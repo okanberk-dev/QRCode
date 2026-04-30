@@ -250,6 +250,63 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
   const coverFileInputRef = useRef<HTMLInputElement | null>(null);
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
+  const [slugSuggesting, setSlugSuggesting] = useState(false);
+  const [readTimeSuggesting, setReadTimeSuggesting] = useState(false);
+
+  const requestSlugSuggestion = async () => {
+    if (slugSuggesting) return;
+    setSlugSuggesting(true);
+    try {
+      const res = await fetch('/api/admin/blog/suggest-slug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          content: form.content,
+          locale: form.locale,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.slug) {
+        setSlugTouched(true);
+        setForm((f) => ({ ...f, slug: data.slug as string }));
+      } else {
+        // Fallback to deterministic
+        setSlugTouched(true);
+        setForm((f) => ({ ...f, slug: createSlug(f.title) }));
+      }
+    } catch {
+      setSlugTouched(true);
+      setForm((f) => ({ ...f, slug: createSlug(f.title) }));
+    } finally {
+      setSlugSuggesting(false);
+    }
+  };
+
+  const requestReadTimeSuggestion = async () => {
+    if (readTimeSuggesting) return;
+    setReadTimeSuggesting(true);
+    try {
+      const res = await fetch('/api/admin/blog/suggest-read-time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: form.content,
+          locale: form.locale,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.readTime) {
+        setForm((f) => ({ ...f, readTime: data.readTime as string }));
+      } else {
+        setForm((f) => ({ ...f, readTime: estimateReadTime(f.content, f.locale) }));
+      }
+    } catch {
+      setForm((f) => ({ ...f, readTime: estimateReadTime(f.content, f.locale) }));
+    } finally {
+      setReadTimeSuggesting(false);
+    }
+  };
 
   const handleCoverFileSelect = async (file: File) => {
     setCoverUploadError(null);
@@ -544,6 +601,10 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
           <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] p-5">
               <p className="pulse-eyebrow text-[#737373]">YAYIN AYARLARI</p>
+              <p className="mt-2 text-[11px] leading-[1.55] text-[#737373]">
+                Yazının dili, URL adresi, yayın tarihi ve kapak görseli gibi içerik dışı
+                ayarlar. Slug ve okuma süresi alanları yapay zekâ önerisi destekler.
+              </p>
               <div className="mt-5 space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-[#737373]">Dil</label>
@@ -576,14 +637,19 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     />
                     <button
                       type="button"
-                      onClick={() => {
-                        setSlugTouched(false);
-                        setForm(f => ({ ...f, slug: createSlug(f.title) }));
-                      }}
-                      className="rounded-2xl border border-[#EDEDED] bg-white px-4 text-[#737373] hover:text-[#0A0A0A]"
-                      title="Başlıktan üret"
+                      onClick={requestSlugSuggestion}
+                      disabled={slugSuggesting || !form.title.trim()}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-[#EDEDED] bg-white px-3 text-[#737373] hover:text-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60"
+                      title="Yapay zekâ ile SEO uyumlu slug öner"
                     >
-                      <Wand2 size={17} />
+                      {slugSuggesting ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <>
+                          <Sparkles size={14} />
+                          <span className="text-xs font-semibold">AI</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -613,10 +679,22 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     <label className="text-xs font-semibold text-[#737373]">Okuma süresi</label>
                     <button
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, readTime: estimateReadTime(f.content, f.locale) }))}
-                      className="text-xs font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4"
+                      onClick={requestReadTimeSuggestion}
+                      disabled={readTimeSuggesting}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 disabled:cursor-not-allowed disabled:opacity-60"
+                      title="Yapay zekâ ile içerik karmaşıklığına göre öner"
                     >
-                      Hesapla
+                      {readTimeSuggesting ? (
+                        <>
+                          <Loader2 size={12} className="animate-spin" />
+                          Hesaplanıyor…
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={12} />
+                          AI ile hesapla
+                        </>
+                      )}
                     </button>
                   </div>
                   <input
