@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { parseBlogDate } from '@/lib/blog-date';
 import {
   ArrowLeft,
   Bold,
@@ -107,6 +108,26 @@ function defaultDate(locale: string) {
     month: 'long',
     year: 'numeric',
   });
+}
+
+/** Mevcut form.date (human-readable veya ISO) → ISO YYYY-MM-DD picker value. */
+function dateInputValue(humanOrIso: string): string {
+  const parsed = parseBlogDate(humanOrIso);
+  const d = parsed ?? new Date();
+  // toISOString returns UTC, slice ilk 10 char "YYYY-MM-DD"
+  return d.toISOString().slice(0, 10);
+}
+
+/** ISO YYYY-MM-DD → locale-aware human-readable ("15 Mart 2026" / "March 15, 2026"). */
+function isoToHuman(iso: string, locale: string): string {
+  if (!iso) return '';
+  // Construct as UTC to avoid timezone drift on server rendering.
+  const [y, m, d] = iso.split('-').map((n) => parseInt(n, 10));
+  if (!y || !m || !d) return iso;
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(
+    locale === 'en' ? 'en-US' : 'tr-TR',
+    { day: 'numeric', month: 'long', year: 'numeric' },
+  );
 }
 
 function getStarterTemplate(locale: string) {
@@ -488,6 +509,26 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 placeholder="Okuyucunun merak edeceği net bir başlık yazın"
                 className="mt-3 w-full border-0 bg-transparent text-3xl font-medium leading-tight tracking-[-0.045em] text-[#0A0A0A] outline-none placeholder:text-[#D4D4D4] sm:text-5xl"
               />
+              {/* SEO char counter — Google snippet ~60 char truncate eder. */}
+              <div className="mt-2 flex items-center justify-between text-[11px] font-medium">
+                <span className="text-[#737373]">
+                  SEO ideal: 50–65 karakter
+                </span>
+                <span
+                  className={
+                    form.title.length === 0
+                      ? 'text-[#737373]'
+                      : form.title.length < 30
+                        ? 'text-[#D97706]'
+                        : form.title.length <= 65
+                          ? 'text-[#16A34A]'
+                          : 'text-[#DC2626]'
+                  }
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {form.title.length} / 180
+                </span>
+              </div>
               <textarea
                 required
                 rows={3}
@@ -497,6 +538,28 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 placeholder="Blog kartlarında ve arama sonuçlarında görünecek kısa açıklama..."
                 className="mt-5 w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 text-base font-medium leading-7 text-[#525252] outline-none focus:border-[#C6F24E] focus:bg-white"
               />
+              {/* Meta description SEO ideal 140–160 char. */}
+              <div className="mt-2 flex items-center justify-between text-[11px] font-medium">
+                <span className="text-[#737373]">
+                  SEO ideal: 140–160 karakter
+                </span>
+                <span
+                  className={
+                    form.description.length === 0
+                      ? 'text-[#737373]'
+                      : form.description.length < 100
+                        ? 'text-[#D97706]'
+                        : form.description.length <= 160
+                          ? 'text-[#16A34A]'
+                          : form.description.length <= 200
+                            ? 'text-[#D97706]'
+                            : 'text-[#DC2626]'
+                  }
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                >
+                  {form.description.length} / 280
+                </span>
+              </div>
             </div>
 
             <div className="overflow-hidden rounded-[28px] border border-[#EDEDED] bg-white shadow-sm">
@@ -613,7 +676,27 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       <button
                         key={locale}
                         type="button"
-                        onClick={() => setForm(f => ({ ...f, locale, date: f.date || defaultDate(locale), readTime: estimateReadTime(f.content, locale) }))}
+                        onClick={() =>
+                          setForm((f) => {
+                            // Locale değişince mevcut tarihi yeni dile uygun formata çevir
+                            // (örn '15 Mart 2026' ↔ 'March 15, 2026'). Parse edilemiyorsa
+                            // bugünün tarihini default olarak kullan.
+                            const parsed = parseBlogDate(f.date);
+                            const nextDate = parsed
+                              ? parsed.toLocaleDateString(locale === 'en' ? 'en-US' : 'tr-TR', {
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric',
+                                })
+                              : f.date || defaultDate(locale);
+                            return {
+                              ...f,
+                              locale,
+                              date: nextDate,
+                              readTime: estimateReadTime(f.content, locale),
+                            };
+                          })
+                        }
                         className={`rounded-xl py-2.5 text-xs font-semibold transition-colors ${form.locale === locale ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-[#FAFAFA]'}`}
                       >
                         {locale.toUpperCase()}
@@ -667,11 +750,18 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 <div>
                   <label className="text-xs font-semibold text-[#737373]">Yayın tarihi</label>
                   <input
-                    type="text"
-                    value={form.date}
-                    onChange={event => setForm(f => ({ ...f, date: event.target.value }))}
-                    className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                    type="date"
+                    value={dateInputValue(form.date)}
+                    onChange={(event) => {
+                      const iso = event.target.value;
+                      if (!iso) return;
+                      setForm((f) => ({ ...f, date: isoToHuman(iso, f.locale) }));
+                    }}
+                    className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold text-[#0A0A0A] outline-none focus:border-[#C6F24E]"
                   />
+                  <p className="mt-2 text-[11px] text-[#737373]">
+                    Sayfada görünüm: <strong className="text-[#0A0A0A]">{form.date || '—'}</strong>
+                  </p>
                 </div>
 
                 <div>
