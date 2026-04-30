@@ -237,7 +237,7 @@ export async function POST(req: NextRequest) {
       // içinde "İşletme adı + ekibi"/"team" fallback'ini üretir.
       // (Eski restaurantName.split(/[\s,.]/)[0] türetimi awkward selamlama
       // üretiyordu: "Cafe Karaköy" → "Hi Cafe,". Kaldırıldı.)
-      const customerRendered = renderRoiCustomerReport(
+      const customerRendered = await renderRoiCustomerReport(
         {
           restaurantName: pdfData.restaurantName,
           firstName: null,
@@ -281,7 +281,7 @@ export async function POST(req: NextRequest) {
     const salesInbox = process.env.NOTIFICATION_EMAIL;
     if (email && salesInbox && !isDuplicate) {
       const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com').replace(/\/+$/, '');
-      const adminRendered = renderRoiAdminNotification(
+      const adminRendered = await renderRoiAdminNotification(
         {
           email,
           restaurantName: pdfData.restaurantName,

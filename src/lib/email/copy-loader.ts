@@ -45,6 +45,10 @@ export const SUPPORTED_MAIL_KEYS = [
   'form-confirmation',
   // §22 davet akışı: e-posta onay gate'i için kullanılır.
   'verify-email',
+  // ROI calculator akışı (§ROI Parça A-E). 2 dedikated template; admin
+  // editor'a da bağlandı ki content değişiklikleri admin'den yapılabilsin.
+  'roi-customer-report',
+  'roi-admin-notification',
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];

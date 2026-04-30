@@ -22,6 +22,11 @@ export const MAIL_PLACEHOLDERS = {
   'customer-reply': ['customerFirstName', 'restaurantName', 'ownerName'],
   'form-confirmation': ['firstName'],
   'verify-email': ['firstName'],
+  // ROI: customer report subject "${restaurantName} için 12 aylık ROI..."
+  // gibi yerlerde + CTA body'de "${planLabel}" + hero'da ${netGain} +
+  // ${roiMultiple}. Render fn vars object'ine bunlar set ediliyor.
+  'roi-customer-report': ['restaurantName', 'planLabel', 'netGain', 'roiMultiple'],
+  'roi-admin-notification': ['restaurantName', 'netGain', 'roiMultiple', 'sectorLabel', 'planLabel'],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;
