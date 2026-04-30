@@ -9,9 +9,10 @@ import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { sanitizeBlogContent } from '@/lib/blog-content';
 import { blogDateToIso } from '@/lib/blog-date';
+import { resolveBlogPair } from '@/lib/blog-translation-pairs';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 // Brand SVGs — lucide-react dropped Twitter/Linkedin/Whatsapp icons; inline
 // glyph paths keep the share row dependency-free and recolour via currentColor.
@@ -52,6 +53,11 @@ export async function generateMetadata(
   const ogImage = post.coverImage?.trim() || `/images/open-graph-${locale}.png`;
   const keywords = getBlogKeywords(post.title, post.description, locale);
 
+  // hreflang — pair'lı yazılarda karşı locale farklı slug taşıyabilir;
+  // resolveBlogPair tek source-of-truth. Pair yoksa default aynı slug.
+  const trSlug = locale === 'tr' ? slug : resolveBlogPair(slug, 'en', 'tr') ?? slug;
+  const enSlug = locale === 'en' ? slug : resolveBlogPair(slug, 'tr', 'en') ?? slug;
+
   return {
     title: `${post.title} — Buaze Blog`,
     description: post.description,
@@ -62,9 +68,9 @@ export async function generateMetadata(
     alternates: {
       canonical: `https://buaze.com/${locale}/blog/${slug}`,
       languages: {
-        tr: `https://buaze.com/tr/blog/${slug}`,
-        en: `https://buaze.com/en/blog/${slug}`,
-        'x-default': `https://buaze.com/en/blog/${slug}`,
+        tr: `https://buaze.com/tr/blog/${trSlug}`,
+        en: `https://buaze.com/en/blog/${enSlug}`,
+        'x-default': `https://buaze.com/en/blog/${enSlug}`,
       },
     },
     robots: {
@@ -187,7 +193,28 @@ export default async function BlogPostPage({
     where: { slug_locale: { slug, locale }, isActive: true } as any,
   });
 
-  if (!post) notFound();
+  if (!post) {
+    // Fallback 1: caller'ın landed slug'ı bu locale'de yok ama karşı locale
+    // slug'ı olarak biliniyor — örn /tr/blog/<en-slug>. Translation pair
+    // map'inden bu locale'in doğru slug'ını bulup oraya 307 redirect.
+    const otherLocale: Locale = locale === 'tr' ? 'en' : 'tr';
+    const pairedInThisLocale = resolveBlogPair(slug, otherLocale, locale);
+    if (pairedInThisLocale && pairedInThisLocale !== slug) {
+      redirect(`/${locale}/blog/${pairedInThisLocale}`);
+    }
+    // Fallback 2: aynı slug karşı locale'de aktif olarak var mı? Varsa
+    // yazının yalnız karşı locale versiyonu yayında demektir; kullanıcıyı
+    // mevcut locale yerine karşı locale URL'ine yönlendir.
+    const sameSlugOther = await prisma.blogPost.findUnique({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      where: { slug_locale: { slug, locale: otherLocale }, isActive: true } as any,
+      select: { id: true },
+    });
+    if (sameSlugOther) {
+      redirect(`/${otherLocale}/blog/${slug}`);
+    }
+    notFound();
+  }
 
   const relatedPosts = await prisma.blogPost.findMany({
     where: { locale, isActive: true, slug: { not: slug } },

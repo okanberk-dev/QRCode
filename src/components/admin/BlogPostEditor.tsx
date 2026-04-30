@@ -14,6 +14,7 @@ import {
   Heading2,
   Heading3,
   Italic,
+  ImagePlus,
   LayoutTemplate,
   Link2,
   List,
@@ -24,6 +25,7 @@ import {
   Save,
   Sparkles,
   Tag,
+  Trash2,
   User,
   Wand2,
   X,
@@ -245,6 +247,98 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
   };
 
   const [tagDraft, setTagDraft] = useState('');
+  const coverFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
+  const [slugSuggesting, setSlugSuggesting] = useState(false);
+  const [readTimeSuggesting, setReadTimeSuggesting] = useState(false);
+
+  const requestSlugSuggestion = async () => {
+    if (slugSuggesting) return;
+    setSlugSuggesting(true);
+    try {
+      const res = await fetch('/api/admin/blog/suggest-slug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          content: form.content,
+          locale: form.locale,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.slug) {
+        setSlugTouched(true);
+        setForm((f) => ({ ...f, slug: data.slug as string }));
+      } else {
+        // Fallback to deterministic
+        setSlugTouched(true);
+        setForm((f) => ({ ...f, slug: createSlug(f.title) }));
+      }
+    } catch {
+      setSlugTouched(true);
+      setForm((f) => ({ ...f, slug: createSlug(f.title) }));
+    } finally {
+      setSlugSuggesting(false);
+    }
+  };
+
+  const requestReadTimeSuggestion = async () => {
+    if (readTimeSuggesting) return;
+    setReadTimeSuggesting(true);
+    try {
+      const res = await fetch('/api/admin/blog/suggest-read-time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: form.content,
+          locale: form.locale,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.readTime) {
+        setForm((f) => ({ ...f, readTime: data.readTime as string }));
+      } else {
+        setForm((f) => ({ ...f, readTime: estimateReadTime(f.content, f.locale) }));
+      }
+    } catch {
+      setForm((f) => ({ ...f, readTime: estimateReadTime(f.content, f.locale) }));
+    } finally {
+      setReadTimeSuggesting(false);
+    }
+  };
+
+  const handleCoverFileSelect = async (file: File) => {
+    setCoverUploadError(null);
+    if (!file.type.startsWith('image/')) {
+      setCoverUploadError('Sadece görsel dosyası yüklenebilir.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setCoverUploadError("Görsel 5 MB'dan büyük olamaz.");
+      return;
+    }
+    setCoverUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/admin/blog/upload-image', {
+        method: 'POST',
+        body: fd,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.url) {
+        setCoverUploadError(data?.error || 'Görsel yüklenemedi.');
+        return;
+      }
+      setForm((f) => ({ ...f, coverImage: data.url as string }));
+    } catch {
+      setCoverUploadError('Bağlantı hatası.');
+    } finally {
+      setCoverUploading(false);
+      if (coverFileInputRef.current) coverFileInputRef.current.value = '';
+    }
+  };
 
   const addTag = (raw: string) => {
     const value = raw.trim().replace(/^#+/, '').replace(/\s+/g, ' ');
@@ -507,6 +601,10 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
           <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] p-5">
               <p className="pulse-eyebrow text-[#737373]">YAYIN AYARLARI</p>
+              <p className="mt-2 text-[11px] leading-[1.55] text-[#737373]">
+                Yazının dili, URL adresi, yayın tarihi ve kapak görseli gibi içerik dışı
+                ayarlar. Slug ve okuma süresi alanları yapay zekâ önerisi destekler.
+              </p>
               <div className="mt-5 space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-[#737373]">Dil</label>
@@ -539,14 +637,19 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     />
                     <button
                       type="button"
-                      onClick={() => {
-                        setSlugTouched(false);
-                        setForm(f => ({ ...f, slug: createSlug(f.title) }));
-                      }}
-                      className="rounded-2xl border border-[#EDEDED] bg-white px-4 text-[#737373] hover:text-[#0A0A0A]"
-                      title="Başlıktan üret"
+                      onClick={requestSlugSuggestion}
+                      disabled={slugSuggesting || !form.title.trim()}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-[#EDEDED] bg-white px-3 text-[#737373] hover:text-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60"
+                      title="Yapay zekâ ile SEO uyumlu slug öner"
                     >
-                      <Wand2 size={17} />
+                      {slugSuggesting ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <>
+                          <Sparkles size={14} />
+                          <span className="text-xs font-semibold">AI</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -576,10 +679,22 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     <label className="text-xs font-semibold text-[#737373]">Okuma süresi</label>
                     <button
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, readTime: estimateReadTime(f.content, f.locale) }))}
-                      className="text-xs font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4"
+                      onClick={requestReadTimeSuggestion}
+                      disabled={readTimeSuggesting}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 disabled:cursor-not-allowed disabled:opacity-60"
+                      title="Yapay zekâ ile içerik karmaşıklığına göre öner"
                     >
-                      Hesapla
+                      {readTimeSuggesting ? (
+                        <>
+                          <Loader2 size={12} className="animate-spin" />
+                          Hesaplanıyor…
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={12} />
+                          AI ile hesapla
+                        </>
+                      )}
                     </button>
                   </div>
                   <input
@@ -591,14 +706,71 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#737373]">Kapak görseli URL</label>
-                  <input
-                    type="text"
-                    value={form.coverImage}
-                    onChange={event => setForm(f => ({ ...f, coverImage: event.target.value }))}
-                    placeholder="https://... veya /images/..."
-                    className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
-                  />
+                  <label className="text-xs font-semibold text-[#737373]">Kapak görseli</label>
+                  {/* Preview — visible whenever coverImage is set */}
+                  {form.coverImage && (
+                    <div className="mt-2 relative overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#FAFAFA]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={form.coverImage}
+                        alt="Kapak önizlemesi"
+                        className="h-40 w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, coverImage: '' }))}
+                        className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-[#0A0A0A] shadow-sm hover:bg-white"
+                        aria-label="Kapağı kaldır"
+                      >
+                        <Trash2 size={11} /> Kaldır
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Upload + URL hybrid */}
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => coverFileInputRef.current?.click()}
+                      disabled={coverUploading}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-xs font-semibold text-[#0A0A0A] hover:border-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    >
+                      {coverUploading ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" />
+                          Yükleniyor…
+                        </>
+                      ) : (
+                        <>
+                          <ImagePlus size={14} />
+                          {form.coverImage ? 'Görseli değiştir' : 'Görsel yükle'}
+                        </>
+                      )}
+                    </button>
+                    <input
+                      ref={coverFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) handleCoverFileSelect(file);
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={form.coverImage}
+                      onChange={(event) => setForm((f) => ({ ...f, coverImage: event.target.value }))}
+                      placeholder="veya URL yapıştır: https://..."
+                      className="flex-1 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                    />
+                  </div>
+                  <p className="mt-2 text-[11px] text-[#737373] leading-[1.55]">
+                    JPG/PNG/WebP, en fazla 5 MB. Otomatik 1600×900 (16:9) WebP'ye çevrilir.
+                  </p>
+                  {coverUploadError && (
+                    <p className="mt-2 text-[12px] font-semibold text-[#991B1B]">{coverUploadError}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between rounded-2xl border border-[#EDEDED] bg-white p-4">

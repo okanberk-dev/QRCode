@@ -235,8 +235,8 @@ export default async function PressPage({
 
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_2fr] gap-5">
             <a
-              href="/favicon.svg"
-              download
+              href="/buaze-logo.svg"
+              download="buaze-logo.svg"
               aria-label={isTr ? 'Buaze logosunu SVG olarak indir' : 'Download Buaze logo as SVG'}
               className="bz-card p-6 flex flex-col items-center justify-center gap-4 hover:bg-[#FAFAFA] transition-colors"
             >

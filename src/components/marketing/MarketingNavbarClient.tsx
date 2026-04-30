@@ -29,6 +29,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import type { Locale, Translations } from '@/lib/translations';
+import { resolveBlogPair } from '@/lib/blog-translation-pairs';
 import BuazeLogo from './BuazeLogo';
 import WatchDemoButton from './WatchDemoButton';
 
@@ -108,7 +109,21 @@ export default function MarketingNavbarClient({
 
   const otherLocale: Locale = isTr ? 'en' : 'tr';
   const switchLocale = () => {
-    const newPath = pathname.replace(`/${locale}`, `/${otherLocale}`);
+    let newPath = pathname.replace(`/${locale}`, `/${otherLocale}`);
+
+    // Blog detail special-case: aynı yazının karşı locale slug'ı farklıysa
+    // kör pathname.replace 404'e götürür. Translation pair map'ten doğru
+    // hedef slug'ı bulup yönlendir; pair yoksa server fallback (blog
+    // [slug]/page.tsx) zaten yakalar.
+    const blogMatch = pathname.match(/^\/(tr|en)\/blog\/([^/]+)\/?$/);
+    if (blogMatch) {
+      const currentSlug = blogMatch[2];
+      const paired = resolveBlogPair(currentSlug, locale, otherLocale);
+      if (paired) {
+        newPath = `/${otherLocale}/blog/${paired}`;
+      }
+    }
+
     document.cookie = `NEXT_LOCALE=${otherLocale};path=/;max-age=${
       60 * 60 * 24 * 365
     };samesite=lax`;

@@ -572,7 +572,10 @@ model BlogPost {
   date        String
   readTime    String   @map("read_time")
   author      String
-  coverImage  String   @map("cover_image")
+  // Either an absolute URL or a base64 data URL (admin upload via
+  // /api/admin/blog/upload-image). @db.Text required because data URLs
+  // can exceed VARCHAR(255) — see CLAUDE.md §3.
+  coverImage  String   @map("cover_image") @db.Text
   isActive    Boolean  @default(true) @map("is_active")
   // Public page view counter — fire-and-forget incremented when the post
   // renders at /[locale]/blog/[slug]. Default 0 keeps existing rows safe.
