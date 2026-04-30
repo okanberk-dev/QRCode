@@ -3,77 +3,54 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Check } from 'lucide-react';
+import type { PublicPlan } from '@/lib/subscription-plans';
 
 interface Props {
   locale: 'tr' | 'en';
   monthlyCta: string;
   yearlyCta: string;
   monthlyPeriod: string;
+  plans: PublicPlan[];
 }
 
 type Billing = 'monthly' | 'yearly';
 
 /**
- * 1:1 with .design/site/site-marketing.jsx:PricingPage — monthly/yearly pill
- * toggle, 3 plans (Starter / Growth / Scale — English in both locales), dynamic
- * price calculation (yearly = monthly × 0.80, 20% off).
+ * Pricing card grid — DB-driven plans (admin/plans). Monthly/yearly pill
+ * toggle keeps a built-in 20% annual off; admin-defined per-plan discount
+ * applies on top of monthly (yearly already includes the toggle's 20%).
  */
-export default function PricingPlans({ locale, monthlyCta, yearlyCta, monthlyPeriod }: Props) {
+export default function PricingPlans({
+  locale,
+  monthlyCta,
+  yearlyCta,
+  monthlyPeriod,
+  plans,
+}: Props) {
   const isTr = locale === 'tr';
   const base = `/${locale}`;
   const [billing, setBilling] = useState<Billing>('monthly');
 
-  const plans = [
-    {
-      id: 'starter' as const,
-      name: 'Starter',
-      desc: isTr ? 'Küçük işletmeler için ideal başlangıç.' : 'Ideal start for small businesses.',
-      monthly: 0,
-      yearly: 0,
-      featured: false,
-      cta: monthlyCta,
-      features: isTr
-        ? ['Sınırsız QR kod', 'Yorum yönetimi', 'Akıllı filtreleme', 'E-posta desteği']
-        : ['Unlimited QR codes', 'Review management', 'Smart filtering', 'Email support'],
-    },
-    {
-      id: 'growth' as const,
-      name: 'Growth',
-      desc: isTr
-        ? 'Hızlı büyüyen ve çok şubeli işletmeler için.'
-        : 'For fast-growing and multi-location businesses.',
-      monthly: 890,
-      yearly: 712,
-      featured: true,
-      cta: monthlyCta,
-      features: isTr
-        ? ['Starter\'daki her şey', 'Buaze Pulse AI dahil', 'Çoklu lokasyon (3\'e kadar)', 'Gelişmiş analitik', 'Öncelikli destek']
-        : ['Everything in Starter', 'Buaze Pulse AI included', 'Multi-location (up to 3)', 'Advanced analytics', 'Priority support'],
-    },
-    {
-      id: 'scale' as const,
-      name: 'Scale',
-      desc: isTr ? 'Kurumsal ihtiyaçlar ve sınırsız kapasite.' : 'Enterprise needs with unlimited capacity.',
-      monthly: 2490,
-      yearly: 1992,
-      featured: false,
-      cta: yearlyCta,
-      features: isTr
-        ? ['Growth\'daki her şey', 'Sınırsız şube', 'API & Webhook erişimi', '7/24 öncelikli destek', 'Özel SLA']
-        : ['Everything in Growth', 'Unlimited locations', 'API & Webhook access', '24/7 priority support', 'Dedicated SLA'],
-    },
-  ];
-
   const formatPrice = (value: number) => {
     if (value === 0) return isTr ? '₺0' : '$0';
     if (isTr) return `₺${value.toLocaleString('tr-TR')}`;
-    const usd = Math.round(value / 30);
-    return `$${usd}`;
+    return `$${value.toLocaleString('en-US')}`;
   };
+
+  if (plans.length === 0) {
+    return (
+      <div className="rounded-3xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-10 text-center">
+        <p className="text-[15px] font-medium text-[#525252]">
+          {isTr
+            ? 'Henüz aktif paket bulunmuyor. Yöneticinizle iletişime geçin.'
+            : 'No active plans yet. Please contact your administrator.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
-      {/* Monthly/Yearly pill toggle */}
       <div className="mb-10 flex justify-center">
         <div
           role="tablist"
@@ -116,11 +93,16 @@ export default function PricingPlans({ locale, monthlyCta, yearlyCta, monthlyPer
         </div>
       </div>
 
-      {/* 3 plan cards */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
+      <div
+        className={`grid grid-cols-1 gap-6 lg:gap-8 ${
+          plans.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'
+        }`}
+      >
         {plans.map((p) => {
-          const price = billing === 'monthly' ? p.monthly : p.yearly;
-          const isDark = p.featured;
+          const hasDiscount = p.discount.active && p.discount.discountedMonthly < p.priceMonthly;
+          const monthlyShown = hasDiscount ? p.discount.discountedMonthly : p.priceMonthly;
+          const price = billing === 'monthly' ? monthlyShown : p.priceYearly;
+          const isDark = p.isFeatured;
 
           return (
             <article
@@ -140,18 +122,33 @@ export default function PricingPlans({ locale, monthlyCta, yearlyCta, monthlyPer
               )}
 
               <div className={`${isDark ? 'pt-2' : ''} mb-6`}>
-                <h2
-                  className={`text-[22px] font-medium tracking-[-0.02em] ${isDark ? 'text-white' : 'text-[#0A0A0A]'}`}
-                >
-                  {p.name}
-                </h2>
+                <div className="flex items-start justify-between gap-3">
+                  <h2
+                    className={`text-[22px] font-medium tracking-[-0.02em] ${
+                      isDark ? 'text-white' : 'text-[#0A0A0A]'
+                    }`}
+                  >
+                    {p.name}
+                  </h2>
+                  {hasDiscount && p.discount.label && (
+                    <span
+                      className={`pulse-eyebrow shrink-0 rounded-full px-2.5 py-1 ${
+                        isDark
+                          ? 'bg-[#C6F24E] text-[#0A0A0A]'
+                          : 'bg-[#EAF9B8] text-[#0A0A0A]'
+                      }`}
+                    >
+                      {p.discount.label}
+                    </span>
+                  )}
+                </div>
                 <p className={`mt-2 text-[13px] leading-snug ${isDark ? 'text-white/70' : 'text-[#525252]'}`}>
-                  {p.desc}
+                  {p.description}
                 </p>
               </div>
 
               <div className={`mb-8 border-b pb-8 ${isDark ? 'border-white/10' : 'border-[#EDEDED]'}`}>
-                <div className="flex items-baseline gap-1">
+                <div className="flex items-baseline gap-2">
                   <span
                     className={`text-[40px] sm:text-[52px] font-medium leading-none tracking-[-0.03em] ${
                       isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
@@ -164,17 +161,26 @@ export default function PricingPlans({ locale, monthlyCta, yearlyCta, monthlyPer
                     {price === 0 ? (isTr ? 'ÜCRETSİZ' : 'FREE') : monthlyPeriod}
                   </span>
                 </div>
-                {billing === 'yearly' && p.monthly > 0 && (
-                  <div className={`mt-2 flex items-center gap-2 text-[12px] ${isDark ? 'text-white/60' : 'text-[#525252]'}`}>
+                {((billing === 'monthly' && hasDiscount) ||
+                  (billing === 'yearly' && p.priceMonthly > 0)) && (
+                  <div
+                    className={`mt-2 flex flex-wrap items-center gap-2 text-[12px] ${
+                      isDark ? 'text-white/60' : 'text-[#525252]'
+                    }`}
+                  >
                     <span className={isDark ? 'text-white/40 line-through' : 'text-[#A3A3A3] line-through'}>
-                      {formatPrice(p.monthly)}
+                      {formatPrice(p.priceMonthly)}
                       {monthlyPeriod}
                     </span>
                     <span>·</span>
                     <span>
-                      {isTr
-                        ? `₺${(p.yearly * 12).toLocaleString('tr-TR')}/yıl`
-                        : `$${Math.round((p.yearly * 12) / 30)}/year`}
+                      {billing === 'yearly'
+                        ? isTr
+                          ? `₺${(p.priceYearly * 12).toLocaleString('tr-TR')}/yıl`
+                          : `$${(p.priceYearly * 12).toLocaleString('en-US')}/year`
+                        : isTr
+                          ? `${formatPrice(p.priceMonthly - p.discount.discountedMonthly)} tasarruf`
+                          : `Save ${formatPrice(p.priceMonthly - p.discount.discountedMonthly)}`}
                     </span>
                   </div>
                 )}
@@ -184,7 +190,9 @@ export default function PricingPlans({ locale, monthlyCta, yearlyCta, monthlyPer
                 {p.features.map((feat) => (
                   <li
                     key={feat}
-                    className={`flex items-start gap-3 text-[14px] font-medium ${isDark ? 'text-white' : 'text-[#0A0A0A]'}`}
+                    className={`flex items-start gap-3 text-[14px] font-medium ${
+                      isDark ? 'text-white' : 'text-[#0A0A0A]'
+                    }`}
                   >
                     <span
                       className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
@@ -199,16 +207,14 @@ export default function PricingPlans({ locale, monthlyCta, yearlyCta, monthlyPer
               </ul>
 
               <Link
-                href={`${base}/auth/register`}
+                href={p.buttonHref.startsWith('http') ? p.buttonHref : `${base}${p.buttonHref}`}
                 className={`block min-h-[48px] w-full rounded-full py-3.5 text-center text-[14px] font-medium transition-colors ${
                   isDark
                     ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
-                    : p.id === 'scale'
-                      ? 'bg-[#0A0A0A] text-white hover:bg-[#1A1A1A]'
-                      : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
+                    : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
                 }`}
               >
-                {p.cta}
+                {p.buttonText || (billing === 'monthly' ? monthlyCta : yearlyCta)}
               </Link>
             </article>
           );

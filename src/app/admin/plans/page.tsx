@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight, Check, CreditCard, Crown, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, CreditCard, Crown, TrendingUp, Users } from 'lucide-react';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import {
@@ -13,6 +13,8 @@ import {
   ProgressBar,
   StatCard,
 } from '@/components/ui';
+import { getAllPlansForAdmin } from '@/lib/subscription-plans';
+import PlansManager from '@/components/admin/PlansManager';
 
 export const metadata: Metadata = {
   title: 'Abonelikler — Buaze Admin',
@@ -21,62 +23,9 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-interface PlanTier {
-  key: string;
-  label: string;
-  price: string;
-  period: string;
-  bestFor: string;
-  features: string[];
-  badge?: string;
-  highlight?: boolean;
-}
-
-const PLAN_TIERS: PlanTier[] = [
-  {
-    key: 'starter',
-    label: 'Starter',
-    price: '₺499',
-    period: 'ay',
-    bestFor: 'Tek konumlu işletmeler için.',
-    features: [
-      'Sınırsız QR kod oluşturma',
-      'Yorum gelen kutusu + e-posta uyarıları',
-      'Google + Yemeksepeti yönlendirme',
-      'Temel analitik ve haftalık özet',
-    ],
-  },
-  {
-    key: 'growth',
-    label: 'Growth',
-    price: '₺899',
-    period: 'ay',
-    bestFor: 'Çoklu şubeli işletmeler için.',
-    features: [
-      'Starter\'daki her şey',
-      'Çoklu konum yönetimi',
-      'Menü builder + menü analitiği',
-      'Pulse AI yanıt önerileri',
-      'Ekip üyesi davet (3 kullanıcı)',
-    ],
-    badge: 'En popüler',
-    highlight: true,
-  },
-  {
-    key: 'pro',
-    label: 'Pro',
-    price: '₺1.499',
-    period: 'ay',
-    bestFor: 'Zincir ve büyük operasyonlar için.',
-    features: [
-      'Growth\'daki her şey',
-      'Sınırsız ekip üyesi + rol bazlı erişim',
-      'Webhook + API erişimi',
-      'Özel domain ve markalama',
-      'Öncelikli destek (SLA)',
-    ],
-  },
-];
+// Plan tier hardcoded array kaldırıldı — paketler artık DB-driven
+// (SubscriptionPlan tablosu). PlansManager admin paneli üzerinden CRUD eder,
+// public /pricing aynı kaynaktan fetch eder.
 
 export default async function AdminPlansPage() {
   const cookieStore = await cookies();
@@ -121,6 +70,10 @@ export default async function AdminPlansPage() {
     orderBy: { createdAt: 'desc' },
     take: 5,
   });
+
+  // Subscription plans — DB-driven, managed by PlansManager below.
+  // Boş ise PlansManager kullanıcıya "Varsayılan paketleri yükle" butonu sunar.
+  const managedPlans = await getAllPlansForAdmin().catch(() => []);
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
@@ -238,112 +191,9 @@ export default async function AdminPlansPage() {
         </div>
       </div>
 
-      {/* Plan tier cards */}
-      <div className="mb-2.5">
-        <Eyebrow>Plan paketleri</Eyebrow>
-        <h2 className="bz-h-tight-2 mt-1 mb-3" style={{ fontSize: 22 }}>
-          Müşterilerin için sunulan planlar
-        </h2>
-      </div>
-      <div className="grid gap-3.5 lg:grid-cols-3">
-        {PLAN_TIERS.map((p) => (
-          <div
-            key={p.key}
-            className={`relative p-6 ${p.highlight ? '' : 'bz-card'}`}
-            style={
-              p.highlight
-                ? {
-                    background: '#0A0A0A',
-                    color: '#fff',
-                    borderRadius: 16,
-                    border: '1px solid #0A0A0A',
-                  }
-                : {}
-            }
-          >
-            {p.badge && (
-              <div className="absolute" style={{ top: -10, right: 16 }}>
-                <Badge kind="lime" dot={false}>
-                  {p.badge}
-                </Badge>
-              </div>
-            )}
-            <div className="flex items-baseline justify-between gap-2 mb-1">
-              <div
-                className="bz-h-tight"
-                style={{ fontSize: 20, color: p.highlight ? '#fff' : '#0A0A0A' }}
-              >
-                {p.label}
-              </div>
-            </div>
-            <div className="flex items-baseline gap-1 mb-2">
-              <span
-                className="bz-h-tight-2"
-                style={{
-                  fontSize: 32,
-                  color: p.highlight ? '#C6F24E' : '#0A0A0A',
-                }}
-              >
-                {p.price}
-              </span>
-              <span
-                style={{
-                  fontSize: 12,
-                  color: p.highlight ? 'rgba(255,255,255,0.6)' : '#737373',
-                }}
-              >
-                / {p.period}
-              </span>
-            </div>
-            <p
-              className="mb-4"
-              style={{
-                fontSize: 12,
-                lineHeight: 1.5,
-                color: p.highlight ? 'rgba(255,255,255,0.7)' : '#525252',
-              }}
-            >
-              {p.bestFor}
-            </p>
-            <ul className="flex flex-col gap-2 mb-5">
-              {p.features.map((f, i) => (
-                <li key={i} className="flex items-start gap-2" style={{ fontSize: 13 }}>
-                  <span
-                    aria-hidden="true"
-                    className="mt-0.5 inline-flex items-center justify-center"
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      background: p.highlight ? '#C6F24E' : '#EAF9B8',
-                      color: '#0A0A0A',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Check size={10} strokeWidth={3} />
-                  </span>
-                  <span
-                    style={{
-                      color: p.highlight ? 'rgba(255,255,255,0.85)' : '#1A1A1A',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {f}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              disabled
-              className={p.highlight ? 'bz-btn-lime w-full' : 'bz-btn-ghost w-full'}
-              title="Iyzico entegrasyonu Wave 3.5'te canlıya alınacak"
-            >
-              {p.highlight ? 'Pakete geç' : 'Detayları gör'}
-            </button>
-          </div>
-        ))}
-      </div>
+      {/* Manageable plan cards — DB-driven via /api/admin/plans CRUD.
+          Public /pricing fetches the same rows. */}
+      <PlansManager initialPlans={managedPlans} />
 
       {/* Roadmap note */}
       <div

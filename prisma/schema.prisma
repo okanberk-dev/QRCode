@@ -841,3 +841,51 @@ model BillingInvoice {
   @@index([userId, issuedAt])
   @@map("billing_invoices")
 }
+
+// Public marketing pricing plans, fully managed from /admin/plans.
+// Single row per plan with bilingual content (TR/EN columns) — admin
+// edits stay in lockstep across locales without needing dual rows.
+// Public render: /api/plans GET (active, ordered by sortOrder).
+// isFeatured is enforced single-row at the API layer (PATCH demotes
+// others when one is promoted).
+model SubscriptionPlan {
+  id              String   @id @default(cuid())
+
+  // Bilingual display fields
+  nameTr          String
+  nameEn          String
+  descriptionTr   String   @db.Text
+  descriptionEn   String   @db.Text
+
+  // Pricing — whole TRY / whole USD; admin UI uses int controls.
+  priceTry        Int      @map("price_try")
+  priceUsd        Int?     @map("price_usd")
+  period          String   @default("month") // 'month' | 'year' | 'one-time'
+
+  // Features — JSON string array, locale-paired
+  featuresTr      Json     @map("features_tr")
+  featuresEn      Json     @map("features_en")
+
+  // CTA
+  buttonTextTr    String   @default("Başla") @map("button_text_tr")
+  buttonTextEn    String   @default("Start") @map("button_text_en")
+  buttonHref      String   @default("/auth/register") @map("button_href")
+
+  // Display
+  isActive        Boolean  @default(true) @map("is_active")
+  isFeatured      Boolean  @default(false) @map("is_featured")
+  sortOrder       Int      @default(0) @map("sort_order")
+
+  // Optional discount
+  discountActive  Boolean  @default(false) @map("discount_active")
+  discountType    String?  @map("discount_type") // 'percent' | 'fixed'
+  discountValue   Int?     @map("discount_value")
+  discountLabelTr String?  @map("discount_label_tr")
+  discountLabelEn String?  @map("discount_label_en")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("subscription_plans")
+}

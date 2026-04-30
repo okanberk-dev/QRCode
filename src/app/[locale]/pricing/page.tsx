@@ -4,6 +4,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import PricingFaq from '@/components/marketing/PricingFaq';
 import PricingPlans from '@/components/marketing/PricingPlans';
+import { getActivePlans } from '@/lib/subscription-plans';
 
 export const dynamic = 'force-dynamic';
 import { getTranslations } from '@/lib/translations';
@@ -47,6 +48,10 @@ export default async function PricingPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
 
+  // DB-driven plans — admin/plans manages content. Empty list falls back
+  // to a friendly empty-state inside PricingPlans.
+  const plans = await getActivePlans(locale).catch(() => []);
+
   const faqs = [
     { q: t.faq_q1, a: t.faq_a1 },
     { q: t.faq_q2, a: t.faq_a2 },
@@ -57,27 +62,26 @@ export default async function PricingPage({
   ];
 
   const priceCurrency = isTr ? 'TRY' : 'USD';
-  // Mirror PricingPlans.tsx: Starter=0, Growth=890, Scale=2490 (TRY monthly).
-  // EN: rough TRY/30 → USD ($30, $83). Annual gives 20% off (× 0.80).
-  const planOffers = [
-    { name: 'Starter', monthly: isTr ? 0 : 0 },
-    { name: 'Growth', monthly: isTr ? 890 : 30 },
-    { name: 'Scale', monthly: isTr ? 2490 : 83 },
-  ].map((p) => ({
-    '@type': 'Offer',
-    name: p.name,
-    price: String(p.monthly),
-    priceCurrency,
-    priceSpecification: {
-      '@type': 'UnitPriceSpecification',
-      price: String(p.monthly),
+  // DB-driven JSON-LD offers — prices reflect the same priceMonthly used in the
+  // visible cards (post-discount when applicable, pre-yearly toggle).
+  const planOffers = plans.map((p) => {
+    const monthly = p.discount.active ? p.discount.discountedMonthly : p.priceMonthly;
+    return {
+      '@type': 'Offer',
+      name: p.name,
+      price: String(monthly),
       priceCurrency,
-      billingDuration: 'P1M',
-      unitCode: 'MON',
-    },
-    availability: 'https://schema.org/InStock',
-    url: `https://buaze.com/${locale}/pricing`,
-  }));
+      priceSpecification: {
+        '@type': 'UnitPriceSpecification',
+        price: String(monthly),
+        priceCurrency,
+        billingDuration: 'P1M',
+        unitCode: 'MON',
+      },
+      availability: 'https://schema.org/InStock',
+      url: `https://buaze.com/${locale}/pricing`,
+    };
+  });
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -220,6 +224,7 @@ export default async function PricingPage({
             monthlyCta={t.pricing_monthly_cta}
             yearlyCta={t.pricing_yearly_cta}
             monthlyPeriod={t.pricing_monthly_period}
+            plans={plans}
           />
         </div>
       </section>
