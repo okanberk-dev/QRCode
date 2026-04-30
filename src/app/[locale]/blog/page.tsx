@@ -37,18 +37,59 @@ export async function generateMetadata({
  * (1.5fr/1fr split with lime pad + chart line overlay), then 3-col grid
  * with color-rotating pads and oversized numeric backdrop per card.
  */
+/**
+ * Filter chip → eşleşen tag varyantları. Admin yazı oluştururken hangi
+ * dilde tag eklediğine göre filter yakalasın diye TR + EN listelenir.
+ */
+const FILTER_TAGS: Record<string, { label: { tr: string; en: string }; tags: string[] }> = {
+  all: {
+    label: { tr: 'Tümü', en: 'All' },
+    tags: [],
+  },
+  strategy: {
+    label: { tr: 'Strateji', en: 'Strategy' },
+    tags: ['Strateji', 'strateji', 'Strategy', 'strategy', 'Büyüme', 'Growth'],
+  },
+  case: {
+    label: { tr: 'Vaka', en: 'Case' },
+    tags: ['Vaka', 'vaka', 'Case', 'case', 'Vaka çalışması', 'Case study'],
+  },
+  guide: {
+    label: { tr: 'Rehber', en: 'Guide' },
+    tags: ['Rehber', 'rehber', 'Guide', 'guide', 'Kılavuz'],
+  },
+  product: {
+    label: { tr: 'Ürün', en: 'Product' },
+    tags: ['Ürün', 'ürün', 'Product', 'product'],
+  },
+  industry: {
+    label: { tr: 'Sektör', en: 'Industry' },
+    tags: ['Sektör', 'sektör', 'Industry', 'industry'],
+  },
+};
+
 export default async function BlogIndexPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: Locale }>;
+  searchParams: Promise<{ cat?: string }>;
 }) {
   const { locale } = await params;
+  const { cat } = await searchParams;
   const t = getTranslations(locale);
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
+  const activeFilter = cat && FILTER_TAGS[cat] ? cat : 'all';
+  const tagsToMatch = FILTER_TAGS[activeFilter]?.tags ?? [];
+
   const posts = await prisma.blogPost.findMany({
-    where: { locale, isActive: true },
+    where: {
+      locale,
+      isActive: true,
+      ...(tagsToMatch.length > 0 ? { tags: { hasSome: tagsToMatch } } : {}),
+    },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -57,9 +98,17 @@ export default async function BlogIndexPage({
   // Category color rotation for rest grid: first neutral, then greyscale
   const padColor = (i: number) => (i === 0 ? '#EAF9B8' : '#F5F5F5');
 
-  const filterChips = isTr
-    ? ['Tümü', 'Strateji', 'Vaka', 'Rehber', 'Ürün', 'Sektör']
-    : ['All', 'Strategy', 'Case', 'Guide', 'Product', 'Industry'];
+  const filterChips = (Object.keys(FILTER_TAGS) as Array<keyof typeof FILTER_TAGS>).map(
+    (key) => ({
+      key,
+      label: FILTER_TAGS[key].label[isTr ? 'tr' : 'en'],
+      href:
+        key === 'all'
+          ? `${base}/blog`
+          : `${base}/blog?cat=${key}`,
+      active: activeFilter === key,
+    }),
+  );
 
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
@@ -83,19 +132,22 @@ export default async function BlogIndexPage({
               : 'Review management, customer psychology, growth tactics — weekly expert guides.'}
           </p>
 
-          {/* Filter chips (visual-only) */}
+          {/* Filter chips — server-side filter via ?cat=... query param.
+              Tag-based; admin yazıya tag eklediğinde filtre yakalar. */}
           <div className="mt-7 flex flex-wrap gap-2">
-            {filterChips.map((c, i) => (
-              <span
-                key={c}
-                className={`inline-flex items-center rounded-full border px-4 py-2 text-[13px] font-medium ${
-                  i === 0
+            {filterChips.map((c) => (
+              <Link
+                key={c.key}
+                href={c.href}
+                aria-current={c.active ? 'page' : undefined}
+                className={`inline-flex items-center rounded-full border px-4 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                  c.active
                     ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                    : 'bg-white text-[#0A0A0A] border-[#EDEDED]'
+                    : 'bg-white text-[#0A0A0A] border-[#EDEDED] hover:border-[#0A0A0A]'
                 }`}
               >
-                {c}
-              </span>
+                {c.label}
+              </Link>
             ))}
           </div>
         </div>
@@ -103,8 +155,24 @@ export default async function BlogIndexPage({
 
       {posts.length === 0 ? (
         <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
-          <div className="max-w-[1200px] mx-auto py-16 text-center text-[15px] text-[#737373]">
-            {isTr ? 'Henüz blog yazısı yok.' : 'No blog posts yet.'}
+          <div className="max-w-[1200px] mx-auto py-16 text-center">
+            <p className="text-[15px] text-[#737373]">
+              {activeFilter !== 'all'
+                ? isTr
+                  ? `"${FILTER_TAGS[activeFilter].label.tr}" kategorisinde henüz yazı yok.`
+                  : `No posts in "${FILTER_TAGS[activeFilter].label.en}" yet.`
+                : isTr
+                  ? 'Henüz blog yazısı yok.'
+                  : 'No blog posts yet.'}
+            </p>
+            {activeFilter !== 'all' && (
+              <Link
+                href={`${base}/blog`}
+                className="mt-4 inline-flex items-center gap-1 text-[13px] font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4"
+              >
+                {isTr ? 'Tüm yazılara dön' : 'View all posts'}
+              </Link>
+            )}
           </div>
         </section>
       ) : (
