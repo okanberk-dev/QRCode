@@ -127,7 +127,7 @@ export default async function CaseStudyPage({
       <main id="main-content">
 
       {/* Breadcrumb */}
-      <div className="border-b border-[#EDEDED] bg-[#FAFAFA] px-6 py-4 sm:px-10">
+      <div className="border-b border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 sm:px-10">
         <div className="mx-auto max-w-[1200px]">
           <Link
             href={`${base}/case-study`}
@@ -149,13 +149,13 @@ export default async function CaseStudyPage({
             className="absolute inset-0 h-full w-full object-cover opacity-80"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 px-6 pb-8 sm:px-10 sm:pb-12">
+          <div className="absolute inset-x-0 bottom-0 px-5 pb-8 sm:px-10 sm:pb-12">
             <div className="mx-auto max-w-[1000px] text-white">
               <p className="pulse-eyebrow text-[#C6F24E]">
                 {resolveSector(study, isTr)} · {study.location}
               </p>
               <h1
-                className="mt-3 text-[40px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em]"
+                className="mt-3 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]"
                 style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
                 {study.brand}
@@ -163,13 +163,13 @@ export default async function CaseStudyPage({
             </div>
           </div>
         </div>
-        <div className="px-6 sm:px-10 py-12 sm:py-16">
+        <div className="px-5 sm:px-10 py-[60px] sm:py-16">
           <div className="mx-auto max-w-[1000px]">
-            <p className="max-w-[760px] text-[18px] leading-[1.55] text-[#0A0A0A] sm:text-[22px]">
+            <p className="max-w-[760px] text-[15px] leading-[1.6] text-[#0A0A0A] sm:text-[22px] sm:leading-[1.55]">
               {heroText}
             </p>
             {subtitleText && (
-              <p className="mt-4 max-w-[720px] text-[15px] leading-[1.65] text-[#525252]">
+              <p className="mt-4 max-w-[720px] text-[14px] leading-[1.6] text-[#525252] sm:text-[15px] sm:leading-[1.65]">
                 {subtitleText}
               </p>
             )}
@@ -179,7 +179,7 @@ export default async function CaseStudyPage({
 
       {/* Stats */}
       {stats.length > 0 && (
-        <section className="border-y border-[#EDEDED] bg-[#FAFAFA] px-6 py-10 sm:px-10 sm:py-14">
+        <section className="border-y border-[#EDEDED] bg-[#FAFAFA] px-5 py-[60px] sm:px-10 sm:py-14">
           <div className="mx-auto max-w-[1000px] grid grid-cols-2 gap-6 sm:grid-cols-4">
             {stats.map((stat) => (
               <div key={stat.label.en} className="border-t-2 border-[#0A0A0A] pt-3">
@@ -200,7 +200,7 @@ export default async function CaseStudyPage({
 
       {/* Highlights */}
       {highlights.length > 0 && (
-        <section className="px-6 sm:px-10 py-16 sm:py-20">
+        <section className="px-5 sm:px-10 py-[60px] sm:py-20">
           <div className="mx-auto max-w-[1000px]">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'SÜRECİN ÖZETİ' : 'HOW IT PLAYED OUT'}
@@ -224,11 +224,11 @@ export default async function CaseStudyPage({
 
       {/* Quote */}
       {quoteText && (
-        <section className="bg-[#0A0A0A] px-6 sm:px-10 py-20 sm:py-24 text-white">
+        <section className="bg-[#0A0A0A] px-5 sm:px-10 py-[60px] sm:py-24 text-white">
           <div className="mx-auto max-w-[900px]">
             <Quote size={32} className="text-[#C6F24E]" />
             <blockquote
-              className="mt-6 text-[28px] font-medium leading-[1.35] tracking-tight text-white sm:text-[36px] lg:text-[44px]"
+              className="mt-6 text-[24px] font-medium leading-[1.35] tracking-tight text-white sm:text-[36px] lg:text-[44px]"
               style={{ fontFamily: 'var(--font-space-grotesk)' }}
             >
               &quot;{quoteText}&quot;
@@ -261,11 +261,11 @@ export default async function CaseStudyPage({
 
       {/* Related */}
       {others.length > 0 && (
-        <section className="px-6 sm:px-10 py-16 sm:py-20">
+        <section className="px-5 sm:px-10 py-[60px] sm:py-20">
           <div className="mx-auto max-w-[1200px]">
             <div className="flex items-end justify-between gap-4">
               <h2
-                className="text-[28px] font-medium tracking-[-0.025em] text-[#0A0A0A] sm:text-[36px]"
+                className="text-[26px] font-medium tracking-[-0.025em] text-[#0A0A0A] sm:text-[36px]"
                 style={{ fontFamily: 'var(--font-space-grotesk)' }}
               >
                 {isTr ? 'Başka sektörlerden' : 'From other sectors'}

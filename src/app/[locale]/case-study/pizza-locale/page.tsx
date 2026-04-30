@@ -147,14 +147,14 @@ export default async function PizzaLocaleCaseStudy({
       <main id="main-content">
 
       {/* ─── Hero ─── */}
-      <section className="relative bg-[#0A0A0A] text-white px-6 sm:px-10 pt-16 sm:pt-24 pb-24 sm:pb-32 overflow-hidden">
+      <section className="relative bg-[#0A0A0A] text-white px-5 sm:px-10 pt-[60px] sm:pt-24 pb-20 sm:pb-32 overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#C6F24E]/10 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2 pointer-events-none" />
         <div className="max-w-[1000px] mx-auto relative z-10 text-center">
           <div className="inline-flex items-center gap-2 bg-[#C6F24E] text-[#0A0A0A] rounded-full pl-2 pr-4 py-1.5">
             <span className="w-2 h-2 rounded-full bg-[#0A0A0A] pulse-heartbeat" />
             <span className="pulse-eyebrow text-[#0A0A0A]">{t.pl_case_hero_badge}</span>
           </div>
-          <h1 className="mt-6 text-[36px] sm:text-[56px] lg:text-[64px] font-medium leading-[1.05] tracking-[-0.035em] text-white">
+          <h1 className="mt-6 text-[38px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-white sm:leading-[1.05]">
             {t.pl_case_hero_title}
           </h1>
           <p className="mt-6 text-[17px] sm:text-[19px] text-white/70 leading-[1.6] max-w-[680px] mx-auto">
@@ -167,7 +167,7 @@ export default async function PizzaLocaleCaseStudy({
       </section>
 
       {/* ─── Metrics ─── */}
-      <section className="relative -mt-14 px-6 sm:px-10">
+      <section className="relative -mt-14 px-5 sm:px-10">
         <div className="max-w-[1100px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4">
           {metrics.map((m, i) => (
             <div key={i} className="bg-white p-6 rounded-2xl border border-[#EDEDED] shadow-[0_8px_24px_rgba(10,10,10,0.06)]">
@@ -185,12 +185,12 @@ export default async function PizzaLocaleCaseStudy({
       </section>
 
       {/* ─── Story sections ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[840px] mx-auto space-y-16 sm:space-y-20">
           {sections.map((s, i) => (
             <div key={i}>
               <span className="pulse-eyebrow text-[#A8D62E]">{s.eyebrow}</span>
-              <h2 className="mt-4 text-[28px] sm:text-[40px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
+              <h2 className="mt-4 text-[26px] sm:text-[40px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
                 {s.title}
               </h2>
               <div className="mt-5 space-y-4 text-[16px] sm:text-[17px] text-[#525252] leading-[1.7]">
@@ -204,13 +204,13 @@ export default async function PizzaLocaleCaseStudy({
       </section>
 
       {/* ─── Before & After ─── */}
-      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-20 sm:py-28">
+      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[1100px] mx-auto">
           <div className="text-center mb-12 max-w-[640px] mx-auto">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Dönüşüm özeti' : 'Transformation summary'}
             </span>
-            <h2 className="mt-4 text-[30px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[26px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
               {isTr ? 'Manuel süreçlerden profesyonel operasyona.' : 'From manual processes to professional ops.'}
             </h2>
           </div>
@@ -252,13 +252,13 @@ export default async function PizzaLocaleCaseStudy({
       </section>
 
       {/* ─── Scaling + branch panel ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-12 lg:gap-16 items-start">
           <div>
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Ölçeklendirme' : 'Scaling'}
             </span>
-            <h2 className="mt-4 text-[30px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[26px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
               {isTr ? "1'den 12 şubeye büyüme rehberi." : '1 to 12 branches: the scaling blueprint.'}
             </h2>
             <div className="mt-5 space-y-4 text-[16px] text-[#525252] leading-[1.7]">
@@ -297,7 +297,7 @@ export default async function PizzaLocaleCaseStudy({
       </section>
 
       {/* ─── Quote ─── */}
-      <section className="bg-[#C6F24E] px-6 sm:px-10 py-20 sm:py-28">
+      <section className="bg-[#C6F24E] px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[900px] mx-auto text-center">
           <span
             aria-hidden
@@ -306,7 +306,7 @@ export default async function PizzaLocaleCaseStudy({
           >
             &quot;
           </span>
-          <p className="mt-2 text-[22px] sm:text-[32px] lg:text-[36px] font-medium text-[#0A0A0A] leading-[1.2] tracking-[-0.02em] -mt-6">
+          <p className="mt-2 text-[20px] sm:text-[32px] lg:text-[36px] font-medium text-[#0A0A0A] leading-[1.25] tracking-[-0.02em] -mt-6 sm:leading-[1.2]">
             {isTr
               ? 'Buaze ile dijital itibarımızı yönetmek artık bir iş yükü değil; büyümemizi sağlayan bir yakıt. 12 şubede de aynı kaliteyi ölçebiliyoruz.'
               : 'Managing our digital reputation with Buaze is no longer a chore; it has become the fuel that drives our growth. We can measure the same quality across all 12 branches.'}
@@ -326,13 +326,13 @@ export default async function PizzaLocaleCaseStudy({
       </section>
 
       {/* ─── Roadmap ─── */}
-      <section className="px-6 sm:px-10 py-20 sm:py-28">
+      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[1000px] mx-auto">
           <div className="text-center mb-12 max-w-[680px] mx-auto">
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Yol haritası' : 'Roadmap'}
             </span>
-            <h2 className="mt-4 text-[30px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
+            <h2 className="mt-4 text-[26px] sm:text-[44px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]">
               {isTr ? "1'den 12'ye büyüme." : 'From 1 to 12 branches.'}
             </h2>
           </div>
@@ -354,9 +354,9 @@ export default async function PizzaLocaleCaseStudy({
       </section>
 
       {/* ─── Final CTA ─── */}
-      <section className="bg-[#0A0A0A] text-white px-6 sm:px-10 py-20 sm:py-28">
+      <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[820px] mx-auto text-center">
-          <h2 className="text-[36px] sm:text-[52px] font-medium leading-[1.04] tracking-[-0.035em] text-white">
+          <h2 className="text-[28px] sm:text-[52px] font-medium leading-[1.04] tracking-[-0.035em] text-white">
             {isTr ? 'Kendi başarı hikâyenizi yazmaya başlayın.' : 'Start writing your own success story.'}
           </h2>
           <div className="mt-9 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
