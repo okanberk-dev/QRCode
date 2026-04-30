@@ -136,6 +136,13 @@ const SECTOR_LABEL: Record<string, string> = {
   clinic: 'Klinik',
   other: 'Diğer',
 };
+const SECTOR_LABEL_EN: Record<string, string> = {
+  restaurant: 'Restaurant',
+  cafe: 'Cafe',
+  hotel: 'Hotel',
+  clinic: 'Clinic',
+  other: 'Other',
+};
 
 const PLAN_LABEL: Record<string, string> = {
   starter: 'Starter',
@@ -143,11 +150,202 @@ const PLAN_LABEL: Record<string, string> = {
   pro: 'Pro',
 };
 
+// PDF locale string map. Tüm hardcoded TR string'ler key'lendirildi; EN
+// paralel — kullanıcı form locale'ine göre PDF de doğru dilde render olur.
+type LocaleKey = 'tr' | 'en';
+const STRINGS: Record<LocaleKey, Record<string, string>> = {
+  tr: {
+    coverEyebrow: 'ROI PROJEKSİYONU · 12 AY',
+    coverH1Suffix: 'için Buaze etkisi.',
+    coverLead:
+      'Bu rapor, sayfada girdiğin senaryo üzerine ~2.400 Buaze hesabı kohortu ve BrightLocal 2024 yerel arama verileriyle kalibre edilmiş bir 12 aylık projeksiyondur. Tüm sayılar tahmindir; gerçek sonuçlar işletmenin akışına ve yorum yanıt disiplinine göre değişir.',
+    heroEyebrow: 'YILLIK NET KAZANÇ',
+    heroSubA: '12 ayda Buaze yatırımının yaklaşık',
+    heroSubB: '× geri dönüşü',
+    heroPaybackA: ' · amorti süresi ~',
+    heroPaybackB: ' ay.',
+    kpiReviews: 'EK YORUM / AY',
+    kpiFiltered: 'FİLTRELENEN KÖTÜ',
+    kpiNewStar: 'YENİ GOOGLE ★',
+    kpiAiSaved: 'AI TASARRUF / AY',
+    aiHrUnit: 'sa',
+    starTodayLabel: 'BUGÜN · GOOGLE ★',
+    starProjectedLabel: '12 AY SONRA · BUAZE İLE',
+    flowH2: 'Buaze QR akışı: yorumlar nereye gider?',
+    flowLead:
+      'Müşteri verdiği yıldıza göre iki farklı akışa ayrılır. İçerik gizlenmez, müşteri yine istediği yere yorum yazma hakkını korur — Buaze yalnızca yönlendirir. Bu pattern Google’ın kullanıcı katkı politikasıyla uyumludur.',
+    flowLowChip: '1-2-3 ★',
+    flowHighChip: '4-5 ★',
+    flowLowTitle: 'Dahili form',
+    flowLowDesc:
+      ' (Buaze admin paneli). Düşük puanların ~%85’i Google’a sızmadan sahibinin gelen kutusuna düşer; sahip müşteriye özel iletişim kurar, sorunu çözebilir.',
+    flowHighTitle: 'Seçili platform',
+    flowHighDesc:
+      ' (Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Foursquare, Yandex — sahibinin aktif tuttukları). Yüksek puanlar arama görünürlüğünü ve dönüşüm oranını birlikte yukarı çeker.',
+    insightAi: 'AI ANALİZİ · SANA ÖZEL',
+    insightTemplate: 'BUAZE ANALİZİ · SANA ÖZEL',
+    insightLeverage: 'EN GÜÇLÜ KALDIRAÇ',
+    insightStepsLabel: 'İLK 30 GÜN — 3 ÖNCELİK',
+    page2Meta: 'Senaryon ve dağılım',
+    scenarioH2: 'Senin senaryon — sayfada girdiğin değerler',
+    rowSector: 'Sektör',
+    rowMonthlyCustomers: 'Aylık müşteri',
+    rowAvgTicket: 'Ortalama sepet',
+    rowCurrentGoogle: 'Mevcut Google ★',
+    rowLowReviews: 'Aylık 1-3★ yorum',
+    rowPlatforms: 'Aktif platformlar',
+    rowPlan: 'Buaze planı',
+    breakdownH2: 'Hesap dökümü',
+    rowQrScans: "QR'ı tarayan / ay",
+    rowReviews: 'Yorum bırakan / ay',
+    rowFiltered: 'Filtrelenen düşük yorum / ay',
+    rowProjectedGoogle: 'Yeni Google ★ (12 ay sonu)',
+    rowNewCustomers: 'Yeni müşteri / ay',
+    rowMonthlyUplift: 'Aylık ek gelir',
+    rowYearlyUplift: 'Yıllık ek gelir',
+    rowAiSaved: 'AI Co-Pilot zaman tasarrufu',
+    aiSavedSuffix: 'sa / ay',
+    platformH2: 'Yüksek-puan akışı: platforma yönlendirme',
+    milestoneH2: 'İlk 90 gün: yol haritası',
+    milestoneLead:
+      'AI Co-Pilot taslakları + filtreleme akışı + çoklu platform yönlendirme — üç kaldıracı aynı anda çalıştırarak ölçülebilir sonuca varman için 90 günlük adım planı.',
+    m1Eyebrow: 'İLK 30 GÜN',
+    m1Title: 'Kurulum & kalibrasyon',
+    m1Body:
+      'QR akışı sahaya çıkar; AI Co-Pilot taslakları işletmen tonuna kalibre olur. İlk tarama oranını ve düşük yorum filtreleme verisini ölçeriz.',
+    m2Eyebrow: '30 → 60 GÜN',
+    m2Title: 'İlk yıldız lift',
+    m2Body:
+      'Filtrelenen düşük yorumlar Google ortalamasını yukarı çekmeye başlar; çoklu platform akışı Yemeksepeti / Getir / Trendyol’da görünürlüğü açar.',
+    m3Eyebrow: '60 → 90 GÜN',
+    m3Title: 'Plan amortismanı',
+    m3BodyA: 'Aylık ek gelir plan maliyetini geçer',
+    m3PaybackA: ' (~',
+    m3PaybackB: ' ay).',
+    m3PaybackNoneSuffix: '.',
+    m3BodyB: ' Yeni Google ★ sabitlenir, ek müşteri akışı kararlı hâle gelir.',
+    socialActiveBusinesses: 'Aktif Buaze işletmesi',
+    socialAvgLift: 'Ortalama yıldız lift\n/ 90 gün',
+    socialFilterRate: 'Düşük yorum\nfiltreleme oranı',
+    socialCalibration: 'Kalibrasyon kaynağı',
+    socialBrightLocal: "BrightLocal’24",
+    riskFree1: '30 gün ücretsiz',
+    riskFree2: 'Kredi kartı yok',
+    riskFree3: 'İstediğin an iptal',
+    ctaTitle: 'Sıradaki adım: 30 dakikalık canlı kurulum',
+    ctaBodyA: 'Bu projeksiyonu birlikte gözden geçirelim.',
+    ctaBodyB:
+      ' planını işletmene uyarlayalım, ilk QR’ı sahanda devreye alalım. Kredi kartı sormuyoruz; 30 gün ücretsiz deneme açık.',
+    ctaDemoLabel: 'Demo:',
+    ctaEmailLabel: 'E-posta:',
+    footerTagline: 'Her yorum bir nabız.',
+    footerNotePage1Prefix: 'ROI Projeksiyonu · ',
+    footerNotePage1Suffix: ' · buaze.com/iletisim',
+    footerNotePage2:
+      'Kalibrasyon: BrightLocal 2024 + Buaze 2026-Q1 kohortu (~2.400 hesap) · buaze.com',
+    monthSuffix: 'ay',
+  },
+  en: {
+    coverEyebrow: 'ROI PROJECTION · 12 MO',
+    coverH1Suffix: 'Buaze impact for',
+    coverLead:
+      'This report turns the scenario you entered into a 12-month projection calibrated on a cohort of ~2,400 Buaze accounts and BrightLocal 2024 local search data. All numbers are estimates; actuals depend on your operational rollout and reply discipline.',
+    heroEyebrow: 'ANNUAL NET GAIN',
+    heroSubA: 'Approximately',
+    heroSubB: '× return on Buaze in 12 months',
+    heroPaybackA: ' · payback ~',
+    heroPaybackB: ' months.',
+    kpiReviews: 'NEW REVIEWS / MO',
+    kpiFiltered: 'LOW FILTERED',
+    kpiNewStar: 'NEW GOOGLE ★',
+    kpiAiSaved: 'AI SAVED / MO',
+    aiHrUnit: 'h',
+    starTodayLabel: 'TODAY · GOOGLE ★',
+    starProjectedLabel: '12 MONTHS · WITH BUAZE',
+    flowH2: 'Buaze QR flow: where reviews go',
+    flowLead:
+      'Customers split into two flows by star rating. Nothing is hidden — they keep the right to leave a review anywhere; Buaze only routes. This pattern is compliant with Google’s user contribution policy.',
+    flowLowChip: '1-2-3 ★',
+    flowHighChip: '4-5 ★',
+    flowLowTitle: 'Internal form',
+    flowLowDesc:
+      ' (Buaze admin panel). ~85% of low ratings stay off Google, landing in the owner’s inbox; the owner can resolve the issue privately.',
+    flowHighTitle: 'Selected platform',
+    flowHighDesc:
+      ' (Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Foursquare, Yandex — those the owner keeps active). High ratings lift discovery and conversion together.',
+    insightAi: 'AI ANALYSIS · TAILORED',
+    insightTemplate: 'BUAZE ANALYSIS · TAILORED',
+    insightLeverage: 'STRONGEST LEVERAGE',
+    insightStepsLabel: 'FIRST 30 DAYS — 3 PRIORITIES',
+    page2Meta: 'Scenario & breakdown',
+    scenarioH2: 'Your scenario — values you entered',
+    rowSector: 'Sector',
+    rowMonthlyCustomers: 'Monthly customers',
+    rowAvgTicket: 'Average ticket',
+    rowCurrentGoogle: 'Current Google ★',
+    rowLowReviews: '1-3★ reviews / mo',
+    rowPlatforms: 'Active platforms',
+    rowPlan: 'Buaze plan',
+    breakdownH2: 'Calculation breakdown',
+    rowQrScans: 'QR scans / mo',
+    rowReviews: 'Reviews submitted / mo',
+    rowFiltered: 'Filtered low reviews / mo',
+    rowProjectedGoogle: 'New Google ★ (12-mo end)',
+    rowNewCustomers: 'New customers / mo',
+    rowMonthlyUplift: 'Monthly uplift',
+    rowYearlyUplift: 'Yearly uplift',
+    rowAiSaved: 'AI Co-Pilot time saved',
+    aiSavedSuffix: 'h / mo',
+    platformH2: 'High-rating flow: platform routing',
+    milestoneH2: 'First 90 days: roadmap',
+    milestoneLead:
+      'AI Co-Pilot drafts + filtering flow + multi-platform routing — three levers running together to deliver measurable outcomes within 90 days.',
+    m1Eyebrow: 'DAYS 1-30',
+    m1Title: 'Setup & calibration',
+    m1Body:
+      'QR flow goes live; AI Co-Pilot drafts calibrate to your tone of voice. We measure scan rate and low-review filtering for the first time.',
+    m2Eyebrow: 'DAYS 30 → 60',
+    m2Title: 'First star lift',
+    m2Body:
+      'Filtered low reviews start nudging the Google average upward; multi-platform flow opens visibility on Yemeksepeti / Getir / Trendyol.',
+    m3Eyebrow: 'DAYS 60 → 90',
+    m3Title: 'Plan payback',
+    m3BodyA: 'Monthly uplift exceeds the plan cost',
+    m3PaybackA: ' (~',
+    m3PaybackB: ' months).',
+    m3PaybackNoneSuffix: '.',
+    m3BodyB: ' New Google ★ stabilizes; extra customer flow becomes steady.',
+    socialActiveBusinesses: 'Active Buaze businesses',
+    socialAvgLift: 'Avg. star lift\n/ 90 days',
+    socialFilterRate: 'Low review\nfiltering rate',
+    socialCalibration: 'Calibration source',
+    socialBrightLocal: 'BrightLocal’24',
+    riskFree1: '30-day free trial',
+    riskFree2: 'No credit card',
+    riskFree3: 'Cancel anytime',
+    ctaTitle: 'Next step: 30-min live setup',
+    ctaBodyA: 'Let’s walk through this projection together.',
+    ctaBodyB:
+      ' plan tailored to your business, first QR shipped on site. No credit card; 30-day free trial.',
+    ctaDemoLabel: 'Demo:',
+    ctaEmailLabel: 'Email:',
+    footerTagline: 'Every review is a pulse.',
+    footerNotePage1Prefix: 'ROI Projection · ',
+    footerNotePage1Suffix: ' · buaze.com/contact',
+    footerNotePage2:
+      'Calibration: BrightLocal 2024 + Buaze 2026-Q1 cohort (~2,400 accounts) · buaze.com',
+    monthSuffix: 'mo',
+  },
+};
+
 export interface RoiPdfData {
   restaurantName: string;
   email: string;
   generatedAt: Date;
   currency: string; // ₺ veya $
+  /** PDF render dili. Form'dan alınır; default 'tr' (TR-first SaaS).
+   *  Tüm hardcoded string'ler `STRINGS[locale]` üzerinden lokalize. */
+  locale?: LocaleKey;
   // Inputs
   sector: string;
   monthlyCustomers: number;
@@ -182,8 +380,9 @@ export interface RoiPdfData {
   } | null;
 }
 
-function fmt(n: number): string {
-  return n.toLocaleString('tr-TR');
+function fmtFor(locale: LocaleKey) {
+  const tag = locale === 'en' ? 'en-US' : 'tr-TR';
+  return (n: number) => n.toLocaleString(tag);
 }
 
 // Logo: yorum baloncuğu + ECG nabız + lime accent dot (CLAUDE.md §11).
@@ -207,7 +406,14 @@ function BuazeLogo() {
 }
 
 export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
-  const dateStr = data.generatedAt.toLocaleDateString('tr-TR', {
+  const locale: LocaleKey = data.locale === 'en' ? 'en' : 'tr';
+  const L = STRINGS[locale];
+  const fmt = fmtFor(locale);
+  const sectorLabel =
+    locale === 'en'
+      ? SECTOR_LABEL_EN[data.sector] ?? data.sector
+      : SECTOR_LABEL[data.sector] ?? data.sector;
+  const dateStr = data.generatedAt.toLocaleDateString(locale === 'en' ? 'en-US' : 'tr-TR', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
@@ -216,11 +422,17 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
   // Pipeline: 4-5★ akışı seçili platformlara dağılır
   const totalRoute = data.platformBreakdown.reduce((s, p) => s + p.reviews, 0) || 1;
 
+  const docTitle =
+    locale === 'en'
+      ? `Buaze ROI Projection — ${data.restaurantName}`
+      : `Buaze ROI Projeksiyonu — ${data.restaurantName}`;
+  const docSubject = locale === 'en' ? '12-Month ROI Projection' : '12 Aylık ROI Projeksiyonu';
+
   return (
     <Document
-      title={`Buaze ROI Projeksiyonu — ${data.restaurantName}`}
+      title={docTitle}
       author="Buaze"
-      subject="12 Aylık ROI Projeksiyonu"
+      subject={docSubject}
       creator="Buaze ROI Calculator"
     >
       {/* ─── Page 1: Kapak + Sonuç ──────────────────────────────────── */}
@@ -235,26 +447,25 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           <Text style={styles.meta}>{dateStr}</Text>
         </View>
 
-        <Text style={styles.eyebrow}>ROI PROJEKSİYONU · 12 AY</Text>
-        <Text style={styles.h1}>{data.restaurantName} için Buaze etkisi.</Text>
-        <Text style={styles.lead}>
-          Bu rapor, sayfada girdiğin senaryo üzerine ~2.400 Buaze hesabı kohortu ve
-          BrightLocal 2024 yerel arama verileriyle kalibre edilmiş bir 12 aylık
-          projeksiyondur. Tüm sayılar tahmindir; gerçek sonuçlar işletmenin akışına
-          ve yorum yanıt disiplinine göre değişir.
+        <Text style={styles.eyebrow}>{L.coverEyebrow}</Text>
+        <Text style={styles.h1}>
+          {locale === 'en'
+            ? `${L.coverH1Suffix} ${data.restaurantName}.`
+            : `${data.restaurantName} ${L.coverH1Suffix}`}
         </Text>
+        <Text style={styles.lead}>{L.coverLead}</Text>
 
         {/* Hero — yıllık net kazanç */}
         <View style={styles.hero}>
-          <Text style={styles.heroEyebrow}>YILLIK NET KAZANÇ</Text>
+          <Text style={styles.heroEyebrow}>{L.heroEyebrow}</Text>
           <Text style={styles.heroValue}>
             {data.currency}
             {fmt(Math.max(0, Math.round(data.netGain)))}
           </Text>
           <Text style={styles.heroSub}>
-            12 ayda Buaze yatırımının yaklaşık {data.roiMultiple.toFixed(1)}× geri dönüşü
+            {L.heroSubA} {data.roiMultiple.toFixed(1)}{L.heroSubB}
             {data.paybackMonths
-              ? ` · amorti süresi ~${data.paybackMonths} ay.`
+              ? `${L.heroPaybackA}${data.paybackMonths}${L.heroPaybackB}`
               : '.'}
           </Text>
         </View>
@@ -263,56 +474,48 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
         <View style={styles.kpiRow}>
           <View style={styles.kpiCell}>
             <Text style={styles.kpiValue}>+{fmt(data.reviewers)}</Text>
-            <Text style={styles.kpiLabel}>EK YORUM / AY</Text>
+            <Text style={styles.kpiLabel}>{L.kpiReviews}</Text>
           </View>
           <View style={styles.kpiCellAccent}>
             <Text style={styles.kpiValue}>{fmt(data.filteredLowReviews)}</Text>
-            <Text style={styles.kpiLabel}>FİLTRELENEN KÖTÜ</Text>
+            <Text style={styles.kpiLabel}>{L.kpiFiltered}</Text>
           </View>
           <View style={styles.kpiCell}>
             <Text style={styles.kpiValue}>{data.projectedGoogle.toFixed(1)}</Text>
-            <Text style={styles.kpiLabel}>YENİ GOOGLE ★</Text>
+            <Text style={styles.kpiLabel}>{L.kpiNewStar}</Text>
           </View>
           <View style={styles.kpiCell}>
-            <Text style={styles.kpiValue}>{data.aiHoursSaved.toFixed(1)} sa</Text>
-            <Text style={styles.kpiLabel}>AI TASARRUF / AY</Text>
+            <Text style={styles.kpiValue}>{data.aiHoursSaved.toFixed(1)} {L.aiHrUnit}</Text>
+            <Text style={styles.kpiLabel}>{L.kpiAiSaved}</Text>
           </View>
         </View>
 
         {/* Buaze akış diyagramı — 1-3★ vs 4-5★ akışı açık anlatım */}
-        <Text style={styles.h2}>Buaze QR akışı: yorumlar nereye gider?</Text>
-        <Text style={[styles.body, { marginBottom: 14, color: C.n500 }]}>
-          Müşteri verdiği yıldıza göre iki farklı akışa ayrılır. İçerik gizlenmez,
-          müşteri yine istediği yere yorum yazma hakkını korur — Buaze yalnızca
-          yönlendirir. Bu pattern Google&apos;ın kullanıcı katkı politikasıyla uyumludur.
-        </Text>
+        <Text style={styles.h2}>{L.flowH2}</Text>
+        <Text style={[styles.body, { marginBottom: 14, color: C.n500 }]}>{L.flowLead}</Text>
 
         <View style={styles.flow}>
           {/* 1-3★ akışı */}
           <View style={styles.flowRow}>
             <View style={[styles.flowChip, { backgroundColor: C.graphite }]}>
-              <Text style={styles.flowChipText}>1-2-3 ★</Text>
+              <Text style={styles.flowChipText}>{L.flowLowChip}</Text>
             </View>
             <Text style={styles.flowArrow}>→</Text>
             <Text style={styles.flowDesc}>
-              <Text style={{ fontFamily: 'Helvetica-Bold' }}>Dahili form</Text>
-              {' '}(Buaze admin paneli). Düşük puanların ~%85&apos;i Google&apos;a sızmadan
-              sahibinin gelen kutusuna düşer; sahip müşteriye özel iletişim kurar,
-              sorunu çözebilir.
+              <Text style={{ fontFamily: 'Helvetica-Bold' }}>{L.flowLowTitle}</Text>
+              {L.flowLowDesc}
             </Text>
           </View>
 
           {/* 4-5★ akışı */}
           <View style={[styles.flowRow, { marginBottom: 0 }]}>
             <View style={[styles.flowChip, { backgroundColor: C.limeDeep }]}>
-              <Text style={[styles.flowChipText, { color: C.graphite }]}>4-5 ★</Text>
+              <Text style={[styles.flowChipText, { color: C.graphite }]}>{L.flowHighChip}</Text>
             </View>
             <Text style={styles.flowArrow}>→</Text>
             <Text style={styles.flowDesc}>
-              <Text style={{ fontFamily: 'Helvetica-Bold' }}>Seçili platform</Text>
-              {' '}(Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Foursquare,
-              Yandex — sahibinin aktif tuttukları). Yüksek puanlar arama görünürlüğünü
-              ve dönüşüm oranını birlikte yukarı çeker.
+              <Text style={{ fontFamily: 'Helvetica-Bold' }}>{L.flowHighTitle}</Text>
+              {L.flowHighDesc}
             </Text>
           </View>
         </View>
@@ -321,14 +524,14 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
         {data.insight && (
           <View style={styles.insightCard}>
             <Text style={styles.insightEyebrow}>
-              {data.insight.source === 'ai' ? 'AI ANALİZİ · SANA ÖZEL' : 'BUAZE ANALİZİ · SANA ÖZEL'}
+              {data.insight.source === 'ai' ? L.insightAi : L.insightTemplate}
             </Text>
             <Text style={styles.insightSummary}>{data.insight.summary}</Text>
             <View style={styles.insightLeverage}>
-              <Text style={styles.insightLeverageEyebrow}>EN GÜÇLÜ KALDIRAÇ</Text>
+              <Text style={styles.insightLeverageEyebrow}>{L.insightLeverage}</Text>
               <Text style={styles.insightLeverageBody}>{data.insight.highlight}</Text>
             </View>
-            <Text style={styles.insightStepsLabel}>İLK 30 GÜN — 3 ÖNCELİK</Text>
+            <Text style={styles.insightStepsLabel}>{L.insightStepsLabel}</Text>
             {data.insight.nextSteps.map((step, i) => (
               <View key={i} style={styles.insightStep}>
                 <Text style={styles.insightStepNum}>{String(i + 1).padStart(2, '0')}.</Text>
@@ -341,7 +544,7 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
         {/* Footer */}
         <View style={styles.footer} fixed>
           <Text style={styles.footerNote}>
-            Buaze · Pulse ROI Projeksiyonu · {data.email}
+            {L.footerNotePage1Prefix}{data.email}{L.footerNotePage1Suffix}
           </Text>
           <Text
             style={styles.pageNumber}
@@ -359,25 +562,25 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
             <Text style={styles.brandWord}>buaze</Text>
             <View style={styles.brandDot} />
           </View>
-          <Text style={styles.meta}>Senaryon ve dağılım</Text>
+          <Text style={styles.meta}>{L.page2Meta}</Text>
         </View>
 
-        <Text style={styles.h2}>Senin senaryon — sayfada girdiğin değerler</Text>
+        <Text style={styles.h2}>{L.scenarioH2}</Text>
 
         <View style={styles.table}>
           {[
-            { l: 'Sektör', v: SECTOR_LABEL[data.sector] ?? data.sector },
-            { l: 'Aylık müşteri', v: fmt(data.monthlyCustomers) },
-            { l: 'Ortalama sepet', v: `${data.currency}${fmt(data.avgTicket)}` },
-            { l: 'Mevcut Google ★', v: data.currentGoogle.toFixed(1) },
-            { l: 'Aylık 1-3★ yorum', v: fmt(data.lowRatingsPerMonth) },
+            { l: L.rowSector, v: sectorLabel },
+            { l: L.rowMonthlyCustomers, v: fmt(data.monthlyCustomers) },
+            { l: L.rowAvgTicket, v: `${data.currency}${fmt(data.avgTicket)}` },
+            { l: L.rowCurrentGoogle, v: data.currentGoogle.toFixed(1) },
+            { l: L.rowLowReviews, v: fmt(data.lowRatingsPerMonth) },
             {
-              l: 'Aktif platformlar',
+              l: L.rowPlatforms,
               v: data.platforms.map((p) => PLATFORM_LABEL[p] ?? p).join(', '),
             },
             {
-              l: 'Buaze planı',
-              v: `${PLAN_LABEL[data.plan] ?? data.plan} · ${data.currency}${fmt(data.planPrice)}/ay`,
+              l: L.rowPlan,
+              v: `${PLAN_LABEL[data.plan] ?? data.plan} · ${data.currency}${fmt(data.planPrice)}/${L.monthSuffix}`,
             },
           ].map((row, i, arr) => (
             <View key={row.l} style={i === arr.length - 1 ? styles.trLast : styles.tr}>
@@ -387,28 +590,28 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           ))}
         </View>
 
-        <Text style={styles.h2}>Hesap dökümü</Text>
+        <Text style={styles.h2}>{L.breakdownH2}</Text>
         <View style={styles.table}>
           {[
-            { l: 'QR\'ı tarayan / ay', v: fmt(data.scanned) },
-            { l: 'Yorum bırakan / ay', v: `+${fmt(data.reviewers)}` },
-            { l: 'Filtrelenen düşük yorum / ay', v: fmt(data.filteredLowReviews) },
+            { l: L.rowQrScans, v: fmt(data.scanned) },
+            { l: L.rowReviews, v: `+${fmt(data.reviewers)}` },
+            { l: L.rowFiltered, v: fmt(data.filteredLowReviews) },
             {
-              l: 'Yeni Google ★ (12 ay sonu)',
+              l: L.rowProjectedGoogle,
               v: `${data.currentGoogle.toFixed(1)} → ${data.projectedGoogle.toFixed(1)}`,
             },
-            { l: 'Yeni müşteri / ay', v: `+${fmt(data.newCustomers)}` },
+            { l: L.rowNewCustomers, v: `+${fmt(data.newCustomers)}` },
             {
-              l: 'Aylık ek gelir',
+              l: L.rowMonthlyUplift,
               v: `${data.currency}${fmt(Math.round(data.monthlyUplift))}`,
             },
             {
-              l: 'Yıllık ek gelir',
+              l: L.rowYearlyUplift,
               v: `${data.currency}${fmt(Math.round(data.yearlyUplift))}`,
             },
             {
-              l: 'AI Co-Pilot zaman tasarrufu',
-              v: `${data.aiHoursSaved.toFixed(1)} sa / ay`,
+              l: L.rowAiSaved,
+              v: `${data.aiHoursSaved.toFixed(1)} ${L.aiSavedSuffix}`,
             },
           ].map((row, i, arr) => (
             <View key={row.l} style={i === arr.length - 1 ? styles.trLast : styles.tr}>
@@ -421,7 +624,7 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
         {/* Platform breakdown */}
         {data.platformBreakdown.length > 0 && (
           <>
-            <Text style={styles.h2}>Yüksek-puan akışı: platforma yönlendirme</Text>
+            <Text style={styles.h2}>{L.platformH2}</Text>
             <View style={{ marginBottom: 6 }}>
               {data.platformBreakdown.map((p) => {
                 const pct = totalRoute > 0 ? (p.reviews / totalRoute) * 100 : 0;
@@ -450,24 +653,21 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
 
         {/* CTA — sonraki adım */}
         <View style={styles.cta}>
-          <Text style={styles.ctaTitle}>Sıradaki adım: 30 dk canlı kurulum</Text>
+          <Text style={styles.ctaTitle}>{L.ctaTitle}</Text>
           <Text style={styles.ctaBody}>
-            Bu projeksiyonu birlikte gözden geçirelim. {PLAN_LABEL[data.plan] ?? data.plan}
-            {' '}planını işletmene uyarlayalım, ilk QR&apos;ı sahanda devreye alalım.
-            Kredi kartı sormuyoruz; 30 gün ücretsiz deneme açık.
+            {L.ctaBodyA}{' '}{PLAN_LABEL[data.plan] ?? data.plan}
+            {L.ctaBodyB}
           </Text>
           <Text style={styles.ctaBody}>
-            <Text style={{ fontFamily: 'Helvetica-Bold' }}>Demo davet:</Text>
-            {' '}buaze.com/iletisim · <Text style={{ fontFamily: 'Helvetica-Bold' }}>E-posta:</Text>{' '}
+            <Text style={{ fontFamily: 'Helvetica-Bold' }}>{L.ctaDemoLabel}</Text>
+            {' '}{locale === 'en' ? 'buaze.com/contact' : 'buaze.com/iletisim'} · <Text style={{ fontFamily: 'Helvetica-Bold' }}>{L.ctaEmailLabel}</Text>{' '}
             hello@buaze.com
           </Text>
           <Text style={styles.ctaLink}>buaze.com</Text>
         </View>
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerNote}>
-            Kalibrasyon: BrightLocal 2024 + Buaze 2026-Q1 kohortu (~2.400 hesap)
-          </Text>
+          <Text style={styles.footerNote}>{L.footerNotePage2}</Text>
           <Text
             style={styles.pageNumber}
             render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
