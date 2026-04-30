@@ -17,11 +17,9 @@ interface BusinessAccountSecuritySettingsProps {
  *
  * 2FA + Aktif Oturumlar kartları kullanıcı talebiyle kaldırıldı (mevcut
  * kullanıcı tabanına yakın değil + Authenticator app modal'ı tıklanmıyordu
- * + Sessions endpoint manager JWT'sinde 401 dönüyordu). Backend
- * endpoint'leri (`/api/account/2fa/*`, `/api/account/sessions`) ve component
- * dosyaları (`TwoFactorSetupModal.tsx`, `ActiveSessionsTable.tsx`) git'te
- * korundu — ileride email magic-code 2FA gibi bağımsız feature olarak
- * yeniden bağlanabilir.
+ * + Sessions endpoint manager JWT'sinde 401 dönüyordu). Backend endpoint'leri
+ * (`/api/account/2fa/*`, `/api/account/sessions`) korundu; component dosyaları
+ * silindi — yeniden bağlanmak istenirse git history'sinden çıkarılabilir.
  *
  * Per-restaurant `BusinessSecuritySettings` (KVKK + isActive)
  * `/dashboard/restaurants/[id]/settings` altında — location-scoped.

@@ -2648,3 +2648,82 @@ Repo kökündeki `scripts/` (+ `prisma/` altındaki seed) — bir kerelik veya p
 - Idempotent yap (upsert tercih, raw INSERT'ten kaçın) — operatör defalarca çağırabilmeli.
 - Üst yorumda kullanım komutunu + ne yaptığını yaz.
 - Build script'ine ekleme — bu script'ler **manuel runner'dır**, her deploy'da koşmaz.
+
+---
+
+## 34. Cleanup Log — Kasıtlı Silinenler
+
+> **Amaç:** Gelecek AI session'ları silinen şeyleri **yanlışlıkla yeniden inşa etmesin**. Bir feature/dosya silindiyse sebep belgelenir; aynı kullanıcı tekrar isteyene kadar geri eklenmez.
+
+### 34.1 2026-04-30 — Ölü kod denetimi (PR #256)
+
+3 paralel agent denetimi + manuel doğrulama. Kriter: `grep -rn` ile statik + dynamic import + string-action araması; 0 referans = orphan.
+
+**Silinen npm paketi:**
+| Paket | Sebep |
+|---|---|
+| `jsonwebtoken` + `@types/jsonwebtoken` | 0 import; auth tamamen `jose` (`src/lib/auth.ts`) ile çalışıyor (8 yerde aktif). Geri eklemek için **gerçek bir Node-only JWT ihtiyacı** gerekir (jose edge-compatible, çoğu use-case karşılar). |
+
+**Silinen orphan component'ler (14):**
+- `src/components/{ReviewList,BusinessSummary,GoogleTabs}.tsx` — root-level legacy
+- `src/components/dashboard/PlatformEnableToggle.tsx`
+- `src/components/dashboard/settings/{ActiveSessionsTable,TwoFactorSetupModal}.tsx` — 2FA + aktif oturum kartları kullanıcı talebiyle kaldırıldı; backend `/api/account/2fa/*` ve `/api/account/sessions` endpoint'leri **korundu** (gelecek email magic-code 2FA için)
+- `src/components/marketing/{CustomerTestimonials,FeatureTabsUI,ProductShowcase,CtaBanner,CaseStudies,LegalPageLayout,VideoModal,AnimatedCounter}.tsx` — eski marketing eskizleri; aktif marketing component'leri (`MobileBottomNav`, `WatchDemoButton`, `LegalDocumentPage`) korundu
+
+**Silinen orphan API route'ları:**
+| Route | Sebep |
+|---|---|
+| `/api/careers/apply` | `careers/page.tsx` view-only (form yok); 203 satırlık page'de `<form>` / `fetch` / `action` / `apply` yok. Route iyi yazılmıştı (rate-limit + Supabase Storage + Resend mail + reCAPTCHA + attachment validation) ama 0 caller. **Geri eklerken:** önce careers page'ine başvuru formu eklenmeli (yoksa orphan tekrarı). |
+| `/api/case-studies` | `/[locale]/case-study/page.tsx` ve `/[slug]/page.tsx` doğrudan `prisma.caseStudy.findMany/findUnique` çağırıyor (server component SSR); API gateway'e gerek yok. **Geri eklerken:** yalnız client-side fetch ihtiyacı (örn. infinite scroll, real-time filter) ortaya çıkarsa. |
+
+**Silinen orphan utility:**
+- `src/lib/zIndex.ts` (`Z.MODAL`, `Z.TOAST` sabitleri) — 0 import. Yeni Modal/Tooltip katmanları kullanılırken Tailwind `z-50/z-[60]` arbitrary değerleri yeterli. Tek-kaynak gerekirse §11 token paterni gibi `globals.css`'te tanımla.
+
+**Silinen orphan public asset'leri:**
+- `public/assets/3d-hero.png` (508 KB, 0 referans)
+- `public/uploads/admin ve isletme panel tasarımları/` (~2.1 MB, 21 tasarım dosyası) — Vercel'e geçişten kalan tortu (§3 base64-in-DB kararı). Kanonik tasarım kaynakları **`.design/` ve `.design-pulse-2026/`'da**; `public/uploads/*` runtime'da serve edilmiyor.
+
+**Hazırda korunanlar (silinmedi, "kasten orphan-benzeri"):**
+| Şey | Sebep |
+|---|---|
+| `CareerApplication` Prisma modeli | `/api/careers/apply` route silindi ama model schema'da kaldı; gelecekte careers form aktive edilirse migration gerekmez. AutomationRule / GoogleIntegration pattern'i (§18). |
+| `AutomationRule` model + `/api/automations/*` route'ları | UI yok, planlı feature |
+| `GoogleIntegration` model | OAuth flow setup var, tam bağlantı gelecek |
+| `NotificationPreference` model | Schema'da, kod minimal |
+| Billing fields (`billingAddress`, `taxNumber`, `discountActive`, `discountType`) | Iyzico Wave 3.5 hazırlığı |
+| `src/lib/api/validate.ts` (`validateBody` Zod helper) | §28 kanonik helper olarak öneriliyor; henüz hiçbir route benimsemedi ama yeni high-risk route'lar için **kasten korundu**. |
+
+### 34.2 False-positive korumaları (yanlışlıkla silinmemeliler)
+
+Agent'lar bu dosyaları orphan iddia etti **ama gerçekte aktif** — silinmedi:
+
+| Dosya | Gerçek kullanım |
+|---|---|
+| `src/components/marketing/MobileBottomNav.tsx` | `MarketingFooter.tsx:362`'de mount (CLAUDE.md §25.4). Conditional FAB (login state'e göre). |
+| `src/components/marketing/WatchDemoButton.tsx` | `MarketingNavbarClient.tsx:402` |
+| `src/components/dashboard/settings/UnsavedChangesBar.tsx` | 4 import |
+| `src/components/dashboard/settings/SettingsCard.tsx` | 8 import |
+
+**Yapma:** `grep -rln "FileName" | wc -l` çıktısına 0 görünce hemen "orphan" deme. **Ek doğrulama:**
+1. `grep -rn "from.*FileName"` (statik import)
+2. `grep -rn "import(.*FileName"` (dynamic import)
+3. Path-name ile (`@/components/path/FileName`) ara
+4. Yorumlardaki "git'te korundu" gibi ipuçlarını **stale comment** olarak işaretle, kanıt sayma
+
+### 34.3 Denetim metodu (gelecek temizlikler için)
+
+Yeni bir ölü kod denetimi yaparken aşağıdaki sırayı izle:
+
+1. **Kapsamı 3 kategoriye böl** — npm deps, src/ dosyaları, API route'ları + Prisma alanları. Her birini ayrı agent'la (veya ayrı pass'le) tara.
+2. **Convention dosyalarını kapsam dışı tut** — Next.js `page.tsx`, `route.ts`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `default.tsx`, `opengraph-image.tsx`, `robots.ts`, `sitemap.ts`, `global-error.tsx`, `middleware.ts`, `instrumentation.ts`, `instrumentation-client.ts`, `sentry.{server,edge}.config.ts`. Bunlar framework auto-load.
+3. **3-yöntem doğrulama** — statik import, dynamic import, string-based form action / fetch URL. Üçü de 0 olmalı.
+4. **CLAUDE.md çapraz kontrol** — silmeden önce CLAUDE.md'de o dosya/feature için "kasten korundu" notu var mı bak (§17, §18, §34.1 hazırda listesi).
+5. **Build doğrulama** — silmeden sonra `npx tsc --noEmit` + `npx next build` koş; "Compiled successfully" + 54 static page üretildi → güvenli.
+6. **Stale comment temizliği** — silinen dosyaya yorum referansı kalmışsa parent dosyada güncelle ("git'te" → "silindi, history'de").
+
+### 34.4 Yapma
+
+- **Boş bırakılan path'lere** silinmiş feature'ları yeniden inşa etme. Önce `git log --all --diff-filter=D --name-only -- '*FileName*'` ile silme kararının gerekçesini oku.
+- Geri eklemek için "olabilir gerekir" yetmez — kullanıcı **açık talep** etmeli (CLAUDE.md §7 scope disiplini).
+- `validate.ts` helper'ını silme — §28 kanonik öneri, gelecek route'lar için bekliyor.
+- `CareerApplication`, `AutomationRule`, `GoogleIntegration`, `NotificationPreference` modellerini silme — schema'da kaldıkları sürece preview deploy / staging ortamında DB'de yer kaplar ama silmek migration zorunluluğu doğurur.
