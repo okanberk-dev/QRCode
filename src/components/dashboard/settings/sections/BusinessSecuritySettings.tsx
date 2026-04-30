@@ -39,9 +39,8 @@ function isDirty(a: FormState, b: FormState) {
  * 2FA + Aktif Oturumlar + API Anahtarları kartları kullanıcı talebiyle
  * kaldırıldı (mevcut kullanıcı tabanına yakın değil; ileride bağımsız
  * feature olarak yeniden değerlendirilir). Backend endpoint'leri
- * (/api/account/2fa/*, /api/account/sessions, /api/api-keys) ve ilgili
- * component dosyaları (TwoFactorSetupModal, ActiveSessionsTable) git'te
- * korundu — yeniden bağlamak istenirse referansta.
+ * (/api/account/2fa/*, /api/account/sessions, /api/api-keys) korundu;
+ * component dosyaları silindi — yeniden bağlamak için git history.
  */
 export function BusinessSecuritySettings({
   restaurant,
