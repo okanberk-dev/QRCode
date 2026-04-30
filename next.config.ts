@@ -50,6 +50,20 @@ const nextConfig: NextConfig = {
         destination: '/:locale/features/pulse-ai',
         permanent: true,
       },
+
+      // Blog slug aliases — preserve old URLs (Google index, social shares)
+      // when content was renamed. Per-locale because TR and EN slugs differ.
+      // To add a new alias, append two entries (one per locale) and redeploy.
+      {
+        source: '/tr/blog/why-google-reviews-matter-for-local-business-growth',
+        destination: '/tr/blog/yerel-isletmeler-icin-google-yorumlari-neden-onemli',
+        permanent: true,
+      },
+      {
+        source: '/en/blog/why-google-reviews-matter-for-local-business-growth',
+        destination: '/en/blog/why-google-reviews-matter-for-local-businesses',
+        permanent: true,
+      },
     ];
   },
 
