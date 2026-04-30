@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { sendMail, sendFormConfirmationEmail } from '@/lib/email';
+import { sendResendEmail } from '@/lib/email-internal';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
-import { generateRoiPdfBase64, type RoiPdfData } from '@/lib/roi/generate-roi-pdf';
+import { generateRoiPdfBase64 } from '@/lib/roi/generate-roi-pdf';
+import type { RoiPdfData } from '@/lib/roi/RoiPdf';
+import { generateRoiInsight, type RoiInsight } from '@/lib/roi/generate-insight';
+import { renderRoiAdminNotification } from '@/lib/email/templates/roi-admin-notification';
+import { renderRoiCustomerReport } from '@/lib/email/templates/roi-customer-report';
 
 export const dynamic = 'force-dynamic';
-// PDF render server-side @react-pdf/renderer ile yapılır; tipik ~500-900 ms
-// — Vercel default 10s yeterli, yine de explicit tutmak için cap yükselt.
+// Toplam request budget: AI insight (8s timeout) + PDF render (1-2s) +
+// 2 mail send (1-2s). Vercel default 10s yetmez; 30s explicit cap güvenli.
 export const maxDuration = 30;
 
 function toInt(value: unknown): number | null {
@@ -69,6 +73,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_email' }, { status: 400 });
   }
 
+  const phone = toStr(body.phone, 60);
+  const locale: 'tr' | 'en' = body.locale === 'en' ? 'en' : 'tr';
+
   const row = await prisma.rOIRequest.create({
     data: {
       email: email?.toLowerCase() ?? null,
@@ -84,123 +91,182 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const salesInbox = process.env.NOTIFICATION_EMAIL;
-  if (email && salesInbox) {
-    // Önemli alanları okunabilir formata çevir; bilinmeyen tüm yapı için
-    // JSON fallback bırakırız ki future schema değişikliklerinde sales mail
-    // kırılmasın.
-    const projObj =
-      body.projection && typeof body.projection === 'object'
-        ? (body.projection as Record<string, unknown>)
-        : null;
-    const calcObj =
-      projObj && typeof projObj.calc === 'object' && projObj.calc !== null
-        ? (projObj.calc as Record<string, unknown>)
-        : null;
+  // Pulse mail dispatch akışı:
+  // 1. PDF için tipli RoiPdfData üret
+  // 2. AI insight + PDF base64 paralel — biri diğerini bloklamaz
+  // 3. Customer mail (PDF attachment + AI insight body)
+  // 4. Sales mail (AI insight + KPI + senaryo)
+  //
+  // Email yoksa müşteri mail'i gönderilmez ama sales mail (panel ekibi
+  // operatöre triage etmesi için) yine gönderilir — eğer en az bir
+  // anlamlı projection varsa.
+  const pdfData = buildRoiPdfData(body, row, email);
 
-    const projLines: string[] = [];
-    const projHtmlRows: string[] = [];
-    function addRow(label: string, value: unknown) {
-      if (value === undefined || value === null || value === '') return;
-      const v = typeof value === 'object' ? JSON.stringify(value) : String(value);
-      projLines.push(`${label}: ${v}`);
-      projHtmlRows.push(`<li>${escape(label)}: ${escape(v)}</li>`);
-    }
-    if (projObj) {
-      addRow('Sektör', projObj.sector);
-      addRow('Aylık müşteri', projObj.monthlyCustomers);
-      addRow('Mevcut Google ★', projObj.currentGoogle);
-      addRow('Aylık 1-3★ yorum', projObj.lowRatingsPerMonth);
-      addRow(
-        'Platformlar',
-        Array.isArray(projObj.platforms) ? projObj.platforms.join(', ') : projObj.platforms,
-      );
-      addRow('Plan', projObj.plan);
-    }
-    if (calcObj) {
-      addRow('Beklenen QR scan / ay', calcObj.scanned);
-      addRow('Beklenen yorum / ay', calcObj.reviewers);
-      addRow('Filtrelenen kötü yorum / ay', calcObj.filteredLowReviews);
-      addRow('Yeni Google ★', calcObj.projectedGoogle);
-      addRow('Yeni müşteri / ay', calcObj.newCustomers);
-      addRow('Aylık ek gelir', calcObj.monthlyUplift);
-      addRow('Yıllık net kazanç', calcObj.netGain);
-      addRow('ROI çarpanı', calcObj.roiMultiple);
-      addRow('Amorti (ay)', calcObj.paybackMonths);
-      addRow('AI Co-Pilot tasarruf (sa/ay)', calcObj.aiHoursSaved);
-    }
-    const projectionText = projLines.length ? `\n\n— Projeksiyon —\n${projLines.join('\n')}` : '';
-    const projectionHtml = projHtmlRows.length
-      ? `<h4 style="margin:16px 0 6px">Projeksiyon</h4><ul>${projHtmlRows.join('')}</ul>`
-      : projObj
-        ? `<pre style="white-space:pre-wrap">${escape(JSON.stringify(projObj, null, 2))}</pre>`
-        : '';
+  if (pdfData) {
+    // AI insight ve PDF base64 paralel.
+    const [insight, pdfBase64] = await Promise.all([
+      generateRoiInsight({ data: pdfData, locale }).catch((err) => {
+        console.error('[roi/save] insight generation failed', err);
+        return null as RoiInsight | null;
+      }),
+      generateRoiPdfBase64({ ...pdfData, insight: null })
+        .catch(async (err) => {
+          console.error('[roi/save] pdf generation (initial) failed', err);
+          return null;
+        }),
+    ]);
 
-    sendMail({
-      to: salesInbox,
-      replyTo: email,
-      subject: `Buaze ROI hesaplayıcı · yeni lead · ${row.restaurantName ?? email}`,
-      text: `Yeni ROI hesap lead'i geldi.\n\nEmail: ${email}\nİşletme: ${row.restaurantName ?? '-'}\nOrt. kişi başı: ${row.avgTicket ?? '-'}${projectionText}`,
-      html: `<h3>Yeni ROI lead'i</h3><ul><li>Email: ${escape(email)}</li><li>İşletme: ${escape(row.restaurantName ?? '-')}</li><li>Ort. kişi başı: ${escape(String(row.avgTicket ?? '-'))}</li></ul>${projectionHtml}`,
-    }).catch((err) => {
-      console.error('[roi/save] sales mail failed', err);
-    });
-  }
-
-  // User-facing ROI confirmation + estetik PDF eki.
-  // PDF, kullanıcının sayfada girdiği senaryo + Buaze hesap modeli sonuçlarını
-  // 2 sayfalık Pulse-temalı dokümana dönüştürür. Akış AÇIKÇA anlatılır:
-  // "1-2-3★ yorumlar dahili form'a, 4-5★ yorumlar seçili platformlara" —
-  // Buaze müşteriden hiçbir şey gizlemez, Google politikası uyumlu kalır.
-  if (email) {
-    const details: Array<{ label: string; value: string }> = [];
-    if (row.restaurantName) details.push({ label: 'İşletme', value: row.restaurantName });
-    if (row.avgTicket) details.push({ label: 'Ortalama hesap', value: String(row.avgTicket) });
-
-    // PDF için tip-güvenli payload üret. Eksik / geçersiz projection
-    // alanlarında PDF üretimini atla — confirmation maili yine gönder.
-    const pdfData = buildRoiPdfData(body, row, email);
-    let attachments: Array<{ filename: string; content: string; contentType?: string }> | undefined;
-    if (pdfData) {
+    // Insight başarılıysa PDF'i insight ile yeniden render et (kapakta
+    // "Buaze analizi" section'ı görünür). PDF render hızlı (<2s) — toplam
+    // budget'i sınırlamaz.
+    let finalPdfBase64 = pdfBase64;
+    if (insight) {
       try {
-        const base64 = await generateRoiPdfBase64(pdfData);
-        const safeName = (pdfData.restaurantName || 'isletme')
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)/g, '')
-          .slice(0, 40) || 'isletme';
-        attachments = [
-          {
-            filename: `buaze-roi-${safeName}.pdf`,
-            content: base64,
-            contentType: 'application/pdf',
-          },
-        ];
+        finalPdfBase64 = await generateRoiPdfBase64({ ...pdfData, insight });
       } catch (err) {
-        // PDF render başarısız olursa fallback: PDF'siz mail. Confirmation
-        // maili yine gönderilir, lead kaybedilmez.
-        console.error('[roi/save] pdf generation failed', err);
+        console.error('[roi/save] pdf re-render with insight failed', err);
+        // İnsight'sız PDF kullan; insight yine mail body'de görünür.
       }
     }
 
-    sendFormConfirmationEmail({
-      to: email,
-      formType: 'roi',
-      name: row.restaurantName,
-      details,
-      attachments,
-    }).catch((err) => console.error('[roi/save] confirmation mail failed', err));
+    const safeName = (pdfData.restaurantName || 'isletme')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '')
+      .slice(0, 40) || 'isletme';
+    const attachments = finalPdfBase64
+      ? [
+          {
+            filename: `buaze-roi-${safeName}.pdf`,
+            content: finalPdfBase64,
+            contentType: 'application/pdf',
+          },
+        ]
+      : undefined;
+
+    const insightOrFallback: RoiInsight = insight ?? {
+      summary:
+        locale === 'tr'
+          ? `${pdfData.restaurantName} için 12 aylık projeksiyon ${pdfData.currency}${Math.round(pdfData.netGain).toLocaleString('tr-TR')} net kazanç ve ${pdfData.roiMultiple.toFixed(1)}× ROI yansıtıyor.`
+          : `Your 12-month projection for ${pdfData.restaurantName} shows ${pdfData.currency}${Math.round(pdfData.netGain).toLocaleString('en-US')} net gain at ${pdfData.roiMultiple.toFixed(1)}× ROI.`,
+      highlight:
+        locale === 'tr'
+          ? `Aylık ${pdfData.filteredLowReviews} kötü yorumun Google'a sızmadan filtrelenmesi en yüksek kaldıraç.`
+          : `Filtering ${pdfData.filteredLowReviews} low reviews/month from leaking to Google is the strongest leverage.`,
+      nextSteps:
+        locale === 'tr'
+          ? [
+              'QR\'ı masa altlığı + kasa yanına yerleştir; ilk 7 gün tarama oranını ölç.',
+              'AI Co-Pilot taslak yanıtlarını ilk 2 hafta her yorum için onayla — model işletme tonuna kalibre olsun.',
+              `Aktif platformların URL'lerini admin panelden gir; yüksek puan akışı doğru yere gitsin.`,
+            ]
+          : [
+              'Place QR on table tents + cashier; measure scan rate during first 7 days.',
+              'Approve every AI Co-Pilot draft for the first 2 weeks so the model calibrates to your tone.',
+              'Add URLs for all active platforms in admin so high-rating flow routes correctly.',
+            ],
+      source: 'template',
+    };
+
+    // Customer mail (Pulse roi-customer-report) — email varsa.
+    if (email) {
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com').replace(/\/+$/, '');
+      const firstNameGuess = pdfData.restaurantName.split(/[\s,.]/)[0] || null;
+      const customerRendered = renderRoiCustomerReport(
+        {
+          restaurantName: pdfData.restaurantName,
+          firstName: firstNameGuess,
+          currency: pdfData.currency,
+          netGain: pdfData.netGain,
+          roiMultiple: pdfData.roiMultiple,
+          monthlyUplift: pdfData.monthlyUplift,
+          paybackMonths: pdfData.paybackMonths,
+          reviewers: pdfData.reviewers,
+          filteredLowReviews: pdfData.filteredLowReviews,
+          projectedGoogle: pdfData.projectedGoogle,
+          currentGoogle: pdfData.currentGoogle,
+          newCustomers: pdfData.newCustomers,
+          aiHoursSaved: pdfData.aiHoursSaved,
+          plan: pdfData.plan,
+          planPrice: pdfData.planPrice,
+          platforms: pdfData.platforms,
+          aiSummary: insightOrFallback.summary,
+          aiHighlight: insightOrFallback.highlight,
+          aiNextSteps: insightOrFallback.nextSteps,
+          hasPdf: !!attachments,
+          contactUrl: `${appUrl}/${locale}/contact`,
+          pricingUrl: `${appUrl}/${locale}/pricing`,
+        },
+        locale,
+      );
+      sendResendEmail({
+        to: email,
+        subject: customerRendered.subject,
+        html: customerRendered.html,
+        text: customerRendered.text,
+        attachments,
+      }).catch((err) => console.error('[roi/save] customer mail failed', err));
+    }
+
+    // Sales mail (Pulse roi-admin-notification) — yalnız email + sales
+    // inbox varsa (admin'e e-posta yoksa kullanıcı kim? bilinmez).
+    const salesInbox = process.env.NOTIFICATION_EMAIL;
+    if (email && salesInbox) {
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com').replace(/\/+$/, '');
+      const adminRendered = renderRoiAdminNotification(
+        {
+          email,
+          restaurantName: pdfData.restaurantName,
+          phone,
+          sector: pdfData.sector,
+          monthlyCustomers: pdfData.monthlyCustomers,
+          avgTicket: pdfData.avgTicket,
+          currentGoogle: pdfData.currentGoogle,
+          lowRatingsPerMonth: pdfData.lowRatingsPerMonth,
+          platforms: pdfData.platforms,
+          plan: pdfData.plan,
+          planPrice: pdfData.planPrice,
+          currency: pdfData.currency,
+          scanned: pdfData.scanned,
+          reviewers: pdfData.reviewers,
+          filteredLowReviews: pdfData.filteredLowReviews,
+          projectedGoogle: pdfData.projectedGoogle,
+          newCustomers: pdfData.newCustomers,
+          monthlyUplift: pdfData.monthlyUplift,
+          yearlyUplift: pdfData.yearlyUplift,
+          netGain: pdfData.netGain,
+          roiMultiple: pdfData.roiMultiple,
+          paybackMonths: pdfData.paybackMonths,
+          aiHoursSaved: pdfData.aiHoursSaved,
+          aiSummary: insightOrFallback.summary,
+          aiHighlight: insightOrFallback.highlight,
+          aiNextSteps: insightOrFallback.nextSteps,
+          aiSource: insightOrFallback.source,
+          panelUrl: `${appUrl}/admin/leads`,
+          ip,
+        },
+        locale,
+      );
+      sendResendEmail({
+        to: salesInbox,
+        replyTo: email,
+        subject: adminRendered.subject,
+        html: adminRendered.html,
+        text: adminRendered.text,
+      }).catch((err) => console.error('[roi/save] admin sales mail failed', err));
+    }
   }
 
   return NextResponse.json({ ok: true, id: row.id });
 }
 
 // PDF için projection JSON'ını tipli payload'a dönüştürür. Beklenmeyen
-// shape'te `null` döner; çağıran tarafı PDF üretimini sessizce atlar.
+// shape'te `null` döner; çağıran tarafı PDF + AI insight + mail akışını
+// sessizce atlar.
 function buildRoiPdfData(
   body: Record<string, unknown>,
   row: { restaurantName: string | null; avgTicket: Prisma.Decimal | null },
-  email: string,
+  email: string | null,
 ): RoiPdfData | null {
   const proj = body.projection;
   if (!proj || typeof proj !== 'object') return null;
@@ -233,16 +299,13 @@ function buildRoiPdfData(
     .filter((x): x is { key: string; share: number; reviews: number } => x !== null);
 
   const planKey = str(p.plan, 'growth');
-  // Currency: locale field projection'da yok; ilk platform key veya default
-  // ₺ varsayalım. (Hesap TR-first; EN payload'da $ gelirse client tarafı
-  // zaten body.currency taşımıyor — fallback TR kabul edilir.)
   const planPriceTr: Record<string, number> = { starter: 499, growth: 899, pro: 1499 };
   const planPrice = planPriceTr[planKey] ?? num(p.planPrice, 899);
   const avgTicketRow = row.avgTicket ? Number(row.avgTicket) : num(p.avgTicket);
 
   return {
     restaurantName: row.restaurantName ?? str(p.restaurantName, 'İşletmen'),
-    email,
+    email: email ?? '',
     generatedAt: new Date(),
     currency: '₺',
     sector: str(p.sector, 'restaurant'),
@@ -267,13 +330,4 @@ function buildRoiPdfData(
     aiHoursSaved: num(calc.aiHoursSaved),
     platformBreakdown,
   };
-}
-
-function escape(v: string) {
-  return v
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
 }
