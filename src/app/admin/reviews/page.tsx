@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Check, Flag, Inbox, Loader2, Mail, Search, Send, Sparkles, Star, UserPlus } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { buildReplyTemplate } from '@/lib/scaffolding';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, Tabs, AlertBanner, EmptyState, Badge, Skeleton } from '@/components/ui';
 
 type Source = 'openai' | 'template' | 'template-fallback' | null;
 type Tone = 'success' | 'info' | 'error';
@@ -340,51 +340,54 @@ function AdminReviewsContent() {
       />
 
       {degraded && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-900">
+        <AlertBanner kind="warn">
           {isTr
             ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — veritabanı senkronizasyonu bekleniyor.`
             : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — database sync pending.`}
-        </div>
+        </AlertBanner>
       )}
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-        <aside className="rounded-2xl border border-[#EDEDED] bg-white">
-          <div className="border-b border-[#EDEDED] p-3">
-            <div className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2">
+        <aside className="bz-card overflow-hidden">
+          <div className="border-b border-[#EDEDED] p-3 space-y-3">
+            <div className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 focus-within:border-[#0A0A0A] transition-colors">
               <Search size={14} className="text-[#737373]" strokeWidth={2} />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={isTr ? 'Müşteri veya yorum ara' : 'Search customer or comment'}
-                className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-[#737373]"
+                aria-label={isTr ? 'Yorum ara' : 'Search reviews'}
+                className="flex-1 bg-transparent text-[16px] sm:text-[13px] outline-none placeholder:text-[#737373]"
               />
             </div>
-            <div className="mt-3 flex flex-wrap gap-1">
-              {tabs.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  className={`pulse-eyebrow rounded-full px-2.5 py-1 transition-colors ${
-                    tab === t.id
-                      ? 'bg-[#0A0A0A] text-white'
-                      : 'bg-[#F5F5F5] text-[#525252] hover:bg-[#EDEDED]'
-                  }`}
-                >
-                  {t.label}
-                  {typeof t.count === 'number' && <span className="ml-1 opacity-60">{t.count}</span>}
-                </button>
-              ))}
-            </div>
+            <Tabs
+              items={tabs.map((t) => ({ id: t.id, label: t.label, count: t.count }))}
+              active={tab}
+              onChange={(id) => setTab(id as typeof tab)}
+              ariaLabel={isTr ? 'Durum filtresi' : 'Status filter'}
+            />
           </div>
           <div className="max-h-[70vh] overflow-y-auto divide-y divide-[#EDEDED]">
             {loading ? (
-              <div className="flex items-center justify-center p-10 text-[#737373]">
-                <Loader2 className="animate-spin" size={18} />
+              <div className="space-y-2 p-3" aria-hidden="true">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-3 w-1/2" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-3/4" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 p-10 text-center text-[#737373]">
-                <Inbox size={22} strokeWidth={1.5} />
-                <p className="text-[13px]">{isTr ? 'Henüz yorum yok' : 'No reviews yet'}</p>
+              <div className="p-6">
+                <EmptyState
+                  icon={<Inbox size={22} strokeWidth={1.5} />}
+                  title={isTr ? 'Henüz yorum yok' : 'No reviews yet'}
+                  body={isTr ? 'Filtreleri değiştirip tekrar dene.' : 'Try adjusting filters.'}
+                />
               </div>
             ) : (
               filtered.map((r) => {
@@ -413,19 +416,13 @@ function AdminReviewsContent() {
                         <span>{r.rating}.0</span>
                         {r.restaurant?.name && <span className="truncate">· {r.restaurant.name}</span>}
                         {r.isReplied && (
-                          <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-1.5 py-0.5 text-[#0A0A0A]">
-                            {isTr ? 'YANITLANDI' : 'REPLIED'}
-                          </span>
+                          <Badge kind="ok">{isTr ? 'YANITLANDI' : 'REPLIED'}</Badge>
                         )}
                         {r.isFlagged && (
-                          <span className="pulse-eyebrow rounded-full bg-red-50 px-1.5 py-0.5 text-red-700">
-                            {isTr ? 'DİKKAT' : 'FLAGGED'}
-                          </span>
+                          <Badge kind="danger">{isTr ? 'DİKKAT' : 'FLAGGED'}</Badge>
                         )}
                         {r.isAssigned && (
-                          <span className="pulse-eyebrow rounded-full bg-[#F5F5F5] px-1.5 py-0.5 text-[#525252]">
-                            {isTr ? 'ATANDI' : 'ASSIGNED'}
-                          </span>
+                          <Badge kind="ghost">{isTr ? 'ATANDI' : 'ASSIGNED'}</Badge>
                         )}
                       </div>
                       {r.comment && <p className="mt-1 line-clamp-2 text-[12px] text-[#525252]">{r.comment}</p>}
@@ -437,10 +434,14 @@ function AdminReviewsContent() {
           </div>
         </aside>
 
-        <section className="rounded-2xl border border-[#EDEDED] bg-white">
+        <section className="bz-card">
           {!active ? (
-            <div className="flex h-80 items-center justify-center text-[#737373]">
-              {isTr ? 'Yorum seçin' : 'Select a review'}
+            <div className="flex min-h-[20rem] items-center justify-center p-6">
+              <EmptyState
+                icon={<Inbox size={22} strokeWidth={1.5} />}
+                title={isTr ? 'Bir yorum seç' : 'Select a review'}
+                body={isTr ? 'Soldaki listeden bir yorum seçince detaylar burada görünecek.' : 'Pick a review from the list to view details here.'}
+              />
             </div>
           ) : (
             <div className="flex flex-col gap-4 p-5 sm:p-6">
@@ -467,19 +468,13 @@ function AdminReviewsContent() {
                       <span className="ml-1 text-[12px] text-[#737373]">{active.rating}.0</span>
                     </div>
                     {active.isReplied && (
-                      <span className="pulse-eyebrow rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[#0A0A0A]">
-                        {isTr ? 'YANITLANDI' : 'REPLIED'}
-                      </span>
+                      <Badge kind="ok">{isTr ? 'YANITLANDI' : 'REPLIED'}</Badge>
                     )}
                     {active.isFlagged && (
-                      <span className="pulse-eyebrow rounded-full bg-red-50 px-2 py-0.5 text-red-700">
-                        {isTr ? 'DİKKAT' : 'FLAGGED'}
-                      </span>
+                      <Badge kind="danger">{isTr ? 'DİKKAT' : 'FLAGGED'}</Badge>
                     )}
                     {active.isAssigned && (
-                      <span className="pulse-eyebrow rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[#525252]">
-                        {isTr ? 'ATANDI' : 'ASSIGNED'}
-                      </span>
+                      <Badge kind="ghost">{isTr ? 'ATANDI' : 'ASSIGNED'}</Badge>
                     )}
                   </div>
                 </div>
@@ -527,6 +522,19 @@ function AdminReviewsContent() {
                 </p>
               </div>
 
+              {active.rating >= 4 ? (
+                <AlertBanner kind="lime" icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}>
+                  <span className="block font-semibold text-[#0A0A0A]">
+                    {isTr ? 'Yanıt yazmaya gerek yok' : 'No reply needed'}
+                  </span>
+                  <span className="block mt-0.5 text-[#525252]">
+                    {isTr
+                      ? `Yüksek puanlı yorum ${(active.platform || 'platform').toUpperCase()} üzerinden alındı; müşteri zaten platformda paylaşımını yaptı. İsterseniz yukarıdaki Flag/Ata aksiyonlarıyla bu yorumu ekibinizle takip edebilirsiniz.`
+                      : `High-rating review came in via ${(active.platform || 'platform').toUpperCase()}; the customer already posted on the platform. You can still flag or assign it to your team using the actions above.`}
+                  </span>
+                </AlertBanner>
+              ) : (
+                <>
               <div className="rounded-xl border border-[#C6F24E]/60 bg-[#EAF9B8]/30 p-4">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -622,6 +630,8 @@ function AdminReviewsContent() {
                   </button>
                 </div>
               </div>
+                </>
+              )}
             </div>
           )}
         </section>

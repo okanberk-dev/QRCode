@@ -6,6 +6,7 @@ import { Loader2, Search, Flag, Mail, UserPlus, Sparkles, RotateCw, Pencil, Send
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
+import { Tabs, AlertBanner, EmptyState, Skeleton, Badge } from '@/components/ui';
 
 // Feedback shape returned by /api/feedback (subset of what we use)
 interface FeedbackRow {
@@ -368,93 +369,87 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       {/* ============ LEFT — review list ============ */}
       <aside className="flex max-h-[55vh] w-full flex-shrink-0 flex-col border-b border-[#EDEDED] bg-white lg:max-h-none lg:w-[340px] lg:border-b-0 lg:border-r">
         {degraded && (
-          <div className="border-b border-[#FDE68A] bg-[#FFFBEB] px-4 py-2 text-[11px] font-medium text-[#92400E]">
-            {isTr
-              ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
-              : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}
+          <div className="px-3 pt-3">
+            <AlertBanner kind="warn">
+              {isTr
+                ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
+                : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}
+            </AlertBanner>
           </div>
         )}
-        <div className="border-b border-[#EDEDED] p-4">
-          {/* Mobile-screens-1.jsx MOwnerFeedback line 247-267: filter chips
-              horizontal scroll. Mobile'da no-wrap + overflow-x-auto;
-              desktop'ta wrap. */}
-          <div className="flex gap-1.5 overflow-x-auto md:flex-wrap no-scrollbar">
-            {tabs.map((tab) => (
-              <button
-                key={tab.k}
-                type="button"
-                onClick={() => setActiveTab(tab.k)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                  activeTab === tab.k
-                    ? 'bg-[#0A0A0A] text-white'
-                    : 'bg-[#F5F5F5] text-[#525252] hover:bg-[#EDEDED]'
-                }`}
-              >
-                {tab.l}
-                <span
-                  className={`ml-1.5 font-mono ${activeTab === tab.k ? 'text-[#C6F24E]' : 'text-[#A3A3A3]'}`}
-                >
-                  {tab.c}
-                </span>
-              </button>
-            ))}
-          </div>
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-[#F5F5F5] px-3 py-2">
-            <Search size={13} className="text-[#737373] shrink-0" strokeWidth={2} />
+        <div className="border-b border-[#EDEDED] p-4 space-y-3">
+          <Tabs
+            items={tabs.map((tab) => ({ id: tab.k, label: tab.l, count: tab.c }))}
+            active={activeTab}
+            onChange={(id) => setActiveTab(id as typeof activeTab)}
+            ariaLabel={isTr ? 'Yorum filtresi' : 'Review filter'}
+          />
+          <div className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 focus-within:border-[#0A0A0A] transition-colors">
+            <Search size={14} className="text-[#737373] shrink-0" strokeWidth={2} />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={isTr ? 'Yorum, müşteri ara...' : 'Search review, customer...'}
-              className="w-full bg-transparent text-[12px] text-[#0A0A0A] placeholder:text-[#737373] outline-none"
+              placeholder={isTr ? 'Yorum, müşteri ara…' : 'Search review, customer…'}
+              aria-label={isTr ? 'Yorum ara' : 'Search reviews'}
+              className="w-full bg-transparent text-[16px] sm:text-[13px] text-[#0A0A0A] placeholder:text-[#737373] outline-none"
             />
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <select
-              value={daysFilter}
-              onChange={(e) => setDaysFilter(e.target.value)}
-              className="flex-1 bg-transparent text-[11px] text-[#525252] outline-none cursor-pointer"
-            >
-              <option value="all">{t.feedbacks_filter_all}</option>
-              <option value="1">{t.feedbacks_filter_today}</option>
-              <option value="7">{isTr ? 'Son 7 gün' : 'Last 7 days'}</option>
-              <option value="30">{isTr ? 'Son 30 gün' : 'Last 30 days'}</option>
-            </select>
-            <span className="h-4 w-px bg-[#EDEDED]" />
-            <select
-              value={filterRating}
-              onChange={(e) => setFilterRating(e.target.value)}
-              className="flex-1 bg-transparent text-[11px] text-[#525252] outline-none cursor-pointer"
-            >
-              <option value="all">{isTr ? 'Tüm puanlar' : 'All ratings'}</option>
-              <option value="5">5 ★</option>
-              <option value="4">4 ★</option>
-              <option value="3">3 ★</option>
-              <option value="2">2 ★</option>
-              <option value="1">1 ★</option>
-            </select>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="flex flex-col gap-1">
+              <span className="pulse-eyebrow text-[#737373]">{isTr ? 'TARİH' : 'DATE'}</span>
+              <select
+                value={daysFilter}
+                onChange={(e) => setDaysFilter(e.target.value)}
+                aria-label={isTr ? 'Tarih aralığı' : 'Date range'}
+                className="rounded-lg border border-[#EDEDED] bg-white px-2 py-1.5 text-[12px] text-[#0A0A0A] outline-none focus:border-[#0A0A0A] cursor-pointer"
+              >
+                <option value="all">{t.feedbacks_filter_all}</option>
+                <option value="1">{t.feedbacks_filter_today}</option>
+                <option value="7">{isTr ? 'Son 7 gün' : 'Last 7 days'}</option>
+                <option value="30">{isTr ? 'Son 30 gün' : 'Last 30 days'}</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="pulse-eyebrow text-[#737373]">{isTr ? 'PUAN' : 'RATING'}</span>
+              <select
+                value={filterRating}
+                onChange={(e) => setFilterRating(e.target.value)}
+                aria-label={isTr ? 'Puan filtresi' : 'Rating filter'}
+                className="rounded-lg border border-[#EDEDED] bg-white px-2 py-1.5 text-[12px] text-[#0A0A0A] outline-none focus:border-[#0A0A0A] cursor-pointer"
+              >
+                <option value="all">{isTr ? 'Tüm puanlar' : 'All ratings'}</option>
+                <option value="5">5 ★</option>
+                <option value="4">4 ★</option>
+                <option value="3">3 ★</option>
+                <option value="2">2 ★</option>
+                <option value="1">1 ★</option>
+              </select>
+            </label>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-[#0A0A0A]" strokeWidth={2} />
-              <span className="mt-3 pulse-eyebrow text-[#737373]">
-                {isTr ? 'YÜKLENİYOR' : 'LOADING'}
-              </span>
+            <div className="space-y-2 p-4" aria-hidden="true">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-3">
+                  <Skeleton className="h-7 w-7 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-3/4" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-[#F5F5F5] text-[#737373]">
-                <Inbox size={16} strokeWidth={2} />
-              </div>
-              <p className="text-[13px] font-medium text-[#0A0A0A]">
-                {isTr ? 'Yorum yok' : 'No reviews'}
-              </p>
-              <p className="mt-1 text-[12px] text-[#737373]">
-                {isTr ? 'Filtreleri değiştirip tekrar dene.' : 'Try adjusting filters.'}
-              </p>
+            <div className="p-4">
+              <EmptyState
+                icon={<Inbox size={22} strokeWidth={1.5} />}
+                title={isTr ? 'Yorum yok' : 'No reviews'}
+                body={isTr ? 'Filtreleri değiştirip tekrar dene.' : 'Try adjusting filters.'}
+              />
             </div>
           ) : (
             <ul>
@@ -487,9 +482,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                       <p className="line-clamp-2 text-[12px] text-[#525252] leading-[1.4]">
                         {r.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
                       </p>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span
                           className="pulse-eyebrow rounded bg-[#0A0A0A] text-[#C6F24E] px-1.5 py-0.5"
+                          aria-label={`${r.rating} ${isTr ? 'yıldız' : 'stars'}`}
                         >
                           {'★'.repeat(r.rating)}
                         </span>
@@ -497,19 +493,26 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                           {(r.platform || 'buaze').toUpperCase()}
                           {r.restaurant?.name ? ` · ${r.restaurant.name}` : ''}
                         </span>
-                        {r.hasPendingAiDraft && !r.isReplied && (
-                          <span
-                            title={isTr ? 'Pulse AI taslağı hazır' : 'Pulse AI draft ready'}
-                            className="ml-auto inline-flex items-center gap-1 rounded-full bg-[#EAF9B8] px-1.5 py-0.5 text-[10px] font-semibold text-[#0A0A0A]"
-                          >
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#A8D62E]" aria-hidden="true" />
-                            <span className="hidden sm:inline">PULSE AI</span>
-                          </span>
-                        )}
-                        {r.isReplied && <span className="ml-auto text-[10px] text-[#16A34A]">✓</span>}
-                        {r.rating <= 2 && !r.isReplied && !r.hasPendingAiDraft && (
-                          <span className="ml-auto text-[10px] text-[#DC2626]">⚠</span>
-                        )}
+                        <span className="ml-auto flex items-center gap-1">
+                          {r.hasPendingAiDraft && !r.isReplied && r.rating <= 3 && (
+                            <span title={isTr ? 'Pulse AI taslağı hazır' : 'Pulse AI draft ready'}>
+                              <Badge kind="lime">
+                                <span className="hidden sm:inline">PULSE AI</span>
+                                <span className="sm:hidden" aria-hidden="true">AI</span>
+                              </Badge>
+                            </span>
+                          )}
+                          {r.isReplied && (
+                            <span title={isTr ? 'Yanıtlandı' : 'Replied'}>
+                              <Badge kind="ok">✓</Badge>
+                            </span>
+                          )}
+                          {r.rating <= 2 && !r.isReplied && !r.hasPendingAiDraft && (
+                            <span title={isTr ? 'Düşük puan' : 'Low rating'}>
+                              <Badge kind="danger">!</Badge>
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </button>
                   </li>
@@ -597,6 +600,25 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               </div>
             )}
 
+            {/* High-rating reply gate (4-5★).
+                4-5 yıldızlı yorumlar zaten public form akışında platforma redirect
+                ediliyor (CLAUDE.md §23.7 Phase 10.1). İçeriden yanıt yazmak
+                anlamsız — UI gizlenir, operasyonel detay (Flag/Assign) korunur. */}
+            {active.rating >= 4 ? (
+              <div className="mt-6">
+                <AlertBanner kind="lime" icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}>
+                  <span className="block font-semibold text-[#0A0A0A]">
+                    {isTr ? 'Yanıt yazmaya gerek yok' : 'No reply needed'}
+                  </span>
+                  <span className="block mt-0.5 text-[#525252]">
+                    {isTr
+                      ? `Yüksek puanlı yorum ${(active.platform || 'platform').toUpperCase()} üzerinden alındı; müşteri zaten platformda paylaşımını yaptı. İsterseniz aşağıdaki Flag/Ata aksiyonlarıyla bu yorumu ekibinizle takip edebilirsiniz.`
+                      : `High-rating review came in via ${(active.platform || 'platform').toUpperCase()}; the customer already posted on the platform. You can still flag or assign it to your team using the actions above.`}
+                  </span>
+                </AlertBanner>
+              </div>
+            ) : (
+              <>
             {/* Buaze Pulse AI suggestion — wired to /api/feedback/[id]/suggest-reply.
                 Uses the configured AI provider when OPENAI_API_KEY is set; falls back to the
                 deterministic template otherwise. The badge reflects which
@@ -772,20 +794,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 </button>
               </div>
             </div>
+              </>
+            )}
           </>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center text-center px-4">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-[#F5F5F5] text-[#737373]">
-              <Inbox size={22} strokeWidth={2} />
-            </div>
-            <p
-              className="text-[16px] font-semibold text-[#0A0A0A] bz-h-tight"
-            >
-              {isTr ? 'Bir yorum seç' : 'Select a review'}
-            </p>
-            <p className="mt-1 text-[13px] text-[#737373]">
-              {isTr ? 'Detayları burada göster.' : 'Details will appear here.'}
-            </p>
+          <div className="flex flex-1 items-center justify-center px-4">
+            <EmptyState
+              icon={<Inbox size={22} strokeWidth={1.5} />}
+              title={isTr ? 'Bir yorum seç' : 'Select a review'}
+              body={isTr ? 'Soldaki listeden bir yorum seçince detaylar burada görünecek.' : 'Pick a review from the list to view details here.'}
+            />
           </div>
         )}
       </section>
