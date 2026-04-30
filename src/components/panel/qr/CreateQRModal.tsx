@@ -21,6 +21,8 @@ interface RestaurantOption {
   trendyolYemekUrl?: string | null;
   tripAdvisorUrl?: string | null;
   airbnbUrl?: string | null;
+  bookingUrl?: string | null;
+  yandexUrl?: string | null;
 }
 
 export interface QRGenerationResult {
@@ -59,7 +61,9 @@ type UrlField =
   | "getirYemekUrl"
   | "trendyolYemekUrl"
   | "tripAdvisorUrl"
-  | "airbnbUrl";
+  | "airbnbUrl"
+  | "bookingUrl"
+  | "yandexUrl";
 
 const PLATFORM_META: Record<
   string,
@@ -71,6 +75,8 @@ const PLATFORM_META: Record<
   trendyol_go: { label: "Trendyol GO", chipId: "trendyol_go", urlField: "trendyolYemekUrl", sectorKey: "trendyol" },
   tripadvisor: { label: "Tripadvisor", chipId: "tripadvisor", urlField: "tripAdvisorUrl", sectorKey: "tripadvisor" },
   airbnb: { label: "Airbnb", chipId: "airbnb", urlField: "airbnbUrl", sectorKey: "airbnb" },
+  booking: { label: "Booking", chipId: "booking", urlField: "bookingUrl", sectorKey: "booking" },
+  yandex: { label: "Yandex", chipId: "yandex", urlField: "yandexUrl", sectorKey: "yandex" },
 };
 
 const FALLBACK_KEYS = ["google", "yemeksepeti", "getir", "trendyol_go"] as const;
@@ -113,7 +119,9 @@ export function CreateQRModal({
       "getirYemekUrl" in activeRestaurant ||
       "trendyolYemekUrl" in activeRestaurant ||
       "tripAdvisorUrl" in activeRestaurant ||
-      "airbnbUrl" in activeRestaurant;
+      "airbnbUrl" in activeRestaurant ||
+      "bookingUrl" in activeRestaurant ||
+      "yandexUrl" in activeRestaurant;
 
     if (!hasPlatformShape) {
       return FALLBACK_KEYS.map((key) => ({

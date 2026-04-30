@@ -47,6 +47,10 @@ interface RestaurantData {
   tripAdvisorEnabled: boolean;
   airbnbUrl: string | null;
   airbnbEnabled: boolean;
+  bookingUrl: string | null;
+  bookingEnabled: boolean;
+  yandexUrl: string | null;
+  yandexEnabled: boolean;
   defaultRedirectPlatform: string | null;
   instagramUrl: string | null;
   facebookUrl: string | null;
@@ -74,6 +78,10 @@ interface FormState {
   tripAdvisorEnabled: boolean;
   airbnbUrl: string;
   airbnbEnabled: boolean;
+  bookingUrl: string;
+  bookingEnabled: boolean;
+  yandexUrl: string;
+  yandexEnabled: boolean;
   instagramUrl: string;
   facebookUrl: string;
   whatsappUrl: string;
@@ -141,6 +149,22 @@ const PLATFORM_DEFS: PlatformDef[] = [
     label: "Airbnb",
     placeholder: "https://www.airbnb.com/rooms/...",
   },
+  {
+    id: "booking",
+    urlKey: "bookingUrl",
+    enabledKey: "bookingEnabled",
+    testProvider: "booking",
+    label: "Booking",
+    placeholder: "https://www.booking.com/hotel/tr/...",
+  },
+  {
+    id: "yandex",
+    urlKey: "yandexUrl",
+    enabledKey: "yandexEnabled",
+    testProvider: "yandex",
+    label: "Yandex",
+    placeholder: "https://yandex.com.tr/maps/org/...",
+  },
 ];
 
 interface SocialDef {
@@ -197,6 +221,10 @@ function toForm(r: RestaurantData): FormState {
     tripAdvisorEnabled: r.tripAdvisorEnabled,
     airbnbUrl: r.airbnbUrl ?? "",
     airbnbEnabled: r.airbnbEnabled,
+    bookingUrl: r.bookingUrl ?? "",
+    bookingEnabled: r.bookingEnabled,
+    yandexUrl: r.yandexUrl ?? "",
+    yandexEnabled: r.yandexEnabled,
     instagramUrl: r.instagramUrl ?? "",
     facebookUrl: r.facebookUrl ?? "",
     whatsappUrl: r.whatsappUrl ?? "",
@@ -334,6 +362,10 @@ export function BusinessIntegrationSettings({
         tripAdvisorEnabled: form.tripAdvisorEnabled,
         airbnbUrl: form.airbnbUrl.trim() || null,
         airbnbEnabled: form.airbnbEnabled,
+        bookingUrl: form.bookingUrl.trim() || null,
+        bookingEnabled: form.bookingEnabled,
+        yandexUrl: form.yandexUrl.trim() || null,
+        yandexEnabled: form.yandexEnabled,
         instagramUrl: form.instagramUrl.trim() || null,
         facebookUrl: form.facebookUrl.trim() || null,
         whatsappUrl: form.whatsappUrl.trim() || null,

@@ -97,8 +97,11 @@ const PLATFORM_COLOR: Record<string, string> = {
   getir: '#5D3EBC',
   trendyol: '#F27A1A',
   tripadvisor: '#00AF87',
+  yelp: '#FF1A1A',
   foursquare: '#F94877',
+  booking: '#003580',
   yandex: '#FC3F1D',
+  airbnb: '#FF5A5F',
 };
 const PLATFORM_LABEL: Record<string, string> = {
   google: 'Google',
@@ -106,8 +109,11 @@ const PLATFORM_LABEL: Record<string, string> = {
   getir: 'Getir',
   trendyol: 'Trendyol GO',
   tripadvisor: 'Tripadvisor',
+  yelp: 'Yelp',
   foursquare: 'Foursquare',
+  booking: 'Booking',
   yandex: 'Yandex',
+  airbnb: 'Airbnb',
 };
 
 const SECTOR_LABEL: Record<string, string> = {

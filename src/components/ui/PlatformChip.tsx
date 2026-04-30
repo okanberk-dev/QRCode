@@ -2,6 +2,8 @@ export type PlatformId =
   | "google"
   | "tripadvisor"
   | "airbnb"
+  | "booking"
+  | "yandex"
   | "yemeksepeti"
   | "trendyol"
   | "trendyol_go"
@@ -24,6 +26,10 @@ export const PLATFORMS: Record<PlatformId, PlatformConfig> = {
   tripadvisor: { label: "Tripadvisor", short: "TA", color: "#34E0A1", urlHost: "tripadvisor.com/..." },
   // Airbnb resmi marka rengi (Rausch). Konaklama segmenti için.
   airbnb: { label: "Airbnb", short: "AB", color: "#FF5A5F", urlHost: "airbnb.com/rooms/..." },
+  // Booking.com resmi mavi (#003580). Konaklama segmenti için ana review sürface.
+  booking: { label: "Booking", short: "BK", color: "#003580", urlHost: "booking.com/hotel/..." },
+  // Yandex resmi kırmızı. TR'de Google'a alternatif harita + review.
+  yandex: { label: "Yandex", short: "YX", color: "#FC3F1D", urlHost: "yandex.com.tr/maps/..." },
   yemeksepeti: { label: "Yemeksepeti", short: "YS", color: "#FA0050", urlHost: "yemeksepeti.com/..." },
   trendyol: { label: "Trendyol GO", short: "TY", color: "#F27A1A", urlHost: "tgoapp.com/..." },
   trendyol_go: { label: "Trendyol GO", short: "TY", color: "#F27A1A", urlHost: "tgoapp.com/..." },

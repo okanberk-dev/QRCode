@@ -37,12 +37,67 @@ const PLANS: PlanDef[] = [
 // Restaurants/cafes have high-frequency, low-consideration purchases →
 // rating bumps convert fast. Hotels/clinics have longer funnels → slower.
 // Calibrated against ~2,400 Buaze accounts (2026-04 cohort).
-const SECTORS: Record<SectorKey, { labelTr: string; labelEn: string; mult: number; defaultTicketTr: number; defaultTicketEn: number }> = {
-  restaurant: { labelTr: 'Restoran', labelEn: 'Restaurant', mult: 1.0, defaultTicketTr: 320, defaultTicketEn: 28 },
-  cafe: { labelTr: 'Kafe', labelEn: 'Cafe', mult: 0.85, defaultTicketTr: 140, defaultTicketEn: 12 },
-  hotel: { labelTr: 'Otel', labelEn: 'Hotel', mult: 0.65, defaultTicketTr: 2400, defaultTicketEn: 180 },
-  clinic: { labelTr: 'Klinik', labelEn: 'Clinic', mult: 0.55, defaultTicketTr: 1500, defaultTicketEn: 120 },
-  other: { labelTr: 'Diğer', labelEn: 'Other', mult: 0.75, defaultTicketTr: 500, defaultTicketEn: 40 },
+//
+// `ticketLabel*` — sektör başına gerçek terminoloji. Otel "gece başı
+// ücret", klinik "hizmet başı ücret", restoran/kafe "ortalama sepet".
+// Slider'ın hem eyebrow'u hem min/max chip'i bu label'a uyar.
+const SECTORS: Record<
+  SectorKey,
+  {
+    labelTr: string;
+    labelEn: string;
+    mult: number;
+    defaultTicketTr: number;
+    defaultTicketEn: number;
+    ticketLabelTr: string;
+    ticketLabelEn: string;
+  }
+> = {
+  restaurant: {
+    labelTr: 'Restoran',
+    labelEn: 'Restaurant',
+    mult: 1.0,
+    defaultTicketTr: 320,
+    defaultTicketEn: 28,
+    ticketLabelTr: 'ORTALAMA SEPET',
+    ticketLabelEn: 'AVERAGE TICKET',
+  },
+  cafe: {
+    labelTr: 'Kafe',
+    labelEn: 'Cafe',
+    mult: 0.85,
+    defaultTicketTr: 140,
+    defaultTicketEn: 12,
+    ticketLabelTr: 'ORTALAMA SEPET',
+    ticketLabelEn: 'AVERAGE TICKET',
+  },
+  hotel: {
+    labelTr: 'Otel',
+    labelEn: 'Hotel',
+    mult: 0.65,
+    defaultTicketTr: 2400,
+    defaultTicketEn: 180,
+    ticketLabelTr: 'GECE BAŞI ÜCRET',
+    ticketLabelEn: 'RATE PER NIGHT',
+  },
+  clinic: {
+    labelTr: 'Klinik',
+    labelEn: 'Clinic',
+    mult: 0.55,
+    defaultTicketTr: 1500,
+    defaultTicketEn: 120,
+    ticketLabelTr: 'HİZMET BAŞI ÜCRET',
+    ticketLabelEn: 'AVG. SERVICE FEE',
+  },
+  other: {
+    labelTr: 'Diğer',
+    labelEn: 'Other',
+    mult: 0.75,
+    defaultTicketTr: 500,
+    defaultTicketEn: 40,
+    ticketLabelTr: 'ORTALAMA HESAP',
+    ticketLabelEn: 'AVERAGE BILL',
+  },
 };
 
 // % of QR scans that land a published review (industry baseline ~45%).
@@ -87,24 +142,31 @@ type PlatformKey =
   | 'trendyol'
   | 'tripadvisor'
   | 'foursquare'
-  | 'yandex';
+  | 'yandex'
+  | 'yelp'
+  | 'booking'
+  | 'airbnb';
 const PLATFORM_META: Record<
   PlatformKey,
   { labelTr: string; labelEn: string; weight: number; color: string }
 > = {
-  google: { labelTr: 'Google', labelEn: 'Google', weight: 0.40, color: '#4285F4' },
-  yemeksepeti: { labelTr: 'Yemeksepeti', labelEn: 'Yemeksepeti', weight: 0.22, color: '#FA0050' },
-  getir: { labelTr: 'Getir', labelEn: 'Getir', weight: 0.13, color: '#5D3EBC' },
-  trendyol: { labelTr: 'Trendyol GO', labelEn: 'Trendyol GO', weight: 0.10, color: '#F27A1A' },
+  google: { labelTr: 'Google', labelEn: 'Google', weight: 0.30, color: '#4285F4' },
+  yemeksepeti: { labelTr: 'Yemeksepeti', labelEn: 'Yemeksepeti', weight: 0.18, color: '#FA0050' },
+  getir: { labelTr: 'Getir', labelEn: 'Getir', weight: 0.12, color: '#5D3EBC' },
+  trendyol: { labelTr: 'Trendyol GO', labelEn: 'Trendyol GO', weight: 0.08, color: '#F27A1A' },
   tripadvisor: { labelTr: 'Tripadvisor', labelEn: 'Tripadvisor', weight: 0.08, color: '#00AF87' },
-  foursquare: { labelTr: 'Foursquare', labelEn: 'Foursquare', weight: 0.04, color: '#F94877' },
-  yandex: { labelTr: 'Yandex', labelEn: 'Yandex', weight: 0.03, color: '#FC3F1D' },
+  yelp: { labelTr: 'Yelp', labelEn: 'Yelp', weight: 0.07, color: '#FF1A1A' },
+  foursquare: { labelTr: 'Foursquare', labelEn: 'Foursquare', weight: 0.05, color: '#F94877' },
+  booking: { labelTr: 'Booking', labelEn: 'Booking', weight: 0.05, color: '#003580' },
+  yandex: { labelTr: 'Yandex', labelEn: 'Yandex', weight: 0.04, color: '#FC3F1D' },
+  airbnb: { labelTr: 'Airbnb', labelEn: 'Airbnb', weight: 0.03, color: '#FF5A5F' },
 };
 const ALL_PLATFORMS = Object.keys(PLATFORM_META) as PlatformKey[];
 
-// Default açık platformlar — TR pazarındaki çekirdek 4. Ek 3 (tripadvisor /
-// foursquare / yandex) chip group'ta görünür ama varsayılan olarak kapalıdır;
-// işletmesi o platformlarda olan operatör ilgili chip'i tek tıkla açar.
+// Default açık platformlar — TR pazarındaki çekirdek 4. Ek 6 (tripadvisor /
+// yelp / foursquare / booking / yandex / airbnb) chip group'ta görünür ama
+// varsayılan olarak kapalıdır; işletmesi o platformlarda olan operatör
+// ilgili chip'i tek tıkla açar.
 const DEFAULT_PLATFORMS: PlatformKey[] = ['google', 'yemeksepeti', 'getir', 'trendyol'];
 
 export default function RoiCalculator({ locale }: RoiCalculatorProps) {
@@ -426,7 +488,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
         <div>
           <div className="flex items-baseline justify-between gap-3">
             <label htmlFor="roi-ticket" className="pulse-eyebrow text-[#0A0A0A]">
-              {isTr ? 'ORTALAMA SEPET' : 'AVERAGE TICKET'}
+              {isTr ? sectorDef.ticketLabelTr : sectorDef.ticketLabelEn}
             </label>
             <output
               htmlFor="roi-ticket"

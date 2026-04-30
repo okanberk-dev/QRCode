@@ -40,6 +40,10 @@ interface RestaurantPayload {
   tripAdvisorEnabled: boolean;
   airbnbUrl: string | null;
   airbnbEnabled: boolean;
+  bookingUrl: string | null;
+  bookingEnabled: boolean;
+  yandexUrl: string | null;
+  yandexEnabled: boolean;
   defaultRedirectPlatform: string | null;
   instagramUrl: string | null;
   facebookUrl: string | null;
@@ -125,6 +129,10 @@ export default function RestaurantSettingsPage() {
           tripAdvisorEnabled: data.tripAdvisorEnabled ?? true,
           airbnbUrl: data.airbnbUrl ?? null,
           airbnbEnabled: data.airbnbEnabled ?? true,
+          bookingUrl: data.bookingUrl ?? null,
+          bookingEnabled: data.bookingEnabled ?? true,
+          yandexUrl: data.yandexUrl ?? null,
+          yandexEnabled: data.yandexEnabled ?? true,
           defaultRedirectPlatform: data.defaultRedirectPlatform ?? null,
           instagramUrl: data.instagramUrl ?? null,
           facebookUrl: data.facebookUrl ?? null,
