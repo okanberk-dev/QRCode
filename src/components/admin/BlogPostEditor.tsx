@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { parseBlogDate } from '@/lib/blog-date';
+import BlogTranslationLink from '@/components/admin/BlogTranslationLink';
 import {
   ArrowLeft,
   Bold,
@@ -53,6 +54,7 @@ interface BlogPost {
   ctaTitle?: string | null;
   ctaSubtitle?: string | null;
   ctaButtonLabel?: string | null;
+  translationGroupId?: string | null;
 }
 
 const EMPTY_FORM = {
@@ -207,6 +209,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
           ctaButtonLabel: post.ctaButtonLabel || '',
         };
         setForm(next);
+        setTranslationGroupId(post.translationGroupId || null);
         window.setTimeout(() => syncEditorFromState(next.content), 0);
       })
       .catch(err => {
@@ -268,6 +271,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
   };
 
   const [tagDraft, setTagDraft] = useState('');
+  const [translationGroupId, setTranslationGroupId] = useState<string | null>(null);
   const coverFileInputRef = useRef<HTMLInputElement | null>(null);
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
@@ -897,6 +901,35 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 </div>
               </div>
             </div>
+
+            {/* Translation pair — TR↔EN eşleştirme. Sadece edit mode'da
+                görünür (postId gerekli). Yeni yazıda info banner. */}
+            {mode === 'edit' && postId ? (
+              <BlogTranslationLink
+                postId={postId}
+                locale={form.locale === 'en' ? 'en' : 'tr'}
+                translationGroupId={translationGroupId}
+                onChanged={async () => {
+                  // Sadece groupId'yi yenile — content'i tekrar editöre yazmamak için
+                  // ayrı küçük fetch. Form içerik state'i dokunulmaz.
+                  try {
+                    const res = await fetch(`/api/admin/blog/${postId}`, { cache: 'no-store' });
+                    const data = await res.json().catch(() => null);
+                    if (data?.post) {
+                      setTranslationGroupId(data.post.translationGroupId || null);
+                    }
+                  } catch {
+                    // ignore — UI bir sonraki açılışta doğru değeri okur
+                  }
+                }}
+              />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-4 text-[12px] leading-[1.55] text-[#737373]">
+                Yazıyı kaydettikten sonra <strong className="text-[#0A0A0A]">Dil
+                eşleşmesi</strong> bölümünden diğer dildeki karşılığını
+                bağlayabilirsin.
+              </div>
+            )}
 
             {/* Public görünüm — opsiyonel override'lar; boş bırakılırsa public sayfa default'a düşer */}
             <div className="rounded-[28px] border border-[#EDEDED] bg-white p-5">
