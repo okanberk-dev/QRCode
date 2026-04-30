@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, LogOut, Megaphone, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -15,6 +15,8 @@ interface DashboardUser {
   email: string;
   plan: string;
   trialEndsAt: string | null;
+  /** ISO string. Drives "first 30 days" sidebar items like /guide. */
+  createdAt: string;
 }
 
 interface DashboardWorkspace {
@@ -139,6 +141,16 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
   const topBar = useTopBar(locale, pathname);
 
+  // /dashboard/guide is an onboarding step list — only useful to fresh
+  // accounts. Hide the sidebar entry after 30 days; the route itself stays
+  // reachable via direct URL for the rare returning user.
+  const showGuide = useMemo(() => {
+    const ts = Date.parse(user.createdAt);
+    if (Number.isNaN(ts)) return false;
+    const elapsedDays = (Date.now() - ts) / (1000 * 60 * 60 * 24);
+    return elapsedDays <= 30;
+  }, [user.createdAt]);
+
   // Cmd/Ctrl+K toggles the command palette anywhere in the dashboard.
   // We listen on window since the user may not have a focused input.
   useEffect(() => {
@@ -222,16 +234,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
       ],
     },
-    {
-      type: 'group',
-      id: 'info',
-      icon: BookOpen,
-      label: locale === 'tr' ? 'Bilgi' : 'Info',
-      children: [
-        { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
-        { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
-      ],
-    },
+    // /announcements sidebar item kaldırıldı — duyurular zaten dashboard
+    // üstündeki <AnnouncementBanner /> ile görünür (varsa). Sayfa direct URL
+    // ile erişilebilir + topbar breadcrumb hâlâ mapping yapıyor.
+    // /guide sadece ilk 30 gün — onboarding sonrası gereksiz.
+    ...(showGuide
+      ? [{ type: 'item' as const, href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide }]
+      : []),
     // Unified Settings hub: Profile + Security + Notifications + Billing +
     // Team + Legal. Per-restaurant ayarlar /restaurants/[id]/settings'te.
     // Legacy /profile redirect'i hâlâ canlı; sidebar'da tek entry yeterli.
@@ -250,8 +259,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
-    { href: `/${locale}/dashboard/announcements`, icon: Megaphone, label: copy.announcements },
-    { href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide },
+    // Announcements bottom sheet'ten de kaldırıldı — banner zaten görünür.
+    // Guide yalnız ilk 30 gün.
+    ...(showGuide
+      ? [{ href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide }]
+      : []),
     { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
   ];
   const moreActive = moreSheetItems.some(
