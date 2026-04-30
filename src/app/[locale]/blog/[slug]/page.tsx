@@ -9,7 +9,7 @@ import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { sanitizeBlogContent } from '@/lib/blog-content';
 import { blogDateToIso } from '@/lib/blog-date';
-import { resolveBlogPair } from '@/lib/blog-translation-pairs';
+import { resolveBlogPairFromDb } from '@/lib/blog-translation-pairs';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
@@ -53,10 +53,12 @@ export async function generateMetadata(
   const ogImage = post.coverImage?.trim() || `/images/open-graph-${locale}.png`;
   const keywords = getBlogKeywords(post.title, post.description, locale);
 
-  // hreflang — pair'lı yazılarda karşı locale farklı slug taşıyabilir;
-  // resolveBlogPair tek source-of-truth. Pair yoksa default aynı slug.
-  const trSlug = locale === 'tr' ? slug : resolveBlogPair(slug, 'en', 'tr') ?? slug;
-  const enSlug = locale === 'en' ? slug : resolveBlogPair(slug, 'tr', 'en') ?? slug;
+  // hreflang — pair'lı yazılarda karşı locale farklı slug taşıyabilir.
+  // DB-aware lookup (translationGroupId) + statik map fallback.
+  const trSlug =
+    locale === 'tr' ? slug : (await resolveBlogPairFromDb(slug, 'en', 'tr')) ?? slug;
+  const enSlug =
+    locale === 'en' ? slug : (await resolveBlogPairFromDb(slug, 'tr', 'en')) ?? slug;
 
   return {
     title: `${post.title} — Buaze Blog`,
@@ -195,10 +197,10 @@ export default async function BlogPostPage({
 
   if (!post) {
     // Fallback 1: caller'ın landed slug'ı bu locale'de yok ama karşı locale
-    // slug'ı olarak biliniyor — örn /tr/blog/<en-slug>. Translation pair
-    // map'inden bu locale'in doğru slug'ını bulup oraya 307 redirect.
+    // slug'ı olarak biliniyor — örn /tr/blog/<en-slug>. DB-aware lookup
+    // (translationGroupId) + statik map fallback ile doğru slug'a 307.
     const otherLocale: Locale = locale === 'tr' ? 'en' : 'tr';
-    const pairedInThisLocale = resolveBlogPair(slug, otherLocale, locale);
+    const pairedInThisLocale = await resolveBlogPairFromDb(slug, otherLocale, locale);
     if (pairedInThisLocale && pairedInThisLocale !== slug) {
       redirect(`/${locale}/blog/${pairedInThisLocale}`);
     }

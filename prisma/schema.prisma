@@ -593,10 +593,18 @@ model BlogPost {
   ctaSubtitle     String?  @map("cta_subtitle") @db.Text
   ctaButtonLabel  String?  @map("cta_button_label")
 
+  // Translation group — bir TR + bir EN post aynı groupId paylaşır.
+  // Admin editör'den "Diğer dildeki karşılığı" alanıyla manuel set edilir.
+  // Locale switcher / 404 fallback bu alandan karşı locale post'unu çözer.
+  // Statik map (src/lib/blog-translation-pairs.ts) eski / seed yazılar için
+  // korunur; yeni yazılar DB-driven bu alanı kullanır.
+  translationGroupId String? @map("translation_group_id")
+
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@unique([slug, locale])
+  @@index([translationGroupId])
   @@map("blog_posts")
 }
 
