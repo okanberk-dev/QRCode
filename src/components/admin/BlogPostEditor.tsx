@@ -1,25 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
-  Bold,
   CheckCircle2,
   Eye,
   ExternalLink,
   FileText,
   Globe,
-  Heading2,
-  Heading3,
-  Italic,
   LayoutTemplate,
-  Link2,
-  List,
-  ListOrdered,
   Loader2,
-  Pilcrow,
   Quote,
   Save,
   Sparkles,
@@ -28,7 +20,8 @@ import {
   Wand2,
   X,
 } from 'lucide-react';
-import { plainTextToBlogContent, sanitizeBlogContent } from '@/lib/blog-content';
+import { sanitizeBlogContent } from '@/lib/blog-content';
+import BlogContentEditor from './BlogContentEditor';
 
 interface BlogPost {
   id: string;
@@ -135,7 +128,6 @@ function getStarterTemplate(locale: string) {
 
 export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit'; postId?: string }) {
   const router = useRouter();
-  const editorRef = useRef<HTMLDivElement | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM, date: defaultDate('tr') });
   const [loading, setLoading] = useState(mode === 'edit');
   const [saving, setSaving] = useState(false);
@@ -143,12 +135,6 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
   const [success, setSuccess] = useState('');
   const [editorMode, setEditorMode] = useState<'write' | 'preview'>('write');
   const [slugTouched, setSlugTouched] = useState(mode === 'edit');
-
-  const syncEditorFromState = useCallback((content: string) => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = content || '<p></p>';
-    }
-  }, []);
 
   useEffect(() => {
     if (mode !== 'edit' || !postId) return;
@@ -184,7 +170,6 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
           ctaButtonLabel: post.ctaButtonLabel || '',
         };
         setForm(next);
-        window.setTimeout(() => syncEditorFromState(next.content), 0);
       })
       .catch(err => {
         if (mounted) setError(err.message || 'Yazı yüklenemedi.');
@@ -196,13 +181,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
     return () => {
       mounted = false;
     };
-  }, [mode, postId, syncEditorFromState]);
-
-  useEffect(() => {
-    if (editorMode === 'write') {
-      window.setTimeout(() => syncEditorFromState(form.content), 0);
-    }
-  }, [editorMode, syncEditorFromState]);
+  }, [mode, postId]);
 
   const updateTitle = (title: string) => {
     setForm(f => ({
@@ -219,29 +198,6 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
       content: cleanContent,
       readTime: f.readTime ? f.readTime : estimateReadTime(cleanContent, f.locale),
     }));
-  };
-
-  const handleEditorInput = () => {
-    updateContent(editorRef.current?.innerHTML || '');
-  };
-
-  const runEditorCommand = (command: string, value?: string) => {
-    editorRef.current?.focus();
-    document.execCommand(command, false, value);
-    handleEditorInput();
-  };
-
-  const addLink = () => {
-    const url = window.prompt('Bağlantı adresi (https://... veya /sayfa)');
-    if (!url) return;
-    runEditorCommand('createLink', url);
-  };
-
-  const handleEditorPaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const text = event.clipboardData.getData('text/plain');
-    document.execCommand('insertHTML', false, plainTextToBlogContent(text));
-    handleEditorInput();
   };
 
   const [tagDraft, setTagDraft] = useState('');
@@ -274,7 +230,6 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
       content: nextContent,
       readTime: estimateReadTime(nextContent, f.locale),
     }));
-    window.setTimeout(() => syncEditorFromState(nextContent), 0);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -434,60 +389,12 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   </button>
                 </div>
 
-                {editorMode === 'write' && (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl border border-[#EDEDED] bg-white p-2">
-                    {[
-                      { label: 'Paragraf', icon: Pilcrow, command: 'formatBlock', value: 'p' },
-                      { label: 'H2', icon: Heading2, command: 'formatBlock', value: 'h2' },
-                      { label: 'H3', icon: Heading3, command: 'formatBlock', value: 'h3' },
-                      { label: 'Kalın', icon: Bold, command: 'bold' },
-                      { label: 'İtalik', icon: Italic, command: 'italic' },
-                      { label: 'Liste', icon: List, command: 'insertUnorderedList' },
-                      { label: 'Numara', icon: ListOrdered, command: 'insertOrderedList' },
-                      { label: 'Alıntı', icon: Quote, command: 'formatBlock', value: 'blockquote' },
-                    ].map(({ label, icon: Icon, command, value }) => (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() => runEditorCommand(command, value)}
-                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#525252] hover:bg-[#EAF9B8] hover:text-[#0A0A0A] transition-colors"
-                        title={label}
-                      >
-                        <Icon size={15} />
-                        <span className="hidden sm:inline">{label}</span>
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={addLink}
-                      className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#525252] hover:bg-[#EAF9B8] hover:text-[#0A0A0A] transition-colors"
-                    >
-                      <Link2 size={15} />
-                      <span className="hidden sm:inline">Link</span>
-                    </button>
-                  </div>
-                )}
               </div>
 
               {editorMode === 'write' ? (
-                <div
-                  ref={editorRef}
-                  contentEditable
-                  role="textbox"
-                  aria-label="Blog içeriği"
-                  onInput={handleEditorInput}
-                  onBlur={handleEditorInput}
-                  onPaste={handleEditorPaste}
-                  className="min-h-[620px] bg-white px-5 py-6 text-[17px] leading-8 text-[#0A0A0A] outline-none sm:px-8
-                    [&_h2]:mt-9 [&_h2]:mb-3 [&_h2]:text-[30px] [&_h2]:font-medium [&_h2]:tracking-[-0.02em]
-                    [&_h3]:mt-7 [&_h3]:mb-2 [&_h3]:text-[22px] [&_h3]:font-medium [&_h3]:tracking-[-0.01em]
-                    [&_p]:mb-5 [&_p]:text-[#525252]
-                    [&_a]:font-medium [&_a]:text-[#0A0A0A] [&_a]:underline [&_a]:decoration-[#C6F24E] [&_a]:decoration-2 [&_a]:underline-offset-4
-                    [&_ul]:mb-5 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:mb-5 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-2 [&_li]:text-[#525252]
-                    [&_blockquote]:my-7 [&_blockquote]:rounded-[18px] [&_blockquote]:border-l-4 [&_blockquote]:border-[#C6F24E] [&_blockquote]:bg-[#EAF9B8]/70 [&_blockquote]:px-5 [&_blockquote]:py-4 [&_blockquote]:font-medium [&_blockquote]:text-[#0A0A0A]"
-                  suppressContentEditableWarning
-                  dangerouslySetInnerHTML={{ __html: form.content || '<p></p>' }}
-                />
+                <div className="px-3 py-3 sm:px-5 sm:py-4">
+                  <BlogContentEditor value={form.content} onChange={updateContent} />
+                </div>
               ) : (
                 <div
                   className="pulse-blog-content min-h-[620px] bg-white px-5 py-6 prose prose-lg max-w-none sm:px-8
@@ -497,7 +404,18 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     prose-p:text-[#525252] prose-p:leading-[1.7] prose-p:mb-6 prose-p:text-[16px]
                     prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4
                     prose-li:text-[#525252] prose-li:leading-[1.7]
-                    prose-blockquote:rounded-[20px] prose-blockquote:border-l-4 prose-blockquote:border-[#C6F24E] prose-blockquote:bg-[#EAF9B8]/75 prose-blockquote:px-6 prose-blockquote:py-5 prose-blockquote:text-[#0A0A0A] prose-blockquote:not-italic prose-blockquote:font-medium"
+                    prose-blockquote:rounded-[20px] prose-blockquote:border-l-4 prose-blockquote:border-[#C6F24E] prose-blockquote:bg-[#EAF9B8]/75 prose-blockquote:px-6 prose-blockquote:py-5 prose-blockquote:text-[#0A0A0A] prose-blockquote:not-italic prose-blockquote:font-medium
+                    [&_code]:rounded [&_code]:bg-[#F5F5F5] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[14px] [&_code]:font-mono [&_code]:text-[#0A0A0A]
+                    [&_pre]:my-7 [&_pre]:rounded-2xl [&_pre]:bg-[#0A0A0A] [&_pre]:px-5 [&_pre]:py-4 [&_pre]:overflow-x-auto
+                    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[14px] [&_pre_code]:text-[#EDEDED]
+                    [&_figure]:my-8 [&_figure]:flex [&_figure]:flex-col [&_figure]:gap-2
+                    [&_figure_img]:m-0 [&_figure_img]:w-full
+                    [&_figcaption]:text-[13px] [&_figcaption]:text-[#737373] [&_figcaption]:text-center
+                    [&_aside]:my-7 [&_aside]:rounded-2xl [&_aside]:border [&_aside]:px-5 [&_aside]:py-4 [&_aside]:text-[15px]
+                    [&_aside_p]:m-0 [&_aside_p]:text-[#0A0A0A]
+                    [&_aside[data-variant=info]]:bg-[#F0F9FF] [&_aside[data-variant=info]]:border-[#BFDBFE]
+                    [&_aside[data-variant=warn]]:bg-[#FFFBEB] [&_aside[data-variant=warn]]:border-[#FDE68A]
+                    [&_aside[data-variant=tip]]:bg-[#EAF9B8] [&_aside[data-variant=tip]]:border-[#C6F24E]"
                   dangerouslySetInnerHTML={{ __html: sanitizeBlogContent(form.content) || '<p>Önizleme için içerik yazın.</p>' }}
                 />
               )}

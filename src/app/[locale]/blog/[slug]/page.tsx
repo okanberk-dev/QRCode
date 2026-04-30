@@ -453,6 +453,17 @@ export default async function BlogPostPage({
                     prose-blockquote:not-italic
                     prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
                     prose-hr:border-[#EDEDED]
+                    [&_code]:rounded [&_code]:bg-[#F5F5F5] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[14px] [&_code]:font-mono [&_code]:text-[#0A0A0A]
+                    [&_pre]:my-7 [&_pre]:rounded-2xl [&_pre]:bg-[#0A0A0A] [&_pre]:px-5 [&_pre]:py-4 [&_pre]:overflow-x-auto
+                    [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-[14px] [&_pre_code]:leading-[1.7] [&_pre_code]:text-[#EDEDED]
+                    [&_figure]:my-8 [&_figure]:flex [&_figure]:flex-col [&_figure]:gap-2
+                    [&_figure_img]:m-0 [&_figure_img]:w-full
+                    [&_figcaption]:text-[13px] [&_figcaption]:leading-[1.6] [&_figcaption]:text-[#737373] [&_figcaption]:text-center
+                    [&_aside]:my-7 [&_aside]:rounded-2xl [&_aside]:border [&_aside]:px-5 [&_aside]:py-4 [&_aside]:text-[15px] [&_aside]:leading-[1.65]
+                    [&_aside_p]:m-0 [&_aside_p]:text-[#0A0A0A]
+                    [&_aside[data-variant=info]]:bg-[#F0F9FF] [&_aside[data-variant=info]]:border-[#BFDBFE]
+                    [&_aside[data-variant=warn]]:bg-[#FFFBEB] [&_aside[data-variant=warn]]:border-[#FDE68A]
+                    [&_aside[data-variant=tip]]:bg-[#EAF9B8] [&_aside[data-variant=tip]]:border-[#C6F24E]
                     break-words"
                   style={{ fontFamily: 'var(--font-body)' }}
                   dangerouslySetInnerHTML={{ __html: content }}

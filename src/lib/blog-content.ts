@@ -14,7 +14,14 @@ const ALLOWED_TAGS = new Set([
   'br',
   'img',
   'hr',
+  'code',
+  'pre',
+  'figure',
+  'figcaption',
+  'aside',
 ]);
+
+const CALLOUT_VARIANTS = new Set(['info', 'warn', 'tip']);
 
 function escapeHtml(value: string) {
   return value
@@ -51,7 +58,7 @@ function decodeHtmlEntities(value: string) {
 }
 
 function normalizeEscapedHtml(input: string) {
-  if (!/(?:&lt;|&amp;lt;)\s*\/?\s*(p|h2|h3|strong|b|em|i|a|ul|ol|li|blockquote|br|img|hr)\b/i.test(input)) {
+  if (!/(?:&lt;|&amp;lt;)\s*\/?\s*(p|h2|h3|strong|b|em|i|a|ul|ol|li|blockquote|br|img|hr|code|pre|figure|figcaption|aside)\b/i.test(input)) {
     return input;
   }
 
@@ -101,6 +108,13 @@ export function sanitizeBlogContent(input: string) {
         const hrefMatch = attrs.match(/\bhref\s*=\s*["']([^"']+)["']/i);
         const href = sanitizeHref(hrefMatch?.[1] ?? null);
         return href ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">` : '<a>';
+      }
+      if (tag === 'aside') {
+        const variantMatch = attrs.match(/\bdata-variant\s*=\s*["']([a-z]+)["']/i);
+        const variant = variantMatch && CALLOUT_VARIANTS.has(variantMatch[1].toLowerCase())
+          ? variantMatch[1].toLowerCase()
+          : 'info';
+        return `<aside data-variant="${variant}">`;
       }
       return `<${tag}>`;
     })
