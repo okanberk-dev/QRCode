@@ -141,32 +141,58 @@ Yeni bir platform eklemek gerekirse: bu 3 haritaya + `prisma/schema.prisma`'daki
 ```
 src/
 ├── app/
-│   ├── [locale]/              # i18n route'ları (tr/en)
-│   ├── admin/                 # Admin panel (superadmin/manager/owner)
-│   │   ├── dashboard/         # Ana özet + istatistik + tablo
-│   │   ├── qr/                # QR oluşturma + history
-│   │   ├── restaurants/       # Restoran yönetimi
-│   │   └── users/             # Superadmin: admin user yönetimi
-│   ├── api/
-│   │   ├── auth/              # login / logout / me
-│   │   ├── admin/             # superadmin/manager CRUD
-│   │   ├── feedback/          # POST (public), GET (scoped), stats, export, branches
-│   │   ├── menu/              # categories / items / upload
-│   │   └── restaurants/       # restoran CRUD + QR üretim
+│   ├── [locale]/              # i18n route'ları (tr/en) — marketing + dashboard
+│   ├── admin/                 # Admin panel (superadmin/manager)
+│   ├── api/                   # cron/, auth/, admin/, feedback/, menu/, restaurants/, newsletter/, sentry-test, dev/, ...
 │   ├── r/[slug]/              # Public QR landing + feedback form
-│   └── menu/[slug]/           # Public restoran menüsü
+│   ├── menu/[slug]/           # Public restoran menüsü (SSR)
+│   ├── global-error.tsx       # Sentry error boundary
+│   ├── opengraph-image.tsx    # Dynamic 1200x630 OG image
+│   ├── robots.ts + sitemap.ts # SEO
+│   └── globals.css            # Pulse @theme + bz-* + pulse-* utility'leri
 ├── components/
-│   ├── admin/                 # StatsCards, FeedbackTable, PlatformDistribution, ...
-│   ├── dashboard/menu/        # MenuEditor, MenuItemForm, MenuCategoryForm
-│   └── menu/                  # PublicMenuView
+│   ├── admin/                 # StatsCards, FeedbackTable, AdminSidebar, ...
+│   ├── auth/                  # LoginForm, RegisterForm, ForgotPasswordForm, ResetPasswordForm
+│   ├── dashboard/             # OwnerShell, RestaurantAnalyticsPanel, menu/*
+│   ├── marketing/             # MarketingNavbar, MarketingFooter, MobileBottomNav, BuazeLogo, NewsletterSignup, ...
+│   ├── menu/                  # PublicMenuView (6 tema), ProductDetailModal, MenuSplash
+│   ├── notifications/         # In-app notification components
+│   ├── panel/                 # Owner+admin paylaşılan shell parçaları
+│   ├── providers/             # QueryProvider (React Query root)
+│   ├── shared/                # Cross-surface küçük yardımcılar
+│   └── ui/                    # bz-* primitive set: Modal, Tabs, Badge, StatCard, Field, ...
 ├── lib/
-│   ├── auth.ts                # JWT + actor resolve + IDOR helpers
+│   ├── auth.ts                # JWT (jose) + actor resolve + IDOR helpers
 │   ├── prisma.ts              # Tek instance (HMR-safe)
 │   ├── translations.ts        # tr/en string haritası
-│   ├── validations.ts         # form/API validation helpers
-│   └── menu-access.ts         # Menü erişim kontrolü
-└── prisma/
-    └── schema.prisma          # Tüm modeller
+│   ├── validations.ts         # Elle validation helpers (legacy)
+│   ├── menu-access.ts         # Menü erişim kontrolü
+│   ├── api/                   # validate.ts (Zod helper, §28) + paylaşılan API yardımcıları
+│   ├── email/                 # Pulse mail layout + templates/ + copy-loader + revisions (§21)
+│   ├── email.ts + email-internal.ts  # Resend HTTP + public sender'lar
+│   ├── legal/                 # KVKK / Terms / Cookie metin kaynakları
+│   ├── roi/                   # ROI hesaplama yardımcıları
+│   ├── seed/                  # Seed data (case-studies, blog vb. helper'ları)
+│   ├── firebase-{client,admin}.ts    # Google Sign-in (sadece OAuth, §4)
+│   ├── recaptcha{,-client}.ts # reCAPTCHA Enterprise score-based bot guard
+│   ├── rate-limit.ts          # Upstash distributed (§14.2)
+│   ├── openai.ts              # AI Co-Pilot (§15)
+│   ├── analytics-{session,heuristics}.ts  # Menu analytics (§13)
+│   └── ...                    # client-image, format, help-articles, sectors, totp, vb.
+├── hooks/                     # Paylaşılan React hooks
+├── types/                     # Cross-cutting TypeScript types
+├── middleware.ts              # Auth + locale + rate-limit gate
+└── proxy.ts                   # Firebase Auth proxy yardımcıları
+prisma/
+├── schema.prisma              # Tüm modeller
+└── seed-case-studies.ts       # Case-study seed (manuel runner)
+scripts/
+├── validate-env.js            # Build-time zorunlu env doğrulaması (§14.1)
+├── seed-mail-templates.ts     # 18 row mail template seed (§21.26)
+├── seed-legal-documents.ts    # Legal metinleri DB'ye seed
+└── backfill-feedback-reply-source.ts  # FeedbackReply.source backfill (§21.20)
+tests/
+└── oauth.test.ts              # Node --test runner (§32)
 ```
 
 ---
@@ -184,10 +210,10 @@ Aşağıdakiler **bilinçli kararlar** — değiştirmek için güçlü sebep ge
 - Uzun dropdown / toolbar'larda mobilde `flex-col md:flex-row` + `w-full sm:w-auto`.
 
 ### ❌ Yapma
-- **Prisma migration dosyası (`prisma/migrations/...`) oluşturma** — deploy akışı `prisma db push --accept-data-loss` üzerine kurulu, `migrate dev` kullanılmıyor.
+- **Prisma migration dosyası (`prisma/migrations/...`) oluşturma** — deploy akışı `prisma db push --accept-data-loss` üzerine kurulu, `migrate dev` kullanılmıyor. Halihazırda `prisma/migrations/` klasörü **yok** — varsa silmeden önce sor (push workflow'u kırılır).
 - **Ortak abstraction'lar** (shared PLATFORM_CONFIG modülü gibi) **üç yerden fazla tekrar** olmadıkça yazma.
 - **AI / otomasyon / rol refactor** ekleme — kullanıcının açıkça istediği scope'a sadık kal.
-- Tercihlere zıt — `public/uploads/*` dışında bir dizine yazma; Coolify volume hedefi `/app/public/uploads`.
+- **Disk'e yazma** — Vercel serverless ephemeral FS, `public/uploads/*` veya başka bir dizine runtime yazılmaz. Görsel/dosya akışı için §3 (base64-in-DB) veya Supabase Storage.
 
 ### 📏 Scope disiplini
 Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" konusunda nettir. Bir görev tanımlandığında:
@@ -198,8 +224,6 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 ---
 
 ## 8. Sık Karşılaşılan Tuzaklar
-
-> **Not:** Eski Coolify upload tuzakları (EACCES, public/uploads volume) artık geçerli değil — Vercel + base64-in-DB'ye geçildi (§3).
 
 ### Next.js body size limit (4MB default)
 - Upload route'u dosyayı `file.arrayBuffer()` ile alıyor. 5MB client tarafı validasyonu var ama Next 15 App Router `Route Handler` default ~4MB. Gerekirse `next.config.ts` içinde experimental body size config.
@@ -454,10 +478,13 @@ Tüm cron'lar `Authorization: Bearer ${CRON_SECRET}` zorunlu; Vercel Cron config
 
 `package.json`:
 ```json
-"build": "prisma db push --accept-data-loss && next build"
+"build": "node scripts/validate-env.js && prisma db push --accept-data-loss && next build"
 ```
 
-Her deploy'da schema sync edilir → `P2022 column does not exist` hatası oluşmaz (daha önce `/api/restaurants` 500 bug'ına sebep olmuştu).
+3 adım:
+1. **`scripts/validate-env.js`** — zorunlu env'leri (DATABASE_URL, DIRECT_URL, JWT_SECRET, NEXT_PUBLIC_APP_URL) doğrular; eksikse exit 1 → Vercel build başlamadan fail eder.
+2. **`prisma db push --accept-data-loss`** — schema sync; `P2022 column does not exist` hatası önlenir (daha önce `/api/restaurants` 500 bug'ına sebep olmuştu).
+3. **`next build`** — uygulama derlemesi.
 
 **Defensive coding kuralı (Faz 6 sweep, 2026-04):** `prisma.X.findUnique({ where: ... })` çağrılarına **her zaman explicit `select`** ekle. Prisma'da select'siz findUnique tüm sütunları çeker; schema'da olup henüz DB'ye sync olmamış bir sütun (deploy race, manual SQL, preview env, dev branch) varsa `P2022` ile 500 atar. Explicit select ilgisiz sütunları sorgudan çıkardığı için drift'e bağışıklık sağlar.
 
@@ -524,9 +551,30 @@ Yorum yanıt taslağı için "Taslak oluştur" butonu (`/admin/reviews` + `/[loc
 
 ## 16. Claude Design Handoff — Referans
 
-`.design/` klasörü Claude Design'dan gelen JSX prototipleri + canvas HTML + chat log içerir (21 dosya, git-tracked). Pulse marka kimliği (graphite/lime/pure white) + ~38 sayfalık site tasarımı kaynağıdır.
+`.design/` klasörü Claude Design'dan gelen JSX prototipleri + canvas HTML + chat log içerir (22 dosya, git-tracked: root 3 + `pulse/` 6 + `site/` 13). Pulse marka kimliği (graphite/lime/pure white) + ~38 sayfalık site tasarımı kaynağıdır.
 
 **Kritik kural:** `.design/*.jsx` **doğrudan `src/`'ye kopyalanmaz** — yalnız referans olarak okunur. Pulse token'lar zaten `globals.css` `@theme {}` bloğunda, font'lar `src/app/layout.tsx`'te yüklü, logo `src/components/marketing/BuazeLogo.tsx`. Uygulanan kararlar §11 (renk + typography) + §12 (menü temaları) + §15 (AI Co-Pilot) + §17 (utility class'ları).
+
+**Font drift notu:** `.design-pulse-2026/project/tokens.css` `--font-heading: "Inter Tight"` önerir; uygulama kodu (CLAUDE.md §11 + `globals.css`) bilinçli olarak **Space Grotesk** kullanır. Tasarım bundle'ındaki font değeri reference, **uygulanmaz**.
+
+### `.design-pulse-2026/` ikinci handoff bundle (2026-04-27)
+
+23 dosya, git-tracked. `README.md` + `chats/chat1.md` + `project/` (21 dosya). Önemli içerik:
+
+| Dosya | İçerik | Uygulama §'sı |
+|---|---|---|
+| `tokens.css` | **Kanonik renk + tipo + radius + shadow + radii** token kaynağı (§23.1) | §23.1 |
+| `primitives.jsx` | UI primitive prototipleri (Modal, Tabs, StatCard, ...) — `src/components/ui/`'a 1:1 indirildi | §23.3 |
+| `shell.jsx` | Owner + admin shell layout taslağı | §23.5 |
+| `admin-and-public.jsx` | Admin dashboard + public review prototipi | §23.7 (Phase 10.1, 11.4) |
+| `owner-pages-{1,2,3}.jsx` | Owner panel ekran-ekran spec | §23.7 (Phase 11.5+) |
+| `mobile-app.jsx` + `mobile-screens-{1,2}.jsx` + `ios-frame.jsx` | Responsive mobil ekranları (native değil — §25 web-only) | §25 |
+| `social-kit.jsx` + `Buaze Social Kit.html` | Sosyal medya görseli kiti (henüz kullanılmıyor) | — |
+| `app.jsx` + `canvas-view.jsx` + `data.jsx` + `tweaks-panel.jsx` | Prototype runtime (hash router + canvas) | — (sadece prototip, uygulanmaz) |
+| `design-canvas.jsx` + `Buaze Pulse Workspace.html` + `screenshots/01-dashboard.png` | Studio canvas + workspace HTML + ekran görüntüsü referansları | — |
+| `chats/chat1.md` | Tasarım iterasyonu transcript'i — niyet kaynağı | tüm Phase logları |
+
+**Kural aynı:** Hiçbir dosya `src/`'ye kopyalanmaz. `tokens.css` token referansı, JSX'ler görsel referans. Native app **yok** — mobil tamamen responsive web (§25).
 
 `design.md` repo kökünde — 15 PR'lık faz log'unu tutar.
 
@@ -537,7 +585,7 @@ Yorum yanıt taslağı için "Taslak oluştur" butonu (`/admin/reviews` + `/[loc
 
 Pulse design 15 draft PR'da uygulandı (PR #39 → #53). Tarihsel commit detayları için `git log` + `design.md`. Aşağıda **kalıcı kararlar** — tasarım kararları için §11, menü için §12, AI Co-Pilot için §15.
 
-21 dosya `.design/` altında (JSX prototipleri + canvas HTML + chat log). **Asla `src/`'ye kopyalanmaz** — yalnız referans. Pulse token'lar zaten `globals.css`, font'lar `layout.tsx`'te yüklü.
+22 dosya `.design/` altında (JSX prototipleri + canvas HTML + chat log). **Asla `src/`'ye kopyalanmaz** — yalnız referans. Pulse token'lar zaten `globals.css`, font'lar `layout.tsx`'te yüklü.
 
 ### Pulse utility class'ları (`src/app/globals.css`)
 
@@ -566,6 +614,8 @@ Tüm motion `prefers-reduced-motion: reduce` altında devre dışı (globals.css
 ---
 
 ## 18. E-posta + Storage Env'leri
+
+> **Kanonik kaynak:** `.env.example` — tüm env'lerin tam listesi orada (build script `node scripts/validate-env.js` ile zorunluları doğrular). Aşağıdaki tablo seçilmiş highlight'tır; çatışma halinde `.env.example` baz alınır.
 
 **Stratejik karar:** Yeni external provider eklenmiyor. Resend (mail) + Supabase Storage (dosya) + OpenAI (AI Co-Pilot) yeterli. POS (Iyzico/Stripe) kasıtlı ertelenmiş — billing read-side canlı, write-side yok.
 
@@ -1714,24 +1764,56 @@ Claude Design "buaze" handoff bundle (`.design-pulse-2026/`, 2026-04-27 günü �
 
 ### 23.1 Token mapping
 
-Mevcut `--color-brand-*` (Tailwind v4 `@theme {}`) ile design'ın `bz-*` token'ları birebir aynı renk değerlerine map olur. Tablodan referans:
+Mevcut `--color-brand-*` (Tailwind v4 `@theme {}`) ile design'ın `bz-*` token'ları birebir aynı renk değerlerine map olur. **Kanonik kaynak `.design-pulse-2026/project/tokens.css`'tir** — değer çatışırsa tokens.css öncelikli. Aşağıdaki tablo tokens.css değerleriyle hizalı:
 
-| Design token (`bz-*` CSS var) | Pulse Tailwind token | Hex |
+**Surfaces / Lines / Text:**
+
+| Design token (`bz-*` CSS var) | Hex | Pulse Tailwind alias |
 |---|---|---|
-| `--bz-bg` | `--color-brand-pure` | `#FFFFFF` |
-| `--bz-bg-soft` | `--color-brand-n50` | `#FAFAFA` |
-| `--bz-bg-mute` | `--color-brand-n100` | `#F2F2F2` |
-| `--bz-bg-dark` | `--color-brand-graphite` | `#0A0A0A` |
-| `--bz-bg-dark2` | `--color-brand-n800` | `#1A1A1A` |
-| `--bz-line` | `--color-brand-n200` | `#EDEDED` |
-| `--bz-fg` | `--color-text-main` | `#0A0A0A` |
-| `--bz-fg-3` | `--color-text-muted` | `#525252` |
-| `--bz-fg-4` | `--color-text-light` | `#737373` |
-| `--bz-lime` | `--color-brand-lime` | `#C6F24E` |
-| `--bz-lime-dark` | `--color-brand-lime-deep` | `#A8D62E` |
-| `--bz-lime-tint` | `--color-brand-lime-soft` | `#EAF9B8` |
+| `--bz-bg` | `#FFFFFF` | `--color-brand-pure` |
+| `--bz-bg-soft` | `#FAFAFA` | `--color-brand-n50` |
+| `--bz-bg-mute` | `#F5F5F5` | (alias yok) |
+| `--bz-bg-dark` | `#0A0A0A` | `--color-brand-graphite` |
+| `--bz-bg-dark2` | `#1A1A1A` | `--color-brand-n800` |
+| `--bz-line` | `#EDEDED` | `--color-brand-n200` |
+| `--bz-line-2` | `#EAEAEA` | (alias yok) |
+| `--bz-fg` | `#0A0A0A` | `--color-text-main` |
+| `--bz-fg-2` | `#1A1A1A` | (alias yok) |
+| `--bz-fg-3` | `#525252` | `--color-text-muted` |
+| `--bz-fg-4` | `#737373` | `--color-text-light` |
+| `--bz-fg-5` | `#6B7280` | (alias yok) |
+| `--bz-fg-mute` | `#A3A3A3` | (alias yok) |
 
-CSS variable formunda yeniden tanımlamadık — hex değer doğrudan `bz-*` class içinde kullanılıyor (mevcut `pulse-*` pattern'iyle aynı). Tek-source-of-truth değişikliği gerekirse `globals.css` `bz-*` block'u + `@theme {}` aynı anda güncellenir.
+**Lime (signature accent):**
+
+| Token | Hex | Kullanım |
+|---|---|---|
+| `--bz-lime` | `#C6F24E` | Primary CTA, active state |
+| `--bz-lime-dark` | `#A8D62E` | Hover / pressed |
+| `--bz-lime-tint` | `#EAF9B8` | Soft tint, badge bg |
+| `--bz-lime-tint-30` | `rgba(198,242,78,0.30)` | Overlay / glow |
+
+**Status (Badge primitive `kind` ile eşleşir):**
+
+| Token | Hex | bg | Badge `kind` |
+|---|---|---|---|
+| `--bz-positive` | `#16A34A` | `#DCFCE7` | `ok` |
+| `--bz-warning` | `#D97706` | `#FEF3C7` | `warn` |
+| `--bz-danger` | `#DC2626` | `#FEE2E2` | `danger` |
+| `--bz-info` | `#2563EB` | `#DBEAFE` | `info` |
+
+**Platform brand (resmi marka renkleri, dokunulmaz):**
+
+| Token | Hex | Platform |
+|---|---|---|
+| `--plat-google` | `#4285F4` | Google |
+| `--plat-yemeksepeti` | `#FA0050` | Yemeksepeti |
+| `--plat-getir` | `#5D3EBC` | Getir |
+| `--plat-trendyol` | `#F27A1A` | Trendyol GO |
+| `--plat-tripadvisor` | `#34E0A1` | Tripadvisor |
+| `--plat-foursquare` | `#F94877` | Foursquare |
+
+**Önemli:** CSS variable formunda yeniden tanımlamadık — hex değer doğrudan `bz-*` class içinde kullanılıyor (mevcut `pulse-*` pattern'iyle aynı). Tek-source-of-truth değişikliği gerekirse `globals.css` `bz-*` block'u + `@theme {}` aynı anda güncellenir; tasarım kararı tartışılırsa tokens.css'e bak.
 
 ### 23.2 Panel utility class envanteri (`globals.css`)
 
@@ -2427,7 +2509,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 | `@radix-ui/react-{dialog,dropdown-menu,tabs,tooltip,popover,select}` | ✅ Kurulu | Sadece a11y-heavy yeni primitive ihtiyacında. Mevcut `src/components/ui/*` toplu migrate edilmez (§27.2) |
 | `firebase ^12.12` | ✅ Kurulu | Sadece Google Sign-in için. Primary auth değil — `jose` JWT + httpOnly cookie (§4) |
 | `jose ^6.2` | ✅ Kurulu | Custom JWT auth — edge compatible, Vercel middleware ile uyumlu (§4) |
-| `@vercel/speed-insights` | ✅ Vercel platformu tarafından sağlanır | Real-user Core Web Vitals (LCP/CLS/INP/FCP/TTFB). Vercel agent / Marketplace integration paketi ve root layout mount'unu otomatik provision eder; manuel `npm i` veya layout edit'i **gereksiz**. Lokal dev'de no-op, sadece Vercel deployment'ta data toplar. Sentry'yi (§26) **replace etmez** — bkz. §31 |
+| `@vercel/speed-insights ^2.0` | ✅ Kurulu | Real-user Core Web Vitals (LCP/CLS/INP/FCP/TTFB). `<SpeedInsights />` root layout'ta mount'lı; alt layout'lar inherit eder (§31). Lokal dev'de no-op, sadece Vercel deployment'ta data toplar. Sentry'yi (§26) **replace etmez** — paralel rol |
 
 ### 30.4 Önerilen ama kurulmaya gerek olmayan lib'ler (revised)
 
@@ -2466,7 +2548,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 
 ## 31. Vercel Speed Insights — Real-User Web Vitals
 
-`@vercel/speed-insights/next` ile gerçek-kullanıcı Core Web Vitals takibi. **Vercel agent / Marketplace integration tarafından otomatik kurulur** — paketi elle `npm i` etme veya `<SpeedInsights />`'ı `src/app/layout.tsx`'e elle eklemeye gerek yok. Tek mount root layout seviyesinde olur ve `[locale]/layout.tsx` + `admin/layout.tsx` dahil tüm panel + marketing + public surface'leri kapsar.
+`@vercel/speed-insights/next` ile gerçek-kullanıcı Core Web Vitals takibi. Paket `package.json`'da kayıtlı (`@vercel/speed-insights ^2.0.0`) ve `<SpeedInsights />` root layout'ta mount'lanır → `[locale]/layout.tsx` + `admin/layout.tsx` dahil tüm panel + marketing + public surface'leri kapsar. Yeni layout/route eklerken **ekstra mount koyma** (duplicate beacon).
 
 ### 31.1 Speed Insights vs Sentry — net rol ayrımı
 
@@ -2505,4 +2587,64 @@ Manuel `track()` çağrısı yok; sadece otomatik Web Vitals beacons. `@vercel/a
 
 ### 31.5 Yeni layout / SSG sayfa eklerken
 
-Yeni route `app/` ağacında otomatik kapsanır (Vercel agent root layout'a tek mount koymuş, alt layout'lar inherit eder). Ayrı bir `<SpeedInsights />` mount **etme** — duplicate beacon gönderir, quota tüketir. Manuel olarak `@vercel/speed-insights` import etmeye veya `package.json`'a eklemeye gerek yok; Vercel platform integration bunu yönetir.
+Yeni route `app/` ağacında otomatik kapsanır (root layout'ta tek `<SpeedInsights />` mount, alt layout'lar inherit eder). Ayrı bir `<SpeedInsights />` mount **etme** — duplicate beacon gönderir, quota tüketir.
+
+---
+
+## 32. Testing
+
+Hafif test infrastructure'ı. Heavy framework yok (Jest/Vitest kurmadı), Node'un built-in test runner'ı yeter.
+
+### 32.1 Mevcut
+
+- **Test runner:** Node 20+ `--test` (built-in). `tsx` ile TS dosyaları doğrudan çalıştırılır.
+- **Komut:** `npm test` → `node --import tsx --test tests/**/*.test.ts`
+- **Klasör:** `tests/` (repo kökünde, `src/` dışında).
+- **Mevcut test:** `tests/oauth.test.ts` — OAuth flow yardımcıları için unit test örneği.
+
+### 32.2 Ne zaman test yaz
+
+**Yap:**
+- Pure helper fonksiyonları (`src/lib/format.ts:parsePriceInput`, `src/lib/email/placeholders.ts:substitutePlaceholders`, `src/lib/analytics-heuristics.ts` eşik mantığı) — DB/network'e bağımsız, deterministik.
+- Güvenlik kritik logic (token validation, IDOR scoping helper'ları, RBAC).
+- Bug fix sonrası regression koruması — fix öncesi failing test, sonrası geçer.
+
+**Yapma:**
+- DB'ye gerçek bağlanan integration testi yazma — Vercel preview / production smoke test'i daha pragmatik.
+- E2E (Playwright/Cypress) ekleme — şimdilik manuel cihaz testi (§25.6) yeterli.
+- Component snapshot testi — UI değişimi sık, drift sonrasında bilgi vermiyor.
+
+### 32.3 Yeni test ekleme
+
+```ts
+// tests/foo.test.ts
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { parsePriceInput } from '../src/lib/format';
+
+test('parsePriceInput tr decimal', () => {
+  assert.equal(parsePriceInput('1.234,56'), 1234.56);
+});
+```
+
+Path: `tests/<konu>.test.ts`. CI (`.github/workflows/ci.yml`) şu an test'i koşmuyor — eklenecekse `npm test` adımı yeterli, ek setup yok.
+
+---
+
+## 33. Scripts Klasörü
+
+Repo kökündeki `scripts/` (+ `prisma/` altındaki seed) — bir kerelik veya periyodik bakım runner'ları. Hiçbiri build/runtime'da otomatik tetiklenmez (build sadece `validate-env.js`'i çağırır).
+
+| Dosya | Komut | Amaç |
+|---|---|---|
+| `scripts/validate-env.js` | `node scripts/validate-env.js` | Build-time zorunlu env doğrulaması — eksik env varsa exit 1. `npm run build` ilk adımı (§14.1). |
+| `scripts/seed-mail-templates.ts` | `DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts` | 18 row mail template upsert (9 template × 2 locale). Idempotent. Operator "kod default'larına dön" istediğinde de çalıştırılır (§21.26). |
+| `scripts/seed-legal-documents.ts` | `DATABASE_URL=... npx tsx scripts/seed-legal-documents.ts` | KVKK / Terms / Cookie metinlerini DB'ye seed eder. Idempotent. |
+| `scripts/backfill-feedback-reply-source.ts` | `DATABASE_URL=... npx tsx scripts/backfill-feedback-reply-source.ts` | `FeedbackReply.source` NULL satırlarını `'manual'` ile doldurur. Tek seferlik, idempotent (§21.20). |
+| `prisma/seed-case-studies.ts` | `DATABASE_URL=... npx tsx prisma/seed-case-studies.ts` | Marketing case-study içeriği seed eder. Idempotent. |
+
+**Yeni script eklerken:**
+- TypeScript ise `scripts/` (veya `prisma/` seed ise `prisma/`) altına koy.
+- Idempotent yap (upsert tercih, raw INSERT'ten kaçın) — operatör defalarca çağırabilmeli.
+- Üst yorumda kullanım komutunu + ne yaptığını yaz.
+- Build script'ine ekleme — bu script'ler **manuel runner'dır**, her deploy'da koşmaz.
