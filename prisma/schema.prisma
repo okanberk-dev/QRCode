@@ -749,8 +749,15 @@ model ROIRequest {
   projection     Json?
   ip             String?
   createdAt      DateTime @default(now()) @map("created_at")
+  // Retargeting cron (3 gün follow-up) tarafından gönderildiyse timestamp.
+  // Null = henüz gönderilmedi → cron pickup eder. Cron set edince
+  // bir daha pick'lemez (per-lead idempotent).
+  retargetingSentAt DateTime? @map("retargeting_sent_at")
 
   @@index([email, createdAt])
+  // Cron query için partial-ish index — `email IS NOT NULL AND
+  // retargetingSentAt IS NULL AND createdAt < cutoff` taraması hızlı.
+  @@index([retargetingSentAt, createdAt])
   @@map("roi_requests")
 }
 
