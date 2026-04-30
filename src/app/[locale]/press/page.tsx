@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowUpRight, Download, Mail } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import BuazeLogo from '@/components/marketing/BuazeLogo';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { getSiteSettings } from '@/lib/site-settings';
@@ -56,16 +57,8 @@ export async function generateMetadata({
 }
 
 const FACTS = {
-  founded: '2023',
-  hq: 'İstanbul, Türkiye',
-  legalName: 'Buaze Bilişim A.Ş.',
-  industry: 'B2B SaaS · Customer Feedback & Reputation Management',
   pressEmail: 'press@buaze.com',
   domain: 'buaze.com',
-  founders: [
-    { name: 'Emre Kaya', role: 'Co-Founder · CEO' },
-    { name: 'Zeynep Aydın', role: 'Co-Founder · CTO' },
-  ],
 };
 
 const BRAND_COLORS = [
@@ -84,7 +77,6 @@ export default async function PressPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
   const settings = await getSiteSettings();
-  const logoSrc = settings.logoUrl || '/favicon.svg';
 
   // External profile URLs that have been configured by ops. Filter so we
   // only render rows that actually point somewhere.
@@ -159,24 +151,15 @@ export default async function PressPage({
 
   const boilerplates = isTr
     ? {
-        short: 'Buaze, restoran, otel, klinik ve perakende işletmelerinin müşteri geri bildirimini ve dijital itibarını tek panelden yöneten Türkiye merkezli bir SaaS platformudur.',
-        medium: 'Buaze (Buaze Bilişim A.Ş.), 2023\'te İstanbul\'da kurulan B2B SaaS şirketidir. QR kod tabanlı yorum toplama ve dijital itibar yönetimi sunar. Restoranlar, oteller, klinikler ve perakende markaları Google Business Profile, Yemeksepeti, Getir, Trendyol GO ve TripAdvisor üzerindeki yorum operasyonlarını Buaze ile tek panelden yönetir.',
-        long: 'Buaze (Buaze Bilişim A.Ş.), Türkiye\'de İstanbul\'dan yönetilen bir B2B SaaS şirketidir. 2023\'te Emre Kaya ve Zeynep Aydın tarafından kuruldu. Şirket, dinamik QR kod tabanlı müşteri geri bildirimi ve dijital itibar yönetimi platformu sunar. Buaze, müşteri tarafında her ziyaretçiye Google Business Profile yorum bağlantısını sunar; isteyen müşteri aynı akışta işletmeye özel geri bildirim de bırakabilir. Yıldıza göre dallandırma yapılmaz, kamuya açık yorum hakkı her zaman korunur. İşletme tarafında, çok-platform yorum gelen kutusu, AI destekli yanıt taslakları (Buaze Pulse AI), platform attribution ve çok-şube analitiği sunulur.',
+        short: 'Buaze, restoran, otel, klinik ve perakende işletmelerinin müşteri geri bildirimini ve dijital itibarını tek panelden yöneten bir SaaS platformudur.',
+        medium: 'Buaze, QR kod tabanlı yorum toplama ve dijital itibar yönetimi sunan bir B2B SaaS platformudur. Restoranlar, oteller, klinikler ve perakende markaları Google Business Profile, Yemeksepeti, Getir, Trendyol GO ve TripAdvisor üzerindeki yorum operasyonlarını Buaze ile tek panelden yönetir.',
+        long: 'Buaze, dinamik QR kod tabanlı müşteri geri bildirimi ve dijital itibar yönetimi platformu sunan bir B2B SaaS markasıdır. Müşteri tarafında her ziyaretçiye Google Business Profile yorum bağlantısı sunulur; isteyen müşteri aynı akışta işletmeye özel geri bildirim de bırakabilir. Yıldıza göre dallandırma yapılmaz, kamuya açık yorum hakkı her zaman korunur. İşletme tarafında ise çok-platform yorum gelen kutusu, AI destekli yanıt taslakları (Buaze Pulse AI), platform attribution ve çok-şube analitiği sunulur.',
       }
     : {
-        short: 'Buaze is an Istanbul-based SaaS platform that helps restaurants, hotels, clinics and retail businesses manage customer feedback and digital reputation from a single dashboard.',
-        medium: 'Buaze (Buaze Bilişim A.Ş.) is a B2B SaaS company founded in Istanbul in 2023. It provides QR-based review collection and digital reputation management. Restaurants, hotels, clinics and retail brands use Buaze to operate review flows across Google Business Profile, Yemeksepeti, Getir, Trendyol GO and TripAdvisor from one panel.',
-        long: 'Buaze (Buaze Bilişim A.Ş.) is a B2B SaaS company headquartered in Istanbul, Turkey. It was founded in 2023 by Emre Kaya and Zeynep Aydın. The company offers a dynamic QR-based customer-feedback and digital-reputation-management platform. On the customer side, every visitor is offered the public Google Business Profile review link; private feedback to the business is an optional extra step in the same flow, with no rating-based gating — the public review path is always preserved. On the operator side, Buaze provides a multi-platform review inbox, AI-assisted reply drafts (Buaze Pulse AI), platform attribution and multi-location analytics.',
+        short: 'Buaze is a SaaS platform that helps restaurants, hotels, clinics and retail businesses manage customer feedback and digital reputation from a single dashboard.',
+        medium: 'Buaze is a B2B SaaS platform that provides QR-based review collection and digital reputation management. Restaurants, hotels, clinics and retail brands use Buaze to operate review flows across Google Business Profile, Yemeksepeti, Getir, Trendyol GO and TripAdvisor from one panel.',
+        long: 'Buaze is a B2B SaaS brand offering a dynamic QR-based customer-feedback and digital-reputation-management platform. On the customer side, every visitor is offered the public Google Business Profile review link; private feedback to the business is an optional extra step in the same flow, with no rating-based gating — the public review path is always preserved. On the operator side, Buaze provides a multi-platform review inbox, AI-assisted reply drafts (Buaze Pulse AI), platform attribution and multi-location analytics.',
       };
-
-  const factRows = [
-    { label: isTr ? 'Tüzel kişilik' : 'Legal name', value: FACTS.legalName },
-    { label: isTr ? 'Kuruluş yılı' : 'Founded', value: FACTS.founded },
-    { label: isTr ? 'Merkez' : 'Headquarters', value: FACTS.hq },
-    { label: isTr ? 'Sektör' : 'Industry', value: FACTS.industry },
-    { label: isTr ? 'Web' : 'Web', value: FACTS.domain },
-    { label: isTr ? 'Basın iletişim' : 'Press contact', value: FACTS.pressEmail },
-  ];
 
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
@@ -209,25 +192,6 @@ export default async function PressPage({
         </div>
       </section>
 
-      {/* ─── At a glance: facts table ─── */}
-      <section className="px-5 sm:px-10 pb-12 sm:pb-16">
-        <div className="max-w-[1100px] mx-auto">
-          <h2 className="text-[24px] sm:text-[32px] font-medium tracking-[-0.025em] mb-6">
-            {isTr ? 'Bir bakışta' : 'At a glance'}
-          </h2>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-[#EDEDED] rounded-2xl overflow-hidden border border-[#EDEDED]">
-            {factRows.map((row) => (
-              <div key={row.label} className="bg-white p-5 sm:p-6">
-                <dt className="pulse-eyebrow text-[#737373]">{row.label}</dt>
-                <dd className="mt-2 text-[16px] sm:text-[17px] font-medium text-[#0A0A0A] tracking-[-0.01em] break-words">
-                  {row.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      </section>
-
       {/* ─── Boilerplate (3 lengths) ─── */}
       <section className="px-5 sm:px-10 pb-12 sm:pb-16">
         <div className="max-w-[1100px] mx-auto">
@@ -257,46 +221,6 @@ export default async function PressPage({
         </div>
       </section>
 
-      {/* ─── Founders ─── */}
-      <section className="px-5 sm:px-10 pb-12 sm:pb-16">
-        <div className="max-w-[1100px] mx-auto">
-          <h2 className="text-[24px] sm:text-[32px] font-medium tracking-[-0.025em] mb-6">
-            {isTr ? 'Kurucular' : 'Founders'}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {FACTS.founders.map((p) => {
-              const initials = p.name
-                .split(/\s+/)
-                .map((part) => part[0])
-                .join('')
-                .slice(0, 2)
-                .toUpperCase();
-              return (
-                <div key={p.name} className="flex items-center gap-5 bz-card p-6">
-                  <div
-                    aria-hidden="true"
-                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]"
-                  >
-                    <span
-                      className="text-[26px] font-medium tracking-[-0.04em] leading-none"
-                      style={{ fontFamily: 'var(--font-heading)' }}
-                    >
-                      {initials}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em]">
-                      {p.name}
-                    </div>
-                    <div className="pulse-eyebrow text-[#737373] mt-1">{p.role}</div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
       {/* ─── Brand assets ─── */}
       <section className="px-5 sm:px-10 pb-12 sm:pb-16">
         <div className="max-w-[1100px] mx-auto">
@@ -313,10 +237,10 @@ export default async function PressPage({
             <a
               href="/favicon.svg"
               download
+              aria-label={isTr ? 'Buaze logosunu SVG olarak indir' : 'Download Buaze logo as SVG'}
               className="bz-card p-6 flex flex-col items-center justify-center gap-4 hover:bg-[#FAFAFA] transition-colors"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoSrc} alt="Buaze logo" className="h-20 w-auto" />
+              <BuazeLogo size={88} />
               <div className="flex items-center gap-2 text-[13px] font-semibold text-[#0A0A0A]">
                 <Download size={14} />
                 {isTr ? 'Logo indir (SVG)' : 'Download logo (SVG)'}
