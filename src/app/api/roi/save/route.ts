@@ -223,11 +223,14 @@ export async function POST(req: NextRequest) {
     // Customer mail (Pulse roi-customer-report) — email varsa.
     if (email) {
       const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com').replace(/\/+$/, '');
-      const firstNameGuess = pdfData.restaurantName.split(/[\s,.]/)[0] || null;
+      // firstName form'da toplanmıyor → null pas et; template kendi
+      // içinde "İşletme adı + ekibi"/"team" fallback'ini üretir.
+      // (Eski restaurantName.split(/[\s,.]/)[0] türetimi awkward selamlama
+      // üretiyordu: "Cafe Karaköy" → "Hi Cafe,". Kaldırıldı.)
       const customerRendered = renderRoiCustomerReport(
         {
           restaurantName: pdfData.restaurantName,
-          firstName: firstNameGuess,
+          firstName: null,
           currency: pdfData.currency,
           netGain: pdfData.netGain,
           roiMultiple: pdfData.roiMultiple,

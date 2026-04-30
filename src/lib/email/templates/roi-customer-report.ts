@@ -66,8 +66,18 @@ export function renderRoiCustomerReport(
   const fmt = (n: number) => n.toLocaleString(isTr ? 'tr-TR' : 'en-US');
   const c = params.currency;
   const planLabel = PLAN_LABEL[params.plan] ?? params.plan;
+  // Greeting fallback: form firstName toplamıyor (gelecek scope). Yoksa
+  // selamı işletme adı + " ekibi"/"team" ile kur — eski "Merhaba merhaba,"
+  // ve restaurantName.split(/[\s,.]/)[0] türetimi (route.ts:226) bug'ları
+  // ortadan kalkar. Kişiselleştirme korunur, awkward selamlama olmaz.
   const firstName = (params.firstName || '').trim();
-  const greetingName = firstName || (isTr ? 'merhaba' : 'hello');
+  const greetingLine = firstName
+    ? isTr
+      ? `Merhaba ${firstName},`
+      : `Hi ${firstName},`
+    : isTr
+      ? `Merhaba ${params.restaurantName} ekibi,`
+      : `Hi ${params.restaurantName} team,`;
   const platformLabels = params.platforms
     .map((p) => (isTr ? PLATFORM_LABEL_TR[p] : p) ?? p)
     .join(', ');
@@ -97,7 +107,7 @@ export function renderRoiCustomerReport(
   const hero = `
     ${renderEyebrow(isTr ? 'BUAZE ROI RAPORU · 12 AY' : 'BUAZE ROI REPORT · 12 MO', PULSE.n500)}
     <h1 style="margin:8px 0 0;font-family:${FONTS.heading};font-size:30px;line-height:1.1;letter-spacing:-0.025em;color:${PULSE.graphite};font-weight:600;">
-      ${escapeHtml(isTr ? `Merhaba ${greetingName},` : `Hi ${greetingName},`)}
+      ${escapeHtml(greetingLine)}
     </h1>
     <p style="margin:14px 0 22px;font-size:15px;line-height:1.6;color:${PULSE.n800};">
       ${escapeHtml(
@@ -127,7 +137,7 @@ export function renderRoiCustomerReport(
           { v: `+${fmt(params.reviewers)}`, l: isTr ? 'Yorum / ay' : 'Reviews / mo' },
           { v: fmt(params.filteredLowReviews), l: isTr ? 'Filtrelenen kötü' : 'Low filtered', accent: true },
           { v: params.projectedGoogle.toFixed(1), l: isTr ? 'Yeni Google ★' : 'New Google ★' },
-          { v: `${params.aiHoursSaved.toFixed(1)} sa`, l: isTr ? 'AI tasarruf' : 'AI saved' },
+          { v: `${params.aiHoursSaved.toFixed(1)} ${isTr ? 'sa' : 'h'}`, l: isTr ? 'AI tasarruf' : 'AI saved' },
         ]
           .map(
             (k) => `<td class="cell stack-col" valign="top" style="width:25%;padding:6px;">
@@ -191,10 +201,14 @@ export function renderRoiCustomerReport(
   `;
 
   // ─── Priority actions list ─────────────────────────────────────────────
-  const stepsBlock = `
+  // Yalnız aiNextSteps doluyken render — boş array'de orphan başlık olmaz.
+  const stepsBlock =
+    params.aiNextSteps.length > 0
+      ? `
     <h2 style="margin:0 0 14px;font-family:${FONTS.heading};font-size:18px;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${isTr ? 'İlk 30 gün için 3 öncelik' : 'Three priorities for the first 30 days'}</h2>
     <ol style="margin:0;padding:0 0 0 4px;list-style:none;">${stepsSafeHtml}</ol>
-  `;
+  `
+      : '';
 
   // ─── CTA card (lime) ──────────────────────────────────────────────────
   const ctaCard = `
@@ -263,9 +277,7 @@ export function renderRoiCustomerReport(
 
   // ─── Plain text fallback ───────────────────────────────────────────────
   const text = [
-    isTr
-      ? `Merhaba ${greetingName},`
-      : `Hi ${greetingName},`,
+    greetingLine,
     '',
     isTr
       ? `${params.restaurantName} için 12 aylık ROI projeksiyonun hazır.`
@@ -281,9 +293,13 @@ export function renderRoiCustomerReport(
     '',
     `${isTr ? 'EN GÜÇLÜ KALDIRAÇ' : 'STRONGEST LEVERAGE'}: ${params.aiHighlight}`,
     '',
-    `${isTr ? 'İLK 30 GÜN — 3 ÖNCELİK' : 'FIRST 30 DAYS — 3 PRIORITIES'}:`,
-    ...params.aiNextSteps.map((s, i) => `${i + 1}. ${s}`),
-    '',
+    ...(params.aiNextSteps.length > 0
+      ? [
+          `${isTr ? 'İLK 30 GÜN — 3 ÖNCELİK' : 'FIRST 30 DAYS — 3 PRIORITIES'}:`,
+          ...params.aiNextSteps.map((s, i) => `${i + 1}. ${s}`),
+          '',
+        ]
+      : []),
     isTr
       ? `Demo daveti: ${params.contactUrl}`
       : `Schedule a demo: ${params.contactUrl}`,
