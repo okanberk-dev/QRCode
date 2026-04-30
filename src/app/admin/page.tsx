@@ -57,62 +57,74 @@ function AdminLoginContent() {
   };
 
   return (
-    <main className="min-h-[100dvh] bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40">
-      {/* Soft top gradient */}
+    <main className="relative min-h-[100dvh] bg-white text-[#0A0A0A] selection:bg-[#C6F24E]/40">
+      {/* Soft top gradient — Pulse §11 lime accent */}
       <div
         aria-hidden
-        className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,#EAF9B8_0%,rgba(234,249,184,0)_62%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_top,#EAF9B8_0%,rgba(234,249,184,0)_65%)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-[-15%] top-[-20%] h-[420px] w-[420px] rounded-full bg-[#C6F24E]/25 blur-[120px]"
       />
 
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 sm:px-5 py-5 sm:py-6">
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-5 sm:px-7 py-5 sm:py-7">
         {/* Top bar — logo + customer login link */}
         <header className="flex items-center justify-between">
-          <Link href="/" className="inline-flex items-center gap-2 sm:gap-2.5">
-            <BuazeLogo size={32} />
-            <span className="text-lg sm:text-xl font-semibold tracking-tight">
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <BuazeLogo size={34} />
+            <span
+              className="bz-h-tight"
+              style={{ fontSize: 22, letterSpacing: '-0.03em' }}
+            >
               buaze<span className="text-[#A8D62E]">.</span>
             </span>
           </Link>
           <Link
             href={`/${locale}/auth/login`}
-            className="hidden rounded-full border border-[#EDEDED] px-4 py-2 text-[13px] font-semibold text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors sm:inline-flex"
+            className="hidden rounded-full border border-[#EDEDED] px-4 py-2 text-[13px] font-medium text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors sm:inline-flex"
           >
             Müşteri girişi
           </Link>
         </header>
 
         {/* Main */}
-        <section className="flex flex-1 items-center justify-center py-8 sm:py-10">
-          <div className="w-full max-w-[420px]">
-            {/* Brand block — mobile-friendly icon + heading */}
-            <div className="mb-6 sm:mb-7 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
-                <ShieldCheck size={22} strokeWidth={2} />
+        <section className="flex flex-1 items-center justify-center py-10 sm:py-12">
+          <div className="w-full max-w-[440px]">
+            {/* Brand block — eyebrow pill + heading */}
+            <div className="mb-7 text-center">
+              <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 shadow-sm">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+                  <ShieldCheck size={11} strokeWidth={2.5} />
+                </span>
+                <span className="pulse-eyebrow text-[#0A0A0A]">YÖNETİCİ PANELİ</span>
               </div>
-              <p className="pulse-eyebrow text-[#737373]">YÖNETİCİ PANELİ</p>
               <h1
-                className="mt-2 text-[32px] sm:text-[38px] font-medium leading-[1] tracking-[-0.04em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
+                className="bz-h-tight text-[34px] sm:text-[42px] leading-[1.02] text-[#0A0A0A]"
+                style={{ letterSpacing: '-0.04em' }}
               >
                 Giriş yap
               </h1>
-              <p className="mt-2.5 text-[13px] sm:text-sm text-[#737373] leading-[1.55] max-w-[320px] mx-auto">
-                Yönetim paneline erişmek için hesabını doğrula.
+              <p className="mt-3 text-[14px] sm:text-[15px] text-[#525252] leading-[1.6] max-w-[340px] mx-auto">
+                Yönetim paneline erişmek için kullanıcı adı ve şifrenle doğrula.
               </p>
             </div>
 
             {/* Card */}
-            <div className="rounded-3xl sm:rounded-[28px] border border-[#EDEDED] bg-white p-5 sm:p-7 shadow-[0_24px_70px_-42px_rgba(10,10,10,0.45)]">
+            <div className="rounded-[28px] border border-[#EDEDED] bg-white p-6 sm:p-8 shadow-[0_28px_80px_-48px_rgba(10,10,10,0.5)]">
               {error && (
                 <div className="mb-4">
                   <AlertBanner kind="danger">{error}</AlertBanner>
                 </div>
               )}
 
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-5">
                 {/* Username */}
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                  <label
+                    htmlFor="adminUsername"
+                    className="pulse-eyebrow text-[#737373]"
+                  >
                     Kullanıcı adı
                   </label>
                   <div className="relative">
@@ -122,14 +134,19 @@ function AdminLoginContent() {
                       strokeWidth={2}
                     />
                     <input
+                      id="adminUsername"
                       type="text"
                       required
                       autoComplete="username"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      enterKeyHint="next"
                       value={credentials.username}
                       onChange={(e) =>
                         setCredentials((prev) => ({ ...prev, username: e.target.value }))
                       }
-                      className="w-full min-h-[48px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-4 text-[14px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:bg-white"
+                      className="w-full min-h-[50px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-4 text-[16px] sm:text-[15px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] hover:border-[#D4D4D4] focus:border-[#0A0A0A] focus:bg-white focus:ring-4 focus:ring-[#C6F24E]/30"
                       placeholder="admin"
                     />
                   </div>
@@ -137,7 +154,10 @@ function AdminLoginContent() {
 
                 {/* Password */}
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                  <label
+                    htmlFor="adminPassword"
+                    className="pulse-eyebrow text-[#737373]"
+                  >
                     Şifre
                   </label>
                   <div className="relative">
@@ -147,14 +167,16 @@ function AdminLoginContent() {
                       strokeWidth={2}
                     />
                     <input
+                      id="adminPassword"
                       type={showPassword ? 'text' : 'password'}
                       required
                       autoComplete="current-password"
+                      enterKeyHint="send"
                       value={credentials.password}
                       onChange={(e) =>
                         setCredentials((prev) => ({ ...prev, password: e.target.value }))
                       }
-                      className="w-full min-h-[48px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-12 text-[14px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:bg-white"
+                      className="w-full min-h-[50px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] py-3.5 pl-11 pr-12 text-[16px] sm:text-[15px] font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] hover:border-[#D4D4D4] focus:border-[#0A0A0A] focus:bg-white focus:ring-4 focus:ring-[#C6F24E]/30"
                       placeholder="••••••••"
                     />
                     <button
@@ -168,11 +190,12 @@ function AdminLoginContent() {
                   </div>
                 </div>
 
-                {/* Remember + Forgot */}
+                {/* Remember + Forgot — `<a>` ensures full-page nav so the
+                    link works even if Next router state hiccups */}
                 <div className="flex items-center justify-between gap-3 pt-1">
                   <label
                     htmlFor="rememberMe"
-                    className="flex cursor-pointer items-center gap-2 text-[12px] font-medium text-[#525252] select-none"
+                    className="flex cursor-pointer items-center gap-2 text-[13px] font-medium text-[#525252] select-none"
                   >
                     <input
                       type="checkbox"
@@ -183,18 +206,18 @@ function AdminLoginContent() {
                     />
                     Beni hatırla
                   </label>
-                  <Link
+                  <a
                     href="/admin/forgot-password"
-                    className="text-[12px] font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                    className="rounded-md text-[13px] font-semibold text-[#0A0A0A] underline-offset-4 hover:underline hover:text-[#A8D62E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 transition-colors"
                   >
                     Şifremi unuttum
-                  </Link>
+                  </a>
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0A0A0A] px-5 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="group mt-1 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_40px_-22px_rgba(10,10,10,0.6)] transition-all hover:bg-[#1A1A1A] hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
                 >
                   {loading ? (
                     <Loader2 className="animate-spin" size={18} />
@@ -211,10 +234,15 @@ function AdminLoginContent() {
               </form>
             </div>
 
+            {/* Footer line — security note */}
+            <p className="mt-5 text-center text-[11px] text-[#A3A3A3] tracking-[0.02em]">
+              Buaze yönetici girişi · KVKK ve Google politikaları uyumlu
+            </p>
+
             {/* Mobile customer-login fallback */}
             <Link
               href={`/${locale}/auth/login`}
-              className="mt-5 inline-flex w-full items-center justify-center gap-1.5 text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors sm:hidden"
+              className="mt-3 inline-flex w-full items-center justify-center gap-1.5 text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors sm:hidden"
             >
               Müşteri paneline geç
               <ArrowRight size={13} strokeWidth={2} />
