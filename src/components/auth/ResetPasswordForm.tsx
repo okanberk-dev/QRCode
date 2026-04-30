@@ -97,6 +97,10 @@ export default function ResetPasswordForm({ locale }: Props) {
             id="reset-token"
             type="text"
             required
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="next"
             value={token}
             onChange={(e) => setToken(e.target.value.trim())}
             placeholder={locale === 'tr' ? 'E-postanızdaki bağlantıyı kullanın' : 'Use the link from your email'}
@@ -122,6 +126,7 @@ export default function ResetPasswordForm({ locale }: Props) {
           maxLength={6}
           required
           autoComplete="one-time-code"
+          enterKeyHint="next"
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
           placeholder="••••••"
@@ -140,6 +145,7 @@ export default function ResetPasswordForm({ locale }: Props) {
             required
             autoComplete="new-password"
             minLength={8}
+            enterKeyHint="send"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder={locale === 'tr' ? 'En az 8 karakter' : 'At least 8 characters'}

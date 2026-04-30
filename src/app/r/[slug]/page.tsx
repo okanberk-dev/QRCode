@@ -379,6 +379,8 @@ function ReviewContent() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   autoComplete="name"
+                  autoCapitalize="words"
+                  enterKeyHint="next"
                 />
                 <input
                   className="bz-input"
@@ -387,6 +389,11 @@ function ReviewContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="next"
                 />
                 <textarea
                   className="bz-input"
@@ -397,6 +404,7 @@ function ReviewContent() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   style={{ resize: 'none', fontFamily: 'inherit' }}
+                  enterKeyHint="enter"
                 />
 
                 {/* KVKK + marketing onayları — design 1:1 sade <label> stili */}
