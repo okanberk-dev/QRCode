@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
-import { Star, ArrowRight, Check, X, ShieldCheck, Mail, Loader2 } from 'lucide-react';
+import { Star, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
 import { buildGoogleReviewUrl } from '@/lib/google-review';
@@ -89,7 +89,6 @@ function ReviewContent() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [redirecting, setRedirecting] = useState<{ url: string; platformId: string } | null>(null);
-  const [showLegal, setShowLegal] = useState<'kvkk' | 'marketing' | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,15 +111,6 @@ function ReviewContent() {
       cancelled = true;
     };
   }, [slug]);
-
-  useEffect(() => {
-    if (showLegal) {
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = '';
-      };
-    }
-  }, [showLegal]);
 
   if (loading) return <DarkLoader />;
   if (isNotFound || !restaurant) return notFound();
@@ -240,6 +230,7 @@ function ReviewContent() {
           aspects: null,
           website,
           recaptchaToken,
+          locale,
         }),
       });
       const result = await response.json();
@@ -407,7 +398,7 @@ function ReviewContent() {
                   enterKeyHint="enter"
                 />
 
-                {/* KVKK + marketing onayları — design 1:1 sade <label> stili */}
+                {/* KVKK aydınlatma — submit gate; metin admin paneli yönetiminde */}
                 <label
                   className="flex gap-2 cursor-pointer"
                   style={{ fontSize: 11.5, color: '#525252', lineHeight: 1.5, alignItems: 'flex-start' }}
@@ -420,22 +411,30 @@ function ReviewContent() {
                     aria-required="true"
                   />
                   <span>
-                    {locale === 'tr'
-                      ? 'KVKK kapsamında verilerimin işletmeyle paylaşılmasını kabul ediyorum.'
-                      : 'I consent to sharing my data with the business under KVKK.'}{' '}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setShowLegal('kvkk');
-                      }}
+                    {locale === 'tr' ? 'Okudum, anladım — ' : 'I have read and understood the '}
+                    <a
+                      href={`/${locale}/kvkk`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="underline text-[#0A0A0A] hover:text-[#A8D62E]"
                     >
-                      {locale === 'tr' ? 'Aydınlatma metni' : 'Privacy notice'}
-                    </button>
+                      {locale === 'tr' ? 'KVKK Aydınlatma Metni' : 'KVKK Privacy Notice'}
+                    </a>
+                    {locale === 'tr' ? ' ve ' : ' and '}
+                    <a
+                      href={`/${locale}/acik-riza`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline text-[#0A0A0A] hover:text-[#A8D62E]"
+                    >
+                      {locale === 'tr' ? 'Açık Rıza Metni' : 'Explicit Consent'}
+                    </a>
+                    {locale === 'tr'
+                      ? ' kapsamında verilerimin işlenmesine açık rıza veriyorum.'
+                      : ' and grant explicit consent for processing.'}
                   </span>
                 </label>
+                {/* Pazarlama izni — opt-in zorunlu (KVKK Açık Rıza + ETK m.6) */}
                 <label
                   className="flex gap-2 cursor-pointer"
                   style={{ fontSize: 11.5, color: '#525252', lineHeight: 1.5, alignItems: 'flex-start' }}
@@ -447,9 +446,16 @@ function ReviewContent() {
                     style={{ marginTop: 2 }}
                   />
                   <span>
-                    {locale === 'tr'
-                      ? 'Kampanya ve duyurulardan haberdar olmak istiyorum (opsiyonel).'
-                      : "I'd like to receive promotions and announcements (optional)."}
+                    {locale === 'tr' ? 'Kampanya ve duyurular için ' : 'For campaigns and announcements I accept the '}
+                    <a
+                      href={`/${locale}/ticari-ileti`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline text-[#0A0A0A] hover:text-[#A8D62E]"
+                    >
+                      {locale === 'tr' ? 'Ticari Elektronik İleti İzni' : 'Commercial Electronic Message Consent'}
+                    </a>
+                    {locale === 'tr' ? ' kapsamında iletişim onayı veriyorum (opsiyonel).' : ' (optional).'}
                   </span>
                 </label>
 
@@ -523,9 +529,6 @@ function ReviewContent() {
         </footer>
       </div>
 
-      {showLegal && (
-        <LegalModal kind={showLegal} t={t} onClose={() => setShowLegal(null)} locale={locale} />
-      )}
     </main>
   );
 }
@@ -581,94 +584,6 @@ function RedirectingOverlay({
           }
         }
       `}</style>
-    </div>
-  );
-}
-
-function LegalModal({
-  kind,
-  t,
-  onClose,
-  locale,
-}: {
-  kind: 'kvkk' | 'marketing';
-  t: (key: string) => string;
-  onClose: () => void;
-  locale: Locale;
-}) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  return (
-    <div
-      onClick={onClose}
-      className="bz-fade-in fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="legal-title"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[520px] overflow-hidden rounded-[20px] bg-white text-[#0A0A0A] shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
-      >
-        <header className="flex items-center justify-between border-b border-[#EDEDED] px-6 py-4">
-          <div className="flex items-center gap-3">
-            <span
-              className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                kind === 'kvkk' ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#F0FDF4] text-[#166534]'
-              }`}
-            >
-              {kind === 'kvkk' ? <ShieldCheck size={18} /> : <Mail size={18} />}
-            </span>
-            <div>
-              <h3 id="legal-title" className="bz-h-tight text-[15px]">
-                {kind === 'kvkk'
-                  ? locale === 'tr'
-                    ? 'KVKK Aydınlatma Metni'
-                    : 'KVKK Privacy Notice'
-                  : locale === 'tr'
-                    ? 'İletişim İzni'
-                    : 'Marketing Consent'}
-              </h3>
-              <p
-                className="text-[9px] uppercase tracking-[0.2em] text-[#737373]"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                Legal & Privacy
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={locale === 'tr' ? 'Kapat' : 'Close'}
-            className="bz-btn-icon"
-          >
-            <X size={18} />
-          </button>
-        </header>
-        <div className="max-h-[60vh] overflow-y-auto px-6 py-5">
-          <p className="whitespace-pre-wrap text-[13px] leading-[1.65] text-[#1A1A1A]">
-            {kind === 'kvkk' ? t('feedback_kvkk_text') : t('feedback_marketing_text')}
-          </p>
-          <p
-            className="mt-5 border-t border-[#EDEDED] pt-3 text-[10px] uppercase tracking-[0.2em] text-[#737373]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            {kind === 'kvkk' ? t('feedback_kvkk_footer') : t('feedback_marketing_footer')}
-          </p>
-        </div>
-        <footer className="flex justify-end border-t border-[#EDEDED] bg-[#FAFAFA] px-6 py-4">
-          <button type="button" onClick={onClose} className="bz-btn-primary px-6 py-2.5 text-[13px]">
-            {locale === 'tr' ? 'Kapat' : 'Close'}
-          </button>
-        </footer>
-      </div>
     </div>
   );
 }

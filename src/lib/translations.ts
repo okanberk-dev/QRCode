@@ -150,53 +150,10 @@ export const translations = {
     feedback_email_placeholder: 'E-posta Adresiniz',
     feedback_kvkk_label: 'Kişisel verilerimin işlenmesine ilişkin KVKK metnini okudum ve onaylıyorum.',
     feedback_marketing_label: 'Kampanya ve duyurulardan haberdar olmak için iletişim izni veriyorum.',
-    feedback_kvkk_text: `KVKK AYDINLATMA METNİ
-
-1. Veri Sorumlusu
-Bu form aracılığıyla paylaşılan kişisel veriler; hizmet aldığınız restoran işletmesi ("İşletme") ile İşletme'ye teknik altyapı ve veri işleme hizmeti sağlayan Buaze (veri işleyen) tarafından, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında işlenmektedir. Veri sorumlusu sıfatını, QR kodunu bulundurarak geri bildirim toplayan İşletme taşır.
-
-2. İşlenen Kişisel Veriler
-• Kimlik: ad, soyad
-• İletişim: telefon numarası, e-posta adresi
-• Müşteri işlem: ziyaret tarihi, masa numarası, şube/lokasyon, puan, yorum metni
-• İşlem güvenliği: IP adresi, cihaz/tarayıcı bilgisi, zaman damgası
-
-3. İşleme Amacı ve Hukuki Sebebi
-Kişisel verileriniz; (i) şikâyet ve önerilerinizin değerlendirilmesi, (ii) müşteri memnuniyetinin sağlanması ve deneyiminizin iyileştirilmesi, (iii) sizinle iletişime geçilerek konunun çözümlenmesi, (iv) hizmet kalitesinin ölçülmesi ve raporlanması amaçlarıyla işlenir. İşleme; KVKK m. 5/2-(c) "sözleşmenin kurulması veya ifası", m. 5/2-(f) "meşru menfaat" hukuki sebeplerine ve aşağıdaki açık rıza onayınıza dayanır.
-
-4. Aktarım
-Verileriniz; yalnızca (a) hizmet sağlayıcı Buaze'nin sunucu ve altyapısı kapsamında, (b) yasal yükümlülükler gereği yetkili kamu kurum ve kuruluşlarına, (c) gerektiğinde hukuki danışmanlarımıza KVKK m. 8 ve m. 9 şartlarına uygun şekilde aktarılabilir. Yurt dışına aktarım yapılmaz; veriler Türkiye'deki veri merkezlerinde saklanır.
-
-5. Saklama Süresi
-Kişisel verileriniz, işleme amacının ortadan kalkmasını takiben en geç 24 ay içinde ya da talebiniz üzerine derhâl silinir, yok edilir veya anonim hâle getirilir. Mevzuatta daha uzun süre öngörülmesi hâlinde yasal süre esas alınır.
-
-6. Haklarınız (KVKK m. 11)
-Veri sorumlusuna başvurarak; kişisel verilerinizin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme, işlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme, yurt içi/yurt dışı aktarıldığı üçüncü kişileri bilme, eksik/yanlış işlenmişse düzeltilmesini isteme, silinmesini veya yok edilmesini isteme, düzeltme/silme işlemlerinin aktarıldığı üçüncü kişilere bildirilmesini isteme, otomatik sistemlerle analiz edilmesi sonucu aleyhinize çıkan bir sonuca itiraz etme ve zarara uğramanız hâlinde tazminat talep etme haklarına sahipsiniz.
-
-7. Başvuru
-Haklarınızı kullanmak için QR kodu bulunduran İşletme'ye doğrudan yazılı başvurabilir ya da Buaze aracılığıyla destek@buaze.com adresi üzerinden talepte bulunabilirsiniz. Başvurularınız en geç 30 gün içinde ücretsiz olarak sonuçlandırılır.
-
-Yukarıdaki aydınlatmayı okuduğumu, anladığımı; kişisel verilerimin bu kapsamda işlenmesine AÇIK RIZA verdiğimi beyan ederim.`,
-    feedback_marketing_text: `TİCARİ ELEKTRONİK İLETİ (İLETİŞİM) İZNİ
-
-6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun ("ETK"), Ticari İletişim ve Ticari Elektronik İletiler Hakkında Yönetmelik ve KVKK m. 5/1 kapsamındaki açık rızam ile;
-
-1. Kapsam
-Paylaştığım ad, telefon ve e-posta bilgilerime; hizmet aldığım restoran işletmesi ("İşletme") ve teknik hizmet sağlayıcısı Buaze tarafından veya bunlar adına aracı hizmet sağlayıcılar vasıtasıyla; SMS, MMS, e-posta, otomatik arama, anlık bildirim ve benzeri elektronik iletişim kanallarıyla ticari elektronik ileti gönderilmesini kabul ediyorum.
-
-2. İçerik
-Bu iletiler; kampanya, indirim, kupon, sadakat programı, özel gün kutlamaları, yeni menü ve ürün duyuruları, etkinlik davetleri ile müşteri memnuniyet anketlerini içerebilir.
-
-3. İYS Kaydı
-İzin bilgim, ETK m. 6 gereği İleti Yönetim Sistemi'ne (İYS — iys.org.tr) kaydedilecektir. İYS üzerinden dilediğim zaman izin durumumu görüntüleyebilir ve değiştirebilirim.
-
-4. Ret Hakkı
-Bu izni hiçbir gerekçe göstermeksizin ve ücretsiz olarak her zaman geri çekebilirim. Her iletide yer alacak "RED" / "ÇIK" bağlantısını kullanarak, İYS üzerinden ya da destek@buaze.com adresine e-posta göndererek iletişimi sonlandırabilirim. Ret talebim en geç 3 iş günü içinde işleme alınır.
-
-5. Saklama
-İletişim onayım ve ret kayıtlarım, ispat yükümlülüğü gereği izin sona erdikten sonra en az 3 yıl süreyle saklanır.
-
-Bu metni okudum, anladım ve yukarıda belirtilen şekilde tarafıma ticari elektronik ileti gönderilmesine AÇIK RIZA veriyorum. Bu izni vermesem de geri bildirim formumu gönderebileceğimi biliyorum.`,
+    // Hukuki içerik DB'den render edilir (admin paneli — /admin/legal-documents).
+    // Bu key'ler backward-compat için boş bırakıldı; ileride çağıran kalmazsa silinebilir.
+    feedback_kvkk_text: '',
+    feedback_marketing_text: '',
     feedback_low_disclaimer: 'Bilgileriniz sadece restoran yetkilisi ile paylaşılacaktır.',
     feedback_kvkk_footer: 'Son Güncelleme: Nisan 2026 · v2.0',
     feedback_marketing_footer: 'İYS Kayıt Zorunlu · ETK m. 6',
@@ -795,53 +752,10 @@ Bu metni okudum, anladım ve yukarıda belirtilen şekilde tarafıma ticari elek
     feedback_email_placeholder: 'Your Email Address',
     feedback_kvkk_label: 'I have read and approve the KVKK text regarding the processing of my personal data.',
     feedback_marketing_label: 'I give consent to be contacted regarding campaigns and announcements.',
-    feedback_kvkk_text: `PERSONAL DATA PROTECTION NOTICE (KVKK)
-
-1. Data Controller
-Personal data shared through this form is processed by the restaurant business where you receive service (the "Business") as the data controller, together with Buaze acting as the data processor providing the technical infrastructure, in accordance with Turkish Personal Data Protection Law No. 6698 ("KVKK") and, where applicable, the GDPR.
-
-2. Categories of Data Processed
-• Identity: first name, last name
-• Contact: phone number, email address
-• Customer transaction: visit date, table number, branch/location, rating, comment
-• Technical security: IP address, device/browser info, timestamp
-
-3. Purpose and Legal Basis
-Your personal data is processed to (i) evaluate your complaints and suggestions, (ii) ensure customer satisfaction and improve your experience, (iii) reach out to you to resolve the matter, (iv) measure and report service quality. Processing relies on KVKK Art. 5/2-(c) "performance of a contract", Art. 5/2-(f) "legitimate interest" and your explicit consent below.
-
-4. Transfer
-Your data may be transferred only (a) within the scope of Buaze's servers and infrastructure, (b) to competent public authorities where required by law, (c) to our legal advisors when necessary, always in compliance with KVKK Articles 8 and 9. No cross-border transfer is made; data is stored in data centers located in Türkiye.
-
-5. Retention
-Your personal data will be deleted, destroyed or anonymized within 24 months after the purpose of processing has ceased, or immediately upon your request. Longer statutory retention periods prevail where applicable.
-
-6. Your Rights (KVKK Art. 11)
-You have the right to: learn whether your data is processed, request information about processing, learn the purpose and whether it is used accordingly, know third parties to whom data is transferred domestically or abroad, request correction of incomplete or inaccurate data, request deletion or destruction, request notification of correction/deletion to third parties, object to decisions based solely on automated processing, and claim compensation for damages suffered.
-
-7. How to Apply
-To exercise your rights, you may apply in writing directly to the Business holding the QR code or via Buaze at support@buaze.com. Your request will be answered free of charge within 30 days at the latest.
-
-I confirm that I have read and understood this notice and hereby give my EXPLICIT CONSENT to the processing of my personal data within this scope.`,
-    feedback_marketing_text: `COMMERCIAL ELECTRONIC MESSAGE (MARKETING) CONSENT
-
-Under Turkish Law No. 6563 on the Regulation of Electronic Commerce ("ETK"), the Regulation on Commercial Communication and Commercial Electronic Messages, and KVKK Art. 5/1, with my explicit consent:
-
-1. Scope
-I agree to receive commercial electronic messages from the restaurant (the "Business") and its technical service provider Buaze, or intermediary service providers acting on their behalf, to my shared name, phone and email via SMS, MMS, email, automated calls, push notifications and similar electronic channels.
-
-2. Content
-Such messages may include campaigns, discounts, coupons, loyalty program updates, special-day greetings, new menu and product announcements, event invitations, and customer satisfaction surveys.
-
-3. IYS Registration
-My consent will be registered with the Turkish Message Management System (IYS — iys.org.tr) as required by ETK Art. 6. I can view and change my consent status via IYS at any time.
-
-4. Right to Opt Out
-I may withdraw this consent at any time without giving a reason and free of charge, by using the "STOP" / "OPT-OUT" link included in every message, via IYS, or by emailing support@buaze.com. My opt-out request will be processed within 3 business days at the latest.
-
-5. Retention
-My consent record and opt-out log will be retained for at least 3 years after the consent ends, for evidentiary purposes.
-
-I have read and understood this notice and give my EXPLICIT CONSENT to receive commercial electronic messages as described above. I understand that I may submit my feedback form even without giving this consent.`,
+    // Legal content rendered from DB (admin panel — /admin/legal-documents).
+    // These keys are kept empty for backward compat; safe to remove later.
+    feedback_kvkk_text: '',
+    feedback_marketing_text: '',
     feedback_low_disclaimer: 'Your information will only be shared with the restaurant management.',
     feedback_kvkk_footer: 'Last Updated: April 2026 · v2.0',
     feedback_marketing_footer: 'IYS Registration Required · ETK Art. 6',
