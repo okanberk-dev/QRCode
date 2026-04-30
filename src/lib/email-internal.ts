@@ -13,6 +13,16 @@ function defaultReplyTo(): string | undefined {
   return undefined;
 }
 
+export interface ResendAttachment {
+  /** Görünür dosya adı (örn. "buaze-roi-projeksiyon.pdf"). */
+  filename: string;
+  /** Base64 string (Resend bunu binary'e çevirir) — Buffer'dan
+   *  `buf.toString('base64')` ile üretilir. */
+  content: string;
+  /** Opsiyonel content-type override; default Resend MIME tahmin eder. */
+  contentType?: string;
+}
+
 export async function sendResendEmail({
   to,
   subject,
@@ -20,6 +30,7 @@ export async function sendResendEmail({
   text,
   replyTo,
   headers,
+  attachments,
 }: {
   to: string | string[];
   subject: string;
@@ -29,6 +40,10 @@ export async function sendResendEmail({
   /** Extra RFC-style headers passed straight to Resend. Used for marketing
    *  mail compliance (List-Unsubscribe, List-Unsubscribe-Post one-click). */
   headers?: Record<string, string>;
+  /** Email attachment listesi — base64 string olarak iletilir. PDF report
+   *  gibi binary dosyalar için. Resend tek mail başına ~40MB toplam attach
+   *  size izin veriyor; pratikte tek PDF için sınır değil. */
+  attachments?: ResendAttachment[];
 }): Promise<boolean> {
   const resendKey = process.env.RESEND_API_KEY?.trim();
 
@@ -52,6 +67,13 @@ export async function sendResendEmail({
     if (effectiveReplyTo) payload.reply_to = effectiveReplyTo;
     if (headers && Object.keys(headers).length > 0) {
       payload.headers = headers;
+    }
+    if (attachments && attachments.length > 0) {
+      payload.attachments = attachments.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        ...(a.contentType ? { content_type: a.contentType } : {}),
+      }));
     }
 
     const response = await fetch('https://api.resend.com/emails', {

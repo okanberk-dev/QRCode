@@ -253,12 +253,21 @@ export async function sendFormConfirmationEmail(params: {
   details?: Array<{ label: string; value: string }>;
   followUpUrl?: string;
   locale?: 'tr' | 'en';
+  /** Opsiyonel ekler — örn. ROI lead'leri için generated PDF rapor.
+   *  Resend HTTP attachments sözleşmesiyle birebir uyumlu (base64 content). */
+  attachments?: Array<{ filename: string; content: string; contentType?: string }>;
 }): Promise<boolean> {
   const rendered = await renderFormConfirmation(
     { formType: params.formType, name: params.name, details: params.details, followUpUrl: params.followUpUrl },
     params.locale ?? 'tr',
   );
-  return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  return sendResendEmail({
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    attachments: params.attachments,
+  });
 }
 
 // ─── Contact form (admin notification) ──────────────────────────────────
