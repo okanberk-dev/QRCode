@@ -221,6 +221,10 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
   const isEnglish = locale === 'en';
 
   const [content, setContent] = useState<Record<string, string>>({});
+  // savedContent: en son DB'ye yazılmış (veya yüklenmiş) snapshot. Dirty
+  // detection için karşılaştırma referansı. `content !== savedContent`
+  // → "Taslak (kaydedilmedi)" badge görünür.
+  const [savedContent, setSavedContent] = useState<Record<string, string>>({});
   const [seeded, setSeeded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -231,6 +235,11 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [confirmDialog, askConfirm] = useConfirmDialog();
+
+  // Dirty check: content vs savedContent stringify (shallow flat object,
+  // <30 string keys; cheap). Field add/remove olmadığı için key sayısı
+  // sabit, JSON compare deterministik.
+  const isDirty = JSON.stringify(content) !== JSON.stringify(savedContent);
 
   useEffect(() => {
     let alive = true;
@@ -258,6 +267,7 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
           stringContent[f.key] = typeof dbContent[f.key] === 'string' ? dbContent[f.key] : '';
         }
         setContent(stringContent);
+        setSavedContent(stringContent);
         setSeeded(true);
       } catch (e) {
         if (alive) setError((e as Error).message);
@@ -297,6 +307,9 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
         throw new Error(body.error || 'Kayıt başarısız');
       }
       setSeeded(true);
+      // Save sonrası dirty state'i temizle — savedContent'i mevcut content
+      // ile senkronize et. Aksi halde "Taslak" badge save'den sonra da kalır.
+      setSavedContent(content);
       setInfo('Kayıt başarılı — değişiklik 1 dakika içinde tüm gönderimlere yansır.');
     } catch (e) {
       setError((e as Error).message);
@@ -376,9 +389,19 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
 
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
         <p className="pulse-eyebrow text-[#737373]">MAIL İÇERİĞİ / {templateKey.toUpperCase()}</p>
-        <h1 className="mt-1 flex items-center gap-3 text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.025em]" style={{ fontFamily: 'var(--font-heading)' }}>
+        <h1 className="mt-1 flex flex-wrap items-center gap-3 text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.025em]" style={{ fontFamily: 'var(--font-heading)' }}>
           <Mail size={20} strokeWidth={2} />
-          {TEMPLATE_LABELS[templateKey] ?? templateKey} · {isEnglish ? 'English' : 'Türkçe'}
+          <span>{TEMPLATE_LABELS[templateKey] ?? templateKey} · {isEnglish ? 'English' : 'Türkçe'}</span>
+          {isDirty && !loading && (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-[11px] font-medium text-[#92400E] border border-[#FDE68A]"
+              style={{ fontFamily: 'var(--font-sans)' }}
+              title="Kaydedilmemiş değişiklikler var"
+            >
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#D97706]" />
+              Taslak
+            </span>
+          )}
         </h1>
         <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252]">
           Aşağıdaki alanlar mailde görünür. Boş bıraktıkların kod-içi varsayılan
@@ -455,8 +478,9 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
             <button
               type="button"
               onClick={onSave}
-              disabled={saving}
-              className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#C6F24E] px-5 py-3 text-sm font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:opacity-50 sm:w-auto sm:text-xs"
+              disabled={saving || !isDirty}
+              title={!isDirty ? 'Değiştirecek bir şey yok' : 'Kaydedilmemiş değişiklikleri kaydet'}
+              className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#C6F24E] px-5 py-3 text-sm font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-xs"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
               Kaydet

@@ -128,13 +128,15 @@ export default function MailFieldInput({ field, value, onChange }: Props) {
       })()}
       {!field.locked && field.placeholders && field.placeholders.length > 0 && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <span className="pulse-eyebrow text-[10px] text-[#9CA3AF]">Yerleşik:</span>
+          <span className="pulse-eyebrow text-[10px] text-[#9CA3AF]" title="Bu alanda kullanabileceğin runtime token'lar — tıkla, imleç konumuna eklenir.">
+            ✨ Yerleşik:
+          </span>
           {field.placeholders.map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => insertPlaceholder(p)}
-              className="min-h-[32px] rounded-md border border-[#EDEDED] bg-[#FAFAFA] px-2.5 py-1 font-mono text-[11px] text-[#525252] hover:border-[#C6F24E] hover:bg-[#EAF9B8] active:scale-95"
+              className="min-h-[32px] cursor-pointer rounded-md border border-[#EDEDED] bg-[#FAFAFA] px-2.5 py-1 font-mono text-[11px] text-[#525252] transition-colors hover:border-[#A8D62E] hover:bg-[#EAF9B8] hover:text-[#0A0A0A] active:scale-95"
               title={`Tıkla → imleç konumuna $\{${p}\} ekle`}
             >
               ${'{'}{p}{'}'}
