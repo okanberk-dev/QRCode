@@ -100,7 +100,7 @@ export default async function DashboardPage({
       restaurantId: { in: user.restaurants.map((r) => r.id) },
       createdAt: { gte: sevenDaysAgo },
     },
-    select: { createdAt: true },
+    select: { createdAt: true, rating: true },
   });
 
   // Mobile dashboard "BUGÜN" hero card aggregate'leri (mobile-screens-1.jsx

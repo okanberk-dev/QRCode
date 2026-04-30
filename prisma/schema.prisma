@@ -931,6 +931,29 @@ model LegalConsent {
   @@map("legal_consents")
 }
 
+// Legal placeholder variables — admin tek noktada `COMPANY_NAME = "Buaze A.Ş."`
+// gibi tanımlar; tüm hukuki metinlerdeki `{{COMPANY_NAME}}` runtime'da gerçek
+// değerle render edilir (CLAUDE.md §32). MailTemplate `${firstName}` placeholder
+// substitution pattern'i (§21.29) ile aynı mantık.
+//
+//  • value boş veya satır yoksa → placeholder ham metin olarak gösterilir
+//    (admin UI bunu hatırlatır; public surface "{{KEY}}" olarak basar)
+//  • Sadece superadmin yazar; trust boundary admin paneli
+model LegalVariable {
+  // Sabit anahtar (örn. 'COMPANY_NAME', 'COMPANY_ADDRESS'). Kataloğu
+  // src/lib/legal/variables.ts içinde sabittir; admin yeni anahtar ekleyemez
+  // (template'lerde tanımsız placeholder'lar render edilince {{KEY}} olarak
+  // basılır, sessiz fail).
+  key         String   @id
+  value       String   @db.Text
+  // Admin paneli içi açıklama (kullanıcı yüzünde görünmez).
+  description String?  @db.Text
+  updatedById String?  @map("updated_by_id")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("legal_variables")
+}
+
 model BillingInvoice {
   id            String   @id @default(cuid())
   userId        String   @map("user_id")

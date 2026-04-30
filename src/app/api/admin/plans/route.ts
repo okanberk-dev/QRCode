@@ -102,7 +102,8 @@ export async function POST(req: NextRequest) {
           data: { isFeatured: false },
         });
       }
-      return tx.subscriptionPlan.create({ data });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return tx.subscriptionPlan.create({ data: data as any });
     });
     return NextResponse.json({ data: toAdminRow(created) }, { status: 201 });
   } catch (error) {

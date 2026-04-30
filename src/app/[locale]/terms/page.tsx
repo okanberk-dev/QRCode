@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
 import LegalDocumentPage from '@/components/marketing/LegalDocumentPage';
-import { loadActiveLegalDocument } from '@/lib/legal/loader';
+import { loadActiveLegalDocumentRendered } from '@/lib/legal/loader';
 
 export async function generateMetadata({
   params,
@@ -10,7 +10,7 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const doc = await loadActiveLegalDocument('kullanim-sartlari', locale);
+  const doc = await loadActiveLegalDocumentRendered('kullanim-sartlari', locale);
   return { title: `${doc.title} — Buaze`, description: doc.description };
 }
 
@@ -23,7 +23,7 @@ export default async function TermsPage({
 }) {
   const { locale } = await params;
   const t = getTranslations(locale);
-  const doc = await loadActiveLegalDocument('kullanim-sartlari', locale);
+  const doc = await loadActiveLegalDocumentRendered('kullanim-sartlari', locale);
 
   return (
     <LegalDocumentPage

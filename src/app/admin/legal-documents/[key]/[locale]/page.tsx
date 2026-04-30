@@ -430,11 +430,23 @@ export default function LegalDocumentEditorPage({
                 </p>
               )}
             </div>
+            <div className="bz-card p-5">
+              <h3 className="bz-h-tight text-[14px] tracking-[-0.02em]">Değişkenler</h3>
+              <p className="mt-1 text-[11.5px] leading-[1.55] text-[#737373]">
+                İçerikte <code className="rounded bg-[#FAFAFA] px-1 py-0.5 text-[10px]">{'{{COMPANY_NAME}}'}</code> gibi
+                placeholder'lar yazıldığında, public sayfa render edilirken otomatik gerçek değerle değiştirilir.
+              </p>
+              <Link
+                href="/admin/legal-documents/variables"
+                className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[#0A0A0A] underline decoration-[#A8D62E] decoration-2 underline-offset-4 hover:text-[#A8D62E]"
+              >
+                Değişkenleri yönet →
+              </Link>
+            </div>
             <AlertBanner kind="warn">
               <div className="text-[12px] leading-[1.55]">
                 Hukuki taslaktır; yayına almadan önce hukuk danışmanı veya KVKK uzmanı tarafından
-                onaylanması gerekir. Placeholder'lar ({'{{COMPANY_NAME}}'}, {'{{COMPANY_ADDRESS}}'}
-                vb.) gerçek değerlerle doldurulmalı.
+                onaylanması gerekir.
               </div>
             </AlertBanner>
           </aside>

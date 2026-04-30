@@ -80,14 +80,22 @@ export default function LegalDocumentsIndexPage() {
         title="Sözleşmeler ve onay metinleri"
         description="KVKK aydınlatma, açık rıza, kullanım şartları, çerez politikası ve diğer hukuki belgeleri buradan oluştur, düzenle ve versiyonla."
         actions={
-          <button
-            type="button"
-            onClick={() => setRefreshKey((k) => k + 1)}
-            className="bz-btn-ghost"
-            aria-label="Yenile"
-          >
-            Yenile
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/legal-documents/variables"
+              className="bz-btn-ghost"
+            >
+              Değişkenler
+            </Link>
+            <button
+              type="button"
+              onClick={() => setRefreshKey((k) => k + 1)}
+              className="bz-btn-ghost"
+              aria-label="Yenile"
+            >
+              Yenile
+            </button>
+          </div>
         }
       />
 
