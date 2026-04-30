@@ -71,7 +71,7 @@ Kişisel verileriniz, aşağıdaki taraflara KVKK m. 8 ve m. 9 şartlarına uygu
 - Ödeme altyapı sağlayıcısı — faturalandırma akışı (yalnız ödeme tarafı)
 - Yetkili kamu kurum ve kuruluşları — hukuki yükümlülükler kapsamında
 
-Yurt dışına aktarım, KVKK m. 9 koşulları (yeterli korumaya sahip ülke listesi veya taahhütname) sağlanmaksızın yapılmaz. Güncel altyapı sağlayıcılarımızın bulunduğu bölgeler {{KVKK_CONTACT_EMAIL}} adresinden talep üzerine paylaşılır.
+Yurt dışına aktarım, **02.06.2024 tarihli 7499 sayılı Kanun ile değişik KVKK m. 9** kapsamında belirlenen mekanizmalardan biri (yeterlilik kararı, taahhütname, bağlayıcı şirket kuralları veya açık rıza) sağlanmadan yapılmaz. Güncel altyapı sağlayıcılarımızın bulunduğu bölgeler ve uygulanan aktarım mekanizması {{KVKK_CONTACT_EMAIL}} adresinden talep üzerine paylaşılır.
 
 ## 6. Saklama süreleri
 
@@ -174,7 +174,7 @@ Data may be shared with the following parties under KVKK Articles 8 and 9:
 - Payment processor — billing flow only
 - Authorised public authorities — under legal obligations
 
-International transfers are not made unless KVKK Article 9 conditions (adequacy or undertaking) are met. The current list of provider regions is available on request from {{KVKK_CONTACT_EMAIL}}.
+International transfers are not made unless one of the mechanisms in **Article 9 of the KVKK as amended by Law No. 7499 (2 June 2024)** is satisfied (adequacy decision, undertaking, binding corporate rules or explicit consent). Current provider regions and the applied transfer mechanism are available on request from {{KVKK_CONTACT_EMAIL}}.
 
 ## 6. Retention periods
 

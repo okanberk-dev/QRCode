@@ -21,6 +21,10 @@ export const LEGAL_DOCUMENT_KEYS = [
   'mesafeli-hizmet-sozlesmesi',
   'iade-iptal-politikasi',
   'veri-isleyici-sozlesmesi',
+  'kabul-edilebilir-kullanim',
+  'icerik-moderasyon',
+  'bilgi-guvenligi',
+  'veri-ihlali-mudahale',
 ] as const;
 
 export type LegalDocumentKey = (typeof LEGAL_DOCUMENT_KEYS)[number];
@@ -85,6 +89,22 @@ export const LEGAL_DOCUMENT_LABELS: Record<
     tr: 'Veri İşleyici Sözleşmesi (DPA)',
     en: 'Data Processing Agreement (DPA)',
   },
+  'kabul-edilebilir-kullanim': {
+    tr: 'Kabul Edilebilir Kullanım Politikası',
+    en: 'Acceptable Use Policy',
+  },
+  'icerik-moderasyon': {
+    tr: 'İçerik Moderasyon ve Şikâyet Politikası',
+    en: 'Content Moderation & Complaints Policy',
+  },
+  'bilgi-guvenligi': {
+    tr: 'Bilgi Güvenliği Politikası',
+    en: 'Information Security Policy',
+  },
+  'veri-ihlali-mudahale': {
+    tr: 'Veri İhlali Müdahale Politikası',
+    en: 'Data Breach Response Policy',
+  },
 };
 
 /**
@@ -133,6 +153,22 @@ export const LEGAL_DOCUMENT_DESCRIPTIONS: Record<
   'veri-isleyici-sozlesmesi': {
     tr: 'KVKK m.12 kapsamında müşteri verilerinin işlenmesine dair veri işleyici sözleşmesi.',
     en: 'Data processor agreement under KVKK Art.12 for processing customer data.',
+  },
+  'kabul-edilebilir-kullanim': {
+    tr: 'Yasaklı içerik, sahte yorum ve kötüye kullanım kuralları + ihlal halinde fesih hakkı.',
+    en: 'Prohibited content, fake review and abuse rules + termination on breach.',
+  },
+  'icerik-moderasyon': {
+    tr: '5651 m.5 yer sağlayıcı çerçevesinde uyar-kaldır prosedürü ve şikâyet kanalları.',
+    en: 'Notice-and-takedown procedure under Internet Law Art.5 + complaints channels.',
+  },
+  'bilgi-guvenligi': {
+    tr: 'KVKK m.12 idari ve teknik güvenlik tedbirleri (bcrypt, TLS, RBAC, RCO, RTO).',
+    en: 'KVKK Art.12 administrative + technical security measures.',
+  },
+  'veri-ihlali-mudahale': {
+    tr: '72 saat içinde KVKK Kuruluna bildirim ve etkilenen kişilere haber verme prosedürü.',
+    en: '72-hour KVKK Authority notification + data-subject notice procedure.',
   },
 };
 

@@ -37,9 +37,11 @@ Aşağıdaki davranışlar yasaktır ve hesabın askıya alınmasına yol açar:
 
 ## 5. Fikri mülkiyet hakları
 
-Platform üzerindeki tüm yazılım kodu, marka, logo, içerik ve tasarım Buaze'ye veya lisans verenlerine aittir. Kullanıcı, platformu yalnızca bu Şartlar çerçevesinde, kişisel veya işletme amaçlı kullanma hakkına sahiptir.
+Platform üzerindeki tüm yazılım kodu, marka, logo, içerik ve tasarım Buaze'ye veya lisans verenlerine aittir. Kullanıcı, platformu yalnızca bu Şartlar çerçevesinde, kişisel veya işletme amaçlı kullanma hakkına sahiptir; tersine mühendislik, kopyalama, lisans verme veya satış yetkisi yoktur.
 
-Kullanıcı tarafından platforma yüklenen içerik (yorum, görsel) Kullanıcı'ya aittir; ancak Kullanıcı, bu içeriğin platform tarafından hizmet sunumu amacıyla saklanması ve gerektiğinde anonimleştirilmiş haliyle agregat olarak kullanılması için Buaze'ye dünya çapında, ücretsiz, devredilebilir bir lisans verir.
+Kullanıcı tarafından platforma yüklenen içerik (yorum, görsel) **Kullanıcı'ya aittir**. Kullanıcı, bu içeriğin yalnızca **hizmetin sunulması, depolanması, müşteriye gösterilmesi ve istatistiksel raporlama amaçlarıyla zorunlu olduğu kapsamda** Buaze tarafından kullanılması için sınırlı, dünya çapında, ücretsiz lisans verir. Bu lisans, hesabın kapatılmasıyla veya içeriğin Kullanıcı tarafından silinmesiyle sona erer; Buaze yalnızca yedeklerini KVKK Aydınlatma Metni'nde belirtilen saklama süresince saklayabilir.
+
+Buaze, anonimleştirilmiş ve toplulaştırılmış (kişisel veri içermeyen) verileri ürün geliştirme ve trend raporları için kullanabilir; bu kullanım Kullanıcı'ya hak doğurmaz ancak Kullanıcı'nın kişisel verileri üzerinde herhangi bir hak iddiasında da bulunulamaz.
 
 ## 6. Hizmet seviyesi ve değişiklik hakkı
 
@@ -47,7 +49,11 @@ Buaze; planlı bakım, altyapı arızası veya zorunlu güvenlik güncellemeleri
 
 ## 7. Sorumluluk sınırları
 
-Buaze, hizmetin kesintisiz veya hatasız sunulacağını garanti etmez. Buaze'nin sorumluluğu, ödenen son 12 aylık abonelik bedeli ile sınırlıdır. Dolaylı zararlardan, kâr kaybından, veri kaybından ve üçüncü kişi talepleri sonucu doğan zararlardan Buaze sorumlu tutulamaz; meğerki Türk Borçlar Kanunu m. 115 anlamında ağır kusuru veya kasıt bulunsun.
+Buaze, hizmetin kesintisiz veya hatasız sunulacağını garanti etmez. **Tacir / kurumsal kullanıcılar** için Buaze'nin sorumluluğu, olayın gerçekleştiği döneme ait son 12 aylık abonelik bedeli ile sınırlıdır; dolaylı zararlar, kâr kaybı, veri kaybı ve üçüncü kişi taleplerinden kaynaklanan zararlar bu sınırın dışındadır.
+
+**Tüketici sıfatı taşıyan kullanıcılar** için 6502 sayılı Tüketicinin Korunması Hakkında Kanun (TKHK) m. 5 ve m. 16 hükümleri saklıdır; tüketicinin kanundan doğan hakları sınırlandırılmaz.
+
+Türk Borçlar Kanunu m. 115/2 uyarınca **ağır kusur** veya **kasıt** halinde sorumluluk hiçbir şekilde sınırlandırılamaz; bu Şartlar'ın hiçbir hükmü TBK m. 27 anlamında ahlaka aykırı şekilde sorumluluğu kaldırmaya yönelik yorumlanamaz.
 
 ## 8. Hesabın askıya alınması veya silinmesi
 
@@ -93,9 +99,11 @@ The following are prohibited and will lead to suspension:
 
 ## 5. Intellectual property
 
-All software code, trademarks, logos, content and design on the Platform belongs to Buaze or its licensors. The User is granted a limited right to use the Platform under these Terms, for personal or business purposes.
+All software code, trademarks, logos, content and design on the Platform belongs to Buaze or its licensors. The User is granted a limited right to use the Platform under these Terms, for personal or business purposes; reverse engineering, copying, sub-licensing or resale are not permitted.
 
-Content uploaded by the User (reviews, images) remains the User's property; however, the User grants Buaze a worldwide, royalty-free, transferable licence to store such content for the purpose of service delivery and to use it in anonymised, aggregate form when necessary.
+Content uploaded by the User (reviews, images) **remains the User's property**. The User grants Buaze a limited, worldwide, royalty-free licence to use it solely **as necessary for service delivery, storage, display to the customer and statistical reporting**. The licence ends when the account is closed or the User deletes the content; Buaze may retain backups only for the periods set out in the KVKK Privacy Notice.
+
+Buaze may use anonymised, aggregated data (containing no personal data) for product development and trend reports; this does not create rights for the User but no rights are claimed over the User's personal data either.
 
 ## 6. Service levels and right to change
 
@@ -103,7 +111,11 @@ Buaze may experience downtime due to scheduled maintenance, infrastructure failu
 
 ## 7. Liability limits
 
-Buaze does not warrant that the service will be uninterrupted or error-free. Liability is limited to the subscription fees paid in the preceding 12 months. Buaze is not liable for indirect damages, loss of profit, loss of data or third-party claims, except for cases of gross negligence or wilful misconduct under Turkish Code of Obligations Art. 115.
+Buaze does not warrant that the service will be uninterrupted or error-free. For **business / corporate users**, Buaze's liability is limited to the subscription fees paid in the 12 months preceding the relevant event; indirect damages, loss of profit, loss of data and third-party claims fall outside this cap.
+
+For **users with consumer status**, the rights granted by Articles 5 and 16 of Law No. 6502 on the Protection of Consumers are reserved; statutory consumer rights are not limited.
+
+Pursuant to Article 115/2 of the Turkish Code of Obligations, liability for **gross negligence** or **wilful misconduct** cannot be limited under any circumstances; no provision of these Terms shall be construed as eliminating liability in a manner contrary to morality (Code of Obligations Art. 27).
 
 ## 8. Suspension and deletion
 

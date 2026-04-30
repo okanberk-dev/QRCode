@@ -12,7 +12,7 @@ export const CEREZ_POLITIKASI_TR = {
   effectiveLabel: 'Yürürlük tarihi',
   content: `## 1. Çerez nedir?
 
-Çerez (cookie), bir web sitesini ziyaret ettiğinizde tarayıcınız tarafından cihazınıza yerleştirilen küçük metin dosyasıdır. Çerezler; oturumunuzu açık tutma, dil tercihlerinizi hatırlama ve site performansını ölçme gibi amaçlarla kullanılır.
+Çerez (cookie), bir web sitesini ziyaret ettiğinizde tarayıcınız tarafından cihazınıza yerleştirilen küçük metin dosyasıdır. Çerezler; oturumunuzu açık tutma, dil tercihlerinizi hatırlama ve site performansını ölçme gibi amaçlarla kullanılır. Bu politika, **Kişisel Verileri Koruma Kurumu'nun "Çerez Uygulamaları Hakkında Rehber" (Haziran 2022)** ışığında hazırlanmıştır.
 
 ## 2. Hangi çerezleri kullanıyoruz?
 
@@ -68,9 +68,10 @@ Bu hizmetlerin gizlilik politikalarına ilgili sağlayıcının web sitesinden u
 
 ## 5. Çerez tercihlerinizi nasıl yönetirsiniz?
 
-- Sayfa altındaki "Çerez tercihleri" bağlantısından kategori bazlı onay verebilir / kaldırabilirsiniz.
+- Sayfaya ilk girişte gösterilen **çerez tercih banner'ı** üzerinden kategori bazlı onay verebilir / reddedebilirsiniz. KVKK Kurul Rehberi uyarınca **"Tümünü kabul et" ile aynı görünürlükte "Tümünü reddet"** seçeneği sunulur.
+- Sayfa altındaki "Çerez tercihleri" bağlantısından dilediğiniz zaman tercihinizi değiştirebilirsiniz.
 - Tarayıcı ayarlarından (Chrome, Safari, Firefox, Edge) çerezleri tamamen engelleyebilir veya silebilirsiniz.
-- Zorunlu çerezleri devre dışı bırakırsanız platform çalışmayabilir.
+- Zorunlu (kesinlikle gerekli) çerezler dışındakiler için varsayılan **kapalıdır**; pasif onay (sadece sayfa içinde gezinme) açık rıza sayılmaz.
 
 ## 6. Değişiklikler
 
@@ -88,7 +89,7 @@ export const CEREZ_POLITIKASI_EN = {
   effectiveLabel: 'Effective from',
   content: `## 1. What is a cookie?
 
-A cookie is a small text file placed on your device by your browser when you visit a website. Cookies keep you signed in, remember your preferences and measure site performance.
+A cookie is a small text file placed on your device by your browser when you visit a website. Cookies keep you signed in, remember your preferences and measure site performance. This policy is prepared in line with the **Personal Data Protection Authority's "Guidelines on Cookie Practices" (June 2022)**.
 
 ## 2. Which cookies do we use?
 
@@ -144,9 +145,10 @@ You can access the privacy policies of these providers from their websites.
 
 ## 5. How to manage your preferences
 
-- Use the "Cookie preferences" link in the footer to grant / withdraw consent per category.
+- The **cookie preference banner** shown on first visit lets you accept or reject cookies on a category basis. Per the KVKK Authority guidance, "Reject all" is presented with **the same prominence** as "Accept all".
+- Use the "Cookie preferences" link in the footer to change your choices at any time.
 - Use your browser settings (Chrome, Safari, Firefox, Edge) to block or delete cookies entirely.
-- Disabling strictly necessary cookies may break the platform.
+- All non-essential cookies are **off by default**; passive interaction (mere browsing) does not count as consent.
 
 ## 6. Changes
 

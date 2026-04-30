@@ -82,7 +82,7 @@ export default function LegalVariablesPage() {
     });
   };
 
-  const onResetField = (key: string, defaultValue: string) => {
+  const onResetField = (key: string) => {
     if (!confirm(`"${key}" değişkenini varsayılana döndür?`)) return;
     setEdits((prev) => ({ ...prev, [key]: '' }));
     // Save immediately — empty value triggers DELETE in API
@@ -236,7 +236,7 @@ export default function LegalVariablesPage() {
                           {row.customised && (
                             <button
                               type="button"
-                              onClick={() => onResetField(row.key, row.defaultValue)}
+                              onClick={() => onResetField(row.key)}
                               className="bz-btn-ghost text-[11.5px]"
                               title="Varsayılana dön"
                             >

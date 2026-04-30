@@ -86,9 +86,13 @@ KVKK m. 9 koşulları (yeterli korumaya sahip ülke kararı veya taahhütname) s
 - Bu sözleşme, ana hizmet sözleşmesi (Platform Kullanım Sözleşmesi) süresince yürürlüktedir.
 - Sözleşme sona erdiğinde Buaze, İşletme talebi üzerine verileri 30 gün içinde **silmek veya iade etmek** zorundadır. Yasal saklama süresi gerektiren veriler ilgili süre boyunca saklanmaya devam eder ve süresinde silinir.
 
-## 11. Sorumluluk
+## 11. Sorumluluk ve rücu
 
-Buaze'nin bu sözleşmeden doğan toplam sorumluluğu, ihlalin gerçekleştiği döneme ait son 12 aylık abonelik bedeli ile sınırlıdır; meğerki ağır kusur veya kasıt olsun.
+Buaze'nin bu sözleşmeden doğan toplam sorumluluğu, ihlalin gerçekleştiği döneme ait son 12 aylık abonelik bedeli ile sınırlıdır; TBK m. 115/2 anlamında ağır kusur veya kasıt halinde bu sınır uygulanmaz.
+
+KVKK Kurulu tarafından İşletmeye (veri sorumlusuna) kesilen idari para cezası veya tazminat talebinin **tamamı veya bir kısmı Buaze'nin kusurundan kaynaklanıyorsa**, İşletme bu kısmı Buaze'ye rücu edebilir. Buaze, kendi kusur oranıyla sınırlı olmak üzere ödemekle yükümlüdür.
+
+Aksi yönde — yani işletmenin kendi kusurundan kaynaklanan ihlallerden — Buaze sorumlu tutulamaz; bu durumda işletme, Buaze'nin uğradığı maliyetleri (avukat, dış denetim, müşteri bildirim masrafları) Buaze'ye karşılamayı taahhüt eder.
 
 ## 12. Yetkili hukuk ve mahkemeler
 
@@ -173,9 +177,13 @@ The Business may audit Buaze's compliance with this agreement and KVKK Art. 12 o
 - This agreement runs concurrently with the main service agreement (Platform User Agreement).
 - On termination, Buaze must **delete or return** the data within 30 days of the Business's request. Data subject to mandatory legal retention is kept for the relevant period and deleted at the end.
 
-## 11. Liability
+## 11. Liability and recourse
 
-Buaze's total liability under this agreement is capped at the subscription fees paid in the 12 months preceding the breach, except in cases of gross negligence or wilful misconduct.
+Buaze's total liability under this agreement is capped at the subscription fees paid in the 12 months preceding the relevant event; the cap does not apply in cases of gross negligence or wilful misconduct (Code of Obligations Art. 115/2).
+
+Where any administrative fine imposed by the KVKK Authority on the Business (controller), or any compensation claim, **stems wholly or partly from Buaze's fault**, the Business may recover that portion from Buaze. Buaze remains liable only to the extent of its own fault.
+
+Conversely, Buaze is not liable for breaches caused by the Business's own fault; in that case the Business agrees to reimburse Buaze for costs incurred (legal counsel, third-party audit, customer notification expenses).
 
 ## 12. Governing law and jurisdiction
 

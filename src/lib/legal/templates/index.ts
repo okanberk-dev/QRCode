@@ -16,6 +16,13 @@ import {
   VERI_ISLEYICI_SOZLESMESI_TR,
   VERI_ISLEYICI_SOZLESMESI_EN,
 } from './veri-isleyici-sozlesmesi';
+import {
+  KABUL_EDILEBILIR_KULLANIM_TR,
+  KABUL_EDILEBILIR_KULLANIM_EN,
+} from './kabul-edilebilir-kullanim';
+import { ICERIK_MODERASYON_TR, ICERIK_MODERASYON_EN } from './icerik-moderasyon';
+import { BILGI_GUVENLIGI_TR, BILGI_GUVENLIGI_EN } from './bilgi-guvenligi';
+import { VERI_IHLALI_MUDAHALE_TR, VERI_IHLALI_MUDAHALE_EN } from './veri-ihlali-mudahale';
 
 export interface LegalTemplateContent {
   title: string;
@@ -72,6 +79,22 @@ export const LEGAL_TEMPLATE_DEFAULTS: Record<
   'veri-isleyici-sozlesmesi': {
     tr: VERI_ISLEYICI_SOZLESMESI_TR,
     en: VERI_ISLEYICI_SOZLESMESI_EN,
+  },
+  'kabul-edilebilir-kullanim': {
+    tr: KABUL_EDILEBILIR_KULLANIM_TR,
+    en: KABUL_EDILEBILIR_KULLANIM_EN,
+  },
+  'icerik-moderasyon': {
+    tr: ICERIK_MODERASYON_TR,
+    en: ICERIK_MODERASYON_EN,
+  },
+  'bilgi-guvenligi': {
+    tr: BILGI_GUVENLIGI_TR,
+    en: BILGI_GUVENLIGI_EN,
+  },
+  'veri-ihlali-mudahale': {
+    tr: VERI_IHLALI_MUDAHALE_TR,
+    en: VERI_IHLALI_MUDAHALE_EN,
   },
 };
 
