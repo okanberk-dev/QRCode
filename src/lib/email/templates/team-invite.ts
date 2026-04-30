@@ -1,6 +1,7 @@
 import { PULSE } from '../tokens';
 import { pulseLayout } from '../layout';
 import { renderEcgDivider, renderEyebrow, renderH1, renderP, renderButton } from '../components';
+import { escapeHtml } from '../escape';
 
 export interface TeamInviteParams {
   /** Davet edilen kişinin adı (varsa) — selamlama için. */
@@ -39,18 +40,18 @@ export function renderTeamInvite(
     : `Accept the invite within ${expiresInDays} days — link expires after that.`;
 
   const greeting = name
-    ? (isTr ? `Merhaba ${escape(name)},` : `Hi ${escape(name)},`)
+    ? (isTr ? `Merhaba ${escapeHtml(name)},` : `Hi ${escapeHtml(name)},`)
     : (isTr ? 'Merhaba,' : 'Hi,');
 
   const intro = isTr
-    ? `<strong>${escape(ownerName)}</strong> seni <strong>Buaze</strong> hesabına ${escape(roleLabel)} olarak davet etti. Daveti kabul ettiğinde aşağıdaki işletmelere erişim hakkına sahip olacaksın.`
-    : `<strong>${escape(ownerName)}</strong> has invited you to their <strong>Buaze</strong> workspace as <strong>${escape(roleLabel)}</strong>. Once you accept, you'll have access to the following businesses.`;
+    ? `<strong>${escapeHtml(ownerName)}</strong> seni <strong>Buaze</strong> hesabına ${escapeHtml(roleLabel)} olarak davet etti. Daveti kabul ettiğinde aşağıdaki işletmelere erişim hakkına sahip olacaksın.`
+    : `<strong>${escapeHtml(ownerName)}</strong> has invited you to their <strong>Buaze</strong> workspace as <strong>${escapeHtml(roleLabel)}</strong>. Once you accept, you'll have access to the following businesses.`;
 
   const restaurantsList = restaurantNames.length
     ? restaurantNames
         .map(
           (n) =>
-            `<li style="margin:0 0 6px 0;font:14px/1.5 sans-serif;color:${PULSE.graphite};">• ${escape(n)}</li>`,
+            `<li style="margin:0 0 6px 0;font:14px/1.5 sans-serif;color:${PULSE.graphite};">• ${escapeHtml(n)}</li>`,
         )
         .join('')
     : `<li style="margin:0;font:14px/1.5 sans-serif;color:${PULSE.n500};">${
@@ -104,12 +105,4 @@ export function renderTeamInvite(
   ].join('\n');
 
   return { subject, html, text };
-}
-
-function escape(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }

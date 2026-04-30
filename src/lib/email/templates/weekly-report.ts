@@ -171,10 +171,10 @@ export async function renderWeeklyReport(
       <td class="bz-pad" style="padding:0 40px 24px;">
         ${renderEyebrow(isTr ? 'Boyut ortalamaları' : 'Aspect averages')}
         ${spacer(10)}
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="background:${PULSE.n50};border-radius:14px;overflow:hidden;">
           <tr>
             ${aspectsItems.map(([label, val], i) => `
-              <td class="stack-col" valign="top" style="width:33.33%;padding:14px 16px;${i < 2 ? `border-right:1px solid ${PULSE.n200};` : ''}background:${PULSE.n50};${i === 0 ? 'border-radius:14px 0 0 14px;' : ''}${i === 2 ? 'border-radius:0 14px 14px 0;' : ''}">
+              <td class="stack-col" valign="top" style="width:33.33%;padding:14px 16px;${i < 2 ? `border-right:1px solid ${PULSE.n200};` : ''}">
                 <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${label}</div>
                 <div style="font-family:${FONTS.heading};font-size:26px;font-weight:500;color:${PULSE.graphite};margin-top:4px;letter-spacing:-0.02em;">${val !== null ? val.toFixed(1) : '—'}</div>
               </td>
