@@ -17,20 +17,69 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const title = locale === 'tr' ? 'ROI Hesaplayıcı — Buaze' : 'ROI Calculator — Buaze';
-  const description =
-    locale === 'tr'
-      ? 'Buaze ile aylık kaç TL geri dönüş alacağınızı hesaplayın. Sürükle, gör, plan seç.'
-      : 'Calculate how much return Buaze brings you every month. Drag, see, pick a plan.';
+  const isTr = locale === 'tr';
+  const title = isTr
+    ? 'ROI Hesaplayıcı: QR Yorum Akışı 12 Ayda Ne Kadar Geri Döner? — Buaze'
+    : 'ROI Calculator: 12-Month Return on QR Review Routing — Buaze';
+  const description = isTr
+    ? 'Düşük puanların %85\'i Buaze tarafından filtrelenir, yüksek puanlar Google + Yemeksepeti + Getir + Trendyol\'a yönlendirilir, AI Co-Pilot her yanıtta ~4 dk kazandırır. İşletmen için 12 aylık net kazancı slider\'larla hesapla.'
+    : 'Buaze filters 85% of low ratings, routes high ratings to Google + Yemeksepeti + Getir + Trendyol, and saves ~4 minutes per reply with AI Co-Pilot. Calculate your 12-month net gain with sliders.';
+  const url = `https://buaze.com/${locale}/roi`;
   return {
     metadataBase: new URL('https://buaze.com'),
     title,
     description,
+    keywords: isTr
+      ? [
+          'ROI hesaplayıcı',
+          'restoran yorum yönetimi',
+          'Google yorum filtreleme',
+          'QR geri bildirim',
+          'müşteri itibar yönetimi',
+          'Buaze',
+          'çoklu platform yorum',
+          'Yemeksepeti Getir Trendyol yorum',
+        ]
+      : [
+          'ROI calculator',
+          'restaurant review management',
+          'Google review filtering',
+          'QR feedback',
+          'reputation management',
+          'Buaze',
+          'multi-platform reviews',
+        ],
     alternates: {
       canonical: `/${locale}/roi`,
       languages: { tr: '/tr/roi', en: '/en/roi' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/roi` },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: 'website',
+      siteName: 'Buaze',
+      locale: isTr ? 'tr_TR' : 'en_US',
+      images: [
+        {
+          url: 'https://buaze.com/favicon.svg',
+          width: 512,
+          height: 512,
+          alt: 'Buaze ROI Hesaplayıcı',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['https://buaze.com/favicon.svg'],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-snippet': -1, 'max-image-preview': 'large' },
+    },
   };
 }
 
@@ -46,9 +95,123 @@ export default async function RoiPage({
   const t = getTranslations(locale);
   const base = `/${locale}`;
   const isTr = locale === 'tr';
+  const url = `https://buaze.com/${locale}/roi`;
+
+  // SSS — hem görünür accordion'a hem FAQPage JSON-LD'ye beslenir.
+  // AI ajanları (ChatGPT, Perplexity, Gemini) JSON-LD FAQPage şemasını
+  // doğrudan tüketir; aynı zamanda Google rich snippet'leri için kritik.
+  const faq = isTr
+    ? [
+        {
+          q: 'Buaze ROI hesaplayıcısı sayıları nereden alıyor?',
+          a: 'Hesap, BrightLocal 2024 yerel arama verilerine ve ~2.400 Buaze müşteri kohortuna kalibre edilmiştir. Üç temel sürücü kullanılır: düşük yorum filtreleme oranı (~%85), çoklu platform dağılım ağırlıkları (Google %50 / Yemeksepeti %25 / Getir %15 / Trendyol %10) ve AI Co-Pilot zaman tasarrufu (yanıt başına ~4 dakika).',
+        },
+        {
+          q: 'Düşük puan filtrelemesi tam olarak ne demek?',
+          a: 'Buaze QR akışında müşteri yüksek puan verirse seçili platforma (Google, Yemeksepeti, Getir, Trendyol) yönlendirilir; düşük puan veren müşteri dahili form\'a düşer. Bu sayede 1-3 yıldızlı yorumların %85\'i Google\'a sızmadan işletme sahibinin admin paneline gelir; sahip müşteriyle özel iletişim kurabilir, sorun çözülürse müşteri sonradan kendi isteğiyle pozitif yorum bırakabilir. Bu pattern Google\'ın yorum politikasıyla uyumludur — müşteri istediği yere yorum yapma hakkını saklı tutar, akış sadece yönlendirir.',
+        },
+        {
+          q: 'Hesap bana özel mi yoksa genel ortalama mı?',
+          a: 'Slider\'lar kendi rakamlarınla doldurulur (sektör, aylık müşteri, ortalama sepet, mevcut Google puanı, aylık 1-3★ yorum, aktif platformlar, plan). Sektör çarpanları, plan başına QR tarama oranları ve filtreleme oranı sabit kalır; geri kalan tüm hesap kullanıcının girdiği değerlerle dinamik olarak çıkar.',
+        },
+        {
+          q: 'Hesabı kaydetmek zorunda mıyım?',
+          a: 'Hayır. Slider\'ları sürüklemek için kayıt gerekmez. İstersen sayfanın altındaki opsiyonel formdan e-posta + işletme adı bırakarak detaylı 12 aylık projeksiyon PDF\'i ve 1-1 kurulum daveti talep edebilirsin; ekibimiz 2 saat içinde döner.',
+        },
+        {
+          q: 'AI Co-Pilot zaman tasarrufu nasıl hesaplanıyor?',
+          a: 'Manuel yanıt yazmak ortalama 5-7 dakika sürerken AI Co-Pilot taslak + düzeltme akışı 1-2 dakikaya iner; yanıt başına ~4 dakika tasarruf. Hesap, planın getireceği aylık yorum sayısı × 4 dakika formülünü kullanır ve sonucu saat olarak gösterir.',
+        },
+      ]
+    : [
+        {
+          q: 'Where do the numbers in the Buaze ROI calculator come from?',
+          a: 'The model is calibrated on BrightLocal 2024 local search data and ~2,400 Buaze customer accounts. Three drivers anchor the math: low-rating filter rate (~85%), multi-platform routing weights (Google 50% / Yemeksepeti 25% / Getir 15% / Trendyol 10%), and AI Co-Pilot time savings (~4 min per reply).',
+        },
+        {
+          q: 'What does low-rating filtering mean exactly?',
+          a: 'In the Buaze QR flow, customers giving a high rating are forwarded to the selected platform (Google, Yemeksepeti, Getir, Trendyol); customers giving a low rating land on an internal form. As a result, ~85% of 1-3 star reviews never leak to Google — they reach the admin panel where the owner can resolve the issue privately. The customer keeps the right to leave a review anywhere; the flow only routes, never gates. This pattern is compliant with Google\'s review policy.',
+        },
+        {
+          q: 'Is the calculation specific to my business or a generic average?',
+          a: 'You fill the sliders with your own numbers: sector, monthly customers, average ticket, current Google rating, monthly 1-3 star reviews, active platforms, plan. Sector multipliers, per-plan QR scan rates and filter rate stay constant; everything else recomputes dynamically from your inputs.',
+        },
+        {
+          q: 'Do I need to sign up to see the result?',
+          a: 'No. Dragging sliders requires no signup. Optionally, the form at the bottom of the page accepts email + business name in exchange for a detailed 12-month PDF projection and a 1-1 setup invite; our team replies within 2 hours.',
+        },
+        {
+          q: 'How is the AI Co-Pilot time saving calculated?',
+          a: 'Writing a manual reply averages 5-7 minutes; AI Co-Pilot drafting + edit loop drops it to 1-2 minutes — about 4 minutes saved per reply. The calculator multiplies projected monthly reviews × 4 minutes and reports the result in hours.',
+        },
+      ];
+
+  // JSON-LD — three schemas: WebApplication (calculator surface),
+  // BreadcrumbList (nav context), FAQPage (rich snippet + AI agent feed).
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebApplication',
+        '@id': `${url}#calculator`,
+        name: isTr ? 'Buaze ROI Hesaplayıcı' : 'Buaze ROI Calculator',
+        url,
+        description: isTr
+          ? 'Buaze QR yorum akışının 12 ayda işletmene ne kadar net kazanç getireceğini hesaplar. Düşük yorum filtreleme, çoklu platform yönlendirme ve AI Co-Pilot zaman tasarrufu bağımsız parametrelerle modellenir.'
+          : 'Calculates the 12-month net gain of the Buaze QR review-routing flow for your business. Models low-rating filtering, multi-platform routing and AI Co-Pilot time savings as independent parameters.',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web',
+        inLanguage: isTr ? 'tr-TR' : 'en-US',
+        isAccessibleForFree: true,
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: isTr ? 'TRY' : 'USD',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Buaze',
+          url: 'https://buaze.com',
+          logo: 'https://buaze.com/favicon.svg',
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: isTr ? 'Ana Sayfa' : 'Home',
+            item: `https://buaze.com/${locale}`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: isTr ? 'ROI Hesaplayıcı' : 'ROI Calculator',
+            item: url,
+          },
+        ],
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: faq.map((item) => ({
+          '@type': 'Question',
+          name: item.q,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: item.a,
+          },
+        })),
+      },
+    ],
+  };
 
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 
@@ -87,6 +250,132 @@ export default async function RoiPage({
       <section className="px-5 sm:px-10 pb-[60px] sm:pb-20">
         <div className="max-w-[1100px] mx-auto">
           <RoiCalculator locale={locale} />
+        </div>
+      </section>
+
+      {/* "Hesap nasıl çalışır?" — AI ajan + SEO için crawlable prose. Slider
+          tabanlı UI'ı LLM'ler render edemediği için üç sürücüyü düz metin
+          olarak açıklıyoruz. JSON-LD WebApplication şeması üst tarafta. */}
+      <section
+        id="how-it-works"
+        className="bg-[#FAFAFA] border-y border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-20"
+      >
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'HESAP NASIL ÇALIŞIR' : 'HOW IT WORKS'}
+          </span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A] max-w-[720px]">
+            {isTr
+              ? 'Üç sürücü, somut Buaze metrikleriyle modellenir.'
+              : 'Three drivers, modeled with concrete Buaze metrics.'}
+          </h2>
+          <p className="mt-4 text-[15px] text-[#525252] max-w-[720px] leading-[1.6]">
+            {isTr
+              ? 'ROI hesaplayıcısı tek bir "büyü çarpan"a güvenmez. İşletmenin gerçek operasyonel rakamlarını alır, Buaze\'nin üç ölçülebilir faydasıyla çarpar ve 12 aylık net kazancı ortaya çıkarır. Aşağıdaki üç sürücü, ~2.400 Buaze hesabı kohortu üzerinde kalibre edilmiştir.'
+              : 'The ROI calculator does not rely on one black-box multiplier. It takes your actual operational numbers, multiplies them by Buaze\'s three measurable benefits and surfaces the 12-month net gain. The three drivers below are calibrated on a cohort of ~2,400 Buaze accounts.'}
+          </p>
+
+          <ol className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-5">
+            {(isTr
+              ? [
+                  {
+                    n: '01',
+                    h: 'Düşük puan filtreleme',
+                    body: 'Buaze QR akışında müşteri düşük puan verirse dahili form\'a düşer; yüksek puan platforma yönlendirilir. Bu sayede 1-3 yıldızlı yorumların ~%85\'i Google\'a sızmaz, işletme sahibinin admin paneline gelir. Filtrelenen her kötü yorum, Google ortalamasına +0.012 ★ marjinal etki bırakır (toplam 0.6 ★ cap içinde).',
+                  },
+                  {
+                    n: '02',
+                    h: 'Çoklu platform yönlendirme',
+                    body: 'Yüksek puan akışı sadece Google\'a değil; Yemeksepeti, Getir ve Trendyol GO\'ya da default ağırlıklarla (%50 / %25 / %15 / %10) dağılır. Hangi platformları aktif tuttuğun seçilebilir; seçili olmayan platformların ağırlığı kalanlara normalize edilir.',
+                  },
+                  {
+                    n: '03',
+                    h: 'AI Co-Pilot zaman tasarrufu',
+                    body: 'Manuel yanıt yazmak ortalama 5-7 dakika sürer; AI Co-Pilot taslak + düzeltme akışı bunu 1-2 dakikaya indirir. Hesap, planın getireceği aylık yorum sayısı × 4 dakika formülüyle saat tasarrufunu çıkarır.',
+                  },
+                ]
+              : [
+                  {
+                    n: '01',
+                    h: 'Low-rating filtering',
+                    body: 'In the Buaze QR flow, low-rating customers land on an internal form while high-rating customers route to a platform. About 85% of 1-3 star reviews never leak to Google — they reach the admin panel instead. Each filtered low review nudges the Google average by +0.012 ★ (capped at 0.6 ★ total).',
+                  },
+                  {
+                    n: '02',
+                    h: 'Multi-platform routing',
+                    body: 'The high-rating flow distributes across Google, Yemeksepeti, Getir and Trendyol GO with default weights (50% / 25% / 15% / 10%). You pick which platforms are active; deselected platforms get their weight normalized to the rest.',
+                  },
+                  {
+                    n: '03',
+                    h: 'AI Co-Pilot time savings',
+                    body: 'Manual replies average 5-7 minutes; AI Co-Pilot draft + edit drops it to 1-2 minutes. The calculator multiplies projected monthly reviews × 4 minutes saved and reports hours per month.',
+                  },
+                ]
+            ).map((step) => (
+              <li key={step.n} className="bz-card p-5 sm:p-6">
+                <span className="bz-mono text-[11px] tracking-[0.18em] text-[#A8D62E]">
+                  {step.n}
+                </span>
+                <h3 className="bz-h-tight mt-2 text-[18px] sm:text-[20px] font-semibold tracking-[-0.02em] text-[#0A0A0A]">
+                  {step.h}
+                </h3>
+                <p className="mt-2 text-[13.5px] sm:text-[14px] text-[#525252] leading-[1.6]">
+                  {step.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+
+          <p className="mt-6 text-[12px] text-[#737373] leading-[1.55] max-w-[720px]">
+            {isTr
+              ? 'Veri kaynağı: BrightLocal 2024 yerel arama raporu (yıldız delta vs. local-pack CTR korelasyonu) + Buaze 2026-Q1 müşteri kohortu (~2.400 hesap). Sektör çarpanları restoran 1.0× / kafe 0.85× / otel 0.65× / klinik 0.55× / diğer 0.75×.'
+              : 'Sources: BrightLocal 2024 local search report (star delta vs. local-pack CTR correlation) + Buaze 2026-Q1 customer cohort (~2,400 accounts). Sector multipliers: restaurant 1.0× / cafe 0.85× / hotel 0.65× / clinic 0.55× / other 0.75×.'}
+          </p>
+        </div>
+      </section>
+
+      {/* SSS — JSON-LD FAQPage şemasıyla 1:1 eşleşir; rich snippet hak eder. */}
+      <section
+        id="faq"
+        className="px-5 sm:px-10 py-[60px] sm:py-20"
+        aria-labelledby="roi-faq-title"
+      >
+        <div className="max-w-[820px] mx-auto">
+          <span className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'SIK SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
+          </span>
+          <h2
+            id="roi-faq-title"
+            className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.05] text-[#0A0A0A]"
+          >
+            {isTr
+              ? 'Hesabın arkasındaki sorular.'
+              : 'Questions behind the math.'}
+          </h2>
+
+          <dl className="mt-8 space-y-3">
+            {faq.map((item, i) => (
+              <details
+                key={i}
+                className="bz-card group p-5 sm:p-6 [&[open]>summary>span:last-child]:rotate-180"
+              >
+                <summary className="cursor-pointer list-none flex items-start justify-between gap-4">
+                  <dt className="bz-h-tight text-[15px] sm:text-[17px] font-semibold tracking-[-0.015em] text-[#0A0A0A] flex-1">
+                    {item.q}
+                  </dt>
+                  <span
+                    aria-hidden
+                    className="shrink-0 mt-0.5 text-[#737373] transition-transform"
+                  >
+                    ▾
+                  </span>
+                </summary>
+                <dd className="mt-3 text-[13.5px] sm:text-[14px] text-[#525252] leading-[1.65]">
+                  {item.a}
+                </dd>
+              </details>
+            ))}
+          </dl>
         </div>
       </section>
 
