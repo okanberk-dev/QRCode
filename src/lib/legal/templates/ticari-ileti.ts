@@ -62,7 +62,9 @@ Ret talebim alındığı tarihten itibaren en geç 3 iş günü içinde işleme 
 
 ## 8. Onay kapsamı
 
-İşbu izin, hizmetten yararlanmamın ön şartı **değildir**. Bu onayı vermesem dahi platform üzerindeki temel hizmetlerden yararlanabilir, geri bildirim formunu gönderebilirim.
+İşbu izin, hizmetten yararlanmamın ön şartı **değildir** (ETK m. 6/2). Bu onayı vermesem dahi platform üzerindeki temel hizmetlerden yararlanabilir, geri bildirim formunu gönderebilirim.
+
+Verdiğim onay yalnızca {{COMPANY_NAME}} ve onun adına gönderim yapan aracılarla sınırlıdır; üçüncü taraflara devredilemez. Onay kayıtlarım İYS üzerinde **işletme bazlı** tutulur ve İYS'den dilediğim zaman tek tıkla reddedebilirim.
 
 Yukarıdaki bilgileri okudum, anladım ve **AÇIK RIZA / ONAY** veriyorum.`,
 };
@@ -122,7 +124,9 @@ Transmitted data is protected against unauthorised access, alteration and disclo
 
 ## 8. Scope of consent
 
-This consent is **not** a precondition for using the service. Even without granting it, I may continue to use core platform features and submit feedback.
+This consent is **not** a precondition for using the service (ETK Art. 6/2). Even without granting it, I may continue to use core platform features and submit feedback.
+
+The consent applies only to {{COMPANY_NAME}} and its authorised intermediaries; it cannot be transferred to third parties. Consent records are kept in IYS on a **business-by-business** basis, and I may opt out via IYS at any time with a single click.
 
 I have read the above and hereby give my **EXPLICIT CONSENT**.`,
 };

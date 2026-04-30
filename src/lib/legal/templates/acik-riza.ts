@@ -40,7 +40,9 @@ Açık rızam, açık biçimde geri alınana veya işleme amacı ortadan kalkana
 
 ## 5. Rızamın geri alınması
 
-Açık rızamı, hiçbir gerekçe göstermeksizin ve ücretsiz olarak her zaman {{KVKK_CONTACT_EMAIL}} adresine başvurarak geri alabilirim. Rıza geri alındığında, bu rızaya bağlı olarak işlenen veriler işlemden kaldırılır; ancak diğer hukuki sebeplerle işlenmesi gereken veriler ilgili mevzuat çerçevesinde saklanmaya devam edilebilir.
+Açık rızamı, hiçbir gerekçe göstermeksizin ve ücretsiz olarak her zaman {{KVKK_CONTACT_EMAIL}} adresine başvurarak geri alabilirim.
+
+Rızanın geri alınması **ileriye etkili sonuç doğurur**; geri alma talebine kadar yapılmış olan işleme faaliyetleri o tarihteki rıza temelinde hukuka uygun kalır ve geçmişe yürütülmez. Geri alma sonrası, bu rızaya bağlı olarak işlenen veriler işlemden kaldırılır; ancak diğer hukuki sebeplerle (sözleşme ifası, yasal yükümlülük, meşru menfaat) işlenmesi gereken veriler ilgili mevzuat çerçevesinde saklanmaya devam edilebilir.
 
 ## 6. Bilgilendirme
 
@@ -84,7 +86,9 @@ My consent remains valid until I expressly withdraw it or until the purpose of p
 
 ## 5. Withdrawing consent
 
-I may withdraw this consent at any time, free of charge and without explanation, by contacting {{KVKK_CONTACT_EMAIL}}. Once withdrawn, data processed solely on the basis of this consent is removed; data that must be retained on other legal grounds may continue to be retained under applicable law.
+I may withdraw this consent at any time, free of charge and without explanation, by contacting {{KVKK_CONTACT_EMAIL}}.
+
+Withdrawal has **prospective effect only**; processing carried out before the withdrawal date remains lawful on the basis of the consent then in force and is not retroactively invalidated. After withdrawal, data processed solely on the basis of this consent is removed; data that must be retained on other legal grounds (contract performance, legal obligation, legitimate interest) may continue to be retained under applicable law.
 
 ## 6. Acknowledgement
 

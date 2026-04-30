@@ -58,7 +58,8 @@ Buaze'nin müşteriye, müşteri geri bildirim toplama, yönlendirme ve raporlam
 ## 7. Veri sorumluluğu
 
 - Buaze, müşterinin platforma yüklediği veri için **veri işleyen** sıfatına sahiptir; veri sorumlusu işletmedir.
-- Buaze, KVKK m. 12 ve m. 16 yükümlülüklerini yerine getirir; aktarım için yazılı veri işleyici eki gerektiğinde {{LEGAL_CONTACT_EMAIL}} adresine başvurarak alınabilir.
+- Buaze, KVKK m. 12 ve m. 16 yükümlülüklerini yerine getirir.
+- Tarafların KVKK kapsamındaki ilişkisini düzenleyen **ayrı bir Veri İşleyici Sözleşmesi (DPA)** {{LEGAL_CONTACT_EMAIL}} adresinden talep edilebilir veya panel üzerinden imzalanabilir. DPA ile bu sözleşme arasında **veri işleme konusunda** çatışma çıktığında **DPA üstündür**; diğer tüm konularda bu Sözleşme uygulanır.
 
 ## 8. Kullanıcı içeriği ve teknik destek
 
@@ -136,7 +137,8 @@ Buaze provides the Customer with a SaaS service for collecting, redirecting and 
 ## 7. Data responsibility
 
 - Buaze acts as **data processor** for data uploaded by the Customer; the Customer is the data controller.
-- Buaze fulfils its KVKK Articles 12 and 16 obligations; a written data-processing addendum can be requested via {{LEGAL_CONTACT_EMAIL}}.
+- Buaze fulfils its KVKK Articles 12 and 16 obligations.
+- A separate **Data Processing Agreement (DPA)** governs the parties' KVKK-related relationship; it can be requested via {{LEGAL_CONTACT_EMAIL}} or signed via the panel. In case of conflict between this Agreement and the DPA on **data processing matters**, the **DPA prevails**; on all other matters this Agreement applies.
 
 ## 8. User content and support
 
