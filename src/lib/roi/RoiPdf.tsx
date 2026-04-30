@@ -109,6 +109,33 @@ const styles = StyleSheet.create({
   ctaTitle: { fontFamily: 'Helvetica-Bold', fontSize: 16, color: C.graphite, marginBottom: 6, letterSpacing: -0.2 },
   ctaBody: { fontSize: 10.5, color: C.graphite, lineHeight: 1.55, marginBottom: 8 },
   ctaLink: { fontFamily: 'Helvetica-Bold', fontSize: 10.5, color: C.graphite, textDecoration: 'underline' },
+
+  /* Star comparison strip (page 1, hero altı) — STRINGS'te starTodayLabel
+     + starProjectedLabel zaten lokalize, daha önce render edilmiyordu. */
+  starStrip: { flexDirection: 'row', gap: 8, marginBottom: 18 },
+  starCellMuted: { flex: 1, backgroundColor: C.n50, borderRadius: 10, padding: 14, borderWidth: 0.5, borderColor: C.n200 },
+  starCellAccent: { flex: 1, backgroundColor: C.graphite, borderRadius: 10, padding: 14 },
+  starLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 },
+  starValue: { fontFamily: 'Helvetica-Bold', fontSize: 28, lineHeight: 1, letterSpacing: -0.4 },
+  starArrow: { width: 24, alignItems: 'center', justifyContent: 'center', fontSize: 16, color: C.n400 },
+
+  /* Milestone roadmap (page 2, scenario altı) — m1/m2/m3 strings hazırdı */
+  milestoneCard: { backgroundColor: C.n50, borderRadius: 10, padding: 14, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: C.limeDeep, borderTopWidth: 0.5, borderRightWidth: 0.5, borderBottomWidth: 0.5, borderColor: C.n200 },
+  milestoneEyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, letterSpacing: 1.2, color: C.limeDeep, textTransform: 'uppercase', marginBottom: 4 },
+  milestoneTitle: { fontFamily: 'Helvetica-Bold', fontSize: 12, color: C.graphite, marginBottom: 4 },
+  milestoneBody: { fontSize: 9.5, color: C.n800, lineHeight: 1.55 },
+
+  /* Social proof strip (page 3, CTA üstü) — socialActiveBusinesses vb. */
+  socialRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
+  socialCell: { flex: 1, backgroundColor: C.n50, borderRadius: 10, padding: 12, borderWidth: 0.5, borderColor: C.n200 },
+  socialValue: { fontFamily: 'Helvetica-Bold', fontSize: 18, lineHeight: 1.1, letterSpacing: -0.3, color: C.graphite, marginBottom: 4 },
+  socialLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, letterSpacing: 1.1, color: C.n500, textTransform: 'uppercase', lineHeight: 1.3 },
+
+  /* Risk-free strip (page 3, CTA içinde) */
+  riskFreeRow: { flexDirection: 'row', gap: 6, marginTop: 12 },
+  riskFreeChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(10,10,10,0.08)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  riskFreeDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: C.graphite, marginRight: 6 },
+  riskFreeText: { fontSize: 9, color: C.graphite, fontFamily: 'Helvetica-Bold' },
 });
 
 const PLATFORM_COLOR: Record<string, string> = {
@@ -477,6 +504,25 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           </Text>
         </View>
 
+        {/* Star comparison strip — bugün vs 12 ay sonra Google ★ */}
+        <View style={styles.starStrip}>
+          <View style={styles.starCellMuted}>
+            <Text style={[styles.starLabel, { color: C.n500 }]}>{L.starTodayLabel}</Text>
+            <Text style={[styles.starValue, { color: C.graphite }]}>
+              {data.currentGoogle.toFixed(1)} ★
+            </Text>
+          </View>
+          <View style={styles.starArrow}>
+            <Text style={{ fontSize: 18, color: C.n400 }}>→</Text>
+          </View>
+          <View style={styles.starCellAccent}>
+            <Text style={[styles.starLabel, { color: C.lime }]}>{L.starProjectedLabel}</Text>
+            <Text style={[styles.starValue, { color: C.lime }]}>
+              {data.projectedGoogle.toFixed(1)} ★
+            </Text>
+          </View>
+        </View>
+
         {/* 4 KPI grid */}
         <View style={styles.kpiRow}>
           <View style={styles.kpiCell}>
@@ -633,6 +679,40 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           </View>
         </View>
 
+        {/* 90-day milestone roadmap — m1/m2/m3 STRINGS hazırdı, ilk kez render */}
+        <View wrap={false}>
+          <Text style={styles.h2}>{L.milestoneH2}</Text>
+          <Text style={[styles.body, { marginBottom: 12, color: C.n500 }]}>
+            {L.milestoneLead}
+          </Text>
+          {[
+            { eyebrow: L.m1Eyebrow, title: L.m1Title, body: L.m1Body },
+            { eyebrow: L.m2Eyebrow, title: L.m2Title, body: L.m2Body },
+            {
+              eyebrow: L.m3Eyebrow,
+              title: L.m3Title,
+              body: `${L.m3BodyA}${
+                data.paybackMonths
+                  ? `${L.m3PaybackA}${data.paybackMonths}${L.m3PaybackB}`
+                  : L.m3PaybackNoneSuffix
+              }${L.m3BodyB}`,
+            },
+          ].map((m, i, arr) => (
+            <View
+              key={m.eyebrow}
+              style={[
+                styles.milestoneCard,
+                i === arr.length - 1 ? { marginBottom: 0 } : {},
+              ]}
+              wrap={false}
+            >
+              <Text style={styles.milestoneEyebrow}>{m.eyebrow}</Text>
+              <Text style={styles.milestoneTitle}>{m.title}</Text>
+              <Text style={styles.milestoneBody}>{m.body}</Text>
+            </View>
+          ))}
+        </View>
+
         {/* Platform breakdown */}
         {data.platformBreakdown.length > 0 && (
           <>
@@ -663,8 +743,33 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
           </>
         )}
 
-        {/* CTA — sonraki adım */}
-        <View style={styles.cta}>
+        {/* Social proof strip — kalibrasyon kaynağı + cohort + filter rate.
+            STRINGS'te social* key'leri hazır, ilk kez render edilir. */}
+        <View wrap={false} style={{ marginTop: 18 }}>
+          <View style={styles.socialRow}>
+            <View style={styles.socialCell}>
+              <Text style={styles.socialValue}>~2.400</Text>
+              <Text style={styles.socialLabel}>{L.socialActiveBusinesses}</Text>
+            </View>
+            <View style={styles.socialCell}>
+              <Text style={styles.socialValue}>+0.4 ★</Text>
+              <Text style={styles.socialLabel}>{L.socialAvgLift}</Text>
+            </View>
+            <View style={styles.socialCell}>
+              <Text style={styles.socialValue}>~85%</Text>
+              <Text style={styles.socialLabel}>{L.socialFilterRate}</Text>
+            </View>
+            <View style={styles.socialCell}>
+              <Text style={[styles.socialValue, { fontSize: 13 }]}>
+                {L.socialBrightLocal}
+              </Text>
+              <Text style={styles.socialLabel}>{L.socialCalibration}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* CTA — sonraki adım + risk-free strip */}
+        <View style={styles.cta} wrap={false}>
           <Text style={styles.ctaTitle}>{L.ctaTitle}</Text>
           <Text style={styles.ctaBody}>
             {L.ctaBodyA}{' '}{PLAN_LABEL[data.plan] ?? data.plan}
@@ -676,6 +781,15 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
             hello@buaze.com
           </Text>
           <Text style={styles.ctaLink}>buaze.com</Text>
+          {/* 3 risk-free güven chip'i (STRINGS riskFree1/2/3) */}
+          <View style={styles.riskFreeRow}>
+            {[L.riskFree1, L.riskFree2, L.riskFree3].map((label) => (
+              <View key={label} style={styles.riskFreeChip}>
+                <View style={styles.riskFreeDot} />
+                <Text style={styles.riskFreeText}>{label}</Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         <View style={styles.footer} fixed>
