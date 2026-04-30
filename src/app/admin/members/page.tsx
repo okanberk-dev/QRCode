@@ -17,6 +17,7 @@ import {
   Store,
   ToggleLeft,
   ToggleRight,
+  Trash2,
 } from 'lucide-react';
 import {
   AlertBanner,
@@ -158,6 +159,31 @@ export default function MembersPage() {
     );
     setError('');
     setSuccess('');
+  };
+
+  const handleSoftDelete = async () => {
+    if (!editingMember) return;
+    const confirmed = window.confirm(
+      `"${editingMember.name || editingMember.email}" silinsin mi?\n\nKullanıcı listede gizlenecek ama veriler (restoranlar, faturalar, audit log) DB'de korunacak. "Silinmiş (arşiv)" filtresinden bulup geri getirebilirsin.`,
+    );
+    if (!confirmed) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/members/${editingMember.id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setEditingMember(null);
+        fetchMembers();
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error || 'Silinemedi.');
+      }
+    } catch {
+      alert('Bağlantı hatası.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -543,23 +569,36 @@ export default function MembersPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setEditingMember(null)}
-                className="flex-1 py-3 rounded-full border border-[#EDEDED] text-[13px] font-medium text-[#525252] hover:bg-[#FAFAFA] transition-colors"
-              >
-                İptal
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 py-3 rounded-full bg-[#0A0A0A] text-white text-[13px] font-semibold hover:bg-[#1A1A1A] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-              >
-                {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
-                Kaydet
-              </button>
+            <div className="flex flex-col gap-3 pt-2">
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingMember(null)}
+                  className="flex-1 py-3 rounded-full border border-[#EDEDED] text-[13px] font-medium text-[#525252] hover:bg-[#FAFAFA] transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="flex-1 py-3 rounded-full bg-[#0A0A0A] text-white text-[13px] font-semibold hover:bg-[#1A1A1A] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                >
+                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
+                  Kaydet
+                </button>
+              </div>
+              {editingMember.isActive && (
+                <button
+                  type="button"
+                  onClick={handleSoftDelete}
+                  disabled={saving}
+                  className="w-full py-3 rounded-full border border-[#FECACA] text-[13px] font-semibold text-[#991B1B] hover:bg-[#FEF2F2] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={14} strokeWidth={2} />
+                  Hesabı sil (geri alınabilir)
+                </button>
+              )}
             </div>
           </div>
         </Modal>
