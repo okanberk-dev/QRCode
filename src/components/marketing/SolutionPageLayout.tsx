@@ -372,6 +372,45 @@ export default function SolutionPageLayout({
         </section>
       )}
 
+      {/* ─── Resources / Internal links ─── */}
+      {/* Mirrors the same Pricing / ROI / Free QR / Google compliance
+          strip the seven custom sector pages render so all 15 sector
+          pages emit the same authoritative cross-link set. */}
+      <section className="border-t border-[#EDEDED] px-6 sm:px-10 py-16 sm:py-20">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="mb-8 max-w-[640px]">
+            <span className="pulse-eyebrow text-[#A8D62E]">
+              {isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}
+            </span>
+            <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.02em] leading-[1.1] text-[#0A0A0A]">
+              {isTr ? 'Daha fazlasını keşfet' : 'Explore more'}
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
+              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
+              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
+              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
+            ].map((r) => (
+              <Link
+                key={r.href}
+                href={r.href}
+                className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
+              >
+                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
+                  {isTr ? r.tr : r.en}
+                </span>
+                <ChevronRight
+                  size={14}
+                  className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors"
+                />
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── Related Solutions ─── */}
       {relatedSolutions.length > 0 && (
         <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-6 sm:px-10 py-16 sm:py-20">
