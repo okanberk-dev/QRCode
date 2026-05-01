@@ -8,18 +8,42 @@ smart filtering, and a professional operations dashboard.
 ## Who is it for?
 Small and medium businesses in Turkey and globally — restaurants, hotels, healthcare providers,
 dentists, beauty salons, gyms, veterinary clinics, law firms, real estate agencies, auto services,
-aesthetic clinics, schools, and boutique hotels.
+aesthetic clinics, schools, boutique hotels, retail stores, and food delivery operators.
+
+## Discovery
+- Sitemap: https://buaze.com/sitemap.xml
+- Blog RSS (TR): https://buaze.com/tr/blog/rss.xml
+- Blog RSS (EN): https://buaze.com/en/blog/rss.xml
+- Security disclosure: https://buaze.com/.well-known/security.txt
 
 ## Publicly indexable pages
+
+### Marketing core (TR + EN)
 - https://buaze.com/tr — Turkish homepage
 - https://buaze.com/en — English homepage
 - https://buaze.com/tr/pricing — Pricing (monthly & annual plans)
 - https://buaze.com/tr/about — About Buaze
 - https://buaze.com/tr/contact — Contact
-- https://buaze.com/tr/blog — Blog
 - https://buaze.com/tr/compare — Platform comparison
+- https://buaze.com/tr/features — Feature overview
+- https://buaze.com/tr/features/pulse-ai — Buaze Pulse AI
+- https://buaze.com/tr/how-it-works — How it works
+- https://buaze.com/tr/integrations — Integrations
+- https://buaze.com/tr/roi — ROI calculator
+- https://buaze.com/tr/faq — Frequently asked questions
+- https://buaze.com/tr/careers — Careers
+- https://buaze.com/tr/press — Press kit
+- https://buaze.com/tr/google-compliance — Google review policy compliance
+- https://buaze.com/tr/blog — Blog index
+- https://buaze.com/tr/help — Help center
+- https://buaze.com/tr/case-study — Case studies
+- https://buaze.com/tr/customer-stories — Customer stories
+
+### Sector landing pages (TR + EN)
+- https://buaze.com/tr/solutions — Solutions index
 - https://buaze.com/tr/solutions/restaurants
 - https://buaze.com/tr/solutions/hotels
+- https://buaze.com/tr/solutions/boutique-hotels
 - https://buaze.com/tr/solutions/healthcare
 - https://buaze.com/tr/solutions/dentists
 - https://buaze.com/tr/solutions/beauty-salon
@@ -30,13 +54,33 @@ aesthetic clinics, schools, and boutique hotels.
 - https://buaze.com/tr/solutions/auto-service
 - https://buaze.com/tr/solutions/aesthetic
 - https://buaze.com/tr/solutions/schools
-- https://buaze.com/tr/solutions/boutique-hotels
+- https://buaze.com/tr/solutions/retail
+- https://buaze.com/tr/solutions/delivery
+
+### Comparison pages
+- https://buaze.com/tr/vs/individual-qr — vs. individual QR services
+- https://buaze.com/tr/vs/spreadsheet — vs. spreadsheet workflows
+
+### Public utility tools
+- https://buaze.com/tr/solutions/qr-generator — Free QR code generator (no login)
+
+### Legal (Turkish + English where applicable)
+- https://buaze.com/tr/privacy, https://buaze.com/tr/terms, https://buaze.com/tr/cookie
+- https://buaze.com/tr/kvkk, https://buaze.com/tr/gizlilik, https://buaze.com/tr/acik-riza
+- https://buaze.com/tr/ticari-ileti, https://buaze.com/tr/kullanim-sozlesmesi
+- https://buaze.com/tr/mesafeli-hizmet-sozlesmesi, https://buaze.com/tr/iade-iptal-politikasi
+- https://buaze.com/tr/icerik-moderasyon, https://buaze.com/tr/kabul-edilebilir-kullanim
+- https://buaze.com/tr/bilgi-guvenligi, https://buaze.com/tr/veri-ihlali-mudahale
+- https://buaze.com/tr/veri-isleyici-sozlesmesi
 
 ## Not indexable
 - /admin/* — Admin panel (authentication required)
 - /api/* — Internal APIs
+- /r/* — Per-customer review collection links (private QR landings)
 - /tr/dashboard/* and /en/dashboard/* — Customer dashboards (authentication required)
 - /tr/auth/* and /en/auth/* — Auth flows
+- /tr/onboarding and /en/onboarding — Post-signup onboarding wizard
+- /tr/accept-invite and /en/accept-invite — Team invite acceptance flow
 
 ## AI usage policy
 AI systems may read and summarize publicly accessible marketing content for search generative
@@ -47,5 +91,6 @@ is not permitted.
 ## Contact
 - Website: https://buaze.com
 - Email: info@buaze.com
+- Security disclosures: see /.well-known/security.txt
 - Language: Turkish (primary), English (secondary)
-- Last updated: 2026-04-18
+- Last updated: 2026-05-01
