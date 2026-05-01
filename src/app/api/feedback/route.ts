@@ -265,35 +265,40 @@ export async function GET(req: NextRequest) {
 
   const skip = (page - 1) * limit;
 
-  // Build filter query
-  const where: Prisma.FeedbackWhereInput = {};
+  // PR15 — where build'i ikiye böl. baseWhere standart filter'ları içerir
+  // (KVKK / restaurantId / rating / dateRange / platform / branch / search).
+  // joinWhere PR3'te eklenen JOIN-based filter'ları (replies/flag/assignment)
+  // ayrı tutar; schema sync olmamış preview env'inde tier 3 fallback bunları
+  // drop edip listenin yine de render olmasını sağlar.
+  const baseWhere: Prisma.FeedbackWhereInput = {};
+  const joinWhere: Prisma.FeedbackWhereInput = {};
 
   // KVKK filter
   if (kvkkFilter === 'true') {
-    where.hasKvkkConsent = true;
+    baseWhere.hasKvkkConsent = true;
   } else if (kvkkFilter === 'false') {
-    where.hasKvkkConsent = false;
+    baseWhere.hasKvkkConsent = false;
   }
 
   // Restaurant filter
   if (restaurantId && restaurantId !== 'all') {
-    where.restaurantId = restaurantId;
+    baseWhere.restaurantId = restaurantId;
   }
 
   // Security override: scope by role
   if (actor.role === 'superadmin') {
     // superadmin — keep any explicit restaurantId filter or show all
   } else if (actor.role === 'manager') {
-    where.restaurantId = actor.restaurantId;
+    baseWhere.restaurantId = actor.restaurantId;
   } else if (actor.role === 'restaurant_owner') {
     const userRestIds = await getScopedRestaurantIds(actor) || [];
 
-    if (where.restaurantId) {
-      if (!userRestIds.includes(where.restaurantId as string)) {
+    if (baseWhere.restaurantId) {
+      if (!userRestIds.includes(baseWhere.restaurantId as string)) {
         return ApiErrors.forbidden();
       }
     } else {
-      where.restaurantId = { in: userRestIds };
+      baseWhere.restaurantId = { in: userRestIds };
     }
   } else {
     return ApiErrors.forbidden();
@@ -301,70 +306,68 @@ export async function GET(req: NextRequest) {
 
   // Rating filter
   if (ratingFilter === 'low') {
-    where.rating = { lte: 3 };
+    baseWhere.rating = { lte: 3 };
   } else if (ratingFilter === 'positive') {
-    where.rating = { gte: 4 };
+    baseWhere.rating = { gte: 4 };
   } else if (ratingFilter && ratingFilter !== 'all') {
     const r = parseInt(ratingFilter, 10);
-    if (Number.isFinite(r)) where.rating = r;
+    if (Number.isFinite(r)) baseWhere.rating = r;
   }
 
   // Date filter (supports today/1, month, numeric days, all)
   // UTC-based to stay consistent regardless of server timezone.
   const createdAtBase: Prisma.DateTimeFilter =
-    where.createdAt && typeof where.createdAt === 'object' && !(where.createdAt instanceof Date)
-      ? (where.createdAt as Prisma.DateTimeFilter)
+    baseWhere.createdAt && typeof baseWhere.createdAt === 'object' && !(baseWhere.createdAt instanceof Date)
+      ? (baseWhere.createdAt as Prisma.DateTimeFilter)
       : {};
   if (daysParam === 'today' || daysParam === '1') {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-    where.createdAt = { ...createdAtBase, gte: today };
+    baseWhere.createdAt = { ...createdAtBase, gte: today };
   } else if (daysParam === 'month') {
     const now = new Date();
     const firstOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
-    where.createdAt = { ...createdAtBase, gte: firstOfMonth };
+    baseWhere.createdAt = { ...createdAtBase, gte: firstOfMonth };
   } else if (daysParam && daysParam !== 'all') {
     const days = parseInt(daysParam);
     if (Number.isFinite(days) && days > 0) {
       const pastDate = new Date();
       pastDate.setDate(pastDate.getDate() - days);
-      where.createdAt = { ...createdAtBase, gte: pastDate };
+      baseWhere.createdAt = { ...createdAtBase, gte: pastDate };
     }
   }
 
   // Platform filter
   if (platformFilter && platformFilter !== 'all') {
-    where.platform = platformFilter;
+    baseWhere.platform = platformFilter;
   }
 
   // Branch filter
   if (branchFilter && branchFilter !== 'all') {
-    where.branch = branchFilter;
+    baseWhere.branch = branchFilter;
   }
 
   // Search filter (comment or name, case-insensitive)
   if (searchParam) {
-    where.OR = [
+    baseWhere.OR = [
       { comment: { contains: searchParam, mode: 'insensitive' } },
       { name: { contains: searchParam, mode: 'insensitive' } },
     ];
   }
 
-  // PR3 — JOIN-based filter expansion (FeedbackReply / FeedbackFlag /
-  // FeedbackAssignment relation'larına bağlı). Schema sync edilmemiş preview
-  // deploy'da bu filter'lar Prisma "table doesn't exist" fail'ine sebep olur;
-  // dış try/catch (line ~478) 500 yerine error response döner. Production'da
-  // `prisma db push` her deploy'da çalışır → güvenli.
+  // PR3 — JOIN-based filter'lar joinWhere'da. Tier 3 fallback bunları drop
+  // ederek liste'nin yine de gelmesini sağlar; UI degraded.joinFilters
+  // banner'ı kullanıcıyı uyarır.
   if (hasReplyParam === 'true') {
-    where.replies = { some: {} };
+    joinWhere.replies = { some: {} };
   } else if (hasReplyParam === 'false') {
-    where.replies = { none: {} };
+    joinWhere.replies = { none: {} };
   }
   if (isFlaggedParam === 'true') {
-    where.flag = { isNot: null };
+    joinWhere.flag = { isNot: null };
   }
   if (isAssignedParam === 'me' && actor.id) {
-    where.assignment = { assigneeId: actor.id };
+    joinWhere.assignment = { assigneeId: actor.id };
   }
 
   try {
@@ -377,9 +380,13 @@ export async function GET(req: NextRequest) {
     let feedbacks: Array<Record<string, unknown>>;
     let joinsAvailable = true;
     let tagsAvailable = true;
+    // PR15 — tier 3 fallback joinWhere'i drop ettiğinde false; UI banner
+    // kullanıcıyı "filter şu an pasif" şeklinde uyarır.
+    let joinFiltersApplied = true;
+    const fullWhere: Prisma.FeedbackWhereInput = { ...baseWhere, ...joinWhere };
     try {
       feedbacks = await prisma.feedback.findMany({
-        where,
+        where: fullWhere,
         orderBy: { createdAt: sortOrder },
         skip,
         take: limit,
@@ -399,7 +406,7 @@ export async function GET(req: NextRequest) {
       tagsAvailable = false;
       try {
         feedbacks = await prisma.feedback.findMany({
-          where,
+          where: fullWhere,
           orderBy: { createdAt: sortOrder },
           skip,
           take: limit,
@@ -412,12 +419,13 @@ export async function GET(req: NextRequest) {
         });
       } catch (innerErr) {
         console.warn(
-          '[feedback] flag/assignment/replies joins failed, falling back to no joins',
+          '[feedback] flag/assignment/replies joins failed, falling back to no joins + dropping JOIN filters',
           (innerErr as Error).message,
         );
         joinsAvailable = false;
+        joinFiltersApplied = false;
         feedbacks = await prisma.feedback.findMany({
-          where,
+          where: baseWhere,
           orderBy: { createdAt: sortOrder },
           skip,
           take: limit,
@@ -426,7 +434,11 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const total = await prisma.feedback.count({ where });
+    // PR15 — count'ı tier sonucuyla aynı where ile yap. joinFiltersApplied
+    // false ise baseWhere kullan (yoksa count fail eder, total=0 görünür).
+    const total = await prisma.feedback.count({
+      where: joinFiltersApplied ? fullWhere : baseWhere,
+    });
 
     // Pulse AI draft lookup — separate from the main include chain so a
     // missing table (preview without `prisma db push`) doesn't cascade into
@@ -486,9 +498,16 @@ export async function GET(req: NextRequest) {
         totalPages: Math.ceil(total / limit),
         // UI uses these flags to surface "feature unavailable" notices when
         // schema sync hasn't happened yet (e.g. preview deploys, fresh DBs).
+        // PR15 — joinFilters: tier 3 fallback joinWhere drop ettiyse true;
+        // UI'da hasReply/isFlagged/isAssigned filter'lar pasif uyarısı.
         degraded:
-          !joinsAvailable || !tagsAvailable || !aiDraftAvailable
-            ? { joins: !joinsAvailable, tags: !tagsAvailable, aiDraft: !aiDraftAvailable }
+          !joinsAvailable || !tagsAvailable || !aiDraftAvailable || !joinFiltersApplied
+            ? {
+                joins: !joinsAvailable,
+                tags: !tagsAvailable,
+                aiDraft: !aiDraftAvailable,
+                joinFilters: !joinFiltersApplied,
+              }
             : null,
       },
     });
