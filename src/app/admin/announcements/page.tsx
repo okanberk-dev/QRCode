@@ -12,6 +12,7 @@ import {
   PageHeader,
   Tabs,
   type TabItem,
+  useConfirmDialog,
 } from '@/components/ui';
 
 type Severity = 'info' | 'success' | 'warning' | 'critical';
@@ -88,7 +89,7 @@ export default function AdminAnnouncementsPage() {
   const [editing, setEditing] = useState<Announcement | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [filterStatus, setFilterStatus] = useState<'all' | Status>('all');
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
 
   const fetchAnnouncements = useCallback(async () => {
     setLoading(true);
@@ -169,22 +170,29 @@ export default function AdminAnnouncementsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      const res = await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setAnnouncements(list => list.filter(a => a.id !== id));
-        setSuccess('Duyuru silindi.');
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Silme başarısız.');
-      }
-    } catch {
-      setError('Silme başarısız.');
-    } finally {
-      setDeleteConfirm(null);
-    }
+  const handleDelete = (id: string, title: string) => {
+    askConfirm({
+      variant: 'danger',
+      title: 'Bu duyuruyu sil',
+      body: `"${title}" duyurusunu kalıcı olarak silmek istediğinden emin misin? Bu işlem geri alınamaz.`,
+      confirmLabel: 'Sil',
+      cancelLabel: 'Vazgeç',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            setAnnouncements(list => list.filter(a => a.id !== id));
+            setSuccess('Duyuru silindi.');
+            setTimeout(() => setSuccess(''), 3000);
+          } else {
+            const data = await res.json().catch(() => ({}));
+            setError(data.error || 'Silme başarısız.');
+          }
+        } catch {
+          setError('Silme başarısız.');
+        }
+      },
+    });
   };
 
   const filtered = filterStatus === 'all' ? announcements : announcements.filter(a => a.status === filterStatus);
@@ -330,31 +338,14 @@ export default function AdminAnnouncementsPage() {
                     >
                       <Pencil size={14} strokeWidth={2} />
                     </button>
-                    {deleteConfirm === a.id ? (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleDelete(a.id)}
-                          className="rounded-full bg-[#FEF2F2] px-3 py-1.5 text-[11px] font-semibold text-[#991B1B] hover:bg-[#FECACA]"
-                        >
-                          Sil
-                        </button>
-                        <button
-                          onClick={() => setDeleteConfirm(null)}
-                          className="rounded-full bg-[#F2F2F2] px-3 py-1.5 text-[11px] font-medium text-[#525252] hover:bg-[#EDEDED]"
-                        >
-                          İptal
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setDeleteConfirm(a.id)}
-                        className="bz-btn-icon"
-                        title="Sil"
-                        aria-label="Sil"
-                      >
-                        <Trash2 size={14} strokeWidth={2} className="text-[#991B1B]" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleDelete(a.id, a.title)}
+                      className="bz-btn-icon"
+                      title="Sil"
+                      aria-label="Sil"
+                    >
+                      <Trash2 size={14} strokeWidth={2} className="text-[#991B1B]" />
+                    </button>
                   </div>
                 </div>
               </article>
@@ -559,6 +550,7 @@ export default function AdminAnnouncementsPage() {
             </form>
         </Modal>
       )}
+      {confirmDialog}
     </div>
   );
 }
