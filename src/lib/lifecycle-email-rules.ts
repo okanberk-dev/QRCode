@@ -101,6 +101,7 @@ export async function applyLifecycleRules(
     results,
     log_recordParams: { userId: user.id, restaurantId: restaurant.id, type: 'qr_not_downloaded' },
     recipient: user.email,
+    userLocale: user.locale,
   });
 
   // Rule 2: first_feedback_tips
@@ -128,6 +129,7 @@ export async function applyLifecycleRules(
     results,
     log_recordParams: { userId: user.id, restaurantId: restaurant.id, type: 'first_feedback_tips' },
     recipient: user.email,
+    userLocale: user.locale,
   });
 
   // Rule 3: upgrade_suggestion
@@ -155,6 +157,7 @@ export async function applyLifecycleRules(
     results,
     log_recordParams: { userId: user.id, restaurantId: restaurant.id, type: 'upgrade_suggestion' },
     recipient: user.email,
+    userLocale: user.locale,
   });
 
   // Rule 4: inactive_reactivation
@@ -179,6 +182,7 @@ export async function applyLifecycleRules(
     results,
     log_recordParams: { userId: user.id, type: 'inactive_reactivation' },
     recipient: user.email,
+    userLocale: user.locale,
   });
 
   return results;
@@ -202,6 +206,8 @@ interface RunRuleParams {
   };
   /** Owner e-posta adresi — retry sonrası fail durumunda ops alert için. */
   recipient: string;
+  /** Owner panel locale — ops alert mail body'si TR/EN parity (Phase 11.34). */
+  userLocale: 'tr' | 'en';
 }
 
 // Retry config (Phase 11.33 — Wave 3+ B). Resend transient errors (5xx,
@@ -258,6 +264,7 @@ async function runRule(p: RunRuleParams): Promise<void> {
     template: `lifecycle:${p.type}`,
     recipient: p.recipient,
     reason: result.lastError ?? 'send_failed_after_retry',
+    userLocale: p.userLocale,
     metadata: {
       userId: p.log_recordParams.userId ?? null,
       restaurantId: p.log_recordParams.restaurantId ?? null,

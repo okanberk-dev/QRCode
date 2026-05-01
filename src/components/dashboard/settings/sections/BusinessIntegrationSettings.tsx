@@ -896,6 +896,11 @@ function LatestCheckLine({
   const isTr = locale === "tr";
   const relative = formatRelative(check.checkedAt, locale);
   if (check.ok) {
+    // Success durumunda kullanıcı dostu sade mesaj. HTTP detay (status code +
+    // latency) kasıtlı gizli — owner için anlamsız teknik detay (Phase 11.34).
+    // Domain whitelist + reachability test geçti → "Başarılı / Successful"
+    // yeterli sinyal. Operatör/dev detay isterse browser DevTools network'ten
+    // doğrudan endpoint response'una bakabilir.
     return (
       <div
         role="status"
@@ -903,12 +908,8 @@ function LatestCheckLine({
       >
         <CheckCircle2 size={14} className="shrink-0" />
         <span>
-          {isTr ? "Son test: " : "Last test: "}
-          <strong>{relative}</strong>
-        </span>
-        <span className="bz-mono text-[#15803D]">
-          · HTTP {check.statusCode ?? "-"}
-          {check.latencyMs != null ? ` · ${check.latencyMs}ms` : ""}
+          <strong>{isTr ? "Başarılı" : "Successful"}</strong>
+          <span className="text-[#15803D] ml-1">· {relative}</span>
         </span>
       </div>
     );
