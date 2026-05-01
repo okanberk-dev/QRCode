@@ -1870,6 +1870,43 @@ Hepsi `prefers-reduced-motion: reduce` altında animasyon devre dışı.
 
 Barrel: `import { StatCard, Badge, Modal } from '@/components/ui'`.
 
+### 23.3.1 Bulk action floating toolbar (Phase 11.12 + 11.19)
+
+Multi-select + bulk action ihtiyacı olan list page'lerde tutarlı toolbar pattern (Stripe Dashboard inspirasyon):
+
+- `selectedIds: Set<string>` state
+- Each row sol başa `shrink-0` checkbox (`e.stopPropagation` row-click'i bloklamasın)
+- Header'a select-all checkbox + indeterminate ref
+- Filter değişiminde `selectedIds` sıfırla (`useEffect [filterStates]`)
+- Selected row'larda `bg-[#EAF9B8]/40` highlight
+- Floating toolbar (selection > 0):
+  - Container: `fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-2xl border border-[#0A0A0A] bg-white shadow inset-x-4 sm:inset-x-auto`
+  - Sayım span: `aria-live="polite"` → SR announcement
+  - Action button'lar: lime CTA (`border-[#A8D62E] bg-[#EAF9B8]`) + ghost (`border-[#EDEDED]`) + dismiss X
+  - `bulkBusy` disabled state during request
+- 3.5s auto-dismiss success notice (graphite pill bottom-20)
+
+Mevcut örnekler:
+- `/admin/reviews` (PR #268) — feedback flag/unflag/assign
+- `/admin/restaurants` (PR #275) — activate/deactivate
+
+Pattern reuse: yeni bulk yüzeyi gerektiren list page'lerde aynı shape kullanılır. 3 yerden fazla tekrar olduğunda `<BulkActionToolbar>` primitive'i çıkarılması düşünülebilir (şu an 2 yerde, abstraction premature).
+
+### 23.3.2 TrialBanner (Phase 11.11)
+
+`src/components/dashboard/TrialBanner.tsx` — owner shell topbar trial countdown banner.
+
+- ≤7d → warn palette (`#FFFBEB/#FDE68A`)
+- ≤3d → danger palette (`#FEF2F2/#FECACA`)
+- Crown icon + dynamic message ("Bugün son" / "1 gün sonra" / "X gün sonra")
+- "Yükselt" CTA → `/pricing` (lime focus ring)
+- X dismiss → `localStorage['bz_trial_banner_dismissed_${YYYY-MM-DD}']` → günlük reset (ertesi gün geri gelir)
+- SSR-safe (hidden default, `useEffect` mount sonrası dismiss state oku)
+- `aria-live="polite"`, `role="status"`, `legal-print-hide`
+- `UserDashboardShell` topbar'a mount edilir (announcements üstünde)
+
+Sidebar `Crown` badge ≤5d için kalıcı görünür (banner ek katman).
+
 ### 23.4 Icon mapping (`src/components/ui/icons.ts`)
 
 Design `Icon.X` identifier'ları lucide-react adlarına map'lendi (re-export). Yeni icon ihtiyaçında `icons.ts`'ye ekle — aynı zamanda `lucide-react`'tan direkt import edilebilir, ortak yere eklemek opsiyonel ama keşfedilebilirlik için tercih edilir.
@@ -1973,6 +2010,17 @@ Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`B
 - **Phase 11.4 (PR #115, branch `claude/implement-buaze-pulse-workspace-odHUj`)**: Süperadmin dashboard 1:1 design parity. Tasarım kaynağı `.design-pulse-2026/project/admin-and-public.jsx` `AdminDashboard` ile karşılaştırma yapıldı; en görünür drift'ler kapatıldı. (1) **Welcome banner kaldırıldı**: dark gradient hero (`bg-[#0A0A0A] text-white`) + custom satisfaction badge → tasarımdaki temiz `<PageHeader eyebrow="SUPERADMIN" eyebrowColor="#C6F24E" title>` pattern'i. Satisfaction `%` description'a inline metric olarak taşındı. Page wrapper `max-w-7xl p-3 sm:p-6 md:p-10` → `max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8` Pulse standardına. (2) **Chart card icon backgrounds remapped**: 6 ayrı off-palette renk (indigo-50, emerald-50, blue-50, purple-50, cyan-50, green-50) → Pulse Lime tint (`#EAF9B8` text-graphite) + Day Distribution için graphite-bordered N50 tile. (3) **Card chrome**: `bg-white rounded-xl sm:rounded-2xl border border-[#EDEDED]` tekrarları → `bz-card` utility class'ı. (4) **Heading weight**: 4 yerde `text-lg sm:text-xl font-semibold/bold tracking-tight` → `bz-h-tight text-lg sm:text-xl` (Space Grotesk 500 weight). Backend dokunulmadı.
 - **Phase 11.3 (PR #115, branch `claude/implement-buaze-pulse-workspace-odHUj`)**: Senior-audit Phase 11.3+ backlog'unun 2 yüksek-değerli kalemi kapatıldı. (1) **Native `alert()` callback'leri → stateful `<AlertBanner>`**: 8 yer — `/admin/qr` (4 download/export error), `/admin/settings` (3 OAuth connect error), `/admin/users` (1 delete error). `actionNotice` / `pageNotice` / `integrationsError` state'leri AlertBanner ile dismissible olarak render edilir. `/admin/qr`'da auto-dismiss 5sn timeout. (2) **3 custom modal → `<Modal>` primitive**: `/admin/users` (yönetici ekle/düzenle), `/admin/restaurants` (işletme ekle), `/admin/announcements` (duyuru ekle/düzenle) — `fixed inset-0` markup'ı silindi, `<Modal>` primitive'i (focus trap, ESC handler, body scroll lock, `aria-modal`, focus-restore on close) kullanılıyor. CTA buton'lar `bz-btn-primary` / `bz-btn-ghost` — uppercase tracking-wider + custom shadow varyantları yerine token-driven Pulse pill'ler. Modal title slot'u `pulse-eyebrow` + `bz-h-tight` ile tasarımdaki başlık hierarchy'sine uydu. Backend dokunulmadı.
 - **Phase 11.10 (2026-04-28, sidebar IA pass)**: Owner ve admin sidebar'larında alt plan/abonelik kartı kaldırıldı; bu kart sidebar'ı gereksiz uzatıp dar ekranlarda menüleri aşağı itiyordu. Menü bilgi mimarisi tekrar collapsible gruplara döndü: owner tarafında `Geri bildirim`, `QR ve platformlar`, `İşletme`, `Bilgi`; admin tarafında `Operasyon`, role'a göre `İşletme/Ayarlar`, superadmin için `Hesaplar`, `İçerik`, `Mail`. Aktif route'un bulunduğu grup otomatik açık kalır, kullanıcı aç/kapat tercihi localStorage'da korunur. Yeni sidebar item eklerken önce mevcut gruplardan birine yerleştir; yeni üst seviye flat item sadece gerçek ana giriş noktasıysa kullanılmalı.
+- **Phase 11.11 (PR #267)**: Owner desktop "Bugün" KPI 3-card row (reviews/scans/redirects today + yesterday delta), latest feedback row'ları full-Link, low-rated lime "Yanıtla" pill. Admin dashboard attention satırlarına server-side trial expiring/expired (2 ek `prisma.user.count`). Yeni `TrialBanner` topbar (≤7d warn / ≤3d danger, daily-reset localStorage dismiss).
+- **Phase 11.12 (PR #268)**: Feedback inbox filter expansion + bulk actions. `/api/feedback` GET'e `hasReply`/`isFlagged`/`isAssigned` query param'lar. Yeni `/api/feedback/bulk` endpoint (IDOR + Zod + Upstash rate limit 10/dk/actor; superadmin/manager only; flag/unflag/assign). Owner + admin filter UI: platform chip + state pill'ler + URL sync. Admin: 4-card quick stats + multi-select + floating bottom toolbar (Stripe pattern).
+- **Phase 11.13 (PR #269)**: URL state sync standardization. Yeni hook `src/hooks/useUrlFilter.ts` — generic `Record<string, string|number|boolean>` defaults, URL = source of truth, no useState shadow. 4 admin list migrate edildi (restaurants/members/customers/users). Mevcut `setX/x` referansları intact (wrapper proxy pattern). Linear/Stripe/Notion deeplink-friendly pattern.
+- **Phase 11.14 (PR #270)**: `/admin/qr` list view mobile card-fallback (`md:hidden flex-col grid` + `hidden md:block table`). CLAUDE.md §23.6 table-to-card pattern uygulandı.
+- **Phase 11.15 (PR #271)**: Silent failure → AlertBanner standardization. 4 admin sayfada (restaurants/members/users/billing) `fetchError` state + `<AlertBanner kind="danger" onDismiss>`. catch ek `console.error` intact (Sentry §26.5 capture pattern).
+- **Phase 11.16 (PR #272)**: Full-row drill-down. `/admin/restaurants` + `/admin/members` tablolarında `<tr role="link" tabIndex={0}>` + `closest('button, a, input')` guard + `onKeyDown` Enter/Space + focus-visible lime ring inset. Action menu `MoreHorizontal` `e.stopPropagation` pattern intact.
+- **Phase 11.17 (PR #273)**: Content-shape skeletons (3 sayfa). `/admin/billing` → `CardSkeleton` + `TableSkeleton` kombinasyonu. `/admin/legal-documents` → 3 `CardSkeleton`. `/admin/announcements` → 6 card responsive grid. `Loader2` spinner pattern → content-shape (Linear/Stripe/Vercel pattern).
+- **Phase 11.18 (PR #274)**: ConfirmDialog pattern unification. `/admin/blog` + `/admin/announcements`'ta inline two-button (Sil/Vazgeç) pattern → `useConfirmDialog` [tuple]. Modal-based focus trap + ESC + body scroll lock + `aria-modal` + focus restore (Phase 11.1 baseline reuse).
+- **Phase 11.19 (PR #275)**: Bulk activate/deactivate (restaurants). Yeni `/api/admin/restaurants/bulk` endpoint (superadmin only, IDOR, Zod, rate limit 10/dk, single `updateMany`). UI: header select-all checkbox + indeterminate state, row solunda checkbox, lime-tint highlight, floating bottom toolbar (X seçildi + Aktif et lime + Duraklat ghost + dismiss), 3.5s auto-dismiss notice.
+- **Phase 11.20 (PR #276)**: A11y polish. 6 admin search input'a `aria-label` (Blog yazısı ara / Müşteri ara / Bülten abonesi ara / Bülten kampanyası ara / İşletme sahibi ara / İşletme ara). 2 bulk toolbar count span'ına `aria-live="polite"` (3 seçildi announcement). WCAG 2.1 AA 1.3.1 + 4.1.2.
+- **Phase 11.21 (PR #277)**: Self-audit follow-up bug bundle. (1) `/admin/members` searchInput desync — browser back ile gelen URL filter input'a yansımıyordu, sync `useEffect` eklendi. (2) `/admin/restaurants` bulk selection stale — filter değişiminde `selectedIds` cleanup yoktu, görünmeyen row'lara apply riski vardı; `useEffect` ile temizlik. (3) `/admin/reviews` bulk refetch URL'inde `assignedToMe` eksikti, "Bana atanan" filter aktifken liste yanlış genişliyordu; query builder'a eklendi. Backend dokunulmadı.
 - **Phase 10+ (out-of-scope backlog)**: Settings stub pages content (Brand/Integrations/Rules/Team/Billing/Notifications/API), Storybook coverage, visual regression testing (Percy/Chromatic), Mobile native wrap (Capacitor/Expo), Superadmin onboarding flow. **Senior audit kalan bulguları** (Phase 11.4+ candidates): 5+ raw form set (label+input pair) → `<Field>` primitive (admin/users modal field'ları, admin/announcements modal field'ları, admin/restaurants modal field'ları); off-palette renkler (slate-800, blue-50, emerald, amber inline) → Pulse palette remap; sortable table'larda `aria-sort`.
 
 ### 23.8 Dokunulmayan eski Pulse
@@ -2434,6 +2482,28 @@ Client kod `error === 'validation_error'` ile auth (401) / authz (403) / server 
 - Form library (react-hook-form, @hookform/resolvers) ekleme — bu task **backend-only**. Frontend form'ları ayrı scope.
 - Schema'ları ortak modüle çıkarmaya zorlama — 3+ yerden import edilene kadar route-local kalsın (CLAUDE.md §7 abstraction kaçınma ilkesi).
 
+### 28.4 Yeni bulk endpoint pattern (Phase 11.12 + 11.19)
+
+Toplu mutate işlemleri için kalıcı şablon. Şu pattern her yeni bulk endpoint için reuse edilir:
+
+1. **Auth:** `getPanelActorFromRequest` + role kontrol (genelde superadmin only, bazen manager dahil; owner asla)
+2. **IDOR whitelist:** `getScopedRestaurantIds` + Prisma `findMany` `id IN ids AND restaurantId IN scoped` → silently filter out (200 + `processed=0`)
+3. **Rate limit:** `rateLimit(`{endpoint}:${actor.id}`, 10, 60_000)` — Upstash distributed
+4. **Zod:** `{ ids: array(string).min(1).max(50), action: enum }`
+5. **Action dispatch:** `Promise.allSettled` (per-row fail isolation) veya `updateMany` (atomic)
+6. **Response:** `{ processed: number, skipped: number, action }`
+
+Mevcut örnekler:
+- `/api/feedback/bulk` (PR #268) — flag/unflag/assign, `Promise.allSettled` + skipped count
+- `/api/admin/restaurants/bulk` (PR #275) — activate/deactivate, `updateMany` atomic
+
+Yeni bulk endpoint eklerken iki örneği baseline al.
+
+**Yapma:**
+- `ids` array.length > 50 — UI selection üst sınırı, daha fazlası repeat batch
+- `Promise.allSettled` içinde her satıra ayrı try/catch — wrapper pattern fail isolation kuralını çiğner
+- Audit log eksik (CLAUDE.md §29.6) — yeni admin destructive bulk'larda `AdminAuditLog` kullan
+
 ---
 
 ## 29. Backend API Foundation Plan
@@ -2816,3 +2886,66 @@ Tüm public sayfalar `application/ld+json` script bloğu taşır. Coverage matri
 - **Google Search Console verification meta tag** — `<meta name="google-site-verification" content="..." />` ihtiyacı çıktığında `[locale]/layout.tsx` `generateMetadata`'a eklenecek (kullanıcı API key sağlamalı)
 - **Bing IndexNow** — `https://api.indexnow.org/indexnow` push API; sitemap zaten yeterli, IndexNow tetik koşulu çıkana kadar bekle
 - **Native app site associations** (`apple-app-site-association`, `assetlinks.json`) — native app yok (CLAUDE.md §25)
+
+---
+
+## 36. useUrlFilter Hook (Phase 11.13)
+
+`src/hooks/useUrlFilter.ts` — generic URL-synced filter state hook. Linear/Stripe SaaS pattern: filter/tab/sort/page state'i `?key=value` query param'a yansır → refresh sonrası state korunur, deeplink-friendly, browser back doğal çalışır.
+
+### 36.1 API
+
+```ts
+const filters = useUrlFilter({
+  search: '',
+  status: 'active' as 'active' | 'passive' | 'all',
+  plan: 'all',
+  page: 1,
+});
+
+filters.values.status         // current value (URL or default)
+filters.set('status', 'passive')  // updates URL
+filters.setMany({ status: 'all', page: 1 })
+filters.reset()               // back to defaults, URL clean
+filters.hasActive             // true if any non-default value
+filters.toQueryString()       // for fetch URL builder reuse
+```
+
+- Generic `Record<string, string|number|boolean>` defaults
+- TypeScript `T` inference: `filters.values.X` tip-güvenli
+- URL = source of truth (no useState shadow)
+- `router.replace({ scroll: false })` — browser history'e entry yok
+- Default değer set edilirse URL'den silinir (clean URL)
+- Number ve boolean parse — `'1'` → `1`, `'true'` → `true`
+
+### 36.2 Migration pattern (mevcut sayfaya uygulama)
+
+State'leri intact tutarak wrapper proxy pattern (en az invasive):
+
+```ts
+const filters = useUrlFilter({ search: '', status: 'active' });
+const searchTerm = filters.values.search;
+const setSearchTerm = (v: string) => filters.set('search', v);
+const statusFilter = filters.values.status;
+const setStatusFilter = (v: string) => filters.set('status', v);
+```
+
+Mevcut tüm `setX/x` referansları sayfa içinde intact kalır — 200+ kullanım dokunulmadı.
+
+### 36.3 Dikkat edilecekler
+
+- **Defaults inline object literal** her render yenilenir → `set/reset` yeni reference. `useEffect` deps'inde kullanılırsa loop riski. Caller `useMemo` veya hook içi `useRef` ile defaults dondurma iyileştirmesi backlog'da (PR14).
+- **Boolean filter'lar** TypeScript literal-type inference için cast gerekir: `hasEmail: false as boolean`.
+- **Functional updater** (`setPage(p => p + 1)`) wrapper'larda destek YOK, direct value kullan: `setPage(page + 1)`.
+- **Debounced search** için `searchInput` local state + `filters.set` combo: `useState(debouncedSearch)` initial + `useEffect` sync (PR12 fix).
+
+### 36.4 Mevcut adoption
+
+- `/admin/restaurants` (Phase 11.13)
+- `/admin/members` (Phase 11.13)
+- `/admin/customers` (Phase 11.13)
+- `/admin/users` (Phase 11.13)
+- Owner `/[locale]/dashboard/feedbacks` (Phase 11.12 — inline pattern)
+- Admin `/admin/reviews` (Phase 11.12 — inline pattern)
+
+İleride Phase 11.X'te owner feedbacks + admin reviews bu hook'a migrate edilebilir (consistency).
