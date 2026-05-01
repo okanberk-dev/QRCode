@@ -494,8 +494,8 @@ export default async function DashboardPage({
         />
       </div>
 
-      {/* Quick Actions — 4-button grid, mobile + desktop unified. */}
-      <div className="grid grid-cols-4 gap-2 sm:gap-3">
+      {/* Quick Actions — mobil 2×2 (touch target ≥ 44px Apple HIG), desktop 4-col. */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         {quickActions.map((a) => (
           <Link
             key={a.id}

@@ -20,8 +20,32 @@ interface CacheEntry {
 // edilen drift. OpenAI maliyetini azaltır (~$0.0005/istek): owner panel
 // refresh'inde 1 saat içinde aynı (restaurant + window + filter) sorgusu
 // cache'den dönülür.
+//
+// Map JavaScript spec gereği insertion order korur → FIFO eviction
+// MAX_CACHE_SIZE'ı aştığımızda en eski entry silinir. Ek olarak her
+// PRUNE_INTERVAL insert'te expired entry'ler temizlenir (long-lived
+// instance'da unbounded growth + memory leak önleme).
 const cache = new Map<string, CacheEntry>();
 const TTL_MS = 60 * 60 * 1000; // 1 saat
+const MAX_CACHE_SIZE = 200; // ~10MB üst sınır (50KB/entry × 200)
+const PRUNE_INTERVAL = 50; // her N insert'te expired temizliği
+let insertCounter = 0;
+
+function pruneExpired(): void {
+  const now = Date.now();
+  for (const [key, entry] of cache) {
+    if (entry.expiresAt <= now) cache.delete(key);
+  }
+}
+
+function evictIfNeeded(): void {
+  // FIFO eviction — Map iterator ilk eklenen key'i döner.
+  while (cache.size >= MAX_CACHE_SIZE) {
+    const oldestKey = cache.keys().next().value;
+    if (oldestKey === undefined) break;
+    cache.delete(oldestKey);
+  }
+}
 
 const MAX_COMMENTS_TO_SEND = 80; // ~500-700 token; gpt-4o-mini'de hızlı
 const MIN_COMMENTS_FOR_AI = 8; // 8'den az yorum varsa AI çağrısı anlamsız
@@ -128,6 +152,10 @@ export async function extractThemes(
     source: 'openai',
   };
 
+  // Prune + evict insert öncesi (yeni entry için yer aç)
+  insertCounter += 1;
+  if (insertCounter % PRUNE_INTERVAL === 0) pruneExpired();
+  evictIfNeeded();
   cache.set(cacheKey, { result, expiresAt: Date.now() + TTL_MS });
   return result;
 }

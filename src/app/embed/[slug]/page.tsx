@@ -121,7 +121,7 @@ export default async function EmbedPage({ params, searchParams }: RouteParams) {
         borderRadius: 14,
       }}
     >
-      {/* Header — avg rating + count */}
+      {/* Header — avg rating + count (zero-state ayrı: sadece "Henüz yorum yok") */}
       <div
         style={{
           display: 'flex',
@@ -131,13 +131,21 @@ export default async function EmbedPage({ params, searchParams }: RouteParams) {
           borderBottom: size === 'full' ? `1px solid ${palette.border}` : 'none',
         }}
       >
-        <span style={{ fontSize: 22, fontWeight: 600, lineHeight: 1 }}>
-          {avgRating > 0 ? avgRating.toFixed(1) : '—'}
-        </span>
-        <StarRow rating={Math.round(avgRating)} color={palette.accent} />
-        <span style={{ color: palette.muted, fontSize: 12, marginLeft: 'auto' }}>
-          {totalCount.toLocaleString('tr-TR')} yorum
-        </span>
+        {totalCount === 0 ? (
+          <span style={{ fontSize: 13, color: palette.muted, fontWeight: 500 }}>
+            Henüz yorum yok — siz ilk olun.
+          </span>
+        ) : (
+          <>
+            <span style={{ fontSize: 22, fontWeight: 600, lineHeight: 1 }}>
+              {avgRating > 0 ? avgRating.toFixed(1) : '—'}
+            </span>
+            <StarRow rating={Math.round(avgRating)} color={palette.accent} />
+            <span style={{ color: palette.muted, fontSize: 12, marginLeft: 'auto' }}>
+              {totalCount.toLocaleString('tr-TR')} yorum
+            </span>
+          </>
+        )}
       </div>
 
       {/* Body — recent reviews (full mode only) */}
