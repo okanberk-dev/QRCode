@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronRight, Scissors, Calendar, Sparkles, BarChart3 } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { getRelatedSolutions } from '@/lib/related-solutions';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,6 +71,38 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
         { t: 'Booking trigger', d: 'Connect to your booking software — auto-send review invites when service ends.' },
       ];
 
+  const benefits = isTr
+    ? [
+        { Icon: Scissors, h: 'Hizmet bitiminde anlık geri bildirim', d: 'Boya, manikür, makyaj uygulaması biter bitmez müşteri QR\'ı tarar — deneyim tazeyken puan ve yorum, randevu kapısından çıktıktan sonra "unutuldu" yok.' },
+        { Icon: Calendar, h: 'Stilist + hizmet bazlı atama', d: 'Yorum geldiğinde hangi stilist, hangi hizmet (saç, cilt, makyaj), hangi gün etiketlenir. Stilist performansı sektörde en kritik veri — Buaze bunu doğrudan görselleştirir.' },
+        { Icon: Sparkles, h: 'Pulse AI yanıt taslağı', d: 'Kişisel ton: "Boya tonum istediğim gibi olmadı" yorumuna teknik nezaket; "İlgi gerçekten farklıydı" yorumuna içten teşekkür. Sahip onaylar, otomatik gönderim yok.' },
+        { Icon: BarChart3, h: 'Çoklu platform yönlendirme', d: 'Google + Instagram link + Foursquare aynı akışta. Müşteri seçtiği platforma yorum yazar; tercih müşteride kalır, yıldız bazlı kısıtlama yok.' },
+      ]
+    : [
+        { Icon: Scissors, h: 'Live feedback the moment service ends', d: 'The instant a coloring, manicure, or makeup application is done, the customer scans the QR — rating and review while the experience is fresh, before "I\'ll do it later" sets in.' },
+        { Icon: Calendar, h: 'Stylist + service-level tagging', d: 'When a review arrives, the stylist, the service (hair, skincare, makeup), and the day are all tagged. Stylist performance is the single most important metric in this sector — Buaze surfaces it directly.' },
+        { Icon: Sparkles, h: 'Pulse AI reply drafts', d: 'Tone-aware: technical politeness for "the color shade was off"; warm thanks for "the care was something else". Owner approves; nothing auto-sent.' },
+        { Icon: BarChart3, h: 'Multi-platform routing', d: 'Google + Instagram link + Foursquare in one flow. The customer posts on the platform of their choice; the choice stays with the customer, no star-rating gate.' },
+      ];
+
+  const faqs: FaqItem[] = isTr
+    ? [
+        { q: 'Güzellik salonu için Buaze nasıl çalışır?', a: 'Hizmet bittikten sonra (boya, manikür, makyaj, cilt bakımı) müşteriye QR kart sunulur — masada, aynada veya bekleme alanında. Müşteri tarar, deneyimini puanlar ve seçtiğin platformlara (Google, Instagram, Foursquare) yönlendirilir. İlk gün ilk yorumlar genelde aynı seansta gelir.' },
+        { q: 'Stilist bazlı performansı görebiliyor muyum?', a: 'Evet. QR oluştururken stilist etiketi (Buaze branch field veya custom URL parametresi) ekleyebilirsin; yorum geldiğinde hangi stilist + hangi hizmet ile geldiği loglanır. Analytics raporunda stilist bazlı ortalama puan, yorum sayısı ve düşük puan oranları görünür.' },
+        { q: 'Düşük puan veren müşteri kaybolur mu?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Müşteri her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (renk düzeltme, hizmet tekrarı vb.) çözme şansı kazanırsınız.' },
+        { q: 'Instagram entegrasyonu var mı?', a: 'Müşteriye akış sırasında Instagram profil bağlantısı sunulur (DM\'le yorum yazma daveti). Instagram\'dan gelen DM yorumlarını otomatik çekecek bir API entegrasyonu yok — Instagram bu API\'yi 3rd-party\'lere açık tutmuyor; ama yönlendirme akışı çalışıyor ve müşteri Instagram tag\'i sayesinde organik kazanım sağlar.' },
+        { q: 'Birden fazla şubem var, nasıl yönetirim?', a: 'Her şube için ayrı işletme oluşturabilir veya tek işletme + şube etiketleri kullanabilirsin. Analytics şube bazlı ayrılır; merkez ekibinin "şube X gerileme yaşıyor, kuruluşa müdahale gerek" gibi kararları doğrudan veriden almasını sağlar.' },
+      ]
+    : [
+        { q: 'How does Buaze work for a beauty salon?', a: 'After the service is done (coloring, manicure, makeup, skincare), present a QR card to the customer — at the chair, on the mirror, or in the waiting area. The customer scans, rates the experience, and is routed to the platforms you have selected (Google, Instagram, Foursquare). Same-session reviews are common on day one.' },
+        { q: 'Can I see per-stylist performance?', a: 'Yes. When generating the QR, you can add a stylist tag (Buaze branch field or a custom URL parameter); when the review arrives, which stylist + which service is logged with it. The analytics report shows per-stylist average rating, review volume, and low-rating ratio.' },
+        { q: 'Do customers giving low ratings simply disappear?', a: 'No. Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team — in practice ~85% choose this private channel. The customer always retains the right to post on a public platform; you gain a chance to resolve the issue privately first (color correction, service redo, etc.).' },
+        { q: 'Is there an Instagram integration?', a: 'The flow surfaces an Instagram profile link to the customer (a DM-review invitation). There is no API integration that auto-pulls DM reviews — Instagram does not expose that API to third parties — but the routing flow works and the Instagram tag drives organic acquisition.' },
+        { q: 'I have multiple branches — how do I manage them?', a: 'Either create a separate business per branch or use a single business + branch tags. Analytics splits per branch, allowing the central team to make decisions like "branch X is regressing, intervention needed at onboarding" directly from data.' },
+      ];
+
+  const relatedSolutions = getRelatedSolutions('beauty-salon', 4);
+
   const jsonLd = buildSolutionSchema({
     locale,
     slug: 'beauty-salon',
@@ -77,6 +111,7 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
     description: isTr
       ? "Hizmet biter bitmez müşteriniz QR'ı tarar. Instagram, Google ve Foursquare'de puanınız organik büyür."
       : 'The moment service ends, your customer scans the QR. Ratings grow organically on Instagram, Google and Foursquare.',
+    faqs,
   });
 
   return (
@@ -227,6 +262,71 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
               <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">{f.d}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Benefits — 4-tile grid */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
+            {isTr ? 'Güzellik salonu operasyonuna özel dört kazanç' : 'Four wins built for beauty salon operations'}
+          </h2>
+          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {benefits.map((b, i) => (
+              <div key={i} className="bz-card p-6 sm:p-7">
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"><b.Icon size={16} /></div>
+                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
+                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
+        <div className="max-w-[820px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
+            {isTr ? 'Güzellik salonu için merak edilenler' : 'Common questions for beauty salons'}
+          </h2>
+          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
+        </div>
+      </section>
+
+      {/* Resources / Related Solutions */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
+          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
+          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
+              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
+              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
+              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
+            ].map((r) => (
+              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
+                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
+                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
+              </Link>
+            ))}
+          </div>
+          {relatedSolutions.length > 0 && (
+            <>
+              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {relatedSolutions.map((sol) => (
+                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
+                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
+                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
+                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
