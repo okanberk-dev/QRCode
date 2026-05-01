@@ -1,6 +1,7 @@
 import { ExternalLink } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
@@ -35,8 +36,86 @@ export default async function GoogleCompliancePage({
     { title: t.google_compliance_point3_title, desc: t.google_compliance_point3_desc },
   ];
 
+  // FAQ — locale-aware. Mirrors CLAUDE.md §19.1.1 compliance copy
+  // parity (audit fix 2026-05): every answer reinforces customer
+  // agency and explicitly disclaims the four review-gating signals
+  // (block / hide / star-branching / incentive). Same questions get
+  // emitted as FAQPage JSON-LD below for AI search engines.
+  const faqs: FaqItem[] = isTr
+    ? [
+        {
+          q: 'Buaze müşteri yorumlarını engelliyor veya gizliyor mu?',
+          a: 'Hayır. Buaze hiçbir müşteri yorumunu engellemez, gizlemez veya manipüle etmez. Müşterileriniz Google, Yemeksepeti, Getir, Trendyol GO ve diğer herkese açık platformlara her zaman istedikleri yorumu yazma hakkına sahiptir. Buaze yalnızca müşteri tercihiyle yönlendirme yapar; yorum içeriğine müdahale etmez.',
+        },
+        {
+          q: 'Düşük puan veren müşterilere Google bağlantısı gösterilmiyor mu?',
+          a: 'Gösteriliyor. Akışta her müşteriye herkese açık platform bağlantıları sunulur. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür; pratikte ~%85\'i bu özel kanalı tercih eder. Tercih müşteriye aittir; Buaze yıldıza göre erişimi kısıtlamaz.',
+        },
+        {
+          q: 'Buaze pozitif yorum için teşvik (indirim, hediye) sunuyor mu?',
+          a: 'Hayır. Buaze hiçbir teşvik, indirim, ikram veya kupon sunmaz. Google\'ın yorum politikası bu tür incentive\'leri açıkça yasaklar; biz de aynı politikayı uygularız. İşletme sahibi tarafından oluşturulabilecek herhangi bir teşvik, müşteriye yorum yazdırmaya bağlı olarak verilemez (CLAUDE.md §19.1).',
+        },
+        {
+          q: 'Müşteri verilerim KVKK ve GDPR ile uyumlu mu saklanıyor?',
+          a: 'Evet. Tüm müşteri verileri Avrupa Birliği veri merkezinde (Frankfurt) saklanır. KVKK aydınlatma metni her form altında görünür ve onay açık (opt-in) şekilde alınır. Pazarlama izni ayrıca onaylanır — hizmet onayıyla aynı checkbox\'a bundle edilmez. IP adresleri 90 gün sonra otomatik anonimleştirilir, müşteri talep ederse kişisel verileri silinir veya export edilir.',
+        },
+        {
+          q: 'Buaze Google\'ın resmi iş ortağı mı?',
+          a: 'Hayır, Buaze bağımsız bir SaaS platformudur ve Google\'ın resmi partner programının parçası değildir. Akışımız Google\'ın yorum politikalarına uygun şekilde tasarlanmıştır; Buaze.com sayfalarında Google ürünlerine yapılan referanslar (Google İşletme, Google Maps) tanımlama amaçlıdır.',
+        },
+        {
+          q: 'Pulse AI yanıt taslakları Google\'ın yorum politikasına uygun mu?',
+          a: 'Evet. Pulse AI sadece **işletme tarafının yanıtı** için taslak üretir — müşteri tarafından yazılan yorumun içeriğini değiştirmez veya manipüle etmez. Üretilen taslak yayınlanmadan önce işletme sahibi tarafından düzenlenir ve onaylanır. Hiçbir AI taslağı otomatik olarak gönderilmez; her yanıt insan onayından geçer.',
+        },
+      ]
+    : [
+        {
+          q: 'Does Buaze block or hide customer reviews?',
+          a: 'No. Buaze never blocks, hides, or manipulates customer reviews. Your customers always retain the right to post on Google, Yemeksepeti, Getir, Trendyol GO, and other public platforms. Buaze only routes by customer preference; we never alter review content.',
+        },
+        {
+          q: 'Are customers giving low ratings denied access to the Google link?',
+          a: 'No. Public-platform links are surfaced to every customer in the flow. Customers giving low ratings additionally see an option to share privately with your team; in practice, ~85% of them choose this private channel. The choice belongs to the customer; Buaze does not gate access by star rating.',
+        },
+        {
+          q: 'Does Buaze offer incentives (discounts, gifts) for positive reviews?',
+          a: 'No. Buaze never offers any incentive, discount, freebie, or coupon. Google\'s review policy explicitly prohibits such incentives, and we apply the same policy. Any incentive a business owner may create cannot be conditioned on a customer leaving a review (CLAUDE.md §19.1).',
+        },
+        {
+          q: 'Is my customer data stored in compliance with KVKK and GDPR?',
+          a: 'Yes. All customer data is stored in an EU data center (Frankfurt). The KVKK notice is visible under every form and consent is collected explicitly (opt-in). Marketing consent is collected separately — never bundled into the same checkbox as service consent. IP addresses are automatically anonymized after 90 days; on customer request, personal data is deleted or exported.',
+        },
+        {
+          q: 'Is Buaze an official Google partner?',
+          a: 'No. Buaze is an independent SaaS platform and is not part of Google\'s official partner program. Our flow is designed to comply with Google\'s review policies; references to Google products (Google Business, Google Maps) on Buaze.com are descriptive only.',
+        },
+        {
+          q: 'Are Pulse AI reply drafts compliant with Google\'s review policy?',
+          a: 'Yes. Pulse AI only generates drafts for the **business-side reply** — it never modifies or manipulates the content of a review written by a customer. The generated draft is edited and approved by the business owner before it is published. No AI draft is sent automatically; every reply passes through human approval.',
+        },
+      ];
+
+  // FAQPage JSON-LD — emitted alongside the visible accordion. Same
+  // questions feed both surfaces so AI search engines (Perplexity, Bing
+  // Chat, Gemini AIO) and Google Rich Results pull from one source of
+  // truth. CLAUDE.md §35.6 schema matrix updated to include this entry.
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
+      <script
+        type="application/ld+json"
+        // FAQPage schema — feeds Google Rich Results + AI search engines.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 
@@ -108,6 +187,28 @@ export default async function GoogleCompliancePage({
               {t.google_compliance_link_text}
               <ExternalLink size={14} />
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FAQ ─── */}
+      <section className="px-5 sm:px-10 pb-[60px] sm:pb-24" id="faq">
+        <div className="max-w-[820px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">
+            {isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}
+          </span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
+            {isTr
+              ? 'Politika ve uyumluluk hakkında merak edilenler'
+              : 'Common questions about policy and compliance'}
+          </h2>
+          <p className="mt-4 text-[15px] sm:text-[16px] text-[#525252] leading-[1.6]">
+            {isTr
+              ? 'Buaze akışının Google yorum politikalarına nasıl uyduğunu, müşteri verilerinizin nasıl korunduğunu ve Pulse AI yanıt taslaklarının neden uyumlu olduğunu açıklıyoruz.'
+              : 'How the Buaze flow aligns with Google\'s review policies, how your customer data is protected, and why Pulse AI reply drafts are compliant.'}
+          </p>
+          <div className="mt-8">
+            <FaqAccordion faqs={faqs} defaultOpen={[0]} />
           </div>
         </div>
       </section>
