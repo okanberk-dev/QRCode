@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, Loader2, Mail, MapPin, Phone, RefreshCw, Search, Star, Store, Users, X } from 'lucide-react';
 import { AlertBanner, PageHeader, StatCard } from '@/components/ui';
+import { useUrlFilter } from '@/hooks/useUrlFilter';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 
@@ -48,15 +49,31 @@ export default function AdminCustomersPage() {
   const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
   const [data, setData] = useState<CustomersResponse | null>(null);
 
-  // Filters
-  const [range, setRange] = useState<Range>('30d');
-  const [restaurantId, setRestaurantId] = useState('');
-  const [search, setSearch] = useState('');
-  const [searchDebounced, setSearchDebounced] = useState('');
-  const [hasEmail, setHasEmail] = useState(false);
-  const [hasPhone, setHasPhone] = useState(false);
-  const [hasComment, setHasComment] = useState(false);
-  const [page, setPage] = useState(1);
+  // Filters — PR4 URL synced (useUrlFilter §28).
+  const filters = useUrlFilter({
+    range: '30d' as Range,
+    restaurantId: '',
+    search: '',
+    hasEmail: false as boolean,
+    hasPhone: false as boolean,
+    hasComment: false as boolean,
+    page: 1,
+  });
+  const range = filters.values.range;
+  const setRange = (v: Range) => filters.set('range', v);
+  const restaurantId = filters.values.restaurantId;
+  const setRestaurantId = (v: string) => filters.set('restaurantId', v);
+  const searchDebounced = filters.values.search;
+  const [search, setSearch] = useState(searchDebounced);
+  const setSearchDebounced = (v: string) => filters.set('search', v);
+  const hasEmail = filters.values.hasEmail;
+  const setHasEmail = (v: boolean) => filters.set('hasEmail', v);
+  const hasPhone = filters.values.hasPhone;
+  const setHasPhone = (v: boolean) => filters.set('hasPhone', v);
+  const hasComment = filters.values.hasComment;
+  const setHasComment = (v: boolean) => filters.set('hasComment', v);
+  const page = filters.values.page;
+  const setPage = (v: number) => filters.set('page', v);
 
   useEffect(() => {
     const t = setTimeout(() => setSearchDebounced(search.trim()), 300);
@@ -269,9 +286,9 @@ export default function AdminCustomersPage() {
         </div>
 
         <div className="mt-3 flex flex-wrap gap-2 pulse-eyebrow">
-          <FilterToggle active={hasEmail} onClick={() => setHasEmail((v) => !v)}>E-posta var</FilterToggle>
-          <FilterToggle active={hasPhone} onClick={() => setHasPhone((v) => !v)}>Telefon var</FilterToggle>
-          <FilterToggle active={hasComment} onClick={() => setHasComment((v) => !v)}>Yorum var</FilterToggle>
+          <FilterToggle active={hasEmail} onClick={() => setHasEmail(!hasEmail)}>E-posta var</FilterToggle>
+          <FilterToggle active={hasPhone} onClick={() => setHasPhone(!hasPhone)}>Telefon var</FilterToggle>
+          <FilterToggle active={hasComment} onClick={() => setHasComment(!hasComment)}>Yorum var</FilterToggle>
         </div>
       </div>
 
@@ -401,14 +418,14 @@ export default function AdminCustomersPage() {
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    onClick={() => setPage(Math.max(1, page - 1))}
                     disabled={page <= 1 || loading}
                     className="rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 pulse-eyebrow text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
                   >
                     Önceki
                   </button>
                   <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() => setPage(Math.min(totalPages, page + 1))}
                     disabled={page >= totalPages || loading}
                     className="rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 pulse-eyebrow text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
                   >

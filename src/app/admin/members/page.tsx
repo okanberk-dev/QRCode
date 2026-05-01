@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useUrlFilter } from '@/hooks/useUrlFilter';
 import Link from 'next/link';
 import {
   AlertTriangle,
@@ -85,12 +86,22 @@ export default function MembersPage() {
   const [meta, setMeta] = useState<Meta>({ total: 0, page: 1, perPage: 25, totalPages: 1 });
   const [loading, setLoading] = useState(true);
 
-  // filters
-  const [searchInput, setSearchInput] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [planFilter, setPlanFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'active' | 'passive' | 'all'>('active');
-  const [page, setPage] = useState(1);
+  // filters — PR4 URL synced (Linear/Stripe pattern, useUrlFilter §28)
+  const filters = useUrlFilter({
+    search: '',
+    plan: '',
+    status: 'active' as 'active' | 'passive' | 'all',
+    page: 1,
+  });
+  const debouncedSearch = filters.values.search;
+  const [searchInput, setSearchInput] = useState(debouncedSearch);
+  const setDebouncedSearch = (v: string) => filters.set('search', v);
+  const planFilter = filters.values.plan;
+  const setPlanFilter = (v: string) => filters.set('plan', v);
+  const statusFilter = filters.values.status;
+  const setStatusFilter = (v: 'active' | 'passive' | 'all') => filters.set('status', v);
+  const page = filters.values.page;
+  const setPage = (v: number) => filters.set('page', v);
 
   // edit + billing + create modals
   const [editingMember, setEditingMember] = useState<Member | null>(null);
@@ -462,7 +473,7 @@ export default function MembersPage() {
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => setPage(Math.max(1, page - 1))}
               disabled={meta.page <= 1}
               className="bz-btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ padding: '6px 12px', fontSize: 12 }}
@@ -475,7 +486,7 @@ export default function MembersPage() {
             </span>
             <button
               type="button"
-              onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+              onClick={() => setPage(Math.min(meta.totalPages, page + 1))}
               disabled={meta.page >= meta.totalPages}
               className="bz-btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ padding: '6px 12px', fontSize: 12 }}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AlertTriangle, Mail, Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { AlertBanner, Badge, Modal, PageHeader, TableSkeleton, useConfirmDialog } from '@/components/ui';
+import { useUrlFilter } from '@/hooks/useUrlFilter';
 
 interface User {
   id: string;
@@ -22,7 +23,10 @@ interface Restaurant {
 export default function UsersPage() {
   const { t } = useAdminTranslation();
   const [users, setUsers] = useState<User[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  // PR4 — URL synced search (useUrlFilter §28).
+  const filters = useUrlFilter({ search: '' });
+  const searchTerm = filters.values.search;
+  const setSearchTerm = (v: string) => filters.set('search', v);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   
