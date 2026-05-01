@@ -3,7 +3,6 @@ import { ChevronLeft } from 'lucide-react';
 import type { Locale, Translations } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
-import { AlertBanner } from '@/components/ui';
 import { renderLegalContentWithToc } from '@/lib/legal/render';
 import type { LegalDocumentSnapshot } from '@/lib/legal/loader';
 
@@ -89,26 +88,19 @@ export default function LegalDocumentPage({
 
             <article className="prose-legal">{blocks}</article>
 
-            {doc.source === 'default' && (
-              <div className="legal-print-hide mt-12">
-                <AlertBanner kind="info">
-                  {isTr
-                    ? 'Bu metin henüz yönetici tarafından kaydedilmedi; varsayılan taslak gösteriliyor.'
-                    : 'This document has not been finalised by an admin yet; the default draft is shown.'}
-                </AlertBanner>
-              </div>
-            )}
-
-            {/* Footer band — print hint + last-updated tekrar (uzun döküman scroll'u sonrası) */}
+            {/* Footer band — son güncelleme + iletişim. Stripe / Linear /
+                Vercel pattern'i: minimal closure, ziyaretçi-facing teknik
+                hint yok (admin kontrol notları admin panelinde). */}
             <div className="mt-14 pt-8 border-t border-[#EDEDED] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-[12.5px] text-[#737373]">
-              <div className="flex flex-wrap items-center gap-2 leading-[1.55]">
-                <span>
-                  {isTr ? 'Bu sayfayı PDF olarak kaydetmek için ' : 'Save this page as a PDF with '}
-                </span>
-                <kbd className="rounded border border-[#EDEDED] bg-[#FAFAFA] px-1.5 py-0.5 text-[11px] font-medium text-[#0A0A0A]">
-                  Ctrl/Cmd + P
-                </kbd>
-              </div>
+              <span>
+                {isTr ? 'Sorularınız için ' : 'Questions? '}
+                <a
+                  href="mailto:legal@buaze.com"
+                  className="font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-[3px] transition-colors hover:decoration-[#A8D62E]"
+                >
+                  legal@buaze.com
+                </a>
+              </span>
               {lastUpdatedLabel && (
                 <span className="pulse-eyebrow text-[#A3A3A3] text-[10px]">
                   {lastUpdatedLabel}
