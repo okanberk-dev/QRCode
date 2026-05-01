@@ -1,12 +1,20 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Loader2, Search, Flag, Mail, UserPlus, Sparkles, RotateCw, Pencil, Send, Plus, Inbox } from 'lucide-react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { Loader2, Search, Flag, Mail, UserPlus, Sparkles, RotateCw, Pencil, Send, Plus, Inbox, RotateCcw } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
-import { Tabs, AlertBanner, EmptyState, Skeleton, Badge } from '@/components/ui';
+import { Tabs, AlertBanner, EmptyState, Skeleton, Badge, PlatformChip, PLATFORMS, type PlatformId } from '@/components/ui';
+
+const PLATFORM_OPTIONS: PlatformId[] = [
+  'google',
+  'yemeksepeti',
+  'getir',
+  'trendyol_go',
+  'tripadvisor',
+];
 
 // Feedback shape returned by /api/feedback (subset of what we use)
 interface FeedbackRow {
@@ -80,6 +88,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // feedback is fetched into the loaded list.
   const [filterRating, setFilterRating] = useState(focusId ? 'all' : (searchParams.get('rating') || 'all'));
   const [daysFilter, setDaysFilter] = useState(focusId ? 'all' : (searchParams.get('days') || 'all'));
+  // PR3 — yeni filter'lar (platform, hasReply, isFlagged). URL state sync için
+  // useRouter + replace pattern'i (CLAUDE.md §28 + Linear/Stripe SaaS pattern).
+  const router = useRouter();
+  const pathname = usePathname();
+  const [platformFilter, setPlatformFilter] = useState<'all' | PlatformId>(
+    focusId ? 'all' : ((searchParams.get('platform') as PlatformId) || 'all'),
+  );
+  const [hasReplyFilter, setHasReplyFilter] = useState<'all' | 'pending'>(
+    focusId ? 'all' : ((searchParams.get('hasReply') === 'false' ? 'pending' : 'all')),
+  );
+  const [flaggedOnly, setFlaggedOnly] = useState<boolean>(
+    focusId ? false : searchParams.get('isFlagged') === 'true',
+  );
 
   // One-shot scroll-into-view + lime pulse highlight when arriving via
   // notification. Cleared on first apply so subsequent state changes
@@ -93,6 +114,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       try {
         const query = new URLSearchParams({ page: '1', limit: '50', days: daysFilter });
         if (filterRating !== 'all') query.append('rating', filterRating);
+        if (platformFilter !== 'all') query.append('platform', platformFilter);
+        if (hasReplyFilter === 'pending') query.append('hasReply', 'false');
+        if (flaggedOnly) query.append('isFlagged', 'true');
         const res = await fetch(`/api/feedback?${query.toString()}`);
         if (res.ok) {
           const data = await res.json();
@@ -106,7 +130,35 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       }
       setLoading(false);
     })();
-  }, [daysFilter, filterRating]);
+  }, [daysFilter, filterRating, platformFilter, hasReplyFilter, flaggedOnly]);
+
+  // URL sync — filter state'i query param'a yansıt (deeplink-friendly).
+  // Notification deep-link `?focus=` aktifken URL'i bozma (one-shot).
+  useEffect(() => {
+    if (focusId) return; // focus akışında URL'i değiştirme
+    const next = new URLSearchParams();
+    if (daysFilter !== 'all') next.set('days', daysFilter);
+    if (filterRating !== 'all') next.set('rating', filterRating);
+    if (platformFilter !== 'all') next.set('platform', platformFilter);
+    if (hasReplyFilter === 'pending') next.set('hasReply', 'false');
+    if (flaggedOnly) next.set('isFlagged', 'true');
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [daysFilter, filterRating, platformFilter, hasReplyFilter, flaggedOnly, focusId, pathname, router]);
+
+  const hasActiveFilter =
+    daysFilter !== 'all' ||
+    filterRating !== 'all' ||
+    platformFilter !== 'all' ||
+    hasReplyFilter !== 'all' ||
+    flaggedOnly;
+  const resetFilters = () => {
+    setDaysFilter('all');
+    setFilterRating('all');
+    setPlatformFilter('all');
+    setHasReplyFilter('all');
+    setFlaggedOnly(false);
+  };
 
   // Apply notification deep-link once data has landed: scroll the matching
   // list row into view and trigger a 1.6s lime pulse so the user sees
@@ -426,6 +478,79 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 <option value="1">1 ★</option>
               </select>
             </label>
+          </div>
+
+          {/* PR3 — Platform chips + state toggles */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPlatformFilter('all')}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                platformFilter === 'all'
+                  ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+              }`}
+              aria-pressed={platformFilter === 'all'}
+            >
+              {isTr ? 'Tüm platformlar' : 'All platforms'}
+            </button>
+            {PLATFORM_OPTIONS.map((pid) => {
+              const active = platformFilter === pid;
+              return (
+                <button
+                  key={pid}
+                  type="button"
+                  onClick={() => setPlatformFilter(active ? 'all' : pid)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                    active
+                      ? 'border-[#0A0A0A] bg-white text-[#0A0A0A]'
+                      : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                  }`}
+                  aria-pressed={active}
+                  title={PLATFORMS[pid].label}
+                >
+                  <PlatformChip id={pid} size={14} />
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setHasReplyFilter(hasReplyFilter === 'pending' ? 'all' : 'pending')}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                hasReplyFilter === 'pending'
+                  ? 'border-[#A8D62E] bg-[#EAF9B8] text-[#0A0A0A]'
+                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+              }`}
+              aria-pressed={hasReplyFilter === 'pending'}
+            >
+              <Mail size={11} strokeWidth={2.2} />
+              {isTr ? 'Yanıt bekleyen' : 'Pending reply'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFlaggedOnly((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                flaggedOnly
+                  ? 'border-[#DC2626] bg-[#FEE2E2] text-[#991B1B]'
+                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+              }`}
+              aria-pressed={flaggedOnly}
+            >
+              <Flag size={11} strokeWidth={2.2} />
+              {isTr ? 'İşaretli' : 'Flagged'}
+            </button>
+            {hasActiveFilter && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors ml-auto"
+              >
+                <RotateCcw size={11} strokeWidth={2.2} />
+                {isTr ? 'Temizle' : 'Reset'}
+              </button>
+            )}
           </div>
         </div>
 

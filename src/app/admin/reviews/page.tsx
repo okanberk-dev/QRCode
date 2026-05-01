@@ -1,11 +1,19 @@
 'use client';
 
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Check, Flag, Inbox, Loader2, Mail, Search, Send, Sparkles, Star, UserPlus } from 'lucide-react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Check, Flag, Inbox, Loader2, Mail, RotateCcw, Search, Send, Sparkles, Star, UserPlus, X } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { buildReplyTemplate } from '@/lib/scaffolding';
-import { PageHeader, Tabs, AlertBanner, EmptyState, Badge, Skeleton } from '@/components/ui';
+import { PageHeader, Tabs, AlertBanner, EmptyState, Badge, Skeleton, PlatformChip, PLATFORMS, StatCard, type PlatformId } from '@/components/ui';
+
+const PLATFORM_OPTIONS: PlatformId[] = [
+  'google',
+  'yemeksepeti',
+  'getir',
+  'trendyol_go',
+  'tripadvisor',
+];
 
 type Source = 'openai' | 'template' | 'template-fallback' | null;
 type Tone = 'success' | 'info' | 'error';
@@ -70,6 +78,23 @@ function AdminReviewsContent() {
   const [activeId, setActiveId] = useState<string | null>(focusId);
   const [tab, setTab] = useState<'all' | 'new' | 'attention' | 'replied'>(focusId ? 'all' : 'all');
   const [search, setSearch] = useState('');
+  // PR3 — yeni filter'lar
+  const router = useRouter();
+  const pathname = usePathname();
+  const [platformFilter, setPlatformFilter] = useState<'all' | PlatformId>(
+    focusId ? 'all' : ((searchParams.get('platform') as PlatformId) || 'all'),
+  );
+  const [hasReplyFilter, setHasReplyFilter] = useState<'all' | 'pending'>(
+    focusId ? 'all' : (searchParams.get('hasReply') === 'false' ? 'pending' : 'all'),
+  );
+  const [flaggedOnly, setFlaggedOnly] = useState<boolean>(
+    focusId ? false : searchParams.get('isFlagged') === 'true',
+  );
+  const [assignedToMe, setAssignedToMe] = useState<boolean>(
+    focusId ? false : searchParams.get('isAssigned') === 'me',
+  );
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // One-shot scroll-into-view + lime pulse when arriving via notification.
   const focusAppliedRef = useRef(false);
@@ -88,8 +113,13 @@ function AdminReviewsContent() {
     (async () => {
       setLoading(true);
       try {
+        const query = new URLSearchParams({ page: '1', limit: '100' });
+        if (platformFilter !== 'all') query.set('platform', platformFilter);
+        if (hasReplyFilter === 'pending') query.set('hasReply', 'false');
+        if (flaggedOnly) query.set('isFlagged', 'true');
+        if (assignedToMe) query.set('isAssigned', 'me');
         const [listRes, countsRes] = await Promise.all([
-          fetch('/api/feedback?page=1&limit=100'),
+          fetch(`/api/feedback?${query.toString()}`),
           fetch('/api/feedback/counts'),
         ]);
         if (listRes.ok) {
@@ -98,6 +128,7 @@ function AdminReviewsContent() {
           setRows(list);
           setActiveId((c) => c ?? list[0]?.id ?? null);
           setDegraded(data?.meta?.degraded ?? null);
+          setSelectedIds(new Set()); // filter değişince selection sıfırla
         }
         if (countsRes.ok) setCounts(await countsRes.json());
       } catch (err) {
@@ -105,7 +136,64 @@ function AdminReviewsContent() {
       }
       setLoading(false);
     })();
-  }, []);
+  }, [platformFilter, hasReplyFilter, flaggedOnly, assignedToMe]);
+
+  // URL state sync — Linear/Stripe inbox pattern (CLAUDE.md §28)
+  useEffect(() => {
+    if (focusId) return;
+    const next = new URLSearchParams();
+    if (platformFilter !== 'all') next.set('platform', platformFilter);
+    if (hasReplyFilter === 'pending') next.set('hasReply', 'false');
+    if (flaggedOnly) next.set('isFlagged', 'true');
+    if (assignedToMe) next.set('isAssigned', 'me');
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [platformFilter, hasReplyFilter, flaggedOnly, assignedToMe, focusId, pathname, router]);
+
+  const hasActiveFilter =
+    platformFilter !== 'all' || hasReplyFilter !== 'all' || flaggedOnly || assignedToMe;
+  const resetFilters = () => {
+    setPlatformFilter('all');
+    setHasReplyFilter('all');
+    setFlaggedOnly(false);
+    setAssignedToMe(false);
+  };
+
+  // Bulk action helper
+  const runBulk = async (action: 'flag' | 'unflag' | 'assign') => {
+    if (selectedIds.size === 0) return;
+    try {
+      const res = await fetch('/api/feedback/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds), action }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNotice({
+          msg: isTr
+            ? `${data.processed} yorum işlendi` + (data.skipped > 0 ? ` (${data.skipped} atlandı)` : '')
+            : `${data.processed} reviews processed` + (data.skipped > 0 ? ` (${data.skipped} skipped)` : ''),
+          tone: 'success',
+        });
+        setSelectedIds(new Set());
+        // Re-fetch list to reflect new flag/assignment state
+        const refresh = await fetch(`/api/feedback?page=1&limit=100${platformFilter !== 'all' ? `&platform=${platformFilter}` : ''}${hasReplyFilter === 'pending' ? '&hasReply=false' : ''}${flaggedOnly ? '&isFlagged=true' : ''}`);
+        if (refresh.ok) {
+          const d = await refresh.json();
+          setRows(d.data ?? []);
+        }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setNotice({
+          msg: err.error?.message || (isTr ? 'Toplu işlem başarısız' : 'Bulk action failed'),
+          tone: 'danger',
+        });
+      }
+    } catch {
+      setNotice({ msg: isTr ? 'Toplu işlem başarısız' : 'Bulk action failed', tone: 'danger' });
+    }
+  };
 
   // Apply notification deep-link once data has landed: scroll the matching
   // list row into view and trigger a 1.6s lime pulse so the user sees
@@ -347,6 +435,31 @@ function AdminReviewsContent() {
         </AlertBanner>
       )}
 
+      {/* PR3 — Quick stats. Linear/Intercom inbox pattern: en üstte 3-4 KPI
+          mini-card. /api/feedback/counts response'undaki tab count'lar buraya
+          map'lenir; hâlâ tab Tabs'ten ayrı bir bağımsız özet katmanı. */}
+      {counts && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          <StatCard
+            label={isTr ? 'Tüm yorumlar' : 'All reviews'}
+            value={(counts.all ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          />
+          <StatCard
+            label={isTr ? 'Yanıt bekleyen' : 'Pending reply'}
+            value={(counts.new ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+            accent="#C6F24E"
+          />
+          <StatCard
+            label={isTr ? 'Düşük puan (≤2★)' : 'Low rating (≤2★)'}
+            value={(counts.attention ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          />
+          <StatCard
+            label={isTr ? 'Yanıtlanmış' : 'Replied'}
+            value={(counts.replied ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          />
+        </div>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <aside className="bz-card overflow-hidden">
           <div className="border-b border-[#EDEDED] p-3 space-y-3">
@@ -366,6 +479,92 @@ function AdminReviewsContent() {
               onChange={(id) => setTab(id as typeof tab)}
               ariaLabel={isTr ? 'Durum filtresi' : 'Status filter'}
             />
+            {/* PR3 — Platform chips */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setPlatformFilter('all')}
+                className={`px-2.5 py-0.5 text-[11px] font-medium rounded-full border transition-colors ${
+                  platformFilter === 'all'
+                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                    : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                }`}
+                aria-pressed={platformFilter === 'all'}
+              >
+                {isTr ? 'Tümü' : 'All'}
+              </button>
+              {PLATFORM_OPTIONS.map((pid) => {
+                const active = platformFilter === pid;
+                return (
+                  <button
+                    key={pid}
+                    type="button"
+                    onClick={() => setPlatformFilter(active ? 'all' : pid)}
+                    className={`inline-flex items-center px-2 py-0.5 text-[11px] font-medium rounded-full border transition-colors ${
+                      active
+                        ? 'border-[#0A0A0A] bg-white text-[#0A0A0A]'
+                        : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                    }`}
+                    aria-pressed={active}
+                    title={PLATFORMS[pid].label}
+                  >
+                    <PlatformChip id={pid} size={14} />
+                  </button>
+                );
+              })}
+            </div>
+            {/* PR3 — State toggles */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setHasReplyFilter(hasReplyFilter === 'pending' ? 'all' : 'pending')}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                  hasReplyFilter === 'pending'
+                    ? 'border-[#A8D62E] bg-[#EAF9B8] text-[#0A0A0A]'
+                    : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                }`}
+                aria-pressed={hasReplyFilter === 'pending'}
+              >
+                <Mail size={11} strokeWidth={2.2} />
+                {isTr ? 'Yanıt bekleyen' : 'Pending'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFlaggedOnly((v) => !v)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                  flaggedOnly
+                    ? 'border-[#DC2626] bg-[#FEE2E2] text-[#991B1B]'
+                    : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                }`}
+                aria-pressed={flaggedOnly}
+              >
+                <Flag size={11} strokeWidth={2.2} />
+                {isTr ? 'İşaretli' : 'Flagged'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAssignedToMe((v) => !v)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                  assignedToMe
+                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                    : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                }`}
+                aria-pressed={assignedToMe}
+              >
+                <UserPlus size={11} strokeWidth={2.2} />
+                {isTr ? 'Bana atanan' : 'Assigned to me'}
+              </button>
+              {hasActiveFilter && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors ml-auto"
+                >
+                  <RotateCcw size={11} strokeWidth={2.2} />
+                  {isTr ? 'Temizle' : 'Reset'}
+                </button>
+              )}
+            </div>
           </div>
           <div className="max-h-[70vh] overflow-y-auto divide-y divide-[#EDEDED]">
             {loading ? (
@@ -392,14 +591,38 @@ function AdminReviewsContent() {
             ) : (
               filtered.map((r) => {
                 const isActive = r.id === active?.id;
+                const isSelected = selectedIds.has(r.id);
                 return (
-                  <button
+                  <div
                     key={r.id}
-                    data-feedback-id={r.id}
-                    onClick={() => setActiveId(r.id)}
-                    className={`flex w-full items-start gap-3 px-3 py-3 text-left transition-colors ${
+                    className={`flex w-full items-start ${
                       isActive ? 'bg-[#EAF9B8]/40' : 'hover:bg-[#FAFAFA]'
                     } ${pulsedId === r.id ? 'animate-pulse ring-2 ring-[#C6F24E] ring-inset' : ''}`}
+                  >
+                    <label
+                      className="flex items-center justify-center px-2 py-3 cursor-pointer shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                      title={isTr ? 'Toplu seç' : 'Bulk select'}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          setSelectedIds((prev) => {
+                            const next = new Set(prev);
+                            if (e.target.checked) next.add(r.id);
+                            else next.delete(r.id);
+                            return next;
+                          });
+                        }}
+                        aria-label={isTr ? `${r.customerName ?? 'Yorum'} seç` : `Select ${r.customerName ?? 'review'}`}
+                        className="h-3.5 w-3.5 accent-[#0A0A0A] cursor-pointer"
+                      />
+                    </label>
+                    <button
+                      data-feedback-id={r.id}
+                      onClick={() => setActiveId(r.id)}
+                      className="flex flex-1 items-start gap-3 pr-3 py-3 text-left"
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[11px] font-semibold text-white">
                       {initials(r.customerName)}
@@ -428,6 +651,7 @@ function AdminReviewsContent() {
                       {r.comment && <p className="mt-1 line-clamp-2 text-[12px] text-[#525252]">{r.comment}</p>}
                     </div>
                   </button>
+                </div>
                 );
               })
             )}
@@ -636,6 +860,51 @@ function AdminReviewsContent() {
           )}
         </section>
       </div>
+
+      {/* PR3 — Bulk action floating toolbar (Stripe Dashboard pattern).
+          Selection > 0 olunca sticky bottom-center; mobile'da inset-x-4. */}
+      {selectedIds.size > 0 && (
+        <div
+          role="region"
+          aria-label={isTr ? 'Toplu işlem araç çubuğu' : 'Bulk action toolbar'}
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-2xl border border-[#0A0A0A] bg-white px-3 py-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.4)] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:max-w-[480px]"
+        >
+          <span className="text-[12px] font-semibold text-[#0A0A0A] px-2">
+            {selectedIds.size} {isTr ? 'seçildi' : 'selected'}
+          </span>
+          <button
+            type="button"
+            onClick={() => runBulk('flag')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-3 py-1 text-[11px] font-medium text-[#525252] hover:bg-[#FAFAFA] transition-colors"
+          >
+            <Flag size={11} strokeWidth={2.2} />
+            {isTr ? 'İşaretle' : 'Flag'}
+          </button>
+          <button
+            type="button"
+            onClick={() => runBulk('unflag')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-3 py-1 text-[11px] font-medium text-[#525252] hover:bg-[#FAFAFA] transition-colors"
+          >
+            {isTr ? 'Kaldır' : 'Unflag'}
+          </button>
+          <button
+            type="button"
+            onClick={() => runBulk('assign')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-3 py-1 text-[11px] font-medium text-[#525252] hover:bg-[#FAFAFA] transition-colors"
+          >
+            <UserPlus size={11} strokeWidth={2.2} />
+            {isTr ? 'Bana ata' : 'Assign me'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            aria-label={isTr ? 'Seçimi temizle' : 'Clear selection'}
+            className="ml-1 rounded-md p-1 hover:bg-[#FAFAFA] transition-colors"
+          >
+            <X size={14} strokeWidth={2.2} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

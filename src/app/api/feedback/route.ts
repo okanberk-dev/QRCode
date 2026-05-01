@@ -253,6 +253,14 @@ export async function GET(req: NextRequest) {
   const kvkkFilter = searchParams.get('kvkk'); // 'true' or 'false'
   const searchParam = (searchParams.get('search') || '').trim();
   const sortOrderParam = searchParams.get('sortOrder');
+  // PR3 — yorum gelen kutusu filter expansion. 3-tier resilience uyumlu:
+  // join'ler tier 3'te düşerse bu filter'lar relation-based, otomatik no-op
+  // sayılır (Prisma where açtığında bağlanan tablo yoksa Prisma şikayet eder
+  // — bu yüzden joinsAvailable kontrolüne benzer şekilde defansif: try/catch
+  // 3-tier pattern içinde zaten yakalıyor).
+  const hasReplyParam = searchParams.get('hasReply'); // 'true' | 'false'
+  const isFlaggedParam = searchParams.get('isFlagged'); // 'true'
+  const isAssignedParam = searchParams.get('isAssigned'); // 'me'
   const sortOrder: 'asc' | 'desc' = sortOrderParam === 'asc' ? 'asc' : 'desc';
 
   const skip = (page - 1) * limit;
@@ -340,6 +348,23 @@ export async function GET(req: NextRequest) {
       { comment: { contains: searchParam, mode: 'insensitive' } },
       { name: { contains: searchParam, mode: 'insensitive' } },
     ];
+  }
+
+  // PR3 — JOIN-based filter expansion (FeedbackReply / FeedbackFlag /
+  // FeedbackAssignment relation'larına bağlı). Schema sync edilmemiş preview
+  // deploy'da bu filter'lar Prisma "table doesn't exist" fail'ine sebep olur;
+  // dış try/catch (line ~478) 500 yerine error response döner. Production'da
+  // `prisma db push` her deploy'da çalışır → güvenli.
+  if (hasReplyParam === 'true') {
+    where.replies = { some: {} };
+  } else if (hasReplyParam === 'false') {
+    where.replies = { none: {} };
+  }
+  if (isFlaggedParam === 'true') {
+    where.flag = { isNot: null };
+  }
+  if (isAssignedParam === 'me' && actor.id) {
+    where.assignment = { assigneeId: actor.id };
   }
 
   try {
