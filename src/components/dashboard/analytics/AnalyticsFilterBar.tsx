@@ -108,12 +108,13 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
           })}
         </div>
 
-        {/* Multi-restaurant owner case */}
+        {/* Multi-restaurant owner case — min-w native select chevron için yer
+            ayırır, max-w uzun isimleri sınırlar (text-overflow native). */}
         {restaurants && restaurants.length > 1 && (
           <select
             value={restaurantId}
             onChange={(e) => update('restaurantId', e.target.value)}
-            className="bz-input h-[34px] py-0 text-[13px] sm:max-w-[200px]"
+            className="bz-input h-[34px] py-0 pr-8 text-[13px] min-w-[180px] sm:min-w-[200px] sm:max-w-[260px]"
             aria-label={isTr ? 'İşletme' : 'Business'}
           >
             <option value="all">{isTr ? 'Tüm işletmeler' : 'All businesses'}</option>
@@ -125,12 +126,14 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
           </select>
         )}
 
-        {/* Branch select */}
+        {/* Branch select — eski 180px chevron'la birlikte "Tüm şubeler" tek harf
+            kesiyordu; min-w 180 + pr-8 ile dropdown ok'unun yer aldığı boşluk
+            text alanından çıkarılıyor. */}
         {branches && branches.length > 0 && (
           <select
             value={branch}
             onChange={(e) => update('branch', e.target.value)}
-            className="bz-input h-[34px] py-0 text-[13px] sm:max-w-[180px]"
+            className="bz-input h-[34px] py-0 pr-8 text-[13px] min-w-[170px] sm:min-w-[190px] sm:max-w-[240px]"
             aria-label={isTr ? 'Şube' : 'Branch'}
           >
             <option value="all">{isTr ? 'Tüm şubeler' : 'All branches'}</option>
