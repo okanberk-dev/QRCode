@@ -1,10 +1,9 @@
 # Buaze — AI-Friendly Site Overview
 
 ## What is Buaze?
-Buaze (buaze.com) is a B2B SaaS platform for digital reputation management and customer
-feedback operations. It helps businesses collect transparent customer feedback through
-QR-code-based review flows, manage reviews from one dashboard, and respond faster with
-AI-assisted reply drafts.
+Buaze (buaze.com) is a QR feedback & digital reputation management platform for local
+businesses. It collects transparent customer feedback through QR flows, lets teams
+manage reviews from one dashboard, and drafts replies with Pulse AI.
 
 ## Compliance positioning
 Buaze does not block, hide, or manipulate customer reviews. The flow does not gate access

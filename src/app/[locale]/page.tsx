@@ -27,11 +27,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getTranslations(locale);
   const title = locale === 'tr'
-    ? 'Buaze | Dijital İtibar ve Geri Bildirim Yönetimi'
-    : 'Buaze | Digital Reputation and Feedback Management';
+    ? 'Buaze | QR Geri Bildirim ve Dijital İtibar Yönetim Platformu'
+    : 'Buaze | QR Feedback & Digital Reputation Management Platform';
   const description = locale === 'tr'
-    ? 'Buaze ile işletmenizin dijital itibarını profesyonelleştirin. Geri bildirim operasyonlarınızı tek bir merkezden yöneterek güven inşa edin.'
-    : 'Professionalize your business\'s digital reputation with Buaze. Build trust by managing your feedback operations from a single hub.';
+    ? 'Buaze ile QR akışlarıyla şeffaf müşteri geri bildirimi toplayın, yorumları tek panelden yönetin ve Pulse AI taslaklarıyla daha hızlı yanıt verin. Restoran, otel, klinik ve yerel hizmet işletmeleri için.'
+    : 'Collect transparent customer feedback through QR flows, manage reviews from one dashboard, and respond faster with Pulse AI drafts. Built for restaurants, hotels, clinics and local service businesses.';
   const ogImage = locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
 
   return {
