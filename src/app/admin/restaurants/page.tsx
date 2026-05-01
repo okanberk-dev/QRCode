@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { AlertBanner, Avatar, Badge, type BadgeKind, CardSkeleton, EmptyState, Modal, PageHeader, type TabItem, Tabs } from '@/components/ui';
 
@@ -589,6 +590,7 @@ interface RestaurantTableProps {
 }
 
 function RestaurantTable({ rows, onToggle }: RestaurantTableProps) {
+  const router = useRouter();
   // The desktop table lives inside `overflow-x-auto`, which clips
   // absolute-positioned dropdowns vertically (browsers treat `overflow-x: auto`
   // as also clipping `overflow-y`). Anchoring the menu via `position: fixed`
@@ -656,8 +658,31 @@ function RestaurantTable({ rows, onToggle }: RestaurantTableProps) {
             {rows.map((r) => {
               const plan = planBadge(r.user?.plan);
               const kvkkOk = hasKvkk(r);
+              const detailHref = `/admin/restaurants/${r.id}`;
+              const onRowKey = (e: React.KeyboardEvent<HTMLTableRowElement>) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  // PR7 — keyboard drill-down. Buton içi keystroke'ları dışarda
+                  // bırak — checkbox, more menu vs hâlâ kendi pattern'leriyle çalışsın.
+                  if ((e.target as HTMLElement).closest('button, a, input, [role="menu"]')) return;
+                  e.preventDefault();
+                  router.push(detailHref);
+                }
+              };
               return (
-                <tr key={r.id}>
+                <tr
+                  key={r.id}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`${r.name} detayını aç`}
+                  onClick={(e) => {
+                    // Action hücresindeki MoreHorizontal kendi stopPropagation'ı
+                    // var; defensive olarak burada da button/anchor/input ise atla.
+                    if ((e.target as HTMLElement).closest('button, a, input')) return;
+                    router.push(detailHref);
+                  }}
+                  onKeyDown={onRowKey}
+                  className="cursor-pointer transition-colors hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-inset"
+                >
                   <td>
                     <div className="flex items-center gap-2.5">
                       <Avatar name={r.name} size={28} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
