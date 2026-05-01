@@ -230,8 +230,8 @@ export default function OnboardingPage({ params }: Props) {
                   ? 'Her konum için ayrı QR kodları, ayrı analitik. Sonra şube ekleyebilirsiniz.'
                   : 'Separate QRs and analytics per location. Add more branches later.')}
                 {step === 'platforms' && (isTr
-                  ? 'Müşteriler 4★ ve üstü verirse seçtiğiniz platforma yönlendirilir.'
-                  : 'Customers giving 4★+ are redirected to the platform you select.')}
+                  ? 'Müşterilerinize bu platformlardaki herkese açık yorum bağlantılarını sunarız. Her müşteri istediği yere yorum yazma hakkını korur; düşük puan veren müşteriler önce ekibinizle özel paylaşım yapmayı tercih edebilir.'
+                  : 'We surface the public review links you have selected to your customers. Every customer keeps the choice to post anywhere; customers giving low ratings can choose to share privately with your team first.')}
                 {step === 'qr' && (isTr
                   ? 'Tasarımı seçin, indirin ve masanıza yapıştırın. Kurulum tamamlandı.'
                   : 'Pick a design, download, stick to your table. Setup complete.')}
