@@ -139,7 +139,6 @@ export default async function DashboardLayout({
         email: user.email,
         plan: user.plan,
         trialEndsAt: user.trialEndsAt?.toISOString() || null,
-        createdAt: user.createdAt.toISOString(),
       }}
       workspace={{
         primaryName: user.restaurants[0]?.name ?? null,
