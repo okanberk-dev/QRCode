@@ -26,6 +26,8 @@ export interface OpsAlertParams {
   reason?: string;
   /** Useful identifiers for ops to find the upstream record. */
   metadata?: Record<string, string | number | null | undefined>;
+  /** Affected owner's panel locale — Buaze ops için TR/EN body parity. */
+  userLocale?: 'tr' | 'en';
 }
 
 const OPS_RATE_LIMIT_PER_WINDOW = 10;
@@ -72,28 +74,51 @@ export async function notifyOpsOfMailFailure(params: OpsAlertParams): Promise<vo
     return;
   }
 
-  const subject = `[OPS] Mail send failed: ${params.template}`;
+  // Locale-aware body — etkilenen owner'ın panel diline göre TR/EN render.
+  // Buaze ops ekibi her iki dili de okuyabilir; mail recipient (ops inbox)
+  // değil, bağlam (affected user) dili önemli (CLAUDE.md §21.33 + Phase 11.34).
+  const isTr = params.userLocale !== 'en'; // default TR (CLAUDE.md §22.9)
   const metaLines = Object.entries(params.metadata ?? {})
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .map(([k, v]) => `  ${k}: ${v}`)
     .join('\n');
 
-  const text = [
-    `A critical mail failed to send.`,
-    ``,
-    `Template:   ${params.template}`,
-    `Recipient:  ${params.recipient}`,
-    `Reason:     ${params.reason ?? 'unknown (see app logs)'}`,
-    ``,
-    `Metadata:`,
-    metaLines || '  (none)',
-    ``,
-    `When:       ${new Date().toISOString()}`,
-    ``,
-    `Action: investigate the recipient mailbox / Resend dashboard, then`,
-    `re-trigger from the admin panel if the upstream record is still`,
-    `actionable.`,
-  ].join('\n');
+  const subject = isTr
+    ? `[OPS] Mail gönderilemedi: ${params.template}`
+    : `[OPS] Mail send failed: ${params.template}`;
+
+  const text = isTr
+    ? [
+        `Kritik bir mail gönderilemedi.`,
+        ``,
+        `Şablon:    ${params.template}`,
+        `Alıcı:     ${params.recipient}`,
+        `Sebep:     ${params.reason ?? 'bilinmiyor (uygulama loglarına bakın)'}`,
+        ``,
+        `Metadata:`,
+        metaLines || '  (yok)',
+        ``,
+        `Zaman:     ${new Date().toISOString()}`,
+        ``,
+        `Aksiyon: alıcı mailbox'ını / Resend dashboard'unu kontrol edin, sonra`,
+        `upstream kayıt hâlâ geçerliyse admin panelinden tekrar tetikleyin.`,
+      ].join('\n')
+    : [
+        `A critical mail failed to send.`,
+        ``,
+        `Template:   ${params.template}`,
+        `Recipient:  ${params.recipient}`,
+        `Reason:     ${params.reason ?? 'unknown (see app logs)'}`,
+        ``,
+        `Metadata:`,
+        metaLines || '  (none)',
+        ``,
+        `When:       ${new Date().toISOString()}`,
+        ``,
+        `Action: investigate the recipient mailbox / Resend dashboard, then`,
+        `re-trigger from the admin panel if the upstream record is still`,
+        `actionable.`,
+      ].join('\n');
 
   try {
     const ok = await sendResendEmail({

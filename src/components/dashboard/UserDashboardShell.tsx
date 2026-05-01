@@ -531,9 +531,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               onClick={() => setPaletteOpen(true)}
               aria-label={locale === 'tr' ? 'Arama paletini aç' : 'Open search palette'}
               title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
-              className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#737373] hover:border-[#0A0A0A] hover:text-[#0A0A0A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+              className="hidden xl:flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
             >
-              <Search size={12} strokeWidth={2} />
+              <Search size={13} strokeWidth={2.25} />
               <span>{locale === 'tr' ? 'Yorum, konum, sayfa ara…' : 'Search reviews, locations, pages…'}</span>
               <span className="ml-1 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono">
                 ⌘K
@@ -544,9 +544,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               onClick={() => setPaletteOpen(true)}
               aria-label={locale === 'tr' ? 'Aramayı aç' : 'Open search'}
               title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
-              className="xl:hidden flex h-9 w-9 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
+              className="xl:hidden flex h-9 w-9 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] hover:bg-[#EAF9B8]/40 active:scale-90 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
             >
-              <Search size={14} strokeWidth={2} />
+              <Search size={15} strokeWidth={2.25} />
             </button>
             <NotificationBell
               locale={locale}
