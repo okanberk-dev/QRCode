@@ -98,7 +98,16 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
       <nav
         aria-label={locale === 'tr' ? 'Mobil alt menü' : 'Mobile bottom navigation'}
         className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#EDEDED]"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          // iOS Safari fix: dinamik bottom-toolbar transition'ında fixed
+          // element'in viewport ile re-position'ı titreşime yol açıyor.
+          // GPU compositing layer'a taşımak nav'ı sayfa render'ından izole
+          // eder, scroll esnasındaki "bir üste çıkma" glitch'ini önler.
+          transform: 'translate3d(0, 0, 0)',
+          willChange: 'transform',
+          backfaceVisibility: 'hidden',
+        }}
       >
         <ul className="flex items-stretch justify-around h-[68px] max-w-[520px] mx-auto px-2">
           {items.map((item) => {
