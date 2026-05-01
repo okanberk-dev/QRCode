@@ -62,7 +62,7 @@ export function BusinessWebsiteSettings({
   const isTr = locale === 'tr';
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [size, setSize] = useState<'compact' | 'full'>('full');
+  const [variant, setVariant] = useState<'wall' | 'badge' | 'spotlight'>('wall');
   const [scriptMode, setScriptMode] = useState<'iframe' | 'script'>('iframe');
   const [copied, setCopied] = useState(false);
 
@@ -96,13 +96,22 @@ export function BusinessWebsiteSettings({
   }, [restaurantId, isTr]);
 
   const embedSnippet = useMemo(() => {
-    const url = `${APP_URL}/embed/${slug}?theme=${theme}&size=${size}`;
+    // Variant → iframe height map. Each layout reserves vertical space for
+    // its content; numbers tuned against the actual server-rendered heights.
+    // Inlined inside useMemo so the constant doesn't drift into the deps
+    // array of an outer Memo.
+    const heights: Record<typeof variant, number> = {
+      badge: 110,
+      spotlight: 320,
+      wall: 440,
+    };
+    const url = `${APP_URL}/embed/${slug}?theme=${theme}&variant=${variant}`;
     if (scriptMode === 'script') {
-      return `<script src="${APP_URL}/buaze-embed.js" data-buaze="${slug}" data-theme="${theme}" data-size="${size}" defer></script>`;
+      return `<script src="${APP_URL}/buaze-embed.js" data-buaze="${slug}" data-theme="${theme}" data-variant="${variant}" defer></script>`;
     }
-    const height = size === 'compact' ? 100 : 400;
+    const height = heights[variant];
     return `<iframe src="${url}" width="100%" height="${height}" frameborder="0" style="border:none;max-width:600px"></iframe>`;
-  }, [slug, theme, size, scriptMode]);
+  }, [slug, theme, variant, scriptMode]);
 
   const handleCopy = async () => {
     try {
@@ -179,32 +188,32 @@ export function BusinessWebsiteSettings({
 
           <div className="flex items-center gap-2">
             <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'BOYUT' : 'SIZE'}
+              {isTr ? 'STİL' : 'STYLE'}
             </span>
             <div
               className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] p-1"
               role="group"
-              aria-label={isTr ? 'Boyut' : 'Size'}
+              aria-label={isTr ? 'Stil seçimi' : 'Style'}
             >
-              {(['full', 'compact'] as const).map((s) => (
+              {(
+                [
+                  { id: 'wall', tr: 'Duvar', en: 'Wall' },
+                  { id: 'spotlight', tr: 'Vitrin', en: 'Spotlight' },
+                  { id: 'badge', tr: 'Rozet', en: 'Badge' },
+                ] as const
+              ).map((v) => (
                 <button
-                  key={s}
+                  key={v.id}
                   type="button"
-                  onClick={() => setSize(s)}
+                  onClick={() => setVariant(v.id)}
                   className={`px-2.5 py-1 text-[12px] font-medium rounded-md transition-colors ${
-                    size === s
+                    variant === v.id
                       ? 'bg-[#0A0A0A] text-white'
                       : 'text-[#525252] hover:bg-[#F5F5F5]'
                   }`}
-                  aria-pressed={size === s}
+                  aria-pressed={variant === v.id}
                 >
-                  {s === 'full'
-                    ? isTr
-                      ? 'Tam'
-                      : 'Full'
-                    : isTr
-                      ? 'Kompakt'
-                      : 'Compact'}
+                  {isTr ? v.tr : v.en}
                 </button>
               ))}
             </div>
@@ -286,7 +295,7 @@ export function BusinessWebsiteSettings({
           websiteDomain={websiteDomain}
           businessName={businessName}
           theme={theme}
-          size={size}
+          variant={variant}
           isTr={isTr}
         />
       </section>
