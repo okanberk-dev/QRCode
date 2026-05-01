@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
-import dynamicImport from 'next/dynamic';
 import type { Locale } from '@/lib/translations';
 import {
   BarChart,
@@ -16,18 +15,15 @@ import {
   type PlatformId,
 } from '@/components/ui';
 import AnalyticsFilterBar from '@/components/dashboard/analytics/AnalyticsFilterBar';
-import type { InteractionTrendPoint } from '@/components/dashboard/analytics/InteractionTrendChart';
+import InteractionTrendChart, {
+  type InteractionTrendPoint,
+} from '@/components/dashboard/analytics/InteractionTrendChart';
 
-// Recharts'ı sadece bu chart için lazy yükle (mobile ilk paint'te skeleton).
-const InteractionTrendChart = dynamicImport(
-  () => import('@/components/dashboard/analytics/InteractionTrendChart'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[240px] sm:h-[300px] md:h-[340px] w-full animate-pulse rounded-xl bg-[#FAFAFA]" />
-    ),
-  },
-);
+// Note: InteractionTrendChart taşır 'use client' direktifini — Next.js 15
+// otomatik client boundary çizer, server-side pre-render minimal HTML
+// üretir, browser'da Recharts hydrate olur. `dynamic({ ssr: false })`
+// Server Component'te yasak (CLAUDE.md §27 — dynamic+ssr:false sadece
+// client component içinde kullanılabilir).
 
 export const dynamic = 'force-dynamic';
 

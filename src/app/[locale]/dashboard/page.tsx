@@ -6,7 +6,6 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
 import Link from 'next/link';
-import dynamicImport from 'next/dynamic';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -20,18 +19,14 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { tr as trLocale, enUS as enLocale } from 'date-fns/locale';
 import RatingChart from '@/components/admin/RatingChart';
 import PlatformDistribution from '@/components/admin/PlatformDistribution';
+import TrendsChart from '@/components/admin/TrendsChart';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
 
-// TrendsChart Recharts bağımlılığı taşır — server-render etmiyoruz, mobil ilk
-// paint'te skeleton görünür, chunk yüklenince swap (CLAUDE.md §21.14 pattern).
-const TrendsChart = dynamicImport(() => import('@/components/admin/TrendsChart'), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[260px] sm:h-[320px] md:h-[350px] w-full animate-pulse rounded-2xl bg-[#FAFAFA]" />
-  ),
-});
+// TrendsChart taşır 'use client' direktifini — server-side pre-render
+// minimal HTML, browser'da Recharts hydrate. `dynamic({ ssr: false })`
+// Next.js 15 Server Component'te yasak (CLAUDE.md §27).
 
 export async function generateMetadata({
   params,
