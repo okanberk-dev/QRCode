@@ -182,7 +182,7 @@ model QrScan {
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   tableNumber  String?    @map("table_number")
   platform     String?
-  source       String?    // 'qr' | 'direct' | 'link' | 'table' | 'delivery'
+  source       String? // 'qr' | 'direct' | 'link' | 'table' | 'delivery'
   sessionId    String?    @map("session_id")
   // KVKK §13.9 — IP 90 gün retention (cron'la anonimleştirilebilir, mevcut
   // pattern Feedback.ipAddress'le aynı).
@@ -268,6 +268,16 @@ model Feedback {
 
   @@index([restaurantId, createdAt])
   @@index([ipAddress, createdAt])
+  // Filtered analytics paths (CLAUDE.md §17 perf pass, 2026-05).
+  // /api/feedback/stats and /dashboard/analytics filter by rating /
+  // platform / branch in addition to (restaurantId, createdAt). Without
+  // matching composite indexes, Postgres falls back to bitmap-index
+  // combinations on filtered subsets — these add 30-50ms per query on
+  // tables that grow with feedback volume. Adding the indexes is safe and
+  // additive (no data shape change, prisma db push picks them up).
+  @@index([restaurantId, rating, createdAt])
+  @@index([restaurantId, platform, createdAt])
+  @@index([restaurantId, branch, createdAt])
   @@map("feedback")
 }
 
@@ -1034,42 +1044,42 @@ model BillingInvoice {
 // isFeatured is enforced single-row at the API layer (PATCH demotes
 // others when one is promoted).
 model SubscriptionPlan {
-  id              String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Bilingual display fields
-  nameTr          String
-  nameEn          String
-  descriptionTr   String   @db.Text
-  descriptionEn   String   @db.Text
+  nameTr        String
+  nameEn        String
+  descriptionTr String @db.Text
+  descriptionEn String @db.Text
 
   // Pricing — whole TRY / whole USD; admin UI uses int controls.
-  priceTry        Int      @map("price_try")
-  priceUsd        Int?     @map("price_usd")
-  period          String   @default("month") // 'month' | 'year' | 'one-time'
+  priceTry Int    @map("price_try")
+  priceUsd Int?   @map("price_usd")
+  period   String @default("month") // 'month' | 'year' | 'one-time'
 
   // Features — JSON string array, locale-paired
-  featuresTr      Json     @map("features_tr")
-  featuresEn      Json     @map("features_en")
+  featuresTr Json @map("features_tr")
+  featuresEn Json @map("features_en")
 
   // CTA
-  buttonTextTr    String   @default("Başla") @map("button_text_tr")
-  buttonTextEn    String   @default("Start") @map("button_text_en")
-  buttonHref      String   @default("/auth/register") @map("button_href")
+  buttonTextTr String @default("Başla") @map("button_text_tr")
+  buttonTextEn String @default("Start") @map("button_text_en")
+  buttonHref   String @default("/auth/register") @map("button_href")
 
   // Display
-  isActive        Boolean  @default(true) @map("is_active")
-  isFeatured      Boolean  @default(false) @map("is_featured")
-  sortOrder       Int      @default(0) @map("sort_order")
+  isActive   Boolean @default(true) @map("is_active")
+  isFeatured Boolean @default(false) @map("is_featured")
+  sortOrder  Int     @default(0) @map("sort_order")
 
   // Optional discount
-  discountActive  Boolean  @default(false) @map("discount_active")
-  discountType    String?  @map("discount_type") // 'percent' | 'fixed'
-  discountValue   Int?     @map("discount_value")
-  discountLabelTr String?  @map("discount_label_tr")
-  discountLabelEn String?  @map("discount_label_en")
+  discountActive  Boolean @default(false) @map("discount_active")
+  discountType    String? @map("discount_type") // 'percent' | 'fixed'
+  discountValue   Int?    @map("discount_value")
+  discountLabelTr String? @map("discount_label_tr")
+  discountLabelEn String? @map("discount_label_en")
 
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([isActive, sortOrder])
   @@map("subscription_plans")
