@@ -5,7 +5,7 @@ import { CreditCard, Download, FileText, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
-import { PageHeader, Badge } from '@/components/ui';
+import { AlertBanner, PageHeader, Badge } from '@/components/ui';
 
 interface BillingSummary {
   plan: string;
@@ -38,18 +38,21 @@ function AdminBillingBody() {
   const [summary, setSummary] = useState<BillingSummary | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
         const [s, i] = await Promise.all([fetch('/api/billing/summary'), fetch('/api/billing/invoices')]);
         if (s.ok) setSummary(await s.json());
+        else setFetchError('Faturalama özeti getirilemedi.');
         if (i.ok) {
           const data = await i.json();
           setInvoices((data.data as Invoice[]) ?? []);
         }
       } catch (e) {
         console.error(e);
+        setFetchError('Bağlantı hatası — faturalama bilgileri şu an gelmiyor.');
       }
       setLoading(false);
     })();
@@ -68,6 +71,12 @@ function AdminBillingBody() {
             : 'Manage your plan, download invoice history, and track monthly usage metrics.'
         }
       />
+
+      {fetchError && (
+        <AlertBanner kind="danger" onDismiss={() => setFetchError(null)}>
+          {fetchError}
+        </AlertBanner>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center rounded-2xl border border-[#EDEDED] bg-white p-20 text-[#737373]">
