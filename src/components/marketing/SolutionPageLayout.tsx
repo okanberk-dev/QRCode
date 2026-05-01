@@ -3,18 +3,6 @@ import {
   TrendingUp,
   Users,
   ChevronRight,
-  Utensils,
-  Hotel,
-  Stethoscope,
-  Scissors,
-  Dumbbell,
-  Scale,
-  Home as HomeIcon,
-  Car,
-  Sparkles,
-  GraduationCap,
-  PawPrint,
-  Building2,
   Star,
   ShieldCheck,
   Zap,
@@ -22,6 +10,7 @@ import {
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import type { Locale, Translations } from '@/lib/translations';
+import { getRelatedSolutions } from '@/lib/related-solutions';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 
@@ -66,21 +55,11 @@ const INDUSTRY_SLUG_MAP: Record<string, string> = {
   ret: 'retail',
 };
 
-const ALL_SOLUTIONS = [
-  { slug: 'restaurants', icon: <Utensils size={16} />, tr: 'Restoran & Kafeler', en: 'Restaurants & Cafes' },
-  { slug: 'hotels', icon: <Hotel size={16} />, tr: 'Oteller', en: 'Hotels' },
-  { slug: 'healthcare', icon: <Stethoscope size={16} />, tr: 'Sağlık Klinikleri', en: 'Healthcare Clinics' },
-  { slug: 'dentists', icon: <Stethoscope size={16} />, tr: 'Diş Klinikleri', en: 'Dental Clinics' },
-  { slug: 'beauty-salon', icon: <Scissors size={16} />, tr: 'Güzellik Salonları', en: 'Beauty Salons' },
-  { slug: 'gym', icon: <Dumbbell size={16} />, tr: 'Spor Salonları', en: 'Gyms & Fitness' },
-  { slug: 'veterinary', icon: <PawPrint size={16} />, tr: 'Veterinerler', en: 'Veterinary Clinics' },
-  { slug: 'law-firms', icon: <Scale size={16} />, tr: 'Hukuk Firmaları', en: 'Law Firms' },
-  { slug: 'real-estate', icon: <HomeIcon size={16} />, tr: 'Emlak', en: 'Real Estate' },
-  { slug: 'auto-service', icon: <Car size={16} />, tr: 'Araç Servisleri', en: 'Auto Services' },
-  { slug: 'aesthetic', icon: <Sparkles size={16} />, tr: 'Estetik & Kozmetik', en: 'Aesthetic & Cosmetics' },
-  { slug: 'schools', icon: <GraduationCap size={16} />, tr: 'Okullar & Kurslar', en: 'Schools & Courses' },
-  { slug: 'boutique-hotels', icon: <Building2 size={16} />, tr: 'Butik Oteller', en: 'Boutique Hotels' },
-];
+// Related-solutions list moved to `src/lib/related-solutions.ts` —
+// shared between the layout-using sector pages and the seven custom
+// sector pages (restaurants, delivery, beauty-salon, healthcare,
+// hotels, law-firms, retail) so all surfaces emit the same cross-link
+// strip and stay in sync when a sector is added.
 
 export default function SolutionPageLayout({
   locale,
@@ -103,7 +82,7 @@ export default function SolutionPageLayout({
   const isTr = locale === 'tr';
   const currentSlug = slugProp ?? INDUSTRY_SLUG_MAP[industryKey] ?? '';
   const canonicalUrl = `https://buaze.com/${locale}/solutions/${currentSlug}`;
-  const relatedSolutions = ALL_SOLUTIONS.filter((s) => s.slug !== currentSlug).slice(0, 4);
+  const relatedSolutions = getRelatedSolutions(currentSlug, 4);
 
   const displaySteps = steps || [
     {
@@ -413,7 +392,7 @@ export default function SolutionPageLayout({
                   className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
                 >
                   <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]">
-                    {sol.icon}
+                    <sol.Icon size={16} />
                   </span>
                   <span className="text-[13px] sm:text-[14px] font-medium text-[#0A0A0A] leading-tight">
                     {isTr ? sol.tr : sol.en}
