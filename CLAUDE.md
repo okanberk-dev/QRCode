@@ -2953,6 +2953,51 @@ Owner panel'deki Slack webhook bildirim ayarı kullanıcı talebiyle kaldırıld
 
 **Geri çekmek için:** Yeni `<InteractionTrendChart>` sadece bu sayfada kullanılır. Recharts bağımlılığı dashboard ana sayfasındaki `TrendsChart` ile zaten paylaşılıyor — ekstra bundle maliyet sıfır. Custom BarChart'a dönmek istenirse, range > 14 gün için thinning veya scrollable container gerekir (yeniden inşa şart).
 
+### 34.9 2026-05-01 — Analytics 2 bug fix + AI themes + 3 yeni metric
+
+Owner panel analytics sayfası kullanıcı şikayetleri sonrası genişletildi.
+
+**Bug fix:**
+| Yer | Sorun | Çözüm |
+|---|---|---|
+| `src/components/ui/BarChart.tsx` | `showValues` mode'da peak bar'ın value badge'i container'dan üste taşıyordu (Day distribution Pzt=5 example: badge bottom 116+28=144 > 140 height) | `topReserve = 24px` ek üst padding + bar max height `height - 24 - topReserve`; badge bottom `+6` (eski +28). Tüm BarChart `showValues` callsite'ları otomatik düzelir. |
+| `src/components/dashboard/analytics/AnalyticsFilterBar.tsx` | "Tüm şubeler" / "Tüm işletmeler" select dropdown native chevron text alanına biniyordu (max-w-[180px] dar) | `min-w + pr-8 (chevron alanı) + max-w` cascade — text-overflow'a uğramayan select |
+
+**Yeni: AI sentiment themes** (`src/lib/analytics-themes.ts`)
+- OpenAI `gpt-4o-mini` (mevcut `chatCompletion` helper reuse, §15) ile top 5 şikayet + top 5 övgü teması
+- Process-local cache (`Map<key, {result, expiresAt}>`, 1 saat TTL) — OpenAI maliyeti kontrolü, ~$0.0005/istek
+- Cache key: `userId:restaurantId:rangeKey:platform:branch` — filter-aware
+- JSON parse hardening: ` ```json ... ``` ` wrapper tolerasyon, schema validation, theme/count bounded
+- Fallback: API key yok / 8'den az yorum / parse fail → empty result, mevcut UI sade görünür
+- Sample 80 yorum × 200 char = ~500-700 input token
+
+**Yeni metric — Saat-bazlı dağılım (24-bucket BarChart)**
+- `feedbacksWindow` JS-side hour bucket (`createdAt.getHours()`)
+- Sparse label (her 3 saatte bir: 00, 03, 06, …, 21) → 24 bar layout temiz
+- Owner: "Personel + kapasite planlaması" footer hint
+- Mevcut "Günlük Dağılım" 7-bucket'ın yanında 2-col grid
+
+**Yeni metric — Yanıt performansı (low rating reply latency)**
+- 3 alt-metric: yanıt oranı (% replied) + medyan süre (saat) + 8h+ bekleyen sayım
+- 8h+ bekleyen > 0 → kırmızı uyarı bandı ("itibar riski")
+- Veri kaynağı: `feedbacksWindow.replies[0]?.createdAt - feedback.createdAt` median JS-side
+- Sadece `feedbacksWindow.filter(rating <= 3).length > 0` ise render edilir
+
+**Yeni metric — Aspect breakdown (yemek/servis/atmosfer)**
+- Schema'daki `Feedback.{food,service,atmosphere}Rating` opsiyonel alanlardan window-bound `_avg`
+- ≥ 5 örneklem yoksa o sub-metric boş ("—") gösterilir
+- 3'ü de boşsa section gizlenir (`showAspects` flag)
+
+**Backend konsolidasyon:**
+- `feedbacksWithComments` (90gün, ayrı query) → silindi
+- `feedbacksWindow` select genişletildi: `id, comment, foodRating, serviceRating, atmosphereRating, replies (take:1)` — multi-purpose tek query
+- Theme analysis, hour bucket, aspect avg, response time **hepsi tek query'den** beslendi (CLAUDE.md §7 replication önleme)
+- `STOP_WORDS` set + `tokenize()` orphan helper'lar silindi (eski sentiment word cloud yerine AI themes geldi)
+
+**Etki:** Analytics sayfası owner için 4 ek aksiyon-odaklı insight kazandı (peak hour staffing, reputation guard SLA, aspect-bazlı geliştirme, AI-extracted complaint themes). Mevcut design system (`bz-card`, `Eyebrow`, `StatCard`, `BarChart`) reuse, yeni primitive yok.
+
+**Geri çekmek için:** AI themes — `OPENAI_API_KEY` set edilmediğinde otomatik fallback empty (bozulmaz). Yeni metric'ler conditional render (data yoksa section gizli). BarChart fix global — eski peak-overflow davranışı geri alınmamalı.
+
 ### 34.8 2026-05-01 — Gerçek QR scan tracking
 
 Owner panel'de "QR taranma" KPI'sı şimdiye dek **feedback count proxy**'siydi — yorum bırakmadan ayrılan müşteri görünmüyordu. Yeni `qr_scans` event tablosu ile gerçek scan tracking eklendi: scan→review conversion oranı, masa/platform breakdown, "tarayıp ayrıldı" boşluğu artık görünür.

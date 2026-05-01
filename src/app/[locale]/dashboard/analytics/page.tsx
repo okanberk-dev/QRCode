@@ -18,6 +18,7 @@ import AnalyticsFilterBar from '@/components/dashboard/analytics/AnalyticsFilter
 import InteractionTrendChart, {
   type InteractionTrendPoint,
 } from '@/components/dashboard/analytics/InteractionTrendChart';
+import { extractThemes } from '@/lib/analytics-themes';
 
 // Note: InteractionTrendChart taşır 'use client' direktifini — Next.js 15
 // otomatik client boundary çizer, server-side pre-render minimal HTML
@@ -37,20 +38,6 @@ export async function generateMetadata({
     title: locale === 'tr' ? 'Analitik — Buaze' : 'Analytics — Buaze',
     robots: { index: false, follow: false },
   };
-}
-
-const STOP_WORDS = new Set([
-  've', 'çok', 'bir', 'için', 'ile', 'ama', 'gibi', 'daha', 'olan',
-  'olur', 'oldu', 'the', 'and', 'was', 'very', 'were', 'are', 'this',
-  'that', 'they', 'have', 'had', 'from', 'then', 'with', 'which', 'just',
-]);
-
-function tokenize(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/[^a-zçğıöşüA-ZÇĞİÖŞÜ\s]/g, ' ')
-    .split(/\s+/)
-    .filter((w) => w.length >= 4 && !STOP_WORDS.has(w));
 }
 
 function pctDelta(curr: number, prev: number): { value: string; kind: 'up' | 'down' | 'neutral' } {
@@ -137,7 +124,6 @@ export default async function AnalyticsPage({
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-  const ninetyDaysAgo = new Date(now - 90 * 24 * 60 * 60 * 1000);
 
   // Apply platform + branch filters to all queries via shared base WHERE.
   const baseWhere = {
@@ -164,14 +150,30 @@ export default async function AnalyticsPage({
     lowRatedWindow,
     lowRatedPrevWindow,
     todayCount,
-    feedbacksWithComments,
     scansWindowCount,
     scansPrevWindowCount,
     scansWindowDaily,
   ] = await Promise.all([
+    // Window feedback'leri — multi-purpose select: hour bucket, aspect avg,
+    // theme analysis (comment), response time (replies). Tek query
+    // multiple-section'ı besler (CLAUDE.md §7 — replication önleme).
     prisma.feedback.findMany({
       where: { ...baseWhere, createdAt: { gte: windowStart } },
-      select: { rating: true, platform: true, createdAt: true },
+      select: {
+        id: true,
+        rating: true,
+        platform: true,
+        comment: true,
+        createdAt: true,
+        foodRating: true,
+        serviceRating: true,
+        atmosphereRating: true,
+        replies: {
+          select: { createdAt: true },
+          orderBy: { createdAt: 'asc' },
+          take: 1,
+        },
+      },
     }),
     prisma.feedback.count({
       where: { ...baseWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
@@ -212,14 +214,6 @@ export default async function AnalyticsPage({
     }),
     prisma.feedback.count({
       where: { ...baseWhere, createdAt: { gte: startOfToday } },
-    }),
-    prisma.feedback.findMany({
-      where: {
-        ...baseWhere,
-        createdAt: { gte: ninetyDaysAgo },
-        comment: { not: null },
-      },
-      select: { rating: true, comment: true },
     }),
     // QR scans — window + delta + daily bucket (interaction chart 3. seri)
     prisma.qrScan.count({
@@ -321,30 +315,81 @@ export default async function AnalyticsPage({
   }
   const dayData = dayBuckets.map((v, i) => ({ label: dayLabels[i], value: v }));
 
-  // Sentiment word chips — 90 day window
-  const posFreq = new Map<string, number>();
-  const negFreq = new Map<string, number>();
-  feedbacksWithComments.forEach((f) => {
-    if (!f.comment) return;
-    if (f.rating === 3) return;
-    const target = f.rating >= 4 ? posFreq : negFreq;
-    tokenize(f.comment).forEach((w) =>
-      target.set(w, (target.get(w) || 0) + 1),
-    );
-  });
-  const allWords = new Set<string>([...posFreq.keys(), ...negFreq.keys()]);
-  const sentimentThemes = Array.from(allWords)
-    .map((label) => {
-      const pos = posFreq.get(label) ?? 0;
-      const neg = negFreq.get(label) ?? 0;
-      return {
-        label,
-        count: pos + neg,
-        tone: pos >= neg ? ('pos' as const) : ('neg' as const),
-      };
-    })
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 14);
+  // ---- Saat-bazlı dağılım (yeni metric, Phase 2026-05) ----
+  // Owner: "Hangi saatlerde peak?" personel + kapasite planlama.
+  // 24-bucket; sparse label'lar (her 3 saatte bir) chart'ı temiz tutar.
+  const hourBuckets: number[] = Array(24).fill(0);
+  for (const f of feedbacksWindow) {
+    const hour = f.createdAt.getHours();
+    if (hour >= 0 && hour < 24) hourBuckets[hour] = (hourBuckets[hour] || 0) + 1;
+  }
+  const hourData = hourBuckets.map((v, h) => ({
+    label: h % 3 === 0 ? `${h.toString().padStart(2, '0')}` : '',
+    value: v,
+  }));
+
+  // ---- Aspect breakdown (yemek / servis / atmosfer) ----
+  // Schema'da rating'lere ek olarak 3 alt-rating var (Feedback.foodRating, vb.).
+  // Public review formu opsiyonel sorduğu için sparse data — yeterli sample
+  // (≥5) varsa StatCard 3'lüsü göster, yoksa section gizlenir.
+  const aspectAvg = (key: 'foodRating' | 'serviceRating' | 'atmosphereRating') => {
+    const rated = feedbacksWindow.filter((f) => f[key] != null);
+    if (rated.length < 5) return null;
+    const sum = rated.reduce((a, f) => a + (f[key] ?? 0), 0);
+    return { avg: sum / rated.length, count: rated.length };
+  };
+  const aspectFood = aspectAvg('foodRating');
+  const aspectService = aspectAvg('serviceRating');
+  const aspectAtmosphere = aspectAvg('atmosphereRating');
+  const showAspects = !!(aspectFood || aspectService || aspectAtmosphere);
+
+  // ---- Yanıt süresi metric ----
+  // Düşük puan (≤3★) yorumlar için ilk yanıta kadar geçen süre. Reputation
+  // guard: 8h+ yanıtsız "incident" sayılır, owner aksiyon alır.
+  const lowRatingFeedbacks = feedbacksWindow.filter((f) => f.rating <= 3);
+  const respondedLatencies: number[] = []; // ms
+  let pendingOver8h = 0;
+  let pendingTotal = 0;
+  const nowMs = Date.now();
+  const EIGHT_H = 8 * 60 * 60 * 1000;
+  for (const f of lowRatingFeedbacks) {
+    const reply = f.replies[0];
+    if (reply) {
+      respondedLatencies.push(reply.createdAt.getTime() - f.createdAt.getTime());
+    } else {
+      pendingTotal += 1;
+      if (nowMs - f.createdAt.getTime() > EIGHT_H) pendingOver8h += 1;
+    }
+  }
+  // Median latency hesabı (saat cinsinden)
+  let medianResponseHours: number | null = null;
+  if (respondedLatencies.length > 0) {
+    const sorted = [...respondedLatencies].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const medianMs =
+      sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+    medianResponseHours = Math.round((medianMs / (60 * 60 * 1000)) * 10) / 10;
+  }
+  const responseRate =
+    lowRatingFeedbacks.length > 0
+      ? Math.round((respondedLatencies.length / lowRatingFeedbacks.length) * 100)
+      : null;
+
+  // ---- AI sentiment themes (CLAUDE.md §15 + §34.x — OpenAI extractThemes) ----
+  // Feedback yorumlarından top 5 şikayet + top 5 övgü teması. Cache key
+  // (restaurant + filter + window) ile process-local 1h TTL. Workspace-bazlı
+  // owner restaurantId'ye göre; çoklu lokasyon "all" için userId.
+  const themesCacheKey = [
+    user.id,
+    restaurantIds.length > 1 ? 'all' : restaurantIds[0] || 'none',
+    rangeKey,
+    platformFilter || 'all',
+    branchFilter || 'all',
+  ].join(':');
+  const themesComments = feedbacksWindow
+    .filter((f): f is typeof f & { comment: string } => typeof f.comment === 'string' && f.comment.trim().length > 0)
+    .map((f) => ({ rating: f.rating, comment: f.comment }));
+  const themes = await extractThemes(themesComments, isTr ? 'tr' : 'en', themesCacheKey);
 
   const windowLabel = isTr ? `${windowDays} GÜNLÜK` : `${windowDays}-DAY`;
   const windowSuffix = isTr ? `önceki ${windowDays} güne göre` : `vs prev ${windowDays}d`;
@@ -472,48 +517,221 @@ export default async function AnalyticsPage({
         )}
       </div>
 
-      {/* 2-col 1fr/1fr: Günlük dağılım + Duygu analizi */}
+      {/* 2-col 1fr/1fr: Günlük dağılım + Saat-bazlı dağılım */}
       <div className="grid gap-3.5 lg:grid-cols-2">
         <section className="bz-card p-5 sm:p-6">
           <Eyebrow>{isTr ? 'GÜNLÜK DAĞILIM' : 'DAY DISTRIBUTION'}</Eyebrow>
           <div className="bz-h-tight mt-1 mb-3" style={{ fontSize: 18 }}>
             {isTr ? 'Hangi günler en çok yorum geliyor?' : 'When are reviews coming in?'}
           </div>
-          <BarChart data={dayData} height={140} showValues />
+          <BarChart data={dayData} height={160} showValues />
         </section>
 
         <section className="bz-card p-5 sm:p-6">
-          <Eyebrow>{isTr ? 'DUYGU ANALİZİ' : 'SENTIMENT'}</Eyebrow>
-          <div className="bz-h-tight mt-1 mb-3.5" style={{ fontSize: 18 }}>
-            {isTr ? 'Yorumlardan çıkan kelimeler' : 'Words from reviews'}
+          <Eyebrow>{isTr ? 'SAAT BAZLI DAĞILIM' : 'HOUR DISTRIBUTION'}</Eyebrow>
+          <div className="bz-h-tight mt-1 mb-3" style={{ fontSize: 18 }}>
+            {isTr ? 'Yoğun saatler hangileri?' : 'Which hours are peak?'}
           </div>
-          {sentimentThemes.length === 0 ? (
-            <p className="text-[12px] text-[#737373]">
-              {isTr ? 'Henüz yeterli yorum yok.' : 'Not enough comments yet.'}
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2 items-center">
-              {sentimentThemes.map((tag) => {
-                const isPos = tag.tone === 'pos';
-                const size = 12 + Math.min(tag.count / 4, 8);
-                return (
-                  <span
-                    key={tag.label}
-                    className="inline-flex items-center gap-1.5 rounded-full"
+          <BarChart data={hourData} height={160} />
+          <p className="mt-2 text-[11px] text-[#737373]">
+            {isTr
+              ? 'Personel ve kapasite planlaması için 24 saatlik dağılım.'
+              : 'Hourly distribution for staffing & capacity planning.'}
+          </p>
+        </section>
+      </div>
+
+      {/* Yanıt performansı + Aspect breakdown (conditional) */}
+      {(lowRatingFeedbacks.length > 0 || showAspects) && (
+        <div className="grid gap-3.5 lg:grid-cols-2">
+          {lowRatingFeedbacks.length > 0 && (
+            <section className="bz-card p-5 sm:p-6">
+              <Eyebrow>{isTr ? 'YANIT PERFORMANSI' : 'RESPONSE PERFORMANCE'}</Eyebrow>
+              <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
+                {isTr ? 'Düşük puanlara yanıt süresi' : 'Reply latency for low ratings'}
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <div className="pulse-eyebrow text-[#737373]">
+                    {isTr ? 'YANIT ORANI' : 'REPLY RATE'}
+                  </div>
+                  <div className="bz-h-tight-2 mt-1 tabular-nums" style={{ fontSize: 22 }}>
+                    {responseRate !== null ? `${responseRate}%` : '—'}
+                  </div>
+                  <div className="text-[11px] text-[#737373] mt-0.5">
+                    {respondedLatencies.length}/{lowRatingFeedbacks.length}
+                  </div>
+                </div>
+                <div>
+                  <div className="pulse-eyebrow text-[#737373]">
+                    {isTr ? 'MEDYAN SÜRE' : 'MEDIAN TIME'}
+                  </div>
+                  <div className="bz-h-tight-2 mt-1 tabular-nums" style={{ fontSize: 22 }}>
+                    {medianResponseHours !== null ? `${medianResponseHours}s` : '—'}
+                  </div>
+                  <div className="text-[11px] text-[#737373] mt-0.5">
+                    {isTr ? 'yanıt geliş süresi' : 'time to first reply'}
+                  </div>
+                </div>
+                <div>
+                  <div className="pulse-eyebrow text-[#737373]">
+                    {isTr ? '8 SAAT+ BEKLEYEN' : 'PENDING 8H+'}
+                  </div>
+                  <div
+                    className="bz-h-tight-2 mt-1 tabular-nums"
                     style={{
-                      padding: '5px 12px',
-                      background: isPos ? '#EAF9B8' : '#FEF2F2',
-                      color: isPos ? '#3D4D00' : '#991B1B',
-                      fontSize: `${size}px`,
-                      fontWeight: 500,
+                      fontSize: 22,
+                      color: pendingOver8h > 0 ? '#DC2626' : '#0A0A0A',
                     }}
                   >
-                    {tag.label}
-                    <span style={{ opacity: 0.6, fontSize: 10 }}>{tag.count}</span>
-                  </span>
-                );
-              })}
+                    {pendingOver8h}
+                  </div>
+                  <div className="text-[11px] text-[#737373] mt-0.5">
+                    {isTr ? `toplam ${pendingTotal} bekleyen` : `${pendingTotal} pending total`}
+                  </div>
+                </div>
+              </div>
+              {pendingOver8h > 0 && (
+                <p className="mt-3 text-[11px] text-[#991B1B] bg-[#FEF2F2] rounded-md px-2.5 py-1.5">
+                  {isTr
+                    ? `${pendingOver8h} düşük puan 8 saatten uzun süredir yanıtsız — itibar riski.`
+                    : `${pendingOver8h} low ratings unanswered for 8h+ — reputation risk.`}
+                </p>
+              )}
+            </section>
+          )}
+
+          {showAspects && (
+            <section className="bz-card p-5 sm:p-6">
+              <Eyebrow>{isTr ? 'KATEGORİ ANALİZİ' : 'ASPECT BREAKDOWN'}</Eyebrow>
+              <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
+                {isTr ? 'Yemek · Servis · Atmosfer' : 'Food · Service · Atmosphere'}
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { key: 'food', data: aspectFood, tr: 'Yemek', en: 'Food' },
+                  { key: 'service', data: aspectService, tr: 'Servis', en: 'Service' },
+                  { key: 'atmosphere', data: aspectAtmosphere, tr: 'Atmosfer', en: 'Atmosphere' },
+                ].map((row) => (
+                  <div key={row.key}>
+                    <div className="pulse-eyebrow text-[#737373]">
+                      {(isTr ? row.tr : row.en).toUpperCase()}
+                    </div>
+                    {row.data ? (
+                      <>
+                        <div className="bz-h-tight-2 mt-1 tabular-nums" style={{ fontSize: 22 }}>
+                          {row.data.avg.toFixed(1)}
+                          <span className="text-[12px] text-[#737373] font-normal"> /5</span>
+                        </div>
+                        <div className="text-[11px] text-[#737373] mt-0.5">
+                          {row.data.count} {isTr ? 'değerlendirme' : 'ratings'}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="bz-h-tight-2 mt-1 tabular-nums text-[#A3A3A3]" style={{ fontSize: 22 }}>
+                        —
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] text-[#737373]">
+                {isTr
+                  ? 'Müşterinin opsiyonel olarak verdiği alt-kategori puanları (≥5 örneklem).'
+                  : 'Optional sub-category ratings from customers (≥5 sample).'}
+              </p>
+            </section>
+          )}
+        </div>
+      )}
+
+      {/* AI sentiment themes — top 5 şikayet + top 5 övgü (CLAUDE.md §15 + §34.x) */}
+      <div className="grid gap-3.5 lg:grid-cols-2">
+        <section className="bz-card p-5 sm:p-6">
+          <header className="flex items-start justify-between gap-2 mb-3">
+            <div>
+              <Eyebrow>{isTr ? 'EN ÇOK ŞİKAYET' : 'TOP COMPLAINTS'}</Eyebrow>
+              <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
+                {isTr ? 'Müşterinin en sık dile getirdiği' : 'Most-mentioned issues'}
+              </div>
             </div>
+            {themes.source === 'openai' && (
+              <span className="pulse-eyebrow shrink-0 rounded-full bg-[#0A0A0A] px-2 py-1 text-[#C6F24E]">
+                {isTr ? 'AI' : 'AI'}
+              </span>
+            )}
+          </header>
+          {themes.complaints.length === 0 ? (
+            <p className="text-[12px] text-[#737373]">
+              {isTr
+                ? themes.source === 'fallback'
+                  ? 'Yeterli düşük puanlı yorum yok ya da AI servisi şu an pasif.'
+                  : 'Düşük puanlı yorumlardan çıkan ortak tema yok.'
+                : 'No common complaint themes yet.'}
+            </p>
+          ) : (
+            <ol className="flex flex-col gap-2.5">
+              {themes.complaints.map((t, idx) => (
+                <li
+                  key={t.theme}
+                  className="flex items-center gap-3 rounded-lg bg-[#FEF2F2] px-3 py-2.5"
+                >
+                  <span className="bz-mono text-[12px] font-semibold text-[#991B1B]">
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
+                  <span className="flex-1 text-[13px] font-medium text-[#0A0A0A]">
+                    {t.theme}
+                  </span>
+                  <span className="bz-mono text-[11px] font-semibold text-[#991B1B]">
+                    ×{t.count}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+
+        <section className="bz-card p-5 sm:p-6">
+          <header className="flex items-start justify-between gap-2 mb-3">
+            <div>
+              <Eyebrow>{isTr ? 'EN ÇOK ÖVGÜ' : 'TOP PRAISES'}</Eyebrow>
+              <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
+                {isTr ? 'Müşterinin en sık beğendiği' : 'Most-praised aspects'}
+              </div>
+            </div>
+            {themes.source === 'openai' && (
+              <span className="pulse-eyebrow shrink-0 rounded-full bg-[#0A0A0A] px-2 py-1 text-[#C6F24E]">
+                {isTr ? 'AI' : 'AI'}
+              </span>
+            )}
+          </header>
+          {themes.praises.length === 0 ? (
+            <p className="text-[12px] text-[#737373]">
+              {isTr
+                ? themes.source === 'fallback'
+                  ? 'Yeterli yüksek puanlı yorum yok ya da AI servisi şu an pasif.'
+                  : 'Yüksek puanlı yorumlardan çıkan ortak tema yok.'
+                : 'No common praise themes yet.'}
+            </p>
+          ) : (
+            <ol className="flex flex-col gap-2.5">
+              {themes.praises.map((t, idx) => (
+                <li
+                  key={t.theme}
+                  className="flex items-center gap-3 rounded-lg bg-[#EAF9B8] px-3 py-2.5"
+                >
+                  <span className="bz-mono text-[12px] font-semibold text-[#3D4D00]">
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
+                  <span className="flex-1 text-[13px] font-medium text-[#0A0A0A]">
+                    {t.theme}
+                  </span>
+                  <span className="bz-mono text-[11px] font-semibold text-[#3D4D00]">
+                    ×{t.count}
+                  </span>
+                </li>
+              ))}
+            </ol>
           )}
         </section>
       </div>

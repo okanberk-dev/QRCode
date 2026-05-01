@@ -34,15 +34,20 @@ export function BarChart({
 }: BarChartProps) {
   if (!data?.length) return null;
   const max = maxValue || Math.max(...data.map((d) => d.value)) || 1;
+  // showValues mode'da üstte value badge için 24px ek alan ayır (eski versiyon
+  // peak bar'da badge container'dan taşıyordu — Pzt 5 yorum, badge "5" üstte
+  // kayboluyordu).
+  const topReserve = showValues ? 24 : 0;
+  const innerMaxBarHeight = Math.max(height - 24 - topReserve, 4);
   return (
     <div
       className={`flex items-end gap-2 ${className}`}
-      style={{ height, padding: "0 0 24px" }}
+      style={{ height, padding: `${topReserve}px 0 24px` }}
       role="img"
       aria-label="bar chart"
     >
       {data.map((d, i) => {
-        const h = (d.value / max) * (height - 24);
+        const h = (d.value / max) * innerMaxBarHeight;
         const isPeak = d.value === max && max > 0;
         const secVal = secondaryValues?.values[i];
         const tooltipParts = [`${d.label}: ${d.value}`];
@@ -60,11 +65,11 @@ export function BarChart({
               title={tooltipText}
               aria-label={tooltipText.replace(/\n/g, ", ")}
             >
-              {/* Value badge above bar */}
+              {/* Value badge above bar — 6px gap, top alan padding-top ile ayrılmış */}
               <span
                 className="absolute font-semibold text-[#0A0A0A] transition-opacity"
                 style={{
-                  bottom: Math.max(h, 4) + 28,
+                  bottom: Math.max(h, 4) + 6,
                   fontSize: 11,
                   fontFamily: "var(--font-mono)",
                 }}
