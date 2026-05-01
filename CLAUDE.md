@@ -2233,6 +2233,61 @@ Mobil pass kapsamı: **küçük metrik düzeltmeleri + smooth motion** (yeni com
 - `transition-colors duration-150` icon + label üzerinde — renk değişimi smooth (tasarım metrikleri 32×2 pin korundu)
 - `prefers-reduced-motion: reduce` zaten globals.css blanket'ı tarafından kapatılır → erişilebilirlik native
 
+#### Pas 5 — tablet portrait (iPad 768-1023px) sayfa-içi optimizasyon
+
+PR #281 marketing chrome'unu (navbar / mobile bottom nav / footer) `lg:` breakpoint'ine taşıdıktan sonra sayfa-içi içerik tablet portrait'da optimize edildi. iPad portrait artık phone-style nav görüyor; bu pas h1 boyutu + grid kademe + menu Modern teması + admin tablo flip ile içeriği aynı tutarlı pattern'e çekti.
+
+**Mevcut `sm:` ve `lg:` değerleri silinmedi** — sadece aralarına `md:` ara kademe eklendi. Mobile baseline (`text-[38px]`, `px-5`, `py-[60px]`) **dokunulmadı**.
+
+**Hero h1 cascade kuralı (29 marketing instance):**
+
+| sm: değeri | md: değeri (yeni) |
+|---|---|
+| `sm:text-[72px]` | `md:text-[56px]` |
+| `sm:text-[68px]`, `sm:text-[64px]` | `md:text-[52px]` |
+| `sm:text-[60px]`, `sm:text-[56px]` | `md:text-[48px]` |
+| `sm:text-[44px]` ve altı | dokunulmadı (zaten makul) |
+
+Tipik diff:
+```
+- text-[38px] sm:text-[64px] lg:text-[72px]
++ text-[38px] sm:text-[64px] md:text-[52px] lg:text-[72px]
+```
+
+**Pattern dönüşüm tablosu:**
+
+| Pattern | Eski | Yeni | Etkilenen |
+|---|---|---|---|
+| Marketing 3-col cards | `grid-cols-1 md:grid-cols-3` | `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` | ~14 sayfa |
+| Marketing 4-col strip | `grid-cols-2 md:grid-cols-4` | `grid-cols-2 lg:grid-cols-4` | 3 sayfa (about, solutions, SolutionPageLayout) |
+| Modern menu cards | `grid-cols-2 sm:grid-cols-3` | `grid-cols-2 lg:grid-cols-3` | `PublicMenuView` ModernLayout |
+| Admin tablolar (≥6 kol) | `hidden md:block` / `md:hidden` | `hidden lg:block` / `lg:hidden` | restaurants, qr, customers, blog |
+
+**Mobile vs tablet vs desktop metric tablosu:**
+
+| Metrik | Mobile (<640) | Tablet (640-1023) | Desktop (≥1024) |
+|---|---|---|---|
+| Hero h1 max | 38px | 48-56px (`md:`) | 64-92px (`lg:`) |
+| Section padding-x | `px-5` | `sm:px-10` | unchanged |
+| Section padding-y | `py-[60px]` | `sm:py-{20-28}` | unchanged |
+| Marketing chrome (PR #281) | drawer + bottom nav | drawer + bottom nav | inline navbar |
+| Marketing card grid | 1-col | 2-col | 3-col |
+| Admin tablolar (≥6 kol) | card-list | card-list | table |
+| Modern menu grid | 2-col | 2-col | 3-col |
+
+**Yapma:**
+- `md:` ara kademe mobile baseline'ı **bozamaz** (`text-[38px]` her zaman default).
+- `sm:` ve `lg:` değerleri **silinmez**.
+- Section padding hex/spacing token'ları (§11) **değişmez**.
+- Yeni utility class veya component eklenmez (className edit-only).
+- Auth form (`max-w-[400px]`) / public review (`max-w-[360px]`) / onboarding step indicator (`sm:inline`) — **kasıtlı dar tasarım, dokunulmaz**.
+- Panel sidebar (`hidden lg:flex`) — PR #281 chrome'uyla tutarlı, **dokunulmaz**.
+- Stat card 4-col (`grid-cols-2 lg:grid-cols-4`) — zaten doğru, dokunulmaz.
+- Admin tablolar `md:` kalır (≤5 kolon, yatay-scroll OK): `users`, `members`, `newsletters`, `dashboard`, `dashboard/qr`.
+- Marketing alternating layout (`grid-cols-1 lg:grid-cols-[1fr_3fr]` vb.) — image+text dengesini koruma için tablet 1-col olarak **kalır**.
+
+**Yeni pattern eklerken:** Aynı kuralı uygula. Yeni hero h1 ekleniyorsa cascade `text-[38px] sm:text-[X] md:text-[Y] lg:text-[Z]` yapısında 4 kademe, mobile-baseline 38px korunur.
+
 ### 25.5 Yeni mobil sayfa eklerken
 
 1. **Tailwind responsive sınıfları** — flat default mobile, `sm:`/`md:` üzeri scaling. Site genelinde standart pattern.
@@ -2250,10 +2305,21 @@ Bazı mobil davranışlar Chrome DevTools'ta replicate edilemez — gerçek ciha
 
 **375px viewport (Chrome DevTools iPhone SE preset):**
 - [ ] Tüm marketing sayfaları — overflow-x sıfır, hero h1 ≤ 38px, section padding `px-5 py-[60px]`
-- [ ] Tüm panel sayfaları — sidebar drawer açılır, bottom nav 5-item görünür, tablo `md:hidden` badges ile dikey stack
+- [ ] Tüm panel sayfaları — sidebar drawer açılır, bottom nav 5-item görünür, tablo `lg:hidden` badges ile dikey stack
 - [ ] Auth + onboarding — input'larda iOS auto-zoom yok, klavye keyboard hint'leri (Next/Send) doğru, form submit tek tap
 - [ ] `/r/[slug]` review surface — yıldız tap, low-rating form, redirect overlay
 - [ ] `/r/[slug]/menu` + `/menu/[slug]` — kategori chip'leri yatay scroll, ürün kart grid 2-col, modal bottom-sheet
+
+**768/820px viewport (iPad portrait — Chrome DevTools iPad / iPad Air preset, §25.4 Pas 5):**
+- [ ] Marketing hero h1 ≤ 56px (`md:text-[48-56px]` cascade aktif), 2-3 satırda görünür
+- [ ] Marketing 3-col grid'ler 2-col render eder (`sm:grid-cols-2 lg:grid-cols-3`)
+- [ ] Marketing 4-col strip 2-col render eder (`grid-cols-2 lg:grid-cols-4`)
+- [ ] Marketing chrome (PR #281): drawer + bottom nav (inline navbar yok)
+- [ ] Admin/dashboard ≥6 kolonlu tablolar card-list göstermek (restaurants, qr, customers, blog)
+- [ ] Public menu Modern theme: 2-col card grid (lg+ 3-col)
+- [ ] Section padding `sm:px-10` + `sm:py-{20-28}` aktif
+- [ ] Auth form `max-w-[400px]` tek-sütun ortada — kasıtlı dar, **değişmedi**
+- [ ] TR + EN parity: TR string'leri 2-col card'da overflow yok mu
 
 **Gerçek cihaz testi (gerektiren scenarios, browser DevTools yetmez):**
 - [ ] **iPhone Safari 17+** — safe-area inset (notch/home bar), iOS auto-zoom prevention (16px font), `inputMode` keyboard, deep link (`/r/[slug]?platform=google` → Google Maps app), PWA install prompt, `navigator.vibrate(8)` (Safari ignore eder, hata atmamalı)

@@ -445,10 +445,10 @@ function AdminQrContent() {
         </div>
       )}
 
-      {/* PR5 — Mobile card fallback (md:hidden). Tablodaki tüm bilgi
+      {/* PR5 — Mobile card fallback (lg:hidden). Tablodaki tüm bilgi
           kompakt kart formatında; primary action (PNG indir + Sil) sağda. */}
       {!loading && cardItems.length > 0 && view === 'list' && (
-        <div className="md:hidden flex flex-col gap-2.5">
+        <div className="lg:hidden flex flex-col gap-2.5">
           {cardItems.map((c) => {
             const rawItem = filteredItems.find((it) => it.id === c.id)!;
             const created = new Date(c.createdAt);
@@ -511,7 +511,7 @@ function AdminQrContent() {
       )}
 
       {!loading && cardItems.length > 0 && view === 'list' && (
-        <div className="bz-card overflow-hidden hidden md:block">
+        <div className="bz-card overflow-hidden hidden lg:block">
           <div className="overflow-x-auto">
             <table className="bz-table w-full">
               <thead>

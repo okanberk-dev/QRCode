@@ -182,7 +182,7 @@ export default async function SolutionsOverviewPage({
                 {isTr ? 'ÇÖZÜMLER' : 'SOLUTIONS'}
               </span>
             </div>
-            <h1 className="text-[38px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
+            <h1 className="text-[38px] sm:text-[60px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? (
                 <>
                   Dört adım, tek panel.{' '}
@@ -274,7 +274,7 @@ export default async function SolutionsOverviewPage({
 
       {/* ─── Numbers strip ─── */}
       <section className="bg-[#C6F24E] border-y border-[#A8D62E] px-5 sm:px-10 py-12 sm:py-14">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
           {numbers.map((item, i) => (
             <div key={i}>
               <div

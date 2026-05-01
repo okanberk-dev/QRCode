@@ -97,7 +97,7 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
               {isTr ? 'SEKTÖR · KLİNİK & SAĞLIK' : 'SECTOR · CLINIC & HEALTHCARE'}
             </span>
             <h1
-              className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
             >
               {isTr ? (
                 <>
@@ -192,7 +192,7 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
 
       {/* 3-stat grid */}
       <section className="px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {stats.map((s) => (
             <div key={s.label} className="bz-card p-6">
               <div

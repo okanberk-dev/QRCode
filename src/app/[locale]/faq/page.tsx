@@ -143,7 +143,7 @@ export default async function FaqPage({
               {isTr ? 'SSS' : 'FAQ'}
             </span>
             <h1
-              className="mt-3 text-[38px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
             >
               {isTr ? 'Cevaplar.' : 'Answers.'}
             </h1>

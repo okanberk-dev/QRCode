@@ -758,7 +758,7 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
   return (
     <div className="bz-card overflow-hidden">
       {/* Desktop: bz-table (1:1 design AdminBusinesses) */}
-      <div className="hidden md:block overflow-x-auto">
+      <div className="hidden lg:block overflow-x-auto">
         <table className="bz-table">
           <thead>
             <tr>
@@ -927,7 +927,7 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
       )}
 
       {/* Mobile: compact horizontal card list (1:1 design MAdminBusinesses) */}
-      <div className="flex flex-col gap-2 p-3 md:hidden">
+      <div className="flex flex-col gap-2 p-3 lg:hidden">
         {rows.map((r) => {
           const plan = planBadge(r.user?.plan);
           return (

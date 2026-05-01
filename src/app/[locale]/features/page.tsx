@@ -143,7 +143,7 @@ export default async function FeaturesPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Ürün' : 'Product'}
           </span>
-          <h1 className="mt-4 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] max-w-[900px]">
+          <h1 className="mt-4 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] max-w-[900px]">
             {isTr ? (
               <>
                 Bir panel. Her yorum.{' '}

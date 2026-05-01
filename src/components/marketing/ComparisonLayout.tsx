@@ -58,7 +58,7 @@ export default function ComparisonLayout({
           <span className="pulse-eyebrow text-[#737373]">
             BUAZE {isTr ? 'KARŞILAŞTIRMA' : 'VS'} {vsName.toUpperCase()}
           </span>
-          <h1 className="mt-5 text-[40px] sm:text-[60px] lg:text-[68px] font-medium leading-[1] tracking-[-0.035em] text-[#0A0A0A]">
+          <h1 className="mt-5 text-[40px] sm:text-[60px] md:text-[48px] lg:text-[68px] font-medium leading-[1] tracking-[-0.035em] text-[#0A0A0A]">
             {heroTitle}
           </h1>
           <p className="mt-6 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[640px] mx-auto">

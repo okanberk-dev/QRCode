@@ -165,7 +165,7 @@ export default async function PulseAiPage({
               </span>
             </div>
             <h1
-              className="mt-5 text-[40px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-white"
+              className="mt-5 text-[40px] sm:text-[60px] md:text-[48px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-white"
             >
               {isTr ? (
                 <>

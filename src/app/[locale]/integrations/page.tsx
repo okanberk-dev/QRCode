@@ -128,7 +128,7 @@ export default async function IntegrationsPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Entegrasyonlar' : 'Integrations'}
           </span>
-          <h1 className="mt-4 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
+          <h1 className="mt-4 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
             {isTr ? (
               <>
                 Mevcut akışına

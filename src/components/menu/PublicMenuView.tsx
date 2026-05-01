@@ -523,7 +523,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                     <h2 className="text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">{category.name}</h2>
                     <div className="h-1 flex-1 rounded-full bg-[#EDEDED]" />
                   </div>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
                     {items.map((item) => (
                       <article
                         key={item.id}

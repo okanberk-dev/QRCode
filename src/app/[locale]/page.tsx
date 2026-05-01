@@ -353,7 +353,7 @@ export default async function LandingPage({
           {/* design `.design/site/site-homepage-v3.jsx:268-282` — fixed 3-col grid;
               each card has a watermarked step number, lucide icon tile, STEP chip,
               h3, body, and an inline product mock at the bottom. */}
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {steps.map(({ n, title, body, Icon, iconBg, iconFg, visual }) => (
               <div
                 key={n}

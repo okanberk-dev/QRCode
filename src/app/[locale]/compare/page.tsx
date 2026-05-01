@@ -100,7 +100,7 @@ export default async function ComparisonPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Karşılaştırma' : 'Comparison'}
           </span>
-          <h1 className="mt-5 text-[38px] sm:text-[60px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
+          <h1 className="mt-5 text-[38px] sm:text-[60px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
             {heroHead}{' '}
             <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">{heroTail}</span>
           </h1>

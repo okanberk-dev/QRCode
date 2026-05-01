@@ -87,7 +87,7 @@ export default async function ContactPage({
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'İletişim' : 'Contact'}
             </span>
-            <h1 className="mt-5 text-[38px] sm:text-[60px] lg:text-[68px] font-medium leading-[0.95] sm:leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+            <h1 className="mt-5 text-[38px] sm:text-[60px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] sm:leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? 'Konuşalım.' : "Let's talk."}
             </h1>
             <p className="mt-5 text-[17px] sm:text-[18px] text-[#525252] leading-[1.55] max-w-[560px]">
