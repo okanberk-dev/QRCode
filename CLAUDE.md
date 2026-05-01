@@ -2727,3 +2727,92 @@ Yeni bir ölü kod denetimi yaparken aşağıdaki sırayı izle:
 - Geri eklemek için "olabilir gerekir" yetmez — kullanıcı **açık talep** etmeli (CLAUDE.md §7 scope disiplini).
 - `validate.ts` helper'ını silme — §28 kanonik öneri, gelecek route'lar için bekliyor.
 - `CareerApplication`, `AutomationRule`, `GoogleIntegration`, `NotificationPreference` modellerini silme — schema'da kaldıkları sürece preview deploy / staging ortamında DB'de yer kaplar ama silmek migration zorunluluğu doğurur.
+
+---
+
+## 35. SEO Infrastructure (2026-05 PR #263 + #264)
+
+`src/app/sitemap.ts` + `robots.ts` + `public/llms.txt` + `public/.well-known/security.txt` + `src/app/[locale]/blog/rss.xml/route.ts` — discovery + structured data infrastructure'ı. Yeni public sayfa eklerken aşağıdaki kuralları takip et.
+
+### 35.1 Sitemap auto-discovery
+
+`src/lib/seo/route-discovery.ts` modül-load'da `fs.readdirSync` ile `src/app/[locale]/` ağacını yürür. `page.tsx` içeren her dizin TR + EN URL olarak emit edilir. **Yeni marketing sayfası eklendiğinde sitemap kod edit gerektirmez** — auto-discover olur.
+
+**Skip listesi (sabit, küçük):**
+- `EXCLUDE_DIRS`: `auth`, `dashboard`, `onboarding`, `accept-invite`
+- `REDIRECT_ALIASES`: 8 yol (solutions/{otel,klinik,hukuk,hotel,clinic,legal,perakende,spa})
+- Dynamic segments: `[slug]`, `[id]` ile başlayan dizinler — sitemap.ts'de explicit Prisma/static fetch ile beslenir
+
+**Yap:**
+- Yeni marketing sayfası ekle → otomatik sitemap'e girer, hiçbir şey yapma.
+- Yeni redirect alias ekledin (örn. `solutions/yenialias` → canonical) → `REDIRECT_ALIASES` set'ine ekle (yoksa duplicate URL sitemap'e girer).
+- Yeni dynamic segment ekledin (örn. `events/[slug]`) → sitemap.ts'de Prisma query bloğu ekle, route-discovery zaten `[` ile filtreliyor.
+- Özel priority/changefreq isteniyorsa `src/lib/seo/route-overrides.ts`'e entry ekle. Default heuristic: `solutions/*` 0.9, hukuki TR 0.5/yearly, diğerleri 0.7/monthly.
+
+**URL dedup**: sitemap.ts sonunda `Set<string>` ile aynı URL ikinci kez emit edilmez. `blog/google-2026` ve `case-study/pizza-locale` gibi static slug page'ler hem walker hem DB query'sinden geliyor olabilir — dedup bunu güvene alır.
+
+### 35.2 robots.ts
+
+İki kural bloğu:
+1. **`userAgent: '*'`** — tüm bot'lar; `/admin/`, `/api/`, `/r/`, dashboard, auth, onboarding, accept-invite disallow
+2. **AI bot'ları** (GPTBot, Anthropic-ai, Google-Extended, vb.) — marketing'i okumalarına izin ver, auth + onboarding hariç
+
+Yeni auth-y path eklediysen disallow'a ekle (örn. `/tr/yeni-auth-flow`).
+
+### 35.3 llms.txt — manual refresh stamp
+
+`public/llms.txt` AI crawler'lar için ürün özeti. **Discovery linkleri** (sitemap, RSS, security.txt) + indexable surface envanteri + **`Last updated:` tarih stamp'i** taşır.
+
+**Yap:** Major public surface değişikliği yaparken (yeni sektör landing, yeni marketing sayfa kategorisi) `Last updated: YYYY-MM-DD` satırını **bugünün tarihiyle** güncelle. Tek tek sayfa ekleme için zorunlu değil — sitemap zaten otomatik.
+
+### 35.4 RSS feed
+
+`/tr/blog/rss.xml` ve `/en/blog/rss.xml` — `src/app/[locale]/blog/rss.xml/route.ts` Next.js route handler. RSS 2.0 XML, no dep (mevcut `escapeHtml` reuse), 50 post limit, `Cache-Control: public, s-maxage=3600, stale-while-revalidate=7200`.
+
+**Yap:** Blog post field'ı eklediysen ve RSS'te göstermek istiyorsan `<item>` template'ine `<author>` veya `<category>` gibi alan ekle. **Yapma**: RSS'e tüm content göm — sadece description (excerpt). Tam content için Atom + content:encoded gerekir, scope creep.
+
+### 35.5 security.txt — RFC 9116
+
+`public/.well-known/security.txt`. Contact: `info@buaze.com`, expires: **2027-05-01**. **Yıllık yenileme zorunlu** — outdated security.txt scanner'lar tarafından "unmaintained" sayılır.
+
+**Yap:** 2027-04 civarında dosyayı düzenle, `Expires` 1 yıl ileri (2028-05-01) yap. Takvim hatırlatması.
+
+### 35.6 JSON-LD coverage (PR #264)
+
+Tüm public sayfalar `application/ld+json` script bloğu taşır. Coverage matrisi:
+
+| Sayfa türü | Schema | Yer |
+|---|---|---|
+| Home (`page.tsx`) | Organization + SoftwareApp + WebSite | `[locale]/layout.tsx` (root, tüm sayfalarda inherit) |
+| Marketing core (about, contact, faq, pricing, press, roi, how-it-works) | WebPage + (FAQ varsa) FAQPage | per-page inline |
+| Blog (`blog/[slug]`) | Article + BreadcrumbList | per-page inline |
+| Case study list + `case-study/[slug]` + pizza-locale | Article + BreadcrumbList | per-page inline |
+| Customer stories list + `customer-stories/[slug]` | ItemList / Article + BreadcrumbList | per-page inline |
+| Help (`help`, `category/[slug]`, `[slug]`) | BreadcrumbList + ItemList / Article | per-page inline |
+| Solutions sector pages (15 sektör) | BreadcrumbList + Service + (FAQ) FAQPage | `src/lib/solution-schema.ts` (shared helper) |
+| Solutions/qr-generator | WebApplication + BreadcrumbList | inline |
+| Features (list) + features/pulse-ai | ItemList / SoftwareApplication + BreadcrumbList | per-page inline |
+| Integrations | ItemList + BreadcrumbList | per-page inline |
+| vs/individual-qr + vs/spreadsheet | WebPage + BreadcrumbList (via `ComparisonLayout` wrapper'ı dışından, page-level) | per-page inline |
+| Careers | ItemList (open positions) + BreadcrumbList | per-page inline |
+| Legal (kvkk, gizlilik, terms vb.) | — (yok, gerek yok) | — |
+
+**Pattern**: per-page inline `<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />`. Shared helper YAPILMADI — breadcrumb 9+ yerde tekrarlandı ama her birinde label + position farklı; CLAUDE.md §7 disiplini.
+
+**Yap:** Yeni public sayfa eklerken page tipine göre uygun schema seç:
+- İçerik sayfası → `Article` veya `WebPage`
+- Liste sayfası → `ItemList`
+- Ürün/özellik → `SoftwareApplication`
+- Servis/sektör → `Service` (mevcut `solution-schema.ts` helper'ını kullan)
+- Hep birlikte → `BreadcrumbList` (3+ derinlik için canonical hierarchy göster)
+
+**Yapma:**
+- AggregateRating ekleme (gerçek review verisi olmadan FAKE; Google policy ihlali)
+- Review schema fake müşteri yorumlarıyla doldurma (aynı sebep)
+- Çok detaylı `Person`, `Place`, `Event` schema'ları — basit tutun, Google rich result eşleşmiyorsa katma değer yok
+
+### 35.7 Dokunulmayan / out-of-scope
+
+- **Google Search Console verification meta tag** — `<meta name="google-site-verification" content="..." />` ihtiyacı çıktığında `[locale]/layout.tsx` `generateMetadata`'a eklenecek (kullanıcı API key sağlamalı)
+- **Bing IndexNow** — `https://api.indexnow.org/indexnow` push API; sitemap zaten yeterli, IndexNow tetik koşulu çıkana kadar bekle
+- **Native app site associations** (`apple-app-site-association`, `assetlinks.json`) — native app yok (CLAUDE.md §25)
