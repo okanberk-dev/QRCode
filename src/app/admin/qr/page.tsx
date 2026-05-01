@@ -445,8 +445,73 @@ function AdminQrContent() {
         </div>
       )}
 
+      {/* PR5 — Mobile card fallback (md:hidden). Tablodaki tüm bilgi
+          kompakt kart formatında; primary action (PNG indir + Sil) sağda. */}
       {!loading && cardItems.length > 0 && view === 'list' && (
-        <div className="bz-card overflow-hidden">
+        <div className="md:hidden flex flex-col gap-2.5">
+          {cardItems.map((c) => {
+            const rawItem = filteredItems.find((it) => it.id === c.id)!;
+            const created = new Date(c.createdAt);
+            return (
+              <div key={c.id} className="bz-card p-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[13px] font-semibold text-[#0A0A0A] truncate">{c.name}</span>
+                      <Badge kind="ok">Aktif</Badge>
+                    </div>
+                    <div className="mt-1 text-[11px] text-[#525252] truncate">
+                      {c.branch || '—'}
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px]">
+                      {c.platform && PLATFORM_TO_CHIP[c.platform] ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <PlatformChip id={PLATFORM_TO_CHIP[c.platform]} size={14} />
+                          <span>{PLATFORM_LABELS[c.platform]}</span>
+                        </span>
+                      ) : (
+                        <span className="text-[#737373]">Genel</span>
+                      )}
+                      {c.tableNumber && (
+                        <>
+                          <span className="text-[#A3A3A3]">·</span>
+                          <span className="bz-mono font-semibold">{c.tableNumber}</span>
+                        </>
+                      )}
+                      <span className="text-[#A3A3A3]">·</span>
+                      <span className="text-[#737373]">
+                        {created.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => downloadOne(rawItem, 'png')}
+                      aria-label="PNG indir"
+                      className="bz-btn-icon"
+                    >
+                      <Download size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => requestDelete(rawItem)}
+                      aria-label="QR'ı sil"
+                      className="bz-btn-icon"
+                      style={{ color: '#DC2626' }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!loading && cardItems.length > 0 && view === 'list' && (
+        <div className="bz-card overflow-hidden hidden md:block">
           <div className="overflow-x-auto">
             <table className="bz-table w-full">
               <thead>
