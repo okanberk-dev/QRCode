@@ -6,6 +6,7 @@ import { Star, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
 import { buildGoogleReviewUrl } from '@/lib/google-review';
+import { resolveBestRedirectPlatform } from '@/lib/platform-redirect-resolver';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
 import { PlatformChip } from '@/components/ui';
@@ -25,10 +26,21 @@ interface RestaurantData {
   airbnbUrl: string | null;
   bookingUrl: string | null;
   yandexUrl: string | null;
+  // Per-platform enabled toggles — `resolveBestRedirectPlatform` (CLAUDE.md
+  // §19.4.3) bunları saygı gösterir. Owner panelden toggle off edilen bir
+  // platform `/r/[slug]` redirect zincirinde atlanır.
+  googleEnabled?: boolean;
+  yemekSepetiEnabled?: boolean;
+  getirEnabled?: boolean;
+  trendyolEnabled?: boolean;
+  tripAdvisorEnabled?: boolean;
+  airbnbEnabled?: boolean;
+  bookingEnabled?: boolean;
+  yandexEnabled?: boolean;
   primaryColor: string;
   isActive: boolean;
   // Phase 12.6 — owner-picked fallback when QR has no `?platform=` param.
-  // NULL → Google fallback (legacy default).
+  // NULL → resolver Google → sektör priority → any active (CLAUDE.md §19.4.3).
   defaultRedirectPlatform?: string | null;
 }
 
@@ -165,24 +177,40 @@ function ReviewContent() {
   // writereview link, or a /maps/place/ URL — see buildGoogleReviewUrl.
   const googleUrl = buildGoogleReviewUrl(restaurant.googlePlaceId);
 
-  const platformUrls: Record<string, string | null> = {
-    google: googleUrl,
-    yemeksepeti: restaurant.yemekSepetiUrl,
-    getir: restaurant.getirYemekUrl,
-    trendyol_go: restaurant.trendyolYemekUrl,
-    tripadvisor: restaurant.tripAdvisorUrl,
-    airbnb: restaurant.airbnbUrl,
-    booking: restaurant.bookingUrl,
-    yandex: restaurant.yandexUrl,
-  };
+  // Resolver chain (CLAUDE.md §19.4.3): requested → default → sector
+  // priority → any active → null. Saf fonksiyon, deterministik. Wave 4'te
+  // `latestChecks` slug GET'inden gelir; şimdilik boş Map → broken-skip
+  // uygulanmaz (legacy davranış korunur, sadece sektör fallback eklenir).
+  const resolution = resolveBestRedirectPlatform({
+    restaurant: {
+      category: restaurant.category,
+      defaultRedirectPlatform: restaurant.defaultRedirectPlatform ?? null,
+      googleReviewUrl: googleUrl,
+      yemekSepetiUrl: restaurant.yemekSepetiUrl,
+      getirYemekUrl: restaurant.getirYemekUrl,
+      trendyolYemekUrl: restaurant.trendyolYemekUrl,
+      tripAdvisorUrl: restaurant.tripAdvisorUrl,
+      airbnbUrl: restaurant.airbnbUrl,
+      bookingUrl: restaurant.bookingUrl,
+      yandexUrl: restaurant.yandexUrl,
+      googleEnabled: restaurant.googleEnabled ?? true,
+      yemekSepetiEnabled: restaurant.yemekSepetiEnabled ?? true,
+      getirEnabled: restaurant.getirEnabled ?? true,
+      trendyolEnabled: restaurant.trendyolEnabled ?? true,
+      tripAdvisorEnabled: restaurant.tripAdvisorEnabled ?? true,
+      airbnbEnabled: restaurant.airbnbEnabled ?? true,
+      bookingEnabled: restaurant.bookingEnabled ?? true,
+      yandexEnabled: restaurant.yandexEnabled ?? true,
+    },
+    requestedProvider: explicitPlatform,
+  });
 
-  // Resolve the platform: explicit `?platform=` wins, then owner-picked
-  // default on the restaurant, finally Google.
-  const platformParam =
-    explicitPlatform || restaurant.defaultRedirectPlatform || 'google';
-
-  const targetPlatformUrl = platformUrls[platformParam] || googleUrl;
-  const fallbackPlatformId = platformParam in platformUrls ? platformParam : 'google';
+  const targetPlatformUrl = resolution.url;
+  // PlatformChip için UI vocabulary: trendyol_go → trendyol mapping mevcut
+  // <PlatformChip>'in PLATFORMS const'ında var; storage key'i 'trendyol_go'
+  // kabul ediyor (CLAUDE.md §5). Provider null ise legacy 'google' fallback
+  // — overlay görsel için nötr placeholder.
+  const fallbackPlatformId = resolution.provider ?? 'google';
 
   const isLow = rating > 0 && rating <= 3;
   const visibleRating = hover || rating;
@@ -205,7 +233,7 @@ function ReviewContent() {
           tableNumber: tableParam,
           comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT,
           restaurantSlug: slug,
-          platform: platformParam || null,
+          platform: resolution.provider || null,
         }),
       });
     } catch (e) {
@@ -292,7 +320,7 @@ function ReviewContent() {
           branch: restaurant.name,
           tableNumber: tableParam,
           restaurantSlug: slug,
-          platform: platformParam || null,
+          platform: resolution.provider || null,
           aspects: null,
           website,
           recaptchaToken,
