@@ -12,8 +12,9 @@ interface Props {
   businessName: string;
   /** Theme variant — embed iframe URL'sine paslanır. */
   theme: 'light' | 'dark';
-  /** Size variant. */
-  size: 'compact' | 'full';
+  /** Layout variant: wall (full review list), spotlight (one featured quote),
+   *  badge (single-line trust pill). */
+  variant: 'wall' | 'badge' | 'spotlight';
   isTr: boolean;
 }
 
@@ -33,13 +34,17 @@ export default function EmbedBrowserPreview({
   websiteDomain,
   businessName,
   theme,
-  size,
+  variant,
   isTr,
 }: Props) {
   const [device, setDevice] = useState<'mobile' | 'desktop'>('desktop');
 
-  const embedSrc = `/embed/${encodeURIComponent(slug)}?theme=${theme}&size=${size}`;
+  const embedSrc = `/embed/${encodeURIComponent(slug)}?theme=${theme}&variant=${variant}`;
   const containerMaxWidth = device === 'mobile' ? 380 : 720;
+  // Match the iframe height to the rendered variant height; same map as the
+  // owner copy snippet so preview height = production height.
+  const iframeHeight =
+    variant === 'badge' ? 110 : variant === 'spotlight' ? 320 : 420;
 
   return (
     <div>
@@ -119,11 +124,11 @@ export default function EmbedBrowserPreview({
 
             {/* The actual embed iframe — live preview */}
             <iframe
-              key={`${theme}-${size}-${device}`}
+              key={`${theme}-${variant}-${device}`}
               src={embedSrc}
               title="Buaze widget preview"
               width="100%"
-              height={size === 'compact' ? 100 : 380}
+              height={iframeHeight}
               frameBorder="0"
               style={{ border: 'none', display: 'block', maxWidth: '100%' }}
             />
