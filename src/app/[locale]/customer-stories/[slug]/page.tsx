@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, ShieldCheck, TrendingUp } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
@@ -163,8 +164,15 @@ export default async function CustomerStoryPage({
               style={{ backgroundColor: story.color }}
             />
             <div className="relative overflow-hidden rounded-[28px] border border-[#EDEDED] bg-white shadow-[0_28px_70px_-50px_rgba(10,10,10,0.55)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={story.image} alt={story.brand} className="aspect-[4/3] w-full object-cover" />
+              <div className="relative aspect-[4/3] w-full overflow-hidden">
+                <Image
+                  src={story.image}
+                  alt={story.brand}
+                  fill
+                  sizes="(max-width: 1023px) 100vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
               <div className="p-6 sm:p-7">
                 <p className="pulse-eyebrow text-[#737373]">{story.brand}</p>
                 <blockquote

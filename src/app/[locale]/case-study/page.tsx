@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowRight, BarChart3, CheckCircle2, ShieldCheck, TrendingUp } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
@@ -186,11 +187,13 @@ export default async function CaseStudiesPage({
             className="group grid overflow-hidden rounded-[28px] border border-[#EDEDED] bg-white shadow-[0_28px_70px_-55px_rgba(10,10,10,0.55)] transition-transform duration-300 hover:-translate-y-1 lg:grid-cols-[0.95fr_1.05fr]"
           >
             <div className="relative min-h-[320px] overflow-hidden bg-[#0A0A0A]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={featured.heroImage}
                 alt={featured.brand}
-                className="absolute inset-0 h-full w-full object-cover opacity-[0.82] transition-transform duration-500 group-hover:scale-105"
+                fill
+                sizes="(max-width: 1023px) 100vw, 50vw"
+                priority
+                className="object-cover opacity-[0.82] transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
               <div className="absolute bottom-5 left-5 rounded-full bg-[#C6F24E] px-4 py-2">
@@ -344,11 +347,12 @@ export default async function CaseStudiesPage({
                   className="group overflow-hidden rounded-[20px] border border-[#EDEDED] bg-[#FAFAFA] transition-colors hover:border-[#0A0A0A]"
                 >
                   <div className="relative aspect-[16/10] overflow-hidden bg-[#0A0A0A]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={study.heroImage}
                       alt={study.brand}
-                      className="h-full w-full object-cover opacity-[0.88] transition-transform duration-500 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
+                      className="object-cover opacity-[0.88] transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
                   <div className="p-6">

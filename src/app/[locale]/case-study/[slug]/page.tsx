@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Quote, TrendingUp } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
@@ -171,11 +172,13 @@ export default async function CaseStudyPage({
       {/* Hero — magazine-style cover photo with text overlay */}
       <section className="relative">
         <div className="relative aspect-[16/9] sm:aspect-[21/9] lg:aspect-[3/1] overflow-hidden bg-[#0A0A0A]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src={study.heroImage}
             alt={study.brand}
-            className="absolute inset-0 h-full w-full object-cover opacity-80"
+            fill
+            sizes="100vw"
+            priority
+            className="object-cover opacity-80"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 px-5 pb-8 sm:px-10 sm:pb-12">

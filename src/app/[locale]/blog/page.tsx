@@ -5,6 +5,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export const dynamic = 'force-dynamic';
 
@@ -189,11 +190,13 @@ export default async function BlogIndexPage({
                   <div className="relative aspect-[16/10] overflow-hidden bg-[#C6F24E] md:aspect-auto md:min-h-[340px]">
                     {featured.coverImage ? (
                       <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                           src={featured.coverImage}
                           alt={featured.title}
-                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-[600ms] group-hover:scale-[1.03]"
+                          fill
+                          sizes="(max-width: 767px) 100vw, 50vw"
+                          priority
+                          className="object-cover transition-transform duration-[600ms] group-hover:scale-[1.03]"
                         />
                         {/* Graphite gradient to keep FEATURED eyebrow readable */}
                         <div
@@ -275,11 +278,12 @@ export default async function BlogIndexPage({
                     >
                       {p.coverImage ? (
                         <>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <Image
                             src={p.coverImage}
                             alt={p.title}
-                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-[600ms] group-hover:scale-[1.04]"
+                            fill
+                            sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
+                            className="object-cover transition-transform duration-[600ms] group-hover:scale-[1.04]"
                           />
                           <div
                             aria-hidden
