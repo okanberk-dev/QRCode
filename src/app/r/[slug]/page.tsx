@@ -37,6 +37,11 @@ interface RestaurantData {
   airbnbEnabled?: boolean;
   bookingEnabled?: boolean;
   yandexEnabled?: boolean;
+  // Wave 4 broken-skip downstream (CLAUDE.md §19.4.5). Slug GET endpoint
+  // son 24 saatlik PlatformLinkCheck'lerden provider başına latest sonucu
+  // attach eder; resolver `latestChecks` Map'i ile broken provider'ı
+  // atlar. Boş veya undefined ise legacy davranış (broken-skip yok).
+  latestChecks?: Record<string, { ok: boolean; checkedAt: string }>;
   primaryColor: string;
   isActive: boolean;
   // Phase 12.6 — owner-picked fallback when QR has no `?platform=` param.
@@ -177,10 +182,21 @@ function ReviewContent() {
   // writereview link, or a /maps/place/ URL — see buildGoogleReviewUrl.
   const googleUrl = buildGoogleReviewUrl(restaurant.googlePlaceId);
 
+  // Wave 4 broken-skip — slug GET'ten gelen son 24 saatlik test sonuçlarını
+  // resolver'ın beklediği Map<provider, { ok, checkedAt: Date }> formatına
+  // dönüştür. `latestChecks` undefined/boş ise resolver legacy davranış
+  // (broken-skip yok, sadece sektör fallback).
+  const latestChecksMap = restaurant.latestChecks
+    ? new Map(
+        Object.entries(restaurant.latestChecks).map(([provider, info]) => [
+          provider,
+          { ok: info.ok, checkedAt: new Date(info.checkedAt) },
+        ]),
+      )
+    : undefined;
+
   // Resolver chain (CLAUDE.md §19.4.3): requested → default → sector
-  // priority → any active → null. Saf fonksiyon, deterministik. Wave 4'te
-  // `latestChecks` slug GET'inden gelir; şimdilik boş Map → broken-skip
-  // uygulanmaz (legacy davranış korunur, sadece sektör fallback eklenir).
+  // priority → any active → null. Saf fonksiyon, deterministik.
   const resolution = resolveBestRedirectPlatform({
     restaurant: {
       category: restaurant.category,
@@ -203,6 +219,7 @@ function ReviewContent() {
       yandexEnabled: restaurant.yandexEnabled ?? true,
     },
     requestedProvider: explicitPlatform,
+    latestChecks: latestChecksMap,
   });
 
   const targetPlatformUrl = resolution.url;

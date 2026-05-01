@@ -62,6 +62,27 @@ export async function GET(req: NextRequest) {
         return ApiErrors.notFound('İşletme bulunamadı');
       }
 
+      // Wave 4 — broken-skip data downstream (CLAUDE.md §19.4.5 + §23.7
+      // Phase 11.28). Cron (Wave 2) günde 1 kez aktif platformları test
+      // ediyor; son 24 saat içinde fail olan provider'lar resolver'da
+      // skip edilir (`/r/[slug]` resolveBestRedirectPlatform). Tek query
+      // + JS reduce ile provider başına latest check.
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const checks = await prisma.platformLinkCheck.findMany({
+        where: { restaurantId: restaurant.id, checkedAt: { gte: since } },
+        orderBy: { checkedAt: 'desc' },
+        take: 100,
+        select: { provider: true, ok: true, checkedAt: true },
+      });
+      const latestChecks: Record<string, { ok: boolean; checkedAt: string }> = {};
+      for (const c of checks) {
+        if (latestChecks[c.provider]) continue;
+        latestChecks[c.provider] = {
+          ok: c.ok,
+          checkedAt: c.checkedAt.toISOString(),
+        };
+      }
+
       // Edge cache: restaurant data rarely changes (owner edits its
       // platform URLs / default platform a few times a month at most), but
       // every `/r/[slug]` page load fetches it. Cache 60s fresh + 5min
@@ -69,11 +90,15 @@ export async function GET(req: NextRequest) {
       // surface (~1000 review-flows/day) goes from 1000 Postgres hits to
       // ~24 (one per minute, edge-shared). Owner updates take up to ~6min
       // worst case to propagate; documented in CLAUDE.md §19.4.
-      return NextResponse.json(restaurant, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      // Latest checks dahil cache'lenir — cron günde 1, 60s freshness yeterli.
+      return NextResponse.json(
+        { ...restaurant, latestChecks },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          },
         },
-      });
+      );
     } catch (error) {
       const err = error as { code?: string; message?: string };
       console.error('Restaurant lookup error:', {
