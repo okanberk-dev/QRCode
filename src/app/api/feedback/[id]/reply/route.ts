@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteFeedback } from '@/lib/panel-access';
 import { sendCustomerReplyEmail } from '@/lib/email';
 import { isValidEmail } from '@/lib/validations';
 
@@ -40,6 +40,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const access = await requireFeedbackAccess(req, id);
   if ('error' in access) {
     return NextResponse.json({ error: access.error }, { status: access.status });
+  }
+
+  // Role-based write gate (TeamMember 'viewer' rolü read-only).
+  // canAccessRestaurant zaten requireFeedbackAccess'te yapıldı; canWriteFeedback
+  // role check'i ekler. superadmin / restaurant_owner / manager (admin) /
+  // team_member (viewer dışı) izinli.
+  if (access.feedback.restaurantId) {
+    const canWrite = await canWriteFeedback(access.actor, access.feedback.restaurantId);
+    if (!canWrite) {
+      return NextResponse.json({ error: 'forbidden_role' }, { status: 403 });
+    }
   }
 
   let body: { body?: string; channel?: string; sendEmail?: boolean; locale?: 'tr' | 'en'; source?: string } = {};

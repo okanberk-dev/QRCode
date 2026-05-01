@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteFeedback } from '@/lib/panel-access';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +56,15 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if ('error' in access) {
     return NextResponse.json({ error: access.error }, { status: access.status });
   }
+
+  // TeamMember 'viewer' rolü AI draft silemez (write op).
+  if (access.feedback.restaurantId) {
+    const canWrite = await canWriteFeedback(access.actor, access.feedback.restaurantId);
+    if (!canWrite) {
+      return NextResponse.json({ error: 'forbidden_role' }, { status: 403 });
+    }
+  }
+
   try {
     await prisma.feedbackAiDraft.deleteMany({ where: { feedbackId: id } });
     return NextResponse.json({ ok: true });

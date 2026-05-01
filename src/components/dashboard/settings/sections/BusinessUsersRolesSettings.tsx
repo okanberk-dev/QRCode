@@ -19,6 +19,7 @@ import {
   useConfirmDialog,
 } from "@/components/ui";
 import { SettingsCard } from "../SettingsCard";
+import { useCurrentRole } from "@/hooks/useCurrentRole";
 
 interface TeamRow {
   id: string;
@@ -104,6 +105,13 @@ export function BusinessUsersRolesSettings({
   const [confirmEl, askConfirm] = useConfirmDialog();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+
+  // Yalnız restaurant_owner davet/edit yapabilir (backend `/api/team`
+  // POST `actor.role !== 'restaurant_owner'` → 403). team_member workspace'in
+  // ekip yönetimi UI'ına direkt URL ile gelirse list görür ama write
+  // butonları gizli — defansif UI gate (UX kötü 403 alert'i yerine).
+  const currentRole = useCurrentRole();
+  const canManageTeam = currentRole.role === "restaurant_owner";
 
   // Invite modal
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -294,15 +302,17 @@ export function BusinessUsersRolesSettings({
         title="Ekip üyeleri"
         description="Workspace'ne kullanıcı davet et, rol ve konum erişimini yönet."
         actions={
-          <button
-            type="button"
-            onClick={() => setInviteOpen(true)}
-            className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
-            style={{ height: 28, padding: "0 12px", borderRadius: 999 }}
-          >
-            <Plus size={12} />
-            Üye davet et
-          </button>
+          canManageTeam ? (
+            <button
+              type="button"
+              onClick={() => setInviteOpen(true)}
+              className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
+              style={{ height: 28, padding: "0 12px", borderRadius: 999 }}
+            >
+              <Plus size={12} />
+              Üye davet et
+            </button>
+          ) : null
         }
       >
         {/* Owner row (kendisi) */}
@@ -377,46 +387,48 @@ export function BusinessUsersRolesSettings({
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(m)}
-                      className="bz-btn-ghost text-[12px]"
-                      style={{ height: 28, padding: "0 10px", borderRadius: 999 }}
-                    >
-                      Düzenle
-                    </button>
-                    {m.status !== "active" && (
+                  {canManageTeam && (
+                    <div className="flex items-center gap-1">
                       <button
                         type="button"
-                        onClick={() => handleResend(m)}
-                        disabled={resendingId === m.id}
-                        className="bz-btn-icon"
-                        aria-label="Daveti yenile"
-                        title="Daveti yenile"
+                        onClick={() => openEdit(m)}
+                        className="bz-btn-ghost text-[12px]"
+                        style={{ height: 28, padding: "0 10px", borderRadius: 999 }}
                       >
-                        {resendingId === m.id ? (
+                        Düzenle
+                      </button>
+                      {m.status !== "active" && (
+                        <button
+                          type="button"
+                          onClick={() => handleResend(m)}
+                          disabled={resendingId === m.id}
+                          className="bz-btn-icon"
+                          aria-label="Daveti yenile"
+                          title="Daveti yenile"
+                        >
+                          {resendingId === m.id ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <RefreshCcw size={12} />
+                          )}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemove(m)}
+                        disabled={busyId === m.id}
+                        className="bz-btn-icon"
+                        aria-label="Kaldır"
+                        title="Kaldır"
+                      >
+                        {busyId === m.id ? (
                           <Loader2 size={12} className="animate-spin" />
                         ) : (
-                          <RefreshCcw size={12} />
+                          <Trash2 size={12} />
                         )}
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => handleRemove(m)}
-                      disabled={busyId === m.id}
-                      className="bz-btn-icon"
-                      aria-label="Kaldır"
-                      title="Kaldır"
-                    >
-                      {busyId === m.id ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : (
-                        <Trash2 size={12} />
-                      )}
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 
 // GET /api/restaurants/[id]
@@ -67,7 +67,8 @@ export async function PUT(
 
   const { id } = await params;
 
-  if (!(await canAccessRestaurant(actor, id))) {
+  // Write op — viewer rolü restoran ayarlarını değiştiremez.
+  if (!(await canWriteRestaurant(actor, id))) {
     return ApiErrors.forbidden();
   }
 
@@ -337,7 +338,10 @@ export async function DELETE(
 
   const { id } = await params;
 
-  if (!(await canAccessRestaurant(actor, id))) {
+  // Restoran silme yıkıcı — viewer hiç yapamaz; manager/staff de
+  // canWriteRestaurant'ın eşik üstü gerekirse owner-only kuralı için
+  // ileride sıkılır. Şu an aynı write katmanı yeterli.
+  if (!(await canWriteRestaurant(actor, id))) {
     return ApiErrors.forbidden();
   }
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteFeedback } from '@/lib/panel-access';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +31,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params;
   const access = await requireFeedbackAccess(req, id);
   if ('error' in access) return NextResponse.json({ error: access.error }, { status: access.status });
+
+  // TeamMember 'viewer' rolü tag eklemez (write op).
+  if (access.feedback.restaurantId) {
+    const canWrite = await canWriteFeedback(access.actor, access.feedback.restaurantId);
+    if (!canWrite) {
+      return NextResponse.json({ error: 'forbidden_role' }, { status: 403 });
+    }
+  }
 
   let body: { label?: unknown; score?: unknown } = {};
   try {
@@ -73,6 +81,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
   const access = await requireFeedbackAccess(req, id);
   if ('error' in access) return NextResponse.json({ error: access.error }, { status: access.status });
+
+  // Tag silme de write op — viewer yapamaz.
+  if (access.feedback.restaurantId) {
+    const canWrite = await canWriteFeedback(access.actor, access.feedback.restaurantId);
+    if (!canWrite) {
+      return NextResponse.json({ error: 'forbidden_role' }, { status: 403 });
+    }
+  }
 
   const label = req.nextUrl.searchParams.get('label')?.trim();
   if (!label) return NextResponse.json({ error: 'missing_label' }, { status: 400 });

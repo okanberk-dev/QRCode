@@ -1,15 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPanelActorFromRequest, isAdminRole } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { prisma } from '@/lib/prisma';
 
-export async function requireRestaurantAccess(req: NextRequest, restaurantId: string) {
+/**
+ * Restaurant erişim guard'ı (read + write).
+ *
+ * Default davranış: HTTP method'una göre **auto-detect**. GET/HEAD/OPTIONS
+ * salt-okunur kabul edilir (sadece IDOR scope kontrolü); diğer method'lar
+ * (POST/PUT/PATCH/DELETE) write op sayılır ve `canWriteRestaurant` ile
+ * TeamMember.role 'viewer' filtreden geçer.
+ *
+ * `opts.requireWrite` ile manuel override:
+ *  - `true`  → request method ne olursa olsun write check zorunlu
+ *  - `false` → request method ne olursa olsun sadece read check
+ *  Edge case: yan-etkisiz POST (örn. integration test) için `false`,
+ *  veya GET endpoint'inde tutucu davranmak için `true`.
+ *
+ * 19 restaurant endpoint'i bu helper'ı kullanır → tek dokunuş ile viewer
+ * tüm CRUD endpoint'lerinde 403'lenir, mevcut caller'lara dokunulmaz.
+ */
+export async function requireRestaurantAccess(
+  req: NextRequest,
+  restaurantId: string,
+  opts: { requireWrite?: boolean } = {},
+) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
     return { ok: false as const, res: NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 }) };
   }
   // Superadmin: global access. Manager: scoped to their own restaurantId.
-  // Everyone else (restaurant_owner): checked via canAccessRestaurant.
+  // Everyone else (restaurant_owner / team_member): checked via canAccessRestaurant.
   const isSuperadmin = actor.role === 'superadmin';
   if (!isSuperadmin) {
     if (actor.role === 'manager') {
@@ -23,6 +44,20 @@ export async function requireRestaurantAccess(req: NextRequest, restaurantId: st
       }
     }
   }
+
+  // Write gate — method-based auto-detect, manuel override mümkün.
+  // Superadmin / manager (admin source) hep yazabilir; team_member 'viewer'
+  // yazma op'larında 403. canWriteRestaurant kendi içinde role lookup yapar.
+  const method = req.method?.toUpperCase() ?? 'GET';
+  const isReadOnly = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+  const writeNeeded = opts.requireWrite ?? !isReadOnly;
+  if (writeNeeded && !isSuperadmin && actor.role !== 'manager') {
+    const canWrite = await canWriteRestaurant(actor, restaurantId);
+    if (!canWrite) {
+      return { ok: false as const, res: NextResponse.json({ error: 'forbidden_role' }, { status: 403 }) };
+    }
+  }
+
   const isAdmin = isSuperadmin || isAdminRole(actor.role);
   return { ok: true as const, actor, isAdmin };
 }
