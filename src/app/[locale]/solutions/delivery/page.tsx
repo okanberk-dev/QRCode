@@ -1,12 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { ChevronRight, Package, Truck, Sparkles, BarChart3 } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
 import PlatformLogo, { TR_DELIVERY, TR_REVIEW } from '@/components/marketing/PlatformLogo';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { getRelatedSolutions } from '@/lib/related-solutions';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
 
@@ -147,6 +150,39 @@ export default async function DeliveryPage({
         { k: '18s', l: 'Average scan-to-review time' },
       ];
 
+  // Sector benefits — 4 tiles. Pulse design (lime icon tile + graphite headline).
+  const benefits = isTr
+    ? [
+        { Icon: Package, h: 'Pakete sticker, eve teslim', d: 'Müşteri evde paketi açtığında QR\'ı tarar. Sıcak deneyim, anlık yorum — kapı önünde dakikalar yerine sofradayken aksiyon.' },
+        { Icon: Truck, h: 'Çoklu platform yönlendirme', d: 'Yemeksepeti + Getir Yemek + Trendyol GO + Google bir akışta. Müşteri seçtiğin platforma yönlenir; tercih müşteride kalır, yıldız bazlı erişim kısıtlaması yok.' },
+        { Icon: Sparkles, h: 'Pulse AI yanıt taslağı', d: '"Gec geldi" yorumu için kişisel ton, "soğuk" yorumu için farklı ton. Her düşük puana saniyeler içinde yanıt taslağı; otomatik gönderim yok, sahip onaylar.' },
+        { Icon: BarChart3, h: 'Sürücü + bölge analitiği', d: 'Hangi sürücü, hangi bölge, hangi saat aralığı en çok düşük puan çekiyor? Operasyonel kararı veriyle al — kuryeyi ya da menü saatini ona göre düzenle.' },
+      ]
+    : [
+        { Icon: Package, h: 'Sticker on the box, review at home', d: 'When the customer opens the package at home, they scan the QR. Hot experience, instant feedback — action at the dining table instead of minutes lost on the doorstep.' },
+        { Icon: Truck, h: 'Multi-platform routing', d: 'Yemeksepeti + Getir Yemek + Trendyol GO + Google in one flow. The customer is shown the platforms you select; the choice stays with the customer, no star-rating gate.' },
+        { Icon: Sparkles, h: 'Pulse AI reply drafts', d: 'Personal tone for "arrived late" reviews, a different tone for "cold". A reply draft for every low rating in seconds; nothing auto-sent, the owner approves.' },
+        { Icon: BarChart3, h: 'Driver + zone analytics', d: 'Which driver, which zone, which time slot attracts the most low ratings? Make operational calls from data — adjust the courier or the menu hours accordingly.' },
+      ];
+
+  const faqs: FaqItem[] = isTr
+    ? [
+        { q: 'Paket servis için Buaze nasıl çalışır?', a: 'Pakete bir Buaze QR sticker yapıştırırsın. Müşteri evde paketi açtığında QR\'ı tarar; deneyimini puanlar ve seçtiğin herkese açık platformlara (Yemeksepeti, Getir Yemek, Trendyol GO, Google) yönlendirilir. Her müşteri istediği yere yorum yazma hakkını korur.' },
+        { q: 'Yemeksepeti, Getir ve Trendyol GO yorumlarını da topluyor mu?', a: 'Evet. Owner panelden bu platformların herkese açık yorum bağlantılarını eklersin; akış müşteriye seçtiğin platformları sunar. Müşteri tercih ettiği platforma yorum yazar; ek olarak ekibinle özel paylaşım yapma seçeneği de görür.' },
+        { q: 'Düşük puan veren müşteri ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak ekibinle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Müşteri her zaman herkese açık platformlara yorum yazma hakkını korur; siz sorunu özelden çözme şansı kazanırsınız.' },
+        { q: 'Kurye performansını da takip eder miyim?', a: 'Evet. Yorum geldiğinde sipariş ID + kurye etiketi + bölge + saat birlikte loglanır. Analytics raporunda hangi kurye en çok düşük puan çekiyor, hangi bölgede teslimat süresi yorumu negatif etkiliyor — sürücü bazlı görürsün.' },
+        { q: 'Sticker tasarımını siz mi gönderiyorsunuz?', a: 'QR PDF\'i indirebileceğin bir sayfa veriyoruz; Buaze logosu + işletme adı + QR kodu kompakt yerleşim. Yerel matbaada bastırabilir veya kendi paketleme tasarımına ekleyebilirsin. Her şube için ayrı QR oluşturma mümkün.' },
+      ]
+    : [
+        { q: 'How does Buaze work for delivery?', a: 'You stick a Buaze QR on every package. When the customer opens it at home, they scan the QR; they rate their experience and are routed to the public platforms you have selected (Yemeksepeti, Getir Yemek, Trendyol GO, Google). Every customer keeps the right to post anywhere they choose.' },
+        { q: 'Does it also collect Yemeksepeti, Getir and Trendyol GO reviews?', a: 'Yes. You add the public review links of these platforms in the owner panel; the flow surfaces the platforms you select to the customer. The customer posts on their preferred platform; they additionally see an option to share privately with your team.' },
+        { q: 'What happens to customers giving low ratings?', a: 'Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with your team — in practice ~85% choose this private channel. The customer always keeps the right to post on any public platform; you gain a chance to resolve the issue privately first.' },
+        { q: 'Can I track courier performance?', a: 'Yes. When a review arrives, the order ID + courier tag + zone + time are logged together. The analytics report shows which courier attracts the most low ratings, which zone\'s delivery time hurts review sentiment — you see it driver-by-driver.' },
+        { q: 'Do you provide the sticker design?', a: 'We provide a page where you can download the QR as PDF; Buaze logo + business name + QR code in a compact layout. You can print it at a local print shop or include it in your packaging design. Per-branch QR generation is supported.' },
+      ];
+
+  const relatedSolutions = getRelatedSolutions('delivery', 4);
+
   const jsonLd = buildSolutionSchema({
     locale,
     slug: 'delivery',
@@ -155,6 +191,7 @@ export default async function DeliveryPage({
     description: isTr
       ? 'Paket içine koyduğunuz tek QR ile müşteriyi tam olarak yorum bırakacağı platforma yönlendirin. Google, Yemeksepeti, Getir Yemek ve Trendyol GO uyumlu.'
       : 'One QR inside every package routes the customer to the platform where they will actually leave a review. Works with Google, Yemeksepeti, Getir Yemek and Trendyol GO.',
+    faqs,
   });
 
   return (
@@ -367,6 +404,73 @@ export default async function DeliveryPage({
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Benefits — 4-tile grid */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
+            {isTr ? 'Paket servis operasyonuna özel dört kazanç' : 'Four wins built for delivery operations'}
+          </h2>
+          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {benefits.map((b, i) => (
+              <div key={i} className="bz-card p-6 sm:p-7">
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]">
+                  <b.Icon size={16} />
+                </div>
+                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
+                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
+        <div className="max-w-[820px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
+            {isTr ? 'Paket servis için merak edilenler' : 'Common questions for delivery'}
+          </h2>
+          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
+        </div>
+      </section>
+
+      {/* Resources / Related Solutions */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
+          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
+          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
+              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
+              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
+              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
+            ].map((r) => (
+              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
+                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
+                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
+              </Link>
+            ))}
+          </div>
+          {relatedSolutions.length > 0 && (
+            <>
+              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {relatedSolutions.map((sol) => (
+                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
+                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
+                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
+                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
