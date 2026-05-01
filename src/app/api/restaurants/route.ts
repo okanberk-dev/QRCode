@@ -38,6 +38,18 @@ export async function GET(req: NextRequest) {
           airbnbUrl: true,
           bookingUrl: true,
           yandexUrl: true,
+          // Per-platform enabled toggles — public review surface honours
+          // them via `resolveBestRedirectPlatform` (CLAUDE.md §19.4.3).
+          // Owner toggling a platform off in panel must take effect on
+          // /r/[slug] without requiring URL removal.
+          googleEnabled: true,
+          yemekSepetiEnabled: true,
+          getirEnabled: true,
+          trendyolEnabled: true,
+          tripAdvisorEnabled: true,
+          airbnbEnabled: true,
+          bookingEnabled: true,
+          yandexEnabled: true,
           primaryColor: true,
           isActive: true,
           // `defaultRedirectPlatform` powers the public review surface's
