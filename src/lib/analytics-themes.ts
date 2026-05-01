@@ -6,8 +6,10 @@ export interface ThemeItem {
 }
 
 export interface ThemesResult {
-  complaints: ThemeItem[];
-  praises: ThemeItem[];
+  /** Top 5 ortak temalar — rating bağımsız, müşterilerin en sık dile getirdiği. */
+  themes: ThemeItem[];
+  /** AI tarafından üretilen kısa çıkarım/sentez (1-2 cümle). Boş olabilir. */
+  synthesis: string;
   source: 'openai' | 'fallback';
 }
 
@@ -48,33 +50,38 @@ function evictIfNeeded(): void {
 }
 
 const MAX_COMMENTS_TO_SEND = 80; // ~500-700 token; gpt-4o-mini'de hızlı
-const MIN_COMMENTS_FOR_AI = 8; // 8'den az yorum varsa AI çağrısı anlamsız
+// Owner panelin uzun süredir AI'ı tetikleyemediği şikayeti — eski 8 eşiği
+// çoğu küçük restoranda hiç tetiklenmiyordu. 4 yoruma indirildi (Buaze
+// kohortunda restoran başına ortalama yorum hacmi düşük).
+const MIN_COMMENTS_FOR_AI = 4;
 
-const SYSTEM_PROMPT_TR = `Sen bir restoran müşteri-deneyim analistisin. Aşağıda yorumları rating + metin formatında alacaksın. Görevin:
+const SYSTEM_PROMPT_TR = `Sen bir restoran müşteri-deneyim analistisin. Aşağıda yorumları rating + metin formatında alacaksın.
 
-1. **complaints**: Düşük puan (≤3★) yorumlardan en sık tekrarlanan 5 ortak tema/şikayet konusu çıkar. Tema KISA olmalı (2-4 kelime), eyleme dönük (örn. "Bekleme süresi uzun", "Yemek soğuk", "Personel ilgisiz"). Aynı temayı farklı yorumlarda say (count = kaç yorumda geçtiğini tahmin et).
-2. **praises**: Yüksek puan (≥4★) yorumlardan en sık övülen 5 tema (örn. "Lezzet", "Hızlı servis", "Atmosfer").
+Görev:
+1. **themes**: Tüm yorumları (rating bağımsız) tarayıp müşterilerin en sık dile getirdiği 5 ortak temayı çıkar. Tema KISA olmalı (2-4 kelime), nötr veya hafif yönlü ifade et (örn. "Bekleme süresi", "Lezzet", "Personel ilgisi", "Fiyat/performans"). Aynı temayı farklı yorumlarda say (count = kaç yorumda geçtiğini tahmin et).
+2. **synthesis**: 1-2 cümlelik genel çıkarım. Restoran sahibine pratik bir bilgi: hangi konu öne çıkıyor, ne yöne işaret ediyor. "Müşteriler genellikle…", "Temel sinyal…" gibi başlat. Övgü ve eleştiri varsa dengeli özetle.
 
 Yanıtını YALNIZCA aşağıdaki JSON formatında ver, başka açıklama yapma:
-{"complaints":[{"theme":"...","count":N}, ...5 madde],"praises":[{"theme":"...","count":N}, ...5 madde]}
+{"themes":[{"theme":"...","count":N}, ...max 5 madde],"synthesis":"..."}
 
-Eğer ilgili kategoride yorum yoksa boş array döndür.`;
+Yorum yetersizse boş array + boş synthesis döndür.`;
 
-const SYSTEM_PROMPT_EN = `You are a restaurant customer-experience analyst. You'll receive feedback as rating + text. Task:
+const SYSTEM_PROMPT_EN = `You are a restaurant customer-experience analyst. You'll receive comments as rating + text.
 
-1. **complaints**: From low ratings (≤3★) extract the top 5 recurring complaint themes. Themes must be SHORT (2-4 words), actionable (e.g. "Long wait time", "Cold food", "Inattentive staff"). Estimate count = how many comments mention each theme.
-2. **praises**: From high ratings (≥4★) extract the top 5 praised themes (e.g. "Taste", "Fast service", "Atmosphere").
+Task:
+1. **themes**: Across all comments (rating-agnostic) extract the top 5 most-mentioned topics. Themes must be SHORT (2-4 words), neutral or lightly-toned (e.g. "Wait time", "Taste", "Staff attentiveness", "Price/value"). Estimate count = how many comments mention each theme.
+2. **synthesis**: A 1-2 sentence overall inference. Practical info for the owner: which topic stands out, what direction it points to. Start with "Customers mostly…" or "Key signal…". If both praise and criticism exist, summarize balanced.
 
 Respond with ONLY this JSON, no other text:
-{"complaints":[{"theme":"...","count":N}, ...5 items],"praises":[{"theme":"...","count":N}, ...5 items]}
+{"themes":[{"theme":"...","count":N}, ...max 5 items],"synthesis":"..."}
 
-Empty array if no comments in category.`;
+Empty array + empty synthesis if not enough comments.`;
 
 function emptyResult(source: ThemesResult['source']): ThemesResult {
-  return { complaints: [], praises: [], source };
+  return { themes: [], synthesis: '', source };
 }
 
-function parseLLMJson(raw: string): { complaints: ThemeItem[]; praises: ThemeItem[] } | null {
+function parseLLMJson(raw: string): { themes: ThemeItem[]; synthesis: string } | null {
   // Model bazen ```json ... ``` ile sarar, bazen ham JSON. İkisini de tolere et.
   const cleaned = raw
     .trim()
@@ -83,22 +90,23 @@ function parseLLMJson(raw: string): { complaints: ThemeItem[]; praises: ThemeIte
   try {
     const parsed = JSON.parse(cleaned);
     if (!parsed || typeof parsed !== 'object') return null;
-    const complaints = Array.isArray(parsed.complaints) ? parsed.complaints : [];
-    const praises = Array.isArray(parsed.praises) ? parsed.praises : [];
-    const sanitize = (arr: unknown[]): ThemeItem[] =>
-      arr
-        .filter((x): x is { theme: string; count: number } => {
-          if (!x || typeof x !== 'object') return false;
-          const o = x as Record<string, unknown>;
-          return typeof o.theme === 'string' && typeof o.count === 'number';
-        })
-        .map((x) => ({
-          theme: String(x.theme).trim().slice(0, 60),
-          count: Math.max(0, Math.min(999, Math.round(x.count))),
-        }))
-        .filter((x) => x.theme.length > 0)
-        .slice(0, 5);
-    return { complaints: sanitize(complaints), praises: sanitize(praises) };
+    const themesIn = Array.isArray(parsed.themes) ? parsed.themes : [];
+    const themes: ThemeItem[] = themesIn
+      .filter((x: unknown): x is { theme: string; count: number } => {
+        if (!x || typeof x !== 'object') return false;
+        const o = x as Record<string, unknown>;
+        return typeof o.theme === 'string' && typeof o.count === 'number';
+      })
+      .map((x: { theme: string; count: number }) => ({
+        theme: String(x.theme).trim().slice(0, 60),
+        count: Math.max(0, Math.min(999, Math.round(x.count))),
+      }))
+      .filter((x: ThemeItem) => x.theme.length > 0)
+      .slice(0, 5);
+    const synthesis = typeof parsed.synthesis === 'string'
+      ? parsed.synthesis.trim().slice(0, 320)
+      : '';
+    return { themes, synthesis };
   } catch {
     return null;
   }
@@ -147,8 +155,8 @@ export async function extractThemes(
   }
 
   const result: ThemesResult = {
-    complaints: parsed.complaints,
-    praises: parsed.praises,
+    themes: parsed.themes,
+    synthesis: parsed.synthesis,
     source: 'openai',
   };
 

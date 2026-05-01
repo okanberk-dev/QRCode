@@ -412,8 +412,9 @@ export default async function AnalyticsPage({
         restaurants={user.restaurants}
       />
 
-      {/* 6 KPI cards: Bugün + scans/reviews/conversion + redirect/low-rating */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3.5">
+      {/* 6 KPI cards: Bugün + scans/reviews/conversion + redirect/low-rating
+          Mobile 2-col → tablet 3-col → desktop 6-col cascade. */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5">
         <StatCard
           label={isTr ? 'Bugün' : 'Today'}
           value={todayCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
@@ -578,11 +579,8 @@ export default async function AnalyticsPage({
                     {isTr ? '8 SAAT+ BEKLEYEN' : 'PENDING 8H+'}
                   </div>
                   <div
-                    className="bz-h-tight-2 mt-1 tabular-nums"
-                    style={{
-                      fontSize: 22,
-                      color: pendingOver8h > 0 ? '#DC2626' : '#0A0A0A',
-                    }}
+                    className="bz-h-tight-2 mt-1 tabular-nums text-[#0A0A0A]"
+                    style={{ fontSize: 22 }}
                   >
                     {pendingOver8h}
                   </div>
@@ -592,10 +590,13 @@ export default async function AnalyticsPage({
                 </div>
               </div>
               {pendingOver8h > 0 && (
-                <p className="mt-3 text-[11px] text-[#991B1B] bg-[#FEF2F2] rounded-md px-2.5 py-1.5">
-                  {isTr
-                    ? `${pendingOver8h} düşük puan 8 saatten uzun süredir yanıtsız — itibar riski.`
-                    : `${pendingOver8h} low ratings unanswered for 8h+ — reputation risk.`}
+                <p className="mt-3 inline-flex items-start gap-2 rounded-md border-l-2 border-[#FCA5A5] bg-[#FAFAFA] px-2.5 py-1.5 text-[11px] leading-[1.55] text-[#525252]">
+                  <span aria-hidden="true" className="mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#FCA5A5]" />
+                  <span>
+                    {isTr
+                      ? `${pendingOver8h} yorum 8 saati aştı. İlk fırsatta yanıtlamak müşteri ilişkisini güçlendirir.`
+                      : `${pendingOver8h} reviews exceeded 8h. Replying soon strengthens customer rapport.`}
+                  </span>
                 </p>
               )}
             </section>
@@ -645,96 +646,62 @@ export default async function AnalyticsPage({
         </div>
       )}
 
-      {/* AI sentiment themes — top 5 şikayet + top 5 övgü (CLAUDE.md §15 + §34.x) */}
-      <div className="grid gap-3.5 lg:grid-cols-2">
-        <section className="bz-card p-5 sm:p-6">
-          <header className="flex items-start justify-between gap-2 mb-3">
-            <div>
-              <Eyebrow>{isTr ? 'EN ÇOK ŞİKAYET' : 'TOP COMPLAINTS'}</Eyebrow>
-              <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
-                {isTr ? 'Müşterinin en sık dile getirdiği' : 'Most-mentioned issues'}
-              </div>
+      {/* AI sentiment themes — single section: müşterinin en sık dile getirdiği
+          ortak temalar + AI sentez çıkarımı. Praise vs complaint ayrımı
+          kaldırıldı (CLAUDE.md §34.x retrofit, 2026-05). */}
+      <section className="bz-card p-5 sm:p-6">
+        <header className="flex items-start justify-between gap-2 mb-3">
+          <div>
+            <Eyebrow>{isTr ? 'AI ÇIKARIMI' : 'AI INFERENCE'}</Eyebrow>
+            <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
+              {isTr ? 'Müşterinin en sık dile getirdiği' : 'Most-mentioned themes'}
             </div>
-            {themes.source === 'openai' && (
-              <span className="pulse-eyebrow shrink-0 rounded-full bg-[#0A0A0A] px-2 py-1 text-[#C6F24E]">
-                {isTr ? 'AI' : 'AI'}
-              </span>
-            )}
-          </header>
-          {themes.complaints.length === 0 ? (
-            <p className="text-[12px] text-[#737373]">
-              {isTr
-                ? themes.source === 'fallback'
-                  ? 'Yeterli düşük puanlı yorum yok ya da AI servisi şu an pasif.'
-                  : 'Düşük puanlı yorumlardan çıkan ortak tema yok.'
-                : 'No common complaint themes yet.'}
-            </p>
-          ) : (
-            <ol className="flex flex-col gap-2.5">
-              {themes.complaints.map((t, idx) => (
-                <li
-                  key={t.theme}
-                  className="flex items-center gap-3 rounded-lg bg-[#FEF2F2] px-3 py-2.5"
-                >
-                  <span className="bz-mono text-[12px] font-semibold text-[#991B1B]">
-                    {String(idx + 1).padStart(2, '0')}
-                  </span>
-                  <span className="flex-1 text-[13px] font-medium text-[#0A0A0A]">
-                    {t.theme}
-                  </span>
-                  <span className="bz-mono text-[11px] font-semibold text-[#991B1B]">
-                    ×{t.count}
-                  </span>
-                </li>
-              ))}
-            </ol>
+          </div>
+          {themes.source === 'openai' && (
+            <span className="pulse-eyebrow shrink-0 inline-flex items-center gap-1 rounded-full bg-[#0A0A0A] px-2 py-1 text-[#C6F24E]">
+              <span aria-hidden="true" className="bz-pulse-dot" style={{ background: '#C6F24E' }} />
+              AI
+            </span>
           )}
-        </section>
+        </header>
 
-        <section className="bz-card p-5 sm:p-6">
-          <header className="flex items-start justify-between gap-2 mb-3">
-            <div>
-              <Eyebrow>{isTr ? 'EN ÇOK ÖVGÜ' : 'TOP PRAISES'}</Eyebrow>
-              <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
-                {isTr ? 'Müşterinin en sık beğendiği' : 'Most-praised aspects'}
-              </div>
-            </div>
-            {themes.source === 'openai' && (
-              <span className="pulse-eyebrow shrink-0 rounded-full bg-[#0A0A0A] px-2 py-1 text-[#C6F24E]">
-                {isTr ? 'AI' : 'AI'}
-              </span>
-            )}
-          </header>
-          {themes.praises.length === 0 ? (
-            <p className="text-[12px] text-[#737373]">
-              {isTr
-                ? themes.source === 'fallback'
-                  ? 'Yeterli yüksek puanlı yorum yok ya da AI servisi şu an pasif.'
-                  : 'Yüksek puanlı yorumlardan çıkan ortak tema yok.'
-                : 'No common praise themes yet.'}
-            </p>
-          ) : (
-            <ol className="flex flex-col gap-2.5">
-              {themes.praises.map((t, idx) => (
-                <li
-                  key={t.theme}
-                  className="flex items-center gap-3 rounded-lg bg-[#EAF9B8] px-3 py-2.5"
-                >
-                  <span className="bz-mono text-[12px] font-semibold text-[#3D4D00]">
-                    {String(idx + 1).padStart(2, '0')}
-                  </span>
-                  <span className="flex-1 text-[13px] font-medium text-[#0A0A0A]">
-                    {t.theme}
-                  </span>
-                  <span className="bz-mono text-[11px] font-semibold text-[#3D4D00]">
-                    ×{t.count}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
+        {themes.synthesis && (
+          <p className="mb-4 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[13px] leading-[1.6] text-[#0A0A0A]">
+            {themes.synthesis}
+          </p>
+        )}
+
+        {themes.themes.length === 0 ? (
+          <p className="text-[12px] text-[#737373]">
+            {isTr
+              ? themes.source === 'fallback'
+                ? 'Yeterli yorum yok ya da AI servisi şu an pasif. En az 4 metinli yoruma ulaşınca AI çıkarımı burada görünür.'
+                : 'Yorumlardan çıkan ortak tema yok.'
+              : themes.source === 'fallback'
+                ? 'Not enough comments yet, or AI service is paused. AI inference appears once at least 4 text comments are collected.'
+                : 'No common themes from comments yet.'}
+          </p>
+        ) : (
+          <ol className="grid gap-2 sm:grid-cols-2">
+            {themes.themes.map((t, idx) => (
+              <li
+                key={t.theme}
+                className="flex items-center gap-3 rounded-lg border border-[#EDEDED] bg-white px-3 py-2.5"
+              >
+                <span className="bz-mono text-[11px] font-semibold text-[#737373]">
+                  {String(idx + 1).padStart(2, '0')}
+                </span>
+                <span className="flex-1 text-[13px] font-medium text-[#0A0A0A]">
+                  {t.theme}
+                </span>
+                <span className="bz-mono text-[11px] font-semibold tabular-nums text-[#525252]">
+                  ×{t.count}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
     </div>
   );
 }

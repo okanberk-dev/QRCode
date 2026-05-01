@@ -21,34 +21,50 @@ export async function GET(
   }
 
   try {
-    const restaurant = await prisma.restaurant.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            plan: true,
-            isActive: true,
+    // Tek round-trip: restaurant + non-QR counts. QrGeneration tablosu history
+    // (her regen = +1 row) — distinct (tableNumber, platform, type) combo'larını
+    // ayrıca count'luyoruz; aksi halde owner panelde "1 QR var ama 2 yazıyor"
+    // false-positive'i çıkıyor.
+    const [restaurant, qrDistinctRows] = await Promise.all([
+      prisma.restaurant.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              plan: true,
+              isActive: true,
+            },
+          },
+          _count: {
+            select: {
+              feedbacks: true,
+              menuItems: { where: { deletedAt: null } },
+              adminUsers: true,
+            },
           },
         },
-        _count: {
-          select: {
-            feedbacks: true,
-            menuItems: { where: { deletedAt: null } },
-            qrGenerations: true,
-            adminUsers: true,
-          }
-        }
-      }
-    });
+      }),
+      prisma.qrGeneration.findMany({
+        where: { restaurantId: id },
+        select: { tableNumber: true, platform: true, type: true },
+        distinct: ['tableNumber', 'platform', 'type'],
+      }),
+    ]);
 
     if (!restaurant) {
       return ApiErrors.notFound('İşletme bulunamadı');
     }
 
-    return NextResponse.json(restaurant);
+    return NextResponse.json({
+      ...restaurant,
+      _count: {
+        ...restaurant._count,
+        qrGenerations: qrDistinctRows.length,
+      },
+    });
   } catch (error) {
     console.error('Failed to fetch restaurant:', error);
     return ApiErrors.internalError('İşletme çekilemedi');

@@ -15,6 +15,7 @@ import {
 import { AlertBanner, PageHeader } from "@/components/ui";
 import { SettingsLayout, type SettingsTab } from "@/components/dashboard/settings/SettingsLayout";
 import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
+import { AccountOverviewCard } from "@/components/dashboard/account/AccountOverviewCard";
 import { BusinessProfileSettings } from "@/components/dashboard/settings/sections/BusinessProfileSettings";
 import { BusinessAccountSecuritySettings } from "@/components/dashboard/settings/sections/BusinessAccountSecuritySettings";
 import { BusinessNotificationSettings } from "@/components/dashboard/settings/sections/BusinessNotificationSettings";
@@ -190,7 +191,10 @@ export default function AccountSettingsPage() {
           </span>
         }
       >
-        <BusinessProfileSettings locale={locale} />
+        <div className="space-y-4">
+          <AccountOverviewCard locale={locale} />
+          <BusinessProfileSettings locale={locale} />
+        </div>
       </SettingsSection>
 
       <SettingsSection
