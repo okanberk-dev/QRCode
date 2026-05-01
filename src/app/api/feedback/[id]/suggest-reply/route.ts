@@ -17,14 +17,25 @@ export async function POST(
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  // Rate-limit by workspace owner so a team can't bypass the cap by spreading
-  // requests across team members. Falls back to actor.id only when we can't
-  // resolve an owner (e.g. unattached superadmin).
+  // İki katmanlı rate limit:
+  //  1. Workspace owner: 30/dk — ekip tek kullanıcının üst sınırını şişiremesin
+  //     (workspace adına paylaşımlı budget). Owner null ise actor.id fallback.
+  //  2. Actor: 10/dk — viewer/staff tek başına workspace budget'ını sömürmesin
+  //     (fairness). canWriteFeedback yan-etki'sini görmemesi için viewer da
+  //     suggest-reply'ı çağırabilir (read-adjacent: taslak görsün ama
+  //     gönderemez), ama 10/dk üst limiti rağmen.
   const ownerKey = (await resolveOwnerUserId(actor)) ?? actor.id;
-  const limit = await rateLimit(`ai-suggest:${ownerKey}`, 30, 60_000);
-  if (!limit.allowed) {
+  const wsLimit = await rateLimit(`ai-suggest:ws:${ownerKey}`, 30, 60_000);
+  if (!wsLimit.allowed) {
     return NextResponse.json(
-      { error: 'rate_limited', retryAfter: limit.retryAfterSeconds },
+      { error: 'rate_limited', retryAfter: wsLimit.retryAfterSeconds },
+      { status: 429 },
+    );
+  }
+  const actorLimit = await rateLimit(`ai-suggest:actor:${actor.id}`, 10, 60_000);
+  if (!actorLimit.allowed) {
+    return NextResponse.json(
+      { error: 'rate_limited', retryAfter: actorLimit.retryAfterSeconds },
       { status: 429 },
     );
   }

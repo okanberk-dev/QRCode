@@ -14,8 +14,14 @@ function getSecretBytes(): Uint8Array {
   return new TextEncoder().encode(DEV_FALLBACK_SECRET);
 }
 
+// `admin_token` JWT'si sadece admin login flow'unda (superadmin / manager için)
+// issue edilir; `restaurant_owner` `user_token` taşır. Yine de defensive
+// olarak owner role'ünü buradan çıkarıyoruz: bir şekilde admin_token'lı
+// restaurant_owner görürse (örn. eski/migrate edilmiş cookie) admin paneline
+// girmesin — `/api/admin/*` endpoint'leri zaten 403 dönüyordu, UX confusion
+// yaratıyordu. Şimdi middleware seviyesinde redirect'lenir.
 function isAllowedAdminPanelRole(role: unknown): boolean {
-  return role === 'superadmin' || role === 'manager' || role === 'restaurant_owner';
+  return role === 'superadmin' || role === 'manager';
 }
 
 // Admin sub-routes that DO NOT require auth.

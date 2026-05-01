@@ -126,6 +126,37 @@ export async function resolveOwnerUserId(actor: PanelActor): Promise<string | nu
 }
 
 /**
+ * Restoran üzerinde yazma izni kontrolü (theme, menu CRUD, QR generation,
+ * settings, branches, vb.).
+ *
+ * Sıra:
+ *  1. `canAccessRestaurant` ile IDOR scope check (false ise erişim reddi).
+ *  2. Sadece `team_member` rolüne ek katman: TeamMember.role 'viewer' ise
+ *     read-only; diğer rol'ler (`owner`/`manager`/`staff`) yazabilir.
+ *     `superadmin`/`manager` (admin source)/`restaurant_owner` write izinli.
+ *
+ * Yeni helper: `canWriteFeedback`'in restoran-CRUD muadili. Aynı role
+ * matrisini iki domain'e (feedback + restaurant) tutarlı uygular.
+ */
+export async function canWriteRestaurant(
+  actor: PanelActor,
+  restaurantId: string,
+): Promise<boolean> {
+  const access = await canAccessRestaurant(actor, restaurantId);
+  if (!access) return false;
+  if (actor.role !== 'team_member') return true;
+
+  const email = actor.email?.toLowerCase().trim();
+  if (!email) return false;
+  const member = await prisma.teamMember.findFirst({
+    where: { email, status: 'active' },
+    select: { role: true },
+  });
+  if (!member) return false;
+  return member.role !== 'viewer';
+}
+
+/**
  * Feedback üzerinde yazma izni kontrolü (reply, flag, assign, bulk).
  *
  * Sıra:

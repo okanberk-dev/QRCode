@@ -33,7 +33,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    // User.role='team_member' ise TeamMember.role'ü de döndür — frontend
+    // role-based UI gate'leri için (viewer butonları disabled vb.). Diğer
+    // rol'lerde (restaurant_owner) `teamRole` null kalır; UI tüm yetkileri
+    // varsayar.
+    let teamRole: string | null = null;
+    if (user.role === 'team_member') {
+      const member = await prisma.teamMember.findFirst({
+        where: { email: user.email.toLowerCase().trim(), status: 'active' },
+        select: { role: true },
+      });
+      teamRole = member?.role ?? null;
+    }
+
+    return NextResponse.json({ ...user, teamRole });
   } catch (error) {
     console.error('[PROFILE_GET]', error);
     return NextResponse.json({ error: 'Bir hata oluştu' }, { status: 500 });
