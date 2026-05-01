@@ -6,6 +6,7 @@ import {
   AlertBanner,
   Badge,
   type BadgeKind,
+  CardSkeleton,
   EmptyState,
   Modal,
   PageHeader,
@@ -232,8 +233,11 @@ export default function AdminAnnouncementsPage() {
 
       {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 size={32} className="animate-spin text-[#0A0A0A]" />
+        // PR8 — content-shape skeletons (Linear/Stripe/Vercel pattern).
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <CardSkeleton key={i} height={180} />
+          ))}
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState

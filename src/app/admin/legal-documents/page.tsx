@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Loader2, ArrowRight, ScrollText } from 'lucide-react';
-import { AlertBanner, Badge, PageHeader, Tabs, type TabItem } from '@/components/ui';
+import { AlertBanner, Badge, CardSkeleton, PageHeader, Tabs, type TabItem } from '@/components/ui';
 
 interface DocCell {
   id: string | null;
@@ -131,9 +131,11 @@ export default function LegalDocumentsIndexPage() {
       </AlertBanner>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-[#737373]">
-          <Loader2 size={18} className="animate-spin" />
-          Yükleniyor...
+        // PR8 — content-shape skeletons. Tipik 3 doküman grup'u için 3 kart.
+        <div className="space-y-3">
+          <CardSkeleton height={200} />
+          <CardSkeleton height={200} />
+          <CardSkeleton height={200} />
         </div>
       ) : grouped.length === 0 ? (
         <div className="rounded-2xl border border-[#EDEDED] bg-white p-10 text-center">
