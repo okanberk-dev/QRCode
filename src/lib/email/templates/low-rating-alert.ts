@@ -29,9 +29,11 @@ export async function renderLowRatingAlert(
   locale: 'tr' | 'en' = 'tr',
 ): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
+  // Subject deliverability §21.23: emoji çıkarıldı (⚠ spam tetikçi).
+  // "★" rating'in görsel sinyalini koruyor.
   const subject = isTr
-    ? `⚠ Düşük puanlı yorum — ${params.restaurantName}${params.branch ? ' · ' + params.branch : ''} · ${params.rating}★`
-    : `⚠ Low-rating review — ${params.restaurantName}${params.branch ? ' · ' + params.branch : ''} · ${params.rating}★`;
+    ? `Düşük puan · ${params.restaurantName}${params.branch ? ' · ' + params.branch : ''} · ${params.rating}★`
+    : `Low rating · ${params.restaurantName}${params.branch ? ' · ' + params.branch : ''} · ${params.rating}★`;
   const preheader = isTr
     ? `${params.customerName ?? 'Müşteri'} az önce ${params.rating} yıldız bıraktı. ${params.aiDraft ? 'AI yanıt taslağı hazır.' : 'Hızlı aksiyon önerileri içeride.'}`
     : `${params.customerName ?? 'A customer'} just left ${params.rating} stars. ${params.aiDraft ? 'AI reply draft inside.' : 'Quick actions inside.'}`;

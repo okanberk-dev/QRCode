@@ -30,9 +30,10 @@ export function renderContactAdmin(
   const businessOrName = params.business || params.name;
   const firstName = params.name.split(' ')[0] || params.name;
 
+  // Subject deliverability §21.23: 📥 emoji çıkarıldı.
   const subject = isTr
-    ? `📥 Yeni iletişim talebi · ${businessOrName}`
-    : `📥 New contact request · ${businessOrName}`;
+    ? `[İletişim] ${businessOrName}`
+    : `[Contact] ${businessOrName}`;
   const messagePreview = params.message.slice(0, 80).replace(/\s+/g, ' ').trim();
   const preheader = isTr
     ? `${params.name} az önce iletişim formundan ulaştı. ${messagePreview}${params.message.length > 80 ? '…' : ''}`
@@ -110,7 +111,10 @@ export function renderContactAdmin(
       };
 
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
-  const replyHref = `mailto:${params.email}?subject=${encodeURIComponent(isTr ? `Re: ${businessOrName}` : `Re: ${businessOrName}`)}`;
+  // mailto/tel URL'lerinde escapeHtml KULLANILMAZ — '&' → '&amp;' link'i bozar.
+  // Raw email + encodeURI yeterli; @ encode etmez ama <> gibi tehlikeli
+  // karakterleri encode eder (defense-in-depth).
+  const replyHref = `mailto:${encodeURI(params.email)}?subject=${encodeURIComponent(isTr ? `Re: ${businessOrName}` : `Re: ${businessOrName}`)}`;
   const phoneHref = params.phone ? `tel:${params.phone.replace(/[^+0-9]/g, '')}` : `${baseAppUrl}/${isTr ? 'tr' : 'en'}/contact`;
   const panelHref = `${baseAppUrl}/admin/leads`;
 
@@ -134,7 +138,7 @@ export function renderContactAdmin(
 
   // Sender meta grid — 3 cells (email / phone / business). Stacks on mobile via .stack-col.
   const senderCells: Array<{ label: string; value: string; href?: string }> = [
-    { label: copy.senderEmailLabel, value: safeEmail, href: `mailto:${params.email}` },
+    { label: copy.senderEmailLabel, value: safeEmail, href: `mailto:${encodeURI(params.email)}` },
     {
       label: copy.senderPhoneLabel,
       value: safePhone ?? `<span style="color:${PULSE.n400};">${copy.senderMissing}</span>`,
@@ -145,10 +149,12 @@ export function renderContactAdmin(
       value: safeBusiness ?? `<span style="color:${PULSE.n400};">${copy.senderMissing}</span>`,
     },
   ];
+  // Border-radius outer container'da; cell'lerde tutmuyoruz çünkü mobile
+  // stack-col collapse olunca yarım-yuvarlak köşeler bozuluyordu (audit B).
   const senderCellsHtml = senderCells
     .map(
       (c, i) => `
-      <td class="stack-col" valign="top" style="width:33.33%;padding:14px 16px;${i < 2 ? `border-right:1px solid ${PULSE.n200};` : ''}background:${PULSE.n50};${i === 0 ? 'border-radius:0 0 0 14px;' : ''}${i === 2 ? 'border-radius:0 0 14px 0;' : ''}">
+      <td class="stack-col" valign="top" style="width:33.33%;padding:14px 16px;${i < 2 ? `border-right:1px solid ${PULSE.n200};` : ''}">
         <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n500};text-transform:uppercase;">${c.label}</div>
         <div style="margin-top:4px;font-family:${FONTS.body};font-size:13px;font-weight:500;color:${PULSE.graphite};word-break:break-word;">${
           c.href ? `<a href="${c.href}" style="color:${PULSE.graphite};text-decoration:none;">${c.value}</a>` : c.value
@@ -231,7 +237,7 @@ export function renderContactAdmin(
                 </td>
               </tr>
             </table>
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="background:${PULSE.n50};border-radius:0 0 14px 14px;overflow:hidden;">
               <tr>${senderCellsHtml}</tr>
             </table>
           </div>

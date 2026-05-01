@@ -217,7 +217,7 @@ export async function renderNewsletter(
         </td>
       </tr>
       ${featuredBlock}
-      ${postRows ? `
+      ${restPosts.length > 0 ? `
       <tr>
         <td class="bz-pad" style="padding:36px 40px 8px;">
           ${renderEyebrow(copy.listEyebrow)}

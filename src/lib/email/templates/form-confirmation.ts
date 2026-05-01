@@ -233,7 +233,10 @@ export async function renderFormConfirmation(
     day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
   });
 
-  const formCard = detailRows ? `
+  // Empty details guard — `detailRows` her zaman string (.join('') ile),
+  // truthy. Asıl kontrol array length'i. Empty array'de orphan başlık
+  // ("Form summary") render edilmez.
+  const formCard = (params.details && params.details.length > 0) ? `
     <div style="border:1px solid ${PULSE.n200};border-radius:14px;overflow:hidden;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.n50};border-bottom:1px solid ${PULSE.n200};">
         <tr>

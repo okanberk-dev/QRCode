@@ -131,6 +131,41 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'notYouTitle', label: '"Sen değil misin?" başlık', locked: true, lockReason: 'Güvenlik uyarısı — hesap sahibi değilsen ne yapmalı bilgisi' },
     { key: 'notYouBody', label: '"Sen değil misin?" gövde', multiline: true, locked: true, lockReason: 'Güvenlik uyarısı içeriği' },
   ],
+  'roi-customer-report': [
+    { key: 'subjectTemplate', label: 'Mail başlığı (subject)', hint: '"${restaurantName} için 12 aylık ROI raporun hazır"', placeholders: MAIL_PLACEHOLDERS['roi-customer-report'] },
+    { key: 'preheaderPrefix', label: 'Inbox preview öneki', hint: 'AI summary öncesi sabit metin — "Yıllık net kazanç + ROI..."' },
+    { key: 'heroEyebrow', label: 'Üst etiket', hint: '"BUAZE ROI RAPORU · 12 AY"' },
+    { key: 'heroIntroPdf', label: 'Hero giriş paragrafı (PDF varken)', multiline: true, placeholders: MAIL_PLACEHOLDERS['roi-customer-report'] },
+    { key: 'heroIntroNoPdf', label: 'Hero giriş paragrafı (PDF yokken)', multiline: true, placeholders: MAIL_PLACEHOLDERS['roi-customer-report'] },
+    { key: 'netGainEyebrow', label: 'Net kazanç kart etiketi', hint: '"YILLIK NET KAZANÇ"' },
+    { key: 'ctaEyebrow', label: 'CTA kart etiketi', hint: '"SIRADAKİ ADIM"' },
+    { key: 'ctaTitle', label: 'CTA başlığı', hint: '"30 dk canlı kurulum + soru-cevap"' },
+    { key: 'ctaBody', label: 'CTA gövde', multiline: true, placeholders: MAIL_PLACEHOLDERS['roi-customer-report'] },
+    { key: 'ctaPrimary', label: 'Birincil CTA buton metni', hint: '"Demo daveti gönder"' },
+    { key: 'ctaSecondary', label: 'Mailto CTA buton metni', hint: '"✉ Bize doğrudan yaz · hello@buaze.com"' },
+    { key: 'ctaPlanLink', label: 'Plan link prefix', hint: '"Ya da planları gör"' },
+    { key: 'riskFree1', label: 'Risk-free chip 1', hint: '"30 gün ücretsiz"' },
+    { key: 'riskFree2', label: 'Risk-free chip 2', hint: '"Kredi kartı yok"' },
+    { key: 'riskFree3', label: 'Risk-free chip 3', hint: '"İstediğin an iptal"' },
+    { key: 'calibrationFooter', label: 'Kalibrasyon disclaimer', multiline: true, hint: 'BrightLocal + Buaze cohort kaynak metni' },
+  ],
+  'roi-admin-notification': [
+    { key: 'subjectTemplate', label: 'Mail başlığı (subject)', hint: '"[Lead] ${restaurantName} · ${netGain}/yıl"', placeholders: MAIL_PLACEHOLDERS['roi-admin-notification'] },
+    { key: 'preheaderPrefix', label: 'Inbox preview öneki', hint: '"${restaurantName} ROI hesabı yaptı: ${netGain}/yıl."', placeholders: MAIL_PLACEHOLDERS['roi-admin-notification'] },
+    { key: 'alertEyebrow', label: 'Alert bar etiketi', hint: '"YENİ ROI LEAD\'İ"' },
+    { key: 'statusPill', label: 'Aciliyet pill', hint: '"24 saat içinde dön"' },
+    { key: 'netGainEyebrow', label: 'Net kazanç kart etiketi', hint: '"YILLIK NET KAZANÇ"' },
+    { key: 'scenarioH2', label: 'Senaryo bölüm başlığı', hint: '"Senaryosu"' },
+    { key: 'quickEyebrow', label: 'Hızlı aksiyon etiketi', hint: '"HIZLI AKSİYON"' },
+    { key: 'replyLabel', label: 'Yanıt yaz buton', hint: '"Yanıt yaz"' },
+    { key: 'replySub', label: 'Yanıt buton sub', hint: '"E-posta gönder"' },
+    { key: 'callLabel', label: 'Telefon buton', hint: '"Telefonla ara"' },
+    { key: 'callSubYes', label: 'Telefon sub (numara var)', hint: '"Numarayı çevir"' },
+    { key: 'callSubNo', label: 'Telefon sub (numara yok)', hint: '"Numara yok"' },
+    { key: 'panelLabel', label: 'Panel buton', hint: '"Lead panel"' },
+    { key: 'panelSub', label: 'Panel buton sub', hint: '"Tüm lead\'ler"' },
+    { key: 'footerDisclosure', label: 'Footer disclaimer', multiline: true, hint: 'Otomatik gönderim açıklaması' },
+  ],
   'customer-reply': [
     { key: 'headerEyebrow', label: 'Üst eyebrow', hint: '"Sana özel · Kişisel yanıt"' },
     { key: 'ownerLabel', label: 'İşletmeci rozeti', hint: '"İŞLETMECİ"' },
@@ -162,6 +197,8 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'customer-reply': 'Müşteri yanıtı',
   'form-confirmation': 'Form onayı',
   'verify-email': 'E-posta onayı',
+  'roi-customer-report': 'ROI raporu (müşteri)',
+  'roi-admin-notification': 'ROI lead (admin)',
 };
 
 interface Props {
@@ -184,6 +221,10 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
   const isEnglish = locale === 'en';
 
   const [content, setContent] = useState<Record<string, string>>({});
+  // savedContent: en son DB'ye yazılmış (veya yüklenmiş) snapshot. Dirty
+  // detection için karşılaştırma referansı. `content !== savedContent`
+  // → "Taslak (kaydedilmedi)" badge görünür.
+  const [savedContent, setSavedContent] = useState<Record<string, string>>({});
   const [seeded, setSeeded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -194,6 +235,11 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [confirmDialog, askConfirm] = useConfirmDialog();
+
+  // Dirty check: content vs savedContent stringify (shallow flat object,
+  // <30 string keys; cheap). Field add/remove olmadığı için key sayısı
+  // sabit, JSON compare deterministik.
+  const isDirty = JSON.stringify(content) !== JSON.stringify(savedContent);
 
   useEffect(() => {
     let alive = true;
@@ -221,6 +267,7 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
           stringContent[f.key] = typeof dbContent[f.key] === 'string' ? dbContent[f.key] : '';
         }
         setContent(stringContent);
+        setSavedContent(stringContent);
         setSeeded(true);
       } catch (e) {
         if (alive) setError((e as Error).message);
@@ -260,6 +307,9 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
         throw new Error(body.error || 'Kayıt başarısız');
       }
       setSeeded(true);
+      // Save sonrası dirty state'i temizle — savedContent'i mevcut content
+      // ile senkronize et. Aksi halde "Taslak" badge save'den sonra da kalır.
+      setSavedContent(content);
       setInfo('Kayıt başarılı — değişiklik 1 dakika içinde tüm gönderimlere yansır.');
     } catch (e) {
       setError((e as Error).message);
@@ -306,10 +356,17 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
     setError(null);
     setInfo(null);
     try {
+      // Audit Fix A: dirty editor → draft içeriği test edilebilsin (DB'ye
+      // yazmadan). Server setMailCopyDraft + try/finally ile geçici
+      // override uygular.
       const res = await fetch('/api/admin/dev/send-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ template: templateKey, locale }),
+        body: JSON.stringify({
+          template: templateKey,
+          locale,
+          ...(isDirty ? { draftContent: content } : {}),
+        }),
       });
       // Defensive parse: empty-body 500 can slip through on platform
       // edge cases. Fall back to status-derived message.
@@ -319,7 +376,8 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
         const hint = body.hint ? ` — ${body.hint}` : '';
         throw new Error(`Test mail gönderimi başarısız: ${msg}${hint}`);
       }
-      setInfo(`Test mail gönderildi: ${body.to}`);
+      const draftHint = isDirty ? ' (taslak içerik)' : '';
+      setInfo(`Test mail gönderildi: ${body.to}${draftHint}`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -339,9 +397,19 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
 
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
         <p className="pulse-eyebrow text-[#737373]">MAIL İÇERİĞİ / {templateKey.toUpperCase()}</p>
-        <h1 className="mt-1 flex items-center gap-3 text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.025em]" style={{ fontFamily: 'var(--font-heading)' }}>
+        <h1 className="mt-1 flex flex-wrap items-center gap-3 text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.025em]" style={{ fontFamily: 'var(--font-heading)' }}>
           <Mail size={20} strokeWidth={2} />
-          {TEMPLATE_LABELS[templateKey] ?? templateKey} · {isEnglish ? 'English' : 'Türkçe'}
+          <span>{TEMPLATE_LABELS[templateKey] ?? templateKey} · {isEnglish ? 'English' : 'Türkçe'}</span>
+          {isDirty && !loading && (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-[11px] font-medium text-[#92400E] border border-[#FDE68A]"
+              style={{ fontFamily: 'var(--font-sans)' }}
+              title="Kaydedilmemiş değişiklikler var"
+            >
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#D97706]" />
+              Taslak
+            </span>
+          )}
         </h1>
         <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252]">
           Aşağıdaki alanlar mailde görünür. Boş bıraktıkların kod-içi varsayılan
@@ -418,8 +486,9 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
             <button
               type="button"
               onClick={onSave}
-              disabled={saving}
-              className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#C6F24E] px-5 py-3 text-sm font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:opacity-50 sm:w-auto sm:text-xs"
+              disabled={saving || !isDirty}
+              title={!isDirty ? 'Değiştirecek bir şey yok' : 'Kaydedilmemiş değişiklikleri kaydet'}
+              className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#C6F24E] px-5 py-3 text-sm font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-xs"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
               Kaydet
@@ -432,6 +501,7 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
         templateKey={templateKey}
         locale={locale}
         open={historyOpen}
+        hasUnsavedDraft={isDirty}
         onClose={() => setHistoryOpen(false)}
         onReverted={() => {
           // Revert applied DB-side; re-fetch the editor's content so the

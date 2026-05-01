@@ -6,6 +6,7 @@ import { sendMail } from '@/lib/email';
 import { rateLimit } from '@/lib/rate-limit';
 import { isPreviewTemplate, SEEDS, type PreviewTemplate } from '@/app/api/dev/email-preview/seeds';
 import { renderTemplate } from '@/app/api/dev/email-preview/route';
+import { setMailCopyDraft, clearMailCopyDraft, isSupportedMailTemplateKey } from '@/lib/email/copy-loader';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,7 +98,29 @@ export async function POST(req: NextRequest) {
       search.set('variant', body.variant);
     }
 
-    const rendered = await renderTemplate(template as PreviewTemplate, locale, search);
+    // Audit Fix A: admin "Test mail at" akışı **draft** içeriği test
+    // edebilsin diye unsaved editor content'i process-local draft store'a
+    // koyup loadMailCopy'yi bypass ediyoruz. try/finally ile garanti
+    // temizlik — state leak yok. Sadece SUPPORTED_MAIL_KEYS için (ROI
+    // public preview vs. dahil)
+    const draftContent = body.draftContent;
+    const draftActive =
+      draftContent &&
+      typeof draftContent === 'object' &&
+      !Array.isArray(draftContent) &&
+      isSupportedMailTemplateKey(template);
+    if (draftActive) {
+      setMailCopyDraft(template, locale, draftContent as Record<string, unknown>);
+    }
+
+    let rendered;
+    try {
+      rendered = await renderTemplate(template as PreviewTemplate, locale, search);
+    } finally {
+      if (draftActive) {
+        clearMailCopyDraft(template, locale);
+      }
+    }
     const subject = `[TEST] ${rendered.subject}`;
 
     const ok = await sendMail({

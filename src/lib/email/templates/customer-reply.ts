@@ -150,7 +150,7 @@ export async function renderCustomerReply(
 
   // Contact 2x2 grid (jsx:144-164). Build only present rows.
   const callCard = params.phone ? `
-    <a href="tel:${params.phone.replace(/\s/g, '')}" style="display:block;padding:14px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
+    <a href="tel:${params.phone.replace(/[^+0-9]/g, '')}" style="display:block;padding:14px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:10px;text-decoration:none;">
       ${renderEyebrow(copy.callEyebrow)}
       <div style="height:4px;line-height:1px;font-size:1px;">&nbsp;</div>
       <div style="font-family:${FONTS.mono};font-size:14px;color:${PULSE.graphite};font-weight:500;">${escapeHtml(params.phone)}</div>

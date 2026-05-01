@@ -24,9 +24,10 @@ export async function renderNewReview(
   locale: 'tr' | 'en' = 'tr',
 ): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
+  // Subject deliverability §21.23: 🎉 emoji çıkarıldı.
   const subject = isTr
-    ? `🎉 Yeni ${params.rating} yıldız geldi — ${params.customerName ?? 'Müşteri'}`
-    : `🎉 New ${params.rating}-star review — ${params.customerName ?? 'a customer'}`;
+    ? `Yeni ${params.rating}★ yorum · ${params.customerName ?? 'Müşteri'}`
+    : `New ${params.rating}★ review · ${params.customerName ?? 'a customer'}`;
   const preheader = params.comment
     ? params.comment.slice(0, 90) + (params.comment.length > 90 ? '…' : '')
     : (isTr ? 'Bu yorumu Google\'da paylaşmak için iyi bir an.' : 'Perfect moment to share this on Google.');

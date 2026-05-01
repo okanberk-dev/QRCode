@@ -11,6 +11,8 @@ import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
 import { escapeHtml } from '../escape';
 import { renderEyebrow, spacer } from '../components';
+import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 const PLATFORM_LABEL_TR: Record<string, string> = {
   google: 'Google',
@@ -58,10 +60,10 @@ export interface RoiCustomerReportParams {
   pricingUrl: string;
 }
 
-export function renderRoiCustomerReport(
+export async function renderRoiCustomerReport(
   params: RoiCustomerReportParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const fmt = (n: number) => n.toLocaleString(isTr ? 'tr-TR' : 'en-US');
   const c = params.currency;
@@ -82,14 +84,61 @@ export function renderRoiCustomerReport(
     .map((p) => (isTr ? PLATFORM_LABEL_TR[p] : p) ?? p)
     .join(', ');
 
-  const subject = isTr
-    ? `${params.restaurantName} için 12 aylık ROI raporun hazır`
-    : `Your 12-month ROI report for ${params.restaurantName} is ready`;
+  // DB-driven copy override (CLAUDE.md §21.26 Phase 2 pattern). Kritik
+  // pazarlama copy'si (subject/preheader/eyebrow/CTA/risk-free strip)
+  // admin panelden edit edilebilir; geri kalan template chrome inline.
+  const inlineDefault = isTr
+    ? {
+        subjectTemplate: '${restaurantName} için 12 aylık ROI raporun hazır',
+        preheaderPrefix: 'Yıllık net kazanç, ROI çarpanı + Buaze analizi.',
+        heroEyebrow: 'BUAZE ROI RAPORU · 12 AY',
+        heroIntroPdf: '${restaurantName} için girdiğin senaryoyu, Buaze hesap modeliyle 12 aylık projeksiyona dönüştürdük. Aşağıda ana sonuçlar; detaylı PDF mailin ekinde.',
+        heroIntroNoPdf: '${restaurantName} için girdiğin senaryoyu, Buaze hesap modeliyle 12 aylık projeksiyona dönüştürdük. Aşağıda ana sonuçlar; detayları aşağıda.',
+        netGainEyebrow: 'YILLIK NET KAZANÇ',
+        ctaEyebrow: 'SIRADAKİ ADIM',
+        ctaTitle: '30 dk canlı kurulum + soru-cevap',
+        ctaBody: 'Bu projeksiyonu birlikte gözden geçirelim. ${planLabel} planını işletmene uyarlayalım, ilk QR\'ı sahanda devreye alalım. Kredi kartı sormuyoruz; 30 gün ücretsiz.',
+        ctaPrimary: 'Demo daveti gönder',
+        ctaSecondary: '✉ Bize doğrudan yaz · hello@buaze.com',
+        ctaPlanLink: 'Ya da planları gör',
+        riskFree1: '30 gün ücretsiz',
+        riskFree2: 'Kredi kartı yok',
+        riskFree3: 'İstediğin an iptal',
+        calibrationFooter: 'Bu rapor BrightLocal 2024 yerel arama verileri ve ~2.400 Buaze müşteri kohortu üzerinde kalibre edildi. Tahmini değerlerdir; gerçek sonuçlar işletmenin yorum yanıt disiplinine ve operasyonel uygulamaya göre değişir.',
+      }
+    : {
+        subjectTemplate: 'Your 12-month ROI report for ${restaurantName} is ready',
+        preheaderPrefix: 'Annual net gain, ROI multiple + Buaze analysis.',
+        heroEyebrow: 'BUAZE ROI REPORT · 12 MO',
+        heroIntroPdf: 'We turned your scenario for ${restaurantName} into a 12-month projection using the Buaze model. Highlights below; detailed PDF is attached.',
+        heroIntroNoPdf: 'We turned your scenario for ${restaurantName} into a 12-month projection using the Buaze model. Highlights below; details follow.',
+        netGainEyebrow: 'ANNUAL NET GAIN',
+        ctaEyebrow: 'NEXT STEP',
+        ctaTitle: '30-min live setup & Q&A',
+        ctaBody: "Let's walk through this projection together, tailor the ${planLabel} plan, and ship your first QR. No credit card; 30-day free trial.",
+        ctaPrimary: 'Schedule a demo',
+        ctaSecondary: '✉ Email us directly · hello@buaze.com',
+        ctaPlanLink: 'Or browse plans',
+        riskFree1: '30-day free',
+        riskFree2: 'No credit card',
+        riskFree3: 'Cancel anytime',
+        calibrationFooter: 'Calibrated on BrightLocal 2024 local search data and ~2,400 Buaze accounts. Numbers are estimates; actuals vary with your reply discipline and operational rollout.',
+      };
 
+  const merged = await loadMailCopy('roi-customer-report', locale, inlineDefault);
+  const vars = {
+    restaurantName: params.restaurantName,
+    planLabel,
+    netGain: c + fmt(Math.max(0, Math.round(params.netGain))),
+    roiMultiple: params.roiMultiple.toFixed(1),
+  };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
+
+  const subject = copyText.subjectTemplate;
   const previewSummary = params.aiSummary.slice(0, 110).replace(/\s+/g, ' ').trim();
-  const preheader = isTr
-    ? `Yıllık ${c}${fmt(Math.max(0, Math.round(params.netGain)))} net kazanç, ${params.roiMultiple.toFixed(1)}× ROI. ${previewSummary}…`
-    : `${c}${fmt(Math.max(0, Math.round(params.netGain)))} annual net gain, ${params.roiMultiple.toFixed(1)}× ROI. ${previewSummary}…`;
+  const preheader = `${copyText.preheaderPrefix} ${previewSummary}…`;
+  const heroIntro = params.hasPdf ? copy.heroIntroPdf : copy.heroIntroNoPdf;
 
   const summarySafe = escapeHtml(params.aiSummary);
   const highlightSafe = escapeHtml(params.aiHighlight);
@@ -107,19 +156,15 @@ export function renderRoiCustomerReport(
   // Mobile class hook'lar: bz-roi-h1 (30→24px), bz-roi-bignum (42→32px),
   // bz-roi-card (24→18px padding). Inline base = Gmail clipping fallback.
   const hero = `
-    ${renderEyebrow(isTr ? 'BUAZE ROI RAPORU · 12 AY' : 'BUAZE ROI REPORT · 12 MO', PULSE.n500)}
+    ${renderEyebrow(copy.heroEyebrow, PULSE.n500)}
     <h1 class="bz-roi-h1" style="margin:8px 0 0;font-family:${FONTS.heading};font-size:30px;line-height:1.1;letter-spacing:-0.025em;color:${PULSE.graphite};font-weight:600;">
       ${escapeHtml(greetingLine)}
     </h1>
     <p style="margin:14px 0 22px;font-size:15px;line-height:1.6;color:${PULSE.n800};">
-      ${escapeHtml(
-        isTr
-          ? `${params.restaurantName} için girdiğin senaryoyu, Buaze hesap modeliyle bir 12 aylık projeksiyona dönüştürdük. Aşağıda ana sonuçlar; ${params.hasPdf ? 'detaylı PDF mailin ekinde' : 'detayları aşağıda'}.`
-          : `We turned your scenario for ${params.restaurantName} into a 12-month projection using the Buaze model. Highlights below; ${params.hasPdf ? 'detailed PDF is attached' : 'details follow'}.`,
-      )}
+      ${heroIntro}
     </p>
     <div class="bz-roi-card" style="background:${PULSE.graphite};color:${PULSE.pure};border-radius:16px;padding:24px;">
-      ${renderEyebrow(isTr ? 'YILLIK NET KAZANÇ' : 'ANNUAL NET GAIN', PULSE.lime)}
+      ${renderEyebrow(copy.netGainEyebrow, PULSE.lime)}
       <div class="bz-roi-bignum" style="margin-top:8px;font-family:${FONTS.heading};font-size:42px;line-height:1;letter-spacing:-0.03em;color:${PULSE.lime};font-weight:600;">${c}${fmt(Math.max(0, Math.round(params.netGain)))}</div>
       <div style="margin-top:12px;font-size:13.5px;line-height:1.55;color:rgba(255,255,255,0.75);">
         ${escapeHtml(
@@ -223,24 +268,16 @@ export function renderRoiCustomerReport(
   );
   const ctaCard = `
     <div class="bz-roi-card" style="background:${PULSE.lime};border-radius:16px;padding:26px;text-align:center;">
-      ${renderEyebrow(isTr ? 'SIRADAKİ ADIM' : 'NEXT STEP', PULSE.graphite)}
-      <h2 style="margin:8px 0 6px;font-family:${FONTS.heading};font-size:22px;line-height:1.2;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${escapeHtml(
-        isTr ? '30 dk canlı kurulum + soru-cevap' : '30-min live setup & Q&A',
-      )}</h2>
-      <p style="margin:0 0 18px;font-size:13.5px;line-height:1.55;color:${PULSE.graphite};">${escapeHtml(
-        isTr
-          ? `Bu projeksiyonu birlikte gözden geçirelim. ${planLabel} planını işletmene uyarlayalım, ilk QR'ı sahanda devreye alalım. Kredi kartı sormuyoruz; 30 gün ücretsiz.`
-          : `Let's walk through this projection together, tailor the ${planLabel} plan, and ship your first QR. No credit card; 30-day free trial.`,
-      )}</p>
-      <a href="${escapeHtml(params.contactUrl)}" style="display:inline-block;background:${PULSE.graphite};color:${PULSE.pure};padding:14px 26px;border-radius:999px;text-decoration:none;font-family:${FONTS.heading};font-size:14px;font-weight:600;letter-spacing:-0.01em;">${escapeHtml(isTr ? 'Demo daveti gönder' : 'Schedule a demo')} →</a>
+      ${renderEyebrow(copy.ctaEyebrow, PULSE.graphite)}
+      <h2 style="margin:8px 0 6px;font-family:${FONTS.heading};font-size:22px;line-height:1.2;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${copy.ctaTitle}</h2>
+      <p style="margin:0 0 18px;font-size:13.5px;line-height:1.55;color:${PULSE.graphite};">${copy.ctaBody}</p>
+      <a href="${escapeHtml(params.contactUrl)}" style="display:inline-block;background:${PULSE.graphite};color:${PULSE.pure};padding:14px 26px;border-radius:999px;text-decoration:none;font-family:${FONTS.heading};font-size:14px;font-weight:600;letter-spacing:-0.01em;">${copy.ctaPrimary} →</a>
       <div style="margin-top:12px;">
         <a href="mailto:hello@buaze.com?subject=${mailtoSubject}" style="display:inline-block;background:${PULSE.pure};color:${PULSE.graphite};border:1px solid ${PULSE.graphite};padding:11px 22px;border-radius:999px;text-decoration:none;font-family:${FONTS.heading};font-size:13px;font-weight:600;letter-spacing:-0.005em;">
-          ${escapeHtml(isTr ? '✉ Bize doğrudan yaz · hello@buaze.com' : '✉ Email us directly · hello@buaze.com')}
+          ${copy.ctaSecondary}
         </a>
       </div>
-      <div style="margin-top:14px;font-size:11.5px;color:${PULSE.graphite};opacity:0.75;">${escapeHtml(
-        isTr ? 'Ya da planları gör' : 'Or browse plans',
-      )}: <a href="${escapeHtml(params.pricingUrl)}" style="color:${PULSE.graphite};font-weight:600;text-decoration:underline;">${isTr ? 'buaze.com/fiyatlandirma' : 'buaze.com/pricing'}</a></div>
+      <div style="margin-top:14px;font-size:11.5px;color:${PULSE.graphite};opacity:0.75;">${copy.ctaPlanLink}: <a href="${escapeHtml(params.pricingUrl)}" style="color:${PULSE.graphite};font-weight:600;text-decoration:underline;">${isTr ? 'buaze.com/fiyatlandirma' : 'buaze.com/pricing'}</a></div>
     </div>
   `;
 
@@ -251,14 +288,10 @@ export function renderRoiCustomerReport(
   // doğal flex-wrap davranışı.
   const riskFree = `
     <div style="text-align:center;">
-      ${[
-        isTr ? '30 gün ücretsiz' : '30-day free',
-        isTr ? 'Kredi kartı yok' : 'No credit card',
-        isTr ? 'İstediğin an iptal' : 'Cancel anytime',
-      ]
+      ${[copy.riskFree1, copy.riskFree2, copy.riskFree3]
         .map(
           (label) => `<span style="display:inline-block;margin:4px 5px;padding:7px 12px;background:${PULSE.limeSoft};border:1px solid ${PULSE.limeDeep}33;border-radius:999px;font-size:11.5px;color:${PULSE.graphite};font-weight:500;line-height:1;">
-            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${PULSE.limeDeep};vertical-align:middle;margin-right:6px;"></span>${escapeHtml(label)}
+            <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${PULSE.limeDeep};vertical-align:middle;margin-right:6px;"></span>${label}
           </span>`,
         )
         .join('')}
@@ -281,11 +314,7 @@ export function renderRoiCustomerReport(
     ${riskFree}
     ${spacer(20)}
     <p style="margin:0;font-size:11px;color:${PULSE.n500};line-height:1.55;">
-      ${escapeHtml(
-        isTr
-          ? 'Bu rapor BrightLocal 2024 yerel arama verileri ve ~2.400 Buaze müşteri kohortu üzerinde kalibre edildi. Tahmini değerlerdir; gerçek sonuçlar işletmenin yorum yanıt disiplinine ve operasyonel uygulamaya göre değişir.'
-          : 'Calibrated on BrightLocal 2024 local search data and ~2,400 Buaze accounts. Numbers are estimates; actuals vary with your reply discipline and operational rollout.',
-      )}
+      ${copy.calibrationFooter}
     </p>
   `;
 

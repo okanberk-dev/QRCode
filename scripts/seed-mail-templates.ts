@@ -412,6 +412,85 @@ const VERIFY_EMAIL_EN: Copy = {
   cta: 'Verify my email →',
 };
 
+// ROI calculator akışı — customer report + admin lead notification
+// (CLAUDE.md ROI Parça A-E + bu PR Parça 4). Kritik pazarlama copy'si
+// admin panelden edit edilebilir; runtime placeholder'lar
+// (${restaurantName}, ${planLabel}, ${netGain}, ${roiMultiple}) substitusyonla
+// dolar.
+const ROI_CUSTOMER_REPORT_TR: Copy = {
+  subjectTemplate: '${restaurantName} için 12 aylık ROI raporun hazır',
+  preheaderPrefix: 'Yıllık net kazanç, ROI çarpanı + Buaze analizi.',
+  heroEyebrow: 'BUAZE ROI RAPORU · 12 AY',
+  heroIntroPdf: '${restaurantName} için girdiğin senaryoyu, Buaze hesap modeliyle 12 aylık projeksiyona dönüştürdük. Aşağıda ana sonuçlar; detaylı PDF mailin ekinde.',
+  heroIntroNoPdf: '${restaurantName} için girdiğin senaryoyu, Buaze hesap modeliyle 12 aylık projeksiyona dönüştürdük. Aşağıda ana sonuçlar; detayları aşağıda.',
+  netGainEyebrow: 'YILLIK NET KAZANÇ',
+  ctaEyebrow: 'SIRADAKİ ADIM',
+  ctaTitle: '30 dk canlı kurulum + soru-cevap',
+  ctaBody: 'Bu projeksiyonu birlikte gözden geçirelim. ${planLabel} planını işletmene uyarlayalım, ilk QR\'ı sahanda devreye alalım. Kredi kartı sormuyoruz; 30 gün ücretsiz.',
+  ctaPrimary: 'Demo daveti gönder',
+  ctaSecondary: '✉ Bize doğrudan yaz · hello@buaze.com',
+  ctaPlanLink: 'Ya da planları gör',
+  riskFree1: '30 gün ücretsiz',
+  riskFree2: 'Kredi kartı yok',
+  riskFree3: 'İstediğin an iptal',
+  calibrationFooter: 'Bu rapor BrightLocal 2024 yerel arama verileri ve ~2.400 Buaze müşteri kohortu üzerinde kalibre edildi. Tahmini değerlerdir; gerçek sonuçlar işletmenin yorum yanıt disiplinine ve operasyonel uygulamaya göre değişir.',
+};
+
+const ROI_CUSTOMER_REPORT_EN: Copy = {
+  subjectTemplate: 'Your 12-month ROI report for ${restaurantName} is ready',
+  preheaderPrefix: 'Annual net gain, ROI multiple + Buaze analysis.',
+  heroEyebrow: 'BUAZE ROI REPORT · 12 MO',
+  heroIntroPdf: 'We turned your scenario for ${restaurantName} into a 12-month projection using the Buaze model. Highlights below; detailed PDF is attached.',
+  heroIntroNoPdf: 'We turned your scenario for ${restaurantName} into a 12-month projection using the Buaze model. Highlights below; details follow.',
+  netGainEyebrow: 'ANNUAL NET GAIN',
+  ctaEyebrow: 'NEXT STEP',
+  ctaTitle: '30-min live setup & Q&A',
+  ctaBody: "Let's walk through this projection together, tailor the ${planLabel} plan, and ship your first QR. No credit card; 30-day free trial.",
+  ctaPrimary: 'Schedule a demo',
+  ctaSecondary: '✉ Email us directly · hello@buaze.com',
+  ctaPlanLink: 'Or browse plans',
+  riskFree1: '30-day free',
+  riskFree2: 'No credit card',
+  riskFree3: 'Cancel anytime',
+  calibrationFooter: 'Calibrated on BrightLocal 2024 local search data and ~2,400 Buaze accounts. Numbers are estimates; actuals vary with your reply discipline and operational rollout.',
+};
+
+const ROI_ADMIN_NOTIFICATION_TR: Copy = {
+  subjectTemplate: '[Lead] ${restaurantName} · ${netGain}/yıl',
+  preheaderPrefix: '${restaurantName} ROI hesabı yaptı: ${netGain}/yıl.',
+  alertEyebrow: "YENİ ROI LEAD'İ",
+  statusPill: '24 saat içinde dön',
+  netGainEyebrow: 'YILLIK NET KAZANÇ',
+  scenarioH2: 'Senaryosu',
+  quickEyebrow: 'HIZLI AKSİYON',
+  replyLabel: 'Yanıt yaz',
+  replySub: 'E-posta gönder',
+  callLabel: 'Telefonla ara',
+  callSubYes: 'Numarayı çevir',
+  callSubNo: 'Numara yok',
+  panelLabel: 'Lead panel',
+  panelSub: "Tüm lead'ler",
+  footerDisclosure: 'Bu mail, kullanıcı ROI hesaplayıcı formunu doldurduğunda otomatik gönderilir. AI insight kullanıcı raporu mailinde + PDF kapağında da yer alır.',
+};
+
+const ROI_ADMIN_NOTIFICATION_EN: Copy = {
+  subjectTemplate: '[Lead] ${restaurantName} · ${netGain}/yr',
+  preheaderPrefix: '${restaurantName} ran an ROI estimate: ${netGain}/yr.',
+  alertEyebrow: 'NEW ROI LEAD',
+  statusPill: 'Reply within 24h',
+  netGainEyebrow: 'ANNUAL NET GAIN',
+  scenarioH2: 'Scenario',
+  quickEyebrow: 'QUICK ACTION',
+  replyLabel: 'Reply',
+  replySub: 'Send email',
+  callLabel: 'Call',
+  callSubYes: 'Dial number',
+  callSubNo: 'No number',
+  panelLabel: 'Lead panel',
+  panelSub: 'All leads',
+  footerDisclosure: 'This message is sent automatically when a user submits the ROI calculator form. The same AI insight appears in the customer report mail + PDF cover.',
+};
+
 const SEEDS: Array<{ key: string; locale: string; content: Copy }> = [
   { key: 'welcome', locale: 'tr', content: WELCOME_TR },
   { key: 'welcome', locale: 'en', content: WELCOME_EN },
@@ -433,6 +512,10 @@ const SEEDS: Array<{ key: string; locale: string; content: Copy }> = [
   { key: 'form-confirmation', locale: 'en', content: FORM_CONFIRMATION_EN },
   { key: 'verify-email', locale: 'tr', content: VERIFY_EMAIL_TR },
   { key: 'verify-email', locale: 'en', content: VERIFY_EMAIL_EN },
+  { key: 'roi-customer-report', locale: 'tr', content: ROI_CUSTOMER_REPORT_TR },
+  { key: 'roi-customer-report', locale: 'en', content: ROI_CUSTOMER_REPORT_EN },
+  { key: 'roi-admin-notification', locale: 'tr', content: ROI_ADMIN_NOTIFICATION_TR },
+  { key: 'roi-admin-notification', locale: 'en', content: ROI_ADMIN_NOTIFICATION_EN },
 ];
 
 async function main() {

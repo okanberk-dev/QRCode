@@ -22,6 +22,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onReverted: () => void;
+  /**
+   * Audit Fix E: parent editor'ün unsaved draft'ı varsa revert dialog'a
+   * ekstra uyarı satırı eklenir. Aksi halde admin "Bu sürüme dön" tıklayıp
+   * draft değişikliklerini farkında olmadan kaybedebilir.
+   */
+  hasUnsavedDraft?: boolean;
 }
 
 const EDIT_TYPE_LABELS: Record<string, string> = {
@@ -53,7 +59,7 @@ function formatDate(iso: string): string {
  * Click "Bu sürüme dön" to revert; the parent reloads the editor state
  * via `onReverted`. Up to 50 most recent revisions (server-side prune).
  */
-export default function MailRevisionHistory({ templateKey, locale, open, onClose, onReverted }: Props) {
+export default function MailRevisionHistory({ templateKey, locale, open, onClose, onReverted, hasUnsavedDraft }: Props) {
   const [loading, setLoading] = useState(false);
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -92,9 +98,16 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
   }, [open, templateKey, locale]);
 
   const onRevert = (revisionId: string) => {
+    // Audit Fix E: editör'de unsaved draft varsa ekstra uyarı satırı.
+    // Confirm sonrası revert API çağrısı parent'taki dirty state'i de
+    // iptal eder (editor reload), bu yüzden draft kaybı geri alınamaz.
+    const baseBody = 'Bu sürüme geri dönmek istediğine emin misin? Mevcut içerik otomatik olarak geçmişe (tarihçeye) eklenir, kaybolmaz.';
+    const draftWarning = hasUnsavedDraft
+      ? '\n\n⚠ Editörde kaydedilmemiş taslak değişiklikleriniz var — bunlar kaybolacak. Önce kaydetmek için "Vazgeç" seçin.'
+      : '';
     askConfirm({
       title: 'Bu sürüme geri dön',
-      body: 'Bu sürüme geri dönmek istediğine emin misin? Mevcut içerik otomatik olarak geçmişe (tarihçeye) eklenir, kaybolmaz.',
+      body: baseBody + draftWarning,
       confirmLabel: 'Geri dön',
       cancelLabel: 'Vazgeç',
       onConfirm: async () => {

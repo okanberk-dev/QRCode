@@ -16,6 +16,8 @@ import {
   renderStatusPill,
   spacer,
 } from '../components';
+import { loadMailCopy } from '../copy-loader';
+import { deepSubstitute } from '../placeholders';
 
 const PLATFORM_LABEL_TR: Record<string, string> = {
   google: 'Google',
@@ -80,10 +82,10 @@ export interface RoiAdminNotificationParams {
   ip?: string | null;
 }
 
-export function renderRoiAdminNotification(
+export async function renderRoiAdminNotification(
   params: RoiAdminNotificationParams,
   locale: 'tr' | 'en' = 'tr',
-): { subject: string; html: string; text: string } {
+): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
   const fmt = (n: number) => n.toLocaleString(isTr ? 'tr-TR' : 'en-US');
   const c = params.currency;
@@ -108,9 +110,57 @@ export function renderRoiAdminNotification(
     .map((p) => (isTr ? PLATFORM_LABEL_TR[p] : p) ?? p)
     .join(', ');
 
-  const subject = isTr
-    ? `[Lead] ${params.restaurantName} · ${c}${fmt(Math.round(params.netGain))}/yıl`
-    : `[Lead] ${params.restaurantName} · ${c}${fmt(Math.round(params.netGain))}/yr`;
+  // DB-driven copy override (CLAUDE.md §21.26 Phase 2 pattern). Kritik
+  // alarm chrome admin panelden edit edilebilir; geri kalan inline.
+  const inlineDefault = isTr
+    ? {
+        subjectTemplate: '[Lead] ${restaurantName} · ${netGain}/yıl',
+        preheaderPrefix: '${restaurantName} ROI hesabı yaptı: ${netGain}/yıl.',
+        alertEyebrow: 'YENİ ROI LEAD\'İ',
+        statusPill: '24 saat içinde dön',
+        netGainEyebrow: 'YILLIK NET KAZANÇ',
+        scenarioH2: 'Senaryosu',
+        quickEyebrow: 'HIZLI AKSİYON',
+        replyLabel: 'Yanıt yaz',
+        replySub: 'E-posta gönder',
+        callLabel: 'Telefonla ara',
+        callSubYes: 'Numarayı çevir',
+        callSubNo: 'Numara yok',
+        panelLabel: 'Lead panel',
+        panelSub: 'Tüm lead\'ler',
+        footerDisclosure: 'Bu mail, kullanıcı ROI hesaplayıcı formunu doldurduğunda otomatik gönderilir. AI insight kullanıcı raporu mailinde + PDF kapağında da yer alır.',
+      }
+    : {
+        subjectTemplate: '[Lead] ${restaurantName} · ${netGain}/yr',
+        preheaderPrefix: '${restaurantName} ran an ROI estimate: ${netGain}/yr.',
+        alertEyebrow: 'NEW ROI LEAD',
+        statusPill: 'Reply within 24h',
+        netGainEyebrow: 'ANNUAL NET GAIN',
+        scenarioH2: 'Scenario',
+        quickEyebrow: 'QUICK ACTION',
+        replyLabel: 'Reply',
+        replySub: 'Send email',
+        callLabel: 'Call',
+        callSubYes: 'Dial number',
+        callSubNo: 'No number',
+        panelLabel: 'Lead panel',
+        panelSub: 'All leads',
+        footerDisclosure: 'This message is sent automatically when a user submits the ROI calculator form. The same AI insight appears in the customer report mail + PDF cover.',
+      };
+
+  const merged = await loadMailCopy('roi-admin-notification', locale, inlineDefault);
+  const netGainStr = c + fmt(Math.round(params.netGain));
+  const vars = {
+    restaurantName: params.restaurantName,
+    netGain: netGainStr,
+    roiMultiple: params.roiMultiple.toFixed(1),
+    sectorLabel,
+    planLabel,
+  };
+  const copy = deepSubstitute(merged, vars, 'html');
+  const copyText = deepSubstitute(merged, vars, 'text');
+
+  const subject = copyText.subjectTemplate;
 
   const summarySafe = escapeHtml(params.aiSummary);
   const highlightSafe = escapeHtml(params.aiHighlight);
@@ -135,9 +185,7 @@ export function renderRoiAdminNotification(
     .slice(0, 110)
     .replace(/\s+/g, ' ')
     .trim();
-  const preheader = isTr
-    ? `${params.restaurantName} ROI hesabı yaptı: ${c}${fmt(Math.round(params.netGain))}/yıl. ${previewSummary}…`
-    : `${params.restaurantName} ran an ROI estimate: ${c}${fmt(Math.round(params.netGain))}/yr. ${previewSummary}…`;
+  const preheader = `${copyText.preheaderPrefix} ${previewSummary}…`;
 
   // ─── HEAD: dark alert bar (timestamp + status pill) ────────────────────
   const alertBar = `
@@ -147,12 +195,12 @@ export function renderRoiAdminNotification(
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
             <tr>
               <td style="vertical-align:middle;">
-                ${renderEyebrow(isTr ? 'YENİ ROI LEAD\'İ' : 'NEW ROI LEAD', PULSE.lime)}
+                ${renderEyebrow(copy.alertEyebrow, PULSE.lime)}
                 <div style="margin-top:4px;font-size:12.5px;color:rgba(255,255,255,0.65);font-family:${FONTS.mono};">${escapeHtml(timestamp)}</div>
               </td>
               <td style="vertical-align:middle;text-align:right;">
                 ${renderStatusPill({
-                  text: isTr ? '24 saat içinde dön' : 'Reply within 24h',
+                  text: copy.statusPill,
                   dotColor: PULSE.lime,
                   textColor: PULSE.pure,
                   bgColor: 'rgba(255,255,255,0.08)',
@@ -182,7 +230,7 @@ export function renderRoiAdminNotification(
     </table>
     ${spacer(18)}
     <div class="bz-roi-card" style="background:${PULSE.limeSoft};border:1px solid ${PULSE.limeDeep}33;border-radius:14px;padding:18px 20px;">
-      ${renderEyebrow(isTr ? 'YILLIK NET KAZANÇ' : 'ANNUAL NET GAIN', PULSE.graphite)}
+      ${renderEyebrow(copy.netGainEyebrow, PULSE.graphite)}
       <div class="bz-roi-bignum-sm" style="margin-top:6px;font-family:${FONTS.heading};font-size:32px;line-height:1.05;letter-spacing:-0.03em;color:${PULSE.graphite};font-weight:600;">${c}${fmt(Math.max(0, Math.round(params.netGain)))}</div>
       <div style="margin-top:8px;font-size:13px;color:${PULSE.n800};line-height:1.55;">
         12 ${isTr ? 'ayda' : 'mo'} ${params.roiMultiple.toFixed(1)}× ROI${params.paybackMonths ? ` · ${isTr ? 'amorti' : 'payback'} ~${params.paybackMonths} ${isTr ? 'ay' : 'mo'}` : ''} · ${c}${fmt(Math.round(params.monthlyUplift))}/${isTr ? 'ay' : 'mo'} ${isTr ? 'ek gelir' : 'uplift'}
@@ -244,7 +292,7 @@ export function renderRoiAdminNotification(
     </tr>
   `;
   const scenarioTable = `
-    <h2 style="margin:0 0 12px;font-family:${FONTS.heading};font-size:17px;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${isTr ? 'Senaryosu' : 'Scenario'}</h2>
+    <h2 style="margin:0 0 12px;font-family:${FONTS.heading};font-size:17px;letter-spacing:-0.02em;color:${PULSE.graphite};font-weight:600;">${copy.scenarioH2}</h2>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${PULSE.n200};border-radius:12px;overflow:hidden;">
       ${tableRow(isTr ? 'Sektör' : 'Sector', escapeHtml(sectorLabel))}
       ${tableRow(isTr ? 'Aylık müşteri' : 'Monthly customers', fmt(params.monthlyCustomers))}
@@ -277,13 +325,13 @@ export function renderRoiAdminNotification(
   `;
 
   const quickActions = `
-    ${renderEyebrow(isTr ? 'HIZLI AKSİYON' : 'QUICK ACTION', PULSE.n500)}
+    ${renderEyebrow(copy.quickEyebrow, PULSE.n500)}
     ${spacer(8)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="stack-row">
       <tr>
-        ${quickAction(isTr ? 'Yanıt yaz' : 'Reply', isTr ? 'E-posta gönder' : 'Send email', replyHref, true)}
-        ${quickAction(isTr ? 'Telefonla ara' : 'Call', phoneSafe ? (isTr ? 'Numarayı çevir' : 'Dial number') : (isTr ? 'Numara yok' : 'No number'), callHref, false)}
-        ${quickAction(isTr ? 'Lead panel' : 'Lead panel', isTr ? 'Tüm lead\'ler' : 'All leads', panelHref, false)}
+        ${quickAction(copy.replyLabel, copy.replySub, replyHref, true)}
+        ${quickAction(copy.callLabel, phoneSafe ? copy.callSubYes : copy.callSubNo, callHref, false)}
+        ${quickAction(copy.panelLabel, copy.panelSub, panelHref, false)}
       </tr>
     </table>
   `;
@@ -300,7 +348,7 @@ export function renderRoiAdminNotification(
     ${spacer(18)}
     ${quickActions}
     ${spacer(12)}
-    <p style="margin:0;font-size:11px;color:${PULSE.n500};line-height:1.55;">${isTr ? 'Bu mail, kullanıcı ROI hesaplayıcı formunu doldurduğunda otomatik gönderilir. AI insight kullanıcı raporu mailinde + PDF kapağında da yer alır.' : 'This message is sent automatically when a user submits the ROI calculator form. The same AI insight appears in the customer report mail + PDF cover.'}</p>
+    <p style="margin:0;font-size:11px;color:${PULSE.n500};line-height:1.55;">${copy.footerDisclosure}</p>
   `;
 
   // ─── Plain text fallback ───────────────────────────────────────────────

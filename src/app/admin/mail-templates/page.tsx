@@ -18,6 +18,9 @@ interface Response {
   data: GridCell[];
 }
 
+// Audit Fix C: liste UI label'ları MailTemplateEditor TEMPLATE_LABELS ile
+// senkron kalmalı. SUPPORTED_MAIL_KEYS'e yeni entry eklendiğinde buraya da
+// eklenir, aksi halde grid'de raw key (`roi-customer-report`) görünür.
 const TEMPLATE_LABELS: Record<string, string> = {
   welcome: 'Hoş geldin',
   newsletter: 'Aylık bülten',
@@ -28,6 +31,9 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'weekly-report': 'Haftalık rapor',
   'customer-reply': 'Müşteri yanıtı',
   'form-confirmation': 'Form onayı',
+  'verify-email': 'E-posta onayı',
+  'roi-customer-report': 'ROI raporu (müşteri)',
+  'roi-admin-notification': 'ROI lead (admin)',
 };
 
 const LOCALE_LABELS: Record<string, string> = {

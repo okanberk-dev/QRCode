@@ -124,7 +124,7 @@ export async function renderTrialEnding(
     <div style="border:1px solid ${PULSE.n200};border-radius:14px;padding:22px;background:${PULSE.pure};">
       <div style="font-family:${FONTS.heading};font-size:16px;font-weight:500;color:${PULSE.graphite};">${copy.starterTitle}</div>
       <div style="margin-top:12px;">
-        <span style="font-family:${FONTS.heading};font-size:32px;font-weight:500;letter-spacing:-0.02em;color:${PULSE.graphite};">${prices.starter}</span>
+        <span class="bz-price-mobile" style="font-family:${FONTS.heading};font-size:32px;font-weight:500;letter-spacing:-0.02em;color:${PULSE.graphite};">${prices.starter}</span>
         <span style="font-size:12px;color:${PULSE.n500};margin-left:6px;">${prices.starterPeriod ?? ''}</span>
       </div>
       ${spacer(14)}
@@ -136,7 +136,7 @@ export async function renderTrialEnding(
       ${renderBadge({ text: copy.proBadge, variant: 'lime-on-dark', position: 'absolute-tr' })}
       <div style="font-family:${FONTS.heading};font-size:16px;font-weight:500;color:${PULSE.graphite};">${copy.proTitle}</div>
       <div style="margin-top:12px;">
-        <span style="font-family:${FONTS.heading};font-size:32px;font-weight:500;letter-spacing:-0.02em;color:${PULSE.graphite};">${prices.pro}</span>
+        <span class="bz-price-mobile" style="font-family:${FONTS.heading};font-size:32px;font-weight:500;letter-spacing:-0.02em;color:${PULSE.graphite};">${prices.pro}</span>
         <span style="font-size:12px;color:${PULSE.n600};margin-left:6px;">${prices.proPeriod ?? ''}</span>
       </div>
       ${spacer(14)}
