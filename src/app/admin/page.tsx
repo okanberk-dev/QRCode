@@ -132,7 +132,7 @@ function AdminLoginContent() {
                 {[
                   { icon: Zap, label: 'Gerçek zamanlı yorum akışı' },
                   { icon: ShieldCheck, label: 'KVKK + Google politika uyumu' },
-                  { icon: Sparkles, label: 'AI Co-Pilot yanıt önerileri' },
+                  { icon: Sparkles, label: 'Pulse AI yanıt önerileri' },
                 ].map(({ icon: Icon, label }) => (
                   <li key={label} className="flex items-center gap-3 text-[14px] text-white/85">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E]/12 text-[#C6F24E]">

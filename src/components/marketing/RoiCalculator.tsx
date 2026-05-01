@@ -127,7 +127,7 @@ const LEAKED_LOW_AVG_STARS = 2.0;
 const ASSUMED_EXISTING_REVIEW_RATE = 0.04;
 const MIN_EXISTING_REVIEWS = 20;
 
-// AI Co-Pilot taslak (CLAUDE.md §15) yanıt başına ortalama kazanım.
+// Pulse AI taslak (CLAUDE.md §15) yanıt başına ortalama kazanım.
 // Manuel yanıt 5-7 dk, AI taslak + edit 1-2 dk → ~4 dk tasarruf / yanıt.
 const AI_REPLY_TIME_SAVED_MIN = 4;
 
@@ -371,7 +371,7 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
         ? Math.max(1, Math.ceil(monthlyPlan / Math.max(monthlyUplift, 1)))
         : null;
 
-    // 4) AI Co-Pilot zaman tasarrufu — ay başına saat (yanıtlanan yorum × 4 dk).
+    // 4) Pulse AI zaman tasarrufu — ay başına saat (yanıtlanan yorum × 4 dk).
     const aiHoursSaved = (reviewers * AI_REPLY_TIME_SAVED_MIN) / 60;
 
     // 5) Platform breakdown — yüksek puan akışı seçili platformlara dağılır.
@@ -709,8 +709,8 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
 
         <p className="text-[11px] text-[#737373] leading-[1.5]">
           {isTr
-            ? 'Üç temel sürücü: düşük yorum filtreleme (%85), çoklu platform yönlendirme ve AI Co-Pilot zaman tasarrufu. BrightLocal 2024 + ~2.400 Buaze hesabı kohortu üzerinde kalibre.'
-            : 'Three drivers: low-review filtering (85%), multi-platform routing, and AI Co-Pilot time savings. Calibrated on BrightLocal 2024 + ~2,400 Buaze accounts.'}
+            ? 'Üç temel sürücü: düşük yorum filtreleme (%85), çoklu platform yönlendirme ve Pulse AI zaman tasarrufu. BrightLocal 2024 + ~2.400 Buaze hesabı kohortu üzerinde kalibre.'
+            : 'Three drivers: low-review filtering (85%), multi-platform routing, and Pulse AI time savings. Calibrated on BrightLocal 2024 + ~2,400 Buaze accounts.'}
         </p>
       </form>
 

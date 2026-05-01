@@ -237,16 +237,16 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     rowNewCustomers: 'Yeni müşteri / ay',
     rowMonthlyUplift: 'Aylık ek gelir',
     rowYearlyUplift: 'Yıllık ek gelir',
-    rowAiSaved: 'AI Co-Pilot zaman tasarrufu',
+    rowAiSaved: 'Pulse AI zaman tasarrufu',
     aiSavedSuffix: 'sa / ay',
     platformH2: 'Yüksek-puan akışı: platforma yönlendirme',
     milestoneH2: 'İlk 90 gün: yol haritası',
     milestoneLead:
-      'AI Co-Pilot taslakları + filtreleme akışı + çoklu platform yönlendirme — üç kaldıracı aynı anda çalıştırarak ölçülebilir sonuca varman için 90 günlük adım planı.',
+      'Pulse AI taslakları + filtreleme akışı + çoklu platform yönlendirme — üç kaldıracı aynı anda çalıştırarak ölçülebilir sonuca varman için 90 günlük adım planı.',
     m1Eyebrow: 'İLK 30 GÜN',
     m1Title: 'Kurulum & kalibrasyon',
     m1Body:
-      'QR akışı sahaya çıkar; AI Co-Pilot taslakları işletmen tonuna kalibre olur. İlk tarama oranını ve düşük yorum filtreleme verisini ölçeriz.',
+      'QR akışı sahaya çıkar; Pulse AI taslakları işletmen tonuna kalibre olur. İlk tarama oranını ve düşük yorum filtreleme verisini ölçeriz.',
     m2Eyebrow: '30 → 60 GÜN',
     m2Title: 'İlk yıldız lift',
     m2Body:
@@ -328,16 +328,16 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     rowNewCustomers: 'New customers / mo',
     rowMonthlyUplift: 'Monthly uplift',
     rowYearlyUplift: 'Yearly uplift',
-    rowAiSaved: 'AI Co-Pilot time saved',
+    rowAiSaved: 'Pulse AI time saved',
     aiSavedSuffix: 'h / mo',
     platformH2: 'High-rating flow: platform routing',
     milestoneH2: 'First 90 days: roadmap',
     milestoneLead:
-      'AI Co-Pilot drafts + filtering flow + multi-platform routing — three levers running together to deliver measurable outcomes within 90 days.',
+      'Pulse AI drafts + filtering flow + multi-platform routing — three levers running together to deliver measurable outcomes within 90 days.',
     m1Eyebrow: 'DAYS 1-30',
     m1Title: 'Setup & calibration',
     m1Body:
-      'QR flow goes live; AI Co-Pilot drafts calibrate to your tone of voice. We measure scan rate and low-review filtering for the first time.',
+      'QR flow goes live; Pulse AI drafts calibrate to your tone of voice. We measure scan rate and low-review filtering for the first time.',
     m2Eyebrow: 'DAYS 30 → 60',
     m2Title: 'First star lift',
     m2Body:
