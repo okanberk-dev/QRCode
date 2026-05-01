@@ -336,19 +336,31 @@ export async function renderRoiAdminNotification(
     </table>
   `;
 
+  // Outer chrome — `bz-pad` wrapper aligns the lead alert with the rest of
+  // the Pulse template family (low-rating-alert / contact-admin / …):
+  // 36px/40px desktop padding, 24px/20px mobile via the @media rule in
+  // layout.ts. Without this wrapper the alert bar + hero + KPI grid sat
+  // flush against the email shell and looked visibly "shifted" compared to
+  // peer admin alerts.
   const content = `
-    ${alertBar}
-    ${hero}
-    ${spacer(20)}
-    ${kpiRow}
-    ${spacer(18)}
-    ${aiInsightCard}
-    ${spacer(20)}
-    ${scenarioTable}
-    ${spacer(18)}
-    ${quickActions}
-    ${spacer(12)}
-    <p style="margin:0;font-size:11px;color:${PULSE.n500};line-height:1.55;">${copy.footerDisclosure}</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td class="bz-pad" style="padding:36px 40px 40px;">
+          ${alertBar}
+          ${hero}
+          ${spacer(20)}
+          ${kpiRow}
+          ${spacer(18)}
+          ${aiInsightCard}
+          ${spacer(20)}
+          ${scenarioTable}
+          ${spacer(18)}
+          ${quickActions}
+          ${spacer(12)}
+          <p style="margin:0;font-size:11px;color:${PULSE.n500};line-height:1.55;">${copy.footerDisclosure}</p>
+        </td>
+      </tr>
+    </table>
   `;
 
   // ─── Plain text fallback ───────────────────────────────────────────────

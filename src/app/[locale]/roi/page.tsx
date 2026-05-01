@@ -116,7 +116,7 @@ export default async function RoiPage({
         },
         {
           q: 'Hesabı kaydetmek zorunda mıyım?',
-          a: 'Hayır. Slider\'ları sürüklemek için kayıt gerekmez. İstersen sayfanın altındaki opsiyonel formdan e-posta + işletme adı bırakarak detaylı 12 aylık projeksiyon PDF\'i ve 1-1 kurulum daveti talep edebilirsin; ekibimiz 2 saat içinde döner.',
+          a: 'Hayır. Slider\'ları sürüklemek için kayıt gerekmez. İstersen sayfanın altındaki opsiyonel formdan e-posta + işletme adı bırakarak detaylı 12 aylık projeksiyon PDF\'i ve 1-1 kurulum daveti talep edebilirsin; ekibimiz hazırlayıp en geç 24 saat içinde mailbox\'ına gönderir, ortalama yanıt süresi 2 saattir.',
         },
         {
           q: 'Pulse AI zaman tasarrufu nasıl hesaplanıyor?',
@@ -138,7 +138,7 @@ export default async function RoiPage({
         },
         {
           q: 'Do I need to sign up to see the result?',
-          a: 'No. Dragging sliders requires no signup. Optionally, the form at the bottom of the page accepts email + business name in exchange for a detailed 12-month PDF projection and a 1-1 setup invite; our team replies within 2 hours.',
+          a: 'No. Dragging sliders requires no signup. Optionally, the form at the bottom of the page accepts email + business name in exchange for a detailed 12-month PDF projection and a 1-1 setup invite; our team prepares it and emails you within 24 hours at the latest — average response time is 2 hours.',
         },
         {
           q: 'How is the Pulse AI time saving calculated?',
