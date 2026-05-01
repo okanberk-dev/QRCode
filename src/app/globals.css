@@ -1050,3 +1050,105 @@ input::-webkit-inner-spin-button {
     transition: none;
   }
 }
+
+/* Legal document typography — public sayfa shell'i (LegalDocumentPage.tsx)
+   tarafından <article className="prose-legal"> ile sarılır. Token'lar §11
+   Pulse paletinden (graphite/lime/N200/N500). renderLegalContent element-bazlı
+   class veriyor; aşağıdakiler ek polish: link, code, blockquote, print. */
+.prose-legal a {
+  color: #0A0A0A;
+  text-decoration: underline;
+  text-decoration-color: #C6F24E;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s ease;
+}
+.prose-legal a:hover {
+  text-decoration-color: #A8D62E;
+}
+.prose-legal code {
+  background: #F5F5F5;
+  border: 1px solid #EDEDED;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.92em;
+  color: #0A0A0A;
+}
+.prose-legal strong {
+  color: #0A0A0A;
+  font-weight: 600;
+}
+.prose-legal h2 {
+  scroll-margin-top: 96px; /* fixed navbar (64px) + biraz nefes */
+  border-top: 1px solid #EDEDED;
+  padding-top: 28px;
+}
+.prose-legal h2:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+.prose-legal h3 {
+  scroll-margin-top: 96px;
+}
+.prose-legal .legal-anchor {
+  opacity: 0;
+  margin-left: 8px;
+  color: #A3A3A3;
+  text-decoration: none;
+  font-size: 0.85em;
+  transition: opacity 0.15s ease;
+}
+.prose-legal h2:hover .legal-anchor,
+.prose-legal h3:hover .legal-anchor,
+.prose-legal .legal-anchor:focus-visible {
+  opacity: 1;
+}
+.prose-legal .legal-anchor:hover {
+  color: #0A0A0A;
+}
+.prose-legal ol {
+  margin: 12px 0;
+  padding-left: 24px;
+  list-style: decimal;
+  color: #525252;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.prose-legal ol > li {
+  margin-top: 6px;
+}
+@media (min-width: 640px) {
+  .prose-legal ol {
+    font-size: 15px;
+  }
+}
+
+/* Print — yasal metinler PDF olarak kaydedilebilir, baskı temiz olsun. */
+@media print {
+  .legal-print-hide {
+    display: none !important;
+  }
+  .prose-legal {
+    color: #000;
+  }
+  .prose-legal h2,
+  .prose-legal h3 {
+    page-break-after: avoid;
+  }
+  .prose-legal p,
+  .prose-legal ul,
+  .prose-legal ol {
+    page-break-inside: avoid;
+  }
+  .prose-legal a {
+    color: #000;
+    text-decoration: underline;
+  }
+  .prose-legal a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    color: #444;
+  }
+}
