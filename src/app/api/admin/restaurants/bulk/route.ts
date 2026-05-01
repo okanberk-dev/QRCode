@@ -50,10 +50,24 @@ export async function POST(req: NextRequest) {
   if (!parsed.ok) return parsed.response;
   const { ids, action } = parsed.data;
 
-  const result = await prisma.restaurant.updateMany({
-    where: { id: { in: ids } },
-    data: { isActive: action === 'activate' },
-  });
+  // Audit log (CLAUDE.md §29.6): superadmin destructive bulk — kim hangi N
+  // işletmeyi pasifleştirdi traceable olmalı. updateMany + audit tek
+  // transaction'da; audit fail rollback eder, asla kaybolmaz.
+  const [result] = await prisma.$transaction([
+    prisma.restaurant.updateMany({
+      where: { id: { in: ids } },
+      data: { isActive: action === 'activate' },
+    }),
+    prisma.adminAuditLog.create({
+      data: {
+        actorId: actor.id,
+        actorSource: 'admin',
+        action: `admin.restaurants.bulk.${action}`,
+        targetId: ids.join(','),
+        payload: { count: ids.length, ids, action },
+      },
+    }),
+  ]);
 
   return NextResponse.json({ processed: result.count, action });
 }

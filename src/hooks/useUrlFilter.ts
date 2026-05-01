@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 /**
@@ -64,6 +64,11 @@ function isDefault<V extends FilterValue>(value: V, defaultValue: V): boolean {
 }
 
 export function useUrlFilter<T extends FilterDefaults>(defaults: T): UrlFilterApi<T> {
+  // Caller her render'da yeni object literal verirse referans değişikliği
+  // set/setMany/hasActive/toQueryString callback'lerini destabilize eder
+  // (useEffect deps'inde kullanılırsa loop riski). İlk render'daki defaults'u
+  // dondururuz; default değerler runtime'da değişmemeli.
+  const defaultsRef = useRef(defaults);
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -72,11 +77,10 @@ export function useUrlFilter<T extends FilterDefaults>(defaults: T): UrlFilterAp
   // Hook consumers don't manage local useState; URL is canonical.
   const values = useMemo<FilterValues<T>>(() => {
     const out = {} as FilterValues<T>;
-    for (const key in defaults) {
-      out[key] = parseValue(params.get(key), defaults[key]);
+    for (const key in defaultsRef.current) {
+      out[key] = parseValue(params.get(key), defaultsRef.current[key]);
     }
     return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
   const writeUrl = useCallback(
@@ -90,7 +94,7 @@ export function useUrlFilter<T extends FilterDefaults>(defaults: T): UrlFilterAp
   const set = useCallback<UrlFilterApi<T>['set']>(
     (key, value) => {
       const next = new URLSearchParams(params.toString());
-      const def = defaults[key];
+      const def = defaultsRef.current[key];
       // null veya default → URL'den sil (clean URL)
       if (value === null || value === undefined || isDefault(value as FilterValue, def)) {
         next.delete(String(key));
@@ -99,7 +103,7 @@ export function useUrlFilter<T extends FilterDefaults>(defaults: T): UrlFilterAp
       }
       writeUrl(next);
     },
-    [params, defaults, writeUrl],
+    [params, writeUrl],
   );
 
   const setMany = useCallback<UrlFilterApi<T>['setMany']>(
@@ -107,7 +111,7 @@ export function useUrlFilter<T extends FilterDefaults>(defaults: T): UrlFilterAp
       const next = new URLSearchParams(params.toString());
       for (const key in updates) {
         const value = updates[key];
-        const def = defaults[key];
+        const def = defaultsRef.current[key];
         if (value === null || value === undefined || isDefault(value as FilterValue, def)) {
           next.delete(String(key));
         } else {
@@ -116,7 +120,7 @@ export function useUrlFilter<T extends FilterDefaults>(defaults: T): UrlFilterAp
       }
       writeUrl(next);
     },
-    [params, defaults, writeUrl],
+    [params, writeUrl],
   );
 
   const reset = useCallback(() => {
@@ -124,23 +128,22 @@ export function useUrlFilter<T extends FilterDefaults>(defaults: T): UrlFilterAp
   }, [writeUrl]);
 
   const hasActive = useMemo(() => {
-    for (const key in defaults) {
-      if (!isDefault(values[key] as FilterValue, defaults[key])) return true;
+    for (const key in defaultsRef.current) {
+      if (!isDefault(values[key] as FilterValue, defaultsRef.current[key])) return true;
     }
     return false;
-  }, [values, defaults]);
+  }, [values]);
 
   const toQueryString = useCallback(() => {
     const next = new URLSearchParams();
-    for (const key in defaults) {
+    for (const key in defaultsRef.current) {
       const v = values[key];
-      if (!isDefault(v as FilterValue, defaults[key])) {
+      if (!isDefault(v as FilterValue, defaultsRef.current[key])) {
         next.set(String(key), String(v));
       }
     }
     return next.toString();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values, defaults]);
+  }, [values]);
 
   // No-op effect: ensures state is reflected even if query params change
   // through external navigation. The useMemo above already does this.
