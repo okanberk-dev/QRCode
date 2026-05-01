@@ -121,6 +121,8 @@ export default async function DashboardPage({
     prev7Count,
     prev7Avg,
     prev7Redirected,
+    last7Scans,
+    prev7Scans,
   ] = await Promise.all([
     // KPI 4: Platforma yönlendirme (all-time) — değer KPI'da; delta last7 vs prev7
     prisma.feedback.count({ where: { restaurantId: restIdIn, ...REDIRECT_WHERE } }),
@@ -169,9 +171,9 @@ export default async function DashboardPage({
         restaurant: { select: { name: true, id: true } },
       },
     }),
-    // QR scan counts proxy — eski findMany + JS match yerine groupBy.
-    // Aynı (restaurant, tableNumber, platform) demeti = aynı QR üretimi.
-    prisma.feedback.groupBy({
+    // QR scan counts — gerçek scan event tracking (CLAUDE.md §34.x).
+    // Eski versiyon feedback proxy idi; artık QrScan tablosundan groupBy.
+    prisma.qrScan.groupBy({
       by: ['restaurantId', 'tableNumber', 'platform'],
       where: { restaurantId: restIdIn },
       _count: { _all: true },
@@ -206,6 +208,17 @@ export default async function DashboardPage({
         restaurantId: restIdIn,
         createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
         ...REDIRECT_WHERE,
+      },
+    }),
+    // Last 7 gün QR scans (gerçek tracking) — KPI 3 + delta
+    prisma.qrScan.count({
+      where: { restaurantId: restIdIn, createdAt: { gte: sevenDaysAgo } },
+    }),
+    // Prev 7 gün QR scans (delta baz)
+    prisma.qrScan.count({
+      where: {
+        restaurantId: restIdIn,
+        createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
       },
     }),
   ]);
@@ -385,7 +398,7 @@ export default async function DashboardPage({
   };
 
   const totalReviewsDelta = pctDelta(last7Total, prev7Count);
-  const scansDelta = totalReviewsDelta; // scan proxy = feedback count
+  const scansDelta = pctDelta(last7Scans, prev7Scans);
   const redirectsDelta = pctDelta(last7Redirected, prev7Redirected);
 
   const prevAvg = prev7Avg._avg.rating ?? 0;
@@ -464,8 +477,8 @@ export default async function DashboardPage({
           accent="#C6F24E"
         />
         <StatCard
-          label={isTr ? 'Son 7g taranma' : 'Scans (7d)'}
-          value={last7Total.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          label={isTr ? 'QR taranma' : 'QR scans'}
+          value={last7Scans.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
           delta={scansDelta.value}
           deltaKind={scansDelta.kind}
           deltaSuffix={isTr ? 'son 7 gün' : 'last 7 days'}
