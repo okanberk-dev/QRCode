@@ -59,7 +59,7 @@ interface RestaurantPayload {
 const SECTION_TABS: SettingsTab[] = [
   { id: "general", label: "Genel" },
   { id: "brand", label: "Marka" },
-  { id: "integrations", label: "Entegrasyonlar" },
+  { id: "integrations", label: "Platform Bağlantıları" },
   { id: "website", label: "Web sitesi" },
   { id: "operations", label: "Operasyonel" },
   { id: "security", label: "Güvenlik" },
@@ -275,8 +275,8 @@ export default function RestaurantSettingsPage() {
       <SettingsSection
         id="integrations"
         active={active === "integrations"}
-        eyebrow="03 — ENTEGRASYONLAR"
-        title="Entegrasyonlar"
+        eyebrow="03 — PLATFORM BAĞLANTILARI"
+        title="Platform Bağlantıları"
         description="Yorum platformları, sosyal medya kanalları ve varsayılan yönlendirme."
         actions={
           <span className="text-[#737373]" aria-hidden="true">

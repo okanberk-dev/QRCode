@@ -762,8 +762,59 @@ return NextResponse.json(restaurant, {
 
 **Yap:** Yeni public read-heavy endpoint eklerken (örn. `/api/menu/[slug]` benzer akış) aynı pattern'i uygula. Public-write veya auth-gated endpoint'lere cache koyma — IDOR + stale-data riski.
 
+### 19.4 Platform Link Quality Control (2026-05)
 
----
+Owner panel yorum platformları (Google / Yemeksepeti / Getir / Trendyol / Tripadvisor / Airbnb / Booking / Yandex) + sosyal medya (Instagram / Facebook / WhatsApp / Reservation) URL'leri için **2-katmanlı doğrulama**. Tek source: `src/lib/integration-domains.ts` `checkProviderUrl()`. Settings sekmesi adı **"Platform Bağlantıları" / "Platform Links"** ("Entegrasyonlar" terminolojisi API senkron beklentisi yaratıyordu — Buaze sadece link yönetir).
+
+**Severity & reason matrisi:**
+
+| Severity | Reason | hardBlock | Tetikleyici |
+|---|---|---|---|
+| `error` | `invalid_url` | true | URL parse fail (`new URL(...)` throws) |
+| `error` | `wrong_protocol` | true | `http(s)` değil |
+| `error` | `wrong_domain` | true | Hostname provider whitelist dışında |
+| `warning` | `generic_homepage` | false | Domain doğru ama path `/` veya locale-only (`/tr`, `/maps`, `/Tourism`, `/searchresults`) |
+| `warning` | `not_review_link` | false | Domain doğru ama provider'ın review-signature substring'i yok |
+| — (ok) | — | — | Tüm kontroller geçti |
+
+**Path heuristic tablosu** (`PATH_RULES` constant):
+
+| Provider | Locale homepage path'leri | Review signature substring'leri |
+|---|---|---|
+| google | `/maps`, `/business` | `g.page/r/`, `goo.gl/maps`, `maps.app.goo.gl`, `business.google.com`, `/maps/place/`, `cid=`, `placeid=` |
+| yemeksepeti | `/tr`, `/en` | `/restaurant/`, `/menu/` |
+| trendyol_go | — | `/restaurant/`, `/yemek/restaurant/` |
+| tripadvisor | `/Tourism`, `/Hotels` | `/Restaurant_Review-`, `/Hotel_Review-`, `/Attraction_Review-`, `/ShowUserReviews-` |
+| booking | `/searchresults` | `/hotel/` |
+| airbnb | — | `/rooms/`, `/h/` |
+
+Diğer 7 provider (yandex, getir, instagram, facebook, whatsapp, website, reservation) için path heuristic **yok** — domain match yeterli. Path-bazlı kontrol "yeterince anlamlı sinyal taşıyan" platformlara sınırlı; abstraction zorlamayalım (CLAUDE.md §7).
+
+**Hard block kuralı:** UI save action sadece `severity === 'error'` durumlarında engellenir. Warning'ler **save'i geçirir** ama amber AlertTriangle satırı kalıcı görünür → owner "ben bilerek koydum, legacy import" dese de yine de hatasını fark eder. Soft warning her zaman dismissible değil — alanı düzeltene kadar görünür.
+
+**Kullanım pattern'i (`BusinessIntegrationSettings.tsx`):**
+```ts
+const result = checkProviderUrl(provider, url);
+if (!result.ok) {
+  const message = describeDomainError(provider, result, locale); // i18n
+  // result.severity === 'error'   → <Field error={message}> (kırmızı)
+  // result.severity === 'warning' → inline amber AlertTriangle satırı
+}
+```
+
+i18n caller-side: `describeDomainError(provider, result, locale)` ile TR/EN mesaj döner. 5 reason için tam locale parity. Helper'a `severity` field'ı eklenmedi — `result.severity` zaten enum, message string ayrı concern.
+
+**Server-side guard:** `/api/restaurants/[id]/integrations/[provider]/test` endpoint'i `checkProviderUrl` çağırır ama warning'leri **engellemez** — sadece reachability HEAD/GET test'i yapar. Domain mismatch ise zaten 200 + `ok: false` + `error: describeDomainError(...)` döner. Quality kontrolü client-side, test endpoint'i reachability-only.
+
+**Yapma:**
+- Yeni dosya `platform-link-quality.ts` açma — mevcut `integration-domains.ts` zaten 2-tier severity döner. ChatGPT-bazlı önerilerde 7-status taksonomi `missing | invalid_url | wrong_domain | generic_homepage | not_direct_review_link | needs_review | valid` görürsen reddet: `missing` UI tarafında `<IntegrationStatusBadge status="not_configured">` ile gösterilir, `valid` = `ok: true`, `needs_review` rezerv kullanılmıyor.
+- Warning severity'sini hard block yapma — owner "ben bu URL'in homepage olduğunu biliyorum, müşteri kendi yolunu bulur" diyebilir; kayıt engellemek paternalistik.
+- Path heuristic'leri çok sıkı yapma — exotic review URL'i miss etmektense legitimate URL'i kabul et. Heuristic substring match (case-insensitive), regex değil.
+- Test endpoint'inde quality warning'i 4xx döndürme — reachability ayrı concern, mevcut response shape `{ ok, statusCode, latencyMs, error?, url }` korunur.
+
+**Yap:**
+- Yeni provider eklerken `PROVIDER_DOMAINS` + `PROVIDER_LABELS` (zorunlu) + `PATH_RULES` (opsiyonel) güncelle.
+- Caller-side warning satırı için inline `<AlertTriangle size={12}>` + `text-[#92400E]` (Pulse warn token, `bg-[#FFFBEB]/border-[#FDE68A]` AlertBanner kind='warn' ile birebir aynı hue). Ayrı bir UI primitive yapma — şu an sadece bir yerde kullanılıyor.
 
 <!-- §20 §4.5 ile birleştirildi (kanonik terminoloji tek bölümde) -->
 
@@ -2059,6 +2110,7 @@ Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`B
 - **Phase 11.19 (PR #275)**: Bulk activate/deactivate (restaurants). Yeni `/api/admin/restaurants/bulk` endpoint (superadmin only, IDOR, Zod, rate limit 10/dk, single `updateMany`). UI: header select-all checkbox + indeterminate state, row solunda checkbox, lime-tint highlight, floating bottom toolbar (X seçildi + Aktif et lime + Duraklat ghost + dismiss), 3.5s auto-dismiss notice.
 - **Phase 11.20 (PR #276)**: A11y polish. 6 admin search input'a `aria-label` (Blog yazısı ara / Müşteri ara / Bülten abonesi ara / Bülten kampanyası ara / İşletme sahibi ara / İşletme ara). 2 bulk toolbar count span'ına `aria-live="polite"` (3 seçildi announcement). WCAG 2.1 AA 1.3.1 + 4.1.2.
 - **Phase 11.21 (PR #277)**: Self-audit follow-up bug bundle. (1) `/admin/members` searchInput desync — browser back ile gelen URL filter input'a yansımıyordu, sync `useEffect` eklendi. (2) `/admin/restaurants` bulk selection stale — filter değişiminde `selectedIds` cleanup yoktu, görünmeyen row'lara apply riski vardı; `useEffect` ile temizlik. (3) `/admin/reviews` bulk refetch URL'inde `assignedToMe` eksikti, "Bana atanan" filter aktifken liste yanlış genişliyordu; query builder'a eklendi. Backend dokunulmadı.
+- **Phase 11.22 (PR TBD, branch `claude/analyze-design-code-BoPyo`)**: Platform Bağlantıları rename + 2-tier link quality (CLAUDE.md §19.4). (1) **Rename** owner-facing only — `UserDashboardShell` (`copy.integrations` + breadcrumb mapping), `restaurants/[id]/settings/page.tsx` (`SECTION_TABS` entry + `<SettingsSection eyebrow + title>`), `BusinessIntegrationSettings` (doc comment + success toast locale-aware). URL path'leri (`/integrations`, `/api/.../integrations/test`), `section=integrations` query param, file/component isimleri, marketing translations (`pricing_feature_api`, `cta_badge2`) **dokunulmadı** — internal stabilite + marketing ayrı kapsam. Command palette keywords array'i `['entegrasyon', 'integration', ...]` legacy term'leri korur (eski terminoloji ile arama yapan owner için). (2) **`integration-domains.ts` genişletildi (yeni dosya YOK, §7)** — `DomainCheckResult` artık `severity: 'error' | 'warning'` + 5-reason union (`invalid_url`, `wrong_protocol`, `wrong_domain`, `generic_homepage`, `not_review_link`). `PATH_RULES` const'ı 6 review provider için substring heuristic (yemeksepeti `/restaurant/`, tripadvisor `/Restaurant_Review-`, vb. — §19.4 tablo). `describeDomainError` 2 yeni branch (TR/EN parity). Test endpoint (`/api/restaurants/[id]/integrations/[provider]/test`) kontratı **dokunulmadı** — domain mismatch zaten 200 + `ok: false` + i18n error döndürüyor; warning'ler reachability'i engellemez. (3) **`BusinessIntegrationSettings` UI** — `fieldErrors: Partial<Record<key, string>>` → `fieldQuality: Partial<Record<key, { result, provider, message }>>`; `hasFieldErrors` → `hasHardErrors` (sadece `severity === 'error'` save block); `IntegrationCard` `fieldError` prop → `quality` prop; `<Field error>` sadece error satırı, warning ayrı amber inline `<AlertTriangle size={12}>` + `text-[#92400E]` satırı (Pulse warn token); `testDisabled` artık warning'lerde de izin verir (sadece error block); üstte intro paragrafı + `<AlertBanner kind="info">` "Resmi API senkronizasyonu ayrı yapılandırılır" notu locale-aware. Mevcut DefaultRedirectPicker + 3 SettingsCard yapısı + IDOR + Zod intact. ChatGPT'nin orijinal önerisinden **3 sıkılaştırma**: yeni dosya yerine helper genişletme (CLAUDE.md §7), 7-status → 5-status (gereksiz `missing`/`needs_review`/`valid` çıkarıldı), 6-field result → 4-field (severity/reason/hostname/expected; i18n message caller-side `describeDomainError`).
 - **Phase 10+ (out-of-scope backlog)**: Settings stub pages content (Brand/Integrations/Rules/Team/Billing/Notifications/API), Storybook coverage, visual regression testing (Percy/Chromatic), Mobile native wrap (Capacitor/Expo), Superadmin onboarding flow. **Senior audit kalan bulguları** (Phase 11.4+ candidates): 5+ raw form set (label+input pair) → `<Field>` primitive (admin/users modal field'ları, admin/announcements modal field'ları, admin/restaurants modal field'ları); off-palette renkler (slate-800, blue-50, emerald, amber inline) → Pulse palette remap; sortable table'larda `aria-sort`.
 
 ### 23.8 Dokunulmayan eski Pulse
