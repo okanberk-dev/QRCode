@@ -3222,6 +3222,7 @@ Tüm public sayfalar `application/ld+json` script bloğu taşır. Coverage matri
 |---|---|---|
 | Home (`page.tsx`) | Organization + SoftwareApp + WebSite | `[locale]/layout.tsx` (root, tüm sayfalarda inherit) |
 | Marketing core (about, contact, faq, pricing, press, roi, how-it-works) | WebPage + (FAQ varsa) FAQPage | per-page inline |
+| Google compliance (`/google-compliance`) | FAQPage (6 SSS, locale-aware) | per-page inline (PR-C, 2026-05) |
 | Blog (`blog/[slug]`) | Article + BreadcrumbList | per-page inline |
 | Case study list + `case-study/[slug]` + pizza-locale | Article + BreadcrumbList | per-page inline |
 | Customer stories list + `customer-stories/[slug]` | ItemList / Article + BreadcrumbList | per-page inline |
