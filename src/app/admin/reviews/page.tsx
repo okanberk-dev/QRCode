@@ -187,11 +187,11 @@ function AdminReviewsContent() {
         const err = await res.json().catch(() => ({}));
         setNotice({
           msg: err.error?.message || (isTr ? 'Toplu işlem başarısız' : 'Bulk action failed'),
-          tone: 'danger',
+          tone: 'error',
         });
       }
     } catch {
-      setNotice({ msg: isTr ? 'Toplu işlem başarısız' : 'Bulk action failed', tone: 'danger' });
+      setNotice({ msg: isTr ? 'Toplu işlem başarısız' : 'Bulk action failed', tone: 'error' });
     }
   };
 
