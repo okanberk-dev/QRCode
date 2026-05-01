@@ -287,6 +287,7 @@ export default function MembersPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="İşletme sahibi ara (email veya isim)…"
+            aria-label="İşletme sahibi ara"
             className="bz-input w-full pl-11"
           />
         </div>

@@ -147,6 +147,7 @@ export default function AdminBlogPage() {
             value={search}
             onChange={event => setSearch(event.target.value)}
             placeholder="Başlık, yazar veya slug ara..."
+            aria-label="Blog yazısı ara"
             className="bz-input"
             style={{ paddingLeft: 36 }}
           />
