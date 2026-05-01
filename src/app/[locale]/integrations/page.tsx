@@ -91,8 +91,35 @@ export default async function IntegrationsPage({
     },
   ];
 
+  const allIntegrations = groups.flatMap((g) => g.items);
+  const canonicalUrl = `https://buaze.com/${locale}/integrations`;
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: isTr ? 'Buaze entegrasyonları' : 'Buaze integrations',
+    inLanguage: isTr ? 'tr-TR' : 'en-US',
+    url: canonicalUrl,
+    numberOfItems: allIntegrations.length,
+    itemListElement: allIntegrations.map((it, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: it.name,
+      description: it.tag,
+    })),
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Entegrasyonlar' : 'Integrations', item: canonicalUrl },
+    ],
+  };
+
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 

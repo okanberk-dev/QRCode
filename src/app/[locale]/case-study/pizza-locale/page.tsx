@@ -141,8 +141,36 @@ export default async function PizzaLocaleCaseStudy({
         { step: '03', title: 'Chain management', desc: 'Brand quality peaked with data from 12 locations.' },
       ];
 
+  const canonicalUrl = `https://buaze.com/${locale}/case-study/pizza-locale`;
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: t.pl_case_hero_title,
+    description: t.pl_case_hero_desc,
+    author: { '@type': 'Organization', name: 'Buaze' },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Buaze',
+      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+    },
+    mainEntityOfPage: canonicalUrl,
+    inLanguage: isTr ? 'tr-TR' : 'en-US',
+    about: ['Pizza Locale', 'Restaurant chain', 'Google review management', 'QR feedback system'],
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Vaka Çalışmaları' : 'Case Studies', item: `https://buaze.com/${locale}/case-study` },
+      { '@type': 'ListItem', position: 3, name: 'Pizza Locale', item: canonicalUrl },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 

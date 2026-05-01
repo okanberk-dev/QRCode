@@ -107,8 +107,34 @@ export default async function FeaturesPage({
         },
       ];
 
+  const canonicalUrl = `https://buaze.com/${locale}/features`;
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: isTr ? 'Buaze özellikleri' : 'Buaze features',
+    inLanguage: isTr ? 'tr-TR' : 'en-US',
+    url: canonicalUrl,
+    numberOfItems: features.length,
+    itemListElement: features.map((feature, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: feature.t,
+      description: feature.d,
+    })),
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: canonicalUrl },
+    ],
+  };
+
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 

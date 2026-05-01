@@ -121,8 +121,37 @@ export default async function CaseStudyPage({
   const subtitleText = isTr ? study.subtitleTr : study.subtitleEn;
   const quoteText = isTr ? study.quoteTr : study.quoteEn;
 
+  const canonicalUrl = `https://buaze.com/${locale}/case-study/${slug}`;
+  const articleSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: `${study.brand} · ${isTr ? 'Buaze ile' : 'with Buaze'}`,
+    description: heroText,
+    image: study.heroImage,
+    author: { '@type': 'Organization', name: 'Buaze' },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Buaze',
+      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+    },
+    mainEntityOfPage: canonicalUrl,
+    inLanguage: isTr ? 'tr-TR' : 'en-US',
+    about: [resolveSector(study, isTr), 'Google review management', 'QR feedback system'],
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Vaka Çalışmaları' : 'Case Studies', item: `https://buaze.com/${locale}/case-study` },
+      { '@type': 'ListItem', position: 3, name: study.brand, item: canonicalUrl },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 

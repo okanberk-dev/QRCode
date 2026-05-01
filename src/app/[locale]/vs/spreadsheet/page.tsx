@@ -66,7 +66,34 @@ export default async function VsSpreadsheetPage({
       },
   ];
 
+  const isTr = locale === 'tr';
+  const canonicalUrl = `https://buaze.com/${locale}/vs/spreadsheet`;
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: isTr ? 'Buaze vs Spreadsheet' : 'Buaze vs Spreadsheet',
+    description: isTr
+      ? 'Excel/Sheets ile manuel yorum takibi vs. gerçek zamanlı Buaze otomasyonu karşılaştırması.'
+      : 'Manual review tracking in Excel/Sheets vs. real-time Buaze automation — side-by-side comparison.',
+    url: canonicalUrl,
+    inLanguage: isTr ? 'tr-TR' : 'en-US',
+    about: ['Spreadsheet workflows', 'Customer feedback platform', 'Reputation management automation'],
+    isPartOf: { '@type': 'WebSite', name: 'Buaze', url: 'https://buaze.com' },
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Karşılaştırma' : 'Compare', item: `https://buaze.com/${locale}/compare` },
+      { '@type': 'ListItem', position: 3, name: 'Spreadsheet', item: canonicalUrl },
+    ],
+  };
+
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
     <ComparisonLayout
       locale={locale}
       t={t}
@@ -81,5 +108,6 @@ export default async function VsSpreadsheetPage({
         ? 'Excel ve kağıt formlar statiktir. Bir müşteri mutsuz ayrıldığında Excel size haber vermez. Buaze ise o müşteriyi daha kapıdan çıkmadan yakalamanızı sağlar.\nTablolarda kaybolan veriler yerine, grafiklerde yükselen itibarınızı izleyin. Manuel hatayı ve veri kaybı riskini profesyonel bir SaaS altyapısı ile sıfırlayın.'
         : 'Spreadsheets and paper forms are static. When a customer leaves unhappy, Excel won\'t notify you. Buaze allows you to catch that customer before they even walk out the door.\nInstead of data lost in tables, watch your rising reputation in charts. Eliminate manual error and data loss risk with a professional SaaS infrastructure.'}
     />
+    </>
   );
 }

@@ -50,8 +50,34 @@ export default async function CustomerStoriesPage({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
+  const canonicalUrl = `https://buaze.com/${locale}/customer-stories`;
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: isTr ? 'Buaze müşteri hikayeleri' : 'Buaze customer stories',
+    inLanguage: isTr ? 'tr-TR' : 'en-US',
+    url: canonicalUrl,
+    numberOfItems: CUSTOMER_STORIES.length,
+    itemListElement: CUSTOMER_STORIES.map((story, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `https://buaze.com/${locale}/customer-stories/${story.slug}`,
+      name: storyText(story.title, locale),
+    })),
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Başarı Hikayeleri' : 'Customer Stories', item: canonicalUrl },
+    ],
+  };
+
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 
