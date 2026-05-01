@@ -3109,6 +3109,62 @@ Owner panel'de "QR taranma" KPI'sı şimdiye dek **feedback count proxy**'siydi 
 - Source breakdown chart: `?source=qr|direct|table|link` parametresinin scan dağılımı — owner placement performance görür.
 - Real conversion funnel: scan → review → redirect → external platform — 4-step funnel chart.
 
+### 34.11 2026-05-01 — Performance pass: feedback/stats trend loop + Feedback indexes
+
+ChatGPT'den gelen kapsamlı performance audit promptunu doğruladıktan sonra (önerilerin %85'i zaten yapılmış) iki gerçek bottleneck düzeltildi:
+
+**Fix 1 — `/api/feedback/stats` 7-day trend loop (PR #293, merged 2026-05-01)**
+
+Önceki kod 7 günlük trend'i `for` loop içinde sıralı await'lerle çekiyordu — her iterasyon kendi içinde 2 query'yi `Promise.all` ile çalıştırıyordu ama dış loop sıralıydı:
+
+```ts
+// ÖNCE — 7 sequential round-trip × 2 query = 14 query, 7 await blok
+for (let i = 6; i >= 0; i--) {
+  const [count, agg] = await Promise.all([
+    prisma.feedback.count(...),
+    prisma.feedback.aggregate(...),
+  ]);
+}
+```
+
+7 gün × ~5-8ms RTT = ~35-50ms pure waiting her isteğe. Fix: 7 day window'ı önce bir `dayBuckets` array'i olarak hesapla, sonra tüm 14 query'yi tek `Promise.all`'da paralel fırlat. Wall-time → tek round-trip.
+
+**Yapma:** Range-bazlı day-by-day aggregate'i `for` loop'unda await etme. Pre-compute + Promise.all ile paralelize et. Eğer date bucketing kompleks oluyorsa `$queryRaw` + `date_trunc` daha temiz; loop pattern son çare.
+
+**Fix 2 — `Feedback` model 3 composite index (PR #297, merged 2026-05-01)**
+
+`prisma/schema.prisma` `Feedback` modelinde sadece `[restaurantId, createdAt]` ve `[ipAddress, createdAt]` index'leri vardı. `/api/feedback/stats` ve `/dashboard/analytics` aşağıdaki kombinasyonlarda filter ediyor:
+
+| Filter pattern | Eski plan | Yeni index |
+|---|---|---|
+| `restaurantId + rating ≥ 4 + createdAt` (Google conversion bucket) | bitmap combine `[restId, createdAt]` üzerinde | `@@index([restaurantId, rating, createdAt])` |
+| `restaurantId + platform + createdAt` (platform distribution) | bitmap combine | `@@index([restaurantId, platform, createdAt])` |
+| `restaurantId + branch + createdAt` (analytics branch filter) | bitmap combine | `@@index([restaurantId, branch, createdAt])` |
+
+Bitmap-combine fallback Postgres'te 30-50ms/query ekliyor (volume büyüdükçe daha kötü). Composite index = single-index seek. Risk düşük: pure additive, data değişmiyor, `prisma db push --accept-data-loss` (CLAUDE.md §14.1) deploy build'de auto-apply.
+
+**Yapma:** "her olası filter kombinasyonuna" preventif index ekleme. Sadece **gerçek query path'lerinde** kullanılan kombinasyonlar için ekle (CLAUDE.md §7 abstraction kaçınma — index de bir form abstraction). Her index Postgres write maliyeti.
+
+**Yap:** Yeni endpoint eklerken filter shape'i mevcut index'lerle match etmiyorsa schema'ya yeni `@@index` ekle. Tek source of truth Prisma schema; SQL `CREATE INDEX` ile manuel ekleme YOK (drift riski).
+
+### Audit özeti — değişmeyenler (zaten optimize edilmiş)
+
+ChatGPT performance audit promptu 9 alan kapsıyordu; aşağıdakiler **zaten optimize edilmişti** ve dokunulmadı:
+
+| Alan | Mevcut durum |
+|---|---|
+| Owner dashboard query batching | 15 paralel query tek `Promise.all` (CLAUDE.md §34.5'in beyan ettiğinden daha sıkı) |
+| Dashboard fetch deduplication | Server component, useEffect+fetch yok, repeat fetch riski yok |
+| Marketing client component over-use | `MarketingNavbar` server, `MarketingNavbarClient` client — split doğru |
+| Font loading | Space Grotesk + Inter + JetBrains Mono — `display: 'swap'` + `subsets: ['latin']` set |
+| Image storage (marketing) | Inline SVG — HTTP request yok, optimization gereksiz |
+| Image storage (menü) | base64-in-DB (CLAUDE.md §3 zorunluluğu, `next/image` uyumsuz) |
+| Public caching | `/api/restaurants?slug=` 60s/300sw cached (CLAUDE.md §19.3) |
+| Third-party scripts | GA + Yandex `lazyOnload`, Sentry session replay disabled (CLAUDE.md §26) |
+| Speed Insights mount | Single root mount (CLAUDE.md §31) |
+
+**Out-of-scope kalanlar:** word cloud `take: 1000` (UI etkisi olabilir, ölçü almadan dokunma), `force-dynamic` ISR audit (CLAUDE.md root + locale layout'ta — `cookies()` için gerekli olabilir, ölçmeden kaldırma).
+
 ---
 
 ## 35. SEO Infrastructure (2026-05 PR #263 + #264)
