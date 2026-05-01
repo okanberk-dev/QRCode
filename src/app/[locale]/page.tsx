@@ -86,24 +86,88 @@ export default async function LandingPage({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
+  // AEO answer-style Q&A — 5 quotable answers AI search engines
+  // (Perplexity, Bing Chat, Gemini AIO, Google AIO) and rich result
+  // crawlers can lift verbatim. Every answer reinforces customer agency
+  // and the four review-gating disclaimers (block / hide / star-branching
+  // / incentive) — mirrors CLAUDE.md §19.1.1 compliance copy parity.
+  const aeoFaqs = isTr
+    ? [
+        {
+          q: 'Buaze nedir?',
+          a: 'Buaze, restoranlar, oteller, klinikler ve yerel hizmet işletmeleri için bir dijital itibar yönetimi ve QR geri bildirim platformudur. QR akışlarıyla şeffaf müşteri geri bildirimi toplar, yorumları tek panelden yönetmenize yardımcı olur ve Pulse AI ile yanıt taslakları üretir.',
+        },
+        {
+          q: 'Buaze kimler için?',
+          a: 'Restoranlar, kafeler, oteller, klinikler, dişçiler, güzellik salonları ve spa, oto servisleri, hukuk büroları, gayrimenkul, eğitim, fitness merkezleri ve diğer yerel hizmet işletmeleri için tasarlandı. Her sektör için özel akışlar ve sektörel analitik sunarız.',
+        },
+        {
+          q: 'QR geri bildirim akışı nasıl çalışır?',
+          a: 'Müşteri masadaki QR kodu tarar ve deneyimini puanlar. Her müşteriye işletmenin seçtiği herkese açık platformlar (Google, Yemeksepeti, Getir, Trendyol GO ve isteğe bağlı diğerleri) sunulur. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür; herkese açık platformlara yorum yazma hakkını her zaman korurlar.',
+        },
+        {
+          q: 'Buaze Google\'ın yorum politikalarına uygun mu?',
+          a: 'Evet. Buaze yorumları engellemez, gizlemez veya manipüle etmez; yıldız bazlı erişim kısıtlaması yapmaz; pozitif yorum için teşvik (indirim, hediye) sunmaz. Akış sadece müşteri tercihiyle yönlendirme yapar. Tam politika açıklaması /google-compliance sayfasındadır.',
+        },
+        {
+          q: 'Buaze negatif yorumları gizler mi?',
+          a: 'Hayır. Hiçbir yorum gizlenmez, engellenmez veya manipüle edilmez. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım seçeneği görür — pratikte yaklaşık %85\'i bu kanalı tercih eder — ama herkese açık bir platforma yorum yazma hakkını her zaman korurlar.',
+        },
+      ]
+    : [
+        {
+          q: 'What is Buaze?',
+          a: 'Buaze is a digital reputation management and QR feedback platform for restaurants, hotels, clinics, and local service businesses. It collects transparent customer feedback through QR flows, helps you manage reviews from one dashboard, and drafts replies with Pulse AI.',
+        },
+        {
+          q: 'Who is Buaze for?',
+          a: 'Buaze is built for restaurants, cafés, hotels, clinics, dentists, beauty and spa businesses, auto services, law firms, real estate, education providers, fitness centers, and other local service businesses. We provide sector-specific flows and analytics for each segment.',
+        },
+        {
+          q: 'How does the QR feedback flow work?',
+          a: 'A customer scans the QR at the table and rates their experience. Every customer is shown the public platforms the business has selected (Google, Yemeksepeti, Getir, Trendyol GO, and optionally others). Customers giving low ratings additionally see an option to share privately with your team; they always retain the right to post on any public platform.',
+        },
+        {
+          q: 'Is Buaze compliant with Google\'s review policies?',
+          a: 'Yes. Buaze does not block, hide, or manipulate reviews; does not gate access by star rating; and does not offer incentives (discounts, gifts) for positive reviews. The flow only routes by customer preference. The full policy statement is at /google-compliance.',
+        },
+        {
+          q: 'Does Buaze hide negative reviews?',
+          a: 'No. No review is ever hidden, blocked, or manipulated. Customers giving low ratings additionally see an option to share privately with your team — in practice about 85% choose this channel — but they always retain the right to post on a public platform.',
+        },
+      ];
+
   // Root layout (`[locale]/layout.tsx`) already emits canonical Organization,
   // WebSite + SearchAction, and SoftwareApplication nodes. Re-declaring them
   // here used to cause duplicate Organization/WebApplication entries (with a
   // stale `/buaze-logo.png` and a TRY/USD pricing conflict against the root
-  // SoftwareApplication offers). Keep only the homepage-specific Service node
-  // here; root nodes carry the rich identity (sameAs, contactPoint, address).
+  // SoftwareApplication offers). Keep only homepage-specific schemas: a
+  // Service node + the FAQPage feeding the AEO section above. Root nodes
+  // carry the rich identity (sameAs, contactPoint, address).
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Service',
-    name: isTr ? 'Dijital İtibar Yönetimi Hizmeti' : 'Digital Reputation Management Service',
-    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
-    description: isTr
-      ? 'İşletmeler için geri bildirim operasyonlarını profesyonelleştirme ve dijital itibar yönetimi platformu.'
-      : 'Platform for professionalizing feedback operations and digital reputation management for businesses.',
-    serviceType: isTr ? 'Dijital itibar yönetimi yazılımı' : 'Digital reputation management software',
-    areaServed: { '@type': 'Country', name: 'Turkey' },
-    inLanguage: isTr ? 'tr-TR' : 'en-US',
-    url: `https://buaze.com/${locale}`,
+    '@graph': [
+      {
+        '@type': 'Service',
+        name: isTr ? 'Dijital İtibar Yönetimi Hizmeti' : 'Digital Reputation Management Service',
+        provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+        description: isTr
+          ? 'İşletmeler için geri bildirim operasyonlarını profesyonelleştirme ve dijital itibar yönetimi platformu.'
+          : 'Platform for professionalizing feedback operations and digital reputation management for businesses.',
+        serviceType: isTr ? 'Dijital itibar yönetimi yazılımı' : 'Digital reputation management software',
+        areaServed: { '@type': 'Country', name: 'Turkey' },
+        inLanguage: isTr ? 'tr-TR' : 'en-US',
+        url: `https://buaze.com/${locale}`,
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: aeoFaqs.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      },
+    ],
   };
 
   // ── Section content (inline locale, keeps translations.ts untouched) ──
@@ -956,6 +1020,73 @@ export default async function LandingPage({
           and an unverifiable named testimonial is FTC + Reklam Kurulu
           deceptive-advertising risk. Restore once a real consented
           customer + venue is available. */}
+
+      {/* ═══════════════════════════════════════════════════════════
+          7.5 AEO ANSWER-STYLE Q&A
+              Quotable, factual answers to questions AI search engines
+              and Google AIO ask about review-management products. The
+              same content feeds the FAQPage JSON-LD above so both the
+              visible UI and structured data come from one source.
+      ═══════════════════════════════════════════════════════════ */}
+      <section
+        id="aeo"
+        className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24"
+      >
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">
+            {isTr ? 'KISACA BUAZE' : 'BUAZE IN BRIEF'}
+          </span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[44px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[760px]">
+            {isTr
+              ? 'En çok sorulan beş soruya net cevaplar'
+              : 'Five common questions, answered directly'}
+          </h2>
+          <p className="mt-4 max-w-[640px] text-[15px] sm:text-[16px] text-[#525252] leading-[1.6]">
+            {isTr
+              ? 'Buaze ne yapar, kimler için tasarlandı ve Google\'ın yorum politikasıyla nasıl uyum sağlar — kısaca.'
+              : 'What Buaze does, who it is built for, and how it aligns with Google\'s review policy — at a glance.'}
+          </p>
+
+          <dl className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-7">
+            {aeoFaqs.map((f, i) => (
+              <div key={i} className="border-l-2 border-[#C6F24E] pl-5">
+                <dt className="bz-h-tight text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A] leading-[1.25]">
+                  {f.q}
+                </dt>
+                <dd className="mt-3 text-[14px] sm:text-[15px] leading-[1.65] text-[#525252]">
+                  {f.a}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <p className="mt-10 text-[13px] text-[#737373] leading-[1.55]">
+            {isTr ? (
+              <>
+                Daha ayrıntılı politika açıklaması:{' '}
+                <Link
+                  href={`${base}/google-compliance`}
+                  className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
+                >
+                  Google uyumluluk sayfası
+                </Link>
+                . Yorum yanıt taslakları + KVKK ayrıntıları orada.
+              </>
+            ) : (
+              <>
+                For the full policy statement, see the{' '}
+                <Link
+                  href={`${base}/google-compliance`}
+                  className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
+                >
+                  Google compliance page
+                </Link>
+                . Reply drafts + KVKK details are documented there.
+              </>
+            )}
+          </p>
+        </div>
+      </section>
 
       {/* ═══════════════════════════════════════════════════════════
           8. LIME CTA BANNER
