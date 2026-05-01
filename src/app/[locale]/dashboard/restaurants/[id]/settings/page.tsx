@@ -10,6 +10,7 @@ import { SettingsSection } from "@/components/dashboard/settings/SettingsSection
 import { BusinessGeneralSettings } from "@/components/dashboard/settings/sections/BusinessGeneralSettings";
 import { BusinessBrandSettings } from "@/components/dashboard/settings/sections/BusinessBrandSettings";
 import { BusinessIntegrationSettings } from "@/components/dashboard/settings/sections/BusinessIntegrationSettings";
+import { PlatformRedirectsPanel } from "@/components/dashboard/settings/sections/PlatformRedirectsPanel";
 import { BusinessWebsiteSettings } from "@/components/dashboard/settings/sections/BusinessWebsiteSettings";
 import { BusinessOperationalSettings } from "@/components/dashboard/settings/sections/BusinessOperationalSettings";
 import { BusinessSecuritySettings } from "@/components/dashboard/settings/sections/BusinessSecuritySettings";
@@ -289,6 +290,12 @@ export default function RestaurantSettingsPage() {
           locale={locale === "tr" ? "tr" : "en"}
           onSaved={handleSaved}
         />
+        <div className="mt-6">
+          <PlatformRedirectsPanel
+            restaurantId={restaurant.id}
+            locale={locale === "tr" ? "tr" : "en"}
+          />
+        </div>
       </SettingsSection>
 
       <SettingsSection

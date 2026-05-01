@@ -213,6 +213,24 @@ function ReviewContent() {
     }
 
     if (targetPlatformUrl) {
+      // Platform redirect tracking — fire-and-forget POST, owner panel
+      // "Platform Yönlendirmeleri" analytics section'ı bunu tüketir
+      // (CLAUDE.md §19.4.2 + §23.7 Phase 11.24). Server'a 302 değil; client
+      // window.location korunur, open-redirect imkansız (target URL request
+      // body'de yok, restaurant kaydından okunur).
+      fetch('/api/platform-redirect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug,
+          provider: fallbackPlatformId,
+          source: sourceParam,
+        }),
+        keepalive: true,
+      }).catch(() => {
+        // Silent — tracking optional, müşteri redirect akışı engellenmez.
+      });
+
       setRedirecting({ url: targetPlatformUrl, platformId: fallbackPlatformId });
       setTimeout(() => {
         window.location.href = targetPlatformUrl;

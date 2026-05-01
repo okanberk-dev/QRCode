@@ -167,6 +167,7 @@ model Restaurant {
   analyticsEvents    MenuAnalyticsEvent[]
   brandSettings      BrandSettings?
   platformLinkChecks PlatformLinkCheck[]
+  platformRedirects  PlatformRedirectEvent[]
 
   @@map("restaurants")
 }
@@ -212,6 +213,42 @@ model PlatformLinkCheck {
   @@index([restaurantId, provider, checkedAt])
   @@index([provider, checkedAt])
   @@map("platform_link_checks")
+}
+
+// Platform redirect event (CLAUDE.md §19.4.2 + §23.7 Phase 11.24). Müşteri
+// `/r/[slug]`'da yıldız verip yüksek puanlı yorum için bir platforma
+// (Google/Yemeksepeti/Trendyol/...) yönlendirildiğinde fire-and-forget
+// `POST /api/platform-redirect` ile kayıt edilir. Owner panel "Platform
+// Yönlendirmeleri" section'ında son 7/30 gün dağılımı görünür.
+//
+// Tasarım kararları (CLAUDE.md §7 minimum):
+//   - Server-side 302 redirect değil; client `window.location` korunur,
+//     bu endpoint sadece event log. Open-redirect imkansız (target URL
+//     query'de yok, restoran kaydından okunan URL).
+//   - `qrCodeId` / `feedbackId` / `campaignId` field'ları YOK — public
+//     review surface o anda taşımıyor (slug + table + platform yeterli
+//     metadata). İhtiyaç çıktığında migration ile eklenir.
+//   - `ipHash` YOK — KVKK §13.9 IP retention zaten 90 gün ham IP için
+//     uygulanıyor; hash'lenmiş IP analytics için ek değer katmıyor,
+//     attack surface büyütüyor.
+//   - `userAgent String? @db.Text` — bot filter'ı için (gelecek owner
+//     analytics segment'i). Helper 500 char trim'liyor.
+model PlatformRedirectEvent {
+  id           String     @id @default(cuid())
+  restaurantId String     @map("restaurant_id")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  // IntegrationProvider literal'ı (CLAUDE.md §5 platform sistem) — Feedback.platform
+  // ile aynı kelime havuzu (google/yemeksepeti/getir/trendyol_go/tripadvisor/airbnb/booking/yandex).
+  provider     String
+  // 'qr' | 'direct' | 'table' | 'link' | 'delivery' (CLAUDE.md §13.4 menu
+  // analytics source taxonomy ile aynı, drift olmasın diye).
+  source       String?
+  userAgent    String?    @db.Text @map("user_agent")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@index([restaurantId, provider, createdAt])
+  @@index([restaurantId, createdAt])
+  @@map("platform_redirect_events")
 }
 
 // QR scan event (CLAUDE.md §34.x). Public review surface (`/r/[slug]`)
