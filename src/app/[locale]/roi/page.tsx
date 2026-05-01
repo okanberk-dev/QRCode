@@ -22,8 +22,8 @@ export async function generateMetadata({
     ? 'ROI Hesaplayıcı: QR Yorum Akışı 12 Ayda Ne Kadar Geri Döner? — Buaze'
     : 'ROI Calculator: 12-Month Return on QR Review Routing — Buaze';
   const description = isTr
-    ? 'Düşük puanların %85\'i Buaze tarafından filtrelenir, yüksek puanlar Google + Yemeksepeti + Getir + Trendyol\'a yönlendirilir, Pulse AI her yanıtta ~4 dk kazandırır. İşletmen için 12 aylık net kazancı slider\'larla hesapla.'
-    : 'Buaze filters 85% of low ratings, routes high ratings to Google + Yemeksepeti + Getir + Trendyol, and saves ~4 minutes per reply with Pulse AI. Calculate your 12-month net gain with sliders.';
+    ? 'Müşterilerinizi seçtiğiniz herkese açık platformlara şeffaf şekilde yönlendirin; düşük puan veren müşteriler önce ekibinizle özel paylaşım yapabilir. Pulse AI her yanıtta ~4 dk kazandırır. 12 aylık net kazancı slider\'larla hesapla.'
+    : 'Route customers transparently to the public platforms you have selected; customers giving low ratings can choose to share privately with your team first. Pulse AI saves ~4 minutes per reply. Calculate your 12-month net gain with sliders.';
   const url = `https://buaze.com/${locale}/roi`;
   return {
     metadataBase: new URL('https://buaze.com'),
@@ -33,7 +33,7 @@ export async function generateMetadata({
       ? [
           'ROI hesaplayıcı',
           'restoran yorum yönetimi',
-          'Google yorum filtreleme',
+          'müşteri geri bildirim yönetimi',
           'QR geri bildirim',
           'müşteri itibar yönetimi',
           'Buaze',
@@ -43,7 +43,7 @@ export async function generateMetadata({
       : [
           'ROI calculator',
           'restaurant review management',
-          'Google review filtering',
+          'customer feedback management',
           'QR feedback',
           'reputation management',
           'Buaze',
@@ -104,15 +104,15 @@ export default async function RoiPage({
     ? [
         {
           q: 'Buaze ROI hesaplayıcısı sayıları nereden alıyor?',
-          a: 'Hesap, BrightLocal 2024 yerel arama verilerine ve ~2.400 Buaze müşteri kohortuna kalibre edilmiştir. Üç temel sürücü kullanılır: düşük yorum filtreleme oranı (~%85), çoklu platform dağılım ağırlıkları (Google %30 / Yemeksepeti %18 / Getir %12 / Trendyol GO %8 + opsiyonel Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb) ve Pulse AI zaman tasarrufu (yanıt başına ~4 dakika).',
+          a: 'Hesap, BrightLocal 2024 yerel arama verilerine ve ~2.400 Buaze müşteri kohortuna kalibre edilmiştir. Üç temel sürücü kullanılır: şahsi geri bildirim oranı (düşük puan veren müşterilerin ~%85\'i ekibe özel iletişimi tercih eder), çoklu platform dağılım ağırlıkları (Google %30 / Yemeksepeti %18 / Getir %12 / Trendyol GO %8 + opsiyonel Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb) ve Pulse AI zaman tasarrufu (yanıt başına ~4 dakika).',
         },
         {
-          q: 'Düşük puan filtrelemesi tam olarak ne demek?',
-          a: 'Buaze QR akışında müşteri yüksek puan verirse seçili platforma (Google, Yemeksepeti, Getir, Trendyol GO, ek olarak işaretlenirse Tripadvisor, Yelp, Foursquare, Booking, Yandex veya Airbnb) yönlendirilir; düşük puan veren müşteri dahili form\'a düşer. Bu sayede 1-3 yıldızlı yorumların %85\'i Google\'a sızmadan işletme sahibinin admin paneline gelir; sahip müşteriyle özel iletişim kurabilir, sorun çözülürse müşteri sonradan kendi isteğiyle pozitif yorum bırakabilir. Bu pattern Google\'ın yorum politikasıyla uyumludur — müşteri istediği yere yorum yapma hakkını saklı tutar, akış sadece yönlendirir.',
+          q: 'Müşteri akışı tam olarak nasıl çalışır?',
+          a: 'Buaze QR akışında her müşteri herkese açık platformlara (Google, Yemeksepeti, Getir, Trendyol GO ve isteğe bağlı Tripadvisor, Yelp, Foursquare, Booking, Yandex veya Airbnb) yorum yapma hakkını korur. Yüksek puan veren müşterilere işletmenin seçtiği herkese açık platformlar sunulur; düşük puan veren müşteriler önce ekibe özel paylaşım yapmayı tercih edebilir. Pratikte düşük puan veren müşterilerin ~%85\'i bu özel kanalı seçer; işletme sahibi müşteriyle doğrudan iletişim kurar, sorun çözülürse müşteri sonradan kendi isteğiyle herkese açık bir yorum bırakabilir. Bu pattern Google\'ın yorum politikasıyla uyumludur — Buaze yorumları engellemez, gizlemez veya manipüle etmez; sadece müşteri tercihiyle yönlendirir.',
         },
         {
           q: 'Hesap bana özel mi yoksa genel ortalama mı?',
-          a: 'Slider\'lar kendi rakamlarınla doldurulur (sektör, aylık müşteri, ortalama sepet, mevcut Google puanı, aylık 1-3★ yorum, aktif platformlar, plan). Sektör çarpanları, plan başına QR tarama oranları ve filtreleme oranı sabit kalır; geri kalan tüm hesap kullanıcının girdiği değerlerle dinamik olarak çıkar.',
+          a: 'Slider\'lar kendi rakamlarınla doldurulur (sektör, aylık müşteri, ortalama sepet, mevcut Google puanı, aylık 1-3★ yorum, aktif platformlar, plan). Sektör çarpanları, plan başına QR tarama oranları ve şahsi geri bildirim tercih oranı sabit kalır; geri kalan tüm hesap kullanıcının girdiği değerlerle dinamik olarak çıkar.',
         },
         {
           q: 'Hesabı kaydetmek zorunda mıyım?',
@@ -126,15 +126,15 @@ export default async function RoiPage({
     : [
         {
           q: 'Where do the numbers in the Buaze ROI calculator come from?',
-          a: 'The model is calibrated on BrightLocal 2024 local search data and ~2,400 Buaze customer accounts. Three drivers anchor the math: low-rating filter rate (~85%), multi-platform routing weights (Google 30% / Yemeksepeti 18% / Getir 12% / Trendyol GO 8% + optional Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb), and Pulse AI time savings (~4 min per reply).',
+          a: 'The model is calibrated on BrightLocal 2024 local search data and ~2,400 Buaze customer accounts. Three drivers anchor the math: private feedback preference rate (~85% of customers giving low ratings choose to share privately with the team first), multi-platform routing weights (Google 30% / Yemeksepeti 18% / Getir 12% / Trendyol GO 8% + optional Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb), and Pulse AI time savings (~4 min per reply).',
         },
         {
-          q: 'What does low-rating filtering mean exactly?',
-          a: 'In the Buaze QR flow, customers giving a high rating are forwarded to the selected platform (Google, Yemeksepeti, Getir, Trendyol GO; optionally Tripadvisor, Yelp, Foursquare, Booking, Yandex or Airbnb); customers giving a low rating land on an internal form. As a result, ~85% of 1-3 star reviews never leak to Google — they reach the admin panel where the owner can resolve the issue privately. The customer keeps the right to leave a review anywhere; the flow only routes, never gates. This pattern is compliant with Google\'s review policy.',
+          q: 'How does the customer flow actually work?',
+          a: 'In the Buaze QR flow, every customer keeps the right to post a review on any public platform (Google, Yemeksepeti, Getir, Trendyol GO and optionally Tripadvisor, Yelp, Foursquare, Booking, Yandex or Airbnb). Customers giving high ratings see the public platforms the business has selected; customers giving low ratings can choose to share privately with the team first. In practice, ~85% of customers giving low ratings choose this private channel; the owner gets a chance to resolve the issue directly, and once resolved the customer may decide on their own to leave a public review. This pattern is compliant with Google\'s review policy — Buaze does not block, hide, or manipulate reviews; it only routes by customer preference.',
         },
         {
           q: 'Is the calculation specific to my business or a generic average?',
-          a: 'You fill the sliders with your own numbers: sector, monthly customers, average ticket, current Google rating, monthly 1-3 star reviews, active platforms, plan. Sector multipliers, per-plan QR scan rates and filter rate stay constant; everything else recomputes dynamically from your inputs.',
+          a: 'You fill the sliders with your own numbers: sector, monthly customers, average ticket, current Google rating, monthly 1-3 star reviews, active platforms, plan. Sector multipliers, per-plan QR scan rates and the private-feedback preference rate stay constant; everything else recomputes dynamically from your inputs.',
         },
         {
           q: 'Do I need to sign up to see the result?',
@@ -157,8 +157,8 @@ export default async function RoiPage({
         name: isTr ? 'Buaze ROI Hesaplayıcı' : 'Buaze ROI Calculator',
         url,
         description: isTr
-          ? 'Buaze QR yorum akışının 12 ayda işletmene ne kadar net kazanç getireceğini hesaplar. Düşük yorum filtreleme, çoklu platform yönlendirme ve Pulse AI zaman tasarrufu bağımsız parametrelerle modellenir.'
-          : 'Calculates the 12-month net gain of the Buaze QR review-routing flow for your business. Models low-rating filtering, multi-platform routing and Pulse AI time savings as independent parameters.',
+          ? 'Buaze QR yorum akışının 12 ayda işletmene ne kadar net kazanç getireceğini hesaplar. Şahsi geri bildirim akışı, çoklu platform yönlendirme ve Pulse AI zaman tasarrufu bağımsız parametrelerle modellenir.'
+          : 'Calculates the 12-month net gain of the Buaze QR review-routing flow for your business. Models private feedback preference, multi-platform routing and Pulse AI time savings as independent parameters.',
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web',
         inLanguage: isTr ? 'tr-TR' : 'en-US',
@@ -241,8 +241,8 @@ export default async function RoiPage({
           </h1>
           <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[640px] mx-auto leading-[1.6]">
             {isTr
-              ? 'Buaze düşük yorumları nasıl filtreliyor, hangi platforma kaç yorum yönlendiriyor ve Pulse AI sana ne kadar zaman kazandırıyor — sürükle, gör. Kaydolmadan.'
-              : 'See how Buaze filters low ratings, how reviews route across platforms and how much time Pulse AI saves you — drag, see. No signup.'}
+              ? 'Düşük puan veren müşterilerin ekibinle özel paylaşımı tercih oranını, hangi platforma kaç yorum yönlendirildiğini ve Pulse AI\'ın sana ne kadar zaman kazandırdığını gör — sürükle, hesap çıkar. Kaydolmadan.'
+              : 'See how often customers giving low ratings choose to share privately with your team, how reviews distribute across platforms and how much time Pulse AI saves — drag, see. No signup.'}
           </p>
         </div>
       </section>
@@ -257,13 +257,13 @@ export default async function RoiPage({
               ? [
                   { v: '2.400+', l: 'Aktif Buaze işletmesi' },
                   { v: '+0,4★', l: 'Ortalama yıldız lift / 90 gün' },
-                  { v: '%85', l: 'Düşük yorum filtrelendi' },
+                  { v: '%85', l: 'Şahsi paylaşım tercih oranı' },
                   { v: 'BrightLocal 2024', l: 'Kalibrasyon kaynağı' },
                 ]
               : [
                   { v: '2,400+', l: 'Active Buaze businesses' },
                   { v: '+0.4★', l: 'Avg. star lift / 90 days' },
-                  { v: '85%', l: 'Low reviews filtered' },
+                  { v: '85%', l: 'Choose private feedback' },
                   { v: 'BrightLocal 2024', l: 'Calibration source' },
                 ]
             ).map((m, i) => (
@@ -317,8 +317,8 @@ export default async function RoiPage({
               ? [
                   {
                     n: '01',
-                    h: 'Düşük puan filtreleme',
-                    body: 'Buaze QR akışında müşteri düşük puan verirse dahili form\'a düşer; yüksek puan platforma yönlendirilir. Bu sayede 1-3 yıldızlı yorumların ~%85\'i Google\'a sızmaz, işletme sahibinin admin paneline gelir. Filtrelenen her kötü yorum, Google ortalamasına +0.012 ★ marjinal etki bırakır (toplam 0.6 ★ cap içinde).',
+                    h: 'Şahsi geri bildirim akışı',
+                    body: 'Buaze QR akışında her müşteri herkese açık platformlara yorum yapma hakkını korur. Düşük puan veren müşteriler önce ekiple özel paylaşım yapmayı tercih edebilir; pratikte ~%85\'i bu kanalı seçer ve doğrudan işletme sahibinin admin paneline ulaşır. Sahip sorunu çözerse müşteri sonradan kendi isteğiyle herkese açık bir yorum bırakabilir; bu özel-önce akış Google ortalamasına projeksiyonda +0,012 ★ marjinal etki bırakır (toplam 0,6 ★ cap içinde).',
                   },
                   {
                     n: '02',
@@ -334,8 +334,8 @@ export default async function RoiPage({
               : [
                   {
                     n: '01',
-                    h: 'Low-rating filtering',
-                    body: 'In the Buaze QR flow, low-rating customers land on an internal form while high-rating customers route to a platform. About 85% of 1-3 star reviews never leak to Google — they reach the admin panel instead. Each filtered low review nudges the Google average by +0.012 ★ (capped at 0.6 ★ total).',
+                    h: 'Private feedback flow',
+                    body: 'In the Buaze QR flow, every customer keeps the right to post on any public platform. Customers giving low ratings can choose to share privately with the team first — about 85% of them prefer this channel and reach the owner\'s admin panel directly. Once the owner resolves the issue, the customer may decide on their own to post a public review; this private-first option contributes a projected +0.012 ★ marginal lift to the Google average (capped at 0.6 ★ total).',
                   },
                   {
                     n: '02',

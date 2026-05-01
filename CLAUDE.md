@@ -684,6 +684,33 @@ Response `meta.degraded: { joins, tags } | null` döner. UI amber banner ile "DB
 
 **Yap:** Marketing checkbox'a açıklayıcı label + açık link ile "İletişim iznini oku" modal — bilinçli onay görünür olsun.
 
+### 19.1.1 Compliance copy parity (2026-05 audit fix)
+
+`/google-compliance` sayfası "yorumları engellemez, gizlemez, yıldıza göre dallandırma yapmıyoruz" diyordu (Buaze pozisyonu net), ama marketing/onboarding/ROI copy'si **operasyonel gerçeği yansıtmıyordu** — "filter / filtreleme / 10x guarantee / 4★+ redirected" gibi review-gating-implying wording vardı. Audit (2026-05) 4 kritik bölgeyi tespit etti ve PR ile düzeltildi:
+
+| Yer | Eski (riski) | Yeni (parity) |
+|---|---|---|
+| `/[locale]/roi/page.tsx` meta description | "Düşük puanların %85'i Buaze tarafından **filtrelenir**" | "Düşük puan veren müşteriler önce ekiple özel paylaşım yapabilir; her müşteri istediği yere yorum yazma hakkını korur" |
+| `/[locale]/roi/page.tsx` keywords | "Google yorum filtreleme" / "Google review filtering" | "müşteri geri bildirim yönetimi" / "customer feedback management" |
+| `/[locale]/roi/page.tsx` FAQ + How-it-works h + body (4 yer) | "Düşük puan filtreleme", "%85'i Google'a **sızmadan**", "leak to Google" | "Şahsi geri bildirim akışı", "ekibe özel iletişimi tercih eder", "private-first option" |
+| `/[locale]/roi/page.tsx` trust strip stat | "%85 Düşük yorum filtrelendi" / "Low reviews filtered" | "%85 Şahsi paylaşım tercih oranı" / "Choose private feedback" |
+| `/[locale]/onboarding/page.tsx:233-234` platform step subtext | "Müşteriler 4★ ve üstü verirse seçtiğiniz platforma yönlendirilir" / "Customers giving 4★+ are redirected" | "Müşterilerinize bu platformlardaki herkese açık yorum bağlantılarını sunarız. Her müşteri istediği yere yorum yazma hakkını korur..." (rating-based routing language elimine edildi) |
+| `/[locale]/solutions/restaurants/page.tsx` (3 yer) | "ilk hafta Google yorumun **10 kat** artsın" / "**multiply 10x** in the first week" | "ilk 90 günde organik Google yorumlarınız ortalama %184 büyüyor (Buaze müşteri kohortu)" — guarantee claim yerine source-attributed cohort metric |
+
+**Yapma:**
+- "filter / filtreleme" wording — review platform context'inde Google review-gating tanımına yakın
+- Yıldız-bazlı routing'i otomatik karar gibi sun ("4★+ → Google'a yönlendirilir") — müşteri tercihini gizler
+- "X kat / Xx multiply" guarantee language — verifiable cohort data ile değiştir veya kaldır
+- "leak to Google" / "sızmadan" — selektif erişim implying
+
+**Yap:**
+- Müşteri agency vurgusu: "her müşteri istediği yere yorum yazma hakkını korur"
+- Tercih (preference) wording: "düşük puan veren müşterilerin %85'i ekibe özel iletişimi tercih eder"
+- Source-attributed metrics: "Buaze müşteri kohortunda ilk 90 günde ortalama +%184" (cohort + window + average — guarantee değil)
+- Compliance disclosure: "Buaze yorumları engellemez, gizlemez veya manipüle etmez; sadece müşteri tercihiyle yönlendirir"
+
+**Mevcut iyi kullanımlar (template):** `/google-compliance/page.tsx` policy card + `/r/[slug]` low-rating form transparency. Yeni copy yazılırken bunlardan referans al.
+
 ### 19.2 Default redirect platform — orphan default uyarısı
 
 `Restaurant.defaultRedirectPlatform` set edilmiş ama o platformun URL'i (`yemekSepetiUrl` / `getirYemekUrl` / `trendyolYemekUrl` / `googleReviewUrl`) sonradan silinmiş olabilir. Bu durumda public review surface (`/r/[slug]`) sessizce Google'a düşer — owner için **görünmez bug**: ayar tutmuyor sanır.
