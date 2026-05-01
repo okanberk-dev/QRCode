@@ -14,6 +14,7 @@ import {
   recordSent,
   type LifecycleEmailType,
 } from './email/lifecycle';
+import { notifyOpsOfMailFailure } from './email/ops-alert';
 import {
   sendQrNotDownloadedEmail,
   sendFirstFeedbackTipsEmail,
@@ -99,6 +100,7 @@ export async function applyLifecycleRules(
       }),
     results,
     log_recordParams: { userId: user.id, restaurantId: restaurant.id, type: 'qr_not_downloaded' },
+    recipient: user.email,
   });
 
   // Rule 2: first_feedback_tips
@@ -125,6 +127,7 @@ export async function applyLifecycleRules(
       }),
     results,
     log_recordParams: { userId: user.id, restaurantId: restaurant.id, type: 'first_feedback_tips' },
+    recipient: user.email,
   });
 
   // Rule 3: upgrade_suggestion
@@ -151,6 +154,7 @@ export async function applyLifecycleRules(
       }),
     results,
     log_recordParams: { userId: user.id, restaurantId: restaurant.id, type: 'upgrade_suggestion' },
+    recipient: user.email,
   });
 
   // Rule 4: inactive_reactivation
@@ -174,6 +178,7 @@ export async function applyLifecycleRules(
       }),
     results,
     log_recordParams: { userId: user.id, type: 'inactive_reactivation' },
+    recipient: user.email,
   });
 
   return results;
@@ -195,6 +200,37 @@ interface RunRuleParams {
     restaurantId?: string;
     type: LifecycleEmailType;
   };
+  /** Owner e-posta adresi — retry sonrası fail durumunda ops alert için. */
+  recipient: string;
+}
+
+// Retry config (Phase 11.33 — Wave 3+ B). Resend transient errors (5xx,
+// network) ~%80-90 1-2 attempt'ta kurtulur. Conservative tutuyoruz çünkü
+// cron sequential işliyor; agresif retry total cron timeout'unu artırır.
+//   - MAX_RETRIES = 1 → total 2 attempt (initial + 1 retry)
+//   - RETRY_DELAY_MS = 3000 → 3sn wait
+// Worst-case extra time: failed_count × 3sn. Resend uptime ~99.9% +
+// 1000 user × ~0.1% fail = ~1 fail × 3s = marjinal.
+const MAX_RETRIES = 1;
+const RETRY_DELAY_MS = 3000;
+
+async function sendWithRetry(
+  send: () => Promise<boolean>,
+): Promise<{ ok: boolean; attempts: number; lastError?: string }> {
+  let lastError: string | undefined;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const ok = await send();
+      if (ok) return { ok: true, attempts: attempt + 1 };
+      lastError = 'send returned false';
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : 'unknown';
+    }
+    if (attempt < MAX_RETRIES) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    }
+  }
+  return { ok: false, attempts: MAX_RETRIES + 1, lastError };
 }
 
 async function runRule(p: RunRuleParams): Promise<void> {
@@ -206,21 +242,34 @@ async function runRule(p: RunRuleParams): Promise<void> {
     p.results.push({ type: p.type, sent: false, skipped: 'already_sent' });
     return;
   }
-  try {
-    const ok = await p.send();
-    if (ok) {
-      await recordSent(p.log_recordParams);
-      p.results.push({ type: p.type, sent: true });
-    } else {
-      p.results.push({ type: p.type, sent: false, error: 'send_failed' });
-    }
-  } catch (err) {
-    p.results.push({
-      type: p.type,
-      sent: false,
-      error: err instanceof Error ? err.message : 'unknown',
-    });
+
+  const result = await sendWithRetry(p.send);
+
+  if (result.ok) {
+    await recordSent(p.log_recordParams);
+    p.results.push({ type: p.type, sent: true });
+    return;
   }
+
+  // Final fail (initial + 1 retry) — ops alert (CLAUDE.md §21.33).
+  // notifyOpsOfMailFailure rate-limited (10/template/5dk) — Resend outage
+  // sırasında inbox bombalanmaz. Helper içinde swallow edilir, throw etmez.
+  await notifyOpsOfMailFailure({
+    template: `lifecycle:${p.type}`,
+    recipient: p.recipient,
+    reason: result.lastError ?? 'send_failed_after_retry',
+    metadata: {
+      userId: p.log_recordParams.userId ?? null,
+      restaurantId: p.log_recordParams.restaurantId ?? null,
+      attempts: result.attempts,
+    },
+  });
+
+  p.results.push({
+    type: p.type,
+    sent: false,
+    error: result.lastError ?? 'send_failed_after_retry',
+  });
 }
 
 /**
