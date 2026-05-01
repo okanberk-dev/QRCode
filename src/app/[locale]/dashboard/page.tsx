@@ -551,7 +551,7 @@ export default async function DashboardPage({
           {last7Total.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
         </div>
         <div className="mt-3">
-          <BarChart data={trendData} height={100} />
+          <BarChart data={trendData} height={100} showValues />
         </div>
       </section>
 

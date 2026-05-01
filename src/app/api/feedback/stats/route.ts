@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
     const daysParam = req.nextUrl.searchParams.get('days');
     const restaurantIdParam = req.nextUrl.searchParams.get('restaurantId');
     const branchParam = req.nextUrl.searchParams.get('branch');
+    const platformParam = req.nextUrl.searchParams.get('platform');
     const today = new Date();
 
     // Build base date filter (supports: today/1, month, numeric days, all).
@@ -39,6 +40,12 @@ export async function GET(req: NextRequest) {
     // Branch filter
     if (branchParam && branchParam !== 'all') {
       dateFilter.branch = branchParam;
+    }
+
+    // Platform filter — tek WHERE eklemesi tüm aggregation'ları otomatik
+    // filtreler (count, groupBy, today, distribution). UI'da chip toggle.
+    if (platformParam && platformParam !== 'all') {
+      dateFilter.platform = platformParam;
     }
 
     // ─── IDOR Security Override ───

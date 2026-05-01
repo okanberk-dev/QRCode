@@ -113,6 +113,15 @@ export function Modal({
     // closure in the consumer doesn't trigger the focus-restore loop.
   }, []);
 
+  // Numeric size'ı viewport'a sığdır (SSR-safe — window sadece client'ta var,
+  // bu component zaten 'use client', ama yine de defansif kontrol).
+  const computedWidth =
+    typeof size === "number"
+      ? typeof window !== "undefined"
+        ? Math.min(size, window.innerWidth)
+        : size
+      : size;
+
   return (
     <div
       role="dialog"
@@ -120,29 +129,37 @@ export function Modal({
       aria-label={ariaLabel || (typeof title === "string" ? title : undefined)}
       onClick={onClose}
       className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
-      style={{ background: "rgba(10,10,10,0.4)", backdropFilter: "blur(8px)" }}
+      style={{
+        background: "rgba(10,10,10,0.4)",
+        backdropFilter: "blur(8px)",
+        // iOS Safari dynamic viewport fix: backdrop tüm görünür alana yayılır,
+        // dvh dolduğunda nav'a/safe-area'ya saygılı kalır.
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
     >
       <div
         ref={dialogRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="bz-fade-in bg-white w-full sm:w-auto focus:outline-none"
+        className="bz-fade-in bg-white w-full sm:w-auto focus:outline-none flex flex-col rounded-t-[20px] sm:rounded-[20px]"
         style={{
-          borderRadius: 20,
-          width: typeof size === "number" ? Math.min(size, window?.innerWidth ?? size) : size,
+          width: computedWidth,
           maxWidth: "92vw",
-          maxHeight: "92vh",
-          overflow: "auto",
+          // Mobile (bottom-sheet) için 90dvh + 92vh fallback. iOS Safari URL
+          // bar açıkken dvh visible viewport'a göre küçülür, modal taşmaz;
+          // dvh desteklemeyen eski tarayıcı vh'a düşer (`min` ignore eder).
+          maxHeight: "min(92vh, 90dvh)",
+          overflow: "hidden",
           boxShadow: "0 24px 80px -20px rgba(0,0,0,0.4)",
         }}
       >
         {(title || !hideCloseButton) && (
           <div
-            className="flex justify-between items-center"
+            className="flex justify-between items-center shrink-0"
             style={{ padding: "20px 24px", borderBottom: "1px solid #EDEDED" }}
           >
             {title && (
-              <div className="bz-h-tight" style={{ fontSize: 17 }}>
+              <div className="bz-h-tight pr-3 truncate" style={{ fontSize: 17 }}>
                 {title}
               </div>
             )}
@@ -150,7 +167,7 @@ export function Modal({
               <button
                 type="button"
                 aria-label="Close"
-                className="bz-btn-icon"
+                className="bz-btn-icon shrink-0"
                 onClick={onClose}
               >
                 <X size={16} />
@@ -158,10 +175,12 @@ export function Modal({
             )}
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div className="p-6 flex-1 overflow-y-auto overscroll-contain">
+          {children}
+        </div>
         {footer && (
           <div
-            className="flex justify-end gap-2 px-6 py-4"
+            className="flex justify-end gap-2 px-6 py-4 shrink-0"
             style={{ borderTop: "1px solid #EDEDED" }}
           >
             {footer}
