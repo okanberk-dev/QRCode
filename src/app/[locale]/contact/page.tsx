@@ -35,13 +35,23 @@ export default async function ContactPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
 
+  // NAP parity (CLAUDE.md §19.1.1 follow-up): root layout JSON-LD uses
+  // support@buaze.com + Workinton Maslak, Floor 4. Footer <address>
+  // block (PR-E) prints the same strings. Keep all three surfaces in
+  // sync so Google's NAP consistency rule does not flag the entity.
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Buaze',
     url: 'https://buaze.com',
-    email: 'hello@buaze.com',
-    address: { '@type': 'PostalAddress', addressLocality: 'Ataşehir, İstanbul', addressCountry: 'TR' },
+    email: 'support@buaze.com',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: 'Workinton Maslak, Floor 4',
+      addressLocality: 'Maslak',
+      addressRegion: 'İstanbul',
+      addressCountry: 'TR',
+    },
   };
 
   const contactItems = isTr
