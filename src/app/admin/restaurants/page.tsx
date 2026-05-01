@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { AlertBanner, Avatar, Badge, type BadgeKind, CardSkeleton, EmptyState, Modal, PageHeader, type TabItem, Tabs } from '@/components/ui';
 
 interface Restaurant {
@@ -54,9 +55,19 @@ function hasKvkk(r: Restaurant): boolean {
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [owners, setOwners] = useState<Owner[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'active' | 'passive' | 'all'>('active');
-  const [planFilter, setPlanFilter] = useState<'all' | 'pro' | 'growth' | 'starter' | 'trial'>('all');
+  // PR4 — URL-synced filters (Linear/Stripe pattern, useUrlFilter §28).
+  // status default 'active' (önceki davranış); search ve plan boş.
+  const filters = useUrlFilter({
+    search: '',
+    status: 'active' as 'active' | 'passive' | 'all',
+    plan: 'all' as 'all' | 'pro' | 'growth' | 'starter' | 'trial',
+  });
+  const searchTerm = filters.values.search;
+  const setSearchTerm = (v: string) => filters.set('search', v);
+  const statusFilter = filters.values.status;
+  const setStatusFilter = (v: 'active' | 'passive' | 'all') => filters.set('status', v);
+  const planFilter = filters.values.plan;
+  const setPlanFilter = (v: 'all' | 'pro' | 'growth' | 'starter' | 'trial') => filters.set('plan', v);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
