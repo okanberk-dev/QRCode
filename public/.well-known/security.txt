@@ -1,0 +1,8 @@
+# Buaze security disclosure policy (RFC 9116).
+# Renew Expires before 2027-05-01 — outdated security.txt is treated as
+# unmaintained by some scanners.
+
+Contact: mailto:info@buaze.com
+Expires: 2027-05-01T00:00:00.000Z
+Preferred-Languages: tr, en
+Canonical: https://buaze.com/.well-known/security.txt
