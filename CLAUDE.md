@@ -3220,7 +3220,7 @@ Tüm public sayfalar `application/ld+json` script bloğu taşır. Coverage matri
 
 | Sayfa türü | Schema | Yer |
 |---|---|---|
-| Home (`page.tsx`) | Organization + SoftwareApp + WebSite | `[locale]/layout.tsx` (root, tüm sayfalarda inherit) |
+| Home (`page.tsx`) | Organization + SoftwareApp + WebSite (root) + Service + FAQPage (page-level `@graph`, AEO 5 SSS, 2026-05) | root layout + `[locale]/page.tsx` |
 | Marketing core (about, contact, faq, pricing, press, roi, how-it-works) | WebPage + (FAQ varsa) FAQPage | per-page inline |
 | Google compliance (`/google-compliance`) | FAQPage (6 SSS, locale-aware) | per-page inline (PR-C, 2026-05) |
 | Blog (`blog/[slug]`) | Article + BreadcrumbList | per-page inline |
