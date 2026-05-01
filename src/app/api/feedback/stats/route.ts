@@ -235,30 +235,41 @@ export async function GET(req: NextRequest) {
       distribution[item.rating] = item._count;
     });
 
-    // Weekly trend (last 7 days) - Scan counts + Avg Rating
-    const trends: { date: string; count: number; avgRating: number }[] = [];
-    for (let i = 6; i >= 0; i--) {
+    // Weekly trend (last 7 days) — scan counts + avg rating per day.
+    // The previous implementation awaited each day sequentially (7 round-trips
+    // with 2 queries each = 14 total, serially blocked). Now we build the 7
+    // ranges up-front and fire all 14 queries in a single Promise.all so the
+    // total wall-time is one round-trip regardless of day count.
+    const dayBuckets = Array.from({ length: 7 }, (_, idx) => {
+      const offset = 6 - idx;
       const d = new Date();
-      d.setDate(d.getDate() - i);
+      d.setDate(d.getDate() - offset);
       const start = new Date(d.getFullYear(), d.getMonth(), d.getDate());
       const end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+      return { d, start, end };
+    });
 
-      const trendFilter: Prisma.FeedbackWhereInput = { ...dateFilter, createdAt: { gte: start, lt: end } };
-      
-      const [count, aggregations] = await Promise.all([
-        prisma.feedback.count({ where: trendFilter }),
-        prisma.feedback.aggregate({
-          _avg: { rating: true },
-          where: trendFilter
-        })
-      ]);
+    const trendResults = await Promise.all(
+      dayBuckets.map(({ start, end }) => {
+        const trendFilter: Prisma.FeedbackWhereInput = {
+          ...dateFilter,
+          createdAt: { gte: start, lt: end },
+        };
+        return Promise.all([
+          prisma.feedback.count({ where: trendFilter }),
+          prisma.feedback.aggregate({ _avg: { rating: true }, where: trendFilter }),
+        ]);
+      })
+    );
 
-      trends.push({
+    const trends = dayBuckets.map(({ d }, idx) => {
+      const [count, aggregations] = trendResults[idx];
+      return {
         date: d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
         count,
-        avgRating: parseFloat(aggregations._avg.rating?.toFixed(1) || '0')
-      });
-    }
+        avgRating: parseFloat(aggregations._avg.rating?.toFixed(1) || '0'),
+      };
+    });
 
     // Day of week distribution (Pzt, Sal, ...) - Limit to last 2000 for performance
     const dayDistributionRaw = await prisma.feedback.findMany({
