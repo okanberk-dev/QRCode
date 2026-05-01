@@ -144,6 +144,12 @@ export default function RestaurantsPage() {
     fetchOwners();
   }, []);
 
+  // Filter değişince seçim sıfırlanmalı; aksi halde görünmeyen row'lar
+  // selectedIds'de kalır ve bulk action onlara da uygulanır.
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [statusFilter, planFilter, searchTerm]);
+
   // Auto-generate slug from name
   const handleNameChange = (name: string) => {
     if (isManualSlug) {
