@@ -69,7 +69,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const focusId = searchParams.get('focus');
 
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
-  const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean } | null>(null);
+  const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean; aiDraft?: boolean; joinFilters?: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(focusId);
   // Tabs: design source (`OwnerFeedback` in owner-pages-1.jsx) buckets feedbacks
@@ -424,8 +424,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           <div className="px-3 pt-3">
             <AlertBanner kind="warn">
               {isTr
-                ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
-                : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}
+                ? degraded.joinFilters
+                  ? 'Filtreler (yanıt / işaret / atama) şu an pasif — DB senkronizasyonu bekleniyor.'
+                  : `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
+                : degraded.joinFilters
+                  ? 'Filters (reply / flag / assignment) temporarily unavailable — DB sync pending.'
+                  : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}
             </AlertBanner>
           </div>
         )}

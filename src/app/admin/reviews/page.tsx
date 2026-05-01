@@ -73,7 +73,7 @@ function AdminReviewsContent() {
 
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [counts, setCounts] = useState<CountsResp | null>(null);
-  const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean } | null>(null);
+  const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean; aiDraft?: boolean; joinFilters?: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(focusId);
   const [tab, setTab] = useState<'all' | 'new' | 'attention' | 'replied'>(focusId ? 'all' : 'all');
@@ -432,8 +432,12 @@ function AdminReviewsContent() {
       {degraded && (
         <AlertBanner kind="warn">
           {isTr
-            ? `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — veritabanı senkronizasyonu bekleniyor.`
-            : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — database sync pending.`}
+            ? degraded.joinFilters
+              ? 'Filtreler (yanıt / işaret / atama) şu an pasif — veritabanı senkronizasyonu bekleniyor.'
+              : `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — veritabanı senkronizasyonu bekleniyor.`
+            : degraded.joinFilters
+              ? 'Filters (reply / flag / assignment) temporarily unavailable — database sync pending.'
+              : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — database sync pending.`}
         </AlertBanner>
       )}
 
