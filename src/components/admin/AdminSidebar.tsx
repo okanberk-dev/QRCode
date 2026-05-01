@@ -265,6 +265,7 @@ export default function AdminSidebar() {
           { href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter' : 'Bülten Aboneleri' },
           { href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Campaigns' : 'Bülten Kampanyaları' },
           { href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri' },
+          { href: '/admin/dev/lifecycle-emails', icon: Mail, label: locale === 'en' ? 'Lifecycle' : 'Yaşam Döngüsü' },
         ],
       },
     );
