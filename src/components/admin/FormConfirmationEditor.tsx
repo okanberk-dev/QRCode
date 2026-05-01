@@ -53,6 +53,9 @@ const emptyNested = (): NestedContent => ({
 export default function FormConfirmationEditor({ locale }: Props) {
   const [activeVariant, setActiveVariant] = useState<FormType>('contact');
   const [nested, setNested] = useState<NestedContent>(emptyNested);
+  // savedNested: en son DB'den yüklenmiş veya başarıyla kaydedilmiş snapshot.
+  // isDirty kontrolü için referans (audit Fix B). MailTemplateEditor pattern'i.
+  const [savedNested, setSavedNested] = useState<NestedContent>(emptyNested);
   const [seeded, setSeeded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,6 +66,8 @@ export default function FormConfirmationEditor({ locale }: Props) {
   const [reloadKey, setReloadKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+
+  const isDirty = JSON.stringify(nested) !== JSON.stringify(savedNested);
 
   useEffect(() => {
     let alive = true;
@@ -90,6 +95,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
           }
         }
         setNested(next);
+        setSavedNested(next);
         setSeeded(true);
       } catch (e) {
         if (alive) setError((e as Error).message);
@@ -135,6 +141,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
         throw new Error(body.error || 'Kayıt başarısız');
       }
       setSeeded(true);
+      setSavedNested(nested);
       setInfo('Tüm 4 variant kaydedildi — değişiklik 1 dakika içinde tüm gönderimlere yansır.');
     } catch (e) {
       setError((e as Error).message);
@@ -181,10 +188,17 @@ export default function FormConfirmationEditor({ locale }: Props) {
     setError(null);
     setInfo(null);
     try {
+      // Audit Fix A: dirty editor → 4-variant draft içeriği test edilebilsin.
+      // Server'a nested object'i tüm variant'lar ile geçer.
       const res = await fetch('/api/admin/dev/send-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ template: 'form-confirmation', locale, variant: activeVariant }),
+        body: JSON.stringify({
+          template: 'form-confirmation',
+          locale,
+          variant: activeVariant,
+          ...(isDirty ? { draftContent: nested } : {}),
+        }),
       });
       // Defensive parse — see MailTemplateEditor for rationale.
       const body = await res.json().catch(() => ({}));
@@ -193,7 +207,8 @@ export default function FormConfirmationEditor({ locale }: Props) {
         const hint = body.hint ? ` — ${body.hint}` : '';
         throw new Error(`Test mail gönderimi başarısız: ${msg}${hint}`);
       }
-      setInfo(`Test mail gönderildi (${activeVariant}): ${body.to}`);
+      const draftHint = isDirty ? ' (taslak içerik)' : '';
+      setInfo(`Test mail gönderildi (${activeVariant}): ${body.to}${draftHint}`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -215,9 +230,19 @@ export default function FormConfirmationEditor({ locale }: Props) {
 
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
         <p className="pulse-eyebrow text-[#737373]">MAIL İÇERİĞİ / FORM-CONFIRMATION</p>
-        <h1 className="mt-1 flex items-center gap-3 text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.025em]" style={{ fontFamily: 'var(--font-heading)' }}>
+        <h1 className="mt-1 flex flex-wrap items-center gap-3 text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.025em]" style={{ fontFamily: 'var(--font-heading)' }}>
           <Mail size={20} strokeWidth={2} />
-          Form onayı · {isEnglish ? 'English' : 'Türkçe'}
+          <span>Form onayı · {isEnglish ? 'English' : 'Türkçe'}</span>
+          {isDirty && !loading && (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#FEF3C7] px-2.5 py-0.5 text-[11px] font-medium text-[#92400E] border border-[#FDE68A]"
+              style={{ fontFamily: 'var(--font-sans)' }}
+              title="Kaydedilmemiş değişiklikler var"
+            >
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#D97706]" />
+              Taslak
+            </span>
+          )}
         </h1>
         <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252]">
           4 form tipi (İletişim · Kariyer · ROI · Bülten) için ayrı içerik. Sekmeler arasında geçiş yap, her birinin alanlarını düzenle, sonra &quot;Kaydet&quot; tüm 4 variant&apos;ı tek seferde DB&apos;ye yazar.
@@ -318,8 +343,9 @@ export default function FormConfirmationEditor({ locale }: Props) {
             <button
               type="button"
               onClick={onSave}
-              disabled={saving}
-              className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#C6F24E] px-5 py-3 text-sm font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:opacity-50 sm:w-auto sm:text-xs"
+              disabled={saving || !isDirty}
+              title={!isDirty ? 'Değiştirecek bir şey yok' : 'Tüm 4 variant kaydedilir'}
+              className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#C6F24E] px-5 py-3 text-sm font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-xs"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
               Kaydet (4 variant)
@@ -332,6 +358,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
         templateKey="form-confirmation"
         locale={locale}
         open={historyOpen}
+        hasUnsavedDraft={isDirty}
         onClose={() => setHistoryOpen(false)}
         onReverted={() => {
           setReloadKey((k) => k + 1);

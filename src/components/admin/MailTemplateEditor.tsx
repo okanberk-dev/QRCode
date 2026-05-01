@@ -356,10 +356,17 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
     setError(null);
     setInfo(null);
     try {
+      // Audit Fix A: dirty editor → draft içeriği test edilebilsin (DB'ye
+      // yazmadan). Server setMailCopyDraft + try/finally ile geçici
+      // override uygular.
       const res = await fetch('/api/admin/dev/send-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ template: templateKey, locale }),
+        body: JSON.stringify({
+          template: templateKey,
+          locale,
+          ...(isDirty ? { draftContent: content } : {}),
+        }),
       });
       // Defensive parse: empty-body 500 can slip through on platform
       // edge cases. Fall back to status-derived message.
@@ -369,7 +376,8 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
         const hint = body.hint ? ` — ${body.hint}` : '';
         throw new Error(`Test mail gönderimi başarısız: ${msg}${hint}`);
       }
-      setInfo(`Test mail gönderildi: ${body.to}`);
+      const draftHint = isDirty ? ' (taslak içerik)' : '';
+      setInfo(`Test mail gönderildi: ${body.to}${draftHint}`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -493,6 +501,7 @@ function FlatTemplateEditor({ templateKey, locale }: Props) {
         templateKey={templateKey}
         locale={locale}
         open={historyOpen}
+        hasUnsavedDraft={isDirty}
         onClose={() => setHistoryOpen(false)}
         onReverted={() => {
           // Revert applied DB-side; re-fetch the editor's content so the

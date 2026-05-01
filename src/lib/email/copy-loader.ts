@@ -19,6 +19,12 @@ import { prisma } from '@/lib/prisma';
 
 type CacheEntry = { content: Record<string, unknown>; expiresAt: number };
 const cache = new Map<string, CacheEntry>();
+
+// Process-local draft store — admin "Önizle" / "Test mail at" akışları için
+// unsaved editor content'i geçici override eder. setMailCopyDraft sırasında
+// cache'i de bypass eder (loader önce buraya bakar). try/finally ile
+// clearMailCopyDraft çağrısı yapılır → state leak engellenir.
+const draftOverrides = new Map<string, Record<string, unknown>>();
 const TTL_MS = 60 * 1000;
 
 /**
@@ -66,6 +72,18 @@ export async function loadMailCopy<T extends Record<string, unknown>>(
   fallback: T,
 ): Promise<T> {
   const cacheKey = `${key}:${locale}`;
+
+  // Admin "Test mail at" + "Önizle" akışları için process-local draft
+  // override. send-test endpoint setMailCopyDraft → render → finally
+  // clearMailCopyDraft pattern'iyle kullanır. DB'ye yazmadan unsaved
+  // değişiklikleri test etme imkanı sağlar (audit Fix A).
+  // Race window: aynı (key, locale) için 2 paralel send-test → birinin
+  // draft'ı diğerini görür. Kabul edilen risk (admin-only, low traffic).
+  const draft = draftOverrides.get(cacheKey);
+  if (draft) {
+    return { ...fallback, ...draft } as T;
+  }
+
   const cached = cache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
     return { ...fallback, ...cached.content } as T;
@@ -122,4 +140,22 @@ export function invalidateMailCopyCache(key: MailTemplateKey, locale: MailLocale
 /** Test helper / admin-triggered full reset (no auth here — caller gates). */
 export function clearMailCopyCache() {
   cache.clear();
+}
+
+/**
+ * Set process-local draft override for a (key, locale). Used by admin
+ * preview/test endpoints to render unsaved editor content without writing
+ * to DB. ALWAYS pair with `clearMailCopyDraft` in a try/finally to avoid
+ * state leak. Caller responsibility — no auto-expire.
+ */
+export function setMailCopyDraft(
+  key: MailTemplateKey,
+  locale: MailLocale,
+  draft: Record<string, unknown>,
+) {
+  draftOverrides.set(`${key}:${locale}`, draft);
+}
+
+export function clearMailCopyDraft(key: MailTemplateKey, locale: MailLocale) {
+  draftOverrides.delete(`${key}:${locale}`);
 }
