@@ -466,7 +466,9 @@ export default function LegalDocumentEditorPage({
               <X size={16} />
             </button>
           </div>
-          <div className="max-h-[70vh] overflow-y-auto px-5 py-4">{previewBlocks}</div>
+          <div className="max-h-[70vh] overflow-y-auto px-5 py-4">
+            <article className="prose-legal">{previewBlocks}</article>
+          </div>
         </Modal>
       )}
 
