@@ -66,7 +66,34 @@ export default async function VsIndividualQrPage({
     },
   ];
 
+  const isTr = locale === 'tr';
+  const canonicalUrl = `https://buaze.com/${locale}/vs/individual-qr`;
+  const webPageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: isTr ? 'Buaze vs Bireysel QR' : 'Buaze vs Individual QR',
+    description: isTr
+      ? 'Ücretsiz statik QR kodları ve dinamik Buaze altyapısının karşılaştırması.'
+      : 'Comparison of free static QR codes vs the dynamic Buaze infrastructure.',
+    url: canonicalUrl,
+    inLanguage: isTr ? 'tr-TR' : 'en-US',
+    about: ['QR code services', 'Customer feedback platform', 'Reputation management'],
+    isPartOf: { '@type': 'WebSite', name: 'Buaze', url: 'https://buaze.com' },
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Karşılaştırma' : 'Compare', item: `https://buaze.com/${locale}/compare` },
+      { '@type': 'ListItem', position: 3, name: isTr ? 'Bireysel QR' : 'Individual QR', item: canonicalUrl },
+    ],
+  };
+
   return (
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
     <ComparisonLayout
       locale={locale}
       t={t}
@@ -81,5 +108,6 @@ export default async function VsIndividualQrPage({
         ? 'Ücretsiz oluşturulan statik QR kodları bir kez basıldıktan sonra değiştirilemez. Google Maps linkiniz güncellendiğinde veya şube yapınız değiştiğinde tüm baskıları çöpe atmanız gerekir.\nEn kritiği: Statik QR\'larda servis kurtarma kanalı yok. Misafir Google\'a yorum bırakırken aynı akışta işletmene özel geri bildirim de gönderemez; servis sorunlarını ekibine ulaşmadan önce kamuya açık ortamda öğrenirsin.'
         : 'Static QR codes created for free cannot be changed once printed. When your Google Maps link is updated or your branch structure changes, you have to throw away all prints.\nMost critically: Static QR codes have no service-recovery channel. A guest can leave a Google review, but cannot also share private feedback with your team in the same flow — so you learn about service issues in public, not internally.'}
     />
+    </>
   );
 }

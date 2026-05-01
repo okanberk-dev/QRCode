@@ -105,8 +105,48 @@ export default async function PulseAiPage({
     ? 'Merhaba Mert, 40 dakikalık bekleyiş için özür dileriz — ana yemekler için standart hedefimiz 18 dakika. Aynı akşam servis sorumlumuzla değerlendirdik ve mutfak-salon koordinasyonunda bir iyileştirme planı çıkardık. Bir sonraki ziyaretinde şef özel olarak ilgilenmek ister — rezervasyonda adımı hatırlatman yeterli.'
     : "Hi Mark, we're sorry about the 40-minute wait — our standard target for mains is 18 minutes. We reviewed the service that evening and drew up a kitchen-to-floor coordination fix the same night. On your next visit our head chef would like to look after you personally — just mention my name at booking.";
 
+  const canonicalUrl = `https://buaze.com/${locale}/features/pulse-ai`;
+  const softwareSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'Buaze Pulse AI',
+    description: isTr
+      ? 'Yorumlara saniyeler içinde markaya özel taslak yanıt üreten Buaze\'nin AI yanıt asistanı.'
+      : "Buaze's AI reply copilot — generates brand-aligned draft responses to reviews in seconds.",
+    applicationCategory: 'BusinessApplication',
+    applicationSubCategory: isTr ? 'Yorum yönetimi' : 'Review management',
+    operatingSystem: 'Web',
+    inLanguage: isTr ? 'tr-TR' : 'en-US',
+    url: canonicalUrl,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'TRY',
+      description: isTr
+        ? 'Buaze planlarına dahil — ek ücret yok.'
+        : 'Included with Buaze plans — no add-on fee.',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Buaze',
+      url: 'https://buaze.com',
+      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+    },
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://buaze.com/${locale}/features` },
+      { '@type': 'ListItem', position: 3, name: 'Buaze Pulse AI', item: canonicalUrl },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 

@@ -75,8 +75,34 @@ export default async function CareersPage({
         { title: 'Data Analyst', team: 'Product', location: 'Remote (EU)', type: 'Full-time' },
       ];
 
+  const canonicalUrl = `https://buaze.com/${locale}/careers`;
+  const itemListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: isTr ? 'Açık pozisyonlar' : 'Open positions',
+    inLanguage: isTr ? 'tr-TR' : 'en-US',
+    url: canonicalUrl,
+    numberOfItems: roles.length,
+    itemListElement: roles.map((role, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: role.title,
+      description: `${role.team} · ${role.location} · ${role.type}`,
+    })),
+  };
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Kariyer' : 'Careers', item: canonicalUrl },
+    ],
+  };
+
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 
