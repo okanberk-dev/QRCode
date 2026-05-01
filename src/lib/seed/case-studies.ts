@@ -26,8 +26,8 @@ export const CASE_STUDY_SEEDS: CaseStudySeed[] = [
         en: 'Per-table QR in a 40-cover venue plus a platform-select QR on every receipt. Customers choose: Google, Yemeksepeti, Getir, Trendyol GO.',
       },
       {
-        tr: 'AI Co-Pilot düşük puana 12 dakika içinde Türkçe taslak yanıt üretiyor — sahibi onayla gönderiyor, tüm işlem 30 saniye.',
-        en: 'AI Co-Pilot drafts a Turkish reply to low ratings within 12 minutes — the owner approves and sends in 30 seconds.',
+        tr: 'Pulse AI düşük puana 12 dakika içinde Türkçe taslak yanıt üretiyor — sahibi onayla gönderiyor, tüm işlem 30 saniye.',
+        en: 'Pulse AI drafts a Turkish reply to low ratings within 12 minutes — the owner approves and sends in 30 seconds.',
       },
       {
         tr: "Ayda 340 yeni yorum, 94'ü Google Maps'e akıyor. Organik görünürlük artışı = yeni rezervasyon akışı.",
@@ -100,8 +100,8 @@ export const CASE_STUDY_SEEDS: CaseStudySeed[] = [
         en: 'Per-treatment QR campaigns (dermatology, laser, filler, botox) — surveys carry treatment-specific questions.',
       },
       {
-        tr: 'AI Co-Pilot hasta adını + işlem tipini + puanı alıp klinik tonuna uygun, aşırı tanıtıcı olmayan profesyonel yanıt yazıyor.',
-        en: 'AI Co-Pilot pulls the patient name + treatment + rating and writes a professional, on-brand reply that stays within medical-advertising guidelines.',
+        tr: 'Pulse AI hasta adını + işlem tipini + puanı alıp klinik tonuna uygun, aşırı tanıtıcı olmayan profesyonel yanıt yazıyor.',
+        en: 'Pulse AI pulls the patient name + treatment + rating and writes a professional, on-brand reply that stays within medical-advertising guidelines.',
       },
       {
         tr: 'KVKK paneli: hasta yalnız "paylaşıma izin veriyorum" tik\'i attıysa yorum Google\'a yönlendiriliyor.',
@@ -123,8 +123,8 @@ export const CASE_STUDY_SEEDS: CaseStudySeed[] = [
     heroImage: 'https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=1800&q=85',
     heroTr: "Brunch yoğunluğunda hesap fişine basılı QR akışı; üç ayda Google yorum hacmi 5 katına çıktı, ortalama puan 4.3'ten 4.7'ye yükseldi.",
     heroEn: 'A receipt-printed QR woven into the brunch rush; in three months Google review volume 5x’d and the average score rose from 4.3 to 4.7.',
-    subtitleTr: "Sabah, öğle ve hafta sonu için ayrı kampanyalar — şube performansı tek panelde, yorum yanıt akışı AI Co-Pilot ile destekli.",
-    subtitleEn: 'Separate campaigns for breakfast, lunch and weekend rushes — branch performance in one panel, replies drafted by AI Co-Pilot.',
+    subtitleTr: "Sabah, öğle ve hafta sonu için ayrı kampanyalar — şube performansı tek panelde, yorum yanıt akışı Pulse AI ile destekli.",
+    subtitleEn: 'Separate campaigns for breakfast, lunch and weekend rushes — branch performance in one panel, replies drafted by Pulse AI.',
     stats: [
       { label: { tr: 'GOOGLE ORT.', en: 'GOOGLE AVG.' }, value: '4.3 → 4.7' },
       { label: { tr: 'YORUM HACMİ', en: 'REVIEW VOLUME' }, value: '5×' },
@@ -141,8 +141,8 @@ export const CASE_STUDY_SEEDS: CaseStudySeed[] = [
         en: 'Separate campaigns for breakfast, lunch and weekend reveal which service window the same menu performs strongest in, branch by branch.',
       },
       {
-        tr: 'AI Co-Pilot düşük puanlı geri bildirime beş dakika içinde Türkçe taslak hazırlıyor; yönetici onayla göndermeden önce müşteri kapıdan çıkmamış oluyor.',
-        en: 'AI Co-Pilot drafts a Turkish reply to low-rated feedback within five minutes; a manager can approve and send before the customer leaves the venue.',
+        tr: 'Pulse AI düşük puanlı geri bildirime beş dakika içinde Türkçe taslak hazırlıyor; yönetici onayla göndermeden önce müşteri kapıdan çıkmamış oluyor.',
+        en: 'Pulse AI drafts a Turkish reply to low-rated feedback within five minutes; a manager can approve and send before the customer leaves the venue.',
       },
     ],
     quoteTr: "Üç ay önce Google'da 4.3 olan ortalamamız bugün 4.7. Daha kıymetlisi: problemleri masada çözebiliyoruz, çünkü misafir hesabı kapatırken not bize ulaşıyor.",

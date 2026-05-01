@@ -105,7 +105,7 @@ function buildPrompt({ data, locale }: InsightInput): string {
       `- Yeni müşteri: ${fmt(data.newCustomers)}/ay`,
       `- Aylık ek gelir: ${c}${fmt(Math.round(data.monthlyUplift))}`,
       `- Yıllık net kazanç: ${c}${fmt(Math.round(data.netGain))} (${data.roiMultiple.toFixed(1)}× ROI)`,
-      `- AI Co-Pilot tasarrufu: ${data.aiHoursSaved.toFixed(1)} sa/ay`,
+      `- Pulse AI tasarrufu: ${data.aiHoursSaved.toFixed(1)} sa/ay`,
       data.paybackMonths ? `- Plan amortismanı: ~${data.paybackMonths} ay` : '- Plan amortismanı belirgin değil',
       '',
       'Bu işletmeye özel 3 cümlelik somut analiz, 1 cümlelik en güçlü kaldıraç ve 3 öncelik aksiyonu üret. JSON yanıt ver.',
@@ -126,7 +126,7 @@ function buildPrompt({ data, locale }: InsightInput): string {
     `- New customers: ${fmt(data.newCustomers)}/mo`,
     `- Monthly uplift: ${c}${fmt(Math.round(data.monthlyUplift))}`,
     `- Annual net gain: ${c}${fmt(Math.round(data.netGain))} (${data.roiMultiple.toFixed(1)}× ROI)`,
-    `- AI Co-Pilot time saved: ${data.aiHoursSaved.toFixed(1)} h/mo`,
+    `- Pulse AI time saved: ${data.aiHoursSaved.toFixed(1)} h/mo`,
     data.paybackMonths ? `- Plan payback: ~${data.paybackMonths} months` : '- Plan payback not significant',
     '',
     'Produce a 3-sentence concrete analysis specific to this business, 1-sentence strongest leverage, and 3 priority actions. Respond in JSON.',
@@ -180,7 +180,7 @@ function buildTemplateInsight({ data, locale }: InsightInput): RoiInsight {
   // Hangi kaldıraç en yüksek? Heuristic önceliklendirme:
   // - lowRatingsPerMonth >= 8 → filtreleme baskın
   // - currentGoogle <= 4.0 → headroom + filtreleme her ikisi
-  // - reviewers >= 100 → AI Co-Pilot zaman tasarrufu öne çıkar
+  // - reviewers >= 100 → Pulse AI zaman tasarrufu öne çıkar
   // - aksi → çoklu platform yönlendirme
   let leverageKey: 'filter' | 'rating' | 'ai' | 'platform' = 'platform';
   if (data.lowRatingsPerMonth >= 8) leverageKey = 'filter';
@@ -193,12 +193,12 @@ function buildTemplateInsight({ data, locale }: InsightInput): RoiInsight {
       highlight: {
         filter: `En yüksek kaldıraç: ayda ${fmt(data.filteredLowReviews)} kötü yorumun Google'a sızmadan filtrelenmesi — itibar koruması doğrudan dönüşüme yansır.`,
         rating: `En yüksek kaldıraç: mevcut ${data.currentGoogle.toFixed(1)} ★ ortalamasının headroom'u büyük; Buaze ile 90 gün içinde ${data.projectedGoogle.toFixed(1)}'e ulaşmak realistik.`,
-        ai: `En yüksek kaldıraç: AI Co-Pilot ile aylık ${data.aiHoursSaved.toFixed(1)} saatlik yanıt süresi tasarrufu — ekibin yorum yanıtlamak yerine müşteri deneyimine zaman ayırır.`,
+        ai: `En yüksek kaldıraç: Pulse AI ile aylık ${data.aiHoursSaved.toFixed(1)} saatlik yanıt süresi tasarrufu — ekibin yorum yanıtlamak yerine müşteri deneyimine zaman ayırır.`,
         platform: `En yüksek kaldıraç: yüksek puanlı yorum akışının ${data.platforms.length} platforma normalize dağılımı — Google dışı kanallarda da görünürlük artar.`,
       }[leverageKey],
       nextSteps: [
         'İlk 7 gün: QR\'ı masa altlığı + kasa yanına yerleştir, kapı çıkışına ekran üstü tabela; tarama oranını ölç.',
-        `Plan ${plan} → ${c}${fmt(data.planPrice)}/ay; AI Co-Pilot taslak yanıtlarını ilk 2 hafta her yorum için onayla — model işletme tonuna kalibre olsun.`,
+        `Plan ${plan} → ${c}${fmt(data.planPrice)}/ay; Pulse AI taslak yanıtlarını ilk 2 hafta her yorum için onayla — model işletme tonuna kalibre olsun.`,
         `Aktif platformların (${data.platforms.length} adet) URL'lerini admin panelden gir; yüksek puanlı akışın doğru yerlere gitmesi için.`,
       ],
     },
@@ -207,12 +207,12 @@ function buildTemplateInsight({ data, locale }: InsightInput): RoiInsight {
       highlight: {
         filter: `Strongest leverage: filtering ${fmt(data.filteredLowReviews)} low reviews/month from leaking to Google — reputation protection translates directly into bookings.`,
         rating: `Strongest leverage: your ${data.currentGoogle.toFixed(1)} ★ has meaningful headroom; reaching ${data.projectedGoogle.toFixed(1)} within 90 days is realistic with Buaze.`,
-        ai: `Strongest leverage: AI Co-Pilot saves ${data.aiHoursSaved.toFixed(1)} hours/month of reply work — the team spends that time on guest experience instead.`,
+        ai: `Strongest leverage: Pulse AI saves ${data.aiHoursSaved.toFixed(1)} hours/month of reply work — the team spends that time on guest experience instead.`,
         platform: `Strongest leverage: high-rating flow distributes across ${data.platforms.length} platforms — visibility grows beyond Google alone.`,
       }[leverageKey],
       nextSteps: [
         'Days 1-7: place QR on table tents + cashier + exit; measure scan rate.',
-        `${plan} plan at ${c}${fmt(data.planPrice)}/mo — approve every AI Co-Pilot draft for the first 2 weeks so the model calibrates to your tone.`,
+        `${plan} plan at ${c}${fmt(data.planPrice)}/mo — approve every Pulse AI draft for the first 2 weeks so the model calibrates to your tone.`,
         `Add URLs for all ${data.platforms.length} active platforms in the admin panel so high-rating flow routes correctly.`,
       ],
     },

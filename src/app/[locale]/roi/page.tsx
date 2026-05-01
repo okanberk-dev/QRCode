@@ -22,8 +22,8 @@ export async function generateMetadata({
     ? 'ROI Hesaplayıcı: QR Yorum Akışı 12 Ayda Ne Kadar Geri Döner? — Buaze'
     : 'ROI Calculator: 12-Month Return on QR Review Routing — Buaze';
   const description = isTr
-    ? 'Düşük puanların %85\'i Buaze tarafından filtrelenir, yüksek puanlar Google + Yemeksepeti + Getir + Trendyol\'a yönlendirilir, AI Co-Pilot her yanıtta ~4 dk kazandırır. İşletmen için 12 aylık net kazancı slider\'larla hesapla.'
-    : 'Buaze filters 85% of low ratings, routes high ratings to Google + Yemeksepeti + Getir + Trendyol, and saves ~4 minutes per reply with AI Co-Pilot. Calculate your 12-month net gain with sliders.';
+    ? 'Düşük puanların %85\'i Buaze tarafından filtrelenir, yüksek puanlar Google + Yemeksepeti + Getir + Trendyol\'a yönlendirilir, Pulse AI her yanıtta ~4 dk kazandırır. İşletmen için 12 aylık net kazancı slider\'larla hesapla.'
+    : 'Buaze filters 85% of low ratings, routes high ratings to Google + Yemeksepeti + Getir + Trendyol, and saves ~4 minutes per reply with Pulse AI. Calculate your 12-month net gain with sliders.';
   const url = `https://buaze.com/${locale}/roi`;
   return {
     metadataBase: new URL('https://buaze.com'),
@@ -104,7 +104,7 @@ export default async function RoiPage({
     ? [
         {
           q: 'Buaze ROI hesaplayıcısı sayıları nereden alıyor?',
-          a: 'Hesap, BrightLocal 2024 yerel arama verilerine ve ~2.400 Buaze müşteri kohortuna kalibre edilmiştir. Üç temel sürücü kullanılır: düşük yorum filtreleme oranı (~%85), çoklu platform dağılım ağırlıkları (Google %30 / Yemeksepeti %18 / Getir %12 / Trendyol GO %8 + opsiyonel Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb) ve AI Co-Pilot zaman tasarrufu (yanıt başına ~4 dakika).',
+          a: 'Hesap, BrightLocal 2024 yerel arama verilerine ve ~2.400 Buaze müşteri kohortuna kalibre edilmiştir. Üç temel sürücü kullanılır: düşük yorum filtreleme oranı (~%85), çoklu platform dağılım ağırlıkları (Google %30 / Yemeksepeti %18 / Getir %12 / Trendyol GO %8 + opsiyonel Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb) ve Pulse AI zaman tasarrufu (yanıt başına ~4 dakika).',
         },
         {
           q: 'Düşük puan filtrelemesi tam olarak ne demek?',
@@ -119,14 +119,14 @@ export default async function RoiPage({
           a: 'Hayır. Slider\'ları sürüklemek için kayıt gerekmez. İstersen sayfanın altındaki opsiyonel formdan e-posta + işletme adı bırakarak detaylı 12 aylık projeksiyon PDF\'i ve 1-1 kurulum daveti talep edebilirsin; ekibimiz 2 saat içinde döner.',
         },
         {
-          q: 'AI Co-Pilot zaman tasarrufu nasıl hesaplanıyor?',
-          a: 'Manuel yanıt yazmak ortalama 5-7 dakika sürerken AI Co-Pilot taslak + düzeltme akışı 1-2 dakikaya iner; yanıt başına ~4 dakika tasarruf. Hesap, planın getireceği aylık yorum sayısı × 4 dakika formülünü kullanır ve sonucu saat olarak gösterir.',
+          q: 'Pulse AI zaman tasarrufu nasıl hesaplanıyor?',
+          a: 'Manuel yanıt yazmak ortalama 5-7 dakika sürerken Pulse AI taslak + düzeltme akışı 1-2 dakikaya iner; yanıt başına ~4 dakika tasarruf. Hesap, planın getireceği aylık yorum sayısı × 4 dakika formülünü kullanır ve sonucu saat olarak gösterir.',
         },
       ]
     : [
         {
           q: 'Where do the numbers in the Buaze ROI calculator come from?',
-          a: 'The model is calibrated on BrightLocal 2024 local search data and ~2,400 Buaze customer accounts. Three drivers anchor the math: low-rating filter rate (~85%), multi-platform routing weights (Google 30% / Yemeksepeti 18% / Getir 12% / Trendyol GO 8% + optional Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb), and AI Co-Pilot time savings (~4 min per reply).',
+          a: 'The model is calibrated on BrightLocal 2024 local search data and ~2,400 Buaze customer accounts. Three drivers anchor the math: low-rating filter rate (~85%), multi-platform routing weights (Google 30% / Yemeksepeti 18% / Getir 12% / Trendyol GO 8% + optional Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb), and Pulse AI time savings (~4 min per reply).',
         },
         {
           q: 'What does low-rating filtering mean exactly?',
@@ -141,8 +141,8 @@ export default async function RoiPage({
           a: 'No. Dragging sliders requires no signup. Optionally, the form at the bottom of the page accepts email + business name in exchange for a detailed 12-month PDF projection and a 1-1 setup invite; our team replies within 2 hours.',
         },
         {
-          q: 'How is the AI Co-Pilot time saving calculated?',
-          a: 'Writing a manual reply averages 5-7 minutes; AI Co-Pilot drafting + edit loop drops it to 1-2 minutes — about 4 minutes saved per reply. The calculator multiplies projected monthly reviews × 4 minutes and reports the result in hours.',
+          q: 'How is the Pulse AI time saving calculated?',
+          a: 'Writing a manual reply averages 5-7 minutes; Pulse AI drafting + edit loop drops it to 1-2 minutes — about 4 minutes saved per reply. The calculator multiplies projected monthly reviews × 4 minutes and reports the result in hours.',
         },
       ];
 
@@ -157,8 +157,8 @@ export default async function RoiPage({
         name: isTr ? 'Buaze ROI Hesaplayıcı' : 'Buaze ROI Calculator',
         url,
         description: isTr
-          ? 'Buaze QR yorum akışının 12 ayda işletmene ne kadar net kazanç getireceğini hesaplar. Düşük yorum filtreleme, çoklu platform yönlendirme ve AI Co-Pilot zaman tasarrufu bağımsız parametrelerle modellenir.'
-          : 'Calculates the 12-month net gain of the Buaze QR review-routing flow for your business. Models low-rating filtering, multi-platform routing and AI Co-Pilot time savings as independent parameters.',
+          ? 'Buaze QR yorum akışının 12 ayda işletmene ne kadar net kazanç getireceğini hesaplar. Düşük yorum filtreleme, çoklu platform yönlendirme ve Pulse AI zaman tasarrufu bağımsız parametrelerle modellenir.'
+          : 'Calculates the 12-month net gain of the Buaze QR review-routing flow for your business. Models low-rating filtering, multi-platform routing and Pulse AI time savings as independent parameters.',
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web',
         inLanguage: isTr ? 'tr-TR' : 'en-US',
@@ -241,8 +241,8 @@ export default async function RoiPage({
           </h1>
           <p className="mt-5 text-[15px] sm:text-[16px] text-[#525252] max-w-[640px] mx-auto leading-[1.6]">
             {isTr
-              ? 'Buaze düşük yorumları nasıl filtreliyor, hangi platforma kaç yorum yönlendiriyor ve AI Co-Pilot sana ne kadar zaman kazandırıyor — sürükle, gör. Kaydolmadan.'
-              : 'See how Buaze filters low ratings, how reviews route across platforms and how much time AI Co-Pilot saves you — drag, see. No signup.'}
+              ? 'Buaze düşük yorumları nasıl filtreliyor, hangi platforma kaç yorum yönlendiriyor ve Pulse AI sana ne kadar zaman kazandırıyor — sürükle, gör. Kaydolmadan.'
+              : 'See how Buaze filters low ratings, how reviews route across platforms and how much time Pulse AI saves you — drag, see. No signup.'}
           </p>
         </div>
       </section>
@@ -327,8 +327,8 @@ export default async function RoiPage({
                   },
                   {
                     n: '03',
-                    h: 'AI Co-Pilot zaman tasarrufu',
-                    body: 'Manuel yanıt yazmak ortalama 5-7 dakika sürer; AI Co-Pilot taslak + düzeltme akışı bunu 1-2 dakikaya indirir. Hesap, planın getireceği aylık yorum sayısı × 4 dakika formülüyle saat tasarrufunu çıkarır.',
+                    h: 'Pulse AI zaman tasarrufu',
+                    body: 'Manuel yanıt yazmak ortalama 5-7 dakika sürer; Pulse AI taslak + düzeltme akışı bunu 1-2 dakikaya indirir. Hesap, planın getireceği aylık yorum sayısı × 4 dakika formülüyle saat tasarrufunu çıkarır.',
                   },
                 ]
               : [
@@ -344,8 +344,8 @@ export default async function RoiPage({
                   },
                   {
                     n: '03',
-                    h: 'AI Co-Pilot time savings',
-                    body: 'Manual replies average 5-7 minutes; AI Co-Pilot draft + edit drops it to 1-2 minutes. The calculator multiplies projected monthly reviews × 4 minutes saved and reports hours per month.',
+                    h: 'Pulse AI time savings',
+                    body: 'Manual replies average 5-7 minutes; Pulse AI draft + edit drops it to 1-2 minutes. The calculator multiplies projected monthly reviews × 4 minutes saved and reports hours per month.',
                   },
                 ]
             ).map((step) => (

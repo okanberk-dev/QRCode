@@ -193,12 +193,12 @@ export async function POST(req: NextRequest) {
         locale === 'tr'
           ? [
               'QR\'ı masa altlığı + kasa yanına yerleştir; ilk 7 gün tarama oranını ölç.',
-              'AI Co-Pilot taslak yanıtlarını ilk 2 hafta her yorum için onayla — model işletme tonuna kalibre olsun.',
+              'Pulse AI taslak yanıtlarını ilk 2 hafta her yorum için onayla — model işletme tonuna kalibre olsun.',
               `Aktif platformların URL'lerini admin panelden gir; yüksek puan akışı doğru yere gitsin.`,
             ]
           : [
               'Place QR on table tents + cashier; measure scan rate during first 7 days.',
-              'Approve every AI Co-Pilot draft for the first 2 weeks so the model calibrates to your tone.',
+              'Approve every Pulse AI draft for the first 2 weeks so the model calibrates to your tone.',
               'Add URLs for all active platforms in admin so high-rating flow routes correctly.',
             ],
       source: 'template',

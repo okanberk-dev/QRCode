@@ -176,7 +176,7 @@ src/
 │   ├── firebase-{client,admin}.ts    # Google Sign-in (sadece OAuth, §4)
 │   ├── recaptcha{,-client}.ts # reCAPTCHA Enterprise score-based bot guard
 │   ├── rate-limit.ts          # Upstash distributed (§14.2)
-│   ├── openai.ts              # AI Co-Pilot (§15)
+│   ├── openai.ts              # Pulse AI (§15)
 │   ├── analytics-{session,heuristics}.ts  # Menu analytics (§13)
 │   └── ...                    # client-image, format, help-articles, sectors, totp, vb.
 ├── hooks/                     # Paylaşılan React hooks
@@ -508,7 +508,7 @@ Public path (`/api/restaurants?slug=`) zaten Faz 1'de süpürüldü (PR #118). S
 - `NEXT_PUBLIC_APP_URL` — QR URL'lerinde kullanılır
 
 **Opsiyonel:**
-- `OPENAI_API_KEY` — AI Co-Pilot yanıt önerileri için (§15). Yoksa endpoint deterministik şablona düşer, UI çalışmaya devam eder.
+- `OPENAI_API_KEY` — Pulse AI yanıt önerileri için (§15). Yoksa endpoint deterministik şablona düşer, UI çalışmaya devam eder.
 - `OPENAI_MODEL` — Varsayılan `gpt-4o-mini`.
 - `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` — error tracking (§26). Yoksa SDK no-op çalışır. Vercel Sentry Marketplace integration tüm Sentry env'lerini (`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` dahil) otomatik provision eder.
 - `NEXT_PUBLIC_FIREBASE_*` (4 env) — Google Sign-in için Firebase client config. Yoksa Google OAuth butonu disable, e-posta+şifre auth çalışmaya devam eder.
@@ -532,7 +532,7 @@ Public path (`/api/restaurants?slug=`) zaten Faz 1'de süpürüldü (PR #118). S
 
 ---
 
-## 15. AI Co-Pilot (OpenAI)
+## 15. Buaze Pulse AI (OpenAI)
 
 Yorum yanıt taslağı için "Taslak oluştur" butonu (`/admin/reviews` + `/[locale]/dashboard/feedbacks`).
 
@@ -553,7 +553,7 @@ Yorum yanıt taslağı için "Taslak oluştur" butonu (`/admin/reviews` + `/[loc
 
 `.design/` klasörü Claude Design'dan gelen JSX prototipleri + canvas HTML + chat log içerir (22 dosya, git-tracked: root 3 + `pulse/` 6 + `site/` 13). Pulse marka kimliği (graphite/lime/pure white) + ~38 sayfalık site tasarımı kaynağıdır.
 
-**Kritik kural:** `.design/*.jsx` **doğrudan `src/`'ye kopyalanmaz** — yalnız referans olarak okunur. Pulse token'lar zaten `globals.css` `@theme {}` bloğunda, font'lar `src/app/layout.tsx`'te yüklü, logo `src/components/marketing/BuazeLogo.tsx`. Uygulanan kararlar §11 (renk + typography) + §12 (menü temaları) + §15 (AI Co-Pilot) + §17 (utility class'ları).
+**Kritik kural:** `.design/*.jsx` **doğrudan `src/`'ye kopyalanmaz** — yalnız referans olarak okunur. Pulse token'lar zaten `globals.css` `@theme {}` bloğunda, font'lar `src/app/layout.tsx`'te yüklü, logo `src/components/marketing/BuazeLogo.tsx`. Uygulanan kararlar §11 (renk + typography) + §12 (menü temaları) + §15 (Pulse AI) + §17 (utility class'ları).
 
 **Font drift notu:** `.design-pulse-2026/project/tokens.css` `--font-heading: "Inter Tight"` önerir; uygulama kodu (CLAUDE.md §11 + `globals.css`) bilinçli olarak **Space Grotesk** kullanır. Tasarım bundle'ındaki font değeri reference, **uygulanmaz**.
 
@@ -583,7 +583,7 @@ Yorum yanıt taslağı için "Taslak oluştur" butonu (`/admin/reviews` + `/[loc
 
 ## 17. Pulse Redesign — Kalıcı Çıktılar
 
-Pulse design 15 draft PR'da uygulandı (PR #39 → #53). Tarihsel commit detayları için `git log` + `design.md`. Aşağıda **kalıcı kararlar** — tasarım kararları için §11, menü için §12, AI Co-Pilot için §15.
+Pulse design 15 draft PR'da uygulandı (PR #39 → #53). Tarihsel commit detayları için `git log` + `design.md`. Aşağıda **kalıcı kararlar** — tasarım kararları için §11, menü için §12, Pulse AI için §15.
 
 22 dosya `.design/` altında (JSX prototipleri + canvas HTML + chat log). **Asla `src/`'ye kopyalanmaz** — yalnız referans. Pulse token'lar zaten `globals.css`, font'lar `layout.tsx`'te yüklü.
 
@@ -617,7 +617,7 @@ Tüm motion `prefers-reduced-motion: reduce` altında devre dışı (globals.css
 
 > **Kanonik kaynak:** `.env.example` — tüm env'lerin tam listesi orada (build script `node scripts/validate-env.js` ile zorunluları doğrular). Aşağıdaki tablo seçilmiş highlight'tır; çatışma halinde `.env.example` baz alınır.
 
-**Stratejik karar:** Yeni external provider eklenmiyor. Resend (mail) + Supabase Storage (dosya) + OpenAI (AI Co-Pilot) yeterli. POS (Iyzico/Stripe) kasıtlı ertelenmiş — billing read-side canlı, write-side yok.
+**Stratejik karar:** Yeni external provider eklenmiyor. Resend (mail) + Supabase Storage (dosya) + OpenAI (Pulse AI) yeterli. POS (Iyzico/Stripe) kasıtlı ertelenmiş — billing read-side canlı, write-side yok.
 
 | Env | Zorunluluk | Etki |
 |---|---|---|
@@ -855,10 +855,10 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 - **forgot-password**: 2x2 meta grid (Talep saati / IP / Cihaz / Hesap), token URL display + 6-digit code fallback, "Sen değil misin?" lime-soft card with 3px lime-deep left border, status pill ("Aktif · 30 dk geçerli")
 - **welcome**: 4-step list with done/current/pending visual states (graphite check / lime current / muted pending), "İlk gün için" 4-card resource grid, secondary "Demo videoyu izle" CTA
 - **form-confirmation**: animated check icon (nested limeSoft → lime), timeline visualization (left border + dot markers), 2 side cards (Acil durum + Beklerken)
-- **low-rating-alert**: graphite alert bar with warning dot + timestamp, avatar circle (FEF3C7) review card, hashtag chips, AI Co-Pilot dark editor card with tone label + edit/approve buttons, 3-col quick actions grid
+- **low-rating-alert**: graphite alert bar with warning dot + timestamp, avatar circle (FEF3C7) review card, hashtag chips, Pulse AI dark editor card with tone label + edit/approve buttons, 3-col quick actions grid
 - **new-review**: "● Canlı · Az önce geldi" status pill, gradient quote card (limeSoft → pure 2-stop with MSO solid fallback), avatar initials, primary "Teşekkür yaz" + secondary "Google'da paylaş" CTAs
 - **weekly-report**: dark hero with 3 deltaed stats, 7-day bar chart (HTML/CSS bars with peak highlight), "Bu haftanın sözleri" 3-quote gallery, side-by-side limeSoft CTA card
-- **newsletter**: dark featured article card (tek sütun: okuma süresi + başlık + excerpt + lime CTA), 4-item numbered list, stats band, future teaser, lime-highlight title positioning. **Not (2026-04 düzeltme)**: JSX prototipindeki sağ sütun "AI Co-Pilot demo code block" (`> input.tone / > model.draft / latency: 1.2s`) **kaldırıldı** — statik içerikti, her ay farklı featured post seçildiğinde uyumsuz görünüyordu. Default preheader artık featured post excerpt'inden çekilir, fallback generic.
+- **newsletter**: dark featured article card (tek sütun: okuma süresi + başlık + excerpt + lime CTA), 4-item numbered list, stats band, future teaser, lime-highlight title positioning. **Not (2026-04 düzeltme)**: JSX prototipindeki sağ sütun "Pulse AI demo code block" (`> input.tone / > model.draft / latency: 1.2s`) **kaldırıldı** — statik içerikti, her ay farklı featured post seçildiğinde uyumsuz görünüyordu. Default preheader artık featured post excerpt'inden çekilir, fallback generic.
 - **customer-reply**: lime-soft hero with restaurant card (graphite K initial), single-line italicized title, paragraph-bazlı letter body, 3 action items (override edilebilir), graphite coupon card with code + "30 gün" split, 2x2 contact grid (call + maps), italic signature
 - **trial-ending**: warning eyebrow, dark usage card with **4-col grid** (yorum / ortalama / AI yanıt / +X% organik artış), 2 plan cards ("Pulse Starter" ₺499 + "Pulse Pro" ₺1.299), **absolute-positioned "ÖNERİLEN" badge** (MSO `<v:rect>`-aware fallback in `renderBadge({ position: 'absolute-tr' })`), "İlk ay %50" eyebrow, secondary "Detaylı karşılaştırma" link
 
@@ -882,7 +882,7 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 **Yeni**: `/api/cron/trial-reminders` (`vercel.json`'da `0 9 * * *` günlük 09:00 UTC)
 - `User.lastTrialReminderAt` field'ı dedup için (20-saat threshold — cron 24-saat aralık güvenliği)
 - **Sadece 1 ve 3 gün kalan trial user'lara mail gönderir** (`TRIAL_REMINDER_DAYS = [1, 3]` constant'ı). Spam algısını önlemek için kullanıcı başına trial sürecinde max 2 mail. SQL window 4 güne kadar geniş (yanlışlıkla skip etmeyi önlemek için), ama precise filter cron handler'ında.
-- Usage hesabı: ilgili restoran için son 14 gün vs önceki 14 gün (growth %), ortalama puan, yorum sayısı, **AI Co-Pilot ile gönderilen yanıt sayısı** (`prisma.feedbackReply.count({ where: { source: 'ai_copilot', ... } })`).
+- Usage hesabı: ilgili restoran için son 14 gün vs önceki 14 gün (growth %), ortalama puan, yorum sayısı, **Pulse AI ile gönderilen yanıt sayısı** (`prisma.feedbackReply.count({ where: { source: 'ai_copilot', ... } })`).
 - Auth: `Bearer ${CRON_SECRET}` (mevcut pattern)
 - Sender: `sendTrialEndingEmail` (Pulse `trial-ending` template)
 - **Eşikleri değiştirmek**: `TRIAL_REMINDER_DAYS` array'i tek değişiklik noktası. Yeni eşik (örn. 7 gün) eklendiğinde SQL window otomatik genişler.
@@ -2276,7 +2276,7 @@ Resmi skill `sendDefaultPii: true` öner — restoran müşteri verileri için y
 // Mail send fail (src/lib/email.ts)
 Sentry.captureMessage('Mail send failed', { level: 'error', tags: { template, recipient_domain } });
 
-// AI Co-Pilot fallback (src/app/api/feedback/[id]/suggest-reply)
+// Pulse AI fallback (src/app/api/feedback/[id]/suggest-reply)
 Sentry.captureMessage('OpenAI suggest-reply fallback', { level: 'warning' });
 
 // Cron job catch

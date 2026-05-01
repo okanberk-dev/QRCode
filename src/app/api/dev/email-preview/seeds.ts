@@ -185,7 +185,7 @@ export const SEEDS = {
       'Aylık 10 kötü yorumun Google\'a sızmadan filtrelenmesi en yüksek kaldıraç — bugünkü 4.2 ★\'a en hızlı etkisi.',
     aiNextSteps: [
       'QR\'ı masa altlığı + kasa yanına yerleştir; ilk 7 gün tarama oranını ölç.',
-      'AI Co-Pilot taslak yanıtlarını ilk 2 hafta her yorum için onayla — model işletme tonuna kalibre olsun.',
+      'Pulse AI taslak yanıtlarını ilk 2 hafta her yorum için onayla — model işletme tonuna kalibre olsun.',
       'Yemeksepeti + Getir + Trendyol GO URL\'lerini admin panelden gir; yüksek puan akışı doğru yere gitsin.',
     ],
     hasPdf: true,
@@ -222,7 +222,7 @@ export const SEEDS = {
       'Aylık 10 kötü yorumun Google\'a sızmadan filtrelenmesi en yüksek kaldıraç.',
     aiNextSteps: [
       'QR\'ı masa altlığı + kasa yanına yerleştir; ilk 7 gün tarama oranını ölç.',
-      'AI Co-Pilot taslak yanıtlarını ilk 2 hafta her yorum için onayla.',
+      'Pulse AI taslak yanıtlarını ilk 2 hafta her yorum için onayla.',
       'Yemeksepeti + Getir + Trendyol GO URL\'lerini admin panelden gir.',
     ],
     aiSource: 'ai',
