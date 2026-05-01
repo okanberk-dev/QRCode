@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronRight, Hotel, Globe, Sparkles, BarChart3 } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
 import PlatformLogo from '@/components/marketing/PlatformLogo';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { getRelatedSolutions } from '@/lib/related-solutions';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +79,38 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
         { t: 'Guest profile', d: 'Recognise returning guests and tie them back to prior reviews.' },
       ];
 
+  const benefits = isTr
+    ? [
+        { Icon: Hotel, h: 'Oda + check-out QR\'ları', d: 'Her oda için ayrı QR (oda numarası URL\'de) + check-out tezgahında genel QR. Misafir hâlâ tesisteyken yorum bırakır — 3 hafta sonra Booking review değil, anlık deneyim.' },
+        { Icon: Globe, h: 'Booking + Tripadvisor + Airbnb + Google', d: 'Dört platformu tek akışta sun. Misafir tercih ettiği platforma yönlendirilir; her misafir istediği yere yorum yazma hakkını korur, yıldız bazlı kısıtlama yok.' },
+        { Icon: Sparkles, h: 'Pulse AI çoklu-dil yanıt taslağı', d: 'Misafirin yorumunun dilini algılar (TR / EN / DE / RU), kültürel ton uygun yanıt taslağı üretir. İşletme onaylar, otomatik gönderim yok.' },
+        { Icon: BarChart3, h: 'Kat / oda tipi analitiği', d: 'Hangi katta, hangi oda tipinde (deluxe / standart / suite) memnuniyet düşük? Klima şikayeti hangi yöne bakan odalarda yoğun? Operasyonel kararı veriyle al.' },
+      ]
+    : [
+        { Icon: Hotel, h: 'Room + check-out QRs', d: 'A separate QR per room (room number in URL) + a general QR at the check-out desk. Guests leave reviews while still on premise — instant experience, not a Booking review three weeks later.' },
+        { Icon: Globe, h: 'Booking + Tripadvisor + Airbnb + Google', d: 'Surface all four platforms in one flow. The guest is routed to their preferred platform; every guest keeps the right to post anywhere, no star-rating gate.' },
+        { Icon: Sparkles, h: 'Pulse AI multi-language reply drafts', d: 'Detects the language of the guest review (TR / EN / DE / RU), produces a culturally appropriate reply draft. Owner approves; nothing auto-sent.' },
+        { Icon: BarChart3, h: 'Floor / room-type analytics', d: 'Which floor, which room type (deluxe / standard / suite) has the lowest satisfaction? Which orientation gets the most AC complaints? Make operational calls from data.' },
+      ];
+
+  const faqs: FaqItem[] = isTr
+    ? [
+        { q: 'Otel için Buaze nasıl çalışır?', a: 'Her oda için bir QR sticker (oda numarası URL\'ye gömülü) + check-out tezgahında bir genel QR yerleştirirsin. Misafir QR\'ı tarar, deneyimini puanlar ve seçtiğin platformlara (Booking, Tripadvisor, Airbnb, Google) yönlendirilir. Misafir tesiste deneyim taze, yorum oranı 3 hafta sonra gönderilen Booking mailine kıyasla 5-10× yüksek.' },
+        { q: 'Booking.com / Tripadvisor / Airbnb yorumlarını da topluyor mu?', a: 'Evet. Owner panelden bu platformların herkese açık yorum bağlantılarını eklersin; akış misafire seçtiğin platformları sunar. Misafir tercih ettiği platforma yorum yazar. Booking gibi closed-loop platformlarda link doğrudan booking ID\'siyle eşleşmez (Booking bunu API\'de açmıyor) — ama misafire bağlantı sunulur.' },
+        { q: 'Oda numarası bazlı analitik var mı?', a: 'Evet. QR\'a oda numarası URL parametresi ekleyebilirsin (örn. `?room=412`); yorum geldiğinde oda numarası + kat + oda tipi loglanır. Analytics raporunda hangi katlarda memnuniyet düşük, hangi odalarda klima/gürültü/manzara şikayeti yoğun — operasyonel ekip görür.' },
+        { q: 'Düşük puan veren misafir Booking\'e yorum yazmaz mı?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren misafirler ek olarak otelinizle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Misafir her zaman herkese açık platformlara (Booking, Tripadvisor, Google) yorum yazma hakkını korur; siz sorunu özelden (oda değişimi, fatura iadesi vb.) çözme şansı kazanırsınız.' },
+        { q: 'Çoklu-dil destek var mı?', a: 'Evet. Misafir yorumunu hangi dilde yazarsa, Pulse AI o dilde yanıt taslağı üretir (TR, EN, DE, RU şu an desteklenen). Genelde otel müşteri profili çok-dilli, bu kritik — manuel çeviri yapmak yanıt süresini saatlerce uzatıyor.' },
+      ]
+    : [
+        { q: 'How does Buaze work for a hotel?', a: 'You place a QR sticker per room (with the room number embedded in the URL) + a general QR at the check-out desk. The guest scans, rates the experience, and is routed to the platforms you have selected (Booking, Tripadvisor, Airbnb, Google). The experience is fresh — review rates are 5-10× higher than the Booking email sent three weeks later.' },
+        { q: 'Does it also collect Booking.com / Tripadvisor / Airbnb reviews?', a: 'Yes. You add the public review links of these platforms in the owner panel; the flow surfaces the platforms you select to the guest. The guest posts on their preferred platform. For closed-loop platforms like Booking, the link does not match a specific booking ID (Booking does not expose that API) — but the public link is presented to the guest.' },
+        { q: 'Is there room-number-level analytics?', a: 'Yes. You can add a room number URL parameter to the QR (e.g. `?room=412`); when a review arrives, the room number + floor + room type are logged. The analytics report shows where satisfaction drops by floor, where AC / noise / view complaints concentrate — visible to the operational team.' },
+        { q: 'Will guests giving low ratings simply not post on Booking?', a: 'No. Buaze never blocks or hides any review. Guests giving low ratings additionally see an option to share privately with your hotel — in practice ~85% choose this private channel. The guest always retains the right to post on any public platform (Booking, Tripadvisor, Google); you simply gain a chance to resolve the issue privately first (room change, refund, etc.).' },
+        { q: 'Is there multi-language support?', a: 'Yes. Pulse AI detects the language the guest writes in (TR, EN, DE, RU currently supported) and produces a reply draft in that language. Hotels typically have a multi-language guest profile — this is critical, manual translation adds hours to reply latency.' },
+      ];
+
+  const relatedSolutions = getRelatedSolutions('hotels', 4);
+
   const jsonLd = buildSolutionSchema({
     locale,
     slug: 'hotels',
@@ -85,6 +119,7 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
     description: isTr
       ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, negatifi önce sen gör."
       : 'Booking.com, Tripadvisor, Airbnb and Google — manage all four from one panel. Collect reviews at check-out with room QRs.',
+    faqs,
   });
 
   return (
@@ -219,6 +254,71 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
               <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">{f.d}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Benefits — 4-tile grid */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
+            {isTr ? 'Otel operasyonuna özel dört kazanç' : 'Four wins built for hotel operations'}
+          </h2>
+          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {benefits.map((b, i) => (
+              <div key={i} className="bz-card p-6 sm:p-7">
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"><b.Icon size={16} /></div>
+                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
+                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
+        <div className="max-w-[820px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
+            {isTr ? 'Otel kurulumu için merak edilenler' : 'Common questions for hotels'}
+          </h2>
+          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
+        </div>
+      </section>
+
+      {/* Resources / Related Solutions */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
+          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
+          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
+              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
+              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
+              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
+            ].map((r) => (
+              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
+                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
+                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
+              </Link>
+            ))}
+          </div>
+          {relatedSolutions.length > 0 && (
+            <>
+              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {relatedSolutions.map((sol) => (
+                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
+                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
+                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
+                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
