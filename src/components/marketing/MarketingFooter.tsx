@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
+import type { ReactElement } from 'react';
 import type { Locale } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
 import NewsletterSignup from './NewsletterSignup';
@@ -24,11 +25,43 @@ interface MarketingFooterProps {
   };
 }
 
-const SOCIAL = [
-  { label: 'X', href: 'https://x.com/buaze', bg: '#000' },
-  { label: 'in', href: 'https://linkedin.com/company/buaze', bg: '#0A66C2' },
-  { label: 'IG', href: 'https://instagram.com/buazerating', bg: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)' },
-  { label: 'YT', href: 'https://youtube.com/@buaze', bg: '#FF0000' },
+// Resmi marka SVG'leri — Lucide'nin Twitter ikonu hâlâ eski-bird; X için
+// resmi 2024+ logo path'i kullanılıyor. Hepsi viewBox=0 0 24 24 normalize.
+const InstagramIcon = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.5" cy="6.5" r="1.1" fill="currentColor" stroke="none" />
+  </svg>
+);
+const XIcon = (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
+const LinkedInIcon = (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.852 3.37-1.852 3.601 0 4.268 2.37 4.268 5.455v6.288zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.064 2.062 2.062 0 1 1 2.063 2.064zm1.778 13.019H3.555V9h3.56v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+  </svg>
+);
+const YouTubeIcon = (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+  </svg>
+);
+
+interface SocialLink {
+  label: string;
+  href: string;
+  brand: string; // hover glow + outline color
+  icon: ReactElement;
+}
+
+const SOCIAL: SocialLink[] = [
+  { label: 'Instagram', href: 'https://instagram.com/buazerating', brand: '#E1306C', icon: InstagramIcon },
+  { label: 'X', href: 'https://x.com/buaze', brand: '#FFFFFF', icon: XIcon },
+  { label: 'LinkedIn', href: 'https://linkedin.com/company/buaze', brand: '#0A66C2', icon: LinkedInIcon },
+  { label: 'YouTube', href: 'https://youtube.com/@buaze', brand: '#FF0033', icon: YouTubeIcon },
 ];
 
 /**
@@ -194,10 +227,12 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.label}
-                    className="flex min-h-[44px] items-center justify-center rounded-2xl text-[11px] font-semibold text-white"
-                    style={{ background: s.bg, fontFamily: 'var(--font-jetbrains-mono)' }}
+                    className="group/social social-pill flex min-h-[48px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white transition-all duration-200 hover:bg-white/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                    style={{ ['--brand' as string]: s.brand }}
                   >
-                    {s.label}
+                    <span className="block h-5 w-5 transition-colors duration-200 group-hover/social:text-[var(--brand)]">
+                      {s.icon}
+                    </span>
                   </a>
                 ))}
               </div>
@@ -266,10 +301,13 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.label}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-[11px] font-semibold text-white transition-transform hover:scale-110"
-                    style={{ background: s.bg, fontFamily: 'var(--font-jetbrains-mono)' }}
+                    title={s.label}
+                    className="group/social flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:border-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                    style={{ ['--brand' as string]: s.brand }}
                   >
-                    {s.label}
+                    <span className="block h-[18px] w-[18px] transition-colors duration-200 group-hover/social:text-[var(--brand)]">
+                      {s.icon}
+                    </span>
                   </a>
                 ))}
               </div>
