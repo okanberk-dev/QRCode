@@ -6,6 +6,7 @@
 // Cron her gün çalışır; her user × restaurant + her email type için bu
 // helper'lar idempotency garantisini sağlar.
 
+import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 
 export type LifecycleEmailType =
@@ -61,6 +62,19 @@ export async function recordSent(params: RecordSentParams): Promise<void> {
     // DB write fail loglanır ama caller'a propagate edilmez — idempotency
     // gevşek; log eksik olursa worst case 1 ek mail gönderilir, kullanıcı
     // küçük rahatsızlık yaşayabilir ama akış kırılmaz.
+    //
+    // Phase 11.32 audit fix: log fail Sentry'e warning olarak gönderilir
+    // → operatör fark eder, recurring DB issue varsa root cause çıkar.
+    // Mail mantığı değişmez (mail zaten gönderildi, sadece log eksik).
     console.error('[lifecycle] recordSent failed', err);
+    Sentry.captureMessage('Lifecycle email log write failed', {
+      level: 'warning',
+      tags: { type: params.type },
+      extra: {
+        userId: params.userId ?? null,
+        restaurantId: params.restaurantId ?? null,
+        error: err instanceof Error ? err.message : String(err),
+      },
+    });
   }
 }

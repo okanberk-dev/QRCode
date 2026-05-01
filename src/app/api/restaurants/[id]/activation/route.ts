@@ -102,11 +102,28 @@ export async function PATCH(
       break;
   }
 
-  await prisma.restaurantActivationState.upsert({
-    where: { restaurantId: id },
-    create: { restaurantId: id, ...updateData },
-    update: updateData,
-  });
+  // Prisma upsert internal `findUnique` + branch logic kullanır (atomic
+  // değil). 2 concurrent PATCH (örn. owner double-click) ikisi de "not
+  // found" görüp 2 create deneyebilir → unique constraint violation.
+  // P2002 yakalanırsa update branch'e fallback (Phase 11.32 audit fix).
+  try {
+    await prisma.restaurantActivationState.upsert({
+      where: { restaurantId: id },
+      create: { restaurantId: id, ...updateData },
+      update: updateData,
+    });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === 'P2002') {
+      // Diğer request kazandı, row var → update et
+      await prisma.restaurantActivationState.update({
+        where: { restaurantId: id },
+        data: updateData,
+      });
+    } else {
+      throw err;
+    }
+  }
 
   const [restaurant, state, qrGenerationCount, feedbackCount] = await loadActivationData(id);
   if (!restaurant) return ApiErrors.notFound('İşletme bulunamadı');
