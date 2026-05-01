@@ -109,9 +109,19 @@ export default async function DashboardPage({
   // feedback count. redirectPct = rating>=4 + platform set olanların oranı.
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
   const thirtyDaysAgoMobile = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const restIds = user.restaurants.map((r) => r.id);
-  const [scansToday, scans30d, redirected30d, total30d] = restIds.length
+  const [
+    scansToday,
+    scans30d,
+    redirected30d,
+    total30d,
+    redirectsToday,
+    scansYesterday,
+    redirectsYesterday,
+  ] = restIds.length
     ? await Promise.all([
         prisma.feedback.count({ where: { restaurantId: { in: restIds }, createdAt: { gte: todayStart } } }),
         prisma.feedback.count({ where: { restaurantId: { in: restIds }, createdAt: { gte: thirtyDaysAgoMobile } } }),
@@ -124,10 +134,50 @@ export default async function DashboardPage({
           },
         }),
         prisma.feedback.count({ where: { restaurantId: { in: restIds }, createdAt: { gte: thirtyDaysAgoMobile } } }),
+        // Bugün yönlendirme — rating>=4 + platform set
+        prisma.feedback.count({
+          where: {
+            restaurantId: { in: restIds },
+            createdAt: { gte: todayStart },
+            rating: { gte: 4 },
+            platform: { not: null },
+          },
+        }),
+        // Dün count'ları (delta için, yalnız desktop "Bugün" KPI row'unda kullanılır)
+        prisma.feedback.count({
+          where: { restaurantId: { in: restIds }, createdAt: { gte: yesterdayStart, lt: todayStart } },
+        }),
+        prisma.feedback.count({
+          where: {
+            restaurantId: { in: restIds },
+            createdAt: { gte: yesterdayStart, lt: todayStart },
+            rating: { gte: 4 },
+            platform: { not: null },
+          },
+        }),
       ])
-    : [0, 0, 0, 0];
+    : [0, 0, 0, 0, 0, 0, 0];
   const reviewsToday = scansToday;
+  const reviewsYesterday = scansYesterday;
   const redirectPct = total30d > 0 ? Math.round((redirected30d / total30d) * 100) : 0;
+
+  // "Bugün" KPI row delta hesaplama (desktop-only, lg+ breakpoint).
+  // pctDelta zaten dosyada tanımlı (~line 56). Dünün count'larıyla karşılaştır.
+  function todayDelta(curr: number, prev: number): { value: string; kind: 'up' | 'down' | 'neutral' } {
+    if (prev === 0) {
+      if (curr === 0) return { value: '—', kind: 'neutral' };
+      return { value: 'Yeni', kind: 'up' };
+    }
+    const diff = curr - prev;
+    const pct = Math.round((diff / prev) * 100);
+    return {
+      value: `${pct >= 0 ? '+' : ''}${pct}%`,
+      kind: pct > 0 ? 'up' : pct < 0 ? 'down' : 'neutral',
+    };
+  }
+  const reviewsTodayDelta = todayDelta(reviewsToday, reviewsYesterday);
+  const scansTodayDelta = todayDelta(scansToday, scansYesterday);
+  const redirectsTodayDelta = todayDelta(redirectsToday, redirectsYesterday);
   const scans30dShort = scans30d >= 1000 ? `${(scans30d / 1000).toFixed(1)}k` : String(scans30d);
   const isTrLocale = locale === 'tr';
   const dayLabelsTr = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
@@ -577,7 +627,12 @@ export default async function DashboardPage({
                 locale: isTr ? trLocale : enLocale,
               });
               return (
-                <div key={fb.id} className="bz-card p-3.5">
+                <Link
+                  key={fb.id}
+                  href={`/${locale}/dashboard/feedbacks?focus=${fb.id}`}
+                  className="bz-card p-3.5 block transition-colors hover:bg-[#FAFAFA] active:scale-[0.99]"
+                  aria-label={`${fb.name || (isTr ? 'Anonim' : 'Anonymous')} — ${fb.rating}★`}
+                >
                   <div className="flex justify-between items-start gap-2.5">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 mb-1">
@@ -621,12 +676,42 @@ export default async function DashboardPage({
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
         </section>
       )}
+
+      {/* Desktop-only "BUGÜN" KPI row (PR2): mobile hero'nun desktop paritesi.
+          Dün ile karşılaştırma delta'sı; lime accent ile bugün vurgusu. */}
+      <div className="hidden lg:grid grid-cols-3 gap-3.5">
+        <StatCard
+          label={isTr ? 'Bugün gelen yorum' : 'Reviews today'}
+          value={reviewsToday.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          delta={reviewsTodayDelta.value}
+          deltaKind={reviewsTodayDelta.kind}
+          deltaSuffix={isTr ? 'düne göre' : 'vs yesterday'}
+          icon={<Inbox size={14} strokeWidth={2} />}
+          accent="#C6F24E"
+        />
+        <StatCard
+          label={isTr ? 'Bugün taranma' : 'Scans today'}
+          value={scansToday.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          delta={scansTodayDelta.value}
+          deltaKind={scansTodayDelta.kind}
+          deltaSuffix={isTr ? 'düne göre' : 'vs yesterday'}
+          icon={<QrCode size={14} strokeWidth={2} />}
+        />
+        <StatCard
+          label={isTr ? 'Bugün yönlendirme' : 'Redirects today'}
+          value={redirectsToday.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          delta={redirectsTodayDelta.value}
+          deltaKind={redirectsTodayDelta.kind}
+          deltaSuffix={isTr ? 'düne göre' : 'vs yesterday'}
+          icon={<ArrowUpRight size={14} strokeWidth={2} />}
+        />
+      </div>
 
       {/* Desktop-only 4-stat KPI grid (1:1 Pulse 2026-04 OwnerDashboard).
           Mobil tarafta üstteki BUGÜN hero ve SON 7 GÜN card aynı verileri taşır. */}
@@ -764,15 +849,18 @@ export default async function DashboardPage({
                 {latestFeedbacks.map((fb) => {
                   const initials = (fb.name || fb.restaurant?.name || 'M').charAt(0).toUpperCase();
                   const high = fb.rating >= 4;
+                  const lowRated = fb.rating <= 3;
                   const branchLabel = fb.branch || fb.restaurant?.name || (isTr ? 'İşletme' : 'Location');
                   const timeAgo = formatDistanceToNowStrict(new Date(fb.createdAt), {
                     addSuffix: true,
                     locale: isTr ? trLocale : enLocale,
                   });
                   return (
-                    <div
+                    <Link
                       key={fb.id}
-                      className="flex items-start gap-3 px-5 py-3.5 border-b border-[#F5F5F5] last:border-b-0"
+                      href={`/${locale}/dashboard/feedbacks?focus=${fb.id}`}
+                      className="flex items-start gap-3 px-5 py-3.5 border-b border-[#F5F5F5] last:border-b-0 transition-colors hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:bg-[#FAFAFA]"
+                      aria-label={`${fb.name || (isTr ? 'Anonim' : 'Anonymous')} — ${fb.rating}★ — ${isTr ? 'detay ve yanıtla' : 'view and reply'}`}
                     >
                       <div
                         className="flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold shrink-0"
@@ -809,9 +897,17 @@ export default async function DashboardPage({
                           </span>
                           <span>·</span>
                           <span className="whitespace-nowrap">{timeAgo}</span>
+                          {lowRated && (
+                            <>
+                              <span>·</span>
+                              <span className="rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[10px] font-semibold text-[#0A0A0A]">
+                                {isTr ? 'Yanıtla →' : 'Reply →'}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
+import TrialBanner from './TrialBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import CommandPalette from '@/components/dashboard/CommandPalette';
@@ -576,6 +577,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           tabIndex={-1}
           className="min-w-0 flex-1 overflow-x-hidden pb-24 lg:pb-0"
         >
+          {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 7 && (
+            <TrialBanner locale={locale} daysLeft={trialDaysLeft} />
+          )}
           {announcements.length > 0 && (
             <AnnouncementBanner announcements={announcements} locale={locale} />
           )}

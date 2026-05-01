@@ -181,12 +181,29 @@ export default async function AdminDashboardPage() {
     };
   });
 
-  // Attention metrics — design 1:1 (4 sinyal):
-  //  1. KVKK metni eksik          → Restaurant.kvkkText empty
-  //  2. 14+ gün giriş yapılmadı   → User.updatedAt (proxy, lastLoginAt yok)
-  //  3. Kota %90+ doldu           → Trial restaurants whose feedback count ≥ 90% of TRIAL_QUOTA
-  //  4. Doğrulanmamış platform    → Restaurant has googleReviewUrl but googlePlaceId null
-  const [kvkkMissing, staleAccounts, restaurantsForQuota, unverifiedPlatform] = await Promise.all([
+  // Attention metrics — design 1:1 + PR2 trial signals.
+  //  1. Trial yakında bitiyor    → User.plan='trial' AND trialEndsAt within 7d  (PR2)
+  //  2. Trial süresi bitti        → User.plan='trial' AND trialEndsAt < now      (PR2)
+  //  3. KVKK metni eksik          → Restaurant.kvkkText empty
+  //  4. 14+ gün giriş yapılmadı   → User.updatedAt (proxy, lastLoginAt yok)
+  //  5. Kota %90+ doldu           → Trial restaurants whose feedback count ≥ 90% of TRIAL_QUOTA
+  //  6. Doğrulanmamış platform    → Restaurant has googleReviewUrl but googlePlaceId null
+  const sevenDaysAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const nowDate = now;
+  const [
+    trialExpiringSoon,
+    trialExpired,
+    kvkkMissing,
+    staleAccounts,
+    restaurantsForQuota,
+    unverifiedPlatform,
+  ] = await Promise.all([
+    prisma.user.count({
+      where: { plan: 'trial', trialEndsAt: { gt: nowDate, lte: sevenDaysAhead } },
+    }),
+    prisma.user.count({
+      where: { plan: 'trial', trialEndsAt: { lte: nowDate } },
+    }),
     prisma.restaurant.count({
       where: { OR: [{ kvkkText: null }, { kvkkText: '' }] },
     }),
@@ -206,6 +223,8 @@ export default async function AdminDashboardPage() {
   ).length;
 
   const attention: AttentionRow[] = [
+    { k: 'Trial 7 gün içinde bitiyor', n: trialExpiringSoon, kind: 'warn' },
+    { k: 'Trial süresi bitti', n: trialExpired, kind: 'danger' },
     { k: 'KVKK metni eksik', n: kvkkMissing, kind: 'danger' },
     { k: '14+ gün giriş yapılmadı', n: staleAccounts, kind: 'warn' },
     { k: 'Kota %90+ doldu', n: quotaNearFull, kind: 'warn' },
