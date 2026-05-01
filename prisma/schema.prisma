@@ -159,6 +159,7 @@ model Restaurant {
 
   feedbacks       Feedback[]
   qrGenerations   QrGeneration[]
+  qrScans         QrScan[]
   adminUsers      AdminUser[]
   menuCategories  MenuCategory[]
   menuItems       MenuItem[]
@@ -166,6 +167,32 @@ model Restaurant {
   brandSettings   BrandSettings?
 
   @@map("restaurants")
+}
+
+// QR scan event (CLAUDE.md §34.x). Public review surface (`/r/[slug]`)
+// load olduğunda fire-and-forget POST /api/qr-scan ile insert edilir.
+// Eski "feedback count = scan proxy" varsayımının yerine gerçek tracking:
+// scan-to-review conversion oranı, masa/platform breakdown, "tarayıp ayrıldı"
+// boşluğu görünür olur. Session-based dedupe (30dk window) — refresh
+// abuse'a karşı (CLAUDE.md §13.3 menu analytics pattern).
+model QrScan {
+  id           String     @id @default(cuid())
+  restaurantId String     @map("restaurant_id")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  tableNumber  String?    @map("table_number")
+  platform     String?
+  source       String?    // 'qr' | 'direct' | 'link' | 'table' | 'delivery'
+  sessionId    String?    @map("session_id")
+  // KVKK §13.9 — IP 90 gün retention (cron'la anonimleştirilebilir, mevcut
+  // pattern Feedback.ipAddress'le aynı).
+  ipAddress    String?    @map("ip_address")
+  userAgent    String?    @map("user_agent")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@index([restaurantId, createdAt])
+  @@index([restaurantId, tableNumber, platform, createdAt])
+  @@index([restaurantId, sessionId, createdAt])
+  @@map("qr_scans")
 }
 
 model QrGeneration {

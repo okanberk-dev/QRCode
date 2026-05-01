@@ -114,6 +114,50 @@ function ReviewContent() {
     };
   }, [slug]);
 
+  // QR scan tracking — restaurant load sonrası fire-and-forget. SessionStorage
+  // dedupe (30dk window) refresh abuse'a karşı; aynı (slug, table, platform)
+  // tuple'ı 30dk'da bir kez sayılır. Hata sessizce yutulur — public surface
+  // müşteri akışını kesintiye uğratmaz.
+  useEffect(() => {
+    if (!restaurant?.slug || !restaurant.isActive) return;
+    if (typeof window === 'undefined') return;
+    const dedupeKey = `bz_qr_scan:${restaurant.slug}:${tableParam || ''}:${explicitPlatform || ''}`;
+    try {
+      const last = window.sessionStorage.getItem(dedupeKey);
+      if (last && Date.now() - parseInt(last, 10) < 30 * 60 * 1000) return;
+      window.sessionStorage.setItem(dedupeKey, String(Date.now()));
+    } catch {
+      // sessionStorage disabled (private mode) — devam, server dedupe yok
+      // ama ek hit kabul edilir (rate limit zaten 30/dk koruyor).
+    }
+    let sid: string | null = null;
+    try {
+      sid = window.sessionStorage.getItem('bz_qr_scan_sid');
+      if (!sid) {
+        sid = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        window.sessionStorage.setItem('bz_qr_scan_sid', sid);
+      }
+    } catch {
+      sid = null;
+    }
+    fetch('/api/qr-scan', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        slug: restaurant.slug,
+        tableNumber: tableParam || null,
+        platform: explicitPlatform || null,
+        source: sourceParam,
+        sessionId: sid,
+      }),
+      keepalive: true,
+    }).catch(() => {
+      // Silent — scan tracking optional, müşteri akışı engellenmez.
+    });
+  }, [restaurant?.slug, restaurant?.isActive, tableParam, explicitPlatform, sourceParam]);
+
   if (loading) return <DarkLoader />;
   if (isNotFound || !restaurant) return notFound();
 

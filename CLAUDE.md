@@ -2953,6 +2953,43 @@ Owner panel'deki Slack webhook bildirim ayarı kullanıcı talebiyle kaldırıld
 
 **Geri çekmek için:** Yeni `<InteractionTrendChart>` sadece bu sayfada kullanılır. Recharts bağımlılığı dashboard ana sayfasındaki `TrendsChart` ile zaten paylaşılıyor — ekstra bundle maliyet sıfır. Custom BarChart'a dönmek istenirse, range > 14 gün için thinning veya scrollable container gerekir (yeniden inşa şart).
 
+### 34.8 2026-05-01 — Gerçek QR scan tracking
+
+Owner panel'de "QR taranma" KPI'sı şimdiye dek **feedback count proxy**'siydi — yorum bırakmadan ayrılan müşteri görünmüyordu. Yeni `qr_scans` event tablosu ile gerçek scan tracking eklendi: scan→review conversion oranı, masa/platform breakdown, "tarayıp ayrıldı" boşluğu artık görünür.
+
+**Yeni:**
+| Katman | Yer |
+|---|---|
+| Schema | `prisma/schema.prisma` `QrScan` model — restaurantId, tableNumber, platform, source, sessionId, ipAddress, userAgent, createdAt + 3 composite index |
+| Helper | `src/lib/qr-scan.ts` `recordQrScan({ slug, ... })` — slug→restaurant resolve, inactive silent no-op (slug fingerprinting önleme, §13.5 pattern), input bounded |
+| API | `POST /api/qr-scan` — public, rate-limit 30/dk/IP (Upstash), body `{slug, tableNumber?, platform?, source?, sessionId?}` |
+| Client tracking | `src/app/r/[slug]/page.tsx` — useEffect mount sonrası fire-and-forget; sessionStorage dedupe key `bz_qr_scan:slug:table:platform` (30dk window); session UUID `bz_qr_scan_sid` sticky |
+
+**Owner panel entegrasyonu:**
+- Dashboard "QR taranma" KPI: `last7Total` (feedback proxy) → `last7Scans` (gerçek qrScan count). Delta `pctDelta(last7Scans, prev7Scans)`.
+- Dashboard "QR Performansı" section: `qrScanCounts` Map artık `QrScan.groupBy(['restaurantId', 'tableNumber', 'platform'])`'tan dolar.
+- Analytics page yeni KPI: **Dönüşüm oranı** = `(reviews / scans) × 100`. KPI grid `lg:grid-cols-5` → `lg:grid-cols-6`.
+- Analytics interaction chart: 2-seri (yorum + yönlendirme) → **3-seri funnel** (taranma → yorum → yönlendirme). Renk hierarchy: scans gri (üst funnel), reviews graphite (ana metrik), redirects lime-deep (aksiyon tamamlanmış).
+- Analytics "X gün taranma" KPI: feedback proxy → gerçek qrScan count.
+
+**KVKK + abuse koruması:**
+- IP/UA opsiyonel kayıt; `Feedback.ipAddress` ile aynı 90 gün retention prensibi (§13.9 cron eklenebilir).
+- SessionStorage dedupe (30dk) + Upstash rate limit (30/dk/IP) → refresh abuse + DDoS dual layer.
+- Inactive restaurant slug → silent 200 (slug enumeration imkansız).
+
+**Backend impact:**
+- Dashboard Promise.all: 13 query → 15 query (last7Scans + prev7Scans). qrScanGroups artık qrScan tablosundan, feedback'ten değil — tip imzası aynı.
+- Analytics Promise.all: 9 query → 12 query (scansWindowCount + scansPrevWindowCount + scansWindowDaily). Branch filter `QrScan`'e uygulanmaz (tabloda alan yok); platform filter uygulanır.
+- Boş restaurantIds fallback path silindi (Prisma `in: []` zaten 0 satır döner — dashboard pattern'ı ile tutarlı).
+
+**Geri çekmek için:** Kullanıcı **açık talep** etmeli (§34.4). Mevcut feedback-proxy "scan count"u veri kalitesi olarak çok zayıftı (yorum bırakmadan ayrılan tüm trafik kayboluyordu); yeniden geri dönmek SaaS metric güvenilirliğini kıran bir adım olur.
+
+**Backlog:**
+- IP anonimleştirme cron (`/api/cron/anonymize-ips` mevcut — `qr_scans.ip_address` da kapsama alınır, `IP_RETENTION_DAYS` env reuse).
+- Hour-of-day scan heatmap (analytics'te yeni section): scan saatlerini görsel pattern olarak göster — peak hour optimization için. Schema yeterli, sadece UI.
+- Source breakdown chart: `?source=qr|direct|table|link` parametresinin scan dağılımı — owner placement performance görür.
+- Real conversion funnel: scan → review → redirect → external platform — 4-step funnel chart.
+
 ---
 
 ## 35. SEO Infrastructure (2026-05 PR #263 + #264)

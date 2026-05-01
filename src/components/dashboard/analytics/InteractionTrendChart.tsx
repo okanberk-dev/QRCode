@@ -13,9 +13,11 @@ import {
 export interface InteractionTrendPoint {
   /** Display label, dd/mm formatlı (ör. "01/05"). */
   date: string;
-  /** Toplam taranma / yorum (proxy: real-scan tracking yok, feedback count). */
+  /** Toplam QR taranma — qr_scans tablosundan gerçek event sayımı. */
   scans: number;
-  /** Yönlendirme — rating ≥ 4 + platform set. */
+  /** Yorum count — Feedback tablosundan. Funnel: scans ⊇ reviews. */
+  reviews: number;
+  /** Yönlendirme — rating ≥ 4 + platform set. Funnel: reviews ⊇ redirects. */
   redirects: number;
 }
 
@@ -25,10 +27,12 @@ interface Props {
 }
 
 /**
- * Analitik sayfası "X gün etkileşim" chart'ı. Eski custom BarChart 90 gün
- * için layout kırılması veriyordu (label collision + 5px bar genişliği).
- * Recharts AreaChart 7/30/90 günü tutarlı render eder; dynamic tick
+ * Analitik sayfası "X gün etkileşim" chart'ı. Recharts AreaChart 3-seri
+ * funnel: scans (en üst) → reviews → redirects (en alt). Dynamic tick
  * interval x-axis tıkanmasını önler (CLAUDE.md §13.8 + §21.14 pattern).
+ *
+ * Renk hierarchy: scans gri (üst funnel, hacim), reviews graphite (ana
+ * metrik), redirects lime-deep (aksiyon tamamlanmış).
  */
 export default function InteractionTrendChart({ data, isTr }: Props) {
   const len = data.length;
@@ -41,6 +45,10 @@ export default function InteractionTrendChart({ data, isTr }: Props) {
         <AreaChart data={data} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
           <defs>
             <linearGradient id="trendScansFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#737373" stopOpacity={0.18} />
+              <stop offset="95%" stopColor="#737373" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="trendReviewsFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#0A0A0A" stopOpacity={0.16} />
               <stop offset="95%" stopColor="#0A0A0A" stopOpacity={0} />
             </linearGradient>
@@ -79,10 +87,20 @@ export default function InteractionTrendChart({ data, isTr }: Props) {
           <Area
             type="monotone"
             dataKey="scans"
+            name={isTr ? 'Taranma' : 'Scans'}
+            stroke="#737373"
+            strokeWidth={2}
+            fill="url(#trendScansFill)"
+            dot={false}
+            activeDot={{ r: 4, fill: '#737373', strokeWidth: 2, stroke: '#fff' }}
+          />
+          <Area
+            type="monotone"
+            dataKey="reviews"
             name={isTr ? 'Yorum' : 'Reviews'}
             stroke="#0A0A0A"
             strokeWidth={2}
-            fill="url(#trendScansFill)"
+            fill="url(#trendReviewsFill)"
             dot={false}
             activeDot={{ r: 4, fill: '#0A0A0A', strokeWidth: 2, stroke: '#fff' }}
           />

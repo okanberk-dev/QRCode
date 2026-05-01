@@ -146,6 +146,15 @@ export default async function AnalyticsPage({
     ...(branchFilter ? { branch: branchFilter } : {}),
   } as const;
 
+  // QR scan tracking — feedback proxy yerine gerçek scan event'i
+  // (CLAUDE.md §34.x). Branch + platform filter feedback'e özel; QrScan
+  // tablosunda branch alanı yok, sadece restaurantId + tableNumber + platform.
+  // Platform filter QrScan'e de uygulanabilir, branch filter sadece feedback.
+  const scanWhere = {
+    restaurantId: { in: restaurantIds },
+    ...(platformFilter ? { platform: platformFilter } : {}),
+  } as const;
+
   const [
     feedbacksWindow,
     feedbacksPrevWindow,
@@ -156,62 +165,74 @@ export default async function AnalyticsPage({
     lowRatedPrevWindow,
     todayCount,
     feedbacksWithComments,
-  ] = restaurantIds.length
-    ? await Promise.all([
-        prisma.feedback.findMany({
-          where: { ...baseWhere, createdAt: { gte: windowStart } },
-          select: { rating: true, platform: true, createdAt: true },
-        }),
-        prisma.feedback.count({
-          where: { ...baseWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
-        }),
-        prisma.feedback.findMany({
-          where: { ...baseWhere, createdAt: { gte: sevenDaysAgo } },
-          select: { createdAt: true },
-        }),
-        prisma.feedback.count({
-          where: {
-            ...baseWhere,
-            createdAt: { gte: windowStart },
-            rating: { gte: 4 },
-            platform: { not: null },
-          },
-        }),
-        prisma.feedback.count({
-          where: {
-            ...baseWhere,
-            createdAt: { gte: prevWindowStart, lt: windowStart },
-            rating: { gte: 4 },
-            platform: { not: null },
-          },
-        }),
-        prisma.feedback.count({
-          where: {
-            ...baseWhere,
-            createdAt: { gte: windowStart },
-            rating: { lte: 3 },
-          },
-        }),
-        prisma.feedback.count({
-          where: {
-            ...baseWhere,
-            createdAt: { gte: prevWindowStart, lt: windowStart },
-            rating: { lte: 3 },
-          },
-        }),
-        prisma.feedback.count({
-          where: { ...baseWhere, createdAt: { gte: startOfToday } },
-        }),
-        prisma.feedback.findMany({
-          where: {
-            ...baseWhere,
-            createdAt: { gte: ninetyDaysAgo },
-            comment: { not: null },
-          },
-          select: { rating: true, comment: true },
-        }),
-      ])
-    : [[], 0, [], 0, 0, 0, 0, 0, []];
+    scansWindowCount,
+    scansPrevWindowCount,
+    scansWindowDaily,
+  ] = await Promise.all([
+    prisma.feedback.findMany({
+      where: { ...baseWhere, createdAt: { gte: windowStart } },
+      select: { rating: true, platform: true, createdAt: true },
+    }),
+    prisma.feedback.count({
+      where: { ...baseWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
+    }),
+    prisma.feedback.findMany({
+      where: { ...baseWhere, createdAt: { gte: sevenDaysAgo } },
+      select: { createdAt: true },
+    }),
+    prisma.feedback.count({
+      where: {
+        ...baseWhere,
+        createdAt: { gte: windowStart },
+        rating: { gte: 4 },
+        platform: { not: null },
+      },
+    }),
+    prisma.feedback.count({
+      where: {
+        ...baseWhere,
+        createdAt: { gte: prevWindowStart, lt: windowStart },
+        rating: { gte: 4 },
+        platform: { not: null },
+      },
+    }),
+    prisma.feedback.count({
+      where: {
+        ...baseWhere,
+        createdAt: { gte: windowStart },
+        rating: { lte: 3 },
+      },
+    }),
+    prisma.feedback.count({
+      where: {
+        ...baseWhere,
+        createdAt: { gte: prevWindowStart, lt: windowStart },
+        rating: { lte: 3 },
+      },
+    }),
+    prisma.feedback.count({
+      where: { ...baseWhere, createdAt: { gte: startOfToday } },
+    }),
+    prisma.feedback.findMany({
+      where: {
+        ...baseWhere,
+        createdAt: { gte: ninetyDaysAgo },
+        comment: { not: null },
+      },
+      select: { rating: true, comment: true },
+    }),
+    // QR scans — window + delta + daily bucket (interaction chart 3. seri)
+    prisma.qrScan.count({
+      where: { ...scanWhere, createdAt: { gte: windowStart } },
+    }),
+    prisma.qrScan.count({
+      where: { ...scanWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
+    }),
+    prisma.qrScan.findMany({
+      where: { ...scanWhere, createdAt: { gte: windowStart } },
+      select: { createdAt: true },
+    }),
+  ]);
 
   // Distinct branches for filter dropdown (across owned restaurants, not
   // affected by current branch filter so user can pick a different one).
@@ -228,24 +249,31 @@ export default async function AnalyticsPage({
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b, isTr ? 'tr-TR' : 'en-US'));
 
-  // KPI calculations
-  const scansCount = feedbacksWindow.length;
-  const reviewsCount = scansCount;
+  // KPI calculations — scans gerçek QrScan'den, reviews feedback'ten ayrı.
+  const reviewsCount = feedbacksWindow.length;
+  const scansCount = scansWindowCount;
   const reviewsDelta = pctDelta(reviewsCount, feedbacksPrevWindow);
-  const scansDelta = reviewsDelta; // same proxy
+  const scansDelta = pctDelta(scansCount, scansPrevWindowCount);
 
-  const redirectRate = scansCount > 0 ? Math.round((redirectedWindow / scansCount) * 100) : 0;
+  // Conversion rate = scan'den sonra yorum bırakanların oranı.
+  // 0 scan → "—" göster, division-by-zero korunur.
+  const conversionRate = scansCount > 0 ? Math.round((reviewsCount / scansCount) * 100) : 0;
+  const prevConversionRate =
+    scansPrevWindowCount > 0
+      ? Math.round((feedbacksPrevWindow / scansPrevWindowCount) * 100)
+      : 0;
+  const conversionDelta = ppDelta(conversionRate, prevConversionRate);
+
+  const redirectRate = reviewsCount > 0 ? Math.round((redirectedWindow / reviewsCount) * 100) : 0;
   const prevRedirectRate = feedbacksPrevWindow > 0 ? Math.round((redirectedPrevWindow / feedbacksPrevWindow) * 100) : 0;
   const redirectDelta = ppDelta(redirectRate, prevRedirectRate);
 
-  const lowRatingRate = scansCount > 0 ? Math.round((lowRatedWindow / scansCount) * 100) : 0;
+  const lowRatingRate = reviewsCount > 0 ? Math.round((lowRatedWindow / reviewsCount) * 100) : 0;
   const prevLowRatingRate = feedbacksPrevWindow > 0 ? Math.round((lowRatedPrevWindow / feedbacksPrevWindow) * 100) : 0;
   const lowRatingDelta = ppDelta(lowRatingRate, prevLowRatingRate, true);
 
-  // Window-day daily distribution (etkileşim chart) — dynamic length.
-  // Dual-series: scans (toplam yorum/taranma) + redirects (rating>=4+platform).
-  // Recharts AreaChart 7/30/90 günü tutarlı render eder; eski BarChart 90
-  // bar için layout kırılıyordu (CLAUDE.md §34.7 cleanup log).
+  // Window-day daily distribution (etkileşim chart) — dynamic length, 3-seri funnel.
+  // Funnel: scans (qrScan, üst) ⊇ reviews (feedback) ⊇ redirects (rating≥4+platform).
   const dateFmt = new Intl.DateTimeFormat(isTr ? 'tr-TR' : 'en-GB', {
     day: '2-digit',
     month: '2-digit',
@@ -259,11 +287,14 @@ export default async function AnalyticsPage({
     const dayFbs = feedbacksWindow.filter(
       (f) => f.createdAt >= dayStart && f.createdAt < dayEnd,
     );
-    const scans = dayFbs.length;
+    const scans = scansWindowDaily.filter(
+      (s) => s.createdAt >= dayStart && s.createdAt < dayEnd,
+    ).length;
+    const reviews = dayFbs.length;
     const redirects = dayFbs.filter(
       (f) => (f.rating ?? 0) >= 4 && f.platform != null && f.platform !== '',
     ).length;
-    return { date: dateFmt.format(dayStart), scans, redirects };
+    return { date: dateFmt.format(dayStart), scans, reviews, redirects };
   });
 
   // Platform paylaşımı — sadece "Tümü" filter'ında anlamlı (tek platform
@@ -336,8 +367,8 @@ export default async function AnalyticsPage({
         restaurants={user.restaurants}
       />
 
-      {/* 5 KPI cards: Bugün + window-based metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+      {/* 6 KPI cards: Bugün + scans/reviews/conversion + redirect/low-rating */}
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3.5">
         <StatCard
           label={isTr ? 'Bugün' : 'Today'}
           value={todayCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
@@ -356,6 +387,13 @@ export default async function AnalyticsPage({
           value={reviewsCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
           delta={reviewsDelta.value}
           deltaKind={reviewsDelta.kind}
+          deltaSuffix={windowSuffix}
+        />
+        <StatCard
+          label={isTr ? 'Dönüşüm oranı' : 'Conversion rate'}
+          value={scansCount > 0 ? `${conversionRate}%` : '—'}
+          delta={scansCount > 0 && scansPrevWindowCount > 0 ? conversionDelta.value : undefined}
+          deltaKind={scansCount > 0 && scansPrevWindowCount > 0 ? conversionDelta.kind : undefined}
           deltaSuffix={windowSuffix}
         />
         <StatCard
@@ -384,7 +422,8 @@ export default async function AnalyticsPage({
                 {isTr ? 'Yorum ve yönlendirme trendi' : 'Reviews & redirects trend'}
               </div>
             </div>
-            <div className="flex gap-3 sm:gap-4 shrink-0">
+            <div className="flex flex-wrap gap-3 sm:gap-4 shrink-0">
+              <LegendDot color="#737373" label={isTr ? 'Taranma' : 'Scans'} />
               <LegendDot color="#0A0A0A" label={isTr ? 'Yorum' : 'Reviews'} />
               <LegendDot color="#A8D62E" label={isTr ? 'Yönlendirme' : 'Redirects'} />
             </div>
