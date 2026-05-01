@@ -293,7 +293,7 @@ export default async function AdminDashboardPage() {
           <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
             Son 12 hafta
           </div>
-          <BarChart data={businessGrowthData} height={160} />
+          <BarChart data={businessGrowthData} height={160} showValues />
         </div>
         <div className="bz-card p-5 sm:p-6">
           <Eyebrow>PLAN DAĞILIMI</Eyebrow>
