@@ -919,12 +919,18 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
               <MailCheck size={26} strokeWidth={2} className="text-[#0A0A0A]" />
             </div>
             <h3 className="bz-h-tight text-[20px] sm:text-[22px] font-medium tracking-[-0.03em] text-[#0A0A0A]">
-              {isTr ? 'PDF yolda · ekibimiz seninle iletişime geçecek' : 'PDF on the way · our team will reach out'}
-            </h3>
-            <p className="mx-auto mt-2 max-w-[440px] text-[13px] sm:text-[14px] leading-[1.6] text-[#525252]">
               {isTr
-                ? 'Detaylı 12 aylık projeksiyon ve 1-1 kurulum daveti birkaç dakika içinde mailbox\'a düşecek. Spam / promosyon klasörünü de kontrol et.'
-                : 'A detailed 12-month projection and a 1-1 setup invite will land in your inbox shortly. Check Promotions / Spam too.'}
+                ? 'Aldık · ekibimiz en geç 24 saat içinde sana ulaşacak'
+                : 'Got it · our team will reach out within 24 hours'}
+            </h3>
+            <p className="mx-auto mt-2 max-w-[460px] text-[13px] sm:text-[14px] leading-[1.6] text-[#525252]">
+              {isTr
+                ? 'Detaylı 12 aylık projeksiyon PDF\'i ve 1-1 kurulum daveti, ekibimiz tarafından en geç 24 saat içinde mailbox\'ına ulaşacak. Spam / promosyon klasörünü de kontrol et.'
+                : 'A detailed 12-month projection PDF and 1-1 setup invite will arrive from our team within 24 hours at the latest. Check Promotions / Spam too.'}
+            </p>
+            <p className="mx-auto mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#EAF9B8] border border-[#A8D62E]/40 px-3 py-1 text-[11.5px] font-medium text-[#0A0A0A]">
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#A8D62E]" />
+              {isTr ? 'Ortalama yanıt süresi · 2 saat' : 'Average response time · 2 hours'}
             </p>
           </div>
         ) : (
@@ -947,8 +953,8 @@ export default function RoiCalculator({ locale }: RoiCalculatorProps) {
               </div>
               <AlertBanner kind="lime" className="sm:max-w-[280px]">
                 {isTr
-                  ? '5 dk içinde mailbox\'a düşer · 2 sa içinde ekibimiz aradığında.'
-                  : 'Inbox in 5 min · our team calls within 2 hours.'}
+                  ? 'Ekibimiz hazırlayıp en geç 24 saat içinde mailbox\'ına gönderir · ortalama yanıt 2 saat.'
+                  : 'Our team prepares it and emails you within 24 hours · avg. reply 2 hours.'}
               </AlertBanner>
             </div>
 

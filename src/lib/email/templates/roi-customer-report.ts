@@ -298,24 +298,35 @@ export async function renderRoiCustomerReport(
     </div>
   `;
 
+  // Outer chrome — `bz-pad` wrapper aligns ROI mails with the rest of the
+  // Pulse template family (welcome / new-review / customer-reply / …):
+  // 36px/40px desktop padding, 24px/20px mobile via the @media rule in
+  // layout.ts. Without this wrapper the cards sat flush against the email
+  // shell and looked visibly "shifted" compared to peer mails.
   const content = `
-    ${hero}
-    ${spacer(20)}
-    ${kpiRow}
-    ${spacer(20)}
-    ${aiInsightCard}
-    ${spacer(22)}
-    ${flowBlock}
-    ${spacer(22)}
-    ${stepsBlock}
-    ${spacer(22)}
-    ${ctaCard}
-    ${spacer(16)}
-    ${riskFree}
-    ${spacer(20)}
-    <p style="margin:0;font-size:11px;color:${PULSE.n500};line-height:1.55;">
-      ${copy.calibrationFooter}
-    </p>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td class="bz-pad" style="padding:36px 40px 40px;">
+          ${hero}
+          ${spacer(20)}
+          ${kpiRow}
+          ${spacer(20)}
+          ${aiInsightCard}
+          ${spacer(22)}
+          ${flowBlock}
+          ${spacer(22)}
+          ${stepsBlock}
+          ${spacer(22)}
+          ${ctaCard}
+          ${spacer(16)}
+          ${riskFree}
+          ${spacer(20)}
+          <p style="margin:0;font-size:11px;color:${PULSE.n500};line-height:1.55;">
+            ${copy.calibrationFooter}
+          </p>
+        </td>
+      </tr>
+    </table>
   `;
 
   // ─── Plain text fallback ───────────────────────────────────────────────

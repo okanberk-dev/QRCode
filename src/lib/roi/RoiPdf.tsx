@@ -4,7 +4,44 @@
 // pure white. @react-pdf/renderer JSX API'siyle iki sayfalık estetik
 // rapor; lead form'unu dolduran restoran sahibine email attachment olarak
 // gönderilir.
-import { Document, Page, Text, View, StyleSheet, Svg, Path, Circle, Rect } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Svg, Path, Circle, Rect, Font } from '@react-pdf/renderer';
+
+// ─── Turkish-compatible font registration ──────────────────────────────────
+//
+// PDF base 14 fonts (Helvetica / Helvetica-Bold / Courier-Bold) ship with
+// WinAnsi encoding which does NOT include Turkish-specific glyphs:
+//   ı (U+0131)  İ (U+0130)  ğ (U+011F)  Ğ (U+011E)
+//   ş (U+015F)  Ş (U+015E)  ₺ (U+20BA — Turkish Lira)
+// The TR ROI report contains ~236 such characters; the EN report uses
+// `$` plus full ASCII so it is unaffected. Without registering a Unicode-
+// capable font the TR PDF rendered tofu boxes / dropped glyphs on those
+// characters and the layout drifted. We register Inter (OFL, by Rasmus
+// Andersson) — Latin Extended-A + ₺ — as the canonical PDF font for both
+// locales so the TR & EN outputs share identical metrics.
+//
+// Source: rsms/inter v3.19 OTF files via jsdelivr CDN. Pinned tag (not
+// @master) so the URL is stable across deploys; jsdelivr caches GitHub
+// releases aggressively — first cold-start fetch ~150-300ms, subsequent
+// renders in the same Lambda are instant.
+//
+// If the CDN is unreachable at PDF render time @react-pdf throws and the
+// route handler's `.catch` (api/roi/save) drops the attachment but still
+// sends the mail body — graceful degradation, no user-facing failure.
+const INTER_REGULAR = 'https://cdn.jsdelivr.net/gh/rsms/inter@v3.19/docs/font-files/Inter-Regular.otf';
+const INTER_BOLD = 'https://cdn.jsdelivr.net/gh/rsms/inter@v3.19/docs/font-files/Inter-Bold.otf';
+
+// Module-init registration. `Font.register` only stores the URL — actual
+// download happens lazily on first render. Two separate families (rather
+// than one family with `fontWeight: 'bold'`) keeps the call-site diff
+// minimal:
+//   'Helvetica'      → 'Inter'
+//   'Helvetica-Bold' → 'Inter-Bold'
+//   'Courier-Bold'   → 'Inter-Bold'  (mono cells become sans-bold; matches
+//                                     the email template family which also
+//                                     drops mono in favor of Space Grotesk
+//                                     weight 600 for tabular numbers).
+Font.register({ family: 'Inter', src: INTER_REGULAR });
+Font.register({ family: 'Inter-Bold', src: INTER_BOLD });
 
 const C = {
   graphite: '#0A0A0A',
@@ -27,32 +64,32 @@ const styles = StyleSheet.create({
     paddingTop: 48,
     paddingHorizontal: 48,
     paddingBottom: 60,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Inter',
     fontSize: 10,
     lineHeight: 1.55,
   },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brandWord: { fontFamily: 'Helvetica-Bold', fontSize: 16, letterSpacing: -0.4, color: C.graphite },
+  brandWord: { fontFamily: 'Inter-Bold', fontSize: 16, letterSpacing: -0.4, color: C.graphite },
   brandDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.limeDeep, marginLeft: 1 },
-  eyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.n500, textTransform: 'uppercase' },
+  eyebrow: { fontFamily: 'Inter-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.n500, textTransform: 'uppercase' },
   meta: { fontSize: 9, color: C.n500 },
-  h1: { fontFamily: 'Helvetica-Bold', fontSize: 30, lineHeight: 1.05, letterSpacing: -0.6, color: C.graphite, marginBottom: 8 },
+  h1: { fontFamily: 'Inter-Bold', fontSize: 30, lineHeight: 1.05, letterSpacing: -0.6, color: C.graphite, marginBottom: 8 },
   // h2.marginTop 28 → 20: Page 2 vertical compaction. Eski değerde
   // "Calculation breakdown" başlığı orphan oluyor, table sayfa sonuna
   // sıkışıp sonraki sayfaya itiliyordu (kullanıcı raporladı).
-  h2: { fontFamily: 'Helvetica-Bold', fontSize: 18, lineHeight: 1.1, letterSpacing: -0.3, color: C.graphite, marginBottom: 8, marginTop: 20 },
-  h3: { fontFamily: 'Helvetica-Bold', fontSize: 12, color: C.graphite, marginBottom: 4 },
+  h2: { fontFamily: 'Inter-Bold', fontSize: 18, lineHeight: 1.1, letterSpacing: -0.3, color: C.graphite, marginBottom: 8, marginTop: 20 },
+  h3: { fontFamily: 'Inter-Bold', fontSize: 12, color: C.graphite, marginBottom: 4 },
   lead: { fontSize: 11, color: C.n500, lineHeight: 1.55, marginBottom: 24 },
   body: { fontSize: 10, color: C.n800, lineHeight: 1.55 },
 
   /* Hero stat */
   hero: { backgroundColor: C.graphite, color: C.white, borderRadius: 14, padding: 22, marginBottom: 18 },
-  heroEyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.lime, textTransform: 'uppercase' },
+  heroEyebrow: { fontFamily: 'Inter-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.lime, textTransform: 'uppercase' },
   // Explicit lineHeight + larger marginBottom: Page-default lineHeight 1.55
   // 38pt face için yetersiz hesaplanıyor, descender heroSub'a çakışıyordu.
   // 1.05 + marginBottom 12 ile bounding box ve sub-text netleşir.
-  heroValue: { fontFamily: 'Helvetica-Bold', fontSize: 38, lineHeight: 1.05, color: C.lime, marginTop: 6, marginBottom: 12 },
+  heroValue: { fontFamily: 'Inter-Bold', fontSize: 38, lineHeight: 1.05, color: C.lime, marginTop: 6, marginBottom: 12 },
   heroSub: { fontSize: 10, color: '#FFFFFFCC' },
 
   /* KPI grid */
@@ -60,14 +97,14 @@ const styles = StyleSheet.create({
   kpiCell: { flex: 1, backgroundColor: C.n50, borderRadius: 10, padding: 12, borderWidth: 0.5, borderColor: C.n200 },
   kpiCellAccent: { flex: 1, backgroundColor: C.limeSoft, borderRadius: 10, padding: 12, borderWidth: 0.5, borderColor: C.limeDeep },
   // Defansif lineHeight: uzun sayılarda (örn. "+1,250") aynı overlap riski.
-  kpiValue: { fontFamily: 'Helvetica-Bold', fontSize: 16, lineHeight: 1.1, color: C.graphite, marginBottom: 2 },
-  kpiLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, letterSpacing: 1.2, color: C.n500, textTransform: 'uppercase' },
+  kpiValue: { fontFamily: 'Inter-Bold', fontSize: 16, lineHeight: 1.1, color: C.graphite, marginBottom: 2 },
+  kpiLabel: { fontFamily: 'Inter-Bold', fontSize: 7.5, letterSpacing: 1.2, color: C.n500, textTransform: 'uppercase' },
 
   /* Flow diagram */
   flow: { borderRadius: 12, borderWidth: 0.5, borderColor: C.n200, padding: 18, marginBottom: 12, backgroundColor: C.white },
   flowRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   flowChip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: C.graphite },
-  flowChipText: { color: C.white, fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 0.8 },
+  flowChipText: { color: C.white, fontFamily: 'Inter-Bold', fontSize: 8.5, letterSpacing: 0.8 },
   flowArrow: { color: C.n500, marginHorizontal: 8, fontSize: 12 },
   flowDesc: { flex: 1, fontSize: 9.5, color: C.n800, lineHeight: 1.5 },
 
@@ -75,67 +112,70 @@ const styles = StyleSheet.create({
   table: { borderRadius: 10, borderWidth: 0.5, borderColor: C.n200, overflow: 'hidden', marginBottom: 18 },
   tr: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: C.n200 },
   trLast: { flexDirection: 'row' },
-  th: { flex: 1, padding: 10, backgroundColor: C.n50, fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 1, color: C.n500, textTransform: 'uppercase' },
+  th: { flex: 1, padding: 10, backgroundColor: C.n50, fontFamily: 'Inter-Bold', fontSize: 8.5, letterSpacing: 1, color: C.n500, textTransform: 'uppercase' },
   td: { flex: 1, padding: 10, fontSize: 10, color: C.graphite },
-  tdMono: { flex: 1, padding: 10, fontFamily: 'Courier-Bold', fontSize: 10, color: C.graphite },
+  tdMono: { flex: 1, padding: 10, fontFamily: 'Inter-Bold', fontSize: 10, color: C.graphite },
 
   /* Bar */
   barRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   barLabel: { width: 90, fontSize: 9, color: C.graphite },
   barTrack: { flex: 1, height: 5, borderRadius: 3, backgroundColor: C.n100, marginRight: 8 },
   barFill: { height: 5, borderRadius: 3 },
-  barValue: { width: 40, fontFamily: 'Courier-Bold', fontSize: 9, color: C.n500, textAlign: 'right' },
+  barValue: { width: 40, fontFamily: 'Inter-Bold', fontSize: 9, color: C.n500, textAlign: 'right' },
 
   /* Footer */
   footer: { position: 'absolute', bottom: 24, left: 48, right: 48, flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 0.5, borderTopColor: C.n200, paddingTop: 10 },
   footerNote: { fontSize: 8, color: C.n500 },
-  pageNumber: { fontFamily: 'Courier-Bold', fontSize: 8, color: C.n500 },
+  pageNumber: { fontFamily: 'Inter-Bold', fontSize: 8, color: C.n500 },
 
   /* AI insight card — kapak sayfası "Buaze analizi" section'ı için
      graphite zemin + lime accent leverage callout + numbered next steps. */
   insightCard: { backgroundColor: C.graphite, borderRadius: 14, padding: 18, marginTop: 16 },
-  insightEyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.lime, textTransform: 'uppercase' },
+  insightEyebrow: { fontFamily: 'Inter-Bold', fontSize: 8.5, letterSpacing: 1.6, color: C.lime, textTransform: 'uppercase' },
   insightSummary: { marginTop: 7, fontSize: 10.5, lineHeight: 1.55, color: '#FFFFFFE6' },
-  insightLeverage: { marginTop: 12, padding: '10px 12px' as any, backgroundColor: 'rgba(198,242,78,0.14)', borderLeftWidth: 3, borderLeftColor: C.lime, borderRadius: 6 },
-  insightLeverageEyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 8, letterSpacing: 1.4, color: C.lime, textTransform: 'uppercase', marginBottom: 3 },
+  // padding shorthand strings ('10px 12px') don't parse reliably in
+  // @react-pdf — fall back to explicit horizontal/vertical so the inner
+  // text never overlaps the 3px lime borderLeft.
+  insightLeverage: { marginTop: 12, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: 'rgba(198,242,78,0.14)', borderLeftWidth: 3, borderLeftColor: C.lime, borderRadius: 6 },
+  insightLeverageEyebrow: { fontFamily: 'Inter-Bold', fontSize: 8, letterSpacing: 1.4, color: C.lime, textTransform: 'uppercase', marginBottom: 3 },
   insightLeverageBody: { fontSize: 10, lineHeight: 1.5, color: C.white },
-  insightStepsLabel: { marginTop: 14, fontFamily: 'Helvetica-Bold', fontSize: 8, letterSpacing: 1.4, color: '#FFFFFF8C', textTransform: 'uppercase', marginBottom: 6 },
+  insightStepsLabel: { marginTop: 14, fontFamily: 'Inter-Bold', fontSize: 8, letterSpacing: 1.4, color: '#FFFFFF8C', textTransform: 'uppercase', marginBottom: 6 },
   insightStep: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 },
-  insightStepNum: { width: 22, fontFamily: 'Courier-Bold', fontSize: 10, color: C.lime, paddingTop: 1 },
+  insightStepNum: { width: 22, fontFamily: 'Inter-Bold', fontSize: 10, color: C.lime, paddingTop: 1 },
   insightStepText: { flex: 1, fontSize: 10, lineHeight: 1.5, color: '#FFFFFFE6' },
 
   /* CTA card */
   cta: { backgroundColor: C.lime, borderRadius: 14, padding: 22, marginTop: 24 },
-  ctaTitle: { fontFamily: 'Helvetica-Bold', fontSize: 16, color: C.graphite, marginBottom: 6, letterSpacing: -0.2 },
+  ctaTitle: { fontFamily: 'Inter-Bold', fontSize: 16, color: C.graphite, marginBottom: 6, letterSpacing: -0.2 },
   ctaBody: { fontSize: 10.5, color: C.graphite, lineHeight: 1.55, marginBottom: 8 },
-  ctaLink: { fontFamily: 'Helvetica-Bold', fontSize: 10.5, color: C.graphite, textDecoration: 'underline' },
+  ctaLink: { fontFamily: 'Inter-Bold', fontSize: 10.5, color: C.graphite, textDecoration: 'underline' },
 
   /* Star comparison strip (page 1, hero altı) — STRINGS'te starTodayLabel
      + starProjectedLabel zaten lokalize, daha önce render edilmiyordu. */
   starStrip: { flexDirection: 'row', gap: 8, marginBottom: 18 },
   starCellMuted: { flex: 1, backgroundColor: C.n50, borderRadius: 10, padding: 14, borderWidth: 0.5, borderColor: C.n200 },
   starCellAccent: { flex: 1, backgroundColor: C.graphite, borderRadius: 10, padding: 14 },
-  starLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 },
-  starValue: { fontFamily: 'Helvetica-Bold', fontSize: 28, lineHeight: 1, letterSpacing: -0.4 },
+  starLabel: { fontFamily: 'Inter-Bold', fontSize: 7.5, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 },
+  starValue: { fontFamily: 'Inter-Bold', fontSize: 28, lineHeight: 1, letterSpacing: -0.4 },
   starArrow: { width: 24, alignItems: 'center', justifyContent: 'center', fontSize: 16, color: C.n400 },
 
   /* Milestone roadmap (page 2, scenario altı) — m1/m2/m3 strings hazırdı */
   milestoneCard: { backgroundColor: C.n50, borderRadius: 10, padding: 14, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: C.limeDeep, borderTopWidth: 0.5, borderRightWidth: 0.5, borderBottomWidth: 0.5, borderColor: C.n200 },
-  milestoneEyebrow: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, letterSpacing: 1.2, color: C.limeDeep, textTransform: 'uppercase', marginBottom: 4 },
-  milestoneTitle: { fontFamily: 'Helvetica-Bold', fontSize: 12, color: C.graphite, marginBottom: 4 },
+  milestoneEyebrow: { fontFamily: 'Inter-Bold', fontSize: 7.5, letterSpacing: 1.2, color: C.limeDeep, textTransform: 'uppercase', marginBottom: 4 },
+  milestoneTitle: { fontFamily: 'Inter-Bold', fontSize: 12, color: C.graphite, marginBottom: 4 },
   milestoneBody: { fontSize: 9.5, color: C.n800, lineHeight: 1.55 },
 
   /* Social proof strip (page 3, CTA üstü) — socialActiveBusinesses vb. */
   socialRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   socialCell: { flex: 1, backgroundColor: C.n50, borderRadius: 10, padding: 12, borderWidth: 0.5, borderColor: C.n200 },
-  socialValue: { fontFamily: 'Helvetica-Bold', fontSize: 18, lineHeight: 1.1, letterSpacing: -0.3, color: C.graphite, marginBottom: 4 },
-  socialLabel: { fontFamily: 'Helvetica-Bold', fontSize: 7.5, letterSpacing: 1.1, color: C.n500, textTransform: 'uppercase', lineHeight: 1.3 },
+  socialValue: { fontFamily: 'Inter-Bold', fontSize: 18, lineHeight: 1.1, letterSpacing: -0.3, color: C.graphite, marginBottom: 4 },
+  socialLabel: { fontFamily: 'Inter-Bold', fontSize: 7.5, letterSpacing: 1.1, color: C.n500, textTransform: 'uppercase', lineHeight: 1.3 },
 
   /* Risk-free strip (page 3, CTA içinde) */
   riskFreeRow: { flexDirection: 'row', gap: 6, marginTop: 12 },
   riskFreeChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(10,10,10,0.08)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
   riskFreeDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: C.graphite, marginRight: 6 },
-  riskFreeText: { fontSize: 9, color: C.graphite, fontFamily: 'Helvetica-Bold' },
+  riskFreeText: { fontSize: 9, color: C.graphite, fontFamily: 'Inter-Bold' },
 });
 
 const PLATFORM_COLOR: Record<string, string> = {
@@ -263,6 +303,12 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     socialFilterRate: 'Düşük yorum\nfiltreleme oranı',
     socialCalibration: 'Kalibrasyon kaynağı',
     socialBrightLocal: "BrightLocal’24",
+    // Locale-aware numeric strings — TR uses dot thousands, comma decimal;
+    // EN uses comma thousands, dot decimal. Previously hardcoded TR format
+    // ("~2.400") rendered incorrectly inside the EN PDF.
+    socialBusinessesValue: '~2.400',
+    socialLiftValue: '+0,4 ★',
+    socialFilterValue: '~%85',
     riskFree1: '30 gün ücretsiz',
     riskFree2: 'Kredi kartı yok',
     riskFree3: 'İstediğin an iptal',
@@ -354,6 +400,10 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     socialFilterRate: 'Low review\nfiltering rate',
     socialCalibration: 'Calibration source',
     socialBrightLocal: 'BrightLocal’24',
+    // Locale-aware numeric strings — see TR block.
+    socialBusinessesValue: '~2,400',
+    socialLiftValue: '+0.4 ★',
+    socialFilterValue: '~85%',
     riskFree1: '30-day free trial',
     riskFree2: 'No credit card',
     riskFree3: 'Cancel anytime',
@@ -555,7 +605,7 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
             </View>
             <Text style={styles.flowArrow}>→</Text>
             <Text style={styles.flowDesc}>
-              <Text style={{ fontFamily: 'Helvetica-Bold' }}>{L.flowLowTitle}</Text>
+              <Text style={{ fontFamily: 'Inter-Bold' }}>{L.flowLowTitle}</Text>
               {L.flowLowDesc}
             </Text>
           </View>
@@ -567,7 +617,7 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
             </View>
             <Text style={styles.flowArrow}>→</Text>
             <Text style={styles.flowDesc}>
-              <Text style={{ fontFamily: 'Helvetica-Bold' }}>{L.flowHighTitle}</Text>
+              <Text style={{ fontFamily: 'Inter-Bold' }}>{L.flowHighTitle}</Text>
               {L.flowHighDesc}
             </Text>
           </View>
@@ -748,15 +798,15 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
         <View wrap={false} style={{ marginTop: 18 }}>
           <View style={styles.socialRow}>
             <View style={styles.socialCell}>
-              <Text style={styles.socialValue}>~2.400</Text>
+              <Text style={styles.socialValue}>{L.socialBusinessesValue}</Text>
               <Text style={styles.socialLabel}>{L.socialActiveBusinesses}</Text>
             </View>
             <View style={styles.socialCell}>
-              <Text style={styles.socialValue}>+0.4 ★</Text>
+              <Text style={styles.socialValue}>{L.socialLiftValue}</Text>
               <Text style={styles.socialLabel}>{L.socialAvgLift}</Text>
             </View>
             <View style={styles.socialCell}>
-              <Text style={styles.socialValue}>~85%</Text>
+              <Text style={styles.socialValue}>{L.socialFilterValue}</Text>
               <Text style={styles.socialLabel}>{L.socialFilterRate}</Text>
             </View>
             <View style={styles.socialCell}>
@@ -776,8 +826,8 @@ export function RoiPdfDocument({ data }: { data: RoiPdfData }) {
             {L.ctaBodyB}
           </Text>
           <Text style={styles.ctaBody}>
-            <Text style={{ fontFamily: 'Helvetica-Bold' }}>{L.ctaDemoLabel}</Text>
-            {' '}{locale === 'en' ? 'buaze.com/contact' : 'buaze.com/iletisim'} · <Text style={{ fontFamily: 'Helvetica-Bold' }}>{L.ctaEmailLabel}</Text>{' '}
+            <Text style={{ fontFamily: 'Inter-Bold' }}>{L.ctaDemoLabel}</Text>
+            {' '}{locale === 'en' ? 'buaze.com/contact' : 'buaze.com/iletisim'} · <Text style={{ fontFamily: 'Inter-Bold' }}>{L.ctaEmailLabel}</Text>{' '}
             hello@buaze.com
           </Text>
           <Text style={styles.ctaLink}>buaze.com</Text>
