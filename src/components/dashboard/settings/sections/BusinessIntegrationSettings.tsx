@@ -244,12 +244,33 @@ function deriveStatus(url: string, enabled: boolean): IntegrationStatusKind {
   return "connected";
 }
 
-interface TestResult {
+interface LatestCheck {
   ok: boolean;
-  statusCode: number;
-  latencyMs: number;
-  error?: string;
-  url?: string;
+  statusCode: number | null;
+  latencyMs: number | null;
+  error: string | null;
+  checkedAt: string;
+  source: string;
+}
+
+function providerForFormKey(key: keyof FormState): IntegrationProvider | null {
+  const platDef = PLATFORM_DEFS.find((d) => d.urlKey === key);
+  if (platDef) return platDef.testProvider;
+  const socDef = SOCIAL_DEFS.find((d) => d.key === key);
+  if (socDef) return socDef.testProvider;
+  return null;
+}
+
+function formatRelative(iso: string, locale: "tr" | "en"): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (diff < 0) return locale === "tr" ? "az önce" : "just now";
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return locale === "tr" ? "az önce" : "just now";
+  if (mins < 60) return locale === "tr" ? `${mins} dk önce` : `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return locale === "tr" ? `${hours} sa önce` : `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return locale === "tr" ? `${days} gün önce` : `${days}d ago`;
 }
 
 /**
@@ -280,7 +301,8 @@ export function BusinessIntegrationSettings({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
-  const [testResults, setTestResults] = useState<Record<string, TestResult>>({});
+  const [retestingAll, setRetestingAll] = useState(false);
+  const [latestChecks, setLatestChecks] = useState<Record<string, LatestCheck>>({});
 
   useEffect(() => {
     const next = toForm(restaurant);
@@ -290,17 +312,39 @@ export function BusinessIntegrationSettings({
     setSuccess(null);
   }, [restaurant]);
 
+  // Mount'ta provider başına son test sonuçlarını çek (CLAUDE.md §19.4 + §23.7
+  // Phase 11.23). Owner panel açıldığında "Son test: 2 saat önce" rozeti
+  // hemen görünür. DB write fail olduysa boş dön (UI kırılmaz).
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/restaurants/${restaurant.id}/integrations/checks`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.checks) return;
+        setLatestChecks(data.checks as Record<string, LatestCheck>);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurant.id]);
+
   const dirty = useMemo(() => isDirty(form, initial), [form, initial]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (success) setSuccess(null);
-    // Eski test sonucu URL değiştiyse anlamını kaybeder; rozet sıfırlanır.
-    setTestResults((prev) => {
-      const next = { ...prev };
-      delete next[String(key)];
-      return next;
-    });
+    // URL değiştiyse o provider'ın son test sonucu artık stale — rozeti
+    // gizle. Owner kaydedip yeniden test edince fresh rozet gelir.
+    const provider = providerForFormKey(key);
+    if (provider) {
+      setLatestChecks((prev) => {
+        if (!prev[provider]) return prev;
+        const next = { ...prev };
+        delete next[provider];
+        return next;
+      });
+    }
   };
 
   const allowedPlatforms = useMemo(() => getSectorPlatforms(form.googleEnabled ? restaurant.category : restaurant.category), [restaurant.category, form.googleEnabled]);
@@ -419,9 +463,13 @@ export function BusinessIntegrationSettings({
   };
 
   const runTest = async (urlKey: string, testProvider: IntegrationProvider) => {
-    if (testing) return;
+    if (testing || retestingAll) return;
     if (dirty) {
-      setError("Test etmeden önce değişiklikleri kaydet.");
+      setError(
+        locale === "tr"
+          ? "Test etmeden önce değişiklikleri kaydet."
+          : "Save changes before testing.",
+      );
       return;
     }
     setTesting(urlKey);
@@ -431,14 +479,95 @@ export function BusinessIntegrationSettings({
         { method: "POST" },
       );
       const data = await res.json();
-      setTestResults((prev) => ({ ...prev, [urlKey]: data }));
-    } catch (err) {
-      setTestResults((prev) => ({
+      setLatestChecks((prev) => ({
         ...prev,
-        [urlKey]: { ok: false, statusCode: 0, latencyMs: 0, error: (err as Error).message },
+        [testProvider]: {
+          ok: data.ok ?? false,
+          statusCode: data.statusCode ?? null,
+          latencyMs: data.latencyMs ?? null,
+          error: data.error ?? null,
+          checkedAt: data.checkedAt ?? new Date().toISOString(),
+          source: "manual",
+        },
+      }));
+    } catch (err) {
+      setLatestChecks((prev) => ({
+        ...prev,
+        [testProvider]: {
+          ok: false,
+          statusCode: null,
+          latencyMs: null,
+          error: (err as Error).message,
+          checkedAt: new Date().toISOString(),
+          source: "manual",
+        },
       }));
     } finally {
       setTesting(null);
+    }
+  };
+
+  const handleRetestAll = async () => {
+    if (retestingAll || testing) return;
+    if (dirty) {
+      setError(
+        locale === "tr"
+          ? "Yeniden test etmeden önce değişiklikleri kaydet."
+          : "Save changes before retesting.",
+      );
+      return;
+    }
+    setRetestingAll(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch(
+        `/api/restaurants/${restaurant.id}/integrations/retest`,
+        { method: "POST" },
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          data?.error ||
+            (locale === "tr" ? "Yeniden test başarısız." : "Retest failed."),
+        );
+      }
+      const data = await res.json();
+      const updates: Record<string, LatestCheck> = {};
+      for (const r of (data.results ?? []) as Array<{
+        provider: string;
+        ok: boolean;
+        statusCode: number;
+        latencyMs: number;
+        error?: string;
+        checkedAt: string;
+      }>) {
+        updates[r.provider] = {
+          ok: r.ok,
+          statusCode: r.statusCode || null,
+          latencyMs: r.latencyMs || null,
+          error: r.error ?? null,
+          checkedAt: r.checkedAt,
+          source: "retest_all",
+        };
+      }
+      setLatestChecks((prev) => ({ ...prev, ...updates }));
+      const checked = data.checked ?? 0;
+      setSuccess(
+        locale === "tr"
+          ? `${checked} platform yeniden test edildi.`
+          : `${checked} platforms retested.`,
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : locale === "tr"
+            ? "Yeniden test sırasında hata oluştu."
+            : "Retest failed.",
+      );
+    } finally {
+      setRetestingAll(false);
     }
   };
 
@@ -447,15 +576,31 @@ export function BusinessIntegrationSettings({
 
   return (
     <div className="space-y-5">
-      <p className="text-[13px] leading-relaxed text-[#525252]">
-        {isTr
-          ? "Google, Yemeksepeti, Getir, Trendyol, Tripadvisor ve diğer platform linklerinizi tek yerden yönetin. Buaze linklerinizi doğrular, erişilebilirliğini test eder ve QR akışlarında doğru yönlendirme yapmanıza yardımcı olur."
-          : "Manage your Google, delivery, travel, social and reservation links from one place. Buaze validates your links, checks reachability, and helps your QR flows route customers safely."}
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <p className="text-[13px] leading-relaxed text-[#525252] flex-1 sm:max-w-[680px]">
+          {isTr
+            ? "Google, Yemeksepeti, Getir, Trendyol, Tripadvisor ve diğer platform linklerinizi tek yerden yönetin. Buaze linklerinizi doğrular, erişilebilirliğini test eder ve QR akışlarında doğru yönlendirme yapmanıza yardımcı olur."
+            : "Manage your Google, delivery, travel, social and reservation links from one place. Buaze validates your links, checks reachability, and helps your QR flows route customers safely."}
+        </p>
+        <button
+          type="button"
+          onClick={handleRetestAll}
+          disabled={retestingAll || testing !== null || dirty}
+          className="bz-btn-ghost shrink-0 inline-flex items-center justify-center gap-1.5 rounded-full text-[13px]"
+          style={{ minHeight: 40 }}
+        >
+          {retestingAll ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <RefreshCw size={14} />
+          )}
+          {isTr ? "Tümünü yeniden test et" : "Retest all"}
+        </button>
+      </div>
       <AlertBanner kind="info">
         {isTr
-          ? "Bu sayfa platform bağlantılarını yönetir. Resmi API senkronizasyonları desteklenen platformlarda ayrıca yapılandırılır."
-          : "This page manages platform links. Official API sync is configured separately for supported platforms."}
+          ? "Bu sayfa platform bağlantılarını yönetir. Resmi API senkronizasyonları desteklenen platformlarda ayrıca yapılandırılır. Bazı platformlar otomatik testleri engelleyebilir; başarısız test her zaman bağlantının tarayıcıda kırık olduğu anlamına gelmez."
+          : "This page manages platform links. Official API sync is configured separately for supported platforms. Some platforms may block automated checks — a failed test does not always mean the link is broken in a browser."}
       </AlertBanner>
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>
@@ -507,8 +652,13 @@ export function BusinessIntegrationSettings({
                   onClear={() => set(def.urlKey, "" as never)}
                   onTest={() => runTest(def.urlKey, def.testProvider)}
                   testing={isThisTesting}
-                  testResult={testResults[def.urlKey]}
-                  testDisabled={dirty || fieldQuality[def.urlKey]?.result.severity === "error"}
+                  latestCheck={latestChecks[def.testProvider] ?? null}
+                  locale={locale}
+                  testDisabled={
+                    dirty ||
+                    retestingAll ||
+                    fieldQuality[def.urlKey]?.result.severity === "error"
+                  }
                   toggle={
                     <Toggle
                       checked={enabled}
@@ -555,8 +705,13 @@ export function BusinessIntegrationSettings({
                 onClear={() => set(def.key, "" as never)}
                 onTest={() => runTest(String(def.key), def.testProvider)}
                 testing={isThisTesting}
-                testResult={testResults[String(def.key)]}
-                testDisabled={dirty || fieldQuality[def.key]?.result.severity === "error"}
+                latestCheck={latestChecks[def.testProvider] ?? null}
+                locale={locale}
+                testDisabled={
+                  dirty ||
+                  retestingAll ||
+                  fieldQuality[def.key]?.result.severity === "error"
+                }
               />
             );
           })}
@@ -597,7 +752,8 @@ interface IntegrationCardProps {
   onClear: () => void;
   onTest: () => void;
   testing: boolean;
-  testResult?: TestResult;
+  latestCheck: LatestCheck | null;
+  locale: "tr" | "en";
   testDisabled: boolean;
   toggle?: React.ReactNode;
   toggleLabel?: string;
@@ -615,7 +771,8 @@ function IntegrationCard({
   onClear,
   onTest,
   testing,
-  testResult,
+  latestCheck,
+  locale,
   testDisabled,
   toggle,
   toggleLabel,
@@ -673,11 +830,13 @@ function IntegrationCard({
         )}
       </div>
 
-      {/* Test result (if any) — shown above actions so it stays visible on
-          phones even when the action row wraps. */}
-      {testResult && (
+      {/* Latest test result (if any) — shown above actions so it stays
+          visible on phones even when the action row wraps. Mount fetch
+          (GET /integrations/checks) hydrates this; manual + retest_all
+          test'ler buraya overwrite eder. */}
+      {latestCheck && (
         <div className="mt-3">
-          <TestResultLine result={testResult} />
+          <LatestCheckLine check={latestCheck} locale={locale} />
         </div>
       )}
 
@@ -727,16 +886,29 @@ function IntegrationCard({
   );
 }
 
-function TestResultLine({ result }: { result: TestResult }) {
-  if (result.ok) {
+function LatestCheckLine({
+  check,
+  locale,
+}: {
+  check: LatestCheck;
+  locale: "tr" | "en";
+}) {
+  const isTr = locale === "tr";
+  const relative = formatRelative(check.checkedAt, locale);
+  if (check.ok) {
     return (
       <div
         role="status"
-        className="flex items-center gap-2 rounded-lg bg-[#F0FDF4] px-3 py-2 text-[12px] text-[#166534]"
+        className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-[#F0FDF4] px-3 py-2 text-[12px] text-[#166534]"
       >
         <CheckCircle2 size={14} className="shrink-0" />
-        <span className="bz-mono">
-          HTTP {result.statusCode} · {result.latencyMs}ms
+        <span>
+          {isTr ? "Son test: " : "Last test: "}
+          <strong>{relative}</strong>
+        </span>
+        <span className="bz-mono text-[#15803D]">
+          · HTTP {check.statusCode ?? "-"}
+          {check.latencyMs != null ? ` · ${check.latencyMs}ms` : ""}
         </span>
       </div>
     );
@@ -747,7 +919,17 @@ function TestResultLine({ result }: { result: TestResult }) {
       className="flex items-start gap-2 rounded-lg bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]"
     >
       <XCircle size={14} className="shrink-0 mt-0.5" />
-      <span>{result.error || `HTTP ${result.statusCode}`}</span>
+      <div className="flex-1 min-w-0">
+        <div>
+          <strong>{isTr ? "Son test başarısız" : "Last test failed"}</strong>
+          <span className="text-[#7F1D1D] ml-1">· {relative}</span>
+        </div>
+        {(check.error || check.statusCode) && (
+          <div className="mt-0.5 text-[11px] text-[#7F1D1D] break-words">
+            {check.error || `HTTP ${check.statusCode}`}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

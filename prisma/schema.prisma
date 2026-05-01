@@ -157,17 +157,61 @@ model Restaurant {
   userId String? @map("user_id")
   user   User?   @relation(fields: [userId], references: [id])
 
-  feedbacks       Feedback[]
-  qrGenerations   QrGeneration[]
-  qrScans         QrScan[]
-  embedViews      EmbedView[]
-  adminUsers      AdminUser[]
-  menuCategories  MenuCategory[]
-  menuItems       MenuItem[]
-  analyticsEvents MenuAnalyticsEvent[]
-  brandSettings   BrandSettings?
+  feedbacks          Feedback[]
+  qrGenerations      QrGeneration[]
+  qrScans            QrScan[]
+  embedViews         EmbedView[]
+  adminUsers         AdminUser[]
+  menuCategories     MenuCategory[]
+  menuItems          MenuItem[]
+  analyticsEvents    MenuAnalyticsEvent[]
+  brandSettings      BrandSettings?
+  platformLinkChecks PlatformLinkCheck[]
 
   @@map("restaurants")
+}
+
+// Platform link health check event (CLAUDE.md §19.4 + §23.7 Phase 11.23).
+// Owner panel "Platform Bağlantıları" sekmesinde "Test et" butonu (manuel)
+// veya gelecekteki cron (Dalga 2) bu satırı yazar. Her test bir snapshot:
+// URL anlık değerini de saklar, böylece owner sonradan URL değiştirse bile
+// geçmiş test sonuçları okunabilir kalır.
+//
+// Severity ayrı kolon değil — ok=false durumunda error mesajı + statusCode
+// yeterli. UI 'son test' rozetini latestCheck.ok'a göre hex'ler.
+//
+// Retention: şimdilik süresiz. Cron (Dalga 2) eklendiğinde provider başına
+// son N=50 kayıt tutmak yeterli olur, eski'leri prune. Şu an manuel test
+// volume'i ayda restoran başına ~5-20 → uzun süre büyümez.
+model PlatformLinkCheck {
+  id           String     @id @default(cuid())
+  restaurantId String     @map("restaurant_id")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  // IntegrationProvider literal'ı (src/lib/integration-domains.ts). String
+  // saklıyoruz — yeni provider eklerken Prisma migration yerine sadece
+  // helper'a ekleme yeter.
+  provider     String
+  // Test edilen URL'in snapshot'ı. Owner sonradan URL değiştirse bile
+  // geçmiş test'in hangi URL'e gittiği görünür kalır. @db.Text — uzun
+  // tracking parametreli URL'ler için (300 char+).
+  url          String     @db.Text
+  ok           Boolean
+  statusCode   Int?       @map("status_code")
+  latencyMs    Int?       @map("latency_ms")
+  // Server fetch error mesajı veya domain validation mesajı. @db.Text +
+  // helper trim'liyor (max 500 char) — Vercel/Resend stack trace'ler uzun
+  // olabilir.
+  error        String?    @db.Text
+  // 'manual' | 'cron' | 'retest_all' (CLAUDE.md §21.20 FeedbackReply.source
+  // pattern). Owner UI 'manual' + 'retest_all'ı aynı gösterir, 'cron' rozeti
+  // ayrı (otomatik test sonuçları farklı confidence taşır — bazı platformlar
+  // bot User-Agent'ı reddeder).
+  source       String     @default("manual")
+  checkedAt    DateTime   @default(now()) @map("checked_at")
+
+  @@index([restaurantId, provider, checkedAt])
+  @@index([provider, checkedAt])
+  @@map("platform_link_checks")
 }
 
 // QR scan event (CLAUDE.md §34.x). Public review surface (`/r/[slug]`)
