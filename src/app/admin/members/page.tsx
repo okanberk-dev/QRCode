@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   Check,
@@ -135,6 +136,7 @@ export default function MembersPage() {
   }, [debouncedSearch, planFilter, statusFilter, page]);
 
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const router = useRouter();
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -365,10 +367,26 @@ export default function MembersPage() {
                   const trialSoon = m.plan === 'trial' && dl !== null && dl > 0 && dl <= 3;
                   const planMeta = PLAN_BADGE[m.plan] || { label: m.plan, kind: 'ghost' as const };
 
+                  const memberHref = `/admin/members/${m.id}`;
                   return (
                     <tr
                       key={m.id}
-                      className={`hover:bg-[#FAFAFA] transition-all ${m.isActive ? '' : 'opacity-60'}`}
+                      role="link"
+                      tabIndex={0}
+                      aria-label={`${m.name || m.email} detayını aç`}
+                      onClick={(e) => {
+                        // Action butonları + iç Link kendi click handler'larıyla
+                        // çalışsın; bubbling row-level navigate'i tetiklemesin.
+                        if ((e.target as HTMLElement).closest('button, a, input')) return;
+                        router.push(memberHref);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter' && e.key !== ' ') return;
+                        if ((e.target as HTMLElement).closest('button, a, input')) return;
+                        e.preventDefault();
+                        router.push(memberHref);
+                      }}
+                      className={`cursor-pointer hover:bg-[#FAFAFA] transition-all focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-inset ${m.isActive ? '' : 'opacity-60'}`}
                     >
                       <td className="px-3 py-4 sm:px-5">
                         <div className="flex items-center gap-3">
