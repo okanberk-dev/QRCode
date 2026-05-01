@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronRight, Receipt, ShoppingBag, Sparkles, BarChart3 } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { getRelatedSolutions } from '@/lib/related-solutions';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,6 +89,38 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
         },
       ];
 
+  const benefits = isTr
+    ? [
+        { Icon: Receipt, h: 'Fiş altı + kasa QR\'ları', d: 'Her fişin altına QR + kasada genel QR. Müşteri ödeme sonrası deneyimini taze yorumlar — kapı çıkışı yerine işlem-an-anı.' },
+        { Icon: ShoppingBag, h: 'Çoklu platform yönlendirme', d: 'Google + Yandex + Foursquare aynı akışta. Müşteri seçtiği platforma yorum yazar; tercih müşteride kalır, yıldız bazlı kısıtlama yok.' },
+        { Icon: Sparkles, h: 'Pulse AI yanıt taslağı', d: 'Stokta yok / kasiyer ilgisi / mağaza temizliği gibi farklı şikayet türlerine ayrı ton. Yönetici onaylar, otomatik gönderim yok.' },
+        { Icon: BarChart3, h: 'Mağaza + vardiya analitiği', d: 'Hangi mağaza, hangi vardiya, hangi kategori (gıda / giyim / elektronik) en çok düşük puan çekiyor? Operasyonel kararı veriyle al.' },
+      ]
+    : [
+        { Icon: Receipt, h: 'Receipt + register QRs', d: 'A QR under every receipt + a general QR at the register. The customer reviews the experience while it\'s fresh — at the moment of transaction, not at the door.' },
+        { Icon: ShoppingBag, h: 'Multi-platform routing', d: 'Google + Yandex + Foursquare in one flow. The customer posts on the platform of their choice; no star-rating gate.' },
+        { Icon: Sparkles, h: 'Pulse AI reply drafts', d: 'Different tone for "out of stock" vs "cashier attentiveness" vs "store cleanliness" complaints. Manager approves; nothing auto-sent.' },
+        { Icon: BarChart3, h: 'Store + shift analytics', d: 'Which store, which shift, which category (grocery / apparel / electronics) attracts the most low ratings? Make operational calls from data.' },
+      ];
+
+  const faqs: FaqItem[] = isTr
+    ? [
+        { q: 'Perakende mağaza için Buaze nasıl çalışır?', a: 'Her fişin altına QR sticker basarsın (POS yazılımı entegrasyonu varsa otomatik) + kasada genel bir QR yerleştirirsin. Müşteri kasadan çıkarken QR\'ı tarar, deneyimini puanlar ve seçtiğin platformlara (Google, Yandex, Foursquare) yönlendirilir.' },
+        { q: 'Birden fazla mağaza nasıl yönetirim?', a: 'Her mağaza için ayrı işletme oluştur veya tek işletme + mağaza etiketleri (Buaze branch field) kullan. Analytics mağaza bazlı ayrılır: hangi mağaza ortalama 4.7, hangi mağaza 4.2 — bölge müdürü doğrudan veriden görür. Pricing planı mağaza sayısına göre ölçeklenir.' },
+        { q: 'Düşük puan veren müşteri ne olur?', a: 'Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren müşteriler ek olarak mağaza yönetimiyle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Müşteri her zaman herkese açık platformlara yorum yazma hakkını korur; siz sorunu özelden (iade, değişim, ek hizmet) çözme şansı kazanırsınız.' },
+        { q: 'Vardiya / kasiyer bazlı performans takip eder miyim?', a: 'Evet. QR\'a vardiya ID veya kasiyer etiketi URL parametresi olarak eklenebilir; yorum geldiğinde hangi vardiya + hangi kasiyer + saat loglanır. Analytics raporunda mağaza yönetimi vardiya bazlı memnuniyet farklarını görür.' },
+        { q: 'Yandex entegrasyonu var mı?', a: 'Evet. Yandex Maps yorum bağlantısını owner panelden eklersin; akış müşteriye Yandex bağlantısı sunar. Türkiye\'de Yandex arama hacmi büyüyor; özellikle Anadolu mağazaları için Google\'la birlikte ikinci kanal olarak değerli.' },
+      ]
+    : [
+        { q: 'How does Buaze work for a retail store?', a: 'You print a QR sticker under every receipt (auto if your POS supports it) + place a general QR at the register. As the customer leaves, they scan the QR, rate the experience, and are routed to the platforms you have selected (Google, Yandex, Foursquare).' },
+        { q: 'How do I manage multiple stores?', a: 'Either create a separate business per store or use a single business + store tags (Buaze branch field). Analytics splits per store: which one averages 4.7, which 4.2 — area managers see it directly from data. Pricing scales with store count.' },
+        { q: 'What happens to customers giving low ratings?', a: 'Buaze never blocks or hides any review. Customers giving low ratings additionally see an option to share privately with store management — in practice ~85% choose this private channel. The customer always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (refund, exchange, extra service).' },
+        { q: 'Can I track shift / cashier performance?', a: 'Yes. The QR can carry a shift ID or cashier tag as a URL parameter; when the review arrives, which shift + which cashier + time is logged. Store management sees per-shift satisfaction differences in the analytics report.' },
+        { q: 'Is there Yandex integration?', a: 'Yes. You add the Yandex Maps review link in the owner panel; the flow surfaces the Yandex link to the customer. Yandex search volume is growing in Turkey; especially for Anatolian stores, Yandex is a valuable second channel alongside Google.' },
+      ];
+
+  const relatedSolutions = getRelatedSolutions('retail', 4);
+
   const jsonLd = buildSolutionSchema({
     locale,
     slug: 'retail',
@@ -95,6 +129,7 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
     description: isTr
       ? "Müşteri kasadan çıkarken fişinin altındaki QR'ı tarar. Google ve Yandex'e yönlendirilir. Çok mağaza, tek panel."
       : 'Customers scan the QR under the receipt on the way out. Routed to Google and Yandex. Multi-store, one panel.',
+    faqs,
   });
 
   return (
@@ -248,6 +283,71 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
               <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">{f.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Benefits — 4-tile grid */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
+            {isTr ? 'Perakende operasyonuna özel dört kazanç' : 'Four wins built for retail operations'}
+          </h2>
+          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {benefits.map((b, i) => (
+              <div key={i} className="bz-card p-6 sm:p-7">
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"><b.Icon size={16} /></div>
+                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
+                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
+        <div className="max-w-[820px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
+            {isTr ? 'Perakende için merak edilenler' : 'Common questions for retail'}
+          </h2>
+          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
+        </div>
+      </section>
+
+      {/* Resources / Related Solutions */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
+          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
+          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
+              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
+              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
+              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
+            ].map((r) => (
+              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
+                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
+                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
+              </Link>
+            ))}
+          </div>
+          {relatedSolutions.length > 0 && (
+            <>
+              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {relatedSolutions.map((sol) => (
+                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
+                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
+                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
+                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
