@@ -975,6 +975,53 @@ Wave 1-2-3'ü bağlayan son halka. `/api/restaurants?slug=` GET endpoint'i artı
 - Yeni provider eklerken hiç ek iş yok — slug GET `latestChecks` reducer string key kabul eder.
 - Cron `take` (BATCH_SIZE=25) artarsa: latestChecks query sınırlı (24h pencere + per-restaurant), yine performant.
 
+### 19.5 Owner Activation Checklist (Phase 11.29, 2026-05)
+
+Yeni restoran sahipleri için 5-step kurulum kontrol listesi. Owner dashboard top'ta `<ActivationChecklistCard />` görünür; 100% complete olduğunda kutlama state + dismiss CTA, dismiss sonrası kart gizli.
+
+**5 step:**
+
+| Step | Compute / tracking |
+|---|---|
+| `profile` | `restaurant.name` + `category` dolu (compute) |
+| `google_link` | `googleReviewUrl` + `googleEnabled` + `checkProviderUrl` hard error değil (compute, warning OK — Phase 11.22 §19.4 disiplini) |
+| `qr_downloaded` | `prisma.qrGeneration.count > 0` (compute — mevcut `rememberFeedbackQr` upsert'i kullanılır) |
+| `qr_printed_shared` | `RestaurantActivationState.qrPrintedSharedAt` (manuel "Bunu yaptım" / "I did this" buton) |
+| `first_feedback` | `prisma.feedback.count > 0` (compute) |
+
+**ChatGPT'den 4 sıkılaştırma:**
+- Schema 5 nullable timestamp (id+restaurantId+3) → **2 timestamp** (`qrPrintedSharedAt` + `dismissedAt`). Diğer 3 step compute ediliyor (CLAUDE.md §7).
+- `qrDownloadedAt` field çıkarıldı → `QrGeneration` mevcut tablosu reuse, ek storage yok.
+- `mark_qr_downloaded` PATCH action çıkarıldı → mevcut `rememberFeedbackQr` zaten kayıt yapıyor.
+- "Suggested actions" ayrı kart çıkarıldı → checklist zaten incomplete step + CTA gösteriyor; tek-kart yeterli.
+
+**Dosyalar:**
+- `prisma/schema.prisma` `RestaurantActivationState` model — `qrPrintedSharedAt` + `dismissedAt` + auto `createdAt`/`updatedAt`. Restaurant cascade.
+- `src/lib/activation.ts` — `computeActivation({ restaurant, state, qrGenerationCount, feedbackCount })` saf fonksiyon. Output: `{ steps[], completedCount, totalCount, percentage, isComplete, dismissedAt }`. Test edilebilir, deterministik.
+- `GET /api/restaurants/[id]/activation` — owner-scoped IDOR. Promise.all aggregate (restaurant + state + qrGenerationCount + feedbackCount).
+- `PATCH /api/restaurants/[id]/activation` — `{ action }` body: `mark_qr_printed` / `unmark_qr_printed` / `dismiss` / `undismiss`. Upsert + computed result return.
+- `<ActivationChecklistCard />` — Pulse `bz-card`, 5-step list (Check / lucide step icon + label + done state + CTA), progress bar (lime), dismiss button (≥1 step complete sonrası), 100% complete success state (PartyPopper + lime tint).
+- `/[locale]/dashboard/page.tsx` — owner home `<OnboardingNudge>` altına `<ActivationChecklistCard restaurantId={user.restaurants[0].id} />` mount.
+
+**UI davranış:**
+- Loading → skeleton kart (5 satır + progress bar).
+- Owner herhangi bir step CTA'sına tıklayınca ilgili sayfaya gider (profile → settings, google → settings#integrations, qr → /qr, feedback → /feedbacks).
+- "Bunu yaptım" buton → `mark_qr_printed` PATCH → state güncel.
+- Dismiss → `dismissedAt` set → kart gizli (frontend filter).
+- 100% complete → success state + dismiss CTA.
+- Dismiss izni: `completedCount >= 1` (anlamlı progress kuralı, ChatGPT önerisi).
+
+**Yapma:**
+- Permanent "Kurulum / Setup" sidebar item ekleme — ChatGPT'nin de tavsiyesi card-only.
+- Suggested Actions ayrı kart yapma — checklist zaten incomplete step + CTA görünür.
+- `qrDownloadedAt` field eklemek — `QrGeneration` mevcut, count sorgusu yeter.
+- Per-restaurant settings sayfasına eklemek — bu PR'da scope dışı; kullanıcı isterse Wave A'nın takibinde eklenebilir.
+- Backend dismiss validation — UI'da `canDismiss` zorlaması yeter; backend tüm dismiss çağrılarını kabul eder (idempotent + IDOR korunuyor).
+
+**Yap:**
+- Yeni step eklerken: `ActivationStep` literal'ı + `STEP_META` icon/label + `ctaHref` switch + (gerekirse) `RestaurantActivationState` field + `computeActivation` mantığı. 5 nokta — küçük genişleme.
+- Lifecycle email Wave B (sonraki PR): activation result'ı tüketir → "QR not downloaded reminder" sadece `qr_downloaded` step incomplete iken gönder. `LifecycleEmailLog` model + cron + 4 yeni email.
+
 <!-- §20 §4.5 ile birleştirildi (kanonik terminoloji tek bölümde) -->
 
 
@@ -2269,6 +2316,7 @@ Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`B
 - **Phase 11.19 (PR #275)**: Bulk activate/deactivate (restaurants). Yeni `/api/admin/restaurants/bulk` endpoint (superadmin only, IDOR, Zod, rate limit 10/dk, single `updateMany`). UI: header select-all checkbox + indeterminate state, row solunda checkbox, lime-tint highlight, floating bottom toolbar (X seçildi + Aktif et lime + Duraklat ghost + dismiss), 3.5s auto-dismiss notice.
 - **Phase 11.20 (PR #276)**: A11y polish. 6 admin search input'a `aria-label` (Blog yazısı ara / Müşteri ara / Bülten abonesi ara / Bülten kampanyası ara / İşletme sahibi ara / İşletme ara). 2 bulk toolbar count span'ına `aria-live="polite"` (3 seçildi announcement). WCAG 2.1 AA 1.3.1 + 4.1.2.
 - **Phase 11.21 (PR #277)**: Self-audit follow-up bug bundle. (1) `/admin/members` searchInput desync — browser back ile gelen URL filter input'a yansımıyordu, sync `useEffect` eklendi. (2) `/admin/restaurants` bulk selection stale — filter değişiminde `selectedIds` cleanup yoktu, görünmeyen row'lara apply riski vardı; `useEffect` ile temizlik. (3) `/admin/reviews` bulk refetch URL'inde `assignedToMe` eksikti, "Bana atanan" filter aktifken liste yanlış genişliyordu; query builder'a eklendi. Backend dokunulmadı.
+- **Phase 11.29 (PR TBD, branch `claude/activation-checklist`)**: Owner activation checklist (CLAUDE.md §19.5, Wave A — Prompt 3). Yeni restoran sahipleri için 5-step kurulum kontrol listesi: profile / google_link / qr_downloaded / qr_printed_shared / first_feedback. (1) **`RestaurantActivationState` Prisma model** — `qrPrintedSharedAt` + `dismissedAt` + auto `createdAt`/`updatedAt`. ChatGPT'nin önerdiği 5 nullable timestamp **2'ye sıkılaştırıldı** (3 step compute edilir: profile/google/feedback mevcut data'dan, qr_downloaded `QrGeneration.count > 0`). (2) **`src/lib/activation.ts`** — `computeActivation({ restaurant, state, qrGenerationCount, feedbackCount })` saf fonksiyon, deterministik, test edilebilir. Output: `{ steps[], completedCount, totalCount, percentage, isComplete, dismissedAt }`. `getSuggestedSteps(result, max)` helper'ı top-N incomplete step döner. Google link kontrolü warning severity'sinde geçer (homepage / not_review_link → "done"; Phase 11.22 §19.4 disiplini, warning hard block değil). (3) **`GET + PATCH /api/restaurants/[id]/activation`** — owner-scoped IDOR. PATCH actions: `mark_qr_printed`/`unmark_qr_printed`/`dismiss`/`undismiss`. `mark_qr_downloaded` action **çıkarıldı** (mevcut `rememberFeedbackQr` upsert'i yeterli). (4) **`<ActivationChecklistCard />`** — Pulse `bz-card`, 5-step list (lucide step icon + label + done state + CTA Go button), progress bar (lime, aria-valuenow), dismiss button (≥1 step complete sonrası), 100% complete success state (PartyPopper + lime tint kutlama). Loading skeleton, error fallback. (5) **`/[locale]/dashboard/page.tsx`** — owner home `<OnboardingNudge>` altına `<ActivationChecklistCard restaurantId={user.restaurants[0].id} />` mount, primary restaurant scope. ChatGPT'den **4 sıkılaştırma** (CLAUDE.md §19.5): schema sadeleşmesi, qrDownloadedAt field çıkarma, Suggested Actions ayrı kart yapmama (checklist incomplete step + CTA yeterli), permanent sidebar item eklememe. **Wave B backlog** (Prompt 3 lifecycle email): `LifecycleEmailLog` + 4 yeni email + cron — activation result'ı tüketir.
 - **Phase 11.28 (PR TBD, branch `claude/platform-redirect-broken-skip`)**: Wave 4 — broken-skip downstream (CLAUDE.md §19.4.5). Wave 1-2-3'ü bağlayan son halka. (1) **`/api/restaurants?slug=` GET endpoint** — son 24 saatlik `PlatformLinkCheck` satırlarından provider başına latest sonucu attach edildi. Tek extra Prisma query (`findMany take: 100 where: {restaurantId, checkedAt: gte 24h}`) + JS reduce. Edge cache (60s/300sw) korunur. (2) **`/r/[slug]/page.tsx`** — `RestaurantData` interface'ine `latestChecks?: Record<string, { ok, checkedAt: string }>` eklendi. Resolver çağrısından önce `Map<provider, { ok, checkedAt: Date }>` construct edip `resolveBestRedirectPlatform({ ..., latestChecks })` parametresine geçirilir. Wave 3b'de undefined geçiriliyordu (legacy davranış); Wave 4'te dolu Map → broken-skip aktif. (3) **Resolver kontratı dokunulmadı** — Wave 3b'de `latestChecks` opsiyonel parametre olarak tasarlanmıştı, broken-skip 24h windowed mantık zaten implementasyonda. Sadece downstream pipe açıldı. **Etki**: cron 24 saat içinde fail eden provider'ı tespit ediyor → müşteri o platforma yönlendirilmiyor → fallback chain (default → sector_priority → any_active) işliyor. Pre-Wave-2 deploylarda (cron yok) `latestChecks` boş → legacy davranış (broken-skip yok), backwards-compat intact. **36 unit test** (Wave 3b'de yazılmış) yeterli — broken-skip 24h içi vs eski farkı zaten kapsanıyor. **Out of scope**: payload'a `error/latencyMs/statusCode` ekleme (KVKK + payload bloat); bunlar zaten owner panel `/checks` endpoint'inde (CLAUDE.md §19.4.1).
 - **Phase 11.27 (PR #316, branch `claude/owner-shell-restore`)**: Owner panel shell restore. PR #312 "chore(shell)" simplification commit'i ile collapsible group'lar + integrations/platforms/announcements/notifications nav item'ları + topbar `<NotificationBell>` + `<TrialBanner>` + Cmd+K command palette kayboldu. Kullanıcı geri istedi → Phase 11.10 + 11.11 + 11.20 canonical hâli `git show 4153341:UserDashboardShell.tsx` ile restore edildi. **`createdAt` prop kaldırıldı**: kullanıcı `layout.tsx`'i `createdAt` pass etmeden basitleştirdi → shell `DashboardUser` interface'inden `createdAt` field'ı çıkarıldı; eski "ilk 30 gün Guide gizle" useMemo'su `showGuide = true` constant'a dönüştü (Guide nav her zaman görünür). Wave 2 (PR #315) merge sonrası rebase'le çakışma temizlendi — bu PR'da sadece shell modifikasyonu (1 dosya).
 - **Phase 11.26 (PR TBD, branch `claude/platform-link-cron`)**: Otomatik retest cron + health API (CLAUDE.md §19.4.4, Dalga 2/3 plan). (1) **`POST /api/cron/platform-link-retest`** — günde 1 kez (`0 4 * * *` UTC, vercel.json) tüm aktif restoranların aktif platform link'lerini test eder, sonuçları `PlatformLinkCheck`'e `source: 'cron'` ile yazar. `Authorization: Bearer ${CRON_SECRET}` guard, BATCH_SIZE=25, `maxDuration: 300`, Promise.allSettled per-row isolation. `runPlatformLinkRetest()` shared helper export edildi (admin manuel trigger ileride). (2) **`GET /api/restaurants/[id]/integrations/health`** — owner-scoped IDOR endpoint, per-provider `{ url, enabled, latestCheck }` + sektör-bazlı `missingRecommended` array + aggregate `counts` (active/inactive/untested/healthy/failing) + sektör adı. ChatGPT'nin önerdiği `healthScore: 78` field'ı **çıkarıldı** — formül subjective, drift kaynağı. UI client-side derive. (3) **`vercel.json`** `crons` array'ine yeni schedule. **Wave 4 enablement**: cron sayesinde latestChecks tüm aktif platformlarda günlük doluyor → resolver broken-skip Wave 4'te aktivasyon kazanır. **Maliyet**: günde ~200-300 outbound HEAD/GET request/gün + 1 Vercel function invocation/gün — marjinal. Wave 1 retest endpoint kontratı dokunulmadı.

@@ -168,6 +168,7 @@ model Restaurant {
   brandSettings      BrandSettings?
   platformLinkChecks PlatformLinkCheck[]
   platformRedirects  PlatformRedirectEvent[]
+  activationState    RestaurantActivationState?
 
   @@map("restaurants")
 }
@@ -213,6 +214,34 @@ model PlatformLinkCheck {
   @@index([restaurantId, provider, checkedAt])
   @@index([provider, checkedAt])
   @@map("platform_link_checks")
+}
+
+// Owner panel activation checklist (CLAUDE.md §19.5 + §23.7 Phase 11.29).
+// Yeni restoranlar için 5-step kurulum kontrol listesi: profile / Google
+// link / QR download / QR print-share / first feedback.
+//
+// Bu modelde sadece **manuel tracking gereken** alanlar tutulur:
+//   - qrPrintedSharedAt → owner manuel "Bunu yaptım" tıklayınca (autoreport
+//                          imkansız — yazıcı / fiziksel paylaşım tracking yok)
+//   - dismissedAt       → owner manuel "Kapat" tıklayınca (sadece 100% complete
+//                          veya meaningful progress sonrası izin verilir)
+//
+// Diğer 4 step **compute edilir**, storage gereksiz (CLAUDE.md §7):
+//   - profile complete    → restaurant.name + category dolu
+//   - google link added   → googleReviewUrl + googleEnabled + checkProviderUrl ok
+//   - qr download         → mevcut QrGeneration.count > 0 (rememberFeedbackQr
+//                            mevcut /qr endpoint'inde upsert yapıyor)
+//   - first feedback      → Feedback.count > 0
+model RestaurantActivationState {
+  id                  String     @id @default(cuid())
+  restaurantId        String     @unique @map("restaurant_id")
+  restaurant          Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  qrPrintedSharedAt   DateTime?  @map("qr_printed_shared_at")
+  dismissedAt         DateTime?  @map("dismissed_at")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  @@map("restaurant_activation_states")
 }
 
 // Platform redirect event (CLAUDE.md §19.4.2 + §23.7 Phase 11.24). Müşteri
