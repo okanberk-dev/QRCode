@@ -26,8 +26,13 @@ export const maxDuration = 300;
 //   - first_feedback_tips:    lifetime
 //   - upgrade_suggestion:     30 gün
 //   - inactive_reactivation:  30 gün
+//
+// BATCH_SIZE = 1000 (Phase 11.32 fix): eskiden 100'dü, hep aynı en eski 100
+// user kapsanıyordu — 101+ user'lar lifecycle email asla almıyordu (deterministik
+// bug, audit'te yakalandı). 1000 effectively unbounded for current scale; Buaze
+// 1000+ user'a ulaştığında cursor-based pagination eklenir.
 
-const BATCH_SIZE = 100;
+const BATCH_SIZE = 1000;
 
 interface LifecycleSummary {
   usersChecked: number;
