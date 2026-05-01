@@ -73,6 +73,10 @@ export default function RestaurantsPage() {
   // fetch fail veya !res.ok'da set; success'te null. AlertBanner onDismiss
   // ile kullanıcı manuel kapatabilir.
   const [fetchError, setFetchError] = useState<string | null>(null);
+  // PR10 — multi-select for bulk activate/deactivate.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkNotice, setBulkNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -203,6 +207,44 @@ export default function RestaurantsPage() {
       fetchRestaurants();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  // PR10 — auto-dismiss bulk notice after 3.5s
+  useEffect(() => {
+    if (!bulkNotice) return;
+    const t = setTimeout(() => setBulkNotice(null), 3500);
+    return () => clearTimeout(t);
+  }, [bulkNotice]);
+
+  const runBulk = async (action: 'activate' | 'deactivate') => {
+    if (selectedIds.size === 0 || bulkBusy) return;
+    setBulkBusy(true);
+    setBulkNotice(null);
+    try {
+      const res = await fetch('/api/admin/restaurants/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds), action }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBulkNotice(
+          action === 'activate'
+            ? `${data.processed} işletme aktif edildi`
+            : `${data.processed} işletme duraklatıldı`,
+        );
+        setSelectedIds(new Set());
+        await fetchRestaurants();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setFetchError(err.error?.message || 'Toplu işlem başarısız.');
+      }
+    } catch (e) {
+      console.error(e);
+      setFetchError('Bağlantı hatası — toplu işlem tamamlanamadı.');
+    } finally {
+      setBulkBusy(false);
     }
   };
 
@@ -366,6 +408,22 @@ export default function RestaurantsPage() {
         <RestaurantTable
           rows={filteredRestaurants}
           onToggle={toggleActive}
+          selectedIds={selectedIds}
+          onToggleSelect={(id, checked) => {
+            setSelectedIds((prev) => {
+              const next = new Set(prev);
+              if (checked) next.add(id);
+              else next.delete(id);
+              return next;
+            });
+          }}
+          onToggleSelectAll={(checked) => {
+            if (checked) {
+              setSelectedIds(new Set(filteredRestaurants.map((r) => r.id)));
+            } else {
+              setSelectedIds(new Set());
+            }
+          }}
         />
       )}
 
@@ -580,6 +638,56 @@ export default function RestaurantsPage() {
             </form>
         </Modal>
       )}
+
+      {/* PR10 — Bulk action floating toolbar (Stripe Dashboard pattern, §11). */}
+      {selectedIds.size > 0 && (
+        <div
+          role="region"
+          aria-label="Toplu işlem araç çubuğu"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-2xl border border-[#0A0A0A] bg-white px-3 py-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.4)] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:max-w-[520px]"
+        >
+          <span className="text-[12px] font-semibold text-[#0A0A0A] px-2">
+            {selectedIds.size} seçildi
+          </span>
+          <button
+            type="button"
+            disabled={bulkBusy}
+            onClick={() => runBulk('activate')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1 text-[11px] font-medium text-[#0A0A0A] hover:bg-[#C6F24E]/40 disabled:opacity-50 transition-colors"
+          >
+            <ToggleRight size={11} strokeWidth={2.2} />
+            Aktif et
+          </button>
+          <button
+            type="button"
+            disabled={bulkBusy}
+            onClick={() => runBulk('deactivate')}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-3 py-1 text-[11px] font-medium text-[#525252] hover:bg-[#FAFAFA] disabled:opacity-50 transition-colors"
+          >
+            <ToggleLeft size={11} strokeWidth={2.2} />
+            Duraklat
+          </button>
+          <button
+            type="button"
+            disabled={bulkBusy}
+            onClick={() => setSelectedIds(new Set())}
+            aria-label="Seçimi temizle"
+            className="ml-1 rounded-md p-1 hover:bg-[#FAFAFA] transition-colors disabled:opacity-50"
+          >
+            <X size={14} strokeWidth={2.2} />
+          </button>
+        </div>
+      )}
+
+      {bulkNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 rounded-full bg-[#0A0A0A] text-white px-4 py-2 text-[12px] font-semibold shadow-lg"
+        >
+          {bulkNotice}
+        </div>
+      )}
     </div>
   );
 }
@@ -587,10 +695,15 @@ export default function RestaurantsPage() {
 interface RestaurantTableProps {
   rows: Restaurant[];
   onToggle: (id: string, currentStatus: boolean) => void;
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string, checked: boolean) => void;
+  onToggleSelectAll: (checked: boolean) => void;
 }
 
-function RestaurantTable({ rows, onToggle }: RestaurantTableProps) {
+function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggleSelectAll }: RestaurantTableProps) {
   const router = useRouter();
+  const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
+  const someSelected = !allSelected && rows.some((r) => selectedIds.has(r.id));
   // The desktop table lives inside `overflow-x-auto`, which clips
   // absolute-positioned dropdowns vertically (browsers treat `overflow-x: auto`
   // as also clipping `overflow-y`). Anchoring the menu via `position: fixed`
@@ -642,6 +755,18 @@ function RestaurantTable({ rows, onToggle }: RestaurantTableProps) {
         <table className="bz-table">
           <thead>
             <tr>
+              <th style={{ width: 36 }}>
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someSelected;
+                  }}
+                  onChange={(e) => onToggleSelectAll(e.target.checked)}
+                  aria-label="Tümünü seç"
+                  className="h-3.5 w-3.5 accent-[#0A0A0A] cursor-pointer"
+                />
+              </th>
               <th>İşletme</th>
               <th>Tür</th>
               <th>Şehir</th>
@@ -681,8 +806,17 @@ function RestaurantTable({ rows, onToggle }: RestaurantTableProps) {
                     router.push(detailHref);
                   }}
                   onKeyDown={onRowKey}
-                  className="cursor-pointer transition-colors hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-inset"
+                  className={`cursor-pointer transition-colors hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-inset ${selectedIds.has(r.id) ? 'bg-[#EAF9B8]/40' : ''}`}
                 >
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(r.id)}
+                      onChange={(e) => onToggleSelect(r.id, e.target.checked)}
+                      aria-label={`${r.name} seç`}
+                      className="h-3.5 w-3.5 accent-[#0A0A0A] cursor-pointer"
+                    />
+                  </td>
                   <td>
                     <div className="flex items-center gap-2.5">
                       <Avatar name={r.name} size={28} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
