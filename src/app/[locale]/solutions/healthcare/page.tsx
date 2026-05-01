@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronRight, ShieldCheck, Stethoscope, Sparkles, BarChart3 } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
+import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { getRelatedSolutions } from '@/lib/related-solutions';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +72,38 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
         { t: 'Multilingual support', d: 'Auto language detection for medical tourism — 12 languages including Arabic.' },
       ];
 
+  const benefits = isTr
+    ? [
+        { Icon: ShieldCheck, h: 'KVKK uyumlu hasta deneyimi', d: 'Hasta verisi EU veri merkezinde, IP 90 gün retention, açık rıza opt-in. Aydınlatma metni form altında görünür; hasta onayı zorunlu.' },
+        { Icon: Stethoscope, h: 'Hekim + branş bazlı atama', d: 'Yorum geldiğinde hangi hekim, hangi branş, hangi muayene tipi etiketlenir. Branş bazlı ortalama puan + memnuniyet skoru — klinik yönetimi için doğrudan operasyonel veri.' },
+        { Icon: Sparkles, h: 'Pulse AI yanıt taslağı', d: 'Sağlık-spesifik ton: profesyonel, empatik, tıbbi ayrıntıya girmeyen yanıtlar. Sahip onaylar, otomatik gönderim yok — KVKK ve hasta gizliliği ihlalini önler.' },
+        { Icon: BarChart3, h: 'Çoklu lokasyon + şube analitiği', d: 'Aynı klinik zincirinin birden fazla şubesi varsa şube bazlı puan, randevu hacmi ve bekleme süresi memnuniyet korelasyonu görselleştirilir.' },
+      ]
+    : [
+        { Icon: ShieldCheck, h: 'KVKK / GDPR-compliant patient experience', d: 'Patient data stored in an EU data center, IP retained for 90 days, opt-in consent. Privacy notice visible under the form; patient consent is required.' },
+        { Icon: Stethoscope, h: 'Physician + specialty tagging', d: 'When a review arrives, the physician, specialty, and visit type are tagged. Specialty-level average rating + satisfaction score — direct operational data for clinic management.' },
+        { Icon: Sparkles, h: 'Pulse AI reply drafts', d: 'Healthcare-specific tone: professional, empathetic, without medical detail. Owner approves; nothing auto-sent — prevents privacy violations.' },
+        { Icon: BarChart3, h: 'Multi-location + branch analytics', d: 'For clinic chains with multiple branches, per-branch rating, appointment volume, and wait-time-vs-satisfaction correlation are visualized.' },
+      ];
+
+  const faqs: FaqItem[] = isTr
+    ? [
+        { q: 'Klinik için Buaze KVKK ile uyumlu mu?', a: 'Evet. Hasta verileri EU veri merkezinde (Frankfurt) saklanır; KVKK aydınlatma metni feedback form altında görünür ve onay açık (opt-in) şekilde alınır. IP adresleri 90 gün sonra otomatik anonimleştirilir. Pazarlama izni hizmet onayından ayrı toplanır. Hasta talep ederse veriler silinir veya export edilir.' },
+        { q: 'Hekim performansını takip eder miyim?', a: 'Evet. QR oluştururken hekim etiketi (Buaze branch field veya custom URL parametresi) ekleyebilirsin; yorum geldiğinde hangi hekim + hangi branş + muayene saati loglanır. Analytics raporunda hekim bazlı ortalama puan, yorum sayısı ve memnuniyet trendleri görünür.' },
+        { q: 'Düşük puan veren hasta kaybolur mu?', a: 'Hayır. Buaze hiçbir yorumu engellemez veya gizlemez. Düşük puan veren hastalar ek olarak kliniğinizle özel paylaşım yapma seçeneği görür — pratikte ~%85\'i bu özel kanalı tercih eder. Hasta her zaman herkese açık platforma yorum yazma hakkını korur; siz sorunu özelden (randevu yeniden planlama, ek konsültasyon, vb.) çözme şansı kazanırsınız.' },
+        { q: 'Hassas tıbbi veri toplar mı?', a: 'Hayır. Form sadece deneyim puanı + opsiyonel yorum + opsiyonel iletişim bilgisi (e-posta veya telefon, KVKK onaylı) toplar. Tedavi detayları, tanı, ilaç bilgisi gibi tıbbi veriler form alanlarında yer almaz. Pulse AI yanıtları da tıbbi ayrıntıya girmez — sadece hizmet kalitesi tonunda yanıt verir.' },
+        { q: 'Birden fazla şubem / muayenehanem var, nasıl yönetilir?', a: 'Her şube için ayrı işletme oluştur veya tek işletme + şube etiketleri kullan. Analytics şube bazlı ayrılır: hangi şubenin ortalama puanı yüksek, hangi şubede bekleme süresi memnuniyeti olumsuz etkiliyor — merkezi yönetim doğrudan veriden görür.' },
+      ]
+    : [
+        { q: 'Is Buaze KVKK / GDPR-compliant for clinics?', a: 'Yes. Patient data is stored in an EU data center (Frankfurt); the KVKK / GDPR notice is visible under the feedback form and consent is opt-in. IP addresses are automatically anonymized after 90 days. Marketing consent is collected separately from service consent. On patient request, data is deleted or exported.' },
+        { q: 'Can I track physician performance?', a: 'Yes. When generating the QR you can add a physician tag (Buaze branch field or a custom URL parameter); when the review arrives, which physician + which specialty + visit time is logged with it. The analytics report shows per-physician average rating, review volume, and satisfaction trends.' },
+        { q: 'Will low-rating patients simply disappear?', a: 'No. Buaze never blocks or hides any review. Patients giving low ratings additionally see an option to share privately with your clinic — in practice ~85% choose this private channel. The patient always retains the right to post on any public platform; you gain a chance to resolve the issue privately first (rescheduling, extra consultation, etc.).' },
+        { q: 'Does Buaze collect sensitive medical data?', a: 'No. The form only collects an experience rating + optional comment + optional contact (email or phone, KVKK-consented). Treatment details, diagnoses, medication information — no medical fields exist. Pulse AI replies also avoid medical detail — they respond in a service-quality tone only.' },
+        { q: 'I have multiple branches / offices — how do I manage them?', a: 'Either create a separate business per branch or use a single business + branch tags. Analytics splits per branch: which branch has the highest average rating, where wait time hurts satisfaction — central management sees it directly from data.' },
+      ];
+
+  const relatedSolutions = getRelatedSolutions('healthcare', 4);
+
   const jsonLd = buildSolutionSchema({
     locale,
     slug: 'healthcare',
@@ -78,6 +112,7 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
     description: isTr
       ? 'KVKK uyumlu hasta geri bildirimi. Tedavi sonrası QR ile deneyim toplayın, Google profilinizi güçlendirin.'
       : 'KVKK-compliant patient feedback. Collect experience after treatment via QR and strengthen your Google profile.',
+    faqs,
   });
 
   return (
@@ -220,6 +255,71 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
               <p className="mt-2 text-[14px] leading-[1.55] text-[#525252]">{f.d}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Benefits — 4-tile grid */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24 border-t border-[#EDEDED]">
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'NEDEN BUAZE' : 'WHY BUAZE'}</span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[42px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[680px]">
+            {isTr ? 'Klinik operasyonuna özel dört kazanç' : 'Four wins built for clinic operations'}
+          </h2>
+          <div className="mt-9 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {benefits.map((b, i) => (
+              <div key={i} className="bz-card p-6 sm:p-7">
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#EAF9B8] text-[#0A0A0A]"><b.Icon size={16} /></div>
+                <h3 className="bz-h-tight mt-4 text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">{b.h}</h3>
+                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">{b.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
+        <div className="max-w-[820px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'SIKÇA SORULAN SORULAR' : 'FREQUENTLY ASKED QUESTIONS'}</span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">
+            {isTr ? 'Klinik kurulumu için merak edilenler' : 'Common questions for clinic setup'}
+          </h2>
+          <div className="mt-8"><FaqAccordion faqs={faqs} defaultOpen={[0]} /></div>
+        </div>
+      </section>
+
+      {/* Resources / Related Solutions */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-20 border-t border-[#EDEDED]">
+        <div className="max-w-[1100px] mx-auto">
+          <span className="pulse-eyebrow text-[#A8D62E]">{isTr ? 'İLGİLİ KAYNAKLAR' : 'RELATED RESOURCES'}</span>
+          <h2 className="mt-3 text-[24px] sm:text-[32px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A]">{isTr ? 'Daha fazlasını keşfet' : 'Explore more'}</h2>
+          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { href: `${base}/pricing`, tr: 'Fiyatlandırma', en: 'Pricing' },
+              { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
+              { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
+              { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
+            ].map((r) => (
+              <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
+                <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>
+                <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
+              </Link>
+            ))}
+          </div>
+          {relatedSolutions.length > 0 && (
+            <>
+              <h3 className="bz-h-tight mt-12 text-[18px] sm:text-[20px] text-[#0A0A0A]">{isTr ? 'Diğer sektörler' : 'Other sectors'}</h3>
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {relatedSolutions.map((sol) => (
+                  <Link key={sol.slug} href={`${base}/solutions/${sol.slug}`} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
+                    <span className="shrink-0 w-9 h-9 bg-[#EAF9B8] rounded-lg flex items-center justify-center text-[#0A0A0A]"><sol.Icon size={16} /></span>
+                    <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? sol.tr : sol.en}</span>
+                    <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </section>
 
