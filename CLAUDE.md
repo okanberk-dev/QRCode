@@ -2864,6 +2864,53 @@ Yeni bir ölü kod denetimi yaparken aşağıdaki sırayı izle:
 - `validate.ts` helper'ını silme — §28 kanonik öneri, gelecek route'lar için bekliyor.
 - `CareerApplication`, `AutomationRule`, `GoogleIntegration`, `NotificationPreference` modellerini silme — schema'da kaldıkları sürece preview deploy / staging ortamında DB'de yer kaplar ama silmek migration zorunluluğu doğurur.
 
+### 34.6 2026-05-01 — Owner dashboard ana sayfa konsolidasyonu
+
+Owner anasayfası (`src/app/[locale]/dashboard/page.tsx`, 1152 LOC) tekrarlayan KPI'lar + chart'lar nedeniyle yeniden inşa edildi. Üst kısım ile aşağıdaki "İleri İstatistikler" bölümü aynı 4 KPI'yı + 2 farklı trend chart'ı + 5-yıldız histogramı tekrar gösteriyordu. Kullanıcı talebi (2026-05): "Trend ile etkileşim analizini birleştir, tekrarlayan içerikler olmasın, profesyonel ama basit görünsün."
+
+**Silinen kapsam:**
+| Katman | Yer | Detay |
+|---|---|---|
+| Component | `src/components/dashboard/RestaurantAnalyticsPanel.tsx` (271 LOC) | "İleri İstatistikler" hub'ı — single call site (sadece dashboard/page.tsx); admin paneli §11.9'da zaten kaldırmıştı |
+| Component | `src/components/admin/StatsCards.tsx` (98 LOC) | RestaurantAnalyticsPanel'in 4-KPI grid'i; dashboard'ın `<StatCard>` primitive'i ile çakışıyordu |
+| Component | `src/components/admin/DayDistributionChart.tsx` (59 LOC) | Day-of-week BarChart; 7-day TrendsChart ile redundant |
+| Component | `src/components/admin/GoogleConversionPanel.tsx` (339 LOC) | Google funnel + leaderboard; `/dashboard/analytics` zaten benzer derin breakdown'lar taşıyor; ana sayfada sade kalsın diye kaldırıldı |
+| UI | Mobile-only `BUGÜN` hero + `SON 7 GÜN` bar + `SON YORUMLAR` list (page.tsx ~150 LOC) | Mobile + desktop unified responsive yapıya geçti |
+| UI | Desktop `BUGÜN` 3-card KPI row (page.tsx 686-714) | 4-stat KPI grid ile bilgi çakışıyordu — yesterday delta yerine prev-7-day delta tek kaynak |
+| UI | "Etkileşim eğilimi" custom BarChart (page.tsx 754-795) | Recharts AreaChart ile değiştirildi (TrendsChart, mobile + desktop unified) |
+| UI | Inline 5-bar puan dağılımı histogramı (page.tsx 797-825) | RatingChart component ile değiştirildi (DRY) |
+
+**Backend konsolidasyon:**
+- 27 ayrı Prisma query → tek `Promise.all` bloğu (13 paralel query)
+- `avgRating` 3× hesaplama → tek `restaurantRatings.groupBy` weighted source
+- `redirectCount` 5× hesaplama → 3'e indirildi (all-time + last7 + prev7)
+- `rating ≥ 4 + platform IS NOT NULL` filter 6+ tekrar → tek `REDIRECT_WHERE` const (file-local, abstraction değil — §7)
+- `qrScanCounts` proxy: `findMany` + JS match → `groupBy` (DB-side aggregation)
+- 30-day window query'leri tamamen kaldırıldı — KPI'lar artık tek pencere (last 7d) kullanıyor (kullanıcı kararı: "tek delta source, karışıklık olmasın")
+- Boş `restIds` fallback path'i kaldırıldı — Prisma `in: []` zaten 0 satır döndürür, defensive code gereksizdi
+
+**Yeni yapı:**
+```
+/dashboard (sade overview)
+├── PageHeader + OnboardingNudge
+├── Unified KPI Grid (mobile 2x2 → desktop 4-col, tek delta pencere)
+├── Quick Actions Grid (4-button, mobile + desktop unified)
+├── Trend & Etkileşim (TEK section — TrendsChart + footer 3-stat + /analytics linki)
+├── Yorum Görünümü (TEK section — RatingChart + PlatformDistribution 2-col)
+├── Son Yorumlar + QR Performansı (mevcut, unified responsive)
+├── Konum Performansı + Restaurants Section + Upgrade CTA (mevcut)
+```
+
+**Chart component'lerinin yeni call site'ları:**
+- `TrendsChart` — `dashboard/page.tsx`'te `dynamic({ ssr: false })` import (CLAUDE.md §21.14 ResponsiveContainer pattern)
+- `RatingChart` — `dashboard/page.tsx`'te direct import
+- `PlatformDistribution` — `dashboard/page.tsx`'te direct import
+- `/api/feedback/stats` endpoint — admin/analytics tarafından hâlâ tüketiliyor; **kontrat değişmedi**
+
+**Net etki:** -1010 LOC codebase azalma (page 1152→909, 4 component sil 767 LOC). Mobile UX değişimi: BUGÜN hero ve gün-spesifik 30d delta'ları kaldırıldı; karşılığında tek-delta-pencere (son 7 gün) tutarlı UX + Recharts AreaChart mobile'a yüklenir.
+
+**Geri eklemek için:** Kullanıcı **açık talep** etmeli (§34.4). Detaylı funnel/leaderboard/30d-window UX gerekli olursa `/dashboard/analytics` (zaten 454 LOC, range/platform/branch/restaurant URL-synced filtreler) genişletilmeli — ana sayfada ek section eklenmemeli (sade kalma kararı).
+
 ### 34.5 2026-05-01 — Slack iletişim yüzeyi kaldırıldı
 
 Owner panel'deki Slack webhook bildirim ayarı kullanıcı talebiyle kaldırıldı. Tek-kanal e-posta'ya odaklanan kapsam.
