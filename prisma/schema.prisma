@@ -216,6 +216,35 @@ model PlatformLinkCheck {
   @@map("platform_link_checks")
 }
 
+// Lifecycle email log (CLAUDE.md §21.34 + §23.7 Phase 11.30). Wave B —
+// `qr_not_downloaded`, `first_feedback_tips`, `upgrade_suggestion`,
+// `inactive_reactivation` lifecycle email'leri için idempotency tracking.
+//
+// Cron her gün çalışır; aynı user+type+window tek bir mail'i tekrar
+// göndermesin diye log kontrol eder. Welcome + trial-ending zaten ayrı
+// trigger'lara sahip (CLAUDE.md §21.6, §21.11) — burada tracked değil.
+//
+// Cooldown'lar (lifecycle-email-rules.ts):
+//   - qr_not_downloaded:      1 kez (lifetime — log varsa skip)
+//   - first_feedback_tips:    1 kez (lifetime)
+//   - upgrade_suggestion:     30 gün
+//   - inactive_reactivation:  30 gün
+//
+// userId + restaurantId opsiyonel — bazı mail'ler sadece user-level
+// (inactive), bazıları restaurant-scoped (qr/feedback). En az biri set.
+model LifecycleEmailLog {
+  id           String    @id @default(cuid())
+  userId       String?   @map("user_id")
+  restaurantId String?   @map("restaurant_id")
+  type         String
+  sentAt       DateTime  @default(now()) @map("sent_at")
+  metadata     Json?
+
+  @@index([userId, type, sentAt])
+  @@index([restaurantId, type, sentAt])
+  @@map("lifecycle_email_logs")
+}
+
 // Owner panel activation checklist (CLAUDE.md §19.5 + §23.7 Phase 11.29).
 // Yeni restoranlar için 5-step kurulum kontrol listesi: profile / Google
 // link / QR download / QR print-share / first feedback.

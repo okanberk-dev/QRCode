@@ -27,6 +27,11 @@ export const MAIL_PLACEHOLDERS = {
   // ${roiMultiple}. Render fn vars object'ine bunlar set ediliyor.
   'roi-customer-report': ['restaurantName', 'planLabel', 'netGain', 'roiMultiple'],
   'roi-admin-notification': ['restaurantName', 'netGain', 'roiMultiple', 'sectorLabel', 'planLabel'],
+  // Wave B lifecycle (CLAUDE.md §21.34) — placeholder whitelist.
+  'qr-not-downloaded': ['firstName', 'restaurantName'],
+  'first-feedback-tips': ['firstName', 'restaurantName'],
+  'upgrade-suggestion': ['firstName', 'restaurantName', 'feedbackCount'],
+  'inactive-reactivation': ['firstName', 'daysInactive'],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;

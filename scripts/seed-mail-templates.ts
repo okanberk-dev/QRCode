@@ -516,6 +516,19 @@ const SEEDS: Array<{ key: string; locale: string; content: Copy }> = [
   { key: 'roi-customer-report', locale: 'en', content: ROI_CUSTOMER_REPORT_EN },
   { key: 'roi-admin-notification', locale: 'tr', content: ROI_ADMIN_NOTIFICATION_TR },
   { key: 'roi-admin-notification', locale: 'en', content: ROI_ADMIN_NOTIFICATION_EN },
+  // Wave B lifecycle (CLAUDE.md §21.34 + §23.7 Phase 11.30) — cron-driven,
+  // idempotent. Inline default'lar template render fn'lerinde; bu seed
+  // sadece mail_templates tablosuna baseline yazıp admin editor'da düzenlenebilir
+  // hale getirir. Empty content {} ile başlat — admin override etmediği sürece
+  // render fn inline default'u kullanır (loadMailCopy shallow merge).
+  { key: 'qr-not-downloaded', locale: 'tr', content: {} },
+  { key: 'qr-not-downloaded', locale: 'en', content: {} },
+  { key: 'first-feedback-tips', locale: 'tr', content: {} },
+  { key: 'first-feedback-tips', locale: 'en', content: {} },
+  { key: 'upgrade-suggestion', locale: 'tr', content: {} },
+  { key: 'upgrade-suggestion', locale: 'en', content: {} },
+  { key: 'inactive-reactivation', locale: 'tr', content: {} },
+  { key: 'inactive-reactivation', locale: 'en', content: {} },
 ];
 
 async function main() {

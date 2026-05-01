@@ -12,6 +12,10 @@ import {
   renderContactAdmin,
   renderTeamInvite,
   renderVerifyEmail,
+  renderQrNotDownloaded,
+  renderFirstFeedbackTips,
+  renderUpgradeSuggestion,
+  renderInactiveReactivation,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -20,6 +24,10 @@ import {
   type TrialEndingParams,
   type ContactAdminParams,
   type TeamInviteParams,
+  type QrNotDownloadedParams,
+  type FirstFeedbackTipsParams,
+  type UpgradeSuggestionParams,
+  type InactiveReactivationParams,
 } from './email/templates';
 import { escapeHtml as _escapeHtml } from './email/escape';
 import { sendResendEmail } from './email-internal';
@@ -306,6 +314,42 @@ export async function sendCustomerReplyEmail(params: CustomerReplyParams & { to:
 export async function sendTrialEndingEmail(params: TrialEndingParams & { to: string; locale?: 'tr' | 'en' }): Promise<boolean> {
   const { to, locale, ...rest } = params;
   const rendered = await renderTrialEnding(rest, locale ?? 'tr');
+  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+}
+
+// ─── Wave B lifecycle senders (CLAUDE.md §21.34) ────────────────────────
+// LifecycleEmailLog idempotency cron tarafında uygulanır; bu sender'lar
+// stateless, çağıran sorumlu.
+
+export async function sendQrNotDownloadedEmail(
+  params: QrNotDownloadedParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const rendered = await renderQrNotDownloaded(rest, locale ?? 'tr');
+  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+}
+
+export async function sendFirstFeedbackTipsEmail(
+  params: FirstFeedbackTipsParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const rendered = await renderFirstFeedbackTips(rest, locale ?? 'tr');
+  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+}
+
+export async function sendUpgradeSuggestionEmail(
+  params: UpgradeSuggestionParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const rendered = await renderUpgradeSuggestion(rest, locale ?? 'tr');
+  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+}
+
+export async function sendInactiveReactivationEmail(
+  params: InactiveReactivationParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const rendered = await renderInactiveReactivation(rest, locale ?? 'tr');
   return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
 }
 
