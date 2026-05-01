@@ -82,6 +82,17 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), unload=*' },
         ],
       },
+      // /embed/* — public iframe widget. Sadece bu path için frame
+      // restrictions gevşetilir (CLAUDE.md §34.10). Site geneli korumalı
+      // (SAMEORIGIN) kalır. ALLOWALL eski browser'lar için placeholder;
+      // modern browser'lar `frame-ancestors *` CSP'sini takip eder.
+      {
+        source: '/embed/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'ALLOWALL' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors *;" },
+        ],
+      },
     ];
   },
 };
