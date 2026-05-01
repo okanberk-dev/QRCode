@@ -21,6 +21,7 @@ export { Modal } from "./Modal";
 export { PageHeader } from "./PageHeader";
 export { PlatformChip, PLATFORMS, type PlatformId, type PlatformConfig } from "./PlatformChip";
 export { ProgressBar } from "./ProgressBar";
+export { PulseSelect, type PulseSelectOption } from "./PulseSelect";
 export { RadioCard } from "./RadioCard";
 export { Skeleton, TableSkeleton, CardSkeleton } from "./Skeleton";
 export { Sparkline } from "./Sparkline";

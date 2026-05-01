@@ -74,21 +74,21 @@ export default function DashboardRestaurantsPage() {
         inactiveStatus: 'Devre dışı',
       }
     : {
-        title: 'My Locations',
+        title: 'My Businesses',
         subtitle: 'Manage your restaurants, branches, or stores from one panel.',
-        add: 'New Location',
-        emptyTitle: 'No location yet',
-        emptyText: 'Create your first location to start collecting feedback.',
+        add: 'New Business',
+        emptyTitle: 'No business yet',
+        emptyText: 'Create your first business to start collecting feedback.',
         manage: 'Manage',
         qr: 'QR Code',
         category: 'Category',
         reviews: 'Reviews',
-        search: 'Search locations',
+        search: 'Search businesses',
         active: 'Active',
         all: 'All',
         inactive: 'Disabled',
-        inactiveEmptyTitle: 'No disabled location',
-        inactiveEmptyText: 'Disabled locations appear here. You can reactivate them from this list.',
+        inactiveEmptyTitle: 'No disabled business',
+        inactiveEmptyText: 'Disabled businesses appear here. You can reactivate them from this list.',
         activate: 'Reactivate',
         deactivate: 'Disable',
         activeStatus: 'Active',
@@ -277,7 +277,7 @@ export default function DashboardRestaurantsPage() {
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
-        eyebrow={locale === 'tr' ? 'KONUMLAR' : 'LOCATIONS'}
+        eyebrow={locale === 'tr' ? 'İŞLETMELER' : 'BUSINESSES'}
         title={copy.title}
         description={copy.subtitle}
         actions={

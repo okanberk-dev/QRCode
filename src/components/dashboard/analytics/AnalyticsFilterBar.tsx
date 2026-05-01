@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useTransition } from 'react';
-import { Eyebrow, PlatformChip, PLATFORMS, type PlatformId } from '@/components/ui';
+import { Eyebrow, PlatformChip, PLATFORMS, PulseSelect, type PlatformId } from '@/components/ui';
 import { RotateCcw } from 'lucide-react';
 
 /**
@@ -108,41 +108,34 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
           })}
         </div>
 
-        {/* Multi-restaurant owner case — min-w native select chevron için yer
-            ayırır, max-w uzun isimleri sınırlar (text-overflow native). */}
+        {/* Multi-restaurant owner case — Pulse-styled custom select. Native
+            <select> iOS Safari'de chevron'u text üstüne biniyordu + Pulse lime
+            focus state desteklemiyordu (CLAUDE.md §23.6 ChevronDown collision). */}
         {restaurants && restaurants.length > 1 && (
-          <select
+          <PulseSelect
             value={restaurantId}
-            onChange={(e) => update('restaurantId', e.target.value)}
-            className="bz-input h-[34px] py-0 pr-8 text-[13px] min-w-[180px] sm:min-w-[200px] sm:max-w-[260px]"
-            aria-label={isTr ? 'İşletme' : 'Business'}
-          >
-            <option value="all">{isTr ? 'Tüm işletmeler' : 'All businesses'}</option>
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => update('restaurantId', v)}
+            options={[
+              { value: 'all', label: isTr ? 'Tüm işletmeler' : 'All businesses' },
+              ...restaurants.map((r) => ({ value: r.id, label: r.name })),
+            ]}
+            ariaLabel={isTr ? 'İşletme' : 'Business'}
+            className="min-w-[180px] sm:min-w-[200px] sm:max-w-[260px]"
+          />
         )}
 
-        {/* Branch select — eski 180px chevron'la birlikte "Tüm şubeler" tek harf
-            kesiyordu; min-w 180 + pr-8 ile dropdown ok'unun yer aldığı boşluk
-            text alanından çıkarılıyor. */}
+        {/* Branch select */}
         {branches && branches.length > 0 && (
-          <select
+          <PulseSelect
             value={branch}
-            onChange={(e) => update('branch', e.target.value)}
-            className="bz-input h-[34px] py-0 pr-8 text-[13px] min-w-[170px] sm:min-w-[190px] sm:max-w-[240px]"
-            aria-label={isTr ? 'Şube' : 'Branch'}
-          >
-            <option value="all">{isTr ? 'Tüm şubeler' : 'All branches'}</option>
-            {branches.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => update('branch', v)}
+            options={[
+              { value: 'all', label: isTr ? 'Tüm şubeler' : 'All branches' },
+              ...branches.map((b) => ({ value: b, label: b })),
+            ]}
+            ariaLabel={isTr ? 'Şube' : 'Branch'}
+            className="min-w-[170px] sm:min-w-[190px] sm:max-w-[240px]"
+          />
         )}
 
         {/* Platform chips */}

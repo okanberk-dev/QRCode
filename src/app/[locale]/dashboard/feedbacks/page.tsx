@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Loader2, Search, Flag, Mail, UserPlus, Sparkles, RotateCw, Pencil, Send, Plus, Inbox, RotateCcw } from 'lucide-react';
+import { Loader2, Search, Flag, Mail, Sparkles, RotateCw, Pencil, Send, Plus, Inbox, RotateCcw, MessageSquare } from 'lucide-react';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
@@ -233,6 +233,47 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [aiTone, setAiTone] = useState<'warm' | 'formal' | 'apologetic'>('warm');
   const [aiFromBackground, setAiFromBackground] = useState(false);
 
+  // Sent reply thread for the active feedback. Fetched on selection.
+  // Owner: "ne yanıt verdik?" görünür olur — eskiden sadece "yanıtlandı"
+  // badge'i vardı, içerik gizliydi.
+  interface SentReply {
+    id: string;
+    body: string;
+    channel: string | null;
+    status: string | null;
+    createdAt: string;
+  }
+  const [sentReplies, setSentReplies] = useState<SentReply[]>([]);
+  const [sentLoading, setSentLoading] = useState(false);
+
+  useEffect(() => {
+    if (!active) {
+      setSentReplies([]);
+      return;
+    }
+    let cancelled = false;
+    setSentLoading(true);
+    (async () => {
+      try {
+        const res = await fetch(`/api/feedback/${active.id}/reply`);
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          const list: SentReply[] = Array.isArray(data?.replies) ? data.replies : [];
+          setSentReplies(list);
+        } else if (!cancelled) {
+          setSentReplies([]);
+        }
+      } catch {
+        if (!cancelled) setSentReplies([]);
+      } finally {
+        if (!cancelled) setSentLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [active?.id]);
+
   useEffect(() => {
     if (!active) {
       setAiSuggestion('');
@@ -360,6 +401,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             r.id === active.id ? { ...r, isReplied: true, hasPendingAiDraft: false } : r,
           ),
         );
+        // Optimistically prepend the new reply to the sent thread so it
+        // appears instantly in the detail panel without a re-fetch.
+        const newReply: SentReply = {
+          id: data?.replyId ?? `tmp-${Date.now()}`,
+          body: replyDraft,
+          channel: wantsEmail ? 'email' : 'internal',
+          status: data?.email?.status === 'failed' ? 'failed' : 'sent',
+          createdAt: new Date().toISOString(),
+        };
+        setSentReplies((list) => [...list, newReply]);
         setReplyDraft('');
         setAiSource(null);
         setAiFromBackground(false);
@@ -403,19 +454,6 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     }
   };
 
-  const assignFeedback = async () => {
-    if (!active) return;
-    try {
-      await fetch(`/api/feedback/${active.id}/assign`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assigneeId: null }),
-      });
-    } catch {
-      /* non-blocking */
-    }
-  };
-
   return (
     <div className="flex min-h-[calc(100vh-140px)] flex-col lg:h-[calc(100vh-140px)] lg:flex-row" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* ============ LEFT — review list ============ */}
@@ -425,11 +463,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             <AlertBanner kind="warn">
               {isTr
                 ? degraded.joinFilters
-                  ? 'Filtreler (yanıt / işaret / atama) şu an pasif — DB senkronizasyonu bekleniyor.'
-                  : `${degraded.joins ? 'Yanıt/atama/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
+                  ? 'Filtreler (yanıt / işaret) şu an pasif — DB senkronizasyonu bekleniyor.'
+                  : `${degraded.joins ? 'Yanıt/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
                 : degraded.joinFilters
-                  ? 'Filters (reply / flag / assignment) temporarily unavailable — DB sync pending.'
-                  : `${degraded.joins ? 'Reply/assignment/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}
+                  ? 'Filters (reply / flag) temporarily unavailable — DB sync pending.'
+                  : `${degraded.joins ? 'Reply/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}
             </AlertBanner>
           </div>
         )}
@@ -484,34 +522,39 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             </label>
           </div>
 
-          {/* PR3 — Platform chips + state toggles */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          {/* Platform filter — compact segmented control. Eskiden uzun "Tüm
+              platformlar" pill + 5 ikon pill gözüküyordu (mobile alan abuse).
+              Şimdi tek satırlı segmented bar: "Tümü" text + ikonlar yan yana,
+              aktif platform lime fill ile vurgulanır. */}
+          <div className="inline-flex items-center gap-0.5 rounded-lg border border-[#EDEDED] p-0.5 bg-white">
             <button
               type="button"
               onClick={() => setPlatformFilter('all')}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+              className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
                 platformFilter === 'all'
-                  ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                  ? 'bg-[#0A0A0A] text-white'
+                  : 'text-[#525252] hover:bg-[#FAFAFA]'
               }`}
               aria-pressed={platformFilter === 'all'}
+              aria-label={isTr ? 'Tüm platformlar' : 'All platforms'}
             >
-              {isTr ? 'Tüm platformlar' : 'All platforms'}
+              {isTr ? 'Tümü' : 'All'}
             </button>
             {PLATFORM_OPTIONS.map((pid) => {
-              const active = platformFilter === pid;
+              const isActive = platformFilter === pid;
               return (
                 <button
                   key={pid}
                   type="button"
-                  onClick={() => setPlatformFilter(active ? 'all' : pid)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
-                    active
-                      ? 'border-[#0A0A0A] bg-white text-[#0A0A0A]'
-                      : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                  onClick={() => setPlatformFilter(isActive ? 'all' : pid)}
+                  className={`inline-flex items-center justify-center px-2 py-1.5 rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+                    isActive
+                      ? 'bg-[#EAF9B8] ring-1 ring-[#A8D62E]'
+                      : 'hover:bg-[#FAFAFA] opacity-70 hover:opacity-100'
                   }`}
-                  aria-pressed={active}
+                  aria-pressed={isActive}
                   title={PLATFORMS[pid].label}
+                  aria-label={PLATFORMS[pid].label}
                 >
                   <PlatformChip id={pid} size={14} />
                 </button>
@@ -692,16 +735,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                   title={isTr ? 'Bayrakla işaretle' : 'Flag'}
                 >
                   <Flag size={12} strokeWidth={2} />
-                  {isTr ? 'Flag' : 'Flag'}
-                </button>
-                <button
-                  type="button"
-                  onClick={assignFeedback}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] px-2.5 py-1.5 text-[11px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
-                  title={isTr ? 'Ekibe ata' : 'Assign'}
-                >
-                  <UserPlus size={12} strokeWidth={2} />
-                  {isTr ? 'Ata' : 'Assign'}
+                  {isTr ? 'İşaretle' : 'Flag'}
                 </button>
               </div>
             </div>
@@ -729,10 +763,65 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               </div>
             )}
 
+            {/* Sent reply thread — owner sees what was previously replied.
+                Eski UI'da sadece "yanıtlandı" badge'i vardı, içerik gizliydi. */}
+            {sentReplies.length > 0 && (
+              <div className="mt-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <MessageSquare size={13} className="text-[#525252]" strokeWidth={2} />
+                  <span className="pulse-eyebrow text-[#737373]">
+                    {isTr ? `GÖNDERİLEN YANITLAR (${sentReplies.length})` : `SENT REPLIES (${sentReplies.length})`}
+                  </span>
+                </div>
+                <ol className="flex flex-col gap-2.5">
+                  {sentReplies.map((rep) => {
+                    const channelLabel =
+                      rep.channel === 'email'
+                        ? isTr ? 'E-posta' : 'Email'
+                        : isTr ? 'Dahili' : 'Internal';
+                    const tone =
+                      rep.status === 'failed'
+                        ? 'border-[#FCA5A5] bg-[#FFFBFB]'
+                        : 'border-[#EDEDED] bg-white';
+                    return (
+                      <li
+                        key={rep.id}
+                        className={`rounded-xl border ${tone} p-3.5`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-1.5">
+                            {rep.channel === 'email' && <Mail size={10} strokeWidth={2.2} />}
+                            {channelLabel}
+                            {rep.status === 'failed' && (
+                              <span className="text-[#991B1B]">
+                                · {isTr ? 'iletilemedi' : 'failed'}
+                              </span>
+                            )}
+                          </span>
+                          <span className="pulse-eyebrow text-[#A3A3A3] tabular-nums">
+                            {timeAgo(rep.createdAt, locale)}
+                          </span>
+                        </div>
+                        <p className="text-[13px] leading-[1.55] text-[#0A0A0A] whitespace-pre-line">
+                          {rep.body}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            )}
+            {sentLoading && sentReplies.length === 0 && (
+              <div className="mt-6 flex items-center gap-2 text-[12px] text-[#737373]">
+                <Loader2 size={12} className="animate-spin" />
+                {isTr ? 'Yanıtlar yükleniyor…' : 'Loading replies…'}
+              </div>
+            )}
+
             {/* High-rating reply gate (4-5★).
                 4-5 yıldızlı yorumlar zaten public form akışında platforma redirect
                 ediliyor (CLAUDE.md §23.7 Phase 10.1). İçeriden yanıt yazmak
-                anlamsız — UI gizlenir, operasyonel detay (Flag/Assign) korunur. */}
+                anlamsız — UI gizlenir, operasyonel detay (Flag) korunur. */}
             {active.rating >= 4 ? (
               <div className="mt-6">
                 <AlertBanner kind="lime" icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}>
@@ -741,8 +830,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                   </span>
                   <span className="block mt-0.5 text-[#525252]">
                     {isTr
-                      ? `Yüksek puanlı yorum ${(active.platform || 'platform').toUpperCase()} üzerinden alındı; müşteri zaten platformda paylaşımını yaptı. İsterseniz aşağıdaki Flag/Ata aksiyonlarıyla bu yorumu ekibinizle takip edebilirsiniz.`
-                      : `High-rating review came in via ${(active.platform || 'platform').toUpperCase()}; the customer already posted on the platform. You can still flag or assign it to your team using the actions above.`}
+                      ? `Yüksek puanlı yorum ${(active.platform || 'platform').toUpperCase()} üzerinden alındı; müşteri zaten platformda paylaşımını yaptı. İsterseniz İşaretle aksiyonuyla bu yorumu ekibinizle takip edebilirsiniz.`
+                      : `High-rating review came in via ${(active.platform || 'platform').toUpperCase()}; the customer already posted on the platform. You can still flag this review to keep track with your team.`}
                   </span>
                 </AlertBanner>
               </div>

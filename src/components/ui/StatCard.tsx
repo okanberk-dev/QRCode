@@ -29,34 +29,45 @@ export function StatCard({
     deltaKind === "up" ? "#16A34A" : deltaKind === "down" ? "#DC2626" : "#737373";
 
   return (
-    <div className={`bz-card relative p-[18px] ${className}`}>
+    <div
+      className={`bz-card relative p-4 sm:p-[18px] transition-shadow hover:shadow-sm ${className}`}
+    >
       <div className="flex justify-between items-start gap-2">
         <Eyebrow>{label}</Eyebrow>
-        {icon && <span style={{ color: "#A3A3A3" }}>{icon}</span>}
+        {icon && (
+          <span
+            aria-hidden="true"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FAFAFA] text-[#525252]"
+          >
+            {icon}
+          </span>
+        )}
       </div>
       <div
-        className="bz-h-tight mt-3"
-        style={{ fontSize: 28, lineHeight: 1, letterSpacing: "-0.025em" }}
+        className="bz-h-tight mt-2.5 sm:mt-3 text-[22px] sm:text-[28px] tabular-nums"
+        style={{ lineHeight: 1.05, letterSpacing: "-0.025em" }}
       >
         {value}
       </div>
       {delta && (
-        <div className="mt-2.5 flex items-center gap-1.5 text-xs">
+        <div className="mt-2 sm:mt-2.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] sm:text-xs">
           <span
-            className="inline-flex items-center gap-1 font-semibold"
+            className="inline-flex items-center gap-1 font-semibold tabular-nums"
             style={{ color: deltaColor }}
           >
             {deltaKind === "up" && <TrendingUp size={12} strokeWidth={2} />}
             {deltaKind === "down" && <TrendingDown size={12} strokeWidth={2} />}
             {delta}
           </span>
-          {deltaSuffix && <span style={{ color: "#737373" }}>{deltaSuffix}</span>}
+          {deltaSuffix && (
+            <span className="text-[10.5px] sm:text-[11px] text-[#737373]">{deltaSuffix}</span>
+          )}
         </div>
       )}
       {accent && (
         <span
           aria-hidden="true"
-          className="absolute top-3.5 right-3.5 w-2 h-2 rounded-full"
+          className="absolute top-3.5 right-3.5 h-2 w-2 rounded-full"
           style={{ background: accent }}
         />
       )}
