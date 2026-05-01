@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/trial-reminders",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/platform-link-retest",
+      "schedule": "0 4 * * *"
     }
   ],
   "rewrites": [
