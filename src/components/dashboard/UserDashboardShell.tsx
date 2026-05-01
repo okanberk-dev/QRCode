@@ -54,7 +54,7 @@ function useTopBar(locale: Locale, pathname: string | null) {
   if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / KONUMLAR' : 'PANEL / LOCATIONS', title: isTr ? 'Konumlar' : 'Locations' };
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
-  if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / ENTEGRASYONLAR' : 'PANEL / INTEGRATIONS', title: isTr ? 'Entegrasyonlar' : 'Integrations' };
+  if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform Bağlantıları' : 'Platform Links' };
   if (rest.startsWith('/leads')) return { breadcrumb: isTr ? 'PANEL / MÜŞTERİLER' : 'PANEL / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
   if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORMLAR' : 'PANEL / PLATFORMS', title: isTr ? 'Platform bağlantıları' : 'Review platforms' };
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
@@ -174,7 +174,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       restaurants: isTr ? 'İşletmeler' : 'Locations',
       qr: 'QR',
       menu: isTr ? 'Menü' : 'Menu',
-      integrations: isTr ? 'Entegrasyonlar' : 'Integrations',
+      integrations: isTr ? 'Platform Bağlantıları' : 'Platform Links',
       guide: isTr ? 'Kılavuz' : 'Guide',
       account: isTr ? 'Hesabım' : 'Account',
       logout: isTr ? 'Çıkış' : 'Logout',
@@ -220,8 +220,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       label: locale === 'tr' ? 'QR ve platformlar' : 'QR & platforms',
       children: [
         { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-        // "Platform bağlantıları" + "Entegrasyonlar" aynı redirect'e gidiyordu;
-        // tek menü item bırakıldı. /platforms route'u backward-compat redirect.
+        // /platforms ve /integrations aynı redirect'e (settings#integrations);
+        // tek menü item bırakıldı. Eski /platforms route'u backward-compat.
         { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
       ],
     },

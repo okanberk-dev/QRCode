@@ -22,11 +22,13 @@ import {
   type IntegrationStatusKind,
   type PlatformId,
 } from "@/components/ui";
+import { AlertTriangle } from "lucide-react";
 import DefaultRedirectPicker from "@/components/dashboard/DefaultRedirectPicker";
 import { getSectorPlatforms } from "@/lib/sector-platforms";
 import {
   checkProviderUrl,
   describeDomainError,
+  type DomainCheckResult,
   type IntegrationProvider,
 } from "@/lib/integration-domains";
 import { SettingsCard } from "../SettingsCard";
@@ -251,7 +253,7 @@ interface TestResult {
 }
 
 /**
- * Section 3 — Entegrasyonlar (Faz 2).
+ * Section 3 — Platform Bağlantıları / Platform Links.
  *
  * Üst kısım: <DefaultRedirectPicker> — orphan-default cleanup mevcut handler'a
  * (CLAUDE.md §19.2). Sonra sektör whitelist'ine göre filtrelenmiş 6 platform
@@ -260,6 +262,10 @@ interface TestResult {
  *
  * Her kart: PlatformChip + IntegrationStatusBadge + URL input + Enable Toggle
  * + "Test et" button + "Kaldır" (URL clear).
+ *
+ * Quality control (CLAUDE.md §19.4): `checkProviderUrl` 2-katmanlı sonuç döner.
+ *   - severity 'error'   → kırmızı satır + save block (invalid_url / wrong_protocol / wrong_domain)
+ *   - severity 'warning' → amber satır, save geçer (generic_homepage / not_review_link)
  *
  * Test: server-side POST `/api/restaurants/[id]/integrations/[provider]/test`.
  */
@@ -314,10 +320,14 @@ export function BusinessIntegrationSettings({
     [visibleDefs, form],
   );
 
-  // Per-field domain check — runs on every keystroke so the inline error
+  // Per-field link quality check — runs on every keystroke so feedback
   // appears next to the offending row, not as a single banner at save time.
-  const fieldErrors = useMemo<Partial<Record<keyof FormState, string>>>(() => {
-    const errors: Partial<Record<keyof FormState, string>> = {};
+  // 2-tier severity (CLAUDE.md §19.4):
+  //   error   → kırmızı, save block
+  //   warning → amber, save geçer (homepage / generic listing path)
+  type FieldQuality = { result: DomainCheckResult; provider: IntegrationProvider; message: string };
+  const fieldQuality = useMemo<Partial<Record<keyof FormState, FieldQuality>>>(() => {
+    const out: Partial<Record<keyof FormState, FieldQuality>> = {};
     const checks: Array<[keyof FormState, IntegrationProvider]> = [
       ...PLATFORM_DEFS.map((d) => [d.urlKey, d.testProvider] as [keyof FormState, IntegrationProvider]),
       ...SOCIAL_DEFS.map((d) => [d.key, d.testProvider] as [keyof FormState, IntegrationProvider]),
@@ -327,21 +337,27 @@ export function BusinessIntegrationSettings({
       if (!value || !value.trim()) continue;
       const result = checkProviderUrl(provider, value);
       if (!result.ok) {
-        errors[field] = describeDomainError(provider, result, locale);
+        out[field] = {
+          result,
+          provider,
+          message: describeDomainError(provider, result, locale),
+        };
       }
     }
-    return errors;
+    return out;
   }, [form, locale]);
 
-  const hasFieldErrors = Object.keys(fieldErrors).length > 0;
+  const hasHardErrors = Object.values(fieldQuality).some(
+    (q) => q?.result.severity === "error",
+  );
 
   const handleSave = async () => {
     if (saving) return;
-    if (hasFieldErrors) {
+    if (hasHardErrors) {
       setError(
         locale === "tr"
-          ? "Bazı bağlantılar marka adresine işaret etmiyor. Aşağıdaki uyarıları düzeltip tekrar dene."
-          : "Some links don't point to the brand domain. Fix the warnings below and try again.",
+          ? "Bazı bağlantılar marka adresine işaret etmiyor. Aşağıdaki kırmızı uyarıları düzeltip tekrar dene."
+          : "Some links don't point to the brand domain. Fix the red errors below and try again.",
       );
       return;
     }
@@ -382,7 +398,11 @@ export function BusinessIntegrationSettings({
       }
       const updated = await res.json();
       setInitial(form);
-      setSuccess("Entegrasyonlar güncellendi.");
+      setSuccess(
+        locale === "tr"
+          ? "Platform bağlantıları güncellendi."
+          : "Platform links updated.",
+      );
       onSaved?.({ ...restaurant, ...payload, ...updated });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Kaydedilemedi.";
@@ -423,9 +443,20 @@ export function BusinessIntegrationSettings({
   };
 
   const hidden = visibleDefs.length === 0;
+  const isTr = locale === "tr";
 
   return (
     <div className="space-y-5">
+      <p className="text-[13px] leading-relaxed text-[#525252]">
+        {isTr
+          ? "Google, Yemeksepeti, Getir, Trendyol, Tripadvisor ve diğer platform linklerinizi tek yerden yönetin. Buaze linklerinizi doğrular, erişilebilirliğini test eder ve QR akışlarında doğru yönlendirme yapmanıza yardımcı olur."
+          : "Manage your Google, delivery, travel, social and reservation links from one place. Buaze validates your links, checks reachability, and helps your QR flows route customers safely."}
+      </p>
+      <AlertBanner kind="info">
+        {isTr
+          ? "Bu sayfa platform bağlantılarını yönetir. Resmi API senkronizasyonları desteklenen platformlarda ayrıca yapılandırılır."
+          : "This page manages platform links. Official API sync is configured separately for supported platforms."}
+      </AlertBanner>
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>
           {error}
@@ -471,13 +502,13 @@ export function BusinessIntegrationSettings({
                   url={url}
                   placeholder={def.placeholder}
                   fieldId={`url-${def.id}`}
-                  fieldError={fieldErrors[def.urlKey] ?? null}
+                  quality={fieldQuality[def.urlKey] ?? null}
                   onUrlChange={(v) => set(def.urlKey, v as never)}
                   onClear={() => set(def.urlKey, "" as never)}
                   onTest={() => runTest(def.urlKey, def.testProvider)}
                   testing={isThisTesting}
                   testResult={testResults[def.urlKey]}
-                  testDisabled={dirty || Boolean(fieldErrors[def.urlKey])}
+                  testDisabled={dirty || fieldQuality[def.urlKey]?.result.severity === "error"}
                   toggle={
                     <Toggle
                       checked={enabled}
@@ -519,13 +550,13 @@ export function BusinessIntegrationSettings({
                 url={url}
                 placeholder={def.placeholder}
                 fieldId={`url-${String(def.key)}`}
-                fieldError={fieldErrors[def.key] ?? null}
+                quality={fieldQuality[def.key] ?? null}
                 onUrlChange={(v) => set(def.key, v as never)}
                 onClear={() => set(def.key, "" as never)}
                 onTest={() => runTest(String(def.key), def.testProvider)}
                 testing={isThisTesting}
                 testResult={testResults[String(def.key)]}
-                testDisabled={dirty || Boolean(fieldErrors[def.key])}
+                testDisabled={dirty || fieldQuality[def.key]?.result.severity === "error"}
               />
             );
           })}
@@ -548,6 +579,12 @@ export default BusinessIntegrationSettings;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
+interface IntegrationCardQuality {
+  result: DomainCheckResult;
+  provider: IntegrationProvider;
+  message: string;
+}
+
 interface IntegrationCardProps {
   logo: React.ReactNode;
   label: string;
@@ -555,7 +592,7 @@ interface IntegrationCardProps {
   url: string;
   placeholder: string;
   fieldId: string;
-  fieldError: string | null;
+  quality: IntegrationCardQuality | null;
   onUrlChange: (next: string) => void;
   onClear: () => void;
   onTest: () => void;
@@ -573,7 +610,7 @@ function IntegrationCard({
   url,
   placeholder,
   fieldId,
-  fieldError,
+  quality,
   onUrlChange,
   onClear,
   onTest,
@@ -583,6 +620,10 @@ function IntegrationCard({
   toggle,
   toggleLabel,
 }: IntegrationCardProps) {
+  const errorMessage =
+    quality && quality.result.severity === "error" ? quality.message : null;
+  const warningMessage =
+    quality && quality.result.severity === "warning" ? quality.message : null;
   return (
     <div
       className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 sm:p-5"
@@ -607,7 +648,7 @@ function IntegrationCard({
 
       {/* URL input + inline domain error */}
       <div className="mt-4">
-        <Field label="URL" htmlFor={fieldId} error={fieldError ?? undefined}>
+        <Field label="URL" htmlFor={fieldId} error={errorMessage ?? undefined}>
           <input
             id={fieldId}
             className="bz-input bz-mono text-[13px]"
@@ -620,6 +661,16 @@ function IntegrationCard({
             placeholder={placeholder}
           />
         </Field>
+        {warningMessage && (
+          <div
+            role="status"
+            className="mt-1.5 flex items-start gap-1.5 text-[11.5px] leading-snug"
+            style={{ color: "#92400E" }}
+          >
+            <AlertTriangle size={12} strokeWidth={2.25} className="mt-0.5 shrink-0" />
+            <span>{warningMessage}</span>
+          </div>
+        )}
       </div>
 
       {/* Test result (if any) — shown above actions so it stays visible on

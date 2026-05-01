@@ -1,13 +1,20 @@
-// Per-provider allowed domain list. Used both client-side (UI validation
-// before save) and server-side (test endpoint guard) so a YemekSepeti URL
-// pasted into the Getir slot doesn't silently HEAD-check the wrong host.
+// Per-provider URL validation. Used both client-side (UI validation before
+// save) and server-side (test endpoint guard) so a YemekSepeti URL pasted
+// into the Getir slot doesn't silently HEAD-check the wrong host.
 //
-// Domains are matched against the URL hostname's final two labels (or the
-// full hostname when shorter). Subdomains are accepted automatically:
-//   maps.app.goo.gl    → matches "google.com" entry's "goo.gl" alias
+// Two layers:
+//   1. Domain whitelist — protocol + hostname → hard error, blocks save.
+//   2. Path heuristic   → soft warning, doesn't block save.
+//
+// The owner can save a homepage / non-review URL on purpose (legacy import,
+// custom landing) — UI surfaces an amber notice but `requireRestaurantAccess`
+// stays the only authoritative gate. Domains below match the URL hostname's
+// final two labels (subdomains accepted automatically):
+//   maps.app.goo.gl    → matches "google.com" entry's "maps.app.goo.gl" alias
 //   tr.tripadvisor.com → matches "tripadvisor.com"
 //
-// `null` means free-form (website / reservation) — only protocol is enforced.
+// `null` domain list means free-form (website / reservation) — only protocol
+// is enforced.
 
 export type IntegrationProvider =
   | 'google'
@@ -56,9 +63,20 @@ export const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
   reservation: 'Rezervasyon',
 };
 
+export type DomainCheckReason =
+  | 'invalid_url'
+  | 'wrong_protocol'
+  | 'wrong_domain'
+  | 'generic_homepage'
+  | 'not_review_link';
+
+export type DomainCheckSeverity = 'error' | 'warning';
+
 export interface DomainCheckResult {
   ok: boolean;
-  reason?: 'invalid_url' | 'wrong_protocol' | 'wrong_domain';
+  /** Severity for failed checks. `error` → hard block. `warning` → save allowed. */
+  severity?: DomainCheckSeverity;
+  reason?: DomainCheckReason;
   hostname?: string;
   expected?: string[];
 }
@@ -69,10 +87,83 @@ function hostnameMatches(host: string, allowed: string): boolean {
   return h === a || h.endsWith(`.${a}`);
 }
 
+// Path heuristics — provider-aware. A domain match alone doesn't mean the
+// URL points at a review surface (yemeksepeti.com → homepage; the customer
+// who lands there can't write a review for a specific restaurant). These
+// patterns are deliberately loose: we'd rather miss an exotic review URL
+// than reject a legitimate one. Soft warning only.
+
+interface PathRules {
+  /** Treat as homepage if the URL has no meaningful path/query/segment. */
+  homepageWhenBare?: boolean;
+  /** Locale-only paths still considered homepage (`/tr`, `/en`, …). */
+  localeHomepagePaths?: string[];
+  /** Substrings that mark a real review/listing link. */
+  reviewSignatures?: string[];
+}
+
+const PATH_RULES: Partial<Record<IntegrationProvider, PathRules>> = {
+  google: {
+    homepageWhenBare: true,
+    localeHomepagePaths: ['/maps', '/business'],
+    reviewSignatures: [
+      'g.page/r/',
+      'goo.gl/maps',
+      'maps.app.goo.gl',
+      'business.google.com',
+      '/maps/place/',
+      'cid=',
+      'placeid=',
+    ],
+  },
+  yemeksepeti: {
+    homepageWhenBare: true,
+    localeHomepagePaths: ['/tr', '/en'],
+    reviewSignatures: ['/restaurant/', '/menu/'],
+  },
+  trendyol_go: {
+    homepageWhenBare: true,
+    reviewSignatures: ['/restaurant/', '/yemek/restaurant/'],
+  },
+  tripadvisor: {
+    homepageWhenBare: true,
+    localeHomepagePaths: ['/Tourism', '/Hotels'],
+    reviewSignatures: [
+      '/Restaurant_Review-',
+      '/Hotel_Review-',
+      '/Attraction_Review-',
+      '/ShowUserReviews-',
+    ],
+  },
+  booking: {
+    homepageWhenBare: true,
+    localeHomepagePaths: ['/searchresults'],
+    reviewSignatures: ['/hotel/'],
+  },
+  airbnb: {
+    homepageWhenBare: true,
+    reviewSignatures: ['/rooms/', '/h/'],
+  },
+};
+
+function isBarePath(pathname: string, search: string): boolean {
+  const p = pathname.replace(/\/+$/, '');
+  return (p === '' || p === '/') && search === '';
+}
+
 /**
- * Validate that `url` is a well-formed http(s) URL pointing at a hostname
- * the given provider expects. Returns `{ ok: true }` for free-form providers
- * (website/reservation) once the protocol is sane.
+ * Validate that `url` is a well-formed http(s) URL pointing at a hostname the
+ * given provider expects, and (for review providers) that the path looks like
+ * a real listing rather than the marketplace homepage.
+ *
+ * - Hard `error` (blocks save): empty path is allowed; invalid/protocol/domain
+ *   is not.
+ * - Soft `warning` (save allowed): domain matches but URL looks like a generic
+ *   homepage or has no review-link signature. Caller decides whether to block.
+ *
+ * Free-form providers (website/reservation) skip both layers once the
+ * protocol is sane. Returns `{ ok: true }` for empty input — caller surfaces
+ * "missing" via its own status badge, not via this helper.
  */
 export function checkProviderUrl(
   provider: IntegrationProvider,
@@ -85,10 +176,15 @@ export function checkProviderUrl(
   try {
     parsed = new URL(trimmed);
   } catch {
-    return { ok: false, reason: 'invalid_url' };
+    return { ok: false, severity: 'error', reason: 'invalid_url' };
   }
   if (!/^https?:$/.test(parsed.protocol)) {
-    return { ok: false, reason: 'wrong_protocol', hostname: parsed.hostname };
+    return {
+      ok: false,
+      severity: 'error',
+      reason: 'wrong_protocol',
+      hostname: parsed.hostname,
+    };
   }
 
   const allowed = PROVIDER_DOMAINS[provider];
@@ -98,11 +194,61 @@ export function checkProviderUrl(
   if (!matched) {
     return {
       ok: false,
+      severity: 'error',
       reason: 'wrong_domain',
       hostname: parsed.hostname,
       expected: allowed,
     };
   }
+
+  // Domain looks right — now look at the path. Anything ambiguous becomes a
+  // warning, never an error: owner can dismiss the notice and save anyway.
+  const rules = PATH_RULES[provider];
+  if (rules) {
+    const pathname = parsed.pathname || '/';
+    const search = parsed.search || '';
+
+    // Homepage: bare path, or locale-only path with no further segments.
+    if (rules.homepageWhenBare && isBarePath(pathname, search)) {
+      return {
+        ok: false,
+        severity: 'warning',
+        reason: 'generic_homepage',
+        hostname: parsed.hostname,
+      };
+    }
+    if (rules.localeHomepagePaths) {
+      for (const prefix of rules.localeHomepagePaths) {
+        if (pathname === prefix || pathname === `${prefix}/`) {
+          return {
+            ok: false,
+            severity: 'warning',
+            reason: 'generic_homepage',
+            hostname: parsed.hostname,
+          };
+        }
+      }
+    }
+
+    // Review signature: path or query has at least one expected substring.
+    // We check both `pathname + search` and the full URL because Google
+    // short links carry the marker on the host (`g.page/r/`).
+    if (rules.reviewSignatures && rules.reviewSignatures.length > 0) {
+      const haystack = `${parsed.host}${pathname}${search}`.toLowerCase();
+      const hasSignature = rules.reviewSignatures.some((sig) =>
+        haystack.includes(sig.toLowerCase()),
+      );
+      if (!hasSignature) {
+        return {
+          ok: false,
+          severity: 'warning',
+          reason: 'not_review_link',
+          hostname: parsed.hostname,
+        };
+      }
+    }
+  }
+
   return { ok: true, hostname: parsed.hostname };
 }
 
@@ -126,6 +272,16 @@ export function describeDomainError(
     return locale === 'tr'
       ? `Bu URL ${label} adresi gibi görünmüyor. Beklenen: ${expected}.`
       : `This URL doesn't look like a ${label} link. Expected: ${expected}.`;
+  }
+  if (result.reason === 'generic_homepage') {
+    return locale === 'tr'
+      ? `Bu link ${label} ana sayfası gibi görünüyor — müşteri yorumu yazmak için doğru sayfaya yönlendirilemeyebilir.`
+      : `This looks like the ${label} homepage — customers may not reach the right page to leave a review.`;
+  }
+  if (result.reason === 'not_review_link') {
+    return locale === 'tr'
+      ? `Bu link ${label}'da bir restoran/listing sayfasına benzemiyor. Yorum bırakılan asıl sayfanın bağlantısını yapıştır.`
+      : `This URL doesn't look like a ${label} listing page. Paste the link of the page where customers actually leave reviews.`;
   }
   return locale === 'tr' ? 'URL doğrulanamadı.' : 'URL could not be verified.';
 }
