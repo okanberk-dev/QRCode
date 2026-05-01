@@ -43,6 +43,7 @@ export async function generateMetadata({
       languages: {
         tr: '/tr',
         en: '/en',
+        'x-default': '/en',
       },
     },
     openGraph: {
@@ -85,41 +86,24 @@ export default async function LandingPage({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
+  // Root layout (`[locale]/layout.tsx`) already emits canonical Organization,
+  // WebSite + SearchAction, and SoftwareApplication nodes. Re-declaring them
+  // here used to cause duplicate Organization/WebApplication entries (with a
+  // stale `/buaze-logo.png` and a TRY/USD pricing conflict against the root
+  // SoftwareApplication offers). Keep only the homepage-specific Service node
+  // here; root nodes carry the rich identity (sameAs, contactPoint, address).
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@graph': [
-      {
-        '@type': 'WebApplication',
-        name: 'Buaze',
-        url: 'https://buaze.com',
-        applicationCategory: 'BusinessApplication',
-        description: t.siteDescription,
-        offers: {
-          '@type': 'Offer',
-          price: isTr ? '500' : '10',
-          priceCurrency: isTr ? 'TRY' : 'USD',
-        },
-        operatingSystem: 'Web',
-      },
-      {
-        '@type': 'Organization',
-        name: 'Buaze',
-        url: 'https://buaze.com',
-        logo: 'https://buaze.com/buaze-logo.png',
-        contactPoint: {
-          '@type': 'ContactPoint',
-          contactType: 'customer service',
-        },
-      },
-      {
-        '@type': 'Service',
-        name: isTr ? 'Dijital İtibar Yönetimi Hizmeti' : 'Digital Reputation Management Service',
-        provider: { '@type': 'Organization', name: 'Buaze' },
-        description: isTr
-          ? 'İşletmeler için geri bildirim operasyonlarını profesyonelleştirme ve dijital itibar yönetimi platformu.'
-          : 'Platform for professionalizing feedback operations and digital reputation management for businesses.',
-      },
-    ],
+    '@type': 'Service',
+    name: isTr ? 'Dijital İtibar Yönetimi Hizmeti' : 'Digital Reputation Management Service',
+    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+    description: isTr
+      ? 'İşletmeler için geri bildirim operasyonlarını profesyonelleştirme ve dijital itibar yönetimi platformu.'
+      : 'Platform for professionalizing feedback operations and digital reputation management for businesses.',
+    serviceType: isTr ? 'Dijital itibar yönetimi yazılımı' : 'Digital reputation management software',
+    areaServed: { '@type': 'Country', name: 'Turkey' },
+    inLanguage: isTr ? 'tr-TR' : 'en-US',
+    url: `https://buaze.com/${locale}`,
   };
 
   // ── Section content (inline locale, keeps translations.ts untouched) ──
