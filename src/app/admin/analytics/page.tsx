@@ -4,7 +4,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, HelpCircle, Loader2, Star, TrendingUp } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import ExportReportButton from '@/components/dashboard/ExportReportButton';
-import { PageHeader } from '@/components/ui';
+import { PageHeader, PlatformChip, PLATFORMS, type PlatformId } from '@/components/ui';
+
+const PLATFORM_OPTIONS: PlatformId[] = [
+  'google',
+  'yemeksepeti',
+  'getir',
+  'trendyol_go',
+  'tripadvisor',
+];
 
 interface TrendPoint {
   date: string;
@@ -50,6 +58,7 @@ export default function AdminAnalyticsPage() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
   const [range, setRange] = useState<'7d' | '30d' | '90d'>('30d');
+  const [platform, setPlatform] = useState<'all' | PlatformId>('all');
   const [stats, setStats] = useState<StatsResp | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,14 +66,16 @@ export default function AdminAnalyticsPage() {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/feedback/stats?days=${range.replace('d', '')}`);
+        const params = new URLSearchParams({ days: range.replace('d', '') });
+        if (platform !== 'all') params.set('platform', platform);
+        const res = await fetch(`/api/feedback/stats?${params.toString()}`);
         if (res.ok) setStats(await res.json());
       } catch (e) {
         console.error(e);
       }
       setLoading(false);
     })();
-  }, [range]);
+  }, [range, platform]);
 
   const total = stats?.totalCount ?? 0;
   const avg = stats?.avgRating ?? 0;
@@ -136,6 +147,40 @@ export default function AdminAnalyticsPage() {
                   {r.toUpperCase()}
                 </button>
               ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setPlatform('all')}
+                className={`px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                  platform === 'all'
+                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                    : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                }`}
+                aria-pressed={platform === 'all'}
+              >
+                {isTr ? 'Tümü' : 'All'}
+              </button>
+              {PLATFORM_OPTIONS.map((pid) => {
+                const active = platform === pid;
+                return (
+                  <button
+                    key={pid}
+                    type="button"
+                    onClick={() => setPlatform(active ? 'all' : pid)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
+                      active
+                        ? 'border-[#0A0A0A] bg-white text-[#0A0A0A]'
+                        : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+                    }`}
+                    aria-pressed={active}
+                    title={PLATFORMS[pid].label}
+                  >
+                    <PlatformChip id={pid} size={14} />
+                    <span className="hidden md:inline">{PLATFORMS[pid].label}</span>
+                  </button>
+                );
+              })}
             </div>
             <ExportReportButton
               label={isTr ? 'CSV indir' : 'Export CSV'}
