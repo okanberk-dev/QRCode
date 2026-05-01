@@ -55,6 +55,11 @@ export const SUPPORTED_MAIL_KEYS = [
   // editor'a da bağlandı ki content değişiklikleri admin'den yapılabilsin.
   'roi-customer-report',
   'roi-admin-notification',
+  // Wave B lifecycle emails — cron-driven, idempotent (CLAUDE.md §21.34).
+  'qr-not-downloaded',
+  'first-feedback-tips',
+  'upgrade-suggestion',
+  'inactive-reactivation',
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];

@@ -1848,6 +1848,62 @@ Bazı mail akışları zaman-kritik: düşük puan uyarısı restoran sahibine u
 - Resend webhook integration → bounce/complaint → auto unsubscribe + ops alert
 - Slack webhook alternative (ops mail yerine)
 
+### 21.34 Lifecycle email infrastructure (Phase 11.30, 2026-05)
+
+Cron-driven, idempotent owner lifecycle email'leri. 4 yeni email type — welcome (Phase 21.6) + trial-ending (Phase 21.11) zaten mevcut, bu Wave B onların etrafına context-aware reminder + reactivation katmanı ekler.
+
+**4 yeni email:**
+
+| Type | Trigger | Cooldown | Hedef |
+|---|---|---|---|
+| `qr_not_downloaded` | account ≥ 1 gün, `QrGeneration.count = 0` | lifetime once | onboarding sonrası QR'a hiç dokunmayan owner |
+| `first_feedback_tips` | `QrGeneration.count > 0`, ≥ 2 gün önce indirildi, `Feedback.count = 0` | lifetime once | QR var ama yorum yok — yerleştirme/çağrı tipleri |
+| `upgrade_suggestion` | `Feedback.count ≥ 50`, `plan ∈ {trial, starter}` | 30 gün | yüksek hacim + düşük plan = upgrade fırsatı |
+| `inactive_reactivation` | `daysSinceLastActivity ≥ 14` (user.updatedAt + last feedback max) | 30 gün | uzun süre login/aktivite yok |
+
+**Dosyalar:**
+- `prisma/schema.prisma` `LifecycleEmailLog` model — `userId?` + `restaurantId?` + `type` + `sentAt` + `metadata: Json?`. 2 composite index (`[userId, type, sentAt]` + `[restaurantId, type, sentAt]`).
+- `src/lib/email/lifecycle.ts` — `alreadySent({userId?, restaurantId?, type, cooldownDays?})` + `recordSent({userId?, restaurantId?, type, metadata?})`. Cooldown undefined → lifetime (any prior log skips).
+- `src/lib/lifecycle-email-rules.ts` — `applyLifecycleRules({user, restaurant, appUrl, now?})` 4 kuralı sırayla check + fail-soft `runRule` helper. `buildLifecycleContexts(userIds, appUrl)` aggregate context inşası (per user × restaurant: qrFirst + qrCount + feedbackCount + lastFeedback).
+- `src/lib/email/templates/{qr-not-downloaded,first-feedback-tips,upgrade-suggestion,inactive-reactivation}.ts` — 4 yeni Pulse template (TR/EN inline default + DB-driven `loadMailCopy` + `deepSubstitute` placeholder).
+- `src/lib/email.ts` — 4 yeni public sender (`sendQrNotDownloadedEmail`, vb.).
+- `src/app/api/cron/lifecycle-emails/route.ts` — `GET` cron (BATCH_SIZE=100, `maxDuration: 300`, `Authorization: Bearer ${CRON_SECRET}` guard). `runLifecycleEmails()` shared helper export'lu (admin manuel trigger ileride). Fail-soft: bir user/rule fırlatırsa diğerleri devam eder.
+- `vercel.json` — `0 8 * * *` UTC daily (Türkiye 11:00, sales window).
+- `scripts/seed-mail-templates.ts` — 4 yeni template × 2 locale = 8 row, empty content `{}` (admin override etmediği sürece render fn inline default kullanır).
+- `src/lib/email/copy-loader.ts` `SUPPORTED_MAIL_KEYS` + `placeholders.ts` `MAIL_PLACEHOLDERS` extension.
+
+**ChatGPT'den 5 sıkılaştırma:**
+
+| Boyut | ChatGPT | Wave B |
+|---|---|---|
+| Welcome email | yeni eklensin | **Mevcut** (`sendWelcomeEmail` Phase 21.6) — `register` endpoint zaten gönderiyor; cron tekrar göndermez |
+| Trial ending email | yeni eklensin | **Mevcut** (`/api/cron/trial-reminders` Phase 21.11) — duplicate cron önleme |
+| Lifecycle log payload | rich JSON metadata | **Sade** — `userId?/restaurantId?/type/sentAt`. metadata Json? yer tutucu, şu an kullanılmıyor (geleceğe bırakıldı). |
+| Cron schedule | "daily or every 12 hours" | **Günde 1** (`0 8 * * *` UTC) — 24h cooldown güvenliği + sales window saati. |
+| Activation entegrasyonu | her email'e geçirilmeli | **Compute zamanında**: `qrGenerationCount` / `feedbackCount` zaten context'te; ayrıca `applyActivation()` çağrısı yapılmıyor (gereksiz hop). |
+
+**Idempotency garantisi:**
+- Lifetime cooldown (`qr_not_downloaded` + `first_feedback_tips`) — herhangi bir log varsa skip. Owner durumu değişse bile (örn. QR indirip silse?) mail tekrar gönderilmez.
+- 30-gün cooldown (`upgrade_suggestion` + `inactive_reactivation`) — log içinde son `sentAt > now - 30d` ise skip.
+- Cron her gün çalışır → idempotent kontrol her döngüde, duplicate yok.
+
+**Maliyet:** Günde ~100 user × 4 rule = 400 condition check; tipik %10-20 hit = 40-80 outbound email/gün. Resend free tier 3000/ay yeter (~30%). Vercel function 1 invocation/gün.
+
+**Yapma:**
+- LifecycleEmailLog'a kullanıcı PII ekleme (email, IP) — `userId` referansı yeter.
+- Welcome veya trial-ending'i bu cron'a taşıma — mevcut trigger'lar (register endpoint + trial-reminders cron) zaten doğru kullanıcı zamanında çağrılıyor.
+- Cron schedule'ı 12-saatlik veya 6-saatlik yapma — 24h cooldown + sales window kuralı bozulur, bilingual user'ları gereksiz yere uyandırır.
+- Cron self-fetch antipattern (`fetch(${appUrl}/api/cron/...)`) — `runLifecycleEmails()` shared helper export'lu, admin manuel trigger doğrudan çağırır (CLAUDE.md §21.13).
+- LifecycleEmailLog metadata'ya tüm context (rating, feedback list) yazma — çoğu mail post-debug için gereksiz, log büyür.
+
+**Yap:**
+- Yeni lifecycle email eklerken: `LifecycleEmailType` literal + `applyLifecycleRules` içine yeni `runRule` çağrısı + sender + template + `SUPPORTED_MAIL_KEYS` + `MAIL_PLACEHOLDERS` + seed entry. 7 nokta. Mevcut 4 email pattern'i kopya.
+- Cooldown yeni email için lifetime mı interval mı karar verirken: irreversible aksiyon (welcome onboarding) → lifetime; reversible/recurring bağlam (upgrade öneri, inactive) → 30 gün.
+
+### 21.35 Wave B — Search button audit (Phase 11.30, 2026-05)
+
+Phase 11.27 shell restore sonrası kullanıcı "search button pasif" raporu yaptı. Audit sonucu: shell canonical hâlinde **2 buton aktif** (xl üstü/altı + Cmd+K klavye + CommandPalette mount). Bu Wave B PR'ında ek değişiklik yapılmadı — kullanıcı tekrar rapor ederse spesifik fix Wave C'de yapılır.
+
 ### 21.36 Admin sidebar — collapsible groups
 
 Superadmin sidebar'ında 14+ menü item vardı; mail/user/content kategorileri karışıktı. Operatör scroll edip ne ne diye tahmin ediyordu. 3 grupta collapsible accordion ile düzenlendi — her grup tek tıkla açılıp kapanır, aktif route otomatik açılır, expand state localStorage'da korunur.
@@ -2316,6 +2372,7 @@ Kritik mappings: `Icon.qr`→`QrCode`, `Icon.inbox`→`Inbox`, `Icon.chart`→`B
 - **Phase 11.19 (PR #275)**: Bulk activate/deactivate (restaurants). Yeni `/api/admin/restaurants/bulk` endpoint (superadmin only, IDOR, Zod, rate limit 10/dk, single `updateMany`). UI: header select-all checkbox + indeterminate state, row solunda checkbox, lime-tint highlight, floating bottom toolbar (X seçildi + Aktif et lime + Duraklat ghost + dismiss), 3.5s auto-dismiss notice.
 - **Phase 11.20 (PR #276)**: A11y polish. 6 admin search input'a `aria-label` (Blog yazısı ara / Müşteri ara / Bülten abonesi ara / Bülten kampanyası ara / İşletme sahibi ara / İşletme ara). 2 bulk toolbar count span'ına `aria-live="polite"` (3 seçildi announcement). WCAG 2.1 AA 1.3.1 + 4.1.2.
 - **Phase 11.21 (PR #277)**: Self-audit follow-up bug bundle. (1) `/admin/members` searchInput desync — browser back ile gelen URL filter input'a yansımıyordu, sync `useEffect` eklendi. (2) `/admin/restaurants` bulk selection stale — filter değişiminde `selectedIds` cleanup yoktu, görünmeyen row'lara apply riski vardı; `useEffect` ile temizlik. (3) `/admin/reviews` bulk refetch URL'inde `assignedToMe` eksikti, "Bana atanan" filter aktifken liste yanlış genişliyordu; query builder'a eklendi. Backend dokunulmadı.
+- **Phase 11.30 (PR TBD, branch `claude/lifecycle-emails`)**: Wave B — lifecycle email infrastructure (CLAUDE.md §21.34). 4 yeni cron-driven idempotent email + `LifecycleEmailLog` model + `applyLifecycleRules` helper + admin editor entegrasyonu. (1) **`LifecycleEmailLog` Prisma model** — `userId? + restaurantId? + type + sentAt + metadata: Json?` + 2 composite index. (2) **4 yeni Pulse template** (`qr-not-downloaded`, `first-feedback-tips`, `upgrade-suggestion`, `inactive-reactivation`) — `loadMailCopy` + `deepSubstitute` placeholder pattern (Phase 21.26 + 21.29). TR/EN inline default + DB-driven override. (3) **`src/lib/email/lifecycle.ts`** + **`src/lib/lifecycle-email-rules.ts`** — saf helper'lar: `alreadySent` cooldown check (lifetime veya 30g), `recordSent` log yaz, `applyLifecycleRules` 4 kuralı sırayla check (fail-soft `runRule`), `buildLifecycleContexts` aggregate context inşası. (4) **`POST /api/cron/lifecycle-emails`** — `Authorization: Bearer ${CRON_SECRET}` guard, BATCH_SIZE=100, `maxDuration: 300`, `runLifecycleEmails()` shared helper export. Response: `{ usersChecked, contextsProcessed, sent: {qr/tips/upgrade/inactive}, skipped, failures, durationMs }`. (5) **`vercel.json`** — `0 8 * * *` UTC schedule (TR 11:00 sales window). (6) **Welcome + trial-ending duplicate önleme**: mevcut Phase 21.6 + 21.11 trigger'ları korunur, cron tekrar göndermez. **ChatGPT'den 5 sıkılaştırma**: log payload sade, cron günde 1 (12 saat değil), upgrade `feedbackCount ≥ 50` threshold, lifetime cooldown irreversible aksiyonlar, search button bu PR'da değişmedi (CLAUDE.md §21.35). **Maliyet**: günde ~40-80 outbound email + 1 invocation, marjinal.
 - **Phase 11.29 (PR TBD, branch `claude/activation-checklist`)**: Owner activation checklist (CLAUDE.md §19.5, Wave A — Prompt 3). Yeni restoran sahipleri için 5-step kurulum kontrol listesi: profile / google_link / qr_downloaded / qr_printed_shared / first_feedback. (1) **`RestaurantActivationState` Prisma model** — `qrPrintedSharedAt` + `dismissedAt` + auto `createdAt`/`updatedAt`. ChatGPT'nin önerdiği 5 nullable timestamp **2'ye sıkılaştırıldı** (3 step compute edilir: profile/google/feedback mevcut data'dan, qr_downloaded `QrGeneration.count > 0`). (2) **`src/lib/activation.ts`** — `computeActivation({ restaurant, state, qrGenerationCount, feedbackCount })` saf fonksiyon, deterministik, test edilebilir. Output: `{ steps[], completedCount, totalCount, percentage, isComplete, dismissedAt }`. `getSuggestedSteps(result, max)` helper'ı top-N incomplete step döner. Google link kontrolü warning severity'sinde geçer (homepage / not_review_link → "done"; Phase 11.22 §19.4 disiplini, warning hard block değil). (3) **`GET + PATCH /api/restaurants/[id]/activation`** — owner-scoped IDOR. PATCH actions: `mark_qr_printed`/`unmark_qr_printed`/`dismiss`/`undismiss`. `mark_qr_downloaded` action **çıkarıldı** (mevcut `rememberFeedbackQr` upsert'i yeterli). (4) **`<ActivationChecklistCard />`** — Pulse `bz-card`, 5-step list (lucide step icon + label + done state + CTA Go button), progress bar (lime, aria-valuenow), dismiss button (≥1 step complete sonrası), 100% complete success state (PartyPopper + lime tint kutlama). Loading skeleton, error fallback. (5) **`/[locale]/dashboard/page.tsx`** — owner home `<OnboardingNudge>` altına `<ActivationChecklistCard restaurantId={user.restaurants[0].id} />` mount, primary restaurant scope. ChatGPT'den **4 sıkılaştırma** (CLAUDE.md §19.5): schema sadeleşmesi, qrDownloadedAt field çıkarma, Suggested Actions ayrı kart yapmama (checklist incomplete step + CTA yeterli), permanent sidebar item eklememe. **Wave B backlog** (Prompt 3 lifecycle email): `LifecycleEmailLog` + 4 yeni email + cron — activation result'ı tüketir.
 - **Phase 11.28 (PR TBD, branch `claude/platform-redirect-broken-skip`)**: Wave 4 — broken-skip downstream (CLAUDE.md §19.4.5). Wave 1-2-3'ü bağlayan son halka. (1) **`/api/restaurants?slug=` GET endpoint** — son 24 saatlik `PlatformLinkCheck` satırlarından provider başına latest sonucu attach edildi. Tek extra Prisma query (`findMany take: 100 where: {restaurantId, checkedAt: gte 24h}`) + JS reduce. Edge cache (60s/300sw) korunur. (2) **`/r/[slug]/page.tsx`** — `RestaurantData` interface'ine `latestChecks?: Record<string, { ok, checkedAt: string }>` eklendi. Resolver çağrısından önce `Map<provider, { ok, checkedAt: Date }>` construct edip `resolveBestRedirectPlatform({ ..., latestChecks })` parametresine geçirilir. Wave 3b'de undefined geçiriliyordu (legacy davranış); Wave 4'te dolu Map → broken-skip aktif. (3) **Resolver kontratı dokunulmadı** — Wave 3b'de `latestChecks` opsiyonel parametre olarak tasarlanmıştı, broken-skip 24h windowed mantık zaten implementasyonda. Sadece downstream pipe açıldı. **Etki**: cron 24 saat içinde fail eden provider'ı tespit ediyor → müşteri o platforma yönlendirilmiyor → fallback chain (default → sector_priority → any_active) işliyor. Pre-Wave-2 deploylarda (cron yok) `latestChecks` boş → legacy davranış (broken-skip yok), backwards-compat intact. **36 unit test** (Wave 3b'de yazılmış) yeterli — broken-skip 24h içi vs eski farkı zaten kapsanıyor. **Out of scope**: payload'a `error/latencyMs/statusCode` ekleme (KVKK + payload bloat); bunlar zaten owner panel `/checks` endpoint'inde (CLAUDE.md §19.4.1).
 - **Phase 11.27 (PR #316, branch `claude/owner-shell-restore`)**: Owner panel shell restore. PR #312 "chore(shell)" simplification commit'i ile collapsible group'lar + integrations/platforms/announcements/notifications nav item'ları + topbar `<NotificationBell>` + `<TrialBanner>` + Cmd+K command palette kayboldu. Kullanıcı geri istedi → Phase 11.10 + 11.11 + 11.20 canonical hâli `git show 4153341:UserDashboardShell.tsx` ile restore edildi. **`createdAt` prop kaldırıldı**: kullanıcı `layout.tsx`'i `createdAt` pass etmeden basitleştirdi → shell `DashboardUser` interface'inden `createdAt` field'ı çıkarıldı; eski "ilk 30 gün Guide gizle" useMemo'su `showGuide = true` constant'a dönüştü (Guide nav her zaman görünür). Wave 2 (PR #315) merge sonrası rebase'le çakışma temizlendi — bu PR'da sadece shell modifikasyonu (1 dosya).

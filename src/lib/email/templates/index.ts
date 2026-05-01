@@ -39,3 +39,17 @@ export type { RoiCustomerReportParams } from './roi-customer-report';
 
 export { renderRoiAdminNotification } from './roi-admin-notification';
 export type { RoiAdminNotificationParams } from './roi-admin-notification';
+
+// Wave B lifecycle emails (CLAUDE.md §21.34 + §23.7 Phase 11.30) — cron'la
+// idempotent gönderim, LifecycleEmailLog ile dedupe.
+export { renderQrNotDownloaded } from './qr-not-downloaded';
+export type { QrNotDownloadedParams } from './qr-not-downloaded';
+
+export { renderFirstFeedbackTips } from './first-feedback-tips';
+export type { FirstFeedbackTipsParams } from './first-feedback-tips';
+
+export { renderUpgradeSuggestion } from './upgrade-suggestion';
+export type { UpgradeSuggestionParams } from './upgrade-suggestion';
+
+export { renderInactiveReactivation } from './inactive-reactivation';
+export type { InactiveReactivationParams } from './inactive-reactivation';
