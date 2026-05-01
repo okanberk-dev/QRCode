@@ -192,6 +192,9 @@ export default function AdminSidebar() {
         { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik' },
         { href: '/admin/qr', icon: QrCode, label: t('qr_codes') },
         ...(role === 'manager' ? [] : [{ href: '/admin/restaurants', icon: Store, label: t('restaurants') }]),
+        ...(role === 'superadmin'
+          ? [{ href: '/admin/embed-usage', icon: Globe, label: locale === 'en' ? 'Embed usage' : 'Embed kullanımı' }]
+          : []),
       ],
     },
     {

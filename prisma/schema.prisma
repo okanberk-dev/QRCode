@@ -160,6 +160,7 @@ model Restaurant {
   feedbacks       Feedback[]
   qrGenerations   QrGeneration[]
   qrScans         QrScan[]
+  embedViews      EmbedView[]
   adminUsers      AdminUser[]
   menuCategories  MenuCategory[]
   menuItems       MenuItem[]
@@ -193,6 +194,24 @@ model QrScan {
   @@index([restaurantId, tableNumber, platform, createdAt])
   @@index([restaurantId, sessionId, createdAt])
   @@map("qr_scans")
+}
+
+// Embeddable widget view event (CLAUDE.md §34.10). İşletme sahibi web
+// sitesine `/embed/[slug]` iframe gömdüğünde her sayfa load fire-and-forget
+// pixel + POST tracking. parentDomain referer'dan parse (full URL leak yok),
+// ipAddress 90 gün retention KVKK §13.9.
+model EmbedView {
+  id           String     @id @default(cuid())
+  restaurantId String     @map("restaurant_id")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  parentDomain String?    @map("parent_domain")
+  ipAddress    String?    @map("ip_address")
+  userAgent    String?    @map("user_agent")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@index([restaurantId, createdAt])
+  @@index([restaurantId, parentDomain, createdAt])
+  @@map("embed_views")
 }
 
 model QrGeneration {

@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { AlertOctagon, ArrowLeft, Building2, Clock, Loader2, Lock, Palette, Plug } from "lucide-react";
+import { AlertOctagon, ArrowLeft, Building2, Clock, Globe, Loader2, Lock, Palette, Plug } from "lucide-react";
 import { AlertBanner, BusinessStatusBadge, PageHeader } from "@/components/ui";
 import { SettingsLayout, type SettingsTab } from "@/components/dashboard/settings/SettingsLayout";
 import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
 import { BusinessGeneralSettings } from "@/components/dashboard/settings/sections/BusinessGeneralSettings";
 import { BusinessBrandSettings } from "@/components/dashboard/settings/sections/BusinessBrandSettings";
 import { BusinessIntegrationSettings } from "@/components/dashboard/settings/sections/BusinessIntegrationSettings";
+import { BusinessWebsiteSettings } from "@/components/dashboard/settings/sections/BusinessWebsiteSettings";
 import { BusinessOperationalSettings } from "@/components/dashboard/settings/sections/BusinessOperationalSettings";
 import { BusinessSecuritySettings } from "@/components/dashboard/settings/sections/BusinessSecuritySettings";
 import { DangerZone } from "@/components/dashboard/settings/sections/DangerZone";
@@ -59,6 +60,7 @@ const SECTION_TABS: SettingsTab[] = [
   { id: "general", label: "Genel" },
   { id: "brand", label: "Marka" },
   { id: "integrations", label: "Entegrasyonlar" },
+  { id: "website", label: "Web sitesi" },
   { id: "operations", label: "Operasyonel" },
   { id: "security", label: "Güvenlik" },
   { id: "danger", label: "Tehlikeli bölge" },
@@ -290,9 +292,30 @@ export default function RestaurantSettingsPage() {
       </SettingsSection>
 
       <SettingsSection
+        id="website"
+        active={active === "website"}
+        eyebrow="04 — WEB SİTESİ"
+        title="Web sitesi entegrasyonu"
+        description="İşletmenizin web sitesine yorum widget'ı yerleştirin."
+        actions={
+          <span className="text-[#737373]" aria-hidden="true">
+            <Globe size={18} />
+          </span>
+        }
+      >
+        <BusinessWebsiteSettings
+          restaurantId={restaurant.id}
+          slug={restaurant.slug}
+          businessName={restaurant.name}
+          website={restaurant.website}
+          locale={locale}
+        />
+      </SettingsSection>
+
+      <SettingsSection
         id="operations"
         active={active === "operations"}
-        eyebrow="04 — OPERASYONEL"
+        eyebrow="05 — OPERASYONEL"
         title="Operasyonel ayarlar"
         description="Çalışma saatleri ve geçici kapalı durumu."
         actions={
@@ -310,7 +333,7 @@ export default function RestaurantSettingsPage() {
       <SettingsSection
         id="security"
         active={active === "security"}
-        eyebrow="05 — GÜVENLİK"
+        eyebrow="06 — GÜVENLİK"
         title="Güvenlik & erişim"
         description="KVKK metni ve işletme aktiflik durumu."
         actions={
@@ -328,7 +351,7 @@ export default function RestaurantSettingsPage() {
       <SettingsSection
         id="danger"
         active={active === "danger"}
-        eyebrow="06 — TEHLİKELİ BÖLGE"
+        eyebrow="07 — TEHLİKELİ BÖLGE"
         title="Tehlikeli bölge"
         description="Geri alınamaz veya yıkıcı işlemler. Dikkatli kullan."
         actions={

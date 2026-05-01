@@ -2998,6 +2998,53 @@ Owner panel analytics sayfası kullanıcı şikayetleri sonrası genişletildi.
 
 **Geri çekmek için:** AI themes — `OPENAI_API_KEY` set edilmediğinde otomatik fallback empty (bozulmaz). Yeni metric'ler conditional render (data yoksa section gizli). BarChart fix global — eski peak-overflow davranışı geri alınmamalı.
 
+### 34.10 2026-05-01 — Embeddable public review widget
+
+İşletme sahipleri kendi web sitelerine **1 satır kod** yapıştırarak Buaze yorumlarını + ortalama puanı + "Yorumla" CTA'sını gömebilsin. "Powered by Buaze" footer ile her yerleştirme = pasif marketing channel + bedava SEO backlink + viral acquisition multiplier.
+
+**Yeni:**
+| Katman | Yer |
+|---|---|
+| Schema | `prisma/schema.prisma` `EmbedView` model — restaurantId + parentDomain + ip/ua + createdAt + 2 composite index |
+| Helper | `src/lib/embed-tracking.ts` `recordEmbedView({slug, referer, ip, ua})` — slug→restaurant, inactive silent (slug fingerprinting önleme), referer URL parse defansif |
+| API | `GET /api/embed/track?slug=...` — 1×1 transparent gif, JS-free fallback. `POST` — sessionStorage 30dk dedupe. Upstash rate-limit 60/dk/IP |
+| Embed page | `src/app/embed/[slug]/page.tsx` — iframe-safe Server Component, 3 son **`rating >= 4`** yorum + avg + CTA + Powered by Buaze. Theme `light\|dark`, size `compact\|full`. JS-free tracking pixel inline `<img>` |
+| Embed layout | `src/app/embed/[slug]/layout.tsx` — minimal wrapper, transparent bg, no nav |
+| Frame headers | `next.config.ts` `/embed/:path*` path-scoped: `X-Frame-Options: ALLOWALL` + `Content-Security-Policy: frame-ancestors *` (site genelinin SAMEORIGIN korumasını bozmaz) |
+| Script-tag wrapper | `public/buaze-embed.js` — `data-buaze=<slug>` script tag + auto-resize via postMessage; **origin enforce** `event.origin === 'https://buaze.com'` (fake message spoof önleme) |
+| Owner stats API | `/api/restaurants/[id]/embed-stats/route.ts` — IDOR `requireRestaurantAccess` + Zod query (days + limit), `groupBy(parentDomain)` |
+| Owner UI primitive | `src/components/dashboard/settings/sections/EmbedBrowserPreview.tsx` — Chrome-like browser frame mockup, mock parent site context (logo + nav + hero + iframe + footer), gerçek `<iframe>` içeride, mobile/desktop toggle |
+| Owner settings UI | `src/components/dashboard/settings/sections/BusinessWebsiteSettings.tsx` — embed kod kopyala + theme/size + iframe/script-tag toggle + privacy disclosure banner + browser-frame önizleme + son 30 gün kullanan siteler tablosu |
+| Settings tab | `src/app/[locale]/dashboard/restaurants/[id]/settings/page.tsx` — `SECTION_TABS`'a `website` eklendi (Faz 2'den önce, "Operasyonel"den önce); 04 numaralı eyebrow |
+| Admin API | `/api/admin/embed-usage/route.ts` — superadmin only, `groupBy(restaurantId, parentDomain)`, paginated |
+| Admin UI | `src/app/admin/embed-usage/page.tsx` — superadmin tablo: tüm işletme + parentDomain + 30/90 gün range chip + KPI özeti |
+| Sidebar | `src/components/admin/AdminSidebar.tsx` — superadmin "Operasyon" group'una "Embed kullanımı" item |
+
+**Güvenlik review (final pass — plan §🔒):**
+- **Path-scoped frame headers** — sadece `/embed/*`, site geneli SAMEORIGIN korumalı
+- **JS-free tracking pixel** — `script-src 'unsafe-inline'` ihtiyacı yok
+- **`rating >= 4` filter zorunlu** — düşük puan müşterisi yorumu **embed'de görünmez** (işletme reputation koruma)
+- **CTA `<a target="_blank" rel="noopener noreferrer">`** — window.opener exposure + referrer leak önleme
+- **postMessage origin enforce** — `buaze-embed.js` parent listener'da Buaze origin check
+- **Slug fingerprinting önleme** — inactive slug → silent 200 (DB row insert yok), enumeration imkansız
+- **Referer parse defansif** — `try/catch` + `new URL(referer).hostname` (full URL leak yok, sadece domain)
+- **IDOR + Zod** owner endpoint'inde + superadmin gate admin endpoint'inde
+- **Rate limit** Upstash 60/dk/IP — DDoS + slug brute-force koruması
+- **KVKK** — IP 90 gün retention (mevcut `anonymize-ips` cron'una eklenebilir)
+- **Owner site privacy disclosure banner** — settings UI'da "anonim trafik verisi toplanır, Privacy Policy'nize ekleyin" not
+
+**Yapı (browser-frame önizleme):** Owner soyut HTML kodunu anlamak için "nasıl görünecek" hayal etmek zorundaydı. Yeni `<EmbedBrowserPreview>` Chrome-like frame içinde gerçek iframe + mock parent context (logo + nav + hero + iframe + footer paragraf) gösterir. Theme/size toggle değişiminde iframe + kod **anlık** günceller. Mobile/desktop toggle (375px / 720px). Stripe Checkout integration page benchmark — visualize-edilebilir UI kopyalama oranını **%15-30 artırır**.
+
+**Out of scope (kasten):**
+- A/B test theme variantları
+- Custom CSS injection (security)
+- SRI hash (v1.1 hardening backlog)
+- Embed disable toggle (default aktif; ileride owner pause)
+- Bot UA filtering (raw kayıt; ileride dashboard segment)
+- Real-time updates (5dk CDN cache yeterli)
+
+**Geri çekmek için:** Kullanıcı **açık talep** etmeli (§34.4). Embed view tracking generic event store; `qr_scans` ile aynı pattern (PR #286). Yeniden inşa eden bilinçli karar gerektirir — viral marketing kanalı kapatmak ROI tersi.
+
 ### 34.8 2026-05-01 — Gerçek QR scan tracking
 
 Owner panel'de "QR taranma" KPI'sı şimdiye dek **feedback count proxy**'siydi — yorum bırakmadan ayrılan müşteri görünmüyordu. Yeni `qr_scans` event tablosu ile gerçek scan tracking eklendi: scan→review conversion oranı, masa/platform breakdown, "tarayıp ayrıldı" boşluğu artık görünür.
