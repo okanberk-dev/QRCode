@@ -177,8 +177,10 @@ function AdminReviewsContent() {
           tone: 'success',
         });
         setSelectedIds(new Set());
-        // Re-fetch list to reflect new flag/assignment state
-        const refresh = await fetch(`/api/feedback?page=1&limit=100${platformFilter !== 'all' ? `&platform=${platformFilter}` : ''}${hasReplyFilter === 'pending' ? '&hasReply=false' : ''}${flaggedOnly ? '&isFlagged=true' : ''}`);
+        // Re-fetch list to reflect new flag/assignment state. assignedToMe
+        // initial fetch'te dahildi ama refetch URL'inde eksikti — "Bana
+        // atanan" filter aktifken bulk sonrası liste yanlış genişliyordu.
+        const refresh = await fetch(`/api/feedback?page=1&limit=100${platformFilter !== 'all' ? `&platform=${platformFilter}` : ''}${hasReplyFilter === 'pending' ? '&hasReply=false' : ''}${flaggedOnly ? '&isFlagged=true' : ''}${assignedToMe ? '&isAssigned=me' : ''}`);
         if (refresh.ok) {
           const d = await refresh.json();
           setRows(d.data ?? []);

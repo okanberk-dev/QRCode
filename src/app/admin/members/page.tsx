@@ -116,6 +116,13 @@ export default function MembersPage() {
   const [billingMember, setBillingMember] = useState<Member | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
+  // URL'den gelen filter (browser back / deeplink) input'a yansımalı; aksi
+  // halde mount'taki debouncedSearch snapshot'ı korunur ve liste filtreli
+  // ama input boş görünür.
+  useEffect(() => {
+    setSearchInput(debouncedSearch);
+  }, [debouncedSearch]);
+
   // Debounce search input by 300ms — matches admin/customers pattern.
   useEffect(() => {
     const t = setTimeout(() => {
