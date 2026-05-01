@@ -149,7 +149,7 @@ export default async function CaseStudyPage({
   };
 
   return (
-    <div className="min-h-screen bg-white pt-[64px]">
+    <div className="min-h-screen bg-white lg:pt-[64px]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />

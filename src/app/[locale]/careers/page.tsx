@@ -100,7 +100,7 @@ export default async function CareersPage({
   };
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] pt-[64px]">
+    <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] lg:pt-[64px]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />

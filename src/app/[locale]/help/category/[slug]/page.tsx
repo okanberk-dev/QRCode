@@ -97,7 +97,7 @@ export default async function HelpCategoryPage({ params }: PageParams) {
       : null;
 
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
+    <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}

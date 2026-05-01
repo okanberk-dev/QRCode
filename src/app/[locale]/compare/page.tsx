@@ -77,7 +77,7 @@ export default async function ComparisonPage({
   const heroTail = heroWords.slice(-3).join(' ');
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 

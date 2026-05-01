@@ -80,7 +80,7 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
   });
 
   return (
-    <div className="min-h-screen bg-white pt-[64px]">
+    <div className="min-h-screen bg-white lg:pt-[64px]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

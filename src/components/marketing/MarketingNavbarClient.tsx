@@ -326,7 +326,9 @@ export default function MarketingNavbarClient({
   return (
     <>
       <nav
-        className={`fixed inset-x-0 top-0 z-40 h-[64px] border-b backdrop-blur-2xl transition-all duration-300 ${
+        className={`${
+          mobileOpen ? 'fixed inset-x-0 top-0' : 'relative'
+        } lg:fixed lg:inset-x-0 lg:top-0 z-40 h-[64px] border-b backdrop-blur-2xl transition-all duration-300 ${
           scrolled
             ? 'border-[#E5E5E5] bg-white/95 shadow-[0_4px_24px_rgba(10,10,10,0.05)]'
             : 'border-[#EDEDED] bg-white/88'
@@ -347,7 +349,7 @@ export default function MarketingNavbarClient({
           </div>
 
           {/* Desktop links */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-1">
             {/* Product */}
             <DesktopDropdown
               label={isTr ? 'Ürün' : 'Product'}
@@ -536,11 +538,11 @@ export default function MarketingNavbarClient({
               </>
             )}
 
-            {/* Mobile hamburger */}
+            {/* Mobile + tablet hamburger */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-              className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] shadow-[0_8px_24px_-20px_rgba(10,10,10,0.28)] hover:bg-[#F5F5F5]"
+              className="lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] shadow-[0_8px_24px_-20px_rgba(10,10,10,0.28)] hover:bg-[#F5F5F5]"
             >
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -548,9 +550,9 @@ export default function MarketingNavbarClient({
         </div>
       </nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile + tablet drawer */}
       {mobileOpen && (
-        <div className="fixed inset-0 top-[64px] z-40 md:hidden">
+        <div className="fixed inset-0 top-[64px] z-40 lg:hidden">
           <button
             type="button"
             aria-label="Close menu"

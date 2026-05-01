@@ -91,13 +91,13 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
       {/* Spacer so page content never hides behind the fixed nav */}
       <div
         aria-hidden="true"
-        className="md:hidden w-full"
-        style={{ height: 'calc(68px + env(safe-area-inset-bottom, 0px))' }}
+        className="lg:hidden w-full"
+        style={{ height: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
       />
 
       <nav
         aria-label={locale === 'tr' ? 'Mobil alt menü' : 'Mobile bottom navigation'}
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#EDEDED]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#EDEDED]"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           // iOS Safari fix: dinamik bottom-toolbar transition'ında fixed
@@ -109,16 +109,16 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
           backfaceVisibility: 'hidden',
         }}
       >
-        <ul className="flex items-stretch justify-around h-[68px] max-w-[520px] mx-auto px-2">
+        <ul className="flex items-stretch justify-around h-[72px] max-w-[520px] mx-auto px-2">
           {items.map((item) => {
             const active = isActive(item.href);
 
             if ('center' in item && item.center) {
-              // Prominent center CTA — flat Pulse circle with lime glow.
-              // 52x52 + -20mt + shadow blur 16 mirrors design buaze-mobil
-              // bundle (layout.jsx:534) so the FAB lifts above the bar.
+              // Prominent center CTA — Pulse lime circle, fully contained inside
+              // the bar so it never overlaps page content while scrolling.
+              // 52x52 inside 72px bar leaves ~10px breathing room top/bottom.
               return (
-                <li key={item.href} className="relative flex-1 flex items-start justify-center -mt-5">
+                <li key={item.href} className="relative flex-1 flex items-center justify-center">
                   <Link
                     href={item.href}
                     onClick={tapHaptic}

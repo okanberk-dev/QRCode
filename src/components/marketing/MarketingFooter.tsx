@@ -188,8 +188,8 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       {/* Link grid */}
       <div className="px-4 py-10 sm:px-10 sm:py-14">
         <div className="mx-auto max-w-[1240px]">
-          {/* Mobile footer — large tap targets, no cramped two-column links. */}
-          <div className="space-y-3 md:hidden">
+          {/* Mobile + tablet footer — large tap targets, no cramped two-column links. */}
+          <div className="space-y-3 lg:hidden">
             <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
               <Link href={base} className="inline-flex items-center gap-2 group">
                 <BuazeLogo
@@ -270,7 +270,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
             ))}
           </div>
 
-          <div className="hidden grid-cols-2 gap-8 sm:gap-10 md:grid lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:gap-8">
+          <div className="hidden grid-cols-2 gap-8 sm:gap-10 lg:grid lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:gap-8">
             {/* Brand */}
             <div className="col-span-2 lg:col-span-1">
               <Link href={base} className="inline-flex items-center gap-2 group">
@@ -349,7 +349,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       </div>
 
       {/* Bottom rail — copyright + legal mini-links */}
-      <div className="border-t border-[#1F1F1F] pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(2.5rem,env(safe-area-inset-left))] sm:pr-[max(2.5rem,env(safe-area-inset-right))] md:pb-5">
+      <div className="border-t border-[#1F1F1F] pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(2.5rem,env(safe-area-inset-left))] sm:pr-[max(2.5rem,env(safe-area-inset-right))] lg:pb-5">
         <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-4 text-center lg:flex-row lg:justify-between lg:gap-6 lg:text-left">
           <p className="pulse-eyebrow text-[#A3A3A3]">
             © {new Date().getFullYear()} BUAZE BİLİŞİM A.Ş. · İSTANBUL
@@ -394,8 +394,8 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       </div>
     </footer>
 
-    {/* Mobile bottom navigation — md:hidden, fixed, safe-area aware. Mounted
-        from the footer so every marketing surface inherits it without
+    {/* Mobile + tablet bottom navigation — lg:hidden, fixed, safe-area aware.
+        Mounted from the footer so every marketing surface inherits it without
         per-page wiring. Auth/onboarding/dashboard render their own chrome. */}
     <MobileBottomNav locale={locale} isLoggedIn={isLoggedIn} />
     </>
