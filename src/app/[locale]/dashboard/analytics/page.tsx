@@ -3,10 +3,12 @@ import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
+import dynamicImport from 'next/dynamic';
 import type { Locale } from '@/lib/translations';
 import {
   BarChart,
   Eyebrow,
+  LegendDot,
   PageHeader,
   PlatformChip,
   PLATFORMS,
@@ -14,6 +16,18 @@ import {
   type PlatformId,
 } from '@/components/ui';
 import AnalyticsFilterBar from '@/components/dashboard/analytics/AnalyticsFilterBar';
+import type { InteractionTrendPoint } from '@/components/dashboard/analytics/InteractionTrendChart';
+
+// Recharts'ı sadece bu chart için lazy yükle (mobile ilk paint'te skeleton).
+const InteractionTrendChart = dynamicImport(
+  () => import('@/components/dashboard/analytics/InteractionTrendChart'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[240px] sm:h-[300px] md:h-[340px] w-full animate-pulse rounded-xl bg-[#FAFAFA]" />
+    ),
+  },
+);
 
 export const dynamic = 'force-dynamic';
 
@@ -233,16 +247,27 @@ export default async function AnalyticsPage({
   const lowRatingDelta = ppDelta(lowRatingRate, prevLowRatingRate, true);
 
   // Window-day daily distribution (etkileşim chart) — dynamic length.
-  const interactionData: { label: string; value: number }[] = Array.from({ length: windowDays }, (_, i) => {
+  // Dual-series: scans (toplam yorum/taranma) + redirects (rating>=4+platform).
+  // Recharts AreaChart 7/30/90 günü tutarlı render eder; eski BarChart 90
+  // bar için layout kırılıyordu (CLAUDE.md §34.7 cleanup log).
+  const dateFmt = new Intl.DateTimeFormat(isTr ? 'tr-TR' : 'en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+  });
+  const interactionData: InteractionTrendPoint[] = Array.from({ length: windowDays }, (_, i) => {
     const dayStart = new Date();
     dayStart.setHours(0, 0, 0, 0);
     dayStart.setDate(dayStart.getDate() - (windowDays - 1 - i));
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
-    const count = feedbacksWindow.filter(
+    const dayFbs = feedbacksWindow.filter(
       (f) => f.createdAt >= dayStart && f.createdAt < dayEnd,
+    );
+    const scans = dayFbs.length;
+    const redirects = dayFbs.filter(
+      (f) => (f.rating ?? 0) >= 4 && f.platform != null && f.platform !== '',
     ).length;
-    return { label: '', value: count };
+    return { date: dateFmt.format(dayStart), scans, redirects };
   });
 
   // Platform paylaşımı — sadece "Tümü" filter'ında anlamlı (tek platform
@@ -356,11 +381,19 @@ export default async function AnalyticsPage({
       {/* 2-col 2fr/1fr: window-day etkileşim + Platform paylaşımı (koşullu) */}
       <div className={`grid gap-3.5 ${showPlatformShare ? 'lg:grid-cols-[2fr_1fr]' : ''}`}>
         <section className="bz-card p-5 sm:p-6">
-          <Eyebrow>{`${windowLabel} ${isTr ? 'ETKİLEŞİM' : 'INTERACTION'}`}</Eyebrow>
-          <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
-            {isTr ? 'Taranma · Yorum · Yönlendirme' : 'Scans · Reviews · Redirects'}
-          </div>
-          <BarChart data={interactionData} height={180} showValues />
+          <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-4">
+            <div>
+              <Eyebrow>{`${windowLabel} ${isTr ? 'ETKİLEŞİM' : 'INTERACTION'}`}</Eyebrow>
+              <div className="bz-h-tight mt-1 text-[18px]">
+                {isTr ? 'Yorum ve yönlendirme trendi' : 'Reviews & redirects trend'}
+              </div>
+            </div>
+            <div className="flex gap-3 sm:gap-4 shrink-0">
+              <LegendDot color="#0A0A0A" label={isTr ? 'Yorum' : 'Reviews'} />
+              <LegendDot color="#A8D62E" label={isTr ? 'Yönlendirme' : 'Redirects'} />
+            </div>
+          </header>
+          <InteractionTrendChart data={interactionData} isTr={isTr} />
         </section>
 
         {showPlatformShare && (

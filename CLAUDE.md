@@ -2864,7 +2864,7 @@ Yeni bir ölü kod denetimi yaparken aşağıdaki sırayı izle:
 - `validate.ts` helper'ını silme — §28 kanonik öneri, gelecek route'lar için bekliyor.
 - `CareerApplication`, `AutomationRule`, `GoogleIntegration`, `NotificationPreference` modellerini silme — schema'da kaldıkları sürece preview deploy / staging ortamında DB'de yer kaplar ama silmek migration zorunluluğu doğurur.
 
-### 34.6 2026-05-01 — Owner dashboard ana sayfa konsolidasyonu
+### 34.5 2026-05-01 — Owner dashboard ana sayfa konsolidasyonu
 
 Owner anasayfası (`src/app/[locale]/dashboard/page.tsx`, 1152 LOC) tekrarlayan KPI'lar + chart'lar nedeniyle yeniden inşa edildi. Üst kısım ile aşağıdaki "İleri İstatistikler" bölümü aynı 4 KPI'yı + 2 farklı trend chart'ı + 5-yıldız histogramı tekrar gösteriyordu. Kullanıcı talebi (2026-05): "Trend ile etkileşim analizini birleştir, tekrarlayan içerikler olmasın, profesyonel ama basit görünsün."
 
@@ -2911,7 +2911,7 @@ Owner anasayfası (`src/app/[locale]/dashboard/page.tsx`, 1152 LOC) tekrarlayan 
 
 **Geri eklemek için:** Kullanıcı **açık talep** etmeli (§34.4). Detaylı funnel/leaderboard/30d-window UX gerekli olursa `/dashboard/analytics` (zaten 454 LOC, range/platform/branch/restaurant URL-synced filtreler) genişletilmeli — ana sayfada ek section eklenmemeli (sade kalma kararı).
 
-### 34.5 2026-05-01 — Slack iletişim yüzeyi kaldırıldı
+### 34.6 2026-05-01 — Slack iletişim yüzeyi kaldırıldı
 
 Owner panel'deki Slack webhook bildirim ayarı kullanıcı talebiyle kaldırıldı. Tek-kanal e-posta'ya odaklanan kapsam.
 
@@ -2939,6 +2939,23 @@ Owner panel'deki Slack webhook bildirim ayarı kullanıcı talebiyle kaldırıld
 **DB drift uyarısı:** `slack_webhook` Postgres kolonu **prod'da hâlâ var** — `prisma db push --accept-data-loss` ilk deploy'da DROP COLUMN çalıştırır. Eski kayıtların `slack_webhook` değerleri kaybolur (kabul edilen — feature kullanılmıyor). CLAUDE.md §21.18 paranoidliği: nullable + default'lu kolon silmek backward-compat bozmaz, eski kod fail olmaz çünkü helper artık o kolonu select etmiyor (defensive `select` paterni §14.1).
 
 **Geri eklemek için:** Kullanıcı **açık talep** etmeli (§34.4). Webhook fan-out generic hale getirilebilir (Discord/Teams/custom URL desteği), tek-platform Slack-özel implementation tekrar yapılması önerilmez.
+
+### 34.7 2026-05-01 — Analytics sayfası "X gün etkileşim" chart fix
+
+`/dashboard/analytics` sayfasındaki "ETKİLEŞİM" chart'ı 90/30 gün range'lerde tamamen kırık görünüyordu. Custom `<BarChart>` primitive'i (`src/components/ui/BarChart.tsx`) `flex-1 + maxWidth: 28 + gap-2` ile sadece ~7-14 bar için tasarlanmıştı. 90 bar dizildiğinde her bar ~5px'e sıkışıp value badge'leri (`showValues`) bar üstüne yığılıyordu; ek olarak `interactionData`'da `label: ''` olduğu için x-axis label collision yaşanıyordu (kullanıcı bug raporu).
+
+**Fix:**
+- Yeni component: `src/components/dashboard/analytics/InteractionTrendChart.tsx` — Recharts AreaChart, dual-series (yorum + yönlendirme), dynamic x-axis tick interval (7d: her label, 30d: her 5, 90d: her ~length/6) — CLAUDE.md §13.8 mobile chart pattern'i ile birebir.
+- Backend `interactionData` shape değişti: `{ label: '', value }` → `{ date: 'dd/mm', scans, redirects }`. Redirects = aynı gün içinde rating ≥ 4 + platform set olanlar.
+- Lazy-load: `dynamic({ ssr: false })` import — recharts mobile bundle yükü ilk paint'te skeleton.
+- `<LegendDot>` ile chart başlığında siyah (Yorum) + lime-deep (Yönlendirme) iki seri etiketi.
+- "GÜNLÜK DAĞILIM" (Pzt-Paz, 7-bucket) BarChart'ı **dokunulmadı** — 7 öğe için BarChart layout'u sağlam.
+
+**Geri çekmek için:** Yeni `<InteractionTrendChart>` sadece bu sayfada kullanılır. Recharts bağımlılığı dashboard ana sayfasındaki `TrendsChart` ile zaten paylaşılıyor — ekstra bundle maliyet sıfır. Custom BarChart'a dönmek istenirse, range > 14 gün için thinning veya scrollable container gerekir (yeniden inşa şart).
+
+---
+
+## 35. SEO Infrastructure (2026-05 PR #263 + #264)
 
 `src/app/sitemap.ts` + `robots.ts` + `public/llms.txt` + `public/.well-known/security.txt` + `src/app/[locale]/blog/rss.xml/route.ts` — discovery + structured data infrastructure'ı. Yeni public sayfa eklerken aşağıdaki kuralları takip et.
 
