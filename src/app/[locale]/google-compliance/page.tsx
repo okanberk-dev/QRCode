@@ -71,7 +71,7 @@ export default async function GoogleCompliancePage({
 
       {/* ─── Points ─── */}
       <section className="px-5 sm:px-10 py-[60px] sm:py-20">
-        <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="max-w-[1100px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {points.map((point, i) => (
             <div key={i} className="bz-card p-6 sm:p-7">
               <span className="pulse-eyebrow text-[#A8D62E]">

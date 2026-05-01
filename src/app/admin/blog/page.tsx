@@ -194,7 +194,7 @@ export default function AdminBlogPage() {
       ) : (
         <div className="bz-card overflow-hidden">
           {/* Desktop: bz-table */}
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden lg:block overflow-x-auto">
             <table className="bz-table">
               <thead>
                 <tr>
@@ -285,7 +285,7 @@ export default function AdminBlogPage() {
           </div>
 
           {/* Mobile: card list */}
-          <div className="divide-y divide-[#EDEDED] md:hidden">
+          <div className="divide-y divide-[#EDEDED] lg:hidden">
             {filtered.map(post => (
               <article key={post.id} className="p-4 space-y-2.5">
                 <div className="flex items-center gap-1.5">

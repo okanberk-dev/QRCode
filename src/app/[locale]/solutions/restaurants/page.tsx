@@ -97,7 +97,7 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
               {isTr ? 'ÇÖZÜM · RESTORAN & KAFE' : 'SOLUTION · RESTAURANT & CAFÉ'}
             </span>
             <h1
-              className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
+              className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
             >
               {isTr ? (
                 <>
@@ -177,7 +177,7 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
 
       {/* 3-stat grid */}
       <section className="px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {stats.map((s) => (
             <div key={s.l} className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-7">
               <div

@@ -184,7 +184,7 @@ export default async function CaseStudyPage({
                 {resolveSector(study, isTr)} · {study.location}
               </p>
               <h1
-                className="mt-3 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]"
+                className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]"
               >
                 {study.brand}
               </h1>

@@ -152,7 +152,7 @@ export default async function HowItWorksPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Nasıl çalışır' : 'How it works'}
           </span>
-          <h1 className="mt-5 text-[38px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
+          <h1 className="mt-5 text-[38px] sm:text-[64px] md:text-[52px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
             {isTr ? (
               <>
                 5 dakikada kurulum.

@@ -176,7 +176,7 @@ export default async function PressPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Buaze (şirket) · Basın kiti' : 'Buaze (the company) · Press kit'}
           </span>
-          <h1 className="mt-3 text-[38px] sm:text-[60px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em]">
+          <h1 className="mt-3 text-[38px] sm:text-[60px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em]">
             {isTr ? 'Basın Kiti.' : 'Press Kit.'}
           </h1>
           <p className="mt-5 max-w-[680px] text-[16px] sm:text-[18px] text-[#525252] leading-[1.6]">

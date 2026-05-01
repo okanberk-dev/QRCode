@@ -311,7 +311,7 @@ export default function AdminCustomersPage() {
         ) : (
           <>
             {/* Desktop table */}
-            <div className="hidden overflow-x-auto md:block">
+            <div className="hidden overflow-x-auto lg:block">
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#FFFFFF]">
                   <tr className="pulse-eyebrow text-[#737373]">
@@ -381,7 +381,7 @@ export default function AdminCustomersPage() {
             </div>
 
             {/* Mobile cards */}
-            <div className="divide-y divide-[#EDEDED] md:hidden">
+            <div className="divide-y divide-[#EDEDED] lg:hidden">
               {rows.map((r) => (
                 <div key={r.key} className="p-4">
                   <div className="flex items-start justify-between gap-3">

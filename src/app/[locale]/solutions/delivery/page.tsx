@@ -173,7 +173,7 @@ export default async function DeliveryPage({
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Sektör · Paket servis & Dark kitchen' : 'Sector · Delivery & Dark kitchen'}
             </span>
-            <h1 className="mt-4 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
+            <h1 className="mt-4 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]">
               {isTr ? (
                 <>
                   Her pakette bir
@@ -350,7 +350,7 @@ export default async function DeliveryPage({
               : 'Customer scans the QR, rates 1–5, and gets routed differently based on the score.'}
           </p>
 
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {flow.map((x) => (
               <div
                 key={x.s}

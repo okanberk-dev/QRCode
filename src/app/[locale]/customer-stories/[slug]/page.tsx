@@ -308,7 +308,7 @@ export default async function CustomerStoryPage({
             </Link>
           </div>
 
-          <div className="mt-7 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CUSTOMER_STORIES.filter((item) => item.slug !== story.slug).slice(0, 3).map((item) => (
               <Link
                 key={item.slug}

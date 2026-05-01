@@ -114,7 +114,7 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
               {isTr ? 'SEKTÖR · PERAKENDE & MAĞAZA' : 'SECTOR · RETAIL & STORE'}
             </span>
             <h1
-              className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-white"
+              className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[0.95] tracking-[-0.035em] text-white"
             >
               {isTr ? (
                 <>
@@ -234,7 +234,7 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
 
       {/* 3-feature grid */}
       <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
             <div
               key={f.title}

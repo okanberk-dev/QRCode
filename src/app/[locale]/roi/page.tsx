@@ -220,7 +220,7 @@ export default async function RoiPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'ROI hesaplayıcı' : 'ROI calculator'}
           </span>
-          <h1 className="mt-4 text-[38px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em]">
+          <h1 className="mt-4 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em]">
             {isTr ? (
               <>
                 Her{' '}
@@ -312,7 +312,7 @@ export default async function RoiPage({
               : 'The ROI calculator does not rely on one black-box multiplier. It takes your actual operational numbers, multiplies them by Buaze\'s three measurable benefits and surfaces the 12-month net gain. The three drivers below are calibrated on a cohort of ~2,400 Buaze accounts.'}
           </p>
 
-          <ol className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-5">
+          <ol className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {(isTr
               ? [
                   {

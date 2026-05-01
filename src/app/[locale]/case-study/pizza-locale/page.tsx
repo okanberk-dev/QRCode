@@ -182,7 +182,7 @@ export default async function PizzaLocaleCaseStudy({
             <span className="w-2 h-2 rounded-full bg-[#0A0A0A] pulse-heartbeat" />
             <span className="pulse-eyebrow text-[#0A0A0A]">{t.pl_case_hero_badge}</span>
           </div>
-          <h1 className="mt-6 text-[38px] sm:text-[56px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-white sm:leading-[1.05]">
+          <h1 className="mt-6 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-white sm:leading-[1.05]">
             {t.pl_case_hero_title}
           </h1>
           <p className="mt-6 text-[17px] sm:text-[19px] text-white/70 leading-[1.6] max-w-[680px] mx-auto">
@@ -364,7 +364,7 @@ export default async function PizzaLocaleCaseStudy({
               {isTr ? "1'den 12'ye büyüme." : 'From 1 to 12 branches.'}
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {roadmap.map((item) => (
               <div
                 key={item.step}

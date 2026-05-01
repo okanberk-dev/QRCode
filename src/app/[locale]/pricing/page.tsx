@@ -183,7 +183,7 @@ export default async function PricingPage({
           <span className="pulse-eyebrow text-[#737373]">
             {isTr ? 'Fiyatlar' : 'Pricing'}
           </span>
-          <h1 className="mt-5 text-[38px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.95] sm:leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+          <h1 className="mt-5 text-[38px] sm:text-[64px] md:text-[52px] lg:text-[72px] font-medium leading-[0.95] sm:leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
             {isTr ? (
               <>
                 Basit. Şeffaf.

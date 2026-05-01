@@ -190,7 +190,7 @@ export default async function AboutPage({
             <span className="pulse-eyebrow text-[#737373]">
               {isTr ? 'Buaze (şirket) · Hakkımızda' : 'Buaze (the company) · About'}
             </span>
-            <h1 className="mt-3 text-[38px] sm:text-[64px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
+            <h1 className="mt-3 text-[38px] sm:text-[64px] md:text-[52px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]">
               {isTr ? (
                 <>
                   Her işletmenin
@@ -248,7 +248,7 @@ export default async function AboutPage({
 
       {/* ─── Numbers · design: #FAFAFA bg + top-2 rule per stat ─── */}
       <section className="bg-[#FAFAFA] px-5 sm:px-10 py-12 sm:py-16">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
           {numbers.map((item, i) => (
             <div key={i} className="border-t-2 border-[#0A0A0A] pt-4">
               <div
@@ -269,7 +269,7 @@ export default async function AboutPage({
           <h2 className="text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.03em] text-[#0A0A0A] mb-10">
             {isTr ? 'Değerlerimiz' : 'Our values'}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {values.map((value) => (
               <div key={value.n} className="bg-white border border-[#EDEDED] rounded-2xl p-7">
                 <span className="pulse-eyebrow text-[#A8D62E]">{value.n}</span>

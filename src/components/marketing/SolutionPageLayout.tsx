@@ -242,7 +242,7 @@ export default function SolutionPageLayout({
                 </span>
                 <span className="pulse-eyebrow text-[#0A0A0A]">{industryBadge}</span>
               </div>
-              <h1 className="text-[40px] sm:text-[60px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
+              <h1 className="text-[40px] sm:text-[60px] md:text-[48px] lg:text-[72px] font-medium leading-[0.98] tracking-[-0.035em] text-[#0A0A0A]">
                 {h1Prefix}{' '}
                 <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">{h1Suffix}</span>
               </h1>
@@ -293,7 +293,7 @@ export default function SolutionPageLayout({
               {isTr ? 'Üç adım, üç saniye.' : 'Three steps, three seconds.'}
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {displaySteps.map((step, i) => (
               <div
                 key={i}
@@ -351,7 +351,7 @@ export default function SolutionPageLayout({
 
       {/* ─── Stats Bar ─── */}
       <section className="bg-[#C6F24E] border-y border-[#A8D62E] px-6 sm:px-10 py-14">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
           {displayStats.map((stat, i) => (
             <div key={i}>
               <div

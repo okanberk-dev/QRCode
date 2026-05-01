@@ -153,7 +153,7 @@ export default async function CaseStudiesPage({
               {isTr ? 'VAKA ÇALIŞMALARI' : 'CASE STUDIES'}
             </span>
             <h1
-              className="mt-5 text-[42px] font-medium leading-[0.95] tracking-[-0.045em] text-[#0A0A0A] sm:text-[72px] lg:text-[92px]"
+              className="mt-5 text-[42px] font-medium leading-[0.95] tracking-[-0.045em] text-[#0A0A0A] sm:text-[72px] md:text-[56px] lg:text-[92px]"
             >
               {isTr ? 'Gerçek operasyonlardan ölçülebilir sonuçlar.' : 'Measurable outcomes from real operations.'}
             </h1>

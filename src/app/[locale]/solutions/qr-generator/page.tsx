@@ -121,7 +121,7 @@ export default async function QRGeneratorPage({
             {isTr ? 'ÜCRETSİZ ARAÇ' : 'FREE TOOL'}
           </span>
           <h1
-            className="mt-3 text-[38px] sm:text-[56px] lg:text-[68px] font-medium leading-[1.02] sm:leading-[1] tracking-[-0.035em] text-[#0A0A0A]"
+            className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[68px] font-medium leading-[1.02] sm:leading-[1] tracking-[-0.035em] text-[#0A0A0A]"
           >
             {isTr ? 'QR kod oluşturucu.' : 'QR code generator.'}
           </h1>

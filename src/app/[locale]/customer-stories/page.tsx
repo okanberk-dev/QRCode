@@ -87,7 +87,7 @@ export default async function CustomerStoriesPage({
             {isTr ? 'Başarı hikayeleri' : 'Customer stories'}
           </span>
           <h1
-            className="mt-3 text-[38px] sm:text-[56px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]"
+            className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em]"
           >
             {isTr ? 'Rakam konuşur.' : 'Numbers do the talking.'}
           </h1>
