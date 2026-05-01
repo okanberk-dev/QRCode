@@ -22,6 +22,7 @@ import PlatformDistribution from '@/components/admin/PlatformDistribution';
 import TrendsChart from '@/components/admin/TrendsChart';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
+import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
 import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
@@ -455,6 +456,16 @@ export default async function DashboardPage({
       />
 
       <OnboardingNudge locale={locale} steps={onboardingSteps} />
+
+      {/* Activation checklist (CLAUDE.md §19.5 + §23.7 Phase 11.29) — primary
+          restaurant için 5-step kurulum kartı. 100% complete + dismiss
+          olduğunda kart gizli. */}
+      {user.restaurants[0] && (
+        <ActivationChecklistCard
+          restaurantId={user.restaurants[0].id}
+          locale={locale}
+        />
+      )}
 
       {/* Unified KPI Grid — mobile 2x2 → desktop 4-col. Tek delta pencere
           (son 7 gün vs önceki 7 gün) — kullanıcı dostu, karışıklık yok. */}
