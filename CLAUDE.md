@@ -711,6 +711,17 @@ Response `meta.degraded: { joins, tags } | null` döner. UI amber banner ile "DB
 
 **Mevcut iyi kullanımlar (template):** `/google-compliance/page.tsx` policy card + `/r/[slug]` low-rating form transparency. Yeni copy yazılırken bunlardan referans al.
 
+### 19.1.2 NAP parity (footer + contact + LocalBusiness)
+
+Google'ın NAP consistency rule'una göre Name + Address + Phone three surface'ta birebir aynı string olmalı: site footer, contact sayfa JSON-LD, LocalBusiness schema. Drift tespit edildi (2026-05) ve bu PR ile düzeltildi:
+
+- **`MarketingFooter.tsx` bottom rail** — yeni `<address>` block (semantic, not-italic, screen reader uyumlu): `Buaze Bilişim A.Ş. · Workinton Maslak, Kat 4 · Maslak / İstanbul · support@buaze.com`. Mobile'da stack, desktop'ta inline dot-separated.
+- **`/[locale]/contact/page.tsx` JSON-LD Organization** — email `hello@buaze.com` → `support@buaze.com` (root layout ile parity); address tek satır → 4-field `PostalAddress` (`streetAddress`, `addressLocality`, `addressRegion`, `addressCountry`).
+
+**Yapma:** `hello@`, `info@`, ad-hoc email'ler kullanma (gelecek mailbox provisioning yapılana kadar tek public email `support@buaze.com`). Footer `<address>` string'ini "İSTANBUL" gibi kısa form'la değiştirme — Google PostalAddress field'ları ile aynı detayda olmalı.
+
+**Yap:** LocalBusiness schema PR'ı eklenirken (kullanıcı tam adres + posta kodu paylaşana kadar bekliyor) **aynı string'i** kullan. Geo coords (`40.9923;29.1244` Ataşehir) ile address (Maslak) tutarsızlığı LocalBusiness PR'da tek source of truth ile çözülecek — bu PR sadece Footer + Contact'ı root layout'la uyumlu hale getirdi.
+
 ### 19.2 Default redirect platform — orphan default uyarısı
 
 `Restaurant.defaultRedirectPlatform` set edilmiş ama o platformun URL'i (`yemekSepetiUrl` / `getirYemekUrl` / `trendyolYemekUrl` / `googleReviewUrl`) sonradan silinmiş olabilir. Bu durumda public review surface (`/r/[slug]`) sessizce Google'a düşer — owner için **görünmez bug**: ayar tutmuyor sanır.

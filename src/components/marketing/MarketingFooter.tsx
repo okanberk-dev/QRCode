@@ -348,8 +348,25 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
         </div>
       </div>
 
-      {/* Bottom rail — copyright + legal mini-links */}
+      {/* Bottom rail — NAP + copyright + legal mini-links.
+          NAP block is wrapped in a semantic <address> so search engines
+          and screen readers identify it as the canonical company address.
+          The string ("Workinton Maslak, Kat 4 · Maslak / İstanbul ·
+          support@buaze.com") must match the LocalBusiness schema 1:1
+          when that PR ships (Google NAP consistency rule). */}
       <div className="border-t border-[#1F1F1F] pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(2.5rem,env(safe-area-inset-left))] sm:pr-[max(2.5rem,env(safe-area-inset-right))] lg:pb-5">
+        <address className="not-italic mx-auto mb-4 flex max-w-[1240px] flex-col items-center gap-x-3 gap-y-1 text-center text-[12px] text-[#A3A3A3] sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4">
+          <span>Buaze Bilişim A.Ş.</span>
+          <span aria-hidden className="hidden sm:inline">·</span>
+          <span>Workinton Maslak, Kat 4 · Maslak / İstanbul</span>
+          <span aria-hidden className="hidden sm:inline">·</span>
+          <a
+            href="mailto:support@buaze.com"
+            className="text-white transition-colors hover:text-[#C6F24E]"
+          >
+            support@buaze.com
+          </a>
+        </address>
         <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-4 text-center lg:flex-row lg:justify-between lg:gap-6 lg:text-left">
           <p className="pulse-eyebrow text-[#A3A3A3]">
             © {new Date().getFullYear()} BUAZE BİLİŞİM A.Ş. · İSTANBUL
