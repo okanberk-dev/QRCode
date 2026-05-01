@@ -34,10 +34,11 @@ import { BusinessPulseAiSettings } from "@/components/dashboard/settings/section
  *     2. security      — password + 2FA + sessions (BusinessAccountSecuritySettings)
  *
  *   ÇALIŞMA ALANI
- *     3. notifications — low-rating mail / digest / Slack
- *     4. billing       — read-only plan + invoices
- *     5. team          — members + roles + locations
- *     6. legal         — KVKK + consent posture (read-only)
+ *     3. notifications — low-rating mail + weekly report
+ *     4. ai            — Pulse AI auto-draft preferences
+ *     5. billing       — read-only plan + invoices
+ *     6. team          — members + roles + locations
+ *     7. legal         — KVKK + consent posture (read-only)
  *
  * Per-restaurant business identity (name, address, brand) lives at
  * /dashboard/restaurants/[id]/settings — single source of truth.
@@ -219,8 +220,8 @@ export default function AccountSettingsPage() {
         title={isTr ? "Bildirim ayarları" : "Notification settings"}
         description={
           isTr
-            ? "Düşük puan maili, günlük özet, haftalık rapor ve Slack webhook tercihleri."
-            : "Low-rating email, daily digest, weekly report and Slack webhook preferences."
+            ? "Düşük puan e-postası ve haftalık rapor tercihleri."
+            : "Low-rating email and weekly report preferences."
         }
         actions={
           <span className="text-[#737373]" aria-hidden="true">

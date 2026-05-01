@@ -86,7 +86,6 @@
 //   lowRatingEmail   Boolean @default(true)  @map("low_rating_email")
 //   dailyDigestEmail Boolean @default(false) @map("daily_digest_email")
 //   weeklyReport     Boolean @default(true)  @map("weekly_report")
-//   slackWebhook     String? @map("slack_webhook")
 //   @@map("notification_preferences")
 // }
 //
@@ -328,7 +327,6 @@ export interface NotificationPreferences {
   lowRatingEmail: boolean;
   dailyDigestEmail: boolean;
   weeklyReport: boolean;
-  slackWebhook?: string | null;
 }
 
 export interface ApiKeyInput {

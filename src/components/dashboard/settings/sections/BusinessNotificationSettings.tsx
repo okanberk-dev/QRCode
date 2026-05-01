@@ -12,14 +12,12 @@ interface BusinessNotificationSettingsProps {
  *
  * `/account` workspace page'inde gösterilir — NotificationPreference modeli
  * `userId` taşır (workspace owner-level), per-restaurant değil. Mevcut
- * `<OwnerNotificationsForm>` (263 LOC) doğrudan kullanılır:
- *   - 4 toggle (lowRatingEmail / dailyDigestEmail / weeklyReport / slackWebhook)
+ * `<OwnerNotificationsForm>` doğrudan kullanılır:
+ *   - 2 toggle (lowRatingEmail / weeklyReport)
  *   - Auto-save on toggle (mevcut davranış)
- *   - Slack webhook validation (https zorunlu)
  *
  * Yeni bildirim kategorileri (rezervasyon/sipariş/yorum/entegrasyon hatası)
- * NotificationPreference modeline alan eklenmesi gerektiriyor — V2 scope
- * (CLAUDE.md plan §10 backend eksiklikler).
+ * NotificationPreference modeline alan eklenmesi gerektiriyor — V2 scope.
  */
 export function BusinessNotificationSettings({
   locale = "tr",

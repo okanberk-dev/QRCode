@@ -421,7 +421,6 @@ model NotificationPreference {
   lowRatingEmail   Boolean  @default(true) @map("low_rating_email")
   dailyDigestEmail Boolean  @default(false) @map("daily_digest_email")
   weeklyReport     Boolean  @default(true) @map("weekly_report")
-  slackWebhook     String?  @map("slack_webhook")
   updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("notification_preferences")

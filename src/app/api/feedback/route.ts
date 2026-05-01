@@ -10,10 +10,7 @@ import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { rateLimit } from '@/lib/rate-limit';
 import { hasOpenAIKey } from '@/lib/openai';
 import { coerceTone, generateAiDraftBackground } from '@/lib/ai-draft';
-import {
-  getNotificationPrefsForRestaurant,
-  postSlackWebhook,
-} from '@/lib/notification-preferences';
+import { getNotificationPrefsForRestaurant } from '@/lib/notification-preferences';
 import { recordConsentBatch } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
 
@@ -164,9 +161,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Notification preferences (owner toggles in /dashboard/notifications).
-    // Pulled once per request — used both for the low-rating mail gate and
-    // the Slack webhook fan-out below.
+    // Notification preferences (owner toggles in /dashboard/account?section=notifications).
+    // Pulled once per request — used to gate the low-rating mail.
     const notifPrefs = await getNotificationPrefsForRestaurant(restaurantId);
 
     // Send email for 1, 2, 3 stars — but only when the owner has the
@@ -196,22 +192,6 @@ export async function POST(req: NextRequest) {
           // Log but don't fail the entire request - the feedback IS in the DB!
           console.error('Email notification failed but saving succeeded:', err);
         }
-      }
-
-      // Slack webhook — fire-and-forget when configured. Same gate as the
-      // low-rating email: only for ≤3★ feedback. Format kept short so it
-      // renders cleanly in Slack's preview.
-      if (notifPrefs.slackWebhook) {
-        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
-        const trimmedComment = (comment || '').toString().slice(0, 280);
-        const text = [
-          `*${restaurantName}* — yeni düşük puan`,
-          `${stars} (${rating}/5)${branch ? ` · ${branch}` : ''}`,
-          trimmedComment ? `> ${trimmedComment}` : null,
-        ]
-          .filter(Boolean)
-          .join('\n');
-        void postSlackWebhook(notifPrefs.slackWebhook, text);
       }
 
       // Pulse AI auto-draft — fire-and-forget when owner has opted in and
