@@ -9,7 +9,6 @@ const DEFAULT_PREFS = {
   lowRatingEmail: true,
   dailyDigestEmail: false,
   weeklyReport: true,
-  slackWebhook: null as string | null,
 };
 
 export async function GET(req: NextRequest) {
@@ -19,14 +18,20 @@ export async function GET(req: NextRequest) {
   const userId = await resolveOwnerUserId(actor);
   if (!userId) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const row = await prisma.notificationPreference.findUnique({ where: { userId } });
+  const row = await prisma.notificationPreference.findUnique({
+    where: { userId },
+    select: {
+      lowRatingEmail: true,
+      dailyDigestEmail: true,
+      weeklyReport: true,
+    },
+  });
   if (!row) return NextResponse.json(DEFAULT_PREFS);
 
   return NextResponse.json({
     lowRatingEmail: row.lowRatingEmail,
     dailyDigestEmail: row.dailyDigestEmail,
     weeklyReport: row.weeklyReport,
-    slackWebhook: row.slackWebhook,
   });
 }
 
@@ -41,7 +46,6 @@ export async function PUT(req: NextRequest) {
     lowRatingEmail?: unknown;
     dailyDigestEmail?: unknown;
     weeklyReport?: unknown;
-    slackWebhook?: unknown;
   } = {};
   try {
     body = await req.json();
@@ -51,29 +55,19 @@ export async function PUT(req: NextRequest) {
 
   const toBool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
 
-  let slackWebhook: string | null = null;
-  if (typeof body.slackWebhook === 'string') {
-    const trimmed = body.slackWebhook.trim();
-    if (trimmed) {
-      if (trimmed.length > 500 || !/^https?:\/\//i.test(trimmed)) {
-        return NextResponse.json({ error: 'invalid_webhook' }, { status: 400 });
-      }
-      slackWebhook = trimmed;
-    }
-  }
-
-  const current = await prisma.notificationPreference.findUnique({ where: { userId } });
+  const current = await prisma.notificationPreference.findUnique({
+    where: { userId },
+    select: {
+      lowRatingEmail: true,
+      dailyDigestEmail: true,
+      weeklyReport: true,
+    },
+  });
 
   const next = {
     lowRatingEmail: toBool(body.lowRatingEmail, current?.lowRatingEmail ?? DEFAULT_PREFS.lowRatingEmail),
     dailyDigestEmail: toBool(body.dailyDigestEmail, current?.dailyDigestEmail ?? DEFAULT_PREFS.dailyDigestEmail),
     weeklyReport: toBool(body.weeklyReport, current?.weeklyReport ?? DEFAULT_PREFS.weeklyReport),
-    slackWebhook:
-      body.slackWebhook === undefined
-        ? current?.slackWebhook ?? null
-        : body.slackWebhook === null || body.slackWebhook === ''
-          ? null
-          : slackWebhook,
   };
 
   const row = await prisma.notificationPreference.upsert({
@@ -86,6 +80,5 @@ export async function PUT(req: NextRequest) {
     lowRatingEmail: row.lowRatingEmail,
     dailyDigestEmail: row.dailyDigestEmail,
     weeklyReport: row.weeklyReport,
-    slackWebhook: row.slackWebhook,
   });
 }

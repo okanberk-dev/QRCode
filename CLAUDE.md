@@ -2864,9 +2864,34 @@ Yeni bir ölü kod denetimi yaparken aşağıdaki sırayı izle:
 - `validate.ts` helper'ını silme — §28 kanonik öneri, gelecek route'lar için bekliyor.
 - `CareerApplication`, `AutomationRule`, `GoogleIntegration`, `NotificationPreference` modellerini silme — schema'da kaldıkları sürece preview deploy / staging ortamında DB'de yer kaplar ama silmek migration zorunluluğu doğurur.
 
----
+### 34.5 2026-05-01 — Slack iletişim yüzeyi kaldırıldı
 
-## 35. SEO Infrastructure (2026-05 PR #263 + #264)
+Owner panel'deki Slack webhook bildirim ayarı kullanıcı talebiyle kaldırıldı. Tek-kanal e-posta'ya odaklanan kapsam.
+
+**Silinen kapsam:**
+| Katman | Yer | Ne silindi |
+|---|---|---|
+| UI | `src/app/[locale]/dashboard/notifications/OwnerNotificationsForm.tsx` | Slack webhook section + `Webhook` icon import + `slackWebhook` state + `webhookDirty` + `invalid_webhook` error handler + desc'teki Slack referansı |
+| UI | `src/app/admin/notifications/page.tsx` | Aynı `/api/notifications` endpoint'ini paylaşıyordu — Slack section + `Webhook` + `Check` icon import + Slack desc temizlendi (orphan UI önleyici) |
+| API | `src/app/api/notifications/route.ts` | `slackWebhook` URL parse + 500 char + `invalid_webhook` 400 + DEFAULT_PREFS field + select alanı + return alanı |
+| Helper | `src/lib/notification-preferences.ts` | `NotificationPrefs.slackWebhook` field + `postSlackWebhook` fan-out fonksiyonu + DEFAULTS field + select |
+| Feedback fan-out | `src/app/api/feedback/route.ts` | `postSlackWebhook` import + ≤3★ Slack mesaj formatlama bloğu (line 201-215) + yorum |
+| DB schema | `prisma/schema.prisma` `NotificationPreference` | `slackWebhook String? @map("slack_webhook")` kolonu — `prisma db push --accept-data-loss` deploy'da DB'den drop eder |
+| Type drift | `src/lib/scaffolding.ts` | `NotificationPreferences.slackWebhook` field + yorumda `slack_webhook` template satırı |
+| JSDoc | `src/components/dashboard/settings/sections/BusinessNotificationSettings.tsx` | "4 toggle" → "2 toggle" + Slack validation referansı |
+| JSDoc + desc | `src/app/[locale]/dashboard/account/page.tsx` | Section description Slack ifadesi + tab listesi yorumu (6 → 7 tab, ai eklenmiş; Slack/digest kaldırıldı) |
+
+**Out of scope (kasten dokunulmadı):**
+- Marketing surface'lerde "Slack ile entegrasyon" iddiaları (`integrations/page.tsx`, `careers/page.tsx`, `PlatformLogo.tsx`) — ayrı kapsam, kullanıcı talep dışı
+- `src/lib/help-articles.ts` `slack-discord-webhook-routing` ve diğer Slack mention'lı help article'lar — feature kalktı ama help article çelişkisi gelecek scope
+- `src/lib/email/templates/low-rating-alert.ts` "Mutfak Slack" suggested action — template hint
+- `src/app/api/automations/*` `invalid_webhook_url` — generic webhook (Slack özel değil), AutomationRule modeli backlog scope (CLAUDE.md §34.4)
+- `src/app/admin/api/page.tsx` + `src/app/admin/settings/page.tsx` Slack mock content / placeholder text
+- CLAUDE.md §21.33 backlog "Slack webhook alternative (ops mail yerine)" — bu ops-alert backlog scope, ayrı feature
+
+**DB drift uyarısı:** `slack_webhook` Postgres kolonu **prod'da hâlâ var** — `prisma db push --accept-data-loss` ilk deploy'da DROP COLUMN çalıştırır. Eski kayıtların `slack_webhook` değerleri kaybolur (kabul edilen — feature kullanılmıyor). CLAUDE.md §21.18 paranoidliği: nullable + default'lu kolon silmek backward-compat bozmaz, eski kod fail olmaz çünkü helper artık o kolonu select etmiyor (defensive `select` paterni §14.1).
+
+**Geri eklemek için:** Kullanıcı **açık talep** etmeli (§34.4). Webhook fan-out generic hale getirilebilir (Discord/Teams/custom URL desteği), tek-platform Slack-özel implementation tekrar yapılması önerilmez.
 
 `src/app/sitemap.ts` + `robots.ts` + `public/llms.txt` + `public/.well-known/security.txt` + `src/app/[locale]/blog/rss.xml/route.ts` — discovery + structured data infrastructure'ı. Yeni public sayfa eklerken aşağıdaki kuralları takip et.
 

@@ -4,14 +4,12 @@ export interface NotificationPrefs {
   lowRatingEmail: boolean;
   dailyDigestEmail: boolean;
   weeklyReport: boolean;
-  slackWebhook: string | null;
 }
 
 const DEFAULTS: NotificationPrefs = {
   lowRatingEmail: true,
   dailyDigestEmail: false,
   weeklyReport: true,
-  slackWebhook: null,
 };
 
 export async function getNotificationPrefsForUser(
@@ -25,7 +23,6 @@ export async function getNotificationPrefsForUser(
         lowRatingEmail: true,
         dailyDigestEmail: true,
         weeklyReport: true,
-        slackWebhook: true,
       },
     });
     if (!row) return DEFAULTS;
@@ -33,7 +30,6 @@ export async function getNotificationPrefsForUser(
       lowRatingEmail: row.lowRatingEmail,
       dailyDigestEmail: row.dailyDigestEmail,
       weeklyReport: row.weeklyReport,
-      slackWebhook: row.slackWebhook,
     };
   } catch {
     return DEFAULTS;
@@ -54,22 +50,5 @@ export async function getNotificationPrefsForRestaurant(
     return { ...prefs, ownerUserId };
   } catch {
     return { ...DEFAULTS, ownerUserId: null };
-  }
-}
-
-export async function postSlackWebhook(
-  webhookUrl: string,
-  text: string,
-): Promise<boolean> {
-  try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    });
-    return res.ok;
-  } catch (err) {
-    console.error('[slack-webhook] post failed', err);
-    return false;
   }
 }
