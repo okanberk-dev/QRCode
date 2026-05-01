@@ -68,6 +68,10 @@ export default function RestaurantsPage() {
   const setStatusFilter = (v: 'active' | 'passive' | 'all') => filters.set('status', v);
   const planFilter = filters.values.plan;
   const setPlanFilter = (v: 'all' | 'pro' | 'growth' | 'starter' | 'trial') => filters.set('plan', v);
+  // PR6 — Inline failure surface (Linear/Stripe pattern, CLAUDE.md §11).
+  // fetch fail veya !res.ok'da set; success'te null. AlertBanner onDismiss
+  // ile kullanıcı manuel kapatabilir.
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -89,6 +93,7 @@ export default function RestaurantsPage() {
 
   const fetchRestaurants = async (filter?: string, planArg?: string) => {
     setLoading(true);
+    setFetchError(null);
     try {
       const currentFilter = filter || statusFilter;
       const currentPlan = planArg ?? planFilter;
@@ -103,9 +108,12 @@ export default function RestaurantsPage() {
           ? result.data
           : [];
         setRestaurants(list);
+      } else {
+        setFetchError('İşletmeler getirilemedi. Lütfen sayfayı yenileyin.');
       }
     } catch (e) {
       console.error(e);
+      setFetchError('Bağlantı hatası — işletmeler şu an gelmiyor.');
     }
     setLoading(false);
   };
@@ -271,6 +279,11 @@ export default function RestaurantsPage() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+      {fetchError && (
+        <AlertBanner kind="danger" onDismiss={() => setFetchError(null)}>
+          {fetchError}
+        </AlertBanner>
+      )}
       <PageHeader
         eyebrow="İŞLETMELER"
         title={`${restaurants.length} kayıtlı işletme`}

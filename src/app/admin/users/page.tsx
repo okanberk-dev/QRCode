@@ -34,6 +34,7 @@ export default function UsersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [pageNotice, setPageNotice] = useState<string | null>(null);
   const [confirmDialog, askConfirm] = useConfirmDialog();
   
@@ -57,6 +58,7 @@ export default function UsersPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      setFetchError(null);
       const usersRes = await fetch('/api/admin/users');
       if (usersRes.ok) {
         // /api/admin/users returns { data, meta } — never assign the raw
@@ -68,6 +70,8 @@ export default function UsersPage() {
           ? usersData.data
           : [];
         setUsers(list);
+      } else {
+        setFetchError('Yöneticiler getirilemedi. Lütfen sayfayı yenileyin.');
       }
 
       const restRes = await fetch('/api/restaurants');
@@ -83,6 +87,7 @@ export default function UsersPage() {
       }
     } catch (e) {
       console.error(e);
+      setFetchError('Bağlantı hatası — yöneticiler şu an gelmiyor.');
     }
     setLoading(false);
   };
@@ -227,6 +232,12 @@ export default function UsersPage() {
           </button>
         }
       />
+
+      {fetchError && (
+        <AlertBanner kind="danger" onDismiss={() => setFetchError(null)}>
+          {fetchError}
+        </AlertBanner>
+      )}
 
       {pageNotice && (
         <AlertBanner kind="danger" onDismiss={() => setPageNotice(null)}>

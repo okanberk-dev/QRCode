@@ -134,17 +134,23 @@ export default function MembersPage() {
     return qp.toString();
   }, [debouncedSearch, planFilter, statusFilter, page]);
 
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   const fetchMembers = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const res = await fetch(`/api/admin/members?${queryString}`);
       if (res.ok) {
         const data = await res.json();
         setMembers(data.data || []);
         if (data.meta) setMeta(data.meta);
+      } else {
+        setFetchError('İşletme sahipleri getirilemedi. Lütfen sayfayı yenileyin.');
       }
     } catch (e) {
       console.error(e);
+      setFetchError('Bağlantı hatası — işletme sahipleri şu an gelmiyor.');
     }
     setLoading(false);
   }, [queryString]);
@@ -257,6 +263,12 @@ export default function MembersPage() {
           </div>
         }
       />
+
+      {fetchError && (
+        <AlertBanner kind="danger" onDismiss={() => setFetchError(null)}>
+          {fetchError}
+        </AlertBanner>
+      )}
 
       {success && (
         <AlertBanner kind="success" onDismiss={() => setSuccess('')}>
