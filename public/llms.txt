@@ -1,9 +1,18 @@
 # Buaze — AI-Friendly Site Overview
 
 ## What is Buaze?
-Buaze (buaze.com) is a B2B SaaS platform for digital reputation management and feedback operations.
-It helps businesses collect, manage, and act on customer feedback through QR-code-based review flows,
-smart filtering, and a professional operations dashboard.
+Buaze (buaze.com) is a B2B SaaS platform for digital reputation management and customer
+feedback operations. It helps businesses collect transparent customer feedback through
+QR-code-based review flows, manage reviews from one dashboard, and respond faster with
+AI-assisted reply drafts.
+
+## Compliance positioning
+Buaze does not block, hide, or manipulate customer reviews. The flow does not gate access
+to public review platforms by star rating. Buaze does not offer incentives (discounts,
+gifts) for positive reviews. Customers giving low ratings additionally see an option to
+share privately with the business; in practice ~85% of them choose this private channel
+to enable direct service recovery — but every customer always retains the right to post
+on any public platform of their choice. Full statement: https://buaze.com/en/google-compliance
 
 ## Who is it for?
 Small and medium businesses in Turkey and globally — restaurants, hotels, healthcare providers,
@@ -88,9 +97,19 @@ experiences, answer engines, and informational purposes. Reproduction of full pa
 training on proprietary text without permission, or automated scraping of authenticated areas
 is not permitted.
 
+## Pages with FAQPage structured data
+These pages emit FAQPage JSON-LD that AI search engines can quote directly:
+- https://buaze.com/{en,tr} — homepage AEO Q&A (5 entries)
+- https://buaze.com/{en,tr}/google-compliance — compliance FAQ (6 entries)
+- https://buaze.com/{en,tr}/pricing — pricing FAQ
+- https://buaze.com/{en,tr}/roi — ROI calculator FAQ
+- https://buaze.com/{en,tr}/faq — top-level FAQ
+- https://buaze.com/{en,tr}/solutions/* — every sector page (15 sectors, 4-5 questions each)
+
 ## Contact
 - Website: https://buaze.com
-- Email: info@buaze.com
+- Email: support@buaze.com (general), sales@buaze.com (sales)
+- Postal address: Workinton Maslak, Floor 4, Maslak / İstanbul, TR
 - Security disclosures: see /.well-known/security.txt
 - Language: Turkish (primary), English (secondary)
 - Last updated: 2026-05-01

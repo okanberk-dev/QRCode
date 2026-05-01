@@ -46,8 +46,12 @@ export const ROUTE_OVERRIDES: Record<string, RouteMeta> = {
   features: { priority: 0.85, changefreq: 'monthly' },
   'features/pulse-ai': { priority: 0.8, changefreq: 'monthly' },
   integrations: { priority: 0.8, changefreq: 'monthly' },
-  roi: { priority: 0.7, changefreq: 'monthly' },
-  'google-compliance': { priority: 0.7, changefreq: 'monthly' },
+  // ROI + google-compliance now ship FAQPage JSON-LD (PR #298 and the
+  // 2026-05 compliance copy parity pass); bumped to 0.8 to match `/faq`
+  // because they're FAQ-rich-snippet eligible on Google and quotable by
+  // AI search engines (Perplexity, Bing Chat, Gemini AIO).
+  roi: { priority: 0.8, changefreq: 'monthly' },
+  'google-compliance': { priority: 0.8, changefreq: 'monthly' },
   'case-study': { priority: 0.8, changefreq: 'monthly' },
   'customer-stories': { priority: 0.8, changefreq: 'monthly' },
 
