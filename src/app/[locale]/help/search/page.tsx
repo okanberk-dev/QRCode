@@ -88,7 +88,7 @@ export default async function HelpSearchPage({ params, searchParams }: PageParam
   }
 
   return (
-    <div className="min-h-screen bg-white text-[#0A0A0A] pt-[64px]">
+    <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 

@@ -106,7 +106,7 @@ export default async function QRGeneratorPage({
   };
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
+    <div className="min-h-screen overflow-x-clip bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

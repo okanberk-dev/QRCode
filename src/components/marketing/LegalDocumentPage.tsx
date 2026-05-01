@@ -42,7 +42,7 @@ export default function LegalDocumentPage({
   })();
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFFFFF] text-[#0A0A0A] pt-[64px] selection:bg-[#C6F24E]/40">
+    <div className="min-h-screen flex flex-col bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
       <div className="legal-print-hide">
         <MarketingNavbar locale={locale} t={t} />
       </div>
