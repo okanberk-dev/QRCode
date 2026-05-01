@@ -869,7 +869,7 @@ function AdminReviewsContent() {
           aria-label={isTr ? 'Toplu işlem araç çubuğu' : 'Bulk action toolbar'}
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-2xl border border-[#0A0A0A] bg-white px-3 py-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.4)] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:max-w-[480px]"
         >
-          <span className="text-[12px] font-semibold text-[#0A0A0A] px-2">
+          <span aria-live="polite" className="text-[12px] font-semibold text-[#0A0A0A] px-2">
             {selectedIds.size} {isTr ? 'seçildi' : 'selected'}
           </span>
           <button

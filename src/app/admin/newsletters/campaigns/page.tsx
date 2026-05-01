@@ -139,6 +139,7 @@ export default function AdminCampaignsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Başlık ara…"
+              aria-label="Bülten kampanyası ara"
               className="w-full rounded-xl border border-[#EDEDED] bg-white py-2 pl-9 pr-3 text-xs font-medium text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
             />
           </div>

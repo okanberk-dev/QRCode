@@ -367,6 +367,7 @@ export default function RestaurantsPage() {
           <input
             type="text"
             placeholder="İşletme, URL, kategori veya sahip ara..."
+            aria-label="İşletme ara"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="bz-input"
@@ -646,7 +647,7 @@ export default function RestaurantsPage() {
           aria-label="Toplu işlem araç çubuğu"
           className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-2xl border border-[#0A0A0A] bg-white px-3 py-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.4)] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:max-w-[520px]"
         >
-          <span className="text-[12px] font-semibold text-[#0A0A0A] px-2">
+          <span aria-live="polite" className="text-[12px] font-semibold text-[#0A0A0A] px-2">
             {selectedIds.size} seçildi
           </span>
           <button
