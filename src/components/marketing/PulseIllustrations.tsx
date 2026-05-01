@@ -177,8 +177,8 @@ export function IllusShield({ size = 220, className }: IllusProps) {
       <circle cx="65" cy="165" r="3" fill="#0A0A0A" />
       <circle cx="100" cy="175" r="3" fill="#0A0A0A" />
       <circle cx="135" cy="165" r="3" fill="#0A0A0A" />
-      <rect x="70" y="45" width="60" height="14" rx="3" fill="#0A0A0A" />
-      <text x="100" y="56" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="9" fill="#C6F24E" fontWeight="600" letterSpacing="0.1em">GOOGLE SAFE</text>
+      <rect x="55" y="45" width="90" height="14" rx="3" fill="#0A0A0A" />
+      <text x="100" y="56" textAnchor="middle" fontFamily="JetBrains Mono" fontSize="9" fill="#C6F24E" fontWeight="600" letterSpacing="0.08em">GOOGLE SAFE</text>
     </svg>
   );
 }
