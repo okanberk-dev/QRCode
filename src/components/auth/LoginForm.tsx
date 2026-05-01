@@ -35,11 +35,15 @@ function GoogleIcon({ size = 16 }: { size?: number }) {
 
 export default function LoginForm({ locale, t }: LoginFormProps) {
   const searchParams = useSearchParams();
+  const prefilledEmail = searchParams.get('email')?.trim() ?? '';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ email: '', password: '', rememberMe: false });
+  // `?email=` query param ile gelen kullanıcılarda (örn. davet linki sonrası
+  // session expire, password reset sonrası) email otomatik doldurulur.
+  // Kullanıcı yine değiştirebilir — sadece pre-fill, readonly değil.
+  const [form, setForm] = useState({ email: prefilledEmail, password: '', rememberMe: false });
 
   // 2FA challenge state — login route twoFactorEnabled=true ise needs2FA döner.
   // challengeToken (5dk JWT) ve email hatırla, 6 haneli kod girişi göster.
@@ -325,6 +329,9 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
             required
             autoComplete="current-password"
             enterKeyHint="send"
+            // Pre-fill (`?email=`) durumunda kullanıcı doğrudan şifre yazsın
+            // — email zaten dolu, focus password'e atılır.
+            autoFocus={!!prefilledEmail}
             value={form.password}
             onChange={(e) => setForm(prev => ({ ...prev, password: e.target.value }))}
             className="min-h-[48px] w-full px-4 py-3.5 bg-white rounded-[10px] border border-[#E5E5E5] focus:border-[#C6F24E] focus:shadow-[0_0_0_4px_rgba(198,242,78,0.18)] outline-none transition-all text-[16px] sm:text-[14px] text-[#0A0A0A] placeholder:text-[#A3A3A3] pr-12"

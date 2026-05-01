@@ -131,9 +131,11 @@ function AcceptInviteInner() {
     e.preventDefault();
     void submit(
       { name, password, phoneNumber },
-      (data) =>
-        data.redirectTo ||
-        `/${locale}/auth/check-email?email=${encodeURIComponent(info && info.ok ? info.email : "")}`,
+      // Backend `issueLoginSession` cookie set eder + `redirectTo: /dashboard`
+      // döner. E-posta onayı atlanır (davet token'ı verification görevi
+      // görür). Fallback yine /dashboard — kullanıcı artık `check-email`
+      // sayfasına atılmaz.
+      (data) => data.redirectTo || `/${locale}/dashboard`,
     );
   };
 
@@ -309,8 +311,8 @@ function AcceptInviteInner() {
                 </h3>
                 <p className="text-[13px] text-[#525252] mt-1.5">
                   {isTr
-                    ? "Birkaç bilgi alacağız. E-postan onaylanınca panele yönlendirilirsin — ekstra onboarding yok."
-                    : "Just a few details. After your email is verified, you’ll go straight to the panel — no extra onboarding."}
+                    ? "Birkaç bilgi alacağız. Hesabını oluşturduğunda doğrudan panele alınırsın — ekstra onay adımı yok."
+                    : "Just a few details. Once your account is ready, you'll go straight to the panel — no extra confirmation step."}
                 </p>
               </div>
 
@@ -417,7 +419,7 @@ function AcceptInviteInner() {
                 ) : (
                   <CheckCircle2 size={14} />
                 )}
-                {isTr ? "Hesabı oluştur ve onay maili al" : "Create account and verify"}
+                {isTr ? "Hesabı oluştur ve panele gir" : "Create account and continue"}
               </button>
             </form>
           )}

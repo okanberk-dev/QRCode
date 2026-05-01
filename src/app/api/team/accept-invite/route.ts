@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { isStrongPassword } from '@/lib/validations';
-import { sendVerifyEmail } from '@/lib/email';
+import { issueLoginSession } from '@/app/api/auth/login/route';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// Section 5 — Davet kabul akışı (Faz 4 + §22 update).
+// Section 5 — Davet kabul akışı (Faz 4 + §22 update + invite-direct-login fix).
 //
 // GET ?token=...
 //   Token geçerli mi kontrol eder, public landing page için detay döner
@@ -19,17 +18,14 @@ export const runtime = 'nodejs';
 //   Davet kabul edilir.
 //   - Email zaten User olarak varsa: TeamMember.status = 'active' → /dashboard
 //   - Yoksa: name + password + (opsiyonel phone) zorunlu. User create
-//     (emailVerified=false, role='team_member'), TeamMember activate, verify
-//     mail tetikle, client → /auth/check-email yönlendir.
+//     (emailVerified=true — davet token'ı verification proof'u, Slack/Notion/
+//     Linear pattern), TeamMember activate, login session issue (cookie set
+//     + UserSession row), client → /dashboard direkt giriş.
 //   §22'den önce bu endpoint hesap yoksa /auth/register'a redirect ediyordu;
-//   artık self-contained — davet linki tek formla biter.
+//   sonra self-contained form'a geçti ama check-email step'i kalıyordu;
+//   artık davet → form → giriş tek seferde tamamlanır.
 
-const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 saat
 const TRIAL_DAYS = 14;
-
-function generateVerifyToken(): string {
-  return randomBytes(32).toString('hex');
-}
 
 interface InviteInfo {
   ok: true;
@@ -117,15 +113,11 @@ export async function GET(req: NextRequest): Promise<NextResponse<InviteInfo | I
   });
 }
 
-interface AcceptResponse {
-  ok: boolean;
-  needsVerification?: boolean;
-  email?: string;
-  redirectTo?: string;
-  error?: string;
-}
-
-export async function POST(req: NextRequest): Promise<NextResponse<AcceptResponse>> {
+// POST dönüş shape'i `issueLoginSession` (login default body + extraBody merge)
+// veya error response'u olabilir. Tek tip ile sıkmak yerine `NextResponse`'ı
+// gevşek tutuyoruz; frontend runtime parse ile `ok` + `redirectTo` field'larını
+// okur.
+export async function POST(req: NextRequest): Promise<NextResponse> {
   maybeSweep();
   const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
   const rl = await rateLimit(`invite:accept:${ip}`, 10, 60 * 1000);
@@ -215,13 +207,14 @@ export async function POST(req: NextRequest): Promise<NextResponse<AcceptRespons
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const verifyToken = generateVerifyToken();
-  const verifyTokenExpiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
   const trialEndsAt = new Date();
   trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
 
   // tx: User create + TeamMember activate atomik. Davet kabul edilirken
   // User insert'i FAIL olursa TeamMember 'invited' kalmalı (idempotent retry).
+  // emailVerified=true — davet linki tek-kullanımlık unique token taşıdığı
+  // için linke tıklayan kullanıcı zaten inbox sahibi olduğunu kanıtlamış
+  // sayılır (Slack/Notion/Linear akışı). Verify maili gönderilmez.
   const created = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
@@ -235,11 +228,18 @@ export async function POST(req: NextRequest): Promise<NextResponse<AcceptRespons
         // panel-access bu role'ü TeamMember.locations'tan scope eder.
         role: 'team_member',
         locale: localeStr,
-        emailVerified: false,
-        emailVerifyToken: verifyToken,
-        emailVerifyTokenExpiresAt: verifyTokenExpiresAt,
+        emailVerified: true,
+        emailVerifyToken: null,
+        emailVerifyTokenExpiresAt: null,
       },
-      select: { id: true, email: true, name: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        plan: true,
+        trialEndsAt: true,
+      },
     });
     await tx.teamMember.update({
       where: { id: member.id },
@@ -252,24 +252,17 @@ export async function POST(req: NextRequest): Promise<NextResponse<AcceptRespons
     return user;
   });
 
-  // Verify maili — fire-and-forget. notifyOpsOfMailFailure sender içinde
-  // (CLAUDE.md §21.33). Mail gitmezse kullanıcı /auth/check-email'da
-  // "Tekrar gönder" butonunu kullanır.
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
-  const verifyUrl = `${appUrl}/${localeStr}/auth/verify-email?token=${verifyToken}`;
-  void sendVerifyEmail({
-    to: created.email,
-    firstName: created.name,
-    verifyUrl,
-    locale: localeStr,
-  }).catch((err) => {
-    console.error('[accept-invite] verify mail send failed:', (err as Error).message);
-  });
-
-  return NextResponse.json({
-    ok: true,
-    needsVerification: true,
-    email: created.email,
-    redirectTo: `/${localeStr}/auth/check-email?email=${encodeURIComponent(created.email)}`,
+  // Direct login — issueLoginSession cookie + UserSession row create yapar.
+  // extraBody ile accept-invite response shape'i (`ok: true`, `redirectTo`)
+  // login default body'sine merge edilir; frontend `data.ok` ve
+  // `data.redirectTo` field'larını okur.
+  return await issueLoginSession({
+    req,
+    user: created,
+    rememberMe: false,
+    extraBody: {
+      ok: true,
+      redirectTo: `/${localeStr}/dashboard`,
+    },
   });
 }

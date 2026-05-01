@@ -166,14 +166,20 @@ export async function POST(req: NextRequest) {
 
 /**
  * Login son adımı — JWT imzala, UserSession row create, cookie set.
- * 2FA olmayan akışın ve /api/auth/login/2fa verify akışının paylaştığı yol.
+ * 2FA olmayan akışın, /api/auth/login/2fa verify akışının ve
+ * /api/team/accept-invite (yeni hesap auto-login) akışının paylaştığı yol.
+ *
+ * `extraBody` set edilirse default `{ success, user }` body'sine merge edilir
+ * — caller kendi response shape'ini (ör. `ok: true`, `redirectTo`) ekler ve
+ * cookie + UserSession davranışı korunur.
  */
 export async function issueLoginSession(args: {
   req: NextRequest;
   user: { id: string; email: string; name: string | null; role: string; plan: string; trialEndsAt: Date | null };
   rememberMe: boolean;
+  extraBody?: Record<string, unknown>;
 }): Promise<NextResponse> {
-  const { req, user, rememberMe } = args;
+  const { req, user, rememberMe, extraBody } = args;
 
   const token = await signJwt({
     userId: user.id,
@@ -211,6 +217,7 @@ export async function issueLoginSession(args: {
       plan: user.plan,
       trialEndsAt: user.trialEndsAt,
     },
+    ...(extraBody ?? {}),
   });
 
   const cookieMaxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 1; // 30 days or 1 day

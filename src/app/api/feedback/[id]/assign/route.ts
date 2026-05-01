@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteFeedback } from '@/lib/panel-access';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +29,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const access = await requireFeedbackAccess(req, id);
   if ('error' in access) {
     return NextResponse.json({ error: access.error }, { status: access.status });
+  }
+
+  // TeamMember 'viewer' rolü atama yapamaz (write op).
+  if (access.feedback.restaurantId) {
+    const canWrite = await canWriteFeedback(access.actor, access.feedback.restaurantId);
+    if (!canWrite) {
+      return NextResponse.json({ error: 'forbidden_role' }, { status: 403 });
+    }
   }
 
   let body: { assigneeId?: string } = {};
@@ -70,6 +78,14 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const access = await requireFeedbackAccess(req, id);
   if ('error' in access) {
     return NextResponse.json({ error: access.error }, { status: access.status });
+  }
+
+  // Unassign de write op — viewer yapamaz.
+  if (access.feedback.restaurantId) {
+    const canWrite = await canWriteFeedback(access.actor, access.feedback.restaurantId);
+    if (!canWrite) {
+      return NextResponse.json({ error: 'forbidden_role' }, { status: 403 });
+    }
   }
 
   await prisma.feedbackAssignment.deleteMany({ where: { feedbackId: id } });

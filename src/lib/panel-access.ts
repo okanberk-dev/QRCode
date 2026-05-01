@@ -9,15 +9,26 @@ import type { PanelActor } from '@/lib/auth';
  * `email` null ise (token'da email claim'i eksik — beklenmiyor ama defansif)
  * boş array döner: kullanıcı hiçbir restoranı göremez. Hata değil, scope
  * sıfır.
+ *
+ * Owner deactivation cascade: TeamMember.ownerId'ye bağlı User pasifleştirildi
+ * mi (`isActive=false` veya `deactivatedAt!=null`) → scope sıfır. Owner
+ * suspend edildiğinde tüm ekibi otomatik kapanır; aksi halde admin "Pasifleştir"
+ * sadece owner'ı engellerken team member'lar boşa erişebiliyordu.
  */
 async function getTeamMemberScope(actor: PanelActor): Promise<string[]> {
   const email = actor.email?.toLowerCase().trim();
   if (!email) return [];
   const member = await prisma.teamMember.findFirst({
     where: { email, status: 'active' },
-    select: { locations: true },
+    select: { ownerId: true, locations: true },
   });
-  if (!member?.locations) return [];
+  if (!member) return [];
+  const owner = await prisma.user.findUnique({
+    where: { id: member.ownerId },
+    select: { isActive: true, deactivatedAt: true },
+  });
+  if (!owner || !owner.isActive || owner.deactivatedAt) return [];
+  if (!member.locations) return [];
   // locations Json? — üst katmanda string[] olarak yazıyoruz ama defansif
   // filtre koruyalım (corrupt JSON / manuel SQL girişine karşı).
   if (!Array.isArray(member.locations)) return [];
@@ -93,7 +104,16 @@ export async function resolveOwnerUserId(actor: PanelActor): Promise<string | nu
       where: { email, status: 'active' },
       select: { ownerId: true },
     });
-    return member?.ownerId ?? null;
+    if (!member) return null;
+    // Owner deactivation cascade — same guard as getTeamMemberScope.
+    // Workspace-scoped helper'lar (billing, team mgmt, campaigns,
+    // notification prefs) suspend edilmiş owner'a yazmamalı.
+    const owner = await prisma.user.findUnique({
+      where: { id: member.ownerId },
+      select: { isActive: true, deactivatedAt: true },
+    });
+    if (!owner || !owner.isActive || owner.deactivatedAt) return null;
+    return member.ownerId;
   }
   if (actor.role === 'manager' && actor.restaurantId) {
     const r = await prisma.restaurant.findUnique({
@@ -103,4 +123,37 @@ export async function resolveOwnerUserId(actor: PanelActor): Promise<string | nu
     return r?.userId ?? null;
   }
   return null;
+}
+
+/**
+ * Feedback üzerinde yazma izni kontrolü (reply, flag, assign, bulk).
+ *
+ * Sıra:
+ *  1. `canAccessRestaurant` ile IDOR scope check (false ise erişim reddi).
+ *  2. Sadece `team_member` rolüne ek katman: TeamMember.role 'viewer' ise
+ *     read-only (görüntüleyici); diğer rol'ler (`owner`/`manager`/`staff`)
+ *     yazabilir. `superadmin`/`manager` (admin source)/`restaurant_owner`
+ *     write izinli — kendi konvansiyonu zaten sahiplikte.
+ *
+ * Not: `manager` (admin source) farklı bir tip — `actor.role === 'manager'`
+ * AdminUser'dan gelir; yazma kısıtlamasına tabi değildir. TeamMember.role
+ * 'manager' workspace içi rol etiketi, AdminUser.role 'manager' farklı bir
+ * scope.
+ */
+export async function canWriteFeedback(
+  actor: PanelActor,
+  restaurantId: string,
+): Promise<boolean> {
+  const access = await canAccessRestaurant(actor, restaurantId);
+  if (!access) return false;
+  if (actor.role !== 'team_member') return true;
+
+  const email = actor.email?.toLowerCase().trim();
+  if (!email) return false;
+  const member = await prisma.teamMember.findFirst({
+    where: { email, status: 'active' },
+    select: { role: true },
+  });
+  if (!member) return false;
+  return member.role !== 'viewer';
 }
