@@ -14,7 +14,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { AlertBanner, Badge, EmptyState, PageHeader, TableSkeleton } from '@/components/ui';
+import { AlertBanner, Badge, EmptyState, PageHeader, TableSkeleton, useConfirmDialog } from '@/components/ui';
 
 interface BlogPost {
   id: string;
@@ -37,7 +37,7 @@ export default function AdminBlogPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [filterLocale, setFilterLocale] = useState<'all' | 'tr' | 'en'>('all');
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
   const [search, setSearch] = useState('');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -79,22 +79,30 @@ export default function AdminBlogPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      const res = await fetch(`/api/admin/blog/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setPosts(prev => prev.filter(post => post.id !== id));
-        setSuccess('Yazı silindi.');
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        setError('Silme başarısız.');
-      }
-    } catch {
-      setError('Silme başarısız.');
-    } finally {
-      setDeleteConfirm(null);
-      setOpenMenu(null);
-    }
+  const handleDelete = (id: string, title: string) => {
+    askConfirm({
+      variant: 'danger',
+      title: 'Bu blog yazısını sil',
+      body: `"${title}" yazısını kalıcı olarak silmek istediğinden emin misin? Bu işlem geri alınamaz.`,
+      confirmLabel: 'Sil',
+      cancelLabel: 'Vazgeç',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/blog/${id}`, { method: 'DELETE' });
+          if (res.ok) {
+            setPosts(prev => prev.filter(post => post.id !== id));
+            setSuccess('Yazı silindi.');
+            setTimeout(() => setSuccess(''), 3000);
+          } else {
+            setError('Silme başarısız.');
+          }
+        } catch {
+          setError('Silme başarısız.');
+        } finally {
+          setOpenMenu(null);
+        }
+      },
+    });
   };
 
   const filtered = posts.filter(post => {
@@ -255,30 +263,16 @@ export default function AdminBlogPage() {
                               <Pencil size={13} strokeWidth={2} />
                               Düzenle
                             </Link>
-                            {deleteConfirm === post.id ? (
-                              <div className="flex items-center gap-1 border-t border-[#EDEDED] p-1.5">
-                                <button
-                                  onClick={() => handleDelete(post.id)}
-                                  className="flex-1 rounded-lg bg-[#FEF2F2] px-2 py-1.5 text-[12px] font-medium text-[#991B1B] hover:bg-[#FECACA]"
-                                >
-                                  Sil
-                                </button>
-                                <button
-                                  onClick={() => setDeleteConfirm(null)}
-                                  className="flex-1 rounded-lg bg-[#FAFAFA] px-2 py-1.5 text-[12px] font-medium text-[#525252] hover:bg-[#EDEDED]"
-                                >
-                                  Vazgeç
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => setDeleteConfirm(post.id)}
-                                className="flex w-full items-center gap-2 border-t border-[#EDEDED] px-3 py-2 text-[13px] text-[#991B1B] hover:bg-[#FEF2F2]"
-                              >
-                                <Trash2 size={13} strokeWidth={2} />
-                                Sil
-                              </button>
-                            )}
+                            <button
+                              onClick={() => {
+                                setOpenMenu(null);
+                                handleDelete(post.id, post.title);
+                              }}
+                              className="flex w-full items-center gap-2 border-t border-[#EDEDED] px-3 py-2 text-[13px] text-[#991B1B] hover:bg-[#FEF2F2]"
+                            >
+                              <Trash2 size={13} strokeWidth={2} />
+                              Sil
+                            </button>
                           </div>
                         )}
                       </div>
@@ -322,36 +316,20 @@ export default function AdminBlogPage() {
                   >
                     <Pencil size={14} />
                   </Link>
-                  {deleteConfirm === post.id ? (
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleDelete(post.id)}
-                        className="rounded-full bg-[#FEF2F2] px-3 py-1.5 text-[12px] font-medium text-[#991B1B]"
-                      >
-                        Sil
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirm(null)}
-                        className="rounded-full bg-[#FAFAFA] px-3 py-1.5 text-[12px] font-medium text-[#525252]"
-                      >
-                        Vazgeç
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setDeleteConfirm(post.id)}
-                      className="bz-btn-icon"
-                      aria-label="Sil"
-                    >
-                      <Trash2 size={14} className="text-[#991B1B]" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleDelete(post.id, post.title)}
+                    className="bz-btn-icon"
+                    aria-label="Sil"
+                  >
+                    <Trash2 size={14} className="text-[#991B1B]" />
+                  </button>
                 </div>
               </article>
             ))}
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }
