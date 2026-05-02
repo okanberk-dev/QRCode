@@ -82,6 +82,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr" className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}>
+      <head>
+        {/* DNS prefetch hints — lazyOnload script'leri (GTM + Yandex Metrica)
+            ve Google Fonts CDN için DNS lookup'ı pre-warm eder; ~50-100ms
+            TTFB warm-up kazandırır. preconnect daha agresif olurdu ama
+            crossorigin/CORS kombinasyonu third-party'lerle inişli-çıkışlı —
+            dns-prefetch 0-risk. */}
+        <link rel="dns-prefetch" href="https://mc.yandex.ru" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+      </head>
       <body className={`${inter.className} antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-screen`}>
         {/* Analytics scripts run on `lazyOnload` to keep them out of the
             critical path. PageSpeed flagged ~410ms (GA) + ~399ms (Yandex)
