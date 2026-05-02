@@ -84,7 +84,10 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
         </div>
       )}
 
-      <div className="flex-1 p-5 sm:p-8">
+      {/* Mobile alt padding: UserDashboardShell mobile bottom nav (~64px,
+          z-40 lg:hidden) son button'u/composer'ı kapatmasın diye 80px
+          ekstra alt boşluk. Desktop'ta nav yok, gereksiz padding gitsin. */}
+      <div className="flex-1 p-5 pb-24 sm:p-8 sm:pb-24 lg:pb-8">
         {/* Header card */}
         <div className="flex items-start gap-4">
           <Avatar
