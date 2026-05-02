@@ -59,7 +59,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
   const customerAspects = active.aspects ?? null;
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white">
+    <section className="flex flex-col bg-white lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
       {/* Mobile sticky top — back button */}
       {showBackButton && (
         <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 backdrop-blur px-4 py-3 lg:hidden">
@@ -229,6 +229,26 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                 {isTr
                   ? `Yüksek puanlı yorum ${(active.platform || 'platform').toUpperCase()} üzerinden alındı; müşteri zaten platformda paylaşımını yaptı. İsterseniz İşaretle aksiyonuyla bu yorumu ekibinizle takip edebilirsiniz.`
                   : `High-rating review came in via ${(active.platform || 'platform').toUpperCase()}; the customer already posted on the platform. You can still flag this review to keep track with your team.`}
+              </span>
+            </AlertBanner>
+          </div>
+        ) : active.isReplied ? (
+          /* Yanıtlanmış düşük puanlı yorumlar — AI yeniden öneri üretmesin
+             (kullanıcı şikayeti: "AI iki defa cevap üretiyor"). Sent thread
+             zaten yukarıda görünür; tekrar yanıt isterse "Yeni yanıt yaz"
+             butonu ile manuel açar. */
+          <div className="mt-6">
+            <AlertBanner
+              kind="info"
+              icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}
+            >
+              <span className="block font-semibold text-[#0A0A0A]">
+                {isTr ? 'Yanıtlandı' : 'Replied'}
+              </span>
+              <span className="block mt-0.5 text-[#525252]">
+                {isTr
+                  ? 'Bu yoruma daha önce yanıt verildi. Yukarıdaki gönderilen yanıtı görebilirsin.'
+                  : 'This review has already been replied to. See the sent reply above.'}
               </span>
             </AlertBanner>
           </div>

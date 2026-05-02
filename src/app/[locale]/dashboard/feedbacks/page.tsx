@@ -204,6 +204,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
   // ============================================================
   // AI draft fetch (background draft → fallback on-demand)
+  //
+  // AI yalnızca düşük puanlı (rating < 4) ve **henüz yanıtlanmamış**
+  // yorumlar için üretilir. Yüksek puanlı yorumlar zaten platforma
+  // yönlendirilmiş, yanıtlanmış yorumlar için yeni öneri gereksiz —
+  // ikisi de UI'da bloğu gizler ve gereksiz network çağrısı yapmaz.
+  // (Eski davranış her seçimde 1-2 fetch tetikliyordu → "AI iki defa
+  // üretti" hissi doğuyordu.)
   // ============================================================
   useEffect(() => {
     if (!active) {
@@ -217,6 +224,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setAiSuggestion('');
     setAiSource(null);
     setAiFromBackground(false);
+    if (active.rating >= 4 || active.isReplied) {
+      setAiLoading(false);
+      return;
+    }
     setAiLoading(true);
     (async () => {
       try {
@@ -472,8 +483,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       </div>
 
       <div
-        className="flex flex-col lg:flex-row overflow-hidden rounded-2xl border border-[#EDEDED] bg-white"
-        style={{ height: 'calc(100vh - 200px)', minHeight: 520 }}
+        className="flex flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white lg:flex-row lg:h-[calc(100vh-200px)] lg:min-h-[540px]"
       >
         {/* ============ LEFT — list ============ */}
         <aside
