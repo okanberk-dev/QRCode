@@ -414,25 +414,23 @@ cascade chain ever drifts.
 | `LegalDocumentRevision` | `documentId` | `SetNull` | same |
 | `LegalConsent` | `documentId` | `SetNull` | KVKK consent decoupled from doc lifetime |
 
-### Two implicit-default `@relation` directives made explicit
+### Two implicit-default `@relation` directives — comment-only documentation
 
-- `Restaurant.user → User`: `onDelete: NoAction` added (was Prisma 6
-  default — identical Postgres `RESTRICT` behaviour). Documents the
-  fact that User hard-delete is unsupported (CLAUDE.md §34.5
-  soft-delete pattern is the only sanctioned path).
-- `AdminUser.restaurant → Restaurant`: `onDelete: NoAction` added.
-  Behaviour-equivalent safety net so a stray direct
-  `prisma.restaurant.delete` (script, manual SQL) cannot strand
-  managers without their scoped restaurant — the
-  `/api/restaurants/[id]` DELETE handler does the manual
-  `adminUser.deleteMany` cleanup.
+- `Restaurant.user → User`: detailed inline comment added documenting
+  that User hard-delete is unsupported (CLAUDE.md §34.5 soft-delete is
+  the only sanctioned path).
+- `AdminUser.restaurant → Restaurant`: detailed inline comment
+  pointing at the manual `adminUser.deleteMany` cleanup in
+  `/api/restaurants/[id]` DELETE.
 
-`NoAction` over `Restrict`: semantically `Restrict` is the tighter
-choice, but Prisma's validator rejects mixing `Restrict` with the
-multi-path cascade chains the Restaurant model already participates
-in (Feedback / Menu / QR / Analytics all `Cascade`). `NoAction` maps
-to the same Postgres `RESTRICT` constraint at the FK level, so the
-runtime behaviour is identical.
+We did **not** annotate either side with an explicit `onDelete:`
+clause. Both `Restrict` and `NoAction` are rejected by Prisma 6's
+validator with a *cyclic referential action* error because the
+Restaurant model already participates in multi-path `Cascade` chains
+(Feedback / Menu / QR / Analytics all cascade). The implicit default
+maps to Postgres `NO ACTION` ≈ `RESTRICT`, which is the runtime
+behaviour we wanted in the first place — the comments make the intent
+visible to schema readers without breaking `prisma validate`.
 
 ### KVKK "right to be forgotten" — open scope
 

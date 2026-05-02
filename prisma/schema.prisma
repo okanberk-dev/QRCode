@@ -162,17 +162,14 @@ model Restaurant {
   updatedAt               DateTime  @updatedAt @map("updated_at")
 
   userId String? @map("user_id")
-  // Explicit `onDelete: NoAction`. Behaviour equivalent to Postgres
-  // RESTRICT (and to the Prisma 6 implicit default). Kept explicit
-  // because: (a) hard-deleting a User row would wipe all of their
-  // restaurants — deactivation flow is the only sanctioned path
-  // (CLAUDE.md §34.5 soft-delete); (b) reads better than relying on
-  // Prisma defaults for a destructive surface. We chose `NoAction`
-  // over `Restrict` because the Restaurant model already participates
-  // in other Cascade chains and Prisma's validator rejects mixing
-  // `Restrict` with multi-path cascades on the same target. Audit
-  // ref: §37.9.
-  user   User?   @relation(fields: [userId], references: [id], onDelete: NoAction)
+  // Implicit-default `onDelete` (Prisma 6 → Postgres `NO ACTION`,
+  // behaviour-equivalent to `RESTRICT`). Hard-deleting a User row aborts
+  // when restaurants exist — deactivation (`isActive=false`) is the only
+  // sanctioned path (CLAUDE.md §34.5 soft-delete; audit ref §37.9).
+  // Explicit `Restrict`/`NoAction` would be more readable but Prisma's
+  // validator rejects them on the Restaurant model because it already
+  // participates in multi-path Cascade chains (Feedback/Menu/QR cascade).
+  user   User?   @relation(fields: [userId], references: [id])
 
   feedbacks          Feedback[]
   qrGenerations      QrGeneration[]
@@ -663,17 +660,17 @@ model AdminUser {
   // single-field ile yürür.
   passwordChangedAt DateTime? @map("password_changed_at")
 
-  // Explicit `onDelete: NoAction`. Behaviour-identical to Postgres
-  // RESTRICT. The `/api/restaurants/[id]` DELETE handler manually
-  // `prisma.adminUser.deleteMany({where:{restaurantId}})` before
-  // deleting the Restaurant row — that manual cleanup is the sanctioned
-  // path. NoAction here is a safety net so a stray direct
-  // `prisma.restaurant.delete` (script, manual SQL) can't strand
-  // managers without their scoped restaurant. (`Restrict` would be the
-  // semantically tighter choice but Prisma's validator rejects mixing
-  // `Restrict` with multi-path cascades that already touch this table.)
-  // Audit ref: §37.9.
-  restaurant Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: NoAction)
+  // Implicit-default `onDelete` (Prisma 6 → Postgres `NO ACTION`,
+  // behaviour-equivalent to `RESTRICT`). The `/api/restaurants/[id]`
+  // DELETE handler manually `prisma.adminUser.deleteMany({where:{restaurantId}})`
+  // before deleting the Restaurant row — that manual cleanup is the
+  // sanctioned path. The default RESTRICT here is a safety net so a stray
+  // direct `prisma.restaurant.delete` (script, manual SQL) can't strand
+  // managers without their scoped restaurant.
+  // Explicit `Restrict`/`NoAction` would be more readable but Prisma's
+  // validator rejects them on the Restaurant model because it already
+  // participates in multi-path Cascade chains. Audit ref: §37.9.
+  restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
 
   @@map("admin_users")
 }
