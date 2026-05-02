@@ -58,7 +58,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
   } = props;
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white">
+    <section className="flex flex-col bg-white lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
       {/* Mobile sticky top — back button + quick actions */}
       {showBackButton && (
         <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 backdrop-blur px-4 py-3 lg:hidden">
@@ -212,6 +212,22 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
               {isTr
                 ? `Yüksek puanlı yorum ${(active.platform || 'platform').toUpperCase()} üzerinden alındı; müşteri zaten platformda paylaşımını yaptı. İsterseniz yukarıdaki Flag/Ata aksiyonlarıyla bu yorumu ekibinizle takip edebilirsiniz.`
                 : `High-rating review came in via ${(active.platform || 'platform').toUpperCase()}; the customer already posted on the platform. You can still flag or assign it to your team.`}
+            </span>
+          </AlertBanner>
+        ) : active.isReplied ? (
+          /* Yanıtlanmış düşük puan — AI yeniden üretmesin, sade bilgi
+             banner'ı + üstteki action button'lar (Flag/Assign) korunur. */
+          <AlertBanner
+            kind="info"
+            icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}
+          >
+            <span className="block font-semibold text-[#0A0A0A]">
+              {isTr ? 'Yanıtlandı' : 'Replied'}
+            </span>
+            <span className="block mt-0.5 text-[#525252]">
+              {isTr
+                ? 'Bu yorum daha önce yanıtlandı. Yukarıdaki Flag/Ata aksiyonları korunur.'
+                : 'This review has already been replied to. Flag/Assign actions remain available above.'}
             </span>
           </AlertBanner>
         ) : (

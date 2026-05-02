@@ -163,6 +163,9 @@ function AdminReviewsContent() {
 
   const active = filtered.find((r) => r.id === activeId) || filtered[0] || null;
 
+  // AI yalnız düşük puan + yanıtlanmamış yorumlar için (CLAUDE.md §15).
+  // Eski davranış suggest-reply'ı kullanıcı tıklayınca üretiyordu — bu zaten
+  // tek-defa pattern. Aktif yorum değişince composer state'i resetliyoruz.
   useEffect(() => {
     setDraft('');
     setAiSource(null);
@@ -484,8 +487,7 @@ function AdminReviewsContent() {
 
       {/* Layout container */}
       <div
-        className="flex flex-col lg:flex-row overflow-hidden rounded-2xl border border-[#EDEDED] bg-white"
-        style={{ height: 'calc(100vh - 260px)', minHeight: 540 }}
+        className="flex flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white lg:flex-row lg:h-[calc(100vh-260px)] lg:min-h-[540px]"
       >
         {/* LEFT — list */}
         <aside

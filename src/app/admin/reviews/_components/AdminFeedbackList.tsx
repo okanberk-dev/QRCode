@@ -65,7 +65,7 @@ export function AdminFeedbackList({
     !allSelected && filtered.some((r) => selectedIds.has(r.id));
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-col lg:h-full">
       {degraded && (
         <div className="px-3 pt-3">
           <AlertBanner kind="warn">
@@ -165,7 +165,7 @@ export function AdminFeedbackList({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="lg:flex-1 lg:overflow-y-auto">
         {loading ? (
           <div className="space-y-2 p-4" aria-hidden="true">
             {Array.from({ length: 5 }).map((_, i) => (
