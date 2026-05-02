@@ -72,23 +72,34 @@ export async function GET(
   const adminIds = entries.filter((e) => e.actorSource === 'admin').map((e) => e.actorId);
   const userIds = entries.filter((e) => e.actorSource === 'user').map((e) => e.actorId);
 
-  let adminUsers: Array<{ id: string; email: string | null; name: string | null; role: string }> = [];
+  // AdminUser model'inde `name` field'ı yok — display name için `username`
+  // kullanılır (CLAUDE.md §4 — AdminUser tablosunda superadmin/manager için
+  // username unique). User model'inde ise `name` field'ı mevcut. Aynı normalize
+  // shape döndürmek için `name` virtual field'ı her iki kaynak için map edilir.
+  let adminUsers: Array<{ id: string; email: string | null; name: string; role: string }> = [];
   let users: Array<{ id: string; email: string; name: string | null }> = [];
   try {
-    [adminUsers, users] = await Promise.all([
+    const [adminRows, userRows] = await Promise.all([
       adminIds.length === 0
-        ? Promise.resolve([])
+        ? Promise.resolve([] as Array<{ id: string; email: string | null; username: string; role: string }>)
         : prisma.adminUser.findMany({
             where: { id: { in: adminIds } },
-            select: { id: true, email: true, name: true, role: true },
+            select: { id: true, email: true, username: true, role: true },
           }),
       userIds.length === 0
-        ? Promise.resolve([])
+        ? Promise.resolve([] as Array<{ id: string; email: string; name: string | null }>)
         : prisma.user.findMany({
             where: { id: { in: userIds } },
             select: { id: true, email: true, name: true },
           }),
     ]);
+    adminUsers = adminRows.map((a) => ({
+      id: a.id,
+      email: a.email,
+      name: a.username,
+      role: a.role,
+    }));
+    users = userRows;
   } catch (error) {
     console.error('[admin/members/audit] actor resolve failed', error);
     // Non-fatal: render entries without actor names rather than 500.
