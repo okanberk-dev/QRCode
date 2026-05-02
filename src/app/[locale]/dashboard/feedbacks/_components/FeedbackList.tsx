@@ -1,6 +1,6 @@
 'use client';
 
-import { Inbox, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
+import { Inbox, Loader2, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
 import { AlertBanner, EmptyState, Skeleton, Tabs } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import type { ActiveTab, DegradedMeta, FeedbackRow } from './types';
@@ -24,6 +24,9 @@ interface FeedbackListProps {
   onResetFilters: () => void;
   onSelect: (id: string) => void;
   degraded: DegradedMeta | null;
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
 }
 
 export function FeedbackList({
@@ -44,6 +47,9 @@ export function FeedbackList({
   onResetFilters,
   onSelect,
   degraded,
+  hasMore,
+  loadingMore,
+  onLoadMore,
 }: FeedbackListProps) {
   const isTr = locale === 'tr';
 
@@ -153,18 +159,43 @@ export function FeedbackList({
             />
           </div>
         ) : (
-          <ul>
-            {filteredList.map((r) => (
-              <FeedbackListItem
-                key={r.id}
-                feedback={r}
-                isActive={activeId === r.id}
-                isPulsed={pulsedId === r.id}
-                locale={locale}
-                onSelect={onSelect}
-              />
-            ))}
-          </ul>
+          <>
+            <ul>
+              {filteredList.map((r) => (
+                <FeedbackListItem
+                  key={r.id}
+                  feedback={r}
+                  isActive={activeId === r.id}
+                  isPulsed={pulsedId === r.id}
+                  locale={locale}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+            {/* "Daha fazla göster" — backend zaten paginate ediyor; ilk 20
+                yorum first paint için yüklenir, kullanıcı talep ettikçe +20.
+                Filter aktifken (search/tab) buton yine görünür çünkü server
+                filter'lı sayfayı döndürür. */}
+            {hasMore && (
+              <div className="flex items-center justify-center px-3 py-4 border-t border-[#F5F5F5]">
+                <button
+                  type="button"
+                  onClick={onLoadMore}
+                  disabled={loadingMore}
+                  className="bz-btn-ghost inline-flex items-center gap-2 text-[12px] disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" strokeWidth={2.2} />
+                      <span>{isTr ? 'Yükleniyor…' : 'Loading…'}</span>
+                    </>
+                  ) : (
+                    <span>{isTr ? 'Daha fazla göster' : 'Show more'}</span>
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

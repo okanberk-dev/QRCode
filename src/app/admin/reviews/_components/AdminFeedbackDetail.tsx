@@ -215,19 +215,15 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
             </span>
           </AlertBanner>
         ) : active.isReplied ? (
-          /* Yanıtlanmış düşük puan — AI yeniden üretmesin, sade bilgi
-             banner'ı + üstteki action button'lar (Flag/Assign) korunur. */
+          /* Yanıtlanmış yorum — AI yeniden üretmesin, sade "Yanıtlandı"
+             başlığı yeterli. Üstteki Flag/Assign action button'ları zaten
+             ayrı block'ta görünür kalıyor; ek açıklayıcı cümleye gerek yok. */
           <AlertBanner
             kind="info"
             icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}
           >
             <span className="block font-semibold text-[#0A0A0A]">
               {isTr ? 'Yanıtlandı' : 'Replied'}
-            </span>
-            <span className="block mt-0.5 text-[#525252]">
-              {isTr
-                ? 'Bu yorum daha önce yanıtlandı. Yukarıdaki Flag/Ata aksiyonları korunur.'
-                : 'This review has already been replied to. Flag/Assign actions remain available above.'}
             </span>
           </AlertBanner>
         ) : (

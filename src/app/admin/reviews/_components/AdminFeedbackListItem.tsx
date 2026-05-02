@@ -52,9 +52,7 @@ export function AdminFeedbackListItem({
         data-feedback-id={r.id}
         onClick={() => onSelect(r.id)}
         aria-current={isActive ? 'true' : undefined}
-        className={`flex flex-1 items-start gap-3 pr-3 py-3 text-left border-l-[3px] ${
-          isActive ? 'border-l-[#0A0A0A]' : 'border-l-transparent'
-        }`}
+        className="flex flex-1 items-start gap-3 pr-3 py-3 text-left"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[11px] font-semibold text-white">
           {initials(r.customerName)}

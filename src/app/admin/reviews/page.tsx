@@ -85,11 +85,22 @@ function AdminReviewsContent() {
   const focusAppliedRef = useRef(false);
   const [pulsedId, setPulsedId] = useState<string | null>(null);
 
+  // Pagination — "Daha fazla göster" pattern. Initial 25 row first paint için
+  // yeterli; admin paneli ağır KPI grid + bulk toolbar hesabıyla yarışmasın,
+  // kullanıcı talep ettikçe +25.
+  const PAGE_SIZE = 25;
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   // ============================================================
   // Build query params for /api/feedback (admin)
   // ============================================================
-  const buildListQuery = (extra?: Record<string, string>) => {
-    const query = new URLSearchParams({ page: '1', limit: '100' });
+  const buildListQuery = (targetPage: number, extra?: Record<string, string>) => {
+    const query = new URLSearchParams({
+      page: String(targetPage),
+      limit: String(PAGE_SIZE),
+    });
     if (platform !== 'all') query.set('platform', String(platform));
     if (hasReply === 'pending') query.set('hasReply', 'false');
     if (flagged) query.set('isFlagged', 'true');
@@ -104,9 +115,11 @@ function AdminReviewsContent() {
   useEffect(() => {
     (async () => {
       setLoading(true);
+      setPage(1);
+      setHasMore(false);
       try {
         const [listRes, countsRes] = await Promise.all([
-          fetch(`/api/feedback?${buildListQuery().toString()}`),
+          fetch(`/api/feedback?${buildListQuery(1).toString()}`),
           fetch('/api/feedback/counts'),
         ]);
         if (listRes.ok) {
@@ -116,6 +129,8 @@ function AdminReviewsContent() {
           setActiveId((c) => c ?? list[0]?.id ?? null);
           setDegraded(data?.meta?.degraded ?? null);
           setSelectedIds(new Set()); // filter değişince selection sıfırla
+          const totalPages = Number(data?.meta?.totalPages ?? 1);
+          setHasMore(totalPages > 1);
         }
         if (countsRes.ok) setCounts(await countsRes.json());
       } catch (err) {
@@ -125,6 +140,31 @@ function AdminReviewsContent() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platform, hasReply, flagged, assigned]);
+
+  const loadMoreRows = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const res = await fetch(`/api/feedback?${buildListQuery(nextPage).toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        const list: FeedbackRow[] = data.data ?? [];
+        setRows((prev) => {
+          // Sayfalar arası overlap (yeni yorum eklenmesi vb.) → duplicate id
+          // skip: React key collision + UI jiter önler.
+          const seen = new Set(prev.map((r) => r.id));
+          return [...prev, ...list.filter((r) => !seen.has(r.id))];
+        });
+        setPage(nextPage);
+        const totalPages = Number(data?.meta?.totalPages ?? 1);
+        setHasMore(nextPage < totalPages);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setLoadingMore(false);
+  };
 
   // ============================================================
   // Notification deep-link
@@ -364,9 +404,13 @@ function AdminReviewsContent() {
         );
         setSelectedIds(new Set());
         // Re-fetch to reflect new flag/assignment state. Mevcut filter'ları
-        // koruyarak (CLAUDE.md §11.21 — assignedToMe filter aktifken bulk
-        // sonrası liste yanlış genişlememeli).
-        const refresh = await fetch(`/api/feedback?${buildListQuery().toString()}`);
+        // + load-more sonrası ulaşılan **toplam yüklü sayfayı** koruyarak
+        // (CLAUDE.md §11.21 — assignedToMe filter aktifken bulk sonrası liste
+        // yanlış genişlememeli; ayrıca load-more ile genişletilmiş liste
+        // bulk sonrası ilk sayfaya çökmemeli).
+        const refresh = await fetch(
+          `/api/feedback?${buildListQuery(1, { limit: String(PAGE_SIZE * page) }).toString()}`,
+        );
         if (refresh.ok) {
           const d = await refresh.json();
           setRows(d.data ?? []);
@@ -515,6 +559,9 @@ function AdminReviewsContent() {
             onResetFilters={onResetFilters}
             onSelect={onSelectFeedback}
             degraded={degraded}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={loadMoreRows}
           />
         </aside>
 

@@ -35,9 +35,7 @@ export function FeedbackListItem({
         type="button"
         onClick={() => onSelect(r.id)}
         className={`flex w-full flex-col gap-1.5 border-b border-[#F5F5F5] px-4 py-3.5 text-left transition-colors ${
-          isActive
-            ? 'bg-[#EAF9B8] border-l-[3px] border-l-[#0A0A0A]'
-            : 'hover:bg-[#FAFAFA] border-l-[3px] border-l-transparent'
+          isActive ? 'bg-[#EAF9B8]' : 'hover:bg-[#FAFAFA]'
         } ${isPulsed ? 'animate-pulse ring-2 ring-[#C6F24E]' : ''}`}
         aria-current={isActive ? 'true' : undefined}
       >
