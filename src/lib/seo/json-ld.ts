@@ -42,6 +42,6 @@ export function jsonLdString(data: unknown): string {
     // U+2028 / U+2029 are line separators that legacy JS parsers treat as
     // newlines inside string literals; modern parsers don't, but JSON-LD
     // blocks should still be byte-stable across parser quirks.
-    .replace(/ /g, '\\u2028')
-    .replace(/ /g, '\\u2029');
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
