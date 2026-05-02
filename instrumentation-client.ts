@@ -13,6 +13,14 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     replaysOnErrorSampleRate: 1.0,
     enableLogs: true,
     environment: process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV,
+    // Pin the deployed commit so client-side errors land in the right
+    // Sentry "Release Health" view. Vercel injects
+    // NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA on every build; falls through to
+    // undefined on local dev so Sentry just labels events as "unknown
+    // release" instead of all-collapsing under one bogus tag.
+    // Server / edge config already set this from VERCEL_GIT_COMMIT_SHA.
+    // CLAUDE.md §34.16.
+    release: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
     integrations: [Sentry.replayIntegration()],
   });
 }

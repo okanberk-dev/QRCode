@@ -157,6 +157,33 @@ const nextConfig: NextConfig = {
           { key: 'Content-Security-Policy', value: EMBED_CSP },
         ],
       },
+      // X-Robots-Tag — defense-in-depth on top of robots.ts (CLAUDE.md
+      // §34.16). robots.ts disallow is a *suggestion* a bot may ignore;
+      // the X-Robots-Tag HTTP header is the *enforced* signal at the
+      // response layer. Applied to:
+      //   /api/*    — JSON endpoints, never indexable
+      //   /admin/*  — internal panel
+      //   /r/*      — public review surface (per-restaurant) — SEO-irrelevant,
+      //               and indexing them would dilute the marketing site
+      //               for thousands of long-tail slugs
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+        ],
+      },
+      {
+        source: '/admin/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+        ],
+      },
+      {
+        source: '/r/:path*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+        ],
+      },
       // Long-lived cache for static assets that are content-hashed at the
       // path level (favicon variants, embed wrapper script, manifest).
       // Vercel CDN already serves Next's `/_next/static/*` with immutable

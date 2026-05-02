@@ -3826,6 +3826,57 @@ GPTBot / Anthropic-ai / Perplexity / vb. AI bot rule'una `crawlDelay: 2` eklendi
 - Yeni public endpoint'in monitoring'i için `/api/health` reuse — DB hit'siz pattern korunur
 - Yeni AI bot user-agent eklenirken `crawlDelay: 2` paterni uygulanır
 
+### 34.16 2026-05-02 — Zero-risk bundle #2: X-Robots-Tag + OG + Apple PWA + Sentry release
+
+İkinci zero-risk bundle. 4 maddeyi tek PR'da topladık; her biri runtime impact sıfır, regression test gerektirmiyor.
+
+#### 1. `X-Robots-Tag: noindex, nofollow, noarchive` (sensitive paths)
+
+`next.config.ts:headers()` üç path scope için header eklendi:
+- `/api/:path*` — JSON endpoints, hiçbir zaman indexable değil
+- `/admin/:path*` — internal panel
+- `/r/:path*` — public review surface (per-restaurant slug). Bunlar SEO-irrelevant, ve binlerce long-tail slug Google'a girerse marketing site signal'ını seyreltir
+
+Defense-in-depth: `robots.ts` disallow bot **önerisi**, `X-Robots-Tag` HTTP header **enforced** signal. Eski cache'lenmiş bot rule'una rağmen bot indekslemeye karar verirse header garantiler.
+
+#### 2. Open Graph metadata genişletme (`app/layout.tsx`)
+
+Mevcut `openGraph`/`twitter` metadata'sına eklendi:
+- `siteName: 'Buaze'`
+- `locale: 'tr_TR'`
+- `alternateLocale: ['en_US']`
+- `type: 'website'`
+- `url: 'https://buaze.com'`
+- OG image `type: 'image/png'`
+- Twitter `title` + `description` explicit set
+
+Slack / LinkedIn / WhatsApp link unfurl'lerinde "Buaze · TR" framing görünür; ham domain fallback eskisi gibi değil.
+
+#### 3. Apple PWA / iOS metadata (`app/layout.tsx`)
+
+Next.js Metadata API `appleWebApp` + `formatDetection` field'ları:
+- `appleWebApp.capable: true` — iOS "Add to Home Screen" → standalone app
+- `appleWebApp.statusBarStyle: 'black-translucent'` — Pulse koyu tema ile uyumlu status bar
+- `appleWebApp.title: 'Buaze'`
+- `formatDetection.telephone: false` — **Önemli**: Safari otomatik olarak sayfadaki sayısal string'leri `tel:` link'ine çevirir. Bu monospace stat tile'ları ("340.000+", "%72") bozardı — özellikle Pulse design system'in tasarımını. `false` ile auto-link kapatılır.
+
+Sıfır JS impact; sadece HTML metadata.
+
+#### 4. Sentry release tagging (`instrumentation-client.ts`)
+
+Server + edge config'inde `release: process.env.VERCEL_GIT_COMMIT_SHA` zaten vardı. Client-side eksikti — `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA` (Vercel build sırasında otomatik enjekte edilir) ile pinlendi.
+
+Sentry "Release Health" dashboard'unda her client error hangi commit'ten geldi görünür. Operatör DX: "X release'inden sonra X error rate'i arttı" diff'i yapılabilir. Lokal dev'de undefined kalır → Sentry "unknown release" olarak etiketler (collapse risk yok).
+
+**Yapma:**
+- `/r/:path*` X-Robots-Tag'i kaldırma — public review pages SEO-irrelevant, binlerce slug Google'a girerse marketing site signal seyrelir.
+- `format-detection: false`'ı `true`'ya çevirme — monospace stat tile'lar Safari'de otomatik `tel:` link'e çevrilir, Pulse design bozulur.
+- Sentry `release` field'ını manuel string ile pinleme — Vercel env injection'a güven.
+
+**Yap:**
+- Yeni private path eklenirken `X-Robots-Tag` da ekle (örn. `/internal/*`).
+- Yeni public marketing route eklenirken sitemap'e otomatik girer (CLAUDE.md §35.1 auto-discovery), X-Robots-Tag dokunma.
+
 ---
 
 ## 35. SEO Infrastructure (2026-05 PR #263 + #264)
