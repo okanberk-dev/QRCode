@@ -53,6 +53,6 @@ export default function robots(): MetadataRoute.Robots {
       }
     ],
     sitemap: 'https://buaze.com/sitemap.xml',
-    host: 'https://buaze.com',
+    host: 'buaze.com',
   };
 }

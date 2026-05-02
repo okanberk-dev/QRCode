@@ -5,7 +5,6 @@ import { STATIC_HELP_ARTICLES } from '@/lib/help-articles';
 import { CUSTOMER_STORIES } from '@/lib/customer-stories';
 import { discoverPublicRoutes } from '@/lib/seo/route-discovery';
 
-export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
 const BASE_URL = 'https://buaze.com';
