@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import NewsletterSignup from '@/components/marketing/NewsletterSignup';
 import BlogReadingProgress from '@/components/marketing/BlogReadingProgress';
@@ -303,7 +304,7 @@ export default async function BlogPostPage({
     <div id="top" className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">

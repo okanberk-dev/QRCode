@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import PublicMenuView, { type MenuCategoryView, type RestaurantView } from '@/components/menu/PublicMenuView';
@@ -176,7 +177,7 @@ export default async function PublicMenuPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
       <PublicMenuView restaurant={restaurant} categories={categories} locale={locale} />
     </>

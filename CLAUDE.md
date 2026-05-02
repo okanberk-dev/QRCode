@@ -4065,10 +4065,29 @@ Bu bulgular davranış-değişikliği gerektiriyor; CLAUDE.md'de bilinçli tasar
 ### 37.4 Audit dışı bırakılan kapsam (ileri pass)
 
 - **`npm audit` supply chain** (lokal node_modules ortamı yoktu)
-- **Render-side XSS sweep** (`dangerouslySetInnerHTML` walk — JSX default escape mevcut, kapsamlı sweep ayrı pass)
+- ~~**Render-side XSS sweep**~~ — **✅ KAPATILDI** (2026-05 follow-up). 54 `dangerouslySetInnerHTML` kullanımı tarandı; 36 JSON-LD callsite `jsonLdString()` helper'ına migrate edildi (CLAUDE.md §37.6), 1 admin-authored `help/[slug]` body sanitize edildi (`sanitizeBlogContent`). Detay: `SECURITY_AUDIT_REPORT.md` "Render-side XSS sweep — closed".
 - **PII grep across 305 files** (`console.error(..., user.email)` patterns)
 - **CSP header** (`next.config.ts` XFO/HSTS var; CSP yok — script inventory mapping gerek: GTM + Yandex + Sentry tunnel + Speed Insights + Analytics + Vercel)
 - **Prisma cascade audit** — `onDelete: Cascade/Restrict` kapsamlı veri-kaybı taraması
+
+### 37.6 JSON-LD safe stringify disiplini (yeni)
+
+`<script type="application/ld+json">` blok'una giden HER `JSON.stringify(...)` çağrısı **`jsonLdString()`** helper'ından geçmek ZORUNDADIR (`src/lib/seo/json-ld.ts`). Plain `JSON.stringify` `</script>` byte sequence'ını escape ETMEZ — DOM parser bytes okur, JavaScript escape rules okumaz. Admin-authored title / excerpt / description JSON-LD'ye geçtiğinde stored XSS yaratır.
+
+```tsx
+// ❌ XSS sink:
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
+// ✅ Safe:
+import { jsonLdString } from '@/lib/seo/json-ld';
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
+```
+
+Helper `<` → `<`, `-->` → `-->`, U+2028/U+2029 escape eder. Output JSON-valid kalır (`JSON.parse` aynı şekilde çalışır).
+
+**Yapma**: yeni JSON-LD blok eklerken `JSON.stringify`'i raw kullanma. Code review check'i — yeni `__html: JSON.stringify(` pattern'i lint-anti-pattern.
 
 ### 37.5 Yeni session disiplini
 
