@@ -4067,7 +4067,7 @@ Bu bulgular davranış-değişikliği gerektiriyor; CLAUDE.md'de bilinçli tasar
 - **`npm audit` supply chain** (lokal node_modules ortamı yoktu)
 - ~~**Render-side XSS sweep**~~ — **✅ KAPATILDI** (2026-05 follow-up). 54 `dangerouslySetInnerHTML` kullanımı tarandı; 36 JSON-LD callsite `jsonLdString()` helper'ına migrate edildi (CLAUDE.md §37.6), 1 admin-authored `help/[slug]` body sanitize edildi (`sanitizeBlogContent`). Detay: `SECURITY_AUDIT_REPORT.md` "Render-side XSS sweep — closed".
 - ~~**PII grep across 305 files**~~ — **✅ KAPATILDI** (2026-05 follow-up). `console.*` çağrıları tarandı (~30 hit); 2 gerçek leak fix edildi: `cron/trial-reminders` email→userId (KVKK), `ops-alert.ts` recipient redaction (Sentry data minimization). Sentry capture extra/tags surface'leri zaten `userId/restaurantId` only, PII içermiyordu.
-- **CSP header** (`next.config.ts` XFO/HSTS var; CSP yok — script inventory mapping gerek: GTM + Yandex + Sentry tunnel + Speed Insights + Analytics + Vercel)
+- ~~**CSP header — A group**~~ — **✅ KAPATILDI** (2026-05 follow-up). Defansif "A grubu" directive'leri site-wide eklendi (CLAUDE.md §37.8). B grubu (`Cross-Origin-Opener-Policy: same-origin-allow-popups`) ve C grubu (strict `script-src` Report-Only mode) hâlâ açık — operatör onayı + Firebase Auth popup test gerektiriyor.
 - **Prisma cascade audit** — `onDelete: Cascade/Restrict` kapsamlı veri-kaybı taraması
 
 ### 37.6 JSON-LD safe stringify disiplini (yeni)
@@ -4106,6 +4106,60 @@ Kural:
 - Sentry `extra` payload'ını kontrolden geçir — Adım 1 ve PII follow-up'ında yapıldı, mevcut surface temiz.
 - Yeni mail dispatch / cron / privileged endpoint'i log'unda PII varsa Sentry'e gitmeden önce redact et (`{ recipient: _omit, ...safe }` pattern'i — `ops-alert.ts` referans).
 - Sentry `sendDefaultPii: false` (CLAUDE.md §26.2) zaten meta header/body'i kapatıyor; bu kural `console.error(..., {explicit PII})` yolunu kapatır.
+
+### 37.8 CSP / security headers — uygulanmış grup + backlog
+
+**`next.config.ts:headers()` mevcut state**:
+
+Site-wide (`/:path*`):
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: SAMEORIGIN` (CSP `frame-ancestors`'ın legacy fallback'i)
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=(), unload=*, interest-cohort=(), browsing-topics=(), payment=(), usb=(), bluetooth=(), serial=()` (FLoC/Topics/payment/sensor opt-out genişletildi)
+- **`Content-Security-Policy: frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests`** (A grubu — defansif directive'ler, hiçbir mevcut script source'unu kısıtlamaz)
+
+`/embed/:path*` override:
+- `X-Frame-Options: ALLOWALL`
+- **`Content-Security-Policy: frame-ancestors *; base-uri 'self'; form-action 'self'; object-src 'none'`** — frame restriction gevşetilir, A grubu directive'lerin geri kalanı korunur
+
+#### Yapılan A grubu (zero-risk)
+
+| Directive | Kapatılan saldırı vektörü |
+|---|---|
+| `frame-ancestors 'self'` | Clickjacking (CSP, XFO modern fallback) |
+| `base-uri 'self'` | `<base>` tag injection (DOM XSS pivot) |
+| `form-action 'self'` | Form hijacking — formlar yalnız `/api/*`'a POST eder |
+| `object-src 'none'` | Flash/Java/PDF embed (codebase'de hiç kullanılmıyor) |
+| `upgrade-insecure-requests` | Mixed content auto-upgrade (HTTPS-only deploy belt-and-suspenders) |
+| Permissions-Policy genişletme | Google FLoC + Topics + payment + sensor erişim opt-out |
+
+#### B grubu — backlog (operatör onayı + Firebase test)
+
+Düşük risk ama Firebase popup auth path'inde verifikasyon gerek:
+- `Cross-Origin-Opener-Policy: same-origin-allow-popups` — Spectre + tab izolasyonu. Strict `same-origin` Firebase `signInWithPopup`'ı koparır; **`-allow-popups` variant'ı seç**. Resmi Firebase dokümantasyonu uyumlu olduğunu söylüyor ama `/auth/google` flow runtime test edilmeli.
+- `Cross-Origin-Resource-Policy: same-origin` (site-wide) + `cross-origin` (`/embed/*`, `/buaze-embed.js`, `/opengraph-image*`, `/favicon.svg`, `/apple-touch-icon.svg`) — 3rd party script-tag wrapper'ı + sosyal paylaşım OG image'ı + favicon yine cross-origin, geri kalan resource'lar same-origin lock. Path-override sayısı arttığı için ayrı PR'da değerlendirilir.
+
+#### C grubu — backlog (Report-Only mode + 1-2 hafta gözlem)
+
+XSS savunmasının gerçek kapısı, ama mevcut inline + 3rd party script'leri kırmamak için kademeli:
+
+- `Content-Security-Policy-Report-Only` (block etmez, ihlali raporlar) ile başla
+- `script-src` allowlist (3rd party domain inventory):
+  - GTM `https://www.googletagmanager.com`, `https://www.google-analytics.com`
+  - Yandex `https://mc.yandex.ru`, `https://mc.yandex.com` (best-effort)
+  - Sentry tunnel (`/monitoring`, kendi origin'imiz — `'self'` yeter)
+  - Vercel Speed Insights `https://vitals.vercel-insights.com`
+  - Vercel Analytics `https://*.vercel-analytics.com`
+  - Vercel Preview Comments `https://vercel.live`
+  - Firebase Auth `https://*.firebaseapp.com`, `https://*.googleapis.com`, `https://apis.google.com`
+  - reCAPTCHA `https://www.google.com/recaptcha/`, `https://www.gstatic.com/recaptcha/`
+- Inline script'ler için **per-request nonce** (Next.js middleware → header → React component prop). Nonce-less çalışmak için `'unsafe-inline'` koyarsak CSP zayıf, XSS savunması sıfır olur.
+- 1-2 hafta Report-Only ile Sentry'ye ihlal akıt → eksik domain'leri ekle → enforce moduna flip.
+
+**Yapma**: Strict CSP'yi doğrudan enforce ile ekleme — 3rd party script'ler kırılır (white-screen production). Report-Only ile başla.
+
+**Yap**: Yeni 3rd party script eklenirken (örn. Iyzico Wave 3.5, yeni analytics widget) C grubu allowlist'i de güncelle.
 
 ### 37.5 Yeni session disiplini
 

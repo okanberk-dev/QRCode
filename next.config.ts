@@ -75,6 +75,59 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
+    // Site-wide CSP — "A group" defensive directives only. Each one closes a
+    // known XSS / clickjacking vector without restricting any script source
+    // we currently load (no `script-src` / `style-src` here — those need the
+    // 3rd-party allowlist mapping documented in CLAUDE.md §37.8 before they
+    // can be flipped on without breaking GTM, Yandex, Sentry, Firebase auth,
+    // reCAPTCHA, Vercel preview comments, etc).
+    //
+    //   - frame-ancestors 'self'         CSP-equivalent of XFO; modern
+    //                                    browsers treat this as the source
+    //                                    of truth, XFO is fallback.
+    //   - base-uri 'self'                Blocks <base> tag injection — a
+    //                                    common DOM-based-XSS pivot.
+    //   - form-action 'self'             Forms can only POST to our own
+    //                                    origin; every form in the codebase
+    //                                    targets /api/* (verified).
+    //   - object-src 'none'              No <object>/<embed>/<applet> in
+    //                                    the codebase — full deny.
+    //   - upgrade-insecure-requests      Belt-and-suspenders on top of the
+    //                                    HTTPS-only deploy: any sneaky
+    //                                    http:// reference auto-upgrades.
+    const SITE_CSP = [
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+      'upgrade-insecure-requests',
+    ].join('; ');
+
+    // /embed/* keeps `frame-ancestors *` (third-party iframe is the entire
+    // point of the widget) but inherits the rest of the A-group directives.
+    const EMBED_CSP = [
+      'frame-ancestors *',
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+    ].join('; ');
+
+    // Permissions-Policy adds Google FLoC / Topics / payment / sensor opt-out
+    // on top of the existing camera/microphone/geolocation/unload set — no
+    // first-party feature uses any of these surfaces.
+    const PERMISSIONS_POLICY = [
+      'camera=()',
+      'microphone=()',
+      'geolocation=()',
+      'unload=*',
+      'interest-cohort=()',
+      'browsing-topics=()',
+      'payment=()',
+      'usb=()',
+      'bluetooth=()',
+      'serial=()',
+    ].join(', ');
+
     return [
       {
         source: '/:path*',
@@ -83,10 +136,8 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
-          // unload=* allows browser extensions (Grammarly, password managers)
-          // to attach unload listeners — they emit a Permissions-Policy
-          // violation otherwise. Doesn't enable any first-party tracking.
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), unload=*' },
+          { key: 'Permissions-Policy', value: PERMISSIONS_POLICY },
+          { key: 'Content-Security-Policy', value: SITE_CSP },
         ],
       },
       // /embed/* — public iframe widget. Sadece bu path için frame
@@ -97,7 +148,7 @@ const nextConfig: NextConfig = {
         source: '/embed/:path*',
         headers: [
           { key: 'X-Frame-Options', value: 'ALLOWALL' },
-          { key: 'Content-Security-Policy', value: "frame-ancestors *;" },
+          { key: 'Content-Security-Policy', value: EMBED_CSP },
         ],
       },
     ];
