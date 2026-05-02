@@ -3060,6 +3060,77 @@ Client kod `error === 'validation_error'` ile auth (401) / authz (403) / server 
 - `validateBody`'yi `@/lib/validations`'la karıştırma — eski elle helper'lar kalır, yeni Zod kullanımı için ayrı dosya.
 - Form library (react-hook-form, @hookform/resolvers) ekleme — bu task **backend-only**. Frontend form'ları ayrı scope.
 - Schema'ları ortak modüle çıkarmaya zorlama — 3+ yerden import edilene kadar route-local kalsın (CLAUDE.md §7 abstraction kaçınma ilkesi).
+- Mevcut çalışan elle validation'ı toplu Zod'a migrate etme — 158 endpoint'in 60+'ı zaten elle validation iyi yazılmış, regression test maliyeti değerinden büyük.
+
+### 28.3.1 Yeni endpoint disiplini (2026-05 — kanonik)
+
+**Yeni route eklenirken `validateBody` ZORUNLU** (yeni kural):
+
+```ts
+import { z } from 'zod';
+import { validateBody } from '@/lib/api/validate';
+
+const Body = z.object({
+  name: z.string().min(1).max(120),
+  amount: z.number().min(0).optional(),
+}).strict();   // ← mass assignment kapatma
+
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => null);
+  const parsed = validateBody<z.infer<typeof Body>>(Body, body);
+  if (!parsed.ok) return parsed.response;
+  const data = parsed.data;  // typed
+  // ... business logic
+}
+```
+
+**`.strict()` neden zorunlu**: Adım 4 audit'te `/api/onboarding/complete` mass assignment riski tespit ettik (saldırgan extra field `role: 'admin'` gönderebilir). `.strict()` schema dışı field'ı 400 ile reddeder.
+
+### 28.3.2 High-risk route — Zod must-have
+
+Yeni billing / oauth / mass action / admin destructive endpoint için Zod **zorunlu** (elle validation yetersiz):
+
+| Route tipi | Sebep |
+|---|---|
+| **Billing** (`/api/billing/*`, `/api/admin/members/*/invoices`) | Saldırgan `{ amount: -100 }` gönderir → kullanıcıya negatif para iadesi tehlikesi. `z.number().positive()` zorunlu. |
+| **OAuth** (`/api/integrations/*/callback`) | State nonce, code regex, redirect URI whitelist — multiple layers. Zod schema = single source of truth. |
+| **Mass action** (`/api/*/bulk`, `/api/admin/restaurants/bulk`) | `ids: string[]` array boyut sınırı + action enum whitelist. Mevcut örnek: `/api/feedback/bulk` (PR #348). |
+| **Admin destructive CRUD** (`/api/admin/users` POST + PUT + DELETE) | Privilege elevation riski, role/scope validation tek source. |
+
+### 28.3.3 Mevcut endpoint'e yeni alan eklenirken (mix-mode)
+
+Mevcut elle validation'a **dokunma** — yeni alan için **lokal Zod check** ekle:
+
+```ts
+// Mevcut elle validation aynen kalır:
+if (!isValidRating(rating)) return ApiErrors.badRequest('INVALID_RATING');
+
+// Yeni alan için lokal Zod (3-satır):
+const newFieldParsed = z.string().max(50).safeParse(body.newField);
+if (!newFieldParsed.success) return ApiErrors.badRequest('INVALID_NEW_FIELD');
+```
+
+Mix-mode mental model karmaşık ama mevcut akış kırılmaz. Tam Zod migration high-risk endpoint için ayrı talep.
+
+### 28.3.4 Net karar matrisi
+
+| Senaryo | Aksiyon |
+|---|---|
+| Yeni endpoint ekleme | `validateBody` + `.strict()` zorunlu |
+| Yeni billing/oauth/mass-action route | Zod must-have, schema'yı PR'da test et |
+| Mevcut endpoint'e yeni alan ekleme | Lokal `z.X.safeParse(body.newField)` (mix-mode) |
+| Mevcut endpoint refactor | **Dokunma**, elle validation çalışıyor |
+| Toplu sweep | **Yapma**, regression test maliyeti değer üstü |
+
+**Yapma:**
+- Yeni endpoint'i elle validation ile yazma — Zod yazmak elle yazmaktan daha hızlı + daha güvenli
+- Billing/oauth route'ta elle validation yetersiz — schema kullan
+- Mevcut çalışan endpoint'e Zod ekleyip frontend error shape'ini değiştirme (breaking change)
+
+**Yap:**
+- Yeni route file açar açmaz `import { z } from 'zod'; import { validateBody } from '@/lib/api/validate';`
+- High-risk route'a 1 unit test ekle: schema valid input → success, invalid input → 400 with path
+- 158 endpoint'in geri kalanı 2-3 yıllık doğal sweep ile Zod'a evolve eder; toplu force etme
 
 ### 28.4 Yeni bulk endpoint pattern (Phase 11.12 + 11.19)
 
@@ -3971,9 +4042,78 @@ Mevcut `purpose: 'any maskable'` combined entry **best practice değil** — Chr
 - Yeni motion (`@keyframes`) eklerken aynı anda `globals.css` reduced-motion blanket'ine selector ekle
 - PWA install ihtiyacı çıkarsa `categories` listesini güncelle (örn. yeni feature için `marketing` kategorisi)
 
----
+### 34.19 2026-05-02 — Auth flow latency optimization (login + Google sign-in)
 
-## 35. SEO Infrastructure (2026-05 PR #263 + #264)
+`/api/auth/login` ve `/api/auth/google` paralelize edildi. İki endpoint de network round-trip'leri sıralı çalıştırıyordu — bağımsız işlemleri `Promise.all` ile birlikte tetikleyerek wait time slowest leg'e indirgendi.
+
+#### `/api/auth/login` — 4-tetik paralelize
+
+**Önce (sequential):**
+```
+verifyRecaptchaToken (50-200ms)
+  ↓
+rateLimit IP    (5-10ms)
+  ↓
+rateLimit email (5-10ms)
+  ↓
+prisma.user.findUnique (10-30ms)
+  ↓
+bcrypt.compare (cost 12 — 100-200ms)
+  ↓
+Total: 170-450ms (network + crypto)
+```
+
+**Sonra (parallel ilk 4 + sequential bcrypt):**
+```
+Promise.all([
+  verifyRecaptchaToken,
+  rateLimit IP,
+  rateLimit email,
+  prisma.user.findUnique,
+])  ← max 50-200ms (slowest leg = reCAPTCHA)
+  ↓
+bcrypt.compare (100-200ms — sequential, passwordHash gerekiyor)
+  ↓
+Total: 150-400ms (~30-50ms kazanç)
+```
+
+bcrypt sequential kalır çünkü `user.passwordHash`'e ihtiyacı var. Cost 12 değişmedi (OWASP 2024 baseline; brute-force defense rate-limit + reCAPTCHA tarafından sağlanıyor).
+
+#### `/api/auth/google` — 2-tetik paralelize
+
+**Önce:** rate limit → reCAPTCHA → Firebase verifyIdToken → findUser
+**Sonra:** `Promise.all([rateLimit, recaptcha])` → verifyIdToken → findUser
+
+Firebase token verify ve findUser sequential kalır çünkü email token'dan çıkıyor.
+
+Kazanç ~50-150ms (slowest leg = reCAPTCHA assessment).
+
+#### Neden bcrypt cost 12 düşürmedik
+
+CLAUDE.md §37.3 deferred listesi #6 (bcrypt cost normalize 12/10/10) cosmetic; performans optimization'ı için cost düşürme **yapma** — OWASP 2024 baseline 12; rate-limit (10/IP/10dk + 5/email/10dk) + reCAPTCHA bot guard zaten yeterli savunma. Cost 10'a düşürmek brute-force resistance %50 azaltır, ~50ms kazanç değer altı.
+
+#### Neden Firebase popup CSP B grubu (COOP) hızlandırmaz
+
+Operatör sordu: "Firebase popup CSP B grubunu uygularsam hızlanır mı?"
+
+**Hayır.** `Cross-Origin-Opener-Policy: same-origin-allow-popups` bir **güvenlik header'ı** (Spectre process isolation). Performans etkisi:
+- ❌ LCP / TBT / Speed Index'i etkilemez
+- ❌ Page load süresini değiştirmez
+- ❌ Auth flow latency değişmez
+- ✅ Spectre saldırılarına karşı browser process isolation (defense-in-depth)
+
+`crossOriginIsolated` mode `SharedArrayBuffer` + high-resolution `performance.now()` açar — Buaze bu API'leri kullanmıyor → indirect kazanç da yok.
+
+CSP B grubu **performans için değil, sadece güvenlik defense-in-depth için** yapılır. Hız için `force-dynamic` → ISR refactor veya GTM/Yandex tracking removal çok daha etkili (CLAUDE.md §34.14).
+
+**Yapma:**
+- Login'de reCAPTCHA + rate-limit'i parallelize ederken bcrypt'i de parallelize etme — `passwordHash` gerek, sequential dependency
+- Auth flow'da `prisma.user.findUnique` `select` optimization'ı (CLAUDE.md §14.1) zaten var — explicit select yetersiz olur, all-fields read tutulur (login akışı tüm User row'unu kullanır)
+- bcrypt cost'u 10'a düşürme — OWASP 2024 baseline 12, brute-force defense gerektirir
+
+**Yap:**
+- Yeni auth-tarzı endpoint (örn. `/api/auth/sso/foo`) eklerken aynı paralelize pattern'i uygula
+- Sequential dependency varsa (örn. token → email → findUser) parallelize etme; data flow gerekirse korunur
 
 `src/app/sitemap.ts` + `robots.ts` + `public/llms.txt` + `public/.well-known/security.txt` + `src/app/[locale]/blog/rss.xml/route.ts` — discovery + structured data infrastructure'ı. Yeni public sayfa eklerken aşağıdaki kuralları takip et.
 
