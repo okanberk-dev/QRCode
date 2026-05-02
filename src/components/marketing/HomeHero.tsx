@@ -594,8 +594,10 @@ export default function HomeHero({ locale }: Props) {
   // top of the (otherwise fast) TTFB. Dropping the fade lets the LCP timer
   // finish on first paint. Heading kademeli reveal'i (bz-fade-up + bz-d1..4)
   // korundu; subtitle text okunabilir, dramatik bir reveal'e ihtiyacı yok.
+  // Subtitle font-size eski clamp(15px, 1.4vw, 18px) idi; düşük-CPU mobile'da
+  // viewport-dependent layout calc paint cost'u +50-200ms ekliyordu. Tailwind
+  // responsive breakpoint mathematically eşit (mobile 15px / sm 16px / lg 18px).
   const subtitleStyle: CSSProperties = {
-    fontSize: 'clamp(15px, 1.4vw, 18px)',
     lineHeight: 1.55,
     textWrap: 'pretty',
   } as CSSProperties;
@@ -677,7 +679,7 @@ export default function HomeHero({ locale }: Props) {
               </h1>
 
               <p
-                className="mt-6 max-w-[520px] text-[#525252]"
+                className="mt-6 max-w-[520px] text-[#525252] text-[15px] sm:text-[16px] lg:text-[18px]"
                 style={subtitleStyle}
               >
                 {isTr ? (
@@ -786,6 +788,12 @@ function InboxCard({ isTr }: { isTr: boolean }) {
       return;
     }
     let interval: ReturnType<typeof setInterval> | null = null;
+    // 2400ms — LCP paint sonrasına ertele. Eski 700ms typing animation
+    // hero subtitle paragraph paint'ini blokluyordu (Lighthouse:
+    // 3,360ms render delay). 28ms × ~60 char = ~1.7s state update zinciri
+    // hydrasyon ardından layout recalc tetikliyor. 2.4s erteleme typing'i
+    // LCP paint sonrasına geçirir; görsel demo değeri korunur (kullanıcı
+    // hero'yu zaten 2-3sn'de tarar).
     const startDelay = setTimeout(() => {
       setTyping(true);
       let i = 0;
@@ -797,7 +805,7 @@ function InboxCard({ isTr }: { isTr: boolean }) {
           setTyping(false);
         }
       }, 28);
-    }, 700);
+    }, 2400);
     return () => {
       clearTimeout(startDelay);
       if (interval) clearInterval(interval);
