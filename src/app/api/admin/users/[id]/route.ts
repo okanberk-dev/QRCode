@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { isStrongPassword } from '@/lib/validations';
 import bcrypt from 'bcryptjs';
 
 // Append-only audit log. Wrapped in try/catch so a missing table (preview
@@ -62,6 +63,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const data: Prisma.AdminUserUncheckedUpdateInput = { role, restaurantId: role === 'manager' ? restaurantId : null };
 
     if (password) {
+      // Match the strength bar applied at create-time. The previous PUT
+      // route accepted any non-empty string so an admin password reset
+      // through this endpoint could downgrade the password to "1".
+      if (!isStrongPassword(password)) {
+        return NextResponse.json(
+          { error: 'Şifre en az 8 karakter olmalı; harf ve rakam içermeli.' },
+          { status: 400 },
+        );
+      }
       data.passwordHash = await bcrypt.hash(password, 12);
     }
 

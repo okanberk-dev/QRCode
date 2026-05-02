@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { isStrongPassword } from '@/lib/validations';
 
 /**
  * Admin password reset finalisation.
@@ -59,9 +61,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (newPassword.length < 8) {
+    // reCAPTCHA — paired with the forgot-password gate. Without it the
+    // attacker that brute-forces the 6-digit code (10/15min limit notwith-
+    // standing) gets to do so without any bot signal.
+    const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'admin_reset_password');
+    if (!captcha.ok) {
+      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
+    }
+
+    // Match the strength bar used everywhere else in the codebase: 8+ chars,
+    // at least one letter, at least one digit. The previous `length < 8`
+    // check accepted "12345678" as a valid admin password.
+    if (!isStrongPassword(newPassword)) {
       return NextResponse.json(
-        { error: 'Şifre en az 8 karakter olmalı.' },
+        { error: 'Şifre en az 8 karakter olmalı; harf ve rakam içermeli.' },
         { status: 400 },
       );
     }

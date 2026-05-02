@@ -3,6 +3,7 @@ import { createHash, randomInt } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { sendPasswordResetEmail } from '@/lib/email';
 import { rateLimit } from '@/lib/rate-limit';
+import { verifyRecaptchaToken } from '@/lib/recaptcha';
 
 /**
  * Admin password recovery — issues a 6-digit numeric code valid for 15
@@ -47,6 +48,15 @@ export async function POST(req: NextRequest) {
         { error: 'Kullanıcı adı veya e-posta zorunludur.' },
         { status: 400 },
       );
+    }
+
+    // reCAPTCHA — admin login already gates with this, the recovery flow
+    // gives an attacker the same code-issuance surface so it needs the same
+    // bot guard. Soft-fails to OK in monitor mode (CLAUDE.md §18) just like
+    // the rest of the public auth flows.
+    const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'admin_forgot_password');
+    if (!captcha.ok) {
+      return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
     // Generic OK response — never leak whether the username exists or not
