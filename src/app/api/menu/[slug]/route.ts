@@ -9,23 +9,35 @@ export async function GET(
   const { slug } = await params;
 
   try {
+    // Explicit select — schema/DB drift immunity (CLAUDE.md §14.1). A column
+    // listed in schema.prisma but missing on the live DB would otherwise
+    // throw P2022 from a default `findUnique` and 500 the public menu
+    // surface for every visitor. Listing only the columns the response
+    // needs also keeps unrelated row data (notification e-mail, owner id,
+    // billing fields, internal notes) off the wire.
     const restaurant = await prisma.restaurant.findUnique({
       where: { slug },
-      include: {
+      select: {
+        name: true,
+        isActive: true,
+        menuLogoUrl: true,
+        primaryColor: true,
+        menuTheme: true,
+        menuAccentColor: true,
         menuCategories: {
           where: { isVisible: true, deletedAt: null },
           orderBy: { sortOrder: 'asc' },
           include: {
             items: {
-              where: { 
+              where: {
                 deletedAt: null,
-                isAvailable: true 
+                isAvailable: true,
               },
-              orderBy: { sortOrder: 'asc' }
-            }
-          }
-        }
-      }
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+      },
     });
 
     if (!restaurant) {
@@ -43,7 +55,7 @@ export async function GET(
       primaryColor: restaurant.primaryColor,
       menuTheme: restaurant.menuTheme,
       menuAccentColor: restaurant.menuAccentColor,
-      categories: restaurant.menuCategories
+      categories: restaurant.menuCategories,
     });
   } catch (error) {
     console.error('[API_MENU_GET]', error);
