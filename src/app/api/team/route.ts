@@ -84,7 +84,31 @@ export async function POST(req: NextRequest) {
     ) {
       return NextResponse.json({ error: 'invalid_locations' }, { status: 400 });
     }
-    locations = body.locations.slice(0, 40);
+    const requested = body.locations.slice(0, 40);
+
+    // IDOR — owner can only assign restaurants they actually own.
+    // Without this check the owner could include any tenant's restaurant
+    // id in `locations`, and `panel-access:getTeamMemberScope` would
+    // happily hand the invitee read+write access to that other tenant
+    // (panel-access reads `member.locations` verbatim). We intersect with
+    // the owner's actual restaurant set; any unknown id is dropped silent.
+    if (requested.length > 0) {
+      const ownedRows = await prisma.restaurant.findMany({
+        where: { id: { in: requested }, userId: actor.id },
+        select: { id: true },
+      });
+      const ownedSet = new Set(ownedRows.map((r) => r.id));
+      const filtered = requested.filter((id) => ownedSet.has(id));
+      if (filtered.length === 0 && requested.length > 0) {
+        return NextResponse.json(
+          { error: 'invalid_locations', hint: 'no requested location is owned by you' },
+          { status: 400 },
+        );
+      }
+      locations = filtered;
+    } else {
+      locations = requested;
+    }
   }
 
   // Faz 4 — invite token üret + mail tetikle. Token unique, expiresAt 7 gün.

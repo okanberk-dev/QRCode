@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import type { PanelActor } from '@/lib/auth';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +77,18 @@ export async function POST(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
+  // Rate limit — without this a compromised cookie can spin up unbounded
+  // API key rows in a tight loop. 10/min per actor is well above any
+  // legitimate UX (operators usually create one or two per session) but
+  // far below the rate needed to exfiltrate scopes by trial-and-error.
+  const rl = await rateLimit(`api-keys:create:${actor.id}`, 10, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'rate_limited' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    );
+  }
+
   let body: { name?: unknown; scopes?: unknown } = {};
   try {
     body = await req.json();
@@ -96,6 +109,27 @@ export async function POST(req: NextRequest) {
       scopes: normalizeScopes(body.scopes),
     },
   });
+
+  // Audit log — issuing an API token is a privileged action that bypasses
+  // the cookie/session boundary. Operator review needs "who issued which
+  // key with which scopes when" traceable. Best-effort.
+  try {
+    await prisma.adminAuditLog.create({
+      data: {
+        actorId: actor.id,
+        actorSource: actor.source,
+        action: 'api-keys.create',
+        targetId: key.id,
+        payload: {
+          name: key.name,
+          scopes: key.scopes,
+          prefix: key.prefix,
+        },
+      },
+    });
+  } catch (err) {
+    console.warn('[audit] api-keys.create write failed (non-fatal)', (err as Error).message);
+  }
 
   return NextResponse.json({
     ok: true,

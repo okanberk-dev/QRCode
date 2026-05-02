@@ -57,7 +57,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     ) {
       return NextResponse.json({ error: 'invalid_locations' }, { status: 400 });
     }
-    updates.locations = body.locations.slice(0, 40);
+    const requested = body.locations.slice(0, 40);
+    // IDOR — same guard as POST /api/team. Owner can only attach
+    // restaurants they own; otherwise this PATCH would let an owner
+    // back-door grant a team member access to another tenant's row.
+    if (requested.length > 0) {
+      const ownedRows = await prisma.restaurant.findMany({
+        where: { id: { in: requested }, userId: access.actor.id },
+        select: { id: true },
+      });
+      const ownedSet = new Set(ownedRows.map((r) => r.id));
+      const filtered = requested.filter((id) => ownedSet.has(id));
+      if (filtered.length === 0) {
+        return NextResponse.json(
+          { error: 'invalid_locations', hint: 'no requested location is owned by you' },
+          { status: 400 },
+        );
+      }
+      updates.locations = filtered;
+    } else {
+      updates.locations = requested;
+    }
   }
 
   const updated = await prisma.teamMember.update({

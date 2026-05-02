@@ -3,6 +3,29 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
+import { isValidEmail, isValidHexColor } from '@/lib/validations';
+import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-domains';
+
+// Field → provider mapping shared with /api/restaurants POST. Keeps the
+// hard-error gate (invalid_url / wrong_protocol / wrong_domain) consistent
+// across create and update so an owner can't smuggle a `javascript:` /
+// off-domain URL into a row that later flows into `window.location.href`
+// on the public review surface.
+const URL_PROVIDER_MAP: Record<string, IntegrationProvider> = {
+  googleReviewUrl: 'google',
+  yemekSepetiUrl: 'yemeksepeti',
+  getirYemekUrl: 'getir',
+  trendyolYemekUrl: 'trendyol_go',
+  tripAdvisorUrl: 'tripadvisor',
+  airbnbUrl: 'airbnb',
+  bookingUrl: 'booking',
+  yandexUrl: 'yandex',
+};
+
+// Hard cap on inline-base64 menu logos — mirrors validations.ts imageUrl
+// limit (300 KB ≈ 220 KB binary). Without it an owner could blow up the
+// row size by pasting a multi-megabyte data URL straight into PUT body.
+const MENU_LOGO_MAX_LEN = 300_000;
 
 // GET /api/restaurants/[id]
 export async function GET(
@@ -216,6 +239,63 @@ export async function PUT(
       });
       if (existing) {
         return ApiErrors.conflict('Bu slug zaten kullanılıyor');
+      }
+    }
+
+    // primaryColor — must be a hex color. The previous PUT accepted any
+    // string, which let an owner stash CSS-injection / XSS-shaped values
+    // that get echoed into the public surface's inline styles.
+    if (primaryColor !== undefined && primaryColor !== null && primaryColor !== '') {
+      if (!isValidHexColor(primaryColor)) {
+        return ApiErrors.badRequest('Geçersiz renk kodu (#RGB veya #RRGGBB)', 'INVALID_PRIMARY_COLOR');
+      }
+    }
+
+    // notificationEmail — when set must be a real e-mail. Without this an
+    // owner could plant arbitrary text into the recipient field that ops
+    // mail routes pull back on retry / error notifications.
+    if (notificationEmail !== undefined && notificationEmail !== null && notificationEmail !== '') {
+      if (typeof notificationEmail !== 'string' || !isValidEmail(notificationEmail) || notificationEmail.length > 256) {
+        return ApiErrors.badRequest('Geçerli bir bildirim e-postası girin', 'INVALID_NOTIFICATION_EMAIL');
+      }
+    }
+
+    // Integration platform URLs — same hard-error gate as the POST path.
+    // Warning severities (homepage / not_review_link) still pass; only
+    // invalid_url / wrong_protocol / wrong_domain are rejected.
+    for (const [field, provider] of Object.entries(URL_PROVIDER_MAP)) {
+      const value = (body as Record<string, unknown>)[field];
+      if (typeof value !== 'string' || !value.trim()) continue;
+      const result = checkProviderUrl(provider, value);
+      if (!result.ok && result.severity === 'error') {
+        return ApiErrors.badRequest(
+          `${field} geçersiz: ${result.reason}`,
+          'INVALID_PLATFORM_URL',
+        );
+      }
+    }
+
+    // menuLogoUrl — base64 data URL or http(s) link. Cap inline size so an
+    // owner can't bloat the row with multi-MB payloads straight into PUT.
+    if (menuLogoUrl !== undefined && menuLogoUrl !== null && typeof menuLogoUrl === 'string' && menuLogoUrl !== '') {
+      if (menuLogoUrl.length > MENU_LOGO_MAX_LEN) {
+        return ApiErrors.badRequest(
+          'Menü logosu çok büyük (max 300 KB)',
+          'MENU_LOGO_TOO_LARGE',
+        );
+      }
+      // Non-data URLs must be http(s) — same protocol check we apply to
+      // the integration URL set, so a `javascript:` href can't slip in
+      // here either.
+      if (!menuLogoUrl.startsWith('data:image/')) {
+        try {
+          const u = new URL(menuLogoUrl);
+          if (!/^https?:$/.test(u.protocol)) {
+            return ApiErrors.badRequest('Menü logosu http(s):// olmalı', 'INVALID_MENU_LOGO');
+          }
+        } catch {
+          return ApiErrors.badRequest('Geçersiz menü logosu adresi', 'INVALID_MENU_LOGO');
+        }
       }
     }
 
