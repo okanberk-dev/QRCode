@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import {
   ChevronRight,
   Utensils,
@@ -140,7 +141,7 @@ export default async function SolutionsOverviewPage({
     <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] lg:pt-[64px] selection:bg-[#C6F24E]/40">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from '@/lib/translations';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import type { Locale } from '@/lib/translations';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
@@ -130,7 +131,7 @@ export default async function FaqPage({
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(faqSchema) }}
       />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">

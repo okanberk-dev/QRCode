@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 // `next/dynamic` aliased — page already exports `dynamic = 'force-dynamic'`
 // (Next.js route segment config); plain import would shadow it.
 import nextDynamic from 'next/dynamic';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
@@ -359,7 +360,7 @@ export default async function LandingPage({
     <div className="min-h-[100dvh] overflow-x-hidden bg-[#FFFFFF] text-[#0A0A0A] selection:bg-[#C6F24E]/40 selection:text-[#0A0A0A] lg:pt-[64px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
 
       <MarketingNavbar locale={locale} t={t} />

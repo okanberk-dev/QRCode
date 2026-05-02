@@ -249,16 +249,41 @@ have every callsite import it.
 
 ---
 
+## Render-side XSS sweep — closed (2026-05 follow-up)
+
+Originally listed as "future pass" scope; closed in a follow-up commit
+after the original PR #345-#349 series.
+
+54 `dangerouslySetInnerHTML` usages walked across 40 files. Three
+classes of sink found:
+
+1. **JSON-LD inline `<script>` blocks (36 files, ~40 instances)** —
+   `JSON.stringify(jsonLd)` does NOT escape `</script>` byte sequence.
+   The DOM parser reads raw bytes, so an admin-authored blog title /
+   case-study excerpt / customer-stories quote that contained a literal
+   `</script>` would break out of the JSON-LD block and execute the
+   following HTML. Fix: new `src/lib/seo/json-ld.ts:jsonLdString()`
+   helper that escapes `<` → `<`, `-->` → `-->`, U+2028,
+   U+2029. All 36 caller files migrated and import the helper. New
+   JSON-LD blocks must use it (CLAUDE.md §37.6 discipline).
+2. **`help/[slug]/page.tsx:206` `article.body`** — DB-driven body
+   (admin-authored `HelpArticle` row) was rendered without
+   sanitization. Compromised admin → stored XSS to every customer on
+   the help page. Fix: pass through `sanitizeBlogContent` (same
+   tag-allowlist + href/src-protocol filter the blog editor uses).
+3. **Trusted / static contexts (12+ instances)** — `BlogPostEditor`
+   live-preview is `sanitizeBlogContent`-fed; `blog/[slug]` server-side
+   already wraps `post.content` in `sanitizeBlogContent`; QR card +
+   menu preview render server-generated SVG (trusted); the layout
+   `<noscript>` Yandex tag uses an env-controlled hardcoded ID. No
+   action.
+
 ## Out of scope (future passes)
 
 Areas the audit deliberately did not cover:
 
 - **L. Supply chain / `npm audit`** — local `node_modules` not present in
   the audit environment.
-- **D. Render-side XSS sweep** — admin + owner React components were not
-  individually walked for `dangerouslySetInnerHTML` usage. JSX default
-  escaping covers the common case; a focused sweep is a candidate for a
-  follow-up pass.
 - **K. Comprehensive PII inventory** — Phase 1 fixed an obvious leak but
   the remaining 305 files were not grep'ed for `console.error(..., user.email)`
   patterns.

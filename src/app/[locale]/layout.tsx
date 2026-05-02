@@ -1,4 +1,5 @@
 import '../globals.css';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import { ContactFloat } from '@/components/marketing/ContactFloat';
 import type { Metadata } from 'next';
 import { type Locale } from '@/lib/translations';
@@ -208,7 +209,7 @@ export default async function LocaleLayout({
       <script
         type="application/ld+json"
         // JSON-LD is safe to inject — it's a static, server-generated object.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(structuredData) }}
       />
       {children}
       {/* ContactFloat is only shown to visitors (unauthenticated users). */}

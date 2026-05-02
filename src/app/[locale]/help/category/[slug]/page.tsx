@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import { notFound } from 'next/navigation';
 import { ChevronRight, ArrowRight } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
@@ -100,12 +101,12 @@ export default async function HelpCategoryPage({ params }: PageParams) {
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbJsonLd) }}
       />
       {itemListJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdString(itemListJsonLd) }}
         />
       )}
       <MarketingNavbar locale={locale} t={t} />

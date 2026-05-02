@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import { ArrowRight, ChevronRight, Scissors, Calendar, Sparkles, BarChart3 } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
@@ -118,7 +119,7 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
     <div className="min-h-screen bg-white lg:pt-[64px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">

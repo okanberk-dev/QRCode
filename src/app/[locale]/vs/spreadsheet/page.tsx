@@ -1,4 +1,5 @@
 import { Check, X, Minus } from 'lucide-react';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import type { Metadata } from 'next';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
@@ -92,8 +93,8 @@ export default async function VsSpreadsheetPage({
 
   return (
     <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageSchema) }} />
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(webPageSchema) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
     <ComparisonLayout
       locale={locale}
       t={t}

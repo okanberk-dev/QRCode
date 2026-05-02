@@ -1,4 +1,5 @@
 import { ExternalLink } from 'lucide-react';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion';
@@ -114,7 +115,7 @@ export default async function GoogleCompliancePage({
       <script
         type="application/ld+json"
         // FAQPage schema — feeds Google Rich Results + AI search engines.
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(faqJsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">

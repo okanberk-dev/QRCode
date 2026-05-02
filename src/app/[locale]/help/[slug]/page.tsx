@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import { notFound } from 'next/navigation';
 import { ChevronRight, ArrowRight } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
@@ -9,6 +10,7 @@ import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { CATEGORY_BY_SLUG } from '@/lib/help-categories';
 import { getStaticHelpArticle, getStaticHelpArticles, type StaticHelpArticle } from '@/lib/help-articles';
+import { sanitizeBlogContent } from '@/lib/blog-content';
 
 export const dynamic = 'force-dynamic';
 
@@ -133,11 +135,11 @@ export default async function HelpArticlePage({ params }: PageParams) {
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(articleJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbJsonLd) }}
       />
       <MarketingNavbar locale={locale} t={t} />
 
@@ -203,7 +205,13 @@ export default async function HelpArticlePage({ params }: PageParams) {
             prose-li:text-[#0A0A0A] prose-li:leading-[1.7]
             prose-blockquote:border-l-2 prose-blockquote:border-[#C6F24E] prose-blockquote:pl-5 prose-blockquote:text-[#525252] prose-blockquote:not-italic
             break-words"
-          dangerouslySetInnerHTML={{ __html: article.body }}
+          // Defence-in-depth — `article.body` may come from `HelpArticle`
+          // (admin-authored row in DB) or from the in-repo static array.
+          // The static array is developer-controlled, but the DB path is
+          // an admin XSS sink reaching every customer that lands on the
+          // help page. Pass through the same tag/href/protocol whitelist
+          // we use for blog content.
+          dangerouslySetInnerHTML={{ __html: sanitizeBlogContent(article.body) }}
         />
 
         {/* Contact CTA (footer-of-article) */}
