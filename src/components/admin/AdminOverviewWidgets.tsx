@@ -18,6 +18,12 @@ export interface AttentionRow {
   k: string;
   n: number;
   kind: 'danger' | 'warn' | 'info';
+  /**
+   * Optional deeplink target. When set the row renders as a `<Link>` and
+   * navigates to the corresponding admin list with the attention filter
+   * preset (CLAUDE.md §11.36). Omit for purely informational rows.
+   */
+  href?: string;
 }
 
 interface Props {
@@ -214,18 +220,40 @@ export default function AdminOverviewWidgets({ locale = 'tr', members: membersPr
             ))}
           </div>
         ) : (
-          attention.map((row, i) => (
-            <div
-              key={i}
-              className="flex justify-between items-center px-5 py-3.5 last:border-b-0"
-              style={{ borderBottom: '1px solid #F5F5F5' }}
-            >
-              <span style={{ fontSize: 13, color: '#1A1A1A' }}>{row.k}</span>
+          attention.map((row, i) => {
+            const badge = (
               <Badge kind={row.kind === 'danger' ? 'danger' : row.kind === 'warn' ? 'warn' : 'info'}>
                 {row.n}
               </Badge>
-            </div>
-          ))
+            );
+            const label = (
+              <span style={{ fontSize: 13, color: '#1A1A1A' }}>{row.k}</span>
+            );
+            if (row.href) {
+              return (
+                <Link
+                  key={i}
+                  href={row.href}
+                  className="flex justify-between items-center px-5 py-3.5 last:border-b-0 transition-colors hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-inset"
+                  style={{ borderBottom: '1px solid #F5F5F5' }}
+                  aria-label={`${row.k} (${row.n})`}
+                >
+                  {label}
+                  {badge}
+                </Link>
+              );
+            }
+            return (
+              <div
+                key={i}
+                className="flex justify-between items-center px-5 py-3.5 last:border-b-0"
+                style={{ borderBottom: '1px solid #F5F5F5' }}
+              >
+                {label}
+                {badge}
+              </div>
+            );
+          })
         )}
       </div>
     </div>

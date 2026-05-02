@@ -62,6 +62,10 @@ export default function RestaurantsPage() {
     search: '',
     status: 'active' as 'active' | 'passive' | 'all',
     plan: 'all' as 'all' | 'pro' | 'growth' | 'starter' | 'trial',
+    // attention: deeplink from /admin/dashboard "Needs attention" widget
+    // (CLAUDE.md §11.36). Backend overrides status when set; UI surfaces an
+    // info banner with "Filtreyi temizle" (clear) action.
+    attention: '' as '' | 'kvkk_missing' | 'quota_full' | 'unverified_platform',
   });
   const searchTerm = filters.values.search;
   const setSearchTerm = (v: string) => filters.set('search', v);
@@ -69,6 +73,8 @@ export default function RestaurantsPage() {
   const setStatusFilter = (v: 'active' | 'passive' | 'all') => filters.set('status', v);
   const planFilter = filters.values.plan;
   const setPlanFilter = (v: 'all' | 'pro' | 'growth' | 'starter' | 'trial') => filters.set('plan', v);
+  const attention = filters.values.attention;
+  const clearAttention = () => filters.set('attention', '');
   // PR6 — Inline failure surface (Linear/Stripe pattern, CLAUDE.md §11).
   // fetch fail veya !res.ok'da set; success'te null. AlertBanner onDismiss
   // ile kullanıcı manuel kapatabilir.
@@ -102,7 +108,11 @@ export default function RestaurantsPage() {
     try {
       const currentFilter = filter || statusFilter;
       const currentPlan = planArg ?? planFilter;
-      const res = await fetch(`/api/restaurants?status=${currentFilter}&plan=${currentPlan}`);
+      const qp = new URLSearchParams();
+      qp.set('status', currentFilter);
+      qp.set('plan', currentPlan);
+      if (attention) qp.set('attention', attention);
+      const res = await fetch(`/api/restaurants?${qp.toString()}`);
       if (res.ok) {
         const result = await res.json();
         // Handle both older array response and newer { data, meta } shape.
@@ -138,7 +148,7 @@ export default function RestaurantsPage() {
 
   useEffect(() => {
     fetchRestaurants();
-  }, [statusFilter, planFilter]);
+  }, [statusFilter, planFilter, attention]);
 
   useEffect(() => {
     fetchOwners();
@@ -148,7 +158,7 @@ export default function RestaurantsPage() {
   // selectedIds'de kalır ve bulk action onlara da uygulanır.
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [statusFilter, planFilter, searchTerm]);
+  }, [statusFilter, planFilter, searchTerm, attention]);
 
   // Auto-generate slug from name
   const handleNameChange = (name: string) => {
@@ -331,6 +341,13 @@ export default function RestaurantsPage() {
       {fetchError && (
         <AlertBanner kind="danger" onDismiss={() => setFetchError(null)}>
           {fetchError}
+        </AlertBanner>
+      )}
+      {attention && (
+        <AlertBanner kind="info" onDismiss={clearAttention}>
+          {attention === 'kvkk_missing' && 'Yalnızca KVKK metni eksik olan işletmeler gösteriliyor.'}
+          {attention === 'unverified_platform' && 'Yalnızca Google Place ID doğrulanmamış işletmeler gösteriliyor.'}
+          {attention === 'quota_full' && 'Yalnızca trial kotasının %90+ doldurmuş işletmeler gösteriliyor.'}
         </AlertBanner>
       )}
       <PageHeader

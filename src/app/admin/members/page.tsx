@@ -88,10 +88,14 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true);
 
   // filters — PR4 URL synced (Linear/Stripe pattern, useUrlFilter §28)
+  // attention: deeplink from /admin/dashboard "Needs attention" widget
+  // (CLAUDE.md §11.36). When set, backend forces matching subset and the
+  // ATTENTION_LABELS notice surfaces an active filter pill.
   const filters = useUrlFilter({
     search: '',
     plan: '',
     status: 'active' as 'active' | 'passive' | 'all',
+    attention: '' as '' | 'trial_expiring' | 'trial_expired' | 'stale',
     page: 1,
   });
   const debouncedSearch = filters.values.search;
@@ -101,6 +105,8 @@ export default function MembersPage() {
   const setPlanFilter = (v: string) => filters.set('plan', v);
   const statusFilter = filters.values.status;
   const setStatusFilter = (v: 'active' | 'passive' | 'all') => filters.set('status', v);
+  const attention = filters.values.attention;
+  const clearAttention = () => filters.set('attention', '');
   const page = filters.values.page;
   const setPage = (v: number) => filters.set('page', v);
 
@@ -136,11 +142,12 @@ export default function MembersPage() {
     const qp = new URLSearchParams();
     if (debouncedSearch) qp.set('search', debouncedSearch);
     if (planFilter) qp.set('plan', planFilter);
+    if (attention) qp.set('attention', attention);
     qp.set('status', statusFilter);
     qp.set('page', String(page));
     qp.set('perPage', '25');
     return qp.toString();
-  }, [debouncedSearch, planFilter, statusFilter, page]);
+  }, [debouncedSearch, planFilter, statusFilter, attention, page]);
 
   const [fetchError, setFetchError] = useState<string | null>(null);
   const router = useRouter();
@@ -168,11 +175,12 @@ export default function MembersPage() {
     fetchMembers();
   }, [fetchMembers]);
 
-  const filtersActive = debouncedSearch || planFilter || statusFilter !== 'active';
+  const filtersActive = debouncedSearch || planFilter || statusFilter !== 'active' || attention;
   const clearFilters = () => {
     setSearchInput('');
     setPlanFilter('');
     setStatusFilter('active');
+    clearAttention();
     setPage(1);
   };
 
@@ -282,6 +290,14 @@ export default function MembersPage() {
       {success && (
         <AlertBanner kind="success" onDismiss={() => setSuccess('')}>
           {success}
+        </AlertBanner>
+      )}
+
+      {attention && (
+        <AlertBanner kind="info" onDismiss={clearAttention}>
+          {attention === 'trial_expiring' && 'Yalnızca 7 gün içinde denemesi bitecek hesaplar gösteriliyor.'}
+          {attention === 'trial_expired' && 'Yalnızca deneme süresi dolmuş hesaplar gösteriliyor.'}
+          {attention === 'stale' && '14 günden uzun süredir giriş kaydı olmayan hesaplar gösteriliyor.'}
         </AlertBanner>
       )}
 
