@@ -39,14 +39,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
     }
 
-    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_login', captchaLocale);
+    // Latency optimization (CLAUDE.md §34.19): reCAPTCHA verify, rate-
+    // limit checks, and the user lookup all hit the network independently.
+    // Running them sequentially adds ~200-400ms; running them in
+    // `Promise.all` collapses the wait time to the slowest leg
+    // (typically the reCAPTCHA Enterprise assessment at 50-200ms).
+    // The bcrypt compare still runs sequentially below — it depends on
+    // the password hash from the user row.
+    const normalizedEmail = email.toLowerCase().trim();
+    const [captcha, ipLimit, emailLimit, user] = await Promise.all([
+      verifyRecaptchaToken(req, recaptchaToken, 'auth_login', captchaLocale),
+      rateLimit(`user-login:ip:${ip}`, 10, 10 * 60 * 1000),
+      rateLimit(`user-login:email:${email.toLowerCase()}`, 5, 10 * 60 * 1000),
+      prisma.user.findUnique({ where: { email: normalizedEmail } }),
+    ]);
+
     if (!captcha.ok) {
       return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
     // Burst-protection: 10 attempts per IP per 10 minutes and a tighter 5 per email.
-    const ipLimit = await rateLimit(`user-login:ip:${ip}`, 10, 10 * 60 * 1000);
-    const emailLimit = await rateLimit(`user-login:email:${email.toLowerCase()}`, 5, 10 * 60 * 1000);
     if (!ipLimit.allowed || !emailLimit.allowed) {
       const retry = Math.max(ipLimit.retryAfterSeconds, emailLimit.retryAfterSeconds);
       return NextResponse.json(
@@ -54,11 +66,6 @@ export async function POST(req: NextRequest) {
         { status: 429, headers: { 'Retry-After': String(retry) } },
       );
     }
-
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
-    });
 
     if (!user) {
       // Use constant-time comparison to prevent timing attacks

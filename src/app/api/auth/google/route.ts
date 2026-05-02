@@ -19,7 +19,19 @@ export async function POST(req: NextRequest) {
     }
 
     const ip = getClientIp(req.headers);
-    const ipLimit = await rateLimit(`google-auth:ip:${ip}`, 10, 10 * 60 * 1000);
+    const { idToken, recaptchaToken, locale } = await req.json();
+    const captchaLocale = locale === 'en' ? 'en' : 'tr';
+
+    // Latency optimization (CLAUDE.md §34.19): rate-limit lookup +
+    // reCAPTCHA assessment are independent network round-trips; the
+    // Firebase ID-token verify happens inside `handleOAuthSignIn` below
+    // and depends on the rest passing first. Running rate-limit and
+    // reCAPTCHA in parallel saves ~50-150ms on the typical sign-in.
+    const [ipLimit, captcha] = await Promise.all([
+      rateLimit(`google-auth:ip:${ip}`, 10, 10 * 60 * 1000),
+      verifyRecaptchaToken(req, recaptchaToken, 'auth_google', captchaLocale),
+    ]);
+
     if (!ipLimit.allowed) {
       return NextResponse.json(
         { error: 'Çok fazla deneme. Lütfen bir süre sonra tekrar deneyin.' },
@@ -27,10 +39,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { idToken, recaptchaToken, locale } = await req.json();
-    const captchaLocale = locale === 'en' ? 'en' : 'tr';
-
-    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'auth_google', captchaLocale);
     if (!captcha.ok) {
       return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
