@@ -5,6 +5,7 @@ import './globals.css';
 import { getSiteSettings } from '@/lib/site-settings';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 
 export const dynamic = 'force-dynamic';
 const GA_MEASUREMENT_ID = 'G-Y1H5FLYZ9R';
@@ -121,7 +122,13 @@ export default function RootLayout({
           }}
         />
         <QueryProvider>{children}</QueryProvider>
+        {/* Vercel telemetry — Speed Insights (Web Vitals: FCP/LCP/CLS/INP)
+            ve Analytics (page views) birlikte mount'lı. RES (Real Experience
+            Score) hesaplaması her iki sample stream'i de tüketir; tek başına
+            Speed Insights ile RES "0" kalabiliyordu (insufficient context).
+            CLAUDE.md §30.5 + §31. */}
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
