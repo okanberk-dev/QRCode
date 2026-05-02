@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import type { PanelActor } from '@/lib/auth';
+import { GOOGLE_BUSINESS_SCOPE } from '@/lib/google-business';
 
 export const dynamic = 'force-dynamic';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
-const SCOPES = ['https://www.googleapis.com/auth/business.manage'];
+const SCOPES = [GOOGLE_BUSINESS_SCOPE];
 
 // 12 minutes — comfortably covers a slow user authenticating with Google
 // (consent screen can take a minute), but short enough that a leaked
@@ -20,6 +21,14 @@ function ownerRef(actor: PanelActor) {
 
 function redirectUri(req: NextRequest) {
   return process.env.GOOGLE_REDIRECT_URI || `${req.nextUrl.origin}/api/integrations/google/callback`;
+}
+
+function safeReturnTo(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  if (!value.startsWith('/')) return null;
+  if (value.startsWith('//')) return null;
+  if (value.length > 300) return null;
+  return value;
 }
 
 export async function POST(req: NextRequest) {
@@ -46,9 +55,11 @@ export async function POST(req: NextRequest) {
   // `state` query string we hand to Google AND an httpOnly cookie
   // on the user's browser. The callback handler matches the two
   // before doing the token exchange.
+  const body = await req.json().catch(() => null);
+  const returnTo = safeReturnTo((body as { returnTo?: unknown } | null)?.returnTo);
   const nonce = randomBytes(32).toString('base64url');
   const owner = ownerRef(actor);
-  const state = Buffer.from(JSON.stringify({ owner, nonce, ts: Date.now() })).toString('base64url');
+  const state = Buffer.from(JSON.stringify({ owner, nonce, ts: Date.now(), returnTo })).toString('base64url');
 
   const url = new URL(GOOGLE_AUTH_URL);
   url.searchParams.set('client_id', clientId);

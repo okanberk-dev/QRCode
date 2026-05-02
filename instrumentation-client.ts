@@ -22,6 +22,44 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     // CLAUDE.md §34.16.
     release: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
     integrations: [Sentry.replayIntegration()],
+    beforeSend(event, hint) {
+      const original = hint.originalException;
+      const originalMessage =
+        original instanceof Error
+          ? original.message
+          : typeof original === 'string'
+            ? original
+            : '';
+      const exceptionText = (event.exception?.values ?? [])
+        .flatMap((value) => [
+          value.type,
+          value.value,
+          ...(value.stacktrace?.frames ?? []).map((frame) => frame.filename),
+        ])
+        .filter(Boolean)
+        .join('\n');
+      const fingerprint = [
+        event.message,
+        originalMessage,
+        exceptionText,
+      ].filter(Boolean).join('\n');
+
+      // Browser extensions can inject scripts into admin pages and throw
+      // errors from `app:///scripts/inpage.js` (MetaMask is the noisy one
+      // observed in Sentry on 2026-05-02). Drop those without hiding real
+      // Buaze bundle errors.
+      if (
+        /MetaMask extension not found/i.test(fingerprint) ||
+        /Failed to connect to MetaMask/i.test(fingerprint) ||
+        /app:\/\/\/scripts\/inpage\.js/i.test(fingerprint) ||
+        /chrome-extension:\/\//i.test(fingerprint) ||
+        /moz-extension:\/\//i.test(fingerprint)
+      ) {
+        return null;
+      }
+
+      return event;
+    },
   });
 }
 

@@ -34,10 +34,15 @@ import {
 } from "@/lib/integration-domains";
 import { SettingsCard } from "../SettingsCard";
 import { UnsavedChangesBar } from "../UnsavedChangesBar";
+import { GoogleBusinessIntegrationPanel } from "./GoogleBusinessIntegrationPanel";
 
 interface RestaurantData {
   id: string;
+  name?: string;
   category: string;
+  address?: string | null;
+  city?: string | null;
+  googlePlaceId?: string | null;
   googleReviewUrl: string | null;
   googleEnabled: boolean;
   yemekSepetiUrl: string | null;
@@ -588,6 +593,29 @@ export function BusinessIntegrationSettings({
   const hidden = visibleDefs.length === 0;
   const isTr = locale === "tr";
 
+  const handleGoogleLinkSelected = (next: {
+    googlePlaceId: string | null;
+    googleReviewUrl: string | null;
+    googleEnabled: boolean;
+  }) => {
+    setForm((prev) => ({
+      ...prev,
+      googleReviewUrl: next.googleReviewUrl ?? "",
+      googleEnabled: next.googleEnabled,
+    }));
+    setInitial((prev) => ({
+      ...prev,
+      googleReviewUrl: next.googleReviewUrl ?? "",
+      googleEnabled: next.googleEnabled,
+    }));
+    setSuccess(
+      locale === "tr"
+        ? "Google işletmesi bağlandı ve yorum linki güncellendi."
+        : "Google business connected and review link updated.",
+    );
+    onSaved?.({ ...restaurant, ...next });
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -639,6 +667,13 @@ export function BusinessIntegrationSettings({
           locale={locale}
         />
       </SettingsCard>
+
+      <GoogleBusinessIntegrationPanel
+        restaurant={restaurant}
+        locale={locale}
+        dirty={dirty}
+        onGoogleLinkSelected={handleGoogleLinkSelected}
+      />
 
       {!hidden && (
         <SettingsCard

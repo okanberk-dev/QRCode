@@ -78,7 +78,7 @@ aesthetic clinics, schools, boutique hotels, retail stores, and food delivery op
 - https://buaze.com/tr/ticari-ileti, https://buaze.com/tr/kullanim-sozlesmesi
 - https://buaze.com/tr/mesafeli-hizmet-sozlesmesi, https://buaze.com/tr/iade-iptal-politikasi
 - https://buaze.com/tr/icerik-moderasyon, https://buaze.com/tr/kabul-edilebilir-kullanim
-- https://buaze.com/tr/bilgi-guvenligi, https://buaze.com/tr/veri-ihlali-mudahale
+- https://buaze.com/tr/veri-ihlali-mudahale
 - https://buaze.com/tr/veri-isleyici-sozlesmesi
 
 ## Not indexable

@@ -130,6 +130,47 @@ Renkler & label haritası şu dosyalarda tekrarlanıyor (ortak modüle çıkarma
 
 Yeni bir platform eklemek gerekirse: bu 3 haritaya + `prisma/schema.prisma`'daki ilgili enum/string alanına + QR public akışına (`/r/[slug]`) ekle.
 
+### 5.1 Google Maps / Business Profile entegrasyonu (2026-05)
+
+Owner panel `Platform Bağlantıları` sekmesinde iki Google katmanı var:
+
+1. **Places API (New)** — işletme arama + `placeId` seçimi. Env: `GOOGLE_MAPS_API_KEY` (server-only, `NEXT_PUBLIC_` yok). Key Google Cloud'da sadece **Places API (New)** ile restrict edilmeli. Seçim sonrası `Restaurant.googlePlaceId` ve `Restaurant.googleReviewUrl = https://search.google.com/local/writereview?placeid=...` kaydedilir.
+2. **Google Business Profile OAuth** — gerçek Google yorumlarını çekme ve yorumlara cevap yazma. Env: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`; scope `https://www.googleapis.com/auth/business.manage`. Token `GoogleIntegration` modelinde user/workspace seviyesinde saklanır; restoran→Google location eşleşmesi schema değiştirmemek için `GoogleIntegration.locationsJson.restaurantLocations[restaurantId]` altında tutulur.
+
+Admin gate:
+- `Restaurant.googleReviewManagementEnabled` (`google_review_management_enabled`, default `false`) işletme bazlı ana şalterdir.
+- Places araması / review link üretimi bu flag'den bağımsız kalır.
+- Google Business Profile konum senkronu, yorum listeleme, **AI ile cevap ver** taslağı ve Google'a public reply gönderme bu flag kapalıyken API seviyesinde `GOOGLE_REVIEW_MANAGEMENT_DISABLED` döner.
+- Admin detay ekranı `/admin/restaurants/[id]` içindeki "Google yorum yönetimi" toggle'ı bu alanı yönetir.
+
+Endpoint'ler:
+- `POST /api/restaurants/[id]/google/places/search` — Places Text Search (Zod + canWriteRestaurant + rate limit)
+- `POST /api/restaurants/[id]/google/places/select` — `placeId` → review URL kaydı
+- `GET /api/restaurants/[id]/google/business/status` — config/connection/selected location
+- `GET /api/restaurants/[id]/google/business/locations` — Business Profile account/location sync
+- `POST /api/restaurants/[id]/google/business/locations/select` — restoranı GBP location'a eşler
+- `GET /api/restaurants/[id]/google/business/reviews` — seçili verified location yorumlarını listeler
+- `POST /api/restaurants/[id]/google/business/reviews/reply` — Google review reply update
+- `POST /api/restaurants/[id]/google/business/reviews/draft` — mevcut Pulse AI draft helper'ıyla cevap taslağı
+
+Notlar:
+- Places API sadece arama / link üretimi içindir; Google yorumlarını çekmek veya cevaplamak için yetmez.
+- Reviews API yalnızca ilgili Google hesabının owner/manager olduğu **verified** Business Profile location'larda çalışır.
+- Google review reply public alana gider; otomatik gönderme yok, owner metni görüp manuel gönderir.
+- Owner UI'daki **AI ile cevap ver** butonu yalnızca taslak üretir; public gönderim ayrı **Google'a gönder** aksiyonuyla yapılır.
+
+### 5.2 2026-05-03 oturum notları
+
+Bu oturumda yapılan kalıcı kararlar:
+- Lokal `/Users/okanberkmanavoglu/Downloads/qrcode` checkout'u GitHub `riosenbeq/qrcode` ile commit `58ec5a6fea06bdcff150fca78dbb7752c4659f29` seviyesinde karşılaştırıldı; kod eşleşiyor.
+- Sentry `SyntaxError Invalid character '\ufffd'` hatası `/tr/bilgi-guvenligi` için geldiği için public **Bilgi Güvenliği** sayfası tamamen kaldırıldı: route, legal template, footer linkleri, SEO override ve `llms.txt` referansı silindi.
+- Google Maps / Business Profile MVP eklendi: Places API ile işletme arama + `placeId` seçimi, OAuth connect/callback, Business Profile konum seçimi, Google yorumlarını listeleme, AI cevap taslağı ve manuel Google reply gönderimi.
+- Vercel project `qr-code` linklendi; Production + Preview env'lerinde `GOOGLE_MAPS_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` görüldü.
+- Google Cloud tarafında Places API (New), My Business Account Management API ve My Business Business Information API etkinleştirildi; OAuth consent External/Testing, test users `berkokanm@gmail.com` + `hello@buaze.com`, scope `https://www.googleapis.com/auth/business.manage`.
+- Güvenlik notu: Google API key server-only tutulur. OAuth client secret kullanıcı tarafından ekranda paylaşıldığı için ilk uygun zamanda rotate edilmesi önerilir.
+- Sentry haftalık mailindeki `/admin/restaurants` hatası MetaMask tarayıcı eklentisi kaynaklı `app:///scripts/inpage.js` noise olarak sınıflandı; `instrumentation-client.ts` içinde MetaMask / browser-extension kaynaklı client event'leri `beforeSend` ile düşürülüyor.
+- Bildirim tercihleri UI'ı Pulse toggle bileşenine taşındı; owner ve admin notification sayfalarında mobil uyumlu kart + switch düzeni kullanılır. `/api/notifications` PUT body artık Zod `.strict()` ile doğrulanır.
+
 ### Platform dağılımı nerede gösteriliyor?
 - **Admin paneli** (`src/app/admin/dashboard/page.tsx`) → `<PlatformDistribution>` (detaylı bar chart + pills). Eskiden üstte ayrı bir "Platform Mini Cards" grid'i vardı — duplikasyon olduğu için kaldırıldı (2026-04).
 - **Owner paneli** (`src/components/dashboard/RestaurantAnalyticsPanel.tsx`) → `<PlatformDistribution>`. Aynı bileşen. Mobile'da da tam görünür (bar chart flex-wrap + `w-24 sm:w-28` label).

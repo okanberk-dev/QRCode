@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, Loader2, Mail } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
-import { AlertBanner } from '@/components/ui';
+import { AlertBanner, Toggle } from '@/components/ui';
 
 interface Prefs {
   lowRatingEmail: boolean;
@@ -154,7 +154,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
         </AlertBanner>
       )}
 
-      <section className="bz-card divide-y divide-[#EDEDED] overflow-hidden p-0">
+      <section className="space-y-3">
         {rows.map((row) => {
           const Icon = row.icon;
           const on = Boolean(prefs[row.key]);
@@ -162,64 +162,48 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
           return (
             <div
               key={row.key}
-              className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 p-5 transition-colors hover:bg-[#FAFAFA]/40"
+              className="rounded-[24px] border border-[#EDEDED] bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#D4D4D4] sm:p-5"
             >
-              {/* Sol kolon: ikon + başlık + açıklama. Toggle her zaman row
-                  ortasında dikey hizalı (grid-cols-[1fr_auto] + items-center). */}
-              <div className="flex items-start gap-3 min-w-0">
-                <span
-                  className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#0A0A0A]"
-                  style={{ background: row.accent ? `${row.accent}33` : '#F5F5F5' }}
-                >
-                  <Icon size={14} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[14px] font-semibold text-[#0A0A0A]">
-                    {row.label[isTr ? 'tr' : 'en']}
-                  </p>
-                  <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
-                    {row.desc[isTr ? 'tr' : 'en']}
-                  </p>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span
+                    className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[#0A0A0A] ring-1 ring-black/5"
+                    style={{ background: row.accent ? `${row.accent}33` : '#F5F5F5' }}
+                  >
+                    <Icon size={16} />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-[14px] font-semibold text-[#0A0A0A]">
+                        {row.label[isTr ? 'tr' : 'en']}
+                      </p>
+                      <span
+                        role="status"
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                          on ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#F5F5F5] text-[#737373]'
+                        }`}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`inline-block h-1.5 w-1.5 rounded-full ${on ? 'bg-[#A8D62E]' : 'bg-[#A3A3A3]'}`}
+                        />
+                        {on ? (isTr ? 'Aktif' : 'Active') : (isTr ? 'Pasif' : 'Off')}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
+                      {row.desc[isTr ? 'tr' : 'en']}
+                    </p>
+                  </div>
                 </div>
-              </div>
-
-              {/* Sağ kolon: toggle button — dikey ortalı, sabit pozisyon. */}
-              <button
-                type="button"
-                onClick={() => toggle(row.key)}
-                disabled={isPending}
-                role="switch"
-                aria-checked={on}
-                aria-label={row.label[isTr ? 'tr' : 'en']}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-wait ${
-                  on ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'
-                }`}
-              >
-                <span
-                  aria-hidden
-                  className={`absolute top-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform ${
-                    on ? 'translate-x-5' : 'translate-x-0.5'
-                  }`}
-                >
-                  {isPending && <Loader2 size={10} className="animate-spin text-[#737373]" />}
-                </span>
-              </button>
-
-              {/* AKTİF/PASİF badge — alt satırda, ikon hizasıyla aynı offset
-                  (icon w-9 + gap-3 = 48px). col-span-2 ile her iki kolonu
-                  kapsar; hizalama row title satırıyla görsel uyumlu. */}
-              <span
-                role="status"
-                className={`col-span-2 inline-flex items-center gap-1.5 self-start text-[10px] font-semibold tracking-[0.18em] uppercase ml-12 ${
-                  on ? 'text-[#0A0A0A]' : 'text-[#737373]'
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`inline-block h-1.5 w-1.5 rounded-full ${on ? 'bg-[#A8D62E]' : 'bg-[#A3A3A3]'}`}
+                <Toggle
+                  checked={on}
+                  onChange={() => toggle(row.key)}
+                  loading={isPending}
+                  disabled={Boolean(pendingKey && !isPending)}
+                  ariaLabel={row.label[isTr ? 'tr' : 'en']}
+                  className="self-start sm:self-center"
                 />
-                {on ? (isTr ? 'Aktif' : 'Active') : (isTr ? 'Pasif' : 'Off')}
-              </span>
+              </div>
             </div>
           );
         })}

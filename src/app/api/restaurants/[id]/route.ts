@@ -125,6 +125,7 @@ export async function PUT(
       phone,
       googlePlaceId,
       googleReviewUrl,
+      googleReviewManagementEnabled,
       notificationEmail,
       primaryColor,
       isActive,
@@ -258,6 +259,13 @@ export async function PUT(
       if (typeof notificationEmail !== 'string' || !isValidEmail(notificationEmail) || notificationEmail.length > 256) {
         return ApiErrors.badRequest('Geçerli bir bildirim e-postası girin', 'INVALID_NOTIFICATION_EMAIL');
       }
+    }
+
+    if (googleReviewManagementEnabled !== undefined && actor.source !== 'admin') {
+      return ApiErrors.forbidden(
+        'Google yorum yönetimini sadece admin paneli değiştirebilir.',
+        'GOOGLE_REVIEW_MANAGEMENT_ADMIN_ONLY',
+      );
     }
 
     // Integration platform URLs — same hard-error gate as the POST path.
@@ -406,6 +414,9 @@ export async function PUT(
         ...(phone !== undefined && { phone: phone || null }),
         ...(googlePlaceId !== undefined && { googlePlaceId: googlePlaceId || null }),
         ...(googleReviewUrl !== undefined && { googleReviewUrl: googleReviewUrl || null }),
+        ...(googleReviewManagementEnabled !== undefined && {
+          googleReviewManagementEnabled: Boolean(googleReviewManagementEnabled),
+        }),
         ...(notificationEmail !== undefined && { notificationEmail: notificationEmail || null }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(isActive !== undefined && { isActive }),

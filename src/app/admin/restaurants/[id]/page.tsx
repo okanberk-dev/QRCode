@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
@@ -47,6 +47,7 @@ export default function RestaurantDetailPage() {
     address: '',
     phone: '',
     googlePlaceId: '',
+    googleReviewManagementEnabled: false,
     getirYemekUrl: '',
     yemekSepetiUrl: '',
     trendyolYemekUrl: '',
@@ -83,6 +84,7 @@ export default function RestaurantDetailPage() {
             address: data.address || '',
             phone: data.phone || '',
             googlePlaceId: data.googlePlaceId || data.googleReviewUrl || '',
+            googleReviewManagementEnabled: data.googleReviewManagementEnabled ?? false,
             getirYemekUrl: data.getirYemekUrl || '',
             yemekSepetiUrl: data.yemekSepetiUrl || '',
             trendyolYemekUrl: data.trendyolYemekUrl || '',
@@ -618,22 +620,47 @@ export default function RestaurantDetailPage() {
             </div>
 
             {allowedPlatforms.has('google') && (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="pulse-eyebrow text-[#737373]">Google Place ID veya Harita Linki</label>
-                  <PlatformUrlHelp platform="google" />
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="pulse-eyebrow text-[#737373]">Google Place ID veya Harita Linki</label>
+                    <PlatformUrlHelp platform="google" />
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.googlePlaceId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
+                    placeholder="ChIJ... veya https://maps.app.goo.gl/..."
+                    className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 font-mono text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                  />
+                  <p className="text-[12px] leading-relaxed text-[#737373]">
+                    Mekan kimliğini ya da Google Haritalar yorum linkini direkt ekleyebilirsiniz. Olumlu geri bildirimler buraya yönlendirilir.
+                  </p>
                 </div>
-                <input
-                  type="text"
-                  value={formData.googlePlaceId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, googlePlaceId: e.target.value }))}
-                  placeholder="ChIJ... veya https://maps.app.goo.gl/..."
-                  className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 font-mono text-[13px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                />
-                <p className="text-[12px] leading-relaxed text-[#737373]">
-                  Mekan kimliğini ya da Google Haritalar yorum linkini direkt ekleyebilirsiniz. Olumlu geri bildirimler buraya yönlendirilir.
-                </p>
+
+                <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 transition-colors hover:bg-white">
+                  <div className="flex min-w-0 gap-3">
+                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
+                      <Sparkles size={15} strokeWidth={2.25} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[14px] font-medium text-[#0A0A0A]">Google yorum yönetimi</p>
+                      <p className="mt-0.5 text-[12px] leading-relaxed text-[#737373]">
+                        Açıkken owner Google Business Profile yorumlarını çekebilir, AI ile cevap taslağı oluşturabilir ve onaylayıp Google&apos;a gönderebilir.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="relative shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={formData.googleReviewManagementEnabled}
+                      onChange={(e) => setFormData(prev => ({ ...prev, googleReviewManagementEnabled: e.target.checked }))}
+                      className="peer sr-only"
+                    />
+                    <div className="h-6 w-11 rounded-full bg-[#EDEDED] transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:bg-[#0A0A0A] peer-checked:after:translate-x-full peer-focus-visible:ring-2 peer-focus-visible:ring-[#C6F24E]/60" />
+                  </div>
+                </label>
               </div>
             )}
           </div>
