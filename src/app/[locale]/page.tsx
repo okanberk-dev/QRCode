@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+// `next/dynamic` aliased — page already exports `dynamic = 'force-dynamic'`
+// (Next.js route segment config); plain import would shadow it.
+import nextDynamic from 'next/dynamic';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
@@ -6,14 +9,19 @@ import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustra
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
 import { BarChart3, Inbox, QrCode, Sparkles, Star } from 'lucide-react';
 import MarqueeRow from '@/components/marketing/MarqueeRow';
-import StickyCtaBar from '@/components/marketing/StickyCtaBar';
-import SocialProofToast from '@/components/marketing/SocialProofToast';
-import HomeIndustryTabs from '@/components/marketing/HomeIndustryTabs';
-import LiveReviewTicker from '@/components/marketing/LiveReviewTicker';
 import HomeHero from '@/components/marketing/HomeHero';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
+
+// Below-the-fold client components — chunk-split with next/dynamic (ssr:true
+// default). HTML SSR korunur (SEO intact); JS bundle ayrı chunk'a düşer ve
+// hydration ana iş parçacığını blocklamaz → mobile FCP/LCP iyileşmesi.
+// Vercel Speed Insights P75 mobile homepage 4.2s LCP idi (CLAUDE.md §31).
+const HomeIndustryTabs = nextDynamic(() => import('@/components/marketing/HomeIndustryTabs'));
+const LiveReviewTicker = nextDynamic(() => import('@/components/marketing/LiveReviewTicker'));
+const StickyCtaBar = nextDynamic(() => import('@/components/marketing/StickyCtaBar'));
+const SocialProofToast = nextDynamic(() => import('@/components/marketing/SocialProofToast'));
 
 const VALID_LOCALES = ['tr', 'en'] as const;
 
