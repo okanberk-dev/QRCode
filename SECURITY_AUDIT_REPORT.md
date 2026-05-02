@@ -162,18 +162,25 @@ plan, or a UX-impacting default flip. They are listed roughly in
 descending value-to-cost order so the operator can pick them up
 incrementally.
 
-### 1. AdminUser has no `UserSession`-equivalent table
+### ~~1. AdminUser has no `UserSession`-equivalent table~~ — **CLOSED 2026-05**
 
-**Effect today**: When admin password reset / role change happens, the
-admin's existing `admin_token` cookie keeps working until expiry. There is
-no server-side revoke surface for admin tokens.
+**Closed in follow-up commit** (after the original PR #345-#349 series).
 
-**Recommended fix**: Either add an `AdminSession` table mirroring
-`UserSession` (token hash + revoked_at, plus a `passwordChangedAt`-style
-timestamp on `AdminUser`), or store `iat` on every JWT and compare against
-`AdminUser.passwordChangedAt` in `getAdminFromRequest`. Once that exists,
-admin password reset / users PUT password change should revoke every
-matching row.
+Implementation chose the lighter of the two recommended options: stamp
+`passwordChangedAt` on `AdminUser` and have `getAdminFromRequest` reject
+tokens whose `iat` is older than that timestamp. No new table required.
+
+- `prisma/schema.prisma` — added `passwordChangedAt DateTime?` to
+  `AdminUser`.
+- `src/lib/auth.ts` — new `isAdminTokenStale(payload)` helper called
+  inside `getAdminFromRequest`. JWT `iat` (set by jose `setIssuedAt()`)
+  is compared against the row's `passwordChangedAt`. Pre-feature rows
+  with `passwordChangedAt = null` pass through (backward compat).
+  DB-error path is fail-open (small blast radius for transient outages
+  — admins have a higher operational cost on lockout than users do).
+- `/api/admin/reset-password` and `/api/admin/users/[id]` PUT now set
+  `passwordChangedAt: new Date()` whenever the password hash is
+  rotated.
 
 ### 2. `RECAPTCHA_ENFORCE` default `'true'`
 
@@ -203,17 +210,18 @@ re-login by writing rows that don't match any current cookie hash and
 flipping the path to fail-closed). After that, set the legacy path to
 `return true`.
 
-### 4. Restaurant DELETE allowed for any non-viewer team member
+### ~~4. Restaurant DELETE allowed for any non-viewer team member~~ — **CLOSED 2026-05**
 
-**Effect today**: `/api/restaurants/[id]` DELETE gates on
-`canWriteRestaurant`, which permits every non-`viewer` team role. A
-manager / staff member can hard-delete the restaurant and cascade-wipe
-feedback / menu / analytics rows.
+**Closed in follow-up commit** (after the original PR #345-#349 series).
 
-**Recommended fix**: Add `canDeleteRestaurant(actor, restaurantId)` to
-`panel-access.ts` that requires `actor.role === 'restaurant_owner'`
-(workspace owner only) or `actor.role === 'superadmin'`. Wire it into the
-DELETE handler and update the UI to hide the button for non-owners.
+- `src/lib/panel-access.ts` — new `canDeleteRestaurant(actor, restaurantId)`
+  helper. Allows `superadmin`, admin-source `manager`, and
+  `restaurant_owner` (user source). Every team-member role (workspace-
+  level `manager` / `staff` / `viewer`) is rejected — workspace
+  ownership is not delegated for destructive cascades.
+- `/api/restaurants/[id]` DELETE switched from `canWriteRestaurant` to
+  `canDeleteRestaurant`. UI button visibility is a follow-up cleanup
+  (server gate is the security-relevant boundary).
 
 ### 5. Site-settings SVG upload is not sanitized
 

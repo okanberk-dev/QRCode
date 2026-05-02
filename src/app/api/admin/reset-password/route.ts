@@ -135,12 +135,17 @@ export async function POST(req: NextRequest) {
       return genericInvalid;
     }
 
-    // Success — write new password hash + clear reset state
+    // Success — write new password hash + clear reset state.
+    // `passwordChangedAt` is the auth-staleness pivot (CLAUDE.md §37.2 A):
+    // every admin_token issued before this timestamp will be rejected by
+    // `getAdminFromRequest`'s staleness check, so a stolen pre-reset
+    // cookie can't survive the password rotation.
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await prisma.adminUser.update({
       where: { id: admin.id },
       data: {
         passwordHash,
+        passwordChangedAt: new Date(),
         resetTokenHash: null,
         resetTokenExpiry: null,
         resetAttempts: 0,

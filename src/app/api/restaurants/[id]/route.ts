@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteRestaurant, canDeleteRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { isValidEmail, isValidHexColor } from '@/lib/validations';
 import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-domains';
@@ -452,10 +452,12 @@ export async function DELETE(
 
   const { id } = await params;
 
-  // Restoran silme yıkıcı — viewer hiç yapamaz; manager/staff de
-  // canWriteRestaurant'ın eşik üstü gerekirse owner-only kuralı için
-  // ileride sıkılır. Şu an aynı write katmanı yeterli.
-  if (!(await canWriteRestaurant(actor, id))) {
+  // Restoran silme yıkıcı + cascade (feedback / menu / analytics).
+  // canDeleteRestaurant gate'i (CLAUDE.md §37.3 deferred #4 closure):
+  // sadece superadmin / admin-source manager / restaurant_owner siler.
+  // team_member rolü (workspace içindeki manager/staff/viewer) HİÇBİR
+  // koşulda silemez — workspace sahipliği devredilmez.
+  if (!(await canDeleteRestaurant(actor, id))) {
     return ApiErrors.forbidden();
   }
 

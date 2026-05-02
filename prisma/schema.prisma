@@ -645,6 +645,13 @@ model AdminUser {
   // sonrası pencere bir saat kapanır.
   resetAttempts    Int       @default(0) @map("reset_attempts")
   resetLastAttempt DateTime? @map("reset_last_attempt")
+  // Şifre değişimi zaman damgası — admin password reset / users PUT
+  // password update sırasında set edilir. Auth middleware JWT iat'ı bu
+  // değerle karşılaştırır; iat < passwordChangedAt → token revoke. AdminUser
+  // için `UserSession` muadili tablo yok (CLAUDE.md §37.3 deferred #1 →
+  // bu field ile kapatıldı), bu yüzden session staleness check'i
+  // single-field ile yürür.
+  passwordChangedAt DateTime? @map("password_changed_at")
 
   restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
 

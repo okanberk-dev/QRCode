@@ -73,6 +73,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         );
       }
       data.passwordHash = await bcrypt.hash(password, 12);
+      // Stamp the staleness pivot — `getAdminFromRequest` rejects every
+      // admin_token issued before this moment for this user (CLAUDE.md
+      // §37.2 A). One admin can't change another's password and have
+      // the victim's existing cookie keep loading the panel.
+      data.passwordChangedAt = new Date();
     }
 
     // Recovery email — boş string explicit clear, undefined dokunma sinyali.

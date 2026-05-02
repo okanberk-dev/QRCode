@@ -121,9 +121,58 @@ async function isUserSessionRevoked(rawToken: string): Promise<boolean> {
   }
 }
 
+/**
+ * Admin session staleness check (CLAUDE.md §37.3 deferred #1 closure).
+ *
+ * AdminUser has no per-token `UserSession` row (the User flow uses one,
+ * but adding a parallel admin table is heavier than the threat model
+ * needs). Instead we stamp `passwordChangedAt` on the AdminUser row
+ * every time the password is rotated (admin reset-password / users PUT
+ * password change). Tokens issued before that timestamp are revoked.
+ *
+ * `iat` is set automatically by jose's `setIssuedAt()` at sign time, so
+ * a forged token can't lie about it without invalidating the HS256 sig.
+ *
+ * Backward compat: AdminUser rows that pre-date this field have
+ * `passwordChangedAt = null` and pass through (legacy session). Once a
+ * password is rotated, the field is set and every old token issued
+ * before that moment becomes stale.
+ *
+ * Best-effort: DB hiccup → log + return false (fail-open here so a
+ * single Postgres glitch doesn't lock every superadmin out at once).
+ * Trade-off: a transient outage is a smaller blast radius than a
+ * locked-out admin during an incident; the User-side revoke check is
+ * fail-closed but admins have a higher operational cost on lockout.
+ */
+async function isAdminTokenStale(payload: jose.JWTPayload): Promise<boolean> {
+  const adminId = typeof payload.id === 'string' ? payload.id : null;
+  // env-admin / fallback-admin payload — no DB row to compare against.
+  if (!adminId || adminId === 'env-admin') return false;
+  const iat = typeof payload.iat === 'number' ? payload.iat : null;
+  if (!iat) return false;
+  try {
+    const admin = await prisma.adminUser.findUnique({
+      where: { id: adminId },
+      select: { passwordChangedAt: true },
+    });
+    if (!admin || !admin.passwordChangedAt) return false;
+    // jose `iat` is in seconds, Date.getTime() in ms.
+    return iat * 1000 < admin.passwordChangedAt.getTime();
+  } catch (err) {
+    console.error('[auth] AdminUser staleness check failed (fail-open):', (err as Error).message);
+    return false;
+  }
+}
+
 export async function getAdminFromRequest(req: NextRequest) {
   const payload = await getTokenPayload(req, 'admin_token');
   if (!payload || !isAdminRole(payload.role)) {
+    return null;
+  }
+  // Reject tokens issued before the most recent password change for this
+  // admin. Stops a stolen / pre-reset cookie from outliving a password
+  // rotation that was triggered exactly to neutralise it.
+  if (await isAdminTokenStale(payload)) {
     return null;
   }
   return payload;
