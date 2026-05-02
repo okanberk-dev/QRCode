@@ -1,122 +1,110 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
+import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Loader2, Search, Flag, Mail, Sparkles, RotateCw, Pencil, Send, Plus, Inbox, RotateCcw, MessageSquare } from 'lucide-react';
+import { Inbox, Loader2 } from 'lucide-react';
+import { EmptyState, PageHeader } from '@/components/ui';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
-import { Tabs, AlertBanner, EmptyState, Skeleton, Badge, PlatformChip, PLATFORMS, type PlatformId } from '@/components/ui';
+import { useUrlFilter } from '@/hooks/useUrlFilter';
 
-const PLATFORM_OPTIONS: PlatformId[] = [
-  'google',
-  'yemeksepeti',
-  'getir',
-  'trendyol_go',
-  'tripadvisor',
-];
-
-// Feedback shape returned by /api/feedback (subset of what we use)
-interface FeedbackRow {
-  id: string;
-  rating: number;
-  comment: string | null;
-  createdAt: string;
-  platform: string | null;
-  customerName: string | null;
-  customerEmail: string | null;
-  customerPhone: string | null;
-  aspects?: { service?: number; food?: number; price?: number; atmosphere?: number } | null;
-  isReplied?: boolean;
-  isFlagged?: boolean;
-  hasPendingAiDraft?: boolean;
-  aiDraftTone?: 'warm' | 'formal' | 'apologetic' | null;
-  restaurant?: { name: string; slug?: string } | null;
-}
-
-function initials(name: string | null) {
-  if (!name) return 'B';
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase())
-    .slice(0, 2)
-    .join('');
-}
-
-function timeAgo(dateStr: string, locale: Locale) {
-  const isTr = locale === 'tr';
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diff = Math.max(0, Math.floor((now - then) / 1000));
-  if (diff < 60) return isTr ? `${diff} sn` : `${diff}s`;
-  if (diff < 3600) return isTr ? `${Math.floor(diff / 60)} dk` : `${Math.floor(diff / 60)}m`;
-  if (diff < 86400) return isTr ? `${Math.floor(diff / 3600)} sa` : `${Math.floor(diff / 3600)}h`;
-  const days = Math.floor(diff / 86400);
-  if (days < 7) return isTr ? `${days} gün` : `${days}d`;
-  return new Date(dateStr).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'short' });
-}
+import type {
+  ActiveTab,
+  AiSource,
+  AiTone,
+  DegradedMeta,
+  FeedbackRow,
+  HasReplyFilter,
+  PlatformFilter,
+  ReplyTone,
+  SentReply,
+} from './_components/types';
+import { FeedbackList } from './_components/FeedbackList';
+import { FeedbackDetail } from './_components/FeedbackDetail';
+import { FeedbackFiltersModal } from './_components/FeedbackFiltersModal';
 
 function FeedbacksContent({ locale }: { locale: Locale }) {
-  const t = getTranslations(locale);
-  const searchParams = useSearchParams();
+  // `t` ileride gerekirse — şu an sadece dil bazlı fallback için kalıyor.
+  void getTranslations(locale);
   const isTr = locale === 'tr';
 
-  // Notification deep-link target — `?focus=<feedbackId>` from the
-  // NotificationBell. When present, the page auto-selects that feedback
-  // (forces tab=all so the row is reachable) and scrolls + lime-pulses
-  // the matching list item once the data lands.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // ============================================================
+  // URL filter state — useUrlFilter hook (CLAUDE.md §36).
+  // 6 filter alanı tek hook'ta. `id`, `view`, `focus` ayrı yönetilir
+  // (filter olmadıkları için reset onları silmemeli).
+  // ============================================================
+  const filters = useUrlFilter({
+    tab: 'all' as ActiveTab,
+    days: 'all',
+    rating: 'all',
+    platform: 'all' as PlatformFilter,
+    hasReply: 'all' as HasReplyFilter,
+    // boolean literal-type cast (CLAUDE.md §36.3) — set('flagged', boolean) için.
+    flagged: false as boolean,
+  });
+
+  // Notification deep-link target — `?focus=<feedbackId>` from NotificationBell.
   const focusId = searchParams.get('focus');
 
+  // Mobile push-route: `?view=detail` query'sini list/detail visibility
+  // toggle olarak kullanır. Desktop (≥lg) bunu ignore eder ve daima
+  // split-pane render olur.
+  const view = searchParams.get('view');
+  const idParam = searchParams.get('id');
+  const isMobileDetailView = view === 'detail';
+
+  // ============================================================
+  // Local state
+  // ============================================================
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
-  const [degraded, setDegraded] = useState<{ joins: boolean; tags: boolean; aiDraft?: boolean; joinFilters?: boolean } | null>(null);
+  const [degraded, setDegraded] = useState<DegradedMeta | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeId, setActiveId] = useState<string | null>(focusId);
-  // Tabs: design source (`OwnerFeedback` in owner-pages-1.jsx) buckets feedbacks
-  // by rating + redirection state, not by reply state. Aligned 1:1 here.
-  // Focus deep-link forces tab=all so the row is guaranteed visible
-  // regardless of rating / redirect state.
-  const [activeTab, setActiveTab] = useState<'all' | 'low' | 'high' | 'redirected'>(
-    focusId ? 'all' : ((searchParams.get('tab') as 'all' | 'low' | 'high' | 'redirected') || 'all'),
-  );
+  const [activeId, setActiveId] = useState<string | null>(focusId ?? idParam);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Reply composer
   const [replyDraft, setReplyDraft] = useState('');
   const [sendEmail, setSendEmail] = useState(true);
   const [sendingReply, setSendingReply] = useState(false);
-  const [replyNotice, setReplyNotice] = useState<{ msg: string; tone: 'success' | 'error' | 'info' } | null>(null);
-  // Focus deep-link also widens the date window so even a not-recent
-  // feedback is fetched into the loaded list.
-  const [filterRating, setFilterRating] = useState(focusId ? 'all' : (searchParams.get('rating') || 'all'));
-  const [daysFilter, setDaysFilter] = useState(focusId ? 'all' : (searchParams.get('days') || 'all'));
-  // PR3 — yeni filter'lar (platform, hasReply, isFlagged). URL state sync için
-  // useRouter + replace pattern'i (CLAUDE.md §28 + Linear/Stripe SaaS pattern).
-  const router = useRouter();
-  const pathname = usePathname();
-  const [platformFilter, setPlatformFilter] = useState<'all' | PlatformId>(
-    focusId ? 'all' : ((searchParams.get('platform') as PlatformId) || 'all'),
-  );
-  const [hasReplyFilter, setHasReplyFilter] = useState<'all' | 'pending'>(
-    focusId ? 'all' : ((searchParams.get('hasReply') === 'false' ? 'pending' : 'all')),
-  );
-  const [flaggedOnly, setFlaggedOnly] = useState<boolean>(
-    focusId ? false : searchParams.get('isFlagged') === 'true',
-  );
+  const [replyNotice, setReplyNotice] = useState<{ msg: string; tone: ReplyTone } | null>(null);
 
-  // One-shot scroll-into-view + lime pulse highlight when arriving via
-  // notification. Cleared on first apply so subsequent state changes
-  // don't re-scroll.
+  // Pulse AI
+  const [aiSuggestion, setAiSuggestion] = useState('');
+  const [aiRegenerating, setAiRegenerating] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSource, setAiSource] = useState<AiSource>(null);
+  const [aiTone, setAiTone] = useState<AiTone>('warm');
+  const [aiFromBackground, setAiFromBackground] = useState(false);
+
+  // Sent reply thread
+  const [sentReplies, setSentReplies] = useState<SentReply[]>([]);
+  const [sentLoading, setSentLoading] = useState(false);
+
+  // Notification deep-link pulse one-shot
   const focusAppliedRef = useRef(false);
   const [pulsedId, setPulsedId] = useState<string | null>(null);
 
+  // Stringify filter values for stable effect deps
+  const { tab, days, rating, platform, hasReply, flagged } = filters.values;
+
+  // ============================================================
+  // Fetch feedbacks list — backend kontratı (CLAUDE.md §Backend) korundu.
+  // ============================================================
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const query = new URLSearchParams({ page: '1', limit: '50', days: daysFilter });
-        if (filterRating !== 'all') query.append('rating', filterRating);
-        if (platformFilter !== 'all') query.append('platform', platformFilter);
-        if (hasReplyFilter === 'pending') query.append('hasReply', 'false');
-        if (flaggedOnly) query.append('isFlagged', 'true');
+        const query = new URLSearchParams({ page: '1', limit: '50', days: String(days) });
+        if (rating !== 'all') query.append('rating', String(rating));
+        if (platform !== 'all') query.append('platform', String(platform));
+        if (hasReply === 'pending') query.append('hasReply', 'false');
+        if (flagged) query.append('isFlagged', 'true');
         const res = await fetch(`/api/feedback?${query.toString()}`);
         if (res.ok) {
           const data = await res.json();
@@ -130,58 +118,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       }
       setLoading(false);
     })();
-  }, [daysFilter, filterRating, platformFilter, hasReplyFilter, flaggedOnly]);
+  }, [days, rating, platform, hasReply, flagged]);
 
-  // URL sync — filter state'i query param'a yansıt (deeplink-friendly).
-  // Notification deep-link `?focus=` aktifken URL'i bozma (one-shot).
-  useEffect(() => {
-    if (focusId) return; // focus akışında URL'i değiştirme
-    const next = new URLSearchParams();
-    if (daysFilter !== 'all') next.set('days', daysFilter);
-    if (filterRating !== 'all') next.set('rating', filterRating);
-    if (platformFilter !== 'all') next.set('platform', platformFilter);
-    if (hasReplyFilter === 'pending') next.set('hasReply', 'false');
-    if (flaggedOnly) next.set('isFlagged', 'true');
-    const qs = next.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [daysFilter, filterRating, platformFilter, hasReplyFilter, flaggedOnly, focusId, pathname, router]);
-
-  const hasActiveFilter =
-    daysFilter !== 'all' ||
-    filterRating !== 'all' ||
-    platformFilter !== 'all' ||
-    hasReplyFilter !== 'all' ||
-    flaggedOnly;
-  const resetFilters = () => {
-    setDaysFilter('all');
-    setFilterRating('all');
-    setPlatformFilter('all');
-    setHasReplyFilter('all');
-    setFlaggedOnly(false);
-  };
-
-  // Apply notification deep-link once data has landed: scroll the matching
-  // list row into view and trigger a 1.6s lime pulse so the user sees
-  // exactly where the bell sent them. Idempotent — guarded by `focusAppliedRef`.
-  useEffect(() => {
-    if (!focusId || loading || focusAppliedRef.current) return;
-    if (!feedbacks.some((r) => r.id === focusId)) return;
-    focusAppliedRef.current = true;
-    setActiveId(focusId);
-    // Defer to next paint so the list has rendered the row.
-    requestAnimationFrame(() => {
-      const el = document.querySelector<HTMLElement>(`[data-feedback-id="${focusId}"]`);
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setPulsedId(focusId);
-      setTimeout(() => setPulsedId(null), 1800);
-    });
-  }, [focusId, loading, feedbacks]);
-
+  // ============================================================
+  // Filtered list (client-side: tab + search)
+  // ============================================================
   const filteredList = useMemo(() => {
     let rows = feedbacks;
-    if (activeTab === 'low') rows = rows.filter((r) => r.rating <= 3);
-    else if (activeTab === 'high') rows = rows.filter((r) => r.rating >= 4);
-    else if (activeTab === 'redirected') rows = rows.filter((r) => !!r.platform);
+    if (tab === 'low') rows = rows.filter((r) => r.rating <= 3);
+    else if (tab === 'high') rows = rows.filter((r) => r.rating >= 4);
+    else if (tab === 'redirected') rows = rows.filter((r) => !!r.platform);
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       rows = rows.filter(
@@ -191,61 +137,42 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       );
     }
     return rows;
-  }, [feedbacks, activeTab, searchTerm]);
+  }, [feedbacks, tab, searchTerm]);
 
   const active = useMemo(
     () => feedbacks.find((r) => r.id === activeId) ?? filteredList[0] ?? null,
     [feedbacks, activeId, filteredList],
   );
 
-  // Counts derived from the loaded list. Tab semantics moved away from
-  // reply-state buckets (Phase 11.8 audit), so the legacy
-  // /api/feedback/counts endpoint shape doesn't match any more — counts
-  // are computed client-side over the fetched window.
-  const counts = useMemo(() => ({
-    all: feedbacks.length,
-    low: feedbacks.filter((r) => r.rating <= 3).length,
-    high: feedbacks.filter((r) => r.rating >= 4).length,
-    redirected: feedbacks.filter((r) => !!r.platform).length,
-  }), [feedbacks]);
+  const counts = useMemo(
+    () => ({
+      all: feedbacks.length,
+      low: feedbacks.filter((r) => r.rating <= 3).length,
+      high: feedbacks.filter((r) => r.rating >= 4).length,
+      redirected: feedbacks.filter((r) => !!r.platform).length,
+    }),
+    [feedbacks],
+  );
 
-  const tabs: { k: typeof activeTab; l: string; c: number }[] = [
-    { k: 'all', l: isTr ? 'Tümü' : 'All', c: counts.all },
-    { k: 'low', l: isTr ? 'Düşük puan (1-3)' : 'Low (1-3)', c: counts.low },
-    { k: 'high', l: isTr ? 'Yüksek puan (4-5)' : 'High (4-5)', c: counts.high },
-    { k: 'redirected', l: isTr ? 'Yönlendirilen' : 'Redirected', c: counts.redirected },
-  ];
+  // ============================================================
+  // Notification deep-link: scroll + lime pulse
+  // ============================================================
+  useEffect(() => {
+    if (!focusId || loading || focusAppliedRef.current) return;
+    if (!feedbacks.some((r) => r.id === focusId)) return;
+    focusAppliedRef.current = true;
+    setActiveId(focusId);
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLElement>(`[data-feedback-id="${focusId}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setPulsedId(focusId);
+      setTimeout(() => setPulsedId(null), 1800);
+    });
+  }, [focusId, loading, feedbacks]);
 
-  // Static customer profile + history + SLA (frontend-only, backend to be wired later)
-  const customerName = active?.customerName ?? (isTr ? 'Müşteri' : 'Customer');
-  const customerAspects = active?.aspects ?? null;
-  const aspectLabel = isTr
-    ? { service: 'Servis', food: 'Yemek', price: 'Fiyat', atmosphere: 'Atmosfer' }
-    : { service: 'Service', food: 'Food', price: 'Price', atmosphere: 'Atmosphere' };
-
-  // Draft suggestion generated locally until the AI backend is wired
-  // (src/app/api/feedback/[id]/suggest-reply/route.ts currently returns
-  // a deterministic template via buildReplyTemplate).
-  const [aiSuggestion, setAiSuggestion] = useState('');
-  const [aiRegenerating, setAiRegenerating] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiSource, setAiSource] = useState<'openai' | 'template' | 'template-fallback' | null>(null);
-  const [aiTone, setAiTone] = useState<'warm' | 'formal' | 'apologetic'>('warm');
-  const [aiFromBackground, setAiFromBackground] = useState(false);
-
-  // Sent reply thread for the active feedback. Fetched on selection.
-  // Owner: "ne yanıt verdik?" görünür olur — eskiden sadece "yanıtlandı"
-  // badge'i vardı, içerik gizliydi.
-  interface SentReply {
-    id: string;
-    body: string;
-    channel: string | null;
-    status: string | null;
-    createdAt: string;
-  }
-  const [sentReplies, setSentReplies] = useState<SentReply[]>([]);
-  const [sentLoading, setSentLoading] = useState(false);
-
+  // ============================================================
+  // Sent reply thread fetch on selection
+  // ============================================================
   useEffect(() => {
     if (!active) {
       setSentReplies([]);
@@ -272,12 +199,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     return () => {
       cancelled = true;
     };
-    // active.id değişiminde tetiklenir; active ref useMemo'lu (line ~196),
-    // aynı id için stale değer riski yok. Lint react-hooks/exhaustive-deps
-    // false positive — active.id semantic doğru sinyal.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id]);
 
+  // ============================================================
+  // AI draft fetch (background draft → fallback on-demand)
+  // ============================================================
   useEffect(() => {
     if (!active) {
       setAiSuggestion('');
@@ -292,8 +219,6 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setAiFromBackground(false);
     setAiLoading(true);
     (async () => {
-      // First: check if a Pulse AI background draft already exists. If so,
-      // surface it instantly and skip the on-demand fetch.
       try {
         const draftRes = await fetch(`/api/feedback/${active.id}/draft`);
         if (draftRes.ok) {
@@ -301,7 +226,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           if (data?.draft?.body) {
             setAiSuggestion(data.draft.body);
             setAiSource(data.draft.source === 'ai_copilot' ? 'openai' : 'template-fallback');
-            if (data.draft.tone === 'warm' || data.draft.tone === 'formal' || data.draft.tone === 'apologetic') {
+            if (
+              data.draft.tone === 'warm' ||
+              data.draft.tone === 'formal' ||
+              data.draft.tone === 'apologetic'
+            ) {
               setAiTone(data.draft.tone);
             }
             setAiFromBackground(true);
@@ -310,9 +239,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           }
         }
       } catch {
-        /* fall through to on-demand */
+        /* fall through */
       }
-      // Fallback: on-demand suggest-reply call.
       try {
         const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
           method: 'POST',
@@ -343,7 +271,15 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     })();
   }, [active, locale]);
 
-  const regenerateAi = async (toneOverride?: 'warm' | 'formal' | 'apologetic') => {
+  // ============================================================
+  // Action handlers
+  // ============================================================
+  const flashReply = (msg: string, tone: ReplyTone = 'info') => {
+    setReplyNotice({ msg, tone });
+    setTimeout(() => setReplyNotice(null), 2800);
+  };
+
+  const onRegenerateAi = async (toneOverride?: AiTone) => {
     if (!active) return;
     const targetTone = toneOverride ?? aiTone;
     setAiRegenerating(true);
@@ -369,22 +305,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     }
   };
 
-  const flashReply = (msg: string, tone: 'success' | 'error' | 'info' = 'info') => {
-    setReplyNotice({ msg, tone });
-    setTimeout(() => setReplyNotice(null), 2800);
-  };
-
   const sendReply = async (overrideBody?: string) => {
     if (!active || sendingReply) return;
-    // overrideBody: AI "Kullan & gönder" akışı setReplyDraft async olduğu için
-    // state güncellemesini beklemeden gönderim için. Manuel "E-posta ile
-    // gönder" butonu replyDraft kullanır (eski davranış).
     const body = (overrideBody ?? replyDraft).trim();
     if (!body) return;
     setSendingReply(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
-    // Mirror /admin/reviews — track whether the reply originated from the
-    // Pulse AI draft so trial-ending mail can count operator vs AI replies.
     const replySource =
       aiSource === 'openai'
         ? 'ai_copilot'
@@ -410,8 +336,6 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             r.id === active.id ? { ...r, isReplied: true, hasPendingAiDraft: false } : r,
           ),
         );
-        // Optimistically prepend the new reply to the sent thread so it
-        // appears instantly in the detail panel without a re-fetch.
         const newReply: SentReply = {
           id: data?.replyId ?? `tmp-${Date.now()}`,
           body,
@@ -426,16 +350,23 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         const emailStatus = data?.email?.status as 'sent' | 'skipped' | 'failed' | undefined;
         if (emailStatus === 'sent') {
           flashReply(
-            isTr ? `E-posta gönderildi: ${active.customerEmail}` : `Email sent to ${active.customerEmail}`,
+            isTr
+              ? `E-posta gönderildi: ${active.customerEmail}`
+              : `Email sent to ${active.customerEmail}`,
             'success',
           );
         } else if (emailStatus === 'failed') {
           flashReply(
-            isTr ? 'Yanıt kaydedildi ama e-posta gönderilemedi' : 'Saved but email delivery failed',
+            isTr
+              ? 'Yanıt kaydedildi ama e-posta gönderilemedi'
+              : 'Saved but email delivery failed',
             'error',
           );
         } else {
-          flashReply(isTr ? 'Yanıt kaydedildi (dahili)' : 'Reply saved (internal)', 'success');
+          flashReply(
+            isTr ? 'Yanıt kaydedildi (dahili)' : 'Reply saved (internal)',
+            'success',
+          );
         }
       } else {
         const data = await res.json().catch(() => ({}));
@@ -448,6 +379,17 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       flashReply(isTr ? 'Ağ hatası' : 'Network error', 'error');
     }
     setSendingReply(false);
+  };
+
+  const onUseAiAndSend = async () => {
+    if (!aiSuggestion || sendingReply) return;
+    setReplyDraft(aiSuggestion);
+    await sendReply(aiSuggestion);
+  };
+
+  const onCopyAiToDraft = () => {
+    if (!aiSuggestion) return;
+    setReplyDraft(aiSuggestion);
   };
 
   const flagFeedback = async () => {
@@ -463,661 +405,179 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     }
   };
 
+  // ============================================================
+  // Mobile push-route handlers
+  // ============================================================
+  const buildUrl = (overrides: { id?: string | null; view?: 'detail' | null }) => {
+    const next = new URLSearchParams(searchParams.toString());
+    if (overrides.id !== undefined) {
+      if (overrides.id === null) next.delete('id');
+      else next.set('id', overrides.id);
+    }
+    if (overrides.view !== undefined) {
+      if (overrides.view === null) next.delete('view');
+      else next.set('view', overrides.view);
+    }
+    const qs = next.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  };
+
+  const onSelectFeedback = (id: string) => {
+    setActiveId(id);
+    // Push (not replace) so browser back returns to list view on mobile.
+    router.push(buildUrl({ id, view: 'detail' }));
+  };
+
+  const onBackToList = () => {
+    router.push(buildUrl({ view: null }));
+  };
+
+  // Reset filters but keep id/view/focus query params intact.
+  const onResetFilters = () => {
+    filters.setMany({
+      tab: 'all',
+      days: 'all',
+      rating: 'all',
+      platform: 'all',
+      hasReply: 'all',
+      flagged: false,
+    });
+  };
+
+  const activeFilterCount =
+    (days !== 'all' ? 1 : 0) +
+    (rating !== 'all' ? 1 : 0) +
+    (platform !== 'all' ? 1 : 0) +
+    (hasReply !== 'all' ? 1 : 0) +
+    (flagged ? 1 : 0);
+
+  const hasActiveFilter = activeFilterCount > 0 || tab !== 'all';
+
+  // ============================================================
+  // Render
+  // ============================================================
   return (
-    <div className="flex min-h-[calc(100vh-140px)] flex-col lg:h-[calc(100vh-140px)] lg:flex-row" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {/* ============ LEFT — review list ============ */}
-      <aside className="flex max-h-[55vh] w-full flex-shrink-0 flex-col border-b border-[#EDEDED] bg-white lg:max-h-none lg:w-[340px] lg:border-b-0 lg:border-r">
-        {degraded && (
-          <div className="px-3 pt-3">
-            <AlertBanner kind="warn">
-              {isTr
-                ? degraded.joinFilters
-                  ? 'Filtreler (yanıt / işaret) şu an pasif — DB senkronizasyonu bekleniyor.'
-                  : `${degraded.joins ? 'Yanıt/işaret durumu' : 'Tag filtreleri'} şu an pasif — DB senkronizasyonu bekleniyor.`
-                : degraded.joinFilters
-                  ? 'Filters (reply / flag) temporarily unavailable — DB sync pending.'
-                  : `${degraded.joins ? 'Reply/flag status' : 'Tag filters'} temporarily unavailable — DB sync pending.`}
-            </AlertBanner>
-          </div>
-        )}
-        <div className="border-b border-[#EDEDED] p-4 space-y-3">
-          <Tabs
-            items={tabs.map((tab) => ({ id: tab.k, label: tab.l, count: tab.c }))}
-            active={activeTab}
-            onChange={(id) => setActiveTab(id as typeof activeTab)}
-            ariaLabel={isTr ? 'Yorum filtresi' : 'Review filter'}
+    <div className="mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8">
+      {/* PageHeader — mobile detail view'inde gizle (sticky back zaten orada) */}
+      <div className={isMobileDetailView ? 'hidden lg:block' : ''}>
+        <PageHeader
+          eyebrow={isTr ? 'GERİ BİLDİRİMLER' : 'FEEDBACKS'}
+          title={isTr ? 'Yorumlar' : 'Reviews'}
+          description={
+            isTr
+              ? 'Müşteri yorumlarını yönet, yanıtla ve düşük puanları takip et.'
+              : 'Manage customer reviews, reply, and follow up on low ratings.'
+          }
+        />
+      </div>
+
+      <div
+        className="flex flex-col lg:flex-row overflow-hidden rounded-2xl border border-[#EDEDED] bg-white"
+        style={{ height: 'calc(100vh - 200px)', minHeight: 520 }}
+      >
+        {/* ============ LEFT — list ============ */}
+        <aside
+          className={`w-full flex-shrink-0 border-b border-[#EDEDED] lg:border-b-0 lg:border-r lg:w-[380px] xl:w-[420px] ${
+            isMobileDetailView ? 'hidden lg:block' : 'block'
+          }`}
+        >
+          <FeedbackList
+            locale={locale}
+            loading={loading}
+            feedbacks={feedbacks}
+            filteredList={filteredList}
+            activeId={active?.id ?? null}
+            pulsedId={pulsedId}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            activeTab={tab}
+            setActiveTab={(v) => filters.set('tab', v)}
+            counts={counts}
+            hasActiveFilter={hasActiveFilter}
+            activeFilterCount={activeFilterCount}
+            onOpenFilters={() => setFiltersOpen(true)}
+            onResetFilters={onResetFilters}
+            onSelect={onSelectFeedback}
+            degraded={degraded}
           />
-          <div className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 focus-within:border-[#0A0A0A] transition-colors">
-            <Search size={14} className="text-[#737373] shrink-0" strokeWidth={2} />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={isTr ? 'Yorum, müşteri ara…' : 'Search review, customer…'}
-              aria-label={isTr ? 'Yorum ara' : 'Search reviews'}
-              className="w-full bg-transparent text-[16px] sm:text-[13px] text-[#0A0A0A] placeholder:text-[#737373] outline-none"
+        </aside>
+
+        {/* ============ DETAIL ============ */}
+        <div
+          className={`flex-1 min-w-0 ${
+            isMobileDetailView ? 'flex' : 'hidden lg:flex'
+          } flex-col`}
+        >
+          {active ? (
+            <FeedbackDetail
+              feedback={active}
+              locale={locale}
+              showBackButton={isMobileDetailView}
+              onBack={onBackToList}
+              onFlag={flagFeedback}
+              sentReplies={sentReplies}
+              sentLoading={sentLoading}
+              aiLoading={aiLoading}
+              aiRegenerating={aiRegenerating}
+              aiSuggestion={aiSuggestion}
+              aiSource={aiSource}
+              aiFromBackground={aiFromBackground}
+              aiTone={aiTone}
+              setAiTone={setAiTone}
+              onRegenerateAi={() => onRegenerateAi()}
+              onUseAiAndSend={onUseAiAndSend}
+              onCopyAiToDraft={onCopyAiToDraft}
+              replyDraft={replyDraft}
+              setReplyDraft={setReplyDraft}
+              sendEmail={sendEmail}
+              setSendEmail={setSendEmail}
+              sendingReply={sendingReply}
+              onSendReply={() => sendReply()}
+              replyNotice={replyNotice}
             />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="flex flex-col gap-1">
-              <span className="pulse-eyebrow text-[#737373]">{isTr ? 'TARİH' : 'DATE'}</span>
-              <select
-                value={daysFilter}
-                onChange={(e) => setDaysFilter(e.target.value)}
-                aria-label={isTr ? 'Tarih aralığı' : 'Date range'}
-                className="rounded-lg border border-[#EDEDED] bg-white px-2 py-1.5 text-[12px] text-[#0A0A0A] outline-none focus:border-[#0A0A0A] cursor-pointer"
-              >
-                <option value="all">{t.feedbacks_filter_all}</option>
-                <option value="1">{t.feedbacks_filter_today}</option>
-                <option value="7">{isTr ? 'Son 7 gün' : 'Last 7 days'}</option>
-                <option value="30">{isTr ? 'Son 30 gün' : 'Last 30 days'}</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="pulse-eyebrow text-[#737373]">{isTr ? 'PUAN' : 'RATING'}</span>
-              <select
-                value={filterRating}
-                onChange={(e) => setFilterRating(e.target.value)}
-                aria-label={isTr ? 'Puan filtresi' : 'Rating filter'}
-                className="rounded-lg border border-[#EDEDED] bg-white px-2 py-1.5 text-[12px] text-[#0A0A0A] outline-none focus:border-[#0A0A0A] cursor-pointer"
-              >
-                <option value="all">{isTr ? 'Tüm puanlar' : 'All ratings'}</option>
-                <option value="5">5 ★</option>
-                <option value="4">4 ★</option>
-                <option value="3">3 ★</option>
-                <option value="2">2 ★</option>
-                <option value="1">1 ★</option>
-              </select>
-            </label>
-          </div>
-
-          {/* Platform filter — compact segmented control. Eskiden uzun "Tüm
-              platformlar" pill + 5 ikon pill gözüküyordu (mobile alan abuse).
-              Şimdi tek satırlı segmented bar: "Tümü" text + ikonlar yan yana,
-              aktif platform lime fill ile vurgulanır. */}
-          <div className="inline-flex items-center gap-0.5 rounded-lg border border-[#EDEDED] p-0.5 bg-white">
-            <button
-              type="button"
-              onClick={() => setPlatformFilter('all')}
-              className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
-                platformFilter === 'all'
-                  ? 'bg-[#0A0A0A] text-white'
-                  : 'text-[#525252] hover:bg-[#FAFAFA]'
-              }`}
-              aria-pressed={platformFilter === 'all'}
-              aria-label={isTr ? 'Tüm platformlar' : 'All platforms'}
-            >
-              {isTr ? 'Tümü' : 'All'}
-            </button>
-            {PLATFORM_OPTIONS.map((pid) => {
-              const isActive = platformFilter === pid;
-              return (
-                <button
-                  key={pid}
-                  type="button"
-                  onClick={() => setPlatformFilter(isActive ? 'all' : pid)}
-                  className={`inline-flex items-center justify-center px-2 py-1.5 rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
-                    isActive
-                      ? 'bg-[#EAF9B8] ring-1 ring-[#A8D62E]'
-                      : 'hover:bg-[#FAFAFA] opacity-70 hover:opacity-100'
-                  }`}
-                  aria-pressed={isActive}
-                  title={PLATFORMS[pid].label}
-                  aria-label={PLATFORMS[pid].label}
-                >
-                  <PlatformChip id={pid} size={14} />
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setHasReplyFilter(hasReplyFilter === 'pending' ? 'all' : 'pending')}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
-                hasReplyFilter === 'pending'
-                  ? 'border-[#A8D62E] bg-[#EAF9B8] text-[#0A0A0A]'
-                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-              }`}
-              aria-pressed={hasReplyFilter === 'pending'}
-            >
-              <Mail size={11} strokeWidth={2.2} />
-              {isTr ? 'Yanıt bekleyen' : 'Pending reply'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setFlaggedOnly((v) => !v)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full border transition-colors ${
-                flaggedOnly
-                  ? 'border-[#DC2626] bg-[#FEE2E2] text-[#991B1B]'
-                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-              }`}
-              aria-pressed={flaggedOnly}
-            >
-              <Flag size={11} strokeWidth={2.2} />
-              {isTr ? 'İşaretli' : 'Flagged'}
-            </button>
-            {hasActiveFilter && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors ml-auto"
-              >
-                <RotateCcw size={11} strokeWidth={2.2} />
-                {isTr ? 'Temizle' : 'Reset'}
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="space-y-2 p-4" aria-hidden="true">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex gap-3">
-                  <Skeleton className="h-7 w-7 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-3 w-1/2" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-3 w-3/4" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : filteredList.length === 0 ? (
-            <div className="p-4">
+          ) : (
+            <div className="flex flex-1 items-center justify-center px-4">
               <EmptyState
                 icon={<Inbox size={22} strokeWidth={1.5} />}
-                title={isTr ? 'Yorum yok' : 'No reviews'}
-                body={isTr ? 'Filtreleri değiştirip tekrar dene.' : 'Try adjusting filters.'}
+                title={isTr ? 'Bir yorum seç' : 'Select a review'}
+                body={
+                  isTr
+                    ? 'Soldaki listeden bir yorum seçince detaylar burada görünecek.'
+                    : 'Pick a review from the list to view details here.'
+                }
               />
             </div>
-          ) : (
-            <ul>
-              {filteredList.map((r) => {
-                const isActive = active?.id === r.id;
-                const avatarBg =
-                  r.rating === 5 ? 'bg-[#0A0A0A] text-[#C6F24E]' : r.rating <= 2 ? 'bg-[#FEE2E2] text-[#DC2626]' : 'bg-[#F5F5F5] text-[#0A0A0A]';
-                return (
-                  <li key={r.id} data-feedback-id={r.id}>
-                    <button
-                      type="button"
-                      onClick={() => setActiveId(r.id)}
-                      className={`flex w-full flex-col gap-1.5 border-b border-[#F5F5F5] px-4 py-3.5 text-left transition-colors ${
-                        isActive ? 'bg-[#EAF9B8] border-l-[3px] border-l-[#0A0A0A]' : 'hover:bg-[#FAFAFA] border-l-[3px] border-l-transparent'
-                      } ${pulsedId === r.id ? 'animate-pulse ring-2 ring-[#C6F24E]' : ''}`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span
-                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-heading text-[10px] font-semibold ${avatarBg}`}
-                          >
-                            {initials(r.customerName)}
-                          </span>
-                          <span className="truncate text-[13px] font-semibold text-[#0A0A0A]">
-                            {r.customerName || (isTr ? 'Anonim' : 'Anonymous')}
-                          </span>
-                        </div>
-                        <span className="pulse-eyebrow text-[#737373] shrink-0">{timeAgo(r.createdAt, locale)}</span>
-                      </div>
-                      <p className="line-clamp-2 text-[12px] text-[#525252] leading-[1.4]">
-                        {r.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
-                      </p>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span
-                          className="pulse-eyebrow rounded bg-[#0A0A0A] text-[#C6F24E] px-1.5 py-0.5"
-                          aria-label={`${r.rating} ${isTr ? 'yıldız' : 'stars'}`}
-                        >
-                          {'★'.repeat(r.rating)}
-                        </span>
-                        <span className="text-[10px] text-[#737373]">
-                          {(r.platform || 'buaze').toUpperCase()}
-                          {r.restaurant?.name ? ` · ${r.restaurant.name}` : ''}
-                        </span>
-                        <span className="ml-auto flex items-center gap-1">
-                          {r.hasPendingAiDraft && !r.isReplied && r.rating <= 3 && (
-                            <span title={isTr ? 'Pulse AI taslağı hazır' : 'Pulse AI draft ready'}>
-                              <Badge kind="lime">
-                                <span className="hidden sm:inline">PULSE AI</span>
-                                <span className="sm:hidden" aria-hidden="true">AI</span>
-                              </Badge>
-                            </span>
-                          )}
-                          {r.isReplied && (
-                            <span title={isTr ? 'Yanıtlandı' : 'Replied'}>
-                              <Badge kind="ok">✓</Badge>
-                            </span>
-                          )}
-                          {r.rating <= 2 && !r.isReplied && !r.hasPendingAiDraft && (
-                            <span title={isTr ? 'Düşük puan' : 'Low rating'}>
-                              <Badge kind="danger">!</Badge>
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
           )}
         </div>
-      </aside>
+      </div>
 
-      {/* ============ CENTER — active review ============ */}
-      <section className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-white p-5 sm:p-8">
-        {active ? (
-          <>
-            <div className="flex items-start gap-4">
-              <div
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-[#0A0A0A] text-[18px] font-semibold text-[#C6F24E] bz-h-tight"
-              >
-                {initials(active.customerName)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2
-                  className="text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
-                >
-                  {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
-                </h2>
-                <p className="pulse-eyebrow text-[#737373] mt-1">
-                  {(active.platform || 'BUAZE').toUpperCase()}
-                  {active.restaurant?.name ? ` · ${active.restaurant.name.toUpperCase()}` : ''}
-                  {` · ${timeAgo(active.createdAt, locale).toUpperCase()} ${isTr ? 'ÖNCE' : 'AGO'}`}
-                </p>
-                <div className="mt-2 flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <span key={i} className={`${i <= active.rating ? 'text-[#C6F24E]' : 'text-[#EDEDED]'} text-[16px]`}>
-                      ★
-                    </span>
-                  ))}
-                  <span className="ml-2 text-[13px] font-semibold text-[#0A0A0A]">
-                    {active.rating.toFixed(1)}
-                  </span>
-                </div>
-              </div>
-              <div className="flex shrink-0 gap-1.5">
-                <button
-                  type="button"
-                  onClick={flagFeedback}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] px-2.5 py-1.5 text-[11px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
-                  title={isTr ? 'Bayrakla işaretle' : 'Flag'}
-                >
-                  <Flag size={12} strokeWidth={2} />
-                  {isTr ? 'İşaretle' : 'Flag'}
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-xl bg-[#FAFAFA] p-5 text-[15px] leading-[1.65] text-[#0A0A0A]">
-              {active.comment ? `"${active.comment}"` : isTr ? 'Yorum bırakılmadı.' : 'No comment.'}
-            </div>
-
-            {customerAspects && Object.entries(customerAspects).some(([, v]) => v) && (
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {Object.entries(customerAspects).map(([k, v]) =>
-                  v ? (
-                    <span
-                      key={k}
-                      className="rounded-full bg-[#EAF9B8] px-2.5 py-1 text-[11px] font-medium text-[#0A0A0A]"
-                    >
-                      {aspectLabel[k as keyof typeof aspectLabel] ?? k} · +{v}
-                    </span>
-                  ) : null,
-                )}
-                <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#A3A3A3] px-2.5 py-1 text-[11px] text-[#737373]">
-                  <Plus size={10} strokeWidth={2} />
-                  {isTr ? 'Etiket' : 'Tag'}
-                </span>
-              </div>
-            )}
-
-            {/* Sent reply thread — owner sees what was previously replied.
-                Eski UI'da sadece "yanıtlandı" badge'i vardı, içerik gizliydi. */}
-            {sentReplies.length > 0 && (
-              <div className="mt-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <MessageSquare size={13} className="text-[#525252]" strokeWidth={2} />
-                  <span className="pulse-eyebrow text-[#737373]">
-                    {isTr ? `GÖNDERİLEN YANITLAR (${sentReplies.length})` : `SENT REPLIES (${sentReplies.length})`}
-                  </span>
-                </div>
-                <ol className="flex flex-col gap-2.5">
-                  {sentReplies.map((rep) => {
-                    const channelLabel =
-                      rep.channel === 'email'
-                        ? isTr ? 'E-posta' : 'Email'
-                        : isTr ? 'Dahili' : 'Internal';
-                    const tone =
-                      rep.status === 'failed'
-                        ? 'border-[#FCA5A5] bg-[#FFFBFB]'
-                        : 'border-[#EDEDED] bg-white';
-                    return (
-                      <li
-                        key={rep.id}
-                        className={`rounded-xl border ${tone} p-3.5`}
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="pulse-eyebrow text-[#737373] inline-flex items-center gap-1.5">
-                            {rep.channel === 'email' && <Mail size={10} strokeWidth={2.2} />}
-                            {channelLabel}
-                            {rep.status === 'failed' && (
-                              <span className="text-[#991B1B]">
-                                · {isTr ? 'iletilemedi' : 'failed'}
-                              </span>
-                            )}
-                          </span>
-                          <span className="pulse-eyebrow text-[#A3A3A3] tabular-nums">
-                            {timeAgo(rep.createdAt, locale)}
-                          </span>
-                        </div>
-                        <p className="text-[13px] leading-[1.55] text-[#0A0A0A] whitespace-pre-line">
-                          {rep.body}
-                        </p>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </div>
-            )}
-            {sentLoading && sentReplies.length === 0 && (
-              <div className="mt-6 flex items-center gap-2 text-[12px] text-[#737373]">
-                <Loader2 size={12} className="animate-spin" />
-                {isTr ? 'Yanıtlar yükleniyor…' : 'Loading replies…'}
-              </div>
-            )}
-
-            {/* High-rating reply gate (4-5★).
-                4-5 yıldızlı yorumlar zaten public form akışında platforma redirect
-                ediliyor (CLAUDE.md §23.7 Phase 10.1). İçeriden yanıt yazmak
-                anlamsız — UI gizlenir, operasyonel detay (Flag) korunur. */}
-            {active.rating >= 4 ? (
-              <div className="mt-6">
-                <AlertBanner kind="lime" icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}>
-                  <span className="block font-semibold text-[#0A0A0A]">
-                    {isTr ? 'Yanıt yazmaya gerek yok' : 'No reply needed'}
-                  </span>
-                  <span className="block mt-0.5 text-[#525252]">
-                    {isTr
-                      ? `Yüksek puanlı yorum ${(active.platform || 'platform').toUpperCase()} üzerinden alındı; müşteri zaten platformda paylaşımını yaptı. İsterseniz İşaretle aksiyonuyla bu yorumu ekibinizle takip edebilirsiniz.`
-                      : `High-rating review came in via ${(active.platform || 'platform').toUpperCase()}; the customer already posted on the platform. You can still flag this review to keep track with your team.`}
-                  </span>
-                </AlertBanner>
-              </div>
-            ) : (
-              <>
-            {/* Buaze Pulse AI suggestion — wired to /api/feedback/[id]/suggest-reply.
-                Uses the configured AI provider when OPENAI_API_KEY is set; falls back to the
-                deterministic template otherwise. The badge reflects which
-                source produced the current draft. */}
-            <div className="mt-6 rounded-xl bg-[#0A0A0A] p-5 text-white">
-              <div className="flex items-center gap-2">
-                <span
-                  className="flex h-5 w-5 items-center justify-center rounded bg-[#C6F24E] text-[10px] font-bold text-[#0A0A0A] bz-h-tight"
-                >
-                  AI
-                </span>
-                <span className="pulse-eyebrow text-[#C6F24E]">
-                  {isTr ? 'BUAZE PULSE AI ÖNERİSİ' : 'BUAZE PULSE AI SUGGESTION'}
-                </span>
-                {!aiLoading && aiSource === 'openai' && (
-                  <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-2 py-0.5 text-[#0A0A0A]">
-                    {isTr ? 'AI' : 'AI'}
-                  </span>
-                )}
-                {!aiLoading && (aiSource === 'template' || aiSource === 'template-fallback') && (
-                  <span className="pulse-eyebrow rounded-full bg-white/10 px-2 py-0.5 text-white/70">
-                    {isTr ? 'ŞABLON' : 'TEMPLATE'}
-                  </span>
-                )}
-                {!aiLoading && aiFromBackground && (
-                  <span className="pulse-eyebrow rounded-full bg-white/10 px-2 py-0.5 text-white/70">
-                    {isTr ? 'HAZIR' : 'READY'}
-                  </span>
-                )}
-                {aiLoading && (
-                  <span className="pulse-eyebrow inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-white/70">
-                    <Loader2 size={10} className="animate-spin" />
-                    {isTr ? 'HAZIRLANIYOR' : 'WORKING'}
-                  </span>
-                )}
-              </div>
-              {aiLoading ? (
-                <div className="mt-3 space-y-2" aria-hidden="true">
-                  <div className="h-3 w-full rounded bg-white/10 animate-pulse" />
-                  <div className="h-3 w-[88%] rounded bg-white/10 animate-pulse" />
-                  <div className="h-3 w-[60%] rounded bg-white/10 animate-pulse" />
-                </div>
-              ) : (
-                <p className="mt-3 text-[13px] leading-[1.65] text-white/80">
-                  {aiSuggestion ? `"${aiSuggestion}"` : (isTr ? 'Pulse AI henüz bir taslak üretmedi.' : 'Pulse AI has not produced a draft yet.')}
-                </p>
-              )}
-              {/* Template fallback warning — AI key yokken / API fail durumunda
-                  kullanıcıyı bilgilendir. "Kullan & gönder" hala çalışır
-                  ama scaffolding generic-safe metin döner. */}
-              {!aiLoading && (aiSource === 'template' || aiSource === 'template-fallback') && aiSuggestion && (
-                <p className="mt-3 inline-flex items-start gap-2 text-[11px] leading-[1.5] text-white/60">
-                  <span aria-hidden="true" className="mt-0.5">⚠</span>
-                  <span>
-                    {isTr
-                      ? 'AI servisi şu an pasif; aşağıdaki şablon hazır taslaktır. "Yeniden öner" ile tekrar deneyebilirsiniz.'
-                      : 'AI service is currently unavailable; this is a generic template. Click "Regenerate" to retry.'}
-                  </span>
-                </p>
-              )}
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!aiSuggestion || sendingReply) return;
-                    setReplyDraft(aiSuggestion); // visual feedback
-                    await sendReply(aiSuggestion); // override body — async state bypass
-                  }}
-                  disabled={aiLoading || !aiSuggestion || sendingReply}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={isTr ? 'AI taslağını doğrudan gönder' : 'Send the AI draft directly'}
-                >
-                  {sendingReply ? (
-                    <Loader2 size={12} strokeWidth={2} className="animate-spin" />
-                  ) : (
-                    <Sparkles size={12} strokeWidth={2} />
-                  )}
-                  {isTr ? 'Kullan & gönder' : 'Use & send'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => regenerateAi()}
-                  disabled={aiLoading || aiRegenerating}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50"
-                >
-                  <RotateCw size={12} strokeWidth={2} className={aiRegenerating ? 'animate-spin' : ''} />
-                  {isTr ? 'Yeniden öner' : 'Regenerate'}
-                </button>
-                <select
-                  value={aiTone}
-                  onChange={(e) => setAiTone(e.target.value as 'warm' | 'formal' | 'apologetic')}
-                  disabled={aiLoading || aiRegenerating}
-                  aria-label={isTr ? 'Pulse AI tonu' : 'Pulse AI tone'}
-                  title={isTr ? '"Yeniden öner"e bas' : 'Click "Regenerate"'}
-                  className="rounded-full border border-white/20 bg-transparent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50 outline-none focus:border-[#C6F24E]"
-                  style={{ colorScheme: 'dark' }}
-                >
-                  <option value="warm" className="text-[#0A0A0A]">{isTr ? 'Ton: Samimi' : 'Tone: Warm'}</option>
-                  <option value="formal" className="text-[#0A0A0A]">{isTr ? 'Ton: Resmi' : 'Tone: Formal'}</option>
-                  <option value="apologetic" className="text-[#0A0A0A]">{isTr ? 'Ton: Özür' : 'Tone: Apologetic'}</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setReplyDraft(aiSuggestion)}
-                  disabled={aiLoading || !aiSuggestion}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={isTr ? 'Taslağı düzenleme alanına kopyala' : 'Copy draft to editor'}
-                >
-                  <Pencil size={12} strokeWidth={2} />
-                  {isTr ? 'Düzenle' : 'Edit'}
-                </button>
-              </div>
-            </div>
-
-            {/* Reply box — persists via /api/feedback/[id]/reply; when
-                channel=email and the customer left an address, Resend
-                delivers the reply to them. */}
-            <div className="mt-4 rounded-xl border border-[#EDEDED] p-4">
-              <div className="flex items-center justify-between">
-                <p className="pulse-eyebrow text-[#737373]">
-                  {isTr ? 'YANIT YAZIN' : 'WRITE A REPLY'}
-                </p>
-                {replyNotice && (
-                  <span
-                    className={`pulse-eyebrow rounded-full px-2.5 py-1 ${
-                      replyNotice.tone === 'success'
-                        ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                        : replyNotice.tone === 'error'
-                          ? 'bg-[#FEF2F2] text-[#991B1B]'
-                          : 'bg-[#F5F5F5] text-[#525252]'
-                    }`}
-                  >
-                    {replyNotice.msg}
-                  </span>
-                )}
-              </div>
-              <textarea
-                value={replyDraft}
-                onChange={(e) => setReplyDraft(e.target.value)}
-                placeholder={isTr ? `Merhaba ${customerName.split(' ')[0]},` : `Hi ${customerName.split(' ')[0]},`}
-                className="mt-2.5 w-full min-h-[80px] resize-none bg-transparent text-[13px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none"
-              />
-
-              <div className="mt-3 rounded-lg bg-[#FAFAFA] p-2.5">
-                {active.customerEmail ? (
-                  <label className="flex cursor-pointer items-center gap-2 text-[12px] text-[#0A0A0A]">
-                    <input
-                      type="checkbox"
-                      checked={sendEmail}
-                      onChange={(e) => setSendEmail(e.target.checked)}
-                      className="h-4 w-4 accent-[#0A0A0A]"
-                    />
-                    <Mail size={12} className="text-current opacity-60" />
-                    <span>
-                      {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
-                      <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>
-                    </span>
-                  </label>
-                ) : (
-                  <p className="flex items-center gap-2 text-[11px] text-[#737373]">
-                    <Mail size={12} />
-                    {isTr
-                      ? `Müşteri e-posta bırakmamış${active.rating >= 4 ? ' (yüksek puanlılar Google\'a yönlendirildiği için bu beklenir)' : ''} — yanıt sadece dahili kayıt olarak saklanır.`
-                      : `No customer email${active.rating >= 4 ? ' (expected: high ratings are redirected to Google)' : ''} — reply saved internally only.`}
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex gap-1.5">
-                  {['📝', '✨', '😊', '@'].map((e) => (
-                    <span
-                      key={e}
-                      className="flex h-7 w-7 items-center justify-center rounded-md bg-[#F5F5F5] text-[12px]"
-                    >
-                      {e}
-                    </span>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => sendReply()}
-                  disabled={!replyDraft.trim() || sendingReply}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-40"
-                >
-                  {sendingReply ? (
-                    <Loader2 size={12} strokeWidth={2} className="animate-spin" />
-                  ) : sendEmail && active.customerEmail ? (
-                    <Mail size={12} strokeWidth={2} />
-                  ) : (
-                    <Send size={12} strokeWidth={2} />
-                  )}
-                  {sendEmail && active.customerEmail
-                    ? isTr ? 'E-posta ile gönder' : 'Send as email'
-                    : isTr ? 'Dahili kaydet' : 'Save internal'}
-                </button>
-              </div>
-            </div>
-              </>
-            )}
-          </>
-        ) : (
-          <div className="flex flex-1 items-center justify-center px-4">
-            <EmptyState
-              icon={<Inbox size={22} strokeWidth={1.5} />}
-              title={isTr ? 'Bir yorum seç' : 'Select a review'}
-              body={isTr ? 'Soldaki listeden bir yorum seçince detaylar burada görünecek.' : 'Pick a review from the list to view details here.'}
-            />
-          </div>
-        )}
-      </section>
-
-      {/* ============ RIGHT — customer context (static, frontend only) ============ */}
-      {active && (
-        <aside className="hidden lg:flex lg:w-[280px] xl:w-[340px] flex-shrink-0 flex-col overflow-y-auto border-l border-[#EDEDED] bg-[#FAFAFA] p-5 xl:p-6">
-          <div className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'MÜŞTERİ PROFİLİ' : 'CUSTOMER PROFILE'}
-          </div>
-          <div className="mt-3 rounded-xl border border-[#EDEDED] bg-white p-5">
-            <p className="text-[12px] text-[#737373]">{isTr ? 'Toplam ziyaret' : 'Total visits'}</p>
-            <div
-              className="text-[32px] font-medium leading-none tracking-[-0.025em] text-[#0A0A0A] bz-h-tight"
-            >
-              1
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div>
-                <p className="pulse-eyebrow text-[#737373]">{isTr ? 'ORT. PUAN' : 'AVG. RATING'}</p>
-                <p
-                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A] bz-h-tight"
-                >
-                  {active.rating.toFixed(1)} <span className="text-[#C6F24E]">★</span>
-                </p>
-              </div>
-              <div>
-                <p className="pulse-eyebrow text-[#737373]">{isTr ? 'SADAKAT' : 'LOYALTY'}</p>
-                <p
-                  className="mt-1 text-[15px] font-semibold text-[#0A0A0A] bz-h-tight"
-                >
-                  {active.rating >= 4 ? (isTr ? 'Yüksek' : 'High') : isTr ? 'Orta' : 'Mid'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 pulse-eyebrow text-[#737373]">{isTr ? 'GEÇMİŞ' : 'HISTORY'}</div>
-          <div className="mt-2 space-y-2">
-            <div className="rounded-lg border border-[#EDEDED] bg-white p-3">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="rounded bg-[#0A0A0A] px-1.5 py-0.5 text-[#C6F24E] font-mono">
-                  {'★'.repeat(active.rating)}
-                </span>
-                <span className="text-[#737373]">{timeAgo(active.createdAt, locale)}</span>
-              </div>
-              <p className="mt-1.5 line-clamp-2 text-[12px] text-[#525252]">
-                {active.comment ?? (isTr ? 'Yorum yok.' : 'No comment.')}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 pulse-eyebrow text-[#737373]">{isTr ? 'OTOMASYON' : 'AUTOMATION'}</div>
-          <div className="mt-2 rounded-xl bg-[#EAF9B8] p-4 text-[12px] leading-[1.55] text-[#0A0A0A]">
-            <strong>{isTr ? 'SLA hedefi' : 'SLA target'}:</strong>{' '}
-            {isTr ? '2 saat içinde yanıt.' : 'Reply within 2 hours.'}
-          </div>
-        </aside>
-      )}
+      {/* Filters modal */}
+      <FeedbackFiltersModal
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        locale={locale}
+        daysFilter={String(days)}
+        setDaysFilter={(v) => filters.set('days', v)}
+        filterRating={String(rating)}
+        setFilterRating={(v) => filters.set('rating', v)}
+        platformFilter={platform}
+        setPlatformFilter={(v) => filters.set('platform', v)}
+        hasReplyFilter={hasReply}
+        setHasReplyFilter={(v) => filters.set('hasReply', v)}
+        flaggedOnly={flagged}
+        setFlaggedOnly={(v) => filters.set('flagged', v)}
+        hasActiveFilter={activeFilterCount > 0}
+        onResetFilters={onResetFilters}
+      />
     </div>
   );
 }
 
-export default async function FeedbacksPage({ params }: { params: Promise<{ locale: Locale }> }) {
+export default async function FeedbacksPage({
+  params,
+}: {
+  params: Promise<{ locale: Locale }>;
+}) {
   const resolvedParams = await params;
   return (
     <Suspense
