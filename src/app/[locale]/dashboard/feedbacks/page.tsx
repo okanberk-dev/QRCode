@@ -68,6 +68,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
 
+  // Pagination — "Daha fazla göster" pattern. Initial 20 row first paint için
+  // ağır chart/AI fetch'leriyle yarışmasın; kullanıcı talep ettikçe +20.
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   // Reply composer
   const [replyDraft, setReplyDraft] = useState('');
   const [sendEmail, setSendEmail] = useState(true);
@@ -96,29 +103,67 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // ============================================================
   // Fetch feedbacks list — backend kontratı (CLAUDE.md §Backend) korundu.
   // ============================================================
+  const buildListQuery = (targetPage: number) => {
+    const query = new URLSearchParams({
+      page: String(targetPage),
+      limit: String(PAGE_SIZE),
+      days: String(days),
+    });
+    if (rating !== 'all') query.append('rating', String(rating));
+    if (platform !== 'all') query.append('platform', String(platform));
+    if (hasReply === 'pending') query.append('hasReply', 'false');
+    if (flagged) query.append('isFlagged', 'true');
+    return query;
+  };
+
   useEffect(() => {
     (async () => {
       setLoading(true);
+      setPage(1);
+      setHasMore(false);
       try {
-        const query = new URLSearchParams({ page: '1', limit: '50', days: String(days) });
-        if (rating !== 'all') query.append('rating', String(rating));
-        if (platform !== 'all') query.append('platform', String(platform));
-        if (hasReply === 'pending') query.append('hasReply', 'false');
-        if (flagged) query.append('isFlagged', 'true');
-        const res = await fetch(`/api/feedback?${query.toString()}`);
+        const res = await fetch(`/api/feedback?${buildListQuery(1).toString()}`);
         if (res.ok) {
           const data = await res.json();
           const rows: FeedbackRow[] = data.data ?? [];
           setFeedbacks(rows);
           if (rows.length > 0) setActiveId((curr) => curr ?? rows[0].id);
           setDegraded(data?.meta?.degraded ?? null);
+          const totalPages = Number(data?.meta?.totalPages ?? 1);
+          setHasMore(totalPages > 1);
         }
       } catch (e) {
         console.error(e);
       }
       setLoading(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days, rating, platform, hasReply, flagged]);
+
+  const loadMoreFeedbacks = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const res = await fetch(`/api/feedback?${buildListQuery(nextPage).toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        const rows: FeedbackRow[] = data.data ?? [];
+        setFeedbacks((prev) => {
+          // Sayfalar arası overlap (yeni yorum eklenmesi vb.) durumunda
+          // duplicate id'leri at — UI'daki React key collision'a düşürmemek için.
+          const seen = new Set(prev.map((r) => r.id));
+          return [...prev, ...rows.filter((r) => !seen.has(r.id))];
+        });
+        setPage(nextPage);
+        const totalPages = Number(data?.meta?.totalPages ?? 1);
+        setHasMore(nextPage < totalPages);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setLoadingMore(false);
+  };
 
   // ============================================================
   // Filtered list (client-side: tab + search)
@@ -509,6 +554,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             onResetFilters={onResetFilters}
             onSelect={onSelectFeedback}
             degraded={degraded}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={loadMoreFeedbacks}
           />
         </aside>
 

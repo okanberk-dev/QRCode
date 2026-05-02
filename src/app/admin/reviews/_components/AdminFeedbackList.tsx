@@ -1,6 +1,6 @@
 'use client';
 
-import { Inbox, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
+import { Inbox, Loader2, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
 import { AlertBanner, EmptyState, Skeleton, Tabs } from '@/components/ui';
 import type { AdminTab, CountsResp, DegradedMeta, FeedbackRow } from './types';
 import { AdminFeedbackListItem } from './AdminFeedbackListItem';
@@ -29,6 +29,10 @@ interface AdminFeedbackListProps {
 
   onSelect: (id: string) => void;
   degraded: DegradedMeta | null;
+
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
 }
 
 export function AdminFeedbackList({
@@ -51,6 +55,9 @@ export function AdminFeedbackList({
   onResetFilters,
   onSelect,
   degraded,
+  hasMore,
+  loadingMore,
+  onLoadMore,
 }: AdminFeedbackListProps) {
   const tabs: { id: AdminTab; label: string; count: number | undefined }[] = [
     { id: 'all', label: isTr ? 'Hepsi' : 'All', count: counts?.all },
@@ -188,18 +195,43 @@ export function AdminFeedbackList({
             />
           </div>
         ) : (
-          filtered.map((r) => (
-            <AdminFeedbackListItem
-              key={r.id}
-              feedback={r}
-              isActive={activeId === r.id}
-              isPulsed={pulsedId === r.id}
-              isSelected={selectedIds.has(r.id)}
-              isTr={isTr}
-              onSelect={onSelect}
-              onToggleSelect={onToggleSelect}
-            />
-          ))
+          <>
+            {filtered.map((r) => (
+              <AdminFeedbackListItem
+                key={r.id}
+                feedback={r}
+                isActive={activeId === r.id}
+                isPulsed={pulsedId === r.id}
+                isSelected={selectedIds.has(r.id)}
+                isTr={isTr}
+                onSelect={onSelect}
+                onToggleSelect={onToggleSelect}
+              />
+            ))}
+            {/* "Daha fazla göster" — backend zaten paginate ediyor; ilk 25
+                yorum first paint için, kullanıcı talep ettikçe +25.
+                Bulk selection load-more sonrası genişler ama mevcut
+                selection state korunur (CLAUDE.md §11.21). */}
+            {hasMore && (
+              <div className="flex items-center justify-center px-3 py-4 border-t border-[#F5F5F5]">
+                <button
+                  type="button"
+                  onClick={onLoadMore}
+                  disabled={loadingMore}
+                  className="bz-btn-ghost inline-flex items-center gap-2 text-[12px] disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" strokeWidth={2.2} />
+                      <span>{isTr ? 'Yükleniyor…' : 'Loading…'}</span>
+                    </>
+                  ) : (
+                    <span>{isTr ? 'Daha fazla göster' : 'Show more'}</span>
+                  )}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
