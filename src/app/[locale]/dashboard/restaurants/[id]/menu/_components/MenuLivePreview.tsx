@@ -2,6 +2,10 @@
 
 import { Smartphone } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import type {
+  MenuCategoryView,
+  RestaurantView,
+} from '@/components/menu/PublicMenuView';
 
 // PublicMenuView client-only ve büyük (1395 LOC). Ana builder bundle'a
 // statik girmesin diye dynamic import.
@@ -20,10 +24,9 @@ const PublicMenuView = dynamic(
 // kapsamlı (sadece restaurant.menuTheme/menuAccentColor/menuLogoUrl).
 
 interface MenuLivePreviewProps {
-  // Mini render için sade prop seti — PublicMenuView'in tüm beklediği
-  // alanları parent geçer.
-  restaurant: any; // owner page'de Restaurant tipi (geniş, lokal); cast lokal
-  categories: any[];
+  // PublicMenuView ile aynı tipler — type safety için import.
+  restaurant: RestaurantView;
+  categories: MenuCategoryView[];
   locale: 'tr' | 'en';
 }
 
