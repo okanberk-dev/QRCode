@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 interface TrendsChartProps {
@@ -11,11 +12,27 @@ interface TrendsChartProps {
 }
 
 export default function TrendsChart({ data }: TrendsChartProps) {
+  // Recharts ResponsiveContainer SSR'da 0x0 ölçüm yapıp `width(-1) and
+  // height(-1) of chart should be greater than 0` warning'ini Vercel log'a
+  // basıyordu (CLAUDE.md §21.14 mevcut minWidth/minHeight={1} pattern'i bile
+  // bu RSC pre-render warning'ini engellemiyor). Mount'a kadar skeleton
+  // göster — chart sadece browser'da hydrate olduğunda render edilir.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div
+        className="h-[260px] sm:h-[320px] md:h-[350px] w-full rounded-xl bg-[#FAFAFA]"
+        aria-hidden="true"
+      />
+    );
+  }
+
   return (
     <div className="h-[260px] sm:h-[320px] md:h-[350px] w-full min-w-0">
-      {/* minWidth/minHeight={1} silences the recharts ResizeObserver warning
-          when the parent grid track briefly measures 0 during the dynamic
-          chunk swap (loading placeholder → real chart). */}
       <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
           <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
