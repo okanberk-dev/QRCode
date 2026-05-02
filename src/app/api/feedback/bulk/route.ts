@@ -114,6 +114,30 @@ export async function POST(req: NextRequest) {
     processed = results.filter((r) => r.status === 'fulfilled').length;
   }
 
+  // Audit log — superadmin/manager mass-mutation surface (CLAUDE.md §29.6).
+  // Best-effort: log write failure must not undo the action that already
+  // committed. Mirrors /api/admin/restaurants/bulk pattern (which logs in
+  // the same transaction as the mutation, but feedback bulk's three
+  // possible mutations make a single-tx wrap awkward).
+  try {
+    await prisma.adminAuditLog.create({
+      data: {
+        actorId: actor.id,
+        actorSource: actor.source,
+        action: `feedback.bulk.${action}`,
+        targetId: allowedIds.join(','),
+        payload: {
+          requestedCount: ids.length,
+          processed,
+          skipped: ids.length - allowedIds.length,
+          ids: allowedIds,
+        },
+      },
+    });
+  } catch (err) {
+    console.warn('[audit] feedback.bulk write failed (non-fatal)', (err as Error).message);
+  }
+
   return NextResponse.json({
     processed,
     skipped: ids.length - allowedIds.length,
