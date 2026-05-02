@@ -4066,7 +4066,7 @@ Bu bulgular davranış-değişikliği gerektiriyor; CLAUDE.md'de bilinçli tasar
 
 - **`npm audit` supply chain** (lokal node_modules ortamı yoktu)
 - ~~**Render-side XSS sweep**~~ — **✅ KAPATILDI** (2026-05 follow-up). 54 `dangerouslySetInnerHTML` kullanımı tarandı; 36 JSON-LD callsite `jsonLdString()` helper'ına migrate edildi (CLAUDE.md §37.6), 1 admin-authored `help/[slug]` body sanitize edildi (`sanitizeBlogContent`). Detay: `SECURITY_AUDIT_REPORT.md` "Render-side XSS sweep — closed".
-- **PII grep across 305 files** (`console.error(..., user.email)` patterns)
+- ~~**PII grep across 305 files**~~ — **✅ KAPATILDI** (2026-05 follow-up). `console.*` çağrıları tarandı (~30 hit); 2 gerçek leak fix edildi: `cron/trial-reminders` email→userId (KVKK), `ops-alert.ts` recipient redaction (Sentry data minimization). Sentry capture extra/tags surface'leri zaten `userId/restaurantId` only, PII içermiyordu.
 - **CSP header** (`next.config.ts` XFO/HSTS var; CSP yok — script inventory mapping gerek: GTM + Yandex + Sentry tunnel + Speed Insights + Analytics + Vercel)
 - **Prisma cascade audit** — `onDelete: Cascade/Restrict` kapsamlı veri-kaybı taraması
 
@@ -4088,6 +4088,24 @@ import { jsonLdString } from '@/lib/seo/json-ld';
 Helper `<` → `<`, `-->` → `-->`, U+2028/U+2029 escape eder. Output JSON-valid kalır (`JSON.parse` aynı şekilde çalışır).
 
 **Yapma**: yeni JSON-LD blok eklerken `JSON.stringify`'i raw kullanma. Code review check'i — yeni `__html: JSON.stringify(` pattern'i lint-anti-pattern.
+
+### 37.7 PII redaction disiplini (yeni)
+
+`console.*` çağrıları Sentry'nin `extra` field'ı ile otomatik kapılır (instrumentation.ts default behaviour). KVKK data minimization gereği:
+
+```ts
+// ❌ PII leak (Sentry'e gider):
+console.error('[FOO] failed', { email: user.email, phone: customer.phone });
+
+// ✅ Redacted:
+console.error('[FOO] failed', { userId: user.id, hasEmail: Boolean(user.email) });
+```
+
+Kural:
+- Kullanıcı `email` / `phone` / `ipAddress` log'lama. `userId` / `restaurantId` / hash log'la.
+- Sentry `extra` payload'ını kontrolden geçir — Adım 1 ve PII follow-up'ında yapıldı, mevcut surface temiz.
+- Yeni mail dispatch / cron / privileged endpoint'i log'unda PII varsa Sentry'e gitmeden önce redact et (`{ recipient: _omit, ...safe }` pattern'i — `ops-alert.ts` referans).
+- Sentry `sendDefaultPii: false` (CLAUDE.md §26.2) zaten meta header/body'i kapatıyor; bu kural `console.error(..., {explicit PII})` yolunu kapatır.
 
 ### 37.5 Yeni session disiplini
 
