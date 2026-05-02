@@ -91,6 +91,10 @@ export default function DashboardQrPage() {
   const [pageError, setPageError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<QrHistoryItem | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // Modal kapanışında "QR oluşturuldu / yeniden oluşturuldu" görünür
+  // feedback. Backend `rememberFeedbackQr` aynı tuple varsa update yapar
+  // (CLAUDE.md §34.5 distinct count) — kullanıcı için "yeni" gibi görünür.
+  const [createNotice, setCreateNotice] = useState<string | null>(null);
 
   // Filters
   const [branchFilter, setBranchFilter] = useState<string>('all');
@@ -240,6 +244,10 @@ export default function DashboardQrPage() {
     };
     setItems((prev) => dedupeQrRows([newItem, ...prev]));
     setSvgs((prev) => ({ ...prev, [newItem.id]: result.svg }));
+    // Görünür feedback — modal kapandı + kullanıcı listede yeni satırı görür.
+    // 3 saniye sonra otomatik kaybolur.
+    setCreateNotice(isTr ? 'QR kodu oluşturuldu.' : 'QR code created.');
+    setTimeout(() => setCreateNotice(null), 3000);
     // Refresh from API to get the canonical id
     setTimeout(() => {
       fetch(`/api/restaurants/${result.restaurantId}/qr/history`)
@@ -366,6 +374,12 @@ export default function DashboardQrPage() {
       {pageError && (
         <AlertBanner kind="danger" onDismiss={() => setPageError(null)}>
           {pageError}
+        </AlertBanner>
+      )}
+
+      {createNotice && (
+        <AlertBanner kind="success" onDismiss={() => setCreateNotice(null)}>
+          {createNotice}
         </AlertBanner>
       )}
 

@@ -272,6 +272,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     return () => {
       cancelled = true;
     };
+    // active.id değişiminde tetiklenir; active ref useMemo'lu (line ~196),
+    // aynı id için stale değer riski yok. Lint react-hooks/exhaustive-deps
+    // false positive — active.id semantic doğru sinyal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id]);
 
   useEffect(() => {
@@ -370,8 +374,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setTimeout(() => setReplyNotice(null), 2800);
   };
 
-  const sendReply = async () => {
-    if (!active || !replyDraft.trim() || sendingReply) return;
+  const sendReply = async (overrideBody?: string) => {
+    if (!active || sendingReply) return;
+    // overrideBody: AI "Kullan & gönder" akışı setReplyDraft async olduğu için
+    // state güncellemesini beklemeden gönderim için. Manuel "E-posta ile
+    // gönder" butonu replyDraft kullanır (eski davranış).
+    const body = (overrideBody ?? replyDraft).trim();
+    if (!body) return;
     setSendingReply(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
     // Mirror /admin/reviews — track whether the reply originated from the
@@ -387,7 +396,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          body: replyDraft,
+          body,
           channel: wantsEmail ? 'email' : 'internal',
           sendEmail: wantsEmail,
           locale,
@@ -405,7 +414,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         // appears instantly in the detail panel without a re-fetch.
         const newReply: SentReply = {
           id: data?.replyId ?? `tmp-${Date.now()}`,
-          body: replyDraft,
+          body,
           channel: wantsEmail ? 'email' : 'internal',
           status: data?.email?.status === 'failed' ? 'failed' : 'sent',
           createdAt: new Date().toISOString(),
@@ -884,14 +893,36 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                   {aiSuggestion ? `"${aiSuggestion}"` : (isTr ? 'Pulse AI henüz bir taslak üretmedi.' : 'Pulse AI has not produced a draft yet.')}
                 </p>
               )}
+              {/* Template fallback warning — AI key yokken / API fail durumunda
+                  kullanıcıyı bilgilendir. "Kullan & gönder" hala çalışır
+                  ama scaffolding generic-safe metin döner. */}
+              {!aiLoading && (aiSource === 'template' || aiSource === 'template-fallback') && aiSuggestion && (
+                <p className="mt-3 inline-flex items-start gap-2 text-[11px] leading-[1.5] text-white/60">
+                  <span aria-hidden="true" className="mt-0.5">⚠</span>
+                  <span>
+                    {isTr
+                      ? 'AI servisi şu an pasif; aşağıdaki şablon hazır taslaktır. "Yeniden öner" ile tekrar deneyebilirsiniz.'
+                      : 'AI service is currently unavailable; this is a generic template. Click "Regenerate" to retry.'}
+                  </span>
+                </p>
+              )}
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setReplyDraft(aiSuggestion)}
-                  disabled={aiLoading || !aiSuggestion}
+                  onClick={async () => {
+                    if (!aiSuggestion || sendingReply) return;
+                    setReplyDraft(aiSuggestion); // visual feedback
+                    await sendReply(aiSuggestion); // override body — async state bypass
+                  }}
+                  disabled={aiLoading || !aiSuggestion || sendingReply}
                   className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={isTr ? 'AI taslağını doğrudan gönder' : 'Send the AI draft directly'}
                 >
-                  <Sparkles size={12} strokeWidth={2} />
+                  {sendingReply ? (
+                    <Loader2 size={12} strokeWidth={2} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={12} strokeWidth={2} />
+                  )}
                   {isTr ? 'Kullan & gönder' : 'Use & send'}
                 </button>
                 <button
@@ -921,6 +952,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                   onClick={() => setReplyDraft(aiSuggestion)}
                   disabled={aiLoading || !aiSuggestion}
                   className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-4 py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={isTr ? 'Taslağı düzenleme alanına kopyala' : 'Copy draft to editor'}
                 >
                   <Pencil size={12} strokeWidth={2} />
                   {isTr ? 'Düzenle' : 'Edit'}
@@ -995,7 +1027,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 </div>
                 <button
                   type="button"
-                  onClick={sendReply}
+                  onClick={() => sendReply()}
                   disabled={!replyDraft.trim() || sendingReply}
                   className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-40"
                 >

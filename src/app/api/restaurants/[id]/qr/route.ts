@@ -32,9 +32,13 @@ async function rememberFeedbackQr(params: {
       });
 
       if (existing) {
+        // Aynı QR yeniden oluşturulduğunda createdAt'i de yenile — owner
+        // panelinde "yeni QR" listesinin en üstüne taşınır. Distinct count
+        // semantiği değişmez (CLAUDE.md §34.5'teki tek-row kuralı korunur),
+        // sadece "freshly-touched" görüntüsü.
         await tx.qrGeneration.update({
           where: { id: existing.id },
-          data: { qrUrl: params.qrUrl },
+          data: { qrUrl: params.qrUrl, createdAt: new Date() },
         });
         return;
       }

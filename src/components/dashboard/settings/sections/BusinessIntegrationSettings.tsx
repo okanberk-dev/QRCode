@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ExternalLink,
   Globe,
+  Link2 as LinkIcon,
   Loader2,
   Phone,
   Plug,
@@ -59,6 +60,10 @@ interface RestaurantData {
   whatsappUrl: string | null;
   reservationUrl: string | null;
   website: string | null;
+  // "Diğer" custom platform — owner kendi review platform URL'i.
+  otherPlatformUrl?: string | null;
+  otherPlatformLabel?: string | null;
+  otherPlatformEnabled?: boolean;
 }
 
 interface BusinessIntegrationSettingsProps {
@@ -88,6 +93,9 @@ interface FormState {
   facebookUrl: string;
   whatsappUrl: string;
   reservationUrl: string;
+  otherPlatformUrl: string;
+  otherPlatformLabel: string;
+  otherPlatformEnabled: boolean;
 }
 
 interface PlatformDef {
@@ -231,6 +239,9 @@ function toForm(r: RestaurantData): FormState {
     facebookUrl: r.facebookUrl ?? "",
     whatsappUrl: r.whatsappUrl ?? "",
     reservationUrl: r.reservationUrl ?? "",
+    otherPlatformUrl: r.otherPlatformUrl ?? "",
+    otherPlatformLabel: r.otherPlatformLabel ?? "",
+    otherPlatformEnabled: r.otherPlatformEnabled ?? true,
   };
 }
 
@@ -430,6 +441,9 @@ export function BusinessIntegrationSettings({
         facebookUrl: form.facebookUrl.trim() || null,
         whatsappUrl: form.whatsappUrl.trim() || null,
         reservationUrl: form.reservationUrl.trim() || null,
+        otherPlatformUrl: form.otherPlatformUrl.trim() || null,
+        otherPlatformLabel: form.otherPlatformLabel.trim() || null,
+        otherPlatformEnabled: form.otherPlatformEnabled,
       };
       const res = await fetch(`/api/restaurants/${restaurant.id}`, {
         method: "PUT",
@@ -715,6 +729,64 @@ export function BusinessIntegrationSettings({
               />
             );
           })}
+        </div>
+      </SettingsCard>
+
+      {/* "Diğer" özel platform — TheFork, OpenTable veya sektör-spesifik
+          review URL'leri için. Domain validation YOK (free-form), sadece
+          http(s) protocol kontrolü save sırasında server-side. */}
+      <SettingsCard
+        icon={<LinkIcon size={18} />}
+        title={isTr ? "Diğer platform" : "Other platform"}
+        description={
+          isTr
+            ? "Listelerimizde yer almayan başka bir review platformu varsa (TheFork, OpenTable, sektör-spesifik) URL'i buraya ekleyebilirsin."
+            : "If you use a review platform we don't list (TheFork, OpenTable, sector-specific), add its URL here."
+        }
+      >
+        <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+            <FallbackIconChip>
+              <LinkIcon size={18} />
+            </FallbackIconChip>
+            <div className="flex-1 space-y-3">
+              <Field
+                label={isTr ? "Platform adı" : "Platform name"}
+                hint={isTr ? "Müşterinin tanıyacağı ad (örn. TheFork, OpenTable)" : "The platform name your customers recognize"}
+              >
+                <input
+                  type="text"
+                  className="bz-input w-full"
+                  value={form.otherPlatformLabel}
+                  onChange={(e) => set("otherPlatformLabel", e.target.value.slice(0, 60))}
+                  placeholder={isTr ? "Örn. TheFork, OpenTable" : "e.g. TheFork, OpenTable"}
+                  maxLength={60}
+                />
+              </Field>
+              <Field label={isTr ? "URL" : "URL"}>
+                <input
+                  type="url"
+                  className="bz-input w-full"
+                  value={form.otherPlatformUrl}
+                  onChange={(e) => set("otherPlatformUrl", e.target.value)}
+                  placeholder="https://..."
+                />
+              </Field>
+              <label className="flex items-center gap-2 text-[12px] text-[#525252] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.otherPlatformEnabled}
+                  onChange={(e) => set("otherPlatformEnabled", e.target.checked)}
+                  className="h-4 w-4 accent-[#0A0A0A]"
+                />
+                <span>
+                  {isTr
+                    ? "Müşteri akışında etkin (yüksek puan yönlendirmesi için kullanılabilir)"
+                    : "Active in customer flow (available for high-rating redirect)"}
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
       </SettingsCard>
 

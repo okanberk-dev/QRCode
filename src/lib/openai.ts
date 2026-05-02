@@ -6,6 +6,8 @@
 // the secret), callers should fall back to a deterministic template so
 // the UI stays functional.
 
+import * as Sentry from '@sentry/nextjs';
+
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const DEFAULT_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const DEFAULT_TIMEOUT_MS = 15_000;
@@ -61,6 +63,14 @@ export async function chatCompletion(
     if (!res.ok) {
       const text = await res.text().catch(() => '');
       console.error('[openai] non-OK', res.status, text.slice(0, 200));
+      // CLAUDE.md §26.5 — operatör görünürlüğü. Owner panelinde "AI çalışmıyor"
+      // şikayeti geldiğinde Sentry'den root cause (rate limit, quota, auth)
+      // hızlı tespit edilir. Body trunc'lanır (PII guard).
+      Sentry.captureMessage('OpenAI non-OK response', {
+        level: 'warning',
+        tags: { service: 'openai', status: String(res.status) },
+        extra: { bodySnippet: text.slice(0, 200), model: opts.model || DEFAULT_MODEL },
+      });
       return null;
     }
 
@@ -71,6 +81,7 @@ export async function chatCompletion(
     return content && content.length > 0 ? content : null;
   } catch (err) {
     console.error('[openai] request failed', err);
+    Sentry.captureException(err, { tags: { service: 'openai' } });
     return null;
   } finally {
     clearTimeout(timeout);
