@@ -52,12 +52,43 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: '/apple-touch-icon.svg',
     },
     manifest: '/site.webmanifest',
+    // Open Graph — extended with site_name + locale alternates so Slack /
+    // LinkedIn / WhatsApp link unfurls show "Buaze · TR" framing instead
+    // of falling back to the raw domain. CLAUDE.md §34.16.
     openGraph: {
-      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze - Every review is a pulse' }],
+      type: 'website',
+      siteName: 'Buaze',
+      locale: 'tr_TR',
+      alternateLocale: ['en_US'],
+      url: 'https://buaze.com',
+      images: [
+        {
+          url: '/opengraph-image',
+          width: 1200,
+          height: 630,
+          alt: 'Buaze - Every review is a pulse',
+          type: 'image/png',
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
+      title: s.titleDefaultTr,
+      description: s.descriptionTr,
       images: ['/opengraph-image'],
+    },
+    // Apple PWA / iOS metadata — improves the "Add to Home Screen" UX:
+    // standalone display, dark status bar on the lime-on-black brand,
+    // no auto-linkified phone numbers (Safari otherwise rewrites every
+    // numeric string in the page into a `tel:` link, breaking the
+    // monospaced stat tiles).
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'black-translucent',
+      title: 'Buaze',
+    },
+    formatDetection: {
+      telephone: false,
     },
     verification: {
       google: 'FYUcNyiNfUTFfmZBl_Xqb_YCFqBpD-PcpHHiGDz_kZ0',
