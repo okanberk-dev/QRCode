@@ -3741,6 +3741,56 @@ Tüm public sayfalar `application/ld+json` script bloğu taşır. Coverage matri
 - **Bing IndexNow** — `https://api.indexnow.org/indexnow` push API; sitemap zaten yeterli, IndexNow tetik koşulu çıkana kadar bekle
 - **Native app site associations** (`apple-app-site-association`, `assetlinks.json`) — native app yok (CLAUDE.md §25)
 
+### 35.8 Müşteri ölçeği iletişim disiplini (2026-05 audit)
+
+About sayfası (`src/app/[locale]/about/page.tsx`) "numbers" bölümü kasıtlı olarak **niteliksel + doğrulanabilir** claim'ler taşır: `2023 / 8+ entegrasyon / TR + EN / 5 dk kurulum`. Sayısal müşteri/yorum istatistikleri (örn. "X+ işletme", "Y reviews/month", "Z countries") **kullanılmaz** — kohort baseline + attribution + window olmadan agresif sayı Google "misleading business claims" sınıfına girer.
+
+**Yapma:**
+- Marketing surface'lerinde "2.400+ işletme", "340K+ aylık yorum", "28 ülke", "4.9/5 müşteri puanı" gibi doğrulanamayan agresif iddialar
+- Gerçek ölçeği (10-50 restoran sınıfı, CLAUDE.md §19.4.4) marketing'de **birebir paylaşma** — yetersiz görünür, conversion kaybı
+- Fictitious customer stories'a metric eklemek ("+184% organic" vb.) kohort context disclosure olmadan
+
+**Yap:**
+- Niteliksel + doğrulanabilir iddialar: kuruluş yılı, entegrasyon sayısı, aktif lokal/dil, tipik kurulum süresi, KVKK uyumluluk durumu, sahte yorum politikası ("0 fake")
+- Gerçek müşteri kohortunu büyüme halinde anonim ama özelleştirilmiş case study'ye dönüştürme (kullanıcı izniyle)
+- Sayı vermek gerekirse **attribution + window**: "Buaze müşteri kohortu, 90 gün ortalama"
+
+### 35.9 ROI insight wording compliance (Google review-gating)
+
+`src/lib/roi/generate-insight.ts` ve `src/lib/roi/RoiPdf.tsx` ROI hesaplama sonrası kullanıcıya gösterilen insight + PDF template'leri içerir. Bu dosyalarda **review-gating-implying wording yasak** (CLAUDE.md §19.1.1 audit'i ile birebir aynı disiplin):
+
+**Yasak (Google review platform policy ihlali sınıfında):**
+- "Google'a sızmadan / leak to Google / stay off Google" — selective access implication
+- "filtreleme / filtering" review context'inde — review gating implication
+- "düşük puan engelleme / block low rating / hide low rating" — paternalistic
+- "X kat / X% guarantee" kohort baseline olmadan
+
+**Yap:**
+- "Şahsi geri bildirim akışı / private feedback path" — owner-customer dialog framing
+- "Müşteri tercih akışı / customer preference flow" — agency-preserving
+- "Düşük puan veren müşterilerin %X'i ekibe özel iletişimi tercih ediyor" — preference language
+- Her low-rating flow açıklamasında customer agency disclosure: "müşteri her zaman istediği yere yorum yazma hakkını korur / every customer keeps the right to post wherever they want"
+
+**leverageKey enum literal'ı:** `'private' | 'rating' | 'ai' | 'platform'`. Eski `'filter'` literal'ı **kaldırıldı** — semantic drift kaynağıydı.
+
+Yeni ROI template eklerken: TR + EN parallel + aynı agency disclosure cümlesi + leverageKey extension için 4 enum + `T.tr.highlight + T.en.highlight` block'una record entry zorunlu.
+
+### 35.10 Bilinçli olarak ertelenen audit bulguları (kullanıcı kararı bekleyen)
+
+Site-wide audit (2026-05) aşağıdaki bulguları işaret etti — fix gerekli ama **marketing pozisyon kararı** olduğu için kullanıcı talebi olmadan dokunulmadı:
+
+| Bulgu | Yer | Karar tetiği |
+|---|---|---|
+| `LiveReviewTicker` 4 hardcoded fake testimonial (M.D., A.K., J.A., S.B.) | `src/components/marketing/LiveReviewTicker.tsx` | Component unmount veya gerçek müşteri review'larıyla replace — kullanıcı UX kararı |
+| `SocialProofToast` "Hotel Nora 284 review/month" fake activity feed | `src/components/marketing/SocialProofToast.tsx` | Component unmount veya placeholder copy ile replace — UX kararı |
+| `customer-stories.ts` 6 fictitious case study (Ark Bistro, Hotel Nora, Derma+, Kahve Dükkan, Law&Co, Spa Ren) Unsplash fotoğraflarla | `src/lib/customer-stories.ts` | "Illustrative scenarios" disclaimer eklemek vs. tamamen kaldırmak — marketing kararı |
+| Sektör pages metric'leri (+312%, +184%, +62%, +148%, vb.) cohort baseline disclosure'ı zayıf | `src/app/[locale]/solutions/*/page.tsx` (15 sektör) | §19.1.1'de "Buaze müşteri kohortu" attribution kanonik; her metric'e per-context cohort note eklenmeli |
+| Title length: Contact (16 char) / Solutions (16-17 char) / Pricing (45-48) — `<30` weak signal | İlgili sayfa `generateMetadata` | Keyword-rich title expansion — kullanıcı tone kararı |
+| OG image eksik: Features (fix sonrası), Solutions, Contact, Pricing | İlgili sayfa metadata | `[locale]/opengraph-image.tsx` per-route handler veya static asset path — design kararı |
+| `LiveReviewTicker` + `SocialProofToast` mount call-site doğrulama | Marketing layout / homepage | Mount ediliyorsa fake notification = E-E-A-T risk; kaldırma kararı |
+
+**Yapma:** Audit raporu gördüğünde toplu olarak hepsini fixleme — yukarıdaki listede `marketing pozisyon kararı` etiketli olanlar **kullanıcı talebi** gerektirir. Sadece deterministik teknik defect'leri (canonical drift, BCP 47 format, robots.txt host protocol vs.) açık talep olmadan da fix edilir.
+
 ---
 
 ## 36. useUrlFilter Hook (Phase 11.13)
