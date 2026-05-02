@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import { signJwt } from '@/lib/auth';
+import { signJwt, getSecret } from '@/lib/auth';
 import { hashToken } from '@/lib/session-hash';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
@@ -10,17 +10,16 @@ import * as jose from 'jose';
 // 2FA challenge JWT — login sonrasında geçerli kullanıcının kimliğini taşıyan
 // kısa ömürlü token. 5 dakika içinde 6 haneli kod doğrulanmazsa expire olur.
 // Çalınmış challenge token = sadece 5 dk geçerli + sadece yeni 2FA verify
-// endpoint'inde kabul (cookie set etmez).
+// endpoint'inde kabul (cookie set etmez). `getSecret()` production'da
+// JWT_SECRET yoksa throw eder (defensive — public dev key ile imzalama).
 const CHALLENGE_TTL = '5m';
 
 async function signChallengeJwt(payload: Record<string, unknown>): Promise<string> {
-  const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET || DEV_FALLBACK_SECRET);
   return new jose.SignJWT({ ...payload, kind: 'login_challenge' })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(CHALLENGE_TTL)
-    .sign(secret);
+    .sign(getSecret());
 }
 
 export async function POST(req: NextRequest) {

@@ -2,9 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendContactAdminEmail, sendFormConfirmationEmail } from '@/lib/email';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { isValidEmail } from '@/lib/validations';
 
 // Must stay in sync with ContactForm.tsx — form under this dwell time is bot-like.
 const MIN_FILL_MS = 2500;
+
+// Strip CR / LF / TAB so user-supplied free text can't escape into mail
+// headers (defense-in-depth — Resend HTTP API JSON-encodes the payload, but
+// we don't want to depend on transport encoding for header safety).
+function stripCtl(value: unknown, max = 1000): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.replace(/[\r\n\t]/g, ' ').trim();
+  return cleaned ? cleaned.slice(0, max) : null;
+}
+
+// Inbox recipients — env-driven so staff additions / departures don't require
+// a code change. Falls back to the generic NOTIFICATION_EMAIL pattern so the
+// route doesn't silently send to a single hardcoded inbox if the env is
+// forgotten on a fresh deploy.
+function resolveContactInbox(): string[] {
+  const list = (process.env.CONTACT_INBOX_EMAILS || process.env.NOTIFICATION_EMAIL || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return list.length ? list : ['hello@buaze.com'];
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, email, phone, business, message, kvkk, marketing, website, renderedAt } = body;
+    const { kvkk, marketing, website, renderedAt } = body;
 
     // Bot guard — honeypot field filled, or form submitted implausibly fast.
     // Respond 200 so scrapers don't learn the trap, but skip the mail send.
@@ -30,20 +52,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    if (!name || !email || !message || !kvkk) {
+    // Sanitize free-text fields *before* truthiness checks — strips CRLF and
+    // caps length, keeping mail-header / spam-rule attacks contained.
+    const name = stripCtl(body.name, 200);
+    const emailRaw = stripCtl(body.email, 200);
+    const phone = stripCtl(body.phone, 60);
+    const business = stripCtl(body.business, 200);
+    const message = stripCtl(body.message, 4000);
+
+    if (!name || !emailRaw || !message || !kvkk) {
       return NextResponse.json({ error: 'Gerekli alanlar eksik veya KVKK onayı verilmemiş.' }, { status: 400 });
     }
+
+    if (!isValidEmail(emailRaw)) {
+      return NextResponse.json({ error: 'Geçerli bir e-posta adresi girin.' }, { status: 400 });
+    }
+    const email = emailRaw.toLowerCase();
 
     const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'contact_submit');
     if (!captcha.ok) {
       return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
-    // Admin notification — Pulse design (CLAUDE.md §21.6). Replaces the
-    // legacy neo-brutalist inline HTML; `replyTo` set to the submitter's
-    // email so admins can hit Reply directly.
+    // Admin notification — Pulse design (CLAUDE.md §21.6). `replyTo` is the
+    // submitter's e-mail (already CRLF-stripped + RFC validated) so admins
+    // can hit Reply directly. Inbox list comes from env (no personal e-mails
+    // hardcoded; see resolveContactInbox).
     const success = await sendContactAdminEmail({
-      to: ['hello@buaze.com', 'okanberk16@gmail.com'],
+      to: resolveContactInbox(),
       replyTo: email,
       name,
       email,
@@ -63,7 +99,7 @@ export async function POST(req: NextRequest) {
       to: email,
       formType: 'contact',
       name,
-      details: business ? [{ label: 'İşletme', value: String(business) }] : undefined,
+      details: business ? [{ label: 'İşletme', value: business }] : undefined,
     }).catch((err) => console.error('[contact] confirmation mail failed', err));
 
     return NextResponse.json({ success: true });

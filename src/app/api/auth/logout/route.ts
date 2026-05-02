@@ -22,9 +22,16 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Match the `secure` derivation used by login / register / refresh so the
+  // cookie clear actually targets the same cookie (mismatched `secure` flags
+  // can leave a stale cookie sitting on the client in mixed-protocol setups).
+  const isSecure =
+    process.env.NODE_ENV === 'production' &&
+    (req.headers.get('x-forwarded-proto') === 'https' || req.nextUrl.protocol === 'https:');
+
   response.cookies.set('user_token', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     maxAge: 0,
     path: '/',
@@ -32,7 +39,7 @@ export async function POST(req: NextRequest) {
 
   response.cookies.set('admin_token', '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     maxAge: 0,
     path: '/',

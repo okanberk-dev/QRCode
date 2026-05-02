@@ -15,11 +15,10 @@ export interface PanelActor {
   source: 'admin' | 'user';
 }
 
-// Built-in fallback secret. Used when JWT_SECRET is not configured. The
-// literal value sits in the public repo, so for any real deployment you
-// MUST set JWT_SECRET in your environment. We log loudly when the fallback
-// kicks in instead of throwing — throwing would brick login flows on
-// hosts that haven't set the env yet.
+// Dev-only fallback secret. The literal value sits in the public repo, so
+// production MUST set JWT_SECRET. We hard-fail in production when JWT_SECRET
+// is missing — issuing tokens signed with a public key is worse than a 5xx
+// at the auth boundary (a forged superadmin token = full takeover).
 const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
 let warnedAboutFallback = false;
 let warnedAboutShortSecret = false;
@@ -33,12 +32,17 @@ export function getSecret(): Uint8Array {
     }
     return new TextEncoder().encode(secret);
   }
+  if (process.env.NODE_ENV === 'production') {
+    // Refuse to issue / verify any token. Caller bubbles 500 to client.
+    throw new Error(
+      '[Buaze] JWT_SECRET is not configured in production. Refusing to use the public dev fallback.',
+    );
+  }
   if (!warnedAboutFallback) {
     warnedAboutFallback = true;
-    const severity = process.env.NODE_ENV === 'production' ? 'ERROR' : 'WARN';
     console.warn(
-      `[Buaze] [${severity}] JWT_SECRET is not configured. Falling back to a public dev key. ` +
-      'In production this is INSECURE — set JWT_SECRET to a 32+ byte random value immediately.',
+      '[Buaze] [WARN] JWT_SECRET is not configured. Falling back to a public dev key. ' +
+      'Set JWT_SECRET to a 32+ byte random value before any deploy.',
     );
   }
   return new TextEncoder().encode(DEV_FALLBACK_SECRET);
@@ -107,10 +111,13 @@ async function isUserSessionRevoked(rawToken: string): Promise<boolean> {
     });
     if (!session) return false; // legacy / pre-feature session
     return session.revokedAt !== null;
-  } catch {
-    // DB hata → fail-open (kullanıcıyı kilitle değil). Ops alert'i prisma
-    // tarafında zaten log'lanır.
-    return false;
+  } catch (err) {
+    // DB error → fail-CLOSED: a transient DB outage must not let a token
+    // that may have been revoked by force-logout / password-reset slip
+    // through. The cost is one re-login on a real outage; the alternative
+    // (fail-open) was a force-logout bypass during DB hiccups.
+    console.error('[auth] UserSession revoke check failed — failing closed:', (err as Error).message);
+    return true;
   }
 }
 

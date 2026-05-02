@@ -37,9 +37,11 @@ export async function POST(req: NextRequest) {
   const locale = body.locale === 'en' ? 'en' : 'tr';
   const source = typeof body.source === 'string' ? body.source.slice(0, 64) : null;
 
-  // Token is required for the unsubscribe link in marketing emails. Generated
-  // on create and reused on resubscribe so the same person can\'t accumulate
-  // tokens by signing up twice.
+  // Token is the one-click unsubscribe credential embedded in every
+  // marketing email. We rotate it on every (re)subscribe so a leaked token
+  // from an old email can't be replayed by a third party to silently
+  // unsubscribe the user. Mail-client URL preview ages tokens in the wild;
+  // the freshest mail always carries the current token.
   const newToken = crypto.randomBytes(24).toString('hex');
   const existing = await prisma.newsletterSubscriber.findUnique({
     where: { email },
@@ -53,6 +55,7 @@ export async function POST(req: NextRequest) {
       locale,
       ...(source ? { source } : {}),
       unsubscribedAt: null,
+      unsubscribeToken: newToken,
     },
   });
 

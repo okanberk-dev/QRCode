@@ -3,14 +3,19 @@ import type { NextRequest } from 'next/server';
 import * as jose from 'jose';
 
 // Mirror of lib/auth.ts secret resolution. Kept inline so the middleware
-// (edge runtime) doesn't pull in Prisma or Node-only deps.
-// Falls back to a public dev key when JWT_SECRET isn't set — set
-// JWT_SECRET in production for any real deployment.
+// (edge runtime) doesn't pull in Prisma or Node-only deps. In production
+// we refuse to verify against the public dev key — getSecretBytes throws
+// and middleware downgrades to "treat as no/invalid token" (= redirect to
+// /admin login). Better to fail closed than to verify against a value
+// anyone with repo access already knows.
 const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
 
 function getSecretBytes(): Uint8Array {
   const secret = process.env.JWT_SECRET;
   if (secret) return new TextEncoder().encode(secret);
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('[Buaze] JWT_SECRET is not configured in production.');
+  }
   return new TextEncoder().encode(DEV_FALLBACK_SECRET);
 }
 

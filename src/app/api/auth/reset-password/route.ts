@@ -77,6 +77,19 @@ export async function POST(req: NextRequest) {
       data: { passwordHash },
     });
 
+    // Force-logout every existing session for this user. If the account was
+    // compromised, the attacker's cookie/JWT must not survive a password
+    // reset. Best-effort — DB hiccup must not bubble a 5xx after we already
+    // wrote the new hash; the user can still sign in with the new password.
+    try {
+      await prisma.userSession.updateMany({
+        where: { userId: user.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    } catch (err) {
+      console.error('[RESET_PASSWORD] session revoke failed for userId=', user.id, (err as Error).message);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[RESET_PASSWORD]', error);

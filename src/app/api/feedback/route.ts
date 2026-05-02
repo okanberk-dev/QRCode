@@ -7,7 +7,7 @@ import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
 import { ApiErrors } from '@/lib/api-errors';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
-import { rateLimit } from '@/lib/rate-limit';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { hasOpenAIKey } from '@/lib/openai';
 import { coerceTone, generateAiDraftBackground } from '@/lib/ai-draft';
 import { getNotificationPrefsForRestaurant } from '@/lib/notification-preferences';
@@ -22,7 +22,10 @@ function parseAspectRating(value: unknown): number | null {
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get('x-forwarded-for') || (req as unknown as { ip?: string }).ip || 'unknown';
+    // `getClientIp` parses X-Forwarded-For correctly (first segment, trimmed).
+    // The previous inline read used the raw header value which let an attacker
+    // pivot the rate-limit / DB-count key by stuffing extra hops into XFF.
+    const ip = getClientIp(req.headers);
 
     // Layered defense:
     // 1) Upstash rate limit (fast, distributed) — short-circuits abuse
