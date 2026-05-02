@@ -3786,6 +3786,46 @@ Bunlar **operatör onayı bekleyen MEDIUM-HIGH scope** — kullanıcı açık ta
 - Kullanıcı agresif performance pass talep ederse §34.14 "Sonraki adım" listesini göster, hangisinin scope'ta olduğunu sor
 - Yeni 3rd party script eklenirken `dns-prefetch` + `preconnect` ekle (§34.14 paterni)
 
+### 34.15 2026-05-02 — Zero-risk security + ops bundle
+
+Kullanıcı "yapıyı bozmadan + etkisiz" ek iyileştirme istedi → 3 zero-risk bundle uygulandı:
+
+#### 1. `X-Permitted-Cross-Domain-Policies: none` (next.config.ts)
+
+Adobe Flash + Acrobat PDF cross-domain policy file (`crossdomain.xml`) lookup'ını engeller. Buaze hiç Flash/PDF cross-domain content servis etmiyor; legacy istemcinin bu file'ı bulup attacker'ın auto-trust kabul etmesine karşı modern security baseline header'ı.
+
+#### 2. `/api/health` uptime probe
+
+Vercel Monitor / UptimeRobot / BetterStack için lightweight DB-free endpoint:
+```ts
+GET /api/health → { ok: true, ts: <ms>, commit: <7-char-sha?> }
+Cache-Control: no-store
+```
+
+DB connection harcamaz, rate limit yok (probe'un kendisi rate-limit check'inden ucuz). Vercel `VERCEL_GIT_COMMIT_SHA` env varsa commit hash response'a eklenir (deploy traceability).
+
+#### 3. Robots.txt `crawlDelay: 2` (AI bot allowlist)
+
+GPTBot / Anthropic-ai / Perplexity / vb. AI bot rule'una `crawlDelay: 2` eklendi. Major search engines (Google, Bing) zaten Crawl-delay'i ignore eder — bu fix AI/SGE crawler'ların yeni domain ingestion'ında polite scraping davranışı için.
+
+**Atlanan zero-risk öneriler (kullanıcı tetiği yokken yeniden inşa edilmemeli):**
+
+| Öneri | Sebep |
+|---|---|
+| GTM `<noscript>` fallback | Buaze GA4 (`gtag.js`) kullanıyor, gerçek GTM container yok; GA4 noscript pixel desteklemiyor |
+| `<meta http-equiv="X-UA-Compatible">` | Next.js default zaten OK; marjinal |
+| ESLint `--fix` auto-fixable warning'ler | `node_modules` audit ortamında yoktu; lokal'de `npx eslint . --fix` çalıştırılabilir, davranış değişikliği yok |
+| `@ts-expect-error` / `@ts-ignore` audit | Grep-only, fix per-case kararı |
+| HSTS `preload` flag | Operatör kararı (HSTS preload listesine submit kalıcı; geri çekmek aylar) |
+| LCP image `fetchpriority="high"` | Touch-fest (component-bazlı), per-page karar |
+| Image `loading="lazy"` + `decoding="async"` | Aynı sebep |
+| Dynamic import sweep | Regression test gerek (lazy load failure modes) |
+
+**Yap:**
+- Yeni HTTP header eklenirken §34.15 disiplini izle: önce zero-risk kategorisinde mi kontrol et (mevcut request'i kırar mı?)
+- Yeni public endpoint'in monitoring'i için `/api/health` reuse — DB hit'siz pattern korunur
+- Yeni AI bot user-agent eklenirken `crawlDelay: 2` paterni uygulanır
+
 ---
 
 ## 35. SEO Infrastructure (2026-05 PR #263 + #264)
