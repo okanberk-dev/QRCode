@@ -160,6 +160,7 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       },
       locale,
       `${rest.id}:${isoWeekKey}`,
+      rest.userId ?? undefined,
     );
     const hasAi = !!(aiInsight.summary || aiInsight.recommendation);
 

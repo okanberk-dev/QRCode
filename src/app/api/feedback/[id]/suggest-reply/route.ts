@@ -6,7 +6,9 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, resolveOwnerUserId } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
+import { AI_QUOTAS, checkLayeredAiQuota } from '@/lib/ai-quota';
 import { coerceTone, generateReplyDraft, type AiDraftTone } from '@/lib/ai-draft';
+import { buildReplyTemplate } from '@/lib/scaffolding';
 
 export async function POST(
   req: NextRequest,
@@ -72,6 +74,33 @@ export async function POST(
 
   // Tone precedence: explicit body.tone → restaurant default → 'warm'.
   const tone = coerceTone(body.tone, coerceTone(feedback.restaurant.aiDraftTone, 'warm'));
+
+  // 3-katmanlı AI quota guard (CLAUDE.md §15.1 ai-quota.ts). Rate limit
+  // (per-minute) burst-protection; AI quota (per-day) credential leak ya
+  // da kötü niyetli loop senaryosunda OpenAI cost'u sınırlar. Quota
+  // dolarsa template fallback döner — UI çalışmaya devam eder.
+  const quota = await checkLayeredAiQuota([
+    { scope: 'suggest-reply:user', identifier: actor.id, dailyLimit: AI_QUOTAS.SUGGEST_REPLY_USER_DAY },
+    { scope: 'suggest-reply:ws', identifier: ownerKey, dailyLimit: AI_QUOTAS.SUGGEST_REPLY_WORKSPACE_DAY },
+    { scope: 'suggest-reply:global', identifier: 'global', dailyLimit: AI_QUOTAS.SUGGEST_REPLY_GLOBAL_DAY },
+  ]);
+
+  if (!quota.allowed) {
+    // Fail-safe: template fallback. UI mevcut akışı tamamlar; kullanıcı
+    // yine "Yeniden öner" deneyebilir (yarın quota reset olunca AI'ya
+    // geri döner).
+    const suggestion = buildReplyTemplate({
+      name: feedback.name,
+      rating: feedback.rating,
+      locale,
+    });
+    return NextResponse.json({
+      suggestion,
+      tone,
+      source: 'template-fallback',
+      quotaExceeded: quota.scope,
+    });
+  }
 
   const draft = await generateReplyDraft(
     {

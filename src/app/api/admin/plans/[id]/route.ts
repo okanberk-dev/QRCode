@@ -70,6 +70,16 @@ export async function PATCH(
     const p = asInt(body.priceUsd);
     data.priceUsd = p != null && p >= 0 ? p : null;
   }
+  // Yıllık fiyat override (CLAUDE.md §15.2). null/undefined ise public
+  // sayfa formula fallback (aylık × 12 × 0.8) uygular.
+  if (body.priceYearlyTry !== undefined) {
+    const p = asInt(body.priceYearlyTry);
+    data.priceYearlyTry = p != null && p >= 0 ? p : null;
+  }
+  if (body.priceYearlyUsd !== undefined) {
+    const p = asInt(body.priceYearlyUsd);
+    data.priceYearlyUsd = p != null && p >= 0 ? p : null;
+  }
   if (body.period !== undefined) {
     const period = asString(body.period, 20);
     if (!ALLOWED_PERIODS.has(period)) errors.push('Geçersiz periyot.');

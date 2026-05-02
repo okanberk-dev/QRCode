@@ -1203,6 +1203,13 @@ model SubscriptionPlan {
   priceUsd Int?   @map("price_usd")
   period   String @default("month") // 'month' | 'year' | 'one-time'
 
+  // Yıllık fiyat — owner panelin ay/yıl toggle'ında gösterilen kalıcı
+  // değer. Null/undefined ise frontend formula fallback kullanır
+  // (aylık × 12 × 0.8 = %20 indirim). Admin elle override edebilir
+  // (örn. promosyon, ezici indirim, sezonluk).
+  priceYearlyTry Int? @map("price_yearly_try")
+  priceYearlyUsd Int? @map("price_yearly_usd")
+
   // Features — JSON string array, locale-paired
   featuresTr Json @map("features_tr")
   featuresEn Json @map("features_en")

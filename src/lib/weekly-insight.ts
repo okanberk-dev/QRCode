@@ -1,4 +1,5 @@
 import { chatCompletion, hasOpenAIKey } from '@/lib/openai';
+import { AI_QUOTAS, AI_QUOTA_WEEK_MS, checkLayeredAiQuota } from '@/lib/ai-quota';
 
 export interface WeeklyInsightInput {
   restaurantName: string;
@@ -112,6 +113,9 @@ export async function extractWeeklyInsight(
   input: WeeklyInsightInput,
   locale: 'tr' | 'en',
   cacheKey: string,
+  /** Workspace owner identifier (CLAUDE.md §15.1 ai-quota.ts).
+   *  Null/undefined ise sadece global cap. */
+  workspaceId?: string,
 ): Promise<WeeklyInsight> {
   const cached = cache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
@@ -119,6 +123,36 @@ export async function extractWeeklyInsight(
   }
 
   if (input.total < MIN_TOTAL_FOR_AI || !hasOpenAIKey()) {
+    return emptyResult('fallback');
+  }
+
+  // AI quota guard — weekly window. Cron Pazartesi 09:00 + 10:00 + manuel
+  // test = ~3 çağrı/restoran/hafta. 20/ws/hafta margin yeterli.
+  const quotaLayers = workspaceId
+    ? [
+        {
+          scope: 'weekly-insight:ws',
+          identifier: workspaceId,
+          dailyLimit: AI_QUOTAS.WEEKLY_INSIGHT_WORKSPACE_WEEK,
+          windowMs: AI_QUOTA_WEEK_MS,
+        },
+        {
+          scope: 'weekly-insight:global',
+          identifier: 'global',
+          dailyLimit: AI_QUOTAS.WEEKLY_INSIGHT_GLOBAL_WEEK,
+          windowMs: AI_QUOTA_WEEK_MS,
+        },
+      ]
+    : [
+        {
+          scope: 'weekly-insight:global',
+          identifier: 'global',
+          dailyLimit: AI_QUOTAS.WEEKLY_INSIGHT_GLOBAL_WEEK,
+          windowMs: AI_QUOTA_WEEK_MS,
+        },
+      ];
+  const quota = await checkLayeredAiQuota(quotaLayers);
+  if (!quota.allowed) {
     return emptyResult('fallback');
   }
 

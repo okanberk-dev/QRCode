@@ -547,6 +547,90 @@ Yorum yanıt taslağı için "Taslak oluştur" butonu (`/admin/reviews` + `/[loc
 - **Maliyet:** ~400 token / öneri ≈ $0.0001. 10K öneri/ay = $1.
 - **Güvenlik:** Anahtar yalnız server-side (`process.env.OPENAI_API_KEY`); `NEXT_PUBLIC_` prefix yok, client bundle'a sızmaz.
 
+### 15.1 AI Quota Guard (3-katmanlı koruma)
+
+`src/lib/ai-quota.ts` — tüm AI çağrı yerlerine **layered daily/weekly cap**. Mevcut Upstash `rateLimit()` (CLAUDE.md §14.2) reuse, yeni dep yok. Cache miss'ten sonra çağrılır — cache hit'lerde quota harcanmaz.
+
+**Üç katman:**
+1. **Per-user/day** — sızdırılmış oturum hızlı abuse'u sınırlasın
+2. **Per-workspace/day** — owner credentials sızıntısında ws-level cap
+3. **Per-global/day** — site geneli "spend ceiling" (cost guard)
+
+**Kanonik limitler** (`AI_QUOTAS` const, ai-quota.ts):
+| Scope | Limit | Window |
+|---|---|---|
+| `SUGGEST_REPLY_USER_DAY` | 100 | 24h |
+| `SUGGEST_REPLY_WORKSPACE_DAY` | 300 | 24h |
+| `SUGGEST_REPLY_GLOBAL_DAY` | 2000 | 24h |
+| `ANALYTICS_THEMES_WORKSPACE_DAY` | 50 | 24h |
+| `ANALYTICS_THEMES_GLOBAL_DAY` | 500 | 24h |
+| `WEEKLY_INSIGHT_WORKSPACE_WEEK` | 20 | 7d |
+| `WEEKLY_INSIGHT_GLOBAL_WEEK` | 200 | 7d |
+
+**Kullanım pattern:**
+```ts
+const quota = await checkLayeredAiQuota([
+  { scope: 'suggest-reply:user', identifier: actor.id, dailyLimit: AI_QUOTAS.SUGGEST_REPLY_USER_DAY },
+  { scope: 'suggest-reply:ws', identifier: ownerKey, dailyLimit: AI_QUOTAS.SUGGEST_REPLY_WORKSPACE_DAY },
+  { scope: 'suggest-reply:global', identifier: 'global', dailyLimit: AI_QUOTAS.SUGGEST_REPLY_GLOBAL_DAY },
+]);
+if (!quota.allowed) {
+  // Fail-safe fallback (template/empty) — UI çalışmaya devam etsin, HTTP hata fırlatma
+  return emptyResult('fallback');
+}
+```
+
+**Wired callsites:**
+- `/api/feedback/[id]/suggest-reply` (POST) — user + ws + global, fail durumu template fallback
+- `extractThemes()` (`analytics-themes.ts`) — ws + global, fail durumu empty result (UI section gizli)
+- `extractWeeklyInsight()` (`weekly-insight.ts`) — ws + global (weekly window), fail durumu empty result
+
+**Quota aşımı yan etkileri:**
+- Sentry `captureMessage` warning level — ops dashboard'da görünür
+- UI graceful degrade (template / hide) — kullanıcı kırıklık yaşamaz, ertesi gün quota reset
+- Rate limit (per-minute) burst protection için ayrı katman — quota daily long-tail koruması
+
+**Yapma:**
+- HTTP 429 fırlatma quota dolduğunda — UI'da AI yokken bile akış tamamlansın (fail-safe)
+- Cache check'ten önce quota check etme — cache hit'te gereksiz Upstash çağrısı
+- Public endpoint'lerde quota'yı atla — `/api/roi/save` (reCAPTCHA gated) gibi public AI akışlarına da global cap uygulanmalı (gelecek scope)
+
+**Yap:**
+- Yeni AI callsite eklerken: cache check → AI key check → quota check → API call sırasıyla
+- Workspace identifier her zaman geçirilsin — `workspaceId` undefined ise sadece global cap uygulanır (fallback)
+- AI maliyet planlama: `gpt-4o-mini` ~$0.0001-0.0005/call. Global day cap × maliyet = max günlük spend
+
+### 15.2 Yıllık fiyat override (admin panel)
+
+`SubscriptionPlan` modelinde admin'in elle düzenleyebileceği yıllık fiyat field'ları:
+- `priceYearlyTry: Int? @map("price_yearly_try")`
+- `priceYearlyUsd: Int? @map("price_yearly_usd")`
+
+**Davranış (`toPublicPlan()` `src/lib/subscription-plans.ts`):**
+- Admin override (priceYearlyTry/Usd dolu) → `priceYearly = adminValue / 12` (aylık-eşdeğeri public sayfa için)
+- Admin null bıraktıysa → formula fallback `priceYearly = discountedMonthly × 0.8`
+
+**Admin form** (`src/components/admin/PlansManager.tsx`) — "Aylık fiyat" input'unun altında "Yıllık fiyat (TRY/USD, opsiyonel)" inputs. Boş bırakılırsa hint olarak otomatik hesap görünür: `Otomatik: ${monthly × 12 × 0.8}`.
+
+**Yapma:**
+- Public sayfada formula hardcode etme — `toPublicPlan()` zaten admin override + fallback handle ediyor
+- Yıllık fiyatı `period: 'year'` plan'larıyla karıştırma — `period` plan tipi (subscription cadence), `priceYearly*` ise display amount
+
+### 15.3 ContactFloat — sağ alt sohbet baloncuğu form'u
+
+`src/components/marketing/ContactFloat.tsx` — marketing surface'inde sticky lead-capture widget (chat-style bubble + inline form, `/contact` sayfasına gitmeden direkt `/api/contact` POST).
+
+**Mount koşulları:**
+- `src/app/[locale]/layout.tsx:215` — sadece **logged-out (anonymous)** kullanıcılarda render edilir. Logged-in panel kullanıcıları dashboard support kanallarını kullanır.
+- Component-içi gating (`ContactFloat.tsx:92`) — `auth/*` ve `onboarding` path'lerinde gizli (form akış gürültüsü olur). **Homepage hariç değil** — ana conversion surface'ında baloncuk görünür.
+
+**Bot guard parity:** `/contact` sayfasıyla aynı honeypot + dwell-time gate (`MIN_FILL_MS`).
+
+**Yapma:**
+- Homepage'de gizleme — eski exclusion (`current === base`) kullanıcı raporu gereği kaldırıldı. Marketing'in en kritik conversion sayfası, bubble orada görünür kalmalı.
+- Logged-in kullanıcılar için ContactFloat mount etme — panel kullanıcılarının kendi support kanalları var, sağ alt widget gürültü.
+- Bubble auto-show timing'i (6sn) düşürme — çok agresif, dismiss rate yükselir.
+
 ---
 
 ## 16. Claude Design Handoff — Referans

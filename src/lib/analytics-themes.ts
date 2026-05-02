@@ -1,4 +1,5 @@
 import { chatCompletion, hasOpenAIKey } from '@/lib/openai';
+import { AI_QUOTAS, checkLayeredAiQuota } from '@/lib/ai-quota';
 
 export interface ThemeItem {
   theme: string;
@@ -116,6 +117,10 @@ export async function extractThemes(
   comments: Array<{ rating: number; comment: string }>,
   locale: 'tr' | 'en',
   cacheKey: string,
+  /** Workspace owner identifier (CLAUDE.md §15.1 ai-quota.ts layered cap).
+   *  cacheKey'in workspace prefix'i olabilir; opsiyonel — verilmezse sadece
+   *  global cap uygulanır. */
+  workspaceId?: string,
 ): Promise<ThemesResult> {
   // Cache hit
   const cached = cache.get(cacheKey);
@@ -125,6 +130,21 @@ export async function extractThemes(
 
   // Yetersiz veri veya OpenAI key yoksa empty fallback
   if (comments.length < MIN_COMMENTS_FOR_AI || !hasOpenAIKey()) {
+    return emptyResult('fallback');
+  }
+
+  // AI quota guard — cache miss ve veri eşiği geçildikten sonra OpenAI
+  // çağrısı öncesi. Quota dolarsa empty fallback (UI'da AI section gizli).
+  const quotaLayers = workspaceId
+    ? [
+        { scope: 'analytics-themes:ws', identifier: workspaceId, dailyLimit: AI_QUOTAS.ANALYTICS_THEMES_WORKSPACE_DAY },
+        { scope: 'analytics-themes:global', identifier: 'global', dailyLimit: AI_QUOTAS.ANALYTICS_THEMES_GLOBAL_DAY },
+      ]
+    : [
+        { scope: 'analytics-themes:global', identifier: 'global', dailyLimit: AI_QUOTAS.ANALYTICS_THEMES_GLOBAL_DAY },
+      ];
+  const quota = await checkLayeredAiQuota(quotaLayers);
+  if (!quota.allowed) {
     return emptyResult('fallback');
   }
 

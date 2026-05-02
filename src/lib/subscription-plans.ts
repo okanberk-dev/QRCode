@@ -30,6 +30,10 @@ export interface AdminPlanRow {
   descriptionEn: string;
   priceTry: number;
   priceUsd: number | null;
+  /** Yıllık fiyat — admin elle override edilebilir (CLAUDE.md §15.2). Null
+   *  ise public sayfa formula fallback uygular (aylık × 12 × 0.8). */
+  priceYearlyTry: number | null;
+  priceYearlyUsd: number | null;
   period: string;
   featuresTr: string[];
   featuresEn: string[];
@@ -81,6 +85,8 @@ export function toAdminRow(row: {
   descriptionEn: string;
   priceTry: number;
   priceUsd: number | null;
+  priceYearlyTry?: number | null;
+  priceYearlyUsd?: number | null;
   period: string;
   featuresTr: unknown;
   featuresEn: unknown;
@@ -106,6 +112,8 @@ export function toAdminRow(row: {
     descriptionEn: row.descriptionEn,
     priceTry: row.priceTry,
     priceUsd: row.priceUsd,
+    priceYearlyTry: row.priceYearlyTry ?? null,
+    priceYearlyUsd: row.priceYearlyUsd ?? null,
     period: row.period,
     featuresTr: asStringArray(row.featuresTr),
     featuresEn: asStringArray(row.featuresEn),
@@ -134,7 +142,15 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
     row.discountType,
     row.discountValue,
   );
-  const yearlyMonthly = Math.round(discountedMonthly * 0.8);
+  // Yıllık fiyat öncelik:
+  //   1. Admin override (priceYearlyTry/Usd dolu) — DB değeri / 12 → aylık-eşdeğeri
+  //   2. Formula fallback — aylık × 0.8 (≈%20 yıllık indirim)
+  // Public sayfa "₺X/ay" formatında gösterdiği için annual ÷ 12 yapılır.
+  const adminYearly = isTr ? row.priceYearlyTry : row.priceYearlyUsd;
+  const yearlyMonthly =
+    adminYearly != null && adminYearly > 0
+      ? Math.round(adminYearly / 12)
+      : Math.round(discountedMonthly * 0.8);
 
   return {
     id: row.id,
