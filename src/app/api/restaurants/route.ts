@@ -4,6 +4,23 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
+import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-domains';
+
+// Field → provider mapping for the eight platform URLs accepted by POST.
+// Lets us run the same `checkProviderUrl` hard-error gate the integration
+// settings UI uses (CLAUDE.md §19.4) on the create path too — a malicious
+// or sloppy owner can't seed the public review surface with a `javascript:`
+// or off-domain URL that later flows into `window.location.href`.
+const URL_PROVIDER_MAP: Record<string, IntegrationProvider> = {
+  googleReviewUrl: 'google',
+  yemekSepetiUrl: 'yemeksepeti',
+  getirYemekUrl: 'getir',
+  trendyolYemekUrl: 'trendyol_go',
+  tripAdvisorUrl: 'tripadvisor',
+  airbnbUrl: 'airbnb',
+  bookingUrl: 'booking',
+  yandexUrl: 'yandex',
+};
 
 // GET /api/restaurants - List all restaurants (admin) or get by slug (public)
 export async function GET(req: NextRequest) {
@@ -266,6 +283,22 @@ export async function POST(req: NextRequest) {
     const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
     if (!slugRegex.test(slug)) {
       return ApiErrors.badRequest('Slug sadece küçük harf, rakam ve tire içerebilir', 'INVALID_SLUG');
+    }
+
+    // Validate every platform URL on hard-error severity. Warnings (homepage
+    // / not_review_link) pass through the same way the IntegrationCard UI
+    // allows them — we only want to block clearly malicious or wrong-domain
+    // values here (`wrong_protocol`, `wrong_domain`, `invalid_url`).
+    for (const [field, provider] of Object.entries(URL_PROVIDER_MAP)) {
+      const value = body[field];
+      if (typeof value !== 'string' || !value.trim()) continue;
+      const result = checkProviderUrl(provider, value);
+      if (!result.ok && result.severity === 'error') {
+        return ApiErrors.badRequest(
+          `${field} geçersiz: ${result.reason}`,
+          'INVALID_PLATFORM_URL',
+        );
+      }
     }
 
     // Resolve owner. Owners assign to themselves. Superadmin may pass a

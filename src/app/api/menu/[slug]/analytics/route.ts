@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { ANALYTICS_SOURCE_TYPES, ANALYTICS_THRESHOLDS, isValidEventType, type AnalyticsEventType } from '@/lib/analytics-heuristics';
 import { isValidSessionId } from '@/lib/analytics-session';
-import { rateLimit, maybeSweep } from '@/lib/rate-limit';
+import { rateLimit, maybeSweep, getClientIp } from '@/lib/rate-limit';
 
 const MAX_EVENTS_PER_REQUEST = 40;
 
@@ -53,11 +53,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     return NextResponse.json({ error: 'Geçersiz olay listesi' }, { status: 400 });
   }
 
-  const rl = await rateLimit(`menu:analytics:${sessionId}`, 300, 60 * 1000);
-  if (!rl.allowed) {
+  // Layered rate limit: per-session bucket already gates a single tab's
+  // burst; the per-IP bucket on top stops a distributed attacker from
+  // spinning up many sessionIds and pushing aggregate spam through. Both
+  // must pass before we hit Postgres.
+  const ip = getClientIp(req.headers);
+  const ipLimit = await rateLimit(`menu:analytics:ip:${ip}`, 1000, 60 * 1000);
+  const sessionLimit = await rateLimit(`menu:analytics:${sessionId}`, 300, 60 * 1000);
+  if (!ipLimit.allowed || !sessionLimit.allowed) {
+    const retry = Math.max(ipLimit.retryAfterSeconds, sessionLimit.retryAfterSeconds);
     return NextResponse.json(
       { error: 'Too many events' },
-      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+      { status: 429, headers: { 'Retry-After': String(retry) } },
     );
   }
 
