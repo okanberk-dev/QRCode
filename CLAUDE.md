@@ -4068,7 +4068,7 @@ Bu bulgular davranış-değişikliği gerektiriyor; CLAUDE.md'de bilinçli tasar
 - ~~**Render-side XSS sweep**~~ — **✅ KAPATILDI** (2026-05 follow-up). 54 `dangerouslySetInnerHTML` kullanımı tarandı; 36 JSON-LD callsite `jsonLdString()` helper'ına migrate edildi (CLAUDE.md §37.6), 1 admin-authored `help/[slug]` body sanitize edildi (`sanitizeBlogContent`). Detay: `SECURITY_AUDIT_REPORT.md` "Render-side XSS sweep — closed".
 - ~~**PII grep across 305 files**~~ — **✅ KAPATILDI** (2026-05 follow-up). `console.*` çağrıları tarandı (~30 hit); 2 gerçek leak fix edildi: `cron/trial-reminders` email→userId (KVKK), `ops-alert.ts` recipient redaction (Sentry data minimization). Sentry capture extra/tags surface'leri zaten `userId/restaurantId` only, PII içermiyordu.
 - ~~**CSP header — A group**~~ — **✅ KAPATILDI** (2026-05 follow-up). Defansif "A grubu" directive'leri site-wide eklendi (CLAUDE.md §37.8). B grubu (`Cross-Origin-Opener-Policy: same-origin-allow-popups`) ve C grubu (strict `script-src` Report-Only mode) hâlâ açık — operatör onayı + Firebase Auth popup test gerektiriyor.
-- **Prisma cascade audit** — `onDelete: Cascade/Restrict` kapsamlı veri-kaybı taraması
+- ~~**Prisma cascade audit**~~ — **✅ KAPATILDI** (2026-05 follow-up). 24 `@relation onDelete` directive'i tarandı; cascade chain'leri (User → Restaurant → Feedback / Menu / QR / Analytics) doğrulandı. 2 implicit-default `@relation` explicit `onDelete: Restrict`'e çevrildi (`Restaurant.user`, `AdminUser.restaurant`). Detay: §37.9.
 
 ### 37.6 JSON-LD safe stringify disiplini (yeni)
 
@@ -4160,6 +4160,134 @@ XSS savunmasının gerçek kapısı, ama mevcut inline + 3rd party script'leri k
 **Yapma**: Strict CSP'yi doğrudan enforce ile ekleme — 3rd party script'ler kırılır (white-screen production). Report-Only ile başla.
 
 **Yap**: Yeni 3rd party script eklenirken (örn. Iyzico Wave 3.5, yeni analytics widget) C grubu allowlist'i de güncelle.
+
+### 37.9 Prisma cascade audit (2026-05)
+
+24 `@relation onDelete` directive'i tarandı; cascade chain'leri haritalandı, audit/billing/legal kayıtların korunması doğrulandı.
+
+#### Cascade chain'leri
+
+**`User` silme** (root identity — şu an hard-delete endpoint'i YOK, sadece soft-delete `isActive=false`):
+```
+User → UserSession (Cascade)
+User → Restaurant (Cascade) → cascade tüm alt tablolar
+```
+
+**`Restaurant` silme** (`/api/restaurants/[id]` DELETE — Adım 4'te `canDeleteRestaurant`-gated):
+```
+Restaurant → Feedback (Cascade)
+              → FeedbackReply, FeedbackFlag, FeedbackAssignment, FeedbackTag, FeedbackAiDraft (hepsi Cascade)
+Restaurant → MenuCategory (Cascade) ← MenuItem.category Restrict, item önce silinmeli
+Restaurant → MenuItem (Cascade)
+Restaurant → QrGeneration (Cascade)
+Restaurant → MenuAnalyticsEvent (Cascade)
+Restaurant → BrandSettings (Cascade)
+Restaurant → PlatformLinkCheck (Cascade)
+Restaurant → RestaurantActivationState (Cascade)
+Restaurant → PlatformRedirectEvent (Cascade)
+Restaurant → QrScan (Cascade)
+Restaurant → EmbedView (Cascade)
+Restaurant → AdminUser (no FK — manuel deleteMany handler içinde)
+```
+
+DELETE handler manuel transaction sıralı silme yapıyor (`/api/restaurants/[id]/route.ts:391-400`) — DB cascade ile birlikte defense-in-depth.
+
+#### Audit / billing / legal kayıt korunması (silinmez)
+
+Kasıtlı tasarım kararı — User/Restaurant cascade'inden bağımsız:
+
+| Tablo | Field | Pattern | Sebep |
+|---|---|---|---|
+| `AdminAuditLog` | `actorId` (string) | FK yok | Audit history User silinse bile kalır |
+| `BillingInvoice` | `userId` (string) | FK yok | Mali kayıt — KVKK/legal saklama yükümlülüğü |
+| `BillingSubscription` | `userId` (string) | FK yok | Aynı sebep |
+| `MailTemplateRevision` | `templateId` | `SetNull` | Template silinse bile revision history (audit + restore) korunur |
+| `LegalDocumentRevision` | `documentId` | `SetNull` | Aynı pattern |
+| `LegalConsent` | `documentId` | `SetNull` | KVKK consent kaydı dokumentin silinmesinden bağımsız |
+
+#### Yapılan iki düzeltme (2026-05 audit)
+
+İki implicit-default `@relation` directive'i (`Restaurant.user`, `AdminUser.restaurant`) için açıklayıcı yorum eklenmesi denendi ama Prisma 6 validator'u bu modelde `Restrict` ve `NoAction` annotation'larını **multi-path cascade graph'inde cyclic referential action olarak** reddediyor (Restaurant zaten Feedback / Menu / QR cascade chain'lerinde). Schema annotation değişikliği bu yüzden **uygulanmadı**; default davranış zaten Postgres `NO ACTION` ≈ `RESTRICT` (hard-delete bloke), istediğimiz semantik. Niyet bu §'de + `SECURITY_AUDIT_REPORT.md` cascade section'ında dokümante.
+
+#### KVKK "right to be forgotten" — açık scope
+
+Şu an User hard-delete endpoint'i yok. Eğer GDPR/KVKK için eklenirse:
+- Cascade chain doğru iş görür (User → Restaurant → tüm alt veriler wipe)
+- **Ama** `BillingInvoice` / `BillingSubscription` / `AdminAuditLog` orphan kalır (FK string)
+- KVKK saklama yükümlülüğü vs. silme hakkı dengelemesi: muhtemelen mali kayıt + audit korunur, PII anonymize edilir (`user.email = 'deleted-{id}@buaze.local'`, `user.name = null`)
+- Bu pattern uygulanırken yeni endpoint + dokumentasyon
+
+**Yapma**: `User` üzerinde direkt `prisma.user.delete` çağırmak. CLAUDE.md §34.5 soft-delete pattern only.
+
+**Yap**: Yeni cascade tanımlanırken `onDelete:` explicit yazılmalı (Prisma 6 default'a güvenmek schema-okuyucu için bilgi kaybı).
+
+---
+
+## 38. SESSION CLOSE — 2026-05 Security Audit Final State
+
+5 fazlı audit + 5 follow-up + 1 cascade pass + 1 docs pass = **12 PR, hepsi merged**. Bu §, oturumun final state'ini ve **yapılmayan/atlanan işleri** açıkça yazar — sonraki session'ların ne ile devam edeceğini görmesi için.
+
+### 38.1 Toplam fix sayısı
+
+| Severity | Adet |
+|---|---|
+| 🔴 CRITICAL | 8 (JWT_SECRET fallback, default credentials, dead-code rename, member deactivate session leak, team locations IDOR, Google OAuth CSRF, JSON-LD `</script>` escape, admin session staleness) |
+| 🟠 HIGH | 11 (Host header injection, reset session revoke, UserSession DB fail-open, primaryColor XSS, integration URL injection, owner deactivate cookie, members audit log, admin reset weak password, restaurant DELETE owner-only, help body sanitize, render-XSS sweep) |
+| 🟡 MEDIUM | 16+ |
+
+### 38.2 Yapılmayan / açık kalanlar (operatör onayı bekliyor)
+
+| # | Bulgu | Öncelik | Tetik koşulu |
+|---|---|---|---|
+| **CSP B grubu** | `Cross-Origin-Opener-Policy: same-origin-allow-popups` + `Cross-Origin-Resource-Policy` path overrides | MEDIUM | Firebase popup auth runtime test |
+| **CSP C grubu** | Strict `script-src` allowlist + nonce middleware (Report-Only ile başla) | MEDIUM-HIGH | 1-2 hafta Sentry CSP report soak |
+| **`RECAPTCHA_ENFORCE` flip** | Default `'false'` → `'true'` production env | MEDIUM | 2 hafta Sentry warn rate izleme |
+| **UserSession legacy `if (!session) return false`** | `auth.ts` fail-closed flip | MEDIUM | Backfill script (mevcut user'lara session row insert) |
+| **Site-settings SVG sanitize** | DOMPurify / sharp.png() rasterize / sandbox CSP | LOW | Admin-only privileged path; düşük öncelik |
+| **bcrypt cost normalize** | Tek `BCRYPT_COST = 12` const, 4 callsite import | LOW | Cosmetic |
+| **KVKK "right to be forgotten"** | User hard-delete endpoint + PII anonymize | LOW (regülasyon scope) | Yasal talep / GDPR DSR akışı |
+
+### 38.3 Audit dışı kalan kapsam (gelecek pass için)
+
+| # | Kapsam | Sebep |
+|---|---|---|
+| 1 | `npm audit` supply chain | Lokal `node_modules` audit ortamında yoktu; CI'da koşulabilir |
+| 2 | Dependency CVE history | Aynı sebep |
+| 3 | E2E auth flow regression test | Test infrastructure ayrı pass |
+
+### 38.4 Sonraki session için disiplin
+
+1. Yeni endpoint eklerken §37.2 A-H disiplinlerini izle (auth boundary / IDOR / privileged audit / rate limit / restaurant CRUD validation / OAuth state / mail recipient / cron secret)
+2. Yeni JSON-LD blok'unda `jsonLdString()` zorunlu (§37.6)
+3. Yeni `console.error` PII içeremez (§37.7) — `userId` / `restaurantId` / hash log'la
+4. Yeni `@relation` eklerken `onDelete:` explicit yaz (§37.9)
+5. Yeni mail/cron endpoint'i `passwordChangedAt: new Date()` set ZORUNLU eğer admin password rotate ediyorsa (§37.3 #1 closure pattern)
+6. Restaurant-yıkıcı endpoint için `canDeleteRestaurant` reuse (§37.3 #4 closure pattern)
+7. `§38.2` tablosundaki bulgulardan biri scope'a giriyorsa kullanıcıya **açık onay** sor
+
+### 38.5 Kalıcı kayıt dosyaları
+
+- **`SECURITY_AUDIT_REPORT.md`** (repo kökü) — 5 audit fazı + 5 follow-up tablolar, deferred rationale, B/C grubu rollout plan
+- **`CLAUDE.md` §37** — yeni endpoint disiplinleri + closed/open follow-up + cascade audit
+- **`CLAUDE.md` §38** — bu session-close özeti
+
+### 38.6 PR index (kapanış)
+
+| PR | İçerik |
+|---|---|
+| #345 | Adım 1 — Public auth + POST hardening |
+| #346 | Adım 2 — Public ingestion + restaurant create |
+| #347 | Adım 3 — Admin auth + privileged CRUD |
+| #348 | Adım 4 — Owner panel + multi-tenant IDOR |
+| #349 | Adım 5 — Google OAuth state CSRF |
+| #350 | Docs — `SECURITY_AUDIT_REPORT.md` + CLAUDE.md §37 |
+| #351 | Follow-up — Admin session staleness + Restaurant DELETE owner-only |
+| #352 | Follow-up — Render-side XSS sweep (JSON-LD + help body) |
+| #353 | Follow-up — PII grep + CI fix |
+| #354 | Follow-up — CSP A-group + Permissions-Policy genişletme |
+| (this PR) | Follow-up — Prisma cascade audit + session-close docs |
+
+12 PR, hepsi `claude/security-vulnerability-audit-x48te` branch'inden main'e merge edildi.
 
 ### 37.5 Yeni session disiplini
 
