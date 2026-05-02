@@ -50,8 +50,12 @@ export async function generateMetadata({
           'multi-platform reviews',
         ],
     alternates: {
-      canonical: `/${locale}/roi`,
-      languages: { tr: '/tr/roi', en: '/en/roi' },
+      canonical: `https://buaze.com/${locale}/roi`,
+      languages: {
+        tr: 'https://buaze.com/tr/roi',
+        en: 'https://buaze.com/en/roi',
+        'x-default': 'https://buaze.com/en/roi',
+      },
     },
     openGraph: {
       title,

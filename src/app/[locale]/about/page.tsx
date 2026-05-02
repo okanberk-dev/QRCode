@@ -159,19 +159,21 @@ export default async function AboutPage({
         { n: '03', title: 'Locality', desc: 'Turkish support, Turkish business realities. We are here too.' },
       ];
 
-  // Numbers aligned with site-more.jsx §117-128
+  // Niteliksel, doğrulanabilir claim'ler (E-E-A-T + Google policy uyumlu).
+  // Sayısal müşteri/yorum istatistikleri kullanmıyoruz — kohort baseline +
+  // attribution olmadan agresif sayı = misleading business claim sınıfında.
   const numbers = isTr
     ? [
-        { num: '2.400+', label: 'İŞLETME' },
-        { num: '340K+', label: 'AYLIK YORUM' },
-        { num: '28', label: 'ÜLKE' },
-        { num: '4.9/5', label: 'MÜŞTERİ PUANI' },
+        { num: '2023', label: 'KURULUŞ' },
+        { num: '8+', label: 'ENTEGRASYON' },
+        { num: 'TR + EN', label: 'AKTİF DİL' },
+        { num: '5 dk', label: 'ORTALAMA KURULUM' },
       ]
     : [
-        { num: '2,400+', label: 'BUSINESSES' },
-        { num: '340K+', label: 'REVIEWS/MO' },
-        { num: '28', label: 'COUNTRIES' },
-        { num: '4.9/5', label: 'CUSTOMER SCORE' },
+        { num: '2023', label: 'FOUNDED' },
+        { num: '8+', label: 'INTEGRATIONS' },
+        { num: 'TR + EN', label: 'LIVE LOCALES' },
+        { num: '5 min', label: 'AVG SETUP' },
       ];
 
   return (

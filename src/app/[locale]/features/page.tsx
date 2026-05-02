@@ -23,18 +23,24 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const title =
-    locale === 'tr' ? 'Özellikler — Buaze' : 'Features — Buaze';
+    locale === 'tr'
+      ? 'QR yorum yönetimi özellikleri — Buaze Pulse AI, gelen kutusu, analitik'
+      : 'QR review management features — Buaze Pulse AI, inbox, analytics';
   const description =
     locale === 'tr'
-      ? 'Yorum gelen kutusu, Buaze Pulse AI yanıt, QR kod stüdyosu, analiz ve raporlama. Buaze\'nin tüm özellikleri nabız metaforunda buluşuyor.'
-      : 'Unified inbox, Buaze Pulse AI replies, QR studio, analytics and reporting. Every Buaze feature meets in the pulse metaphor.';
+      ? 'Tüm platformları tek gelen kutuda yönetin: Buaze Pulse AI taslak yanıt, QR stüdyosu, çoklu platform yönlendirme, canlı analitik ve haftalık rapor.'
+      : 'Manage every platform in one inbox: Buaze Pulse AI reply drafts, QR studio, multi-platform routing, live analytics and weekly reports.';
   return {
     metadataBase: new URL('https://buaze.com'),
     title,
     description,
     alternates: {
-      canonical: `/${locale}/features`,
-      languages: { tr: '/tr/features', en: '/en/features' },
+      canonical: `https://buaze.com/${locale}/features`,
+      languages: {
+        tr: 'https://buaze.com/tr/features',
+        en: 'https://buaze.com/en/features',
+        'x-default': 'https://buaze.com/en/features',
+      },
     },
     openGraph: { title, description, url: `https://buaze.com/${locale}/features` },
   };

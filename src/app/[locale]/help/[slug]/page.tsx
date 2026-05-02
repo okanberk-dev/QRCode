@@ -106,7 +106,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
     description: article.excerpt ?? '',
     datePublished: article.updatedAt.toISOString(),
     dateModified: article.updatedAt.toISOString(),
-    inLanguage: locale,
+    inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
     image: 'https://buaze.com/favicon.svg',
     author: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
     publisher: {
