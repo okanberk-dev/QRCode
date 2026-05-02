@@ -19,7 +19,6 @@ interface Restaurant {
   menuPublished: boolean;
   createdAt: string;
   city?: string | null;
-  kvkkText?: string | null;
   avgRating?: number | null;
   user: { id: string; email: string; name: string | null; plan: string; isActive: boolean } | null;
   _count: { feedbacks: number; menuItems: number; qrGenerations?: number; adminUsers?: number };
@@ -49,10 +48,6 @@ interface Owner {
   isActive: boolean;
 }
 
-function hasKvkk(r: Restaurant): boolean {
-  return !!(r.kvkkText && r.kvkkText.trim().length > 0);
-}
-
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [owners, setOwners] = useState<Owner[]>([]);
@@ -65,7 +60,7 @@ export default function RestaurantsPage() {
     // attention: deeplink from /admin/dashboard "Needs attention" widget
     // (CLAUDE.md §11.36). Backend overrides status when set; UI surfaces an
     // info banner with "Filtreyi temizle" (clear) action.
-    attention: '' as '' | 'kvkk_missing' | 'quota_full' | 'unverified_platform',
+    attention: '' as '' | 'quota_full' | 'unverified_platform',
   });
   const searchTerm = filters.values.search;
   const setSearchTerm = (v: string) => filters.set('search', v);
@@ -345,7 +340,6 @@ export default function RestaurantsPage() {
       )}
       {attention && (
         <AlertBanner kind="info" onDismiss={clearAttention}>
-          {attention === 'kvkk_missing' && 'Yalnızca KVKK metni eksik olan işletmeler gösteriliyor.'}
           {attention === 'unverified_platform' && 'Yalnızca Google Place ID doğrulanmamış işletmeler gösteriliyor.'}
           {attention === 'quota_full' && 'Yalnızca trial kotasının %90+ doldurmuş işletmeler gösteriliyor.'}
         </AlertBanner>
@@ -798,7 +792,6 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
               <th>Şube</th>
               <th>Yorum</th>
               <th>Puan</th>
-              <th>KVKK</th>
               <th>Durum</th>
               <th aria-label="İşlemler" />
             </tr>
@@ -806,7 +799,6 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
           <tbody>
             {rows.map((r) => {
               const plan = planBadge(r.user?.plan);
-              const kvkkOk = hasKvkk(r);
               const detailHref = `/admin/restaurants/${r.id}`;
               const onRowKey = (e: React.KeyboardEvent<HTMLTableRowElement>) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -863,7 +855,6 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
                       </span>
                     ) : '—'}
                   </td>
-                  <td>{kvkkOk ? <Badge kind="ok">Tam</Badge> : <Badge kind="danger">Eksik</Badge>}</td>
                   <td>
                     {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
                   </td>

@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   AlertOctagon,
-  Download,
   Loader2,
   PowerOff,
   Trash2,
@@ -24,12 +23,16 @@ interface DangerZoneProps {
 }
 
 /**
- * Section 9 — Danger Zone (Faz 3).
+ * Section 9 — Danger Zone.
  *
- * 3 kırmızı kart:
+ * 2 kırmızı kart:
  *  1. Devre dışı bırak — `isActive: false` (geri alınabilir).
  *  2. İşletmeyi sil — DELETE endpoint, çift onay (işletme adı yaz).
- *  3. KVKK veri export — POST /api/account/export-data → JSON indir.
+ *
+ * Veri dışa aktarımı butonu kullanıcı talebiyle UI'dan kaldırıldı; KVKK
+ * Madde 11 erişim/silme talepleri legal@buaze.com üzerinden işletilir.
+ * Endpoint (`/api/account/export-data`) ileride yeniden bağlanmak üzere
+ * geri uçta korunur.
  */
 export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZoneProps) {
   const router = useRouter();
@@ -86,38 +89,6 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
     } catch (err) {
       setError(err instanceof Error ? err.message : "Hata");
       setDeleteBusy(false);
-    }
-  };
-
-  // KVKK export
-  const [exportBusy, setExportBusy] = useState(false);
-  const handleExport = async () => {
-    if (exportBusy) return;
-    setExportBusy(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/account/export-data", { method: "POST" });
-      if (!res.ok) {
-        if (res.status === 429) throw new Error("Saatte bir kez veri indirilebilir.");
-        throw new Error("Veri indirilemedi.");
-      }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      // Content-Disposition'daki filename'i kullan; yoksa default ad ver.
-      const cd = res.headers.get("Content-Disposition") ?? "";
-      const m = /filename="?([^";]+)"?/.exec(cd);
-      a.download = m?.[1] ?? "buaze-veri.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      setSuccess("Veriler indirildi.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Hata");
-    } finally {
-      setExportBusy(false);
     }
   };
 
@@ -189,52 +160,7 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
         </div>
       </div>
 
-      {/* 2. KVKK export */}
-      <div className="p-5 sm:p-6" style={dangerCardStyle}>
-        <div className="flex items-start gap-3">
-          <div
-            className="shrink-0 flex items-center justify-center"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: "#FEE2E2",
-              color: "#991B1B",
-            }}
-          >
-            <Download size={18} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">
-              KVKK veri dışa aktarımı
-            </h3>
-            <p className="text-[12.5px] text-[#525252] mt-1">
-              Hesabınla ilişkili tüm verileri (işletmeler, yorumlar, ekip,
-              ayarlar) JSON olarak indir. Saatte bir kez indirilebilir.
-            </p>
-            <button
-              type="button"
-              onClick={handleExport}
-              disabled={exportBusy}
-              className="mt-3 inline-flex items-center gap-1.5"
-              style={{
-                height: 36,
-                padding: "0 14px",
-                borderRadius: 999,
-                background: "#fff",
-                border: "1px solid #FECACA",
-                color: "#991B1B",
-                fontSize: 13,
-              }}
-            >
-              {exportBusy ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-              Verileri indir
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. İşletmeyi sil */}
+      {/* 2. İşletmeyi sil */}
       <div className="p-5 sm:p-6" style={dangerCardStyle}>
         <div className="flex items-start gap-3">
           <div

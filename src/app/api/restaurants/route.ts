@@ -126,12 +126,11 @@ export async function GET(req: NextRequest) {
     // plan lives on the owner User row, not on Restaurant. 'all' = unfiltered.
     const planFilter = adminParams.get('plan') || 'all';
     // Admin "Needs attention" deeplink filter (CLAUDE.md §11.36).
-    // - kvkk_missing         → Restaurant.kvkkText null/empty
     // - quota_full           → trial restaurants whose feedback count ≥ TRIAL_QUOTA × 0.9
     // - unverified_platform  → googleReviewUrl IS NOT NULL AND googlePlaceId IS NULL
     // Forces status=all so passive accounts surface too (deactivated trials etc.)
     const attention = adminParams.get('attention') || '';
-    const ATTENTION_VALUES = new Set(['kvkk_missing', 'quota_full', 'unverified_platform']);
+    const ATTENTION_VALUES = new Set(['quota_full', 'unverified_platform']);
     const attentionActive = ATTENTION_VALUES.has(attention);
     const skip = (page - 1) * limit;
 
@@ -144,9 +143,7 @@ export async function GET(req: NextRequest) {
 
     if (attentionActive) {
       // attention deeplink overrides status — full superset visible
-      if (attention === 'kvkk_missing') {
-        where.OR = [{ kvkkText: null }, { kvkkText: '' }];
-      } else if (attention === 'unverified_platform') {
+      if (attention === 'unverified_platform') {
         where.googleReviewUrl = { not: null };
         where.googlePlaceId = null;
       } else if (attention === 'quota_full') {

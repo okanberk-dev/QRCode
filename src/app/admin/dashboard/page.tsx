@@ -184,16 +184,14 @@ export default async function AdminDashboardPage() {
   // Attention metrics — design 1:1 + PR2 trial signals.
   //  1. Trial yakında bitiyor    → User.plan='trial' AND trialEndsAt within 7d  (PR2)
   //  2. Trial süresi bitti        → User.plan='trial' AND trialEndsAt < now      (PR2)
-  //  3. KVKK metni eksik          → Restaurant.kvkkText empty
-  //  4. 14+ gün giriş yapılmadı   → User.updatedAt (proxy, lastLoginAt yok)
-  //  5. Kota %90+ doldu           → Trial restaurants whose feedback count ≥ 90% of TRIAL_QUOTA
-  //  6. Doğrulanmamış platform    → Restaurant has googleReviewUrl but googlePlaceId null
+  //  3. 14+ gün giriş yapılmadı   → User.updatedAt (proxy, lastLoginAt yok)
+  //  4. Kota %90+ doldu           → Trial restaurants whose feedback count ≥ 90% of TRIAL_QUOTA
+  //  5. Doğrulanmamış platform    → Restaurant has googleReviewUrl but googlePlaceId null
   const sevenDaysAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const nowDate = now;
   const [
     trialExpiringSoon,
     trialExpired,
-    kvkkMissing,
     staleAccounts,
     restaurantsForQuota,
     unverifiedPlatform,
@@ -203,9 +201,6 @@ export default async function AdminDashboardPage() {
     }),
     prisma.user.count({
       where: { plan: 'trial', trialEndsAt: { lte: nowDate } },
-    }),
-    prisma.restaurant.count({
-      where: { OR: [{ kvkkText: null }, { kvkkText: '' }] },
     }),
     prisma.user.count({
       where: { role: 'restaurant_owner', updatedAt: { lt: fourteenDaysAgo } },
@@ -237,12 +232,6 @@ export default async function AdminDashboardPage() {
       n: trialExpired,
       kind: 'danger',
       href: '/admin/members?attention=trial_expired',
-    },
-    {
-      k: 'KVKK metni eksik',
-      n: kvkkMissing,
-      kind: 'danger',
-      href: '/admin/restaurants?attention=kvkk_missing',
     },
     {
       k: '14+ gün giriş yapılmadı',
