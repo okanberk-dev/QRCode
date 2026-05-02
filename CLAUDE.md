@@ -3916,6 +3916,61 @@ PageSpeed "minimize image load" + LCP/Speed Index çalışmalarının devamı. 1
 - Below-fold ise `loading="lazy"` de ekle
 - Hero / LCP-candidate ise `fetchpriority="high"` düşün (per-page karar)
 
+### 34.18 2026-05-02 — Zero-risk bundle #3: SEO + a11y + PWA polish
+
+3 küçük geliştirme tek pas:
+
+#### 1. JSON-LD Organization schema — `areaServed` + `foundingDate`
+
+`src/app/[locale]/layout.tsx`'teki Organization schema zaten **zengindi** (sameAs, contactPoint, address, legalName, alternateName, logo, description, url). Tek gap: Organization root'unda service geography ve company founding year yoktu.
+
+```ts
+{
+  '@type': 'Organization',
+  // ... mevcut field'lar
+  areaServed: 'TR',
+  foundingDate: '2023',
+}
+```
+
+`areaServed` contactPoint level'ında zaten vardı (per-channel) ama Organization-level signal Knowledge Graph entries için kritik. `foundingDate` CLAUDE.md §35.8 "kuruluş yılı 2023" deklarasyonu ile tutarlı.
+
+#### 2. `prefers-reduced-motion` blanket — 3 eksik selector
+
+`src/app/globals.css` ana `prefers-reduced-motion: reduce` blanket'i çoğu Pulse + Tailwind animation'ı kapatıyordu, ama spot-check'te 3 keyframe açıkta kalmıştı:
+
+- `.star-anim-pulse` — public review surface yıldız tap animasyonu
+- `.animate-slide-up` — `slideUpFade` keyframe (form/card entrance)
+- `.confetti-fly` — onboarding finish (`confettiFly` keyframe)
+
+3'ü de blanket'e eklendi. Universal `transition-duration: 0.001ms` reset zaten var, sadece explicit `animation:` property'leri kapatıyordu.
+
+`ecgDraw` zaten ayrı `[style*='ecgDraw']` blanket'inde kapsanıyor (inline-styled element).
+
+#### 3. PWA manifest genişletme
+
+`public/site.webmanifest` mevcut SVG icon listesi + `name`/`short_name`/`background_color`/`theme_color` minimal seti. Web App Manifest spec'e uygun ek field'lar:
+
+| Yeni field | Etki |
+|---|---|
+| `id: '/'` | PWA unique identifier (browser install state) |
+| `orientation: 'portrait'` | Mobile install default |
+| `lang: 'tr'`, `dir: 'ltr'` | Content metadata |
+| `categories: ['business', 'productivity', 'utilities']` | App store categorisation |
+| Icon: `purpose: 'maskable'` ayrı 192/512 entries | Android adaptive icon support (Pixel/Galaxy launcher) |
+
+Mevcut `purpose: 'any maskable'` combined entry **best practice değil** — Chrome / Edge ayrı `any` ve `maskable` entry bekliyor. `any` purpose 180x180 + 192x192/512x512 maskable ayrı entry'lere bölündü.
+
+**Yapma:**
+- Organization schema'ya **var olmayan** sosyal medya hesabı uydurma (`sameAs` Google rich results dolandırıcılık sayar). Mevcut `sameAs: [instagram, twitter, linkedin, youtube]` Buaze gerçek hesapları olduğu varsayılıyor — yoksa SiteSettings ile null-filter yap (`.filter` zaten var).
+- `prefers-reduced-motion` blanket'e yeni keyframe'i sadece bireysel selector ile değil; universal `* { transition-duration: 0.001ms }` reset zaten kapsar — keyframe `animation` ise blanket'e selector ekle.
+- Manifest `purpose: 'any maskable'` combined entry kullanma — Chrome/Edge install prompt iconu doğru picking yapamaz.
+
+**Yap:**
+- Yeni Organization schema field eklerken Google's "Organization structured data guidelines"a uygun ol (sameAs gerçek public profile, contactPoint gerçek email)
+- Yeni motion (`@keyframes`) eklerken aynı anda `globals.css` reduced-motion blanket'ine selector ekle
+- PWA install ihtiyacı çıkarsa `categories` listesini güncelle (örn. yeni feature için `marketing` kategorisi)
+
 ---
 
 ## 35. SEO Infrastructure (2026-05 PR #263 + #264)

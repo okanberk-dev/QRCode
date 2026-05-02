@@ -955,7 +955,12 @@ input::-webkit-inner-spin-button {
 @media (prefers-reduced-motion: reduce) {
   /* Pulse panel + marketing animations all disabled when the user prefers
      reduced motion. Covers explicit Pulse keyframes and Tailwind's native
-     animate-* utilities (which don't auto-respect this preference). */
+     animate-* utilities (which don't auto-respect this preference).
+     Audit ref: CLAUDE.md §34.18 — `star-anim-pulse`, `animate-slide-up`,
+     `confetti-fly` added in the 2026-05 spot-check. */
+  .star-anim-pulse,
+  .animate-slide-up,
+  .confetti-fly,
   .bz-pulse-dot,
   .bz-fade-in,
   .bz-fade-up,

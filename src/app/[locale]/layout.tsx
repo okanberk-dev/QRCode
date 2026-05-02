@@ -177,6 +177,12 @@ export default async function LocaleLayout({
         addressRegion: 'İstanbul',
         addressCountry: 'TR',
       },
+      // Service geography + company founding year — Google rich result
+      // hints. `areaServed` doubles up at the contactPoint level (per-
+      // channel) but the Organization-level signal is what knowledge-graph
+      // entries pick up. CLAUDE.md §34.18.
+      areaServed: 'TR',
+      foundingDate: '2023',
     },
     {
       '@context': 'https://schema.org',
