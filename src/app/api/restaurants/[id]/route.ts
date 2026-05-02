@@ -131,6 +131,10 @@ export async function PUT(
       facebookUrl,
       whatsappUrl,
       reservationUrl,
+      // "Diğer" custom platform (CLAUDE.md §X — owner free-form review URL)
+      otherPlatformUrl,
+      otherPlatformLabel,
+      otherPlatformEnabled,
       // Faz 3 — Operasyonel ayarlar
       workingHours,
       temporarilyClosed,
@@ -178,11 +182,14 @@ export async function PUT(
     }
 
     // Section 3 — sosyal medya URL validation (Faz 2). Boş = clear.
+    // "Diğer" platform aynı protokol kontrolünden geçer; domain whitelist YOK
+    // (free-form, integration-domains.ts 'other' provider).
     const SOCIAL_FIELDS: Array<[string, unknown]> = [
       ['instagramUrl', instagramUrl],
       ['facebookUrl', facebookUrl],
       ['whatsappUrl', whatsappUrl],
       ['reservationUrl', reservationUrl],
+      ['otherPlatformUrl', otherPlatformUrl],
     ];
     for (const [name, value] of SOCIAL_FIELDS) {
       if (value === undefined || value === null || value === '' || typeof value !== 'string') continue;
@@ -294,6 +301,17 @@ export async function PUT(
         }),
         ...(reservationUrl !== undefined && {
           reservationUrl: typeof reservationUrl === 'string' && reservationUrl.trim() ? reservationUrl.trim().slice(0, 500) : null,
+        }),
+        // "Diğer" custom platform (CLAUDE.md §X — owner free-form review URL).
+        // Label max 60 char (UI giriş limiti); URL max 1000 (website pattern).
+        ...(otherPlatformUrl !== undefined && {
+          otherPlatformUrl: typeof otherPlatformUrl === 'string' && otherPlatformUrl.trim() ? otherPlatformUrl.trim().slice(0, 1000) : null,
+        }),
+        ...(otherPlatformLabel !== undefined && {
+          otherPlatformLabel: typeof otherPlatformLabel === 'string' && otherPlatformLabel.trim() ? otherPlatformLabel.trim().slice(0, 60) : null,
+        }),
+        ...(otherPlatformEnabled !== undefined && {
+          otherPlatformEnabled: Boolean(otherPlatformEnabled),
         }),
         // Faz 3 — Operasyonel
         ...(workingHours !== undefined && {

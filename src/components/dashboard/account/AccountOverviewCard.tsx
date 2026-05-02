@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Calendar, Crown, Loader2, MessageSquareText, Reply, Store } from "lucide-react";
+import { AlertTriangle, Calendar, Crown, Loader2, MessageSquareText, Reply, Store } from "lucide-react";
 import type { Locale } from "@/lib/translations";
 import { Avatar, Badge, Eyebrow } from "@/components/ui";
 
@@ -19,8 +19,20 @@ interface OverviewData {
   replies30d: number;
 }
 
+/**
+ * Parent-from-profile fallback. /api/user/overview fetch fail ederse
+ * (401, 500, prerender), parent'ten gelen `profile` prop'u ile minimal
+ * fallback render edilir — kart kaybolmaz.
+ */
+interface ProfileFallback {
+  name: string | null;
+  email: string;
+}
+
 interface AccountOverviewCardProps {
   locale: Locale;
+  /** Optional fallback profile from parent (page already fetched /api/user/profile). */
+  profile?: ProfileFallback | null;
 }
 
 const PLAN_TONE: Record<string, "lime" | "info" | "ghost" | "warn"> = {
@@ -66,22 +78,32 @@ function daysUntil(iso: string | null): number | null {
  * Pulse design — bz-card, lime-soft accent. CLAUDE.md §11 token'ları + §23
  * panel scope.
  */
-export function AccountOverviewCard({ locale }: AccountOverviewCardProps) {
+export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProps) {
   const isTr = locale === "tr";
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchFailed, setFetchFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch("/api/user/overview");
-        if (!cancelled && res.ok) {
+        if (cancelled) return;
+        if (res.ok) {
           const json = (await res.json()) as OverviewData;
           setData(json);
+        } else {
+          // CLAUDE.md §26.5 — operatöre görünür log; Sentry instrumentation
+          // server-side. Production'da silent fail debug edilemez idi.
+          console.warn("[account-overview] fetch returned", res.status);
+          setFetchFailed(true);
         }
-      } catch {
-        /* fail silent — card hides */
+      } catch (err) {
+        if (!cancelled) {
+          console.warn("[account-overview] fetch threw", err);
+          setFetchFailed(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -100,7 +122,39 @@ export function AccountOverviewCard({ locale }: AccountOverviewCardProps) {
     );
   }
 
-  if (!data) return null;
+  // Fetch fail durumunda parent'ten gelen profile ile minimal fallback. Card
+  // kaybolmaz; user "hesap özeti gözükmüyor" şikayeti çözülür.
+  if (!data) {
+    if (!profile) return null; // hiç data yoksa eski davranış (kart gizli)
+    return (
+      <div className="bz-card overflow-hidden p-0">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div className="flex items-center gap-4 min-w-0">
+            <Avatar size={52} name={initials(profile.name, profile.email)} />
+            <div className="min-w-0">
+              <Eyebrow>{isTr ? "HESAP SAHİBİ" : "ACCOUNT OWNER"}</Eyebrow>
+              <h3 className="bz-h-tight mt-0.5 truncate text-[18px] text-[#0A0A0A]">
+                {profile.name || profile.email}
+              </h3>
+              <p className="bz-mono mt-0.5 truncate text-[12px] text-[#737373]">{profile.email}</p>
+            </div>
+          </div>
+        </div>
+        {fetchFailed && (
+          <div className="border-t border-[#EDEDED] bg-[#FFFBEB] px-5 py-3 sm:px-6">
+            <p className="inline-flex items-start gap-2 text-[12px] leading-[1.55] text-[#92400E]">
+              <AlertTriangle size={13} className="mt-0.5 shrink-0" strokeWidth={2} />
+              <span>
+                {isTr
+                  ? "Hesap özeti istatistikleri şu an yüklenemedi. Birkaç saniye sonra sayfayı yenilemeyi deneyebilirsin."
+                  : "Could not load account stats right now. Try refreshing in a few seconds."}
+              </span>
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const planKey = (data.plan ?? "trial").toLowerCase();
   const planTone = PLAN_TONE[planKey] ?? "ghost";

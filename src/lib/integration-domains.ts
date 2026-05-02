@@ -29,7 +29,8 @@ export type IntegrationProvider =
   | 'facebook'
   | 'whatsapp'
   | 'website'
-  | 'reservation';
+  | 'reservation'
+  | 'other';
 
 export const PROVIDER_DOMAINS: Record<IntegrationProvider, string[] | null> = {
   google: ['google.com', 'g.page', 'goo.gl', 'maps.app.goo.gl', 'business.google.com'],
@@ -45,6 +46,10 @@ export const PROVIDER_DOMAINS: Record<IntegrationProvider, string[] | null> = {
   whatsapp: ['whatsapp.com', 'wa.me', 'api.whatsapp.com'],
   website: null,
   reservation: null,
+  // "Diğer" — owner kendi review platform URL'i (TheFork, OpenTable, sektör-
+  // spesifik). Domain whitelist YOK; sadece protocol kontrolü (`website` ile
+  // aynı pattern).
+  other: null,
 };
 
 export const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
@@ -61,6 +66,7 @@ export const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
   whatsapp: 'WhatsApp',
   website: 'Web sitesi',
   reservation: 'Rezervasyon',
+  other: 'Diğer',
 };
 
 export type DomainCheckReason =

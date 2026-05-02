@@ -94,6 +94,13 @@ model Restaurant {
   facebookUrl             String?   @map("facebook_url")
   whatsappUrl             String?   @map("whatsapp_url")
   reservationUrl          String?   @map("reservation_url")
+  // "Diğer" custom platform — owner kendi review URL'i (TheFork, OpenTable,
+  // sektör-spesifik) koyabilir. CLAUDE.md §X — domain validation YOK
+  // (free-form, `website` ile aynı pattern). Label opsiyonel ama UI'da
+  // gösterilir; URL düzgünse domain auto-extract ile fallback (host).
+  otherPlatformUrl        String?   @map("other_platform_url")     @db.Text
+  otherPlatformLabel      String?   @map("other_platform_label")
+  otherPlatformEnabled    Boolean   @default(true) @map("other_platform_enabled")
   // Operasyonel ayarlar (Section 7 — Faz 3). "Geçici kapalı" — public /r/<slug>
   // sayfasında "Geçici olarak kapalıyız" banner tetiklemek için. closedReason
   // (≤500 char) opsiyonel; UI sebebi gösterir.

@@ -162,9 +162,11 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
           return (
             <div
               key={row.key}
-              className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 p-4 sm:p-5 transition-colors hover:bg-[#FAFAFA]/40"
+              className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-3 p-5 transition-colors hover:bg-[#FAFAFA]/40"
             >
-              <div className="flex items-start gap-3 min-w-0 flex-1">
+              {/* Sol kolon: ikon + başlık + açıklama. Toggle her zaman row
+                  ortasında dikey hizalı (grid-cols-[1fr_auto] + items-center). */}
+              <div className="flex items-start gap-3 min-w-0">
                 <span
                   className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#0A0A0A]"
                   style={{ background: row.accent ? `${row.accent}33` : '#F5F5F5' }}
@@ -172,26 +174,16 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
                   <Icon size={14} />
                 </span>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-[14px] font-semibold text-[#0A0A0A]">
-                      {row.label[isTr ? 'tr' : 'en']}
-                    </p>
-                    <span
-                      className={`pulse-eyebrow rounded-full px-2 py-0.5 ${
-                        on
-                          ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                          : 'bg-[#F5F5F5] text-[#737373]'
-                      }`}
-                      aria-hidden="true"
-                    >
-                      {on ? (isTr ? 'AKTİF' : 'ACTIVE') : (isTr ? 'PASİF' : 'OFF')}
-                    </span>
-                  </div>
+                  <p className="text-[14px] font-semibold text-[#0A0A0A]">
+                    {row.label[isTr ? 'tr' : 'en']}
+                  </p>
                   <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
                     {row.desc[isTr ? 'tr' : 'en']}
                   </p>
                 </div>
               </div>
+
+              {/* Sağ kolon: toggle button — dikey ortalı, sabit pozisyon. */}
               <button
                 type="button"
                 onClick={() => toggle(row.key)}
@@ -199,7 +191,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
                 role="switch"
                 aria-checked={on}
                 aria-label={row.label[isTr ? 'tr' : 'en']}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-wait sm:self-center ${
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-wait ${
                   on ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'
                 }`}
               >
@@ -212,6 +204,22 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
                   {isPending && <Loader2 size={10} className="animate-spin text-[#737373]" />}
                 </span>
               </button>
+
+              {/* AKTİF/PASİF badge — alt satırda, ikon hizasıyla aynı offset
+                  (icon w-9 + gap-3 = 48px). col-span-2 ile her iki kolonu
+                  kapsar; hizalama row title satırıyla görsel uyumlu. */}
+              <span
+                role="status"
+                className={`col-span-2 inline-flex items-center gap-1.5 self-start text-[10px] font-semibold tracking-[0.18em] uppercase ml-12 ${
+                  on ? 'text-[#0A0A0A]' : 'text-[#737373]'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`inline-block h-1.5 w-1.5 rounded-full ${on ? 'bg-[#A8D62E]' : 'bg-[#A3A3A3]'}`}
+                />
+                {on ? (isTr ? 'Aktif' : 'Active') : (isTr ? 'Pasif' : 'Off')}
+              </span>
             </div>
           );
         })}

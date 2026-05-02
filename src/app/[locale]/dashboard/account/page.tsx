@@ -192,7 +192,7 @@ export default function AccountSettingsPage() {
         }
       >
         <div className="space-y-4">
-          <AccountOverviewCard locale={locale} />
+          <AccountOverviewCard locale={locale} profile={profile} />
           <BusinessProfileSettings locale={locale} />
         </div>
       </SettingsSection>
