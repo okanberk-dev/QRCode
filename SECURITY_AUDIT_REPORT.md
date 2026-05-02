@@ -311,6 +311,59 @@ caller's payload, so no PII path there.
 `CLAUDE.md` §37.7 added — "PII redaction disiplini" — codifying the
 `userId not e-mail` rule for new mail / cron / privileged endpoints.
 
+## CSP / security headers — A group closed (2026-05 follow-up)
+
+Originally listed as "future pass" scope; A-group landed in a follow-up
+commit. B and C groups stay open (operator decision + Firebase popup
+verification + 1-2 week Report-Only soak).
+
+### A group (zero-risk, applied)
+
+`next.config.ts:headers()` now ships:
+
+- `Content-Security-Policy: frame-ancestors 'self'; base-uri 'self';
+  form-action 'self'; object-src 'none'; upgrade-insecure-requests`
+  (site-wide)
+- `Content-Security-Policy: frame-ancestors *; base-uri 'self';
+  form-action 'self'; object-src 'none'` (`/embed/*` override — keeps
+  the third-party-iframe story but inherits the rest of the directives)
+- `Permissions-Policy` extended with `interest-cohort=()`,
+  `browsing-topics=()`, `payment=()`, `usb=()`, `bluetooth=()`,
+  `serial=()` (Google FLoC / Topics / payment / sensor opt-out — no
+  first-party feature uses these surfaces).
+
+Each closes a distinct attack vector — clickjacking, `<base>` tag
+injection, form hijacking, Flash/Java/PDF embed surface, mixed-content
+slips — without restricting any script source we currently load.
+
+### B group — deferred (low risk, Firebase popup verify required)
+
+- `Cross-Origin-Opener-Policy: same-origin-allow-popups` — Spectre +
+  tab isolation. Strict `same-origin` would break Firebase
+  `signInWithPopup`; the `-allow-popups` variant is documented as
+  compatible but the `/auth/google` flow needs runtime verification.
+- `Cross-Origin-Resource-Policy: same-origin` (site-wide) with
+  `cross-origin` overrides for `/embed/*`, `/buaze-embed.js`,
+  `/opengraph-image*`, `/favicon.svg`, `/apple-touch-icon.svg`. More
+  path overrides than the A-group justified, so a separate PR.
+
+### C group — deferred (Report-Only + 1-2 week soak)
+
+The actual XSS guardrail. Strict `script-src` enforcement would break
+existing inline scripts (GTM init, Yandex Metrika init, JSON-LD,
+Speed Insights bootstrap, Vercel Preview Comments) without a nonce
+flow. CLAUDE.md §37.8 documents the third-party allowlist
+(`googletagmanager.com`, `mc.yandex.ru`, `vercel-insights.com`,
+`*.firebaseapp.com`, `*.googleapis.com`, `gstatic.com/recaptcha`,
+`vercel.live`) plus the Next.js middleware nonce pattern needed for
+inline scripts.
+
+Recommended rollout:
+1. Ship `Content-Security-Policy-Report-Only` with the candidate
+   allowlist. No requests are blocked, violations report to Sentry.
+2. Watch Sentry CSP reports for 1-2 weeks. Add any missing domain.
+3. Flip to `Content-Security-Policy` (enforce) on a canary deployment.
+
 ## Out of scope (future passes)
 
 Areas the audit deliberately did not cover:
