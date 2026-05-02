@@ -58,7 +58,7 @@ export default function MenuSplash({ name, accent, logoUrl, durationMs = 3000, o
         <div className="mx-auto flex h-28 w-28 items-center justify-center overflow-hidden rounded-[32px] bg-white/95 shadow-2xl ring-1 ring-white/40 sm:h-32 sm:w-32">
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt={name} className="h-full w-full object-cover" />
+            <img src={logoUrl} alt={name} decoding="async" className="h-full w-full object-cover" />
           ) : (
             <span className="text-5xl font-extrabold tracking-tight sm:text-6xl" style={{ color: accent }}>
               {initial}

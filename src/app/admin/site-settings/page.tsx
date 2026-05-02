@@ -369,7 +369,7 @@ const AssetUploader = ({ url, label, accept, aspect, onUpload, onRemove, uploadi
         {url ? (
           <div className={`${previewClass} flex items-center justify-center overflow-hidden relative group`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={url} alt={label} className="max-w-full max-h-full object-contain" />
+            <img src={url} alt={label} loading="lazy" decoding="async" className="max-w-full max-h-full object-contain" />
           </div>
         ) : (
           <div className={`${previewClass} bg-[#FFFFFF] border-2 border-dashed border-[#EDEDED] flex items-center justify-center`}>

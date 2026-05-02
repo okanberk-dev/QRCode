@@ -500,7 +500,7 @@ export default function BrandIdentityCard({
           >
             {form.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={form.logoUrl} alt="" className="h-full w-full object-contain" />
+              <img src={form.logoUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
             ) : (
               initial1
             )}

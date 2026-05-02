@@ -335,7 +335,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
             <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/95 text-3xl font-semibold shadow-lg sm:h-20 sm:w-20 sm:text-4xl" style={{ color: accent }}>
               {restaurant.menuLogoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+                <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
               ) : (
                 restaurant.name.charAt(0).toUpperCase()
               )}
@@ -470,7 +470,7 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
             >
               {restaurant.menuLogoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+                <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
               ) : (
                 restaurant.name.charAt(0).toUpperCase()
               )}
@@ -591,7 +591,7 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
           {restaurant.menuLogoUrl && (
             <div className="mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full border border-[#EDEDED] bg-white shadow-sm sm:h-20 sm:w-20">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+              <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
             </div>
           )}
           <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#6B7280]">{restaurant.category}</p>
@@ -713,7 +713,7 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
             <div className="mx-auto mb-5 h-20 w-20 overflow-hidden rounded-full p-[2px] shadow-lg sm:h-24 sm:w-24" style={{ backgroundColor: accent }}>
               <div className="h-full w-full overflow-hidden rounded-full bg-[#000000]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+                <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
               </div>
             </div>
           )}
@@ -848,7 +848,7 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
           {restaurant.menuLogoUrl && (
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[#EDEDED] bg-white shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+              <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
             </div>
           )}
           <div className="min-w-0 flex-1">
@@ -968,7 +968,7 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
           >
             {restaurant.menuLogoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+              <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
             ) : (
               restaurant.name.charAt(0).toUpperCase()
             )}
@@ -1100,7 +1100,7 @@ function PulseLayout({
             {restaurant.menuLogoUrl ? (
               <span className="h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-[#EDEDED] bg-white">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={restaurant.menuLogoUrl} alt={restaurant.name} className="h-full w-full object-cover" />
+                <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
               </span>
             ) : (
               <span
