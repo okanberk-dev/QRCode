@@ -386,14 +386,12 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                     { label: 'Mesafeli Sözleşme', href: `${base}/mesafeli-hizmet-sozlesmesi` },
                     { label: 'İade & İptal', href: `${base}/iade-iptal-politikasi` },
                     { label: 'Kullanım Politikası', href: `${base}/kabul-edilebilir-kullanim` },
-                    { label: 'Güvenlik', href: `${base}/bilgi-guvenligi` },
                   ]
                 : [
                     { label: 'Agreement', href: `${base}/kullanim-sozlesmesi` },
                     { label: 'Distance Contract', href: `${base}/mesafeli-hizmet-sozlesmesi` },
                     { label: 'Refund Policy', href: `${base}/iade-iptal-politikasi` },
                     { label: 'Acceptable Use', href: `${base}/kabul-edilebilir-kullanim` },
-                    { label: 'Security', href: `${base}/bilgi-guvenligi` },
                   ]),
               { label: isTr ? 'Google Uyumu' : 'Google compliance', href: `${base}/google-compliance` },
             ].map((item) => (

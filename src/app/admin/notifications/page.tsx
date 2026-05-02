@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Bell, Loader2, Mail } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
-import { PageHeader } from '@/components/ui';
+import { AlertBanner, PageHeader, Toggle } from '@/components/ui';
 
 interface Prefs {
   lowRatingEmail: boolean;
@@ -31,7 +31,7 @@ function AdminNotificationsBody() {
   const isTr = locale === 'tr';
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [pendingKey, setPendingKey] = useState<keyof Prefs | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,8 +51,8 @@ function AdminNotificationsBody() {
     setTimeout(() => setNotice(null), 2500);
   };
 
-  const save = async (next: Prefs) => {
-    setSaving(true);
+  const save = async (next: Prefs, previous: Prefs, key: keyof Prefs) => {
+    setPendingKey(key);
     try {
       const res = await fetch('/api/notifications', {
         method: 'PUT',
@@ -68,19 +68,23 @@ function AdminNotificationsBody() {
         });
         flash(isTr ? 'Kaydedildi' : 'Saved');
       } else {
+        setPrefs(previous);
         const body = await res.json().catch(() => ({}));
         flash(isTr ? `Hata: ${body.error ?? res.status}` : `Error: ${body.error ?? res.status}`);
       }
     } catch {
+      setPrefs(previous);
       flash(isTr ? 'Ağ hatası' : 'Network error');
     }
-    setSaving(false);
+    setPendingKey(null);
   };
 
   const toggle = (key: keyof Prefs) => {
+    if (pendingKey) return;
+    const previous = prefs;
     const next = { ...prefs, [key]: !prefs[key] };
     setPrefs(next);
-    save(next);
+    save(next, previous, key);
   };
 
   const rows: { key: keyof Prefs; label: { tr: string; en: string }; desc: { tr: string; en: string }; icon: React.ComponentType<{ size?: number }> }[] = [
@@ -122,44 +126,61 @@ function AdminNotificationsBody() {
           <Loader2 className="animate-spin" size={20} />
         </div>
       ) : (
-        <section className="divide-y divide-[#EDEDED] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white">
+        <section className="space-y-3">
           {rows.map((row) => {
             const Icon = row.icon;
             const on = Boolean(prefs[row.key]);
+            const isPending = pendingKey === row.key;
             return (
-              <div key={row.key} className="flex items-start justify-between gap-4 p-5">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F5F5F5] text-[#0A0A0A]">
-                    <Icon size={14} />
-                  </span>
-                  <div>
-                    <p className="text-[14px] font-semibold text-[#0A0A0A]">{row.label[isTr ? 'tr' : 'en']}</p>
-                    <p className="mt-1 text-[12px] text-[#525252]">{row.desc[isTr ? 'tr' : 'en']}</p>
+              <div
+                key={row.key}
+                className="rounded-[24px] border border-[#EDEDED] bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#D4D4D4] sm:p-5"
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#F5F5F5] text-[#0A0A0A] ring-1 ring-black/5">
+                      <Icon size={16} />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-[14px] font-semibold text-[#0A0A0A]">{row.label[isTr ? 'tr' : 'en']}</p>
+                        <span
+                          role="status"
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                            on ? 'bg-[#EAF9B8] text-[#0A0A0A]' : 'bg-[#F5F5F5] text-[#737373]'
+                          }`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`inline-block h-1.5 w-1.5 rounded-full ${on ? 'bg-[#A8D62E]' : 'bg-[#A3A3A3]'}`}
+                          />
+                          {on ? (isTr ? 'Aktif' : 'Active') : (isTr ? 'Pasif' : 'Off')}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">{row.desc[isTr ? 'tr' : 'en']}</p>
+                    </div>
                   </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => toggle(row.key)}
-                  disabled={saving}
-                  role="switch"
-                  aria-checked={on}
-                  aria-label={row.label[isTr ? 'tr' : 'en']}
-                  className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                    on ? 'bg-[#C6F24E]' : 'bg-[#EDEDED]'
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                      on ? 'translate-x-5' : 'translate-x-0.5'
-                    }`}
+                  <Toggle
+                    checked={on}
+                    onChange={() => toggle(row.key)}
+                    loading={isPending}
+                    disabled={Boolean(pendingKey && !isPending)}
+                    ariaLabel={row.label[isTr ? 'tr' : 'en']}
+                    className="self-start sm:self-center"
                   />
-                </button>
+                </div>
               </div>
             );
           })}
         </section>
       )}
+      {notice?.toLowerCase().includes('forbidden') ? (
+        <AlertBanner kind="warn">
+          {isTr
+            ? 'Bu ekran workspace bildirim tercihlerini kullanır. Superadmin hesabının kişisel workspace’i yoksa API doğal olarak 403 döner.'
+            : 'This screen uses workspace notification preferences. A superadmin without a personal workspace will naturally receive a 403 from the API.'}
+        </AlertBanner>
+      ) : null}
     </div>
   );
 }

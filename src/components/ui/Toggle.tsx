@@ -1,51 +1,80 @@
+import { Loader2 } from "lucide-react";
+
 interface ToggleProps {
   checked: boolean;
   onChange: (next: boolean) => void;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
+  loading?: boolean;
   ariaLabel?: string;
+  className?: string;
 }
 
-export function Toggle({ checked, onChange, size = "md", disabled, ariaLabel }: ToggleProps) {
-  const w = size === "sm" ? 32 : 38;
-  const h = size === "sm" ? 18 : 22;
-  const pad = 2;
-  const kn = h - pad * 2;
+const SIZE = {
+  sm: {
+    track: "h-5 w-9",
+    knob: "h-4 w-4",
+    translate: "translate-x-4",
+    spinner: 9,
+  },
+  md: {
+    track: "h-7 w-12",
+    knob: "h-6 w-6",
+    translate: "translate-x-5",
+    spinner: 11,
+  },
+  lg: {
+    track: "h-8 w-14",
+    knob: "h-7 w-7",
+    translate: "translate-x-6",
+    spinner: 12,
+  },
+} as const;
+
+export function Toggle({
+  checked,
+  onChange,
+  size = "md",
+  disabled,
+  loading,
+  ariaLabel,
+  className = "",
+}: ToggleProps) {
+  const s = SIZE[size];
+  const isDisabled = disabled || loading;
+
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-busy={loading || undefined}
       aria-label={ariaLabel}
-      disabled={disabled}
-      onClick={() => !disabled && onChange(!checked)}
-      style={{
-        position: "relative",
-        width: w,
-        height: h,
-        background: checked ? "#0A0A0A" : "#E5E5E5",
-        borderRadius: 999,
-        border: 0,
-        cursor: disabled ? "not-allowed" : "pointer",
-        transition: "background 150ms ease",
-        padding: pad,
-        opacity: disabled ? 0.5 : 1,
-      }}
+      disabled={isDisabled}
+      onClick={() => !isDisabled && onChange(!checked)}
+      className={[
+        "group relative inline-flex shrink-0 items-center rounded-full border p-0.5",
+        "transition-all duration-200 ease-out active:scale-[0.98]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]/70 focus-visible:ring-offset-2",
+        checked
+          ? "border-[#0A0A0A] bg-[#0A0A0A] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+          : "border-[#D4D4D4] bg-[#F5F5F5] shadow-[inset_0_1px_2px_rgba(10,10,10,0.06)]",
+        isDisabled ? "cursor-not-allowed opacity-60 active:scale-100" : "cursor-pointer hover:border-[#0A0A0A]",
+        s.track,
+        className,
+      ].join(" ")}
     >
       <span
         aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: pad,
-          left: checked ? w - kn - pad : pad,
-          width: kn,
-          height: kn,
-          borderRadius: "50%",
-          background: "#fff",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-          transition: "left 200ms ease",
-        }}
-      />
+        className={[
+          "inline-flex items-center justify-center rounded-full transition-transform duration-200 ease-out",
+          "shadow-[0_2px_8px_rgba(10,10,10,0.18)]",
+          checked ? `${s.translate} bg-[#C6F24E] text-[#0A0A0A]` : "translate-x-0 bg-white text-[#737373]",
+          s.knob,
+        ].join(" ")}
+      >
+        {loading ? <Loader2 size={s.spinner} className="animate-spin" /> : null}
+      </span>
     </button>
   );
 }

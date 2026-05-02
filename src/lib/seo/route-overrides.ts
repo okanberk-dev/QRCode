@@ -66,7 +66,6 @@ export const ROUTE_OVERRIDES: Record<string, RouteMeta> = {
   gizlilik: { priority: 0.5, changefreq: 'yearly' },
   'acik-riza': { priority: 0.4, changefreq: 'yearly' },
   'ticari-ileti': { priority: 0.4, changefreq: 'yearly' },
-  'bilgi-guvenligi': { priority: 0.4, changefreq: 'yearly' },
   'icerik-moderasyon': { priority: 0.4, changefreq: 'yearly' },
   'kabul-edilebilir-kullanim': { priority: 0.4, changefreq: 'yearly' },
   'kullanim-sozlesmesi': { priority: 0.5, changefreq: 'yearly' },

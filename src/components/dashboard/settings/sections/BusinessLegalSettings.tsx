@@ -213,8 +213,6 @@ function linkForKey(key: string, locale: Locale): string {
       return `/${locale}/kabul-edilebilir-kullanim`;
     case "icerik-moderasyon":
       return `/${locale}/icerik-moderasyon`;
-    case "bilgi-guvenligi":
-      return `/${locale}/bilgi-guvenligi`;
     case "veri-ihlali-mudahale":
       return `/${locale}/veri-ihlali-mudahale`;
     default:

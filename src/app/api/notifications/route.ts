@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { resolveOwnerUserId } from '@/lib/panel-access';
+import { validateBody } from '@/lib/api/validate';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +12,12 @@ const DEFAULT_PREFS = {
   dailyDigestEmail: false,
   weeklyReport: true,
 };
+
+const PreferencesBody = z.object({
+  lowRatingEmail: z.boolean().optional(),
+  dailyDigestEmail: z.boolean().optional(),
+  weeklyReport: z.boolean().optional(),
+}).strict();
 
 export async function GET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
@@ -42,18 +50,15 @@ export async function PUT(req: NextRequest) {
   const userId = await resolveOwnerUserId(actor);
   if (!userId) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  let body: {
-    lowRatingEmail?: unknown;
-    dailyDigestEmail?: unknown;
-    weeklyReport?: unknown;
-  } = {};
+  let body: unknown = {};
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  const toBool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
+  const parsed = validateBody(PreferencesBody, body);
+  if (!parsed.ok) return parsed.response;
 
   const current = await prisma.notificationPreference.findUnique({
     where: { userId },
@@ -65,9 +70,9 @@ export async function PUT(req: NextRequest) {
   });
 
   const next = {
-    lowRatingEmail: toBool(body.lowRatingEmail, current?.lowRatingEmail ?? DEFAULT_PREFS.lowRatingEmail),
-    dailyDigestEmail: toBool(body.dailyDigestEmail, current?.dailyDigestEmail ?? DEFAULT_PREFS.dailyDigestEmail),
-    weeklyReport: toBool(body.weeklyReport, current?.weeklyReport ?? DEFAULT_PREFS.weeklyReport),
+    lowRatingEmail: parsed.data.lowRatingEmail ?? current?.lowRatingEmail ?? DEFAULT_PREFS.lowRatingEmail,
+    dailyDigestEmail: parsed.data.dailyDigestEmail ?? current?.dailyDigestEmail ?? DEFAULT_PREFS.dailyDigestEmail,
+    weeklyReport: parsed.data.weeklyReport ?? current?.weeklyReport ?? DEFAULT_PREFS.weeklyReport,
   };
 
   const row = await prisma.notificationPreference.upsert({

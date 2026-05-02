@@ -18,11 +18,26 @@ function clearStateCookie(res: NextResponse): NextResponse {
   return res;
 }
 
-function redirectBack(req: NextRequest, status: string): NextResponse {
+function safeReturnTo(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  if (!value.startsWith('/')) return null;
+  if (value.startsWith('//')) return null;
+  if (value.length > 300) return null;
+  return value;
+}
+
+function redirectBack(req: NextRequest, status: string, returnTo?: string | null): NextResponse {
   const url = new URL(req.nextUrl.origin);
-  // /profile redirects to /account; aim straight at the account hub.
-  url.pathname = '/tr/dashboard/account';
-  url.searchParams.set('section', 'notifications');
+  const safePath = safeReturnTo(returnTo);
+  if (safePath) {
+    const target = new URL(safePath, req.nextUrl.origin);
+    url.pathname = target.pathname;
+    url.search = target.search;
+  } else {
+    // /profile redirects to /account; aim straight at the account hub.
+    url.pathname = '/tr/dashboard/account';
+    url.searchParams.set('section', 'notifications');
+  }
   url.searchParams.set('google', status);
   return clearStateCookie(NextResponse.redirect(url.toString(), 302));
 }
@@ -61,7 +76,7 @@ export async function GET(req: NextRequest) {
   const stateParam = req.nextUrl.searchParams.get('state');
   if (!stateParam) return redirectBack(req, 'state-missing');
 
-  let parsedState: { owner?: unknown; nonce?: unknown } | null = null;
+  let parsedState: { owner?: unknown; nonce?: unknown; returnTo?: unknown } | null = null;
   try {
     const json = Buffer.from(stateParam, 'base64url').toString('utf8');
     parsedState = JSON.parse(json);
@@ -70,11 +85,12 @@ export async function GET(req: NextRequest) {
   }
   const stateNonce = parsedState && typeof parsedState.nonce === 'string' ? parsedState.nonce : null;
   const stateOwner = parsedState && typeof parsedState.owner === 'string' ? parsedState.owner : null;
-  if (!stateNonce || !stateOwner) return redirectBack(req, 'state-invalid');
+  const returnTo = safeReturnTo(parsedState?.returnTo);
+  if (!stateNonce || !stateOwner) return redirectBack(req, 'state-invalid', returnTo);
 
   const cookieNonce = req.cookies.get(GOOGLE_OAUTH_STATE_COOKIE)?.value;
   if (!cookieNonce || !nonceMatches(cookieNonce, stateNonce)) {
-    return redirectBack(req, 'state-mismatch');
+    return redirectBack(req, 'state-mismatch', returnTo);
   }
 
   // Defence-in-depth: the `owner` baked into state must match the
@@ -82,12 +98,12 @@ export async function GET(req: NextRequest) {
   // scenario where one user's nonce could be replayed under another
   // user's session cookie.
   if (stateOwner !== ownerRef(actor)) {
-    return redirectBack(req, 'state-actor-mismatch');
+    return redirectBack(req, 'state-actor-mismatch', returnTo);
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return redirectBack(req, 'missing-config');
+  if (!clientId || !clientSecret) return redirectBack(req, 'missing-config', returnTo);
 
   const body = new URLSearchParams({
     code,
@@ -103,7 +119,7 @@ export async function GET(req: NextRequest) {
     body,
   });
 
-  if (!tokenRes.ok) return redirectBack(req, 'token-error');
+  if (!tokenRes.ok) return redirectBack(req, 'token-error', returnTo);
 
   const tokens = await tokenRes.json() as {
     access_token?: string;
@@ -111,7 +127,7 @@ export async function GET(req: NextRequest) {
     expires_in?: number;
   };
 
-  if (!tokens.access_token) return redirectBack(req, 'token-missing');
+  if (!tokens.access_token) return redirectBack(req, 'token-missing', returnTo);
 
   const userId = ownerRef(actor);
   const existing = await prisma.googleIntegration.findUnique({ where: { userId } });
@@ -132,5 +148,5 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  return redirectBack(req, 'connected');
+  return redirectBack(req, 'connected', returnTo);
 }
