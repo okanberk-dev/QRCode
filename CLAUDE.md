@@ -3159,6 +3159,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 | `firebase ^12.12` | ✅ Kurulu | Sadece Google Sign-in için. Primary auth değil — `jose` JWT + httpOnly cookie (§4) |
 | `jose ^6.2` | ✅ Kurulu | Custom JWT auth — edge compatible, Vercel middleware ile uyumlu (§4) |
 | `@vercel/speed-insights ^2.0` | ✅ Kurulu | Real-user Core Web Vitals (LCP/CLS/INP/FCP/TTFB). `<SpeedInsights />` root layout'ta mount'lı; alt layout'lar inherit eder (§31). Lokal dev'de no-op, sadece Vercel deployment'ta data toplar. Sentry'yi (§26) **replace etmez** — paralel rol |
+| `@vercel/analytics ^2.0` | ✅ Kurulu (2026-05) | Page views + custom events. `<Analytics />` root layout'ta `<SpeedInsights />` ile birlikte mount'lı; ikisi paralel beacon emit eder. RES (Real Experience Score) hesaplaması her iki sample stream'i tüketir — Analytics olmadan RES sample context yetersiz kalıyordu (Vercel dashboard "No data available" uyarısı). Lokal dev'de no-op. Custom event tracking şu an wired değil (passive page views) — gerekirse `track('event_name', { ... })` API'si var. |
 
 ### 30.4 Önerilen ama kurulmaya gerek olmayan lib'ler (revised)
 
@@ -3179,7 +3180,6 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 
 | Lib | Tetik koşul |
 |---|---|
-| `@vercel/analytics` | Marketing funnel analysis lazım olduğunda — page-view + conversion tracking. Speed Insights (§31) zaten kurulu, Web Vitals tarafını karşılıyor |
 | `iyzipay-node` (veya REST direct) | Iyzico Wave 3.5 başlatıldığında billing write-side için |
 | `react-hook-form` | Bir form 8+ alana çıktığında veya complex validation chain gerekirse |
 | `next-intl` | 3. locale eklenirken (TR + EN dışı) — current pattern 2 locale için uygun, 3+ ölçeklemiyor |
@@ -3195,9 +3195,11 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 
 ---
 
-## 31. Vercel Speed Insights — Real-User Web Vitals
+## 31. Vercel Speed Insights + Analytics — Real-User Web Vitals
 
-`@vercel/speed-insights/next` ile gerçek-kullanıcı Core Web Vitals takibi. Paket `package.json`'da kayıtlı (`@vercel/speed-insights ^2.0.0`) ve `<SpeedInsights />` root layout'ta mount'lanır → `[locale]/layout.tsx` + `admin/layout.tsx` dahil tüm panel + marketing + public surface'leri kapsar. Yeni layout/route eklerken **ekstra mount koyma** (duplicate beacon).
+`@vercel/speed-insights/next` (Web Vitals) ve `@vercel/analytics/next` (page views) ile gerçek-kullanıcı telemetrisi. Her iki paket `package.json`'da kayıtlı (`@vercel/speed-insights ^2.0.0` + `@vercel/analytics ^2.0.1`); `<SpeedInsights />` ve `<Analytics />` `src/app/layout.tsx` body sonunda **birlikte mount'lı** → `[locale]/layout.tsx` + `admin/layout.tsx` dahil tüm panel + marketing + public surface'leri kapsar. Yeni layout/route eklerken **ekstra mount koyma** (duplicate beacon).
+
+**Neden ikisi birlikte:** Vercel "Real Experience Score" (RES) hesaplaması Web Vitals + page-view stream'lerinin **birleşik** sample'ından çıkar. Tek başına Speed Insights ile RES "0" görünüp dashboard'da "No data available — make sure you are using the latest @vercel/speed-insights package" uyarısı çıkıyordu (paket zaten v2 latest'tı, gerçek sebep page-view context eksikliğiydi). Analytics eklenince RES hesaplaması için yeterli sample kalitesi sağlanır.
 
 ### 31.1 Speed Insights vs Sentry — net rol ayrımı
 
@@ -3232,11 +3234,11 @@ veya `0.1` (10%) — büyük ölçekte istatistiksel olarak yeterli, dashboard t
 
 ### 31.4 Wired endpoints (yok — passive)
 
-Manuel `track()` çağrısı yok; sadece otomatik Web Vitals beacons. `@vercel/analytics`'ın `track()` API'si ayrıdır (custom event); şu an kurulmadı (§30.5'te tetik koşulu marketing funnel ihtiyacı).
+Manuel `track()` çağrısı yok; sadece otomatik Web Vitals + page view beacon'ları. `@vercel/analytics`'ın `track('event_name', { ... })` API'si available — marketing funnel analysis (örn. ROI form submit, plan upgrade click, demo CTA) için ileride wire edilebilir. Şu an passive otomatik tracking yeterli.
 
 ### 31.5 Yeni layout / SSG sayfa eklerken
 
-Yeni route `app/` ağacında otomatik kapsanır (root layout'ta tek `<SpeedInsights />` mount, alt layout'lar inherit eder). Ayrı bir `<SpeedInsights />` mount **etme** — duplicate beacon gönderir, quota tüketir.
+Yeni route `app/` ağacında otomatik kapsanır (root layout'ta tek `<SpeedInsights />` + `<Analytics />` mount, alt layout'lar inherit eder). Ayrı `<SpeedInsights />` veya `<Analytics />` mount **etme** — duplicate beacon gönderir, quota tüketir + sample drift yapar.
 
 ---
 
