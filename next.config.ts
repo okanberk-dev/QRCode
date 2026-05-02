@@ -151,6 +151,48 @@ const nextConfig: NextConfig = {
           { key: 'Content-Security-Policy', value: EMBED_CSP },
         ],
       },
+      // Long-lived cache for static assets that are content-hashed at the
+      // path level (favicon variants, embed wrapper script, manifest).
+      // Vercel CDN already serves Next's `/_next/static/*` with immutable
+      // headers, but anything we ship from `public/` falls back to a short
+      // default. PageSpeed flagged ~74 KiB of cache savings here — fixing
+      // it shaves repeat-view load + helps the "Use efficient cache
+      // lifetimes" insight (CLAUDE.md §34.14).
+      //
+      // We don't add a hash to these paths so we keep them at 1 year +
+      // SWR — when the file content changes the operator does a cache
+      // bust manually (rename the file or query-string the references,
+      // matching the existing `?v=3` discipline in layout.tsx icon meta).
+      {
+        source: '/buaze-embed.js',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/favicon.svg',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/apple-touch-icon.svg',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/site.webmanifest',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/llms.txt',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+        ],
+      },
     ];
   },
 };

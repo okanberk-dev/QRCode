@@ -83,14 +83,23 @@ export default function RootLayout({
   return (
     <html lang="tr" className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}>
       <head>
-        {/* DNS prefetch hints — lazyOnload script'leri (GTM + Yandex Metrica)
-            ve Google Fonts CDN için DNS lookup'ı pre-warm eder; ~50-100ms
-            TTFB warm-up kazandırır. preconnect daha agresif olurdu ama
-            crossorigin/CORS kombinasyonu third-party'lerle inişli-çıkışlı —
-            dns-prefetch 0-risk. */}
+        {/* Resource hints — `preconnect` opens the TLS handshake ahead of
+            time (DNS + TCP + TLS) and was promoted from the previous
+            `dns-prefetch`-only setup after PageSpeed flagged the
+            "Network dependency tree" insight (CLAUDE.md §34.14).
+            `dns-prefetch` is kept as a fallback for browsers that ignore
+            `preconnect` (very old). Fonts use `crossOrigin="anonymous"`
+            because the woff2 files are fetched as anonymous CORS — without
+            the attribute the browser opens a second connection just to
+            satisfy the credentials mode. */}
+        <link rel="preconnect" href="https://mc.yandex.ru" />
         <link rel="dns-prefetch" href="https://mc.yandex.ru" />
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
       </head>
       <body className={`${inter.className} antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-screen`}>
         {/* Analytics scripts run on `lazyOnload` to keep them out of the
