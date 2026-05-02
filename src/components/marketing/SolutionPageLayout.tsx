@@ -1,5 +1,4 @@
 import {
-import { jsonLdString } from '@/lib/seo/json-ld';
   QrCode,
   TrendingUp,
   Users,
@@ -8,6 +7,7 @@ import { jsonLdString } from '@/lib/seo/json-ld';
   ShieldCheck,
   Zap,
 } from 'lucide-react';
+import { jsonLdString } from '@/lib/seo/json-ld';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import type { Locale, Translations } from '@/lib/translations';

@@ -100,11 +100,15 @@ export async function GET(req: NextRequest) {
           });
         } else {
           failed++;
-          console.error('[TRIAL_REMINDERS] send failed', { email: user.email, daysLeft, locale: userLocale });
+          // PII redaction (CLAUDE.md §37 KVKK / Sentry minimization): log
+          // userId, never the e-mail. Sentry auto-captures `extra` from
+          // console.error and the rough match for "trial reminder send
+          // failed" is the user.id — operators can pull the row from DB.
+          console.error('[TRIAL_REMINDERS] send failed', { userId: user.id, daysLeft, locale: userLocale });
         }
       } catch (err) {
         failed++;
-        console.error('[TRIAL_REMINDERS] exception', { email: user.email, err });
+        console.error('[TRIAL_REMINDERS] exception', { userId: user.id, err });
       }
 
       // Resend free-tier rate limit is 10 req/sec; 120 ms keeps us well under.

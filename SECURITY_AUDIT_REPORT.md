@@ -278,6 +278,39 @@ classes of sink found:
    `<noscript>` Yandex tag uses an env-controlled hardcoded ID. No
    action.
 
+## PII grep across 305 files — closed (2026-05 follow-up)
+
+Originally listed as "future pass" scope; closed in a follow-up commit.
+
+`console.*` calls walked across `/src` (~30 hits in `lib/`, `api/`,
+`components/`). Sentry's `instrumentation.ts` auto-captures `extra` from
+console.error, so anything echoed there feeds the error tracker.
+KVKK data-minimization plus the project's `sendDefaultPii: false`
+posture mean PII (e-mail / phone / ip / passwordHash) must not reach
+that surface.
+
+Two real leaks found, both fixed:
+
+1. **`/api/cron/trial-reminders`** logged `{ email: user.email, ... }`
+   on send-failure and exception paths. Replaced with `userId`. Trial
+   reminders run for every active trial user, so this was a recurring
+   PII fountain into Sentry.
+2. **`/lib/email/ops-alert.ts`** — when neither `OPS_EMAIL` nor
+   `NOTIFICATION_EMAIL` was configured, the "no recipient" log dumped
+   the full `params` object, which carries `recipient` (the affected
+   user's e-mail). Now strips `recipient` before logging
+   (`const { recipient: _omit, ...safe } = params`).
+
+The Sentry `captureException` / `captureMessage` surfaces (`openai.ts`,
+`ai-quota.ts`, `lifecycle.ts`, `email/lifecycle.ts`) were already
+PII-clean — they only carry `userId`, `restaurantId`, error message,
+and tag identifiers. The Resend HTTP error log (`email-internal.ts`)
+echoes the response body, which Resend itself does not echo back the
+caller's payload, so no PII path there.
+
+`CLAUDE.md` §37.7 added — "PII redaction disiplini" — codifying the
+`userId not e-mail` rule for new mail / cron / privileged endpoints.
+
 ## Out of scope (future passes)
 
 Areas the audit deliberately did not cover:

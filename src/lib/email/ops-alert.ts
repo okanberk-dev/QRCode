@@ -60,7 +60,14 @@ function opsRecipient(): string | null {
 export async function notifyOpsOfMailFailure(params: OpsAlertParams): Promise<void> {
   const to = opsRecipient();
   if (!to) {
-    console.error('[ops-alert] no recipient configured (OPS_EMAIL / NOTIFICATION_EMAIL)', params);
+    // PII redaction — `params.recipient` is the affected user's e-mail,
+    // and `console.error` is captured by Sentry's `extra`. Strip it
+    // before logging so a missing OPS_EMAIL config doesn't dump every
+    // failed-send recipient into the error tracker (KVKK / Sentry data
+    // minimization). The metadata bag rarely carries PII (template
+    // name + numeric ids) so we keep that.
+    const { recipient: _omit, ...safe } = params;
+    console.error('[ops-alert] no recipient configured (OPS_EMAIL / NOTIFICATION_EMAIL)', safe);
     return;
   }
 
