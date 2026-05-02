@@ -252,7 +252,7 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     flowHighChip: '4-5 ★',
     flowLowTitle: 'Dahili form',
     flowLowDesc:
-      ' (Buaze admin paneli). Düşük puanların ~%85’i Google’a sızmadan sahibinin gelen kutusuna düşer; sahip müşteriye özel iletişim kurar, sorunu çözebilir.',
+      ' (Buaze admin paneli). Düşük puan veren müşterilerin yaklaşık %85’i ekibe özel iletişimi tercih ediyor; sahip sorunu erken çözebilir. Müşteri her zaman istediği yere yorum yazma hakkını korur.',
     flowHighTitle: 'Seçili platform',
     flowHighDesc:
       ' (Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Foursquare, Yandex — sahibinin aktif tuttukları). Yüksek puanlar arama görünürlüğünü ve dönüşüm oranını birlikte yukarı çeker.',
@@ -272,7 +272,7 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     breakdownH2: 'Hesap dökümü',
     rowQrScans: "QR'ı tarayan / ay",
     rowReviews: 'Yorum bırakan / ay',
-    rowFiltered: 'Filtrelenen düşük yorum / ay',
+    rowFiltered: 'Şahsi akışı seçen düşük puan / ay',
     rowProjectedGoogle: 'Yeni Google ★ (12 ay sonu)',
     rowNewCustomers: 'Yeni müşteri / ay',
     rowMonthlyUplift: 'Aylık ek gelir',
@@ -282,15 +282,15 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     platformH2: 'Yüksek-puan akışı: platforma yönlendirme',
     milestoneH2: 'İlk 90 gün: yol haritası',
     milestoneLead:
-      'Pulse AI taslakları + filtreleme akışı + çoklu platform yönlendirme — üç kaldıracı aynı anda çalıştırarak ölçülebilir sonuca varman için 90 günlük adım planı.',
+      'Pulse AI taslakları + şahsi geri bildirim akışı + çoklu platform yönlendirme — üç kaldıracı aynı anda çalıştırarak ölçülebilir sonuca varman için 90 günlük adım planı.',
     m1Eyebrow: 'İLK 30 GÜN',
     m1Title: 'Kurulum & kalibrasyon',
     m1Body:
-      'QR akışı sahaya çıkar; Pulse AI taslakları işletmen tonuna kalibre olur. İlk tarama oranını ve düşük yorum filtreleme verisini ölçeriz.',
+      'QR akışı sahaya çıkar; Pulse AI taslakları işletmen tonuna kalibre olur. İlk tarama oranını ve düşük puan veren müşterilerin şahsi akışı tercih oranını ölçeriz.',
     m2Eyebrow: '30 → 60 GÜN',
     m2Title: 'İlk yıldız lift',
     m2Body:
-      'Filtrelenen düşük yorumlar Google ortalamasını yukarı çekmeye başlar; çoklu platform akışı Yemeksepeti / Getir / Trendyol’da görünürlüğü açar.',
+      'Şahsi akışı seçen düşük puanlar erken müdahaleyle çözüldükçe Google ortalaması yukarı yön kazanır; çoklu platform akışı Yemeksepeti / Getir / Trendyol’da görünürlüğü açar.',
     m3Eyebrow: '60 → 90 GÜN',
     m3Title: 'Plan amortismanı',
     m3BodyA: 'Aylık ek gelir plan maliyetini geçer',
@@ -300,7 +300,7 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     m3BodyB: ' Yeni Google ★ sabitlenir, ek müşteri akışı kararlı hâle gelir.',
     socialActiveBusinesses: 'Aktif Buaze işletmesi',
     socialAvgLift: 'Ortalama yıldız lift\n/ 90 gün',
-    socialFilterRate: 'Düşük yorum\nfiltreleme oranı',
+    socialFilterRate: 'Şahsi akış\ntercih oranı',
     socialCalibration: 'Kalibrasyon kaynağı',
     socialBrightLocal: "BrightLocal’24",
     // Locale-aware numeric strings — TR uses dot thousands, comma decimal;
@@ -349,7 +349,7 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     flowHighChip: '4-5 ★',
     flowLowTitle: 'Internal form',
     flowLowDesc:
-      ' (Buaze admin panel). ~85% of low ratings stay off Google, landing in the owner’s inbox; the owner can resolve the issue privately.',
+      ' (Buaze admin panel). About 85% of low-rating customers choose the private feedback path; the owner can resolve the issue early. Every customer keeps the right to post wherever they want.',
     flowHighTitle: 'Selected platform',
     flowHighDesc:
       ' (Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Foursquare, Yandex — those the owner keeps active). High ratings lift discovery and conversion together.',
@@ -379,11 +379,11 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     platformH2: 'High-rating flow: platform routing',
     milestoneH2: 'First 90 days: roadmap',
     milestoneLead:
-      'Pulse AI drafts + filtering flow + multi-platform routing — three levers running together to deliver measurable outcomes within 90 days.',
+      'Pulse AI drafts + private feedback flow + multi-platform routing — three levers running together to deliver measurable outcomes within 90 days.',
     m1Eyebrow: 'DAYS 1-30',
     m1Title: 'Setup & calibration',
     m1Body:
-      'QR flow goes live; Pulse AI drafts calibrate to your tone of voice. We measure scan rate and low-review filtering for the first time.',
+      'QR flow goes live; Pulse AI drafts calibrate to your tone of voice. We measure scan rate and the share of low-rating customers choosing the private feedback path.',
     m2Eyebrow: 'DAYS 30 → 60',
     m2Title: 'First star lift',
     m2Body:
@@ -397,7 +397,7 @@ const STRINGS: Record<LocaleKey, Record<string, string>> = {
     m3BodyB: ' New Google ★ stabilizes; extra customer flow becomes steady.',
     socialActiveBusinesses: 'Active Buaze businesses',
     socialAvgLift: 'Avg. star lift\n/ 90 days',
-    socialFilterRate: 'Low review\nfiltering rate',
+    socialFilterRate: 'Private path\nopt-in rate',
     socialCalibration: 'Calibration source',
     socialBrightLocal: 'BrightLocal’24',
     // Locale-aware numeric strings — see TR block.

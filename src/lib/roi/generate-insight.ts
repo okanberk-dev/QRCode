@@ -178,20 +178,20 @@ function buildTemplateInsight({ data, locale }: InsightInput): RoiInsight {
     : SECTOR_LABEL_EN[data.sector] ?? 'business';
 
   // Hangi kaldıraç en yüksek? Heuristic önceliklendirme:
-  // - lowRatingsPerMonth >= 8 → filtreleme baskın
-  // - currentGoogle <= 4.0 → headroom + filtreleme her ikisi
+  // - lowRatingsPerMonth >= 8 → şahsi geri bildirim akışı baskın
+  // - currentGoogle <= 4.0 → headroom + şahsi akış her ikisi
   // - reviewers >= 100 → Pulse AI zaman tasarrufu öne çıkar
   // - aksi → çoklu platform yönlendirme
-  let leverageKey: 'filter' | 'rating' | 'ai' | 'platform' = 'platform';
-  if (data.lowRatingsPerMonth >= 8) leverageKey = 'filter';
+  let leverageKey: 'private' | 'rating' | 'ai' | 'platform' = 'platform';
+  if (data.lowRatingsPerMonth >= 8) leverageKey = 'private';
   else if (data.currentGoogle <= 4.0) leverageKey = 'rating';
   else if (data.reviewers >= 100) leverageKey = 'ai';
 
   const T = {
     tr: {
-      summary: `${data.restaurantName} (${sector}) için ${plan} planı 12 ayda yaklaşık ${c}${fmt(Math.round(data.netGain))} net kazanç + ${data.roiMultiple.toFixed(1)}× ROI yansıtıyor. Aylık ${fmt(data.monthlyCustomers)} müşteriden ${fmt(data.reviewers)} yeni yorum çekilirken, mevcut ${fmt(data.lowRatingsPerMonth)} kötü yorumun ${fmt(data.filteredLowReviews)}'i Google'a sızmadan işletme sahibinin gelen kutusuna düşer. Sonuç: Google ortalaması ${data.currentGoogle.toFixed(1)} → ${data.projectedGoogle.toFixed(1)} ★, aylık ${fmt(data.newCustomers)} ek müşteri.`,
+      summary: `${data.restaurantName} (${sector}) için ${plan} planı 12 ayda yaklaşık ${c}${fmt(Math.round(data.netGain))} net kazanç + ${data.roiMultiple.toFixed(1)}× ROI yansıtıyor. Aylık ${fmt(data.monthlyCustomers)} müşteriden ${fmt(data.reviewers)} yeni yorum çekilirken, düşük puan veren müşterilerin yaklaşık ${fmt(data.filteredLowReviews)}'i ekibe özel iletişim akışını tercih ediyor — sahip sorunu erken çözebilir, müşteri istediği yere yorum yazma hakkını korur. Sonuç: Google ortalaması ${data.currentGoogle.toFixed(1)} → ${data.projectedGoogle.toFixed(1)} ★, aylık ${fmt(data.newCustomers)} ek müşteri.`,
       highlight: {
-        filter: `En yüksek kaldıraç: ayda ${fmt(data.filteredLowReviews)} kötü yorumun Google'a sızmadan filtrelenmesi — itibar koruması doğrudan dönüşüme yansır.`,
+        private: `En yüksek kaldıraç: ayda ${fmt(data.filteredLowReviews)} düşük puan veren müşterinin ekibe özel iletişimi tercih etmesi — sahip sorunu çözebilir, müşteri ilişkisi korunur.`,
         rating: `En yüksek kaldıraç: mevcut ${data.currentGoogle.toFixed(1)} ★ ortalamasının headroom'u büyük; Buaze ile 90 gün içinde ${data.projectedGoogle.toFixed(1)}'e ulaşmak realistik.`,
         ai: `En yüksek kaldıraç: Pulse AI ile aylık ${data.aiHoursSaved.toFixed(1)} saatlik yanıt süresi tasarrufu — ekibin yorum yanıtlamak yerine müşteri deneyimine zaman ayırır.`,
         platform: `En yüksek kaldıraç: yüksek puanlı yorum akışının ${data.platforms.length} platforma normalize dağılımı — Google dışı kanallarda da görünürlük artar.`,
@@ -203,9 +203,9 @@ function buildTemplateInsight({ data, locale }: InsightInput): RoiInsight {
       ],
     },
     en: {
-      summary: `For ${data.restaurantName} (${sector}), the ${plan} plan projects roughly ${c}${fmt(Math.round(data.netGain))} annual net gain at ${data.roiMultiple.toFixed(1)}× ROI. Monthly ${fmt(data.monthlyCustomers)} customers convert into ${fmt(data.reviewers)} new reviews, while ${fmt(data.filteredLowReviews)} of the current ${fmt(data.lowRatingsPerMonth)} low ratings stay off Google by routing to the internal form. Result: Google average ${data.currentGoogle.toFixed(1)} → ${data.projectedGoogle.toFixed(1)} ★, ${fmt(data.newCustomers)} extra customers/month.`,
+      summary: `For ${data.restaurantName} (${sector}), the ${plan} plan projects roughly ${c}${fmt(Math.round(data.netGain))} annual net gain at ${data.roiMultiple.toFixed(1)}× ROI. Monthly ${fmt(data.monthlyCustomers)} customers convert into ${fmt(data.reviewers)} new reviews, and roughly ${fmt(data.filteredLowReviews)} of the current ${fmt(data.lowRatingsPerMonth)} low-rating customers choose the private feedback path so the owner can address concerns first — every customer keeps the right to post wherever they want. Result: Google average ${data.currentGoogle.toFixed(1)} → ${data.projectedGoogle.toFixed(1)} ★, ${fmt(data.newCustomers)} extra customers/month.`,
       highlight: {
-        filter: `Strongest leverage: filtering ${fmt(data.filteredLowReviews)} low reviews/month from leaking to Google — reputation protection translates directly into bookings.`,
+        private: `Strongest leverage: about ${fmt(data.filteredLowReviews)} low-rating customers/month opting for private feedback first — owners can recover the relationship before anything goes public.`,
         rating: `Strongest leverage: your ${data.currentGoogle.toFixed(1)} ★ has meaningful headroom; reaching ${data.projectedGoogle.toFixed(1)} within 90 days is realistic with Buaze.`,
         ai: `Strongest leverage: Pulse AI saves ${data.aiHoursSaved.toFixed(1)} hours/month of reply work — the team spends that time on guest experience instead.`,
         platform: `Strongest leverage: high-rating flow distributes across ${data.platforms.length} platforms — visibility grows beyond Google alone.`,
