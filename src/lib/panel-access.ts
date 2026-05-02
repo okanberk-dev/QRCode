@@ -157,6 +157,38 @@ export async function canWriteRestaurant(
 }
 
 /**
+ * Restoran silme yetkisi (CLAUDE.md §37.3 deferred #4 closure).
+ *
+ * Restoran DELETE yıkıcı bir aksiyon — feedback / menu / analytics
+ * cascade siler. `canWriteRestaurant` viewer dışındaki tüm rolleri
+ * geçiriyor ki bu staff/manager team rolleri için gereksiz geniş bir
+ * yetki: bir manager kendi yetkilendirdiği yorum cevabı için yeterli
+ * ama tüm restoranı silmek için değil.
+ *
+ * Sadece şu rollere izin verilir:
+ *  - `superadmin` (admin source) — Buaze iç ekibi global access
+ *  - `manager` (admin source) — kendi scoped restaurantId'si — admin
+ *    panelinden yapılan operasyonel iş
+ *  - `restaurant_owner` (user source) — workspace owner, kendi restoranı
+ *
+ * `team_member` HİÇBİR rolde restoran silemez (manager/staff/owner team
+ * etiketleri olsa bile). Owner'ın workspace sahibi olarak silme yetkisi,
+ * davet ettiği team üyelerine devredilmez.
+ */
+export async function canDeleteRestaurant(
+  actor: PanelActor,
+  restaurantId: string,
+): Promise<boolean> {
+  const access = await canAccessRestaurant(actor, restaurantId);
+  if (!access) return false;
+  if (actor.role === 'superadmin') return true;
+  if (actor.role === 'manager' && actor.source === 'admin') return true;
+  if (actor.role === 'restaurant_owner') return true;
+  // team_member (workspace üye) — silmek YASAK
+  return false;
+}
+
+/**
  * Feedback üzerinde yazma izni kontrolü (reply, flag, assign, bulk).
  *
  * Sıra:

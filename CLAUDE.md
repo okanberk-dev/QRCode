@@ -89,7 +89,7 @@ where.restaurantId = { in: scopedIds };
 ```
 
 ### JWT fallback
-`src/lib/auth.ts`'de `JWT_SECRET` için hardcoded fallback var — Vercel preview için. **Production'da `JWT_SECRET` env set edilmeli.**
+`src/lib/auth.ts:getSecret()` artık production'da `JWT_SECRET` set edilmemişse **throw eder** (Adım 1 audit fix, PR #345 — §37). Dev fallback hâlâ var (lokal `npm run dev` için), ama Vercel deployment'larında env yokken auth route'ları 500 dönecek. **Operatör notu (2026-05)**: `JWT_SECRET` Vercel project env'inde Production + Preview + Development scope'larında zaten set; bu fix sadece "env unutulmuş bir deploy"u kapatır, mevcut deploy'ları etkilemez.
 
 ---
 
@@ -4047,18 +4047,20 @@ Adım 2 + Adım 4 fix paralel paterni — POST + PUT'ta aynı kontroller.
 - Tüm cron endpoint'leri `if (!cronSecret || authHeader !== Bearer ${cronSecret}) return 401`. **`process.env.CRON_SECRET`'i `||` ile fallback'lemek YASAK** — env yoksa fail-closed olmalı.
 - Cron handler'ın admin manuel trigger'ından `runFoo()` shared helper export et (CLAUDE.md §21.13 self-fetch antipattern). Yeni cron eklerken aynı pattern.
 
-### 37.3 Atlanan 6 follow-up (operatör onayı bekleyen)
+### 37.3 Atlanan follow-up (operatör onayı bekleyen)
 
 Bu bulgular davranış-değişikliği gerektiriyor; CLAUDE.md'de bilinçli tasarım kararı veya backwards-compat zorunluluğu var. Açık talep olmadan dokunulmadı. Detay: `SECURITY_AUDIT_REPORT.md` "Deferred follow-ups" section.
 
-| # | Bulgu | Öncelik | Çözüm scope |
+| # | Bulgu | Öncelik | Durum |
 |---|---|---|---|
-| 1 | `AdminUser` için `UserSession`-equivalent tablo yok → admin password reset sonrası saldırgan'ın `admin_token`'ı revoke edilemiyor | HIGH | Yeni `AdminSession` tablosu + auth middleware revoke check, veya `passwordChangedAt` + JWT iat compare |
+| ~~1~~ | ~~`AdminUser` için `UserSession`-equivalent tablo yok~~ | ~~HIGH~~ | **✅ KAPATILDI** (2026-05 follow-up). `AdminUser.passwordChangedAt` field + `getAdminFromRequest` JWT iat staleness check. `admin/reset-password` ve `admin/users/[id]` PUT password değişimi field'ı set ediyor. Eski cookie'ler iat < passwordChangedAt → 401 → re-login. |
 | 2 | `RECAPTCHA_ENFORCE` default `'false'` (monitor mode) | MEDIUM | Sentry "low score" / "action mismatch" warn rate'i izle, 2 hafta sonra production env'de `'true'` flip |
 | 3 | `UserSession` `if (!session) return false` legacy fail-open (pre-table cookies) | MEDIUM | Backfill script ile mevcut user'lara `UserSession` row, sonra `return true` flip |
-| 4 | Restaurant DELETE viewer-hariç tüm team rolleri ile mümkün | MEDIUM | `canDeleteRestaurant` helper'ı (owner-only), DELETE handler'a wire |
+| ~~4~~ | ~~Restaurant DELETE viewer-hariç tüm team rolleri ile mümkün~~ | ~~MEDIUM~~ | **✅ KAPATILDI** (2026-05 follow-up). Yeni `canDeleteRestaurant` helper (`panel-access.ts`) — sadece `superadmin` / admin-source `manager` / `restaurant_owner` izinli. Team_member rolleri (workspace manager/staff/viewer) HİÇBİR durumda silemez. `/api/restaurants/[id]` DELETE bu helper'a wire. |
 | 5 | Site-settings SVG upload sanitize yok | LOW | `DOMPurify` server-side veya `sharp.png()` rasterize, ya da `Content-Disposition: attachment` + sandbox CSP |
 | 6 | bcrypt cost inconsistency (12 / 10 / 10) | LOW (cosmetic) | Tek `BCRYPT_COST = 12` const, tüm callsite import |
+
+**2026-05 follow-up disiplini**: Yeni admin password değişikliği akışı eklendiğinde `passwordChangedAt: new Date()` set zorunlu (Adım 3 fix paterni). Yeni restoran-yıkıcı endpoint için `canDeleteRestaurant` helper'ı reuse — `canWriteRestaurant` write-only ihtiyaçları kapsar, destructive olanlar değil.
 
 ### 37.4 Audit dışı bırakılan kapsam (ileri pass)
 
