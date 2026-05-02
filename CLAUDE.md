@@ -3728,6 +3728,64 @@ Lucide-react 1000+ icon export ediyor, default tree-shake bu volume'da fail edeb
 
 **Yeni session bu raporu görünce:** §34.13'teki 3 fix'in altındaki "Yapma" listesini izle. Performans audit raporu tekrar geldiğinde aynı bulgular için Skip listesi disipline yeniden değerlendir, kullanıcı tetiği yoksa yeniden inşa etme.
 
+### 34.14 2026-05-02 — PageSpeed pass #2: cache lifetimes + preconnect
+
+PageSpeed Insights ikinci tur (Lighthouse 13.0.1) — kullanıcı raporu paylaştı:
+
+| Metric | Mobile | Desktop |
+|---|---|---|
+| First Contentful Paint | 2.7s 🟠 | 0.7s 🟢 |
+| Largest Contentful Paint | 4.2s 🔴 | 1.3s 🟠 |
+| Total Blocking Time | 1,210ms 🔴 | 380ms 🔴 |
+| Cumulative Layout Shift | 0.001 🟢 | 0.001 🟢 |
+| Speed Index | 6.2s 🔴 | 1.9s 🟠 |
+
+**Insights flagged:** Document request latency (mobil 840ms / desktop 240ms), Forced reflow, Network dependency tree, Use efficient cache lifetimes (74 KiB savings), Legacy JavaScript (24 KiB), Reduce unused JavaScript (174 KiB), Reduce JS execution time (1.8s), Minimize main-thread work (3.6s), Avoid long main-thread tasks (6 found).
+
+**Uygulanan 2 fix (zero-risk, deterministik):**
+
+1. **Static asset `Cache-Control: public, max-age=31536000, immutable`** — `next.config.ts:headers()`. `public/` altındaki `buaze-embed.js`, `favicon.svg`, `apple-touch-icon.svg`, `site.webmanifest` için 1 yıl + immutable. PageSpeed "Use efficient cache lifetimes" insight'ının ~74 KiB savings target'ı. `llms.txt` 1 gün + 1 hafta SWR (markdown content değişebilir). `_next/static/*` Vercel CDN tarafından zaten immutable; bu fix `public/` static asset gap'ini kapatır. **Cache bust pattern**: dosya rename + query string `?v=N` (mevcut `layout.tsx` `?v=3` icon meta disiplini ile uyumlu).
+
+2. **Preconnect for 3rd-party origins** — `app/layout.tsx`. Önceki `dns-prefetch` setup'ının üzerine `preconnect` eklendi (TLS handshake pre-warm — DNS + TCP + TLS, dns-prefetch sadece DNS). Targets: `mc.yandex.ru`, `www.googletagmanager.com`, `fonts.googleapis.com`, `fonts.gstatic.com` (woff2 origin için kritik). Fonts `crossOrigin="anonymous"` — woff2 anonymous CORS, attribute olmadan browser ikinci connection açar. PageSpeed "Network dependency tree" insight'ı için.
+
+**Tahmin edilen kazanç**: Mobile LCP ~200-400ms, repeat-view ~74 KiB tasarruf (dolayısıyla TTFB), font swap latency düşer.
+
+**Yapılmayan / kasten skip (kullanıcı tetiği yokken yeniden inşa edilmemeli):**
+
+| Insight | Sebep |
+|---|---|
+| Document request latency 840ms (mobile) | `force-dynamic` root + locale layout `cookies()` ihtiyacı için (CLAUDE.md §34.11). SSR cache strategy refactor isolated PR; ölçü + canary test gerek. |
+| Forced reflow | Next.js production minified chunk; sourcemap olmadan kaynak imkansız. CLAUDE.md §34.12 dokümante. |
+| Legacy JavaScript (24 KiB) | `browserslist` modern target zaten ayarlı (Chrome ≥100, Safari ≥15.4 vs); Lighthouse user-agent `nomodule` polyfill fallback'i çekiyor — gerçek user impact yok. CLAUDE.md §34.12. |
+| Reduce unused JavaScript (174 KiB) | GTM 65 KiB + chunks/834 59 KiB + Yandex 50 KiB. GTM/Yandex business decision (active tracking; kaldırma marketing/conversion impact). buaze chunks granular split refactor scope dışı. CLAUDE.md §34.12. |
+| Reduce JS execution time 1.8s + Main-thread work 3.6s | Pulse design system + Tailwind v4 + Radix kompleksitesi. CSS scope reduction büyük UX impact'i. CLAUDE.md §34.12. |
+| Avoid long main-thread tasks (6 found) | Yukarıdaki ile aynı kök; React Strict Mode + Suspense boundary refactor büyük scope. |
+| LCP element render delay | §34.13'te zaten kısmen ele alındı (700ms typing defer + Tailwind clamp→breakpoint + lucide tree-shake hint). Ek 3-fix listesi (force-dynamic kaldırma, ReputationCluster Suspense, code-splitting) aynı sebeplerle skip. |
+
+**100/100 hedefi gerçekçi mi?** Mevcut tracking stack (GTM + Yandex + Sentry + Speed Insights + Analytics + Vercel Preview Comments + Firebase Auth + reCAPTCHA) ve `force-dynamic` SSR ihtiyacı varken **Mobile 100 imkansız**. Realistic hedef: Mobile 75-85, Desktop 90-95. Bu fix'lerden sonra:
+- Desktop LCP 1.3s → ~1.0-1.1s
+- Mobile LCP 4.2s → ~3.6-3.9s
+- Repeat-view: cache header'ları sayesinde belirgin iyileşme
+
+**Sonraki adım gerçek 100'e yakınsa**:
+1. Operatör onayı ile GTM/Yandex tracking kaldırma (`?utm_source` ile UTM-only attribution gibi alternatif analytics)
+2. `force-dynamic` ↔ ISR cache strategy refactor (canary deploy gerekir)
+3. Component code-splitting + dynamic import sweep
+4. Font subset optimization (Latin-only zaten, Latin-Ext düşürülürse)
+5. Inline critical CSS + defer non-critical CSS
+
+Bunlar **operatör onayı bekleyen MEDIUM-HIGH scope** — kullanıcı açık talep etmedikçe dokunulmaz.
+
+**Yapma:**
+- `force-dynamic`'i kaldırma (cookies() + ISR canary test gerektirir)
+- GTM/Yandex unmount (business/conversion decision)
+- "Performance score" için tracking pixel kaldırma (production data gerek)
+- Aggressive code-splitting "olur belki" kafasıyla (lazy-load regression test gerek)
+
+**Yap:**
+- Kullanıcı agresif performance pass talep ederse §34.14 "Sonraki adım" listesini göster, hangisinin scope'ta olduğunu sor
+- Yeni 3rd party script eklenirken `dns-prefetch` + `preconnect` ekle (§34.14 paterni)
+
 ---
 
 ## 35. SEO Infrastructure (2026-05 PR #263 + #264)
