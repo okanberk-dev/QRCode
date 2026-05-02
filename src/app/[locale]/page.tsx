@@ -215,6 +215,7 @@ export default async function LandingPage({
           </p>
           <span
             className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-[#0A0A0A] px-2 py-1 text-[#C6F24E]"
+            role="img"
             aria-label={isTr ? '5 yıldız' : '5 stars'}
           >
             {Array.from({ length: 5 }).map((_, i) => (

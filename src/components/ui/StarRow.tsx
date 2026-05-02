@@ -18,6 +18,7 @@ export function StarRow({
   return (
     <span
       className={`inline-flex gap-0.5 ${className}`}
+      role="img"
       aria-label={`${value} of 5 stars`}
     >
       {[1, 2, 3, 4, 5].map((s) => {

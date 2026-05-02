@@ -144,6 +144,7 @@ export default function LiveReviewTicker({ locale, rotateMs = 2800 }: Props) {
 
           <div
             className="mt-3 flex items-center gap-1"
+            role="img"
             aria-label={`${activeReview.stars} ${isTr ? 'yıldız' : 'stars'}`}
           >
             {Array.from({ length: activeReview.stars }).map((_, i) => (
@@ -218,6 +219,7 @@ export default function LiveReviewTicker({ locale, rotateMs = 2800 }: Props) {
                 </p>
                 <span
                   className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-[#0A0A0A] px-2 py-1 text-[#C6F24E] ring-1 ring-[#C6F24E]/20"
+                  role="img"
                   aria-label={`${r.stars} ${isTr ? 'yıldız' : 'stars'}`}
                 >
                   {Array.from({ length: r.stars }).map((_, starIndex) => (
