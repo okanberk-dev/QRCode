@@ -364,11 +364,109 @@ Recommended rollout:
 2. Watch Sentry CSP reports for 1-2 weeks. Add any missing domain.
 3. Flip to `Content-Security-Policy` (enforce) on a canary deployment.
 
-## Out of scope (future passes)
+## Prisma cascade audit — closed (2026-05 follow-up)
 
-Areas the audit deliberately did not cover:
+24 `@relation onDelete` directives walked across `prisma/schema.prisma`.
+Cascade chains validated; audit / billing / legal records confirmed
+to survive the `User` and `Restaurant` cascade paths.
 
-- **L. Supply chain / `npm audit`** — local `node_modules` not present in
+### Cascade chains
+
+`User` deletion (no hard-delete endpoint exists today —
+`/api/admin/members/[id]` DELETE is soft-delete `isActive=false`):
+
+```
+User → UserSession (Cascade)
+User → Restaurant (Cascade) → full sub-cascade chain
+```
+
+`Restaurant` deletion (`/api/restaurants/[id]` DELETE, gated by
+`canDeleteRestaurant` per Step 4):
+
+```
+Restaurant → Feedback (Cascade)
+              → FeedbackReply / Flag / Assignment / Tag / AiDraft (all Cascade)
+Restaurant → MenuCategory (Cascade) ← MenuItem.category Restrict, items deleted first
+Restaurant → MenuItem (Cascade)
+Restaurant → QrGeneration (Cascade)
+Restaurant → MenuAnalyticsEvent (Cascade)
+Restaurant → BrandSettings (Cascade)
+Restaurant → PlatformLinkCheck (Cascade)
+Restaurant → RestaurantActivationState (Cascade)
+Restaurant → PlatformRedirectEvent (Cascade)
+Restaurant → QrScan (Cascade)
+Restaurant → EmbedView (Cascade)
+Restaurant → AdminUser (no FK — manual deleteMany in DELETE handler)
+```
+
+The DELETE handler runs a manual transaction that mirrors the
+DB-level cascade, so the deletion order is explicit even if the
+cascade chain ever drifts.
+
+### Records preserved across cascade (intentional)
+
+| Table | Field | Pattern | Reason |
+|---|---|---|---|
+| `AdminAuditLog` | `actorId` (string) | no FK | audit history survives User deletion |
+| `BillingInvoice` | `userId` (string) | no FK | financial record / KVKK retention |
+| `BillingSubscription` | `userId` (string) | no FK | same |
+| `MailTemplateRevision` | `templateId` | `SetNull` | revision history (audit + restore) |
+| `LegalDocumentRevision` | `documentId` | `SetNull` | same |
+| `LegalConsent` | `documentId` | `SetNull` | KVKK consent decoupled from doc lifetime |
+
+### Two implicit-default `@relation` directives made explicit
+
+- `Restaurant.user → User`: `onDelete: Restrict` added (was Prisma 6
+  default `NoAction`, identical Postgres behaviour). Documents the
+  fact that User hard-delete is unsupported (CLAUDE.md §34.5
+  soft-delete pattern is the only sanctioned path).
+- `AdminUser.restaurant → Restaurant`: `onDelete: Restrict` added.
+  Behaviour-equivalent safety net so a stray direct
+  `prisma.restaurant.delete` (script, manual SQL) cannot strand
+  managers without their scoped restaurant — the
+  `/api/restaurants/[id]` DELETE handler does the manual
+  `adminUser.deleteMany` cleanup.
+
+### KVKK "right to be forgotten" — open scope
+
+There is no User hard-delete endpoint today. If a GDPR/KVKK Data
+Subject Request handler is added, the cascade chain works correctly
+(everything tied to the user wipes), **except** `BillingInvoice` /
+`BillingSubscription` / `AdminAuditLog` rows which intentionally have
+no FK and would orphan. The right pattern is then to anonymise PII on
+those rows (`user.email = "deleted-{id}@buaze.local"`, name + phone
+nulled) instead of deleting the financial / audit history. Scope for
+its own PR if/when the regulatory request arrives.
+
+## Session close — 2026-05 audit final state
+
+This audit ran across 12 PRs (5 phase + 6 follow-up + 1 docs/cascade
+close). All merged into `main` from
+`claude/security-vulnerability-audit-x48te`.
+
+### What was fixed
+
+| Severity | Count | Examples |
+|---|---|---|
+| CRITICAL | 8 | JWT_SECRET fallback, default credentials, dead-code rename, member deactivate session leak, team locations IDOR, Google OAuth CSRF, JSON-LD `</script>` escape, admin session staleness |
+| HIGH | 11 | Host header injection, reset session revoke, UserSession DB fail-open, primaryColor XSS, integration URL injection, owner deactivate cookie, members audit log, admin reset weak password, restaurant DELETE owner-only, help body sanitize, render-XSS sweep |
+| MEDIUM | 16+ | per-route hardening, CSP A-group, Permissions-Policy, PII redaction, audit logs, cascade explicit-Restrict |
+
+### What was deliberately left open (operator decision)
+
+| Item | Priority | Trigger |
+|---|---|---|
+| CSP B group (`COOP: same-origin-allow-popups`, `CORP: same-origin` with cross-origin overrides) | MEDIUM | Firebase popup auth runtime verification |
+| CSP C group (strict `script-src` + nonce middleware, Report-Only soak) | MEDIUM-HIGH | 1-2 week Sentry CSP-report observation |
+| `RECAPTCHA_ENFORCE` default flip to `'true'` | MEDIUM | 2-week Sentry warn-rate watch on production |
+| `UserSession` legacy `if (!session) return false` flip to fail-closed | MEDIUM | Backfill script first (insert sessions for existing users) |
+| Site-settings SVG upload sanitization | LOW | Admin-only privileged path |
+| bcrypt cost normalisation (single const) | LOW (cosmetic) | — |
+| KVKK "right to be forgotten" hard-delete endpoint | LOW (regulatory) | Real DSR request |
+
+### Out of scope (future audit passes)
+
+- **`npm audit` supply chain** — local `node_modules` not present in
   the audit environment.
 - **K. Comprehensive PII inventory** — Phase 1 fixed an obvious leak but
   the remaining 305 files were not grep'ed for `console.error(..., user.email)`
