@@ -63,22 +63,21 @@ export async function POST(req: NextRequest) {
         .setExpirationTime('30m')
         .sign(getSecret());
 
-      // Derive base URL from the incoming request so the email link always
-      // points back to the exact deployment the user is on (works for
-      // buaze.com, *.vercel.app preview deploys, and custom domains).
-      const forwardedProto = req.headers.get('x-forwarded-proto');
-      const forwardedHost = req.headers.get('x-forwarded-host') || req.headers.get('host');
+      // Derive base URL — env-pinned canonical app URL is the *only* trusted
+      // source. Host / X-Forwarded-Host are attacker-controllable (Vercel
+      // strips its own proxy headers but custom domains + edge deploys can
+      // still inject them) and have caused password-reset poisoning bugs in
+      // the wild (Django CVE-2014-1418, Drupal SA-CORE-2014-005). We refuse
+      // to use them as the email link origin.
+      //
+      // Order: NEXT_PUBLIC_APP_URL → req.nextUrl.origin (loopback dev only).
+      // We keep `req.nextUrl.origin` as the dev fallback so localhost
+      // workflows keep working when NEXT_PUBLIC_APP_URL isn't set.
       const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
-
-      let safeBase: string;
-      if (forwardedHost && !/localhost|127\.0\.0\.1/i.test(forwardedHost)) {
-        const proto = forwardedProto || 'https';
-        safeBase = `${proto}://${forwardedHost}`;
-      } else if (envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)) {
-        safeBase = envAppUrl;
-      } else {
-        safeBase = req.nextUrl.origin;
-      }
+      const safeBase: string =
+        envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl)
+          ? envAppUrl
+          : req.nextUrl.origin;
 
       const resetUrl = `${safeBase}/${locale}/auth/reset-password?token=${encodeURIComponent(token)}`;
 
@@ -90,8 +89,9 @@ export async function POST(req: NextRequest) {
       });
 
       if (!sent) {
-        // Log but still return ok to the client — we don't want to leak infra state
-        console.error('[FORGOT_PASSWORD] SMTP failed for', user.email);
+        // Log but still return ok to the client — we don't want to leak infra state.
+        // PII redaction: log user.id, never the e-mail (KVKK / Sentry data minimization).
+        console.error('[FORGOT_PASSWORD] mail send failed for userId=', user.id);
       }
 
       return NextResponse.json({ ok: true });

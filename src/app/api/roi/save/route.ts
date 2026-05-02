@@ -117,6 +117,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  // Size-cap the user-supplied projection JSON before handing it to Prisma.
+  // Without a cap an attacker can stuff a multi-megabyte object into the
+  // JSONB column on every request and bloat the DB. 50 KB easily covers a
+  // legitimate ROI calculator payload (KPIs + per-platform breakdown) with
+  // multiple-x headroom.
+  const MAX_PROJECTION_BYTES = 50_000;
+  let projectionJson: Prisma.InputJsonValue | undefined;
+  if (body.projection && typeof body.projection === 'object') {
+    try {
+      const serialized = JSON.stringify(body.projection);
+      if (serialized.length <= MAX_PROJECTION_BYTES) {
+        projectionJson = body.projection as Prisma.InputJsonValue;
+      } else {
+        console.warn('[roi/save] projection too large — dropped', {
+          bytes: serialized.length,
+          limit: MAX_PROJECTION_BYTES,
+        });
+      }
+    } catch {
+      /* unserializable (cycle, BigInt, etc.) — drop silently */
+    }
+  }
+
   const row = await prisma.rOIRequest.create({
     data: {
       email: email?.toLowerCase() ?? null,
@@ -124,10 +147,7 @@ export async function POST(req: NextRequest) {
       tables: toInt(body.tables),
       avgTicket: toDecimal(body.avgTicket),
       noShowRate: toFloat(body.noShowRate),
-      projection:
-        body.projection && typeof body.projection === 'object'
-          ? (body.projection as Prisma.InputJsonValue)
-          : undefined,
+      projection: projectionJson,
       ip,
     },
   });

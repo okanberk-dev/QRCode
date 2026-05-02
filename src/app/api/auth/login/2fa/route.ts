@@ -3,18 +3,19 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/totp';
 import { rateLimit, maybeSweep, getClientIp } from '@/lib/rate-limit';
+import { getSecret } from '@/lib/auth';
 import * as jose from 'jose';
 import { issueLoginSession } from '../route';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const DEV_FALLBACK_SECRET = 'cldqlkmC72MfL/WvllPYQq9O0puMk4j+LxrEtzm8PVs=';
-
 async function verifyChallengeToken(token: string): Promise<{ userId: string; rememberMe: boolean } | null> {
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || DEV_FALLBACK_SECRET);
-    const { payload } = await jose.jwtVerify(token, secret);
+    // getSecret() production'da JWT_SECRET yoksa throw eder; aşağıdaki
+    // catch null döner ve kullanıcı "challenge süresi doldu" mesajı alır
+    // (forged challenge token'ın imzası doğrulanmaz).
+    const { payload } = await jose.jwtVerify(token, getSecret());
     if (payload.kind !== 'login_challenge') return null;
     if (typeof payload.userId !== 'string') return null;
     return { userId: payload.userId, rememberMe: !!payload.rememberMe };
