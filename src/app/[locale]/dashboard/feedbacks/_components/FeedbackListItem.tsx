@@ -60,6 +60,7 @@ export function FeedbackListItem({
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
             className="pulse-eyebrow rounded bg-[#0A0A0A] text-[#C6F24E] px-1.5 py-0.5"
+            role="img"
             aria-label={`${r.rating} ${isTr ? 'yıldız' : 'stars'}`}
           >
             {'★'.repeat(r.rating)}

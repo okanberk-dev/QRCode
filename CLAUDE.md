@@ -3653,6 +3653,44 @@ ChatGPT performance audit promptu 9 alan kapsıyordu; aşağıdakiler **zaten op
 
 **Out-of-scope kalanlar:** word cloud `take: 1000` (UI etkisi olabilir, ölçü almadan dokunma), `force-dynamic` ISR audit (CLAUDE.md root + locale layout'ta — `cookies()` için gerekli olabilir, ölçmeden kaldırma).
 
+### 34.12 2026-05-02 — Lighthouse audit ARIA fix + skipped findings
+
+Google PageSpeed (Lighthouse 13.0.1) raporu — Desktop 81 / Mobile 83. Kritik bulguların kanıt güçlü olanı düzeltildi, skip edilenler **bu bölümde sebepleriyle dokümante** edildi. **Yeni session bu raporu görünce yapılmış olanları yeniden inşa etmesin, skip kararlarını yeniden sorgulamadan değiştirmesin.**
+
+**Düzeltilen — Yasaklı ARIA (a11y critical):**
+
+Lighthouse "Öğeler, yasaklanmış ARIA özelliklerini kullanıyor" — generic `<span>` / `<div>` elementlerinde `aria-label` attribute'u WAI-ARIA 1.2 spec'ine göre **prohibited**. Element default role'u "generic" olduğu için aria-label kabul etmez, screen reader'lar bu name'i atlayabilir.
+
+5 yere `role="img"` eklendi:
+- `src/components/ui/StarRow.tsx` (`StarRow` primitive — N of 5 stars label)
+- `src/components/marketing/LiveReviewTicker.tsx` × 2 (active review + ticker rows)
+- `src/app/[locale]/page.tsx` (homepage hero "5 stars" review chip)
+- `src/app/[locale]/dashboard/feedbacks/_components/FeedbackListItem.tsx` (rating chip "★★★")
+
+**Yapma:** `<button>` / `<a>` / `<input>` / `<select>` gibi interactive element'lerde `aria-label` zaten meşru (implicit role'leri var) — `role="img"` eklemek **drift**. Sadece **generic span/div + aria-label** kombinasyonu yasak.
+
+**Yap:** Yeni dekoratif/semantik amaçlı non-interactive element'e aria-label eklerken `role="img"` (görsel-semantik) veya `role="status"` (live region) gibi explicit role belirt. CLAUDE.md §23.3.x primitive'leri yazarken bu disiplin kontrol edilmeli.
+
+**Skip edilen — sebepleriyle:**
+
+| Bulgu | Tahmini tasarruf | Skip sebebi |
+|---|---|---|
+| Eski JavaScript polyfills (`Array.prototype.at`, `flat`, `flatMap`, `Object.fromEntries`, `Object.hasOwn`, `String.prototype.trim*`, `Array.from`) | 24 KiB | `package.json` `browserslist` zaten modern target (`Chrome >= 100`, `Safari >= 15.4`, `iOS >= 15.4`). Next.js polyfill'leri `nomodule` script olarak serve ediliyor — modern user'a yüklenmiyor. Lighthouse user-agent'ı bu fallback'i çekiyor; gerçek user impact'i yok. Manual kaldırma yolu yok (Next.js compiler internal). |
+| Yandex Metrica `wss://mc.yandex.com/solid.ws` console error | 0 perf | `webvisor:false` set edilmiş ama Yandex SDK internal bağlantı denemesi `mc.yandex.com` (`.com` TLD) DNS'inde fail oluyor — TR ISP'lerinde `.com` TLD bazen resolve etmiyor. SDK config'te kapatma yolu yok; `mc.yandex.ru` (`.ru` TLD) ana script URL'inde zaten kullanılıyor. Çözüm yolu: Yandex Metrica'yı tamamen kaldırmak — TR pazarı bot/click tracking için tercih ediliyor, kaldırma kullanıcı kararı. CLAUDE.md `layout.tsx:103-107` zaten dokümante. |
+| Forced reflow `chunks/834-fea64....js:16:18740` 11ms peak | <11ms | Next.js production minified chunk; sourcemap olmadan kaynak imkansız. 11ms TBT'ye marjinal etki, prioritize edilemez. |
+| JavaScript yürütme süresi 2.4s (chunks/834-fea64 2217ms CPU) | Büyük | Code-splitting refactor scope'u büyük; her marketing route ayrı bundle gerektirir. CLAUDE.md §27 React Query + §11 Pulse design system zaten optimize. Real user 4G+ trafiğinde TBT acceptable (340-360ms turuncu, 600ms+ kırmızı eşik). |
+| Kullanılmayan JavaScript 175 KiB (GTM 65 / chunks/834 59 / Yandex 50) | Büyük | GTM + Yandex third-party — aktif kullanılan tracking, kaldırma marketing/conversion impact taşır. buaze chunks/834 muhtemelen common chunk; granular split refactor scope dışı. |
+| LCP 3.0s mobile / FCP 2.0s mobile | Major | `force-dynamic` root layout (CLAUDE.md §34.11 "ölçmeden kaldırma" disiplini); `getSiteSettings()` cookies() context için dynamic gerekli. Cache strategy refactor isolated PR olmalı, ölçü + canary test gerektirir. |
+| Total Blocking Time 340-360ms | Orta | Script Eval 2.2s + Style/Layout 1.2s — Pulse design system kompleksitesi (`bz-*` token'ları + tailwind v4 + radix primitives). CSS scope reduction büyük UX impact'i. |
+
+**Yap:** Yeni Lighthouse audit'i çıkarsa **bu listeyi referans al**: aynı bulgular tekrar geliyorsa bilinçli skip kararının değişmediğini doğrula. Yeni unique bulgu varsa fix.
+
+**Yapma:**
+- `browserslist` target'ı **daha gevşek** yapmak (eski browser support ekleyerek polyfills artar — yanlış yön)
+- GTM veya Yandex'i kaldırmak (kullanıcı talebi olmadan)
+- `force-dynamic`'i root/locale layout'tan kaldırmak (cookies() context kırılır, çok endpoint etkilenir)
+- Lighthouse score'u "kâğıtta" iyi göstermek için tracking script'leri kaldırmak — production decision'ı, performance audit'i gerekçe değil
+
 ---
 
 ## 35. SEO Infrastructure (2026-05 PR #263 + #264)
