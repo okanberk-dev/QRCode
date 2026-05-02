@@ -13,14 +13,14 @@ interface PlatformDistributionProps {
 }
 
 const PLATFORM_COLORS: Record<string, { bg: string; bar: string; text: string; icon: React.ReactNode }> = {
-  google: { bg: 'bg-blue-50', bar: 'bg-[#4285F4]', text: 'text-[#4285F4]', icon: <img src="/platforms/google.svg" alt="Google" className="w-4 h-4 object-cover rounded-sm" /> },
-  yemeksepeti: { bg: 'bg-red-50', bar: 'bg-[#FA0050]', text: 'text-[#FA0050]', icon: <img src="/platforms/yemeksepeti.svg" alt="Yemeksepeti" className="w-4 h-4 object-cover rounded-sm" /> },
-  getir: { bg: 'bg-purple-50', bar: 'bg-[#5D3EBC]', text: 'text-[#5D3EBC]', icon: <img src="/platforms/getir.svg" alt="Getir" className="w-4 h-4 object-cover rounded-sm" /> },
-  trendyol_go: { bg: 'bg-[#EAF9B8]', bar: 'bg-[#F27A1A]', text: 'text-[#F27A1A]', icon: <img src="/platforms/trendyol-go.svg" alt="Trendyol" className="w-4 h-4 object-cover rounded-sm" /> },
-  tripadvisor: { bg: 'bg-emerald-50', bar: 'bg-[#00AF87]', text: 'text-[#00AF87]', icon: <img src="/platforms/tripadvisor.svg" alt="Tripadvisor" className="w-4 h-4 object-cover rounded-sm" /> },
-  airbnb: { bg: 'bg-pink-50', bar: 'bg-[#FF5A5F]', text: 'text-[#FF5A5F]', icon: <img src="/platforms/airbnb.svg" alt="Airbnb" className="w-4 h-4 object-cover rounded-sm" /> },
-  booking: { bg: 'bg-blue-50', bar: 'bg-[#003580]', text: 'text-[#003580]', icon: <img src="/platforms/booking.svg" alt="Booking" className="w-4 h-4 object-cover rounded-sm" /> },
-  yandex: { bg: 'bg-red-50', bar: 'bg-[#FC3F1D]', text: 'text-[#FC3F1D]', icon: <img src="/platforms/yandex.svg" alt="Yandex" className="w-4 h-4 object-cover rounded-sm" /> },
+  google: { bg: 'bg-blue-50', bar: 'bg-[#4285F4]', text: 'text-[#4285F4]', icon: <img src="/platforms/google.svg" alt="Google" loading="lazy" decoding="async" className="w-4 h-4 object-cover rounded-sm" /> },
+  yemeksepeti: { bg: 'bg-red-50', bar: 'bg-[#FA0050]', text: 'text-[#FA0050]', icon: <img src="/platforms/yemeksepeti.svg" alt="Yemeksepeti" loading="lazy" decoding="async" className="w-4 h-4 object-cover rounded-sm" /> },
+  getir: { bg: 'bg-purple-50', bar: 'bg-[#5D3EBC]', text: 'text-[#5D3EBC]', icon: <img src="/platforms/getir.svg" alt="Getir" loading="lazy" decoding="async" className="w-4 h-4 object-cover rounded-sm" /> },
+  trendyol_go: { bg: 'bg-[#EAF9B8]', bar: 'bg-[#F27A1A]', text: 'text-[#F27A1A]', icon: <img src="/platforms/trendyol-go.svg" alt="Trendyol" loading="lazy" decoding="async" className="w-4 h-4 object-cover rounded-sm" /> },
+  tripadvisor: { bg: 'bg-emerald-50', bar: 'bg-[#00AF87]', text: 'text-[#00AF87]', icon: <img src="/platforms/tripadvisor.svg" alt="Tripadvisor" loading="lazy" decoding="async" className="w-4 h-4 object-cover rounded-sm" /> },
+  airbnb: { bg: 'bg-pink-50', bar: 'bg-[#FF5A5F]', text: 'text-[#FF5A5F]', icon: <img src="/platforms/airbnb.svg" alt="Airbnb" loading="lazy" decoding="async" className="w-4 h-4 object-cover rounded-sm" /> },
+  booking: { bg: 'bg-blue-50', bar: 'bg-[#003580]', text: 'text-[#003580]', icon: <img src="/platforms/booking.svg" alt="Booking" loading="lazy" decoding="async" className="w-4 h-4 object-cover rounded-sm" /> },
+  yandex: { bg: 'bg-red-50', bar: 'bg-[#FC3F1D]', text: 'text-[#FC3F1D]', icon: <img src="/platforms/yandex.svg" alt="Yandex" loading="lazy" decoding="async" className="w-4 h-4 object-cover rounded-sm" /> },
   unspecified: { bg: 'bg-[#FFFFFF]', bar: 'bg-[#C9D0DB]', text: 'text-[#6B7280]', icon: '—' },
 };
 

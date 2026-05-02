@@ -1361,7 +1361,7 @@ function ItemModal({
             <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-[#F5F5F5] ring-1 ring-[#EDEDED]">
               {imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={imageUrl} alt="preview" className="h-full w-full object-cover" />
+                <img src={imageUrl} alt="preview" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[#A3A3A3]">
                   <ImageIcon size={24} strokeWidth={1.75} />
@@ -2025,7 +2025,7 @@ function ThemePanel({
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-white ring-1 ring-[#EDEDED]">
               {restaurant.menuLogoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={restaurant.menuLogoUrl} alt="logo" className="h-full w-full object-cover" />
+                <img src={restaurant.menuLogoUrl} alt="logo" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center" style={{ color: currentAccent }}>
                   <UtensilsCrossed size={26} strokeWidth={1.75} />

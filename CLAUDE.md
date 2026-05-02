@@ -3877,6 +3877,45 @@ Sentry "Release Health" dashboard'unda her client error hangi commit'ten geldi g
 - Yeni private path eklenirken `X-Robots-Tag` da ekle (örn. `/internal/*`).
 - Yeni public marketing route eklenirken sitemap'e otomatik girer (CLAUDE.md §35.1 auto-discovery), X-Robots-Tag dokunma.
 
+### 34.17 2026-05-02 — Image attribute sweep (lazy + async decoding)
+
+PageSpeed "minimize image load" + LCP/Speed Index çalışmalarının devamı. 18 raw `<img>` elementi tarandı, position-aware attribute'lar eklendi.
+
+**Risk-aware kategorizasyon:**
+
+| Konum | Kategori | Eklenen |
+|---|---|---|
+| `PlatformDistribution.tsx` 8 platform icon (chart legend) | Below-fold | `loading="lazy" decoding="async"` |
+| `MenuSplash.tsx` 1 logo | Above-fold (LCP candidate) | sadece `decoding="async"` |
+| `PublicMenuView.tsx` 7 restaurant logo (6 tema) | Above-fold (LCP candidate) | sadece `decoding="async"` |
+| `BrandIdentityCard.tsx` admin logo preview | Below-fold form | `loading="lazy" decoding="async"` |
+| `dashboard/restaurants/[id]/menu/page.tsx` ItemModal + ThemePanel | Below-fold form | `loading="lazy" decoding="async"` |
+| `admin/site-settings/page.tsx` AssetUploader preview | Below-fold form | `loading="lazy" decoding="async"` |
+
+**Değiştirilmeyenler:**
+- `PublicMenuView.tsx` menu item image'ları (5 yer) — zaten `loading="lazy" decoding="async"` taşıyordu (CLAUDE.md §25.5 image CLS pattern)
+- `app/layout.tsx` Yandex 1×1 noscript pixel — already lazy-by-noscript
+- `api/admin/blog/seed/route.ts` raw HTML markup — DB'ye yazılan static HTML; React component değil
+
+**Pattern disipline (yeni `<img>` eklerken):**
+
+```tsx
+// Above-fold / hero / LCP candidate:
+<img src={...} alt={...} decoding="async" className="..." />
+
+// Below-fold (chart legend, form preview, list item):
+<img src={...} alt={...} loading="lazy" decoding="async" className="..." />
+```
+
+**Yapma:**
+- LCP candidate (hero image, restaurant logo splash) `loading="lazy"` — ilk paint geç olur, LCP regression
+- `<Image>` (next/image) komponenti yerine raw `<img>` (CLAUDE.md §25.5 base64-in-DB için raw zorunlu)
+
+**Yap:**
+- Yeni `<img>`'a varsayılan olarak `decoding="async"` ekle (zero-risk, browser hint)
+- Below-fold ise `loading="lazy"` de ekle
+- Hero / LCP-candidate ise `fetchpriority="high"` düşün (per-page karar)
+
 ---
 
 ## 35. SEO Infrastructure (2026-05 PR #263 + #264)
