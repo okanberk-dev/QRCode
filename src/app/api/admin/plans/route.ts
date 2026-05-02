@@ -70,6 +70,13 @@ export async function POST(req: NextRequest) {
   const priceUsd = asInt(body.priceUsd);
   data.priceUsd = priceUsd != null && priceUsd >= 0 ? priceUsd : null;
 
+  // Yıllık fiyat (admin override) — null/undefined ise public sayfa formula
+  // fallback (aylık × 12 × 0.8) uygular. Pozitif int ya da null kabul eder.
+  const priceYearlyTry = asInt(body.priceYearlyTry);
+  data.priceYearlyTry = priceYearlyTry != null && priceYearlyTry >= 0 ? priceYearlyTry : null;
+  const priceYearlyUsd = asInt(body.priceYearlyUsd);
+  data.priceYearlyUsd = priceYearlyUsd != null && priceYearlyUsd >= 0 ? priceYearlyUsd : null;
+
   const period = asString(body.period, 20) || 'month';
   if (!ALLOWED_PERIODS.has(period)) errors.push('Geçersiz periyot.');
   else data.period = period;

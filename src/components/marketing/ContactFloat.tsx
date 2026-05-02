@@ -88,8 +88,11 @@ export function ContactFloat({ locale }: { locale: string }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [state]);
 
-  // Hide on homepage, auth, and onboarding (same gate as before).
-  if (current === base || current.startsWith(`${base}/auth`) || current === `${base}/onboarding`) {
+  // Hide on auth + onboarding only — bu sayfalarda form gürültü olur
+  // (kullanıcı zaten bir akışı tamamlıyor). Homepage en kritik conversion
+  // surface, baloncuk orada **görünmeli** (eski "homepage'de gizle" exclusion
+  // kaldırıldı, kullanıcı raporu gereği — CLAUDE.md §15.3).
+  if (current.startsWith(`${base}/auth`) || current === `${base}/onboarding`) {
     return null;
   }
 

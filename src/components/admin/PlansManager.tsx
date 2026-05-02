@@ -21,6 +21,10 @@ interface FormState {
   descriptionEn: string;
   priceTry: string;
   priceUsd: string;
+  /** Yıllık fiyat (TRY) — boş bırakılırsa public sayfa formula fallback
+   *  uygular (aylık × 12 × 0.8). Admin override istediğinde elle girer. */
+  priceYearlyTry: string;
+  priceYearlyUsd: string;
   period: 'month' | 'year' | 'one-time';
   featuresTr: string;
   featuresEn: string;
@@ -44,6 +48,8 @@ const EMPTY_FORM: FormState = {
   descriptionEn: '',
   priceTry: '0',
   priceUsd: '',
+  priceYearlyTry: '',
+  priceYearlyUsd: '',
   period: 'month',
   featuresTr: '',
   featuresEn: '',
@@ -68,6 +74,8 @@ function rowToForm(p: AdminPlanRow): FormState {
     descriptionEn: p.descriptionEn,
     priceTry: String(p.priceTry),
     priceUsd: p.priceUsd != null ? String(p.priceUsd) : '',
+    priceYearlyTry: p.priceYearlyTry != null ? String(p.priceYearlyTry) : '',
+    priceYearlyUsd: p.priceYearlyUsd != null ? String(p.priceYearlyUsd) : '',
     period: (p.period === 'year' || p.period === 'one-time' ? p.period : 'month') as FormState['period'],
     featuresTr: p.featuresTr.join('\n'),
     featuresEn: p.featuresEn.join('\n'),
@@ -93,6 +101,8 @@ function formToBody(f: FormState) {
     descriptionEn: f.descriptionEn.trim(),
     priceTry: parseInt(f.priceTry, 10) || 0,
     priceUsd: f.priceUsd.trim() === '' ? null : parseInt(f.priceUsd, 10),
+    priceYearlyTry: f.priceYearlyTry.trim() === '' ? null : parseInt(f.priceYearlyTry, 10),
+    priceYearlyUsd: f.priceYearlyUsd.trim() === '' ? null : parseInt(f.priceYearlyUsd, 10),
     period: f.period,
     featuresTr: f.featuresTr.split('\n').map((s) => s.trim()).filter(Boolean),
     featuresEn: f.featuresEn.split('\n').map((s) => s.trim()).filter(Boolean),
@@ -541,7 +551,7 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <Field label="Fiyat (TRY)" required>
+            <Field label="Aylık fiyat (TRY)" required>
               <input
                 type="number"
                 min={0}
@@ -550,7 +560,7 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                 className="bz-input"
               />
             </Field>
-            <Field label="Fiyat (USD, opsiyonel)">
+            <Field label="Aylık fiyat (USD, opsiyonel)">
               <input
                 type="number"
                 min={0}
@@ -572,6 +582,47 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                 <option value="year">Yıllık</option>
                 <option value="one-time">Tek seferlik</option>
               </select>
+            </Field>
+          </div>
+
+          {/* Yıllık fiyat — public pricing sayfasında "Yıllık" toggle'da
+              gösterilir. Boş bırakılırsa frontend formula (aylık × 12 × 0.8)
+              uygular; admin elle override ettiğinde DB değeri kullanılır.
+              CLAUDE.md §15.2 yıllık fiyat override pattern. */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field
+              label="Yıllık fiyat (TRY, opsiyonel)"
+              hint="Boş bırakılırsa aylık × 12 × 0.8 (≈%20 indirim) hesaplanır."
+            >
+              <input
+                type="number"
+                min={0}
+                value={form.priceYearlyTry}
+                onChange={(e) => setForm((f) => ({ ...f, priceYearlyTry: e.target.value }))}
+                className="bz-input"
+                placeholder={(() => {
+                  const m = parseInt(form.priceTry, 10);
+                  if (!Number.isFinite(m) || m <= 0) return 'örn. 4990';
+                  return `Otomatik: ${Math.round(m * 12 * 0.8).toLocaleString('tr-TR')}`;
+                })()}
+              />
+            </Field>
+            <Field
+              label="Yıllık fiyat (USD, opsiyonel)"
+              hint="USD aylık dolu ise yıllık otomatik hesaplanabilir, ya da elle gir."
+            >
+              <input
+                type="number"
+                min={0}
+                value={form.priceYearlyUsd}
+                onChange={(e) => setForm((f) => ({ ...f, priceYearlyUsd: e.target.value }))}
+                className="bz-input"
+                placeholder={(() => {
+                  const u = parseInt(form.priceUsd, 10);
+                  if (!Number.isFinite(u) || u <= 0) return 'EN sayfası için';
+                  return `Otomatik: ${Math.round(u * 12 * 0.8)}`;
+                })()}
+              />
             </Field>
           </div>
 

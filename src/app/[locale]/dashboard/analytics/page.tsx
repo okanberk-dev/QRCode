@@ -389,7 +389,7 @@ export default async function AnalyticsPage({
   const themesComments = feedbacksWindow
     .filter((f): f is typeof f & { comment: string } => typeof f.comment === 'string' && f.comment.trim().length > 0)
     .map((f) => ({ rating: f.rating, comment: f.comment }));
-  const themes = await extractThemes(themesComments, isTr ? 'tr' : 'en', themesCacheKey);
+  const themes = await extractThemes(themesComments, isTr ? 'tr' : 'en', themesCacheKey, user.id);
 
   const windowLabel = isTr ? `${windowDays} GÜNLÜK` : `${windowDays}-DAY`;
   const windowSuffix = isTr ? `önceki ${windowDays} güne göre` : `vs prev ${windowDays}d`;
