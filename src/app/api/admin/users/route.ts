@@ -58,8 +58,8 @@ export async function POST(req: NextRequest) {
       return ApiErrors.badRequest('Kullanıcı adı, şifre ve rol zorunludur', 'MISSING_FIELDS');
     }
 
-    if (username.length < 3) {
-      return ApiErrors.badRequest('Kullanıcı adı en az 3 karakter olmalıdır', 'INVALID_USERNAME');
+    if (typeof username !== 'string' || username.length < 3 || username.length > 64) {
+      return ApiErrors.badRequest('Kullanıcı adı 3-64 karakter olmalıdır', 'INVALID_USERNAME');
     }
 
     if (!isStrongPassword(password)) {
@@ -142,6 +142,28 @@ export async function POST(req: NextRequest) {
           select: { id: true, username: true, email: true, role: true, restaurantId: true },
         });
       });
+
+      // Audit log — create is a privileged action and the [id] PUT/DELETE
+      // routes already write here; POST staying silent meant "who created
+      // which superadmin?" was never traceable. Best-effort (non-fatal).
+      try {
+        await prisma.adminAuditLog.create({
+          data: {
+            actorId: String(admin.id),
+            actorSource: 'admin',
+            action: 'admin.users.create',
+            targetId: newUser.id,
+            payload: {
+              username: newUser.username,
+              role: newUser.role,
+              restaurantId: newUser.restaurantId,
+              hasEmail: Boolean(newUser.email),
+            },
+          },
+        });
+      } catch (err) {
+        console.warn('[audit] users.create write failed (non-fatal)', (err as Error).message);
+      }
 
       return NextResponse.json({ success: true, user: newUser }, { status: 201 });
     } catch (txError) {

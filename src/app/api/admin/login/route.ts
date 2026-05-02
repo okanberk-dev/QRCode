@@ -2,11 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 import { signJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { timingSafeEqual } from 'crypto';
 import { blockKey, isBlocked, rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
 
 const DUMMY_BCRYPT_HASH = '$2b$12$CwTycUXWue0Thq9StjUM0uJ8N1g9vDg0v7wv3V60N9ku74f75hJ5a';
 const LOCKOUT_WINDOW_MS = 30 * 60 * 1000;
+
+// Constant-time string compare for the ENV-bootstrap password path.
+// Plain `===` leaks the matching prefix length over a network and was the
+// fastest way to brute-force the bootstrap admin from the outside.
+function constantTimeStringEq(a: string, b: string): boolean {
+  const ab = Buffer.from(a, 'utf8');
+  const bb = Buffer.from(b, 'utf8');
+  if (ab.length !== bb.length) {
+    // Still pay the cost so we don't leak the length difference via timing.
+    timingSafeEqual(ab, ab);
+    return false;
+  }
+  return timingSafeEqual(ab, bb);
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,30 +69,42 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Only AdminUser accounts can authenticate to /admin.
-    // HOTFIX: Migrate old 'admin' row to 'oknbrk' automatically
+    // First-run bootstrap. We refuse to seed a default username/password —
+    // older versions of this route fell back to a literal `oknbrk` /
+    // `123456+` pair when the env was unset, which let anyone with repo
+    // access take over a fresh deploy. Now both env vars must be set AND
+    // the password must clear `isStrongPassword`'s 8+ char + letter +
+    // digit bar; otherwise we just don't bootstrap and login fails.
+    //
+    // The legacy "rename `admin` → `oknbrk`" hotfix was also dropped —
+    // dead code that wrote on every login attempt and leaked the canonical
+    // admin username via timing/error patterns.
     try {
-      // Hotfix migration — only `id` is read downstream (CLAUDE.md §14.1).
-      const existing = await prisma.adminUser.findUnique({
-        where: { username: 'admin' },
-        select: { id: true },
-      });
-      if (existing) {
-        await prisma.adminUser.update({ where: { id: existing.id }, data: { username: 'oknbrk' } });
-      }
-      
       const adminCount = await prisma.adminUser.count();
       if (adminCount === 0) {
-        const defaultHash = await bcrypt.hash(process.env.ADMIN_PASSWORD || '123456+', 12);
-        await prisma.adminUser.create({
-          data: {
-            username: process.env.ADMIN_USERNAME || 'oknbrk',
-            passwordHash: defaultHash,
-          }
-        });
+        const envUsername = process.env.ADMIN_USERNAME?.trim();
+        const envPassword = process.env.ADMIN_PASSWORD;
+        const passwordOk =
+          typeof envPassword === 'string' &&
+          envPassword.length >= 8 &&
+          /[A-Za-z]/.test(envPassword) &&
+          /\d/.test(envPassword);
+        if (envUsername && passwordOk) {
+          const defaultHash = await bcrypt.hash(envPassword, 12);
+          await prisma.adminUser.create({
+            data: {
+              username: envUsername.toLowerCase(),
+              passwordHash: defaultHash,
+            },
+          });
+        } else if (process.env.NODE_ENV === 'production') {
+          console.error(
+            '[admin/login] No AdminUser rows and ADMIN_USERNAME/ADMIN_PASSWORD not set to strong values — refusing to seed.',
+          );
+        }
       }
     } catch {
-      // Ignored if table doesn't exist
+      // Ignored if table doesn't exist (preview before db push, etc.)
     }
 
     let admin = null;
@@ -107,11 +134,24 @@ export async function POST(req: NextRequest) {
     } else {
       // Dummy compare to prevent timing attack vulnerabilities
       await bcrypt.compare(password, DUMMY_BCRYPT_HASH);
-      // Fallback for DB issues or first run
-      const envUsername = process.env.ADMIN_USERNAME || 'oknbrk';
-      const envPassword = process.env.ADMIN_PASSWORD || '123456+';
-      
-      if (normalizedUsername === envUsername.toLowerCase() && password === envPassword) {
+      // Fallback for DB issues or first run. Env vars must be present AND
+      // pass the same strength bar applied at bootstrap — no default
+      // username / password literals. Keeps a fresh deploy from accepting
+      // a known credential pair before the operator sets ADMIN_PASSWORD.
+      const envUsername = process.env.ADMIN_USERNAME?.trim();
+      const envPassword = process.env.ADMIN_PASSWORD;
+      const envPasswordStrong =
+        typeof envPassword === 'string' &&
+        envPassword.length >= 8 &&
+        /[A-Za-z]/.test(envPassword) &&
+        /\d/.test(envPassword);
+
+      if (
+        envUsername &&
+        envPasswordStrong &&
+        normalizedUsername === envUsername.toLowerCase() &&
+        constantTimeStringEq(password, envPassword as string)
+      ) {
         isPasswordValid = true;
         try {
           const adminCount = await prisma.adminUser.count();
@@ -119,9 +159,9 @@ export async function POST(req: NextRequest) {
             const hashedPassword = await bcrypt.hash(password, 12);
             admin = await prisma.adminUser.create({
               data: {
-                username: envUsername,
-                passwordHash: hashedPassword
-              }
+                username: envUsername.toLowerCase(),
+                passwordHash: hashedPassword,
+              },
             });
           }
         } catch (e) {

@@ -93,6 +93,8 @@ export async function PUT(
   if (!admin || admin.role !== 'superadmin') {
     return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
   }
+  const adminId = typeof admin.id === 'string' ? admin.id : null;
+  if (!adminId) return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
 
   const { id } = await params;
 
@@ -110,17 +112,26 @@ export async function PUT(
       data.plan = plan;
     }
 
+    let deactivating = false;
     if (isActive !== undefined) {
       data.isActive = Boolean(isActive);
       // Keep deactivatedAt in sync — deactivate writes the timestamp,
       // reactivate clears it. Quick edit (PUT) and the dedicated
       // /reactivate endpoint converge on the same shape.
       data.deactivatedAt = isActive ? null : new Date();
+      deactivating = !data.isActive;
     }
 
     if (trialEndsAt !== undefined) {
       data.trialEndsAt = trialEndsAt ? new Date(trialEndsAt) : null;
     }
+
+    // Capture before-state for the audit payload so we can diff later if
+    // ops needs to inspect a "who downgraded this owner?" chain.
+    const before = await prisma.user.findUnique({
+      where: { id },
+      select: { plan: true, isActive: true, trialEndsAt: true, email: true },
+    });
 
     const user = await prisma.user.update({
       where: { id },
@@ -135,6 +146,43 @@ export async function PUT(
         deactivatedAt: true,
       },
     });
+
+    // Force-logout the owner when the admin flips them to inactive.
+    // Without this the owner's existing user_token cookie keeps working
+    // until expiry — login flow rejects new logins via `isActive`, but
+    // already-issued JWTs were treated as valid and let a deactivated
+    // owner keep loading panel pages and posting to scoped APIs.
+    if (deactivating) {
+      try {
+        await prisma.userSession.updateMany({
+          where: { userId: id, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+      } catch (err) {
+        console.error('[MEMBERS PUT] session revoke failed:', (err as Error).message);
+      }
+    }
+
+    // Audit log — POST + DELETE already log; PUT was the only mutation
+    // that wasn't traceable. Best-effort.
+    try {
+      await prisma.adminAuditLog.create({
+        data: {
+          actorId: adminId,
+          actorSource: 'admin',
+          action: 'admin.members.update',
+          targetId: id,
+          payload: {
+            before: before ? { plan: before.plan, isActive: before.isActive, trialEndsAt: before.trialEndsAt } : null,
+            after: { plan: user.plan, isActive: user.isActive, trialEndsAt: user.trialEndsAt },
+            email: before?.email ?? user.email,
+            sessionsRevoked: deactivating,
+          },
+        },
+      });
+    } catch (err) {
+      console.warn('[audit] members.update write failed (non-fatal)', (err as Error).message);
+    }
 
     return NextResponse.json(user);
   } catch (error) {
@@ -183,6 +231,18 @@ export async function DELETE(
       },
     }),
   ]);
+
+  // Force-logout the owner — same rationale as the PUT path. Best-effort,
+  // outside the transaction: a session-revoke hiccup must not undo the
+  // deactivation we already committed.
+  try {
+    await prisma.userSession.updateMany({
+      where: { userId: id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+  } catch (err) {
+    console.error('[MEMBERS DELETE] session revoke failed:', (err as Error).message);
+  }
 
   return NextResponse.json({ ok: true });
 }
