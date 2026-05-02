@@ -17,6 +17,7 @@ import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import PublicMenuView, { type MenuCategoryView, type MenuItemView, type RestaurantView } from '@/components/menu/PublicMenuView';
 import { Modal, useConfirmDialog } from '@/components/ui';
+import { MenuLivePreview } from './_components/MenuLivePreview';
 import { MENU_THEMES, type MenuAllergen, type MenuBadge, type MenuTheme } from '@/lib/validations';
 import { formatPrice, parsePriceInput } from '@/lib/format';
 import { compressImage } from '@/lib/client-image';
@@ -882,15 +883,25 @@ export default function RestaurantMenuBuilderPage() {
         </AlertBanner>
       )}
 
-      {/* Menu Design (theme + accent color + logo) */}
-      <ThemePanel
-        restaurant={restaurant}
-        copy={copy}
-        locale={locale}
-        saving={themeSaving}
-        onChange={saveTheme}
-        onUploadLogo={uploadLogo}
-      />
+      {/* Menu Design (theme + accent color + logo) — yan panelde canlı
+          önizleme: tema/accent/logo değiştirildiğinde anlık müşteri
+          görünümü, save-and-see loop'u kaldırır. Mobile'da preview
+          panel gizli (340px phone mockup mobile'da kafa karıştırır). */}
+      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+        <ThemePanel
+          restaurant={restaurant}
+          copy={copy}
+          locale={locale}
+          saving={themeSaving}
+          onChange={saveTheme}
+          onUploadLogo={uploadLogo}
+        />
+        <MenuLivePreview
+          restaurant={restaurant}
+          categories={categories}
+          locale={locale}
+        />
+      </div>
 
       {/* Two-pane builder */}
       <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
@@ -938,7 +949,21 @@ export default function RestaurantMenuBuilderPage() {
                       isLast={idx === categories.length - 1}
                       isTr={isTr}
                       copy={copy}
-                      onSelect={() => setActiveCategoryId(c.id)}
+                      onSelect={() => {
+                        setActiveCategoryId(c.id);
+                        // Mobile UX: kategori değiştirince items pane'ne
+                        // smooth scroll yap (lg+'da two-pane zaten yan yana,
+                        // scroll gereksiz). Eskiden mobilde kategori
+                        // tıklayınca items pane görünmüyordu, kullanıcı
+                        // sayfayı manuel scroll etmek zorundaydı.
+                        if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                          requestAnimationFrame(() => {
+                            document
+                              .getElementById('menu-items-pane')
+                              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          });
+                        }
+                      }}
                       onMoveUp={() => moveCategory(idx, -1)}
                       onMoveDown={() => moveCategory(idx, 1)}
                       onToggleVisible={() => toggleCategoryVisibility(c)}
@@ -953,7 +978,10 @@ export default function RestaurantMenuBuilderPage() {
         </section>
 
         {/* Items */}
-        <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+        <section
+          id="menu-items-pane"
+          className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm scroll-mt-20"
+        >
           <div className="flex items-start justify-between gap-3 border-b border-[#EDEDED] px-5 py-4 sm:px-6">
             <div className="min-w-0">
               <p className="pulse-eyebrow text-[#737373]">{activeCategory ? copy.items : copy.categories}</p>

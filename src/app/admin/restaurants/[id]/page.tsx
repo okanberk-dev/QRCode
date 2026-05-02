@@ -373,13 +373,22 @@ export default function RestaurantDetailPage() {
               </p>
             </div>
           </div>
-          <Link
-            href={`/tr/dashboard/restaurants/${id}/menu`}
-            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#0A0A0A] px-4 py-2 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95"
-          >
-            <UtensilsCrossed size={14} strokeWidth={2} />
-            Menüyü Düzenle
-          </Link>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Link
+              href={`/admin/restaurants/${id}/menu`}
+              className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:border-[#0A0A0A] active:scale-95"
+            >
+              <Eye size={14} strokeWidth={2} />
+              Menüyü Görüntüle
+            </Link>
+            <Link
+              href={`/tr/dashboard/restaurants/${id}/menu`}
+              className="inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-4 py-2 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95"
+            >
+              <UtensilsCrossed size={14} strokeWidth={2} />
+              Menüyü Düzenle
+            </Link>
+          </div>
         </div>
 
         <div className="grid gap-3 p-6 sm:grid-cols-2">
