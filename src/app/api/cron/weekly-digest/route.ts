@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { sendWeeklyDigest } from '@/lib/email';
-import { getNotificationPrefsForUser } from '@/lib/notification-preferences';
+import { runWeeklyDigest } from '@/lib/weekly-digest-runner';
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300;
 
 /**
- * Weekly digest cron endpoint.
+ * Weekly digest cron — Pazartesi 09:00 UTC.
  *
- * Meant to be called by Vercel Cron (or any external scheduler) once per week.
- * Iterates over all active restaurants that have a notificationEmail (or whose
- * owner has an email) and sends a summary of the past 7 days.
+ * Aktif restoranların son 7 günlük yorum + aspect istatistiklerini özetleyip
+ * `weekly-report` Pulse mail template'i ile gönderir. 2026-05'ten beri
+ * Pulse AI çıkarımı (`extractWeeklyInsight`) inline olarak mail'e
+ * gömülür — gpt-4o-mini, ~$0.0002/restoran, 24h cache.
  *
- * Security: protected by CRON_SECRET header to prevent unauthorized triggers.
+ * Logic `src/lib/weekly-digest-runner.ts`'ta — cron handler sadece auth +
+ * JSON wrap yapar. CLAUDE.md §21.13: cron logic'i lib'a, route handler
+ * thin (Next.js `route.ts` non-HTTP export'lara izin vermez).
+ *
+ * Security: `Authorization: Bearer ${CRON_SECRET}` zorunlu.
  */
 export async function GET(req: NextRequest) {
-  // Verify cron secret. CRON_SECRET must be configured — otherwise the
-  // endpoint refuses every request to avoid an open public trigger.
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
@@ -22,123 +26,18 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    // Get all active restaurants with an email target
-    const restaurants = await prisma.restaurant.findMany({
-      where: { isActive: true },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        notificationEmail: true,
-        googlePlaceId: true,
-        userId: true,
-        user: { select: { email: true, locale: true } },
-      },
-    });
-
-    let sent = 0;
-    let skipped = 0;
-    let optedOut = 0;
-
-    for (const rest of restaurants) {
-      const email = rest.notificationEmail || rest.user?.email;
-      if (!email) {
-        skipped++;
-        continue;
-      }
-
-      // Honor the owner's notification preferences. If the user has turned
-      // the weekly report off in /dashboard/notifications, skip them.
-      const prefs = await getNotificationPrefsForUser(rest.userId);
-      if (!prefs.weeklyReport) {
-        optedOut++;
-        continue;
-      }
-
-      // Gather stats for this restaurant over the past 7 days
-      const where = {
-        restaurantId: rest.id,
-        createdAt: { gte: sevenDaysAgo },
-      };
-
-      const [total, avgAgg, distribution, highRatings, aspectAggs] = await Promise.all([
-        prisma.feedback.count({ where }),
-        prisma.feedback.aggregate({ _avg: { rating: true }, where }),
-        prisma.feedback.groupBy({
-          by: ['rating'],
-          where,
-          _count: true,
-          orderBy: { rating: 'desc' },
-        }),
-        prisma.feedback.count({ where: { ...where, rating: { gte: 4 } } }),
-        prisma.feedback.aggregate({
-          _avg: { foodRating: true, serviceRating: true, atmosphereRating: true },
-          where,
-        }),
-      ]);
-
-      // Skip restaurants with zero feedback this week
-      if (total === 0) {
-        skipped++;
-        continue;
-      }
-
-      const avgRating = avgAgg._avg.rating
-        ? parseFloat(avgAgg._avg.rating.toFixed(1))
-        : 0;
-
-      const dist: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-      distribution.forEach((row) => {
-        dist[row.rating] = row._count;
-      });
-
-      const lowRatings = (dist[1] || 0) + (dist[2] || 0) + (dist[3] || 0);
-
-      const sentToGoogle = rest.googlePlaceId ? highRatings : 0;
-      const conversionRate = highRatings > 0
-        ? parseFloat(((sentToGoogle / highRatings) * 100).toFixed(0))
-        : null;
-
-      const round1 = (n: number | null | undefined) =>
-        n == null ? null : parseFloat(n.toFixed(1));
-
-      const locale = rest.user?.locale === 'en' ? 'en' : 'tr';
-
-      await sendWeeklyDigest({
-        to: email,
-        locale,
-        restaurantName: rest.name,
-        period: {
-          from: sevenDaysAgo,
-          to: new Date(),
-        },
-        stats: {
-          total,
-          avgRating,
-          highRatings,
-          lowRatings,
-          distribution: dist,
-          conversionRate,
-          aspects: {
-            food: round1(aspectAggs._avg.foodRating),
-            service: round1(aspectAggs._avg.serviceRating),
-            atmosphere: round1(aspectAggs._avg.atmosphereRating),
-          },
-        },
-      });
-
-      sent++;
-    }
-
+    const result = await runWeeklyDigest();
+    // recipient detaylarını cron response'unda göstermeyelim (Vercel logs
+    // KVKK riski + log payload size). Sadece counts.
     return NextResponse.json({
       ok: true,
-      sent,
-      skipped,
-      optedOut,
-      total: restaurants.length,
+      sent: result.sent,
+      skipped: result.skipped,
+      optedOut: result.optedOut,
+      failed: result.failed,
+      total: result.totalRestaurants,
+      recipientCount: result.recipients.length,
+      durationMs: result.durationMs,
     });
   } catch (error) {
     console.error('[WEEKLY_DIGEST]', error);
