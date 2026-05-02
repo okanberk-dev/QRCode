@@ -54,7 +54,6 @@ interface RestaurantPayload {
   workingHours: string | null;
   temporarilyClosed: boolean;
   closedReason: string | null;
-  kvkkText: string | null;
 }
 
 const SECTION_TABS: SettingsTab[] = [
@@ -144,7 +143,6 @@ export default function RestaurantSettingsPage() {
           workingHours: data.workingHours ?? null,
           temporarilyClosed: data.temporarilyClosed ?? false,
           closedReason: data.closedReason ?? null,
-          kvkkText: data.kvkkText ?? null,
         });
       } catch (err) {
         if (!cancelled) setError((err as Error).message);
@@ -342,7 +340,7 @@ export default function RestaurantSettingsPage() {
         active={active === "security"}
         eyebrow="06 — GÜVENLİK"
         title="Güvenlik & erişim"
-        description="KVKK metni ve işletme aktiflik durumu."
+        description="İşletme aktiflik durumu."
         actions={
           <span className="text-[#737373]" aria-hidden="true">
             <Lock size={18} />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { FileText, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import { AlertBanner, Badge, Toggle } from "@/components/ui";
 import { SettingsCard } from "../SettingsCard";
 import { UnsavedChangesBar } from "../UnsavedChangesBar";
@@ -9,7 +9,6 @@ import { UnsavedChangesBar } from "../UnsavedChangesBar";
 interface RestaurantData {
   id: string;
   isActive: boolean;
-  kvkkText?: string | null;
 }
 
 interface BusinessSecuritySettingsProps {
@@ -32,9 +31,12 @@ function isDirty(a: FormState, b: FormState) {
 /**
  * Section 8 — Güvenlik & Erişim.
  *
- * 2 alt-bölüm:
- *  1. KVKK Aydınlatma metni — Buaze tarafından sağlanan default metin (read-only info)
- *  2. İşletmeyi devre dışı bırak — isActive Toggle
+ * Tek alt-bölüm: İşletmeyi devre dışı bırak (isActive Toggle).
+ *
+ * KVKK aydınlatma + açık rıza metinleri Buaze tarafından merkezi olarak
+ * yönetilir (`LegalDocument` modeli + `/admin/legal-documents`); işletme
+ * sahibi düzenlemez ve "metin eksik" uyarısı çıkmaz. Salt-okunur özet
+ * `BusinessLegalSettings` bölümünde gösterilir.
  *
  * 2FA + Aktif Oturumlar + API Anahtarları kartları kullanıcı talebiyle
  * kaldırıldı (mevcut kullanıcı tabanına yakın değil; ileride bağımsız
@@ -112,24 +114,7 @@ export function BusinessSecuritySettings({
         </AlertBanner>
       )}
 
-      {/* 1. KVKK */}
-      <SettingsCard
-        icon={<FileText size={18} />}
-        title="KVKK aydınlatma metni"
-        description="Müşterinin yorum sayfasında gösterilen KVKK aydınlatma metni Buaze tarafından hazırlanmış güncel şablondan otomatik olarak yüklenir."
-        actions={<Badge kind="ok">Aktif</Badge>}
-      >
-        <p className="text-[13px] leading-[1.6] text-[#525252]">
-          Yasal güncelleme gerektiğinde metin merkezi olarak güncellenir; ayrıca düzenleme yapmana gerek yoktur.
-          Özel bir metne ihtiyacın olursa{" "}
-          <a className="underline text-[#0A0A0A]" href="mailto:legal@buaze.com">
-            legal@buaze.com
-          </a>{" "}
-          adresinden bize yazabilirsin.
-        </p>
-      </SettingsCard>
-
-      {/* 2. isActive */}
+      {/* isActive */}
       <SettingsCard
         icon={<Lock size={18} />}
         title="İşletmeyi devre dışı bırak"
