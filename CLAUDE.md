@@ -3930,3 +3930,147 @@ Mevcut tüm `setX/x` referansları sayfa içinde intact kalır — 200+ kullanı
 - Admin `/admin/reviews` (Phase 11.12 — inline pattern)
 
 İleride Phase 11.X'te owner feedbacks + admin reviews bu hook'a migrate edilebilir (consistency).
+
+---
+
+## 37. Security Audit (2026-05) — Standartlar + Atlanan Bulgular
+
+5 fazlı kapsamlı güvenlik denetimi yapıldı; 5 PR ile **27 fix** (6 CRITICAL + 8 HIGH + 13 MEDIUM) merge'lendi. Ayrıntılı rapor: **`SECURITY_AUDIT_REPORT.md`** (repo kökünde). Bu §, kalıcı kararları + sonraki sessions için **yeni endpoint disiplinlerini** + atlanan 6 follow-up'ı tutar — drift olmasın diye burada referansla.
+
+### 37.1 PR index (tarihsel)
+
+| PR | Faz | İçerik |
+|---|---|---|
+| **#345** | Adım 1 | Public auth + POST hardening (JWT_SECRET hard-fail, Host header injection, UserSession revoke fail-closed) |
+| **#346** | Adım 2 | Public ingestion (`/embed`, `/r/[slug]`, menu analytics IP rate limit, restaurant POST `checkProviderUrl`) |
+| **#347** | Adım 3 | Admin auth + privileged CRUD (default credentials kill, audit log POST, reset reCAPTCHA) |
+| **#348** | Adım 4 | Owner panel + multi-tenant IDOR (team locations whitelist, restaurant PUT validation, api-keys hardening) |
+| **#349** | Adım 5 | Google OAuth state CSRF + cron/mail/openai audit clean |
+
+### 37.2 Yeni endpoint disiplinleri (kalıcı kararlar)
+
+Yeni route eklenirken bu kuralları izle — audit fix'lerinin bozulmaması için:
+
+#### A. Auth boundary
+- **`getSecret()` production'da throw eder** — `JWT_SECRET` env yokken token sign/verify yapılmaz. Public dev fallback sadece dev'de. **`getSecret()`'ı duplicate inline etmek YASAK** (Adım 1'de 4 yerden temizlendi). Yeni route `import { getSecret } from '@/lib/auth'`.
+- **`UserSession` revoke checks fail-closed (DB error path)** — `auth.ts:isUserSessionRevoked` catch block `return true`. Yeni endpoint'lerin auth dependency'si bunu varsayar.
+- **Password reset / member deactivate → UserSession revoke ZORUNLU**:
+  ```ts
+  await prisma.userSession.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+  ```
+  Pattern: `/api/auth/reset-password`, `/api/admin/members/[id]` PUT + DELETE. Yeni "owner pasifleştir" / "şifre değiştir" akışlarına eklenmeli.
+
+#### B. IDOR — restaurant whitelist
+- **Owner-controlled `locations: string[]` array'i ASLA verbatim kabul edilmez** (Adım 4 CRITICAL). Pattern:
+  ```ts
+  const ownedRows = await prisma.restaurant.findMany({
+    where: { id: { in: requested }, userId: actor.id },
+    select: { id: true },
+  });
+  const ownedSet = new Set(ownedRows.map((r) => r.id));
+  const filtered = requested.filter((id) => ownedSet.has(id));
+  ```
+  `/api/team` POST + `/api/team/[id]` PATCH'te uygulanmış. Benzer pattern team / location-scoped yeni endpoint'lerde tekrarlanmalı.
+
+#### C. Rate limit + audit log (privileged actions)
+- **Yeni admin destructive bulk** veya **privileged CRUD (POST/PUT/DELETE)** `AdminAuditLog` row yazmalı. POST/CREATE de log'lanmalı (Adım 3'te `/api/admin/users` POST + `/api/api-keys` POST audit log eksikti, fix uygulandı). Pattern:
+  ```ts
+  await prisma.adminAuditLog.create({
+    data: {
+      actorId: actor.id,
+      actorSource: actor.source,
+      action: 'admin.users.create' /* veya 'feedback.bulk.flag' */,
+      targetId: id,
+      payload: { before, after },
+    },
+  });
+  ```
+- **API token / privileged write endpoint'i `rateLimit('endpoint:actor:${actor.id}', 10, 60_000)` ile gate edilmeli** (Adım 4 `/api/api-keys` fix paterni).
+
+#### D. Public POST'larda IP-bazlı rate limit (sessionId yetersiz)
+- `sessionId` rate limit tek başına yetersiz — saldırgan farklı sessionId'lerle paralel spam. **IP katmanı ZORUNLU**:
+  ```ts
+  const ip = getClientIp(req.headers);
+  const ipLimit = await rateLimit(`x:ip:${ip}`, 1000, 60_000);
+  const sessionLimit = await rateLimit(`x:session:${sessionId}`, 300, 60_000);
+  if (!ipLimit.allowed || !sessionLimit.allowed) return 429;
+  ```
+  Pattern: `/api/menu/[slug]/analytics` (Adım 2 fix). Yeni public ingestion endpoint'lerinde tekrarla.
+- **Ham `req.headers.get('x-forwarded-for')` kullanma** — `getClientIp()` ile parse et. Saldırgan `X-Forwarded-For: a, b, c` ile rate-limit key pivot edebilir. Adım 1 `/api/feedback` fix paterni.
+
+#### E. Restaurant CRUD validation (mass assignment kapısı)
+
+POST + PUT iki path'te de aynı validation çalışmalı:
+
+- **`primaryColor` → `isValidHexColor`** (XSS via inline style)
+- **`googleReviewUrl, yemekSepetiUrl, ...` (8 platform URL) → `checkProviderUrl` hard-error reject** (`javascript:` / off-domain injection)
+- **`notificationEmail` → `isValidEmail`** + 256 char cap
+- **`menuLogoUrl` → 300 KB cap + non-data URL `http(s)://` zorunlu**
+- **Slug regex** `/^[a-z0-9]+(?:-[a-z0-9]+)*$/`
+
+Adım 2 + Adım 4 fix paralel paterni — POST + PUT'ta aynı kontroller.
+
+#### F. OAuth flow — `state` nonce ZORUNLU
+- Yeni 3rd party OAuth integration eklenirse:
+  ```ts
+  // /connect:
+  const nonce = randomBytes(32).toString('base64url');
+  response.cookies.set('bz_<provider>_oauth_state', nonce, {
+    httpOnly: true, secure, sameSite: 'lax', maxAge: 12 * 60, path: '/',
+  });
+  state = base64url(JSON.stringify({ owner, nonce, ts }));
+
+  // /callback:
+  const stateNonce = JSON.parse(decode(stateParam)).nonce;
+  const cookieNonce = req.cookies.get('bz_<provider>_oauth_state')?.value;
+  if (!nonceMatches(cookieNonce, stateNonce)) return redirectBack('state-mismatch');
+  if (state.owner !== ownerRef(actor)) return redirectBack('state-actor-mismatch');
+  // clear cookie after every redirectBack
+  ```
+  Pattern: `/api/integrations/google/{connect,callback}` (Adım 5 fix). RFC 6749 §10.12 zorunluluk.
+
+#### G. Mail recipient guard
+- **Mail body'sine giden user input CRLF strip + `isValidEmail` kontrolü**:
+  ```ts
+  function stripCtl(value: unknown, max = 1000): string | null {
+    if (typeof value !== 'string') return null;
+    return value.replace(/[\r\n\t]/g, ' ').trim().slice(0, max) || null;
+  }
+  ```
+  Pattern: `/api/contact` (Adım 1 fix). Yeni mail-tetikleyen endpoint'lerde kullan.
+- **PII console.error YASAK** — kullanıcı email/phone log'a yazma (`userId` log'la). Sentry `extra` ile kapılır → KVKK ihlali. Adım 1 fix.
+
+#### H. CRON_SECRET sağlam pattern
+- Tüm cron endpoint'leri `if (!cronSecret || authHeader !== Bearer ${cronSecret}) return 401`. **`process.env.CRON_SECRET`'i `||` ile fallback'lemek YASAK** — env yoksa fail-closed olmalı.
+- Cron handler'ın admin manuel trigger'ından `runFoo()` shared helper export et (CLAUDE.md §21.13 self-fetch antipattern). Yeni cron eklerken aynı pattern.
+
+### 37.3 Atlanan 6 follow-up (operatör onayı bekleyen)
+
+Bu bulgular davranış-değişikliği gerektiriyor; CLAUDE.md'de bilinçli tasarım kararı veya backwards-compat zorunluluğu var. Açık talep olmadan dokunulmadı. Detay: `SECURITY_AUDIT_REPORT.md` "Deferred follow-ups" section.
+
+| # | Bulgu | Öncelik | Çözüm scope |
+|---|---|---|---|
+| 1 | `AdminUser` için `UserSession`-equivalent tablo yok → admin password reset sonrası saldırgan'ın `admin_token`'ı revoke edilemiyor | HIGH | Yeni `AdminSession` tablosu + auth middleware revoke check, veya `passwordChangedAt` + JWT iat compare |
+| 2 | `RECAPTCHA_ENFORCE` default `'false'` (monitor mode) | MEDIUM | Sentry "low score" / "action mismatch" warn rate'i izle, 2 hafta sonra production env'de `'true'` flip |
+| 3 | `UserSession` `if (!session) return false` legacy fail-open (pre-table cookies) | MEDIUM | Backfill script ile mevcut user'lara `UserSession` row, sonra `return true` flip |
+| 4 | Restaurant DELETE viewer-hariç tüm team rolleri ile mümkün | MEDIUM | `canDeleteRestaurant` helper'ı (owner-only), DELETE handler'a wire |
+| 5 | Site-settings SVG upload sanitize yok | LOW | `DOMPurify` server-side veya `sharp.png()` rasterize, ya da `Content-Disposition: attachment` + sandbox CSP |
+| 6 | bcrypt cost inconsistency (12 / 10 / 10) | LOW (cosmetic) | Tek `BCRYPT_COST = 12` const, tüm callsite import |
+
+### 37.4 Audit dışı bırakılan kapsam (ileri pass)
+
+- **`npm audit` supply chain** (lokal node_modules ortamı yoktu)
+- **Render-side XSS sweep** (`dangerouslySetInnerHTML` walk — JSX default escape mevcut, kapsamlı sweep ayrı pass)
+- **PII grep across 305 files** (`console.error(..., user.email)` patterns)
+- **CSP header** (`next.config.ts` XFO/HSTS var; CSP yok — script inventory mapping gerek: GTM + Yandex + Sentry tunnel + Speed Insights + Analytics + Vercel)
+- **Prisma cascade audit** — `onDelete: Cascade/Restrict` kapsamlı veri-kaybı taraması
+
+### 37.5 Yeni session disiplini
+
+Yeni route veya endpoint eklenirken:
+1. §37.2 A-H disiplinlerini izle
+2. §37.3 atlanan bulgulardan biri scope'a giriyorsa kullanıcıya **açık onay** sor
+3. Yeni güvenlik fix'i uygulanırsa: `SECURITY_AUDIT_REPORT.md`'ye yeni satır ekle + bu §'ye phase log
