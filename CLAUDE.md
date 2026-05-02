@@ -1186,7 +1186,8 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 
 | Path | Schedule | Amaç |
 |---|---|---|
-| `/api/cron/weekly-digest` | `0 9 * * 1` | Her pazartesi 09:00 UTC — restoran sahibine haftalık özet |
+| `/api/cron/weekly-digest` | `0 9 * * 1` | Her pazartesi 09:00 UTC — restoran sahibine haftalık özet (Pulse AI çıkarımı dahil — §21.38) |
+| `/api/cron/weekly-digest-summary` | `0 10 * * 1` | Her pazartesi 10:00 UTC — hello@buaze.com'a "kim mail aldı" özeti (ops, §21.38) |
 | `/api/cron/anonymize-ips` | `0 3 * * 0` | Her pazar 03:00 UTC — KVKK IP retention |
 | `/api/cron/monthly-newsletter` | `0 9 1 * *` | Her ayın 1'i 09:00 UTC — Pulse aylık bülten |
 | `/api/cron/trial-reminders` | `0 9 * * *` | Her gün 09:00 UTC — trial bitimine 1 ve 3 gün kalanlara hatırlatma |
@@ -1967,6 +1968,47 @@ type NavGroup = {
 2. `id` unique olsun (localStorage key'i için)
 3. Mevcut tek-item entry'leri `children` içine taşı
 4. Grup adı locale-aware (TR primary, EN fallback)
+
+### 21.38 Weekly digest with Pulse AI inference + ops summary (Phase 11.35, 2026-05)
+
+Pazartesi günleri çalışan iki cron birlikte: 09:00 UTC işletmelere AI-zenginleştirilmiş haftalık rapor + 10:00 UTC `hello@buaze.com`'a kim mail aldı özeti.
+
+**Akış:**
+1. `0 9 * * 1` — `/api/cron/weekly-digest` çalışır → her aktif restoran için son 7 günlük stats + 30 yorum metni → `extractWeeklyInsight()` (gpt-4o-mini, ~$0.0002/restoran) → Pulse `weekly-report` template'i içine "PULSE AI ÇIKARIMI" section'ı gömülerek gönderilir.
+2. `0 10 * * 1` — `/api/cron/weekly-digest-summary` çalışır → `runWeeklyDigest({ dryRun: true })` ile aynı recipient list'i tekrar derive eder (mail göndermez) → Pulse `weekly-digest-summary` template'i ile `hello@buaze.com`'a (env override `OPS_DIGEST_SUMMARY_EMAIL`) "kim aldı" özeti gönderir.
+
+**Yeni dosyalar:**
+- `src/lib/weekly-insight.ts` — `extractWeeklyInsight()` saf helper (gpt-4o-mini + 24h cache + fail-safe fallback). Output: `{ summary, recommendation, source }`. CLAUDE.md §15 `chatCompletion` reuse, `MIN_TOTAL_FOR_AI = 1`, `MAX_COMMENTS_TO_SEND = 30`.
+- `src/lib/email/templates/weekly-digest-summary.ts` — ops-internal template (DB-driven copy yok, hardcoded inline; admin override edilemez). Hero counts (sent/skipped/optedOut/failed) + recipient table (restaurant + total + avg + AI badge + status).
+- `src/app/api/cron/weekly-digest-summary/route.ts` — cron endpoint, `runWeeklyDigest({ dryRun: true })` çağırır, `OPS_DIGEST_SUMMARY_EMAIL` env yoksa `hello@buaze.com` fallback.
+
+**Genişletilen dosyalar:**
+- `src/lib/email/templates/weekly-report.ts` — `WeeklyReportParams.aiInsight?` field eklendi. Render template'i graphite + lime accent dot ile "PULSE AI ÇIKARIMI" section'ı; copy field'ları `aiEyebrow / aiTitle / aiRecommendationLabel` (DB-driven, admin override edilebilir).
+- `src/lib/email.ts` — `WeeklyDigestParams` `aiInsight` taşır; yeni `sendWeeklyDigestSummary()` sender.
+- `src/app/api/cron/weekly-digest/route.ts` — `runWeeklyDigest()` shared helper'a refactor. `dryRun` parametresi: true → mail göndermez, sadece recipients listesi döner (CLAUDE.md §21.13 self-fetch antipattern bypass). Artık `comment` text'leri de fetch eder (AI bağlamı için, max 30 yorum).
+
+**Idempotency + cost:**
+- AI cache key: `${restaurantId}:${ISO-week}` — aynı haftada cron retry'da OpenAI'ya tekrar request gitmez.
+- Maliyet: ~$0.0002 × N restoran/hafta = haftalık ~$0.02 (100 restoran). 24h cache ile cron retry yapılırsa cost 0.
+- AI key yok / hata → `summary` ve `recommendation` boş string + `source: 'fallback'`. Mail rendering AI section'ı **gizler** (graceful degrade).
+
+**Recipient flow:**
+- 10:00 cron `dryRun: true` çalıştığı için `recipient.emailSent` her zaman false döner. Ops summary template'inde anlamlı görünmesi için cron handler bunu `true` override eder ("haftalık raporu hak etti" semantiği).
+- Skipped (yorum yok) ve optedOut (bildirim kapalı) restoranları recipient listesine girmez — sadece counts görünür.
+- `recipientEmail` ops mail'inde maskelenir (`a***@domain`) — KVKK görselleştirme.
+
+**Yeni env (opsiyonel):**
+- `OPS_DIGEST_SUMMARY_EMAIL` — default `hello@buaze.com`. Operator istediği inbox'a yönlendirebilir.
+
+**Yapma:**
+- `runWeeklyDigest()` helper'a yeni cron'u **self-fetch** ile bağlama (CLAUDE.md §21.13). Direkt import + helper invoke pattern'i bu PR'da uygulandı.
+- AI cache TTL'i 24h'dan kısa yapma — Pazartesi 09:00 + 10:00 + manuel test (admin trigger ileride) → 3 OpenAI çağrısı yerine 1.
+- Mail recipients listesini 09:00 cron'da DB'ye log'lama — `WeeklyDigestRun` model gereksiz; `dryRun=true` yeterli pattern (ileride drift yaşarsak tabloya geçilebilir).
+- AI bağlamı için 30+ yorum gönderme — token cost lineer, 30 yorum yeterli sample (analytics-themes 80 kullanıyor ama o filter-aware UI flow).
+
+**Yap:**
+- Yeni cron eklenirken `runX()` shared helper export et + `Authorization: Bearer ${CRON_SECRET}` guard + `maxDuration: 300` explicit set.
+- Yeni AI-driven template eklenirken: per-week cache key (`${id}:${week}`), MIN_THRESHOLD (yetersiz veride API çağrısı yok), JSON parse fail-safe, render template'inde section conditional gizleme (boş AI → section yok).
 
 
 ---

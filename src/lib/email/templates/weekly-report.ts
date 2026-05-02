@@ -24,6 +24,14 @@ export interface WeeklyReportParams {
   deltas?: { totalDelta?: string | null; avgDelta?: string | null; responseDelta?: string | null };
   weekNumber?: number;
   dashboardUrl: string;
+  /** Pulse AI çıkarımı — `extractWeeklyInsight()` çıktısı. summary veya
+   *  recommendation dolu ise mailde "PULSE AI ÇIKARIMI" section'ı render
+   *  edilir; ikisi de boşsa section gizlenir (template fail-safe). */
+  aiInsight?: {
+    summary: string;
+    recommendation: string;
+    source: 'openai' | 'fallback';
+  };
 }
 
 export async function renderWeeklyReport(
@@ -62,6 +70,9 @@ export async function renderWeeklyReport(
     cta: 'Panele git →',
     detailLabel: 'Detaylı analiz seni bekliyor.',
     detailSub: 'Heatmap, sentiment ve aspect kırılımı panelde.',
+    aiEyebrow: 'Pulse AI çıkarımı',
+    aiTitle: 'Bu haftanın özeti',
+    aiRecommendationLabel: 'Önümüzdeki hafta için öneri',
   } : {
     eyebrow: `Week ${weekNum} · Monday report`,
     titleA: positiveCount > 0 ? 'A quiet week,' : 'How was the week?',
@@ -79,6 +90,9 @@ export async function renderWeeklyReport(
     cta: 'See full details →',
     detailLabel: 'Deep-dive analytics inside.',
     detailSub: 'Heatmap, sentiment and aspect breakdown in the panel.',
+    aiEyebrow: 'Pulse AI inference',
+    aiTitle: 'This week\'s synthesis',
+    aiRecommendationLabel: 'Recommendation for next week',
   };
 
   // DB-merged + placeholder substitution. `eyebrow` is locked in editor
@@ -160,6 +174,45 @@ export async function renderWeeklyReport(
       </td>
     </tr>` : '';
 
+  // Pulse AI çıkarımı block — yalnız `aiInsight.summary` veya
+  // `aiInsight.recommendation` doluysa render edilir. CLAUDE.md §11 Pulse
+  // tokens (graphite + lime accent) + email-safe table layout.
+  const aiInsight = params.aiInsight;
+  const hasAi = !!(aiInsight && (aiInsight.summary || aiInsight.recommendation));
+  const aiBlock = hasAi ? `
+    <tr>
+      <td class="bz-pad" style="padding:32px 40px 8px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.graphite};border-radius:14px;overflow:hidden;">
+          <tr>
+            <td style="padding:22px 24px 18px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding-right:8px;vertical-align:middle;">
+                    <span style="display:inline-block;width:8px;height:8px;border-radius:100px;background:${PULSE.lime};"></span>
+                  </td>
+                  <td style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.lime};text-transform:uppercase;vertical-align:middle;">${copy.aiEyebrow}</td>
+                </tr>
+              </table>
+              <div style="font-family:${FONTS.heading};font-size:22px;font-weight:500;letter-spacing:-0.02em;color:${PULSE.pure};line-height:1.2;margin-top:12px;">${copy.aiTitle}</div>
+              ${aiInsight!.summary ? `
+                <p style="font-family:${FONTS.body};font-size:14px;line-height:1.6;color:${PULSE.n200};margin:14px 0 0;">${aiInsight!.summary}</p>
+              ` : ''}
+              ${aiInsight!.recommendation ? `
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:16px;border-top:1px solid ${PULSE.n800};">
+                  <tr>
+                    <td style="padding-top:14px;">
+                      <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.18em;color:${PULSE.n400};text-transform:uppercase;">${copy.aiRecommendationLabel}</div>
+                      <p style="font-family:${FONTS.body};font-size:14px;line-height:1.55;color:${PULSE.lime};margin:8px 0 0;font-weight:500;">${aiInsight!.recommendation}</p>
+                    </td>
+                  </tr>
+                </table>
+              ` : ''}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>` : '';
+
   // Aspect averages
   const aspectsItems: Array<[string, number | null]> = [
     [copy.aspectFood, params.stats.aspects.food],
@@ -208,6 +261,7 @@ export async function renderWeeklyReport(
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">${distRows}</table>
         </td>
       </tr>
+      ${aiBlock}
       ${aspectsBlock}
       ${quotesBlock}
       <tr>

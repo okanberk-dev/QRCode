@@ -16,6 +16,7 @@ import {
   renderFirstFeedbackTips,
   renderUpgradeSuggestion,
   renderInactiveReactivation,
+  renderWeeklyDigestSummary,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -28,6 +29,7 @@ import {
   type FirstFeedbackTipsParams,
   type UpgradeSuggestionParams,
   type InactiveReactivationParams,
+  type WeeklyDigestSummaryParams,
 } from './email/templates';
 import { escapeHtml as _escapeHtml } from './email/escape';
 import { sendResendEmail } from './email-internal';
@@ -135,6 +137,9 @@ export interface WeeklyDigestParams {
   restaurantName: string;
   period: { from: Date; to: Date };
   stats: WeeklyReportParams['stats'];
+  /** Pulse AI çıkarımı (`extractWeeklyInsight()`) — boş ise mailde
+   *  AI section'ı gizlenir. */
+  aiInsight?: WeeklyReportParams['aiInsight'];
 }
 
 export async function sendWeeklyDigest(params: WeeklyDigestParams): Promise<boolean> {
@@ -145,10 +150,34 @@ export async function sendWeeklyDigest(params: WeeklyDigestParams): Promise<bool
       period: params.period,
       stats: params.stats,
       dashboardUrl,
+      aiInsight: params.aiInsight,
     },
     params.locale,
   );
   return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+}
+
+// ─── Weekly digest summary (ops mail to hello@buaze.com) ─────────────────
+
+/**
+ * Pazartesi 10:00 UTC'de hello@buaze.com'a haftalık digest gönderim
+ * özetini iletir. CLAUDE.md §21.x — gönderim listesi + AI çalıştığı
+ * restoranlar + skipped/failed sayıları.
+ *
+ * @returns true → mail Resend'e başarıyla gitti, false → fail.
+ */
+export async function sendWeeklyDigestSummary(args: {
+  to: string;
+  locale?: 'tr' | 'en';
+  data: WeeklyDigestSummaryParams;
+}): Promise<boolean> {
+  const rendered = renderWeeklyDigestSummary(args.data, args.locale ?? 'tr');
+  return sendResendEmail({
+    to: args.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
 }
 
 // ─── Forgot password ────────────────────────────────────────────────────

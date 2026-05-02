@@ -53,3 +53,8 @@ export type { UpgradeSuggestionParams } from './upgrade-suggestion';
 
 export { renderInactiveReactivation } from './inactive-reactivation';
 export type { InactiveReactivationParams } from './inactive-reactivation';
+
+// Ops-internal — Pazartesi 10:00 UTC weekly digest summary mail to
+// hello@buaze.com (CLAUDE.md §21.x weekly digest summary cron).
+export { renderWeeklyDigestSummary } from './weekly-digest-summary';
+export type { WeeklyDigestSummaryParams } from './weekly-digest-summary';
