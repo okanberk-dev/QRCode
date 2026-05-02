@@ -24,6 +24,13 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  // Tree-shake hint — lucide-react 1000+ icon export ediyor; default
+  // tree-shake bu volume'da fail edebilir. `optimizePackageImports` Next 14+
+  // feature: yalnız import edilen icon'lar bundle'a girer. CLAUDE.md §34.13.
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
+
   async rewrites() {
     if (!firebaseAuthProxyTarget) return [];
 

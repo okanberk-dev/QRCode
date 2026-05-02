@@ -3691,6 +3691,43 @@ Lighthouse "Öğeler, yasaklanmış ARIA özelliklerini kullanıyor" — generic
 - `force-dynamic`'i root/locale layout'tan kaldırmak (cookies() context kırılır, çok endpoint etkilenir)
 - Lighthouse score'u "kâğıtta" iyi göstermek için tracking script'leri kaldırmak — production decision'ı, performance audit'i gerekçe değil
 
+### 34.13 2026-05-02 — Hero LCP paint defer + bundle hint (PR #343)
+
+Lighthouse Mobile detaylı audit'inde "LCP element render delay 3,360ms" kanıtlandı. LCP element: homepage hero subtitle paragraph (`HomeHero.tsx`'te, parent client component). Kök neden: aynı `HomeHero` içinde `InboxCard` child component'inde **AI draft typing animation** (700ms `setTimeout` + 28ms × ~60 char `setInterval`) hydrasyon sonrası state update zinciri başlatıyor → her update layout recalc → subtitle paragraph paint geç oluyor.
+
+**Uygulanan 3 minimum-diff fix:**
+
+**(1) `HomeHero.tsx:777-805` InboxCard typing startDelay 700ms → 2400ms.**
+
+Typing animation kayıp olmaz, sadece LCP paint sonrasına ertelenir. Görsel demo değeri korunur (kullanıcı zaten hero'yu 2-3sn'de tarar).
+
+**Yapma:** Bu animation'ı silme, `0` startDelay yapma — UX kaybı. 2400ms (animation'ın doğal start'tan önceki rotator interval'inden sonra) tek kanıt güçlü değer.
+
+**(2) `HomeHero.tsx:597-602` subtitle `clamp(15px, 1.4vw, 18px)` inline style → Tailwind responsive (`text-[15px] sm:text-[16px] lg:text-[18px]`).**
+
+`clamp(min, vw, max)` browser'a viewport'a göre per-render hesap zorlatır; düşük-CPU mobile'da +50-200ms paint cost. Tailwind breakpoint mathematically eşit (mobile 15px / sm 16px / lg 18px) ve viewport hesabı paint öncesi gerekmez.
+
+**Yapma:** Diğer `clamp()` inline kullanımlarını (örn. headline `clamp(44px, 7.5vw, 92px)`) aynı pattern ile değiştirme — heading LCP element değil, fluid scaling görsel olarak heading'de daha kıymetli. Ölçü+visual regression olmadan toplu refactor scope dışı.
+
+**(3) `next.config.ts` `experimental.optimizePackageImports: ['lucide-react']`.**
+
+Lucide-react 1000+ icon export ediyor, default tree-shake bu volume'da fail edebilir. `optimizePackageImports` Next 14+ feature — sadece import edilen icon'lar bundle'a girer. Buaze 5 icon homepage'de + birkaç düzine site genelinde → bundle ~5-8 KiB azalır.
+
+**Yap:** Yeni heavy package eklerken (örn. `date-fns`, `lodash`) bu listeye ekle. Default Next.js bilinen paketleri zaten optimize ediyor (`@radix-ui/*`) ama explicit listing daha güvenli.
+
+**Yapma:** `optimizePackageImports`'a kullanılmayan paket eklemek — build zamanı analiz overhead artar.
+
+**Skip listesi (gerekçeleriyle, §34.12 ile tutarlı):**
+- `force-dynamic` kaldırma (root + admin) — cookies() + ISR cache canary test gerektirir
+- HomeHero `dynamic({ssr: true})` lazy — LCP paragraph hâlâ aynı component'te, fix değil
+- ReputationCluster Suspense boundary — child'lar tek client component'te, ayrı boundary efektif değil
+- @radix-ui/react-tabs replacement / GTM / Yandex unmount / code-splitting — büyük scope, tracking decision
+- Server-side feedback search — backend kontrat genişlemesi, §28 disiplini
+
+**Net etki tahmini:** LCP 3,360ms → ~2,400-2,600ms (~700-900ms kazanç), bundle ~5-8 KiB. Real user mobile 4G TBT'de görünür iyileşme.
+
+**Yeni session bu raporu görünce:** §34.13'teki 3 fix'in altındaki "Yapma" listesini izle. Performans audit raporu tekrar geldiğinde aynı bulgular için Skip listesi disipline yeniden değerlendir, kullanıcı tetiği yoksa yeniden inşa etme.
+
 ---
 
 ## 35. SEO Infrastructure (2026-05 PR #263 + #264)
