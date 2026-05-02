@@ -4207,11 +4207,11 @@ Kasıtlı tasarım kararı — User/Restaurant cascade'inden bağımsız:
 
 #### Yapılan iki düzeltme (2026-05 audit)
 
-İki implicit-default `@relation` explicit `onDelete: Restrict`'e çevrildi:
+İki implicit-default `@relation` explicit `onDelete: NoAction`'a çevrildi:
 - `Restaurant.user → User`: Hard-delete bloke (User soft-delete only — CLAUDE.md §34.5)
 - `AdminUser.restaurant → Restaurant`: Manuel cleanup zorunlu (`/api/restaurants/[id]` DELETE handler'da `adminUser.deleteMany`)
 
-Davranış değişmedi (Prisma 6 default `NoAction` ≈ Postgres `RESTRICT`); explicit annotation schema-okuyucu için daha açık.
+Davranış değişmedi (Prisma 6 default `NoAction` ≈ Postgres `RESTRICT`); explicit annotation schema-okuyucu için daha açık. **Not**: `Restrict` semantik olarak daha sıkı bir tercih olurdu ama Prisma validator multi-path cascade'lerin aynı target tablosunda `Restrict` mix etmesini reddediyor (Restaurant zaten Feedback / Menu / QR cascade chain'lerinde) — bu yüzden `NoAction` ile aynı Postgres `RESTRICT` davranışına explicit annotation yapıldı.
 
 #### KVKK "right to be forgotten" — açık scope
 

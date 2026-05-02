@@ -416,16 +416,23 @@ cascade chain ever drifts.
 
 ### Two implicit-default `@relation` directives made explicit
 
-- `Restaurant.user → User`: `onDelete: Restrict` added (was Prisma 6
-  default `NoAction`, identical Postgres behaviour). Documents the
+- `Restaurant.user → User`: `onDelete: NoAction` added (was Prisma 6
+  default — identical Postgres `RESTRICT` behaviour). Documents the
   fact that User hard-delete is unsupported (CLAUDE.md §34.5
   soft-delete pattern is the only sanctioned path).
-- `AdminUser.restaurant → Restaurant`: `onDelete: Restrict` added.
+- `AdminUser.restaurant → Restaurant`: `onDelete: NoAction` added.
   Behaviour-equivalent safety net so a stray direct
   `prisma.restaurant.delete` (script, manual SQL) cannot strand
   managers without their scoped restaurant — the
   `/api/restaurants/[id]` DELETE handler does the manual
   `adminUser.deleteMany` cleanup.
+
+`NoAction` over `Restrict`: semantically `Restrict` is the tighter
+choice, but Prisma's validator rejects mixing `Restrict` with the
+multi-path cascade chains the Restaurant model already participates
+in (Feedback / Menu / QR / Analytics all `Cascade`). `NoAction` maps
+to the same Postgres `RESTRICT` constraint at the FK level, so the
+runtime behaviour is identical.
 
 ### KVKK "right to be forgotten" — open scope
 
