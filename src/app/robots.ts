@@ -23,7 +23,11 @@ export default function robots(): MetadataRoute.Robots {
           '/*/accept-invite',
         ],
       },
-      // Allow AI bots to read marketing pages for search generative experiences
+      // Allow AI bots to read marketing pages for search generative experiences.
+      // `crawlDelay: 2` — polite scraping. Major search engines (Google, Bing)
+      // ignore Crawl-delay anyway; this targets the AI / SGE crawlers which
+      // tend to hammer pages aggressively when ingesting a new domain.
+      // CLAUDE.md §34.15.
       {
         userAgent: [
           'GPTBot',
@@ -50,6 +54,7 @@ export default function robots(): MetadataRoute.Robots {
           '/tr/accept-invite',
           '/en/accept-invite',
         ],
+        crawlDelay: 2,
       }
     ],
     sitemap: 'https://buaze.com/sitemap.xml',

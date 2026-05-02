@@ -136,6 +136,12 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+          // Adobe Flash + Acrobat PDF cross-domain policy lookup engelleme.
+          // Buaze hiç Flash/PDF cross-domain content servis etmiyor; bu header
+          // legacy istemcilerin `crossdomain.xml` lookup'ı yapmasını ve
+          // attacker'ın bunu auto-trust kabul etmesini bloke eder. Modern
+          // baseline security header (CLAUDE.md §34.15).
+          { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
           { key: 'Permissions-Policy', value: PERMISSIONS_POLICY },
           { key: 'Content-Security-Policy', value: SITE_CSP },
         ],
