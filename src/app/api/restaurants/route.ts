@@ -125,6 +125,14 @@ export async function GET(req: NextRequest) {
     // growth | starter | trial | all). Joins through `user.plan` because
     // plan lives on the owner User row, not on Restaurant. 'all' = unfiltered.
     const planFilter = adminParams.get('plan') || 'all';
+    // Admin "Needs attention" deeplink filter (CLAUDE.md §11.36).
+    // - kvkk_missing         → Restaurant.kvkkText null/empty
+    // - quota_full           → trial restaurants whose feedback count ≥ TRIAL_QUOTA × 0.9
+    // - unverified_platform  → googleReviewUrl IS NOT NULL AND googlePlaceId IS NULL
+    // Forces status=all so passive accounts surface too (deactivated trials etc.)
+    const attention = adminParams.get('attention') || '';
+    const ATTENTION_VALUES = new Set(['kvkk_missing', 'quota_full', 'unverified_platform']);
+    const attentionActive = ATTENTION_VALUES.has(attention);
     const skip = (page - 1) * limit;
 
     const where: Prisma.RestaurantWhereInput = {};
@@ -134,7 +142,35 @@ export async function GET(req: NextRequest) {
       where.id = { in: scopedIds };
     }
 
-    if (status === 'active') {
+    if (attentionActive) {
+      // attention deeplink overrides status — full superset visible
+      if (attention === 'kvkk_missing') {
+        where.OR = [{ kvkkText: null }, { kvkkText: '' }];
+      } else if (attention === 'unverified_platform') {
+        where.googleReviewUrl = { not: null };
+        where.googlePlaceId = null;
+      } else if (attention === 'quota_full') {
+        // Quota-full needs row-level _count which Prisma can't filter in
+        // `where` directly. Pre-resolve the matching ids, then narrow the
+        // main query — keeps pagination + ordering intact.
+        const TRIAL_QUOTA = 2000;
+        const trialRestaurants = await prisma.restaurant.findMany({
+          where: { user: { plan: 'trial' } },
+          select: { id: true, _count: { select: { feedbacks: true } } },
+        });
+        const quotaIds = trialRestaurants
+          .filter((r) => r._count.feedbacks >= TRIAL_QUOTA * 0.9)
+          .map((r) => r.id);
+        // Narrow scope-aware id filter: when scopedIds is null (superadmin)
+        // accept the full quota set; otherwise intersect.
+        if (scopedIds !== null) {
+          const allowed = new Set(scopedIds);
+          where.id = { in: quotaIds.filter((id) => allowed.has(id)) };
+        } else {
+          where.id = { in: quotaIds };
+        }
+      }
+    } else if (status === 'active') {
       where.isActive = true;
     } else if (status === 'passive') {
       where.isActive = false;

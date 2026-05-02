@@ -222,13 +222,46 @@ export default async function AdminDashboardPage() {
     (r) => r._count.feedbacks >= TRIAL_QUOTA * 0.9,
   ).length;
 
+  // Each row deeplinks to the corresponding admin list with the matching
+  // attention filter preset (CLAUDE.md §11.36). Backend mirrors these
+  // attention values in /api/admin/members + /api/restaurants.
   const attention: AttentionRow[] = [
-    { k: 'Trial 7 gün içinde bitiyor', n: trialExpiringSoon, kind: 'warn' },
-    { k: 'Trial süresi bitti', n: trialExpired, kind: 'danger' },
-    { k: 'KVKK metni eksik', n: kvkkMissing, kind: 'danger' },
-    { k: '14+ gün giriş yapılmadı', n: staleAccounts, kind: 'warn' },
-    { k: 'Kota %90+ doldu', n: quotaNearFull, kind: 'warn' },
-    { k: 'Doğrulanmamış platform', n: unverifiedPlatform, kind: 'warn' },
+    {
+      k: 'Trial 7 gün içinde bitiyor',
+      n: trialExpiringSoon,
+      kind: 'warn',
+      href: '/admin/members?attention=trial_expiring',
+    },
+    {
+      k: 'Trial süresi bitti',
+      n: trialExpired,
+      kind: 'danger',
+      href: '/admin/members?attention=trial_expired',
+    },
+    {
+      k: 'KVKK metni eksik',
+      n: kvkkMissing,
+      kind: 'danger',
+      href: '/admin/restaurants?attention=kvkk_missing',
+    },
+    {
+      k: '14+ gün giriş yapılmadı',
+      n: staleAccounts,
+      kind: 'warn',
+      href: '/admin/members?attention=stale',
+    },
+    {
+      k: 'Kota %90+ doldu',
+      n: quotaNearFull,
+      kind: 'warn',
+      href: '/admin/restaurants?attention=quota_full',
+    },
+    {
+      k: 'Doğrulanmamış platform',
+      n: unverifiedPlatform,
+      kind: 'warn',
+      href: '/admin/restaurants?attention=unverified_platform',
+    },
   ];
 
   return (

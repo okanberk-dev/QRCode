@@ -12,11 +12,21 @@ export interface ListMembersParams {
   search?: string;
   plan?: string;
   status?: 'active' | 'passive' | 'all';
+  /**
+   * Admin "Needs attention" deeplink filter (CLAUDE.md §11.36).
+   * - `trial_expiring` → trial users whose trialEndsAt is within next 7 days
+   * - `trial_expired`  → trial users whose trialEndsAt has passed
+   * - `stale`          → restaurant_owner with no updatedAt in 14+ days
+   * Status filter is forced to 'all' when attention is set so passive accounts
+   * (e.g. trial_expired sometimes deactivated) still surface.
+   */
+  attention?: 'trial_expiring' | 'trial_expired' | 'stale';
   page?: number;
   perPage?: number;
 }
 
 export const VALID_PLANS = ['trial', 'monthly', 'yearly', 'free'] as const;
+export const VALID_ATTENTIONS = ['trial_expiring', 'trial_expired', 'stale'] as const;
 
 export const DEFAULT_PER_PAGE = 25;
 export const MAX_PER_PAGE = 100;
@@ -26,17 +36,21 @@ export function parseListMembersParams(searchParams: URLSearchParams): ListMembe
   const search = searchParams.get('search')?.trim() || undefined;
   const planRaw = searchParams.get('plan')?.trim() || undefined;
   const statusRaw = searchParams.get('status')?.trim() || undefined;
+  const attentionRaw = searchParams.get('attention')?.trim() || undefined;
   const pageRaw = searchParams.get('page');
   const perPageRaw = searchParams.get('perPage');
 
   const plan = planRaw && (VALID_PLANS as readonly string[]).includes(planRaw) ? planRaw : undefined;
+  const attention = attentionRaw && (VALID_ATTENTIONS as readonly string[]).includes(attentionRaw)
+    ? (attentionRaw as ListMembersParams['attention'])
+    : undefined;
   const status: ListMembersParams['status'] =
     statusRaw === 'passive' ? 'passive' : statusRaw === 'all' ? 'all' : 'active';
 
   const page = Math.max(1, Number(pageRaw) || 1);
   const perPage = Math.min(MAX_PER_PAGE, Math.max(1, Number(perPageRaw) || DEFAULT_PER_PAGE));
 
-  return { search, plan, status, page, perPage };
+  return { search, plan, status, attention, page, perPage };
 }
 
 /** Build Prisma where clause from list params. Restaurant-owners only. */
@@ -52,6 +66,23 @@ export function buildMembersWhere(params: ListMembersParams): Prisma.UserWhereIn
   if (params.plan) {
     where.plan = params.plan;
   }
+
+  if (params.attention) {
+    const now = new Date();
+    if (params.attention === 'trial_expiring') {
+      const sevenDaysAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      where.plan = 'trial';
+      where.trialEndsAt = { gt: now, lte: sevenDaysAhead };
+    } else if (params.attention === 'trial_expired') {
+      where.plan = 'trial';
+      where.trialEndsAt = { lte: now };
+    } else if (params.attention === 'stale') {
+      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      where.updatedAt = { lt: fourteenDaysAgo };
+    }
+    return where;
+  }
+
   if (params.status === 'active') {
     where.isActive = true;
   } else if (params.status === 'passive') {
