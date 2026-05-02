@@ -4207,7 +4207,7 @@ Kasıtlı tasarım kararı — User/Restaurant cascade'inden bağımsız:
 
 #### Yapılan iki düzeltme (2026-05 audit)
 
-İki implicit-default `@relation` directive'i (`Restaurant.user`, `AdminUser.restaurant`) için detaylı yorum eklendi. Annotation'ın kendisi default'ta bırakıldı — Prisma 6 validator'u bu modelde `Restrict` ve `NoAction`'ı **multi-path cascade graph'inde cyclic referential action olarak** reddediyor (Restaurant zaten Feedback / Menu / QR cascade chain'lerinde). Default davranış zaten Postgres `NO ACTION` ≈ `RESTRICT` (hard-delete bloke), istediğimiz semantik. Yorum-only dokümantasyon schema-okuyucu için niyet'i açıklıyor.
+İki implicit-default `@relation` directive'i (`Restaurant.user`, `AdminUser.restaurant`) için açıklayıcı yorum eklenmesi denendi ama Prisma 6 validator'u bu modelde `Restrict` ve `NoAction` annotation'larını **multi-path cascade graph'inde cyclic referential action olarak** reddediyor (Restaurant zaten Feedback / Menu / QR cascade chain'lerinde). Schema annotation değişikliği bu yüzden **uygulanmadı**; default davranış zaten Postgres `NO ACTION` ≈ `RESTRICT` (hard-delete bloke), istediğimiz semantik. Niyet bu §'de + `SECURITY_AUDIT_REPORT.md` cascade section'ında dokümante.
 
 #### KVKK "right to be forgotten" — açık scope
 

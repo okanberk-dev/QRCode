@@ -414,23 +414,27 @@ cascade chain ever drifts.
 | `LegalDocumentRevision` | `documentId` | `SetNull` | same |
 | `LegalConsent` | `documentId` | `SetNull` | KVKK consent decoupled from doc lifetime |
 
-### Two implicit-default `@relation` directives — comment-only documentation
+### Two implicit-default `@relation` directives — left as-is
 
-- `Restaurant.user → User`: detailed inline comment added documenting
-  that User hard-delete is unsupported (CLAUDE.md §34.5 soft-delete is
-  the only sanctioned path).
-- `AdminUser.restaurant → Restaurant`: detailed inline comment
-  pointing at the manual `adminUser.deleteMany` cleanup in
-  `/api/restaurants/[id]` DELETE.
+`Restaurant.user → User` and `AdminUser.restaurant → Restaurant`
+both use Prisma's implicit `onDelete` default, which maps to
+Postgres `NO ACTION` ≈ `RESTRICT` — the exact runtime behaviour
+this audit wanted (User / Restaurant hard-delete aborts when
+dependents exist).
 
-We did **not** annotate either side with an explicit `onDelete:`
-clause. Both `Restrict` and `NoAction` are rejected by Prisma 6's
-validator with a *cyclic referential action* error because the
-Restaurant model already participates in multi-path `Cascade` chains
-(Feedback / Menu / QR / Analytics all cascade). The implicit default
-maps to Postgres `NO ACTION` ≈ `RESTRICT`, which is the runtime
-behaviour we wanted in the first place — the comments make the intent
-visible to schema readers without breaking `prisma validate`.
+We attempted to make the directives explicit (first with `Restrict`,
+then with `NoAction`, then with descriptive inline comments) and
+each variant tripped Prisma 6's *cyclic referential action*
+validator: the Restaurant model already participates in multi-path
+`Cascade` chains (Feedback / Menu / QR / Analytics) and the
+validator refuses to accept a second referential action on the same
+graph node — even when the addition is behaviour-equivalent to the
+default it would replace.
+
+Schema is therefore left at its existing state. The intent — soft-
+delete pattern (CLAUDE.md §34.5) for User; manual `adminUser.deleteMany`
+cleanup for Restaurant DELETE — is documented in CLAUDE.md §37.9
+and in this section.
 
 ### KVKK "right to be forgotten" — open scope
 
