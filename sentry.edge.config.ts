@@ -1,8 +1,10 @@
 import * as Sentry from '@sentry/nextjs';
 
-if (process.env.SENTRY_DSN) {
+const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
+
+if (dsn) {
   Sentry.init({
-    dsn: process.env.SENTRY_DSN,
+    dsn,
     // KVKK / GDPR — see comment in sentry.server.config.ts.
     sendDefaultPii: false,
     tracesSampleRate: process.env.NODE_ENV === 'development' ? 1.0 : 0.1,
