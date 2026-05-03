@@ -188,6 +188,7 @@ Bu oturumda yapılan kalıcı kararlar:
 - Recharts `ResponsiveContainer` ölçüm uyarısı (`width(-1) height(-1)`) için `src/components/charts/MeasuredChart.tsx` eklendi. Yeni Recharts kullanımında önce pozitif `ResizeObserver` ölçümü al, sonra numeric `width/height` ile chart render et.
 - Chrome DevTools'taki `chrome-extension://... content-script-start.js`, `runtime.lastError: Receiving end does not exist`, `inpage.js Failed to connect to MetaMask` satırları uygulama hatası değil; tarayıcı eklentisi gürültüsü. Ürün tarafında sadece gerçek app kaynaklı warning/error'lar fixlenir.
 - Pulse AI owner auto-draft toggle'ı uçtan uca bağlandı: `enableAiDraft=false` iken yeni düşük puanlarda background draft yok, feedback seçimi otomatik suggestion üretmez, draft endpoint'i null döner ve toggle kapatılırken bekleyen `FeedbackAiDraft` kayıtları temizlenir. Manuel "Yeniden öner" bilinçli kullanıcı aksiyonu olarak çalışmaya devam eder.
+- 2026-05-03 production Sentry audit: Vercel env listesinde `NEXT_PUBLIC_SENTRY_DSN` Production/Preview/Development scope'larında var, fakat `SENTRY_DSN` yok. Server/edge config artık `SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN` ile init olur; client config zaten public DSN kullanır. Bu sayede `instrumentation.ts` `onRequestError` hook'u production server hatalarını no-op bırakmaz. `GET /api/sentry-test` smoke endpoint'i bu iki DSN'den biriyle test edilir.
 
 ### Platform dağılımı nerede gösteriliyor?
 - **Admin paneli** (`src/app/admin/dashboard/page.tsx`) → `<PlatformDistribution>` (detaylı bar chart + pills). Eskiden üstte ayrı bir "Platform Mini Cards" grid'i vardı — duplikasyon olduğu için kaldırıldı (2026-04).
@@ -573,7 +574,7 @@ Public path (`/api/restaurants?slug=`) zaten Faz 1'de süpürüldü (PR #118). S
 **Opsiyonel:**
 - `OPENAI_API_KEY` — Pulse AI yanıt önerileri için (§15). Yoksa endpoint deterministik şablona düşer, UI çalışmaya devam eder.
 - `OPENAI_MODEL` — Varsayılan `gpt-4o-mini`.
-- `SENTRY_DSN` + `NEXT_PUBLIC_SENTRY_DSN` — error tracking (§26). Yoksa SDK no-op çalışır. Vercel Sentry Marketplace integration tüm Sentry env'lerini (`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` dahil) otomatik provision eder.
+- `SENTRY_DSN` veya `NEXT_PUBLIC_SENTRY_DSN` — error tracking (§26). Server/edge runtime `SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN` ile init olur; client yalnızca `NEXT_PUBLIC_SENTRY_DSN` kullanır. Yoksa SDK no-op çalışır. Vercel Sentry Marketplace integration source-map upload için ayrıca `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` sağlayabilir.
 - `NEXT_PUBLIC_FIREBASE_*` (4 env) — Google Sign-in için Firebase client config. Yoksa Google OAuth butonu disable, e-posta+şifre auth çalışmaya devam eder.
 - `FIREBASE_AUTH_PROXY_TARGET` — `next.config.ts` rewrite hedefi (Firebase Auth proxy). `__/auth/*` ve `__/firebase/init.json` path'lerini Firebase'e yönlendirir. Boşsa rewrite eklenmez.
 - `FIREBASE_ADMIN_PROJECT_ID` — server-side Firebase Admin SDK için.
@@ -2931,15 +2932,15 @@ Bundle README + user prompt: *"mobil uygulama değil responsive olacak sadece"*.
 
 ## 26. Sentry — Hata İzleme & Performans
 
-`@sentry/nextjs` ^10.51 ile **production gözlem** katmanı. Vercel Sentry Marketplace integration kuruldu — env'ler (`SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`) Production + Preview + Development scope'larında otomatik provision. Lokal dev'de DSN yoksa SDK tamamen no-op.
+`@sentry/nextjs` ^10.51 ile **production gözlem** katmanı. Server/edge runtime `SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN` ile init olur; client runtime `NEXT_PUBLIC_SENTRY_DSN` kullanır. Vercel Sentry Marketplace integration ayrıca source-map upload için `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` sağlayabilir. Lokal dev'de DSN yoksa SDK tamamen no-op.
 
 ### 26.1 Dosya yapısı (canonical SDK skill pattern)
 
 | Dosya | Görev |
 |---|---|
 | `instrumentation.ts` | `register()` runtime'a göre lazy import + `onRequestError = Sentry.captureRequestError` (Next 15 unhandled server error hook, SDK >= 8.28) |
-| `sentry.server.config.ts` | Server runtime init; `includeLocalVariables: true` (stack trace'de local vars) |
-| `sentry.edge.config.ts` | Edge runtime init |
+| `sentry.server.config.ts` | Server runtime init; DSN fallback `SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN`; `includeLocalVariables: true` (stack trace'de local vars) |
+| `sentry.edge.config.ts` | Edge runtime init; DSN fallback `SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN` |
 | `instrumentation-client.ts` | Browser init + `Sentry.replayIntegration()` + `onRouterTransitionStart` |
 | `src/app/global-error.tsx` | Branded safe-mode uncaught boundary; `reportBoundaryError('global-error-boundary', error)` + retry/home CTA |
 | `next.config.ts` | Koşulsuz `withSentryConfig` wrap; auth token yoksa source-map upload silently skip |
@@ -2958,7 +2959,7 @@ Resmi skill `sendDefaultPii: true` öner — restoran müşteri verileri için y
 
 ### 26.4 Smoke test
 
-`GET /api/sentry-test` — kasıtlı 500 fırlatır (`Error: [Sentry smoke test] Synthetic error...`), tag `sentry.smoketest=true`. Production'da default disable, `ENABLE_SENTRY_TEST=1` env ile aç. Doğrulama sonrası endpoint kullanılmaz, kalabilir.
+`GET /api/sentry-test` — kasıtlı 500 fırlatır (`Error: [Sentry smoke test] Synthetic error...`), tag `sentry.smoketest=true`. Production'da default disable, `ENABLE_SENTRY_TEST=1` env ile aç. Doğrulama için `SENTRY_DSN` veya `NEXT_PUBLIC_SENTRY_DSN` yeterlidir; endpoint kullanılınca Sentry'de 30 sn içinde issue oluşmalı. Doğrulama sonrası endpoint kullanılmaz, kalabilir.
 
 ### 26.5 Manuel capture pattern'leri (opsiyonel)
 
