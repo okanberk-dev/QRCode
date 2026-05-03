@@ -18,19 +18,20 @@ export async function GET(
   try {
     const restaurant = await prisma.restaurant.findUnique({
       where: { id },
-      select: { id: true, enableAiDraft: true, aiDraftTone: true },
+      select: { id: true, enableAiDraft: true, googleAiEnabled: true, aiDraftTone: true },
     });
     if (!restaurant) {
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
     return NextResponse.json({
       enableAiDraft: restaurant.enableAiDraft,
+      googleAiEnabled: restaurant.googleAiEnabled,
       aiDraftTone: coerceTone(restaurant.aiDraftTone, 'warm'),
     });
   } catch (err) {
     console.error('[ai-settings GET] failed:', err);
     // Schema drift fallback — pretend disabled so UI renders.
-    return NextResponse.json({ enableAiDraft: false, aiDraftTone: 'warm', degraded: true });
+    return NextResponse.json({ enableAiDraft: false, googleAiEnabled: true, aiDraftTone: 'warm', degraded: true });
   }
 }
 
@@ -42,16 +43,19 @@ export async function PATCH(
   const access = await requireRestaurantAccess(req, id);
   if (!access.ok) return access.res;
 
-  let body: { enableAiDraft?: unknown; aiDraftTone?: unknown } = {};
+  let body: { enableAiDraft?: unknown; googleAiEnabled?: unknown; aiDraftTone?: unknown } = {};
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  const data: { enableAiDraft?: boolean; aiDraftTone?: string } = {};
+  const data: { enableAiDraft?: boolean; googleAiEnabled?: boolean; aiDraftTone?: string } = {};
   if (typeof body.enableAiDraft === 'boolean') {
     data.enableAiDraft = body.enableAiDraft;
+  }
+  if (typeof body.googleAiEnabled === 'boolean') {
+    data.googleAiEnabled = body.googleAiEnabled;
   }
   if (body.aiDraftTone !== undefined) {
     if (!isValidTone(body.aiDraftTone)) {
@@ -71,10 +75,11 @@ export async function PATCH(
     const updated = await prisma.restaurant.update({
       where: { id },
       data,
-      select: { enableAiDraft: true, aiDraftTone: true },
+      select: { enableAiDraft: true, googleAiEnabled: true, aiDraftTone: true },
     });
     return NextResponse.json({
       enableAiDraft: updated.enableAiDraft,
+      googleAiEnabled: updated.googleAiEnabled,
       aiDraftTone: updated.aiDraftTone,
     });
   } catch (err) {

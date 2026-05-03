@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Calendar, Clock, Info } from "lucide-react";
+import { AlertTriangle, Clock, Info } from "lucide-react";
 import { AlertBanner, Field, Toggle } from "@/components/ui";
 import { SettingsCard } from "../SettingsCard";
 import { UnsavedChangesBar } from "../UnsavedChangesBar";
@@ -204,17 +204,6 @@ export function BusinessOperationalSettings({
             </Field>
           </div>
         )}
-      </SettingsCard>
-
-      <SettingsCard
-        icon={<Calendar size={18} />}
-        title="Sipariş & rezervasyon kabulü"
-        description="Sonraki fazla aktif olur (V2)."
-      >
-        <AlertBanner kind="info">
-          Sipariş kabulü, rezervasyon kabulü, otomatik onay, hizmet bölgeleri
-          ve tatil günleri yakında gelecek (V2 schema migration gerekiyor).
-        </AlertBanner>
       </SettingsCard>
 
       <UnsavedChangesBar

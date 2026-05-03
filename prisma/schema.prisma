@@ -166,6 +166,7 @@ model Restaurant {
   // not override. Auto-send is intentionally NOT supported — owner approval is
   // always required (KVKK + brand voice).
   enableAiDraft                 Boolean   @default(false) @map("enable_ai_draft")
+  googleAiEnabled               Boolean   @default(true) @map("google_ai_enabled")
   aiDraftTone                   String    @default("warm") @map("ai_draft_tone") // warm | formal | apologetic
   createdAt                     DateTime  @default(now()) @map("created_at")
   updatedAt                     DateTime  @updatedAt @map("updated_at")

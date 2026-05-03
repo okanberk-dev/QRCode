@@ -174,11 +174,27 @@ export async function runPlatformLinkTest(
       });
     }
     const latencyMs = Date.now() - start;
+    
+    // Yemeksepeti, Getir, Trendyol gibi platformlar Vercel/bot IP'lerini WAF ile engeller (403, 405).
+    // Domain Regex ile zaten validate edildiği için, 403/405 dönmesi aslında sunucuya ulaşıldığını gösterir.
+    let isOk = res.ok;
+    const isWafBlock = res.status === 403 || res.status === 405 || res.status === 429;
+    if (!isOk && isWafBlock && ['yemeksepeti', 'getir', 'trendyol_go', 'tripadvisor'].includes(provider)) {
+      isOk = true;
+    }
+
+    let errorMessage: string | undefined;
+    if (!isOk) {
+      if (res.status === 404) errorMessage = 'Sayfa bulunamadı.';
+      else if (isWafBlock) errorMessage = 'Bağlantı sunucu tarafından reddedildi.';
+      else errorMessage = 'Bağlantı doğrulanamadı.';
+    }
+
     result = {
-      ok: res.ok,
+      ok: isOk,
       statusCode: res.status,
       latencyMs,
-      error: res.ok ? undefined : `HTTP ${res.status}`,
+      error: errorMessage,
       url,
       checkedAt,
     };

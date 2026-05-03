@@ -7,6 +7,7 @@ import {
   Bell,
   BookOpen,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   CreditCard,
   Crown,
@@ -104,6 +105,21 @@ export default function AdminSidebar() {
   // Default missing → group is closed; we auto-expand below when an
   // active route lives inside the group.
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    setExpandedGroups(loadGroupState());
+    const collapsed = window.localStorage.getItem('buaze.admin.sidebarCollapsed') === 'true';
+    setIsCollapsed(collapsed);
+  }, []);
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      window.localStorage.setItem('buaze.admin.sidebarCollapsed', String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     setExpandedGroups(loadGroupState());
@@ -324,29 +340,35 @@ export default function AdminSidebar() {
       <div className="px-4 pt-5 pb-3">
         <Link href="/admin/dashboard" className="flex items-center gap-2.5">
           <BuazeLogo size={32} variant="on-dark" imageUrl={profile?.logoUrl} />
-          <span
-            className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
-            buaze<span className="text-[#C6F24E]">.</span>
-          </span>
+          {!isCollapsed && (
+            <span
+              className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none animate-in fade-in slide-in-from-left-2 duration-300"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              buaze<span className="text-[#C6F24E]">.</span>
+            </span>
+          )}
         </Link>
       </div>
 
       {/* Workspace switcher */}
       <div className="px-3 pb-3">
-        <div className="flex items-center gap-2.5 rounded-lg bg-[#1A1A1A] px-3 py-2.5">
+        <div className={`flex items-center gap-2.5 rounded-lg bg-[#1A1A1A] ${isCollapsed ? 'px-2 py-2 justify-center' : 'px-3 py-2.5'}`}>
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {workspaceName.charAt(0).toUpperCase()}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-semibold text-white leading-tight">{workspaceName}</p>
-            <p className="pulse-eyebrow text-white/70 mt-0.5">{workspaceMeta}</p>
-          </div>
-          <ChevronDown size={14} className="text-white/60 shrink-0" strokeWidth={2} />
+          {!isCollapsed && (
+            <>
+              <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-2 duration-300">
+                <p className="truncate text-[13px] font-semibold text-white leading-tight">{workspaceName}</p>
+                <p className="pulse-eyebrow text-white/70 mt-0.5">{workspaceMeta}</p>
+              </div>
+              <ChevronDown size={14} className="text-white/60 shrink-0" strokeWidth={2} />
+            </>
+          )}
         </div>
       </div>
 
@@ -372,14 +394,13 @@ export default function AdminSidebar() {
                   href={item.href}
                   onClick={handleNavClick}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
-                    isActive
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${isActive
                       ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold shadow-[0_2px_8px_-2px_rgba(198,242,78,0.4)]'
                       : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
-                  }`}
+                    }`}
                 >
-                  <Icon size={16} strokeWidth={2} />
-                  <span className="truncate">{item.label}</span>
+                  <Icon size={16} strokeWidth={2} className="shrink-0" />
+                  {!isCollapsed && <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>}
                 </Link>
               );
             }
@@ -400,24 +421,27 @@ export default function AdminSidebar() {
                 <button
                   type="button"
                   onClick={() => toggleGroup(item.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
-                    childActive
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${childActive
                       ? 'bg-white/[0.07] text-white font-semibold'
                       : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
-                  }`}
+                    }`}
                   aria-expanded={isExpanded}
                 >
-                  <Icon size={16} strokeWidth={2} />
-                  <span className="flex-1 truncate text-left">{item.label}</span>
-                  <ChevronRight
-                    size={14}
-                    strokeWidth={2}
-                    className={`text-white/50 transition-transform duration-200 ${
-                      isExpanded ? 'rotate-90' : ''
-                    }`}
-                  />
+                  <Icon size={16} strokeWidth={2} className="shrink-0" />
+                  {!isCollapsed && (
+                    <>
+                      <span className="flex-1 truncate text-left animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>
+                      <ChevronRight
+                        size={14}
+                        strokeWidth={2}
+                        className={`text-white/50 transition-transform duration-200 ${
+                          isExpanded ? 'rotate-90' : ''
+                        }`}
+                      />
+                    </>
+                  )}
                 </button>
-                {isExpanded && (
+                {!isCollapsed && isExpanded && (
                   <div className="mt-1 ml-5 space-y-0.5 border-l border-white/10 pl-3 pb-1">
                     {item.children.map((child) => {
                       const ChildIcon = child.icon;
@@ -428,14 +452,13 @@ export default function AdminSidebar() {
                           href={child.href}
                           onClick={handleNavClick}
                           aria-current={isActive ? 'page' : undefined}
-                          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${
-                            isActive
+                          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${isActive
                               ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
                               : 'text-white/60 hover:bg-white/5 hover:text-white font-medium'
-                          }`}
+                            }`}
                         >
-                          <ChildIcon size={14} strokeWidth={2} />
-                          <span className="truncate">{child.label}</span>
+                          <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
+                          <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">{child.label}</span>
                         </Link>
                       );
                     })}
@@ -455,34 +478,41 @@ export default function AdminSidebar() {
           >
             {initial}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
-            <p className="truncate pulse-eyebrow text-white/70 mt-0.5">{roleLabel}</p>
-          </div>
+          {!isCollapsed && (
+            <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-2 duration-300">
+              <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
+              <p className="truncate pulse-eyebrow text-white/70 mt-0.5">{roleLabel}</p>
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center justify-between px-1 py-2 border-t border-white/10">
-          <div className="flex items-center gap-1.5">
-            <Globe size={12} strokeWidth={2} className="text-white/60" />
-            <span className="pulse-eyebrow text-white/60">{t('system_language')}</span>
+        {!isCollapsed && (
+          <div className="flex items-center justify-between px-1 py-2 border-t border-white/10 animate-in fade-in duration-300">
+            <div className="flex items-center gap-1.5">
+              <Globe size={12} strokeWidth={2} className="text-white/60" />
+              <span className="pulse-eyebrow text-white/60">{t('system_language')}</span>
+            </div>
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as 'tr' | 'en')}
+              className="bg-white/10 text-white text-[11px] font-medium border-none rounded-md px-2 py-1 outline-none cursor-pointer"
+            >
+              <option value="tr" className="text-black">TR</option>
+              <option value="en" className="text-black">EN</option>
+            </select>
           </div>
-          <select
-            value={locale}
-            onChange={(e) => setLocale(e.target.value as 'tr' | 'en')}
-            className="bg-white/10 text-white text-[11px] font-medium border-none rounded-md px-2 py-1 outline-none cursor-pointer"
+        )}
+
+        <div className="flex gap-1 mt-2">
+          <button
+            onClick={handleLogout}
+            title={t('logout')}
+            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-medium text-white/60 transition-all hover:bg-white/5 hover:text-red-300 w-full`}
           >
-            <option value="tr" className="text-black">TR</option>
-            <option value="en" className="text-black">EN</option>
-          </select>
+            <LogOut size={13} strokeWidth={2} />
+            {!isCollapsed && <span>{t('logout')}</span>}
+          </button>
         </div>
-
-        <button
-          onClick={handleLogout}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-medium text-white/60 transition-all hover:bg-white/5 hover:text-red-300"
-        >
-          <LogOut size={13} strokeWidth={2} />
-          {t('logout')}
-        </button>
       </div>
     </div>
   );
@@ -490,8 +520,16 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-64 bg-[#0A0A0A] border-r border-white/5 flex-col h-full z-30 text-white">
+      <aside className={`relative hidden lg:flex bg-[#0A0A0A] border-r border-white/5 flex-col h-full z-30 text-white transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-64'}`}>
         <SidebarContent navRef={navRef} />
+        {/* Floating toggle button */}
+        <button
+          onClick={toggleSidebar}
+          aria-label={isCollapsed ? (locale === 'tr' ? 'Menüyü genişlet' : 'Expand menu') : (locale === 'tr' ? 'Menüyü daralt' : 'Collapse menu')}
+          className="absolute -right-3 top-7 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#1A1A1A] text-white/70 shadow-sm hover:text-white hover:bg-[#2A2A2A] transition-all"
+        >
+          {isCollapsed ? <ChevronRight size={13} strokeWidth={2.5} /> : <ChevronLeft size={13} strokeWidth={2.5} />}
+        </button>
       </aside>
 
       {/* Mobile top bar */}

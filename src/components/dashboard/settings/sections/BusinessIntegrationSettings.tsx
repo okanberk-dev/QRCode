@@ -317,7 +317,6 @@ export function BusinessIntegrationSettings({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
-  const [retestingAll, setRetestingAll] = useState(false);
   const [latestChecks, setLatestChecks] = useState<Record<string, LatestCheck>>({});
 
   useEffect(() => {
@@ -482,7 +481,7 @@ export function BusinessIntegrationSettings({
   };
 
   const runTest = async (urlKey: string, testProvider: IntegrationProvider) => {
-    if (testing || retestingAll) return;
+    if (testing) return;
     if (dirty) {
       setError(
         locale === "tr"
@@ -526,70 +525,6 @@ export function BusinessIntegrationSettings({
     }
   };
 
-  const handleRetestAll = async () => {
-    if (retestingAll || testing) return;
-    if (dirty) {
-      setError(
-        locale === "tr"
-          ? "Yeniden test etmeden önce değişiklikleri kaydet."
-          : "Save changes before retesting.",
-      );
-      return;
-    }
-    setRetestingAll(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const res = await fetch(
-        `/api/restaurants/${restaurant.id}/integrations/retest`,
-        { method: "POST" },
-      );
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(
-          data?.error ||
-            (locale === "tr" ? "Yeniden test başarısız." : "Retest failed."),
-        );
-      }
-      const data = await res.json();
-      const updates: Record<string, LatestCheck> = {};
-      for (const r of (data.results ?? []) as Array<{
-        provider: string;
-        ok: boolean;
-        statusCode: number;
-        latencyMs: number;
-        error?: string;
-        checkedAt: string;
-      }>) {
-        updates[r.provider] = {
-          ok: r.ok,
-          statusCode: r.statusCode || null,
-          latencyMs: r.latencyMs || null,
-          error: r.error ?? null,
-          checkedAt: r.checkedAt,
-          source: "retest_all",
-        };
-      }
-      setLatestChecks((prev) => ({ ...prev, ...updates }));
-      const checked = data.checked ?? 0;
-      setSuccess(
-        locale === "tr"
-          ? `${checked} platform yeniden test edildi.`
-          : `${checked} platforms retested.`,
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : locale === "tr"
-            ? "Yeniden test sırasında hata oluştu."
-            : "Retest failed.",
-      );
-    } finally {
-      setRetestingAll(false);
-    }
-  };
-
   const hidden = visibleDefs.length === 0;
   const isTr = locale === "tr";
 
@@ -624,20 +559,6 @@ export function BusinessIntegrationSettings({
             ? "Google, Yemeksepeti, Getir, Trendyol, Tripadvisor ve diğer platform linklerinizi tek yerden yönetin. Buaze linklerinizi doğrular, erişilebilirliğini test eder ve QR akışlarında doğru yönlendirme yapmanıza yardımcı olur."
             : "Manage your Google, delivery, travel, social and reservation links from one place. Buaze validates your links, checks reachability, and helps your QR flows route customers safely."}
         </p>
-        <button
-          type="button"
-          onClick={handleRetestAll}
-          disabled={retestingAll || testing !== null || dirty}
-          className="bz-btn-ghost shrink-0 inline-flex items-center justify-center gap-1.5 rounded-full text-[13px]"
-          style={{ minHeight: 40 }}
-        >
-          {retestingAll ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <RefreshCw size={14} />
-          )}
-          {isTr ? "Tümünü yeniden test et" : "Retest all"}
-        </button>
       </div>
       <AlertBanner kind="info">
         {isTr
@@ -690,6 +611,7 @@ export function BusinessIntegrationSettings({
               return (
                 <IntegrationCard
                   key={def.id}
+                  showTest={def.id === "google"}
                   logo={<PlatformChip id={def.id} size={36} />}
                   label={def.label}
                   status={status}
@@ -705,7 +627,6 @@ export function BusinessIntegrationSettings({
                   locale={locale}
                   testDisabled={
                     dirty ||
-                    retestingAll ||
                     fieldQuality[def.urlKey]?.result.severity === "error"
                   }
                   toggle={
@@ -759,6 +680,7 @@ export function BusinessIntegrationSettings({
             return (
               <CompactIntegrationCard
                 key={def.key as string}
+                showTest={false}
                 logo={logo}
                 label={def.label}
                 status={status}
@@ -774,7 +696,6 @@ export function BusinessIntegrationSettings({
                 locale={locale}
                 testDisabled={
                   dirty ||
-                  retestingAll ||
                   fieldQuality[def.key]?.result.severity === "error"
                 }
               />
@@ -864,6 +785,7 @@ interface IntegrationCardQuality {
 }
 
 interface IntegrationCardProps {
+  showTest?: boolean;
   logo: React.ReactNode;
   label: string;
   status: IntegrationStatusKind;
@@ -883,6 +805,7 @@ interface IntegrationCardProps {
 }
 
 function IntegrationCard({
+  showTest = false,
   logo,
   label,
   status,
@@ -957,7 +880,7 @@ function IntegrationCard({
           visible on phones even when the action row wraps. Mount fetch
           (GET /integrations/checks) hydrates this; manual + retest_all
           test'ler buraya overwrite eder. */}
-      {latestCheck && (
+      {latestCheck && showTest && (
         <div className="mt-3">
           <LatestCheckLine check={latestCheck} locale={locale} />
         </div>
@@ -966,16 +889,18 @@ function IntegrationCard({
       {/* Actions — full-width grid on mobile (44px+ touch targets), inline
           flex on tablet/desktop. */}
       <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end">
-        <button
-          type="button"
-          onClick={onTest}
-          disabled={!url || testing || testDisabled}
-          className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px] sm:text-[12px]"
-          style={{ minHeight: 40 }}
-        >
-          {testing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          Test et
-        </button>
+        {showTest && (
+          <button
+            type="button"
+            onClick={onTest}
+            disabled={!url || testing || testDisabled}
+            className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px] sm:text-[12px]"
+            style={{ minHeight: 40 }}
+          >
+            {testing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            Test et
+          </button>
+        )}
         {url ? (
           <a
             href={url}
@@ -1048,9 +973,9 @@ function LatestCheckLine({
           <strong>{isTr ? "Son test başarısız" : "Last test failed"}</strong>
           <span className="text-[#7F1D1D] ml-1">· {relative}</span>
         </div>
-        {(check.error || check.statusCode) && (
+        {check.error && (
           <div className="mt-0.5 text-[11px] text-[#7F1D1D] break-words">
-            {check.error || `HTTP ${check.statusCode}`}
+            {check.error}
           </div>
         )}
       </div>
@@ -1101,6 +1026,7 @@ function FallbackIconChip({ children }: { children: React.ReactNode }) {
 }
 
 function CompactIntegrationCard({
+  showTest = false,
   logo,
   label,
   url,
@@ -1151,16 +1077,18 @@ function CompactIntegrationCard({
         </div>
         
         <div className="flex items-center gap-1.5 shrink-0 justify-end">
-          <button
-            type="button"
-            onClick={onTest}
-            disabled={!url || testing || testDisabled}
-            className="bz-btn-ghost inline-flex items-center justify-center rounded-full"
-            style={{ width: 36, height: 36 }}
-            title="Test et"
-          >
-            {testing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-          </button>
+          {showTest && (
+            <button
+              type="button"
+              onClick={onTest}
+              disabled={!url || testing || testDisabled}
+              className="bz-btn-ghost inline-flex items-center justify-center rounded-full"
+              style={{ width: 36, height: 36 }}
+              title="Test et"
+            >
+              {testing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            </button>
+          )}
           {url && (
             <a
               href={url}
@@ -1186,7 +1114,7 @@ function CompactIntegrationCard({
           )}
         </div>
       </div>
-      {latestCheck && (
+      {latestCheck && showTest && (
         <div className="mt-2 sm:ml-[156px]">
           <LatestCheckLine check={latestCheck} locale={locale} />
         </div>

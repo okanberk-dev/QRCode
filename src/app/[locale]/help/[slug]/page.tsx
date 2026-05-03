@@ -51,11 +51,41 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
   };
 }
 
+function extractHeadings(html: string) {
+  const matches = [...html.matchAll(/<h2[^>]*>(.*?)<\/h2>/gi)];
+  return matches
+    .map((match) => match[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, 8)
+    .map((text) => ({ text, id: slugifyHeading(text) }));
+}
+
+function slugifyHeading(value: string) {
+  return value
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+function addHeadingAnchors(html: string) {
+  return html.replace(/<h2>(.*?)<\/h2>/gi, (_match, inner: string) => {
+    const text = inner.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    return `<h2 id="${slugifyHeading(text)}">${inner}</h2>`;
+  });
+}
+
 /**
  * Help article detail — breadcrumb, prose body, related articles.
- * Follows the blog/[slug] pattern but with help-specific chrome:
- * category eyebrow, sidebar-free single column (640px) and related
- * list below.
+ * Follows the blog/[slug] pattern with category eyebrow, TOC sidebar,
+ * and related list below.
  */
 export default async function HelpArticlePage({ params }: PageParams) {
   const { locale, slug } = await params;
@@ -101,6 +131,9 @@ export default async function HelpArticlePage({ params }: PageParams) {
       .map((item) => ({ slug: item.slug, title: item.title, excerpt: item.excerpt }));
   }
 
+  const contentWithAnchors = addHeadingAnchors(sanitizeBlogContent(article.body));
+  const tocItems = extractHeadings(contentWithAnchors);
+
   const articleJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -145,7 +178,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
 
       {/* Header — breadcrumb + category + title */}
       <section className="border-b border-[#EDEDED] bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[760px]">
+        <div className="mx-auto max-w-[1000px]">
           <nav
             aria-label={isTr ? 'Site yolu' : 'Breadcrumb'}
             className="mb-6 flex flex-wrap items-center gap-1.5 text-[12px] text-[#737373]"
@@ -193,46 +226,80 @@ export default async function HelpArticlePage({ params }: PageParams) {
       </section>
 
       {/* Body */}
-      <main className="mx-auto max-w-[720px] px-5 sm:px-10 py-[60px] sm:py-14">
-        <article
-          className="prose prose-lg max-w-none
-            prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
-            prose-h2:text-[26px] prose-h2:mt-10 prose-h2:mb-4
-            prose-h3:text-[19px] prose-h3:mt-7 prose-h3:mb-3
-            prose-p:text-[#0A0A0A] prose-p:leading-[1.7] prose-p:mb-5 prose-p:text-[16px]
-            prose-strong:font-medium prose-strong:text-[#0A0A0A]
-            prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#A8D62E]
-            prose-li:text-[#0A0A0A] prose-li:leading-[1.7]
-            prose-blockquote:border-l-2 prose-blockquote:border-[#C6F24E] prose-blockquote:pl-5 prose-blockquote:text-[#525252] prose-blockquote:not-italic
-            break-words"
-          // Defence-in-depth — `article.body` may come from `HelpArticle`
-          // (admin-authored row in DB) or from the in-repo static array.
-          // The static array is developer-controlled, but the DB path is
-          // an admin XSS sink reaching every customer that lands on the
-          // help page. Pass through the same tag/href/protocol whitelist
-          // we use for blog content.
-          dangerouslySetInnerHTML={{ __html: sanitizeBlogContent(article.body) }}
-        />
+      <main className="mx-auto max-w-[1000px] px-5 sm:px-10 py-[60px] sm:py-14">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-16">
+          {/* Left - TOC */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              {tocItems.length > 0 && (
+                <nav aria-label={isTr ? 'İçindekiler' : 'Table of Contents'}>
+                  <div className="pulse-eyebrow text-[#737373] mb-3.5">
+                    {isTr ? 'İçindekiler' : 'Contents'}
+                  </div>
+                  <div className="flex flex-col border-l border-[#EDEDED]">
+                    {tocItems.map((item, index) => (
+                      <a
+                        key={`${item.id}-${index}`}
+                        href={`#${item.id}`}
+                        className={`relative -ml-px py-2.5 pl-4 text-[13px] leading-[1.4] transition-colors border-l-2 ${
+                          index === 0
+                            ? 'border-[#C6F24E] font-semibold text-[#0A0A0A]'
+                            : 'border-transparent text-[#737373] hover:text-[#0A0A0A]'
+                        }`}
+                      >
+                        <span
+                          className="mr-2 text-[10px] tracking-[0.08em] text-[#A3A3A3]"
+                          style={{ fontFamily: 'var(--font-mono)' }}
+                        >
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        {item.text}
+                      </a>
+                    ))}
+                  </div>
+                </nav>
+              )}
+            </div>
+          </aside>
 
-        {/* Contact CTA (footer-of-article) */}
-        <div className="mt-12 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-6 sm:p-7">
-          <h2
-            className="text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]"
-          >
-            {isTr ? 'Sorun çözülmedi mi?' : 'Did this not solve it?'}
-          </h2>
-          <p className="mt-2 text-[14px] text-[#525252]">
-            {isTr
-              ? 'Destek ekibimize yaz, 2 saat içinde dönelim. Ortalama yanıt süremiz 12 dakika.'
-              : "Write to our support team — we reply within 2 hours. Our median reply time is 12 minutes."}
-          </p>
-          <Link
-            href={`${base}/contact`}
-            className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
-          >
-            {isTr ? 'İletişime geç' : 'Contact support'}
-            <ArrowRight size={14} />
-          </Link>
+          {/* Right - Content */}
+          <div className="min-w-0">
+            <article
+              className="pulse-blog-content prose prose-lg max-w-none
+                prose-headings:font-medium prose-headings:text-[#0A0A0A] prose-headings:tracking-[-0.02em]
+                prose-h2:text-[26px] sm:prose-h2:text-[32px] prose-h2:mt-12 prose-h2:mb-4
+                prose-h3:text-[20px] prose-h3:mt-8 prose-h3:mb-3
+                prose-p:text-[#525252] prose-p:leading-[1.75] prose-p:mb-6 prose-p:text-[16px]
+                prose-strong:font-semibold prose-strong:text-[#0A0A0A]
+                prose-a:text-[#0A0A0A] prose-a:font-medium prose-a:underline prose-a:decoration-[#C6F24E] prose-a:decoration-2 prose-a:underline-offset-4 hover:prose-a:text-[#A8D62E]
+                prose-li:text-[#525252] prose-li:leading-[1.7]
+                prose-blockquote:border-l-2 prose-blockquote:border-[#C6F24E] prose-blockquote:pl-5 prose-blockquote:text-[#525252] prose-blockquote:not-italic
+                prose-img:rounded-2xl prose-img:border prose-img:border-[#EDEDED]
+                prose-hr:border-[#EDEDED]
+                break-words"
+              style={{ fontFamily: 'var(--font-body)' }}
+              dangerouslySetInnerHTML={{ __html: contentWithAnchors }}
+            />
+
+            {/* Contact CTA (footer-of-article) */}
+            <div className="mt-16 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-6 sm:p-7">
+              <h2 className="text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+                {isTr ? 'Sorun çözülmedi mi?' : 'Did this not solve it?'}
+              </h2>
+              <p className="mt-2 text-[14px] text-[#525252]">
+                {isTr
+                  ? 'Destek ekibimize yaz, 2 saat içinde dönelim. Ortalama yanıt süremiz 12 dakika.'
+                  : "Write to our support team — we reply within 2 hours. Our median reply time is 12 minutes."}
+              </p>
+              <Link
+                href={`${base}/contact`}
+                className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
+              >
+                {isTr ? 'İletişime geç' : 'Contact support'}
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
         </div>
       </main>
 

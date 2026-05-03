@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
@@ -23,13 +24,20 @@ export async function GET(
   const { id } = await params;
   if (!(await canAccessRestaurant(actor, id))) return ApiErrors.forbidden();
 
-  const reviewManagementEnabled = await googleReviewManagementEnabled(id);
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id },
+    select: { googleReviewManagementEnabled: true, googleAiEnabled: true },
+  });
+
+  const reviewManagementEnabled = restaurant?.googleReviewManagementEnabled ?? false;
+  const googleAiEnabled = restaurant?.googleAiEnabled ?? true;
   const integration = await getGoogleIntegrationForRestaurant(actor, id);
   const cache = parseGoogleLocationsCache(integration?.locationsJson ?? null);
   const selectedLocation = selectedGoogleLocation(cache, id);
 
   return NextResponse.json({
     googleReviewManagementEnabled: reviewManagementEnabled,
+    googleAiEnabled,
     placesConfigured: googlePlacesConfigured(),
     oauthConfigured: googleOAuthConfigured(),
     connected: Boolean(integration),

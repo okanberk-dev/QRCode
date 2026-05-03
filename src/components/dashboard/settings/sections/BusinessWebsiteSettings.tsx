@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Code, Copy, Check, Globe, Info, Loader2, Sparkles } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Copy, Check, Info, Sparkles } from 'lucide-react';
 import { AlertBanner, Eyebrow } from '@/components/ui';
 import EmbedBrowserPreview from './EmbedBrowserPreview';
 import type { Locale } from '@/lib/translations';
@@ -15,45 +15,20 @@ interface BusinessWebsiteSettingsProps {
   locale?: Locale;
 }
 
-interface DomainStat {
-  domain: string;
-  count: number;
-  firstSeen: string | null;
-  lastSeen: string | null;
-}
-
-interface StatsResponse {
-  totalViews: number;
-  byDomain: DomainStat[];
-  days: number;
-}
-
 const APP_URL =
   typeof process !== 'undefined' && process.env.NEXT_PUBLIC_APP_URL
     ? process.env.NEXT_PUBLIC_APP_URL
     : 'https://buaze.com';
 
-function relativeTime(iso: string | null, isTr: boolean): string {
-  if (!iso) return '—';
-  const diff = Date.now() - new Date(iso).getTime();
-  if (diff < 0) return '—';
-  const m = Math.floor(diff / 60_000);
-  if (m < 60) return isTr ? `${m} dk önce` : `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return isTr ? `${h} sa önce` : `${h}h ago`;
-  const d = Math.floor(h / 24);
-  if (d < 30) return isTr ? `${d} gün önce` : `${d}d ago`;
-  const mo = Math.floor(d / 30);
-  return isTr ? `${mo} ay önce` : `${mo}mo ago`;
-}
-
 /**
- * Web sitesi widget — embed kod kopyala + tema/boyut + browser-frame
- * önizleme + kullanan siteler. Settings tab içinde gömülü ("keşif"
- * pattern, ana navigasyonda flag yok).
+ * Web sitesi widget — embed kod kopyala + tema/boyut + browser-frame önizleme.
+ * Settings tab içinde gömülü ("keşif" pattern, ana navigasyonda flag yok).
+ *
+ * Not: Widget kullanan siteler (embed analytics) owner panelinden kaldırıldı.
+ * Sadece admin paneli /admin/restaurants/[id] üzerinden görülebilir.
  */
 export function BusinessWebsiteSettings({
-  restaurantId,
+  restaurantId: _restaurantId,
   slug,
   businessName,
   website,
@@ -66,40 +41,7 @@ export function BusinessWebsiteSettings({
   const [scriptMode, setScriptMode] = useState<'iframe' | 'script'>('iframe');
   const [copied, setCopied] = useState(false);
 
-  const [stats, setStats] = useState<StatsResponse | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [statsError, setStatsError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setStatsLoading(true);
-    setStatsError(null);
-    (async () => {
-      try {
-        const res = await fetch(
-          `/api/restaurants/${restaurantId}/embed-stats?days=30&limit=10`,
-        );
-        if (!cancelled && res.ok) {
-          setStats((await res.json()) as StatsResponse);
-        } else if (!cancelled) {
-          setStatsError(isTr ? 'Veriler alınamadı.' : 'Stats failed to load.');
-        }
-      } catch {
-        if (!cancelled) setStatsError(isTr ? 'Ağ hatası.' : 'Network error.');
-      } finally {
-        if (!cancelled) setStatsLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [restaurantId, isTr]);
-
   const embedSnippet = useMemo(() => {
-    // Variant → iframe height map. Each layout reserves vertical space for
-    // its content; numbers tuned against the actual server-rendered heights.
-    // Inlined inside useMemo so the constant doesn't drift into the deps
-    // array of an outer Memo.
     const heights: Record<typeof variant, number> = {
       badge: 110,
       spotlight: 320,
@@ -142,7 +84,7 @@ export function BusinessWebsiteSettings({
           <Eyebrow>{isTr ? 'WEB SİTESİ ENTEGRASYONU' : 'WEBSITE INTEGRATION'}</Eyebrow>
           <div className="bz-h-tight mt-1 text-[18px]">
             {isTr
-              ? 'İşletmenizin web sitesine Buaze yorum widget’ı'
+              ? 'İşletmenizin web sitesine Buaze yorum widget\u2019ı'
               : 'Buaze review widget for your business website'}
           </div>
           <p className="mt-1 text-[12.5px] text-[#525252]">
@@ -279,8 +221,8 @@ export function BusinessWebsiteSettings({
         {/* Privacy disclosure */}
         <AlertBanner kind="info" icon={<Info size={14} />}>
           {isTr
-            ? 'Widget kullanımında anonim trafik verisi (IP, referans alan adı) toplanır. Sitenizin Gizlilik Politikası’nda belirtmenizi öneririz.'
-            : 'Widget collects anonymous traffic data (IP, referrer hostname). Mention this in your site’s Privacy Policy.'}
+            ? 'Widget kullan\u0131m\u0131nda anonim trafik verisi (IP, referans alan ad\u0131) toplan\u0131r. Sitenizin Gizlilik Politikas\u0131\u2019nda belirtmenizi \u00f6neririz.'
+            : "Widget collects anonymous traffic data (IP, referrer hostname). Mention this in your site\u2019s Privacy Policy."}
         </AlertBanner>
       </div>
 
@@ -298,71 +240,6 @@ export function BusinessWebsiteSettings({
           variant={variant}
           isTr={isTr}
         />
-      </section>
-
-      {/* Kullanan siteler */}
-      <section className="bz-card p-4 sm:p-5">
-        <header className="mb-3 flex items-center gap-2">
-          <Globe size={14} className="text-[#0A0A0A]" />
-          <Eyebrow>{isTr ? 'KULLANAN SİTELER' : 'SITES USING WIDGET'}</Eyebrow>
-        </header>
-        <p className="text-[12px] text-[#737373] mb-3">
-          {isTr
-            ? 'Son 30 günde widget’ınızın yüklendiği siteler.'
-            : 'Sites that loaded your widget in the last 30 days.'}
-        </p>
-
-        {statsLoading ? (
-          <div className="flex items-center gap-2 text-[12px] text-[#737373]">
-            <Loader2 className="animate-spin" size={14} />
-            {isTr ? 'Yükleniyor…' : 'Loading…'}
-          </div>
-        ) : statsError ? (
-          <AlertBanner kind="danger">{statsError}</AlertBanner>
-        ) : !stats || stats.byDomain.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-4 text-center text-[12px] text-[#737373]">
-            <Code size={20} className="mx-auto mb-2 text-[#A3A3A3]" />
-            {isTr
-              ? 'Widget henüz hiçbir siteden yüklenmedi. Yukarıdaki kodu sitenize yapıştırın.'
-              : 'Widget hasn’t been loaded from any site yet. Paste the code above into your site.'}
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-[#EDEDED]">
-            <table className="w-full text-[12px]">
-              <thead className="bg-[#FAFAFA]">
-                <tr className="text-left">
-                  <th className="px-3 py-2 pulse-eyebrow text-[#737373]">
-                    {isTr ? 'ALAN ADI' : 'DOMAIN'}
-                  </th>
-                  <th className="px-3 py-2 pulse-eyebrow text-[#737373] text-right">
-                    {isTr ? 'GÖRÜNTÜ' : 'VIEWS'}
-                  </th>
-                  <th className="px-3 py-2 pulse-eyebrow text-[#737373] text-right">
-                    {isTr ? 'SON' : 'LAST'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.byDomain.map((d) => (
-                  <tr key={d.domain} className="border-t border-[#EDEDED]">
-                    <td className="px-3 py-2 font-medium truncate max-w-[260px]">{d.domain}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {d.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-                    </td>
-                    <td className="px-3 py-2 text-right text-[#737373]">
-                      {relativeTime(d.lastSeen, isTr)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="border-t border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 text-[11px] text-[#737373]">
-              {isTr
-                ? `Toplam ${stats.totalViews.toLocaleString('tr-TR')} görüntü · son 30 gün`
-                : `${stats.totalViews.toLocaleString('en-US')} total views · last 30 days`}
-            </div>
-          </div>
-        )}
       </section>
     </div>
   );
