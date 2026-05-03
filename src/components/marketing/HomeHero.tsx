@@ -398,31 +398,74 @@ function SentimentDial({ isTr }: { isTr: boolean }) {
 
 // ─────────────────────────────────────────────────────────────
 // LiveSignal — refreshing bar chart card
+//
+// Mount paradigm:
+//   1. Deterministic sin-wave seed (no Math.random on first paint) so the
+//      first frame always renders the same shape — no "shaky" first paint.
+//   2. Bars mount at height 0, then `mounted` flips on next tick and CSS
+//      transitions each bar to its initial height. A `transitionDelay`
+//      stagger (28ms · index) gives a Linear-style "rising" entrance.
+//   3. Live updates every 1.1s with a low-pass filter (last * 0.7 + new
+//      random * 0.3) so the chart breathes smoothly instead of jittering.
+//   4. The accent (rightmost 4 bars) stays lime-tinted so the visual
+//      hierarchy is stable even as the data shifts.
 // ─────────────────────────────────────────────────────────────
 
+const SIGNAL_BAR_COUNT = 22;
+const SIGNAL_TICK_MS = 1100;
+const SIGNAL_MOUNT_STAGGER_MS = 28;
+
+function deterministicSeed(count: number): number[] {
+  // Smooth wave: sine + cosine layered + slight upward bias toward the
+  // newer (right) edge so the chart reads as "growing momentum".
+  return Array.from({ length: count }, (_, i) => {
+    const phase = (i / count) * Math.PI * 2;
+    const wave = 28 * Math.sin(phase * 1.1) + 14 * Math.cos(phase * 0.6);
+    const trend = (i / count) * 18; // gentle right-ward bias
+    return Math.round(Math.max(32, Math.min(88, 50 + wave + trend)));
+  });
+}
+
 function LiveSignal({ isTr }: { isTr: boolean }) {
-  const [bars, setBars] = useState<number[]>(() =>
-    Array.from(
-      { length: 22 },
-      (_, i) => 30 + Math.random() * 50 + (i / 22) * 20,
-    ),
-  );
+  const [bars, setBars] = useState<number[]>(() => deterministicSeed(SIGNAL_BAR_COUNT));
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Two RAF ticks ensure the browser commits the 0-height paint before we
+    // flip to the seeded heights — without this the transition is skipped
+    // because React batches the initial render and the height update.
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setMounted(true));
+    });
+
     const reduced =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
-    const t = setInterval(() => {
-      setBars((b) => {
-        const last = b[b.length - 1];
-        return [
-          ...b.slice(1),
-          Math.max(20, Math.min(95, last + (Math.random() - 0.4) * 30)),
-        ];
+
+    if (reduced) {
+      return () => {
+        cancelAnimationFrame(raf1);
+        cancelAnimationFrame(raf2);
+      };
+    }
+
+    const tick = window.setInterval(() => {
+      setBars((prev) => {
+        const last = prev[prev.length - 1];
+        // Low-pass filter: 70% of last bar + 30% of new random delta.
+        // Centered jitter (-9..+9) and clamped (32..88) keeps the curve calm.
+        const target = last + (Math.random() - 0.5) * 18;
+        const next = Math.round(Math.max(32, Math.min(88, last * 0.7 + target * 0.3)));
+        return [...prev.slice(1), next];
       });
-    }, 600);
-    return () => clearInterval(t);
+    }, SIGNAL_TICK_MS);
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      window.clearInterval(tick);
+    };
   }, []);
 
   const total = useCountUp(1426, 1800);
@@ -452,24 +495,52 @@ function LiveSignal({ isTr }: { isTr: boolean }) {
             </span>
           </div>
         </div>
-        <div className="flex h-12 items-end gap-[3px]" aria-hidden>
-          {bars.map((h, i) => (
-            <span
-              key={i}
-              className="w-1.5 rounded-sm"
-              style={{
-                height: `${h}%`,
-                background:
-                  i === bars.length - 1
-                    ? '#C6F24E'
-                    : i > bars.length - 5
-                      ? '#A8D62E'
-                      : '#0A0A0A',
-                opacity: i < bars.length - 8 ? 0.45 + (i / bars.length) * 0.5 : 1,
-                transition: 'height .5s cubic-bezier(.4,0,.2,1)',
-              }}
-            />
-          ))}
+        <div
+          className="flex h-12 items-end gap-[3px]"
+          role="img"
+          aria-label={
+            isTr
+              ? 'Bu ay yorum akışı, son 22 dönem trendi'
+              : 'This month review flow, last 22 buckets trend'
+          }
+        >
+          {bars.map((h, i) => {
+            // Stable visual hierarchy: rightmost 4 bars carry the lime
+            // accent regardless of value updates, so the eye does not
+            // chase a moving color.
+            const tailDistance = bars.length - 1 - i;
+            const isAccent = tailDistance < 4;
+            const isPeak = tailDistance === 0;
+            const background = isPeak
+              ? '#C6F24E'
+              : isAccent
+                ? '#A8D62E'
+                : '#0A0A0A';
+            const opacity = mounted
+              ? isAccent
+                ? 1
+                : 0.4 + (i / bars.length) * 0.55
+              : 0;
+            const height = mounted ? `${h}%` : '0%';
+            return (
+              <span
+                key={i}
+                className="w-1.5 rounded-sm"
+                style={{
+                  height,
+                  background,
+                  opacity,
+                  // Mount-in stagger: each bar grows ~28ms after the
+                  // previous one. After mount, only `height` and `opacity`
+                  // change, so the same transition keeps live updates smooth.
+                  transition:
+                    'height 600ms cubic-bezier(.65,0,.35,1), opacity 400ms cubic-bezier(.4,0,.2,1)',
+                  transitionDelay: mounted ? '0ms' : `${i * SIGNAL_MOUNT_STAGGER_MS}ms`,
+                  willChange: 'height, opacity',
+                }}
+              />
+            );
+          })}
         </div>
       </div>
     </div>
