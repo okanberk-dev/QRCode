@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -112,9 +112,21 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Collapsible group state — persists across navigations via localStorage.
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
   useEffect(() => {
     setExpandedGroups(loadGroupState());
+    const collapsed = window.localStorage.getItem('buaze.owner.sidebarCollapsed') === 'true';
+    setIsCollapsed(collapsed);
   }, []);
+
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      window.localStorage.setItem('buaze.owner.sidebarCollapsed', String(next));
+      return next;
+    });
+  };
   const toggleGroup = (groupId: string) => {
     setExpandedGroups((prev) => {
       const next = { ...prev, [groupId]: !prev[groupId] };
@@ -298,29 +310,35 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       <div className="px-4 pt-5 pb-3">
         <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
           <BuazeLogo size={32} variant="on-dark" imageUrl={logoUrl} />
-          <span
-            className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none bz-h-tight"
-          >
-            buaze<span className="text-[#C6F24E]">.</span>
-          </span>
+          {!isCollapsed && (
+            <span
+              className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none bz-h-tight animate-in fade-in slide-in-from-left-2 duration-300"
+            >
+              buaze<span className="text-[#C6F24E]">.</span>
+            </span>
+          )}
         </Link>
       </div>
 
       {/* Workspace switcher */}
       <div className="px-3 pb-3">
-        <div className="flex items-center gap-2.5 rounded-lg bg-[#1A1A1A] px-3 py-2.5">
+        <div className={`flex items-center gap-2.5 rounded-lg bg-[#1A1A1A] ${isCollapsed ? 'px-2 py-2 justify-center' : 'px-3 py-2.5'}`}>
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold bz-h-tight"
           >
             {primaryInitial}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-semibold text-white leading-tight">{primaryName}</p>
-            <p className="pulse-eyebrow text-white/70 mt-0.5">
-              {locationCount} {locale === 'tr' ? 'KONUM' : 'LOCATIONS'}
-            </p>
-          </div>
-          <ChevronDown size={14} className="text-white/60 shrink-0" strokeWidth={2} />
+          {!isCollapsed && (
+            <>
+              <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-2 duration-300">
+                <p className="truncate text-[13px] font-semibold text-white leading-tight">{primaryName}</p>
+                <p className="pulse-eyebrow text-white/70 mt-0.5">
+                  {locationCount} {locale === 'tr' ? 'KONUM' : 'LOCATIONS'}
+                </p>
+              </div>
+              <ChevronDown size={14} className="text-white/60 shrink-0" strokeWidth={2} />
+            </>
+          )}
         </div>
       </div>
 
@@ -351,8 +369,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                     : 'text-white/70 hover:bg-white/5 hover:text-white'
                 }`}
               >
-                <Icon size={16} strokeWidth={2} />
-                <span className="flex-1 truncate">{item.label}</span>
+                <Icon size={16} strokeWidth={2} className="shrink-0" />
+                {!isCollapsed && <span className="flex-1 truncate animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>}
                 {item.badge !== undefined && item.badge !== 0 && (
                   <span
                     className="text-[10px] font-semibold rounded-full px-2 py-0.5"
@@ -390,15 +408,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 }`}
                 aria-expanded={isExpanded}
               >
-                <Icon size={16} strokeWidth={2} />
-                <span className="flex-1 truncate text-left">{item.label}</span>
-                <ChevronRight
-                  size={14}
-                  strokeWidth={2}
-                  className={`text-white/60 transition-transform duration-200 ${
-                    isExpanded ? 'rotate-90' : ''
-                  }`}
-                />
+                <Icon size={16} strokeWidth={2} className="shrink-0" />
+                {!isCollapsed && (
+                  <>
+                    <span className="flex-1 truncate text-left animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>
+                    <ChevronRight
+                      size={14}
+                      strokeWidth={2}
+                      className={`text-white/60 transition-transform duration-200 ${
+                        isExpanded ? 'rotate-90' : ''
+                      }`}
+                    />
+                  </>
+                )}
               </button>
               {/* Smooth expand/collapse — grid-template-rows trick lets us
                   animate `0fr → 1fr` even though the inner content has no
@@ -407,10 +429,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               <div
                 className="grid transition-[grid-template-rows,opacity] duration-200 ease-out"
                 style={{
-                  gridTemplateRows: isExpanded ? '1fr' : '0fr',
-                  opacity: isExpanded ? 1 : 0,
+                  gridTemplateRows: (!isCollapsed && isExpanded) ? '1fr' : '0fr',
+                  opacity: (!isCollapsed && isExpanded) ? 1 : 0,
                 }}
-                aria-hidden={!isExpanded}
+                aria-hidden={isCollapsed || !isExpanded}
               >
                 <div className="overflow-hidden">
                   <div className="mt-1 ml-5 space-y-0.5 border-l border-white/10 pl-3 pb-1">
@@ -431,8 +453,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                               : 'text-white/60 hover:bg-white/5 hover:text-white'
                           }`}
                         >
-                          <ChildIcon size={14} strokeWidth={2} />
-                          <span className="truncate">{child.label}</span>
+                          <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
+                          {!isCollapsed && <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">{child.label}</span>}
                         </Link>
                       );
                     })}
@@ -452,19 +474,44 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           >
             {initial}
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
-            <p className="truncate text-[10px] text-white/70">{user.email}</p>
-          </div>
+          {!isCollapsed && (
+            <div className="min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
+              <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
+              <p className="truncate text-[10px] text-white/70">{user.email}</p>
+            </div>
+          )}
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-red-300"
-        >
-          <LogOut size={13} strokeWidth={2} />
-          {copy.logout}
-        </button>
+        <div className="flex gap-1">
+          <button
+            onClick={handleLogout}
+            title={copy.logout}
+            className={`flex items-center justify-center gap-2 rounded-xl py-2 text-[12px] font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-red-300 ${isCollapsed ? 'w-full' : 'flex-1 px-4'}`}
+          >
+            <LogOut size={13} strokeWidth={2} />
+            {!isCollapsed && <span>{copy.logout}</span>}
+          </button>
+          {!isCollapsed && (
+            <button
+              onClick={toggleSidebar}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+              title={locale === 'tr' ? 'Menüyü daralt' : 'Collapse menu'}
+            >
+              <ChevronLeft size={16} />
+            </button>
+          )}
+        </div>
       </div>
+      {isCollapsed && (
+        <div className="flex justify-center p-2 border-t border-white/5 bg-black/10">
+          <button
+            onClick={toggleSidebar}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 hover:bg-white/10 hover:text-white transition-colors"
+            title={locale === 'tr' ? 'Menüyü genişlet' : 'Expand menu'}
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -474,7 +521,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
       </a>
       {/* Desktop sidebar */}
-      <aside className="hidden h-full w-64 shrink-0 border-r border-white/5 lg:flex">
+      <aside className={`hidden h-full shrink-0 border-r border-white/5 lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-64'}`}>
         {renderSidebar(navRef)}
       </aside>
 

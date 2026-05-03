@@ -47,6 +47,7 @@ interface ReviewsPayload {
 
 interface GoogleStatus {
   googleReviewManagementEnabled: boolean;
+  googleAiEnabled: boolean;
   placesConfigured: boolean;
   oauthConfigured: boolean;
   connected: boolean;
@@ -95,10 +96,10 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: "
 }
 
 function ReviewCard({
-  review, locale, value, onChange, onDraft, onSend, drafting, replying
+  review, locale, value, onChange, onDraft, onSend, drafting, replying, aiEnabled
 }: {
   review: GoogleReview; locale: "tr" | "en"; value: string; onChange: (value: string) => void;
-  onDraft: () => void; onSend: () => void; drafting: boolean; replying: boolean;
+  onDraft: () => void; onSend: () => void; drafting: boolean; replying: boolean; aiEnabled: boolean;
 }) {
   const isTr = locale === "tr";
   const rating = starValue(review.starRating);
@@ -137,18 +138,22 @@ function ReviewCard({
           />
         </Field>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <button type="button" className="bz-btn-ghost inline-flex w-full items-center justify-center gap-1.5 rounded-full text-[12px] sm:w-auto" onClick={onDraft} disabled={drafting}>
-            {drafting ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-            {isTr ? "AI ile cevap ver" : "Reply with AI"}
-          </button>
+          {aiEnabled && (
+            <button type="button" className="bz-btn-ghost inline-flex w-full items-center justify-center gap-1.5 rounded-full text-[12px] sm:w-auto" onClick={onDraft} disabled={drafting}>
+              {drafting ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+              {isTr ? "AI ile cevap ver" : "Reply with AI"}
+            </button>
+          )}
           <button type="button" className="bz-btn-primary inline-flex w-full items-center justify-center gap-1.5 rounded-full text-[12px] sm:w-auto" onClick={onSend} disabled={replying || !value.trim()}>
             {replying ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
             {isTr ? "Google'a gönder" : "Send to Google"}
           </button>
         </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-[#737373]">
-          {isTr ? "AI yalnızca taslak hazırlar; herkese açık Google yanıtı, sen Google'a gönder dediğinde yayınlanır." : "AI only prepares a draft; the public Google reply is published only after you send it."}
-        </p>
+        {aiEnabled && (
+          <p className="mt-2 text-[11px] leading-relaxed text-[#737373]">
+            {isTr ? "AI yalnızca taslak hazırlar; herkese açık Google yanıtı, sen Google'a gönder dediğinde yayınlanır." : "AI only prepares a draft; the public Google reply is published only after you send it."}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -445,6 +450,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                       onSend={() => sendReply(review)}
                       drafting={Boolean(drafting[review.name])}
                       replying={Boolean(replying[review.name])}
+                      aiEnabled={Boolean(status?.googleAiEnabled)}
                     />
                   ))
                 )}

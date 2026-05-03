@@ -14,6 +14,7 @@ interface RestaurantOption {
 
 interface RestaurantSettings {
   enableAiDraft: boolean;
+  googleAiEnabled: boolean;
   aiDraftTone: Tone;
   loaded: boolean;
   saving: boolean;
@@ -70,18 +71,19 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
           try {
             const res = await fetch(`/api/restaurants/${r.id}/ai-settings`);
             if (!res.ok) {
-              next[r.id] = { enableAiDraft: false, aiDraftTone: "warm", loaded: true, saving: false };
+              next[r.id] = { enableAiDraft: false, googleAiEnabled: true, aiDraftTone: "warm", loaded: true, saving: false };
               return;
             }
             const data = await res.json();
             next[r.id] = {
               enableAiDraft: Boolean(data.enableAiDraft),
+              googleAiEnabled: Boolean(data.googleAiEnabled ?? true),
               aiDraftTone: (data.aiDraftTone as Tone) ?? "warm",
               loaded: true,
               saving: false,
             };
           } catch {
-            next[r.id] = { enableAiDraft: false, aiDraftTone: "warm", loaded: true, saving: false };
+            next[r.id] = { enableAiDraft: false, googleAiEnabled: true, aiDraftTone: "warm", loaded: true, saving: false };
           }
         }),
       );
@@ -92,8 +94,8 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
     };
   }, [restaurants]);
 
-  const update = async (id: string, patch: Partial<Pick<RestaurantSettings, "enableAiDraft" | "aiDraftTone">>) => {
-    setSettings((s) => ({ ...s, [id]: { ...(s[id] ?? { enableAiDraft: false, aiDraftTone: "warm", loaded: true, saving: false }), ...patch, saving: true, error: null } }));
+  const update = async (id: string, patch: Partial<Pick<RestaurantSettings, "enableAiDraft" | "googleAiEnabled" | "aiDraftTone">>) => {
+    setSettings((s) => ({ ...s, [id]: { ...(s[id] ?? { enableAiDraft: false, googleAiEnabled: true, aiDraftTone: "warm", loaded: true, saving: false }), ...patch, saving: true, error: null } }));
     try {
       const res = await fetch(`/api/restaurants/${id}/ai-settings`, {
         method: "PATCH",
@@ -110,6 +112,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
         ...s,
         [id]: {
           enableAiDraft: Boolean(data.enableAiDraft),
+          googleAiEnabled: Boolean(data.googleAiEnabled ?? true),
           aiDraftTone: (data.aiDraftTone as Tone) ?? "warm",
           loaded: true,
           saving: false,
@@ -200,6 +203,27 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                       {isTr
                         ? "1-3★ yorum geldiğinde taslak inbox'a gelir, manuel onaylayıp gönderirsin."
                         : "When a 1-3★ review arrives, a draft lands in the inbox for your approval."}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-start gap-3 border-t border-[#EDEDED] pt-4">
+                  <Toggle
+                    checked={Boolean(s?.googleAiEnabled)}
+                    onChange={(next) => update(r.id, { googleAiEnabled: next })}
+                    disabled={s?.saving}
+                    ariaLabel={
+                      isTr ? "Google yorumlarında Pulse AI kullan" : "Use Pulse AI for Google reviews"
+                    }
+                  />
+                  <div className="text-[14px] text-[#0A0A0A]">
+                    <span className="font-semibold">
+                      {isTr ? "Google yorumlarında Pulse AI kullan" : "Use Pulse AI for Google reviews"}
+                    </span>
+                    <span className="block text-[12px] text-[#737373] mt-0.5">
+                      {isTr
+                        ? "Google yorumlarını yanıtlarken AI yardımcıyı aktif hale getirir."
+                        : "Enables AI assistant when replying to Google reviews."}
                     </span>
                   </div>
                 </div>
