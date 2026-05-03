@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import type { PanelActor } from '@/lib/auth';
+import { safeParseJson } from '@/lib/safe-json';
 import { GOOGLE_OAUTH_STATE_COOKIE } from '../connect/route';
 
 export const dynamic = 'force-dynamic';
@@ -76,13 +77,22 @@ export async function GET(req: NextRequest) {
   const stateParam = req.nextUrl.searchParams.get('state');
   if (!stateParam) return redirectBack(req, 'state-missing');
 
-  let parsedState: { owner?: unknown; nonce?: unknown; returnTo?: unknown } | null = null;
-  try {
-    const json = Buffer.from(stateParam, 'base64url').toString('utf8');
-    parsedState = JSON.parse(json);
-  } catch {
-    parsedState = null;
-  }
+  // safeParseJson tags malformed payloads to Sentry — useful when an
+  // attacker (or a stale browser tab) hands us a state that no longer
+  // round-trips. Görev G + CLAUDE.md §38.8.
+  const parsedStateRaw = (() => {
+    try {
+      return Buffer.from(stateParam, 'base64url').toString('utf8');
+    } catch {
+      return null;
+    }
+  })();
+  const parsedState = parsedStateRaw
+    ? safeParseJson<{ owner?: unknown; nonce?: unknown; returnTo?: unknown }>(
+        parsedStateRaw,
+        { source: 'google-oauth-state' },
+      )
+    : null;
   const stateNonce = parsedState && typeof parsedState.nonce === 'string' ? parsedState.nonce : null;
   const stateOwner = parsedState && typeof parsedState.owner === 'string' ? parsedState.owner : null;
   const returnTo = safeReturnTo(parsedState?.returnTo);

@@ -9,6 +9,7 @@
 
 import { chatCompletion, hasOpenAIKey } from '@/lib/openai';
 import type { RoiPdfData } from '@/lib/roi/RoiPdf';
+import { safeParseJson } from '@/lib/safe-json';
 
 export interface RoiInsight {
   /** 2-3 cümle senaryo özeti — restoran sahibinin diliyle. */
@@ -142,28 +143,27 @@ function parseInsightJson(raw: string): Omit<RoiInsight, 'source'> | null {
     .replace(/```\s*$/i, '')
     .trim();
 
-  try {
-    const parsed = JSON.parse(cleaned) as {
-      summary?: unknown;
-      highlight?: unknown;
-      nextSteps?: unknown;
-    };
-    const summary = typeof parsed.summary === 'string' ? parsed.summary.trim() : '';
-    const highlight = typeof parsed.highlight === 'string' ? parsed.highlight.trim() : '';
-    const nextStepsRaw = Array.isArray(parsed.nextSteps) ? parsed.nextSteps : [];
-    const nextSteps = nextStepsRaw
-      .filter((s): s is string => typeof s === 'string')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0)
-      .slice(0, 3);
+  // safeParseJson tags malformed AI responses to Sentry — see CLAUDE.md
+  // §38.8 + Görev G.
+  const parsed = safeParseJson<{
+    summary?: unknown;
+    highlight?: unknown;
+    nextSteps?: unknown;
+  }>(cleaned, { source: 'roi-insight' });
+  if (!parsed) return null;
+  const summary = typeof parsed.summary === 'string' ? parsed.summary.trim() : '';
+  const highlight = typeof parsed.highlight === 'string' ? parsed.highlight.trim() : '';
+  const nextStepsRaw = Array.isArray(parsed.nextSteps) ? parsed.nextSteps : [];
+  const nextSteps = nextStepsRaw
+    .filter((s): s is string => typeof s === 'string')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .slice(0, 3);
 
-    if (!summary || !highlight || nextSteps.length < 2) return null;
-    // Ensure 3 entries — pad with last if AI returned 2.
-    while (nextSteps.length < 3) nextSteps.push(nextSteps[nextSteps.length - 1]);
-    return { summary, highlight, nextSteps };
-  } catch {
-    return null;
-  }
+  if (!summary || !highlight || nextSteps.length < 2) return null;
+  // Ensure 3 entries — pad with last if AI returned 2.
+  while (nextSteps.length < 3) nextSteps.push(nextSteps[nextSteps.length - 1]);
+  return { summary, highlight, nextSteps };
 }
 
 // ─── Deterministic template fallback ───────────────────────────────────
