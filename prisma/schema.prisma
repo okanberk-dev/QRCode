@@ -121,6 +121,11 @@ model Restaurant {
   // search/linking can stay available, but fetching Google reviews, AI reply
   // drafting, and public Google reply writes require this per-restaurant flag.
   googleReviewManagementEnabled Boolean   @default(false) @map("google_review_management_enabled")
+
+  // Google Rating Impact Tracking
+  initialGoogleRating           Float?    @map("initial_google_rating")
+  currentGoogleRating           Float?    @map("current_google_rating")
+
   getirYemekUrl                 String?   @map("getir_yemek_url")
   yemekSepetiUrl                String?   @map("yemek_sepeti_url")
   trendyolYemekUrl              String?   @map("trendyol_yemek_url")

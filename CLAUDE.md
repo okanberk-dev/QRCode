@@ -4719,3 +4719,4 @@ Yeni route veya endpoint eklenirken:
 1. §37.2 A-H disiplinlerini izle
 2. §37.3 atlanan bulgulardan biri scope'a giriyorsa kullanıcıya **açık onay** sor
 3. Yeni güvenlik fix'i uygulanırsa: `SECURITY_AUDIT_REPORT.md`'ye yeni satır ekle + bu §'ye phase log
+\n### 37.3 Google Rating Impact Tracking\nGoogle İşletme hesabı bağlandığı andaki ortalama puan `Restaurant.initialGoogleRating` olarak kaydedilir. `api/cron/google-reviews-alert` periyodik çalışarak `Restaurant.currentGoogleRating` alanını günceller. Dashboard üzerinde (Yorum Görünümü) Buaze'nin işletme puanına etkisi (Örn: +0.4 Puan Artış) profesyonel bir widget ile raporlanır.

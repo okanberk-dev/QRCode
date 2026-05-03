@@ -88,6 +88,8 @@ export default async function DashboardPage({
           name: true,
           slug: true,
           isActive: true,
+          initialGoogleRating: true,
+          currentGoogleRating: true,
           _count: { select: { feedbacks: true } },
         },
       },
@@ -445,6 +447,19 @@ export default async function DashboardPage({
     },
   ];
 
+  // ---- Google Rating Impact ----
+  const impactStats = user.restaurants
+    .filter((r) => r.initialGoogleRating !== null && r.currentGoogleRating !== null)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      initial: r.initialGoogleRating!,
+      current: r.currentGoogleRating!,
+      diff: Math.round((r.currentGoogleRating! - r.initialGoogleRating!) * 10) / 10,
+    }))
+    .sort((a, b) => b.diff - a.diff)
+    .slice(0, 3); // top 3
+
   return (
     <div
       className="mx-auto max-w-[1200px] space-y-6 px-4 sm:px-7 py-6 lg:py-8"
@@ -758,39 +773,101 @@ export default async function DashboardPage({
         </div>
       )}
 
-      {/* Konum performansı (sade liste) */}
-      {locationPerf.length > 0 && (
-        <section className="bz-card p-6 sm:p-7">
-          <div>
-            <Eyebrow>{isTr ? 'Konum performansı' : 'Location performance'}</Eyebrow>
-            <div className="bz-h-tight mt-1 text-[16px]">
-              {isTr ? 'Puana göre' : 'By rating'}
-            </div>
-          </div>
-          <ul className="mt-4 divide-y divide-[#EDEDED]">
-            {locationPerf.map((loc) => (
-              <li key={loc.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <Link
-                    href={`/${locale}/dashboard/restaurants/${loc.id}`}
-                    className="block truncate text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
-                  >
-                    {loc.name}
-                  </Link>
-                  <div className="pulse-eyebrow text-[#737373] mt-0.5">
-                    {loc.count} {isTr ? 'yorum' : 'reviews'}
-                  </div>
+      {/* Konum performansı ve Google Etkisi (Grid layout) */}
+      {(locationPerf.length > 0 || impactStats.length > 0) && (
+        <div className="grid gap-3.5 lg:grid-cols-2">
+          {locationPerf.length > 0 && (
+            <section className="bz-card p-6 sm:p-7">
+              <div>
+                <Eyebrow>{isTr ? 'Konum performansı' : 'Location performance'}</Eyebrow>
+                <div className="bz-h-tight mt-1 text-[16px]">
+                  {isTr ? 'Puana göre' : 'By rating'}
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <span className="bz-h-tight text-[18px] tabular-nums">
-                    {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
-                  </span>
-                  <Star size={14} className="text-[#C6F24E]" fill="#C6F24E" />
+              </div>
+              <ul className="mt-4 divide-y divide-[#EDEDED]">
+                {locationPerf.map((loc) => (
+                  <li key={loc.id} className="flex items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <Link
+                        href={`/${locale}/dashboard/restaurants/${loc.id}`}
+                        className="block truncate text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                      >
+                        {loc.name}
+                      </Link>
+                      <div className="pulse-eyebrow text-[#737373] mt-0.5">
+                        {loc.count} {isTr ? 'yorum' : 'reviews'}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="bz-h-tight text-[18px] tabular-nums">
+                        {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
+                      </span>
+                      <Star size={14} className="text-[#C6F24E]" fill="#C6F24E" />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {impactStats.length > 0 && (
+            <section className="bz-card p-6 sm:p-7 bg-[#FAFAFA] border-[#EAF9B8] border-2 shadow-[0_4px_24px_rgba(198,242,78,0.15)] relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Star size={120} fill="#C6F24E" color="#C6F24E" />
+              </div>
+              <div className="relative z-10">
+                <Eyebrow className="text-[#525252]">
+                  {isTr ? 'BUAZE ETKİSİ' : 'BUAZE IMPACT'}
+                </Eyebrow>
+                <div className="bz-h-tight mt-1 text-[18px] sm:text-[20px] font-semibold text-[#0A0A0A]">
+                  {isTr ? 'Google Puan Artışı' : 'Google Rating Growth'}
                 </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+                <p className="mt-2 text-[13px] text-[#525252] leading-relaxed max-w-[280px]">
+                  {isTr 
+                    ? 'Buaze sayesinde yorum toplama ve hızlı geri dönüşlerle işletme puanınız yükselişte.'
+                    : 'Your business rating is growing thanks to review collection and fast replies via Buaze.'}
+                </p>
+                
+                <div className="mt-6 space-y-4">
+                  {impactStats.map(stat => (
+                    <div key={stat.id} className="rounded-xl bg-white p-4 border border-[#EDEDED] shadow-sm flex items-center justify-between">
+                      <div className="min-w-0">
+                        <div className="text-[14px] font-semibold text-[#0A0A0A] truncate">{stat.name}</div>
+                        <div className="text-[12px] text-[#737373] mt-0.5 flex items-center gap-1.5">
+                          <span>{isTr ? 'Başlangıç' : 'Initial'}: {stat.initial.toFixed(1)}</span>
+                          <ArrowRight size={10} />
+                          <strong className="text-[#0A0A0A]">{isTr ? 'Güncel' : 'Current'}: {stat.current.toFixed(1)}</strong>
+                        </div>
+                      </div>
+                      {stat.diff > 0 && (
+                        <div className="flex flex-col items-end">
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[11px] font-bold text-[#0A0A0A]">
+                            <ArrowUpRight size={10} strokeWidth={3} />
+                            +{stat.diff.toFixed(1)}
+                          </span>
+                        </div>
+                      )}
+                      {stat.diff === 0 && (
+                        <div className="flex flex-col items-end">
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] font-bold text-[#525252]">
+                            = {isTr ? 'Aynı' : 'Same'}
+                          </span>
+                        </div>
+                      )}
+                      {stat.diff < 0 && (
+                        <div className="flex flex-col items-end">
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-600">
+                            {stat.diff.toFixed(1)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+        </div>
       )}
 
       {/* Restaurants */}

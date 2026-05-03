@@ -12,6 +12,7 @@ import {
   parseGoogleLocationsCache,
   selectedGoogleLocation,
   withSelectedGoogleLocation,
+  listGoogleReviews,
 } from '@/lib/google-business';
 import { prisma } from '@/lib/prisma';
 
@@ -47,6 +48,12 @@ export async function POST(
     return ApiErrors.badRequest('Google Business Profile hesabı bağlı değil.', 'GOOGLE_NOT_CONNECTED');
   }
 
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id },
+    select: { initialGoogleRating: true },
+  });
+  if (!restaurant) return ApiErrors.notFound('İşletme bulunamadı.');
+
   const cache = parseGoogleLocationsCache(integration.locationsJson);
   const location = cache.locations.find(
     (item) =>
@@ -63,6 +70,20 @@ export async function POST(
     location.newReviewUri ??
     (googlePlaceId ? googleReviewUrlFromPlaceId(googlePlaceId) : undefined);
 
+  // Fetch current rating from Google to use as initial/current rating
+  const selectionForFetch = selectedGoogleLocation(nextCache, id);
+  let fetchedRating: number | undefined;
+  if (selectionForFetch) {
+    try {
+      const res = await listGoogleReviews(integration as any, selectionForFetch);
+      if (typeof res.averageRating === 'number') {
+        fetchedRating = res.averageRating;
+      }
+    } catch (err) {
+      console.error('[google rating fetch] failed on location select', err);
+    }
+  }
+
   await prisma.$transaction([
     prisma.googleIntegration.update({
       where: { id: integration.id },
@@ -74,6 +95,10 @@ export async function POST(
         ...(googlePlaceId !== undefined && { googlePlaceId }),
         ...(googleReviewUrl !== undefined && { googleReviewUrl }),
         googleEnabled: true,
+        ...(fetchedRating !== undefined && {
+          currentGoogleRating: fetchedRating,
+          ...(restaurant.initialGoogleRating === null && { initialGoogleRating: fetchedRating }),
+        }),
       },
     }),
   ]);
