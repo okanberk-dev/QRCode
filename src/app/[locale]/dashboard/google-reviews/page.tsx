@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { CheckCircle2, Loader2, MessageSquareText, RefreshCw, Send, Sparkles, Star, ExternalLink, Inbox } from 'lucide-react';
+import { CheckCircle2, Loader2, MessageSquareText, RefreshCw, Send, Sparkles, Star, ExternalLink, Inbox, Unplug } from 'lucide-react';
 import { AlertBanner, EmptyState, Field, PageHeader } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 
@@ -306,11 +306,11 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     <div className="mx-auto max-w-[1000px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow={isTr ? 'GERİ BİLDİRİMLER' : 'FEEDBACKS'}
-        title={isTr ? 'Google Yorumları' : 'Google Reviews'}
+        title={isTr ? "Google'a Yapılan Yorumlar" : 'Google Reviews'}
         description={
           isTr
-            ? 'Google Business Profile hesabınızdaki yorumları okuyun, AI ile yanıt taslağı oluşturun ve yayınlayın.'
-            : 'Read Google Business Profile reviews, generate AI reply drafts and publish them.'
+            ? 'Müşterilerinizin Google İşletme Profilinize bıraktığı yorumları görüntüleyin, Pulse AI ile yanıt taslağı oluşturun ve doğrudan Google üzerinden yayınlayın.'
+            : 'View reviews left on your Google Business Profile, generate AI reply drafts with Pulse AI, and publish them directly to Google.'
         }
       />
 
@@ -344,15 +344,15 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           </h3>
           <p className="text-[14px] text-[#525252] max-w-md mx-auto mb-6">
             {isTr 
-              ? "Google yorumlarınızı bu sayfadan okumak ve cevaplamak için önce Ayarlar > Platform Bağlantıları bölümünden işletmenizi bağlamanız gerekmektedir." 
-              : "To read and reply to Google reviews from this page, you first need to connect your business from Settings > Platform Links."}
+              ? "Müşterilerinizin Google'a bıraktığı yorumları bu sayfadan okumak ve yanıtlamak için önce Google Business hesabınızı bağlamanız gerekmektedir." 
+              : "To read and reply to reviews your customers left on Google from this page, you first need to connect your Google Business account."}
           </p>
           <button
             onClick={() => router.push(`/${locale}/dashboard/restaurants/${activeRestaurantId}/settings?section=integrations`)}
             className="bz-btn-primary inline-flex items-center gap-2 px-6 rounded-full"
           >
             <ExternalLink size={16} />
-            {isTr ? "Platform Bağlantılarına Git" : "Go to Platform Links"}
+            {isTr ? "Google Hesabını Bağla" : "Connect Google Account"}
           </button>
         </div>
       ) : (
@@ -366,15 +366,35 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                 {status.selectedLocation.address}
               </p>
             </div>
-            <button
-              type="button"
-              className="bz-btn-primary inline-flex items-center gap-1.5 rounded-full text-[13px]"
-              onClick={() => activeRestaurantId && loadStatusAndReviews(activeRestaurantId)}
-              disabled={reviewsLoading}
-            >
-              {reviewsLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-              {isTr ? "Yorumları Yenile" : "Refresh Reviews"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="bz-btn-ghost inline-flex items-center gap-1.5 rounded-full text-[12px] text-red-600 hover:bg-red-50 hover:border-red-100"
+                onClick={async () => {
+                  if (!confirm(isTr ? 'Google hesap bağlantısı kesilecek. Devam etmek istiyor musunuz?' : 'Google account will be disconnected. Continue?')) return;
+                  try {
+                    const res = await fetch('/api/integrations/google/disconnect', { method: 'POST' });
+                    if (res.ok && activeRestaurantId) {
+                      loadStatusAndReviews(activeRestaurantId);
+                    }
+                  } catch {
+                    setReviewsError(isTr ? 'Bağlantı kesilemedi.' : 'Failed to disconnect.');
+                  }
+                }}
+              >
+                <Unplug size={13} />
+                {isTr ? 'Bağlantıyı Kes' : 'Disconnect'}
+              </button>
+              <button
+                type="button"
+                className="bz-btn-primary inline-flex items-center gap-1.5 rounded-full text-[13px]"
+                onClick={() => activeRestaurantId && loadStatusAndReviews(activeRestaurantId)}
+                disabled={reviewsLoading}
+              >
+                {reviewsLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                {isTr ? "Yorumları Yenile" : "Refresh Reviews"}
+              </button>
+            </div>
           </div>
 
           {reviewsError && <AlertBanner kind="danger">{reviewsError}</AlertBanner>}

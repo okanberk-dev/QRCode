@@ -48,7 +48,7 @@ function useTopBar(locale: Locale, pathname: string | null) {
   const rest = pathname.replace(`/${locale}/dashboard`, '') || '/';
   if (rest === '/') return { breadcrumb: isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW', title: isTr ? 'Genel bakış' : 'Overview' };
   if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorum gelen kutusu' : 'Review inbox' };
-  if (rest.startsWith('/google-reviews')) return { breadcrumb: isTr ? 'PANEL / GOOGLE YORUMLARI' : 'PANEL / GOOGLE REVIEWS', title: isTr ? 'Google Yorumları' : 'Google Reviews' };
+  if (rest.startsWith('/google-reviews')) return { breadcrumb: isTr ? 'PANEL / GOOGLE YORUMLARI' : 'PANEL / GOOGLE REVIEWS', title: isTr ? 'Google\'a Yapılan Yorumlar' : 'Google Reviews' };
   if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'QR OLUŞTUR / YENİ KAMPANYA' : 'QR / NEW CAMPAIGN', title: isTr ? 'QR kodu oluştur' : 'Create QR code' };
   if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / İŞLETMELER' : 'PANEL / BUSINESSES', title: isTr ? 'İşletmeler' : 'Businesses' };
