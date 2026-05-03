@@ -29,9 +29,13 @@ export async function GET() {
     new Error('[Sentry smoke test] Synthetic error from /api/sentry-test — safe to ignore.'),
   );
 
-  // Wait up to 2s for the buffered envelope to reach Sentry before the
-  // serverless function process is torn down.
-  const flushed = await Sentry.flush(2000);
+  // Wait up to 5s for the buffered envelope to reach Sentry before the
+  // serverless function process is torn down. 2s was insufficient on
+  // Vercel cold starts — DNS + TLS + envelope POST took ~3-4s and the
+  // buffer was dropped, leaving Sentry empty even though `captureException`
+  // returned a real event id. 5s sits well inside Vercel's 10s function
+  // gateway timeout. CLAUDE.md §26 documents the ceiling.
+  const flushed = await Sentry.flush(5000);
 
   return NextResponse.json({ ok: true, eventId, flushed }, { status: 500 });
 }
