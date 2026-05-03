@@ -38,6 +38,7 @@ export interface GoogleBusinessLocation {
 
 export interface GoogleRestaurantLocationSelection extends GoogleBusinessLocation {
   selectedAt: string;
+  lastReviewNotifiedAt?: string;
 }
 
 export interface GoogleLocationsCache {

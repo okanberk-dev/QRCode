@@ -1,0 +1,128 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { sendFeedbackNotification } from '@/lib/email';
+import {
+  parseGoogleLocationsCache,
+  listGoogleReviews,
+} from '@/lib/google-business';
+
+// Only run on Edge / or Node, Node is safer for Prisma
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 mins for cron
+
+const STAR_VALUE: Record<string, number> = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5 };
+
+export async function GET(req: NextRequest) {
+  // Validate cron secret
+  const authHeader = req.headers.get('authorization');
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    // 1. Fetch all integrations that have locations configured
+    const integrations = await prisma.googleIntegration.findMany({
+      where: {
+        locationsJson: { not: undefined }, // In Prisma Postgres, Json not null is sometimes tricky, let's just get all that might have it
+      },
+    });
+
+    let processedCount = 0;
+    let emailSentCount = 0;
+
+    // 2. Iterate over each integration
+    for (const integration of integrations) {
+      if (!integration.locationsJson) continue;
+
+      const cache = parseGoogleLocationsCache(integration.locationsJson);
+      let cacheUpdated = false;
+
+      // 3. Iterate over the restaurant selections within this integration
+      for (const [restaurantId, selection] of Object.entries(cache.restaurantLocations)) {
+        // Find if this restaurant is active and has googleReviewManagementEnabled
+        const restaurant = await prisma.restaurant.findUnique({
+          where: { id: restaurantId },
+          select: { name: true, notificationEmail: true, isActive: true, googleReviewManagementEnabled: true, user: { select: { email: true } } },
+        });
+
+        if (!restaurant || !restaurant.isActive || !restaurant.googleReviewManagementEnabled) {
+          continue;
+        }
+
+        // Fetch reviews for this location
+        try {
+          const res = await listGoogleReviews(integration as any, selection);
+          
+          // Determine the cutoff time for new reviews
+          // Default to 24 hours ago if no previous sync time exists
+          const fallbackTime = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+          const cutoffTime = selection.lastReviewNotifiedAt || fallbackTime;
+
+          let maxCreateTime = selection.lastReviewNotifiedAt || '';
+
+          // Filter for low-rating reviews (<= 3 stars) that are newer than cutoffTime
+          const newLowReviews = res.reviews.filter((review) => {
+            const rating = review.starRating ? STAR_VALUE[review.starRating] ?? 0 : 0;
+            const createTime = review.createTime || '';
+            
+            // Track the most recent review time we've seen
+            if (createTime > maxCreateTime) {
+              maxCreateTime = createTime;
+            }
+
+            return rating > 0 && rating <= 3 && createTime > cutoffTime;
+          });
+
+          // Send notifications for these new low reviews
+          for (const review of newLowReviews) {
+            const toEmail = restaurant.notificationEmail || restaurant.user?.email;
+            if (toEmail) {
+              await sendFeedbackNotification({
+                rating: STAR_VALUE[review.starRating!] ?? 3,
+                restaurantName: restaurant.name,
+                name: review.reviewer?.displayName,
+                comment: review.comment,
+                platform: 'google',
+                toEmail,
+              });
+              emailSentCount++;
+            }
+          }
+
+          // Update lastReviewNotifiedAt if we saw newer reviews (even if they were high rating, we track max time)
+          // Actually, we should track max time across ALL reviews fetched so we don't fetch them again
+          let localMaxTime = cutoffTime;
+          for (const review of res.reviews) {
+            if ((review.createTime || '') > localMaxTime) {
+              localMaxTime = review.createTime || '';
+            }
+          }
+
+          if (localMaxTime > (selection.lastReviewNotifiedAt || '')) {
+            selection.lastReviewNotifiedAt = localMaxTime;
+            cacheUpdated = true;
+          }
+
+          processedCount++;
+        } catch (err) {
+          console.error(`[Cron] Failed to fetch google reviews for restaurant ${restaurantId}`, err);
+        }
+      }
+
+      // 4. Save updated locationsJson back to the integration if modified
+      if (cacheUpdated) {
+        await prisma.googleIntegration.update({
+          where: { id: integration.id },
+          data: {
+            locationsJson: cache as any,
+          },
+        });
+      }
+    }
+
+    return NextResponse.json({ ok: true, processedCount, emailSentCount });
+  } catch (err) {
+    console.error('[Cron] Google reviews alert failed', err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

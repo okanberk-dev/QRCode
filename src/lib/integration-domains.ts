@@ -34,9 +34,9 @@ export type IntegrationProvider =
 
 export const PROVIDER_DOMAINS: Record<IntegrationProvider, string[] | null> = {
   google: ['google.com', 'g.page', 'goo.gl', 'maps.app.goo.gl', 'business.google.com'],
-  yemeksepeti: ['yemeksepeti.com'],
-  getir: ['getir.com', 'getiryemek.com'],
-  trendyol_go: ['tgoapp.com', 'trendyol.com', 'trendyolgo.com'],
+  yemeksepeti: ['yemeksepeti.com', 'yemeksepeti.com.tr'],
+  getir: ['getir.com', 'getiryemek.com', 'getir.net', 'getir.com.tr'],
+  trendyol_go: ['tgoapp.com', 'trendyol.com', 'trendyolgo.com', 'tgoyemek.com', 'trendyol.com.tr'],
   tripadvisor: ['tripadvisor.com', 'tripadvisor.com.tr'],
   airbnb: ['airbnb.com', 'airbnb.com.tr'],
   booking: ['booking.com'],

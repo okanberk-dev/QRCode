@@ -48,6 +48,7 @@ function useTopBar(locale: Locale, pathname: string | null) {
   const rest = pathname.replace(`/${locale}/dashboard`, '') || '/';
   if (rest === '/') return { breadcrumb: isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW', title: isTr ? 'Genel bakış' : 'Overview' };
   if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorum gelen kutusu' : 'Review inbox' };
+  if (rest.startsWith('/google-reviews')) return { breadcrumb: isTr ? 'PANEL / GOOGLE YORUMLARI' : 'PANEL / GOOGLE REVIEWS', title: isTr ? 'Google Yorumları' : 'Google Reviews' };
   if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'QR OLUŞTUR / YENİ KAMPANYA' : 'QR / NEW CAMPAIGN', title: isTr ? 'QR kodu oluştur' : 'Create QR code' };
   if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / İŞLETMELER' : 'PANEL / BUSINESSES', title: isTr ? 'İşletmeler' : 'Businesses' };
@@ -163,6 +164,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     return {
       dashboard: isTr ? 'Panel' : 'Dashboard',
       feedbacks: isTr ? 'Yorumlar' : 'Feedbacks',
+      googleReviews: isTr ? 'Google Yorumları' : 'Google Reviews',
       analytics: isTr ? 'Analitik' : 'Analytics',
       restaurants: isTr ? 'İşletmeler' : 'Locations',
       qr: 'QR',
@@ -202,6 +204,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       label: locale === 'tr' ? 'Geri bildirim' : 'Feedback',
       children: [
         { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
+        { href: `/${locale}/dashboard/google-reviews`, icon: MessageSquareText, label: copy.googleReviews },
         { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
         { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
       ],
@@ -249,6 +252,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
   ];
   const moreSheetItems = [
+    { href: `/${locale}/dashboard/google-reviews`, icon: MessageSquareText, label: copy.googleReviews },
     { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
@@ -725,6 +729,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         navItems={[
           { href: `/${locale}/dashboard`, label: copy.dashboard, keywords: ['panel', 'dashboard', 'genel'] },
           { href: `/${locale}/dashboard/feedbacks`, label: copy.feedbacks, keywords: ['yorum', 'review', 'feedback', 'inbox'] },
+          { href: `/${locale}/dashboard/google-reviews`, label: copy.googleReviews, keywords: ['google', 'yorum', 'review', 'feedback'] },
           { href: `/${locale}/dashboard/qr`, label: copy.qr, keywords: ['qr', 'kod', 'code'] },
           { href: `/${locale}/dashboard/analytics`, label: copy.analytics, keywords: ['analitik', 'rapor', 'analytics', 'report'] },
           { href: `/${locale}/dashboard/restaurants`, label: copy.restaurants, keywords: ['işletme', 'konum', 'lokasyon', 'restoran', 'location'] },
