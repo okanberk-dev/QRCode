@@ -7,6 +7,15 @@ export const dynamic = 'force-dynamic';
 // NEXT_PUBLIC_SENTRY_DSN to confirm server errors actually reach the dashboard.
 // Disabled in production by default — set ENABLE_SENTRY_TEST=1 if you need to
 // test prod, then unset after verification.
+//
+// Why captureException + flush instead of throw:
+// On Vercel serverless, the function process exits as soon as the response
+// is returned. Sentry's envelope POST is async (~1-2s); a thrown error
+// triggers `onRequestError` but the buffer is dropped when the process
+// dies. `await Sentry.flush(2000)` waits up to 2s for the buffer to drain,
+// so the event reliably reaches the dashboard. Same pattern is now used
+// across other route handlers that emit Sentry events from a serverless
+// runtime — see CLAUDE.md §26 for guidance.
 export async function GET() {
   if (process.env.NODE_ENV === 'production' && process.env.ENABLE_SENTRY_TEST !== '1') {
     return NextResponse.json(
@@ -15,7 +24,14 @@ export async function GET() {
     );
   }
 
-  // Tag the event so it's easy to find in the Sentry dashboard later.
   Sentry.setTag('sentry.smoketest', 'true');
-  throw new Error('[Sentry smoke test] Synthetic error from /api/sentry-test — safe to ignore.');
+  const eventId = Sentry.captureException(
+    new Error('[Sentry smoke test] Synthetic error from /api/sentry-test — safe to ignore.'),
+  );
+
+  // Wait up to 2s for the buffered envelope to reach Sentry before the
+  // serverless function process is torn down.
+  const flushed = await Sentry.flush(2000);
+
+  return NextResponse.json({ ok: true, eventId, flushed }, { status: 500 });
 }
