@@ -61,7 +61,27 @@ const PLATFORM_LABELS_TR: Record<string, string> = {
   yandex: 'Yandex',
 };
 
-export default async function DashboardPage({
+function isExpectedNavigationError(error: unknown) {
+  const digest = (error as { digest?: unknown })?.digest;
+  return typeof digest === 'string' && digest.startsWith('NEXT_');
+}
+
+export default async function DashboardPage(props: {
+  params: Promise<{ locale: Locale }>;
+}) {
+  try {
+    return await renderDashboardPage(props);
+  } catch (error) {
+    if (!isExpectedNavigationError(error)) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      console.error('[DashboardPage] Server render failed', { message, stack });
+    }
+    throw error;
+  }
+}
+
+async function renderDashboardPage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
