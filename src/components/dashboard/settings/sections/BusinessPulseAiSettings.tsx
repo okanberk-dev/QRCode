@@ -201,8 +201,8 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                     </span>
                     <span className="block text-[12px] text-[#737373] mt-0.5">
                       {isTr
-                        ? "1-3★ yorum geldiğinde taslak inbox'a gelir, manuel onaylayıp gönderirsin."
-                        : "When a 1-3★ review arrives, a draft lands in the inbox for your approval."}
+                        ? "Açıksa 1-3★ yorum geldiğinde taslak inbox'a gelir. Kapalıyken otomatik taslak üretilmez; manuel öneri butonu ayrı kalır."
+                        : "When on, 1-3★ reviews get an inbox draft. When off, no draft is created automatically; the manual suggestion button stays separate."}
                     </span>
                   </div>
                 </div>

@@ -170,6 +170,11 @@ Bu oturumda yapılan kalıcı kararlar:
 - Güvenlik notu: Google API key server-only tutulur. OAuth client secret kullanıcı tarafından ekranda paylaşıldığı için ilk uygun zamanda rotate edilmesi önerilir.
 - Sentry haftalık mailindeki `/admin/restaurants` hatası MetaMask tarayıcı eklentisi kaynaklı `app:///scripts/inpage.js` noise olarak sınıflandı; `instrumentation-client.ts` içinde MetaMask / browser-extension kaynaklı client event'leri `beforeSend` ile düşürülüyor.
 - Bildirim tercihleri UI'ı Pulse toggle bileşenine taşındı; owner ve admin notification sayfalarında mobil uyumlu kart + switch düzeni kullanılır. `/api/notifications` PUT body artık Zod `.strict()` ile doğrulanır.
+- Error-boundary mimarisi kalıcı hale getirildi: `src/app/global-error.tsx` artık markalı safe-mode fallback; `src/app/[locale]/dashboard/error.tsx` panel içi fallback; `src/lib/error-boundary.ts` tüm boundary'ler için Sentry tag'li raporlama + transient `network error`/`failed to fetch` otomatik tek retry helper'ı sağlar. Yeni app segment'i eklenirken global boundary'ye güvenmek yerine mümkünse segment-specific `error.tsx` ekle.
+- Supabase pooler production'da `connection_limit=1` ile kullanıldığı için server-render sayfalarda aynı request içinde çoklu Prisma read batch'leri `Promise.all([...])` yerine `prisma.$transaction([...])` ile tek connection üstünden yürütülür. Owner dashboard, owner analytics, admin dashboard ve menü analytics API bu kurala geçirildi. Cron/outbound per-row isolation için `Promise.allSettled` kullanılmaya devam eder.
+- Recharts `ResponsiveContainer` ölçüm uyarısı (`width(-1) height(-1)`) için `src/components/charts/MeasuredChart.tsx` eklendi. Yeni Recharts kullanımında önce pozitif `ResizeObserver` ölçümü al, sonra numeric `width/height` ile chart render et.
+- Chrome DevTools'taki `chrome-extension://... content-script-start.js`, `runtime.lastError: Receiving end does not exist`, `inpage.js Failed to connect to MetaMask` satırları uygulama hatası değil; tarayıcı eklentisi gürültüsü. Ürün tarafında sadece gerçek app kaynaklı warning/error'lar fixlenir.
+- Pulse AI owner auto-draft toggle'ı uçtan uca bağlandı: `enableAiDraft=false` iken yeni düşük puanlarda background draft yok, feedback seçimi otomatik suggestion üretmez, draft endpoint'i null döner ve toggle kapatılırken bekleyen `FeedbackAiDraft` kayıtları temizlenir. Manuel "Yeniden öner" bilinçli kullanıcı aksiyonu olarak çalışmaya devam eder.
 
 ### Platform dağılımı nerede gösteriliyor?
 - **Admin paneli** (`src/app/admin/dashboard/page.tsx`) → `<PlatformDistribution>` (detaylı bar chart + pills). Eskiden üstte ayrı bir "Platform Mini Cards" grid'i vardı — duplikasyon olduğu için kaldırıldı (2026-04).
@@ -187,7 +192,7 @@ src/
 │   ├── api/                   # cron/, auth/, admin/, feedback/, menu/, restaurants/, newsletter/, sentry-test, dev/, ...
 │   ├── r/[slug]/              # Public QR landing + feedback form
 │   ├── menu/[slug]/           # Public restoran menüsü (SSR)
-│   ├── global-error.tsx       # Sentry error boundary
+│   ├── global-error.tsx       # Branded safe-mode + Sentry error boundary
 │   ├── opengraph-image.tsx    # Dynamic 1200x630 OG image
 │   ├── robots.ts + sitemap.ts # SEO
 │   └── globals.css            # Pulse @theme + bz-* + pulse-* utility'leri
@@ -542,6 +547,10 @@ Public path (`/api/restaurants?slug=`) zaten Faz 1'de süpürüldü (PR #118). S
 
 **Yeni route eklerken:** `findUnique`'e `select: { ... }` ekle. Sonradan field eklersen `select`'i de güncelle. Lint kuralı bunu zorlamıyor; code review checklist.
 
+**Server-render Prisma batch kuralı (2026-05-03):** Vercel/Supabase pooler `connection_limit=1` altında bir Server Component veya tek request'lik API çok sayıda Prisma read'i aynı anda başlatırsa (`Promise.all([...prisma...])`) pool queue/timeout riski artar. Sayfanın tek snapshot'ını üretmek için bağımsız read batch'lerinde `prisma.$transaction([...])` kullan; bu tek connection üstünden sıralı ve tutarlı çalışır. Gerçek paralellik gereken outbound HTTP, cron per-row isolation veya kullanıcı aksiyon batch'lerinde `Promise.allSettled` pattern'i korunur.
+
+**Error boundary kuralı (2026-05-03):** Root `global-error.tsx` son güvenlik ağıdır; normal ürün akışları için segment bazlı `error.tsx` tercih edilir (`/[locale]/dashboard`, `/admin`, public QR/menu gibi). Tüm boundary'ler `reportBoundaryError(boundary, error)` ile Sentry'ye `boundary` tag'i yollar. Transient `TypeError: network error`, `failed to fetch`, `fetch failed`, `load failed` vakalarında `scheduleTransientRetry(...)` ile route başına 30 saniyede en fazla 1 otomatik retry yapılır; kalıcı hatada kullanıcıya `Tekrar dene` + güvenli dönüş CTA'sı gösterilir.
+
 **Zorunlu Vercel env var'ları:**
 - `DATABASE_URL` — Supabase pooler (port 6543)
 - `DIRECT_URL` — Supabase direct connection (port 5432) — `prisma db push` bunu kullanır. **Yoksa build fail eder.**
@@ -581,12 +590,14 @@ Yorum yanıt taslağı için "Taslak oluştur" butonu (`/admin/reviews` + `/[loc
 - **Endpoint:** `POST /api/feedback/[id]/suggest-reply`
   - IDOR: `getPanelActorFromRequest` + `canAccessRestaurant`
   - Rate limit: **30 istek / dk / workspace owner** (`resolveOwnerUserId(actor)` ile keylenir — team member'lar bypass yapamaz)
-  - Body: `{ locale?: 'tr' | 'en' }`; diğer her şey Prisma'dan
+  - Body: `{ locale?: 'tr' | 'en'; tone?: 'warm' | 'formal' | 'apologetic'; autoDraft?: boolean }`; diğer her şey Prisma'dan. `autoDraft:true` yalnız otomatik inbox fallback'i için kullanılır ve `enableAiDraft=false` ise `409 auto_draft_disabled` döner.
   - Response: `{ feedbackId, suggestion, source: 'openai' | 'template' | 'template-fallback' }`
 - **Fallback:** `OPENAI_API_KEY` yok / API hata → `buildReplyTemplate()` tek satır + `[fill in]` placeholder döner. UI'da gri "ŞABLON" rozeti, lime "AI" rozeti.
 - **Prompt:** Restoran itibar uzmanı, 2-4 cümle, max 80 kelime, ücretsiz ikram önerme, emoji yok. Model `gpt-4o-mini` default (env: `OPENAI_MODEL`).
 - **Maliyet:** ~400 token / öneri ≈ $0.0001. 10K öneri/ay = $1.
 - **Güvenlik:** Anahtar yalnız server-side (`process.env.OPENAI_API_KEY`); `NEXT_PUBLIC_` prefix yok, client bundle'a sızmaz.
+- **Auto-draft toggle kuralı:** `Restaurant.enableAiDraft=false` ise düşük puanlı yorumlarda arka plan draft üretilmez, owner inbox seçiminde `/draft` veya `suggest-reply` otomatik çağrılmaz, `/api/feedback/[id]/draft` `draft:null` döner. Manuel `Yeniden öner` / `suggest-reply` ayrı, açık kullanıcı aksiyonu olarak kalır.
+- **Disable cleanup:** Owner `Pulse AI taslaklarını otomatik hazırla` toggle'ını kapattığında `/api/restaurants/[id]/ai-settings` ilgili restoranın bekleyen `FeedbackAiDraft` kayıtlarını temizler; böylece eski draft badge'leri ve otomatik prefill görünmez.
 
 ### 15.1 AI Quota Guard (3-katmanlı koruma)
 
@@ -2917,7 +2928,7 @@ Bundle README + user prompt: *"mobil uygulama değil responsive olacak sadece"*.
 | `sentry.server.config.ts` | Server runtime init; `includeLocalVariables: true` (stack trace'de local vars) |
 | `sentry.edge.config.ts` | Edge runtime init |
 | `instrumentation-client.ts` | Browser init + `Sentry.replayIntegration()` + `onRouterTransitionStart` |
-| `src/app/global-error.tsx` | Uncaught error boundary; `NextError statusCode={0}` + `Sentry.captureException` |
+| `src/app/global-error.tsx` | Branded safe-mode uncaught boundary; `reportBoundaryError('global-error-boundary', error)` + retry/home CTA |
 | `next.config.ts` | Koşulsuz `withSentryConfig` wrap; auth token yoksa source-map upload silently skip |
 
 ### 26.2 KVKK / GDPR sapmaları (skill default'undan)
@@ -3223,7 +3234,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 - Scheduled job'lar için **Vercel Cron + API route + Upstash/DB** üçlüsü
 - Sentry'yi şu kategorilerde kullan:
   - Caught error'lar (try/catch içinde explicit `captureException`)
-  - Error boundary'ler (`global-error.tsx` zaten yapıyor)
+  - Error boundary'ler (`global-error.tsx` + segment `error.tsx` dosyaları `reportBoundaryError` ile yapıyor)
   - API failure'lar (`onRequestError` zaten yakalıyor)
   - Cron failure'lar (cron handler `try/catch` + `captureException` + tag `{ cron: 'name' }`)
   - Önemli integration failure'lar (OpenAI, Resend, Iyzico — fallback öncesi capture)

@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { CheckCircle2, Loader2, MessageSquareText, RefreshCw, Send, Sparkles, Star, ExternalLink, Inbox, Unplug } from 'lucide-react';
-import { AlertBanner, EmptyState, Field, PageHeader } from '@/components/ui';
+import { useRouter } from 'next/navigation';
+import { CheckCircle2, Loader2, RefreshCw, Send, Sparkles, Star, ExternalLink, Inbox, Unplug } from 'lucide-react';
+import { AlertBanner, Field, PageHeader } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 
 interface GoogleLocation {
@@ -95,6 +95,17 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: "
   );
 }
 
+function LoadingPanel({ label }: { label: string }) {
+  return (
+    <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8">
+      <div className="flex items-center justify-center gap-2 text-[13px] font-medium text-[#737373]">
+        <Loader2 size={16} className="animate-spin" />
+        {label}
+      </div>
+    </div>
+  );
+}
+
 function ReviewCard({
   review, locale, value, onChange, onDraft, onSend, drafting, replying, aiEnabled
 }: {
@@ -169,6 +180,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
 
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
+  const [checkedRestaurantId, setCheckedRestaurantId] = useState<string | null>(null);
   const [reviewsPayload, setReviewsPayload] = useState<ReviewsPayload | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
@@ -198,6 +210,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const loadStatusAndReviews = async (restaurantId: string) => {
     setStatusLoading(true);
     setStatus(null);
+    setCheckedRestaurantId(null);
     setReviewsPayload(null);
     setReviewsError(null);
 
@@ -206,6 +219,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Google durumu alınamadı.");
       setStatus(data);
+      setCheckedRestaurantId(restaurantId);
 
       if (data.googleReviewManagementEnabled && data.connected && data.selectedLocation) {
         setReviewsLoading(true);
@@ -299,13 +313,10 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     return { low, unanswered, replied, breakdown: ratingBreakdown(reviews) };
   }, [reviewsPayload]);
 
-  if (loadingInitial) {
-    return (
-      <div className="flex h-[400px] items-center justify-center">
-        <Loader2 className="animate-spin text-[#0A0A0A]" size={24} />
-      </div>
-    );
-  }
+  const statusIsReady = Boolean(
+    activeRestaurantId && checkedRestaurantId === activeRestaurantId && status,
+  );
+  const shouldShowStatusLoading = loadingInitial || statusLoading || Boolean(activeRestaurantId && !statusIsReady && !reviewsError);
 
   return (
     <div className="mx-auto max-w-[1000px] px-4 sm:px-7 py-6 lg:py-8">
@@ -336,10 +347,31 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         </div>
       )}
 
-      {statusLoading ? (
-        <div className="flex items-center gap-2 text-[13px] text-[#737373] mt-8">
-          <Loader2 size={16} className="animate-spin" />
-          {isTr ? "Google durumu kontrol ediliyor..." : "Checking Google status..."}
+      {shouldShowStatusLoading ? (
+        <LoadingPanel label={isTr ? "Google yorumları hazırlanıyor..." : "Preparing Google reviews..."} />
+      ) : restaurants.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">
+          <Inbox size={40} strokeWidth={1.5} className="mx-auto text-[#A3A3A3] mb-4" />
+          <h3 className="text-[18px] font-medium text-[#0A0A0A] mb-2">
+            {isTr ? "Henüz işletme yok" : "No business yet"}
+          </h3>
+          <p className="text-[14px] text-[#525252] max-w-md mx-auto">
+            {isTr
+              ? "Google yorumlarını yönetmek için önce panelden bir işletme oluşturmanız gerekiyor."
+              : "Create a business first before managing Google reviews."}
+          </p>
+        </div>
+      ) : reviewsError && !statusIsReady ? (
+        <div className="mt-6 space-y-4">
+          <AlertBanner kind="danger">{reviewsError}</AlertBanner>
+          <button
+            type="button"
+            className="bz-btn-ghost inline-flex items-center gap-1.5 rounded-full text-[12px]"
+            onClick={() => activeRestaurantId && loadStatusAndReviews(activeRestaurantId)}
+          >
+            <RefreshCw size={13} />
+            {isTr ? "Tekrar dene" : "Try again"}
+          </button>
         </div>
       ) : !status?.connected || !status?.selectedLocation ? (
         <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">

@@ -77,10 +77,24 @@ export async function PATCH(
       data,
       select: { enableAiDraft: true, googleAiEnabled: true, aiDraftTone: true },
     });
+    let clearedPendingDrafts: number | null = null;
+    if (data.enableAiDraft === false) {
+      try {
+        const result = await prisma.feedbackAiDraft.deleteMany({
+          where: { feedback: { is: { restaurantId: id } } },
+        });
+        clearedPendingDrafts = result.count;
+      } catch (draftErr) {
+        // A fresh preview DB might not have feedback_ai_drafts yet. The setting
+        // save must still succeed; the inbox will also hide drafts while off.
+        console.warn('[ai-settings PATCH] pending draft cleanup skipped:', draftErr);
+      }
+    }
     return NextResponse.json({
       enableAiDraft: updated.enableAiDraft,
       googleAiEnabled: updated.googleAiEnabled,
       aiDraftTone: updated.aiDraftTone,
+      clearedPendingDrafts,
     });
   } catch (err) {
     console.error('[ai-settings PATCH] failed:', err);

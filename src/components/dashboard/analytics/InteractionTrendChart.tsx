@@ -4,11 +4,11 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
+import { MeasuredChart } from '@/components/charts/MeasuredChart';
 
 export interface InteractionTrendPoint {
   /** Display label, dd/mm formatlı (ör. "01/05"). */
@@ -40,9 +40,9 @@ export default function InteractionTrendChart({ data, isTr }: Props) {
   const interval = len <= 7 ? 0 : len <= 30 ? 5 : Math.max(1, Math.floor(len / 6));
 
   return (
-    <div className="h-[240px] sm:h-[300px] md:h-[340px] w-full min-w-0">
-      <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-        <AreaChart data={data} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
+    <MeasuredChart className="h-[240px] sm:h-[300px] md:h-[340px] w-full min-w-0">
+      {({ width, height }) => (
+        <AreaChart width={width} height={height} data={data} margin={{ top: 10, right: 12, left: -12, bottom: 0 }}>
           <defs>
             <linearGradient id="trendScansFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#737373" stopOpacity={0.18} />
@@ -115,7 +115,7 @@ export default function InteractionTrendChart({ data, isTr }: Props) {
             activeDot={{ r: 4, fill: '#A8D62E', strokeWidth: 2, stroke: '#fff' }}
           />
         </AreaChart>
-      </ResponsiveContainer>
-    </div>
+      )}
+    </MeasuredChart>
   );
 }

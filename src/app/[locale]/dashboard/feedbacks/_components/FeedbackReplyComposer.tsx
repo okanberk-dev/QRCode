@@ -55,6 +55,7 @@ export function FeedbackReplyComposer({
 }: FeedbackReplyComposerProps) {
   const isTr = locale === 'tr';
   const customerFirst = (active.customerName ?? (isTr ? 'müşteri' : 'customer')).split(' ')[0];
+  const autoDraftEnabled = active.aiAutoDraftEnabled === true;
 
   return (
     <>
@@ -100,9 +101,13 @@ export function FeedbackReplyComposer({
           <p className="mt-3 text-[13px] leading-[1.65] text-white/80">
             {aiSuggestion
               ? `"${aiSuggestion}"`
-              : isTr
-                ? 'Pulse AI henüz bir taslak üretmedi.'
-                : 'Pulse AI has not produced a draft yet.'}
+              : autoDraftEnabled
+                ? isTr
+                  ? 'Pulse AI henüz bir taslak üretmedi.'
+                  : 'Pulse AI has not produced a draft yet.'
+                : isTr
+                  ? 'Otomatik taslak kapalı. İstersen "Yeniden öner" ile manuel taslak oluşturabilirsin.'
+                  : 'Auto-drafts are off. You can still create one manually with "Regenerate".'}
           </p>
         )}
 

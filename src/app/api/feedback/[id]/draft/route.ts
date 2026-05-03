@@ -1,6 +1,6 @@
 // Pulse AI auto-draft access. The owner reply form pre-fills from this
-// endpoint when a pending draft exists; otherwise the form falls back to
-// on-demand suggest-reply.
+// endpoint when auto-draft is enabled and a pending draft exists. Manual
+// on-demand suggest-reply stays available even when auto-draft is off.
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
@@ -14,7 +14,11 @@ async function requireFeedbackAccess(req: NextRequest, id: string) {
 
   const feedback = await prisma.feedback.findUnique({
     where: { id },
-    select: { id: true, restaurantId: true },
+    select: {
+      id: true,
+      restaurantId: true,
+      restaurant: { select: { enableAiDraft: true } },
+    },
   });
   if (!feedback) return { error: 'not_found' as const, status: 404 };
 
@@ -32,6 +36,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const access = await requireFeedbackAccess(req, id);
   if ('error' in access) {
     return NextResponse.json({ error: access.error }, { status: access.status });
+  }
+
+  if (access.feedback.restaurant?.enableAiDraft !== true) {
+    return NextResponse.json({ draft: null, autoDraftDisabled: true });
   }
 
   // Defensive: if the FeedbackAiDraft table hasn't been pushed to this DB

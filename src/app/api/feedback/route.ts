@@ -374,7 +374,7 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
         include: {
-          restaurant: { select: { name: true, slug: true } },
+          restaurant: { select: { name: true, slug: true, enableAiDraft: true } },
           flag: { select: { id: true } },
           assignment: { select: { assigneeId: true } },
           tags: { select: { id: true, label: true, score: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
@@ -394,7 +394,7 @@ export async function GET(req: NextRequest) {
           skip,
           take: limit,
           include: {
-            restaurant: { select: { name: true, slug: true } },
+            restaurant: { select: { name: true, slug: true, enableAiDraft: true } },
             flag: { select: { id: true } },
             assignment: { select: { assigneeId: true } },
             _count: { select: { replies: true } },
@@ -412,7 +412,7 @@ export async function GET(req: NextRequest) {
           orderBy: { createdAt: sortOrder },
           skip,
           take: limit,
-          include: { restaurant: { select: { name: true, slug: true } } },
+          include: { restaurant: { select: { name: true, slug: true, enableAiDraft: true } } },
         });
       }
     }
@@ -456,18 +456,24 @@ export async function GET(req: NextRequest) {
         flag?: unknown;
         assignment?: { assigneeId?: string | null };
         tags?: unknown[];
+        restaurant?: { name?: string; slug?: string | null; enableAiDraft?: boolean | null } | null;
       };
       const draft = f.id ? aiDraftMap.get(f.id) : undefined;
+      const aiAutoDraftEnabled = f.restaurant?.enableAiDraft === true;
       return {
         ...f,
         customerName: f.name,
         customerEmail: f.email,
+        restaurant: f.restaurant
+          ? { name: f.restaurant.name ?? '', slug: f.restaurant.slug ?? undefined }
+          : null,
         isReplied: joinsAvailable ? (f._count?.replies ?? 0) > 0 : false,
         isFlagged: joinsAvailable ? Boolean(f.flag) : false,
         isAssigned: joinsAvailable ? Boolean(f.assignment) : false,
         assigneeId: joinsAvailable ? f.assignment?.assigneeId ?? null : null,
         tags: joinsAvailable && tagsAvailable ? (f.tags ?? []) : [],
-        hasPendingAiDraft: aiDraftAvailable && Boolean(draft),
+        aiAutoDraftEnabled,
+        hasPendingAiDraft: aiDraftAvailable && aiAutoDraftEnabled && Boolean(draft),
         aiDraftTone: draft?.tone ?? null,
       };
     });

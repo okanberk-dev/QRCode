@@ -41,7 +41,7 @@ function isPrismaSchemaDriftError(error: unknown) {
 
 async function fetchMenuCounts(restaurantId: string) {
   try {
-    const [categoryCount, itemCount] = await Promise.all([
+    const [categoryCount, itemCount] = await prisma.$transaction([
       prisma.menuCategory.count({ where: { restaurantId, deletedAt: null } }),
       prisma.menuItem.count({ where: { restaurantId, deletedAt: null } }),
     ]);
@@ -50,7 +50,7 @@ async function fetchMenuCounts(restaurantId: string) {
     if (!isPrismaSchemaDriftError(error)) throw error;
     // Schema drift on preview deploys — fall back to count without deletedAt filter.
     try {
-      const [categoryCount, itemCount] = await Promise.all([
+      const [categoryCount, itemCount] = await prisma.$transaction([
         prisma.menuCategory.count({ where: { restaurantId } }),
         prisma.menuItem.count({ where: { restaurantId } }),
       ]);
@@ -135,12 +135,11 @@ export default async function DashboardMenuPage({
   // 2+ restaurants — show a clean picker. Each card carries enough context
   // (status, counts, last updated) for the operator to pick the right menu
   // without bouncing through a read-only summary first.
-  const summaries: RestaurantSummary[] = await Promise.all(
-    restaurants.map(async (r) => {
-      const counts = await fetchMenuCounts(r.id);
-      return { ...r, ...counts };
-    }),
-  );
+  const summaries: RestaurantSummary[] = [];
+  for (const restaurant of restaurants) {
+    const counts = await fetchMenuCounts(restaurant.id);
+    summaries.push({ ...restaurant, ...counts });
+  }
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
@@ -280,4 +279,3 @@ function RestaurantMenuCard({
     </Link>
   );
 }
-

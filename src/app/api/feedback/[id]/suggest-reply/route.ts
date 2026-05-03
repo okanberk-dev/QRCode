@@ -43,7 +43,7 @@ export async function POST(
   }
 
   const { id } = await params;
-  let body: { locale?: 'tr' | 'en'; tone?: AiDraftTone } = {};
+  let body: { locale?: 'tr' | 'en'; tone?: AiDraftTone; autoDraft?: boolean } = {};
   try {
     body = await req.json();
   } catch {
@@ -60,7 +60,7 @@ export async function POST(
       name: true,
       platform: true,
       restaurantId: true,
-      restaurant: { select: { name: true, category: true, aiDraftTone: true } },
+      restaurant: { select: { name: true, category: true, aiDraftTone: true, enableAiDraft: true } },
     },
   });
 
@@ -70,6 +70,10 @@ export async function POST(
 
   if (!(await canAccessRestaurant(actor, feedback.restaurantId))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  if (body.autoDraft === true && feedback.restaurant.enableAiDraft !== true) {
+    return NextResponse.json({ error: 'auto_draft_disabled' }, { status: 409 });
   }
 
   // Tone precedence: explicit body.tone → restaurant default → 'warm'.

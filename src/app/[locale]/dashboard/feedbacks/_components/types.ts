@@ -15,6 +15,7 @@ export interface FeedbackRow {
   isReplied?: boolean;
   isFlagged?: boolean;
   hasPendingAiDraft?: boolean;
+  aiAutoDraftEnabled?: boolean;
   aiDraftTone?: 'warm' | 'formal' | 'apologetic' | null;
   restaurant?: { name: string; slug?: string } | null;
 }

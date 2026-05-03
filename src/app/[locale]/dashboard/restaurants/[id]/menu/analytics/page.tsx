@@ -8,10 +8,11 @@ import {
   MousePointerClick, RefreshCw, Sparkles, TrendingDown, TrendingUp, X,
 } from 'lucide-react';
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar,
 } from 'recharts';
 import { formatPct } from '@/lib/analytics-heuristics';
 import type { Locale } from '@/lib/translations';
+import { MeasuredChart } from '@/components/charts/MeasuredChart';
 import { AlertBanner } from '@/components/ui';
 
 type Range = '7d' | '30d' | '90d' | 'all';
@@ -371,9 +372,9 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
       <div className="mb-4">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-[#0A0A0A]">{copy.trends}</h2>
       </div>
-      <div className="h-72 min-h-[288px] w-full min-w-[1px] overflow-hidden">
-        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-          <AreaChart data={trend} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+      <MeasuredChart className="h-72 min-h-[288px] w-full min-w-[1px] overflow-hidden">
+        {({ width, height }) => (
+          <AreaChart width={width} height={height} data={trend} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradViews" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#C6F24E" stopOpacity={0.6} />
@@ -394,8 +395,8 @@ function TrendChart({ trend, copy, isTr }: { trend: AnalyticsResponse['trend']; 
             <Area type="monotone" dataKey="menuViews" stroke="#C6F24E" strokeWidth={2} fill="url(#gradViews)" name={copy.kpiMenuViews} />
             <Area type="monotone" dataKey="productClicks" stroke="#0A0A0A" strokeWidth={2} fill="url(#gradClicks)" name={isTr ? 'Ürün Tıklama' : 'Product Clicks'} />
           </AreaChart>
-        </ResponsiveContainer>
-      </div>
+        )}
+      </MeasuredChart>
     </div>
   );
 }
@@ -452,9 +453,9 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: Copy })
       {dataRows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
       ) : (
-        <div className="h-72 min-h-[288px] w-full min-w-[1px] overflow-hidden">
-          <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-            <BarChart data={dataRows} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+        <MeasuredChart className="h-72 min-h-[288px] w-full min-w-[1px] overflow-hidden">
+          {({ width, height }) => (
+            <BarChart width={width} height={height} data={dataRows} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#EDEDED" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 11, fill: '#6B7280' }} stroke="#EDEDED" allowDecimals={false} />
               <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#0A0A0A' }} stroke="#EDEDED" width={90} />
@@ -465,8 +466,8 @@ function TopCategoriesChart({ rows, copy }: { rows: CategoryRow[]; copy: Copy })
               <Bar dataKey="clicks" fill="#C6F24E" radius={[0, 6, 6, 0]} name={copy.columns.clicks} />
               <Bar dataKey="views" fill="#0A0A0A" radius={[0, 6, 6, 0]} name={copy.columns.views} />
             </BarChart>
-          </ResponsiveContainer>
-        </div>
+          )}
+        </MeasuredChart>
       )}
     </div>
   );

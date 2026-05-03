@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
+import { reportBoundaryError, scheduleTransientRetry } from '@/lib/error-boundary';
 
 export default function MenuError({
   error,
@@ -11,8 +12,9 @@ export default function MenuError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('[menu-error-boundary]', error);
-  }, [error]);
+    reportBoundaryError('public-menu-error-boundary', error);
+    return scheduleTransientRetry('public-menu', error, reset);
+  }, [error, reset]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] font-sans px-6 py-12">

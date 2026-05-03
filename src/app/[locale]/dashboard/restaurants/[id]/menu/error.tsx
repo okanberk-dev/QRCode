@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
+import { reportBoundaryError, scheduleTransientRetry } from '@/lib/error-boundary';
 
 export default function MenuBuilderError({
   error,
@@ -17,8 +18,9 @@ export default function MenuBuilderError({
   const isTr = locale === 'tr';
 
   useEffect(() => {
-    console.error('[dashboard/restaurants/[id]/menu]', error);
-  }, [error]);
+    reportBoundaryError('menu-builder-error-boundary', error);
+    return scheduleTransientRetry('menu-builder', error, reset);
+  }, [error, reset]);
 
   return (
     <div className="mx-auto max-w-[640px] px-4 py-12 sm:px-8 lg:py-16">

@@ -199,6 +199,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     [feedbacks],
   );
 
+  const activeFeedbackId = active?.id ?? null;
+  const activeCustomerEmail = active?.customerEmail ?? null;
+  const activeCustomerName = active?.customerName ?? null;
+  const activeRating = active?.rating ?? null;
+  const activeIsReplied = active?.isReplied === true;
+  const activeAutoDraftEnabled = active?.aiAutoDraftEnabled === true;
+
   // ============================================================
   // Notification deep-link: scroll + lime pulse
   // ============================================================
@@ -254,32 +261,43 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // yorumlar için üretilir. Yüksek puanlı yorumlar zaten platforma
   // yönlendirilmiş, yanıtlanmış yorumlar için yeni öneri gereksiz —
   // ikisi de UI'da bloğu gizler ve gereksiz network çağrısı yapmaz.
+  // Restoran bazlı `enableAiDraft=false` ise seçim anında draft endpoint'i
+  // ve suggest-reply otomatik çağrılmaz; manuel "Yeniden öner" ayrı kalır.
   // (Eski davranış her seçimde 1-2 fetch tetikliyordu → "AI iki defa
   // üretti" hissi doğuyordu.)
   // ============================================================
   useEffect(() => {
-    if (!active) {
+    if (!activeFeedbackId || activeRating === null) {
       setAiSuggestion('');
       setAiSource(null);
       setAiLoading(false);
       setAiFromBackground(false);
       return;
     }
-    setSendEmail(Boolean(active.customerEmail));
+    setSendEmail(Boolean(activeCustomerEmail));
     setAiSuggestion('');
     setAiSource(null);
     setAiFromBackground(false);
-    if (active.rating >= 4 || active.isReplied) {
+    if (activeRating >= 4 || activeIsReplied) {
       setAiLoading(false);
       return;
     }
+    if (!activeAutoDraftEnabled) {
+      setAiLoading(false);
+      return;
+    }
+    let cancelled = false;
     setAiLoading(true);
     (async () => {
       try {
-        const draftRes = await fetch(`/api/feedback/${active.id}/draft`);
+        const draftRes = await fetch(`/api/feedback/${activeFeedbackId}/draft`);
         if (draftRes.ok) {
           const data = await draftRes.json();
-          if (data?.draft?.body) {
+          if (!cancelled && data?.autoDraftDisabled) {
+            setAiLoading(false);
+            return;
+          }
+          if (!cancelled && data?.draft?.body) {
             setAiSuggestion(data.draft.body);
             setAiSource(data.draft.source === 'ai_copilot' ? 'openai' : 'template-fallback');
             if (
@@ -298,34 +316,48 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         /* fall through */
       }
       try {
-        const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
+        const res = await fetch(`/api/feedback/${activeFeedbackId}/suggest-reply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ locale }),
+          body: JSON.stringify({ locale, autoDraft: true }),
         });
         if (res.ok) {
           const data = await res.json();
+          if (cancelled) return;
           if (typeof data?.suggestion === 'string') setAiSuggestion(data.suggestion);
           if (typeof data?.source === 'string') setAiSource(data.source);
           if (data?.tone === 'warm' || data?.tone === 'formal' || data?.tone === 'apologetic') {
             setAiTone(data.tone);
           }
         } else {
+          if (cancelled) return;
           setAiSuggestion(
-            buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }),
+            buildReplyTemplate({ name: activeCustomerName, rating: activeRating, locale }),
           );
           setAiSource('template-fallback');
         }
       } catch {
+        if (cancelled) return;
         setAiSuggestion(
-          buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }),
+          buildReplyTemplate({ name: activeCustomerName, rating: activeRating, locale }),
         );
         setAiSource('template-fallback');
       } finally {
-        setAiLoading(false);
+        if (!cancelled) setAiLoading(false);
       }
     })();
-  }, [active, locale]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    activeAutoDraftEnabled,
+    activeCustomerEmail,
+    activeCustomerName,
+    activeFeedbackId,
+    activeIsReplied,
+    activeRating,
+    locale,
+  ]);
 
   // ============================================================
   // Action handlers

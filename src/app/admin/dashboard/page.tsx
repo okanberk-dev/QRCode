@@ -77,7 +77,7 @@ export default async function AdminDashboardPage() {
     ownersThirtyDaysAgo,
     restaurantsForGrowth,
     recentRestaurants,
-  ] = await Promise.all([
+  ] = await prisma.$transaction([
     prisma.restaurant.count(),
     prisma.restaurant.count({ where: { createdAt: { gte: oneDayAgo } } }),
     prisma.feedback.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
@@ -195,7 +195,7 @@ export default async function AdminDashboardPage() {
     staleAccounts,
     restaurantsForQuota,
     unverifiedPlatform,
-  ] = await Promise.all([
+  ] = await prisma.$transaction([
     prisma.user.count({
       where: { plan: 'trial', trialEndsAt: { gt: nowDate, lte: sevenDaysAhead } },
     }),

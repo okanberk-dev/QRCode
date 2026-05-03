@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
+import { reportBoundaryError, scheduleTransientRetry } from '@/lib/error-boundary';
 
 export default function DashboardMenuError({
   error,
@@ -17,8 +18,9 @@ export default function DashboardMenuError({
   const isTr = locale === 'tr';
 
   useEffect(() => {
-    console.error('[dashboard/menu]', error);
-  }, [error]);
+    reportBoundaryError('dashboard-menu-error-boundary', error);
+    return scheduleTransientRetry('dashboard-menu', error, reset);
+  }, [error, reset]);
 
   return (
     <div className="mx-auto max-w-[640px] px-4 py-12 sm:px-8 lg:py-16">

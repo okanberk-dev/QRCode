@@ -81,7 +81,28 @@ const RANGE_DAYS: Record<string, number> = {
   '90d': 90,
 };
 
-export default async function AnalyticsPage({
+function isExpectedNavigationError(error: unknown) {
+  const digest = (error as { digest?: unknown })?.digest;
+  return typeof digest === 'string' && digest.startsWith('NEXT_');
+}
+
+export default async function AnalyticsPage(props: {
+  params: Promise<{ locale: Locale }>;
+  searchParams: Promise<{ range?: string; platform?: string; branch?: string; restaurantId?: string }>;
+}) {
+  try {
+    return await renderAnalyticsPage(props);
+  } catch (error) {
+    if (!isExpectedNavigationError(error)) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      console.error('[AnalyticsPage] Server render failed', { message, stack });
+    }
+    throw error;
+  }
+}
+
+async function renderAnalyticsPage({
   params,
   searchParams,
 }: {
@@ -153,7 +174,7 @@ export default async function AnalyticsPage({
     scansWindowCount,
     scansPrevWindowCount,
     scansWindowDaily,
-  ] = await Promise.all([
+  ] = await prisma.$transaction([
     // Window feedback'leri — multi-purpose select: hour bucket, aspect avg,
     // theme analysis (comment), response time (replies). Tek query
     // multiple-section'ı besler (CLAUDE.md §7 — replication önleme).

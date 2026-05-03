@@ -89,7 +89,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       clicksByCategory,
       productViews,
       productClicks,
-    ] = await Promise.all([
+    ] = await prisma.$transaction([
       prisma.menuCategory.findMany({
         where: { restaurantId: id, deletedAt: null },
         select: { id: true, name: true, sortOrder: true },
@@ -158,7 +158,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           : {}),
       };
       const prevScoped: Prisma.MenuAnalyticsEventWhereInput = { ...prevBase, ...(categoryId ? { categoryId } : {}) };
-      const [prevMenuViews, prevEvents] = await Promise.all([
+      const [prevMenuViews, prevEvents] = await prisma.$transaction([
         prisma.menuAnalyticsEvent.count({ where: { ...prevBase, eventType: 'menu_view' } }),
         prisma.menuAnalyticsEvent.groupBy({ by: ['eventType'], where: prevScoped, _count: { _all: true } }),
       ]);

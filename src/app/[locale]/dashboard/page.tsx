@@ -125,9 +125,10 @@ async function renderDashboardPage({
   const sevenDaysAgo = new Date(now - 7 * 86400000);
   const fourteenDaysAgo = new Date(now - 14 * 86400000);
 
-  // ---- Tek toplu Promise.all bloğu ----
-  // Eski versiyon 27 ayrı Prisma çağrısı + 4 ayrı Promise.all yapıyordu.
-  // Tek batch'te 13 paralel query — round-trip 1, kod akışı sıralı okunabilir.
+  // ---- Tek toplu Prisma transaction bloğu ----
+  // Supabase pooler production'da connection_limit=1 ile çalışır; aynı
+  // request içinde çok sayıda paralel query açmak pool_timeout riskini
+  // artırır. Array transaction tek connection üstünden sırayla çalışır.
   // Boş restIds için Prisma `in: []` zaten 0 satır döner; fallback path
   // gereksiz. (Postgres `WHERE id = ANY(ARRAY[]::text[])` syntactically OK.)
   const [
@@ -146,7 +147,7 @@ async function renderDashboardPage({
     prev7Redirected,
     last7Scans,
     prev7Scans,
-  ] = await Promise.all([
+  ] = await prisma.$transaction([
     // KPI 4: Platforma yönlendirme (all-time) — değer KPI'da; delta last7 vs prev7
     prisma.feedback.count({ where: { restaurantId: restIdIn, ...REDIRECT_WHERE } }),
     // Son yorumlar listesi

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { RefreshCw, Home, AlertTriangle } from 'lucide-react';
+import { reportBoundaryError, scheduleTransientRetry } from '@/lib/error-boundary';
 
 export default function AdminError({
   error,
@@ -12,8 +13,9 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('[admin-error-boundary]', error);
-  }, [error]);
+    reportBoundaryError('admin-error-boundary', error);
+    return scheduleTransientRetry('admin', error, reset);
+  }, [error, reset]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] font-sans px-6 py-12">
