@@ -59,6 +59,7 @@ interface RestaurantData {
   bookingEnabled: boolean;
   yandexUrl: string | null;
   yandexEnabled: boolean;
+  externalPlatformsEnabled?: boolean;
   defaultRedirectPlatform: string | null;
   instagramUrl: string | null;
   facebookUrl: string | null;
@@ -318,6 +319,7 @@ export function BusinessIntegrationSettings({
   const [success, setSuccess] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
   const [latestChecks, setLatestChecks] = useState<Record<string, LatestCheck>>({});
+  const externalPlatformsEnabled = restaurant.externalPlatformsEnabled !== false;
 
   useEffect(() => {
     const next = toForm(restaurant);
@@ -364,8 +366,11 @@ export function BusinessIntegrationSettings({
 
   const allowedPlatforms = useMemo(() => getSectorPlatforms(form.googleEnabled ? restaurant.category : restaurant.category), [restaurant.category, form.googleEnabled]);
   const visibleDefs = useMemo(
-    () => PLATFORM_DEFS.filter((d) => allowedPlatforms.has(d.id)),
-    [allowedPlatforms],
+    () =>
+      PLATFORM_DEFS.filter(
+        (d) => allowedPlatforms.has(d.id) && (externalPlatformsEnabled || d.id === "google"),
+      ),
+    [allowedPlatforms, externalPlatformsEnabled],
   );
   const enabledPlatformsForPicker = useMemo<PlatformId[]>(
     () =>
@@ -388,7 +393,9 @@ export function BusinessIntegrationSettings({
   const fieldQuality = useMemo<Partial<Record<keyof FormState, FieldQuality>>>(() => {
     const out: Partial<Record<keyof FormState, FieldQuality>> = {};
     const checks: Array<[keyof FormState, IntegrationProvider]> = [
-      ...PLATFORM_DEFS.map((d) => [d.urlKey, d.testProvider] as [keyof FormState, IntegrationProvider]),
+      ...PLATFORM_DEFS
+        .filter((d) => externalPlatformsEnabled || d.id === "google")
+        .map((d) => [d.urlKey, d.testProvider] as [keyof FormState, IntegrationProvider]),
       ...SOCIAL_DEFS.map((d) => [d.key, d.testProvider] as [keyof FormState, IntegrationProvider]),
     ];
     for (const [field, provider] of checks) {
@@ -404,7 +411,7 @@ export function BusinessIntegrationSettings({
       }
     }
     return out;
-  }, [form, locale]);
+  }, [form, locale, externalPlatformsEnabled]);
 
   const hasHardErrors = Object.values(fieldQuality).some(
     (q) => q?.result.severity === "error",
@@ -427,28 +434,32 @@ export function BusinessIntegrationSettings({
       const payload: Partial<RestaurantData> = {
         googleReviewUrl: form.googleReviewUrl.trim() || null,
         googleEnabled: form.googleEnabled,
-        yemekSepetiUrl: form.yemekSepetiUrl.trim() || null,
-        yemekSepetiEnabled: form.yemekSepetiEnabled,
-        getirYemekUrl: form.getirYemekUrl.trim() || null,
-        getirEnabled: form.getirEnabled,
-        trendyolYemekUrl: form.trendyolYemekUrl.trim() || null,
-        trendyolEnabled: form.trendyolEnabled,
-        tripAdvisorUrl: form.tripAdvisorUrl.trim() || null,
-        tripAdvisorEnabled: form.tripAdvisorEnabled,
-        airbnbUrl: form.airbnbUrl.trim() || null,
-        airbnbEnabled: form.airbnbEnabled,
-        bookingUrl: form.bookingUrl.trim() || null,
-        bookingEnabled: form.bookingEnabled,
-        yandexUrl: form.yandexUrl.trim() || null,
-        yandexEnabled: form.yandexEnabled,
         instagramUrl: form.instagramUrl.trim() || null,
         facebookUrl: form.facebookUrl.trim() || null,
         whatsappUrl: form.whatsappUrl.trim() || null,
         reservationUrl: form.reservationUrl.trim() || null,
-        otherPlatformUrl: form.otherPlatformUrl.trim() || null,
-        otherPlatformLabel: form.otherPlatformLabel.trim() || null,
-        otherPlatformEnabled: form.otherPlatformEnabled,
       };
+      if (externalPlatformsEnabled) {
+        Object.assign(payload, {
+          yemekSepetiUrl: form.yemekSepetiUrl.trim() || null,
+          yemekSepetiEnabled: form.yemekSepetiEnabled,
+          getirYemekUrl: form.getirYemekUrl.trim() || null,
+          getirEnabled: form.getirEnabled,
+          trendyolYemekUrl: form.trendyolYemekUrl.trim() || null,
+          trendyolEnabled: form.trendyolEnabled,
+          tripAdvisorUrl: form.tripAdvisorUrl.trim() || null,
+          tripAdvisorEnabled: form.tripAdvisorEnabled,
+          airbnbUrl: form.airbnbUrl.trim() || null,
+          airbnbEnabled: form.airbnbEnabled,
+          bookingUrl: form.bookingUrl.trim() || null,
+          bookingEnabled: form.bookingEnabled,
+          yandexUrl: form.yandexUrl.trim() || null,
+          yandexEnabled: form.yandexEnabled,
+          otherPlatformUrl: form.otherPlatformUrl.trim() || null,
+          otherPlatformLabel: form.otherPlatformLabel.trim() || null,
+          otherPlatformEnabled: form.otherPlatformEnabled,
+        });
+      }
       const res = await fetch(`/api/restaurants/${restaurant.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -565,6 +576,13 @@ export function BusinessIntegrationSettings({
           ? "Bu sayfa platform bağlantılarını yönetir. Resmi API senkronizasyonları desteklenen platformlarda ayrıca yapılandırılır. Bazı platformlar otomatik testleri engelleyebilir; başarısız test her zaman bağlantının tarayıcıda kırık olduğu anlamına gelmez."
           : "This page manages platform links. Official API sync is configured separately for supported platforms. Some platforms may block automated checks — a failed test does not always mean the link is broken in a browser."}
       </AlertBanner>
+      {!externalPlatformsEnabled && (
+        <AlertBanner kind="warn">
+          {isTr
+            ? "Google dışındaki yorum platformları bu işletme için admin tarafından kapalı. Google bağlantısı ve sosyal linkler çalışmaya devam eder."
+            : "Non-Google review platforms are disabled for this location by admin. Google linking and social links remain available."}
+        </AlertBanner>
+      )}
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>
           {error}
@@ -707,6 +725,7 @@ export function BusinessIntegrationSettings({
       {/* "Diğer" özel platform — TheFork, OpenTable veya sektör-spesifik
           review URL'leri için. Domain validation YOK (free-form), sadece
           http(s) protocol kontrolü save sırasında server-side. */}
+      {externalPlatformsEnabled ? (
       <SettingsCard
         icon={<LinkIcon size={18} />}
         title={isTr ? "Diğer platform" : "Other platform"}
@@ -761,6 +780,7 @@ export function BusinessIntegrationSettings({
           </div>
         </div>
       </SettingsCard>
+      ) : null}
 
       <UnsavedChangesBar
         dirty={dirty}

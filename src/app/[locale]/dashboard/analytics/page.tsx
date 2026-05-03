@@ -122,7 +122,10 @@ async function renderAnalyticsPage({
 
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
-    include: { restaurants: { select: { id: true, name: true } } },
+    select: {
+      id: true,
+      restaurants: { select: { id: true, name: true, aiAnalyticsEnabled: true } },
+    },
   });
   if (!user) redirect(`/${locale}/auth/login`);
 
@@ -182,6 +185,7 @@ async function renderAnalyticsPage({
       where: { ...baseWhere, createdAt: { gte: windowStart } },
       select: {
         id: true,
+        restaurantId: true,
         rating: true,
         platform: true,
         comment: true,
@@ -407,10 +411,19 @@ async function renderAnalyticsPage({
     platformFilter || 'all',
     branchFilter || 'all',
   ].join(':');
+  const aiEnabledRestaurantIds = new Set(
+    user.restaurants.filter((r) => r.aiAnalyticsEnabled).map((r) => r.id),
+  );
+  const aiAnalyticsAvailable = restaurantIds.some((restaurantId) =>
+    aiEnabledRestaurantIds.has(restaurantId),
+  );
   const themesComments = feedbacksWindow
+    .filter((f) => typeof f.restaurantId === 'string' && aiEnabledRestaurantIds.has(f.restaurantId))
     .filter((f): f is typeof f & { comment: string } => typeof f.comment === 'string' && f.comment.trim().length > 0)
     .map((f) => ({ rating: f.rating, comment: f.comment }));
-  const themes = await extractThemes(themesComments, isTr ? 'tr' : 'en', themesCacheKey, user.id);
+  const themes = aiAnalyticsAvailable
+    ? await extractThemes(themesComments, isTr ? 'tr' : 'en', themesCacheKey, user.id)
+    : { themes: [], synthesis: '', source: 'fallback' as const };
 
   const windowLabel = isTr ? `${windowDays} GÜNLÜK` : `${windowDays}-DAY`;
   const windowSuffix = isTr ? `önceki ${windowDays} güne göre` : `vs prev ${windowDays}d`;
@@ -670,6 +683,7 @@ async function renderAnalyticsPage({
       {/* AI sentiment themes — single section: müşterinin en sık dile getirdiği
           ortak temalar + AI sentez çıkarımı. Praise vs complaint ayrımı
           kaldırıldı (CLAUDE.md §34.x retrofit, 2026-05). */}
+      {aiAnalyticsAvailable && (
       <section className="bz-card p-5 sm:p-6">
         <header className="flex items-start justify-between gap-2 mb-3">
           <div>
@@ -723,6 +737,7 @@ async function renderAnalyticsPage({
           </ol>
         )}
       </section>
+      )}
     </div>
   );
 }

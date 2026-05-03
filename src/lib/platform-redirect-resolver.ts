@@ -23,6 +23,7 @@
 
 import type { PlatformId } from '@/components/ui';
 import { detectSector, SECTOR_PLATFORMS } from '@/lib/sector-platforms';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
 
 export type RedirectProvider =
   | 'google'
@@ -69,6 +70,7 @@ export interface ResolveRestaurantInput {
   airbnbEnabled: boolean;
   bookingEnabled: boolean;
   yandexEnabled: boolean;
+  externalPlatformsEnabled?: boolean;
 }
 
 const PROVIDER_FIELDS: Record<
@@ -149,6 +151,7 @@ function isUsable(
   const fields = PROVIDER_FIELDS[provider];
   const url = restaurant[fields.url] as string | null;
   const enabled = restaurant[fields.enabled] as boolean;
+  if (restaurant.externalPlatformsEnabled === false && isExternalReviewProvider(provider)) return null;
   if (!url || !url.trim()) return null;
   if (!enabled) return null;
   if (isBroken(provider, latestChecks, brokenWindowHours, now)) return null;

@@ -13,6 +13,7 @@ interface RestaurantOption {
 }
 
 interface RestaurantSettings {
+  pulseAiEnabled: boolean;
   enableAiDraft: boolean;
   googleAiEnabled: boolean;
   aiDraftTone: Tone;
@@ -71,11 +72,12 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
           try {
             const res = await fetch(`/api/restaurants/${r.id}/ai-settings`);
             if (!res.ok) {
-              next[r.id] = { enableAiDraft: false, googleAiEnabled: true, aiDraftTone: "warm", loaded: true, saving: false };
+              next[r.id] = { pulseAiEnabled: false, enableAiDraft: false, googleAiEnabled: false, aiDraftTone: "warm", loaded: true, saving: false };
               return;
             }
             const data = await res.json();
             next[r.id] = {
+              pulseAiEnabled: Boolean(data.pulseAiEnabled ?? true),
               enableAiDraft: Boolean(data.enableAiDraft),
               googleAiEnabled: Boolean(data.googleAiEnabled ?? true),
               aiDraftTone: (data.aiDraftTone as Tone) ?? "warm",
@@ -83,7 +85,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
               saving: false,
             };
           } catch {
-            next[r.id] = { enableAiDraft: false, googleAiEnabled: true, aiDraftTone: "warm", loaded: true, saving: false };
+            next[r.id] = { pulseAiEnabled: false, enableAiDraft: false, googleAiEnabled: false, aiDraftTone: "warm", loaded: true, saving: false };
           }
         }),
       );
@@ -95,7 +97,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
   }, [restaurants]);
 
   const update = async (id: string, patch: Partial<Pick<RestaurantSettings, "enableAiDraft" | "googleAiEnabled" | "aiDraftTone">>) => {
-    setSettings((s) => ({ ...s, [id]: { ...(s[id] ?? { enableAiDraft: false, googleAiEnabled: true, aiDraftTone: "warm", loaded: true, saving: false }), ...patch, saving: true, error: null } }));
+    setSettings((s) => ({ ...s, [id]: { ...(s[id] ?? { pulseAiEnabled: true, enableAiDraft: false, googleAiEnabled: true, aiDraftTone: "warm", loaded: true, saving: false }), ...patch, saving: true, error: null } }));
     try {
       const res = await fetch(`/api/restaurants/${id}/ai-settings`, {
         method: "PATCH",
@@ -111,6 +113,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
       setSettings((s) => ({
         ...s,
         [id]: {
+          pulseAiEnabled: Boolean(data.pulseAiEnabled ?? true),
           enableAiDraft: Boolean(data.enableAiDraft),
           googleAiEnabled: Boolean(data.googleAiEnabled ?? true),
           aiDraftTone: (data.aiDraftTone as Tone) ?? "warm",
@@ -149,8 +152,9 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
       </AlertBanner>
 
       {restaurants.map((r) => {
-        const s = settings[r.id];
-        const loaded = Boolean(s?.loaded);
+      const s = settings[r.id];
+      const loaded = Boolean(s?.loaded);
+      const pulseEnabled = s?.pulseAiEnabled !== false;
         return (
           <div key={r.id} className="bz-card p-5">
             <div className="flex items-start justify-between gap-3">
@@ -186,11 +190,20 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
               </>
             ) : (
               <>
+                {!pulseEnabled && (
+                  <div className="mt-4">
+                    <AlertBanner kind="warn">
+                      {isTr
+                        ? "Pulse AI bu işletme için admin tarafından kapalı. Taslaklar ve Google AI yardımcıları paket açılana kadar kullanılamaz."
+                        : "Pulse AI is disabled for this location by admin. Drafts and Google AI helpers are unavailable until the feature is enabled."}
+                    </AlertBanner>
+                  </div>
+                )}
                 <div className="mt-4 flex items-start gap-3">
                   <Toggle
                     checked={Boolean(s?.enableAiDraft)}
                     onChange={(next) => update(r.id, { enableAiDraft: next })}
-                    disabled={s?.saving}
+                    disabled={s?.saving || !pulseEnabled}
                     ariaLabel={
                       isTr ? "Pulse AI taslaklarını otomatik hazırla" : "Auto-prepare Pulse AI drafts"
                     }
@@ -211,7 +224,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                   <Toggle
                     checked={Boolean(s?.googleAiEnabled)}
                     onChange={(next) => update(r.id, { googleAiEnabled: next })}
-                    disabled={s?.saving}
+                    disabled={s?.saving || !pulseEnabled}
                     ariaLabel={
                       isTr ? "Google yorumlarında Pulse AI kullan" : "Use Pulse AI for Google reviews"
                     }
@@ -237,7 +250,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                       <RadioCard
                         key={opt.value}
                         active={s?.aiDraftTone === opt.value}
-                        disabled={s?.saving}
+                        disabled={s?.saving || !pulseEnabled}
                         onClick={() => update(r.id, { aiDraftTone: opt.value })}
                         title={isTr ? opt.labelTr : opt.labelEn}
                         body={isTr ? opt.descTr : opt.descEn}

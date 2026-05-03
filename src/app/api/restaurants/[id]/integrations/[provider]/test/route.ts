@@ -9,6 +9,7 @@ import {
   type RestaurantUrlField,
 } from '@/lib/platform-link-test';
 import type { IntegrationProvider } from '@/lib/integration-domains';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -64,6 +65,20 @@ export async function POST(
 
   const gate = await requireRestaurantAccess(req, id);
   if (!gate.ok) return gate.res;
+
+  if (isExternalReviewProvider(provider)) {
+    const entitlement = await prisma.restaurant.findUnique({
+      where: { id },
+      select: { externalPlatformsEnabled: true },
+    });
+    if (!entitlement) return ApiErrors.notFound('İşletme bulunamadı');
+    if (!entitlement.externalPlatformsEnabled) {
+      return ApiErrors.forbidden(
+        'Google dışındaki platformlar bu işletme için kapalı.',
+        'EXTERNAL_PLATFORMS_DISABLED',
+      );
+    }
+  }
 
   // 30 test/dk/restoran. Owner panelinde butona spam tıklamayı engellemek için.
   const rl = await rateLimit(`integration:test:${id}`, 30, 60 * 1000);

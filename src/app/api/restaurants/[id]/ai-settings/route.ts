@@ -18,20 +18,21 @@ export async function GET(
   try {
     const restaurant = await prisma.restaurant.findUnique({
       where: { id },
-      select: { id: true, enableAiDraft: true, googleAiEnabled: true, aiDraftTone: true },
+      select: { id: true, pulseAiEnabled: true, enableAiDraft: true, googleAiEnabled: true, aiDraftTone: true },
     });
     if (!restaurant) {
       return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
     return NextResponse.json({
+      pulseAiEnabled: restaurant.pulseAiEnabled,
       enableAiDraft: restaurant.enableAiDraft,
-      googleAiEnabled: restaurant.googleAiEnabled,
+      googleAiEnabled: restaurant.pulseAiEnabled ? restaurant.googleAiEnabled : false,
       aiDraftTone: coerceTone(restaurant.aiDraftTone, 'warm'),
     });
   } catch (err) {
     console.error('[ai-settings GET] failed:', err);
     // Schema drift fallback — pretend disabled so UI renders.
-    return NextResponse.json({ enableAiDraft: false, googleAiEnabled: true, aiDraftTone: 'warm', degraded: true });
+    return NextResponse.json({ pulseAiEnabled: false, enableAiDraft: false, googleAiEnabled: false, aiDraftTone: 'warm', degraded: true });
   }
 }
 
@@ -72,10 +73,24 @@ export async function PATCH(
   }
 
   try {
+    const entitlement = await prisma.restaurant.findUnique({
+      where: { id },
+      select: { pulseAiEnabled: true },
+    });
+    if (!entitlement) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
+    if (!entitlement.pulseAiEnabled) {
+      return NextResponse.json(
+        { error: 'pulse_ai_disabled_by_admin' },
+        { status: 403 },
+      );
+    }
+
     const updated = await prisma.restaurant.update({
       where: { id },
       data,
-      select: { enableAiDraft: true, googleAiEnabled: true, aiDraftTone: true },
+      select: { pulseAiEnabled: true, enableAiDraft: true, googleAiEnabled: true, aiDraftTone: true },
     });
     let clearedPendingDrafts: number | null = null;
     if (data.enableAiDraft === false) {
@@ -91,6 +106,7 @@ export async function PATCH(
       }
     }
     return NextResponse.json({
+      pulseAiEnabled: updated.pulseAiEnabled,
       enableAiDraft: updated.enableAiDraft,
       googleAiEnabled: updated.googleAiEnabled,
       aiDraftTone: updated.aiDraftTone,

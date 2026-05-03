@@ -2,11 +2,11 @@
 
 import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, Code } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, Code, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, Toggle, useConfirmDialog } from '@/components/ui';
 import { getSectorPlatforms } from '@/lib/sector-platforms';
 
 interface Owner {
@@ -28,6 +28,14 @@ interface RestaurantMeta {
     adminUsers: number;
   };
 }
+
+type FeatureToggleKey =
+  | 'googleReviewManagementEnabled'
+  | 'pulseAiEnabled'
+  | 'menuEnabled'
+  | 'menuPublished'
+  | 'aiAnalyticsEnabled'
+  | 'externalPlatformsEnabled';
 
 export default function RestaurantDetailPage() {
   const params = useParams();
@@ -58,7 +66,10 @@ export default function RestaurantDetailPage() {
   });
   const [menuEnabled, setMenuEnabled] = useState(true);
   const [menuPublished, setMenuPublished] = useState(false);
-  const [menuSaving, setMenuSaving] = useState<null | 'enabled' | 'published'>(null);
+  const [pulseAiEnabled, setPulseAiEnabled] = useState(true);
+  const [aiAnalyticsEnabled, setAiAnalyticsEnabled] = useState(true);
+  const [externalPlatformsEnabled, setExternalPlatformsEnabled] = useState(true);
+  const [featureSaving, setFeatureSaving] = useState<FeatureToggleKey | null>(null);
   const [owners, setOwners] = useState<Owner[]>([]);
   const [meta, setMeta] = useState<RestaurantMeta | null>(null);
   const [embedStats, setEmbedStats] = useState<{ totalViews: number; byDomain: { domain: string; count: number; lastSeen: string | null }[] } | null>(null);
@@ -108,6 +119,9 @@ export default function RestaurantDetailPage() {
           });
           setMenuEnabled(data.menuEnabled ?? true);
           setMenuPublished(data.menuPublished ?? false);
+          setPulseAiEnabled(data.pulseAiEnabled ?? true);
+          setAiAnalyticsEnabled(data.aiAnalyticsEnabled ?? true);
+          setExternalPlatformsEnabled(data.externalPlatformsEnabled ?? true);
         } else {
           setError('Bir hata oluştu');
         }
@@ -186,35 +200,54 @@ export default function RestaurantDetailPage() {
     setSaving(false);
   };
 
-  const saveMenuSetting = async (patch: { menuEnabled?: boolean; menuPublished?: boolean }) => {
-    setMenuSaving(patch.menuEnabled !== undefined ? 'enabled' : 'published');
-    setError('');
-    // Optimistic update — revert on error.
-    const prevEnabled = menuEnabled;
-    const prevPublished = menuPublished;
-    if (patch.menuEnabled !== undefined) {
-      setMenuEnabled(patch.menuEnabled);
-      if (patch.menuEnabled === false) setMenuPublished(false);
+  const applyFeatureState = (next: Partial<Record<FeatureToggleKey, boolean>>) => {
+    if (next.googleReviewManagementEnabled !== undefined) {
+      setFormData(prev => ({ ...prev, googleReviewManagementEnabled: Boolean(next.googleReviewManagementEnabled) }));
     }
-    if (patch.menuPublished !== undefined) setMenuPublished(patch.menuPublished);
+    if (next.menuEnabled !== undefined) setMenuEnabled(Boolean(next.menuEnabled));
+    if (next.menuPublished !== undefined) setMenuPublished(Boolean(next.menuPublished));
+    if (next.pulseAiEnabled !== undefined) setPulseAiEnabled(Boolean(next.pulseAiEnabled));
+    if (next.aiAnalyticsEnabled !== undefined) setAiAnalyticsEnabled(Boolean(next.aiAnalyticsEnabled));
+    if (next.externalPlatformsEnabled !== undefined) {
+      setExternalPlatformsEnabled(Boolean(next.externalPlatformsEnabled));
+    }
+  };
+
+  const saveFeatureSetting = async (patch: Partial<Record<FeatureToggleKey, boolean>>) => {
+    const savingKey = Object.keys(patch)[0] as FeatureToggleKey | undefined;
+    if (!savingKey) return;
+    setFeatureSaving(savingKey);
+    setError('');
+    setSuccess('');
+
+    const prev = {
+      googleReviewManagementEnabled: formData.googleReviewManagementEnabled,
+      pulseAiEnabled,
+      menuEnabled,
+      menuPublished,
+      aiAnalyticsEnabled,
+      externalPlatformsEnabled,
+    };
+    const optimistic = { ...prev, ...patch };
+    if (patch.menuEnabled === false) optimistic.menuPublished = false;
+    applyFeatureState(optimistic);
+
     try {
-      const res = await fetch(`/api/admin/restaurants/${id}/menu-settings`, {
+      const res = await fetch(`/api/admin/restaurants/${id}/feature-access`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Güncellenemedi');
-      setMenuEnabled(data.restaurant.menuEnabled);
-      setMenuPublished(data.restaurant.menuPublished);
-      setSuccess('Menü ayarı güncellendi');
+      applyFeatureState(data.restaurant);
+      setSuccess('Özellik ayarı güncellendi');
       setTimeout(() => setSuccess(''), 2500);
     } catch (e) {
-      setMenuEnabled(prevEnabled);
-      setMenuPublished(prevPublished);
+      applyFeatureState(prev);
       setError((e as Error).message);
     }
-    setMenuSaving(null);
+    setFeatureSaving(null);
   };
 
   const handleDelete = () => {
@@ -429,18 +462,18 @@ export default function RestaurantDetailPage() {
         </AlertBanner>
       )}
 
-      {/* Menu management — outside the main form so its toggles don't submit the whole thing */}
+      {/* Feature entitlements — package-ready master switches */}
       <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-[#EDEDED] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
-              <UtensilsCrossed size={18} strokeWidth={2} />
+              <Sparkles size={18} strokeWidth={2} />
             </div>
             <div>
-              <p className="pulse-eyebrow text-[#737373]">Menü Yönetimi</p>
-              <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Menü Erişimi & Yayını</h3>
+              <p className="pulse-eyebrow text-[#737373]">Paket Özellikleri</p>
+              <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Gelişmiş özellik yönetimi</h3>
               <p className="mt-1 text-[12px] leading-relaxed text-[#737373]">
-                Yetki kapalıyken yayın otomatik durdurulur ve müşteriler menüyü göremez.
+                Bu şalterler ileride abonelik paketlerine bağlanacak işletme bazlı yetkileri yönetir.
               </p>
             </div>
           </div>
@@ -462,49 +495,62 @@ export default function RestaurantDetailPage() {
           </div>
         </div>
 
-        <div className="grid gap-3 p-6 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => saveMenuSetting({ menuEnabled: !menuEnabled })}
-            disabled={menuSaving !== null}
-            className={`flex items-center justify-between gap-3 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 active:scale-[0.99] disabled:opacity-60 disabled:hover:translate-y-0 ${
-              menuEnabled ? 'border-[#BBF7D0] bg-[#F0FDF4]/60' : 'border-[#EDEDED] bg-white'
-            }`}
-          >
-            <div className="min-w-0">
-              <p className="pulse-eyebrow text-[#737373]">Menü Yetkisi</p>
-              <p className="mt-1 text-[15px] font-medium text-[#0A0A0A]">
-                {menuSaving === 'enabled' ? 'Kaydediliyor…' : menuEnabled ? 'Açık' : 'Kapalı'}
-              </p>
-            </div>
-            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all ${
-              menuEnabled ? 'bg-[#16A34A] text-white' : 'bg-[#EDEDED] text-[#737373]'
-            }`}>
-              {menuEnabled ? <Eye size={15} strokeWidth={2.25} /> : <EyeOff size={15} strokeWidth={2.25} />}
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => saveMenuSetting({ menuPublished: !menuPublished })}
-            disabled={menuSaving !== null || !menuEnabled}
-            className={`flex items-center justify-between gap-3 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 ${
-              menuPublished ? 'border-[#C6F24E] bg-[#EAF9B8]/60' : 'border-[#EDEDED] bg-white'
-            }`}
-            title={!menuEnabled ? 'Önce menü yetkisini açın' : undefined}
-          >
-            <div className="min-w-0">
-              <p className="pulse-eyebrow text-[#737373]">Yayın Durumu</p>
-              <p className="mt-1 text-[15px] font-medium text-[#0A0A0A]">
-                {menuSaving === 'published' ? 'Kaydediliyor…' : menuPublished ? 'Yayında' : 'Taslak'}
-              </p>
-            </div>
-            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-all ${
-              menuPublished ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-[#EDEDED] text-[#737373]'
-            }`}>
-              {menuPublished ? <Eye size={15} strokeWidth={2.25} /> : <EyeOff size={15} strokeWidth={2.25} />}
-            </div>
-          </button>
+        <div className="grid gap-3 p-6 lg:grid-cols-2">
+          <FeatureToggleCard
+            icon={<MessageSquare size={17} strokeWidth={2.2} />}
+            eyebrow="Google"
+            title="Google yorum yönetimi"
+            description="Business Profile yorumlarını çekme, yanıtlama ve Google yorum cevap taslakları."
+            checked={formData.googleReviewManagementEnabled}
+            loading={featureSaving === 'googleReviewManagementEnabled'}
+            onChange={(next) => saveFeatureSetting({ googleReviewManagementEnabled: next })}
+          />
+          <FeatureToggleCard
+            icon={<Sparkles size={17} strokeWidth={2.2} />}
+            eyebrow="Pulse AI"
+            title="Pulse AI kullanımı"
+            description="Owner panelindeki manuel/otomatik AI yanıt taslakları ve Google AI yardımcıları."
+            checked={pulseAiEnabled}
+            loading={featureSaving === 'pulseAiEnabled'}
+            onChange={(next) => saveFeatureSetting({ pulseAiEnabled: next })}
+          />
+          <FeatureToggleCard
+            icon={<UtensilsCrossed size={17} strokeWidth={2.2} />}
+            eyebrow="Menü"
+            title="Menü oluşturma modülü"
+            description="Kapalıyken owner menü builder kullanamaz; yayın otomatik taslağa alınır."
+            checked={menuEnabled}
+            loading={featureSaving === 'menuEnabled'}
+            onChange={(next) => saveFeatureSetting({ menuEnabled: next })}
+          />
+          <FeatureToggleCard
+            icon={<BarChart3 size={17} strokeWidth={2.2} />}
+            eyebrow="Analitik"
+            title="AI ile analiz"
+            description="Kapalıyken owner analitikleri normal metriklerle devam eder, AI tema çıkarımı gizlenir."
+            checked={aiAnalyticsEnabled}
+            loading={featureSaving === 'aiAnalyticsEnabled'}
+            onChange={(next) => saveFeatureSetting({ aiAnalyticsEnabled: next })}
+          />
+          <FeatureToggleCard
+            icon={<Globe size={17} strokeWidth={2.2} />}
+            eyebrow="Platformlar"
+            title="Google dışı platformlar"
+            description="Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Booking, Airbnb ve Yandex yönlendirmeleri."
+            checked={externalPlatformsEnabled}
+            loading={featureSaving === 'externalPlatformsEnabled'}
+            onChange={(next) => saveFeatureSetting({ externalPlatformsEnabled: next })}
+          />
+          <FeatureToggleCard
+            icon={menuPublished ? <Eye size={17} strokeWidth={2.2} /> : <EyeOff size={17} strokeWidth={2.2} />}
+            eyebrow="Yayın"
+            title="Menü yayın durumu"
+            description="Menü modülü açıkken public menü sayfasının yayında olup olmadığını belirler."
+            checked={menuPublished}
+            loading={featureSaving === 'menuPublished'}
+            disabled={!menuEnabled}
+            onChange={(next) => saveFeatureSetting({ menuPublished: next })}
+          />
         </div>
       </section>
 
@@ -707,29 +753,6 @@ export default function RestaurantDetailPage() {
                     Mekan kimliğini ya da Google Haritalar yorum linkini direkt ekleyebilirsiniz. Olumlu geri bildirimler buraya yönlendirilir.
                   </p>
                 </div>
-
-                <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 transition-colors hover:bg-white">
-                  <div className="flex min-w-0 gap-3">
-                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[#C6F24E]">
-                      <Sparkles size={15} strokeWidth={2.25} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[14px] font-medium text-[#0A0A0A]">Google yorum yönetimi</p>
-                      <p className="mt-0.5 text-[12px] leading-relaxed text-[#737373]">
-                        Açıkken owner Google Business Profile yorumlarını çekebilir, AI ile cevap taslağı oluşturabilir ve onaylayıp Google&apos;a gönderebilir.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="relative shrink-0">
-                    <input
-                      type="checkbox"
-                      checked={formData.googleReviewManagementEnabled}
-                      onChange={(e) => setFormData(prev => ({ ...prev, googleReviewManagementEnabled: e.target.checked }))}
-                      className="peer sr-only"
-                    />
-                    <div className="h-6 w-11 rounded-full bg-[#EDEDED] transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:bg-[#0A0A0A] peer-checked:after:translate-x-full peer-focus-visible:ring-2 peer-focus-visible:ring-[#C6F24E]/60" />
-                  </div>
-                </label>
               </div>
             )}
           </div>
@@ -877,6 +900,58 @@ function Metric({ icon, label, value }: { icon: ReactNode; label: string; value:
       <p className="mt-2 font-heading text-[22px] font-medium text-[#0A0A0A]">
         {value}
       </p>
+    </div>
+  );
+}
+
+function FeatureToggleCard({
+  icon,
+  eyebrow,
+  title,
+  description,
+  checked,
+  loading,
+  disabled,
+  onChange,
+}: {
+  icon: ReactNode;
+  eyebrow: string;
+  title: string;
+  description: string;
+  checked: boolean;
+  loading?: boolean;
+  disabled?: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-4 transition-colors ${
+        checked ? 'border-[#D9EE7A] bg-[#EAF9B8]/35' : 'border-[#EDEDED] bg-white'
+      } ${disabled ? 'opacity-60' : ''}`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 gap-3">
+          <div
+            className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+              checked ? 'bg-[#0A0A0A] text-[#C6F24E]' : 'bg-[#F5F5F5] text-[#737373]'
+            }`}
+          >
+            {icon}
+          </div>
+          <div className="min-w-0">
+            <p className="pulse-eyebrow text-[#737373]">{eyebrow}</p>
+            <p className="mt-1 text-[14px] font-medium text-[#0A0A0A]">{title}</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-[#737373]">{description}</p>
+          </div>
+        </div>
+        <Toggle
+          checked={checked}
+          onChange={onChange}
+          loading={loading}
+          disabled={disabled}
+          ariaLabel={title}
+        />
+      </div>
     </div>
   );
 }

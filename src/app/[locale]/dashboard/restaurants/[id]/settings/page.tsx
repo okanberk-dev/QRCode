@@ -46,7 +46,11 @@ interface RestaurantPayload {
   bookingEnabled: boolean;
   yandexUrl: string | null;
   yandexEnabled: boolean;
+  externalPlatformsEnabled: boolean;
   defaultRedirectPlatform: string | null;
+  otherPlatformUrl: string | null;
+  otherPlatformLabel: string | null;
+  otherPlatformEnabled: boolean;
   instagramUrl: string | null;
   facebookUrl: string | null;
   whatsappUrl: string | null;
@@ -135,7 +139,11 @@ export default function RestaurantSettingsPage() {
           bookingEnabled: data.bookingEnabled ?? true,
           yandexUrl: data.yandexUrl ?? null,
           yandexEnabled: data.yandexEnabled ?? true,
+          externalPlatformsEnabled: data.externalPlatformsEnabled ?? true,
           defaultRedirectPlatform: data.defaultRedirectPlatform ?? null,
+          otherPlatformUrl: data.otherPlatformUrl ?? null,
+          otherPlatformLabel: data.otherPlatformLabel ?? null,
+          otherPlatformEnabled: data.otherPlatformEnabled ?? true,
           instagramUrl: data.instagramUrl ?? null,
           facebookUrl: data.facebookUrl ?? null,
           whatsappUrl: data.whatsappUrl ?? null,

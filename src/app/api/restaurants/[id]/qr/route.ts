@@ -4,6 +4,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
 import { isValidTableIdentifier, isValidHexColor } from '@/lib/validations';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
 import QRCode from 'qrcode';
 
 const DEFAULT_DARK = '#000000';
@@ -131,7 +132,7 @@ export async function GET(
   try {
     const restaurant = await prisma.restaurant.findUnique({
       where: { id },
-      select: { id: true, slug: true, isActive: true },
+      select: { id: true, slug: true, isActive: true, externalPlatformsEnabled: true },
     });
 
     if (!restaurant) {
@@ -142,6 +143,12 @@ export async function GET(
       return NextResponse.json(
         { error: 'Bu işletme pasif durumda. QR oluşturmadan önce aktifleştirin.' },
         { status: 409 }
+      );
+    }
+    if (!restaurant.externalPlatformsEnabled && isExternalReviewProvider(sanitizedPlatform)) {
+      return NextResponse.json(
+        { error: 'Google dışındaki platformlar bu işletme için kapalı.' },
+        { status: 403 },
       );
     }
 

@@ -60,7 +60,7 @@ export async function POST(
       name: true,
       platform: true,
       restaurantId: true,
-      restaurant: { select: { name: true, category: true, aiDraftTone: true, enableAiDraft: true } },
+      restaurant: { select: { name: true, category: true, aiDraftTone: true, enableAiDraft: true, pulseAiEnabled: true } },
     },
   });
 
@@ -70,6 +70,10 @@ export async function POST(
 
   if (!(await canAccessRestaurant(actor, feedback.restaurantId))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  if (feedback.restaurant.pulseAiEnabled !== true) {
+    return NextResponse.json({ error: 'pulse_ai_disabled_by_admin' }, { status: 403 });
   }
 
   if (body.autoDraft === true && feedback.restaurant.enableAiDraft !== true) {

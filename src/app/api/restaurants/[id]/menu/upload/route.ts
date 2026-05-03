@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
-import { requireRestaurantAccess } from '@/lib/menu-access';
+import { requireMenuModuleAccess } from '@/lib/menu-access';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 
 // Client-side limit is 5 MB (raw upload); server-side we enforce the same
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   maybeSweep();
   const { id } = await params;
 
-  const gate = await requireRestaurantAccess(req, id);
+  const gate = await requireMenuModuleAccess(req, id);
   if (!gate.ok) return gate.res;
 
   // 60 uploads/min/user. Normal workflow is well below this; abuse needs a

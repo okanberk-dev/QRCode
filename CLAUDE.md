@@ -159,7 +159,20 @@ Notlar:
 - Google review reply public alana gider; otomatik gönderme yok, owner metni görüp manuel gönderir.
 - **Mimari Not (2026-05):** Google yorumları karmaşıklığı nedeniyle `Ayarlar > Platform Bağlantıları` panelinden çıkarılıp tamamen müstakil bir **`/[locale]/dashboard/google-reviews`** sayfasına taşınmıştır. İşletme sahipleri, birden fazla restoranı varsa bu yeni sayfada restoran seçebilir, yorumları tek bir listede analiz edip (AI desteğiyle) cevaplayabilir. Ayarlar sekmesinde sadece eşleştirme (bağlantı ve lokasyon seçimi) bulunur.
 
-### 5.2 2026-05-03 oturum notları
+### 5.2 Paket & Özellik Erişimi (2026-05)
+
+İşletme bazlı paket entitlement'ları admin tarafından yönetilir. Bu layer, ileride ücretli plan/paket sistemi otomatik atama yapana kadar superadmin'in her işletme için master şalterleri manuel yönetmesini sağlar.
+
+- Kanonik admin endpoint: `PATCH /api/admin/restaurants/[id]/feature-access` (superadmin only). Response: `{ restaurant: { id, googleReviewManagementEnabled, pulseAiEnabled, menuEnabled, menuPublished, aiAnalyticsEnabled, externalPlatformsEnabled, updatedAt } }`.
+- Master alanlar: `googleReviewManagementEnabled` (default `false`), `pulseAiEnabled`, `aiAnalyticsEnabled`, `externalPlatformsEnabled` (üçü de default `true`) + mevcut `menuEnabled/menuPublished`.
+- Admin UI konumu: `/admin/restaurants/[id]` içindeki **Paket Özellikleri / Gelişmiş özellik yönetimi** kart grubu. Eski Google yorum ve menü kontrolleri burada toplanır; aynı ayar başka formda tekrar edilmez.
+- `menuEnabled=false` olduğunda `menuPublished=false` yapılır ve owner menü oluşturma/düzenleme/publish API'leri server-side 403 döner. Public menü zaten `menuEnabled && menuPublished` ile görünür.
+- `pulseAiEnabled=false` olduğunda owner Pulse AI ayarları kilitlenir; feedback draft/suggest-reply ve Google review draft endpoint'leri AI üretmez. Admin master kapatma anında bekleyen `FeedbackAiDraft` kayıtları temizlenir; owner tercih alanları (`enableAiDraft`, `googleAiEnabled`, `aiDraftTone`) silinmez.
+- `aiAnalyticsEnabled=false` olduğunda owner analytics sayfası normal KPI/chart akışını korur; sadece AI tema çıkarımı / weekly AI insight çağrıları yapılmaz.
+- `externalPlatformsEnabled=false` olduğunda Google dışı review platformları (Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Airbnb, Booking, Yandex ve "Diğer") owner UI/API, QR üretimi, integration test/retest ve public `/r/[slug]` redirect resolver tarafında yok sayılır. Kayıtlı URL'ler ve owner platform tercihleri silinmez; gate tekrar açılınca kaldığı yerden kullanılabilir.
+- Vercel env notu: `.env.local` gitignore altında kalır. Production'da `JWT_SECRET` boş bırakılmamalı; Pulse AI gerçek model çağrısı için `OPENAI_API_KEY` Production/Preview scope'larında dolu olmalı.
+
+### 5.3 2026-05-03 oturum notları
 
 Bu oturumda yapılan kalıcı kararlar:
 - Lokal `/Users/okanberkmanavoglu/Downloads/qrcode` checkout'u GitHub `riosenbeq/qrcode` ile commit `58ec5a6fea06bdcff150fca78dbb7752c4659f29` seviyesinde karşılaştırıldı; kod eşleşiyor.

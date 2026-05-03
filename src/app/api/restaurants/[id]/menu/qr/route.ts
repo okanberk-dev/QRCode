@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRestaurantAccess } from '@/lib/menu-access';
+import { requireMenuModuleAccess } from '@/lib/menu-access';
 import { isValidHexColor } from '@/lib/validations';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import QRCode from 'qrcode';
@@ -55,7 +55,7 @@ export async function GET(
   maybeSweep();
   const { id } = await params;
 
-  const access = await requireRestaurantAccess(req, id);
+  const access = await requireMenuModuleAccess(req, id, { requireWrite: false });
   if (!access.ok) return access.res;
 
   const { searchParams } = new URL(req.url);

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRestaurantAccess, touchMenuUpdated } from '@/lib/menu-access';
+import { requireMenuModuleAccess, requireRestaurantAccess, touchMenuUpdated } from '@/lib/menu-access';
 import { validateMenuCategory } from '@/lib/validations';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const gate = await requireRestaurantAccess(req, id);
+  const gate = await requireMenuModuleAccess(req, id);
   if (!gate.ok) return gate.res;
 
   let body: unknown;

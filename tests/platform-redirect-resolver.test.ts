@@ -21,6 +21,7 @@ function makeRestaurant(
     airbnbUrl: null,
     bookingUrl: null,
     yandexUrl: null,
+    externalPlatformsEnabled: true,
     googleEnabled: true,
     yemekSepetiEnabled: true,
     getirEnabled: true,
@@ -243,4 +244,20 @@ test('default disabled + sektör fallback', () => {
   // Default Google disabled → sektör 2.: yemeksepeti
   assert.equal(result.provider, 'yemeksepeti');
   assert.equal(result.reason, 'sector_priority');
+});
+
+test('external platformlar kapalıyken Google dışı yönlendirme kullanılmaz', () => {
+  const restaurant = makeRestaurant({
+    externalPlatformsEnabled: false,
+    googleReviewUrl: 'https://g.page/r/abc',
+    yemekSepetiUrl: 'https://www.yemeksepeti.com/restaurant/foo',
+    defaultRedirectPlatform: 'yemeksepeti',
+  });
+  const result = resolveBestRedirectPlatform({
+    restaurant,
+    requestedProvider: 'yemeksepeti',
+  });
+  assert.equal(result.provider, 'google');
+  assert.equal(result.reason, 'sector_priority');
+  assert.equal(result.fallback, true);
 });

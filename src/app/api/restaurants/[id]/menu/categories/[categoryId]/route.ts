@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRestaurantAccess, touchMenuUpdated } from '@/lib/menu-access';
+import { requireMenuModuleAccess, touchMenuUpdated } from '@/lib/menu-access';
 import { validateMenuCategory } from '@/lib/validations';
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string; categoryId: string }> }) {
   const { id, categoryId } = await params;
-  const gate = await requireRestaurantAccess(req, id);
+  const gate = await requireMenuModuleAccess(req, id);
   if (!gate.ok) return gate.res;
 
   const existing = await prisma.menuCategory.findUnique({ where: { id: categoryId } });
@@ -35,7 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string; categoryId: string }> }) {
   const { id, categoryId } = await params;
-  const gate = await requireRestaurantAccess(req, id);
+  const gate = await requireMenuModuleAccess(req, id);
   if (!gate.ok) return gate.res;
 
   const existing = await prisma.menuCategory.findUnique({

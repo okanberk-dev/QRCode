@@ -54,6 +54,7 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       slug: true,
       notificationEmail: true,
       googlePlaceId: true,
+      aiAnalyticsEnabled: true,
       userId: true,
       user: { select: { email: true, locale: true } },
     },
@@ -147,21 +148,23 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       rating: r.rating,
       comment: (r.comment || '').trim(),
     })).filter((r) => r.comment.length > 0);
-    const aiInsight: WeeklyInsight = await extractWeeklyInsight(
-      {
-        restaurantName: rest.name,
-        total,
-        avgRating,
-        highRatings,
-        lowRatings,
-        distribution: dist,
-        aspects,
-        comments: safeComments,
-      },
-      locale,
-      `${rest.id}:${isoWeekKey}`,
-      rest.userId ?? undefined,
-    );
+    const aiInsight: WeeklyInsight = rest.aiAnalyticsEnabled
+      ? await extractWeeklyInsight(
+          {
+            restaurantName: rest.name,
+            total,
+            avgRating,
+            highRatings,
+            lowRatings,
+            distribution: dist,
+            aspects,
+            comments: safeComments,
+          },
+          locale,
+          `${rest.id}:${isoWeekKey}`,
+          rest.userId ?? undefined,
+        )
+      : { summary: '', recommendation: '', source: 'fallback' };
     const hasAi = !!(aiInsight.summary || aiInsight.recommendation);
 
     let emailSent = false;
