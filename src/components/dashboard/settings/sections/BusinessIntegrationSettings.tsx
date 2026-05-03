@@ -1048,9 +1048,9 @@ function LatestCheckLine({
           <strong>{isTr ? "Son test başarısız" : "Last test failed"}</strong>
           <span className="text-[#7F1D1D] ml-1">· {relative}</span>
         </div>
-        {(check.error || check.statusCode) && (
+        {check.error && (
           <div className="mt-0.5 text-[11px] text-[#7F1D1D] break-words">
-            {check.error || `HTTP ${check.statusCode}`}
+            {check.error}
           </div>
         )}
       </div>
