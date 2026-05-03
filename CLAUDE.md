@@ -4768,3 +4768,58 @@ Yeni route veya endpoint eklenirken:
 - **Platform Bağlantıları:** "Test Et" mekanizması Yemeksepeti, Getir, Trendyol GO vb. platformlardan kaldırıldı. Bu işlevsellik (test et/yeniden test et) arayüzde sadeleştirme amacıyla sadece Google İşletme Profilinde tutuluyor.
 - **Widget Kullanım Verisi (Kullanan Siteler):** İşletme sahiplerinin gördüğü `BusinessWebsiteSettings` içerisindeki widget analiz istatistikleri kaldırılarak Admin Paneline (`/admin/restaurants/[id]`) taşındı. Sadece adminler hangi sitelerin widget kullandığını görebilir.
 - **Operasyonel Ayarlar (V2 Placeholder):** Ayarlar ekranındaki "Sipariş & Rezervasyon Kabulü" henüz backend tarafı hazır olmayan bir V2 placeholder olduğu için UI karmaşasını önlemek adına tamamen temizlendi.
+
+### 38.8 2026-05-03 oturum 2 — Görev A/B/C/D + yeni acil task
+
+CLAUDE.md §5.4 Production Hata Düzeltme Takip Planı'ndaki açık görevlerin sistematik kapatılması (her görev kendi PR'ı, draft mode, kullanıcı review'lı merge):
+
+**Tamamlanan görevler:**
+
+| Görev | PR | Çıktı |
+|---|---|---|
+| **Görev A** — Sentry server-side capture doğrulama | #377 → #378 → #379 → #380 | **Kısmi doğrulama**. Smoke test endpoint `/api/sentry-test` `Sentry.captureException` + `await Sentry.flush(5000)` paterne geçti, eski `throw` kaldırıldı. **Ama production envelope hâlâ ulaşmıyor** — yeni acil task'a (§38.8 sonu) bak. |
+| **Görev B** — Google Business retry/reauth doğrulama | #381 | 8 yeni unit test `tests/google-business.test.ts` — `googleBusinessFetch` transport branch'leri (200, 403, 429×3, 503×3, network reject, persistent 401, malformed JSON, retry-then-success) mock fetch ile CI altında. Mevcut 48 + 8 = 56 test. |
+| **Görev D** — Sentry config deprecation cleanup | #382 | `next.config.ts` `withSentryConfig` `disableLogger` + `automaticVercelMonitors` top-level deprecated → `webpack.{ treeshake: { removeDebugLogging: true }, automaticVercelMonitors: true }`. Sentry SDK 10.51 canonical shape. Build log uyarısız. |
+| **Görev C Faz 1** — reCAPTCHA Sentry breadcrumb | #383 | `src/lib/recaptcha.ts` `softFail()` her tetiklendiğinde `Sentry.captureMessage('reCAPTCHA soft-pass', { tags: { reason, action }, extra: {...detail}, level: 'warning' })`. Saf `buildSoftPassSentryEnvelope()` helper export'lu, 6 yeni test (`tests/recaptcha.test.ts`) PII guard dahil. **Faz 2** (`RECAPTCHA_ENFORCE=true` flip) ayrı PR, 1-2 hafta production veri sonrası. |
+
+**Görev A bulguları (kritik):**
+
+1. **Production Sentry org'u `buaze-ev/sentry-apricot-blanket`** — daha önceki health raporlarında yanlışlıkla `buaze/javascript-nextjs` org'una bakılıyordu, o boş. Gerçek production hatalar `buaze-ev`'de:
+   - `Hydration Error` (`/tr` homepage)
+   - **`SyntaxError: Invalid character '�'`** — Task 5 issue'sunun tam o issue'su, 23 saat önce başlamış, 10 saat önce son görülmüş
+   - `MetaMask` browser extension noise
+2. **Client-side capture sağlam** — Hydration Error, `� SyntaxError` (browser-origin culprit) Sentry'e düzenli ulaşıyor.
+3. **Server-side capture sessizce kayboluyor** — bu PR serisindeki 4 deneme + 3 production deploy iteration sonrası kanıtlandı:
+   - `Sentry.captureException` event ID üretiyor (`fb5aa82...`, `72e058...`, `9a9db0...`)
+   - `Sentry.flush(2000)` → `false`, `Sentry.flush(5000)` → hâlâ `false`
+   - Sentry'de event ID lookup → `Event Not Found`
+   - Sandbox'tan Sentry ingest erişilebilir (HTTP 404 GET, bağlantı OK)
+   - `debug: true` Sentry SDK config Vercel runtime log'a YANSIMIYOR (Vercel logging stderr'ı skipliyor olabilir)
+   - `includeLocalVariables` ve `enableLogs` suçsuz kanıtlandı (kaldırıldı, yine `flush: false`)
+
+### Yeni acil task — Server-side Sentry envelope flush kör nokta
+
+**Sorun**: Production'da `Sentry.captureException` çağrıları (PR #374 Google business retry, PR #383 reCAPTCHA breadcrumb, gelecek PR'larda Görev G `safeParseJson`) Vercel function tear-down öncesi flush olmuyor → server-side hatalar Sentry'e ulaşmıyor.
+
+**Etki**: Görev G'nin (`safeParseJson`) ürettiği yeni hatalar otomatik kaybolur. Diğer manuel `captureException` çağrıları da etkilenmiş olabilir.
+
+**Çözüm scope (gelecek task)**:
+- Hipotez 1: Vercel function tear-down + Sentry SDK transport flush yarış koşulu — `Sentry.flush(N)` SDK'ın envelope POST'unu beklemiyor olabilir. Sentry SDK 10.x'te bilinen Vercel/Next.js issue'su olabilir, GitHub araştırması gerek.
+- Hipotez 2: Vercel runtime log'u Sentry SDK debug çıktısını yakalamıyor → debug:true bile efektif sinyal vermiyor. Workaround: SDK transport hatasını `Sentry.captureMessage` öncesi `console.error` ile manuel log + Vercel runtime log'da görünür hale getir.
+- Hipotez 3: Edge runtime mı Node runtime mı sorunu — `instrumentation.ts` runtime detection üzerinden config import ediyor; edge/node mixing varsa transport farklı olabilir.
+- Hipotez 4: Vercel function egress'te DNS gecikmesi — sandbox'tan Sentry ingest TLS handshake hızlı; Vercel cold start'ta TLS daha yavaş olabilir, 5sn yetmeyebilir.
+
+**Bu task Görev G öncesi yapılmalı** çünkü Görev G'nin değeri buna bağlı.
+
+**Vercel env durumu**: `ENABLE_SENTRY_TEST` env'i Vercel Production'dan kaldırıldı (Görev A kapanışında, kullanıcı sildi). Endpoint default 403 dönüyor.
+
+### Pending durum (sıralı)
+
+| Sıra | Görev | Durum |
+|---|---|---|
+| 1 | **Server-side Sentry flush deep dive** (yeni acil) | 🟡 Pending |
+| 2 | **Görev F** — Read-only API Cache-Control headers (6 endpoint) | 🟡 Pending |
+| 3 | **Görev G** — `safeParseJson` helper + risky callsites | 🟡 Pending (server-side flush önce) |
+| 4 | **Görev E** — Vercel `live: false` araştırması | 🟡 Pending |
+| 5 | Görev C Faz 2 — `RECAPTCHA_ENFORCE=true` flip | 🟡 Pending (1-2 hafta veri sonrası) |
+| 6 | Task 8 — Prisma 7 upgrade | 🟡 Pending (ayrı major-version branch) |
