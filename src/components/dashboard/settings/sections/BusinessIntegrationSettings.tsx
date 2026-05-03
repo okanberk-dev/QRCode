@@ -728,8 +728,24 @@ export function BusinessIntegrationSettings({
         title="Sosyal medya & rezervasyon"
         description="İşletmenin sosyal medya kanalları ve rezervasyon linki."
       >
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-2 sm:space-y-3">
           {SOCIAL_DEFS.map((def) => {
+            if (def.key === "reservationUrl") {
+              return (
+                <div key={def.key as string} className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3 opacity-75">
+                  <div className="flex items-center gap-3">
+                    <FallbackIconChip><Phone size={18} /></FallbackIconChip>
+                    <div>
+                      <div className="bz-h-tight text-[14px]">{def.label}</div>
+                      <div className="text-[12px] text-[#737373] mt-0.5">
+                        {isTr ? "Şu anda pasif, talebe göre açılacaktır." : "Currently passive, will be opened based on demand."}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             const url = form[def.key] as string;
             const status: IntegrationStatusKind = url ? "connected" : "not_configured";
             const isThisTesting = testing === String(def.key);
@@ -741,7 +757,7 @@ export function BusinessIntegrationSettings({
               </FallbackIconChip>
             );
             return (
-              <IntegrationCard
+              <CompactIntegrationCard
                 key={def.key as string}
                 logo={logo}
                 label={def.label}
@@ -1081,5 +1097,100 @@ function FallbackIconChip({ children }: { children: React.ReactNode }) {
     >
       {children}
     </span>
+  );
+}
+
+function CompactIntegrationCard({
+  logo,
+  label,
+  url,
+  placeholder,
+  fieldId,
+  quality,
+  onUrlChange,
+  onClear,
+  onTest,
+  testing,
+  latestCheck,
+  locale,
+  testDisabled,
+}: IntegrationCardProps) {
+  const errorMessage = quality && quality.result.severity === "error" ? quality.message : null;
+  const warningMessage = quality && quality.result.severity === "warning" ? quality.message : null;
+  
+  return (
+    <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3 sm:p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:w-[140px] shrink-0">
+          <div className="scale-90 origin-left">{logo}</div>
+          <div className="bz-h-tight text-[14px] truncate">{label}</div>
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <input
+            id={fieldId}
+            className="bz-input bz-mono text-[13px] w-full"
+            style={{ minHeight: 36, padding: "0 12px" }}
+            type="url"
+            inputMode="url"
+            autoComplete="off"
+            spellCheck={false}
+            value={url}
+            onChange={(e) => onUrlChange(e.target.value)}
+            placeholder={placeholder}
+          />
+          {(errorMessage || warningMessage) && (
+            <div
+              className="mt-1 flex items-start gap-1.5 text-[11px] leading-snug"
+              style={{ color: errorMessage ? "#991B1B" : "#92400E" }}
+            >
+              <AlertTriangle size={12} strokeWidth={2.25} className="mt-0.5 shrink-0" />
+              <span>{errorMessage || warningMessage}</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-1.5 shrink-0 justify-end">
+          <button
+            type="button"
+            onClick={onTest}
+            disabled={!url || testing || testDisabled}
+            className="bz-btn-ghost inline-flex items-center justify-center rounded-full"
+            style={{ width: 36, height: 36 }}
+            title="Test et"
+          >
+            {testing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+          </button>
+          {url && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bz-btn-ghost inline-flex items-center justify-center rounded-full"
+              style={{ width: 36, height: 36 }}
+              title="Aç"
+            >
+              <ExternalLink size={14} />
+            </a>
+          )}
+          {url && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="bz-btn-ghost inline-flex items-center justify-center rounded-full text-[#737373] hover:text-[#991B1B]"
+              style={{ width: 36, height: 36 }}
+              title="Kaldır"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+      {latestCheck && (
+        <div className="mt-2 sm:ml-[156px]">
+          <LatestCheckLine check={latestCheck} locale={locale} />
+        </div>
+      )}
+    </div>
   );
 }

@@ -8,9 +8,6 @@ import {
   MessageSquareText,
   RefreshCw,
   Search,
-  Send,
-  Sparkles,
-  Star,
 } from "lucide-react";
 import { AlertBanner, Field } from "@/components/ui";
 import { SettingsCard } from "../SettingsCard";
@@ -65,33 +62,6 @@ interface GoogleLocation {
   newReviewUri: string | null;
 }
 
-interface GoogleReview {
-  name: string;
-  reviewId: string;
-  reviewer?: {
-    displayName?: string;
-    profilePhotoUrl?: string;
-    isAnonymous?: boolean;
-  };
-  starRating?: string;
-  comment?: string;
-  createTime?: string;
-  updateTime?: string;
-  reviewReply?: {
-    comment?: string;
-    updateTime?: string;
-    reviewReplyState?: string;
-  };
-}
-
-interface ReviewsPayload {
-  reviews: GoogleReview[];
-  averageRating: number | null;
-  totalReviewCount: number;
-  nextPageToken?: string;
-  location: GoogleLocation;
-}
-
 const STAR_VALUE: Record<string, number> = {
   ONE: 1,
   TWO: 2,
@@ -100,40 +70,10 @@ const STAR_VALUE: Record<string, number> = {
   FIVE: 5,
 };
 
-function starValue(starRating: string | undefined): number {
-  return starRating ? STAR_VALUE[starRating] ?? 0 : 0;
-}
-
 function defaultQuery(restaurant: RestaurantData): string {
   return [restaurant.name, restaurant.address, restaurant.city]
     .filter((item): item is string => Boolean(item && item.trim()))
     .join(" ");
-}
-
-function formatDate(value: string | undefined, locale: "tr" | "en"): string {
-  if (!value) return locale === "tr" ? "Tarih yok" : "No date";
-  try {
-    return new Intl.DateTimeFormat(locale === "tr" ? "tr-TR" : "en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(new Date(value));
-  } catch {
-    return value;
-  }
-}
-
-function ratingBreakdown(reviews: GoogleReview[]) {
-  const counts = new Map<number, number>();
-  for (const review of reviews) {
-    const value = starValue(review.starRating);
-    if (!value) continue;
-    counts.set(value, (counts.get(value) ?? 0) + 1);
-  }
-  return [5, 4, 3, 2, 1].map((rating) => ({
-    rating,
-    count: counts.get(rating) ?? 0,
-  }));
 }
 
 export function GoogleBusinessIntegrationPanel({
@@ -152,35 +92,13 @@ export function GoogleBusinessIntegrationPanel({
   const [locations, setLocations] = useState<GoogleLocation[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(false);
   const [locationsError, setLocationsError] = useState<string | null>(null);
-  const [reviewsPayload, setReviewsPayload] = useState<ReviewsPayload | null>(null);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [reviewsError, setReviewsError] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState<Record<string, string>>({});
-  const [replying, setReplying] = useState<Record<string, boolean>>({});
-  const [drafting, setDrafting] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setQuery(defaultQuery(restaurant));
   }, [restaurant.id, restaurant.name, restaurant.address, restaurant.city]);
 
-  const selectedLocation = status?.selectedLocation ?? reviewsPayload?.location ?? null;
+  const selectedLocation = status?.selectedLocation ?? null;
   const reviewManagementEnabled = status?.googleReviewManagementEnabled === true;
-
-  const reviewAnalysis = useMemo(() => {
-    const reviews = reviewsPayload?.reviews ?? [];
-    const low = reviews.filter((review) => {
-      const value = starValue(review.starRating);
-      return value > 0 && value <= 3;
-    }).length;
-    const unanswered = reviews.filter((review) => !review.reviewReply?.comment).length;
-    const replied = reviews.length - unanswered;
-    return {
-      low,
-      unanswered,
-      replied,
-      breakdown: ratingBreakdown(reviews),
-    };
-  }, [reviewsPayload]);
 
   const loadStatus = async () => {
     setStatusLoading(true);
@@ -312,83 +230,29 @@ export function GoogleBusinessIntegrationPanel({
         googleReviewUrl: data.restaurant?.googleReviewUrl ?? location.newReviewUri,
         googleEnabled: true,
       });
-      await loadReviews();
     } catch (err) {
       setLocationsError(err instanceof Error ? err.message : "Google konumu kaydedilemedi.");
     }
   };
 
-  const loadReviews = async () => {
-    setReviewsLoading(true);
-    setReviewsError(null);
-    try {
-      const res = await fetch(`/api/restaurants/${restaurant.id}/google/business/reviews`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Google yorumları alınamadı.");
-      setReviewsPayload(data);
-      const replies: Record<string, string> = {};
-      for (const review of (data.reviews ?? []) as GoogleReview[]) {
-        replies[review.name] = review.reviewReply?.comment ?? "";
-      }
-      setReplyText(replies);
-    } catch (err) {
-      setReviewsError(err instanceof Error ? err.message : "Google yorumları alınamadı.");
-    } finally {
-      setReviewsLoading(false);
-    }
-  };
 
-  const draftReply = async (review: GoogleReview) => {
-    setDrafting((prev) => ({ ...prev, [review.name]: true }));
-    try {
-      const res = await fetch(`/api/restaurants/${restaurant.id}/google/business/reviews/draft`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerName: review.reviewer?.displayName ?? null,
-          rating: starValue(review.starRating) || 5,
-          comment: review.comment ?? null,
-          locale,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Taslak oluşturulamadı.");
-      setReplyText((prev) => ({ ...prev, [review.name]: data.suggestion ?? "" }));
-    } catch (err) {
-      setReviewsError(err instanceof Error ? err.message : "Taslak oluşturulamadı.");
-    } finally {
-      setDrafting((prev) => ({ ...prev, [review.name]: false }));
-    }
-  };
 
-  const sendReply = async (review: GoogleReview) => {
-    const comment = replyText[review.name]?.trim();
-    if (!comment) return;
-    setReplying((prev) => ({ ...prev, [review.name]: true }));
-    setReviewsError(null);
+  const disconnectGoogle = async () => {
+    setLocationsError(null);
     try {
-      const res = await fetch(`/api/restaurants/${restaurant.id}/google/business/reviews/reply`, {
+      const res = await fetch(`/api/integrations/google/disconnect`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reviewName: review.name, comment }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Yanıt gönderilemedi.");
-      setReviewsPayload((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          reviews: prev.reviews.map((item) =>
-            item.name === review.name
-              ? { ...item, reviewReply: data.reply }
-              : item,
-          ),
-        };
-      });
+      if (!res.ok) throw new Error(data?.error || "Bağlantı kesilemedi.");
+      setStatus((prev) => prev ? ({
+        ...prev,
+        connected: false,
+        selectedLocation: null,
+      }) : null);
+      setLocations([]);
     } catch (err) {
-      setReviewsError(err instanceof Error ? err.message : "Yanıt gönderilemedi.");
-    } finally {
-      setReplying((prev) => ({ ...prev, [review.name]: false }));
+      setLocationsError(err instanceof Error ? err.message : "Bağlantı kesilemedi.");
     }
   };
 
@@ -546,15 +410,24 @@ export function GoogleBusinessIntegrationPanel({
                       ? "Henüz Google Business konumu seçilmedi."
                       : "No Google Business location selected yet."}
                 </div>
-                <button
-                  type="button"
-                  className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px]"
-                  onClick={loadLocations}
-                  disabled={locationsLoading}
-                >
-                  {locationsLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                  {isTr ? "Konumları yenile" : "Refresh locations"}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px] text-red-600 hover:bg-red-50 hover:border-red-100"
+                    onClick={disconnectGoogle}
+                  >
+                    {isTr ? "Bağlantıyı kes" : "Disconnect"}
+                  </button>
+                  <button
+                    type="button"
+                    className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px]"
+                    onClick={loadLocations}
+                    disabled={locationsLoading}
+                  >
+                    {locationsLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                    {isTr ? "Konumları yenile" : "Refresh locations"}
+                  </button>
+                </div>
               </div>
 
               {locationsError && <AlertBanner kind="danger">{locationsError}</AlertBanner>}
@@ -577,62 +450,18 @@ export function GoogleBusinessIntegrationPanel({
 
               {selectedLocation && (
                 <div className="space-y-3">
-                  <button
-                    type="button"
+                  <a
+                    href={`/${locale}/dashboard/google-reviews`}
                     className="bz-btn-primary inline-flex items-center gap-1.5 rounded-full text-[13px]"
-                    onClick={loadReviews}
-                    disabled={reviewsLoading}
                   >
-                    {reviewsLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                    {isTr ? "Google yorumlarını getir" : "Fetch Google reviews"}
-                  </button>
-                  {reviewsError && <AlertBanner kind="danger">{reviewsError}</AlertBanner>}
-                  {reviewsPayload && (
-                    <div className="space-y-4">
-                      <div className="grid gap-2 sm:grid-cols-4">
-                        <Metric label={isTr ? "Google puanı" : "Google rating"} value={reviewsPayload.averageRating?.toFixed(1) ?? "-"} />
-                        <Metric label={isTr ? "Toplam yorum" : "Total reviews"} value={String(reviewsPayload.totalReviewCount)} />
-                        <Metric label={isTr ? "Yanıtlanan" : "Replied"} value={String(reviewAnalysis.replied)} />
-                        <Metric label={isTr ? "Yanıtsız" : "Unanswered"} value={String(reviewAnalysis.unanswered)} tone={reviewAnalysis.unanswered ? "warn" : "ok"} />
-                      </div>
-                      <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
-                        <div className="mb-2 text-[12px] font-semibold text-[#262626]">
-                          {isTr ? "Son çekilen yorumlarda puan dağılımı" : "Rating breakdown in fetched reviews"}
-                        </div>
-                        <div className="space-y-1.5">
-                          {reviewAnalysis.breakdown.map((item) => (
-                            <div key={item.rating} className="flex items-center gap-2 text-[12px] text-[#525252]">
-                              <span className="w-8">{item.rating}★</span>
-                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#EDEDED]">
-                                <div
-                                  className="h-full rounded-full bg-[#C6F24E]"
-                                  style={{
-                                    width: `${reviewsPayload.reviews.length ? (item.count / reviewsPayload.reviews.length) * 100 : 0}%`,
-                                  }}
-                                />
-                              </div>
-                              <span className="w-6 text-right">{item.count}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        {reviewsPayload.reviews.map((review) => (
-                          <ReviewCard
-                            key={review.name}
-                            review={review}
-                            locale={locale}
-                            value={replyText[review.name] ?? ""}
-                            onChange={(value) => setReplyText((prev) => ({ ...prev, [review.name]: value }))}
-                            onDraft={() => draftReply(review)}
-                            onSend={() => sendReply(review)}
-                            drafting={Boolean(drafting[review.name])}
-                            replying={Boolean(replying[review.name])}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                    <ExternalLink size={14} />
+                    {isTr ? "Google Yorumlarına Git" : "Go to Google Reviews"}
+                  </a>
+                  <p className="text-[12px] text-[#737373] max-w-[600px] mt-1">
+                    {isTr
+                      ? "Google Business Profile hesabınızdaki yorumları okumak, AI ile yanıt taslağı oluşturmak ve doğrudan Google üzerinden yanıtlamak için yeni Google Yorumları sayfasına gidebilirsiniz."
+                      : "You can go to the new Google Reviews page to read reviews, generate AI reply drafts, and publish replies directly to Google."}
+                  </p>
                 </div>
               )}
             </div>
@@ -640,119 +469,6 @@ export function GoogleBusinessIntegrationPanel({
         </div>
       </div>
     </SettingsCard>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "ok" | "warn";
-}) {
-  return (
-    <div className="rounded-xl border border-[#EDEDED] bg-white p-3">
-      <div className="text-[11px] text-[#737373]">{label}</div>
-      <div
-        className="bz-h-tight mt-1 text-[20px]"
-        style={{ color: tone === "warn" ? "#92400E" : tone === "ok" ? "#166534" : "#0A0A0A" }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function ReviewCard({
-  review,
-  locale,
-  value,
-  onChange,
-  onDraft,
-  onSend,
-  drafting,
-  replying,
-}: {
-  review: GoogleReview;
-  locale: "tr" | "en";
-  value: string;
-  onChange: (value: string) => void;
-  onDraft: () => void;
-  onSend: () => void;
-  drafting: boolean;
-  replying: boolean;
-}) {
-  const isTr = locale === "tr";
-  const rating = starValue(review.starRating);
-  const author = review.reviewer?.isAnonymous
-    ? isTr ? "Anonim kullanıcı" : "Anonymous user"
-    : review.reviewer?.displayName || (isTr ? "Google kullanıcısı" : "Google user");
-
-  return (
-    <div className="rounded-xl border border-[#EDEDED] bg-white p-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="bz-h-tight text-[14px]">{author}</div>
-          <div className="mt-1 flex items-center gap-1 text-[12px] text-[#737373]">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Star
-                key={index}
-                size={13}
-                fill={index < rating ? "#C6F24E" : "transparent"}
-                color={index < rating ? "#0A0A0A" : "#A3A3A3"}
-              />
-            ))}
-            <span className="ml-1">{formatDate(review.updateTime ?? review.createTime, locale)}</span>
-          </div>
-        </div>
-        {review.reviewReply?.comment && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#F0FDF4] px-2.5 py-1 text-[11px] text-[#166534]">
-            <CheckCircle2 size={12} />
-            {isTr ? "Yanıt var" : "Replied"}
-          </span>
-        )}
-      </div>
-      <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-[#404040]">
-        {review.comment || (isTr ? "Yazılı yorum yok." : "No written comment.")}
-      </p>
-      <div className="mt-4">
-        <Field label={isTr ? "Google yanıtı" : "Google reply"}>
-          <textarea
-            className="bz-input min-h-[96px] resize-y text-[13px]"
-            value={value}
-            onChange={(event) => onChange(event.target.value.slice(0, 4096))}
-            placeholder={isTr ? "Bu yorum için herkese açık yanıt..." : "Public reply for this review..."}
-          />
-        </Field>
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            className="bz-btn-ghost inline-flex w-full items-center justify-center gap-1.5 rounded-full text-[12px] sm:w-auto"
-            onClick={onDraft}
-            disabled={drafting}
-          >
-            {drafting ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-            {isTr ? "AI ile cevap ver" : "Reply with AI"}
-          </button>
-          <button
-            type="button"
-            className="bz-btn-primary inline-flex w-full items-center justify-center gap-1.5 rounded-full text-[12px] sm:w-auto"
-            onClick={onSend}
-            disabled={replying || !value.trim()}
-          >
-            {replying ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-            {isTr ? "Google'a gönder" : "Send to Google"}
-          </button>
-        </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-[#737373]">
-          {isTr
-            ? "AI yalnızca taslak hazırlar; herkese açık Google yanıtı, sen Google'a gönder dediğinde yayınlanır."
-            : "AI only prepares a draft; the public Google reply is published only after you send it."}
-        </p>
-      </div>
-    </div>
   );
 }
 

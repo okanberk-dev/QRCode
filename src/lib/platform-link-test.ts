@@ -115,16 +115,21 @@ export async function runPlatformLinkTest(
   // 2. Domain validation — yanlış host'a HEAD atmadan koru (CLAUDE.md §19.4).
   const domainCheck = checkProviderUrl(provider, url);
   if (!domainCheck.ok) {
-    const result: PlatformLinkTestResult = {
-      ok: false,
-      statusCode: 0,
-      latencyMs: 0,
-      error: describeDomainError(provider, domainCheck),
-      url,
-      checkedAt,
-    };
-    if (persist) await persistCheck(params, result);
-    return result;
+    // google dışındaki platformlar için domain doğru ama 'warning' ise (örn: getir.com anasayfası) teste izin ver
+    const isAllowedWarning = domainCheck.severity === 'warning' && provider !== 'google';
+    
+    if (!isAllowedWarning) {
+      const result: PlatformLinkTestResult = {
+        ok: false,
+        statusCode: 0,
+        latencyMs: 0,
+        error: describeDomainError(provider, domainCheck),
+        url,
+        checkedAt,
+      };
+      if (persist) await persistCheck(params, result);
+      return result;
+    }
   }
 
   // 3. HEAD → fallback GET. URL parse zaten domainCheck'te validate edildi,

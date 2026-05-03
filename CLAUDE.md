@@ -157,14 +157,14 @@ Notlar:
 - Places API sadece arama / link üretimi içindir; Google yorumlarını çekmek veya cevaplamak için yetmez.
 - Reviews API yalnızca ilgili Google hesabının owner/manager olduğu **verified** Business Profile location'larda çalışır.
 - Google review reply public alana gider; otomatik gönderme yok, owner metni görüp manuel gönderir.
-- Owner UI'daki **AI ile cevap ver** butonu yalnızca taslak üretir; public gönderim ayrı **Google'a gönder** aksiyonuyla yapılır.
+- **Mimari Not (2026-05):** Google yorumları karmaşıklığı nedeniyle `Ayarlar > Platform Bağlantıları` panelinden çıkarılıp tamamen müstakil bir **`/[locale]/dashboard/google-reviews`** sayfasına taşınmıştır. İşletme sahipleri, birden fazla restoranı varsa bu yeni sayfada restoran seçebilir, yorumları tek bir listede analiz edip (AI desteğiyle) cevaplayabilir. Ayarlar sekmesinde sadece eşleştirme (bağlantı ve lokasyon seçimi) bulunur.
 
 ### 5.2 2026-05-03 oturum notları
 
 Bu oturumda yapılan kalıcı kararlar:
 - Lokal `/Users/okanberkmanavoglu/Downloads/qrcode` checkout'u GitHub `riosenbeq/qrcode` ile commit `58ec5a6fea06bdcff150fca78dbb7752c4659f29` seviyesinde karşılaştırıldı; kod eşleşiyor.
 - Sentry `SyntaxError Invalid character '\ufffd'` hatası `/tr/bilgi-guvenligi` için geldiği için public **Bilgi Güvenliği** sayfası tamamen kaldırıldı: route, legal template, footer linkleri, SEO override ve `llms.txt` referansı silindi.
-- Google Maps / Business Profile MVP eklendi: Places API ile işletme arama + `placeId` seçimi, OAuth connect/callback, Business Profile konum seçimi, Google yorumlarını listeleme, AI cevap taslağı ve manuel Google reply gönderimi.
+- Google Maps / Business Profile MVP eklendi: Places API ile işletme arama + `placeId` seçimi, OAuth connect/callback, Business Profile konum seçimi, Google yorumlarını listeleme, AI cevap taslağı ve manuel Google reply gönderimi. Yorum yönetimi Ayarlar panelinden alınarak doğrudan sol menüde `Google Yorumları` sekmesine müstakil bir sayfa olarak yerleştirildi.
 - Vercel project `qr-code` linklendi; Production + Preview env'lerinde `GOOGLE_MAPS_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` görüldü.
 - Google Cloud tarafında Places API (New), My Business Account Management API ve My Business Business Information API etkinleştirildi; OAuth consent External/Testing, test users `berkokanm@gmail.com` + `hello@buaze.com`, scope `https://www.googleapis.com/auth/business.manage`.
 - Güvenlik notu: Google API key server-only tutulur. OAuth client secret kullanıcı tarafından ekranda paylaşıldığı için ilk uygun zamanda rotate edilmesi önerilir.

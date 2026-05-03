@@ -80,7 +80,9 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
   const restaurantName = data.restaurantName || 'Restoran';
   const locale = data.locale ?? 'tr';
   const reviewUrl = `${appUrl()}/${locale}/auth/login?redirect=${encodeURIComponent(
-    `/${locale}/dashboard/feedbacks` + (data.feedbackId ? `?highlight=${data.feedbackId}` : ''),
+    data.platform === 'google'
+      ? `/${locale}/dashboard/google-reviews`
+      : `/${locale}/dashboard/feedbacks` + (data.feedbackId ? `?highlight=${data.feedbackId}` : '')
   )}`;
 
   const safeComment = data.comment === SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT ? null : data.comment ?? null;
