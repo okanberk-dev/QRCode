@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, HelpCircle, Loader2, Star, TrendingUp } from 'lucide-react';
+import { BarChart3, HelpCircle, Loader2, Star, TrendingUp, Globe2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import ExportReportButton from '@/components/dashboard/ExportReportButton';
 import { PageHeader, PlatformChip, PLATFORMS, type PlatformId } from '@/components/ui';
@@ -41,6 +41,38 @@ interface StatsResp {
   wordCloud?: WordCloudEntry[];
 }
 
+interface GoogleIntegrationRestaurant {
+  restaurantId: string;
+  restaurantName: string;
+  ownerEmail: string | null;
+  selectedLocation: {
+    accountId: string;
+    locationId: string;
+    title: string;
+    selectedAt: string;
+    lastReviewNotifiedAt: string | null;
+  } | null;
+}
+
+interface GoogleIntegrationRow {
+  integrationId: string;
+  integrationOwner: string;
+  ownerEmail: string | null;
+  hasRefreshToken: boolean;
+  accessTokenExpiresAt: string;
+  accessTokenExpired: boolean;
+  syncedAt: string | null;
+  totalLocations: number;
+  restaurants: GoogleIntegrationRestaurant[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface GoogleIntegrationsResp {
+  integrations: GoogleIntegrationRow[];
+  meta: { total: number; withRefreshToken: number; expiredAccess: number };
+}
+
 const PLATFORM_COLORS: Record<string, string> = {
   google: '#4285F4',
   yemeksepeti: '#FA0050',
@@ -61,6 +93,9 @@ export default function AdminAnalyticsPage() {
   const [platform, setPlatform] = useState<'all' | PlatformId>('all');
   const [stats, setStats] = useState<StatsResp | null>(null);
   const [loading, setLoading] = useState(true);
+  const [googleData, setGoogleData] = useState<GoogleIntegrationsResp | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(true);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -76,6 +111,38 @@ export default function AdminAnalyticsPage() {
       setLoading(false);
     })();
   }, [range, platform]);
+
+  // Google Business Profile bağlantı görünürlüğü — superadmin only.
+  // Endpoint zaten role gate ediyor, manager rolü 403 alır ve burada
+  // sessizce gizlenir (kasıtlı; aşağıdaki section render guard'ı
+  // boş `googleData?.integrations` durumunda hiçbir şey göstermez).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setGoogleLoading(true);
+      setGoogleError(null);
+      try {
+        const res = await fetch('/api/admin/google-integrations');
+        if (cancelled) return;
+        if (res.status === 403) {
+          // Manager / non-superadmin — sessizce gizle.
+          setGoogleData(null);
+          return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as GoogleIntegrationsResp;
+        setGoogleData(data);
+      } catch (err) {
+        if (cancelled) return;
+        setGoogleError(err instanceof Error ? err.message : 'unknown');
+      } finally {
+        if (!cancelled) setGoogleLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const total = stats?.totalCount ?? 0;
   const avg = stats?.avgRating ?? 0;
@@ -393,6 +460,161 @@ export default function AdminAnalyticsPage() {
             )}
           </section>
         </>
+      )}
+
+      {/* Süperadmin: Google Business Profile bağlantı görünürlüğü.
+          Endpoint manager rolüne 403 dönüyor → setGoogleData(null) → bu
+          section hiç render edilmez. Sadece superadmin görür. */}
+      {googleData && googleData.integrations.length > 0 && (
+        <section className="mt-6 min-w-0 rounded-xl border border-[#EDEDED] bg-white p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
+                <Globe2 size={14} />
+              </span>
+              <div>
+                <h2 className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'GOOGLE BUSINESS BAĞLANTILARI' : 'GOOGLE BUSINESS CONNECTIONS'}
+                </h2>
+                <p className="text-[12px] text-[#525252]">
+                  {isTr
+                    ? `${googleData.meta.total} bağlantı · ${googleData.meta.withRefreshToken} aktif refresh token · ${googleData.meta.expiredAccess} access token süresi dolmuş`
+                    : `${googleData.meta.total} connections · ${googleData.meta.withRefreshToken} active refresh tokens · ${googleData.meta.expiredAccess} expired access tokens`}
+                </p>
+              </div>
+            </div>
+            <span className="rounded-full bg-[#0A0A0A] px-2 py-1 text-[10px] font-semibold text-[#C6F24E]">
+              {isTr ? 'SADECE SÜPERADMIN' : 'SUPERADMIN ONLY'}
+            </span>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-[12px]">
+              <thead>
+                <tr className="border-b border-[#EDEDED] text-[10px] uppercase tracking-wider text-[#737373]">
+                  <th className="py-2 pr-3 font-medium">{isTr ? 'Bağlantı sahibi' : 'Connected by'}</th>
+                  <th className="py-2 pr-3 font-medium">{isTr ? 'Token durumu' : 'Token status'}</th>
+                  <th className="py-2 pr-3 font-medium">{isTr ? 'Restoran(lar)' : 'Restaurant(s)'}</th>
+                  <th className="py-2 pr-3 font-medium">{isTr ? 'Seçili konum' : 'Selected location'}</th>
+                  <th className="py-2 pr-3 font-medium">{isTr ? 'Son sync' : 'Last sync'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {googleData.integrations.map((row) => {
+                  const tokenLabel = !row.hasRefreshToken
+                    ? (isTr ? 'Reauth gerek' : 'Reauth required')
+                    : row.accessTokenExpired
+                      ? (isTr ? 'Yenileme bekliyor' : 'Pending refresh')
+                      : (isTr ? 'Aktif' : 'Active');
+                  const tokenTone = !row.hasRefreshToken
+                    ? 'bg-[#FEE2E2] text-[#991B1B]'
+                    : row.accessTokenExpired
+                      ? 'bg-[#FEF3C7] text-[#92400E]'
+                      : 'bg-[#DCFCE7] text-[#166534]';
+                  const tokenIcon = !row.hasRefreshToken
+                    ? <AlertTriangle size={11} />
+                    : row.accessTokenExpired
+                      ? <Loader2 size={11} />
+                      : <CheckCircle2 size={11} />;
+                  return row.restaurants.length === 0 ? (
+                    <tr key={row.integrationId} className="border-b border-[#F5F5F5]">
+                      <td className="py-3 pr-3">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-[#0A0A0A]">{row.ownerEmail ?? row.integrationOwner}</span>
+                          {row.ownerEmail && (
+                            <span className="text-[10px] text-[#737373]">{row.integrationOwner}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 pr-3">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${tokenTone}`}>
+                          {tokenIcon}
+                          {tokenLabel}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-3 italic text-[#737373]" colSpan={3}>
+                        {isTr ? '— Henüz hiçbir restorana konum seçilmemiş —' : '— No location selected for any restaurant yet —'}
+                      </td>
+                    </tr>
+                  ) : (
+                    row.restaurants.map((rest, idx) => (
+                      <tr key={`${row.integrationId}-${rest.restaurantId}`} className="border-b border-[#F5F5F5]">
+                        {idx === 0 ? (
+                          <>
+                            <td className="py-3 pr-3" rowSpan={row.restaurants.length}>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-[#0A0A0A]">{row.ownerEmail ?? row.integrationOwner}</span>
+                                {row.ownerEmail && (
+                                  <span className="text-[10px] text-[#737373]">{row.integrationOwner}</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 pr-3" rowSpan={row.restaurants.length}>
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${tokenTone}`}>
+                                {tokenIcon}
+                                {tokenLabel}
+                              </span>
+                            </td>
+                          </>
+                        ) : null}
+                        <td className="py-3 pr-3">
+                          <div className="flex flex-col">
+                            <span className="font-medium text-[#0A0A0A]">{rest.restaurantName}</span>
+                            {rest.ownerEmail && rest.ownerEmail !== row.ownerEmail && (
+                              <span className="text-[10px] text-[#737373]">{rest.ownerEmail}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 pr-3 text-[#525252]">
+                          {rest.selectedLocation?.title ?? <span className="italic text-[#737373]">—</span>}
+                        </td>
+                        <td className="py-3 pr-3 text-[#737373] tabular-nums">
+                          {row.syncedAt ? new Date(row.syncedAt).toLocaleString(isTr ? 'tr-TR' : 'en-US', {
+                            year: 'numeric', month: '2-digit', day: '2-digit',
+                            hour: '2-digit', minute: '2-digit',
+                          }) : (isTr ? 'Hiç' : 'Never')}
+                        </td>
+                      </tr>
+                    ))
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <p className="mt-4 text-[11px] text-[#737373]">
+            {isTr
+              ? 'Refresh token & access token detayları sadece bu görünümde özetlenir; ham token değerleri istemciye hiçbir zaman dönmez (KVKK + güvenlik). "Reauth gerek" satırları ilgili owner\'ın yeniden bağlanması gerektiğini gösterir.'
+              : 'Refresh & access token details are summarised here only; raw token values are never returned to the client (KVKK + security). "Reauth required" rows mean the owner needs to reconnect Google.'}
+          </p>
+        </section>
+      )}
+
+      {googleLoading && !googleData && (
+        <section className="mt-6 flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white p-5 text-[12px] text-[#737373]">
+          <Loader2 size={14} className="animate-spin" />
+          {isTr ? 'Google Business bağlantıları yükleniyor…' : 'Loading Google Business connections…'}
+        </section>
+      )}
+
+      {googleError && (
+        <section className="mt-6 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-[12px] text-[#991B1B]">
+          {isTr ? `Google Business bağlantıları alınamadı (${googleError})` : `Could not load Google Business connections (${googleError})`}
+        </section>
+      )}
+
+      {googleData && googleData.integrations.length === 0 && (
+        <section className="mt-6 rounded-xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-5 text-center">
+          <Globe2 size={20} className="mx-auto text-[#737373]" />
+          <p className="mt-2 text-[13px] font-medium text-[#0A0A0A]">
+            {isTr ? 'Henüz Google Business Profile bağlayan kimse yok.' : 'No one has connected Google Business Profile yet.'}
+          </p>
+          <p className="mt-1 text-[11px] text-[#737373]">
+            {isTr
+              ? 'İlk owner OAuth flow\'unu tamamladığında bu tablo doldurulacak.'
+              : 'This table will populate once the first owner completes the OAuth flow.'}
+          </p>
+        </section>
       )}
     </div>
   );
