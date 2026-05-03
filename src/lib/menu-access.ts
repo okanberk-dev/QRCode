@@ -72,3 +72,38 @@ export async function touchMenuUpdated(restaurantId: string) {
     console.error('[touchMenuUpdated]', error);
   }
 }
+
+export async function requireMenuModuleAccess(
+  req: NextRequest,
+  restaurantId: string,
+  opts: { requireWrite?: boolean } = {},
+) {
+  const gate = await requireRestaurantAccess(req, restaurantId, opts);
+  if (!gate.ok) return gate;
+
+  // Admin can inspect and maintain disabled menu rows from the admin panel.
+  // Owner/workspace users see a plan lock and cannot mutate the menu module.
+  if (!gate.isAdmin) {
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { menuEnabled: true },
+    });
+    if (!restaurant) {
+      return {
+        ok: false as const,
+        res: NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 }),
+      };
+    }
+    if (!restaurant.menuEnabled) {
+      return {
+        ok: false as const,
+        res: NextResponse.json(
+          { error: 'Menü modülü bu işletme için kapalı.', code: 'MENU_MODULE_DISABLED' },
+          { status: 403 },
+        ),
+      };
+    }
+  }
+
+  return gate;
+}

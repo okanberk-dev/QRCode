@@ -48,6 +48,8 @@ export async function POST(
       category: true,
       aiDraftTone: true,
       googleReviewManagementEnabled: true,
+      pulseAiEnabled: true,
+      googleAiEnabled: true,
     },
   });
   if (!restaurant) return ApiErrors.notFound('İşletme bulunamadı.');
@@ -55,6 +57,12 @@ export async function POST(
     return ApiErrors.forbidden(
       'Google yorum yönetimi bu işletme için kapalı.',
       'GOOGLE_REVIEW_MANAGEMENT_DISABLED',
+    );
+  }
+  if (!restaurant.pulseAiEnabled || !restaurant.googleAiEnabled) {
+    return ApiErrors.forbidden(
+      'Pulse AI bu işletme için kapalı.',
+      'PULSE_AI_DISABLED',
     );
   }
 

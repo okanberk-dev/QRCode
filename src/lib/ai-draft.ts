@@ -142,10 +142,10 @@ export async function generateAiDraftBackground(
       name: true,
       comment: true,
       platform: true,
-      restaurant: { select: { name: true, category: true, enableAiDraft: true } },
+      restaurant: { select: { name: true, category: true, pulseAiEnabled: true, enableAiDraft: true } },
     },
   });
-  if (!feedback?.restaurant?.enableAiDraft) return;
+  if (!feedback?.restaurant?.pulseAiEnabled || !feedback.restaurant.enableAiDraft) return;
 
   const draft = await generateReplyDraft(
     {
@@ -163,7 +163,7 @@ export async function generateAiDraftBackground(
   const stillEnabled = await prisma.feedback.findFirst({
     where: {
       id: feedbackId,
-      restaurant: { enableAiDraft: true },
+      restaurant: { pulseAiEnabled: true, enableAiDraft: true },
     },
     select: { id: true },
   });

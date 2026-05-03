@@ -37,6 +37,7 @@ interface RestaurantData {
   airbnbEnabled?: boolean;
   bookingEnabled?: boolean;
   yandexEnabled?: boolean;
+  externalPlatformsEnabled?: boolean;
   // Wave 4 broken-skip downstream (CLAUDE.md §19.4.5). Slug GET endpoint
   // son 24 saatlik PlatformLinkCheck'lerden provider başına latest sonucu
   // attach eder; resolver `latestChecks` Map'i ile broken provider'ı
@@ -217,6 +218,7 @@ function ReviewContent() {
       airbnbEnabled: restaurant.airbnbEnabled ?? true,
       bookingEnabled: restaurant.bookingEnabled ?? true,
       yandexEnabled: restaurant.yandexEnabled ?? true,
+      externalPlatformsEnabled: restaurant.externalPlatformsEnabled ?? true,
     },
     requestedProvider: explicitPlatform,
     latestChecks: latestChecksMap,

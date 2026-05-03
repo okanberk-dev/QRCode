@@ -5,6 +5,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-domains';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
 
 // Field → provider mapping for the eight platform URLs accepted by POST.
 // Lets us run the same `checkProviderUrl` hard-error gate the integration
@@ -67,6 +68,7 @@ export async function GET(req: NextRequest) {
           airbnbEnabled: true,
           bookingEnabled: true,
           yandexEnabled: true,
+          externalPlatformsEnabled: true,
           primaryColor: true,
           isActive: true,
           // `defaultRedirectPlatform` powers the public review surface's
@@ -108,8 +110,31 @@ export async function GET(req: NextRequest) {
       // ~24 (one per minute, edge-shared). Owner updates take up to ~6min
       // worst case to propagate; documented in CLAUDE.md §19.4.
       // Latest checks dahil cache'lenir — cron günde 1, 60s freshness yeterli.
+      const publicRestaurant = restaurant.externalPlatformsEnabled
+        ? restaurant
+        : {
+            ...restaurant,
+            yemekSepetiUrl: null,
+            getirYemekUrl: null,
+            trendyolYemekUrl: null,
+            tripAdvisorUrl: null,
+            airbnbUrl: null,
+            bookingUrl: null,
+            yandexUrl: null,
+            yemekSepetiEnabled: false,
+            getirEnabled: false,
+            trendyolEnabled: false,
+            tripAdvisorEnabled: false,
+            airbnbEnabled: false,
+            bookingEnabled: false,
+            yandexEnabled: false,
+            defaultRedirectPlatform: isExternalReviewProvider(restaurant.defaultRedirectPlatform)
+              ? null
+              : restaurant.defaultRedirectPlatform,
+          };
+
       return NextResponse.json(
-        { ...restaurant, latestChecks },
+        { ...publicRestaurant, latestChecks },
         {
           headers: {
             'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',

@@ -23,6 +23,7 @@ interface RestaurantOption {
   airbnbUrl?: string | null;
   bookingUrl?: string | null;
   yandexUrl?: string | null;
+  externalPlatformsEnabled?: boolean;
 }
 
 export interface QRGenerationResult {
@@ -121,7 +122,8 @@ export function CreateQRModal({
       "tripAdvisorUrl" in activeRestaurant ||
       "airbnbUrl" in activeRestaurant ||
       "bookingUrl" in activeRestaurant ||
-      "yandexUrl" in activeRestaurant;
+      "yandexUrl" in activeRestaurant ||
+      "externalPlatformsEnabled" in activeRestaurant;
 
     if (!hasPlatformShape) {
       return FALLBACK_KEYS.map((key) => ({
@@ -134,6 +136,7 @@ export function CreateQRModal({
     const sectorAllowed = getSectorPlatforms(activeRestaurant.category ?? null);
 
     return Object.entries(PLATFORM_META)
+      .filter(([key]) => activeRestaurant.externalPlatformsEnabled !== false || key === "google")
       .filter(([, meta]) => sectorAllowed.has(meta.sectorKey as PlatformId))
       .filter(([, meta]) => {
         const value = activeRestaurant[meta.urlField];

@@ -5,7 +5,6 @@ import { canAccessRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import {
   getGoogleIntegrationForRestaurant,
-  googleReviewManagementEnabled,
   googleOAuthConfigured,
   googlePlacesConfigured,
   parseGoogleLocationsCache,
@@ -26,11 +25,11 @@ export async function GET(
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id },
-    select: { googleReviewManagementEnabled: true, googleAiEnabled: true },
+    select: { googleReviewManagementEnabled: true, pulseAiEnabled: true, googleAiEnabled: true },
   });
 
   const reviewManagementEnabled = restaurant?.googleReviewManagementEnabled ?? false;
-  const googleAiEnabled = restaurant?.googleAiEnabled ?? true;
+  const googleAiEnabled = (restaurant?.pulseAiEnabled ?? true) && (restaurant?.googleAiEnabled ?? true);
   const integration = await getGoogleIntegrationForRestaurant(actor, id);
   const cache = parseGoogleLocationsCache(integration?.locationsJson ?? null);
   const selectedLocation = selectedGoogleLocation(cache, id);

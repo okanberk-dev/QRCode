@@ -32,6 +32,7 @@ interface Restaurant {
   airbnbUrl?: string | null;
   bookingUrl?: string | null;
   yandexUrl?: string | null;
+  externalPlatformsEnabled?: boolean;
 }
 
 interface QrHistoryItem {
@@ -642,6 +643,7 @@ export default function DashboardQrPage() {
               airbnbUrl: r.airbnbUrl ?? null,
               bookingUrl: r.bookingUrl ?? null,
               yandexUrl: r.yandexUrl ?? null,
+              externalPlatformsEnabled: r.externalPlatformsEnabled ?? true,
             }))}
           defaultRestaurantId={preselected || undefined}
           locale={locale}

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireRestaurantAccess, touchMenuUpdated } from '@/lib/menu-access';
+import { requireMenuModuleAccess, touchMenuUpdated } from '@/lib/menu-access';
 import { validateReorder } from '@/lib/validations';
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const gate = await requireRestaurantAccess(req, id);
+  const gate = await requireMenuModuleAccess(req, id);
   if (!gate.ok) return gate.res;
 
   let body: unknown;

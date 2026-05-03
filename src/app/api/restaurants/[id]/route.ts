@@ -5,6 +5,7 @@ import { canAccessRestaurant, canWriteRestaurant, canDeleteRestaurant } from '@/
 import { ApiErrors } from '@/lib/api-errors';
 import { isValidEmail, isValidHexColor } from '@/lib/validations';
 import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-domains';
+import { isExternalPlatformField, isExternalReviewProvider } from '@/lib/restaurant-features';
 
 // Field → provider mapping shared with /api/restaurants POST. Keeps the
 // hard-error gate (invalid_url / wrong_protocol / wrong_domain) consistent
@@ -126,6 +127,9 @@ export async function PUT(
       googlePlaceId,
       googleReviewUrl,
       googleReviewManagementEnabled,
+      pulseAiEnabled,
+      aiAnalyticsEnabled,
+      externalPlatformsEnabled,
       notificationEmail,
       primaryColor,
       isActive,
@@ -267,6 +271,20 @@ export async function PUT(
         'GOOGLE_REVIEW_MANAGEMENT_ADMIN_ONLY',
       );
     }
+    const featureEntitlementFields = {
+      pulseAiEnabled,
+      aiAnalyticsEnabled,
+      externalPlatformsEnabled,
+    };
+    if (
+      Object.values(featureEntitlementFields).some((value) => value !== undefined) &&
+      actor.role !== 'superadmin'
+    ) {
+      return ApiErrors.forbidden(
+        'Paket özelliklerini sadece süperadmin değiştirebilir.',
+        'FEATURE_ENTITLEMENTS_ADMIN_ONLY',
+      );
+    }
 
     // Integration platform URLs — same hard-error gate as the POST path.
     // Warning severities (homepage / not_review_link) still pass; only
@@ -307,9 +325,32 @@ export async function PUT(
       }
     }
 
-    const currentRest = await prisma.restaurant.findUnique({ where: { id } });
+    const currentRest = await prisma.restaurant.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        defaultRedirectPlatform: true,
+        externalPlatformsEnabled: true,
+      },
+    });
     if (!currentRest) {
       return ApiErrors.notFound('İşletme bulunamadı');
+    }
+
+    if (actor.source !== 'admin' && currentRest.externalPlatformsEnabled === false) {
+      const touchesExternalPlatform = Object.keys(body as Record<string, unknown>).some(isExternalPlatformField);
+      if (touchesExternalPlatform) {
+        return ApiErrors.forbidden(
+          'Google dışındaki platformlar bu işletme için kapalı.',
+          'EXTERNAL_PLATFORMS_DISABLED',
+        );
+      }
+      if (typeof defaultRedirectPlatform === 'string' && isExternalReviewProvider(defaultRedirectPlatform)) {
+        return ApiErrors.forbidden(
+          'Google dışındaki platformlar bu işletme için kapalı.',
+          'EXTERNAL_PLATFORMS_DISABLED',
+        );
+      }
     }
 
     // Orphan-default cleanup (CLAUDE.md §19.2). If this PUT clears the URL
@@ -416,6 +457,11 @@ export async function PUT(
         ...(googleReviewUrl !== undefined && { googleReviewUrl: googleReviewUrl || null }),
         ...(googleReviewManagementEnabled !== undefined && {
           googleReviewManagementEnabled: Boolean(googleReviewManagementEnabled),
+        }),
+        ...(pulseAiEnabled !== undefined && { pulseAiEnabled: Boolean(pulseAiEnabled) }),
+        ...(aiAnalyticsEnabled !== undefined && { aiAnalyticsEnabled: Boolean(aiAnalyticsEnabled) }),
+        ...(externalPlatformsEnabled !== undefined && {
+          externalPlatformsEnabled: Boolean(externalPlatformsEnabled),
         }),
         ...(notificationEmail !== undefined && { notificationEmail: notificationEmail || null }),
         ...(primaryColor !== undefined && { primaryColor }),

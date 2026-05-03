@@ -8,6 +8,7 @@ import {
   PROVIDER_MAP,
   type ProviderMapping,
 } from '@/lib/platform-link-test';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -73,6 +74,7 @@ export async function POST(
       bookingEnabled: true,
       yandexUrl: true,
       yandexEnabled: true,
+      externalPlatformsEnabled: true,
       instagramUrl: true,
       facebookUrl: true,
       whatsappUrl: true,
@@ -86,6 +88,7 @@ export async function POST(
   const r = restaurant as unknown as Record<string, string | null | boolean>;
   const active: Array<{ mapping: ProviderMapping; url: string }> = [];
   for (const m of PROVIDER_MAP) {
+    if (!restaurant.externalPlatformsEnabled && isExternalReviewProvider(m.provider)) continue;
     const url = (r[m.urlField] as string | null) ?? '';
     if (!url || !url.trim()) continue;
     if (m.enabledField) {

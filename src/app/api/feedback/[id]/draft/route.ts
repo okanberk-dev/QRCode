@@ -17,7 +17,7 @@ async function requireFeedbackAccess(req: NextRequest, id: string) {
     select: {
       id: true,
       restaurantId: true,
-      restaurant: { select: { enableAiDraft: true } },
+      restaurant: { select: { pulseAiEnabled: true, enableAiDraft: true } },
     },
   });
   if (!feedback) return { error: 'not_found' as const, status: 404 };
@@ -36,6 +36,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const access = await requireFeedbackAccess(req, id);
   if ('error' in access) {
     return NextResponse.json({ error: access.error }, { status: access.status });
+  }
+
+  if (access.feedback.restaurant?.pulseAiEnabled !== true) {
+    return NextResponse.json({ draft: null, pulseAiDisabled: true });
   }
 
   if (access.feedback.restaurant?.enableAiDraft !== true) {

@@ -13,6 +13,7 @@ import { coerceTone, generateAiDraftBackground } from '@/lib/ai-draft';
 import { getNotificationPrefsForRestaurant } from '@/lib/notification-preferences';
 import { recordConsentBatch } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
 
 function parseAspectRating(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
@@ -94,6 +95,7 @@ export async function POST(req: NextRequest) {
     let restaurantName: string = 'Restoran';
     let aiDraftEnabled = false;
     let aiDraftTone: string = 'warm';
+    let feedbackPlatform = sanitizedPlatform;
 
     if (restaurantSlug) {
       const restaurant = await prisma.restaurant.findUnique({
@@ -102,16 +104,21 @@ export async function POST(req: NextRequest) {
           id: true,
           name: true,
           notificationEmail: true,
+          pulseAiEnabled: true,
           enableAiDraft: true,
           aiDraftTone: true,
+          externalPlatformsEnabled: true,
         },
       });
       if (restaurant) {
         restaurantId = restaurant.id;
         notificationEmail = restaurant.notificationEmail;
         restaurantName = restaurant.name;
-        aiDraftEnabled = restaurant.enableAiDraft;
+        aiDraftEnabled = restaurant.pulseAiEnabled && restaurant.enableAiDraft;
         aiDraftTone = restaurant.aiDraftTone;
+        if (!restaurant.externalPlatformsEnabled && isExternalReviewProvider(feedbackPlatform)) {
+          feedbackPlatform = null;
+        }
       }
     }
 
@@ -131,7 +138,7 @@ export async function POST(req: NextRequest) {
         hasKvkkConsent: body.hasKvkkConsent ?? true,
         hasMarketingConsent: body.hasMarketingConsent ?? false,
         restaurantId,
-        platform: sanitizedPlatform,
+        platform: feedbackPlatform,
         // Rich Feedback Additions — coerce safely; non-1..5 inputs become null.
         foodRating: parseAspectRating(aspects?.food),
         serviceRating: parseAspectRating(aspects?.service),
@@ -374,7 +381,7 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
         include: {
-          restaurant: { select: { name: true, slug: true, enableAiDraft: true } },
+          restaurant: { select: { name: true, slug: true, pulseAiEnabled: true, enableAiDraft: true } },
           flag: { select: { id: true } },
           assignment: { select: { assigneeId: true } },
           tags: { select: { id: true, label: true, score: true, createdAt: true }, orderBy: { createdAt: 'asc' } },
@@ -394,7 +401,7 @@ export async function GET(req: NextRequest) {
           skip,
           take: limit,
           include: {
-            restaurant: { select: { name: true, slug: true, enableAiDraft: true } },
+            restaurant: { select: { name: true, slug: true, pulseAiEnabled: true, enableAiDraft: true } },
             flag: { select: { id: true } },
             assignment: { select: { assigneeId: true } },
             _count: { select: { replies: true } },
@@ -412,7 +419,7 @@ export async function GET(req: NextRequest) {
           orderBy: { createdAt: sortOrder },
           skip,
           take: limit,
-          include: { restaurant: { select: { name: true, slug: true, enableAiDraft: true } } },
+          include: { restaurant: { select: { name: true, slug: true, pulseAiEnabled: true, enableAiDraft: true } } },
         });
       }
     }
@@ -456,10 +463,10 @@ export async function GET(req: NextRequest) {
         flag?: unknown;
         assignment?: { assigneeId?: string | null };
         tags?: unknown[];
-        restaurant?: { name?: string; slug?: string | null; enableAiDraft?: boolean | null } | null;
+        restaurant?: { name?: string; slug?: string | null; pulseAiEnabled?: boolean | null; enableAiDraft?: boolean | null } | null;
       };
       const draft = f.id ? aiDraftMap.get(f.id) : undefined;
-      const aiAutoDraftEnabled = f.restaurant?.enableAiDraft === true;
+      const aiAutoDraftEnabled = f.restaurant?.pulseAiEnabled === true && f.restaurant?.enableAiDraft === true;
       return {
         ...f,
         customerName: f.name,

@@ -121,6 +121,12 @@ model Restaurant {
   // search/linking can stay available, but fetching Google reviews, AI reply
   // drafting, and public Google reply writes require this per-restaurant flag.
   googleReviewManagementEnabled Boolean   @default(false) @map("google_review_management_enabled")
+  // Package-ready feature entitlements. Owner-level preferences (enableAiDraft,
+  // googleAiEnabled, per-platform toggles) sit under these admin-controlled
+  // master switches so future paid plans can assign them automatically.
+  pulseAiEnabled                 Boolean   @default(true) @map("pulse_ai_enabled")
+  aiAnalyticsEnabled             Boolean   @default(true) @map("ai_analytics_enabled")
+  externalPlatformsEnabled       Boolean   @default(true) @map("external_platforms_enabled")
 
   // Google Rating Impact Tracking
   initialGoogleRating           Float?    @map("initial_google_rating")
