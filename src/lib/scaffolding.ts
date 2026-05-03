@@ -4,9 +4,8 @@
 // under `src/app/api/…/route.ts` — search the repo for `SCAFFOLDED:` to
 // find them. Replace the stub body with real Prisma queries when ready.
 //
-// Prisma schema additions expected (add to `prisma/schema.prisma` and
-// run `prisma db push --accept-data-loss` — the project avoids
-// migration files per CLAUDE.md §7):
+// Prisma schema additions expected: add to `prisma/schema.prisma`, create
+// a Prisma migration, and let deploy run `prisma migrate deploy`.
 //
 // model FeedbackReply {
 //   id           String   @id @default(cuid())

@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     // Replied count joins the FeedbackReply table which may not exist on
-    // environments where `prisma db push` has not run yet. Fall back to 0
+    // environments where schema migration has not run yet. Fall back to 0
     // so the counts strip still renders instead of blanking the page.
     let replied = 0;
     try {
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       });
     } catch (err) {
       console.warn(
-        '[feedback/counts] replied fallback — did `prisma db push` run?',
+        '[feedback/counts] replied fallback — did schema migration run?',
         (err as Error).message,
       );
     }

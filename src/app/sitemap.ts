@@ -141,7 +141,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   // Help articles — DB takes precedence; static array fills gaps so the
-  // sitemap is never empty in preview deploys without prisma db push.
+  // sitemap is never empty in preview deploys before schema migration.
   const seenArticleKeys = new Set<string>();
   try {
     const dbArticles = await prisma.helpArticle.findMany({

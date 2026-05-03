@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   // Explicit select — drift-resilient (CLAUDE.md §14.1). Admin campaign
   // detail page consumes every field; pinning them future-proofs against
-  // schema columns added before `prisma db push` runs in deploy.
+  // schema columns added before migration deploy finishes.
   const campaign = await prisma.newsletterCampaign.findUnique({
     where: { id },
     select: {

@@ -2,7 +2,7 @@
 // pre-date the column.
 //
 // Why: `source String? @default("manual")` only fills the default on NEW
-// inserts. Existing rows stay NULL after `prisma db push`. The trial cron's
+// inserts. Existing rows stay NULL after the schema migration. The trial cron's
 // AI count filter (`source: 'ai_copilot'`) ignores NULLs anyway, but admin
 // reports that GROUP BY source will surface a phantom "Unknown" bucket
 // unless we backfill.

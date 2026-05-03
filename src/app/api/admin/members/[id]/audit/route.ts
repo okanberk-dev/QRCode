@@ -7,7 +7,7 @@ import { getAdminFromRequest } from '@/lib/auth';
 // Action label translation lives client-side (TR/EN map per action key).
 //
 // Resilience: any unexpected DB error (schema drift on a preview deploy that
-// hasn't run `prisma db push` yet, transient connection blip, malformed
+// hasn't run schema migration yet, transient connection blip, malformed
 // payload column) used to bubble up as a 500 and break the member detail page.
 // We now degrade gracefully — log + return empty data so the timeline shows
 // its empty state instead of a console error wall.

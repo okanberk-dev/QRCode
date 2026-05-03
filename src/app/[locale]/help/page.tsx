@@ -72,7 +72,7 @@ export default async function HelpCenterPage({
       select: { slug: true, title: true, category: true },
     });
   } catch {
-    // If the table is missing (pre-first `prisma db push`) fall back to
+    // If the table is missing (pre-first schema migration) fall back to
     // an empty state — the layout still renders "Coming soon".
   }
   countBySlug = { ...staticCounts, ...Object.fromEntries(Object.entries(countBySlug).filter(([, count]) => count > 0)) };

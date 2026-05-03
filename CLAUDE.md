@@ -25,7 +25,7 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 | Framework | Next.js 15 (App Router, `src/app`) | Vercel Deployment |
 | Dil | TypeScript (strict, ama `ignoreBuildErrors: true` — dikkat) | |
 | DB | PostgreSQL **via Supabase** | `DATABASE_URL` (pgbouncer 6543) + `DIRECT_URL` (5432 migration için) |
-| ORM | Prisma 6 | `prisma db push` Dockerfile'da otomatik |
+| ORM | Prisma 6 | Vercel build'de `prisma migrate deploy`; `npm run db:push` sadece lokal scratch DB |
 | Auth | Custom JWT (`jose`) + httpOnly cookie | `src/lib/auth.ts` — edge compatible |
 | Auth (Google Sign-in) | Firebase Web SDK (`firebase`) | `src/lib/firebase-client.ts` + `firebase-admin.ts` — sadece Google OAuth için, primary auth değil |
 | UI | Tailwind v4 (PostCSS) + lucide-react (ikonlar) | Elle yazılmış bileşenler + Radix UI primitive'leri (`@radix-ui/react-dialog`, `dropdown-menu`, `tabs`, `tooltip`, `popover`, `select`) headless infrastructure |
@@ -189,6 +189,23 @@ Bu oturumda yapılan kalıcı kararlar:
 - Chrome DevTools'taki `chrome-extension://... content-script-start.js`, `runtime.lastError: Receiving end does not exist`, `inpage.js Failed to connect to MetaMask` satırları uygulama hatası değil; tarayıcı eklentisi gürültüsü. Ürün tarafında sadece gerçek app kaynaklı warning/error'lar fixlenir.
 - Pulse AI owner auto-draft toggle'ı uçtan uca bağlandı: `enableAiDraft=false` iken yeni düşük puanlarda background draft yok, feedback seçimi otomatik suggestion üretmez, draft endpoint'i null döner ve toggle kapatılırken bekleyen `FeedbackAiDraft` kayıtları temizlenir. Manuel "Yeniden öner" bilinçli kullanıcı aksiyonu olarak çalışmaya devam eder.
 - 2026-05-03 production Sentry audit: Vercel env listesinde `NEXT_PUBLIC_SENTRY_DSN` Production/Preview/Development scope'larında var, fakat `SENTRY_DSN` yok. Server/edge config artık `SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN` ile init olur; client config zaten public DSN kullanır. Bu sayede `instrumentation.ts` `onRequestError` hook'u production server hatalarını no-op bırakmaz. `GET /api/sentry-test` smoke endpoint'i bu iki DSN'den biriyle test edilir.
+- 2026-05-03 Prisma deploy audit: Build script `prisma migrate deploy` akışına geçirildi; ilk baseline migration `prisma/migrations/20260503172000_init/migration.sql` mevcut schema'dan üretildi. Vercel Preview + Production DB schema diff'i boş doğrulandı ve baseline `20260503172000_init` migration metadata'sı applied olarak işaretlendi; bu işlem tablo/kolon/data değiştirmedi, yalnızca `_prisma_migrations` geçmişini başlattı.
+
+### 5.4 2026-05-03 Production Hata Düzeltme Takip Planı
+
+Tamamlanan PR serisi:
+- PR #370: Admin **Paket & Özellik Erişimi** paneli ve owner-side entitlement gate'leri.
+- PR #371: Marketing ürün linkleri düzeltildi; Yorum Yönetimi ve Analitik & Raporlar kendi detay sayfalarına ayrıldı.
+- PR #372: Server/edge Sentry DSN fallback'i düzeltildi (`SENTRY_DSN || NEXT_PUBLIC_SENTRY_DSN`); Vercel Preview/GitHub CI yeşil.
+- Task 2 branch `fix/prisma-migrate-deploy-build`: build script `prisma migrate deploy` kullanır, baseline migration commitlenir, Preview + Production migration status up-to-date doğrulanır.
+
+Kalan production düzeltmeleri ayrı PR'larla, bu sırada ilerlemeli:
+1. **Task 4 — Google Business retry + reauth**: `src/lib/google-business.ts` içinde tek wrapper (`googleBusinessFetch`) genişlet. 401 için refresh denemesi, rate-limit/network için 2 retry + exponential backoff, refresh başarısızsa tokenları güvenli biçimde geçersiz sayan `requiresReauth` response'u ekle. Endpoint'ler zincirleme 500 üretmemeli; Sentry event'i `tags: { integration: 'google-business' }` ile tek kez düşmeli.
+2. **Task 3 — Dashboard polling azaltma**: Önce gerçek callsite'ları ölç. `NotificationBell` low-rating poll'u 60 sn; activation, integration checks ve Google status mount fetch seviyesinde. Yarı-statik endpoint'lerde owner-scoped olduğundan CDN public cache kullanma; bunun yerine client stale/refetch stratejisi veya server-side kısa private/no-store kararını explicit yaz. Hedef: aynı dashboard 5 dk açıkken API çağrı sayısını yarıya indirmek.
+3. **Task 5 — `Invalid character '\ufffd'` bağlamlandırma**: Sentry issue stack/breadcrumb okunmadan kör refactor yapma. Önce issue URL'sinden failing URL/script context al; sonra yalnızca riskli `JSON.parse` yüzeylerine `try/catch + Sentry.captureException(..., extra.rawSnippet)` ekle. Secret/PII raw payload loglama.
+4. **Task 6 — Sentry deprecation temizliği**: `next.config.ts` içindeki deprecated `disableLogger` ve `automaticVercelMonitors` seçeneklerini SDK 10 formatına taşı. Sadece build warning temizliği; runtime davranışı değişmemeli.
+5. **Task 7 — reCAPTCHA assessment kararı**: Vercel env isimleri mevcut kodla `RECAPTCHA_ENTERPRISE_*` formatında uyumlu. Warning'in tam hata metnini structured logla; `RECAPTCHA_ENFORCE` monitor-mode kararını koru veya product kararıyla low-score reject'e geç. Bot sinyali PII içermeden loglanmalı.
+6. **Task 8 — Prisma 7 upgrade**: En son ve ayrı major-version branch. Prisma 7 breaking-change rehberi okunmadan yapılmaz.
 
 ### Platform dağılımı nerede gösteriliyor?
 - **Admin paneli** (`src/app/admin/dashboard/page.tsx`) → `<PlatformDistribution>` (detaylı bar chart + pills). Eskiden üstte ayrı bir "Platform Mini Cards" grid'i vardı — duplikasyon olduğu için kaldırıldı (2026-04).
@@ -268,9 +285,10 @@ Aşağıdakiler **bilinçli kararlar** — değiştirmek için güçlü sebep ge
 - Tailwind yardımcı sınıflarını tekrarla — ortak "Button" component'i yazma (proje boyunca tutarlılık için).
 - `format()` (date-fns) + `locale === 'tr' ? tr : undefined` pattern'ini kullan.
 - Uzun dropdown / toolbar'larda mobilde `flex-col md:flex-row` + `w-full sm:w-auto`.
+- Prisma schema değiştiriyorsan migration dosyasını commit et (`prisma/migrations/...`). Deploy migration history üzerinden yürür.
 
 ### ❌ Yapma
-- **Prisma migration dosyası (`prisma/migrations/...`) oluşturma** — deploy akışı `prisma db push --accept-data-loss` üzerine kurulu, `migrate dev` kullanılmıyor. Halihazırda `prisma/migrations/` klasörü **yok** — varsa silmeden önce sor (push workflow'u kırılır).
+- Production/Preview schema değişikliği için `npm run db:push` kullanma. Bu script yalnızca lokal scratch DB içindir; kalıcı değişiklik migration olarak commitlenir.
 - **Ortak abstraction'lar** (shared PLATFORM_CONFIG modülü gibi) **üç yerden fazla tekrar** olmadıkça yazma.
 - **AI / otomasyon / rol refactor** ekleme — kullanıcının açıkça istediği scope'a sadık kal.
 - **Disk'e yazma** — Vercel serverless ephemeral FS, `public/uploads/*` veya başka bir dizine runtime yazılmaz. Görsel/dosya akışı için §3 (base64-in-DB) veya Supabase Storage.
@@ -292,7 +310,7 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 - Schema değiştirdin ama `prisma generate` yapmadın → TS hataları. `npx prisma generate` (Dockerfile zaten yapıyor).
 
 ### Supabase `DIRECT_URL` eksik
-- `prisma migrate`/`db push` direct bağlantı (5432) gerektirir. `DATABASE_URL` pgbouncer (6543) olabilir ama `DIRECT_URL` olmadan schema sync başarısız.
+- `prisma migrate deploy` direct bağlantı (5432) gerektirir. `DATABASE_URL` pgbouncer (6543) olabilir ama `DIRECT_URL` olmadan migration deploy başarısız.
 
 ---
 
@@ -301,7 +319,7 @@ Kullanıcı genellikle **sade ve anlaşılır** ister ve "scope creep yapma" kon
 - [ ] Kullanıcı dilini ayarla (mesaj TR gelirse TR cevapla).
 - [ ] Hedeflenen route'u bul: `src/app/admin/...` (panel) vs `src/app/api/...` (API) vs `src/app/r/[slug]/` (public).
 - [ ] IDOR scoping gerekli mi? → evet ise `getScopedRestaurantIds` kullan.
-- [ ] Yeni DB alanı gerekli mi? → `schema.prisma`'da var mı kontrol et (muhtemelen var). Yoksa ekle + `prisma db push` (migration değil).
+- [ ] Yeni DB alanı gerekli mi? → `schema.prisma`'da var mı kontrol et. Yoksa ekle + Prisma migration oluştur; `npm run db:push` sadece lokal scratch DB için.
 - [ ] Platform ile ilgili mi? → 4 config haritasını güncellemeyi unutma.
 - [ ] Dosya yükleme mi? → §3 depolama mimarisine göre davran.
 - [ ] Mobil görünüm → `flex-col md:flex-row`, `w-full sm:w-auto`, `text-[10px] sm:text-xs`.
@@ -538,12 +556,12 @@ Tüm cron'lar `Authorization: Bearer ${CRON_SECRET}` zorunlu; Vercel Cron config
 
 `package.json`:
 ```json
-"build": "node scripts/validate-env.js && prisma db push --accept-data-loss && next build"
+"build": "node scripts/validate-env.js && prisma migrate deploy && next build"
 ```
 
 3 adım:
 1. **`scripts/validate-env.js`** — zorunlu env'leri (DATABASE_URL, DIRECT_URL, JWT_SECRET, NEXT_PUBLIC_APP_URL) doğrular; eksikse exit 1 → Vercel build başlamadan fail eder.
-2. **`prisma db push --accept-data-loss`** — schema sync; `P2022 column does not exist` hatası önlenir (daha önce `/api/restaurants` 500 bug'ına sebep olmuştu).
+2. **`prisma migrate deploy`** — commitlenmiş migration history'yi uygular. Schema değişiklikleri `prisma/migrations/` altında görünür; production build sessiz data drop yapmaz.
 3. **`next build`** — uygulama derlemesi.
 
 **Defensive coding kuralı (Faz 6 sweep, 2026-04):** `prisma.X.findUnique({ where: ... })` çağrılarına **her zaman explicit `select`** ekle. Prisma'da select'siz findUnique tüm sütunları çeker; schema'da olup henüz DB'ye sync olmamış bir sütun (deploy race, manual SQL, preview env, dev branch) varsa `P2022` ile 500 atar. Explicit select ilgisiz sütunları sorgudan çıkardığı için drift'e bağışıklık sağlar.
@@ -567,7 +585,7 @@ Public path (`/api/restaurants?slug=`) zaten Faz 1'de süpürüldü (PR #118). S
 
 **Zorunlu Vercel env var'ları:**
 - `DATABASE_URL` — Supabase pooler (port 6543)
-- `DIRECT_URL` — Supabase direct connection (port 5432) — `prisma db push` bunu kullanır. **Yoksa build fail eder.**
+- `DIRECT_URL` — Supabase direct connection (port 5432) — Prisma migrations bunu kullanır. **Yoksa build fail eder.**
 - `JWT_SECRET` — auth token signing
 - `NEXT_PUBLIC_APP_URL` — QR URL'lerinde kullanılır
 
@@ -813,7 +831,7 @@ Yorum gelen kutusu (admin + owner) — kalıcı kararlar.
 
 ### Feedback list 3-tier resilience (`GET /api/feedback`)
 
-`prisma db push` henüz çalışmamış preview deploy'larında bazı join tabloları (`feedback_replies`, `feedback_flags`, `feedback_assignments`, `feedback_tags`) yoksa list endpoint çökmesin diye:
+Schema migration henüz uygulanmamış preview deploy'larında bazı join tabloları (`feedback_replies`, `feedback_flags`, `feedback_assignments`, `feedback_tags`) yoksa list endpoint çökmesin diye:
 
 1. **Tier 1 (happy path):** Tüm join'ler — `flag + assignment + replies + tags`
 2. **Tier 2:** Tags hariç tüm join'ler (sadece `FeedbackTag` eksikse `isReplied/isFlagged/isAssigned` korunur)
@@ -1241,7 +1259,7 @@ Auth: `Bearer ${CRON_SECRET}` (CLAUDE.md §14.1 mevcut env'i kullanılır, yeni 
 | Mail | Aylık cron | `getUnsubscribeUrl(token)` footer'a gömer |
 | Unsubscribe | `GET /api/newsletter/unsubscribe?token=...` | `unsubscribedAt = now()` set + Pulse stilinde plain HTML "Aboneliğin sonlandı" sayfası |
 
-Schema: `NewsletterSubscriber.unsubscribeToken String? @unique` (Prisma 6.x, `prisma db push` deploy build script'inde otomatik sync).
+Schema: `NewsletterSubscriber.unsubscribeToken String? @unique` (Prisma 6.x, migration deploy akışında uygulanır).
 
 ### 21.5 Admin newsletter sayfası (`/admin/newsletters`)
 
@@ -1433,7 +1451,7 @@ Send başlamadan campaign `'sending'`, bitince `'sent'` + `sentAt` + counts. Eve
 
 ### 21.18 Vercel preview env'leri
 
-**Mevcut durum (2026-04 doğrulandı)**: Vercel'de **`DATABASE_URL`, `DIRECT_URL`, `CRON_SECRET`, `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`** Production + Preview + Development scope'larında set. **Yeni preview branch açıldığında ekstra konfigürasyon yok** — `prisma db push` build script'inde otomatik koşar, schema sync olur.
+**Mevcut durum (2026-05 doğrulandı)**: Vercel'de **`DATABASE_URL`, `DIRECT_URL`, `CRON_SECRET`, `RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`** Production + Preview + Development scope'larında set. **Yeni preview branch açıldığında ekstra konfigürasyon yok** — `prisma migrate deploy` build script'inde otomatik koşar, schema history uygulanır.
 
 **Mevcut DB topology**: production DB tek paylaşılan Supabase instance (preview deploy'lar da aynı DB'ye yazıyor). Supabase Branching aktif değil (`supabase/` klasörü boş → PR'larda `Supabase Preview` check `skipped` normal).
 
@@ -1461,7 +1479,7 @@ Concurrency cancel-in-progress: aynı PR'a yeni commit gelince eski run iptal. W
 
 ### 21.20 FeedbackReply.source backfill
 
-`scripts/backfill-feedback-reply-source.ts` — eski reply'ları `source = 'manual'` ile dolduran one-shot data migration. `prisma db push` schema kolonu ekler ama eski rows NULL kalır. Çalıştırmak (idempotent):
+`scripts/backfill-feedback-reply-source.ts` — eski reply'ları `source = 'manual'` ile dolduran one-shot data migration. Schema migration kolonu ekler ama eski rows NULL kalır. Çalıştırmak (idempotent):
 
 ```bash
 DATABASE_URL=... npx tsx scripts/backfill-feedback-reply-source.ts
@@ -2165,7 +2183,7 @@ Pazartesi günleri çalışan iki cron birlikte: 09:00 UTC işletmelere AI-zengi
 
 ## 22. Yardım Merkezi (Help Center) — İçerik & SEO Sistemi
 
-Buaze yardım merkezi **hybrid** veri kaynağıyla çalışır: Prisma `HelpArticle` tablosu (admin tarafından eklenen makaleler) + `STATIC_HELP_ARTICLES` array (kod içine yazılı evergreen içerik). DB boşsa veya tablo henüz `prisma db push` çalıştırılmamış preview deploy'larında static array fallback olur — yardım sayfası asla çökmez.
+Buaze yardım merkezi **hybrid** veri kaynağıyla çalışır: Prisma `HelpArticle` tablosu (admin tarafından eklenen makaleler) + `STATIC_HELP_ARTICLES` array (kod içine yazılı evergreen içerik). DB boşsa veya tablo henüz migration deploy görmemiş preview deploy'larında static array fallback olur — yardım sayfası asla çökmez.
 
 ### 22.1 Mimari özet
 
@@ -2294,7 +2312,7 @@ Retrofit yaparken:
 
 ### 22.7 Pitfall — DB tablosu olmayan preview
 
-Preview deploy'da `prisma db push` koşmamış olabilir. Help sayfaları `try/catch` ile DB sorgusunu sarar; tablo yoksa static array'e düşer. Bu hibridliği bozmamak için:
+Preview deploy'da migration henüz koşmamış olabilir. Help sayfaları `try/catch` ile DB sorgusunu sarar; tablo yoksa static array'e düşer. Bu hibridliği bozmamak için:
 - Yeni alan eklenirse static + DB iki tarafı da güncelle (Prisma migration + array entry)
 - DB'den gelen makale `image_url` gibi static'e olmayan alan tutarsa, ortak bir typeguard ile ele al
 
@@ -3575,7 +3593,7 @@ Owner panel'deki Slack webhook bildirim ayarı kullanıcı talebiyle kaldırıld
 | API | `src/app/api/notifications/route.ts` | `slackWebhook` URL parse + 500 char + `invalid_webhook` 400 + DEFAULT_PREFS field + select alanı + return alanı |
 | Helper | `src/lib/notification-preferences.ts` | `NotificationPrefs.slackWebhook` field + `postSlackWebhook` fan-out fonksiyonu + DEFAULTS field + select |
 | Feedback fan-out | `src/app/api/feedback/route.ts` | `postSlackWebhook` import + ≤3★ Slack mesaj formatlama bloğu (line 201-215) + yorum |
-| DB schema | `prisma/schema.prisma` `NotificationPreference` | `slackWebhook String? @map("slack_webhook")` kolonu — `prisma db push --accept-data-loss` deploy'da DB'den drop eder |
+| DB schema | `prisma/schema.prisma` `NotificationPreference` | `slackWebhook String? @map("slack_webhook")` kolonu kaldırılmıştır; migration akışında eski kolonlar ancak explicit migration ile düşürülür |
 | Type drift | `src/lib/scaffolding.ts` | `NotificationPreferences.slackWebhook` field + yorumda `slack_webhook` template satırı |
 | JSDoc | `src/components/dashboard/settings/sections/BusinessNotificationSettings.tsx` | "4 toggle" → "2 toggle" + Slack validation referansı |
 | JSDoc + desc | `src/app/[locale]/dashboard/account/page.tsx` | Section description Slack ifadesi + tab listesi yorumu (6 → 7 tab, ai eklenmiş; Slack/digest kaldırıldı) |
@@ -3588,7 +3606,7 @@ Owner panel'deki Slack webhook bildirim ayarı kullanıcı talebiyle kaldırıld
 - `src/app/admin/api/page.tsx` + `src/app/admin/settings/page.tsx` Slack mock content / placeholder text
 - CLAUDE.md §21.33 backlog "Slack webhook alternative (ops mail yerine)" — bu ops-alert backlog scope, ayrı feature
 
-**DB drift uyarısı:** `slack_webhook` Postgres kolonu **prod'da hâlâ var** — `prisma db push --accept-data-loss` ilk deploy'da DROP COLUMN çalıştırır. Eski kayıtların `slack_webhook` değerleri kaybolur (kabul edilen — feature kullanılmıyor). CLAUDE.md §21.18 paranoidliği: nullable + default'lu kolon silmek backward-compat bozmaz, eski kod fail olmaz çünkü helper artık o kolonu select etmiyor (defensive `select` paterni §14.1).
+**DB drift uyarısı:** `slack_webhook` Postgres kolonu prod'da görünürse migration history içinde explicit drop kararı gerekir. Eski kayıtların `slack_webhook` değerleri kaybolacağı için bunu ayrı migration/PR olarak ele al; mevcut helper artık o kolonu select etmiyor (defensive `select` paterni §14.1).
 
 **Geri eklemek için:** Kullanıcı **açık talep** etmeli (§34.4). Webhook fan-out generic hale getirilebilir (Discord/Teams/custom URL desteği), tek-platform Slack-özel implementation tekrar yapılması önerilmez.
 
@@ -3766,7 +3784,7 @@ for (let i = 6; i >= 0; i--) {
 | `restaurantId + platform + createdAt` (platform distribution) | bitmap combine | `@@index([restaurantId, platform, createdAt])` |
 | `restaurantId + branch + createdAt` (analytics branch filter) | bitmap combine | `@@index([restaurantId, branch, createdAt])` |
 
-Bitmap-combine fallback Postgres'te 30-50ms/query ekliyor (volume büyüdükçe daha kötü). Composite index = single-index seek. Risk düşük: pure additive, data değişmiyor, `prisma db push --accept-data-loss` (CLAUDE.md §14.1) deploy build'de auto-apply.
+Bitmap-combine fallback Postgres'te 30-50ms/query ekliyor (volume büyüdükçe daha kötü). Composite index = single-index seek. Risk düşük: pure additive, data değişmiyor; migration deploy akışında explicit index migration'ı olarak uygulanır.
 
 **Yapma:** "her olası filter kombinasyonuna" preventif index ekleme. Sadece **gerçek query path'lerinde** kullanılan kombinasyonlar için ekle (CLAUDE.md §7 abstraction kaçınma — index de bir form abstraction). Her index Postgres write maliyeti.
 

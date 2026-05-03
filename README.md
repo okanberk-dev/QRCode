@@ -111,9 +111,9 @@ The main layout relies heavily on a custom color palette defined mostly inline o
 ---
 
 ## 🔧 Build & Deploy
-This project deploys autonomously on Vercel with zero-touch database configuration.
+This project deploys on Vercel with Prisma migration-based database changes.
 
-*   **Automated Database Synchronization:** The `package.json` includes a `postinstall` script (`export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && prisma generate && prisma db push --accept-data-loss`). This allows Vercel to automatically compile the Prisma Client and simultaneously deploy all missing database tables to your Supabase instance during the build phase, bypassing any manual IPv4/IPv6 pooling setups.
+*   **Database Migrations:** The `package.json` build script runs `node scripts/validate-env.js && prisma migrate deploy && next build`. Schema changes must be committed under `prisma/migrations/`. Use `npm run db:push` only for local scratch databases where you intentionally do not need migration history.
 *   **Auto Admin Bootstrap:** Upon successful deployment, logging into `/admin` with the configured `ADMIN_USERNAME` and `ADMIN_PASSWORD` (default: `admin`/`123456+`) will automatically bootstrap your superadmin credentials to the newly created database tables.
 *   **SSR Compliance:** Do not use dynamic browser objects inside Server Components.
 

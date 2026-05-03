@@ -6,7 +6,7 @@ import { isStrongPassword } from '@/lib/validations';
 import bcrypt from 'bcryptjs';
 
 // Append-only audit log. Wrapped in try/catch so a missing table (preview
-// deploy before db push) doesn't take down the actual mutation.
+// deploy before schema migration) doesn't take down the actual mutation.
 async function writeAudit(entry: {
   actorId: string;
   actorSource: 'admin' | 'user';
