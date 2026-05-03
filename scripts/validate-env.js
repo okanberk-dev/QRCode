@@ -1,13 +1,44 @@
-// Fail-fast env validation. Runs before `prisma db push` and `next build`.
+// Fail-fast env validation. Runs before `prisma migrate deploy` and `next build`.
 // Vercel injects production env vars before running the build script, so a
 // missing required value here means the deploy is misconfigured.
 //
 // Local dev: copy .env.example to .env.local and fill in values, then
 // `npm run build` will pass.
 
+const fs = require('node:fs');
+const path = require('node:path');
+
+function loadDotenvFile(file) {
+  const fullPath = path.join(process.cwd(), file);
+  if (!fs.existsSync(fullPath)) return;
+
+  const lines = fs.readFileSync(fullPath, 'utf8').split(/\r?\n/);
+  for (const line of lines) {
+    const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+    if (!match) continue;
+    const [, key, rawValue] = match;
+    if (process.env[key] !== undefined) continue;
+
+    let value = rawValue.trim();
+    const quoted =
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"));
+    if (quoted) {
+      value = value.slice(1, -1);
+      if (rawValue.trim().startsWith('"')) value = value.replace(/\\n/g, '\n');
+    } else {
+      value = value.replace(/\s+#.*$/, '').trim();
+    }
+    process.env[key] = value;
+  }
+}
+
+loadDotenvFile('.env');
+loadDotenvFile('.env.local');
+
 const required = [
   ['DATABASE_URL', 'Supabase pooled connection (port 6543)'],
-  ['DIRECT_URL', 'Supabase direct connection (port 5432) — required for prisma db push'],
+  ['DIRECT_URL', 'Supabase direct connection (port 5432) — required for Prisma migrations'],
   ['JWT_SECRET', 'Auth token signing — set in production for any real deploy'],
   ['NEXT_PUBLIC_APP_URL', 'Used to build QR + email deeplinks'],
 ];

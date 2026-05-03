@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch {
-      // Ignored if table doesn't exist (preview before db push, etc.)
+      // Ignored if table doesn't exist (preview before schema migration, etc.)
     }
 
     let admin = null;

@@ -363,7 +363,7 @@ export async function GET(req: NextRequest) {
   try {
     // Primary query includes the Faz-2 flag/reply/assignment joins plus the
     // FeedbackTag join. When the database schema is ahead of push (e.g. a
-    // preview env where `prisma db push` hasn't run yet), any one of these
+    // preview env where schema migration hasn't run yet), any one of these
     // includes throws and would otherwise break every panel page that
     // renders a feedback list. We try three tiers of degradation so the
     // inbox keeps rendering even if just one of the new tables is missing.
@@ -390,7 +390,7 @@ export async function GET(req: NextRequest) {
       });
     } catch (joinErr) {
       console.warn(
-        '[feedback] tags+joins failed, retrying without tags — did `prisma db push` run?',
+        '[feedback] tags+joins failed, retrying without tags — did schema migration run?',
         (joinErr as Error).message,
       );
       tagsAvailable = false;
@@ -431,7 +431,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Pulse AI draft lookup — separate from the main include chain so a
-    // missing table (preview without `prisma db push`) doesn't cascade into
+    // missing table (preview before schema migration) doesn't cascade into
     // the existing 3-tier resilience. Map by feedbackId for O(1) join.
     let aiDraftAvailable = true;
     const aiDraftMap = new Map<string, { tone: string; source: string }>();
@@ -447,7 +447,7 @@ export async function GET(req: NextRequest) {
         }
       } catch (err) {
         console.warn(
-          '[feedback] FeedbackAiDraft lookup failed — did `prisma db push` run?',
+          '[feedback] FeedbackAiDraft lookup failed — did schema migration run?',
           (err as Error).message,
         );
         aiDraftAvailable = false;

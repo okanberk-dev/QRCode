@@ -47,7 +47,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   // Defensive: if the FeedbackAiDraft table hasn't been pushed to this DB
-  // yet (preview without `prisma db push`), don't 500 — return null so the
+  // yet (preview before schema migration), don't 500 — return null so the
   // reply form gracefully falls back to on-demand suggest-reply.
   try {
     const draft = await prisma.feedbackAiDraft.findUnique({

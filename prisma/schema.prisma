@@ -436,7 +436,7 @@ model Feedback {
   // matching composite indexes, Postgres falls back to bitmap-index
   // combinations on filtered subsets — these add 30-50ms per query on
   // tables that grow with feedback volume. Adding the indexes is safe and
-  // additive (no data shape change, prisma db push picks them up).
+  // additive (no data shape change, migration deploy applies them).
   @@index([restaurantId, rating, createdAt])
   @@index([restaurantId, platform, createdAt])
   @@index([restaurantId, branch, createdAt])

@@ -77,7 +77,7 @@ export async function GET(
     // Common cause: `mail_template_revisions` table missing. Hint
     // operator about the most likely fix without leaking stack trace.
     const hint = /mail_template_revisions|MailTemplateRevision/.test(message)
-      ? 'Tablo eksik olabilir → Vercel build script `prisma db push --accept-data-loss` koştu mu kontrol et.'
+      ? 'Tablo eksik olabilir → Vercel build script `prisma migrate deploy` koştu mu kontrol et.'
       : 'Vercel Function Logs → tam stack trace.';
     return NextResponse.json(
       { error: 'server_error', detail: message, hint },
