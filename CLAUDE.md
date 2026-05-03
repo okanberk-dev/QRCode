@@ -4864,6 +4864,21 @@ Toplam: **10 commit + 9 functional PR + 1 docs final = 11 PR/commit serisi**, he
 | 2 | Görev C Faz 2 — `RECAPTCHA_ENFORCE=true` flip | C Faz 1 PR #383 breadcrumb basıyor; 1-2 hafta production veri toplandıktan sonra Sentry dashboard `tags.reason:low score` rate'i incele, healthy ise Vercel Production env'inde `RECAPTCHA_ENFORCE=true` flip et (kod değişikliği yok). Risk: `/api/admin/login` admin'in kendisini kilitleyebilir → kullanıcı kendi login'i önce test eder. |
 | 3 | Task 8 — Prisma 7 upgrade | Major-version, breaking-change rehberi okunmadan başlanmaz. Ayrı dedicated task. CLAUDE.md §5.4 Task 8 zaten dokümante. |
 
+**Production audit findings (2026-05-03 oturum sonu, Vercel Observability):**
+
+12 saatlik pencerede üç hata kategorisi tespit edildi:
+
+| Kategori | Detay | Aksiyon |
+|---|---|---|
+| `/api/sentry-test` 4 fail | Görev A diagnostic deploy'larının (#377-379) yan etkisi, beklenen davranış | Yok — `ENABLE_SENTRY_TEST` kapatıldı |
+| `/en/opengraph-image` 1 fail (`Error: ENOENT: no such file...`) | Tek seferlik dynamic OG image render hatası 18:02 UTC. Sonraki deploy'larda tekrar etmedi | Opsiyonel — `src/app/[locale]/opengraph-image.tsx` font/asset yüklemesi audit (acil değil) |
+| **Prisma error dalgası 09:55-10:00 UTC** (12 endpoint, 9 fail × 500, 3 silent log) | PR #367 deploy edildikten sonra ~5dk sürdü, **kendi düzeldi**. `/tr/dashboard` (3x), `/api/cron/google-reviews-alert` (1x), legal pages, blog, homepage, `/auth/login` etkilendi. Hipotez: Supabase pooler `connection_limit=1` (§14.1) altında cold start race veya transient connection exhaustion | İzlemeye devam — tekrarlarsa pool exhaustion audit |
+
+**Kritik kanıt**: bu Prisma dalgasının **0 event'i Sentry'e ulaştı** (12 endpoint, 9 server-side fail). Görev A'nın "server-side envelope flush kör nokta" bulgusunu **canlı production verisiyle** kanıtlıyor. **Server-side Sentry flush deep dive task'ının önceliği** bu bulgu ile somut argüman kazandı:
+- Üretimde benzer bir Prisma dalgası, OAuth fail dalgası, veya mail send dalgası olursa **Sentry'den haberdar olamayız**
+- Sadece reaktif Vercel Observability incelemesi ile fark ederiz
+- Görev G'nin (`safeParseJson`) capture'ları ve Görev C Faz 1'in (reCAPTCHA breadcrumb) **gerçek production değerleri bu task çözülmeden ölçülemez**
+
 ### Sonraki AI session disiplin notu
 
 Bu oturum'un bulguları + kalıcı kararları:
