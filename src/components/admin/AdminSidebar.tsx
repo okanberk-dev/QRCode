@@ -394,11 +394,10 @@ export default function AdminSidebar() {
                   href={item.href}
                   onClick={handleNavClick}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
-                    isActive
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${isActive
                       ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold shadow-[0_2px_8px_-2px_rgba(198,242,78,0.4)]'
                       : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
-                  }`}
+                    }`}
                 >
                   <Icon size={16} strokeWidth={2} className="shrink-0" />
                   {!isCollapsed && <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>}
@@ -422,11 +421,10 @@ export default function AdminSidebar() {
                 <button
                   type="button"
                   onClick={() => toggleGroup(item.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${
-                    childActive
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${childActive
                       ? 'bg-white/[0.07] text-white font-semibold'
                       : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
-                  }`}
+                    }`}
                   aria-expanded={isExpanded}
                 >
                   <Icon size={16} strokeWidth={2} className="shrink-0" />
@@ -454,11 +452,10 @@ export default function AdminSidebar() {
                           href={child.href}
                           onClick={handleNavClick}
                           aria-current={isActive ? 'page' : undefined}
-                          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${
-                            isActive
+                          className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${isActive
                               ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
                               : 'text-white/60 hover:bg-white/5 hover:text-white font-medium'
-                          }`}
+                            }`}
                         >
                           <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
                           <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">{child.label}</span>
