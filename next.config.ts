@@ -243,7 +243,12 @@ export default withSentryConfig(nextConfig, {
   // Tunnel SDK traffic through the app origin to dodge ad-blockers.
   // Middleware matcher is `/admin/:path*` so /monitoring is already excluded.
   tunnelRoute: '/monitoring',
-  // Hide Sentry's own logger noise from the production browser console.
-  disableLogger: true,
-  automaticVercelMonitors: true,
+  webpack: {
+    // Hide Sentry's own logger noise from the production browser console.
+    // (Replaces the deprecated top-level `disableLogger: true`.)
+    treeshake: { removeDebugLogging: true },
+    // Auto-create Sentry cron monitors for vercel.json crons.
+    // (Replaces the deprecated top-level `automaticVercelMonitors: true`.)
+    automaticVercelMonitors: true,
+  },
 });
