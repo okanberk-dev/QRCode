@@ -146,13 +146,13 @@ export default function MarketingNavbarClient({
       icon: <Sparkles size={16} />,
     },
     {
-      href: `${base}/features`,
+      href: `${base}/features/review-management`,
       label: isTr ? 'Yorum Yönetimi' : 'Review Management',
       sub: isTr ? 'Tek panelde her platform' : 'All platforms in one inbox',
       icon: <Inbox size={16} />,
     },
     {
-      href: `${base}/features`,
+      href: `${base}/features/analytics-reports`,
       label: isTr ? 'Analitik & Raporlar' : 'Analytics & Reports',
       sub: isTr ? 'NPS, trend, konum kırılımı' : 'NPS, trends, breakdowns',
       icon: <BarChart3 size={16} />,

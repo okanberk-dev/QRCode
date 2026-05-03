@@ -67,24 +67,28 @@ export default async function FeaturesPage({
           t: 'Yorum gelen kutusu',
           d: 'Google, Yelp, Yemeksepeti — tüm platformlardan gelen yorumlar tek bir inbox\'ta. Atama, SLA, arşivleme.',
           Ill: IllusInbox,
+          href: `${base}/features/review-management`,
         },
         {
           n: '02',
           t: 'Buaze Pulse AI yanıt',
           d: 'Her yoruma 30 sn\'de markanıza özel yanıt. Buaze Pulse AI işletmenizin tonunu öğrenir.',
           Ill: IllusShield,
+          href: `${base}/features/pulse-ai`,
         },
         {
           n: '03',
           t: 'QR kod stüdyosu',
           d: 'Masa başına, paket içine, hizmet sonrası. Branded, izlenebilir, yeniden basılabilir.',
           Ill: IllusCompass,
+          href: `${base}/solutions/qr-generator`,
         },
         {
           n: '04',
           t: 'Analiz & raporlama',
           d: 'NPS, duygu, personel performansı, konum karşılaştırma. Haftalık e-posta raporu.',
           Ill: IllusChart,
+          href: `${base}/features/analytics-reports`,
         },
       ]
     : [
@@ -93,24 +97,28 @@ export default async function FeaturesPage({
           t: 'Unified review inbox',
           d: 'Google, Yelp, Yemeksepeti — reviews from every platform in a single inbox. Assign, SLA, archive.',
           Ill: IllusInbox,
+          href: `${base}/features/review-management`,
         },
         {
           n: '02',
           t: 'Buaze Pulse AI replies',
           d: 'Brand-tone response to every review in 30 seconds. Buaze Pulse AI learns your business voice.',
           Ill: IllusShield,
+          href: `${base}/features/pulse-ai`,
         },
         {
           n: '03',
           t: 'QR studio',
           d: 'Per table, per package, per service — branded, trackable, reprintable.',
           Ill: IllusCompass,
+          href: `${base}/solutions/qr-generator`,
         },
         {
           n: '04',
           t: 'Analytics & reporting',
           d: 'NPS, sentiment, staff performance, location benchmarks. Weekly email digest.',
           Ill: IllusChart,
+          href: `${base}/features/analytics-reports`,
         },
       ];
 
@@ -196,7 +204,7 @@ export default async function FeaturesPage({
                 </p>
                 <div className="mt-6 flex flex-col sm:flex-row gap-3">
                   <Link
-                    href={`${base}/auth/register`}
+                    href={f.href}
                     className="inline-flex items-center justify-center gap-2 bg-[#0A0A0A] text-white px-5 py-3 rounded-full text-[13px] font-medium hover:bg-[#1A1A1A] transition-colors"
                   >
                     {isTr ? 'Detaylı bak' : 'Take a closer look'}
