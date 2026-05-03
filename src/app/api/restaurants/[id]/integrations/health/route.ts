@@ -183,5 +183,10 @@ export async function GET(
     missingRecommended,
     counts: { active, inactive, untested, healthy, failing },
   };
-  return NextResponse.json(response);
+  return NextResponse.json(response, {
+    // Owner-scoped per-provider health snapshot — driven by daily cron
+    // (CLAUDE.md §19.4.4). 60s/300sw matches the dashboard polling
+    // cadence (CLAUDE.md §19.3 owner-cache pattern).
+    headers: { 'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300' },
+  });
 }

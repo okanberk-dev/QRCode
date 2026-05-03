@@ -80,12 +80,20 @@ export async function GET(
     .sort((a, b) => b.count - a.count);
   const topProvider = byProvider[0]?.provider ?? null;
 
-  return NextResponse.json({
-    range,
-    totals: { last7Days, last30Days },
-    byProvider,
-    topProvider,
-    windowStart: windowStart?.toISOString() ?? null,
-    windowEnd: now.toISOString(),
-  });
+  return NextResponse.json(
+    {
+      range,
+      totals: { last7Days, last30Days },
+      byProvider,
+      topProvider,
+      windowStart: windowStart?.toISOString() ?? null,
+      windowEnd: now.toISOString(),
+    },
+    {
+      // Owner-scoped redirect analytics — aggregated counters that change
+      // slowly. 5min CDN cache + 15min SWR keeps the panel responsive
+      // without re-running the groupBy on every poll (CLAUDE.md §19.3).
+      headers: { 'Cache-Control': 'private, s-maxage=300, stale-while-revalidate=900' },
+    },
+  );
 }
