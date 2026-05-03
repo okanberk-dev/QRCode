@@ -8,7 +8,9 @@ import {
   listGoogleReviews,
   parseGoogleLocationsCache,
   selectedGoogleLocation,
+  GoogleBusinessApiError,
 } from '@/lib/google-business';
+import { googleBusinessErrorResponse } from '@/lib/google-business-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +48,10 @@ export async function GET(
     );
     return NextResponse.json({ ...reviews, location: selection });
   } catch (error) {
-    console.error('[google reviews] failed', error);
+    if (error instanceof GoogleBusinessApiError) {
+      return googleBusinessErrorResponse(error, 'Google yorumları alınamadı.');
+    }
+    console.error('[google reviews] failed', { restaurantId: id });
     return ApiErrors.internalError('Google yorumları çekilemedi.');
   }
 }

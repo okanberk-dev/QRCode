@@ -70,17 +70,22 @@ export async function POST(
     location.newReviewUri ??
     (googlePlaceId ? googleReviewUrlFromPlaceId(googlePlaceId) : undefined);
 
-  // Fetch current rating from Google to use as initial/current rating
+  // Fetch current rating from Google to use as initial/current rating.
+  // Fail-soft: rating is best-effort. `googleBusinessFetch` already emits a
+  // single Sentry event on failure (tagged `integration: 'google-business'`);
+  // here we only need a PII-safe local breadcrumb so this rare path is not
+  // silent. Reauth / rate-limit on rating fetch must not block the location
+  // selection happy path.
   const selectionForFetch = selectedGoogleLocation(nextCache, id);
   let fetchedRating: number | undefined;
   if (selectionForFetch) {
     try {
-      const res = await listGoogleReviews(integration as any, selectionForFetch);
+      const res = await listGoogleReviews(integration, selectionForFetch);
       if (typeof res.averageRating === 'number') {
         fetchedRating = res.averageRating;
       }
-    } catch (err) {
-      console.error('[google rating fetch] failed on location select', err);
+    } catch {
+      // Sentry already captured upstream; do not log raw error to avoid PII.
     }
   }
 
