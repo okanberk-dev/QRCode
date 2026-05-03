@@ -1,5 +1,6 @@
 import { chatCompletion, hasOpenAIKey } from '@/lib/openai';
 import { AI_QUOTAS, AI_QUOTA_WEEK_MS, checkLayeredAiQuota } from '@/lib/ai-quota';
+import { safeParseJson } from '@/lib/safe-json';
 
 export interface WeeklyInsightInput {
   restaurantName: string;
@@ -89,16 +90,17 @@ function parseLLMJson(raw: string): { summary: string; recommendation: string } 
     .trim()
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```$/, '');
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (!parsed || typeof parsed !== 'object') return null;
-    const summary = typeof parsed.summary === 'string' ? parsed.summary.trim().slice(0, 400) : '';
-    const recommendation = typeof parsed.recommendation === 'string' ? parsed.recommendation.trim().slice(0, 240) : '';
-    if (!summary && !recommendation) return null;
-    return { summary, recommendation };
-  } catch {
-    return null;
-  }
+  // safeParseJson tags malformed AI responses to Sentry — see CLAUDE.md
+  // §38.8 + Görev G.
+  const parsed = safeParseJson<{ summary?: unknown; recommendation?: unknown }>(
+    cleaned,
+    { source: 'weekly-insight' },
+  );
+  if (!parsed || typeof parsed !== 'object') return null;
+  const summary = typeof parsed.summary === 'string' ? parsed.summary.trim().slice(0, 400) : '';
+  const recommendation = typeof parsed.recommendation === 'string' ? parsed.recommendation.trim().slice(0, 240) : '';
+  if (!summary && !recommendation) return null;
+  return { summary, recommendation };
 }
 
 /**

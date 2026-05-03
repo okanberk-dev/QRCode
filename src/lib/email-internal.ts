@@ -6,6 +6,8 @@
 // Public surface (sendMail / sendFeedbackNotification / etc.) lives in
 // email.ts and re-uses this module.
 
+import { safeParseJson } from '@/lib/safe-json';
+
 function defaultReplyTo(): string | undefined {
   const env = process.env.RESEND_REPLY_TO?.trim()
     || process.env.NOTIFICATION_EMAIL?.trim();
@@ -92,14 +94,17 @@ export async function sendResendEmail({
       return false;
     }
 
-    let parsed: { id?: string } | null = null;
-    try {
-      parsed = JSON.parse(responseText);
-    } catch {
+    // safeParseJson tags malformed Resend responses to Sentry — useful
+    // when Resend changes payload shape or returns HTML on 2xx (rare but
+    // happens during incidents). Görev G + CLAUDE.md §38.8.
+    const parsed = safeParseJson<{ id?: string }>(responseText, {
+      source: 'resend-mail',
+    });
+    if (!parsed) {
       console.error('[Buaze Email] Resend non-JSON 2xx body:', responseText);
       return false;
     }
-    if (!parsed || typeof parsed.id !== 'string' || !parsed.id) {
+    if (typeof parsed.id !== 'string' || !parsed.id) {
       console.error('[Buaze Email] Resend 2xx without id:', responseText);
       return false;
     }

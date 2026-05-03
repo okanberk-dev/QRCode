@@ -1,5 +1,6 @@
 import { chatCompletion, hasOpenAIKey } from '@/lib/openai';
 import { AI_QUOTAS, checkLayeredAiQuota } from '@/lib/ai-quota';
+import { safeParseJson } from '@/lib/safe-json';
 
 export interface ThemeItem {
   theme: string;
@@ -88,29 +89,31 @@ function parseLLMJson(raw: string): { themes: ThemeItem[]; synthesis: string } |
     .trim()
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```$/, '');
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (!parsed || typeof parsed !== 'object') return null;
-    const themesIn = Array.isArray(parsed.themes) ? parsed.themes : [];
-    const themes: ThemeItem[] = themesIn
-      .filter((x: unknown): x is { theme: string; count: number } => {
-        if (!x || typeof x !== 'object') return false;
-        const o = x as Record<string, unknown>;
-        return typeof o.theme === 'string' && typeof o.count === 'number';
-      })
-      .map((x: { theme: string; count: number }) => ({
-        theme: String(x.theme).trim().slice(0, 60),
-        count: Math.max(0, Math.min(999, Math.round(x.count))),
-      }))
-      .filter((x: ThemeItem) => x.theme.length > 0)
-      .slice(0, 5);
-    const synthesis = typeof parsed.synthesis === 'string'
-      ? parsed.synthesis.trim().slice(0, 320)
-      : '';
-    return { themes, synthesis };
-  } catch {
-    return null;
-  }
+  // safeParseJson tags `kind: json-parse-failure` to Sentry on a `�`-style
+  // malformed response so the next occurrence is debuggable from the
+  // dashboard alone (CLAUDE.md §38.8 + Görev G).
+  const parsed = safeParseJson<{ themes?: unknown; synthesis?: unknown }>(
+    cleaned,
+    { source: 'analytics-themes' },
+  );
+  if (!parsed || typeof parsed !== 'object') return null;
+  const themesIn = Array.isArray(parsed.themes) ? parsed.themes : [];
+  const themes: ThemeItem[] = themesIn
+    .filter((x: unknown): x is { theme: string; count: number } => {
+      if (!x || typeof x !== 'object') return false;
+      const o = x as Record<string, unknown>;
+      return typeof o.theme === 'string' && typeof o.count === 'number';
+    })
+    .map((x: { theme: string; count: number }) => ({
+      theme: String(x.theme).trim().slice(0, 60),
+      count: Math.max(0, Math.min(999, Math.round(x.count))),
+    }))
+    .filter((x: ThemeItem) => x.theme.length > 0)
+    .slice(0, 5);
+  const synthesis = typeof parsed.synthesis === 'string'
+    ? parsed.synthesis.trim().slice(0, 320)
+    : '';
+  return { themes, synthesis };
 }
 
 export async function extractThemes(
