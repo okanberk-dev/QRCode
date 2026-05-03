@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { RecaptchaEnterpriseServiceClient } from '@google-cloud/recaptcha-enterprise';
 import { getClientIp, blockKey, isBlocked } from '@/lib/rate-limit';
 
@@ -130,6 +131,32 @@ export function isRecaptchaServerConfigured(): boolean {
   return Boolean(SITE_KEY && PROJECT_ID);
 }
 
+/**
+ * Build the Sentry capture envelope for a soft-passed reCAPTCHA decision.
+ * Pure for testing — see `tests/recaptcha.test.ts`.
+ *
+ * PII guard: callers only pass numeric scores, enum-like reasons, the
+ * expected action, and Google's invalidReason / typeof checks. IP is
+ * never threaded into `detail`. We keep the same shape here.
+ */
+export function buildSoftPassSentryEnvelope(
+  reason: string,
+  detail: Record<string, unknown>,
+): {
+  level: 'warning';
+  tags: { reason: string; action?: string };
+  extra: Record<string, unknown>;
+} {
+  return {
+    level: 'warning',
+    tags: {
+      reason,
+      ...(typeof detail.action === 'string' && { action: detail.action }),
+    },
+    extra: { ...detail },
+  };
+}
+
 function softFail(
   reason: string,
   detail: Record<string, unknown>,
@@ -137,6 +164,12 @@ function softFail(
 ): RecaptchaSuccess | RecaptchaFailure {
   if (ENFORCE) return failure;
   console.warn(`[recaptcha] ${reason} — soft-pass (set RECAPTCHA_ENFORCE=true to block)`, detail);
+  // Görev C Faz 1: emit a Sentry breadcrumb on every soft-pass so we can
+  // measure how often each reason fires before flipping RECAPTCHA_ENFORCE
+  // to `true` in production. Tagged so dashboards can break down by
+  // {reason, action}. PII-safe: caller details never include IP, token,
+  // or user identifiers — see CLAUDE.md §37.3 #2.
+  Sentry.captureMessage('reCAPTCHA soft-pass', buildSoftPassSentryEnvelope(reason, detail));
   return { ok: true, skipped: true };
 }
 
