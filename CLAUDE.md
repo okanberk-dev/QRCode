@@ -4823,3 +4823,53 @@ CLAUDE.md §5.4 Production Hata Düzeltme Takip Planı'ndaki açık görevlerin 
 | 4 | **Görev E** — Vercel `live: false` araştırması | 🟡 Pending |
 | 5 | Görev C Faz 2 — `RECAPTCHA_ENFORCE=true` flip | 🟡 Pending (1-2 hafta veri sonrası) |
 | 6 | Task 8 — Prisma 7 upgrade | 🟡 Pending (ayrı major-version branch) |
+
+### 38.9 2026-05-03 oturum 2 — Final kapanış (Görev E, F, G + 9 PR özeti)
+
+§38.8'de listelenen pending görevlerden 3'ü daha aynı oturumda kapatıldı. Bu alt-section §38.8'i tamamlar; 9 PR'ın final state'i ve gelecek sessions için "ne kaldı" özeti.
+
+**Tamamlanan ek görevler:**
+
+| Görev | PR | Çıktı |
+|---|---|---|
+| **Görev F** — Read-only API Cache-Control | #385 | 6 owner-scoped GET endpoint'e `Cache-Control: private, s-maxage=N, stale-while-revalidate=M` eklendi: status/activation/integrations/checks (60s/300sw), integrations/health (60s/300sw), integrations/checks (120s/600sw), redirect-stats (300s/900sw), embed-stats (300s/900sw). PATCH endpoint'lere dokunulmadı (write path origin'e gitmeli). Frontend `refetchInterval` Wave C ayrı task. |
+| **Görev G** — `safeParseJson` helper | #386 | `src/lib/safe-json.ts` + `tests/safe-json.test.ts` (7 test). Helper Sentry'e `tags: { kind: 'json-parse-failure' }` + 200 char snippet + per-callsite `source` ctx basıyor. **5 callsite wrap edildi**: `analytics-themes.ts` (gpt-4o-mini Türkçe), `weekly-insight.ts` (Türkçe), `roi/generate-insight.ts` (Türkçe), `google/callback/route.ts` (OAuth state), `email-internal.ts` (Resend response). Skip edilenler: 4 client-side localStorage, `google-business.ts` (PR #374 lock), `recaptcha.ts` env, `seo/json-ld.ts` yorum satırları. |
+| **Görev E** — Vercel `live: false` araştırması | yok (sadece research) | Vercel MCP `get_project` çıktısı: project-level `domains` array'inde sadece `*.vercel.app` URL'leri; `buaze.com` ve `www.buaze.com` deployment-level alias listesinde mevcut ama project config'e bound değil. Runtime etkisi yok (site canlı). Kullanıcı kontrol listesi: Settings → Domains → custom domain ekle/doğrula, Deployment Protection "Standard" mı, Production Branch `main` mi (✅ doğrulanmış). Çözüm operatör tarafında, kod değişikliği yok. |
+
+**9 PR özet tablosu:**
+
+| PR | Branch | Görev | Çıktı |
+|---|---|---|---|
+| #377 | sentry-server-flush-fix | A — flush(2000) | Smoke test endpoint flush'lı, `throw` kaldırıldı |
+| #378 | sentry-flush-timeout-bump | A — flush 2s → 5s | Cold start cover, flush hâlâ false |
+| #379 | sentry-server-debug | A — debug:true diagnostic | suspect config (`includeLocalVariables`/`enableLogs`) suçsuz kanıtlandı |
+| #380 | sentry-debug-cleanup | A — production-safe revert | Original config restore, debug:true off |
+| #381 | google-business-mock-tests | B — mock fetch tests | 8 yeni unit test transport branch'lerine regression koruması |
+| #382 | sentry-config-modernize | D — webpack.* migrate | Build log deprecation uyarıları temiz |
+| #383 | recaptcha-sentry-breadcrumb | C Faz 1 | `softFail()` her tetiklendiğinde Sentry breadcrumb + 6 yeni test PII guard |
+| #384 | docs-2026-05-03-mid-session | Docs ara not | §38.8 oturum 2 ara güncelleme |
+| #385 | api-cache-headers | F — Cache-Control | 6 owner endpoint cache header |
+| #386 | safe-json-parse | G — safeParseJson | Helper + 5 risky callsite wrap + 7 test |
+| (this PR) | docs-2026-05-03-final | Docs final kapanış | §38.9 final özet + Görev E sonucu + pending list update |
+
+Toplam: **10 commit + 9 functional PR + 1 docs final = 11 PR/commit serisi**, hepsi `claude/*` branch'lerinden draft mode'da açıldı, kullanıcı review'lı merge edildi.
+
+### Pending durum (final, sıralı)
+
+§38.8'in sonundaki pending tablosu Görev F + G + E kapandığı için **3 entry kaldı**:
+
+| Sıra | Task | Sebep |
+|---|---|---|
+| 1 | **Server-side Sentry flush deep dive** (yeni acil) | Görev A bulgusu — production'da `Sentry.captureException` envelope flush olmuyor. Görev G'nin (`safeParseJson` capture'ları) ve C Faz 1'in (reCAPTCHA breadcrumb) **tam değerini bloke ediyor**. 4 hipotez: (a) Vercel function tear-down + SDK transport flush yarış koşulu, (b) Vercel runtime log SDK debug çıktısını yakalamıyor, (c) Edge runtime mix, (d) Vercel egress DNS gecikmesi. ~1-2 saat AR-GE. |
+| 2 | Görev C Faz 2 — `RECAPTCHA_ENFORCE=true` flip | C Faz 1 PR #383 breadcrumb basıyor; 1-2 hafta production veri toplandıktan sonra Sentry dashboard `tags.reason:low score` rate'i incele, healthy ise Vercel Production env'inde `RECAPTCHA_ENFORCE=true` flip et (kod değişikliği yok). Risk: `/api/admin/login` admin'in kendisini kilitleyebilir → kullanıcı kendi login'i önce test eder. |
+| 3 | Task 8 — Prisma 7 upgrade | Major-version, breaking-change rehberi okunmadan başlanmaz. Ayrı dedicated task. CLAUDE.md §5.4 Task 8 zaten dokümante. |
+
+### Sonraki AI session disiplin notu
+
+Bu oturum'un bulguları + kalıcı kararları:
+
+1. **Sentry org adı**: production DSN `buaze-ev/sentry-apricot-blanket` (NOT `buaze/javascript-nextjs`). Health audit'lerde her zaman `buaze-ev` org'una bak.
+2. **`safeParseJson` helper canonical**: yeni `JSON.parse` callsite'ı eklerken (özellikle AI yanıtı, OAuth state, external API body) helper'ı kullan. Sentry tag `json-parse-failure` ile dashboard'da otomatik group'lanır.
+3. **`Cache-Control: private, s-maxage=N, swr=M`** owner-scoped read endpoint'lerinde standard. Yeni read endpoint eklerken §19.3 + Görev F (PR #385) referansını incele.
+4. **Server-side `Sentry.captureException` çağrılarında flush gerekli**: PR #377-380 paterni (ya `await Sentry.flush(2000)` veya HOF wrapper). Acil task çözülmeden yeni manuel capture eklerken Vercel runtime log'a `console.error` ile lokal breadcrumb da yaz.
+5. **`Sentry.captureMessage` PII guard**: tag/extra/level structure'ı PR #383 `buildSoftPassSentryEnvelope()` paternini izle. IP, token, email, request body asla extra'da yer almaz.
