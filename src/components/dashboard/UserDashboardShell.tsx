@@ -485,33 +485,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           <button
             onClick={handleLogout}
             title={copy.logout}
-            className={`flex items-center justify-center gap-2 rounded-xl py-2 text-[12px] font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-red-300 ${isCollapsed ? 'w-full' : 'flex-1 px-4'}`}
+            className={`flex items-center justify-center gap-2 rounded-xl py-2 text-[12px] font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-red-300 w-full`}
           >
             <LogOut size={13} strokeWidth={2} />
             {!isCollapsed && <span>{copy.logout}</span>}
           </button>
-          {!isCollapsed && (
-            <button
-              onClick={toggleSidebar}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 hover:bg-white/10 hover:text-white transition-colors"
-              title={locale === 'tr' ? 'Menüyü daralt' : 'Collapse menu'}
-            >
-              <ChevronLeft size={16} />
-            </button>
-          )}
         </div>
       </div>
-      {isCollapsed && (
-        <div className="flex justify-center p-2 border-t border-white/5 bg-black/10">
-          <button
-            onClick={toggleSidebar}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/40 hover:bg-white/10 hover:text-white transition-colors"
-            title={locale === 'tr' ? 'Menüyü genişlet' : 'Expand menu'}
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
     </div>
   );
 
@@ -521,8 +501,16 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
       </a>
       {/* Desktop sidebar */}
-      <aside className={`hidden h-full shrink-0 border-r border-white/5 lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-64'}`}>
+      <aside className={`relative hidden h-full shrink-0 border-r border-white/5 lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-64'}`}>
         {renderSidebar(navRef)}
+        {/* Floating toggle button */}
+        <button
+          onClick={toggleSidebar}
+          aria-label={isCollapsed ? (locale === 'tr' ? 'Menüyü genişlet' : 'Expand menu') : (locale === 'tr' ? 'Menüyü daralt' : 'Collapse menu')}
+          className="absolute -right-3 top-7 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#1A1A1A] text-white/70 shadow-sm hover:text-white hover:bg-[#2A2A2A] transition-all"
+        >
+          {isCollapsed ? <ChevronRight size={13} strokeWidth={2.5} /> : <ChevronLeft size={13} strokeWidth={2.5} />}
+        </button>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto">

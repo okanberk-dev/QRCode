@@ -4720,3 +4720,8 @@ Yeni route veya endpoint eklenirken:
 2. §37.3 atlanan bulgulardan biri scope'a giriyorsa kullanıcıya **açık onay** sor
 3. Yeni güvenlik fix'i uygulanırsa: `SECURITY_AUDIT_REPORT.md`'ye yeni satır ekle + bu §'ye phase log
 \n### 37.3 Google Rating Impact Tracking\nGoogle İşletme hesabı bağlandığı andaki ortalama puan `Restaurant.initialGoogleRating` olarak kaydedilir. `api/cron/google-reviews-alert` periyodik çalışarak `Restaurant.currentGoogleRating` alanını günceller. Dashboard üzerinde (Yorum Görünümü) Buaze'nin işletme puanına etkisi (Örn: +0.4 Puan Artış) profesyonel bir widget ile raporlanır.
+
+### 38.7 2026-05-03 — UI/UX Temizliği (Settings Panel Düzenlemeleri)
+- **Platform Bağlantıları:** "Test Et" mekanizması Yemeksepeti, Getir, Trendyol GO vb. platformlardan kaldırıldı. Bu işlevsellik (test et/yeniden test et) arayüzde sadeleştirme amacıyla sadece Google İşletme Profilinde tutuluyor.
+- **Widget Kullanım Verisi (Kullanan Siteler):** İşletme sahiplerinin gördüğü `BusinessWebsiteSettings` içerisindeki widget analiz istatistikleri kaldırılarak Admin Paneline (`/admin/restaurants/[id]`) taşındı. Sadece adminler hangi sitelerin widget kullandığını görebilir.
+- **Operasyonel Ayarlar (V2 Placeholder):** Ayarlar ekranındaki "Sipariş & Rezervasyon Kabulü" henüz backend tarafı hazır olmayan bir V2 placeholder olduğu için UI karmaşasını önlemek adına tamamen temizlendi.
