@@ -4,6 +4,7 @@ import { sendFeedbackNotification } from '@/lib/email';
 import {
   parseGoogleLocationsCache,
   listGoogleReviews,
+  GoogleBusinessApiError,
 } from '@/lib/google-business';
 
 // Google reviews alert cron (CLAUDE.md §37.2 H pattern).
@@ -57,7 +58,7 @@ export async function runGoogleReviewsAlert() {
 
       // Fetch reviews for this location
       try {
-        const res = await listGoogleReviews(integration as any, selection);
+        const res = await listGoogleReviews(integration, selection);
 
         if (typeof res.averageRating === 'number' && res.averageRating !== restaurant.currentGoogleRating) {
           await prisma.restaurant.update({
@@ -118,7 +119,19 @@ export async function runGoogleReviewsAlert() {
 
         processedCount++;
       } catch (err) {
-        console.error(`[Cron] Failed to fetch google reviews for restaurant ${restaurantId}`, err);
+        // Per-restaurant fail isolation. `googleBusinessFetch` already emits a
+        // single Sentry event with `tags: { integration: 'google-business' }`;
+        // here we just record a PII-safe local breadcrumb (restaurantId + code)
+        // so this restaurant's watermark does not advance — next cron retries.
+        if (err instanceof GoogleBusinessApiError) {
+          console.error('[Cron] Google reviews skip', {
+            restaurantId,
+            code: err.code,
+            requiresReauth: err.requiresReauth,
+          });
+        } else {
+          console.error('[Cron] Google reviews unexpected error', { restaurantId });
+        }
       }
     }
 

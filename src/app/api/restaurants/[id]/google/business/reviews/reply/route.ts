@@ -10,7 +10,9 @@ import {
   parseGoogleLocationsCache,
   selectedGoogleLocation,
   updateGoogleReviewReply,
+  GoogleBusinessApiError,
 } from '@/lib/google-business';
+import { googleBusinessErrorResponse } from '@/lib/google-business-response';
 import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -72,7 +74,10 @@ export async function POST(
     );
     return NextResponse.json({ reply });
   } catch (error) {
-    console.error('[google review reply] failed', error);
+    if (error instanceof GoogleBusinessApiError) {
+      return googleBusinessErrorResponse(error, 'Google yorum yanıtı gönderilemedi.');
+    }
+    console.error('[google review reply] failed', { restaurantId: id });
     return ApiErrors.internalError('Google yorum yanıtı gönderilemedi.');
   }
 }

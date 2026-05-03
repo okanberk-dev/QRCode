@@ -8,7 +8,9 @@ import {
   getGoogleIntegrationForRestaurant,
   googleReviewManagementEnabled,
   selectedGoogleLocation,
+  GoogleBusinessApiError,
 } from '@/lib/google-business';
+import { googleBusinessErrorResponse } from '@/lib/google-business-response';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -48,7 +50,10 @@ export async function GET(
       syncedAt: cache.syncedAt,
     });
   } catch (error) {
-    console.error('[google business locations] failed', error);
+    if (error instanceof GoogleBusinessApiError) {
+      return googleBusinessErrorResponse(error, 'Google işletme konumları alınamadı.');
+    }
+    console.error('[google business locations] failed', { restaurantId: id });
     return ApiErrors.internalError('Google işletme konumları çekilemedi.');
   }
 }
