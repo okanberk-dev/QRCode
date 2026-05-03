@@ -217,6 +217,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                         {f.phone && <span className="pulse-eyebrow text-[#737373] mt-0.5">{f.phone}</span>}
                         {f.email && <span className="pulse-eyebrow text-[#737373] truncate max-w-[200px]">{f.email}</span>}
                       </div>
+<<<<<<< Updated upstream
                     ) : (
                       <span className="text-[12px] text-[#737373] italic">—</span>
                     )}
@@ -251,6 +252,10 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                           ? `"${f.comment}"`
                           : '—'}
                       </p>
+=======
+
+                      {/* Aspect Ratings Row */}
+>>>>>>> Stashed changes
                       {(f.foodRating || f.serviceRating || f.atmosphereRating) && (
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                           {f.foodRating && (
