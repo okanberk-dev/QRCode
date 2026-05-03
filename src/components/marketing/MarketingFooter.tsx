@@ -100,8 +100,8 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       items: [
         { label: isTr ? 'QR Stüdyosu' : 'QR Studio', href: `${base}/solutions/qr-generator` },
         { label: 'Buaze Pulse AI', href: `${base}/features/pulse-ai` },
-        { label: isTr ? 'Yorum Yönetimi' : 'Review Management', href: `${base}/features` },
-        { label: isTr ? 'Analitik & Raporlar' : 'Analytics & Reports', href: `${base}/features` },
+        { label: isTr ? 'Yorum Yönetimi' : 'Review Management', href: `${base}/features/review-management` },
+        { label: isTr ? 'Analitik & Raporlar' : 'Analytics & Reports', href: `${base}/features/analytics-reports` },
         { label: isTr ? 'Entegrasyonlar' : 'Integrations', href: `${base}/integrations` },
       ],
     },
