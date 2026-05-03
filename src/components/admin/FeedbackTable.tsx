@@ -251,6 +251,7 @@ export default function FeedbackTable({ feedbacks, locale = 'tr' }: FeedbackTabl
                           ? `"${f.comment}"`
                           : '—'}
                       </p>
+                      {/* Aspect Ratings Row */}
                       {(f.foodRating || f.serviceRating || f.atmosphereRating) && (
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
                           {f.foodRating && (
