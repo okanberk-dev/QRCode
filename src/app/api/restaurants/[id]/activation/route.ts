@@ -58,6 +58,12 @@ export async function GET(
 
   return NextResponse.json(
     computeActivation({ restaurant, state, qrGenerationCount, feedbackCount }),
+    {
+      // Owner-scoped onboarding state — `private` so CDN keeps it per-user;
+      // 60s/300sw matches the dashboard polling cadence and lets PATCH
+      // results propagate within minutes (CLAUDE.md §19.3).
+      headers: { 'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300' },
+    },
   );
 }
 

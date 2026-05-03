@@ -63,5 +63,12 @@ export async function GET(
     lastSeen: g._max.createdAt?.toISOString() ?? null,
   }));
 
-  return NextResponse.json({ totalViews, byDomain, days });
+  return NextResponse.json(
+    { totalViews, byDomain, days },
+    {
+      // Owner-scoped embed view counters — slow-moving aggregate, safe to
+      // cache for 5min/15min SWR (CLAUDE.md §19.3 owner-cache pattern).
+      headers: { 'Cache-Control': 'private, s-maxage=300, stale-while-revalidate=900' },
+    },
+  );
 }

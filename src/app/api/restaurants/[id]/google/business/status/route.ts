@@ -34,15 +34,23 @@ export async function GET(
   const cache = parseGoogleLocationsCache(integration?.locationsJson ?? null);
   const selectedLocation = selectedGoogleLocation(cache, id);
 
-  return NextResponse.json({
-    googleReviewManagementEnabled: reviewManagementEnabled,
-    googleAiEnabled,
-    placesConfigured: googlePlacesConfigured(),
-    oauthConfigured: googleOAuthConfigured(),
-    connected: Boolean(integration),
-    expiresAt: integration?.expiresAt?.toISOString() ?? null,
-    hasRefreshToken: Boolean(integration?.refreshToken),
-    selectedLocation,
-    syncedAt: cache.syncedAt,
-  });
+  return NextResponse.json(
+    {
+      googleReviewManagementEnabled: reviewManagementEnabled,
+      googleAiEnabled,
+      placesConfigured: googlePlacesConfigured(),
+      oauthConfigured: googleOAuthConfigured(),
+      connected: Boolean(integration),
+      expiresAt: integration?.expiresAt?.toISOString() ?? null,
+      hasRefreshToken: Boolean(integration?.refreshToken),
+      selectedLocation,
+      syncedAt: cache.syncedAt,
+    },
+    {
+      // Owner-scoped status barely changes between requests — `private` so
+      // the CDN never shares it across users; 60s/300sw covers a typical
+      // dashboard polling cadence (CLAUDE.md §19.3 owner-cache pattern).
+      headers: { 'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300' },
+    },
+  );
 }

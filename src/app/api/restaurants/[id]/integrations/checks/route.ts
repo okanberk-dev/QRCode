@@ -62,5 +62,13 @@ export async function GET(
     };
   }
 
-  return NextResponse.json({ checks });
+  return NextResponse.json(
+    { checks },
+    {
+      // Owner-scoped link health snapshot — refreshed by cron daily; 120s
+      // CDN cache + 600s SWR keeps the dashboard snappy without serving
+      // stale "Test et" results to the operator (CLAUDE.md §19.3).
+      headers: { 'Cache-Control': 'private, s-maxage=120, stale-while-revalidate=600' },
+    },
+  );
 }
