@@ -12,6 +12,8 @@ import type {
 } from './types';
 import { initials, timeAgo } from './utils';
 import { FeedbackReplyComposer } from './FeedbackReplyComposer';
+import FeedbackTimeline from '@/components/dashboard/feedbacks/FeedbackTimeline';
+import { buildFeedbackTimeline } from '@/lib/feedback-timeline';
 
 interface FeedbackDetailProps {
   feedback: FeedbackRow;
@@ -313,6 +315,54 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             />
           </div>
         )}
+
+        {/* §38.33 — PLATFORM/KAYNAK metadata grid (tasarım page-reviews.jsx
+            line 177-186). 2-col, mute eyebrow + value. Tasarımdaki "Masa 7"
+            gibi spesifik kaynak bilgisi schema'da yok — platform fallback. */}
+        <div className="mt-8 grid grid-cols-2 gap-2.5 rounded-xl border border-[#EDEDED] p-4">
+          <div>
+            <div className="pulse-eyebrow text-[10px] text-[#737373]">
+              {isTr ? 'PLATFORM' : 'PLATFORM'}
+            </div>
+            <div className="bz-h-tight mt-1 text-[14px] text-[#0A0A0A]">
+              {(active.platform || 'BUAZE').toUpperCase()}
+            </div>
+          </div>
+          <div>
+            <div className="pulse-eyebrow text-[10px] text-[#737373]">
+              {isTr ? 'KAYNAK' : 'SOURCE'}
+            </div>
+            <div className="bz-h-tight mt-1 text-[14px] text-[#0A0A0A]">
+              {active.restaurant?.name || (isTr ? 'İşletme' : 'Location')}
+            </div>
+          </div>
+        </div>
+
+        {/* §38.33 — ZAMAN ÇİZELGESİ. Tasarım page-reviews.jsx line 223-243.
+            Mevcut data'dan derive: feedback.createdAt + sentReplies
+            (FeedbackReply.createdAt). FeedbackAiDraft + LifecycleEmailLog
+            client-side fetch'te exposed değil; future enhancement (backend
+            API genişletme gerekir). Tasarım 3-event minimum, mevcut 2-event
+            (received + replied) görünür. */}
+        <div className="mt-6">
+          <FeedbackTimeline
+            events={buildFeedbackTimeline({
+              feedback: {
+                id: active.id,
+                createdAt: new Date(active.createdAt),
+                platform: active.platform,
+              },
+              replies: sentReplies.map((r) => ({
+                id: r.id,
+                createdAt: new Date(r.createdAt),
+                source: null, // FeedbackReply.source feedbacks API'de exposed değil
+                channel: r.channel,
+              })),
+              isTr,
+            })}
+            isTr={isTr}
+          />
+        </div>
       </div>
     </section>
   );

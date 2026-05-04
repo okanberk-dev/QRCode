@@ -174,6 +174,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     if (tab === 'low') rows = rows.filter((r) => r.rating <= 3);
     else if (tab === 'high') rows = rows.filter((r) => r.rating >= 4);
     else if (tab === 'redirected') rows = rows.filter((r) => !!r.platform);
+    // §38.33 — yeni 3 mobile-friendly tab semantic
+    else if (tab === 'unreplied') rows = rows.filter((r) => r.isReplied !== true);
+    else if (tab === 'today') {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const startMs = startOfDay.getTime();
+      rows = rows.filter((r) => new Date(r.createdAt).getTime() >= startMs);
+    } else if (tab === 'ai_ready') {
+      rows = rows.filter((r) => r.hasPendingAiDraft === true);
+    }
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       rows = rows.filter(
@@ -190,15 +200,50 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     [feedbacks, activeId, filteredList],
   );
 
-  const counts = useMemo(
-    () => ({
+  const counts = useMemo(() => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const startMs = startOfDay.getTime();
+    return {
       all: feedbacks.length,
       low: feedbacks.filter((r) => r.rating <= 3).length,
       high: feedbacks.filter((r) => r.rating >= 4).length,
       redirected: feedbacks.filter((r) => !!r.platform).length,
-    }),
-    [feedbacks],
-  );
+      // §38.33 — mobile chip strip + sticky AI banner için
+      unreplied: feedbacks.filter((r) => r.isReplied !== true).length,
+      today: feedbacks.filter(
+        (r) => new Date(r.createdAt).getTime() >= startMs,
+      ).length,
+      aiReady: feedbacks.filter((r) => r.hasPendingAiDraft === true).length,
+    };
+  }, [feedbacks]);
+
+  // §38.33 — BU HAFTA stat card için son 7 gün aggregate (client-side, mevcut
+  // feedbacks state üstünden). Tasarım kaynağı: page-reviews.jsx line 83-92.
+  const weekStats = useMemo(() => {
+    const sevenDaysAgo = Date.now() - 7 * 86400000;
+    const fourteenDaysAgo = Date.now() - 14 * 86400000;
+    const last7 = feedbacks.filter(
+      (r) => new Date(r.createdAt).getTime() >= sevenDaysAgo,
+    );
+    const prev7 = feedbacks.filter((r) => {
+      const t = new Date(r.createdAt).getTime();
+      return t >= fourteenDaysAgo && t < sevenDaysAgo;
+    });
+    const avgOf = (rows: typeof last7) =>
+      rows.length === 0 ? 0 : rows.reduce((sum, r) => sum + r.rating, 0) / rows.length;
+    const last7Avg = avgOf(last7);
+    const prev7Avg = avgOf(prev7);
+    const delta =
+      last7Avg > 0 && prev7Avg > 0
+        ? Math.round((last7Avg - prev7Avg) * 100) / 100
+        : null;
+    return {
+      avgRating: last7Avg,
+      delta,
+      totalCount: last7.length,
+    };
+  }, [feedbacks]);
 
   const activeFeedbackId = active?.id ?? null;
   const activeCustomerEmail = active?.customerEmail ?? null;
@@ -590,6 +635,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           activeFilterCount={activeFilterCount}
           onOpenFilters={() => setFiltersOpen(true)}
           onResetFilters={onResetFilters}
+          platformFilter={platform}
+          setPlatformFilter={(v) => filters.set('platform', v)}
+          weekStats={weekStats}
         />
 
         {/* ============ LEFT — list (orta kolon xl:'de) ============ */}
