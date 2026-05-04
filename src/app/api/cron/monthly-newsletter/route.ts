@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runMonthlyNewsletter } from '@/lib/monthly-newsletter';
 
+// CRITICAL — Vercel Pro defaults function timeout to 60s when these are
+// unset. The monthly newsletter iterates every active subscriber (Resend
+// HTTP layer + 120ms throttle to stay under the 10/sec rate limit), so a
+// 1000-subscriber send takes ~120s and was silently timing out → cron
+// silently succeeded with partial sends. CLAUDE.md §38.11 cron checklist.
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 /**
  * Monthly newsletter cron.
  *
