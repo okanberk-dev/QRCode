@@ -167,6 +167,10 @@ export async function PUT(
       workingHours,
       temporarilyClosed,
       closedReason,
+      // Phase 8c+ §38.26 — Owner-tanımlı hedef puan (Analytics 14-week trend
+      // chart için). Null = unset, 1.0–5.0 arası float. UI client'ta validate
+      // edilir; server'da defansif aralık kontrolü (mass assignment guard).
+      targetRating,
     } = body;
 
     // Phase 12.6 — defaultRedirectPlatform whitelist. NULL or '' = clear
@@ -207,6 +211,16 @@ export async function PUT(
 
     if (closedReason !== undefined && typeof closedReason === 'string' && closedReason.length > 500) {
       return ApiErrors.badRequest('Sebep en fazla 500 karakter', 'INVALID_CLOSED_REASON');
+    }
+
+    // Phase 8c+ §38.26 — targetRating defansif validation (mass assignment +
+    // range guard). Null kabul (unset). 1.0–5.0 arası float; aksi halde 400.
+    if (
+      targetRating !== undefined &&
+      targetRating !== null &&
+      (typeof targetRating !== 'number' || !Number.isFinite(targetRating) || targetRating < 1 || targetRating > 5)
+    ) {
+      return ApiErrors.badRequest('Hedef puan 1.0 – 5.0 arasında bir sayı olmalı', 'INVALID_TARGET_RATING');
     }
 
     // Section 3 — sosyal medya URL validation (Faz 2). Boş = clear.
@@ -451,6 +465,9 @@ export async function PUT(
         }),
         ...(closedReason !== undefined && {
           closedReason: typeof closedReason === 'string' && closedReason.trim() ? closedReason.trim().slice(0, 500) : null,
+        }),
+        ...(targetRating !== undefined && {
+          targetRating: typeof targetRating === 'number' ? targetRating : null,
         }),
         ...(phone !== undefined && { phone: phone || null }),
         ...(googlePlaceId !== undefined && { googlePlaceId: googlePlaceId || null }),
