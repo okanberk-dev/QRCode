@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { verifyJwt } from '@/lib/auth';
@@ -22,6 +23,10 @@ export async function GET(req: NextRequest) {
         id: true,
         email: true,
         name: true,
+        // §38.37 — Hesabım profile genişletme (phone/position/timezone).
+        phoneNumber: true,
+        position: true,
+        timezone: true,
         role: true,
         plan: true,
         trialEndsAt: true,
@@ -65,7 +70,8 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Geçersiz oturum' }, { status: 401 });
     }
 
-    const { name, email, currentPassword, newPassword } = await req.json();
+    const body = await req.json();
+    const { name, email, phoneNumber, position, timezone, currentPassword, newPassword } = body;
 
     const user = await prisma.user.findUnique({
       where: { id: payload.userId as string },
@@ -78,7 +84,7 @@ export async function PUT(req: NextRequest) {
     const updateData: Prisma.UserUpdateInput = {};
 
     if (name) updateData.name = name.trim();
-    
+
     if (email && email.toLowerCase().trim() !== user.email) {
       const existingUser = await prisma.user.findUnique({
         where: { email: email.toLowerCase().trim() },
@@ -87,6 +93,59 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Bu e-posta adresi zaten kullanımda' }, { status: 400 });
       }
       updateData.email = email.toLowerCase().trim();
+    }
+
+    // §38.37 — Lokal Zod validation 3 yeni alan için (CLAUDE.md §28.3.3
+    // mix-mode paterni — mevcut elle validation'a dokunmadan yeni alan için
+    // lokal safeParse). Tüm 3 alan opsiyonel: undefined → değişmez, null veya
+    // empty string → unset (Prisma null kabul eder).
+    if (phoneNumber !== undefined) {
+      const parsed = z
+        .union([z.string().max(32), z.null(), z.literal('')])
+        .safeParse(phoneNumber);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: 'Telefon numarası geçersiz (max 32 karakter)' },
+          { status: 400 },
+        );
+      }
+      const v = typeof parsed.data === 'string' ? parsed.data.trim() : null;
+      updateData.phoneNumber = v && v.length > 0 ? v : null;
+    }
+    if (position !== undefined) {
+      const parsed = z
+        .union([z.string().max(100), z.null(), z.literal('')])
+        .safeParse(position);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: 'Pozisyon geçersiz (max 100 karakter)' },
+          { status: 400 },
+        );
+      }
+      const v = typeof parsed.data === 'string' ? parsed.data.trim() : null;
+      updateData.position = v && v.length > 0 ? v : null;
+    }
+    if (timezone !== undefined) {
+      // IANA timezone format (örn. "Europe/Istanbul"). Boş string → null.
+      // Yapı kontrol: continent/city pattern, max 64 char.
+      const parsed = z
+        .union([
+          z
+            .string()
+            .max(64)
+            .regex(/^[A-Za-z]+\/[A-Za-z_-]+(?:\/[A-Za-z_-]+)?$/, 'Geçersiz timezone'),
+          z.null(),
+          z.literal(''),
+        ])
+        .safeParse(timezone);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: 'Saat dilimi geçersiz (örn. Europe/Istanbul)' },
+          { status: 400 },
+        );
+      }
+      const v = typeof parsed.data === 'string' ? parsed.data.trim() : null;
+      updateData.timezone = v && v.length > 0 ? v : null;
     }
 
     // Password change logic
@@ -114,6 +173,9 @@ export async function PUT(req: NextRequest) {
         id: true,
         email: true,
         name: true,
+        phoneNumber: true,
+        position: true,
+        timezone: true,
       },
     });
 

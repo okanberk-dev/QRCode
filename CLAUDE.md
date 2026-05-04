@@ -6663,3 +6663,69 @@ Kullanıcı 3 karar onayladı (AskUserQuestion):
 - 🟡 Mobile MobileCustomers ekranı (page-mobile-v2.jsx eksik) — kullanıcı isterse ileride
 - 🟡 Bulk action bar + Kampanya/Segmentle/Arşivle (schema + backend gerek)
 - 🟡 Advanced filter modal ("Daha fazla filtre" button) — multi-criteria filter (kanal + tarih aralığı + segment combine)
+
+### 38.37 2026-05-04 — Hesabım 1:1 parity (right rail Plan + Invoices + Danger zone + 6-field profile)
+
+Kullanıcı raporu: "Hesabım bölümünü tasarım ile birebir her metriğini aynı yap, mobile uyumlu olsun, step by step ilerle". Audit (Explore agent) `.design-owner-2026/page-account.jsx` ile mevcut `/dashboard/account` sayfasını karşılaştırdı; ~%70 parity, 3 önemli drift tespit etti.
+
+Kullanıcı 3 karar onayladı (AskUserQuestion):
+- **Tab scope**: Mevcut 7 tab korunur (Profil / Güvenlik / Bildirim / Pulse AI / Faturalandırma / Kullanıcılar / KVKK & Yasal); business + language + API tab'ları skip (drift kabul, scope creep önleme)
+- **Right rail**: Tasarım birebir — Plan dark hero + invoices + danger zone (3 widget)
+- **Profil form**: 6-field tasarım birebir (name / email / phone / position / timezone select)
+
+**Schema migration** (`User.position` + `User.timezone`):
+- `prisma/schema.prisma` `User` model'ine 2 nullable field: `position String?` (free-form, max 100 char) + `timezone String?` (IANA tz string, max 64 char + regex validation). `phoneNumber` zaten mevcuttu, reuse.
+- Migration: `prisma/migrations/20260504200000_add_user_profile_position_timezone/migration.sql` — `ALTER TABLE users ADD COLUMN position TEXT; ADD COLUMN timezone TEXT;`. Nullable + default null, breaking change yok (CLAUDE.md §21.18 paterni).
+
+**API endpoint** (`/api/user/profile` PUT):
+- 3 yeni alan accept (CLAUDE.md §28.3.3 mix-mode paterni — mevcut elle validation'a dokunmadan lokal Zod check). `phoneNumber`: max 32 char, free-form. `position`: max 100 char, free-form. `timezone`: max 64 char + IANA regex `^[A-Za-z]+/[A-Za-z_-]+(?:/[A-Za-z_-]+)?$`. Empty string → null (Prisma null kabul eder).
+- GET response select genişletildi (3 yeni alan UI'a döner).
+
+**Profile form** (`BusinessProfileSettings.tsx`):
+- Eski 2-field (name + email) → 6-field grid (name + email + phone + position + timezone select).
+- `TIMEZONE_OPTIONS` const — 10 popüler IANA tz (Europe/Istanbul / London / Berlin / Paris / Amsterdam / America/New_York / LA / Asia/Dubai / Singapore / Tokyo) + "Seçilmedi" empty option.
+- iOS auto-zoom: input `inputMode="tel"`, autoComplete tags (tel / organization-title / etc.).
+- Locale select ayrı kart korundu (panel dili — global app-level i18n, profile field değil).
+
+**Right rail widgets** (3 yeni component):
+1. **`AccountPlanWidget.tsx`** (~170 satır client component) — graphite dark hero + lime accent + plan name + price + 3 usage progress bar (Yorum / Ekip / Lokasyon). `/api/billing/summary` fetch, plan tier-bazlı default limits (Pro 8/5, Growth 4/3, Trial 2/1). ProgressBar tone-based (≥90% red / ≥70% amber / <70% lime). "Planı yönet" CTA → `/pricing`. Trial gün kalan badge.
+2. **`AccountInvoicesWidget.tsx`** (~90 satır client component) — son 4 fatura (`/api/billing/invoices` fetch + `slice(0, 4)`). Status badge (paid/pending/failed → ok/warn/danger). Download icon link (varsa, `<a target="_blank" rel="noopener">`). Empty state → kart gizli (trial owner için fatura yok).
+3. **`AccountDangerZone.tsx`** (~50 satır client component) — red border + "TEHLİKELİ BÖLGE" eyebrow + "Hesabı dondur" + "Hesabı sil" buttons disabled + "Yakında" badge. Backend yok (Iyzico Wave 3.5 sonrası — CLAUDE.md §28 disiplin scope creep önleme).
+
+**Page integration** (`/dashboard/account/page.tsx`):
+- Import 3 yeni widget.
+- `useEffect` load 3-fetch'e genişletildi (`/api/team` eklendi → `teamCount` state plan widget'a prop).
+- `rightRail` rewrite: 3 quick-nav button (PLAN/EKİP/KVKK) → 3 widget (Plan + Invoices + Danger zone). Eski button'lar tasarımda yoktu, drift olarak silindi.
+
+**Mobile responsive** (CLAUDE.md §25 paterni):
+- `SettingsLayout.tsx` mevcut `isCompactNav` mode (sm:) → tüm children stack + rightRail bottom (border-t). Plan widget dark hero, invoices white card, danger zone red border — hepsi mobile'da dikey stack, native responsive.
+- iOS auto-zoom önleme: text input `text-[16px] sm:text-[14px]` paterni `bz-input` zaten taşır (CLAUDE.md §25.5).
+
+**Yapma**:
+- API `/api/user/profile` PUT'a tüm 3 yeni alan zorunlu yapma — `if (X !== undefined)` paterni opsiyonel kabul (geriye dönük uyumlu).
+- Timezone select'i `Intl.supportedValuesOf('timeZone')` ile dinamik render etme — 600+ tz, owner UI overload. 10 popüler hard-coded liste pragmatic.
+- Plan widget'ında team/restaurant limits için yeni schema field ekleme — UI runtime tier-bazlı default (Pro 8/5, Growth 4/3, Trial 2/1) yeter; ileride enforce edilirse `Plan` taxonomy genişler.
+- Danger zone button'larını active yapma — backend yok, false promise, support workflow.
+- Right rail eski 3 quick-nav button'u korumak — tasarımda yok, mevcut tab nav zaten section'lara taşıyor (duplicate UX).
+- AccountInvoicesWidget'ta tüm faturalar listesi — sağ rail compact, max 4. Tüm liste için Faturalandırma tab → BusinessBillingSettings.
+
+**Yap**:
+- Yeni profile field eklenirken: schema (nullable + migration) → API GET select + PUT body destructure + lokal Zod safeParse (CLAUDE.md §28.3.3 mix-mode) → form state + UI input + payload (5 nokta).
+- Plan tier limit değişiyorsa `AccountPlanWidget` fallback object güncel; caller override için `teamLimit` + `restaurantLimit` prop'ları opsiyonel.
+- Yeni right rail widget eklerken `<>` fragment children'a ekle (mevcut grid `xl:grid-cols-[...320px]` 320px sabit, içerideki widget'lar dikey stack).
+- Backend Iyzico Wave 3.5 sonrası: Danger zone button'ları enable, `/api/account/freeze` + `/api/account/delete` endpoint'leri (rate-limit + email confirm + 30g recovery flow).
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` modified files — 0 errors
+- `npm test` 143/143 pass (yeni test gerekmez — widget'lar pure presentational + data-fetch, helper logic'i schema-driven)
+- Manuel: `/tr/dashboard/account` → 6-field profil form (name/email/phone/position/timezone select); xl: ≥1280px right rail Plan dark hero + Invoices + Danger zone
+- Manuel mobile (375px): SettingsLayout `isCompactNav` mode, rightRail bottom border-t, widget'lar dikey stack
+- Manuel: Profile save → /api/user/profile PUT → response 3 yeni alan ile dönüyor; reload state korunur
+
+**Backlog güncel** (Bu PR sonrası):
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30 paterni)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)
+- 🟡 Account freeze + delete backend (Iyzico Wave 3.5 sonrası — `/api/account/freeze` + email confirm + 30g recovery)
+- 🟡 API & Webhook tab UI (backend hazır `/api/api-keys` + `/webhooks`, UI scope büyük — HIGH-3)
+- 🟡 2FA + Sessions + SSO UI (CLAUDE.md §34.1 — backend kalmış, UI silinmiş, low adoption)

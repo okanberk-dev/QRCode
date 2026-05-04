@@ -17,6 +17,13 @@ model User {
   // Format free-form (TR `+90 5XX...` placeholder); not validated server-side
   // because mevcut validations.ts pattern minimal — admin paneli görüntüler.
   phoneNumber               String?   @map("phone_number")
+  // §38.37 — Hesabım profile genişletme. Owner'ın işletme içi rolü/pozisyonu
+  // (örn. "Operasyon müdürü", "Sahip"). Free-form, max 100 char client-side.
+  position                  String?
+  // §38.37 — IANA timezone (örn. "Europe/Istanbul", "Europe/London"). Default
+  // null → owner UI'da "—" göster, lokal browser tz fallback. Mevcut `locale`
+  // field'ından farklı (locale = dil/UI, timezone = tarih/saat formatı).
+  timezone                  String?
   role                      String    @default("restaurant_owner") // restaurant_owner | team_member
   plan                      String    @default("trial") // trial | monthly | yearly
   trialEndsAt               DateTime? @map("trial_ends_at")
