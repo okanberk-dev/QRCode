@@ -54,7 +54,8 @@ function useTopBar(locale: Locale, pathname: string | null) {
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / İŞLETMELER' : 'PANEL / BUSINESSES', title: isTr ? 'İşletmeler' : 'Businesses' };
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
   if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform Bağlantıları' : 'Platform Links' };
-  if (rest.startsWith('/leads')) return { breadcrumb: isTr ? 'PANEL / MÜŞTERİLER' : 'PANEL / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
+  if (rest.startsWith('/customers')) return { breadcrumb: isTr ? 'CRM / MÜŞTERİLER' : 'CRM / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
+  if (rest.startsWith('/leads')) return { breadcrumb: isTr ? 'CRM / MÜŞTERİ LİSTESİ' : 'CRM / CUSTOMER LIST', title: isTr ? 'Müşteri Listesi' : 'Customer List' };
   if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORMLAR' : 'PANEL / PLATFORMS', title: isTr ? 'Platform bağlantıları' : 'Review platforms' };
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
@@ -189,6 +190,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       trialLeft: isTr ? 'gün kaldı' : 'days left',
       more: isTr ? 'Daha fazla' : 'More',
       leads: isTr ? 'Müşteri Listesi' : 'Customer List',
+      customers: isTr ? 'Müşteriler' : 'Customers',
       platforms: isTr ? 'Platform bağlantıları' : 'Review platforms',
       announcements: isTr ? 'Duyurular' : 'Announcements',
       notifications: isTr ? 'Bildirimler' : 'Notifications',
@@ -218,6 +220,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
         { href: `/${locale}/dashboard/google-reviews`, icon: MessageSquareText, label: copy.googleReviews },
         { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
+        { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
         { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
       ],
     },
@@ -268,6 +271,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
     { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+    { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
     { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
     // Announcements bottom sheet'ten de kaldırıldı — banner zaten görünür.
     // Guide yalnız ilk 30 gün.
@@ -775,6 +779,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           { href: `/${locale}/dashboard/restaurants`, label: copy.restaurants, keywords: ['işletme', 'konum', 'lokasyon', 'restoran', 'location'] },
           { href: `/${locale}/dashboard/menu`, label: copy.menu, keywords: ['menü', 'menu', 'ürün', 'item'] },
           { href: `/${locale}/dashboard/integrations`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
+          { href: `/${locale}/dashboard/customers`, label: copy.customers, keywords: ['müşteri', 'customer', 'crm'] },
           { href: `/${locale}/dashboard/leads`, label: copy.leads, keywords: ['müşteri', 'customer', 'lead'] },
           { href: `/${locale}/dashboard/guide`, label: copy.guide, keywords: ['kılavuz', 'guide', 'help', 'yardım'] },
           { href: `/${locale}/dashboard/account`, label: copy.account, keywords: ['ayar', 'settings', 'profil', 'profile', 'hesap', 'account', 'şifre', 'password', '2fa', 'güvenlik', 'security', 'fatura', 'billing', 'ekip', 'team', 'kvkk', 'legal', 'bildirim', 'notification'] },
