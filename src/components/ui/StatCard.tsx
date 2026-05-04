@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Eyebrow } from "./Eyebrow";
+import { Sparkline } from "./Sparkline";
 
 export type DeltaKind = "up" | "down" | "neutral";
 
@@ -13,6 +14,14 @@ interface StatCardProps {
   icon?: ReactNode;
   accent?: string;
   className?: string;
+  /**
+   * Optional daily/window series — render alanında alt satırda mini chart
+   * (CLAUDE.md §38.18, .design-owner-2026/page-analytics.jsx parity).
+   * Min 2 nokta gerekir; geçilmezse veya tek nokta varsa render skip.
+   */
+  sparkline?: number[];
+  /** Sparkline rengi (default lime-deep `#A8D62E`). */
+  sparklineColor?: string;
 }
 
 export function StatCard({
@@ -24,9 +33,12 @@ export function StatCard({
   icon,
   accent,
   className = "",
+  sparkline,
+  sparklineColor = "#A8D62E",
 }: StatCardProps) {
   const deltaColor =
     deltaKind === "up" ? "#16A34A" : deltaKind === "down" ? "#DC2626" : "#737373";
+  const showSparkline = sparkline !== undefined && sparkline.length >= 2;
 
   return (
     <div
@@ -62,6 +74,11 @@ export function StatCard({
           {deltaSuffix && (
             <span className="text-[10.5px] sm:text-[11px] text-[#737373]">{deltaSuffix}</span>
           )}
+        </div>
+      )}
+      {showSparkline && (
+        <div className="mt-3">
+          <Sparkline values={sparkline} w={200} h={28} color={sparklineColor} className="w-full" />
         </div>
       )}
       {accent && (

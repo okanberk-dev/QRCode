@@ -428,6 +428,18 @@ async function renderAnalyticsPage({
   const windowLabel = isTr ? `${windowDays} GÜNLÜK` : `${windowDays}-DAY`;
   const windowSuffix = isTr ? `önceki ${windowDays} güne göre` : `vs prev ${windowDays}d`;
 
+  // Phase 8c+ (CLAUDE.md §38.18) — KPI mini sparkline data
+  // (.design-owner-2026/page-analytics.jsx parity). interactionData zaten
+  // window-bazlı günlük seri taşıyor; her bir KPI kendi metric'ini
+  // çıkartarak ham series verir. Min 2 nokta gerekir (StatCard guard).
+  const sparkScans = interactionData.map((d) => d.scans);
+  const sparkReviews = interactionData.map((d) => d.reviews);
+  const sparkRedirects = interactionData.map((d) => d.redirects);
+  // Conversion = reviews / scans (her gün için, NaN guard 0 fallback).
+  const sparkConversion = interactionData.map((d) =>
+    d.scans > 0 ? Math.round((d.reviews / d.scans) * 100) : 0,
+  );
+
   return (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
       <PageHeader
@@ -461,6 +473,8 @@ async function renderAnalyticsPage({
           delta={scansDelta.value}
           deltaKind={scansDelta.kind}
           deltaSuffix={windowSuffix}
+          sparkline={sparkScans}
+          sparklineColor="#737373"
         />
         <StatCard
           label={isTr ? `${windowDays} gün yorum` : `${windowDays}d reviews`}
@@ -468,6 +482,8 @@ async function renderAnalyticsPage({
           delta={reviewsDelta.value}
           deltaKind={reviewsDelta.kind}
           deltaSuffix={windowSuffix}
+          sparkline={sparkReviews}
+          sparklineColor="#0A0A0A"
         />
         <StatCard
           label={isTr ? 'Dönüşüm oranı' : 'Conversion rate'}
@@ -475,6 +491,8 @@ async function renderAnalyticsPage({
           delta={scansCount > 0 && scansPrevWindowCount > 0 ? conversionDelta.value : undefined}
           deltaKind={scansCount > 0 && scansPrevWindowCount > 0 ? conversionDelta.kind : undefined}
           deltaSuffix={windowSuffix}
+          sparkline={sparkConversion}
+          sparklineColor="#A8D62E"
         />
         <StatCard
           label={isTr ? 'Yönlendirme oranı' : 'Redirect rate'}
@@ -482,6 +500,8 @@ async function renderAnalyticsPage({
           delta={redirectDelta.value}
           deltaKind={redirectDelta.kind}
           deltaSuffix={windowSuffix}
+          sparkline={sparkRedirects}
+          sparklineColor="#A8D62E"
         />
         <StatCard
           label={isTr ? 'Düşük puan oranı' : 'Low rating rate'}
@@ -682,18 +702,20 @@ async function renderAnalyticsPage({
 
       {/* AI sentiment themes — single section: müşterinin en sık dile getirdiği
           ortak temalar + AI sentez çıkarımı. Praise vs complaint ayrımı
-          kaldırıldı (CLAUDE.md §34.x retrofit, 2026-05). */}
+          kaldırıldı (CLAUDE.md §34.x retrofit, 2026-05). Phase 8c+ (CLAUDE.md
+          §38.18) — dark card visual treatment (.design-owner-2026/page-analytics
+          AI İçgörüler kart paterni). */}
       {aiAnalyticsAvailable && (
-      <section className="bz-card p-5 sm:p-6">
+      <section className="rounded-2xl bg-[#0A0A0A] text-white p-5 sm:p-6 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.4)]">
         <header className="flex items-start justify-between gap-2 mb-3">
           <div>
-            <Eyebrow>{isTr ? 'AI ÇIKARIMI' : 'AI INFERENCE'}</Eyebrow>
-            <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
+            <Eyebrow color="#C6F24E">{isTr ? 'AI ÇIKARIMI' : 'AI INFERENCE'}</Eyebrow>
+            <div className="bz-h-tight mt-1 text-white" style={{ fontSize: 18 }}>
               {isTr ? 'Müşterinin en sık dile getirdiği' : 'Most-mentioned themes'}
             </div>
           </div>
           {themes.source === 'openai' && (
-            <span className="pulse-eyebrow shrink-0 inline-flex items-center gap-1 rounded-full bg-[#0A0A0A] px-2 py-1 text-[#C6F24E]">
+            <span className="pulse-eyebrow shrink-0 inline-flex items-center gap-1 rounded-full border border-[#C6F24E]/30 bg-[#C6F24E]/10 px-2 py-1 text-[#C6F24E]">
               <span aria-hidden="true" className="bz-pulse-dot" style={{ background: '#C6F24E' }} />
               AI
             </span>
@@ -701,13 +723,13 @@ async function renderAnalyticsPage({
         </header>
 
         {themes.synthesis && (
-          <p className="mb-4 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[13px] leading-[1.6] text-[#0A0A0A]">
+          <p className="mb-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[13px] leading-[1.6] text-white">
             {themes.synthesis}
           </p>
         )}
 
         {themes.themes.length === 0 ? (
-          <p className="text-[12px] text-[#737373]">
+          <p className="text-[12px] text-white/60">
             {isTr
               ? themes.source === 'fallback'
                 ? 'Yeterli yorum yok ya da AI servisi şu an pasif. En az 4 metinli yoruma ulaşınca AI çıkarımı burada görünür.'
@@ -721,15 +743,15 @@ async function renderAnalyticsPage({
             {themes.themes.map((t, idx) => (
               <li
                 key={t.theme}
-                className="flex items-center gap-3 rounded-lg border border-[#EDEDED] bg-white px-3 py-2.5"
+                className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5"
               >
-                <span className="bz-mono text-[11px] font-semibold text-[#737373]">
+                <span className="bz-mono text-[11px] font-semibold text-white/50">
                   {String(idx + 1).padStart(2, '0')}
                 </span>
-                <span className="flex-1 text-[13px] font-medium text-[#0A0A0A]">
+                <span className="flex-1 text-[13px] font-medium text-white">
                   {t.theme}
                 </span>
-                <span className="bz-mono text-[11px] font-semibold tabular-nums text-[#525252]">
+                <span className="bz-mono text-[11px] font-semibold tabular-nums text-white/70">
                   ×{t.count}
                 </span>
               </li>
