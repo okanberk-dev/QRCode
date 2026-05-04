@@ -32,6 +32,16 @@ export interface WeeklyReportParams {
     recommendation: string;
     source: 'openai' | 'fallback';
   };
+  /** Phase 8c+ (CLAUDE.md §38.21) — bu hafta yorum bırakan müşterilerin
+   *  segment dağılımı. weekly-digest-runner deriveCustomerFields ile
+   *  hesaplar. Tüm değerler 0 ise template section gizler (sadece anonim
+   *  yorumlar veya hiç müşteri olmayan durum). */
+  segmentCounts?: {
+    vip: number;
+    loyal: number;
+    new: number;
+    risk: number;
+  };
 }
 
 export async function renderWeeklyReport(
@@ -73,6 +83,13 @@ export async function renderWeeklyReport(
     aiEyebrow: 'Pulse AI çıkarımı',
     aiTitle: 'Bu haftanın özeti',
     aiRecommendationLabel: 'Önümüzdeki hafta için öneri',
+    segmentEyebrow: 'Müşteri segmentleri',
+    segmentTitle: 'Bu hafta kim yorum bıraktı?',
+    segmentVip: 'VIP',
+    segmentLoyal: 'Düzenli',
+    segmentNew: 'Yeni',
+    segmentRisk: 'Risk',
+    segmentHint: 'Sadık + memnuniyetsiz dağılımı tek bakışta.',
   } : {
     eyebrow: `Week ${weekNum} · Monday report`,
     titleA: positiveCount > 0 ? 'A quiet week,' : 'How was the week?',
@@ -93,6 +110,13 @@ export async function renderWeeklyReport(
     aiEyebrow: 'Pulse AI inference',
     aiTitle: 'This week\'s synthesis',
     aiRecommendationLabel: 'Recommendation for next week',
+    segmentEyebrow: 'Customer segments',
+    segmentTitle: 'Who reviewed this week?',
+    segmentVip: 'VIP',
+    segmentLoyal: 'Loyal',
+    segmentNew: 'New',
+    segmentRisk: 'Risk',
+    segmentHint: 'Loyal + at-risk distribution at a glance.',
   };
 
   // DB-merged + placeholder substitution. `eyebrow` is locked in editor
@@ -213,6 +237,38 @@ export async function renderWeeklyReport(
       </td>
     </tr>` : '';
 
+  // Phase 8c+ (CLAUDE.md §38.21) — segment counts kart. Tüm değerler 0 ise
+  // section gizlenir (anonim feedback haftası veya hiç müşteri yoksa).
+  const segCounts = params.segmentCounts;
+  const segTotal = segCounts ? segCounts.vip + segCounts.loyal + segCounts.new + segCounts.risk : 0;
+  const segmentBlock = segCounts && segTotal > 0 ? (() => {
+    const segItems: Array<{ label: string; count: number; bg: string; fg: string }> = [
+      { label: copy.segmentVip, count: segCounts.vip, bg: PULSE.graphite, fg: PULSE.pure },
+      { label: copy.segmentLoyal, count: segCounts.loyal, bg: PULSE.limeSoft, fg: PULSE.graphite },
+      { label: copy.segmentNew, count: segCounts.new, bg: '#DBEAFE', fg: '#1E40AF' },
+      { label: copy.segmentRisk, count: segCounts.risk, bg: '#FEE2E2', fg: '#991B1B' },
+    ];
+    return `
+    <tr>
+      <td class="bz-pad" style="padding:0 40px 24px;">
+        ${renderEyebrow(copy.segmentEyebrow)}
+        ${spacer(8)}
+        <div style="font-family:${FONTS.heading};font-size:18px;font-weight:500;letter-spacing:-0.02em;color:${PULSE.graphite};margin-bottom:14px;">${copy.segmentTitle}</div>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="stack-row" style="background:${PULSE.n50};border-radius:14px;overflow:hidden;">
+          <tr>
+            ${segItems.map((seg, i) => `
+              <td class="stack-col" valign="top" style="width:25%;padding:14px 14px;${i < 3 ? `border-right:1px solid ${PULSE.n200};` : ''}">
+                <span style="display:inline-block;background:${seg.bg};color:${seg.fg};font-family:${FONTS.body};font-size:11px;font-weight:600;border-radius:100px;padding:3px 10px;letter-spacing:-0.01em;">${seg.label}</span>
+                <div style="font-family:${FONTS.heading};font-size:26px;font-weight:500;color:${PULSE.graphite};margin-top:8px;letter-spacing:-0.02em;line-height:1;">${seg.count}</div>
+              </td>
+            `).join('')}
+          </tr>
+        </table>
+        <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.12em;color:${PULSE.n500};text-transform:uppercase;margin-top:10px;">${copy.segmentHint}</div>
+      </td>
+    </tr>`;
+  })() : '';
+
   // Aspect averages
   const aspectsItems: Array<[string, number | null]> = [
     [copy.aspectFood, params.stats.aspects.food],
@@ -262,6 +318,7 @@ export async function renderWeeklyReport(
         </td>
       </tr>
       ${aiBlock}
+      ${segmentBlock}
       ${aspectsBlock}
       ${quotesBlock}
       <tr>

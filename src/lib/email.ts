@@ -142,6 +142,10 @@ export interface WeeklyDigestParams {
   /** Pulse AI çıkarımı (`extractWeeklyInsight()`) — boş ise mailde
    *  AI section'ı gizlenir. */
   aiInsight?: WeeklyReportParams['aiInsight'];
+  /** Phase 8c+ (CLAUDE.md §38.21) — bu hafta yorum bırakan müşterilerin
+   *  segment dağılımı. weekly-digest-runner deriveCustomerFields ile
+   *  hesaplar; tüm değerler 0 ise mailde section gizlenir. */
+  segmentCounts?: WeeklyReportParams['segmentCounts'];
 }
 
 export async function sendWeeklyDigest(params: WeeklyDigestParams): Promise<boolean> {
@@ -153,6 +157,7 @@ export async function sendWeeklyDigest(params: WeeklyDigestParams): Promise<bool
       stats: params.stats,
       dashboardUrl,
       aiInsight: params.aiInsight,
+      segmentCounts: params.segmentCounts,
     },
     params.locale,
   );

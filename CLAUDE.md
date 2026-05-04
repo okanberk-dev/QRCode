@@ -5579,6 +5579,57 @@ Sonra plan onaylanınca implement et.
 **Sonraki backlog (Analytics + diğer)**:
 - 🟡 14-haftalık trend chart (backend weekly aggregate gerek)
 - 🟡 Heatmap Gün × Saat (backend 2D matrix gerek)
-- 🟡 Topics sentiment progress (extractThemes sentiment field extend)
-- 🟢 Admin `/customers` segment kolonu (Phase 8c helper reuse)
-- 🟢 Weekly digest mail segment context
+- 🟡 Topics sentiment progress (extractThemes sentiment field extend) — PR #428 açık
+- 🟢 Admin `/customers` segment kolonu (Phase 8c helper reuse) — PR #427 açık
+- ~~Weekly digest mail segment context~~ ✅ **Tamamlandı** §38.21
+
+### 38.21 2026-05-04 — Weekly digest mail segment context
+
+§38.16 backlog'unun son LOW öncelikli kalemi bu PR'da kapatıldı. Pazartesi 09:00 UTC haftalık digest mail'ine "Bu hafta kim yorum bıraktı?" segment dağılım kartı eklendi: VIP / Düzenli / Yeni / Risk segment chip'leri + counts. Owner mail açtığında "ne kadar yorum geldi" ek olarak "kim yorum bıraktı" segment context'ini de görür.
+
+**Backend** (`weekly-digest-runner.ts`):
+- Per-restaurant Promise.all 6→7 query (yeni `segmentRows` raw aggregate).
+- `prisma.$queryRaw` contact_key bazlı aggregate (visits + avgRating + lastAt) — KVKK consent + non-anonim filter (owner /api/customers paterni).
+- `LIMIT 500` cap (haftalık hacim için fazlasıyla yeterli).
+- JS-side `deriveCustomerFields` ile her contact_key'in segment'i derive edilir → `segmentCounts` aggregate.
+- `sendWeeklyDigest` params'a yeni alan pipe-through.
+
+**Mail template** (`src/lib/email/templates/weekly-report.ts`):
+- `WeeklyReportParams.segmentCounts?` opsiyonel — undefined veya tüm değerler 0 ise template section gizler (anonim feedback haftası / ilk hafta).
+- Yeni `segmentBlock` 4-cell stack (CLAUDE.md §21.2 mail mobile-first paterni — table-based + `class="stack-row"` mobil dikey stack).
+- Segment chip color treatment: VIP graphite + Düzenli `PULSE.limeSoft` + Yeni `#DBEAFE` + Risk `#FEE2E2` (admin/owner UI ile aynı renk eşlemesi — drift sıfır).
+- Inline default'a 7 yeni copy alanı (segmentEyebrow + segmentTitle + segmentVip/Loyal/New/Risk + segmentHint) — TR + EN parite.
+
+**Sender** (`src/lib/email.ts`):
+- `WeeklyDigestParams.segmentCounts?` field eklendi → `renderWeeklyReport` pipe-through.
+
+**Mail copy DB seed** (`scripts/seed-mail-templates.ts`):
+- `WEEKLY_REPORT_TR` + `WEEKLY_REPORT_EN` 7 yeni copy alanı eklendi.
+- Operator seed çalıştırırsa yeni field'lar DB'ye yazılır; admin override etmediği sürece inline default'tan zaten okunur (loadMailCopy shallow merge).
+- 32 row aynı (16 template × 2 locale), shape'i değişmedi.
+
+**Mail editor field listesi** (CLAUDE.md §21.26 paterni):
+- Bu PR'da `MailTemplateEditor.tsx FIELDS_BY_TEMPLATE` haritası **dokunulmadı** — scope creep önleme. Admin override ihtiyacı çıkarsa ayrı PR.
+- Güvenli: inline default fallback gereği yeni mail'lerde segment kartı doğru render edilir.
+
+**Yapma**:
+- `LIMIT 500` cap'ı kaldırma — haftalık per-restaurant feedback hacmi nadiren 100'ü geçer; cap bu durumda silent slice anlamına gelir, segment dağılımı yine doğru oranlı.
+- Segment kartı mail body'de KVKK contact bilgisi göstermez (sadece counts) — anonim feedback'leri zaten contact_key filter'ı dışlıyor.
+- `MailTemplateEditor` field listesini bu PR'da güncellemek scope creep.
+- AI maliyet ile karıştırma — segment hesaplaması saf SQL + JS, OpenAI çağrısı yok.
+
+**Yap**:
+- Yeni mail template'i hazırlanırken segment context'i taşıması gerekirse aynı pattern reuse.
+- Mail editor admin override için yeni alanları görmek isterse `FIELDS_BY_TEMPLATE.weekly-report` array'ine 7 yeni FieldDef ekle.
+- Segment renk eşlemesi 5 callsite'a ulaştı (admin + drawer + dashboard + owner + mail) — `SEGMENT_COLOR_MAP` const extraction backlog.
+
+**Test + verification**:
+- Yeni unit test gerekmedi — helper Phase 8c'de 28 test'le coverage'da.
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors.
+
+**Backlog güncel**:
+- 🔴 14-haftalık trend chart (backend weekly aggregate)
+- 🔴 Heatmap Gün × Saat (backend 2D matrix)
+- 🟡 SentimentBadge extraction (3+ callsite drift kapatma)
+- 🟡 Mail editor weekly-report yeni alan field listesi
+- 🟡 SEGMENT_COLOR_MAP const extraction (5 callsite drift)

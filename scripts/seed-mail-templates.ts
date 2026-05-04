@@ -192,6 +192,14 @@ const WEEKLY_REPORT_TR: Copy = {
   cta: 'Panele git →',
   detailLabel: 'Detaylı analiz seni bekliyor.',
   detailSub: 'Heatmap, sentiment ve aspect kırılımı panelde.',
+  // Phase 8c+ (CLAUDE.md §38.21) — segment dağılımı kartı (4 chip + counts)
+  segmentEyebrow: 'Müşteri segmentleri',
+  segmentTitle: 'Bu hafta kim yorum bıraktı?',
+  segmentVip: 'VIP',
+  segmentLoyal: 'Düzenli',
+  segmentNew: 'Yeni',
+  segmentRisk: 'Risk',
+  segmentHint: 'Sadık + memnuniyetsiz dağılımı tek bakışta.',
 };
 
 const WEEKLY_REPORT_EN: Copy = {
@@ -209,6 +217,13 @@ const WEEKLY_REPORT_EN: Copy = {
   cta: 'See full details →',
   detailLabel: 'Deep-dive analytics inside.',
   detailSub: 'Heatmap, sentiment and aspect breakdown in the panel.',
+  segmentEyebrow: 'Customer segments',
+  segmentTitle: 'Who reviewed this week?',
+  segmentVip: 'VIP',
+  segmentLoyal: 'Loyal',
+  segmentNew: 'New',
+  segmentRisk: 'Risk',
+  segmentHint: 'Loyal + at-risk distribution at a glance.',
 };
 
 const CUSTOMER_REPLY_TR: Copy = {
