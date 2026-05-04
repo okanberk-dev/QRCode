@@ -15,4 +15,21 @@ if (dsn) {
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
     release: process.env.VERCEL_GIT_COMMIT_SHA,
   });
+  // CLAUDE.md §38.8/§38.9 follow-up — same cold-start signal as the server
+  // config. Edge runtime cold starts are typically more frequent than node;
+  // having a separate row distinguishes which runtime the route actually
+  // ran on.
+  console.error(`[sentry-init/edge] dsn=${describeDsn(dsn)} env=${process.env.VERCEL_ENV || process.env.NODE_ENV || 'unset'}`);
+} else {
+  console.error('[sentry-init/edge] dsn=unset — Sentry SDK not initialised on edge runtime');
+}
+
+function describeDsn(raw: string): string {
+  try {
+    const url = new URL(raw);
+    const projectId = url.pathname.replace(/^\//, '') || 'unknown';
+    return `${url.host}/${projectId}`;
+  } catch {
+    return 'invalid';
+  }
 }
