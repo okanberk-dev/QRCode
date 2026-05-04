@@ -6372,3 +6372,73 @@ Sonuç: 3 ayrı section silindi. Konum performansı + QR performansı 2-col grid
 - 🟡 ActivityFeed real-time (gelecek scope)
 - 🟢 `last7Total` rename → `currentScopeTotal` (cosmetic, geniş refactor)
 - 🟢 PageHeader "Son güncelleme N dk önce" subtitle (§38.27'de atıldı, server time anlamsız)
+
+### 38.33 2026-05-04 — Yorumlar + Google Yorumları 1:1 parity (Timeline + Templates + WeekStats + AI Hazır mobil)
+
+Kullanıcı raporu (4 ekran görüntüsü + design link `bbIuwvW9esfgyMH24a5ZDg`): Yorumlar (feedbacks/inbox) + Google Yorumları sayfaları tasarım ile %60-75 parity. Audit (Explore agent) 4 kritik gap + 10+ minor gap tespit etti. **Kullanıcı 4 backend kararını onayladı (hepsi Recommended)**:
+
+| Karar | Seçim | Etki |
+|---|---|---|
+| ZAMAN ÇİZELGESİ | **Mevcut data'dan derive** | Feedback.createdAt + FeedbackAiDraft.generatedAt + FeedbackReply.createdAt + LifecycleEmailLog union |
+| HIZLI YANIT ŞABLONLARI | **Static 4 şablon (kod-içi)** | `lib/quick-reply-templates.ts` saf helper TR/EN |
+| Ort. Yanıt Süresi KPI | **On-the-fly aggregate** | Google reviews reply.updateTime - createTime farkı |
+| isRead/Beklemede | **Atla — 4 tab yeter** | Tümü/Düşük/Yanıtsız/Yanıtlandı korunur |
+
+**Schema migration YOK**. Yeni endpoint YOK. UI + 2 saf helper + 3 component + 13 unit test.
+
+**Yeni saf helper'lar**:
+- `src/lib/feedback-timeline.ts` — `buildFeedbackTimeline` 4 source union (received + ai_draft + notification + replied), kronolojik asc sort, locale-aware label, latency formatter (`1400ms → 1.4s`), `FEEDBACK_RELATED_SYSTEM_TYPES` whitelist (LifecycleEmailLog generic mail event'leri filter dışı). 7 unit test.
+- `src/lib/quick-reply-templates.ts` — `QUICK_REPLY_TEMPLATES` static 4 şablon (positive_thanks/low_rating_apology/complaint_callback/birthday_thanks) × TR/EN × tone (warm/apologetic/formal). `${customerName}` + `${restaurantName}` placeholder substitute, **KVKK consent guard** (false → "Müşteri" fallback). `listQuickReplyTemplates` UI list + `getQuickReplyTemplate` body fetch. 6 unit test.
+
+**Yeni componentler**:
+- `src/components/dashboard/feedbacks/FeedbackTimeline.tsx` — server-friendly, sentiment dot (lime/lime-deep/grey/graphite per type) + title + relative time + meta. Empty fallback "Henüz aktivite yok".
+- `src/components/dashboard/feedbacks/WeekStatsCard.tsx` — pure presentational, "BU HAFTA" eyebrow + 26px mono rating + 5 yıldız + delta + count. Filter rail altı.
+- `src/components/dashboard/google-reviews/QuickReplyTemplates.tsx` — 4 template list, MessageSquareText icon + tone dot + chevron. Click → `onSelect(key)` callback (caller composer'a prefill veya clipboard kopyalar).
+
+**Yorumlar sayfası genişletme** (`src/app/[locale]/dashboard/feedbacks/`):
+- `page.tsx`: `weekStats` client-side aggregate (last7 vs prev7 avg + count); `counts` extension (unreplied + today + aiReady); `filteredList` 3 yeni tab semantik (unreplied/today/ai_ready); FeedbackFiltersRail'a platformFilter + weekStats props
+- `_components/types.ts`: `ActiveTab` literal genişletildi (+ unreplied/today/ai_ready)
+- `_components/FeedbackFiltersRail.tsx`: PLATFORM section (5 quick pill — Tüm/Google/Yemeksepeti/Getir/Trendyol) + WeekStatsCard mount
+- `_components/FeedbackList.tsx`: tabs replace eski 4 (Tümü/Düşük/Yüksek/Yönlendirilen) → yeni 5 (Tümü/Düşük/Yanıtsız/Bugün/AI Hazır) tasarım uyumlu; counts type extend; **mobile sticky bottom AI banner** (`counts.aiReady > 0 && activeTab !== 'ai_ready'` — graphite + lime accent + "Aç" CTA, click → 'ai_ready' tab'a switch). bottom-[80px] z-30 mobile bottom nav üstünde.
+- `_components/FeedbackDetail.tsx`: composer'dan sonra **PLATFORM/KAYNAK 2-col metadata grid** + **ZAMAN ÇİZELGESİ FeedbackTimeline mount** (received + replied event'ler — FeedbackAiDraft + LifecycleEmailLog client-side fetch'te exposed değil; `source: null` placeholder).
+
+**Google Yorumları sayfası genişletme** (`src/app/[locale]/dashboard/google-reviews/page.tsx`):
+- `reviewAnalysis` extension: **avgResponseHours** (reply.updateTime − createTime farkı, on-the-fly avg) + **newThisMonth** (createTime son 30g)
+- KPI 4-card replace: eski (Google puanı / Toplam / Yanıtlanan / Yanıtsız) → yeni tasarım uyumlu (Toplam yorum / Yanıtlanan % / Ort. yanıt süresi / Bu ay yeni). "Google puanı" hero card'ında zaten görünür (duplicate); "Yanıtsız" implicit (toplam − yanıtlanan).
+- Sağ rail grid `sm:grid-cols-2 lg:grid-cols-3` (3-card sığdırma): PROFİL SAĞLIĞI + SIK GEÇEN KELİMELER + **HIZLI YANIT ŞABLONLARI** (yeni). Click → `getQuickReplyTemplate` body clipboard kopyalanır (composer prefill scope dışı, future enhancement).
+
+**Kasıtlı drift'ler** (kullanıcı kararı / pragmatic):
+- Timeline'da FeedbackAiDraft + LifecycleEmailLog client-side fetch'te exposed değil → received + replied event'ler görünür, AI draft + system notification future enhancement
+- Composer template prefill mevcut composer textarea'ya wire edilmedi (clipboard pattern yeterli — owner manuel paste)
+- Mobile chip set (Tümü/Düşük/Yanıtsız/Bugün/AI Hazır) ↔ Desktop rail (Tümü/Düşük/Yüksek/Yönlendirilen) farklı — kullanıcı `ai_ready` mobile'da seçerse desktop rail highlight etmez (acceptable degradation)
+- Yorumlar 28 vs Buaze gerçek yorum sayısı bağlamsız tasarım mock; veri gerçek
+- Google Reviews "Bekliyor"/"Yanıtlandı" badge mevcut ReviewCard'ında zaten var (CLAUDE.md §38.14 referans)
+
+**Yapma**:
+- FeedbackAuditLog yeni schema açma — kullanıcı atladı, mevcut data derive yeterli (CLAUDE.md §38.33 paterni); future enhancement için ayrı talep gerekir
+- `Feedback.isRead` field eklemek — kullanıcı atladı (4 tab yeter); "Okunmamış"/"Beklemede" semantic mevcut Yanıtsız ile karşılanır
+- QuickReplyTemplate per-restaurant özelleştirme — static 4 şablon (kod-içi) yeterli; per-restaurant Yeni schema gerek (out of scope)
+- Composer'a quick reply template prefill button ekleme (Yorumlar sayfasında) — tasarım sadece Google Yorumları sağ rail'da gösteriyor; Yorumlar AI Co-Pilot flow'u zaten mevcut (Yeniden öner + Onayla & Gönder)
+- ActivityType (CANLI AKIŞ §38.31) ile FeedbackTimeline (§38.33) helper'larını birleştirme — farklı UX (Timeline = single feedback events, ActivityFeed = cross-feedback timeline). 2 helper kalır
+
+**Yap**:
+- Yeni timeline event tipi eklenirken (örn. `flagged`, `assigned`): `TimelineEventType` literal + `DOT_COLOR` map + `COPY` map + `buildFeedbackTimeline` push branch + unit test
+- Yeni quick reply template eklenirken: `QuickReplyKey` literal + `TEMPLATES` map (TR + EN + tone + label) + UI mevcut (4-list iterate sırasına göre yeni şablon eklenir)
+- KVKK consent: yeni quick reply caller varsa `hasKvkkConsent` field'ını geçir (CLAUDE.md §38.32 paterni reuse)
+- Avg response time KPI başka surface'ta gerekirse: helper extract (örn. `lib/google-reviews-stats.ts`) — şu an 1 yer (page.tsx), abstraction premature (CLAUDE.md §7)
+
+**Verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` 0 errors (2 baseline warning — pre-existing FeedbackList `_feedbacks` unused + `no-async-client-component` for export wrapper, scope dışı)
+- `npm test` 134/134 pass (121 + 7 feedback-timeline + 6 quick-reply-templates)
+- Manuel: `/tr/dashboard/feedbacks` 3-col split: rail (status + platform + week stats) + list + detail panel (PLATFORM/KAYNAK grid + ZAMAN ÇİZELGESİ)
+- Manuel mobil (375px): 5-chip strip (Tümü/Düşük/Yanıtsız/Bugün/AI Hazır) + AI Hazır > 0 ise sticky bottom banner
+- Manuel: `/tr/dashboard/google-reviews` 4 KPI (Toplam / Yanıtlanan % / Ort. yanıt süresi / Bu ay yeni) + sağ rail 3-card (PROFİL SAĞLIĞI + SIK GEÇEN KELİMELER + HIZLI YANIT ŞABLONLARI)
+- Manuel: HIZLI YANIT ŞABLONLARI click → clipboard'a template body kopyalanır
+
+**Backlog güncel** (Bu PR sonrası):
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)
+- 🟡 FeedbackTimeline AI draft + system event extension (backend API genişletmesi gerekir)
+- 🟡 Composer template prefill (Yorumlar AI Co-Pilot composer'a quick reply integration)
+- 🟢 Mobile chip ↔ Desktop rail unified state (kullanıcı tab değiştirince cross-state inconsistency)

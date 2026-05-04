@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { CheckCircle2, Loader2, RefreshCw, Send, Sparkles, Star, ExternalLink, Inbox, Unplug } from 'lucide-react';
 import { AlertBanner, Field, PageHeader } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
+import QuickReplyTemplates from '@/components/dashboard/google-reviews/QuickReplyTemplates';
+import { getQuickReplyTemplate } from '@/lib/quick-reply-templates';
 
 interface GoogleLocation {
   accountName: string;
@@ -385,7 +387,36 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     }).length;
     const unanswered = reviews.filter((review) => !review.reviewReply?.comment).length;
     const replied = reviews.length - unanswered;
-    return { low, unanswered, replied, breakdown: ratingBreakdown(reviews) };
+    // §38.33 — Avg response time KPI (tasarım line 96-115). On-the-fly
+    // aggregate; Google review reply timestamp ile review createTime farkı.
+    let totalReplyMs = 0;
+    let replyCount = 0;
+    for (const r of reviews) {
+      if (!r.reviewReply?.updateTime || !r.createTime) continue;
+      const replyMs = new Date(r.reviewReply.updateTime).getTime();
+      const createMs = new Date(r.createTime).getTime();
+      const diff = replyMs - createMs;
+      if (diff > 0) {
+        totalReplyMs += diff;
+        replyCount += 1;
+      }
+    }
+    const avgResponseMs = replyCount > 0 ? totalReplyMs / replyCount : null;
+    const avgResponseHours = avgResponseMs !== null ? avgResponseMs / 3600000 : null;
+    // §38.33 — Bu ay yeni: createTime son 30 gün içinde olanlar.
+    const thirtyDaysAgoMs = Date.now() - 30 * 86400000;
+    const newThisMonth = reviews.filter((r) => {
+      if (!r.createTime) return false;
+      return new Date(r.createTime).getTime() >= thirtyDaysAgoMs;
+    }).length;
+    return {
+      low,
+      unanswered,
+      replied,
+      avgResponseHours,
+      newThisMonth,
+      breakdown: ratingBreakdown(reviews),
+    };
   }, [reviewsPayload]);
 
   const statusIsReady = Boolean(
@@ -564,11 +595,41 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                 </div>
               </section>
 
+              {/* §38.33 — KPI 4-card grid tasarım .design-owner-2026/page-google.jsx
+                  line 96-115 paterni: Toplam yorum / Yanıtlanan % / Ort yanıt süresi
+                  / Bu ay yeni. Eski "Google puanı" KPI hero card'da büyük (4.7)
+                  zaten görünüyor — duplicate; "Yanıtsız" implicit (toplam −
+                  yanıtlanan). 4 yeni KPI tasarım uyumlu. */}
               <div className="grid gap-3 sm:grid-cols-4">
-                <Metric label={isTr ? "Google puanı" : "Google rating"} value={reviewsPayload.averageRating?.toFixed(1) ?? "-"} />
-                <Metric label={isTr ? "Toplam yorum" : "Total reviews"} value={String(reviewsPayload.totalReviewCount)} />
-                <Metric label={isTr ? "Yanıtlanan" : "Replied"} value={String(reviewAnalysis.replied)} />
-                <Metric label={isTr ? "Yanıtsız" : "Unanswered"} value={String(reviewAnalysis.unanswered)} tone={reviewAnalysis.unanswered ? "warn" : "ok"} />
+                <Metric
+                  label={isTr ? 'Toplam yorum' : 'Total reviews'}
+                  value={String(reviewsPayload.totalReviewCount)}
+                />
+                <Metric
+                  label={isTr ? 'Yanıtlanan' : 'Replied'}
+                  value={
+                    reviewsPayload.reviews.length > 0
+                      ? `%${Math.round(
+                          (reviewAnalysis.replied / reviewsPayload.reviews.length) * 100,
+                        )}`
+                      : '—'
+                  }
+                  tone={reviewAnalysis.unanswered === 0 ? 'ok' : undefined}
+                />
+                <Metric
+                  label={isTr ? 'Ort. yanıt süresi' : 'Avg response time'}
+                  value={
+                    reviewAnalysis.avgResponseHours !== null
+                      ? reviewAnalysis.avgResponseHours < 1
+                        ? `${Math.round(reviewAnalysis.avgResponseHours * 60)} ${isTr ? 'dk' : 'm'}`
+                        : `${reviewAnalysis.avgResponseHours.toFixed(1)} ${isTr ? 'sa' : 'h'}`
+                      : '—'
+                  }
+                />
+                <Metric
+                  label={isTr ? 'Bu ay yeni' : 'New this month'}
+                  value={String(reviewAnalysis.newThisMonth)}
+                />
               </div>
               <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
                 <div className="mb-3 text-[13px] font-semibold text-[#262626]">
@@ -663,7 +724,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                 const arcOffset = arcCircumference * (1 - score / 100);
 
                 return (
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {/* PROFİL SAĞLIĞI */}
                     <div className="bz-card p-5">
                       <div className="flex items-start justify-between gap-3 mb-4">
@@ -811,6 +872,29 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                           : 'Keywords analyzed from fetched reviews; color reflects sentiment by rating.'}
                       </p>
                     </div>
+
+                    {/* §38.33 — HIZLI YANIT ŞABLONLARI. Tasarım kaynağı:
+                        .design-owner-2026/page-google.jsx line 235-252 (4
+                        template list). Static (kullanıcı kararı, CLAUDE.md
+                        §38.33). Click → ileride composer prefill (mevcut
+                        composer'a wire scope dışı; UI parity şimdilik). */}
+                    <QuickReplyTemplates
+                      onSelect={(key) => {
+                        // Future scope: composer textarea'ya prefill.
+                        // Şimdilik clipboard'a kopyala, owner manuel paste eder.
+                        const body = getQuickReplyTemplate(key, isTr ? 'tr' : 'en', {
+                          customerName: null,
+                          restaurantName:
+                            restaurants.find((r) => r.id === activeRestaurantId)?.name ?? null,
+                        });
+                        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                          navigator.clipboard.writeText(body).catch(() => {
+                            /* clipboard API yoksa silent fail */
+                          });
+                        }
+                      }}
+                      isTr={isTr}
+                    />
                   </div>
                 );
               })()}

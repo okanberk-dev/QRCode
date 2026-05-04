@@ -35,7 +35,7 @@ export interface DegradedMeta {
   joinFilters?: boolean;
 }
 
-export type ActiveTab = 'all' | 'low' | 'high' | 'redirected';
+export type ActiveTab = 'all' | 'low' | 'high' | 'redirected' | 'unreplied' | 'today' | 'ai_ready';
 export type AiTone = 'warm' | 'formal' | 'apologetic';
 export type AiSource = 'openai' | 'template' | 'template-fallback' | null;
 export type ReplyTone = 'success' | 'error' | 'info';

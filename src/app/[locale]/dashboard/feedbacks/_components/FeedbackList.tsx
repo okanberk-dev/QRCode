@@ -1,6 +1,6 @@
 'use client';
 
-import { Inbox, Loader2, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
+import { Inbox, Loader2, RotateCcw, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { AlertBanner, EmptyState, Skeleton, Tabs } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import type { ActiveTab, DegradedMeta, FeedbackRow } from './types';
@@ -17,7 +17,16 @@ interface FeedbackListProps {
   setSearchTerm: (v: string) => void;
   activeTab: ActiveTab;
   setActiveTab: (v: ActiveTab) => void;
-  counts: { all: number; low: number; high: number; redirected: number };
+  counts: {
+    all: number;
+    low: number;
+    high: number;
+    redirected: number;
+    // §38.33 — mobile chip strip + sticky AI banner için
+    unreplied: number;
+    today: number;
+    aiReady: number;
+  };
   hasActiveFilter: boolean;
   activeFilterCount: number;
   onOpenFilters: () => void;
@@ -53,11 +62,15 @@ export function FeedbackList({
 }: FeedbackListProps) {
   const isTr = locale === 'tr';
 
+  // §38.33 — Tasarım .design-owner-2026/page-mobile-v2.jsx mobil chip strip:
+  // Tümü / Düşük / Yanıtsız / Bugün / AI Hazır. Mevcut high/redirected
+  // chip'leri xl: rail'e taşındı, mobil chip set'inde aksiyon-odaklı seçim.
   const tabs: { k: ActiveTab; l: string; c: number }[] = [
     { k: 'all', l: isTr ? 'Tümü' : 'All', c: counts.all },
-    { k: 'low', l: isTr ? 'Düşük (1-3)' : 'Low (1-3)', c: counts.low },
-    { k: 'high', l: isTr ? 'Yüksek (4-5)' : 'High (4-5)', c: counts.high },
-    { k: 'redirected', l: isTr ? 'Yönlendirilen' : 'Redirected', c: counts.redirected },
+    { k: 'low', l: isTr ? 'Düşük' : 'Low', c: counts.low },
+    { k: 'unreplied', l: isTr ? 'Yanıtsız' : 'Unreplied', c: counts.unreplied },
+    { k: 'today', l: isTr ? 'Bugün' : 'Today', c: counts.today },
+    { k: 'ai_ready', l: isTr ? 'AI Hazır' : 'AI Ready', c: counts.aiReady },
   ];
 
   return (
@@ -138,6 +151,33 @@ export function FeedbackList({
           </div>
         </div>
       </div>
+
+      {/* §38.33 — Mobile sticky bottom AI banner. Tasarım kaynağı:
+          .design-owner-2026/page-mobile-v2.jsx (sticky footer).
+          counts.aiReady > 0 ise görünür; click → "AI Hazır" tab'a switch.
+          xl:hidden — rail tarafında zaten chip görünür. bottom nav (CLAUDE.md
+          §25 MobileBottomNav) altında ~80px yer var; banner üzerinde sticky. */}
+      {counts.aiReady > 0 && activeTab !== 'ai_ready' && (
+        <div className="lg:hidden sticky bottom-[80px] z-30 mx-3 mb-3 rounded-2xl bg-[#0A0A0A] text-white px-4 py-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)] flex items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30"
+          >
+            <Sparkles size={13} className="text-[#C6F24E]" strokeWidth={2.2} />
+          </span>
+          <span className="flex-1 min-w-0 text-[12.5px] leading-[1.45]">
+            <strong className="font-semibold">{counts.aiReady}</strong>{' '}
+            {isTr ? 'yoruma AI yanıt hazır' : 'reviews have AI replies ready'}
+          </span>
+          <button
+            type="button"
+            onClick={() => setActiveTab('ai_ready')}
+            className="shrink-0 inline-flex items-center rounded-full bg-[#C6F24E] px-3 py-1.5 text-[11.5px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+          >
+            {isTr ? 'Aç' : 'Open'}
+          </button>
+        </div>
+      )}
 
       <div className="lg:flex-1 lg:overflow-y-auto">
         {loading ? (
