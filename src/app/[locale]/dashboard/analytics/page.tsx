@@ -740,22 +740,63 @@ async function renderAnalyticsPage({
           </p>
         ) : (
           <ol className="grid gap-2 sm:grid-cols-2">
-            {themes.themes.map((t, idx) => (
-              <li
-                key={t.theme}
-                className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5"
-              >
-                <span className="bz-mono text-[11px] font-semibold text-white/50">
-                  {String(idx + 1).padStart(2, '0')}
-                </span>
-                <span className="flex-1 text-[13px] font-medium text-white">
-                  {t.theme}
-                </span>
-                <span className="bz-mono text-[11px] font-semibold tabular-nums text-white/70">
-                  ×{t.count}
-                </span>
-              </li>
-            ))}
+            {themes.themes.map((t, idx) => {
+              // Phase 8c+ (CLAUDE.md §38.20) — sentiment progress bar
+              // (.design-owner-2026/page-analytics Topics paterni). Sentiment
+              // opsiyonel; eski cache entry'lerinde / model uymadığında
+              // undefined → progress bar render skip (graceful).
+              const hasSentiment = typeof t.sentimentPositivePct === 'number';
+              const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
+              const neg = 100 - pos;
+              return (
+                <li
+                  key={t.theme}
+                  className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="bz-mono text-[11px] font-semibold text-white/50">
+                      {String(idx + 1).padStart(2, '0')}
+                    </span>
+                    <span className="flex-1 text-[13px] font-medium text-white">
+                      {t.theme}
+                    </span>
+                    <span className="bz-mono text-[11px] font-semibold tabular-nums text-white/70">
+                      ×{t.count}
+                    </span>
+                  </div>
+                  {hasSentiment && (
+                    <>
+                      <div
+                        className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-white/10"
+                        role="img"
+                        aria-label={
+                          isTr
+                            ? `${pos}% pozitif, ${neg}% negatif`
+                            : `${pos}% positive, ${neg}% negative`
+                        }
+                      >
+                        <div
+                          className="h-full"
+                          style={{ width: `${pos}%`, background: '#A8D62E' }}
+                        />
+                        <div
+                          className="h-full"
+                          style={{ width: `${neg}%`, background: 'rgba(248, 113, 113, 0.6)' }}
+                        />
+                      </div>
+                      <div className="mt-1 flex justify-between bz-mono text-[10px]">
+                        <span className="text-[#A8D62E]">
+                          {pos}% {isTr ? 'olumlu' : 'positive'}
+                        </span>
+                        <span className="text-red-300/80">
+                          {neg}% {isTr ? 'olumsuz' : 'negative'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </li>
+              );
+            })}
           </ol>
         )}
       </section>

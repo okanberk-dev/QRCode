@@ -5707,3 +5707,58 @@ Sonra plan onaylanınca implement et.
 - 🔴 Heatmap Gün × Saat (backend 2D matrix)
 - 🟡 Admin /customers SentimentBadge migrate (PR #427 merge sonrası ayrı PR)
 - 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
+
+### 38.23 2026-05-04 — Consolidated PR: Admin /customers + Topics sentiment + Admin SentimentBadge migrate
+
+**Bağlam**: PR #427 (admin /customers segment) ve PR #428 (topics sentiment progress) main'de conflict'li olduğu için merge edilemedi. Bu consolidated PR'da iki PR'ın değişiklikleri **cherry-pick** edildi + main'in son hâliyle (PR #430 SentimentBadge primitive dahil) reconcile edildi + admin /customers SentimentBadge migrate'i §38.22 backlog notuyla aynı PR'da tamamlandı. Tek seferde merge edilebilir, conflict yok.
+
+**İçerik**:
+
+| Kapsam | Kaynak |
+|---|---|
+| Admin /customers segment + LTV + sentiment + days enrichment | PR #427 cherry-pick |
+| Admin filter pills + tablo 9-kolon + mobile card | PR #427 cherry-pick |
+| Admin CSV export 5 yeni sütun | PR #427 cherry-pick |
+| Admin /customers SentimentBadge migrate (inline → primitive) | YENİ — §38.22 paterni reuse |
+| Analytics topics sentiment progress (extractThemes JSON) | PR #428 cherry-pick |
+| Cache key version `v2:` (auto-invalidate) | PR #428 cherry-pick |
+| Analytics page sentiment progress bar render | PR #428 cherry-pick |
+
+**Conflict resolution**:
+- CLAUDE.md çakışmaları: HEAD (main son hâli) tutuldu. §38.19 ve §38.20 alt-section'ları yeniden eklenmedi — §38.23 onları topluca özetler. Tarihsel commit log (cherry-pick) zaten ayrı PR commit'lerini taşır.
+- Kod dosyaları: temiz cherry-pick (admin/customers + analytics-themes + analytics page farklı dosyalar, kod çakışması yok).
+
+**Admin /customers SentimentBadge migrate** (yeni — §38.22 backlog kapatma):
+- `SENTIMENT_PRESENTATION` inline map silindi (~4 satır + yorum).
+- `import { SentimentBadge } from '@/components/customers/SentimentBadge'`.
+- 2 callsite (table cell + mobile card row) `<SentimentBadge sentiment={r.sentiment} locale="tr" />` (default `variant="cell"`).
+- `CustomerSentiment` import'u tip için korundu (`CustomerRow.sentiment` interface).
+- 3 yer (admin + drawer + owner) artık tek primitive'den okuyor — drift sıfır.
+
+**Yapma**:
+- PR #427 + PR #428'i ayrıca merge etmeye çalışma — content bu consolidated PR ile aynı. Bu PR merge edildikten sonra GitHub'da manuel close.
+- §38.19 / §38.20 alt-section'larını CLAUDE.md'ye ayrı ekleme — §38.23 toplu özet.
+
+**Yap**:
+- PR #427 + #428'i merge sonrası manuel close (auto-close yapamaz, farklı branch).
+
+**Test + verification**:
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors (sadece 2 pre-existing baseline warning).
+- Cherry-pick + admin migrate kombinasyonu lokalde doğrulandı.
+
+**Dosyalar (toplam)**:
+
+| Dosya | Kaynak |
+|---|---|
+| `src/app/api/admin/customers/route.ts` | PR #427 |
+| `src/app/api/admin/customers/export/route.ts` | PR #427 |
+| `src/app/admin/customers/page.tsx` | PR #427 + admin migrate yeni |
+| `src/lib/analytics-themes.ts` | PR #428 |
+| `src/app/[locale]/dashboard/analytics/page.tsx` | PR #428 |
+| `CLAUDE.md` | §38.23 yeni log |
+
+**Backlog güncel** (Bu PR sonrası):
+- 🔴 14-haftalık trend chart (backend weekly aggregate)
+- 🔴 Heatmap Gün × Saat (backend 2D matrix)
+- 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)
