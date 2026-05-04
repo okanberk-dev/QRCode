@@ -202,8 +202,18 @@ export function FeedbackReplyComposer({
         <textarea
           value={replyDraft}
           onChange={(e) => setReplyDraft(e.target.value)}
+          onInput={(e) => {
+            // UX: textarea auto-grow — kullanıcının yazdığı her satır görünür
+            // kalsın. Mevcut sabit min-h-[100px] resize-none uzun yanıtta
+            // textarea içinde scroll yaratıyordu (kullanıcı raporu: "alta
+            // inilmiyor"). Parent panel scroll açık olunca (page.tsx
+            // lg:overflow-y-auto fix'i) bu auto-grow ferah deneyim sağlar.
+            const el = e.currentTarget;
+            el.style.height = 'auto';
+            el.style.height = `${Math.min(el.scrollHeight, 480)}px`;
+          }}
           placeholder={isTr ? `Merhaba ${customerFirst},` : `Hi ${customerFirst},`}
-          className="mt-2.5 w-full min-h-[100px] resize-none bg-transparent text-[14px] sm:text-[13px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none"
+          className="mt-2.5 w-full min-h-[120px] resize-none bg-transparent text-[14px] sm:text-[13px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none transition-[height] duration-150"
         />
 
         <div className="mt-3 rounded-lg bg-[#FAFAFA] p-2.5">

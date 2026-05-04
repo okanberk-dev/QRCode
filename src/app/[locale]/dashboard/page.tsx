@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { extractThemes } from '@/lib/analytics-themes';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
@@ -23,7 +24,7 @@ import TrendsChart from '@/components/admin/TrendsChart';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
-import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
+import { Eyebrow, PageHeader, Sparkline, StatCard, PLATFORMS } from '@/components/ui';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
 // minimal HTML, browser'da Recharts hydrate. `dynamic({ ssr: false })`
@@ -148,14 +149,16 @@ async function renderDashboardPage({
     last7Scans,
     prev7Scans,
     pendingTasks,
+    themesFeedbacks,
   ] = await prisma.$transaction([
     // KPI 4: Platforma yönlendirme (all-time) — değer KPI'da; delta last7 vs prev7
     prisma.feedback.count({ where: { restaurantId: restIdIn, ...REDIRECT_WHERE } }),
-    // Son yorumlar listesi
+    // Son yorumlar listesi (4 görünür "Son yorumlar" kartı için + 4 ek
+    // CANLI AKIŞ timeline için — aynı veri reuse).
     prisma.feedback.findMany({
       where: { restaurantId: restIdIn },
       orderBy: { createdAt: 'desc' },
-      take: 4,
+      take: 8,
       include: { restaurant: { select: { name: true } } },
     }),
     // Trend (son 7 gün) — daily bucket için ham veri
@@ -253,6 +256,19 @@ async function renderDashboardPage({
       orderBy: { createdAt: 'desc' },
       take: 4,
       include: { restaurant: { select: { name: true } } },
+    }),
+    // SIK BAHSEDİLEN KONULAR — son 30 gün yorum metinleri (extractThemes
+    // helper'ı için ham veri). Min 8 yorum + OpenAI key gereği helper içinde
+    // (yetersiz → empty fallback). Cache 1 saat (CLAUDE.md §34.9).
+    prisma.feedback.findMany({
+      where: {
+        restaurantId: restIdIn,
+        createdAt: { gte: new Date(now - 30 * 86400000) },
+        comment: { not: null },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 80,
+      select: { rating: true, comment: true },
     }),
   ]);
 
@@ -379,6 +395,17 @@ async function renderDashboardPage({
   const trialDaysLeft = user.trialEndsAt
     ? Math.max(0, Math.ceil((user.trialEndsAt.getTime() - Date.now()) / 86400000))
     : 0;
+
+  // SIK BAHSEDİLEN KONULAR — son 30 gün yorumlarından AI ile tema çıkarımı.
+  // extractThemes helper içinde min 8 yorum + OpenAI key kontrolü; yoksa
+  // empty fallback (UI section gizli). Cache 1 saat (CLAUDE.md §34.9).
+  const themeComments: Array<{ rating: number; comment: string }> = themesFeedbacks
+    .filter((f): f is { rating: number; comment: string } =>
+      typeof f.comment === 'string' && f.comment.length > 0,
+    )
+    .map((f) => ({ rating: f.rating, comment: f.comment }));
+  const themeCacheKey = `dashboard-themes:${user.id}:30d`;
+  const dashboardThemes = await extractThemes(themeComments, locale, themeCacheKey, user.id);
 
   // ---- Onboarding nudge (mevcut signal'lardan türet) ----
   const hasRestaurant = user.restaurants.length > 0;
@@ -690,6 +717,195 @@ async function renderDashboardPage({
         </div>
       </section>
 
+      {/* KANAL DAĞILIMI — tasarım .design-pulse-2026/.../page-dashboard.jsx
+          ChannelCard 4-card grid paterni. Top 4 platform card (brand icon +
+          name + count + avg rating + delta tahmini). Mobile 2-col, sm+ 4-col. */}
+      {platformDistData.length > 0 && (
+        <section>
+          <header className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <Eyebrow>{isTr ? 'KANAL DAĞILIMI' : 'CHANNEL BREAKDOWN'}</Eyebrow>
+              <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px]">
+                {isTr ? 'Platform performansı' : 'Platform performance'}
+              </h2>
+            </div>
+            <Link
+              href={`/${locale}/dashboard/analytics`}
+              className="text-[12px] text-[#525252] hover:text-[#0A0A0A] inline-flex items-center gap-1"
+            >
+              {isTr ? 'Tüm kanallar' : 'All channels'}
+              <ArrowRight size={11} strokeWidth={2} />
+            </Link>
+          </header>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {platformDistData.slice(0, 4).map((p) => {
+              const brand = (PLATFORMS as Record<string, { color: string; short: string; label: string }>)[
+                p.platform
+              ];
+              const tone = brand?.color ?? '#A3A3A3';
+              const short = brand?.short ?? p.label.slice(0, 2).toUpperCase();
+              return (
+                <div key={p.platform} className="bz-card p-3.5 flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[10.5px] font-semibold text-white"
+                      style={{ background: tone }}
+                    >
+                      {short}
+                    </span>
+                    <span className="truncate text-[12.5px] font-semibold text-[#0A0A0A]">
+                      {p.label}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="bz-mono tabular-nums text-[20px] font-semibold text-[#0A0A0A]">
+                      {p.avgRating != null ? p.avgRating.toFixed(1) : '—'}
+                    </span>
+                    <span className="text-[11px] text-[#525252]">
+                      {p.count} {isTr ? 'yorum' : 'reviews'}
+                    </span>
+                  </div>
+                  {/* Mini progress bar — count vs leader */}
+                  <div className="h-1 rounded-full bg-[#F5F5F5] overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${
+                          platformDistData[0]?.count
+                            ? Math.max(8, (p.count / platformDistData[0].count) * 100)
+                            : 0
+                        }%`,
+                        background: tone,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* SIK BAHSEDİLEN KONULAR — tasarım .design-pulse-2026/.../page-dashboard.jsx
+          Topic breakdown paterni. extractThemes (AI helper, gpt-4o-mini, cached
+          1h) son 30 gün yorumlarından top temaları çıkarır. Min 8 yorum yoksa
+          ya da OpenAI key yoksa section gizli (empty fallback). */}
+      {dashboardThemes.themes.length > 0 && (
+        <section className="bz-card p-5 sm:p-6">
+          <header className="mb-5 flex items-end justify-between gap-3">
+            <div>
+              <Eyebrow>{isTr ? 'SIK BAHSEDİLEN KONULAR' : 'TRENDING TOPICS'}</Eyebrow>
+              <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px]">
+                {isTr ? 'Müşteriler ne konuşuyor' : 'What customers talk about'}
+              </h2>
+            </div>
+            <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0">
+              {isTr ? 'SON 30 GÜN' : 'LAST 30 DAYS'}
+            </span>
+          </header>
+          <ul className="space-y-3.5">
+            {dashboardThemes.themes.slice(0, 5).map((t) => {
+              const top = dashboardThemes.themes[0]?.count ?? 1;
+              const pct = top > 0 ? (t.count / top) * 100 : 0;
+              return (
+                <li key={t.theme}>
+                  <div className="mb-1.5 flex items-center justify-between gap-2 text-[13px]">
+                    <span className="font-medium text-[#0A0A0A] truncate">{t.theme}</span>
+                    <span className="bz-mono tabular-nums text-[11px] text-[#737373] shrink-0">
+                      {t.count} {isTr ? 'bahsedilme' : 'mentions'}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-[#F5F5F5] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#0A0A0A] transition-all duration-500"
+                      style={{ width: `${Math.max(8, pct)}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {dashboardThemes.synthesis && (
+            <div className="mt-5 rounded-xl bg-[#0A0A0A] p-4 text-[13px] leading-[1.55] text-white">
+              <span className="pulse-eyebrow text-[#C6F24E] block mb-1.5">
+                {isTr ? 'PULSE AI ÇIKARIMI' : 'PULSE AI INSIGHT'}
+              </span>
+              <p className="text-white/85">{dashboardThemes.synthesis}</p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* CANLI AKIŞ — tasarım .design-pulse-2026/.../page-dashboard.jsx
+          ActivityRow timeline paterni. latestFeedbacks reuse (8 kayıt; üst
+          kart 4'ünü gösterir, burası 8'i timeline format'ta). SentimentDot
+          rating'e göre (≥4 lime, =3 gray, ≤2 red). */}
+      {latestFeedbacks.length > 0 && (
+        <section className="bz-card p-5 sm:p-6">
+          <header className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span aria-hidden className="bz-pulse-dot" />
+              <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
+            </div>
+            <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums">
+              {latestFeedbacks.length} {isTr ? 'son etkinlik' : 'recent events'}
+            </span>
+          </header>
+          <ul className="space-y-0">
+            {latestFeedbacks.map((fb, idx) => {
+              const sentColor = fb.rating >= 4 ? '#16A34A' : fb.rating <= 2 ? '#DC2626' : '#A3A3A3';
+              const action = isTr
+                ? fb.rating >= 4
+                  ? 'yüksek puanlı yorum bıraktı'
+                  : fb.rating <= 2
+                    ? 'düşük puanlı yorum bıraktı'
+                    : 'yorum bıraktı'
+                : fb.rating >= 4
+                  ? 'left a high-rated review'
+                  : fb.rating <= 2
+                    ? 'left a low-rated review'
+                    : 'left a review';
+              const target = `${'★'.repeat(fb.rating)}${'☆'.repeat(5 - fb.rating)} ${
+                fb.platform
+                  ? PLATFORM_LABELS_TR[fb.platform] ?? fb.platform
+                  : fb.restaurant?.name ?? ''
+              }`;
+              const timeAgo = formatDistanceToNowStrict(new Date(fb.createdAt), {
+                addSuffix: false,
+                locale: isTr ? trLocale : enLocale,
+              });
+              return (
+                <li
+                  key={fb.id}
+                  className={`flex items-center gap-3 py-2.5 text-[12.5px] ${
+                    idx < latestFeedbacks.length - 1 ? 'border-b border-[#F5F5F5]' : ''
+                  }`}
+                >
+                  <span className="bz-mono tabular-nums text-[11px] text-[#737373] w-14 shrink-0 truncate">
+                    {timeAgo}
+                  </span>
+                  <span
+                    aria-hidden
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: sentColor }}
+                  />
+                  <div className="min-w-0 flex-1 truncate text-[#525252]">
+                    <Link
+                      href={`/${locale}/dashboard/feedbacks?focus=${fb.id}`}
+                      className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                    >
+                      {fb.name || (isTr ? 'Anonim' : 'Anonymous')}
+                    </Link>{' '}
+                    {action}{' — '}
+                    <span className="text-[#737373]">{target}</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* Yorum Görünümü — TEK section, 2-col responsive. Puan dağılımı
           (5-bar histogram) + Platform dağılımı (pill + bar grid) yan yana.
           /analytics derin breakdown için zaten var. */}
@@ -758,7 +974,7 @@ async function renderDashboardPage({
                 </Link>
               </div>
               <div className="border-t border-[#EDEDED]">
-                {latestFeedbacks.map((fb) => {
+                {latestFeedbacks.slice(0, 4).map((fb) => {
                   const initials = (fb.name || fb.restaurant?.name || 'M')
                     .charAt(0)
                     .toUpperCase();

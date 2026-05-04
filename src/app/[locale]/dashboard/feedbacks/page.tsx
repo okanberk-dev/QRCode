@@ -607,11 +607,17 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           />
         </aside>
 
-        {/* ============ DETAIL ============ */}
+        {/* ============ DETAIL ============
+            UX fix: lg:min-h-0 + lg:overflow-y-auto. Mevcut parent
+            lg:h-[calc(100vh-200px)] sabit yükseklik, detail body uzun olduğunda
+            (yorum metni + composer + yanıtlar listesi) flex child default
+            min-height: auto child'ı genişletir + parent overflow-hidden →
+            composer alta inilemiyor (kullanıcı raporu). min-h-0 flex item
+            shrink-to-content yapmasın, overflow-y-auto kendi scroll'unu açar. */}
         <div
           className={`flex-1 min-w-0 ${
             isMobileDetailView ? 'flex' : 'hidden lg:flex'
-          } flex-col`}
+          } flex-col lg:min-h-0 lg:overflow-y-auto`}
         >
           {active ? (
             <FeedbackDetail
