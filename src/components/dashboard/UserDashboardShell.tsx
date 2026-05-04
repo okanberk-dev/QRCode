@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -111,6 +111,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
   // Collapsible group state — persists across navigations via localStorage.
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -120,6 +122,25 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     const collapsed = window.localStorage.getItem('buaze.owner.sidebarCollapsed') === 'true';
     setIsCollapsed(collapsed);
   }, []);
+
+  // User menu dropdown — outside click + ESC kapatır.
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onPointer = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setUserMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [userMenuOpen]);
 
   const toggleSidebar = () => {
     setIsCollapsed((prev) => {
@@ -525,31 +546,97 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </div>
       )}
 
-      {/* User row + logout */}
-      <div className="border-t border-[#EDEDED] bg-[#FAFAFA] p-3">
-        <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-[#FAFAFA] px-2.5 py-2">
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] border border-[#EDEDED] bz-h-tight"
-          >
+      {/* User pill + dropdown menu — tasarım .design-pulse-2026/.../shell.jsx
+          UserMenu paterni (Profil/Ayarlar/Yardım/Çıkış). Phase 1 .bz-user-menu
+          CSS class'larını kullanır. Outside click + ESC kapatır. */}
+      <div className="relative border-t border-[#EDEDED] bg-[#FAFAFA] p-3" ref={userMenuRef}>
+        <button
+          type="button"
+          onClick={() => setUserMenuOpen((v) => !v)}
+          aria-expanded={userMenuOpen}
+          aria-haspopup="menu"
+          aria-label={locale === 'tr' ? 'Hesap menüsü' : 'Account menu'}
+          className={`flex w-full items-center gap-2.5 rounded-xl bg-[#FAFAFA] px-2.5 py-2 transition-colors hover:bg-[#F5F5F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
+            isCollapsed ? 'justify-center' : ''
+          }`}
+          title={isCollapsed ? displayName : undefined}
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] border border-[#EDEDED] bz-h-tight">
             {initial}
           </div>
           {!isCollapsed && (
-            <div className="min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
-              <p className="truncate text-[12px] font-medium text-[#0A0A0A]">{displayName}</p>
-              <p className="truncate text-[10px] text-[#525252]">{user.email}</p>
-            </div>
+            <>
+              <div className="min-w-0 flex-1 text-left animate-in fade-in slide-in-from-left-2 duration-300">
+                <p className="truncate text-[12px] font-medium text-[#0A0A0A]">{displayName}</p>
+                <p className="truncate text-[10px] text-[#525252]">{user.email}</p>
+              </div>
+              <ChevronDown
+                size={14}
+                strokeWidth={2}
+                className={`text-[#737373] shrink-0 transition-transform duration-200 ${
+                  userMenuOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </>
           )}
-        </div>
-        <div className="flex gap-1">
-          <button
-            onClick={handleLogout}
-            title={copy.logout}
-            className={`flex items-center justify-center gap-2 rounded-xl py-2 text-[12px] font-medium text-[#737373] transition-colors hover:bg-[#FAFAFA] hover:text-[#DC2626] w-full`}
+        </button>
+
+        {userMenuOpen && (
+          <div
+            className="bz-user-menu"
+            role="menu"
+            style={{ left: 12, right: 12 }}
           >
-            <LogOut size={13} strokeWidth={2} />
-            {!isCollapsed && <span>{copy.logout}</span>}
-          </button>
-        </div>
+            {!isCollapsed && (
+              <div className="px-2.5 py-2">
+                <p className="truncate text-[12px] font-semibold text-[#0A0A0A]">{displayName}</p>
+                <p className="truncate text-[10px] text-[#525252] mt-0.5">{user.email}</p>
+              </div>
+            )}
+            {!isCollapsed && <div className="bz-user-menu-divider" />}
+            <Link
+              href={`/${locale}/dashboard/account?section=profile`}
+              className="bz-user-menu-item"
+              role="menuitem"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              <UserCircle size={14} strokeWidth={2} />
+              {locale === 'tr' ? 'Profilim' : 'Profile'}
+            </Link>
+            <Link
+              href={`/${locale}/dashboard/account`}
+              className="bz-user-menu-item"
+              role="menuitem"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              <Settings size={14} strokeWidth={2} />
+              {locale === 'tr' ? 'Ayarlar' : 'Settings'}
+            </Link>
+            <div className="bz-user-menu-divider" />
+            <Link
+              href={`/${locale}/help`}
+              className="bz-user-menu-item"
+              role="menuitem"
+              onClick={() => setUserMenuOpen(false)}
+            >
+              <BookOpen size={14} strokeWidth={2} />
+              {locale === 'tr' ? 'Yardım Merkezi' : 'Help Center'}
+            </Link>
+            <div className="bz-user-menu-divider" />
+            <button
+              type="button"
+              onClick={() => {
+                setUserMenuOpen(false);
+                handleLogout();
+              }}
+              className="bz-user-menu-item danger w-full"
+              role="menuitem"
+            >
+              <LogOut size={14} strokeWidth={2} />
+              {copy.logout}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
