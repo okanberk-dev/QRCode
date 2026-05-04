@@ -126,7 +126,9 @@ async function renderAnalyticsPage({
     where: { id: payload.userId },
     select: {
       id: true,
-      restaurants: { select: { id: true, name: true, aiAnalyticsEnabled: true } },
+      restaurants: {
+        select: { id: true, name: true, aiAnalyticsEnabled: true, targetRating: true },
+      },
     },
   });
   if (!user) redirect(`/${locale}/auth/login`);
@@ -418,6 +420,24 @@ async function renderAnalyticsPage({
     volume: b.volume,
   }));
 
+  // Phase 8c+ §38.26 — Owner-tanımlı hedef puan. Single-restaurant filter
+  // aktifse o restoran'ın `targetRating`ini kullan; çoklu restoran (all-mode)
+  // veya hedef set edilmemişse 4.0 industry default.
+  const filterRestaurants = user.restaurants.filter((r) => restaurantIds.includes(r.id));
+  let resolvedTargetRating = 4.0;
+  if (filterRestaurants.length === 1 && typeof filterRestaurants[0].targetRating === 'number') {
+    resolvedTargetRating = filterRestaurants[0].targetRating;
+  } else if (filterRestaurants.length > 1) {
+    // Çoklu restoran: hedefi olanların ortalaması; hiçbiri set etmemişse 4.0.
+    const targets = filterRestaurants
+      .map((r) => r.targetRating)
+      .filter((t): t is number => typeof t === 'number');
+    if (targets.length > 0) {
+      resolvedTargetRating =
+        Math.round((targets.reduce((sum, t) => sum + t, 0) / targets.length) * 10) / 10;
+    }
+  }
+
   // ---- Aspect breakdown (yemek / servis / atmosfer) ----
   // Schema'da rating'lere ek olarak 3 alt-rating var (Feedback.foodRating, vb.).
   // Public review formu opsiyonel sorduğu için sparse data — yeterli sample
@@ -581,7 +601,7 @@ async function renderAnalyticsPage({
           Range filter'dan bağımsız sabit pencere; mevcut window-day etkileşim
           trendi (aşağıda) farklı amaca hizmet eder (günlük + range-bound). */}
       <section className="bz-card p-5 sm:p-6">
-        <WeeklyTrendChart weeks={weeklyTrend} targetRating={4.0} isTr={isTr} />
+        <WeeklyTrendChart weeks={weeklyTrend} targetRating={resolvedTargetRating} isTr={isTr} />
       </section>
 
       {/* 2-col 2fr/1fr: window-day etkileşim + Platform paylaşımı (koşullu) */}

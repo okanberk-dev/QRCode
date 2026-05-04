@@ -58,6 +58,9 @@ interface RestaurantPayload {
   workingHours: string | null;
   temporarilyClosed: boolean;
   closedReason: string | null;
+  // Phase 8c+ §38.26 — Owner-tanımlı hedef puan, Analytics 14-haftalık trend
+  // chart için. null = henüz ayarlanmadı (chart 4.0 fallback).
+  targetRating: number | null;
 }
 
 const SECTION_TABS: SettingsTab[] = [
@@ -151,6 +154,8 @@ export default function RestaurantSettingsPage() {
           workingHours: data.workingHours ?? null,
           temporarilyClosed: data.temporarilyClosed ?? false,
           closedReason: data.closedReason ?? null,
+          targetRating:
+            typeof data.targetRating === 'number' ? data.targetRating : null,
         });
       } catch (err) {
         if (!cancelled) setError((err as Error).message);

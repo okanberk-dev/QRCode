@@ -5878,3 +5878,67 @@ Sonra plan onaylanınca implement et.
 - 🟡 `Restaurant.targetRating` schema field + Settings UI (yeni backlog)
 - 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
 - 🛡️ Security follow-ups (CLAUDE.md §38.2)
+
+### 38.26 2026-05-04 — Restaurant.targetRating schema + Owner Settings UI
+
+§38.25'te WeeklyTrendChart'ta hardcoded `4.0` industry default kullanılıyordu. Bu PR owner'a hedef puanını özelleştirme yolu açar — yeni nullable schema field + Settings UI + API validation + chart dinamik DB read.
+
+**Schema** (`prisma/schema.prisma` Restaurant):
+- Yeni alan: `targetRating Float? @map("target_rating")`
+- Nullable — owner ayarlamamışsa chart 4.0 fallback gösterir.
+- Float (Int değil) çünkü 4.5 gibi yarım-puan hedefler tipik (fine dining 4.7).
+- Migration: `20260504160000_add_restaurant_target_rating/migration.sql` — `ADD COLUMN "target_rating" DOUBLE PRECISION;` (NOT NULL constraint yok — eski satırlar null kalır, breaking change yok).
+
+**API** (`/api/restaurants/[id]` PUT):
+- Body `targetRating` accept; defansif validation (mass assignment guard):
+  - `null` accept (unset)
+  - `number` + `Number.isFinite` + `[1, 5]` arası
+  - Aksi halde `400 INVALID_TARGET_RATING`
+- Update payload spread'ine eklendi (`...(targetRating !== undefined && { targetRating: ... })`)
+- GET endpoint `include` kullandığı için tüm Restaurant alanları otomatik döner — explicit select genişlemesi gerekmedi.
+
+**Settings UI** (`BusinessGeneralSettings.tsx`):
+- Yeni "Performans hedefi" SettingsCard (Pin icon) — "Durum" cardından önce.
+- `<Field label="Hedef ortalama puan" hint="1.0 – 5.0 arası (örn. 4.5). Boş bırakırsan 4.0 fallback.">` + `<input inputMode="decimal">`.
+- Client-side validation: `Number.isFinite + [1, 5]` range. Comma → dot accept (`replace(',', '.')`) TR locale rahat.
+- Form state `targetRating: string` (boş = "henüz ayarlanmadı"), payload'a parse'li number veya null.
+- `RestaurantData` interface + `toForm` helper'ında `targetRating: number | null` + `string` mapping.
+
+**Analytics page dinamik read** (`/dashboard/analytics/page.tsx`):
+- `user.restaurants` select'ine `targetRating: true` eklendi.
+- Yeni `resolvedTargetRating` resolver:
+  - Single restaurant filter aktif + restoran'ın targetRating'i set'liyse → o değer.
+  - Çoklu restaurant'ta hedef set olanların ortalaması (1 ondalık yuvarlanmış).
+  - Hiçbiri set etmemiş veya filter all → 4.0 fallback.
+- `<WeeklyTrendChart targetRating={resolvedTargetRating}>` prop'u dinamik.
+
+**Dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `prisma/schema.prisma` | `Restaurant.targetRating Float?` |
+| `prisma/migrations/20260504160000_add_restaurant_target_rating/migration.sql` | YENİ — `ADD COLUMN "target_rating" DOUBLE PRECISION;` |
+| `src/app/api/restaurants/[id]/route.ts` | Body destructure + range validation + update payload spread |
+| `src/components/dashboard/settings/sections/BusinessGeneralSettings.tsx` | RestaurantData + FormState + toForm + validate + payload + UI input (Performans hedefi card) |
+| `src/app/[locale]/dashboard/restaurants/[id]/settings/page.tsx` | RestaurantPayload interface + initial load |
+| `src/app/[locale]/dashboard/analytics/page.tsx` | user.restaurants select genişlet + resolvedTargetRating helper + chart prop dinamik |
+| `CLAUDE.md` | §38.25 backlog notu kapatıldı + §38.26 yeni log |
+
+**Yapma**:
+- Migration'da `DEFAULT 4.0` ekleme — eski owner'lar arasında "ben 4.0 hedefliyorum" varsayımı yanlış olur; null + UI fallback (4.0) açıkça "henüz ayarlanmadı" semantiği taşır.
+- `targetRating: Int` yapma — yarım-puan hedef (4.5, 4.7) imkansız olur. Float zorunlu.
+- Validation'da sadece client-side bırakma — mass assignment riski (admin tarafı atlatabilir). Server-side defansif `[1, 5]` range guard zorunlu.
+- Çoklu restaurant'ta her birinin target'ını ayrı chart göster — owner panelinde 1 chart yeterli, ortalama veya per-filter.
+
+**Yap**:
+- Yeni weekly/monthly aggregate chart eklenirse (örn. monthly trend) `resolvedTargetRating` resolver'ı reuse.
+- Schema'ya yeni nullable field eklerken aynı paterni: `Float? @map(...)` + migration ADD COLUMN nullable + GET include intact + PUT body destructure + range validation + UI input.
+
+**Test + verification**:
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors.
+- Migration `prisma migrate deploy` Vercel build script'inde otomatik çalışır (CLAUDE.md §14.1 paterni). Production migration güvenli (nullable, default null).
+- Manual test: Settings page Performans hedefi inputta 4.5 gir → kaydet → analytics page'de hedef line 4.5'e taşınmış olmalı.
+
+**Backlog güncel** (Bu PR sonrası):
+- 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2 — operatör tetiği bekliyor)

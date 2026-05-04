@@ -132,6 +132,13 @@ model Restaurant {
   initialGoogleRating           Float?    @map("initial_google_rating")
   currentGoogleRating           Float?    @map("current_google_rating")
 
+  // Owner-tanımlı hedef puan — Analytics 14-haftalık trend chart'ında dashed
+  // line + delta to target hint için (CLAUDE.md §38.25 + §38.26). Null = owner
+  // henüz ayarlamadı, chart fallback olarak 4.0 industry default gösterir.
+  // Range 1.0–5.0 (UI client-side validate); float çünkü 4.5 gibi yarım-puan
+  // hedefler tipik (örn. fine dining 4.7 hedefler).
+  targetRating                  Float?    @map("target_rating")
+
   getirYemekUrl                 String?   @map("getir_yemek_url")
   yemekSepetiUrl                String?   @map("yemek_sepeti_url")
   trendyolYemekUrl              String?   @map("trendyol_yemek_url")

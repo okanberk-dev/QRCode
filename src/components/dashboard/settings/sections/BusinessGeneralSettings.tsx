@@ -28,6 +28,9 @@ interface RestaurantData {
   googlePlaceId: string | null;
   notificationEmail: string | null;
   isActive: boolean;
+  /** Phase 8c+ §38.26 — Owner-tanımlı hedef puan, Analytics 14-haftalık trend
+   *  chart için. null = henüz ayarlanmadı (chart 4.0 fallback). */
+  targetRating: number | null;
 }
 
 interface BusinessGeneralSettingsProps {
@@ -53,6 +56,8 @@ interface FormState {
   googlePlaceId: string;
   notificationEmail: string;
   isActive: boolean;
+  /** Empty string = "henüz ayarlanmadı" (DB null). Number-string parse save'de. */
+  targetRating: string;
 }
 
 function toForm(r: RestaurantData): FormState {
@@ -68,6 +73,8 @@ function toForm(r: RestaurantData): FormState {
     googlePlaceId: r.googlePlaceId ?? "",
     notificationEmail: r.notificationEmail ?? "",
     isActive: r.isActive ?? true,
+    targetRating:
+      typeof r.targetRating === "number" ? r.targetRating.toFixed(1) : "",
   };
 }
 
@@ -141,6 +148,14 @@ export function BusinessGeneralSettings({
     if (form.notificationEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.notificationEmail.trim())) {
       next.notificationEmail = "Geçerli bir e-posta girin.";
     }
+    // Phase 8c+ §38.26 — targetRating range validation (1.0–5.0).
+    const targetRaw = form.targetRating.trim();
+    if (targetRaw) {
+      const parsed = Number(targetRaw.replace(',', '.'));
+      if (!Number.isFinite(parsed) || parsed < 1 || parsed > 5) {
+        next.targetRating = "Hedef puan 1.0 – 5.0 arasında olmalı.";
+      }
+    }
     setFieldErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -155,6 +170,13 @@ export function BusinessGeneralSettings({
     setError(null);
     setSuccess(null);
     try {
+      // Phase 8c+ §38.26 — boş input → null (henüz ayarlanmadı), aksi halde
+      // 1.0–5.0 arası float (validate guard zaten çalıştı).
+      const targetRaw = form.targetRating.trim();
+      const targetRatingValue = targetRaw
+        ? Math.round(Number(targetRaw.replace(',', '.')) * 10) / 10
+        : null;
+
       const payload = {
         name: form.name.trim(),
         slug: form.slug.trim(),
@@ -167,6 +189,7 @@ export function BusinessGeneralSettings({
         googlePlaceId: form.googlePlaceId.trim() || null,
         notificationEmail: form.notificationEmail.trim() || null,
         isActive: form.isActive,
+        targetRating: targetRatingValue,
       };
       const res = await fetch(`/api/restaurants/${restaurant.id}`, {
         method: "PUT",
@@ -368,6 +391,32 @@ export function BusinessGeneralSettings({
               value={form.googlePlaceId}
               onChange={(e) => set("googlePlaceId", e.target.value)}
               placeholder="ChIJ... veya https://maps.app.goo.gl/..."
+            />
+          </Field>
+        </div>
+      </SettingsCard>
+
+      {/* Phase 8c+ §38.26 — Owner-tanımlı hedef puan. Analytics 14-haftalık
+          trend chart'ında dashed line + delta to target hint için. */}
+      <SettingsCard
+        icon={<Pin size={18} />}
+        title="Performans hedefi"
+        description="Analytics 14-haftalık trend grafiğinde hedef puan çizgisi olarak görünür. Ayarlamazsan 4.0 endüstri ortalaması kullanılır."
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
+            label="Hedef ortalama puan"
+            error={fieldErrors.targetRating}
+            hint="1.0 – 5.0 arası (örn. 4.5). Boş bırakırsan 4.0 fallback."
+          >
+            <input
+              className="bz-input"
+              type="text"
+              inputMode="decimal"
+              value={form.targetRating}
+              maxLength={4}
+              onChange={(e) => set("targetRating", e.target.value)}
+              placeholder="4.5"
             />
           </Field>
         </div>
