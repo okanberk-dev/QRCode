@@ -9,10 +9,6 @@ import {
   MessageSquareText,
   Inbox,
   Download,
-  Crown,
-  Sparkles,
-  CheckCircle2,
-  AlertTriangle,
 } from 'lucide-react';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
@@ -26,6 +22,7 @@ import {
   type CustomerSegment,
   type CustomerSentiment,
 } from '@/lib/customers';
+import { SegmentChip } from '@/components/customers/SegmentChip';
 import { CustomerDetailDrawer } from './_components/CustomerDetailDrawer';
 
 // Phase 8 — Owner Customers CRM (CLAUDE.md §23.7 Phase 12.x).
@@ -99,39 +96,6 @@ function parseRange(raw: string | undefined): { start: Date | null; key: RangeKe
   if (raw === 'all') return { start: null, key: 'all' };
   const k = (raw && raw in RANGE_PRESETS ? raw : '30d') as Exclude<RangeKey, 'all'>;
   return { start: new Date(Date.now() - RANGE_PRESETS[k] * 24 * 60 * 60 * 1000), key: k };
-}
-
-// Segment chip — tasarım kaynağı page-customers.jsx ile aynı renk eşleme
-// (VIP graphite + Düzenli lime + Yeni info + Risk danger). 4 yerde kullanım
-// (table desktop, mobile card, filter pills, drawer header) tek render-yer.
-function SegmentChip({
-  segment,
-  locale,
-  size = 'md',
-}: {
-  segment: CustomerSegment;
-  locale: Locale;
-  size?: 'sm' | 'md';
-}) {
-  const isTr = locale === 'tr';
-  const map: Record<CustomerSegment, { label: { tr: string; en: string }; bg: string; fg: string; Icon: typeof Crown }> = {
-    vip: { label: { tr: 'VIP', en: 'VIP' }, bg: '#0A0A0A', fg: '#FFFFFF', Icon: Crown },
-    loyal: { label: { tr: 'Düzenli', en: 'Loyal' }, bg: '#EAF9B8', fg: '#0A0A0A', Icon: CheckCircle2 },
-    new: { label: { tr: 'Yeni', en: 'New' }, bg: '#DBEAFE', fg: '#1E40AF', Icon: Sparkles },
-    risk: { label: { tr: 'Risk', en: 'Risk' }, bg: '#FEE2E2', fg: '#991B1B', Icon: AlertTriangle },
-  };
-  const m = map[segment];
-  const px = size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]';
-  const iconSize = size === 'sm' ? 9 : 10;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full font-semibold tracking-tight whitespace-nowrap ${px}`}
-      style={{ backgroundColor: m.bg, color: m.fg }}
-    >
-      <m.Icon size={iconSize} strokeWidth={2.2} />
-      {isTr ? m.label.tr : m.label.en}
-    </span>
-  );
 }
 
 // Sentiment dot+label — drawer + table cell + mobile card.

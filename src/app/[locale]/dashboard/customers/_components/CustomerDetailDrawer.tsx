@@ -14,13 +14,11 @@ import {
   TrendingUp,
   AlertTriangle,
   ArrowRight,
-  Crown,
-  Sparkles,
-  CheckCircle2,
   Wallet,
 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
+import { SegmentChip } from '@/components/customers/SegmentChip';
 
 // Phase 8d — Customer detail drawer (CLAUDE.md §23.7 Phase 12).
 // Phase 8c (CLAUDE.md §38.16): Segment + LTV + Sentiment chips header'da; LTV
@@ -81,30 +79,6 @@ function ratingTone(rating: number): { color: string; label: 'pos' | 'neu' | 'ne
   if (rating >= 4) return { color: '#16A34A', label: 'pos' };
   if (rating <= 2) return { color: '#DC2626', label: 'neg' };
   return { color: '#A3A3A3', label: 'neu' };
-}
-
-// Phase 8c segment chip — same styling as customers/page.tsx for consistency.
-function SegmentChip({ segment, locale }: { segment: CustomerSegment; locale: Locale }) {
-  const isTr = locale === 'tr';
-  const map: Record<
-    CustomerSegment,
-    { label: { tr: string; en: string }; bg: string; fg: string; Icon: typeof Crown }
-  > = {
-    vip: { label: { tr: 'VIP', en: 'VIP' }, bg: '#0A0A0A', fg: '#FFFFFF', Icon: Crown },
-    loyal: { label: { tr: 'Düzenli', en: 'Loyal' }, bg: '#EAF9B8', fg: '#0A0A0A', Icon: CheckCircle2 },
-    new: { label: { tr: 'Yeni', en: 'New' }, bg: '#DBEAFE', fg: '#1E40AF', Icon: Sparkles },
-    risk: { label: { tr: 'Risk', en: 'Risk' }, bg: '#FEE2E2', fg: '#991B1B', Icon: AlertTriangle },
-  };
-  const m = map[segment];
-  return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
-      style={{ backgroundColor: m.bg, color: m.fg }}
-    >
-      <m.Icon size={10} strokeWidth={2.2} />
-      {isTr ? m.label.tr : m.label.en}
-    </span>
-  );
 }
 
 function SentimentBadge({
