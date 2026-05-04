@@ -14,10 +14,19 @@ import {
   TrendingUp,
   AlertTriangle,
   ArrowRight,
+  Crown,
+  Sparkles,
+  CheckCircle2,
+  Wallet,
 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
+import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
 
 // Phase 8d — Customer detail drawer (CLAUDE.md §23.7 Phase 12).
+// Phase 8c (CLAUDE.md §38.16): Segment + LTV + Sentiment chips header'da; LTV
+// 4. tile olarak stats grid'e (audit önerisi: mobile card'da gizli, drawer'da
+// görünür).
+//
 // URL state pattern: ?detail=<key> param drawer açar. useSearchParams ile
 // detect; key değişince fetch tetiklenir. Mevcut Modal primitive paterni
 // (focus trap + ESC + body scroll lock + outside click) tek-amaçlı slide-in
@@ -38,6 +47,10 @@ interface CustomerData {
     firstSeenAt: string | null;
     lastSeenAt: string | null;
     truncated: boolean;
+    segment?: CustomerSegment;
+    ltv?: number;
+    sentiment?: CustomerSentiment;
+    daysSinceLastVisit?: number | null;
   };
   feedbacks: Array<{
     id: string;
@@ -68,6 +81,56 @@ function ratingTone(rating: number): { color: string; label: 'pos' | 'neu' | 'ne
   if (rating >= 4) return { color: '#16A34A', label: 'pos' };
   if (rating <= 2) return { color: '#DC2626', label: 'neg' };
   return { color: '#A3A3A3', label: 'neu' };
+}
+
+// Phase 8c segment chip — same styling as customers/page.tsx for consistency.
+function SegmentChip({ segment, locale }: { segment: CustomerSegment; locale: Locale }) {
+  const isTr = locale === 'tr';
+  const map: Record<
+    CustomerSegment,
+    { label: { tr: string; en: string }; bg: string; fg: string; Icon: typeof Crown }
+  > = {
+    vip: { label: { tr: 'VIP', en: 'VIP' }, bg: '#0A0A0A', fg: '#FFFFFF', Icon: Crown },
+    loyal: { label: { tr: 'Düzenli', en: 'Loyal' }, bg: '#EAF9B8', fg: '#0A0A0A', Icon: CheckCircle2 },
+    new: { label: { tr: 'Yeni', en: 'New' }, bg: '#DBEAFE', fg: '#1E40AF', Icon: Sparkles },
+    risk: { label: { tr: 'Risk', en: 'Risk' }, bg: '#FEE2E2', fg: '#991B1B', Icon: AlertTriangle },
+  };
+  const m = map[segment];
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
+      style={{ backgroundColor: m.bg, color: m.fg }}
+    >
+      <m.Icon size={10} strokeWidth={2.2} />
+      {isTr ? m.label.tr : m.label.en}
+    </span>
+  );
+}
+
+function SentimentBadge({
+  sentiment,
+  locale,
+}: {
+  sentiment: CustomerSentiment;
+  locale: Locale;
+}) {
+  const isTr = locale === 'tr';
+  const map: Record<CustomerSentiment, { color: string; label: { tr: string; en: string } }> = {
+    pos: { color: '#16A34A', label: { tr: 'Olumlu', en: 'Positive' } },
+    neu: { color: '#A3A3A3', label: { tr: 'Nötr', en: 'Neutral' } },
+    neg: { color: '#DC2626', label: { tr: 'Olumsuz', en: 'Negative' } },
+  };
+  const s = map[sentiment];
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-2 py-0.5 text-[11px] text-[#525252] whitespace-nowrap">
+      <span
+        aria-hidden
+        className="h-1.5 w-1.5 rounded-full shrink-0"
+        style={{ backgroundColor: s.color }}
+      />
+      {isTr ? s.label.tr : s.label.en}
+    </span>
+  );
 }
 
 function formatRelative(iso: string, locale: Locale): string {
@@ -227,6 +290,13 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                   {data.customer.restaurantName}
                 </p>
               )}
+              {/* Phase 8c: Segment + Sentiment chips */}
+              {data?.stats.segment && data?.stats.sentiment && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <SegmentChip segment={data.stats.segment} locale={locale} />
+                  <SentimentBadge sentiment={data.stats.sentiment} locale={locale} />
+                </div>
+              )}
             </div>
           </div>
           <button
@@ -289,8 +359,8 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                 )}
               </div>
 
-              {/* Stats — 3 tile */}
-              <div className="grid grid-cols-3 gap-2">
+              {/* Stats — Phase 8c 4 tile (LTV eklendi) */}
+              <div className="grid grid-cols-2 gap-2">
                 <div className="bz-card-soft p-3">
                   <span className="pulse-eyebrow text-[#737373]">
                     {isTr ? 'YORUM' : 'REVIEWS'}
@@ -311,6 +381,26 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                       {data.stats.avgRating != null ? data.stats.avgRating.toFixed(1) : '—'}
                     </span>
                     <Star size={11} className="text-[#C6F24E]" fill="#C6F24E" />
+                  </div>
+                </div>
+                <div className="bz-card-soft p-3">
+                  <span className="pulse-eyebrow text-[#737373]">
+                    {isTr ? 'LTV' : 'LTV'}
+                  </span>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span
+                      className="bz-mono tabular-nums text-[18px] font-semibold text-[#0A0A0A]"
+                      title={
+                        isTr
+                          ? 'Etkileşim ağırlığı (yorum × ortalama puan)'
+                          : 'Engagement weight (reviews × avg rating)'
+                      }
+                    >
+                      {data.stats.ltv != null
+                        ? data.stats.ltv.toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US')
+                        : '—'}
+                    </span>
+                    <Wallet size={11} className="text-[#A3A3A3]" />
                   </div>
                 </div>
                 <div className="bz-card-soft p-3">

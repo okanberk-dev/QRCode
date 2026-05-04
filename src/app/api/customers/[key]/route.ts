@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { deriveCustomerFields } from '@/lib/customers';
 
 // Phase 8d — Customer detail (CLAUDE.md §23.7 Phase 12).
+// Phase 8c (CLAUDE.md §38.16) extends response with segment + ltv + sentiment
+// derived via lib/customers.ts saf helper'ları (drawer 4-tile + chip için).
+//
 // Owner-scoped single customer endpoint. URL key = "restaurantId|contactKey"
 // (contactKey = lower(email) || phone). Drawer fetcher kullanır.
 //
@@ -113,6 +117,15 @@ export async function GET(
       createdAt: f.createdAt.toISOString(),
     }));
 
+    // Derive Phase 8c segment + LTV + sentiment for drawer chips/tile.
+    const visits = agg._count._all;
+    const avgRating = agg._avg.rating;
+    const derived = deriveCustomerFields({
+      visits,
+      avgRating,
+      lastAt: agg._max.createdAt,
+    });
+
     return NextResponse.json(
       {
         customer: {
@@ -124,11 +137,15 @@ export async function GET(
           restaurantName: restaurant?.name ?? null,
         },
         stats: {
-          totalReviews: agg._count._all,
-          avgRating: agg._avg.rating,
+          totalReviews: visits,
+          avgRating,
           firstSeenAt: agg._min.createdAt?.toISOString() ?? null,
           lastSeenAt: agg._max.createdAt?.toISOString() ?? null,
-          truncated: agg._count._all > MAX_FEEDBACKS,
+          truncated: visits > MAX_FEEDBACKS,
+          segment: derived.segment,
+          ltv: derived.ltv,
+          sentiment: derived.sentiment,
+          daysSinceLastVisit: derived.daysSinceLastVisit,
         },
         feedbacks: items,
       },

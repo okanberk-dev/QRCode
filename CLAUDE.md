@@ -5406,3 +5406,78 @@ Sonra plan onaylanınca implement et.
 - Product decision'ları AskUserQuestion ile netleştir (segment threshold'lar)
 - §38.16 dokümantasyon disiplini explicit
 - Senior backend + frontend disiplini somut kriterlerle
+
+### 38.16 2026-05-04 — Phase 8c Customers CRM tamamlama (segment + LTV + sentiment)
+
+§38.14 Phase 8d Customer Detail Drawer ile başlayan CRM modülünü Phase 8c kapsamında segment + LTV + sentiment + filter pill'leri ile tamamladık. Tasarım kaynağı `.design-owner-2026/project/page-customers.jsx` ile parite + audit önerilerine göre UI density (drawer-centric) optimize edildi.
+
+**Audit (3 paralel Explore agent, yeni iş öncesi)**:
+1. **Composer regression** (Yorumlar sayfası §38.15): ✅ Tüm 5 fix doğru uygulanmış — a11y label/aria/focus, Cmd+Enter shortcut + kbd hint, tone-change auto-regenerate, auto-grow viewport-aware, detail wrapper `lg:min-h-0 lg:overflow-y-auto` + 400px grid + Gmail-pattern draft clear + retry button + scrollIntoView. Phase 8c scope'undan etkilenmez.
+2. **Mobile/Desktop UX gap**: ⚠️ Density risk var. Mobile card 5 → 7-8 satır kalabalıklık, desktop 6 → 9 kolon 1280px'de overflow yüksek. Audit önerisi (kabul edildi): drawer-centric — list'te essentials, LTV drawer'a, "İşletme" kolon drop, sticky first column.
+3. **Dashboard segment crossover**: BUGÜN BEKLEYEN + segment badge yüksek değerli; **Phase 8c+ scope** (bu PR'da implement edilmedi, backlog tablosunda).
+
+**Threshold kararları (kullanıcı onayı, AskUserQuestion)**:
+
+| Karar | Değer | Sebep |
+|---|---|---|
+| Segment thresholds | **Konservatif** — VIP: visits ≥ 5 + avgRating ≥ 4.0 / Risk: avgRating < 3.0 + visits ≥ 2 / New: visits ≤ 2 / Loyal: kalan | Tasarımda 4 segment (.design-owner-2026), churned scope creep |
+| Churned segment | **Hayır** | Tasarım parity korunur (4 segment), 5. pill mobile da row taksim kaybı |
+| LTV formülü | **`visits × avgRating × 10`** | Konservatif heuristic, owner'a yanıltıcı "altın" iddiası vermez |
+| UI yaklaşımı | **Drawer-centric** | Mobile sade (Segment+Sentiment), Desktop 7 kolon + sticky first |
+
+**Kalıcı kararlar (yeni endpoint/feature eklenirken bu disiplin)**:
+
+- **`src/lib/customers.ts` saf fonksiyon helper kaynak**: `computeSegment` + `computeLTV` + `computeSentiment` + `computeDaysSinceLastVisit` + `deriveCustomerFields` (4-in-1 aggregate). 4 callsite (list endpoint + detail endpoint + export endpoint + page server component) tek source-of-truth, SQL'de duplicate yok. Helper drift önleme.
+- **Segment sınıflandırma sırası**: `new → risk → vip → loyal`. "new" ilk önce çünkü visits ≤ 2 olan müşteriye risk/vip yetersiz örneklem; "risk" VIP'ten önce çünkü memnuniyetsizlik signal'ı sadakat signal'ından kritik (avgRating < 3 + visits ≥ 5 durumunda VIP yerine Risk seçilmeli).
+- **Pagination strategy**: SQL `LIMIT 5000` cap (CLAUDE.md §19.4.4 ölçek için rahat) + JS-side derive + filter + slice. SQL'de segment hesaplaması (HAVING + CASE) yapılmıyor — helper drift önleme. Cap aşılırsa `meta.truncated: true` döner, UI amber banner gösterir.
+- **Segment counts**: pill label'ları için tüm enriched array üzerinden hesaplanır; segment filter UYGULANMADAN. Her pill mevcut range/scope toplamını gösterir, filter kaybolmasın.
+- **CSV export sütun sırası**: 14 sütun (eski 9 + 5 yeni: Ort. Puan, Segment, LTV, Sentiment, Son Ziyaret gün önce). Sentiment label TR'de "Olumlu/Nötr/Olumsuz" (CSV is internal/ops use, locale TR fixed).
+
+**Yeni dosyalar**:
+
+| Dosya | Amaç |
+|---|---|
+| `src/lib/customers.ts` | Saf fonksiyon helper'ları (5 export) |
+| `tests/customers.test.ts` | 28 unit test (5 suite, 100% coverage saf fonksiyonlarda) |
+
+**Genişletilen dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/app/api/customers/route.ts` | LIMIT 5000 + JS-side derive + segmentCounts + segment filter + truncated meta |
+| `src/app/api/customers/[key]/route.ts` | response.stats'a 4 yeni alan (segment + ltv + sentiment + daysSinceLastVisit) |
+| `src/app/api/customers/export/route.ts` | 5 yeni CSV sütunu + segment query param filter |
+| `src/app/[locale]/dashboard/customers/page.tsx` | Tablo 7-kolon (İşletme drop, Segment + LTV + Sentiment ekle), sticky first column, mobile card Segment+Sentiment row, segment filter pills + URL state |
+| `src/app/[locale]/dashboard/customers/_components/CustomerDetailDrawer.tsx` | Header'a SegmentChip + SentimentBadge, 3-tile → 4-tile (LTV ekle), CustomerData type genişletildi |
+
+**Yapma**:
+- LTV birimini "₺" / "$" / "TL" prefix'i ile sun — gerçek satış data'sı yok, currency iddiası yanıltıcı (heuristic disclosure: hover title `'Etkileşim ağırlığı (yorum × ortalama puan)'`)
+- Churned segment ekleme — tasarım parity korunur, scope creep
+- Segment hesaplamasını SQL'e taşımak (HAVING + CASE) — helper drift kaynağı; helper 4 callsite'tan reuse edilmeli (CLAUDE.md §28 disiplin)
+- Mobile card'a LTV row eklemek — kalabalıklık, drawer'a yönlendir (audit kararı)
+- Desktop tabloda "İşletme" kolonu geri eklemek — restaurant_name drawer header'da var, dedupe; restaurant_name + branch zaten ad altı subtitle'da görünür
+- Filter pill'lerde segment filter aktifken segmentCounts'ı yeniden hesaplama — counts pre-filter olmalı (her pill toplam göstermesi UX gereği)
+- Segment threshold'larını component-level inline duplicate etme — helper'dan import et
+
+**Yap**:
+- Yeni segment-related feature eklerken `deriveCustomerFields()` aggregate kullan — 4 alan tek seferde derive eder, race olmaz
+- Threshold değişikliği gerekirse `src/lib/customers.ts` tek nokta + tests/customers.test.ts unit test'i güncelle (28 test'in 8'i threshold-bound)
+- Yeni Pulse component eklerken Pulse Badge primitive `kind` enum'u (ok/off/warn/danger/info/lime/ghost) yetmezse inline pill (custom bg/fg) yaz — VIP graphite gibi unique branding için Badge enum genişletme yerine inline (CLAUDE.md §7 abstraction kaçınma)
+- Drawer'da yeni stat alanı eklerken 4-tile grid'i `grid-cols-2` korunur (5+ alan eklenirse `grid-cols-2 sm:grid-cols-3` ile tier'lendirilebilir)
+- Yeni filter (örn. range + branch + segment combine) eklerken segmentCounts hesabı pre-filter konumunda kalmalı; sadece filtered array'in derived counts'ı UI etkilemez
+
+**Backlog (operatör kararı bekleyen, Phase 8c+ scope)**:
+
+| Item | Sev | Sebep |
+|---|---|---|
+| **Dashboard "BUGÜN BEKLEYEN" segment badge** (VIP müşteri yanıt bekliyor / Risk müşteri win-back fırsatı) | MED | §38.14 dashboard zenginleştirme + Phase 8c helper export reuse. Audit'in en yüksek-değerli crossover'ı. |
+| Admin `/customers` segment kolonu | MED | Helper reuse; aynı API olmadan admin endpoint kendi raw SQL'inde derive eder |
+| Weekly digest mail segment context | LOW | "Bu hafta 3 VIP müşterin yorum bıraktı" gibi segment-bazlı sayım — `weekly-digest-summary` template'i + helper |
+| LTV gerçek satış data integration | DEFER | Iyzico Wave 3.5 sonrası — POS data + bu helper'ı override etme; şimdilik heuristic |
+| Customer notes / tags / manuel segment override | DEFER | Yeni schema (CustomerNote model) + write-side; bu PR'ın scope'u dışında |
+
+**Sonraki AI session için ipuçları**:
+1. PR #420 (Phase 8d) merge edilmişse fresh main'den Phase 8c eklenmiştir; daha sonraki PR'lar `claude/*` branch'inden açılır.
+2. Stacked PR YAPMA — squash gotcha §21.22 2x yaşandı; tek consolidated PR önerilir.
+3. Threshold/copy değişikliği lokal: `src/lib/customers.ts` + test güncel + page label'ları + drawer helper component'i.
+4. CLAUDE.md §38.17 yeni feature için sonraki alt-section.

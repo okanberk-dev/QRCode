@@ -3,12 +3,31 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { deriveCustomerFields, type CustomerSegment } from '@/lib/customers';
 
 // Owner-scoped Customers CSV export (Phase 8b, CLAUDE.md §23.7 Phase 12).
+// Phase 8c (CLAUDE.md §38.16): adds Avg Rating + Days Since + Segment + LTV +
+// Sentiment columns (5 new) derived via lib/customers.ts. ?segment= query
+// param mirrors list endpoint filter.
+//
 // Mirrors /api/admin/customers/export structure but enforces owner scope via
 // getScopedRestaurantIds. UTF-8 + BOM for TR characters in Excel.
 
 const RANGE_PRESETS = { '7d': 7, '30d': 30, '90d': 90 } as const;
+const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal']);
+
+const SEGMENT_LABEL: Record<CustomerSegment, string> = {
+  vip: 'VIP',
+  loyal: 'Düzenli',
+  new: 'Yeni',
+  risk: 'Risk',
+};
+
+const SENTIMENT_LABEL = {
+  pos: 'Olumlu',
+  neu: 'Nötr',
+  neg: 'Olumsuz',
+} as const;
 
 interface AggregateRow {
   restaurant_name: string | null;
@@ -18,6 +37,7 @@ interface AggregateRow {
   branch: string | null;
   platform: string | null;
   last_rating: number | null;
+  avg_rating: number | null;
   last_at: Date;
   feedback_count: bigint;
 }
@@ -54,6 +74,10 @@ export async function GET(req: NextRequest) {
   const requireEmail = toBool(searchParams.get('hasEmail'));
   const requirePhone = toBool(searchParams.get('hasPhone'));
   const requireComment = toBool(searchParams.get('hasComment'));
+  const segmentParamRaw = (searchParams.get('segment') || '').trim().toLowerCase();
+  const segmentParam = VALID_SEGMENTS.has(segmentParamRaw as CustomerSegment)
+    ? (segmentParamRaw as CustomerSegment)
+    : null;
 
   const rangeStart = parseRange(rangeParam);
   const restaurantId =
@@ -95,6 +119,7 @@ export async function GET(req: NextRequest) {
         (ARRAY_AGG(f.branch ORDER BY f.created_at DESC) FILTER (WHERE f.branch IS NOT NULL AND f.branch <> ''))[1] AS branch,
         (ARRAY_AGG(f.platform ORDER BY f.created_at DESC) FILTER (WHERE f.platform IS NOT NULL))[1] AS platform,
         (ARRAY_AGG(f.rating ORDER BY f.created_at DESC))[1] AS last_rating,
+        AVG(f.rating)::float AS avg_rating,
         MAX(f.created_at) AS last_at,
         COUNT(*)::bigint AS feedback_count
       FROM feedback f
@@ -104,9 +129,36 @@ export async function GET(req: NextRequest) {
       ORDER BY MAX(f.created_at) DESC
     `);
 
-    const header = ['İsim', 'E-posta', 'Telefon', 'İşletme', 'Şube', 'Platform', 'Son Puan', 'Yorum Sayısı', 'Son Yorum'];
+    const now = new Date();
+
+    const header = [
+      'İsim',
+      'E-posta',
+      'Telefon',
+      'İşletme',
+      'Şube',
+      'Platform',
+      'Son Puan',
+      'Ort. Puan',
+      'Yorum Sayısı',
+      'Segment',
+      'LTV',
+      'Sentiment',
+      'Son Ziyaret (gün önce)',
+      'Son Yorum',
+    ];
     const lines = [header.map(esc).join(',')];
     for (const r of rows) {
+      const visits = Number(r.feedback_count);
+      const derived = deriveCustomerFields({
+        visits,
+        avgRating: r.avg_rating,
+        lastAt: r.last_at,
+        now,
+      });
+      // Apply segment filter post-derive (mirror list endpoint).
+      if (segmentParam && derived.segment !== segmentParam) continue;
+
       lines.push([
         esc(r.name),
         esc(r.email),
@@ -115,7 +167,12 @@ export async function GET(req: NextRequest) {
         esc(r.branch),
         esc(r.platform),
         esc(r.last_rating),
-        esc(Number(r.feedback_count)),
+        esc(r.avg_rating != null ? r.avg_rating.toFixed(2) : ''),
+        esc(visits),
+        esc(SEGMENT_LABEL[derived.segment]),
+        esc(derived.ltv),
+        esc(SENTIMENT_LABEL[derived.sentiment]),
+        esc(derived.daysSinceLastVisit ?? ''),
         esc(new Date(r.last_at).toISOString().slice(0, 10)),
       ].join(','));
     }
