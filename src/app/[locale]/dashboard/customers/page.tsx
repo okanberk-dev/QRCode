@@ -1,7 +1,19 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Mail, Phone, Star, Users, MessageSquareText, Inbox, Download } from 'lucide-react';
+import {
+  Mail,
+  Phone,
+  Star,
+  Users,
+  MessageSquareText,
+  Inbox,
+  Download,
+  Crown,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+} from 'lucide-react';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
@@ -9,9 +21,17 @@ import type { PanelActor } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { PageHeader, StatCard, EmptyState, Badge } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
+import {
+  deriveCustomerFields,
+  type CustomerSegment,
+  type CustomerSentiment,
+} from '@/lib/customers';
 import { CustomerDetailDrawer } from './_components/CustomerDetailDrawer';
 
 // Phase 8 — Owner Customers CRM (CLAUDE.md §23.7 Phase 12.x).
+// Phase 8c (CLAUDE.md §38.16): segment + LTV + sentiment columns + segment
+// filter pills. Helper'lar lib/customers.ts (saf fonksiyon, test edilebilir).
+//
 // Server component + direct Prisma raw SQL (admin /api/admin/customers paterni
 // reuse). IDOR via getScopedRestaurantIds. Anonim feedback (email + phone null)
 // listede yer almaz; dedupe key (restaurantId, COALESCE(lower(email), phone)).
@@ -22,6 +42,8 @@ const RANGE_PRESETS = { '7d': 7, '30d': 30, '90d': 90 } as const;
 type RangeKey = keyof typeof RANGE_PRESETS | 'all';
 
 const PAGE_SIZE = 25;
+const MAX_AGGREGATE_ROWS = 5000;
+const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal']);
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -30,6 +52,7 @@ interface PageProps {
     search?: string;
     restaurantId?: string;
     page?: string;
+    segment?: string;
   }>;
 }
 
@@ -54,10 +77,90 @@ interface SummaryRow {
   avg_rating: number | null;
 }
 
+interface EnrichedRow {
+  restaurant_id: string;
+  restaurant_name: string | null;
+  contact_key: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  branch: string | null;
+  last_rating: number | null;
+  avg_rating: number | null;
+  last_at: Date;
+  feedback_count: number;
+  segment: CustomerSegment;
+  ltv: number;
+  sentiment: CustomerSentiment;
+  days_since: number | null;
+}
+
 function parseRange(raw: string | undefined): { start: Date | null; key: RangeKey } {
   if (raw === 'all') return { start: null, key: 'all' };
   const k = (raw && raw in RANGE_PRESETS ? raw : '30d') as Exclude<RangeKey, 'all'>;
   return { start: new Date(Date.now() - RANGE_PRESETS[k] * 24 * 60 * 60 * 1000), key: k };
+}
+
+// Segment chip — tasarım kaynağı page-customers.jsx ile aynı renk eşleme
+// (VIP graphite + Düzenli lime + Yeni info + Risk danger). 4 yerde kullanım
+// (table desktop, mobile card, filter pills, drawer header) tek render-yer.
+function SegmentChip({
+  segment,
+  locale,
+  size = 'md',
+}: {
+  segment: CustomerSegment;
+  locale: Locale;
+  size?: 'sm' | 'md';
+}) {
+  const isTr = locale === 'tr';
+  const map: Record<CustomerSegment, { label: { tr: string; en: string }; bg: string; fg: string; Icon: typeof Crown }> = {
+    vip: { label: { tr: 'VIP', en: 'VIP' }, bg: '#0A0A0A', fg: '#FFFFFF', Icon: Crown },
+    loyal: { label: { tr: 'Düzenli', en: 'Loyal' }, bg: '#EAF9B8', fg: '#0A0A0A', Icon: CheckCircle2 },
+    new: { label: { tr: 'Yeni', en: 'New' }, bg: '#DBEAFE', fg: '#1E40AF', Icon: Sparkles },
+    risk: { label: { tr: 'Risk', en: 'Risk' }, bg: '#FEE2E2', fg: '#991B1B', Icon: AlertTriangle },
+  };
+  const m = map[segment];
+  const px = size === 'sm' ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-[11px]';
+  const iconSize = size === 'sm' ? 9 : 10;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full font-semibold tracking-tight whitespace-nowrap ${px}`}
+      style={{ backgroundColor: m.bg, color: m.fg }}
+    >
+      <m.Icon size={iconSize} strokeWidth={2.2} />
+      {isTr ? m.label.tr : m.label.en}
+    </span>
+  );
+}
+
+// Sentiment dot+label — drawer + table cell + mobile card.
+// Tasarım Sparkbar primitive'ini bilinçli olarak inline dot+label'a indirgiyor
+// (audit önerisi: density, 9-kolon tablo overflow guard).
+function SentimentCell({
+  sentiment,
+  locale,
+}: {
+  sentiment: CustomerSentiment;
+  locale: Locale;
+}) {
+  const isTr = locale === 'tr';
+  const map: Record<CustomerSentiment, { color: string; label: { tr: string; en: string } }> = {
+    pos: { color: '#16A34A', label: { tr: 'Olumlu', en: 'Positive' } },
+    neu: { color: '#A3A3A3', label: { tr: 'Nötr', en: 'Neutral' } },
+    neg: { color: '#DC2626', label: { tr: 'Olumsuz', en: 'Negative' } },
+  };
+  const s = map[sentiment];
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[#525252] whitespace-nowrap">
+      <span
+        aria-hidden
+        className="h-1.5 w-1.5 rounded-full shrink-0"
+        style={{ backgroundColor: s.color }}
+      />
+      {isTr ? s.label.tr : s.label.en}
+    </span>
+  );
 }
 
 export default async function OwnerCustomersPage({ params, searchParams }: PageProps) {
@@ -65,6 +168,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const sp = await searchParams;
   const locale: Locale = localeParam === 'en' ? 'en' : 'tr';
   const isTr = locale === 'tr';
+  const intLocale = isTr ? 'tr-TR' : 'en-US';
 
   // Auth — same pattern as dashboard/layout.tsx.
   const cookieStore = await cookies();
@@ -129,8 +233,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const search = (sp.search || '').trim().slice(0, 100) || null;
   const restaurantIdParam =
     sp.restaurantId && scopedIds.includes(sp.restaurantId) ? sp.restaurantId : null;
+  const segmentParamRaw = (sp.segment || '').trim().toLowerCase();
+  const segmentFilter = VALID_SEGMENTS.has(segmentParamRaw as CustomerSegment)
+    ? (segmentParamRaw as CustomerSegment)
+    : null;
   const page = Math.max(1, Number.parseInt(sp.page || '1', 10) || 1);
-  const offset = (page - 1) * PAGE_SIZE;
 
   // Where clause builder (Prisma raw SQL — admin /api/admin/customers paterni).
   const whereParts: Prisma.Sql[] = [
@@ -157,13 +264,16 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const whereSql = Prisma.join(whereParts, ' AND ');
 
   let summaryRow: SummaryRow | undefined;
-  let rows: AggregateRow[] = [];
-  let total = 0;
+  let aggregates: AggregateRow[] = [];
   let restaurants: { id: string; name: string }[] = [];
   let errored = false;
 
   try {
-    const [summary, fetched, totalRows, restaurantList] = await Promise.all([
+    // Phase 8c — fetch up to MAX_AGGREGATE_ROWS aggregate rows; JS-side derive
+    // segment/LTV/sentiment + filter + pagination. SQL'de segment hesaplaması
+    // duplicate olmasın diye (helper drift önleme) bilinçli pattern (CLAUDE.md
+    // §38.16). Buaze ölçeği için 5000 cap rahat.
+    const [summary, fetched, restaurantList] = await Promise.all([
       prisma.$queryRaw<SummaryRow[]>(Prisma.sql`
         SELECT
           COUNT(DISTINCT CONCAT(f.restaurant_id, '|', COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')))) AS customers,
@@ -191,15 +301,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         WHERE ${whereSql}
         GROUP BY f.restaurant_id, r.name, contact_key
         ORDER BY MAX(f.created_at) DESC
-        LIMIT ${PAGE_SIZE} OFFSET ${offset}
-      `),
-      prisma.$queryRaw<{ total: bigint }[]>(Prisma.sql`
-        SELECT COUNT(*)::bigint AS total FROM (
-          SELECT 1
-          FROM feedback f
-          WHERE ${whereSql}
-          GROUP BY f.restaurant_id, COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
-        ) g
+        LIMIT ${MAX_AGGREGATE_ROWS}
       `),
       prisma.restaurant.findMany({
         where: { id: { in: scopedIds } },
@@ -208,20 +310,71 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       }),
     ]);
     summaryRow = summary[0];
-    rows = fetched;
-    total = Number(totalRows[0]?.total ?? 0);
+    aggregates = fetched;
     restaurants = restaurantList;
   } catch (error) {
     console.error('[OWNER_CUSTOMERS_PAGE]', error);
     errored = true;
   }
 
+  // JS-side enrichment + filter + slice (Phase 8c).
+  const now = new Date();
+  const enriched: EnrichedRow[] = aggregates.map((r) => {
+    const visits = Number(r.feedback_count);
+    const derived = deriveCustomerFields({
+      visits,
+      avgRating: r.avg_rating,
+      lastAt: r.last_at,
+      now,
+    });
+    return {
+      restaurant_id: r.restaurant_id,
+      restaurant_name: r.restaurant_name,
+      contact_key: r.contact_key,
+      name: r.name,
+      email: r.email,
+      phone: r.phone,
+      branch: r.branch,
+      last_rating: r.last_rating,
+      avg_rating: r.avg_rating,
+      last_at: r.last_at,
+      feedback_count: visits,
+      segment: derived.segment,
+      ltv: derived.ltv,
+      sentiment: derived.sentiment,
+      days_since: derived.daysSinceLastVisit,
+    };
+  });
+
+  // Segment counts hesapla (filter pill label'ları) — segment filter UYGULANMADAN.
+  // Her pill, mevcut range/scope için segment toplamını gösterir.
+  const segmentCounts: Record<'all' | CustomerSegment, number> = {
+    all: enriched.length,
+    vip: 0,
+    loyal: 0,
+    new: 0,
+    risk: 0,
+  };
+  for (const row of enriched) {
+    segmentCounts[row.segment] += 1;
+  }
+
+  // Apply segment filter (post-derive).
+  const filtered = segmentFilter
+    ? enriched.filter((r) => r.segment === segmentFilter)
+    : enriched;
+
+  const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const hasFilter = Boolean(search || restaurantIdParam || rangeKey !== '30d');
+  const offset = (page - 1) * PAGE_SIZE;
+  const rows = filtered.slice(offset, offset + PAGE_SIZE);
+  const truncated = aggregates.length >= MAX_AGGREGATE_ROWS;
+
+  const hasFilter = Boolean(search || restaurantIdParam || segmentFilter || rangeKey !== '30d');
 
   // URL builder for filter forms / pagination / drawer detail links.
   function buildHref(
-    over: Partial<Record<'range' | 'search' | 'restaurantId' | 'page' | 'detail', string>>,
+    over: Partial<Record<'range' | 'search' | 'restaurantId' | 'page' | 'detail' | 'segment', string>>,
   ) {
     const q = new URLSearchParams();
     const r = over.range ?? rangeKey;
@@ -230,6 +383,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     if (s) q.set('search', s);
     const rid = over.restaurantId ?? restaurantIdParam ?? '';
     if (rid) q.set('restaurantId', rid);
+    // segment: '' explicitly clears; undefined keeps current.
+    const seg = over.segment !== undefined ? over.segment : (segmentFilter ?? '');
+    if (seg) q.set('segment', seg);
     const p = over.page ?? String(page);
     if (p && p !== '1') q.set('page', p);
     if (over.detail) q.set('detail', over.detail);
@@ -238,12 +394,25 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   }
 
   function fmtDate(iso: string | Date) {
-    return new Date(iso).toLocaleString(isTr ? 'tr-TR' : 'en-US', {
+    return new Date(iso).toLocaleDateString(intLocale, {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
     });
   }
+
+  // Segment pills config — table-of-truth, render desktop + mobile.
+  const SEGMENT_PILLS: Array<{
+    key: 'all' | CustomerSegment;
+    labelTr: string;
+    labelEn: string;
+  }> = [
+    { key: 'all', labelTr: 'Tümü', labelEn: 'All' },
+    { key: 'vip', labelTr: 'VIP', labelEn: 'VIP' },
+    { key: 'loyal', labelTr: 'Düzenli', labelEn: 'Loyal' },
+    { key: 'new', labelTr: 'Yeni', labelEn: 'New' },
+    { key: 'risk', labelTr: 'Risk', labelEn: 'Risk' },
+  ];
 
   return (
     <div className="space-y-5">
@@ -263,6 +432,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                 if (rangeKey !== '30d') q.set('range', rangeKey);
                 if (search) q.set('search', search);
                 if (restaurantIdParam) q.set('restaurantId', restaurantIdParam);
+                if (segmentFilter) q.set('segment', segmentFilter);
                 const qs = q.toString();
                 return `/api/customers/export${qs ? `?${qs}` : ''}`;
               })()}
@@ -282,16 +452,24 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         </div>
       )}
 
+      {truncated && !errored && (
+        <div className="bz-card border-[#FDE68A] bg-[#FFFBEB] p-3 text-[12px] text-[#92400E]">
+          {isTr
+            ? `Çok fazla müşteri var; yalnızca ilk ${MAX_AGGREGATE_ROWS.toLocaleString('tr-TR')} kayıt gösteriliyor. Daha dar bir tarih aralığı veya işletme filtresi seçebilirsin.`
+            : `Too many customers; showing the first ${MAX_AGGREGATE_ROWS.toLocaleString('en-US')} records. Narrow the date range or business filter to refine.`}
+        </div>
+      )}
+
       {/* Summary tiles */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5">
         <StatCard
           label={isTr ? 'Müşteri' : 'Customers'}
-          value={(summaryRow ? Number(summaryRow.customers) : 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          value={(summaryRow ? Number(summaryRow.customers) : 0).toLocaleString(intLocale)}
           icon={<Users size={14} />}
         />
         <StatCard
           label={isTr ? 'Yorum' : 'Reviews'}
-          value={(summaryRow ? Number(summaryRow.feedbacks) : 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          value={(summaryRow ? Number(summaryRow.feedbacks) : 0).toLocaleString(intLocale)}
           icon={<MessageSquareText size={14} />}
         />
         <StatCard
@@ -304,6 +482,40 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           icon={<Star size={14} className="text-[#C6F24E]" />}
           accent="#C6F24E"
         />
+      </div>
+
+      {/* Segment filter pills — Phase 8c. URL state ?segment=. */}
+      <div
+        className="bz-card flex flex-wrap items-center gap-1.5 p-3"
+        role="tablist"
+        aria-label={isTr ? 'Segment filtresi' : 'Segment filter'}
+      >
+        {SEGMENT_PILLS.map((pill) => {
+          const active = pill.key === 'all' ? segmentFilter === null : segmentFilter === pill.key;
+          const count = segmentCounts[pill.key];
+          return (
+            <Link
+              key={pill.key}
+              href={buildHref({ segment: pill.key === 'all' ? '' : pill.key, page: '1' })}
+              role="tab"
+              aria-selected={active}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                active
+                  ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                  : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
+              }`}
+            >
+              {isTr ? pill.labelTr : pill.labelEn}
+              <span
+                className={`bz-mono tabular-nums text-[10.5px] rounded-full px-1.5 py-0.5 ${
+                  active ? 'bg-white/15 text-white' : 'bg-[#F5F5F5] text-[#737373]'
+                }`}
+              >
+                {count.toLocaleString(intLocale)}
+              </span>
+            </Link>
+          );
+        })}
       </div>
 
       {/* Filter row — URL-driven (no client island, no debounce) */}
@@ -356,6 +568,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           </select>
         )}
         <input type="hidden" name="range" value={rangeKey} />
+        {segmentFilter && <input type="hidden" name="segment" value={segmentFilter} />}
         <button type="submit" className="bz-btn-primary">
           {isTr ? 'Uygula' : 'Apply'}
         </button>
@@ -385,16 +598,21 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         </div>
       ) : (
         <>
-          {/* Desktop table */}
-          <div className="bz-card hidden overflow-hidden lg:block">
-            <table className="bz-table w-full">
+          {/* Desktop table — Phase 8c restructure (audit): "İşletme" drop
+              (drawer'da var), Segment + LTV + Sentiment kolonları eklendi.
+              Sticky first column "Müşteri" 1280px overflow guard'ı için. */}
+          <div className="bz-card hidden overflow-x-auto lg:block">
+            <table className="bz-table w-full min-w-[920px]">
               <thead>
                 <tr>
-                  <th className="text-left">{isTr ? 'Müşteri' : 'Customer'}</th>
+                  <th className="text-left sticky left-0 z-10 bg-[#FAFAFA]">
+                    {isTr ? 'Müşteri' : 'Customer'}
+                  </th>
                   <th className="text-left">{isTr ? 'İletişim' : 'Contact'}</th>
-                  <th className="text-left">{isTr ? 'İşletme' : 'Business'}</th>
+                  <th className="text-left">{isTr ? 'Segment' : 'Segment'}</th>
                   <th className="text-right">{isTr ? 'Yorum' : 'Reviews'}</th>
-                  <th className="text-right">{isTr ? 'Son puan' : 'Last ★'}</th>
+                  <th className="text-right">{isTr ? 'LTV' : 'LTV'}</th>
+                  <th className="text-left">{isTr ? 'Memnuniyet' : 'Sentiment'}</th>
                   <th className="text-right">{isTr ? 'Son ziyaret' : 'Last seen'}</th>
                 </tr>
               </thead>
@@ -407,7 +625,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   const detailHref = buildHref({ detail: detailKey });
                   return (
                     <tr key={detailKey} className="bz-tr-hover">
-                      <td>
+                      <td className="sticky left-0 z-10 bg-white">
                         <div className="flex items-center gap-3">
                           <div className="bz-avatar h-8 w-8 text-[12px]">{initials}</div>
                           <div className="min-w-0">
@@ -419,8 +637,10 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                             >
                               {r.name || (isTr ? 'Anonim' : 'Anonymous')}
                             </Link>
-                            {r.branch && (
+                            {(r.restaurant_name || r.branch) && (
                               <div className="text-[11px] text-[#737373] truncate">
+                                {r.restaurant_name}
+                                {r.branch && r.restaurant_name && ' · '}
                                 {r.branch}
                               </div>
                             )}
@@ -435,7 +655,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                               className="inline-flex items-center gap-1.5 text-[#0A0A0A] hover:text-[#A8D62E]"
                             >
                               <Mail size={11} strokeWidth={2} />
-                              <span className="truncate">{r.email}</span>
+                              <span className="truncate max-w-[180px]">{r.email}</span>
                             </a>
                           )}
                           {r.phone && (
@@ -450,21 +670,18 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                         </div>
                       </td>
                       <td>
-                        <span className="text-[12px] text-[#525252]">
-                          {r.restaurant_name || '—'}
-                        </span>
+                        <SegmentChip segment={r.segment} locale={locale} />
                       </td>
                       <td className="text-right tabular-nums text-[13px] font-semibold">
-                        {Number(r.feedback_count)}
+                        {r.feedback_count}
                       </td>
                       <td className="text-right">
-                        {r.last_rating != null ? (
-                          <Badge kind={r.last_rating >= 4 ? 'lime' : r.last_rating >= 3 ? 'warn' : 'danger'}>
-                            {r.last_rating}★
-                          </Badge>
-                        ) : (
-                          <span className="text-[#A3A3A3]">—</span>
-                        )}
+                        <span className="bz-mono tabular-nums text-[12.5px] font-semibold text-[#0A0A0A]">
+                          {r.ltv.toLocaleString(intLocale)}
+                        </span>
+                      </td>
+                      <td>
+                        <SentimentCell sentiment={r.sentiment} locale={locale} />
                       </td>
                       <td className="text-right text-[12px] text-[#737373]">
                         {fmtDate(r.last_at)}
@@ -476,7 +693,8 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             </table>
           </div>
 
-          {/* Mobile card list */}
+          {/* Mobile card list — Phase 8c: Segment chip + Sentiment dot eklendi
+              (audit önerisi: drawer-centric, LTV mobile card'da gösterilmez). */}
           <div className="grid gap-3 lg:hidden">
             {rows.map((r) => {
               const initials = (r.name || r.email || r.phone || '?')
@@ -510,6 +728,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                       </div>
                     </div>
                   </div>
+                  {/* Phase 8c: Segment + Sentiment row */}
+                  <div className="flex items-center justify-between gap-2">
+                    <SegmentChip segment={r.segment} locale={locale} size="sm" />
+                    <SentimentCell sentiment={r.sentiment} locale={locale} />
+                  </div>
                   <div className="flex flex-col gap-1 text-[12px]">
                     {r.email && (
                       <a
@@ -532,7 +755,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   </div>
                   <div className="flex items-center justify-between border-t border-[#EDEDED] pt-2 text-[11px] text-[#737373]">
                     <span>
-                      <strong className="text-[#0A0A0A]">{Number(r.feedback_count)}</strong>{' '}
+                      <strong className="text-[#0A0A0A]">{r.feedback_count}</strong>{' '}
                       {isTr ? 'yorum' : 'reviews'}
                     </span>
                     <span>{fmtDate(r.last_at)}</span>
