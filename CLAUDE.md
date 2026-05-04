@@ -5470,7 +5470,7 @@ Sonra plan onaylanınca implement et.
 
 | Item | Sev | Sebep |
 |---|---|---|
-| **Dashboard "BUGÜN BEKLEYEN" segment badge** (VIP müşteri yanıt bekliyor / Risk müşteri win-back fırsatı) | MED | §38.14 dashboard zenginleştirme + Phase 8c helper export reuse. Audit'in en yüksek-değerli crossover'ı. |
+| ~~Dashboard "BUGÜN BEKLEYEN" segment badge~~ ✅ **Tamamlandı** §38.17 | — | PR §38.17 merged |
 | Admin `/customers` segment kolonu | MED | Helper reuse; aynı API olmadan admin endpoint kendi raw SQL'inde derive eder |
 | Weekly digest mail segment context | LOW | "Bu hafta 3 VIP müşterin yorum bıraktı" gibi segment-bazlı sayım — `weekly-digest-summary` template'i + helper |
 | LTV gerçek satış data integration | DEFER | Iyzico Wave 3.5 sonrası — POS data + bu helper'ı override etme; şimdilik heuristic |
@@ -5481,3 +5481,51 @@ Sonra plan onaylanınca implement et.
 2. Stacked PR YAPMA — squash gotcha §21.22 2x yaşandı; tek consolidated PR önerilir.
 3. Threshold/copy değişikliği lokal: `src/lib/customers.ts` + test güncel + page label'ları + drawer helper component'i.
 4. CLAUDE.md §38.17 yeni feature için sonraki alt-section.
+
+### 38.17 2026-05-04 — Dashboard "BUGÜN BEKLEYEN" segment badge crossover
+
+§38.16 backlog tablosunda en yüksek-değerli crossover olarak işaretlenen iş bu PR'da kapatıldı. Owner home'daki "BUGÜN BEKLEYEN" section (yanıtsız low-rating feedback list) artık her satırda müşteri segment chip'i (VIP / Düzenli / Yeni / Risk) gösterir → owner aksiyon önceliklendirmesi data-odaklı (VIP yanıt bekliyor = reputation priority, Risk = win-back urgency).
+
+**SegmentChip extraction (CLAUDE.md §7 — 3+ kuralı tetiklendi)**:
+- 2 inline kopya (customers/page.tsx + drawer) + 3. callsite (dashboard) → **`src/components/customers/SegmentChip.tsx` extract edildi** (pure presentational, server + client component'lerden import edilebilir).
+- 3 callsite ortak source-of-truth: `SEGMENT_MAP` const'ı (Crown / CheckCircle2 / Sparkles / AlertTriangle ikonları + 4 renk eşlemesi), `size: 'sm' | 'md'` prop'u.
+- Migration: `customers/page.tsx`'teki inline `SegmentChip` (29 satır) silindi → import edildi. Drawer'daki inline `SegmentChip` (22 satır) silindi → import edildi (Crown/Sparkles/CheckCircle2 lucide import'ları da temizlendi).
+
+**Dashboard `pendingTasks` query**:
+- `include` → `select` migration (CLAUDE.md §14.1 defensive select disiplini); explicit `email`, `phone`, `restaurantId` field'ları + alt alanlar select'lendi (segment derivation contact_key için zorunlu).
+
+**Customer aggregate post-fetch**:
+- Audit "Seçenek B" kararı uygulandı: SQL kompleksitesinden kaçınma, basit raw query (`WHERE (restaurant_id, contact_key) IN VALUES`). 4-row küçük yük, +5ms tolere edilebilir (CLAUDE.md §14.1 connection_limit=1).
+- `Prisma.sql\`(\${id}, \${key})\`` tuple match — SQL injection guard tüm değerler parametreli.
+- `hasKvkkConsent = TRUE` zorunlu (CLAUDE.md §13.5 paterni — anonim feedback ve consent dışı kayıtlar aggregate'e dahil edilmez).
+- `try/catch` fail-soft: aggregate query çökse de pending tasks list intact kalır (chip render olmaz, mevcut UX bozulmaz). `console.error` log + Sentry capture (CLAUDE.md §38.13 server-side flush kör nokta — log Vercel runtime'da görünür kalır).
+
+**JS-side merge + UI render**:
+- `pendingTasksWithSegment` map: contact_key bulunmayan satırlar için `segment: null` (anonim feedback). UI'da `task.segment && <SegmentChip>` conditional → null durumda render skip.
+- Desktop: yıldızların yanına `size="sm"` chip (`hidden sm:inline-flex`); mobile: comment altında ayrı satır (`mt-1 flex sm:hidden`). Layout density audit önerisine sadık.
+
+**Dosyalar**:
+| Dosya | Değişim |
+|---|---|
+| `src/components/customers/SegmentChip.tsx` | YENİ — extract'lı pure component (45 satır) |
+| `src/app/[locale]/dashboard/customers/page.tsx` | inline `SegmentChip` sil + import; lucide Crown/Sparkles/CheckCircle2/AlertTriangle import'ları temizlendi |
+| `src/app/[locale]/dashboard/customers/_components/CustomerDetailDrawer.tsx` | inline `SegmentChip` sil + import; lucide Crown/Sparkles/CheckCircle2 import'ları temizlendi |
+| `src/app/[locale]/dashboard/page.tsx` | (a) `Prisma` + `deriveCustomerFields` + `SegmentChip` import; (b) `pendingTasks` query `include` → `select` (5 yeni alan); (c) `pendingCustomerAggregates` raw query (try/catch fail-soft); (d) `pendingTasksWithSegment` map + UI render conditional chip |
+
+**Yapma**:
+- SentimentCell / SentimentBadge'i bu PR'da extract etme — hâlâ 2 yerde (drawer + customers/page.tsx), §7 "3+ kuralı" tetiklenmedi.
+- `pendingTasks` aggregate query'sini transaction içine taşıma — sequential connection_limit=1 toplam latency'ye eklenir; post-fetch küçük query +5ms daha az invasive.
+- Aggregate fail durumunda dashboard'ı hata sayfasına yönlendirme — fail-soft pattern (try/catch + chip skip) UX'i koruyor.
+- Dashboard pending row'a LTV/sentiment ek bilgi ekleme — owner aksiyon-odaklı; tek segment yeterli, density artmaz.
+
+**Yap**:
+- Yeni callsite (örn. admin /customers segment kolonu, weekly digest mail segment context) `SegmentChip` import'u veya `deriveCustomerFields` aggregate kullanır — drift kaybolur.
+- Yeni dashboard widget'ı segment data'sına ihtiyaç duyarsa benzer post-fetch raw query paterni reuse — abstraction değil, copy-paste 2 satır.
+
+**Test + verification**:
+- Yeni unit test gerekmedi (CLAUDE.md §32.2 — UI snapshot kaçınma + helper Phase 8c'de 28 test'le coverage'da).
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors.
+
+**Sonraki crossover (CLAUDE.md §38.16 backlog)**:
+- Admin `/customers` segment kolonu (helper reuse, ayrı PR)
+- Weekly digest mail segment context ("Bu hafta 3 VIP yorum bıraktı")

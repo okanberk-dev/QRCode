@@ -1,8 +1,10 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { Prisma } from '@prisma/client';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { extractThemes } from '@/lib/analytics-themes';
+import { deriveCustomerFields, type CustomerSegment } from '@/lib/customers';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
@@ -25,6 +27,7 @@ import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
 import { Eyebrow, PageHeader, Sparkline, StatCard, PLATFORMS } from '@/components/ui';
+import { SegmentChip } from '@/components/customers/SegmentChip';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
 // minimal HTML, browser'da Recharts hydrate. `dynamic({ ssr: false })`
@@ -251,11 +254,26 @@ async function renderDashboardPage({
     }),
     // Bekleyen görevler — yanıtlanmamış low-rating yorumlar (HIGH 3 dashboard
     // task card için, tasarım .design-pulse-2026/.../page-dashboard.jsx).
+    // Phase 8c+ (CLAUDE.md §38.17): email/phone explicit select — Phase 8c
+    // segment helper'ı için contact_key türetilebilir (deriveCustomerFields
+    // sonrası SegmentChip render). include → select migration aynı zamanda
+    // CLAUDE.md §14.1 defensive select disiplini.
     prisma.feedback.findMany({
       where: { restaurantId: restIdIn, rating: { lte: 3 }, replies: { none: {} } },
       orderBy: { createdAt: 'desc' },
       take: 4,
-      include: { restaurant: { select: { name: true } } },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        rating: true,
+        comment: true,
+        branch: true,
+        createdAt: true,
+        restaurantId: true,
+        restaurant: { select: { name: true } },
+      },
     }),
     // SIK BAHSEDİLEN KONULAR — son 30 gün yorum metinleri (extractThemes
     // helper'ı için ham veri). Min 8 yorum + OpenAI key gereği helper içinde
@@ -406,6 +424,80 @@ async function renderDashboardPage({
     .map((f) => ({ rating: f.rating, comment: f.comment }));
   const themeCacheKey = `dashboard-themes:${user.id}:30d`;
   const dashboardThemes = await extractThemes(themeComments, locale, themeCacheKey, user.id);
+
+  // Phase 8c+ — pendingTasks her satırı için customer segment chip crossover
+  // (CLAUDE.md §38.17). Anonim feedback (email + phone null) → segment yok →
+  // chip render skip. Aggregate post-fetch tek raw query (CLAUDE.md §28.3.4
+  // "mevcut endpoint'e yeni alan ekleme" + audit'in "Seçenek B: SQL basit, +1
+  // round-trip" kararı). 4-row küçük yük, +5ms tolere edilebilir.
+  type PendingContactKey = { restaurantId: string; contactKey: string };
+  const pendingContactKeys: PendingContactKey[] = [];
+  for (const task of pendingTasks) {
+    if (!task.restaurantId) continue; // schema nullable; runtime where filter zaten daraltır
+    const key =
+      (task.email?.trim().toLowerCase() ?? '') ||
+      (task.phone?.trim() ?? '');
+    if (key) pendingContactKeys.push({ restaurantId: task.restaurantId, contactKey: key });
+  }
+
+  type CustomerAggregateRow = {
+    restaurant_id: string;
+    contact_key: string;
+    visits: bigint;
+    avg_rating: number | null;
+    last_at: Date;
+  };
+  let pendingCustomerAggregates: CustomerAggregateRow[] = [];
+  if (pendingContactKeys.length > 0) {
+    // Postgres VALUES tuple matching — (restaurant_id, contact_key) çiftleri.
+    // SQL injection guard: tüm değerler Prisma parametreleri olarak geçer.
+    const tuples = pendingContactKeys.map(
+      (p) => Prisma.sql`(${p.restaurantId}, ${p.contactKey})`,
+    );
+    try {
+      pendingCustomerAggregates = await prisma.$queryRaw<CustomerAggregateRow[]>(Prisma.sql`
+        SELECT
+          f.restaurant_id,
+          COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')) AS contact_key,
+          COUNT(*)::bigint AS visits,
+          AVG(f.rating)::float AS avg_rating,
+          MAX(f.created_at) AS last_at
+        FROM feedback f
+        WHERE f.has_kvkk_consent = TRUE
+          AND COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')) IS NOT NULL
+          AND (
+            f.restaurant_id,
+            COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
+          ) IN (${Prisma.join(tuples)})
+        GROUP BY f.restaurant_id, contact_key
+      `);
+    } catch (err) {
+      // Fail-soft — segment chip crossover faili mevcut "BUGÜN BEKLEYEN"
+      // section'ını kıramaz; chip görünmez ama task list intact.
+      console.error('[DASHBOARD_PENDING_AGGREGATE]', err);
+      pendingCustomerAggregates = [];
+    }
+  }
+
+  type PendingTaskWithSegment = (typeof pendingTasks)[number] & {
+    segment: CustomerSegment | null;
+  };
+  const pendingTasksWithSegment: PendingTaskWithSegment[] = pendingTasks.map((task) => {
+    const key =
+      (task.email?.trim().toLowerCase() ?? '') ||
+      (task.phone?.trim() ?? '');
+    if (!key) return { ...task, segment: null };
+    const agg = pendingCustomerAggregates.find(
+      (a) => a.restaurant_id === task.restaurantId && a.contact_key === key,
+    );
+    if (!agg) return { ...task, segment: null };
+    const derived = deriveCustomerFields({
+      visits: Number(agg.visits),
+      avgRating: agg.avg_rating,
+      lastAt: agg.last_at,
+    });
+    return { ...task, segment: derived.segment };
+  });
 
   // ---- Onboarding nudge (mevcut signal'lardan türet) ----
   const hasRestaurant = user.restaurants.length > 0;
@@ -563,7 +655,7 @@ async function renderDashboardPage({
             </Link>
           </header>
           <ul className="space-y-2">
-            {pendingTasks.map((task) => {
+            {pendingTasksWithSegment.map((task) => {
               const initial = (task.name || task.email || '?').charAt(0).toUpperCase();
               const ageMin = Math.floor((Date.now() - task.createdAt.getTime()) / 60000);
               const ageLabel =
@@ -595,10 +687,25 @@ async function renderDashboardPage({
                             />
                           ))}
                         </span>
+                        {/* Phase 8c+ segment chip — desktop'ta yıldızların yanında
+                            (CLAUDE.md §38.17). Anonim feedback'te chip render
+                            edilmez (segment null). */}
+                        {task.segment && (
+                          <span className="hidden sm:inline-flex shrink-0">
+                            <SegmentChip segment={task.segment} locale={locale} size="sm" />
+                          </span>
+                        )}
                       </div>
                       <p className="mt-0.5 truncate text-[11.5px] text-[#525252]">
                         {task.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
                       </p>
+                      {/* Mobile: chip comment'in altında ayrı satır — desktop'ta
+                          gizli (yıldızların yanına render edilir). */}
+                      {task.segment && (
+                        <div className="mt-1 flex sm:hidden">
+                          <SegmentChip segment={task.segment} locale={locale} size="sm" />
+                        </div>
+                      )}
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-0.5 text-[10.5px] text-[#737373]">
                       <span className="bz-mono tabular-nums">{ageLabel}</span>
