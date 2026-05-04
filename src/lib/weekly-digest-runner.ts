@@ -7,10 +7,12 @@
 // auth + JSON wrap eder. Next.js `route.ts` non-HTTP export'ları hata
 // veriyor, helper'lar `src/lib/`'a aittir.
 
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sendWeeklyDigest } from '@/lib/email';
 import { getNotificationPrefsForUser } from '@/lib/notification-preferences';
 import { extractWeeklyInsight, type WeeklyInsight } from '@/lib/weekly-insight';
+import { deriveCustomerFields, type CustomerSegment } from '@/lib/customers';
 
 export interface WeeklyDigestRecipient {
   restaurantId: string;
@@ -94,7 +96,7 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       createdAt: { gte: sevenDaysAgo },
     };
 
-    const [total, avgAgg, distribution, highRatings, aspectAggs, commentRows] = await Promise.all([
+    const [total, avgAgg, distribution, highRatings, aspectAggs, commentRows, segmentRows] = await Promise.all([
       prisma.feedback.count({ where }),
       prisma.feedback.aggregate({ _avg: { rating: true }, where }),
       prisma.feedback.groupBy({
@@ -114,6 +116,30 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
         orderBy: { createdAt: 'desc' },
         take: 30,
       }),
+      // Phase 8c+ (CLAUDE.md §38.21) — bu hafta yorum bırakan müşterilerin
+      // segment dağılımı. contact_key bazlı aggregate (visits + avgRating)
+      // → deriveCustomerFields ile segment derive. KVKK consent + non-anonim
+      // filter (owner /api/customers paterni). max 500 contact_key cap (haftalık
+      // hacim için fazlasıyla yeterli).
+      prisma.$queryRaw<Array<{
+        contact_key: string;
+        visits: bigint;
+        avg_rating: number | null;
+        last_at: Date;
+      }>>(Prisma.sql`
+        SELECT
+          COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')) AS contact_key,
+          COUNT(*)::bigint AS visits,
+          AVG(f.rating)::float AS avg_rating,
+          MAX(f.created_at) AS last_at
+        FROM feedback f
+        WHERE f.has_kvkk_consent = TRUE
+          AND f.restaurant_id = ${rest.id}
+          AND f.created_at >= ${sevenDaysAgo}
+          AND COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')) IS NOT NULL
+        GROUP BY contact_key
+        LIMIT 500
+      `),
     ]);
 
     if (total === 0) {
@@ -167,6 +193,19 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       : { summary: '', recommendation: '', source: 'fallback' };
     const hasAi = !!(aiInsight.summary || aiInsight.recommendation);
 
+    // Phase 8c+ — segment dağılımı (deriveCustomerFields). Tüm değerler 0
+    // ise mailde section gizlenir (template fail-safe).
+    const segmentCounts: Record<CustomerSegment, number> = { vip: 0, loyal: 0, new: 0, risk: 0 };
+    for (const row of segmentRows) {
+      const visits = Number(row.visits);
+      const derived = deriveCustomerFields({
+        visits,
+        avgRating: row.avg_rating,
+        lastAt: row.last_at,
+      });
+      segmentCounts[derived.segment] += 1;
+    }
+
     let emailSent = false;
     if (!dryRun) {
       try {
@@ -188,6 +227,7 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
             aspects,
           },
           aiInsight,
+          segmentCounts,
         });
         emailSent = ok;
         if (ok) sent++;
