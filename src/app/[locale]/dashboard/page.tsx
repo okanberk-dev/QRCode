@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { extractThemes } from '@/lib/analytics-themes';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
@@ -148,6 +149,7 @@ async function renderDashboardPage({
     last7Scans,
     prev7Scans,
     pendingTasks,
+    themesFeedbacks,
   ] = await prisma.$transaction([
     // KPI 4: Platforma yönlendirme (all-time) — değer KPI'da; delta last7 vs prev7
     prisma.feedback.count({ where: { restaurantId: restIdIn, ...REDIRECT_WHERE } }),
@@ -253,6 +255,19 @@ async function renderDashboardPage({
       orderBy: { createdAt: 'desc' },
       take: 4,
       include: { restaurant: { select: { name: true } } },
+    }),
+    // SIK BAHSEDİLEN KONULAR — son 30 gün yorum metinleri (extractThemes
+    // helper'ı için ham veri). Min 8 yorum + OpenAI key gereği helper içinde
+    // (yetersiz → empty fallback). Cache 1 saat (CLAUDE.md §34.9).
+    prisma.feedback.findMany({
+      where: {
+        restaurantId: restIdIn,
+        createdAt: { gte: new Date(now - 30 * 86400000) },
+        comment: { not: null },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 80,
+      select: { rating: true, comment: true },
     }),
   ]);
 
@@ -379,6 +394,17 @@ async function renderDashboardPage({
   const trialDaysLeft = user.trialEndsAt
     ? Math.max(0, Math.ceil((user.trialEndsAt.getTime() - Date.now()) / 86400000))
     : 0;
+
+  // SIK BAHSEDİLEN KONULAR — son 30 gün yorumlarından AI ile tema çıkarımı.
+  // extractThemes helper içinde min 8 yorum + OpenAI key kontrolü; yoksa
+  // empty fallback (UI section gizli). Cache 1 saat (CLAUDE.md §34.9).
+  const themeComments: Array<{ rating: number; comment: string }> = themesFeedbacks
+    .filter((f): f is { rating: number; comment: string } =>
+      typeof f.comment === 'string' && f.comment.length > 0,
+    )
+    .map((f) => ({ rating: f.rating, comment: f.comment }));
+  const themeCacheKey = `dashboard-themes:${user.id}:30d`;
+  const dashboardThemes = await extractThemes(themeComments, locale, themeCacheKey, user.id);
 
   // ---- Onboarding nudge (mevcut signal'lardan türet) ----
   const hasRestaurant = user.restaurants.length > 0;
@@ -756,6 +782,56 @@ async function renderDashboardPage({
               );
             })}
           </div>
+        </section>
+      )}
+
+      {/* SIK BAHSEDİLEN KONULAR — tasarım .design-pulse-2026/.../page-dashboard.jsx
+          Topic breakdown paterni. extractThemes (AI helper, gpt-4o-mini, cached
+          1h) son 30 gün yorumlarından top temaları çıkarır. Min 8 yorum yoksa
+          ya da OpenAI key yoksa section gizli (empty fallback). */}
+      {dashboardThemes.themes.length > 0 && (
+        <section className="bz-card p-5 sm:p-6">
+          <header className="mb-5 flex items-end justify-between gap-3">
+            <div>
+              <Eyebrow>{isTr ? 'SIK BAHSEDİLEN KONULAR' : 'TRENDING TOPICS'}</Eyebrow>
+              <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px]">
+                {isTr ? 'Müşteriler ne konuşuyor' : 'What customers talk about'}
+              </h2>
+            </div>
+            <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0">
+              {isTr ? 'SON 30 GÜN' : 'LAST 30 DAYS'}
+            </span>
+          </header>
+          <ul className="space-y-3.5">
+            {dashboardThemes.themes.slice(0, 5).map((t) => {
+              const top = dashboardThemes.themes[0]?.count ?? 1;
+              const pct = top > 0 ? (t.count / top) * 100 : 0;
+              return (
+                <li key={t.theme}>
+                  <div className="mb-1.5 flex items-center justify-between gap-2 text-[13px]">
+                    <span className="font-medium text-[#0A0A0A] truncate">{t.theme}</span>
+                    <span className="bz-mono tabular-nums text-[11px] text-[#737373] shrink-0">
+                      {t.count} {isTr ? 'bahsedilme' : 'mentions'}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-[#F5F5F5] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#0A0A0A] transition-all duration-500"
+                      style={{ width: `${Math.max(8, pct)}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {dashboardThemes.synthesis && (
+            <div className="mt-5 rounded-xl bg-[#0A0A0A] p-4 text-[13px] leading-[1.55] text-white">
+              <span className="pulse-eyebrow text-[#C6F24E] block mb-1.5">
+                {isTr ? 'PULSE AI ÇIKARIMI' : 'PULSE AI INSIGHT'}
+              </span>
+              <p className="text-white/85">{dashboardThemes.synthesis}</p>
+            </div>
+          )}
         </section>
       )}
 
