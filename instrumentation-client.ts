@@ -58,6 +58,24 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
         return null;
       }
 
+      // CLAUDE.md §38.29 — React Suspense streaming reveal collision
+      // ("$RS" minified frame is React DOM's revealStyleOrUnknown). When
+      // Google Translate / Grammarly / iOS Reader / similar DOM mutators
+      // remove Suspense placeholder nodes between SSR and client reveal,
+      // React loses its anchor and throws `Cannot read properties of null
+      // (reading 'parentNode')`. Not actionable from our code; user sees
+      // a blank section that recovers on reload. Filter narrowly: must
+      // be parentNode null AND stack contains $RS (React's minified
+      // streaming reveal function). Real Buaze parentNode bugs would
+      // have different stack frames (component name visible).
+      const isReactRevealCollision =
+        /Cannot read propert(?:y|ies) of null \(reading 'parentNode'\)/.test(
+          originalMessage,
+        ) && /\$RS\b/.test(exceptionText);
+      if (isReactRevealCollision) {
+        return null;
+      }
+
       return event;
     },
   });

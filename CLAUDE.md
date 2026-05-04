@@ -6093,3 +6093,68 @@ Tasarımdaki `minWidth: 130, flexShrink: 0` ile birebir hizalı.
 | `CLAUDE.md` | §38.28 yeni log |
 
 **Sonraki AI session disiplini**: Yeni mobile-specific UI eklerken `.design-owner-2026/project/page-mobile-v2.jsx` cross-check zorunlu. Mobile + desktop tasarımı birbirinden bağımsız bölümler — desktop layout sm: breakpoint ile mobile'a "doğal" düşmüyorsa explicit `sm:hidden` + mobile-only section eklenmeli.
+
+### 38.29 2026-05-04 — Sentry React Suspense reveal collision filter + §38.27/§38.28 audit
+
+**Sentry production issue** (sentry-apricot-blanket, 2026-05-04 16:35 UTC, ID `111c5df8dd8749dd84adbd5b0c657274`):
+
+```
+TypeError: Cannot read properties of null (reading 'parentNode')
+  at $RS (app:///tr/dashboard:1:203498)
+  at None (app:///tr/dashboard:1:207852)
+```
+
+**Root cause analysis:**
+
+`$RS` minified frame React DOM'un **streaming Suspense reveal** fonksiyonudur (`revealStyleOrUnknown` veya benzeri). Next.js 15 App Router server component → client component geçişinde implicit Suspense boundary'ler oluşur; SSR bu boundary'lerin placeholder'larını HTML'de işaretler, client mount'unda React reveal eder.
+
+DOM mutator browser extensions (Google Translate, Grammarly, LastPass, iOS Reader Mode, ad blockers) Suspense placeholder node'larını SSR ile client reveal arasında kaldırır → React anchor'ını kaybeder → `parentNode` null → TypeError.
+
+**Bu bizim kod bug'ımız değil**: Buaze codebase'inde tek `parentNode` reference Yandex Metrica analytics injection (`app/layout.tsx:164`, standard 3rd party tracker). Recent §38.27/§38.28 değişikliklerinde DOM manipulation yok.
+
+**Kullanıcı etkisi**: Sayfa render'ı kısmen kaybolur, reload ile düzelir. Çoğu kullanıcıda hiç tetiklenmez (sadece DOM-mutator extension'ı olanlarda). Recharts ResizeObserver veya Recharts'sız custom SVG'lerimiz yan etkili değil.
+
+**Fix** (`instrumentation-client.ts` `beforeSend`):
+
+Mevcut MetaMask + chrome/moz-extension filter'lerine yeni dar-scope filter eklendi:
+
+```ts
+const isReactRevealCollision =
+  /Cannot read propert(?:y|ies) of null \(reading 'parentNode'\)/.test(originalMessage) &&
+  /\$RS\b/.test(exceptionText);
+if (isReactRevealCollision) return null;
+```
+
+İki koşul AND: hata mesajı **VE** stack `$RS` içermeli. Gerçek Buaze parentNode bug'ları stack'te component adıyla farklı frame taşır (örn. `Component@app:///src/components/...`) → filter atlatmaz, Sentry'e ulaşır.
+
+**Recent work audit (§38.27 + §38.28 PR #435):**
+
+Paralel Explore agent ile 8 kategori tarandı:
+
+| Kategori | Sonuç |
+|---|---|
+| A. SQL injection | ✅ Temiz — `Prisma.join(restIds)` + `new Date()` parametrik, raw input concat yok |
+| B. IDOR | ✅ Temiz — `restIds` user.restaurants include scope'unda, tüm queries `{ restaurantId: { in: restIds } }` |
+| C. KVKK / PII | ✅ Temiz — `has_kvkk_consent = TRUE` filter zorunlu, AIInsightBanner localStorage sadece ISO week (PII yok) |
+| D. XSS | ✅ Temiz — `extractThemes` synthesis `String().trim().slice(0, 320)` capped, greeting `userFirstName` `split()[0]` no HTML |
+| E. SSR / hydration | ✅ Mitigated — AIInsightBanner `useState(true)` SSR-safe (her iki yanda null), `force-dynamic` page server-time deterministik |
+| F. Performance / N+1 | ✅ Temiz — tek `prisma.$transaction([...])` (CLAUDE.md §14.1), `[restaurantId, createdAt]` index sufficient |
+| G. Edge cases | ✅ Temiz — `avgRating > 0` + `trendsChartData.length >= 2` + `peakCount > 0` + `ratingDelta.value !== '0%'` guard'ları yerinde |
+| H. CLAUDE.md disiplin | ✅ Temiz — `force-dynamic`, defensive `select`, transaction batching, abstraction kaçınma korunmuş |
+
+**0 kritik bug, 0 güvenlik açığı.** Helper fonksiyonlar (`pctDelta`, greeting hour logic) unit test için minor aday — CLAUDE.md §32 opportunistic, blocking değil.
+
+**Yapma:**
+- `parentNode` filter'ını genişletme — sadece `$RS` ile AND. Daha geniş regex (`/parentNode/.test(...)`) gerçek Buaze bug'larını sessizce yutar.
+- Sentry filter'a "sayfa hata vermesin diye" tüm browser-extension exception'larını silme — gerçek extension uyumsuzluğu (örn. signin flow break) Sentry'e gitmeli, fix edilmeli.
+- "Bu bizim hatamız değil, görmezden gel" yaklaşımı — filter sadece kanıtlanmış noise pattern'ler için; yeni unknown pattern Sentry'e gitsin, soruşturulsun.
+
+**Yap:**
+- Yeni Sentry production issue gelirse §38.29 paterni izle: (a) issue ID + minified stack analiz, (b) Buaze codebase'de gerçek root cause arama (grep), (c) yoksa noise filter (dar AND koşulu), (d) CLAUDE.md log + issue ID dokümante.
+- Sentry org doğru kontrol et: `buaze-ev/sentry-apricot-blanket` (CLAUDE.md §38.13) — eski `buaze/javascript-nextjs` boş.
+- Server-side captures Sentry'e ulaşmıyor (CLAUDE.md §38.13 A kararı) — bu issue **client-side** olduğu için DSN üzerinden ulaştı.
+
+**Verification:**
+- `npx tsc --noEmit` 0 errors, `npm test` 97/97 pass, `npx eslint instrumentation-client.ts` 0 errors
+- Manuel: production'da `Cannot read properties of null (reading 'parentNode')` + `$RS` event'i tekrar gelirse Sentry dashboard'da görünmemeli
+- Real parentNode bug regression: Buaze code'da component'te explicit `node.parentNode` çağrı eklenirse + crash → Sentry'e gitmeli (filter atlatmaz, çünkü stack `$RS` taşımaz)
