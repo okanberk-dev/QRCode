@@ -174,6 +174,99 @@ test('buildActivityFeed: platform target shows stars + platform label', () => {
   assert.equal(event.target, '★★★★★ Google');
 });
 
+test('buildActivityFeed: KVKK consent false hides name (anonim fallback)', () => {
+  const [event] = buildActivityFeed({
+    feedbacks: [
+      {
+        id: 'f1',
+        name: 'Ayşe Demir',
+        rating: 5,
+        platform: 'google',
+        createdAt: t('2026-05-04T09:00:00Z'),
+        restaurantId: 'r1',
+        hasKvkkConsent: false,
+      },
+    ],
+    replies: [],
+    aiDrafts: [],
+    systemEvents: [],
+    isTr: true,
+  });
+  // KVKK opt-out → name ifşa edilmez, fallback "Müşteri".
+  assert.equal(event.actor, 'Müşteri');
+});
+
+test('buildActivityFeed: KVKK consent true preserves shortName', () => {
+  const [event] = buildActivityFeed({
+    feedbacks: [
+      {
+        id: 'f1',
+        name: 'Ayşe Demir',
+        rating: 5,
+        platform: 'google',
+        createdAt: t('2026-05-04T09:00:00Z'),
+        restaurantId: 'r1',
+        hasKvkkConsent: true,
+      },
+    ],
+    replies: [],
+    aiDrafts: [],
+    systemEvents: [],
+  });
+  assert.equal(event.actor, 'Ayşe D.');
+});
+
+test('buildActivityFeed: KVKK consent undefined falls through to legacy (shortName)', () => {
+  const [event] = buildActivityFeed({
+    feedbacks: [
+      {
+        id: 'f1',
+        name: 'Ayşe Demir',
+        rating: 5,
+        platform: 'google',
+        createdAt: t('2026-05-04T09:00:00Z'),
+        restaurantId: 'r1',
+        // hasKvkkConsent omitted (undefined)
+      },
+    ],
+    replies: [],
+    aiDrafts: [],
+    systemEvents: [],
+  });
+  // undefined → legacy davranış (CLAUDE.md §38.32 dokümanı).
+  assert.equal(event.actor, 'Ayşe D.');
+});
+
+test('buildActivityFeed: system event priority slice keeps top 3 by priority + final timestamp sort', () => {
+  const events = buildActivityFeed({
+    feedbacks: [],
+    replies: [],
+    aiDrafts: [],
+    systemEvents: [
+      // 4 event: priority sırası weekly_report(1) → trial_ending(2) →
+      // qr_not_downloaded(5) → foobar_unknown(100). Helper priority asc +
+      // slice(0,3) → unknown atlandı. Final events sort timestamp desc.
+      { id: 's_low', type: 'qr_not_downloaded', sentAt: t('2026-05-04T10:00:00Z') },
+      { id: 's_high', type: 'weekly_report', sentAt: t('2026-05-04T09:00:00Z') },
+      { id: 's_mid', type: 'trial_ending', sentAt: t('2026-05-04T08:00:00Z') },
+      { id: 's_unknown', type: 'foobar_unknown', sentAt: t('2026-05-04T11:00:00Z') },
+    ],
+    limit: 10,
+  });
+  const systemEvents = events.filter((e) => e.type === 'system');
+  assert.equal(systemEvents.length, 3);
+  // foobar_unknown (lowest priority) atlandı, kalan 3 timestamp desc sort'a girer.
+  const ids = systemEvents.map((e) => e.id);
+  assert.ok(!ids.includes('system:s_unknown'));
+  assert.ok(ids.includes('system:s_high'));
+  assert.ok(ids.includes('system:s_mid'));
+  assert.ok(ids.includes('system:s_low'));
+  // Final timestamp desc: s_low (10:00) → s_high (09:00) → s_mid (08:00).
+  assert.equal(systemEvents[0].id, 'system:s_low');
+  assert.equal(systemEvents[1].id, 'system:s_high');
+  assert.equal(systemEvents[2].id, 'system:s_mid');
+});
+
 test('buildActivityFeed: locale EN', () => {
   const [event] = buildActivityFeed({
     feedbacks: [

@@ -6291,3 +6291,84 @@ Tasarımdaki dropdown affordance (`<button bz-btn-ghost>Bu hafta <chevronDown/><
 - 🔴 HIGH 4 Platforms 12-card grid (DEFER — § 38.30 paterni, backend gap)
 - 🛡️ Security follow-ups (CLAUDE.md §38.2)
 - 🟡 ActivityFeed real-time (websocket/SSE) — şu an sayfa reload yeterli, gelecek scope
+
+### 38.32 2026-05-04 — Dashboard self-audit follow-up (BUGÜN BEKLEYEN 3-task + duplikasyon temizliği + minor fixes)
+
+§38.31 sonrası kullanıcı self-audit raporu istedi: "birebir çektim mi?". Audit raporu (Explore agent + screenshot vs current cross-check) ~%80 parity buldu. Kullanıcı kararıyla 4 grup fix bu PR'da uygulandı.
+
+**A · BUGÜN BEKLEYEN 3-task tipi** (önceki §38.31 "Out of scope" backlog kapandı):
+
+Tasarım `.design-owner-2026/page-dashboard.jsx:250-280` 4 farklı task tipi gösteriyordu (`reply`, `platform`, `campaign`, `reminder`). Kullanıcı kararı: campaign **silindi** (schema'da Campaign tablosu yok, scope creep). Yemeksepeti/Getir/Trendyol public API'si yok → sadece Google için sync check anlamlı.
+
+Yeni saf helper `src/lib/dashboard-tasks.ts` — `buildPendingTasks({ unrepliedFeedbacks, googlePlatformCheck, churnedCustomers, limit })`:
+- 3 task tipi: `reply` (Acil) / `platform` Google sync (Orta) / `reminder` churn (Düşük)
+- Severity ranking sort (high → medium → low), stable insertion order
+- Saf fonksiyon, 9 unit test (`tests/dashboard-tasks.test.ts`)
+
+Yeni component `src/components/dashboard/PendingTasks.tsx`:
+- Severity badge (Acil red / Orta amber / Düşük slate)
+- Task icon (MessageSquareText / RefreshCw / Users)
+- Empty state "Bekleyen iş yok" (yeni hesap)
+- Tıklanabilir Link → ilgili page (feedbacks?filter=unreplied / google-reviews / customers?segment=loyal)
+
+Backend genişletme (`src/app/[locale]/dashboard/page.tsx`):
+- Eski `pendingTasks` (4-feedback findMany) → `unrepliedAggregate` (count + min createdAt) — UI duplikasyon temizliği için detail render kaldırıldı
+- Yeni `googleSyncCheck` query: `PlatformLinkCheck.findFirst({ provider: 'google', ok: false, checkedAt: gte 24h })` (CLAUDE.md §19.4)
+- Yeni `churnedCustomerRows` raw SQL: 30+ gündür dönüş yapmamış ≥2 visit'li tekil müşteri sayısı (KVKK consent + non-anonim + GROUP BY contact_key + HAVING)
+
+**B · Duplikasyon temizliği** (kullanıcı talebi: "anasayfada 2 defa tekrarlayan bilgiler"):
+
+| Eski section | Neden duplicate | Karar |
+|---|---|---|
+| BUGÜN BEKLEYEN 4-feedback inline list (§38.17 segment crossover) | Yeni `<PendingTasks>` 3-task summary'ye dönüştürüldü | KALDIRILDI — pendingCustomerAggregates + segment crossover blok da silindi (Customer page/drawer'da segment chip hâlâ aktif) |
+| "Son yorumlar" detail card section | CANLI AKIŞ timeline'ı aynı feedback verisini kompakt gösteriyor | KALDIRILDI — owner detail için /feedbacks page'e tıklar |
+| Konum performansı "BUAZE ETKİSİ" Google impact card | KANAL DAĞILIMI Google card'ında impact strip ("Önce 4.5 → Şimdi 4.8 · +0.3") | KALDIRILDI — tek source-of-truth KANAL |
+
+Sonuç: 3 ayrı section silindi. Konum performansı + QR performansı 2-col grid yerine tek-sütun layout (UI sadeleşti).
+
+**C · Minor fixes** (audit'in HIGH/MEDIUM bulguları):
+
+1. **YTD leap year fix**: `prevScopeEnd = now - 365d` → `nowDate.setFullYear(year - 1)` (calendar day, leap year edge case'inde 1 gün drift kapalı). YTD prev pencere artık "geçen yılın bugünü" anlamlı yıllık karşılaştırma.
+2. **`pendingCount` rename**: `pendingTasks.length` → `unrepliedAggregate._count._all` (tek source); duplicate const tanımı silindi.
+3. **ActivityFeed KVKK consent**: `FeedbackInput.hasKvkkConsent?: boolean | null` field eklendi. Helper `consentGiven = hasKvkkConsent !== false && !== null` → false ise actor "Müşteri" fallback (anonim). undefined → legacy davranış (eski feedback'ler shortName).
+4. **LifecycleEmailLog priority ranking**: `take:5 → take:10` (caller daha geniş örneklem getirir), helper `SYSTEM_TYPE_PRIORITY` map ile (`weekly_report`=1, `trial_ending`=2, `upgrade_suggestion`=3, vb.) priority asc + sentAt desc tiebreaker → top 3 system event seçilir, final timestamp desc sort'la global event order'a girer.
+
+**D · `last7Total` rename DEFER**: Variable name §38.27'de comment ile dokümante edildi (scope='30d' iken "last30" semantik). 5 baseline warning sustains; rename geniş refactor (delta hesaplarında 4 callsite + comment), CLAUDE.md §7 abstraction kaçınma — bu PR'a sıkıştırılmadı.
+
+**Yeni dosyalar**:
+- `src/lib/dashboard-tasks.ts` (~165 satır, saf helper)
+- `src/components/dashboard/PendingTasks.tsx` (~115 satır, server component)
+- `tests/dashboard-tasks.test.ts` (9 unit test)
+
+**Genişletilen**:
+- `src/lib/activity-feed.ts` — KVKK consent field + system priority ranking
+- `src/app/[locale]/dashboard/page.tsx` — backend +2 query, frontend duplikasyon temizliği, minor fix'ler
+- `tests/activity-feed.test.ts` — 4 yeni test (KVKK true/false/undefined + system ranking)
+
+**Yapma**:
+- BUGÜN BEKLEYEN'e Yemeksepeti/Getir/Trendyol sync error eklemek — public API yok, anlamlı sync check imkansız (CLAUDE.md §19.4 PlatformLinkCheck sadece HEAD/GET reachability test eder, gerçek API integration yok)
+- Campaign task tipi ekleme — schema'da Campaign tablosu yok, kullanıcı kararı silinmiş (scope dışı)
+- Pending task'larda detail render geri ekleme — duplikasyon (CANLI AKIŞ + Son yorumlar referansı zaten /feedbacks page'de)
+- ActivityFeed `hasKvkkConsent: undefined` durumda "Müşteri" fallback — legacy feedback'ler için davranış bozulur (eski rows hep undefined)
+- LifecycleEmailLog priority list'e yeni type eklerken `100` default dışında bırakma — explicit priority verilmeli (yoksa 3-event slice'ında atlanır, görünmez kalır)
+
+**Yap**:
+- Yeni task tipi eklenirse: `TaskType` literal genişlet + `COPY` map TR/EN + `SEVERITY_BADGE` opsiyonel + `TASK_ICON` map + `buildPendingTasks` push branch + unit test
+- Yeni LifecycleEmailLog type: `SYSTEM_TYPE_PRIORITY` map + (gerekirse) `systemActionLabel` switch case + locale strings
+- Dashboard'a yeni section eklerken duplikasyon kontrolü: aynı veri başka section'da var mı? Tek source-of-truth disiplini
+
+**Verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` 0 errors (5 baseline warning §38.27 KPI semantik değişiminden — `last7Total` rename DEFER)
+- `npm test` 121/121 pass (108 mevcut + 9 dashboard-tasks + 4 activity-feed KVKK/ranking)
+- Manuel: `/tr/dashboard` BUGÜN BEKLEYEN'de 3 task tipi (reply/platform/reminder) + severity badges
+- Manuel: `Restaurant.initialGoogleRating + currentGoogleRating + diff > 0` olan owner için Google card'da impact strip; "BUAZE ETKİSİ" section yok (silindi)
+- Manuel: "Son yorumlar" section yok; CANLI AKIŞ feedback'leri kompakt timeline'da
+- Manuel: Anonim feedback (KVKK consent false) → "Müşteri yorum bıraktı"; consent true → "Ayşe D. yorum bıraktı"
+
+**Backlog güncel** (Bu PR sonrası — dashboard 1:1 parity ~%95 kapatıldı):
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER — §38.30 paterni)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)
+- 🟡 ActivityFeed real-time (gelecek scope)
+- 🟢 `last7Total` rename → `currentScopeTotal` (cosmetic, geniş refactor)
+- 🟢 PageHeader "Son güncelleme N dk önce" subtitle (§38.27'de atıldı, server time anlamsız)

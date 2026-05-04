@@ -4,14 +4,15 @@ import { Prisma } from '@prisma/client';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { extractThemes } from '@/lib/analytics-themes';
-import { deriveCustomerFields, type CustomerSegment } from '@/lib/customers';
+// §38.32 — deriveCustomerFields + CustomerSegment + SegmentChip artık
+// dashboard'da kullanılmıyor (BUGÜN BEKLEYEN feedback-detail render kaldırıldı).
+// Customers list/drawer'da hâlâ aktif (§38.17 paterni).
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { getTranslations } from '@/lib/translations';
 import Link from 'next/link';
 import {
   ArrowRight,
-  ArrowUpRight,
   Building2,
   Download,
   Inbox,
@@ -34,7 +35,8 @@ import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import ScopeDropdown from '@/components/dashboard/ScopeDropdown';
 import { buildActivityFeed } from '@/lib/activity-feed';
 import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
-import { SegmentChip } from '@/components/customers/SegmentChip';
+import PendingTasks from '@/components/dashboard/PendingTasks';
+import { buildPendingTasks } from '@/lib/dashboard-tasks';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
 // minimal HTML, browser'da Recharts hydrate. `dynamic({ ssr: false })`
@@ -169,12 +171,19 @@ async function renderDashboardPage({
           ? 90
           : Math.max(1, Math.ceil((now - ytdStartForScope.getTime()) / 86400000));
   const scopeStart = scope === 'ytd' ? ytdStartForScope : new Date(now - scopeDays * 86400000);
+  // §38.32 — YTD leap year fix: prevScopeEnd = "geçen yılın bugünü" (calendar
+  // day) — `now - 365d` yerine `nowDate.setFullYear(year - 1)`. Artık yıl
+  // (Şubat 29) edge case'inde 1 gün drift'i kapatır.
   const prevScopeStart =
     scope === 'ytd'
       ? new Date(nowDateForScope.getFullYear() - 1, 0, 1)
       : new Date(now - 2 * scopeDays * 86400000);
-  const prevScopeEnd =
-    scope === 'ytd' ? new Date(now - 365 * 86400000) : scopeStart;
+  const prevScopeEnd = (() => {
+    if (scope !== 'ytd') return scopeStart;
+    const ytdPrevEnd = new Date(nowDateForScope);
+    ytdPrevEnd.setFullYear(ytdPrevEnd.getFullYear() - 1);
+    return ytdPrevEnd;
+  })();
   // Phase 8c+ §38.30 — NABIZ chart 30G/90G/YTD chip toggle (tasarım
   // page-dashboard.jsx line 230-234). 90 gün > YTD (Ocak başı) ise 90 gün
   // taban; aksi halde YTD start (Ocak 1) en geriye uzanan window.
@@ -209,13 +218,15 @@ async function renderDashboardPage({
     lowRated30dCount,
     lowRated30dRepliedCount,
     newCustomers30dRows,
-    pendingTasks,
+    unrepliedAggregate,
     themesFeedbacks,
     trendFeedbacksRange,
     prevPlatformGroups,
     recentReplies,
     recentAiDrafts,
     recentSystemEvents,
+    googleSyncCheck,
+    churnedCustomerRows,
   ] = await prisma.$transaction([
     // KPI 4: Platforma yönlendirme (all-time) — değer KPI'da; delta last7 vs prev7
     prisma.feedback.count({ where: { restaurantId: restIdIn, ...REDIRECT_WHERE } }),
@@ -356,28 +367,15 @@ async function renderDashboardPage({
                 IS NOT NULL
         `)
       : prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`SELECT 0::bigint AS count WHERE FALSE`),
-    // Bekleyen görevler — yanıtlanmamış low-rating yorumlar (HIGH 3 dashboard
-    // task card için, tasarım .design-pulse-2026/.../page-dashboard.jsx).
-    // Phase 8c+ (CLAUDE.md §38.17): email/phone explicit select — Phase 8c
-    // segment helper'ı için contact_key türetilebilir (deriveCustomerFields
-    // sonrası SegmentChip render). include → select migration aynı zamanda
-    // CLAUDE.md §14.1 defensive select disiplini.
-    prisma.feedback.findMany({
+    // §38.32 — BUGÜN BEKLEYEN "reply" task: yanıtsız low-rating yorum
+    // toplam sayısı + en eskisinin tarihi (relative time için). Eski 4-feedback
+    // detail list (§38.17 segment crossover) kaldırıldı — UI duplikasyon
+    // (kullanıcı kararı: "anasayfada 2 defa tekrarlayan bilgiler"); yeni
+    // PendingTasks summary 3-task generic. Owner click → /feedbacks detayına.
+    prisma.feedback.aggregate({
       where: { restaurantId: restIdIn, rating: { lte: 3 }, replies: { none: {} } },
-      orderBy: { createdAt: 'desc' },
-      take: 4,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        rating: true,
-        comment: true,
-        branch: true,
-        createdAt: true,
-        restaurantId: true,
-        restaurant: { select: { name: true } },
-      },
+      _count: { _all: true },
+      _min: { createdAt: true },
     }),
     // SIK BAHSEDİLEN KONULAR — son 30 gün yorum metinleri (extractThemes
     // helper'ı için ham veri). Min 8 yorum + OpenAI key gereği helper içinde
@@ -451,17 +449,55 @@ async function renderDashboardPage({
       },
     }),
     // §38.31 — CANLI AKIŞ "Sistem günlük rapor gönderildi" event'leri.
-    // LifecycleEmailLog cron-driven log (CLAUDE.md §21.34).
+    // LifecycleEmailLog cron-driven log (CLAUDE.md §21.34). §38.32: type
+    // ranking helper'da yapılır (priority list; weekly_report > trial_ending
+    // > diğer); take: 10 daha geniş örneklem ki helper en kritik 5'ini seçsin.
     prisma.lifecycleEmailLog.findMany({
       where: { restaurantId: restIdIn },
       orderBy: { sentAt: 'desc' },
-      take: 5,
+      take: 10,
       select: {
         id: true,
         type: true,
         sentAt: true,
       },
     }),
+    // §38.32 — BUGÜN BEKLEYEN "platform" task: sadece Google için (Yemeksepeti/
+    // Getir/Trendyol public API yok, anlamlı sync check imkansız). Son 24 saat
+    // içinde provider='google' PlatformLinkCheck.ok=false varsa task aktif.
+    // CLAUDE.md §19.4 PlatformLinkCheck pattern.
+    prisma.platformLinkCheck.findFirst({
+      where: {
+        restaurantId: restIdIn,
+        provider: 'google',
+        ok: false,
+        checkedAt: { gte: new Date(now - 24 * 3600 * 1000) },
+      },
+      orderBy: { checkedAt: 'desc' },
+      select: { id: true, checkedAt: true },
+    }),
+    // §38.32 — BUGÜN BEKLEYEN "reminder" task: 30+ gündür dönüş yapmamış ≥2
+    // visit'li müşteri sayısı (kayıp müşteri / churn signal). Phase 8c segment
+    // helper'da `churned` yok (CLAUDE.md §38.16 4 segment + new); bu task için
+    // ayrı raw SQL aggregate. KVKK consent + non-anonim filter (§38.17 paterni).
+    restIds.length > 0
+      ? prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`
+          SELECT COUNT(*)::bigint AS count FROM (
+            SELECT
+              COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')) AS contact_key,
+              MAX(f.created_at) AS last_at,
+              COUNT(*) AS visits
+            FROM feedback f
+            WHERE f.has_kvkk_consent = TRUE
+              AND f.restaurant_id IN (${Prisma.join(restIds)})
+              AND COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
+                  IS NOT NULL
+            GROUP BY 1
+            HAVING MAX(f.created_at) < NOW() - INTERVAL '30 days'
+              AND COUNT(*) >= 2
+          ) churned_customers
+        `)
+      : prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`SELECT 0::bigint AS count WHERE FALSE`),
   ]);
 
   // ---- Derived metrics ----
@@ -695,78 +731,22 @@ async function renderDashboardPage({
   const themeCacheKey = `dashboard-themes:${user.id}:30d`;
   const dashboardThemes = await extractThemes(themeComments, locale, themeCacheKey, user.id);
 
-  // Phase 8c+ — pendingTasks her satırı için customer segment chip crossover
-  // (CLAUDE.md §38.17). Anonim feedback (email + phone null) → segment yok →
-  // chip render skip. Aggregate post-fetch tek raw query (CLAUDE.md §28.3.4
-  // "mevcut endpoint'e yeni alan ekleme" + audit'in "Seçenek B: SQL basit, +1
-  // round-trip" kararı). 4-row küçük yük, +5ms tolere edilebilir.
-  type PendingContactKey = { restaurantId: string; contactKey: string };
-  const pendingContactKeys: PendingContactKey[] = [];
-  for (const task of pendingTasks) {
-    if (!task.restaurantId) continue; // schema nullable; runtime where filter zaten daraltır
-    const key =
-      (task.email?.trim().toLowerCase() ?? '') ||
-      (task.phone?.trim() ?? '');
-    if (key) pendingContactKeys.push({ restaurantId: task.restaurantId, contactKey: key });
-  }
-
-  type CustomerAggregateRow = {
-    restaurant_id: string;
-    contact_key: string;
-    visits: bigint;
-    avg_rating: number | null;
-    last_at: Date;
-  };
-  let pendingCustomerAggregates: CustomerAggregateRow[] = [];
-  if (pendingContactKeys.length > 0) {
-    // Postgres VALUES tuple matching — (restaurant_id, contact_key) çiftleri.
-    // SQL injection guard: tüm değerler Prisma parametreleri olarak geçer.
-    const tuples = pendingContactKeys.map(
-      (p) => Prisma.sql`(${p.restaurantId}, ${p.contactKey})`,
-    );
-    try {
-      pendingCustomerAggregates = await prisma.$queryRaw<CustomerAggregateRow[]>(Prisma.sql`
-        SELECT
-          f.restaurant_id,
-          COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')) AS contact_key,
-          COUNT(*)::bigint AS visits,
-          AVG(f.rating)::float AS avg_rating,
-          MAX(f.created_at) AS last_at
-        FROM feedback f
-        WHERE f.has_kvkk_consent = TRUE
-          AND COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')) IS NOT NULL
-          AND (
-            f.restaurant_id,
-            COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
-          ) IN (${Prisma.join(tuples)})
-        GROUP BY f.restaurant_id, contact_key
-      `);
-    } catch (err) {
-      // Fail-soft — segment chip crossover faili mevcut "BUGÜN BEKLEYEN"
-      // section'ını kıramaz; chip görünmez ama task list intact.
-      console.error('[DASHBOARD_PENDING_AGGREGATE]', err);
-      pendingCustomerAggregates = [];
-    }
-  }
-
-  type PendingTaskWithSegment = (typeof pendingTasks)[number] & {
-    segment: CustomerSegment | null;
-  };
-  const pendingTasksWithSegment: PendingTaskWithSegment[] = pendingTasks.map((task) => {
-    const key =
-      (task.email?.trim().toLowerCase() ?? '') ||
-      (task.phone?.trim() ?? '');
-    if (!key) return { ...task, segment: null };
-    const agg = pendingCustomerAggregates.find(
-      (a) => a.restaurant_id === task.restaurantId && a.contact_key === key,
-    );
-    if (!agg) return { ...task, segment: null };
-    const derived = deriveCustomerFields({
-      visits: Number(agg.visits),
-      avgRating: agg.avg_rating,
-      lastAt: agg.last_at,
-    });
-    return { ...task, segment: derived.segment };
+  // §38.32 — BUGÜN BEKLEYEN refactor: eski 4-feedback inline detail render +
+  // segment crossover (§38.17) kaldırıldı. Yeni 3-task summary (reply / platform
+  // Google sync / reminder churn). Detail için owner /feedbacks deep-link'e
+  // tıklar. Customer segment chip Customers page + drawer'da hâlâ mevcut.
+  const pendingCount = unrepliedAggregate._count._all;
+  const oldestUnrepliedAt = unrepliedAggregate._min.createdAt ?? null;
+  const churnedCount = Number(churnedCustomerRows[0]?.count ?? 0);
+  const dashboardTasks = buildPendingTasks({
+    unrepliedFeedbacks: { count: pendingCount, oldestUnrepliedAt },
+    googlePlatformCheck: {
+      failing: googleSyncCheck !== null,
+      lastCheckedAt: googleSyncCheck?.checkedAt ?? null,
+    },
+    churnedCustomers: { count: churnedCount },
+    limit: 4,
+    isTr,
   });
 
   // ---- Onboarding nudge (mevcut signal'lardan türet) ----
@@ -907,6 +887,9 @@ async function renderDashboardPage({
   // §38.31 — CANLI AKIŞ event union build. 4 source helper'a geçirilir,
   // helper sort + slice + sentiment derive yapar (saf fonksiyon, test edilebilir).
   const activityEvents = buildActivityFeed({
+    // §38.32 — slice(0,8) caller-side redundant (helper limit=6 zaten 5-6'ya
+    // crop eder); explicit cap ile clarity. KVKK consent helper'a geçirilir,
+    // false ise actor "Müşteri" fallback (anonim feedback).
     feedbacks: latestFeedbacks.slice(0, 8).map((f) => ({
       id: f.id,
       name: f.name,
@@ -915,6 +898,7 @@ async function renderDashboardPage({
       createdAt: f.createdAt,
       restaurantId: f.restaurantId,
       restaurant: f.restaurant,
+      hasKvkkConsent: f.hasKvkkConsent,
     })),
     replies: recentReplies.map((r) => ({
       id: r.id,
@@ -953,7 +937,8 @@ async function renderDashboardPage({
         ? 'Good afternoon'
         : 'Good evening';
   const userFirstName = user.name?.trim().split(/\s+/)[0] || (isTr ? 'Hoş geldin' : 'Welcome');
-  const pendingCount = pendingTasks.length;
+  // §38.32 — pendingCount line 729'da unrepliedAggregate._count._all'dan
+  // tanımlandı; greeting hook için reuse.
   const pendingHook = isTr
     ? pendingCount > 0
       ? `Bugün ${pendingCount} yorum yanıt bekliyor.`
@@ -1102,97 +1087,17 @@ async function renderDashboardPage({
         />
       )}
 
-      {/* Bekleyen görevler — tasarım .design-pulse-2026/.../page-dashboard.jsx
-          BUGÜN BEKLEYEN paterni. Yanıtlanmamış düşük puanlı yorumlar (rating ≤3
-          + replies count == 0). Owner için aksiyon-odaklı workflow item'ı —
-          itibar koruması için kritik (CLAUDE.md §15 Pulse AI suggest-reply ile
-          işbirliği yapar; "Yanıtla" butonu inbox'a feedback fokuslu açar). */}
-      {pendingTasks.length > 0 && (
-        <section className="bz-card p-5 sm:p-6">
-          <header className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <Eyebrow>{isTr ? 'BUGÜN BEKLEYEN' : 'PENDING TODAY'}</Eyebrow>
-              <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px]">
-                {pendingTasks.length}{' '}
-                {isTr ? 'görev — yanıtsız düşük puan' : 'tasks — unanswered low rating'}
-              </h2>
-            </div>
-            <Link
-              href={`/${locale}/dashboard/feedbacks?tab=low&hasReply=false`}
-              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 shrink-0"
-            >
-              {isTr ? 'Tümü' : 'View all'}
-              <ArrowRight size={12} strokeWidth={2} />
-            </Link>
-          </header>
-          <ul className="space-y-2">
-            {pendingTasksWithSegment.map((task) => {
-              const initial = (task.name || task.email || '?').charAt(0).toUpperCase();
-              const ageMin = Math.floor((Date.now() - task.createdAt.getTime()) / 60000);
-              const ageLabel =
-                ageMin < 60
-                  ? `${ageMin} ${isTr ? 'dk' : 'm'}`
-                  : ageMin < 1440
-                    ? `${Math.floor(ageMin / 60)} ${isTr ? 'sa' : 'h'}`
-                    : `${Math.floor(ageMin / 1440)} ${isTr ? 'g' : 'd'}`;
-              const branch = task.branch || task.restaurant?.name || '';
-              return (
-                <li key={task.id}>
-                  <Link
-                    href={`/${locale}/dashboard/feedbacks?focus=${task.id}`}
-                    className="flex items-center gap-3 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-3 py-2.5 transition-colors hover:bg-[#FEE2E2]"
-                  >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#DC2626] text-[12px] font-semibold text-white">
-                      {initial}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[#0A0A0A]">
-                        <span className="truncate">{task.name || (isTr ? 'Anonim' : 'Anonymous')}</span>
-                        <span className="flex shrink-0 gap-px">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star
-                              key={s}
-                              size={10}
-                              className={s <= task.rating ? 'text-[#DC2626]' : 'text-[#FECACA]'}
-                              fill={s <= task.rating ? '#DC2626' : '#FECACA'}
-                            />
-                          ))}
-                        </span>
-                        {/* Phase 8c+ segment chip — desktop'ta yıldızların yanında
-                            (CLAUDE.md §38.17). Anonim feedback'te chip render
-                            edilmez (segment null). */}
-                        {task.segment && (
-                          <span className="hidden sm:inline-flex shrink-0">
-                            <SegmentChip segment={task.segment} locale={locale} size="sm" />
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-0.5 truncate text-[11.5px] text-[#525252]">
-                        {task.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
-                      </p>
-                      {/* Mobile: chip comment'in altında ayrı satır — desktop'ta
-                          gizli (yıldızların yanına render edilir). */}
-                      {task.segment && (
-                        <div className="mt-1 flex sm:hidden">
-                          <SegmentChip segment={task.segment} locale={locale} size="sm" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-0.5 text-[10.5px] text-[#737373]">
-                      <span className="bz-mono tabular-nums">{ageLabel}</span>
-                      {branch && <span className="truncate max-w-[80px]">{branch}</span>}
-                    </div>
-                    <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-[#0A0A0A] px-2.5 py-1 text-[10.5px] font-semibold text-white">
-                      {isTr ? 'Yanıtla' : 'Reply'}
-                      <ArrowRight size={10} strokeWidth={2.5} />
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+      {/* §38.32 — BUGÜN BEKLEYEN: 3 task tipi summary (reply / platform Google
+          sync / reminder churn). Tasarım .design-owner-2026/page-dashboard.jsx
+          line 250-280. Eski 4-feedback inline detail render + segment crossover
+          (§38.17) kaldırıldı (UI duplikasyon — owner zaten /feedbacks page'de
+          detail görür). campaign tipi schema'da yok + kullanıcı kararı (silindi).
+          Yemeksepeti/Getir/Trendyol public API yok → sadece Google sync check. */}
+      <PendingTasks
+        tasks={dashboardTasks}
+        isTr={isTr}
+        viewAllHref={`/${locale}/dashboard/feedbacks?tab=low&hasReply=false`}
+      />
 
       {/* Phase 8c+ §38.27 — KPI 4-card 1:1 tasarım parity. Tasarım kaynağı
           .design-owner-2026/page-dashboard.jsx: GENEL PUAN / TOPLAM YORUM /
@@ -1564,245 +1469,98 @@ async function renderDashboardPage({
           (yeni hesap) "henüz aktivite yok" mesajı. */}
       <ActivityFeed events={activityEvents} isTr={isTr} />
 
-      {/* Son yorumlar + QR performansı (unified responsive: mobile dikey
-          stack, lg+ 2-col split). Eski mobile-only ayrı liste silindi. */}
-      {(latestFeedbacks.length > 0 || qrPerfTop.length > 0) && (
-        <div className="grid gap-3.5 lg:grid-cols-2">
-          {latestFeedbacks.length > 0 && (
-            <section className="bz-card">
-              <div className="flex items-center justify-between p-5">
-                <div>
-                  <Eyebrow>{isTr ? 'Son yorumlar' : 'Recent reviews'}</Eyebrow>
-                  <div className="bz-h-tight mt-1 text-[16px]">
-                    {isTr ? 'Gelen kutusu' : 'Inbox'}
-                  </div>
-                </div>
-                <Link
-                  href={`/${locale}/dashboard/feedbacks`}
-                  className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5"
+      {/* §38.32 — "Son yorumlar" section'ı kaldırıldı: CANLI AKIŞ feed
+          (yukarıda) aynı bilgiyi kompakt timeline ile gösteriyor (UI duplikasyon
+          temizliği — kullanıcı kararı). Owner detail için /feedbacks page'e
+          tıklar. QR Performansı tek sütunda korunur. */}
+      {qrPerfTop.length > 0 && (
+        <section className="bz-card">
+          <div className="p-5">
+            <Eyebrow>{isTr ? 'QR performansı' : 'QR performance'}</Eyebrow>
+            <div className="bz-h-tight mt-1 text-[16px]">
+              {isTr ? 'En aktif QR kodları' : 'Most active QRs'}
+            </div>
+          </div>
+          <div className="border-t border-[#EDEDED] grid lg:grid-cols-2">
+            {qrPerfTop.map((q, idx) => {
+              const platformLabel = q.platform
+                ? PLATFORM_LABELS_TR[q.platform] ?? q.platform
+                : isTr
+                  ? 'Genel'
+                  : 'General';
+              const last = idx === qrPerfTop.length - 1;
+              const lastInRow = idx === qrPerfTop.length - 2;
+              return (
+                <div
+                  key={q.id}
+                  className={`flex items-center gap-3 px-5 py-3.5 ${
+                    last ? '' : 'border-b border-[#F5F5F5]'
+                  } ${lastInRow ? 'lg:border-b-0' : ''} ${
+                    idx % 2 === 0 ? 'lg:border-r lg:border-[#F5F5F5]' : ''
+                  }`}
                 >
-                  {isTr ? 'Tümü' : 'View all'}
-                  <ArrowRight size={12} strokeWidth={2} />
-                </Link>
-              </div>
-              <div className="border-t border-[#EDEDED]">
-                {latestFeedbacks.slice(0, 4).map((fb) => {
-                  const initials = (fb.name || fb.restaurant?.name || 'M')
-                    .charAt(0)
-                    .toUpperCase();
-                  const high = fb.rating >= 4;
-                  const lowRated = fb.rating <= 3;
-                  const branchLabel =
-                    fb.branch || fb.restaurant?.name || (isTr ? 'İşletme' : 'Location');
-                  const timeAgo = formatDistanceToNowStrict(new Date(fb.createdAt), {
-                    addSuffix: true,
-                    locale: isTr ? trLocale : enLocale,
-                  });
-                  return (
-                    <Link
-                      key={fb.id}
-                      href={`/${locale}/dashboard/feedbacks?focus=${fb.id}`}
-                      className="flex items-start gap-3 px-5 py-3.5 border-b border-[#F5F5F5] last:border-b-0 transition-colors hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:bg-[#FAFAFA]"
-                      aria-label={`${fb.name || (isTr ? 'Anonim' : 'Anonymous')} — ${fb.rating}★ — ${
-                        isTr ? 'detay ve yanıtla' : 'view and reply'
-                      }`}
-                    >
-                      <div
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-semibold shrink-0"
-                        style={{
-                          background: high ? '#0A0A0A' : '#DC2626',
-                          color: high ? '#C6F24E' : '#fff',
-                        }}
-                      >
-                        {initials}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex justify-between items-center gap-2">
-                          <span className="text-[13px] font-semibold truncate">
-                            {fb.name || (isTr ? 'Anonim' : 'Anonymous')}
-                          </span>
-                          <span className="flex gap-px shrink-0">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                              <Star
-                                key={s}
-                                size={11}
-                                className={s <= fb.rating ? 'text-[#C6F24E]' : 'text-[#E5E5E5]'}
-                                fill={s <= fb.rating ? '#C6F24E' : '#E5E5E5'}
-                              />
-                            ))}
-                          </span>
-                        </div>
-                        <p className="mt-1 truncate text-[12.5px] text-[#525252] leading-[1.5]">
-                          {fb.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
-                        </p>
-                        <div className="mt-1 flex gap-2.5 text-[10.5px] text-[#A3A3A3]">
-                          <span className="truncate">
-                            {branchLabel}
-                            {fb.tableNumber
-                              ? ` · ${isTr ? 'Masa' : 'Table'} ${fb.tableNumber}`
-                              : ''}
-                          </span>
-                          <span>·</span>
-                          <span className="whitespace-nowrap">{timeAgo}</span>
-                          {lowRated && (
-                            <>
-                              <span>·</span>
-                              <span className="rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[10px] font-semibold text-[#0A0A0A]">
-                                {isTr ? 'Yanıtla →' : 'Reply →'}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {qrPerfTop.length > 0 && (
-            <section className="bz-card">
-              <div className="p-5">
-                <Eyebrow>{isTr ? 'QR performansı' : 'QR performance'}</Eyebrow>
-                <div className="bz-h-tight mt-1 text-[16px]">
-                  {isTr ? 'En aktif QR kodları' : 'Most active QRs'}
-                </div>
-              </div>
-              <div className="border-t border-[#EDEDED]">
-                {qrPerfTop.map((q) => {
-                  const platformLabel = q.platform
-                    ? PLATFORM_LABELS_TR[q.platform] ?? q.platform
-                    : isTr
-                      ? 'Genel'
-                      : 'General';
-                  return (
-                    <div
-                      key={q.id}
-                      className="flex items-center gap-3 px-5 py-3.5 border-b border-[#F5F5F5] last:border-b-0"
-                    >
-                      <div
-                        className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0"
-                        style={{ background: '#0A0A0A' }}
-                      >
-                        <QrCode size={18} className="text-[#C6F24E]" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[13px] font-semibold truncate">{q.name}</div>
-                        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#737373]">
-                          <span className="truncate">{platformLabel}</span>
-                          <span>·</span>
-                          <span className="whitespace-nowrap">
-                            {q.scans.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-                            {isTr ? 'taranma' : 'scans'}
-                          </span>
-                        </div>
-                      </div>
-                      <Sparkline values={q.sparkline} w={56} h={20} color="#0A0A0A" />
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0"
+                    style={{ background: '#0A0A0A' }}
+                  >
+                    <QrCode size={18} className="text-[#C6F24E]" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-semibold truncate">{q.name}</div>
+                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#737373]">
+                      <span className="truncate">{platformLabel}</span>
+                      <span>·</span>
+                      <span className="whitespace-nowrap">
+                        {q.scans.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
+                        {isTr ? 'taranma' : 'scans'}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-        </div>
+                  </div>
+                  <Sparkline values={q.sparkline} w={56} h={20} color="#0A0A0A" />
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {/* Konum performansı ve Google Etkisi (Grid layout) */}
-      {(locationPerf.length > 0 || impactStats.length > 0) && (
-        <div className="grid gap-3.5 lg:grid-cols-2">
-          {locationPerf.length > 0 && (
-            <section className="bz-card p-6 sm:p-7">
-              <div>
-                <Eyebrow>{isTr ? 'Konum performansı' : 'Location performance'}</Eyebrow>
-                <div className="bz-h-tight mt-1 text-[16px]">
-                  {isTr ? 'Puana göre' : 'By rating'}
+      {/* §38.32 — Konum performansı tek-sütun. Eski "Buaze Etkisi" Google
+          impact card'ı kaldırıldı: KANAL DAĞILIMI Google card'ında impact
+          strip ("Önce X.X → Şimdi Y.Y · +Δ") aynı bilgiyi tek-bakış veriyor
+          (UI duplikasyon temizliği — kullanıcı kararı). */}
+      {locationPerf.length > 0 && (
+        <section className="bz-card p-6 sm:p-7">
+          <div>
+            <Eyebrow>{isTr ? 'Konum performansı' : 'Location performance'}</Eyebrow>
+            <div className="bz-h-tight mt-1 text-[16px]">
+              {isTr ? 'Puana göre' : 'By rating'}
+            </div>
+          </div>
+          <ul className="mt-4 divide-y divide-[#EDEDED]">
+            {locationPerf.map((loc) => (
+              <li key={loc.id} className="flex items-center justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <Link
+                    href={`/${locale}/dashboard/restaurants/${loc.id}`}
+                    className="block truncate text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                  >
+                    {loc.name}
+                  </Link>
+                  <div className="pulse-eyebrow text-[#737373] mt-0.5">
+                    {loc.count} {isTr ? 'yorum' : 'reviews'}
+                  </div>
                 </div>
-              </div>
-              <ul className="mt-4 divide-y divide-[#EDEDED]">
-                {locationPerf.map((loc) => (
-                  <li key={loc.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="min-w-0">
-                      <Link
-                        href={`/${locale}/dashboard/restaurants/${loc.id}`}
-                        className="block truncate text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
-                      >
-                        {loc.name}
-                      </Link>
-                      <div className="pulse-eyebrow text-[#737373] mt-0.5">
-                        {loc.count} {isTr ? 'yorum' : 'reviews'}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <span className="bz-h-tight text-[18px] tabular-nums">
-                        {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
-                      </span>
-                      <Star size={14} className="text-[#C6F24E]" fill="#C6F24E" />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {impactStats.length > 0 && (
-            <section className="bz-card p-6 sm:p-7 bg-[#FAFAFA] border-[#EAF9B8] border-2 shadow-[0_4px_24px_rgba(198,242,78,0.15)] relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Star size={120} fill="#C6F24E" color="#C6F24E" />
-              </div>
-              <div className="relative z-10">
-                <Eyebrow className="text-[#525252]">
-                  {isTr ? 'BUAZE ETKİSİ' : 'BUAZE IMPACT'}
-                </Eyebrow>
-                <div className="bz-h-tight mt-1 text-[18px] sm:text-[20px] font-semibold text-[#0A0A0A]">
-                  {isTr ? 'Google Puan Artışı' : 'Google Rating Growth'}
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="bz-h-tight text-[18px] tabular-nums">
+                    {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
+                  </span>
+                  <Star size={14} className="text-[#C6F24E]" fill="#C6F24E" />
                 </div>
-                <p className="mt-2 text-[13px] text-[#525252] leading-relaxed max-w-[280px]">
-                  {isTr 
-                    ? 'Buaze sayesinde yorum toplama ve hızlı geri dönüşlerle işletme puanınız yükselişte.'
-                    : 'Your business rating is growing thanks to review collection and fast replies via Buaze.'}
-                </p>
-                
-                <div className="mt-6 space-y-4">
-                  {impactStats.map(stat => (
-                    <div key={stat.id} className="rounded-xl bg-white p-4 border border-[#EDEDED] shadow-sm flex items-center justify-between">
-                      <div className="min-w-0">
-                        <div className="text-[14px] font-semibold text-[#0A0A0A] truncate">{stat.name}</div>
-                        <div className="text-[12px] text-[#737373] mt-0.5 flex items-center gap-1.5">
-                          <span>{isTr ? 'Başlangıç' : 'Initial'}: {stat.initial.toFixed(1)}</span>
-                          <ArrowRight size={10} />
-                          <strong className="text-[#0A0A0A]">{isTr ? 'Güncel' : 'Current'}: {stat.current.toFixed(1)}</strong>
-                        </div>
-                      </div>
-                      {stat.diff > 0 && (
-                        <div className="flex flex-col items-end">
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[11px] font-semibold text-[#0A0A0A]">
-                            <ArrowUpRight size={10} strokeWidth={3} />
-                            +{stat.diff.toFixed(1)}
-                          </span>
-                        </div>
-                      )}
-                      {stat.diff === 0 && (
-                        <div className="flex flex-col items-end">
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] font-semibold text-[#525252]">
-                            = {isTr ? 'Aynı' : 'Same'}
-                          </span>
-                        </div>
-                      )}
-                      {stat.diff < 0 && (
-                        <div className="flex flex-col items-end">
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[11px] font-semibold text-[#DC2626]">
-                            {stat.diff.toFixed(1)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-          )}
-        </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* Restaurants */}
