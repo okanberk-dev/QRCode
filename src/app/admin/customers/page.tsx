@@ -4,8 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, Loader2, Mail, MapPin, Phone, RefreshCw, Search, Star, Store, Users, X } from 'lucide-react';
 import { AlertBanner, PageHeader, StatCard } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
+import { SegmentChip } from '@/components/customers/SegmentChip';
+import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
 
 type Range = '7d' | '30d' | '90d' | 'all';
+type SegmentFilter = '' | CustomerSegment;
 
 interface CustomerRow {
   key: string;
@@ -17,15 +20,42 @@ interface CustomerRow {
   branch: string | null;
   platform: string | null;
   lastRating: number | null;
+  avgRating: number | null;
   feedbackCount: number;
   lastAt: string;
+  // Phase 8c+ (CLAUDE.md §38.19) — derived enrichments.
+  segment: CustomerSegment;
+  ltv: number;
+  sentiment: CustomerSentiment;
+  daysSinceLastVisit: number | null;
+}
+
+interface SegmentCounts {
+  all: number;
+  vip: number;
+  loyal: number;
+  new: number;
+  risk: number;
 }
 
 interface CustomersResponse {
   data: CustomerRow[];
-  meta: { total: number; page: number; limit: number; totalPages: number };
-  summary: { customers: number; feedbacks: number; avgRating: number | null };
+  meta: { total: number; page: number; limit: number; totalPages: number; truncated?: boolean };
+  summary: {
+    customers: number;
+    feedbacks: number;
+    avgRating: number | null;
+    segmentCounts?: SegmentCounts;
+  };
 }
+
+// Sentiment dot+label — admin-side minimal (Phase 8c+ paterni). 3 yere ulaştığında
+// (admin + owner cell + drawer badge) component extraction CLAUDE.md §7.
+const SENTIMENT_PRESENTATION: Record<CustomerSentiment, { color: string; tr: string; en: string }> = {
+  pos: { color: '#16A34A', tr: 'Olumlu', en: 'Positive' },
+  neu: { color: '#A3A3A3', tr: 'Nötr', en: 'Neutral' },
+  neg: { color: '#DC2626', tr: 'Olumsuz', en: 'Negative' },
+};
 
 interface RestaurantOption {
   id: string;
@@ -54,6 +84,7 @@ export default function AdminCustomersPage() {
     range: '30d' as Range,
     restaurantId: '',
     search: '',
+    segment: '' as SegmentFilter,
     hasEmail: false as boolean,
     hasPhone: false as boolean,
     hasComment: false as boolean,
@@ -66,6 +97,8 @@ export default function AdminCustomersPage() {
   const searchDebounced = filters.values.search;
   const [search, setSearch] = useState(searchDebounced);
   const setSearchDebounced = (v: string) => filters.set('search', v);
+  const segmentFilter = filters.values.segment;
+  const setSegmentFilter = (v: SegmentFilter) => filters.set('segment', v);
   const hasEmail = filters.values.hasEmail;
   const setHasEmail = (v: boolean) => filters.set('hasEmail', v);
   const hasPhone = filters.values.hasPhone;
@@ -83,7 +116,7 @@ export default function AdminCustomersPage() {
   // Reset to first page whenever a non-page filter changes.
   useEffect(() => {
     setPage(1);
-  }, [range, restaurantId, searchDebounced, hasEmail, hasPhone, hasComment]);
+  }, [range, restaurantId, searchDebounced, segmentFilter, hasEmail, hasPhone, hasComment]);
 
   // Load restaurant options once (for the dropdown).
   useEffect(() => {
@@ -113,13 +146,14 @@ export default function AdminCustomersPage() {
     q.set('range', range);
     if (restaurantId) q.set('restaurantId', restaurantId);
     if (searchDebounced) q.set('search', searchDebounced);
+    if (segmentFilter) q.set('segment', segmentFilter);
     if (hasEmail) q.set('hasEmail', '1');
     if (hasPhone) q.set('hasPhone', '1');
     if (hasComment) q.set('hasComment', '1');
     q.set('limit', String(PAGE_SIZE));
     q.set('page', String(overrides.page ?? page));
     return q;
-  }, [range, restaurantId, searchDebounced, hasEmail, hasPhone, hasComment, page]);
+  }, [range, restaurantId, searchDebounced, segmentFilter, hasEmail, hasPhone, hasComment, page]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -167,13 +201,14 @@ export default function AdminCustomersPage() {
   };
 
   const hasActiveFilters = useMemo(
-    () => !!(restaurantId || searchDebounced || hasEmail || hasPhone || hasComment) || range !== '30d',
-    [restaurantId, searchDebounced, hasEmail, hasPhone, hasComment, range],
+    () => !!(restaurantId || searchDebounced || segmentFilter || hasEmail || hasPhone || hasComment) || range !== '30d',
+    [restaurantId, searchDebounced, segmentFilter, hasEmail, hasPhone, hasComment, range],
   );
   const resetFilters = () => {
     setRange('30d');
     setRestaurantId('');
     setSearch('');
+    setSegmentFilter('');
     setHasEmail(false);
     setHasPhone(false);
     setHasComment(false);
@@ -181,6 +216,18 @@ export default function AdminCustomersPage() {
 
   const rows = data?.data ?? [];
   const totalPages = data?.meta.totalPages ?? 1;
+  const segmentCounts = data?.summary.segmentCounts;
+  const truncated = !!data?.meta.truncated;
+
+  // Segment filter pills config — TR/EN labels, count badges from backend
+  // (pre-filter, her pill toplamı görünür).
+  const SEGMENT_PILLS: Array<{ key: SegmentFilter; tr: string; en: string }> = [
+    { key: '', tr: 'Tümü', en: 'All' },
+    { key: 'vip', tr: 'VIP', en: 'VIP' },
+    { key: 'loyal', tr: 'Düzenli', en: 'Loyal' },
+    { key: 'new', tr: 'Yeni', en: 'New' },
+    { key: 'risk', tr: 'Risk', en: 'Risk' },
+  ];
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
@@ -291,7 +338,54 @@ export default function AdminCustomersPage() {
           <FilterToggle active={hasPhone} onClick={() => setHasPhone(!hasPhone)}>Telefon var</FilterToggle>
           <FilterToggle active={hasComment} onClick={() => setHasComment(!hasComment)}>Yorum var</FilterToggle>
         </div>
+
+        {/* Phase 8c+ segment filter pills (CLAUDE.md §38.19 — owner /customers
+            ile parite). role=tablist + count badges (pre-filter). */}
+        <div
+          className="mt-3 flex flex-wrap gap-1.5"
+          role="tablist"
+          aria-label="Segment filtresi"
+        >
+          {SEGMENT_PILLS.map((pill) => {
+            const active = segmentFilter === pill.key;
+            const count = segmentCounts
+              ? pill.key === ''
+                ? segmentCounts.all
+                : segmentCounts[pill.key as CustomerSegment]
+              : null;
+            return (
+              <button
+                key={pill.key || 'all'}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setSegmentFilter(pill.key)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                  active
+                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
+                }`}
+              >
+                {pill.tr}
+                {count !== null && (
+                  <span
+                    className={`bz-mono tabular-nums text-[10.5px] rounded-full px-1.5 py-0.5 ${
+                      active ? 'bg-white/15 text-white' : 'bg-[#F5F5F5] text-[#737373]'
+                    }`}
+                  >
+                    {count.toLocaleString('tr-TR')}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      {truncated && (
+        <AlertBanner kind="warn">
+          Çok fazla müşteri var; yalnızca ilk 5.000 kayıt gösteriliyor. Daha dar bir tarih aralığı veya restoran filtresi uygulayabilirsin.
+        </AlertBanner>
+      )}
 
       {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
@@ -310,106 +404,153 @@ export default function AdminCustomersPage() {
           </div>
         ) : (
           <>
-            {/* Desktop table */}
+            {/* Desktop table — Phase 8c+ (CLAUDE.md §38.19): Segment + LTV +
+                Sentiment kolonları eklendi. Mevcut kolonlar korundu (admin
+                cross-restaurant view'da "İşletme" kolonu kritik, drop edilmez
+                — owner panelde drawer'da görünüyor, admin'de table'da kalır). */}
             <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[1100px] text-left text-xs">
                 <thead className="bg-[#FFFFFF]">
                   <tr className="pulse-eyebrow text-[#737373]">
                     <th className="px-5 py-3">Müşteri</th>
                     <th className="px-5 py-3">İletişim</th>
                     <th className="px-5 py-3">İşletme</th>
+                    <th className="px-5 py-3">Segment</th>
                     <th className="px-5 py-3 text-right">Son Puan</th>
                     <th className="px-5 py-3 text-right">Feedback</th>
+                    <th className="px-5 py-3 text-right">LTV</th>
+                    <th className="px-5 py-3">Memnuniyet</th>
                     <th className="px-5 py-3">Son Tarih</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#EDEDED]">
-                  {rows.map((r) => (
-                    <tr key={r.key} className="hover:bg-[#FFFFFF]/50">
-                      <td className="px-5 py-3 font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</td>
-                      <td className="px-5 py-3 text-[#1A1A1A]">
-                        <div className="flex flex-col gap-0.5">
-                          {r.email && (
-                            <span className="inline-flex items-center gap-1.5 truncate">
-                              <Mail size={11} className="text-[#6B7280]" strokeWidth={2} />
-                              <a href={`mailto:${r.email}`} className="truncate hover:underline">{r.email}</a>
+                  {rows.map((r) => {
+                    const sentiment = SENTIMENT_PRESENTATION[r.sentiment];
+                    return (
+                      <tr key={r.key} className="hover:bg-[#FFFFFF]/50">
+                        <td className="px-5 py-3 font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</td>
+                        <td className="px-5 py-3 text-[#1A1A1A]">
+                          <div className="flex flex-col gap-0.5">
+                            {r.email && (
+                              <span className="inline-flex items-center gap-1.5 truncate">
+                                <Mail size={11} className="text-[#6B7280]" strokeWidth={2} />
+                                <a href={`mailto:${r.email}`} className="truncate hover:underline">{r.email}</a>
+                              </span>
+                            )}
+                            {r.phone && (
+                              <span className="inline-flex items-center gap-1.5">
+                                <Phone size={11} className="text-[#6B7280]" strokeWidth={2} />
+                                <a href={`tel:${r.phone.replace(/\s/g, '')}`} className="hover:underline">{r.phone}</a>
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-[#1A1A1A]">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center gap-1.5 font-bold text-[#0A0A0A]">
+                              <Store size={11} strokeWidth={2} />
+                              {r.restaurantName || '—'}
                             </span>
-                          )}
-                          {r.phone && (
-                            <span className="inline-flex items-center gap-1.5">
-                              <Phone size={11} className="text-[#6B7280]" strokeWidth={2} />
-                              <a href={`tel:${r.phone.replace(/\s/g, '')}`} className="hover:underline">{r.phone}</a>
+                            {r.branch && (
+                              <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
+                                <MapPin size={10} strokeWidth={2} />
+                                {r.branch}
+                              </span>
+                            )}
+                            {r.platform && (
+                              <span className="pulse-eyebrow text-[#6B7280]">
+                                {PLATFORM_LABEL[r.platform] || r.platform}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3">
+                          <SegmentChip segment={r.segment} locale="tr" size="sm" />
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          {r.lastRating !== null ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#C6F24E]/15 px-2 py-0.5 font-semibold text-[#0A0A0A]">
+                              <Star size={11} fill="#C6F24E" strokeWidth={0} />
+                              {r.lastRating}
                             </span>
+                          ) : (
+                            <span className="text-[#6B7280]">—</span>
                           )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3 text-[#1A1A1A]">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="inline-flex items-center gap-1.5 font-bold text-[#0A0A0A]">
-                            <Store size={11} strokeWidth={2} />
-                            {r.restaurantName || '—'}
+                        </td>
+                        <td className="px-5 py-3 text-right font-bold tabular-nums text-[#0A0A0A]">{r.feedbackCount}</td>
+                        <td className="px-5 py-3 text-right">
+                          <span
+                            className="bz-mono tabular-nums text-[12px] font-semibold text-[#0A0A0A]"
+                            title="Etkileşim ağırlığı (yorum × ortalama puan)"
+                          >
+                            {r.ltv.toLocaleString('tr-TR')}
                           </span>
-                          {r.branch && (
-                            <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
-                              <MapPin size={10} strokeWidth={2} />
-                              {r.branch}
-                            </span>
-                          )}
-                          {r.platform && (
-                            <span className="pulse-eyebrow text-[#6B7280]">
-                              {PLATFORM_LABEL[r.platform] || r.platform}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        {r.lastRating !== null ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-[#C6F24E]/15 px-2 py-0.5 font-semibold text-[#0A0A0A]">
-                            <Star size={11} fill="#C6F24E" strokeWidth={0} />
-                            {r.lastRating}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[#525252] whitespace-nowrap">
+                            <span
+                              aria-hidden
+                              className="h-1.5 w-1.5 rounded-full shrink-0"
+                              style={{ backgroundColor: sentiment.color }}
+                            />
+                            {sentiment.tr}
                           </span>
-                        ) : (
-                          <span className="text-[#6B7280]">—</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-right font-bold tabular-nums text-[#0A0A0A]">{r.feedbackCount}</td>
-                      <td className="px-5 py-3 text-[#1A1A1A]">{new Date(r.lastAt).toLocaleDateString('tr-TR')}</td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-5 py-3 text-[#1A1A1A]">{new Date(r.lastAt).toLocaleDateString('tr-TR')}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
-            {/* Mobile cards */}
+            {/* Mobile cards — Phase 8c+ Segment + Sentiment row eklendi
+                (CLAUDE.md §38.19, audit drawer-centric paterni — LTV mobile'da
+                gizli, admin paneli desktop-first kullanıma yönelik). */}
             <div className="divide-y divide-[#EDEDED] lg:hidden">
-              {rows.map((r) => (
-                <div key={r.key} className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</p>
-                      <p className="mt-0.5 inline-flex items-center gap-1 truncate text-[11px] font-bold text-[#1A1A1A]">
-                        <Store size={11} strokeWidth={2} />
-                        {r.restaurantName || '—'}
-                      </p>
+              {rows.map((r) => {
+                const sentiment = SENTIMENT_PRESENTATION[r.sentiment];
+                return (
+                  <div key={r.key} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</p>
+                        <p className="mt-0.5 inline-flex items-center gap-1 truncate text-[11px] font-bold text-[#1A1A1A]">
+                          <Store size={11} strokeWidth={2} />
+                          {r.restaurantName || '—'}
+                        </p>
+                      </div>
+                      {r.lastRating !== null && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#C6F24E]/15 px-2 py-0.5 text-[11px] font-semibold text-[#0A0A0A]">
+                          <Star size={11} fill="#C6F24E" strokeWidth={0} />
+                          {r.lastRating}
+                        </span>
+                      )}
                     </div>
-                    {r.lastRating !== null && (
-                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#C6F24E]/15 px-2 py-0.5 text-[11px] font-semibold text-[#0A0A0A]">
-                        <Star size={11} fill="#C6F24E" strokeWidth={0} />
-                        {r.lastRating}
+                    {/* Phase 8c+: Segment chip + Sentiment dot row */}
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <SegmentChip segment={r.segment} locale="tr" size="sm" />
+                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#525252] whitespace-nowrap">
+                        <span
+                          aria-hidden
+                          className="h-1.5 w-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor: sentiment.color }}
+                        />
+                        {sentiment.tr}
                       </span>
-                    )}
+                    </div>
+                    <div className="mt-2 space-y-0.5 text-[11px] text-[#1A1A1A]">
+                      {r.email && <p className="truncate"><Mail size={10} className="mr-1 inline" strokeWidth={2} />{r.email}</p>}
+                      {r.phone && <p><Phone size={10} className="mr-1 inline" strokeWidth={2} />{r.phone}</p>}
+                      {r.branch && <p><MapPin size={10} className="mr-1 inline" strokeWidth={2} />{r.branch}</p>}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between pulse-eyebrow text-[#6B7280]">
+                      <span>{r.feedbackCount} feedback · LTV {r.ltv.toLocaleString('tr-TR')}</span>
+                      <span>{new Date(r.lastAt).toLocaleDateString('tr-TR')}</span>
+                    </div>
                   </div>
-                  <div className="mt-2 space-y-0.5 text-[11px] text-[#1A1A1A]">
-                    {r.email && <p className="truncate"><Mail size={10} className="mr-1 inline" strokeWidth={2} />{r.email}</p>}
-                    {r.phone && <p><Phone size={10} className="mr-1 inline" strokeWidth={2} />{r.phone}</p>}
-                    {r.branch && <p><MapPin size={10} className="mr-1 inline" strokeWidth={2} />{r.branch}</p>}
-                  </div>
-                  <div className="mt-2 flex items-center justify-between pulse-eyebrow text-[#6B7280]">
-                    <span>{r.feedbackCount} feedback</span>
-                    <span>{new Date(r.lastAt).toLocaleDateString('tr-TR')}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {totalPages > 1 && (
