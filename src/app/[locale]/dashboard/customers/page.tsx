@@ -109,10 +109,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                 ? 'Önce bir işletme ekle, müşteriler buraya yorum bıraktıkça otomatik görünür.'
                 : 'Add a business first; customers appear here as reviews come in.'
             }
-            action={{
-              label: isTr ? 'İşletme ekle' : 'Add business',
-              href: `/${locale}/dashboard/restaurants`,
-            }}
+            action={
+              <Link
+                href={`/${locale}/dashboard/restaurants`}
+                className="bz-btn-primary"
+              >
+                {isTr ? 'İşletme ekle' : 'Add business'}
+              </Link>
+            }
           />
         </div>
       </div>
