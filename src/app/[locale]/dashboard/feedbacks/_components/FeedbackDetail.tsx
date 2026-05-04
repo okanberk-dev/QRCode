@@ -206,6 +206,37 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                     <p className="text-[13px] leading-[1.55] text-[#0A0A0A] whitespace-pre-line">
                       {rep.body}
                     </p>
+                    {rep.status === 'failed' && (
+                      <div className="mt-2.5 flex items-center justify-between gap-2 rounded-lg bg-[#FEF2F2] border border-[#FECACA] px-2.5 py-1.5 text-[11px] text-[#991B1B]">
+                        <span>
+                          {isTr
+                            ? 'Bu yanıt iletilemedi. Düzenleyip yeniden göndermek ister misiniz?'
+                            : 'This reply could not be sent. Edit and re-send?'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            props.setReplyDraft(rep.body);
+                            // Composer textarea'ya scroll + focus
+                            requestAnimationFrame(() => {
+                              const textarea = document.getElementById(
+                                'reply-textarea-input',
+                              ) as HTMLTextAreaElement | null;
+                              if (textarea) {
+                                textarea.focus();
+                                textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                // Cursor textarea sonuna
+                                const len = textarea.value.length;
+                                textarea.setSelectionRange(len, len);
+                              }
+                            });
+                          }}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#0A0A0A] px-2.5 py-1 text-[10.5px] font-semibold text-white hover:bg-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                        >
+                          {isTr ? 'Yeniden dene' : 'Retry'}
+                        </button>
+                      </div>
+                    )}
                   </li>
                 );
               })}

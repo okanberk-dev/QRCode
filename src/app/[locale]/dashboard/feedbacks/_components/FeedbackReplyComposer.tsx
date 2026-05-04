@@ -149,11 +149,21 @@ export function FeedbackReplyComposer({
           </button>
           <select
             value={aiTone}
-            onChange={(e) => setAiTone(e.target.value as AiTone)}
+            onChange={(e) => {
+              const next = e.target.value as AiTone;
+              setAiTone(next);
+              // UX: tone değişimi → otomatik AI regenerate. Kullanıcı "Yeniden
+              // öner"e bastırmak zorunda kalmasın. aiSuggestion mevcut olmalı
+              // (aksi halde kullanıcı ilk seçim yapıyor demektir, regenerate
+              // gerekmez — onRegenerateAi içinde guard'lı).
+              if (aiSuggestion && !aiRegenerating && !aiLoading) {
+                onRegenerateAi();
+              }
+            }}
             disabled={aiLoading || aiRegenerating}
-            aria-label={isTr ? 'Pulse AI tonu' : 'Pulse AI tone'}
-            title={isTr ? '"Yeniden öner"e bas' : 'Click "Regenerate"'}
-            className="w-full sm:w-auto rounded-full border border-white/20 bg-transparent px-3 py-2 sm:py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50 outline-none focus:border-[#C6F24E]"
+            aria-label={isTr ? 'Pulse AI yanıt tonu' : 'Pulse AI reply tone'}
+            title={isTr ? 'Tonu değiştirince taslak otomatik yenilenir' : 'Changing tone auto-regenerates the draft'}
+            className="w-full sm:w-auto rounded-full border border-white/20 bg-transparent px-3 py-2 sm:py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50 outline-none focus-visible:border-[#C6F24E] focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
             style={{ colorScheme: 'dark' }}
           >
             <option value="warm" className="text-[#0A0A0A]">
@@ -182,39 +192,76 @@ export function FeedbackReplyComposer({
       {/* Reply textarea */}
       <div className="mt-4 rounded-xl border border-[#EDEDED] p-4">
         <div className="flex items-center justify-between gap-2">
-          <p className="pulse-eyebrow text-[#737373]">
+          <label
+            id="reply-textarea-label"
+            htmlFor="reply-textarea-input"
+            className="pulse-eyebrow text-[#737373] cursor-pointer"
+          >
             {isTr ? 'YANIT YAZIN' : 'WRITE A REPLY'}
-          </p>
-          {replyNotice && (
-            <span
-              className={`pulse-eyebrow rounded-full px-2.5 py-1 ${
-                replyNotice.tone === 'success'
-                  ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                  : replyNotice.tone === 'error'
-                    ? 'bg-[#FEF2F2] text-[#991B1B]'
-                    : 'bg-[#F5F5F5] text-[#525252]'
-              }`}
-            >
-              {replyNotice.msg}
-            </span>
-          )}
+          </label>
+          <div className="flex items-center gap-2">
+            {replyDraft.length > 0 && (
+              <span
+                className="bz-mono text-[10px] tabular-nums text-[#A3A3A3]"
+                aria-live="polite"
+              >
+                {replyDraft.length}
+              </span>
+            )}
+            {replyNotice && (
+              <span
+                className={`pulse-eyebrow rounded-full px-2.5 py-1 ${
+                  replyNotice.tone === 'success'
+                    ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+                    : replyNotice.tone === 'error'
+                      ? 'bg-[#FEF2F2] text-[#991B1B]'
+                      : 'bg-[#F5F5F5] text-[#525252]'
+                }`}
+                role="status"
+              >
+                {replyNotice.msg}
+              </span>
+            )}
+          </div>
         </div>
         <textarea
+          id="reply-textarea-input"
+          aria-labelledby="reply-textarea-label"
+          aria-describedby="reply-textarea-hint"
           value={replyDraft}
           onChange={(e) => setReplyDraft(e.target.value)}
+          onKeyDown={(e) => {
+            // Klavye shortcut'ı: Cmd/Ctrl+Enter → gönder (composer odaklıyken).
+            // Boş textarea + sendingReply state engellemesi onSendReply'da var.
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+              e.preventDefault();
+              if (replyDraft.trim() && !sendingReply) onSendReply();
+            }
+          }}
           onInput={(e) => {
-            // UX: textarea auto-grow — kullanıcının yazdığı her satır görünür
-            // kalsın. Mevcut sabit min-h-[100px] resize-none uzun yanıtta
-            // textarea içinde scroll yaratıyordu (kullanıcı raporu: "alta
-            // inilmiyor"). Parent panel scroll açık olunca (page.tsx
-            // lg:overflow-y-auto fix'i) bu auto-grow ferah deneyim sağlar.
+            // UX: textarea auto-grow — viewport-aware max height (küçük ekranda
+            // 50% viewport, masaüstünde max 480px). 'overflow-y: auto' max'a
+            // dayandığında textarea içinde scroll açar (parent zaten scrollable,
+            // kullanıcı uzun draft yazarken kontrolü kaybetmesin).
             const el = e.currentTarget;
             el.style.height = 'auto';
-            el.style.height = `${Math.min(el.scrollHeight, 480)}px`;
+            const cap = typeof window !== 'undefined'
+              ? Math.min(480, Math.round(window.innerHeight * 0.5))
+              : 480;
+            el.style.height = `${Math.min(el.scrollHeight, cap)}px`;
           }}
           placeholder={isTr ? `Merhaba ${customerFirst},` : `Hi ${customerFirst},`}
-          className="mt-2.5 w-full min-h-[120px] resize-none bg-transparent text-[14px] sm:text-[13px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none transition-[height] duration-150"
+          className="mt-2.5 w-full min-h-[120px] resize-none bg-transparent text-[16px] sm:text-[13px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none focus:placeholder:text-[#525252] transition-[height] duration-150 overflow-y-auto"
+          maxLength={5000}
         />
+        <p
+          id="reply-textarea-hint"
+          className="sr-only"
+        >
+          {isTr
+            ? 'Cmd veya Ctrl + Enter ile gönderebilirsiniz. En fazla 5000 karakter.'
+            : 'Press Cmd or Ctrl + Enter to send. Maximum 5000 characters.'}
+        </p>
 
         <div className="mt-3 rounded-lg bg-[#FAFAFA] p-2.5">
           {active.customerEmail ? (
@@ -242,21 +289,36 @@ export function FeedbackReplyComposer({
         </div>
 
         <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="flex gap-1.5">
-            {['📝', '✨', '😊', '@'].map((e) => (
-              <span
-                key={e}
-                className="flex h-7 w-7 items-center justify-center rounded-md bg-[#F5F5F5] text-[12px]"
-              >
-                {e}
-              </span>
-            ))}
-          </div>
+          {/* Mobile: empty spacer (button right-aligned). Desktop: shortcut hint. */}
+          <span
+            className="hidden sm:inline-flex items-center gap-1.5 text-[10.5px] text-[#A3A3A3]"
+            aria-hidden
+          >
+            <kbd className="bz-mono rounded border border-[#EDEDED] bg-[#FAFAFA] px-1.5 py-0.5 text-[9.5px] text-[#525252]">
+              ⌘
+            </kbd>
+            <kbd className="bz-mono rounded border border-[#EDEDED] bg-[#FAFAFA] px-1.5 py-0.5 text-[9.5px] text-[#525252]">
+              Enter
+            </kbd>
+            {isTr ? 'göndermek için' : 'to send'}
+          </span>
           <button
             type="button"
             onClick={onSendReply}
             disabled={!replyDraft.trim() || sendingReply}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 sm:py-1.5 text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-40"
+            aria-disabled={!replyDraft.trim() || sendingReply}
+            title={
+              !replyDraft.trim()
+                ? isTr
+                  ? 'Önce bir yanıt yazın'
+                  : 'Write a reply first'
+                : sendingReply
+                  ? isTr
+                    ? 'Gönderiliyor…'
+                    : 'Sending…'
+                  : undefined
+            }
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 sm:py-1.5 text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
           >
             {sendingReply ? (
               <Loader2 size={12} strokeWidth={2} className="animate-spin" />
