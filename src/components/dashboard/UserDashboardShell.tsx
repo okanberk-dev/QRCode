@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -309,14 +309,14 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   // returns JSX (not a component) keeps reconciliation in place: only the
   // active-state classes are diffed and patched.
   const renderSidebar = (forwardedNavRef?: React.MutableRefObject<HTMLElement | null>) => (
-    <div className="flex h-full flex-col bg-[#0A0A0A] text-white">
+    <div className="flex h-full flex-col bg-white text-[#0A0A0A]">
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
         <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
           <BuazeLogo size={32} variant="on-dark" imageUrl={logoUrl} />
           {!isCollapsed && (
             <span
-              className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none bz-h-tight animate-in fade-in slide-in-from-left-2 duration-300"
+              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A] leading-none bz-h-tight animate-in fade-in slide-in-from-left-2 duration-300"
             >
               buaze<span className="text-[#C6F24E]">.</span>
             </span>
@@ -326,7 +326,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
       {/* Workspace switcher */}
       <div className="px-3 pb-3">
-        <div className={`flex items-center gap-2.5 rounded-lg bg-[#1A1A1A] ${isCollapsed ? 'px-2 py-2 justify-center' : 'px-3 py-2.5'}`}>
+        <div className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAFA] border border-[#EDEDED] ${isCollapsed ? 'px-2 py-2 justify-center' : 'px-3 py-2.5'}`}>
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold bz-h-tight"
           >
@@ -335,15 +335,29 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           {!isCollapsed && (
             <>
               <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-2 duration-300">
-                <p className="truncate text-[13px] font-semibold text-white leading-tight">{primaryName}</p>
-                <p className="pulse-eyebrow text-white/70 mt-0.5">
+                <p className="truncate text-[13px] font-semibold text-[#0A0A0A] leading-tight">{primaryName}</p>
+                <p className="pulse-eyebrow text-[#525252] mt-0.5">
                   {locationCount} {locale === 'tr' ? 'KONUM' : 'LOCATIONS'}
                 </p>
               </div>
-              <ChevronDown size={14} className="text-white/60 shrink-0" strokeWidth={2} />
+              <ChevronDown size={14} className="text-[#737373] shrink-0" strokeWidth={2} />
             </>
           )}
         </div>
+      </div>
+
+      {/* Primary CTA — Yeni QR / Yorum İste (tasarım .design-pulse-2026 shell.jsx
+          paterni; Phase 1'de eklenen .bz-side-cta + --mini class'larını kullanır). */}
+      <div className="px-3 pb-3">
+        <Link
+          href={`/${locale}/dashboard/qr`}
+          className={`bz-side-cta ${isCollapsed ? 'bz-side-cta--mini' : ''}`}
+          title={isCollapsed ? (locale === 'tr' ? 'Yeni QR' : 'New QR') : undefined}
+          onClick={handleNavClick}
+        >
+          <Plus size={14} strokeWidth={2.2} />
+          <span>{locale === 'tr' ? 'Yeni QR oluştur' : 'New QR'}</span>
+        </Link>
       </div>
 
       {/* Nav */}
@@ -370,7 +384,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
                   isActive
                     ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                    : 'text-white/70 hover:bg-white/5 hover:text-white'
+                    : 'text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
                 }`}
               >
                 <Icon size={16} strokeWidth={2} className="shrink-0" />
@@ -400,15 +414,15 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           return (
             <div key={item.id}>
               {showDividerBefore && (
-                <div aria-hidden className="my-2 mx-3 h-px bg-white/5" />
+                <div aria-hidden className="my-2 mx-3 h-px bg-[#FAFAFA]" />
               )}
               <button
                 type="button"
                 onClick={() => toggleGroup(item.id)}
                 className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
                   childActive
-                    ? 'bg-white/[0.07] text-white'
-                    : 'text-white/70 hover:bg-white/5 hover:text-white'
+                    ? 'bg-[#F5F5F5] text-[#0A0A0A]'
+                    : 'text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
                 }`}
                 aria-expanded={isExpanded}
               >
@@ -424,7 +438,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                     <ChevronRight
                       size={14}
                       strokeWidth={2}
-                      className={`text-white/60 transition-transform duration-200 ${
+                      className={`text-[#737373] transition-transform duration-200 ${
                         isExpanded ? 'rotate-90' : ''
                       }`}
                     />
@@ -444,7 +458,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 aria-hidden={isCollapsed || !isExpanded}
               >
                 <div className="overflow-hidden">
-                  <div className="mt-1 ml-5 space-y-0.5 border-l border-white/10 pl-3 pb-1">
+                  <div className="mt-1 ml-5 space-y-0.5 border-l border-[#EDEDED] pl-3 pb-1">
                     {item.children.map((child) => {
                       const ChildIcon = child.icon;
                       const isActive =
@@ -459,7 +473,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                           className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] font-medium transition-colors ${
                             isActive
                               ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                              : 'text-white/60 hover:bg-white/5 hover:text-white'
+                              : 'text-[#737373] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
                           }`}
                         >
                           <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
@@ -475,18 +489,54 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         })}
       </nav>
 
+      {/* Plan progress card — sadece trial user + sidebar açık (collapsed durumda
+          gizli, alan yetersiz). Tasarım .design-pulse-2026 shell.jsx paterni:
+          PRO PLAN eyebrow + gün countdown + lime progress bar + Yükselt link. */}
+      {!isCollapsed && user.plan === 'trial' && trialDaysLeft !== null && (
+        <div className="px-3 pb-3 animate-in fade-in slide-in-from-left-2 duration-300">
+          <div className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="pulse-eyebrow text-[#0A0A0A]">
+                {locale === 'tr' ? 'DENEME PLANI' : 'TRIAL PLAN'}
+              </span>
+              <span className="bz-mono text-[10.5px] text-[#525252] tabular-nums">
+                {trialDaysLeft}
+                {locale === 'tr' ? 'g' : 'd'}
+              </span>
+            </div>
+            <div className="bz-progress lime">
+              <i style={{ width: `${Math.max(8, Math.min(100, (trialDaysLeft / 14) * 100))}%` }} />
+            </div>
+            <Link
+              href={`/${locale}/dashboard/account?section=billing`}
+              className="block text-[11.5px] text-[#525252] leading-[1.4]"
+              onClick={handleNavClick}
+            >
+              {trialDaysLeft <= 5
+                ? locale === 'tr'
+                  ? 'Az kaldı — '
+                  : 'Almost over — '
+                : ''}
+              <span className="font-semibold text-[#0A0A0A] underline">
+                {locale === 'tr' ? 'Plana yükselt' : 'Upgrade plan'}
+              </span>
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* User row + logout */}
-      <div className="border-t border-white/10 bg-black/20 p-3">
-        <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-white/5 px-2.5 py-2">
+      <div className="border-t border-[#EDEDED] bg-[#FAFAFA] p-3">
+        <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-[#FAFAFA] px-2.5 py-2">
           <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] border border-white/10 bz-h-tight"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] border border-[#EDEDED] bz-h-tight"
           >
             {initial}
           </div>
           {!isCollapsed && (
             <div className="min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
-              <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
-              <p className="truncate text-[10px] text-white/70">{user.email}</p>
+              <p className="truncate text-[12px] font-medium text-[#0A0A0A]">{displayName}</p>
+              <p className="truncate text-[10px] text-[#525252]">{user.email}</p>
             </div>
           )}
         </div>
@@ -494,7 +544,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           <button
             onClick={handleLogout}
             title={copy.logout}
-            className={`flex items-center justify-center gap-2 rounded-xl py-2 text-[12px] font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-red-300 w-full`}
+            className={`flex items-center justify-center gap-2 rounded-xl py-2 text-[12px] font-medium text-[#737373] transition-colors hover:bg-[#FAFAFA] hover:text-[#DC2626] w-full`}
           >
             <LogOut size={13} strokeWidth={2} />
             {!isCollapsed && <span>{copy.logout}</span>}
@@ -510,13 +560,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
       </a>
       {/* Desktop sidebar */}
-      <aside className={`relative hidden h-full shrink-0 border-r border-white/5 lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-64'}`}>
+      <aside className={`relative hidden h-full shrink-0 border-r border-[#EDEDED] lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-64'}`}>
         {renderSidebar(navRef)}
         {/* Floating toggle button */}
         <button
           onClick={toggleSidebar}
           aria-label={isCollapsed ? (locale === 'tr' ? 'Menüyü genişlet' : 'Expand menu') : (locale === 'tr' ? 'Menüyü daralt' : 'Collapse menu')}
-          className="absolute -right-3 top-7 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#1A1A1A] text-white/70 shadow-sm hover:text-white hover:bg-[#2A2A2A] transition-all"
+          className="absolute -right-3 top-7 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#525252] shadow-sm hover:text-[#0A0A0A] hover:bg-[#FAFAFA] transition-all"
         >
           {isCollapsed ? <ChevronRight size={13} strokeWidth={2.5} /> : <ChevronLeft size={13} strokeWidth={2.5} />}
         </button>
@@ -708,16 +758,16 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             onClick={() => setMoreOpen(false)}
           />
           <div
-            className="absolute bottom-0 left-0 right-0 bg-[#0A0A0A] rounded-t-3xl border-t border-white/10 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] text-white shadow-2xl"
+            className="absolute bottom-0 left-0 right-0 bg-[#0A0A0A] rounded-t-3xl border-t border-[#EDEDED] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] text-[#0A0A0A] shadow-2xl"
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
             <div className="mb-3 flex items-center justify-between px-2">
-              <p className="pulse-eyebrow text-white/70">{copy.more}</p>
+              <p className="pulse-eyebrow text-[#525252]">{copy.more}</p>
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
                 aria-label="close"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/5 hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
               >
                 <X size={18} strokeWidth={2} />
               </button>
@@ -735,7 +785,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                       className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] transition-colors ${
                         isActive
                           ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
-                          : 'text-white/80 hover:bg-white/5 hover:text-white font-medium'
+                          : 'text-[#1A1A1A] hover:bg-[#FAFAFA] hover:text-[#0A0A0A] font-medium'
                       }`}
                     >
                       <Icon size={16} strokeWidth={2} />
@@ -744,14 +794,14 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                   </li>
                 );
               })}
-              <li className="pt-2 mt-2 border-t border-white/10">
+              <li className="pt-2 mt-2 border-t border-[#EDEDED]">
                 <button
                   type="button"
                   onClick={() => {
                     setMoreOpen(false);
                     handleLogout();
                   }}
-                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-medium text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-medium text-[#DC2626] transition-colors hover:bg-[#FEF2F2] hover:text-[#DC2626]"
                 >
                   <LogOut size={16} strokeWidth={2} />
                   <span>{copy.logout}</span>

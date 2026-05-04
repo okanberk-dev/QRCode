@@ -438,6 +438,57 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
 
           {reviewsPayload && (
             <div className="space-y-6">
+              {/* Dark hero rating card — tasarım .design-pulse-2026/.../page-google.jsx
+                  paterni: koyu zemin + lime accent rating + lime corner + summary
+                  metrikleri. Mevcut 4-tile metric + breakdown chart aşağıda
+                  korunur (detaylı analiz için). */}
+              <section className="relative overflow-hidden rounded-2xl bg-[#0A0A0A] p-6 sm:p-8 text-white">
+                {/* Lime corner accent (Pulse signature) */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-[#C6F24E]/10 blur-2xl"
+                />
+                <div className="relative grid gap-6 lg:grid-cols-[auto_1fr] lg:items-end">
+                  <div>
+                    <span className="pulse-eyebrow text-[#C6F24E]">
+                      {isTr ? 'GOOGLE PUAN ÖZETİ' : 'GOOGLE RATING SUMMARY'}
+                    </span>
+                    <div className="mt-2 flex items-baseline gap-3">
+                      <span className="bz-h-tight-2 text-[56px] sm:text-[68px] leading-[0.9] text-[#C6F24E] tabular-nums">
+                        {reviewsPayload.averageRating != null
+                          ? reviewsPayload.averageRating.toFixed(1)
+                          : '—'}
+                      </span>
+                      <span className="text-[14px] text-white/60">/ 5</span>
+                    </div>
+                    <p className="mt-2 text-[13px] text-white/70">
+                      {reviewsPayload.totalReviewCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
+                      {isTr ? 'Google yorumu' : 'Google reviews'}
+                    </p>
+                  </div>
+                  {/* Inline mini distribution */}
+                  <div className="space-y-1.5 lg:max-w-[420px] lg:ml-auto w-full">
+                    {reviewAnalysis.breakdown.map((item) => {
+                      const pct = reviewsPayload.reviews.length
+                        ? (item.count / reviewsPayload.reviews.length) * 100
+                        : 0;
+                      return (
+                        <div key={item.rating} className="flex items-center gap-2.5 text-[11.5px]">
+                          <span className="w-5 text-white/60 tabular-nums">{item.rating}★</span>
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                            <div
+                              className="h-full rounded-full bg-[#C6F24E] transition-all duration-500"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="w-7 text-right text-white/70 tabular-nums">{item.count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </section>
+
               <div className="grid gap-3 sm:grid-cols-4">
                 <Metric label={isTr ? "Google puanı" : "Google rating"} value={reviewsPayload.averageRating?.toFixed(1) ?? "-"} />
                 <Metric label={isTr ? "Toplam yorum" : "Total reviews"} value={String(reviewsPayload.totalReviewCount)} />
