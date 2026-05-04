@@ -42,6 +42,13 @@ interface SettingsLayoutProps {
    * to a tail-end ungrouped block.
    */
   groups?: SettingsGroup[];
+  /**
+   * Optional right rail rendered xl: (≥1280px) breakpoint'inde 320px sabit
+   * kolon olarak. lg ve altında gizli (yer yok). Tasarım .design-pulse-2026
+   * page-account.jsx 220|1fr|320 paterni. account/page.tsx kullanır;
+   * restaurants/[id]/settings rail geçmediği sürece mevcut 2-col korunur.
+   */
+  rightRail?: ReactNode;
 }
 
 /**
@@ -64,6 +71,7 @@ export function SettingsLayout({
   children,
   ariaLabel,
   groups,
+  rightRail,
 }: SettingsLayoutProps) {
   const tabItems: TabItem[] = tabs.map((t) => ({
     id: t.id,
@@ -118,16 +126,27 @@ export function SettingsLayout({
   }, []);
 
   return (
-    <div className="mx-auto max-w-[1200px] px-5 sm:px-7 py-6 lg:py-8">
+    <div className={`mx-auto px-5 sm:px-7 py-6 lg:py-8 ${rightRail ? 'max-w-[1440px]' : 'max-w-[1200px]'}`}>
       {header && <div className="mb-6 sm:mb-8">{header}</div>}
 
       {/* Mobile (sm): all sections render as accordion via children */}
       {isCompactNav ? (
         <div className="space-y-3" role="region" aria-label={ariaLabel}>
           {children}
+          {rightRail && (
+            <div className="space-y-3 pt-2 border-t border-[#EDEDED] mt-3">
+              {rightRail}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-6 lg:gap-10">
+        <div
+          className={`grid grid-cols-1 gap-6 lg:gap-10 ${
+            rightRail
+              ? 'lg:grid-cols-[240px_1fr] xl:grid-cols-[240px_minmax(0,1fr)_320px]'
+              : 'lg:grid-cols-[240px_1fr]'
+          }`}
+        >
           {/* Tab nav: horizontal on md, vertical on lg */}
           <aside className={`lg:sticky ${stickyTopClass} self-start`}>
             <div className="hidden lg:block">
@@ -191,6 +210,15 @@ export function SettingsLayout({
           <main className="min-w-0 max-w-[920px]">
             {children}
           </main>
+
+          {/* Right rail (xl:+) — opsiyonel; tasarım .design-pulse-2026
+              page-account.jsx 320px paterni. Sticky scroll, lg ve altında
+              gizli (yer yok), mobil accordion altında inline render edilir. */}
+          {rightRail && (
+            <aside className={`hidden xl:block xl:sticky ${stickyTopClass} self-start space-y-3`}>
+              {rightRail}
+            </aside>
+          )}
         </div>
       )}
     </div>
