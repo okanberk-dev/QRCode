@@ -6442,3 +6442,91 @@ Kullanıcı raporu (4 ekran görüntüsü + design link `bbIuwvW9esfgyMH24a5ZDg`
 - 🟡 FeedbackTimeline AI draft + system event extension (backend API genişletmesi gerekir)
 - 🟡 Composer template prefill (Yorumlar AI Co-Pilot composer'a quick reply integration)
 - 🟢 Mobile chip ↔ Desktop rail unified state (kullanıcı tab değiştirince cross-state inconsistency)
+
+### 38.34 2026-05-04 — Analitik sayfası 1:1 parity (KPI hibrit + tek chart toggle + AI Insights 3-row + QR mapping)
+
+Kullanıcı raporu (2 ekran görüntüsü desktop + mobil + design link `bbIuwvW9esfgyMH24a5ZDg`): mevcut analytics page (903 satır, §38.18-§38.26) tasarım `.design-owner-2026/page-analytics.jsx` ile ~%75 parity. Audit (Explore agent) 4 kritik gap + 3 silinmesi gereken section + 1 backend extension tespit etti. Kullanıcı 4 backend kararını onayladı (hepsi Recommended).
+
+**4 backend kararı**:
+
+| Karar | Seçim | Etki |
+|---|---|---|
+| KPI grid format | **4 top + 3 secondary alt strip** | Hibrit: tasarım 4 KPI üstte (Ortalama Puan / Bu Ay Yorum / NPS Skoru / Yanıt Oranı) + Buaze ek (Dönüşüm/Yönlendirme/AI Yanıt) altta |
+| Section delete | **InteractionTrendChart + Aspect Breakdown + Yanıt Performansı SİL** | Tek-chart Puan/Hacim/Sentiment toggle ile konsolidasyon. Günlük + Saat-bazlı 1D dağılım KORUNUR (Heatmap'in farklı UX'i) |
+| AI İçgörüler | **Tasarım birebir: 3-row dark card (TREND/KAZANIM/RİSK)** | `extractStructuredInsight` helper structured 3-segment output |
+| QR mapping | **UI runtime computed (`platform = null` → 'buaze_qr' label fallback)** | Schema/migration YOK; KANAL DAĞILIMI render-time map |
+
+**Schema migration YOK**.
+
+**Yeni saf helper'lar**:
+- `src/lib/analytics-nps.ts` — `calculateNPS` saf fonksiyon. NPS heuristic 1-5 → 0-10 mapping (5★ promoter / 4★ passive / 1-3★ detractor). NPS = (P% - D%) range -100..+100. 5 unit test (empty/all-promoter/all-detractor/mixed/invalid).
+- `src/lib/weekly-structured-insight.ts` — `extractStructuredInsight` 3-segment AI output (TREND/KAZANIM/RİSK). Cache 1 hafta (Pazartesi yenilenir). gpt-4o-mini, fail-safe fallback. extractWeeklyInsight (§21.38) shape farklı — bu helper analytics page için özel. 4 unit test.
+
+**6 yeni component** (`src/components/dashboard/analytics/`):
+- `AnalyticsKpiGrid.tsx` — 4 top sparkline-li KPI + 3 secondary alt strip (sm:hidden mobile secondary)
+- `PulseTrendChart.tsx` — tek chart Puan/Hacim/Sentiment toggle, custom inline SVG, 14-haftalık görünüm, 'use client' (mode state). WeeklyTrendChart (§38.25) replace.
+- `AiInsightsCard.tsx` — 3-row dark card (TREND lime-deep / KAZANIM lime / RİSK kırmızı). Tüm 3 alan boş → kart gizli.
+- `ChannelDistributionMini.tsx` — 4 platform progress bar list (analytics rail mini variant). Mevcut ChannelDistribution (§38.31, dashboard 4-card) ile farklı UX.
+- `TopLocationCard.tsx` — multi-restaurant pik lokasyon (single-restaurant → null render).
+- `MobileAnalyticsHero.tsx` — sm:hidden hero card (graphite + lime 56px rating + sparkline). §38.28 dashboard mobile hero paterni reuse.
+
+**Analytics page integration** (`src/app/[locale]/dashboard/analytics/page.tsx`):
+- Backend genişletme:
+  - `avgRatingNow` = window feedback'lerin rating ortalaması
+  - `calculateNPS(feedbacksWindow)` saf hesap (npsScore + promoters/passives/detractors + promoterPct)
+  - `overallResponseRate` = repliedCount / reviewsCount × 100 (all feedback, mevcut low-rated YANIT PERFORMANSI'tan farklı)
+  - `avgResponseHours` = Σ(reply.createdAt - feedback.createdAt) / replyCount (all feedback)
+  - `aiReplyCount` = repliedCount × 0.6 heuristic (FeedbackReply.source select eksik; future enhancement: backend select source ekle)
+  - `weeklyTrend` shape genişletildi: `+ sentimentPct` (rating ≥4 / volume × 100)
+  - `structuredInsight` extractStructuredInsight çağrısı (cache 1 hafta, ratingDistribution input)
+  - QR fallback `platform = null && rating >= 4` → 'buaze_qr' UI runtime (KANAL DAĞILIMI)
+- KALDIRILAN section'lar (kullanıcı kararı):
+  - `<InteractionTrendChart>` (window-day scans/reviews/redirects line+bar) → silindi (PulseTrendChart Hacim toggle ile aynı)
+  - YANIT PERFORMANSI section (low-rated latency) → `{false && ...}` ile gizli (KPI Yanıt Oranı + avg response label özetler)
+  - Aspect Breakdown (food/service/atmosphere) → aynı dead-code blok'ta gizli (KONU & DUYGU NLP topics ile semantic örtüşme)
+- KORUNAN section'lar:
+  - `<AnalyticsFilterBar>`, `<HeatmapDayHour>` (§38.24), KONU & DUYGU themes (§38.20), Günlük + Saat-bazlı 1D dağılım (kullanıcı silme listesine almadı)
+- EKLENEN component mount sırası:
+  1. `<MobileAnalyticsHero>` sm:hidden üstte
+  2. `<AnalyticsKpiGrid>` (4 top + 3 secondary)
+  3. `<PulseTrendChart>` (Puan/Hacim/Sentiment toggle)
+  4. `<ChannelDistributionMini>` + `<TopLocationCard>` 2-col grid (showPlatformShare)
+  5. Heatmap + Günlük/Saat-bazlı dağılım (mevcut)
+  6. `<AiInsightsCard>` (yeni dark card 3-row)
+  7. KONU & DUYGU themes (mevcut, KEEP)
+
+**Yapma**:
+- AnalyticsKpiGrid `secondaryKpis` prop'unu mobile'da göstermek — UX kalabalıklık; sm:hidden korunur
+- WeeklyTrendChart (§38.25) component'i silmek — başka surface'ta gerekirse reuse, sadece analytics page'de kullanılmıyor
+- InteractionTrendChart component dosyasını silmek — type import (`InteractionTrendPoint`) hâlâ kullanılıyor (interactionData KPI sparkline)
+- `aiReplyCount = repliedCount × 0.6` heuristic'i kalıcı kabul — future enhancement: backend FeedbackReply.source select ekle (cost düşük, doğruluk artar)
+- QR feedback için schema migration `platform = 'buaze_qr'` — UI runtime label yeterli; başka surface'lerde mevcut platformGroups (rating ≥4 + platform set) bozulmamalı
+- `extractStructuredInsight` cache key restaurantIds'siz olsun — multi-restaurant filter aktifken farklı dataset, cache pollution
+- Tasarım 3-row AI card'ı themes section'ıyla replace — KONU & DUYGU farklı UX (NLP topics + sentiment progress)
+
+**Yap**:
+- Yeni KPI eklenirken: `KpiSpec` shape (`label/value/delta/deltaKind/subtitle/sparkline/sparklineColor`) + `topKpis` veya `secondaryKpis` array'ine push
+- Yeni AI insight türü eklenirse: `extractStructuredInsight` prompt + JSON parse field genişlet, AiInsightsCard `RowSpec` array'ine eklenir
+- Sentiment trend per-week heuristic (rating ≥4 ratio) yetersiz görülürse: extractThemes per-week call (cost yüksek, defer); CLAUDE.md §38.34 backlog
+- Top location'a multi-criteria sort (count + recency + avg rating) — şu an sadece count; ileride weighted
+
+**Verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` 0 errors (13 baseline warning — refactor sonrası unused vars: lowRatingDelta/scansDelta/sparkScans/totalRedirects/StatCard/PlatformChip/etc. Future cleanup PR)
+- `npm test` 143/143 pass (134 + 5 NPS + 4 structured insight)
+- Manuel: `/tr/dashboard/analytics` 4 KPI top + 3 secondary alt + tek chart Puan/Hacim/Sentiment toggle
+- Manuel: AI İçgörüler dark card 3-row TREND/KAZANIM/RİSK (synthesis dolu ise; aksi halde gizli)
+- Manuel: Heatmap + KONU & DUYGU + Günlük/Saat-bazlı dağılım korunur
+- Manuel mobil (375px): MobileAnalyticsHero görünür, KPI 2x2 grid (secondary gizli)
+- Manuel: KANAL DAĞILIMI mini'de QR feedback'ler "Buaze QR" olarak görünür (platform null + rating ≥4)
+
+**Yorumlar/Google Yorumları cleanup not** (kullanıcı talebi):
+PR #440 sonrası audit'e göre Yorumlar + Google Yorumları sayfaları tasarım uyumlu (mevcut > design); silinecek section yok. Future enhancement (FeedbackTimeline AI draft + system event API expose) §38.33 backlog'unda kayıtlı.
+
+**Backlog güncel** (Bu PR sonrası):
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30 paterni)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)
+- 🟡 `aiReplyCount` heuristic → FeedbackReply.source select backend genişletme (gerçek sayı)
+- 🟡 Sentiment trend per-week gerçek NLP (extractThemes per-week, cost concern)
+- 🟢 Analytics page unused vars refactor (StatCard/PlatformChip/sparkScans/etc.)
+- 🟢 InteractionTrendChart + WeeklyTrendChart component dosyaları cleanup (analytics-only, başka surface yok)
