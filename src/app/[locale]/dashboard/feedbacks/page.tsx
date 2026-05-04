@@ -22,6 +22,7 @@ import type {
 } from './_components/types';
 import { FeedbackList } from './_components/FeedbackList';
 import { FeedbackDetail } from './_components/FeedbackDetail';
+import { FeedbackFiltersRail } from './_components/FeedbackFiltersRail';
 import { FeedbackFiltersModal } from './_components/FeedbackFiltersModal';
 
 function FeedbacksContent({ locale }: { locale: Locale }) {
@@ -560,11 +561,25 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       </div>
 
       <div
-        className="flex flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white lg:flex-row lg:h-[calc(100vh-200px)] lg:min-h-[540px]"
+        className="flex flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white lg:flex-row lg:h-[calc(100vh-200px)] lg:min-h-[540px] xl:grid xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,360px)]"
       >
-        {/* ============ LEFT — list ============ */}
+        {/* ============ XL FILTER RAIL — visible only on xl: (≥1280px) ============ */}
+        <FeedbackFiltersRail
+          locale={locale}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          activeTab={tab}
+          setActiveTab={(v) => filters.set('tab', v)}
+          counts={counts}
+          hasActiveFilter={hasActiveFilter}
+          activeFilterCount={activeFilterCount}
+          onOpenFilters={() => setFiltersOpen(true)}
+          onResetFilters={onResetFilters}
+        />
+
+        {/* ============ LEFT — list (orta kolon xl:'de) ============ */}
         <aside
-          className={`w-full flex-shrink-0 border-b border-[#EDEDED] lg:border-b-0 lg:border-r lg:w-[380px] xl:w-[420px] ${
+          className={`w-full flex-shrink-0 border-b border-[#EDEDED] lg:border-b-0 lg:border-r lg:w-[380px] xl:w-auto xl:flex-none ${
             isMobileDetailView ? 'hidden lg:block' : 'block'
           }`}
         >

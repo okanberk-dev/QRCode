@@ -406,7 +406,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="bz-btn-ghost inline-flex items-center gap-1.5 rounded-full text-[12px] text-red-600 hover:bg-red-50 hover:border-red-100"
+                className="bz-btn-ghost inline-flex items-center gap-1.5 rounded-full text-[12px] text-[#DC2626] hover:bg-[#FEF2F2] hover:border-[#FECACA]"
                 onClick={async () => {
                   if (!confirm(isTr ? 'Google hesap bağlantısı kesilecek. Devam etmek istiyor musunuz?' : 'Google account will be disconnected. Continue?')) return;
                   try {
