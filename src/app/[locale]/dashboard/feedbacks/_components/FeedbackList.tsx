@@ -76,8 +76,11 @@ export function FeedbackList({
         </div>
       )}
 
-      {/* Sticky search + tabs + filter shortcut */}
-      <div className="border-b border-[#EDEDED] bg-white p-3 space-y-2.5 sticky top-0 z-10">
+      {/* Sticky search + tabs + filter shortcut.
+          xl:'de (≥1280px) parent grid'in <FeedbackFiltersRail> standalone rail'a
+          taşıdığı için bu header xl: aralığında gizli — duplicate state kullanmasın.
+          lg:1024-1279 ve mobil aralıkta header burada görünür (mevcut UX). */}
+      <div className="border-b border-[#EDEDED] bg-white p-3 space-y-2.5 sticky top-0 z-10 xl:hidden">
         <div className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 focus-within:border-[#0A0A0A] transition-colors">
           <Search size={14} className="text-[#737373] shrink-0" strokeWidth={2} />
           <input
