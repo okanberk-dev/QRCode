@@ -5140,4 +5140,100 @@ notifyOpsOfOpenAiBillingFailure({ status, errorType, message, source });
 |---|---|---|
 | `claude/sentry-test-console-diagnostic` | #398 merged | Console.error swap + DSN fingerprint helper |
 | `claude/sentry-init-debug-log` | #399 merged | Cold-start init log (server + edge) |
-| `claude/sentry-flush-session-close-docs` | (this PR) | §38.13 docs close-out + §38.8/§38.9 pending tablo update |
+| `claude/sentry-flush-session-close-docs` | #400 merged | §38.13 docs close-out + §38.8/§38.9 pending tablo update |
+
+### 38.14 2026-05-04 — Owner Panel Pulse 2026 redesign + UX bug fix
+
+Claude Design'dan gelen `/v1/design/h/237b0j9_8BAp9h3YZqg08Q` handoff bundle (`/tmp/owner-redesign/a/`) Pulse 2026 design system'iyle owner panel'i hizalama oturumu. Tasarım dosyaları **birebir uygulanmadı** (rule §16 — `.design/` referans only); spec'ten somut delivery'e dönüşen 9 PR + 2 recovery PR.
+
+**Toplam 12 PR, 9 unique feature**:
+
+| PR | İçerik | Durum |
+|---|---|---|
+| #401 | RatingChart renk hierarchy + PlatformDistribution duplikasyon temizliği + QR card "yorum"→"taranma" label fix | merged |
+| #402 | Phase 1 CSS Foundation — yeni `.bz-*` sidebar/drawer/menu utility class'ları | merged |
+| #409 | Recovery: Phase 2-5-6-8 reapply (stacked-squash gotcha #1) | merged |
+| #410 | HIGH sweep — sidebar dark→light + primary CTA + plan progress + dashboard task card + Google hero | merged |
+| #418 | Recovery: PR #411-416 reapply (stacked-squash gotcha #2) + Yorumlar composer scroll bug fix | merged |
+| #419 | Google Reviews PROFİL SAĞLIĞI gauge + SIK GEÇEN KELİMELER (NLP keyword bar) | merged |
+| #420 | Customer detail drawer — URL state pattern, slide-in, fetch, ESC+outside+focus trap | açık (CI passing) |
+| (this PR) | Bu §38.14 docs close-out + sıradaki prompt placeholder | açık |
+
+**Yapısal değişiklikler (sweep'in büyük çıktıları)**:
+
+1. **Sidebar light theme** — `bg-[#0A0A0A] text-white` → `bg-white text-[#0A0A0A]`. Avatar chip + drawer overlay + bottom nav active state Pulse signature olarak korundu.
+2. **Sidebar enhancements** — Yeni QR primary CTA, plan progress card (trial countdown), user dropdown menu (Profil/Ayarlar/Yardım/Çıkış, ESC + outside click), JetBrains Mono uppercase grup label, GENEL/CRM/İŞLETME/AYARLAR 4-grup nav reorganize.
+3. **Customers CRM** (yeni sayfa) — `/dashboard/customers` server component, owner-scoped `/api/customers` endpoint, CSV export endpoint, customer detail drawer (URL state `?detail=KEY`).
+4. **Feedbacks 3-col** — xl: ≥1280px breakpoint'inde `300px filter rail | 1fr list | 360px detail`. `FeedbackFiltersRail` component.
+5. **Account 320px right rail** — xl: SettingsLayout opsiyonel `rightRail` prop. Plan/Team/Legal quick-nav 3 link card.
+6. **Dashboard zenginleştirme** — 4 yeni section: BUGÜN BEKLEYEN (yanıtlanmamış low-rating), KANAL DAĞILIMI (4-card grid), SIK BAHSEDİLEN KONULAR (extractThemes AI), CANLI AKIŞ (activity timeline).
+7. **Google Reviews polish** — Dark hero rating card (lime corner accent), PROFİL SAĞLIĞI 92/100 gauge (SVG arc), SIK GEÇEN KELİMELER (client-side word frequency, AI maliyetsiz).
+8. **Customer detail drawer** (Phase 8d) — sağ slide-in, URL state, 3-stat tile, feedback timeline, mailto/tel actions.
+
+**UX bug fix (PR #418)**:
+- Kullanıcı raporu: "Yorumlar sayfasında yorum yazma alanında alta inilmiyor."
+- Kök neden 1: detail wrapper'da `lg:min-h-0` + `lg:overflow-y-auto` eksikti; flex item default min-height: auto child'ı genişletip parent overflow-hidden altında scroll engelliyordu.
+- Kök neden 2: textarea `min-h-[100px] resize-none` — uzun yanıtta büyümüyor, içeride scroll yaratıyordu.
+- Fix: detail wrapper scroll açıldı + textarea `onInput` auto-grow (max 480px, smooth transition) + composer pb `lg:pb-8 → lg:pb-12`.
+
+**Yeni dosyalar (kalıcı)**:
+
+| Dosya | Amaç |
+|---|---|
+| `src/app/[locale]/dashboard/customers/page.tsx` | Owner Customers CRM list (server component, URL filter) |
+| `src/app/[locale]/dashboard/customers/_components/CustomerDetailDrawer.tsx` | Slide-in drawer (URL state, fetch, ESC, focus trap) |
+| `src/app/[locale]/dashboard/feedbacks/_components/FeedbackFiltersRail.tsx` | xl: 3-col layout filter rail |
+| `src/app/api/customers/route.ts` | Owner-scoped customer list (raw SQL aggregation, KVKK filtered) |
+| `src/app/api/customers/export/route.ts` | CSV export (UTF-8 + BOM, Excel TR-safe) |
+| `src/app/api/customers/[key]/route.ts` | Single customer detail (IDOR + Prisma OR clause) |
+
+**Yeni utility class'ları** (`src/app/globals.css`, Phase 1 — 277 satır additive):
+- `.bz-brand-mark` — logo + wordmark inline cluster
+- `.bz-side-section` + `--mini` — group eyebrow
+- `.bz-side-item` + `.active` + `--mini` — nav item (default + collapsed + active)
+- `.bz-side-tip` — collapsed nav tooltip
+- `.bz-side-cta` + `--mini` — sidebar primary CTA
+- `.bz-user-menu` + `-item` + `-divider` — bottom user dropdown
+- `.bz-progress` + `.lime` — sidebar plan card progress
+- `.bz-topbar-toggle` — mobile hamburger
+- `.bz-mob-drawer` + `-overlay` + `bz-drawer-slide-in` keyframe — mobile drawer
+
+**Yeni helper'lar** (in-page, not library — abstraction yok):
+- `computeHealthScore({avgRating, total, replied})` (google-reviews) — 0-100, rating×70 + responseRate×25 + volume×5
+- `extractKeywords(reviews, topN)` (google-reviews) — tokenize + STOPWORDS + sentiment derive
+- Customers `buildHref` extended `'detail'` param
+
+**KVKK + güvenlik disiplini (yeni endpoint'ler)**:
+- ✅ Tüm yeni endpoint'ler IDOR — `getPanelActorFromRequest` + `getScopedRestaurantIds`
+- ✅ Superadmin (null scope) 403 — admin endpoint ayrı pattern
+- ✅ Anonim feedback exclusion (hasKvkkConsent + contactKey null filter)
+- ✅ Email match `mode: 'insensitive'`, phone exact (Prisma OR clause)
+- ✅ Cache-Control: `private, s-maxage=N, stale-while-revalidate=M`
+- ✅ Cherry-pick recovery sırasında stacked-squash gotcha 2 kez yaşandı; her seferinde fresh-from-main consolidated PR ile recovery yapıldı (CLAUDE.md §21.22 paterni).
+
+**Squash merge gotcha 2x (CLAUDE.md §21.22 referans)**:
+
+| Gotcha | Kayıp PR'lar | Recovery PR |
+|---|---|---|
+| #1 | #403, #404, #405, #406, #407, #408 | #409 (recovery) |
+| #2 | #411, #412, #413, #414, #415, #416 | #418 (recovery) |
+
+Sebep: stacked PR'larda kullanıcı "Squash and merge" seçmiş, base PR merge sonrası alt PR'lar `closed-but-NOT-merged` durumda kalmış (içerikleri main'e geçmemiş). Çözüm: Cherry-pick + tek consolidated PR.
+
+**Disiplin notu** (sonraki AI session için): Birden fazla stacked PR varsa, en sondaki PR'a tek bir squash merge yeterli olur (tüm commit'ler tek squash'a sıkışır + alt PR'lar otomatik close). Ama kullanıcı bu pattern'i bilmiyorsa yine gotcha. **En güvenli**: tek-PR yaklaşım (consolidated branch + cherry-pick), ya da kullanıcıya merge sırası açıkça söyle.
+
+**Kalan backlog (sonraki PR'lar için)**:
+
+| Item | Scope | Öncelik |
+|---|---|---|
+| **Phase 8c** — Customers segment helper (VIP/Loyal/Risk/Churned/New) + LTV proxy + sentiment columns + filter pills | `src/lib/customers.ts` + `/api/customers` extend + `customers/page.tsx` table+mobile card 3 sütun ekle | MED — CRM tamamlama |
+| **HIGH 4** — Platform Bağlantıları 12-card grid sayfası | Aggregate view vs per-restaurant; product decision gerek (multi-restaurant owner UX) | DEFER — kullanıcı kararı bekliyor |
+| **Kampanyalar** (Campaigns) | Tasarım sidebar'da var, mevcutta yok; yeni feature scope (backend + UI + e-posta integration) | SKIP — explicit talep yok |
+| **HIGH 5 ek** — Google Profil tamlığı / Q&A / Quick reply templates | Google Place API sync gerek (yeni backend) + reply template seed | DEFER — backend feature |
+
+**Sonraki AI session için ipuçları**:
+1. PR #420 merge edildiğinde fresh main'den **Phase 8c branch** açılır.
+2. Stacked PR olmasın — tek consolidated PR önerisi. Squash gotcha riski 2 kez yaşandı.
+3. CLAUDE.md §38.14 (bu) son durum kaynağı; yeni iş yaparken §38.15+ olarak ekle.
+
+**Sıradaki kullanıcı prompt'u** — bu doc PR'dan sonra alınacak, ileride §38.15 olarak not edilecek.
