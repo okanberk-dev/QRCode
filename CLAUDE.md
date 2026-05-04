@@ -5942,3 +5942,94 @@ Sonra plan onaylanınca implement et.
 **Backlog güncel** (Bu PR sonrası):
 - 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
 - 🛡️ Security follow-ups (CLAUDE.md §38.2 — operatör tetiği bekliyor)
+
+### 38.27 2026-05-04 — Dashboard 1:1 tasarım parity (greeting + AI banner + KPI 4 + peak hint + stacked sentiment)
+
+Kullanıcı raporu: anasayfa `dashboard` tasarımla "1:1 değil, %100 uyumlu istiyorum". Audit (Explore agent) %85 hizalı buldu, 4 kritik gap kapatıldı:
+
+1. **Page header rewrite** — saat-aware greeting + actionable hook + subtitle + 3 action.
+2. **AI İçgörü banner** — graphite + lime, haftalık dismiss.
+3. **KPI 4-card 1:1** — Genel puan / Toplam yorum / Yanıt oranı / Yeni müşteri.
+4. **NABIZ peak hint** — chart altında "Pik · 4 Mayıs · 9 yorum".
+5. **SIK BAHSEDİLEN stacked bar** — `sentimentPositivePct` (Phase 8c+ §38.20) ile 3-segment.
+
+**PageHeader primitive genişletme** (`src/components/ui/PageHeader.tsx`):
+- Yeni opsiyonel `subtitle?: ReactNode` (kompakt meta, mono font 12px)
+- Yeni opsiyonel `eyebrowPulse?: boolean` (eyebrow yanında lime `bz-pulse-dot`)
+- Geriye dönük uyumlu — tüm mevcut callsite'lar etkilenmez.
+
+**AIInsightBanner.tsx yeni component** (`src/components/dashboard/AIInsightBanner.tsx`):
+- Graphite `#0A0A0A` bg + lime `#C6F24E` accent
+- `localStorage[storageKey]` haftalık dismiss (ISO week comparison)
+- "İncele →" lime CTA + dismiss X buton
+- `role="status"` + `aria-label`
+- SSR-safe: hidden default + useEffect mount kontrolü
+- Backend kaynak: `extractThemes` `themes.synthesis` field'ı (1-2 cümle AI çıkarımı)
+
+**Dashboard page rewrite** (`src/app/[locale]/dashboard/page.tsx`):
+
+Header:
+- Saat-aware greeting (TR: Günaydın 5-12 / İyi öğleden sonralar 12-18 / İyi akşamlar 18+; EN parite)
+- `userFirstName = user.name?.split(' ')[0] ?? 'Hoş geldin'` fallback
+- `pendingHook` — `pendingTasks.length > 0 ? "Bugün N yorum yanıt bekliyor." : "Bugün yanıtsız yorum yok 🎉"`
+- Subtitle: `restoran adı · {weekday, day, month, year}`
+- 3 action: Rapor indir (ghost) / Yorum İste (primary)
+- "Bu hafta" dropdown çıkarıldı (RangeDropdown component'i scope dışı; gelecek backlog)
+
+KPI rewrite (Genel puan / Toplam yorum / Yanıt oranı / Yeni müşteri):
+- **Genel puan**: `avgRating.toFixed(1)` + lime accent + delta (mevcut last7 vs prev7).
+- **Toplam yorum**: KEEP last7 + delta.
+- **Yanıt oranı**: 30 günlük rating ≤3 + replies some — `replied/total × 100`. Empty case "—" + "düşük puan yorum yok" hint.
+- **Yeni müşteri**: 30 günlük tekil contact_key (KVKK consent + non-anonim). `restIds.length === 0` SQL guard `WHERE FALSE`.
+- QR taranma + Platform yönlendirme metrikleri **kaldırıldı** (`/dashboard/analytics`'te §34.7-10 ile zaten zengin; ana dashboard owner action-odaklı 4-card sade).
+
+NABIZ peak hint:
+- 7-gün trend buckets üzerinden tek pass peak compute (peakIdx, peakCount, peakDateMs).
+- Locale'a göre tarih format: `4 Mayıs` (TR `day: 'numeric', month: 'long'`).
+- Footer: `bz-mono mt-2 text-[11px] text-[#737373]` ile inline render.
+
+SIK BAHSEDİLEN stacked sentiment bar:
+- `hasSentiment = typeof t.sentimentPositivePct === 'number'` branching:
+  - Has: 3-segment stacked bar (lime `#16A34A` pozitif + kırmızı `#DC2626` negatif), alt satırda `+pos%` + `-neg%` counter.
+  - Has not: eski tek-renk graphite progress bar fallback (graceful — eski cache + model uymadığında).
+- `role="img"` + `aria-label="N% pozitif, M% negatif"` (CLAUDE.md §37 yasaklı ARIA disiplini — explicit role + span/aria-label valid).
+- Inner synthesis card kaldırıldı — `AIInsightBanner` üstte aynı synthesis taşıyor (duplicate UX önlemi).
+
+Backend ek queries (3 yeni transaction satırı):
+- `lowRated30dCount` — `prisma.feedback.count({ rating ≤3, createdAt last 30d })`
+- `lowRated30dRepliedCount` — yukarıya `replies: { some: {} }` ek filter
+- `newCustomers30dRows` — `prisma.$queryRaw` distinct contact_key 30 günlük, `restIds.length === 0` durumda `WHERE FALSE` guard
+- Connection_limit=1 disiplini korunur — tek transaction (CLAUDE.md §14.1).
+
+**Dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/components/ui/PageHeader.tsx` | `subtitle` + `eyebrowPulse` props |
+| `src/components/dashboard/AIInsightBanner.tsx` | YENİ — graphite + lime banner, haftalık dismiss |
+| `src/app/[locale]/dashboard/page.tsx` | greeting + actionable + subtitle + 3 actions + AIInsightBanner mount + KPI 4-card 1:1 + 3 yeni transaction query + peak hint + stacked sentiment + inner synthesis cleanup |
+| `CLAUDE.md` | §38.27 yeni log |
+
+**Yapma**:
+- "Bu hafta" dropdown tarih filter'ı bu PR'a sıkıştırma — RangeDropdown client component + 3 ayrı dataset gerekir, ayrı backlog.
+- "Son güncelleme 2 dk önce" subtitle'a koyma — server render anı 0 sn anlamsız, lastSync gerçek-zamanlı yok.
+- `pendingHook` için `pendingTasks.length === 0 && totalReviews === 0` durumunu özel handle et — emoji 🎉 generic positive yeterli.
+- Inner synthesis card'ı geri ekleme — duplicate UX (AIInsightBanner üstte).
+- KPI cards'da QR/Redirect metrikleri geri getirme — analytics page zaten zengin, dashboard sade.
+- Yanıt oranı için division-by-zero — `lowRated30dCount > 0` guard zorunlu, "—" + hint fallback.
+
+**Yap**:
+- Yeni dashboard widget'ı eklerken aynı saat-aware greeting paterni reuse: helper `getGreeting(hour, locale)` 3+ callsite olduğunda lib'e taşınır.
+- AI banner için custom insight (extractThemes dışı) eklenirse `<AIInsightBanner insight={...} />` yeniden mount.
+- Yeni KPI eklenirse 5-card grid yerine 4-card sadık kal (mobile 2x2 + lg 4-col), aksi halde mobile 2x3 visual taşma.
+- Stacked sentiment bar pattern'i analytics topics section ile birebir aynı (CLAUDE.md §38.20) — tutarlılık.
+
+**Test + verification**:
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors.
+- 4 yeni baseline warning (transaction'da kullanılmayan `_redirectCountAllTime`, `prev7Redirected`, `last7Scans`, `prev7Scans` — KPI semantik değişimi sonrası). CLAUDE.md §21.25 paterni: refactor scope dışı tolere edilir.
+- Manuel: `/tr/dashboard` farklı saatlerde — greeting değişir; KPI 4-card görünür; AI banner dismiss → ertesi hafta tekrar; peak hint footer + stacked sentiment.
+
+**Backlog güncel** (Bu PR sonrası — analytics + dashboard drift'i tamamen kapatıldı):
+- 🟡 "Bu hafta" RangeDropdown dashboard header'da (NABIZ chart 30/90/YTD toggle ile bağlı)
+- 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)

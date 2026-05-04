@@ -4,8 +4,16 @@ import { Eyebrow } from "./Eyebrow";
 interface PageHeaderProps {
   eyebrow?: ReactNode;
   eyebrowColor?: string;
+  /** Phase 8c+ §38.27 — eyebrow yanında lime pulse-dot ("canlı" indicator).
+   *  Tasarım `.design-owner-2026/page-dashboard.jsx` "PANEL / GENEL BAKIŞ ●"
+   *  paterni. */
+  eyebrowPulse?: boolean;
   title: ReactNode;
   description?: ReactNode;
+  /** Phase 8c+ §38.27 — title altında kompakt subtitle ("Restoran · Tarih ·
+   *  Son güncelleme" gibi). description'dan farklı: subtitle inline meta,
+   *  description daha uzun açıklama. İkisi birlikte verilebilir. */
+  subtitle?: ReactNode;
   actions?: ReactNode;
   className?: string;
 }
@@ -13,8 +21,10 @@ interface PageHeaderProps {
 export function PageHeader({
   eyebrow,
   eyebrowColor,
+  eyebrowPulse,
   title,
   description,
+  subtitle,
   actions,
   className = "",
 }: PageHeaderProps) {
@@ -23,7 +33,18 @@ export function PageHeader({
       className={`flex flex-col md:flex-row md:items-end justify-between gap-3 md:gap-4 mb-5 ${className}`}
     >
       <div className="min-w-0 flex-1">
-        {eyebrow && <Eyebrow color={eyebrowColor}>{eyebrow}</Eyebrow>}
+        {eyebrow && (
+          <span className="inline-flex items-center gap-1.5">
+            <Eyebrow color={eyebrowColor}>{eyebrow}</Eyebrow>
+            {eyebrowPulse && (
+              <span
+                aria-hidden="true"
+                className="inline-block h-1.5 w-1.5 rounded-full bz-pulse-dot"
+                style={{ background: "#C6F24E" }}
+              />
+            )}
+          </span>
+        )}
         <h1
           className="bz-h-tight-2 mt-1"
           style={{
@@ -33,6 +54,14 @@ export function PageHeader({
         >
           {title}
         </h1>
+        {subtitle && (
+          <p
+            className="bz-mono mt-2"
+            style={{ fontSize: 12, color: "#737373", lineHeight: 1.5 }}
+          >
+            {subtitle}
+          </p>
+        )}
         {description && (
           <p
             className="mt-2 max-w-2xl"
