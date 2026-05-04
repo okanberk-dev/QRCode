@@ -6,6 +6,7 @@ import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-domains';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
+import { isValidEmail, isValidHexColor } from '@/lib/validations';
 
 // Field → provider mapping for the eight platform URLs accepted by POST.
 // Lets us run the same `checkProviderUrl` hard-error gate the integration
@@ -323,6 +324,25 @@ export async function POST(req: NextRequest) {
           `${field} geçersiz: ${result.reason}`,
           'INVALID_PLATFORM_URL',
         );
+      }
+    }
+
+    // primaryColor — must be a hex color. Without this gate an admin could
+    // create a restaurant whose primaryColor is an XSS / CSS-injection-shaped
+    // value that the public surface echoes into inline styles. PUT had this
+    // gate (CLAUDE.md §37.2 E); POST was missing it — drift fix.
+    if (primaryColor !== undefined && primaryColor !== null && primaryColor !== '') {
+      if (!isValidHexColor(primaryColor)) {
+        return ApiErrors.badRequest('Geçersiz renk kodu (#RGB veya #RRGGBB)', 'INVALID_PRIMARY_COLOR');
+      }
+    }
+
+    // notificationEmail — when set must be a real e-mail capped at 256 chars.
+    // Mirrors PUT validation. Without this gate ops/error notification
+    // recipients could be arbitrary text injected at create time.
+    if (notificationEmail !== undefined && notificationEmail !== null && notificationEmail !== '') {
+      if (typeof notificationEmail !== 'string' || !isValidEmail(notificationEmail) || notificationEmail.length > 256) {
+        return ApiErrors.badRequest('Geçerli bir bildirim e-postası girin', 'INVALID_NOTIFICATION_EMAIL');
       }
     }
 
