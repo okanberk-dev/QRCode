@@ -20,11 +20,13 @@ export function Sparkline({ values, w = 80, h = 24, color = "#0A0A0A", className
     <svg
       width={w}
       height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
       className={className}
       style={{ display: "block" }}
       aria-hidden="true"
     >
-      <polygon points={area} fill={color} opacity="0.07" />
+      <polygon points={area} fill={color} opacity="0.12" />
       <polyline
         points={points}
         fill="none"
@@ -32,6 +34,7 @@ export function Sparkline({ values, w = 80, h = 24, color = "#0A0A0A", className
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
       />
     </svg>
   );

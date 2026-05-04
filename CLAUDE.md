@@ -5529,3 +5529,56 @@ Sonra plan onaylanınca implement et.
 **Sonraki crossover (CLAUDE.md §38.16 backlog)**:
 - Admin `/customers` segment kolonu (helper reuse, ayrı PR)
 - Weekly digest mail segment context ("Bu hafta 3 VIP yorum bıraktı")
+
+### 38.18 2026-05-04 — Analytics Pulse drift fix (KPI sparkline + AI dark card)
+
+§16 üçüncü handoff bundle (`.design-owner-2026/project/page-analytics.jsx`) "drift küçük, mevcut analytics ile uyumlu" notuyla işaretlenmişti — bu PR'da tasarım parity için 2 yüksek-değer + low-risk drift kapatıldı; geri kalan büyük drift'ler backend genişleme gerektirdiği için backlog tablosuna eklendi.
+
+**Drift inventory** (audit, senior frontend dev):
+
+| Tasarım item | Mevcut | Karar |
+|---|---|---|
+| KPI mini sparkline (StatCard altında 32px area+line) | Sade StatCard | ✅ **YAP** — daily series data zaten var |
+| AI İçgörüler **dark card** (graphite + lime accent) | Açık `bz-card` | ✅ **YAP** — visual restyle |
+| 14-haftalık puan & hacim trendi (büyük chart, hedef line, last-point lime tooltip) | Window-day etkileşim trendi | 🔴 **DEFER** — backend weekly aggregate gerek |
+| Heatmap (Gün × Saat, 7×24 grid) | 2 ayrı bar chart (günlük + saatlik) | 🔴 **DEFER** — backend 2D matrix + recharts/SVG custom |
+| Topics sentiment progress (% pozitif/negatif bar) | Theme count only | 🔴 **DEFER** — `extractThemes` helper sentiment field extend |
+| EN AKTİF KONUM mini section (lokasyon kart) | Yok | 🟡 **OPSİYONEL** — restoran-bazlı sıralama, küçük ek query |
+
+**Yapılan**:
+
+1. **`src/components/ui/StatCard.tsx`** — opsiyonel `sparkline?: number[]` + `sparklineColor?: string` prop'ları. Min 2 nokta gerekir; geçilmezse render skip (geriye dönük uyumlu, mevcut 50+ callsite etkilenmez). Sparkline alt satırda 28px height, `Sparkline` primitive reuse.
+
+2. **`src/components/ui/Sparkline.tsx`** — `viewBox` + `preserveAspectRatio="none"` + `vectorEffect="non-scaling-stroke"`. Card width değişince scale eder; line stroke kalitesi `non-scaling-stroke` ile korunur. Default opacity `0.07` → `0.12` (koyu kart üzerinde fade görünmesin diye).
+
+3. **`src/app/[locale]/dashboard/analytics/page.tsx`** — `interactionData` zaten window-day series taşır; 4 yeni map (`sparkScans` / `sparkReviews` / `sparkRedirects` / `sparkConversion`) hesaplanır. 4 KPI'a sparkline + uygun renk wire'lı:
+   - **scans**: graphite (`#0A0A0A`)
+   - **reviews**: graphite (`#0A0A0A`)
+   - **conversion + redirects**: lime-deep (`#A8D62E` — Pulse aksen)
+   - **bugün** + **low-rating**: sparkline yok (single-day veya rate-bazlı semantic uygun değil)
+
+4. **AI insights section dark card restyle** — `bz-card` → `rounded-2xl bg-[#0A0A0A] text-white p-5 sm:p-6 shadow-[...]`. Eyebrow `color="#C6F24E"`. AI badge: `border-[#C6F24E]/30 bg-[#C6F24E]/10`. Synthesis paragraf: `border-white/10 bg-white/[0.04]`. Theme list item'ları aynı dark overlay. İçerik kontratı değişmedi (themes/synthesis/source).
+
+**Yapma**:
+
+- 14-haftalık puan & hacim trendi — backend weekly aggregate (`Feedback.groupBy({ by: ['week', 'rating'] })`) ve hedef line ile büyük chart yeniden inşa gerek. Mevcut `interactionData` daily; weekly bucket'lama + restoran target rating ek veri tabanı alanı.
+- Heatmap (Gün × Saat) — `Feedback.createdAt` zaten timestamp, ama 7×24 = 168 cell'lik 2D matrix + custom SVG render veya recharts heatmap; mevcut bar chart yeterli sinyal verir. Audit "drift küçük" notuyla uyumlu.
+- Topics sentiment progress — `extractThemes` helper sadece `theme + count` döner. Sentiment yüzdesi için OpenAI prompt'a "her tema için pozitif/negatif oranı" eklenmeli + JSON response shape değişir; bu yeni helper version + cache invalidation gerekir.
+- EN AKTİF KONUM kart — restoran-bazlı yorum sayısı + ortalama puan, mevcut `feedbacksWindow` ile JS-side hesaplanabilir ama kart visual treatment + click-through navigation karar gerektirir. Owner panelinde zaten "Konum performansı" var (dashboard); analytics duplicate olur.
+
+**Yap**:
+
+- StatCard'a yeni metric eklenirken sparkline data window-bazlı seri olduğunda otomatik wire — daily aggregate yoksa sparkline geçme (rate metric'leri bu PR'da scope'tan çıkarıldı).
+- AI insights kart visual'ı dark card'dan başka bir surface'ta da kullanılırsa (örn. dashboard "BUGÜN BEKLEYEN" yanı), aynı styling kuralları reuse edilebilir; component extraction `<DarkInsightCard>` 3+ callsite olunca düşünülür (CLAUDE.md §7 disiplin).
+- Backend genişleme PR'ı açıldığında (`extractThemes` sentiment field, weekly aggregate, heatmap matrix) bu §38.18 backlog tablosunu güncelle, yeni §38.X log ekle.
+
+**Test + verification**:
+- Yeni unit test gerekmedi — sparkline pure presentational, primitive. Hem mevcut StatCard 50+ callsite etkilenmez (opsiyonel prop, geriye dönük uyumlu).
+- 97/97 test pass, 0 tsc errors, 0 lint errors.
+
+**Sonraki backlog (Analytics + diğer)**:
+- 🟡 14-haftalık trend chart (backend weekly aggregate gerek)
+- 🟡 Heatmap Gün × Saat (backend 2D matrix gerek)
+- 🟡 Topics sentiment progress (extractThemes sentiment field extend)
+- 🟢 Admin `/customers` segment kolonu (Phase 8c helper reuse)
+- 🟢 Weekly digest mail segment context
