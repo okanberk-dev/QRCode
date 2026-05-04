@@ -37,6 +37,8 @@ export interface FeedbackInput {
   restaurantId: string | null;
   /** Restaurant.locale (TR/EN); locale-aware fallback için opsiyonel. */
   restaurant?: { name: string } | null;
+  /** §38.32 — KVKK consent flag. false → name expose etmez, "Müşteri" fallback. */
+  hasKvkkConsent?: boolean | null;
 }
 
 export interface FeedbackReplyInput {
@@ -199,11 +201,16 @@ export function buildActivityFeed({
   const events: ActivityEvent[] = [];
 
   for (const f of feedbacks) {
+    // §38.32 — KVKK consent check: opsiyonel field; explicit `false` ise
+    // name expose etme (anonim feedback). Eski kayıtlarda undefined →
+    // legacy davranış (name shortName'e düşer). consent==null → opt-out
+    // varsayım olarak fallback.
+    const consentGiven = f.hasKvkkConsent !== false && f.hasKvkkConsent !== null;
     events.push({
       id: `feedback:${f.id}`,
       type: 'feedback',
       timestamp: f.createdAt,
-      actor: shortName(f.name, isTr),
+      actor: consentGiven ? shortName(f.name, isTr) : c.customerFallback,
       action: c.feedbackAction,
       target: platformTarget(f.rating, f.platform),
       sentiment: ratingToSentiment(f.rating),
@@ -239,7 +246,28 @@ export function buildActivityFeed({
     });
   }
 
-  for (const s of systemEvents) {
+  // §38.32 — System event ranking: tüm event'leri pushlamadan önce priority
+  // ile filter + slice. weekly_report > trial_ending > critical reminders >
+  // generic. Caller take:10 daha geniş örneklem getirir, helper en kritik
+  // 3'ünü seçer (timeline kalabalığı önlenir).
+  const SYSTEM_TYPE_PRIORITY: Record<string, number> = {
+    weekly_report: 1,
+    trial_ending: 2,
+    upgrade_suggestion: 3,
+    inactive_reactivation: 4,
+    qr_not_downloaded: 5,
+    first_feedback_tips: 6,
+    welcome: 7,
+  };
+  const rankedSystemEvents = [...systemEvents]
+    .sort((a, b) => {
+      const ra = SYSTEM_TYPE_PRIORITY[a.type] ?? 100;
+      const rb = SYSTEM_TYPE_PRIORITY[b.type] ?? 100;
+      if (ra !== rb) return ra - rb;
+      return b.sentAt.getTime() - a.sentAt.getTime();
+    })
+    .slice(0, 3);
+  for (const s of rankedSystemEvents) {
     events.push({
       id: `system:${s.id}`,
       type: 'system',
