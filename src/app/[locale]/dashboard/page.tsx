@@ -13,7 +13,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   Building2,
-  ChevronDown,
   Download,
   Inbox,
   Plus,
@@ -30,7 +29,11 @@ import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/Onb
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
 import AIInsightBanner from '@/components/dashboard/AIInsightBanner';
 import PulseRangeToggle from '@/components/dashboard/PulseRangeToggle';
-import { Eyebrow, PageHeader, Sparkline, StatCard, PLATFORMS } from '@/components/ui';
+import ChannelDistribution from '@/components/dashboard/ChannelDistribution';
+import ActivityFeed from '@/components/dashboard/ActivityFeed';
+import ScopeDropdown from '@/components/dashboard/ScopeDropdown';
+import { buildActivityFeed } from '@/lib/activity-feed';
+import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
@@ -76,6 +79,7 @@ function isExpectedNavigationError(error: unknown) {
 
 export default async function DashboardPage(props: {
   params: Promise<{ locale: Locale }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   try {
     return await renderDashboardPage(props);
@@ -91,12 +95,30 @@ export default async function DashboardPage(props: {
 
 async function renderDashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: Locale }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale } = await params;
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
+
+  // Phase 8c+ §38.31 — Header "Bu hafta" dropdown URL searchParam scope.
+  // Default '7d'; KPI window'ları + prev window delta için kullanılır.
+  // YTD: prev_year_YTD karmaşık (1 yıl önce data); delta gizlenir (null).
+  const sp = searchParams ? await searchParams : {};
+  const scopeRaw = typeof sp.scope === 'string' ? sp.scope : '7d';
+  const scope: 'tw7d' | 'tw30d' | 'tw90d' | 'ytd' =
+    scopeRaw === '30d'
+      ? 'tw30d'
+      : scopeRaw === '90d'
+        ? 'tw90d'
+        : scopeRaw === 'ytd'
+          ? 'ytd'
+          : 'tw7d';
+  const scopeUrlValue: '7d' | '30d' | '90d' | 'ytd' =
+    scope === 'tw30d' ? '30d' : scope === 'tw90d' ? '90d' : scope === 'ytd' ? 'ytd' : '7d';
 
   // Auth check
   const cookieStore = await cookies();
@@ -131,7 +153,28 @@ async function renderDashboardPage({
   // Time windows used by KPIs + trend.
   const now = Date.now();
   const sevenDaysAgo = new Date(now - 7 * 86400000);
-  const fourteenDaysAgo = new Date(now - 14 * 86400000);
+  // Phase 8c+ §38.31 — scope-aware window computation. Scope dropdown
+  // 7d/30d/90d/ytd değerini server'a URL searchParam ile geçirir; KPI
+  // (Toplam yorum / Yanıt oranı / Yeni müşteri) ve delta hesabı bu
+  // pencere üzerinden çalışır. YTD prev pencere = "geçen yıl aynı
+  // dönem" (Jan 1 prev_year → today_minus_1_year). Yıllık karşılaştırma.
+  const nowDateForScope = new Date(now);
+  const ytdStartForScope = new Date(nowDateForScope.getFullYear(), 0, 1);
+  const scopeDays =
+    scope === 'tw7d'
+      ? 7
+      : scope === 'tw30d'
+        ? 30
+        : scope === 'tw90d'
+          ? 90
+          : Math.max(1, Math.ceil((now - ytdStartForScope.getTime()) / 86400000));
+  const scopeStart = scope === 'ytd' ? ytdStartForScope : new Date(now - scopeDays * 86400000);
+  const prevScopeStart =
+    scope === 'ytd'
+      ? new Date(nowDateForScope.getFullYear() - 1, 0, 1)
+      : new Date(now - 2 * scopeDays * 86400000);
+  const prevScopeEnd =
+    scope === 'ytd' ? new Date(now - 365 * 86400000) : scopeStart;
   // Phase 8c+ §38.30 — NABIZ chart 30G/90G/YTD chip toggle (tasarım
   // page-dashboard.jsx line 230-234). 90 gün > YTD (Ocak başı) ise 90 gün
   // taban; aksi halde YTD start (Ocak 1) en geriye uzanan window.
@@ -169,6 +212,10 @@ async function renderDashboardPage({
     pendingTasks,
     themesFeedbacks,
     trendFeedbacksRange,
+    prevPlatformGroups,
+    recentReplies,
+    recentAiDrafts,
+    recentSystemEvents,
   ] = await prisma.$transaction([
     // KPI 4: Platforma yönlendirme (all-time) — değer KPI'da; delta last7 vs prev7
     prisma.feedback.count({ where: { restaurantId: restIdIn, ...REDIRECT_WHERE } }),
@@ -225,69 +272,74 @@ async function renderDashboardPage({
       where: { restaurantId: restIdIn },
       _count: { _all: true },
     }),
-    // Last 7 gün ortalama puan (delta için baz)
+    // §38.31 — Scope window total + avg (KPI Toplam yorum value + delta).
     prisma.feedback.aggregate({
-      where: { restaurantId: restIdIn, createdAt: { gte: sevenDaysAgo } },
+      where: { restaurantId: restIdIn, createdAt: { gte: scopeStart } },
       _avg: { rating: true },
+      _count: { _all: true },
     }),
-    // Last 7 gün yönlendirme (delta için baz)
+    // §38.31 — placeholder (eski last7Redirected; KPI Yönlendirme §38.27'de
+    // KPI'dan kaldırıldı, transaction sırasını korumak için count tutuldu).
     prisma.feedback.count({
-      where: { restaurantId: restIdIn, createdAt: { gte: sevenDaysAgo }, ...REDIRECT_WHERE },
+      where: { restaurantId: restIdIn, createdAt: { gte: scopeStart }, ...REDIRECT_WHERE },
     }),
-    // Önceki 7 gün count (delta için)
+    // §38.31 — Önceki scope window count (delta baseline). YTD durumda
+    // prev_year YTD karşılaştırması.
     prisma.feedback.count({
       where: {
         restaurantId: restIdIn,
-        createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+        createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
       },
     }),
-    // Önceki 7 gün ortalama puan
+    // §38.31 — Önceki scope window ortalama puan (delta baseline).
     prisma.feedback.aggregate({
       where: {
         restaurantId: restIdIn,
-        createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+        createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
       },
       _avg: { rating: true },
     }),
-    // Önceki 7 gün yönlendirme
+    // §38.31 — Önceki scope window yönlendirme (placeholder).
     prisma.feedback.count({
       where: {
         restaurantId: restIdIn,
-        createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+        createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
         ...REDIRECT_WHERE,
       },
     }),
-    // Last 7 gün QR scans (gerçek tracking) — KPI 3 + delta
+    // §38.31 — Scope window QR scans (placeholder; KPI'dan §38.27'de
+    // kaldırıldı, transaction sırası korunur).
     prisma.qrScan.count({
-      where: { restaurantId: restIdIn, createdAt: { gte: sevenDaysAgo } },
+      where: { restaurantId: restIdIn, createdAt: { gte: scopeStart } },
     }),
-    // Prev 7 gün QR scans (delta baz)
+    // §38.31 — Prev scope window QR scans (placeholder).
     prisma.qrScan.count({
       where: {
         restaurantId: restIdIn,
-        createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+        createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
       },
     }),
-    // Phase 8c+ §38.27 — Yanıt oranı KPI: 30 günde rating ≤3 toplam +
+    // §38.31 — Yanıt oranı KPI: scope window içinde rating ≤3 toplam +
     // hangileri yanıtlanmış (some replies). Ratio = replied / total × 100.
+    // §38.27'de fixed 30d idi; §38.31 ile scope dropdown'a bağlandı.
     prisma.feedback.count({
       where: {
         restaurantId: restIdIn,
-        createdAt: { gte: new Date(now - 30 * 86400000) },
+        createdAt: { gte: scopeStart },
         rating: { lte: 3 },
       },
     }),
     prisma.feedback.count({
       where: {
         restaurantId: restIdIn,
-        createdAt: { gte: new Date(now - 30 * 86400000) },
+        createdAt: { gte: scopeStart },
         rating: { lte: 3 },
         replies: { some: {} },
       },
     }),
-    // Phase 8c+ §38.27 — Yeni müşteri KPI: son 30 günde yorum bırakan ve
-    // contact_key (email|phone) NOT NULL olan tekil müşteri sayısı. Phase 8c
-    // segment 'new' threshold (visits ≤ 2) çoğu yeni gelen için bu kapsam.
+    // §38.31 — Yeni müşteri KPI: scope window'da yorum bırakan ve
+    // contact_key (email|phone) NOT NULL olan tekil müşteri sayısı.
+    // §38.27'de fixed 30d idi; §38.31 ile scope dropdown'a bağlandı.
     // restIds boşsa SQL `IN ()` syntax error olur — WHERE FALSE ile 0 döner.
     restIds.length > 0
       ? prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`
@@ -299,7 +351,7 @@ async function renderDashboardPage({
           FROM feedback f
           WHERE f.has_kvkk_consent = TRUE
             AND f.restaurant_id IN (${Prisma.join(restIds)})
-            AND f.created_at >= ${new Date(now - 30 * 86400000)}
+            AND f.created_at >= ${scopeStart}
             AND COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
                 IS NOT NULL
         `)
@@ -348,6 +400,68 @@ async function renderDashboardPage({
       where: { restaurantId: restIdIn, createdAt: { gte: trendOldestStart } },
       select: { createdAt: true, rating: true },
     }),
+    // §38.31 — KANAL DAĞILIMI delta için önceki scope window platform groupBy.
+    // Mevcut platformGroups all-time aggregate; delta için aynı window'da
+    // önceki dönem ortalaması karşılaştırılır.
+    prisma.feedback.groupBy({
+      by: ['platform'],
+      where: {
+        restaurantId: restIdIn,
+        platform: { not: null },
+        createdAt: { gte: prevScopeStart, lt: prevScopeEnd },
+      },
+      _count: { _all: true },
+      _avg: { rating: true },
+    }),
+    // §38.31 — CANLI AKIŞ "yanıt verdi" event'leri (manuel + AI). buildActivityFeed
+    // helper'ı source='ai_copilot' / 'manual' ayırır.
+    prisma.feedbackReply.findMany({
+      where: { feedback: { restaurantId: restIdIn } },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+      select: {
+        id: true,
+        createdAt: true,
+        source: true,
+        feedback: {
+          select: {
+            id: true,
+            name: true,
+            rating: true,
+            platform: true,
+          },
+        },
+      },
+    }),
+    // §38.31 — CANLI AKIŞ "AI Asistan yanıt önerisi hazırladı" event'leri.
+    // FeedbackAiDraft owner inbox'ında bekleyen (CLAUDE.md §15 / §21.8.1).
+    prisma.feedbackAiDraft.findMany({
+      where: { feedback: { restaurantId: restIdIn } },
+      orderBy: { generatedAt: 'desc' },
+      take: 8,
+      select: {
+        id: true,
+        generatedAt: true,
+        feedback: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    }),
+    // §38.31 — CANLI AKIŞ "Sistem günlük rapor gönderildi" event'leri.
+    // LifecycleEmailLog cron-driven log (CLAUDE.md §21.34).
+    prisma.lifecycleEmailLog.findMany({
+      where: { restaurantId: restIdIn },
+      orderBy: { sentAt: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        type: true,
+        sentAt: true,
+      },
+    }),
   ]);
 
   // ---- Derived metrics ----
@@ -361,11 +475,11 @@ async function renderDashboardPage({
           0,
         ) / totalRatedCount;
 
-  const last7Total = trendFeedbacks.length;
+  // §38.31 — Scope window total + avg, scope dropdown'a parametrik. last7Avg
+  // değişken adı korundu (lint silence) ama scope='30d' iken "last7" değil
+  // "last30" semantik; yorumda açıklandı.
+  const last7Total = last7Avg._count._all;
   const last7AvgRating = last7Avg._avg.rating ?? 0;
-  // last7RedirectPct §38.27'de footer 3-stat'tan kaldırıldı; §38.30 NABIZ
-  // section legend dot + peak hint paterni kullanıyor. Restored bırakılmıyor;
-  // analytics page §34.7-10 derin breakdown'da zaten görünür.
 
   // Per-restaurant avg map (Konum performansı widget için)
   const ratingByRestaurant = new Map(
@@ -763,6 +877,65 @@ async function renderDashboardPage({
     .sort((a, b) => b.diff - a.diff)
     .slice(0, 3); // top 3
 
+  // §38.31 — KANAL DAĞILIMI ChannelDistribution data: platformDistData
+  // (current scope avgRating + count) + prevPlatformGroups (önceki scope avg)
+  // → delta = current - prev. Top 4 platform.
+  const prevPlatformAvg = new Map<string, number>();
+  for (const g of prevPlatformGroups) {
+    if (!g.platform || g._avg.rating === null) continue;
+    prevPlatformAvg.set(g.platform, g._avg.rating);
+  }
+  const channelStats = platformDistData.slice(0, 4).map((p) => {
+    const prev = prevPlatformAvg.get(p.platform);
+    const delta =
+      p.avgRating !== null && prev !== undefined
+        ? Math.round((p.avgRating - prev) * 10) / 10
+        : null;
+    return {
+      platform: p.platform,
+      label: p.label,
+      count: p.count,
+      avgRating: p.avgRating ?? 0,
+      delta,
+    };
+  });
+
+  // §38.31 — Google card impact strip data (Önce X.X → Şimdi Y.Y · +Δ).
+  // En yüksek positive diff'li restoranı al; null-safe (null → strip gizli).
+  const googleImpact = impactStats.length > 0 ? impactStats[0] : null;
+
+  // §38.31 — CANLI AKIŞ event union build. 4 source helper'a geçirilir,
+  // helper sort + slice + sentiment derive yapar (saf fonksiyon, test edilebilir).
+  const activityEvents = buildActivityFeed({
+    feedbacks: latestFeedbacks.slice(0, 8).map((f) => ({
+      id: f.id,
+      name: f.name,
+      rating: f.rating,
+      platform: f.platform,
+      createdAt: f.createdAt,
+      restaurantId: f.restaurantId,
+      restaurant: f.restaurant,
+    })),
+    replies: recentReplies.map((r) => ({
+      id: r.id,
+      createdAt: r.createdAt,
+      source: r.source,
+      feedback: r.feedback,
+    })),
+    aiDrafts: recentAiDrafts.map((d) => ({
+      id: d.id,
+      generatedAt: d.generatedAt,
+      feedback: d.feedback,
+    })),
+    systemEvents: recentSystemEvents.map((s) => ({
+      id: s.id,
+      type: s.type,
+      sentAt: s.sentAt,
+    })),
+    limit: 6,
+    isTr,
+  });
+
   // Phase 8c+ §38.27 — Tasarım .design-owner-2026/page-dashboard.jsx 1:1 parity:
   // greeting (saat-aware) + actionable hook (pending count) + subtitle (restoran
   // · tarih · son güncelleme) + 3 action button (Rapor / Tarih / Yorum İste).
@@ -819,22 +992,12 @@ async function renderDashboardPage({
               <Download size={13} strokeWidth={2} />
               {isTr ? 'Rapor indir' : 'Download report'}
             </Link>
-            {/* Phase 8c+ §38.30 — "Bu hafta" header ghost button.
-                Tasarım kaynağı: page-dashboard.jsx line 174-176 (chevronDown
-                icon, ghost btn). Tasarımda dropdown semantic yok (sadece
-                affordance). Pragmatic implementation: /analytics?range=7d
-                shortcut — orada gerçek range/platform/branch URL filter
-                hub'ı (CLAUDE.md §34.7-10). Owner click ettiğinde derin
-                filtreye yönlendirilir; dashboard'a iki ayrı range control
-                eklemek scope creep olur. */}
-            <Link
-              href={`/${locale}/dashboard/analytics?range=7d`}
-              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
-              aria-label={isTr ? 'Bu hafta — analitik' : 'This week — analytics'}
-            >
-              {isTr ? 'Bu hafta' : 'This week'}
-              <ChevronDown size={13} strokeWidth={2} />
-            </Link>
+            {/* §38.31 — Header dynamic ScopeDropdown (önceki §38.30 sade
+                Link'ti). 4 option: Bu hafta / Bu ay / Son 90 gün / Bu yıl.
+                URL searchParam `?scope=` ile server component'i tetikler;
+                KPI window'ları (Toplam yorum / Yanıt oranı / Yeni müşteri)
+                + delta + AI banner kapsam değişir. Default '7d'. */}
+            <ScopeDropdown current={scopeUrlValue} isTr={isTr} />
             <Link
               href={`/${locale}/dashboard/feedbacks`}
               className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
@@ -1169,9 +1332,12 @@ async function renderDashboardPage({
         </div>
       </section>
 
-      {/* KANAL DAĞILIMI — tasarım .design-pulse-2026/.../page-dashboard.jsx
-          ChannelCard 4-card grid paterni. Top 4 platform card (brand icon +
-          name + count + avg rating + delta tahmini). Mobile 2-col, sm+ 4-col. */}
+      {/* KANAL DAĞILIMI — Phase 8c+ §38.31. Tasarım kaynağı:
+          .design-owner-2026/project/page-dashboard.jsx ChannelCard line
+          134-157 (4-card grid + delta + 5 yıldız + count). Google card'da
+          ek "impact strip" (initialGoogleRating → currentGoogleRating)
+          Buaze etkisi (CLAUDE.md §37.3). prevPlatformGroups ile delta
+          hesabı (önceki scope window vs current). */}
       {platformDistData.length > 0 && (
         <section>
           <header className="mb-3 flex items-end justify-between gap-3">
@@ -1189,60 +1355,11 @@ async function renderDashboardPage({
               <ArrowRight size={11} strokeWidth={2} />
             </Link>
           </header>
-          {/* Phase 8c+ §38.28 — Mobile horizontal scroll, sm+ 4-col grid.
-              Tasarım kaynağı: .design-owner-2026/page-mobile-v2.jsx
-              "yatay scroll mini cards" paterni. Mobile'da 2-col yerine
-              horizontal scroll daha çok platform sığar (4 platform tek
-              satırda); 130px min card width + no-scrollbar. */}
-          <div className="flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible">
-            {platformDistData.slice(0, 4).map((p) => {
-              const brand = (PLATFORMS as Record<string, { color: string; short: string; label: string }>)[
-                p.platform
-              ];
-              const tone = brand?.color ?? '#A3A3A3';
-              const short = brand?.short ?? p.label.slice(0, 2).toUpperCase();
-              return (
-                <div
-                  key={p.platform}
-                  className="bz-card p-3.5 flex flex-col gap-2.5 shrink-0 w-[150px] sm:w-auto sm:shrink"
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[10.5px] font-semibold text-white"
-                      style={{ background: tone }}
-                    >
-                      {short}
-                    </span>
-                    <span className="truncate text-[12.5px] font-semibold text-[#0A0A0A]">
-                      {p.label}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between">
-                    <span className="bz-mono tabular-nums text-[20px] font-semibold text-[#0A0A0A]">
-                      {p.avgRating != null ? p.avgRating.toFixed(1) : '—'}
-                    </span>
-                    <span className="text-[11px] text-[#525252]">
-                      {p.count} {isTr ? 'yorum' : 'reviews'}
-                    </span>
-                  </div>
-                  {/* Mini progress bar — count vs leader */}
-                  <div className="h-1 rounded-full bg-[#F5F5F5] overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{
-                        width: `${
-                          platformDistData[0]?.count
-                            ? Math.max(8, (p.count / platformDistData[0].count) * 100)
-                            : 0
-                        }%`,
-                        background: tone,
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <ChannelDistribution
+            channels={channelStats}
+            googleImpact={googleImpact}
+            isTr={isTr}
+          />
         </section>
       )}
 
@@ -1440,6 +1557,12 @@ async function renderDashboardPage({
           </div>
         </section>
       )}
+
+      {/* §38.31 — CANLI AKIŞ timeline (tasarım page-dashboard.jsx line
+          17-23). Feedback + Reply + AI Draft + Sistem Notification union;
+          5-row sentiment dot + actor + action + target. Empty fallback
+          (yeni hesap) "henüz aktivite yok" mesajı. */}
+      <ActivityFeed events={activityEvents} isTr={isTr} />
 
       {/* Son yorumlar + QR performansı (unified responsive: mobile dikey
           stack, lg+ 2-col split). Eski mobile-only ayrı liste silindi. */}

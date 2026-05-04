@@ -6210,3 +6210,84 @@ Tasarımdaki dropdown affordance (`<button bz-btn-ghost>Bu hafta <chevronDown/><
 **Backlog güncel** (Bu PR sonrası):
 - 🔴 HIGH 4 Platforms 12-card grid (DEFER — tasarımdaki 12 platform'dan 4'ü backend gap'i: Slack §34.6'da silindi, Yelp + Foursquare PROVIDER_DOMAINS taxonomy'de yok, Webhook health AutomationRule UI'sı yok. 1:1 implementation product decision gerekiyor: silinmiş feature geri ekleme + 3 yeni provider + activity log endpoint.)
 - 🛡️ Security follow-ups (CLAUDE.md §38.2 — operatör tetiği bekliyor)
+
+### 38.31 2026-05-04 — Dashboard 1:1 final parity (KANAL impact + CANLI AKIŞ + ScopeDropdown dynamic)
+
+§38.27/§38.28/§38.30 sonrası kullanıcı raporu: anasayfa hâlâ tasarımla 1:1 değil. 4 yeni gap kapatıldı; tasarım kaynağı `.design-owner-2026/project/page-dashboard.jsx` (yeni bundle Tund0CaNMoOr35lZHC-lVg ile birebir). PR §38.27/§38.30 backlog item'ları (`🟡 Bu hafta dropdown dynamic` + `🟡 KANAL DAĞILIMI Google impact`) kapatıldı.
+
+**A · KANAL DAĞILIMI 4-card + Google impact strip**:
+- Yeni component `src/components/dashboard/ChannelDistribution.tsx` (~150 satır, server-friendly)
+- 4 platform card (Google + top 3) — brand chip + name + delta + 22px rating + 5 yıldız + count
+- Google card'da ek "impact strip" — `initialGoogleRating → currentGoogleRating · +Δ` (CLAUDE.md §37.3 hazır schema field'ları)
+- Mobile horizontal scroll + sm+ 4-col grid (CLAUDE.md §38.28 paterni reuse)
+- Backend genişleme: yeni transaction query `prevPlatformGroups` (önceki scope window groupBy by platform) — delta hesabı için
+- `impactStats` (mevcut hesaplama) artık Google card'da gösterilir; "Konum performansı" section'ında tutuluyor (duplicate değil, farklı UX — Konum performansı per-restoran, Google card platform-level)
+
+**B · CANLI AKIŞ 5-row timeline**:
+- Yeni saf helper `src/lib/activity-feed.ts` — `buildActivityFeed({ feedbacks, replies, aiDrafts, systemEvents, limit })` — 4 source union + sort (timestamp desc) + slice + sentiment derive
+- Yeni component `src/components/dashboard/ActivityFeed.tsx` — server component, sentiment dot + actor + action + target + relative timestamp; null target durumu (sistem event'i) gizlenir
+- Backend: 3 yeni transaction query (`recentReplies` + `recentAiDrafts` + `recentSystemEvents`) — tek transaction, connection_limit=1 disiplini korunur (CLAUDE.md §14.1)
+- Source mix:
+  - Feedback → "Ayşe D. yorum bıraktı — ★★★★★ Google" (sentiment: rating ≥4 pos, ≤2 neg, =3 neu)
+  - FeedbackReply (`source='manual'`) → "Mehmet K. yanıt verdi — ..."
+  - FeedbackReply (`source='ai_copilot'`) → "AI Asistan AI yanıtı gönderdi — ..."
+  - FeedbackAiDraft → "AI Asistan yanıt önerisi hazırladı — Mehmet T."
+  - LifecycleEmailLog → "Sistem QR hatırlatma gönderildi" (8 type → readable label, CLAUDE.md §21.34)
+- 11 unit test (`tests/activity-feed.test.ts`) — saf fonksiyon coverage (sort/limit/sentiment/KVKK fallback/locale)
+- Mevcut "Son yorumlar" section'ı KORUNUR — owner alışkanlığı, ActivityFeed kompakt timeline (5-row), Son yorumlar geniş kart (rating + comment preview); ikisi farklı UX
+
+**C · NABIZ chart visual** — § 38.30'da implement edildi, ek değişiklik yok (visual parity ~%90 kabul, CLAUDE.md §7 abstraction kaçınma).
+
+**D · ScopeDropdown dynamic** (§38.30 backlog kapatıldı):
+- Yeni client component `src/components/dashboard/ScopeDropdown.tsx` (Radix DropdownMenu)
+- 4 option: Bu hafta (7d) / Bu ay (30d) / Son 90 gün (90d) / Bu yıl (YTD)
+- URL searchParam `?scope=` → `useRouter().replace()` ile push (default '7d' clean URL)
+- `useTransition` ile pending state — chevron pulse + opacity-70 disabled görsel
+- Server component `searchParams` prop reads scope → KPI window'ları parametrik:
+  - `scopeStart` (scope days ago veya YTD start)
+  - `prevScopeStart` (2× scope days ago veya prev_year YTD start)
+  - `prevScopeEnd` (scopeStart veya `now - 365d` YTD durumda)
+- 7 transaction query window'ı scope-aware: `last7Avg`, `last7Redirected` (placeholder), `prev7Count`, `prev7Avg`, `prev7Redirected` (placeholder), `last7Scans` (placeholder), `prev7Scans` (placeholder), `lowRated30dCount` → `lowRatedScopeCount` (yanıt oranı KPI), `lowRated30dRepliedCount`, `newCustomers30dRows` → scope window
+- KPI value değişimi: scope='30d' iken "30 gün" yorum sayısı + delta vs prev 30 gün
+- AI Insight banner ve extractThemes (themesFeedbacks) **scope-aware DEĞİL** (sabit 30d) — AI cache + product decision (sık değişmez)
+
+**Schema bulguları** (yeni migration **YOK**):
+- `Restaurant.initialGoogleRating` + `currentGoogleRating` zaten var (CLAUDE.md §37.3, line 132-133)
+- `Feedback`, `FeedbackReply`, `FeedbackAiDraft`, `LifecycleEmailLog` — tüm 4 union source schema'da mevcut
+
+**Performance** (CLAUDE.md §14.1):
+- Transaction artık 23 query (önce 19) — ~30-50ms ek latency (sequential connection_limit=1)
+- Dropdown click → server component force-dynamic full reload — ~150ms wall time tolere edilebilir
+- Edge cache yok (`force-dynamic` page, owner-scoped IDOR)
+
+**Yapma**:
+- `Restaurant.googleReviewCount` field'ı eklemek — KANAL DAĞILIMI count zaten platformGroups'tan geliyor. Yeni schema gerek yok.
+- ActivityFeed'i client component'e çevirmek — server-side render daha hızlı, real-time gerekmiyor (sayfa reload yeterli)
+- Sistem event tipini ActivityFeed'e generic `Event` table ile ekleme — mevcut union sufficient
+- ScopeDropdown'u client state'le tutup URL routing'i atlatmak — deeplink + browser back desteği kaybolur
+- AIInsightBanner'ı scope-aware yapma — AI cache + theme extraction sabit 30d daha verimli (gpt-4o-mini cost kontrol)
+- "Son yorumlar" section'ı kaldırıp ActivityFeed'i tek bırakma — owner alışkanlığı, tasarımda da iki ayrı UX
+- prevScopeStart YTD durumda `null` veya `new Date(0)` gibi sentinel kullanma — `prev_year YTD start` (Jan 1 last year) anlamlı yıllık karşılaştırma verir
+- KPI 4-card eyebrow'a "son N gün" subtitle eklemek (mevcut layout) — hint metni KPI altında zaten var, çift duplicate olur
+
+**Yap**:
+- Yeni source ActivityFeed'e eklerken: `ActivityType` literal genişlet + `buildActivityFeed` input array + helper içinde push branch + (gerekirse) yeni `system event type → label` map (`systemActionLabel` switch case)
+- Yeni scope value ekleneceğinde (örn. '24h' last day): `DASHBOARD_SCOPE_VALUES` array + `LABELS` map + dashboard page `scope` switch + `scopeDays` switch
+- ChannelDistribution yeni platform eklenirse `PLATFORM_META` map (color + short initial) genişletilir; component-local data, taxonomy ile drift sıfır (mevcut PLATFORMS config sadece label için reuse edilir)
+- ScopeDropdown latency hissedilirse `loading.tsx` segment-bazlı eklenir (Next.js 15 paterni); şu an `useTransition` `pending` state yeterli görsel feedback
+- Yeni dashboard widget'ı scope'a bağlanırsa same pattern: `searchParams` prop oku → scope literal → window date compute → conditional query
+
+**Verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` 0 errors (5 baseline warning §38.27 KPI semantik değişiminden, scope refactor öncesi)
+- `npm test` 108/108 pass (97 mevcut + 11 yeni `activity-feed.test.ts`)
+- Manuel: `/tr/dashboard` 4 KANAL card görünür, Google impact strip "Önce 4.5 → Şimdi 4.8 · +0.3" (impactStats null değilse)
+- Manuel: CANLI AKIŞ 5-6 row timeline (yorum/reply/AI draft/sistem mix)
+- Manuel: "Bu hafta" dropdown click → menu açılır, "Bu ay" select → URL `?scope=30d`, KPI value 30 gün toplamına döner
+- Manuel: scope=ytd seçimi → KPI YTD count, delta prev_year YTD karşılaştırması (yıllık bazda anlamlı)
+- Manuel: scope=ytd 1. yıl owner için (1 yıldan az veri) → prev pencere boş, delta `+%X` ya da `-%Y` aşırı değer; UI tolerate eder
+
+**Backlog güncel** (Bu PR sonrası — dashboard 1:1 parity tam kapatıldı):
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER — § 38.30 paterni, backend gap)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)
+- 🟡 ActivityFeed real-time (websocket/SSE) — şu an sayfa reload yeterli, gelecek scope
