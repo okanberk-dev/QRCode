@@ -153,11 +153,12 @@ async function renderDashboardPage({
   ] = await prisma.$transaction([
     // KPI 4: Platforma yönlendirme (all-time) — değer KPI'da; delta last7 vs prev7
     prisma.feedback.count({ where: { restaurantId: restIdIn, ...REDIRECT_WHERE } }),
-    // Son yorumlar listesi
+    // Son yorumlar listesi (4 görünür "Son yorumlar" kartı için + 4 ek
+    // CANLI AKIŞ timeline için — aynı veri reuse).
     prisma.feedback.findMany({
       where: { restaurantId: restIdIn },
       orderBy: { createdAt: 'desc' },
-      take: 4,
+      take: 8,
       include: { restaurant: { select: { name: true } } },
     }),
     // Trend (son 7 gün) — daily bucket için ham veri
@@ -835,6 +836,76 @@ async function renderDashboardPage({
         </section>
       )}
 
+      {/* CANLI AKIŞ — tasarım .design-pulse-2026/.../page-dashboard.jsx
+          ActivityRow timeline paterni. latestFeedbacks reuse (8 kayıt; üst
+          kart 4'ünü gösterir, burası 8'i timeline format'ta). SentimentDot
+          rating'e göre (≥4 lime, =3 gray, ≤2 red). */}
+      {latestFeedbacks.length > 0 && (
+        <section className="bz-card p-5 sm:p-6">
+          <header className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span aria-hidden className="bz-pulse-dot" />
+              <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
+            </div>
+            <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums">
+              {latestFeedbacks.length} {isTr ? 'son etkinlik' : 'recent events'}
+            </span>
+          </header>
+          <ul className="space-y-0">
+            {latestFeedbacks.map((fb, idx) => {
+              const sentColor = fb.rating >= 4 ? '#16A34A' : fb.rating <= 2 ? '#DC2626' : '#A3A3A3';
+              const action = isTr
+                ? fb.rating >= 4
+                  ? 'yüksek puanlı yorum bıraktı'
+                  : fb.rating <= 2
+                    ? 'düşük puanlı yorum bıraktı'
+                    : 'yorum bıraktı'
+                : fb.rating >= 4
+                  ? 'left a high-rated review'
+                  : fb.rating <= 2
+                    ? 'left a low-rated review'
+                    : 'left a review';
+              const target = `${'★'.repeat(fb.rating)}${'☆'.repeat(5 - fb.rating)} ${
+                fb.platform
+                  ? PLATFORM_LABELS_TR[fb.platform] ?? fb.platform
+                  : fb.restaurant?.name ?? ''
+              }`;
+              const timeAgo = formatDistanceToNowStrict(new Date(fb.createdAt), {
+                addSuffix: false,
+                locale: isTr ? trLocale : enLocale,
+              });
+              return (
+                <li
+                  key={fb.id}
+                  className={`flex items-center gap-3 py-2.5 text-[12.5px] ${
+                    idx < latestFeedbacks.length - 1 ? 'border-b border-[#F5F5F5]' : ''
+                  }`}
+                >
+                  <span className="bz-mono tabular-nums text-[11px] text-[#737373] w-14 shrink-0 truncate">
+                    {timeAgo}
+                  </span>
+                  <span
+                    aria-hidden
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: sentColor }}
+                  />
+                  <div className="min-w-0 flex-1 truncate text-[#525252]">
+                    <Link
+                      href={`/${locale}/dashboard/feedbacks?focus=${fb.id}`}
+                      className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                    >
+                      {fb.name || (isTr ? 'Anonim' : 'Anonymous')}
+                    </Link>{' '}
+                    {action}{' — '}
+                    <span className="text-[#737373]">{target}</span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {/* Yorum Görünümü — TEK section, 2-col responsive. Puan dağılımı
           (5-bar histogram) + Platform dağılımı (pill + bar grid) yan yana.
           /analytics derin breakdown için zaten var. */}
@@ -903,7 +974,7 @@ async function renderDashboardPage({
                 </Link>
               </div>
               <div className="border-t border-[#EDEDED]">
-                {latestFeedbacks.map((fb) => {
+                {latestFeedbacks.slice(0, 4).map((fb) => {
                   const initials = (fb.name || fb.restaurant?.name || 'M')
                     .charAt(0)
                     .toUpperCase();
