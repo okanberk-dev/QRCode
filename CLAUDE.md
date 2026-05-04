@@ -5579,6 +5579,61 @@ Sonra plan onaylanınca implement et.
 **Sonraki backlog (Analytics + diğer)**:
 - 🟡 14-haftalık trend chart (backend weekly aggregate gerek)
 - 🟡 Heatmap Gün × Saat (backend 2D matrix gerek)
-- 🟡 Topics sentiment progress (extractThemes sentiment field extend)
-- 🟢 Admin `/customers` segment kolonu (Phase 8c helper reuse)
+- ~~Topics sentiment progress~~ ✅ **Tamamlandı** §38.20
+- 🟢 Admin `/customers` segment kolonu (Phase 8c helper reuse) — PR #427 açık
 - 🟢 Weekly digest mail segment context
+
+### 38.20 2026-05-04 — Analytics Topics sentiment progress (extractThemes sentiment field)
+
+§38.18 backlog'unda işaretlenen tasarım drift'i (`.design-owner-2026/page-analytics.jsx` Topics paterni) bu PR'da kapatıldı. AI tema list'inin her satırında pozitif/negatif sentiment progress bar görünür → owner sadece "ne konuşuluyor" değil "nasıl konuşuluyor" sinyalini de alır.
+
+**Backend genişlemesi (extractThemes JSON shape)**:
+
+| Field | Önce | Sonra |
+|---|---|---|
+| `ThemeItem` | `{ theme, count }` | `{ theme, count, sentimentPositivePct? }` |
+| Prompt instruction | 2 madde (themes + synthesis) | **3 madde** (themes + sentimentPositivePct + synthesis) |
+| Cache key | `${cacheKey}` | `v2:${cacheKey}` (auto-invalidate eski entry) |
+
+`sentimentPositivePct` **opsiyonel** — eski cache entry'leri ve model JSON'a uyumsuz response'lar için graceful skip. UI conditional render — undefined ise progress bar render edilmez, eski "theme + count" tek satır kalır.
+
+**Defansif parse**:
+- `Math.max(0, Math.min(100, Math.round(x.sentimentPositivePct)))` clamp
+- `Number.isFinite()` NaN/Infinity guard
+- Field yoksa `item.sentimentPositivePct` undefined kalır (interface optional)
+- JSON parse fail → mevcut `safeParseJson` Sentry tag'i intact (CLAUDE.md §38.9)
+
+**Cache invalidation strategy**:
+- `CACHE_KEY_VERSION = 'v2'` const + helper internal `versionedKey = \`${CACHE_KEY_VERSION}:${cacheKey}\``
+- Çağıranlar cache key'i değiştirmez; helper otomatik bumplar.
+- v1 cache entry'leri 1 saat TTL ile zaten temizlenir; deploy sonrası tüm cache miss → yeni AI çağrısı sentiment ile döner.
+- Maliyet: bir-zamanlık cache miss dalgası (~$0.0005 × N restoran). Tolere edilebilir.
+
+**Frontend render** (analytics dark AI card):
+- `hasSentiment` check + conditional progress bar
+- 1.5px height: lime `#A8D62E` (pozitif) + `rgba(248, 113, 113, 0.6)` (negatif)
+- A11y: `role="img"` + `aria-label="N% pozitif, M% negatif"` (CLAUDE.md §37 yasaklı ARIA disiplini — explicit role="img" ile span+aria-label valid)
+- bz-mono 10px counter satırı (lime + red)
+
+**Dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/lib/analytics-themes.ts` | `ThemeItem.sentimentPositivePct?` + prompt instruction (TR+EN) + parseLLMJson tolerate + cache key version bump |
+| `src/app/[locale]/dashboard/analytics/page.tsx` | Theme list item conditional progress bar render |
+| `CLAUDE.md` | §38.18 backlog ✅ + §38.20 yeni log |
+
+**Yapma**:
+- `sentimentPositivePct` zorunlu yapma — eski cache + model uymazsa breaking. Optional + UI conditional render disiplin.
+- Cache key version'ı caller'lara taşıma — helper internal versioning daha temiz, 4+ callsite'a yayılmaz.
+- Tek bar (sadece pos%) yerine pos+neg split — owner negatif yüzdeyi açıkça görmek ister.
+- MIN_COMMENTS_FOR_AI artırma — cache 1 saat amortize ediyor.
+
+**Yap**:
+- ThemeItem'a yeni field eklenirken: optional + cache version bump + clamp + UI conditional pattern.
+- Prompt değişikliği yapıldığında cache version bump **zorunlu** — silent breakage önleme.
+- Pulse Palette `#16A34A`/`#DC2626` yerine dark card üstünde `#A8D62E` + `rgba(248,113,113,0.6)` (okunaklılık).
+
+**Test + verification**:
+- Yeni unit test gerekmedi — defansif parse mevcut pattern.
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors.
