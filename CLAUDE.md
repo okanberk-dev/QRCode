@@ -749,6 +749,37 @@ if (!quota.allowed) {
 
 `design.md` repo kökünde — 15 PR'lık faz log'unu tutar.
 
+### `.design-owner-2026/` üçüncü handoff bundle (2026-05-04)
+
+Claude Design `/v1/design/h/237b0j9_8BAp9h3YZqg08Q` bundle'ı git-tracked olarak eklendi (34 dosya, 612KB). §38.14 ve §38.15'teki tüm owner panel sweep'inin tasarım kaynağı.
+
+| Klasör/Dosya | İçerik | Uygulama §'sı |
+|---|---|---|
+| `README.md` | "Coding agents read first" + bundle açıklama | — |
+| `chats/chat1.md` | Tasarım iterasyonu transcript'i (niyet kaynağı) | §38.14 / §38.15 |
+| `project/page-dashboard.jsx` | Dashboard 4 yeni section spec'i (BUGÜN BEKLEYEN, KANAL DAĞILIMI, SIK BAHSEDİLEN, CANLI AKIŞ) | §23.7 Phase 12 (PR #410, #415-#417) |
+| `project/page-reviews.jsx` | Yorumlar 3-col layout (filter rail + list + AI Co-Pilot detail) | §23.7 Phase 5 (PR #418), §38.15 composer fix |
+| `project/page-google.jsx` | Google Reviews dark hero + PROFİL SAĞLIĞI gauge + SIK GEÇEN KELİMELER | §23.7 Phase 12 (PR #410, #419) |
+| `project/page-platforms.jsx` | 12 platform card grid (multi-restaurant aggregate) | DEFER — HIGH 4 (CLAUDE.md §38.14 backlog) |
+| `project/page-account.jsx` | 220 nav | 1fr | 320 right rail layout | §23.7 Phase 12 (PR #413) |
+| `project/page-analytics.jsx` | KPI sparkline + heatmap + AI insight dark card | (mevcut analytics ile uyumlu, drift küçük) |
+| `project/page-customers.jsx` | CRM tablosu — segment / LTV / sentiment kolonları | PR #407, #420 (foundation), Phase 8c (segment) BACKLOG |
+| `project/page-system.jsx` | System overview (palet + tipografi + bileşen anatomi) | §11 + §23.3 (zaten kullanılıyor) |
+| `project/page-mobile.jsx` + `page-mobile-v2.jsx` | Mobile screen mockup'ları | §25 (responsive web) |
+| `project/shell.jsx` | Sidebar collapse + user menu + plan progress + brand mark | §23.7 Phase 12 (PR #410, #411, #414) |
+| `project/components/icons.jsx` | Lucide-style icon mapping | §23.4 (mevcut) |
+| `project/components/mobile.jsx` | Mobile drawer + bottom bar | §25 (mevcut) |
+| `project/components/page-{customers,feedbacks,google,analytics,platforms,account,shell}.jsx` | Component-level prototipler | reference |
+| `project/styles/buaze.css` | Token + utility tanımları | §23.1 ile uyumlu |
+| `project/tokens.css` | Renk + typography token kaynağı | §23.1 ile uyumlu |
+| `project/assets/buaze-logo.svg` | SVG logo (mevcut `BuazeLogo.tsx` ile uyumlu) | §11 |
+| `project/Owner Panel Pulse Redesign.html` | Canvas HTML (preview) | — (yalnız prototip) |
+| `project/src/app/[locale]/dashboard/...` | Production code'un snapshot kopyaları (Claude Design GitHub'dan import) | reference, **`src/`'ye kopyalanmaz** |
+
+**Kural aynı:** `.design-owner-2026/` da ilk iki bundle gibi `src/`'ye kopyalanmaz. JSX prototipleri ve HTML canvas görsel/spec referans. Token değerleri `tokens.css` ile cross-check edilir.
+
+**Niçin git-tracked**: Sonraki AI session'lar (özellikle CRM segment + LTV + sentiment Phase 8c) bu bundle'ı `page-customers.jsx`'ten okuyabilsin. Local `/tmp/owner-redesign/` lifecycle kısa, kalıcı kayıt için repo'da olmalı.
+
 
 ---
 
@@ -5236,4 +5267,142 @@ Sebep: stacked PR'larda kullanıcı "Squash and merge" seçmiş, base PR merge s
 2. Stacked PR olmasın — tek consolidated PR önerisi. Squash gotcha riski 2 kez yaşandı.
 3. CLAUDE.md §38.14 (bu) son durum kaynağı; yeni iş yaparken §38.15+ olarak ekle.
 
-**Sıradaki kullanıcı prompt'u** — bu doc PR'dan sonra alınacak, ileride §38.15 olarak not edilecek.
+**Sıradaki kullanıcı prompt'u** — §38.15'te dokümante edildi.
+
+### 38.15 2026-05-04 — Yorumlar composer UX revize (audit + senior dev fix)
+
+Kullanıcı promptu (özet): *"Bu zamana kadar yapılanların hatasız ve tasarıma uyumlu olduğundan emin ol. Backend gerekiyorsa senior backend dev titizliğiyle, frontend tarafında en iyi dev gibi hatalı/UX kötü yerleri düzelt — özellikle Yorumlar sayfasında mesaj/mail atma alanı."*
+
+Senior frontend dev disipliniyle paralel Explore agent ile composer/yorumlar UX deep-dive audit + 14 issue fix. **Backend dokunulmadı** (composer UX bütünüyle frontend). Tasarım parity §38.14'te zaten teyit; bu PR **UX kalite + a11y + bug** kapsamında.
+
+**PR #422 — `fix(feedbacks): composer UX revize`** (3 dosya, +147/-39):
+
+A11y (P0, WCAG 2.1 AA):
+
+| Yer | Fix |
+|---|---|
+| `FeedbackReplyComposer` textarea | `<label htmlFor>` + `aria-labelledby="reply-textarea-label"` + `aria-describedby="reply-textarea-hint"` + stable `id="reply-textarea-input"` (failed reply retry için scrollIntoView/focus target) |
+| Send button | `aria-disabled` + dynamic `title` ("Önce yanıt yazın" / "Gönderiliyor…") + `focus-visible:ring-2 ring-[#C6F24E] ring-offset-2` |
+| Tone selector | `focus-visible:ring-2 ring-[#C6F24E] ring-offset-2 ring-offset-[#0A0A0A]` (dark bg üstünde lime ring contrast pass) |
+| Reply notice | `role="status"` (semantic SR announcement) + char counter `aria-live="polite"` |
+
+UX (P1) — productivity wins:
+
+| Fix | Detay |
+|---|---|
+| **Cmd/Ctrl+Enter shortcut** | Composer textarea `onKeyDown` handler, boş + sending guard'lı submit |
+| Visual `kbd` chip | "⌘ Enter göndermek için" desktop hint (Stripe/Linear pattern) |
+| **Tone change → auto-regenerate** | `onChange` içinde `setAiTone` + `onRegenerateAi()` (aiSuggestion mevcutsa, !aiLoading guard'lı). Manuel "Yeniden Öner" tıklaması gereksiz. |
+| Karakter sayacı | Live (>0 görünür), `bz-mono tabular-nums`, `aria-live` polite |
+| `maxLength={5000}` | HTML guard mail body üst sınır |
+| Reply notice timeout | 2.8s → **5s** (success/info), **8s** (error tone). WCAG dwell timing (≥5.5s öneri). |
+| iOS auto-zoom prevent | Textarea `text-[16px] sm:text-[13px]` (CLAUDE.md §25.5 paterni) |
+| Auto-grow viewport-aware | `Math.min(480, window.innerHeight × 0.5)` — küçük ekranda full-takeover engellenir |
+| Placeholder focus | `focus:placeholder:text-[#525252]` darker on focus |
+| Emoji buttons removed | 📝✨😊@ — no functionality, visual clutter (UX disiplin) |
+
+Bug (P0) — Gmail-like:
+
+| Fix |
+|---|
+| **`replyDraft` + `replyNotice` + `sendEmail` clear on feedback switch** — `useEffect [activeFeedbackId]`. Önceden A müşteri için draft yazıp B'ye geçince stale draft kalıyordu (data leak + UX confusion). Yeni feedback'te `sendEmail` da true'ya reset (customer email varsa default etkin). |
+
+UX (P0) — failed reply recovery:
+
+| Fix |
+|---|
+| **Failed reply altında "Yeniden dene" button** (Pulse danger palette satırı). Tıklayınca: `props.setReplyDraft(rep.body)` + `requestAnimationFrame(() => textarea.focus() + scrollIntoView smooth + cursor end)`. Mevcut backend POST endpoint reuse — yeni endpoint açılmadı (eski failed kayıt audit-friendly korunur). |
+
+Drift (P1):
+
+| Fix |
+|---|
+| `xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,360px)]` → `xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,400px)]`. Detail panel 360→400px (composer textarea + button row ferah; dar layout overflow'u temizlendi). |
+
+**Senior backend disiplini (audit kararları)**:
+- Failed reply için PATCH endpoint açılmadı (CLAUDE.md §28 — abstraction kaçınma + audit log korunması). Mevcut POST pattern: yeni reply oluşturulur, eski failed kayıt log için kalır.
+- Backend kontratı dokunulmadı. composer `onSendReply` mevcut endpoint'e POST atar, response shape değişmedi.
+
+**Senior frontend disiplini (audit kararları)**:
+- WCAG 2.1 AA hedefi: label + aria-describedby + role + focus-visible
+- Klavye-first: Cmd+Enter shortcut, scrollIntoView smooth, cursor positioning
+- iOS guard: 16px font (auto-zoom prevent)
+- State hygiene: Gmail draft pattern (clear on switch)
+- Failure UX: Retry button (data loss yok, audit korunur)
+- Reduced motion: `transition-[height]` 150ms (auto-grow), reduced-motion blanket korur
+
+**P2 backlog (gelecek PR — kullanıcı talebine göre)**:
+
+| Item | Sev | Scope |
+|---|---|---|
+| AI skeleton + spinner redundancy | LOW | `Composer.tsx` visual cleanup |
+| Sent reply scroll position kayıp on switch | MED | useEffect scroll anchor / smooth restore |
+| Reply thread expand/collapse | LOW | Long thread'lerde collapsible |
+| Emoji buttons replacement | LOW | Mention `@` / AI improve / snippet — yeni feature, scope explicit talep |
+
+**Yapma**:
+- Composer'a yeni emoji picker / GIF / image attachment ekleme — scope creep, kullanıcı talebi yok
+- Failed reply için PATCH/retry endpoint açma — mevcut POST audit-friendly (eski failed kayıt korunur)
+- Tone change auto-regenerate'i kapatma — UX win, manuel tıklama gereksizliği netleşti
+- Notice dwell timing'i 2.8s'e geri çekme — WCAG dwell ≥5.5s ihlali, error 8s mantıklı
+
+**Yap**:
+- Yeni composer-related feature eklenirken bu PR'daki a11y disiplinini koru: `<label htmlFor>` + `aria-describedby` + `focus-visible:ring`
+- Failed reply retry pattern reuse — `/api/feedback/[id]/reply` POST + body re-load (textarea fokus + scrollIntoView + cursor end)
+- UX dwell timing'leri tutarlı tut: success/info **5s**, error **8s** (bu PR kanonik)
+- Cmd+Enter shortcut pattern'i diğer form composer'larda da reuse (inbox reply, email compose, vb.)
+
+**Kalan backlog (Phase 8c, HIGH 4 dahil)**: §38.14'teki backlog tablosu ile aynı, Phase 8c (Customers segment + LTV + sentiment) en yüksek öncelikli olmaya devam eder.
+
+### Sonraki AI session için prompt (öneri)
+
+Aşağıdaki prompt sonraki session'a aktarılmak için tasarlandı. Kullanıcı doğrudan kopyalayıp yapıştırabilir veya kendi versiyonunu yazabilir:
+
+```
+CLAUDE.md §38.14 + §38.15 son session özetlerini oku. Şimdi:
+
+1. PHASE 8C (Customers CRM tamamlama) — yapılacak iş:
+   - src/lib/customers.ts yeni helper:
+     • computeSegment({visits, daysSinceLastVisit, avgRating}) → 'vip' | 'loyal' | 'risk' | 'churned' | 'new'
+     • computeLTV({visits, avgRating}) → number (proxy: visits × avgRating × 10)
+     • computeSentiment(avgRating) → 'pos' | 'neu' | 'neg'
+   - /api/customers/route.ts response'a 4 alan ekle: avgRating, daysSinceLastVisit, segment, ltv, sentiment (server-side helper ile derive)
+   - /api/customers/export route 4 yeni sütun (Segment + LTV + Sentiment + Days since)
+   - /[locale]/dashboard/customers/page.tsx:
+     • Table'a 3 yeni sütun (Segment Badge, LTV mono, Sentiment dot+label)
+     • Mobile card'a 3 yeni row
+     • Segment filter pills (Tümü / VIP / Loyal / Risk / Churned / New) range filter üstüne
+   - Tasarım kaynağı: .design-owner-2026/project/page-customers.jsx (segment+LTV+sentiment kolonları)
+
+2. AUDIT — yeni iş başlamadan önce paralel Explore agent ile:
+   - Composer fix sonrası Yorumlar sayfası gerçekten temiz mi (regression check)
+   - Yeni Customer drawer + segment columns'a uygun ekstra mobile UX gap'i var mı
+   - Phase 8c sonrası dashboard "BUGÜN BEKLEYEN" + Customers segment crossover (high-LTV churned customer alert vs?)
+
+3. DİSİPLİN:
+   - Senior backend dev titizliği: IDOR + Zod + cache header + audit (yeni segment helper'ları test edilebilir saf fonksiyon)
+   - Senior frontend dev: a11y (Badge primitive + filter pill keyboard nav) + mobile card consistency
+   - CLAUDE.md §28 abstraction kaçınma — segment helper 3+ yerde kullanılırsa lib/customers.ts; aksi halde inline
+   - Stacked PR YAPMA — fresh main'den tek consolidated branch (squash gotcha 2x yaşandı, §21.22)
+
+4. ÇIKTI:
+   - Tek PR (Phase 8c) main'e doğrudan
+   - CLAUDE.md §38.16 olarak audit + fix log'u
+
+Önce CLAUDE.md §38.14 + §38.15 + §16 .design-owner-2026 entry'lerini hızlıca tara,
+sonra Phase 8c implementation planını AskUserQuestion ile clarify (segment threshold'ları product decision):
+- VIP threshold: visits ≥ ? + avgRating ≥ ?
+- Risk threshold: avgRating < ? + visits ≥ ?
+- Churned: daysSinceLastVisit > ?
+- LTV multiplier proxy: visits × avgRating × ? (yoksa flat visits sayısı)
+
+Sonra plan onaylanınca implement et.
+```
+
+**Bu prompt'un avantajları**:
+- Tüm bağlamı CLAUDE.md §38.14 + §38.15 + §16'dan çekiyor (re-read disiplini)
+- Audit aşaması mevcut (regression check, mobile gap)
+- Stacked-squash gotcha uyarısı dahil (fresh-from-main)
+- Product decision'ları AskUserQuestion ile netleştir (segment threshold'lar)
+- §38.16 dokümantasyon disiplini explicit
+- Senior backend + frontend disiplini somut kriterlerle
