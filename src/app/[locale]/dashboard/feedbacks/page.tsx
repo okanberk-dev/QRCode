@@ -207,6 +207,17 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const activeIsReplied = active?.isReplied === true;
   const activeAutoDraftEnabled = active?.aiAutoDraftEnabled === true;
 
+  // UX: feedback değişince composer state'lerini temizle. User A'ya draft
+  // yazıp B'ye geçince stale draft kalmasın (Gmail-like behavior). Reply
+  // notice + AI suggestion da feedback'e bağlı, yeni bağlamda anlamsız.
+  useEffect(() => {
+    setReplyDraft('');
+    setReplyNotice(null);
+    // sendEmail varsayılanı yeni feedback için yeniden değerlendirilir —
+    // customerEmail varsa true (etkin), yoksa false (otomatik dahili).
+    setSendEmail(true);
+  }, [activeFeedbackId]);
+
   // ============================================================
   // Notification deep-link: scroll + lime pulse
   // ============================================================
@@ -363,9 +374,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // ============================================================
   // Action handlers
   // ============================================================
+  // UX: notice 2.8s → 5s. WCAG önerisi "important messages stay ≥5.5s",
+  // 5s makul orta nokta. Error tone ekstra dwell (8s) — kullanıcı hatayı
+  // okumadan kaybolmasın.
   const flashReply = (msg: string, tone: ReplyTone = 'info') => {
     setReplyNotice({ msg, tone });
-    setTimeout(() => setReplyNotice(null), 2800);
+    const dwell = tone === 'error' ? 8000 : 5000;
+    setTimeout(() => setReplyNotice(null), dwell);
   };
 
   const onRegenerateAi = async (toneOverride?: AiTone) => {
@@ -561,7 +576,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       </div>
 
       <div
-        className="flex flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white lg:flex-row lg:h-[calc(100vh-200px)] lg:min-h-[540px] xl:grid xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,360px)]"
+        className="flex flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white lg:flex-row lg:h-[calc(100vh-200px)] lg:min-h-[540px] xl:grid xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,400px)]"
       >
         {/* ============ XL FILTER RAIL — visible only on xl: (≥1280px) ============ */}
         <FeedbackFiltersRail
