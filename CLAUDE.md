@@ -5814,3 +5814,67 @@ Sonra plan onaylanınca implement et.
 - 🔴 14-haftalık trend chart (backend weekly aggregate — schema field gerek)
 - 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
 - 🛡️ Security follow-ups (CLAUDE.md §38.2)
+
+### 38.25 2026-05-04 — Analytics 14-haftalık trend chart (puan & hacim)
+
+§38.18 backlog'unun son büyük kalemini bu PR'da kapattık. `.design-owner-2026/page-analytics.jsx` PUAN & HACİM TRENDİ paterni — 14-haftalık trend chart analytics page'inde KPI strip altına büyük overview section olarak eklendi.
+
+**Mimari karar (sade tutmak için)**:
+- **Schema değişikliği YOK bu PR'da** — `Restaurant.targetRating` field'ı eklenmedi. Hardcoded `4.0` industry default kullanılır.
+- **Owner ayar UI sonraki backlog kalemi** — kullanıcının hedef puanını özelleştirmesi gerektiğinde `Restaurant.targetRating Int?` (veya `Float?`) field eklenir + Settings UI'a input + WeeklyTrendChart prop'u DB'den okunur.
+- **recharts dependency artırma YOK** — custom inline SVG (800×240 viewBox).
+- **Mevcut "ETKİLEŞİM" window-day trendi KEEP** — farklı amaç: günlük trend (range-bound) vs haftalık özet (sabit 14-hafta).
+
+**Component** (`src/components/dashboard/analytics/WeeklyTrendChart.tsx`):
+- Pure presentational, `'use client'` yok.
+- Props: `weeks: WeeklyTrendPoint[]` (14 hafta seri) + `targetRating?: number` (default 4.0) + `isTr?: boolean`.
+- Auto Y-axis range: data + target ± 0.2 buffer (sıkışmaz).
+- Volume bars (gri `#EDEDED`) background → trend line (graphite stroke 2.5) → lime gradient area → hedef line dashed → son point lime tooltip + delta to target.
+- Volume 0 olan haftalar line atlama (gap), volume 0 bar render skip.
+- `<2 weeks with data` empty state ("Trend için yeterli haftalık veri yok").
+- A11y: `role="img"` + `aria-label="14 haftalık trend, son hafta avg X.XX"`. Cell `<title>` tooltip her bar + nokta.
+
+**Mobile responsive**:
+- Parent `<section>` `overflow-x-auto` SVG'ye `min-width: 600` veriyor — mobile (375px) altında horizontal scroll. Volume bar + line + label readability korunur.
+- Header legend (Hacim/Puan swatches) `hidden sm:flex` — mobile'da gizli (header subtitle delta hint yeterli).
+
+**Backend aggregate** (`/[locale]/dashboard/analytics/page.tsx`):
+- `feedbacks98d` yeni transaction query — 98 gün (~14 hafta) sabit pencere, range filter'dan bağımsız.
+- ISO Pazartesi başlangıçlı haftalık bucket (jsDay 0=Sun → 6, 1=Mon → 0).
+- Volume = count, rating = `ratingSum / volume` (volume 0 ise 0 → line gap).
+- `weeklyTrend.label = "H1"…"H14"` (en eski → en yeni).
+- Mevcut `feedbacksWindow` query'i (range-bound) etkilenmez; bu ek query 14-hafta için ayrı.
+
+**Dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/components/dashboard/analytics/WeeklyTrendChart.tsx` | YENİ — custom SVG component (~250 satır) |
+| `src/app/[locale]/dashboard/analytics/page.tsx` | `feedbacks98d` query + 14-week bucket aggregate + import + section render (KPI altı, etkileşim üstü) |
+| `CLAUDE.md` | §38.18 backlog ✅ + §38.25 yeni log |
+
+**Yapma**:
+- `Restaurant.targetRating` schema field'ı bu PR'da ekleme — sade scope, hardcoded 4.0 yeter. Owner ayar gelecek scope.
+- recharts heatmap/line eklentisi ekleme — bundle 30+ KB, custom SVG yeterli.
+- "Etkileşim trendi" (window-day) section'ını silme — farklı amaç (günlük interaction vs haftalık rating overview); owner her ikisinden yararlanır.
+- Y axis range hardcode (4.0–5.0) — restoran kohortları farklı; auto-range data + target ± 0.2 buffer ile sıkışma yok.
+- "Puan / Hacim / Sentiment" toggle button'ları (tasarım kaynağında var) bu PR'da ekleme — single-mode (puan + hacim birlikte) yeterli; toggle UI scope creep.
+
+**Yap**:
+- Owner Settings'e `targetRating` ayarı eklenirse `WeeklyTrendChart` prop'u dinamik DB'den oku + bu §38.25 backlog notunu güncelle.
+- Yeni 14-hafta benzeri weekly aggregate ihtiyacı çıkarsa aynı paterni reuse (98-gün query + ISO Pazartesi bucket + JS-side aggregate).
+- Volume bar'ların max scale'i `Math.max(...weeks.map((w) => w.volume), 1)` — 0 fallback ile NaN/Infinity guard.
+
+**Test + verification**:
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors.
+- Yeni unit test gerekmedi — pure presentational primitive, weekly bucket aggregate `Date.getTime()` arithmetic'i deterministik.
+- Manual: `/tr/dashboard/analytics` 14-week trend görünür, son point lime tooltip "X.XX", hedef line 4.0'da dashed, delta hint header'da.
+
+**Backlog güncel** (Bu PR sonrası — analytics drift'i tamamen kapatıldı):
+- ✅ 14-haftalık trend chart (§38.25)
+- ✅ Heatmap Gün × Saat (§38.24)
+- ✅ Topics sentiment progress (§38.20)
+- ✅ KPI sparkline + AI dark card (§38.18)
+- 🟡 `Restaurant.targetRating` schema field + Settings UI (yeni backlog)
+- 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)
