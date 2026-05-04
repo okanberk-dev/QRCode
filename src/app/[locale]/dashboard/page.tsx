@@ -147,6 +147,7 @@ async function renderDashboardPage({
     prev7Redirected,
     last7Scans,
     prev7Scans,
+    pendingTasks,
   ] = await prisma.$transaction([
     // KPI 4: Platforma yönlendirme (all-time) — değer KPI'da; delta last7 vs prev7
     prisma.feedback.count({ where: { restaurantId: restIdIn, ...REDIRECT_WHERE } }),
@@ -244,6 +245,14 @@ async function renderDashboardPage({
         restaurantId: restIdIn,
         createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
       },
+    }),
+    // Bekleyen görevler — yanıtlanmamış low-rating yorumlar (HIGH 3 dashboard
+    // task card için, tasarım .design-pulse-2026/.../page-dashboard.jsx).
+    prisma.feedback.findMany({
+      where: { restaurantId: restIdIn, rating: { lte: 3 }, replies: { none: {} } },
+      orderBy: { createdAt: 'desc' },
+      take: 4,
+      include: { restaurant: { select: { name: true } } },
     }),
   ]);
 
@@ -501,6 +510,83 @@ async function renderDashboardPage({
           restaurantId={user.restaurants[0].id}
           locale={locale}
         />
+      )}
+
+      {/* Bekleyen görevler — tasarım .design-pulse-2026/.../page-dashboard.jsx
+          BUGÜN BEKLEYEN paterni. Yanıtlanmamış düşük puanlı yorumlar (rating ≤3
+          + replies count == 0). Owner için aksiyon-odaklı workflow item'ı —
+          itibar koruması için kritik (CLAUDE.md §15 Pulse AI suggest-reply ile
+          işbirliği yapar; "Yanıtla" butonu inbox'a feedback fokuslu açar). */}
+      {pendingTasks.length > 0 && (
+        <section className="bz-card p-5 sm:p-6">
+          <header className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <Eyebrow>{isTr ? 'BUGÜN BEKLEYEN' : 'PENDING TODAY'}</Eyebrow>
+              <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px]">
+                {pendingTasks.length}{' '}
+                {isTr ? 'görev — yanıtsız düşük puan' : 'tasks — unanswered low rating'}
+              </h2>
+            </div>
+            <Link
+              href={`/${locale}/dashboard/feedbacks?tab=low&hasReply=false`}
+              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 shrink-0"
+            >
+              {isTr ? 'Tümü' : 'View all'}
+              <ArrowRight size={12} strokeWidth={2} />
+            </Link>
+          </header>
+          <ul className="space-y-2">
+            {pendingTasks.map((task) => {
+              const initial = (task.name || task.email || '?').charAt(0).toUpperCase();
+              const ageMin = Math.floor((Date.now() - task.createdAt.getTime()) / 60000);
+              const ageLabel =
+                ageMin < 60
+                  ? `${ageMin} ${isTr ? 'dk' : 'm'}`
+                  : ageMin < 1440
+                    ? `${Math.floor(ageMin / 60)} ${isTr ? 'sa' : 'h'}`
+                    : `${Math.floor(ageMin / 1440)} ${isTr ? 'g' : 'd'}`;
+              const branch = task.branch || task.restaurant?.name || '';
+              return (
+                <li key={task.id}>
+                  <Link
+                    href={`/${locale}/dashboard/feedbacks?focus=${task.id}`}
+                    className="flex items-center gap-3 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-3 py-2.5 transition-colors hover:bg-[#FEE2E2]"
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#DC2626] text-[12px] font-semibold text-white">
+                      {initial}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 text-[13px] font-semibold text-[#0A0A0A]">
+                        <span className="truncate">{task.name || (isTr ? 'Anonim' : 'Anonymous')}</span>
+                        <span className="flex shrink-0 gap-px">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              size={10}
+                              className={s <= task.rating ? 'text-[#DC2626]' : 'text-[#FECACA]'}
+                              fill={s <= task.rating ? '#DC2626' : '#FECACA'}
+                            />
+                          ))}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 truncate text-[11.5px] text-[#525252]">
+                        {task.comment || (isTr ? 'Yorum bırakılmadı.' : 'No comment.')}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-0.5 text-[10.5px] text-[#737373]">
+                      <span className="bz-mono tabular-nums">{ageLabel}</span>
+                      {branch && <span className="truncate max-w-[80px]">{branch}</span>}
+                    </div>
+                    <span className="hidden sm:inline-flex shrink-0 items-center gap-1 rounded-full bg-[#0A0A0A] px-2.5 py-1 text-[10.5px] font-semibold text-white">
+                      {isTr ? 'Yanıtla' : 'Reply'}
+                      <ArrowRight size={10} strokeWidth={2.5} />
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       {/* Unified KPI Grid — mobile 2x2 → desktop 4-col. Tek delta pencere
