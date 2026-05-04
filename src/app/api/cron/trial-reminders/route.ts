@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendTrialEndingEmail } from '@/lib/email';
 
+// CRITICAL — without these directives Vercel Pro defaults to a 60s function
+// timeout. trial-reminders fans out per-user mail sends (Resend HTTP layer);
+// once trial cohort grows past ~200 users that 60s ceiling gets hit and the
+// cron silently 504s. CLAUDE.md §38.11 cron checklist.
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 /**
  * Trial reminder cron.
  *

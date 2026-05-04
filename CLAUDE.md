@@ -4945,3 +4945,76 @@ Kullanıcı PR #390 sonrası "uçtan uca hata + işlevsellik kontrolü" istedi. 
 4. Bulguları kategorize et: HIGH (production risk) / MEDIUM (operasyonel) / LOW (cosmetic) / FALSE POSITIVE
 5. Tek "audit fix bundle" PR'ı — multiple PR yerine tek narrative ile gönderilmesi audit context'ini korur
 6. CLAUDE.md güncellemesi son adım — değişiklik yaparsan §38'e yeni alt-section ekle
+
+### 38.11 2026-05-04 — Cron config drift fix (Vercel Pro silent timeout)
+
+Kullanıcı raporu: "Vercel Pro almama rağmen cron'lar çalışmıyor". `src/app/api/cron/*` 8 endpoint'i denetlendi; **5 cron'da kritik runtime config drift** tespit edildi. Vercel Pro plan'da function default timeout **60 saniye** — bu cron'ların batch işleri (mail send, IP anonymize, trial reminder fan-out) 60s ceiling'i aşıp **silent timeout** ile 504 dönüyor; Sentry server-side flush kör noktasıyla (CLAUDE.md §38.8) birlikte tamamen sessiz fail oluyor.
+
+**Konfigürasyon matrisi (audit anı, 2026-05-04)**:
+
+| Cron | dynamic | runtime | maxDuration | Önceki davranış |
+|---|---|---|---|---|
+| `anonymize-ips` | ❌ → ✓ | ❌ → ✓ | ❌ → ✓ 300 | 60s default; updateMany hızlı, etkilenmedi ama defansif |
+| `monthly-newsletter` | ❌ → ✓ | ❌ → ✓ | ❌ → ✓ 300 | **CRITICAL** — ~1000 abone × 120ms throttle = ~120s, 60s'de timeout, partial send |
+| `trial-reminders` | ❌ → ✓ | ❌ → ✓ | ❌ → ✓ 300 | **HIGH** — trial cohort büyüdükçe per-user mail fan-out 60s'i aşıyor |
+| `weekly-digest` | ✓ | ❌ → ✓ | ✓ 300 | runtime explicit eksikti, defansif drift |
+| `weekly-digest-summary` | ✓ | ❌ → ✓ | ✓ 300 | aynı |
+| `google-reviews-alert` | ✓ | ✓ | ✓ 300 | clean |
+| `lifecycle-emails` | ✓ | ✓ | ✓ 300 | clean |
+| `platform-link-retest` | ✓ | ✓ | ✓ 300 | clean |
+
+**Cron checklist (yeni cron eklerken zorunlu 3 directive)**:
+
+```ts
+// src/app/api/cron/<name>/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+
+// 1) dynamic: cron context'i her tetikte fresh DB read + fresh env okuma
+//    yapmalı; statik prerender'a düşmemeli.
+export const dynamic = 'force-dynamic';
+
+// 2) runtime: explicit nodejs — Vercel implicit infer ediyor (Prisma
+//    Node-only) ama explicit declaration future edge runtime drift'ine
+//    karşı korur.
+export const runtime = 'nodejs';
+
+// 3) maxDuration: Vercel Pro default 60s. Batch işler (mail fan-out,
+//    DB updateMany üstüne, Resend rate limit throttle) 300s safe.
+//    Vercel Pro üst sınır 800s, Enterprise üst sınır da var.
+export const maxDuration = 300;
+
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get('authorization');
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  // ... business logic
+}
+```
+
+**Yapma:**
+- `dynamic`, `runtime`, `maxDuration` üçlüsünü skip etme — yeni cron eklerken bu üç directive zorunlu disiplin
+- `maxDuration: 60` set etme — Vercel Pro default zaten 60s; explicit 60 hiçbir defansif değer katmaz, 300 (5 dk) batch için güvenli
+- `maxDuration: 800` set etme (Vercel Pro üst sınır) — gerçek ihtiyaç olmadan max çekme; 300 yeterli, daha büyük batch ise queue (Upstash QStash) düşün
+- `runtime = 'edge'` deneme — cron handler'lar Prisma + nodemailer/Resend HTTP / fs okumaları yapıyor, edge uyumsuz
+- CRON_SECRET pattern'inde fallback kullanma (`process.env.CRON_SECRET || 'default'`) — fail-closed, env yoksa 401 düşmeli (CLAUDE.md §37.2 H)
+
+**Yap:**
+- Yeni cron eklerken 3 directive + auth gate + try/catch + structured response (`{ ok: true, ...stats }`) pattern'i izle
+- `vercel.json` `crons` array'i + CLAUDE.md §21.12 tablosu birlikte güncelle (tek source-of-truth)
+- Batch işler için `Promise.allSettled` per-row isolation (1 hata tüm batch'i kırmasın)
+- Shared helper export et (admin manuel trigger için, CLAUDE.md §21.13 self-fetch antipattern bypass)
+
+**Kullanıcı yansıması (bu fix'in)**:
+- **Operatör (sen)**: aylık newsletter artık tam liste send eder (önceden ~500 abone'ye partial send, kalanı silently drop); trial-reminders timeout fail'i kaybolur → trial conversion mail'leri ulaşır
+- **İşletme sahibi (owner)**: trial bitimine 1/3 gün kalan owner'lar artık reminder mail'i alır → conversion fırsatı artar
+- **Müşteri**: dolaylı — abone olduğu newsletter artık her ay tam içerikle ulaşır
+- **Validasyon**: bir sonraki Pazartesi 09:00 UTC weekly-digest cron'unun execution duration'ı Vercel cron dashboard'da kontrol edilebilir; 60s'in üstünde sürmesi önceden timeout demekti, şimdi 300s ceiling
+
+**Kanıt zinciri (root cause confirmed)**:
+- Vercel Pro plan: `Function timeout` default 60s (Hobby 10s, Enterprise 800s default)
+- `monthly-newsletter` `runMonthlyNewsletter()` helper'ı: Resend HTTP rate limit 10/sec → her abone arasına 120ms throttle. 1000 abone = 120s. **60s ceiling'de timeout olur** → cron Vercel tarafından 504 olarak işaretlenir, sonraki execution'a kadar partial send hayatta kalır
+- `trial-reminders` per-user mail fan-out: trial cohort 200+ user'da ~80s alır
+- `anonymize-ips` tek `prisma.feedback.updateMany` query'si: <2s, etkilenmiyor ama defansif düzeltildi
+- `weekly-digest` ve `weekly-digest-summary` zaten `maxDuration: 300` set'ti ama `runtime` eksikti — sadece defansif düzeltme

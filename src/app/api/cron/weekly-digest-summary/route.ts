@@ -3,6 +3,9 @@ import { runWeeklyDigest } from '@/lib/weekly-digest-runner';
 import { sendWeeklyDigestSummary } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
+// Explicit Node.js runtime — mirrors weekly-digest, locks the cron away
+// from any implicit edge upgrade. CLAUDE.md §38.11 cron checklist.
+export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 /**

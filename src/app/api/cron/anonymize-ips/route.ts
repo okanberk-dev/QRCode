@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// Runtime + maxDuration explicit declared so Vercel Pro does not fall back
+// to the 60s default function timeout — single updateMany finishes in
+// <1s today but defending against future growth (millions of feedback
+// rows) is cheap. CLAUDE.md §38.11 cron checklist disciplini.
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 /**
  * KVKK / GDPR IP retention cron.
  *

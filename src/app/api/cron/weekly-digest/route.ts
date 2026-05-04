@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { runWeeklyDigest } from '@/lib/weekly-digest-runner';
 
 export const dynamic = 'force-dynamic';
+// Explicit Node.js runtime — Vercel infers it from imports today (Prisma
+// client is Node-only) but the explicit declaration matches the cron
+// checklist (CLAUDE.md §38.11) and prevents a future edge-runtime drift.
+export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 /**
