@@ -183,10 +183,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
           >
             {isTr ? 'MEVCUT PLAN' : 'CURRENT PLAN'}
           </p>
-          <h3
-            className="mt-1.5 text-[36px] sm:text-[40px] font-medium leading-[1] tracking-[-0.025em] text-white"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
+          <h3 className="bz-h-tight-2 mt-1.5 text-[36px] sm:text-[40px] text-white">
             {summary?.planLabel || (isTr ? 'Trial' : 'Trial')}
           </h3>
           <p className="mt-1.5 text-[13px] text-[#A3A3A3]">
@@ -199,10 +196,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
 
           {summary?.amount ? (
             <div className="mt-4 flex items-baseline gap-2">
-              <span
-                className="text-[28px] sm:text-[32px] font-semibold text-[#C6F24E]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
+              <span className="bz-h-tight-2 text-[28px] sm:text-[32px] text-[#C6F24E]">
                 {formatCurrency(summary.amount, summary.currency, isTr ? 'tr' : 'en')}
               </span>
               <span className="text-[13px] text-[#A3A3A3]">
