@@ -4,11 +4,15 @@ import { redirect } from 'next/navigation';
 import {
   Mail,
   Phone,
-  Star,
   Users,
-  MessageSquareText,
+  Crown,
+  Wallet,
+  Repeat2,
   Inbox,
   Download,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
@@ -24,6 +28,7 @@ import {
 } from '@/lib/customers';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 import { SentimentBadge } from '@/components/customers/SentimentBadge';
+import { SentimentSparkbar } from '@/components/customers/SentimentSparkbar';
 import { CustomerDetailDrawer } from './_components/CustomerDetailDrawer';
 
 // Phase 8 — Owner Customers CRM (CLAUDE.md §23.7 Phase 12.x).
@@ -295,6 +300,19 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     segmentCounts[row.segment] += 1;
   }
 
+  // §38.36 — 4-stat KPI grid. Tasarımdaki TOPLAM MİSAFİR / VIP / ORT. LTV /
+  // GERİ DÖNÜŞ ORANI birebir; ama YoY + sektör benchmark deltaları SKIP
+  // (CLAUDE.md §35.8 — verifiable olmayan iddia, "sektör %48" gibi).
+  const totalCustomers = summaryRow ? Number(summaryRow.customers) : 0;
+  const vipCount = segmentCounts.vip;
+  const vipPct = totalCustomers > 0 ? (vipCount / totalCustomers) * 100 : 0;
+  const avgLtv =
+    enriched.length > 0
+      ? Math.round(enriched.reduce((sum, r) => sum + r.ltv, 0) / enriched.length)
+      : 0;
+  const returningCount = enriched.filter((r) => r.feedback_count >= 2).length;
+  const returnRate = enriched.length > 0 ? (returningCount / enriched.length) * 100 : 0;
+
   // Apply segment filter (post-derive).
   const filtered = segmentFilter
     ? enriched.filter((r) => r.segment === segmentFilter)
@@ -396,76 +414,127 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         </div>
       )}
 
-      {/* Summary tiles */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3.5">
+      {/* §38.36 — 4-stat KPI grid (TOPLAM MİSAFİR / VIP / ORT. LTV / GERİ DÖNÜŞ).
+          Tasarım: .design-owner-2026/page-customers.jsx:54-67. */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <StatCard
-          label={isTr ? 'Müşteri' : 'Customers'}
-          value={(summaryRow ? Number(summaryRow.customers) : 0).toLocaleString(intLocale)}
+          label={isTr ? 'Toplam misafir' : 'Total guests'}
+          value={totalCustomers.toLocaleString(intLocale)}
           icon={<Users size={14} />}
         />
         <StatCard
-          label={isTr ? 'Yorum' : 'Reviews'}
-          value={(summaryRow ? Number(summaryRow.feedbacks) : 0).toLocaleString(intLocale)}
-          icon={<MessageSquareText size={14} />}
+          label="VIP"
+          value={vipCount.toLocaleString(intLocale)}
+          icon={<Crown size={14} className="text-[#C6F24E]" />}
+          accent="#C6F24E"
+          delta={
+            totalCustomers > 0
+              ? `%${vipPct.toFixed(1).replace('.', ',')} ${isTr ? 'segment' : 'segment'}`
+              : null
+          }
+          deltaKind="neutral"
         />
         <StatCard
-          label={isTr ? 'Ort. puan' : 'Avg rating'}
-          value={
-            summaryRow?.avg_rating != null
-              ? summaryRow.avg_rating.toFixed(1)
-              : '—'
+          label={isTr ? 'Ort. LTV' : 'Avg LTV'}
+          value={avgLtv > 0 ? avgLtv.toLocaleString(intLocale) : '—'}
+          icon={<Wallet size={14} />}
+        />
+        <StatCard
+          label={isTr ? 'Geri dönüş oranı' : 'Return rate'}
+          value={enriched.length > 0 ? `%${Math.round(returnRate)}` : '—'}
+          icon={<Repeat2 size={14} />}
+          delta={
+            enriched.length > 0
+              ? `${returningCount.toLocaleString(intLocale)} ${isTr ? 'tekrar gelen' : 'returning'}`
+              : null
           }
-          icon={<Star size={14} className="text-[#C6F24E]" />}
-          accent="#C6F24E"
+          deltaKind="neutral"
         />
       </div>
 
-      {/* Segment filter pills — Phase 8c. URL state ?segment=. */}
-      <div
-        className="bz-card flex flex-wrap items-center gap-1.5 p-3"
-        role="tablist"
-        aria-label={isTr ? 'Segment filtresi' : 'Segment filter'}
-      >
-        {SEGMENT_PILLS.map((pill) => {
-          const active = pill.key === 'all' ? segmentFilter === null : segmentFilter === pill.key;
-          const count = segmentCounts[pill.key];
-          return (
-            <Link
-              key={pill.key}
-              href={buildHref({ segment: pill.key === 'all' ? '' : pill.key, page: '1' })}
-              role="tab"
-              aria-selected={active}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
-                active
-                  ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                  : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
-              }`}
-            >
-              {isTr ? pill.labelTr : pill.labelEn}
-              <span
-                className={`bz-mono tabular-nums text-[10.5px] rounded-full px-1.5 py-0.5 ${
-                  active ? 'bg-white/15 text-white' : 'bg-[#F5F5F5] text-[#737373]'
-                }`}
-              >
-                {count.toLocaleString(intLocale)}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Filter row — URL-driven (no client island, no debounce) */}
+      {/* §38.36 — TEK KONSOLİDE TOOLBAR (eski 2 ayrı bz-card filter section'ı
+          birleştirildi: segment pills card + filter form card duplicate → tek
+          toolbar). Tasarım: .design-owner-2026/page-customers.jsx:70-84.
+          Search (URL form) + segment pills (URL Link) + range chips + restaurant
+          select. "Daha fazla filtre" + "Görünüm" tasarım button'ları SKIP
+          (CLAUDE.md §7 — backend yok). */}
       <form
         action={`/${locale}/dashboard/customers`}
         method="get"
-        className="bz-card p-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3"
+        className="bz-card p-3 flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-2.5"
       >
-        <div className="flex flex-wrap gap-1.5">
+        {/* Hidden inputs — URL state preservation across search submit */}
+        <input type="hidden" name="range" value={rangeKey} />
+        {segmentFilter && <input type="hidden" name="segment" value={segmentFilter} />}
+        {restaurantIdParam && (
+          <input type="hidden" name="restaurantId" value={restaurantIdParam} />
+        )}
+
+        {/* Search input — sol icon, max 320px lg, full mobile */}
+        <div className="relative w-full lg:w-auto lg:max-w-[320px] lg:flex-1">
+          <Search
+            size={14}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
+            strokeWidth={2}
+          />
+          <input
+            type="search"
+            name="search"
+            defaultValue={search ?? ''}
+            placeholder={isTr ? 'Ad, e-posta veya telefon ara…' : 'Search name, email or phone…'}
+            className="bz-input w-full pl-9"
+            maxLength={100}
+            aria-label={isTr ? 'Müşteri ara' : 'Search customers'}
+          />
+        </div>
+
+        {/* Divider lg+ */}
+        <div className="hidden lg:block h-6 w-px bg-[#EDEDED]" aria-hidden />
+
+        {/* Segment pills inline — count INLINE label, horizontal scroll mobile */}
+        <div
+          className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-3 px-3 lg:mx-0 lg:px-0 lg:flex-wrap"
+          role="tablist"
+          aria-label={isTr ? 'Segment filtresi' : 'Segment filter'}
+        >
+          {SEGMENT_PILLS.map((pill) => {
+            const active = pill.key === 'all' ? segmentFilter === null : segmentFilter === pill.key;
+            const count = segmentCounts[pill.key];
+            return (
+              <Link
+                key={pill.key}
+                href={buildHref({ segment: pill.key === 'all' ? '' : pill.key, page: '1' })}
+                role="tab"
+                aria-selected={active}
+                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                  active
+                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
+                }`}
+              >
+                {isTr ? pill.labelTr : pill.labelEn}
+                <span
+                  className={`bz-mono tabular-nums text-[10.5px] rounded-full px-1.5 py-0.5 ${
+                    active ? 'bg-white/15 text-white' : 'bg-[#F5F5F5] text-[#737373]'
+                  }`}
+                >
+                  {count.toLocaleString(intLocale)}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* spacer lg+ */}
+        <div className="hidden lg:block flex-1" aria-hidden />
+
+        {/* Range chips — horizontal scroll mobile */}
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-3 px-3 lg:mx-0 lg:px-0 lg:flex-wrap">
           {(['7d', '30d', '90d', 'all'] as RangeKey[]).map((k) => (
             <Link
               key={k}
               href={buildHref({ range: k, page: '1' })}
-              className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
                 rangeKey === k
                   ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
                   : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
@@ -481,19 +550,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             </Link>
           ))}
         </div>
-        <input
-          type="search"
-          name="search"
-          defaultValue={search ?? ''}
-          placeholder={isTr ? 'Ad, e-posta veya telefon ara…' : 'Search name, email or phone…'}
-          className="bz-input flex-1 min-w-0"
-          maxLength={100}
-        />
+
+        {/* Restaurant select (multi-restaurant only) */}
         {restaurants.length > 1 && (
           <select
             name="restaurantId"
             defaultValue={restaurantIdParam ?? ''}
-            className="bz-input sm:w-[200px]"
+            className="bz-input w-full lg:w-[180px]"
+            aria-label={isTr ? 'İşletme filtresi' : 'Business filter'}
           >
             <option value="">{isTr ? 'Tüm işletmeler' : 'All businesses'}</option>
             {restaurants.map((r) => (
@@ -503,16 +567,18 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             ))}
           </select>
         )}
-        <input type="hidden" name="range" value={rangeKey} />
-        {segmentFilter && <input type="hidden" name="segment" value={segmentFilter} />}
-        <button type="submit" className="bz-btn-primary">
-          {isTr ? 'Uygula' : 'Apply'}
-        </button>
-        {hasFilter && (
-          <Link href={`/${locale}/dashboard/customers`} className="bz-btn-ghost">
-            {isTr ? 'Temizle' : 'Reset'}
-          </Link>
-        )}
+
+        {/* Apply / Reset — search submit + filter clear */}
+        <div className="flex gap-2 lg:gap-1.5">
+          <button type="submit" className="bz-btn-primary">
+            {isTr ? 'Uygula' : 'Apply'}
+          </button>
+          {hasFilter && (
+            <Link href={`/${locale}/dashboard/customers`} className="bz-btn-ghost">
+              {isTr ? 'Temizle' : 'Reset'}
+            </Link>
+          )}
+        </div>
       </form>
 
       {/* Table — desktop, card list on mobile (CLAUDE.md §23.6 paterni) */}
@@ -534,22 +600,23 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         </div>
       ) : (
         <>
-          {/* Desktop table — Phase 8c restructure (audit): "İşletme" drop
-              (drawer'da var), Segment + LTV + Sentiment kolonları eklendi.
-              Sticky first column "Müşteri" 1280px overflow guard'ı için. */}
+          {/* §38.36 — Desktop table 6-col (tasarım line 108-122 birebir).
+              Eski "İletişim" sütunu drop (email Misafir altına taşındı, telefon
+              drawer'da). Sentiment SentimentBadge yerine SentimentSparkbar
+              (0-100 score progress + number). Avatar bg sentiment-based
+              (pos lime-soft / neg red-soft / neu n100). */}
           <div className="bz-card hidden overflow-x-auto lg:block">
-            <table className="bz-table w-full min-w-[920px]">
+            <table className="bz-table w-full min-w-[860px]">
               <thead>
                 <tr>
                   <th className="text-left sticky left-0 z-10 bg-[#FAFAFA]">
-                    {isTr ? 'Müşteri' : 'Customer'}
+                    {isTr ? 'Misafir' : 'Guest'}
                   </th>
-                  <th className="text-left">{isTr ? 'İletişim' : 'Contact'}</th>
                   <th className="text-left">{isTr ? 'Segment' : 'Segment'}</th>
-                  <th className="text-right">{isTr ? 'Yorum' : 'Reviews'}</th>
+                  <th className="text-right">{isTr ? 'Ziyaret' : 'Visits'}</th>
                   <th className="text-right">{isTr ? 'LTV' : 'LTV'}</th>
-                  <th className="text-left">{isTr ? 'Memnuniyet' : 'Sentiment'}</th>
                   <th className="text-right">{isTr ? 'Son ziyaret' : 'Last seen'}</th>
+                  <th className="text-left">{isTr ? 'Sentiment' : 'Sentiment'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -559,11 +626,27 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                     .toUpperCase();
                   const detailKey = `${r.restaurant_id}|${r.contact_key}`;
                   const detailHref = buildHref({ detail: detailKey });
+                  // §38.36 — Sentiment-based avatar bg (tasarım line 131-134).
+                  const avatarBg =
+                    r.sentiment === 'neg' ? '#FEF2F2'
+                    : r.sentiment === 'pos' ? '#EAF9B8'
+                    : '#F5F5F5';
+                  const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#0A0A0A';
+                  // Score 0-100 (avgRating × 20, clamped).
+                  const sentScore =
+                    r.avg_rating != null
+                      ? Math.round(Math.max(0, Math.min(5, r.avg_rating)) * 20)
+                      : 0;
                   return (
                     <tr key={detailKey} className="bz-tr-hover">
                       <td className="sticky left-0 z-10 bg-white">
                         <div className="flex items-center gap-3">
-                          <div className="bz-avatar h-8 w-8 text-[12px]">{initials}</div>
+                          <div
+                            className="bz-avatar h-8 w-8 text-[12px]"
+                            style={{ backgroundColor: avatarBg, color: avatarFg }}
+                          >
+                            {initials}
+                          </div>
                           <div className="min-w-0">
                             <Link
                               href={detailHref}
@@ -573,6 +656,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                             >
                               {r.name || (isTr ? 'Anonim' : 'Anonymous')}
                             </Link>
+                            {r.email && (
+                              <div className="bz-mono text-[11px] text-[#737373] truncate max-w-[220px]">
+                                {r.email}
+                              </div>
+                            )}
                             {(r.restaurant_name || r.branch) && (
                               <div className="text-[11px] text-[#737373] truncate">
                                 {r.restaurant_name}
@@ -584,43 +672,25 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                         </div>
                       </td>
                       <td>
-                        <div className="flex flex-col gap-0.5 text-[12px]">
-                          {r.email && (
-                            <a
-                              href={`mailto:${r.email}`}
-                              className="inline-flex items-center gap-1.5 text-[#0A0A0A] hover:text-[#A8D62E]"
-                            >
-                              <Mail size={11} strokeWidth={2} />
-                              <span className="truncate max-w-[180px]">{r.email}</span>
-                            </a>
-                          )}
-                          {r.phone && (
-                            <a
-                              href={`tel:${r.phone}`}
-                              className="inline-flex items-center gap-1.5 text-[#525252] hover:text-[#0A0A0A]"
-                            >
-                              <Phone size={11} strokeWidth={2} />
-                              <span>{r.phone}</span>
-                            </a>
-                          )}
-                        </div>
-                      </td>
-                      <td>
                         <SegmentChip segment={r.segment} locale={locale} />
                       </td>
-                      <td className="text-right tabular-nums text-[13px] font-semibold">
-                        {r.feedback_count}
+                      <td className="text-right">
+                        <span className="bz-mono tabular-nums text-[13px] font-semibold text-[#0A0A0A]">
+                          {r.feedback_count}
+                        </span>
                       </td>
                       <td className="text-right">
                         <span className="bz-mono tabular-nums text-[12.5px] font-semibold text-[#0A0A0A]">
                           {r.ltv.toLocaleString(intLocale)}
                         </span>
                       </td>
-                      <td>
-                        <SentimentBadge sentiment={r.sentiment} locale={locale} />
+                      <td className="text-right">
+                        <span className="bz-mono text-[11.5px] text-[#737373]">
+                          {fmtDate(r.last_at)}
+                        </span>
                       </td>
-                      <td className="text-right text-[12px] text-[#737373]">
-                        {fmtDate(r.last_at)}
+                      <td>
+                        <SentimentSparkbar score={sentScore} />
                       </td>
                     </tr>
                   );
@@ -701,45 +771,96 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             })}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <nav
-              className="bz-card flex items-center justify-between p-3 text-[12px]"
-              aria-label={isTr ? 'Sayfalar' : 'Pagination'}
-            >
-              <span className="text-[#737373]">
-                {isTr
-                  ? `Sayfa ${page} / ${totalPages} · ${total} müşteri`
-                  : `Page ${page} of ${totalPages} · ${total} customers`}
-              </span>
-              <div className="flex gap-1.5">
-                {page > 1 ? (
-                  <Link
-                    href={buildHref({ page: String(page - 1) })}
-                    className="bz-btn-ghost"
-                  >
-                    {isTr ? '← Önceki' : '← Prev'}
-                  </Link>
-                ) : (
-                  <span className="bz-btn-ghost opacity-40 cursor-not-allowed">
-                    {isTr ? '← Önceki' : '← Prev'}
+          {/* §38.36 — Pagination polish: "X–Y / total misafir" + page numbers
+              + chevron icons. Tasarım line 157-174. Smart ellipsis (≤7 sayfa
+              tüm sayılar, >7 current ± 1 ile compact). */}
+          {totalPages > 1 &&
+            (() => {
+              const startRow = offset + 1;
+              const endRow = Math.min(offset + PAGE_SIZE, total);
+              const pageList: (number | '…')[] = [];
+              if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i += 1) pageList.push(i);
+              } else {
+                pageList.push(1);
+                if (page > 3) pageList.push('…');
+                const lo = Math.max(2, page - 1);
+                const hi = Math.min(totalPages - 1, page + 1);
+                for (let i = lo; i <= hi; i += 1) pageList.push(i);
+                if (page < totalPages - 2) pageList.push('…');
+                pageList.push(totalPages);
+              }
+              return (
+                <nav
+                  className="bz-card flex flex-col gap-2.5 p-3 sm:flex-row sm:items-center sm:justify-between"
+                  aria-label={isTr ? 'Sayfalar' : 'Pagination'}
+                >
+                  <span className="bz-mono text-[11.5px] text-[#737373] tabular-nums">
+                    {isTr
+                      ? `${startRow.toLocaleString(intLocale)}–${endRow.toLocaleString(intLocale)} / ${total.toLocaleString(intLocale)} misafir`
+                      : `${startRow.toLocaleString(intLocale)}–${endRow.toLocaleString(intLocale)} of ${total.toLocaleString(intLocale)} guests`}
                   </span>
-                )}
-                {page < totalPages ? (
-                  <Link
-                    href={buildHref({ page: String(page + 1) })}
-                    className="bz-btn-ghost"
-                  >
-                    {isTr ? 'Sonraki →' : 'Next →'}
-                  </Link>
-                ) : (
-                  <span className="bz-btn-ghost opacity-40 cursor-not-allowed">
-                    {isTr ? 'Sonraki →' : 'Next →'}
-                  </span>
-                )}
-              </div>
-            </nav>
-          )}
+                  <div className="flex items-center gap-1">
+                    {page > 1 ? (
+                      <Link
+                        href={buildHref({ page: String(page - 1) })}
+                        className="bz-btn-icon"
+                        aria-label={isTr ? 'Önceki sayfa' : 'Previous page'}
+                      >
+                        <ChevronLeft size={14} strokeWidth={2} />
+                      </Link>
+                    ) : (
+                      <span
+                        className="bz-btn-icon opacity-40 cursor-not-allowed"
+                        aria-disabled="true"
+                      >
+                        <ChevronLeft size={14} strokeWidth={2} />
+                      </span>
+                    )}
+                    {pageList.map((p, i) =>
+                      p === '…' ? (
+                        <span
+                          key={`ellipsis-${i}`}
+                          className="bz-mono text-[11px] text-[#A3A3A3] px-1"
+                          aria-hidden
+                        >
+                          …
+                        </span>
+                      ) : (
+                        <Link
+                          key={p}
+                          href={buildHref({ page: String(p) })}
+                          aria-current={p === page ? 'page' : undefined}
+                          className={`min-w-[28px] h-7 inline-flex items-center justify-center rounded-md px-2 text-[12px] font-medium tabular-nums transition-colors ${
+                            p === page
+                              ? 'bg-[#0A0A0A] text-white'
+                              : 'text-[#525252] hover:bg-[#F5F5F5]'
+                          }`}
+                        >
+                          {p}
+                        </Link>
+                      ),
+                    )}
+                    {page < totalPages ? (
+                      <Link
+                        href={buildHref({ page: String(page + 1) })}
+                        className="bz-btn-icon"
+                        aria-label={isTr ? 'Sonraki sayfa' : 'Next page'}
+                      >
+                        <ChevronRight size={14} strokeWidth={2} />
+                      </Link>
+                    ) : (
+                      <span
+                        className="bz-btn-icon opacity-40 cursor-not-allowed"
+                        aria-disabled="true"
+                      >
+                        <ChevronRight size={14} strokeWidth={2} />
+                      </span>
+                    )}
+                  </div>
+                </nav>
+              );
+            })()}
         </>
       )}
 
