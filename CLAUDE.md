@@ -5762,3 +5762,55 @@ Sonra plan onaylanınca implement et.
 - 🔴 Heatmap Gün × Saat (backend 2D matrix)
 - 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
 - 🛡️ Security follow-ups (CLAUDE.md §38.2)
+
+### 38.24 2026-05-04 — Analytics Heatmap Gün × Saat (yorum yoğunluk haritası)
+
+§38.18 backlog'unun 2D yoğunluk haritası kalemini bu PR'da kapattık. `.design-owner-2026/page-analytics.jsx` YORUM YOĞUNLUĞU paterni — 7×24 (Gün × Saat) heatmap analytics page'inde mevcut "Günlük Dağılım" + "Saat Bazlı Dağılım" 2 ayrı bar chart'ın altına yeni section olarak eklendi.
+
+**Mimari karar (audit önerisi)**:
+- **Schema değişikliği YOK** — mevcut `Feedback.createdAt` timestamp'inden 7×24 matrix JS-side aggregate. `feedbacksWindow` query zaten select'liyor (multi-purpose query, CLAUDE.md §7 paterni — replication önleme).
+- **recharts dependency artırma YOK** — custom inline SVG (480×180 viewBox + cell render). Bundle artışı ~1 KB.
+- **Mevcut 2 bar chart KEEP** ("Günlük Dağılım" + "Saat Bazlı Dağılım") — heatmap onların yerine değil yanına; owner familiar pattern korunur, 2D + 1D iki signal seçeneği sunar.
+
+**Component** (`src/components/dashboard/analytics/HeatmapDayHour.tsx`):
+- Pure presentational, `'use client'` yok (server component'ten import edilebilir).
+- Props: `cells: Array<{ day, hour, count }>` + `isTr?: boolean`.
+- Cell color: `rgba(168, 214, 46, ${0.15 + ratio * 0.85})` lime opacity (max'a göre normalize). Boş cell `#F2F2F2`.
+- Peak hücre algoritması: tek pass, "Pik · Cuma 20:00 · 14 yorum/saat" hint footer'da.
+- A11y: `role="img"` + `aria-label="Gün × saat heatmap'i, pik {gün} {saat}:00 · {N} yorum/saat"`. Her cell'de native `<title>` tooltip.
+
+**Mobile responsive**:
+- Parent overflow-x-auto SVG'ye `min-width: 480` veriyor — mobile (375px) altında horizontal scroll. Cell layout korunur, label'lar okunabilir kalır.
+- Legend (az/çok lime swatches) `hidden sm:flex` — mobile'da gizli (peak hint footer ile bilgi yeter).
+
+**Backend aggregate** (`/[locale]/dashboard/analytics/page.tsx`):
+- `feedbacksWindow.forEach` ile 7×24 matrix (`day = jsDay === 0 ? 6 : jsDay - 1` → ISO Pzt-Paz).
+- 168 cell (eksik kombinasyonlar 0 default — heatmap'e flat array gönderilir).
+- Query `select` zaten `createdAt` taşır; ek SQL yok.
+
+**Dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/components/dashboard/analytics/HeatmapDayHour.tsx` | YENİ — custom SVG component (~150 satır) |
+| `src/app/[locale]/dashboard/analytics/page.tsx` | `heatmapCells` aggregate + `<HeatmapDayHour>` import + section render |
+| `CLAUDE.md` | §38.18 backlog ✅ + §38.24 yeni log |
+
+**Yapma**:
+- recharts heatmap eklentisi ekleme — bundle 30+ KB, 7×24 grid için custom SVG yeterli.
+- Mevcut "Günlük Dağılım" + "Saat Bazlı Dağılım" bar chart'larını silme — owner familiar pattern, 1D özet çoğu zaman daha hızlı tarayabiliyor.
+- Cell aspect ratio'yu zorla square — 18×20 px tasarım kaynağı paterni; mobile'da scroll fallback aspect korur.
+- Color scale'i absolute (örn. 0-100) yapma — restoran hacmi farklı, max'a göre normalize her restoran için anlamlı.
+
+**Yap**:
+- Yeni 2D analytics surface eklerken aynı paterni reuse: JS-side aggregate (varsa mevcut query) + custom SVG.
+- A11y `role="img"` + `aria-label` peak hint'i taşımalı (screen reader için 2D matrix yorumlaması zor).
+
+**Test + verification**:
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors.
+- Yeni unit test gerekmedi — pure presentational primitive, matrix aggregate mevcut createdAt logic'iyle aynı.
+
+**Backlog güncel** (Bu PR sonrası):
+- 🔴 14-haftalık trend chart (backend weekly aggregate — schema field gerek)
+- 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)

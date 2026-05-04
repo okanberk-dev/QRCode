@@ -18,6 +18,7 @@ import AnalyticsFilterBar from '@/components/dashboard/analytics/AnalyticsFilter
 import InteractionTrendChart, {
   type InteractionTrendPoint,
 } from '@/components/dashboard/analytics/InteractionTrendChart';
+import { HeatmapDayHour } from '@/components/dashboard/analytics/HeatmapDayHour';
 import { extractThemes } from '@/lib/analytics-themes';
 
 // Note: InteractionTrendChart taşır 'use client' direktifini — Next.js 15
@@ -353,6 +354,26 @@ async function renderAnalyticsPage({
     value: v,
   }));
 
+  // ---- Phase 8c+ (CLAUDE.md §38.24) — Heatmap Gün × Saat ----
+  // .design-owner-2026/page-analytics.jsx YORUM YOĞUNLUĞU paterni.
+  // 7×24 matrix mevcut feedbacksWindow.createdAt'ten JS-side aggregate
+  // (yeni schema field gerekmez). 168 cell.
+  const heatmapCells: Array<{ day: number; hour: number; count: number }> = [];
+  const heatmapMatrix: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+  for (const f of feedbacksWindow) {
+    const jsDay = f.createdAt.getDay();
+    const day = jsDay === 0 ? 6 : jsDay - 1;
+    const hour = f.createdAt.getHours();
+    if (day >= 0 && day < 7 && hour >= 0 && hour < 24) {
+      heatmapMatrix[day][hour] += 1;
+    }
+  }
+  for (let d = 0; d < 7; d++) {
+    for (let h = 0; h < 24; h++) {
+      heatmapCells.push({ day: d, hour: h, count: heatmapMatrix[d][h] });
+    }
+  }
+
   // ---- Aspect breakdown (yemek / servis / atmosfer) ----
   // Schema'da rating'lere ek olarak 3 alt-rating var (Feedback.foodRating, vb.).
   // Public review formu opsiyonel sorduğu için sparse data — yeterli sample
@@ -595,6 +616,11 @@ async function renderAnalyticsPage({
           </p>
         </section>
       </div>
+
+      {/* Phase 8c+ §38.24 — Heatmap Gün × Saat (2D yoğunluk haritası) */}
+      <section className="bz-card p-5 sm:p-6">
+        <HeatmapDayHour cells={heatmapCells} isTr={isTr} />
+      </section>
 
       {/* Yanıt performansı + Aspect breakdown (conditional) */}
       {(lowRatingFeedbacks.length > 0 || showAspects) && (
