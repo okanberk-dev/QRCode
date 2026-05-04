@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Mail, Phone, Star, Users, MessageSquareText, Inbox } from 'lucide-react';
+import { Mail, Phone, Star, Users, MessageSquareText, Inbox, Download } from 'lucide-react';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
@@ -250,6 +250,25 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           isTr
             ? 'Yorum bırakan müşterilerin tek listesi — e-posta veya telefonla iletişime geçilebilir.'
             : 'Customers who left a review — reachable via email or phone.'
+        }
+        actions={
+          rows.length > 0 ? (
+            <a
+              href={(() => {
+                const q = new URLSearchParams();
+                if (rangeKey !== '30d') q.set('range', rangeKey);
+                if (search) q.set('search', search);
+                if (restaurantIdParam) q.set('restaurantId', restaurantIdParam);
+                const qs = q.toString();
+                return `/api/customers/export${qs ? `?${qs}` : ''}`;
+              })()}
+              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
+              download
+            >
+              <Download size={13} strokeWidth={2} />
+              {isTr ? 'CSV indir' : 'Export CSV'}
+            </a>
+          ) : undefined
         }
       />
 
