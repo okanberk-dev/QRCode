@@ -6033,3 +6033,63 @@ Backend ek queries (3 yeni transaction satırı):
 - 🟡 "Bu hafta" RangeDropdown dashboard header'da (NABIZ chart 30/90/YTD toggle ile bağlı)
 - 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
 - 🛡️ Security follow-ups (CLAUDE.md §38.2)
+
+### 38.28 2026-05-04 — Dashboard mobil 1:1 parity (hero card + KANAL horizontal scroll)
+
+§38.27 desktop parity sonrası kullanıcı talebi: "telefon görünümü ve jsx kodları var onları da inceleyip mobil kısmı da tamamladığından emin ol". Mobil tasarım kaynakları cross-check edildi (`page-mobile-v2.jsx` `MobileDashboard` line 106-260 + `page-mobile.jsx` + `components/mobile.jsx`); 2 görünür drift kapatıldı.
+
+**A · Mobile-only hero card** (`sm:hidden`, `src/app/[locale]/dashboard/page.tsx`):
+
+Mobil owner anasayfa açtığında "günün özeti" tek-bakış card. Desktop'ta `KPI 4-card` zaten "Genel puan" gösteriyor → `sm:hidden` ile sadece <640px viewport'ta render.
+
+- Graphite `#0A0A0A` bg + lime `#C6F24E` accent (44px Space Grotesk rating)
+- 5 yıldız satırı (lime fill, rounded avgRating'e göre)
+- Delta arrow (`↑/↓ X%`) + "Y yorum bu ay" mono altındaki line
+- 7-gün `<Sparkline>` (lime gradient area + stroke), `trendsChartData.count` series reuse
+- `avgRating > 0` + `trendsChartData.length >= 2` guard'lı conditional render
+- `aria-label` locale-aware ("Bugünün özeti" / "Today's summary")
+
+Tasarım kaynağı: `page-mobile-v2.jsx` line 130-157 (Hero card) — birebir hizalı (graphite bg, lime 44px rating, 5 yıldız, mono delta, sparkline path).
+
+**B · KANAL DAĞILIMI horizontal scroll** (mobile-only):
+
+Mobil dar ekranda 4 platform card 2x2 grid'de görsel olarak sıkışıyordu; `page-mobile-v2.jsx` line 218-247 paterni ile edge-to-edge horizontal scroll'a geçirildi.
+
+```tsx
+{/* Eski */}
+<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+
+{/* Yeni */}
+<div className="flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible">
+```
+
+Card width: `shrink-0 w-[150px]` mobile, `sm:w-auto sm:shrink` desktop. Edge-to-edge: `-mx-4 px-4` mobile (ana wrapper padding'ini negatif margin ile yala), desktop full container.
+
+Tasarımdaki `minWidth: 130, flexShrink: 0` ile birebir hizalı.
+
+**Verification**:
+- `npx tsc --noEmit` 0 errors, `npm test` 97/97 pass, `npx eslint` 0 errors (4 baseline warning §38.27'den, mobile diff'inde değil)
+- Manuel 375px viewport: hero card görünür + KANAL DAĞILIMI horizontal scroll çalışıyor
+- 640px+ (sm:): hero card gizli + KANAL DAĞILIMI 4-col grid (mevcut davranış korundu)
+- `avgRating === 0` (yeni hesap): hero card gizli
+
+**Yapma**:
+- Hero card'ı desktop'ta (sm+) göstermek — KPI "Genel puan" zaten orada, redundant UI
+- Sparkline'ı `trendsChartData.length < 2` durumda render etmek — tek nokta line oluşur, çirkin
+- KANAL DAĞILIMI'na yatay scroll snap CSS (`scroll-snap-x mandatory`) eklemek — nice-to-have, gerekmiyor
+- Mobile card width `< 130px` küçültmek — owner readability bozulur (44px rating + delta + sparkline yan yana sıkışır)
+- KPI 4-card mobile grid'i `grid-cols-1` (tek sütun) yapmak — mevcut `grid-cols-2` zaten mobil tasarım ile 1:1, dikey overflow
+
+**Yap**:
+- Yeni mobile-specific section eklerken `sm:hidden` + design kaynağı `page-mobile-v2.jsx` cross-check (drift önleme)
+- Horizontal scroll pattern reuse: `flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:grid sm:grid-cols-N sm:gap-3 sm:overflow-visible` ve card `shrink-0 w-[Npx] sm:w-auto sm:shrink`
+- 3+ yerden tekrar olunca `<HorizontalScrollRow>` primitive (CLAUDE.md §7) — şu an 1 yerde, abstraction premature
+
+**Dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/app/[locale]/dashboard/page.tsx` | Mobile hero card section (`sm:hidden`, ~+70 satır) + KANAL DAĞILIMI flex/grid responsive |
+| `CLAUDE.md` | §38.28 yeni log |
+
+**Sonraki AI session disiplini**: Yeni mobile-specific UI eklerken `.design-owner-2026/project/page-mobile-v2.jsx` cross-check zorunlu. Mobile + desktop tasarımı birbirinden bağımsız bölümler — desktop layout sm: breakpoint ile mobile'a "doğal" düşmüyorsa explicit `sm:hidden` + mobile-only section eklenmeli.

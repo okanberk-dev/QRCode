@@ -735,6 +735,76 @@ async function renderDashboardPage({
         }
       />
 
+      {/* Phase 8c+ §38.28 — Mobile-only hero card. Tasarım kaynağı:
+          .design-owner-2026/page-mobile-v2.jsx MobileDashboard hero —
+          graphite bg + lime accent + büyük rating + 7-gün sparkline.
+          Desktop'ta gizli (KPI 4-card zaten "Genel puan" gösteriyor); mobil
+          dar ekranda owner anasayfaya açtığında ilk gördüğü "nabız"
+          özetlemesi. */}
+      {avgRating > 0 && (
+        <section
+          className="sm:hidden rounded-[18px] bg-[#0A0A0A] text-white p-[18px] relative overflow-hidden"
+          aria-label={isTr ? 'Bugünün özeti' : "Today's summary"}
+        >
+          <div className="pulse-eyebrow text-white/60 text-[9.5px]">
+            {isTr ? 'BUGÜN · ' : 'TODAY · '}
+            {nowDate.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+              day: 'numeric',
+              month: 'long',
+            })}
+          </div>
+          <div className="mt-2 mb-3">
+            <div className="flex items-baseline gap-1.5">
+              <span
+                className="bz-h-tight"
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: 44,
+                  lineHeight: 0.9,
+                  letterSpacing: '-0.04em',
+                  color: '#C6F24E',
+                }}
+              >
+                {avgRating.toFixed(2)}
+              </span>
+              <span className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    size={13}
+                    className={s <= Math.round(avgRating) ? 'text-[#C6F24E]' : 'text-white/20'}
+                    fill={s <= Math.round(avgRating) ? '#C6F24E' : 'transparent'}
+                  />
+                ))}
+              </span>
+            </div>
+            <div className="bz-mono text-[11px] text-white/60 mt-1.5">
+              {ratingDelta.value !== '0%' && (
+                <span className="text-[#C6F24E] font-semibold">
+                  {ratingDelta.kind === 'down' ? '↓' : '↑'} {ratingDelta.value.replace(/^[+-]/, '')}
+                </span>
+              )}
+              {ratingDelta.value !== '0%' && ' · '}
+              {totalReviews}{' '}
+              {isTr ? 'yorum bu ay' : 'reviews this month'}
+            </div>
+          </div>
+          {/* Mini 7-gün sparkline (trendsChartData.count series) — graphite
+              bg üzerinde lime gradient area + lime stroke. */}
+          {trendsChartData.length >= 2 && (
+            <div className="h-[50px] -mx-[18px] -mb-[18px] px-[18px] pb-[18px]">
+              <Sparkline
+                values={trendsChartData.map((d) => d.count)}
+                w={320}
+                h={50}
+                color="#C6F24E"
+                className="w-full"
+              />
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Phase 8c+ §38.27 — AI İçgörü banner. extractThemes synthesis dolu
           ise mount edilir; haftalık dismiss localStorage ile (ertesi hafta
           tekrar gelir). */}
@@ -991,7 +1061,12 @@ async function renderDashboardPage({
               <ArrowRight size={11} strokeWidth={2} />
             </Link>
           </header>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* Phase 8c+ §38.28 — Mobile horizontal scroll, sm+ 4-col grid.
+              Tasarım kaynağı: .design-owner-2026/page-mobile-v2.jsx
+              "yatay scroll mini cards" paterni. Mobile'da 2-col yerine
+              horizontal scroll daha çok platform sığar (4 platform tek
+              satırda); 130px min card width + no-scrollbar. */}
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible">
             {platformDistData.slice(0, 4).map((p) => {
               const brand = (PLATFORMS as Record<string, { color: string; short: string; label: string }>)[
                 p.platform
@@ -999,7 +1074,10 @@ async function renderDashboardPage({
               const tone = brand?.color ?? '#A3A3A3';
               const short = brand?.short ?? p.label.slice(0, 2).toUpperCase();
               return (
-                <div key={p.platform} className="bz-card p-3.5 flex flex-col gap-2.5">
+                <div
+                  key={p.platform}
+                  className="bz-card p-3.5 flex flex-col gap-2.5 shrink-0 w-[150px] sm:w-auto sm:shrink"
+                >
                   <div className="flex items-center gap-2">
                     <span
                       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[10.5px] font-semibold text-white"
