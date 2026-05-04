@@ -6158,3 +6158,55 @@ Paralel Explore agent ile 8 kategori tarandı:
 - `npx tsc --noEmit` 0 errors, `npm test` 97/97 pass, `npx eslint instrumentation-client.ts` 0 errors
 - Manuel: production'da `Cannot read properties of null (reading 'parentNode')` + `$RS` event'i tekrar gelirse Sentry dashboard'da görünmemeli
 - Real parentNode bug regression: Buaze code'da component'te explicit `node.parentNode` çağrı eklenirse + crash → Sentry'e gitmeli (filter atlatmaz, çünkü stack `$RS` taşımaz)
+
+### 38.30 2026-05-04 — Dashboard NABIZ chart 30G/90G/YTD chip toggle + "Bu hafta" header link
+
+§38.27 backlog (`🟡 "Bu hafta" RangeDropdown dashboard header'da (NABIZ chart 30/90/YTD toggle)`) bu PR'da kapatıldı. Tasarım kaynağı: `.design-owner-2026/project/page-dashboard.jsx` line 174-176 (header Bu hafta ghost btn) + line 230-247 (NABIZ chip toggle + legend dot + peak hint).
+
+**A · NABIZ chart 30G/90G/YTD chip toggle**:
+
+Yeni client component `src/components/dashboard/PulseRangeToggle.tsx` (~110 satır):
+- Props: `ranges: { '30g' | '90g' | 'ytd': { data, peak } }` + `defaultRange='30g'` + `isTr`
+- 3 chip (30G/90G/YTD) tasarımdaki `bz-chip active` paterniyle (lime selection: graphite bg + white text), inactive: white + n200 border
+- `role="tablist"` + `aria-selected` semantik
+- TrendsChart `dynamic({ ssr: false })` import (CLAUDE.md §27 paterni)
+- Peak hint footer (`Pik · 4 Mayıs · 9 yorum` paterni) active range'a göre
+- `role="tab"` + `aria-selected` + `focus-visible:ring-[#C6F24E]`
+
+Backend (`src/app/[locale]/dashboard/page.tsx`):
+- Yeni transaction query: `trendFeedbacksRange` — en geriye uzanan window (YTD veya 90G, hangisi daha eski). YTD Mayıs 4'te 124 gün, 90G default. CLAUDE.md §14.1 connection_limit=1 disiplini korunur — tek transaction.
+- 3 yeni helper: `bucketDaily(rows, days)` → 30/90 daily buckets, `bucketWeekly(rows, fromDate)` → YTD weekly buckets (~18 hafta max), `findPeak(buckets) → { dateText, count } | null`.
+- 3 dataset compute: `trend30`, `trend90`, `trendYtd` (label: "4 May" / "11 May" gibi locale-aware kısa).
+- 3 peak compute: `peak30`, `peak90`, `peakYtd`.
+
+Dashboard NABIZ section rewrite:
+- Eyebrow: `TREND VE ETKİLEŞİM` → `NABIZ · SON 30 GÜN` (tasarım line 223 paterni).
+- Header altında büyük rating display: `avgRating.toFixed(2)` (24px Space Grotesk weight 500, letter-spacing -0.02em) + delta arrow (`↑/↓` lime/red) + `vs. önceki 30 gün` mute text. Tasarım line 224-228.
+- Eski 7-gün footer 3-stat (toplam/ort puan/yönlendirme) **kaldırıldı** — tasarım line 237-247'de yok. Yerine legend dots (Ortalama puan graphite line + Günlük yorum hacmi gri swatch) + peak hint sağa-aligned.
+
+Dead code temizliği: `peakIdx`, `peakCount`, `peakDateText`, `peakDateMs` outer-scope değişkenleri silindi (artık `findPeak` helper içinde scope'lanıyor). `last7RedirectPct` orphan olduğu için yorum-only bırakıldı (transaction destructure leftovers gibi §38.27 paterni).
+
+**B · "Bu hafta" header ghost button (görsel parity)**:
+
+Tasarımdaki dropdown affordance (`<button bz-btn-ghost>Bu hafta <chevronDown/></button>`) sade implementasyon: `<Link>` to `/analytics?range=7d` shortcut. Owner click ettiğinde gerçek range/platform/branch URL filter hub'ına (CLAUDE.md §34.7-10) yönlendirilir.
+
+**Yapma:**
+- "Bu hafta" header'a tam dropdown menu yapma — page-level KPI scope filter'ı (Genel puan, Yanıt oranı, Yeni müşteri 7d/30d/90d/YTD) eklemek delta semantic'i değiştirir + iki ayrı range control (header + chip) confuses owner. Analytics page hub'ı.
+- NABIZ section'a "Son 7 gün" / "Son 90 gün" gibi dinamik subtitle ekleme — tasarım `SON 30 GÜN` static eyebrow, default 30G chip aktif. Chip click'te subtitle changes complexity yaratır.
+- TrendsChart'a `interval` prop'u ekleme — Recharts dense data'da otomatik tick interval handle ediyor. CLAUDE.md §13.8 `interval={trend.length <= 7 ? 0 : 5}` analytics-page paterni dashboard'a aktarılmadı (§7 abstraction kaçınma; chart auto-handle yetiyor).
+- YTD weekly bucket sayısını sınırlama — Mayıs 4'te 18 hafta, sınır gerekmiyor. Yıl sonunda max 53 hafta yine recharts uyumlu.
+- Mobile hero card'daki 7-gün sparkline'ı 30G data'sına bağlama — mobile hero "günün özeti" semantic, 7 gün anlamlı; 30G çok geniş, sparkline detayı kaybolur.
+
+**Yap:**
+- Yeni range eklenirse (örn. "Son 24 saat" / "12 ay") `RangeKey` literal + `LABELS` map + `ORDER` array + bucketing helper genişlet. PulseRangeToggle generic değil ama 3+ range ihtiyacı çıkarsa generic'e refactor düşünülür (CLAUDE.md §7).
+- "Bu hafta" header link'i ileride client-side dropdown'a evrilirse (örn. range param'lı analytics deeplink), `<Link>` → `<button onClick>` + popover state. URL filter analytics tarafındaki pattern reuse.
+- NABIZ section default chip'i değişirse (örn. owner ayarı), `defaultRange` prop'u localStorage veya server preference'tan oku.
+
+**Verification**:
+- `npx tsc --noEmit` 0 errors, `npm test` 97/97 pass, `npx eslint` 0 errors (5 baseline warning §38.27 KPI semantik değişiminden, mobile diff'inde değil)
+- Manuel: `/tr/dashboard` 30G chip default aktif → 30 daily buckets, peak hint "Pik · 4 May · N yorum"; 90G chip → 90 daily; YTD → ~18 weekly buckets
+- Manuel: header "Bu hafta" ghost btn → click → `/tr/dashboard/analytics?range=7d` redirect
+
+**Backlog güncel** (Bu PR sonrası):
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER — tasarımdaki 12 platform'dan 4'ü backend gap'i: Slack §34.6'da silindi, Yelp + Foursquare PROVIDER_DOMAINS taxonomy'de yok, Webhook health AutomationRule UI'sı yok. 1:1 implementation product decision gerekiyor: silinmiş feature geri ekleme + 3 yeni provider + activity log endpoint.)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2 — operatör tetiği bekliyor)

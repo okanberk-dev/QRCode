@@ -13,6 +13,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Building2,
+  ChevronDown,
   Download,
   Inbox,
   Plus,
@@ -24,11 +25,11 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { tr as trLocale, enUS as enLocale } from 'date-fns/locale';
 import RatingChart from '@/components/admin/RatingChart';
 import PlatformDistribution from '@/components/admin/PlatformDistribution';
-import TrendsChart from '@/components/admin/TrendsChart';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
 import AIInsightBanner from '@/components/dashboard/AIInsightBanner';
+import PulseRangeToggle from '@/components/dashboard/PulseRangeToggle';
 import { Eyebrow, PageHeader, Sparkline, StatCard, PLATFORMS } from '@/components/ui';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 
@@ -131,6 +132,12 @@ async function renderDashboardPage({
   const now = Date.now();
   const sevenDaysAgo = new Date(now - 7 * 86400000);
   const fourteenDaysAgo = new Date(now - 14 * 86400000);
+  // Phase 8c+ §38.30 — NABIZ chart 30G/90G/YTD chip toggle (tasarım
+  // page-dashboard.jsx line 230-234). 90 gün > YTD (Ocak başı) ise 90 gün
+  // taban; aksi halde YTD start (Ocak 1) en geriye uzanan window.
+  const ninetyDaysAgo = new Date(now - 90 * 86400000);
+  const ytdStart = new Date(new Date(now).getFullYear(), 0, 1);
+  const trendOldestStart = ytdStart < ninetyDaysAgo ? ytdStart : ninetyDaysAgo;
 
   // ---- Tek toplu Prisma transaction bloğu ----
   // Supabase pooler production'da connection_limit=1 ile çalışır; aynı
@@ -161,6 +168,7 @@ async function renderDashboardPage({
     newCustomers30dRows,
     pendingTasks,
     themesFeedbacks,
+    trendFeedbacksRange,
   ] = await prisma.$transaction([
     // KPI 4: Platforma yönlendirme (all-time) — değer KPI'da; delta last7 vs prev7
     prisma.feedback.count({ where: { restaurantId: restIdIn, ...REDIRECT_WHERE } }),
@@ -332,6 +340,14 @@ async function renderDashboardPage({
       take: 80,
       select: { rating: true, comment: true },
     }),
+    // Phase 8c+ §38.30 — NABIZ chart 30G/90G/YTD chip toggle için ham veri.
+    // En geriye uzanan window (YTD veya 90 gün, hangisi daha eski). JS-side
+    // 3 dataset'e bucketlanır (trend30 daily, trend90 daily, trendYtd weekly).
+    // Mevcut 7-day trendFeedbacks (mobile hero sparkline) etkilenmez.
+    prisma.feedback.findMany({
+      where: { restaurantId: restIdIn, createdAt: { gte: trendOldestStart } },
+      select: { createdAt: true, rating: true },
+    }),
   ]);
 
   // ---- Derived metrics ----
@@ -347,7 +363,9 @@ async function renderDashboardPage({
 
   const last7Total = trendFeedbacks.length;
   const last7AvgRating = last7Avg._avg.rating ?? 0;
-  const last7RedirectPct = last7Total > 0 ? Math.round((last7Redirected / last7Total) * 100) : 0;
+  // last7RedirectPct §38.27'de footer 3-stat'tan kaldırıldı; §38.30 NABIZ
+  // section legend dot + peak hint paterni kullanıyor. Restored bırakılmıyor;
+  // analytics page §34.7-10 derin breakdown'da zaten görünür.
 
   // Per-restaurant avg map (Konum performansı widget için)
   const ratingByRestaurant = new Map(
@@ -403,22 +421,99 @@ async function renderDashboardPage({
     trendsChartData.push({ date: dayLabels[labelIdx], count, avgRating: ratingAvg });
   }
 
-  // Phase 8c+ §38.27 — Peak hint NABIZ chart altında. Tasarım kaynağı:
-  // "Pik · 4 Mayıs · 9 yorum". 7-gün buckets üzerinden tek pass.
-  let peakIdx = 0;
-  let peakCount = 0;
-  for (let i = 0; i < trendsChartData.length; i++) {
-    if (trendsChartData[i].count > peakCount) {
-      peakCount = trendsChartData[i].count;
-      peakIdx = i;
+  // Phase 8c+ §38.30 — NABIZ chart 30G/90G/YTD bucket helpers + peak per
+  // range. 3 dataset trendFeedbacksRange (en geniş window) üzerinden
+  // tek pass. Tasarım kaynağı: page-dashboard.jsx line 230-247.
+  type TrendBucketRow = { createdAt: Date; rating: number };
+  function bucketDaily(rows: TrendBucketRow[], days: number) {
+    const buckets: { date: string; count: number; avgRating: number; dateMs: number }[] = [];
+    for (let i = 0; i < days; i++) {
+      const dayStart = new Date();
+      dayStart.setHours(0, 0, 0, 0);
+      dayStart.setDate(dayStart.getDate() - (days - 1 - i));
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+      const dayRows = rows.filter(
+        (f) => f.createdAt >= dayStart && f.createdAt < dayEnd,
+      );
+      const count = dayRows.length;
+      const ratingSum = dayRows.reduce((sum, f) => sum + (f.rating || 0), 0);
+      const avgRating = count > 0 ? Math.round((ratingSum / count) * 10) / 10 : 0;
+      buckets.push({
+        // 30G ve 90G için "4 May" gibi kısa label; Recharts dense data'da
+        // tick interval'ını otomatik handle eder (XAxis dataKey="date").
+        date: dayStart.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+          day: 'numeric',
+          month: 'short',
+        }),
+        count,
+        avgRating,
+        dateMs: dayStart.getTime(),
+      });
     }
+    return buckets;
   }
-  // Tarih label compute — i'inci bucket'ın gerçek tarihi (dayStart pattern).
-  const peakDateMs = Date.now() - (6 - peakIdx) * 86400000;
-  const peakDateText = new Date(peakDateMs).toLocaleDateString(
-    isTr ? 'tr-TR' : 'en-US',
-    { day: 'numeric', month: 'long' },
-  );
+
+  function bucketWeekly(rows: TrendBucketRow[], fromDate: Date) {
+    const buckets: { date: string; count: number; avgRating: number; dateMs: number }[] = [];
+    const start = new Date(fromDate);
+    start.setHours(0, 0, 0, 0);
+    let cursor = new Date(start);
+    while (cursor.getTime() < now) {
+      const weekEnd = new Date(cursor);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+      const weekRows = rows.filter(
+        (f) => f.createdAt >= cursor && f.createdAt < weekEnd,
+      );
+      const count = weekRows.length;
+      const ratingSum = weekRows.reduce((sum, f) => sum + (f.rating || 0), 0);
+      const avgRating = count > 0 ? Math.round((ratingSum / count) * 10) / 10 : 0;
+      buckets.push({
+        date: cursor.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+          day: 'numeric',
+          month: 'short',
+        }),
+        count,
+        avgRating,
+        dateMs: cursor.getTime(),
+      });
+      cursor = new Date(weekEnd);
+    }
+    return buckets;
+  }
+
+  function findPeak(
+    buckets: { count: number; dateMs: number }[],
+  ): { dateText: string; count: number } | null {
+    if (buckets.length === 0) return null;
+    let peakIdx = 0;
+    let peakCount = 0;
+    for (let i = 0; i < buckets.length; i++) {
+      if (buckets[i].count > peakCount) {
+        peakCount = buckets[i].count;
+        peakIdx = i;
+      }
+    }
+    if (peakCount === 0) return null;
+    return {
+      dateText: new Date(buckets[peakIdx].dateMs).toLocaleDateString(
+        isTr ? 'tr-TR' : 'en-US',
+        { day: 'numeric', month: 'long' },
+      ),
+      count: peakCount,
+    };
+  }
+
+  // 30G + 90G daily buckets, YTD weekly buckets (~18 hafta max → chart temiz).
+  const trend30 = bucketDaily(trendFeedbacksRange, 30);
+  const trend90 = bucketDaily(trendFeedbacksRange, 90);
+  const trendYtd = bucketWeekly(trendFeedbacksRange, ytdStart);
+
+  const peak30 = findPeak(trend30);
+  const peak90 = findPeak(trend90);
+  const peakYtd = findPeak(trendYtd);
+  // §38.27'deki 7-gün peak hesabı §38.30'da PulseRangeToggle içine taşındı;
+  // dashboard'da ayrıca kullanılmıyor.
 
   // Per-restaurant 7-day sparkline (QR Performansı için).
   const sparklineByRestaurant = new Map<string, number[]>();
@@ -724,6 +819,22 @@ async function renderDashboardPage({
               <Download size={13} strokeWidth={2} />
               {isTr ? 'Rapor indir' : 'Download report'}
             </Link>
+            {/* Phase 8c+ §38.30 — "Bu hafta" header ghost button.
+                Tasarım kaynağı: page-dashboard.jsx line 174-176 (chevronDown
+                icon, ghost btn). Tasarımda dropdown semantic yok (sadece
+                affordance). Pragmatic implementation: /analytics?range=7d
+                shortcut — orada gerçek range/platform/branch URL filter
+                hub'ı (CLAUDE.md §34.7-10). Owner click ettiğinde derin
+                filtreye yönlendirilir; dashboard'a iki ayrı range control
+                eklemek scope creep olur. */}
+            <Link
+              href={`/${locale}/dashboard/analytics?range=7d`}
+              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
+              aria-label={isTr ? 'Bu hafta — analitik' : 'This week — analytics'}
+            >
+              {isTr ? 'Bu hafta' : 'This week'}
+              <ChevronDown size={13} strokeWidth={2} />
+            </Link>
             <Link
               href={`/${locale}/dashboard/feedbacks`}
               className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
@@ -987,18 +1098,42 @@ async function renderDashboardPage({
         ))}
       </div>
 
-      {/* Trend & Etkileşim — TEK section. Eski custom BarChart "Etkileşim
-          eğilimi" + ayrı "İleri İstatistikler" trend chart'ı tek yerde
-          birleştirildi (Recharts AreaChart, secondary rating line). Footer
-          3-stat kompakt summary. Derin filtre/funnel/leaderboard için
-          /analytics linki. */}
+      {/* NABIZ — Phase 8c+ §38.30. Tasarım kaynağı page-dashboard.jsx
+          line 217-248 (NABIZ · SON 30 GÜN + chip toggle 30G/90G/YTD +
+          legend dots + peak hint). PulseRangeToggle 3 dataset arasında
+          client-side switch yapar (server'da hepsi compute edildi). Eski
+          "Son 7 gün" footer 3-stat kaldırıldı (tasarımda yok), yerine
+          legend (Ortalama puan + Günlük yorum hacmi) + peak hint geldi. */}
       <section className="bz-card p-5 sm:p-6">
-        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+        <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
           <div>
-            <Eyebrow>{isTr ? 'TREND VE ETKİLEŞİM' : 'TREND & ENGAGEMENT'}</Eyebrow>
-            <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px]">
-              {isTr ? 'Son 7 gün' : 'Last 7 days'}
-            </h2>
+            <Eyebrow>{isTr ? 'NABIZ · SON 30 GÜN' : 'PULSE · LAST 30 DAYS'}</Eyebrow>
+            <div className="flex items-baseline gap-2.5 mt-1.5">
+              <span
+                className="bz-h-tight"
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: 24,
+                  fontWeight: 500,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1,
+                }}
+              >
+                {avgRating > 0 ? avgRating.toFixed(2) : '—'}
+              </span>
+              {ratingDelta.value !== '0%' && (
+                <span
+                  className={`text-[11px] font-semibold ${
+                    ratingDelta.kind === 'down' ? 'text-[#DC2626]' : 'text-[#16A34A]'
+                  }`}
+                >
+                  {ratingDelta.kind === 'down' ? '↓' : '↑'} {ratingDelta.value.replace(/^[+-]/, '')}
+                </span>
+              )}
+              <span className="text-[12px] text-[#737373]">
+                {isTr ? 'vs. önceki 30 gün' : 'vs. prev 30 days'}
+              </span>
+            </div>
           </div>
           <Link
             href={`/${locale}/dashboard/analytics`}
@@ -1009,34 +1144,27 @@ async function renderDashboardPage({
           </Link>
         </header>
 
-        <TrendsChart data={trendsChartData} />
+        <PulseRangeToggle
+          ranges={{
+            '30g': { data: trend30, peak: peak30 },
+            '90g': { data: trend90, peak: peak90 },
+            ytd: { data: trendYtd, peak: peakYtd },
+          }}
+          defaultRange="30g"
+          isTr={isTr}
+        />
 
-        {/* Phase 8c+ §38.27 — Peak hint footer (tasarım: "Pik · 4 Mayıs · 9 yorum"). */}
-        {peakCount > 0 && (
-          <p className="bz-mono mt-2 text-[11px] text-[#737373]">
-            {isTr
-              ? `Pik · ${peakDateText} · ${peakCount} yorum`
-              : `Peak · ${peakDateText} · ${peakCount} reviews`}
-          </p>
-        )}
-
-        <div className="mt-5 pt-3.5 border-t border-[#EDEDED] grid grid-cols-3 gap-2 text-[12px] text-[#525252]">
-          <span>
-            <strong className="text-[#0A0A0A] tabular-nums">{last7Total}</strong>{' '}
-            <span className="hidden sm:inline">{isTr ? 'toplam yorum' : 'total reviews'}</span>
-            <span className="sm:hidden">{isTr ? 'yorum' : 'reviews'}</span>
+        {/* Legend dots — tasarım line 237-247 (Ortalama puan graphite line +
+            Günlük yorum hacmi gri swatch). Mobile'da gizli (peak hint
+            zaten yeterli sinyal verir). */}
+        <div className="hidden sm:flex items-center gap-4 mt-3 text-[11.5px] text-[#737373]">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block w-3.5 h-0.5 rounded-sm bg-[#0A0A0A]" />
+            {isTr ? 'Ortalama puan' : 'Avg rating'}
           </span>
-          <span>
-            <strong className="text-[#0A0A0A] tabular-nums">
-              {last7AvgRating > 0 ? last7AvgRating.toFixed(1) : '—'}
-            </strong>{' '}
-            <span className="hidden sm:inline">{isTr ? 'ort. puan' : 'avg rating'}</span>
-            <span className="sm:hidden">{isTr ? 'puan' : 'rating'}</span>
-          </span>
-          <span>
-            <strong className="text-[#0A0A0A] tabular-nums">{last7RedirectPct}%</strong>{' '}
-            <span className="hidden sm:inline">{isTr ? 'yönlendirme oranı' : 'redirect rate'}</span>
-            <span className="sm:hidden">{isTr ? 'yönlend.' : 'redirect'}</span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block w-2 h-2 rounded-sm bg-[#EDEDED]" />
+            {isTr ? 'Günlük yorum hacmi' : 'Daily review volume'}
           </span>
         </div>
       </section>
