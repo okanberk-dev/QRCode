@@ -5,6 +5,13 @@ import { safeParseJson } from '@/lib/safe-json';
 export interface ThemeItem {
   theme: string;
   count: number;
+  /**
+   * Phase 8c+ (CLAUDE.md §38.20) — tasarım .design-owner-2026/page-analytics
+   * Topics sentiment progress paterni. 0-100 range; OpenAI prompt model'in
+   * "bu tema yorumlarda ne kadar olumlu" yargısı. Optional — eski cache
+   * entry'lerde yok, UI graceful skip yapar.
+   */
+  sentimentPositivePct?: number;
 }
 
 export interface ThemesResult {
@@ -57,14 +64,21 @@ const MAX_COMMENTS_TO_SEND = 80; // ~500-700 token; gpt-4o-mini'de hızlı
 // kohortunda restoran başına ortalama yorum hacmi düşük).
 const MIN_COMMENTS_FOR_AI = 4;
 
+// Cache key version prefix — Phase 8c+ (CLAUDE.md §38.20) sentiment field
+// eklendi; eski cache entry'leri (sentimentPositivePct yok) invalidate
+// edilsin diye `:v2` prefix'i. Cache miss'te yeni AI çağrısı sentiment
+// taşıyan response döner.
+const CACHE_KEY_VERSION = 'v2';
+
 const SYSTEM_PROMPT_TR = `Sen bir restoran müşteri-deneyim analistisin. Aşağıda yorumları rating + metin formatında alacaksın.
 
 Görev:
 1. **themes**: Tüm yorumları (rating bağımsız) tarayıp müşterilerin en sık dile getirdiği 5 ortak temayı çıkar. Tema KISA olmalı (2-4 kelime), nötr veya hafif yönlü ifade et (örn. "Bekleme süresi", "Lezzet", "Personel ilgisi", "Fiyat/performans"). Aynı temayı farklı yorumlarda say (count = kaç yorumda geçtiğini tahmin et).
-2. **synthesis**: 1-2 cümlelik genel çıkarım. Restoran sahibine pratik bir bilgi: hangi konu öne çıkıyor, ne yöne işaret ediyor. "Müşteriler genellikle…", "Temel sinyal…" gibi başlat. Övgü ve eleştiri varsa dengeli özetle.
+2. **sentimentPositivePct**: Her tema için bu temadan bahseden yorumların yüzde kaçı OLUMLU yargı taşıyor (0-100 arası tam sayı). 100 = tüm bahisler övgü, 0 = tüm bahisler şikayet, 50 = dengeli. Rating + metin tonu birlikte dikkate al.
+3. **synthesis**: 1-2 cümlelik genel çıkarım. Restoran sahibine pratik bir bilgi: hangi konu öne çıkıyor, ne yöne işaret ediyor. "Müşteriler genellikle…", "Temel sinyal…" gibi başlat. Övgü ve eleştiri varsa dengeli özetle.
 
 Yanıtını YALNIZCA aşağıdaki JSON formatında ver, başka açıklama yapma:
-{"themes":[{"theme":"...","count":N}, ...max 5 madde],"synthesis":"..."}
+{"themes":[{"theme":"...","count":N,"sentimentPositivePct":X}, ...max 5 madde],"synthesis":"..."}
 
 Yorum yetersizse boş array + boş synthesis döndür.`;
 
@@ -72,10 +86,11 @@ const SYSTEM_PROMPT_EN = `You are a restaurant customer-experience analyst. You'
 
 Task:
 1. **themes**: Across all comments (rating-agnostic) extract the top 5 most-mentioned topics. Themes must be SHORT (2-4 words), neutral or lightly-toned (e.g. "Wait time", "Taste", "Staff attentiveness", "Price/value"). Estimate count = how many comments mention each theme.
-2. **synthesis**: A 1-2 sentence overall inference. Practical info for the owner: which topic stands out, what direction it points to. Start with "Customers mostly…" or "Key signal…". If both praise and criticism exist, summarize balanced.
+2. **sentimentPositivePct**: For each theme, what percentage of comments mentioning it carry a POSITIVE sentiment (integer 0-100). 100 = all praise, 0 = all complaints, 50 = balanced. Consider rating + text tone together.
+3. **synthesis**: A 1-2 sentence overall inference. Practical info for the owner: which topic stands out, what direction it points to. Start with "Customers mostly…" or "Key signal…". If both praise and criticism exist, summarize balanced.
 
 Respond with ONLY this JSON, no other text:
-{"themes":[{"theme":"...","count":N}, ...max 5 items],"synthesis":"..."}
+{"themes":[{"theme":"...","count":N,"sentimentPositivePct":X}, ...max 5 items],"synthesis":"..."}
 
 Empty array + empty synthesis if not enough comments.`;
 
@@ -99,15 +114,23 @@ function parseLLMJson(raw: string): { themes: ThemeItem[]; synthesis: string } |
   if (!parsed || typeof parsed !== 'object') return null;
   const themesIn = Array.isArray(parsed.themes) ? parsed.themes : [];
   const themes: ThemeItem[] = themesIn
-    .filter((x: unknown): x is { theme: string; count: number } => {
+    .filter((x: unknown): x is { theme: string; count: number; sentimentPositivePct?: number } => {
       if (!x || typeof x !== 'object') return false;
       const o = x as Record<string, unknown>;
       return typeof o.theme === 'string' && typeof o.count === 'number';
     })
-    .map((x: { theme: string; count: number }) => ({
-      theme: String(x.theme).trim().slice(0, 60),
-      count: Math.max(0, Math.min(999, Math.round(x.count))),
-    }))
+    .map((x: { theme: string; count: number; sentimentPositivePct?: number }) => {
+      const item: ThemeItem = {
+        theme: String(x.theme).trim().slice(0, 60),
+        count: Math.max(0, Math.min(999, Math.round(x.count))),
+      };
+      // Phase 8c+ — sentiment opsiyonel; model uymadıysa undefined kalır,
+      // UI graceful skip yapar.
+      if (typeof x.sentimentPositivePct === 'number' && Number.isFinite(x.sentimentPositivePct)) {
+        item.sentimentPositivePct = Math.max(0, Math.min(100, Math.round(x.sentimentPositivePct)));
+      }
+      return item;
+    })
     .filter((x: ThemeItem) => x.theme.length > 0)
     .slice(0, 5);
   const synthesis = typeof parsed.synthesis === 'string'
@@ -125,8 +148,13 @@ export async function extractThemes(
    *  global cap uygulanır. */
   workspaceId?: string,
 ): Promise<ThemesResult> {
+  // Phase 8c+ (CLAUDE.md §38.20) — version prefix sentiment field eklenince
+  // eski cache entry'leri (sentiment yok) invalidate eder. Çağıranların
+  // cache key'i değiştirmesine gerek yok; helper otomatik bumplar.
+  const versionedKey = `${CACHE_KEY_VERSION}:${cacheKey}`;
+
   // Cache hit
-  const cached = cache.get(cacheKey);
+  const cached = cache.get(versionedKey);
   if (cached && cached.expiresAt > Date.now()) {
     return cached.result;
   }
@@ -187,6 +215,6 @@ export async function extractThemes(
   insertCounter += 1;
   if (insertCounter % PRUNE_INTERVAL === 0) pruneExpired();
   evictIfNeeded();
-  cache.set(cacheKey, { result, expiresAt: Date.now() + TTL_MS });
+  cache.set(versionedKey, { result, expiresAt: Date.now() + TTL_MS });
   return result;
 }
