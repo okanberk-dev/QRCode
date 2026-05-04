@@ -86,8 +86,10 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
 
       {/* Mobile alt padding: UserDashboardShell mobile bottom nav (~64px,
           z-40 lg:hidden) son button'u/composer'ı kapatmasın diye 80px
-          ekstra alt boşluk. Desktop'ta nav yok, gereksiz padding gitsin. */}
-      <div className="flex-1 p-5 pb-24 sm:p-8 sm:pb-24 lg:pb-8">
+          ekstra alt boşluk. Desktop'ta scroll açıldığı için composer'ın
+          rahat görünmesi için lg:pb-12 (48px) — eski lg:pb-8 (32px) son
+          satır button'u panel kenarına sıkıştırıyordu. */}
+      <div className="flex-1 p-5 pb-24 sm:p-8 sm:pb-24 lg:pb-12">
         {/* Header card */}
         <div className="flex items-start gap-4">
           <Avatar
