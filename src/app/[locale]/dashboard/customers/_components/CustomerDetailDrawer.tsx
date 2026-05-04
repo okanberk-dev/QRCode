@@ -19,6 +19,7 @@ import {
 import type { Locale } from '@/lib/translations';
 import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
 import { SegmentChip } from '@/components/customers/SegmentChip';
+import { SentimentBadge } from '@/components/customers/SentimentBadge';
 
 // Phase 8d — Customer detail drawer (CLAUDE.md §23.7 Phase 12).
 // Phase 8c (CLAUDE.md §38.16): Segment + LTV + Sentiment chips header'da; LTV
@@ -81,31 +82,6 @@ function ratingTone(rating: number): { color: string; label: 'pos' | 'neu' | 'ne
   return { color: '#A3A3A3', label: 'neu' };
 }
 
-function SentimentBadge({
-  sentiment,
-  locale,
-}: {
-  sentiment: CustomerSentiment;
-  locale: Locale;
-}) {
-  const isTr = locale === 'tr';
-  const map: Record<CustomerSentiment, { color: string; label: { tr: string; en: string } }> = {
-    pos: { color: '#16A34A', label: { tr: 'Olumlu', en: 'Positive' } },
-    neu: { color: '#A3A3A3', label: { tr: 'Nötr', en: 'Neutral' } },
-    neg: { color: '#DC2626', label: { tr: 'Olumsuz', en: 'Negative' } },
-  };
-  const s = map[sentiment];
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-2 py-0.5 text-[11px] text-[#525252] whitespace-nowrap">
-      <span
-        aria-hidden
-        className="h-1.5 w-1.5 rounded-full shrink-0"
-        style={{ backgroundColor: s.color }}
-      />
-      {isTr ? s.label.tr : s.label.en}
-    </span>
-  );
-}
 
 function formatRelative(iso: string, locale: Locale): string {
   const isTr = locale === 'tr';
@@ -268,7 +244,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
               {data?.stats.segment && data?.stats.sentiment && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   <SegmentChip segment={data.stats.segment} locale={locale} />
-                  <SentimentBadge sentiment={data.stats.sentiment} locale={locale} />
+                  <SentimentBadge sentiment={data.stats.sentiment} locale={locale} variant="badge" />
                 </div>
               )}
             </div>

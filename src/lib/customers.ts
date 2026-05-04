@@ -6,6 +6,34 @@
 export type CustomerSegment = 'new' | 'risk' | 'vip' | 'loyal';
 export type CustomerSentiment = 'pos' | 'neu' | 'neg';
 
+// Phase 8c+ (CLAUDE.md §38.22) — segment + sentiment görsel renk eşlemesi.
+// 5 callsite (admin/customers + drawer + dashboard + owner/customers + mail
+// template) artık tek source-of-truth'tan okur, drift sıfır. Caller yine
+// kendi JSX/HTML'ini render eder; yalnız renk + ikon adı paylaşılır.
+//
+// `bg` light card backgrounds (admin + owner + dashboard + mail), `fg`
+// foreground text/icon. Mail template Pulse light-card variant'la birebir
+// uyumlu. Dark card (drawer'da kullanılmaz; drawer chip aynı light palette
+// kullanır çünkü dark drawer üstünde light pill ok'tur).
+export const SEGMENT_COLOR_MAP: Record<
+  CustomerSegment,
+  { bg: string; fg: string; iconName: 'crown' | 'check' | 'sparkles' | 'alert' }
+> = {
+  vip: { bg: '#0A0A0A', fg: '#FFFFFF', iconName: 'crown' },
+  loyal: { bg: '#EAF9B8', fg: '#0A0A0A', iconName: 'check' },
+  new: { bg: '#DBEAFE', fg: '#1E40AF', iconName: 'sparkles' },
+  risk: { bg: '#FEE2E2', fg: '#991B1B', iconName: 'alert' },
+};
+
+// Sentiment dot+label renk eşlemesi — 3 callsite (admin/customers inline +
+// drawer SentimentBadge + owner/customers SentimentCell). Bu PR'da
+// `<SentimentBadge variant>` primitive'i extract edildi; const tek source.
+export const SENTIMENT_COLOR_MAP: Record<CustomerSentiment, string> = {
+  pos: '#16A34A',
+  neu: '#A3A3A3',
+  neg: '#DC2626',
+};
+
 export interface SegmentInput {
   /** Total feedback count for the customer (within selected range). */
   visits: number;

@@ -23,6 +23,7 @@ import {
   type CustomerSentiment,
 } from '@/lib/customers';
 import { SegmentChip } from '@/components/customers/SegmentChip';
+import { SentimentBadge } from '@/components/customers/SentimentBadge';
 import { CustomerDetailDrawer } from './_components/CustomerDetailDrawer';
 
 // Phase 8 — Owner Customers CRM (CLAUDE.md §23.7 Phase 12.x).
@@ -96,35 +97,6 @@ function parseRange(raw: string | undefined): { start: Date | null; key: RangeKe
   if (raw === 'all') return { start: null, key: 'all' };
   const k = (raw && raw in RANGE_PRESETS ? raw : '30d') as Exclude<RangeKey, 'all'>;
   return { start: new Date(Date.now() - RANGE_PRESETS[k] * 24 * 60 * 60 * 1000), key: k };
-}
-
-// Sentiment dot+label — drawer + table cell + mobile card.
-// Tasarım Sparkbar primitive'ini bilinçli olarak inline dot+label'a indirgiyor
-// (audit önerisi: density, 9-kolon tablo overflow guard).
-function SentimentCell({
-  sentiment,
-  locale,
-}: {
-  sentiment: CustomerSentiment;
-  locale: Locale;
-}) {
-  const isTr = locale === 'tr';
-  const map: Record<CustomerSentiment, { color: string; label: { tr: string; en: string } }> = {
-    pos: { color: '#16A34A', label: { tr: 'Olumlu', en: 'Positive' } },
-    neu: { color: '#A3A3A3', label: { tr: 'Nötr', en: 'Neutral' } },
-    neg: { color: '#DC2626', label: { tr: 'Olumsuz', en: 'Negative' } },
-  };
-  const s = map[sentiment];
-  return (
-    <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[#525252] whitespace-nowrap">
-      <span
-        aria-hidden
-        className="h-1.5 w-1.5 rounded-full shrink-0"
-        style={{ backgroundColor: s.color }}
-      />
-      {isTr ? s.label.tr : s.label.en}
-    </span>
-  );
 }
 
 export default async function OwnerCustomersPage({ params, searchParams }: PageProps) {
@@ -645,7 +617,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                         </span>
                       </td>
                       <td>
-                        <SentimentCell sentiment={r.sentiment} locale={locale} />
+                        <SentimentBadge sentiment={r.sentiment} locale={locale} />
                       </td>
                       <td className="text-right text-[12px] text-[#737373]">
                         {fmtDate(r.last_at)}
@@ -695,7 +667,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   {/* Phase 8c: Segment + Sentiment row */}
                   <div className="flex items-center justify-between gap-2">
                     <SegmentChip segment={r.segment} locale={locale} size="sm" />
-                    <SentimentCell sentiment={r.sentiment} locale={locale} />
+                    <SentimentBadge sentiment={r.sentiment} locale={locale} />
                   </div>
                   <div className="flex flex-col gap-1 text-[12px]">
                     {r.email && (
