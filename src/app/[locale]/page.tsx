@@ -1046,6 +1046,14 @@ export default async function LandingPage({
           className="pointer-events-none absolute -right-12 -top-10 h-[220px] w-[220px] opacity-[0.06]"
           aria-hidden
         />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(198,242,78,0.10)_0%,transparent_65%)]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-32 bottom-0 h-[360px] w-[360px] rounded-full bg-[radial-gradient(circle,rgba(198,242,78,0.06)_0%,transparent_60%)]"
+        />
         <div className="relative mx-auto max-w-[760px]">
           <span className="pulse-eyebrow inline-flex items-center gap-2 text-[#A8D62E]">
             <MessageCircleQuestion size={14} strokeWidth={2.2} aria-hidden />
@@ -1061,26 +1069,30 @@ export default async function LandingPage({
               ? 'Buaze ne yapar, kimler için tasarlandı ve Google\'ın yorum politikasıyla nasıl uyum sağlar — kısaca.'
               : 'What Buaze does, who it is built for, and how it aligns with Google\'s review policy — at a glance.'}
           </p>
-          <span className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[12px] font-medium text-[#525252]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]" aria-hidden />
+          <span className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1 text-[12px] font-medium text-[#0A0A0A]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#0A0A0A]" aria-hidden />
             {isTr ? '5 soru · 2 dakikada okunur' : '5 questions · 2 min read'}
           </span>
 
-          <div className="mt-10 divide-y divide-[#EDEDED] border-y border-[#EDEDED]">
+          <div className="mt-10 flex flex-col gap-3">
             {aeoFaqs.map((f, idx) => (
               <details
                 key={f.q}
-                className="group py-5 transition-colors sm:py-6 [&[open]]:bg-white"
+                className="group rounded-2xl border border-[#EDEDED] bg-white p-5 transition-all duration-200 hover:border-[#A3A3A3] hover:shadow-[0_1px_2px_rgba(10,10,10,0.04)] sm:p-6 [&[open]]:border-[#0A0A0A] [&[open]]:shadow-[inset_3px_0_0_0_#C6F24E,0_4px_16px_rgba(10,10,10,0.04)] motion-reduce:transition-none"
                 open={idx < 2}
               >
-                <summary className="flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 text-left text-[16px] font-medium leading-[1.4] text-[#0A0A0A] sm:text-[17px] [&::-webkit-details-marker]:hidden">
+                <summary className="flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 text-left text-[16px] font-medium leading-[1.4] text-[#0A0A0A] sm:text-[17px] group-open:font-semibold [&::-webkit-details-marker]:hidden">
                   <span className="flex-1">{f.q}</span>
-                  <ChevronDown
-                    size={18}
-                    strokeWidth={2.2}
+                  <span
                     aria-hidden
-                    className="mt-1 shrink-0 text-[#737373] transition-transform duration-200 group-open:rotate-180 group-open:text-[#0A0A0A] motion-reduce:transition-none"
-                  />
+                    className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-[#FAFAFA] transition-all duration-200 group-hover:border-[#A3A3A3] group-open:border-[#0A0A0A] group-open:bg-[#0A0A0A] motion-reduce:transition-none"
+                  >
+                    <ChevronDown
+                      size={14}
+                      strokeWidth={2.4}
+                      className="text-[#737373] transition-transform duration-200 group-open:rotate-180 group-open:text-[#C6F24E] motion-reduce:transition-none"
+                    />
+                  </span>
                 </summary>
                 <p className="mt-3 text-[14px] leading-[1.7] text-[#525252] sm:text-[15px]">
                   {f.a}
@@ -1097,7 +1109,7 @@ export default async function LandingPage({
             </p>
             <Link
               href={`${base}/google-compliance`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] hover:bg-[#FAFAFA]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-[#0A0A0A] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
             >
               {isTr ? 'Google uyumluluk sayfası' : 'Google compliance page'}
               <ArrowUpRight size={14} strokeWidth={2.2} aria-hidden />
