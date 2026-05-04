@@ -119,6 +119,17 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'cta', label: 'Birincil CTA' },
     { key: 'detailLabel', label: 'Detay kart başlığı' },
     { key: 'detailSub', label: 'Detay kart açıklaması', multiline: true },
+    // Phase 8c+ (CLAUDE.md §38.22) — segment dağılımı kartı override alanları.
+    // Segment chip etiketleri (VIP/Düzenli/Yeni/Risk) kasten override edilebilir
+    // bırakıldı (lokalizasyon: bazı sektörlerde "Düzenli" yerine "Sadık" tercih
+    // edilebilir). Backend `segmentCounts` undefined ise card otomatik gizlenir.
+    { key: 'segmentEyebrow', label: 'Segment kartı etiketi', hint: '"Müşteri segmentleri"' },
+    { key: 'segmentTitle', label: 'Segment kartı başlığı', hint: '"Bu hafta kim yorum bıraktı?"' },
+    { key: 'segmentVip', label: 'VIP chip etiketi' },
+    { key: 'segmentLoyal', label: 'Düzenli chip etiketi' },
+    { key: 'segmentNew', label: 'Yeni chip etiketi' },
+    { key: 'segmentRisk', label: 'Risk chip etiketi' },
+    { key: 'segmentHint', label: 'Segment açıklama satırı', multiline: true, hint: 'Kart altındaki ufak hint metni' },
   ],
   'verify-email': [
     { key: 'eyebrow', label: 'Eyebrow', hint: '"E-POSTA ONAYI"' },

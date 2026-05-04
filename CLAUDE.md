@@ -5630,6 +5630,80 @@ Sonra plan onaylanınca implement et.
 **Backlog güncel**:
 - 🔴 14-haftalık trend chart (backend weekly aggregate)
 - 🔴 Heatmap Gün × Saat (backend 2D matrix)
-- 🟡 SentimentBadge extraction (3+ callsite drift kapatma)
-- 🟡 Mail editor weekly-report yeni alan field listesi
-- 🟡 SEGMENT_COLOR_MAP const extraction (5 callsite drift)
+- ~~SentimentBadge extraction~~ ✅ **Tamamlandı** §38.22
+- ~~Mail editor weekly-report yeni alan field listesi~~ ✅ **Tamamlandı** §38.22
+- ~~SEGMENT_COLOR_MAP const extraction~~ ✅ **Tamamlandı** §38.22
+
+### 38.22 2026-05-04 — Customer drift cleanup (SentimentBadge + COLOR_MAP + mail editor)
+
+§38.21'de açılan 3 cosmetic drift backlog kalemini tek consolidated PR'da kapattık. Hepsi LOW risk + LOW scope, birbirleriyle ilişkili (customer segment + sentiment refactor + mail editor extension).
+
+**Değişiklik 1: `SEGMENT_COLOR_MAP` + `SENTIMENT_COLOR_MAP` const extraction** (`src/lib/customers.ts`):
+- 5 callsite (admin + drawer + dashboard + owner + mail) için tek source-of-truth.
+- `SEGMENT_COLOR_MAP[segment] = { bg, fg, iconName }` — JSX render component-local; lib JSX import etmez (saf module).
+- `SENTIMENT_COLOR_MAP[sentiment] = string` — sade dot color, pos/neu/neg → green/gray/red hex.
+- `iconName` literal union (`'crown' | 'check' | 'sparkles' | 'alert'`) — caller component lucide ikonu kendi mapping ile çözer.
+
+**Değişiklik 2: `SegmentChip.tsx` refactor** (`src/components/customers/SegmentChip.tsx`):
+- Inline `SEGMENT_MAP` (label+color+icon) silindi → 3 ayrı sub-map'e bölündü:
+  - `SEGMENT_COLOR_MAP` (lib'a taşındı)
+  - `SEGMENT_LABELS` (component-local — TR/EN dil eşlemesi)
+  - `ICON_BY_NAME` (component-local — lucide React component'ları)
+- Bu split sayesinde `lib/customers.ts` JSX dependency'si almaz; mail template (HTML) ve UI (JSX) aynı color map'ten okuyabilir.
+
+**Değişiklik 3: `SentimentBadge.tsx` yeni primitive** (`src/components/customers/SentimentBadge.tsx`):
+- 3 callsite (admin/customers + drawer + owner customers) için tek source-of-truth.
+- `variant: 'cell' | 'badge'` prop:
+  - `cell` (default): inline dot + label, bg yok → table cell + mobile card için
+  - `badge`: rounded-full + bg-[#FAFAFA] + border + dot + label → drawer header için
+- `lib/customers.ts:SENTIMENT_COLOR_MAP` + component-local `SENTIMENT_LABELS` (TR/EN).
+
+**Migration**:
+- Drawer (`CustomerDetailDrawer.tsx`): inline `SentimentBadge` (22 satır) silindi → import + `<SentimentBadge variant="badge">`. Inline `CustomerSentiment` import'u korundu (interface tip için).
+- Owner customers (`/dashboard/customers/page.tsx`): inline `SentimentCell` (28 satır) silindi → import + `<SentimentBadge>` (variant default `cell`). 2 callsite (table + mobile card) tek import.
+
+**Admin /customers migrate ERTELENDİ**:
+- PR #427 (admin segment kolonu) main'e merge edilmediği için admin/customers'ta `SENTIMENT_PRESENTATION` inline map main'de henüz yok. Bu PR fresh main'den açıldı, admin/customers main hâlinde.
+- PR #427 merge edildikten sonra ayrı follow-up PR'da migrate edilir (CLAUDE.md §38.22 backlog notu).
+
+**Değişiklik 4: Mail editor `FIELDS_BY_TEMPLATE.weekly-report` 7 yeni FieldDef** (`src/components/admin/MailTemplateEditor.tsx`):
+- §38.21'de inline default'a eklenen 7 segment alanı admin override için görünür hale geldi:
+  - `segmentEyebrow` + `segmentTitle` (kart başlık)
+  - `segmentVip` + `segmentLoyal` + `segmentNew` + `segmentRisk` (chip etiketleri)
+  - `segmentHint` (kart altı açıklama, multiline)
+- Hint'lerde "lokalizasyon: Düzenli yerine Sadık tercih edilebilir" gibi kullanım ipuçları.
+- CLAUDE.md §21.26 paterni — backend `segmentCounts` undefined ise card otomatik gizlenir, admin override sadece görünürlüğü değil rendering'i etkiler.
+
+**Dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/lib/customers.ts` | `SEGMENT_COLOR_MAP` + `SENTIMENT_COLOR_MAP` const'ları |
+| `src/components/customers/SegmentChip.tsx` | Inline color map → lib import + `ICON_BY_NAME` + `SEGMENT_LABELS` ayrı |
+| `src/components/customers/SentimentBadge.tsx` | YENİ primitive (variant cell/badge + lib color map import) |
+| `src/app/[locale]/dashboard/customers/_components/CustomerDetailDrawer.tsx` | inline `SentimentBadge` sil + import + `variant="badge"` |
+| `src/app/[locale]/dashboard/customers/page.tsx` | inline `SentimentCell` sil + import (2 callsite — table + mobile card) |
+| `src/components/admin/MailTemplateEditor.tsx` | `weekly-report` field listesine 7 yeni FieldDef |
+| `CLAUDE.md` | §38.22 yeni log + 3 backlog ✅ |
+
+**Yapma**:
+- Admin /customers migrate'i bu PR'da yapma — main'de PR #427 değişiklikleri yok, çakışma riski. PR #427 merge sonrası ayrı PR.
+- Mail template'inde `iconName` JSX render etme — mail HTML, lucide-react import'u email'de yok (string-based render). Sadece UI component'leri `ICON_BY_NAME` mapping kullanır.
+- `SentimentBadge variant` enum'unu genişletme (örn. `dark`) — şu an 2 yer için 2 variant yeter; 3. variant ihtiyacı çıkarsa eklenir.
+- Color map'lere yeni segment/sentiment ekleme — `CustomerSegment` / `CustomerSentiment` literal union genişlemesi tüm callsite'larda exhaustive check'i kırar (compiler yardımcısı). Yeni segment ekleme = thresholds + UI + mail toplu refactor.
+
+**Yap**:
+- Yeni segment görsel callsite eklerken `SegmentChip` import + `<SegmentChip segment={s} locale={l} size="sm|md">`.
+- Yeni sentiment görsel callsite eklerken `SentimentBadge` + `variant="cell|badge"` seç.
+- Mail editor'a yeni override alan eklerken aynı `FIELDS_BY_TEMPLATE` paterni — hint + multiline + placeholders flag'leri konfigüre.
+- Admin /customers PR #427 merge sonrası: aynı pattern ile inline `SENTIMENT_PRESENTATION` sil → `<SentimentBadge>` import (3. callsite — drift sıfırlanır).
+
+**Test + verification**:
+- Yeni unit test gerekmedi — primitive pure presentational + helper Phase 8c'de 28 test'le coverage'da.
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors (1 pre-existing baseline warning, refactor scope dışı).
+
+**Backlog güncel** (Cosmetic temizliği bitti, kalan büyük kalemler):
+- 🔴 14-haftalık trend chart (backend weekly aggregate)
+- 🔴 Heatmap Gün × Saat (backend 2D matrix)
+- 🟡 Admin /customers SentimentBadge migrate (PR #427 merge sonrası ayrı PR)
+- 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
