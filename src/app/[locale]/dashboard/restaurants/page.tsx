@@ -503,7 +503,7 @@ export default function DashboardRestaurantsPage() {
                         setFormData((prev) => ({ ...prev, slug: event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') }));
                         setIsManualSlug(true);
                       }}
-                      className="min-w-0 w-full bg-transparent py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none"
+                      className="min-w-0 w-full bg-transparent py-3.5 sm:py-4 text-sm font-medium text-[#0A0A0A] outline-none"
                     />
                   </div>
                 </label>
@@ -563,7 +563,7 @@ export default function DashboardRestaurantsPage() {
                     value={formData.googlePlaceId}
                     onChange={(event) => setFormData((prev) => ({ ...prev, googlePlaceId: event.target.value }))}
                     placeholder={locale === 'tr' ? 'https://maps.google.com/... veya Place ID' : 'https://maps.google.com/... or Place ID'}
-                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3.5 text-sm font-bold text-[#0A0A0A] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#C6F24E]"
+                    className="w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-3.5 text-sm font-medium text-[#0A0A0A] outline-none transition-all placeholder:text-[#6B7280] focus:ring-2 focus:ring-[#C6F24E]"
                   />
                 </div>
                 )}
@@ -576,7 +576,7 @@ export default function DashboardRestaurantsPage() {
                       value={formData.getirYemekUrl}
                       onChange={(event) => setFormData((prev) => ({ ...prev, getirYemekUrl: event.target.value }))}
                       placeholder="https://getir.com/yemek/..."
-                      className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                      className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-medium text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                     />
                   </label>
                 )}
@@ -589,7 +589,7 @@ export default function DashboardRestaurantsPage() {
                       value={formData.yemekSepetiUrl}
                       onChange={(event) => setFormData((prev) => ({ ...prev, yemekSepetiUrl: event.target.value }))}
                       placeholder="https://www.yemeksepeti.com/..."
-                      className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                      className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-medium text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                     />
                   </label>
                 )}
@@ -602,7 +602,7 @@ export default function DashboardRestaurantsPage() {
                       value={formData.trendyolYemekUrl}
                       onChange={(event) => setFormData((prev) => ({ ...prev, trendyolYemekUrl: event.target.value }))}
                       placeholder="https://www.trendyol.com/..."
-                      className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-bold text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                      className="w-full rounded-2xl border border-[#EDEDED] bg-[#FFFFFF] px-4 sm:px-5 py-3.5 sm:py-4 text-sm font-medium text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
                     />
                   </label>
                 )}

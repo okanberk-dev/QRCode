@@ -862,7 +862,7 @@ async function renderDashboardPage({
                       </div>
                       {stat.diff > 0 && (
                         <div className="flex flex-col items-end">
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[11px] font-bold text-[#0A0A0A]">
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#EAF9B8] px-2 py-0.5 text-[11px] font-semibold text-[#0A0A0A]">
                             <ArrowUpRight size={10} strokeWidth={3} />
                             +{stat.diff.toFixed(1)}
                           </span>
@@ -870,14 +870,14 @@ async function renderDashboardPage({
                       )}
                       {stat.diff === 0 && (
                         <div className="flex flex-col items-end">
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] font-bold text-[#525252]">
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] font-semibold text-[#525252]">
                             = {isTr ? 'Aynı' : 'Same'}
                           </span>
                         </div>
                       )}
                       {stat.diff < 0 && (
                         <div className="flex flex-col items-end">
-                          <span className="inline-flex items-center gap-0.5 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-600">
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[11px] font-semibold text-[#DC2626]">
                             {stat.diff.toFixed(1)}
                           </span>
                         </div>
