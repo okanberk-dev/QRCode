@@ -5,6 +5,7 @@ import { Download, Loader2, Mail, MapPin, Phone, RefreshCw, Search, Star, Store,
 import { AlertBanner, PageHeader, StatCard } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { SegmentChip } from '@/components/customers/SegmentChip';
+import { SentimentBadge } from '@/components/customers/SentimentBadge';
 import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
 
 type Range = '7d' | '30d' | '90d' | 'all';
@@ -49,13 +50,9 @@ interface CustomersResponse {
   };
 }
 
-// Sentiment dot+label — admin-side minimal (Phase 8c+ paterni). 3 yere ulaştığında
-// (admin + owner cell + drawer badge) component extraction CLAUDE.md §7.
-const SENTIMENT_PRESENTATION: Record<CustomerSentiment, { color: string; tr: string; en: string }> = {
-  pos: { color: '#16A34A', tr: 'Olumlu', en: 'Positive' },
-  neu: { color: '#A3A3A3', tr: 'Nötr', en: 'Neutral' },
-  neg: { color: '#DC2626', tr: 'Olumsuz', en: 'Negative' },
-};
+// Phase 8c+ §38.23 — `SENTIMENT_PRESENTATION` inline map'i `SentimentBadge`
+// primitive'ine (CLAUDE.md §38.22) migrate edildi; admin/customers + drawer
+// + owner /customers tek source-of-truth, drift sıfır.
 
 interface RestaurantOption {
   id: string;
@@ -425,7 +422,6 @@ export default function AdminCustomersPage() {
                 </thead>
                 <tbody className="divide-y divide-[#EDEDED]">
                   {rows.map((r) => {
-                    const sentiment = SENTIMENT_PRESENTATION[r.sentiment];
                     return (
                       <tr key={r.key} className="hover:bg-[#FFFFFF]/50">
                         <td className="px-5 py-3 font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</td>
@@ -487,14 +483,7 @@ export default function AdminCustomersPage() {
                           </span>
                         </td>
                         <td className="px-5 py-3">
-                          <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[#525252] whitespace-nowrap">
-                            <span
-                              aria-hidden
-                              className="h-1.5 w-1.5 rounded-full shrink-0"
-                              style={{ backgroundColor: sentiment.color }}
-                            />
-                            {sentiment.tr}
-                          </span>
+                          <SentimentBadge sentiment={r.sentiment} locale="tr" />
                         </td>
                         <td className="px-5 py-3 text-[#1A1A1A]">{new Date(r.lastAt).toLocaleDateString('tr-TR')}</td>
                       </tr>
@@ -509,7 +498,6 @@ export default function AdminCustomersPage() {
                 gizli, admin paneli desktop-first kullanıma yönelik). */}
             <div className="divide-y divide-[#EDEDED] lg:hidden">
               {rows.map((r) => {
-                const sentiment = SENTIMENT_PRESENTATION[r.sentiment];
                 return (
                   <div key={r.key} className="p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -530,14 +518,7 @@ export default function AdminCustomersPage() {
                     {/* Phase 8c+: Segment chip + Sentiment dot row */}
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <SegmentChip segment={r.segment} locale="tr" size="sm" />
-                      <span className="inline-flex items-center gap-1.5 text-[11px] text-[#525252] whitespace-nowrap">
-                        <span
-                          aria-hidden
-                          className="h-1.5 w-1.5 rounded-full shrink-0"
-                          style={{ backgroundColor: sentiment.color }}
-                        />
-                        {sentiment.tr}
-                      </span>
+                      <SentimentBadge sentiment={r.sentiment} locale="tr" />
                     </div>
                     <div className="mt-2 space-y-0.5 text-[11px] text-[#1A1A1A]">
                       {r.email && <p className="truncate"><Mail size={10} className="mr-1 inline" strokeWidth={2} />{r.email}</p>}
