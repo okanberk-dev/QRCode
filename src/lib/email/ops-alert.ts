@@ -141,3 +141,85 @@ export async function notifyOpsOfMailFailure(params: OpsAlertParams): Promise<vo
     console.error('[ops-alert] dispatch threw:', err);
   }
 }
+
+export interface OpenAiBillingAlertParams {
+  /** OpenAI HTTP status (typically 429 for billing/quota issues). */
+  status: number;
+  /** Error type returned by OpenAI ('billing_not_active', 'insufficient_quota', etc). */
+  errorType?: string;
+  /** Error message snippet from OpenAI response body. */
+  message?: string;
+  /** Which Buaze surface triggered the call (analytics-themes, suggest-reply, ...). */
+  source?: string;
+}
+
+/**
+ * Notify ops when OpenAI returns a billing-related failure
+ * (billing_not_active / insufficient_quota / payment failure). When the
+ * Buaze owner's OpenAI balance runs out, every AI feature silently falls
+ * back to a deterministic template — owners see the worse output without
+ * any visible signal. This alert lands in the ops inbox the moment the
+ * first failed call happens so the operator can top up before the day
+ * is over.
+ *
+ * Rate-limited the same way as `notifyOpsOfMailFailure`: 1 mail per 5 min
+ * window per error type. A real outage might emit thousands of failures
+ * per minute (every dashboard load triggers analytics + suggest-reply);
+ * we only need the first one to know the system is offline.
+ *
+ * Locale: default TR (CLAUDE.md §22.9). Buaze ops works in TR; an EN
+ * variant is exposed for parity but rarely used.
+ */
+export async function notifyOpsOfOpenAiBillingFailure(
+  params: OpenAiBillingAlertParams,
+): Promise<void> {
+  const to = opsRecipient();
+  if (!to) {
+    console.error('[ops-alert] OpenAI billing alert — no recipient configured', {
+      status: params.status,
+      errorType: params.errorType,
+      source: params.source,
+    });
+    return;
+  }
+
+  // Per-errorType rate-limit so a billing outage emitting 200 fails/min
+  // turns into ONE mail per 5 min, not 200 inbox entries. CLAUDE.md §21.33
+  // pattern.
+  const key = `ops-alert:openai-billing:${params.errorType || 'unknown'}`;
+  const limit = await rateLimit(key, OPS_RATE_LIMIT_PER_WINDOW, OPS_RATE_LIMIT_WINDOW_MS);
+  if (!limit.allowed) {
+    return;
+  }
+
+  const subject = `[OPS] OpenAI ${params.errorType || 'billing'} — AI özellikleri kapalı`;
+
+  const text = [
+    `OpenAI billing arızası — Buaze AI özellikleri (Pulse AI taslak, analytics`,
+    `tema çıkarımı, haftalık insight) şu an template fallback'a düştü.`,
+    ``,
+    `Hata tipi:    ${params.errorType ?? 'bilinmiyor'}`,
+    `HTTP status:  ${params.status}`,
+    `Kaynak:       ${params.source ?? 'bilinmiyor'}`,
+    `Mesaj:        ${params.message ?? '(yok)'}`,
+    ``,
+    `Zaman:        ${new Date().toISOString()}`,
+    ``,
+    `Aksiyon: https://platform.openai.com/account/billing → kart/credit kontrol et,`,
+    `gerekirse kredi yükle. Düzeldikten sonra owner'lar dashboard yenileyince`,
+    `AI taslakları tekrar üretilir (cache yok, anlık).`,
+    ``,
+    `Bu uyarı 5 dakikada bir kez atılır — aynı hata içinde tekrarlamaz.`,
+  ].join('\n');
+
+  try {
+    await sendResendEmail({
+      to,
+      subject,
+      html: `<pre style="font-family:monospace;white-space:pre-wrap;">${text.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c))}</pre>`,
+      text,
+    });
+  } catch (err) {
+    console.error('[ops-alert] OpenAI billing dispatch threw:', err);
+  }
+}

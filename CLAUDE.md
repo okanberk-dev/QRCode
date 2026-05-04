@@ -5018,3 +5018,58 @@ export async function GET(req: NextRequest) {
 - `trial-reminders` per-user mail fan-out: trial cohort 200+ user'da ~80s alır
 - `anonymize-ips` tek `prisma.feedback.updateMany` query'si: <2s, etkilenmiyor ama defansif düzeltildi
 - `weekly-digest` ve `weekly-digest-summary` zaten `maxDuration: 300` set'ti ama `runtime` eksikti — sadece defansif düzeltme
+
+### 38.12 2026-05-04 — Production health fix bundle (Vercel runtime audit)
+
+PR #392 (cron config hardening) sonrası kullanıcı "şu an cron'lar gerçekten çalışıyor mu" sordu. 3 günlük Vercel runtime log'u (1-4 May 2026) tarandı; **8 farklı production hata kategorisi** tespit edildi. Mevcut kod state'iyle çapraz kontrol sonrası 4 tanesi zaten fix'lenmişti (eski deploy artığı), 4 tanesi hâlâ aktifti — 2 tanesi kod fix, 2 tanesi operatör aksiyonu.
+
+**Audit'te tespit edilen 8 hata kategorisi**:
+
+| # | Hata | State (audit anı) | Fix kategorisi |
+|---|---|---|---|
+| 1 | Resend HTTP 429 (newsletter) | ❌ Aktif — `monthly-newsletter.ts:98` 120ms throttle (Resend free 2/sec cap'i aşıyor) | **Kod (bu PR)** |
+| 2 | OpenAI 429 `billing_not_active` | ❌ Aktif — billing tükenmiş, AI tüm akışları template fallback | **Operatör (sen)** + **kod (alert)** |
+| 3 | Prisma EMAXCONN | ❌ Aktif — `DATABASE_URL` `connection_limit` eksik | **Kod (bu PR `.env.example`) + operatör (Vercel env revize)** |
+| 4 | reCAPTCHA `PERMISSION_DENIED` | ❌ Aktif — Google API key restriction (soft-pass aktif, kasıtlı) | **Operatör** |
+| 5 | OG image ENOENT | ✅ Fix edilmiş — `public/images/open-graph-{tr,en}.png` artık var | (eski log) |
+| 6 | Google Business 429 | ✅ Mevcut yeterli — `googleBusinessFetch` 2 retry + exp backoff + 401 reauth (PR #374) | (kapsanmış) |
+| 7 | AdminUser.name field | ✅ Fix edilmiş — `audit/route.ts` `username: true` + `name: a.username` map | (eski log) |
+| 8 | OpenAI AbortError | ✅ Defansif — `try/catch` + `clearTimeout` + signal | (kapsanmış) |
+
+**Bu PR'da yapılan fix'ler**:
+
+1. **Resend throttle** `monthly-newsletter.ts:98` `120ms → 600ms` (1.6 req/sec, %20 safety margin under Resend free 2/sec cap)
+2. **OpenAI billing alert** `src/lib/email/ops-alert.ts` yeni `notifyOpsOfOpenAiBillingFailure()` export + `src/lib/openai.ts` `chatCompletion` 429 + `OPENAI_BILLING_ERROR_TYPES` (`billing_not_active`, `insufficient_quota`, `billing_hard_limit_reached`) detect → ops mail (5 dk/error type rate-limit). Operatör topup gerektiğinde anında mail alır.
+3. **`.env.example` `DATABASE_URL`** `&connection_limit=1` eklendi (template + CLAUDE.md §14.1 referans). Vercel'de `DATABASE_URL` env'i revize edilmesi gerekir (operatör aksiyonu).
+
+**OpenAI billing alert davranışı**:
+```ts
+// chatCompletion 429 + body.error.type ∈ OPENAI_BILLING_ERROR_TYPES → notify
+notifyOpsOfOpenAiBillingFailure({ status, errorType, message, source });
+// → ops-alert.ts rate-limited (1 mail / 5 min / errorType key)
+// → fire-and-forget, AI fallback path bloklanmaz
+// → mail body: error type + status + source + topup link
+// → recipient: OPS_EMAIL || NOTIFICATION_EMAIL fallback
+```
+
+**`connection_limit=1` mantığı (CLAUDE.md §14.1 ek)**:
+- Vercel serverless'ta her Lambda 10 conn default açar (Prisma default `connection_limit`)
+- 20 concurrent Lambda × 10 conn = 200 conn → Supabase pooler 200 cap'i hızla dolar
+- `connection_limit=1` → her Lambda 1 logical conn açar; pgbouncer transaction-mode altında multiplex eder
+- Prisma docs canonical öneri: https://pris.ly/d/connection-pool
+
+**Yapma**:
+- Resend throttle 120ms'a geri çekme — Resend Pro plan'a (10 req/sec) geçilirse ~150ms uygun olur, free tier'da değil
+- OpenAI billing alert'i her 429'da gönderme — sadece `OPENAI_BILLING_ERROR_TYPES` set'inde olanlarda. Generic rate-limit (RPM) 429'ları gönderilmez (false positive)
+- `connection_limit=1`'i `DIRECT_URL`'e ekleme — bu URL sadece build-time `prisma migrate deploy` için, request runtime'a girmez
+
+**Yap**:
+- Yeni Resend mass-send akışı eklenirken throttle 600ms+ veya batch API kullan (paid tier'da daha hızlı throttle OK)
+- Yeni OpenAI billing error type ortaya çıkarsa `OPENAI_BILLING_ERROR_TYPES` set'ine ekle
+- Vercel env'inde `DATABASE_URL`'i revize ettiğinde bir sonraki deploy'dan itibaren etkili — manuel redeploy gerekmez
+
+**Operatör aksiyonu listesi (kullanıcı yapacak)**:
+1. **OpenAI dashboard** (`https://platform.openai.com/account/billing`) → kart kontrol et / kredi yükle. Düzeltildikten sonra mevcut tüm AI akışları (Pulse AI suggest-reply, analytics tema çıkarımı, weekly insight) anında çalışır (cache yok)
+2. **Vercel Settings → Environment Variables → `DATABASE_URL`** → mevcut connection string'in sonuna `&connection_limit=1` ekle. Sonraki deploy'da etkili. Production + Preview scope ikisinde de güncelle.
+3. **Google Cloud Console → reCAPTCHA Enterprise** → API key restrictions kontrol et (PERMISSION_DENIED'ı çözmek için). LOW öncelik — soft-pass mode zaten aktif (CLAUDE.md §38.2).
+4. (opsiyonel) **Supabase project plan upgrade** — Pro plan pool cap'i 400+'a çıkar; `connection_limit=1` ile birlikte two-layer protection.

@@ -95,7 +95,14 @@ export async function runMonthlyNewsletter(options: RunMonthlyNewsletterOptions 
         });
       }
 
-      await new Promise((r) => setTimeout(r, 120));
+      // Resend free tier rate limit is **2 req/sec**. Earlier code throttled
+      // at 120ms (~8 req/sec) under the assumption of the paid 10 req/sec
+      // tier — production logs (1 May 2026 monthly-newsletter run) showed
+      // `Resend HTTP 429: rate_limit_exceeded` and partial sends.
+      // CLAUDE.md §38.12 documents the audit. 600ms (~1.6 req/sec) keeps
+      // a 20% safety margin under the free cap. Upgrade to Resend Pro
+      // (10 req/sec) → tune back to ~150ms.
+      await new Promise((r) => setTimeout(r, 600));
     }
   } finally {
     if (campaign) {
