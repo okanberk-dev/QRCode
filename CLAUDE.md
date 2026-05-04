@@ -5942,3 +5942,154 @@ Sonra plan onaylanınca implement et.
 **Backlog güncel** (Bu PR sonrası):
 - 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
 - 🛡️ Security follow-ups (CLAUDE.md §38.2 — operatör tetiği bekliyor)
+
+### 38.27 2026-05-04 — Dashboard 1:1 tasarım parity (greeting + AI banner + KPI 4 + peak hint + stacked sentiment)
+
+Kullanıcı raporu: anasayfa `dashboard` tasarımla "1:1 değil, %100 uyumlu istiyorum". Audit (Explore agent) %85 hizalı buldu, 4 kritik gap kapatıldı:
+
+1. **Page header rewrite** — saat-aware greeting + actionable hook + subtitle + 3 action.
+2. **AI İçgörü banner** — graphite + lime, haftalık dismiss.
+3. **KPI 4-card 1:1** — Genel puan / Toplam yorum / Yanıt oranı / Yeni müşteri.
+4. **NABIZ peak hint** — chart altında "Pik · 4 Mayıs · 9 yorum".
+5. **SIK BAHSEDİLEN stacked bar** — `sentimentPositivePct` (Phase 8c+ §38.20) ile 3-segment.
+
+**PageHeader primitive genişletme** (`src/components/ui/PageHeader.tsx`):
+- Yeni opsiyonel `subtitle?: ReactNode` (kompakt meta, mono font 12px)
+- Yeni opsiyonel `eyebrowPulse?: boolean` (eyebrow yanında lime `bz-pulse-dot`)
+- Geriye dönük uyumlu — tüm mevcut callsite'lar etkilenmez.
+
+**AIInsightBanner.tsx yeni component** (`src/components/dashboard/AIInsightBanner.tsx`):
+- Graphite `#0A0A0A` bg + lime `#C6F24E` accent
+- `localStorage[storageKey]` haftalık dismiss (ISO week comparison)
+- "İncele →" lime CTA + dismiss X buton
+- `role="status"` + `aria-label`
+- SSR-safe: hidden default + useEffect mount kontrolü
+- Backend kaynak: `extractThemes` `themes.synthesis` field'ı (1-2 cümle AI çıkarımı)
+
+**Dashboard page rewrite** (`src/app/[locale]/dashboard/page.tsx`):
+
+Header:
+- Saat-aware greeting (TR: Günaydın 5-12 / İyi öğleden sonralar 12-18 / İyi akşamlar 18+; EN parite)
+- `userFirstName = user.name?.split(' ')[0] ?? 'Hoş geldin'` fallback
+- `pendingHook` — `pendingTasks.length > 0 ? "Bugün N yorum yanıt bekliyor." : "Bugün yanıtsız yorum yok 🎉"`
+- Subtitle: `restoran adı · {weekday, day, month, year}`
+- 3 action: Rapor indir (ghost) / Yorum İste (primary)
+- "Bu hafta" dropdown çıkarıldı (RangeDropdown component'i scope dışı; gelecek backlog)
+
+KPI rewrite (Genel puan / Toplam yorum / Yanıt oranı / Yeni müşteri):
+- **Genel puan**: `avgRating.toFixed(1)` + lime accent + delta (mevcut last7 vs prev7).
+- **Toplam yorum**: KEEP last7 + delta.
+- **Yanıt oranı**: 30 günlük rating ≤3 + replies some — `replied/total × 100`. Empty case "—" + "düşük puan yorum yok" hint.
+- **Yeni müşteri**: 30 günlük tekil contact_key (KVKK consent + non-anonim). `restIds.length === 0` SQL guard `WHERE FALSE`.
+- QR taranma + Platform yönlendirme metrikleri **kaldırıldı** (`/dashboard/analytics`'te §34.7-10 ile zaten zengin; ana dashboard owner action-odaklı 4-card sade).
+
+NABIZ peak hint:
+- 7-gün trend buckets üzerinden tek pass peak compute (peakIdx, peakCount, peakDateMs).
+- Locale'a göre tarih format: `4 Mayıs` (TR `day: 'numeric', month: 'long'`).
+- Footer: `bz-mono mt-2 text-[11px] text-[#737373]` ile inline render.
+
+SIK BAHSEDİLEN stacked sentiment bar:
+- `hasSentiment = typeof t.sentimentPositivePct === 'number'` branching:
+  - Has: 3-segment stacked bar (lime `#16A34A` pozitif + kırmızı `#DC2626` negatif), alt satırda `+pos%` + `-neg%` counter.
+  - Has not: eski tek-renk graphite progress bar fallback (graceful — eski cache + model uymadığında).
+- `role="img"` + `aria-label="N% pozitif, M% negatif"` (CLAUDE.md §37 yasaklı ARIA disiplini — explicit role + span/aria-label valid).
+- Inner synthesis card kaldırıldı — `AIInsightBanner` üstte aynı synthesis taşıyor (duplicate UX önlemi).
+
+Backend ek queries (3 yeni transaction satırı):
+- `lowRated30dCount` — `prisma.feedback.count({ rating ≤3, createdAt last 30d })`
+- `lowRated30dRepliedCount` — yukarıya `replies: { some: {} }` ek filter
+- `newCustomers30dRows` — `prisma.$queryRaw` distinct contact_key 30 günlük, `restIds.length === 0` durumda `WHERE FALSE` guard
+- Connection_limit=1 disiplini korunur — tek transaction (CLAUDE.md §14.1).
+
+**Dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/components/ui/PageHeader.tsx` | `subtitle` + `eyebrowPulse` props |
+| `src/components/dashboard/AIInsightBanner.tsx` | YENİ — graphite + lime banner, haftalık dismiss |
+| `src/app/[locale]/dashboard/page.tsx` | greeting + actionable + subtitle + 3 actions + AIInsightBanner mount + KPI 4-card 1:1 + 3 yeni transaction query + peak hint + stacked sentiment + inner synthesis cleanup |
+| `CLAUDE.md` | §38.27 yeni log |
+
+**Yapma**:
+- "Bu hafta" dropdown tarih filter'ı bu PR'a sıkıştırma — RangeDropdown client component + 3 ayrı dataset gerekir, ayrı backlog.
+- "Son güncelleme 2 dk önce" subtitle'a koyma — server render anı 0 sn anlamsız, lastSync gerçek-zamanlı yok.
+- `pendingHook` için `pendingTasks.length === 0 && totalReviews === 0` durumunu özel handle et — emoji 🎉 generic positive yeterli.
+- Inner synthesis card'ı geri ekleme — duplicate UX (AIInsightBanner üstte).
+- KPI cards'da QR/Redirect metrikleri geri getirme — analytics page zaten zengin, dashboard sade.
+- Yanıt oranı için division-by-zero — `lowRated30dCount > 0` guard zorunlu, "—" + hint fallback.
+
+**Yap**:
+- Yeni dashboard widget'ı eklerken aynı saat-aware greeting paterni reuse: helper `getGreeting(hour, locale)` 3+ callsite olduğunda lib'e taşınır.
+- AI banner için custom insight (extractThemes dışı) eklenirse `<AIInsightBanner insight={...} />` yeniden mount.
+- Yeni KPI eklenirse 5-card grid yerine 4-card sadık kal (mobile 2x2 + lg 4-col), aksi halde mobile 2x3 visual taşma.
+- Stacked sentiment bar pattern'i analytics topics section ile birebir aynı (CLAUDE.md §38.20) — tutarlılık.
+
+**Test + verification**:
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors.
+- 4 yeni baseline warning (transaction'da kullanılmayan `_redirectCountAllTime`, `prev7Redirected`, `last7Scans`, `prev7Scans` — KPI semantik değişimi sonrası). CLAUDE.md §21.25 paterni: refactor scope dışı tolere edilir.
+- Manuel: `/tr/dashboard` farklı saatlerde — greeting değişir; KPI 4-card görünür; AI banner dismiss → ertesi hafta tekrar; peak hint footer + stacked sentiment.
+
+**Backlog güncel** (Bu PR sonrası — analytics + dashboard drift'i tamamen kapatıldı):
+- 🟡 "Bu hafta" RangeDropdown dashboard header'da (NABIZ chart 30/90/YTD toggle ile bağlı)
+- 🟡 HIGH 4 Platforms 12-card grid (product decision pending)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)
+
+### 38.28 2026-05-04 — Dashboard mobil 1:1 parity (hero card + KANAL horizontal scroll)
+
+§38.27 desktop parity sonrası kullanıcı talebi: "telefon görünümü ve jsx kodları var onları da inceleyip mobil kısmı da tamamladığından emin ol". Mobil tasarım kaynakları cross-check edildi (`page-mobile-v2.jsx` `MobileDashboard` line 106-260 + `page-mobile.jsx` + `components/mobile.jsx`); 2 görünür drift kapatıldı.
+
+**A · Mobile-only hero card** (`sm:hidden`, `src/app/[locale]/dashboard/page.tsx`):
+
+Mobil owner anasayfa açtığında "günün özeti" tek-bakış card. Desktop'ta `KPI 4-card` zaten "Genel puan" gösteriyor → `sm:hidden` ile sadece <640px viewport'ta render.
+
+- Graphite `#0A0A0A` bg + lime `#C6F24E` accent (44px Space Grotesk rating)
+- 5 yıldız satırı (lime fill, rounded avgRating'e göre)
+- Delta arrow (`↑/↓ X%`) + "Y yorum bu ay" mono altındaki line
+- 7-gün `<Sparkline>` (lime gradient area + stroke), `trendsChartData.count` series reuse
+- `avgRating > 0` + `trendsChartData.length >= 2` guard'lı conditional render
+- `aria-label` locale-aware ("Bugünün özeti" / "Today's summary")
+
+Tasarım kaynağı: `page-mobile-v2.jsx` line 130-157 (Hero card) — birebir hizalı (graphite bg, lime 44px rating, 5 yıldız, mono delta, sparkline path).
+
+**B · KANAL DAĞILIMI horizontal scroll** (mobile-only):
+
+Mobil dar ekranda 4 platform card 2x2 grid'de görsel olarak sıkışıyordu; `page-mobile-v2.jsx` line 218-247 paterni ile edge-to-edge horizontal scroll'a geçirildi.
+
+```tsx
+{/* Eski */}
+<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+
+{/* Yeni */}
+<div className="flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible">
+```
+
+Card width: `shrink-0 w-[150px]` mobile, `sm:w-auto sm:shrink` desktop. Edge-to-edge: `-mx-4 px-4` mobile (ana wrapper padding'ini negatif margin ile yala), desktop full container.
+
+Tasarımdaki `minWidth: 130, flexShrink: 0` ile birebir hizalı.
+
+**Verification**:
+- `npx tsc --noEmit` 0 errors, `npm test` 97/97 pass, `npx eslint` 0 errors (4 baseline warning §38.27'den, mobile diff'inde değil)
+- Manuel 375px viewport: hero card görünür + KANAL DAĞILIMI horizontal scroll çalışıyor
+- 640px+ (sm:): hero card gizli + KANAL DAĞILIMI 4-col grid (mevcut davranış korundu)
+- `avgRating === 0` (yeni hesap): hero card gizli
+
+**Yapma**:
+- Hero card'ı desktop'ta (sm+) göstermek — KPI "Genel puan" zaten orada, redundant UI
+- Sparkline'ı `trendsChartData.length < 2` durumda render etmek — tek nokta line oluşur, çirkin
+- KANAL DAĞILIMI'na yatay scroll snap CSS (`scroll-snap-x mandatory`) eklemek — nice-to-have, gerekmiyor
+- Mobile card width `< 130px` küçültmek — owner readability bozulur (44px rating + delta + sparkline yan yana sıkışır)
+- KPI 4-card mobile grid'i `grid-cols-1` (tek sütun) yapmak — mevcut `grid-cols-2` zaten mobil tasarım ile 1:1, dikey overflow
+
+**Yap**:
+- Yeni mobile-specific section eklerken `sm:hidden` + design kaynağı `page-mobile-v2.jsx` cross-check (drift önleme)
+- Horizontal scroll pattern reuse: `flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:grid sm:grid-cols-N sm:gap-3 sm:overflow-visible` ve card `shrink-0 w-[Npx] sm:w-auto sm:shrink`
+- 3+ yerden tekrar olunca `<HorizontalScrollRow>` primitive (CLAUDE.md §7) — şu an 1 yerde, abstraction premature
+
+**Dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/app/[locale]/dashboard/page.tsx` | Mobile hero card section (`sm:hidden`, ~+70 satır) + KANAL DAĞILIMI flex/grid responsive |
+| `CLAUDE.md` | §38.28 yeni log |
+
+**Sonraki AI session disiplini**: Yeni mobile-specific UI eklerken `.design-owner-2026/project/page-mobile-v2.jsx` cross-check zorunlu. Mobile + desktop tasarımı birbirinden bağımsız bölümler — desktop layout sm: breakpoint ile mobile'a "doğal" düşmüyorsa explicit `sm:hidden` + mobile-only section eklenmeli.

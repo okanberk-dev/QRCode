@@ -13,7 +13,9 @@ import {
   ArrowRight,
   ArrowUpRight,
   Building2,
+  Download,
   Inbox,
+  Plus,
   QrCode,
   ShieldCheck,
   Star,
@@ -26,6 +28,7 @@ import TrendsChart from '@/components/admin/TrendsChart';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
+import AIInsightBanner from '@/components/dashboard/AIInsightBanner';
 import { Eyebrow, PageHeader, Sparkline, StatCard, PLATFORMS } from '@/components/ui';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 
@@ -136,7 +139,9 @@ async function renderDashboardPage({
   // Boş restIds için Prisma `in: []` zaten 0 satır döner; fallback path
   // gereksiz. (Postgres `WHERE id = ANY(ARRAY[]::text[])` syntactically OK.)
   const [
-    redirectCountAllTime,
+    // _redirectCountAllTime: §38.27'de KPI'dan kaldırıldı; transaction sırasını
+    // korumak için destructure'da kalır, prefix ile lint silence.
+    _redirectCountAllTime,
     latestFeedbacks,
     trendFeedbacks,
     restaurantRatings,
@@ -151,6 +156,9 @@ async function renderDashboardPage({
     prev7Redirected,
     last7Scans,
     prev7Scans,
+    lowRated30dCount,
+    lowRated30dRepliedCount,
+    newCustomers30dRows,
     pendingTasks,
     themesFeedbacks,
   ] = await prisma.$transaction([
@@ -252,6 +260,42 @@ async function renderDashboardPage({
         createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
       },
     }),
+    // Phase 8c+ §38.27 — Yanıt oranı KPI: 30 günde rating ≤3 toplam +
+    // hangileri yanıtlanmış (some replies). Ratio = replied / total × 100.
+    prisma.feedback.count({
+      where: {
+        restaurantId: restIdIn,
+        createdAt: { gte: new Date(now - 30 * 86400000) },
+        rating: { lte: 3 },
+      },
+    }),
+    prisma.feedback.count({
+      where: {
+        restaurantId: restIdIn,
+        createdAt: { gte: new Date(now - 30 * 86400000) },
+        rating: { lte: 3 },
+        replies: { some: {} },
+      },
+    }),
+    // Phase 8c+ §38.27 — Yeni müşteri KPI: son 30 günde yorum bırakan ve
+    // contact_key (email|phone) NOT NULL olan tekil müşteri sayısı. Phase 8c
+    // segment 'new' threshold (visits ≤ 2) çoğu yeni gelen için bu kapsam.
+    // restIds boşsa SQL `IN ()` syntax error olur — WHERE FALSE ile 0 döner.
+    restIds.length > 0
+      ? prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`
+          SELECT COUNT(DISTINCT
+            CONCAT(f.restaurant_id, '|',
+              COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
+            )
+          )::bigint AS count
+          FROM feedback f
+          WHERE f.has_kvkk_consent = TRUE
+            AND f.restaurant_id IN (${Prisma.join(restIds)})
+            AND f.created_at >= ${new Date(now - 30 * 86400000)}
+            AND COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
+                IS NOT NULL
+        `)
+      : prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`SELECT 0::bigint AS count WHERE FALSE`),
     // Bekleyen görevler — yanıtlanmamış low-rating yorumlar (HIGH 3 dashboard
     // task card için, tasarım .design-pulse-2026/.../page-dashboard.jsx).
     // Phase 8c+ (CLAUDE.md §38.17): email/phone explicit select — Phase 8c
@@ -358,6 +402,23 @@ async function renderDashboardPage({
     const ratingAvg = count > 0 ? Math.round((ratingSum / count) * 10) / 10 : 0;
     trendsChartData.push({ date: dayLabels[labelIdx], count, avgRating: ratingAvg });
   }
+
+  // Phase 8c+ §38.27 — Peak hint NABIZ chart altında. Tasarım kaynağı:
+  // "Pik · 4 Mayıs · 9 yorum". 7-gün buckets üzerinden tek pass.
+  let peakIdx = 0;
+  let peakCount = 0;
+  for (let i = 0; i < trendsChartData.length; i++) {
+    if (trendsChartData[i].count > peakCount) {
+      peakCount = trendsChartData[i].count;
+      peakIdx = i;
+    }
+  }
+  // Tarih label compute — i'inci bucket'ın gerçek tarihi (dayStart pattern).
+  const peakDateMs = Date.now() - (6 - peakIdx) * 86400000;
+  const peakDateText = new Date(peakDateMs).toLocaleDateString(
+    isTr ? 'tr-TR' : 'en-US',
+    { day: 'numeric', month: 'long' },
+  );
 
   // Per-restaurant 7-day sparkline (QR Performansı için).
   const sparklineByRestaurant = new Map<string, number[]>();
@@ -550,8 +611,6 @@ async function renderDashboardPage({
   };
 
   const totalReviewsDelta = pctDelta(last7Total, prev7Count);
-  const scansDelta = pctDelta(last7Scans, prev7Scans);
-  const redirectsDelta = pctDelta(last7Redirected, prev7Redirected);
 
   const prevAvg = prev7Avg._avg.rating ?? 0;
   const ratingDeltaNum =
@@ -609,15 +668,153 @@ async function renderDashboardPage({
     .sort((a, b) => b.diff - a.diff)
     .slice(0, 3); // top 3
 
+  // Phase 8c+ §38.27 — Tasarım .design-owner-2026/page-dashboard.jsx 1:1 parity:
+  // greeting (saat-aware) + actionable hook (pending count) + subtitle (restoran
+  // · tarih · son güncelleme) + 3 action button (Rapor / Tarih / Yorum İste).
+  const nowDate = new Date();
+  const hour = nowDate.getHours();
+  const greeting = isTr
+    ? hour >= 5 && hour < 12
+      ? 'Günaydın'
+      : hour >= 12 && hour < 18
+        ? 'İyi öğleden sonralar'
+        : 'İyi akşamlar'
+    : hour >= 5 && hour < 12
+      ? 'Good morning'
+      : hour >= 12 && hour < 18
+        ? 'Good afternoon'
+        : 'Good evening';
+  const userFirstName = user.name?.trim().split(/\s+/)[0] || (isTr ? 'Hoş geldin' : 'Welcome');
+  const pendingCount = pendingTasks.length;
+  const pendingHook = isTr
+    ? pendingCount > 0
+      ? `Bugün ${pendingCount} yorum yanıt bekliyor.`
+      : 'Bugün yanıtsız yorumun yok 🎉'
+    : pendingCount > 0
+      ? `Today ${pendingCount} review${pendingCount > 1 ? 's' : ''} await reply.`
+      : "You're all caught up today 🎉";
+  const primaryRestaurantName = user.restaurants[0]?.name ?? '';
+  const dateText = nowDate.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
   return (
     <div
       className="mx-auto max-w-[1200px] space-y-6 px-4 sm:px-7 py-6 lg:py-8"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <PageHeader
-        eyebrow={isTr ? 'İŞLETME PANELİ' : 'OWNER PANEL'}
-        title={isTr ? 'Panel' : 'Dashboard'}
+        eyebrow={isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW'}
+        eyebrowPulse
+        title={`${greeting}, ${userFirstName}. ${pendingHook}`}
+        subtitle={
+          primaryRestaurantName
+            ? `${primaryRestaurantName} · ${dateText}`
+            : dateText
+        }
+        actions={
+          <>
+            <Link
+              href={`/${locale}/dashboard/analytics`}
+              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
+            >
+              <Download size={13} strokeWidth={2} />
+              {isTr ? 'Rapor indir' : 'Download report'}
+            </Link>
+            <Link
+              href={`/${locale}/dashboard/feedbacks`}
+              className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
+            >
+              <Plus size={13} strokeWidth={2} />
+              {isTr ? 'Yorum İste' : 'Request review'}
+            </Link>
+          </>
+        }
       />
+
+      {/* Phase 8c+ §38.28 — Mobile-only hero card. Tasarım kaynağı:
+          .design-owner-2026/page-mobile-v2.jsx MobileDashboard hero —
+          graphite bg + lime accent + büyük rating + 7-gün sparkline.
+          Desktop'ta gizli (KPI 4-card zaten "Genel puan" gösteriyor); mobil
+          dar ekranda owner anasayfaya açtığında ilk gördüğü "nabız"
+          özetlemesi. */}
+      {avgRating > 0 && (
+        <section
+          className="sm:hidden rounded-[18px] bg-[#0A0A0A] text-white p-[18px] relative overflow-hidden"
+          aria-label={isTr ? 'Bugünün özeti' : "Today's summary"}
+        >
+          <div className="pulse-eyebrow text-white/60 text-[9.5px]">
+            {isTr ? 'BUGÜN · ' : 'TODAY · '}
+            {nowDate.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+              day: 'numeric',
+              month: 'long',
+            })}
+          </div>
+          <div className="mt-2 mb-3">
+            <div className="flex items-baseline gap-1.5">
+              <span
+                className="bz-h-tight"
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: 44,
+                  lineHeight: 0.9,
+                  letterSpacing: '-0.04em',
+                  color: '#C6F24E',
+                }}
+              >
+                {avgRating.toFixed(2)}
+              </span>
+              <span className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    size={13}
+                    className={s <= Math.round(avgRating) ? 'text-[#C6F24E]' : 'text-white/20'}
+                    fill={s <= Math.round(avgRating) ? '#C6F24E' : 'transparent'}
+                  />
+                ))}
+              </span>
+            </div>
+            <div className="bz-mono text-[11px] text-white/60 mt-1.5">
+              {ratingDelta.value !== '0%' && (
+                <span className="text-[#C6F24E] font-semibold">
+                  {ratingDelta.kind === 'down' ? '↓' : '↑'} {ratingDelta.value.replace(/^[+-]/, '')}
+                </span>
+              )}
+              {ratingDelta.value !== '0%' && ' · '}
+              {totalReviews}{' '}
+              {isTr ? 'yorum bu ay' : 'reviews this month'}
+            </div>
+          </div>
+          {/* Mini 7-gün sparkline (trendsChartData.count series) — graphite
+              bg üzerinde lime gradient area + lime stroke. */}
+          {trendsChartData.length >= 2 && (
+            <div className="h-[50px] -mx-[18px] -mb-[18px] px-[18px] pb-[18px]">
+              <Sparkline
+                values={trendsChartData.map((d) => d.count)}
+                w={320}
+                h={50}
+                color="#C6F24E"
+                className="w-full"
+              />
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Phase 8c+ §38.27 — AI İçgörü banner. extractThemes synthesis dolu
+          ise mount edilir; haftalık dismiss localStorage ile (ertesi hafta
+          tekrar gelir). */}
+      {dashboardThemes.synthesis && (
+        <AIInsightBanner
+          insight={dashboardThemes.synthesis}
+          actionHref={`/${locale}/dashboard/analytics`}
+          isTr={isTr}
+        />
+      )}
 
       <OnboardingNudge locale={locale} steps={onboardingSteps} />
 
@@ -723,9 +920,21 @@ async function renderDashboardPage({
         </section>
       )}
 
-      {/* Unified KPI Grid — mobile 2x2 → desktop 4-col. Tek delta pencere
-          (son 7 gün vs önceki 7 gün) — kullanıcı dostu, karışıklık yok. */}
+      {/* Phase 8c+ §38.27 — KPI 4-card 1:1 tasarım parity. Tasarım kaynağı
+          .design-owner-2026/page-dashboard.jsx: GENEL PUAN / TOPLAM YORUM /
+          YANIT ORANI / YENİ MÜŞTERİ. QR taranma + Platform yönlendirme
+          metrikleri /dashboard/analytics'te zaten zengin; ana dashboard
+          owner action-odaklı 4-card'a sade. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <StatCard
+          label={isTr ? 'Genel puan' : 'Avg rating'}
+          value={avgRating > 0 ? `${avgRating.toFixed(1)}` : '—'}
+          delta={ratingDelta.value}
+          deltaKind={ratingDelta.kind}
+          deltaSuffix={isTr ? '/ 5.0' : '/ 5.0'}
+          icon={<Star size={14} strokeWidth={2} fill="#C6F24E" stroke="#C6F24E" />}
+          accent="#C6F24E"
+        />
         <StatCard
           label={isTr ? 'Toplam yorum' : 'Total reviews'}
           value={totalReviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
@@ -735,29 +944,28 @@ async function renderDashboardPage({
           icon={<Inbox size={14} strokeWidth={2} />}
         />
         <StatCard
-          label={isTr ? 'Ortalama puan' : 'Avg rating'}
-          value={avgRating > 0 ? avgRating.toFixed(1) : '—'}
-          delta={ratingDelta.value}
-          deltaKind={ratingDelta.kind}
-          deltaSuffix={isTr ? 'son 7 gün' : 'last 7 days'}
-          icon={<Star size={14} strokeWidth={2} fill="#C6F24E" stroke="#C6F24E" />}
-          accent="#C6F24E"
+          label={isTr ? 'Yanıt oranı' : 'Response rate'}
+          value={
+            lowRated30dCount > 0
+              ? `%${Math.round((lowRated30dRepliedCount / lowRated30dCount) * 100)}`
+              : '—'
+          }
+          deltaSuffix={
+            lowRated30dCount > 0
+              ? isTr
+                ? `${lowRated30dRepliedCount}/${lowRated30dCount} · son 30 gün`
+                : `${lowRated30dRepliedCount}/${lowRated30dCount} · last 30 days`
+              : isTr
+                ? 'düşük puan yorum yok'
+                : 'no low rating reviews'
+          }
+          icon={<ShieldCheck size={14} strokeWidth={2} />}
         />
         <StatCard
-          label={isTr ? 'QR taranma' : 'QR scans'}
-          value={last7Scans.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          delta={scansDelta.value}
-          deltaKind={scansDelta.kind}
-          deltaSuffix={isTr ? 'son 7 gün' : 'last 7 days'}
-          icon={<QrCode size={14} strokeWidth={2} />}
-        />
-        <StatCard
-          label={isTr ? 'Platforma yönlendirme' : 'Platform redirects'}
-          value={redirectCountAllTime.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          delta={redirectsDelta.value}
-          deltaKind={redirectsDelta.kind}
-          deltaSuffix={isTr ? 'son 7 gün' : 'last 7 days'}
-          icon={<ArrowUpRight size={14} strokeWidth={2} />}
+          label={isTr ? 'Yeni müşteri' : 'New customers'}
+          value={Number(newCustomers30dRows[0]?.count ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          deltaSuffix={isTr ? 'son 30 gün · CRM\'de aktif' : 'last 30 days · in CRM'}
+          icon={<Building2 size={14} strokeWidth={2} />}
         />
       </div>
 
@@ -803,6 +1011,15 @@ async function renderDashboardPage({
 
         <TrendsChart data={trendsChartData} />
 
+        {/* Phase 8c+ §38.27 — Peak hint footer (tasarım: "Pik · 4 Mayıs · 9 yorum"). */}
+        {peakCount > 0 && (
+          <p className="bz-mono mt-2 text-[11px] text-[#737373]">
+            {isTr
+              ? `Pik · ${peakDateText} · ${peakCount} yorum`
+              : `Peak · ${peakDateText} · ${peakCount} reviews`}
+          </p>
+        )}
+
         <div className="mt-5 pt-3.5 border-t border-[#EDEDED] grid grid-cols-3 gap-2 text-[12px] text-[#525252]">
           <span>
             <strong className="text-[#0A0A0A] tabular-nums">{last7Total}</strong>{' '}
@@ -844,7 +1061,12 @@ async function renderDashboardPage({
               <ArrowRight size={11} strokeWidth={2} />
             </Link>
           </header>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* Phase 8c+ §38.28 — Mobile horizontal scroll, sm+ 4-col grid.
+              Tasarım kaynağı: .design-owner-2026/page-mobile-v2.jsx
+              "yatay scroll mini cards" paterni. Mobile'da 2-col yerine
+              horizontal scroll daha çok platform sığar (4 platform tek
+              satırda); 130px min card width + no-scrollbar. */}
+          <div className="flex gap-2.5 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible">
             {platformDistData.slice(0, 4).map((p) => {
               const brand = (PLATFORMS as Record<string, { color: string; short: string; label: string }>)[
                 p.platform
@@ -852,7 +1074,10 @@ async function renderDashboardPage({
               const tone = brand?.color ?? '#A3A3A3';
               const short = brand?.short ?? p.label.slice(0, 2).toUpperCase();
               return (
-                <div key={p.platform} className="bz-card p-3.5 flex flex-col gap-2.5">
+                <div
+                  key={p.platform}
+                  className="bz-card p-3.5 flex flex-col gap-2.5 shrink-0 w-[150px] sm:w-auto sm:shrink"
+                >
                   <div className="flex items-center gap-2">
                     <span
                       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[10.5px] font-semibold text-white"
@@ -912,8 +1137,16 @@ async function renderDashboardPage({
           </header>
           <ul className="space-y-3.5">
             {dashboardThemes.themes.slice(0, 5).map((t) => {
-              const top = dashboardThemes.themes[0]?.count ?? 1;
-              const pct = top > 0 ? (t.count / top) * 100 : 0;
+              // Phase 8c+ §38.27 — Stacked sentiment bar (tasarım kaynağı:
+              // .design-owner-2026/page-dashboard.jsx). sentimentPositivePct
+              // §38.20'de eklendi (opsiyonel); set'liyse 3-segment stacked
+              // (lime/gri/kırmızı), yoksa eski tek-renk fallback (graceful).
+              const hasSentiment = typeof t.sentimentPositivePct === 'number';
+              const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
+              // Heuristic: pos%, neu = pos+neg complement içinde 1/3 (kalan
+              // 1/3 nötr varsayım); neg = 100 - pos - neu. Daha doğru tek
+              // pos% var (extractThemes neu/neg ayırmıyor); pratik: neg = 100 - pos.
+              const neg = hasSentiment ? 100 - pos : 0;
               return (
                 <li key={t.theme}>
                   <div className="mb-1.5 flex items-center justify-between gap-2 text-[13px]">
@@ -922,24 +1155,45 @@ async function renderDashboardPage({
                       {t.count} {isTr ? 'bahsedilme' : 'mentions'}
                     </span>
                   </div>
-                  <div className="h-2 rounded-full bg-[#F5F5F5] overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#0A0A0A] transition-all duration-500"
-                      style={{ width: `${Math.max(8, pct)}%` }}
-                    />
-                  </div>
+                  {hasSentiment ? (
+                    <>
+                      <div
+                        className="flex h-2 overflow-hidden rounded-full bg-[#F5F5F5]"
+                        role="img"
+                        aria-label={
+                          isTr
+                            ? `${pos}% pozitif, ${neg}% negatif`
+                            : `${pos}% positive, ${neg}% negative`
+                        }
+                      >
+                        <div className="h-full" style={{ width: `${pos}%`, background: '#16A34A' }} />
+                        <div className="h-full" style={{ width: `${neg}%`, background: '#DC2626' }} />
+                      </div>
+                      <div className="mt-1 flex justify-between bz-mono text-[10px]">
+                        <span className="text-[#16A34A]">
+                          +{pos}% {isTr ? 'pozitif' : 'positive'}
+                        </span>
+                        <span className="text-[#DC2626]">
+                          -{neg}% {isTr ? 'negatif' : 'negative'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-2 rounded-full bg-[#F5F5F5] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#0A0A0A] transition-all duration-500"
+                        style={{
+                          width: `${Math.max(8, (t.count / (dashboardThemes.themes[0]?.count ?? 1)) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  )}
                 </li>
               );
             })}
           </ul>
-          {dashboardThemes.synthesis && (
-            <div className="mt-5 rounded-xl bg-[#0A0A0A] p-4 text-[13px] leading-[1.55] text-white">
-              <span className="pulse-eyebrow text-[#C6F24E] block mb-1.5">
-                {isTr ? 'PULSE AI ÇIKARIMI' : 'PULSE AI INSIGHT'}
-              </span>
-              <p className="text-white/85">{dashboardThemes.synthesis}</p>
-            </div>
-          )}
+          {/* Inner synthesis card kaldırıldı — AIInsightBanner page üstünde
+              aynı synthesis'i taşıyor; duplicate UX önlemi (§38.27). */}
         </section>
       )}
 
