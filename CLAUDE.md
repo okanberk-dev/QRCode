@@ -4827,10 +4827,10 @@ CLAUDE.md §5.4 Production Hata Düzeltme Takip Planı'ndaki açık görevlerin 
 
 | Sıra | Görev | Durum |
 |---|---|---|
-| 1 | **Server-side Sentry flush deep dive** (yeni acil) | 🟡 Pending |
-| 2 | **Görev F** — Read-only API Cache-Control headers (6 endpoint) | 🟡 Pending |
-| 3 | **Görev G** — `safeParseJson` helper + risky callsites | 🟡 Pending (server-side flush önce) |
-| 4 | **Görev E** — Vercel `live: false` araştırması | 🟡 Pending |
+| 1 | **Server-side Sentry flush deep dive** (yeni acil) | 🔴 **KAPATILDI** (kabullenildi, §38.13 — A kararı) |
+| 2 | **Görev F** — Read-only API Cache-Control headers (6 endpoint) | ✅ Kapatıldı (PR #385) |
+| 3 | **Görev G** — `safeParseJson` helper + risky callsites | ✅ Kapatıldı (PR #386) |
+| 4 | **Görev E** — Vercel `live: false` araştırması | ✅ Kapatıldı (sadece research, kod değişikliği yok) |
 | 5 | Görev C Faz 2 — `RECAPTCHA_ENFORCE=true` flip | 🟡 Pending (1-2 hafta veri sonrası) |
 | 6 | Task 8 — Prisma 7 upgrade | 🟡 Pending (ayrı major-version branch) |
 
@@ -4870,7 +4870,7 @@ Toplam: **10 commit + 9 functional PR + 1 docs final = 11 PR/commit serisi**, he
 
 | Sıra | Task | Sebep |
 |---|---|---|
-| 1 | **Server-side Sentry flush deep dive** (yeni acil) | Görev A bulgusu — production'da `Sentry.captureException` envelope flush olmuyor. Görev G'nin (`safeParseJson` capture'ları) ve C Faz 1'in (reCAPTCHA breadcrumb) **tam değerini bloke ediyor**. 4 hipotez: (a) Vercel function tear-down + SDK transport flush yarış koşulu, (b) Vercel runtime log SDK debug çıktısını yakalamıyor, (c) Edge runtime mix, (d) Vercel egress DNS gecikmesi. ~1-2 saat AR-GE. |
+| 1 | **Server-side Sentry flush deep dive** | 🔴 **KAPATILDI** (2026-05-04, §38.13 — A kararı). 5 hipotez 4'ü elendi (PR #390 + #398 + #399), kalan (e) SDK transport veya Vercel egress için ek diagnostic değer/maliyet düşük. Kabul: Sentry server-side captures bozuk kalsın, monitoring Vercel runtime logs üzerinden yapılır (§38.9 paterni). |
 | 2 | Görev C Faz 2 — `RECAPTCHA_ENFORCE=true` flip | C Faz 1 PR #383 breadcrumb basıyor; 1-2 hafta production veri toplandıktan sonra Sentry dashboard `tags.reason:low score` rate'i incele, healthy ise Vercel Production env'inde `RECAPTCHA_ENFORCE=true` flip et (kod değişikliği yok). Risk: `/api/admin/login` admin'in kendisini kilitleyebilir → kullanıcı kendi login'i önce test eder. |
 | 3 | Task 8 — Prisma 7 upgrade | Major-version, breaking-change rehberi okunmadan başlanmaz. Ayrı dedicated task. CLAUDE.md §5.4 Task 8 zaten dokümante. |
 
@@ -4896,7 +4896,7 @@ Bu oturum'un bulguları + kalıcı kararları:
 1. **Sentry org adı**: production DSN `buaze-ev/sentry-apricot-blanket` (NOT `buaze/javascript-nextjs`). Health audit'lerde her zaman `buaze-ev` org'una bak.
 2. **`safeParseJson` helper canonical**: yeni `JSON.parse` callsite'ı eklerken (özellikle AI yanıtı, OAuth state, external API body) helper'ı kullan. Sentry tag `json-parse-failure` ile dashboard'da otomatik group'lanır.
 3. **`Cache-Control: private, s-maxage=N, swr=M`** owner-scoped read endpoint'lerinde standard. Yeni read endpoint eklerken §19.3 + Görev F (PR #385) referansını incele.
-4. **Server-side `Sentry.captureException` çağrılarında flush gerekli**: PR #377-380 paterni (ya `await Sentry.flush(2000)` veya HOF wrapper). Acil task çözülmeden yeni manuel capture eklerken Vercel runtime log'a `console.error` ile lokal breadcrumb da yaz.
+4. **Server-side `Sentry.captureException` çağrıları envelope göndermez** (§38.13 kapatma). Flush mekaniği bozuk; eventId üretilse de Sentry dashboard'a düşmez. Yeni manuel capture eklemek **çalışmasa da safe** (no-throw, no-block) ama gerçek görünürlük yalnızca Vercel runtime log'larından gelir. Critical path'te gerçekten görmek istediğin sinyali `console.error` ile yaz; Sentry tek başına yetmez.
 5. **`Sentry.captureMessage` PII guard**: tag/extra/level structure'ı PR #383 `buildSoftPassSentryEnvelope()` paternini izle. IP, token, email, request body asla extra'da yer almaz.
 
 ### 38.10 2026-05-04 — Audit follow-up bundle (deep-dive findings)
@@ -5073,3 +5073,71 @@ notifyOpsOfOpenAiBillingFailure({ status, errorType, message, source });
 2. **Vercel Settings → Environment Variables → `DATABASE_URL`** → mevcut connection string'in sonuna `&connection_limit=1` ekle. Sonraki deploy'da etkili. Production + Preview scope ikisinde de güncelle.
 3. **Google Cloud Console → reCAPTCHA Enterprise** → API key restrictions kontrol et (PERMISSION_DENIED'ı çözmek için). LOW öncelik — soft-pass mode zaten aktif (CLAUDE.md §38.2).
 4. (opsiyonel) **Supabase project plan upgrade** — Pro plan pool cap'i 400+'a çıkar; `connection_limit=1` ile birlikte two-layer protection.
+
+### 38.13 2026-05-04 — Sentry server-side flush kapatma (A kararı, kabullenildi)
+
+§38.8 + §38.9'da açık bırakılan "server-side Sentry envelope flush kör nokta" araştırması bu oturumda **kapatıldı**. 5 hipotezden 4'ü elendi; kalan (e) için ek diagnostic'in değer/maliyet oranı düşük olduğu için "kabullenme + Vercel runtime logs üzerinden monitoring" kararı alındı.
+
+**Bu oturumda yapılan diagnostic adımlar:**
+
+| PR | Branch | Hipotez | Sonuç |
+|---|---|---|---|
+| #398 | `claude/sentry-test-console-diagnostic` | (b) `console.error` Vercel log'da ayrı row görünür → flush sonucu görünür olur | ❌ ELENDI — Vercel runtime log API per-request **1 row** kuralı uyguluyor (`console.error` da `process.stderr.write` gibi collapse ediyor). PR ayrıca DSN fingerprint helper'ı kazandırdı. |
+| #399 | `claude/sentry-init-debug-log` | (d) DSN yanlış projeye route oluyor | ❌ ELENDI — cold-start init log + smoke test response `dsn: o4511305612328960.ingest.us.sentry.io/4511305613967361` döndü → `buaze-ev/sentry-apricot-blanket` doğru project (o4511305612328960 = `buaze-ev` org id, 4511305613967361 = `sentry-apricot-blanket` project id). |
+
+**Live smoke test sonucu (10:24 UTC, deployment `dpl_J73ddVaXaCey8xPKzdpr51T94AXt`):**
+
+- `GET /api/sentry-test` → 500 + JSON `{ ok: true, eventId: '1027cf57510443769932b488fb08c991', dsn: 'o4511305612328960.ingest.us.sentry.io/4511305613967361', flushPattern: 'after()-wrapped' }`
+- `Sentry.captureException` event ID üretti (SDK çağrısı kabul edildi)
+- `after()` callback flush'ı schedule etti (PR #390 paterni)
+- Vercel runtime logs → **hâlâ 1 row** (4 console.error breadcrumb collapse oldu)
+- Sentry dashboard `buaze-ev/sentry-apricot-blanket` → **0 issue** son 15dk + sonraki 30dk içinde event id ile arandı, **bulunamadı**
+
+**Hipotez eleme tablosu (final):**
+
+| Hipotez | Durum | Kanıt |
+|---|---|---|
+| (a) `await Sentry.flush(N)` çalışır | ❌ ELENDI | PR #377-380 — `flush(2000)` ve `flush(5000)` her ikisi de `false` döndü, envelope ulaşmadı |
+| (b) `console.error` Vercel log'da ayrı row | ❌ ELENDI | PR #398 — collapse devam ediyor, hipotez yanlış |
+| (c) Edge runtime mix | ❌ ELENDI | `runtime = 'nodejs'` explicit set'li, log `NEXT_RUNTIME=nodejs` kanıtlıyor |
+| (d) DSN yanlış projeye route oluyor | ❌ ELENDI | PR #399 — DSN fingerprint `buaze-ev/sentry-apricot-blanket` doğru |
+| (e) SDK transport bozuk **veya** Vercel egress firewall Sentry ingest'e ulaşamıyor | 🟡 KALAN | Manuel envelope POST diagnostic ile test edilebilir (PR 3 önerisi) ama A kararı ile bu yola gidilmedi |
+
+**A kararı (kabullenme) — gerekçe:**
+
+1. **Müşteri etkisi sıfır**: site çalışıyor, Sentry server-side captures bozuk olsa da unhandled error'lar `onRequestError` hook ile yakalanıyor (zaten flush gönderemiyor ama crash'i loglamıyor da değil — sadece dashboard'a düşmüyor)
+2. **Client-side captures ÇALIŞIYOR**: `buaze-ev/sentry-apricot-blanket`'te `Hydration Error`, `SyntaxError '�'`, MetaMask noise gibi browser-side event'ler düzenli geliyor. Sentry tamamen ölü değil — sadece server-only path'ler kapalı.
+3. **Operasyonel görünürlük zaafı VAR ama kontrollü**: §38.9 "Prisma dalgası" örneğinde olduğu gibi server-only hatalar Sentry'de görünmez; ama Vercel runtime logs'a düşer. Operatör reaktif olarak Vercel Observability ile tespit eder. Proaktif Sentry uyarıları yok.
+4. **Diagnostic maliyet/değer oranı düşük**: PR 3 (manuel envelope POST) kök nedeni tanılar ama tek başına fix değil — sonuca göre ek bir PR daha gerekir (SDK upgrade, custom transport, veya Vercel support ticket). Toplam ~30dk-2 saat iş + belirsiz fix yolu. Alternatif olarak Sentry SDK 10.51 → latest upgrade (~10dk, %50-70 olasılık fix) önerildi ama operatör tercih etmedi.
+5. **Sentry SDK 10.x + Vercel Node runtime ekosisteminde "envelope flush silently fails" sık raporlanıyor** — Sentry aktif fix yapıyor olabilir; gelecek bir SDK upgrade window'unda otomatik düzelme şansı var.
+
+**Bu kararla birlikte kalıcı state:**
+
+- `/api/sentry-test` endpoint kod tarafı korundu (rollback **yapılmadı**) — gelecek diagnostic ihtiyacı için yeniden yazılmasın
+- `sentry.server.config.ts` + `sentry.edge.config.ts` cold-start init log'u korundu (PR #399 değişikliği) — Vercel runtime log'da `[sentry-init/server] dsn=...` satırı her cold start'ta görünür, gelecekte DSN drift olursa anında fark edilir
+- `ENABLE_SENTRY_TEST` env Vercel Production'dan **silindi** (operatör 2026-05-04). Endpoint default 403 dönüyor, bot scan veya spam çağrıları Vercel function quota tüketmez
+- Server-side `Sentry.captureException` çağrıları (manuel + `onRequestError` otomatik) çalışmaya devam eder; envelope ulaşmasa da hata fırlatmaz, request akışını kırmaz
+
+**Yapma:**
+
+- Yeni "Sentry server-side flush hipotezi" çalıştırma — 5'i denendi, 4 elendi. Kalan (e) için A kararı verildi. Yeni session bu kapsamı tekrar açmadan önce kullanıcıya açık talep oluştuğunu doğrulasın.
+- `/api/sentry-test` endpoint dosyasını silme veya rollback'leme — gelecek diagnostic için reuse edilebilir altyapı
+- `sentry.server.config.ts` `[sentry-init/server]` log satırını silme — DSN drift detection için kalıcı
+- Server-side `Sentry.captureException` çağrılarını kaldırma — eventID üretiyor, throw etmiyor; gerçek görünürlük yok ama mevcut akış da bozulmuyor
+- "Sentry server captures bozuk, kullanıcı etkilensin" panik yapma — müşteri etkisi sıfır, sadece operatör görünürlüğü zaafı
+
+**Yap:**
+
+- Production hata audit'i için **Vercel Observability dashboard + runtime logs** kullan (`get_runtime_logs` MCP tool, level filter, since/until window). §38.9 paterni — Prisma dalgası, OpenAI billing fail, mail send fail bu yolla tespit edildi.
+- Yeni cron / mail / OAuth integration eklenirken hata path'lerinde **`console.error` ile structured log yaz** (PII guard §37.7) — Sentry'e güvenme, gerçek monitoring kanalı bu.
+- Yeni `Sentry.captureException` çağrısı eklerken **ek olarak `console.error` ile aynı bağlamı yaz** — biri çalışmasa diğeri çalışsın.
+- `@sentry/nextjs` upgrade fırsatı çıkarsa (örn. başka bir feature için bumping) bilinçli olarak smoke endpoint'e tekrar test et — A kararı SDK fix'i geldiğinde otomatik geri alınır.
+- Sentry server-side flush'ı çözmek operatör veya gelecek session'ın tercihiyse: önce `@sentry/nextjs` 10.51 → latest upgrade (B seçeneği), sonra başarısızsa PR 3 manuel envelope POST diagnostic (C seçeneği). A → B → C sıralaması.
+
+**Branchler kullanıldı bu oturumda:**
+
+| Branch | PR | Durum |
+|---|---|---|
+| `claude/sentry-test-console-diagnostic` | #398 merged | Console.error swap + DSN fingerprint helper |
+| `claude/sentry-init-debug-log` | #399 merged | Cold-start init log (server + edge) |
+| `claude/sentry-flush-session-close-docs` | (this PR) | §38.13 docs close-out + §38.8/§38.9 pending tablo update |
