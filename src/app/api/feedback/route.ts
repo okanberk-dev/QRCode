@@ -336,8 +336,15 @@ export async function GET(req: NextRequest) {
   }
 
   // Platform filter
+  // §38.35 — 'buaze_qr' UI runtime label: tasarım .design-owner-2026/
+  // page-reviews.jsx "Buaze QR" pill filter. Backend mapping: platform = null
+  // (CLAUDE.md §38.34 paterni — schema migration YOK, runtime label).
   if (platformFilter && platformFilter !== 'all') {
-    baseWhere.platform = platformFilter;
+    if (platformFilter === 'buaze_qr') {
+      baseWhere.platform = null;
+    } else {
+      baseWhere.platform = platformFilter;
+    }
   }
 
   // Branch filter

@@ -40,5 +40,10 @@ export type AiTone = 'warm' | 'formal' | 'apologetic';
 export type AiSource = 'openai' | 'template' | 'template-fallback' | null;
 export type ReplyTone = 'success' | 'error' | 'info';
 
-export type PlatformFilter = 'all' | PlatformId;
+// §38.35 — Tasarım .design-owner-2026/page-reviews.jsx PLATFORM section
+// "Buaze QR" pill ekleme. Buaze QR feedback'ler (platform = null + rating)
+// UI runtime label fallback paterni (CLAUDE.md §38.34). Filter logic:
+// platform === null. Eski PlatformId enum'u korunur (taxonomy değişmez,
+// CLAUDE.md §19.4 disiplini).
+export type PlatformFilter = 'all' | 'buaze_qr' | PlatformId;
 export type HasReplyFilter = 'all' | 'pending';

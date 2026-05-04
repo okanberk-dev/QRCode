@@ -20,7 +20,17 @@ interface FeedbackFiltersRailProps {
   setSearchTerm: (v: string) => void;
   activeTab: ActiveTab;
   setActiveTab: (v: ActiveTab) => void;
-  counts: { all: number; low: number; high: number; redirected: number };
+  counts: {
+    all: number;
+    low: number;
+    high: number;
+    redirected: number;
+    // §38.35 — Mobile chip set ile unified rail status (Tasarım
+    // page-reviews.jsx + page-mobile-v2.jsx birebir).
+    unreplied: number;
+    today: number;
+    aiReady: number;
+  };
   hasActiveFilter: boolean;
   activeFilterCount: number;
   onOpenFilters: () => void;
@@ -37,9 +47,13 @@ interface FeedbackFiltersRailProps {
   };
 }
 
+// §38.35 — Tasarım page-reviews.jsx PLATFORM section line 22-29: 6 platform
+// pill. "Buaze QR" eklendi (platform = null UI runtime label, CLAUDE.md §38.34
+// paterni). Tasarımdaki sıra korunur.
 const PLATFORM_PILLS: { id: PlatformFilter; tr: string; en: string }[] = [
   { id: 'all', tr: 'Tüm platformlar', en: 'All platforms' },
   { id: 'google', tr: 'Google', en: 'Google' },
+  { id: 'buaze_qr', tr: 'Buaze QR', en: 'Buaze QR' },
   { id: 'yemeksepeti', tr: 'Yemeksepeti', en: 'Yemeksepeti' },
   { id: 'getir', tr: 'Getir', en: 'Getir' },
   { id: 'trendyol', tr: 'Trendyol GO', en: 'Trendyol GO' },
@@ -61,11 +75,17 @@ export function FeedbackFiltersRail({
   weekStats,
 }: FeedbackFiltersRailProps) {
   const isTr = locale === 'tr';
+  // §38.35 — Tasarım birebir: rail status set mobile chip set ile UNIFIED
+  // (kullanıcı raporu "filtreleme eksik"). Eski 4-tab (Tümü/Düşük/Yüksek/
+  // Yönlendirilen) replace edildi 5-tab aksiyon-odaklı (Tümü/Düşük/Yanıtsız/
+  // Bugün/AI Hazır). high/redirected rail'dan kaldırıldı; analytics page
+  // §34.7-10 derin breakdown'da zaten görünür.
   const tabs: { k: ActiveTab; l: string; c: number }[] = [
     { k: 'all', l: isTr ? 'Tümü' : 'All', c: counts.all },
-    { k: 'low', l: isTr ? 'Düşük (1-3)' : 'Low (1-3)', c: counts.low },
-    { k: 'high', l: isTr ? 'Yüksek (4-5)' : 'High (4-5)', c: counts.high },
-    { k: 'redirected', l: isTr ? 'Yönlendirilen' : 'Redirected', c: counts.redirected },
+    { k: 'low', l: isTr ? 'Düşük puan' : 'Low rating', c: counts.low },
+    { k: 'unreplied', l: isTr ? 'Yanıtsız' : 'Unreplied', c: counts.unreplied },
+    { k: 'today', l: isTr ? 'Bugün' : 'Today', c: counts.today },
+    { k: 'ai_ready', l: isTr ? 'AI Hazır' : 'AI Ready', c: counts.aiReady },
   ];
 
   return (

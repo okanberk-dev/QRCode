@@ -6530,3 +6530,54 @@ PR #440 sonrası audit'e göre Yorumlar + Google Yorumları sayfaları tasarım 
 - 🟡 Sentiment trend per-week gerçek NLP (extractThemes per-week, cost concern)
 - 🟢 Analytics page unused vars refactor (StatCard/PlatformChip/sparkScans/etc.)
 - 🟢 InteractionTrendChart + WeeklyTrendChart component dosyaları cleanup (analytics-only, başka surface yok)
+
+### 38.35 2026-05-04 — Yorumlar filter parity (Desktop rail status unified + Buaze QR platform pill)
+
+Kullanıcı raporu: "Yorumlar kısmında eksik yapmışsın filtreleme vs gibi özellikler yok lütfen kontrol et ve her şeyi birebir aynı yap". Audit:
+
+| Drift | Bulgu | Fix |
+|---|---|---|
+| Desktop rail status tabs | Eski 4-tab (Tümü/Düşük/Yüksek/Yönlendirilen) — mobile chip set §38.33'te değişmiş ama rail UNIFY edilmemişti | Rail status tabs replace 5-tab mobile chip set ile (Tümü/Düşük/Yanıtsız/Bugün/AI Hazır) |
+| PLATFORM rail "Buaze QR" eksik | Tasarım §22-29 6 platform pill (Tüm/Google/**Buaze QR**/Yemeksepeti/Getir/Trendyol GO) | + 'Buaze QR' pill (CLAUDE.md §38.34 paterni — UI runtime label, platform=null backend filter) |
+
+**Schema migration YOK** (CLAUDE.md §38.34 paterni reuse — runtime label).
+
+**`FeedbackFiltersRail.tsx`** değişiklikler:
+- `counts` type genişletildi: `+ unreplied, today, aiReady` (page.tsx'te zaten hesaplanıyordu §38.33)
+- Status tabs replace: `[all, low, high, redirected]` → `[all, low, unreplied, today, ai_ready]` (rail + mobile chip = unified state, §38.33 backlog "Mobile chip ↔ Desktop rail unified state" kapatıldı)
+- PLATFORM_PILLS: `[all, google, yemeksepeti, getir, trendyol]` → `[all, google, **buaze_qr**, yemeksepeti, getir, trendyol]` (tasarımdaki 6 pill + sıralama)
+
+**`types.ts`** değişiklik:
+- `PlatformFilter` literal genişletildi: `'all' | 'buaze_qr' | PlatformId`
+- PlatformId enum **dokunulmadı** (CLAUDE.md §19.4 taxonomy disiplini — schema değişmez)
+
+**`/api/feedback/route.ts`** backend filter:
+```ts
+if (platformFilter === 'buaze_qr') {
+  baseWhere.platform = null;
+} else {
+  baseWhere.platform = platformFilter;
+}
+```
+Backend mapping: 'buaze_qr' → `platform IS NULL`. Schema'da Buaze QR feedback'leri `platform = null` (CLAUDE.md §34.3 referans), runtime label "Buaze QR" UI'da gösterilir.
+
+**Yapma**:
+- `PlatformId` enum'una 'buaze_qr' eklemek — taxonomy disiplini bozar (CLAUDE.md §19.4 — `PROVIDER_DOMAINS` + `PROVIDER_LABELS` + `PLATFORM_DEFS` 5 nokta drift). UI runtime label yeterli.
+- Rail tab set'ini mobile chip'ten farklılaştırmak — kullanıcı kararı: cross-state unified.
+- "Yüksek" + "Yönlendirilen" tab'larını rail'a geri eklemek — analytics page §34.7-10 derin breakdown'da zaten mevcut, dashboard owner action-odaklı (Yanıtsız/Bugün/AI Hazır).
+- Tasarımdaki "Okunmamış" + "Beklemede" tab'larını eklemek — schema'da `Feedback.isRead` field yok (CLAUDE.md §38.33 user kararı atla). Mevcut "Yanıtsız" + "Bugün" semantic karşılar.
+
+**Yap**:
+- Yeni filter pill eklenirken (örn. yeni platform): `PlatformFilter` literal + `PLATFORM_PILLS` array + API filter map (3 nokta).
+- Yeni status tab eklenirken: `ActiveTab` literal (types.ts) + `tabs` array (FeedbackFiltersRail + FeedbackList ikisi de) + page.tsx counts compute + filteredList logic.
+
+**Verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` 0 errors (2 baseline pre-existing)
+- `npm test` 143/143 pass (test değişmedi)
+- Manuel: `/tr/dashboard/feedbacks` xl: rail 5-tab + 6-platform pill (Buaze QR dahil)
+- Manuel: Buaze QR pill click → API `?platform=buaze_qr` → backend `platform IS NULL` filter → QR feedback'ler listelenir
+- Manuel: Mobile chip set rail ile birebir aynı (5-tab unified state)
+
+**Backlog güncel** (Bu PR sonrası):
+- 🟢 Mobile chip ↔ Desktop rail unified state ✅ KAPATILDI bu PR'da
