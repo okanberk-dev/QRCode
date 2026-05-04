@@ -9,6 +9,7 @@ import type { PanelActor } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { PageHeader, StatCard, EmptyState, Badge } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
+import { CustomerDetailDrawer } from './_components/CustomerDetailDrawer';
 
 // Phase 8 — Owner Customers CRM (CLAUDE.md §23.7 Phase 12.x).
 // Server component + direct Prisma raw SQL (admin /api/admin/customers paterni
@@ -218,8 +219,10 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasFilter = Boolean(search || restaurantIdParam || rangeKey !== '30d');
 
-  // URL builder for filter forms / pagination links.
-  function buildHref(over: Partial<Record<'range' | 'search' | 'restaurantId' | 'page', string>>) {
+  // URL builder for filter forms / pagination / drawer detail links.
+  function buildHref(
+    over: Partial<Record<'range' | 'search' | 'restaurantId' | 'page' | 'detail', string>>,
+  ) {
     const q = new URLSearchParams();
     const r = over.range ?? rangeKey;
     if (r !== '30d') q.set('range', r);
@@ -229,6 +232,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     if (rid) q.set('restaurantId', rid);
     const p = over.page ?? String(page);
     if (p && p !== '1') q.set('page', p);
+    if (over.detail) q.set('detail', over.detail);
     const qs = q.toString();
     return `/${locale}/dashboard/customers${qs ? `?${qs}` : ''}`;
   }
@@ -399,15 +403,22 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   const initials = (r.name || r.email || r.phone || '?')
                     .charAt(0)
                     .toUpperCase();
+                  const detailKey = `${r.restaurant_id}|${r.contact_key}`;
+                  const detailHref = buildHref({ detail: detailKey });
                   return (
-                    <tr key={`${r.restaurant_id}|${r.contact_key}`} className="bz-tr-hover">
+                    <tr key={detailKey} className="bz-tr-hover">
                       <td>
                         <div className="flex items-center gap-3">
                           <div className="bz-avatar h-8 w-8 text-[12px]">{initials}</div>
                           <div className="min-w-0">
-                            <div className="truncate text-[13px] font-semibold text-[#0A0A0A]">
+                            <Link
+                              href={detailHref}
+                              scroll={false}
+                              className="block truncate text-[13px] font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                              aria-label={`${r.name || 'Anonim'} — ${isTr ? 'detayı aç' : 'open detail'}`}
+                            >
                               {r.name || (isTr ? 'Anonim' : 'Anonymous')}
-                            </div>
+                            </Link>
                             {r.branch && (
                               <div className="text-[11px] text-[#737373] truncate">
                                 {r.branch}
@@ -471,15 +482,22 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
               const initials = (r.name || r.email || r.phone || '?')
                 .charAt(0)
                 .toUpperCase();
+              const detailKey = `${r.restaurant_id}|${r.contact_key}`;
+              const detailHref = buildHref({ detail: detailKey });
               return (
-                <div key={`${r.restaurant_id}|${r.contact_key}`} className="bz-card p-4 space-y-2.5">
+                <div key={detailKey} className="bz-card p-4 space-y-2.5">
                   <div className="flex items-start gap-3">
                     <div className="bz-avatar h-9 w-9 text-[13px]">{initials}</div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
-                        <div className="truncate text-[14px] font-semibold text-[#0A0A0A]">
+                        <Link
+                          href={detailHref}
+                          scroll={false}
+                          className="truncate text-[14px] font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
+                          aria-label={`${r.name || 'Anonim'} — ${isTr ? 'detayı aç' : 'open detail'}`}
+                        >
                           {r.name || (isTr ? 'Anonim' : 'Anonymous')}
-                        </div>
+                        </Link>
                         {r.last_rating != null && (
                           <Badge kind={r.last_rating >= 4 ? 'lime' : r.last_rating >= 3 ? 'warn' : 'danger'}>
                             {r.last_rating}★
@@ -565,6 +583,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           )}
         </>
       )}
+
+      {/* Customer detail drawer — URL state ?detail=KEY ile mount/unmount.
+          Client island; useSearchParams ile detect, fetch, ESC + outside click
+          + body scroll lock. (CLAUDE.md §23.7 Phase 12 Phase 8d) */}
+      <CustomerDetailDrawer locale={locale} />
     </div>
   );
 }
