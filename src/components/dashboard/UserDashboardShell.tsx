@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -346,6 +346,20 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </div>
       </div>
 
+      {/* Primary CTA — Yeni QR / Yorum İste (tasarım .design-pulse-2026 shell.jsx
+          paterni; Phase 1'de eklenen .bz-side-cta + --mini class'larını kullanır). */}
+      <div className="px-3 pb-3">
+        <Link
+          href={`/${locale}/dashboard/qr`}
+          className={`bz-side-cta ${isCollapsed ? 'bz-side-cta--mini' : ''}`}
+          title={isCollapsed ? (locale === 'tr' ? 'Yeni QR' : 'New QR') : undefined}
+          onClick={handleNavClick}
+        >
+          <Plus size={14} strokeWidth={2.2} />
+          <span>{locale === 'tr' ? 'Yeni QR oluştur' : 'New QR'}</span>
+        </Link>
+      </div>
+
       {/* Nav */}
       <nav
         ref={forwardedNavRef as React.RefObject<HTMLElement>}
@@ -474,6 +488,42 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           );
         })}
       </nav>
+
+      {/* Plan progress card — sadece trial user + sidebar açık (collapsed durumda
+          gizli, alan yetersiz). Tasarım .design-pulse-2026 shell.jsx paterni:
+          PRO PLAN eyebrow + gün countdown + lime progress bar + Yükselt link. */}
+      {!isCollapsed && user.plan === 'trial' && trialDaysLeft !== null && (
+        <div className="px-3 pb-3 animate-in fade-in slide-in-from-left-2 duration-300">
+          <div className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="pulse-eyebrow text-[#0A0A0A]">
+                {locale === 'tr' ? 'DENEME PLANI' : 'TRIAL PLAN'}
+              </span>
+              <span className="bz-mono text-[10.5px] text-[#525252] tabular-nums">
+                {trialDaysLeft}
+                {locale === 'tr' ? 'g' : 'd'}
+              </span>
+            </div>
+            <div className="bz-progress lime">
+              <i style={{ width: `${Math.max(8, Math.min(100, (trialDaysLeft / 14) * 100))}%` }} />
+            </div>
+            <Link
+              href={`/${locale}/dashboard/account?section=billing`}
+              className="block text-[11.5px] text-[#525252] leading-[1.4]"
+              onClick={handleNavClick}
+            >
+              {trialDaysLeft <= 5
+                ? locale === 'tr'
+                  ? 'Az kaldı — '
+                  : 'Almost over — '
+                : ''}
+              <span className="font-semibold text-[#0A0A0A] underline">
+                {locale === 'tr' ? 'Plana yükselt' : 'Upgrade plan'}
+              </span>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* User row + logout */}
       <div className="border-t border-[#EDEDED] bg-[#FAFAFA] p-3">
