@@ -39,26 +39,8 @@ export default function PlatformDistribution({ data, locale = 'tr' }: PlatformDi
 
   return (
     <div className="space-y-4">
-      {/* Summary pills */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {sorted.map((item) => {
-          const config = PLATFORM_COLORS[item.platform] || PLATFORM_COLORS.unspecified;
-          const percentage = total > 0 ? Math.round((item.count / total) * 100) : 0;
-          return (
-            <div
-              key={item.platform}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl ${config.bg} border border-[#EDEDED]`}
-            >
-              <span className="text-sm">{config.icon}</span>
-              <span className={`text-[12px] font-semibold ${config.text}`}>{item.label}</span>
-              <span className="text-[12px] font-semibold text-[#0A0A0A]">{item.count}</span>
-              <span className="text-[10px] font-bold text-[#6B7280]">({percentage}%)</span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Horizontal bar chart */}
+      {/* Horizontal bar chart — Pulse design'a sadık (graphite + lime hierarchy);
+          eski renkli pill grid'i visual duplication yarattığı için kaldırıldı (§11.6 paterni). */}
       <div className="space-y-3">
         {sorted.map((item) => {
           const config = PLATFORM_COLORS[item.platform] || PLATFORM_COLORS.unspecified;

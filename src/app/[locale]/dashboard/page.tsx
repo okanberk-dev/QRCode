@@ -328,7 +328,7 @@ async function renderDashboardPage({
     }
   }
 
-  // QR scan count map (proxy: aynı restaurant+table+platform feedback sayımı)
+  // QR scan count map — QrScan tablosundan groupBy(restaurantId, tableNumber, platform)
   const qrScanCounts = new Map<string, number>();
   for (const g of qrScanGroups) {
     if (!g.restaurantId) continue;
@@ -780,7 +780,7 @@ async function renderDashboardPage({
                           <span>·</span>
                           <span className="whitespace-nowrap">
                             {q.scans.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-                            {isTr ? 'yorum' : 'reviews'}
+                            {isTr ? 'taranma' : 'scans'}
                           </span>
                         </div>
                       </div>
