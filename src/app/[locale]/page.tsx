@@ -8,7 +8,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
 import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
-import { BarChart3, Inbox, QrCode, Sparkles, Star } from 'lucide-react';
+import { BarChart3, ChevronDown, Inbox, MessageCircleQuestion, QrCode, Sparkles, Star } from 'lucide-react';
 import MarqueeRow from '@/components/marketing/MarqueeRow';
 import HomeHero from '@/components/marketing/HomeHero';
 import { getTranslations } from '@/lib/translations';
@@ -1040,37 +1040,56 @@ export default async function LandingPage({
       ═══════════════════════════════════════════════════════════ */}
       <section
         id="aeo"
-        className="bg-[#FAFAFA] border-t border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24"
+        className="relative overflow-hidden border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-[60px] sm:px-10 sm:py-24"
       >
-        <div className="max-w-[1100px] mx-auto">
-          <span className="pulse-eyebrow text-[#A8D62E]">
+        <IllusShield
+          className="pointer-events-none absolute -right-12 -top-10 h-[220px] w-[220px] opacity-[0.06]"
+          aria-hidden
+        />
+        <div className="relative mx-auto max-w-[760px]">
+          <span className="pulse-eyebrow inline-flex items-center gap-2 text-[#A8D62E]">
+            <MessageCircleQuestion size={14} strokeWidth={2.2} aria-hidden />
             {isTr ? 'KISACA BUAZE' : 'BUAZE IN BRIEF'}
           </span>
-          <h2 className="mt-3 text-[26px] sm:text-[36px] lg:text-[44px] font-medium tracking-[-0.03em] leading-[1.1] text-[#0A0A0A] max-w-[760px]">
+          <h2 className="mt-3 text-[26px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A] sm:text-[36px] lg:text-[44px]">
             {isTr
               ? 'En çok sorulan beş soruya net cevaplar'
               : 'Five common questions, answered directly'}
           </h2>
-          <p className="mt-4 max-w-[640px] text-[15px] sm:text-[16px] text-[#525252] leading-[1.6]">
+          <p className="mt-4 max-w-[640px] text-[15px] leading-[1.6] text-[#525252] sm:text-[16px]">
             {isTr
               ? 'Buaze ne yapar, kimler için tasarlandı ve Google\'ın yorum politikasıyla nasıl uyum sağlar — kısaca.'
               : 'What Buaze does, who it is built for, and how it aligns with Google\'s review policy — at a glance.'}
           </p>
+          <span className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[12px] font-medium text-[#525252]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]" aria-hidden />
+            {isTr ? '5 soru · 2 dakikada okunur' : '5 questions · 2 min read'}
+          </span>
 
-          <dl className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-7">
-            {aeoFaqs.map((f, i) => (
-              <div key={i} className="border-l-2 border-[#C6F24E] pl-5">
-                <dt className="bz-h-tight text-[18px] sm:text-[20px] font-semibold tracking-[-0.01em] text-[#0A0A0A] leading-[1.25]">
-                  {f.q}
-                </dt>
-                <dd className="mt-3 text-[14px] sm:text-[15px] leading-[1.65] text-[#525252]">
+          <div className="mt-10 divide-y divide-[#EDEDED] border-y border-[#EDEDED]">
+            {aeoFaqs.map((f, idx) => (
+              <details
+                key={f.q}
+                className="group py-5 transition-colors sm:py-6 [&[open]]:bg-white"
+                open={idx < 2}
+              >
+                <summary className="flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 text-left text-[16px] font-semibold leading-[1.4] text-[#0A0A0A] sm:text-[17px] [&::-webkit-details-marker]:hidden">
+                  <span className="flex-1">{f.q}</span>
+                  <ChevronDown
+                    size={20}
+                    strokeWidth={2.2}
+                    aria-hidden
+                    className="mt-0.5 shrink-0 text-[#737373] transition-transform duration-200 group-open:rotate-180 group-open:text-[#0A0A0A] motion-reduce:transition-none"
+                  />
+                </summary>
+                <p className="mt-3 text-[14px] leading-[1.7] text-[#525252] sm:text-[15px]">
                   {f.a}
-                </dd>
-              </div>
+                </p>
+              </details>
             ))}
-          </dl>
+          </div>
 
-          <p className="mt-10 text-[13px] text-[#737373] leading-[1.55]">
+          <p className="mt-10 text-[13px] leading-[1.55] text-[#737373]">
             {isTr ? (
               <>
                 Daha ayrıntılı politika açıklaması:{' '}
