@@ -23,7 +23,7 @@ import TrendsChart from '@/components/admin/TrendsChart';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
-import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
+import { Eyebrow, PageHeader, Sparkline, StatCard, PLATFORMS } from '@/components/ui';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
 // minimal HTML, browser'da Recharts hydrate. `dynamic({ ssr: false })`
@@ -689,6 +689,75 @@ async function renderDashboardPage({
           </span>
         </div>
       </section>
+
+      {/* KANAL DAĞILIMI — tasarım .design-pulse-2026/.../page-dashboard.jsx
+          ChannelCard 4-card grid paterni. Top 4 platform card (brand icon +
+          name + count + avg rating + delta tahmini). Mobile 2-col, sm+ 4-col. */}
+      {platformDistData.length > 0 && (
+        <section>
+          <header className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <Eyebrow>{isTr ? 'KANAL DAĞILIMI' : 'CHANNEL BREAKDOWN'}</Eyebrow>
+              <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px]">
+                {isTr ? 'Platform performansı' : 'Platform performance'}
+              </h2>
+            </div>
+            <Link
+              href={`/${locale}/dashboard/analytics`}
+              className="text-[12px] text-[#525252] hover:text-[#0A0A0A] inline-flex items-center gap-1"
+            >
+              {isTr ? 'Tüm kanallar' : 'All channels'}
+              <ArrowRight size={11} strokeWidth={2} />
+            </Link>
+          </header>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {platformDistData.slice(0, 4).map((p) => {
+              const brand = (PLATFORMS as Record<string, { color: string; short: string; label: string }>)[
+                p.platform
+              ];
+              const tone = brand?.color ?? '#A3A3A3';
+              const short = brand?.short ?? p.label.slice(0, 2).toUpperCase();
+              return (
+                <div key={p.platform} className="bz-card p-3.5 flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[10.5px] font-semibold text-white"
+                      style={{ background: tone }}
+                    >
+                      {short}
+                    </span>
+                    <span className="truncate text-[12.5px] font-semibold text-[#0A0A0A]">
+                      {p.label}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="bz-mono tabular-nums text-[20px] font-semibold text-[#0A0A0A]">
+                      {p.avgRating != null ? p.avgRating.toFixed(1) : '—'}
+                    </span>
+                    <span className="text-[11px] text-[#525252]">
+                      {p.count} {isTr ? 'yorum' : 'reviews'}
+                    </span>
+                  </div>
+                  {/* Mini progress bar — count vs leader */}
+                  <div className="h-1 rounded-full bg-[#F5F5F5] overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${
+                          platformDistData[0]?.count
+                            ? Math.max(8, (p.count / platformDistData[0].count) * 100)
+                            : 0
+                        }%`,
+                        background: tone,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Yorum Görünümü — TEK section, 2-col responsive. Puan dağılımı
           (5-bar histogram) + Platform dağılımı (pill + bar grid) yan yana.
