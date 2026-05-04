@@ -81,6 +81,81 @@ function ratingBreakdown(reviews: GoogleReview[]) {
   return [5, 4, 3, 2, 1].map((rating) => ({ rating, count: counts.get(rating) ?? 0 }));
 }
 
+// PROFİL SAĞLIĞI score (HIGH 5 sub-item) — tasarım .design-pulse-2026/.../page-google.jsx
+// 92/100 paterni. 3 sinyal ağırlıklı toplama, 0-100 normalize:
+// - Rating: avg/5 × 70 (en kritik signal — müşteri memnuniyeti)
+// - Response rate: replied/total × 25 (operasyonel disiplin)
+// - Volume: min(1, total/50) × 5 (mevcudiyet bonus)
+// 4.7 + 92% + 100 yorum → ~94 (tasarımdaki 92/100 hedefi)
+function computeHealthScore(opts: {
+  avgRating: number | null;
+  total: number;
+  replied: number;
+}): number {
+  const rating = Math.max(0, Math.min(5, opts.avgRating ?? 0));
+  const responseRate = opts.total > 0 ? Math.min(1, opts.replied / opts.total) : 0;
+  const volume = Math.min(1, opts.total / 50);
+  const score = (rating / 5) * 70 + responseRate * 25 + volume * 5;
+  return Math.round(Math.max(0, Math.min(100, score)));
+}
+
+// SIK GEÇEN KELİMELER — client-side word frequency analiz. AI maliyet yok,
+// deterministik, instant. Stopwords TR + EN minimal liste; 3+ harf, top N.
+// Sentiment: keyword'in göründüğü review'ların avg rating → pos/neu/neg.
+const STOPWORDS = new Set([
+  // TR
+  'bir', 've', 'ile', 'için', 'gibi', 'ama', 'fakat', 'çok', 'daha', 'kadar',
+  'bu', 'şu', 'ben', 'sen', 'biz', 'siz', 'onlar', 'var', 'yok', 'çünkü',
+  'yani', 'üzere', 'böyle', 'şey', 'kişi', 'gün', 'sonra', 'önce', 'her',
+  'hep', 'hiç', 'ise', 'ya', 'ne', 'da', 'de', 'ki', 'mı', 'mi', 'mu', 'mü',
+  'olan', 'oldu', 'olur', 'olduk', 'olduğu', 'oldukça', 'idi', 'değil',
+  'ama', 'tam', 'göre', 'kez', 'yer', 'yere', 'bile', 'sadece', 'falan',
+  // EN
+  'the', 'and', 'with', 'for', 'like', 'but', 'very', 'more', 'most', 'just',
+  'this', 'that', 'was', 'are', 'were', 'have', 'had', 'has', 'will', 'would',
+  'could', 'should', 'from', 'they', 'them', 'their', 'there', 'here', 'when',
+  'what', 'which', 'who', 'how', 'all', 'any', 'some', 'one', 'two', 'too',
+  'also', 'into', 'over', 'than', 'then', 'been', 'being', 'about',
+]);
+
+interface KeywordItem {
+  word: string;
+  mentions: number;
+  sentiment: 'pos' | 'neu' | 'neg';
+}
+
+function extractKeywords(reviews: GoogleReview[], topN = 8): KeywordItem[] {
+  const wordStats = new Map<string, { count: number; ratingSum: number }>();
+  for (const review of reviews) {
+    if (!review.comment) continue;
+    const value = starValue(review.starRating);
+    const tokens = review.comment
+      .toLowerCase()
+      .replace(/[^\p{L}\s]/gu, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length >= 3 && !STOPWORDS.has(w));
+    const seen = new Set<string>();
+    for (const token of tokens) {
+      if (seen.has(token)) continue; // bir review'da kelime 2x sayılmaz (mention count)
+      seen.add(token);
+      const entry = wordStats.get(token) ?? { count: 0, ratingSum: 0 };
+      entry.count += 1;
+      entry.ratingSum += value || 3;
+      wordStats.set(token, entry);
+    }
+  }
+  const sorted = Array.from(wordStats.entries())
+    .filter(([, s]) => s.count >= 2) // tek geçen kelimeler gürültü
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, topN);
+  return sorted.map(([word, s]) => {
+    const avgRating = s.ratingSum / s.count;
+    const sentiment: KeywordItem['sentiment'] =
+      avgRating >= 4 ? 'pos' : avgRating <= 2.5 ? 'neg' : 'neu';
+    return { word, mentions: s.count, sentiment };
+  });
+}
+
 function Metric({ label, value, tone }: { label: string; value: string; tone?: "ok" | "warn" }) {
   return (
     <div className="rounded-xl border border-[#EDEDED] bg-white p-3">
@@ -516,6 +591,230 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                   ))}
                 </div>
               </div>
+
+              {/* PROFİL SAĞLIĞI + SIK GEÇEN KELİMELER — tasarım
+                  .design-pulse-2026/.../page-google.jsx sağ rail paterni.
+                  Mevcut max-w-[1000px] 1-col layout'a sığdırmak için 2-col
+                  responsive grid (sm+ side-by-side, mobile stack). */}
+              {(() => {
+                const score = computeHealthScore({
+                  avgRating: reviewsPayload.averageRating,
+                  total: reviewsPayload.totalReviewCount,
+                  replied: reviewAnalysis.replied,
+                });
+                const tier =
+                  score >= 85
+                    ? { label: isTr ? 'Mükemmel' : 'Excellent', kind: 'lime' as const }
+                    : score >= 60
+                      ? { label: isTr ? 'İyi' : 'Good', kind: 'warn' as const }
+                      : { label: isTr ? 'Geliştir' : 'Improve', kind: 'danger' as const };
+                const responseRate =
+                  reviewsPayload.totalReviewCount > 0
+                    ? Math.round(
+                        (reviewAnalysis.replied / reviewsPayload.totalReviewCount) * 100,
+                      )
+                    : 0;
+                const last30Days = reviewsPayload.reviews.filter((r) => {
+                  if (!r.createTime) return false;
+                  const ageMs = Date.now() - new Date(r.createTime).getTime();
+                  return ageMs <= 30 * 86400000;
+                }).length;
+                const checklist: Array<{
+                  label: string;
+                  value: string;
+                  ok: boolean;
+                }> = [
+                  {
+                    label: isTr ? 'Ortalama puan' : 'Avg rating',
+                    value:
+                      reviewsPayload.averageRating != null
+                        ? `${reviewsPayload.averageRating.toFixed(1)} / 5`
+                        : '—',
+                    ok: (reviewsPayload.averageRating ?? 0) >= 4,
+                  },
+                  {
+                    label: isTr ? 'Yanıt oranı' : 'Response rate',
+                    value: `%${responseRate}`,
+                    ok: responseRate >= 75,
+                  },
+                  {
+                    label: isTr ? 'Toplam yorum' : 'Total reviews',
+                    value: reviewsPayload.totalReviewCount.toLocaleString(
+                      isTr ? 'tr-TR' : 'en-US',
+                    ),
+                    ok: reviewsPayload.totalReviewCount >= 50,
+                  },
+                  {
+                    label: isTr ? 'Son 30 gün hacmi' : 'Last 30d volume',
+                    value: `${last30Days} ${isTr ? 'yorum' : 'reviews'}`,
+                    ok: last30Days >= 5,
+                  },
+                ];
+                const keywords = extractKeywords(reviewsPayload.reviews, 8);
+                const maxMentions = keywords[0]?.mentions ?? 1;
+                const tierBadgeClass =
+                  tier.kind === 'lime'
+                    ? 'bg-[#EAF9B8] text-[#0A0A0A] border border-[#C6F24E]'
+                    : tier.kind === 'warn'
+                      ? 'bg-[#FFFBEB] text-[#92400E] border border-[#FDE68A]'
+                      : 'bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]';
+                const arcRadius = 38;
+                const arcCircumference = 2 * Math.PI * arcRadius;
+                const arcOffset = arcCircumference * (1 - score / 100);
+
+                return (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {/* PROFİL SAĞLIĞI */}
+                    <div className="bz-card p-5">
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div>
+                          <span className="pulse-eyebrow text-[#737373]">
+                            {isTr ? 'PROFİL SAĞLIĞI' : 'PROFILE HEALTH'}
+                          </span>
+                          <div className="mt-1.5 flex items-baseline gap-1.5">
+                            <span className="bz-h-tight-2 text-[32px] tabular-nums text-[#0A0A0A]">
+                              {score}
+                            </span>
+                            <span className="text-[15px] text-[#A3A3A3]">/100</span>
+                          </div>
+                          <span
+                            className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${tierBadgeClass}`}
+                          >
+                            <span
+                              aria-hidden
+                              className="h-1.5 w-1.5 rounded-full"
+                              style={{
+                                background:
+                                  tier.kind === 'lime'
+                                    ? '#16A34A'
+                                    : tier.kind === 'warn'
+                                      ? '#D97706'
+                                      : '#DC2626',
+                              }}
+                            />
+                            {tier.label}
+                          </span>
+                        </div>
+                        {/* Mini gauge — SVG arc */}
+                        <svg
+                          viewBox="0 0 100 100"
+                          className="h-20 w-20 shrink-0 -rotate-90"
+                          aria-hidden
+                        >
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r={arcRadius}
+                            fill="none"
+                            stroke="#EDEDED"
+                            strokeWidth="8"
+                          />
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r={arcRadius}
+                            fill="none"
+                            stroke={
+                              tier.kind === 'lime'
+                                ? '#C6F24E'
+                                : tier.kind === 'warn'
+                                  ? '#D97706'
+                                  : '#DC2626'
+                            }
+                            strokeWidth="8"
+                            strokeDasharray={arcCircumference}
+                            strokeDashoffset={arcOffset}
+                            strokeLinecap="round"
+                            style={{ transition: 'stroke-dashoffset 600ms ease' }}
+                          />
+                        </svg>
+                      </div>
+                      <ul className="space-y-2 border-t border-[#EDEDED] pt-3">
+                        {checklist.map((item) => (
+                          <li
+                            key={item.label}
+                            className="flex items-center gap-2 text-[12.5px]"
+                          >
+                            <span
+                              aria-hidden
+                              className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[8px]"
+                              style={{
+                                background: item.ok ? '#EAF9B8' : '#FEF3C7',
+                                color: item.ok ? '#4D5C00' : '#92400E',
+                              }}
+                            >
+                              {item.ok ? '✓' : '!'}
+                            </span>
+                            <span className="text-[#525252]">{item.label}</span>
+                            <span className="bz-mono ml-auto text-[11px] font-semibold tabular-nums text-[#0A0A0A]">
+                              {item.value}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* SIK GEÇEN KELİMELER */}
+                    <div className="bz-card p-5">
+                      <div className="mb-4 flex items-center justify-between">
+                        <span className="pulse-eyebrow text-[#737373]">
+                          {isTr ? 'SIK GEÇEN KELİMELER' : 'TOP KEYWORDS'}
+                        </span>
+                        <span className="bz-mono text-[10px] text-[#A3A3A3] uppercase tracking-wider">
+                          NLP
+                        </span>
+                      </div>
+                      {keywords.length === 0 ? (
+                        <div className="py-8 text-center text-[12.5px] text-[#737373]">
+                          {isTr
+                            ? 'Yeterli yorum metni yok.'
+                            : 'Not enough review text yet.'}
+                        </div>
+                      ) : (
+                        <ul className="space-y-2.5">
+                          {keywords.map((k) => {
+                            const barColor =
+                              k.sentiment === 'pos'
+                                ? '#A8D62E'
+                                : k.sentiment === 'neg'
+                                  ? '#DC2626'
+                                  : '#A3A3A3';
+                            const pct = (k.mentions / maxMentions) * 100;
+                            return (
+                              <li
+                                key={k.word}
+                                className="flex items-center gap-2.5 text-[12.5px]"
+                              >
+                                <span className="w-[80px] truncate font-medium text-[#0A0A0A]">
+                                  {k.word}
+                                </span>
+                                <div className="h-1.5 flex-1 rounded-full bg-[#F5F5F5] overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-500"
+                                    style={{
+                                      width: `${Math.max(8, pct)}%`,
+                                      background: barColor,
+                                    }}
+                                  />
+                                </div>
+                                <span className="bz-mono w-7 text-right text-[11px] tabular-nums text-[#737373]">
+                                  {k.mentions}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                      <p className="mt-4 text-[10.5px] text-[#A3A3A3] leading-[1.5]">
+                        {isTr
+                          ? 'Kelimeler çekilen yorumlardan analiz edilir; renk müşteri puanına göre sentiment.'
+                          : 'Keywords analyzed from fetched reviews; color reflects sentiment by rating.'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="space-y-4">
                 {reviewsPayload.reviews.length === 0 ? (
                   <div className="py-8 text-center text-[#737373] text-[14px]">
