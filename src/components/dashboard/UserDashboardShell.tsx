@@ -411,7 +411,12 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 <Icon size={16} strokeWidth={2} className="shrink-0" />
                 {!isCollapsed && (
                   <>
-                    <span className="flex-1 truncate text-left animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>
+                    <span
+                      className="flex-1 truncate text-left text-[10.5px] font-mono uppercase tracking-[0.14em] animate-in fade-in slide-in-from-left-2 duration-300"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      {item.label}
+                    </span>
                     <ChevronRight
                       size={14}
                       strokeWidth={2}
