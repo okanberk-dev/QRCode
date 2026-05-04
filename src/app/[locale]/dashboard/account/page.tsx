@@ -159,6 +159,58 @@ export default function AccountSettingsPage() {
     );
   }
 
+  // Right rail (xl:+) — tasarım .design-pulse-2026/.../page-account.jsx 320px
+  // sağ kolon paterni. Link-only quick navigation (gerçek içerik tabs'ta).
+  const rightRail = (
+    <>
+      <button
+        type="button"
+        onClick={() => handleSectionChange('billing')}
+        className="bz-card-soft block w-full p-4 text-left transition-colors hover:bg-[#F5F5F5]"
+      >
+        <span className="pulse-eyebrow text-[#737373]">{isTr ? 'PLAN' : 'PLAN'}</span>
+        <p className="bz-h-tight mt-1 text-[15px]">
+          {isTr ? 'Plan & Faturalandırma' : 'Plan & Billing'}
+        </p>
+        <p className="mt-1 text-[12px] text-[#525252]">
+          {isTr
+            ? 'Mevcut planını gör, faturaları indir, yükselt.'
+            : 'Review your plan, download invoices, upgrade.'}
+        </p>
+      </button>
+      <button
+        type="button"
+        onClick={() => handleSectionChange('team')}
+        className="bz-card-soft block w-full p-4 text-left transition-colors hover:bg-[#F5F5F5]"
+      >
+        <span className="pulse-eyebrow text-[#737373]">{isTr ? 'EKİP' : 'TEAM'}</span>
+        <p className="bz-h-tight mt-1 text-[15px]">
+          {isTr ? 'Üye & roller' : 'Members & roles'}
+        </p>
+        <p className="mt-1 text-[12px] text-[#525252]">
+          {isTr
+            ? 'Yeni üye davet et, rol değiştir.'
+            : 'Invite new members, manage roles.'}
+        </p>
+      </button>
+      <button
+        type="button"
+        onClick={() => handleSectionChange('legal')}
+        className="block w-full rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-left transition-colors hover:bg-[#FEE2E2]"
+      >
+        <span className="pulse-eyebrow text-[#991B1B]">{isTr ? 'KVKK' : 'LEGAL'}</span>
+        <p className="bz-h-tight mt-1 text-[15px] text-[#991B1B]">
+          {isTr ? 'Onay & yasal' : 'Consent & legal'}
+        </p>
+        <p className="mt-1 text-[12px] text-[#7F1D1D]">
+          {isTr
+            ? 'KVKK onay durumu, gizlilik tercihleri.'
+            : 'KVKK consent status, privacy preferences.'}
+        </p>
+      </button>
+    </>
+  );
+
   return (
     <SettingsLayout
       tabs={TABS}
@@ -167,6 +219,7 @@ export default function AccountSettingsPage() {
       onChange={handleSectionChange}
       header={header}
       ariaLabel={isTr ? "Hesap ayarları bölümleri" : "Account settings sections"}
+      rightRail={rightRail}
     >
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>
