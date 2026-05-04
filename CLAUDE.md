@@ -6581,3 +6581,85 @@ Backend mapping: 'buaze_qr' → `platform IS NULL`. Schema'da Buaze QR feedback'
 
 **Backlog güncel** (Bu PR sonrası):
 - 🟢 Mobile chip ↔ Desktop rail unified state ✅ KAPATILDI bu PR'da
+
+### 38.36 2026-05-04 — Müşteriler 1:1 parity (duplicate filter card consolidate + 4-stat + sparkbar + sentiment-based avatar)
+
+Kullanıcı raporu: "iki adet müşteriler kısmı var, en sonda attığım tasarımdaki ile birebir aynı yap, diğer duplicate kısmı sil, filtreler vs her şeyiyle tasarımdakini al (mobil dahil)". Audit (Explore agent + manuel doğrulama): mevcut `/dashboard/customers` page tasarım `.design-owner-2026/page-customers.jsx` ile ~%70 parity. **Duplicate** sayfada iki ayrı `bz-card` filter section'ı (segment pills card + filter form card) → tasarımda tek konsolide toolbar.
+
+Kullanıcı 3 karar onayladı (AskUserQuestion):
+- Duplicate scope: tek sayfada 2 section, biri silinecek (filter card consolidate)
+- Tasarım kaynağı: `page-customers.jsx` (8-col + sentiment sparkbar)
+- Mobil: mevcut card yapısı korunur, küçük polish
+
+**Schema/migration YOK**, backend dokunulmadı. Mevcut SQL + helper'lar (Phase 8c §38.16 reuse).
+
+**Phase A — Toolbar consolidate (DUPLICATE FIX)**:
+- Eski 2 ayrı `bz-card` (segment pills line 424-455 + filter form line 458-516) → **tek `bz-card` toolbar** (tasarım line 70-84 birebir).
+- Search input (sol Search icon, max 320px lg), divider, segment pills inline (count INLINE label), spacer, range chips, restaurant select.
+- Mobile: search full-width, segment pills + range chips horizontal scroll (`no-scrollbar -mx-3 px-3` paterni CLAUDE.md §25.4).
+- Tasarımdaki "Daha fazla filtre" + "Görünüm" + "Bulk action bar" buttons SKIP (CLAUDE.md §7 — backend yok, scope creep).
+
+**Phase B — 4-stat KPI grid (3→4)**:
+- Eski 3 StatCard (Müşteri / Yorum / Ort. puan) → 4 StatCard tasarım uyumlu:
+  - **TOPLAM MİSAFİR**: `summaryRow.customers` count
+  - **VIP**: `segmentCounts.vip` + delta `%X.X segment` (`vip / total × 100`)
+  - **ORT. LTV**: `Math.round(enriched.reduce((s, r) => s + r.ltv, 0) / enriched.length)`
+  - **GERİ DÖNÜŞ ORANI**: `(enriched.filter(r => feedback_count >= 2).length / enriched.length × 100)` % + delta `N tekrar gelen`
+- YoY + sektör benchmark deltaları SKIP (CLAUDE.md §35.8 — verifiable olmayan claim).
+- Mevcut `<StatCard>` primitive sufficient (`delta` + `deltaKind: 'neutral'`).
+- Yeni icons: `Crown` (VIP) + `Wallet` (LTV) + `Repeat2` (Return rate).
+
+**Phase C — Tablo column rewrite (7→6 col)**:
+- Eski: Müşteri / İletişim / Segment / Yorum / LTV / Memnuniyet / Son ziyaret
+- Yeni: Misafir / Segment / Ziyaret / LTV / Son ziyaret / Sentiment (Sparkbar)
+- "İletişim" sütun **drop** — email Misafir altına `bz-mono` 11px (tasarım line 137), telefon drawer'da (Phase 8d §38.14 intact)
+- Sentiment SentimentBadge (dot+label) → **`<SentimentSparkbar>`** (60px progress + 24px score 0-100, tone-based: ≥70 lime-deep / 50-69 graphite-mute / <50 danger)
+- Avatar bg **sentiment-based** (tasarım line 131-134): pos `#EAF9B8` (lime-soft) / neg `#FEF2F2` (red-soft) / neu `#F5F5F5` (n100); fg neg `#991B1B`, diğer `#0A0A0A`
+- Score derivation: `Math.round((avg_rating ?? 0) × 20)` clamped [0, 100]
+
+**Phase D — Pagination polish**:
+- Eski: "Sayfa N / M · X müşteri" + Prev/Next text buttons
+- Yeni (tasarım line 157-174): "X–Y / total misafir" mono left + ChevronLeft + page numbers + ChevronRight icons; current page graphite primary, others ghost
+- Smart ellipsis: ≤7 sayfa tüm sayılar; >7 → `1, …, current-1, current, current+1, …, totalPages` (current page guarantee)
+
+**Phase E — Mobile polish**:
+- Stats grid `grid-cols-2 lg:grid-cols-3` → **`grid-cols-2 lg:grid-cols-4`** (4-stat uyumlu)
+- Toolbar mobile: search full-width → segment pills horizontal scroll → range chips horizontal scroll → restaurant select alt satır
+- Card list **dokunulmadı** (kullanıcı kararı)
+
+**Yeni dosya**:
+- `src/components/customers/SentimentSparkbar.tsx` (~50 satır pure presentational, server + client'tan import edilebilir)
+
+**Genişletilen**:
+- `src/app/[locale]/dashboard/customers/page.tsx` — toolbar consolidate, 4-stat, table 6-col, pagination polish
+
+**Yapma**:
+- "Daha fazla filtre" + "Görünüm" buttons ekleme — backend yok (advanced filter modal + view density toggle), scope creep.
+- "Bulk action bar (3 misafir seçildi · Kampanya/Segmentle/Arşivle)" ekleme — schema + backend yok (Phase 8c §38.16 paterni).
+- "Son sipariş" kolonu — Buaze yorum-bazlı, sipariş data'sı yok.
+- Checkbox row select — bulk action olmadan UI değer katmaz.
+- Sektör benchmark "%48 vs %62" — gerçek sektör data'sı yok (CLAUDE.md §35.8).
+- YoY delta "+12% YoY" — yıllık karşılaştırma data'sı yok.
+- Mobile MobileCustomers ekranı tasarım eklenirken yeni component yapma — page-mobile-v2.jsx eksik, mevcut card list yeterli.
+- SegmentChip / SentimentBadge component'lerini değiştirme — Sparkbar yeni dedicated component (CLAUDE.md §7 — 3+ callsite olunca SentimentBadge variant 'sparkbar'a evrilir).
+
+**Yap**:
+- Yeni stat card eklenirken `<StatCard delta deltaKind subtitle>` mevcut prop'ları reuse (label + value + icon + accent + sparkline opsiyonel) — primitive değiştirme gerekmez.
+- Yeni 0-100 score sentiment görseli gerekirse `<SentimentSparkbar score={N}>` reuse — tone enum-bound (≥70 / 50-69 / <50).
+- Pagination ellipsis logic için aynı paterni reuse: ≤7 sayfa `Array.from({length}, (_, i) => i + 1)` / >7 `[1, '…', current-1, current, current+1, '…', total]`.
+- Yeni filter pill / chip eklenirken `no-scrollbar overflow-x-auto -mx-3 px-3 lg:mx-0 lg:px-0 lg:flex-wrap` paterni reuse (mobile horizontal scroll, desktop wrap).
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` 0 errors (modified files specifically)
+- `npm test` 143/143 pass (yeni test gerekmez — Sparkbar pure presentational primitive)
+- Manuel: `/tr/dashboard/customers` TEK toolbar (search + 5 segment pills + range chips + restaurant select); 4-stat KPI grid; 6-col tablo (Misafir / Segment / Ziyaret / LTV / Son ziyaret / Sentiment Sparkbar); avatar bg sentiment-based; pagination "X–Y / total misafir" + page numbers + chevron icons
+- Manuel mobile (375px): stats 2-col, toolbar stacked vertical, segment pills + range chips horizontal scroll, card list intact
+- Manuel: Drawer (?detail=KEY) intact (Phase 8d §38.14)
+
+**Backlog güncel** (Bu PR sonrası):
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30 paterni)
+- 🛡️ Security follow-ups (CLAUDE.md §38.2)
+- 🟡 Mobile MobileCustomers ekranı (page-mobile-v2.jsx eksik) — kullanıcı isterse ileride
+- 🟡 Bulk action bar + Kampanya/Segmentle/Arşivle (schema + backend gerek)
+- 🟡 Advanced filter modal ("Daha fazla filtre" button) — multi-criteria filter (kanal + tarih aralığı + segment combine)
