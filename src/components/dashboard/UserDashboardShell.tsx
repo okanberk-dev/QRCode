@@ -118,7 +118,18 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
-    setExpandedGroups(loadGroupState());
+    // Phase 12 — yeni grup ID'leri (general/crm/business/settings) default
+    // expanded. Mevcut localStorage stale eski ID'leri ('feedback'/'growth')
+    // taşıyabilir; merge ile yeniler de dahil edilir, kullanıcı manuel
+    // toggle yaptığında localStorage update olur.
+    const loaded = loadGroupState();
+    setExpandedGroups({
+      general: loaded.general ?? true,
+      crm: loaded.crm ?? true,
+      business: loaded.business ?? true,
+      settings: loaded.settings ?? true,
+      ...loaded,
+    });
     const collapsed = window.localStorage.getItem('buaze.owner.sidebarCollapsed') === 'true';
     setIsCollapsed(collapsed);
   }, []);
@@ -230,31 +241,31 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   type NavGroup = { type: 'group'; id: string; icon: LucideIcon; label: string; children: NavChild[] };
   type Nav = NavItem | NavGroup;
 
+  // Phase 12 — sidebar nav full reorganize (tasarım .design-pulse-2026
+  // shell.jsx GENEL/CRM/AYARLAR paterni). 4 grup: GENEL, CRM, İŞLETME, AYARLAR.
+  // Eski grup ID'leri (feedback/growth/business) localStorage stale kalır,
+  // yeni ID'ler default expanded (useEffect migration).
   const navItems: Nav[] = [
-    { type: 'item', href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
     {
       type: 'group',
-      id: 'feedback',
-      icon: MessageSquareText,
-      label: locale === 'tr' ? 'Geri bildirim' : 'Feedback',
+      id: 'general',
+      icon: LayoutDashboard,
+      label: locale === 'tr' ? 'Genel' : 'General',
       children: [
+        { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
         { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
         { href: `/${locale}/dashboard/google-reviews`, icon: MessageSquareText, label: copy.googleReviews },
         { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-        { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
-        { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
       ],
     },
     {
       type: 'group',
-      id: 'growth',
-      icon: QrCode,
-      label: locale === 'tr' ? 'QR ve platformlar' : 'QR & platforms',
+      id: 'crm',
+      icon: UsersRound,
+      label: 'CRM',
       children: [
-        { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-        // /platforms ve /integrations aynı redirect'e (settings#integrations);
-        // tek menü item bırakıldı. Eski /platforms route'u backward-compat.
-        { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
+        { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
+        { href: `/${locale}/dashboard/leads`, icon: UsersRound, label: copy.leads },
       ],
     },
     {
@@ -263,21 +274,29 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       icon: Store,
       label: locale === 'tr' ? 'İşletme' : 'Business',
       children: [
+        { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
         { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
         { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
+        // /platforms ve /integrations aynı redirect'e (settings#integrations);
+        // tek menü item bırakıldı. Eski /platforms route'u backward-compat.
+        { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
       ],
     },
-    // /announcements sidebar item kaldırıldı — duyurular zaten dashboard
-    // üstündeki <AnnouncementBanner /> ile görünür (varsa). Sayfa direct URL
-    // ile erişilebilir + topbar breadcrumb hâlâ mapping yapıyor.
-    // /guide sadece ilk 30 gün — onboarding sonrası gereksiz.
-    ...(showGuide
-      ? [{ type: 'item' as const, href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide }]
-      : []),
-    // Unified Settings hub: Profile + Security + Notifications + Billing +
-    // Team + Legal. Per-restaurant ayarlar /restaurants/[id]/settings'te.
-    // Legacy /profile redirect'i hâlâ canlı; sidebar'da tek entry yeterli.
-    { type: 'item', href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
+    {
+      type: 'group',
+      id: 'settings',
+      icon: UserCircle,
+      label: locale === 'tr' ? 'Ayarlar' : 'Settings',
+      children: [
+        // Unified Settings hub: Profile + Security + Notifications + Billing +
+        // Team + Legal. Per-restaurant ayarlar /restaurants/[id]/settings'te.
+        { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
+        // /guide sadece ilk 30 gün — onboarding sonrası gereksiz.
+        ...(showGuide
+          ? [{ href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide }]
+          : []),
+      ],
+    },
   ];
 
   // Mobile bottom nav: 4 primary tabs + "More" sheet for the rest.
