@@ -19,6 +19,7 @@ import InteractionTrendChart, {
   type InteractionTrendPoint,
 } from '@/components/dashboard/analytics/InteractionTrendChart';
 import { HeatmapDayHour } from '@/components/dashboard/analytics/HeatmapDayHour';
+import { WeeklyTrendChart } from '@/components/dashboard/analytics/WeeklyTrendChart';
 import { extractThemes } from '@/lib/analytics-themes';
 
 // Note: InteractionTrendChart taşır 'use client' direktifini — Next.js 15
@@ -178,6 +179,7 @@ async function renderAnalyticsPage({
     scansWindowCount,
     scansPrevWindowCount,
     scansWindowDaily,
+    feedbacks98d,
   ] = await prisma.$transaction([
     // Window feedback'leri — multi-purpose select: hour bucket, aspect avg,
     // theme analysis (comment), response time (replies). Tek query
@@ -251,6 +253,14 @@ async function renderAnalyticsPage({
     prisma.qrScan.findMany({
       where: { ...scanWhere, createdAt: { gte: windowStart } },
       select: { createdAt: true },
+    }),
+    // Phase 8c+ §38.25 — 14 haftalık trend için 98 günlük rating + createdAt
+    // serisi. Range filter'dan bağımsız sabit pencere; tasarım kaynağı
+    // .design-owner-2026/page-analytics.jsx 14-week trend paterni. Schema
+    // değişikliği yok — mevcut createdAt'ten haftalık aggregate JS-side.
+    prisma.feedback.findMany({
+      where: { ...baseWhere, createdAt: { gte: new Date(now - 98 * 24 * 60 * 60 * 1000) } },
+      select: { rating: true, createdAt: true },
     }),
   ]);
 
@@ -373,6 +383,40 @@ async function renderAnalyticsPage({
       heatmapCells.push({ day: d, hour: h, count: heatmapMatrix[d][h] });
     }
   }
+
+  // ---- Phase 8c+ §38.25 — 14-haftalık trend bucket ----
+  // .design-owner-2026/page-analytics.jsx PUAN & HACİM TRENDİ paterni.
+  // Range filter'dan bağımsız sabit 98 gün penceresi (~14 hafta). Her hafta
+  // için ortalama puan + volume hesapla.
+  const WEEKS_TOTAL = 14;
+  const weekBuckets: Array<{ ratingSum: number; volume: number }> = Array.from(
+    { length: WEEKS_TOTAL },
+    () => ({ ratingSum: 0, volume: 0 }),
+  );
+  // Bugün dahil son 14 hafta — index 0 = en eski (98 gün önce), 13 = bu hafta.
+  const weekZero = new Date(now);
+  weekZero.setHours(0, 0, 0, 0);
+  // Pazartesi başlangıç (jsDay 0=Sun → 6, 1=Mon → 0)
+  const todayJsDay = weekZero.getDay();
+  const isoOffset = todayJsDay === 0 ? 6 : todayJsDay - 1;
+  weekZero.setDate(weekZero.getDate() - isoOffset); // Bu pazartesi
+  // 13 hafta öncesinin pazartesi'sine geri git
+  const trendStart = new Date(weekZero);
+  trendStart.setDate(trendStart.getDate() - 13 * 7);
+
+  for (const f of feedbacks98d) {
+    const ms = f.createdAt.getTime() - trendStart.getTime();
+    const weekIdx = Math.floor(ms / (7 * 24 * 60 * 60 * 1000));
+    if (weekIdx >= 0 && weekIdx < WEEKS_TOTAL) {
+      weekBuckets[weekIdx].ratingSum += f.rating;
+      weekBuckets[weekIdx].volume += 1;
+    }
+  }
+  const weeklyTrend = weekBuckets.map((b, i) => ({
+    label: `H${i + 1}`,
+    rating: b.volume > 0 ? Math.round((b.ratingSum / b.volume) * 100) / 100 : 0,
+    volume: b.volume,
+  }));
 
   // ---- Aspect breakdown (yemek / servis / atmosfer) ----
   // Schema'da rating'lere ek olarak 3 alt-rating var (Feedback.foodRating, vb.).
@@ -532,6 +576,13 @@ async function renderAnalyticsPage({
           deltaSuffix={windowSuffix}
         />
       </div>
+
+      {/* Phase 8c+ §38.25 — 14-haftalık puan & hacim trendi (büyük overview).
+          Range filter'dan bağımsız sabit pencere; mevcut window-day etkileşim
+          trendi (aşağıda) farklı amaca hizmet eder (günlük + range-bound). */}
+      <section className="bz-card p-5 sm:p-6">
+        <WeeklyTrendChart weeks={weeklyTrend} targetRating={4.0} isTr={isTr} />
+      </section>
 
       {/* 2-col 2fr/1fr: window-day etkileşim + Platform paylaşımı (koşullu) */}
       <div className={`grid gap-3.5 ${showPlatformShare ? 'lg:grid-cols-[2fr_1fr]' : ''}`}>
