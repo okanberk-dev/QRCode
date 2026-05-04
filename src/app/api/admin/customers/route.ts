@@ -3,14 +3,28 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import {
+  deriveCustomerFields,
+  type CustomerSegment,
+  type CustomerSentiment,
+} from '@/lib/customers';
 
 // Feedback-derived restaurant customer list. Each row = one real end-customer
 // (deduped by email or phone) across all accessible restaurants.
 // Replaces the previous SaaS-user list (which now lives only under
 // /api/admin/members).
+//
+// Phase 8c+ (CLAUDE.md §38.19): segment + LTV + sentiment + days enriched via
+// shared lib/customers.ts helper'ı (owner /api/customers ile pattern parity).
+// Pagination strategy: SQL aggregate'i max 5000 row cap'le çek, JS-side derive,
+// filter (segment), slice (page) — SQL'de segment hesaplaması duplicate
+// olmasın diye (helper drift önleme).
 
 const RANGE_PRESETS = { '7d': 7, '30d': 30, '90d': 90 } as const;
 type RangeKey = keyof typeof RANGE_PRESETS | 'all';
+
+const MAX_AGGREGATE_ROWS = 5000;
+const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal']);
 
 interface CustomerRow {
   key: string;
@@ -22,8 +36,13 @@ interface CustomerRow {
   branch: string | null;
   platform: string | null;
   lastRating: number | null;
+  avgRating: number | null;
   feedbackCount: number;
   lastAt: string;
+  segment: CustomerSegment;
+  ltv: number;
+  sentiment: CustomerSentiment;
+  daysSinceLastVisit: number | null;
 }
 
 interface AggregateRow {
@@ -36,6 +55,7 @@ interface AggregateRow {
   branch: string | null;
   platform: string | null;
   last_rating: number | null;
+  avg_rating: number | null;
   last_at: Date;
   feedback_count: bigint;
 }
@@ -135,9 +155,12 @@ export async function GET(req: NextRequest) {
   const requireEmail = toBool(searchParams.get('hasEmail'));
   const requirePhone = toBool(searchParams.get('hasPhone'));
   const requireComment = toBool(searchParams.get('hasComment'));
+  const segmentParamRaw = (searchParams.get('segment') || '').trim().toLowerCase();
+  const segmentParam = VALID_SEGMENTS.has(segmentParamRaw as CustomerSegment)
+    ? (segmentParamRaw as CustomerSegment)
+    : null;
   const page = Math.max(1, Number.parseInt(searchParams.get('page') || '1', 10) || 1);
   const limit = Math.min(200, Math.max(1, Number.parseInt(searchParams.get('limit') || '25', 10) || 25));
-  const offset = (page - 1) * limit;
 
   const { start: rangeStart } = parseRange(rangeParam);
 
@@ -157,8 +180,9 @@ export async function GET(req: NextRequest) {
   });
 
   try {
-    // Summary aggregates over the filtered set (unique customers, total feedbacks, avg rating).
-    const [summary, rows, totalRows] = await Promise.all([
+    // Phase 8c+ — fetch up to MAX_AGGREGATE_ROWS aggregate rows; JS-side derive
+    // segment/LTV/sentiment + filter + pagination (CLAUDE.md §38.19).
+    const [summary, aggregates] = await Promise.all([
       prisma.$queryRaw<SummaryRow[]>(Prisma.sql`
         SELECT
           COUNT(DISTINCT CONCAT(f.restaurant_id, '|', COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')))) AS customers,
@@ -178,6 +202,7 @@ export async function GET(req: NextRequest) {
           (ARRAY_AGG(f.branch ORDER BY f.created_at DESC) FILTER (WHERE f.branch IS NOT NULL AND f.branch <> ''))[1] AS branch,
           (ARRAY_AGG(f.platform ORDER BY f.created_at DESC) FILTER (WHERE f.platform IS NOT NULL))[1] AS platform,
           (ARRAY_AGG(f.rating ORDER BY f.created_at DESC))[1] AS last_rating,
+          AVG(f.rating)::float AS avg_rating,
           MAX(f.created_at) AS last_at,
           COUNT(*)::bigint AS feedback_count
         FROM feedback f
@@ -185,47 +210,80 @@ export async function GET(req: NextRequest) {
         WHERE ${filters}
         GROUP BY f.restaurant_id, r.name, contact_key
         ORDER BY MAX(f.created_at) DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `),
-      prisma.$queryRaw<{ total: bigint }[]>(Prisma.sql`
-        SELECT COUNT(*)::bigint AS total FROM (
-          SELECT 1
-          FROM feedback f
-          WHERE ${filters}
-          GROUP BY f.restaurant_id, COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), ''))
-        ) grouped
+        LIMIT ${MAX_AGGREGATE_ROWS}
       `),
     ]);
 
-    const total = Number(totalRows[0]?.total ?? 0);
-    const summaryRow = summary[0];
+    // Derive segment + LTV + sentiment + days for each row.
+    const now = new Date();
+    const enriched: CustomerRow[] = aggregates.map((r) => {
+      const visits = Number(r.feedback_count);
+      const avgRating = r.avg_rating;
+      const derived = deriveCustomerFields({
+        visits,
+        avgRating,
+        lastAt: r.last_at,
+        now,
+      });
+      return {
+        key: `${r.restaurant_id}|${r.contact_key}`,
+        name: r.name,
+        email: r.email,
+        phone: r.phone,
+        restaurantId: r.restaurant_id,
+        restaurantName: r.restaurant_name,
+        branch: r.branch,
+        platform: r.platform,
+        lastRating: r.last_rating,
+        avgRating,
+        feedbackCount: visits,
+        lastAt: new Date(r.last_at).toISOString(),
+        segment: derived.segment,
+        ltv: derived.ltv,
+        sentiment: derived.sentiment,
+        daysSinceLastVisit: derived.daysSinceLastVisit,
+      };
+    });
 
-    const data: CustomerRow[] = rows.map((r) => ({
-      key: `${r.restaurant_id}|${r.contact_key}`,
-      name: r.name,
-      email: r.email,
-      phone: r.phone,
-      restaurantId: r.restaurant_id,
-      restaurantName: r.restaurant_name,
-      branch: r.branch,
-      platform: r.platform,
-      lastRating: r.last_rating,
-      feedbackCount: Number(r.feedback_count),
-      lastAt: new Date(r.last_at).toISOString(),
-    }));
+    // Segment counts (filter pill labels) — pre-filter (her pill toplamı).
+    const segmentCounts = {
+      all: enriched.length,
+      vip: 0,
+      loyal: 0,
+      new: 0,
+      risk: 0,
+    };
+    for (const row of enriched) {
+      segmentCounts[row.segment] += 1;
+    }
+
+    // Apply segment filter (post-derive).
+    const filtered = segmentParam
+      ? enriched.filter((row) => row.segment === segmentParam)
+      : enriched;
+
+    // Slice for pagination.
+    const total = filtered.length;
+    const offset = (page - 1) * limit;
+    const slice = filtered.slice(offset, offset + limit);
+
+    const summaryRow = summary[0];
+    const truncated = aggregates.length >= MAX_AGGREGATE_ROWS;
 
     return NextResponse.json({
-      data,
+      data: slice,
       meta: {
         total,
         page,
         limit,
         totalPages: Math.max(1, Math.ceil(total / limit)),
+        truncated,
       },
       summary: {
         customers: Number(summaryRow?.customers ?? 0),
         feedbacks: Number(summaryRow?.feedbacks ?? 0),
         avgRating: summaryRow?.avg_rating ?? null,
+        segmentCounts,
       },
     });
   } catch (error) {

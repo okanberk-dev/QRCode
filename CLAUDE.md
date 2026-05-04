@@ -5580,5 +5580,46 @@ Sonra plan onaylanınca implement et.
 - 🟡 14-haftalık trend chart (backend weekly aggregate gerek)
 - 🟡 Heatmap Gün × Saat (backend 2D matrix gerek)
 - 🟡 Topics sentiment progress (extractThemes sentiment field extend)
-- 🟢 Admin `/customers` segment kolonu (Phase 8c helper reuse)
+- ~~Admin `/customers` segment kolonu~~ ✅ **Tamamlandı** §38.19
 - 🟢 Weekly digest mail segment context
+
+### 38.19 2026-05-04 — Admin `/customers` segment kolonu (Phase 8c helper reuse)
+
+§38.16 backlog tablosunda MED öncelikli işaretlenen iş bu PR'da kapatıldı. `lib/customers.ts` saf helper'ları (Phase 8c) admin tarafına taşındı; owner `/dashboard/customers` ile **panel parite**: aynı segment + LTV + sentiment + days enrichment, aynı filter pills, aynı CSV export sütunları.
+
+**Mimari karar (mevcut paterni reuse)**:
+- API endpoint **owner pattern'i (CLAUDE.md §38.16) kopyası** — SQL aggregate `LIMIT 5000` cap + JS-side derive + filter (segment) + slice (page). SQL'de segment hesaplaması duplicate olmasın diye; helper drift önleme.
+- Admin scope `getScopedRestaurantIds === null` (superadmin all-access) destekler — owner endpoint'inden tek farkı budur. SQL'in `scopedIds === null → IS NOT NULL` branch'i mevcut.
+- Truncated meta (`aggregates.length >= 5000`) UI'da amber `<AlertBanner kind="warn">` gösterir.
+
+**SegmentChip 4. callsite** (CLAUDE.md §7 — extraction zaten yapıldı §38.17):
+- 3 mevcut callsite (owner customers/page + drawer + dashboard) + 4. yeni admin/customers — **`@/components/customers/SegmentChip` import**, drift sıfır.
+
+**Sentiment 3. callsite — DEFER extraction**:
+- Owner customers/page.tsx `SentimentCell` (page-local server, inline)
+- Drawer `SentimentBadge` (page-local client, inline, badge variant)
+- Admin (yeni 3. yer) — `SENTIMENT_PRESENTATION` const + inline `<span>` (minimal admin variant)
+- 3 yer 3 farklı API (cell/badge/admin-inline). Şu an yeterince **görsel benzer** ama component drift riski var.
+- **Backlog**: `<SentimentBadge variant="cell|badge|inline">` extraction sonraki PR'da; 4 yere ulaşmadan önce kapatılır. Bu PR scope'tan çıkarıldı (CLAUDE.md §38.20 olarak takip edilir).
+
+**Dosyalar**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/app/api/admin/customers/route.ts` | Pagination yeniden yazıldı (LIMIT 5000 + JS-side derive + segment filter + segmentCounts + truncated meta). Helper import'lı. |
+| `src/app/api/admin/customers/export/route.ts` | 5 yeni CSV sütun (Ort Puan + Segment + LTV + Sentiment + Son Ziyaret) + `?segment=` filter. SEGMENT_LABEL + SENTIMENT_LABEL TR sabit (ops dosyası). |
+| `src/app/admin/customers/page.tsx` | (a) `useUrlFilter` segment param + tip; (b) Segment filter pills role=tablist + count badges; (c) tablo 6→9 kolon (Segment + LTV + Memnuniyet); (d) mobile card Segment+Sentiment row + LTV inline; (e) truncated banner; (f) SegmentChip 4. callsite import. |
+| `CLAUDE.md` | §38.16 backlog ✅ + §38.19 yeni log |
+
+**Yapma**:
+- Sentiment cell/badge/inline 3 yere ulaşınca extract edilebilir; bu PR'da **scope creep önleme** yaptım (admin-side inline + helper-only Phase 8c'de mevcut).
+- Admin sayfasında "İşletme" kolonunu owner pattern'i gibi drop etme — admin cross-restaurant view'da işletme adı kritik signal (drawer yok). Owner'da drawer header'da var, admin'de inline kalır.
+- Tablo `min-w-[1100px]` admin desktop için ihtiyaç (9 kolon); kaldırma. Mobile zaten card list.
+
+**Yap**:
+- Yeni admin Customer view (örn. `/admin/restaurants/[id]/customers`) açılırsa aynı pattern reuse: helper import + segment filter + LIMIT 5000.
+- SentimentBadge extraction PR'ı açıldığında bu §38.19 admin inline'ı + Phase 8c'deki 2 inline'ı tek primitive'den import etsin.
+
+**Test + verification**:
+- Yeni unit test gerekmedi (helper Phase 8c'de 28 test'le coverage'da).
+- 97/97 mevcut test pass, 0 tsc errors, 0 lint errors (sadece pre-existing 2 baseline warning, refactor scope dışı).
