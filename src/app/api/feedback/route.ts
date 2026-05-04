@@ -233,8 +233,16 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = parseInt(searchParams.get('limit') || '50', 10);
+  // Clamp page + limit so malformed query strings (e.g. ?page=abc, fuzzing,
+  // typos) do not silently corrupt pagination. parseInt('abc', 10) returns
+  // NaN; (NaN-1)*limit is NaN; Prisma `skip: NaN` is silently treated as 0
+  // and the user sees page 1 every time → duplicate rows / missed feedback.
+  // Limit is also clamped to a safe range so the inbox cannot pull a 10K row
+  // window in a single request.
+  const pageRaw = parseInt(searchParams.get('page') || '1', 10);
+  const limitRaw = parseInt(searchParams.get('limit') || '50', 10);
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
+  const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? Math.min(limitRaw, 100) : 50;
   const ratingFilter = searchParams.get('rating'); // e.g. "low" or "1"
   const daysParam = searchParams.get('days');
   const restaurantId = searchParams.get('restaurantId');

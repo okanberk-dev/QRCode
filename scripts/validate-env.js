@@ -51,6 +51,12 @@ const optional = [
   ['SUPABASE_STORAGE_BUCKET', 'careers attachment uploads return 503'],
   ['KV_REST_API_URL', 'rate limiter falls back to per-instance in-memory mode'],
   ['KV_REST_API_TOKEN', 'rate limiter falls back to per-instance in-memory mode'],
+  // Cron endpoints (/api/cron/*) reject every request with 401 when this is
+  // missing — fail-closed. That hides silently broken automation: weekly
+  // digest, lifecycle emails, platform link retest, etc. all stop without
+  // any user-facing signal. Surface it at build time so a fresh deploy
+  // notices before the first Monday cron tick.
+  ['CRON_SECRET', 'every /api/cron/* endpoint returns 401, all batch jobs (digest, lifecycle, platform-link-retest, ...) stop running'],
 ];
 
 const missing = [];

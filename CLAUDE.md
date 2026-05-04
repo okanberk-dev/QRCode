@@ -78,10 +78,13 @@ Bu dosya, gelecek AI oturumlarının (Claude veya başka) bu projeyi **doğru va
 3. **Restaurant Owner** — `User` tablosu, `role='restaurant_owner'`. Kendi restoranlarına erişim.
 
 ### IDOR koruması
-`src/lib/auth.ts` içindeki `getPanelActorFromRequest()` + `getScopedRestaurantIds()` + `canAccessRestaurant()` yardımcılarını **her yeni API route'unda** kullan. `/api/feedback/*` ve `/api/restaurants/*` için bu zorunlu.
+`getPanelActorFromRequest()` `src/lib/auth.ts`'te (auth + JWT verify); `getScopedRestaurantIds()` + `canAccessRestaurant()` `src/lib/panel-access.ts`'te (route'a bağımsız scope helper'ları). Bu üçünü **her yeni API route'unda** kullan. `/api/feedback/*` ve `/api/restaurants/*` için zorunlu.
 
 Örnek pattern (`src/app/api/feedback/stats/route.ts`'e bak):
 ```ts
+import { getPanelActorFromRequest } from '@/lib/auth';
+import { getScopedRestaurantIds } from '@/lib/panel-access';
+
 const actor = await getPanelActorFromRequest(req);
 if (!actor) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
 const scopedIds = await getScopedRestaurantIds(actor);
@@ -265,7 +268,7 @@ prisma/
 └── seed-case-studies.ts       # Case-study seed (manuel runner)
 scripts/
 ├── validate-env.js            # Build-time zorunlu env doğrulaması (§14.1)
-├── seed-mail-templates.ts     # 18 row mail template seed (§21.26)
+├── seed-mail-templates.ts     # 32 row mail template seed (16 template × 2 locale, §21.26)
 ├── seed-legal-documents.ts    # Legal metinleri DB'ye seed
 └── backfill-feedback-reply-source.ts  # FeedbackReply.source backfill (§21.20)
 tests/
@@ -1352,6 +1355,8 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 
 ### 21.12 Cron path listesi (mevcut)
 
+`vercel.json` `crons` array'inde 8 entry. Tek source-of-truth: `vercel.json`. CLAUDE.md tablosu sadece referans amaçlı — `vercel.json` değişirse bu tabloyu da güncelle.
+
 | Path | Schedule | Amaç |
 |---|---|---|
 | `/api/cron/weekly-digest` | `0 9 * * 1` | Her pazartesi 09:00 UTC — restoran sahibine haftalık özet (Pulse AI çıkarımı dahil — §21.38) |
@@ -1359,6 +1364,9 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 | `/api/cron/anonymize-ips` | `0 3 * * 0` | Her pazar 03:00 UTC — KVKK IP retention |
 | `/api/cron/monthly-newsletter` | `0 9 1 * *` | Her ayın 1'i 09:00 UTC — Pulse aylık bülten |
 | `/api/cron/trial-reminders` | `0 9 * * *` | Her gün 09:00 UTC — trial bitimine 1 ve 3 gün kalanlara hatırlatma |
+| `/api/cron/lifecycle-emails` | `0 8 * * *` | Her gün 08:00 UTC — owner lifecycle email akışı (§21.34) |
+| `/api/cron/platform-link-retest` | `0 4 * * *` | Her gün 04:00 UTC — aktif platform link'lerinin sağlık kontrolü (§19.4.4) |
+| `/api/cron/google-reviews-alert` | `0 * * * *` | Her saat — Google rating impact tracking + threshold uyarı (§37.3) |
 
 ### 21.13 Cron logic'i admin panelden tetikleme (anti-pattern: self-fetch)
 
@@ -1672,7 +1680,9 @@ Eski tarayıcı default isteklerini SVG'ye yönlendirir:
 
 **Next 16 hazırlığı**: `next lint` deprecated. ESLint CLI'a geçildi. `next/core-web-vitals` + `next/typescript` preset'leri aynen kalıyor; sadece lint runner değişti.
 
-### 21.26 DB-driven mail content (9 template — tüm Pulse mailler)
+### 21.26 DB-driven mail content (16 template — Pulse + lifecycle + ROI + verify-email)
+
+> **Sayım** (2026-05-04 audit): `src/lib/email/copy-loader.ts` `SUPPORTED_MAIL_KEYS` 16 template, `scripts/seed-mail-templates.ts` 32 row upsert (16 × 2 locale). Tarihsel olarak Phase 21.26 9 Pulse template ile başladı; 21.27-21.34 phase'leri ile lifecycle (4) + ROI (2) + verify-email (1) eklendi. Yeni template eklerken `SUPPORTED_MAIL_KEYS` + seed + bu sayıyı senkronize tut.
 
 **Schema** (`prisma/schema.prisma` `MailTemplate`):
 - `key: String` — `'welcome' | 'newsletter' | 'trial-ending'` (MVP scope)
@@ -3444,7 +3454,7 @@ Repo kökündeki `scripts/` (+ `prisma/` altındaki seed) — bir kerelik veya p
 | Dosya | Komut | Amaç |
 |---|---|---|
 | `scripts/validate-env.js` | `node scripts/validate-env.js` | Build-time zorunlu env doğrulaması — eksik env varsa exit 1. `npm run build` ilk adımı (§14.1). |
-| `scripts/seed-mail-templates.ts` | `DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts` | 18 row mail template upsert (9 template × 2 locale). Idempotent. Operator "kod default'larına dön" istediğinde de çalıştırılır (§21.26). |
+| `scripts/seed-mail-templates.ts` | `DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts` | 32 row mail template upsert (16 template × 2 locale, §21.26). Idempotent. Operator "kod default'larına dön" istediğinde de çalıştırılır. |
 | `scripts/seed-legal-documents.ts` | `DATABASE_URL=... npx tsx scripts/seed-legal-documents.ts` | KVKK / Terms / Cookie metinlerini DB'ye seed eder. Idempotent. |
 | `scripts/backfill-feedback-reply-source.ts` | `DATABASE_URL=... npx tsx scripts/backfill-feedback-reply-source.ts` | `FeedbackReply.source` NULL satırlarını `'manual'` ile doldurur. Tek seferlik, idempotent (§21.20). |
 | `prisma/seed-case-studies.ts` | `DATABASE_URL=... npx tsx prisma/seed-case-studies.ts` | Marketing case-study içeriği seed eder. Idempotent. |
@@ -4888,3 +4898,50 @@ Bu oturum'un bulguları + kalıcı kararları:
 3. **`Cache-Control: private, s-maxage=N, swr=M`** owner-scoped read endpoint'lerinde standard. Yeni read endpoint eklerken §19.3 + Görev F (PR #385) referansını incele.
 4. **Server-side `Sentry.captureException` çağrılarında flush gerekli**: PR #377-380 paterni (ya `await Sentry.flush(2000)` veya HOF wrapper). Acil task çözülmeden yeni manuel capture eklerken Vercel runtime log'a `console.error` ile lokal breadcrumb da yaz.
 5. **`Sentry.captureMessage` PII guard**: tag/extra/level structure'ı PR #383 `buildSoftPassSentryEnvelope()` paternini izle. IP, token, email, request body asla extra'da yer almaz.
+
+### 38.10 2026-05-04 — Audit follow-up bundle (deep-dive findings)
+
+Kullanıcı PR #390 sonrası "uçtan uca hata + işlevsellik kontrolü" istedi. 3 paralel Explore agent (Recent PR impact / Runtime risks / CLAUDE.md drift) ile derinlemesine sweep yapıldı; baseline temiz idi (0 TS error, 0 lint error, 69/69 test pass) ama daha derinde 4 kod drift'i + 4 dokümantasyon drift'i bulundu. Tek "audit follow-up bundle" PR'ında toplandı.
+
+**Kod fix'leri (4):**
+
+| # | Yer | Sorun | Fix |
+|---|---|---|---|
+| 1 | `src/app/api/restaurants/route.ts:368-369` (POST handler) | `primaryColor` + `notificationEmail` validation eksik. PUT'ta var (CLAUDE.md §37.2 E disiplini), POST'ta drift → security regression: malicious admin XSS-shaped color veya arbitrary email field'ı yazabilir | `isValidHexColor` + `isValidEmail` validation block'u PUT'tan kopyalandı |
+| 2 | `src/app/api/feedback/route.ts:236-237` (GET handler) | `parseInt('abc') → NaN`; `(NaN-1)*limit → NaN`; Prisma `skip: NaN` → silent 0 → **page 1 her zaman dönüyor** → kullanıcı duplicate feedback görür / kayıp data | `Number.isFinite(...) && > 0` clamp + `Math.min(limit, 100)` upper bound |
+| 3 | `sentry.server.config.ts` + `sentry.edge.config.ts` | CLAUDE.md §26.2 kanonik `replaysSessionSampleRate: 0`, server/edge config'de yok. Sentry replay browser-only feature olduğu için no-op ama defansif declaration | Her iki config'e `replaysSessionSampleRate: 0` ekle (no-op, future-proof) |
+| 4 | `scripts/validate-env.js` | `CRON_SECRET` validate-env'da yok. Operatör Vercel'de unutursa **8 cron endpoint'i silent 401** → weekly digest, lifecycle email, platform link retest, hepsi sessizce durur, kullanıcıya görünür sinyal yok | Optional listeye eklendi (warning, not exit-1) — fresh deploy'da operatöre uyarı verir |
+
+**Dokümantasyon güncellemeleri (4):**
+
+| # | CLAUDE.md section | Drift | Düzeltme |
+|---|---|---|---|
+| 1 | §4 (IDOR koruması) | Helper'ların `auth.ts`'te olduğu yazıyor; gerçekte `getScopedRestaurantIds` + `canAccessRestaurant` `panel-access.ts`'te | Helper path'leri ayrıştırıldı, import örneği güncellendi |
+| 2 | §21.12 (Cron path listesi) | 5 cron listeleniyor; vercel.json'da 8 var. Eksik: `lifecycle-emails`, `platform-link-retest`, `google-reviews-alert` | 3 entry eklendi + "tek source-of-truth: vercel.json" notu |
+| 3 | §21.26 (Mail template başlığı) | "9 template — tüm Pulse mailler" yazıyor; gerçekte 16 template (`SUPPORTED_MAIL_KEYS`: 9 Pulse + 4 lifecycle + 2 ROI + 1 verify-email) | Başlık → "16 template — Pulse + lifecycle + ROI + verify-email" + 2026-05-04 audit notu |
+| 4 | Dosya envanteri (line 271) + scripts tablosu (line 3457) | "18 row mail template seed" stale | "32 row (16 × 2 locale)" güncellendi |
+
+**False positive elenenler** (rapor edildi ama doğrulamada gerçek bug değil):
+- `daysParam` clamp: kod zaten `Number.isFinite && > 0` kontrol ediyor
+- `OPS_DIGEST_SUMMARY_EMAIL` validation weak: kod fail-closed (line 38-40 `!recipient` → 500)
+- Resend fallback silent fail chain: CLAUDE.md §21.33 by design
+- `OPS_EMAIL` dead code: `src/lib/email/ops-alert.ts:43` aktif kullanıyor
+
+**Yapma:**
+- POST + PUT validation paritesini bozma — yeni alan eklerken her iki handler'a da aynı gate (Zod ile yapacaksan §28.3 `.strict()` zorunlu)
+- `parseInt(...)` doğrudan pagination param'lara — `Math.max(1, Number.isFinite(...) ? ... : 1)` clamp pattern'i kullan
+- Sentry replay config'lerini ayrıştırma — server/edge/client üçü de `replaysSessionSampleRate: 0` (browser-only feature olsa bile defansif tutarlılık)
+- `CRON_SECRET`'i required listeye taşıma — cron kullanmayan kişisel deploy'lar etkilenir (warning yeterli)
+
+**Yap:**
+- Yeni cron eklerken `vercel.json` + §21.12 tablosu birlikte güncelle (tek source-of-truth disiplini)
+- Yeni mail template eklerken `SUPPORTED_MAIL_KEYS` + `seed-mail-templates.ts` + §21.26 sayım birlikte güncelle (16 → 17, 32 → 34, vb.)
+- Yeni POST endpoint'inde validation gate'leri PUT ile parite tut — §37.2 E
+
+**Audit metodu (referans, gelecek session için):**
+1. Lokal baseline (tsc + lint + test) — yeşilse "yüzeysel temiz" olduğunu doğrula, derinleşmek için agent kullan
+2. 3 paralel Explore agent (recent PR impact / runtime risks / CLAUDE.md drift) — paralel çağır, sonuçları topluca triage'la
+3. Her agent finding'ini manuel doğrula — agent yer/öncelik veriyor ama context dışı yorumlar olabilir (false positive yaygın)
+4. Bulguları kategorize et: HIGH (production risk) / MEDIUM (operasyonel) / LOW (cosmetic) / FALSE POSITIVE
+5. Tek "audit fix bundle" PR'ı — multiple PR yerine tek narrative ile gönderilmesi audit context'ini korur
+6. CLAUDE.md güncellemesi son adım — değişiklik yaparsan §38'e yeni alt-section ekle
