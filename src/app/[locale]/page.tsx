@@ -8,7 +8,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
 import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
-import { BarChart3, ChevronDown, Inbox, MessageCircleQuestion, QrCode, Sparkles, Star } from 'lucide-react';
+import { ArrowUpRight, BarChart3, ChevronDown, Inbox, MessageCircleQuestion, QrCode, Sparkles, Star } from 'lucide-react';
 import MarqueeRow from '@/components/marketing/MarqueeRow';
 import HomeHero from '@/components/marketing/HomeHero';
 import { getTranslations } from '@/lib/translations';
@@ -1051,7 +1051,7 @@ export default async function LandingPage({
             <MessageCircleQuestion size={14} strokeWidth={2.2} aria-hidden />
             {isTr ? 'KISACA BUAZE' : 'BUAZE IN BRIEF'}
           </span>
-          <h2 className="mt-3 text-[26px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A] sm:text-[36px] lg:text-[44px]">
+          <h2 className="mt-3 text-[26px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A] sm:text-[40px] lg:text-[46px]">
             {isTr
               ? 'En çok sorulan beş soruya net cevaplar'
               : 'Five common questions, answered directly'}
@@ -1073,13 +1073,13 @@ export default async function LandingPage({
                 className="group py-5 transition-colors sm:py-6 [&[open]]:bg-white"
                 open={idx < 2}
               >
-                <summary className="flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 text-left text-[16px] font-semibold leading-[1.4] text-[#0A0A0A] sm:text-[17px] [&::-webkit-details-marker]:hidden">
+                <summary className="flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 text-left text-[16px] font-medium leading-[1.4] text-[#0A0A0A] sm:text-[17px] [&::-webkit-details-marker]:hidden">
                   <span className="flex-1">{f.q}</span>
                   <ChevronDown
-                    size={20}
+                    size={18}
                     strokeWidth={2.2}
                     aria-hidden
-                    className="mt-0.5 shrink-0 text-[#737373] transition-transform duration-200 group-open:rotate-180 group-open:text-[#0A0A0A] motion-reduce:transition-none"
+                    className="mt-1 shrink-0 text-[#737373] transition-transform duration-200 group-open:rotate-180 group-open:text-[#0A0A0A] motion-reduce:transition-none"
                   />
                 </summary>
                 <p className="mt-3 text-[14px] leading-[1.7] text-[#525252] sm:text-[15px]">
@@ -1089,31 +1089,20 @@ export default async function LandingPage({
             ))}
           </div>
 
-          <p className="mt-10 text-[13px] leading-[1.55] text-[#737373]">
-            {isTr ? (
-              <>
-                Daha ayrıntılı politika açıklaması:{' '}
-                <Link
-                  href={`${base}/google-compliance`}
-                  className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
-                >
-                  Google uyumluluk sayfası
-                </Link>
-                . Yorum yanıt taslakları + KVKK ayrıntıları orada.
-              </>
-            ) : (
-              <>
-                For the full policy statement, see the{' '}
-                <Link
-                  href={`${base}/google-compliance`}
-                  className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
-                >
-                  Google compliance page
-                </Link>
-                . Reply drafts + KVKK details are documented there.
-              </>
-            )}
-          </p>
+          <div className="mt-10 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-[13px] leading-[1.55] text-[#737373]">
+              {isTr
+                ? 'Yorum yanıt taslakları + KVKK ayrıntıları için tam politika sayfası.'
+                : 'Full policy page with reply drafts + KVKK details.'}
+            </p>
+            <Link
+              href={`${base}/google-compliance`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:border-[#0A0A0A] hover:bg-[#FAFAFA]"
+            >
+              {isTr ? 'Google uyumluluk sayfası' : 'Google compliance page'}
+              <ArrowUpRight size={14} strokeWidth={2.2} aria-hidden />
+            </Link>
+          </div>
         </div>
       </section>
 
