@@ -1,12 +1,9 @@
 import { NextResponse, after } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 
-// Hypothesis (c) — explicit Node.js runtime declaration. Verifies the
-// instrumentation 'nodejs' branch in `instrumentation.ts:register()` is
-// actually loaded for this route. CLAUDE.md §38.8 documents the suspected
-// runtime mix as one of four hypotheses. Setting this explicitly removes
-// any ambiguity Vercel might introduce when a route is implicitly edge or
-// node based on imports.
+// Explicit Node.js runtime — verifies the instrumentation 'nodejs' branch in
+// `instrumentation.ts:register()` is loaded for this route. Removes ambiguity
+// Vercel might introduce when a route is implicitly edge or node based on imports.
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -15,33 +12,31 @@ export const dynamic = 'force-dynamic';
 // dashboard. Disabled in production by default — set ENABLE_SENTRY_TEST=1
 // if you need to test prod, then unset after verification.
 //
-// CLAUDE.md §38.8 deep-dive context:
+// CLAUDE.md §38.8/§38.9 deep-dive context:
 //
 // PR #377-380 sequence proved that `await Sentry.flush(N)` does not work on
 // Vercel Node runtime: 4 deploy iterations, every flush returned `false`,
 // no envelope reached Sentry even when `captureException` returned a real
 // event id. PR #389 then proved this with live production data — a Prisma
-// outage produced 12 server-side 500s and 0 Sentry events.
+// outage produced 12 server-side 500s and 0 Sentry events. PR #390 wrapped
+// the flush in Next.js 15 `after()` (Vercel waitUntil) — eventId returned
+// (`5de5663e...`) but Sentry still received nothing.
 //
-// Root cause (research, this PR): Sentry's internal `vercelWaitUntil`
-// helper from `@sentry/core` only works in the Edge Runtime. In Node
-// runtime it returns early and the SDK relies on `process.on('SIGTERM')`
-// for the envelope POST to drain — but Vercel does not always send SIGTERM
-// to Node functions before tear-down. So both `await Sentry.flush()` AND
-// the auto-flush inside `Sentry.captureRequestError` (the `onRequestError`
-// hook in `instrumentation.ts`) drop envelopes silently on Node.
+// This PR (diagnostic visibility): swap `process.stderr.write` breadcrumbs
+// for `console.error`. Vercel runtime log API collapses all of a request's
+// `stderr` writes into a single preview row, which made the `after()`
+// diagnostic blind — we could not tell whether the callback ran or what
+// `flush()` returned. `console.error` is captured as separate `level=error`
+// rows (proven empirically: `[recaptcha] assessment api ...` warn lines
+// appear as standalone rows in Vercel runtime logs while our 4 stderr
+// breadcrumbs from the same request collapsed to 1 row). Once visibility
+// is restored we can finally observe the after()/flush() behaviour and
+// pick the next hypothesis.
 //
-// Fix tested here: schedule the flush via Next.js 15's `after()` helper,
-// which wires into Vercel's `waitUntil()` primitive (GA for Node runtime
-// since May 2024). The serverless function stays alive until the after()
-// callback resolves, even after the response is returned.
-//
-// Diagnostic add-ons in this PR:
-//   - process.stderr.write breadcrumbs verify the handler reached each
-//     stage even if `console.*` output is filtered by Vercel runtime logs
-//     (Hypothesis b in §38.8).
-//   - Response payload echoes runtime + flush pattern so an ops engineer
-//     can see at a glance which code path ran in production.
+// We also log a fingerprint of the configured DSN (host + project id only,
+// never the public key or secret) so we can prove which Sentry project the
+// envelope is being shipped to. This rules out the "wrong DSN routes to a
+// project we have no visibility into" hypothesis.
 export async function GET() {
   if (process.env.NODE_ENV === 'production' && process.env.ENABLE_SENTRY_TEST !== '1') {
     return NextResponse.json(
@@ -50,12 +45,10 @@ export async function GET() {
     );
   }
 
-  // Hypothesis (b) — direct stderr write. `console.error` / `console.log`
-  // are sometimes dropped by Vercel runtime log capture; `process.stderr`
-  // is captured reliably. These breadcrumbs let us correlate the request
-  // with what the handler actually did even if Sentry never sees it.
-  process.stderr.write(
-    `[sentry-smoketest] handler entered, NEXT_RUNTIME=${process.env.NEXT_RUNTIME ?? 'unset'}, VERCEL=${process.env.VERCEL ?? 'unset'}\n`,
+  const dsnFingerprint = describeDsn(process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN);
+
+  console.error(
+    `[sentry-smoketest] handler entered NEXT_RUNTIME=${process.env.NEXT_RUNTIME ?? 'unset'} VERCEL=${process.env.VERCEL ?? 'unset'} dsn=${dsnFingerprint}`,
   );
 
   Sentry.setTag('sentry.smoketest', 'true');
@@ -65,25 +58,21 @@ export async function GET() {
     new Error('[Sentry smoke test] Synthetic error from /api/sentry-test — diagnostic flush via after()'),
   );
 
-  process.stderr.write(`[sentry-smoketest] captureException returned eventId=${eventId ?? 'undefined'}\n`);
+  console.error(`[sentry-smoketest] captureException returned eventId=${eventId ?? 'undefined'}`);
 
-  // Hypothesis (a) — schedule the flush via Next.js `after()`. This runs
-  // the callback after the response is returned, but Vercel keeps the
-  // function alive (via waitUntil) until the callback resolves. In
-  // self-hosted environments without a waitUntil context, `after()` falls
-  // back to running the callback inline — still safe, just blocks the
-  // response. On Vercel Node runtime this is the documented canonical
-  // pattern (Vercel + Next.js docs both recommend after() for post-
-  // response work as of Next 15.1).
+  // Schedule the flush via Next.js `after()`. The callback runs after the
+  // response is returned; on Vercel Node runtime the function stays alive
+  // via `waitUntil()` until the callback resolves. Self-hosted environments
+  // without a waitUntil context fall back to running the callback inline.
   after(async () => {
-    process.stderr.write('[sentry-smoketest] after() callback running, calling flush(2000)\n');
+    console.error('[sentry-smoketest] after() callback running, calling flush(2000)');
     let flushed = false;
     try {
       flushed = await Sentry.flush(2000);
     } catch (err) {
-      process.stderr.write(`[sentry-smoketest] flush threw: ${String(err)}\n`);
+      console.error(`[sentry-smoketest] flush threw: ${String(err)}`);
     }
-    process.stderr.write(`[sentry-smoketest] flush completed, result=${flushed}\n`);
+    console.error(`[sentry-smoketest] flush completed result=${flushed}`);
   });
 
   return NextResponse.json(
@@ -92,9 +81,24 @@ export async function GET() {
       eventId,
       runtime: process.env.NEXT_RUNTIME ?? 'unset',
       vercel: process.env.VERCEL === '1',
+      dsn: dsnFingerprint,
       flushPattern: 'after()-wrapped',
-      note: 'Flush scheduled via Next.js 15 after(). Check Sentry dashboard within 30s.',
+      note: 'Flush scheduled via Next.js 15 after(). Check Vercel runtime logs for the 4 console.error breadcrumbs; check Sentry dashboard within 30s.',
     },
     { status: 500 },
   );
+}
+
+// Returns a non-secret DSN fingerprint suitable for log output: host plus
+// project id only. Sentry DSNs follow `https://<publicKey>@<host>/<projectId>`;
+// we strip the public key (auth-bearing) and never expose the URL whole.
+function describeDsn(raw: string | undefined): string {
+  if (!raw) return 'unset';
+  try {
+    const url = new URL(raw);
+    const projectId = url.pathname.replace(/^\//, '') || 'unknown';
+    return `${url.host}/${projectId}`;
+  } catch {
+    return 'invalid';
+  }
 }
