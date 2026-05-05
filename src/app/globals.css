@@ -21,41 +21,25 @@
   --color-brand-n800: #1A1A1A;
   --color-brand-n900: #0A0A0A;
 
-  /* Semantic aliases */
-  --color-primary-50: #EAF9B8;
-  --color-primary-100: #D7F98E;
-  --color-primary-500: #C6F24E;
-  --color-primary-600: #A8D62E;
-  --color-primary-700: #0A0A0A;
-
-  --color-accent-400: #D7F98E;
-  --color-accent-500: #C6F24E;
-
+  /* Semantic surface tokens — kullanım: :root background-color
+   * + body bg ve layout.tsx Tailwind arbitrary `[var(--color-*)]`. */
   --color-background: #FFFFFF;
   --color-surface: #FFFFFF;
-
   --color-text-main: #0A0A0A;
   --color-text-muted: #525252;
   --color-text-light: #737373;
 
-  --color-success: #16A34A;
-  --color-error: #DC2626;
-
-  /* Legacy aliases — eski tokenlara referans veren kod için */
-  --color-brand-ink: #000000;
-  --color-brand-navy: #0A0A0A;
-  --color-brand-slate: #1A1A1A;
-  --color-brand-gold: #C6F24E;
-  --color-brand-amber: #D7F98E;
-  --color-brand-ivory: #FFFFFF;
-  --color-brand-cloud: #EDEDED;
-  --color-brand-orange: #C6F24E;
-  --color-brand-dark: #0A0A0A;
-  --color-brand-navy-legacy: #0A0A0A;
-  --color-brand-mist: #FFFFFF;
-  --color-brand-gray: #EDEDED;
-  --color-brand-primary: #C6F24E;
-  --color-brand-accent: #C6F24E;
+  /* CSS Performance §38.60 — silinmiş semantic + legacy alias'lar (0 callsite):
+   *   --color-primary-50/100/500/600/700, --color-accent-400/500
+   *   --color-success, --color-error
+   *   --color-brand-{ink,navy,slate,gold,amber,ivory,cloud,orange,dark,
+   *     navy-legacy,mist,gray,primary,accent}
+   * = 23 token. CLAUDE.md §11 "legacy aliases — geriye dönük uyumluluk
+   * için var ama yeni kod Pulse token'larını kullanmalı". Codebase inline
+   * hex kullanıyor (`bg-[#0A0A0A]`, `text-[#C6F24E]` etc), Tailwind v4 JIT
+   * unused token'ları zaten output'a yazmıyor, ama @theme bloğu source
+   * temizliği için sadeleştirildi. Geri eklemek için: önce 3+ callsite
+   * doğrula, sonra Pulse paletinden hex değer ata (CLAUDE.md §7). */
 
   /* Font stack — Pulse: Space Grotesk (display), Inter (body), JetBrains Mono (mono) */
   --font-body: var(--font-inter), system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -138,38 +122,10 @@ body {
   box-shadow: 0 12px 28px -22px rgba(10, 10, 10, 0.3);
 }
 
-.pulse-dark-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: 999px;
-  background: linear-gradient(145deg, #0a0a0a 0%, #171717 100%);
-  border: 1px solid rgba(198, 242, 78, 0.2);
-  color: #eaf9b8;
-  box-shadow:
-    0 18px 36px -24px rgba(10, 10, 10, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.pulse-star-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.24rem;
-  min-height: 2rem;
-  padding: 0.42rem 0.78rem;
-  border-radius: 999px;
-  background: linear-gradient(145deg, #0a0a0a 0%, #181818 100%);
-  border: 1px solid rgba(198, 242, 78, 0.18);
-  color: #c6f24e;
-  box-shadow:
-    0 18px 36px -24px rgba(10, 10, 10, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.pulse-star-pill svg,
-.pulse-star-pill [data-star='true'] {
-  filter: drop-shadow(0 0 6px rgba(198, 242, 78, 0.18));
-}
+/* CSS Performance §38.60 — `.pulse-dark-badge` ve `.pulse-star-pill`
+ * (32 satır, eski neo-brutalist, 2026-04 Pulse redesign'da değiştirildi)
+ * 0 callsite ile silindi. Geri eklenirse: <span> elementine inline
+ * Tailwind ile aynı görsel kompozisyonu yap (lime + graphite + shadow). */
 
 .pulse-icon-badge {
   display: inline-flex;
@@ -829,7 +785,7 @@ input::-webkit-inner-spin-button {
 }
 .bz-table tr:last-child td { border-bottom: 0; }
 .bz-table tbody tr:hover td { background: rgba(250,250,250,0.6); }
-.bz-table--compact td { padding: 9px 14px; }
+/* CSS Performance §38.60 — `.bz-table--compact` modifier silindi (0 callsite). */
 
 /* §38.46 — Standalone hover variant (buaze.css token paterni). bz-table-tbody-hover
    ile birlikte kullanılan utility; bz-table parent'ı olmadan tr satırlarına
@@ -1011,18 +967,9 @@ input::-webkit-inner-spin-button {
   display: flex;
   align-items: center;
 }
-.bz-side-section--mini {
-  justify-content: center;
-  padding: 10px 0 4px;
-  font-size: 0; /* visually collapse label, keep box for spacing rhythm */
-}
-.bz-side-section--mini::before {
-  content: '';
-  width: 16px;
-  height: 1px;
-  background: #EDEDED;
-  display: block;
-}
+/* CSS Performance §38.60 — `.bz-side-section--mini` collapsed-mode variant
+ * silindi (0 callsite — UserDashboardShell `!isCollapsed && (...)` inline
+ * conditional kullanıyor; CSS variant gerekmiyor). */
 
 /* Sidebar nav item — supports default + collapsed (mini) + active states. */
 .bz-side-item {
@@ -1085,47 +1032,10 @@ input::-webkit-inner-spin-button {
   border-radius: 0 2px 2px 0;
 }
 
-/* Mini (collapsed) variant — icon-only, centered, hover tooltip. */
-.bz-side-item--mini {
-  justify-content: center;
-  padding: 10px 0;
-  width: 52px;
-  margin: 0 auto;
-}
-.bz-side-item--mini .label,
-.bz-side-item--mini .count,
-.bz-side-item--mini .badge-new {
-  display: none;
-}
-.bz-side-item--mini.active::before {
-  left: -8px;
-  top: 6px;
-  bottom: 6px;
-}
-
-/* Tooltip — appears on hover/focus when sidebar is collapsed. */
-.bz-side-tip {
-  position: absolute;
-  left: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%);
-  background: #0A0A0A;
-  color: #FFFFFF;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 10px;
-  border-radius: 6px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 120ms ease;
-  z-index: 100;
-  box-shadow: 0 4px 12px rgba(10, 10, 10, 0.16);
-}
-.bz-side-item--mini:hover .bz-side-tip,
-.bz-side-item--mini:focus-visible .bz-side-tip {
-  opacity: 1;
-}
+/* CSS Performance §38.60 — `.bz-side-item--mini` + `.bz-side-tip` (collapsed
+ * mode tooltip) silindi (0 callsite — UserDashboardShell.tsx `!isCollapsed &&
+ * (...)` inline conditional + ikon-only render kullanıyor; CSS variant
+ * gerekmiyor). `.bz-side-cta--mini` aktif (line 445), korundu. */
 
 /* Sidebar primary CTA (Yeni Yorum İste / Request review). */
 .bz-side-cta {
@@ -1232,33 +1142,11 @@ input::-webkit-inner-spin-button {
   box-shadow: 0 0 0 2px rgba(198, 242, 78, 0.6);
 }
 
-/* Mobile drawer (slide-in from left, coexists with bottom nav). */
-.bz-mob-drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 10, 10, 0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 60;
-  animation: bz-fade-in 180ms ease both;
-}
-.bz-mob-drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: min(82vw, 320px);
-  background: #FFFFFF;
-  z-index: 61;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 8px 32px rgba(10, 10, 10, 0.18);
-  animation: bz-drawer-slide-in 220ms cubic-bezier(0.4, 0, 0.2, 1) both;
-}
-@keyframes bz-drawer-slide-in {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
+/* CSS Performance §38.60 — `.bz-mob-drawer-overlay`, `.bz-mob-drawer`,
+ * @keyframes bz-drawer-slide-in (toplam ~28 satır + 1 keyframe) silindi.
+ * 0 className callsite — UserDashboardShell mobile drawer inline Tailwind
+ * (`fixed inset-y-0 left-0 ...` + transition utilities) ile yapılıyor.
+ * Sadece JSDoc yorumu referans veriyordu. */
 
 @media (prefers-reduced-motion: reduce) {
   /* Pulse panel + marketing animations all disabled when the user prefers
@@ -1284,10 +1172,6 @@ input::-webkit-inner-spin-button {
   .animate-pulse,
   .animate-bounce,
   .animate-ping,
-  .bz-mob-drawer,
-  .bz-mob-drawer-overlay,
-  .bz-drawer,
-  .bz-drawer-overlay,
   [class*="animate-in"] {
     animation: none !important;
   }
@@ -1300,65 +1184,22 @@ input::-webkit-inner-spin-button {
   }
 }
 
-/* ═════════════════════════════════════════════════════════════════════════
- * §38.58 — tokens.css port: tasarım birebir parity (eksik 17 class)
- * Kaynak: /Users/okanberkmanavoglu/Downloads/a/tokens.css
- * SKIP: bz-row/bz-col/bz-grow (Tailwind redundant, CLAUDE.md §7).
- * ═════════════════════════════════════════════════════════════════════════ */
-
-/* Type helpers — bz-eyebrow alias mevcut pulse-eyebrow ile aynı style */
-.bz-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 500; color: #737373; }
-.bz-tnum { font-variant-numeric: tabular-nums; }
-
-/* Avatar variants — base .bz-avatar mevcut (line 825), variants tasarımdan port */
-.bz-avatar--lg { width: 48px; height: 48px; font-size: 16px; border-radius: 12px; }
-.bz-avatar--xl { width: 64px; height: 64px; font-size: 22px; border-radius: 14px; }
-.bz-avatar--soft { background: #EAF9B8; color: #0A0A0A; }
-
-/* KPI block — mevcut StatCard primitive ile uyumlu, opsiyonel inline kullanım */
-.bz-kpi { display: flex; flex-direction: column; gap: 8px; }
-.bz-kpi-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #737373; font-weight: 500; }
-.bz-kpi-value { font-family: var(--font-heading); font-size: 32px; letter-spacing: -0.03em; font-weight: 500; color: #0A0A0A; font-variant-numeric: tabular-nums; line-height: 1; }
-.bz-kpi-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.bz-kpi-delta.up { color: #16A34A; }
-.bz-kpi-delta.down { color: #DC2626; }
-.bz-kpi-delta.flat { color: #737373; }
-
-/* Filter / range chip — graphite active state (PulseRangeToggle kullanır) */
-.bz-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: #FAFAFA; border: 1px solid #EDEDED; font-size: 12px; font-weight: 500; color: #333333; cursor: pointer; transition: background-color 120ms, border-color 120ms; }
-.bz-chip:hover { background: #F2F2F2; }
-.bz-chip.active { background: #0A0A0A; color: #FFFFFF; border-color: #0A0A0A; }
-
-/* Stars — 5★ display, #FACC15 yellow (StarRow primitive lime kullanır, drift kabul) */
-.bz-stars { display: inline-flex; gap: 2px; color: #FACC15; }
-.bz-stars--mute { color: #D4D4D4; }
-
-/* Sparkline path */
-.bz-spark { stroke: #0A0A0A; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.bz-spark-fill { fill: #EAF9B8; }
-
-/* Subtle scrollbar (panel scroll containers için) */
-.bz-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-.bz-scroll::-webkit-scrollbar-thumb { background: #EDEDED; border-radius: 4px; }
-.bz-scroll::-webkit-scrollbar-thumb:hover { background: #D4D4D4; }
-
-/* Bottom nav (mobile) — MobileBottomNav opsiyonel refactor için tokenlar */
-.bz-bottomnav { display: flex; align-items: stretch; background: #FFFFFF; border-top: 1px solid #EDEDED; padding: 6px 6px max(6px, env(safe-area-inset-bottom)); gap: 2px; }
-.bz-bottomnav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; font-size: 10px; font-weight: 500; color: #737373; border-radius: 10px; cursor: pointer; position: relative; }
-.bz-bottomnav-item.active { color: #0A0A0A; font-weight: 600; }
-.bz-bottomnav-item.active::before { content: ""; position: absolute; top: 0; left: 25%; right: 25%; height: 2px; background: #0A0A0A; border-radius: 0 0 2px 2px; }
-.bz-bottomnav-item .badge-tip { position: absolute; top: 4px; right: calc(50% - 18px); background: #DC2626; color: #FFFFFF; font-family: var(--font-mono); font-size: 9px; font-weight: 600; border-radius: 999px; padding: 1px 5px; border: 2px solid #FFFFFF; min-width: 16px; text-align: center; letter-spacing: -0.02em; }
-
-/* Drawer — kanonik isim (mevcut bz-mob-drawer/-overlay alias) */
-.bz-drawer { position: absolute; top: 0; bottom: 0; left: 0; width: 280px; background: #FFFFFF; z-index: 41; box-shadow: 4px 0 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; }
-.bz-drawer-overlay { position: absolute; inset: 0; background: rgba(10,10,10,0.55); backdrop-filter: blur(2px); z-index: 40; }
-
-/* Util — text helpers + lime underline link + canvas frame */
-.bz-link { color: #0A0A0A; text-decoration: underline; text-decoration-color: #C6F24E; text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.bz-muted { color: #737373; }
-.bz-text-mute { color: #A3A3A3; }
-.bz-text-strong { color: #0A0A0A; font-weight: 600; }
-.bz-frame { background: #FFFFFF; color: #0A0A0A; font-family: var(--font-body); }
+/* CSS Performance §38.60 — §38.58 "tokens.css port" 17 class 0 callsite
+ * ile silindi (~63 satır). Bu class'lar `.design-owner-2026/tokens.css`
+ * kaynağından kopyalanmıştı; ancak production'da hiçbiri kullanılmadı.
+ * Eşdeğerleri:
+ *   - bz-eyebrow / bz-tnum  → mevcut .pulse-eyebrow / Tailwind tabular-nums
+ *   - bz-avatar--lg/xl/soft → Avatar primitive size/color prop
+ *   - bz-kpi*               → <StatCard> primitive (CLAUDE.md §23.3)
+ *   - bz-chip               → PulseRangeToggle inline Tailwind
+ *   - bz-stars*             → <StarRow> primitive
+ *   - bz-spark*             → <Sparkline> primitive (custom inline SVG)
+ *   - bz-bottomnav*         → MobileBottomNav inline Tailwind
+ *   - bz-drawer / bz-drawer-overlay → bz-mob-drawer / bz-mob-drawer-overlay
+ *   - bz-link/muted/text-mute/text-strong/frame → mevcut Tailwind ile yapılır
+ *   - bz-scroll             → 0 callsite, dökümante edilmemiş
+ * Yeniden ihtiyaç olursa: önce 3+ callsite varlığını doğrula (CLAUDE.md §7
+ * abstraction kaçınma); aksi halde inline Tailwind tercih et. */
 
 /* ─── ROI calculator slider polish ─────────────────────────────────────────
    Native input[type=range] thumb default ~14px — mobilde dokunma için yetersiz.

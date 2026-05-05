@@ -18,9 +18,15 @@ const spaceGrotesk = Space_Grotesk({
   variable: '--font-space-grotesk',
 });
 
+// CSS Performance §38.60 — Inter weight 900 kaldırıldı (0 callsite kaldı,
+// `menu/[slug]/not-found` `font-black` → `font-semibold`'e çekildi).
+// CLAUDE.md §11 paterni: "Aşırı `font-black` kullanımından kaçının."
+// Latin subset 1 weight ≈ ~15-25KB woff2 — repeat-view + cold start tasarrufu.
+// Weight 800 korundu: MenuSplash hero (user-facing) + homepage 100px ghost
+// number decorative — gözle görülür ağırlık farkı yaratıyor.
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800', '900'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
   variable: '--font-inter',
 });

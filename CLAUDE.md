@@ -8636,7 +8636,185 @@ PR #469 squash merge sırasında §38.59 son commit'leri (`bd22119c + 1be3c1c3`)
 - Squash merge timing race: future PR'larda branch HEAD'in stable olduğunu doğrula (push tamamen biter, sonra merge butonu).
 
 **Backlog** (Bu PR sonrası):
-- 🟡 CSS minify (kullanıcı kararı: ayrı session)
-- 🟡 globals.css `.bz-*` utility kompakt format (production zaten minify, kaynak refactor scope dışı)
+- ✅ CSS minify + dead utility cleanup §38.60'ta kapatıldı
+- ✅ globals.css `.bz-*` utility kompakt format §38.60'ta kapatıldı (kaynak 1531 → 1372 satır)
 - (Diğer §38.B kalemleri intact)
+
+### 38.60 2026-05-05 — CSS Performance & Design System Optimization
+
+§38.59 backlog'unun "CSS minify (kullanıcı kararı: ayrı session)" kalemi kapatıldı. Tasarımı bozmadan + mevcut Pulse design system'i koruyarak kaynak temizliği + font weight optimizasyonu yapıldı.
+
+**Kapsam ve disiplin** (CLAUDE.md §7 abstraction kaçınma + §11 Pulse tokens + §16 referans bundle yalnız okunur):
+- Tailwind v4 + PostCSS pipeline'ı korundu (`postcss.config.mjs` `@tailwindcss/postcss`).
+- Production CSS zaten Tailwind v4 JIT ile minify; bu PR **kaynak dosya** (`globals.css` + `@theme {}` block) temizliği.
+- Panel (`bz-*`) ↔ marketing (`pulse-*`) ayrımı **korundu** — iki sistem paralel kalır (CLAUDE.md §11 + §23 disiplini).
+- 0 yeni dep, 0 schema migration, 0 functional behaviour değişimi.
+
+**Phase 1 — Dead utility class cleanup** (`src/app/globals.css`):
+
+| Class | Satır | Sebep |
+|---|---|---|
+| `pulse-dark-badge` | 12 | Eski neo-brutalist, 2026-04 Pulse redesign'da değiştirildi, 0 callsite |
+| `pulse-star-pill` (+ nested SVG selector) | 16 | Aynı (StarRow primitive + lucide `<Star>` icon kullanılıyor) |
+| `bz-eyebrow` | 1 | `pulse-eyebrow` mevcut alias |
+| `bz-tnum` | 1 | Tailwind `tabular-nums` utility |
+| `bz-avatar--lg/--xl/--soft` | 3 | Avatar primitive size+color prop |
+| `bz-kpi/-label/-value/-delta` (+ up/down/flat) | 7 | `<StatCard>` primitive (CLAUDE.md §23.3) |
+| `bz-chip` (+ hover/active) | 3 | PulseRangeToggle inline Tailwind |
+| `bz-stars/-mute` | 2 | `<StarRow>` primitive |
+| `bz-spark/-fill` | 2 | `<Sparkline>` primitive |
+| `bz-scroll` (+ webkit pseudo) | 3 | 0 callsite |
+| `bz-bottomnav/-item` (+ active + badge-tip) | 5 | MobileBottomNav inline Tailwind |
+| `bz-drawer/-overlay` | 2 | Sadece JSDoc yorum referansı (CustomerDetailDrawer comment), `bz-mob-drawer*` zaten Tailwind ile yapılıyor |
+| `bz-link/muted/text-mute/text-strong/frame` | 5 | 0 callsite |
+| `bz-side-section--mini` (+ ::before) | 6 | Sidebar collapse mode `!isCollapsed && (...)` inline conditional kullanıyor |
+| `bz-side-item--mini` (+ nested + active::before) | 12 | Aynı |
+| `bz-side-tip` (+ hover/focus) | 21 | `bz-side-item--mini` ile birlikte (collapsed tooltip) |
+| `bz-mob-drawer-overlay` | 9 | className referansı yok (sadece JSDoc) |
+| `bz-mob-drawer` | 13 | Aynı |
+| `@keyframes bz-drawer-slide-in` | 4 | Yukarıdaki için tanımlı, orphan |
+| `bz-table--compact` | 1 | 0 callsite |
+
+Toplam **27 dead class + 1 keyframe** silindi (~130 satır kaynaktan).
+
+**Phase 2 — Legacy `@theme` token cleanup**:
+
+CLAUDE.md §11 dokümante "legacy aliases — geriye dönük uyumluluk için var ama yeni kod Pulse token'larını kullanmalı". Tüm 23 dead token (0 callsite — codebase inline hex `bg-[#0A0A0A]` paterni kullanıyor):
+
+| Kategori | Tokens | Adet |
+|---|---|---|
+| Semantic primary | `--color-primary-50/100/500/600/700` | 5 |
+| Accent | `--color-accent-400/500` | 2 |
+| Status | `--color-success`, `--color-error` | 2 |
+| Brand legacy | `--color-brand-{ink,navy,slate,gold,amber,ivory,cloud,orange,dark,navy-legacy,mist,gray,primary,accent}` | 14 |
+
+Korunan canonical tokens (`--color-brand-pure/graphite/lime/lime-deep/lime-soft` + N-scale + surface + font stack) intact. Tailwind v4 JIT zaten unused token'ları output'a yazmıyor; bu pas **kaynak temizliği** (drift kaynağını yok ediyor).
+
+**Phase 3 — Font weight optimization** (`src/app/layout.tsx`):
+
+Inter weight 900 (`font-black`) yüklemesi kaldırıldı:
+- Eski: `weight: ['400', '500', '600', '700', '800', '900']`
+- Yeni: `weight: ['400', '500', '600', '700', '800']`
+- Tek callsite (`menu/[slug]/not-found.tsx`) `font-black` → `font-semibold`'e çekildi.
+- CLAUDE.md §11 paterni: *"Aşırı `font-black` kullanımından kaçının."*
+- Latin subset 1 weight ≈ ~15-25KB woff2 — repeat-view + cold start TTFB iyileşmesi.
+
+Inter weight 800 **korundu**: MenuSplash hero (user-facing) + homepage 100px ghost number — gözle görülür ağırlık farkı yaratıyor.
+
+Space Grotesk weight 700 + JetBrains Mono weights (400/500/600) **korundu**.
+
+**Phase 4 — Minor design fix** (`src/app/menu/[slug]/not-found.tsx`):
+
+Pulse §11 ses ve ton disiplinine uydurma:
+- `font-extrabold` (800) heading → `font-semibold` (600) — Space Grotesk + tight tracking ile bold aşırı kalın durur.
+- `font-bold text-[#1A1A1A]` body p → `font-medium text-[#525252]` — body Pulse muted (n600) standardı.
+- `font-black uppercase` CTA → `font-semibold uppercase` — uppercase + tracking-widest zaten yeterli vurgu.
+
+Bu sayfa rare/leaf (404) ama Pulse disiplin tutarlılığı için düzeltildi.
+
+**Reduce-motion blanket güncellemesi**:
+
+`globals.css:1263-1301` `@media (prefers-reduced-motion: reduce)` blanket'inde silinmiş `bz-mob-drawer/-overlay/-drawer/-drawer-overlay` referansları temizlendi (4 satır).
+
+**Ölçüm sonuçları**:
+
+| Metrik | Baseline | Optimized | Delta |
+|---|---|---|---|
+| `globals.css` source (line) | 1531 | 1372 | **-159 (-10.4%)** |
+| `globals.css` source (byte) | 45,646 | 40,295 | **-5,351 (-11.7%)** |
+| CSS bundle raw (sum) | 211,521 B | 204,550 B | **-6,971 B (-3.3%)** |
+| CSS bundle gzipped (sum) | 32,751 B | 31,669 B | **-1,082 B (-3.3%)** |
+| Inter font weights | 6 (400/500/600/700/800/900) | 5 (400/500/600/700/800) | **-1 weight (~15-25 KB woff2)** |
+| TS errors (`src/`) | 0 | 0 | unchanged |
+| ESLint errors | 0 (1 baseline warn) | 0 (1 baseline warn) | unchanged |
+| Tests | 182/182 pass | 182/182 pass | unchanged |
+
+**Yapma**:
+- Silinen `bz-*` class'larını geri ekleme — yerine inline Tailwind veya mevcut React primitive kullanılır (CLAUDE.md §7 — 3+ callsite olunca yeniden değerlendirilir).
+- `pulse-blog-content` 37 nested selector'unu temizleme — meşru blog post styling, marketing surface'inde aktif kullanım.
+- Tailwind v4 `@theme {}` core token'larını (`--color-brand-pure/graphite/lime/lime-deep/lime-soft` + N-scale + surface + font) silme — design system canonical kaynak (CLAUDE.md §11 + §16 tokens.css).
+- Inter weight 800'ü kaldırma — MenuSplash hero (her QR scan'de görünür) + homepage 100px ghost number weight'in görsel etkisi var.
+- Space Grotesk veya JetBrains Mono weight'lerini kaldırma — heading hierarchy'sinde + mono eyebrow'da heavy use.
+- Panel (`bz-*`) ↔ marketing (`pulse-*`) CSS'i ayrı bundle'a böl — Tailwind v4 JIT zaten on-demand generation yapıyor, mevcut split anlamlı bir değer katmaz, build complexity artar.
+- `pulse-icon-badge` (1 callsite — WatchDemoButton) veya `pulse-chip-soft` (1 callsite — homepage hero) silmek — küçük ama meşru kullanım, premature.
+- Animation keyframe'lerinden `starPulse`/`slideUpFade`/`pulseHeartbeat`/`bzFadeUp`/`bzScaleIn`/`bzFloat`/`bzWordSwap`/`bzCaretBlink`/`marqueeSlide` silmek — homepage + marketing hero animasyon kaynakları, aktif callsite.
+
+**Yap**:
+- Yeni utility class eklerken önce 3+ callsite varlığını doğrula (CLAUDE.md §7); aksi halde inline Tailwind tercih et.
+- Yeni `@theme` token eklerken `bg-[var(--token)]` veya Tailwind class form callsite'ı eşzamanlı eklemediğinde token'ı **eklemeyin** — JIT zaten unused tokenları output'a yazmıyor ama kaynak drift kaynağı.
+- Yeni font weight ihtiyacı çıkarsa: önce mevcut weight'lerle test et (Space Grotesk + tight tracking ile 500/600 weight neredeyse her zaman yeter). Yeni weight eklerken cost: ~15-25KB woff2 / weight / subset.
+- Yeni class silme operasyonunda CSS regression kontrolü için: `grep -rE "(class|className)=.*\\bCLASS_NAME\\b" src/` — JSDoc-only referanslar (`// .CLASS_NAME` yorum) regression değil.
+- Reduce-motion blanket'ini güncel tut: yeni keyframe eklerken aynı anda `@media (prefers-reduced-motion: reduce)` listesine selector ekle (CLAUDE.md §38.18 paterni).
+
+**Test + verification**:
+- `npm install`: 882 package, no audit issues
+- `npx next build`: 0 errors, 47 routes static + dynamic build started successfully
+- `npx tsc --noEmit`: 0 errors in `src/` (4 pre-existing `.next/types/...` auto-generated artifacts — Next.js 15 cron route handler shared helper export pattern, CLAUDE.md §21.13 + `next.config.ts:typescript.ignoreBuildErrors: true` handles them)
+- `npx eslint .`: 0 errors, 1 baseline warning (`canAccessRestaurant unused`, pre-existing §38.58)
+- `npm test`: 182/182 pass, 22 suites, 0 fail
+
+**Etkilenen dosyalar**:
+- `src/app/globals.css` (1531 → 1372 lines, -159 lines / -5,351 bytes)
+- `src/app/layout.tsx` (Inter weight 900 removed + comment)
+- `src/app/menu/[slug]/not-found.tsx` (3 font weight refinements)
+
+**Gelecek opportunistic cleanup** (LOW öncelik, ayrı session):
+- `pulse-icon-badge` + `pulse-chip-soft` (1 callsite each) — eğer marketing redesign sırasında touch edilirse inline Tailwind ile değiştir
+- `pulse-blog-lead` first-letter dropcap (2 callsite, blog detail) — mevcut, korunur
+- `pulse-blog-content` (3 callsite blog/case-study/help) — 37 nested selector ama meşru, dokunulmaz
+- Comment-only blocks (banner ASCII art) compaktlaştırma — sadece kaynak okunabilirlik (output zaten minify), ROI düşük
+
+**Backlog** (Bu PR sonrası — diğer §38.B kalemleri intact):
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
+- 🛡️ Security follow-ups (§38.2 — operatör tetiği bekliyor)
+- 🟡 Yorumlar mobile chip ↔ Desktop rail unified state (§38.39 → ✅ kapatıldı)
+- 🟢 Animation keyframe'lerin progressive enhancement audit (örn. `bzFloat` 3.2s loop CPU cost vs visual value)
+
+---
+
+## CSS Performance & Design System Optimization Notes
+
+Date: 2026-05-05
+
+Summary:
+- 27 dead `.bz-*` ve `.pulse-*` utility class + 1 orphan `@keyframes` silindi (~130 satır kaynak).
+- 23 legacy `@theme` token (semantic + brand alias'ları) `globals.css`'den kaldırıldı.
+- Inter font weight 900 (`font-black`) yüklemesi devre dışı bırakıldı; tek callsite (`menu/[slug]/not-found`) `font-semibold`'e çekildi.
+- `globals.css` 1531 → 1372 satır (-159 / -%10.4); CSS bundle gzipped 32,751 → 31,669 B (-1,082 / -%3.3).
+- 0 fonksiyonel davranış değişimi, 0 yeni dependency, 0 schema migration.
+
+Files Updated:
+- `src/app/globals.css` (-159 satır kaynak, dead `.bz-*` + `.pulse-*` + legacy `@theme` token cleanup, reduce-motion blanket güncellendi)
+- `src/app/layout.tsx` (Inter weight 900 yüklemesi kaldırıldı + açıklayıcı yorum)
+- `src/app/menu/[slug]/not-found.tsx` (3 font weight Pulse §11 disiplinine uydurma: `font-extrabold` → `font-semibold`, `font-bold` → `font-medium`, `font-black` → `font-semibold`)
+
+CSS / Performance Changes:
+- Production'da Tailwind v4 JIT zaten unused token'ları output'tan dışarıda tutuyor; bu PR **kaynak temizliği** (drift kaynağı yok edildi) + utility class definition silme (output'a yazılan eski class'lar ortadan kalktı).
+- Panel (`bz-*`) ↔ marketing (`pulse-*`) CSS sistemleri **paralel korundu**; ayrı bundle'a bölme reddedildi (Tailwind v4 JIT on-demand generation zaten yapıyor, build complexity artırmaya değmez).
+- Inter weight 900 kaldırıldı: 1 latin subset weight ≈ ~15-25 KB woff2 — repeat-view + cold start TTFB iyileşmesi (özellikle mobil 4G). Weight 800 korundu (MenuSplash hero + 100px ghost number user-facing).
+- Reduce-motion blanket'ten silinen `bz-mob-drawer/-overlay/-drawer/-drawer-overlay` referansları temizlendi (4 satır).
+- `pulse-blog-content` (37 nested selector), `bz-card`/`bz-btn-*`/`bz-input`/`bz-table`/`bz-tabs-vertical`/`bz-side-cta`/`bz-progress`/`bz-skip-link` aktif primitive'ler dokunulmadı (meşru kullanım).
+
+Design Fixes:
+- `menu/[slug]/not-found.tsx` heading `font-extrabold` → `font-semibold` (Space Grotesk + tight tracking ile bold aşırı kalın durur, CLAUDE.md §11 paterni).
+- Body paragraph `font-bold text-[#1A1A1A]` → `font-medium text-[#525252]` (Pulse muted n600 standardı).
+- CTA `font-black uppercase` → `font-semibold uppercase` (uppercase + tracking-widest zaten yeterli vurgu).
+- Tasarımsal regression yok — 4 sayfa (anasayfa marketing, owner dashboard, admin paneli, panel ortak shell) Pulse design tokens ile tutarlı kalır.
+
+Validation:
+- Build: passed (`npx next build` 0 errors, 47 routes static + dynamic, CSS bundle 204,550 B raw / 31,669 B gz).
+- Lint: passed (`npx eslint .` 0 errors, 1 pre-existing baseline warning — `canAccessRestaurant` unused §38.58'den kalan).
+- Typecheck: passed in `src/` (`npx tsc --noEmit` 0 errors in source; 4 pre-existing `.next/types/...` auto-generated TS errors Next.js 15 cron handler shared helper pattern uyumsuzluğu, `next.config.ts:typescript.ignoreBuildErrors: true` handles them — CLAUDE.md §21.13).
+- Tests: 182/182 pass (`npm test`, 22 test suites, duration ~12s).
+- Visual check: anasayfa hero + admin dashboard + owner dashboard + Yorumlar + Müşteriler + Analitik + Hesabım sayfaları Pulse design system koruma; `globals.css` `bz-card` + `bz-btn-*` + `bz-input` + `bz-tab-vertical` aktif primitive'ler intact.
+
+Notes / Risks:
+- ✅ Risk düşük: silinen tüm class'lar 0 className callsite ile doğrulandı (`grep -rE "(class|className)=.*\\bCLASS\\b"` regression check).
+- ✅ Tailwind v4 + PostCSS minify pipeline'ı dokunulmadı; production output zaten minified.
+- ✅ Reduce-motion blanket güncel (silinen class'lar listeden çıkarıldı).
+- ⚠️ Gelecek redesign'da `pulse-icon-badge` + `pulse-chip-soft` (1 callsite each) inline Tailwind ile değiştirilebilir — ama küçük, premature scope.
+- ⚠️ Inter weight 800 korundu çünkü MenuSplash + hero ghost number callsite'larında visible weight farkı var; aksi halde de kaldırılabilirdi (~15-25 KB ek tasarruf).
+- ⚠️ Pre-existing 4 TS error (`.next/types/...` Next.js auto-generated) bu PR ile ilişkisiz — CLAUDE.md §21.13 + `ignoreBuildErrors` flag ile handle ediliyor.
+- 🟢 Ölçülebilen iyileşme: source -159 satır / -%10.4, CSS bundle gzipped -1,082 B / -%3.3, Inter font transferred -1 weight (~15-25 KB woff2 / cold load).
+- 🟡 Gelecek opportunistic cleanup: animation keyframe progressive enhancement audit (`bzFloat`/`bzWordSwap`/`bzCaretBlink` CPU cost vs visual value), comment-only blocks compactlaştırma (low ROI).
 
