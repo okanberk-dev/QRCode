@@ -14,6 +14,7 @@ import { initials, timeAgo } from './utils';
 import { FeedbackReplyComposer } from './FeedbackReplyComposer';
 import FeedbackTimeline from '@/components/dashboard/feedbacks/FeedbackTimeline';
 import { buildFeedbackTimeline } from '@/lib/feedback-timeline';
+import { AiSummaryCard } from './AiSummaryCard';
 
 interface FeedbackDetailProps {
   feedback: FeedbackRow;
@@ -143,6 +144,18 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
         <div className="mt-6 rounded-xl bg-[#FAFAFA] p-5 text-[15px] leading-[1.65] text-[#0A0A0A]">
           {active.comment ? `"${active.comment}"` : isTr ? 'Yorum bırakılmadı.' : 'No comment.'}
         </div>
+
+        {/* §38.53 — AI ÖZET (3-sinyal: Pozitif/İyileştirme/Tekrar gelme niyeti).
+            Tasarım birebir parity. Empty/fallback durumda kart gizlenir. */}
+        {active.comment && active.comment.trim().length >= 10 && (
+          <div className="mt-3">
+            <AiSummaryCard
+              feedbackId={active.id}
+              isTr={isTr}
+              locale={isTr ? 'tr' : 'en'}
+            />
+          </div>
+        )}
 
         {/* Aspect tags */}
         {customerAspects && Object.entries(customerAspects).some(([, v]) => v) && (
