@@ -330,7 +330,7 @@ export async function POST(req: NextRequest) {
           aiHighlight: insightOrFallback.highlight,
           aiNextSteps: insightOrFallback.nextSteps,
           aiSource: insightOrFallback.source,
-          panelUrl: `${appUrl}/admin/leads`,
+          panelUrl: `${appUrl}/admin/customers`,
           ip,
         },
         locale,

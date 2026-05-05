@@ -163,14 +163,48 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
     };
   }, [detailKey, isTr]);
 
-  // ESC + body scroll lock + focus management (Modal primitive paterni).
+  // ESC + body scroll lock + focus management + Tab focus trap (a11y).
+  // CLAUDE.md §38.40 — Modal primitive paterni reuse (FOCUSABLE_SELECTOR + Tab
+  // cycling). Mevcut ESC + initial focus + restore intact, Tab+Shift+Tab
+  // dialog içinde döngü eklendi (a11y compliance).
   useEffect(() => {
     if (!open) return;
     previouslyFocused.current = document.activeElement as HTMLElement;
+    const FOCUSABLE_SELECTOR = [
+      "a[href]",
+      "button:not([disabled])",
+      "input:not([disabled]):not([type='hidden'])",
+      "select:not([disabled])",
+      "textarea:not([disabled])",
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
         closeDrawer();
+        return;
+      }
+      // Focus trap — Tab/Shift+Tab dialog içinde döngü.
+      if (e.key === 'Tab' && drawerRef.current) {
+        const focusables = Array.from(
+          drawerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+        ).filter((el) => !el.hasAttribute('disabled'));
+        if (focusables.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const firstEl = focusables[0];
+        const lastEl = focusables[focusables.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        if (e.shiftKey) {
+          if (active === firstEl || !drawerRef.current.contains(active)) {
+            e.preventDefault();
+            lastEl.focus();
+          }
+        } else if (active === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
       }
     };
     document.addEventListener('keydown', onKey);

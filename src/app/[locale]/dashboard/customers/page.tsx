@@ -708,10 +708,23 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                 .toUpperCase();
               const detailKey = `${r.restaurant_id}|${r.contact_key}`;
               const detailHref = buildHref({ detail: detailKey });
+              // §38.40 — Mobile card sentiment-based avatar bg (desktop'taki
+              // pattern mobile'a port). Tasarım .design-owner-2026/page-customers.jsx
+              // line 131-134 — pos lime-soft / neg red-soft / neu n100.
+              const avatarBg =
+                r.sentiment === 'neg' ? '#FEF2F2'
+                : r.sentiment === 'pos' ? '#EAF9B8'
+                : '#F5F5F5';
+              const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#0A0A0A';
               return (
                 <div key={detailKey} className="bz-card p-4 space-y-2.5">
                   <div className="flex items-start gap-3">
-                    <div className="bz-avatar h-9 w-9 text-[13px]">{initials}</div>
+                    <div
+                      className="bz-avatar h-9 w-9 text-[13px]"
+                      style={{ backgroundColor: avatarBg, color: avatarFg }}
+                    >
+                      {initials}
+                    </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
                         <Link

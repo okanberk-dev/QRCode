@@ -6842,3 +6842,132 @@ Kullanıcı raporu: "Mobile uyumluluğa bak ve sidebar tasarımla aynı ölçüd
 - 🟡 Plan card "Yükselt" link underline cosmetic
 - 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
 - 🛡️ Security follow-ups (§38.2)
+
+### 38.40 2026-05-05 — Leads sayfası tamamen kaldırma + Customers UX iyileştirme (loading + a11y + mobile sentiment)
+
+Kullanıcı raporu: "CRM Kısmındaki 2. müşteri listesi kısmını (dashboard/leads) tamamen kaldırmanı istiyorum ve diğer müşteriler kısmını da tasarım ile aynı orantıda yapmanı ve çalışmayan veya yanlış olan yerleri de sistemimize göre geliştirip UI/UX olarak güzel bir şey yapmanı istiyorum (tasarımdaki mobil uyumluluk kısmı da aynı olsun)".
+
+Audit (Explore agent): Leads sayfası **misnomer** — `/dashboard/leads` mevcuttu ama Lead Prisma modeli yok, dedicated backend yok; `LeadsTable.tsx` shared component `/api/feedback` endpoint'ini contact filter ile sorguluyordu. Owner CRM'de `/dashboard/customers` zaten Phase 8c+ §38.36'da segment + LTV + sentiment + drawer ile tam featured. Admin tarafında `/admin/customers` zaten cross-restaurant müşteri listesi (CLAUDE.md §38.23). Leads tamamen redundant.
+
+**Phase A — Leads tamamen kaldırma (tek-yön cleanup)**:
+- `src/app/[locale]/dashboard/leads/page.tsx` ✅ silindi
+- `src/app/admin/leads/page.tsx` ✅ silindi (admin redundant — `/admin/customers` cross-restaurant'ı kapsıyor)
+- `src/components/shared/LeadsTable.tsx` ✅ silindi (~140 satır shared component)
+- `src/components/dashboard/UserDashboardShell.tsx` 5 nav reference temizlendi:
+  - Line 58 — `/leads` breadcrumb mapping
+  - Line 223 — `copy.leads` TR/EN string
+  - Line 268 — CRM grup child item (UsersRound + label)
+  - Line 314 — Mobile "More" sheet item
+  - Line 941 — Command palette entry
+- Mail template URL fix (5 yer) — `/admin/leads` → `/admin/customers`:
+  - `src/app/api/roi/save/route.ts:333` panelUrl
+  - `src/app/api/dev/email-preview/seeds.ts:229` panelUrl
+  - `src/lib/email/templates/roi-admin-notification.ts:313` panelHref fallback
+  - `src/lib/email/templates/contact-admin.ts:119` + line 304
+- Backend: yeni endpoint yok, schema değişikliği yok (Lead modeli zaten yoktu)
+
+**Phase B — Customers UX iyileştirme** (CRITICAL + HIGH audit önerisi):
+
+1. **Loading skeleton** (`src/app/[locale]/dashboard/customers/loading.tsx` YENİ — Next.js segment-bazlı loading.tsx convention):
+   - Server component fetch sırasında otomatik mount → "yükleniyor" spinner yerine content-shape placeholder
+   - PageHeader + 4 StatCardSkeleton + CardSkeleton (toolbar) + TableSkeleton (desktop) + 4 mobile card skeleton
+   - CLAUDE.md §11.17 paterni reuse (`Skeleton`, `TableSkeleton`, `CardSkeleton`, `StatCardSkeleton` primitive'leri)
+
+2. **CustomerDetailDrawer focus trap** (`_components/CustomerDetailDrawer.tsx:167-188` ESC handler genişletildi):
+   - Modal primitive paterni reuse (CLAUDE.md §11.1) — `FOCUSABLE_SELECTOR` (a/button/input/select/textarea/[tabindex]/[contenteditable]) + Tab+Shift+Tab cycling
+   - WCAG 2.1 AA a11y compliance (klavye-only kullanıcılar için drawer içinde döngü)
+   - Mevcut ESC + initial focus + restore + body scroll lock korundu (yan etki yok)
+
+3. **Mobile card sentiment-based avatar bg** (`page.tsx:704-718` mobile card section):
+   - Desktop'taki paterni mobile'a port (tasarım `.design-owner-2026/page-customers.jsx` line 131-134 birebir)
+   - `pos` lime-soft `#EAF9B8` / `neg` red-soft `#FEF2F2` / `neu` n100 `#F5F5F5`; fg neg `#991B1B`, diğer `#0A0A0A`
+   - Cross-platform tutarlılık (desktop tablo + mobile card aynı sentiment cue)
+
+**Skip edilen MEDIUM bulgular** (audit raporunda belirtilenler — gelecek PR backlog):
+- Range filter "30d" default not visceral (visual hint)
+- Sentiment sparkbar 0 score "—" fallback
+- Pagination "…" tooltip skipped count
+- Mobile "More" sheet scroll indicator
+- Search input placeholder right-align
+
+**Mobile parity**: `.design-owner-2026/project/page-customers.jsx` mobile-specific variant **yok** (sadece desktop). Mevcut mobile card layout intent'e uygun (CLAUDE.md §38.36 mobile polish kararı — kullanıcı "mevcut mobile card yapısını koru, küçük polish" onayladı). Bu PR sentiment avatar cross-platform tutarlılık ekledi.
+
+**Yapma**:
+- `LeadsTable.tsx`'i geri yükleme — Lead model yok, fonksiyonel olarak `/dashboard/customers` (owner) + `/admin/customers` (admin) tüm use case'leri karşılıyor (CLAUDE.md §34.4 paterni — silinmiş feature için açık talep gerekli).
+- Admin `/admin/leads` route'unu geri ekleme — `/admin/customers` Phase 8c §38.23 cross-restaurant scope ile zaten admin için tam featured.
+- Loading skeleton'ı client useEffect tabanlı yapma — Next.js `loading.tsx` segment convention sunucu side rendering ile otomatik mount, ek state yönetimi gereksiz.
+- Drawer focus trap için `<FocusScope>` library veya yeni primitive ekleme — Modal primitive paterni inline reuse (3 yerden fazla repeat olmadığı sürece, CLAUDE.md §7).
+- Mobile card sentiment avatar için ayrı component extract — pattern desktop ile aynı, inline copy 5 satır (CLAUDE.md §7 abstraction kaçınma).
+- ROI/contact mail template `/admin/customers` URL'lerini başka path'a değiştirme — admin için doğru landing.
+
+**Yap**:
+- Yeni "müşteri listesi" benzer UI ihtiyacı çıkarsa `/dashboard/customers` Phase 8c+ feature set'ini extend (yeni filter, yeni tile, yeni column) — paralel sayfa açma.
+- Yeni drawer/modal primitive'i için Modal primitive (`src/components/ui/Modal.tsx`) reuse — focus trap zaten mevcut, dialog wrapping sufficient.
+- Yeni server component segment için `loading.tsx` ekle (Next.js convention) — content-shape placeholder spinner'dan çok daha iyi UX.
+- Mevcut Customers feature'ı genişletirken sentiment-based avatar paterni desktop + mobile parity korunsun.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` modified files — 0 errors
+- `npm test` 143/143 pass (yeni test gerekmez — leads silme + skeleton + focus trap + avatar bg pure UI/dependency removal)
+- Manuel: `/tr/dashboard` sidebar CRM grup → "Müşteri Listesi" link YOK (silindi); sadece "Müşteriler" item
+- Manuel: `/tr/dashboard/leads` → 404 (silindi)
+- Manuel: `/admin/leads` → 404 (silindi); `/admin/customers` cross-restaurant müşteri listesi
+- Manuel: Mobile (375px) `/tr/dashboard/customers` → loading skeleton ilk paint, sentiment avatar bg pos/neg/neu doğru
+- Manuel: Drawer açıkken Tab/Shift+Tab → fokus drawer içinde döngü; ESC kapanır, fokus tıklayan element'e döner
+- Manuel: Mail templates ROI/contact admin URL'leri `/admin/customers`'a yönlendirir (test mail send via /admin/dev/mail-preview)
+
+---
+
+## 38.A — Bu oturum (2026-05-04 → 2026-05-05) tamamlanan PR'lar
+
+| PR | § | Kapsam |
+|---|---|---|
+| #441 | §38.34 | Analitik 1:1 parity (KPI hibrit + tek-chart toggle + AI Insights 3-row + QR mapping) |
+| #442 | §38.35 | Yorumlar filter parity (rail status 5-tab unified + Buaze QR platform pill) |
+| #443 | §38.36 | Müşteriler 1:1 parity (filter consolidate + 4-stat + sparkbar + sentiment avatar desktop) |
+| #444 | §38.37 | Hesabım 1:1 parity (right rail Plan + Invoices + Danger zone + 6-field profile) |
+| #445 | §38.38 | 5-sayfa audit + PendingTasks → Yorumlar URL drift fix (`?filter=` → `?tab=`) |
+| #446 | §38.39 | Sidebar CTA "Yorum İste" + mobile/sidebar audit |
+| (this) | §38.40 | Leads sayfası tamamen kaldırma + Customers UX iyileştirme (loading + a11y + mobile sentiment) |
+
+## 38.B — Kalan backlog (operatör kararı / yeni iterasyon bekleyen)
+
+**🔴 HIGH (büyük scope, product decision pending)**:
+- HIGH 4 Platforms 12-card grid (CLAUDE.md §38.30) — multi-restaurant aggregate view, product decision (her restoran ayrı vs aggregate)
+- API & Webhook tab UI (`/api/api-keys` + `/webhooks` backend hazır, UI scope büyük — HIGH-3)
+- 2FA + Sessions + SSO UI (CLAUDE.md §34.1 — backend kalmış, UI silinmiş, low adoption)
+- Account freeze + delete backend (Iyzico Wave 3.5 sonrası — `/api/account/freeze` + email confirm + 30g recovery)
+
+**🛡️ Security follow-ups (CLAUDE.md §38.2 dokümante)**:
+- AdminUser session staleness — kapatıldı (passwordChangedAt iat check)
+- Restaurant DELETE owner-only — kapatıldı (canDeleteRestaurant)
+- RECAPTCHA_ENFORCE flip — pending (1-2 hafta production data sonrası)
+- UserSession legacy fail-open — backfill script + flip
+- Site-settings SVG sanitize — DOMPurify / sharp.png() rasterize
+- bcrypt cost normalize — cosmetic, tek const
+
+**🟡 MEDIUM (cosmetic + minor UX)**:
+- Sidebar search input (Cmd+K duplicate, kullanıcı isterse §38.39 backlog)
+- Mobile bottom nav "Yorum İste" FAB (secondary nav drawer'a migrate koşuluyla)
+- Plan card "Yükselt" link underline cosmetic
+- Customers range filter "30d" default visceral hint
+- Sentiment sparkbar 0 score "—" fallback
+- Pagination "…" tooltip skipped count
+- Customers mobile MobileCustomers ekranı (page-mobile-v2.jsx eksik)
+- KANAL DAĞILIMI shared base component refactor (3+ callsite olunca §7)
+- Bulk action bar Customers (Kampanya/Segmentle/Arşivle — schema + backend gerek)
+
+**🟢 LOW (edge case / cosmetic)**:
+- Müşteriler page.tsx outdated comment cleanup
+- 14-haftalık trend chart per-week sentiment gerçek NLP (heuristic kabul edildi §38.34)
+- ActivityFeed real-time (websocket/SSE — şu an page reload yeterli §38.31)
+- Server-side Sentry envelope flush (kabullenildi §38.13)
+
+## 38.C — Sonraki AI session disiplin notu
+
+1. **Designated branch** `claude/phase-8c-customers-crm-BlEr9` — task-prompt'ta sabit, force-with-lease ile reuse (squash merge sonrası stale tip OK).
+2. **Stacked PR YAPMA** — squash gotcha 2× yaşandı (CLAUDE.md §21.22). Tek consolidated PR, fresh main'den branch.
+3. **Audit metodu** (CLAUDE.md §38.38 paterni) — Explore agent çıktısını manuel doğrulamadan kabul etme. False positive yaygın.
+4. **Yeni feature eklerken**: tasarım kaynağı `.design-owner-2026/project/page-X.jsx` cross-check + AskUserQuestion kritik kararlar (backend gerek, drift kabul) + phase-by-phase implementation.
+5. **CLAUDE.md §38.X log** zorunlu — yeni iş yaparken §38.41+ olarak ekle, "Yapma/Yap" + "Test + verification" + backlog güncelle.
