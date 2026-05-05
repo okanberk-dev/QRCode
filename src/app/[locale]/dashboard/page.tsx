@@ -1063,17 +1063,11 @@ async function renderDashboardPage({
         </div>
       )}
 
-      {/* §38.32 — BUGÜN BEKLEYEN: 3 task tipi summary (reply / platform Google
-          sync / reminder churn). Tasarım .design-owner-2026/page-dashboard.jsx
-          line 250-280. Eski 4-feedback inline detail render + segment crossover
-          (§38.17) kaldırıldı (UI duplikasyon — owner zaten /feedbacks page'de
-          detail görür). campaign tipi schema'da yok + kullanıcı kararı (silindi).
-          Yemeksepeti/Getir/Trendyol public API yok → sadece Google sync check. */}
-      <PendingTasks
-        tasks={dashboardTasks}
-        isTr={isTr}
-        viewAllHref={`/${locale}/dashboard/feedbacks?tab=low&hasReply=false`}
-      />
+      {/* §38.44 — PendingTasks position değişti: tasarım .design-owner-2026/
+          page-dashboard.jsx line 218-265 NABIZ chart + BUGÜN BEKLEYEN yan yana
+          2-col grid (1.55fr/1fr). PendingTasks artık NABIZ section ile aynı
+          wrapper'da render ediliyor (KPI sonrası, hidden sm:block grid wrapper).
+          Mobile'da PendingTasks görünür (NABIZ hidden), tablet+ 2-col. */}
 
       {/* Phase 8c+ §38.27 — KPI 4-card 1:1 tasarım parity. Tasarım kaynağı
           .design-owner-2026/page-dashboard.jsx: GENEL PUAN / TOPLAM YORUM /
@@ -1144,10 +1138,12 @@ async function renderDashboardPage({
         ))}
       </div>
 
-      {/* §38.43 — NABIZ chart mobile'da gizli (tasarım .design-owner-2026/
-          page-mobile-v2.jsx MobileDashboard'da büyük chart yok; küçük ekranda
-          chart UX kötü). sm:block ile sadece tablet+ desktop. Phase 8c+ §38.30
-          desktop tasarım intact. */}
+      {/* §38.44 — 2-col grid wrapper: NABIZ chart (1.55fr) + PendingTasks (1fr).
+          Tasarım .design-owner-2026/page-dashboard.jsx line 218-265 birebir.
+          Mobile: NABIZ gizli (hidden sm:block, §38.43), grid 1-col → PendingTasks
+          tek görünür. Tablet (sm-lg): NABIZ + PendingTasks alt alta (1-col).
+          Desktop (lg+): yan yana 2-col (1.55fr / 1fr). */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_minmax(0,1fr)] gap-3">
       <section className="bz-card p-5 sm:p-6 hidden sm:block">
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
           <div>
@@ -1212,6 +1208,24 @@ async function renderDashboardPage({
           </span>
         </div>
       </section>
+
+        {/* §38.44 — PendingTasks (BUGÜN BEKLEYEN) sağ kolon (lg+ 2-col grid).
+            §38.32 task tipi (reply / platform / reminder), §38.41 url fix
+            (?tab=low&hasReply=false). Mobile'da NABIZ gizli olduğunda tek
+            sütun grid'de görünür. */}
+        <PendingTasks
+          tasks={dashboardTasks}
+          isTr={isTr}
+          viewAllHref={`/${locale}/dashboard/feedbacks?tab=low&hasReply=false`}
+        />
+      </div>
+
+      {/* §38.44 — 2-col grid wrapper: KANAL + SIK BAHSEDİLEN sol stack (1.55fr)
+          + ActivityFeed sağ kolon (1fr). Tasarım .design-owner-2026/
+          page-dashboard.jsx line 266-340 birebir. Mobile: SIK BAHSEDİLEN
+          gizli (hidden sm:block, §38.43), KANAL ve ActivityFeed tek sütun. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_minmax(0,1fr)] gap-3">
+        <div className="space-y-3">
 
       {/* KANAL DAĞILIMI — Phase 8c+ §38.31. Tasarım kaynağı:
           .design-owner-2026/project/page-dashboard.jsx ChannelCard line
@@ -1322,9 +1336,12 @@ async function renderDashboardPage({
         </section>
       )}
 
+        </div>{/* §38.44 — sol stack close (KANAL + SIK BAHSEDİLEN) */}
 
-      {/* §38.41 — CANLI AKIŞ timeline (tasarım .design-owner-2026/page-dashboard.jsx
-          line 309-340). Feedback + Reply + AI Draft + Sistem Notification union.
+      {/* §38.41 + §38.44 — CANLI AKIŞ timeline (tasarım .design-owner-2026/
+          page-dashboard.jsx line 309-340). §38.44'te 2-col grid sağ kolon
+          olarak konumlandırıldı (sol KANAL+SIK BAHSEDİLEN stack ile yan yana).
+          Feedback + Reply + AI Draft + Sistem Notification union.
           §38.40 audit'inde kullanıcı raporu: eski custom inline 8-item CANLI AKIŞ
           + ActivityFeed component duplicate + "Tümünü gör" 404 → eski section
           silindi, viewAllHref locale-aware override edildi. Tasarımda olmayan
@@ -1336,6 +1353,8 @@ async function renderDashboardPage({
         isTr={isTr}
         viewAllHref={`/${locale}/dashboard/feedbacks`}
       />
+
+      </div>{/* §38.44 — KANAL+SIK BAHSEDİLEN+ActivityFeed 2-col grid wrapper close */}
     </div>
   );
 }
