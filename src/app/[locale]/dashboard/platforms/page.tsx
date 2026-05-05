@@ -6,7 +6,9 @@ import {
   Plus,
   AlertTriangle,
   CheckCircle2,
-  Activity,
+  Download,
+  Layers,
+  MessageSquare,
   Settings,
   ExternalLink,
 } from 'lucide-react';
@@ -15,18 +17,24 @@ import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { PageHeader, StatCard, EmptyState, Badge } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 
-// §38.45 — Workspace-level Platform Bağlantıları sayfası. Tasarım kaynağı:
-// .design-owner-2026/project/page-platforms.jsx (12-card grid + KPI summary).
-// Mevcut redirect davranışı kaldırıldı — eski "ilk restoranın settings'ine
-// yönlendir" pattern (CLAUDE.md §19.4 per-restaurant) korunur "Yönet" CTA
-// olarak. Workspace-level summary owner için multi-restaurant agregat görünüm.
+// §38.45 + §38.52 — Workspace-level Platform Bağlantıları sayfası. Tasarım kaynağı:
+// .design-owner-2026/project/page-platforms.jsx (PagePlatforms — 12-card grid +
+// KPI summary + filter chips + 4-state status badge).
 //
-// Buaze taxonomy 12-platform (8 yorum + 3 sosyal + 1 mesaj):
-// - Yorum: Google / Yemeksepeti / Getir / Trendyol / Tripadvisor / Airbnb / Booking / Yandex
+// Buaze hibrit taksonomi 13-platform (10 yorum + 2 sosyal + 1 mesaj):
+// - Yorum: Google / Yemeksepeti / Getir / Trendyol / Tripadvisor / Airbnb / Booking / Yandex / Yelp / Foursquare
 // - Sosyal: Instagram / Facebook
 // - Mesaj: WhatsApp
-// - Tasarımdaki Yelp/Foursquare/Slack/Webhook taxonomy dışı (CLAUDE.md §34.6
-//   Slack silindi; Yelp/Foursquare PROVIDER_DOMAINS'de yok).
+//
+// §38.52 — Yelp + Foursquare eklendi (kullanıcı kararı, PROVIDER_DOMAINS
+// genişletildi). Tasarımdaki Zapier/HubSpot/Mailchimp skip — Buaze yorum-odaklı
+// pattern korunur (CLAUDE.md §38.52 dokümantasyon).
+//
+// KPI 4-card hibrit (kullanıcı kararı, CLAUDE.md §38.52):
+// - Bağlı kanal X/N (mevcut)
+// - Bekleyen sorun (PlatformLinkCheck ok=false son 24h workspace aggregate)
+// - Toplam yorum (Feedback workspace count current month)
+// - Aktif kategori (3: yorum / sosyal / mesaj)
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +66,9 @@ interface RestaurantPlatformRow {
   airbnbUrl: string | null;
   bookingUrl: string | null;
   yandexUrl: string | null;
+  // §38.52 — Yelp + Foursquare yorum platformları
+  yelpUrl: string | null;
+  foursquareUrl: string | null;
   instagramUrl: string | null;
   facebookUrl: string | null;
   whatsappUrl: string | null;
@@ -69,6 +80,8 @@ interface RestaurantPlatformRow {
   airbnbEnabled: boolean;
   bookingEnabled: boolean;
   yandexEnabled: boolean;
+  yelpEnabled: boolean;
+  foursquareEnabled: boolean;
 }
 
 const PLATFORM_DEFS: PlatformDef[] = [
@@ -81,6 +94,9 @@ const PLATFORM_DEFS: PlatformDef[] = [
   { id: 'airbnb', name: 'Airbnb', cat: 'review', catLabel: { tr: 'Yorum', en: 'Review' }, accent: '#FF5A5F', initials: 'AB', urlField: 'airbnbUrl', enabledField: 'airbnbEnabled' },
   { id: 'booking', name: 'Booking', cat: 'review', catLabel: { tr: 'Yorum', en: 'Review' }, accent: '#003580', initials: 'BK', urlField: 'bookingUrl', enabledField: 'bookingEnabled' },
   { id: 'yandex', name: 'Yandex', cat: 'review', catLabel: { tr: 'Yorum', en: 'Review' }, accent: '#FFCC00', initials: 'YA', urlField: 'yandexUrl', enabledField: 'yandexEnabled' },
+  // §38.52 — Yelp + Foursquare yorum platformları
+  { id: 'yelp', name: 'Yelp', cat: 'review', catLabel: { tr: 'Yorum', en: 'Review' }, accent: '#D32323', initials: 'Y', urlField: 'yelpUrl', enabledField: 'yelpEnabled' },
+  { id: 'foursquare', name: 'Foursquare', cat: 'review', catLabel: { tr: 'Yorum', en: 'Review' }, accent: '#F94877', initials: '4SQ', urlField: 'foursquareUrl', enabledField: 'foursquareEnabled' },
   // Sosyal medya
   { id: 'instagram', name: 'Instagram', cat: 'social', catLabel: { tr: 'Sosyal', en: 'Social' }, accent: '#E1306C', initials: 'IG', urlField: 'instagramUrl' },
   { id: 'facebook', name: 'Facebook', cat: 'social', catLabel: { tr: 'Sosyal', en: 'Social' }, accent: '#1877F2', initials: 'FB', urlField: 'facebookUrl' },
@@ -122,6 +138,9 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
       airbnbUrl: true,
       bookingUrl: true,
       yandexUrl: true,
+      // §38.52 — Yelp + Foursquare URL select
+      yelpUrl: true,
+      foursquareUrl: true,
       instagramUrl: true,
       facebookUrl: true,
       whatsappUrl: true,
@@ -133,6 +152,9 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
       airbnbEnabled: true,
       bookingEnabled: true,
       yandexEnabled: true,
+      // §38.52 — enable flags
+      yelpEnabled: true,
+      foursquareEnabled: true,
     },
     orderBy: { createdAt: 'asc' },
   })) as RestaurantPlatformRow[];
@@ -169,6 +191,36 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
     );
   }
 
+  // §38.52 — Health KPI hibrit (kullanıcı kararı tasarım birebir 4 KPI ama
+  // mevcut data-source). 3 ek workspace aggregate query (CLAUDE.md §14.1
+  // connection_limit=1 disiplini, prisma.$transaction).
+  const restaurantIds = restaurants.map((r) => r.id);
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const [pendingIssuesCount, totalReviewsThisMonth] = restaurantIds.length === 0
+    ? [0, 0]
+    : await prisma.$transaction([
+        // Bekleyen sorun: PlatformLinkCheck son 24h ok=false (workspace agg)
+        // distinct (restaurantId, provider) — aynı sorun çoklu test'te tekrar sayılmaz.
+        prisma.platformLinkCheck.count({
+          where: {
+            restaurantId: { in: restaurantIds },
+            checkedAt: { gte: last24h },
+            ok: false,
+          },
+        }),
+        // Toplam yorum: workspace ay-başı feedback
+        prisma.feedback.count({
+          where: {
+            restaurantId: { in: restaurantIds },
+            createdAt: { gte: monthStart },
+          },
+        }),
+      ]);
+
   // Per-platform aggregate: bağlı (URL set + enabled), toplam restoran sayısı.
   const platformSummaries = PLATFORM_DEFS.map((p) => {
     let connected = 0;
@@ -185,18 +237,14 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
     return { ...p, connected, urlSet, total: restaurants.length };
   });
 
-  // KPI metrikleri
+  // KPI metrikleri (§38.52 hibrit — tasarım 4 KPI ama mevcut data-source)
   const totalConnected = platformSummaries.reduce((sum, p) => sum + p.connected, 0);
   const totalSlots = restaurants.length * PLATFORM_DEFS.length;
-  const totalUrlSet = platformSummaries.reduce((sum, p) => sum + p.urlSet, 0);
-  const reviewPlatformsConnected = platformSummaries
-    .filter((p) => p.cat === 'review')
-    .reduce((sum, p) => sum + p.connected, 0);
-  const socialPlatformsConnected = platformSummaries
-    .filter((p) => p.cat === 'social' || p.cat === 'message')
-    .reduce((sum, p) => sum + p.connected, 0);
-  // "Pasif" = URL set ama enabled=false
-  const inactiveCount = totalUrlSet - totalConnected;
+  // Aktif kategori = en az 1 platform bağlı kategori sayısı (yorum/sosyal/mesaj)
+  const activeCategorySet = new Set(
+    platformSummaries.filter((p) => p.connected > 0).map((p) => p.cat),
+  );
+  const activeCategoryCount = activeCategorySet.size;
 
   // Hızlı erişim: "Yönet" CTA için ilk restoranın settings'i
   const firstRestaurantId = restaurants[0]!.id;
@@ -213,45 +261,74 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
             : 'Collect reviews, orders, and messages from every platform in one panel. Buaze speaks to 11+ services natively.'
         }
         actions={
-          <Link
-            href={manageHref}
-            className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px]"
-          >
-            <Plus size={13} strokeWidth={2} />
-            {isTr ? 'Yeni bağlantı ekle' : 'Add new link'}
-          </Link>
+          <div className="flex items-center gap-2">
+            {/* §38.52 — Bağlantı log'u CSV export (PlatformLinkCheck workspace history). */}
+            <a
+              href={`/api/dashboard/platforms/log/export`}
+              download
+              className="bz-btn inline-flex items-center gap-1.5 text-[12.5px]"
+              title={isTr ? 'Son test sonuçlarını CSV olarak indir' : 'Download recent test results as CSV'}
+            >
+              <Download size={13} strokeWidth={2} />
+              {isTr ? "Bağlantı log'u" : 'Connection log'}
+            </a>
+            <Link
+              href={manageHref}
+              className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px]"
+            >
+              <Plus size={13} strokeWidth={2} />
+              {isTr ? 'Yeni bağlantı' : 'New connection'}
+            </Link>
+          </div>
         }
       />
 
-      {/* KPI 4-card */}
+      {/* §38.52 — KPI 4-card hibrit (tasarım birebir 4 KPI ama mevcut data-source) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <StatCard
-          label={isTr ? 'Bağlı' : 'Connected'}
+          label={isTr ? 'Bağlı kanal' : 'Connected'}
           value={`${totalConnected}/${totalSlots}`}
           icon={<CheckCircle2 size={14} className="text-[#16A34A]" />}
-        />
-        <StatCard
-          label={isTr ? 'Pasif' : 'Inactive'}
-          value={inactiveCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          icon={<AlertTriangle size={14} className="text-[#D97706]" />}
           delta={
-            inactiveCount > 0
-              ? isTr
-                ? 'URL var, kapalı'
-                : 'URL set, off'
-              : null
+            isTr
+              ? `${PLATFORM_DEFS.length} platform destekleniyor`
+              : `${PLATFORM_DEFS.length} platforms supported`
           }
           deltaKind="neutral"
         />
         <StatCard
-          label={isTr ? 'Yorum platformları' : 'Review platforms'}
-          value={reviewPlatformsConnected.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          icon={<Activity size={14} />}
+          label={isTr ? 'Bekleyen sorun' : 'Pending issue'}
+          value={pendingIssuesCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          icon={
+            <AlertTriangle
+              size={14}
+              className={pendingIssuesCount > 0 ? 'text-[#DC2626]' : 'text-[#737373]'}
+            />
+          }
+          delta={
+            pendingIssuesCount > 0
+              ? isTr
+                ? 'son 24 saat'
+                : 'last 24 hours'
+              : isTr
+                ? 'tüm bağlantılar sağlıklı'
+                : 'all healthy'
+          }
+          deltaKind={pendingIssuesCount > 0 ? 'down' : 'neutral'}
         />
         <StatCard
-          label={isTr ? 'Sosyal & mesaj' : 'Social & messaging'}
-          value={socialPlatformsConnected.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          icon={<Plug size={14} />}
+          label={isTr ? 'Toplam yorum' : 'Total reviews'}
+          value={totalReviewsThisMonth.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+          icon={<MessageSquare size={14} />}
+          delta={isTr ? 'bu ay' : 'this month'}
+          deltaKind="neutral"
+        />
+        <StatCard
+          label={isTr ? 'Aktif kategori' : 'Active category'}
+          value={`${activeCategoryCount}/3`}
+          icon={<Layers size={14} />}
+          delta={isTr ? 'yorum · sosyal · mesaj' : 'review · social · message'}
+          deltaKind="neutral"
         />
       </div>
 

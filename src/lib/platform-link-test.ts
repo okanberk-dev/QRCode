@@ -234,6 +234,9 @@ export type RestaurantUrlField =
   | 'airbnbUrl'
   | 'bookingUrl'
   | 'yandexUrl'
+  // §38.52 — Yelp + Foursquare yorum platformları
+  | 'yelpUrl'
+  | 'foursquareUrl'
   | 'instagramUrl'
   | 'facebookUrl'
   | 'whatsappUrl'
@@ -248,7 +251,10 @@ export type RestaurantEnabledField =
   | 'tripAdvisorEnabled'
   | 'airbnbEnabled'
   | 'bookingEnabled'
-  | 'yandexEnabled';
+  | 'yandexEnabled'
+  // §38.52
+  | 'yelpEnabled'
+  | 'foursquareEnabled';
 
 export interface ProviderMapping {
   provider: IntegrationProvider;
@@ -266,6 +272,9 @@ export const PROVIDER_MAP: ProviderMapping[] = [
   { provider: 'airbnb', urlField: 'airbnbUrl', enabledField: 'airbnbEnabled' },
   { provider: 'booking', urlField: 'bookingUrl', enabledField: 'bookingEnabled' },
   { provider: 'yandex', urlField: 'yandexUrl', enabledField: 'yandexEnabled' },
+  // §38.52 — Yelp + Foursquare yorum platformları
+  { provider: 'yelp', urlField: 'yelpUrl', enabledField: 'yelpEnabled' },
+  { provider: 'foursquare', urlField: 'foursquareUrl', enabledField: 'foursquareEnabled' },
   { provider: 'instagram', urlField: 'instagramUrl' },
   { provider: 'facebook', urlField: 'facebookUrl' },
   { provider: 'whatsapp', urlField: 'whatsappUrl' },

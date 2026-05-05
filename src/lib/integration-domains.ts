@@ -25,6 +25,9 @@ export type IntegrationProvider =
   | 'airbnb'
   | 'booking'
   | 'yandex'
+  // §38.52 — Yelp + Foursquare yorum platformları (hibrit taksonomi).
+  | 'yelp'
+  | 'foursquare'
   | 'instagram'
   | 'facebook'
   | 'whatsapp'
@@ -41,6 +44,9 @@ export const PROVIDER_DOMAINS: Record<IntegrationProvider, string[] | null> = {
   airbnb: ['airbnb.com', 'airbnb.com.tr'],
   booking: ['booking.com'],
   yandex: ['yandex.com', 'yandex.com.tr', 'yandex.ru'],
+  // §38.52 — Yelp + Foursquare
+  yelp: ['yelp.com', 'yelp.com.tr'],
+  foursquare: ['foursquare.com', 'fsq.com'],
   instagram: ['instagram.com', 'instagr.am'],
   facebook: ['facebook.com', 'fb.com', 'fb.me', 'm.facebook.com'],
   whatsapp: ['whatsapp.com', 'wa.me', 'api.whatsapp.com'],
@@ -61,6 +67,8 @@ export const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
   airbnb: 'Airbnb',
   booking: 'Booking',
   yandex: 'Yandex',
+  yelp: 'Yelp',
+  foursquare: 'Foursquare',
   instagram: 'Instagram',
   facebook: 'Facebook',
   whatsapp: 'WhatsApp',
@@ -149,6 +157,16 @@ const PATH_RULES: Partial<Record<IntegrationProvider, PathRules>> = {
   airbnb: {
     homepageWhenBare: true,
     reviewSignatures: ['/rooms/', '/h/'],
+  },
+  // §38.52 — Yelp business listing path: /biz/<slug>
+  yelp: {
+    homepageWhenBare: true,
+    reviewSignatures: ['/biz/', '/biz_redir'],
+  },
+  // §38.52 — Foursquare venue path: /v/<slug>/<id> veya /venue/<id>
+  foursquare: {
+    homepageWhenBare: true,
+    reviewSignatures: ['/v/', '/venue/'],
   },
 };
 
