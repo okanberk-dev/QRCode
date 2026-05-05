@@ -29,6 +29,8 @@ interface BillingSummary {
   trialDaysLeft: number | null;
   renewsAt: string | null;
   quota: { used: number; limit: number };
+  // §38.51 — AI yanıt aylık quota (FeedbackReply.source='ai_copilot' count).
+  aiReplies?: { used: number; limit: number };
   amount: number | null;
   currency: string;
   billingCycle: string | null;
@@ -110,11 +112,14 @@ export function AccountPlanWidget({
   const restaurantMax =
     restaurantLimit ?? (data.plan === "yearly" ? 5 : data.plan === "monthly" ? 3 : 1);
 
+  // §38.51 — Tasarım birebir 3 bar: Konum + Ekip + AI yanıt (Yorum bar silindi,
+  // AI yanıt eklendi). Kullanıcı kararı (CLAUDE.md §38.51): API çağrısı bar skip.
+  // .design-owner-2026/page-account.jsx Plan widget line 175-198 paterni.
   const usageBars: UsageBar[] = [
     {
-      label: isTr ? "Yorum (bu ay)" : "Reviews (this month)",
-      used: data.quota.used,
-      limit: data.quota.limit,
+      label: isTr ? "Lokasyon" : "Locations",
+      used: restaurantCount,
+      limit: restaurantMax,
     },
     {
       label: isTr ? "Ekip üyesi" : "Team members",
@@ -122,9 +127,9 @@ export function AccountPlanWidget({
       limit: teamMax,
     },
     {
-      label: isTr ? "Lokasyon" : "Locations",
-      used: restaurantCount,
-      limit: restaurantMax,
+      label: isTr ? "AI yanıt / ay" : "AI replies / mo",
+      used: data.aiReplies?.used ?? 0,
+      limit: data.aiReplies?.limit ?? 500,
     },
   ];
 

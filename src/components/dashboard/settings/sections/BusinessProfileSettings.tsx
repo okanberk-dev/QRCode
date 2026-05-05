@@ -52,6 +52,8 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
   const [phoneNumber, setPhoneNumber] = useState("");
   const [position, setPosition] = useState("");
   const [timezone, setTimezone] = useState("");
+  // §38.51 — emailVerified UI badge ("Doğrulandı" green check, tasarım birebir).
+  const [emailVerified, setEmailVerified] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +66,7 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
         setPhoneNumber(data.phoneNumber ?? "");
         setPosition(data.position ?? "");
         setTimezone(data.timezone ?? "");
+        setEmailVerified(Boolean(data.emailVerified));
       })
       .catch(() => {})
       .finally(() => {
@@ -176,7 +179,23 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
               autoComplete="name"
             />
           </Field>
-          <Field label={isTr ? "E-posta" : "Email"} required>
+          <Field
+            label={
+              <span className="flex items-center justify-between gap-2">
+                <span>{isTr ? "E-posta" : "Email"}</span>
+                {emailVerified && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px] font-medium text-[#16A34A]"
+                    title={isTr ? "E-posta doğrulandı" : "Email verified"}
+                  >
+                    <Check size={10} strokeWidth={2.5} />
+                    {isTr ? "Doğrulandı" : "Verified"}
+                  </span>
+                )}
+              </span>
+            }
+            required
+          >
             <input
               type="email"
               required

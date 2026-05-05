@@ -59,6 +59,11 @@ interface RestaurantData {
   bookingEnabled: boolean;
   yandexUrl: string | null;
   yandexEnabled: boolean;
+  // §38.52 — Yelp + Foursquare yorum platformları (hibrit taksonomi)
+  yelpUrl: string | null;
+  yelpEnabled: boolean;
+  foursquareUrl: string | null;
+  foursquareEnabled: boolean;
   externalPlatformsEnabled?: boolean;
   defaultRedirectPlatform: string | null;
   instagramUrl: string | null;
@@ -95,6 +100,11 @@ interface FormState {
   bookingEnabled: boolean;
   yandexUrl: string;
   yandexEnabled: boolean;
+  // §38.52 — Yelp + Foursquare
+  yelpUrl: string;
+  yelpEnabled: boolean;
+  foursquareUrl: string;
+  foursquareEnabled: boolean;
   instagramUrl: string;
   facebookUrl: string;
   whatsappUrl: string;
@@ -181,6 +191,23 @@ const PLATFORM_DEFS: PlatformDef[] = [
     label: "Yandex",
     placeholder: "https://yandex.com.tr/maps/org/...",
   },
+  // §38.52 — Yelp + Foursquare yorum platformları (hibrit taksonomi).
+  {
+    id: "yelp",
+    urlKey: "yelpUrl",
+    enabledKey: "yelpEnabled",
+    testProvider: "yelp",
+    label: "Yelp",
+    placeholder: "https://www.yelp.com/biz/...",
+  },
+  {
+    id: "foursquare",
+    urlKey: "foursquareUrl",
+    enabledKey: "foursquareEnabled",
+    testProvider: "foursquare",
+    label: "Foursquare",
+    placeholder: "https://foursquare.com/v/...",
+  },
 ];
 
 interface SocialDef {
@@ -241,6 +268,11 @@ function toForm(r: RestaurantData): FormState {
     bookingEnabled: r.bookingEnabled,
     yandexUrl: r.yandexUrl ?? "",
     yandexEnabled: r.yandexEnabled,
+    // §38.52 — Yelp + Foursquare
+    yelpUrl: r.yelpUrl ?? "",
+    yelpEnabled: r.yelpEnabled,
+    foursquareUrl: r.foursquareUrl ?? "",
+    foursquareEnabled: r.foursquareEnabled,
     instagramUrl: r.instagramUrl ?? "",
     facebookUrl: r.facebookUrl ?? "",
     whatsappUrl: r.whatsappUrl ?? "",

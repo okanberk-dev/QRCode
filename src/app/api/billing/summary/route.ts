@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { resolveOwnerUserId } from '@/lib/panel-access';
-import { PLAN_QUOTA, PLAN_LABELS } from '@/lib/constants';
+import { PLAN_QUOTA, PLAN_QUOTA_AI_REPLIES, PLAN_LABELS } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,17 +55,32 @@ export async function GET(req: NextRequest) {
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
 
-  const used =
+  // §38.51 — feedback ingest + AI reply quota tek transaction (CLAUDE.md §14.1
+  // pgbouncer connection_limit=1 disiplini). FeedbackReply.source='ai_copilot'
+  // owner panelinde Pulse AI Co-Pilot kullanımı; aylık quota Plan widget'a yansır.
+  const [used, aiRepliesUsed] =
     restaurantIds.length === 0
-      ? 0
-      : await prisma.feedback.count({
-          where: {
-            restaurantId: { in: restaurantIds },
-            createdAt: { gte: monthStart },
-          },
-        });
+      ? [0, 0]
+      : await prisma.$transaction([
+          prisma.feedback.count({
+            where: {
+              restaurantId: { in: restaurantIds },
+              createdAt: { gte: monthStart },
+            },
+          }),
+          prisma.feedbackReply.count({
+            where: {
+              source: 'ai_copilot',
+              feedback: {
+                restaurantId: { in: restaurantIds },
+              },
+              createdAt: { gte: monthStart },
+            },
+          }),
+        ]);
 
   const limit = PLAN_QUOTA[plan] ?? PLAN_QUOTA.trial;
+  const aiRepliesQuota = PLAN_QUOTA_AI_REPLIES[plan] ?? PLAN_QUOTA_AI_REPLIES.trial;
 
   const paymentMethod =
     subscription?.paymentBrand && subscription?.paymentLast4
@@ -79,6 +94,7 @@ export async function GET(req: NextRequest) {
     trialDaysLeft: isTrial ? trialDaysLeft(trialEnd) : null,
     renewsAt: renewsAt ? renewsAt.toISOString() : null,
     quota: { used, limit },
+    aiReplies: { used: aiRepliesUsed, limit: aiRepliesQuota },
     paymentMethod,
     // Pricing snapshot — Faz 2 owner-readonly billing card. Null when admin
     // hasn't seeded values yet; UI falls back to plan-derived label.

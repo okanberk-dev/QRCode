@@ -155,6 +155,11 @@ model Restaurant {
   airbnbUrl                     String?   @map("airbnb_url")
   bookingUrl                    String?   @map("booking_url")
   yandexUrl                     String?   @map("yandex_url")
+  // §38.52 — Yelp + Foursquare yorum platformları (kullanıcı talebi, hibrit
+  // taksonomi: tasarım PagePlatforms 12 platform listesinden Yelp + Foursquare
+  // eklendi; Zapier/HubSpot/Mailchimp skip — review-odaklı Buaze paterniyle).
+  yelpUrl                       String?   @map("yelp_url")
+  foursquareUrl                 String?   @map("foursquare_url")
   // Per-platform enable flag — owner panelde toggle ile manuel kapatılabilir.
   // URL doluyken toggle off ise platform "passive" (varsayılana fallback).
   // Default true; URL boşsa UI yine "Henüz bağlanmadı" gösterir (enabled
@@ -167,6 +172,9 @@ model Restaurant {
   airbnbEnabled                 Boolean   @default(true) @map("airbnb_enabled")
   bookingEnabled                Boolean   @default(true) @map("booking_enabled")
   yandexEnabled                 Boolean   @default(true) @map("yandex_enabled")
+  // §38.52 — Yelp + Foursquare enable flags
+  yelpEnabled                   Boolean   @default(true) @map("yelp_enabled")
+  foursquareEnabled             Boolean   @default(true) @map("foursquare_enabled")
   // Owner's chosen fallback platform when a QR has no explicit ?platform=
   // query string. NULL → Google fallback (legacy default). Values mirror
   // Feedback.platform: google | yemeksepeti | getir | trendyol_go.
