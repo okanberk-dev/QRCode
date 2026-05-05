@@ -9856,3 +9856,75 @@ Aşamalı refinement Stage 2: "owner panel bağlantı ve UX kopuklukları". 3 pa
 - Kalan riskler: replaceState pattern (kasıtlı, dokunulmadı); 106 transition-colors + 25 rounded-2xl border opportunistic Stage 1 backlog intact
 - **Sonraki aşama önerisi**: Stage 3 — menü editörü detaylı UX (CLAUDE.md §12 + a/page-mobile-v2.jsx menu detail spec). Veya Stage 4 mobile kapsamlı QA (CLAUDE.md §25 + §38.B mobile backlog), Stage 5 admin paneli polish, ya da kullanıcı yeni odak talebi.
 
+### 38.73 2026-05-05 — Stage 3 owner menu management UX (6-phase fix bundle)
+
+Aşamalı refinement Stage 3: "owner panel menü yönetimi UX'i". 3 paralel Explore agent + manuel verify (5 false positive elendi). Sonuç: 6 gerçek menu UX drift kapatıldı (CLAUDE.md §12 + §38.65-§38.72 paterni reuse). Branch `chore/owner-menu-management-ux`.
+
+**Out of scope** (kullanıcı talimatı): Backend/API mantığı, detaylı menü editör refactor (mega-component ~1700 satır §12.1 dokunulmadı), mobile kapsamlı QA (Stage 4), admin paneli (Stage 5), genel dashboard redesign.
+
+**6 fix bundle**:
+
+1. **Phase A — Editor custom hero eyebrow + description inline**: Stage 1 §38.71 13 sayfaya uygulanan PageHeader Pulse pattern editor mega-component'inde yoktu. Custom hero (gradient + back link + restoran icon + status badge + 5 action button) **korundu** (kullanıcı kararı AskUserQuestion). Inline `pulse-eyebrow MENÜ` + 13px description ekleme: "Kategoriler ve ürünleri düzenle. Sağ taraftaki canlı önizlemede değişiklikleri anında gör." `copy.eyebrow + copy.pageDescription` (description adı form label çakışmasını önlemek için yeniden adlandırıldı; CLAUDE.md §38.73 ts1117 fix).
+
+2. **Phase B — "Kategori Ekle" button hiyerarşi unify**: Header `bg-[#C6F24E]` Lime PRIMARY (line ~948) + Boş state CTA `bg-[#0A0A0A]` Graphite DARK (line ~968) inconsistent. Pulse §11 "aynı semantik aksiyon = aynı görsel hiyerarşi" disipline. Boş state Lime'a swap; mental drift sıfırlandı.
+
+3. **Phase C — 2 loading.tsx skeleton**: Stage 1 §38.71 content-shape paterni reuse. `/dashboard/menu/loading.tsx` (yeni — 6 card grid hub picker) + `/dashboard/restaurants/[id]/menu/loading.tsx` (mevcut generic Loader2 → 2-col panel 340+1fr + custom hero shape). Apple-premium polish.
+
+4. **Phase D — MenuLivePreview mobile hint**: `MenuLivePreview.tsx` `hidden lg:block` ile mobile'da gizli; mobile owner "preview nereye gitti?" düşünmesin diye `lg:hidden` inline info card eklendi (Eye icon + "Canlı menü önizlemesi masaüstünde sağ tarafta görünür").
+
+5. **Phase E — menuEnabled disable UX güçlendir** (CLAUDE.md §5.2): Mevcut AlertBanner kind=`warn` copy "Menü özelliği yönetici tarafından kapatıldı. Yayınlayamazsınız." kısa kalmıştı (POST endpoint'leri 403 dönüyordu ama UI hâlâ enable görünüyordu). Copy güçlendirildi: "Bu paket plan menü düzenlemeyi kapsamıyor. Sadece görüntüleme modu — kategori, ürün ekleyemez ve menü yayınlayamazsınız." 5 Add CTA button'una `disabled={!restaurant.menuEnabled}` + `disabled:cursor-not-allowed disabled:opacity-50` eklendi (categories header + boş state lime + items header + items boş state + boş kategoriyle başla).
+
+6. **Phase F — Client error message locale-aware**: `restaurants/[id]/menu/page.tsx:345-346` `throw new Error('Restoran yüklenemedi')` + `'Menü yüklenemedi'` TR-hardcoded. `isTr ? ... : ...` ile locale-aware. EN owner için drift fix. Diğer 9 throw new Error (Tema kaydedilemedi vs) Stage 3 scope dışı (mega-component refactor).
+
+**TypeScript drift fix**:
+- `copy.description` (Phase A yeni) ile mevcut form label `description` (line 276) çakıştı → `pageDescription` rename (CLAUDE.md §38.73 build TS1117 fix).
+- `fetchAll` useCallback `isTr` dep eksikti (Phase F sonrası) → `[id, isTr]` dep ekleme.
+
+**Audit'te tespit edilen ama skip edilen 5 false positive**:
+- Hub 0/1/2+ restoran flow ✅ zaten doğru (EmptyState + redirect + picker grid)
+- Publish state visibility ✅ zaten 3 yerde net (top bar 3px lime + badge dot + toggle button)
+- IDOR API tarafında ✅ `canAccessRestaurant` doğru
+- Server-side page guard — Editor `'use client'` mega-component refactor BÜYÜK scope, Stage 3 disipline dışı (§12.1)
+- Modal focus management ✅ §11.1 baseline mevcut
+
+**Verification**:
+- `npm run lint` ✓ 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx next build` ✓ Compiled successfully + 58/58 static page (Prisma stub DB warnings beklenen)
+- `npx tsc --noEmit` ✓ 0 errors in `src/` (4 pre-existing `.next/types` baseline §21.13)
+- `npm test` ✓ 182/182 pass, 22 suites
+- Sanity grep regression: 6 fix landed (eyebrow/pageDescription / boş state lime / 2 loading.tsx / mobile hint / 6 menuEnabled disabled / locale-aware error)
+
+**UX flow özet (Stage 3 sonrası)**:
+1. Sidebar `Menü` → `/dashboard/menu` hub
+2. 0 restoran → EmptyState + "İşletme ekle" CTA
+3. 1 restoran → otomatik redirect `/restaurants/[id]/menu`
+4. 2+ restoran → card-based picker (skeleton'lı loading)
+5. Editor entry → eyebrow `MENÜ` + custom hero (back link + icon + restoran adı + description + status row)
+6. Sağ rail (lg:+) → MenuLivePreview canlı; mobile'da "preview için masaüstüne geç" info card
+7. Birincil CTA: Kategori Ekle (lime PRIMARY tek tutum — header + boş state aynı renk)
+8. Publish toggle: header actions (lime PRIMARY draft / amber warning published)
+9. menuEnabled=false → Read-only AlertBanner copy + 5 Add CTA `disabled` görünümü
+10. Client error → locale-aware (TR/EN)
+
+**Yapma**:
+- Editor mega-component'i refactor etmek (~1700 satır, §12.1 — Stage 3 disipline dışı, gelecek scope).
+- Server-side page guard ekleme (`'use client'` → server component) — büyük refactor, mevcut API IDOR yeterli.
+- Diğer 9 `throw new Error` callsite'ı locale-aware yapma — sadece ana fetch errors (line 345-346) en görünür, diğerleri minor (mega-component scope).
+- 2 "Kategori Ekle" button'undan birini silme — header + boş state ikisi de UX'in farklı bağlamlarında gerekli (filter rail vs first-time setup).
+- Custom hero'yu PageHeader primitive'iyle replace etme — kullanıcı kararı (AskUserQuestion) "custom hero koru".
+
+**Yap**:
+- Yeni copy field eklerken mevcut form label çakışma kontrolü (`grep "description:"` benzeri).
+- Yeni `useCallback` dep array'inde `isTr` veya başka closure değişkenleri kontrol et (lint warning'i hızlı yakala).
+- Yeni Add CTA eklenirse `disabled={!restaurant.menuEnabled}` paterni reuse.
+- Yeni segment loading.tsx eklerken Skeleton primitive (`<Skeleton>`/`<CardSkeleton>`/`<StatCardSkeleton>`) reuse.
+
+**Stage 3 closure** (Tarih 2026-05-05):
+- Branch `chore/owner-menu-management-ux`
+- PR + merge için kullanıcı manuel müdahale (GitHub MCP disconnected bu session'da)
+- İncelenen dosyalar: 4 (editor mega-component + 2 yeni loading.tsx + MenuLivePreview)
+- Yapılan değişiklikler: 6 phase fix (eyebrow inline + button unify + 2 loading + mobile hint + disable UX + locale error) + 2 ts/lint drift fix (pageDescription rename + useCallback dep)
+- Kontroller: lint 0 err / build 58 page / tsc src 0 err / test 182/182 / sanity grep clean
+- Kalan riskler: Editor mega-component ~1700 satır intact (refactor scope dışı); server-side guard yapılmadı; diğer 9 throw new Error TR-only (minor)
+- **Sonraki aşama önerisi**: Stage 4 — owner panel mobile kapsamlı QA (CLAUDE.md §25 + §38.B mobile backlog: bottom nav, drawer, touch targets, viewport overflow). Veya Stage 5 admin paneli polish, ya da kullanıcı yeni odak talebi.
+
