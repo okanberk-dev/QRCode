@@ -136,6 +136,9 @@ export default function MembersPage() {
       setPage(1);
     }, 300);
     return () => clearTimeout(t);
+    // setDebouncedSearch + setPage are useUrlFilter wrapper proxies — new
+    // reference each render (CLAUDE.md §36). Adding to deps would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
 
   const queryString = useMemo(() => {

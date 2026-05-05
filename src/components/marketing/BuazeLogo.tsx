@@ -26,7 +26,7 @@ export default function BuazeLogo({ size = 40, className = '', variant = 'defaul
 
   if (isUsableUrl && !imgFailed) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
+       
       <img
         src={imageUrl as string}
         width={size}

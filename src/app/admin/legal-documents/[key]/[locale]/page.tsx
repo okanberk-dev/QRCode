@@ -385,7 +385,7 @@ export default function LegalDocumentEditorPage({
                 <div>
                   <div className="text-[13px] font-medium text-[#0A0A0A]">Aktif</div>
                   <div className="text-[11.5px] text-[#737373]">
-                    Pasifleştirilirse public surface'lerde gizlenir.
+                    Pasifleştirilirse public surface&apos;lerde gizlenir.
                   </div>
                 </div>
                 <Toggle checked={isActive} onChange={setIsActive} />
@@ -434,7 +434,7 @@ export default function LegalDocumentEditorPage({
               <h3 className="bz-h-tight text-[14px] tracking-[-0.02em]">Değişkenler</h3>
               <p className="mt-1 text-[11.5px] leading-[1.55] text-[#737373]">
                 İçerikte <code className="rounded bg-[#FAFAFA] px-1 py-0.5 text-[10px]">{'{{COMPANY_NAME}}'}</code> gibi
-                placeholder'lar yazıldığında, public sayfa render edilirken otomatik gerçek değerle değiştirilir.
+                placeholder&apos;lar yazıldığında, public sayfa render edilirken otomatik gerçek değerle değiştirilir.
               </p>
               <Link
                 href="/admin/legal-documents/variables"
@@ -536,8 +536,8 @@ export default function LegalDocumentEditorPage({
           <div className="px-5 py-4">
             <h3 className="bz-h-tight text-[15px]">Belgeyi sil?</h3>
             <p className="mt-2 text-[13px] leading-[1.6] text-[#525252]">
-              Bu işlem belgeyi siler ve public surface'lerde kod default'una düşürür.
-              Versiyon geçmişi audit için korunur. Geri almak için "Geçmiş" üzerinden eski
+              Bu işlem belgeyi siler ve public surface&apos;lerde kod default&apos;una düşürür.
+              Versiyon geçmişi audit için korunur. Geri almak için &quot;Geçmiş&quot; üzerinden eski
               sürüme dönebilirsin.
             </p>
             <div className="mt-4 flex items-center justify-end gap-2">

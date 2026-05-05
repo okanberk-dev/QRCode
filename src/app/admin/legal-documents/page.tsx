@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Loader2, ArrowRight, ScrollText } from 'lucide-react';
+import { ArrowRight, ScrollText } from 'lucide-react';
 import { AlertBanner, Badge, CardSkeleton, PageHeader, Tabs, type TabItem } from '@/components/ui';
 
 interface DocCell {
@@ -176,7 +176,7 @@ export default function LegalDocumentsIndexPage() {
                           {item.source === 'db' ? (
                             <>v{item.version}</>
                           ) : (
-                            <span className="text-[#A8D62E]">Henüz oluşturulmadı (kod default'u kullanılıyor)</span>
+                            <span className="text-[#A8D62E]">Henüz oluşturulmadı (kod default&apos;u kullanılıyor)</span>
                           )}
                           {item.updatedAt && (
                             <span className="hidden sm:inline">

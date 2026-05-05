@@ -211,7 +211,7 @@ function RestaurantMenuCard({
           aria-hidden="true"
         >
           {restaurant.menuLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+             
             <img
               src={restaurant.menuLogoUrl}
               alt=""

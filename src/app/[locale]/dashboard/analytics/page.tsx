@@ -7,11 +7,8 @@ import type { Locale } from '@/lib/translations';
 import {
   BarChart,
   Eyebrow,
-  LegendDot,
   PageHeader,
-  PlatformChip,
   PLATFORMS,
-  StatCard,
   type PlatformId,
 } from '@/components/ui';
 import AnalyticsFilterBar from '@/components/dashboard/analytics/AnalyticsFilterBar';
@@ -22,7 +19,7 @@ import type { InteractionTrendPoint } from '@/components/dashboard/analytics/Int
 // InteractionTrendPoint type import KALDI (interactionData KPI sparkline için
 // hâlâ compute ediliyor; chart kullanılmıyor).
 import { PulseTrendChart } from '@/components/dashboard/analytics/PulseTrendChart';
-import { AnalyticsKpiGrid, type KpiSpec } from '@/components/dashboard/analytics/AnalyticsKpiGrid';
+import { AnalyticsKpiGrid } from '@/components/dashboard/analytics/AnalyticsKpiGrid';
 import { AiInsightsCard } from '@/components/dashboard/analytics/AiInsightsCard';
 import { ChannelDistributionMini } from '@/components/dashboard/analytics/ChannelDistributionMini';
 import { TopLocationCard } from '@/components/dashboard/analytics/TopLocationCard';
@@ -186,7 +183,7 @@ async function renderAnalyticsPage({
     redirectedPrevWindow,
     lowRatedWindow,
     lowRatedPrevWindow,
-    todayCount,
+    _todayCount,
     scansWindowCount,
     scansPrevWindowCount,
     scansWindowDaily,
@@ -294,7 +291,7 @@ async function renderAnalyticsPage({
   const reviewsCount = feedbacksWindow.length;
   const scansCount = scansWindowCount;
   const reviewsDelta = pctDelta(reviewsCount, feedbacksPrevWindow);
-  const scansDelta = pctDelta(scansCount, scansPrevWindowCount);
+  const _scansDelta = pctDelta(scansCount, scansPrevWindowCount);
 
   // Conversion rate = scan'den sonra yorum bırakanların oranı.
   // 0 scan → "—" göster, division-by-zero korunur.
@@ -311,7 +308,7 @@ async function renderAnalyticsPage({
 
   const lowRatingRate = reviewsCount > 0 ? Math.round((lowRatedWindow / reviewsCount) * 100) : 0;
   const prevLowRatingRate = feedbacksPrevWindow > 0 ? Math.round((lowRatedPrevWindow / feedbacksPrevWindow) * 100) : 0;
-  const lowRatingDelta = ppDelta(lowRatingRate, prevLowRatingRate, true);
+  const _lowRatingDelta = ppDelta(lowRatingRate, prevLowRatingRate, true);
 
   // §38.34 — Yeni KPI hesaplamaları (4 top tasarım + 3 secondary Buaze)
   // 1) Ortalama Puan + delta
@@ -394,7 +391,7 @@ async function renderAnalyticsPage({
     .filter((p) => p.count > 0)
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
-  const totalRedirects = platformShare.reduce((a, p) => a + p.count, 0);
+  const _totalRedirects = platformShare.reduce((a, p) => a + p.count, 0);
   const showPlatformShare = !platformFilter;
 
   // Günlük dağılım (7-day day-of-week) — fixed 7d window
@@ -595,18 +592,18 @@ async function renderAnalyticsPage({
       )
     : { trend: '', win: '', risk: '', source: 'fallback' as const };
 
-  const windowLabel = isTr ? `${windowDays} GÜNLÜK` : `${windowDays}-DAY`;
-  const windowSuffix = isTr ? `önceki ${windowDays} güne göre` : `vs prev ${windowDays}d`;
+  const _windowLabel = isTr ? `${windowDays} GÜNLÜK` : `${windowDays}-DAY`;
+  const _windowSuffix = isTr ? `önceki ${windowDays} güne göre` : `vs prev ${windowDays}d`;
 
   // Phase 8c+ (CLAUDE.md §38.18) — KPI mini sparkline data
   // (.design-owner-2026/page-analytics.jsx parity). interactionData zaten
   // window-bazlı günlük seri taşıyor; her bir KPI kendi metric'ini
   // çıkartarak ham series verir. Min 2 nokta gerekir (StatCard guard).
-  const sparkScans = interactionData.map((d) => d.scans);
+  const _sparkScans = interactionData.map((d) => d.scans);
   const sparkReviews = interactionData.map((d) => d.reviews);
-  const sparkRedirects = interactionData.map((d) => d.redirects);
+  const _sparkRedirects = interactionData.map((d) => d.redirects);
   // Conversion = reviews / scans (her gün için, NaN guard 0 fallback).
-  const sparkConversion = interactionData.map((d) =>
+  const _sparkConversion = interactionData.map((d) =>
     d.scans > 0 ? Math.round((d.reviews / d.scans) * 100) : 0,
   );
 

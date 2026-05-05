@@ -115,6 +115,9 @@ function AdminApiBody() {
       setActivity(DEMO_ACTIVITY);
       setLoading(false);
     })();
+    // Mount-only demo data load. `isTr` only affects render output; locale
+    // change via parent layout already triggers a full remount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const flash = (m: string) => {

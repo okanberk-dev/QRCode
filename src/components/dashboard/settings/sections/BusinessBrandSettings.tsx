@@ -251,7 +251,7 @@ export function BusinessBrandSettings({
                 <Loader2 size={20} className="animate-spin text-[#737373]" />
               </div>
             ) : snapshot?.coverImageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
+               
               <img
                 src={snapshot.coverImageUrl}
                 alt="Kapak görseli önizleme"

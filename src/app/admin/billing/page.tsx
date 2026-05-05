@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CreditCard, Download, FileText, Loader2, Zap } from 'lucide-react';
+import { CreditCard, Download, FileText, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';

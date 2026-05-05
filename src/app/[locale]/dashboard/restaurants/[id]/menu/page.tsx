@@ -33,7 +33,7 @@ interface RestaurantShape extends RestaurantView {
   menuLogoUrl: string | null;
 }
 
-interface CategoryShape extends MenuCategoryView {}
+type CategoryShape = MenuCategoryView;
 
 const BADGE_LABELS: Record<MenuBadge, { tr: string; en: string }> = {
   populer: { tr: 'Popüler', en: 'Popular' },
@@ -1360,7 +1360,7 @@ function ItemModal({
           <div className="flex gap-3">
             <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-[#F5F5F5] ring-1 ring-[#EDEDED]">
               {imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                 
                 <img src={imageUrl} alt="preview" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[#A3A3A3]">
@@ -1729,7 +1729,7 @@ function SortableItemRow({
         </button>
         <div className={`h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-[#F5F5F5] ring-1 ring-[#EDEDED] transition-opacity ${dimmed ? 'opacity-50' : ''}`}>
           {item.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+             
             <img src={item.imageUrl} alt={item.name} loading="lazy" className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-[#A3A3A3]">
@@ -2024,7 +2024,7 @@ function ThemePanel({
           <div className="flex items-start gap-4 rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-4">
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-white ring-1 ring-[#EDEDED]">
               {restaurant.menuLogoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                 
                 <img src={restaurant.menuLogoUrl} alt="logo" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center" style={{ color: currentAccent }}>

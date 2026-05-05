@@ -87,7 +87,7 @@ export default function ProductDetailModal({ item, accent, locale, onClose }: Pr
         {/* Hero image */}
         <div className="relative -mt-10 aspect-[4/3] w-full overflow-hidden bg-[#FFFFFF]">
           {item.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+             
             <img
               src={item.imageUrl}
               alt={item.name}

@@ -208,7 +208,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
           <div className="flex items-start gap-1.5 text-[11px] text-[#737373] leading-[1.55]">
             <MailCheck size={12} className="mt-0.5 shrink-0" strokeWidth={2} />
             <span>
-              Sistem random şifre üretir ve email'e davet linki gönderir. Kullanıcı linkle kendi şifresini belirler. Link 30 dakika geçerli.
+              Sistem random şifre üretir ve email&apos;e davet linki gönderir. Kullanıcı linkle kendi şifresini belirler. Link 30 dakika geçerli.
             </span>
           </div>
 

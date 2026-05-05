@@ -165,7 +165,9 @@ export default function AdminAnalyticsPage() {
       ? isTr ? 'Ortalama' : 'Average'
       : isTr ? 'Dikkat' : 'At risk';
 
-  const trends = stats?.trends ?? [];
+  // §38.49 — useMemo to keep `trends` reference stable across renders;
+  // useMemo dep below depends on it (otherwise re-fires every render).
+  const trends = useMemo(() => stats?.trends ?? [], [stats]);
   const trendPath = useMemo(() => buildTrendPath(trends), [trends]);
 
   const ratingRows = [5, 4, 3, 2, 1].map((r) => {

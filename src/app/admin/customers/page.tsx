@@ -110,11 +110,18 @@ export default function AdminCustomersPage() {
   useEffect(() => {
     const t = setTimeout(() => setSearchDebounced(search.trim()), 300);
     return () => clearTimeout(t);
+    // setSearchDebounced is a useUrlFilter wrapper proxy — new reference each
+    // render (CLAUDE.md §36). Adding to deps would loop. Search input string
+    // is the only intentional trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   // Reset to first page whenever a non-page filter changes.
   useEffect(() => {
     setPage(1);
+    // setPage is also a useUrlFilter wrapper proxy (see CLAUDE.md §36).
+    // Filter values are the only intentional triggers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, restaurantId, searchDebounced, segmentFilter, hasEmail, hasPhone, hasComment]);
 
   // Load restaurant options once (for the dropdown).

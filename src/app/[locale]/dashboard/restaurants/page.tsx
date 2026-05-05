@@ -118,6 +118,9 @@ export default function DashboardRestaurantsPage() {
 
   useEffect(() => {
     fetchRestaurants();
+    // fetchRestaurants is a stable closure capturing statusFilter via the
+    // existing scope; statusFilter is the only intentional trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter]);
 
   useEffect(() => {

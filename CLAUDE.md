@@ -7270,6 +7270,51 @@ for each PLATFORM_DEF (11):
 - 🟢 `/dashboard/integrations` route cleanup (backward-compat; silinebilir)
 - (diğer §38.B kalemleri intact)
 
+### 38.49 2026-05-05 — Lint warnings cleanup (78 → 0)
+
+CLAUDE.md §21.25 baseline lint debt sweep — kullanıcı talebi "warning'leri temizle". §38.47 + §38.48 sonrası `npx eslint .` çıktısı `78 warnings` veriyordu (CI yeşil çünkü 0 error, ama görsel kirlilik). Bu PR sıfırladı: **0 errors, 0 warnings**.
+
+**Yapılan kategoriler**:
+
+| Kural | Önceki | Sonra | Çözüm |
+|---|---|---|---|
+| `@next/next/no-img-element` | 13 | 0 | Rule `'off'` (CLAUDE.md §3 base64-in-DB pattern `<img>` zorunlu — Vercel ephemeral FS, `next/image` data: URL ile uyumsuz). Açıklama config yorumuyla. |
+| `@typescript-eslint/no-unused-vars` | 29 | 0 | `argsIgnorePattern: '^_'` + `varsIgnorePattern: '^_'` config — `_` prefix ignore. Auto-fix 14 unused import sildi. Manuel: orphan transaction değişkenleri `_` prefix (CLAUDE.md §38.27 KPI semantik değişiminden kalan baseline), gerçek unused var/import sildi (Loader2, Wand2, useMemo, Hit, KpiSpec, restaurantNameById, STAR_VALUE, vb.) |
+| `react/no-unescaped-entities` | 17 | 0 | `'` → `&apos;`, `"` → `&quot;` (10 dosyada 17 yer) |
+| `react-hooks/exhaustive-deps` | 12 | 0 | Case-by-case: useUrlFilter wrapper setter'ları (CLAUDE.md §36 — eklemek loop yaratır) → `eslint-disable-next-line` + açıklama. `MailTemplateEditor.fields` + `admin/analytics.trends` → `useMemo` ile sar (gerçek perf fix). Stable closure paterni → açıklamalı disable. |
+| `@next/next/no-async-client-component` | 1 | 0 | `feedbacks/page.tsx` async client → `React.use()` ile Promise unwrap (Next 15 paterni) |
+| `@typescript-eslint/no-empty-object-type` | 1 | 0 | `interface CategoryShape extends MenuCategoryView {}` → `type CategoryShape = MenuCategoryView` |
+| `@typescript-eslint/no-explicit-any` | 1 | 0 | `cache as any` → `cache as unknown as Prisma.InputJsonValue` |
+| `@next/next/google-font-preconnect` | 1 | 0 | Redundant `dns-prefetch` siler (preconnect zaten var, modern browser'lar için yeter) |
+| `import/no-anonymous-default-export` | 1 | 0 | `postcss.config.mjs` named const + default export pattern |
+| `prefer-const` | 1 | 0 | Auto-fix |
+
+**ESLint config değişiklikleri** (`eslint.config.mjs`):
+- `.design-owner-2026/**` + `.design-pulse-2026/**` ignore (CLAUDE.md §16 — referans bundle, src/ değil)
+- `@next/next/no-img-element: 'off'` (CLAUDE.md §3 + §11 platform brand SVG'leri için meşru)
+- `@typescript-eslint/no-unused-vars: ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }]` (intentional unused için `_` prefix paterni)
+
+**Yapma**:
+- `<img>` rule'unu yeniden `'warn'` etme — base64-in-DB pattern (CLAUDE.md §3) Vercel zorunluluğu. Yeni `<img>` kullanımı meşru, eslint-disable yorum gereksiz.
+- `useUrlFilter` setter'larını useEffect dep'e ekleme — wrapper proxy paterni (CLAUDE.md §36), her render'da yeni reference, eklerse infinite loop.
+- `_` prefix'li orphan transaction değişkenleri silme — §38.27'de bilinçli kalan baseline (KPI semantik değişimi sonrası, ileride lazım olabilir referansı). Sadece prefix ile linter görmezden gelir.
+- Anonim default export pattern'i (config dosyaları haricinde) — `postcss.config.mjs` named const + export pattern'i tek-dosya istisna.
+
+**Yap**:
+- Yeni dosya eklerken intentional unused argument/var için `_` prefix kullan (örn. `_ctx`, `_event`).
+- Yeni `useEffect` deps eksikliği oluşursa: önce gerçek bug mu yoksa stable closure mı analiz et. Stable ise açıklamalı `// eslint-disable-next-line react-hooks/exhaustive-deps` ekle.
+- JSX'te `'` veya `"` kullanırken `&apos;` / `&quot;` escape et veya JSX expression `{"\""}` kullan.
+- Yeni async fonksiyon Next 15 client component'te → `React.use()` ile Promise unwrap.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint .` **0 errors, 0 warnings** (78 → 0)
+- `npm test` 182/182 pass
+
+**Backlog güncel**:
+- (CLAUDE.md §21.25 lint baseline disipline temizlendi — ileride yeni eklenen warning'ler için aynı patternler uygulanır)
+- Diğer §38.B kalemleri intact
+
 ### 38.48 2026-05-05 — Wave 1: Mail churned chip + Admin endpoint lastTopic/lastChannel parity
 
 §38.47 sonrası Customers backlog'unun "schema değişikliği YOK" olan 2 kalemi bu PR'da kapatıldı. Kullanıcı talebi: "Atlanan işlerden müşteri ekle dışında olanları yap" (Bulk action 3'lüsü Wave 2 ayrı PR — schema migration).

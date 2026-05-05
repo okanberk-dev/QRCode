@@ -169,7 +169,7 @@ export default async function EmbedPage({ params, searchParams }: RouteParams) {
         </a>
       </div>
       {/* JS-free tracking pixel — 1×1 transparent GIF, server insert */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
+      { }
       <img
         src={trackPixelUrl}
         alt=""
