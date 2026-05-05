@@ -30,6 +30,10 @@ interface FeedbackFiltersRailProps {
     unreplied: number;
     today: number;
     aiReady: number;
+    // §38.56 — 5-tab tasarım birebir parity (Tümü/Okunmamış/Düşük/Yanıtlandı/Beklemede)
+    unread?: number;
+    replied?: number;
+    pending?: number;
   };
   hasActiveFilter: boolean;
   activeFilterCount: number;
@@ -78,14 +82,15 @@ export function FeedbackFiltersRail({
   // §38.35 — Tasarım birebir: rail status set mobile chip set ile UNIFIED
   // (kullanıcı raporu "filtreleme eksik"). Eski 4-tab (Tümü/Düşük/Yüksek/
   // Yönlendirilen) replace edildi 5-tab aksiyon-odaklı (Tümü/Düşük/Yanıtsız/
-  // Bugün/AI Hazır). high/redirected rail'dan kaldırıldı; analytics page
-  // §34.7-10 derin breakdown'da zaten görünür.
+  // §38.56 — Tasarım a/page-reviews.jsx 5-tab birebir parity:
+  // Tümü / Okunmamış / Düşük puan / Yanıtlandı / Beklemede. Mobile chip
+  // (FeedbackList.tsx) ile unified state.
   const tabs: { k: ActiveTab; l: string; c: number }[] = [
     { k: 'all', l: isTr ? 'Tümü' : 'All', c: counts.all },
+    { k: 'unread', l: isTr ? 'Okunmamış' : 'Unread', c: counts.unread ?? 0 },
     { k: 'low', l: isTr ? 'Düşük puan' : 'Low rating', c: counts.low },
-    { k: 'unreplied', l: isTr ? 'Yanıtsız' : 'Unreplied', c: counts.unreplied },
-    { k: 'today', l: isTr ? 'Bugün' : 'Today', c: counts.today },
-    { k: 'ai_ready', l: isTr ? 'AI Hazır' : 'AI Ready', c: counts.aiReady },
+    { k: 'replied', l: isTr ? 'Yanıtlandı' : 'Replied', c: counts.replied ?? 0 },
+    { k: 'pending', l: isTr ? 'Beklemede' : 'Pending', c: counts.pending ?? 0 },
   ];
 
   return (

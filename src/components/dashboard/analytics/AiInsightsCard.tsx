@@ -1,19 +1,16 @@
 import { Sparkles, TrendingUp, Award, AlertTriangle } from 'lucide-react';
 
-// §38.50 — AI İÇGÖRÜLER · BU HAFTA light card (tasarım birebir parity).
-// Tasarım kaynağı: .design-owner-2026/project/page-analytics.jsx
-// "AI İÇGÖRÜLER" line 285-315:
-//   - Container: bz-card (white bg)
-//   - Insight rows: bg-[#FAFAFA] rounded-[10px] borderLeft 2px tone-color
-//   - 3-row strüktür: TREND (lime) / KAZANIM (lime-deep) / RİSK (red)
-//   - Icon + title + summary
+// §38.56 — AI İÇGÖRÜLER · BU HAFTA DARK card (tasarım a/page-analytics.jsx
+// line 244-275 birebir). Owner kararı: §38.50'de light card'a dönmüştü
+// (eski tasarım kaynağı), yeni handoff a/ bundle birebir DARK card istiyor:
+//   - Container: graphite (#0A0A0A) bg + lime accent corner
+//   - 3-row strüktür: TREND (lime) / KAZANIM (lime) / RİSK (red)
+//   - Icon badge dark (#1A1A1A) + tone color border
+//   - Body white text on graphite
 //
-// §38.34 dark card (graphite + lime accent) → light theme migration. Owner
-// kararı (CLAUDE.md §38.50): tasarım birebir, sayfa visual flow Pulse light
-// convention'a uyar.
-//
-// Server-friendly (data prop). 3 alan boş ise kart gizli (extractStructuredInsight
-// fail → fallback empty → UI render etmez). Min 1 alan dolu olmalı.
+// Server-friendly (data prop). 3 alan boş ise kart gizli
+// (extractStructuredInsight fail → fallback empty → UI render etmez).
+// Min 1 alan dolu olmalı.
 
 export interface AiInsightsCardProps {
   trend: string;
@@ -80,45 +77,60 @@ export function AiInsightsCard({
   const eyebrow = eyebrowLabel ?? (isTr ? 'AI İÇGÖRÜLER · BU HAFTA' : 'AI INSIGHTS · THIS WEEK');
 
   return (
-    <section className="bz-card p-5 sm:p-6" aria-label={eyebrow}>
-      <header className="mb-4 flex items-center justify-between gap-3">
+    <section
+      className="relative overflow-hidden rounded-[18px] bg-[#0A0A0A] p-5 sm:p-6 text-white"
+      aria-label={eyebrow}
+    >
+      {/* Lime corner accent (Pulse signature) */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#C6F24E]/10 blur-2xl"
+      />
+      <header className="relative mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span
             aria-hidden="true"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#EAF9B8] border border-[#C6F24E]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full"
+            style={{ background: 'rgba(198,242,78,0.15)', border: '1px solid rgba(198,242,78,0.4)' }}
           >
-            <Sparkles size={13} className="text-[#0A0A0A]" strokeWidth={2.2} />
+            <Sparkles size={13} className="text-[#C6F24E]" strokeWidth={2.2} />
           </span>
-          <h3 className="pulse-eyebrow text-[10.5px] text-[#737373]">{eyebrow}</h3>
+          <h3 className="pulse-eyebrow text-[10.5px] text-[#C6F24E]">{eyebrow}</h3>
         </div>
-        <span className="bz-mono text-[10px] text-[#A3A3A3] uppercase tracking-wider">
+        <span className="bz-mono text-[10px] uppercase tracking-wider text-white/55">
           {isTr ? 'haftalık özet' : 'weekly summary'}
         </span>
       </header>
-      <ol className="flex flex-col gap-2.5">
+      <ol className="relative flex flex-col gap-2.5">
         {visibleRows.map((r) => {
           const Icon = r.icon;
           return (
             <li
               key={r.key}
-              className="flex items-start gap-3 rounded-[10px] bg-[#FAFAFA] p-3.5"
-              style={{ borderLeft: `2px solid ${r.toneColor}` }}
+              className="flex items-start gap-3 rounded-[10px] p-3.5"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                borderLeft: `2px solid ${r.toneColor}`,
+              }}
             >
               <span
                 aria-hidden="true"
                 className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md"
-                style={{ background: '#FFFFFF', border: `1px solid ${r.toneColor}40` }}
+                style={{
+                  background: '#1A1A1A',
+                  border: `1px solid ${r.toneColor}55`,
+                }}
               >
                 <Icon size={13} strokeWidth={2.2} style={{ color: r.toneColor }} />
               </span>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <div
-                  className="pulse-eyebrow text-[10px] mb-1"
+                  className="pulse-eyebrow mb-1 text-[10px]"
                   style={{ color: r.toneColor }}
                 >
                   {isTr ? r.labelTr : r.labelEn}
                 </div>
-                <p className="text-[12.5px] leading-[1.55] text-[#0A0A0A]">{r.body}</p>
+                <p className="text-[12.5px] leading-[1.55] text-white/90">{r.body}</p>
               </div>
             </li>
           );

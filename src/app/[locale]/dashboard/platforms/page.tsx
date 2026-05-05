@@ -45,14 +45,19 @@ interface PageProps {
 interface PlatformDef {
   id: string;
   name: string;
-  cat: 'review' | 'social' | 'message';
+  cat: 'review' | 'social' | 'message' | 'api';
   catLabel: { tr: string; en: string };
   accent: string;
   initials: string;
-  // Restaurant model'inde URL field adı
-  urlField: keyof RestaurantPlatformRow;
+  // §38.56 — `urlField` opsiyonel oldu: Webhook (api kategori) Restaurant
+  // schema'da URL field'ı yok; mevcut AutomationRule schema reuse ileride.
+  // Şimdilik "Hazır / Yakında" placeholder (CLAUDE.md §34.4 paterni).
+  urlField?: keyof RestaurantPlatformRow;
   // Restaurant model'inde enabled flag adı (review platforms only)
   enabledField?: keyof RestaurantPlatformRow;
+  // §38.56 — Backend olmayan placeholder card için: "Yakında" disabled CTA
+  // pattern (CLAUDE.md §11.2 +§34.4 paterni reuse).
+  comingSoon?: boolean;
 }
 
 interface RestaurantPlatformRow {
@@ -102,6 +107,9 @@ const PLATFORM_DEFS: PlatformDef[] = [
   { id: 'facebook', name: 'Facebook', cat: 'social', catLabel: { tr: 'Sosyal', en: 'Social' }, accent: '#1877F2', initials: 'FB', urlField: 'facebookUrl' },
   // Mesaj
   { id: 'whatsapp', name: 'WhatsApp', cat: 'message', catLabel: { tr: 'Mesaj', en: 'Message' }, accent: '#25D366', initials: 'WA', urlField: 'whatsappUrl' },
+  // §38.56 — API: Webhook (tasarım a/page-platforms.jsx 12. card "Hazir" badge).
+  // Backend AutomationRule schema mevcut (CLAUDE.md §34.4); UI scope ayrı PR.
+  { id: 'webhook', name: 'Webhook', cat: 'api', catLabel: { tr: 'API', en: 'API' }, accent: '#525252', initials: 'WH', comingSoon: true },
 ];
 
 export default async function OwnerPlatformsPage({ params }: PageProps) {
@@ -222,16 +230,20 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
       ]);
 
   // Per-platform aggregate: bağlı (URL set + enabled), toplam restoran sayısı.
+  // §38.56 — Webhook (comingSoon): backend yok, aggregate skip → connected=0,
+  // urlSet=0. UI tarafında "Yakında" badge + disabled CTA gösterir.
   const platformSummaries = PLATFORM_DEFS.map((p) => {
     let connected = 0;
     let urlSet = 0;
-    for (const r of restaurants) {
-      const url = r[p.urlField] as string | null;
-      const hasUrl = typeof url === 'string' && url.trim().length > 0;
-      const isEnabled = p.enabledField ? Boolean(r[p.enabledField]) : true;
-      if (hasUrl) {
-        urlSet += 1;
-        if (isEnabled) connected += 1;
+    if (p.urlField) {
+      for (const r of restaurants) {
+        const url = r[p.urlField] as string | null;
+        const hasUrl = typeof url === 'string' && url.trim().length > 0;
+        const isEnabled = p.enabledField ? Boolean(r[p.enabledField]) : true;
+        if (hasUrl) {
+          urlSet += 1;
+          if (isEnabled) connected += 1;
+        }
       }
     }
     return { ...p, connected, urlSet, total: restaurants.length };
@@ -358,6 +370,12 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
             en: 'Messaging',
             count: PLATFORM_DEFS.filter((p) => p.cat === 'message').length,
           },
+          {
+            id: 'api',
+            tr: 'API',
+            en: 'API',
+            count: PLATFORM_DEFS.filter((p) => p.cat === 'api').length,
+          },
         ].map((c, i) => (
           <span
             key={c.id}
@@ -387,20 +405,38 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
         {platformSummaries.map((p) => {
           const isConnected = p.connected > 0;
           const isPartial = p.urlSet > p.connected;
-          const fullStatus = isConnected ? 'connected' : isPartial ? 'inactive' : 'available';
-          const statusBadgeKind: 'ok' | 'warn' | 'ghost' =
-            fullStatus === 'connected' ? 'ok' : fullStatus === 'inactive' ? 'warn' : 'ghost';
+          // §38.56 — Webhook (comingSoon): "Yakında" status (info badge),
+          // disabled CTA. AutomationRule schema mevcut, UI ayrı PR scope.
+          const fullStatus = p.comingSoon
+            ? 'coming_soon'
+            : isConnected
+              ? 'connected'
+              : isPartial
+                ? 'inactive'
+                : 'available';
+          const statusBadgeKind: 'ok' | 'warn' | 'ghost' | 'info' =
+            fullStatus === 'connected'
+              ? 'ok'
+              : fullStatus === 'inactive'
+                ? 'warn'
+                : fullStatus === 'coming_soon'
+                  ? 'info'
+                  : 'ghost';
           const statusLabel = isTr
             ? fullStatus === 'connected'
               ? 'Bağlı'
               : fullStatus === 'inactive'
                 ? 'Pasif'
-                : 'Hazır'
+                : fullStatus === 'coming_soon'
+                  ? 'Yakında'
+                  : 'Hazır'
             : fullStatus === 'connected'
               ? 'Connected'
               : fullStatus === 'inactive'
                 ? 'Inactive'
-                : 'Available';
+                : fullStatus === 'coming_soon'
+                  ? 'Coming soon'
+                  : 'Available';
           return (
             <div
               key={p.id}
@@ -430,35 +466,61 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
                 <Badge kind={statusBadgeKind}>{statusLabel}</Badge>
               </div>
 
-              {/* Aggregate row */}
-              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[10px] border border-[#EDEDED]">
-                <div className="bg-white p-2.5">
-                  <div className="pulse-eyebrow text-[9.5px] text-[#737373] mb-0.5">
-                    {isTr ? 'BAĞLI' : 'CONNECTED'}
+              {/* Aggregate row — Webhook (comingSoon) için "AutomationRule
+                  schema hazır" + "AI Co-Pilot reuse" placeholder bilgi. */}
+              {p.comingSoon ? (
+                <div className="rounded-[10px] border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-3">
+                  <div className="pulse-eyebrow text-[9.5px] text-[#737373] mb-1">
+                    {isTr ? 'BACKEND HAZIR' : 'BACKEND READY'}
                   </div>
-                  <div className="bz-mono tabular-nums text-[12px] font-semibold text-[#0A0A0A]">
-                    {p.connected}/{p.total}
+                  <p className="text-[11.5px] text-[#525252] leading-[1.5]">
+                    {isTr
+                      ? 'AutomationRule schema mevcut; UI ayrı PR scope (CLAUDE.md §34.4).'
+                      : 'AutomationRule schema in place; UI ships in a separate PR (CLAUDE.md §34.4).'}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[10px] border border-[#EDEDED]">
+                  <div className="bg-white p-2.5">
+                    <div className="pulse-eyebrow text-[9.5px] text-[#737373] mb-0.5">
+                      {isTr ? 'BAĞLI' : 'CONNECTED'}
+                    </div>
+                    <div className="bz-mono tabular-nums text-[12px] font-semibold text-[#0A0A0A]">
+                      {p.connected}/{p.total}
+                    </div>
+                  </div>
+                  <div className="bg-white p-2.5 border-l border-[#EDEDED]">
+                    <div className="pulse-eyebrow text-[9.5px] text-[#737373] mb-0.5">
+                      {isTr ? 'URL VAR' : 'URL SET'}
+                    </div>
+                    <div className="bz-mono tabular-nums text-[12px] font-semibold text-[#0A0A0A]">
+                      {p.urlSet}/{p.total}
+                    </div>
                   </div>
                 </div>
-                <div className="bg-white p-2.5 border-l border-[#EDEDED]">
-                  <div className="pulse-eyebrow text-[9.5px] text-[#737373] mb-0.5">
-                    {isTr ? 'URL VAR' : 'URL SET'}
-                  </div>
-                  <div className="bz-mono tabular-nums text-[12px] font-semibold text-[#0A0A0A]">
-                    {p.urlSet}/{p.total}
-                  </div>
-                </div>
-              </div>
+              )}
 
-              {/* Action */}
+              {/* Action — comingSoon: disabled "Yakında" CTA pattern (CLAUDE.md §11.2 + §34.4 paterni reuse) */}
               <div className="flex gap-2">
-                <Link
-                  href={manageHref}
-                  className="bz-btn-ghost flex-1 inline-flex items-center justify-center gap-1.5 text-[12px]"
-                >
-                  <Settings size={11} strokeWidth={2} />
-                  {isTr ? 'Yönet' : 'Manage'}
-                </Link>
+                {p.comingSoon ? (
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-[12px] border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 text-[12px] font-medium text-[#A3A3A3] cursor-not-allowed"
+                    title={isTr ? 'Yakında bağlanacak' : 'Coming soon'}
+                  >
+                    {isTr ? 'Yakında' : 'Coming soon'}
+                  </button>
+                ) : (
+                  <Link
+                    href={manageHref}
+                    className="bz-btn-ghost flex-1 inline-flex items-center justify-center gap-1.5 text-[12px]"
+                  >
+                    <Settings size={11} strokeWidth={2} />
+                    {isTr ? 'Yönet' : 'Manage'}
+                  </Link>
+                )}
               </div>
             </div>
           );

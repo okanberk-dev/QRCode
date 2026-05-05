@@ -22,10 +22,14 @@ interface FeedbackListProps {
     low: number;
     high: number;
     redirected: number;
-    // §38.33 — mobile chip strip + sticky AI banner için
+    // §38.33 — mobile chip strip + sticky AI banner için (legacy literal)
     unreplied: number;
     today: number;
     aiReady: number;
+    // §38.56 — Tasarım a/page-reviews.jsx 5-tab birebir parity counts
+    unread?: number;
+    replied?: number;
+    pending?: number;
   };
   hasActiveFilter: boolean;
   activeFilterCount: number;
@@ -62,15 +66,17 @@ export function FeedbackList({
 }: FeedbackListProps) {
   const isTr = locale === 'tr';
 
-  // §38.33 — Tasarım .design-owner-2026/page-mobile-v2.jsx mobil chip strip:
-  // Tümü / Düşük / Yanıtsız / Bugün / AI Hazır. Mevcut high/redirected
-  // chip'leri xl: rail'e taşındı, mobil chip set'inde aksiyon-odaklı seçim.
+  // §38.56 — Tasarım a/page-reviews.jsx 5-tab birebir parity:
+  // Tümü / Okunmamış / Düşük puan / Yanıtlandı / Beklemede.
+  // Migration 20260505230000 Feedback.isRead + isPending field'ları
+  // backend'den geldiğinde counts.unread + counts.pending dolu olur;
+  // eski feedback'lerde isRead/isPending undefined → 0 sayılır.
   const tabs: { k: ActiveTab; l: string; c: number }[] = [
     { k: 'all', l: isTr ? 'Tümü' : 'All', c: counts.all },
-    { k: 'low', l: isTr ? 'Düşük' : 'Low', c: counts.low },
-    { k: 'unreplied', l: isTr ? 'Yanıtsız' : 'Unreplied', c: counts.unreplied },
-    { k: 'today', l: isTr ? 'Bugün' : 'Today', c: counts.today },
-    { k: 'ai_ready', l: isTr ? 'AI Hazır' : 'AI Ready', c: counts.aiReady },
+    { k: 'unread', l: isTr ? 'Okunmamış' : 'Unread', c: counts.unread ?? 0 },
+    { k: 'low', l: isTr ? 'Düşük puan' : 'Low rating', c: counts.low },
+    { k: 'replied', l: isTr ? 'Yanıtlandı' : 'Replied', c: counts.replied ?? 0 },
+    { k: 'pending', l: isTr ? 'Beklemede' : 'Pending', c: counts.pending ?? 0 },
   ];
 
   return (

@@ -235,7 +235,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   // related pages into operational groups so the sidebar stays compact.
   type LucideIcon = typeof LayoutDashboard;
   type NavItem = { type: 'item'; href: string; icon: LucideIcon; label: string; badge?: number };
-  type NavChild = { href: string; icon: LucideIcon; label: string };
+  // §38.56 — `isNew` opsiyonel: tasarım a/shell.jsx Kampanyalar item'ı "Yeni"
+  // badge ile gösterir. Tek-shot signal flag, badge text style "lime + 10px".
+  type NavChild = { href: string; icon: LucideIcon; label: string; isNew?: boolean };
   type NavGroup = { type: 'group'; id: string; icon: LucideIcon; label: string; children: NavChild[] };
   type Nav = NavItem | NavGroup;
 
@@ -253,7 +255,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
         { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
         { href: `/${locale}/dashboard/google-reviews`, icon: MessageSquareText, label: copy.googleReviews },
-        { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
       ],
     },
     {
@@ -261,8 +262,20 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       id: 'crm',
       icon: UsersRound,
       label: 'CRM',
+      // §38.56 — tasarım a/shell.jsx CRM grup birebir: Müşteriler / Analitik /
+      // Kampanyalar (Yeni badge). Analitik mevcut /dashboard/analytics route'u
+      // kullanır (eskiden GENEL'deydi); Kampanyalar şu an placeholder route
+      // (`/dashboard/campaigns` 404 dönecek — sayfa açılana kadar "Yeni" badge
+      // hint olarak görünür).
       children: [
         { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
+        { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
+        {
+          href: `/${locale}/dashboard/campaigns`,
+          icon: MessageSquareText,
+          label: locale === 'tr' ? 'Kampanyalar' : 'Campaigns',
+          isNew: true,
+        },
       ],
     },
     {
@@ -381,6 +394,30 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           )}
         </div>
       </div>
+
+      {/* §38.57 — Sidebar search button (tasarım a/shell.jsx line 189-206
+          birebir). Cmd+K palette tetikleyicisi, topbar'daki Cmd+K button'u
+          ile aynı palette state'i paylaşır. Collapse mode'da gizli (icon-only
+          sidebar'da topbar Cmd+K yeterli). */}
+      {!isCollapsed && (
+        <div className="px-3 pb-2 animate-in fade-in slide-in-from-top-1 duration-300">
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            aria-label={locale === 'tr' ? 'Aramayı aç' : 'Open search'}
+            title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
+            className="flex w-full items-center gap-2 rounded-[10px] border border-[#EDEDED] bg-white px-3 py-2 text-[12px] text-[#737373] hover:border-[#0A0A0A] hover:text-[#0A0A0A] hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] transition-colors"
+          >
+            <Search size={13} strokeWidth={2.2} className="shrink-0" />
+            <span className="flex-1 text-left truncate">
+              {locale === 'tr' ? 'Ara…' : 'Search…'}
+            </span>
+            <span className="shrink-0 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono">
+              ⌘K
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* §38.39 — Primary CTA tasarım birebir: "Yorum İste" (tasarım kaynağı
           .design-owner-2026/shell.jsx). Owner panel'de birincil aksiyon yorum
@@ -516,7 +553,21 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                           }`}
                         >
                           <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
-                          {!isCollapsed && <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">{child.label}</span>}
+                          {!isCollapsed && (
+                            <>
+                              <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">
+                                {child.label}
+                              </span>
+                              {child.isNew && (
+                                <span
+                                  className="ml-auto inline-flex shrink-0 items-center rounded-full bg-[#C6F24E] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-[#0A0A0A]"
+                                  aria-label={locale === 'tr' ? 'Yeni' : 'New'}
+                                >
+                                  {locale === 'tr' ? 'Yeni' : 'New'}
+                                </span>
+                              )}
+                            </>
+                          )}
                         </Link>
                       );
                     })}
@@ -931,6 +982,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           { href: `/${locale}/dashboard/google-reviews`, label: copy.googleReviews, keywords: ['google', 'yorum', 'review', 'feedback'] },
           { href: `/${locale}/dashboard/qr`, label: copy.qr, keywords: ['qr', 'kod', 'code'] },
           { href: `/${locale}/dashboard/analytics`, label: copy.analytics, keywords: ['analitik', 'rapor', 'analytics', 'report'] },
+          { href: `/${locale}/dashboard/campaigns`, label: locale === 'tr' ? 'Kampanyalar' : 'Campaigns', keywords: ['kampanya', 'campaign', 'mail', 'segment'] },
           { href: `/${locale}/dashboard/restaurants`, label: copy.restaurants, keywords: ['işletme', 'konum', 'lokasyon', 'restoran', 'location'] },
           { href: `/${locale}/dashboard/menu`, label: copy.menu, keywords: ['menü', 'menu', 'ürün', 'item'] },
           { href: `/${locale}/dashboard/platforms`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
