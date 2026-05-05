@@ -459,18 +459,18 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 aria-current={isActive ? 'page' : undefined}
                 className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
                   isActive
-                    ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                    : 'text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
+                    ? 'bg-[#0A0A0A] text-white font-semibold before:absolute before:left-[-12px] before:top-1.5 before:bottom-1.5 before:w-[3px] before:bg-[#C6F24E] before:rounded-r-sm'
+                    : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
                 }`}
               >
                 <Icon size={16} strokeWidth={2} className="shrink-0" />
                 {!isCollapsed && <span className="flex-1 truncate animate-in fade-in slide-in-from-left-2 duration-300">{item.label}</span>}
                 {item.badge !== undefined && item.badge !== 0 && (
                   <span
-                    className="text-[10px] font-semibold rounded-full px-2 py-0.5"
+                    className="text-[10px] font-semibold rounded-full px-2 py-0.5 bz-mono tabular-nums"
                     style={{
-                      background: isActive ? 'rgba(10,10,10,0.1)' : 'rgba(198,242,78,0.2)',
-                      color: isActive ? '#0A0A0A' : '#C6F24E',
+                      background: isActive ? 'rgba(198,242,78,0.22)' : '#F2F2F2',
+                      color: isActive ? '#C6F24E' : '#737373',
                     }}
                   >
                     {item.badge}
@@ -490,15 +490,15 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           return (
             <div key={item.id}>
               {showDividerBefore && (
-                <div aria-hidden className="my-2 mx-3 h-px bg-[#FAFAFA]" />
+                <div aria-hidden className="my-2 mx-3 h-px bg-[#EDEDED]" />
               )}
               <button
                 type="button"
                 onClick={() => toggleGroup(item.id)}
                 className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
                   childActive
-                    ? 'bg-[#F5F5F5] text-[#0A0A0A]'
-                    : 'text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
+                    ? 'bg-[#F2F2F2] text-[#0A0A0A]'
+                    : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
                 }`}
                 aria-expanded={isExpanded}
               >
@@ -548,8 +548,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                           tabIndex={isExpanded ? 0 : -1}
                           className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] font-medium transition-colors ${
                             isActive
-                              ? 'bg-[#C6F24E] text-[#0A0A0A]'
-                              : 'text-[#737373] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
+                              ? 'bg-[#0A0A0A] text-white font-semibold'
+                              : 'text-[#737373] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
                           }`}
                         >
                           <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
@@ -615,17 +615,18 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </div>
       )}
 
-      {/* User pill + dropdown menu — tasarım .design-pulse-2026/.../shell.jsx
-          UserMenu paterni (Profil/Ayarlar/Yardım/Çıkış). Phase 1 .bz-user-menu
-          CSS class'larını kullanır. Outside click + ESC kapatır. */}
-      <div className="relative border-t border-[#EDEDED] bg-[#FAFAFA] p-3" ref={userMenuRef}>
+      {/* User pill + dropdown menu — tasarım a/shell.jsx UserMenu paterni
+          (Profil/Ayarlar/Yardım/Çıkış). Sidebar tek beyaz alan, user pill
+          sadece border-top ile ayrılır (mevcut wrapper bg-[#FAFAFA] kaldırıldı,
+          tasarım birebir). bz-user-menu CSS class'ları kullanır. */}
+      <div className="relative border-t border-[#EDEDED] p-3" ref={userMenuRef}>
         <button
           type="button"
           onClick={() => setUserMenuOpen((v) => !v)}
           aria-expanded={userMenuOpen}
           aria-haspopup="menu"
           aria-label={locale === 'tr' ? 'Hesap menüsü' : 'Account menu'}
-          className={`flex w-full items-center gap-2.5 rounded-xl bg-[#FAFAFA] px-2.5 py-2 transition-colors hover:bg-[#F5F5F5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
+          className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 transition-colors hover:bg-[#F2F2F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${
             isCollapsed ? 'justify-center' : ''
           }`}
           title={isCollapsed ? displayName : undefined}
