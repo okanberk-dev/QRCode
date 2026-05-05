@@ -14,13 +14,15 @@ import { deriveCustomerFields, type CustomerSegment } from '@/lib/customers';
 // param mirrors list endpoint filter.
 
 const RANGE_PRESETS = { '7d': 7, '30d': 30, '90d': 90 } as const;
-const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal']);
+// §38.47 — `churned` segment eklendi.
+const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal', 'churned']);
 
 const SEGMENT_LABEL: Record<CustomerSegment, string> = {
   vip: 'VIP',
   loyal: 'Düzenli',
   new: 'Yeni',
   risk: 'Risk',
+  churned: 'Kayıp',
 };
 
 const SENTIMENT_LABEL = {

@@ -83,6 +83,10 @@ export async function GET(
           name: true,
           email: true,
           phone: true,
+          // §38.47 — son feedback'in aspect rating'leri (lastTopic için).
+          foodRating: true,
+          serviceRating: true,
+          atmosphereRating: true,
         },
       }),
       prisma.restaurant.findUnique({
@@ -118,6 +122,9 @@ export async function GET(
     }));
 
     // Derive Phase 8c segment + LTV + sentiment for drawer chips/tile.
+    // §38.47 — last feedback's platform + aspect ratings forwarded for the
+    // drawer's metadata grid (UI derives lastTopic + lastChannel via helper
+    // with locale at render time — same DRY pattern as list endpoint).
     const visits = agg._count._all;
     const avgRating = agg._avg.rating;
     const derived = deriveCustomerFields({
@@ -125,6 +132,12 @@ export async function GET(
       avgRating,
       lastAt: agg._max.createdAt,
     });
+
+    const lastFeedback = feedbacks[0]; // sorted DESC, ilk = en yeni
+    const lastPlatform = lastFeedback?.platform ?? null;
+    const lastFoodRating = lastFeedback?.foodRating ?? null;
+    const lastServiceRating = lastFeedback?.serviceRating ?? null;
+    const lastAtmosphereRating = lastFeedback?.atmosphereRating ?? null;
 
     return NextResponse.json(
       {
@@ -146,6 +159,12 @@ export async function GET(
           ltv: derived.ltv,
           sentiment: derived.sentiment,
           daysSinceLastVisit: derived.daysSinceLastVisit,
+          // §38.47 — drawer metadata grid'i için raw alanlar.
+          lastPlatform,
+          lastFoodRating,
+          lastServiceRating,
+          lastAtmosphereRating,
+          lastRating: lastFeedback?.rating ?? null,
         },
         feedbacks: items,
       },

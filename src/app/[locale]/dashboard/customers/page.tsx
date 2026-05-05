@@ -8,6 +8,7 @@ import {
   Crown,
   Wallet,
   Repeat2,
+  AlertTriangle,
   Inbox,
   Download,
   Search,
@@ -23,6 +24,8 @@ import { PageHeader, StatCard, EmptyState, Badge } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import {
   deriveCustomerFields,
+  computeLastChannel,
+  computeLastTopic,
   type CustomerSegment,
   type CustomerSentiment,
 } from '@/lib/customers';
@@ -46,7 +49,8 @@ type RangeKey = keyof typeof RANGE_PRESETS | 'all';
 
 const PAGE_SIZE = 25;
 const MAX_AGGREGATE_ROWS = 5000;
-const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal']);
+// §38.47 — 'churned' segment eklendi (CLAUDE.md §38.36 backlog kapanışı).
+const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal', 'churned']);
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -72,6 +76,10 @@ interface AggregateRow {
   last_at: Date;
   feedback_count: bigint;
   avg_rating: number | null;
+  // §38.47 — son feedback'in aspect rating'leri (lastTopic için).
+  last_food_rating: number | null;
+  last_service_rating: number | null;
+  last_atmosphere_rating: number | null;
 }
 
 interface SummaryRow {
@@ -88,6 +96,7 @@ interface EnrichedRow {
   email: string | null;
   phone: string | null;
   branch: string | null;
+  platform: string | null;
   last_rating: number | null;
   avg_rating: number | null;
   last_at: Date;
@@ -96,6 +105,9 @@ interface EnrichedRow {
   ltv: number;
   sentiment: CustomerSentiment;
   days_since: number | null;
+  // §38.47 — derived label'lar (UI render-time, locale-aware).
+  last_topic: string;
+  last_channel: string;
 }
 
 function parseRange(raw: string | undefined): { start: Date | null; key: RangeKey } {
@@ -232,8 +244,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           (ARRAY_AGG(f.email ORDER BY f.created_at DESC) FILTER (WHERE f.email IS NOT NULL AND f.email <> ''))[1] AS email,
           (ARRAY_AGG(f.phone ORDER BY f.created_at DESC) FILTER (WHERE f.phone IS NOT NULL AND f.phone <> ''))[1] AS phone,
           (ARRAY_AGG(f.branch ORDER BY f.created_at DESC) FILTER (WHERE f.branch IS NOT NULL AND f.branch <> ''))[1] AS branch,
-          (ARRAY_AGG(f.platform ORDER BY f.created_at DESC) FILTER (WHERE f.platform IS NOT NULL))[1] AS platform,
+          (ARRAY_AGG(f.platform ORDER BY f.created_at DESC))[1] AS platform,
           (ARRAY_AGG(f.rating ORDER BY f.created_at DESC))[1] AS last_rating,
+          (ARRAY_AGG(f.food_rating ORDER BY f.created_at DESC))[1] AS last_food_rating,
+          (ARRAY_AGG(f.service_rating ORDER BY f.created_at DESC))[1] AS last_service_rating,
+          (ARRAY_AGG(f.atmosphere_rating ORDER BY f.created_at DESC))[1] AS last_atmosphere_rating,
           AVG(f.rating)::float AS avg_rating,
           MAX(f.created_at) AS last_at,
           COUNT(*)::bigint AS feedback_count
@@ -258,7 +273,8 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     errored = true;
   }
 
-  // JS-side enrichment + filter + slice (Phase 8c).
+  // JS-side enrichment + filter + slice (Phase 8c). §38.47 — derive lastTopic
+  // + lastChannel labels + churned segment via daysSinceLastVisit input.
   const now = new Date();
   const enriched: EnrichedRow[] = aggregates.map((r) => {
     const visits = Number(r.feedback_count);
@@ -267,6 +283,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       avgRating: r.avg_rating,
       lastAt: r.last_at,
       now,
+      lastTopicInput: {
+        rating: r.last_rating,
+        foodRating: r.last_food_rating,
+        serviceRating: r.last_service_rating,
+        atmosphereRating: r.last_atmosphere_rating,
+      },
+      lastPlatform: r.platform,
+      locale,
     });
     return {
       restaurant_id: r.restaurant_id,
@@ -276,6 +300,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       email: r.email,
       phone: r.phone,
       branch: r.branch,
+      platform: r.platform,
       last_rating: r.last_rating,
       avg_rating: r.avg_rating,
       last_at: r.last_at,
@@ -284,25 +309,33 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       ltv: derived.ltv,
       sentiment: derived.sentiment,
       days_since: derived.daysSinceLastVisit,
+      // §38.47 — derived label'lar; deriveCustomerFields helper zaten compute
+      // etti, fallback olarak helper'ı tekrar çağırıyoruz (lastTopic/lastChannel
+      // her zaman dolu olsun diye — input geçirildi, undefined gelmez).
+      last_topic: derived.lastTopic ?? computeLastTopic({ rating: r.last_rating }, locale),
+      last_channel: derived.lastChannel ?? computeLastChannel(r.platform, locale),
     };
   });
 
   // Segment counts hesapla (filter pill label'ları) — segment filter UYGULANMADAN.
   // Her pill, mevcut range/scope için segment toplamını gösterir.
+  // §38.47 — `churned` segment count eklendi.
   const segmentCounts: Record<'all' | CustomerSegment, number> = {
     all: enriched.length,
     vip: 0,
     loyal: 0,
     new: 0,
     risk: 0,
+    churned: 0,
   };
   for (const row of enriched) {
     segmentCounts[row.segment] += 1;
   }
 
-  // §38.36 — 4-stat KPI grid. Tasarımdaki TOPLAM MİSAFİR / VIP / ORT. LTV /
-  // GERİ DÖNÜŞ ORANI birebir; ama YoY + sektör benchmark deltaları SKIP
-  // (CLAUDE.md §35.8 — verifiable olmayan iddia, "sektör %48" gibi).
+  // §38.36 + §38.47 — 5-stat KPI grid. Tasarım: .design-owner-2026/page-customers.jsx
+  // line 54-67 (5 KPI: Toplam / VIP / Ortalama LTV / Tekrar gelme / Risk altında).
+  // YoY + sektör benchmark deltaları SKIP (CLAUDE.md §35.8 — verifiable olmayan
+  // iddia, "sektör %48" gibi).
   const totalCustomers = summaryRow ? Number(summaryRow.customers) : 0;
   const vipCount = segmentCounts.vip;
   const vipPct = totalCustomers > 0 ? (vipCount / totalCustomers) * 100 : 0;
@@ -312,6 +345,12 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       : 0;
   const returningCount = enriched.filter((r) => r.feedback_count >= 2).length;
   const returnRate = enriched.length > 0 ? (returningCount / enriched.length) * 100 : 0;
+  // §38.47 — 5. KPI "Risk altında". `risk` + `churned` segment'lerin toplamı
+  // owner için "şu an dikkat gereken müşteri" sinyalidir; tasarım sade "Risk
+  // altında" başlığını taşır → ikisini birleştir, alt-text'te ayrım göster.
+  const riskCount = segmentCounts.risk;
+  const churnedCount = segmentCounts.churned;
+  const atRiskCount = riskCount + churnedCount;
 
   // Apply segment filter (post-derive).
   const filtered = segmentFilter
@@ -356,6 +395,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   }
 
   // Segment pills config — table-of-truth, render desktop + mobile.
+  // §38.47 — 6. chip "Kayıp" (churned) eklendi (tasarım birebir).
   const SEGMENT_PILLS: Array<{
     key: 'all' | CustomerSegment;
     labelTr: string;
@@ -366,6 +406,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     { key: 'loyal', labelTr: 'Düzenli', labelEn: 'Loyal' },
     { key: 'new', labelTr: 'Yeni', labelEn: 'New' },
     { key: 'risk', labelTr: 'Risk', labelEn: 'Risk' },
+    { key: 'churned', labelTr: 'Kayıp', labelEn: 'Churned' },
   ];
 
   return (
@@ -414,9 +455,10 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         </div>
       )}
 
-      {/* §38.36 — 4-stat KPI grid (TOPLAM MİSAFİR / VIP / ORT. LTV / GERİ DÖNÜŞ).
-          Tasarım: .design-owner-2026/page-customers.jsx:54-67. */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* §38.36 + §38.47 — 5-stat KPI grid (TOPLAM / VIP / ORT. LTV / GERİ DÖNÜŞ
+          / RİSK ALTINDA). Tasarım: .design-owner-2026/page-customers.jsx:54-67.
+          Mobile 2-col → 5 KPI 2x3 layout (3. row tek tile, intentional sade). */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
         <StatCard
           label={isTr ? 'Toplam misafir' : 'Total guests'}
           value={totalCustomers.toLocaleString(intLocale)}
@@ -446,6 +488,19 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           delta={
             enriched.length > 0
               ? `${returningCount.toLocaleString(intLocale)} ${isTr ? 'tekrar gelen' : 'returning'}`
+              : null
+          }
+          deltaKind="neutral"
+        />
+        <StatCard
+          label={isTr ? 'Risk altında' : 'At risk'}
+          value={atRiskCount.toLocaleString(intLocale)}
+          icon={<AlertTriangle size={14} className="text-[#DC2626]" />}
+          delta={
+            atRiskCount > 0
+              ? isTr
+                ? `${riskCount} risk · ${churnedCount} kayıp`
+                : `${riskCount} risk · ${churnedCount} churned`
               : null
           }
           deltaKind="neutral"
@@ -600,13 +655,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         </div>
       ) : (
         <>
-          {/* §38.36 — Desktop table 6-col (tasarım line 108-122 birebir).
+          {/* §38.36 + §38.47 — Desktop table 8-col (tasarım line 108-122 birebir).
               Eski "İletişim" sütunu drop (email Misafir altına taşındı, telefon
-              drawer'da). Sentiment SentimentBadge yerine SentimentSparkbar
-              (0-100 score progress + number). Avatar bg sentiment-based
-              (pos lime-soft / neg red-soft / neu n100). */}
+              drawer'da). §38.47'de Kanal + Son konu kolonları eklendi (tasarım
+              parity). Sentiment SentimentBadge yerine SentimentSparkbar (0-100
+              score progress + number). Avatar bg sentiment-based (pos lime-soft
+              / neg red-soft / neu n100). */}
           <div className="bz-card hidden overflow-x-auto lg:block">
-            <table className="bz-table w-full min-w-[860px]">
+            <table className="bz-table w-full min-w-[1040px]">
               <thead>
                 <tr>
                   <th className="text-left sticky left-0 z-10 bg-[#FAFAFA]">
@@ -615,6 +671,8 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                   <th className="text-left">{isTr ? 'Segment' : 'Segment'}</th>
                   <th className="text-right">{isTr ? 'Ziyaret' : 'Visits'}</th>
                   <th className="text-right">{isTr ? 'LTV' : 'LTV'}</th>
+                  <th className="text-left">{isTr ? 'Son konu' : 'Last topic'}</th>
+                  <th className="text-left">{isTr ? 'Kanal' : 'Channel'}</th>
                   <th className="text-right">{isTr ? 'Son ziyaret' : 'Last seen'}</th>
                   <th className="text-left">{isTr ? 'Sentiment' : 'Sentiment'}</th>
                 </tr>
@@ -682,6 +740,16 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                       <td className="text-right">
                         <span className="bz-mono tabular-nums text-[12.5px] font-semibold text-[#0A0A0A]">
                           {r.ltv.toLocaleString(intLocale)}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="text-[12px] text-[#525252]">
+                          {r.last_topic}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="bz-mono text-[11px] inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[#525252] whitespace-nowrap">
+                          {r.last_channel}
                         </span>
                       </td>
                       <td className="text-right">
@@ -771,6 +839,13 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                         <span>{r.phone}</span>
                       </a>
                     )}
+                  </div>
+                  {/* §38.47 — Mobile card meta: kanal pill + son konu metni */}
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#737373]">
+                    <span className="bz-mono inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[#525252]">
+                      {r.last_channel}
+                    </span>
+                    <span className="text-[#525252]">{r.last_topic}</span>
                   </div>
                   <div className="flex items-center justify-between border-t border-[#EDEDED] pt-2 text-[11px] text-[#737373]">
                     <span>

@@ -1,4 +1,4 @@
-import { Crown, CheckCircle2, Sparkles, AlertTriangle } from 'lucide-react';
+import { Crown, CheckCircle2, Sparkles, AlertTriangle, Archive } from 'lucide-react';
 import type { CustomerSegment } from '@/lib/customers';
 import { SEGMENT_COLOR_MAP } from '@/lib/customers';
 import type { Locale } from '@/lib/translations';
@@ -13,6 +13,9 @@ import type { Locale } from '@/lib/translations';
 // edilebilir ('use client' yok). Phase 8c+ §38.22'de renk eşlemesi
 // `lib/customers.ts:SEGMENT_COLOR_MAP` const'ına taşındı (5. callsite mail
 // template ile drift sıfır). Lucide icon → iconName eşlemesi component-local.
+//
+// §38.47 — `churned` segment desteği (Archive icon + Kayıp/Churned label).
+// Tasarım .design-owner-2026/page-customers.jsx 6. chip parity.
 
 export interface SegmentChipProps {
   segment: CustomerSegment;
@@ -25,6 +28,7 @@ const ICON_BY_NAME = {
   check: CheckCircle2,
   sparkles: Sparkles,
   alert: AlertTriangle,
+  archive: Archive,
 } as const;
 
 const SEGMENT_LABELS: Record<CustomerSegment, { tr: string; en: string }> = {
@@ -32,6 +36,7 @@ const SEGMENT_LABELS: Record<CustomerSegment, { tr: string; en: string }> = {
   loyal: { tr: 'Düzenli', en: 'Loyal' },
   new: { tr: 'Yeni', en: 'New' },
   risk: { tr: 'Risk', en: 'Risk' },
+  churned: { tr: 'Kayıp', en: 'Churned' },
 };
 
 export function SegmentChip({ segment, locale, size = 'md' }: SegmentChipProps) {

@@ -27,7 +27,7 @@ const RANGE_PRESETS = { '7d': 7, '30d': 30, '90d': 90 } as const;
 type RangeKey = keyof typeof RANGE_PRESETS | 'all';
 
 const MAX_AGGREGATE_ROWS = 5000;
-const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal']);
+const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal', 'churned']);
 
 interface CustomerRow {
   key: string;
@@ -37,6 +37,7 @@ interface CustomerRow {
   restaurantId: string;
   restaurantName: string | null;
   branch: string | null;
+  /** Last feedback's platform (null = Buaze QR). UI derives label via computeLastChannel. */
   platform: string | null;
   lastRating: number | null;
   avgRating: number | null;
@@ -46,6 +47,10 @@ interface CustomerRow {
   ltv: number;
   sentiment: CustomerSentiment;
   daysSinceLastVisit: number | null;
+  /** §38.47 — last feedback's aspect ratings (UI derives lastTopic via computeLastTopic). */
+  lastFoodRating: number | null;
+  lastServiceRating: number | null;
+  lastAtmosphereRating: number | null;
 }
 
 interface AggregateRow {
@@ -61,6 +66,12 @@ interface AggregateRow {
   last_at: Date;
   feedback_count: bigint;
   avg_rating: number | null;
+  // §38.47 — en son feedback'in aspect rating'leri (lastTopic için).
+  // ARRAY_AGG[1] zaten en son satırı verir; null durumlar (sub-rating
+  // verilmemiş) helper içinde rating-fallback'e düşer.
+  last_food_rating: number | null;
+  last_service_rating: number | null;
+  last_atmosphere_rating: number | null;
 }
 
 interface SummaryRow {
@@ -201,8 +212,11 @@ export async function GET(req: NextRequest) {
           (ARRAY_AGG(f.email ORDER BY f.created_at DESC) FILTER (WHERE f.email IS NOT NULL AND f.email <> ''))[1] AS email,
           (ARRAY_AGG(f.phone ORDER BY f.created_at DESC) FILTER (WHERE f.phone IS NOT NULL AND f.phone <> ''))[1] AS phone,
           (ARRAY_AGG(f.branch ORDER BY f.created_at DESC) FILTER (WHERE f.branch IS NOT NULL AND f.branch <> ''))[1] AS branch,
-          (ARRAY_AGG(f.platform ORDER BY f.created_at DESC) FILTER (WHERE f.platform IS NOT NULL))[1] AS platform,
+          (ARRAY_AGG(f.platform ORDER BY f.created_at DESC))[1] AS platform,
           (ARRAY_AGG(f.rating ORDER BY f.created_at DESC))[1] AS last_rating,
+          (ARRAY_AGG(f.food_rating ORDER BY f.created_at DESC))[1] AS last_food_rating,
+          (ARRAY_AGG(f.service_rating ORDER BY f.created_at DESC))[1] AS last_service_rating,
+          (ARRAY_AGG(f.atmosphere_rating ORDER BY f.created_at DESC))[1] AS last_atmosphere_rating,
           AVG(f.rating)::float AS avg_rating,
           MAX(f.created_at) AS last_at,
           COUNT(*)::bigint AS feedback_count
@@ -215,7 +229,10 @@ export async function GET(req: NextRequest) {
       `),
     ]);
 
-    // Derive segment + LTV + sentiment + days for each row.
+    // Derive segment + LTV + sentiment + days for each row. §38.47 — segment
+    // helper now consumes daysSinceLastVisit for the churned bucket; raw aspect
+    // ratings + last platform are forwarded to caller (UI/CSV) which derives
+    // lastTopic + lastChannel labels using locale at render time.
     const now = new Date();
     const enriched: CustomerRow[] = aggregates.map((r) => {
       const visits = Number(r.feedback_count);
@@ -243,17 +260,22 @@ export async function GET(req: NextRequest) {
         ltv: derived.ltv,
         sentiment: derived.sentiment,
         daysSinceLastVisit: derived.daysSinceLastVisit,
+        lastFoodRating: r.last_food_rating,
+        lastServiceRating: r.last_service_rating,
+        lastAtmosphereRating: r.last_atmosphere_rating,
       };
     });
 
     // Segment counts (filter pill labels) — calculated BEFORE segment filter
     // so each pill shows total in current range/scope (not after filter).
+    // §38.47 — `churned` segment count eklendi.
     const segmentCounts = {
       all: enriched.length,
       vip: 0,
       loyal: 0,
       new: 0,
       risk: 0,
+      churned: 0,
     };
     for (const row of enriched) {
       segmentCounts[row.segment] += 1;

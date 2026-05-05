@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
+import { computeLastChannel, computeLastTopic } from '@/lib/customers';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 import { SentimentBadge } from '@/components/customers/SentimentBadge';
 
@@ -50,6 +51,12 @@ interface CustomerData {
     ltv?: number;
     sentiment?: CustomerSentiment;
     daysSinceLastVisit?: number | null;
+    // §38.47 — last feedback'in platform + aspect rating'leri (raw alanlar).
+    lastPlatform?: string | null;
+    lastRating?: number | null;
+    lastFoodRating?: number | null;
+    lastServiceRating?: number | null;
+    lastAtmosphereRating?: number | null;
   };
   feedbacks: Array<{
     id: string;
@@ -65,16 +72,9 @@ interface CustomerDetailDrawerProps {
   locale: Locale;
 }
 
-const PLATFORM_LABEL: Record<string, string> = {
-  google: 'Google',
-  yemeksepeti: 'Yemeksepeti',
-  getir: 'Getir',
-  trendyol_go: 'Trendyol GO',
-  tripadvisor: 'Tripadvisor',
-  airbnb: 'Airbnb',
-  booking: 'Booking',
-  yandex: 'Yandex',
-};
+// §38.47 — `computeLastChannel` helper drift-zero source; drawer feedback list
+// timeline'ında platform label'ı için aynı helper kullanılır (eski inline
+// PLATFORM_LABEL map'i kaldırıldı, taxonomy genişlemesinde drift olmaz).
 
 function ratingTone(rating: number): { color: string; label: 'pos' | 'neu' | 'neg' } {
   if (rating >= 4) return { color: '#16A34A', label: 'pos' };
@@ -402,6 +402,33 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                 </div>
               </div>
 
+              {/* §38.47 — Son konu + Kanal meta row (helper'lar ile derive,
+                  drawer-locale'e duyarlı). Tasarım .design-owner-2026/page-customers.jsx
+                  meta satırı paterni. */}
+              <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'SON KONU' : 'LAST TOPIC'}
+                </span>
+                <span className="text-[#262626] font-medium">
+                  {computeLastTopic(
+                    {
+                      rating: data.stats.lastRating ?? null,
+                      foodRating: data.stats.lastFoodRating ?? null,
+                      serviceRating: data.stats.lastServiceRating ?? null,
+                      atmosphereRating: data.stats.lastAtmosphereRating ?? null,
+                    },
+                    locale,
+                  )}
+                </span>
+                <span className="text-[#A3A3A3]">·</span>
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'KANAL' : 'CHANNEL'}
+                </span>
+                <span className="bz-mono inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[#525252]">
+                  {computeLastChannel(data.stats.lastPlatform ?? null, locale)}
+                </span>
+              </div>
+
               {/* First seen + truncated notice */}
               <div className="flex items-center justify-between text-[11px] text-[#737373]">
                 <span className="inline-flex items-center gap-1.5">
@@ -438,11 +465,9 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                 <ol className="space-y-3">
                   {data.feedbacks.map((fb) => {
                     const tone = ratingTone(fb.rating);
-                    const platformLabel = fb.platform
-                      ? PLATFORM_LABEL[fb.platform] ?? fb.platform
-                      : isTr
-                        ? 'Buaze'
-                        : 'Buaze';
+                    // §38.47 — computeLastChannel helper reuse (Buaze QR
+                    // fallback otomatik, taxonomy drift sıfır).
+                    const platformLabel = computeLastChannel(fb.platform, locale);
                     return (
                       <li
                         key={fb.id}

@@ -3,7 +3,7 @@
 // test edilebilir. Caller (API list/detail/export + UI server component)
 // raw aggregate row üstüne bu helper'ları map ile uygular.
 
-export type CustomerSegment = 'new' | 'risk' | 'vip' | 'loyal';
+export type CustomerSegment = 'new' | 'risk' | 'vip' | 'loyal' | 'churned';
 export type CustomerSentiment = 'pos' | 'neu' | 'neg';
 
 // Phase 8c+ (CLAUDE.md §38.22) — segment + sentiment görsel renk eşlemesi.
@@ -15,14 +15,21 @@ export type CustomerSentiment = 'pos' | 'neu' | 'neg';
 // foreground text/icon. Mail template Pulse light-card variant'la birebir
 // uyumlu. Dark card (drawer'da kullanılmaz; drawer chip aynı light palette
 // kullanır çünkü dark drawer üstünde light pill ok'tur).
+//
+// §38.47 — `churned` segment eklendi (CLAUDE.md §38.36 backlog kapanışı,
+// tasarım .design-owner-2026/page-customers.jsx 6. chip parity). Görsel
+// muted ghost paletti (n100 bg + n500 fg + archive icon) — "kayıp" sinyali
+// agresif kırmızı değil, sade etiket. Risk = aktif memnuniyetsizlik (red),
+// Churned = sessiz bırakma (ghost) ayrımı.
 export const SEGMENT_COLOR_MAP: Record<
   CustomerSegment,
-  { bg: string; fg: string; iconName: 'crown' | 'check' | 'sparkles' | 'alert' }
+  { bg: string; fg: string; iconName: 'crown' | 'check' | 'sparkles' | 'alert' | 'archive' }
 > = {
   vip: { bg: '#0A0A0A', fg: '#FFFFFF', iconName: 'crown' },
   loyal: { bg: '#EAF9B8', fg: '#0A0A0A', iconName: 'check' },
   new: { bg: '#DBEAFE', fg: '#1E40AF', iconName: 'sparkles' },
   risk: { bg: '#FEE2E2', fg: '#991B1B', iconName: 'alert' },
+  churned: { bg: '#F5F5F5', fg: '#737373', iconName: 'archive' },
 };
 
 // Sentiment dot+label renk eşlemesi — 3 callsite (admin/customers inline +
@@ -39,20 +46,41 @@ export interface SegmentInput {
   visits: number;
   /** Mean rating across the visits, or null when no rating present. */
   avgRating: number | null;
+  /**
+   * §38.47 — Days since last visit. Required for `churned` detection.
+   * Optional for backwards-compat: caller'lar geçmedikçe churned bucket'a
+   * düşmez (legacy davranış intact).
+   */
+  daysSinceLastVisit?: number | null;
 }
 
-// Konservatif eşikler (kullanıcı kararı, CLAUDE.md §38.16):
-// - new:   visits ≤ 2                       → yeni misafir, profil olgunlaşmamış
-// - risk:  avgRating < 3.0 && visits ≥ 2   → memnuniyetsiz + tekrar gelmiş
-// - vip:   visits ≥ 5 && avgRating ≥ 4.0   → sadık + yüksek puan
-// - loyal: default fallback
+// Konservatif eşikler (kullanıcı kararı, CLAUDE.md §38.16 + §38.47):
+// - churned: daysSinceLastVisit > 90 && visits ≥ 2 → uzun süre dönmemiş tanıdık misafir
+// - new:     visits ≤ 2                            → yeni misafir, profil olgunlaşmamış
+// - risk:    avgRating < 3.0 && visits ≥ 2        → memnuniyetsiz + tekrar gelmiş
+// - vip:     visits ≥ 5 && avgRating ≥ 4.0        → sadık + yüksek puan
+// - loyal:   default fallback
 //
-// Öncelik: new → risk → vip → loyal. "new" ilk önce çünkü visits ≤ 2 olan
-// müşteriye risk/vip yapıştırmak yetersiz örneklem nedeniyle yanıltıcı; profil
-// olgunlaşana kadar "new" segment'i bekletir. Risk'i VIP'ten önce eleyerek
-// avgRating < 3 + visits ≥ 5 (örneğin) durumunda VIP yerine Risk seçilmesini
-// sağlar (memnuniyetsizlik signal'i sadakat signal'ından kritik).
-export function computeSegment({ visits, avgRating }: SegmentInput): CustomerSegment {
+// Öncelik: churned → new → risk → vip → loyal.
+//
+// `churned` ilk: 90 gün dönmemiş VIP olsa bile "kayıp" durumu daha aktüel
+// (owner için görsel uyarı: bir zamanlar değerli, şimdi sessiz). Tek-ziyaretli
+// müşteri churned olmaz çünkü "yeni denemiş, beğenmemiş" ile "sadık + kaybedildi"
+// karışmasın — `visits ≥ 2` zorunlu.
+//
+// `new` ikinci: visits ≤ 2 olan müşteriye risk/vip yapıştırmak yetersiz
+// örneklem nedeniyle yanıltıcı; profil olgunlaşana kadar "new" segment'i bekletir.
+//
+// Risk'i VIP'ten önce eleyerek avgRating < 3 + visits ≥ 5 durumunda VIP yerine
+// Risk seçilmesini sağlar (memnuniyetsizlik signal'i sadakat signal'ından kritik).
+export function computeSegment({ visits, avgRating, daysSinceLastVisit }: SegmentInput): CustomerSegment {
+  if (
+    typeof daysSinceLastVisit === 'number' &&
+    daysSinceLastVisit > 90 &&
+    visits >= 2
+  ) {
+    return 'churned';
+  }
   if (visits <= 2) return 'new';
   if (avgRating !== null && avgRating < 3.0 && visits >= 2) return 'risk';
   if (visits >= 5 && avgRating !== null && avgRating >= 4.0) return 'vip';
@@ -101,14 +129,106 @@ export function computeDaysSinceLastVisit(
   return Math.floor(ms / (1000 * 60 * 60 * 24));
 }
 
-// Convenience aggregate — caller bir satır için 3 helper'ı tek seferde
+// §38.47 — Last topic deterministik label (per-customer AI çağrısı pahalı,
+// 10K müşteri × $0.0005 = $5/render kabul edilemez). Schema'daki
+// foodRating/serviceRating/atmosphereRating opsiyonel sub-rating'lerinden
+// en düşük olan = ana şikayet konusu. Hiç sub-rating yoksa rating-based
+// fallback (Olumlu/Karışık/Şikayet). Caller en son feedback'in alanlarını
+// geçirir; helper saf fonksiyon.
+//
+// Tasarım örnekleri (.design-owner-2026/page-customers.jsx): "Servis",
+// "Bekleme", "Atmosfer", "Menü", "Genel", "Yemek", "Fiyat". Aspect-bazlı
+// label bu örneklerle uyumlu (Servis/Yemek/Atmosfer doğrudan; diğerleri
+// rating-fallback ile kapsanır).
+export interface LastTopicInput {
+  rating: number | null;
+  foodRating?: number | null;
+  serviceRating?: number | null;
+  atmosphereRating?: number | null;
+}
+
+export function computeLastTopic(input: LastTopicInput, locale: 'tr' | 'en' = 'tr'): string {
+  const isTr = locale === 'tr';
+  const aspects: Array<{ name: string; val: number }> = [];
+  if (typeof input.foodRating === 'number') {
+    aspects.push({ name: isTr ? 'Yemek' : 'Food', val: input.foodRating });
+  }
+  if (typeof input.serviceRating === 'number') {
+    aspects.push({ name: isTr ? 'Servis' : 'Service', val: input.serviceRating });
+  }
+  if (typeof input.atmosphereRating === 'number') {
+    aspects.push({ name: isTr ? 'Atmosfer' : 'Atmosphere', val: input.atmosphereRating });
+  }
+
+  // Aspect varsa: en düşük puanlı alanı konu olarak göster (≤3 → şikayet
+  // konusu; ≥4 → olumlu olduğu konu). Sub-rating'i en düşük olan en
+  // bilgilendirici sinyal — owner "neresi sorun" hızlıca anlar.
+  if (aspects.length > 0) {
+    const lowest = aspects.reduce((a, b) => (a.val < b.val ? a : b));
+    return lowest.name;
+  }
+
+  // Rating fallback — sub-rating verilmemiş (public review formu opsiyonel
+  // sorduğu için sparse data, CLAUDE.md §34.9 paterni). Rating-bazlı genel
+  // duygu etiketi yine anlamlı.
+  if (input.rating === null) return '—';
+  if (input.rating <= 2) return isTr ? 'Şikayet' : 'Complaint';
+  if (input.rating === 3) return isTr ? 'Karışık' : 'Mixed';
+  if (input.rating >= 4) return isTr ? 'Olumlu' : 'Praise';
+  return '—';
+}
+
+// §38.47 — Last channel/source label. `Feedback.platform` (google /
+// yemeksepeti / getir / vb.) → kısa human-readable label. null = "Buaze QR"
+// (mevcut platform=null + rating ≥4 paterni, CLAUDE.md §38.34 + §38.35
+// "Buaze QR" runtime label).
+//
+// Pulse 11-platform taxonomy ile uyumlu (CLAUDE.md §19.4). Bilinmeyen
+// platform string'leri "Diğer" / "Other" fallback (defansif — sadece bilinen
+// label'lar için özel display, drift'e bağışıklık).
+const CHANNEL_LABELS_TR: Record<string, string> = {
+  google: 'Google',
+  yemeksepeti: 'Yemeksepeti',
+  getir: 'Getir',
+  trendyol_go: 'Trendyol GO',
+  tripadvisor: 'Tripadvisor',
+  airbnb: 'Airbnb',
+  booking: 'Booking',
+  yandex: 'Yandex',
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  whatsapp: 'WhatsApp',
+};
+
+const CHANNEL_LABELS_EN: Record<string, string> = {
+  ...CHANNEL_LABELS_TR,
+  // EN'de TR'den farklı tek-iki etiket (tüm platform marka isimleri ortak).
+};
+
+export function computeLastChannel(
+  platform: string | null | undefined,
+  locale: 'tr' | 'en' = 'tr',
+): string {
+  const isTr = locale === 'tr';
+  if (!platform) return isTr ? 'Buaze QR' : 'Buaze QR';
+  const map = isTr ? CHANNEL_LABELS_TR : CHANNEL_LABELS_EN;
+  return map[platform.toLowerCase()] ?? (isTr ? 'Diğer' : 'Other');
+}
+
+// Convenience aggregate — caller bir satır için tüm helper'ları tek seferde
 // uygulamak isterse. List endpoint, detail endpoint, export endpoint ve UI
 // hepsi aynı output şeklini bekler — DRY pattern.
+//
+// §38.47 — `lastTopic` ve `lastChannel` opsiyonel input'larla genişletildi.
+// `lastTopicInput` veya `lastPlatform` geçilmezse helper undefined döner;
+// caller (drawer veya UI) field gerektirmiyorsa input'u skip edebilir.
 export interface CustomerDerivedFields {
   segment: CustomerSegment;
   ltv: number;
   sentiment: CustomerSentiment;
   daysSinceLastVisit: number | null;
+  lastTopic?: string;
+  lastChannel?: string;
 }
 
 export function deriveCustomerFields(input: {
@@ -116,11 +236,28 @@ export function deriveCustomerFields(input: {
   avgRating: number | null;
   lastAt: Date | string | null;
   now?: Date;
+  /** §38.47 — son feedback'in rating + aspect alanları (lastTopic için). */
+  lastTopicInput?: LastTopicInput;
+  /** §38.47 — son feedback'in platform alanı (lastChannel için). */
+  lastPlatform?: string | null;
+  /** §38.47 — TR/EN locale (lastTopic + lastChannel label'ları). */
+  locale?: 'tr' | 'en';
 }): CustomerDerivedFields {
+  const days = computeDaysSinceLastVisit(input.lastAt, input.now);
   return {
-    segment: computeSegment({ visits: input.visits, avgRating: input.avgRating }),
+    segment: computeSegment({
+      visits: input.visits,
+      avgRating: input.avgRating,
+      daysSinceLastVisit: days,
+    }),
     ltv: computeLTV({ visits: input.visits, avgRating: input.avgRating }),
     sentiment: computeSentiment(input.avgRating),
-    daysSinceLastVisit: computeDaysSinceLastVisit(input.lastAt, input.now),
+    daysSinceLastVisit: days,
+    ...(input.lastTopicInput
+      ? { lastTopic: computeLastTopic(input.lastTopicInput, input.locale) }
+      : {}),
+    ...(input.lastPlatform !== undefined
+      ? { lastChannel: computeLastChannel(input.lastPlatform, input.locale) }
+      : {}),
   };
 }

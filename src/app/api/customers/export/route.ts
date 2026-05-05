@@ -3,24 +3,33 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
-import { deriveCustomerFields, type CustomerSegment } from '@/lib/customers';
+import {
+  deriveCustomerFields,
+  computeLastTopic,
+  computeLastChannel,
+  type CustomerSegment,
+} from '@/lib/customers';
 
 // Owner-scoped Customers CSV export (Phase 8b, CLAUDE.md §23.7 Phase 12).
 // Phase 8c (CLAUDE.md §38.16): adds Avg Rating + Days Since + Segment + LTV +
 // Sentiment columns (5 new) derived via lib/customers.ts. ?segment= query
 // param mirrors list endpoint filter.
 //
+// §38.47 — adds Last Topic + Last Channel columns (2 new). VALID_SEGMENTS
+// genişletildi (`churned` dahil). Helper'lar saf fonksiyon, drift sıfır.
+//
 // Mirrors /api/admin/customers/export structure but enforces owner scope via
 // getScopedRestaurantIds. UTF-8 + BOM for TR characters in Excel.
 
 const RANGE_PRESETS = { '7d': 7, '30d': 30, '90d': 90 } as const;
-const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal']);
+const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal', 'churned']);
 
 const SEGMENT_LABEL: Record<CustomerSegment, string> = {
   vip: 'VIP',
   loyal: 'Düzenli',
   new: 'Yeni',
   risk: 'Risk',
+  churned: 'Kayıp',
 };
 
 const SENTIMENT_LABEL = {
@@ -40,6 +49,10 @@ interface AggregateRow {
   avg_rating: number | null;
   last_at: Date;
   feedback_count: bigint;
+  // §38.47 — son feedback'in aspect rating'leri (lastTopic için).
+  last_food_rating: number | null;
+  last_service_rating: number | null;
+  last_atmosphere_rating: number | null;
 }
 
 function parseRange(raw: string | null): Date | null {
@@ -117,8 +130,11 @@ export async function GET(req: NextRequest) {
         (ARRAY_AGG(f.email ORDER BY f.created_at DESC) FILTER (WHERE f.email IS NOT NULL AND f.email <> ''))[1] AS email,
         (ARRAY_AGG(f.phone ORDER BY f.created_at DESC) FILTER (WHERE f.phone IS NOT NULL AND f.phone <> ''))[1] AS phone,
         (ARRAY_AGG(f.branch ORDER BY f.created_at DESC) FILTER (WHERE f.branch IS NOT NULL AND f.branch <> ''))[1] AS branch,
-        (ARRAY_AGG(f.platform ORDER BY f.created_at DESC) FILTER (WHERE f.platform IS NOT NULL))[1] AS platform,
+        (ARRAY_AGG(f.platform ORDER BY f.created_at DESC))[1] AS platform,
         (ARRAY_AGG(f.rating ORDER BY f.created_at DESC))[1] AS last_rating,
+        (ARRAY_AGG(f.food_rating ORDER BY f.created_at DESC))[1] AS last_food_rating,
+        (ARRAY_AGG(f.service_rating ORDER BY f.created_at DESC))[1] AS last_service_rating,
+        (ARRAY_AGG(f.atmosphere_rating ORDER BY f.created_at DESC))[1] AS last_atmosphere_rating,
         AVG(f.rating)::float AS avg_rating,
         MAX(f.created_at) AS last_at,
         COUNT(*)::bigint AS feedback_count
@@ -137,13 +153,14 @@ export async function GET(req: NextRequest) {
       'Telefon',
       'İşletme',
       'Şube',
-      'Platform',
+      'Kanal',
       'Son Puan',
       'Ort. Puan',
       'Yorum Sayısı',
       'Segment',
       'LTV',
       'Sentiment',
+      'Son Konu',
       'Son Ziyaret (gün önce)',
       'Son Yorum',
     ];
@@ -159,19 +176,32 @@ export async function GET(req: NextRequest) {
       // Apply segment filter post-derive (mirror list endpoint).
       if (segmentParam && derived.segment !== segmentParam) continue;
 
+      // §38.47 — TR-fixed labels (CSV operatör/internal ops use; locale=tr).
+      const lastChannel = computeLastChannel(r.platform, 'tr');
+      const lastTopic = computeLastTopic(
+        {
+          rating: r.last_rating,
+          foodRating: r.last_food_rating,
+          serviceRating: r.last_service_rating,
+          atmosphereRating: r.last_atmosphere_rating,
+        },
+        'tr',
+      );
+
       lines.push([
         esc(r.name),
         esc(r.email),
         esc(r.phone),
         esc(r.restaurant_name),
         esc(r.branch),
-        esc(r.platform),
+        esc(lastChannel),
         esc(r.last_rating),
         esc(r.avg_rating != null ? r.avg_rating.toFixed(2) : ''),
         esc(visits),
         esc(SEGMENT_LABEL[derived.segment]),
         esc(derived.ltv),
         esc(SENTIMENT_LABEL[derived.sentiment]),
+        esc(lastTopic),
         esc(derived.daysSinceLastVisit ?? ''),
         esc(new Date(r.last_at).toISOString().slice(0, 10)),
       ].join(','));

@@ -37,6 +37,7 @@ interface SegmentCounts {
   loyal: number;
   new: number;
   risk: number;
+  churned: number;
 }
 
 interface CustomersResponse {
@@ -224,6 +225,7 @@ export default function AdminCustomersPage() {
     { key: 'loyal', tr: 'Düzenli', en: 'Loyal' },
     { key: 'new', tr: 'Yeni', en: 'New' },
     { key: 'risk', tr: 'Risk', en: 'Risk' },
+    { key: 'churned', tr: 'Kayıp', en: 'Churned' },
   ];
 
   return (
