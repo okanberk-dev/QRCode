@@ -9279,3 +9279,72 @@ Marketing surface'lerindeki heavy shadow'lar (MarketingNavbar / PricingPlans / C
 - PR-2: Dashboard KPI tile typography + AI Insight Banner lime audit + section padding
 - PR-3: Yorumlar Detail panel shadow + Customers table hover + Analytics chart whitespace + Google/Platforms list polish
 
+### 38.66 2026-05-05 — Apple-inspired refinement: kalan UX issue fixes (PR-1 follow-up)
+
+§38.65 PR-1 sonrası kullanıcı raporu: "kalan issueları düzelt". Identified UX risks bu mini-PR'da kapatıldı (3 küçük fix, 4 dosya, ~30 satır):
+
+#### Issue 1 — `PageHeader` `titleScale` prop (hero / compact)
+
+§38.65 hero scale (`clamp(28-40px)`) tüm owner panel sayfalarına yansıyor; **yoğun 3-col layout sayfalarda h1 ezici** hissedilebilir riski. Fix: per-callsite override prop.
+
+```tsx
+interface PageHeaderProps {
+  // ...
+  titleScale?: 'hero' | 'compact';  // §38.66 — yeni prop
+}
+
+// Internal:
+const titleStyle = titleScale === 'compact'
+  ? { fontSize: 'clamp(22px, 4vw, 32px)', lineHeight: 1.1 }
+  : { fontSize: 'clamp(28px, 5vw, 40px)', lineHeight: 1.05 };  // hero default
+```
+
+`bz-h-tight-2` Space Grotesk weight 500 + tight tracking sabit; sadece size scale per variant.
+
+#### Issue 2 — 3 yoğun layout sayfası `compact` bayrağı
+
+| Sayfa | Sebep |
+|---|---|
+| `/dashboard/feedbacks` | Filter rail + list + detail 3-col layout |
+| `/dashboard/customers` | 8-col tablo + filter toolbar + 5-stat KPI grid |
+| `/dashboard/analytics` | 5-col KPI + chart + heatmap + topic grid yoğun dashboard |
+
+Diğer sayfalar (Dashboard / Hesabım / Settings / Google / Platforms) `hero` default kalır — Apple HIG CEO confidence scale.
+
+#### Issue 3 — AccountPlanWidget Plan dark hero shadow
+
+- Eski: `shadow-[0_4px_20px_rgba(10,10,10,0.18)]` (heavy graphite drop)
+- Yeni: `bz-elev-2` (`0_4px_16px_0.06` — Apple-soft mid-tier)
+
+Kart-internal mid-tier; aşırı drama yok, fonksiyonel depth. `bz-elev-3` (heavier modal/dropdown tier) yerine `bz-elev-2` çünkü Plan widget right-rail içerik kartı, popup değil.
+
+#### Skip edilen risk'ler (kasıtlı, gerçek issue değil)
+
+- ⚠️ **Backdrop-blur-xl GPU compositing** (PR-1): Modern iPhone (≥SE2) + Chrome 90+ Android sorunsuz. Düşük-end ölçü olmadan agresif fix gereksiz; mevcut `backdrop-blur-xl` korunur. Performance regression production'da gözlenirse `backdrop-blur` (8px) geri alınabilir.
+- ⚠️ **Sidebar nav `bz-motion-spring` reduced-motion**: A11y intact — `prefers-reduced-motion: reduce` blanket universal `*` reset (`transition-duration: 0.001ms`) zaten transform animation'ı sıfırlar (effective olarak instant). Ek selector gereksiz.
+
+**Etkilenen dosyalar**:
+- `src/components/ui/PageHeader.tsx` (titleScale prop + dynamic titleStyle)
+- `src/app/[locale]/dashboard/feedbacks/page.tsx` (`titleScale="compact"`)
+- `src/app/[locale]/dashboard/customers/page.tsx` (`titleScale="compact"`)
+- `src/app/[locale]/dashboard/analytics/page.tsx` (`titleScale="compact"`)
+- `src/components/dashboard/account/AccountPlanWidget.tsx` (heavy shadow → `bz-elev-2`)
+
+**Validation**:
+- `npx tsc --noEmit` 0 errors in `src/`
+- `npx eslint .` 0 errors, 1 baseline warning (canAccessRestaurant pre-existing §38.58)
+- `npm test` 182/182 pass
+
+**Yapma**:
+- Tüm sayfaları `titleScale="compact"` yapma — Dashboard / Hesabım / Settings hero kalır (Apple HIG intent korunur)
+- `compact` mode'u 28-32px aralığına genişletme — yoğun layout için 22-32px doğru kararlı
+- Plan widget shadow'u `bz-elev-3` (heavy) yapma — kart-internal mid-tier `bz-elev-2` doğru; bz-elev-3 modal/dropdown floating tier
+
+**Yap**:
+- Yeni PageHeader callsite eklerken sayfa layout density'sini değerlendir: hero (default) vs compact
+- Yeni dark/graphite hero kartlar (Plan widget benzeri) eklerken `bz-elev-2` reuse — mid-tier kart-internal soft depth pattern
+
+**Backlog güncel** (PR-2 + PR-3 sonraki session'lara devam):
+- PR-2 (§38.67): Dashboard KPI tile sparkline color tone + AI Insight Banner lime overuse audit + section padding ↑
+- PR-3 (§38.68): Yorumlar Detail panel shadow + Customers table row motion + Analytics chart whitespace + Google/Platforms list polish
+

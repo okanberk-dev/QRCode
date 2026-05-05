@@ -15,6 +15,13 @@ interface PageHeaderProps {
    *  description daha uzun açıklama. İkisi birlikte verilebilir. */
   subtitle?: ReactNode;
   actions?: ReactNode;
+  /** §38.66 — Title scale prop (Apple HIG hero vs kompakt 3-col layout):
+   *   - `hero` (default, §38.65): clamp(28px, 5vw, 40px) — Dashboard, Hesabım,
+   *     Settings gibi hero scale sayfalar
+   *   - `compact`: clamp(22px, 4vw, 32px) — Yorumlar / Müşteriler / Analitik
+   *     gibi yoğun 3-col layout sayfalar (h1 ezici hissedilebilir, daha
+   *     mütevazı). PR-1 visual regression riski'ni absorb eder. */
+  titleScale?: 'hero' | 'compact';
   className?: string;
 }
 
@@ -26,8 +33,15 @@ export function PageHeader({
   description,
   subtitle,
   actions,
+  titleScale = 'hero',
   className = "",
 }: PageHeaderProps) {
+  // §38.66 — titleScale variant: hero (Apple HIG default) vs compact
+  // (yoğun 3-col layout için mütevazı). Her ikisinde de `bz-h-tight-2`
+  // Space Grotesk weight 500 + tight tracking sabit; sadece size scale.
+  const titleStyle = titleScale === 'compact'
+    ? { fontSize: 'clamp(22px, 4vw, 32px)', lineHeight: 1.1 }
+    : { fontSize: 'clamp(28px, 5vw, 40px)', lineHeight: 1.05 };
   return (
     <div
       className={`flex flex-col md:flex-row md:items-end justify-between gap-3 md:gap-4 mb-5 ${className}`}
@@ -46,15 +60,14 @@ export function PageHeader({
           </span>
         )}
         <h1
-          /* §38.65 — Apple HIG type-first hierarchy upgrade: h1 clamp range
-             20-28px → 28-40px (sm: 28px, lg: 40px). Owner panel hero scale
-             "CEO confidence" hissi. `bz-h-tight-2` Space Grotesk weight 500 +
-             tight tracking (-0.03em) sabit; sadece size scale up. */
+          /* §38.65 — Apple HIG type-first hierarchy upgrade. §38.66'da
+             titleScale prop ile per-callsite override (hero vs compact)
+             eklendi; default hero (Dashboard/Hesabım/Settings için 28-40px),
+             compact yoğun 3-col layout (Yorumlar/Müşteriler/Analitik için
+             22-32px) ezici hissedilmesini önler. `bz-h-tight-2` Space Grotesk
+             weight 500 + tight tracking sabit. */
           className="bz-h-tight-2 mt-1"
-          style={{
-            fontSize: "clamp(28px, 5vw, 40px)",
-            lineHeight: 1.05,
-          }}
+          style={titleStyle}
         >
           {title}
         </h1>

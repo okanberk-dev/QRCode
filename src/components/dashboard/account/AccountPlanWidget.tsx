@@ -157,7 +157,10 @@ export function AccountPlanWidget({
     // önceki tek "Planı yönet" full-width drift'ti. Trial gün kalan badge
     // header sağına (sadece >0 ise), tasarımda yok ama §11.11 TrialBanner
     // entegrasyonu için faydalı sinyal.
-    <div className="rounded-2xl bg-[#0A0A0A] p-5 text-white shadow-[0_4px_20px_rgba(10,10,10,0.18)]">
+    /* §38.66 — Plan dark hero shadow Apple-soft tier'a düşürüldü:
+       0_4px_20px_0.18 (heavy graphite drop) → bz-elev-2 (0_4px_16px_0.06).
+       Kart-internal mid-tier; aşırı drama yok, fonksiyonel depth. */
+    <div className="rounded-2xl bg-[#0A0A0A] p-5 text-white bz-elev-2">
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="inline-flex items-center gap-1.5">
           <span className="bz-pulse-dot" aria-hidden />
