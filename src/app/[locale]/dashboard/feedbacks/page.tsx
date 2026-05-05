@@ -708,9 +708,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // Render
   // ============================================================
   return (
-    <div className="mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8">
-      {/* PageHeader — mobile detail view'inde gizle (sticky back zaten orada) */}
-      <div className={isMobileDetailView ? 'hidden lg:block' : ''}>
+    // §38.62 — Pixel-perfect parity: tasarım `.design-owner-2026/page-reviews.jsx`
+    // `contentStyle={{ padding: 0, background: '#FFFFFF' }}` override ediyor.
+    // Outer `mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8` kaldırıldı; 3-col
+    // grid full-width content area'da render ediliyor → filter rail sol sidebar'a
+    // yapışık (border-right). Header için ayrı padded wrapper (px-4 sm:px-7
+    // py-6 lg:py-8) tasarımdaki PanelTopbar görünümünü taklit eder.
+    <div className="bg-white">
+      {/* PageHeader — mobile detail view'inde gizle (sticky back zaten orada).
+          Padded wrapper sadece header için, alt grid full-width. */}
+      <div className={`px-4 sm:px-7 py-6 lg:py-8 border-b border-[#EDEDED] ${isMobileDetailView ? 'hidden lg:block' : ''}`}>
         <PageHeader
           eyebrow={isTr ? 'GERİ BİLDİRİMLER' : 'FEEDBACKS'}
           title={isTr ? 'Yorumlar' : 'Reviews'}
@@ -779,8 +786,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           a/page-reviews.jsx birebir). Mevcut WeekStatsCard rail'da
           (FeedbackFiltersRail içinde) Bu hafta özet hâlâ görünür. */}
 
+      {/* §38.62 — 3-col grid full-width (tasarım `padding: 0` parity).
+          `rounded-2xl border` kaldırıldı; bölücüler artık inline border-right
+          üzerinden (filter rail + review list sınır çizgileri). Sidebar'a
+          yapışık görünüm bu sayede sağlanır. Header section yüksekliği:
+          mobile 24+80+24+1 ≈ 129px, desktop 32+80+32+1 ≈ 145px → 160px buffer. */}
       <div
-        className="flex flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white lg:flex-row lg:h-[calc(100vh-200px)] lg:min-h-[540px] xl:grid xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,360px)]"
+        className="flex flex-col overflow-hidden bg-white lg:flex-row lg:h-[calc(100vh-160px)] lg:min-h-[540px] xl:grid xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,360px)]"
       >
         {/* ============ XL FILTER RAIL — visible only on xl: (≥1280px) ============ */}
         <FeedbackFiltersRail
@@ -831,11 +843,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
         {/* ============ DETAIL ============
             UX fix: lg:min-h-0 + lg:overflow-y-auto. Mevcut parent
-            lg:h-[calc(100vh-200px)] sabit yükseklik, detail body uzun olduğunda
-            (yorum metni + composer + yanıtlar listesi) flex child default
-            min-height: auto child'ı genişletir + parent overflow-hidden →
-            composer alta inilemiyor (kullanıcı raporu). min-h-0 flex item
-            shrink-to-content yapmasın, overflow-y-auto kendi scroll'unu açar. */}
+            lg:h-[calc(100vh-160px)] sabit yükseklik (§38.62 sonrası, eskiden
+            200px), detail body uzun olduğunda (yorum metni + composer +
+            yanıtlar listesi) flex child default min-height: auto child'ı
+            genişletir + parent overflow-hidden → composer alta inilemiyor
+            (kullanıcı raporu). min-h-0 flex item shrink-to-content yapmasın,
+            overflow-y-auto kendi scroll'unu açar. */}
         <div
           className={`flex-1 min-w-0 ${
             isMobileDetailView ? 'flex' : 'hidden lg:flex'

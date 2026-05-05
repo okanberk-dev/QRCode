@@ -8958,3 +8958,72 @@ Notes / Risks:
 - 🟢 Architectural cleanup: 3 component'tan `<style>` block eliminasyonu + dead bz-float removal + uniform a11y kapsam.
 - 🟡 Gelecek: fontFamily redundancy 143 callsite + inline hex 70+ callsite + JetBrains Mono weight pruning DEFER (CLAUDE.md §38.B).
 
+### 38.62 2026-05-05 — Yorumlar sayfası pixel-perfect parity (sidebar-yapışık layout)
+
+Kullanıcı raporu: *"Owner panelde tasarımla aynı ölçülerde olmayan kısımları analiz et (son tasarım). Yorumlar sayfası soldaki menüsü sidebar yapışık olması lazım gibi ve tüm yerleri fixleyip pixel perfect yap."*
+
+Manuel audit + tasarım kaynağı `.design-owner-2026/project/page-reviews.jsx` cross-check sonucu **kritik drift** tespit edildi:
+
+**Tasarım kaynağı**:
+```jsx
+// shell.jsx — PanelShell default content padding
+<main style={{ flex: 1, overflow: 'auto', padding: '24px 28px 32px', ...contentStyle }}>
+
+// page-reviews.jsx — TEK override sayfa
+<PanelShell contentStyle={{ padding: 0, background: '#FFFFFF' }}>
+  <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 360px', height: '100%' }}>
+    <div style={{ borderRight: '1px solid var(--bz-n200)', padding: '20px 16px' }}>...</div>
+    <div style={{ borderRight: '1px solid var(--bz-n200)' }}>...</div>
+    <div>...</div>
+  </div>
+</PanelShell>
+```
+
+**Mevcut implementation drift** (`/dashboard/feedbacks/page.tsx`):
+```tsx
+<div className="mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8">
+  <PageHeader />
+  <div className="rounded-2xl border border-[#EDEDED] bg-white grid xl:grid-cols-[300px_1fr_360px]">
+```
+
+3 problem:
+1. **`mx-auto max-w-[1400px]`** → tasarımda content full-width, max-w yok
+2. **`px-4 sm:px-7 py-6 lg:py-8`** outer padding → tasarımda `padding: 0` override
+3. **`rounded-2xl border`** card → tasarımda card yok, bölücüler `border-right` ile
+
+Sonuç: filter rail sol sidebar'a "yapışık" değil — outer padding + max-w + card border arasındaki boşluk Gmail-tarzı 3-col inbox'ı kart-vari hale çeviriyor.
+
+**Fix**:
+- Outer wrapper `mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8` → `bg-white` (full-width, padding 0)
+- PageHeader için ayrı padded container: `<div className="px-4 sm:px-7 py-6 lg:py-8 border-b border-[#EDEDED]">` — tasarımdaki PanelTopbar görünümünü taklit eder
+- 3-col grid'in `rounded-2xl border` kaldırıldı — bölücüler artık `<aside className="xl:border-r xl:border-[#EDEDED]">` (FeedbackFiltersRail) + middle column `border-r` (review list inline) üzerinden
+- Grid height: `lg:h-[calc(100vh-200px)]` → `lg:h-[calc(100vh-160px)]` (header section ~145px desktop + 15px buffer)
+- FeedbackFiltersRail: `<div className="p-4 space-y-5">` → `<div className="px-4 py-5 space-y-[22px]">` (tasarım `padding: '20px 16px'` + `gap: 22` parity)
+
+**Owner panel diğer sayfalar — mevcut layout tasarımla uyumlu**:
+- Dashboard: `mx-auto max-w-[1200px] space-y-6 px-4 sm:px-7 py-6 lg:py-8` — PanelShell default 24/28/32 padding ile yakın, max-w-[1200px] ultra-wide screens için kullanıcı dostu UX (tasarımda yok ama legitimate constraint, dokunulmadı)
+- Customers / Analytics / Account / Google / Platforms: aynı pattern, dokunulmadı
+
+**Etkilenen dosyalar**:
+- `src/app/[locale]/dashboard/feedbacks/page.tsx` (outer wrapper restructure: padded header section + full-width grid)
+- `src/app/[locale]/dashboard/feedbacks/_components/FeedbackFiltersRail.tsx` (`p-4 space-y-5` → `px-4 py-5 space-y-[22px]`)
+
+**Sonuç**: Yorumlar sayfası 3-col layout artık Gmail/Linear/Notion paterniyle birebir — filter rail (300px) sol sidebar'a yapışık, review list (1fr) ortada, detail panel (360px) sağda; bölücüler `border-right` ile, full-height viewport.
+
+**Yapma**:
+- Outer wrapper'ı geri ekleme — pixel-perfect parity için card-vari görünüm bozar.
+- `rounded-2xl border` card geri ekleme — 3-col layout sidebar'la-yapışık intent'ini yıkar.
+- Diğer owner panel sayfalarını da `padding: 0` override etmek — tasarım `contentStyle` sadece Yorumlar'da; diğerleri default padding 24/28/32 kullanıyor, mevcut implementation uyumlu.
+- `max-w-[1200px]` (Dashboard / Analytics / Customers) silmek — ultra-wide screens'de chart aşırı genişlemesi olur, kullanıcı dostu constraint.
+
+**Yap**:
+- Yeni 3-col inbox-style sayfa eklerken aynı paterni reuse: outer `bg-white` (padding 0) + padded header section + full-width grid + bölücü `border-right` (card border yok).
+- Yeni padding-override ihtiyacı çıkarsa tasarım `contentStyle={{ padding: 0 }}` referansını kontrol et — sadece o sayfaya uygula.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors in `src/`
+- `npx eslint .` 0 errors, 1 baseline warning
+- `npm test` 182/182 pass
+- `npx next build` ✓ 58/58 static page (Prisma stub DB warnings beklenen)
+- Manuel test plan: `/tr/dashboard/feedbacks` xl: layout filter rail sol sidebar'a `border-r` ile yapışık, mid + detail panel intact; mobile: PageHeader stacked, grid flex-col fallback intact.
+

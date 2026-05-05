@@ -98,7 +98,10 @@ export function FeedbackFiltersRail({
 
   return (
     <aside className="hidden xl:flex xl:flex-col xl:border-r xl:border-[#EDEDED] xl:bg-white xl:overflow-y-auto">
-      <div className="p-4 space-y-5">
+      {/* §38.62 — Tasarım `.design-owner-2026/page-reviews.jsx` parity:
+          padding 20px 16px (py-5 px-4) + gap 22px (~space-y-[22px]).
+          Önceki `p-4 space-y-5` (16px / 20px) küçük drift'ti. */}
+      <div className="px-4 py-5 space-y-[22px]">
         {/* DURUM section — 5 tab tasarım birebir.
             Aktif item: bg-[#0A0A0A] text-white + sol kenar 3px lime stripe
             (::before pseudo via inline `before:` Tailwind). */}
