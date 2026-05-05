@@ -9027,3 +9027,107 @@ Sonuç: filter rail sol sidebar'a "yapışık" değil — outer padding + max-w 
 - `npx next build` ✓ 58/58 static page (Prisma stub DB warnings beklenen)
 - Manuel test plan: `/tr/dashboard/feedbacks` xl: layout filter rail sol sidebar'a `border-r` ile yapışık, mid + detail panel intact; mobile: PageHeader stacked, grid flex-col fallback intact.
 
+### 38.63 2026-05-05 — Hesabım sol nav bz-card + Plan widget tasarım parity + mobile drawer admin paneli paterni
+
+Kullanıcı raporu: *"Ayarlar kısmında sidebar yanındaki menü güvenlik gibi seçenekler düz yazıyor; tasarımda kart içinde belli bir düzendeydi. Sağdaki abonelik kısmı çok bozuk gözüküyor, tasarıma uygun güzel UI/UX. Mobilde açılan menüyü düzelt — owner paneli admin paneldeki gibi açılsın (tasarımdaki mobil menüye bak)."*
+
+3 fix kapatıldı:
+
+#### Fix 1 — `SettingsLayout` sol nav `bz-card` wrapper
+
+Tasarım `.design-owner-2026/page-account.jsx:38-49` parity:
+```jsx
+<div className="bz-card" style={{ padding: 12, alignSelf: 'flex-start', position: 'sticky', top: 20 }}>
+  <div className="bz-eyebrow" style={{ padding: '6px 10px 8px' }}>AYARLAR</div>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    {ACCOUNT_NAV.map(n => (<div className={`bz-side-item ${n.active ? 'active' : ''}`}>...</div>))}
+  </div>
+</div>
+```
+
+Mevcut implementation'da sol nav (lg:+ vertical Tabs) düz `<aside>` içinde sticky-only render ediliyordu — kart yok, drift. Fix:
+- `<div className="hidden lg:block">` → `<div className="hidden lg:block bz-card p-3">`
+- `space-y-5` → `space-y-4` (kart içi grup gap kompakt)
+- Border separator full-width: `<div className="border-t border-[#EDEDED]" />` → `<div className="-mx-3 border-t border-[#EDEDED]" />` (bz-card 12px padding'i nötralize ederek edge-to-edge çizgi)
+- Eyebrow padding: `px-1` → `px-2.5 pt-1` (tasarım `padding: '6px 10px 8px'` parity)
+
+Horizontal nav (md/sm) kartsız kalır — zaten underline strip görünümü, tasarımda da farklı pattern.
+
+#### Fix 2 — `AccountPlanWidget` tasarım parity (Plan dark hero "bozuk" fix)
+
+Tasarım `.design-owner-2026/page-account.jsx:170-211` Plan widget parity:
+```jsx
+<span className="bz-eyebrow" style={{ color: 'var(--bz-lime)' }}>PULSE PRO</span>
+<span className="bz-pulse-dot"/>
+...
+<span className="bz-h-tight-2" style={{ fontSize: 36, color: '#FFF' }}>₺2.490</span>
+<span className="bz-mono" style={{ fontSize: 12, color: 'var(--bz-n400)' }}>/ay</span>
+...
+<div className="bz-mono" style={{ fontSize: 11, color: 'var(--bz-n400)', marginBottom: 16 }}>
+  Bir sonraki ödeme · 14 Mayıs 2026
+</div>
+...
+<button className="bz-btn-lime bz-btn-sm" style={{ flex: 1 }}>Planı yükselt</button>
+<button className="bz-btn-ghost bz-btn-sm" style={{ borderColor: 'rgba(255,255,255,0.18)', color: '#FFF' }}>Yönet</button>
+```
+
+**Mevcut drift'ler** (kullanıcı "çok bozuk" dediği sebepler):
+1. Eyebrow: `<Crown> + "PLAN"` (gri tone) → tasarım: `bz-pulse-dot + "PULSE PRO"` lime — plan adı eyebrow olarak öne çıkar.
+2. Price: `bz-h-tight text-[20px] planLabel` + `text-[12px] price` → tasarım: 36px hero price + 12px mono `/ay` muted suffix — fiyat hero olmalı.
+3. Renews date: yok → tasarım: `Bir sonraki ödeme · 14 Mayıs 2026` mono muted (BillingSummary.renewsAt mevcut, bağlanmamıştı).
+4. CTA: tek "Planı yönet" full-width lime → tasarım: 2-button row (Yükselt lime + Yönet ghost transparent border).
+
+**Fix uygulandı**:
+- Eyebrow: `<span className="bz-pulse-dot" />` + `<span className="pulse-eyebrow text-[#C6F24E]">{data.planLabel || 'PLAN'}</span>` — Crown icon kaldırıldı; lime pulse dot animation `prefers-reduced-motion` blanket'inde zaten kapsanır (CLAUDE.md §38.61).
+- Price hero: `<span className="bz-h-tight-2 text-white" style={{ fontSize: 36, lineHeight: 1 }}>{priceMain}</span>` + ayrı `<span className="bz-mono text-[12px] text-white/50">{priceCycleSuffix}</span>` — eski combined `priceText` const silindi.
+- Renews date render: `data.renewsAt → toLocaleDateString({day, month: 'long', year: 'numeric'}, intLocale)` — TR/EN locale parity.
+- 2-button row: `grid grid-cols-2 gap-2` → lime "Yükselt" + ghost transparent-border "Yönet". Her ikisi de `/pricing`'e gider (placeholder; gerçek "Yönet" Iyzico Wave 3.5 sonrası ayrı endpoint'e yönlenir).
+
+#### Fix 3 — Owner mobile drawer admin paneli paterni
+
+Mevcut owner drawer (`UserDashboardShell.tsx:870-879`):
+```tsx
+{drawerOpen && (
+  <div className="fixed inset-0 z-50 flex lg:hidden">
+    <div className="h-full w-72 max-w-[85vw] shadow-2xl">{renderSidebar()}</div>
+    <button className="flex-1 bg-black/50 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
+  </div>
+)}
+```
+
+Eksikler vs admin (`AdminSidebar.tsx:577-598`):
+- `role="dialog"` + `aria-modal="true"` + `aria-label` (a11y dialog semantic — focus trap helper, keyboard skip-link gibi konsistans)
+- safe-area inset paddings (`paddingTop: env(safe-area-inset-top)`, `paddingBottom: env(safe-area-inset-bottom)`) — iOS notch + home-indicator için kritik
+- `bg-white border-r` explicit (renderSidebar default light bg veriyor ama drawer wrapper'ın kendi bg'i fallback için garanti)
+- Drawer width `w-72` (288px) → `w-[280px]` (admin paneli ile birebir)
+- Backdrop opacity `bg-black/50` → `bg-black/60` (admin paneli ile birebir, daha güçlü contrast)
+- Backdrop close button `aria-label` — close intent screen reader için açık
+
+**Fix uygulandı**: drawer wrapper a11y attribute'ları + safe-area paddings + bg-white explicit + width/opacity admin paterniyle uyumlu hâle getirildi. `renderSidebar()` çağrısı intact (sidebar içeriği aynı kalır).
+
+Tasarım kaynağı `.design-owner-2026/page-mobile-v2.jsx` MobileDrawer (line 3-72) ileride scope açılırsa mobile-specific drawer içeriği için (Wordmark + close button header + search input + lime CTA + 3-grup nav + user info card) — şu anki implementation desktop sidebar'ı drawer'a aktarıyor (admin ile aynı pattern, kullanıcı isteği "admin gibi açılsın" karşılandı).
+
+**Etkilenen dosyalar**:
+- `src/components/dashboard/settings/SettingsLayout.tsx` (sol nav `bz-card` wrapper + spacing parity)
+- `src/components/dashboard/account/AccountPlanWidget.tsx` (eyebrow + 36px hero price + renews date + 2-button row; orphan `priceText` const silindi)
+- `src/components/dashboard/UserDashboardShell.tsx` (mobile drawer a11y + safe-area + admin paneli pattern)
+
+**Validation**:
+- `npx tsc --noEmit` 0 errors in `src/`
+- `npx eslint` 3 modified file 0 errors
+- `npm test` 182/182 pass
+- `npx next build` ✓ 58/58 static page (Prisma stub DB warnings beklenen)
+- Sanity grep: silinen `priceText` orphan referans yok; `<Crown>` import kaldırıldığı için ESLint warning yok
+
+**Yapma**:
+- Right rail Plan widget'a renew date için yeni schema field ekleme — `BillingSummary.renewsAt` (mevcut `/api/billing/summary` field) zaten taşır, sadece UI'da render edilmiyordu.
+- Plan tier label "PULSE PRO" hardcode etme — `data.planLabel` dinamik (DB'den gelir, üst plan tier değişikliklerinde otomatik refleks).
+- Mobile drawer'ı tasarım MobileDrawer paterniyle (Wordmark + search + lime CTA + 3-grup nav) yeniden inşa etme — kullanıcı isteği "admin paneli gibi açılsın" (dialog semantic + safe-area), büyük redesign sonrası senkron drift riski.
+- SettingsLayout sol nav'ı tüm responsive breakpoint'lerde bz-card içine almak — md/sm horizontal Tabs underline strip görünümü kart'a sığmaz, kasıtlı kaldı.
+- "Yönet" button ayrı endpoint'e (`/api/billing/manage`) bağlama — Iyzico Wave 3.5 sonrası scope.
+
+**Yap**:
+- Yeni right rail widget eklerken `bz-card` veya graphite dark hero (rounded-2xl + bg-[#0A0A0A]) variant'ı reuse — tasarım `.design-owner-2026/page-account.jsx` paterni.
+- Yeni mobile drawer ihtiyacı için `<UserDashboardShell>` mobile drawer wrapper'ını genişlet — admin paneli paterniyle aynı a11y + safe-area + bg pattern reuse.
+- Yeni vertical Tabs sticky settings sayfası eklenirse `bz-card` wrapper otomatik geçerli (`SettingsLayout` rendered).
+

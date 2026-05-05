@@ -147,19 +147,26 @@ export function SettingsLayout({
               : 'lg:grid-cols-[240px_1fr]'
           }`}
         >
-          {/* Tab nav: horizontal on md, vertical on lg */}
+          {/* Tab nav: horizontal on md, vertical on lg.
+              §38.63 — Tasarım `.design-owner-2026/page-account.jsx` parity:
+              vertical nav (lg+) `<div className="bz-card" style={{ padding: 12,
+              alignSelf: 'flex-start', position: 'sticky', top: 20 }}>` ile
+              kart içinde grup'lanmış. Önceki düz aside (sticky-only) drift'ti.
+              `bz-card` wrapper + `p-3` (~12px) padding tasarımdaki ölçüye
+              birebir uydu. Horizontal nav (md/sm) kartsız kalır (zaten
+              underline strip görünümü). */}
           <aside className={`lg:sticky ${stickyTopClass} self-start`}>
-            <div className="hidden lg:block">
+            <div className="hidden lg:block bz-card p-3">
               {groupedTabs && groups ? (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {groups.map((g, idx) => {
                     const items = groupedTabs.buckets.get(g.id) ?? [];
                     if (items.length === 0) return null;
                     return (
                       <Fragment key={g.id}>
-                        {idx > 0 && <div className="border-t border-[#EDEDED]" aria-hidden />}
-                        <div className="space-y-2">
-                          <div className="px-1">
+                        {idx > 0 && <div className="-mx-3 border-t border-[#EDEDED]" aria-hidden />}
+                        <div className="space-y-1.5">
+                          <div className="px-2.5 pt-1">
                             <Eyebrow>{g.label}</Eyebrow>
                           </div>
                           <Tabs
@@ -175,7 +182,7 @@ export function SettingsLayout({
                   })}
                   {groupedTabs.ungrouped.length > 0 && (
                     <Fragment>
-                      <div className="border-t border-[#EDEDED]" aria-hidden />
+                      <div className="-mx-3 border-t border-[#EDEDED]" aria-hidden />
                       <Tabs
                         items={groupedTabs.ungrouped}
                         active={active}
