@@ -40,6 +40,8 @@ async function loadRestaurantUrl(
       airbnbUrl: true,
       bookingUrl: true,
       yandexUrl: true,
+      yelpUrl: true,
+      foursquareUrl: true,
       instagramUrl: true,
       facebookUrl: true,
       whatsappUrl: true,

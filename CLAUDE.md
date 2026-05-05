@@ -9632,3 +9632,79 @@ Pulse design system için pixel-perfect approach 7-rule disipline (yeni §38.B �
 - 🛡️ Security follow-ups (§38.2 — operatör tetiği bekliyor)
 - DEFER backlog 12 item (Google API + 2FA UI + Profile photo + Account freeze + diğer backend/schema gate, kullanıcı açık talep gerek)
 
+### 38.70 2026-05-05 — Backend bağlantı audit (3-agent) + Yelp/Foursquare schema sync + cache header polish
+
+Kullanıcı 7 owner panel sayfası için kapsamlı backend bağlantı audit'i + 🔴 CRITICAL + 🟠 HIGH severity issue'leri doğrudan fix istedi. 3 paralel Explore agent (Dashboard+Hesabım / Yorumlar+Müşteriler+Analitik / Google+Platforms) + manuel false positive eleme (CLAUDE.md §38.39 paterni) + CLAUDE.md anchor cross-check (§28 / §37 / §38.B / SECURITY_AUDIT_REPORT.md).
+
+**Audit sonuçları**:
+
+| Agent | Bulgu | Karar |
+|---|---|---|
+| Dashboard + Hesabım | 0 CRITICAL, 0 HIGH, 1 MEDIUM (intentional DEFER §38.51) | TEMİZ |
+| Yorumlar + Müşteriler + Analitik | "🔴 CRITICAL: isRead/isPending tab filter eksik" iddiası | **FALSE POSITIVE** — `feedbacks/page.tsx:187,190` filter logic intact + API route `...f` spread ile UI'a iletiliyor. Sağlam. |
+| Google + Platforms | 1 gerçek CRITICAL + 1 gerçek HIGH + 2 false positive | FIX |
+
+**Gerçek bulgular** (manuel verify edildi):
+
+🔴 **CRITICAL — Yelp + Foursquare 4 schema field 3 endpoint Prisma select'inde EKSİK** (§38.52'de eklenmiş ama 3 API endpoint güncellenmemişti):
+- `src/app/api/cron/platform-link-retest/route.ts:58-82` (daily 04:00 UTC cron)
+- `src/app/api/restaurants/[id]/integrations/health/route.ts:79-105` (workspace KPI)
+- `src/app/api/restaurants/[id]/integrations/[provider]/test/route.ts:28-52` (manuel test)
+
+Etki: cron Yelp/Foursquare otomatik test atlıyor, health endpoint statü raporlamıyor, manuel test endpoint URL'i yükleyemiyor — owner Yelp/Foursquare URL ekledikten sonra "Son test" rozeti ve workspace "Bekleyen sorun" KPI'sı bu 2 platform'u dahil etmiyor. yemekSepeti/getir/trendyol gibi 8 platform select'te zaten vardı, sadece §38.52'deki yeni 4 field unutulmuş.
+
+Fix: 3 endpoint select'ine `yelpUrl + yelpEnabled + foursquareUrl + foursquareEnabled` ekle (cron + health 4 field; test endpoint sadece URL field'ları çünkü manuel test enabled flag kontrolü yapmıyor — 2 field). Cron logic generic (PROVIDER_MAP loop) — fonksiyonel değişiklik gerekmez, mevcut JS-side `runPlatformLinkTest` çağrıları zaten bu field'ları bekliyordu.
+
+🟠 **HIGH — `/api/dashboard/platforms/log/export` Cache-Control `private` tag eksik**: line 52 + 113 sadece `'no-store'` taşıyordu. Owner-scoped IDOR endpoint için defansif belt-and-suspenders olarak `'private, no-store'`'a geçirildi (§19.3 paterni — CDN/proxy strip riskine karşı).
+
+❌ **2 false positive eleme**:
+- Yorumlar tab filter (Agent 2): line 187,190'da intact, `...f` spread API → UI dataflow sağlam.
+- "Yeni bağlantı" CTA (Agent 3): line 263 + 288 `manageHref` zaten bağlı (`/${locale}/dashboard/restaurants/${firstRestaurantId}/settings?section=integrations`).
+
+**Etkilenen dosyalar** (4 kod + 1 docs):
+- `src/app/api/cron/platform-link-retest/route.ts` (+4 satır select)
+- `src/app/api/restaurants/[id]/integrations/health/route.ts` (+4 satır select)
+- `src/app/api/restaurants/[id]/integrations/[provider]/test/route.ts` (+2 satır select — yelpUrl + foursquareUrl, enabled flag manuel test'te gerekmez)
+- `src/app/api/dashboard/platforms/log/export/route.ts` (2 satır cache header `'no-store'` → `'private, no-store'`)
+- `CLAUDE.md` (bu §38.70 log)
+
+Toplam ~12 satır net edit. Schema migration YOK (§38.52'de zaten production'a deploy edilmiş, sadece select'ler eksikti). Backward compat ✅ (yeni field'lar nullable, eski restoran row'ları null Yelp/Foursquare ile sorunsuz çalışır).
+
+**Skip edilen MEDIUM/LOW** (RESPECT/DEFER, CLAUDE.md backlog):
+- 🟡 KpiStrip dead-code cleanup (§38.53 import kaldırıldı §38.56'da, dosya 207 satır intact) — premature (CLAUDE.md §7).
+- 🟡 bulk_ai_reply response.drafts modal/composer UX (§38.58 backlog "per-row checkbox UX") — DEFER, optimistic state + FeedbackList badge yeterli.
+- 🟡 Webhook UI tam CRUD (§38.57 backlog) — backend AutomationRule schema mevcut, "Yakında" placeholder yeterli.
+- 🟡 extractStructuredInsight Redis cache migration (§15.1 backlog) — Vercel cold start + layered quota cost guard yeterli.
+- 🟡 Google "Profili görüntüle" action (§38.57 backend gap) — `GoogleIntegration.locationsJson.restaurantLocations[id].profileUrl` exposed değil.
+- 🟢 CRUD scope iptalleri (§38.16/§38.48/§38.64 Customer CRUD) RESPECT.
+- 🛡️ Security follow-ups (§38.2): operatör kararı bekliyor.
+
+**Yapma**:
+- §38.52 paterni reuse edilirken (yeni provider eklerken) 5-nokta drift kontrol disipline'sini atla — `PROVIDER_DOMAINS` + `PROVIDER_LABELS` + `PROVIDER_MAP` + `PATH_RULES` + `PLATFORM_DEFS`'e ek olarak **3 API endpoint select'ini** de güncel tut (cron + health + test). §38.70 audit bu 3-endpoint select drift'inin schema migration sırasında atlandığını ortaya çıkardı.
+- Owner-scoped IDOR endpoint'lerinde Cache-Control'u sadece `'no-store'` ile bırakma — defansif `'private, no-store'` standart (CDN/proxy strip riski + §19.3 disipline).
+- Agent çıktılarındaki "🔴 CRITICAL" iddialarını manuel verify etmeden kabul etme — §38.39 + §38.69 7-rule paterniyle (`grep + Read line:N`) doğrula. False positive yaygın (Agent 2 isRead/isPending filter, Agent 3 "Yeni bağlantı" CTA).
+
+**Yap**:
+- Yeni provider schema migration eklerken **6-nokta drift disipline** zorunlu (5 mevcut + 3 endpoint Prisma select).
+- Owner-scoped read endpoint cache header pattern: `'private, no-store'` (mutation-friendly read) veya `'private, s-maxage=N, stale-while-revalidate=M'` (cacheable read).
+- Audit önerisi alırken: **3-agent paralel + manuel verify** + AskUserQuestion (kritik kararlar) + tek consolidated PR (CLAUDE.md §21.22 stacked PR YOK).
+
+**Verification**:
+- `npx tsc --noEmit` 0 errors in `src/`
+- `npx eslint .` 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npm test` 182/182 pass
+- Sanity grep (post-fix): `yelpUrl: true|foursquareUrl: true` 3 endpoint × 2 field; `private, no-store` log export 2 hit.
+
+**Manuel test** (production sonrası — operatör):
+- Owner panel'de bir restorana Yelp ve/veya Foursquare URL ekle + enable et.
+- "Tümünü retest" buton'u Yelp/Foursquare'ı paralel test ediyor mu kontrol et.
+- Workspace `/dashboard/platforms` KPI "Bekleyen sorun" sayısı bu provider'ları dahil ediyor mu kontrol et.
+- Daily cron 04:00 UTC sonrası `PlatformLinkCheck` tablosunda Yelp/Foursquare row'ları var mı (Vercel logs).
+
+**Backlog güncel** (Bu PR sonrası — diğer §38.B kalemleri intact):
+- ✅ §38.70 backend bağlantı audit + Yelp/Foursquare schema sync + cache header polish kapatıldı
+- 🟡 KpiStrip dead-code cleanup (opsiyonel, premature)
+- 🟡 bulk_ai_reply UX modal (§38.58 backlog)
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
+- 🛡️ Security follow-ups (§38.2 — operatör tetiği bekliyor)
+
