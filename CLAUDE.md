@@ -7269,3 +7269,51 @@ for each PLATFORM_DEF (11):
 - 🟡 Per-platform card'da inline test/retest CTA (mevcut per-restaurant settings'te var, duplicate scope)
 - 🟢 `/dashboard/integrations` route cleanup (backward-compat; silinebilir)
 - (diğer §38.B kalemleri intact)
+
+### 38.46 2026-05-05 — buaze.css token cross-check (orphan `bz-tr-hover` fix)
+
+Kullanıcı `buaze.css` (canonical design tokens) + `layout.tsx` + eski `page.tsx` paylaştı, "kontrol et ve birebir yaptın mı bak" istedi.
+
+**Karar (AskUserQuestion)**: Mevcut state korunur (post §38.41/§38.43/§38.44 cleanup), sadece css/layout cross-check + drift varsa fix.
+
+**Cross-check sonucu** — buaze.css tokens vs `globals.css` + production usage:
+
+| Token | Production usage | globals.css definition | Durum |
+|---|---|---|---|
+| `bz-h-tight-2` | 19 | 1 | ✅ tutarlı |
+| `bz-tab` | 8 | 9 | ✅ tutarlı (variant'lar dahil) |
+| **`bz-tr-hover`** | **1** | **0** | **❌ DRIFT** |
+| `bz-h-tight-1`, `bz-num`, `bz-scroll`, `bz-stripes`, `bz-rule`, `bz-focus`, `bz-mob-shell`, `bz-tab-active`, `bz-th`, `bz-td` | 0 | 0 | ⚪ Dead utility (skip — production'da kullanılmıyor) |
+
+**Drift fix (1 yer)**:
+- `bz-tr-hover` — `customers/page.tsx:641`'de tr row hover için kullanılıyor ama globals.css'te tanımsız → CSS tanımı yok, hover efekti silent fail ediyor.
+- Fix: `globals.css` line 818'e `.bz-tr-hover:hover { background: #FAFAFA; }` eklendi (bz-table'ın yanına, kanonik buaze.css `var(--n-50)` paterni Buaze hex equivalent'i `#FAFAFA`).
+
+**Dead utility skip kararı** (CLAUDE.md §16 + §7 paterni):
+- buaze.css 10+ tanım production'da kullanılmıyor (`bz-h-tight-1`, `bz-num`, `bz-scroll`, `bz-stripes`, `bz-rule`, `bz-focus`, `bz-mob-shell`, `bz-tab-active`, `bz-th`, `bz-td`).
+- Bunları globals.css'e eklemek **dead utility class** yaratır — production'da inline Tailwind ile aynı görsel yapılıyor (örn. `bz-num` yerine `bz-mono tabular-nums`, `bz-scroll` yerine `overflow-y-auto no-scrollbar`).
+- §16 kanonik karar: tasarım kaynağı `tokens.css` referans, `globals.css` `@theme {}` + `bz-*` utility'leri ile birebir implementer.
+
+**Eski page.tsx paylaşımı** (kullanıcı kararı: skip):
+- Paylaşılan `page.tsx` §38.41 cleanup öncesi versiyon (5 silinen section: YORUM GÖRÜNÜMÜ + QR performansı + Konum performansı + Restaurants list + Upgrade CTA)
+- Mevcut state korunur (post §38.41 — kullanıcı kararı "tasarımda yoksa sil")
+- Geri yüklenmez
+
+**layout.tsx** — mevcut implementation tasarım layout pattern'i ile birebir (admin token bypass + user token + announcements + getSiteSettings + UserDashboardShell mount). Drift yok.
+
+**Yapma**:
+- buaze.css'teki dead utility class'ları globals.css'e ekleme (örn. `bz-num`, `bz-scroll`) — production'da kullanılmıyor, dead utility yaratır. Yeni component eklerken aynı görsel için inline Tailwind veya mevcut `bz-*` utility (CLAUDE.md §16 + §7 paterni).
+- Eski `page.tsx` versiyondaki silinen section'ları geri yükleme — §38.41 kullanıcı kararı "tasarımda yoksa sil" intact.
+- CSS variables (`--n-*`, `--lime-*`) globals.css'e ekleme — Buaze inline Tailwind hex (`#0A0A0A` graphite, `#C6F24E` lime) zaten kullanıyor; CSS variables Buaze pattern'inde değil (Tailwind v4 `@theme {}` block'u doğru abstraction).
+
+**Yap**:
+- Yeni production usage için CSS class eklenmesi gerekirse (örn. yeni component bz-num kullanırsa) globals.css'e ekle. Şu an sadece bz-tr-hover (1 yer) bu kategoride.
+- buaze.css yeni token eklendiğinde production usage cross-check (`grep -rn "token-name" src/`) — kullanılmazsa dead utility, ekleme.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npm test` 143/143 pass
+- Manuel: `/tr/dashboard/customers` table tr hover → background `#FAFAFA` çalışır (eski silent fail)
+
+**Backlog güncel** (Bu PR sonrası):
+- Yok (cross-check temiz, 1 mikro drift fix)
