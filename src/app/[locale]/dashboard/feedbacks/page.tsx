@@ -719,6 +719,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           Padded wrapper sadece header için, alt grid full-width. */}
       <div className={`px-4 sm:px-7 py-6 lg:py-8 border-b border-[#EDEDED] ${isMobileDetailView ? 'hidden lg:block' : ''}`}>
         <PageHeader
+          /* §38.66 — Yorumlar 3-col layout (filter rail + list + detail)
+             yoğun bilgi mimarisi; hero scale h1 (40px) ezici hissedilebilir.
+             titleScale="compact" 22-32px clamp ile mütevazı kalır. */
+          titleScale="compact"
           eyebrow={isTr ? 'GERİ BİLDİRİMLER' : 'FEEDBACKS'}
           title={isTr ? 'Yorumlar' : 'Reviews'}
           description={

@@ -679,6 +679,10 @@ async function renderAnalyticsPage({
   return (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
       <PageHeader
+        /* §38.66 — Analytics 5-col KPI + chart + heatmap + topic grid yoğun
+           dashboard; hero h1 ezici hissedilir. titleScale="compact"
+           22-32px mütevazı kalır. */
+        titleScale="compact"
         eyebrow={isTr ? 'İŞLETME PANELİ' : 'OWNER PANEL'}
         title={isTr ? 'Analitik' : 'Analytics'}
         description={

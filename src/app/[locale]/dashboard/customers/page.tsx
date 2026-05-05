@@ -469,6 +469,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   return (
     <div className="space-y-5">
       <PageHeader
+        /* §38.66 — Customers 8-col tablo + filter toolbar + KPI grid yoğun
+           layout; hero h1 ezici. titleScale="compact" mütevazı kalır. */
+        titleScale="compact"
         eyebrow="CRM"
         title={isTr ? 'Müşteriler' : 'Customers'}
         description={
