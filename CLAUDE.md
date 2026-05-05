@@ -9799,3 +9799,60 @@ Mevcut `customers/loading.tsx` + `dashboard/loading.tsx` paterni reuse: `<Skelet
 - Kalan riskler: bulkNotice kasıtlı skip (toast UX); 106 transition-colors + 25 rounded-2xl border opportunistic backlog; .next/types 4 pre-existing baseline (CLAUDE.md §21.13 ignoreBuildErrors)
 - **Sonraki aşama önerisi**: Stage 2 — opportunistic 30 `transition-colors` → `bz-motion-spring` (top 5 dosya: AnalyticsFilterBar, restaurants/page.tsx, ExportReportButton, AnnouncementBanner, guide/page.tsx) + 10 `rounded-2xl border #EDEDED` → `bz-card`. Veya kullanıcı yeni stage talebi (§38.B master backlog).
 
+### 38.72 2026-05-05 — Stage 2 owner panel UX & navigation fix bundle
+
+Aşamalı refinement Stage 2: "owner panel bağlantı ve UX kopuklukları". 3 paralel Explore agent + manuel verify (5 false positive elendi: replaceState pattern §38.57 kasıtlı, QR restaurantId zaten dual fallback, "İşletmelere dön" error fallback context, profile aggregation §38.51 kasıtlı). Sonuç: 6 gerçek navigation/UX drift kapatıldı. Branch `chore/owner-ux-navigation-fixes`.
+
+**Out of scope** (kullanıcı talimatı): Admin (Stage 5), mobile QA (Stage 4), menü editörü detaylı geliştirme (Stage 3), büyük görsel redesign, backend/API mantığı.
+
+**6 fix bundle**:
+
+1. **Campaigns breadcrumb gap** (`useTopBar` line 53 sonrası) — `/campaigns` entry yoktu, topbar generic "BUAZE PANELİ" gösteriyordu. Eklendi: `breadcrumb: 'CRM / KAMPANYALAR'`, `title: 'Kampanyalar'`. Sidebar Kampanyalar item'ı (§38.56 paterni) artık topbar'da net görünür.
+
+2. **Menu back link infinite loop riski** — `/restaurants/[id]/menu/page.tsx:793` "Menülere Dön" linki `/dashboard/menu` hub'a gidiyordu. **1-restoran owner için hub line 132'de `/restaurants/[id]/menu` redirect ediyor → infinite loop.** Fix: href `/dashboard/restaurants/${id}` (detail page evrensel doğru parent). Copy `İşletmeye Dön` / `Back to Business`. Hub picker sidebar üzerinden hâlâ erişilebilir.
+
+3. **Google Reviews → Platforms cross-link missing** (Audit Agent #2 #1) — Owner Google Yorumları sayfasında "Tüm platform durumu" için workspace `/dashboard/platforms`'a link yoktu. Eklendi: PageHeader ve restaurant selector altında compact info hint satırı (`<Plug>` icon + "Diğer platformları yönet → Platform Bağlantıları"). Owner navigation fabric net (workspace ↔ per-platform).
+
+4. **Per-restaurant integrations → workspace uplink** (Audit Agent #2 #3) — Settings hub'ta `BusinessIntegrationSettings` form per-restaurant; tüm işletme platform durumu için `/dashboard/platforms` workspace overview'a back-link yoktu. Eklendi: form üst sağ köşeye `bz-btn-ghost` "Workspace özeti" / "Workspace overview" link. Owner per-restaurant edit sırasında workspace KPI grid'i 1 tıkla görür.
+
+5. **Notifications sidebar item** (Audit Agent #2 #2) — `notifications: 'Bildirimler'` const tanımlıydı (UserDashboardShell:251) ama nav'da render edilmiyor; sadece NotificationBell topbar icon prop olarak kullanılıyordu. Eklendi: AYARLAR grubu child item `Bell icon → /dashboard/account?section=notifications` (§38.57 Faturalama paterni reuse). matchHref helper section query'yi handle eder; sidebar'da lime active state korunur. Owner "Bildirimler nerede?" sorusuna sidebar'da net cevap görür (CLAUDE.md §38.51'in açık bıraktığı karar pragmatik kapatıldı).
+
+6. **Topbar breadcrumb search-param aware** — `useTopBar()` artık `?section=` parametresini okur. `ACCOUNT_SECTION_SUFFIX` map (billing/notifications/profile/security/team/ai/legal) ile breadcrumb `'PANEL / HESABIM > FATURALAMA'` formatına çıkar. Owner Account içinde alt-section'da olduğunu topbar'dan da görür. Pattern matchHref (§38.57) ile uyumlu — section query tek source.
+
+**Audit'te tespit edilen ama skip edilen 5 false positive**:
+- `replaceState` pattern (Audit Agent #2 #4) — CLAUDE.md §38.57 kasıtlı pattern (geri buton hijack önleme), Settings/Account içinde tab geçişlerinde history kirletmeme. Yorum dosyada explicit (line 90).
+- QR `restaurantId` param drift (Audit Agent #3 #2) — `qr/page.tsx:76` zaten `searchParams.get('restaurant') || searchParams.get('restaurantId')` dual fallback. Drift yok.
+- "İşletmelere dön" copy mismatch (Audit Agent #1 #4) — error fallback context (AlertBanner sonrası), href `/dashboard/restaurants` listesi doğru. Copy + href tutarlı.
+- Profile aggregation surprise (Audit Agent #2 #5) — §38.51 4-card aggregation Apple System Settings paterni kasıtlı.
+- Mobile bottom nav vs desktop sidebar duplicate (Audit Agent #3 #5) — cosmetic, mobile QA Stage 4 scope.
+
+**Verification**:
+- `npm run lint` ✓ 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx next build` ✓ Compiled successfully + 58/58 static page (Prisma stub DB warnings beklenen)
+- `npx tsc --noEmit` ✓ 0 errors in `src/` (4 pre-existing `.next/types` baseline §21.13)
+- `npm test` ✓ 182/182 pass, 22 suites
+- Sanity grep regression: campaigns breadcrumb / Notifications nav item / İşletmeye Dön / Platform Bağlantıları cross-link / Workspace özeti uplink / ACCOUNT_SECTION_SUFFIX hepsi landed.
+
+**Yapma**:
+- Per-restaurant `replaceState` pattern'ini `pushState`'e çevirme — §38.57 kasıtlı (history hijack önleme).
+- QR sayfasında `restaurant` veya `restaurantId` paramlarından birini kaldırma — dual fallback geçmiş URL'leri ve farklı caller'ları (restaurants/page → `?restaurant=`, detail → `?restaurantId=`) korur.
+- Menu back link `/dashboard/menu` hub'a geri çevirme — 1-restoran owner için redirect loop kaynağı.
+- Google Reviews cross-link'i info AlertBanner'a yükseltme — sade compact hint yeterli, owner her açılışta gereksiz görmek istemez.
+- Per-restaurant uplink'i AlertBanner'a çevirme — `bz-btn-ghost` actions slot'unda doğru pozisyon (form header sağ).
+- Mobile bottom nav 5. item "More" → FAB değiştirme — secondary nav fonksiyonu kaybolur (Stage 4 mobile QA scope).
+
+**Yap**:
+- Yeni nav item eklerken `useTopBar()` map'ine eşzamanlı entry ekle (campaigns paterni reuse) — sidebar var ama breadcrumb yok drift'i önle.
+- Yeni Account sub-section eklenirken `ACCOUNT_SECTION_SUFFIX` map'ine TR/EN entry ekle (deeplink breadcrumb otomatik gelir).
+- Yeni cross-link hint için inline `<Plug size={12} />` + `<Link underline-offset-2 hover:underline>` paterni reuse (Apple-tarzı sade).
+- Yeni per-restaurant settings form'u eklenirse aynı "Workspace özeti" uplink paterni (header sağ üst).
+
+**Stage 2 closure** (Tarih 2026-05-05):
+- Branch `chore/owner-ux-navigation-fixes`
+- PR + merge sonrası bu satıra link eklenecek
+- İncelenen dosyalar: 4 (UserDashboardShell + 2 page + 1 settings section)
+- Yapılan değişiklikler: 6 navigation/UX fix (1 breadcrumb + 1 back link + 2 cross-link + 1 sidebar item + 1 search-param aware breadcrumb)
+- Kontroller: lint 0 err / build 58 page / tsc src 0 err / test 182/182 / sanity grep clean
+- Kalan riskler: replaceState pattern (kasıtlı, dokunulmadı); 106 transition-colors + 25 rounded-2xl border opportunistic Stage 1 backlog intact
+- **Sonraki aşama önerisi**: Stage 3 — menü editörü detaylı UX (CLAUDE.md §12 + a/page-mobile-v2.jsx menu detail spec). Veya Stage 4 mobile kapsamlı QA (CLAUDE.md §25 + §38.B mobile backlog), Stage 5 admin paneli polish, ya da kullanıcı yeni odak talebi.
+
