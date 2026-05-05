@@ -1,24 +1,24 @@
 'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useTransition } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { Eyebrow, PlatformChip, PLATFORMS, PulseSelect, type PlatformId } from '@/components/ui';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Calendar, Download, X } from 'lucide-react';
 
 /**
  * URL-synced filter bar for analytics surfaces.
- * State (range/platform/branch) tek-source: URL searchParams. Server component
- * `?range=7d&platform=google&branch=Şube%20A` parse eder, Prisma query'lerine
- * pasla. Bu component sadece chip/select UI ve URL update'i.
+ * State (range/platform/branch/custom) tek-source: URL searchParams. Server
+ * component parse eder, Prisma query'lerine pasla. Bu component sadece UI ve
+ * URL update'i.
  *
- * Pattern: Next.js App Router idiomatic — server fetch + client filter + URL state.
- * Stripe / Linear dashboard'larıyla aynı pattern.
+ * §38.50 — 4 tab (7G/30G/90G/1Y) + "Özel aralık" modal + "Rapor al" CSV export.
  */
 
-const RANGES: Array<{ id: '7d' | '30d' | '90d'; tr: string; en: string }> = [
-  { id: '7d', tr: '7 gün', en: '7d' },
-  { id: '30d', tr: '30 gün', en: '30d' },
-  { id: '90d', tr: '90 gün', en: '90d' },
+const RANGES: Array<{ id: '7d' | '30d' | '90d' | '1y'; tr: string; en: string }> = [
+  { id: '7d', tr: '7G', en: '7D' },
+  { id: '30d', tr: '30G', en: '30D' },
+  { id: '90d', tr: '90G', en: '90D' },
+  { id: '1y', tr: '1Y', en: '1Y' },
 ];
 
 const PLATFORM_OPTIONS: PlatformId[] = [
@@ -42,10 +42,12 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
 
-  const range = (params.get('range') as '7d' | '30d' | '90d' | null) ?? '30d';
+  const range = (params.get('range') as '7d' | '30d' | '90d' | '1y' | 'custom' | null) ?? '30d';
   const platform = params.get('platform') ?? 'all';
   const branch = params.get('branch') ?? 'all';
   const restaurantId = params.get('restaurantId') ?? 'all';
+  const customStart = params.get('customStart') ?? '';
+  const customEnd = params.get('customEnd') ?? '';
 
   const hasActiveFilter =
     range !== '30d' ||
@@ -65,11 +67,79 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
     });
   };
 
+  const updateMany = (entries: Array<[string, string | null]>) => {
+    const next = new URLSearchParams(params.toString());
+    for (const [key, value] of entries) {
+      if (value && value !== 'all') next.set(key, value);
+      else next.delete(key);
+    }
+    startTransition(() => {
+      router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+    });
+  };
+
   const reset = () => {
     startTransition(() => {
       router.replace(pathname, { scroll: false });
     });
   };
+
+  // §38.50 — Custom range modal state
+  const [customOpen, setCustomOpen] = useState(false);
+  const [draftStart, setDraftStart] = useState(customStart);
+  const [draftEnd, setDraftEnd] = useState(customEnd);
+  const customDialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setDraftStart(customStart);
+    setDraftEnd(customEnd);
+  }, [customStart, customEnd]);
+
+  useEffect(() => {
+    if (!customOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setCustomOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [customOpen]);
+
+  const applyCustom = () => {
+    if (!draftStart || !draftEnd) return;
+    if (draftEnd <= draftStart) return;
+    updateMany([
+      ['range', 'custom'],
+      ['customStart', draftStart],
+      ['customEnd', draftEnd],
+    ]);
+    setCustomOpen(false);
+  };
+
+  const clearCustom = () => {
+    updateMany([
+      ['range', null],
+      ['customStart', null],
+      ['customEnd', null],
+    ]);
+    setCustomOpen(false);
+  };
+
+  // §38.50 — Export CSV. Mevcut URL params'ı kopyalar (range/platform/branch/restaurantId/custom).
+  const exportHref = (() => {
+    const qs = new URLSearchParams(params.toString());
+    return `/api/dashboard/analytics/export?${qs.toString()}`;
+  })();
+
+  const customLabel =
+    range === 'custom' && customStart && customEnd
+      ? `${customStart} → ${customEnd}`
+      : isTr
+        ? 'Özel aralık'
+        : 'Custom range';
 
   return (
     <section
@@ -82,7 +152,7 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
           <Eyebrow>{isTr ? 'FİLTRE' : 'FILTERS'}</Eyebrow>
         </div>
 
-        {/* Range — segmented control (admin parite) */}
+        {/* Range — segmented control (4 tab — §38.50: 1Y eklendi) */}
         <div
           className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] p-1"
           role="group"
@@ -94,7 +164,13 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
               <button
                 key={r.id}
                 type="button"
-                onClick={() => update('range', r.id === '30d' ? null : r.id)}
+                onClick={() => {
+                  if (r.id === '30d') {
+                    updateMany([['range', null], ['customStart', null], ['customEnd', null]]);
+                  } else {
+                    updateMany([['range', r.id], ['customStart', null], ['customEnd', null]]);
+                  }
+                }}
                 className={`px-3 py-1 text-[12px] font-medium rounded-md transition-colors ${
                   active
                     ? 'bg-[#0A0A0A] text-white'
@@ -108,9 +184,34 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
           })}
         </div>
 
-        {/* Multi-restaurant owner case — Pulse-styled custom select. Native
-            <select> iOS Safari'de chevron'u text üstüne biniyordu + Pulse lime
-            focus state desteklemiyordu (CLAUDE.md §23.6 ChevronDown collision). */}
+        {/* §38.50 — Özel aralık trigger */}
+        <button
+          type="button"
+          onClick={() => setCustomOpen(true)}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-md border transition-colors ${
+            range === 'custom'
+              ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+              : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+          }`}
+          aria-pressed={range === 'custom'}
+          aria-haspopup="dialog"
+        >
+          <Calendar size={13} />
+          <span className="bz-mono tabular-nums max-w-[200px] truncate">{customLabel}</span>
+        </button>
+
+        {/* §38.50 — Rapor al (CSV export) */}
+        <a
+          href={exportHref}
+          download
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-md border border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA] transition-colors"
+          aria-label={isTr ? 'Rapor indir (CSV)' : 'Download report (CSV)'}
+        >
+          <Download size={13} />
+          {isTr ? 'Rapor al' : 'Export'}
+        </a>
+
+        {/* Multi-restaurant owner case — Pulse-styled custom select */}
         {restaurants && restaurants.length > 1 && (
           <PulseSelect
             value={restaurantId}
@@ -186,6 +287,106 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
           </button>
         )}
       </div>
+
+      {/* §38.50 — Özel aralık modal (basit date range picker) */}
+      {customOpen && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="custom-range-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCustomOpen(false);
+          }}
+        >
+          <div
+            ref={customDialogRef}
+            className="w-full max-w-[420px] rounded-2xl bg-white p-5 sm:p-6 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)]"
+          >
+            <header className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h2
+                  id="custom-range-title"
+                  className="bz-h-tight text-[18px] text-[#0A0A0A]"
+                >
+                  {isTr ? 'Özel tarih aralığı' : 'Custom date range'}
+                </h2>
+                <p className="mt-1 text-[12px] text-[#737373]">
+                  {isTr
+                    ? 'Başlangıç ve bitiş tarihlerini seç (max 365 gün).'
+                    : 'Pick start and end dates (max 365 days).'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCustomOpen(false)}
+                aria-label={isTr ? 'Kapat' : 'Close'}
+                className="bz-btn-icon"
+              >
+                <X size={16} />
+              </button>
+            </header>
+
+            <div className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1.5">
+                <span className="pulse-eyebrow text-[10px] text-[#737373]">
+                  {isTr ? 'BAŞLANGIÇ' : 'START'}
+                </span>
+                <input
+                  type="date"
+                  value={draftStart}
+                  onChange={(e) => setDraftStart(e.target.value)}
+                  className="bz-input"
+                  max={draftEnd || undefined}
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="pulse-eyebrow text-[10px] text-[#737373]">
+                  {isTr ? 'BİTİŞ' : 'END'}
+                </span>
+                <input
+                  type="date"
+                  value={draftEnd}
+                  onChange={(e) => setDraftEnd(e.target.value)}
+                  className="bz-input"
+                  min={draftStart || undefined}
+                />
+              </label>
+            </div>
+
+            <footer className="mt-5 flex items-center justify-between gap-3">
+              {range === 'custom' ? (
+                <button
+                  type="button"
+                  onClick={clearCustom}
+                  className="bz-btn-ghost text-[12px]"
+                >
+                  {isTr ? 'Temizle' : 'Clear'}
+                </button>
+              ) : (
+                <span />
+              )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCustomOpen(false)}
+                  className="bz-btn-ghost text-[12px]"
+                >
+                  {isTr ? 'Vazgeç' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={applyCustom}
+                  disabled={!draftStart || !draftEnd || draftEnd <= draftStart}
+                  className="bz-btn-primary text-[12px] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isTr ? 'Uygula' : 'Apply'}
+                </button>
+              </div>
+            </footer>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

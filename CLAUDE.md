@@ -7576,3 +7576,119 @@ Kullanıcı `buaze.css` (canonical design tokens) + `layout.tsx` + eski `page.ts
 
 **Backlog güncel** (Bu PR sonrası):
 - Yok (cross-check temiz, 1 mikro drift fix)
+
+### 38.50 2026-05-05 — Analytics tasarım birebir parity (PageAnalytics jsx)
+
+Kullanıcı tasarım dosyası `.design-owner-2026/project/page-analytics.jsx` `PageAnalytics` JSX paylaştı, "tasarımdaki karşılığına bak ve sisteme uydur" istedi. Audit (Explore agent + manuel doğrulama): mevcut `/dashboard/analytics` page tasarım ile ~%75 parity. AskUserQuestion ile 4 kritik karar netleşti — hepsi "tasarım birebir" tercih edildi.
+
+**4 kritik karar (kullanıcı seçimi)**:
+- **Big chart**: Tasarım birebir 3-series simultaneous (line + bars + target dashed birlikte). §38.34 toggle mode (Puan/Hacim/Sentiment ayrı render) silindi.
+- **AI Insights theme**: Tasarım birebir light card (N50 bg + tone border-left). §38.34 dark card (graphite + lime accent) silindi — sayfa visual flow Pulse light convention'a uyar.
+- **2-up grid sağ kart**: Tasarım birebir KONU SENTİMENT ANALİZİ (mevcut bottom dark section'dan taşındı + light theme migrate). TopLocationCard sayfa altına ayrıldı (multi-restaurant owner için faydalı, silmek bilgi kaybı).
+- **Range tabs + actions**: Tasarım birebir 4 tab (7G/30G/90G/1Y) + "Özel aralık" modal + "Rapor al" CSV export.
+
+**Schema migration YOK** — tüm değişiklikler UI + helper extension + 1 yeni endpoint.
+
+**Phase A — Backend extension** (`page.tsx`):
+- `RANGE_DAYS['1y'] = 365` (yıllık trend)
+- `parseCustomRange(customStart, customEnd)` saf fonksiyon — ISO YYYY-MM-DD parse + max 365 gün cap (DDoS koruma)
+- `searchParams` interface: `customStart` + `customEnd` opsiyonel field'lar
+- Range parse logic genişletildi: `range='custom' && parseCustomRange OK` → custom window; aksi halde `RANGE_DAYS[range]` veya 30d fallback
+- `windowEnd` opsiyonel zorunluluk: tüm Prisma query'lerde `createdAt: { gte: windowStart, lte: windowEnd }` (custom range desteklemek için)
+- Yeni `returnRate` KPI compute: KVKK consent + non-anonim feedback'ler içinde 2+ visit yapan tekil contact_key oranı (% return). `(email && email.toLowerCase()) || phone` contact_key, JS-side aggregate.
+- `feedbacksWindow` select genişletildi: `email + phone + hasKvkkConsent` field'ları (returnRate için)
+- `avgResponseValueLabel` yeni helper: "2sa 18dk" / "2h 18m" formatlanmış string (saatten azsa "X dk" / "Xm")
+- `ppDelta` helper silindi (secondary KPI silindi, caller kalmadı)
+- Secondary compute (`conversionRate`/`redirectRate`/`lowRatingRate`) `_` prefix ile suspended (gelecek genişleme için)
+
+**Phase B1 — `PulseTrendChart` 3-series simultaneous rewrite**:
+- Toggle mode (`mode` state + 'use client') silindi → server component
+- 3-series simultaneous: bars (volume gri #E5E5E5 alt band 80px) + area (lime gradient) + line (rating lime stroke 2.5) + dashed target line (#A3A3A3) + last point lime tooltip + circle highlight (every 5th point)
+- Header legend: 3-swatch (Puan / Hacim / Hedef X.X) tasarım birebir
+- Y-axis range: rating min/max + target ± 0.2 buffer (sıkışmaz)
+- Volume bars rating Y'sinin altında ayrı band (LINE_BAND_H + VOL_BAND_H 80px split)
+- Empty state (<2 hafta veri): kart + boş mesaj
+- ~340 satır → ~270 satır (toggle logic silindi)
+
+**Phase B2 — `AiInsightsCard` light theme rewrite**:
+- Container: `rounded-2xl bg-[#0A0A0A] text-white` → `bz-card` (white bg)
+- 3-row insight: `bg-white/[0.04] border-white/10` → `bg-[#FAFAFA] borderLeft 2px tone-color`
+- Eyebrow: `color: #C6F24E` → `text-[#737373]` muted
+- Header icon badge: `bg-[#C6F24E]/15` → `bg-[#EAF9B8] border-[#C6F24E]`
+- Tone palette: `trend` lime-deep `#A8D62E` / `win` green `#16A34A` / `risk` red `#DC2626`
+- Each row: white bg icon container + tone label eyebrow + body dark text (light theme)
+
+**Phase B3 — `AnalyticsKpiGrid` 5-col single row**:
+- Hibrit (4 top + 3 secondary alt strip) → tasarım birebir 5 KPI single row
+- `kpis: KpiSpec[]` tek prop (önceki `topKpis` + `secondaryKpis` ayrımı silindi)
+- Mobile: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`
+- 5 KPI: **Toplam yorum / Ortalama puan / Yanıt süresi (saat) / NPS / Tekrar gelme** (tasarım line 47-72 birebir)
+- Secondary 3 KPI (Dönüşüm/Yönlendirme/AI Yanıt) silindi — Buaze-özel metric'ler tasarımda yok, drift
+- Sparkline + delta + subtitle korundu, font-size 30px → 26px (5-col sığsın)
+
+**Phase B4 — `AnalyticsFilterBar` 1Y + Custom + Export**:
+- `RANGES` array'a `'1y'` eklendi (4 tab — tasarım birebir)
+- Yeni "Özel aralık" trigger button (Calendar icon + draftStart/draftEnd modal state)
+- Custom range modal: 2 date input (start/end) + Uygula/Vazgeç/Temizle butonları + ESC handler + body scroll lock + `aria-modal`
+- `applyCustom` → URL update with `range=custom + customStart + customEnd`
+- `clearCustom` → range null + customStart null + customEnd null (default 30d'ye dön)
+- Yeni "Rapor al" link → `/api/dashboard/analytics/export?{filters}` (CSV download)
+- Mevcut platform/branch/restaurantId chip'leri intact
+
+**Phase C — Layout restructure**:
+- 2-up grid (`lg:grid-cols-[2fr_1fr]` → `lg:grid-cols-[1fr_1.4fr]` tasarım birebir)
+- **Sol kart**: ChannelDistributionMini (KEEP) + Buaze QR runtime label
+- **Sağ kart**: KONU SENTİMENT ANALİZİ (light theme migrate) — eski bottom dark section silindi
+- KONU SENTİMENT topic threshold: ≥80% lime / ≥70% amber / <70% red (tasarım line 252)
+- Topic progress bar light: `bg-[#F5F5F5]` track + tone-color fill
+- "AI ile çıkarıldı" badge: dark border `#C6F24E/30` → light `bg-[#EAF9B8] border-[#C6F24E]`
+- TopLocationCard sayfa altına taşındı (AI Insights altında, multi-restaurant owner için bilgi)
+- Heatmap section intact (§38.24 bottom)
+
+**Phase D — `/api/dashboard/analytics/export` (CSV)**:
+- Yeni endpoint owner-scoped IDOR (`getPanelActorFromRequest` + `getScopedRestaurantIds`)
+- Owner only (`actor.source === 'user'`); admin export ayrı (admin/customers/export var)
+- URL params parity: range/platform/branch/restaurantId/customStart/customEnd
+- 14 sütun: Tarih, Restoran, Şube, Platform, Puan, Yemek, Servis, Atmosfer, Yorum, Yanıt durumu, Yanıt süresi (saat), KVKK, Pazarlama, Müşteri (anonim hariç)
+- UTF-8 BOM (`'﻿'`) Excel TR-safe
+- HARD_LIMIT 10000 row (DDoS koruma — 1y × 50 owner × 50 yorum/gün = 90K, owner için 10K tam yıllık yeterli)
+- `Cache-Control: no-store` (her request fresh data)
+- `Content-Disposition: attachment; filename="analytics-{range|customStart_customEnd}-{date}.csv"`
+- Filename custom range için `analytics-2026-04-01_2026-05-01.csv`
+
+**Drift kararı**: Mevcut "Günlük Dağılım" + "Saat-bazlı Dağılım" 2-col bar chart'ları intact (tasarımdaki Heatmap'in farklı UX'i — owner familiar pattern korunur, 1D özet hızlı tarama).
+
+**Yapma**:
+- `1y` range'i 730 gün veya 2y'a genişletme — 1Y owner için yıllık trend yeterli, 730 gün KPI delta penceresi prevWindow'unu 2 yıl önceki dönemle karşılaştırır (anlamsızlaşır).
+- Custom range max'ı 365 gün'den genişletme — DDoS koruma + Prisma query timeout riski.
+- AI Insights eski dark theme'e döndürme — `§38.34` kararı bilinçliydi, `§38.50` tasarım birebir önceliklendirildi (sayfa visual flow tutarlı).
+- KONU SENTİMENT'i tekrar bottom separate section yapma — 2-up grid'in sağ kartı tasarım birebir, KANAL DAĞILIMI + KONU SENTİMENT logical pair.
+- TopLocationCard'ı silmek — multi-restaurant owner için pik lokasyon bilgisi faydalı (silmek bilgi kaybı).
+- `/api/dashboard/analytics/export` endpoint'i admin'lere de açma — admin için ayrı `/api/admin/analytics/export` gerekirse explicit talep gerek (scope dışı).
+- Export endpoint'inde mass assignment riski — Zod `.strict()` body schema yok ama URL params zaten validate edilir (range whitelist, customStart parse, restaurantId scope filter).
+- Big chart'a 4. seri (sentiment) eklemek — owner kararı 3-series (Puan/Hacim/Hedef) tasarım birebir; sentiment ayrı KONU & DUYGU section'da progress bar olarak görünür.
+- Secondary KPI'ları (Dönüşüm/Yönlendirme/AI Yanıt) `_` prefix'le suspended bırakmak yerine tamamen silmek — gelecek genişleme için compute logic dead code'ta korunabilir; PR'ın gerçek scope'u tasarım birebir, suspended OK.
+
+**Yap**:
+- Yeni KPI eklenirse `kpis` array'a push (5+ KPI olursa `lg:grid-cols-6` denenir, ama 5 ideal — tasarımdaki sade görünüm).
+- Yeni range eklenirse (`'2y'` etc.) `RANGE_DAYS` map + `RANGES` array (FilterBar) + parseCustomRange max cap update.
+- Custom range UX'i geliştirmek: gelecekte preset dropdown ("Bu hafta" / "Geçen ay" / "YTD") modal içinde quick-select. Şu an manuel date input yeterli.
+- Export endpoint'i extend etmek için yeni column eklerken `headers` array + row mapping iki yerde güncellenir (drift önleme).
+- AI Insights light card pattern'i başka surface'ta (örn. Dashboard) reuse edilirse helper component extract düşünülür (3+ callsite olunca, CLAUDE.md §7).
+- Tasarım `.design-owner-2026` bundle'ı yeni handoff geldiğinde aynı pattern: cross-check + AskUserQuestion + plan + Phase A-E + §38.X log.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint .` 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npm test` 182/182 pass
+- Manuel desktop: 5-KPI single row + 3-series chart simultaneous (line + bars + dashed) + 2-up grid sağ kart KONU SENTİMENT light + Heatmap + AI Insights light card + TopLocationCard footer
+- Manuel mobile (375px): KPI 2-col stack, ChannelDistribution + KONU SENTİMENT alt alta, AI Insights light card 3-row görünür
+- Manuel: 4 tab (7G/30G/90G/1Y) + Özel aralık modal (date input + Uygula) + Rapor al → CSV download
+- Manuel: Custom range `?range=custom&customStart=2026-04-01&customEnd=2026-05-01` → KPI'lar pencere içinde compute
+- Manuel: Export CSV → 14 sütun + UTF-8 BOM + Excel TR-safe açılır
+
+**Backlog güncel** (Bu PR sonrası):
+- Custom range preset dropdown ("Bu hafta" / "Geçen ay" / "YTD" quick-select) — opsiyonel UX iyileştirme
+- Export endpoint admin variant (`/api/admin/analytics/export`) — talep gelince
+- AI Insights light card pattern başka surface (Dashboard) reuse — 3+ callsite olunca extract
+- (CLAUDE.md §38.B master backlog kalemleri intact)
