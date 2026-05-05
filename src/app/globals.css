@@ -672,6 +672,42 @@ input::-webkit-inner-spin-button {
 }
 .bz-divider { border-top: 1px solid #EDEDED; }
 
+/* ── §38.65 Apple-style elevation tier + motion easing ──────────────
+   Pulse design system'e Apple HIG (macOS Sonoma / iOS 17) "soft elevation"
+   katmanı. 3-tier shadow scale: idle/hover/floating. Heavy
+   `shadow-[0_18px_36px_rgba(0,0,0,0.18)]` patterns yerine subtle
+   tier'lar kullanılır. Motion easing: spring-like cubic-bezier
+   (0.4, 0, 0.2, 1) tüm transition'larda + Apple polish hover'da
+   `translate-y-[-1px]` lift effect. Pulse lime accent + graphite
+   palette sabit; sadece "design dili" polish. */
+
+.bz-elev-1 {
+  box-shadow: 0 2px 8px rgba(10, 10, 10, 0.04);
+}
+.bz-elev-2 {
+  box-shadow: 0 4px 16px rgba(10, 10, 10, 0.06);
+}
+.bz-elev-3 {
+  box-shadow: 0 12px 32px rgba(10, 10, 10, 0.10);
+}
+
+/* Motion: spring-like Apple easing — UI element lift/scale/opacity */
+.bz-motion-spring {
+  transition-property: transform, box-shadow, background-color, border-color, color, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Lift hover — Apple HIG subtle interaction signal. Pair with
+   `bz-motion-spring`. `prefers-reduced-motion: reduce` blanket
+   transform'u zaten sıfırlar (CLAUDE.md §38.61 universal `*` reset). */
+.bz-lift:hover {
+  transform: translateY(-1px);
+}
+.bz-lift:active {
+  transform: translateY(0);
+}
+
 /* ── Buttons ── */
 .bz-btn-primary {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;

@@ -46,10 +46,14 @@ export function PageHeader({
           </span>
         )}
         <h1
+          /* §38.65 — Apple HIG type-first hierarchy upgrade: h1 clamp range
+             20-28px → 28-40px (sm: 28px, lg: 40px). Owner panel hero scale
+             "CEO confidence" hissi. `bz-h-tight-2` Space Grotesk weight 500 +
+             tight tracking (-0.03em) sabit; sadece size scale up. */
           className="bz-h-tight-2 mt-1"
           style={{
-            fontSize: "clamp(20px, 4vw, 28px)",
-            lineHeight: 1.1,
+            fontSize: "clamp(28px, 5vw, 40px)",
+            lineHeight: 1.05,
           }}
         >
           {title}

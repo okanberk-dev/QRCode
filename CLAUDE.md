@@ -9184,3 +9184,98 @@ Sonuç: Customer CRUD pragmatik feedback-insert paterni **iptal**. Tasarımdaki 
 - 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
 - 🛡️ Security follow-ups (§38.2)
 
+### 38.65 2026-05-05 — Apple-inspired Pulse refinement: PR-1 Foundation + Sidebar
+
+Kullanıcı raporu: *"Tüm yapılan sayfaları + sidebar'ı Apple'ın minimalist ama profesyonel tasarımı gibi yap. Pulse lime temasında sabit kal."*
+
+**8-phase plan + 3-PR strategy** (kullanıcı AskUserQuestion onayı):
+- PR-1 (bu): Foundation token + Sidebar polish
+- PR-2 (sonraki session): Dashboard + Hesabım high-traffic pages
+- PR-3 (sonraki): Yorumlar + Müşteriler + Analitik + Google + Platforms
+
+**Kullanıcı kararları**:
+- Type hierarchy: 32-40px h1 hero scale (Recommended)
+- Backdrop-blur: sticky header only (Recommended)
+- Pulse lime + graphite + N-scale palette **sabit**
+
+**Apple HIG ↔ Pulse intersection** (sentez):
+- Generous whitespace + type-driven hierarchy + soft elevation tier
+- Selective lime accent (CTA + active + dot only — overuse'dan kaçın)
+- Smooth motion `cubic-bezier(0.4, 0, 0.2, 1)` 200ms + lift hover
+- Frosted glass selective (sticky header only)
+
+#### Phase 0 — Foundation tokens (`src/app/globals.css`)
+
+3-tier shadow elevation + spring motion + lift utility eklendi (`bz-card` block sonrası, ~30 satır):
+
+```css
+.bz-elev-1 { box-shadow: 0 2px 8px rgba(10, 10, 10, 0.04); }     /* idle baseline */
+.bz-elev-2 { box-shadow: 0 4px 16px rgba(10, 10, 10, 0.06); }    /* hover/active */
+.bz-elev-3 { box-shadow: 0 12px 32px rgba(10, 10, 10, 0.10); }   /* modal/dropdown */
+
+.bz-motion-spring {
+  transition-property: transform, box-shadow, background-color, border-color, color, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bz-lift:hover { transform: translateY(-1px); }
+.bz-lift:active { transform: translateY(0); }
+```
+
+`prefers-reduced-motion: reduce` blanket'i universal `*` reset (CLAUDE.md §38.61) `transform` + `transition-duration` zaten sıfırlar; ek selector eklenmedi.
+
+#### Phase 1 — Sidebar polish (`UserDashboardShell.tsx`)
+
+- **Nav item motion**: `transition-colors` (renk-only) → `bz-motion-spring` (transform-friendly + cubic-bezier easing). Lift `bz-lift` kasıtlı eklenmedi (nav-link distract eder; CTA + kartlar için saklı).
+- **Sticky header backdrop-blur**: mobile topbar `backdrop-blur` (8px) → `backdrop-blur-xl` (24px). Apple Liquid Glass referansı; sadece sticky header katmanında (kullanıcı kararı). Desktop topbar non-sticky → backdrop-blur eklenmedi.
+
+#### Phase 1.c — PageHeader h1 hero scale (`src/components/ui/PageHeader.tsx`)
+
+Hero h1 type scale upgrade — owner panel'in tüm sayfalarındaki PageHeader otomatik etkilenir:
+
+| Metric | Eski | Yeni |
+|---|---|---|
+| h1 fontSize | `clamp(20px, 4vw, 28px)` | `clamp(28px, 5vw, 40px)` |
+| h1 lineHeight | `1.1` | `1.05` |
+
+`bz-h-tight-2` Space Grotesk weight 500 + tight tracking (-0.03em) sabit; sadece size scale up. Topbar shell-chrome h1 (22px breadcrumb-tier) dokunulmadı (chrome != hero).
+
+#### Phase 1.d — NotificationBell heavy shadow → bz-elev-3
+
+NotificationBell dropdown panel:
+- Eski: `shadow-[0_20px_60px_-20px_rgba(0,0,0,0.25)]` (heavy, neo-brutalist drop)
+- Yeni: `bz-elev-3` (`0_12px_32px_rgba(10,10,10,0.10)` — yumuşak Apple depth)
+
+Marketing surface'lerindeki heavy shadow'lar (MarketingNavbar / PricingPlans / ContactFloat) panel-only scope dışında tutuldu.
+
+**Etkilenen dosyalar**:
+- `src/app/globals.css` (+30 satır: 3-tier elevation + spring motion + lift utility)
+- `src/components/dashboard/UserDashboardShell.tsx` (sidebar nav `bz-motion-spring` + sticky topbar `backdrop-blur-xl`)
+- `src/components/ui/PageHeader.tsx` (h1 clamp 28-40px hero scale)
+- `src/components/notifications/NotificationBell.tsx` (heavy shadow → bz-elev-3)
+
+**Validation**:
+- `npx tsc --noEmit` 0 errors in `src/`
+- `npx eslint .` 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npm test` 182/182 pass
+- `npx next build` ✓ 58/58 static page
+
+**Yapma**:
+- Pulse lime palette dışına çıkma — `#C6F24E` lime + `#0A0A0A` graphite + N-scale **sabit**
+- Heavy shadow pattern'leri marketing surface'lerinde değiştirme — bu PR scope panel-only
+- `bz-lift` utility'sini sidebar nav-link'lerine uygulamak — owner nav item navigation, lift hareket distract; CTA + kartlar için saklı
+- Desktop topbar'a backdrop-blur eklemek — non-sticky position, gereksiz GPU compositing
+- PageHeader h1 scale 44-56px agresif Apple Display style — owner panel content-density Display'den daha yoğun, 32-40px max kullanıcı kararı
+- `bz-elev-1/2/3` token'ları her bz-card'a otomatik uygulamak — opt-in pattern (callsite kararı), default `bz-card` border + radius şu an, shadow opsiyonel layer
+
+**Yap**:
+- Yeni heavy shadow pattern eklerken `bz-elev-3` token reuse (callsite verbosity azalır)
+- Yeni nav/list item smooth hover gerekirse `bz-motion-spring` + `hover:bg-...` paterni reuse
+- Yeni hero PageHeader callsite eklenirse otomatik 28-40px scale alır (token-driven)
+- PR-2 (Dashboard + Hesabım) + PR-3 (kalan sayfalar) sonraki session'larda; Foundation token'ları sayfa-specific edit'lerde reuse
+
+**Sonraki PR'lar (§38.66, §38.67)**:
+- PR-2: Dashboard KPI tile typography + AI Insight Banner lime audit + section padding
+- PR-3: Yorumlar Detail panel shadow + Customers table hover + Analytics chart whitespace + Google/Platforms list polish
+
