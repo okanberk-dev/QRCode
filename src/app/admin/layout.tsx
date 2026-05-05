@@ -85,7 +85,7 @@ export default async function AdminLayout({
             {adminLocale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
           </a>
         )}
-        {showSidebar && <AdminSidebar />}
+        {showSidebar && <AdminSidebar announcements={announcements} />}
         <main
           id="panel-main-content"
           tabIndex={-1}

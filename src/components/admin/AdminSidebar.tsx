@@ -30,6 +30,12 @@ import {
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
+import NotificationBell from '@/components/notifications/NotificationBell';
+import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
+
+interface AdminSidebarProps {
+  announcements?: DashboardAnnouncement[];
+}
 
 interface AdminProfile {
   id: string;
@@ -94,7 +100,7 @@ function saveSidebarScroll(scrollTop: number) {
   }
 }
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ announcements = [] }: AdminSidebarProps = {}) {
   const pathname = usePathname();
   const { t, locale, setLocale } = useAdminTranslation();
   const [role, setRole] = useState('superadmin');
@@ -546,19 +552,26 @@ export default function AdminSidebar() {
             buaze<span className="text-[#C6F24E]">.</span>
           </span>
         </Link>
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F2F2F2] text-[#0A0A0A] hover:bg-[#EDEDED] transition-colors"
-          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-            {mobileOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationBell
+            locale={locale === 'en' ? 'en' : 'tr'}
+            announcements={announcements}
+            panelBase="/admin"
+          />
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F2F2F2] text-[#0A0A0A] hover:bg-[#EDEDED] transition-colors"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              {mobileOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Mobile drawer */}

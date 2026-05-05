@@ -30,34 +30,28 @@ export default function AdminMobileNav() {
   return (
     <nav
       aria-label="Mobil navigasyon"
-      className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 border-t border-[#EDEDED] z-50 text-[#0A0A0A] shadow-[0_-4px_20px_0_rgba(0,0,0,0.06)] backdrop-blur-md"
+      className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#EDEDED] z-50 text-[#0A0A0A] shadow-[0_-4px_20px_0_rgba(0,0,0,0.04)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <ul className="flex items-stretch justify-around px-2 pt-2 pb-1.5">
+      <ul className="grid grid-cols-5 items-center px-2 pt-2 pb-1.5">
         {filteredItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
           const Icon = item.icon;
 
           return (
-            <li key={item.href} className="flex-1 min-w-0">
+            <li key={item.href} className="min-w-0">
               <Link
                 href={item.href}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
-                className={`relative flex flex-col items-center gap-1 px-1 py-1.5 rounded-xl transition-colors ${
-                  isActive ? 'text-[#0A0A0A] font-semibold' : 'text-[#737373] hover:text-[#0A0A0A]'
+                className={`relative flex flex-col items-center gap-[3px] px-1 pt-1.5 pb-1 transition-colors ${
+                  isActive
+                    ? 'text-[#0A0A0A] font-semibold'
+                    : 'text-[#A3A3A3] font-medium hover:text-[#0A0A0A]'
                 }`}
               >
-                {isActive && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-[#0A0A0A] rounded-b-full"
-                  />
-                )}
-                <span className={`p-2 rounded-lg transition-colors ${isActive ? 'bg-[#EAF9B8]' : ''}`}>
-                  <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                </span>
-                <span className="pulse-eyebrow truncate max-w-full">{item.label}</span>
+                <Icon size={18} strokeWidth={2} />
+                <span className="text-[10px] leading-none truncate max-w-full">{item.label}</span>
               </Link>
             </li>
           );
