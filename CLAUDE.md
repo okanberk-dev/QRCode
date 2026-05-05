@@ -6729,3 +6729,57 @@ Kullanıcı 3 karar onayladı (AskUserQuestion):
 - 🟡 Account freeze + delete backend (Iyzico Wave 3.5 sonrası — `/api/account/freeze` + email confirm + 30g recovery)
 - 🟡 API & Webhook tab UI (backend hazır `/api/api-keys` + `/webhooks`, UI scope büyük — HIGH-3)
 - 🟡 2FA + Sessions + SSO UI (CLAUDE.md §34.1 — backend kalmış, UI silinmiş, low adoption)
+
+### 38.38 2026-05-04 — Audit pass: parity cross-check + filter test + overlap (PendingTasks URL fix)
+
+Kullanıcı raporu: "bu zamana kadar yaptıklarını tasarım ile aynı birebir ölçüde yaptın mı kontrol et? filtrelemeleri ekleyip çalışma durumuna da bak. overlapleri çöz". 5 sayfa (Dashboard / Yorumlar / Müşteriler / Analitik / Hesabım) tasarım parity + filter functionality + overlap audit yapıldı.
+
+**Audit metodu**: Explore agent geniş kapsamlı rapor + manuel doğrulama. Agent 2 false positive verdi (Dashboard ScopeDropdown UI dropout iddia etti — `page.tsx:985` render ediyor; Yorumlar rail tabs stale iddia etti — §38.35 PR #442'de zaten 5-tab unified). Manuel grep + Read ile gerçek bulgular ayrıştırıldı.
+
+**Parity sonucu (5/5 sayfa OK)**:
+
+| Sayfa | Tasarım parity | Filter functionality |
+|---|---|---|
+| Dashboard (§38.27/§38.28/§38.30/§38.31/§38.32) | ✅ — ScopeDropdown topbar render, KPI 4-card, KANAL DAĞILIMI, NABIZ chart, BUGÜN BEKLEYEN, CANLI AKIŞ, mobile hero | ✅ `?scope=7d/30d/90d/ytd` URL state |
+| Yorumlar (§38.33/§38.35) | ✅ — 3-col xl: layout, 5-tab unified rail+mobile, 6-platform pill (Buaze QR), week stats card | ✅ `?tab=`, `?platform=` URL state via `useUrlFilter` |
+| Müşteriler (§38.36) | ✅ — Tek toolbar konsolide, 4-stat KPI, 6-col tablo, sentiment sparkbar, sentiment-based avatar bg | ✅ `?segment=`, `?range=`, `?search=`, `?restaurantId=` URL state |
+| Analitik (§38.34) | ✅ — KPI hibrit (4 top + 3 secondary), tek-chart toggle, AI Insights 3-row, KANAL DAĞILIMI mini, heatmap | ✅ Server-side `?range=`, `?platform=`, `?branch=`, `?restaurantId=` filter |
+| Hesabım (§38.37) | ✅ — 220 nav + 1fr + 320 right rail (Plan + Invoices + Danger zone), 6-field profile | (filter yok, settings hub) |
+
+**Gerçek bulgu (1 fix)**:
+- **PendingTasks → Yorumlar URL drift** (`src/lib/dashboard-tasks.ts:136`):
+  - Eski: `href: '/dashboard/feedbacks?filter=unreplied'`
+  - Sorun: Yorumlar page (`feedbacks/page.tsx:43`) `?tab=` URL state kullanıyor (CLAUDE.md §36 `useUrlFilter` paterni); `?filter=` query param yakalanmıyor. PendingTasks "X yorum yanıt bekliyor" task tıklanınca Yorumlar sayfasına gidiliyor ama "Yanıtsız" tab seçilmiyor → user manuel tab tıklıyor (UX gap).
+  - Yeni: `href: '/dashboard/feedbacks?tab=unreplied'` (URL state contract'a uyumlu)
+  - Diğer hrefs OK: `/dashboard/google-reviews` (no filter), `/dashboard/customers?segment=loyal` (`?segment=` doğru param)
+
+**Skip edilebilecekler (intentional/cosmetic)**:
+- KANAL DAĞILIMI bifurcation (Dashboard 4-card grid + Analytics mini progress) — kasıtlı farklı UX (CLAUDE.md §38.31 vs §38.34 dokümante)
+- Müşteriler page.tsx:603-606 yorum satırı outdated — cosmetic, fix scope dışı
+
+**Overlap envanteri**:
+- 4-card dashboard `ChannelDistribution` + analytics mini `ChannelDistributionMini` — intentional bifurcation (farklı surface, farklı density)
+- Customer SegmentChip 3 callsite (table + drawer + future dashboard pending) — tek source-of-truth (CLAUDE.md §38.22)
+- Plan widget Account right rail'de tek source — Dashboard'da banner yok (intentional, §38.30)
+- Mobile hero card Dashboard + Analytics — farklı data (rating + sparkline vs avgRating + delta + sparkline), intentional
+
+**Yapma**:
+- PendingTasks helper'a yeni task tipi eklerken URL contract'ı tüketici sayfa ile cross-check et (CLAUDE.md §36 `useUrlFilter` defaults). Yorumlar `?tab=`, Müşteriler `?segment=` + `?range=`, Google Yorumları (no filter param yet).
+- Audit raporunda agent'ın bulduğu CRITICAL/HIGH bulguları doğrudan kabul etme — manuel grep + Read ile false positive ele.
+- Cross-link drift'i spot-fix ile geçiştirme — gelecek yeni href ekleyenler aynı yanlışı tekrar yapabilir; CLAUDE.md §38.38 paterni dokümantasyon.
+
+**Yap**:
+- PendingTasks veya benzeri cross-link helper'a yeni href eklerken konsumer sayfanın `useUrlFilter` defaults'unu kontrol et (param adı + valid değer).
+- Audit önerisi alırken agent çıktısını manuel doğrula: `grep -n` ile referans, `Read` ile satır bağlamı. False positive yaygın.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint src/lib/dashboard-tasks.ts` 0 errors
+- `npm test` 143/143 pass (test href hardcode etmiyor, sadece string fix)
+- Manuel: `/tr/dashboard` BUGÜN BEKLEYEN'de "yanıt bekliyor" task tıkla → `/tr/dashboard/feedbacks?tab=unreplied` URL → Yanıtsız tab aktif
+
+**Backlog güncel** (Bu PR sonrası):
+- KANAL DAĞILIMI shared base component refactor (3+ callsite olunca, CLAUDE.md §7) — şu an 2 yer, premature
+- Müşteriler page.tsx outdated comment cleanup — cosmetic, 1-line fix gelecek PR'a iliştirilebilir
+- HIGH 4 Platforms 12-card grid (DEFER §38.30)
+- Security follow-ups (§38.2)

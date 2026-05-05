@@ -133,7 +133,7 @@ export function buildPendingTasks({
       severity: 'high',
       title: c.replyTitle(unrepliedFeedbacks.count),
       meta: oldestRel ? c.replyMeta(oldestRel) : c.replyMetaNoTime,
-      href: '/dashboard/feedbacks?filter=unreplied',
+      href: '/dashboard/feedbacks?tab=unreplied',
     });
   }
 
