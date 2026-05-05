@@ -276,7 +276,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
         // /platforms ve /integrations aynı redirect'e (settings#integrations);
         // tek menü item bırakıldı. Eski /platforms route'u backward-compat.
-        { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
+        { href: `/${locale}/dashboard/platforms`, icon: Plug, label: copy.integrations },
       ],
     },
     {
@@ -306,7 +306,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const moreSheetItems = [
     { href: `/${locale}/dashboard/google-reviews`, icon: MessageSquareText, label: copy.googleReviews },
     { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-    { href: `/${locale}/dashboard/integrations`, icon: Plug, label: copy.integrations },
+    { href: `/${locale}/dashboard/platforms`, icon: Plug, label: copy.integrations },
     { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
     { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
     // Announcements bottom sheet'ten de kaldırıldı — banner zaten görünür.
@@ -933,7 +933,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           { href: `/${locale}/dashboard/analytics`, label: copy.analytics, keywords: ['analitik', 'rapor', 'analytics', 'report'] },
           { href: `/${locale}/dashboard/restaurants`, label: copy.restaurants, keywords: ['işletme', 'konum', 'lokasyon', 'restoran', 'location'] },
           { href: `/${locale}/dashboard/menu`, label: copy.menu, keywords: ['menü', 'menu', 'ürün', 'item'] },
-          { href: `/${locale}/dashboard/integrations`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
+          { href: `/${locale}/dashboard/platforms`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
           { href: `/${locale}/dashboard/customers`, label: copy.customers, keywords: ['müşteri', 'customer', 'crm'] },
           { href: `/${locale}/dashboard/guide`, label: copy.guide, keywords: ['kılavuz', 'guide', 'help', 'yardım'] },
           { href: `/${locale}/dashboard/account`, label: copy.account, keywords: ['ayar', 'settings', 'profil', 'profile', 'hesap', 'account', 'şifre', 'password', '2fa', 'güvenlik', 'security', 'fatura', 'billing', 'ekip', 'team', 'kvkk', 'legal', 'bildirim', 'notification'] },
