@@ -400,8 +400,8 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
                   href={item.href}
                   onClick={handleNavClick}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${isActive
-                      ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold shadow-[0_2px_8px_-2px_rgba(198,242,78,0.4)]'
+                  className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${isActive
+                      ? 'bg-[#0A0A0A] text-white font-semibold before:absolute before:left-[-12px] before:top-1.5 before:bottom-1.5 before:w-[3px] before:bg-[#C6F24E] before:rounded-r-sm'
                       : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A] font-medium'
                     }`}
                 >
@@ -459,7 +459,7 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
                           onClick={handleNavClick}
                           aria-current={isActive ? 'page' : undefined}
                           className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${isActive
-                              ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
+                              ? 'bg-[#0A0A0A] text-white font-semibold'
                               : 'text-[#737373] hover:bg-[#F2F2F2] hover:text-[#0A0A0A] font-medium'
                             }`}
                         >
