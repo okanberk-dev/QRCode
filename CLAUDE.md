@@ -6783,3 +6783,62 @@ Kullanıcı raporu: "bu zamana kadar yaptıklarını tasarım ile aynı birebir 
 - Müşteriler page.tsx outdated comment cleanup — cosmetic, 1-line fix gelecek PR'a iliştirilebilir
 - HIGH 4 Platforms 12-card grid (DEFER §38.30)
 - Security follow-ups (§38.2)
+
+### 38.39 2026-05-05 — Mobile responsive + sidebar tasarım parity audit (sidebar CTA "Yorum İste" fix)
+
+Kullanıcı raporu: "Mobile uyumluluğa bak ve sidebar tasarımla aynı ölçüde olsun". 2 paralel audit (mobile responsive + sidebar parity).
+
+**Mobile audit sonucu (5/5 sayfa %95 OK)**:
+
+| Sayfa | Mobile parity | Bulgu |
+|---|---|---|
+| Dashboard | ✅ KPI 2-col, Mobile hero `sm:hidden`, KANAL `no-scrollbar -mx-4 px-4` (§38.28), NABIZ chart, ScopeDropdown | None CRITICAL |
+| Yorumlar | ✅ Flex-col mobile, 5-tab horizontal scroll, detail panel `view=detail` push-route | None CRITICAL |
+| Müşteriler | ✅ Stats 2-col, toolbar consolidate mobile (search full-width + segment+range scroll), card list `lg:hidden` | None CRITICAL |
+| Analitik | ✅ MobileAnalyticsHero `sm:hidden`, Heatmap `overflow-x-auto + minWidth: 480`, KPI 4-card mobile, günlük/saat dağılım stack | None CRITICAL |
+| Hesabım | ✅ SettingsLayout `isCompactNav` (≤767px), rightRail `border-t mt-3` stack, profile form `grid-cols-1 md:grid-cols-2` | None CRITICAL |
+
+**Agent false positive eleme** (manuel doğrulama):
+- ❌ "Heatmap mobile overflow" — `HeatmapDayHour.tsx:96-100` zaten `overflow-x-auto + minWidth: 480` taşıyor
+- ❌ "Hesabım rightRail mobile width" — widget'lar (Plan/Invoices/Danger) full-width default + bz-card stack mobile'da sığar
+
+**Sidebar audit sonucu**:
+
+3 drift bulgu (`.design-owner-2026/project/shell.jsx` vs `UserDashboardShell.tsx`):
+
+| Bulgu | Tasarım | Mevcut | Karar |
+|---|---|---|---|
+| **CTA label** | "Yorum İste" (Request Review) | "Yeni QR oluştur" (New QR) | ✅ FIX — label tasarım birebir, href `/dashboard/qr` korunur (QR distribution = yorum isteme operasyonel yöntemi) |
+| **Sidebar search input** | Sidebar'da search bar (Cmd+K hint) + collapsed icon-button | Sadece topbar Cmd+K palette | ⏭ SKIP — Cmd+K palette zaten mevcut + keyboard shortcut, sidebar search duplicate UI noise (CLAUDE.md §7 abstraction kaçınma) |
+| **Mobile FAB lime accent** | 5. item lime-accent FAB ("Yorum İste") | 5. item neutral "More" sheet trigger | ⏭ SKIP — "More" sheet mevcut secondary nav (QR/Menu/Restaurants/Integrations) erişimi sağlıyor; FAB stylinge geçince fonksiyon kaybı + drawer'da redundant aksiyon |
+
+**Yapılan fix** (`UserDashboardShell.tsx:389-401`):
+- CTA label TR/EN: "Yeni QR oluştur" / "New QR" → "Yorum İste" / "Request review"
+- href intact (`/dashboard/qr`) — QR generation owner için yorum talep operasyonel akışı
+- title attribute (collapsed mode) güncellendi
+- Yorum (line 389-393) tasarım kaynağı + intent açıklamasıyla genişletildi
+
+**Yapma**:
+- Sidebar search input ekleme — Cmd+K palette zaten search + nav (CLAUDE.md §38.27 mevcut), sidebar input UI noise + drift kaynağı (3+ search entry point owner için karışıklık)
+- Mobile bottom nav 5. item "More" → FAB değiştirme — secondary nav erişimi (QR/Menu/Restaurants/Integrations) kaybolur; "Yorum İste" CTA mobile'da hamburger drawer'da zaten visible (sidebar'a mount edilmiş)
+- CTA href değiştirme (`/dashboard/feedbacks` ya da yeni route) — mevcut `/dashboard/qr` doğru intent (proactive review request flow); feedback inbox tabı reactive flow (mevcut yorumları yönet, yeni istek değil)
+- Mobile audit'te ChannelDistribution font 13px → daha küçük yapma — 170px card width tasarım birebir, 13px JetBrains Mono mobile'da okunur
+
+**Yap**:
+- Yeni primary CTA (sidebar bottom) eklenirken tasarım kaynağı `.design-owner-2026/shell.jsx` cross-check + intent (review request vs QR generation vs other)
+- Mobile bottom nav 5. item değişimi gerekirse: "More" sheet fonksiyonu drawer'a tam migrate olmalı (orphan secondary nav kalmamalı)
+- Mobile heatmap/2D chart eklerken `overflow-x-auto + minWidth: Npx` paterni (HeatmapDayHour referans, §38.24)
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint src/components/dashboard/UserDashboardShell.tsx` 0 errors
+- `npm test` 143/143 pass (CTA label change kod test'i etkilemez)
+- Manuel: `/tr/dashboard` sidebar CTA "Yorum İste" görünür, /en/ "Request review", collapsed mode'da title attribute aynı text
+- Manuel mobile (375px): 5 sayfa scroll/layout intact, drawer + bottom nav fonksiyonel
+
+**Backlog güncel** (Bu PR sonrası):
+- 🟡 Sidebar search input ekleme (Cmd+K duplicate gerekçesi olmadan tasarım birebir parity isterse)
+- 🟡 Mobile bottom nav "Yorum İste" FAB (secondary nav drawer'a migrate koşuluyla)
+- 🟡 Plan card "Yükselt" link underline cosmetic
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
+- 🛡️ Security follow-ups (§38.2)

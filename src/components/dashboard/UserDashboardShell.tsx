@@ -386,17 +386,20 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </div>
       </div>
 
-      {/* Primary CTA — Yeni QR / Yorum İste (tasarım .design-pulse-2026 shell.jsx
-          paterni; Phase 1'de eklenen .bz-side-cta + --mini class'larını kullanır). */}
+      {/* §38.39 — Primary CTA tasarım birebir: "Yorum İste" (tasarım kaynağı
+          .design-owner-2026/shell.jsx). Owner panel'de birincil aksiyon yorum
+          talep akışı. href intact (/dashboard/qr) — QR distribution yorum
+          isteme'nin operasyonel yöntemi. Phase 1'de eklenen .bz-side-cta +
+          --mini class'larını kullanır. */}
       <div className="px-3 pb-3">
         <Link
           href={`/${locale}/dashboard/qr`}
           className={`bz-side-cta ${isCollapsed ? 'bz-side-cta--mini' : ''}`}
-          title={isCollapsed ? (locale === 'tr' ? 'Yeni QR' : 'New QR') : undefined}
+          title={isCollapsed ? (locale === 'tr' ? 'Yorum İste' : 'Request review') : undefined}
           onClick={handleNavClick}
         >
           <Plus size={14} strokeWidth={2.2} />
-          <span>{locale === 'tr' ? 'Yeni QR oluştur' : 'New QR'}</span>
+          <span>{locale === 'tr' ? 'Yorum İste' : 'Request review'}</span>
         </Link>
       </div>
 
