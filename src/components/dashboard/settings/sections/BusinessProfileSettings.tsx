@@ -9,16 +9,35 @@ interface BusinessProfileSettingsProps {
   locale?: Locale;
 }
 
+// §38.37 — IANA timezone select options. Owner-facing 10 popüler tz + "Diğer"
+// (custom input fallback). Tasarım .design-owner-2026/page-account.jsx:Profile
+// timezone select. Backend Zod regex `^[A-Za-z]+/[A-Za-z_-]+(?:/[A-Za-z_-]+)?$`
+// kabul eder, herhangi bir IANA tz string set edilebilir.
+const TIMEZONE_OPTIONS: { value: string; label: string }[] = [
+  { value: "Europe/Istanbul", label: "İstanbul (UTC+3)" },
+  { value: "Europe/London", label: "Londra (UTC+0/+1)" },
+  { value: "Europe/Berlin", label: "Berlin (UTC+1/+2)" },
+  { value: "Europe/Paris", label: "Paris (UTC+1/+2)" },
+  { value: "Europe/Amsterdam", label: "Amsterdam (UTC+1/+2)" },
+  { value: "America/New_York", label: "New York (UTC-5/-4)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (UTC-8/-7)" },
+  { value: "Asia/Dubai", label: "Dubai (UTC+4)" },
+  { value: "Asia/Singapore", label: "Singapur (UTC+8)" },
+  { value: "Asia/Tokyo", label: "Tokyo (UTC+9)" },
+];
+
 /**
  * Section — Profil (Faz unified hub).
  *
- * User-level identity: ad, e-posta, panel dili. /api/user/profile PUT
- * handles name + email (also accepts password fields, but those live in
+ * User-level identity: ad, e-posta, telefon, pozisyon, timezone, panel dili.
+ * /api/user/profile PUT handles name + email + phoneNumber + position +
+ * timezone (also accepts password fields, but those live in
  * `BusinessAccountSecuritySettings`). Locale change reuses /api/user/locale
  * which writes to user.locale and bounces to the new locale URL.
  *
  * Pulse design — bz-card + bz-input via <Field>. AlertBanner for
- * success/error feedback (auto-dismiss success after 4s).
+ * success/error feedback (auto-dismiss success after 4s). §38.37 6-field
+ * (tasarım .design-owner-2026/page-account.jsx birebir).
  */
 export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettingsProps) {
   const isTr = locale === "tr";
@@ -29,6 +48,10 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  // §38.37 — yeni 3 alan
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [position, setPosition] = useState("");
+  const [timezone, setTimezone] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +61,9 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
         if (cancelled || !data) return;
         setName(data.name ?? "");
         setEmail(data.email ?? "");
+        setPhoneNumber(data.phoneNumber ?? "");
+        setPosition(data.position ?? "");
+        setTimezone(data.timezone ?? "");
       })
       .catch(() => {})
       .finally(() => {
@@ -63,7 +89,14 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
       const res = await fetch("/api/user/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          // §38.37 — null yerine empty string gönder; backend trim + null'a düşürür.
+          phoneNumber: phoneNumber.trim(),
+          position: position.trim(),
+          timezone: timezone.trim(),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -152,6 +185,52 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
               className="bz-input w-full"
               autoComplete="email"
             />
+          </Field>
+          {/* §38.37 — yeni 3 alan: telefon / pozisyon / timezone (tasarım birebir). */}
+          <Field
+            label={isTr ? "Telefon" : "Phone"}
+            hint={isTr ? "Opsiyonel — admin yazışmaları için" : "Optional — admin contact"}
+          >
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              className="bz-input w-full"
+              autoComplete="tel"
+              maxLength={32}
+              placeholder="+90 5XX XXX XX XX"
+              inputMode="tel"
+            />
+          </Field>
+          <Field
+            label={isTr ? "Pozisyon" : "Position"}
+            hint={isTr ? "İşletme içi rolün — örn. Operasyon müdürü" : "Your role — e.g. Operations manager"}
+          >
+            <input
+              type="text"
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+              className="bz-input w-full"
+              autoComplete="organization-title"
+              maxLength={100}
+            />
+          </Field>
+          <Field
+            label={isTr ? "Saat dilimi" : "Time zone"}
+            hint={isTr ? "Tarih/saat görünümü için" : "For date/time display"}
+          >
+            <select
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className="bz-input w-full"
+            >
+              <option value="">{isTr ? "Seçilmedi" : "Not set"}</option>
+              {TIMEZONE_OPTIONS.map((tz) => (
+                <option key={tz.value} value={tz.value}>
+                  {tz.label}
+                </option>
+              ))}
+            </select>
           </Field>
         </div>
 

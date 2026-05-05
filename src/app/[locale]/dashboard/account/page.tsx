@@ -23,6 +23,9 @@ import { BusinessBillingSettings } from "@/components/dashboard/settings/section
 import { BusinessUsersRolesSettings } from "@/components/dashboard/settings/sections/BusinessUsersRolesSettings";
 import { BusinessLegalSettings } from "@/components/dashboard/settings/sections/BusinessLegalSettings";
 import { BusinessPulseAiSettings } from "@/components/dashboard/settings/sections/BusinessPulseAiSettings";
+import { AccountPlanWidget } from "@/components/dashboard/account/AccountPlanWidget";
+import { AccountInvoicesWidget } from "@/components/dashboard/account/AccountInvoicesWidget";
+import { AccountDangerZone } from "@/components/dashboard/account/AccountDangerZone";
 
 /**
  * Workspace-level Settings hub (`/dashboard/account`) — unified Hub.
@@ -86,6 +89,9 @@ export default function AccountSettingsPage() {
   const [active, setActive] = useState<string>(initialSection);
   const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  // §38.37 — Plan widget için workspace usage. Team count /api/team'den fetch
+  // (restaurantCount mevcut state'ten derive: restaurants.length).
+  const [teamCount, setTeamCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,12 +99,14 @@ export default function AccountSettingsPage() {
     let cancelled = false;
     const load = async () => {
       try {
-        const [resR, resP] = await Promise.all([
+        const [resR, resP, resT] = await Promise.all([
           fetch("/api/restaurants?limit=100"),
           fetch("/api/user/profile"),
+          fetch("/api/team"),
         ]);
         const restaurantsData = resR.ok ? await resR.json() : { data: [] };
         const profileData = resP.ok ? await resP.json() : null;
+        const teamData = resT.ok ? await resT.json() : null;
         if (cancelled) return;
         const list: RestaurantOption[] = Array.isArray(restaurantsData)
           ? restaurantsData.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }))
@@ -114,6 +122,16 @@ export default function AccountSettingsPage() {
             email: profileData.email ?? "",
             name: profileData.name ?? null,
           });
+        }
+        // §38.37 — /api/team response shape farklı kontratlarla dönebilir
+        // (data array, members array). Hepsini opsiyonel kabul et.
+        if (teamData) {
+          const arr =
+            Array.isArray(teamData) ? teamData
+            : Array.isArray(teamData?.data) ? teamData.data
+            : Array.isArray(teamData?.members) ? teamData.members
+            : [];
+          setTeamCount(arr.length);
         }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "Yüklenemedi");
@@ -159,55 +177,19 @@ export default function AccountSettingsPage() {
     );
   }
 
-  // Right rail (xl:+) — tasarım .design-pulse-2026/.../page-account.jsx 320px
-  // sağ kolon paterni. Link-only quick navigation (gerçek içerik tabs'ta).
+  // §38.37 — Right rail (xl:+) — tasarım .design-owner-2026/page-account.jsx
+  // 320px sağ kolon paterni: Plan dark hero (usage bars) + Recent invoices +
+  // Danger zone. Eski 3 quick-nav button (PLAN/EKİP/KVKK) silindi (drift —
+  // tasarımda yok). Workspace data: teamCount + restaurantCount caller-side.
   const rightRail = (
     <>
-      <button
-        type="button"
-        onClick={() => handleSectionChange('billing')}
-        className="bz-card-soft block w-full p-4 text-left transition-colors hover:bg-[#F5F5F5]"
-      >
-        <span className="pulse-eyebrow text-[#737373]">{isTr ? 'PLAN' : 'PLAN'}</span>
-        <p className="bz-h-tight mt-1 text-[15px]">
-          {isTr ? 'Plan & Faturalandırma' : 'Plan & Billing'}
-        </p>
-        <p className="mt-1 text-[12px] text-[#525252]">
-          {isTr
-            ? 'Mevcut planını gör, faturaları indir, yükselt.'
-            : 'Review your plan, download invoices, upgrade.'}
-        </p>
-      </button>
-      <button
-        type="button"
-        onClick={() => handleSectionChange('team')}
-        className="bz-card-soft block w-full p-4 text-left transition-colors hover:bg-[#F5F5F5]"
-      >
-        <span className="pulse-eyebrow text-[#737373]">{isTr ? 'EKİP' : 'TEAM'}</span>
-        <p className="bz-h-tight mt-1 text-[15px]">
-          {isTr ? 'Üye & roller' : 'Members & roles'}
-        </p>
-        <p className="mt-1 text-[12px] text-[#525252]">
-          {isTr
-            ? 'Yeni üye davet et, rol değiştir.'
-            : 'Invite new members, manage roles.'}
-        </p>
-      </button>
-      <button
-        type="button"
-        onClick={() => handleSectionChange('legal')}
-        className="block w-full rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-left transition-colors hover:bg-[#FEE2E2]"
-      >
-        <span className="pulse-eyebrow text-[#991B1B]">{isTr ? 'KVKK' : 'LEGAL'}</span>
-        <p className="bz-h-tight mt-1 text-[15px] text-[#991B1B]">
-          {isTr ? 'Onay & yasal' : 'Consent & legal'}
-        </p>
-        <p className="mt-1 text-[12px] text-[#7F1D1D]">
-          {isTr
-            ? 'KVKK onay durumu, gizlilik tercihleri.'
-            : 'KVKK consent status, privacy preferences.'}
-        </p>
-      </button>
+      <AccountPlanWidget
+        locale={locale}
+        teamCount={teamCount}
+        restaurantCount={restaurants.length}
+      />
+      <AccountInvoicesWidget locale={locale} />
+      <AccountDangerZone locale={locale} />
     </>
   );
 
