@@ -1,6 +1,6 @@
 import { CSSProperties, ReactNode } from "react";
 
-export type BadgeKind = "ok" | "off" | "warn" | "danger" | "info" | "lime" | "ghost";
+export type BadgeKind = "ok" | "off" | "warn" | "danger" | "info" | "lime" | "ghost" | "dark";
 
 interface BadgeProps {
   kind?: BadgeKind;

@@ -716,7 +716,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
       </a>
       {/* Desktop sidebar */}
-      <aside className={`relative hidden h-full shrink-0 border-r border-[#EDEDED] lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-64'}`}>
+      <aside className={`relative hidden h-full shrink-0 border-r border-[#EDEDED] lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-[248px]'}`}>
         {renderSidebar(navRef)}
         {/* Floating toggle button */}
         <button
@@ -822,7 +822,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         <main
           id="panel-main-content"
           tabIndex={-1}
-          className="min-w-0 flex-1 overflow-x-hidden pb-24 lg:pb-0"
+          className="min-w-0 flex-1 overflow-x-hidden bg-[#FAFAFA] pb-24 lg:pb-0"
         >
           {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 7 && (
             <TrialBanner locale={locale} daysLeft={trialDaysLeft} />
