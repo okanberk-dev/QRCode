@@ -242,6 +242,14 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'cta', label: 'Birincil CTA buton metni' },
     { key: 'footnote', label: 'Footer dipnot', multiline: true },
   ],
+  // §38.48 Wave 2 — Customer mass email campaign chrome (subject + body owner-authored,
+  // editor sadece üst-seviye chrome alanlarını override eder).
+  'customer-campaign': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"Restoranından mesaj"' },
+    { key: 'unsubscribeLabel', label: '"Listeden ayrıl" link metni' },
+    { key: 'sentLine', label: 'Footer "Buaze ile gönderildi" prefix' },
+    { key: 'sentSuffix', label: 'Footer suffix', hint: 'TR: "üzerinden iletildi." / EN: ""' },
+  ],
 };
 
 const TEMPLATE_LABELS: Record<string, string> = {
@@ -261,6 +269,7 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'first-feedback-tips': 'İlk yorum rehberi',
   'upgrade-suggestion': 'Plan yükseltme önerisi',
   'inactive-reactivation': 'Tekrar canlandırma',
+  'customer-campaign': 'Müşteri kampanyası',
 };
 
 interface Props {

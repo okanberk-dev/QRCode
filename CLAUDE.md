@@ -7325,6 +7325,87 @@ for each PLATFORM_DEF (11):
 - 🟡 More kebab dropdown — kullanıcı skip dedi (drawer click yeterli)
 - (diğer §38.B kalemleri intact)
 
+### 38.48 Wave 2 — 2026-05-05 — Customers Bulk Actions (Arşivle / Segmentle / Kampanya gönder)
+
+§38.47 + §38.48 Wave 1 sonrası backlog'un schema-değişikliği gerektiren 3 bulk action kalemi bu PR'da kapatıldı. Plan: `~/.claude/plans/nerin-ile-devam-et-sprightly-kahn.md` Phase C-H. Wave 1 (mail churned chip + admin endpoint parity) ayrı PR — bu PR Wave 2 (bulk actions, schema migration GEREK).
+
+**Phase C — Prisma migration** (`prisma/schema.prisma` + `prisma/migrations/20260505000000_add_customer_overlays_and_email_campaigns/migration.sql`):
+- 4 yeni mini-model: `CustomerArchive` + `CustomerSegmentOverride` + `CustomerEmailCampaign` + `CustomerEmailLog`. Restaurant reverse relations (cascade onDelete).
+- `Customer` ana modeli AÇILMADI — Buaze müşterileri Feedback-derived dedupe paterni intact (CLAUDE.md §4.5). 3 mini-model LEFT JOIN ile customer list'e overlay eder.
+- Migration deploy `prisma migrate deploy` build script'inde otomatik çalışır (CLAUDE.md §14.1).
+
+**Phase D — Helper extension**:
+- `src/lib/customers.ts` — `applyArchiveOverlay(rows, archivedKeys: Set<string> | undefined)` + `applySegmentOverride(derivedSegment, overrideKey, overrides: Map<string, CustomerSegment>)`. Saf fonksiyon, deterministik.
+- `src/lib/email-customer-campaign.ts` (YENİ ~200 satır) — `sendCustomerCampaign({...})`. Pipeline: KVKK marketing consent gate → render Pulse template → sendResendEmail with RFC 2369/8058 List-Unsubscribe headers → CustomerEmailLog audit per-row → final campaign update. 600ms throttle (CLAUDE.md §38.12). HMAC-SHA256 unsubscribe token.
+- `src/lib/email/templates/customer-campaign.ts` (YENİ) — Pulse mail template, owner-authored subject + body free-text (escapeHtml + line-break preservation).
+- `scripts/seed-mail-templates.ts` — 2 yeni seed row (TR + EN, content `{}`).
+- `src/components/admin/MailTemplateEditor.tsx` — `customer-campaign` FieldDef (4 chrome alanı) + TEMPLATE_LABELS entry.
+- `src/lib/email/copy-loader.ts` — `SUPPORTED_MAIL_KEYS` + `'customer-campaign'`.
+
+**Phase E — Bulk endpoint** (`src/app/api/customers/bulk/route.ts` YENİ):
+- `POST /api/customers/bulk` — Zod `.strict()` body schema (CLAUDE.md §28.3): `{ keys: string[] (max 50), action: 'archive'|'unarchive'|'set_segment'|'send_campaign', payload? }`.
+- Auth: `getPanelActorFromRequest` + `getScopedRestaurantIds` (owner-only). IDOR: keys parse → restaurantId whitelist filter; sahibi olmayan müşteriye operation silently skip.
+- Rate limit: 10 req/dk/actor (Upstash, CLAUDE.md §14.2).
+- Action handlers: `archive`/`unarchive` (upsert/deleteMany), `set_segment` (CustomerSegmentOverride upsert), `send_campaign` (CustomerEmailCampaign create + sendCustomerCampaign batch). `Promise.allSettled` per-row isolation (CLAUDE.md §28.4).
+- Response: `{ processed, skipped, action, campaignId? }`. `maxDuration: 60`.
+
+**Phase F — Owner UI**:
+- `src/app/[locale]/dashboard/customers/page.tsx`:
+  - `?showArchived=1` URL param + toolbar "Arşiv" toggle chip.
+  - Promise.all'a 2 yeni overlay query (`customerArchive` + `customerSegmentOverride`).
+  - `applySegmentOverride` + `applyArchiveOverlay` apply (pre-segmentCounts/KPI compute).
+  - Tablo header'a `<input data-select-all>` + body row'lara `<input data-customer-key={detailKey}>`. Mobile card aynı checkbox + `r.archived ? 'opacity-60' : ''` muted styling.
+  - Bottom'a `<CustomersBulkBar locale showArchived>` mount.
+- `src/app/[locale]/dashboard/customers/_components/CustomersBulkBar.tsx` (YENİ ~430 satır client island):
+  - useEffect ile checkbox'ları hydrate eder; select-all indeterminate state.
+  - Floating bottom toolbar (CLAUDE.md §23.3.1 paterni reuse): "X seçildi · Kampanya · Segmentle · Arşivle". `showArchived` true ise "Geri al" action.
+  - 3 modal: SegmentPickerModal (5-segment grid), CampaignComposeModal (subject + body + KVKK warn), Archive confirm (`useConfirmDialog` async, CLAUDE.md §11.18).
+  - 3.5s success/error notice dwell.
+
+**Phase G — Unsubscribe** (`src/app/api/customers/unsubscribe/route.ts` YENİ):
+- `GET ?token=` → idempotent unsubscribe + Pulse "Aboneliğin sonlandı" sayfası (TR/EN).
+- `POST ?token=` → RFC 8058 one-click. 200 OK her durumda.
+- Token: HMAC-SHA256 + constant-time compare (timing-attack guard).
+- KVKK propagate: `Feedback.hasMarketingConsent = false` + `CustomerEmailLog.status = 'unsubscribed'` (cross-feedback aynı restaurant scope'unda).
+
+**Phase H — Tests**:
+- `tests/customers.test.ts` — 11 yeni unit test (`applyArchiveOverlay` 5 + `applySegmentOverride` 5 + cross-restaurant scope edge case).
+- `tests/customer-campaign.test.ts` (YENİ) — 6 unit test `verifyUnsubscribeToken` round-trip + tampered signature + edge cases.
+- Toplam: 166 → 182 test (16 yeni).
+
+**KVKK + güvenlik özet**:
+- ✅ KVKK marketing consent gate (helper + endpoint)
+- ✅ IDOR via getScopedRestaurantIds whitelist + Zod `.strict()` mass-assignment koruması
+- ✅ Rate limit 10/dk/actor + send pipeline 600ms throttle
+- ✅ HMAC-SHA256 unsubscribe token + constant-time compare
+- ✅ RFC 2369/8058 List-Unsubscribe headers
+- ✅ Cascade onDelete (Restaurant/Campaign silinince overlay temizlenir)
+- ✅ XSS: campaign body escapeHtml + linebreak preservation
+
+**Yapma**:
+- `Customer` ana model açma — Feedback-derived dedupe paterni (CLAUDE.md §4.5) sync overhead getirir.
+- KVKK consent gate'i atlama — server-side `Feedback.hasMarketingConsent` zorunlu (CLAUDE.md §19.1).
+- `verifyUnsubscribeToken` `===` ile compare — timing attack açar; helper `crypto.timingSafeEqual` kullanır.
+- `archivedKeys` SQL'e taşıma — Wave 2 5000 cap içinde JS-side filter pratik.
+- send_campaign multi-restaurant key seti — endpoint primary restaurant'ı seçer, diğerleri skip (campaign FK tek restaurant).
+
+**Yap**:
+- Yeni bulk action eklerken: BodySchema `action` enum + handler block + helper extension.
+- Yeni mail template eklerken: SUPPORTED_MAIL_KEYS + seed entry + MailTemplateEditor FieldDef + MAIL_PLACEHOLDERS (CLAUDE.md §21.26).
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` 0 errors (3 baseline warning: schema.prisma + seed ignore pattern + MailTemplateEditor useMemo, scope dışı)
+- `npm test` 182/182 pass
+
+**Backlog güncel** (§38.48 Wave 1 + Wave 2 tamamlandı):
+- 🟡 Müşteri ekle / İçe aktar (CSV) — kullanıcı dışladı
+- 🟡 More kebab dropdown — kullanıcı skip dedi
+- 🟡 Cross-restaurant unsubscribe propagate (workspace-wide)
+- 🟡 Campaign templates pre-defined örnekleri
+- 🟡 Campaign analytics (Resend webhook open/click tracking)
+- 🟡 A/B testing + Schedule send
+
 ### 38.47 2026-05-05 — Customers tasarım drift kapanışı (churned segment + lastTopic + lastChannel + 5. KPI + 6. chip)
 
 §38.36 / §38.40 backlog'unun son 4 kalemi bu PR'da kapatıldı. Tasarım kaynağı `.design-owner-2026/project/page-customers.jsx` (8 yorumlu kolon + 6 segment chip + 5 KPI tile) ile mevcut state %85 → %95 parity. Schema migration **YOK**.

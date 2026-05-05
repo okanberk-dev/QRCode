@@ -16,6 +16,9 @@ import {
   computeLastTopic,
   computeLastChannel,
   deriveCustomerFields,
+  applyArchiveOverlay,
+  applySegmentOverride,
+  type CustomerSegment,
 } from '../src/lib/customers';
 
 describe('computeSegment', () => {
@@ -406,5 +409,85 @@ describe('deriveCustomerFields', () => {
     });
     assert.equal(result.lastTopic, 'Atmosphere');
     assert.equal(result.lastChannel, 'Yemeksepeti');
+  });
+});
+
+// §38.48 Wave 2 — Archive + segment override overlay helpers
+describe('applyArchiveOverlay', () => {
+  const rows = [
+    { restaurant_id: 'r1', contact_key: 'a@b.com', name: 'A' },
+    { restaurant_id: 'r1', contact_key: 'c@d.com', name: 'B' },
+    { restaurant_id: 'r2', contact_key: '+90555', name: 'C' },
+  ];
+
+  it('returns input unchanged when archivedKeys is undefined', () => {
+    const result = applyArchiveOverlay(rows, undefined);
+    assert.equal(result.length, 3);
+    assert.deepEqual(result, rows);
+  });
+
+  it('returns input unchanged when archivedKeys is empty Set', () => {
+    const result = applyArchiveOverlay(rows, new Set());
+    assert.equal(result.length, 3);
+  });
+
+  it('filters out archived rows by composite key', () => {
+    const archived = new Set(['r1|a@b.com']);
+    const result = applyArchiveOverlay(rows, archived);
+    assert.equal(result.length, 2);
+    assert.equal(result[0].name, 'B');
+    assert.equal(result[1].name, 'C');
+  });
+
+  it('filters multiple archived keys', () => {
+    const archived = new Set(['r1|a@b.com', 'r2|+90555']);
+    const result = applyArchiveOverlay(rows, archived);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].name, 'B');
+  });
+
+  it('archive key restaurantId-bound (cross-restaurant same email NOT filtered)', () => {
+    // Two restaurants with the same contact_key — only the matching restaurant
+    // pair gets archived (KVKK + scope discipline).
+    const sameEmailRows = [
+      { restaurant_id: 'r1', contact_key: 'shared@x.com' },
+      { restaurant_id: 'r2', contact_key: 'shared@x.com' },
+    ];
+    const archived = new Set(['r1|shared@x.com']);
+    const result = applyArchiveOverlay(sameEmailRows, archived);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].restaurant_id, 'r2');
+  });
+});
+
+describe('applySegmentOverride', () => {
+  it('returns derived segment when overrides Map is undefined', () => {
+    const result = applySegmentOverride('vip', 'r1|a@b.com', undefined);
+    assert.equal(result, 'vip');
+  });
+
+  it('returns derived segment when overrides Map is empty', () => {
+    const result = applySegmentOverride('loyal', 'r1|a@b.com', new Map());
+    assert.equal(result, 'loyal');
+  });
+
+  it('replaces derived segment with manualSegment override', () => {
+    const overrides = new Map<string, CustomerSegment>([['r1|a@b.com', 'vip']]);
+    const result = applySegmentOverride('loyal', 'r1|a@b.com', overrides);
+    assert.equal(result, 'vip');
+  });
+
+  it('keeps derived segment when key not in overrides', () => {
+    const overrides = new Map<string, CustomerSegment>([['r2|other@y.com', 'risk']]);
+    const result = applySegmentOverride('new', 'r1|a@b.com', overrides);
+    assert.equal(result, 'new');
+  });
+
+  it('all 5 segment values are valid override targets', () => {
+    const segments: CustomerSegment[] = ['vip', 'loyal', 'new', 'risk', 'churned'];
+    for (const seg of segments) {
+      const overrides = new Map<string, CustomerSegment>([['r1|x', seg]]);
+      assert.equal(applySegmentOverride('loyal', 'r1|x', overrides), seg);
+    }
   });
 });

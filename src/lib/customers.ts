@@ -215,6 +215,35 @@ export function computeLastChannel(
   return map[platform.toLowerCase()] ?? (isTr ? 'Diğer' : 'Other');
 }
 
+// §38.48 Wave 2 — Customer overlay helpers.
+//
+// `applyArchiveOverlay` archived contact_key'leri filter eder. Caller
+// `?showArchived=1` ile bypass etmek isterse `archivedKeys` undefined geçirir
+// (helper hiç filter uygulamaz). Archived `Set<string>` daha hızlı membership
+// check (binlerce müşteride O(1) vs O(n) array.includes).
+export function applyArchiveOverlay<T extends { restaurant_id: string; contact_key: string }>(
+  rows: T[],
+  archivedKeys: Set<string> | undefined,
+): T[] {
+  if (!archivedKeys || archivedKeys.size === 0) return rows;
+  return rows.filter((r) => !archivedKeys.has(`${r.restaurant_id}|${r.contact_key}`));
+}
+
+// `applySegmentOverride` derived segment'i manuel override ile replace eder.
+// Owner panel "Segmentle ekle" bulk action ile contact_key başına manualSegment
+// kaydedilir; bu helper UI/CSV-side derive sırasında override'ı uygular.
+//
+// Map key: `${restaurantId}|${contactKey}`, value: CustomerSegment. Map yoksa
+// veya boşsa original `derived.segment` korunur.
+export function applySegmentOverride(
+  derivedSegment: CustomerSegment,
+  overrideKey: string,
+  overrides: Map<string, CustomerSegment> | undefined,
+): CustomerSegment {
+  if (!overrides || overrides.size === 0) return derivedSegment;
+  return overrides.get(overrideKey) ?? derivedSegment;
+}
+
 // Convenience aggregate — caller bir satır için tüm helper'ları tek seferde
 // uygulamak isterse. List endpoint, detail endpoint, export endpoint ve UI
 // hepsi aynı output şeklini bekler — DRY pattern.
