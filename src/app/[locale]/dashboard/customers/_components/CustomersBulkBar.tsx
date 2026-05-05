@@ -243,7 +243,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
       {/* Floating bottom toolbar */}
       {count > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 inset-x-4 sm:inset-x-auto">
-          <div className="mx-auto max-w-[640px] rounded-2xl border border-[#0A0A0A] bg-white shadow-[0_8px_32px_rgba(0,0,0,0.12)] px-4 py-2.5 flex items-center gap-2 flex-wrap">
+          <div className="mx-auto max-w-[640px] rounded-2xl border border-[#0A0A0A] bg-white bz-elev-2 px-4 py-2.5 flex items-center gap-2 flex-wrap">
             <span className="bz-mono text-[12px] tabular-nums text-[#0A0A0A]" aria-live="polite">
               {count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
               {isTr ? 'seçildi' : 'selected'}

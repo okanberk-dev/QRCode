@@ -9421,3 +9421,108 @@ Tüm `bz-tr-hover` callsite'ları otomatik yumuşak transition alır (Customers 
 - 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
 - 🛡️ Security follow-ups (§38.2)
 
+### 38.68 2026-05-05 — Apple-soft tier mobile callsite migration (PR-mobil)
+
+§38.65-67 desktop refinement'ın mobile counterpart'ı. Foundation token'lar
+(`bz-elev-1/2/3`, `bz-motion-spring`, `bz-lift`) mobile surface'lere
+yayılır; mobile drawer entrance professional-grade slide animation kazanır.
+Pulse lime + graphite + N-scale palette **sabit**, sadece "design dili"
+polish (motion + shadow tier + entrance animation).
+
+**Audit findings** (3 paralel Explore agent + manuel doğrulama):
+- 4 heavy shadow callsite §38.65-67 sweep'inden mobile surface'lerde kalmıştı
+  (`shadow-2xl` × 1, `shadow-[0_8px_24px_-12px_0.45]`, `shadow-[0_8px_32px_0.12]`)
+- Mobile drawer instant toggle — Apple HIG drawers always glide
+- Bottom-nav-dışı 11 mobile interactive element `transition-colors` Tailwind
+  default ease (cubic-bezier yok)
+
+**Phase A — Yeni `bz-mob-drawer-in` keyframe** (`globals.css:560`):
+- `cust-drawer-in` paterni paralel slide-from-left variant (220ms
+  cubic-bezier(0.4, 0, 0.2, 1))
+- Reduced-motion blanket genişletildi (`[style*='bz-mob-drawer-in']` selector
+  eklendi, §38.61 paterni reuse — universal `*` reset üstüne belt-and-suspenders)
+
+**Phase B — Mobile drawer** (`UserDashboardShell.tsx:894`):
+- `shadow-2xl` (~25px heavy) → `bz-elev-3` (Apple-soft heaviest tier)
+- Inline `style={{ animation: 'bz-mob-drawer-in 220ms cubic-bezier...' }}` +
+  mevcut safe-area paddings (§38.63 a11y intact) tek `style={{}}` block'a
+  konsolide edildi
+- `bz-elev-3` çünkü drawer modal-tier (`role="dialog"` + `aria-modal="true"`),
+  §38.65 NotificationBell paterni ile birebir
+
+**Phase C — 2 mobile heavy shadow callsite migration**:
+
+| Dosya | Eski | Yeni |
+|---|---|---|
+| `feedbacks/_components/FeedbackList.tsx:167` (sticky AI banner) | `shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)]` | `bz-elev-2` |
+| `customers/_components/CustomersBulkBar.tsx:246` (floating toolbar) | `shadow-[0_8px_32px_rgba(0,0,0,0.12)]` | `bz-elev-2` |
+
+**bz-elev-2 sebebi**: Sticky inline overlay/floating bar, modal değil — Apple
+soft mid-tier (`0_4px_16px_0.06`). Liste scroll plane'iyle bağlı hissi
+korunur. `bz-elev-3` heavy tier disconnect yaratır.
+
+**Phase D — 11 mobile interactive callsite `bz-motion-spring`**:
+
+| Dosya | Satırlar |
+|---|---|
+| `feedbacks/_components/FeedbackFiltersRail.tsx` | 119, 165, 196 (status tabs + platform pills + filter button) |
+| `feedbacks/_components/FeedbackReplyComposer.tsx` | 131, 145, 166, 183, 321 (AI suggestion CTA + regenerate + tone select + copy-to-draft + manual send) |
+| `customers/page.tsx` | 629, 657, 695 (segment pills + range chips + archive toggle) |
+
+`transition-colors` (Tailwind default, no cubic-bezier easing) →
+`bz-motion-spring` (200ms cubic-bezier(0.4, 0, 0.2, 1) cross-property:
+transform/box-shadow/colors/opacity).
+
+Risk değerlendirmesi: Bu 11 callsite **route değişmez** (chip toggle, AI
+suggestion button, segment pill — local state mutate). 200ms tactile ease ≪
+user reaction time at tap targets. §38.67 paterni (`bz-tr-hover`) ile birebir.
+
+**Phase E — Bottom nav motion KORU** (intentional drift):
+- `UserDashboardShell.tsx:914` etrafındaki bottom nav items mevcut
+  `transition-colors` korunur
+- Yapma sebebi: Active state route changes (pill bg `bg-[#0A0A0A]` →
+  transparent). `bz-motion-spring` 200ms cross-fade ile previous tab'ın
+  graphite circle'ı yeni page mount sırasında "bleed" eder — iOS tab bar
+  tactile snap pattern ile uyumsuz. Hard cut = native feel
+- Bottom nav upward soft glow shadow (`shadow-[0_-4px_20px_0_rgba(10,10,10,0.06)]`)
+  korunur (negatif Y direction `bz-elev-*` token'larında yok)
+
+**Phase F — Form input polish DEFER** (§38.69 micro-PR backlog):
+- BusinessProfileSettings name + email `inputMode` + `enterKeyHint` polish
+  ayrı concern (UX polish, Apple HIG elevation/motion ≠)
+- Bu PR scope clean: sadece motion + shadow tier + entrance animation
+
+**Etkilenen dosyalar** (7 file, ~14 line edit + 1 yeni keyframe block):
+- `src/app/globals.css` (+8 satır: yeni keyframe + reduced-motion blanket selector)
+- `src/components/dashboard/UserDashboardShell.tsx:894` (drawer shadow + animation, style block konsolide)
+- `src/app/[locale]/dashboard/feedbacks/_components/FeedbackList.tsx:167` (1 token swap)
+- `src/app/[locale]/dashboard/customers/_components/CustomersBulkBar.tsx:246` (1 token swap)
+- `src/app/[locale]/dashboard/feedbacks/_components/FeedbackFiltersRail.tsx` (3 token swap: lines 119, 165, 196)
+- `src/app/[locale]/dashboard/feedbacks/_components/FeedbackReplyComposer.tsx` (5 token swap: lines 131, 145, 166, 183, 321)
+- `src/app/[locale]/dashboard/customers/page.tsx` (3 token swap: lines 629, 657, 695)
+
+**Yapma**:
+- Pulse palette dışına çıkma — lime/graphite/N-scale SABİT
+- Bottom nav `transition-colors` → `bz-motion-spring` değişikliği — route change pill bleed flicker
+- Mobile bottom nav shadow `bz-elev-*` ile değiştirme — upward Y direction (`-4px`) token'larda yok
+- Mobile hero card'a (Dashboard `sm:hidden`) shadow ekleme — design intent solid graphite, no shadow
+- Marketing MobileBottomNav dokunma — marketing surface scope dışı, zaten polished
+- Form `inputMode`/`enterKeyHint` bu PR'a sıkıştırma — §38.69 ayrı micro-PR
+- CustomerDetailDrawer `cust-drawer-in` keyframe'ini `bz-mob-drawer-in` ile birleştirme — slide-from-right vs slide-from-left, farklı transform direction
+- Customer "Müşteri ekle" / CSV import button'larını mobile'da ekleme — §38.64 iptal disipline intact
+
+**Yap**:
+- Yeni mobile interactive callsite eklenirken `bz-motion-spring` reuse (chip/button non-route-changing)
+- Yeni floating mobile bar/toast için `bz-elev-2` token reuse
+- Yeni mobile modal/drawer için `bz-elev-3` token reuse + (gerekirse) yeni slide-in keyframe (`cust-drawer-in` slide-from-right + `bz-mob-drawer-in` slide-from-left paterni)
+- Yeni keyframe eklenirken aynı PR'da reduced-motion blanket'a `[style*='keyframe-name']` selector ekle (§38.61 disipline)
+- Bottom nav tactile snap (transition-colors hard cut) yeni nav surface'lerde reuse — iOS native feel
+
+**Backlog güncel** (PR-1 + §38.66 + §38.67 + §38.68 sonrası):
+- ✅ §38.68 mobile callsite migration kapatıldı
+- 🟡 §38.69 micro-PR — Form input polish (BusinessProfileSettings inputMode + enterKeyHint)
+- 🟡 Mobile More sheet shadow-2xl → bz-elev-3 (UserDashboardShell.tsx:980, ek scope)
+- 🟡 Marketing MobileBottomNav lift utility audit (marketing surface, panel-only kapsam dışı)
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
+- 🛡️ Security follow-ups (§38.2)
+

@@ -557,6 +557,12 @@ body {
   to   { transform: translateX(0); }
 }
 
+/* §38.68 — Mobile drawer (UserDashboardShell hamburger) soldan slide-in */
+@keyframes bz-mob-drawer-in {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
 /* /r/[slug] yüksek puan platform redirect overlay — 2.2s lime progress */
 @keyframes bzProgress {
   from { width: 0; }
@@ -583,6 +589,7 @@ body {
     stroke-dashoffset: 0 !important;
   }
   [style*='cust-drawer-in'],
+  [style*='bz-mob-drawer-in'],
   [style*='buaze-splash-fill'],
   [style*='bzProgress'],
   .animate-\[bzProgress_2\.2s_linear_forwards\] {
