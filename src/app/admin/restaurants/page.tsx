@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download, ChevronRight } from 'lucide-react';
+import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
@@ -766,101 +766,82 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
 
   const openRow = openMenu ? rows.find((r) => r.id === openMenu.id) : null;
 
+  // Card grid layout (CLAUDE.md §38.42) — eski 2-pas (desktop tablo + mobile
+  // card) tek responsive grid'e konsolide edildi. Tasarım kaynağı:
+  // .design-owner-2026/components/mobile.jsx:222-237 MobileCustomers card paterni
+  // (avatar + name + plan/status pill + meta line). Bulk select checkbox + more
+  // menu kart içine entegre edildi.
   return (
-    <div className="bz-card overflow-hidden">
-      {/* Desktop: bz-table (1:1 design AdminBusinesses) */}
-      <div className="hidden lg:block overflow-x-auto">
-        <table className="bz-table">
-          <thead>
-            <tr>
-              <th style={{ width: 36 }}>
+    <>
+      {/* Bulk select-all bar (sadece sayfada en az 1 kart varsa görünür) */}
+      {rows.length > 0 && (
+        <div className="mb-3 flex items-center justify-between gap-2 px-1 text-[11.5px] text-[#525252]">
+          <label className="inline-flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = someSelected;
+              }}
+              onChange={(e) => onToggleSelectAll(e.target.checked)}
+              aria-label="Tümünü seç"
+              className="h-3.5 w-3.5 accent-[#0A0A0A] cursor-pointer"
+            />
+            <span className="bz-mono uppercase tracking-wider">
+              {allSelected ? 'Hepsi seçili' : someSelected ? `${selectedIds.size} seçili` : 'Tümünü seç'}
+            </span>
+          </label>
+          <span className="bz-mono text-[#737373]">{rows.length} işletme</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {rows.map((r) => {
+          const plan = planBadge(r.user?.plan);
+          const detailHref = `/admin/restaurants/${r.id}`;
+          const isSelected = selectedIds.has(r.id);
+          const onCardKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            if ((e.target as HTMLElement).closest('button, a, input, [role="menu"]')) return;
+            e.preventDefault();
+            router.push(detailHref);
+          };
+          return (
+            <div
+              key={r.id}
+              role="link"
+              tabIndex={0}
+              aria-label={`${r.name} detayını aç`}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest('button, a, input')) return;
+                router.push(detailHref);
+              }}
+              onKeyDown={onCardKey}
+              className={`bz-card cursor-pointer p-4 transition-colors hover:border-[#A3A3A3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${isSelected ? 'bg-[#EAF9B8]/40 border-[#A8D62E]' : ''}`}
+            >
+              <div className="flex items-start gap-3">
                 <input
                   type="checkbox"
-                  checked={allSelected}
-                  ref={(el) => {
-                    if (el) el.indeterminate = someSelected;
-                  }}
-                  onChange={(e) => onToggleSelectAll(e.target.checked)}
-                  aria-label="Tümünü seç"
-                  className="h-3.5 w-3.5 accent-[#0A0A0A] cursor-pointer"
+                  checked={isSelected}
+                  onChange={(e) => onToggleSelect(r.id, e.target.checked)}
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`${r.name} seç`}
+                  className="mt-1 h-3.5 w-3.5 shrink-0 accent-[#0A0A0A] cursor-pointer"
                 />
-              </th>
-              <th>İşletme</th>
-              <th>Tür</th>
-              <th>Şehir</th>
-              <th>Plan</th>
-              <th>Şube</th>
-              <th>Yorum</th>
-              <th>Puan</th>
-              <th>Durum</th>
-              <th aria-label="İşlemler" />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => {
-              const plan = planBadge(r.user?.plan);
-              const detailHref = `/admin/restaurants/${r.id}`;
-              const onRowKey = (e: React.KeyboardEvent<HTMLTableRowElement>) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  // PR7 — keyboard drill-down. Buton içi keystroke'ları dışarda
-                  // bırak — checkbox, more menu vs hâlâ kendi pattern'leriyle çalışsın.
-                  if ((e.target as HTMLElement).closest('button, a, input, [role="menu"]')) return;
-                  e.preventDefault();
-                  router.push(detailHref);
-                }
-              };
-              return (
-                <tr
-                  key={r.id}
-                  role="link"
-                  tabIndex={0}
-                  aria-label={`${r.name} detayını aç`}
-                  onClick={(e) => {
-                    // Action hücresindeki MoreHorizontal kendi stopPropagation'ı
-                    // var; defensive olarak burada da button/anchor/input ise atla.
-                    if ((e.target as HTMLElement).closest('button, a, input')) return;
-                    router.push(detailHref);
-                  }}
-                  onKeyDown={onRowKey}
-                  className={`cursor-pointer transition-colors hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-inset ${selectedIds.has(r.id) ? 'bg-[#EAF9B8]/40' : ''}`}
-                >
-                  <td onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(r.id)}
-                      onChange={(e) => onToggleSelect(r.id, e.target.checked)}
-                      aria-label={`${r.name} seç`}
-                      className="h-3.5 w-3.5 accent-[#0A0A0A] cursor-pointer"
-                    />
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-2.5">
-                      <Avatar name={r.name} size={28} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
-                      <div className="min-w-0">
-                        <div className="font-semibold text-[#0A0A0A] truncate" title={r.name}>{r.name}</div>
-                        <div className="text-[11px] text-[#737373] truncate">{r.user?.name || r.user?.email || 'Sahip atanmamış'}</div>
+                <Avatar name={r.name} size={40} color={r.primaryColor || '#0A0A0A'} fg="#FFFFFF" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[14px] font-semibold text-[#0A0A0A] truncate" title={r.name}>
+                        {r.name}
+                      </div>
+                      <div className="text-[11px] text-[#737373] truncate">
+                        {r.user?.name || r.user?.email || 'Sahip atanmamış'}
                       </div>
                     </div>
-                  </td>
-                  <td><span className="text-[12px] text-[#525252] capitalize">{r.category}</span></td>
-                  <td>{r.city || '—'}</td>
-                  <td><Badge kind={plan.kind}>{plan.label}</Badge></td>
-                  <td className="bz-mono">1</td>
-                  <td className="bz-mono">{r._count.feedbacks}</td>
-                  <td>
-                    {r.avgRating ? (
-                      <span className="inline-flex items-center gap-1 font-semibold">
-                        <Star size={11} className="text-[#C6F24E] fill-[#C6F24E]" />
-                        {r.avgRating.toFixed(1)}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td>
-                    {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
-                  </td>
-                  <td>
                     <button
-                      className="bz-btn-icon"
+                      type="button"
+                      className="bz-btn-icon shrink-0 -mt-1 -mr-1"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleMenu(r.id, e.currentTarget);
@@ -871,17 +852,44 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
                     >
                       <MoreHorizontal size={14} strokeWidth={2} />
                     </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+                <Badge kind={plan.kind}>{plan.label}</Badge>
+                {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
+                {r.category && (
+                  <span className="text-[10.5px] uppercase tracking-wider text-[#A3A3A3] bz-mono">
+                    {r.category}
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-3 flex items-center gap-3 text-[11.5px] text-[#525252] border-t border-[#EDEDED] pt-3">
+                {r.city && (
+                  <span className="truncate">{r.city}</span>
+                )}
+                <span className="inline-flex items-center gap-1 bz-mono">
+                  {r._count.feedbacks}
+                  <span className="text-[#A3A3A3]">yrm</span>
+                </span>
+                {r.avgRating != null ? (
+                  <span className="inline-flex items-center gap-0.5 font-semibold text-[#0A0A0A]">
+                    <Star size={11} className="text-[#C6F24E] fill-[#C6F24E]" />
+                    {r.avgRating.toFixed(1)}
+                  </span>
+                ) : (
+                  <span className="text-[#A3A3A3]">— puan yok</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Viewport-anchored row menu (escapes the table's overflow-x-auto
-          clipping context). Rendered once per open menu; coords come from
-          the trigger button's bounding rect at click time. */}
+      {/* Viewport-anchored action menu (kart içinde overflow clipping'e takılmaz).
+          Coords trigger button'ın bounding rect'ından alınır. */}
       {openRow && openMenu && (
         <div
           role="menu"
@@ -933,61 +941,6 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
           </button>
         </div>
       )}
-
-      {/* Mobile: compact horizontal card list (1:1 design MAdminBusinesses) */}
-      <div className="flex flex-col gap-2 p-3 lg:hidden">
-        {rows.map((r) => {
-          const plan = planBadge(r.user?.plan);
-          return (
-            <Link
-              key={r.id}
-              href={`/admin/restaurants/${r.id}`}
-              className="bz-card flex items-center gap-3 p-3.5 active:bg-[#FAFAFA] transition-colors"
-            >
-              <Avatar
-                name={r.name}
-                size={40}
-                color={r.primaryColor || '#0A0A0A'}
-                fg="#FFFFFF"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <div
-                    className="text-[13px] font-semibold text-[#0A0A0A] truncate flex-1"
-                    title={r.name}
-                  >
-                    {r.name}
-                  </div>
-                  <Badge kind={plan.kind}>{plan.label}</Badge>
-                </div>
-                <div
-                  className="flex items-center gap-1.5 text-[10.5px] text-[#737373]"
-                >
-                  {r.city && (
-                    <>
-                      <span className="truncate">{r.city}</span>
-                      <span aria-hidden="true">·</span>
-                    </>
-                  )}
-                  {r.avgRating != null && (
-                    <>
-                      <span className="inline-flex items-center gap-0.5">
-                        <Star size={9} className="text-[#C6F24E] fill-[#C6F24E]" />
-                        {r.avgRating.toFixed(1)}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                    </>
-                  )}
-                  <span className="bz-mono">
-                    {r._count.feedbacks} <span className="text-[#A3A3A3]">yrm</span>
-                  </span>
-                </div>
-              </div>
-              <ChevronRight size={14} className="shrink-0 text-[#A3A3A3]" strokeWidth={2} />
-            </Link>
-          );
-        })}
-      </div>
-    </div>
+    </>
   );
 }

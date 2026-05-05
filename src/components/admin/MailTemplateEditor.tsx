@@ -195,6 +195,51 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'sentLine', label: 'Footer Buaze disclosure 1', locked: true, lockReason: 'KVKK / GDPR: Buaze gönderim açıklaması — şeffaflık zorunluluğu' },
     { key: 'sentSuffix', label: 'Footer Buaze disclosure 2', locked: true, lockReason: 'KVKK / GDPR: Buaze gönderim açıklaması — şeffaflık zorunluluğu' },
   ],
+  // ── Wave B lifecycle emails (CLAUDE.md §21.34) ──
+  // Audit Fix (CLAUDE.md §38.10): SUPPORTED_MAIL_KEYS 4 lifecycle entry
+  // taşıyor ama editor field map'e eklenmemişti → admin edit page'de
+  // FIELDS_BY_TEMPLATE[key] ?? [] boş array fallback'e düşüyor, form 0
+  // field render ediyordu ("içerikleri gözükmüyor" şikayetinin kök nedeni).
+  'qr-not-downloaded': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"KURULUM HATIRLATMASI"' },
+    { key: 'title', label: 'Başlık', placeholders: MAIL_PLACEHOLDERS['qr-not-downloaded'] },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['qr-not-downloaded'] },
+    { key: 'why', label: 'Neden önemli paragrafı', multiline: true, hint: 'QR yerleşiminin yorum sayısına etkisi açıklaması' },
+    { key: 'cta', label: 'Birincil CTA buton metni' },
+    { key: 'footnote', label: 'Footer dipnot', multiline: true, hint: 'Tek-sefer hatırlatma + checklist disclaimer' },
+  ],
+  'first-feedback-tips': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"İLK YORUM REHBERİ"' },
+    { key: 'title', label: 'Başlık', placeholders: MAIL_PLACEHOLDERS['first-feedback-tips'] },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['first-feedback-tips'] },
+    { key: 'tip1Title', label: 'İpucu 1 başlık', hint: '"1. Görünürlük: doğru yer"' },
+    { key: 'tip1Body', label: 'İpucu 1 gövde', multiline: true },
+    { key: 'tip2Title', label: 'İpucu 2 başlık', hint: '"2. Personel: doğal davet"' },
+    { key: 'tip2Body', label: 'İpucu 2 gövde', multiline: true },
+    { key: 'tip3Title', label: 'İpucu 3 başlık', hint: '"3. Görsel mesaj: net çağrı"' },
+    { key: 'tip3Body', label: 'İpucu 3 gövde', multiline: true },
+    { key: 'cta', label: 'Birincil CTA buton metni' },
+    { key: 'footnote', label: 'Footer dipnot', multiline: true },
+  ],
+  'upgrade-suggestion': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"PLAN ÖNERİSİ"' },
+    { key: 'title', label: 'Başlık', placeholders: MAIL_PLACEHOLDERS['upgrade-suggestion'] },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true, placeholders: MAIL_PLACEHOLDERS['upgrade-suggestion'] },
+    { key: 'feature1', label: 'Özellik 1', multiline: true, hint: '"Pulse AI ile yorumlara saniyeler içinde profesyonel yanıt taslağı"' },
+    { key: 'feature2', label: 'Özellik 2', multiline: true },
+    { key: 'feature3', label: 'Özellik 3', multiline: true },
+    { key: 'feature4', label: 'Özellik 4', multiline: true },
+    { key: 'cta', label: 'Birincil CTA buton metni' },
+    { key: 'footnote', label: 'Footer dipnot', multiline: true, hint: 'Ayda bir gönderim disclaimer' },
+  ],
+  'inactive-reactivation': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"TEKRAR HOŞ GELDİNİZ"' },
+    { key: 'title', label: 'Başlık', placeholders: MAIL_PLACEHOLDERS['inactive-reactivation'] },
+    { key: 'intro', label: 'Giriş paragrafı', multiline: true },
+    { key: 'suggestion', label: 'Öneri paragrafı', multiline: true, hint: '3 hızlı kontrol noktası listesi' },
+    { key: 'cta', label: 'Birincil CTA buton metni' },
+    { key: 'footnote', label: 'Footer dipnot', multiline: true },
+  ],
 };
 
 const TEMPLATE_LABELS: Record<string, string> = {
@@ -210,6 +255,10 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'verify-email': 'E-posta onayı',
   'roi-customer-report': 'ROI raporu (müşteri)',
   'roi-admin-notification': 'ROI lead (admin)',
+  'qr-not-downloaded': 'QR indirilmedi',
+  'first-feedback-tips': 'İlk yorum rehberi',
+  'upgrade-suggestion': 'Plan yükseltme önerisi',
+  'inactive-reactivation': 'Tekrar canlandırma',
 };
 
 interface Props {

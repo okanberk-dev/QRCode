@@ -20,7 +20,7 @@ interface Response {
 
 // Audit Fix C: liste UI label'ları MailTemplateEditor TEMPLATE_LABELS ile
 // senkron kalmalı. SUPPORTED_MAIL_KEYS'e yeni entry eklendiğinde buraya da
-// eklenir, aksi halde grid'de raw key (`roi-customer-report`) görünür.
+// eklenir, aksi halde grid'de raw key (`qr-not-downloaded`) görünür.
 const TEMPLATE_LABELS: Record<string, string> = {
   welcome: 'Hoş geldin',
   newsletter: 'Aylık bülten',
@@ -34,6 +34,10 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'verify-email': 'E-posta onayı',
   'roi-customer-report': 'ROI raporu (müşteri)',
   'roi-admin-notification': 'ROI lead (admin)',
+  'qr-not-downloaded': 'QR indirilmedi',
+  'first-feedback-tips': 'İlk yorum rehberi',
+  'upgrade-suggestion': 'Plan yükseltme önerisi',
+  'inactive-reactivation': 'Tekrar canlandırma',
 };
 
 const LOCALE_LABELS: Record<string, string> = {
@@ -92,7 +96,7 @@ export default function MailTemplatesIndexPage() {
       <PageHeader
         eyebrow="MAIL İÇERİKLERİ"
         title="Mail içerikleri"
-        description="9 mail template'inin içerik alanlarını burada düzenleyebilirsin. Boş bıraktığın alanlar otomatik kod-içi varsayılana düşer. Değişiklikler 1 dakika içinde tüm gönderimlere yansır."
+        description="16 mail template'inin (Pulse + lifecycle + ROI + verify) içerik alanlarını burada düzenleyebilirsin. Boş bıraktığın alanlar otomatik kod-içi varsayılana düşer. Değişiklikler 1 dakika içinde tüm gönderimlere yansır."
         actions={
           <button
             type="button"
