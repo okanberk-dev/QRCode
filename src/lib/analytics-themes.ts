@@ -12,6 +12,12 @@ export interface ThemeItem {
    * entry'lerde yok, UI graceful skip yapar.
    */
   sentimentPositivePct?: number;
+  // §38.58 — `a/` bundle parity (a/page-dashboard.jsx:294-298 SIK BAHSEDİLEN
+  // 3-segment stacked bar pos / neu / neg). Tasarım birebir için neutral +
+  // negative ayrı yüzde gerek. Toplam pos+neu+neg = 100. Model uymadıysa 3
+  // field birden undefined kalır → UI 2-segment fallback'a düşer.
+  sentimentNeutralPct?: number;
+  sentimentNegativePct?: number;
 }
 
 export interface ThemesResult {
@@ -64,21 +70,21 @@ const MAX_COMMENTS_TO_SEND = 80; // ~500-700 token; gpt-4o-mini'de hızlı
 // kohortunda restoran başına ortalama yorum hacmi düşük).
 const MIN_COMMENTS_FOR_AI = 4;
 
-// Cache key version prefix — Phase 8c+ (CLAUDE.md §38.20) sentiment field
-// eklendi; eski cache entry'leri (sentimentPositivePct yok) invalidate
-// edilsin diye `:v2` prefix'i. Cache miss'te yeni AI çağrısı sentiment
-// taşıyan response döner.
-const CACHE_KEY_VERSION = 'v2';
+// Cache key version prefix — §38.58 `a/` bundle parity (3-segment sentiment:
+// pos/neu/neg) için v2 → v3 bump. Eski v2 cache entry'lerinde sadece
+// sentimentPositivePct vardı; yeni v3'te neu + neg de gelir. Çağıranlar cache
+// key değiştirmez; helper otomatik prefix'ler.
+const CACHE_KEY_VERSION = 'v3';
 
 const SYSTEM_PROMPT_TR = `Sen bir restoran müşteri-deneyim analistisin. Aşağıda yorumları rating + metin formatında alacaksın.
 
 Görev:
 1. **themes**: Tüm yorumları (rating bağımsız) tarayıp müşterilerin en sık dile getirdiği 5 ortak temayı çıkar. Tema KISA olmalı (2-4 kelime), nötr veya hafif yönlü ifade et (örn. "Bekleme süresi", "Lezzet", "Personel ilgisi", "Fiyat/performans"). Aynı temayı farklı yorumlarda say (count = kaç yorumda geçtiğini tahmin et).
-2. **sentimentPositivePct**: Her tema için bu temadan bahseden yorumların yüzde kaçı OLUMLU yargı taşıyor (0-100 arası tam sayı). 100 = tüm bahisler övgü, 0 = tüm bahisler şikayet, 50 = dengeli. Rating + metin tonu birlikte dikkate al.
+2. **sentimentPositivePct + sentimentNeutralPct + sentimentNegativePct**: Her tema için bu temadan bahseden yorumların duygu dağılımı (0-100 arası 3 tam sayı, TOPLAM 100 OLMALI). pozitif = övgü/memnuniyet, nötr = ne övgü ne şikayet (yorum, gözlem, beklenti), negatif = şikayet/eleştiri. Rating + metin tonu birlikte dikkate al.
 3. **synthesis**: 1-2 cümlelik genel çıkarım. Restoran sahibine pratik bir bilgi: hangi konu öne çıkıyor, ne yöne işaret ediyor. "Müşteriler genellikle…", "Temel sinyal…" gibi başlat. Övgü ve eleştiri varsa dengeli özetle.
 
 Yanıtını YALNIZCA aşağıdaki JSON formatında ver, başka açıklama yapma:
-{"themes":[{"theme":"...","count":N,"sentimentPositivePct":X}, ...max 5 madde],"synthesis":"..."}
+{"themes":[{"theme":"...","count":N,"sentimentPositivePct":X,"sentimentNeutralPct":Y,"sentimentNegativePct":Z}, ...max 5 madde],"synthesis":"..."}
 
 Yorum yetersizse boş array + boş synthesis döndür.`;
 
@@ -86,11 +92,11 @@ const SYSTEM_PROMPT_EN = `You are a restaurant customer-experience analyst. You'
 
 Task:
 1. **themes**: Across all comments (rating-agnostic) extract the top 5 most-mentioned topics. Themes must be SHORT (2-4 words), neutral or lightly-toned (e.g. "Wait time", "Taste", "Staff attentiveness", "Price/value"). Estimate count = how many comments mention each theme.
-2. **sentimentPositivePct**: For each theme, what percentage of comments mentioning it carry a POSITIVE sentiment (integer 0-100). 100 = all praise, 0 = all complaints, 50 = balanced. Consider rating + text tone together.
+2. **sentimentPositivePct + sentimentNeutralPct + sentimentNegativePct**: For each theme, the sentiment breakdown of comments mentioning it (3 integers 0-100, MUST SUM TO 100). positive = praise/satisfaction, neutral = neither praise nor complaint (observation, expectation), negative = complaint/criticism. Consider rating + text tone together.
 3. **synthesis**: A 1-2 sentence overall inference. Practical info for the owner: which topic stands out, what direction it points to. Start with "Customers mostly…" or "Key signal…". If both praise and criticism exist, summarize balanced.
 
 Respond with ONLY this JSON, no other text:
-{"themes":[{"theme":"...","count":N,"sentimentPositivePct":X}, ...max 5 items],"synthesis":"..."}
+{"themes":[{"theme":"...","count":N,"sentimentPositivePct":X,"sentimentNeutralPct":Y,"sentimentNegativePct":Z}, ...max 5 items],"synthesis":"..."}
 
 Empty array + empty synthesis if not enough comments.`;
 
@@ -114,20 +120,56 @@ function parseLLMJson(raw: string): { themes: ThemeItem[]; synthesis: string } |
   if (!parsed || typeof parsed !== 'object') return null;
   const themesIn = Array.isArray(parsed.themes) ? parsed.themes : [];
   const themes: ThemeItem[] = themesIn
-    .filter((x: unknown): x is { theme: string; count: number; sentimentPositivePct?: number } => {
+    .filter((x: unknown): x is {
+      theme: string;
+      count: number;
+      sentimentPositivePct?: number;
+      sentimentNeutralPct?: number;
+      sentimentNegativePct?: number;
+    } => {
       if (!x || typeof x !== 'object') return false;
       const o = x as Record<string, unknown>;
       return typeof o.theme === 'string' && typeof o.count === 'number';
     })
-    .map((x: { theme: string; count: number; sentimentPositivePct?: number }) => {
+    .map((x: {
+      theme: string;
+      count: number;
+      sentimentPositivePct?: number;
+      sentimentNeutralPct?: number;
+      sentimentNegativePct?: number;
+    }) => {
       const item: ThemeItem = {
         theme: String(x.theme).trim().slice(0, 60),
         count: Math.max(0, Math.min(999, Math.round(x.count))),
       };
-      // Phase 8c+ — sentiment opsiyonel; model uymadıysa undefined kalır,
-      // UI graceful skip yapar.
-      if (typeof x.sentimentPositivePct === 'number' && Number.isFinite(x.sentimentPositivePct)) {
-        item.sentimentPositivePct = Math.max(0, Math.min(100, Math.round(x.sentimentPositivePct)));
+      // §38.58 — 3-segment sentiment (pos/neu/neg). Model çoğunlukla 3 alanı
+      // birden döner; toplam 100'e normalize edilir (model arada drift edebilir
+      // — örn. pos=70 + neu=20 + neg=15 = 105). En az pos set'liyse alanlar
+      // tutulur; eksik alanlar 0 farsayılır + son alan complement (toplam 100)
+      // ile dengelenir.
+      const pos = typeof x.sentimentPositivePct === 'number' && Number.isFinite(x.sentimentPositivePct)
+        ? Math.max(0, Math.min(100, Math.round(x.sentimentPositivePct)))
+        : null;
+      const neu = typeof x.sentimentNeutralPct === 'number' && Number.isFinite(x.sentimentNeutralPct)
+        ? Math.max(0, Math.min(100, Math.round(x.sentimentNeutralPct)))
+        : null;
+      const neg = typeof x.sentimentNegativePct === 'number' && Number.isFinite(x.sentimentNegativePct)
+        ? Math.max(0, Math.min(100, Math.round(x.sentimentNegativePct)))
+        : null;
+      if (pos !== null) {
+        item.sentimentPositivePct = pos;
+        // Eksik alanlar 0 fallback; toplam 100'e clamp.
+        const neuVal = neu ?? 0;
+        const negVal = neg ?? Math.max(0, 100 - pos - neuVal);
+        const total = pos + neuVal + negVal;
+        // Toplam 100'den sapıyorsa (drift): pos sabit, neu sabit, neg = 100 - pos - neu.
+        if (total !== 100) {
+          item.sentimentNeutralPct = neuVal;
+          item.sentimentNegativePct = Math.max(0, Math.min(100 - pos - neuVal, 100 - pos));
+        } else {
+          item.sentimentNeutralPct = neuVal;
+          item.sentimentNegativePct = negVal;
+        }
       }
       return item;
     })

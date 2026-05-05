@@ -875,11 +875,19 @@ async function renderAnalyticsPage({
               ) : (
                 <ol className="flex flex-col gap-3.5">
                   {themes.themes.map((t) => {
-                    // §38.50 — Sentiment progress bar light theme. Threshold:
-                    // ≥80% lime (#A8D62E) / ≥70% amber (#D97706) / <70% red (#DC2626).
+                    // §38.58 — 3-segment sentiment bar (tasarım birebir
+                    // a/page-analytics.jsx:228-235 + dashboard parity). pos%
+                    // tile rengini hâlâ belirler (≥80 lime / ≥70 amber / <70
+                    // red); progress bar 3-segment (lime + n300 + red) toplam
+                    // 100. v2 cache'ten gelen entry'lerde neu/neg yok →
+                    // graceful fallback (neg = 100 - pos heuristic).
                     const hasSentiment = typeof t.sentimentPositivePct === 'number';
                     const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
-                    const barColor =
+                    const neu = hasSentiment ? (t.sentimentNeutralPct ?? 0) : 0;
+                    const neg = hasSentiment
+                      ? (t.sentimentNegativePct ?? Math.max(0, 100 - pos - neu))
+                      : 0;
+                    const tileColor =
                       pos >= 80 ? '#A8D62E' : pos >= 70 ? '#D97706' : '#DC2626';
                     return (
                       <li key={t.theme}>
@@ -895,7 +903,7 @@ async function renderAnalyticsPage({
                             {hasSentiment && (
                               <span
                                 className="bz-mono text-[12px] font-semibold tabular-nums"
-                                style={{ color: barColor }}
+                                style={{ color: tileColor }}
                               >
                                 %{pos}
                               </span>
@@ -903,20 +911,32 @@ async function renderAnalyticsPage({
                           </div>
                         </div>
                         {hasSentiment && (
-                          <div
-                            className="flex h-2 overflow-hidden rounded-full bg-[#F5F5F5]"
-                            role="img"
-                            aria-label={
-                              isTr
-                                ? `${pos}% pozitif sentiment`
-                                : `${pos}% positive sentiment`
-                            }
-                          >
+                          <>
                             <div
-                              className="h-full rounded-full transition-all"
-                              style={{ width: `${pos}%`, background: barColor }}
-                            />
-                          </div>
+                              className="flex h-2 overflow-hidden rounded-full bg-[#F5F5F5]"
+                              role="img"
+                              aria-label={
+                                isTr
+                                  ? `${pos}% pozitif, ${neu}% nötr, ${neg}% negatif`
+                                  : `${pos}% positive, ${neu}% neutral, ${neg}% negative`
+                              }
+                            >
+                              <div className="h-full" style={{ width: `${pos}%`, background: '#16A34A' }} />
+                              <div className="h-full" style={{ width: `${neu}%`, background: '#A3A3A3' }} />
+                              <div className="h-full" style={{ width: `${neg}%`, background: '#DC2626' }} />
+                            </div>
+                            <div className="mt-1 flex justify-between gap-3 bz-mono text-[10px]">
+                              <span className="text-[#16A34A] font-semibold">
+                                +{pos}% {isTr ? 'pozitif' : 'positive'}
+                              </span>
+                              <span className="text-[#737373]">
+                                {isTr ? 'nötr' : 'neutral'} {neu}%
+                              </span>
+                              <span className="text-[#DC2626] font-semibold">
+                                -{neg}% {isTr ? 'negatif' : 'negative'}
+                              </span>
+                            </div>
+                          </>
                         )}
                       </li>
                     );
