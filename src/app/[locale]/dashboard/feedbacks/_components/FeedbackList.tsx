@@ -164,7 +164,7 @@ export function FeedbackList({
           xl:hidden — rail tarafında zaten chip görünür. bottom nav (CLAUDE.md
           §25 MobileBottomNav) altında ~80px yer var; banner üzerinde sticky. */}
       {counts.aiReady > 0 && activeTab !== 'ai_ready' && (
-        <div className="lg:hidden sticky bottom-[80px] z-30 mx-3 mb-3 rounded-2xl bg-[#0A0A0A] text-white px-4 py-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.45)] flex items-center gap-3">
+        <div className="lg:hidden sticky bottom-[80px] z-30 mx-3 mb-3 rounded-2xl bg-[#0A0A0A] text-white px-4 py-3 bz-elev-2 flex items-center gap-3">
           <span
             aria-hidden="true"
             className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30"

@@ -891,8 +891,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           aria-label={locale === 'tr' ? 'Owner navigation' : 'Owner navigation'}
         >
           <div
-            className="h-full w-[280px] max-w-[85vw] bg-white border-r border-[#EDEDED] shadow-2xl flex flex-col text-[#0A0A0A] overflow-y-auto"
+            className="h-full w-[280px] max-w-[85vw] bg-white border-r border-[#EDEDED] bz-elev-3 flex flex-col text-[#0A0A0A] overflow-y-auto"
             style={{
+              animation: 'bz-mob-drawer-in 220ms cubic-bezier(0.4, 0, 0.2, 1)',
               paddingTop: 'env(safe-area-inset-top)',
               paddingBottom: 'env(safe-area-inset-bottom)',
             }}

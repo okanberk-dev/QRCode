@@ -116,7 +116,7 @@ export function FeedbackFiltersRail({
                 key={tab.k}
                 type="button"
                 onClick={() => setActiveTab(tab.k)}
-                className={`relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                className={`relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium bz-motion-spring ${
                   active
                     ? 'bg-[#0A0A0A] text-white before:absolute before:left-[-3px] before:top-1.5 before:bottom-1.5 before:w-[3px] before:bg-[#C6F24E] before:rounded-r-sm'
                     : 'text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
@@ -162,7 +162,7 @@ export function FeedbackFiltersRail({
                   key={p.id}
                   type="button"
                   onClick={() => setPlatformFilter(p.id)}
-                  className={`relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors ${
+                  className={`relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium bz-motion-spring ${
                     active
                       ? 'bg-[#0A0A0A] text-white before:absolute before:left-[-3px] before:top-1.5 before:bottom-1.5 before:w-[3px] before:bg-[#C6F24E] before:rounded-r-sm'
                       : 'text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
@@ -193,7 +193,7 @@ export function FeedbackFiltersRail({
           <button
             type="button"
             onClick={onOpenFilters}
-            className={`relative flex w-full items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] font-medium transition-colors ${
+            className={`relative flex w-full items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] font-medium bz-motion-spring ${
               hasActiveFilter
                 ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
                 : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'

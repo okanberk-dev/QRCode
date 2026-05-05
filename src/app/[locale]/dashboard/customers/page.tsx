@@ -626,7 +626,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                 href={buildHref({ segment: pill.key === 'all' ? '' : pill.key, page: '1' })}
                 role="tab"
                 aria-selected={active}
-                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium bz-motion-spring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
                   active
                     ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
                     : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
@@ -654,7 +654,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             <Link
               key={k}
               href={buildHref({ range: k, page: '1' })}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium bz-motion-spring ${
                 rangeKey === k
                   ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
                   : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
@@ -692,7 +692,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             tablo satırlarında + "Geri al" buton. */}
         <Link
           href={buildHref({ showArchived: showArchived ? '' : '1', page: '1' })}
-          className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+          className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium bz-motion-spring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
             showArchived
               ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
               : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
