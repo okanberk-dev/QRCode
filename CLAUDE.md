@@ -7107,3 +7107,80 @@ Kullanıcı raporu: "anasayfa hala tasarım ile birebir aynı değil lütfen tas
 **Backlog güncel** (Bu PR sonrası):
 - 🟡 Mobile KPI label içerik tasarım birebir (BEKLEYEN/YENİ/YANIT/NPS) — opsiyonel cosmetic, owner KPI semantic §38.27 intact
 - (diğer §38.B kalemleri intact)
+
+### 38.44 2026-05-05 — Dashboard masaüstü 2-col grid layout (NABIZ+PendingTasks + KANAL+SIK+ActivityFeed)
+
+Kullanıcı raporu: "aşağıda da masaüstü dashboard jsx kodları var sen de tasarım dosyalarıyla da karşılaştır ve yap" — `.design-owner-2026/project/page-dashboard.jsx` `DashboardPage` JSX paylaştı.
+
+**Tasarım masaüstü layout** (2 yerde 1.55fr/1fr 2-col grid):
+
+```
+KPI 4-card (full-width)
+├── 2-col grid (1.55fr / 1fr)
+│   ├── NABIZ chart (sol, 1.55fr)
+│   └── PendingTasks (sağ, 1fr)
+└── 2-col grid (1.55fr / 1fr)
+    ├── sol stack (KANAL DAĞILIMI + SIK BAHSEDİLEN)
+    └── ActivityFeed (sağ, 1fr)
+```
+
+**Mevcut layout** (post §38.43): tek sütun (full-width), section'lar dikey sıralı.
+
+**Drift fix** (3 yapısal değişiklik):
+
+1. **PendingTasks position değişti**:
+   - Eski: KPI öncesi standalone section (line 1066-1076)
+   - Yeni: KPI sonrası NABIZ chart ile yan yana 2-col grid sağ kolonu
+   - Mobile (sm:hidden NABIZ) → PendingTasks tek görünür (grid 1-col)
+
+2. **2-col grid wrapper #1: NABIZ + PendingTasks** (line 1141-1224):
+   ```tsx
+   <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_minmax(0,1fr)] gap-3">
+     <NABIZ section className="hidden sm:block" />
+     <PendingTasks />
+   </div>
+   ```
+   - Mobile (<sm): NABIZ gizli, PendingTasks tek
+   - Tablet (sm-lg): NABIZ + PendingTasks alt alta (1-col)
+   - Desktop (lg+): yan yana 1.55fr/1fr
+
+3. **2-col grid wrapper #2: KANAL+SIK+ActivityFeed** (line 1227-1361):
+   ```tsx
+   <div className="grid grid-cols-1 lg:grid-cols-[1.55fr_minmax(0,1fr)] gap-3">
+     <div className="space-y-3">
+       <KANAL DAĞILIMI section />
+       <SIK BAHSEDİLEN section className="hidden sm:block" />
+     </div>
+     <ActivityFeed />
+   </div>
+   ```
+   - Mobile (<sm): SIK BAHSEDİLEN gizli, KANAL + ActivityFeed alt alta
+   - Tablet (sm-lg): tüm 3 section alt alta (sol stack 1-col)
+   - Desktop (lg+): sol stack (KANAL+SIK) + ActivityFeed yan yana
+
+**Mobile parity intact** (§38.43): 4 desktop-only section (ActivationChecklist + QuickActions + NABIZ + SIK BAHSEDİLEN) hidden sm:block korunur. Mobile'da: PageHeader + Hero + AI banner + PendingTasks + KPI + KANAL + ActivityFeed (7 section, tasarım MobileDashboard birebir).
+
+**Yapma**:
+- 2-col grid breakpoint'i `md:` veya `sm:` yapma — `lg:` (1024+) doğru çünkü sm-md (640-1023) tablet'te NABIZ chart + PendingTasks yan yana sıkışık olur (yatay scroll riski). 2-col tablet altında 1-col fallback uygun.
+- PendingTasks'ı KPI öncesi konuma geri taşımak — tasarım net (KPI sonrası NABIZ ile yan yana). Mobile'da tek başına görünür çünkü NABIZ gizli (§38.43).
+- KANAL DAĞILIMI'nı sol stack'tan çıkarıp ActivityFeed sağ tarafa duplicate render etmek — sol stack içinde KANAL + SIK BAHSEDİLEN ardışık (tasarım line 268-307 birebir), tek source-of-truth.
+- 2-col grid yerine `lg:flex lg:flex-row` kullanmak — grid `1.55fr/1fr` ratio asymmetric layout için daha temiz, flex `flex-[1.55] flex-[1]` daha verbose.
+- Mobile responsive break'leri tasarımdan farklı yapmak — kullanıcı talebi "tasarım birebir", lg+ desktop layout net.
+
+**Yap**:
+- Yeni dashboard section eklerken 2-col grid'e fit etmesi gerekiyorsa wrapper içine al; yoksa standalone full-width section.
+- Sol stack içinde yeni section eklenecekse `<div className="space-y-3">` parent'ına child olarak ekle (KANAL + SIK BAHSEDİLEN yanında 3. section).
+- Mobile section sırası tasarım MobileDashboard'a uygun kalmalı (§38.43): Hero → AI → PendingTasks → KPI → KANAL → ActivityFeed.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint src/app/[locale]/dashboard/page.tsx` 5 baseline warning (§38.27 transaction compute orphans, tolerated)
+- `npm test` 143/143 pass
+- Manuel desktop (lg+ ≥1024px): NABIZ chart sol (1.55fr) + PendingTasks sağ (1fr); KANAL+SIK BAHSEDİLEN sol stack + ActivityFeed sağ
+- Manuel tablet (sm-lg 640-1023px): tüm section'lar alt alta (1-col); sol stack ve sağ ActivityFeed dikey sıralı
+- Manuel mobile (<sm 640px): tasarım MobileDashboard 7 section sırası intact (§38.43)
+
+**Backlog güncel** (Bu PR sonrası):
+- 🟡 Topic breakdown sentiment (SIK BAHSEDİLEN tasarımdaki pos/neu/neg multi-color stacked bar) — extractThemes helper sentiment field genişletme gerek (backend)
+- 🟡 PageHeader dynamic title "Bugün N yorum yanıt bekliyor" + sub "Restoran · gün, tarih · Son güncelleme N dk önce" — mevcut greeting/subtitle parity audit gerek
+- (diğer §38.B kalemleri intact)
