@@ -171,7 +171,7 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
           onClick={downloadPng}
           aria-label={isTr ? "PNG indir" : "Download PNG"}
           title={isTr ? "PNG indir" : "Download PNG"}
-          className="bz-btn-icon flex h-8 w-full items-center justify-center"
+          className="bz-btn-icon flex h-11 sm:h-9 w-full items-center justify-center"
         >
           <Download size={14} />
         </button>
@@ -180,7 +180,7 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
           onClick={copy}
           aria-label={isTr ? "URL'yi kopyala" : "Copy URL"}
           title={isTr ? "URL'yi kopyala" : "Copy URL"}
-          className="bz-btn-icon flex h-8 w-full items-center justify-center"
+          className="bz-btn-icon flex h-11 sm:h-9 w-full items-center justify-center"
         >
           {copied ? <Check size={14} className="text-[#A8D62E]" /> : <Copy size={14} />}
         </button>
@@ -190,7 +190,7 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
           rel="noopener noreferrer"
           aria-label={isTr ? "Hedef sayfayı aç" : "Open target page"}
           title={isTr ? "Hedef sayfayı aç" : "Open target page"}
-          className="bz-btn-icon flex h-8 w-full items-center justify-center"
+          className="bz-btn-icon flex h-11 sm:h-9 w-full items-center justify-center"
         >
           <Eye size={14} />
         </a>
@@ -200,7 +200,7 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
             onClick={onDelete}
             aria-label={isTr ? "QR'ı sil" : "Delete QR"}
             title={isTr ? "Sil" : "Delete"}
-            className="bz-btn-icon flex h-8 w-full items-center justify-center"
+            className="bz-btn-icon flex h-11 sm:h-9 w-full items-center justify-center"
             style={{ color: "#DC2626" }}
           >
             <Trash2 size={14} />

@@ -167,7 +167,7 @@ export function Modal({
               <button
                 type="button"
                 aria-label="Close"
-                className="bz-btn-icon shrink-0"
+                className="bz-btn-icon-lg shrink-0"
                 onClick={onClose}
               >
                 <X size={16} />

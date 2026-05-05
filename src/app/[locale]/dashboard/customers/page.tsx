@@ -522,8 +522,10 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
 
       {/* §38.36 + §38.47 — 5-stat KPI grid (TOPLAM / VIP / ORT. LTV / GERİ DÖNÜŞ
           / RİSK ALTINDA). Tasarım: .design-owner-2026/page-customers.jsx:54-67.
-          Mobile 2-col → 5 KPI 2x3 layout (3. row tek tile, intentional sade). */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+          §38.74 — Tablet portrait cascade: mobile 2-col → sm:3 → md:4 → lg:5
+          (CLAUDE.md §25.5 md: ara kademe). 768-1023px iPad'de 4-col real-estate
+          kullanılır (önceki 2-col wasted space). */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
         <StatCard
           label={isTr ? 'Toplam misafir' : 'Total guests'}
           value={totalCustomers.toLocaleString(intLocale)}
@@ -932,23 +934,23 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                     <SegmentChip segment={r.segment} locale={locale} size="sm" />
                     <SentimentBadge sentiment={r.sentiment} locale={locale} />
                   </div>
-                  <div className="flex flex-col gap-1 text-[12px]">
+                  <div className="flex flex-col gap-1 text-[12px] min-w-0">
                     {r.email && (
                       <a
                         href={`mailto:${r.email}`}
-                        className="inline-flex items-center gap-1.5 text-[#0A0A0A]"
+                        className="flex items-center gap-1.5 text-[#0A0A0A] min-w-0"
                       >
-                        <Mail size={11} strokeWidth={2} />
-                        <span className="truncate">{r.email}</span>
+                        <Mail size={11} strokeWidth={2} className="shrink-0" />
+                        <span className="truncate min-w-0 flex-1">{r.email}</span>
                       </a>
                     )}
                     {r.phone && (
                       <a
                         href={`tel:${r.phone}`}
-                        className="inline-flex items-center gap-1.5 text-[#525252]"
+                        className="flex items-center gap-1.5 text-[#525252] min-w-0"
                       >
-                        <Phone size={11} strokeWidth={2} />
-                        <span>{r.phone}</span>
+                        <Phone size={11} strokeWidth={2} className="shrink-0" />
+                        <span className="truncate min-w-0 flex-1">{r.phone}</span>
                       </a>
                     )}
                   </div>
@@ -1031,7 +1033,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                           key={p}
                           href={buildHref({ page: String(p) })}
                           aria-current={p === page ? 'page' : undefined}
-                          className={`min-w-[28px] h-7 inline-flex items-center justify-center rounded-md px-2 text-[12px] font-medium tabular-nums transition-colors ${
+                          // §38.74 — Mobile WCAG 2.5.5 (44x44 touch target).
+                          // Mobile h-11 w-11 (44px); sm:+ h-8 (32px) compact.
+                          className={`min-w-[44px] h-11 sm:min-w-[32px] sm:h-8 inline-flex items-center justify-center rounded-md px-2 text-[12px] font-medium tabular-nums transition-colors ${
                             p === page
                               ? 'bg-[#0A0A0A] text-white'
                               : 'text-[#525252] hover:bg-[#F5F5F5]'

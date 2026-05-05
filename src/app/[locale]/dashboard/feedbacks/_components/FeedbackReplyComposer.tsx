@@ -251,6 +251,14 @@ export function FeedbackReplyComposer({
             el.style.height = `${Math.min(el.scrollHeight, cap)}px`;
           }}
           placeholder={isTr ? `Merhaba ${customerFirst},` : `Hi ${customerFirst},`}
+          // §38.74 — Mobile keyboard hints (CLAUDE.md §25.5 paterni reuse).
+          // inputMode="text" Safari soft-keyboard layout düzgün; enterKeyHint
+          // "send" iOS Done butonunu Gönder olarak gösterir (Cmd+Enter shortcut
+          // line 234 desktop'ta, mobile için soft keyboard hint).
+          inputMode="text"
+          enterKeyHint="send"
+          autoCorrect="on"
+          spellCheck={true}
           className="mt-2.5 w-full min-h-[120px] resize-none bg-transparent text-[16px] sm:text-[13px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none focus:placeholder:text-[#525252] transition-[height] duration-150 overflow-y-auto"
           maxLength={5000}
         />

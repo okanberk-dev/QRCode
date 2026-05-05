@@ -777,6 +777,21 @@ input::-webkit-inner-spin-button {
 .bz-btn-icon:hover { background: #F2F2F2; color: #0A0A0A; }
 .bz-btn-icon:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.6); color: #0A0A0A; }
 
+/* §38.74 — Mobile-kritik close button variant. WCAG 2.5.5 (44x44px touch
+   target) modal/drawer kapatma butonları için. Hover+focus ile bz-btn-icon
+   parity; sadece boyut farklı. Sidebar/topbar/list row chevron'larında
+   kullanma — Pulse compact density korunur (mevcut bz-btn-icon 32x32 14+
+   callsite intact). */
+.bz-btn-icon-lg {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 10px;
+  background: transparent; color: #525252;
+  border: 1px solid transparent; cursor: pointer; transition: background-color 120ms, color 120ms, box-shadow 120ms;
+  outline: none;
+}
+.bz-btn-icon-lg:hover { background: #F2F2F2; color: #0A0A0A; }
+.bz-btn-icon-lg:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.6); color: #0A0A0A; }
+
 /* Small variant — bz-btn-primary/lime/ghost ile birlikte kullanılır.
    tokens.css line 127 birebir port. */
 .bz-btn-sm { font-size: 12px; padding: 7px 12px; }

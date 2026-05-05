@@ -9928,3 +9928,77 @@ Aşamalı refinement Stage 3: "owner panel menü yönetimi UX'i". 3 paralel Expl
 - Kalan riskler: Editor mega-component ~1700 satır intact (refactor scope dışı); server-side guard yapılmadı; diğer 9 throw new Error TR-only (minor)
 - **Sonraki aşama önerisi**: Stage 4 — owner panel mobile kapsamlı QA (CLAUDE.md §25 + §38.B mobile backlog: bottom nav, drawer, touch targets, viewport overflow). Veya Stage 5 admin paneli polish, ya da kullanıcı yeni odak talebi.
 
+### 38.74 2026-05-05 — Stage 4 owner panel mobile responsive QA (7-fix bundle)
+
+Aşamalı refinement Stage 4: "owner panel mobile kapsamlı QA". 3 paralel Explore agent + manuel verify (3 false positive elendi). 7 gerçek mobile drift kapatıldı (CLAUDE.md §25 + §38.65-§38.73 paterni reuse). Branch `chore/owner-mobile-responsive-qa`.
+
+**Out of scope** (kullanıcı talimatı): Admin paneli (Stage 5), büyük desktop redesign, backend/API mantığı, önceki aşamaların tasarım dilini bozacak değişiklikler.
+
+**7 fix bundle**:
+
+1. **`bz-btn-icon-lg` variant** (globals.css §38.74 sonrası `bz-btn-icon` 32x32 satırı) — WCAG 2.5.5 (44x44 touch target) modal/drawer kapatma butonları için. Mevcut `.bz-btn-icon` 32x32 14+ callsite (sidebar nav, NotificationBell, FeedbackList row chevron, vs) intact Pulse compact density. Yeni variant sadece **mobil-kritik** Modal `<Modal>` primitive close button (line 170) + `CustomerDetailDrawer` close button (line 287) için. AskUserQuestion sonrası seçildi (3 callsite Recommended).
+
+2. **Customers pagination touch target** (`page.tsx:1038`) — `min-w-[28px] h-7` (28x28) → mobile `min-w-[44px] h-11 sm:min-w-[32px] sm:h-8`. WCAG 2.5.5 mobile 44x44, sm:+ 32x32 compact (Pulse density). Owner mobile pagination 44px tıklanabilir.
+
+3. **Customers KPI grid cascade** (`page.tsx:528`) — `grid-cols-2 lg:grid-cols-5` → `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5`. Tablet portrait 768-1023px iPad'de 4-col real-estate kullanılır (önceki 2-col wasted space). CLAUDE.md §25.5 md: ara kademe paterni.
+
+4. **Customers mobile card email/phone truncate** (`page.tsx:937-955`) — `inline-flex` parent + `<span className="truncate">` çalışmıyordu (parent flex-grow yok). `flex items-center gap-1.5 min-w-0` parent + `<Mail/Phone className="shrink-0">` + `<span className="truncate min-w-0 flex-1">` 375px'de uzun email/phone overflow yapmaz, kart layout intact.
+
+5. **CustomerDetailDrawer width md: cascade** (drawer line 246) — `w-full sm:w-[480px]` → `w-full sm:w-[420px] md:w-[480px]`. 568-639px range (iPad mini, large Android phone) drawer 480/568=84.5% viewport critical density loss; sm:+ ara kademe 420px ile 73.9% rahat. md:+ 480px Pulse standard.
+
+6. **FeedbackReplyComposer textarea keyboard hints** (line 253-260) — `inputMode="text"` Safari soft-keyboard layout, `enterKeyHint="send"` iOS Done buton "Gönder", `autoCorrect="on"` + `spellCheck={true}` mobile reply UX. Cmd+Enter desktop shortcut intact (line 234).
+
+7. **QRCard buttons touch target** (4 callsite, line 174-203) — `bz-btn-icon flex h-8 w-full` → `h-11 sm:h-9 w-full` mobile 44px (WCAG safe), sm:+ 36px compact. 4 button (PNG download / Copy URL / Open / Delete) bulk swap.
+
+**Audit'te tespit edilen ama skip edilen 3 false positive**:
+- Feedbacks 3-col layout md: ara kademe (audit Agent #3 #1) — mevcut `lg:flex-row + xl:grid-cols-[300px_1fr_360px]` cascade kasıtlı; mobile/tablet stack OK, lg+:flex-row → xl+:grid 3-col. Stage 4 "büyük desktop redesign yapma" disipline uyumlu.
+- CustomersBulkBar mobile width (audit Agent #1 #2) — line 245-246 zaten `inset-x-4 sm:inset-x-auto` + `mx-auto max-w-[640px]` + `flex items-center gap-2 flex-wrap`. 375px viewport safe; flex-wrap button satır kırılımı doğru.
+- Settings input 16px font-size (audit Agent #2 #4) — `bz-input` globals.css mobile 16px iOS auto-zoom prevention zaten kurulu (CLAUDE.md §25.5). Doc-only.
+
+**Stage 4 disipline ile uyumlu skip'ler** (DEFER §38.B):
+- Feedbacks `?view=detail` mobile pattern (audit Agent #1 #1) — büyük UX refactor, ayrı Stage 4+ scope.
+- MenuLivePreview modal/bottom-sheet trigger — Stage 3 §38.73 inline hint card yeterli; modal trigger ayrı feature scope.
+- Server-side guard mega-component — Stage 3 §38.73 paterni intact (büyük refactor).
+
+**Verification**:
+- `npm run lint` ✓ 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx next build` ✓ Compiled successfully + 58/58 static page (Prisma stub DB warnings beklenen)
+- `npx tsc --noEmit` ✓ 0 errors in `src/` (4 pre-existing `.next/types` baseline §21.13)
+- `npm test` ✓ 182/182 pass, 22 suites
+- Sanity grep regression: 7 fix landed (bz-btn-icon-lg 2 callsite + 3 globals.css / pagination 44px / KPI cascade / drawer cascade / composer enterKeyHint / QRCard 4 button h-11 mobile / mobile email truncate)
+
+**Mobile breakpoint tablosu** (Stage 4 sonrası):
+
+| Sayfa | 375px (iPhone SE) | 430px (iPhone Pro Max) | 768px (iPad portrait) | 1024px (laptop) | 1440px (desktop) |
+|---|---|---|---|---|---|
+| Dashboard | hero card sm:hidden + KPI 2x2 | KPI 2x2 | KPI 2x2 | KPI 4-col | KPI 4-col + KANAL 4-col |
+| Yorumlar | flex-col stack | stack | stack | flex-row 2-pane | 3-col grid |
+| Müşteriler | 2-col KPI + card list + 44px pagination | 2-col KPI | 4-col KPI | 5-col KPI + 6-col tablo | 5-col KPI + tablo |
+| Analitik | 5-col KPI 2-col stack + heatmap scroll | 2-col KPI | 3-col KPI | 5-col KPI | 5-col KPI |
+| QR | KPI 2-col + form/preview stack + 44px buttons | 2-col + h-11 buttons | 2-col + h-9 sm | 4-col KPI + 3-col history | 4-col + 3-col |
+| Hesabım | SettingsLayout compactNav + rightRail bottom | compactNav | nav top + content | 220px nav + 1fr | 220px + 1fr + 320px rail |
+| Customer drawer | full-screen | full-screen | sm:420px | md:480px | md:480px |
+
+**Yapma**:
+- `bz-btn-icon` mobile-first responsive yapma — 14+ callsite cascade Pulse compact density bozar (sidebar nav 44px row aşırı yükselir).
+- Feedbacks `lg:flex-row + xl:grid` cascade'ine md: ara kademe ekleme — kasıtlı mobile/tablet stack pattern, ek breakpoint UX karışıklığı.
+- CustomersBulkBar `inset-x-4 + flex-wrap` pattern'ini değiştirme — 375px safe.
+- QRCard `h-11 sm:h-9` cascade'ini `h-11` constant yapma — desktop compact density bozar.
+- Composer textarea `enterKeyHint="send"` yerine `"done"` — iOS keyboard "send" semantik aksiyon match.
+- Drawer 420px → 480px direkt sm:480px geri çevirme — 568-639px range 84.5% viewport critical density.
+
+**Yap**:
+- Yeni mobile-kritik close button eklenirken `bz-btn-icon-lg` variant reuse (Pulse compact intact).
+- Yeni table → mobile card pattern eklerken email/phone truncate için `flex parent + min-w-0 flex-1 truncate` paterni reuse (CLAUDE.md §38.74 paterni).
+- Yeni KPI grid eklerken `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5` cascade reuse (tablet portrait optimize).
+- Yeni form textarea/input mobile için `inputMode + enterKeyHint + autoCorrect + spellCheck` quad reuse.
+
+**Stage 4 closure** (Tarih 2026-05-05):
+- Branch `chore/owner-mobile-responsive-qa`
+- PR + merge için kullanıcı manuel müdahale (GitHub MCP disconnected bu session'da)
+- İncelenen dosyalar: 6 (globals.css + Modal.tsx + CustomerDetailDrawer + customers/page + composer + QRCard)
+- Yapılan değişiklikler: 7 fix (1 yeni CSS variant + 6 callsite swap)
+- Kontroller: lint 0 err / build 58 page / tsc src 0 err / test 182/182 / sanity grep clean
+- Kalan riskler: Feedbacks `?view=detail` mobile pattern büyük UX refactor (DEFER); MenuLivePreview modal trigger gelecek scope; server-side guard mega-component (Stage 3 §38.73 intact)
+- **Sonraki aşama önerisi**: Stage 5 — admin paneli polish (Apple-premium + UX + mobile responsive parity Stage 1-4 paterni reuse). Veya kullanıcı yeni odak talebi.
+
