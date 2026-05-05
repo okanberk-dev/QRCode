@@ -446,6 +446,15 @@ model Feedback {
   serviceRating    Int?    @map("service_rating")
   atmosphereRating Int?    @map("atmosphere_rating")
 
+  // §38.56 — Yorumlar Inbox tab kategorileri (Okunmamış / Beklemede).
+  // isRead default false: yeni feedback owner inbox'ta açana kadar
+  // okunmamış sayılır. Mark-as-read explicit owner aksiyonu gerektirir.
+  // isPending default false: owner manuel "Beklemede" işaretler (örn.
+  // ek bilgi bekleniyor, müşteriye geri dönülecek) — Yanıtlandı/değil
+  // dikotomisi ötesi state.
+  isRead    Boolean @default(false) @map("is_read")
+  isPending Boolean @default(false) @map("is_pending")
+
   createdAt DateTime @default(now()) @map("created_at")
 
   restaurantId String?     @map("restaurant_id")
