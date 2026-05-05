@@ -8481,3 +8481,97 @@ Aşağıdaki listeyi cross-check için kullan:
 - [ ] PlatformChip yelp + foursquare brand color
 - [ ] PROVIDER_DOMAINS + PROVIDER_LABELS + PROVIDER_MAP + PATH_RULES
   yelp + foursquare entry (§38.52)
+
+### 38.58 2026-05-05 — `a/` bundle followup audit + 4 yüksek-değer drift kapanışı
+
+PR #467 (§38.55-57 mega) merge sonrası kullanıcı yeni handoff `/Users/okanberkmanavoglu/Downloads/a/` bundle ile cross-check istedi. 3 paralel Explore agent + manuel doğrulama (cwd kayması nedeniyle agent çıktıları çoğunlukla yüzeysel — `import var` ile `render var` karıştırıyor; manuel `grep + Read` ile gerçek drift listesi netleşti).
+
+**Audit sonucu**: 8 surface'in tümü %88-95 parity. 4 yüksek-değer drift bu PR'da kapatıldı; geri kalan 7 drift backlog (DEFER kabul kararları + büyük scope'lar).
+
+**4 kritik karar (kullanıcı AskUserQuestion onayı, hepsi Recommended)**:
+1. ✅ Yorumlar "Toplu yanıtla" — Mevcut `/api/feedback/bulk` endpoint extension `bulk_ai_reply` action
+2. ✅ Dashboard sentiment 3-segment — `extractThemes` helper'a neu hesabı ekle (pos/neu/neg)
+3. ✅ Sidebar 4-grup intact + Faturalama eklenir (AYARLAR'a `?section=billing` deeplink)
+4. ✅ Customers İçe aktar + Misafir ekle — DEFER backlog (CLAUDE.md §38.16 + §38.48 — yeni Customer schema gerek)
+
+**Schema migration: YOK**.
+
+**Phase A — `extractThemes` 3-segment sentiment** (`src/lib/analytics-themes.ts`):
+- `ThemeItem` interface: `+ sentimentNeutralPct?: number, sentimentNegativePct?: number` opsiyonel field'lar
+- System prompt update (TR + EN): model'e 3 yüzde sorulur, **toplam 100 olmalı** (drift'lerde son alan complement)
+- `parseLLMJson` validation: pos var ise neu (default 0) + neg (complement) clamp; toplam 100'e normalize
+- `CACHE_KEY_VERSION` `'v2' → 'v3'` bump (eski v2 cache'lerde sentiment alanları yok → invalidate)
+- Backward-compat: model 3 alan döndürmezse `pos` set'liyse 2-segment gibi davranır (neg = 100 - pos heuristic; neu undefined)
+
+**Phase B — Dashboard SIK BAHSEDİLEN render 3-segment** (`src/app/[locale]/dashboard/page.tsx:1277-1336`):
+- `hasSentiment` check (typeof t.sentimentPositivePct === 'number')
+- 3-segment stacked bar: lime `#16A34A` (pos) + n400 `#A3A3A3` (neu) + red `#DC2626` (neg)
+- Footer 3-row counter: `+pos% pozitif · neu% nötr · -neg% negatif`
+- `aria-label`: 3 değer locale-aware
+
+**Phase C — Analytics KONU & DUYGU 3-segment** (`src/app/[locale]/dashboard/analytics/page.tsx:876-924`):
+- §38.50 mevcut tile color (≥80 lime / ≥70 amber / <70 red) korunur (pos% göstergesi)
+- Progress bar 2-segment → 3-segment (lime + n400 + red)
+- Counter row 3-row (pos/neu/neg)
+
+**Phase D — Yorumlar Toplu yanıtla** (`src/app/api/feedback/bulk/route.ts` + `feedbacks/page.tsx`):
+- Body schema `action` enum genişletildi: `+ 'bulk_ai_reply'`
+- Body opsiyonel `tone?: 'warm'|'apologetic'|'formal'`, `locale?: 'tr'|'en'` field'ları
+- **Action-bazlı role guard**:
+  - `bulk_ai_reply` → owner + manager + superadmin (owner kendi feedback'lerine bulk AI draft, auto-send YOK)
+  - `flag/unflag/assign` → superadmin / manager only (mevcut §11.12 davranışı korunur)
+- IDOR — scoped restaurantId whitelist (mevcut). bulk_ai_reply için select genişletildi (rating + comment + name + platform + restaurant context).
+- **Pulse AI master gate**: `Restaurant.pulseAiEnabled !== true` ise feedback skip (`drafts[].source = 'skipped'`)
+- **AI Quota Guard layered** (CLAUDE.md §15.1 paterni reuse): per-id sıralı `checkLayeredAiQuota(suggest-reply)` user/ws/global. Quota dolarsa template fallback (UI yine draft görür).
+- Per-id `generateReplyDraft` helper reuse (suggest-reply route paterni); `FeedbackAiDraft` upsert (mevcut tablo, generatedAt güncellenir)
+- Response: `{ processed, skipped, action: 'bulk_ai_reply', drafts: [{feedbackId, source: 'openai'|'template'|'template-fallback'|'skipped'}] }`
+- UI (`feedbacks/page.tsx`):
+  - `bulkBusy` + `bulkNotice` state
+  - `onBulkAiReply` callback — aktif filtered list'in ilk 50 yanıtsız yorumu (`!isReplied`) için POST
+  - PageHeader actions'a "Toplu yanıtla" button (Sparkles icon + count badge + lime primary). Disabled if `bulkEligibleCount === 0` veya `bulkBusy`.
+  - Optimistic state: target id'lere `hasPendingAiDraft: true` set → FeedbackList'te PULSE AI badge'i hemen görünür
+  - Floating notice (`fixed bottom-4 left-1/2 -translate-x-1/2 z-50`): success graphite + lime accent / error red palette
+  - 5s/8s auto-dismiss (CLAUDE.md §38.15 dwell timing)
+
+**Phase E — Sidebar Faturalama nav item** (`src/components/dashboard/UserDashboardShell.tsx`):
+- AYARLAR grubuna yeni child: `{ href: '/dashboard/account?section=billing', icon: CreditCard, label: 'Faturalama'/'Billing' }`
+- `useSearchParams` hook eklendi
+- Yeni helper `matchHref(href)` — query string taşıyan href'ler için search param'ı tüketir
+- Yeni helper `matchAccountBase(href)` — Account base item'ı `section=billing` aktifken active **OLMASIN** (Faturalama o anda active)
+- Child render'da `hasQuery ? matchHref(child.href) : isAccountBase ? matchAccountBase(child.href) : default` 3-katman conditional
+- CommandPalette — `Faturalama` ayrı entry (`href: /dashboard/account?section=billing`, keywords: fatura/billing/invoice/plan/ödeme/abonelik). Account entry'sinden `fatura/billing` keyword'leri çıkarıldı (duplicate önleme).
+
+**Yapma**:
+- Sentiment 3-segment'da `neu` veya `neg` field'ları zorunlu yapma — `pos` set'liyse fallback heuristic kullanılır (backward-compat eski v2 cache + drift modeli için).
+- Mobile bottom nav 4 primary tab'a Faturalama eklemek — desktop sidebar deeplink intent (tek-tık fatura), mobile zaten "More" sheet'te Account'a erişiyor; nav crowding önleme.
+- bulk_ai_reply'a `auto_send: true` opsiyonu eklemek — auto-send yapılmaz, KVKK + UX güvenliği gereği owner manuel onay (her draft FeedbackAiDraft'a yazılır + composer'da görünür).
+- bulk_ai_reply için per-row checkbox UX — MVP filter-aware (aktif tab + first 50 yanıtsız). Per-row checkbox tasarımda var ama scope creep — backlog.
+- `extractThemes` cache TTL'i 1h'dan kısa yapma — 3-segment çağrı maliyeti aynı (pos+neu+neg JSON output gpt-4o-mini için marginal token).
+- Faturalama sidebar item için yeni `/dashboard/billing` route açmak — Account içinde billing subtab mevcut (`?section=billing` SettingsLayout URL state). Yeni route Account refactor gerektirir, scope dışı.
+
+**Yap**:
+- Yeni AI helper output şekli genişlettiğinde `CACHE_KEY_VERSION` bump et (eski cache invalidate). v2 → v3 bu PR'da uygulandı.
+- Yeni bulk action eklerken Body schema enum + role guard (action-bazlı) + select branch + drafts[] response + audit log (assign/flag pattern reuse).
+- Yeni sidebar nav item query string deeplink ile geliyorsa: `useSearchParams` + `matchHref` helper reuse + parent base item için `matchAccountBase`-style exclusion.
+- 3-segment stacked bar pattern başka surface'ta gerekirse aynı 3-color (lime + n400 + red) + 3-row counter footer.
+
+**Test + verification**:
+- Sandbox `node_modules` yok; CI workflow (`.github/workflows/ci.yml`) PR açıldığında `npm ci + npx prisma generate + npx tsc + npx eslint + npm test` koşar.
+- Manuel kod gözden geçirme: TypeScript narrowing güvenli (allowedRows cast + EnrichedRow type), helper'lar saf fonksiyon (matchHref + parseLLMJson).
+- 0 yeni dep eklendi.
+- Schema migration YOK.
+
+**Backlog güncel** (Bu PR sonrası):
+- 🟡 Yorumlar per-row checkbox UX (tasarım birebir multi-select; mevcut filter-aware MVP yeterli)
+- 🟡 Customers "İçe aktar" + "Misafir ekle" (yeni Customer schema gerek, kullanıcı SKIP §38.16)
+- 🟡 Sidebar 3-grup vs 4-grup (Menu+Restaurants production-only intentional drift)
+- 🟡 Customers KPI 4-stat tasarım birebir (§38.47'de bilinçli 5-stat — Risk altında ek)
+- 🟡 Customers tablo 9-col tasarım birebir (§38.47 8-col + Son konu/Kanal pragmatic)
+- 🟡 Platforms "Sipariş" + "Bildirim" kategorileri (Buaze yorum-odaklı 4-kategori intentional)
+- 🟡 Account 3-col layout (220/1fr/320) vs SettingsLayout (intent same, cosmetic)
+- ⚪ Account "Değişiklikleri kaydet" header buton (DEFER §38.51 dokümante)
+- ⚪ Profile photo upload + 2FA UI + Phone verified badge (DEFER §38.51)
+- ⚪ "Profili görüntüle" Google action (DEFER §38.57 — backend profileUrl exposed değil)
+- ⚪ Webhook UI tam CRUD (DEFER §38.57)
+- (CLAUDE.md §38.B master backlog kalemleri intact)
+

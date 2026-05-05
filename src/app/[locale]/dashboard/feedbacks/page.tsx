@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, Suspense, use } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Download, Filter, Inbox, Loader2 } from 'lucide-react';
+import { Download, Filter, Inbox, Loader2, Sparkles, X } from 'lucide-react';
 import { EmptyState, PageHeader } from '@/components/ui';
 // §38.56 — KpiStrip kaldırıldı (kullanıcı kararı, tasarım a/page-reviews.jsx
 // birebir — toolbar'da CSV/Filtre/Toplu yanıtla yeterli). Component dosyası
@@ -100,6 +100,15 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // Notification deep-link pulse one-shot
   const focusAppliedRef = useRef(false);
   const [pulsedId, setPulsedId] = useState<string | null>(null);
+
+  // §38.58 — Toplu yanıtla (bulk_ai_reply) state. Tasarım a/page-reviews.jsx:45
+  // topbar "Toplu yanıtla" CTA — aktif filtered list'in ilk 50 yorumu için
+  // /api/feedback/bulk endpoint'ine bulk_ai_reply action POST eder. Auto-send
+  // YOK; her draft FeedbackAiDraft'a yazılır, owner FeedbackList'te tek-tek
+  // onaylayıp gönderir (KVKK + UX güvenliği). Per-id checkbox UX gelecek
+  // scope (CLAUDE.md §38.58 backlog) — MVP filter-aware bulk yeterli.
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkNotice, setBulkNotice] = useState<{ msg: string; tone: 'success' | 'error' } | null>(null);
 
   // Stringify filter values for stable effect deps
   const { tab, days, rating, platform, hasReply, flagged } = filters.values;
@@ -605,6 +614,87 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     });
   };
 
+  // §38.58 — Bulk AI reply (Toplu yanıtla). Aktif filtered list'in ilk 50
+  // **yanıtsız** yorumu için /api/feedback/bulk endpoint'ine POST eder.
+  // Yanıtsız filtre: zaten yanıtlanmış olanlar için draft hazırlamak gereksiz.
+  // Auto-send YOK; her draft FeedbackAiDraft'a yazılır + FeedbackList'te
+  // PULSE AI badge görünür → owner her birini tek-tek onaylar.
+  const onBulkAiReply = async () => {
+    if (bulkBusy) return;
+    const targetIds = filteredList
+      .filter((f) => !f.isReplied)
+      .slice(0, 50)
+      .map((f) => f.id);
+    if (targetIds.length === 0) {
+      setBulkNotice({
+        msg: isTr ? 'Yanıt bekleyen yorum yok.' : 'No reviews awaiting reply.',
+        tone: 'error',
+      });
+      return;
+    }
+    setBulkBusy(true);
+    setBulkNotice(null);
+    try {
+      const res = await fetch('/api/feedback/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: targetIds,
+          action: 'bulk_ai_reply',
+          locale,
+        }),
+      });
+      if (!res.ok) {
+        setBulkNotice({
+          msg: isTr ? 'Toplu taslak hazırlanamadı.' : 'Could not prepare bulk drafts.',
+          tone: 'error',
+        });
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      const processed = typeof data?.processed === 'number' ? data.processed : 0;
+      const skipped = typeof data?.skipped === 'number' ? data.skipped : 0;
+      // FeedbackList'te PULSE AI badge'leri yansısın diye list state'i refresh
+      // et. Mevcut feedbacks array'inde hasPendingAiDraft = true olarak
+      // optimistic update; backend cache yansıması için kullanıcı sayfayı
+      // refresh ederse yine aynı (FeedbackAiDraft tablosu kalıcı).
+      setFeedbacks((list) =>
+        list.map((r) =>
+          targetIds.includes(r.id) && !r.isReplied
+            ? { ...r, hasPendingAiDraft: true }
+            : r,
+        ),
+      );
+      setBulkNotice({
+        msg: isTr
+          ? `${processed} taslak hazırlandı${skipped > 0 ? ` · ${skipped} atlandı` : ''}. Aşağıdaki listede her birini tek-tek onaylayabilirsin.`
+          : `${processed} drafts prepared${skipped > 0 ? ` · ${skipped} skipped` : ''}. Approve each one in the list below.`,
+        tone: 'success',
+      });
+    } catch {
+      setBulkNotice({
+        msg: isTr ? 'Bağlantı hatası. Tekrar dene.' : 'Network error. Try again.',
+        tone: 'error',
+      });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  // §38.58 — Bulk notice 5s auto-dismiss (success), 8s (error). CLAUDE.md
+  // §38.15 dwell timing kanonik: WCAG dwell ≥5.5s, error daha uzun.
+  useEffect(() => {
+    if (!bulkNotice) return;
+    const ttl = bulkNotice.tone === 'error' ? 8000 : 5000;
+    const t = setTimeout(() => setBulkNotice(null), ttl);
+    return () => clearTimeout(t);
+  }, [bulkNotice]);
+
+  const bulkEligibleCount = useMemo(
+    () => filteredList.filter((f) => !f.isReplied).slice(0, 50).length,
+    [filteredList],
+  );
+
   const activeFilterCount =
     (days !== 'all' ? 1 : 0) +
     (rating !== 'all' ? 1 : 0) +
@@ -649,6 +739,36 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               >
                 <Filter size={13} strokeWidth={2} />
                 {isTr ? 'Filtre' : 'Filter'}
+              </button>
+              {/* §38.58 — Toplu yanıtla (bulk_ai_reply). Tasarım a/page-reviews.jsx:45
+                  birebir; aktif filtered list'in ilk 50 yanıtsız yorumu için AI
+                  draft hazırlar (auto-send YOK, owner her birini onaylar). */}
+              <button
+                type="button"
+                onClick={onBulkAiReply}
+                disabled={bulkBusy || bulkEligibleCount === 0}
+                className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50"
+                title={
+                  bulkEligibleCount === 0
+                    ? isTr
+                      ? 'Yanıt bekleyen yorum yok'
+                      : 'No reviews awaiting reply'
+                    : isTr
+                      ? `${bulkEligibleCount} yorum için AI taslağı hazırla`
+                      : `Prepare AI drafts for ${bulkEligibleCount} reviews`
+                }
+              >
+                {bulkBusy ? (
+                  <Loader2 size={13} strokeWidth={2} className="animate-spin" />
+                ) : (
+                  <Sparkles size={13} strokeWidth={2} />
+                )}
+                {isTr ? 'Toplu yanıtla' : 'Bulk reply'}
+                {bulkEligibleCount > 0 && (
+                  <span className="ml-1 inline-flex items-center justify-center rounded bg-[#0A0A0A] px-1.5 text-[10px] font-mono text-[#C6F24E]">
+                    {bulkEligibleCount}
+                  </span>
+                )}
               </button>
             </div>
           }
@@ -782,6 +902,39 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         hasActiveFilter={activeFilterCount > 0}
         onResetFilters={onResetFilters}
       />
+
+      {/* §38.58 — Bulk notice (CLAUDE.md §23.3.1 floating toolbar paterni).
+          Success/error tone-based palette; 5s/8s auto-dismiss (§38.15 dwell). */}
+      {bulkNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed bottom-4 left-1/2 z-50 max-w-[560px] -translate-x-1/2 rounded-2xl border px-4 py-3 shadow-lg inset-x-4 sm:inset-x-auto ${
+            bulkNotice.tone === 'success'
+              ? 'border-[#A8D62E] bg-[#0A0A0A] text-white'
+              : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <Sparkles
+              size={14}
+              strokeWidth={2}
+              className={`mt-0.5 shrink-0 ${
+                bulkNotice.tone === 'success' ? 'text-[#C6F24E]' : 'text-[#DC2626]'
+              }`}
+            />
+            <p className="flex-1 text-[12.5px] leading-snug">{bulkNotice.msg}</p>
+            <button
+              type="button"
+              onClick={() => setBulkNotice(null)}
+              className="shrink-0 rounded-full p-1 hover:bg-white/10"
+              aria-label={isTr ? 'Bildirimi kapat' : 'Dismiss notice'}
+            >
+              <X size={12} strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

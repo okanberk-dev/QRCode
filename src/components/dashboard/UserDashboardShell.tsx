@@ -2,8 +2,8 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { BarChart3, BookOpen, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -107,6 +107,31 @@ function saveSidebarScroll(scrollTop: number) {
 export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, children }: UserDashboardShellProps) {
   void TOP_BAR_MAP;
   const pathname = usePathname();
+  // §38.58 — Faturalama nav item href'i `?section=billing` query taşır
+  // (Account içinde billing subtab'a deeplink). Active state hesabı search
+  // param'ı tüketir; aksi halde Account ve Faturalama her ikisi de active
+  // görünür (aynı pathname).
+  const searchParams = useSearchParams();
+  const matchHref = (href: string): boolean => {
+    if (!pathname) return false;
+    const [hrefPath, hrefQuery] = href.split('?');
+    if (!hrefQuery) {
+      return pathname === hrefPath || pathname.startsWith(`${hrefPath}/`);
+    }
+    if (pathname !== hrefPath) return false;
+    const expected = new URLSearchParams(hrefQuery);
+    for (const [key, value] of expected.entries()) {
+      if (searchParams.get(key) !== value) return false;
+    }
+    return true;
+  };
+  // Account base item için: query param'sız Account href'i match etsin AMA
+  // section=billing aktifken active OLMASIN (Faturalama o anda lime).
+  const matchAccountBase = (href: string): boolean => {
+    if (!pathname) return false;
+    if (!(pathname === href || pathname.startsWith(`${href}/`))) return false;
+    return searchParams.get('section') !== 'billing';
+  };
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -301,6 +326,15 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         // Unified Settings hub: Profile + Security + Notifications + Billing +
         // Team + Legal. Per-restaurant ayarlar /restaurants/[id]/settings'te.
         { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
+        // §38.58 — Faturalama nav item (tasarım a/shell.jsx:125 birebir).
+        // Account içinde billing subtab var; deeplink `?section=billing`
+        // ile aktiflik korunur. Tek-tık fatura erişimi (owner aylık ödeme
+        // sonrası fatura indirir, profilden geçmek redundant click).
+        {
+          href: `/${locale}/dashboard/account?section=billing`,
+          icon: CreditCard,
+          label: locale === 'tr' ? 'Faturalama' : 'Billing',
+        },
         // /guide sadece ilk 30 gün — onboarding sonrası gereksiz.
         ...(showGuide
           ? [{ href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide }]
@@ -537,8 +571,16 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                   <div className="mt-1 ml-5 space-y-0.5 border-l border-[#EDEDED] pl-3 pb-1">
                     {item.children.map((child) => {
                       const ChildIcon = child.icon;
-                      const isActive =
-                        pathname === child.href || pathname?.startsWith(`${child.href}/`);
+                      // §38.58 — Faturalama (Account#billing) deeplink ayrı
+                      // active state'e ihtiyaç duyar; Account base item'ı
+                      // section=billing aktifken kendisi active olmasın.
+                      const hasQuery = child.href.includes('?');
+                      const isAccountBase = child.href.endsWith('/dashboard/account');
+                      const isActive = hasQuery
+                        ? matchHref(child.href)
+                        : isAccountBase
+                          ? matchAccountBase(child.href)
+                          : pathname === child.href || pathname?.startsWith(`${child.href}/`);
                       return (
                         <Link
                           key={child.href}
@@ -989,7 +1031,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           { href: `/${locale}/dashboard/platforms`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
           { href: `/${locale}/dashboard/customers`, label: copy.customers, keywords: ['müşteri', 'customer', 'crm'] },
           { href: `/${locale}/dashboard/guide`, label: copy.guide, keywords: ['kılavuz', 'guide', 'help', 'yardım'] },
-          { href: `/${locale}/dashboard/account`, label: copy.account, keywords: ['ayar', 'settings', 'profil', 'profile', 'hesap', 'account', 'şifre', 'password', '2fa', 'güvenlik', 'security', 'fatura', 'billing', 'ekip', 'team', 'kvkk', 'legal', 'bildirim', 'notification'] },
+          { href: `/${locale}/dashboard/account`, label: copy.account, keywords: ['ayar', 'settings', 'profil', 'profile', 'hesap', 'account', 'şifre', 'password', '2fa', 'güvenlik', 'security', 'ekip', 'team', 'kvkk', 'legal', 'bildirim', 'notification'] },
+          // §38.58 — Faturalama ayrı palette entry'si (Account base'inden
+          // ayrılmış; tasarım a/shell.jsx:125 sidebar nav birebir).
+          { href: `/${locale}/dashboard/account?section=billing`, label: locale === 'tr' ? 'Faturalama' : 'Billing', keywords: ['fatura', 'billing', 'invoice', 'plan', 'ödeme', 'payment', 'abonelik', 'subscription'] },
         ]}
       />
     </div>

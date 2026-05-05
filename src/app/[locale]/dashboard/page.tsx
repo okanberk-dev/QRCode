@@ -1276,16 +1276,15 @@ async function renderDashboardPage({
           </header>
           <ul className="space-y-3.5">
             {dashboardThemes.themes.slice(0, 5).map((t) => {
-              // Phase 8c+ §38.27 — Stacked sentiment bar (tasarım kaynağı:
-              // .design-owner-2026/page-dashboard.jsx). sentimentPositivePct
-              // §38.20'de eklendi (opsiyonel); set'liyse 3-segment stacked
-              // (lime/gri/kırmızı), yoksa eski tek-renk fallback (graceful).
+              // §38.58 — 3-segment stacked sentiment bar (tasarım birebir
+              // a/page-dashboard.jsx:294-298 pos/**neu**/neg). extractThemes
+              // helper artık 3 yüzde döndürür (CACHE_KEY_VERSION 'v3'). Eski
+              // v2 cache entry'lerinde sentiment alanları yok → fallback
+              // tek-renk count bar (graceful).
               const hasSentiment = typeof t.sentimentPositivePct === 'number';
               const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
-              // Heuristic: pos%, neu = pos+neg complement içinde 1/3 (kalan
-              // 1/3 nötr varsayım); neg = 100 - pos - neu. Daha doğru tek
-              // pos% var (extractThemes neu/neg ayırmıyor); pratik: neg = 100 - pos.
-              const neg = hasSentiment ? 100 - pos : 0;
+              const neu = hasSentiment ? (t.sentimentNeutralPct ?? 0) : 0;
+              const neg = hasSentiment ? (t.sentimentNegativePct ?? Math.max(0, 100 - pos - neu)) : 0;
               return (
                 <li key={t.theme}>
                   <div className="mb-1.5 flex items-center justify-between gap-2 text-[13px]">
@@ -1301,18 +1300,22 @@ async function renderDashboardPage({
                         role="img"
                         aria-label={
                           isTr
-                            ? `${pos}% pozitif, ${neg}% negatif`
-                            : `${pos}% positive, ${neg}% negative`
+                            ? `${pos}% pozitif, ${neu}% nötr, ${neg}% negatif`
+                            : `${pos}% positive, ${neu}% neutral, ${neg}% negative`
                         }
                       >
                         <div className="h-full" style={{ width: `${pos}%`, background: '#16A34A' }} />
+                        <div className="h-full" style={{ width: `${neu}%`, background: '#A3A3A3' }} />
                         <div className="h-full" style={{ width: `${neg}%`, background: '#DC2626' }} />
                       </div>
-                      <div className="mt-1 flex justify-between bz-mono text-[10px]">
-                        <span className="text-[#16A34A]">
+                      <div className="mt-1 flex justify-between gap-3 bz-mono text-[10px]">
+                        <span className="text-[#16A34A] font-semibold">
                           +{pos}% {isTr ? 'pozitif' : 'positive'}
                         </span>
-                        <span className="text-[#DC2626]">
+                        <span className="text-[#737373]">
+                          {isTr ? 'nötr' : 'neutral'} {neu}%
+                        </span>
+                        <span className="text-[#DC2626] font-semibold">
                           -{neg}% {isTr ? 'negatif' : 'negative'}
                         </span>
                       </div>
