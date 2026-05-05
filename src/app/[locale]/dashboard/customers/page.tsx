@@ -477,6 +477,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             : 'Customers who left a review — reachable via email or phone.'
         }
         actions={
+          /* §38.64 — Manuel "Müşteri ekle" + CSV "İçe aktar" kullanıcı kararıyla
+             iptal (CLAUDE.md §38.16 + §38.48 + §38.64 disipline). Tasarımdaki
+             3-button trio'dan sadece "Dışa aktar" görünür kalır (export-only).
+             Yeniden eklemek için: kullanıcı açık talep + Customer ana modeli
+             yaklaşımı (CLAUDE.md §34.4 silinmiş feature paterni). */
           rows.length > 0 ? (
             <a
               href={(() => {

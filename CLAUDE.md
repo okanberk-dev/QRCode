@@ -9131,3 +9131,56 @@ Tasarım kaynağı `.design-owner-2026/page-mobile-v2.jsx` MobileDrawer (line 3-
 - Yeni mobile drawer ihtiyacı için `<UserDashboardShell>` mobile drawer wrapper'ını genişlet — admin paneli paterniyle aynı a11y + safe-area + bg pattern reuse.
 - Yeni vertical Tabs sticky settings sayfası eklenirse `bz-card` wrapper otomatik geçerli (`SettingsLayout` rendered).
 
+### 38.64 2026-05-05 — Customer CRUD pragmatik denemesi iptal + PendingTasks locale prefix fix
+
+Kullanıcı raporu (2-aşamalı talep):
+1. *"Müşteriler sayfasını CRUD işlemlerini de tasarımdaki gibi yap"* — AskUserQuestion ile 3 seçenek sundum, kullanıcı **"Pragmatik feedback-insert form"** seçti (Müşteri ekle modal + CSV import + POST endpoint'ler).
+2. Implementation %50 ilerledikten sonra kullanıcı kararını değiştirdi: *"manuel müşteri ekleme olmasın sadece sistemden csv indirilebilsin"*.
+
+Sonuç: Customer CRUD pragmatik feedback-insert paterni **iptal**. Tasarımdaki 3-button trio'dan (`Müşteri ekle / İçe aktar / Dışa aktar`) **kalıcı olarak** sadece "Dışa aktar" görünür kalır.
+
+**Yapılan rollback** (3 dosya):
+- `src/app/[locale]/dashboard/customers/_components/CustomerHeaderActions.tsx` — silindi (yeni client component, hiç merge olmamıştı)
+- `src/app/api/customers/add/route.ts` — silindi (yeni POST endpoint, IDOR + Zod + Feedback insert, hiç merge olmamıştı)
+- `src/app/[locale]/dashboard/customers/page.tsx` — orijinal `<a download>` `bz-btn-ghost` paterni restore edildi; `Download` icon import geri eklendi; `CustomerHeaderActions` import silindi
+
+**Korunan tek değişiklik — PendingTasks locale prefix fix**:
+- `src/lib/dashboard-tasks.ts` — `lp = isTr ? '/tr' : '/en'` constant; 3 task href'i `${lp}/dashboard/...` ile prefix'lendi.
+- Sebep: Dashboard `[locale]` Next.js segment route'u `/dashboard/feedbacks` (locale prefix-siz) link'lere 404 verirdi. Pre-existing UX bug, kullanıcı talebine bağlı değil — ayrı kapsam.
+- Tests intact (`tests/dashboard-tasks.test.ts` `/\/dashboard\/feedbacks/` regex prefix-agnostic substring match).
+
+**CLAUDE.md §38.16 + §38.48 + §38.64 cross-check kararı**:
+- §38.16 Phase 8c (Customers CRM tamamlama): "Müşteri ekle / İçe aktar — kullanıcı dışladı" backlog notu
+- §38.48 Wave 2 (Bulk Actions): "Müşteri ekle / İçe aktar (CSV) — kullanıcı dışladı" backlog notu
+- §38.64 (bu): pragmatik feedback-insert paterni de iptal — CLAUDE.md §34.4 "silinmiş feature paterni" disipline ile uyumlu, gelecek session aynı feature'ı yeniden inşa etmesin (kullanıcı açık talep gerekli)
+
+**Yapma**:
+- Manuel "Müşteri ekle" button'unu yeniden ekleme — kullanıcı 3 ayrı oturumda iptal etti (§38.16 + §38.48 + §38.64). Yeniden açılırsa: Customer ana modeli (yeni `Customer` schema) yaklaşımı tercih (Feedback-insert pragmatik paterni de elendi).
+- "İçe aktar" CSV import button'unu yeniden ekleme — aynı disipline.
+- Tasarımdaki 3-button trio (`Müşteri ekle / İçe aktar / Dışa aktar`) görünümü için fake/disabled placeholder button koyma — visual drift, kullanıcı kararı net.
+- `PendingTasks` href'lerini locale-prefix-siz hâline geri çevirme — `[locale]` segment route'u 404'e düşer.
+
+**Yap**:
+- Yeni dashboard navigation link'i eklerken `[locale]` prefix zorunlu: `${lp}/dashboard/...` paterni.
+- Tests'te href regex'leri prefix-agnostic substring match kullan (`/\/dashboard\/X/` formu — `lp` constant değişimine immune).
+- Customer-related yeni feature talebinde önce CLAUDE.md §38.16 + §38.48 + §38.64 cross-check; "iptal disipline" net.
+
+**Etkilenen dosyalar**:
+- `src/app/[locale]/dashboard/customers/_components/CustomerHeaderActions.tsx` (silindi)
+- `src/app/api/customers/add/route.ts` (silindi)
+- `src/app/[locale]/dashboard/customers/page.tsx` (Download import restore + PageHeader actions orijinal pattern)
+- `src/lib/dashboard-tasks.ts` (locale prefix fix korundu — 3 href)
+
+**Validation**:
+- `npx tsc --noEmit` 0 errors in `src/`
+- `npx eslint .` 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npm test` 182/182 pass
+- `npx next build` ✓ 58/58 static page (Prisma stub DB warnings beklenen)
+- Sanity grep: `CustomerHeaderActions` + `/api/customers/add` 0 callsite (silindi); 3 PendingTasks task href'inde `${lp}/dashboard/...` pattern intact
+
+**Backlog güncel** (§38.B master):
+- ✅ §38.64 Customer CRUD iptal + PendingTasks locale prefix fix kapatıldı
+- 🟡 Customer CRUD yeniden açılırsa: Customer ana modeli yaklaşımı (Wave 2-style schema migration), feedback-insert paterni elendi
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
+- 🛡️ Security follow-ups (§38.2)
+

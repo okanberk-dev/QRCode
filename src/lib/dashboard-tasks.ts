@@ -121,6 +121,11 @@ export function buildPendingTasks({
   const c = COPY[isTr ? 'tr' : 'en'];
   const now = new Date();
   const tasks: DashboardTask[] = [];
+  // §38.64 — Locale prefix href fix: dashboard `[locale]` segment route'ı
+  // gerektirdiğinden link'lerde TR/EN prefix zorunlu (önceden eksikti, root
+  // `/dashboard/...` 404 riski). ActivityFeed (§38.31) viewAllHref aynı
+  // paterni kullanır.
+  const lp = isTr ? '/tr' : '/en';
 
   // 1. reply task — yanıtlanmamış low-rating yorumlar (Acil)
   if (unrepliedFeedbacks.count > 0) {
@@ -133,7 +138,7 @@ export function buildPendingTasks({
       severity: 'high',
       title: c.replyTitle(unrepliedFeedbacks.count),
       meta: oldestRel ? c.replyMeta(oldestRel) : c.replyMetaNoTime,
-      href: '/dashboard/feedbacks?tab=unreplied',
+      href: `${lp}/dashboard/feedbacks?tab=unreplied`,
     });
   }
 
@@ -149,7 +154,7 @@ export function buildPendingTasks({
       severity: 'medium',
       title: c.platformTitle,
       meta: checkedRel ? c.platformMeta(checkedRel) : c.platformMetaNow,
-      href: '/dashboard/google-reviews',
+      href: `${lp}/dashboard/google-reviews`,
     });
   }
 
@@ -161,7 +166,7 @@ export function buildPendingTasks({
       severity: 'low',
       title: c.reminderTitle(churnedCustomers.count),
       meta: c.reminderMeta,
-      href: '/dashboard/customers?segment=loyal',
+      href: `${lp}/dashboard/customers?segment=loyal`,
     });
   }
 
