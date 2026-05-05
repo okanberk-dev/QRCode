@@ -206,6 +206,13 @@ model Restaurant {
   platformLinkChecks PlatformLinkCheck[]
   platformRedirects  PlatformRedirectEvent[]
   activationState    RestaurantActivationState?
+  // Phase 8c+ §38.48 Wave 2 — Customers bulk action overlays.
+  // Customers Feedback-derived dedupe paterni (CLAUDE.md §4.5) intact;
+  // bu mini-modeller LEFT JOIN ile customer list'e overlay eder.
+  customerArchives        CustomerArchive[]
+  customerSegmentOverrides CustomerSegmentOverride[]
+  customerEmailCampaigns  CustomerEmailCampaign[]
+  customerEmailLogs       CustomerEmailLog[]
 
   @@map("restaurants")
 }
@@ -1273,4 +1280,85 @@ model SubscriptionPlan {
 
   @@index([isActive, sortOrder])
   @@map("subscription_plans")
+}
+
+// Phase 8c+ §38.48 Wave 2 — Customer overlay mini-models.
+//
+// Buaze müşterileri Feedback-derived dedupe paterni (CLAUDE.md §4.5):
+// `(restaurantId, COALESCE(lower(email), phone))`. Yeni Customer ana modeli
+// AÇMIYORUZ — mevcut Feedback ile sync gerekmez. Onun yerine 3 mini-model
+// owner panel customer list'ine LEFT JOIN ile overlay eder:
+//   - CustomerArchive: soft-delete (list'ten gizle, geri alınabilir)
+//   - CustomerSegmentOverride: manuel segment ataması (derived'i replace)
+//   - CustomerEmailCampaign + CustomerEmailLog: bulk send audit + dedupe
+//
+// IDOR: tüm 4 model `restaurantId` taşır; cascade delete restoran silindiğinde.
+// Owner-scope `getScopedRestaurantIds` ile filter (CLAUDE.md §4).
+
+model CustomerArchive {
+  id           String   @id @default(cuid())
+  restaurantId String   @map("restaurant_id")
+  contactKey   String   @map("contact_key") // lower(email) || phone
+  archivedAt   DateTime @default(now()) @map("archived_at")
+  archivedById String?  @map("archived_by_id") // nullable: actor sometimes is admin
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, contactKey])
+  @@index([restaurantId, archivedAt])
+  @@map("customer_archives")
+}
+
+model CustomerSegmentOverride {
+  id            String   @id @default(cuid())
+  restaurantId  String   @map("restaurant_id")
+  contactKey    String   @map("contact_key")
+  manualSegment String   @map("manual_segment") // 'vip' | 'loyal' | 'new' | 'risk' | 'churned'
+  setById       String?  @map("set_by_id")
+  setAt         DateTime @default(now()) @map("set_at")
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([restaurantId, contactKey])
+  @@index([restaurantId, setAt])
+  @@map("customer_segment_overrides")
+}
+
+model CustomerEmailCampaign {
+  id             String    @id @default(cuid())
+  restaurantId   String    @map("restaurant_id")
+  subject        String
+  body           String    @db.Text
+  recipientCount Int       @default(0) @map("recipient_count")
+  sentCount      Int       @default(0) @map("sent_count")
+  failedCount    Int       @default(0) @map("failed_count")
+  status         String    @default("draft") // 'draft' | 'sending' | 'sent' | 'failed'
+  scheduledAt    DateTime? @map("scheduled_at")
+  sentAt         DateTime? @map("sent_at")
+  createdById    String?   @map("created_by_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  restaurant     Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  logs           CustomerEmailLog[]
+
+  @@index([restaurantId, createdAt])
+  @@index([restaurantId, status])
+  @@map("customer_email_campaigns")
+}
+
+model CustomerEmailLog {
+  id           String    @id @default(cuid())
+  campaignId   String    @map("campaign_id")
+  restaurantId String    @map("restaurant_id")
+  contactKey   String    @map("contact_key")
+  email        String
+  status       String    @default("pending") // 'pending' | 'sent' | 'failed' | 'unsubscribed'
+  errorMessage String?   @map("error_message") @db.Text
+  sentAt       DateTime? @map("sent_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  campaign     CustomerEmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant            @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, contactKey]) // dedupe per campaign
+  @@index([campaignId])
+  @@index([restaurantId, createdAt])
+  @@map("customer_email_logs")
 }

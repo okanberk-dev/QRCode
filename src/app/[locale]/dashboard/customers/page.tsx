@@ -26,6 +26,8 @@ import {
   deriveCustomerFields,
   computeLastChannel,
   computeLastTopic,
+  applyArchiveOverlay,
+  applySegmentOverride,
   type CustomerSegment,
   type CustomerSentiment,
 } from '@/lib/customers';
@@ -33,6 +35,7 @@ import { SegmentChip } from '@/components/customers/SegmentChip';
 import { SentimentBadge } from '@/components/customers/SentimentBadge';
 import { SentimentSparkbar } from '@/components/customers/SentimentSparkbar';
 import { CustomerDetailDrawer } from './_components/CustomerDetailDrawer';
+import CustomersBulkBar from './_components/CustomersBulkBar';
 
 // Phase 8 — Owner Customers CRM (CLAUDE.md §23.7 Phase 12.x).
 // Phase 8c (CLAUDE.md §38.16): segment + LTV + sentiment columns + segment
@@ -60,6 +63,8 @@ interface PageProps {
     restaurantId?: string;
     page?: string;
     segment?: string;
+    // §38.48 Wave 2 — archived müşterileri göster (varsayılan: gizli).
+    showArchived?: string;
   }>;
 }
 
@@ -108,6 +113,8 @@ interface EnrichedRow {
   // §38.47 — derived label'lar (UI render-time, locale-aware).
   last_topic: string;
   last_channel: string;
+  // §38.48 Wave 2 — archived state (UI muted styling + "Geri al" buton).
+  archived: boolean;
 }
 
 function parseRange(raw: string | undefined): { start: Date | null; key: RangeKey } {
@@ -191,6 +198,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     ? (segmentParamRaw as CustomerSegment)
     : null;
   const page = Math.max(1, Number.parseInt(sp.page || '1', 10) || 1);
+  // §38.48 Wave 2 — `?showArchived=1` toggle. Default: archived müşteriler
+  // listede gizli. Toggle on iken filter overlay bypass edilir.
+  const showArchived = sp.showArchived === '1' || sp.showArchived === 'true';
 
   // Where clause builder (Prisma raw SQL — admin /api/admin/customers paterni).
   const whereParts: Prisma.Sql[] = [
@@ -219,6 +229,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   let summaryRow: SummaryRow | undefined;
   let aggregates: AggregateRow[] = [];
   let restaurants: { id: string; name: string }[] = [];
+  // §38.48 Wave 2 — Archive overlay + segment override map'leri.
+  let archivedKeys = new Set<string>();
+  let segmentOverrides = new Map<string, CustomerSegment>();
   let errored = false;
 
   try {
@@ -226,7 +239,10 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     // segment/LTV/sentiment + filter + pagination. SQL'de segment hesaplaması
     // duplicate olmasın diye (helper drift önleme) bilinçli pattern (CLAUDE.md
     // §38.16). Buaze ölçeği için 5000 cap rahat.
-    const [summary, fetched, restaurantList] = await Promise.all([
+    // §38.48 — overlay query'leri Promise.all'a paralel eklendi (CLAUDE.md
+    // §14.1 connection_limit=1 disiplini için tek transaction yerine paralel
+    // küçük query'ler kabul edilebilir — overlay tabloları boş çoğu owner için).
+    const [summary, fetched, restaurantList, archives, overrides] = await Promise.all([
       prisma.$queryRaw<SummaryRow[]>(Prisma.sql`
         SELECT
           COUNT(DISTINCT CONCAT(f.restaurant_id, '|', COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')))) AS customers,
@@ -264,10 +280,34 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         select: { id: true, name: true },
         orderBy: { name: 'asc' },
       }),
+      // §38.48 — Archive overlay (showArchived ise filter hâlâ sorgulanır
+      // ama UI bypass eder; "geri al" butonu için archived state gerekir).
+      prisma.customerArchive.findMany({
+        where: { restaurantId: { in: scopedIds } },
+        select: { restaurantId: true, contactKey: true },
+      }),
+      // §38.48 — Segment override (manualSegment varsa derived'i replace eder).
+      prisma.customerSegmentOverride.findMany({
+        where: { restaurantId: { in: scopedIds } },
+        select: { restaurantId: true, contactKey: true, manualSegment: true },
+      }),
     ]);
     summaryRow = summary[0];
     aggregates = fetched;
     restaurants = restaurantList;
+    archivedKeys = new Set(archives.map((a) => `${a.restaurantId}|${a.contactKey}`));
+    segmentOverrides = new Map(
+      overrides
+        .filter((o) =>
+          (['vip', 'loyal', 'new', 'risk', 'churned'] as CustomerSegment[]).includes(
+            o.manualSegment as CustomerSegment,
+          ),
+        )
+        .map((o) => [
+          `${o.restaurantId}|${o.contactKey}`,
+          o.manualSegment as CustomerSegment,
+        ]),
+    );
   } catch (error) {
     console.error('[OWNER_CUSTOMERS_PAGE]', error);
     errored = true;
@@ -292,6 +332,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       lastPlatform: r.platform,
       locale,
     });
+    // §38.48 — Segment override (manualSegment varsa derived'i replace).
+    const overrideKey = `${r.restaurant_id}|${r.contact_key}`;
+    const finalSegment = applySegmentOverride(derived.segment, overrideKey, segmentOverrides);
     return {
       restaurant_id: r.restaurant_id,
       restaurant_name: r.restaurant_name,
@@ -305,7 +348,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       avg_rating: r.avg_rating,
       last_at: r.last_at,
       feedback_count: visits,
-      segment: derived.segment,
+      segment: finalSegment,
       ltv: derived.ltv,
       sentiment: derived.sentiment,
       days_since: derived.daysSinceLastVisit,
@@ -314,21 +357,32 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       // her zaman dolu olsun diye — input geçirildi, undefined gelmez).
       last_topic: derived.lastTopic ?? computeLastTopic({ rating: r.last_rating }, locale),
       last_channel: derived.lastChannel ?? computeLastChannel(r.platform, locale),
+      // §38.48 — Archived state (UI muted styling + "Geri al" buton).
+      archived: archivedKeys.has(overrideKey),
     };
   });
+
+  // §38.48 — Archive overlay: showArchived=1 ise filter bypass; default
+  // archived müşteriler listede görünmez.
+  const visibleEnriched = showArchived
+    ? enriched
+    : applyArchiveOverlay(enriched, archivedKeys);
 
   // Segment counts hesapla (filter pill label'ları) — segment filter UYGULANMADAN.
   // Her pill, mevcut range/scope için segment toplamını gösterir.
   // §38.47 — `churned` segment count eklendi.
+  // §38.48 — `visibleEnriched` (archive overlay sonrası) üstünden — owner pill
+  // sayıları "şu an gördüğüm liste" semantiği taşır; archived dahil değil
+  // (showArchived=1 ise zaten visibleEnriched = enriched).
   const segmentCounts: Record<'all' | CustomerSegment, number> = {
-    all: enriched.length,
+    all: visibleEnriched.length,
     vip: 0,
     loyal: 0,
     new: 0,
     risk: 0,
     churned: 0,
   };
-  for (const row of enriched) {
+  for (const row of visibleEnriched) {
     segmentCounts[row.segment] += 1;
   }
 
@@ -340,11 +394,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const vipCount = segmentCounts.vip;
   const vipPct = totalCustomers > 0 ? (vipCount / totalCustomers) * 100 : 0;
   const avgLtv =
-    enriched.length > 0
-      ? Math.round(enriched.reduce((sum, r) => sum + r.ltv, 0) / enriched.length)
+    visibleEnriched.length > 0
+      ? Math.round(visibleEnriched.reduce((sum, r) => sum + r.ltv, 0) / visibleEnriched.length)
       : 0;
-  const returningCount = enriched.filter((r) => r.feedback_count >= 2).length;
-  const returnRate = enriched.length > 0 ? (returningCount / enriched.length) * 100 : 0;
+  const returningCount = visibleEnriched.filter((r) => r.feedback_count >= 2).length;
+  const returnRate = visibleEnriched.length > 0 ? (returningCount / visibleEnriched.length) * 100 : 0;
   // §38.47 — 5. KPI "Risk altında". `risk` + `churned` segment'lerin toplamı
   // owner için "şu an dikkat gereken müşteri" sinyalidir; tasarım sade "Risk
   // altında" başlığını taşır → ikisini birleştir, alt-text'te ayrım göster.
@@ -354,8 +408,8 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
 
   // Apply segment filter (post-derive).
   const filtered = segmentFilter
-    ? enriched.filter((r) => r.segment === segmentFilter)
-    : enriched;
+    ? visibleEnriched.filter((r) => r.segment === segmentFilter)
+    : visibleEnriched;
 
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -363,11 +417,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const rows = filtered.slice(offset, offset + PAGE_SIZE);
   const truncated = aggregates.length >= MAX_AGGREGATE_ROWS;
 
-  const hasFilter = Boolean(search || restaurantIdParam || segmentFilter || rangeKey !== '30d');
+  const hasFilter = Boolean(search || restaurantIdParam || segmentFilter || rangeKey !== '30d' || showArchived);
 
   // URL builder for filter forms / pagination / drawer detail links.
   function buildHref(
-    over: Partial<Record<'range' | 'search' | 'restaurantId' | 'page' | 'detail' | 'segment', string>>,
+    over: Partial<Record<'range' | 'search' | 'restaurantId' | 'page' | 'detail' | 'segment' | 'showArchived', string>>,
   ) {
     const q = new URLSearchParams();
     const r = over.range ?? rangeKey;
@@ -382,6 +436,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     const p = over.page ?? String(page);
     if (p && p !== '1') q.set('page', p);
     if (over.detail) q.set('detail', over.detail);
+    // §38.48 — showArchived toggle URL state.
+    const arch = over.showArchived !== undefined ? over.showArchived : (showArchived ? '1' : '');
+    if (arch) q.set('showArchived', arch);
     const qs = q.toString();
     return `/${locale}/dashboard/customers${qs ? `?${qs}` : ''}`;
   }
@@ -623,6 +680,29 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           </select>
         )}
 
+        {/* §38.48 — Arşiv toggle (Wave 2). Default off; on iken muted styling
+            tablo satırlarında + "Geri al" buton. */}
+        <Link
+          href={buildHref({ showArchived: showArchived ? '' : '1', page: '1' })}
+          className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+            showArchived
+              ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+              : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
+          }`}
+          title={isTr ? 'Arşivlenenler dahil' : 'Include archived'}
+        >
+          {isTr ? 'Arşiv' : 'Archive'}
+          {archivedKeys.size > 0 && (
+            <span
+              className={`bz-mono tabular-nums text-[10.5px] rounded-full px-1.5 py-0.5 ${
+                showArchived ? 'bg-white/15 text-white' : 'bg-[#F5F5F5] text-[#737373]'
+              }`}
+            >
+              {archivedKeys.size.toLocaleString(intLocale)}
+            </span>
+          )}
+        </Link>
+
         {/* Apply / Reset — search submit + filter clear */}
         <div className="flex gap-2 lg:gap-1.5">
           <button type="submit" className="bz-btn-primary">
@@ -662,10 +742,19 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
               score progress + number). Avatar bg sentiment-based (pos lime-soft
               / neg red-soft / neu n100). */}
           <div className="bz-card hidden overflow-x-auto lg:block">
-            <table className="bz-table w-full min-w-[1040px]">
+            <table className="bz-table w-full min-w-[1080px]">
               <thead>
                 <tr>
-                  <th className="text-left sticky left-0 z-10 bg-[#FAFAFA]">
+                  {/* §38.48 Wave 2 — bulk select-all checkbox; client island hydrates */}
+                  <th className="w-10 text-left">
+                    <input
+                      type="checkbox"
+                      data-select-all
+                      aria-label={isTr ? 'Tümünü seç' : 'Select all'}
+                      className="h-4 w-4 cursor-pointer accent-[#0A0A0A]"
+                    />
+                  </th>
+                  <th className="text-left sticky left-10 z-10 bg-[#FAFAFA]">
                     {isTr ? 'Misafir' : 'Guest'}
                   </th>
                   <th className="text-left">{isTr ? 'Segment' : 'Segment'}</th>
@@ -696,8 +785,16 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                       ? Math.round(Math.max(0, Math.min(5, r.avg_rating)) * 20)
                       : 0;
                   return (
-                    <tr key={detailKey} className="bz-tr-hover">
-                      <td className="sticky left-0 z-10 bg-white">
+                    <tr key={detailKey} className={`bz-tr-hover ${r.archived ? 'opacity-60' : ''}`}>
+                      <td className="w-10">
+                        <input
+                          type="checkbox"
+                          data-customer-key={detailKey}
+                          aria-label={isTr ? 'Bu satırı seç' : 'Select row'}
+                          className="h-4 w-4 cursor-pointer accent-[#0A0A0A]"
+                        />
+                      </td>
+                      <td className="sticky left-10 z-10 bg-white">
                         <div className="flex items-center gap-3">
                           <div
                             className="bz-avatar h-8 w-8 text-[12px]"
@@ -785,8 +882,15 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                 : '#F5F5F5';
               const avatarFg = r.sentiment === 'neg' ? '#991B1B' : '#0A0A0A';
               return (
-                <div key={detailKey} className="bz-card p-4 space-y-2.5">
+                <div key={detailKey} className={`bz-card p-4 space-y-2.5 ${r.archived ? 'opacity-60' : ''}`}>
                   <div className="flex items-start gap-3">
+                    {/* §38.48 — bulk select checkbox (mobile card) */}
+                    <input
+                      type="checkbox"
+                      data-customer-key={detailKey}
+                      aria-label={isTr ? 'Bu satırı seç' : 'Select row'}
+                      className="mt-1.5 h-4 w-4 shrink-0 cursor-pointer accent-[#0A0A0A]"
+                    />
                     <div
                       className="bz-avatar h-9 w-9 text-[13px]"
                       style={{ backgroundColor: avatarBg, color: avatarFg }}
@@ -956,6 +1060,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           Client island; useSearchParams ile detect, fetch, ESC + outside click
           + body scroll lock. (CLAUDE.md §23.7 Phase 12 Phase 8d) */}
       <CustomerDetailDrawer locale={locale} />
+
+      {/* §38.48 Wave 2 — Bulk action bar client island. Tablodaki checkbox'ları
+          hydrate eder + selection state + 3 modal trigger (Kampanya/Segmentle/
+          Arşivle). showArchived prop'u "Geri al" eylemi için. */}
+      <CustomersBulkBar locale={locale} showArchived={showArchived} />
     </div>
   );
 }

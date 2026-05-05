@@ -60,6 +60,8 @@ export const SUPPORTED_MAIL_KEYS = [
   'first-feedback-tips',
   'upgrade-suggestion',
   'inactive-reactivation',
+  // §38.48 Wave 2 — Owner → customer mass email campaign (CLAUDE.md §38.48).
+  'customer-campaign',
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];

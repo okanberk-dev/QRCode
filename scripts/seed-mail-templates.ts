@@ -546,6 +546,10 @@ const SEEDS: Array<{ key: string; locale: string; content: Copy }> = [
   { key: 'upgrade-suggestion', locale: 'en', content: {} },
   { key: 'inactive-reactivation', locale: 'tr', content: {} },
   { key: 'inactive-reactivation', locale: 'en', content: {} },
+  // §38.48 Wave 2 — Owner → customer mass campaign template (admin override
+  // edilebilir; inline default fallback render fn'inde TR/EN dolu).
+  { key: 'customer-campaign', locale: 'tr', content: {} },
+  { key: 'customer-campaign', locale: 'en', content: {} },
 ];
 
 async function main() {
