@@ -245,15 +245,10 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
         className="fixed top-0 right-0 bottom-0 z-[51] w-full sm:w-[480px] bg-white flex flex-col shadow-2xl"
         style={{ animation: 'cust-drawer-in 220ms cubic-bezier(0.4, 0, 0.2, 1)' }}
       >
-        <style>{`
-          @keyframes cust-drawer-in {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            aside[role="dialog"] { animation: none !important; }
-          }
-        `}</style>
+        {/* CSS Performance §38.61 — `@keyframes cust-drawer-in` + reduced-motion
+            override globals.css'e taşındı. Inline `style={{ animation: ... }}`
+            yazılı element'i `[style*='cust-drawer-in']` selector blanket'i
+            yakalıyor; bu component'tan style block kaldırıldı. */}
 
         {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-[#EDEDED] p-5">

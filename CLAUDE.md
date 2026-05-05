@@ -8818,3 +8818,143 @@ Notes / Risks:
 - 🟢 Ölçülebilen iyileşme: source -159 satır / -%10.4, CSS bundle gzipped -1,082 B / -%3.3, Inter font transferred -1 weight (~15-25 KB woff2 / cold load).
 - 🟡 Gelecek opportunistic cleanup: animation keyframe progressive enhancement audit (`bzFloat`/`bzWordSwap`/`bzCaretBlink` CPU cost vs visual value), comment-only blocks compactlaştırma (low ROI).
 
+### 38.61 2026-05-05 — CSS Performance Wave 2: Keyframe consolidation + dead `.bz-float` cleanup
+
+§38.60 sonrası kullanıcı talebi: *"Anasayfa ve tüm alt sayfalarının da css'lerini minify ettin mi? Tasarım ve işlevsellik bozulmadan neler yapılabiliyorsa profesyonel olarak yapmanı istiyorum. Ek olarak; yeni tasarımdaki componentleri vs tasarımsal öğeleri engelleyen kodlar da varsa fixle."*
+
+3 paralel Explore agent ile **tüm CSS surface envanteri** + Pulse design system blocker audit yapıldı. Bulgular:
+
+**CSS surface envanteri**:
+- ✅ Tek source: `globals.css` (1372 satır, §38.60 sonrası)
+- ✅ Tailwind v4 JIT scope: `src/app/**` + `src/components/**` otomatik kapsamda
+- ✅ Per-route CSS files: Next 15 + Tailwind v4 otomatik split (185KB + 19KB marketing/panel — ek ayar gerekmez)
+- ✅ CSS modules / CSS-in-JS lib: yok
+- ✅ Inline `<link rel="stylesheet">` external: yok
+- 🟢 **3 styled-jsx/inline `<style>` block bulundu** (component-local keyframe definitions) → konsolide fırsatı
+- 🟢 **`.bz-float` + `@keyframes bzFloat`** 0 callsite → dead code
+
+**Pulse design system blocker audit** (§38.60 sonrası tekrar doğrulandı, hepsi temiz):
+- ✅ Eski neo-brutalist `shadow-[6px_6px_0_0]` + `border-[3px]` 0 callsite
+- ✅ Legacy `--color-brand-{navy,gold,ivory,...}` token kullanımı 0 callsite
+- ✅ `bz-*` ↔ `pulse-*` arası specificity savaşı yok
+- ✅ `!important` (13 occurrence) hepsi justified (blog UGC sandbox + a11y reduced-motion + email MSO)
+
+**Kasıtlı SKIP / DEFER** (tasarım bozma riski):
+- 143 inline `fontFamily: 'var(--font-heading)'` redundancy — h1-h6 vs span/div mixed; case-by-case manual audit gerek
+- 70+ inline hex Pulse token migration — design pivot riski, low ROI
+- JetBrains Mono weight 600 drop — 4 small-text callsite visual regression riski
+- Critical CSS inline `<head>` — `next/font` + Vercel CDN otomatik handle ediyor, premature
+
+**Phase A — Styled-jsx/inline `<style>` keyframe konsolidasyonu** (3 component → globals.css):
+
+| Component | Keyframe | Eski location | Yeni location |
+|---|---|---|---|
+| `MenuSplash.tsx` | `buaze-splash-fill` | `<style jsx global>` block | `globals.css` |
+| `CustomerDetailDrawer.tsx` | `cust-drawer-in` | inline `<style>` block (mount-on-open injection) | `globals.css` |
+| `/r/[slug]/page.tsx` | `bzProgress` | `<style jsx>` block | `globals.css` |
+
+Animation referansları (`style={{ animation: '...' }}`, `animate-[bzProgress_2.2s_linear_forwards]`) component'lerde **intact** kalır — sadece keyframe **definition'ı** tek dosyaya taşır.
+
+**Reduced-motion blanket** (`globals.css:583-595`) genişletildi: mevcut `[style*='ecgDraw']` paterni reuse edilerek `[style*='cust-drawer-in']`, `[style*='buaze-splash-fill']`, `[style*='bzProgress']`, ve Tailwind arbitrary class `.animate-\[bzProgress_2\.2s_linear_forwards\]` eklendi. Inline `style={{ animation: ... }}` ile yazılı element'ler ve Tailwind arbitrary `animate-[name]` class'ları reduced-motion altında `animation: none !important` ile duraklatılır.
+
+**Phase B — Dead `.bz-float` + `@keyframes bzFloat`** silindi:
+- 0 className callsite (`grep -rE "(class|className)=.*\bbz-float\b" src/` boş)
+- `@keyframes bzFloat` (~5 satır) + `.bz-float` class def + mobile media variant (`@media (max-width: 640px) .bz-float`) + reduced-motion blanket'ten `.bz-float,` satırı silindi
+
+**Avantajlar**:
+- styled-jsx Babel transform compile-time overhead'i kaldırılır (production JS bundle'da 0 footprint, ama component render cycle'ında her mount'ta `<style>` DOM injection eliminasyonu — CustomerDetailDrawer mount-on-open için micro CPU savings)
+- Reduced-motion blanket fragmentation çözüldü — tek dosyada uniform a11y kapsam (a11y consistency disipline)
+- Her keyframe isim çakışması globals.css review'unda görünür (drift önleme — yeni component aynı isimde keyframe tanımlamaz)
+
+**Etkilenen dosyalar**:
+- `src/app/globals.css` (+24 satır net: +3 keyframe + reduced-motion blanket genişlemesi; -11 satır dead `.bz-float`)
+- `src/components/menu/MenuSplash.tsx` (-6 satır `<style jsx global>` block)
+- `src/app/[locale]/dashboard/customers/_components/CustomerDetailDrawer.tsx` (-9 satır `<style>` block)
+- `src/app/r/[slug]/page.tsx` (-10 satır `<style jsx>` block)
+
+**Ölçüm**:
+
+| Metrik | §38.60 baseline | §38.61 sonrası | Delta |
+|---|---|---|---|
+| `globals.css` source (line) | 1372 | 1394 | +22 (3 keyframe + reduced-motion blanket; bz-float silindi) |
+| `globals.css` source (byte) | 40,295 | 41,368 | +1,073 |
+| CSS bundle raw (sum) | 204,550 B | 204,753 B | +203 B |
+| CSS bundle gzipped (sum) | 31,669 B | 31,783 B | +114 B |
+| JS bundle (chunks/) gzipped | unchanged | unchanged | 0 (Next.js styled-jsx compile zamanında zaten optimum) |
+| TS errors (`src/`) | 0 | 0 | unchanged |
+| ESLint errors | 0 (1 baseline warn) | 0 (1 baseline warn) | unchanged |
+| Tests | 182/182 pass | 182/182 pass | unchanged |
+
+**Net kazanım**: CSS bundle'da hafif artış (+114 B gzipped) reduced-motion blanket genişlemesinden kaynaklanıyor; karşılığında **3 component'tan styled-jsx eliminasyonu + a11y blanket consistency + dead bz-float removal + drift disipline iyileşmesi**. Net iyileşme: **architectural cleanliness + a11y kapsam** > byte-level bundle size.
+
+**Yapma**:
+- Component-local `<style>` block'larını tekrar geri ekleme — keyframe konsolidasyonu disipline edilmeli (yeni keyframe ihtiyacı çıkarsa globals.css'e ekle, drift önleme).
+- Reduced-motion blanket'inden `[style*='X']` selector'larını silme — inline `style={{ animation: ... }}` yazılı element'ler için kapsam zorunlu (a11y).
+- `animate-[bzProgress_...]` Tailwind arbitrary class'ı silmek — JIT tarafından detect edilir + globals.css keyframe def'i ile çalışır (drift sıfır).
+- Yeni stil isteğine `<style jsx>` ile yaklaşma — globals.css'te `@keyframes` + `.class { animation }` paterni canonical.
+
+**Yap**:
+- Yeni component animation eklerken: keyframe `globals.css`'in @keyframes section'ına; class def `.bz-*` veya `.pulse-*` veya inline `style={{ animation: '...' }}` ile component'te.
+- Yeni inline-styled element için reduced-motion kapsam: `[style*='keyframeName']` selector ekle (mevcut blanket'i genişlet, ayrı block açma).
+- Dead utility class regression çıkarsa (bir className silinip kullanım kaldıysa): `grep -rE "(class\|className)=.*\bCLASS\b" src/` zorunlu doğrulama (CLAUDE.md §38.60 paterni).
+
+**Backlog güncel** (Bu PR sonrası — diğer §38.B kalemleri intact):
+- ✅ §38.61 keyframe konsolidasyonu + dead `.bz-float` kapatıldı
+- 🟡 `fontFamily: 'var(--font-heading)'` 143 callsite redundancy — manual audit (h1-h6 vs span/div karar)
+- 🟡 Inline hex Pulse token migration 70+ callsite — design pivot risk, low ROI
+- 🟡 JetBrains Mono weight 600 drop — 4 small-text callsite visual regression riski (~25 KB tasarruf)
+- 🟢 Critical CSS inline `<head>` — `next/font` + Vercel CDN otomatik handle ediyor, premature
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
+- 🛡️ Security follow-ups (§38.2 — operatör tetiği bekliyor)
+
+---
+
+## CSS Performance & Design System Optimization Notes #2
+
+Date: 2026-05-05
+
+Summary:
+- 3 styled-jsx/inline `<style>` keyframe component'tan globals.css'e konsolide edildi (`buaze-splash-fill`, `cust-drawer-in`, `bzProgress`).
+- Dead `.bz-float` class + `@keyframes bzFloat` + media variants + reduced-motion blanket referansı silindi (0 callsite).
+- Reduced-motion blanket genişletildi: inline `style={{ animation: ... }}` ve Tailwind arbitrary `animate-[name]` class'ları için `[style*='X']` paterni reuse edildi (mevcut `ecgDraw` paterniyle paralel, a11y consistency).
+- 0 fonksiyonel davranış değişimi, 0 yeni dependency, 0 schema migration, tasarım intact.
+
+Files Updated:
+- `src/app/globals.css` (+24 satır net: 3 yeni keyframe + reduced-motion blanket genişlemesi, -11 satır dead `.bz-float`)
+- `src/components/menu/MenuSplash.tsx` (-6 satır `<style jsx global>` block + açıklayıcı yorum)
+- `src/app/[locale]/dashboard/customers/_components/CustomerDetailDrawer.tsx` (-9 satır `<style>` block + açıklayıcı yorum)
+- `src/app/r/[slug]/page.tsx` (-10 satır `<style jsx>` block + açıklayıcı yorum)
+
+CSS / Performance Changes:
+- Tek-source-of-truth keyframe disipline: 3 component-local `<style>` block kaldırıldı, tüm @keyframes definitions globals.css'te.
+- styled-jsx Babel transform overhead'i: Next.js compile zamanında optimum çıktı veriyor (JS bundle gzipped delta 0); ama component render cycle'ında `<style>` DOM injection eliminasyonu (CustomerDetailDrawer mount-on-open).
+- a11y reduced-motion kapsam: 3 yeni keyframe + 1 Tailwind arbitrary class blanket'e eklendi. Component-level `prefers-reduced-motion` override'ları (eski CustomerDetailDrawer `aside[role="dialog"]` selector) gereksiz oldu.
+- CSS bundle source +1,073 byte (3 keyframe + reduced-motion expansion); gzipped +114 byte. Net architectural value > byte cost.
+- JS bundle gzipped delta: 0 (styled-jsx Next.js tarafından zaten optimum compile ediliyordu).
+
+Design Fixes:
+- Mevcut tasarımda Pulse component'leri ENGELLEYEN kod **bulunamadı** (3 paralel agent + manuel audit confirmed). Eski neo-brutalist 6px shadow + 3px border 0 callsite, legacy navy/gold tokens 0 callsite, !important targetlı + justified, specificity savaşı yok. §38.60 cleanup başarılı.
+- 3 component'tan inline `<style>` kaldırıldı — `MenuSplash` (QR scan splash), `CustomerDetailDrawer` (CRM customer detail), `/r/[slug]` (yüksek puan platform redirect overlay). Her biri user-facing critical surface.
+
+Validation:
+- Build: passed (`npx next build` 0 errors, 47 routes built — CSS bundle 204,753 B raw / 31,783 B gz).
+- Lint: passed (`npx eslint .` 0 errors, 1 pre-existing baseline warning — `canAccessRestaurant` unused §38.58'den kalan).
+- Typecheck: passed in `src/` (`npx tsc --noEmit` 0 errors in source; 4 pre-existing `.next/types/...` auto-generated TS errors §21.13 paterni, `ignoreBuildErrors: true` handles them).
+- Tests: 182/182 pass (`npm test`, 22 test suites).
+- Sanity grep: silinen `.bz-float` className 0 regression; 3 keyframe ismi component'lerde animation referansı olarak intact (`buaze-splash-fill`, `cust-drawer-in`, `bzProgress`); `<style jsx` 0 occurrence src/'de.
+- Visual check (manuel test plan PR description'da):
+  - `/menu/[slug]` 3sn linear progress splash dolar
+  - `/dashboard/customers?detail=KEY` drawer sağdan slide-in
+  - `/r/[slug]` yüksek puan + platform redirect 2.2s lime progress overlay
+  - `prefers-reduced-motion: reduce` simulation tüm 3 keyframe duraklatır
+
+Notes / Risks:
+- ✅ Risk düşük: keyframe definition tek lokasyon, animation referansları intact.
+- ✅ Reduced-motion blanket genişlemesi mevcut `[style*='ecgDraw']` paterniyle paralel — tutarlı a11y disipline.
+- ✅ Tailwind v4 + PostCSS pipeline'ı dokunulmadı.
+- ✅ Pulse design system intact (Phase C audit confirmed).
+- ⚠️ CSS bundle hafif artış (+114 byte gzipped) — kabul edilen kazanım reduced-motion fragmentation kaldırma + drift disipline.
+- ⚠️ Pre-existing 4 TS error (`.next/types/...` Next.js auto-generated) bu PR ile ilişkisiz.
+- 🟢 Architectural cleanup: 3 component'tan `<style>` block eliminasyonu + dead bz-float removal + uniform a11y kapsam.
+- 🟡 Gelecek: fontFamily redundancy 143 callsite + inline hex 70+ callsite + JetBrains Mono weight pruning DEFER (CLAUDE.md §38.B).
+
