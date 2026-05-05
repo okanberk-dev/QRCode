@@ -177,6 +177,8 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
               onChange={(e) => setName(e.target.value)}
               className="bz-input w-full"
               autoComplete="name"
+              autoCapitalize="words"
+              enterKeyHint="next"
             />
           </Field>
           <Field
@@ -203,6 +205,11 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
               onChange={(e) => setEmail(e.target.value)}
               className="bz-input w-full"
               autoComplete="email"
+              inputMode="email"
+              enterKeyHint="next"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
             />
           </Field>
           {/* §38.37 — yeni 3 alan: telefon / pozisyon / timezone (tasarım birebir). */}

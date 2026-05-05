@@ -327,6 +327,8 @@ export function BusinessGeneralSettings({
               value={form.phone}
               onChange={(e) => set("phone", e.target.value)}
               autoComplete="tel"
+              inputMode="tel"
+              enterKeyHint="next"
               placeholder="+90 ..."
             />
           </Field>
@@ -337,6 +339,11 @@ export function BusinessGeneralSettings({
               value={form.notificationEmail}
               onChange={(e) => set("notificationEmail", e.target.value)}
               autoComplete="email"
+              inputMode="email"
+              enterKeyHint="next"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="bildirim@isletmem.com"
             />
           </Field>

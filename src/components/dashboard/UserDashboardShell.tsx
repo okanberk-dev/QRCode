@@ -978,9 +978,21 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             onClick={() => setMoreOpen(false)}
           />
           <div
-            className="absolute bottom-0 left-0 right-0 bg-[#0A0A0A] rounded-t-3xl border-t border-[#EDEDED] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] text-[#0A0A0A] shadow-2xl"
+            /* §38.69 — Mobile More sheet white theme tutarlılık (mobile drawer
+               §38.68 bg-white paterni reuse). Eski bg-[#0A0A0A] + text-[#0A0A0A]
+               leftover dark ile graphite text invisible bug'ına neden oluyordu;
+               internals (eyebrow #525252, hover #FAFAFA, items #1A1A1A, logout
+               #FEF2F2) zaten white sheet için tasarlanmış. Drag handle n300
+               (bg-[#D4D4D4]) visible on white. shadow-2xl → bz-elev-3 mobile
+               modal-tier (Apple-soft heavy tier, §38.65 NotificationBell + §38.68
+               drawer paterni). Apple HIG bottom sheet bz-mob-drawer-in slide-in
+               variant (mobile drawer ile aynı 220ms cubic-bezier easing). */
+            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl border-t border-[#EDEDED] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] bz-elev-3"
+            style={{
+              animation: 'bz-mob-sheet-in 240ms cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#D4D4D4]" />
             <div className="mb-3 flex items-center justify-between px-2">
               <p className="pulse-eyebrow text-[#525252]">{copy.more}</p>
               <button
@@ -1002,7 +1014,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                       href={item.href}
                       onClick={() => setMoreOpen(false)}
                       aria-current={isActive ? 'page' : undefined}
-                      className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] transition-colors ${
+                      className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] bz-motion-spring ${
                         isActive
                           ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
                           : 'text-[#1A1A1A] hover:bg-[#FAFAFA] hover:text-[#0A0A0A] font-medium'
@@ -1021,7 +1033,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                     setMoreOpen(false);
                     handleLogout();
                   }}
-                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-medium text-[#DC2626] transition-colors hover:bg-[#FEF2F2] hover:text-[#DC2626]"
+                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-medium text-[#DC2626] bz-motion-spring hover:bg-[#FEF2F2] hover:text-[#DC2626]"
                 >
                   <LogOut size={16} strokeWidth={2} />
                   <span>{copy.logout}</span>
