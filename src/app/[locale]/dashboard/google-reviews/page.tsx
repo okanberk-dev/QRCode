@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   CheckCircle2,
   Loader2,
@@ -16,6 +17,7 @@ import {
   ArrowUp,
   ArrowDown,
   Edit3,
+  Plug,
 } from 'lucide-react';
 import { AlertBanner, PageHeader } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
@@ -900,6 +902,23 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           </select>
         </div>
       )}
+
+      {/* §38.72 — Workspace cross-link hint. Owner için Google Yorumları
+          tek-platform; tüm platform durumu için /dashboard/platforms
+          workspace overview'a link. Audit Agent #2 #1 (CLAUDE.md §38.72). */}
+      <div className="mb-5 flex items-center gap-2 text-[12px] text-[#525252]">
+        <Plug size={12} strokeWidth={2} className="shrink-0" />
+        <span>
+          {isTr ? 'Diğer platformları da yönetmek için ' : 'Manage other platforms in '}
+          <Link
+            href={`/${locale}/dashboard/platforms`}
+            className="font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+          >
+            {isTr ? 'Platform Bağlantıları' : 'Platform Links'}
+          </Link>
+          {isTr ? ' sayfasına git.' : '.'}
+        </span>
+      </div>
 
       {shouldShowStatusLoading ? (
         <LoadingPanel label={isTr ? "Google yorumları hazırlanıyor..." : "Preparing Google reviews..."} />

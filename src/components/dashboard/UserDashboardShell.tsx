@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { BarChart3, BookOpen, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -42,7 +42,20 @@ function getDaysLeft(trialEndsAt: string | null) {
 
 const TOP_BAR_MAP: Record<string, { breadcrumb: string; title: string } | undefined> = undefined as never;
 
-function useTopBar(locale: Locale, pathname: string | null) {
+// §38.72 — Account section deeplink subtitles (?section=billing →
+// "PANEL / HESABIM > FATURALAMA"). matchHref helper section query'yi tüketir;
+// breadcrumb da aynı param'ı okuyarak alt-section konteksti gösterir.
+const ACCOUNT_SECTION_SUFFIX: Record<string, { tr: string; en: string }> = {
+  billing: { tr: 'FATURALAMA', en: 'BILLING' },
+  notifications: { tr: 'BİLDİRİMLER', en: 'NOTIFICATIONS' },
+  profile: { tr: 'PROFİL', en: 'PROFILE' },
+  security: { tr: 'GÜVENLİK', en: 'SECURITY' },
+  team: { tr: 'EKİP', en: 'TEAM' },
+  ai: { tr: 'PULSE AI', en: 'PULSE AI' },
+  legal: { tr: 'KVKK & YASAL', en: 'PRIVACY & LEGAL' },
+};
+
+function useTopBar(locale: Locale, pathname: string | null, section?: string | null) {
   const isTr = locale === 'tr';
   if (!pathname) return null;
   const rest = pathname.replace(`/${locale}/dashboard`, '') || '/';
@@ -55,10 +68,20 @@ function useTopBar(locale: Locale, pathname: string | null) {
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
   if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform Bağlantıları' : 'Platform Links' };
   if (rest.startsWith('/customers')) return { breadcrumb: isTr ? 'CRM / MÜŞTERİLER' : 'CRM / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
+  // §38.72 — Campaigns sidebar item (CRM grup §38.56) için breadcrumb entry.
+  if (rest.startsWith('/campaigns')) return { breadcrumb: isTr ? 'CRM / KAMPANYALAR' : 'CRM / CAMPAIGNS', title: isTr ? 'Kampanyalar' : 'Campaigns' };
   if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORMLAR' : 'PANEL / PLATFORMS', title: isTr ? 'Platform bağlantıları' : 'Review platforms' };
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
-  if (rest.startsWith('/account')) return { breadcrumb: isTr ? 'PANEL / HESABIM' : 'PANEL / ACCOUNT', title: isTr ? 'Hesabım' : 'Account' };
+  if (rest.startsWith('/account')) {
+    // §38.72 — section=X aktifken breadcrumb'a > ALT BAŞLIK ekle.
+    const suffix = section ? ACCOUNT_SECTION_SUFFIX[section] : undefined;
+    const baseCrumb = isTr ? 'PANEL / HESABIM' : 'PANEL / ACCOUNT';
+    return {
+      breadcrumb: suffix ? `${baseCrumb} > ${isTr ? suffix.tr : suffix.en}` : baseCrumb,
+      title: isTr ? 'Hesabım' : 'Account',
+    };
+  }
   // /profile redirects to /account; breadcrumb retained for the brief hop.
   if (rest.startsWith('/profile')) return { breadcrumb: isTr ? 'PANEL / HESABIM' : 'PANEL / ACCOUNT', title: isTr ? 'Hesabım' : 'Account' };
   return null;
@@ -208,7 +231,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     setDrawerOpen(false);
   };
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
-  const topBar = useTopBar(locale, pathname);
+  // §38.72 — Search param-aware breadcrumb (?section=billing → "> FATURALAMA").
+  const activeSection = searchParams.get('section');
+  const topBar = useTopBar(locale, pathname, activeSection);
 
   // /dashboard/guide her zaman görünür. Eski "ilk 30 gün" mantığı
   // `user.createdAt` prop'una bağlıydı; layout.tsx kullanıcı tarafından
@@ -334,6 +359,15 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           href: `/${locale}/dashboard/account?section=billing`,
           icon: CreditCard,
           label: locale === 'tr' ? 'Faturalama' : 'Billing',
+        },
+        // §38.72 — Bildirimler nav item (Faturalama paterni reuse).
+        // /dashboard/notifications redirect-only stub; matchHref ile
+        // ?section=notifications subtab'ında lime active state korunur.
+        // Owner topbar bell icon'una ek olarak sidebar'da net link görür.
+        {
+          href: `/${locale}/dashboard/account?section=notifications`,
+          icon: Bell,
+          label: copy.notifications,
         },
         // /guide sadece ilk 30 gün — onboarding sonrası gereksiz.
         ...(showGuide

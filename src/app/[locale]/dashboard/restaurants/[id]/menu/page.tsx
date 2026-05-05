@@ -256,7 +256,7 @@ export default function RestaurantMenuBuilderPage() {
   const copy = useMemo(
     () => ({
       title: isTr ? 'Menü' : 'Menu',
-      backToMenus: isTr ? 'Menülere Dön' : 'Back to Menus',
+      backToMenus: isTr ? 'İşletmeye Dön' : 'Back to Business',
       categories: isTr ? 'Kategoriler' : 'Categories',
       items: isTr ? 'Ürünler' : 'Items',
       addCategory: isTr ? 'Kategori Ekle' : 'Add Category',
@@ -789,8 +789,13 @@ export default function RestaurantMenuBuilderPage() {
         <div className="relative flex flex-col gap-5 p-6 sm:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 space-y-3">
+              {/* §38.72 — Back link target değişti: hub yerine restoran detail.
+                  1-restoran owner'da hub redirect'i (line 132) infinite loop
+                  riski yaratıyordu (`/menu` → `/restaurants/[id]/menu`).
+                  Detail page evrensel doğru parent — hub picker sidebar'dan
+                  erişilebilir kalır. Copy backToMenus → "İşletmeye Dön". */}
               <Link
-                href={`/${locale}/dashboard/menu`}
+                href={`/${locale}/dashboard/restaurants/${id}`}
                 className="pulse-eyebrow inline-flex items-center gap-1.5 text-[#737373] transition-colors hover:text-[#0A0A0A]"
               >
                 <ArrowLeft size={12} strokeWidth={2.25} />
