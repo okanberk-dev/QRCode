@@ -6971,3 +6971,72 @@ Audit (Explore agent): Leads sayfası **misnomer** — `/dashboard/leads` mevcut
 3. **Audit metodu** (CLAUDE.md §38.38 paterni) — Explore agent çıktısını manuel doğrulamadan kabul etme. False positive yaygın.
 4. **Yeni feature eklerken**: tasarım kaynağı `.design-owner-2026/project/page-X.jsx` cross-check + AskUserQuestion kritik kararlar (backend gerek, drift kabul) + phase-by-phase implementation.
 5. **CLAUDE.md §38.X log** zorunlu — yeni iş yaparken §38.41+ olarak ekle, "Yapma/Yap" + "Test + verification" + backlog güncelle.
+
+### 38.41 2026-05-05 — Dashboard duplicate CANLI AKIŞ + section cleanup (tasarım dışı bottom section'lar kaldırıldı)
+
+Kullanıcı raporu: "anasayfada hala iki tane canlı akış kısmı var ve bir tanesinde tümünü gör diyince 404 sayfası çıkıyor lütfen 8 tane canlı akış gösteren kısmı sil ve diğeri kalsın onda da tümünü gör kısmını düzelt geriye kalan kısımları da tasarım ile birebir yap eğer tasarımda yoksa sil".
+
+Audit: Dashboard `/dashboard/page.tsx` (1698 satır) tasarım `.design-owner-2026/project/page-dashboard.jsx` ile karşılaştırıldı. **6 section tasarımda yok**:
+
+| Section | Lokasyon | Sebep |
+|---|---|---|
+| Eski CANLI AKIŞ (custom inline 8-item) | line 1350-1418 | Duplicate — `<ActivityFeed>` component (line 1466-1470) ile aynı bilgi |
+| YORUM GÖRÜNÜMÜ (RatingChart + PlatformDistribution) | line 1420-1463 | Tasarımda yok; `/dashboard/analytics`'te zaten var |
+| QR performansı | line 1476-1525 | Tasarımda yok; `/dashboard/qr`'da zaten var |
+| Konum performansı | line 1527-1564 | Tasarımda yok; `/dashboard/analytics` + `/dashboard/restaurants`'te var |
+| Restaurants list (3-col grid) | line 1566-1665 | Tasarımda yok; sidebar nav `/dashboard/restaurants` link'i var |
+| Upgrade CTA (trial graphite hero) | line 1667-1697 | Tasarımda yok; `<TrialBanner>` topbar zaten upgrade prompt sağlıyor (CLAUDE.md §11.11) |
+
+**ActivityFeed viewAllHref 404 fix**:
+- Eski: `<ActivityFeed events={...} isTr={...} />` — default `viewAllHref = '/dashboard/feedbacks'` (locale prefix yok)
+- Yeni: `viewAllHref={`/${locale}/dashboard/feedbacks`}` explicit override
+- "Tümünü gör" tıklandığında doğru `/tr/dashboard/feedbacks` URL'ine gider (404 kapandı)
+
+**Orphan import + compute cleanup** (silinen section'lara bağlı değişkenler):
+- Imports: `formatDistanceToNowStrict`, `trLocale`, `enLocale`, `RatingChart`, `PlatformDistribution`, `CopyUrlButton`, `getTranslations` — tümü silindi
+- JS-side compute: `t = getTranslations(locale)`, `locationPerf` (Konum performansı), `trialDaysLeft` (Upgrade CTA), `ratingByRestaurant` (locationPerf parent map) — silindi
+- Backend transaction'da kalan baseline warning'leri (5 adet — `_redirectCountAllTime`, `last7Redirected`, `prev7Redirected`, `last7Scans`, `prev7Scans`) §38.27'den kalan kabul edilmiş baseline (CLAUDE.md §21.25) — refactor scope dışı, çünkü transaction batch tutarlılığı korumalı
+
+**Net etki**:
+- Dashboard 1698 → 1366 satır (-332 satır)
+- 5 baseline warning korunur (§38.27 KPI semantik değişimi), 0 error
+- 143/143 test pass
+
+**Tasarım sonrası dashboard section sırası** (final, §38.27/§38.31 + §38.41 cleanup):
+1. PageHeader + ScopeDropdown
+2. MobileDashboardHero (sm:hidden)
+3. AIInsightBanner
+4. ActivationChecklist
+5. PendingTasks (BUGÜN BEKLEYEN)
+6. KPI 4-card
+7. Quick Actions 4-col
+8. NABIZ chart
+9. KANAL DAĞILIMI
+10. SIK BAHSEDİLEN KONULAR
+11. ActivityFeed (CANLI AKIŞ — TEK section, viewAllHref locale-aware)
+
+**Yapma**:
+- Restaurants list section'ı geri ekleme — sidebar nav `/dashboard/restaurants` link'i + ActivationChecklist owner için yeterli giriş noktası sağlıyor.
+- Upgrade CTA section'ı geri ekleme — `<TrialBanner>` topbar zaten visible upgrade prompt (≤7d warn / ≤3d danger paletti, CLAUDE.md §11.11). Bottom CTA redundant.
+- YORUM GÖRÜNÜMÜ / QR performansı / Konum performansı'nı dashboard'a geri ekleme — owner bu bilgilere `/analytics`, `/qr`, `/restaurants` page'lerinden erişir; dashboard summary view, deep dive değil.
+- ActivityFeed default `viewAllHref = '/dashboard/feedbacks'` locale prefix'siz değer — tüm caller'lar locale-aware override etmeli (CLAUDE.md §38 paterni).
+- Orphan transaction compute baseline warning'leri (`_redirectCountAllTime` vb.) refactor — §38.27 KPI semantik değişiminden kalan, transaction batch tutarlılığı korunmalı (CLAUDE.md §21.25 baseline tolerated).
+
+**Yap**:
+- Yeni dashboard section eklenirken tasarım kaynağı `.design-owner-2026/project/page-dashboard.jsx` cross-check + drift kararı.
+- ActivityFeed (veya benzeri shared component) caller'larında locale-aware URL override paterni reuse: `viewAllHref={`/${locale}/...`}`.
+- Section silindiğinde dependency cleanup zorunlu (import + JS-side compute), backend transaction batch tutarlılığı korunmalı.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint src/app/[locale]/dashboard/page.tsx` 5 baseline warning (§38.27 transaction compute orphans, tolerated)
+- `npm test` 143/143 pass
+- Manuel: `/tr/dashboard` tek CANLI AKIŞ section (ActivityFeed) görünür, "Tümünü gör" → `/tr/dashboard/feedbacks` doğru route
+- Manuel: YORUM GÖRÜNÜMÜ + QR performansı + Konum performansı + Restaurants list + Upgrade CTA section'ları YOK (silindi)
+- Manuel: Trial owner için topbar `<TrialBanner>` upgrade prompt görünür (bottom Upgrade CTA gereksizleştirildi)
+
+**Backlog güncel** (Bu PR sonrası — §38.B master tablosu güncellendi):
+- 🟡 Orphan transaction compute cleanup (5 baseline warning §38.27) — refactor scope, gelecek opportunistic cleanup
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
+- 🛡️ Security follow-ups (§38.2)
+- (diğer §38.B kalemleri intact)

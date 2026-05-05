@@ -9,7 +9,6 @@ import { extractThemes } from '@/lib/analytics-themes';
 // Customers list/drawer'da hâlâ aktif (§38.17 paterni).
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
-import { getTranslations } from '@/lib/translations';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -21,11 +20,6 @@ import {
   ShieldCheck,
   Star,
 } from 'lucide-react';
-import { formatDistanceToNowStrict } from 'date-fns';
-import { tr as trLocale, enUS as enLocale } from 'date-fns/locale';
-import RatingChart from '@/components/admin/RatingChart';
-import PlatformDistribution from '@/components/admin/PlatformDistribution';
-import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
 import AIInsightBanner from '@/components/dashboard/AIInsightBanner';
@@ -103,7 +97,6 @@ async function renderDashboardPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale } = await params;
-  const t = getTranslations(locale);
   const isTr = locale === 'tr';
 
   // Phase 8c+ §38.31 — Header "Bu hafta" dropdown URL searchParam scope.
@@ -517,21 +510,6 @@ async function renderDashboardPage({
   const last7Total = last7Avg._count._all;
   const last7AvgRating = last7Avg._avg.rating ?? 0;
 
-  // Per-restaurant avg map (Konum performansı widget için)
-  const ratingByRestaurant = new Map(
-    restaurantRatings.map((r) => [
-      r.restaurantId,
-      { avg: r._avg.rating ?? 0, count: r._count._all },
-    ]),
-  );
-  const locationPerf = user.restaurants
-    .map((r) => {
-      const stat = ratingByRestaurant.get(r.id);
-      return { id: r.id, name: r.name, avg: stat?.avg ?? 0, count: stat?.count ?? 0 };
-    })
-    .sort((a, b) => b.avg - a.avg || b.count - a.count)
-    .slice(0, 5);
-
   // Star distribution
   const starCounts: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   for (const g of starGroups) {
@@ -715,10 +693,6 @@ async function renderDashboardPage({
     });
     if (qrPerfTop.length >= 5) break;
   }
-
-  const trialDaysLeft = user.trialEndsAt
-    ? Math.max(0, Math.ceil((user.trialEndsAt.getTime() - Date.now()) / 86400000))
-    : 0;
 
   // SIK BAHSEDİLEN KONULAR — son 30 gün yorumlarından AI ile tema çıkarımı.
   // extractThemes helper içinde min 8 yorum + OpenAI key kontrolü; yoksa
@@ -1347,352 +1321,20 @@ async function renderDashboardPage({
         </section>
       )}
 
-      {/* CANLI AKIŞ — tasarım .design-pulse-2026/.../page-dashboard.jsx
-          ActivityRow timeline paterni. latestFeedbacks reuse (8 kayıt; üst
-          kart 4'ünü gösterir, burası 8'i timeline format'ta). SentimentDot
-          rating'e göre (≥4 lime, =3 gray, ≤2 red). */}
-      {latestFeedbacks.length > 0 && (
-        <section className="bz-card p-5 sm:p-6">
-          <header className="mb-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span aria-hidden className="bz-pulse-dot" />
-              <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
-            </div>
-            <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums">
-              {latestFeedbacks.length} {isTr ? 'son etkinlik' : 'recent events'}
-            </span>
-          </header>
-          <ul className="space-y-0">
-            {latestFeedbacks.map((fb, idx) => {
-              const sentColor = fb.rating >= 4 ? '#16A34A' : fb.rating <= 2 ? '#DC2626' : '#A3A3A3';
-              const action = isTr
-                ? fb.rating >= 4
-                  ? 'yüksek puanlı yorum bıraktı'
-                  : fb.rating <= 2
-                    ? 'düşük puanlı yorum bıraktı'
-                    : 'yorum bıraktı'
-                : fb.rating >= 4
-                  ? 'left a high-rated review'
-                  : fb.rating <= 2
-                    ? 'left a low-rated review'
-                    : 'left a review';
-              const target = `${'★'.repeat(fb.rating)}${'☆'.repeat(5 - fb.rating)} ${
-                fb.platform
-                  ? PLATFORM_LABELS_TR[fb.platform] ?? fb.platform
-                  : fb.restaurant?.name ?? ''
-              }`;
-              const timeAgo = formatDistanceToNowStrict(new Date(fb.createdAt), {
-                addSuffix: false,
-                locale: isTr ? trLocale : enLocale,
-              });
-              return (
-                <li
-                  key={fb.id}
-                  className={`flex items-center gap-3 py-2.5 text-[12.5px] ${
-                    idx < latestFeedbacks.length - 1 ? 'border-b border-[#F5F5F5]' : ''
-                  }`}
-                >
-                  <span className="bz-mono tabular-nums text-[11px] text-[#737373] w-14 shrink-0 truncate">
-                    {timeAgo}
-                  </span>
-                  <span
-                    aria-hidden
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ background: sentColor }}
-                  />
-                  <div className="min-w-0 flex-1 truncate text-[#525252]">
-                    <Link
-                      href={`/${locale}/dashboard/feedbacks?focus=${fb.id}`}
-                      className="font-semibold text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
-                    >
-                      {fb.name || (isTr ? 'Anonim' : 'Anonymous')}
-                    </Link>{' '}
-                    {action}{' — '}
-                    <span className="text-[#737373]">{target}</span>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
 
-      {/* Yorum Görünümü — TEK section, 2-col responsive. Puan dağılımı
-          (5-bar histogram) + Platform dağılımı (pill + bar grid) yan yana.
-          /analytics derin breakdown için zaten var. */}
-      {(totalReviews > 0 || platformDistData.length > 0) && (
-        <section className="bz-card p-5 sm:p-6">
-          <header className="mb-5">
-            <Eyebrow>{isTr ? 'YORUM GÖRÜNÜMÜ' : 'REVIEW INSIGHTS'}</Eyebrow>
-            <h2 className="bz-h-tight mt-1 text-[18px] sm:text-[20px]">
-              {isTr ? 'Puanlar ve platformlar' : 'Ratings & platforms'}
-            </h2>
-          </header>
-
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div>
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="bz-h-tight-2 text-[28px] sm:text-[32px] tabular-nums">
-                  {avgRating > 0 ? avgRating.toFixed(1) : '—'}
-                </span>
-                <span className="text-[13px] text-[#737373]">
-                  / 5 · {totalReviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-                  {isTr ? 'yorum' : 'reviews'}
-                </span>
-              </div>
-              <RatingChart distribution={starCounts} totalCount={totalReviews} />
-            </div>
-
-            <div>
-              <div className="mb-4">
-                <span className="pulse-eyebrow text-[#737373]">
-                  {isTr ? 'PLATFORM DAĞILIMI' : 'PLATFORM SPLIT'}
-                </span>
-              </div>
-              {platformDistData.length > 0 ? (
-                <PlatformDistribution data={platformDistData} locale={locale} />
-              ) : (
-                <p className="text-[13px] text-[#737373]">
-                  {isTr
-                    ? 'Henüz platform bağlantılı yorum gelmedi.'
-                    : 'No platform-linked reviews yet.'}
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* §38.31 — CANLI AKIŞ timeline (tasarım page-dashboard.jsx line
-          17-23). Feedback + Reply + AI Draft + Sistem Notification union;
-          5-row sentiment dot + actor + action + target. Empty fallback
-          (yeni hesap) "henüz aktivite yok" mesajı. */}
-      <ActivityFeed events={activityEvents} isTr={isTr} />
-
-      {/* §38.32 — "Son yorumlar" section'ı kaldırıldı: CANLI AKIŞ feed
-          (yukarıda) aynı bilgiyi kompakt timeline ile gösteriyor (UI duplikasyon
-          temizliği — kullanıcı kararı). Owner detail için /feedbacks page'e
-          tıklar. QR Performansı tek sütunda korunur. */}
-      {qrPerfTop.length > 0 && (
-        <section className="bz-card">
-          <div className="p-5">
-            <Eyebrow>{isTr ? 'QR performansı' : 'QR performance'}</Eyebrow>
-            <div className="bz-h-tight mt-1 text-[16px]">
-              {isTr ? 'En aktif QR kodları' : 'Most active QRs'}
-            </div>
-          </div>
-          <div className="border-t border-[#EDEDED] grid lg:grid-cols-2">
-            {qrPerfTop.map((q, idx) => {
-              const platformLabel = q.platform
-                ? PLATFORM_LABELS_TR[q.platform] ?? q.platform
-                : isTr
-                  ? 'Genel'
-                  : 'General';
-              const last = idx === qrPerfTop.length - 1;
-              const lastInRow = idx === qrPerfTop.length - 2;
-              return (
-                <div
-                  key={q.id}
-                  className={`flex items-center gap-3 px-5 py-3.5 ${
-                    last ? '' : 'border-b border-[#F5F5F5]'
-                  } ${lastInRow ? 'lg:border-b-0' : ''} ${
-                    idx % 2 === 0 ? 'lg:border-r lg:border-[#F5F5F5]' : ''
-                  }`}
-                >
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-lg shrink-0"
-                    style={{ background: '#0A0A0A' }}
-                  >
-                    <QrCode size={18} className="text-[#C6F24E]" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-semibold truncate">{q.name}</div>
-                    <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[#737373]">
-                      <span className="truncate">{platformLabel}</span>
-                      <span>·</span>
-                      <span className="whitespace-nowrap">
-                        {q.scans.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-                        {isTr ? 'taranma' : 'scans'}
-                      </span>
-                    </div>
-                  </div>
-                  <Sparkline values={q.sparkline} w={56} h={20} color="#0A0A0A" />
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Konum performansı ve Google Etkisi (Grid layout) */}
-      {/* §38.32 — Konum performansı tek-sütun. Eski "Buaze Etkisi" Google
-          impact card'ı kaldırıldı: KANAL DAĞILIMI Google card'ında impact
-          strip ("Önce X.X → Şimdi Y.Y · +Δ") aynı bilgiyi tek-bakış veriyor
-          (UI duplikasyon temizliği — kullanıcı kararı). */}
-      {locationPerf.length > 0 && (
-        <section className="bz-card p-6 sm:p-7">
-          <div>
-            <Eyebrow>{isTr ? 'Konum performansı' : 'Location performance'}</Eyebrow>
-            <div className="bz-h-tight mt-1 text-[16px]">
-              {isTr ? 'Puana göre' : 'By rating'}
-            </div>
-          </div>
-          <ul className="mt-4 divide-y divide-[#EDEDED]">
-            {locationPerf.map((loc) => (
-              <li key={loc.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <Link
-                    href={`/${locale}/dashboard/restaurants/${loc.id}`}
-                    className="block truncate text-[13px] font-medium text-[#0A0A0A] hover:text-[#A8D62E] transition-colors"
-                  >
-                    {loc.name}
-                  </Link>
-                  <div className="pulse-eyebrow text-[#737373] mt-0.5">
-                    {loc.count} {isTr ? 'yorum' : 'reviews'}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <span className="bz-h-tight text-[18px] tabular-nums">
-                    {loc.avg > 0 ? loc.avg.toFixed(1) : '—'}
-                  </span>
-                  <Star size={14} className="text-[#C6F24E]" fill="#C6F24E" />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {/* Restaurants */}
-      <section className="space-y-5">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[20px] sm:text-[22px] font-semibold tracking-[-0.015em] bz-h-tight">
-            {t.dash_restaurants}
-          </h2>
-          <Link
-            href={`/${locale}/dashboard/restaurants`}
-            className="inline-flex items-center gap-1.5 bg-[#0A0A0A] text-white px-4 py-2.5 rounded-full text-[13px] font-medium hover:bg-[#1A1A1A] transition-colors"
-          >
-            {t.dash_add_restaurant}
-            <ArrowRight size={14} strokeWidth={2} />
-          </Link>
-        </div>
-
-        {user.restaurants.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-10 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-[#EDEDED]">
-              <Building2 size={22} className="text-[#737373]" />
-            </div>
-            <p className="text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight">
-              {t.dash_no_restaurant}
-            </p>
-            <p className="mt-2 text-[14px] text-[#525252] leading-[1.55] max-w-[400px] mx-auto">
-              {isTr
-                ? 'İlk restoranınızı ekleyerek itibarınızı yönetmeye başlayın.'
-                : 'Add your first restaurant to start managing your reputation.'}
-            </p>
-            <Link
-              href={`/${locale}/dashboard/restaurants`}
-              className="mt-5 inline-flex items-center gap-1.5 bg-[#C6F24E] text-[#0A0A0A] px-5 py-2.5 rounded-full text-[13px] font-medium hover:bg-[#A8D62E] transition-colors"
-            >
-              {t.dash_add_restaurant}
-              <ArrowRight size={14} strokeWidth={2} />
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {user.restaurants.map((restaurant) => (
-              <div
-                key={restaurant.id}
-                className="bz-card p-6 transition-colors hover:border-[#C6F24E]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-[17px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight">
-                      {restaurant.name}
-                    </h3>
-                    <div className="mt-1 flex items-center gap-1.5">
-                      <p className="pulse-eyebrow text-[#737373] truncate">/{restaurant.slug}</p>
-                      <CopyUrlButton
-                        url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/r/${restaurant.slug}`}
-                        className="h-5 w-5"
-                      />
-                    </div>
-                  </div>
-                  <span
-                    className={`pulse-eyebrow shrink-0 rounded-full px-2 py-1 ${
-                      restaurant.isActive
-                        ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                        : 'bg-[#F5F5F5] text-[#737373]'
-                    }`}
-                  >
-                    {restaurant.isActive
-                      ? isTr
-                        ? 'AKTİF'
-                        : 'ACTIVE'
-                      : isTr
-                        ? 'PASİF'
-                        : 'INACTIVE'}
-                  </span>
-                </div>
-                <div className="mt-5 flex items-center gap-2 border-y border-[#EDEDED] py-3">
-                  <Star size={14} className="text-[#C6F24E]" fill="currentColor" />
-                  <span className="text-[13px] text-[#525252]">
-                    <span className="font-semibold text-[#0A0A0A] bz-h-tight">
-                      {restaurant._count.feedbacks}
-                    </span>{' '}
-                    {isTr ? 'yorum toplandı' : 'reviews collected'}
-                  </span>
-                </div>
-                <div className="mt-5 flex gap-2">
-                  <Link
-                    href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
-                    className="flex-1 rounded-full bg-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors"
-                  >
-                    {t.dash_manage}
-                  </Link>
-                  <Link
-                    href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
-                    className="flex-1 rounded-full border border-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"
-                  >
-                    {t.dash_qr}
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Upgrade CTA */}
-      {user.plan === 'trial' && (
-        <section className="rounded-2xl bg-[#0A0A0A] p-8 sm:p-10 text-white">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="max-w-[560px]">
-              <span className="pulse-eyebrow text-[#C6F24E]">
-                {isTr ? 'GROWTH' : 'GROWTH'}
-              </span>
-              <h3 className="mt-3 text-[24px] sm:text-[30px] font-medium tracking-[-0.02em] leading-[1.15] bz-h-tight">
-                {isTr
-                  ? 'Kesintisiz itibar yönetimi.'
-                  : 'Uninterrupted reputation management.'}
-              </h3>
-              <p className="mt-3 text-[14px] text-white/70 leading-[1.6]">
-                {isTr
-                  ? `Deneme sürenizin bitmesine ${trialDaysLeft} gün kaldı. Tüm özellikleri sınırsız kullanmak için şimdi yükseltin.`
-                  : `Only ${trialDaysLeft} days left in your trial. Upgrade now for unlimited access.`}
-              </p>
-            </div>
-            <Link
-              href={`/${locale}/pricing`}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap bg-[#C6F24E] text-[#0A0A0A] px-6 py-3.5 rounded-full text-[14px] font-medium hover:bg-[#A8D62E] transition-colors"
-            >
-              {t.dash_upgrade}
-              <ArrowRight size={14} strokeWidth={2} />
-            </Link>
-          </div>
-        </section>
-      )}
+      {/* §38.41 — CANLI AKIŞ timeline (tasarım .design-owner-2026/page-dashboard.jsx
+          line 309-340). Feedback + Reply + AI Draft + Sistem Notification union.
+          §38.40 audit'inde kullanıcı raporu: eski custom inline 8-item CANLI AKIŞ
+          + ActivityFeed component duplicate + "Tümünü gör" 404 → eski section
+          silindi, viewAllHref locale-aware override edildi. Tasarımda olmayan
+          YORUM GÖRÜNÜMÜ + QR performansı + Konum performansı + Restaurants
+          list + Upgrade CTA section'ları da bu PR'da kaldırıldı (kullanıcı
+          talebi: "tasarımda yoksa sil"). */}
+      <ActivityFeed
+        events={activityEvents}
+        isTr={isTr}
+        viewAllHref={`/${locale}/dashboard/feedbacks`}
+      />
     </div>
   );
 }
