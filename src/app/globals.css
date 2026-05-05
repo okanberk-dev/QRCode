@@ -917,6 +917,19 @@ input::-webkit-inner-spin-button {
   color: #fff;
   font-weight: 600;
 }
+/* §38.59 — Tasarım birebir: aktif item sol kenarda 3px lime stripe accent.
+   .design-owner-2026 page-account.jsx + page-reviews.jsx aynı paterni
+   kullanır (siyah zemin + lime sol kenar vurgu). */
+.bz-tab-vertical[aria-selected="true"]::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: #C6F24E;
+  border-radius: 0 2px 2px 0;
+}
 .bz-tab-vertical[aria-selected="true"]::after { content: none; }
 
 /* ── ECG pulse animation for live indicators ── */

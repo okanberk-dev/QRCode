@@ -8575,3 +8575,68 @@ PR #467 (§38.55-57 mega) merge sonrası kullanıcı yeni handoff `/Users/okanbe
 - ⚪ Webhook UI tam CRUD (DEFER §38.57)
 - (CLAUDE.md §38.B master backlog kalemleri intact)
 
+### 38.59 2026-05-05 — Sidebar tek-active + Skeleton + Filter rail + Timeline + Hesabım nav
+
+PR #469 squash merge sırasında §38.59 son commit'leri (`bd22119c + 1be3c1c3`) main'e gitmedi (squash timing — merge tıklandığında branch HEAD §38.58 state'indeydi, §38.59 commit'leri sonra push edildi). Bu PR ile main'e cherry-pick + CLAUDE.md docs eklendi.
+
+**Kapsanan değişiklikler** (kullanıcı raporu — Pulse System Overview + Yorumlar Inbox + Profil & ayarlar ekran görüntüleri):
+
+**Phase A — Sidebar fix** (`UserDashboardShell.tsx`):
+- Search input ("Ara… ⌘K") sidebar'dan kaldırıldı (kullanıcı kararı). Cmd+K palette topbar'da + global keyboard shortcut ile erişilebilir; sidebar görsel sadeleşti.
+- **Multi-active bug fix**: parent group `bg-[#F2F2F2]` highlight kaldırıldı (line 532-536). Eski davranış: child item siyah zeminli + parent group da gri zeminli → kullanıcı 2 menü "seçili" hissetti. Şimdi sadece child item siyah, parent group sadece chevron rotate + child reveal animation.
+- `childActive` mantığı `matchHref + matchAccountBase` ile genişletildi: eski `pathname.startsWith(c.href)` Faturalama gibi query-string taşıyan child'ları (`?section=billing`) match edemiyordu → group expansion broken. matchHref helper Faturalama deeplink'i ve Account base ayrımını doğru handle eder.
+
+**Phase B — Sayfa anatomisi (skeleton loading)**:
+- `src/app/[locale]/dashboard/loading.tsx` rewrite — eski sade `Loader2` spinner yerine tasarım `a/page-system.jsx` Sayfa Anatomisi mock'u birebir: PageHeader skeleton + 3 graphite filled card row + 3 light gray card row + 2-col chart+activity placeholder. `.bz-skeleton` shimmer animation reuse, `role="status"` a11y, `sr-only` yükleniyor metni.
+- `src/app/admin/loading.tsx` YENİ — admin pattern (KPI 4-card + table-list skeleton).
+
+**Phase C — Yorumlar filter rail tasarım birebir** (`FeedbackFiltersRail.tsx`):
+- "FİLTRE / Yorum keşfi" başlık kaldırıldı (tasarımda yok)
+- Search input kaldırıldı (sidebar'dan kaldırılan paterni paralel)
+- Status item'lardadot indicator: active beyaz, danger red (Düşük puan), normal n300 ghost dot
+- Aktif item: `bg-[#0A0A0A] text-white` + sol kenar 3px lime stripe (`before:` pseudo) — tasarım `a/page-reviews.jsx` birebir
+- PLATFORM section icon + label: Plug default, QrCode for Buaze QR, Google G-circle pill
+- GELİŞMİŞ section sade compact (Filtreler buton + Reset)
+
+**Phase D — Yorumlar detail timeline rewrite** (`FeedbackTimeline.tsx`):
+- Vertical connecting line dot'lar arasında (n200 1px) — `absolute left-[5px] top-[14px] bottom-[-2px] w-px bg-[#EDEDED]`
+- İlk event (en güncel) için lime-soft halo pulse (rgba opacity 0.18-0.22)
+- Latency badge inline: meta'daki `1.4s`/`350ms` graphite + lime mono badge'a çıkarıldı (regex split `LATENCY_REGEX`)
+- Title bold + tarih+meta light hierarchy daha sıkı (font-size 12.5/10.5)
+- Dot `ring-2 ring-white` (connecting line üstünde temiz görünüm)
+
+**Phase E — Hesabım sol nav tasarım birebir** (`account/page.tsx` + `globals.css`):
+- 2-group (KİŞİSEL + ÇALIŞMA ALANI) → tek "AYARLAR" group
+- Tab label tasarım terminoloji align:
+  - "Bildirim" → **"Bildirimler"**
+  - "Faturalandırma" → **"Plan & Faturalama"**
+  - "Kullanıcılar" → **"Ekip & Roller"**
+- 3 tasarım tab'ı (İşletme bilgileri / Dil & Bölge / API & Webhook) DEFER edildi — backend bağlı (CLAUDE.md §38.51 + §38.B HIGH backlog).
+- `globals.css` `.bz-tab-vertical[aria-selected="true"]::before` lime stripe pseudo (sol kenar 3px lime accent) — Account sol nav + diğer SettingsLayout vertical Tabs callsite'ları otomatik tasarım birebir.
+
+**Phase F — JSDoc nested `**/` block-comment terminator fix** (`analytics-themes.ts`):
+- §38.58 PR'da Vercel build hatası: SWC parser JSDoc içinde `pos/**neu**/neg` markdown bold → `**/` comment terminator olarak yorumlandı → `Expected '{', got 'interface'` 5. satır syntax error.
+- Düzeltme: bold işaretleri kaldır, line-comment'a geç (`pos / neu / neg`). Build yeşil.
+
+**CSS minify (DEFER)**:
+- `globals.css` 1518 satır + 130 blank + 78 comment block. Production build zaten PostCSS+Tailwind v4 ile otomatik minify ediyor — kullanıcı trafiğine giden CSS minified.
+- Kaynak dosya 'profesyonel format' refactor regression riski yüksek (utility class değişimi panel görünümünü bozar). Kullanıcı kararı: ayrı session.
+
+**Yapma**:
+- `claude/a-bundle-followup-58` remote branch'i hâlâ duruyor (squash merge sırasında `--delete-branch` flag çalışamadı çünkü lokal main worktree'sinde). Branch silmek opsiyonel — §38.59 commit'leri zaten main'e geri eklendi.
+- Sidebar parent group highlight'ı geri ekleme — kullanıcı raporu net "2 menü seçili olmasın".
+- Account 3 DEFER tab'ı (İşletme bilgileri / Dil & Bölge / API & Webhook) eklemek — backend yok, scope creep (CLAUDE.md §38.51 + §38.B disiplin).
+- FeedbackFiltersRail'a search input geri ekleme — Cmd+K palette topbar + global, sidebar+rail search redundant.
+- Skeleton loading state'lerinde gerçek içerik renderlemek — `loading.tsx` Next.js segment convention sadece children placeholder, shell intact.
+
+**Yap**:
+- Yeni vertical Tabs callsite eklenirken `.bz-tab-vertical[aria-selected="true"]` lime stripe pseudo otomatik geçerli.
+- Yeni filter rail benzeri 3-col layout için aynı paterni reuse: status dot + lime stripe + platform icon.
+- Yeni timeline component için aynı paterni reuse: vertical line + halo + latency badge regex split.
+- Squash merge timing race: future PR'larda branch HEAD'in stable olduğunu doğrula (push tamamen biter, sonra merge butonu).
+
+**Backlog** (Bu PR sonrası):
+- 🟡 CSS minify (kullanıcı kararı: ayrı session)
+- 🟡 globals.css `.bz-*` utility kompakt format (production zaten minify, kaynak refactor scope dışı)
+- (Diğer §38.B kalemleri intact)
+
