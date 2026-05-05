@@ -502,15 +502,10 @@ body {
   }
 }
 
-/* Hero float — gentle up/down oscillation for floating badges. */
-@keyframes bzFloat {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
-}
-
-.bz-float {
-  animation: bzFloat 3.2s ease-in-out infinite;
-}
+/* CSS Performance §38.61 — `@keyframes bzFloat` + `.bz-float` class silindi
+ * (0 callsite). Eski hero floating badge animasyonu marketing redesign
+ * sürecinde değişti; geri eklenirse mevcut `bz-fade-up`/`bz-scale-in`
+ * paternine paralel restore et. */
 
 /* Hero — kinetic sector word swap (rotates inside the headline). */
 @keyframes bzWordSwap {
@@ -544,24 +539,54 @@ body {
   will-change: transform;
 }
 
+/* CSS Performance §38.61 — 3 keyframe styled-jsx/inline `<style>` block'larından
+ * konsolide edildi. Animation hâlâ component-level `animation:` veya
+ * `animate-[name]` arbitrary class'ı ile referans verilir; yalnız keyframe
+ * tanımı tek dosyaya taşındı (styled-jsx Babel transform overhead'i kaldırır,
+ * reduced-motion blanket'ini fragmentation'dan kurtarır). */
+
+/* MenuSplash (QR scan splash) — 3s linear progress fill */
+@keyframes buaze-splash-fill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* CustomerDetailDrawer — sağdan slide-in (mount-on-open) */
+@keyframes cust-drawer-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+/* /r/[slug] yüksek puan platform redirect overlay — 2.2s lime progress */
+@keyframes bzProgress {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .pulse-heartbeat,
   .animate-slide-up,
   .animate-slide-in,
   .bz-fade-up,
-  .bz-scale-in,
-  .bz-float {
+  .bz-scale-in {
     animation: none !important;
   }
 }
 
-/* ECG draw stops instantly for reduced motion too. Scoped separately
- * because it targets an inline-styled element, not a class. */
+/* ECG draw + §38.61 inline-animation keyframes — `[style*='X']` paterni
+ * (ecgDraw zaten kullanıyor) inline `style={{ animation: '...' }}` yazılan
+ * element'leri yakalar. Tailwind utility class'ı yok bunlarda. */
 @media (prefers-reduced-motion: reduce) {
   [style*='ecgDraw'] {
     animation: none !important;
     stroke-dashoffset: 0 !important;
+  }
+  [style*='cust-drawer-in'],
+  [style*='buaze-splash-fill'],
+  [style*='bzProgress'],
+  .animate-\[bzProgress_2\.2s_linear_forwards\] {
+    animation: none !important;
   }
 }
 
@@ -574,9 +599,6 @@ body {
    * reduce visual noise (low-power mode users + scroll context). */
   .animate-marquee {
     animation-duration: 28s;
-  }
-  .bz-float {
-    animation-duration: 4s;
   }
 }
 

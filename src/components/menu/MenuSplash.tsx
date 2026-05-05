@@ -78,13 +78,9 @@ export default function MenuSplash({ name, accent, logoUrl, durationMs = 3000, o
           style={{ animation: `buaze-splash-fill ${durationMs}ms linear forwards` }}
         />
       </div>
-
-      <style jsx global>{`
-        @keyframes buaze-splash-fill {
-          from { width: 0%; }
-          to { width: 100%; }
-        }
-      `}</style>
+      {/* CSS Performance §38.61 — `@keyframes buaze-splash-fill` styled-jsx
+          block'undan globals.css'e taşındı. Reduced-motion için inline-style
+          selector blanket'i `[style*='buaze-splash-fill']` ile kapsanır. */}
     </div>
   );
 }

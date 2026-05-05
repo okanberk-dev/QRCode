@@ -687,16 +687,11 @@ function RedirectingOverlay({
       <div className="h-1 w-[180px] overflow-hidden rounded-full bg-white/10">
         <div className="h-full bg-[#C6F24E] animate-[bzProgress_2.2s_linear_forwards]" style={{ width: 0 }} />
       </div>
-      <style jsx>{`
-        @keyframes bzProgress {
-          from {
-            width: 0;
-          }
-          to {
-            width: 100%;
-          }
-        }
-      `}</style>
+      {/* CSS Performance §38.61 — `@keyframes bzProgress` styled-jsx block'undan
+          globals.css'e taşındı. `animate-[bzProgress_2.2s_linear_forwards]`
+          Tailwind arbitrary class'ı keyframe ismini referans verdiği için
+          tanım nereden gelirse gelsin animation çalışır; reduced-motion blanket
+          arbitrary class selector'unu da yakalar. */}
     </div>
   );
 }
