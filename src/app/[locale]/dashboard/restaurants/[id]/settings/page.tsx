@@ -46,6 +46,11 @@ interface RestaurantPayload {
   bookingEnabled: boolean;
   yandexUrl: string | null;
   yandexEnabled: boolean;
+  // §38.52 — Yelp + Foursquare yorum platformları
+  yelpUrl: string | null;
+  yelpEnabled: boolean;
+  foursquareUrl: string | null;
+  foursquareEnabled: boolean;
   externalPlatformsEnabled: boolean;
   defaultRedirectPlatform: string | null;
   otherPlatformUrl: string | null;
@@ -142,6 +147,12 @@ export default function RestaurantSettingsPage() {
           bookingEnabled: data.bookingEnabled ?? true,
           yandexUrl: data.yandexUrl ?? null,
           yandexEnabled: data.yandexEnabled ?? true,
+          // §38.52 — Yelp + Foursquare yorum platformları (default enabled true,
+          // URL boşsa UI "Henüz bağlanmadı" gösterir)
+          yelpUrl: data.yelpUrl ?? null,
+          yelpEnabled: data.yelpEnabled ?? true,
+          foursquareUrl: data.foursquareUrl ?? null,
+          foursquareEnabled: data.foursquareEnabled ?? true,
           externalPlatformsEnabled: data.externalPlatformsEnabled ?? true,
           defaultRedirectPlatform: data.defaultRedirectPlatform ?? null,
           otherPlatformUrl: data.otherPlatformUrl ?? null,

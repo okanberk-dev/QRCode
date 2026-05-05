@@ -1,8 +1,22 @@
 'use client';
 
-import { useEffect, useMemo, useState, Suspense } from 'react';
+import { useEffect, useMemo, useState, useRef, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Loader2, RefreshCw, Send, Sparkles, Star, ExternalLink, Inbox, Unplug } from 'lucide-react';
+import {
+  CheckCircle2,
+  Loader2,
+  RefreshCw,
+  Send,
+  Sparkles,
+  Star,
+  ExternalLink,
+  Inbox,
+  Unplug,
+  Flag,
+  MoreVertical,
+  Copy,
+  ChevronDown,
+} from 'lucide-react';
 import { AlertBanner, Field, PageHeader } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import QuickReplyTemplates from '@/components/dashboard/google-reviews/QuickReplyTemplates';
@@ -184,10 +198,17 @@ function LoadingPanel({ label }: { label: string }) {
 }
 
 function ReviewCard({
-  review, locale, value, onChange, onDraft, onSend, drafting, replying, aiEnabled
+  review, locale, value, onChange, onDraft, onSend, drafting, replying, aiEnabled,
+  flagged, onFlagToggle, onCopyUrl, onOpenInGoogle, urgent,
 }: {
   review: GoogleReview; locale: "tr" | "en"; value: string; onChange: (value: string) => void;
   onDraft: () => void; onSend: () => void; drafting: boolean; replying: boolean; aiEnabled: boolean;
+  // §38.52 — More menu + flag
+  flagged: boolean;
+  onFlagToggle: () => void;
+  onCopyUrl: () => void;
+  onOpenInGoogle: () => void;
+  urgent?: boolean;
 }) {
   const isTr = locale === "tr";
   const rating = starValue(review.starRating);
@@ -195,11 +216,46 @@ function ReviewCard({
     ? isTr ? "Anonim kullanıcı" : "Anonymous user"
     : review.reviewer?.displayName || (isTr ? "Google kullanıcısı" : "Google user");
 
+  // §38.52 — More menu state
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen]);
+
   return (
-    <div className="rounded-xl border border-[#EDEDED] bg-white p-4">
+    <div className={`rounded-xl border bg-white p-4 ${flagged ? 'border-[#FDE68A] bg-[#FFFBEB]/40' : 'border-[#EDEDED]'}`}>
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="bz-h-tight text-[14px]">{author}</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="bz-h-tight text-[14px]">{author}</span>
+            {urgent && (
+              <span className="pulse-eyebrow inline-flex items-center gap-1 rounded-full border border-[#FCA5A5] bg-[#FEF2F2] px-1.5 py-0.5 text-[9px] text-[#991B1B]">
+                <span aria-hidden="true" className="bz-pulse-dot" style={{ background: '#DC2626' }} />
+                {isTr ? 'Acil yanıt' : 'Urgent'}
+              </span>
+            )}
+            {flagged && (
+              <span className="pulse-eyebrow inline-flex items-center gap-1 rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-1.5 py-0.5 text-[9px] text-[#92400E]">
+                <Flag size={9} />
+                {isTr ? 'İşaretli' : 'Flagged'}
+              </span>
+            )}
+          </div>
           <div className="mt-1 flex items-center gap-1 text-[12px] text-[#737373]">
             {Array.from({ length: 5 }).map((_, index) => (
               <Star key={index} size={13} fill={index < rating ? "#C6F24E" : "transparent"} color={index < rating ? "#0A0A0A" : "#A3A3A3"} />
@@ -207,12 +263,63 @@ function ReviewCard({
             <span className="ml-1">{formatDate(review.updateTime ?? review.createTime, locale)}</span>
           </div>
         </div>
-        {review.reviewReply?.comment && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#F0FDF4] px-2.5 py-1 text-[11px] text-[#166534]">
-            <CheckCircle2 size={12} />
-            {isTr ? "Yanıt var" : "Replied"}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {review.reviewReply?.comment && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-[#F0FDF4] px-2.5 py-1 text-[11px] text-[#166534]">
+              <CheckCircle2 size={12} />
+              {isTr ? "Yanıtlandı" : "Replied"}
+            </span>
+          )}
+          {/* §38.52 — More menu (3-dot dropdown) */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((o) => !o)}
+              className="bz-btn-icon"
+              aria-label={isTr ? 'Diğer aksiyonlar' : 'More actions'}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+            >
+              <MoreVertical size={14} />
+            </button>
+            {menuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full z-30 mt-1 min-w-[180px] rounded-lg border border-[#EDEDED] bg-white py-1 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.15)]"
+              >
+                <button
+                  type="button"
+                  onClick={() => { onFlagToggle(); setMenuOpen(false); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-[12.5px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                  role="menuitem"
+                >
+                  <Flag size={12} />
+                  {flagged
+                    ? (isTr ? 'İşareti kaldır' : 'Remove flag')
+                    : (isTr ? 'İşaretle' : 'Flag')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onOpenInGoogle(); setMenuOpen(false); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-[12.5px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                  role="menuitem"
+                >
+                  <ExternalLink size={12} />
+                  {isTr ? "Google'da aç" : 'Open in Google'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onCopyUrl(); setMenuOpen(false); }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-[12.5px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                  role="menuitem"
+                >
+                  <Copy size={12} />
+                  {isTr ? 'Linki kopyala' : 'Copy link'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-[#404040]">
         {review.comment || (isTr ? "Yazılı yorum yok." : "No written comment.")}
@@ -264,6 +371,120 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [replying, setReplying] = useState<Record<string, boolean>>({});
   const [drafting, setDrafting] = useState<Record<string, boolean>>({});
+  // §38.52 — 4-tab filter + sort + flag (localStorage backed)
+  const [activeTab, setActiveTab] = useState<'all' | 'unreplied' | 'negative' | 'flagged'>('all');
+  const [sortMode, setSortMode] = useState<'newest' | 'oldest' | 'lowest' | 'unreplied_first'>('newest');
+  const [flaggedIds, setFlaggedIds] = useState<Set<string>>(new Set());
+
+  // Restoran değişiminde localStorage'dan flag set'ini yükle.
+  useEffect(() => {
+    if (!activeRestaurantId || typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(`bz_google_review_flags:${activeRestaurantId}`);
+      if (raw) {
+        const arr = JSON.parse(raw) as string[];
+        setFlaggedIds(new Set(Array.isArray(arr) ? arr : []));
+      } else {
+        setFlaggedIds(new Set());
+      }
+    } catch {
+      setFlaggedIds(new Set());
+    }
+  }, [activeRestaurantId]);
+
+  const toggleFlag = (reviewName: string) => {
+    setFlaggedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(reviewName)) next.delete(reviewName);
+      else next.add(reviewName);
+      if (activeRestaurantId && typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem(
+            `bz_google_review_flags:${activeRestaurantId}`,
+            JSON.stringify(Array.from(next)),
+          );
+        } catch {
+          /* localStorage quota / unavailable */
+        }
+      }
+      return next;
+    });
+  };
+
+  const reviewExternalUrl = (review: GoogleReview): string => {
+    // Google Review URL'i kanonik path: place + reviewId. API direct URL döndürmüyorsa
+    // Maps search fallback (review.name'i "accounts/{a}/locations/{l}/reviews/{r}" formatında).
+    const reviewId = review.reviewId || review.name?.split('/').pop() || '';
+    const placeId = reviewsPayload?.location?.placeId;
+    if (placeId) {
+      return `https://search.google.com/local/reviews?placeid=${encodeURIComponent(placeId)}`;
+    }
+    if (reviewsPayload?.location?.mapsUri) {
+      return reviewsPayload.location.mapsUri;
+    }
+    return `https://www.google.com/maps/search/?q=${encodeURIComponent(reviewId)}`;
+  };
+
+  const openReviewInGoogle = (review: GoogleReview) => {
+    if (typeof window === 'undefined') return;
+    window.open(reviewExternalUrl(review), '_blank', 'noopener,noreferrer');
+  };
+
+  const copyReviewUrl = (review: GoogleReview) => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return;
+    navigator.clipboard.writeText(reviewExternalUrl(review)).catch(() => {
+      /* clipboard unavailable */
+    });
+  };
+
+  // Filtered + sorted reviews
+  const filteredReviews = useMemo<GoogleReview[]>(() => {
+    if (!reviewsPayload?.reviews) return [];
+    let arr = [...reviewsPayload.reviews];
+
+    // Tab filter
+    if (activeTab === 'unreplied') {
+      arr = arr.filter((r) => !r.reviewReply?.comment);
+    } else if (activeTab === 'negative') {
+      arr = arr.filter((r) => starValue(r.starRating) <= 3);
+    } else if (activeTab === 'flagged') {
+      arr = arr.filter((r) => flaggedIds.has(r.name));
+    }
+
+    // Sort
+    arr.sort((a, b) => {
+      if (sortMode === 'newest' || sortMode === 'oldest') {
+        const aTime = new Date(a.updateTime ?? a.createTime ?? 0).getTime();
+        const bTime = new Date(b.updateTime ?? b.createTime ?? 0).getTime();
+        return sortMode === 'newest' ? bTime - aTime : aTime - bTime;
+      }
+      if (sortMode === 'lowest') {
+        return starValue(a.starRating) - starValue(b.starRating);
+      }
+      if (sortMode === 'unreplied_first') {
+        const aRep = a.reviewReply?.comment ? 1 : 0;
+        const bRep = b.reviewReply?.comment ? 1 : 0;
+        if (aRep !== bRep) return aRep - bRep;
+        // Tie-break: newest first
+        const aTime = new Date(a.updateTime ?? a.createTime ?? 0).getTime();
+        const bTime = new Date(b.updateTime ?? b.createTime ?? 0).getTime();
+        return bTime - aTime;
+      }
+      return 0;
+    });
+    return arr;
+  }, [reviewsPayload, activeTab, sortMode, flaggedIds]);
+
+  // Tab counts (filter independent)
+  const tabCounts = useMemo(() => {
+    const all = reviewsPayload?.reviews ?? [];
+    return {
+      all: all.length,
+      unreplied: all.filter((r) => !r.reviewReply?.comment).length,
+      negative: all.filter((r) => starValue(r.starRating) <= 3).length,
+      flagged: all.filter((r) => flaggedIds.has(r.name)).length,
+    };
+  }, [reviewsPayload, flaggedIds]);
 
   useEffect(() => {
     (async () => {
@@ -899,13 +1120,88 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                 );
               })()}
 
+              {/* §38.52 — Tab strip + sort dropdown (tasarım birebir parity).
+                  Tabs: Tümü / Yanıtsız / Negatif / İşaretli. Sort: En yeni/eski/
+                  Düşük puan/Yanıtsız önce. */}
+              <div className="bz-card p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                  className="flex items-center gap-1 flex-wrap"
+                  role="tablist"
+                  aria-label={isTr ? 'Yorum filtreleri' : 'Review filters'}
+                >
+                  {(
+                    [
+                      { id: 'all', tr: 'Tümü', en: 'All', count: tabCounts.all },
+                      { id: 'unreplied', tr: 'Yanıtlanmamış', en: 'Unanswered', count: tabCounts.unreplied },
+                      { id: 'negative', tr: 'Negatif', en: 'Negative', count: tabCounts.negative },
+                      { id: 'flagged', tr: 'İşaretli', en: 'Flagged', count: tabCounts.flagged },
+                    ] as const
+                  ).map((tab) => {
+                    const active = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                          active
+                            ? 'bg-[#0A0A0A] text-white'
+                            : 'bg-[#FAFAFA] text-[#525252] hover:bg-[#F5F5F5]'
+                        }`}
+                      >
+                        {isTr ? tab.tr : tab.en}
+                        <span
+                          className={`bz-mono tabular-nums text-[10.5px] rounded-full px-1.5 py-0.5 ${
+                            active ? 'bg-white/15 text-white' : 'bg-white text-[#737373]'
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Sort dropdown */}
+                <label className="inline-flex items-center gap-2 text-[12px]">
+                  <span className="pulse-eyebrow text-[10px] text-[#737373]">
+                    {isTr ? 'SIRALA' : 'SORT'}
+                  </span>
+                  <span className="relative inline-flex items-center">
+                    <select
+                      value={sortMode}
+                      onChange={(e) => setSortMode(e.target.value as typeof sortMode)}
+                      className="appearance-none rounded-md border border-[#EDEDED] bg-white pl-3 pr-7 py-1.5 text-[12px] font-medium text-[#0A0A0A] hover:bg-[#FAFAFA] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                      aria-label={isTr ? 'Yorum sıralama' : 'Review sort'}
+                    >
+                      <option value="newest">{isTr ? 'En yeni' : 'Newest'}</option>
+                      <option value="oldest">{isTr ? 'En eski' : 'Oldest'}</option>
+                      <option value="lowest">{isTr ? 'Düşük puan önce' : 'Lowest rating first'}</option>
+                      <option value="unreplied_first">{isTr ? 'Yanıtsız önce' : 'Unanswered first'}</option>
+                    </select>
+                    <ChevronDown
+                      size={12}
+                      className="pointer-events-none absolute right-2 text-[#737373]"
+                    />
+                  </span>
+                </label>
+              </div>
+
               <div className="space-y-4">
-                {reviewsPayload.reviews.length === 0 ? (
+                {filteredReviews.length === 0 ? (
                   <div className="py-8 text-center text-[#737373] text-[14px]">
-                    {isTr ? "Henüz yorum bulunmuyor." : "No reviews found yet."}
+                    {activeTab === 'all'
+                      ? isTr
+                        ? 'Henüz yorum bulunmuyor.'
+                        : 'No reviews found yet.'
+                      : isTr
+                        ? 'Bu filtreyle eşleşen yorum yok.'
+                        : 'No reviews match this filter.'}
                   </div>
                 ) : (
-                  reviewsPayload.reviews.map((review) => (
+                  filteredReviews.map((review) => (
                     <ReviewCard
                       key={review.name}
                       review={review}
@@ -917,6 +1213,11 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                       drafting={Boolean(drafting[review.name])}
                       replying={Boolean(replying[review.name])}
                       aiEnabled={Boolean(status?.googleAiEnabled)}
+                      flagged={flaggedIds.has(review.name)}
+                      onFlagToggle={() => toggleFlag(review.name)}
+                      onCopyUrl={() => copyReviewUrl(review)}
+                      onOpenInGoogle={() => openReviewInGoogle(review)}
+                      urgent={starValue(review.starRating) <= 2 && !review.reviewReply?.comment}
                     />
                   ))
                 )}

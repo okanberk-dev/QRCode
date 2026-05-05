@@ -84,6 +84,17 @@ function formatRelative(iso: string | null): string {
 }
 
 /**
+ * §38.51 — Online status heuristic. Tasarım kaynağı:
+ * .design-owner-2026/page-account.jsx team item green dot bottom-right.
+ * 5-dakika eşik: TeamMember.lastSeenAt >= now - 5min → online.
+ */
+const ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+function isOnlineByLastSeen(iso: string | null): boolean {
+  if (!iso) return false;
+  return Date.now() - new Date(iso).getTime() < ONLINE_THRESHOLD_MS;
+}
+
+/**
  * Section 5 — Kullanıcılar & Roller (Faz 4 — workspace level).
  *
  * TeamMember CRUD UI:
@@ -314,7 +325,14 @@ export function BusinessUsersRolesSettings({
           className="flex items-center gap-3 p-3 mb-3"
           style={{ background: "#EAF9B8", border: "1px solid #A8D62E", borderRadius: 10 }}
         >
-          <Avatar size={36} name={ownerName || ownerEmail} />
+          {/* §38.51 — Owner her zaman online (mevcut session sahibi). */}
+          <div className="relative">
+            <Avatar size={36} name={ownerName || ownerEmail} />
+            <span
+              aria-label="online"
+              className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#16A34A] border-2 border-white"
+            />
+          </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="bz-h-tight text-[13px] truncate">
@@ -345,6 +363,7 @@ export function BusinessUsersRolesSettings({
                 locCount === 0
                   ? "Tüm konumlar"
                   : `${locCount} / ${totalLoc} konum`;
+              const online = isOnlineByLastSeen(m.lastSeenAt);
               return (
                 <div
                   key={m.id}
@@ -355,7 +374,16 @@ export function BusinessUsersRolesSettings({
                     borderRadius: 10,
                   }}
                 >
-                  <Avatar size={36} name={m.name || m.email} />
+                  {/* §38.51 — Online dot indicator (lastSeenAt < 5min) tasarım birebir. */}
+                  <div className="relative">
+                    <Avatar size={36} name={m.name || m.email} />
+                    {online && (
+                      <span
+                        aria-label="online"
+                        className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#16A34A] border-2 border-white"
+                      />
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="bz-h-tight text-[13px] truncate">

@@ -27,6 +27,18 @@ export const PLAN_QUOTA: Record<string, number> = {
   enterprise: 999999,
 };
 
+/**
+ * §38.51 — AI yanıt (FeedbackReply.source='ai_copilot') aylık quota per plan.
+ * Tasarım kaynağı: .design-owner-2026/page-account.jsx Plan widget "AI yanıt
+ * / ay" progress bar (Growth=2000). Pulse AI Co-Pilot maliyeti kontrol eder.
+ */
+export const PLAN_QUOTA_AI_REPLIES: Record<string, number> = {
+  trial: 500,
+  monthly: 2000,
+  yearly: 5000,
+  enterprise: 999999,
+};
+
 export const PLAN_LABELS: Record<string, { tr: string; en: string }> = {
   trial: { tr: 'Deneme', en: 'Trial' },
   monthly: { tr: 'Aylık', en: 'Monthly' },

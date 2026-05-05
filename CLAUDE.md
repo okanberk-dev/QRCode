@@ -7692,3 +7692,201 @@ Kullanıcı tasarım dosyası `.design-owner-2026/project/page-analytics.jsx` `P
 - Export endpoint admin variant (`/api/admin/analytics/export`) — talep gelince
 - AI Insights light card pattern başka surface (Dashboard) reuse — 3+ callsite olunca extract
 - (CLAUDE.md §38.B master backlog kalemleri intact)
+
+### 38.51 2026-05-05 — Hesabım tasarım birebir parity (PageAccount jsx)
+
+Kullanıcı tasarım dosyası `.design-owner-2026/project/page-account.jsx` `PageAccount` JSX paylaştı. Audit (Explore agent) §38.37'deki Hesabım 1:1 parity sonrası 7 ek drift tespit etti. AskUserQuestion ile 4 kritik karar netleşti — kullanıcı **Profile photo upload + 2FA SKIP** tercih etti, "geri kalanları yap, tasarım birebir aynı olsun".
+
+**Kullanıcı kararları**:
+- ❌ Profile photo upload — SKIP (gereksiz, schema migration yapılmadı)
+- ❌ 2FA UI — SKIP (low adoption, backend `/api/account/2fa/*` korundu)
+- ✅ Profile content **4-card senkronize scroll** (Apple System Settings paterni)
+- ✅ Security **2-row** (Şifre + Aktif oturumlar)
+- ✅ Plan widget **AI yanıt bar** (3 bar: Konum + Ekip + AI yanıt; API çağrısı SKIP)
+- ✅ Team **online dot indicator**
+- ✅ emailVerified **"Doğrulandı" badge**
+- ✅ Header **"Veri indir"** (KVKK export); "Değişiklikleri kaydet" SKIP (UnsavedChangesBar mevcut, generic header save UX confusing)
+
+**Schema migration: YOK** (`User.avatarUrl` skip edildi, mevcut `User.totpSecret` + `User.emailVerified` zaten var, mevcut `/api/account/sessions/*` zaten var).
+
+**Phase A — Backend extension**:
+1. `lib/constants.ts` `PLAN_QUOTA_AI_REPLIES` yeni map (trial 500 / monthly 2000 / yearly 5000 / enterprise 999999)
+2. `/api/billing/summary` response'una `aiReplies: { used, limit }` eklendi:
+   - `feedback.count` + `feedbackReply.count(source='ai_copilot')` Promise.all → `prisma.$transaction` (CLAUDE.md §14.1 connection_limit=1 disiplini)
+   - Aylık window (`monthStart` reuse)
+3. `/api/user/profile` GET select'e `emailVerified: true` (UI badge için)
+
+**Phase B1 — BusinessProfileSettings emailVerified badge**:
+- E-posta `<Field label>` ReactNode olarak custom JSX: `<span flex justify-between>` + `<Check size=10 #16A34A>` + "Doğrulandı"
+- `emailVerified` state + initial fetch'te `Boolean(data.emailVerified)`
+- Phone verified backend yok (`User.phoneVerified` schema'da yok) — drift kabul (CLAUDE.md §38.51 dokümante)
+
+**Phase B2 — BusinessAccountSecuritySettings 2-row (Sessions UI restore)**:
+- Mevcut "Şifre değiştir" SettingsCard intact
+- Yeni "Aktif oturumlar" SettingsCard:
+  - Header summary "X cihaz · macOS, iOS, Chrome" (initial mount fetch + parseUserAgentLabel heuristic)
+  - "Görüntüle" buton → Modal (Pulse `<Modal>` primitive, focus trap §11.1)
+  - Modal: session list (Avatar icon + device/browser + IP + relative time) + "Bu cihaz" pill (current) + "Sonlandır" buton (red border)
+  - "Diğer cihazlardan çıkış" footer button (revoke-others endpoint)
+- 2FA SKIP — kullanıcı kararı; backend `/api/account/2fa/*` korundu (CLAUDE.md §34.1 disiplini)
+- Helper: `parseUserAgentLabel` (UA → device/browser, no UA-Parser-JS lib §7), `relativeTime` (TR/EN locale-aware)
+
+**Phase B3 — AccountPlanWidget AI yanıt bar**:
+- 3 bar yeniden düzenlendi: Konum + Ekip + AI yanıt (Yorum bar silindi, AI yanıt eklendi)
+- `BillingSummary.aiReplies?` opsiyonel field (backend yeni response shape backward-compat)
+- API çağrısı bar SKIP (kullanıcı kararı)
+- Tasarım birebir: lime accent + dark hero + lime "Planı yönet" CTA korunur
+
+**Phase B4 — BusinessUsersRolesSettings online dot indicator**:
+- `isOnlineByLastSeen(iso)` helper — 5-dakika threshold
+- Avatar wrapper `<div className="relative">` + green dot (#16A34A, bottom-right, 10px, 2px white border)
+- Owner row: her zaman online (mevcut session sahibi)
+- Member rows: `lastSeenAt` heuristic
+- Tasarım kaynağı: page-account.jsx team item green dot bottom-right
+
+**Phase B5 — Header actions**:
+- `<form action="/api/account/export-data" method="POST">` + Download button → KVKK export download
+- "Değişiklikleri kaydet" header buton SKIP (drift kabul, dokümantasyon notu)
+- Title "Hesap & ayarlar" → "Hesabım" (tasarım birebir)
+- Description "Profilini, işletme bilgilerini, ekibini ve aboneliğini yönet" (tasarım birebir)
+
+**Phase C — Profile content aggregation (Apple System Settings)**:
+- Profile tab AKTİFKEN main panel'de 4 card senkronize scroll:
+  1. AccountOverviewCard (Profil Özeti, read-only avatar + identity)
+  2. BusinessProfileSettings (Kişisel Bilgiler, 6-field + emailVerified badge)
+  3. BusinessUsersRolesSettings (Ekip Üyeleri, online dot)
+  4. BusinessAccountSecuritySettings (Güvenlik, Şifre + Sessions)
+- Drilldown için Team + Security tab'lar hâlâ var — owner Profile'da overview + drilldown'da deep dive
+- 7 tab nav korunur (KİŞİSEL: Profil + Güvenlik / ÇALIŞMA ALANI: Bildirim + Pulse AI + Faturalandırma + Kullanıcılar + KVKK)
+- Owner profile + email + name workspace state'inden geçer
+
+**Yapma**:
+- Profile photo upload eklemek — kullanıcı SKIP kararı, schema `User.avatarUrl` migration yok, scope creep
+- 2FA UI eklemek — kullanıcı SKIP kararı; backend `/api/account/2fa/*` korundu, gelecekte mail magic-code 2FA eklenirse aktif edilir
+- "Değişiklikleri kaydet" header generic save buton — UnsavedChangesBar bottom paterni mevcut, her section ayrı form/endpoint, generic save tetikleyici hangi section aktif belirsiz UX confusing
+- Phone verified badge eklemek — `User.phoneVerified` schema'da yok, backend gerek (drift kabul)
+- "Ülke" alan eklemek — schema'da yok, "Saat dilimi" yeterli (CLAUDE.md §38.37 kararı intact)
+- 220px nav width — mevcut 240px (cosmetic, drift kabul)
+- API çağrısı quota bar — kullanıcı SKIP kararı (API & Webhook UI yok)
+- Profile section'da BusinessUsersRolesSettings + BusinessAccountSecuritySettings render etmesi performans overhead — accept (component'ler kendi data'larını fetch eder, refresh etmediği sürece stale data riski yok)
+- AI yanıt heuristic count yerine gerçek source-aware count — backend zaten `feedbackReply.count(source='ai_copilot')` kullanıyor (CLAUDE.md §38.34 deferred eski heuristic değil, gerçek query)
+
+**Yap**:
+- Yeni quota field eklenirken `lib/constants.ts` `PLAN_QUOTA_*` map paterni reuse + billing/summary response'a eklenir
+- Yeni KVKK alanı için verified badge eklenirken `Field label={ReactNode}` paterni — custom JSX label
+- Yeni session-aware modal eklerken `<Modal>` primitive (focus trap + ESC + body lock + ariaLabel)
+- Yeni online dot location eklenirken `isOnlineByLastSeen(iso)` helper reuse — 5-min threshold
+- Profile aggregation paterni başka surface'ta gerekirse (örn. Admin profile) aynı 4-card render reuse
+- 2FA UI gelecekte aktif edilirse: backend zaten hazır (`/api/account/2fa/setup,verify,disable`), git history'den UI restore + Modal pattern reuse + "Aktif" pill
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint .` 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npm test` 182/182 pass
+- Manuel desktop: Profile tab'da 4-card senkronize scroll (Profil Özeti + Kişisel Bilgiler + Ekip + Güvenlik) + emailVerified "Doğrulandı" green badge + Plan widget 3 bar (Konum + Ekip + AI yanıt) + header "Veri indir" KVKK export
+- Manuel: Aktif oturumlar Modal → session list + "Sonlandır" + "Diğer cihazlardan çıkış"
+- Manuel: Team online dot indicator (lastSeenAt 5min < threshold)
+- Manuel mobile (375px): SettingsLayout `isCompactNav` + rightRail bottom border-t (Plan + Invoices + Danger zone stack)
+
+**Backlog güncel** (Bu PR sonrası):
+- Profile photo upload (kullanıcı talep ederse — yeni schema field `User.avatarUrl` + base64-in-DB §3 paterni + sharp WebP 256x256 cover endpoint)
+- 2FA TOTP UI restore (backend hazır, git history'den restore + Modal pattern reuse)
+- Phone verified badge (schema field `User.phoneVerified` + verify endpoint gerek)
+- "Değişiklikleri kaydet" header global save (her section'a ref geçirme, complex)
+- Owner avatar render edilmiyor — profile photo upload yapılmadığı sürece initials fallback intact
+- (CLAUDE.md §38.B master backlog kalemleri intact)
+
+### 38.52 2026-05-05 — Platforms + Google Yorumları tasarım birebir parity (PagePlatforms + PageGoogle)
+
+İki tasarım dosyası `.design-owner-2026/page-platforms.jsx` + `.design-owner-2026/page-google.jsx` ile cross-check sonrası §38.45'teki Platform Bağlantıları + §38.14/18/33'teki Google Yorumları üzerine 8 ek drift kapatıldı. Kullanıcı kararları:
+
+| Karar | Seçim |
+|---|---|
+| Platform taksonomi | **Hibrit** — Yelp + Foursquare yorum platformları eklenir; Zapier/HubSpot/Mailchimp skip (review-odaklı Buaze paterni) |
+| Health KPI 4-card | **Hibrit** — tasarım birebir 4 KPI ama mevcut data-source (Bağlı/Bekleyen sorun/Toplam yorum/Aktif kategori) |
+| Google reviews UI | **Tasarım birebir** — 4 tab filter + sort dropdown + More menu (flag/open/copy URL) |
+| Bağlantı log'u export | **Tasarım birebir** — `/api/dashboard/platforms/log/export` CSV |
+
+**Schema migration**: 1 yeni — `Restaurant` modeline 4 nullable field (`yelpUrl`, `foursquareUrl`, `yelpEnabled`, `foursquareEnabled`).
+
+**Phase A — Taxonomy genişletme (5 nokta drift kapatma)**:
+1. `prisma/schema.prisma` Restaurant 4 yeni field + migration
+2. `src/lib/integration-domains.ts` `IntegrationProvider` literal + `PROVIDER_DOMAINS` (yelp.com / foursquare.com fsq.com) + `PROVIDER_LABELS` + `PATH_RULES` (yelp `/biz/`, foursquare `/v/` `/venue/`)
+3. `src/lib/platform-link-test.ts` `RestaurantUrlField` + `RestaurantEnabledField` + `PROVIDER_MAP` 2 yeni entry
+4. `src/components/ui/PlatformChip.tsx` `PlatformId` zaten yelp/foursquare destekliyor (UI tier önceden hazırdı, color drift `#FF1A1A` mevcut korundu — tasarım `#D32323` close-enough)
+5. `src/components/dashboard/settings/sections/BusinessIntegrationSettings.tsx` `RestaurantData` + `FormState` + `PLATFORM_DEFS` 2 yeni entry + `toForm` helper
+
+**Phase B — `/dashboard/platforms` (workspace) genişletme**:
+- `RestaurantPlatformRow` + select 4 yeni field (yelp/foursquare URL+enabled)
+- `PLATFORM_DEFS` 2 yeni entry — Yelp (#D32323 'Y'), Foursquare (#F94877 '4SQ')
+- KPI 4-card hibrit:
+  - **Bağlı kanal X/N** (mevcut, totalConnected/totalSlots)
+  - **Bekleyen sorun** — yeni: `prisma.platformLinkCheck.count` ok=false son 24h workspace aggregate (CLAUDE.md §14.1 connection_limit=1, prisma.$transaction)
+  - **Toplam yorum** — yeni: `prisma.feedback.count` workspace ay-başı
+  - **Aktif kategori** — yeni: yorum/sosyal/mesaj 3-set distinct
+- Header actions: "Bağlantı log'u" (Download icon, ghost) + "Yeni bağlantı" (Plus icon, primary)
+- Title eyebrow "PLATFORM BAĞLANTILARI" / "PLATFORM LINKS" (mevcut), description "Buaze 11+ → 13+ servisle birebir konuşur"
+
+**Phase C — `/api/dashboard/platforms/log/export` (CSV)**:
+- Owner-scoped IDOR (`getPanelActorFromRequest` + `getScopedRestaurantIds`)
+- `actor.source === 'user'` only (admin variant ayrı endpoint)
+- 8 sütun: Tarih / Restoran / Platform / Status / HTTP / Latency (ms) / Error / URL
+- UTF-8 BOM (Excel TR-safe)
+- HARD_LIMIT 5000 row + HISTORY_DAYS 90 (PlatformLinkCheck workspace son 90 gün)
+- `Cache-Control: no-store`, `Content-Disposition: attachment; filename="platform-log-{date}.csv"`
+
+**Phase D — `/dashboard/google-reviews` 4-tab + sort + More menu**:
+- **`activeTab` state** (`'all' | 'unreplied' | 'negative' | 'flagged'`) — useMemo `filteredReviews` + tabCounts
+- **`sortMode` state** (`'newest' | 'oldest' | 'lowest' | 'unreplied_first'`) — `<select>` dropdown sağ rail
+- **`flaggedIds` state** — localStorage-backed (`bz_google_review_flags:${restaurantId}` key, JSON array). Backend yok (Google review FK için Buaze FeedbackFlag uygun değil; production-grade gelecekte yeni `GoogleReviewFlag` schema ile genişletilebilir).
+- **More menu** (3-dot dropdown):
+  - "İşaretle/işareti kaldır" — toggleFlag (localStorage)
+  - "Google'da aç" — `reviewExternalUrl` (placeId → `search.google.com/local/reviews?placeid=`, fallback mapsUri veya search query)
+  - "Linki kopyala" — clipboard API
+- Tab strip: Tümü / Yanıtlanmamış / Negatif / İşaretli + per-tab count rounded pill
+- Sort dropdown native `<select>` + ChevronDown icon (CLAUDE.md §23.6 PulseSelect tier altı, basit kullanım)
+- ReviewCard 4 yeni prop: `flagged` + `onFlagToggle` + `onCopyUrl` + `onOpenInGoogle` + opsiyonel `urgent` (rating ≤2 + unreplied)
+- Urgent pill: kırmızı dot + "Acil yanıt" (low rating + no reply heuristic)
+- Flag visual: card border amber (`#FDE68A`), bg `#FFFBEB/40`, "İşaretli" amber pill
+
+**Drift kararları (kabul edilen)**:
+- ❌ Zapier/HubSpot/Mailchimp — Buaze yorum-odaklı pattern, scope creep (kullanıcı kararı)
+- ❌ "Bugün senk" + "API kullanım" KPI metric'leri — backend yok (sync event tracking + rate-limit monitoring schema gerek), hibrit 4 KPI mevcut data ile yeterli
+- ❌ Google review backend flag (FeedbackFlag) — Google review FK uygun değil; localStorage-backed pragmatic, gelecekte yeni schema gelirse migrate edilir
+- ❌ Yelp brand color tasarım `#D32323` vs mevcut `#FF1A1A` — close-enough drift kabul (PlatformChip UI tier korundu)
+
+**Yapma**:
+- 5 yeni provider (Zapier/HubSpot/Mailchimp + Yelp Business + Foursquare check-in) eklemek — Buaze yorum-odaklı pattern kullanıcı kararı
+- "Bugün senk" KPI'yı backend olmadan placeholder ile göstermek — operatör/kullanıcı yanıltıcı; mevcut data-source 4 KPI yeterli
+- Google review için `FeedbackFlag` schema reuse — FK uygun değil (Feedback ≠ Google review)
+- More menu'ye "Sil" buton eklemek — Google API public reviews silinmez; flag yeterli
+- Sort dropdown için Radix Select / PulseSelect — native `<select>` Pulse styling ile yeterli, scope kontrol
+- "İşaretli" tab counter cross-restaurant aggregate — restoran-bazlı localStorage, multi-location aggregate scope dışı
+- Yelp + Foursquare resolver chain (review redirect) — şu an sadece UI listing + URL link; redirect resolution `platform-redirect-resolver.ts` `RedirectProvider` literal'a eklenmedi (gelecek scope)
+- Workspace platforms KPI'da "API kullanım" rate-limit — Upstash quota stats workspace level zor erişilebilir; Buaze internal monitoring, owner UI'a expose edilmez
+
+**Yap**:
+- Yeni provider eklerken 5 nokta disiplini (CLAUDE.md §19.4 + §38.45): `PROVIDER_DOMAINS` + `PROVIDER_LABELS` + `PROVIDER_MAP` + `PATH_RULES` (opsiyonel) + `PLATFORM_DEFS` (workspace + per-restaurant)
+- Yeni KPI metric eklenirken backend mevcut data-source kontrol — yoksa scope kontrol (CLAUDE.md §38.B backlog)
+- Yeni log export endpoint için `getScopedRestaurantIds` + UTF-8 BOM + HARD_LIMIT (CLAUDE.md §38.50/51 paterni)
+- Google review flag production-grade gerekirse: yeni `GoogleReviewFlag` schema (`googleReviewName String @unique` + `restaurantId` + `flaggedById` + `flaggedAt` + `note?`) → backend endpoint + migrate localStorage entry'leri (defansif sync)
+- Yeni dashboard sayfa eklerken tasarım kaynağı `.design-owner-2026/page-X.jsx` cross-check + AskUserQuestion + plan onayı + Phase A-E + §38.X log
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint .` 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npm test` 182/182 pass
+- Manuel desktop: `/dashboard/platforms` 13 platform 3-col grid + 4 KPI hibrit + "Bağlantı log'u" CSV download + per-platform "Yönet" CTA per-restaurant settings'e
+- Manuel desktop: `/dashboard/google-reviews` 4-tab filter (Tümü/Yanıtsız/Negatif/İşaretli) + sort dropdown (4-mode) + More menu (Flag/Open/Copy) + urgent badge low-rating unreplied
+- Manuel: `/api/dashboard/platforms/log/export` → 8-sütun CSV download (Excel TR-safe açılır)
+- Manuel: localStorage flag persistence — sayfa yenilenince flag intact, restoran değişince yeni flag set yüklenir
+- Manuel mobile (375px): platforms 3-col → 1-col grid responsive, google reviews tab strip horizontal flex-wrap
+
+**Backlog güncel** (Bu PR sonrası):
+- Yelp + Foursquare resolver chain (`RedirectProvider` literal genişlet, `/r/[slug]` review redirect)
+- Google review production-grade flag (yeni `GoogleReviewFlag` schema + backend endpoint)
+- Workspace `/api/dashboard/platforms/log/export` admin variant (`/api/admin/platforms/log/export` cross-workspace)
+- "Bugün senk" + "API kullanım" KPI backend (sync event tracking + rate-limit observability)
+- Zapier/HubSpot/Mailchimp integration (CRM/Otomasyon/E-posta scope) — yeni 3 kategori filter chip + 5 nokta drift
+- Sort dropdown PulseSelect migrate (CLAUDE.md §23.6 — native select iOS Safari chevron collision drift, low priority)
+- (CLAUDE.md §38.B master backlog kalemleri intact)

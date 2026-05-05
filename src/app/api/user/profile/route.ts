@@ -27,6 +27,8 @@ export async function GET(req: NextRequest) {
         phoneNumber: true,
         position: true,
         timezone: true,
+        // §38.51 — emailVerified UI badge için (tasarım "Doğrulandı" green check).
+        emailVerified: true,
         role: true,
         plan: true,
         trialEndsAt: true,
