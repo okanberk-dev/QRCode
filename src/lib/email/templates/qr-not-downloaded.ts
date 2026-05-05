@@ -2,6 +2,7 @@ import { pulseLayout } from '../layout';
 import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
+import { QR_NOT_DOWNLOADED_DEFAULTS } from './lifecycle-defaults';
 
 export interface QrNotDownloadedParams {
   firstName?: string | null;
@@ -25,23 +26,7 @@ export async function renderQrNotDownloaded(
     ? `${params.restaurantName} için QR kodunuz hazır — masaya yerleştirin, ilk yorumları toplamaya başlayın.`
     : `Your QR for ${params.restaurantName} is ready — place it on a table to start collecting reviews.`;
 
-  const inlineDefault = isTr
-    ? {
-        eyebrow: 'KURULUM HATIRLATMASI',
-        title: 'Merhaba ${firstName}, QR kodunuz sizi bekliyor',
-        intro: '${restaurantName} için kurulum başlattınız ama henüz QR kodunuzu indirmediniz. QR kartınız olmadan müşterileriniz size yorum bırakamaz.',
-        why: 'Masaya / kasaya / fişe yerleştirilmiş bir QR kartı, ortalama olarak yorum sayısını anlamlı şekilde artırır. Tek bir indirme yeterli — sonrası baskı + yerleştirme.',
-        cta: 'QR kodunuzu indirin',
-        footnote: 'Bu hatırlatma sadece bir kez gönderilir. Kurulumunuzu tamamlamak istiyorsanız panele giriş yaparak kontrol listesine bakabilirsiniz.',
-      }
-    : {
-        eyebrow: 'SETUP REMINDER',
-        title: "Hi ${firstName}, your QR is waiting",
-        intro: "You started setup for ${restaurantName} but haven't downloaded your QR yet. Without a QR card, your customers can't leave reviews.",
-        why: 'A QR placed on a table / counter / receipt meaningfully increases review volume. One download — then print + place.',
-        cta: 'Download your QR',
-        footnote: 'This reminder is sent only once. Sign in to the dashboard anytime to check your activation checklist.',
-      };
+  const inlineDefault = QR_NOT_DOWNLOADED_DEFAULTS[isTr ? 'tr' : 'en'];
 
   const merged = await loadMailCopy('qr-not-downloaded', locale, inlineDefault);
   const fallbackName = isTr ? 'merhaba' : 'hi';
