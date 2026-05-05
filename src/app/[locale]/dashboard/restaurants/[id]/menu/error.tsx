@@ -30,10 +30,7 @@ export default function MenuBuilderError({
             <AlertTriangle size={20} className="text-[#DC2626]" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1
-              className="text-[20px] sm:text-[22px] font-medium tracking-[-0.015em] text-[#0A0A0A]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
+            <h1 className="bz-h-tight text-[20px] sm:text-[22px] text-[#0A0A0A]">
               {isTr ? 'Menü düzenleyici açılamadı' : 'Menu builder could not open'}
             </h1>
             <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">

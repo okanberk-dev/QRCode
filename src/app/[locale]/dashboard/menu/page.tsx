@@ -95,7 +95,7 @@ export default async function DashboardMenuPage({
     return (
       <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
         <PageHeader
-          eyebrow={isTr ? 'İŞLETME PANELİ' : 'OWNER PANEL'}
+          eyebrow={isTr ? 'MENÜ' : 'MENU'}
           title={isTr ? 'Menü' : 'Menu'}
           description={
             isTr
@@ -144,7 +144,7 @@ export default async function DashboardMenuPage({
   return (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
       <PageHeader
-        eyebrow={isTr ? 'İŞLETME PANELİ' : 'OWNER PANEL'}
+        eyebrow={isTr ? 'MENÜ' : 'MENU'}
         title={isTr ? 'Menü' : 'Menu'}
         description={
           isTr

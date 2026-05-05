@@ -172,7 +172,7 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
       <div className="space-y-5">
         <PageHeader
           eyebrow={isTr ? 'PLATFORM BAĞLANTILARI' : 'PLATFORM LINKS'}
-          title={isTr ? 'Entegrasyonlar' : 'Integrations'}
+          title={isTr ? 'Platform Bağlantıları' : 'Platform Links'}
           description={
             isTr
               ? 'Her platformdan gelen yorumu tek panelde topla. Önce bir işletme ekle.'
@@ -266,11 +266,11 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
     <div className="space-y-5">
       <PageHeader
         eyebrow={isTr ? 'PLATFORM BAĞLANTILARI' : 'PLATFORM LINKS'}
-        title={isTr ? 'Entegrasyonlar' : 'Integrations'}
+        title={isTr ? 'Platform Bağlantıları' : 'Platform Links'}
         description={
           isTr
-            ? 'Her platformdan gelen yorumu, siparişi ve mesajı tek panelde topla. Buaze 11+ servisle birebir konuşur.'
-            : 'Collect reviews, orders, and messages from every platform in one panel. Buaze speaks to 11+ services natively.'
+            ? 'Yorumları, siparişleri ve mesajları tek panelde topla. 13+ servis bağlanabilir.'
+            : 'Collect reviews, orders, and messages in one panel. 13+ services supported.'
         }
         actions={
           <div className="flex items-center gap-2">

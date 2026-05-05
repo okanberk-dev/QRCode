@@ -842,12 +842,12 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   return (
     <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
-        eyebrow={isTr ? 'GERİ BİLDİRİMLER' : 'FEEDBACKS'}
-        title={isTr ? "Google'a Yapılan Yorumlar" : 'Google Reviews'}
+        eyebrow={isTr ? 'GOOGLE YORUMLARI' : 'GOOGLE REVIEWS'}
+        title={isTr ? 'Google Yorumları' : 'Google Reviews'}
         description={
           isTr
-            ? 'Müşterilerinizin Google İşletme Profilinize bıraktığı yorumları görüntüleyin, Pulse AI ile yanıt taslağı oluşturun ve doğrudan Google üzerinden yayınlayın.'
-            : 'View reviews left on your Google Business Profile, generate AI reply drafts with Pulse AI, and publish them directly to Google.'
+            ? 'Google\'a bırakılan yorumları oku, Pulse AI taslağıyla yanıt yaz ve doğrudan yayınla.'
+            : 'Read Google reviews, draft replies with Pulse AI, and publish straight from here.'
         }
         actions={
           // §38.57 — Tasarım a/page-google.jsx topbar 2 action button birebir.

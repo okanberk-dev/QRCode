@@ -683,7 +683,7 @@ async function renderAnalyticsPage({
            dashboard; hero h1 ezici hissedilir. titleScale="compact"
            22-32px mütevazı kalır. */
         titleScale="compact"
-        eyebrow={isTr ? 'İŞLETME PANELİ' : 'OWNER PANEL'}
+        eyebrow={isTr ? 'ANALİTİK' : 'ANALYTICS'}
         title={isTr ? 'Analitik' : 'Analytics'}
         description={
           isTr
