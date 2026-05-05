@@ -127,6 +127,9 @@ export default function OnboardingPage({ params }: Props) {
     return () => {
       cancelled = true;
     };
+    // `steps` is a module-level const array — stable across renders. Mount-only
+    // prefill load (empty deps intentional).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const update = <K extends keyof OnboardingState>(key: K, value: OnboardingState[K]) =>

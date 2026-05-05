@@ -143,6 +143,9 @@ export default function RestaurantsPage() {
 
   useEffect(() => {
     fetchRestaurants();
+    // fetchRestaurants is a stable closure capturing filter state; the listed
+    // filters are the only intentional triggers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, planFilter, attention]);
 
   useEffect(() => {

@@ -166,7 +166,7 @@ export function BusinessOperationalSettings({
         >
           <Info size={14} className="shrink-0 mt-0.5 text-[#737373]" aria-hidden="true" />
           <span className="text-[12px] text-[#525252]">
-            Detaylı haftalık takvim (gün-bazlı açılış/kapanış) yakında V2'de gelecek.
+            Detaylı haftalık takvim (gün-bazlı açılış/kapanış) yakında V2&apos;de gelecek.
           </span>
         </div>
       </SettingsCard>

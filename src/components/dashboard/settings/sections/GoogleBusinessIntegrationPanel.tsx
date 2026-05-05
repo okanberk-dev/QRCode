@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CheckCircle2,
   ExternalLink,
@@ -62,14 +62,6 @@ interface GoogleLocation {
   newReviewUri: string | null;
 }
 
-const STAR_VALUE: Record<string, number> = {
-  ONE: 1,
-  TWO: 2,
-  THREE: 3,
-  FOUR: 4,
-  FIVE: 5,
-};
-
 function defaultQuery(restaurant: RestaurantData): string {
   return [restaurant.name, restaurant.address, restaurant.city]
     .filter((item): item is string => Boolean(item && item.trim()))
@@ -95,6 +87,9 @@ export function GoogleBusinessIntegrationPanel({
 
   useEffect(() => {
     setQuery(defaultQuery(restaurant));
+    // We intentionally read individual restaurant fields rather than the whole
+    // object — this avoids re-running on unrelated restaurant prop mutations.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurant.id, restaurant.name, restaurant.address, restaurant.city]);
 
   const selectedLocation = status?.selectedLocation ?? null;
@@ -116,6 +111,9 @@ export function GoogleBusinessIntegrationPanel({
 
   useEffect(() => {
     void loadStatus();
+    // loadStatus is a stable closure capturing restaurant.id; restaurant.id
+    // change is the only intentional re-fetch trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurant.id]);
 
   const searchPlaces = async () => {

@@ -29,7 +29,6 @@ import {
   Tag,
   Trash2,
   User,
-  Wand2,
   X,
 } from 'lucide-react';
 import { plainTextToBlogContent, sanitizeBlogContent } from '@/lib/blog-content';
@@ -228,6 +227,10 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
     if (editorMode === 'write') {
       window.setTimeout(() => syncEditorFromState(form.content), 0);
     }
+    // form.content is a controlled value — re-syncing on every content edit
+    // would clobber the user's caret. Only mode toggle (write↔preview) should
+    // trigger sync; intentional skip of form.content dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editorMode, syncEditorFromState]);
 
   const updateTitle = (title: string) => {
@@ -804,7 +807,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   {/* Preview — visible whenever coverImage is set */}
                   {form.coverImage && (
                     <div className="mt-2 relative overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#FAFAFA]">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      { }
                       <img
                         src={form.coverImage}
                         alt="Kapak önizlemesi"
@@ -860,7 +863,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     />
                   </div>
                   <p className="mt-2 text-[11px] text-[#737373] leading-[1.55]">
-                    JPG/PNG/WebP, en fazla 5 MB. Otomatik 1600×900 (16:9) WebP'ye çevrilir.
+                    JPG/PNG/WebP, en fazla 5 MB. Otomatik 1600×900 (16:9) WebP&apos;ye çevrilir.
                   </p>
                   {coverUploadError && (
                     <p className="mt-2 text-[12px] font-semibold text-[#991B1B]">{coverUploadError}</p>

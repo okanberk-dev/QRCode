@@ -131,7 +131,7 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
               İşletmeyi devre dışı bırak
             </h3>
             <p className="text-[12.5px] text-[#525252] mt-1">
-              Müşteri sayfası "aktif değil" uyarısı gösterir, yorum kabul edilmez.
+              Müşteri sayfası &quot;aktif değil&quot; uyarısı gösterir, yorum kabul edilmez.
               İstediğin zaman tekrar aktifleştirebilirsin.
             </p>
             <button

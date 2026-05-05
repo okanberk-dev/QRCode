@@ -278,7 +278,7 @@ function AcceptInviteInner() {
                 {isTr ? (
                   <>
                     <strong className="text-[#0A0A0A]">{info.email}</strong> ile
-                    zaten Buaze hesabın var. Daveti kabul ettiğinde bu workspace'e
+                    zaten Buaze hesabın var. Daveti kabul ettiğinde bu workspace&apos;e
                     erişimin aktifleşir.
                   </>
                 ) : (

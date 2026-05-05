@@ -59,7 +59,7 @@ function inferMetadata(routePath: string): { priority: number; changefreq: Chang
 
   // Heuristic: solutions/* are sector landing pages — prioritize.
   let priority = DEFAULT_PRIORITY;
-  let changefreq: ChangeFreq = DEFAULT_CHANGEFREQ;
+  const changefreq: ChangeFreq = DEFAULT_CHANGEFREQ;
 
   if (routePath.startsWith('solutions/')) {
     priority = 0.9;

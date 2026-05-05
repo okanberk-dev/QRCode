@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Eye, History, Loader2, Mail, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import MailFieldInput, { type MailFieldDef } from './MailFieldInput';
@@ -288,7 +288,12 @@ export default function MailTemplateEditor({ templateKey, locale }: Props) {
 }
 
 function FlatTemplateEditor({ templateKey, locale }: Props) {
-  const fields = FIELDS_BY_TEMPLATE[templateKey] ?? [];
+  // §38.49 — useMemo to keep `fields` reference stable across renders;
+  // useEffect deps below depend on it (otherwise re-fires every render).
+  const fields = useMemo(
+    () => FIELDS_BY_TEMPLATE[templateKey] ?? [],
+    [templateKey],
+  );
   const isEnglish = locale === 'en';
 
   const [content, setContent] = useState<Record<string, string>>({});

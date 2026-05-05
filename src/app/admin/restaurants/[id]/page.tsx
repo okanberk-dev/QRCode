@@ -408,7 +408,7 @@ export default function RestaurantDetailPage() {
             <div>
               <p className="pulse-eyebrow text-[#737373]">Widget</p>
               <h2 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Kullanan siteler</h2>
-              <p className="mt-0.5 text-[12px] text-[#737373]">Son 30 günde bu işletmenin widget'ını yükleyen alan adları.</p>
+              <p className="mt-0.5 text-[12px] text-[#737373]">Son 30 günde bu işletmenin widget&apos;ını yükleyen alan adları.</p>
             </div>
           </div>
           {embedStatsLoading ? (

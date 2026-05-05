@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, Suspense } from 'react';
+import { useEffect, useMemo, useRef, useState, Suspense, use } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Inbox, Loader2 } from 'lucide-react';
 import { EmptyState, PageHeader } from '@/components/ui';
@@ -747,12 +747,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   );
 }
 
-export default async function FeedbacksPage({
+export default function FeedbacksPage({
   params,
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
-  const resolvedParams = await params;
+  // §38.49 — Client component → async edilemez (Next.js no-async-client-component
+  // kuralı). React 18.3+ `use()` hook ile Promise client-side unwrap.
+  const resolvedParams = use(params);
   return (
     <Suspense
       fallback={

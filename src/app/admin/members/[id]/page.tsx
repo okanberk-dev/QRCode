@@ -432,7 +432,7 @@ export default function MemberDetailPage({
                 onClick={() => setActiveTab('audit')}
                 className="mt-4 text-[12px] text-[#737373] hover:text-[#0A0A0A] underline"
               >
-                Tüm log'u gör
+                Tüm log&apos;u gör
               </button>
             )}
           </section>

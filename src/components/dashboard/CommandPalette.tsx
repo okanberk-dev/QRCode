@@ -32,8 +32,6 @@ interface FeedbackHit {
   restaurantName?: string | null;
 }
 
-type Hit = RestaurantHit | FeedbackHit;
-
 interface NavItem {
   href: string;
   label: string;

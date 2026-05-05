@@ -280,7 +280,7 @@ export default function BrandIdentityCard({
               {uploadingLogo ? (
                 <Loader2 size={20} className="animate-spin text-[#737373]" />
               ) : form.logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                 
                 <img
                   src={form.logoUrl}
                   alt="logo"
@@ -347,7 +347,7 @@ export default function BrandIdentityCard({
               {uploadingFavicon ? (
                 <Loader2 size={14} className="animate-spin text-[#737373]" />
               ) : form.faviconUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                 
                 <img
                   src={form.faviconUrl}
                   alt="favicon"
@@ -499,7 +499,7 @@ export default function BrandIdentityCard({
             }}
           >
             {form.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
+               
               <img src={form.logoUrl} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
             ) : (
               initial1

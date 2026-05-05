@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Loader2,
   Mail,
@@ -157,12 +157,6 @@ export function BusinessUsersRolesSettings({
   useEffect(() => {
     void load();
   }, []);
-
-  const restaurantNameById = useMemo(() => {
-    const map = new Map<string, string>();
-    restaurants.forEach((r) => map.set(r.id, r.name));
-    return map;
-  }, [restaurants]);
 
   const handleInvite = async () => {
     if (inviting) return;
@@ -340,12 +334,11 @@ export function BusinessUsersRolesSettings({
           </div>
         ) : members.length === 0 ? (
           <p className="text-[13px] text-[#737373] py-2">
-            Henüz ek üye yok. "Üye davet et" ile başla.
+            Henüz ek üye yok. &quot;Üye davet et&quot; ile başla.
           </p>
         ) : (
           <div className="space-y-2">
             {members.map((m) => {
-              const initial = (m.name || m.email).slice(0, 1).toUpperCase();
               const locCount = m.locations?.length ?? 0;
               const totalLoc = restaurants.length;
               const locLabel =

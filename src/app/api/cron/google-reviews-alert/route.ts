@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sendFeedbackNotification } from '@/lib/email';
 import {
@@ -140,7 +141,7 @@ export async function runGoogleReviewsAlert() {
       await prisma.googleIntegration.update({
         where: { id: integration.id },
         data: {
-          locationsJson: cache as any,
+          locationsJson: cache as unknown as Prisma.InputJsonValue,
         },
       });
     }
