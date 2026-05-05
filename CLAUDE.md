@@ -9526,3 +9526,109 @@ user reaction time at tap targets. §38.67 paterni (`bz-tr-hover`) ile birebir.
 - 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
 - 🛡️ Security follow-ups (§38.2)
 
+### 38.69 2026-05-05 — Mobile UX polish + pixel-perfect verification + bottom sheet white theme
+
+§38.68 backlog'unun **DO NOW** kalemleri (security hariç) tek consolidated PR'da
+kapatıldı + kullanıcı raporu kritik bug fix (mobile More sheet invisible text)
++ pixel-perfect approach disipline CLAUDE.md'ye kalıcı not edildi. 3 paralel
+Explore agent audit (mobile + backlog + pixel-perfect drift) + manuel doğrulama
+(false positive eleme) sonrası 5 phase implement.
+
+**Audit findings özet** (3 paralel agent):
+- Mobile More sheet `shadow-2xl` (UserDashboardShell.tsx:981) — DO NOW
+- BusinessGeneralSettings + BusinessProfileSettings 4 form input `inputMode`/`enterKeyHint` polish — DO NOW
+- More sheet items `transition-colors` → `bz-motion-spring` — Apple HIG polish
+- SettingsLayout 240px sol nav (tasarım `220px 1fr 320px`) — pixel-perfect drift
+- Heatmap opacity formula ✓ (`0.15 + ratio * 0.85` doğru, §38.24'te uygulanmış)
+- FeedbackFiltersRail 3px lime stripe ✓ (§38.62/§38.68 sweep'te doğru)
+- AI Insight Banner padding ✓ (subtle drift, low-value polish — SKIP)
+
+**Kullanıcı raporu (kritik mobile bug)**: "Mobile More sheet menü kısmı text invisible." Screenshot evidence: tüm item text'leri (Google Yorumları, Analitik, Platform Bağlantıları, İşletmeler, Müşteriler, Kılavuz, Hesabım) zar zor okunur düşük contrast'ta. Sadece "Çıkış" parlak kırmızı görünür.
+
+**Root cause**: Wrapper line 981 `bg-[#0A0A0A]` (dark graphite) + `text-[#0A0A0A]` (graphite text) = **invisible text on same color**. Internals (eyebrow #525252, hover bg #FAFAFA, item text #1A1A1A, logout border #EDEDED, logout hover bg #FEF2F2) **white sheet için tasarlanmış** — wrapper dark leftover/yanlış. Mobile drawer (§38.68 white) + bottom nav (white) ile tutarsız, kullanıcı UX bozulmuş.
+
+**Phase A — Form input polish** (4 input field):
+- `BusinessGeneralSettings.tsx:323-345` phone (`type="tel"`) + notification email (`type="email"`):
+  - `inputMode="tel"` / `inputMode="email"`
+  - `enterKeyHint="next"`
+  - Email için `autoCapitalize="off"` + `autoCorrect="off"` + `spellCheck={false}`
+- `BusinessProfileSettings.tsx:170-212` name (`type="text"`) + email:
+  - Name: `autoCapitalize="words"` + `enterKeyHint="next"`
+  - Email: `inputMode="email"` + `enterKeyHint="next"` + autoCapitalize/autoCorrect/spellCheck off
+- iOS Safari keyboard layout auto-select + form chain navigation polish (CLAUDE.md §25.5/§25.6 disipline reuse)
+
+**Phase B+ — Mobile More sheet white theme + slide-in animation + Apple-soft shadow**:
+
+`UserDashboardShell.tsx:981` wrapper rewrite (kullanıcı bug fix + tasarım tutarlılık):
+- `bg-[#0A0A0A]` (dark) → `bg-white` — internals (eyebrow #525252, hover #FAFAFA, item #1A1A1A, logout #FEF2F2) zaten white sheet için tasarlandığından invisible text bug otomatik düzelir
+- `text-[#0A0A0A]` redundant kaldırıldı (white wrapper'da children zaten dark text override ediyor)
+- `shadow-2xl` (~25px Tailwind heavy default) → `bz-elev-3` (Apple-soft heaviest tier `0_12px_32px_0.10`, §38.65 NotificationBell + §38.68 mobile drawer paterni reuse — modal-tier)
+- Drag handle `bg-white/20` → `bg-[#D4D4D4]` (n300, visible on white)
+- Yeni `style={{ animation: 'bz-mob-sheet-in 240ms cubic-bezier(0.4, 0, 0.2, 1)' }}` — bottom sheet slide-from-bottom entrance (`bz-mob-drawer-in` slide-from-left paterni paralel)
+
+**Yeni `bz-mob-sheet-in` keyframe** (`globals.css:566`, §38.68 paterni reuse):
+```css
+@keyframes bz-mob-sheet-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+```
++ Reduced-motion blanket genişletme (`[style*='bz-mob-sheet-in']` selector — §38.61 paterni belt-and-suspenders).
+
+**Phase C — More sheet items spring motion** (3 callsite):
+- More sheet item link (line 1005) `transition-colors` → `bz-motion-spring`
+- Logout button (line 1024) aynı
+- Tap feedback Apple HIG polish — bottom nav'dan farklı bağlam (overlay tier, drawer kapanır + route navigate, "bleed" sorunu yok)
+
+**Phase D — Pixel-perfect: SettingsLayout 240px → 220px**:
+- `src/components/dashboard/settings/SettingsLayout.tsx:146-147` grid template `lg:grid-cols-[240px_1fr]` → `lg:grid-cols-[220px_1fr]`
+- xl: variant aynı `220px_minmax(0,1fr)_320px` — tasarım `.design-owner-2026/page-account.jsx:36` `gridTemplateColumns: '220px 1fr 320px'` birebir
+- 20px sol nav daraltma — Account + Profile + diğer settings sayfaları otomatik etkilenir
+
+**Phase E — CLAUDE.md §38.69 log + Pixel-perfect approach disipline notu** (CLAUDE.md kalıcı policy):
+
+Pulse design system için pixel-perfect approach 7-rule disipline (yeni §38.B üstüne kalıcı not):
+
+1. **Tasarım kaynağı kanonik** — `.design-owner-2026/project/page-*.jsx` (CLAUDE.md §16) tek source-of-truth. JSX prototipleri `src/`'ye **kopyalanmaz**, sadece referans.
+2. **Token-driven implementation** — Inline hex/spacing yerine `bz-elev-1/2/3`, `bz-motion-spring`, `bz-lift`, Pulse `pulse-eyebrow`/`bz-h-tight-2`, color token'lar (`#C6F24E`/`#0A0A0A`/N-scale) kullan.
+3. **Audit yöntemi** — Yeni sayfa eklerken veya parity issue raporu çıkarken: 3 paralel Explore agent (mobile + backlog + pixel-perfect drift) → manuel verify (false positive yaygın) → AskUserQuestion ile kritik kararlar → tek consolidated PR.
+4. **Drift kategorileri**:
+   - 🔴 HIGH = visible drift (heavy shadow, wrong color, position misalignment, **invisible text on same-color background**)
+   - 🟡 MEDIUM = polish opportunity (motion easing, padding 2-4px, font weight 600 vs 500)
+   - 🟢 LOW = cosmetic (1px offset, opacity 0.05 drift, font-size 1px)
+5. **Verification protocol** — Edit sonrası: `tsc 0 errors`, `eslint 0 errors`, `npm test 182/182 pass`, `npx next build 58/58 static page`. Manual: Chrome DevTools 375px iPhone SE + 768px iPad portrait + `prefers-reduced-motion: reduce` simulation + VoiceOver. Sanity grep regression check (`grep -rE "<old_pattern>" src/ → 0`).
+6. **Foundation token reuse** — Yeni component eklerken önce mevcut `bz-*`/`pulse-*` token'ları kullan; 3+ callsite tekrar olmadan yeni token oluşturma (CLAUDE.md §7 abstraction kaçınma).
+7. **Kullanıcı raporu kritik** — "Görmüyorum / okuyamıyorum / tıklamıyor / yanlış renk" gibi raporlar **HIGH severity** kabul edilir; subtle pixel drift'ten önce çözülür. Mobile bug raporları için screenshot + element inspection + theme/contrast audit zorunlu (§38.69 More sheet invisible text bug paterni — 1 wrapper className değişimi 7 görünmez item'ı düzeltir).
+
+**Etkilenen dosyalar** (5 file, ~30 satır edit + 1 yeni keyframe block):
+- `src/app/globals.css` (+8 satır: yeni `bz-mob-sheet-in` keyframe + reduced-motion blanket selector)
+- `src/components/dashboard/UserDashboardShell.tsx:981` (wrapper white theme + bz-elev-3 + bz-mob-sheet-in animation + drag handle visible) + 2 motion swap (line 1005 + 1024)
+- `src/components/dashboard/settings/sections/BusinessGeneralSettings.tsx:323-345` (2 input polish)
+- `src/components/dashboard/settings/sections/BusinessProfileSettings.tsx:170-212` (2 input polish)
+- `src/components/dashboard/settings/SettingsLayout.tsx:146-147` (240px → 220px tasarım birebir)
+
+**Yapma**:
+- Pulse palette dışına çıkma — lime/graphite/N-scale SABİT
+- Mobile More sheet'i tekrar dark theme'e çevirme — internals white için tasarlandığı için invisible text bug regression olur
+- Form input `<select>` `inputMode` ekleme — native picker zaten doğru
+- AI Insight Banner padding agresif sıkıştırma (px-5 py-4 → px-4 py-3.5) — owner okunaklılığı bozar, design source 14px/18px tasarımı subtle drift, low-value
+- DEFER backlog item'larını (12 item: Google API + 2FA + Profile photo + Account freeze + ...) bu PR'a sıkıştırma — schema/backend/product decision gerek
+- Bottom nav `transition-colors` değiştirme — §38.68 documented intentional drift (route change pill bleed)
+
+**Yap**:
+- Yeni form input eklenirken `inputMode` + `enterKeyHint` + `autoComplete` triple'ı doğru kombine et (email/tel/numeric/decimal/text)
+- Yeni mobile bottom sheet/overlay eklenirken `bz-elev-3` + `bz-mob-sheet-in` (slide-from-bottom) veya `bz-mob-drawer-in` (slide-from-left) keyframe paterni reuse
+- Yeni keyframe eklenirken aynı PR'da reduced-motion blanket'a `[style*='keyframe-name']` selector ekle (§38.61 disipline)
+- Mobile UI bug raporu için: theme audit (bg color × text color contrast WCAG AA) + screenshot evidence + manuel doğrulama (3-agent çıktısı false positive olabilir)
+- Pixel-perfect drift için tasarım kaynağı `.design-owner-2026/project/page-*.jsx` line:N referansla — agent çıktısını manuel verify
+
+**Backlog güncel** (PR-1 + §38.66 + §38.67 + §38.68 + §38.69 sonrası):
+- ✅ §38.69 form input polish + mobile More sheet white theme + pixel-perfect verification kapatıldı
+- ✅ Pixel-perfect approach disipline CLAUDE.md'de kalıcı not (§38.69 — 7-rule)
+- 🟡 Marketing MobileBottomNav lift utility audit (marketing surface, panel-only kapsam dışı)
+- 🟡 AI Insight Banner padding 2-4px polish (subtle, low-value, deferred)
+- 🟡 Sentiment topic stacked bar 3-segment polish (§38.41/§38.20)
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
+- 🛡️ Security follow-ups (§38.2 — operatör tetiği bekliyor)
+- DEFER backlog 12 item (Google API + 2FA UI + Profile photo + Account freeze + diğer backend/schema gate, kullanıcı açık talep gerek)
+

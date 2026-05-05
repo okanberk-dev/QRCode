@@ -143,8 +143,8 @@ export function SettingsLayout({
         <div
           className={`grid grid-cols-1 gap-6 lg:gap-10 ${
             rightRail
-              ? 'lg:grid-cols-[240px_1fr] xl:grid-cols-[240px_minmax(0,1fr)_320px]'
-              : 'lg:grid-cols-[240px_1fr]'
+              ? 'lg:grid-cols-[220px_1fr] xl:grid-cols-[220px_minmax(0,1fr)_320px]'
+              : 'lg:grid-cols-[220px_1fr]'
           }`}
         >
           {/* Tab nav: horizontal on md, vertical on lg.
