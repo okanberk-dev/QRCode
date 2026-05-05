@@ -1277,7 +1277,7 @@ async function renderDashboardPage({
           <ul className="space-y-3.5">
             {dashboardThemes.themes.slice(0, 5).map((t) => {
               // §38.58 — 3-segment stacked sentiment bar (tasarım birebir
-              // a/page-dashboard.jsx:294-298 pos/**neu**/neg). extractThemes
+              // a/page-dashboard.jsx:294-298 pos / neu / neg). extractThemes
               // helper artık 3 yüzde döndürür (CACHE_KEY_VERSION 'v3'). Eski
               // v2 cache entry'lerinde sentiment alanları yok → fallback
               // tek-renk count bar (graceful).

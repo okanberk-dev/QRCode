@@ -12,12 +12,10 @@ export interface ThemeItem {
    * entry'lerde yok, UI graceful skip yapar.
    */
   sentimentPositivePct?: number;
-  /**
-   * §38.58 — `a/` bundle parity (a/page-dashboard.jsx:294-298 SIK BAHSEDİLEN
-   * 3-segment stacked bar pos/**neu**/neg). Tasarım birebir için neutral +
-   * negative ayrı yüzde gerek. Toplam pos+neu+neg = 100. Model uymadıysa 3
-   * field birden undefined kalır → UI 2-segment fallback'a düşer.
-   */
+  // §38.58 — `a/` bundle parity (a/page-dashboard.jsx:294-298 SIK BAHSEDİLEN
+  // 3-segment stacked bar pos / neu / neg). Tasarım birebir için neutral +
+  // negative ayrı yüzde gerek. Toplam pos+neu+neg = 100. Model uymadıysa 3
+  // field birden undefined kalır → UI 2-segment fallback'a düşer.
   sentimentNeutralPct?: number;
   sentimentNegativePct?: number;
 }
