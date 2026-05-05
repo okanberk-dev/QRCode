@@ -472,7 +472,14 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 href={item.href}
                 onClick={handleNavClick}
                 aria-current={isActive ? 'page' : undefined}
-                className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
+                /* §38.65 — Apple HIG sidebar item polish: bz-motion-spring
+                   200ms cubic-bezier easing + transform-friendly transition.
+                   Önceki `transition-colors` only → renk değişimi sade ama
+                   subtle motion yok. Now: hover'da bg + color + (active hariç)
+                   text shift smooth animate olur. Lift `bz-lift` kasıtlı
+                   eklenmedi — sidebar item'lar nav-link, lift hareket distract
+                   eder; CTA + kartlar için saklı. */
+                className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium bz-motion-spring ${
                   isActive
                     ? 'bg-[#0A0A0A] text-white font-semibold before:absolute before:left-[-12px] before:top-1.5 before:bottom-1.5 before:w-[3px] before:bg-[#C6F24E] before:rounded-r-sm'
                     : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
@@ -763,8 +770,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto">
-        {/* Mobile top bar */}
-        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+        {/* Mobile top bar — §38.65 backdrop-blur-xl Apple "frosted glass" tier upgrade
+            (kullanıcı kararı: sticky header only). Önceki `backdrop-blur` (8px) →
+            `backdrop-blur-xl` (24px) Liquid Glass referansı; sadece header katmanında. */}
+        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur-xl lg:hidden">
           <Link href={`/${locale}/dashboard`} className="flex items-center gap-2">
             <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
             <span
