@@ -1,16 +1,18 @@
-// §38.50 — PUAN VE HACİM TRENDİ — 3-series simultaneous (tasarım birebir).
-// Tasarım kaynağı: .design-owner-2026/project/page-analytics.jsx PageAnalytics
-// "Big trend chart" line 169-219:
-//   - Volume bars (gri #E5E5E5) background
-//   - Rating line (lime gradient area + lime stroke 2.5)
-//   - Target dashed line (#A3A3A3, 4.5 default)
-//   - Last point lime tooltip + circle highlight
-//   - X-axis date labels (her 5'inci nokta highlight)
+'use client';
+
+// §38.56 — PUAN & HACİM TRENDİ — Puan/Hacim/Sentiment 3-mode toggle restore
+// (tasarım a/page-analytics.jsx line 102-105 birebir). §38.34'te vardı,
+// §38.50'de simultaneous 3-series'a dönüştürülmüştü; yeni handoff bundle
+// toggle istiyor.
 //
-// §38.34 toggle mode (Puan/Hacim/Sentiment ayrı render) silindi: tasarım
-// 3-series birlikte, owner tek bakışta puan + hacim + hedef ilişkisi görür.
+// Mode davranışı:
+//   - 'rating' (default): volume bars + rating line (lime) + target dashed
+//   - 'volume': öne çıkan volume bars (lime fill) + rating line muted
+//   - 'sentiment': sentiment % line (lime) + target dashed (50% line)
 //
-// Custom inline SVG — recharts kullanmaz. Server component (no 'use client').
+// Custom inline SVG — recharts kullanmaz. Client component (toggle state).
+
+import { useState } from 'react';
 
 export interface PulseTrendPoint {
   /** Etiket (örn. "H1"..."H14" veya "04 NIS"). */
@@ -54,11 +56,16 @@ function computeRatingYRange(
   return { min: Math.max(0, minR - 0.2), max: Math.min(5, maxR + 0.2) };
 }
 
+type TrendMode = 'rating' | 'volume' | 'sentiment';
+
 export function PulseTrendChart({
   weeks,
   targetRating = 4.0,
   isTr = true,
 }: PulseTrendChartProps) {
+  // §38.56 — Mode toggle state (tasarım birebir Puan/Hacim/Sentiment 3-tab).
+  const [mode, setMode] = useState<TrendMode>('rating');
+
   if (weeks.length < 2) {
     return (
       <section
@@ -148,10 +155,10 @@ export function PulseTrendChart({
       className="bz-card p-5 sm:p-6"
       aria-label={isTr ? 'Puan ve hacim trendi' : 'Rating and volume trend'}
     >
-      <header className="mb-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+      <header className="mb-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <h3 className="pulse-eyebrow text-[10.5px] text-[#737373]">
-            {isTr ? 'PUAN VE HACİM TRENDİ' : 'RATING & VOLUME TREND'}
+            {isTr ? 'PUAN & HACİM TRENDİ' : 'RATING & VOLUME TREND'}
           </h3>
           <div className="bz-h-tight mt-1 text-[16px] sm:text-[18px]">
             {isTr ? `${weeks.length} haftalık görünüm` : `${weeks.length}-week view`}
@@ -162,35 +169,38 @@ export function PulseTrendChart({
             </div>
           )}
         </div>
-        {/* §38.50 — Tasarım legend: 3-series simultaneous birlikte. */}
+        {/* §38.56 — Mode toggle (tasarım a/page-analytics.jsx line 102-105
+            birebir 3-tab: Puan / Hacim / Sentiment). Default rating aktif. */}
         <div
-          className="flex flex-wrap items-center gap-3 text-[11px] text-[#525252]"
-          aria-label={isTr ? 'Açıklama' : 'Legend'}
+          role="tablist"
+          aria-label={isTr ? 'Trend modu' : 'Trend mode'}
+          className="inline-flex items-center gap-0.5 rounded-full border border-[#EDEDED] bg-[#FAFAFA] p-0.5"
         >
-          <span className="inline-flex items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              className="inline-block w-3.5 h-0.5 rounded-sm"
-              style={{ background: '#A8D62E' }}
-            />
-            {isTr ? 'Puan' : 'Rating'}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              className="inline-block w-2 h-2 rounded-sm"
-              style={{ background: '#E5E5E5' }}
-            />
-            {isTr ? 'Hacim' : 'Volume'}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              className="inline-block w-3.5"
-              style={{ borderTop: '1px dashed #A3A3A3' }}
-            />
-            {isTr ? `Hedef ${targetRating.toFixed(1)}` : `Target ${targetRating.toFixed(1)}`}
-          </span>
+          {(
+            [
+              { id: 'rating', tr: 'Puan', en: 'Rating' },
+              { id: 'volume', tr: 'Hacim', en: 'Volume' },
+              { id: 'sentiment', tr: 'Sentiment', en: 'Sentiment' },
+            ] as const
+          ).map((m) => {
+            const active = mode === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setMode(m.id)}
+                className={`inline-flex items-center rounded-full px-3 py-1 text-[11.5px] font-medium transition-colors ${
+                  active
+                    ? 'bg-[#0A0A0A] text-white'
+                    : 'text-[#525252] hover:bg-white'
+                }`}
+              >
+                {isTr ? m.tr : m.en}
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -227,13 +237,16 @@ export function PulseTrendChart({
             />
           ))}
 
-          {/* Volume bars (alt band, gri) */}
+          {/* Volume bars — mode'a göre öne çıkar (lime fill) veya soluk (gri).
+              §38.56: 'volume' mode'da bars ana focus + lime + büyük opacity. */}
           {weeks.map((w, i) => {
             const x = PAD_X + i * stepX;
             const barW = Math.max(8, stepX * 0.5);
             const barX = x - barW / 2;
             const barY = volumeY(w.volume);
             const barH = volBandTop + VOL_BAND_H - barY;
+            const barFill = mode === 'volume' ? '#C6F24E' : '#E5E5E5';
+            const barOpacity = mode === 'volume' ? 1 : mode === 'rating' ? 0.7 : 0.35;
             return (
               <rect
                 key={i}
@@ -241,37 +254,44 @@ export function PulseTrendChart({
                 y={barY}
                 width={barW}
                 height={Math.max(0, barH)}
-                fill="#E5E5E5"
+                fill={barFill}
+                opacity={barOpacity}
                 rx="1.5"
               />
             );
           })}
 
-          {/* Rating area (lime gradient) */}
-          {areaPath && <path d={areaPath} fill="url(#pulseTrendArea)" opacity="0.35" />}
+          {/* Rating area (lime gradient) — sadece rating mode'da */}
+          {mode === 'rating' && areaPath && (
+            <path d={areaPath} fill="url(#pulseTrendArea)" opacity="0.35" />
+          )}
 
-          {/* Target dashed line */}
-          <line
-            x1={PAD_X}
-            x2={VB_W - PAD_X}
-            y1={targetY}
-            y2={targetY}
-            stroke="#A3A3A3"
-            strokeWidth="1.5"
-            strokeDasharray="6 4"
-          />
-          <text
-            x={VB_W - PAD_X + 4}
-            y={targetY + 4}
-            fontSize="10"
-            fontFamily="JetBrains Mono, monospace"
-            fill="#737373"
-          >
-            {isTr ? 'HEDEF' : 'TARGET'}
-          </text>
+          {/* Target dashed line — rating + sentiment mode'da görünür */}
+          {mode !== 'volume' && (
+            <>
+              <line
+                x1={PAD_X}
+                x2={VB_W - PAD_X}
+                y1={mode === 'sentiment' ? PAD_TOP + LINE_BAND_H * 0.5 : targetY}
+                y2={mode === 'sentiment' ? PAD_TOP + LINE_BAND_H * 0.5 : targetY}
+                stroke="#A3A3A3"
+                strokeWidth="1.5"
+                strokeDasharray="6 4"
+              />
+              <text
+                x={VB_W - PAD_X + 4}
+                y={(mode === 'sentiment' ? PAD_TOP + LINE_BAND_H * 0.5 : targetY) + 4}
+                fontSize="10"
+                fontFamily="JetBrains Mono, monospace"
+                fill="#737373"
+              >
+                {mode === 'sentiment' ? '50%' : isTr ? 'HEDEF' : 'TARGET'}
+              </text>
+            </>
+          )}
 
-          {/* Rating line (lime stroke 2.5) */}
-          {linePath && (
+          {/* Rating line — rating mode'da (volume mode'da gizli, sentiment'ta yerini sentiment line alır) */}
+          {mode === 'rating' && linePath && (
             <path
               d={linePath}
               stroke="#A8D62E"
@@ -281,6 +301,35 @@ export function PulseTrendChart({
               strokeLinejoin="round"
             />
           )}
+
+          {/* Sentiment line — 'sentiment' mode'da Y axis 0-100% (sentimentPct) */}
+          {mode === 'sentiment' && (() => {
+            function sentY(pct: number): number {
+              const ratio = Math.min(100, Math.max(0, pct)) / 100;
+              return PAD_TOP + LINE_BAND_H * (1 - ratio);
+            }
+            const sentPoints = weeks.map((w, i) => ({
+              x: PAD_X + i * stepX,
+              y: sentY(w.sentimentPct ?? 0),
+              valid: w.volume > 0,
+              pct: w.sentimentPct ?? 0,
+            }));
+            const sentValid = sentPoints.filter((p) => p.valid);
+            if (sentValid.length < 2) return null;
+            const sentPath = sentValid
+              .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
+              .join(' ');
+            return (
+              <path
+                d={sentPath}
+                stroke="#A8D62E"
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            );
+          })()}
 
           {/* Highlight points (every 5th, tasarımda) */}
           {points.map((p, i) =>

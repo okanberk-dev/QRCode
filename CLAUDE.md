@@ -7978,6 +7978,115 @@ Tasarım dosyası `.design-owner-2026/page-feedbacks.jsx` ile cross-check sonras
 - "Manuel ekle" — yeni Customer schema (kullanıcı SKIP §38.16 paterni)
 - (CLAUDE.md §38.B master backlog kalemleri intact)
 
+### 38.56 2026-05-05 — Yeni handoff `a/` bundle 7 yüksek-değerli drift kapatma
+
+Kullanıcı yeni handoff bundle `/Users/okanberkmanavoglu/Downloads/a/` paylaştı (12 ana JSX + components/ alt klasörü). 5 ekran görüntüsü: Dashboard / Yorumlar / Google Yorumları / Platform Bağlantıları / Analitik. Bu bundle `.design-owner-2026/`'dan **daha güncel**; çelişkide yeni `a/` kazanır (CLAUDE.md §16 — `src/`'e ASLA kopyalanmaz, sadece referans).
+
+**3 paralel Explore agent ile audit + manuel doğrulama** (CLAUDE.md §38.38 paterni). 4 false positive elendi (Customers page yok / UserDashboardShell yok / sidebar+mobile drift'leri — cwd kayması). Manuel `grep` + `Read` ile gerçek drift listesi netleşti.
+
+**8 kritik karar (AskUserQuestion)** — hepsi Recommended:
+1. ✅ Tek konsolide mega PR (stacked-squash gotcha riski sıfır, atomic deploy)
+2. ✅ Schema migration: Feedback.isRead + isPending (Yorumlar 5-tab için)
+3. ✅ Zomato terk et (mevcut 4 platform Google/Yemeksepeti/Getir/Trendyol korunur)
+4. ✅ Slack çıkar (§34.6 silinme kararı korunur, tasarımdaki Slack drift kabul)
+5. ✅ Yorumlar KpiStrip sil (tasarım birebir, üst KPI strip yok)
+6. ✅ Yorumlar sağ rail 3-col (300/1fr/360) — mevcut zaten 300/1fr/400, **40px tasarım birebir**
+7. ✅ Analytics AI dark card restore + 14-hafta Puan/Hacim/Sentiment toggle restore
+8. ✅ Webhook UI 12. card (Hazir badge + disabled CTA) + başlık "Platform Bağlantıları"
+
+**Scope realistik**: 7 sayfa + sidebar + mobile + 1 schema + Webhook UI = ~2500-5000 satır iş. Tek session'da tasarım birebir derin parity imkansız. **7 yüksek-değerli drift** bu PR'da, **7 minor drift** backlog (Dashboard sentiment stacked bar / sidebar search input / mobile drawer rewrite / Customers a/page-customers.jsx delta / Account a/page-account.jsx delta / Google §38.55 sonrası ekstra drift / Platforms KPI "Webhook sağlığı" metric).
+
+**5 phase implement edildi**:
+
+**Phase 1 — Schema migration** (`prisma/schema.prisma` + `prisma/migrations/20260505230000_add_feedback_is_read_is_pending/migration.sql`):
+- `Feedback.isRead Boolean DEFAULT FALSE` — Okunmamış tab için
+- `Feedback.isPending Boolean DEFAULT FALSE` — Beklemede tab için
+- Mevcut feedback'ler default false (Okunmamış kabul edilir, owner mark-as-read ile günceller)
+- §38.33'te kullanıcı SKIP demişti, §38.56'da onaylandı
+
+**Phase 5 — Sidebar Kampanyalar nav item** (`UserDashboardShell.tsx`):
+- Analitik GENEL grubundan CRM grubuna taşındı (tasarım a/shell.jsx birebir)
+- Yeni nav item: Kampanyalar (icon: MessageSquareText, isNew: true badge)
+- href `/dashboard/campaigns` placeholder (404 dönecek — sayfa açılana kadar lime "Yeni" badge hint olarak)
+- NavChild type'a opsiyonel `isNew: boolean` field eklendi
+- Badge UI render: `bg-[#C6F24E] text-[#0A0A0A] text-[9px] uppercase tracking-wider`
+- Command palette Kampanyalar entry (kampanya/campaign/mail/segment keywords)
+
+**Phase 4 — Platforms Webhook 12. card** (`/dashboard/platforms/page.tsx`):
+- PlatformDef cat enum genişletildi: `'review' | 'social' | 'message' | 'api'`
+- urlField opsiyonel + `comingSoon?: boolean` flag
+- PLATFORM_DEFS'a Webhook entry: `{ id: 'webhook', cat: 'api', accent: '#525252', initials: 'WH', comingSoon: true }`
+- Aggregate compute Webhook için skip (urlField yok)
+- Filter chips API kategorisi eklendi
+- Card render comingSoon branch:
+  - "Yakında" info badge (mevcut Badge primitive 'info' kind reuse)
+  - Dashed-border placeholder card "BACKEND HAZIR" eyebrow + AutomationRule schema açıklaması (CLAUDE.md §34.4 paterni)
+  - Disabled CTA "Yakında" button (cursor-not-allowed, aria-disabled)
+
+**Phase 3 — Analytics AI dark card restore + 14-hafta toggle restore**:
+- `AiInsightsCard.tsx`: Light card (§38.50 kullanıcı kararı) → DARK card (graphite + lime accent + corner blur). Tasarım a/page-analytics.jsx line 244-275 birebir. 3-row insight (TREND lime-deep / KAZANIM green / RİSK red) dark theme:
+  - Container: `bg-[#0A0A0A] text-white rounded-[18px]`
+  - Lime corner blur (Pulse signature)
+  - Header eyebrow: `text-[#C6F24E]`
+  - Insight rows: `bg-rgba(255,255,255,0.04)` + tone borderLeft + dark icon badge
+- `PulseTrendChart.tsx`: 'use client' + `mode: 'rating' | 'volume' | 'sentiment'` state, header'da 3-tab toggle (Puan/Hacim/Sentiment). Mode'a göre conditional render:
+  - 'rating' (default): volume bars (gri muted) + rating line (lime) + target dashed
+  - 'volume': volume bars öne çıkar (lime fill, full opacity) + rating line gizli
+  - 'sentiment': sentiment % line (lime, 0-100 axis) + target dashed (50% line)
+- §38.50'de "simultaneous" kararı (light card + 3-series simultaneous) overrideland — yeni a/ bundle tasarım birebir öncelikli (CLAUDE.md §16 disiplini)
+
+**Phase 2 — Yorumlar 5-tab schema-aware + KpiStrip sil + 360 width** (`/dashboard/feedbacks/page.tsx` + `_components/`):
+- KpiStrip import + render kaldırıldı (kullanıcı kararı tasarım birebir)
+- xl: grid 300/1fr/**400** → 300/1fr/**360** (tasarım birebir, 40px daralt)
+- ActiveTab literal genişledi: 'unread' / 'replied' / 'pending' eklendi (eski 'high'/'redirected'/'unreplied'/'today'/'ai_ready' backwards-compat literal'da kalır — deeplink-friendly URL state korunur)
+- FeedbackRow type genişledi: `isRead?: boolean` + `isPending?: boolean` (Prisma Client schema'dan field'lar geldikten sonra dolu olur; eski feedback'ler undefined → false sayılır)
+- filteredList logic: 5 yeni tab branch eklendi (unread/low/replied/pending), eski branch'ler korundu
+- counts compute: 3 yeni field (unread/replied/pending), eski 7 field korundu
+- FeedbackList tabs literal: tasarım birebir 5-tab (Tümü/Okunmamış/Düşük puan/Yanıtlandı/Beklemede) — mevcut Tümü/Düşük/Yanıtsız/Bugün/AI Hazır silindi
+- FeedbackFiltersRail tabs literal: aynı 5-tab unified (xl: rail + mobile chip set §38.35 paterni reuse)
+- FeedbackList + FeedbackFiltersRail counts type: 3 yeni opsiyonel field eklendi
+
+**Yapma**:
+- 7 minor drift'i bu session'da yapmaya çalışma — scope realistik (~2-3 saat session limit). Kullanıcı kararı 7 yüksek-değerli drift, kalan backlog.
+- `Feedback.isRead` default true yapma — yeni feedback owner'ın inbox'ında görünmeli (Okunmamış sayılır, açtıkça okunur).
+- Eski tab literal'larını ('high'/'redirected'/'unreplied'/'today'/'ai_ready') ActiveTab'dan silme — URL state breaking olur (deeplink-friendly), backwards-compat type'da kalır.
+- KpiStrip component dosyasını silmeyi (`_components/KpiStrip.tsx`) — gelecek future use için tutulur, sadece import + render kaldırıldı.
+- Webhook için urlField mecburi yapmak — `comingSoon: true` durumunda backend yok, opsiyonel.
+- Slack platform restore (kullanıcı kararı §34.6 korunur, drift kabul).
+- Zomato yeni provider eklemek (kullanıcı kararı, drift kabul).
+- Analytics PulseTrendChart'ı dynamic import yapmak — 'use client' eklendi, server component'ten client'a geçti, ama parent server-render'a engel olmaz (props serializable).
+- AI Co-Pilot dark theme tasarım birebir öncelik mi yoksa light flow consistency mi — §38.50 kullanıcı kararı geçersiz kıldı, yeni handoff `a/` öncelikli (CLAUDE.md §16).
+
+**Yap**:
+- Yeni tab literal eklerken: `ActiveTab` union + filteredList branch + counts compute + FeedbackList tabs + FeedbackFiltersRail tabs (5 nokta, mevcut tüm caller'lar mevcut tabsla zaten uyumlu — backwards-compat type'da intact).
+- Yeni Webhook benzeri "Hazır / Yakında" card eklerken: `comingSoon: true` flag + dashed-border placeholder + disabled CTA paterni reuse.
+- Yeni nav item "Yeni" badge ile eklerken: NavChild `isNew: true` flag + UI render branch (CLAUDE.md §38.56 paterni reuse).
+- Schema field eklerken (CLAUDE.md §38.51 paterni): nullable + ADD COLUMN migration + Prisma Client regenerate + UI type genişlet + caller'larda undefined fallback.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` 0 errors, 1 warning (prisma/schema.prisma file ignored, beklenen — eslint config schema dosyalarını dışlar)
+- `npm test` 182/182 pass
+- Manuel: Sidebar Kampanyalar item "Yeni" lime badge ile görünür, Analitik CRM grubunda
+- Manuel: `/dashboard/platforms` 12. card Webhook (Yakında badge + disabled CTA + dashed BACKEND HAZIR placeholder)
+- Manuel: `/dashboard/analytics` AI İçgörüler dark card (graphite + lime corner) + 14-hafta toggle (Puan/Hacim/Sentiment)
+- Manuel: `/dashboard/feedbacks` 5-tab (Tümü/Okunmamış/Düşük puan/Yanıtlandı/Beklemede), KPI strip silindi, xl: 360 width sağ rail
+
+**Backlog (operatör kararı bekleyen)**:
+- Dashboard "Sık bahsedilen konular" multi-color stacked bar (tasarım pos+neg ayrı çubuklar; mevcut tek-color sentiment progress §38.20)
+- Sidebar search input (Cmd+K palette duplicate, kullanıcı isterse)
+- Mobile drawer rewrite (§25 + §38.28/43 mevcut; tasarım a/page-mobile-v2.jsx full parity için ek refactor)
+- Customers a/page-customers.jsx delta cross-check (§38.16/36/47/48 mevcut zaten kapsamlı)
+- Account a/page-account.jsx delta (§38.51 yakın zaman önce yapıldı)
+- Google §38.55 sonrası a/page-google.jsx ekstra drift kontrolü
+- Platforms KPI "Webhook sağlığı %99.94" metric (backend AutomationRule event log gerek)
+- /api/feedback GET endpoint'e `isRead` + `isPending` query param filter (şu an client-side filter; backend filter performans + API contract iyileştirme)
+- /api/feedback/[id] PATCH endpoint'e `isRead` + `isPending` toggle action (UI'dan mark-as-read / set-pending için)
+- /dashboard/campaigns sayfa scaffolding (404 placeholder olarak görünüyor, açılana kadar "Yeni" badge hint)
+- Webhook UI implementation (AutomationRule schema mevcut, CRUD endpoint açma)
+
+---
+
 ### 38.55 2026-05-05 — Google Yorumları sayfası tasarım birebir parity (8 drift kapatıldı)
 
 §38.54 audit'te google-reviews 3 DRIFT iddiası (KPI 4-card / PROFİL gauge / Sık geçen kelimeler) **render var** olarak false positive geçilmişti — sadece görsel "var/yok" gözledim, **tasarım birebir parity** kontrol etmedim. Kullanıcı yeni handoff `/Users/okanberkmanavoglu/Downloads/a/page-google.jsx` ile cross-check istedi. Senior frontend/backend disiplini: tasarım line-line read → mevcut kod oku → **8 gerçek drift** tespit → 3 kritik karar onayla → birebir uygula.

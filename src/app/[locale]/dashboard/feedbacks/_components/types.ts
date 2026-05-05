@@ -14,6 +14,11 @@ export interface FeedbackRow {
   aspects?: { service?: number; food?: number; price?: number; atmosphere?: number } | null;
   isReplied?: boolean;
   isFlagged?: boolean;
+  // §38.56 — Yorumlar Inbox tab kategorileri (Okunmamış / Beklemede).
+  // Backend Feedback.isRead + isPending field'ları (migration 20260505230000)
+  // ile eşlenir. API response'tan alınır; eski feedback'ler default false.
+  isRead?: boolean;
+  isPending?: boolean;
   hasPendingAiDraft?: boolean;
   aiAutoDraftEnabled?: boolean;
   aiDraftTone?: 'warm' | 'formal' | 'apologetic' | null;
@@ -35,7 +40,14 @@ export interface DegradedMeta {
   joinFilters?: boolean;
 }
 
-export type ActiveTab = 'all' | 'low' | 'high' | 'redirected' | 'unreplied' | 'today' | 'ai_ready';
+// §38.56 — Tasarım a/page-reviews.jsx 5-tab birebir parity:
+// Tümü / Okunmamış (isRead=false) / Düşük puan (rating ≤3) /
+// Yanıtlandı (isReplied) / Beklemede (isPending). Eski 'high' / 'redirected'
+// / 'today' / 'ai_ready' literal'ları backwards-compat type'da kalır
+// (mevcut filter wiring + URL state breaking olmasın); UI'da yeni 5-tab
+// FeedbackList'te yer alır, eski 4-tab fallback olarak hâlâ filter logic'i
+// destekler (deeplink-friendly).
+export type ActiveTab = 'all' | 'unread' | 'low' | 'replied' | 'pending' | 'high' | 'redirected' | 'unreplied' | 'today' | 'ai_ready';
 export type AiTone = 'warm' | 'formal' | 'apologetic';
 export type AiSource = 'openai' | 'template' | 'template-fallback' | null;
 export type ReplyTone = 'success' | 'error' | 'info';

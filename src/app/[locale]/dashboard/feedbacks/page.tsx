@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState, Suspense, use } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Download, Filter, Inbox, Loader2 } from 'lucide-react';
 import { EmptyState, PageHeader } from '@/components/ui';
-import { KpiStrip } from './_components/KpiStrip';
+// §38.56 — KpiStrip kaldırıldı (kullanıcı kararı, tasarım a/page-reviews.jsx
+// birebir — toolbar'da CSV/Filtre/Toplu yanıtla yeterli). Component dosyası
+// silinmedi (potansiyel future use), sadece import + render kaldırıldı.
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
@@ -172,10 +174,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // ============================================================
   const filteredList = useMemo(() => {
     let rows = feedbacks;
-    if (tab === 'low') rows = rows.filter((r) => r.rating <= 3);
+    // §38.56 — Yeni 5-tab tasarım birebir (Tümü/Okunmamış/Düşük/Yanıtlandı/Beklemede)
+    if (tab === 'unread') rows = rows.filter((r) => r.isRead !== true);
+    else if (tab === 'low') rows = rows.filter((r) => r.rating <= 3);
+    else if (tab === 'replied') rows = rows.filter((r) => r.isReplied === true);
+    else if (tab === 'pending') rows = rows.filter((r) => r.isPending === true);
+    // Eski tab literal'ları (deeplink-friendly backwards-compat, CLAUDE.md §38.56)
     else if (tab === 'high') rows = rows.filter((r) => r.rating >= 4);
     else if (tab === 'redirected') rows = rows.filter((r) => !!r.platform);
-    // §38.33 — yeni 3 mobile-friendly tab semantic
     else if (tab === 'unreplied') rows = rows.filter((r) => r.isReplied !== true);
     else if (tab === 'today') {
       const startOfDay = new Date();
@@ -210,12 +216,17 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       low: feedbacks.filter((r) => r.rating <= 3).length,
       high: feedbacks.filter((r) => r.rating >= 4).length,
       redirected: feedbacks.filter((r) => !!r.platform).length,
-      // §38.33 — mobile chip strip + sticky AI banner için
       unreplied: feedbacks.filter((r) => r.isReplied !== true).length,
       today: feedbacks.filter(
         (r) => new Date(r.createdAt).getTime() >= startMs,
       ).length,
       aiReady: feedbacks.filter((r) => r.hasPendingAiDraft === true).length,
+      // §38.56 — Yeni 5-tab counts (tasarım a/page-reviews.jsx birebir).
+      // Eski feedback'ler (migration öncesi) isRead/isPending undefined →
+      // Okunmamış/Beklemede sayımına dahil olmaz; default false.
+      unread: feedbacks.filter((r) => r.isRead !== true).length,
+      replied: feedbacks.filter((r) => r.isReplied === true).length,
+      pending: feedbacks.filter((r) => r.isPending === true).length,
     };
   }, [feedbacks]);
 
@@ -644,14 +655,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         />
       </div>
 
-      {/* §38.53 — KPI 4-card strip (Bu hafta + Ort puan + Yanıt süresi + Yanıt oranı).
-          WeekStatsCard rail altından kaldırıldı (KPI strip ile redundant). Tasarım birebir. */}
-      <div className={`mt-3 mb-4 ${isMobileDetailView ? 'hidden lg:block' : ''}`}>
-        <KpiStrip isTr={isTr} />
-      </div>
+      {/* §38.56 — KPI 4-card strip SİLİNDİ (kullanıcı kararı, tasarım
+          a/page-reviews.jsx birebir). Mevcut WeekStatsCard rail'da
+          (FeedbackFiltersRail içinde) Bu hafta özet hâlâ görünür. */}
 
       <div
-        className="flex flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white lg:flex-row lg:h-[calc(100vh-200px)] lg:min-h-[540px] xl:grid xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,400px)]"
+        className="flex flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white lg:flex-row lg:h-[calc(100vh-200px)] lg:min-h-[540px] xl:grid xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,360px)]"
       >
         {/* ============ XL FILTER RAIL — visible only on xl: (≥1280px) ============ */}
         <FeedbackFiltersRail
