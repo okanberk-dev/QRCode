@@ -60,17 +60,10 @@ function pctDelta(curr: number, prev: number): { value: string; kind: 'up' | 'do
   };
 }
 
-function ppDelta(currPct: number, prevPct: number, invertGood = false): { value: string; kind: 'up' | 'down' | 'neutral' } {
-  const diff = currPct - prevPct;
-  const rounded = Math.round(diff * 10) / 10;
-  const sign = rounded >= 0 ? '+' : '';
-  const isPositive = invertGood ? rounded < 0 : rounded > 0;
-  const isNegative = invertGood ? rounded > 0 : rounded < 0;
-  return {
-    value: `${sign}${rounded}pp`,
-    kind: isPositive ? 'up' : isNegative ? 'down' : 'neutral',
-  };
-}
+// §38.50 — `ppDelta` (percentage point delta) helper'ı silindi: secondary KPI
+// (Dönüşüm/Yönlendirme/AI Yanıt) tasarım birebir parite için kaldırıldı,
+// pp delta caller'ı kalmadı. `pctDelta` (yüzde delta) reviewsDelta için hâlâ
+// kullanılıyor.
 
 const DAY_LABELS_TR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 const DAY_LABELS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -83,10 +76,14 @@ const PLATFORM_DISPLAY: Array<{ id: PlatformId; key: string }> = [
   { id: 'trendyol_go', key: 'trendyol_go' },
 ];
 
+// §38.50 — `1y` (365 gün) range desteği eklendi (tasarım birebir parity).
+// `custom` özel aralık: customStart/customEnd query param'ları parse edilir,
+// invalid → 30d fallback.
 const RANGE_DAYS: Record<string, number> = {
   '7d': 7,
   '30d': 30,
   '90d': 90,
+  '1y': 365,
 };
 
 function isExpectedNavigationError(error: unknown) {
@@ -94,9 +91,35 @@ function isExpectedNavigationError(error: unknown) {
   return typeof digest === 'string' && digest.startsWith('NEXT_');
 }
 
+/**
+ * §38.50 — Custom range parse. Strict ISO date format (YYYY-MM-DD).
+ * Invalid → null fallback (caller 30d default'a düşer).
+ * Range max 365 gün (DDoS koruma + perf).
+ */
+function parseCustomRange(
+  customStart: string | undefined,
+  customEnd: string | undefined,
+): { start: Date; end: Date; days: number } | null {
+  if (!customStart || !customEnd) return null;
+  const startMs = Date.parse(customStart);
+  const endMs = Date.parse(customEnd);
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) return null;
+  if (endMs <= startMs) return null;
+  const days = Math.round((endMs - startMs) / (24 * 60 * 60 * 1000));
+  if (days < 1 || days > 365) return null;
+  return { start: new Date(startMs), end: new Date(endMs), days };
+}
+
 export default async function AnalyticsPage(props: {
   params: Promise<{ locale: Locale }>;
-  searchParams: Promise<{ range?: string; platform?: string; branch?: string; restaurantId?: string }>;
+  searchParams: Promise<{
+    range?: string;
+    platform?: string;
+    branch?: string;
+    restaurantId?: string;
+    customStart?: string;
+    customEnd?: string;
+  }>;
 }) {
   try {
     return await renderAnalyticsPage(props);
@@ -115,7 +138,14 @@ async function renderAnalyticsPage({
   searchParams,
 }: {
   params: Promise<{ locale: Locale }>;
-  searchParams: Promise<{ range?: string; platform?: string; branch?: string; restaurantId?: string }>;
+  searchParams: Promise<{
+    range?: string;
+    platform?: string;
+    branch?: string;
+    restaurantId?: string;
+    customStart?: string;
+    customEnd?: string;
+  }>;
 }) {
   const { locale } = await params;
   const sp = await searchParams;
@@ -139,9 +169,19 @@ async function renderAnalyticsPage({
   });
   if (!user) redirect(`/${locale}/auth/login`);
 
-  // Parse filters from URL searchParams (server-side, no client fetch).
-  const rangeKey = (sp.range && RANGE_DAYS[sp.range] ? sp.range : '30d') as keyof typeof RANGE_DAYS;
-  const windowDays = RANGE_DAYS[rangeKey];
+  // §38.50 — Custom range önceliği: `?range=custom&customStart=...&customEnd=...`
+  // ile owner özel pencere seçer; `range` literal map'inde yoksa custom parse'a
+  // düşer; o da invalid ise 30d fallback (default).
+  const customRange =
+    sp.range === 'custom'
+      ? parseCustomRange(sp.customStart, sp.customEnd)
+      : null;
+  const rangeKey = customRange
+    ? ('custom' as const)
+    : sp.range && RANGE_DAYS[sp.range]
+      ? (sp.range as keyof typeof RANGE_DAYS)
+      : ('30d' as const);
+  const windowDays = customRange ? customRange.days : RANGE_DAYS[rangeKey as keyof typeof RANGE_DAYS];
   const platformFilter = sp.platform && sp.platform !== 'all' ? sp.platform : null;
   const branchFilter = sp.branch && sp.branch !== 'all' ? sp.branch : null;
 
@@ -153,8 +193,14 @@ async function renderAnalyticsPage({
       : ownedIds;
 
   const now = Date.now();
-  const windowStart = new Date(now - windowDays * 24 * 60 * 60 * 1000);
-  const prevWindowStart = new Date(now - windowDays * 2 * 24 * 60 * 60 * 1000);
+  // §38.50 — Custom range: explicit start/end. Aksi halde rolling window
+  // (now - windowDays). prevWindow custom range için: aynı uzunlukta
+  // önceki pencere (start - windowDays → start).
+  const windowStart = customRange ? customRange.start : new Date(now - windowDays * 24 * 60 * 60 * 1000);
+  const windowEnd = customRange ? customRange.end : new Date(now);
+  const prevWindowStart = customRange
+    ? new Date(customRange.start.getTime() - windowDays * 24 * 60 * 60 * 1000)
+    : new Date(now - windowDays * 2 * 24 * 60 * 60 * 1000);
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
@@ -192,8 +238,10 @@ async function renderAnalyticsPage({
     // Window feedback'leri — multi-purpose select: hour bucket, aspect avg,
     // theme analysis (comment), response time (replies). Tek query
     // multiple-section'ı besler (CLAUDE.md §7 — replication önleme).
+    // §38.50 — `email/phone/hasKvkkConsent` field'ları yeni `returnRate` KPI
+    // (tekrar gelme = 2+ visit yapan tekil contact_key) için. Same query.
     prisma.feedback.findMany({
-      where: { ...baseWhere, createdAt: { gte: windowStart } },
+      where: { ...baseWhere, createdAt: { gte: windowStart, lte: windowEnd } },
       select: {
         id: true,
         restaurantId: true,
@@ -204,6 +252,9 @@ async function renderAnalyticsPage({
         foodRating: true,
         serviceRating: true,
         atmosphereRating: true,
+        email: true,
+        phone: true,
+        hasKvkkConsent: true,
         replies: {
           select: { createdAt: true },
           orderBy: { createdAt: 'asc' },
@@ -221,7 +272,7 @@ async function renderAnalyticsPage({
     prisma.feedback.count({
       where: {
         ...baseWhere,
-        createdAt: { gte: windowStart },
+        createdAt: { gte: windowStart, lte: windowEnd },
         rating: { gte: 4 },
         platform: { not: null },
       },
@@ -237,7 +288,7 @@ async function renderAnalyticsPage({
     prisma.feedback.count({
       where: {
         ...baseWhere,
-        createdAt: { gte: windowStart },
+        createdAt: { gte: windowStart, lte: windowEnd },
         rating: { lte: 3 },
       },
     }),
@@ -253,13 +304,13 @@ async function renderAnalyticsPage({
     }),
     // QR scans — window + delta + daily bucket (interaction chart 3. seri)
     prisma.qrScan.count({
-      where: { ...scanWhere, createdAt: { gte: windowStart } },
+      where: { ...scanWhere, createdAt: { gte: windowStart, lte: windowEnd } },
     }),
     prisma.qrScan.count({
       where: { ...scanWhere, createdAt: { gte: prevWindowStart, lt: windowStart } },
     }),
     prisma.qrScan.findMany({
-      where: { ...scanWhere, createdAt: { gte: windowStart } },
+      where: { ...scanWhere, createdAt: { gte: windowStart, lte: windowEnd } },
       select: { createdAt: true },
     }),
     // Phase 8c+ §38.25 — 14 haftalık trend için 98 günlük rating + createdAt
@@ -293,22 +344,20 @@ async function renderAnalyticsPage({
   const reviewsDelta = pctDelta(reviewsCount, feedbacksPrevWindow);
   const _scansDelta = pctDelta(scansCount, scansPrevWindowCount);
 
-  // Conversion rate = scan'den sonra yorum bırakanların oranı.
-  // 0 scan → "—" göster, division-by-zero korunur.
-  const conversionRate = scansCount > 0 ? Math.round((reviewsCount / scansCount) * 100) : 0;
-  const prevConversionRate =
+  // §38.50 — Secondary KPI silindi (Dönüşüm/Yönlendirme/AI Yanıt → tasarım
+  // birebir 5 single row). Dead compute'lar `_` prefix ile suspended (gelecek
+  // export endpoint veya analytics extension'da yine gerekebilir).
+  const _conversionRate = scansCount > 0 ? Math.round((reviewsCount / scansCount) * 100) : 0;
+  const _prevConversionRate =
     scansPrevWindowCount > 0
       ? Math.round((feedbacksPrevWindow / scansPrevWindowCount) * 100)
       : 0;
-  const conversionDelta = ppDelta(conversionRate, prevConversionRate);
 
-  const redirectRate = reviewsCount > 0 ? Math.round((redirectedWindow / reviewsCount) * 100) : 0;
-  const prevRedirectRate = feedbacksPrevWindow > 0 ? Math.round((redirectedPrevWindow / feedbacksPrevWindow) * 100) : 0;
-  const redirectDelta = ppDelta(redirectRate, prevRedirectRate);
+  const _redirectRate = reviewsCount > 0 ? Math.round((redirectedWindow / reviewsCount) * 100) : 0;
+  const _prevRedirectRate = feedbacksPrevWindow > 0 ? Math.round((redirectedPrevWindow / feedbacksPrevWindow) * 100) : 0;
 
-  const lowRatingRate = reviewsCount > 0 ? Math.round((lowRatedWindow / reviewsCount) * 100) : 0;
-  const prevLowRatingRate = feedbacksPrevWindow > 0 ? Math.round((lowRatedPrevWindow / feedbacksPrevWindow) * 100) : 0;
-  const _lowRatingDelta = ppDelta(lowRatingRate, prevLowRatingRate, true);
+  const _lowRatingRate = reviewsCount > 0 ? Math.round((lowRatedWindow / reviewsCount) * 100) : 0;
+  const _prevLowRatingRate = feedbacksPrevWindow > 0 ? Math.round((lowRatedPrevWindow / feedbacksPrevWindow) * 100) : 0;
 
   // §38.34 — Yeni KPI hesaplamaları (4 top tasarım + 3 secondary Buaze)
   // 1) Ortalama Puan + delta
@@ -323,19 +372,12 @@ async function renderAnalyticsPage({
   void prevFeedbacksAvgInput; // intentionally unused — prev avg rating compute deferred
   // 2) NPS — calculateNPS saf helper
   const npsResult = calculateNPS(feedbacksWindow.map((f) => ({ rating: f.rating ?? 0 })));
-  // 3) Yanıt Oranı (all feedback) — replied / total × 100
+  // 3) Yanıt sayısı (all feedback) — replied count, "Yanıt süresi" KPI subtitle.
   const repliedCount = feedbacksWindow.filter(
     (f) => Array.isArray(f.replies) && f.replies.length > 0,
   ).length;
-  const overallResponseRate = reviewsCount > 0 ? Math.round((repliedCount / reviewsCount) * 100) : 0;
-  // 4) AI Yanıt count — replies içinde source ai_copilot olan feedback'ler
-  // Şu anki feedbacksWindow.replies select 'createdAt' only; source eksik.
-  // Pragmatic: ayrı transaction query EKLEMEYELİM, mevcut replied count'tan
-  // tahmini hesap yap → AI Yanıt = repliedCount × 0.6 (ortalama AI kullanım).
-  // Bu drift; gerçek source-aware count için backend genişletme deferred.
-  const aiReplyCount = Math.round(repliedCount * 0.6); // §38.34 heuristic; future enhancement: select source
 
-  // 5) Avg response time (all feedback) — reply.createdAt − feedback.createdAt
+  // 4) Avg response time (all feedback) — reply.createdAt − feedback.createdAt
   let totalResponseMs = 0;
   let responseCount = 0;
   for (const f of feedbacksWindow) {
@@ -348,12 +390,39 @@ async function renderAnalyticsPage({
     }
   }
   const avgResponseHours = responseCount > 0 ? totalResponseMs / responseCount / 3600000 : null;
-  const avgResponseLabel =
-    avgResponseHours === null
-      ? null
-      : avgResponseHours < 1
-        ? `${Math.round(avgResponseHours * 60)} ${isTr ? 'dk' : 'm'} ortalama`
-        : `${avgResponseHours.toFixed(1)} ${isTr ? 'sa' : 'h'} ortalama`;
+
+  // §38.50 — Yanıt süresi KPI (saat-bazlı, tasarım birebir parity).
+  // Display format: "2sa 18dk" / "2h 18m" — saatten azsa "X dk" / "Xm".
+  const avgResponseValueLabel = (() => {
+    if (avgResponseHours === null) return '—';
+    if (avgResponseHours < 1) {
+      const mins = Math.round(avgResponseHours * 60);
+      return `${mins} ${isTr ? 'dk' : 'm'}`;
+    }
+    const wholeH = Math.floor(avgResponseHours);
+    const mins = Math.round((avgResponseHours - wholeH) * 60);
+    return mins > 0
+      ? `${wholeH}${isTr ? 'sa' : 'h'} ${mins}${isTr ? 'dk' : 'm'}`
+      : `${wholeH}${isTr ? 'sa' : 'h'}`;
+  })();
+
+  // §38.50 — Tekrar gelme KPI (Return Rate). KVKK consent + non-anonim
+  // (email veya phone dolu) feedback'ler içinde aynı contact_key 2+ kez
+  // yorum yazmış müşterilerin total tekil müşteri sayısına oranı.
+  // CLAUDE.md §4.5 paterni — Customers feedback-derived dedupe.
+  const contactCounts = new Map<string, number>();
+  for (const f of feedbacksWindow) {
+    if (f.hasKvkkConsent !== true) continue;
+    const key = (f.email && f.email.toLowerCase()) || f.phone;
+    if (!key) continue;
+    contactCounts.set(key, (contactCounts.get(key) ?? 0) + 1);
+  }
+  const totalUniqueCustomers = contactCounts.size;
+  const returningCustomers = Array.from(contactCounts.values()).filter((c) => c >= 2).length;
+  const returnRate =
+    totalUniqueCustomers > 0
+      ? Math.round((returningCustomers / totalUniqueCustomers) * 100)
+      : null;
 
   // Window-day daily distribution (etkileşim chart) — dynamic length, 3-seri funnel.
   // Funnel: scans (qrScan, üst) ⊇ reviews (feedback) ⊇ redirects (rating≥4+platform).
@@ -638,21 +707,13 @@ async function renderAnalyticsPage({
         isTr={isTr}
       />
 
-      {/* §38.34 — KPI hibrit: 4 top tasarım uyumlu + 3 secondary alt strip
-          Buaze ek (Dönüşüm/Yönlendirme/AI Yanıt). 6-card grid yerine. */}
+      {/* §38.50 — KPI 5-col single row (tasarım birebir parity).
+          Toplam yorum / Ortalama puan / Yanıt süresi / NPS / Tekrar gelme.
+          Secondary 3 KPI (Dönüşüm/Yönlendirme/AI Yanıt) silindi — owner kararı. */}
       <AnalyticsKpiGrid
-        topKpis={[
+        kpis={[
           {
-            label: isTr ? 'ORTALAMA PUAN' : 'AVG RATING',
-            value: avgRatingNow > 0 ? avgRatingNow.toFixed(2) : '—',
-            delta: avgRatingNow > 0 ? `+${(avgRatingNow - 4.0).toFixed(2)}` : null,
-            deltaKind: 'up',
-            subtitle: isTr ? `hedef ${resolvedTargetRating.toFixed(1)}` : `target ${resolvedTargetRating.toFixed(1)}`,
-            sparkline: sparkReviews,
-            sparklineColor: '#A8D62E',
-          },
-          {
-            label: isTr ? `BU ${windowDays === 30 ? 'AY' : windowDays + ' GÜN'} YORUM` : `${windowDays}D REVIEWS`,
+            label: isTr ? 'TOPLAM YORUM' : 'TOTAL REVIEWS',
             value: reviewsCount.toLocaleString(isTr ? 'tr-TR' : 'en-US'),
             delta: reviewsDelta.value,
             deltaKind: reviewsDelta.kind,
@@ -663,76 +724,86 @@ async function renderAnalyticsPage({
             sparklineColor: '#0A0A0A',
           },
           {
-            label: isTr ? 'NPS SKORU' : 'NPS SCORE',
+            label: isTr ? 'ORTALAMA PUAN' : 'AVG RATING',
+            value: avgRatingNow > 0 ? avgRatingNow.toFixed(2) : '—',
+            delta: avgRatingNow > 0 ? `+${(avgRatingNow - 4.0).toFixed(2)}` : null,
+            deltaKind: 'up',
+            subtitle: isTr
+              ? `hedef ${resolvedTargetRating.toFixed(1)}`
+              : `target ${resolvedTargetRating.toFixed(1)}`,
+            sparkline: sparkReviews,
+            sparklineColor: '#A8D62E',
+          },
+          {
+            label: isTr ? 'YANIT SÜRESİ' : 'REPLY TIME',
+            value: avgResponseValueLabel,
+            delta: avgResponseHours !== null ? (isTr ? 'ortalama' : 'avg') : null,
+            deltaKind: 'flat',
+            subtitle:
+              reviewsCount > 0
+                ? isTr
+                  ? `${repliedCount}/${reviewsCount} yanıtlandı`
+                  : `${repliedCount}/${reviewsCount} replied`
+                : isTr
+                  ? 'henüz yanıt yok'
+                  : 'no replies yet',
+            sparkline: sparkReviews,
+            sparklineColor: '#A8D62E',
+          },
+          {
+            label: isTr ? 'NPS' : 'NPS',
             value: npsResult.total > 0 ? String(npsResult.npsScore) : '—',
             delta:
               npsResult.total > 0 ? `Promoter %${npsResult.promoterPct}` : null,
             deltaKind: 'flat',
-            subtitle: isTr
-              ? `${npsResult.promoters}P · ${npsResult.passives}Pa · ${npsResult.detractors}D`
-              : `${npsResult.promoters}P · ${npsResult.passives}Pa · ${npsResult.detractors}D`,
+            subtitle:
+              npsResult.total > 0
+                ? `${npsResult.promoters}P · ${npsResult.passives}Pa · ${npsResult.detractors}D`
+                : isTr
+                  ? 'yeterli veri yok'
+                  : 'not enough data',
             sparkline: sparkReviews,
             sparklineColor: '#A8D62E',
           },
           {
-            label: isTr ? 'YANIT ORANI' : 'RESPONSE RATE',
-            value: reviewsCount > 0 ? `%${overallResponseRate}` : '—',
+            label: isTr ? 'TEKRAR GELME' : 'RETURN RATE',
+            value: returnRate !== null ? `%${returnRate}` : '—',
             delta:
-              reviewsCount > 0 && repliedCount > 0 ? `${repliedCount}/${reviewsCount}` : null,
-            deltaKind: 'flat',
-            subtitle: avgResponseLabel ?? (isTr ? 'henüz yanıt yok' : 'no replies yet'),
-            sparkline: sparkReviews,
-            sparklineColor: '#A8D62E',
-          },
-        ]}
-        secondaryKpis={[
-          {
-            label: isTr ? 'Dönüşüm Oranı' : 'Conversion Rate',
-            value: scansCount > 0 ? `%${conversionRate}` : '—',
-            delta:
-              scansCount > 0 && scansPrevWindowCount > 0 ? conversionDelta.value : null,
-            deltaKind:
-              scansCount > 0 && scansPrevWindowCount > 0 ? conversionDelta.kind : 'flat',
-            subtitle: isTr ? 'tarama → yorum' : 'scan → review',
-          },
-          {
-            label: isTr ? 'Yönlendirme Oranı' : 'Redirect Rate',
-            value: reviewsCount > 0 ? `%${redirectRate}` : '—',
-            delta: reviewsCount > 0 ? redirectDelta.value : null,
-            deltaKind: redirectDelta.kind,
-            subtitle: isTr ? 'yorum → platform' : 'review → platform',
-          },
-          {
-            label: isTr ? 'AI Yanıt' : 'AI Replies',
-            value: aiReplyCount.toLocaleString(isTr ? 'tr-TR' : 'en-US'),
-            delta:
-              repliedCount > 0
-                ? `%${Math.round((aiReplyCount / Math.max(1, repliedCount)) * 100)}`
+              returnRate !== null && totalUniqueCustomers > 0
+                ? isTr
+                  ? `${returningCustomers}/${totalUniqueCustomers}`
+                  : `${returningCustomers}/${totalUniqueCustomers}`
                 : null,
             deltaKind: 'flat',
-            subtitle: isTr ? 'AI Co-Pilot ile' : 'with AI Co-Pilot',
+            subtitle:
+              totalUniqueCustomers > 0
+                ? isTr
+                  ? `${totalUniqueCustomers} tekil müşteri`
+                  : `${totalUniqueCustomers} unique`
+                : isTr
+                  ? 'KVKK onaylı veri yok'
+                  : 'no consented data',
+            sparkline: sparkReviews,
+            sparklineColor: '#0A0A0A',
           },
         ]}
         isTr={isTr}
       />
 
-      {/* §38.34 — Tek chart Puan/Hacim/Sentiment toggle. Tasarım kaynağı:
-          page-analytics.jsx PUAN & HACİM TRENDİ. Eski WeeklyTrendChart §38.25
-          bu component'le replace edildi (visual parity %100). InteractionTrendChart
-          (window-day) "Hacim" toggle ile aynı semantik → silindi. */}
+      {/* §38.50 — PUAN VE HACİM TRENDİ 3-series simultaneous (tasarım birebir).
+          Toggle mode silindi — line + bars + target birlikte render. */}
       <PulseTrendChart
         weeks={weeklyTrend}
         targetRating={resolvedTargetRating}
-        defaultMode="rating"
         isTr={isTr}
       />
 
-      {/* §38.34 — InteractionTrendChart silindi (kullanıcı kararı, CLAUDE.md
-          §38.34): tek-chart Hacim toggle (yukarıda PulseTrendChart) ile aynı
-          veri. PLATFORM PAYLAŞIMI mevcut'ta vardı; tasarım KANAL DAĞILIMI mini
-          (aşağıda ChannelDistributionMini) ile semantic uyumlu — replace. */}
+      {/* §38.50 — Two-up grid: Sol KANAL DAĞILIMI / Sağ KONU SENTİMENT ANALİZİ
+          (tasarım birebir parity). Mevcut bottom KONU & DUYGU section
+          (line 944-1039 dark) buraya taşındı + light theme migration.
+          TopLocationCard sayfa altına ayrıldı. */}
       {showPlatformShare && (
-        <div className="grid gap-3.5 lg:grid-cols-[2fr_1fr]">
+        <div className="grid gap-3.5 lg:grid-cols-[1fr_1.4fr]">
           <ChannelDistributionMini
             channels={[
               ...platformShare.map((p) => ({
@@ -741,8 +812,7 @@ async function renderAnalyticsPage({
                 count: p.count,
                 color: PLATFORMS[p.id].color,
               })),
-              // §38.34 — 'Buaze QR' UI runtime label: platform null yorumlar
-              // (rating ≥4 + non-platform). KANAL DAĞILIMI'nda göster.
+              // 'Buaze QR' UI runtime label: platform null yorumlar (rating ≥4).
               ...(() => {
                 const buazeQrCount = feedbacksWindow.filter(
                   (f) => (f.rating ?? 0) >= 4 && !f.platform,
@@ -761,35 +831,104 @@ async function renderAnalyticsPage({
             ]}
             isTr={isTr}
           />
-          <TopLocationCard
-            topLocation={(() => {
-              if (user.restaurants.length < 2) return null;
-              const counts = new Map<string, number>();
-              const ratings = new Map<string, { sum: number; count: number }>();
-              for (const f of feedbacksWindow) {
-                if (!f.restaurantId) continue;
-                counts.set(f.restaurantId, (counts.get(f.restaurantId) ?? 0) + 1);
-                const r = ratings.get(f.restaurantId) ?? { sum: 0, count: 0 };
-                r.sum += f.rating ?? 0;
-                r.count += 1;
-                ratings.set(f.restaurantId, r);
-              }
-              if (counts.size === 0) return null;
-              const top = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0];
-              const restaurant = user.restaurants.find((r) => r.id === top[0]);
-              if (!restaurant) return null;
-              const ratingAgg = ratings.get(top[0])!;
-              return {
-                id: restaurant.id,
-                name: restaurant.name,
-                branch: null,
-                count: top[1],
-                avgRating: ratingAgg.count > 0 ? ratingAgg.sum / ratingAgg.count : 0,
-              };
-            })()}
-            locale={locale}
-            isTr={isTr}
-          />
+
+          {/* §38.50 — KONU SENTİMENT ANALİZİ (light theme). Tasarım kaynağı:
+              page-analytics.jsx line 232-260. Mevcut dark kart (line 944-1039)
+              silindi (CLAUDE.md §38.50 owner kararı). */}
+          {aiAnalyticsAvailable ? (
+            <section className="bz-card p-5 sm:p-6">
+              <header className="mb-3 flex items-start justify-between gap-2">
+                <div>
+                  <Eyebrow>{isTr ? 'KONU SENTİMENT ANALİZİ' : 'TOPIC SENTIMENT'}</Eyebrow>
+                  <div className="bz-h-tight mt-1 text-[16px] sm:text-[18px]">
+                    {isTr ? 'Müşterinin en sık dile getirdiği' : 'Most-mentioned themes'}
+                  </div>
+                </div>
+                {themes.source === 'openai' && (
+                  <span className="pulse-eyebrow shrink-0 inline-flex items-center gap-1 rounded-full border border-[#C6F24E] bg-[#EAF9B8] px-2 py-1 text-[#0A0A0A]">
+                    <span
+                      aria-hidden="true"
+                      className="bz-pulse-dot"
+                      style={{ background: '#A8D62E' }}
+                    />
+                    {isTr ? 'AI ile çıkarıldı' : 'AI extracted'}
+                  </span>
+                )}
+              </header>
+
+              {themes.synthesis && (
+                <p className="mb-4 rounded-[10px] bg-[#FAFAFA] px-3 py-2.5 text-[12.5px] leading-[1.55] text-[#0A0A0A]">
+                  {themes.synthesis}
+                </p>
+              )}
+
+              {themes.themes.length === 0 ? (
+                <p className="text-[12px] text-[#737373]">
+                  {isTr
+                    ? themes.source === 'fallback'
+                      ? 'Yeterli yorum yok ya da AI servisi şu an pasif. En az 4 metinli yoruma ulaşınca AI çıkarımı burada görünür.'
+                      : 'Yorumlardan çıkan ortak tema yok.'
+                    : themes.source === 'fallback'
+                      ? 'Not enough comments yet, or AI service is paused. AI inference appears once at least 4 text comments are collected.'
+                      : 'No common themes from comments yet.'}
+                </p>
+              ) : (
+                <ol className="flex flex-col gap-3.5">
+                  {themes.themes.map((t) => {
+                    // §38.50 — Sentiment progress bar light theme. Threshold:
+                    // ≥80% lime (#A8D62E) / ≥70% amber (#D97706) / <70% red (#DC2626).
+                    const hasSentiment = typeof t.sentimentPositivePct === 'number';
+                    const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
+                    const barColor =
+                      pos >= 80 ? '#A8D62E' : pos >= 70 ? '#D97706' : '#DC2626';
+                    return (
+                      <li key={t.theme}>
+                        <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                          <span className="text-[13px] font-medium text-[#0A0A0A]">
+                            {t.theme}
+                          </span>
+                          <div className="flex items-baseline gap-2.5">
+                            <span className="bz-mono text-[10.5px] tabular-nums text-[#A3A3A3]">
+                              {t.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
+                              {isTr ? 'söz' : 'mentions'}
+                            </span>
+                            {hasSentiment && (
+                              <span
+                                className="bz-mono text-[12px] font-semibold tabular-nums"
+                                style={{ color: barColor }}
+                              >
+                                %{pos}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {hasSentiment && (
+                          <div
+                            className="flex h-2 overflow-hidden rounded-full bg-[#F5F5F5]"
+                            role="img"
+                            aria-label={
+                              isTr
+                                ? `${pos}% pozitif sentiment`
+                                : `${pos}% positive sentiment`
+                            }
+                          >
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{ width: `${pos}%`, background: barColor }}
+                            />
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </section>
+          ) : (
+            <section className="bz-card p-5 sm:p-6 flex items-center justify-center text-[13px] text-[#737373]">
+              {isTr ? 'AI sentiment analizi pasif.' : 'AI sentiment analysis paused.'}
+            </section>
+          )}
         </div>
       )}
 
@@ -928,9 +1067,9 @@ async function renderAnalyticsPage({
         </div>
       )}
 
-      {/* §38.34 — AI İÇGÖRÜLER · BU HAFTA dark card (TREND/KAZANIM/RİSK 3-row).
-          Tasarım birebir (kullanıcı kararı). Empty fallback → kart gizli
-          (extractStructuredInsight tüm 3 alan boş ise). */}
+      {/* §38.50 — Bottom row: Heatmap + AI İÇGÖRÜLER 2-up grid (tasarım birebir).
+          AI İÇGÖRÜLER artık light card (CLAUDE.md §38.50). KONU SENTİMENT
+          (eski bottom dark) yukarı 2-up grid sağ kart'a taşındı. */}
       <AiInsightsCard
         trend={structuredInsight.trend}
         win={structuredInsight.win}
@@ -938,105 +1077,39 @@ async function renderAnalyticsPage({
         isTr={isTr}
       />
 
-      {/* KONU & DUYGU (AI sentiment themes) — KEEP. Tasarım §5'te ayrı section
-          (NLP topics + sentiment progress). AI İÇGÖRÜLER (yukarıda) summary,
-          KONU & DUYGU (aşağıda) detail breakdown. */}
-      {aiAnalyticsAvailable && (
-      <section className="rounded-2xl bg-[#0A0A0A] text-white p-5 sm:p-6 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.4)]">
-        <header className="flex items-start justify-between gap-2 mb-3">
-          <div>
-            <Eyebrow color="#C6F24E">{isTr ? 'AI ÇIKARIMI' : 'AI INFERENCE'}</Eyebrow>
-            <div className="bz-h-tight mt-1 text-white" style={{ fontSize: 18 }}>
-              {isTr ? 'Müşterinin en sık dile getirdiği' : 'Most-mentioned themes'}
-            </div>
-          </div>
-          {themes.source === 'openai' && (
-            <span className="pulse-eyebrow shrink-0 inline-flex items-center gap-1 rounded-full border border-[#C6F24E]/30 bg-[#C6F24E]/10 px-2 py-1 text-[#C6F24E]">
-              <span aria-hidden="true" className="bz-pulse-dot" style={{ background: '#C6F24E' }} />
-              AI
-            </span>
-          )}
-        </header>
-
-        {themes.synthesis && (
-          <p className="mb-4 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-[13px] leading-[1.6] text-white">
-            {themes.synthesis}
-          </p>
-        )}
-
-        {themes.themes.length === 0 ? (
-          <p className="text-[12px] text-white/60">
-            {isTr
-              ? themes.source === 'fallback'
-                ? 'Yeterli yorum yok ya da AI servisi şu an pasif. En az 4 metinli yoruma ulaşınca AI çıkarımı burada görünür.'
-                : 'Yorumlardan çıkan ortak tema yok.'
-              : themes.source === 'fallback'
-                ? 'Not enough comments yet, or AI service is paused. AI inference appears once at least 4 text comments are collected.'
-                : 'No common themes from comments yet.'}
-          </p>
-        ) : (
-          <ol className="grid gap-2 sm:grid-cols-2">
-            {themes.themes.map((t, idx) => {
-              // Phase 8c+ (CLAUDE.md §38.20) — sentiment progress bar
-              // (.design-owner-2026/page-analytics Topics paterni). Sentiment
-              // opsiyonel; eski cache entry'lerinde / model uymadığında
-              // undefined → progress bar render skip (graceful).
-              const hasSentiment = typeof t.sentimentPositivePct === 'number';
-              const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
-              const neg = 100 - pos;
-              return (
-                <li
-                  key={t.theme}
-                  className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="bz-mono text-[11px] font-semibold text-white/50">
-                      {String(idx + 1).padStart(2, '0')}
-                    </span>
-                    <span className="flex-1 text-[13px] font-medium text-white">
-                      {t.theme}
-                    </span>
-                    <span className="bz-mono text-[11px] font-semibold tabular-nums text-white/70">
-                      ×{t.count}
-                    </span>
-                  </div>
-                  {hasSentiment && (
-                    <>
-                      <div
-                        className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-white/10"
-                        role="img"
-                        aria-label={
-                          isTr
-                            ? `${pos}% pozitif, ${neg}% negatif`
-                            : `${pos}% positive, ${neg}% negative`
-                        }
-                      >
-                        <div
-                          className="h-full"
-                          style={{ width: `${pos}%`, background: '#A8D62E' }}
-                        />
-                        <div
-                          className="h-full"
-                          style={{ width: `${neg}%`, background: 'rgba(248, 113, 113, 0.6)' }}
-                        />
-                      </div>
-                      <div className="mt-1 flex justify-between bz-mono text-[10px]">
-                        <span className="text-[#A8D62E]">
-                          {pos}% {isTr ? 'olumlu' : 'positive'}
-                        </span>
-                        <span className="text-red-300/80">
-                          {neg}% {isTr ? 'olumsuz' : 'negative'}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </section>
-      )}
+      {/* §38.50 — TopLocationCard sayfa altına taşındı (multi-restaurant owner
+          için faydalı, 2-up grid sağ kart KONU SENTİMENT'a verildi). */}
+      {(() => {
+        if (user.restaurants.length < 2) return null;
+        const counts = new Map<string, number>();
+        const ratings = new Map<string, { sum: number; count: number }>();
+        for (const f of feedbacksWindow) {
+          if (!f.restaurantId) continue;
+          counts.set(f.restaurantId, (counts.get(f.restaurantId) ?? 0) + 1);
+          const r = ratings.get(f.restaurantId) ?? { sum: 0, count: 0 };
+          r.sum += f.rating ?? 0;
+          r.count += 1;
+          ratings.set(f.restaurantId, r);
+        }
+        if (counts.size === 0) return null;
+        const top = Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0];
+        const restaurant = user.restaurants.find((r) => r.id === top[0]);
+        if (!restaurant) return null;
+        const ratingAgg = ratings.get(top[0])!;
+        return (
+          <TopLocationCard
+            topLocation={{
+              id: restaurant.id,
+              name: restaurant.name,
+              branch: null,
+              count: top[1],
+              avgRating: ratingAgg.count > 0 ? ratingAgg.sum / ratingAgg.count : 0,
+            }}
+            locale={locale}
+            isTr={isTr}
+          />
+        );
+      })()}
     </div>
   );
 }

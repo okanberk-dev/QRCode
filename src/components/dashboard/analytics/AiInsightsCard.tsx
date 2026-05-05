@@ -1,12 +1,19 @@
 import { Sparkles, TrendingUp, Award, AlertTriangle } from 'lucide-react';
 
-// Phase 8c+ §38.34 — AI İÇGÖRÜLER · BU HAFTA dark card. Tasarım kaynağı:
-// .design-owner-2026/project/page-analytics.jsx line 285-315 (3-row dark
-// card: TREND / KAZANIM / RİSK).
+// §38.50 — AI İÇGÖRÜLER · BU HAFTA light card (tasarım birebir parity).
+// Tasarım kaynağı: .design-owner-2026/project/page-analytics.jsx
+// "AI İÇGÖRÜLER" line 285-315:
+//   - Container: bz-card (white bg)
+//   - Insight rows: bg-[#FAFAFA] rounded-[10px] borderLeft 2px tone-color
+//   - 3-row strüktür: TREND (lime) / KAZANIM (lime-deep) / RİSK (red)
+//   - Icon + title + summary
 //
-// Server-friendly (data prop). 3 alan boş ise kart gizli (kullanıcı kararı,
-// CLAUDE.md §38.34: structured insight extract fail → fallback empty → UI
-// kart render etmez). Min 1 alan dolu olmalı.
+// §38.34 dark card (graphite + lime accent) → light theme migration. Owner
+// kararı (CLAUDE.md §38.50): tasarım birebir, sayfa visual flow Pulse light
+// convention'a uyar.
+//
+// Server-friendly (data prop). 3 alan boş ise kart gizli (extractStructuredInsight
+// fail → fallback empty → UI render etmez). Min 1 alan dolu olmalı.
 
 export interface AiInsightsCardProps {
   trend: string;
@@ -22,7 +29,10 @@ interface RowSpec {
   labelTr: string;
   labelEn: string;
   icon: typeof TrendingUp;
-  color: string;
+  /** Border-left + icon + label color. Tone-based: lime/lime-deep/red. */
+  toneColor: string;
+  /** Tone label color (badge bg + label text). */
+  toneBg: string;
   body: string;
 }
 
@@ -39,7 +49,8 @@ export function AiInsightsCard({
       labelTr: 'TREND',
       labelEn: 'TREND',
       icon: TrendingUp,
-      color: '#C6F24E',
+      toneColor: '#A8D62E', // lime-deep — pozitif/nötr trend
+      toneBg: '#EAF9B8',
       body: trend,
     },
     {
@@ -47,7 +58,8 @@ export function AiInsightsCard({
       labelTr: 'KAZANIM',
       labelEn: 'WIN',
       icon: Award,
-      color: '#A8D62E',
+      toneColor: '#16A34A', // green — net pozitif
+      toneBg: '#DCFCE7',
       body: win,
     },
     {
@@ -55,7 +67,8 @@ export function AiInsightsCard({
       labelTr: 'RİSK',
       labelEn: 'RISK',
       icon: AlertTriangle,
-      color: '#FCA5A5',
+      toneColor: '#DC2626', // red — uyarı
+      toneBg: '#FEE2E2',
       body: risk,
     },
   ];
@@ -67,48 +80,46 @@ export function AiInsightsCard({
   const eyebrow = eyebrowLabel ?? (isTr ? 'AI İÇGÖRÜLER · BU HAFTA' : 'AI INSIGHTS · THIS WEEK');
 
   return (
-    <section
-      className="rounded-2xl bg-[#0A0A0A] text-white p-5 sm:p-6 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.4)]"
-      aria-label={eyebrow}
-    >
+    <section className="bz-card p-5 sm:p-6" aria-label={eyebrow}>
       <header className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span
             aria-hidden="true"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#EAF9B8] border border-[#C6F24E]"
           >
-            <Sparkles size={13} className="text-[#C6F24E]" strokeWidth={2.2} />
+            <Sparkles size={13} className="text-[#0A0A0A]" strokeWidth={2.2} />
           </span>
-          <h3
-            className="pulse-eyebrow text-[10.5px]"
-            style={{ color: '#C6F24E' }}
-          >
-            {eyebrow}
-          </h3>
+          <h3 className="pulse-eyebrow text-[10.5px] text-[#737373]">{eyebrow}</h3>
         </div>
-        <span className="bz-mono text-[10px] text-white/50 uppercase tracking-wider">
+        <span className="bz-mono text-[10px] text-[#A3A3A3] uppercase tracking-wider">
           {isTr ? 'haftalık özet' : 'weekly summary'}
         </span>
       </header>
-      <ol className="flex flex-col gap-3">
+      <ol className="flex flex-col gap-2.5">
         {visibleRows.map((r) => {
           const Icon = r.icon;
           return (
             <li
               key={r.key}
-              className="flex items-start gap-3 rounded-xl bg-white/[0.04] border border-white/10 p-3.5"
+              className="flex items-start gap-3 rounded-[10px] bg-[#FAFAFA] p-3.5"
+              style={{ borderLeft: `2px solid ${r.toneColor}` }}
             >
               <span
                 aria-hidden="true"
-                className="shrink-0 inline-flex h-8 w-16 items-center justify-center gap-1.5 rounded-md bg-white/5 text-[10.5px] font-semibold"
-                style={{ color: r.color }}
+                className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md"
+                style={{ background: '#FFFFFF', border: `1px solid ${r.toneColor}40` }}
               >
-                <Icon size={11} strokeWidth={2.4} />
-                {isTr ? r.labelTr : r.labelEn}
+                <Icon size={13} strokeWidth={2.2} style={{ color: r.toneColor }} />
               </span>
-              <p className="flex-1 min-w-0 text-[12.5px] leading-[1.55] text-white/95">
-                {r.body}
-              </p>
+              <div className="flex-1 min-w-0">
+                <div
+                  className="pulse-eyebrow text-[10px] mb-1"
+                  style={{ color: r.toneColor }}
+                >
+                  {isTr ? r.labelTr : r.labelEn}
+                </div>
+                <p className="text-[12.5px] leading-[1.55] text-[#0A0A0A]">{r.body}</p>
+              </div>
             </li>
           );
         })}
