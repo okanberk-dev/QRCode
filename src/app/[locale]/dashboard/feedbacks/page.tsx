@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState, Suspense, use } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Inbox, Loader2 } from 'lucide-react';
+import { Download, Filter, Inbox, Loader2 } from 'lucide-react';
 import { EmptyState, PageHeader } from '@/components/ui';
+import { KpiStrip } from './_components/KpiStrip';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
@@ -614,10 +615,39 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           title={isTr ? 'Yorumlar' : 'Reviews'}
           description={
             isTr
-              ? 'Müşteri yorumlarını yönet, yanıtla ve düşük puanları takip et.'
-              : 'Manage customer reviews, reply, and follow up on low ratings.'
+              ? 'Tüm kanallardan gelen müşteri geri bildirimleri. Yanıt sürelerinin altında kalmaya çalış.'
+              : 'Customer feedback from all channels. Try to stay under reply targets.'
+          }
+          actions={
+            <div className="flex items-center gap-2">
+              {/* §38.53 — Dışa aktar (CSV export, mevcut /api/feedback/export endpoint) */}
+              <a
+                href="/api/feedback/export?days=90"
+                download
+                className="bz-btn inline-flex items-center gap-1.5 text-[12.5px]"
+                title={isTr ? 'Son 90 gün yorumları CSV indir' : 'Download last 90 days as CSV'}
+              >
+                <Download size={13} strokeWidth={2} />
+                {isTr ? 'Dışa aktar' : 'Export'}
+              </a>
+              {/* §38.53 — Filtre (mobil drawer toggle, xl: rail görünür) */}
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(true)}
+                className="bz-btn inline-flex items-center gap-1.5 text-[12.5px] xl:hidden"
+              >
+                <Filter size={13} strokeWidth={2} />
+                {isTr ? 'Filtre' : 'Filter'}
+              </button>
+            </div>
           }
         />
+      </div>
+
+      {/* §38.53 — KPI 4-card strip (Bu hafta + Ort puan + Yanıt süresi + Yanıt oranı).
+          WeekStatsCard rail altından kaldırıldı (KPI strip ile redundant). Tasarım birebir. */}
+      <div className={`mt-3 mb-4 ${isMobileDetailView ? 'hidden lg:block' : ''}`}>
+        <KpiStrip isTr={isTr} />
       </div>
 
       <div

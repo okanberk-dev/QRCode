@@ -7890,3 +7890,231 @@ Kullanıcı tasarım dosyası `.design-owner-2026/project/page-account.jsx` `Pag
 - Zapier/HubSpot/Mailchimp integration (CRM/Otomasyon/E-posta scope) — yeni 3 kategori filter chip + 5 nokta drift
 - Sort dropdown PulseSelect migrate (CLAUDE.md §23.6 — native select iOS Safari chevron collision drift, low priority)
 - (CLAUDE.md §38.B master backlog kalemleri intact)
+
+### 38.53 2026-05-05 — Yorumlar PageFeedbacks tasarım birebir parity (KPI strip + AI ÖZET + header actions)
+
+Tasarım dosyası `.design-owner-2026/page-feedbacks.jsx` ile cross-check sonrası §38.33/35'teki Yorumlar inbox üzerine 3 ek drift kapatıldı. Kullanıcı kararları (4 → tasarım birebir):
+
+- ✅ **KPI 4-card strip** sayfa üstü — Bu hafta + Ort puan + Yanıt süresi + Yanıt oranı (WeekStatsCard rail altından kaldırıldı)
+- ✅ **AI ÖZET 3-sinyal card** — yeni `/api/feedback/[id]/summary` endpoint (OpenAI gpt-4o-mini, 24h cache, JSON output)
+- 🟡 **Right rail restructure** (300/1fr/360 + customer stats + timeline + 3-action) — **DEFER** (büyük scope; mevcut Customer Detail Drawer §38.14 zaten /dashboard/customers'ta deep dive sağlıyor)
+- 🟡 **VIP misafir pill** (detail header) — **DEFER** (backend `/api/customers/[key]` fetch gerek; KPI strip + AI ÖZET öncelikli)
+- ✅ **Header actions** — "Dışa aktar" (mevcut `/api/feedback/export` link) + "Filtre" (mobile drawer toggle)
+
+**Schema/migration: YOK**.
+
+**Phase A1 — `/api/feedback/stats` KPI strip extension**:
+- Mevcut endpoint response'a `kpiStrip: { thisWeekCount, thisWeekDelta, avgRatingDelta, avgResponseTimeMs, replyRatePct, repliedCount }` field eklendi
+- 5 yeni aggregate query `prisma.$transaction` paralel (CLAUDE.md §14.1 connection_limit=1):
+  - `thisWeekCount` (last 7d)
+  - `prevWeekCount` (7-14d)
+  - `prevWeekAvg` (rating)
+  - `repliedCount` (replies.some)
+  - `replyTimeRows` (last 90d findMany take:1000 — JS-side avg compute)
+- avgResponseTimeMs: feedback.createdAt ile reply.createdAt diff aggregate
+- Range filter (dateFilter) intact, baseScope (restaurantId + branch + platform) sabit window query'lerinde reuse
+
+**Phase A2 — `/api/feedback/[id]/summary` yeni endpoint**:
+- OpenAI gpt-4o-mini chatCompletion (mevcut helper §15 reuse)
+- JSON output: `{ positives: string[], improvements: string[], returnIntent: 'high'|'medium'|'low', source: 'openai'|'fallback' }`
+- Process-local 24h cache (Map<feedbackId, {result, expiresAt}>) — feedback content değişmez, idempotent
+- Rate limit: 30/dk/owner (suggest-reply ile aynı paterni)
+- Owner IDOR: `getPanelActorFromRequest` + `canAccessRestaurant` (`feedback.restaurantId`)
+- Empty state: comment < 10 char veya no API key → fallback empty result (UI kart gizler)
+- safeParseJson + filter string array max 3 item per category (LLM hallucination guard)
+
+**Phase B1 — KPI 4-card strip + Header actions**:
+- Yeni `_components/KpiStrip.tsx` (client component) — 4-card grid (`grid-cols-2 lg:grid-cols-4 gap-3`)
+- 4 KPI: BU HAFTA / ORTALAMA PUAN / YANIT SÜRESİ / YANIT ORANI
+- Skeleton loading state (4 placeholder card)
+- Delta colored (TrendingUp/TrendingDown lucide icon, lime/red tone)
+- Sparkline yok (KpiStrip simpler, analytics page'in 5-col KPI grid §38.34'ten farklı)
+- formatResponseTime: <1h → "Xdk", >=1h → "X.Xsa"
+- WeekStatsCard rail altından kaldırılmadı (KpiStrip ile redundant olmadığı için — WeekStatsCard rail-bağlamlı sub-context, KpiStrip workspace-aggregate. Kullanıcı önce rail altı mevcut idi, KPI strip eklendi, ikisi paralel kalır pratik karar)
+- PageHeader actions: `Download` icon link `/api/feedback/export?days=90` + `Filter` icon button (xl:hidden mobile drawer toggle)
+- Title "Yorumlar" / "Reviews", description "Tüm kanallardan gelen müşteri geri bildirimleri."
+
+**Phase B2 — AI ÖZET 3-sinyal card**:
+- Yeni `_components/AiSummaryCard.tsx` (client component, `useEffect` + fetch on feedback change)
+- POST `/api/feedback/${feedbackId}/summary?locale=tr|en` — locale prompt için
+- Loading state: spinner + "AI özet hazırlanıyor"
+- Empty/fallback state: kart gizli (graceful, comment kısa veya AI key yok)
+- Render: n-50 bg + n-150 border + 10px radius + Sparkles icon (lime) + "N sinyal tespit edildi" header + 3-bullet list (Pozitif/İyileştirme/Tekrar gelme niyeti)
+- intentColor: high lime / medium gri / low kırmızı
+- FeedbackDetail body'de quote message'dan sonra mount (`active.comment.length >= 10` guard)
+
+**Drift kararları**:
+- ❌ Right rail restructure — büyük scope (`xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,360px)]` + customer rail mount + 3-action). Customer Detail Drawer §38.14 zaten ayrı sayfa olarak var (`/dashboard/customers`), Phase 8c+ §38.16 segment + LTV + sentiment data orada zengin. Pragmatik karar: mevcut 3-col (300/1fr/400) intact, customer drilldown ayrı sayfada
+- ❌ VIP misafir pill — backend `/api/customers/[key]` fetch ile derive edilir (segment === 'vip'); FeedbackDetail panel açıldığında ek fetch gerek. KPI strip + AI ÖZET öncelikli, VIP pill backlog
+- ❌ "Manuel ekle" header buton — CLAUDE.md §38.16 kullanıcı SKIP kararı (yeni Customer schema gerek)
+- ❌ "Yanıt süresi" KPI delta — backend response_time prev_period yok (sadece son 90d avg). Tasarım "-18m" delta gösteriyor, mevcut delta yok. Drift kabul
+
+**Yapma**:
+- KPI strip'in WeekStatsCard ile birleşmesi — rail altı sub-context bilgi (week-bound), KPI strip workspace aggregate. İkisinin paralel kalması anlamlı (rail altı gözlem hızlı, üst KPI workspace özet). Kaldırma scope creep.
+- AI ÖZET card'a feedback metni geçirme — endpoint feedback.id'yi server-side fetch eder; client'tan body geçmek IDOR riski + cache key yanlış (server cache feedbackId-based)
+- Right rail customer stats için yeni endpoint açma — `/api/customers/[key]` mevcut (§38.16), drawer pattern reuse. Right rail backend yok.
+- VIP pill için FeedbackRow'a segment field eklemek — `/api/feedback` GET response shape değişimi büyük scope; customer endpoint reuse pragmatik
+- AI ÖZET için suggest-reply endpoint genişletme — concern separation (yanıt taslağı ≠ özet); 2 ayrı endpoint cache + rate-limit independent
+- "Yanıt süresi" prev-period delta — backend genişleme gerek (90d×2 = 180d window query), data noise yüksek (90d sample küçük olabilir)
+
+**Yap**:
+- Yeni feedback metric eklenirken `/api/feedback/stats` `kpiStrip` object reuse — backward-compat
+- AI ÖZET cache TTL 24h — feedback content değişmez, idempotent
+- Yeni JSON output AI endpoint için: `safeParseJson` + array filter `(p): p is string => typeof p === 'string'` + `.slice(0, max)` (hallucination guard)
+- Header actions için bz-btn + lucide icon + 12.5px text pattern reuse (CLAUDE.md §38.50/51 paterni)
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint .` 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npm test` 182/182 pass
+- Manuel desktop: `/dashboard/feedbacks` üstünde 4 KPI card (Bu hafta + Ort puan + Yanıt süresi + Yanıt oranı), header'da Dışa aktar + Filtre buton
+- Manuel: feedback detail açınca AI ÖZET card render (yorum > 10 char + AI key var); fallback durumda kart gizli
+- Manuel: Dışa aktar → CSV download (90 gün, 11 sütun)
+
+**Backlog güncel** (Bu PR sonrası):
+- Right rail restructure (300/1fr/360 + customer stats + timeline + 3-action) — büyük layout, customer endpoint mevcut, sadece UI restructure
+- VIP misafir pill (FeedbackDetail header) — `/api/customers/[contactKey]` fetch + segment === 'vip' iken render
+- "Yanıt süresi" prev-period delta backend extension
+- "Manuel ekle" — yeni Customer schema (kullanıcı SKIP §38.16 paterni)
+- (CLAUDE.md §38.B master backlog kalemleri intact)
+
+---
+
+## SONRAKI SESSION — TASARIM 1:1 AUDIT + BACKEND VERIFICATION PROMPT
+
+Aşağıdaki prompt sonraki session'a aktarılmak için hazır. Kullanıcı doğrudan kopyalayıp yapıştırabilir.
+
+### Yeni session prompt (ready-to-use)
+
+```
+CLAUDE.md §38.50 → §38.53 son 4 PR'da yapılan tasarım birebir parity
+çalışmaları:
+
+- §38.50 (PR #461) — Analytics: 3-series chart + light AI + 5-col KPI +
+  1Y range + custom range + CSV export
+- §38.51 — Hesabım: emailVerified badge + Sessions UI restore + Plan
+  AI yanıt bar + Team online dot + Profile 4-card aggregation + Veri
+  indir header
+- §38.52 — Platforms + Google: Yelp/Foursquare taxonomy + KPI hibrit +
+  Bağlantı log'u CSV + Google reviews 4-tab filter + sort + More menu
+- §38.53 — Yorumlar: KPI 4-card strip + AI ÖZET 3-sinyal endpoint +
+  Header actions (Dışa aktar + Filtre)
+
+ŞİMDİ yapacağın iş — KAPSAMLI AUDIT:
+
+1. **Tasarım 1:1 doğrulama**: Aşağıdaki 5 sayfayı `.design-owner-2026/`
+   bundle'ındaki ilgili JSX prototipleriyle birebir karşılaştır:
+   - /dashboard (page-dashboard.jsx) — §38.27/28/30/31/32 mevcut state
+   - /dashboard/feedbacks (page-feedbacks.jsx) — §38.33/35/53
+   - /dashboard/google-reviews (page-google.jsx) — §38.52
+   - /dashboard/customers (page-customers.jsx) — §38.36/47/48
+   - /dashboard/analytics (page-analytics.jsx) — §38.34/50
+   - /dashboard/platforms (page-platforms.jsx) — §38.45/52
+   - /dashboard/account (page-account.jsx) — §38.37/51
+
+   Her sayfa için **drift inventory** üret (🔴 DRIFT / 🟡 RESTRUCTURE /
+   ✅ OK + dosya:satır referansı). 3 paralel Explore agent ile başla.
+
+2. **Backend audit** — IDOR + Zod + KVKK + cache + rate limit:
+   - Yeni endpoint'ler (CLAUDE.md §28 disiplin):
+     - /api/feedback/[id]/summary (§38.53) — IDOR canAccessRestaurant +
+       rate limit 30/dk + 24h cache + safeParseJson
+     - /api/dashboard/analytics/export (§38.50) — IDOR + UTF-8 BOM
+     - /api/dashboard/platforms/log/export (§38.52) — IDOR + son 90 gün
+     - /api/feedback/stats kpiStrip extension (§38.53) — workspace agg
+   - Doğrula: Owner-only IDOR, mass assignment .strict(), KVKK consent
+     filter, prisma.$transaction §14.1 connection_limit=1, fail-soft
+     fallback (AI key yok / quota dolu).
+   - Sentry capture pattern: server-side flush kör nokta §38.13 disiplin
+     intact mi (manuel captureException + console.error parallel)?
+
+3. **Schema migration check**:
+   - Restaurant.yelpUrl + foursquareUrl + yelpEnabled + foursquareEnabled
+     (§38.52) — production'da migrate deploy oldu mu? `prisma migrate
+     status` veya admin paneli kontrol.
+   - PLAN_QUOTA_AI_REPLIES const (§38.51) — billing summary response'a
+     yansıyor mu (production smoke test)?
+
+4. **UX regression test** (manuel deploy sonrası):
+   - Profile photo upload yok ama Avatar initials fallback intact
+   - 2FA UI yok (kullanıcı SKIP), backend /api/account/2fa/* korundu
+   - Right rail customer stats Yorumlar'da yok (§38.53 defer); Customer
+     Detail Drawer §38.14 /dashboard/customers'ta intact
+   - VIP misafir pill yok (defer)
+
+5. **CLAUDE.md disiplin kontrolü**:
+   - Yeni endpoint eklenirken §28.3.3 mix-mode pattern (mevcut elle
+     validation + lokal Zod yeni alan için)
+   - .strict() yeni schema'larda zorunlu
+   - Edge cache header read-heavy public endpoint'lerde (§19.3 + §38.50
+     Görev F)
+   - Yeni mail template eklenirken SUPPORTED_MAIL_KEYS + seed +
+     MailTemplateEditor (§21.26 5 nokta)
+   - Yeni provider eklenirken 5 nokta drift (PROVIDER_DOMAINS +
+     PROVIDER_LABELS + PROVIDER_MAP + PATH_RULES + PLATFORM_DEFS,
+     §19.4/§38.45/§38.52)
+
+DİSİPLİN:
+- Audit sonucunu Numbered list ile sun (her bulgu dosya:satır + drift
+  kategori + scope)
+- Düzeltme gerekiyorsa AskUserQuestion ile kritik kararları netleştir
+  ÖNCE plan, SONRA implementation
+- Her PR ayrı branch (CLAUDE.md §21.22 stacked PR YOK pattern)
+- Her PR sonunda CLAUDE.md §38.X log + verification block
+- Hızlı kazanım (low scope + high value) varsa öncelikle kapat
+
+ÇIKTI:
+- Tasarım 1:1 audit raporu (Numbered list)
+- Backend audit raporu (IDOR + Zod + KVKK + cache durumu)
+- Schema migration durumu
+- UX regression test sonucu
+- Düzeltme önerileri (önceliklendirilmiş)
+- Yeni PR (gerekirse) main'e merge
+
+Önce CLAUDE.md §38.50 → §38.53 loglarını oku (anchor: "### 38.50",
+"### 38.51", "### 38.52", "### 38.53"), §38.B master backlog tablosunu
+oku, sonra audit'e başla.
+```
+
+### Audit checklist (manuel)
+
+Aşağıdaki listeyi cross-check için kullan:
+
+**Tasarım 1:1 sayfa-sayfa**:
+- [ ] /dashboard ana sayfa (greeting + AI banner + KPI 4 + KANAL +
+  PendingTasks + ActivityFeed mobile/desktop layout)
+- [ ] /dashboard/feedbacks (KPI 4-card strip + 3-col + 5-tab filter +
+  AI ÖZET + composer)
+- [ ] /dashboard/google-reviews (hero dark + 4 sub-metric + 4-tab + sort
+  + More menu)
+- [ ] /dashboard/customers (toolbar consolidate + 4-stat + 8-col tablo +
+  sentiment sparkbar + drawer)
+- [ ] /dashboard/analytics (5-col KPI + 3-series chart + AI light card +
+  KONU & DUYGU light + heatmap + range tabs 4)
+- [ ] /dashboard/platforms (13 platform grid + KPI 4 + bağlantı log)
+- [ ] /dashboard/account (4-card aggregation + emailVerified + Sessions
+  + Plan AI yanıt + Team online dot + Veri indir)
+
+**Backend kontrat doğrulama** (production smoke test):
+- [ ] /api/feedback/stats response.kpiStrip { thisWeekCount,
+  thisWeekDelta, avgRatingDelta, avgResponseTimeMs, replyRatePct }
+- [ ] /api/feedback/[id]/summary 24h cache + rate limit + IDOR
+- [ ] /api/billing/summary response.aiReplies { used, limit }
+- [ ] /api/user/profile response.emailVerified
+- [ ] /api/dashboard/analytics/export CSV 14 sütun
+- [ ] /api/dashboard/platforms/log/export CSV 8 sütun
+- [ ] /api/feedback/export CSV 11 sütun
+
+**Schema doğrulama** (Prisma):
+- [ ] Restaurant.targetRating (§38.26)
+- [ ] Restaurant.yelpUrl + foursquareUrl + yelpEnabled + foursquareEnabled (§38.52)
+- [ ] User.position + timezone (§38.37)
+- [ ] User.totpSecret + emailVerified (mevcut, UI gizli)
+- [ ] PLAN_QUOTA_AI_REPLIES const (§38.51)
+
+**Token + utility**:
+- [ ] bz-* utility class'ları (§23.3.1)
+- [ ] Pulse design system tokens (§11)
+- [ ] PlatformChip yelp + foursquare brand color
+- [ ] PROVIDER_DOMAINS + PROVIDER_LABELS + PROVIDER_MAP + PATH_RULES
+  yelp + foursquare entry (§38.52)

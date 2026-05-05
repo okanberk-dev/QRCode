@@ -351,6 +351,97 @@ export async function GET(req: NextRequest) {
 
 
 
+    // §38.53 — KPI strip metric'leri (Yorumlar sayfası 4-card).
+    // Tasarım PageFeedbacks: Bu hafta (count + delta) / Ort puan (delta) /
+    // Yanıt süresi (avg latency saat) / Yanıt oranı (replied/total %).
+    // Workspace owner-scoped (mevcut dateFilter restaurant scope intact).
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setUTCDate(oneWeekAgo.getUTCDate() - 7);
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setUTCDate(twoWeeksAgo.getUTCDate() - 14);
+
+    // 4 yeni aggregate query — connection_limit=1 disipline (CLAUDE.md §14.1)
+    // Promise.all paralel scope'lu. Mevcut dateFilter intact (range filter)
+    // ile kombine edilmez — Bu hafta + Ort puan delta sabit 7d/14d window.
+    const baseScope: Prisma.FeedbackWhereInput = {};
+    if ('restaurantId' in dateFilter) {
+      baseScope.restaurantId = dateFilter.restaurantId as typeof baseScope.restaurantId;
+    }
+    if ('branch' in dateFilter) {
+      baseScope.branch = dateFilter.branch as typeof baseScope.branch;
+    }
+    if ('platform' in dateFilter) {
+      baseScope.platform = dateFilter.platform as typeof baseScope.platform;
+    }
+
+    const [thisWeekCount, prevWeekCount, prevWeekAvg, repliedCount, replyTimeRows] =
+      await prisma.$transaction([
+        prisma.feedback.count({
+          where: { ...baseScope, createdAt: { gte: oneWeekAgo } },
+        }),
+        prisma.feedback.count({
+          where: { ...baseScope, createdAt: { gte: twoWeeksAgo, lt: oneWeekAgo } },
+        }),
+        prisma.feedback.aggregate({
+          _avg: { rating: true },
+          where: { ...baseScope, createdAt: { gte: twoWeeksAgo, lt: oneWeekAgo } },
+        }),
+        prisma.feedback.count({
+          where: { ...dateFilter, replies: { some: {} } },
+        }),
+        // Reply latency: feedback + first reply createdAt — JS-side avg compute.
+        // Last 90 days cap (HARD_LIMIT 1000) — workspace KPI tek-snapshot,
+        // tüm zamanları bekleyen owner için anlamsız.
+        prisma.feedback.findMany({
+          where: {
+            ...dateFilter,
+            replies: { some: {} },
+            createdAt: { gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) },
+          },
+          select: {
+            createdAt: true,
+            replies: {
+              orderBy: { createdAt: 'asc' },
+              take: 1,
+              select: { createdAt: true },
+            },
+          },
+          take: 1000,
+        }),
+      ]);
+
+    // Avg response time (ms) — JS-side aggregate.
+    let totalResponseMs = 0;
+    let responseSampleSize = 0;
+    for (const f of replyTimeRows) {
+      const reply = f.replies[0];
+      if (!reply) continue;
+      const diff = reply.createdAt.getTime() - f.createdAt.getTime();
+      if (diff > 0) {
+        totalResponseMs += diff;
+        responseSampleSize += 1;
+      }
+    }
+    const avgResponseTimeMs =
+      responseSampleSize > 0 ? totalResponseMs / responseSampleSize : null;
+
+    // Reply rate (%) — replied / total × 100. Range filter'a göre dateFilter scope.
+    const replyRatePct = totalCount > 0 ? Math.round((repliedCount / totalCount) * 100) : 0;
+
+    // This week delta — count vs prev week
+    const thisWeekDelta =
+      prevWeekCount > 0
+        ? Math.round(((thisWeekCount - prevWeekCount) / prevWeekCount) * 100)
+        : thisWeekCount > 0
+          ? 100
+          : 0;
+
+    // Avg rating delta — bu hafta vs prev week (stat'ın range filter'ından bağımsız sabit).
+    const prevWeekAvgRating = prevWeekAvg._avg.rating
+      ? parseFloat(prevWeekAvg._avg.rating.toFixed(2))
+      : 0;
+    const avgRatingDelta = prevWeekAvgRating > 0 ? avgRating - prevWeekAvgRating : null;
+
     return NextResponse.json({
       totalCount,
       todayCount,
@@ -364,6 +455,15 @@ export async function GET(req: NextRequest) {
       aspects, // Food / Service / Atmosphere breakdown
       googleConversion, // Google review conversion funnel + per-restaurant breakdown
       platformDistribution, // Platform-based review counts
+      // §38.53 — KPI strip metric'leri
+      kpiStrip: {
+        thisWeekCount,
+        thisWeekDelta, // % change vs prev week
+        avgRatingDelta, // float diff vs prev week (null = no prev data)
+        avgResponseTimeMs, // null = no replies in 90d
+        replyRatePct, // 0-100
+        repliedCount, // for "X / Y replied" subtitle
+      },
     });
   } catch (error) {
     console.error('Failed to fetch stats:', error);
