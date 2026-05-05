@@ -847,7 +847,13 @@ input::-webkit-inner-spin-button {
 
 /* §38.46 — Standalone hover variant (buaze.css token paterni). bz-table-tbody-hover
    ile birlikte kullanılan utility; bz-table parent'ı olmadan tr satırlarına
-   uygulandığında (örn. CRM tablolar, customers/page.tsx) hover efekti sağlar. */
+   uygulandığında (örn. CRM tablolar, customers/page.tsx) hover efekti sağlar.
+   §38.67 — Apple HIG smooth motion: bg-color transition cubic-bezier 200ms.
+   Önceden hard-cut color flip; şimdi yumuşak fade. Reduced-motion blanket
+   (universal `*` reset) zaten bu transition'ı 0.001ms'e sıfırlar. */
+.bz-tr-hover {
+  transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
 .bz-tr-hover:hover { background: #FAFAFA; }
 
 /* ── Avatar ── */

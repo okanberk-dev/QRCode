@@ -287,7 +287,9 @@ export default function CommandPalette({ open, onClose, locale, base, navItems }
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-[640px] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0_30px_80px_-20px_rgba(0,0,0,0.35)] animate-slide-in">
+      {/* §38.67 — Modal floating tier: heavy shadow-[0_30px_80px] → bz-elev-3
+          (0_12px_32px Apple-soft). Floating modal için en heavy tier doğru. */}
+      <div className="w-full max-w-[640px] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white bz-elev-3 animate-slide-in">
         {/* Search input */}
         <div className="flex items-center gap-3 border-b border-[#EDEDED] px-4">
           <SearchIcon size={16} strokeWidth={2} className="shrink-0 text-[#737373]" />
