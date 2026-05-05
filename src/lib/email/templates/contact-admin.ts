@@ -116,7 +116,7 @@ export function renderContactAdmin(
   // karakterleri encode eder (defense-in-depth).
   const replyHref = `mailto:${encodeURI(params.email)}?subject=${encodeURIComponent(isTr ? `Re: ${businessOrName}` : `Re: ${businessOrName}`)}`;
   const phoneHref = params.phone ? `tel:${params.phone.replace(/[^+0-9]/g, '')}` : `${baseAppUrl}/${isTr ? 'tr' : 'en'}/contact`;
-  const panelHref = `${baseAppUrl}/admin/leads`;
+  const panelHref = `${baseAppUrl}/admin/customers`;
 
   const quickActions = [
     { l: copy.replyLabel, s: copy.replySub, href: replyHref },
@@ -301,7 +301,7 @@ ${params.message}
 
 ${copy.consentEyebrow}: ${consentSummary}
 
-${baseAppUrl}/admin/leads`;
+${baseAppUrl}/admin/customers`;
 
   return { subject, html, text };
 }

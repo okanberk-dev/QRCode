@@ -310,7 +310,7 @@ export async function renderRoiAdminNotification(
   // & -> &amp; dönüşümü URL'i bozar. Raw email + raw phone (ASCII filter).
   const rawPhone = params.phone ? params.phone.replace(/[^+0-9]/g, '') : '';
   const callHref = rawPhone ? `tel:${rawPhone}` : '#';
-  const panelHref = params.panelUrl || 'https://buaze.com/admin/leads';
+  const panelHref = params.panelUrl || 'https://buaze.com/admin/customers';
   const replyHref = `mailto:${encodeURI(params.email)}?subject=${encodeURIComponent(
     isTr ? `Buaze ROI hesabınız hakkında — ${params.restaurantName}` : `About your Buaze ROI estimate — ${params.restaurantName}`,
   )}`;

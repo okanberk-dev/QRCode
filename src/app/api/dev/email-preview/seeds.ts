@@ -226,7 +226,7 @@ export const SEEDS = {
       'Yemeksepeti + Getir + Trendyol GO URL\'lerini admin panelden gir.',
     ],
     aiSource: 'ai',
-    panelUrl: `${APP_URL}/admin/leads`,
+    panelUrl: `${APP_URL}/admin/customers`,
     ip: '88.247.123.42',
   }),
 } satisfies Record<PreviewTemplate, () => unknown>;
