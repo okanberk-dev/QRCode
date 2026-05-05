@@ -7692,3 +7692,106 @@ Kullanıcı tasarım dosyası `.design-owner-2026/project/page-analytics.jsx` `P
 - Export endpoint admin variant (`/api/admin/analytics/export`) — talep gelince
 - AI Insights light card pattern başka surface (Dashboard) reuse — 3+ callsite olunca extract
 - (CLAUDE.md §38.B master backlog kalemleri intact)
+
+### 38.51 2026-05-05 — Hesabım tasarım birebir parity (PageAccount jsx)
+
+Kullanıcı tasarım dosyası `.design-owner-2026/project/page-account.jsx` `PageAccount` JSX paylaştı. Audit (Explore agent) §38.37'deki Hesabım 1:1 parity sonrası 7 ek drift tespit etti. AskUserQuestion ile 4 kritik karar netleşti — kullanıcı **Profile photo upload + 2FA SKIP** tercih etti, "geri kalanları yap, tasarım birebir aynı olsun".
+
+**Kullanıcı kararları**:
+- ❌ Profile photo upload — SKIP (gereksiz, schema migration yapılmadı)
+- ❌ 2FA UI — SKIP (low adoption, backend `/api/account/2fa/*` korundu)
+- ✅ Profile content **4-card senkronize scroll** (Apple System Settings paterni)
+- ✅ Security **2-row** (Şifre + Aktif oturumlar)
+- ✅ Plan widget **AI yanıt bar** (3 bar: Konum + Ekip + AI yanıt; API çağrısı SKIP)
+- ✅ Team **online dot indicator**
+- ✅ emailVerified **"Doğrulandı" badge**
+- ✅ Header **"Veri indir"** (KVKK export); "Değişiklikleri kaydet" SKIP (UnsavedChangesBar mevcut, generic header save UX confusing)
+
+**Schema migration: YOK** (`User.avatarUrl` skip edildi, mevcut `User.totpSecret` + `User.emailVerified` zaten var, mevcut `/api/account/sessions/*` zaten var).
+
+**Phase A — Backend extension**:
+1. `lib/constants.ts` `PLAN_QUOTA_AI_REPLIES` yeni map (trial 500 / monthly 2000 / yearly 5000 / enterprise 999999)
+2. `/api/billing/summary` response'una `aiReplies: { used, limit }` eklendi:
+   - `feedback.count` + `feedbackReply.count(source='ai_copilot')` Promise.all → `prisma.$transaction` (CLAUDE.md §14.1 connection_limit=1 disiplini)
+   - Aylık window (`monthStart` reuse)
+3. `/api/user/profile` GET select'e `emailVerified: true` (UI badge için)
+
+**Phase B1 — BusinessProfileSettings emailVerified badge**:
+- E-posta `<Field label>` ReactNode olarak custom JSX: `<span flex justify-between>` + `<Check size=10 #16A34A>` + "Doğrulandı"
+- `emailVerified` state + initial fetch'te `Boolean(data.emailVerified)`
+- Phone verified backend yok (`User.phoneVerified` schema'da yok) — drift kabul (CLAUDE.md §38.51 dokümante)
+
+**Phase B2 — BusinessAccountSecuritySettings 2-row (Sessions UI restore)**:
+- Mevcut "Şifre değiştir" SettingsCard intact
+- Yeni "Aktif oturumlar" SettingsCard:
+  - Header summary "X cihaz · macOS, iOS, Chrome" (initial mount fetch + parseUserAgentLabel heuristic)
+  - "Görüntüle" buton → Modal (Pulse `<Modal>` primitive, focus trap §11.1)
+  - Modal: session list (Avatar icon + device/browser + IP + relative time) + "Bu cihaz" pill (current) + "Sonlandır" buton (red border)
+  - "Diğer cihazlardan çıkış" footer button (revoke-others endpoint)
+- 2FA SKIP — kullanıcı kararı; backend `/api/account/2fa/*` korundu (CLAUDE.md §34.1 disiplini)
+- Helper: `parseUserAgentLabel` (UA → device/browser, no UA-Parser-JS lib §7), `relativeTime` (TR/EN locale-aware)
+
+**Phase B3 — AccountPlanWidget AI yanıt bar**:
+- 3 bar yeniden düzenlendi: Konum + Ekip + AI yanıt (Yorum bar silindi, AI yanıt eklendi)
+- `BillingSummary.aiReplies?` opsiyonel field (backend yeni response shape backward-compat)
+- API çağrısı bar SKIP (kullanıcı kararı)
+- Tasarım birebir: lime accent + dark hero + lime "Planı yönet" CTA korunur
+
+**Phase B4 — BusinessUsersRolesSettings online dot indicator**:
+- `isOnlineByLastSeen(iso)` helper — 5-dakika threshold
+- Avatar wrapper `<div className="relative">` + green dot (#16A34A, bottom-right, 10px, 2px white border)
+- Owner row: her zaman online (mevcut session sahibi)
+- Member rows: `lastSeenAt` heuristic
+- Tasarım kaynağı: page-account.jsx team item green dot bottom-right
+
+**Phase B5 — Header actions**:
+- `<form action="/api/account/export-data" method="POST">` + Download button → KVKK export download
+- "Değişiklikleri kaydet" header buton SKIP (drift kabul, dokümantasyon notu)
+- Title "Hesap & ayarlar" → "Hesabım" (tasarım birebir)
+- Description "Profilini, işletme bilgilerini, ekibini ve aboneliğini yönet" (tasarım birebir)
+
+**Phase C — Profile content aggregation (Apple System Settings)**:
+- Profile tab AKTİFKEN main panel'de 4 card senkronize scroll:
+  1. AccountOverviewCard (Profil Özeti, read-only avatar + identity)
+  2. BusinessProfileSettings (Kişisel Bilgiler, 6-field + emailVerified badge)
+  3. BusinessUsersRolesSettings (Ekip Üyeleri, online dot)
+  4. BusinessAccountSecuritySettings (Güvenlik, Şifre + Sessions)
+- Drilldown için Team + Security tab'lar hâlâ var — owner Profile'da overview + drilldown'da deep dive
+- 7 tab nav korunur (KİŞİSEL: Profil + Güvenlik / ÇALIŞMA ALANI: Bildirim + Pulse AI + Faturalandırma + Kullanıcılar + KVKK)
+- Owner profile + email + name workspace state'inden geçer
+
+**Yapma**:
+- Profile photo upload eklemek — kullanıcı SKIP kararı, schema `User.avatarUrl` migration yok, scope creep
+- 2FA UI eklemek — kullanıcı SKIP kararı; backend `/api/account/2fa/*` korundu, gelecekte mail magic-code 2FA eklenirse aktif edilir
+- "Değişiklikleri kaydet" header generic save buton — UnsavedChangesBar bottom paterni mevcut, her section ayrı form/endpoint, generic save tetikleyici hangi section aktif belirsiz UX confusing
+- Phone verified badge eklemek — `User.phoneVerified` schema'da yok, backend gerek (drift kabul)
+- "Ülke" alan eklemek — schema'da yok, "Saat dilimi" yeterli (CLAUDE.md §38.37 kararı intact)
+- 220px nav width — mevcut 240px (cosmetic, drift kabul)
+- API çağrısı quota bar — kullanıcı SKIP kararı (API & Webhook UI yok)
+- Profile section'da BusinessUsersRolesSettings + BusinessAccountSecuritySettings render etmesi performans overhead — accept (component'ler kendi data'larını fetch eder, refresh etmediği sürece stale data riski yok)
+- AI yanıt heuristic count yerine gerçek source-aware count — backend zaten `feedbackReply.count(source='ai_copilot')` kullanıyor (CLAUDE.md §38.34 deferred eski heuristic değil, gerçek query)
+
+**Yap**:
+- Yeni quota field eklenirken `lib/constants.ts` `PLAN_QUOTA_*` map paterni reuse + billing/summary response'a eklenir
+- Yeni KVKK alanı için verified badge eklenirken `Field label={ReactNode}` paterni — custom JSX label
+- Yeni session-aware modal eklerken `<Modal>` primitive (focus trap + ESC + body lock + ariaLabel)
+- Yeni online dot location eklenirken `isOnlineByLastSeen(iso)` helper reuse — 5-min threshold
+- Profile aggregation paterni başka surface'ta gerekirse (örn. Admin profile) aynı 4-card render reuse
+- 2FA UI gelecekte aktif edilirse: backend zaten hazır (`/api/account/2fa/setup,verify,disable`), git history'den UI restore + Modal pattern reuse + "Aktif" pill
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint .` 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npm test` 182/182 pass
+- Manuel desktop: Profile tab'da 4-card senkronize scroll (Profil Özeti + Kişisel Bilgiler + Ekip + Güvenlik) + emailVerified "Doğrulandı" green badge + Plan widget 3 bar (Konum + Ekip + AI yanıt) + header "Veri indir" KVKK export
+- Manuel: Aktif oturumlar Modal → session list + "Sonlandır" + "Diğer cihazlardan çıkış"
+- Manuel: Team online dot indicator (lastSeenAt 5min < threshold)
+- Manuel mobile (375px): SettingsLayout `isCompactNav` + rightRail bottom border-t (Plan + Invoices + Danger zone stack)
+
+**Backlog güncel** (Bu PR sonrası):
+- Profile photo upload (kullanıcı talep ederse — yeni schema field `User.avatarUrl` + base64-in-DB §3 paterni + sharp WebP 256x256 cover endpoint)
+- 2FA TOTP UI restore (backend hazır, git history'den restore + Modal pattern reuse)
+- Phone verified badge (schema field `User.phoneVerified` + verify endpoint gerek)
+- "Değişiklikleri kaydet" header global save (her section'a ref geçirme, complex)
+- Owner avatar render edilmiyor — profile photo upload yapılmadığı sürece initials fallback intact
+- (CLAUDE.md §38.B master backlog kalemleri intact)

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check, Key, Loader2 } from "lucide-react";
-import { AlertBanner, Field } from "@/components/ui";
+import { useEffect, useState, useCallback } from "react";
+import { Check, Key, Loader2, Monitor, Smartphone, Globe, X } from "lucide-react";
+import { AlertBanner, Field, Modal } from "@/components/ui";
 import type { Locale } from "@/lib/translations";
 import { SettingsCard } from "../SettingsCard";
 
@@ -10,18 +10,66 @@ interface BusinessAccountSecuritySettingsProps {
   locale?: Locale;
 }
 
+interface SessionRow {
+  id: string;
+  isCurrent: boolean;
+  userAgent: string | null;
+  ipAddress: string | null;
+  lastSeenAt: string;
+  createdAt: string;
+}
+
+interface SessionsResponse {
+  currentTokenHash: string;
+  sessions: SessionRow[];
+}
+
+/**
+ * §38.51 — User-Agent → friendly label parser. Tasarım Kaynağı:
+ * page-account.jsx "3 cihaz · macOS, iOS, Chrome" özet pattern. Pragmatik
+ * heuristic — UA-Parser-JS gibi bir lib eklenmedi (CLAUDE.md §7).
+ */
+function parseUserAgentLabel(ua: string | null): { device: string; browser: string } {
+  if (!ua) return { device: 'Bilinmiyor', browser: '—' };
+  // OS
+  let device = 'Web';
+  if (/iPhone|iPad/i.test(ua)) device = 'iOS';
+  else if (/Android/i.test(ua)) device = 'Android';
+  else if (/Mac OS|Macintosh/i.test(ua)) device = 'macOS';
+  else if (/Windows/i.test(ua)) device = 'Windows';
+  else if (/Linux/i.test(ua)) device = 'Linux';
+  // Browser (Chrome before Safari — iOS Safari has both)
+  let browser = 'Web';
+  if (/Edg\//i.test(ua)) browser = 'Edge';
+  else if (/Firefox/i.test(ua)) browser = 'Firefox';
+  else if (/Chrome\//i.test(ua)) browser = 'Chrome';
+  else if (/Safari/i.test(ua)) browser = 'Safari';
+  return { device, browser };
+}
+
+function relativeTime(iso: string, isTr: boolean): string {
+  const now = Date.now();
+  const ms = now - new Date(iso).getTime();
+  const min = Math.floor(ms / 60000);
+  if (min < 1) return isTr ? 'şimdi' : 'just now';
+  if (min < 60) return isTr ? `${min} dk önce` : `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return isTr ? `${hr} sa önce` : `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 30) return isTr ? `${day} gün önce` : `${day}d ago`;
+  const month = Math.floor(day / 30);
+  return isTr ? `${month} ay önce` : `${month}mo ago`;
+}
+
 /**
  * Section — Güvenlik (Faz unified hub).
  *
- * Workspace user-level security: yalnız "Şifre değiştir".
+ * §38.51 — 2-row pattern (tasarım .design-owner-2026/page-account.jsx birebir):
+ *   - Şifre (her zaman)
+ *   - Aktif oturumlar (yeni, /api/account/sessions UI restore)
  *
- * 2FA + Aktif Oturumlar kartları kullanıcı talebiyle kaldırıldı (mevcut
- * kullanıcı tabanına yakın değil + Authenticator app modal'ı tıklanmıyordu
- * + Sessions endpoint manager JWT'sinde 401 dönüyordu). Backend endpoint'leri
- * (`/api/account/2fa/*`, `/api/account/sessions`) korundu; component dosyaları
- * silindi — yeniden bağlanmak istenirse git history'sinden çıkarılabilir.
- *
- * Per-restaurant `BusinessSecuritySettings` (KVKK + isActive)
+ * 2FA SKIP (kullanıcı kararı, CLAUDE.md §38.51) — backend `/api/account/2fa/*`
+ * korundu, UI yok. Per-restaurant `BusinessSecuritySettings` (KVKK + isActive)
  * `/dashboard/restaurants/[id]/settings` altında — location-scoped.
  */
 export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccountSecuritySettingsProps) {
@@ -34,11 +82,106 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
   const [pwError, setPwError] = useState<string | null>(null);
   const [pwSuccess, setPwSuccess] = useState<string | null>(null);
 
+  // §38.51 — Sessions state
+  const [sessionsModalOpen, setSessionsModalOpen] = useState(false);
+  const [sessions, setSessions] = useState<SessionRow[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
+  const [sessionsSummary, setSessionsSummary] = useState<{ count: number; devices: string[] } | null>(null);
+  const [revoking, setRevoking] = useState<string | 'others' | null>(null);
+
   useEffect(() => {
     if (!pwSuccess) return;
     const t = setTimeout(() => setPwSuccess(null), 4000);
     return () => clearTimeout(t);
   }, [pwSuccess]);
+
+  // §38.51 — Initial summary fetch (badge için "X cihaz · macOS, iOS").
+  const loadSessionsSummary = useCallback(async () => {
+    try {
+      const res = await fetch("/api/account/sessions");
+      if (!res.ok) return;
+      const data = (await res.json()) as SessionsResponse;
+      const devices = Array.from(
+        new Set(data.sessions.map((s) => parseUserAgentLabel(s.userAgent).device)),
+      ).slice(0, 3);
+      setSessionsSummary({ count: data.sessions.length, devices });
+      setSessions(data.sessions);
+    } catch {
+      // Silent fail — summary opsiyonel görsel
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSessionsSummary();
+  }, [loadSessionsSummary]);
+
+  const openSessionsModal = async () => {
+    setSessionsModalOpen(true);
+    setSessionsLoading(true);
+    setSessionsError(null);
+    try {
+      const res = await fetch("/api/account/sessions");
+      if (!res.ok) {
+        setSessionsError(isTr ? "Oturumlar yüklenemedi." : "Could not load sessions.");
+        return;
+      }
+      const data = (await res.json()) as SessionsResponse;
+      setSessions(data.sessions);
+    } catch {
+      setSessionsError(isTr ? "Bağlantı hatası." : "Connection error.");
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
+  const revokeSession = async (id: string) => {
+    setRevoking(id);
+    setSessionsError(null);
+    try {
+      const res = await fetch(`/api/account/sessions/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        setSessionsError(isTr ? "Oturum sonlandırılamadı." : "Could not revoke session.");
+        return;
+      }
+      const next = sessions.filter((s) => s.id !== id);
+      setSessions(next);
+      const devices = Array.from(
+        new Set(next.map((s) => parseUserAgentLabel(s.userAgent).device)),
+      ).slice(0, 3);
+      setSessionsSummary({ count: next.length, devices });
+    } catch {
+      setSessionsError(isTr ? "Bağlantı hatası." : "Connection error.");
+    } finally {
+      setRevoking(null);
+    }
+  };
+
+  const revokeOthers = async () => {
+    setRevoking('others');
+    setSessionsError(null);
+    try {
+      const res = await fetch(`/api/account/sessions/revoke-others`, { method: "POST" });
+      if (!res.ok) {
+        setSessionsError(isTr ? "Diğer oturumlar sonlandırılamadı." : "Could not revoke others.");
+        return;
+      }
+      // Reload — sadece current kalır
+      const refresh = await fetch("/api/account/sessions");
+      if (refresh.ok) {
+        const data = (await refresh.json()) as SessionsResponse;
+        setSessions(data.sessions);
+        const devices = Array.from(
+          new Set(data.sessions.map((s) => parseUserAgentLabel(s.userAgent).device)),
+        ).slice(0, 3);
+        setSessionsSummary({ count: data.sessions.length, devices });
+      }
+    } catch {
+      setSessionsError(isTr ? "Bağlantı hatası." : "Connection error.");
+    } finally {
+      setRevoking(null);
+    }
+  };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,6 +288,125 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
           </div>
         </form>
       </SettingsCard>
+
+      {/* §38.51 — Aktif oturumlar (tasarım birebir 2-row pattern: Şifre + Sessions, 2FA skip) */}
+      <SettingsCard
+        icon={<Monitor size={18} />}
+        title={isTr ? "Aktif oturumlar" : "Active sessions"}
+        description={
+          sessionsSummary && sessionsSummary.count > 0
+            ? isTr
+              ? `${sessionsSummary.count} cihaz · ${sessionsSummary.devices.join(", ")}`
+              : `${sessionsSummary.count} devices · ${sessionsSummary.devices.join(", ")}`
+            : isTr
+              ? "Hesabına bağlı tüm oturumları görüntüle ve gerekirse sonlandır."
+              : "View all sessions linked to your account, revoke if needed."
+        }
+      >
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={openSessionsModal}
+            className="bz-btn"
+          >
+            {isTr ? "Görüntüle" : "View"}
+          </button>
+        </div>
+      </SettingsCard>
+
+      {/* Sessions modal */}
+      {sessionsModalOpen && (
+        <Modal
+          title={isTr ? "Aktif oturumlar" : "Active sessions"}
+          onClose={() => setSessionsModalOpen(false)}
+          size={560}
+          ariaLabel={isTr ? "Aktif oturumlar listesi" : "Active sessions list"}
+        >
+          {sessionsError && (
+            <div className="mb-3">
+              <AlertBanner kind="danger" onDismiss={() => setSessionsError(null)}>
+                {sessionsError}
+              </AlertBanner>
+            </div>
+          )}
+
+          {sessionsLoading ? (
+            <div className="flex items-center justify-center gap-2 p-8 text-[13px] text-[#737373]">
+              <Loader2 size={14} className="animate-spin" />
+              {isTr ? "Yükleniyor…" : "Loading…"}
+            </div>
+          ) : sessions.length === 0 ? (
+            <p className="text-center text-[13px] text-[#737373] p-6">
+              {isTr ? "Aktif oturum yok." : "No active sessions."}
+            </p>
+          ) : (
+            <ol className="flex flex-col divide-y divide-[#EDEDED]">
+              {sessions.map((s) => {
+                const ua = parseUserAgentLabel(s.userAgent);
+                const Icon = ua.device === 'iOS' || ua.device === 'Android' ? Smartphone : ua.device === 'Web' ? Globe : Monitor;
+                return (
+                  <li key={s.id} className="flex items-center gap-3 py-3">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#FAFAFA] border border-[#EDEDED]"
+                    >
+                      <Icon size={15} className="text-[#525252]" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13px] font-medium text-[#0A0A0A]">
+                          {ua.device} · {ua.browser}
+                        </span>
+                        {s.isCurrent && (
+                          <span className="pulse-eyebrow inline-flex items-center gap-1 rounded-full border border-[#C6F24E] bg-[#EAF9B8] px-1.5 py-0.5 text-[9px] text-[#0A0A0A]">
+                            <span aria-hidden="true" className="bz-pulse-dot" style={{ background: '#A8D62E' }} />
+                            {isTr ? 'Bu cihaz' : 'This device'}
+                          </span>
+                        )}
+                      </div>
+                      <div className="bz-mono text-[10.5px] text-[#737373] tabular-nums mt-0.5">
+                        {s.ipAddress ?? '—'} · {relativeTime(s.lastSeenAt, isTr)}
+                      </div>
+                    </div>
+                    {!s.isCurrent && (
+                      <button
+                        type="button"
+                        onClick={() => revokeSession(s.id)}
+                        disabled={revoking === s.id}
+                        className="inline-flex items-center gap-1 rounded-md border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1 text-[11px] font-medium text-[#991B1B] hover:bg-[#FEE2E2] disabled:opacity-50"
+                        aria-label={isTr ? 'Bu oturumu sonlandır' : 'Revoke this session'}
+                      >
+                        {revoking === s.id ? (
+                          <Loader2 size={11} className="animate-spin" />
+                        ) : (
+                          <X size={11} strokeWidth={2.5} />
+                        )}
+                        {isTr ? 'Sonlandır' : 'Revoke'}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+
+          {!sessionsLoading && sessions.filter((s) => !s.isCurrent).length > 0 && (
+            <div className="mt-4 flex justify-end pt-3 border-t border-[#EDEDED]">
+              <button
+                type="button"
+                onClick={revokeOthers}
+                disabled={revoking === 'others'}
+                className="bz-btn disabled:opacity-50"
+              >
+                {revoking === 'others' ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : null}
+                {isTr ? 'Diğer cihazlardan çıkış' : 'Sign out other devices'}
+              </button>
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }

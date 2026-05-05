@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import {
   Bell,
   CreditCard,
+  Download,
   Loader2,
   ShieldCheck,
   ShieldQuestion,
@@ -154,14 +155,36 @@ export default function AccountSettingsPage() {
   };
 
   const isTr = locale === "tr";
+
+  // §38.51 — Header actions tasarım birebir parity. "Değişiklikleri kaydet"
+  // header'da SKIP edildi (drift kabul, CLAUDE.md §38.51): mevcut akış
+  // her-section-kendi-form paterni — generic header save tetikleyici hangi
+  // section aktif belirsiz, UX confusing. UnsavedChangesBar bottom paterni
+  // mevcut, redundant olur. Sadece "Veri indir" eklendi (KVKK export).
   const header = (
     <PageHeader
       eyebrow={isTr ? "HESABIM" : "ACCOUNT"}
-      title={isTr ? "Hesap & ayarlar" : "Account & settings"}
+      title={isTr ? "Hesabım" : "Account"}
       description={
         isTr
-          ? "Profil, güvenlik, bildirim, faturalandırma, ekip ve yasal metinler — tek ekranda."
-          : "Profile, security, notifications, billing, team and legal — all in one place."
+          ? "Profilini, işletme bilgilerini, ekibini ve aboneliğini yönet."
+          : "Manage your profile, business, team and subscription."
+      }
+      actions={
+        <form action="/api/account/export-data" method="POST" className="inline-flex">
+          <button
+            type="submit"
+            className="bz-btn"
+            title={
+              isTr
+                ? 'KVKK / GDPR veri dışa aktarımı (saatte 1)'
+                : 'KVKK / GDPR data export (1/hr)'
+            }
+          >
+            <Download size={13} />
+            {isTr ? 'Veri indir' : 'Export data'}
+          </button>
+        </form>
       }
     />
   );
@@ -210,6 +233,14 @@ export default function AccountSettingsPage() {
       )}
 
       {/* KİŞİSEL */}
+      {/* §38.51 — Profile content aggregation (Apple System Settings paterni,
+          tasarım .design-owner-2026/page-account.jsx birebir):
+            - Profil Fotoğrafı (AccountOverviewCard, read-only avatar)
+            - Kişisel Bilgiler (BusinessProfileSettings, 6-field + emailVerified)
+            - Ekip Üyeleri (BusinessUsersRolesSettings, online dot)
+            - Güvenlik (BusinessAccountSecuritySettings, Şifre + Sessions)
+          Drilldown için Team + Security tab'lar hâlâ var; Profile tab AKTİFKEN
+          4 card senkronize scroll. Owner tek bakışta hesabını görür. */}
       <SettingsSection
         id="profile"
         active={active === "profile"}
@@ -217,8 +248,8 @@ export default function AccountSettingsPage() {
         title={isTr ? "Profil" : "Profile"}
         description={
           isTr
-            ? "Adın, e-posta adresin ve panel dilin."
-            : "Your name, email, and panel language."
+            ? "Profilini, ekibini ve güvenlik ayarlarını tek ekranda yönet."
+            : "Manage your profile, team and security in one place."
         }
         actions={
           <span className="text-[#737373]" aria-hidden="true">
@@ -229,6 +260,14 @@ export default function AccountSettingsPage() {
         <div className="space-y-4">
           <AccountOverviewCard locale={locale} profile={profile} />
           <BusinessProfileSettings locale={locale} />
+          {profile && (
+            <BusinessUsersRolesSettings
+              restaurants={restaurants}
+              ownerEmail={profile.email}
+              ownerName={profile.name}
+            />
+          )}
+          <BusinessAccountSecuritySettings locale={locale} />
         </div>
       </SettingsSection>
 
