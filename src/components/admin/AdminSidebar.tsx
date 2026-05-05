@@ -335,14 +335,14 @@ export default function AdminSidebar() {
           : 'TEK İŞLETME';
 
   const SidebarContent = ({ navRef: forwardedNavRef }: { navRef?: React.MutableRefObject<HTMLElement | null> } = {}) => (
-    <div className="flex flex-col h-full bg-[#0A0A0A] text-white" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="flex flex-col h-full bg-white text-[#0A0A0A]" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
         <Link href="/admin/dashboard" className="flex items-center gap-2.5">
-          <BuazeLogo size={32} variant="on-dark" imageUrl={profile?.logoUrl} />
+          <BuazeLogo size={32} variant="default" imageUrl={profile?.logoUrl} />
           {!isCollapsed && (
             <span
-              className="text-[18px] font-medium tracking-[-0.03em] text-white leading-none animate-in fade-in slide-in-from-left-2 duration-300"
+              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A] leading-none animate-in fade-in slide-in-from-left-2 duration-300"
               style={{ fontFamily: 'var(--font-heading)' }}
             >
               buaze<span className="text-[#C6F24E]">.</span>
@@ -353,7 +353,7 @@ export default function AdminSidebar() {
 
       {/* Workspace switcher */}
       <div className="px-3 pb-3">
-        <div className={`flex items-center gap-2.5 rounded-lg bg-[#1A1A1A] ${isCollapsed ? 'px-2 py-2 justify-center' : 'px-3 py-2.5'}`}>
+        <div className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAFA] border border-[#EDEDED] ${isCollapsed ? 'px-2 py-2 justify-center' : 'px-3 py-2.5'}`}>
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold"
             style={{ fontFamily: 'var(--font-heading)' }}
@@ -363,10 +363,10 @@ export default function AdminSidebar() {
           {!isCollapsed && (
             <>
               <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-2 duration-300">
-                <p className="truncate text-[13px] font-semibold text-white leading-tight">{workspaceName}</p>
-                <p className="pulse-eyebrow text-white/70 mt-0.5">{workspaceMeta}</p>
+                <p className="truncate text-[13px] font-semibold text-[#0A0A0A] leading-tight">{workspaceName}</p>
+                <p className="pulse-eyebrow text-[#737373] mt-0.5">{workspaceMeta}</p>
               </div>
-              <ChevronDown size={14} className="text-white/60 shrink-0" strokeWidth={2} />
+              <ChevronDown size={14} className="text-[#A3A3A3] shrink-0" strokeWidth={2} />
             </>
           )}
         </div>
@@ -396,7 +396,7 @@ export default function AdminSidebar() {
                   aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${isActive
                       ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold shadow-[0_2px_8px_-2px_rgba(198,242,78,0.4)]'
-                      : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
+                      : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A] font-medium'
                     }`}
                 >
                   <Icon size={16} strokeWidth={2} className="shrink-0" />
@@ -416,14 +416,14 @@ export default function AdminSidebar() {
             return (
               <div key={item.id}>
                 {showDividerBefore && (
-                  <div aria-hidden className="my-2 mx-3 h-px bg-white/5" />
+                  <div aria-hidden className="my-2 mx-3 h-px bg-[#EDEDED]" />
                 )}
                 <button
                   type="button"
                   onClick={() => toggleGroup(item.id)}
                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-all ${childActive
-                      ? 'bg-white/[0.07] text-white font-semibold'
-                      : 'text-white/70 hover:bg-white/5 hover:text-white font-medium'
+                      ? 'bg-[#F2F2F2] text-[#0A0A0A] font-semibold'
+                      : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A] font-medium'
                     }`}
                   aria-expanded={isExpanded}
                 >
@@ -434,7 +434,7 @@ export default function AdminSidebar() {
                       <ChevronRight
                         size={14}
                         strokeWidth={2}
-                        className={`text-white/50 transition-transform duration-200 ${
+                        className={`text-[#A3A3A3] transition-transform duration-200 ${
                           isExpanded ? 'rotate-90' : ''
                         }`}
                       />
@@ -442,7 +442,7 @@ export default function AdminSidebar() {
                   )}
                 </button>
                 {!isCollapsed && isExpanded && (
-                  <div className="mt-1 ml-5 space-y-0.5 border-l border-white/10 pl-3 pb-1">
+                  <div className="mt-1 ml-5 space-y-0.5 border-l border-[#EDEDED] pl-3 pb-1">
                     {item.children.map((child) => {
                       const ChildIcon = child.icon;
                       const isActive = pathname === child.href || pathname?.startsWith(child.href + '/');
@@ -454,7 +454,7 @@ export default function AdminSidebar() {
                           aria-current={isActive ? 'page' : undefined}
                           className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12px] transition-all ${isActive
                               ? 'bg-[#C6F24E] text-[#0A0A0A] font-semibold'
-                              : 'text-white/60 hover:bg-white/5 hover:text-white font-medium'
+                              : 'text-[#737373] hover:bg-[#F2F2F2] hover:text-[#0A0A0A] font-medium'
                             }`}
                         >
                           <ChildIcon size={14} strokeWidth={2} className="shrink-0" />
@@ -470,35 +470,35 @@ export default function AdminSidebar() {
       </nav>
 
       {/* User card + locale switcher + logout */}
-      <div className="border-t border-white/10 bg-black/20 p-3">
-        <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-white/5 px-2.5 py-2">
+      <div className="border-t border-[#EDEDED] bg-[#FAFAFA] p-3">
+        <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-white border border-[#EDEDED] px-2.5 py-2">
           <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] border border-white/10 text-[12px] font-semibold text-[#C6F24E]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             {initial}
           </div>
           {!isCollapsed && (
             <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-2 duration-300">
-              <p className="truncate text-[12px] font-medium text-white">{displayName}</p>
-              <p className="truncate pulse-eyebrow text-white/70 mt-0.5">{roleLabel}</p>
+              <p className="truncate text-[12px] font-medium text-[#0A0A0A]">{displayName}</p>
+              <p className="truncate pulse-eyebrow text-[#737373] mt-0.5">{roleLabel}</p>
             </div>
           )}
         </div>
 
         {!isCollapsed && (
-          <div className="flex items-center justify-between px-1 py-2 border-t border-white/10 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between px-1 py-2 border-t border-[#EDEDED] animate-in fade-in duration-300">
             <div className="flex items-center gap-1.5">
-              <Globe size={12} strokeWidth={2} className="text-white/60" />
-              <span className="pulse-eyebrow text-white/60">{t('system_language')}</span>
+              <Globe size={12} strokeWidth={2} className="text-[#737373]" />
+              <span className="pulse-eyebrow text-[#737373]">{t('system_language')}</span>
             </div>
             <select
               value={locale}
               onChange={(e) => setLocale(e.target.value as 'tr' | 'en')}
-              className="bg-white/10 text-white text-[11px] font-medium border-none rounded-md px-2 py-1 outline-none cursor-pointer"
+              className="bg-[#F2F2F2] text-[#0A0A0A] text-[11px] font-medium border-none rounded-md px-2 py-1 outline-none cursor-pointer"
             >
-              <option value="tr" className="text-black">TR</option>
-              <option value="en" className="text-black">EN</option>
+              <option value="tr">TR</option>
+              <option value="en">EN</option>
             </select>
           </div>
         )}
@@ -507,7 +507,7 @@ export default function AdminSidebar() {
           <button
             onClick={handleLogout}
             title={t('logout')}
-            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-medium text-white/60 transition-all hover:bg-white/5 hover:text-red-300 w-full`}
+            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-medium text-[#737373] transition-all hover:bg-[#FEF2F2] hover:text-[#991B1B] w-full`}
           >
             <LogOut size={13} strokeWidth={2} />
             {!isCollapsed && <span>{t('logout')}</span>}
@@ -520,13 +520,13 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className={`relative hidden lg:flex bg-[#0A0A0A] border-r border-white/5 flex-col h-full z-30 text-white transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-64'}`}>
+      <aside className={`relative hidden lg:flex bg-white border-r border-[#EDEDED] flex-col h-full z-30 text-[#0A0A0A] transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-[248px]'}`}>
         <SidebarContent navRef={navRef} />
         {/* Floating toggle button */}
         <button
           onClick={toggleSidebar}
           aria-label={isCollapsed ? (locale === 'tr' ? 'Menüyü genişlet' : 'Expand menu') : (locale === 'tr' ? 'Menüyü daralt' : 'Collapse menu')}
-          className="absolute -right-3 top-7 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-white/10 bg-[#1A1A1A] text-white/70 shadow-sm hover:text-white hover:bg-[#2A2A2A] transition-all"
+          className="absolute -right-3 top-7 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#525252] shadow-sm hover:text-[#0A0A0A] hover:bg-[#FAFAFA] transition-all"
         >
           {isCollapsed ? <ChevronRight size={13} strokeWidth={2.5} /> : <ChevronLeft size={13} strokeWidth={2.5} />}
         </button>
@@ -534,13 +534,13 @@ export default function AdminSidebar() {
 
       {/* Mobile top bar */}
       <div
-        className="lg:hidden sticky top-0 z-40 flex items-center justify-between bg-[#0A0A0A] border-b border-white/10 px-4 py-3 text-white"
+        className="lg:hidden sticky top-0 z-40 flex items-center justify-between bg-white border-b border-[#EDEDED] px-4 py-3 text-[#0A0A0A]"
         style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
       >
         <Link href="/admin/dashboard" className="flex items-center gap-2">
-          <BuazeLogo size={26} variant="on-dark" imageUrl={profile?.logoUrl} />
+          <BuazeLogo size={26} variant="default" imageUrl={profile?.logoUrl} />
           <span
-            className="text-[16px] font-medium tracking-[-0.03em] text-white"
+            className="text-[16px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
             buaze<span className="text-[#C6F24E]">.</span>
@@ -548,7 +548,7 @@ export default function AdminSidebar() {
         </Link>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-white hover:bg-white/10 transition-colors"
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F2F2F2] text-[#0A0A0A] hover:bg-[#EDEDED] transition-colors"
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -570,7 +570,7 @@ export default function AdminSidebar() {
           aria-label="Admin navigation"
         >
           <div
-            className="w-[280px] max-w-[85vw] h-full bg-[#0A0A0A] border-r border-white/10 shadow-2xl flex flex-col text-white"
+            className="w-[280px] max-w-[85vw] h-full bg-white border-r border-[#EDEDED] shadow-2xl flex flex-col text-[#0A0A0A]"
             style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
           >
             <SidebarContent />
