@@ -256,6 +256,13 @@ export default function RestaurantMenuBuilderPage() {
   const copy = useMemo(
     () => ({
       title: isTr ? 'Menü' : 'Menu',
+      // §38.73 — Editor PageHeader Pulse pattern (eyebrow + pageDescription).
+      // Custom hero korunur, sadece copy hint inline ekleniyor.
+      // (`description` adı form label'ı için zaten kullanılıyor — line 276.)
+      eyebrow: isTr ? 'MENÜ' : 'MENU',
+      pageDescription: isTr
+        ? 'Kategoriler ve ürünleri düzenle. Sağ taraftaki canlı önizlemede değişiklikleri anında gör.'
+        : 'Manage categories and items. Watch changes live in the preview on the right.',
       backToMenus: isTr ? 'İşletmeye Dön' : 'Back to Business',
       categories: isTr ? 'Kategoriler' : 'Categories',
       items: isTr ? 'Ürünler' : 'Items',
@@ -288,9 +295,13 @@ export default function RestaurantMenuBuilderPage() {
       preview: isTr ? 'Önizle' : 'Preview',
       exitPreview: isTr ? 'Önizlemeden Çık' : 'Exit Preview',
       viewPublic: isTr ? 'Genel Sayfa' : 'Public Page',
+      // §38.73 — Copy güçlendirildi: sadece publish değil, edit (kategori/ürün
+      // ekle/değiştir) de POST endpoint tarafında 403 dönüyor (CLAUDE.md §5.2).
+      // UI'da edit butonları disabled state'e geçer (aşağıda); banner read-only
+      // moda işaret eder.
       disabledByAdmin: isTr
-        ? 'Menü özelliği yönetici tarafından kapatıldı. Yayınlayamazsınız.'
-        : 'Menu feature disabled by admin. Publishing is blocked.',
+        ? 'Bu paket plan menü düzenlemeyi kapsamıyor. Sadece görüntüleme modu — kategori, ürün ekleyemez ve menü yayınlayamazsınız.'
+        : 'Menu editing is not included in this plan. View-only mode — you cannot add categories, items, or publish the menu.',
       published: isTr ? 'Yayında' : 'Published',
       draft: isTr ? 'Taslak' : 'Draft',
       disabled: isTr ? 'Kapalı' : 'Disabled',
@@ -332,8 +343,9 @@ export default function RestaurantMenuBuilderPage() {
         fetch(`/api/restaurants/${id}`),
         fetch(`/api/restaurants/${id}/menu/categories`),
       ]);
-      if (!rRes.ok) throw new Error('Restoran yüklenemedi');
-      if (!cRes.ok) throw new Error('Menü yüklenemedi');
+      // §38.73 — Locale-aware error messages (EN owner için drift fix).
+      if (!rRes.ok) throw new Error(isTr ? 'Restoran yüklenemedi' : 'Restaurant failed to load');
+      if (!cRes.ok) throw new Error(isTr ? 'Menü yüklenemedi' : 'Menu failed to load');
       const r = await rRes.json();
       const c = await cRes.json();
       setRestaurant({
@@ -362,7 +374,7 @@ export default function RestaurantMenuBuilderPage() {
       setError((e as Error).message);
     }
     setLoading(false);
-  }, [id]);
+  }, [id, isTr]);
 
   useEffect(() => {
     if (id) fetchAll();
@@ -801,6 +813,10 @@ export default function RestaurantMenuBuilderPage() {
                 <ArrowLeft size={12} strokeWidth={2.25} />
                 {copy.backToMenus}
               </Link>
+              {/* §38.73 — Pulse pattern eyebrow (Stage 1 §38.71 13 sayfada
+                  uygulanan disipline). Custom hero korunur (kullanıcı kararı),
+                  sadece eyebrow + description copy hint inline. */}
+              <div className="pulse-eyebrow text-[#525252]">{copy.eyebrow}</div>
               <div className="flex items-center gap-3">
                 <span className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E] shadow-sm">
                   <UtensilsCrossed size={20} strokeWidth={2} />
@@ -815,6 +831,9 @@ export default function RestaurantMenuBuilderPage() {
                   {restaurant.name}
                 </h1>
               </div>
+              <p className="text-[13px] leading-relaxed text-[#525252] max-w-[640px]">
+                {copy.pageDescription}
+              </p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-[#737373]">
                 <span className={`inline-flex items-center gap-1.5 ${status.text}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} aria-hidden />
@@ -908,6 +927,17 @@ export default function RestaurantMenuBuilderPage() {
         />
       </div>
 
+      {/* §38.73 — Mobile preview hint. MenuLivePreview lg:block; mobile owner
+          "preview nereye gitti?" diye düşünmesin diye küçük inline info card. */}
+      <div className="lg:hidden flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-2.5 text-[12px] text-[#525252]">
+        <Eye size={13} strokeWidth={2} className="shrink-0 text-[#737373]" />
+        <span>
+          {isTr
+            ? 'Canlı menü önizlemesi masaüstünde sağ tarafta görünür.'
+            : 'Live menu preview is shown on the right side on desktop.'}
+        </span>
+      </div>
+
       {/* Two-pane builder */}
       <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
         {/* Categories */}
@@ -919,7 +949,8 @@ export default function RestaurantMenuBuilderPage() {
             </div>
             <button
               onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-3.5 py-1.5 text-[12px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:bg-[#A8D62E] active:scale-95"
+              disabled={!restaurant.menuEnabled}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-3.5 py-1.5 text-[12px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:bg-[#A8D62E] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={14} strokeWidth={2.25} />
               {copy.addCategory}
@@ -933,9 +964,13 @@ export default function RestaurantMenuBuilderPage() {
                 </span>
                 <p className="max-w-[260px] text-[12px] leading-relaxed text-[#525252]">{copy.noCategories}</p>
               </div>
+              {/* §38.73 — Boş state CTA Lime PRIMARY (header ile birebir).
+                  Eski graphite stil "neden farklı?" mental drift yaratıyordu;
+                  aynı semantik aksiyon = aynı görsel hiyerarşi (Pulse §11). */}
               <button
                 onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
-                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-medium text-white transition-all hover:bg-[#1A1A1A] active:scale-95"
+                disabled={!restaurant.menuEnabled}
+                className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-2 text-[12px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:bg-[#A8D62E] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus size={12} strokeWidth={2.25} />
                 {copy.addCategory}
@@ -1005,7 +1040,8 @@ export default function RestaurantMenuBuilderPage() {
             {activeCategory && (
               <button
                 onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95"
+                disabled={!restaurant.menuEnabled}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus size={14} strokeWidth={2.25} />
                 {copy.addItem}
@@ -1079,7 +1115,7 @@ export default function RestaurantMenuBuilderPage() {
                 </div>
                 <button
                   onClick={() => setCategoryModal({ mode: 'create', data: { isVisible: true } })}
-                  disabled={presetBusy !== null}
+                  disabled={presetBusy !== null || !restaurant.menuEnabled}
                   className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus size={13} strokeWidth={2.25} />
@@ -1102,7 +1138,8 @@ export default function RestaurantMenuBuilderPage() {
               <p className="max-w-[280px] text-[13px] leading-relaxed text-[#525252]">{copy.noItems}</p>
               <button
                 onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
-                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white transition-all hover:bg-[#1A1A1A] active:scale-95"
+                disabled={!restaurant.menuEnabled}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus size={12} strokeWidth={2.25} />
                 {copy.addItem}
