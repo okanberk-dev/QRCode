@@ -56,6 +56,15 @@ export const AI_QUOTAS = {
 
   // ROI insight — public form (reCAPTCHA gated), yeni kullanıcı/gün
   ROI_INSIGHT_GLOBAL_DAY: 200,
+
+  // Feedback summary (§38.53) — owner detail panel'de AI ÖZET 3-sinyal.
+  // 24h cache hit oranı yüksek (her feedback için tek seferlik). Owner
+  // panel kullanımı suggest-reply'a göre daha düşük (her detail tıklamada
+  // değil, sadece comment ≥10 char + AI key var).
+  // 50/user/day = ~10K user × full daily cap → marjinal cost (~$0.0001/call).
+  FEEDBACK_SUMMARY_USER_DAY: 50,
+  FEEDBACK_SUMMARY_WORKSPACE_DAY: 200,
+  FEEDBACK_SUMMARY_GLOBAL_DAY: 1000,
 } as const;
 
 export interface AiQuotaLayer {

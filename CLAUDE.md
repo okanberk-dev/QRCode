@@ -7978,6 +7978,59 @@ Tasarım dosyası `.design-owner-2026/page-feedbacks.jsx` ile cross-check sonras
 - "Manuel ekle" — yeni Customer schema (kullanıcı SKIP §38.16 paterni)
 - (CLAUDE.md §38.B master backlog kalemleri intact)
 
+### 38.54 2026-05-05 — Audit follow-up: AI Quota Guard + MAIL_PLACEHOLDERS customer-campaign
+
+§38.50-53 sonrası kullanıcı kapsamlı audit istedi. 3 paralel Explore agent + manuel doğrulama (5 dosya cross-check) sonrası 4 false positive elendi (Agent 1 google-reviews 3 DRIFT iddiası + Agent 3 Yelp/Foursquare 5-nokta drift iddiası), 2 gerçek drift tespit edildi. AskUserQuestion ile tek konsolide PR + 3-katman layered quota onaylandı.
+
+**False positive elenenler** (manuel grep + Read ile çürütüldü):
+- ❌ Google reviews "KPI 4-card grid eksik" → YANLIŞ, page.tsx:826-852 render mevcut (Toplam yorum / Yanıtlanan / Ort. yanıt süresi / Bu ay yeni)
+- ❌ Google reviews "PROFİL SAĞLIĞI gauge eksik" → YANLIŞ, page.tsx:949 SVG arc render
+- ❌ Google reviews "SIK GEÇEN KELİMELER UI eksik" → YANLIŞ, page.tsx:1039 keyword bar render
+- ❌ Yelp + Foursquare "5-nokta drift" → YANLIŞ, integration-domains.ts:29-30/48-49/70-71/162-167 + platform-link-test.ts:238-239/256-257/276-277 + PlatformChip.tsx:11-12/37-38 + schema.prisma:161-162/176-177 hepsi mevcut. Sadece `platform-redirect-resolver.ts` resolver chain bilinçli DEFER (§38.52 backlog notu)
+
+**Gerçek drift 1 — `/api/feedback/[id]/summary` AI Quota Guard yok** (CLAUDE.md §15.1 disiplin sapması):
+- 3 wired callsite (suggest-reply / extractThemes / extractWeeklyInsight) `checkLayeredAiQuota` kullanıyor; yeni summary endpoint atlanmış
+- Risk: cost guard kapalı, OpenAI quota saldırgan/buggy client'a açık. Mevcut 30/dk rate limit ilk savunma ama daily ceiling yok
+- Fix: 3-katman layered quota (per-user/day + per-workspace/day + per-global/day), suggest-reply paterni birebir reuse
+
+**Gerçek drift 2 — `MAIL_PLACEHOLDERS['customer-campaign']` yok** (CLAUDE.md §21.26 5-nokta drift):
+- customer-campaign template'i `${restaurantName}` token kullanıyor (templates/customer-campaign.ts:49 vars object)
+- Whitelist'te entry yok → admin override'da `${restaurantName}` yazsa `validatePlaceholders` reddeder (typo gibi 400 invalid_placeholder)
+- Fix: `'customer-campaign': ['restaurantName']` whitelist
+
+**Yeni AI_QUOTAS sabite** (`src/lib/ai-quota.ts:65-67`):
+- `FEEDBACK_SUMMARY_USER_DAY = 50` — owner detail panel'de tek-feedback için tek seferlik (24h cache hit oranı yüksek), suggest-reply'den (100/user/day) yarı limit pragmatic
+- `FEEDBACK_SUMMARY_WORKSPACE_DAY = 200` — multi-team workspace cap
+- `FEEDBACK_SUMMARY_GLOBAL_DAY = 1000` — site-genel daily ceiling, ~$0.10/day worst-case (gpt-4o-mini ~$0.0001/call × 1000)
+
+**AI quota integration** (`src/app/api/feedback/[id]/summary/route.ts:9, 117-127`):
+- Cache miss + AI key check sonrası, OpenAI `chatCompletion` çağrısından **önce** quota check
+- 3-katman: user (`actor.id`) → workspace (`ownerId = resolveOwnerUserId(actor) ?? actor.id`) → global
+- Quota fail → fallback empty result + `setCached(id, result)` (24h boyunca tekrar AI çağrısı yok, redundant quota harcama yok)
+- HTTP 429 fırlatma yok — UI graceful degrade (CLAUDE.md §15.1 disiplini)
+
+**Yapma:**
+- Quota check'i cache hit'ten önce yapma — cache hit'te AI çağrısı yok, quota harcanmamalı (gereksiz Upstash istek)
+- Quota fail durumunda HTTP 429 dönmek — UI fail-safe pattern (template/empty fallback) bozulur (CLAUDE.md §15.1)
+- `setCached` quota fail sonrası atlama — aynı feedbackId için 24h boyunca tekrar quota check + tekrar fallback redundant
+- Yeni AI endpoint quota'sız bırakma — §15.1 disiplin: cache check → AI key check → quota check → API call sırası zorunlu
+
+**Yap:**
+- Yeni AI callsite eklerken `AI_QUOTAS` sabite yeni 3 entry (USER_DAY + WORKSPACE_DAY + GLOBAL_DAY) + `checkLayeredAiQuota` çağrısı zorunlu
+- Quota fail → fail-safe fallback (UI çalışmaya devam etsin) + setCached (redundant call koruması)
+- Yeni mail template eklerken `MAIL_PLACEHOLDERS` whitelist eklemek zorunlu (token kullanmıyorsa bile — gelecek admin override için tetiklemeli)
+
+**Test + verification:**
+- `npx tsc --noEmit` 0 errors
+- `npx eslint .` 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npm test` 182/182 pass (yeni unit test gerekmez — quota helper §15.1 mevcut, placeholders whitelist data-only)
+- Manuel: `/api/feedback/[id]/summary` POST → quota check (Upstash key `ai-quota:feedback-summary:user:{userId}` + `:ws:{ownerId}` + `:global:global`), quota fail durumda 200 OK fallback empty result
+- Manuel: admin mail template editor `/admin/mail-templates/customer-campaign/tr` → "${restaurantName}" placeholder valid (eskisi 400 invalid_placeholder)
+
+**Backlog güncel** (Bu PR sonrası):
+- (CLAUDE.md §38.B master backlog kalemleri intact)
+- §38.13 Sentry server-side flush kabul (export endpoint'lerinde `console.error` parallel yok ama §38.13 A kararı: Vercel runtime logs üzerinden monitoring)
+
 ---
 
 ## SONRAKI SESSION — TASARIM 1:1 AUDIT + BACKEND VERIFICATION PROMPT
