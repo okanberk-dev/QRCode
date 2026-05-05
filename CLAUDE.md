@@ -7184,3 +7184,88 @@ KPI 4-card (full-width)
 - 🟡 Topic breakdown sentiment (SIK BAHSEDİLEN tasarımdaki pos/neu/neg multi-color stacked bar) — extractThemes helper sentiment field genişletme gerek (backend)
 - 🟡 PageHeader dynamic title "Bugün N yorum yanıt bekliyor" + sub "Restoran · gün, tarih · Son güncelleme N dk önce" — mevcut greeting/subtitle parity audit gerek
 - (diğer §38.B kalemleri intact)
+
+### 38.45 2026-05-05 — Workspace-level Platforms sayfası (HIGH 4 §38.30 backlog kapatma)
+
+Kullanıcı raporu: "page-platforms.jsx tasarımdaki karşılığına tasarımına her şeyine bak ve sisteme uydur" + Buaze 11-platform taxonomy ile sade workspace-level summary kararı.
+
+**HIGH 4 backlog (§38.30)** — uzun süre defer edilen `/dashboard/platforms` workspace-level summary sayfası bu PR'da kapatıldı.
+
+**Tasarım kaynağı**: `.design-owner-2026/project/page-platforms.jsx` (12 platform card grid + KPI 4 + activity log).
+
+**Buaze taxonomy adapt** (12 → 11 platform; tasarımdaki 4 platform skip):
+- Yorum (8): Google / Yemeksepeti / Getir / Trendyol GO / Tripadvisor / Airbnb / Booking / Yandex
+- Sosyal (2): Instagram / Facebook
+- Mesaj (1): WhatsApp
+- **Skip**: Yelp + Foursquare (taxonomy'de yok, CLAUDE.md §19.4 PROVIDER_DOMAINS), Slack (CLAUDE.md §34.6 silindi), Webhook (AutomationRule backlog)
+
+**Mevcut implementation**:
+- `/dashboard/platforms` route'u eskiden per-restaurant settings'e redirect ediyordu (CLAUDE.md §19.4 paterni)
+- Workspace-level summary YOK
+- Sidebar nav `/dashboard/integrations` → per-restaurant redirect
+
+**Değişiklikler**:
+
+1. **`/dashboard/platforms/page.tsx` rewrite** (eski redirect → server component summary):
+   - PageHeader (eyebrow + title + description + "Yeni bağlantı ekle" CTA)
+   - KPI 4-card: **Bağlı** (X/total) + **Pasif** (URL var ama kapalı) + **Yorum platformları** (connected count) + **Sosyal & mesaj** (connected count)
+   - Filter chips (Tümü / Yorum / Sosyal / Mesaj) — UI-only (server render aggregate)
+   - 11 platform card grid (3-col): logo + name + cat label + status badge (Bağlı/Pasif/Hazır) + "Bağlı X/Y" + "URL var X/Y" + "Yönet" CTA
+   - "Yönet" CTA → first restaurant settings (`?section=integrations`)
+   - Empty state: hiç restoran yoksa "İşletme ekle" CTA
+   - IDOR: `userId` + `prisma.restaurant.findMany({ where: { userId } })`
+
+2. **Sidebar nav** (`UserDashboardShell.tsx` — 3 yer):
+   - `/dashboard/integrations` → `/dashboard/platforms` (sed replace)
+   - 3 yer: business group child item + mobile More sheet item + command palette entry
+   - Workspace-level landing intent: owner sidebar'dan platforms'a tıkladığında summary görür, detail için card'daki "Yönet" CTA per-restaurant settings'e gider
+
+**Per-platform aggregate** (server-side compute):
+```ts
+for each PLATFORM_DEF (11):
+  for each restaurant:
+    hasUrl = restaurant[urlField] !== null
+    isEnabled = restaurant[enabledField] (review platforms only)
+    if hasUrl: urlSet++
+      if isEnabled: connected++
+```
+
+**KPI metrics**:
+- Bağlı: `Σ connected` (tüm restaurants × tüm platforms)
+- Pasif: `urlSet - connected` (URL var ama enabled=false)
+- Yorum platformları: `Σ connected (cat: review)`
+- Sosyal & mesaj: `Σ connected (cat: social/message)`
+
+**Backend**: yeni endpoint **YOK**. Page server component Prisma aggregate query (CLAUDE.md §14.1 paterni — `force-dynamic` + workspace-scoped IDOR + tek `findMany` select).
+
+**Cross-check (Analytics + Account)** — yeni audit yapıldı, 2 false positive elendi:
+- ❌ Analytics "Topics gizli" — gerçekte line 947 `aiAnalyticsAvailable &&` ile aktif (KONU & DUYGU dark card)
+- ❌ Account "language + api tab eksik" — §38.37 kullanıcı kararı "Mevcut 7 tab korunur"
+
+**Yapma**:
+- Yelp/Foursquare/Slack/Webhook eklemek — Buaze taxonomy dışı (CLAUDE.md §19.4 + §34.6). Tasarımdaki ekstra 4 platform sade workspace-level summary'de skip edildi (kullanıcı kararı).
+- Workspace-level platform card'da inline URL düzenleme — per-restaurant settings'te zaten var, duplicate UI. "Yönet" CTA ile detail page'e gönder.
+- Activity log table eklemek — `PlatformLinkCheck` workspace-level aggregate query yeni endpoint gerek (scope creep). Mevcut per-restaurant activity log per-restaurant settings'te var (CLAUDE.md §19.4.1).
+- Sidebar'da `/dashboard/integrations` link'i geri yüklemek — eski per-restaurant redirect davranışı confusing (workspace-level summary daha doğru landing).
+- "Bağla" CTA platform card'da (tasarımda var) — owner workspace seviyesinde değil per-restaurant seviyesinde bağlanır; "Yönet" CTA per-restaurant settings'e götürür (URL düzenleme orada).
+
+**Yap**:
+- Yeni platform eklenirken (örn. yeni yorum site) `PLATFORM_DEFS` const + Restaurant schema field + `RestaurantPlatformRow` type genişlet.
+- Workspace-level metric ekleme (örn. webhook health, activity log) için ayrı PR — backend endpoint gerek (`/api/platforms/health` workspace aggregate).
+- Sidebar nav'dan `/dashboard/integrations` redirect'i tamamen silmek (Phase X+) — şu an `/integrations` route silinmeden korunur (backward-compat); cleanup fırsatı çıkarsa silinebilir.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` modified files — 0 errors
+- `npm test` 143/143 pass (yeni test gerekmez — server component pure render)
+- Manuel desktop: `/tr/dashboard/platforms` → KPI 4-card + filter chips + 11 platform card grid + workspace info footer
+- Manuel mobile (375px): grid 1-col, KPI 2-col, filter chips horizontal scroll
+- Manuel: Sidebar "Platform Bağlantıları" item → `/dashboard/platforms` (per-restaurant redirect değil)
+- Manuel: Platform card "Yönet" CTA → first restaurant settings#integrations
+
+**Backlog güncel** (Bu PR sonrası — HIGH 4 §38.30 KAPATILDI):
+- 🟡 Activity log table workspace-level (PlatformLinkCheck aggregate endpoint gerek)
+- 🟡 "Webhook sağlığı" KPI (success rate %, ek query)
+- 🟡 Per-platform card'da inline test/retest CTA (mevcut per-restaurant settings'te var, duplicate scope)
+- 🟢 `/dashboard/integrations` route cleanup (backward-compat; silinebilir)
+- (diğer §38.B kalemleri intact)
