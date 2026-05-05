@@ -868,13 +868,33 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </main>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — §38.63 Admin paneli (AdminSidebar.tsx:577) paterniyle
+          uyumlu hale getirildi: role="dialog" aria-modal aria-label + safe-area
+          inset top/bottom + bg-white border-r. Önceki implementation a11y
+          attribute'ları ve safe-area paddings eksikti. Tasarım kaynağı
+          .design-owner-2026/page-mobile-v2.jsx MobileDrawer (line 3-72) +
+          shell.jsx PanelShell `mobile drawer` paterniyle uyumlu. */}
       {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div className="h-full w-72 max-w-[85vw] shadow-2xl">{renderSidebar()}</div>
+        <div
+          className="fixed inset-0 z-50 flex lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label={locale === 'tr' ? 'Owner navigation' : 'Owner navigation'}
+        >
+          <div
+            className="h-full w-[280px] max-w-[85vw] bg-white border-r border-[#EDEDED] shadow-2xl flex flex-col text-[#0A0A0A] overflow-y-auto"
+            style={{
+              paddingTop: 'env(safe-area-inset-top)',
+              paddingBottom: 'env(safe-area-inset-bottom)',
+            }}
+          >
+            {renderSidebar()}
+          </div>
           <button
-            className="flex-1 bg-black/50 backdrop-blur-sm"
+            type="button"
+            className="flex-1 bg-black/60 backdrop-blur-sm"
             onClick={() => setDrawerOpen(false)}
+            aria-label={locale === 'tr' ? 'Menüyü kapat' : 'Close menu'}
           />
         </div>
       )}

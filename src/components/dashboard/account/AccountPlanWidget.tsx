@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Crown, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { Locale } from "@/lib/translations";
 
 // §38.37 — Hesabım sağ rail Plan widget. Tasarım .design-owner-2026/
@@ -133,17 +133,37 @@ export function AccountPlanWidget({
     },
   ];
 
-  const priceText =
-    data.amount != null
-      ? `${data.currency === "TRY" ? "₺" : "$"}${data.amount.toLocaleString(intLocale)}${data.billingCycle === "monthly" ? (isTr ? " /ay" : " /mo") : ""}`
-      : null;
+  // §38.63 — Renews date format (tasarım: "Bir sonraki ödeme · 14 Mayıs 2026").
+  const renewsText = data.renewsAt
+    ? new Date(data.renewsAt).toLocaleDateString(intLocale, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
+
+  // Hero price + cycle suffix ayrı tutuluyor (tasarımda 36px price + 12px /ay
+  // muted ayrı element). Eski combined `priceText` artık sadece fallback.
+  const priceMain = data.amount != null
+    ? `${data.currency === "TRY" ? "₺" : "$"}${data.amount.toLocaleString(intLocale)}`
+    : null;
+  const priceCycleSuffix = data.billingCycle === "monthly" ? (isTr ? "/ay" : "/mo") : "";
 
   return (
+    // §38.63 — Tasarım .design-owner-2026/page-account.jsx Plan widget parity:
+    // (1) Eyebrow plan adı + lime + bz-pulse-dot (önceki "PLAN" + Crown drift'ti);
+    // (2) 36px hero price + bz-mono /ay suffix muted; (3) renewsAt date
+    // "Bir sonraki ödeme · ..."; (4) 2 button row (Yükselt lime + Yönet ghost),
+    // önceki tek "Planı yönet" full-width drift'ti. Trial gün kalan badge
+    // header sağına (sadece >0 ise), tasarımda yok ama §11.11 TrialBanner
+    // entegrasyonu için faydalı sinyal.
     <div className="rounded-2xl bg-[#0A0A0A] p-5 text-white shadow-[0_4px_20px_rgba(10,10,10,0.18)]">
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/30 bg-[#C6F24E]/10 px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.18em] text-[#C6F24E]">
-          <Crown size={11} strokeWidth={2} />
-          {isTr ? "PLAN" : "PLAN"}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="inline-flex items-center gap-1.5">
+          <span className="bz-pulse-dot" aria-hidden />
+          <span className="pulse-eyebrow text-[#C6F24E]">
+            {data.planLabel || (isTr ? "PLAN" : "PLAN")}
+          </span>
         </div>
         {data.trialDaysLeft != null && data.trialDaysLeft > 0 && (
           <span className="text-[10px] font-mono text-white/60 uppercase tracking-wider">
@@ -154,16 +174,32 @@ export function AccountPlanWidget({
         )}
       </div>
 
-      <div className="mb-1">
-        <div className="bz-h-tight text-[20px] leading-tight text-white">
+      {/* Hero price — tasarım 36px h-tight-2 + 12px mono suffix */}
+      {priceMain ? (
+        <div className="flex items-baseline gap-1.5 mb-1">
+          <span className="bz-h-tight-2 text-white" style={{ fontSize: 36, lineHeight: 1 }}>
+            {priceMain}
+          </span>
+          {priceCycleSuffix && (
+            <span className="bz-mono text-[12px] text-white/50">{priceCycleSuffix}</span>
+          )}
+        </div>
+      ) : (
+        <div className="bz-h-tight text-[20px] leading-tight text-white mb-1">
           {data.planLabel}
         </div>
-        {priceText && (
-          <div className="bz-mono mt-0.5 text-[12px] text-white/60">{priceText}</div>
-        )}
-      </div>
+      )}
 
-      <div className="mt-5 space-y-3">
+      {/* Renews date — tasarım pattern "Bir sonraki ödeme · 14 Mayıs 2026" */}
+      {renewsText && (
+        <div className="bz-mono text-[11px] text-white/55 mb-4">
+          {isTr ? "Bir sonraki ödeme · " : "Next payment · "}
+          {renewsText}
+        </div>
+      )}
+      {!renewsText && <div className="mb-4" />}
+
+      <div className="space-y-3">
         {usageBars.map((bar) => (
           <div key={bar.label}>
             <div className="flex items-baseline justify-between mb-1.5">
@@ -181,12 +217,25 @@ export function AccountPlanWidget({
         ))}
       </div>
 
-      <Link
-        href={`/${locale}/pricing`}
-        className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[#C6F24E] hover:bg-[#A8D62E] active:scale-[0.98] px-3 py-2 text-[12px] font-semibold text-[#0A0A0A] transition-colors"
-      >
-        {isTr ? "Planı yönet" : "Manage plan"}
-      </Link>
+      {/* §38.63 — 2-button row: lime "Yükselt" (primary) + ghost "Yönet"
+          (transparent border). Tasarım line 207: `style={{ flex: 1 }}` lime +
+          `style={{ borderColor: 'rgba(255,255,255,0.18)', color: '#FFF' }}`
+          ghost. Her ikisi de /pricing'e gider — placeholder subtree;
+          gerçek "Yönet" Iyzico Wave 3.5 sonrası ayrı endpoint'e yönlenir. */}
+      <div className="mt-5 grid grid-cols-2 gap-2">
+        <Link
+          href={`/${locale}/pricing`}
+          className="inline-flex items-center justify-center rounded-full bg-[#C6F24E] hover:bg-[#A8D62E] active:scale-[0.98] px-3 py-2 text-[12px] font-semibold text-[#0A0A0A] transition-colors"
+        >
+          {isTr ? "Yükselt" : "Upgrade"}
+        </Link>
+        <Link
+          href={`/${locale}/pricing`}
+          className="inline-flex items-center justify-center rounded-full border border-white/20 hover:border-white/40 hover:bg-white/5 active:scale-[0.98] px-3 py-2 text-[12px] font-semibold text-white transition-colors"
+        >
+          {isTr ? "Yönet" : "Manage"}
+        </Link>
+      </div>
     </div>
   );
 }
