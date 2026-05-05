@@ -44,6 +44,11 @@ interface CustomerRow {
   ltv: number;
   sentiment: CustomerSentiment;
   daysSinceLastVisit: number | null;
+  // §38.48 — Owner endpoint paterni reuse (CLAUDE.md §38.47). UI/CSV-side
+  // computeLastTopic + computeLastChannel ile derive eder; helper drift sıfır.
+  lastFoodRating: number | null;
+  lastServiceRating: number | null;
+  lastAtmosphereRating: number | null;
 }
 
 interface AggregateRow {
@@ -59,6 +64,10 @@ interface AggregateRow {
   avg_rating: number | null;
   last_at: Date;
   feedback_count: bigint;
+  // §38.48 — son feedback'in aspect rating'leri (lastTopic için, owner paterni).
+  last_food_rating: number | null;
+  last_service_rating: number | null;
+  last_atmosphere_rating: number | null;
 }
 
 interface SummaryRow {
@@ -201,8 +210,11 @@ export async function GET(req: NextRequest) {
           (ARRAY_AGG(f.email ORDER BY f.created_at DESC) FILTER (WHERE f.email IS NOT NULL AND f.email <> ''))[1] AS email,
           (ARRAY_AGG(f.phone ORDER BY f.created_at DESC) FILTER (WHERE f.phone IS NOT NULL AND f.phone <> ''))[1] AS phone,
           (ARRAY_AGG(f.branch ORDER BY f.created_at DESC) FILTER (WHERE f.branch IS NOT NULL AND f.branch <> ''))[1] AS branch,
-          (ARRAY_AGG(f.platform ORDER BY f.created_at DESC) FILTER (WHERE f.platform IS NOT NULL))[1] AS platform,
+          (ARRAY_AGG(f.platform ORDER BY f.created_at DESC))[1] AS platform,
           (ARRAY_AGG(f.rating ORDER BY f.created_at DESC))[1] AS last_rating,
+          (ARRAY_AGG(f.food_rating ORDER BY f.created_at DESC))[1] AS last_food_rating,
+          (ARRAY_AGG(f.service_rating ORDER BY f.created_at DESC))[1] AS last_service_rating,
+          (ARRAY_AGG(f.atmosphere_rating ORDER BY f.created_at DESC))[1] AS last_atmosphere_rating,
           AVG(f.rating)::float AS avg_rating,
           MAX(f.created_at) AS last_at,
           COUNT(*)::bigint AS feedback_count
@@ -243,6 +255,10 @@ export async function GET(req: NextRequest) {
         ltv: derived.ltv,
         sentiment: derived.sentiment,
         daysSinceLastVisit: derived.daysSinceLastVisit,
+        // §38.48 — raw aspect rating alanları (UI Kanal/Son Konu derive için).
+        lastFoodRating: r.last_food_rating,
+        lastServiceRating: r.last_service_rating,
+        lastAtmosphereRating: r.last_atmosphere_rating,
       };
     });
 

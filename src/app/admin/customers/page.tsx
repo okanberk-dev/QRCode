@@ -7,6 +7,7 @@ import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 import { SentimentBadge } from '@/components/customers/SentimentBadge';
 import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
+import { computeLastChannel, computeLastTopic } from '@/lib/customers';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 type SegmentFilter = '' | CustomerSegment;
@@ -29,6 +30,10 @@ interface CustomerRow {
   ltv: number;
   sentiment: CustomerSentiment;
   daysSinceLastVisit: number | null;
+  // §38.48 — son feedback'in raw aspect rating'leri (lastTopic için).
+  lastFoodRating: number | null;
+  lastServiceRating: number | null;
+  lastAtmosphereRating: number | null;
 }
 
 interface SegmentCounts {
@@ -62,12 +67,8 @@ interface RestaurantOption {
 
 const PAGE_SIZE = 25;
 
-const PLATFORM_LABEL: Record<string, string> = {
-  google: 'Google',
-  yemeksepeti: 'Yemeksepeti',
-  getir: 'Getir',
-  trendyol_go: 'Trendyol GO',
-};
+// §38.48 — `PLATFORM_LABEL` inline map silindi → `computeLastChannel` helper
+// reuse (CLAUDE.md §38.47 + §38.48 drift sıfır source-of-truth).
 
 export default function AdminCustomersPage() {
   const [loading, setLoading] = useState(true);
@@ -408,7 +409,7 @@ export default function AdminCustomersPage() {
                 cross-restaurant view'da "İşletme" kolonu kritik, drop edilmez
                 — owner panelde drawer'da görünüyor, admin'de table'da kalır). */}
             <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[1100px] text-left text-xs">
+              <table className="w-full min-w-[1280px] text-left text-xs">
                 <thead className="bg-[#FFFFFF]">
                   <tr className="pulse-eyebrow text-[#737373]">
                     <th className="px-5 py-3">Müşteri</th>
@@ -418,6 +419,9 @@ export default function AdminCustomersPage() {
                     <th className="px-5 py-3 text-right">Son Puan</th>
                     <th className="px-5 py-3 text-right">Feedback</th>
                     <th className="px-5 py-3 text-right">LTV</th>
+                    {/* §38.48 — Owner /customers paterni reuse: Son konu + Kanal */}
+                    <th className="px-5 py-3">Son Konu</th>
+                    <th className="px-5 py-3">Kanal</th>
                     <th className="px-5 py-3">Memnuniyet</th>
                     <th className="px-5 py-3">Son Tarih</th>
                   </tr>
@@ -444,6 +448,9 @@ export default function AdminCustomersPage() {
                           </div>
                         </td>
                         <td className="px-5 py-3 text-[#1A1A1A]">
+                          {/* §38.48 — Platform inline label kaldırıldı; ayrı "Kanal"
+                              kolonu eklendi (computeLastChannel helper-derive,
+                              drift sıfır). */}
                           <div className="flex flex-col gap-0.5">
                             <span className="inline-flex items-center gap-1.5 font-bold text-[#0A0A0A]">
                               <Store size={11} strokeWidth={2} />
@@ -453,11 +460,6 @@ export default function AdminCustomersPage() {
                               <span className="inline-flex items-center gap-1.5 text-[11px] text-[#6B7280]">
                                 <MapPin size={10} strokeWidth={2} />
                                 {r.branch}
-                              </span>
-                            )}
-                            {r.platform && (
-                              <span className="pulse-eyebrow text-[#6B7280]">
-                                {PLATFORM_LABEL[r.platform] || r.platform}
                               </span>
                             )}
                           </div>
@@ -482,6 +484,23 @@ export default function AdminCustomersPage() {
                             title="Etkileşim ağırlığı (yorum × ortalama puan)"
                           >
                             {r.ltv.toLocaleString('tr-TR')}
+                          </span>
+                        </td>
+                        {/* §38.48 — Son konu + Kanal (helper-derive, owner paterni reuse) */}
+                        <td className="px-5 py-3 text-[#525252]">
+                          {computeLastTopic(
+                            {
+                              rating: r.lastRating,
+                              foodRating: r.lastFoodRating,
+                              serviceRating: r.lastServiceRating,
+                              atmosphereRating: r.lastAtmosphereRating,
+                            },
+                            'tr',
+                          )}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className="bz-mono inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[11px] text-[#525252] whitespace-nowrap">
+                            {computeLastChannel(r.platform, 'tr')}
                           </span>
                         </td>
                         <td className="px-5 py-3">
@@ -521,6 +540,23 @@ export default function AdminCustomersPage() {
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <SegmentChip segment={r.segment} locale="tr" size="sm" />
                       <SentimentBadge sentiment={r.sentiment} locale="tr" />
+                    </div>
+                    {/* §38.48 — Kanal pill + Son konu metni (owner mobile paterni reuse) */}
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[#737373]">
+                      <span className="bz-mono inline-flex items-center rounded-md bg-[#F5F5F5] px-2 py-0.5 text-[#525252]">
+                        {computeLastChannel(r.platform, 'tr')}
+                      </span>
+                      <span className="text-[#525252]">
+                        {computeLastTopic(
+                          {
+                            rating: r.lastRating,
+                            foodRating: r.lastFoodRating,
+                            serviceRating: r.lastServiceRating,
+                            atmosphereRating: r.lastAtmosphereRating,
+                          },
+                          'tr',
+                        )}
+                      </span>
                     </div>
                     <div className="mt-2 space-y-0.5 text-[11px] text-[#1A1A1A]">
                       {r.email && <p className="truncate"><Mail size={10} className="mr-1 inline" strokeWidth={2} />{r.email}</p>}

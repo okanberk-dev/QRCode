@@ -3,7 +3,12 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
-import { deriveCustomerFields, type CustomerSegment } from '@/lib/customers';
+import {
+  deriveCustomerFields,
+  computeLastTopic,
+  computeLastChannel,
+  type CustomerSegment,
+} from '@/lib/customers';
 
 // CSV export of the feedback-derived admin customer list. Mirrors the filter
 // surface of GET /api/admin/customers but returns the full filtered set (no
@@ -42,6 +47,10 @@ interface AggregateRow {
   avg_rating: number | null;
   last_at: Date;
   feedback_count: bigint;
+  // §38.48 — son feedback'in aspect rating'leri (lastTopic için, owner paterni).
+  last_food_rating: number | null;
+  last_service_rating: number | null;
+  last_atmosphere_rating: number | null;
 }
 
 function parseRange(raw: string | null): Date | null {
@@ -120,8 +129,11 @@ export async function GET(req: NextRequest) {
         (ARRAY_AGG(f.email ORDER BY f.created_at DESC) FILTER (WHERE f.email IS NOT NULL AND f.email <> ''))[1] AS email,
         (ARRAY_AGG(f.phone ORDER BY f.created_at DESC) FILTER (WHERE f.phone IS NOT NULL AND f.phone <> ''))[1] AS phone,
         (ARRAY_AGG(f.branch ORDER BY f.created_at DESC) FILTER (WHERE f.branch IS NOT NULL AND f.branch <> ''))[1] AS branch,
-        (ARRAY_AGG(f.platform ORDER BY f.created_at DESC) FILTER (WHERE f.platform IS NOT NULL))[1] AS platform,
+        (ARRAY_AGG(f.platform ORDER BY f.created_at DESC))[1] AS platform,
         (ARRAY_AGG(f.rating ORDER BY f.created_at DESC))[1] AS last_rating,
+        (ARRAY_AGG(f.food_rating ORDER BY f.created_at DESC))[1] AS last_food_rating,
+        (ARRAY_AGG(f.service_rating ORDER BY f.created_at DESC))[1] AS last_service_rating,
+        (ARRAY_AGG(f.atmosphere_rating ORDER BY f.created_at DESC))[1] AS last_atmosphere_rating,
         AVG(f.rating)::float AS avg_rating,
         MAX(f.created_at) AS last_at,
         COUNT(*)::bigint AS feedback_count
@@ -134,19 +146,22 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
 
+    // §38.48 — `Platform` raw label yerine `Kanal` derived (Buaze QR fallback)
+    // + yeni `Son Konu` sütunu (helper'la deterministik label).
     const header = [
       'İsim',
       'E-posta',
       'Telefon',
       'Restoran',
       'Şube',
-      'Platform',
+      'Kanal',
       'Son Puan',
       'Ort. Puan',
       'Toplam Feedback',
       'Segment',
       'LTV',
       'Sentiment',
+      'Son Konu',
       'Son Ziyaret (gün önce)',
       'Son Tarih',
     ];
@@ -162,19 +177,32 @@ export async function GET(req: NextRequest) {
       // Apply segment filter post-derive (mirror list endpoint).
       if (segmentParam && derived.segment !== segmentParam) continue;
 
+      // §38.48 — TR-fixed labels (CSV admin/internal ops use; locale=tr).
+      const lastChannel = computeLastChannel(r.platform, 'tr');
+      const lastTopic = computeLastTopic(
+        {
+          rating: r.last_rating,
+          foodRating: r.last_food_rating,
+          serviceRating: r.last_service_rating,
+          atmosphereRating: r.last_atmosphere_rating,
+        },
+        'tr',
+      );
+
       lines.push([
         esc(r.name),
         esc(r.email),
         esc(r.phone),
         esc(r.restaurant_name),
         esc(r.branch),
-        esc(r.platform),
+        esc(lastChannel),
         esc(r.last_rating),
         esc(r.avg_rating != null ? r.avg_rating.toFixed(2) : ''),
         esc(visits),
         esc(SEGMENT_LABEL[derived.segment]),
         esc(derived.ltv),
         esc(SENTIMENT_LABEL[derived.sentiment]),
+        esc(lastTopic),
         esc(derived.daysSinceLastVisit ?? ''),
         esc(new Date(r.last_at).toISOString().slice(0, 10)),
       ].join(','));
