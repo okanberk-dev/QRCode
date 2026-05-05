@@ -26,7 +26,7 @@ export default function AdminTopbar({ announcements = [], displayName }: AdminTo
   const initial = (displayName?.trim()?.charAt(0) || 'A').toUpperCase();
 
   return (
-    <div className="sticky top-0 z-40 flex items-center justify-end gap-2 border-b border-[#EDEDED] bg-white/95 px-4 py-2.5 backdrop-blur sm:px-6">
+    <div className="hidden lg:flex sticky top-0 z-40 items-center justify-end gap-2 border-b border-[#EDEDED] bg-white/95 px-4 py-2.5 backdrop-blur sm:px-6">
       <NotificationBell
         locale={locale === 'en' ? 'en' : 'tr'}
         announcements={announcements}
