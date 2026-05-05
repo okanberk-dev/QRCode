@@ -7270,6 +7270,84 @@ for each PLATFORM_DEF (11):
 - 🟢 `/dashboard/integrations` route cleanup (backward-compat; silinebilir)
 - (diğer §38.B kalemleri intact)
 
+### 38.47 2026-05-05 — Customers tasarım drift kapanışı (churned segment + lastTopic + lastChannel + 5. KPI + 6. chip)
+
+§38.36 / §38.40 backlog'unun son 4 kalemi bu PR'da kapatıldı. Tasarım kaynağı `.design-owner-2026/project/page-customers.jsx` (8 yorumlu kolon + 6 segment chip + 5 KPI tile) ile mevcut state %85 → %95 parity. Schema migration **YOK**.
+
+**Helper extension** (`src/lib/customers.ts`):
+- `CustomerSegment` literal: `+ 'churned'`. `SEGMENT_COLOR_MAP`: yeni `archive` icon + n100 bg + n500 fg ghost paletti (Risk = aktif memnuniyetsizlik kırmızı, Churned = sessiz bırakma muted ayrımı).
+- `computeSegment` `daysSinceLastVisit?: number | null` opsiyonel input. Threshold: **`daysSinceLastVisit > 90 && visits ≥ 2 → churned`**. Öncelik sırası: `churned → new → risk → vip → loyal`. Tek-ziyaretli müşteri churned olmaz (visits≥2 zorunlu — "yeni denedi/beğenmedi" ile "sadık + kaybedildi" karışmasın). Backwards-compat: `daysSinceLastVisit` undefined ise legacy davranış intact (mevcut callsite'lar etkilenmez).
+- `computeLastTopic({ rating, foodRating?, serviceRating?, atmosphereRating? }, locale)` — saf deterministik label. Aspect rating varsa **en düşük** olan konu (Yemek/Servis/Atmosfer); yoksa rating-bazlı fallback (Olumlu/Karışık/Şikayet). Per-customer AI çağrısı YOK (10K müşteri × $0.0005 = $5/render reddedildi).
+- `computeLastChannel(platform, locale)` — Pulse 11-platform taxonomy → human-readable label. `null/undefined/''` → `Buaze QR` (CLAUDE.md §38.34 paterni). Bilinmeyen platform → `Diğer/Other` defansif fallback.
+- `deriveCustomerFields` aggregate genişletildi: opsiyonel `lastTopicInput` + `lastPlatform` + `locale` input → `lastTopic` + `lastChannel` derived field'ları.
+
+**Test extension** (`tests/customers.test.ts`):
+- 23 yeni unit test → toplam 80 test (143 → 166).
+- Churned threshold (=90 vs >90 boundary), tek-ziyaretli guard, backward-compat (undefined → legacy), churned wins over vip/risk.
+- `computeLastTopic` aspect lowest detection, locale parity (TR/EN), rating fallback, partial aspects.
+- `computeLastChannel` known platform map, null → Buaze QR, unknown → Diğer/Other, case-insensitive.
+- `deriveCustomerFields` integration: churned, lastTopic + lastChannel populated/omitted (backwards-compat).
+
+**Backend genişletme** (saf raw SQL extension, schema/migration **YOK**):
+- `/api/customers/route.ts` raw query → 3 yeni `ARRAY_AGG[1]` (`last_food_rating`, `last_service_rating`, `last_atmosphere_rating`). `platform` filter `IS NOT NULL` kaldırıldı (Buaze QR null platform önemli sinyal). `VALID_SEGMENTS` set'i + `segmentCounts` initial object → `churned` eklendi. `CustomerRow` interface raw alanları forward eder; helper'lar UI/CSV-side derive.
+- `/api/customers/[key]/route.ts` detail endpoint → son feedback'in `foodRating/serviceRating/atmosphereRating/platform/rating` alanları stats'a eklendi (drawer metadata için).
+- `/api/customers/export/route.ts` CSV → 2 yeni sütun (`Kanal` + `Son Konu`); helper'lar TR-fixed locale ile derive eder. `VALID_SEGMENTS` + `SEGMENT_LABEL` (Kayıp) + `AggregateRow` interface genişlet.
+
+**UI** (`src/app/[locale]/dashboard/customers/page.tsx`):
+- **5. KPI "Risk altında"** (tasarım line 54-67 birebir): `riskCount + churnedCount` kombine; alt-text "N risk · M kayıp" ayrımı. KPI grid `lg:grid-cols-4` → `lg:grid-cols-5`.
+- **6. segment chip "Kayıp"**: SEGMENT_PILLS array'ine entry; segment counts pre-filter compute (filter aktifken her pill toplamı görünür).
+- **8-col tablo** (eski 6 → 8): Yeni `Son konu` + `Kanal` kolonları. `min-w-[1040px]` (eski 860). Mobile card meta'sına da kanal pill + son konu metni eklendi (`flex-wrap items-center gap-2`).
+- Helper'lar UI-side `enriched.map` içinde lokal derive (locale-aware).
+
+**Drawer** (`CustomerDetailDrawer.tsx`):
+- `CustomerData.stats` → 5 yeni opsiyonel alan (`lastPlatform`, `lastRating`, `lastFoodRating`, `lastServiceRating`, `lastAtmosphereRating`).
+- Yeni meta row `SON KONU · KANAL` (header altında, stats grid sonrasında — tasarım drawer-centric paterni).
+- Eski inline `PLATFORM_LABEL` map silindi → `computeLastChannel` helper kullanılır (Buaze QR fallback otomatik, taxonomy genişlemesinde drift sıfır).
+
+**SegmentChip** (`src/components/customers/SegmentChip.tsx`):
+- `lucide-react` `Archive` icon + `ICON_BY_NAME` map'e `archive` entry. `SEGMENT_LABELS` map'e `churned: { tr: 'Kayıp', en: 'Churned' }`.
+
+**Admin customers** (downstream uyumluluk):
+- `/admin/customers/page.tsx` `SegmentCounts` interface + `SEGMENT_PILLS` array → `churned` alanı eklendi (TR Kayıp / EN Churned label).
+- `/api/admin/customers/route.ts` `VALID_SEGMENTS` + `segmentCounts` → `churned` eklendi.
+- `/api/admin/customers/export/route.ts` `VALID_SEGMENTS` + `SEGMENT_LABEL` → `churned: 'Kayıp'`.
+- `src/lib/weekly-digest-runner.ts` `segmentCounts` initial → `churned: 0` (mail template `churned` render etmez, type uyumluluğu için).
+
+**Bilinçli skip** (kullanıcı talebine göre, schema gerekenler):
+- "Müşteri ekle" / "İçe aktar" — yeni Customer schema gerek (mevcut Customers feedback-derived dedupe paterni, §4.5). Workflow + KVKK consent flow yeniden inşa kapsamı.
+- Bulk action bar (Kampanya/Segmentle/Arşivle) — Campaign schema + endpoints + bulk PATCH endpoints yok (CLAUDE.md §38.36 paterni).
+- More actions kebab dropdown — drawer click zaten her aksiyonu sağlıyor (CLAUDE.md §7).
+
+**Yapma**:
+- `computeSegment` daysSinceLastVisit threshold'unu 60g veya 120g'a çekme — 90g kullanıcı kararı (CLAUDE.md §38.16 + §38.47). 90g sektör norm "müşteri kayıp" eşiği; daha kısa false positive (turist), daha uzun gerçek churn'u kaçırır.
+- Aspect lowest tie-break ekleme — şu an `reduce` ilk alana priority verir (food < service < atmosphere). Ek karmaşık logic gereksiz (real data sparse, tie nadiren duyulur).
+- Per-customer AI extract için yeni endpoint açma — workspace-level `extractThemes` (analytics §38.34) zaten var; per-customer maliyet kabul edilemez.
+- `computeLastChannel` map'ine "Yelp/Foursquare/Slack" eklemek — Buaze taxonomy dışı (CLAUDE.md §19.4 + §34.6).
+- Admin endpoint'lerinde aspect raw alanlar geri çekme — admin endpoint kendi response shape'ini koruyor; lastTopic/lastChannel derive workspace-level Customers UI'da, admin'e şu an gerek yok (gelecek scope).
+- Mail template'ine `churned` chip eklemek — 4-cell stack 5'e genişletme + new copy field'ları (TR/EN) gerek (CLAUDE.md §21.26 paterni). Backend type uyumlu, mail UX bilinçli sade.
+
+**Yap**:
+- Yeni segment threshold değişimi gerekirse `src/lib/customers.ts:computeSegment` tek nokta + `tests/customers.test.ts` boundary testleri güncel (28 test'in 7'si threshold-bound).
+- Yeni platform eklerken: `CHANNEL_LABELS_TR` + `CHANNEL_LABELS_EN` map (TR/EN parity) + Pulse 11-platform taxonomy (CLAUDE.md §19.4) + helper test case.
+- Yeni aspect rating field eklerken (örn. `priceRating`): schema migration + `LastTopicInput` interface genişletme + `computeLastTopic` aspects array push + test.
+- Mail template'ine churned eklemek istenirse `weekly-report.ts` `segmentCounts` interface + 4-cell → 5-cell stack + 2 yeni copy field (TR/EN) + DB seed.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` (modified files) 0 errors (2 baseline warning admin/customers `useEffect` deps, scope dışı)
+- `npm test` 166/166 pass (143 → 166, 23 yeni helper test)
+- Manuel: `/tr/dashboard/customers` 5-KPI grid + 6-segment chip (Kayıp dahil) + 8-col tablo (Son konu + Kanal eklendi) + drawer metadata row
+- Manuel mobile (375px): KPI 2-col stack, segment pills horizontal scroll (6 pill), card meta'da kanal pill + konu metni
+- Manuel: Churned threshold gerçek müşteri (90+ gün dönmemiş + 2+ ziyaret) tespit edildi mi (DB'de seed/test data gerek)
+
+**Backlog güncel** (Bu PR sonrası):
+- 🟡 Müşteri ekle / İçe aktar (yeni Customer schema, manual create flow + KVKK)
+- 🟡 Bulk action bar (Kampanya/Segmentle/Arşivle backend yok)
+- 🟡 More actions kebab dropdown (drawer click yeterli — eklenmesi cosmetic)
+- 🟡 Mail template'inde `churned` chip (5-cell stack + 2 yeni copy field)
+- 🟡 Admin customers endpoint'lerinde lastTopic/lastChannel raw alanları (admin UI kullanırsa)
+- (diğer §38.B kalemleri intact)
+
 ### 38.46 2026-05-05 — buaze.css token cross-check (orphan `bz-tr-hover` fix)
 
 Kullanıcı `buaze.css` (canonical design tokens) + `layout.tsx` + eski `page.tsx` paylaştı, "kontrol et ve birebir yaptın mı bak" istedi.

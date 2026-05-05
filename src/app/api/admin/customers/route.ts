@@ -24,7 +24,8 @@ const RANGE_PRESETS = { '7d': 7, '30d': 30, '90d': 90 } as const;
 type RangeKey = keyof typeof RANGE_PRESETS | 'all';
 
 const MAX_AGGREGATE_ROWS = 5000;
-const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal']);
+// §38.47 — `churned` segment eklendi (CLAUDE.md §38.47).
+const VALID_SEGMENTS = new Set<CustomerSegment>(['new', 'risk', 'vip', 'loyal', 'churned']);
 
 interface CustomerRow {
   key: string;
@@ -246,12 +247,14 @@ export async function GET(req: NextRequest) {
     });
 
     // Segment counts (filter pill labels) — pre-filter (her pill toplamı).
+    // §38.47 — `churned` segment count eklendi.
     const segmentCounts = {
       all: enriched.length,
       vip: 0,
       loyal: 0,
       new: 0,
       risk: 0,
+      churned: 0,
     };
     for (const row of enriched) {
       segmentCounts[row.segment] += 1;

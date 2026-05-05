@@ -195,7 +195,14 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
 
     // Phase 8c+ — segment dağılımı (deriveCustomerFields). Tüm değerler 0
     // ise mailde section gizlenir (template fail-safe).
-    const segmentCounts: Record<CustomerSegment, number> = { vip: 0, loyal: 0, new: 0, risk: 0 };
+    // §38.47 — `churned` segment count eklendi.
+    const segmentCounts: Record<CustomerSegment, number> = {
+      vip: 0,
+      loyal: 0,
+      new: 0,
+      risk: 0,
+      churned: 0,
+    };
     for (const row of segmentRows) {
       const visits = Number(row.visits);
       const derived = deriveCustomerFields({
