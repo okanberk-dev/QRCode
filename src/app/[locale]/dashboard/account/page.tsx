@@ -49,19 +49,28 @@ import { AccountDangerZone } from "@/components/dashboard/account/AccountDangerZ
  * /dashboard/restaurants/[id]/settings — single source of truth.
  */
 
+// §38.59 — Tasarım birebir tek "AYARLAR" group + tasarım terminolojisi
+// (kullanıcı ekran görüntüsü Hesabım/Profil & ayarlar). Eski 2-group
+// (KİŞİSEL + ÇALIŞMA ALANI) tek group'a sıkıştırıldı; tab label'ları
+// tasarımda gösterilen formata align edildi:
+//   "Bildirim" → "Bildirimler" (tasarım line 8)
+//   "Faturalandırma" → "Plan & Faturalama" (tasarım line 10)
+//   "Kullanıcılar" → "Ekip & Roller" (tasarım line 6)
+// 3 tasarım tab'ı (İşletme bilgileri / Dil & Bölge / API & Webhook) DEFER
+// edildi — backend bağlı (CLAUDE.md §38.51 + §38.B HIGH backlog). Tasarım
+// 8 tab gösterse de, prod backend'i olmayan placeholder tab eklemiyoruz.
 const TABS: SettingsTab[] = [
-  { id: "profile", label: "Profil", group: "personal" },
-  { id: "security", label: "Güvenlik", group: "personal" },
-  { id: "notifications", label: "Bildirim", group: "workspace" },
-  { id: "ai", label: "Pulse AI", group: "workspace" },
-  { id: "billing", label: "Faturalandırma", group: "workspace" },
-  { id: "team", label: "Kullanıcılar", group: "workspace" },
-  { id: "legal", label: "KVKK & Yasal", group: "workspace" },
+  { id: "profile", label: "Profil", group: "settings" },
+  { id: "security", label: "Güvenlik", group: "settings" },
+  { id: "notifications", label: "Bildirimler", group: "settings" },
+  { id: "ai", label: "Pulse AI", group: "settings" },
+  { id: "billing", label: "Plan & Faturalama", group: "settings" },
+  { id: "team", label: "Ekip & Roller", group: "settings" },
+  { id: "legal", label: "KVKK & Yasal", group: "settings" },
 ];
 
 const GROUPS = [
-  { id: "personal", label: "KİŞİSEL" },
-  { id: "workspace", label: "ÇALIŞMA ALANI" },
+  { id: "settings", label: "AYARLAR" },
 ];
 
 const VALID_SECTION_IDS = new Set(TABS.map((t) => t.id));
