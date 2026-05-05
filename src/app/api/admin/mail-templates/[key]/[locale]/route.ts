@@ -8,6 +8,7 @@ import { stripLockedFields } from '@/lib/email/locked-fields';
 import { MAIL_PLACEHOLDERS, findInvalidPlaceholders } from '@/lib/email/placeholders';
 import { pruneRevisions } from '@/lib/email/revisions';
 import { findInvalidField } from '@/lib/email/field-validation';
+import { LIFECYCLE_INLINE_DEFAULTS } from '@/lib/email/templates/lifecycle-defaults';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,18 +54,63 @@ export async function GET(
       createdAt: true,
     },
   });
-  if (!row) return NextResponse.json({ error: 'not_seeded' }, { status: 404 });
+
+  // Lifecycle templates (CLAUDE.md §38.43): SEEDS array bunları `content: {}`
+  // ile seedler — DB'de row olabilir ama içerik boş. Editor input'lar boş
+  // kalmasın diye GET response'unda inline default'ı fallback olarak merge
+  // ediyoruz. Diğer 12 template DB'de dolu seed'lendi, fallback uygulanmaz.
+  // `inlineDefault` seed seviyesindeki kanonik kaynak (lifecycle-defaults.ts);
+  // render fn'leri de aynı obj'yi import ediyor → drift sıfır.
+  const inlineDefault: Record<string, string> | null =
+    LIFECYCLE_INLINE_DEFAULTS[parsed.key]?.[parsed.locale] ?? null;
+
+  if (!row) {
+    // Row hiç yoksa: lifecycle template ise inline default'ı dön; eski 12
+    // template (welcome/newsletter/...) seed çalıştırılmamışsa hâlâ 404 —
+    // operatör manuel `npx tsx scripts/seed-mail-templates.ts` çalıştırmalı.
+    if (inlineDefault) {
+      return NextResponse.json({
+        template: {
+          id: null,
+          key: parsed.key,
+          locale: parsed.locale,
+          content: inlineDefault,
+          editable: true,
+          updatedById: null,
+          updatedAt: null,
+          createdAt: null,
+          isInlineDefault: true,
+        },
+      });
+    }
+    return NextResponse.json({ error: 'not_seeded' }, { status: 404 });
+  }
+
+  // Row var. Content boş object ise (lifecycle empty seed) inline default'ı
+  // merge et. Spread sırası: önce default, sonra DB → admin override DB
+  // değerlerini korur, eksik field'lara default doldurulur.
+  const dbContent =
+    row.content && typeof row.content === 'object' && !Array.isArray(row.content)
+      ? (row.content as Record<string, unknown>)
+      : {};
+  const dbHasContent = Object.keys(dbContent).length > 0;
+  const finalContent = inlineDefault && !dbHasContent
+    ? inlineDefault
+    : inlineDefault
+    ? { ...inlineDefault, ...dbContent }
+    : dbContent;
 
   return NextResponse.json({
     template: {
       id: row.id,
       key: row.key,
       locale: row.locale,
-      content: row.content,
+      content: finalContent,
       editable: row.editable,
       updatedById: row.updatedById,
       updatedAt: row.updatedAt.toISOString(),
       createdAt: row.createdAt.toISOString(),
+      isInlineDefault: !!inlineDefault && !dbHasContent,
     },
   });
 }

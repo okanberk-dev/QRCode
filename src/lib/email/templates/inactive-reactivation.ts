@@ -2,6 +2,7 @@ import { pulseLayout } from '../layout';
 import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
+import { INACTIVE_REACTIVATION_DEFAULTS } from './lifecycle-defaults';
 
 export interface InactiveReactivationParams {
   firstName?: string | null;
@@ -25,23 +26,7 @@ export async function renderInactiveReactivation(
     ? `${params.daysInactive} gündür panele girmediniz. QR ve platform bağlantılarınız sizi bekliyor.`
     : `${params.daysInactive} days since your last sign-in. Your QR and platform links are waiting.`;
 
-  const inlineDefault = isTr
-    ? {
-        eyebrow: 'TEKRAR HOŞ GELDİNİZ',
-        title: 'Merhaba ${firstName}, panele bir göz atalım',
-        intro: 'Bir süredir sizden haber alamıyoruz. Bu süre içinde QR kodunuz çalışmaya devam etti — gelen yorumları, platform yönlendirmelerini ve son test sonuçlarını panelde görebilirsiniz.',
-        suggestion: 'Eğer yorum akışı yavaşladıysa, hızlı 3 kontrol noktası: QR kartınızın yerinde olması, Platform Bağlantılarının aktif kalması ve Google linkinizin doğru bir liste sayfasına işaret etmesi.',
-        cta: 'Panele göz at',
-        footnote: 'Bu mesaj ayda en fazla bir kez gönderilir. Aktif kullanıma döndüğünüzde otomatik olarak duracak.',
-      }
-    : {
-        eyebrow: 'WELCOME BACK',
-        title: "Hi ${firstName}, let's check the panel together",
-        intro: "We haven't heard from you in a while. In the meantime your QR has been quietly working — sign in to see incoming reviews, platform redirects, and recent test results.",
-        suggestion: 'If the review flow has slowed, three quick checks: the QR card is in place, your Platform Links are active, and your Google link points to a real listing page.',
-        cta: 'Open dashboard',
-        footnote: 'This message is sent at most once a month. It stops automatically once you become active again.',
-      };
+  const inlineDefault = INACTIVE_REACTIVATION_DEFAULTS[isTr ? 'tr' : 'en'];
 
   const merged = await loadMailCopy('inactive-reactivation', locale, inlineDefault);
   const fallbackName = isTr ? 'merhaba' : 'hi';
