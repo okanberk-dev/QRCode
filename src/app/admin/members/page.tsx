@@ -374,7 +374,7 @@ export default function MembersPage() {
           }
         />
       ) : (
-        <div className="bg-white rounded-xl sm:rounded-2xl border border-[#EDEDED] overflow-hidden">
+        <div className="bz-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse sm:min-w-[600px]">
               <thead>
@@ -527,15 +527,16 @@ export default function MembersPage() {
             {(meta.page - 1) * meta.perPage + 1}–
             {Math.min(meta.page * meta.perPage, meta.total)} / {meta.total}
           </span>
+          {/* §38.75 — Pagination button mobile 44px touch target (Stage 4
+              §38.74 paterni reuse). sm:+ 36px Pulse compact density korunur. */}
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setPage(Math.max(1, page - 1))}
               disabled={meta.page <= 1}
-              className="bz-btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ padding: '6px 12px', fontSize: 12 }}
+              className="bz-btn-ghost min-h-[44px] sm:min-h-[36px] text-[12px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ChevronLeft size={12} strokeWidth={2} />
+              <ChevronLeft size={14} strokeWidth={2} />
               Önceki
             </button>
             <span className="px-2 text-[12px] text-[#737373]">
@@ -545,11 +546,10 @@ export default function MembersPage() {
               type="button"
               onClick={() => setPage(Math.min(meta.totalPages, page + 1))}
               disabled={meta.page >= meta.totalPages}
-              className="bz-btn-ghost disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ padding: '6px 12px', fontSize: 12 }}
+              className="bz-btn-ghost min-h-[44px] sm:min-h-[36px] text-[12px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Sonraki
-              <ChevronRight size={12} strokeWidth={2} />
+              <ChevronRight size={14} strokeWidth={2} />
             </button>
           </div>
         </div>
