@@ -129,6 +129,8 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'segmentLoyal', label: 'Düzenli chip etiketi' },
     { key: 'segmentNew', label: 'Yeni chip etiketi' },
     { key: 'segmentRisk', label: 'Risk chip etiketi' },
+    // §38.48 — 5. segment chip (CLAUDE.md §38.47 churned segment parity)
+    { key: 'segmentChurned', label: 'Kayıp chip etiketi', hint: '"Kayıp" / "Churned" — 90+ gün dönmemiş misafir' },
     { key: 'segmentHint', label: 'Segment açıklama satırı', multiline: true, hint: 'Kart altındaki ufak hint metni' },
   ],
   'verify-email': [

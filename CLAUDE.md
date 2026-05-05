@@ -7270,6 +7270,61 @@ for each PLATFORM_DEF (11):
 - 🟢 `/dashboard/integrations` route cleanup (backward-compat; silinebilir)
 - (diğer §38.B kalemleri intact)
 
+### 38.48 2026-05-05 — Wave 1: Mail churned chip + Admin endpoint lastTopic/lastChannel parity
+
+§38.47 sonrası Customers backlog'unun "schema değişikliği YOK" olan 2 kalemi bu PR'da kapatıldı. Kullanıcı talebi: "Atlanan işlerden müşteri ekle dışında olanları yap" (Bulk action 3'lüsü Wave 2 ayrı PR — schema migration).
+
+**Phase A — Mail churned chip (pure UI/copy extension)**:
+- `src/lib/email/templates/weekly-report.ts` — `WeeklyReportParams.segmentCounts.churned: number` + inline default copy TR (Kayıp) / EN (Churned) + `segItems` array 5. item (CLAUDE.md §38.47 SEGMENT_COLOR_MAP `churned` ghost paletti `#F5F5F5/#737373` reuse) + border `i < 3` → `i < 4`, width `25%` → `20%`. `segTotal` 5-segment sum.
+- `scripts/seed-mail-templates.ts` — `WEEKLY_REPORT_TR/EN` `segmentChurned` field eklendi (TR: 'Kayıp' / EN: 'Churned'). Idempotent reseed.
+- `src/components/admin/MailTemplateEditor.tsx` — `FIELDS_BY_TEMPLATE['weekly-report']` `segmentChurned` FieldDef eklendi (admin override edilebilir). Mevcut `segmentRisk` ile `segmentHint` arasına yerleştirildi (ordering segItems array ile aynı).
+- **Mobile parity**: `stack-row` + `stack-col` 5-cell otomatik dikey stack (CLAUDE.md §21.2). CSS değişikliği YOK.
+- `weekly-digest-runner.ts` zaten `churned: 0` forward ediyordu (§38.47 type compat fix); mail template artık render edecek.
+
+**Phase B — Admin endpoint lastTopic/lastChannel parity** (owner §38.47 paterni reuse):
+- `src/app/api/admin/customers/route.ts`:
+  - `AggregateRow` 3 yeni field: `last_food_rating, last_service_rating, last_atmosphere_rating: number | null`.
+  - Raw query 3 yeni `ARRAY_AGG[1]` (owner endpoint birebir).
+  - `platform` filter `IS NOT NULL` kaldırıldı (Buaze QR null önemli sinyal §38.34/§38.35).
+  - `CustomerRow` response 3 raw alan forward (`lastFoodRating/lastServiceRating/lastAtmosphereRating`) — UI helper-derive.
+- `src/app/api/admin/customers/export/route.ts`:
+  - `AggregateRow` 3 yeni aspect rating + raw query 3 yeni `ARRAY_AGG[1]`.
+  - CSV header: 14 → 15 sütun. `Platform` raw label kolonu **`Kanal` derived ile değiştirildi** (`computeLastChannel(platform, 'tr')` — Buaze QR fallback otomatik) + yeni `Son Konu` sütunu (`computeLastTopic(...)`).
+- `src/app/admin/customers/page.tsx`:
+  - `CustomerRow` interface 3 raw aspect alan eklendi.
+  - `import { computeLastChannel, computeLastTopic } from '@/lib/customers'`.
+  - Tablo header: 9 → 11 kolon (yeni `Son Konu` + `Kanal`, LTV ile Memnuniyet arasına). `min-w-[1100px]` → `min-w-[1280px]`.
+  - "İşletme" kolonundaki inline `PLATFORM_LABEL[r.platform]` lookup **silindi** (duplicate — yeni `Kanal` kolonu ayrı). Şube + restoran adı korundu.
+  - Tablo body: 2 yeni cell (Son konu metni + Kanal pill, owner paterni reuse).
+  - Mobile card: `flex-wrap items-center gap-2` meta row (kanal pill + son konu metni, owner mobile §38.47 paterni reuse).
+  - Orphan `PLATFORM_LABEL` const silindi (drift kaynağı, helper merkezi).
+
+**Yapma**:
+- `weekly-report.ts` 5-cell stack'i 4-col grid'e zorlamak — table-based stack-row mobile responsive otomatik (CSS değişikliği YOK).
+- Admin endpoint'inde owner UI'a Son Konu/Kanal eklerken yeni helper veya farklı taxonomy kullanma — `computeLastTopic` + `computeLastChannel` lib/customers.ts merkezi (CLAUDE.md §7).
+- "İşletme" kolonunda platform inline label'ı tutmak (duplicate kaynağı — yeni `Kanal` kolonu ayrı yerde).
+- `PLATFORM_LABEL` inline map'i geri ekleme — `computeLastChannel` taxonomy genişlemesinde tek source (Pulse 11-platform).
+- Admin tablo `min-w` 1280'den geriye çekme — 11-col layout dar ekrandan başka türlü sığmaz; horizontal scroll alternatifi mobile responsive eyrilebilir.
+
+**Yap**:
+- Yeni mail template'i 5+ segment chip taşıyacaksa aynı `segItems` array + `i < N-1` border + `width: ${100/N}%` paterni reuse (CLAUDE.md §38.48 referans).
+- Admin endpoint'lere yeni column eklerken: `AggregateRow` interface + raw `ARRAY_AGG[1]` + response forward + UI helper-derive — owner paterniyle birebir, drift sıfır.
+- Yeni mail template field'ı admin override edilebilir olsun isterse `MailTemplateEditor.tsx` `FIELDS_BY_TEMPLATE` map'ine FieldDef ekle (CLAUDE.md §21.26 paterni).
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint` (modified files) 0 errors (4 baseline warning admin/customers useEffect deps + MailTemplateEditor fields useMemo, scope dışı)
+- `npm test` 166/166 pass (yeni helper test gerekmez — Phase A presentational, Phase B owner helper reuse)
+- Manuel: `/admin/dev/mail-preview` weekly-report TR + EN → 5 chip görünür (Kayıp dahil); mobile (375px) dikey stack
+- Manuel: `/admin/customers` → 2 yeni kolon (Son Konu + Kanal), CSV export 15 sütun (Platform → Kanal)
+- Manuel: `/admin/mail-templates/weekly-report/tr` → segmentChurned editor field
+
+**Backlog güncel** (Bu PR sonrası):
+- 🟡 **Wave 2** — Bulk action bar (Arşivle / Segmentle / Kampanya gönder) — schema migration GEREK (CustomerArchive + CustomerSegmentOverride + CustomerEmailCampaign + CustomerEmailLog mini-models + send pipeline + KVKK consent). Plan dosyası `~/.claude/plans/nerin-ile-devam-et-sprightly-kahn.md` Phase C-H.
+- 🟡 Müşteri ekle / İçe aktar — kullanıcı dışladı (yeni Customer ana model gerek)
+- 🟡 More kebab dropdown — kullanıcı skip dedi (drawer click yeterli)
+- (diğer §38.B kalemleri intact)
+
 ### 38.47 2026-05-05 — Customers tasarım drift kapanışı (churned segment + lastTopic + lastChannel + 5. KPI + 6. chip)
 
 §38.36 / §38.40 backlog'unun son 4 kalemi bu PR'da kapatıldı. Tasarım kaynağı `.design-owner-2026/project/page-customers.jsx` (8 yorumlu kolon + 6 segment chip + 5 KPI tile) ile mevcut state %85 → %95 parity. Schema migration **YOK**.
