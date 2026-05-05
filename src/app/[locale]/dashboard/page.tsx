@@ -995,7 +995,6 @@ async function renderDashboardPage({
               <span
                 className="bz-h-tight"
                 style={{
-                  fontFamily: 'var(--font-heading)',
                   fontSize: 44,
                   lineHeight: 0.9,
                   letterSpacing: '-0.04em',
@@ -1155,13 +1154,7 @@ async function renderDashboardPage({
             <div className="flex items-baseline gap-2.5 mt-1.5">
               <span
                 className="bz-h-tight"
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontSize: 24,
-                  fontWeight: 500,
-                  letterSpacing: '-0.02em',
-                  lineHeight: 1,
-                }}
+                style={{ fontSize: 24, lineHeight: 1 }}
               >
                 {avgRating > 0 ? avgRating.toFixed(2) : '—'}
               </span>

@@ -20,7 +20,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import type { PanelActor } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
-import { PageHeader, StatCard, EmptyState, Badge } from '@/components/ui';
+import { PageHeader, StatCard, EmptyState, Badge, AlertBanner } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import {
   deriveCustomerFields,
@@ -161,8 +161,8 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           title={isTr ? 'Müşteriler' : 'Customers'}
           description={
             isTr
-              ? 'Müşteri ilişkileri yönetimi — yorum bırakanların listesi.'
-              : 'Customer relationship management — list of reviewers.'
+              ? 'Yorum bırakan müşterilerin listesi.'
+              : 'List of customers who left feedback.'
           }
         />
         <div className="bz-card p-10">
@@ -476,8 +476,8 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         title={isTr ? 'Müşteriler' : 'Customers'}
         description={
           isTr
-            ? 'Yorum bırakan müşterilerin tek listesi — e-posta veya telefonla iletişime geçilebilir.'
-            : 'Customers who left a review — reachable via email or phone.'
+            ? 'Yorum bırakan müşterilerle e-posta veya telefonla iletişime geç.'
+            : 'Reach customers who left a review by email or phone.'
         }
         actions={
           /* §38.64 — Manuel "Müşteri ekle" + CSV "İçe aktar" kullanıcı kararıyla
@@ -507,17 +507,17 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       />
 
       {errored && (
-        <div className="bz-card border-[#FECACA] bg-[#FEF2F2] p-4 text-[13px] text-[#991B1B]">
+        <AlertBanner kind="danger">
           {isTr ? 'Müşteriler yüklenemedi.' : 'Customers could not be loaded.'}
-        </div>
+        </AlertBanner>
       )}
 
       {truncated && !errored && (
-        <div className="bz-card border-[#FDE68A] bg-[#FFFBEB] p-3 text-[12px] text-[#92400E]">
+        <AlertBanner kind="warn">
           {isTr
             ? `Çok fazla müşteri var; yalnızca ilk ${MAX_AGGREGATE_ROWS.toLocaleString('tr-TR')} kayıt gösteriliyor. Daha dar bir tarih aralığı veya işletme filtresi seçebilirsin.`
             : `Too many customers; showing the first ${MAX_AGGREGATE_ROWS.toLocaleString('en-US')} records. Narrow the date range or business filter to refine.`}
-        </div>
+        </AlertBanner>
       )}
 
       {/* §38.36 + §38.47 — 5-stat KPI grid (TOPLAM / VIP / ORT. LTV / GERİ DÖNÜŞ

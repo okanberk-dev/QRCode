@@ -362,12 +362,12 @@ export default function DashboardQrPage() {
   return (
     <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <PageHeader
-        eyebrow={isTr ? 'QR YÖNETİMİ' : 'QR MANAGEMENT'}
+        eyebrow={isTr ? 'QR KODLARI' : 'QR CODES'}
         title={isTr ? 'QR kodları' : 'QR codes'}
         description={
           isTr
-            ? 'Her QR kodu belirli bir platforma bağlanabilir. Müşteri 4–5 yıldız verdiğinde, QR\'ın bağlı olduğu platforma yönlendirilir; aksi halde varsayılan platforma gider.'
-            : "Each QR code can be linked to a specific platform. When a customer leaves 4–5 stars, they're redirected to that QR's linked platform; otherwise they go to your default."
+            ? '4–5 yıldız veren müşteri seçtiğin platforma yönlendirilir; düşük puan dahili formda kalır.'
+            : 'Customers giving 4–5 stars route to the platform you choose; lower ratings stay in the private form.'
         }
         actions={headerActions}
       />

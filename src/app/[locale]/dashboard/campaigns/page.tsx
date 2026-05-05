@@ -24,8 +24,8 @@ export default async function OwnerCampaignsPage({ params }: PageProps) {
         title={isTr ? 'Kampanyalar' : 'Campaigns'}
         description={
           isTr
-            ? 'Müşteri segmentlerine özel e-posta kampanyaları planla ve gönder. Yakında — şu an "Müşteriler" sayfasından bulk action ile tek seferlik kampanya gönderebilirsin.'
-            : 'Plan and send email campaigns to customer segments. Coming soon — for now, send one-off campaigns via Customers page bulk actions.'
+            ? 'Müşteri segmentlerine özel e-posta kampanyaları planla. Yakında geliyor.'
+            : 'Plan email campaigns for customer segments. Coming soon.'
         }
       />
 

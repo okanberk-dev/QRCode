@@ -47,12 +47,10 @@ export function MobileAnalyticsHero({
           <span
             className="bz-h-tight"
             style={{
-              fontFamily: 'var(--font-heading)',
               fontSize: 56,
               lineHeight: 0.9,
               letterSpacing: '-0.04em',
               color: '#C6F24E',
-              fontWeight: 500,
             }}
           >
             {avgRating.toFixed(2)}

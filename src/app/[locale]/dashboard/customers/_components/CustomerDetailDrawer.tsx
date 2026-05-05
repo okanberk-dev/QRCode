@@ -21,6 +21,7 @@ import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
 import { computeLastChannel, computeLastTopic } from '@/lib/customers';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 import { SentimentBadge } from '@/components/customers/SentimentBadge';
+import { AlertBanner } from '@/components/ui';
 
 // Phase 8d — Customer detail drawer (CLAUDE.md §23.7 Phase 12).
 // Phase 8c (CLAUDE.md §38.16): Segment + LTV + Sentiment chips header'da; LTV
@@ -242,7 +243,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="customer-drawer-heading"
-        className="fixed top-0 right-0 bottom-0 z-[51] w-full sm:w-[480px] bg-white flex flex-col shadow-2xl"
+        className="fixed top-0 right-0 bottom-0 z-[51] w-full sm:w-[480px] bg-white flex flex-col bz-elev-3"
         style={{ animation: 'cust-drawer-in 220ms cubic-bezier(0.4, 0, 0.2, 1)' }}
       >
         {/* CSS Performance §38.61 — `@keyframes cust-drawer-in` + reduced-motion
@@ -299,13 +300,17 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
           )}
 
           {error && !loading && (
-            <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-4 text-[13px] text-[#991B1B]">
-              <div className="flex items-center gap-2 font-semibold">
-                <AlertTriangle size={14} strokeWidth={2} />
-                {isTr ? 'Müşteri detayı getirilemedi' : 'Failed to load customer'}
+            <AlertBanner
+              kind="danger"
+              icon={<AlertTriangle size={14} strokeWidth={2} className="shrink-0 mt-0.5" />}
+            >
+              <div>
+                <div className="font-semibold">
+                  {isTr ? 'Müşteri detayı getirilemedi' : 'Failed to load customer'}
+                </div>
+                <p className="mt-1 opacity-80">{error}</p>
               </div>
-              <p className="mt-1.5 text-[12px] text-[#7F1D1D]">{error}</p>
-            </div>
+            </AlertBanner>
           )}
 
           {data && !loading && (

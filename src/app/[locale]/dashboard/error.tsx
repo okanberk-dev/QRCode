@@ -31,10 +31,7 @@ export default function DashboardError({
             {transient ? <Loader2 size={20} className="animate-spin" /> : <AlertTriangle size={20} />}
           </div>
           <div className="min-w-0 flex-1">
-            <h1
-              className="text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A] sm:text-[22px]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
+            <h1 className="bz-h-tight text-[20px] sm:text-[22px] text-[#0A0A0A]">
               {transient
                 ? isTr
                   ? 'Bağlantı yenileniyor'

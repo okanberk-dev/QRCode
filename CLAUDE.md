@@ -9708,3 +9708,94 @@ Toplam ~12 satır net edit. Schema migration YOK (§38.52'de zaten production'a 
 - 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
 - 🛡️ Security follow-ups (§38.2 — operatör tetiği bekliyor)
 
+### 38.71 2026-05-05 — Stage 1 owner panel Apple-premium polish + 13-page PageHeader copy audit
+
+Kullanıcı **aşamalı refinement Stage 1**: "owner panel tasarımsal bozuklukları" — Apple-tarzı minimalist + premium SaaS panel hissi için targeted fix bundle. Plan onaylı (`/root/.claude/plans/quiet-sparking-shannon.md`); 3 paralel Explore agent + manuel verify ile **false positive elenmiş 6 gerçek drift** + 13 dashboard sayfasının PageHeader title/description systematic copy audit.
+
+**Branch**: `chore/owner-design-audit-fixes` (kullanıcı explicit istedi, eski `claude/fix-owner-panel-design-Llooy` override).
+
+**Out of scope** (kullanıcı talimatı): Admin paneli (Stage 5), Menü yönetimi özel akışı (Stage 3), Mobile kapsamlı QA (Stage 4), Backend/API mantığı, Bağlantı UX akışları (Settings integrations detail edit yok), Marketing surface'leri.
+
+**Phase A — 4 yeni segment `loading.tsx`** (CLAUDE.md §11.17 content-shape skeleton, generic Loader2 fallback yerine):
+- `feedbacks/loading.tsx` — 3-col split (rail 300 + list + detail 360 §38.62)
+- `qr/loading.tsx` — KPI strip + form/preview + 3-col QR card grid
+- `google-reviews/loading.tsx` — Hero card + 3-tab + review list + sağ rail
+- `analytics/loading.tsx` — 5-col KPI + filter bar + tek-chart + 2-up grid + heatmap + AI insights light
+
+Mevcut `customers/loading.tsx` + `dashboard/loading.tsx` paterni reuse: `<Skeleton>` / `<StatCardSkeleton>` primitive (`src/components/ui/Skeleton.tsx`).
+
+**Phase B — `PendingTasks` SEVERITY_BADGE → Badge primitive** (`src/components/dashboard/PendingTasks.tsx`):
+- Eski `SEVERITY_BADGE` const inline hex (`#FEE2E2/#FEF3C7/#F1F5F9`) → `<Badge kind="danger|warn|ghost">` Pulse primitive
+- Renkler globals.css `bz-badge--{danger,warn,ghost}` üzerinden gelir, drift sıfırlanır
+- Bonus: `transition-colors` → `bz-motion-spring` (CLAUDE.md §38.B opportunistic)
+
+**Phase C — 2 inline error div → `<AlertBanner>`** (CLAUDE.md §11.18 paterni):
+- `customers/page.tsx:510` errored → `<AlertBanner kind="danger">`
+- `customers/page.tsx:516` truncated (bonus, +1 callsite) → `<AlertBanner kind="warn">`
+- `customers/_components/CustomerDetailDrawer.tsx:302` error → `<AlertBanner kind="danger" icon={<AlertTriangle/>}>`
+
+**Intentional skip** — `feedbacks/page.tsx:925-933` bulkNotice kasıtlı **floating toast** (fixed bottom-4 + graphite+lime success + danger conditional palette §38.31). AlertBanner inline content primitive farklı UX; floating Apple-tarzı confirmation toast intact tutuldu (CLAUDE.md §38.71 backlog notu).
+
+**Phase D — `CustomerDetailDrawer` `shadow-2xl` → `bz-elev-3`** (line 246) — Apple-soft heaviest tier `0_12px_32px_0.10`, modal-tier (§38.65 NotificationBell + §38.68 mobile drawer paterni reuse).
+
+**Phase E — `KpiStrip` `animate-pulse` div → `<StatCardSkeleton>`** (line 80) — Pulse content-shape primitive (§11.17 paterni).
+
+**Phase F — 6 `fontFamily: 'var(--font-heading)'` redundancy strip**:
+- `dashboard/error.tsx:36`
+- `dashboard/page.tsx:998 + 1159`
+- `dashboard/menu/error.tsx:35`
+- `dashboard/restaurants/[id]/menu/error.tsx:35` (chrome wrapper, menu UX akışı değil — Stage 3 scope dışı kalır)
+- `analytics/MobileAnalyticsHero.tsx:50`
+
+`bz-h-tight` className zaten Space Grotesk + tight tracking + weight 500 apply ediyor (globals.css:665). Inline `style={{ fontFamily }}` redundant + verbose.
+
+**Phase G — 13 dashboard sayfasında PageHeader copy audit + revize** (Pulse Voice §11: Net · Ölçülü · Güvenli · Doğrudan + kısa+yol gösterici):
+
+| Sayfa | Eski drift | Yeni copy |
+|---|---|---|
+| qr | Eyebrow `QR YÖNETİMİ` (formal) + 50 kelime description | Eyebrow `QR KODLARI` + 14 kelime action-oriented |
+| google-reviews | Eyebrow `GERİ BİLDİRİMLER` (Yorumlar ile duplicate) + Title `Google'a Yapılan Yorumlar` (long) + 30 kelime description | Eyebrow `GOOGLE YORUMLARI` + Title `Google Yorumları` + 14 kelime |
+| menu (97+146) | Eyebrow `İŞLETME PANELİ` (generic) | Eyebrow `MENÜ` (action kategorisi belirgin) |
+| customers (159 empty) | "Müşteri ilişkileri yönetimi — yorum bırakanların listesi." (formal) | "Yorum bırakan müşterilerin listesi." (sade) |
+| customers (471 main) | "Yorum bırakan müşterilerin tek listesi — e-posta veya telefonla iletişime geçilebilir." | "Yorum bırakan müşterilerle e-posta veya telefonla iletişime geç." (action-oriented) |
+| campaigns | "Müşteri segmentlerine özel e-posta kampanyaları planla ve gönder. Yakında — şu an "Müşteriler" sayfasından bulk action ile..." (uzun) | "Müşteri segmentlerine özel e-posta kampanyaları planla. Yakında geliyor." (sade) |
+| analytics | Eyebrow `İŞLETME PANELİ` (generic) | Eyebrow `ANALİTİK` |
+| platforms (173+267) | Title `Entegrasyonlar` (eyebrow `PLATFORM BAĞLANTILARI` ile inconsistent §38.45) + "Buaze 11+ servisle..." outdated | Title `Platform Bağlantıları` + "13+ servis bağlanabilir." (Yelp + Foursquare §38.52) |
+
+**OK kalanlar** (revize gerekmedi): Dashboard ana (dynamic greeting), Yorumlar (sade zaten), Hesabım (sade zaten), Kılavuz (Pulse Voice match), Duyurular, İşletmeler (component-level dynamic copy).
+
+**Verification**:
+- `npm run lint` ✓ 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx next build` ✓ Compiled successfully + 58/58 static page (Prisma stub DB warnings beklenen)
+- `npx tsc --noEmit -p tsconfig.json` ✓ 0 errors in `src/` (4 pre-existing `.next/types/...` baseline §21.13 + `ignoreBuildErrors: true` handle)
+- `npm test` ✓ 182/182 pass, 22 suites
+- Sanity grep regression check (CLAUDE.md §38.60 paterni):
+  - `shadow-2xl` 0 active code (1 hit yorum içinde)
+  - `fontFamily.*--font-heading` 0
+  - `SEVERITY_BADGE` 0 (Badge primitive)
+  - `border-[#FECACA] bg-[#FEF2F2]` 0 customers (AlertBanner)
+  - `animate-pulse` 0 active code KpiStrip (yorum referansı)
+
+**Yapma**:
+- `feedbacks/page.tsx:925` bulkNotice'ı AlertBanner'a migrate etme — floating toast UX (graphite+lime success / danger conditional) AlertBanner inline kind="success" Pulse light-green palette mismatch. Kasıtlı tasarım (§38.31).
+- `restaurants/[id]/page.tsx`, `restaurants/[id]/settings/page.tsx`, menu detail (`restaurants/[id]/menu/*`) sayfa copy revize — Stage 3 scope dışı, dokunulmadı.
+- `notifications/page.tsx` redirect-only stub (Hesabım'a 308) — PageHeader yok, dokunulmadı.
+- 106 `transition-colors` callsite veya 25+ `rounded-2xl border #EDEDED` callsite toplu migrate — opportunistic Stage 2 backlog (§38.B intact).
+- AI Insight Banner padding 2-4px polish (§38.69 deferred).
+
+**Yap**:
+- Yeni dashboard segment eklerken `loading.tsx` content-shape skeleton (CLAUDE.md §11.17 + §38.71 paterni) zorunlu — generic Loader2 fallback Apple-premium ihlali.
+- Yeni inline error div için `<AlertBanner kind="danger|warn|info|success|lime">` primitive reuse (§11.18).
+- Yeni heavy shadow callsite için `bz-elev-1/2/3` token tier seçimi (§38.65).
+- Yeni `<h1>`/`<h2>` Space Grotesk weight için `className="bz-h-tight"` veya `"bz-h-tight-2"` (-0.02em / -0.03em tracking) — inline `fontFamily: 'var(--font-heading)'` redundant.
+- Yeni PageHeader title/description için Pulse Voice (Net · Ölçülü · Güvenli · Doğrudan): action-oriented + max 12-15 kelime + TR primary + EN paralel kısa çeviri.
+
+**Stage 1 closure** (Tarih 2026-05-05):
+- Branch `chore/owner-design-audit-fixes`
+- PR + merge sonrası bu satıra link eklenecek
+- İncelenen dosyalar: 23 (10 polish + 13 copy review)
+- Yapılan değişiklikler: 4 yeni loading.tsx + 6 token migration + 9 copy revize
+- Kontroller: lint 0 err / build 58 page / tsc src 0 err / test 182/182 / sanity grep clean
+- Kalan riskler: bulkNotice kasıtlı skip (toast UX); 106 transition-colors + 25 rounded-2xl border opportunistic backlog; .next/types 4 pre-existing baseline (CLAUDE.md §21.13 ignoreBuildErrors)
+- **Sonraki aşama önerisi**: Stage 2 — opportunistic 30 `transition-colors` → `bz-motion-spring` (top 5 dosya: AnalyticsFilterBar, restaurants/page.tsx, ExportReportButton, AnnouncementBanner, guide/page.tsx) + 10 `rounded-2xl border #EDEDED` → `bz-card`. Veya kullanıcı yeni stage talebi (§38.B master backlog).
+

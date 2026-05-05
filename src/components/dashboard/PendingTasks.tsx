@@ -1,17 +1,21 @@
 import Link from 'next/link';
 import { ArrowRight, MessageSquareText, RefreshCw, Users } from 'lucide-react';
 import type { DashboardTask, TaskSeverity, TaskType } from '@/lib/dashboard-tasks';
-import { Eyebrow } from '@/components/ui';
+import { Badge, Eyebrow } from '@/components/ui';
+import type { BadgeKind } from '@/components/ui/Badge';
 
 // Phase 8c+ §38.32 — BUGÜN BEKLEYEN section. Tasarım kaynağı:
 // .design-owner-2026/project/page-dashboard.jsx PendingTasks line 250-280.
 // 4 task tipinden 3'ü implement (campaign çıkarıldı; Yemeksepeti/Getir/
 // Trendyol public API yok, sadece Google sync check anlamlı).
 
-const SEVERITY_BADGE: Record<TaskSeverity, { tr: string; en: string; bg: string; fg: string }> = {
-  high: { tr: 'Acil', en: 'Urgent', bg: '#FEE2E2', fg: '#991B1B' },
-  medium: { tr: 'Orta', en: 'Medium', bg: '#FEF3C7', fg: '#92400E' },
-  low: { tr: 'Düşük', en: 'Low', bg: '#F1F5F9', fg: '#475569' },
+// §38.71 — Inline hex render kaldırıldı, Pulse Badge primitive'e migrate.
+// Renk tokenleri globals.css `.bz-badge--{danger,warn,ghost}` üzerinden
+// gelir; drift sıfırlanır, Pulse palette tutarlılığı korunur (CLAUDE.md §23.1).
+const SEVERITY_LABEL: Record<TaskSeverity, { tr: string; en: string; kind: BadgeKind }> = {
+  high: { tr: 'Acil', en: 'Urgent', kind: 'danger' },
+  medium: { tr: 'Orta', en: 'Medium', kind: 'warn' },
+  low: { tr: 'Düşük', en: 'Low', kind: 'ghost' },
 };
 
 const TASK_ICON: Record<TaskType, typeof MessageSquareText> = {
@@ -71,12 +75,12 @@ export function PendingTasks({
         <ol className="flex flex-col">
           {tasks.map((task, idx) => {
             const Icon = TASK_ICON[task.type];
-            const badge = SEVERITY_BADGE[task.severity];
+            const sev = SEVERITY_LABEL[task.severity];
             return (
               <li key={task.id}>
                 <Link
                   href={task.href}
-                  className={`flex items-center gap-3 py-3 -mx-2 px-2 rounded-lg hover:bg-[#FAFAFA] transition-colors ${
+                  className={`flex items-center gap-3 py-3 -mx-2 px-2 rounded-lg hover:bg-[#FAFAFA] bz-motion-spring ${
                     idx < tasks.length - 1 ? 'border-b border-[#F2F2F2]' : ''
                   }`}
                 >
@@ -96,12 +100,9 @@ export function PendingTasks({
                       </p>
                     )}
                   </div>
-                  <span
-                    className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold tabular-nums"
-                    style={{ background: badge.bg, color: badge.fg }}
-                  >
-                    {isTr ? badge.tr : badge.en}
-                  </span>
+                  <Badge kind={sev.kind} dot={false} className="shrink-0 text-[10.5px]">
+                    {isTr ? sev.tr : sev.en}
+                  </Badge>
                   <ArrowRight
                     size={12}
                     strokeWidth={2}
