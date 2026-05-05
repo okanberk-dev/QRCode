@@ -7978,6 +7978,98 @@ Tasarım dosyası `.design-owner-2026/page-feedbacks.jsx` ile cross-check sonras
 - "Manuel ekle" — yeni Customer schema (kullanıcı SKIP §38.16 paterni)
 - (CLAUDE.md §38.B master backlog kalemleri intact)
 
+### 38.57 2026-05-05 — `a/` bundle minor drift sweep + Campaigns scaffolding + isRead PATCH + Google actions
+
+§38.56 mega PR sonrası kullanıcı "kaldığın yerden devam et, hepsini main'e merge et" istedi. Backlog'daki 10 minor drift triyaj edildi: 3 zaten mevcut (Sidebar user dropdown §38.14, Dashboard sentiment stacked bar §38.20, Webhook ui scope-out §34.4 paterni yeterli), 4 implement edildi (campaigns / sidebar search / PATCH endpoint / Google actions), 3 audit ile temiz çıktı (Customers/Account/Google delta — §95-99 parity).
+
+**Audit metodu (3 paralel agent + manuel)**:
+- Customers/Account/Google a/ bundle delta cross-check tek paralel agent'la (önceki cwd kayması ders alındı)
+- Manuel doğrulama gerekmedi — tüm 3 sayfa zaten §38.16/36/47/48/37/51/55 ile uyumlu
+
+**Phase 1 — `/dashboard/campaigns` scaffolding** (`src/app/[locale]/dashboard/campaigns/page.tsx`):
+- Sidebar Kampanyalar nav item (§38.56 Phase 5) `/dashboard/campaigns` href'e yönlendirir, eskiden 404 dönüyordu
+- Yeni placeholder page: PageHeader (CRM/KAMPANYALAR eyebrow) + "Coming soon" hero card (Sparkles icon + lime tint) + 3-card roadmap grid (Segment-based / Şablon kütüphanesi / Performans analizi)
+- Backend henüz CustomerEmailCampaign §38.48 Wave 2 admin-only `/admin/newsletters/campaigns` kullanıyor; owner panel müstakil kampanya yönetimi gelecek scope (workspace-scoped, segment-aware, scheduled, recurring)
+
+**Phase 2 — Sidebar search input** (`UserDashboardShell.tsx`):
+- Tasarım a/shell.jsx line 189-206 birebir: sidebar üstünde search button + Cmd+K badge
+- §38.39'da SKIP edilmişti (Cmd+K palette duplicate gerekçesiyle); yeni handoff bundle tasarım birebir öncelikli (CLAUDE.md §16)
+- Topbar'daki Cmd+K button'u ile aynı palette state'i paylaşır (`setPaletteOpen`)
+- Collapse mode'da gizli (`!isCollapsed` guard) — icon-only sidebar'da topbar Cmd+K yeterli
+- "Ara…" placeholder + `⌘K` mono badge sağda, hover state graphite border
+
+**Phase 3 — `/api/feedback/[id]` PATCH endpoint** (yeni dosya):
+- §38.56 Phase 1 schema migration (Feedback.isRead + isPending) için backend toggle endpoint yoktu — şimdi açıldı
+- Disiplin: §28.3.3 mix-mode (Zod `.strict()` body schema), §37.2 A IDOR (canAccessRestaurant + canWriteFeedback), `validateBody` helper reuse
+- Body: `{ isRead?: boolean, isPending?: boolean }` (en az 1 field zorunlu, aksi 400 no_updates)
+- Response: `{ ok: true, feedback: { id, isRead, isPending } }`
+- Audit log gerekmedi (kullanıcı tercihi state, destructive değil)
+- Yorumlar UI'sında mark-as-read / set-pending action wiring **gelecek scope** — endpoint backend hazır
+
+**Phase 4 — Google Yorumları PageHeader actions** (`/dashboard/google-reviews/page.tsx`):
+- Tasarım a/page-google.jsx topbar line 40-42 birebir: 3 action button (Profili görüntüle / Senkronize et / Yanıt sırası N)
+- 2 action implement edildi:
+  - **Senkronize et**: `loadStatusAndReviews(activeRestaurantId)` — mevcut sync fonksiyonu reuse (RefreshCw icon, loading state'i Loader2 spinner ile gösterilir)
+  - **Yanıt sırası (N)**: `setActiveTab('unreplied')` — 3-tab inline filter'a deeplink (Send icon, count `reviewAnalysis.unanswered`)
+- "Profili görüntüle" SKIP — backend `status.selectedLocation.profileUrl` exposed değil, gelecek scope (Google Business API genişleme)
+- `actions` slot conditional: `activeRestaurantId && reviewsPayload` (sayfa boş yüklenmeden önce action'lar görünmez)
+
+**Backlog'daki 3 mevcut item (no fix gerek)**:
+- Sidebar user dropdown menu — §38.14 Phase 12'de tam mevcut (Profilim/Ayarlar/Yardım Merkezi/Çıkış, ESC + outside click)
+- Dashboard "Sık bahsedilen konular" multi-color stacked bar — §38.20'de mevcut (sentimentPositivePct field; pos green + neg red, 2-segment stacked)
+- Webhook UI — §38.56 Phase 4'te "Yakında" placeholder + dashed BACKEND HAZIR card pattern yeterli (CLAUDE.md §34.4); full CRUD UI ayrı PR scope (yeni form + endpoint + 2-3 saatlik iş)
+
+**Audit sonucu (Customers/Account/Google %95-99 parity)**:
+
+Customers (§38.16/36/47/48 mevcut):
+- ✅ 5-stat KPI grid + consolidated toolbar + 6-segment pill (Tümü/VIP/Düzenli/Yeni/Risk/Kayıp)
+- ✅ 8-col tablo (Misafir/Segment/Ziyaret/LTV/Son ziyaret/Sentiment Sparkbar)
+- ✅ Bulk action bar + Archive toggle + Pagination smart ellipsis
+- 🟡 Minor: "Son konu" + "Kanal" 2 ek kolon mid-table (§38.47'de eklendi, tasarım birebir 8-col yerine 9-col); drift kabul
+
+Account (§38.37/51 mevcut):
+- ✅ 3-col layout (220px nav + 1fr + 320px right rail)
+- ✅ Right rail: Plan + Invoices + Danger zone widget
+- ✅ Profile 4-card aggregation + Team online dot + Security 4 items
+- ⚪ "Değişiklikleri kaydet" header buton SKIP (§38.51 dokümante; per-section UnsavedChangesBar ile tutarlı UX)
+
+Google (§38.55 mevcut):
+- ✅ Hero dark card 2-col + 4-KPI delta+sub
+- ✅ 3-tab inline filter + ReviewCard (avatar lg + reply preview + action buttons)
+- ✅ PROFİL SAĞLIĞI 4-item heuristic + SIK GEÇEN KELİMELER NLP + HIZLI YANIT ŞABLONLARI
+- 🔴 (FİX EDİLDİ Phase 4): Header actions Senkronize + Yanıt sırası
+
+**Yapma**:
+- Webhook UI tam CRUD implement etmek bu PR'da — scope creep (~2-3 saat ayrı iş, AutomationRule mevcut endpoint reuse ama form + validation + test büyük). Mevcut "Yakında" placeholder yeterli.
+- /api/feedback PATCH endpoint'e UI tarafında mark-as-read / set-pending action wiring eklemek bu PR'da — endpoint backend hazır ama UI flow (FeedbackList row tıklanınca mark-as-read otomatik mi yoksa dropdown'la manuel mi?) ek UX kararı gerek.
+- Google Yorumları "Profili görüntüle" action button — backend `profileUrl` exposed değil, gelecek scope.
+- Customers "Son konu" + "Kanal" kolonlarını tasarım birebir kaldırma — §38.47'de bilinçli eklendi, owner için anlamlı sinyal taşıyor.
+- Account "Değişiklikleri kaydet" header buton geri ekleme — UnsavedChangesBar pattern §38.51 dokümante, bilinçli skip.
+
+**Yap**:
+- Yeni placeholder sayfa eklerken aynı paterni reuse: PageHeader + "Coming soon" hero card + 3-card roadmap grid
+- Yeni PATCH endpoint için: validateBody + Zod `.strict()` + IDOR (canAccessRestaurant + canWriteFeedback) + Prisma update + select-only response
+- Yeni PageHeader actions için: conditional render (data ready guard) + bz-btn-ghost (secondary) + bz-btn-primary (primary) + icon + title attribute (a11y)
+- Sidebar search button gibi yeni nav element için: `!isCollapsed` guard (collapse mode'da gizli) + topbar Cmd+K state share
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint .` 0 errors, 0 warnings
+- `npm test` 182/182 pass
+- Manuel: `/tr/dashboard/campaigns` placeholder page (Coming soon hero + roadmap)
+- Manuel: Sidebar üstünde "Ara…" search button + ⌘K badge (collapse mode'da gizli)
+- Manuel: `/api/feedback/{id}` PATCH `{ isRead: true }` → 200 + updated feedback
+- Manuel: `/tr/dashboard/google-reviews` PageHeader actions (Senkronize et + Yanıt sırası N)
+
+**Backlog güncel** (PR #466 mega PR sonrası):
+- Webhook UI tam CRUD implementation (AutomationRule endpoint reuse, ayrı PR)
+- /api/feedback PATCH UI wiring (FeedbackDetail mark-as-read + Beklemede toggle)
+- Google "Profili görüntüle" action button (backend profileUrl expose)
+- Mobile drawer rewrite full parity (a/page-mobile-v2.jsx — mevcut §25/§38.28/§38.43 yeterli, ek refactor gelecek scope)
+- Platforms KPI "Webhook sağlığı %99.94" metric (backend AutomationRule event log gerek)
+
+---
+
 ### 38.56 2026-05-05 — Yeni handoff `a/` bundle 7 yüksek-değerli drift kapatma
 
 Kullanıcı yeni handoff bundle `/Users/okanberkmanavoglu/Downloads/a/` paylaştı (12 ana JSX + components/ alt klasörü). 5 ekran görüntüsü: Dashboard / Yorumlar / Google Yorumları / Platform Bağlantıları / Analitik. Bu bundle `.design-owner-2026/`'dan **daha güncel**; çelişkide yeni `a/` kazanır (CLAUDE.md §16 — `src/`'e ASLA kopyalanmaz, sadece referans).

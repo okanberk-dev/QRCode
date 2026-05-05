@@ -849,6 +849,39 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             ? 'Müşterilerinizin Google İşletme Profilinize bıraktığı yorumları görüntüleyin, Pulse AI ile yanıt taslağı oluşturun ve doğrudan Google üzerinden yayınlayın.'
             : 'View reviews left on your Google Business Profile, generate AI reply drafts with Pulse AI, and publish them directly to Google.'
         }
+        actions={
+          // §38.57 — Tasarım a/page-google.jsx topbar 2 action button birebir.
+          // "Profili görüntüle" backend gerek (profileUrl status'ta exposed
+          // değil, gelecek scope). Senkronize et + Yanıt sırası (unreplied
+          // count) implement edilir.
+          activeRestaurantId && reviewsPayload ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => loadStatusAndReviews(activeRestaurantId)}
+                disabled={reviewsLoading}
+                className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px]"
+                title={isTr ? 'Google yorumlarını yeniden çek' : 'Refresh Google reviews'}
+              >
+                {reviewsLoading ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <RefreshCw size={13} strokeWidth={2} />
+                )}
+                {isTr ? 'Senkronize et' : 'Sync'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('unreplied')}
+                className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px]"
+                title={isTr ? 'Yanıtlanmamış yorumlara odaklan' : 'Focus on unanswered reviews'}
+              >
+                <Send size={13} strokeWidth={2} />
+                {isTr ? 'Yanıt sırası' : 'Reply queue'} ({reviewAnalysis.unanswered})
+              </button>
+            </div>
+          ) : null
+        }
       />
 
       {restaurants.length > 1 && (
