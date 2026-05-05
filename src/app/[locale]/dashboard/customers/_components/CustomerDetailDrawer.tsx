@@ -243,7 +243,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="customer-drawer-heading"
-        className="fixed top-0 right-0 bottom-0 z-[51] w-full sm:w-[480px] bg-white flex flex-col bz-elev-3"
+        className="fixed top-0 right-0 bottom-0 z-[51] w-full sm:w-[420px] md:w-[480px] bg-white flex flex-col bz-elev-3"
         style={{ animation: 'cust-drawer-in 220ms cubic-bezier(0.4, 0, 0.2, 1)' }}
       >
         {/* CSS Performance §38.61 — `@keyframes cust-drawer-in` + reduced-motion
@@ -284,7 +284,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
             type="button"
             onClick={closeDrawer}
             aria-label={isTr ? 'Kapat' : 'Close'}
-            className="bz-btn-icon shrink-0"
+            className="bz-btn-icon-lg shrink-0"
           >
             <X size={16} strokeWidth={2.2} />
           </button>
