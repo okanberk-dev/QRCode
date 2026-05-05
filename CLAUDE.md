@@ -7795,3 +7795,98 @@ Kullanıcı tasarım dosyası `.design-owner-2026/project/page-account.jsx` `Pag
 - "Değişiklikleri kaydet" header global save (her section'a ref geçirme, complex)
 - Owner avatar render edilmiyor — profile photo upload yapılmadığı sürece initials fallback intact
 - (CLAUDE.md §38.B master backlog kalemleri intact)
+
+### 38.52 2026-05-05 — Platforms + Google Yorumları tasarım birebir parity (PagePlatforms + PageGoogle)
+
+İki tasarım dosyası `.design-owner-2026/page-platforms.jsx` + `.design-owner-2026/page-google.jsx` ile cross-check sonrası §38.45'teki Platform Bağlantıları + §38.14/18/33'teki Google Yorumları üzerine 8 ek drift kapatıldı. Kullanıcı kararları:
+
+| Karar | Seçim |
+|---|---|
+| Platform taksonomi | **Hibrit** — Yelp + Foursquare yorum platformları eklenir; Zapier/HubSpot/Mailchimp skip (review-odaklı Buaze paterni) |
+| Health KPI 4-card | **Hibrit** — tasarım birebir 4 KPI ama mevcut data-source (Bağlı/Bekleyen sorun/Toplam yorum/Aktif kategori) |
+| Google reviews UI | **Tasarım birebir** — 4 tab filter + sort dropdown + More menu (flag/open/copy URL) |
+| Bağlantı log'u export | **Tasarım birebir** — `/api/dashboard/platforms/log/export` CSV |
+
+**Schema migration**: 1 yeni — `Restaurant` modeline 4 nullable field (`yelpUrl`, `foursquareUrl`, `yelpEnabled`, `foursquareEnabled`).
+
+**Phase A — Taxonomy genişletme (5 nokta drift kapatma)**:
+1. `prisma/schema.prisma` Restaurant 4 yeni field + migration
+2. `src/lib/integration-domains.ts` `IntegrationProvider` literal + `PROVIDER_DOMAINS` (yelp.com / foursquare.com fsq.com) + `PROVIDER_LABELS` + `PATH_RULES` (yelp `/biz/`, foursquare `/v/` `/venue/`)
+3. `src/lib/platform-link-test.ts` `RestaurantUrlField` + `RestaurantEnabledField` + `PROVIDER_MAP` 2 yeni entry
+4. `src/components/ui/PlatformChip.tsx` `PlatformId` zaten yelp/foursquare destekliyor (UI tier önceden hazırdı, color drift `#FF1A1A` mevcut korundu — tasarım `#D32323` close-enough)
+5. `src/components/dashboard/settings/sections/BusinessIntegrationSettings.tsx` `RestaurantData` + `FormState` + `PLATFORM_DEFS` 2 yeni entry + `toForm` helper
+
+**Phase B — `/dashboard/platforms` (workspace) genişletme**:
+- `RestaurantPlatformRow` + select 4 yeni field (yelp/foursquare URL+enabled)
+- `PLATFORM_DEFS` 2 yeni entry — Yelp (#D32323 'Y'), Foursquare (#F94877 '4SQ')
+- KPI 4-card hibrit:
+  - **Bağlı kanal X/N** (mevcut, totalConnected/totalSlots)
+  - **Bekleyen sorun** — yeni: `prisma.platformLinkCheck.count` ok=false son 24h workspace aggregate (CLAUDE.md §14.1 connection_limit=1, prisma.$transaction)
+  - **Toplam yorum** — yeni: `prisma.feedback.count` workspace ay-başı
+  - **Aktif kategori** — yeni: yorum/sosyal/mesaj 3-set distinct
+- Header actions: "Bağlantı log'u" (Download icon, ghost) + "Yeni bağlantı" (Plus icon, primary)
+- Title eyebrow "PLATFORM BAĞLANTILARI" / "PLATFORM LINKS" (mevcut), description "Buaze 11+ → 13+ servisle birebir konuşur"
+
+**Phase C — `/api/dashboard/platforms/log/export` (CSV)**:
+- Owner-scoped IDOR (`getPanelActorFromRequest` + `getScopedRestaurantIds`)
+- `actor.source === 'user'` only (admin variant ayrı endpoint)
+- 8 sütun: Tarih / Restoran / Platform / Status / HTTP / Latency (ms) / Error / URL
+- UTF-8 BOM (Excel TR-safe)
+- HARD_LIMIT 5000 row + HISTORY_DAYS 90 (PlatformLinkCheck workspace son 90 gün)
+- `Cache-Control: no-store`, `Content-Disposition: attachment; filename="platform-log-{date}.csv"`
+
+**Phase D — `/dashboard/google-reviews` 4-tab + sort + More menu**:
+- **`activeTab` state** (`'all' | 'unreplied' | 'negative' | 'flagged'`) — useMemo `filteredReviews` + tabCounts
+- **`sortMode` state** (`'newest' | 'oldest' | 'lowest' | 'unreplied_first'`) — `<select>` dropdown sağ rail
+- **`flaggedIds` state** — localStorage-backed (`bz_google_review_flags:${restaurantId}` key, JSON array). Backend yok (Google review FK için Buaze FeedbackFlag uygun değil; production-grade gelecekte yeni `GoogleReviewFlag` schema ile genişletilebilir).
+- **More menu** (3-dot dropdown):
+  - "İşaretle/işareti kaldır" — toggleFlag (localStorage)
+  - "Google'da aç" — `reviewExternalUrl` (placeId → `search.google.com/local/reviews?placeid=`, fallback mapsUri veya search query)
+  - "Linki kopyala" — clipboard API
+- Tab strip: Tümü / Yanıtlanmamış / Negatif / İşaretli + per-tab count rounded pill
+- Sort dropdown native `<select>` + ChevronDown icon (CLAUDE.md §23.6 PulseSelect tier altı, basit kullanım)
+- ReviewCard 4 yeni prop: `flagged` + `onFlagToggle` + `onCopyUrl` + `onOpenInGoogle` + opsiyonel `urgent` (rating ≤2 + unreplied)
+- Urgent pill: kırmızı dot + "Acil yanıt" (low rating + no reply heuristic)
+- Flag visual: card border amber (`#FDE68A`), bg `#FFFBEB/40`, "İşaretli" amber pill
+
+**Drift kararları (kabul edilen)**:
+- ❌ Zapier/HubSpot/Mailchimp — Buaze yorum-odaklı pattern, scope creep (kullanıcı kararı)
+- ❌ "Bugün senk" + "API kullanım" KPI metric'leri — backend yok (sync event tracking + rate-limit monitoring schema gerek), hibrit 4 KPI mevcut data ile yeterli
+- ❌ Google review backend flag (FeedbackFlag) — Google review FK uygun değil; localStorage-backed pragmatic, gelecekte yeni schema gelirse migrate edilir
+- ❌ Yelp brand color tasarım `#D32323` vs mevcut `#FF1A1A` — close-enough drift kabul (PlatformChip UI tier korundu)
+
+**Yapma**:
+- 5 yeni provider (Zapier/HubSpot/Mailchimp + Yelp Business + Foursquare check-in) eklemek — Buaze yorum-odaklı pattern kullanıcı kararı
+- "Bugün senk" KPI'yı backend olmadan placeholder ile göstermek — operatör/kullanıcı yanıltıcı; mevcut data-source 4 KPI yeterli
+- Google review için `FeedbackFlag` schema reuse — FK uygun değil (Feedback ≠ Google review)
+- More menu'ye "Sil" buton eklemek — Google API public reviews silinmez; flag yeterli
+- Sort dropdown için Radix Select / PulseSelect — native `<select>` Pulse styling ile yeterli, scope kontrol
+- "İşaretli" tab counter cross-restaurant aggregate — restoran-bazlı localStorage, multi-location aggregate scope dışı
+- Yelp + Foursquare resolver chain (review redirect) — şu an sadece UI listing + URL link; redirect resolution `platform-redirect-resolver.ts` `RedirectProvider` literal'a eklenmedi (gelecek scope)
+- Workspace platforms KPI'da "API kullanım" rate-limit — Upstash quota stats workspace level zor erişilebilir; Buaze internal monitoring, owner UI'a expose edilmez
+
+**Yap**:
+- Yeni provider eklerken 5 nokta disiplini (CLAUDE.md §19.4 + §38.45): `PROVIDER_DOMAINS` + `PROVIDER_LABELS` + `PROVIDER_MAP` + `PATH_RULES` (opsiyonel) + `PLATFORM_DEFS` (workspace + per-restaurant)
+- Yeni KPI metric eklenirken backend mevcut data-source kontrol — yoksa scope kontrol (CLAUDE.md §38.B backlog)
+- Yeni log export endpoint için `getScopedRestaurantIds` + UTF-8 BOM + HARD_LIMIT (CLAUDE.md §38.50/51 paterni)
+- Google review flag production-grade gerekirse: yeni `GoogleReviewFlag` schema (`googleReviewName String @unique` + `restaurantId` + `flaggedById` + `flaggedAt` + `note?`) → backend endpoint + migrate localStorage entry'leri (defansif sync)
+- Yeni dashboard sayfa eklerken tasarım kaynağı `.design-owner-2026/page-X.jsx` cross-check + AskUserQuestion + plan onayı + Phase A-E + §38.X log
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint .` 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npm test` 182/182 pass
+- Manuel desktop: `/dashboard/platforms` 13 platform 3-col grid + 4 KPI hibrit + "Bağlantı log'u" CSV download + per-platform "Yönet" CTA per-restaurant settings'e
+- Manuel desktop: `/dashboard/google-reviews` 4-tab filter (Tümü/Yanıtsız/Negatif/İşaretli) + sort dropdown (4-mode) + More menu (Flag/Open/Copy) + urgent badge low-rating unreplied
+- Manuel: `/api/dashboard/platforms/log/export` → 8-sütun CSV download (Excel TR-safe açılır)
+- Manuel: localStorage flag persistence — sayfa yenilenince flag intact, restoran değişince yeni flag set yüklenir
+- Manuel mobile (375px): platforms 3-col → 1-col grid responsive, google reviews tab strip horizontal flex-wrap
+
+**Backlog güncel** (Bu PR sonrası):
+- Yelp + Foursquare resolver chain (`RedirectProvider` literal genişlet, `/r/[slug]` review redirect)
+- Google review production-grade flag (yeni `GoogleReviewFlag` schema + backend endpoint)
+- Workspace `/api/dashboard/platforms/log/export` admin variant (`/api/admin/platforms/log/export` cross-workspace)
+- "Bugün senk" + "API kullanım" KPI backend (sync event tracking + rate-limit observability)
+- Zapier/HubSpot/Mailchimp integration (CRM/Otomasyon/E-posta scope) — yeni 3 kategori filter chip + 5 nokta drift
+- Sort dropdown PulseSelect migrate (CLAUDE.md §23.6 — native select iOS Safari chevron collision drift, low priority)
+- (CLAUDE.md §38.B master backlog kalemleri intact)

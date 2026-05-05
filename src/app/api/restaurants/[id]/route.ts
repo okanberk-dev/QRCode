@@ -21,6 +21,9 @@ const URL_PROVIDER_MAP: Record<string, IntegrationProvider> = {
   airbnbUrl: 'airbnb',
   bookingUrl: 'booking',
   yandexUrl: 'yandex',
+  // §38.52 — Yelp + Foursquare
+  yelpUrl: 'yelp',
+  foursquareUrl: 'foursquare',
 };
 
 // Hard cap on inline-base64 menu logos — mirrors validations.ts imageUrl
@@ -154,6 +157,11 @@ export async function PUT(
       yandexUrl,
       bookingEnabled,
       yandexEnabled,
+      // §38.52 — Yelp + Foursquare yorum platformları (hibrit taksonomi)
+      yelpUrl,
+      foursquareUrl,
+      yelpEnabled,
+      foursquareEnabled,
       // Faz 2 — Sosyal medya entegrasyonları
       instagramUrl,
       facebookUrl,
@@ -381,6 +389,9 @@ export async function PUT(
       airbnb: airbnbUrl,
       booking: bookingUrl,
       yandex: yandexUrl,
+      // §38.52 — Yelp + Foursquare orphan default cleanup
+      yelp: yelpUrl,
+      foursquare: foursquareUrl,
     };
     const orphanedDefault =
       defaultRedirectPlatform === undefined &&
@@ -498,6 +509,11 @@ export async function PUT(
         ...(yandexUrl !== undefined && { yandexUrl: yandexUrl || null }),
         ...(bookingEnabled !== undefined && { bookingEnabled: Boolean(bookingEnabled) }),
         ...(yandexEnabled !== undefined && { yandexEnabled: Boolean(yandexEnabled) }),
+        // §38.52 — Yelp + Foursquare yorum platformları PUT body
+        ...(yelpUrl !== undefined && { yelpUrl: yelpUrl || null }),
+        ...(foursquareUrl !== undefined && { foursquareUrl: foursquareUrl || null }),
+        ...(yelpEnabled !== undefined && { yelpEnabled: Boolean(yelpEnabled) }),
+        ...(foursquareEnabled !== undefined && { foursquareEnabled: Boolean(foursquareEnabled) }),
         ...(menuLogoUrl !== undefined && { menuLogoUrl: menuLogoUrl || null }),
         ...(defaultRedirectPlatform !== undefined && {
           defaultRedirectPlatform: defaultRedirectPlatform || null,
