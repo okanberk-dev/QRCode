@@ -71,7 +71,10 @@ export function AIInsightBanner({
     <section
       role="status"
       aria-label={isTr ? 'AI içgörü' : 'AI insight'}
-      className="relative rounded-2xl bg-[#0A0A0A] text-white px-5 py-4 sm:px-6 sm:py-5 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.4)] flex items-start gap-4"
+      /* §38.67 — Heavy shadow → bz-elev-3 (Apple-soft tier). Önceki
+         0_20px_50px_-30px_0.4 dramatic; banner graphite hero kartı,
+         floating modal değil → bz-elev-3 (0_12px_32px_0.10) doğru. */
+      className="relative rounded-2xl bg-[#0A0A0A] text-white px-5 py-4 sm:px-6 sm:py-5 bz-elev-3 flex items-start gap-4"
     >
       <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-5">
         <div className="flex items-start gap-3 flex-1 min-w-0">

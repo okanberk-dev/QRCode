@@ -301,7 +301,8 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
         >
           <div
             ref={customDialogRef}
-            className="w-full max-w-[420px] rounded-2xl bg-white p-5 sm:p-6 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.35)]"
+            /* §38.67 — Custom date modal heavy shadow → bz-elev-3 Apple-soft. */
+            className="w-full max-w-[420px] rounded-2xl bg-white p-5 sm:p-6 bz-elev-3"
           >
             <header className="mb-4 flex items-start justify-between gap-3">
               <div>

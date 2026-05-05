@@ -56,7 +56,8 @@ export function MenuLivePreview({ restaurant, categories, locale }: MenuLivePrev
         {/* Phone mockup — 375px logical width, 0.78 scale ile sığdır */}
         <div className="relative bg-[#FAFAFA] p-4">
           <div
-            className="relative mx-auto overflow-hidden rounded-[28px] border border-[#0A0A0A] bg-white shadow-[0_18px_40px_-15px_rgba(10,10,10,0.35)]"
+            /* §38.67 — Phone mockup heavy drop → bz-elev-3 Apple-soft. */
+            className="relative mx-auto overflow-hidden rounded-[28px] border border-[#0A0A0A] bg-white bz-elev-3"
             style={{
               width: 280,
               height: 540,

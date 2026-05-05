@@ -9348,3 +9348,76 @@ Kart-internal mid-tier; aşırı drama yok, fonksiyonel depth. `bz-elev-3` (heav
 - PR-2 (§38.67): Dashboard KPI tile sparkline color tone + AI Insight Banner lime overuse audit + section padding ↑
 - PR-3 (§38.68): Yorumlar Detail panel shadow + Customers table row motion + Analytics chart whitespace + Google/Platforms list polish
 
+### 38.67 2026-05-05 — Apple-soft tier callsite migration (PR-2 + PR-3 birleşmiş)
+
+Kullanıcı raporu: *"Tasarımımızı bozmadan sadece üst seviyeye taşıyacak yapacağın eklemeler veya düzeltmeler — tüm masaüstü sayfaları için owner panel için planlayıp yap."*
+
+§38.65 Foundation token'larının (`bz-elev-1/2/3`, `bz-motion-spring`, `bz-lift`) kart-by-kart, list-by-list callsite migration'ı tüm owner panel masaüstü sayfalarında. Pulse lime + graphite + N-scale palette **sabit**; sadece "design dili" polish.
+
+**Audit önceliklendirmesi** (3 yüksek-impact polish, ~5-7 dosya, ~25 satır edit):
+
+#### Phase 1 — 4 heavy shadow callsite → `bz-elev-3`
+
+| Dosya | Eski | Yeni | Sebep |
+|---|---|---|---|
+| `AIInsightBanner.tsx` | `shadow-[0_20px_50px_-30px_0.4]` | `bz-elev-3` | Graphite hero kart, soft Apple depth |
+| `CommandPalette.tsx` | `shadow-[0_30px_80px_-20px_0.35]` | `bz-elev-3` | Floating modal, en heavy tier doğru |
+| `AnalyticsFilterBar.tsx` (custom date modal) | `shadow-[0_24px_60px_-20px_0.35]` | `bz-elev-3` | Modal floating tier |
+| `MenuLivePreview.tsx` (phone mockup) | `shadow-[0_18px_40px_-15px_0.35]` | `bz-elev-3` | Phone preview canvas, soft drop |
+
+§38.66'da `AccountPlanWidget` zaten `bz-elev-2` migrate edilmişti (kart-internal mid-tier). §38.65'te `NotificationBell` zaten `bz-elev-3` migrate edilmişti (dropdown floating tier).
+
+#### Phase 2 — Dashboard section padding generosity
+
+`/dashboard` (`page.tsx:933`):
+- Eski: `px-4 sm:px-7 py-6 lg:py-8` (24/32px vertical)
+- Yeni: `px-4 sm:px-7 py-8 lg:py-12` (32/48px vertical)
+
+Apple HIG generous whitespace; daha breathing room. Hesabım §38.37'de zaten `py-12` (48px sabit). Yoğun layout sayfaları (Yorumlar/Müşteriler/Analitik) **korunur** — content-density fazla, generous artırma overflow yapar.
+
+#### Phase 3 — `.bz-tr-hover` smooth motion (Customers + FeedbackList)
+
+`globals.css:848-855` `.bz-tr-hover` extended:
+- Eski: `:hover { background: #FAFAFA; }` (hard-cut color flip)
+- Yeni: `transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1);` + `:hover { background: #FAFAFA; }` (smooth fade)
+
+Tüm `bz-tr-hover` callsite'ları otomatik yumuşak transition alır (Customers tablo + Yorumlar list + olası gelecek tablolar). `prefers-reduced-motion: reduce` blanket (universal `*` reset) zaten bu transition'ı 0.001ms'e sıfırlar — a11y intact.
+
+#### Skip edilenler (kasıtlı)
+
+- ⚠️ **AI Insight Banner lime overuse audit** (önceden §38.66 backlog): Banner'ın graphite + lime accent paterni tasarımdaki AI Co-Pilot signal-semantic. 5 lime callsite (icon container bg + border + icon color + eyebrow color + CTA bg) tasarımdan birebir. Çıkarmak banner'ın AI semantic'ini yıkar — skip.
+- ⚠️ **Yoğun layout section padding generosity** (Yorumlar/Müşteriler/Analitik): py-6 lg:py-8 mevcut, content-density yüksek. Apple HIG generous artırma overflow yaratır — skip.
+- ⚠️ **Google Yorumları + Platforms heavy shadow**: Bu sayfalarda `shadow-[0_X_Y]` heavy pattern bulunmadı (zaten clean). Migration gerekmez.
+
+**Etkilenen dosyalar** (5 file, ~25 satır):
+- `src/components/dashboard/AIInsightBanner.tsx` (heavy → `bz-elev-3`)
+- `src/components/dashboard/CommandPalette.tsx` (heavy → `bz-elev-3`)
+- `src/components/dashboard/analytics/AnalyticsFilterBar.tsx` (modal heavy → `bz-elev-3`)
+- `src/app/[locale]/dashboard/restaurants/[id]/menu/_components/MenuLivePreview.tsx` (phone mockup → `bz-elev-3`)
+- `src/app/[locale]/dashboard/page.tsx` (section padding `py-6 lg:py-8` → `py-8 lg:py-12`)
+- `src/app/globals.css` (`.bz-tr-hover` transition smooth motion ekle)
+
+**Validation**:
+- `npx tsc --noEmit` 0 errors in `src/`
+- `npx eslint .` 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npm test` 182/182 pass
+
+**Yapma**:
+- AI Insight Banner lime'ı çıkartma — graphite + lime AI semantic'i tasarım intent
+- Yoğun layout sayfalarına generous padding ekleme — content-density overflow
+- `bz-elev-3` token'ı her bz-card'a varsayılan eklemek — opt-in pattern (callsite kararı), default `bz-card` border + radius şu an, shadow opsiyonel layer
+- `.bz-tr-hover` `transition: all` (geniş property liste) yapma — sadece `background-color` 200ms; transform/border smooth animasyon gereksiz, performance hassasiyeti
+
+**Yap**:
+- Yeni heavy shadow callsite eklerken `bz-elev-1/2/3` tier seçimi: idle (1) / hover/mid (2) / floating (3)
+- Yeni tablo/list satır hover ihtiyacı için `bz-tr-hover` reuse — token'ın smooth motion'ı otomatik uygulanır
+- Yeni Apple-style hero sayfa eklerken section padding `py-8 lg:py-12` (Dashboard/Hesabım/Settings paterni)
+
+**Backlog güncel** (PR-1 + §38.66 + §38.67 sonrası):
+- ✅ §38.65 Foundation tokens kapatıldı
+- ✅ §38.66 PageHeader titleScale + Plan widget shadow kapatıldı
+- ✅ §38.67 4 heavy shadow + Dashboard padding + bz-tr-hover smooth motion kapatıldı
+- 🟡 Yeni callsite eklendiğinde `bz-elev-X` token reuse + `bz-motion-spring` ihtiyaca göre
+- 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
+- 🛡️ Security follow-ups (§38.2)
+
