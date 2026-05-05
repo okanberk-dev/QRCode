@@ -749,6 +749,10 @@ input::-webkit-inner-spin-button {
 .bz-btn-icon:hover { background: #F2F2F2; color: #0A0A0A; }
 .bz-btn-icon:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.6); color: #0A0A0A; }
 
+/* Small variant — bz-btn-primary/lime/ghost ile birlikte kullanılır.
+   tokens.css line 127 birebir port. */
+.bz-btn-sm { font-size: 12px; padding: 7px 12px; }
+
 /* ── Status badges ── */
 .bz-badge {
   display: inline-flex; align-items: center; gap: 6px;
@@ -772,6 +776,9 @@ input::-webkit-inner-spin-button {
 .bz-badge--lime   { background: #EAF9B8; color: #4D5C00; border-color: #D9EE7A; }
 .bz-badge--lime .dot   { background: #A8D62E; }
 .bz-badge--ghost  { background: #F2F2F2; color: #525252; border-color: #EDEDED; }
+/* Owner / superadmin scope için graphite + lime accent. tokens.css line 151-152 birebir port. */
+.bz-badge--dark   { background: #0A0A0A; color: #C6F24E; border-color: #0A0A0A; }
+.bz-badge--dark .dot { background: #C6F24E; }
 
 /* ── Inputs ── */
 .bz-input {
@@ -793,6 +800,14 @@ input::-webkit-inner-spin-button {
 .bz-input:hover:not(:disabled) { border-color: #D4D4D4; }
 .bz-input:focus { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198,242,78,0.35); }
 .bz-input:disabled { background: #FAFAFA; color: #737373; cursor: not-allowed; }
+
+/* Search wrapper — magnifier icon absolute pozisyonlu sol içeride.
+   tokens.css line 170-179 birebir port. Kullanım:
+   <div class="bz-input-search"><Search size={14}/><input class="bz-input" placeholder="Ara…"/></div>
+   Icon padding-left: 34px sayesinde input metnine bindirmez. */
+.bz-input-search { position: relative; display: inline-flex; align-items: center; width: 100%; }
+.bz-input-search input { padding-left: 34px; }
+.bz-input-search > svg { position: absolute; left: 11px; color: #A3A3A3; pointer-events: none; }
 
 /* ── Tables ── */
 .bz-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -1258,6 +1273,8 @@ input::-webkit-inner-spin-button {
   .animate-ping,
   .bz-mob-drawer,
   .bz-mob-drawer-overlay,
+  .bz-drawer,
+  .bz-drawer-overlay,
   [class*="animate-in"] {
     animation: none !important;
   }
@@ -1269,6 +1286,66 @@ input::-webkit-inner-spin-button {
     scroll-behavior: auto !important;
   }
 }
+
+/* ═════════════════════════════════════════════════════════════════════════
+ * §38.58 — tokens.css port: tasarım birebir parity (eksik 17 class)
+ * Kaynak: /Users/okanberkmanavoglu/Downloads/a/tokens.css
+ * SKIP: bz-row/bz-col/bz-grow (Tailwind redundant, CLAUDE.md §7).
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+/* Type helpers — bz-eyebrow alias mevcut pulse-eyebrow ile aynı style */
+.bz-eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 500; color: #737373; }
+.bz-tnum { font-variant-numeric: tabular-nums; }
+
+/* Avatar variants — base .bz-avatar mevcut (line 825), variants tasarımdan port */
+.bz-avatar--lg { width: 48px; height: 48px; font-size: 16px; border-radius: 12px; }
+.bz-avatar--xl { width: 64px; height: 64px; font-size: 22px; border-radius: 14px; }
+.bz-avatar--soft { background: #EAF9B8; color: #0A0A0A; }
+
+/* KPI block — mevcut StatCard primitive ile uyumlu, opsiyonel inline kullanım */
+.bz-kpi { display: flex; flex-direction: column; gap: 8px; }
+.bz-kpi-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #737373; font-weight: 500; }
+.bz-kpi-value { font-family: var(--font-heading); font-size: 32px; letter-spacing: -0.03em; font-weight: 500; color: #0A0A0A; font-variant-numeric: tabular-nums; line-height: 1; }
+.bz-kpi-delta { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bz-kpi-delta.up { color: #16A34A; }
+.bz-kpi-delta.down { color: #DC2626; }
+.bz-kpi-delta.flat { color: #737373; }
+
+/* Filter / range chip — graphite active state (PulseRangeToggle kullanır) */
+.bz-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: #FAFAFA; border: 1px solid #EDEDED; font-size: 12px; font-weight: 500; color: #333333; cursor: pointer; transition: background-color 120ms, border-color 120ms; }
+.bz-chip:hover { background: #F2F2F2; }
+.bz-chip.active { background: #0A0A0A; color: #FFFFFF; border-color: #0A0A0A; }
+
+/* Stars — 5★ display, #FACC15 yellow (StarRow primitive lime kullanır, drift kabul) */
+.bz-stars { display: inline-flex; gap: 2px; color: #FACC15; }
+.bz-stars--mute { color: #D4D4D4; }
+
+/* Sparkline path */
+.bz-spark { stroke: #0A0A0A; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.bz-spark-fill { fill: #EAF9B8; }
+
+/* Subtle scrollbar (panel scroll containers için) */
+.bz-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.bz-scroll::-webkit-scrollbar-thumb { background: #EDEDED; border-radius: 4px; }
+.bz-scroll::-webkit-scrollbar-thumb:hover { background: #D4D4D4; }
+
+/* Bottom nav (mobile) — MobileBottomNav opsiyonel refactor için tokenlar */
+.bz-bottomnav { display: flex; align-items: stretch; background: #FFFFFF; border-top: 1px solid #EDEDED; padding: 6px 6px max(6px, env(safe-area-inset-bottom)); gap: 2px; }
+.bz-bottomnav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; font-size: 10px; font-weight: 500; color: #737373; border-radius: 10px; cursor: pointer; position: relative; }
+.bz-bottomnav-item.active { color: #0A0A0A; font-weight: 600; }
+.bz-bottomnav-item.active::before { content: ""; position: absolute; top: 0; left: 25%; right: 25%; height: 2px; background: #0A0A0A; border-radius: 0 0 2px 2px; }
+.bz-bottomnav-item .badge-tip { position: absolute; top: 4px; right: calc(50% - 18px); background: #DC2626; color: #FFFFFF; font-family: var(--font-mono); font-size: 9px; font-weight: 600; border-radius: 999px; padding: 1px 5px; border: 2px solid #FFFFFF; min-width: 16px; text-align: center; letter-spacing: -0.02em; }
+
+/* Drawer — kanonik isim (mevcut bz-mob-drawer/-overlay alias) */
+.bz-drawer { position: absolute; top: 0; bottom: 0; left: 0; width: 280px; background: #FFFFFF; z-index: 41; box-shadow: 4px 0 24px rgba(0,0,0,0.12); display: flex; flex-direction: column; }
+.bz-drawer-overlay { position: absolute; inset: 0; background: rgba(10,10,10,0.55); backdrop-filter: blur(2px); z-index: 40; }
+
+/* Util — text helpers + lime underline link + canvas frame */
+.bz-link { color: #0A0A0A; text-decoration: underline; text-decoration-color: #C6F24E; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.bz-muted { color: #737373; }
+.bz-text-mute { color: #A3A3A3; }
+.bz-text-strong { color: #0A0A0A; font-weight: 600; }
+.bz-frame { background: #FFFFFF; color: #0A0A0A; font-family: var(--font-body); }
 
 /* ─── ROI calculator slider polish ─────────────────────────────────────────
    Native input[type=range] thumb default ~14px — mobilde dokunma için yetersiz.
