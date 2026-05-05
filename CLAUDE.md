@@ -7040,3 +7040,70 @@ Audit: Dashboard `/dashboard/page.tsx` (1698 satır) tasarım `.design-owner-202
 - 🔴 HIGH 4 Platforms 12-card grid (DEFER §38.30)
 - 🛡️ Security follow-ups (§38.2)
 - (diğer §38.B kalemleri intact)
+
+### 38.43 2026-05-05 — Dashboard mobile parity (tasarım MobileDashboard birebir + 4 desktop-only section)
+
+Kullanıcı raporu: "anasayfa hala tasarım ile birebir aynı değil lütfen tasarım ile aynı şekilde ekler misin tüm elemenleri ve tamamı birebir aynı olsun" + tasarım kaynağı `.design-owner-2026/project/page-mobile-v2.jsx` `MobileDashboard` JSX paylaştı.
+
+**Tasarım MobileDashboard section sırası**:
+1. Topbar (hamburger + KADIKÖY BISTRO + bell)
+2. Hero card (graphite + lime 4.71 + sparkline)
+3. AI banner (lime border-left + insight)
+4. KPI 2×2 (BEKLEYEN/YENİ/YANIT/NPS)
+5. Bekleyen görevler card (3 task)
+6. Kanallar (horizontal scroll cards)
+7. CANLI AKIŞ (3-row activity)
+
+**Mevcut mobile dashboard** (§38.27/§38.41 sonrası): Hero → AI → ActivationChecklist → PendingTasks → KPI 4-card → Quick Actions → NABIZ → KANAL → SIK BAHSEDİLEN → ActivityFeed.
+
+**Drift**: 4 section tasarımdaki MobileDashboard'da yok ama mevcut mobile'da görünüyor:
+- ActivationChecklist (5-step kurulum kartı)
+- Quick Actions (4-col touch grid)
+- NABIZ chart (PulseRangeToggle 30G/90G/YTD)
+- SIK BAHSEDİLEN KONULAR (AI tema kartı)
+
+**Fix**: 4 section `hidden sm:block` ile mobile'da gizlendi (tablet+ desktop'ta intact).
+
+| Section | Yeni class | Lokasyon |
+|---|---|---|
+| ActivationChecklist | `<div className="hidden sm:block">` wrapper | line 1057-1063 |
+| Quick Actions | `hidden sm:grid` direkt grid'e | line 1128 |
+| NABIZ chart section | `bz-card p-5 sm:p-6 hidden sm:block` | line 1153 |
+| SIK BAHSEDİLEN section | `bz-card p-5 sm:p-6 hidden sm:block` | line 1252 |
+
+**Mobile-only final dashboard sırası** (sm: ≤640px):
+1. PageHeader + ScopeDropdown
+2. MobileDashboardHero (sm:hidden)
+3. AIInsightBanner
+4. PendingTasks (BUGÜN BEKLEYEN)
+5. KPI 4-card (mobile 2×2)
+6. KANAL DAĞILIMI (horizontal scroll)
+7. ActivityFeed (CANLI AKIŞ)
+
+**Desktop intact** (sm+ ≥640px): Tüm 11 section mevcut sırayla görünür.
+
+**Karşılaştırma**: Tasarımda KPI içeriği BEKLEYEN/YENİ/YANIT/NPS, mevcut KPI Genel puan/Toplam yorum/Yanıt oranı/Yeni müşteri (§38.27 kararı) — KPI label içeriği değişmedi (mevcut KPI semantic owner için anlamlı + backend zaten compute ediyor).
+
+**Yapma**:
+- KPI label içeriklerini tasarımdaki BEKLEYEN/YENİ/YANIT/NPS'a değiştirme — mevcut KPI semantic §38.27'de owner kararı; compute logic intact, label drift yapmamalı.
+- Mobile'da gizlenen section'ları tasarımdaki gibi mobile-only yeniden yazmak — mevcut desktop layout güçlü, mobile gizleme yeterli.
+- ActivationChecklist mobile'da göstermeye geri dönmek — tasarım net, mobile MobileDashboard'da yok; TrialBanner topbar zaten upgrade prompt sağlıyor (§11.11).
+- Quick Actions mobile'da göstermek — mobile bottom nav 5-item primary nav zaten Genel/Yorum/Yorum İste/Analitik/Profil sağlıyor; duplicate.
+- NABIZ chart mobile'a sığdırmak — küçük ekranda chart UX kötü; analytics page derin breakdown için zaten var.
+
+**Yap**:
+- Yeni dashboard section eklenirken mobile-relevance kararı: tasarım MobileDashboard'da var mı? Yoksa `hidden sm:block` ile desktop-only.
+- Mobile'da görünmesi gereken section'lar tasarım birebir.
+- Yeni mobile-only section gerekirse `sm:hidden` ile mobile-only render.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint src/app/[locale]/dashboard/page.tsx` 5 baseline warning (§38.27 transaction compute orphans, tolerated)
+- `npm test` 143/143 pass
+- Manuel desktop (≥640px): Tüm 11 section görünür
+- Manuel mobile (375px): Sadece tasarımdaki 7 section görünür (4 section gizli)
+- Manuel tablet (768px sm+): Tüm section'lar görünür
+
+**Backlog güncel** (Bu PR sonrası):
+- 🟡 Mobile KPI label içerik tasarım birebir (BEKLEYEN/YENİ/YANIT/NPS) — opsiyonel cosmetic, owner KPI semantic §38.27 intact
+- (diğer §38.B kalemleri intact)

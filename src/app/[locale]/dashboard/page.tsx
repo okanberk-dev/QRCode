@@ -1051,14 +1051,16 @@ async function renderDashboardPage({
 
       <OnboardingNudge locale={locale} steps={onboardingSteps} />
 
-      {/* Activation checklist (CLAUDE.md §19.5 + §23.7 Phase 11.29) — primary
-          restaurant için 5-step kurulum kartı. 100% complete + dismiss
-          olduğunda kart gizli. */}
+      {/* §38.43 — Activation checklist mobile'da gizli (tasarım .design-owner-2026/
+          page-mobile-v2.jsx MobileDashboard'da yok). sm:block ile sadece tablet+
+          desktop'ta görünür. CLAUDE.md §19.5 paterni intact. */}
       {user.restaurants[0] && (
-        <ActivationChecklistCard
-          restaurantId={user.restaurants[0].id}
-          locale={locale}
-        />
+        <div className="hidden sm:block">
+          <ActivationChecklistCard
+            restaurantId={user.restaurants[0].id}
+            locale={locale}
+          />
+        </div>
       )}
 
       {/* §38.32 — BUGÜN BEKLEYEN: 3 task tipi summary (reply / platform Google
@@ -1122,8 +1124,10 @@ async function renderDashboardPage({
         />
       </div>
 
-      {/* Quick Actions — mobil 2×2 (touch target ≥ 44px Apple HIG), desktop 4-col. */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+      {/* §38.43 — Quick Actions mobile'da gizli (tasarım .design-owner-2026/
+          page-mobile-v2.jsx MobileDashboard'da yok; mobile bottom nav zaten
+          5-item primary nav sağlıyor). sm:grid ile sadece tablet+ desktop. */}
+      <div className="hidden sm:grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         {quickActions.map((a) => (
           <Link
             key={a.id}
@@ -1140,13 +1144,11 @@ async function renderDashboardPage({
         ))}
       </div>
 
-      {/* NABIZ — Phase 8c+ §38.30. Tasarım kaynağı page-dashboard.jsx
-          line 217-248 (NABIZ · SON 30 GÜN + chip toggle 30G/90G/YTD +
-          legend dots + peak hint). PulseRangeToggle 3 dataset arasında
-          client-side switch yapar (server'da hepsi compute edildi). Eski
-          "Son 7 gün" footer 3-stat kaldırıldı (tasarımda yok), yerine
-          legend (Ortalama puan + Günlük yorum hacmi) + peak hint geldi. */}
-      <section className="bz-card p-5 sm:p-6">
+      {/* §38.43 — NABIZ chart mobile'da gizli (tasarım .design-owner-2026/
+          page-mobile-v2.jsx MobileDashboard'da büyük chart yok; küçük ekranda
+          chart UX kötü). sm:block ile sadece tablet+ desktop. Phase 8c+ §38.30
+          desktop tasarım intact. */}
+      <section className="bz-card p-5 sm:p-6 hidden sm:block">
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
           <div>
             <Eyebrow>{isTr ? 'NABIZ · SON 30 GÜN' : 'PULSE · LAST 30 DAYS'}</Eyebrow>
@@ -1242,12 +1244,11 @@ async function renderDashboardPage({
         </section>
       )}
 
-      {/* SIK BAHSEDİLEN KONULAR — tasarım .design-pulse-2026/.../page-dashboard.jsx
-          Topic breakdown paterni. extractThemes (AI helper, gpt-4o-mini, cached
-          1h) son 30 gün yorumlarından top temaları çıkarır. Min 8 yorum yoksa
-          ya da OpenAI key yoksa section gizli (empty fallback). */}
+      {/* §38.43 — SIK BAHSEDİLEN KONULAR mobile'da gizli (tasarım .design-owner-2026/
+          page-mobile-v2.jsx MobileDashboard'da yok). sm:block ile sadece tablet+
+          desktop. AI tema kart desktop için intact. */}
       {dashboardThemes.themes.length > 0 && (
-        <section className="bz-card p-5 sm:p-6">
+        <section className="bz-card p-5 sm:p-6 hidden sm:block">
           <header className="mb-5 flex items-end justify-between gap-3">
             <div>
               <Eyebrow>{isTr ? 'SIK BAHSEDİLEN KONULAR' : 'TRENDING TOPICS'}</Eyebrow>
