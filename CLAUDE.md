@@ -7978,6 +7978,115 @@ Tasarım dosyası `.design-owner-2026/page-feedbacks.jsx` ile cross-check sonras
 - "Manuel ekle" — yeni Customer schema (kullanıcı SKIP §38.16 paterni)
 - (CLAUDE.md §38.B master backlog kalemleri intact)
 
+### 38.55 2026-05-05 — Google Yorumları sayfası tasarım birebir parity (8 drift kapatıldı)
+
+§38.54 audit'te google-reviews 3 DRIFT iddiası (KPI 4-card / PROFİL gauge / Sık geçen kelimeler) **render var** olarak false positive geçilmişti — sadece görsel "var/yok" gözledim, **tasarım birebir parity** kontrol etmedim. Kullanıcı yeni handoff `/Users/okanberkmanavoglu/Downloads/a/page-google.jsx` ile cross-check istedi. Senior frontend/backend disiplini: tasarım line-line read → mevcut kod oku → **8 gerçek drift** tespit → 3 kritik karar onayla → birebir uygula.
+
+**8 drift inventory** (manuel cross-check):
+
+| # | Drift | Severity |
+|---|---|---|
+| 1 | Üst layout: 2-col `1fr 1fr` (Hero+Stats yan yana) — mevcut tek section + ayrı KPI grid + duplicate breakdown card | 🔴 HIGH |
+| 2 | KPI 4-card delta + sub line eksik (TASARIM: +184/+8%/-22%/+12% delta + son 30 gün/sektör ort. 64%/AI ile/haftalık X sub) | 🟡 MEDIUM |
+| 3 | Reviews stream header: 3-tab inline (Tümü/Yanıtsız/Düşük puan) — mevcut 4-tab + sort dropdown + More menu (§38.52) | 🟡 RESTRUCTURE |
+| 4 | ReviewCard avatar lg + sentiment-bg (rating ≥4 lime-soft / <4 #FEF2F2 + #991B1B) — mevcut sadece text + Star | 🔴 HIGH |
+| 5 | Reply preview kartı (yanıtlandı durumda lime borderLeft + n50 bg + eyebrow + reply body) — mevcut **YOK** | 🔴 HIGH |
+| 6 | Action buttons: AI yanıt (lime primary) + Manuel + Bildir / Yanıtı düzenle + Bildir — mevcut textarea inline + AI/Send butonları | 🟡 MEDIUM |
+| 7 | PROFİL SAĞLIĞI checklist 4 item: Profil tamlığı / Yanıt oranı / Fotoğraf sayısı / Q&A bölümü — mevcut: Ort. puan / Yanıt oranı / Toplam yorum / Son 30g hacmi | 🔴 HIGH |
+| 8 | Layout: `1fr 320px` sağ rail (Reviews stream sol + PROFİL/KEYWORDS/QUICK sağ) — mevcut 3-col grid | 🔴 HIGH |
+
+**3 kritik karar (kullanıcı AskUserQuestion onayı, hepsi Recommended)**:
+1. Tab kompozisyonu: **Tasarım birebir 3-tab + sort/more menu sil** (§38.52 4-tab+sort+more menu silindi)
+2. PROFİL SAĞLIĞI checklist: **Heuristic placeholder** (Profil tamlığı + Yanıt oranı mevcut data; Fotoğraf sayısı + Q&A "— yakında" hint)
+3. KPI delta + sub: **Backend extend** (reviewAnalysis useMemo'ya delta/sub field'ları)
+
+**Phase A — `reviewAnalysis` extend** (`src/app/[locale]/dashboard/google-reviews/page.tsx:603-732`):
+- `prevPeriodNew` + `repliedThisMonth` + `prevPeriodReplied` + `prevAvgResponseHours` (>30g <60g window)
+- `pctDelta(curr, prev) → { value, sign }` saf helper
+- `totalDelta` (abs +N), `currRepliedPct` (0-100), `repliedRateDelta`, `avgResponseDelta`, `newDelta`, `weeklyAvg`
+- Mevcut data'dan derive — schema/migration YOK
+
+**Phase B+C — Hero+KPI 2-col layout + KpiTile component**:
+- `<div className="grid gap-3 lg:grid-cols-2">` wrapper: SOL Hero card (dark, 80px avg, 5★, 5-row distribution) + SAĞ KPI grid (`bz-card grid grid-cols-2 gap-x-6 gap-y-5`)
+- Yeni `KpiTile` local component (`page.tsx:175-217`) — label + 28px value + delta arrowUp/Down (lime/red) + sub mono
+- 4 KPI: TOPLAM YORUM (+184 son 30 gün) / YANITLANAN (+8% sektör ort. %64) / ORT. YANIT SÜRESİ (-22% AI ile, sign -1 ama lime) / BU AY YENİ (+12% haftalık X)
+- `Metric` component silindi (KpiTile yerini aldı)
+- Duplicate "Son çekilen yorumlarda puan dağılımı" breakdown card SİLİNDİ (Hero içinde zaten var)
+- max-w wrapper `1000 → 1280` (1fr 320px sağ rail için)
+- ArrowUp + ArrowDown + Edit3 lucide import eklendi
+
+**Phase D — 3-tab + Reviews stream + ReviewCard rewrite**:
+- `activeTab` literal `'all' | 'unreplied' | 'negative' | 'flagged' → 'all' | 'unreplied' | 'low'`
+- `sortMode` state SİLİNDİ (default newest first)
+- `filteredReviews` 3-tab branch + sort logic sade newest desc
+- `tabCounts.all/unreplied/low` (negative+flagged silindi)
+- Reviews stream + Right rail `1fr 320px` grid wrapper
+- SOL: `<section className="bz-card overflow-hidden p-0">` — header (h3 "Son Google yorumları" + count badge + 3-tab inline) + `<div className="divide-y">` card list
+- SAĞ: `<aside className="flex flex-col gap-3">` — PROFİL SAĞLIĞI + SIK GEÇEN + QUICK 3-card stack
+- Eski Tab strip + sort dropdown bz-card SİLİNDİ
+- Eski Reviews list `<div className="space-y-4">` SİLİNDİ
+- More menu UI SİLİNDİ (3-dot dropdown — flag action button'a iniyor)
+- ReviewCard rewrite (~210 satır):
+  - `bz-avatar lg` (44px) sentiment bg (rating ≥4 lime-soft / <4 #FEF2F2 + #991B1B)
+  - Header: name + 5 stars + relative time + Pending(warn dot)/Replied(ok check) badge / urgent badge
+  - Body
+  - Reply preview kart (yanıtlandı durumda): lime borderLeft 3px + n50 bg + eyebrow `{restaurantName} yanıtladı · X` + reply body
+  - Action buttons: AI yanıt (primary lime + sparkle) / Manuel (ghost + send) / Bildir (ghost + flag) — yanıtsız; Yanıtı düzenle (ghost + edit) / Bildir — yanıtlı
+  - Composer textarea collapse pattern: action click → `setComposerOpen(true)` → textarea + AI taslağı + Google'a gönder + İptal
+  - `restaurantName` prop eklendi (reply preview eyebrow için)
+  - `onCopyUrl` + `onOpenInGoogle` props SİLİNDİ
+  - `useRef` import + `menuOpen` state + More menu UI SİLİNDİ
+  - `reviewExternalUrl` + `openReviewInGoogle` + `copyReviewUrl` helper'ları SİLİNDİ
+  - Unused imports: `useRef`, `MoreVertical`, `Copy`, `ChevronDown`, `Field` SİLİNDİ
+- `Metric` component SİLİNDİ (KpiTile reuse)
+
+**Phase E — PROFİL SAĞLIĞI heuristic 4 item**:
+- `profileComplete = Boolean(status?.connected && status?.selectedLocation?.title)`
+- 4 item:
+  1. Profil tamlığı: `%100` (complete) veya `%50` (partial), ok = profileComplete
+  2. Yanıt oranı: `%${responseRate}`, ok ≥75%
+  3. Fotoğraf sayısı: `— yakında` placeholder, ok = false (warn) — backend gap (Google Business Profile media.list API extension)
+  4. Q&A bölümü: `— yakında` placeholder, ok = false (warn) — backend gap (Google Business Profile questions API extension)
+- Mevcut SVG arc gauge + tier (Mükemmel/İyi/Geliştir) + score compute KORUNDU
+- "ok/warn" check icon (lime-soft #4D5C00 ✓ / FEF3C7 #92400E !) tasarım birebir
+
+**Backend gap'leri** (operatör onayı bekleyen, Phase 11.X+ scope):
+- Google Business Profile `media.list` API extension — gerçek fotoğraf sayısı (şu an `— yakında`)
+- Google Business Profile `questions` API extension — gerçek Q&A boş soru sayısı (şu an `— yakında`)
+- "sektör ort. %64" external benchmark (şu an heuristic constant) — gelecek scope
+
+**Yapma**:
+- Tab strip + sort dropdown + More menu'yu geri ekleme — kullanıcı kararı tasarım birebir 3-tab. §38.52 4-tab+sort+more menu silindi.
+- Avatar text + Star pattern'i geri ekleme — bz-avatar lg + sentiment bg tasarım birebir.
+- Reply preview kart eski "Yanıtlandı" badge ile değiştirme — tasarım line 156-167'de detay reply visible.
+- ReviewCard textarea inline default açık bırakma — collapse pattern (action click → `setComposerOpen(true)`) tasarım birebir.
+- PROFİL SAĞLIĞI Fotoğraf sayısı + Q&A için Google Business Profile API extension yapma — büyük scope, ayrı PR önerilir (CLAUDE.md §38.55 backlog).
+- Hero card içindeki 5-row distribution'u ayrı section'a taşıma — tasarım birebir Hero içerisinde.
+- Duplicate "Son çekilen yorumlarda puan dağılımı" breakdown card geri ekleme — Hero içinde aynı bilgi var.
+- max-w wrapper 1280 → 1000 geri çekme — 1fr 320px sağ rail için 1280 zorunlu.
+
+**Yap**:
+- Yeni KPI delta+sub formatı için `KpiTile` component reuse (3+ callsite olunca lib'e taşınır, CLAUDE.md §7).
+- Yeni heuristic checklist item için aynı pattern: ok=true (lime-soft check) / ok=false (warn `!`) + value + label.
+- ReviewCard composer collapse pattern başka surface'ta gerekirse `setComposerOpen` state reuse.
+- Backend gap (Google Business Profile API extension) açılırsa: yeni endpoint `/api/integrations/google/business/profile-stats` (media count + Q&A count) + reviewsPayload extension + heuristic placeholder gerçek data ile değiştir.
+
+**Test + verification**:
+- `npx tsc --noEmit` 0 errors
+- `npx eslint .` 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npm test` 182/182 pass
+- Manuel: `/tr/dashboard/google-reviews` 2-col Hero+KPI üstte (4 KPI delta+sub) + 1fr 320px sağ rail (Reviews stream sol bz-card + PROFİL/KEYWORDS/QUICK sağ stack) + 3-tab inline header
+- Manuel: ReviewCard avatar lg sentiment-bg + Pending/Replied badge + reply preview kart (yanıtlandı) + action buttons (AI/Manuel/Bildir veya Düzenle/Bildir) + composer collapse
+- Manuel: PROFİL SAĞLIĞI 4 item (Profil tamlığı + Yanıt oranı + Fotoğraf sayısı `— yakında` + Q&A `— yakında`)
+- Diff: 651 insertion / 415 deletion (~236 net satır artış, layout restructure + ReviewCard rewrite + reviewAnalysis extension nedeniyle)
+
+**Backlog güncel**:
+- Google Business Profile API extension (media.list + questions) — Fotoğraf + Q&A gerçek data
+- "sektör ort. %64" external benchmark — Stripe Atlas gibi external data feed (uzak scope)
+- Reply preview kart relative time tooltip (örn. "1 gün önce") — şu an tarih kısa formatlanmış (YYYY-MM-DD)
+
+---
+
 ### 38.54 2026-05-05 — Audit follow-up: AI Quota Guard + MAIL_PLACEHOLDERS customer-campaign
 
 §38.50-53 sonrası kullanıcı kapsamlı audit istedi. 3 paralel Explore agent + manuel doğrulama (5 dosya cross-check) sonrası 4 false positive elendi (Agent 1 google-reviews 3 DRIFT iddiası + Agent 3 Yelp/Foursquare 5-nokta drift iddiası), 2 gerçek drift tespit edildi. AskUserQuestion ile tek konsolide PR + 3-katman layered quota onaylandı.

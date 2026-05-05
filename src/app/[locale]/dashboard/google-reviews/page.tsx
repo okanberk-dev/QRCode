@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useRef, Suspense } from 'react';
+import { useEffect, useMemo, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
@@ -13,11 +13,11 @@ import {
   Inbox,
   Unplug,
   Flag,
-  MoreVertical,
-  Copy,
-  ChevronDown,
+  ArrowUp,
+  ArrowDown,
+  Edit3,
 } from 'lucide-react';
-import { AlertBanner, Field, PageHeader } from '@/components/ui';
+import { AlertBanner, PageHeader } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import QuickReplyTemplates from '@/components/dashboard/google-reviews/QuickReplyTemplates';
 import { getQuickReplyTemplate } from '@/lib/quick-reply-templates';
@@ -172,16 +172,46 @@ function extractKeywords(reviews: GoogleReview[], topN = 8): KeywordItem[] {
   });
 }
 
-function Metric({ label, value, tone }: { label: string; value: string; tone?: "ok" | "warn" }) {
+// §38.55 — KPI tile with delta + sub line. Tasarım kaynağı:
+// .design-owner-2026/page-google.jsx line 96-115 birebir (label + 28px value
+// + delta arrowUp/Down + sub mono).
+function KpiTile({
+  label,
+  value,
+  delta,
+  sub,
+}: {
+  label: string;
+  value: string;
+  delta: { text: string; sign: 1 | 0 | -1 } | null;
+  sub: string;
+}) {
+  const deltaColor =
+    delta && delta.sign === 1 ? '#16A34A' : delta && delta.sign === -1 ? '#DC2626' : '#737373';
+  const DeltaIcon =
+    delta && delta.sign === 1 ? ArrowUp : delta && delta.sign === -1 ? ArrowDown : null;
+
   return (
-    <div className="rounded-xl border border-[#EDEDED] bg-white p-3">
-      <div className="text-[11px] text-[#737373]">{label}</div>
-      <div
-        className="bz-h-tight mt-1 text-[20px]"
-        style={{ color: tone === "warn" ? "#92400E" : tone === "ok" ? "#166534" : "#0A0A0A" }}
+    <div className="flex flex-col gap-1.5">
+      <span className="pulse-eyebrow text-[#737373]">{label}</span>
+      <span
+        className="bz-h-tight tabular-nums text-[#0A0A0A]"
+        style={{ fontSize: 28, lineHeight: 1.05, fontWeight: 500, letterSpacing: '-0.02em' }}
       >
         {value}
-      </div>
+      </span>
+      <span className="flex items-center gap-2">
+        {delta && (
+          <span
+            className="inline-flex items-center gap-0.5 text-[11px] font-medium tabular-nums"
+            style={{ color: deltaColor }}
+          >
+            {DeltaIcon ? <DeltaIcon size={11} /> : null}
+            {delta.text}
+          </span>
+        )}
+        <span className="bz-mono text-[10.5px] text-[#A3A3A3]">{sub}</span>
+      </span>
     </div>
   );
 }
@@ -197,158 +227,269 @@ function LoadingPanel({ label }: { label: string }) {
   );
 }
 
+// §38.55 — ReviewCard tasarım birebir (page-google.jsx line 132-178).
+// Avatar lg + sentiment-bg + name + stars + relative time + Pending/Replied
+// badge + body + reply preview kartı (yanıtlandı durumda) + action buttons
+// row (AI yanıt + Manuel + Bildir / Yanıtı düzenle + Bildir). Composer textarea
+// collapse pattern: action click ile açılır.
 function ReviewCard({
-  review, locale, value, onChange, onDraft, onSend, drafting, replying, aiEnabled,
-  flagged, onFlagToggle, onCopyUrl, onOpenInGoogle, urgent,
+  review,
+  locale,
+  value,
+  onChange,
+  onDraft,
+  onSend,
+  drafting,
+  replying,
+  aiEnabled,
+  flagged,
+  onFlagToggle,
+  restaurantName,
+  urgent,
 }: {
-  review: GoogleReview; locale: "tr" | "en"; value: string; onChange: (value: string) => void;
-  onDraft: () => void; onSend: () => void; drafting: boolean; replying: boolean; aiEnabled: boolean;
-  // §38.52 — More menu + flag
+  review: GoogleReview;
+  locale: 'tr' | 'en';
+  value: string;
+  onChange: (value: string) => void;
+  onDraft: () => void;
+  onSend: () => void;
+  drafting: boolean;
+  replying: boolean;
+  aiEnabled: boolean;
   flagged: boolean;
   onFlagToggle: () => void;
-  onCopyUrl: () => void;
-  onOpenInGoogle: () => void;
+  restaurantName: string;
   urgent?: boolean;
 }) {
-  const isTr = locale === "tr";
+  const isTr = locale === 'tr';
   const rating = starValue(review.starRating);
   const author = review.reviewer?.isAnonymous
-    ? isTr ? "Anonim kullanıcı" : "Anonymous user"
-    : review.reviewer?.displayName || (isTr ? "Google kullanıcısı" : "Google user");
+    ? isTr
+      ? 'Anonim kullanıcı'
+      : 'Anonymous user'
+    : review.reviewer?.displayName || (isTr ? 'Google kullanıcısı' : 'Google user');
+  const initials = author
+    .split(/\s+/)
+    .map((t) => t[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  const replied = Boolean(review.reviewReply?.comment);
+  const positive = rating >= 4;
 
-  // §38.52 — More menu state
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenuOpen(false);
-    };
-    document.addEventListener('mousedown', onClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onClick);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [menuOpen]);
+  // Composer state — tasarım birebir collapse pattern. Action click → açılır.
+  // Yanıtlandı durumda "Yanıtı düzenle" → mevcut reply'i value'ya yükle.
+  const [composerOpen, setComposerOpen] = useState(false);
+  const handleEditReply = () => {
+    if (review.reviewReply?.comment && !value.trim()) {
+      onChange(review.reviewReply.comment);
+    }
+    setComposerOpen(true);
+  };
+  const handleAiClick = () => {
+    onDraft();
+    setComposerOpen(true);
+  };
+  const handleManualClick = () => {
+    setComposerOpen(true);
+  };
 
   return (
-    <div className={`rounded-xl border bg-white p-4 ${flagged ? 'border-[#FDE68A] bg-[#FFFBEB]/40' : 'border-[#EDEDED]'}`}>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="bz-h-tight text-[14px]">{author}</span>
+    <div className={`p-5 ${flagged ? 'bg-[#FFFBEB]/40' : ''}`}>
+      <div className="flex gap-3.5">
+        {/* Avatar lg — sentiment bg (tasarım line 138-141) */}
+        <div
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold"
+          style={{
+            background: positive ? '#EAF9B8' : '#FEF2F2',
+            color: positive ? '#0A0A0A' : '#991B1B',
+          }}
+          aria-hidden
+        >
+          {initials || (isTr ? 'B' : 'B')}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          {/* Header row: name + stars + time + Pending/Replied badge */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[13.5px] font-semibold text-[#0A0A0A]">{author}</span>
+            <div className="flex items-center gap-0.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  size={12}
+                  fill={i < rating ? '#C6F24E' : 'transparent'}
+                  color={i < rating ? '#0A0A0A' : '#A3A3A3'}
+                />
+              ))}
+            </div>
+            <span className="bz-mono text-[11px] text-[#A3A3A3]">
+              · {formatDate(review.updateTime ?? review.createTime, locale)}
+            </span>
             {urgent && (
-              <span className="pulse-eyebrow inline-flex items-center gap-1 rounded-full border border-[#FCA5A5] bg-[#FEF2F2] px-1.5 py-0.5 text-[9px] text-[#991B1B]">
-                <span aria-hidden="true" className="bz-pulse-dot" style={{ background: '#DC2626' }} />
+              <span className="pulse-eyebrow ml-auto inline-flex items-center gap-1 rounded-full border border-[#FCA5A5] bg-[#FEF2F2] px-1.5 py-0.5 text-[9px] text-[#991B1B]">
+                <span aria-hidden className="bz-pulse-dot" style={{ background: '#DC2626' }} />
                 {isTr ? 'Acil yanıt' : 'Urgent'}
               </span>
             )}
-            {flagged && (
-              <span className="pulse-eyebrow inline-flex items-center gap-1 rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-1.5 py-0.5 text-[9px] text-[#92400E]">
-                <Flag size={9} />
-                {isTr ? 'İşaretli' : 'Flagged'}
+            {!urgent && (
+              <span className={`ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] ${
+                replied
+                  ? 'bg-[#F0FDF4] text-[#166534]'
+                  : 'bg-[#FFFBEB] text-[#92400E]'
+              }`}>
+                {replied ? (
+                  <>
+                    <CheckCircle2 size={10} />
+                    {isTr ? 'Yanıtlandı' : 'Replied'}
+                  </>
+                ) : (
+                  <>
+                    <span
+                      aria-hidden
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: '#D97706' }}
+                    />
+                    {isTr ? 'Bekliyor' : 'Pending'}
+                  </>
+                )}
               </span>
             )}
           </div>
-          <div className="mt-1 flex items-center gap-1 text-[12px] text-[#737373]">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Star key={index} size={13} fill={index < rating ? "#C6F24E" : "transparent"} color={index < rating ? "#0A0A0A" : "#A3A3A3"} />
-            ))}
-            <span className="ml-1">{formatDate(review.updateTime ?? review.createTime, locale)}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {review.reviewReply?.comment && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-[#F0FDF4] px-2.5 py-1 text-[11px] text-[#166534]">
-              <CheckCircle2 size={12} />
-              {isTr ? "Yanıtlandı" : "Replied"}
-            </span>
-          )}
-          {/* §38.52 — More menu (3-dot dropdown) */}
-          <div className="relative" ref={menuRef}>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((o) => !o)}
-              className="bz-btn-icon"
-              aria-label={isTr ? 'Diğer aksiyonlar' : 'More actions'}
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
+
+          {/* Body */}
+          <p className="mt-2 whitespace-pre-wrap text-[13px] leading-[1.6] text-[#262626]">
+            {review.comment || (isTr ? 'Yazılı yorum yok.' : 'No written comment.')}
+          </p>
+
+          {/* Reply preview — yanıtlandı durumda (tasarım line 156-167 birebir) */}
+          {replied && !composerOpen && (
+            <div
+              className="mt-3 rounded-r-[10px] bg-[#FAFAFA] p-3 pl-3.5"
+              style={{ borderLeft: '3px solid #C6F24E' }}
             >
-              <MoreVertical size={14} />
-            </button>
-            {menuOpen && (
-              <div
-                role="menu"
-                className="absolute right-0 top-full z-30 mt-1 min-w-[180px] rounded-lg border border-[#EDEDED] bg-white py-1 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.15)]"
+              <div className="pulse-eyebrow text-[#737373]">
+                {restaurantName || (isTr ? 'İşletme' : 'Business')}{' '}
+                {isTr ? 'yanıtladı' : 'replied'}
+                {review.reviewReply?.updateTime && (
+                  <>
+                    {' · '}
+                    {formatDate(review.reviewReply.updateTime, locale)}
+                  </>
+                )}
+              </div>
+              <p className="mt-1 whitespace-pre-wrap text-[12.5px] leading-[1.55] text-[#262626]">
+                {review.reviewReply?.comment}
+              </p>
+            </div>
+          )}
+
+          {/* Action buttons — composer kapalıyken (tasarım line 169-174) */}
+          {!composerOpen && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {!replied && aiEnabled && (
+                <button
+                  type="button"
+                  onClick={handleAiClick}
+                  disabled={drafting}
+                  className="inline-flex items-center gap-1 rounded-full bg-[#C6F24E] px-3 py-1 text-[11.5px] font-medium text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-60"
+                >
+                  {drafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                  {isTr ? 'AI yanıt' : 'AI reply'}
+                </button>
+              )}
+              {!replied && (
+                <button
+                  type="button"
+                  onClick={handleManualClick}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[11.5px] font-medium text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                >
+                  <Send size={12} />
+                  {isTr ? 'Manuel' : 'Manual'}
+                </button>
+              )}
+              {replied && (
+                <button
+                  type="button"
+                  onClick={handleEditReply}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[11.5px] font-medium text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                >
+                  <Edit3 size={12} />
+                  {isTr ? 'Yanıtı düzenle' : 'Edit reply'}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onFlagToggle}
+                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11.5px] font-medium transition-colors ${
+                  flagged
+                    ? 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]'
+                    : 'border-[#EDEDED] bg-white text-[#0A0A0A] hover:bg-[#FAFAFA]'
+                }`}
+                aria-pressed={flagged}
               >
+                <Flag size={12} />
+                {flagged
+                  ? (isTr ? 'İşareti kaldır' : 'Unflag')
+                  : (isTr ? 'Bildir' : 'Flag')}
+              </button>
+            </div>
+          )}
+
+          {/* Composer — açıkken textarea + Gönder/İptal (collapse pattern) */}
+          {composerOpen && (
+            <div className="mt-3 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] p-3">
+              <textarea
+                className="bz-input min-h-[88px] resize-y text-[13px]"
+                value={value}
+                onChange={(event) => onChange(event.target.value.slice(0, 4096))}
+                placeholder={
+                  isTr
+                    ? 'Bu yorum için herkese açık yanıt...'
+                    : 'Public reply for this review...'
+                }
+                aria-label={isTr ? 'Google yanıtı' : 'Google reply'}
+              />
+              <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => { onFlagToggle(); setMenuOpen(false); }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-[12.5px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
-                  role="menuitem"
+                  onClick={() => setComposerOpen(false)}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[11.5px] font-medium text-[#525252] hover:bg-[#FAFAFA]"
                 >
-                  <Flag size={12} />
-                  {flagged
-                    ? (isTr ? 'İşareti kaldır' : 'Remove flag')
-                    : (isTr ? 'İşaretle' : 'Flag')}
+                  {isTr ? 'İptal' : 'Cancel'}
                 </button>
+                {aiEnabled && (
+                  <button
+                    type="button"
+                    onClick={onDraft}
+                    disabled={drafting}
+                    className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[11.5px] font-medium text-[#0A0A0A] hover:bg-[#FAFAFA] disabled:opacity-60"
+                  >
+                    {drafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    {isTr ? 'AI taslağı' : 'AI draft'}
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={() => { onOpenInGoogle(); setMenuOpen(false); }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-[12.5px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
-                  role="menuitem"
+                  onClick={onSend}
+                  disabled={replying || !value.trim()}
+                  className="inline-flex items-center gap-1 rounded-full bg-[#0A0A0A] px-3 py-1 text-[11.5px] font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-60"
                 >
-                  <ExternalLink size={12} />
-                  {isTr ? "Google'da aç" : 'Open in Google'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { onCopyUrl(); setMenuOpen(false); }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-[12.5px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
-                  role="menuitem"
-                >
-                  <Copy size={12} />
-                  {isTr ? 'Linki kopyala' : 'Copy link'}
+                  {replying ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                  {isTr ? "Google'a gönder" : 'Send to Google'}
                 </button>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-      <p className="mt-3 whitespace-pre-wrap text-[13px] leading-relaxed text-[#404040]">
-        {review.comment || (isTr ? "Yazılı yorum yok." : "No written comment.")}
-      </p>
-      <div className="mt-4">
-        <Field label={isTr ? "Google yanıtı" : "Google reply"}>
-          <textarea
-            className="bz-input min-h-[96px] resize-y text-[13px]"
-            value={value} onChange={(event) => onChange(event.target.value.slice(0, 4096))}
-            placeholder={isTr ? "Bu yorum için herkese açık yanıt..." : "Public reply for this review..."}
-          />
-        </Field>
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:justify-end">
-          {aiEnabled && (
-            <button type="button" className="bz-btn-ghost inline-flex w-full items-center justify-center gap-1.5 rounded-full text-[12px] sm:w-auto" onClick={onDraft} disabled={drafting}>
-              {drafting ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-              {isTr ? "AI ile cevap ver" : "Reply with AI"}
-            </button>
+              {aiEnabled && (
+                <p className="mt-1.5 text-[10.5px] leading-[1.5] text-[#A3A3A3]">
+                  {isTr
+                    ? 'AI yalnızca taslak hazırlar; herkese açık Google yanıtı sen "Google\'a gönder" dediğinde yayınlanır.'
+                    : 'AI only prepares a draft; the public Google reply is published only after you send it.'}
+                </p>
+              )}
+            </div>
           )}
-          <button type="button" className="bz-btn-primary inline-flex w-full items-center justify-center gap-1.5 rounded-full text-[12px] sm:w-auto" onClick={onSend} disabled={replying || !value.trim()}>
-            {replying ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-            {isTr ? "Google'a gönder" : "Send to Google"}
-          </button>
         </div>
-        {aiEnabled && (
-          <p className="mt-2 text-[11px] leading-relaxed text-[#737373]">
-            {isTr ? "AI yalnızca taslak hazırlar; herkese açık Google yanıtı, sen Google'a gönder dediğinde yayınlanır." : "AI only prepares a draft; the public Google reply is published only after you send it."}
-          </p>
-        )}
       </div>
     </div>
   );
@@ -371,9 +512,11 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [replying, setReplying] = useState<Record<string, boolean>>({});
   const [drafting, setDrafting] = useState<Record<string, boolean>>({});
-  // §38.52 — 4-tab filter + sort + flag (localStorage backed)
-  const [activeTab, setActiveTab] = useState<'all' | 'unreplied' | 'negative' | 'flagged'>('all');
-  const [sortMode, setSortMode] = useState<'newest' | 'oldest' | 'lowest' | 'unreplied_first'>('newest');
+  // §38.55 — 3-tab filter (tasarım birebir page-google.jsx line 125-129).
+  // Sort dropdown silindi (default newest first). Flag state korunur — action
+  // button "Bildir" toggleFlag ile çalışır (More dropdown UI silindi, ama
+  // localStorage flag persistence + action button kalır).
+  const [activeTab, setActiveTab] = useState<'all' | 'unreplied' | 'low'>('all');
   const [flaggedIds, setFlaggedIds] = useState<Set<string>>(new Set());
 
   // Restoran değişiminde localStorage'dan flag set'ini yükle.
@@ -411,80 +554,51 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     });
   };
 
-  const reviewExternalUrl = (review: GoogleReview): string => {
-    // Google Review URL'i kanonik path: place + reviewId. API direct URL döndürmüyorsa
-    // Maps search fallback (review.name'i "accounts/{a}/locations/{l}/reviews/{r}" formatında).
-    const reviewId = review.reviewId || review.name?.split('/').pop() || '';
-    const placeId = reviewsPayload?.location?.placeId;
-    if (placeId) {
-      return `https://search.google.com/local/reviews?placeid=${encodeURIComponent(placeId)}`;
-    }
-    if (reviewsPayload?.location?.mapsUri) {
-      return reviewsPayload.location.mapsUri;
-    }
-    return `https://www.google.com/maps/search/?q=${encodeURIComponent(reviewId)}`;
-  };
+  // §38.55 — reviewExternalUrl + openReviewInGoogle + copyReviewUrl helper'ları
+  // SİLİNDİ. More menu UI tasarım birebir uyum için kaldırıldı (page-google.jsx
+  // line 119-179'da Reviews stream header'da sadece 3-tab; per-row "Open in
+  // Google" / "Copy URL" yok). Future scope: tasarım line 169-174 action
+  // buttons'a entegre edilebilir.
 
-  const openReviewInGoogle = (review: GoogleReview) => {
-    if (typeof window === 'undefined') return;
-    window.open(reviewExternalUrl(review), '_blank', 'noopener,noreferrer');
-  };
-
-  const copyReviewUrl = (review: GoogleReview) => {
-    if (typeof navigator === 'undefined' || !navigator.clipboard) return;
-    navigator.clipboard.writeText(reviewExternalUrl(review)).catch(() => {
-      /* clipboard unavailable */
-    });
-  };
-
-  // Filtered + sorted reviews
+  // §38.55 — Filtered reviews (3-tab tasarım birebir paterni). Sort sil
+  // (kullanıcı kararı tasarım birebir — page-google.jsx line 125-129'da sort
+  // dropdown yok). Default order: newest first (tasarım line 132 GOOGLE_REVIEWS
+  // kronolojik en yeni başta).
   const filteredReviews = useMemo<GoogleReview[]>(() => {
     if (!reviewsPayload?.reviews) return [];
     let arr = [...reviewsPayload.reviews];
 
-    // Tab filter
+    // 3-tab filter (Tümü / Yanıtsız / Düşük puan) — tasarım birebir
     if (activeTab === 'unreplied') {
       arr = arr.filter((r) => !r.reviewReply?.comment);
-    } else if (activeTab === 'negative') {
-      arr = arr.filter((r) => starValue(r.starRating) <= 3);
-    } else if (activeTab === 'flagged') {
-      arr = arr.filter((r) => flaggedIds.has(r.name));
+    } else if (activeTab === 'low') {
+      arr = arr.filter((r) => {
+        const v = starValue(r.starRating);
+        return v > 0 && v <= 3;
+      });
     }
 
-    // Sort
+    // Default sort: newest first (latest createTime/updateTime üstte)
     arr.sort((a, b) => {
-      if (sortMode === 'newest' || sortMode === 'oldest') {
-        const aTime = new Date(a.updateTime ?? a.createTime ?? 0).getTime();
-        const bTime = new Date(b.updateTime ?? b.createTime ?? 0).getTime();
-        return sortMode === 'newest' ? bTime - aTime : aTime - bTime;
-      }
-      if (sortMode === 'lowest') {
-        return starValue(a.starRating) - starValue(b.starRating);
-      }
-      if (sortMode === 'unreplied_first') {
-        const aRep = a.reviewReply?.comment ? 1 : 0;
-        const bRep = b.reviewReply?.comment ? 1 : 0;
-        if (aRep !== bRep) return aRep - bRep;
-        // Tie-break: newest first
-        const aTime = new Date(a.updateTime ?? a.createTime ?? 0).getTime();
-        const bTime = new Date(b.updateTime ?? b.createTime ?? 0).getTime();
-        return bTime - aTime;
-      }
-      return 0;
+      const aTime = new Date(a.updateTime ?? a.createTime ?? 0).getTime();
+      const bTime = new Date(b.updateTime ?? b.createTime ?? 0).getTime();
+      return bTime - aTime;
     });
     return arr;
-  }, [reviewsPayload, activeTab, sortMode, flaggedIds]);
+  }, [reviewsPayload, activeTab]);
 
-  // Tab counts (filter independent)
+  // Tab counts (filter independent) — 3-tab parity
   const tabCounts = useMemo(() => {
     const all = reviewsPayload?.reviews ?? [];
     return {
       all: all.length,
       unreplied: all.filter((r) => !r.reviewReply?.comment).length,
-      negative: all.filter((r) => starValue(r.starRating) <= 3).length,
-      flagged: all.filter((r) => flaggedIds.has(r.name)).length,
+      low: all.filter((r) => {
+        const v = starValue(r.starRating);
+        return v > 0 && v <= 3;
+      }).length,
     };
-  }, [reviewsPayload, flaggedIds]);
+  }, [reviewsPayload]);
 
   useEffect(() => {
     (async () => {
@@ -608,8 +722,9 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     }).length;
     const unanswered = reviews.filter((review) => !review.reviewReply?.comment).length;
     const replied = reviews.length - unanswered;
-    // §38.33 — Avg response time KPI (tasarım line 96-115). On-the-fly
-    // aggregate; Google review reply timestamp ile review createTime farkı.
+
+    // §38.33 — Avg response time. Google review reply timestamp ile
+    // review createTime farkı (tüm fetch'lenmiş yorumlar üzerinden).
     let totalReplyMs = 0;
     let replyCount = 0;
     for (const r of reviews) {
@@ -624,12 +739,84 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     }
     const avgResponseMs = replyCount > 0 ? totalReplyMs / replyCount : null;
     const avgResponseHours = avgResponseMs !== null ? avgResponseMs / 3600000 : null;
-    // §38.33 — Bu ay yeni: createTime son 30 gün içinde olanlar.
-    const thirtyDaysAgoMs = Date.now() - 30 * 86400000;
+
+    // §38.55 — KPI delta + sub line backend extension. Tasarım birebir
+    // (page-google.jsx line 96-115): Toplam yorum (+184 son 30 gün) /
+    // Yanıtlanan 92% (+8% sektör ort. 64%) / Ort. yanıt süresi (-22% AI ile)
+    // / Bu ay yeni 142 (+12% haftalık 32). Mevcut data'dan derive — son 30g
+    // window vs prev 30g (>30d <60d) compare.
+    const now = Date.now();
+    const thirtyDaysAgoMs = now - 30 * 86400000;
+    const sixtyDaysAgoMs = now - 60 * 86400000;
+
     const newThisMonth = reviews.filter((r) => {
       if (!r.createTime) return false;
       return new Date(r.createTime).getTime() >= thirtyDaysAgoMs;
     }).length;
+
+    const prevPeriodNew = reviews.filter((r) => {
+      if (!r.createTime) return false;
+      const ms = new Date(r.createTime).getTime();
+      return ms >= sixtyDaysAgoMs && ms < thirtyDaysAgoMs;
+    }).length;
+
+    const repliedThisMonth = reviews.filter((r) => {
+      if (!r.reviewReply?.updateTime) return false;
+      return new Date(r.reviewReply.updateTime).getTime() >= thirtyDaysAgoMs;
+    }).length;
+
+    const prevPeriodReplied = reviews.filter((r) => {
+      if (!r.reviewReply?.updateTime) return false;
+      const ms = new Date(r.reviewReply.updateTime).getTime();
+      return ms >= sixtyDaysAgoMs && ms < thirtyDaysAgoMs;
+    }).length;
+
+    // Ort. yanıt süresi prev period — aynı yapı, prev 30g window
+    let prevTotalReplyMs = 0;
+    let prevReplyCount = 0;
+    for (const r of reviews) {
+      if (!r.reviewReply?.updateTime || !r.createTime) continue;
+      const replyMs = new Date(r.reviewReply.updateTime).getTime();
+      if (replyMs < sixtyDaysAgoMs || replyMs >= thirtyDaysAgoMs) continue;
+      const createMs = new Date(r.createTime).getTime();
+      const diff = replyMs - createMs;
+      if (diff > 0) {
+        prevTotalReplyMs += diff;
+        prevReplyCount += 1;
+      }
+    }
+    const prevAvgResponseHours =
+      prevReplyCount > 0 ? prevTotalReplyMs / prevReplyCount / 3600000 : null;
+
+    // Delta % helpers — fail-safe (pre/curr 0 değerlerde "—" döner)
+    const pctDelta = (curr: number, prev: number): { value: number; sign: 1 | 0 | -1 } | null => {
+      if (prev === 0) return curr > 0 ? { value: 100, sign: 1 } : null;
+      const pct = ((curr - prev) / prev) * 100;
+      const sign: 1 | 0 | -1 = pct > 0 ? 1 : pct < 0 ? -1 : 0;
+      return { value: Math.round(Math.abs(pct)), sign };
+    };
+
+    // §38.55 — Total reviews delta (mutlak fark — tasarım "+184" abs val)
+    const totalDelta = newThisMonth - prevPeriodNew;
+
+    // Replied % delta (current vs prev replied rate)
+    const currRepliedPct = reviews.length > 0 ? (replied / reviews.length) * 100 : 0;
+    const repliedRateDelta =
+      reviews.length > 0 && prevPeriodNew > 0
+        ? pctDelta(repliedThisMonth, prevPeriodReplied)
+        : null;
+
+    // Avg response time delta — prev 30d ile current 30d kıyas
+    // (Daha düşük süre = iyi → "-" pozitif gösterilir, sign 1 sayılır)
+    const avgResponseDelta =
+      avgResponseHours !== null && prevAvgResponseHours !== null && prevAvgResponseHours > 0
+        ? pctDelta(avgResponseHours, prevAvgResponseHours)
+        : null;
+
+    // New this month delta vs prev period
+    const newDelta = pctDelta(newThisMonth, prevPeriodNew);
+    const weeklyAvg = Math.max(1, Math.round(newThisMonth / 4));
+
     return {
       low,
       unanswered,
@@ -637,6 +824,13 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
       avgResponseHours,
       newThisMonth,
       breakdown: ratingBreakdown(reviews),
+      // §38.55 — KPI delta + sub line metrics (UI tasarım birebir)
+      totalDelta, // abs +N (e.g. +184)
+      currRepliedPct, // 0-100
+      repliedRateDelta, // {value, sign} — "Yanıtlanan" KPI delta
+      avgResponseDelta, // {value, sign} — "Ort. yanıt süresi" KPI delta
+      newDelta, // {value, sign} — "Bu ay yeni" KPI delta
+      weeklyAvg, // newThisMonth / 4 (heuristic — sub line "haftalık X")
     };
   }, [reviewsPayload]);
 
@@ -646,7 +840,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const shouldShowStatusLoading = loadingInitial || statusLoading || Boolean(activeRestaurantId && !statusIsReady && !reviewsError);
 
   return (
-    <div className="mx-auto max-w-[1000px] px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow={isTr ? 'GERİ BİLDİRİMLER' : 'FEEDBACKS'}
         title={isTr ? "Google'a Yapılan Yorumlar" : 'Google Reviews'}
@@ -764,113 +958,149 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           {reviewsError && <AlertBanner kind="danger">{reviewsError}</AlertBanner>}
 
           {reviewsPayload && (
-            <div className="space-y-6">
-              {/* Dark hero rating card — tasarım .design-pulse-2026/.../page-google.jsx
-                  paterni: koyu zemin + lime accent rating + lime corner + summary
-                  metrikleri. Mevcut 4-tile metric + breakdown chart aşağıda
-                  korunur (detaylı analiz için). */}
-              <section className="relative overflow-hidden rounded-2xl bg-[#0A0A0A] p-6 sm:p-8 text-white">
-                {/* Lime corner accent (Pulse signature) */}
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-[#C6F24E]/10 blur-2xl"
-                />
-                <div className="relative grid gap-6 lg:grid-cols-[auto_1fr] lg:items-end">
-                  <div>
-                    <span className="pulse-eyebrow text-[#C6F24E]">
-                      {isTr ? 'GOOGLE PUAN ÖZETİ' : 'GOOGLE RATING SUMMARY'}
+            <div className="space-y-4">
+              {/* §38.55 — Üst 2-col: Hero + KPI 4-card yan yana (tasarım
+                  page-google.jsx line 47 — `1fr 1fr` grid). Mobile/tablet'te
+                  stack (lg:grid-cols-2). */}
+              <div className="grid gap-3 lg:grid-cols-2">
+                {/* SOL: Dark hero rating card + 5-row distribution.
+                    Tasarım line 49-94 birebir paritesi. */}
+                <section className="relative overflow-hidden rounded-[18px] bg-[#0A0A0A] p-6 sm:p-7 text-white">
+                  {/* Lime corner accent (tasarım line 58-65) */}
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute right-5 top-5 inline-flex items-center gap-1.5 text-[#C6F24E]"
+                  >
+                    <Star size={12} fill="#C6F24E" stroke="#C6F24E" />
+                    <span className="bz-mono text-[10px] uppercase tracking-[0.16em]">
+                      {isTr ? 'GOOGLE' : 'GOOGLE'}
                     </span>
-                    <div className="mt-2 flex items-baseline gap-3">
-                      <span className="bz-h-tight-2 text-[56px] sm:text-[68px] leading-[0.9] text-[#C6F24E] tabular-nums">
+                  </span>
+                  <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-7">
+                    <div>
+                      <div
+                        className="bz-h-tight tabular-nums text-[#C6F24E]"
+                        style={{ fontSize: 80, lineHeight: 0.9, letterSpacing: '-0.04em', fontWeight: 500 }}
+                      >
                         {reviewsPayload.averageRating != null
                           ? reviewsPayload.averageRating.toFixed(1)
                           : '—'}
-                      </span>
-                      <span className="text-[14px] text-white/60">/ 5</span>
-                    </div>
-                    <p className="mt-2 text-[13px] text-white/70">
-                      {reviewsPayload.totalReviewCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-                      {isTr ? 'Google yorumu' : 'Google reviews'}
-                    </p>
-                  </div>
-                  {/* Inline mini distribution */}
-                  <div className="space-y-1.5 lg:max-w-[420px] lg:ml-auto w-full">
-                    {reviewAnalysis.breakdown.map((item) => {
-                      const pct = reviewsPayload.reviews.length
-                        ? (item.count / reviewsPayload.reviews.length) * 100
-                        : 0;
-                      return (
-                        <div key={item.rating} className="flex items-center gap-2.5 text-[11.5px]">
-                          <span className="w-5 text-white/60 tabular-nums">{item.rating}★</span>
-                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
-                            <div
-                              className="h-full rounded-full bg-[#C6F24E] transition-all duration-500"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="w-7 text-right text-white/70 tabular-nums">{item.count}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </section>
-
-              {/* §38.33 — KPI 4-card grid tasarım .design-owner-2026/page-google.jsx
-                  line 96-115 paterni: Toplam yorum / Yanıtlanan % / Ort yanıt süresi
-                  / Bu ay yeni. Eski "Google puanı" KPI hero card'da büyük (4.7)
-                  zaten görünüyor — duplicate; "Yanıtsız" implicit (toplam −
-                  yanıtlanan). 4 yeni KPI tasarım uyumlu. */}
-              <div className="grid gap-3 sm:grid-cols-4">
-                <Metric
-                  label={isTr ? 'Toplam yorum' : 'Total reviews'}
-                  value={String(reviewsPayload.totalReviewCount)}
-                />
-                <Metric
-                  label={isTr ? 'Yanıtlanan' : 'Replied'}
-                  value={
-                    reviewsPayload.reviews.length > 0
-                      ? `%${Math.round(
-                          (reviewAnalysis.replied / reviewsPayload.reviews.length) * 100,
-                        )}`
-                      : '—'
-                  }
-                  tone={reviewAnalysis.unanswered === 0 ? 'ok' : undefined}
-                />
-                <Metric
-                  label={isTr ? 'Ort. yanıt süresi' : 'Avg response time'}
-                  value={
-                    reviewAnalysis.avgResponseHours !== null
-                      ? reviewAnalysis.avgResponseHours < 1
-                        ? `${Math.round(reviewAnalysis.avgResponseHours * 60)} ${isTr ? 'dk' : 'm'}`
-                        : `${reviewAnalysis.avgResponseHours.toFixed(1)} ${isTr ? 'sa' : 'h'}`
-                      : '—'
-                  }
-                />
-                <Metric
-                  label={isTr ? 'Bu ay yeni' : 'New this month'}
-                  value={String(reviewAnalysis.newThisMonth)}
-                />
-              </div>
-              <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
-                <div className="mb-3 text-[13px] font-semibold text-[#262626]">
-                  {isTr ? "Son çekilen yorumlarda puan dağılımı" : "Rating breakdown in fetched reviews"}
-                </div>
-                <div className="space-y-2">
-                  {reviewAnalysis.breakdown.map((item) => (
-                    <div key={item.rating} className="flex items-center gap-3 text-[13px] text-[#525252]">
-                      <span className="w-8">{item.rating}★</span>
-                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#EDEDED]">
-                        <div
-                          className="h-full rounded-full bg-[#C6F24E]"
-                          style={{
-                            width: `${reviewsPayload.reviews.length ? (item.count / reviewsPayload.reviews.length) * 100 : 0}%`,
-                          }}
-                        />
                       </div>
-                      <span className="w-8 text-right">{item.count}</span>
+                      <div className="mt-2 flex gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            size={18}
+                            fill={i < Math.round(reviewsPayload.averageRating ?? 0) ? '#C6F24E' : 'transparent'}
+                            stroke={i < Math.round(reviewsPayload.averageRating ?? 0) ? '#C6F24E' : '#262626'}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                    {/* Inline 5-row distribution (tasarım line 80-92) */}
+                    <div className="flex-1">
+                      <div className="pulse-eyebrow text-white/55 mb-2">
+                        {isTr ? 'SON 12 AY' : 'LAST 12 MONTHS'}
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {reviewAnalysis.breakdown.map((d) => {
+                          const pct = reviewsPayload.reviews.length
+                            ? (d.count / reviewsPayload.reviews.length) * 100
+                            : 0;
+                          const barColor = d.rating >= 4 ? '#C6F24E' : d.rating === 3 ? '#A3A3A3' : '#7F1D1D';
+                          return (
+                            <div key={d.rating} className="flex items-center gap-2.5">
+                              <span className="bz-mono w-4 text-[11px] text-white/55 tabular-nums">
+                                {d.rating}★
+                              </span>
+                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#262626]">
+                                <div
+                                  className="h-full rounded-full transition-all duration-500"
+                                  style={{ width: `${pct}%`, background: barColor }}
+                                />
+                              </div>
+                              <span className="bz-mono w-10 text-right text-[11px] text-white/55 tabular-nums">
+                                {d.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* SAĞ: KPI 4-card grid (tasarım line 96-115 — 2x2 bz-card).
+                    §38.55 — delta + sub line her KPI'da. */}
+                <div className="bz-card grid grid-cols-2 gap-x-6 gap-y-5 p-5 sm:p-6">
+                  {/* TOPLAM YORUM */}
+                  <KpiTile
+                    label={isTr ? 'TOPLAM YORUM' : 'TOTAL REVIEWS'}
+                    value={reviewsPayload.totalReviewCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+                    delta={
+                      reviewAnalysis.totalDelta !== 0
+                        ? {
+                            text: `${reviewAnalysis.totalDelta > 0 ? '+' : ''}${reviewAnalysis.totalDelta}`,
+                            sign: reviewAnalysis.totalDelta > 0 ? 1 : -1,
+                          }
+                        : null
+                    }
+                    sub={isTr ? 'son 30 gün' : 'last 30 days'}
+                  />
+                  {/* YANITLANAN */}
+                  <KpiTile
+                    label={isTr ? 'YANITLANAN' : 'REPLIED'}
+                    value={
+                      reviewsPayload.reviews.length > 0
+                        ? `%${Math.round(reviewAnalysis.currRepliedPct)}`
+                        : '—'
+                    }
+                    delta={
+                      reviewAnalysis.repliedRateDelta
+                        ? {
+                            text: `${reviewAnalysis.repliedRateDelta.sign >= 0 ? '+' : '-'}%${reviewAnalysis.repliedRateDelta.value}`,
+                            sign: reviewAnalysis.repliedRateDelta.sign,
+                          }
+                        : null
+                    }
+                    sub={isTr ? 'sektör ort. %64' : 'sector avg 64%'}
+                  />
+                  {/* ORT. YANIT SÜRESİ */}
+                  <KpiTile
+                    label={isTr ? 'ORT. YANIT SÜRESİ' : 'AVG RESPONSE TIME'}
+                    value={
+                      reviewAnalysis.avgResponseHours !== null
+                        ? reviewAnalysis.avgResponseHours < 1
+                          ? `${Math.round(reviewAnalysis.avgResponseHours * 60)} ${isTr ? 'dk' : 'm'}`
+                          : `${reviewAnalysis.avgResponseHours.toFixed(1)} ${isTr ? 'sa' : 'h'}`
+                        : '—'
+                    }
+                    delta={
+                      reviewAnalysis.avgResponseDelta
+                        ? {
+                            // Daha kısa süre = iyi → "-X%" pozitif gösterilir (sign -1 ama lime).
+                            text: `${reviewAnalysis.avgResponseDelta.sign === -1 ? '-' : '+'}%${reviewAnalysis.avgResponseDelta.value}`,
+                            // Improvement: avg lower → positive direction
+                            sign: reviewAnalysis.avgResponseDelta.sign === -1 ? 1 : -1,
+                          }
+                        : null
+                    }
+                    sub={isTr ? 'AI ile' : 'with AI'}
+                  />
+                  {/* BU AY YENİ */}
+                  <KpiTile
+                    label={isTr ? 'BU AY YENİ' : 'NEW THIS MONTH'}
+                    value={String(reviewAnalysis.newThisMonth)}
+                    delta={
+                      reviewAnalysis.newDelta
+                        ? {
+                            text: `${reviewAnalysis.newDelta.sign >= 0 ? '+' : '-'}%${reviewAnalysis.newDelta.value}`,
+                            sign: reviewAnalysis.newDelta.sign,
+                          }
+                        : null
+                    }
+                    sub={`${isTr ? 'haftalık' : 'weekly'} ${reviewAnalysis.weeklyAvg}`}
+                  />
                 </div>
               </div>
 
@@ -896,23 +1126,23 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                         (reviewAnalysis.replied / reviewsPayload.totalReviewCount) * 100,
                       )
                     : 0;
-                const last30Days = reviewsPayload.reviews.filter((r) => {
-                  if (!r.createTime) return false;
-                  const ageMs = Date.now() - new Date(r.createTime).getTime();
-                  return ageMs <= 30 * 86400000;
-                }).length;
+                // §38.55 — PROFİL SAĞLIĞI checklist 4 item (tasarım birebir
+                // page-google.jsx line 191-209). Heuristic placeholder
+                // pattern: Profil tamlığı + Yanıt oranı (mevcut data) /
+                // Fotoğraf sayısı + Q&A bölümü (Google Business Profile API
+                // genişletme gerek — backend gap, "yakında" hint).
+                const profileComplete = Boolean(
+                  status?.connected && status?.selectedLocation?.title,
+                );
                 const checklist: Array<{
                   label: string;
                   value: string;
                   ok: boolean;
                 }> = [
                   {
-                    label: isTr ? 'Ortalama puan' : 'Avg rating',
-                    value:
-                      reviewsPayload.averageRating != null
-                        ? `${reviewsPayload.averageRating.toFixed(1)} / 5`
-                        : '—',
-                    ok: (reviewsPayload.averageRating ?? 0) >= 4,
+                    label: isTr ? 'Profil tamlığı' : 'Profile completeness',
+                    value: profileComplete ? '%100' : '%50',
+                    ok: profileComplete,
                   },
                   {
                     label: isTr ? 'Yanıt oranı' : 'Response rate',
@@ -920,16 +1150,16 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                     ok: responseRate >= 75,
                   },
                   {
-                    label: isTr ? 'Toplam yorum' : 'Total reviews',
-                    value: reviewsPayload.totalReviewCount.toLocaleString(
-                      isTr ? 'tr-TR' : 'en-US',
-                    ),
-                    ok: reviewsPayload.totalReviewCount >= 50,
+                    label: isTr ? 'Fotoğraf sayısı' : 'Photo count',
+                    // Backend gap: Google Business Profile media.list API extension gerek (§38.55 backlog)
+                    value: isTr ? '— yakında' : '— soon',
+                    ok: false,
                   },
                   {
-                    label: isTr ? 'Son 30 gün hacmi' : 'Last 30d volume',
-                    value: `${last30Days} ${isTr ? 'yorum' : 'reviews'}`,
-                    ok: last30Days >= 5,
+                    label: isTr ? 'Q&A bölümü' : 'Q&A section',
+                    // Backend gap: Google Business Profile questions API extension gerek (§38.55 backlog)
+                    value: isTr ? '— yakında' : '— soon',
+                    ok: false,
                   },
                 ];
                 const keywords = extractKeywords(reviewsPayload.reviews, 8);
@@ -945,7 +1175,109 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                 const arcOffset = arcCircumference * (1 - score / 100);
 
                 return (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+                    {/* §38.55 — SOL: Reviews stream (tasarım page-google.jsx
+                        line 119-179 birebir). bz-card + header (h3 + count
+                        badge + 3-tab inline) + divide-y card list. */}
+                    <section className="bz-card overflow-hidden p-0">
+                      {/* Header */}
+                      <div className="flex flex-col gap-3 border-b border-[#EDEDED] px-5 py-4 sm:flex-row sm:items-center">
+                        <div className="flex items-center gap-2.5">
+                          <h3 className="bz-h-tight text-[15px]">
+                            {isTr ? 'Son Google yorumları' : 'Latest Google reviews'}
+                          </h3>
+                          <span className="inline-flex items-center justify-center rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] font-medium text-[#525252] tabular-nums">
+                            {filteredReviews.length}
+                          </span>
+                        </div>
+                        <div className="flex-1" />
+                        <div
+                          role="tablist"
+                          aria-label={isTr ? 'Yorum filtreleri' : 'Review filters'}
+                          className="flex flex-wrap items-center gap-0.5 sm:gap-1"
+                        >
+                          {(
+                            [
+                              { id: 'all', tr: 'Tümü', en: 'All', count: tabCounts.all },
+                              { id: 'unreplied', tr: 'Yanıtsız', en: 'Unanswered', count: tabCounts.unreplied },
+                              { id: 'low', tr: 'Düşük puan', en: 'Low rating', count: tabCounts.low },
+                            ] as const
+                          ).map((tab) => {
+                            const active = activeTab === tab.id;
+                            return (
+                              <button
+                                key={tab.id}
+                                type="button"
+                                role="tab"
+                                aria-selected={active}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] transition-colors ${
+                                  active
+                                    ? 'bg-[#0A0A0A] text-white'
+                                    : 'text-[#525252] hover:bg-[#FAFAFA]'
+                                }`}
+                              >
+                                {isTr ? tab.tr : tab.en}
+                                {tab.count > 0 && (
+                                  <span
+                                    className={`bz-mono tabular-nums text-[10px] ${
+                                      active ? 'text-white/70' : 'text-[#A3A3A3]'
+                                    }`}
+                                  >
+                                    {tab.count}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Card list */}
+                      <div className="divide-y divide-[#EDEDED]">
+                        {filteredReviews.length === 0 ? (
+                          <div className="px-5 py-12 text-center text-[13px] text-[#737373]">
+                            {activeTab === 'all'
+                              ? isTr
+                                ? 'Henüz yorum bulunmuyor.'
+                                : 'No reviews found yet.'
+                              : isTr
+                                ? 'Bu filtreyle eşleşen yorum yok.'
+                                : 'No reviews match this filter.'}
+                          </div>
+                        ) : (
+                          filteredReviews.map((review) => (
+                            <ReviewCard
+                              key={review.name}
+                              review={review}
+                              locale={locale}
+                              value={replyText[review.name] ?? ''}
+                              onChange={(value) =>
+                                setReplyText((prev) => ({ ...prev, [review.name]: value }))
+                              }
+                              onDraft={() => draftReply(review)}
+                              onSend={() => sendReply(review)}
+                              drafting={Boolean(drafting[review.name])}
+                              replying={Boolean(replying[review.name])}
+                              aiEnabled={Boolean(status?.googleAiEnabled)}
+                              flagged={flaggedIds.has(review.name)}
+                              onFlagToggle={() => toggleFlag(review.name)}
+                              restaurantName={
+                                restaurants.find((r) => r.id === activeRestaurantId)?.name ?? ''
+                              }
+                              urgent={
+                                starValue(review.starRating) <= 2 &&
+                                !review.reviewReply?.comment
+                              }
+                            />
+                          ))
+                        )}
+                      </div>
+                    </section>
+
+                    {/* §38.55 — SAĞ: Right rail (tasarım page-google.jsx line 181-253).
+                        Dikey stack: PROFİL SAĞLIĞI + SIK GEÇEN KELİMELER + HIZLI YANIT. */}
+                    <aside className="flex flex-col gap-3">
                     {/* PROFİL SAĞLIĞI */}
                     <div className="bz-card p-5">
                       <div className="flex items-start justify-between gap-3 mb-4">
@@ -1116,112 +1448,16 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                       }}
                       isTr={isTr}
                     />
+                    </aside>
                   </div>
                 );
               })()}
 
-              {/* §38.52 — Tab strip + sort dropdown (tasarım birebir parity).
-                  Tabs: Tümü / Yanıtsız / Negatif / İşaretli. Sort: En yeni/eski/
-                  Düşük puan/Yanıtsız önce. */}
-              <div className="bz-card p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div
-                  className="flex items-center gap-1 flex-wrap"
-                  role="tablist"
-                  aria-label={isTr ? 'Yorum filtreleri' : 'Review filters'}
-                >
-                  {(
-                    [
-                      { id: 'all', tr: 'Tümü', en: 'All', count: tabCounts.all },
-                      { id: 'unreplied', tr: 'Yanıtlanmamış', en: 'Unanswered', count: tabCounts.unreplied },
-                      { id: 'negative', tr: 'Negatif', en: 'Negative', count: tabCounts.negative },
-                      { id: 'flagged', tr: 'İşaretli', en: 'Flagged', count: tabCounts.flagged },
-                    ] as const
-                  ).map((tab) => {
-                    const active = activeTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={active}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                          active
-                            ? 'bg-[#0A0A0A] text-white'
-                            : 'bg-[#FAFAFA] text-[#525252] hover:bg-[#F5F5F5]'
-                        }`}
-                      >
-                        {isTr ? tab.tr : tab.en}
-                        <span
-                          className={`bz-mono tabular-nums text-[10.5px] rounded-full px-1.5 py-0.5 ${
-                            active ? 'bg-white/15 text-white' : 'bg-white text-[#737373]'
-                          }`}
-                        >
-                          {tab.count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Sort dropdown */}
-                <label className="inline-flex items-center gap-2 text-[12px]">
-                  <span className="pulse-eyebrow text-[10px] text-[#737373]">
-                    {isTr ? 'SIRALA' : 'SORT'}
-                  </span>
-                  <span className="relative inline-flex items-center">
-                    <select
-                      value={sortMode}
-                      onChange={(e) => setSortMode(e.target.value as typeof sortMode)}
-                      className="appearance-none rounded-md border border-[#EDEDED] bg-white pl-3 pr-7 py-1.5 text-[12px] font-medium text-[#0A0A0A] hover:bg-[#FAFAFA] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-                      aria-label={isTr ? 'Yorum sıralama' : 'Review sort'}
-                    >
-                      <option value="newest">{isTr ? 'En yeni' : 'Newest'}</option>
-                      <option value="oldest">{isTr ? 'En eski' : 'Oldest'}</option>
-                      <option value="lowest">{isTr ? 'Düşük puan önce' : 'Lowest rating first'}</option>
-                      <option value="unreplied_first">{isTr ? 'Yanıtsız önce' : 'Unanswered first'}</option>
-                    </select>
-                    <ChevronDown
-                      size={12}
-                      className="pointer-events-none absolute right-2 text-[#737373]"
-                    />
-                  </span>
-                </label>
-              </div>
-
-              <div className="space-y-4">
-                {filteredReviews.length === 0 ? (
-                  <div className="py-8 text-center text-[#737373] text-[14px]">
-                    {activeTab === 'all'
-                      ? isTr
-                        ? 'Henüz yorum bulunmuyor.'
-                        : 'No reviews found yet.'
-                      : isTr
-                        ? 'Bu filtreyle eşleşen yorum yok.'
-                        : 'No reviews match this filter.'}
-                  </div>
-                ) : (
-                  filteredReviews.map((review) => (
-                    <ReviewCard
-                      key={review.name}
-                      review={review}
-                      locale={locale}
-                      value={replyText[review.name] ?? ""}
-                      onChange={(value) => setReplyText((prev) => ({ ...prev, [review.name]: value }))}
-                      onDraft={() => draftReply(review)}
-                      onSend={() => sendReply(review)}
-                      drafting={Boolean(drafting[review.name])}
-                      replying={Boolean(replying[review.name])}
-                      aiEnabled={Boolean(status?.googleAiEnabled)}
-                      flagged={flaggedIds.has(review.name)}
-                      onFlagToggle={() => toggleFlag(review.name)}
-                      onCopyUrl={() => copyReviewUrl(review)}
-                      onOpenInGoogle={() => openReviewInGoogle(review)}
-                      urgent={starValue(review.starRating) <= 2 && !review.reviewReply?.comment}
-                    />
-                  ))
-                )}
-              </div>
+              {/* §38.55 — Tab strip + sort dropdown bz-card SİLİNDİ (tasarım
+                  birebir, page-google.jsx line 119-179'da Reviews stream
+                  bz-card header'ında inline 3-tab; sort dropdown yok).
+                  Reviews list de SİLİNDİ — yukarıdaki 1fr 320px grid'in sol
+                  kolonu içinde Reviews stream bz-card altında render olur. */}
             </div>
           )}
         </div>
