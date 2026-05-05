@@ -32,6 +32,10 @@ export const MAIL_PLACEHOLDERS = {
   'first-feedback-tips': ['firstName', 'restaurantName'],
   'upgrade-suggestion': ['firstName', 'restaurantName', 'feedbackCount'],
   'inactive-reactivation': ['firstName', 'daysInactive'],
+  // §38.48 Wave 2 — owner authored customer campaign mail. Render fn vars
+  // object'inde sadece restaurantName geçer; admin override'da bu token
+  // valid kabul edilir, diğerleri 400 invalid_placeholder döner.
+  'customer-campaign': ['restaurantName'],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;

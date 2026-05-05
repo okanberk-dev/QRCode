@@ -6,6 +6,7 @@ import { hasOpenAIKey, chatCompletion } from '@/lib/openai';
 import { rateLimit } from '@/lib/rate-limit';
 import { resolveOwnerUserId } from '@/lib/panel-access';
 import { safeParseJson } from '@/lib/safe-json';
+import { checkLayeredAiQuota, AI_QUOTAS } from '@/lib/ai-quota';
 
 // §38.53 — Pulse AI feedback özet (3-sinyal). Tasarım kaynağı:
 // .design-owner-2026/page-feedbacks.jsx "AI ÖZET" card (Pozitif / İyileştirme /
@@ -105,6 +106,20 @@ export async function POST(
 
   // OpenAI key check
   if (!hasOpenAIKey()) {
+    const result = { ...FALLBACK };
+    setCached(id, result);
+    return NextResponse.json(result);
+  }
+
+  // §15.1 AI Quota Guard — 3-katman layered (user/day + workspace/day + global/day).
+  // Cost ceiling: ~$0.0001/call × 1000 global/day = ~$0.10/day worst-case.
+  // Quota dolduğunda fail-safe fallback (cache'lenir, 24h boyunca tekrar AI çağrısı yok).
+  const quota = await checkLayeredAiQuota([
+    { scope: 'feedback-summary:user', identifier: actor.id, dailyLimit: AI_QUOTAS.FEEDBACK_SUMMARY_USER_DAY },
+    { scope: 'feedback-summary:ws', identifier: ownerId, dailyLimit: AI_QUOTAS.FEEDBACK_SUMMARY_WORKSPACE_DAY },
+    { scope: 'feedback-summary:global', identifier: 'global', dailyLimit: AI_QUOTAS.FEEDBACK_SUMMARY_GLOBAL_DAY },
+  ]);
+  if (!quota.allowed) {
     const result = { ...FALLBACK };
     setCached(id, result);
     return NextResponse.json(result);
