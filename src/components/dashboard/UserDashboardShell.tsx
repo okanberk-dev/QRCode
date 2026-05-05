@@ -429,29 +429,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </div>
       </div>
 
-      {/* §38.57 — Sidebar search button (tasarım a/shell.jsx line 189-206
-          birebir). Cmd+K palette tetikleyicisi, topbar'daki Cmd+K button'u
-          ile aynı palette state'i paylaşır. Collapse mode'da gizli (icon-only
-          sidebar'da topbar Cmd+K yeterli). */}
-      {!isCollapsed && (
-        <div className="px-3 pb-2 animate-in fade-in slide-in-from-top-1 duration-300">
-          <button
-            type="button"
-            onClick={() => setPaletteOpen(true)}
-            aria-label={locale === 'tr' ? 'Aramayı aç' : 'Open search'}
-            title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
-            className="flex w-full items-center gap-2 rounded-[10px] border border-[#EDEDED] bg-white px-3 py-2 text-[12px] text-[#737373] hover:border-[#0A0A0A] hover:text-[#0A0A0A] hover:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] transition-colors"
-          >
-            <Search size={13} strokeWidth={2.2} className="shrink-0" />
-            <span className="flex-1 text-left truncate">
-              {locale === 'tr' ? 'Ara…' : 'Search…'}
-            </span>
-            <span className="shrink-0 rounded bg-[#F5F5F5] px-1.5 py-0.5 text-[10px] font-medium text-[#525252] bz-mono">
-              ⌘K
-            </span>
-          </button>
-        </div>
-      )}
+      {/* §38.59 — Sidebar search button kaldırıldı (kullanıcı kararı). Cmd+K
+          palette hâlâ topbar'da + global keyboard shortcut ile erişilebilir;
+          sidebar görsel sadeleşti. Eski search button kapsamı: paletteOpen
+          state intact, sadece sidebar tetikleyicisi UI'dan çıkarıldı. */}
 
       {/* §38.39 — Primary CTA tasarım birebir: "Yorum İste" (tasarım kaynağı
           .design-owner-2026/shell.jsx). Owner panel'de birincil aksiyon yorum
@@ -516,10 +497,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
           // Group: collapsible parent with auto-expand when active route
           // lives in one of its children.
+          // §38.59 — childActive mantığı matchHref ile genişledi:
+          //   eski `pathname.startsWith(c.href)` Faturalama gibi query-string
+          //   taşıyan child'ları (?section=billing) match edemiyordu →
+          //   group expansion broken. matchHref helper Faturalama deeplink'i
+          //   ve Account base ayrımını doğru handle eder.
           const Icon = item.icon;
-          const childActive = item.children.some(
-            (c) => pathname === c.href || pathname?.startsWith(`${c.href}/`),
-          );
+          const childActive = item.children.some((c) => {
+            const cHasQuery = c.href.includes('?');
+            const cIsAccountBase = c.href.endsWith('/dashboard/account');
+            if (cHasQuery) return matchHref(c.href);
+            if (cIsAccountBase) return matchAccountBase(c.href);
+            return pathname === c.href || pathname?.startsWith(`${c.href}/`);
+          });
           const isExpanded = childActive || expandedGroups[item.id] === true;
           return (
             <div key={item.id}>
@@ -529,11 +519,12 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               <button
                 type="button"
                 onClick={() => toggleGroup(item.id)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
-                  childActive
-                    ? 'bg-[#F2F2F2] text-[#0A0A0A]'
-                    : 'text-[#525252] hover:bg-[#F2F2F2] hover:text-[#0A0A0A]'
-                }`}
+                // §38.59 — Parent group button active highlight kaldırıldı:
+                //   eski `childActive ? bg-[#F2F2F2]` → child item siyah zeminli
+                //   ve parent group da gri — kullanıcı 2 menü "seçili" hissi
+                //   yaşadı. Şimdi parent group sadece chevron rotate + child
+                //   reveal animation; tek "active" görünüm child item'da.
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F2F2F2] hover:text-[#0A0A0A]"
                 aria-expanded={isExpanded}
               >
                 <Icon size={16} strokeWidth={2} className="shrink-0" />
