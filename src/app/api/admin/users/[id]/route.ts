@@ -30,6 +30,74 @@ async function writeAudit(entry: {
   }
 }
 
+// CLAUDE.md §38.93 (Stage A1) — admin user detail GET. /admin/users/[id]
+// page kullanır: AdminUser fields (username/email/role/passwordChangedAt) +
+// scoped restaurant adı (manager) + audit history sayım. Detail page ayrıca
+// `actorId` üzerinden audit log endpoint'ini çağırır (mevcut helper reuse).
+//
+// Resilient — table missing (P2021/P2022 schema drift) durumlarında 404 değil
+// 500 dönerken Prisma error code preserve edilir; UI graceful degrade.
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const admin = await getAdminFromRequest(req);
+  if (!admin || admin.role !== 'superadmin') {
+    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+  }
+
+  const { id } = await params;
+
+  try {
+    // AdminUser model'inde `createdAt` / `updatedAt` field'ı yok (CLAUDE.md
+    // §37.3 #1 closure — sadece `passwordChangedAt` staleness pivot'u var).
+    // UI'da tarih bilgisi olarak yalnız son şifre değişimi tarihi sunulur.
+    const user = await prisma.adminUser.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        restaurantId: true,
+        passwordChangedAt: true,
+      },
+    });
+    if (!user) {
+      return NextResponse.json({ error: 'Bulunamadı' }, { status: 404 });
+    }
+
+    let restaurant: { id: string; name: string; slug: string; isActive: boolean } | null = null;
+    if (user.restaurantId) {
+      restaurant = await prisma.restaurant.findUnique({
+        where: { id: user.restaurantId },
+        select: { id: true, name: true, slug: true, isActive: true },
+      });
+    }
+
+    return NextResponse.json(
+      {
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          restaurantId: user.restaurantId,
+          passwordChangedAt: user.passwordChangedAt?.toISOString() ?? null,
+        },
+        restaurant,
+      },
+      {
+        headers: {
+          // Owner scope, IDOR-gated, KVKK-safe (no PII beyond admin email).
+          // Short cache + revalidate keeps detail fresh for admin edits.
+          'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120',
+        },
+      },
+    );
+  } catch (err) {
+    console.error('[ADMIN_USERS_GET]', err);
+    return NextResponse.json({ error: 'Kullanıcı yüklenemedi' }, { status: 500 });
+  }
+}
+
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await getAdminFromRequest(req);
   if (!admin || admin.role !== 'superadmin') {
