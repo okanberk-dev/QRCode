@@ -50,17 +50,18 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const isSvg = file.type === 'image/svg+xml';
 
+    // SVG XSS protection (CLAUDE.md §38.79 / §38.2 #5):
+    // ALL inputs — including SVG and ICO — go through sharp's pipeline. SVG
+    // is accepted as input (libvips renders it via librsvg) but the output
+    // is always a raster (WebP for logos, PNG for favicons). Raw SVG is
+    // never stored, so embedded <script> or event handlers cannot execute
+    // when the asset is rendered by <img src> or <link rel="icon">.
     let outBuffer: Buffer;
     let outExt: string;
     let outMime: string;
 
-    if (isSvg) {
-      outBuffer = buffer;
-      outExt = 'svg';
-      outMime = 'image/svg+xml';
-    } else if (kind === 'logo') {
+    if (kind === 'logo') {
       outBuffer = await sharp(buffer)
         .resize(512, 512, { fit: 'inside', withoutEnlargement: true })
         .webp({ quality: 90 })

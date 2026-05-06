@@ -12,6 +12,7 @@ import {
 } from '@/lib/admin-members';
 import { sendPasswordResetEmail } from '@/lib/email';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
   // Random 32-byte password — admin never sees it; the user resets via the
   // invite link before first login. Bcrypt cost 10 (matches register).
   const randomPassword = crypto.randomBytes(32).toString('hex');
-  const passwordHash = await bcrypt.hash(randomPassword, 10);
+  const passwordHash = await bcrypt.hash(randomPassword, BCRYPT_COST);
 
   // 14-day trial by default for trial plan; null for other plans.
   const trialEndsAt =

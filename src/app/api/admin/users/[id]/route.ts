@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { isStrongPassword } from '@/lib/validations';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 
 // Append-only audit log. Wrapped in try/catch so a missing table (preview
 // deploy before schema migration) doesn't take down the actual mutation.
@@ -72,7 +73,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           { status: 400 },
         );
       }
-      data.passwordHash = await bcrypt.hash(password, 12);
+      data.passwordHash = await bcrypt.hash(password, BCRYPT_COST);
       // Stamp the staleness pivot — `getAdminFromRequest` rejects every
       // admin_token issued before this moment for this user (CLAUDE.md
       // §37.2 A). One admin can't change another's password and have

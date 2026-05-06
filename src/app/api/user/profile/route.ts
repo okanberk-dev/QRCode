@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { verifyJwt } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
@@ -165,7 +166,7 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Yeni şifre en az 8 karakter olmalıdır' }, { status: 400 });
       }
 
-      updateData.passwordHash = await bcrypt.hash(newPassword, 12);
+      updateData.passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
     }
 
     const updatedUser = await prisma.user.update({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as jose from 'jose';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Hesap bulunamadı veya devre dışı.' }, { status: 404 });
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
     await prisma.user.update({
       where: { id: user.id },
       data: { passwordHash },

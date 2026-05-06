@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await getAdminFromRequest(req);
@@ -38,7 +39,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     if (password) {
-      data.passwordHash = await bcrypt.hash(password, 12);
+      data.passwordHash = await bcrypt.hash(password, BCRYPT_COST);
     }
 
     const normalizedRestaurantIds = Array.isArray(restaurantIds)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { rateLimit } from '@/lib/rate-limit';
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest) {
     // every admin_token issued before this timestamp will be rejected by
     // `getAdminFromRequest`'s staleness check, so a stolen pre-reset
     // cookie can't survive the password rotation.
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
     await prisma.adminUser.update({
       where: { id: admin.id },
       data: {
