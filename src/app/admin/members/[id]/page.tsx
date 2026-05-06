@@ -32,6 +32,7 @@ import MemberAuditTimeline from '@/components/admin/MemberAuditTimeline';
 import MemberBillingModal from '@/components/admin/MemberBillingModal';
 import MemberActivationPanel from '@/components/admin/MemberActivationPanel';
 import MemberRecentFeedbacksPanel from '@/components/admin/MemberRecentFeedbacksPanel';
+import ImpersonateButton from '@/components/admin/ImpersonateButton';
 
 interface MemberDetail {
   user: {
@@ -280,6 +281,15 @@ export default function MemberDetailPage({
         }
         actions={
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Stage A4 §38.96 — "Owner gibi gör" support workflow.
+                Modal açar; reason + KVKK consent + 30dk timer disclosure. */}
+            {user.isActive && (
+              <ImpersonateButton
+                targetUserId={user.id}
+                targetEmail={user.email}
+                targetName={user.name}
+              />
+            )}
             <button
               type="button"
               onClick={sendPasswordReset}

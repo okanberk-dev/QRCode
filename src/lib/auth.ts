@@ -39,6 +39,13 @@ export interface PanelActor {
   email: string | null;
   plan: string | null;
   source: 'admin' | 'user';
+  // Stage A4 §38.96 — admin impersonation flow.
+  // Owner panel'inde admin gibi davranan superadmin/manager için JWT payload'ı
+  // taşır. `source = 'user'` olarak görünür (owner endpoint'leri normal çalışır)
+  // ama `realAdminId` set ise bu actor aslında bir admin — UI banner + audit
+  // tag bu alana göre karar verir.
+  realAdminId?: string | null;
+  impersonationSessionId?: string | null;
 }
 
 // Dev-only fallback secret. The literal value sits in the public repo, so
@@ -317,6 +324,53 @@ export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelA
     return null;
   }
 
+  // Stage A4 §38.96 — impersonation flow detection. JWT payload'ı taşıyan
+  // `impersonating` claim varsa bu actor aslında bir admin'dir; owner gibi
+  // davranır ama UI banner + audit tag için real admin id kayıt edilir.
+  // Güvenlik: ImpersonationSession DB row'u hâlâ aktif (ended_at null + ends_at
+  // gelecekte) olmalı — aksi halde claim ignore edilir (forge / expired token
+  // koruma).
+  const impersonating = userPayload.impersonating as
+    | { adminId?: unknown; sessionId?: unknown }
+    | undefined;
+  let realAdminId: string | null = null;
+  let impersonationSessionId: string | null = null;
+  if (
+    impersonating &&
+    typeof impersonating === 'object' &&
+    typeof impersonating.adminId === 'string' &&
+    typeof impersonating.sessionId === 'string'
+  ) {
+    try {
+      const session = await prisma.impersonationSession.findUnique({
+        where: { id: impersonating.sessionId },
+        select: {
+          id: true,
+          adminId: true,
+          targetUserId: true,
+          endedAt: true,
+          endsAt: true,
+        },
+      });
+      const stillActive =
+        !!session &&
+        session.adminId === impersonating.adminId &&
+        session.targetUserId === userPayload.userId &&
+        session.endedAt === null &&
+        session.endsAt.getTime() > Date.now();
+      if (stillActive) {
+        realAdminId = impersonating.adminId;
+        impersonationSessionId = impersonating.sessionId;
+      }
+      // Inactive/expired session → claim discarded silently. Token still
+      // valid as plain user token (less privilege). Refresh required for
+      // realAdminId to reappear; cron will have ended the session anyway.
+    } catch (err) {
+      // DB error → conservative discard impersonation claim, treat as plain user.
+      console.warn('[auth] impersonation session lookup failed', (err as Error).message);
+    }
+  }
+
   return {
     id: userPayload.userId as string,
     role: getStringClaim(userPayload, 'role') || 'restaurant_owner',
@@ -325,5 +379,7 @@ export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelA
     email: getStringClaim(userPayload, 'email'),
     plan: getStringClaim(userPayload, 'plan'),
     source: 'user',
+    realAdminId,
+    impersonationSessionId,
   };
 }

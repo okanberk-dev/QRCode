@@ -20,6 +20,27 @@ if (dsn) {
     enableLogs: true,
     environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
     release: process.env.VERCEL_GIT_COMMIT_SHA,
+    // Stage A4 §38.96 — impersonation flow tag injection. Helper'lar
+    // (writeAdminAuditLog + impersonate endpoint'leri) zaten manuel
+    // `tags.kind='impersonation'` set ediyor; bu beforeSend onRequestError
+    // path'inde otomatik fired-by-error event'leri tag'ler. Forensic ops
+    // için: tag'li event filter dashboard'da impersonation süresince
+    // çıkan tüm hataları görme imkanı verir.
+    beforeSend(event) {
+      // Mevcut event tag'lerine zarar verme — sadece impersonation context
+      // varsa zenginleştir. Tag header'lar Vercel runtime'da
+      // `globalThis.__buazeImpersonationContext` ile set edilirse etiketle
+      // (helper opsiyonel, bu PR'da otomatik fire yok). Future scope.
+      const ctx = (globalThis as { __buazeImpersonationContext?: { adminId: string; sessionId: string } }).__buazeImpersonationContext;
+      if (ctx) {
+        event.tags = {
+          ...(event.tags ?? {}),
+          impersonating: 'true',
+          realAdminId: ctx.adminId,
+        };
+      }
+      return event;
+    },
   });
   // CLAUDE.md §38.8/§38.9 follow-up — cold-start init signal. PR #390 +
   // /api/sentry-test diagnostics could not prove which Sentry project the

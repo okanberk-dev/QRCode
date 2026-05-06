@@ -7,6 +7,7 @@ import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, Cred
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
+import ImpersonationBanner from './ImpersonationBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import CommandPalette from '@/components/dashboard/CommandPalette';
@@ -787,6 +788,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] lg:flex lg:h-screen lg:overflow-hidden relative">
+      {/* Stage A4 §38.96 — sticky impersonation banner. Server-side actor.realAdminId
+          set ise üstte kırmızı banner + 30dk countdown + "Çıkış" CTA. */}
+      <ImpersonationBanner />
       <a href="#panel-main-content" className="bz-skip-link">
         {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
       </a>

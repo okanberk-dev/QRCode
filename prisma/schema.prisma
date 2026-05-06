@@ -58,8 +58,12 @@ model User {
   createdAt                 DateTime  @default(now()) @map("created_at")
   updatedAt                 DateTime  @updatedAt @map("updated_at")
 
-  restaurants Restaurant[]
-  sessions    UserSession[]
+  restaurants    Restaurant[]
+  sessions       UserSession[]
+  // Stage A4 §38.96 — admin impersonation reverse relation. Bir owner'a
+  // birden çok admin paralel impersonation açabilir (örn. iki ayrı support
+  // ticket); her biri kendi 30dk pencere'sinde expire eder.
+  impersonations ImpersonationSession[] @relation("UserImpersonations")
 
   @@map("users")
 }
@@ -696,11 +700,15 @@ model AdminUser {
   // single-field ile yürür.
   passwordChangedAt DateTime? @map("password_changed_at")
 
-  restaurant  Restaurant?       @relation(fields: [restaurantId], references: [id])
+  restaurant     Restaurant?            @relation(fields: [restaurantId], references: [id])
   // Stage A2 §38.94 — granular permission grants (per-resource × per-action).
   // Superadmin'ler için boş kalır (helper bypass eder); manager'lar için
   // bu satırlar cross-resource access'i açar.
-  permissions AdminPermission[]
+  permissions    AdminPermission[]
+  // Stage A4 §38.96 — admin impersonation sessions (support workflow).
+  // Reverse relation; tek admin paralel session açabilir (örn. iki ayrı
+  // owner için support ticket); cron 30dk sonra expire eder.
+  impersonations ImpersonationSession[] @relation("AdminImpersonations")
 
   @@map("admin_users")
 }
@@ -734,6 +742,38 @@ model AdminPermission {
   @@unique([adminUserId, resource, action])
   @@index([adminUserId])
   @@map("admin_permissions")
+}
+
+// Stage A4 §38.96 — admin impersonation session.
+//
+// Support workflow için kritik: superadmin (veya 'impersonation:write' permission'lı
+// manager) geçici olarak owner gibi panel'e girebilir. KVKK + audit + auto-timeout
+// disipline:
+//   - Reason zorunlu (min 20 char) — superadmin niye girdiğini sebebiyle açıklar
+//   - Auto-timeout 30dk (`endsAt`) — cron her 5dk'da bir geçen session'ları kapatır
+//   - Audit log iki entry: `admin.impersonate.start` + `admin.impersonate.end`
+//   - User'a anlık mail bildirimi (KVKK transparency)
+//
+// Cron retention: `endedAt` set olan session'lar tutulur (audit history). 2 yıllık
+// retention boundary AdminAuditLog ile aynı (manual cleanup ileride).
+model ImpersonationSession {
+  id           String    @id @default(cuid())
+  adminId      String    @map("admin_id")
+  targetUserId String    @map("target_user_id")
+  reason       String // Min 20 char audit context, raw stored
+  startedAt    DateTime  @default(now()) @map("started_at")
+  endsAt       DateTime  @map("ends_at") // Mandatory 30dk pencere
+  endedAt      DateTime? @map("ended_at")
+  endedReason  String?   @map("ended_reason") // 'manual' | 'timeout' | 'admin_logout'
+
+  admin      AdminUser @relation("AdminImpersonations", fields: [adminId], references: [id], onDelete: Cascade)
+  targetUser User      @relation("UserImpersonations", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, startedAt])
+  @@index([targetUserId, startedAt])
+  // Active session lookup için (cron + auth check):
+  @@index([endedAt, endsAt])
+  @@map("impersonation_sessions")
 }
 
 // Append-only log of privileged superadmin actions (user CRUD, role

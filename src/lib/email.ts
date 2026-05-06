@@ -229,6 +229,121 @@ export async function sendWelcomeEmail(params: {
   return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
 }
 
+// ─── Stage A4 §38.96 — Impersonation start mail (KVKK transparency) ─────
+
+/**
+ * Owner'a "Hesabınıza X yönetici Y nedeniyle eriştir, Z dakika boyunca aktif"
+ * mailı gönderir. KVKK §13.9 transparency disipline + audit complementary.
+ *
+ * Inline minimal template (Pulse layout overhead'i bu kritik mail için
+ * gereksiz — text-first body + hesap güvenliği bilgisi). recipient + reason
+ * CRLF strip (CLAUDE.md §37.2 H + §37.7).
+ */
+function stripCtl(value: unknown, max = 1000): string | null {
+  if (typeof value !== 'string') return null;
+  return value.replace(/[\r\n\t]/g, ' ').trim().slice(0, max) || null;
+}
+
+export async function sendImpersonationStartEmail(params: {
+  recipient: string;
+  recipientName: string | null;
+  adminUsername: string;
+  reason: string;
+  endsAt: Date;
+  locale: 'tr' | 'en';
+}): Promise<boolean> {
+  const recipient = stripCtl(params.recipient, 256);
+  if (!recipient) return false;
+  const adminUsername = stripCtl(params.adminUsername, 80) ?? 'Yönetici';
+  const reason = stripCtl(params.reason, 500) ?? '(belirtilmemiş)';
+  const recipientName = stripCtl(params.recipientName, 100);
+  const endsAtLabel = params.endsAt.toLocaleString(
+    params.locale === 'en' ? 'en-US' : 'tr-TR',
+    { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' },
+  );
+
+  const subject =
+    params.locale === 'en'
+      ? `[Buaze] An admin opened a support session on your account`
+      : `[Buaze] Hesabınıza destek erişimi açıldı`;
+
+  const greeting = recipientName
+    ? params.locale === 'en'
+      ? `Hi ${recipientName},`
+      : `Merhaba ${recipientName},`
+    : params.locale === 'en'
+      ? 'Hi there,'
+      : 'Merhaba,';
+
+  const html =
+    params.locale === 'en'
+      ? `
+<p>${greeting}</p>
+<p>A Buaze admin (${adminUsername}) just opened a 30-minute support
+session on your account.</p>
+<p><strong>Reason:</strong> ${reason}</p>
+<p><strong>Session ends at:</strong> ${endsAtLabel} (auto-revoke).</p>
+<p>This is part of KVKK / GDPR transparency — we always notify you when an
+admin acts on your behalf. Your data is read-only during this session
+unless the admin makes a change you explicitly approved with support.</p>
+<p>If you didn't expect this contact our support team immediately at
+support@buaze.com.</p>
+<p>— Buaze Team</p>
+`
+      : `
+<p>${greeting}</p>
+<p>Bir Buaze yöneticisi (${adminUsername}) hesabınızda 30 dakikalık bir destek
+oturumu açtı.</p>
+<p><strong>Sebep:</strong> ${reason}</p>
+<p><strong>Oturum bitiş:</strong> ${endsAtLabel} (otomatik kapanır).</p>
+<p>Bu bildirim KVKK / GDPR şeffaflık disiplinin bir parçasıdır — bir
+yönetici hesabınız üzerinden işlem yaptığında her zaman size haber
+veririz. Bu oturumda yönetici varsayılan olarak yalnız okuyabilir;
+müşteri talebiniz olmadan değişiklik yapmaz.</p>
+<p>Bu erişimi bilmiyorsanız hemen support@buaze.com adresinden bize
+ulaşın.</p>
+<p>— Buaze Ekibi</p>
+`;
+
+  const text =
+    params.locale === 'en'
+      ? `${greeting}
+
+A Buaze admin (${adminUsername}) just opened a 30-minute support session on
+your account.
+
+Reason: ${reason}
+Session ends at: ${endsAtLabel} (auto-revoke).
+
+This is part of KVKK / GDPR transparency. If you didn't expect this contact
+support@buaze.com immediately.
+
+— Buaze Team`
+      : `${greeting}
+
+Bir Buaze yöneticisi (${adminUsername}) hesabınızda 30 dakikalık bir destek
+oturumu açtı.
+
+Sebep: ${reason}
+Oturum bitiş: ${endsAtLabel} (otomatik kapanır).
+
+KVKK / GDPR şeffaflık. Bu erişimi bilmiyorsanız support@buaze.com
+adresinden bize ulaşın.
+
+— Buaze Ekibi`;
+
+  return sendResendEmail({
+    to: recipient,
+    subject,
+    html,
+    text,
+    headers: {
+      // No marketing tracking for transactional security mail.
+      'X-Buaze-Mail-Type': 'impersonation-start',
+    },
+  });
+}
+
 // ─── Team invite (Faz 4) ────────────────────────────────────────────────
 
 /**
