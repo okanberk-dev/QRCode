@@ -392,11 +392,42 @@ export default function RestaurantDetailPage() {
             <Metric icon={<UtensilsCrossed size={15} />} label="Menü Ürünü" value={String(meta?._count.menuItems ?? 0)} />
             <Metric icon={<Users size={15} />} label="Yetkili" value={String(meta?._count.adminUsers ?? 0)} />
           </div>
+          {/* §38.76 — İşletme sahibi cross-link. meta.user.id varsa
+              `/admin/members/[ownerId]` link sahibi profile'a götürür; admin
+              "kim sahip → diğer işletmeleri ne?" akışı tek-tıkla. Owner Stage
+              2 §38.72 cross-link paterni admin'e port. */}
           <div className="mt-4 rounded-2xl bg-[#FAFAFA] p-3">
             <p className="pulse-eyebrow text-[#737373]">İşletme Sahibi</p>
-            <p className="mt-1 truncate text-[13px] font-medium text-[#0A0A0A]">{ownerLabel}</p>
+            {meta?.user?.id ? (
+              <Link
+                href={`/admin/members/${meta.user.id}`}
+                className="mt-1 inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A] hover:underline underline-offset-2"
+              >
+                <span className="truncate">{ownerLabel}</span>
+                <ExternalLink size={11} strokeWidth={2} className="shrink-0 text-[#737373]" />
+              </Link>
+            ) : (
+              <p className="mt-1 truncate text-[13px] font-medium text-[#0A0A0A]">{ownerLabel}</p>
+            )}
             {meta?.user?.email && <p className="truncate text-[11px] text-[#737373]">{meta.user.email}</p>}
           </div>
+
+          {/* §38.76 — Yorum geçmişi filter'lı cross-link. /admin/reviews
+              ?restaurantId=[id] ile bu restorana özel yorumlar. Owner /
+              admin daha hızlı action: detail'de "X yorum" sayısı gör →
+              tıkla → filter'lı liste. */}
+          {meta && meta._count.feedbacks > 0 && (
+            <div className="mt-3">
+              <Link
+                href={`/admin/reviews?restaurantId=${id}`}
+                className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px] w-full justify-center"
+              >
+                <MessageSquare size={12} strokeWidth={2} />
+                Yorum geçmişini gör ({meta._count.feedbacks})
+                <ExternalLink size={11} strokeWidth={2} />
+              </Link>
+            </div>
+          )}
         </section>
 
         {/* Widget embed kullanımı — admin-only */}

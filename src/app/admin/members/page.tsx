@@ -29,6 +29,7 @@ import {
   Modal,
   PageHeader,
   TableSkeleton,
+  useConfirmDialog,
 } from '@/components/ui';
 import MemberBillingModal from '@/components/admin/MemberBillingModal';
 import MemberCreateModal from '@/components/admin/MemberCreateModal';
@@ -118,6 +119,11 @@ export default function MembersPage() {
 
   const [editPlan, setEditPlan] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
+  // §38.76 — useConfirmDialog primitive (CLAUDE.md §11.18 paterni). Native
+  // window.confirm() yerine accessible Modal-tabanlı confirmation. Diğer
+  // admin destructive aksiyonları (restaurants delete, blog delete) zaten bu
+  // primitive'i kullanıyor; members soft-delete tutarsızlık intact'tı.
+  const [confirmDialog, askConfirm] = useConfirmDialog();
   const [editTrialEndsAt, setEditTrialEndsAt] = useState('');
   const [billingMember, setBillingMember] = useState<Member | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -198,12 +204,25 @@ export default function MembersPage() {
     setSuccess('');
   };
 
-  const handleSoftDelete = async () => {
+  const handleSoftDelete = () => {
     if (!editingMember) return;
-    const confirmed = window.confirm(
-      `"${editingMember.name || editingMember.email}" silinsin mi?\n\nKullanıcı listede gizlenecek ama veriler (restoranlar, faturalar, audit log) DB'de korunacak. "Silinmiş (arşiv)" filtresinden bulup geri getirebilirsin.`,
-    );
-    if (!confirmed) return;
+    // §38.76 — useConfirmDialog (CLAUDE.md §11.18). Native confirm() yerine
+    // accessible Modal-tabanlı; AlertTriangle icon + danger style + body text
+    // (kullanıcı silmenin yan etkilerini net görür).
+    const memberLabel = editingMember.name || editingMember.email;
+    askConfirm({
+      title: `"${memberLabel}" silinsin mi?`,
+      body:
+        "Kullanıcı listede gizlenecek ama veriler (restoranlar, faturalar, audit log) DB'de korunacak. \"Silinmiş (arşiv)\" filtresinden bulup geri getirebilirsin.",
+      confirmLabel: 'Sil (yumuşak)',
+      cancelLabel: 'Vazgeç',
+      variant: 'danger',
+      onConfirm: () => doSoftDelete(),
+    });
+  };
+
+  const doSoftDelete = async () => {
+    if (!editingMember) return;
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/members/${editingMember.id}`, {
@@ -696,6 +715,8 @@ export default function MembersPage() {
           }}
         />
       )}
+      {/* §38.76 — useConfirmDialog Modal mount (CLAUDE.md §11.18). */}
+      {confirmDialog}
     </div>
   );
 }

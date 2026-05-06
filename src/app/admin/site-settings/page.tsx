@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { Loader2, Save, Upload, Image as ImageIcon, Check, AlertCircle, X, Globe, Sparkles } from 'lucide-react';
+import { Loader2, Save, Upload, Image as ImageIcon, Check, AlertCircle, X, Globe, Sparkles, ShieldCheck, Home } from 'lucide-react';
 import { AlertBanner, Badge, PageHeader } from '@/components/ui';
 
 type Lang = 'tr' | 'en';
@@ -113,11 +113,38 @@ export default function SiteSettingsPage() {
   }
 
   if (!settings) {
+    // §38.76 — Page-level 403/404 guard. Site-settings superadmin-only
+    // (CLAUDE.md §4.5); manager/restaurant_owner direct URL ile geldiğinde
+    // mevcut inline AlertBanner yerine branded full-page block + Dashboard
+    // CTA. SuperadminBlock component'i (ters yönlü, workspace-only sayfalar
+    // için tasarlandı) burada uygun değil; site-settings için bu inline
+    // pattern yeterli — SuperadminRequired wrapper ileride 3+ callsite çıkar
+    // ise extract edilir (CLAUDE.md §7).
+    const isPermissionError = error.toLowerCase().includes('superadmin') || error.includes('Yetkisiz');
     return (
-      <div className="p-8">
-        <AlertBanner kind="danger" icon={<AlertCircle size={14} strokeWidth={2} className="mt-0.5" />}>
-          {error || 'Ayarlar yüklenemedi.'}
-        </AlertBanner>
+      <div className="flex min-h-[60vh] items-center justify-center px-4 py-10">
+        <div className="bz-card w-full max-w-md p-6 sm:p-8 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
+            <ShieldCheck size={20} strokeWidth={2} />
+          </div>
+          <h2 className="bz-h-tight mt-4 text-[20px] text-[#0A0A0A]">
+            {isPermissionError ? 'Sadece Superadmin' : 'Ayarlar yüklenemedi'}
+          </h2>
+          <p className="mt-2 text-[13px] leading-relaxed text-[#525252]">
+            {isPermissionError
+              ? 'Site Ayarları sayfası sadece superadmin kullanıcıları içindir. İşletme veya yönetici hesabıyla bu sayfaya erişemezsin.'
+              : error || 'Ayarlar getirilirken bir hata oluştu. Lütfen tekrar dene.'}
+          </p>
+          <div className="mt-5 flex items-center justify-center gap-2">
+            <Link
+              href="/admin/dashboard"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E]"
+            >
+              <Home size={13} strokeWidth={2} />
+              Dashboard&apos;a dön
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
