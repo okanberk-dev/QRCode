@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import nextDynamic from 'next/dynamic';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
@@ -9,8 +10,28 @@ import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBa
 import TrialBanner from './TrialBanner';
 import ImpersonationBanner from './ImpersonationBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
-import NotificationBell from '@/components/notifications/NotificationBell';
-import CommandPalette from '@/components/dashboard/CommandPalette';
+
+// CLAUDE.md §38.100 — Mobile RES (Real Experience Score) iyileştirmesi.
+// NotificationBell + CommandPalette interactive bileşenler — initial dashboard
+// render'ında critical path'te değiller (Bell click + Cmd+K shortcut sonrası
+// mount eder). next/dynamic({ssr: false}) ile JS chunk'ı bölerek INP/FCP
+// kazancı sağlar. Skeleton placeholder yok çünkü iconlar default state'de
+// görünmez/no-op olarak çalışır (Bell badge mount sonrası refetch olur).
+const NotificationBell = nextDynamic(() => import('@/components/notifications/NotificationBell'), {
+  ssr: false,
+  loading: () => (
+    <span
+      aria-hidden="true"
+      className="bz-btn-icon"
+      style={{ width: 32, height: 32 }}
+    />
+  ),
+});
+const CommandPalette = nextDynamic(() => import('@/components/dashboard/CommandPalette'), {
+  ssr: false,
+  // No loading placeholder — palette mount only after Cmd+K trigger; absent
+  // until interactive.
+});
 
 interface DashboardUser {
   name: string | null;
