@@ -11898,3 +11898,269 @@ viewer mevcut pattern reuse, A5 bulk ops.
 - **Sonraki aşama önerisi**: Stage A2.1 sidebar UI gating (impersonation
   permission grant'ları için admin sidebar'a "Yetkiler" link), Stage A5
   bulk ops, veya §38.B master backlog (HIGH 4 Platforms 12-card grid).
+
+### 38.97 2026-05-06 — Stage A5 admin BI dashboard + bulk feature override + bulk owner mail (3 fix bundle)
+
+§38.93-§38.96 admin Stage A1-A4 zinciri (cross-link + RBAC + audit viewer
++ impersonation) sonrası, admin operasyonel kapasiteyi 3 büyük feature
+ile genişletir: cross-workspace BI (MRR + churn + NPS + retention),
+toplu feature_override (CLAUDE.md §5.2 master flag bulk apply), toplu
+owner segment mail (Pulse template + Resend pipeline). Stage A4
+impersonation gibi geleneksel SaaS support flow'u, ama bu kez **panel
+seviye operatör araçları** (hızlı conversion paneli + ürün toggle
+toplu rollout + targeted owner outreach).
+
+**Out of scope** (kullanıcı talimatı): Yeni schema migration (mevcut
+AdminAuditLog + Restaurant + User reuse), Iyzico billing write-side
+(MRR sentinel sabitler intact), client realtime (Stage 16 owner scope),
+customer support ticket sistemi.
+
+**3 fix bundle**:
+
+#### Fix 1 — `/admin/analytics` cross-workspace BI section
+
+Yeni `src/lib/admin-bi.ts` saf helper — 4 dataset aggregator:
+- `getMrrTrend(months)` — last N month MRR by plan tier (sentinel
+  PLAN_PRICES, CLAUDE.md §11.9 reuse). Plan-switch history yok, today's
+  plan ≈ past plan kabul.
+- `getChurnTrend(months)` — monthly deactivated / active denominator.
+  `User.deactivatedAt` field-level cross-check (CLAUDE.md §38.84
+  paterni intact).
+- `getNpsDistribution(sinceDays)` — Promoter (5★) / passive (3-4★) /
+  detractor (1-2★) cross-workspace. Mevcut /admin/analytics NPS
+  formula (CLAUDE.md §38.34) reuse, sadece scope global.
+- `getCohortRetention(months)` — cohort signup ay'a göre retention
+  (active+trial / signups). Plan-bazlı ayrım (`retainedActive` paid,
+  `retainedTrial` trial).
+
+Yeni endpoint'ler:
+- `GET /api/admin/analytics/bi?range=30d|90d|1y` — Zod range schema,
+  `analytics:read` permission gate (CLAUDE.md §38.94 RBAC), private
+  s-maxage=120 + swr=600 (CDN strip için private).
+- `GET /api/admin/analytics/bi/export?range=...` — CSV download, 4
+  section (MRR / Churn / NPS / Cohort), UTF-8 BOM (Excel TR-safe),
+  rate limit 5/dk/admin (CLAUDE.md §38.78 export rate-limit paterni
+  reuse).
+
+UI — `src/components/admin/AdminBiSection.tsx`:
+- recharts (mevcut dep) `AreaChart` (MRR plan-stacked), `BarChart`
+  (churn + cohort retention stacked), `PieChart` (NPS).
+- Filter: range chip (30G/90G/1Y) + CSV export button.
+- `hidden sm:block` ile mobile gizli (cross-workspace BI owner-relevant
+  değil, sadece tablet+ desktop).
+- Mount: `/admin/analytics` page sonu (mevcut Google Business Profile
+  bağlantı tablosu altına).
+
+#### Fix 2 — Bulk feature_override (`/admin/restaurants/bulk`)
+
+`/api/admin/restaurants/bulk` endpoint discriminated union'a genişletildi:
+- `{ action: 'feature_override', ids, payload: { feature, value } }`
+  branch eklendi.
+- Zod `.strict()` schema (CLAUDE.md §28.3 mass assignment guard).
+- 6 master flag (CLAUDE.md §5.2 RESTAURANT_FEATURE_KEYS): single-feature
+  × multi-restaurant; per-run tek feature setlenir (minimal blast
+  radius).
+- Side effects feature-access endpoint'iyle parite: `menuEnabled=false ⇒
+  menuPublished=false`; `pulseAiEnabled=false ⇒ FeedbackAiDraft cleanup`
+  (Promise.allSettled per-row isolation).
+- Audit log helper (`writeAdminAuditLog`) — before snapshot (forensic
+  delta) + count + ids + payload.
+
+UI — `src/app/admin/restaurants/page.tsx`:
+- Mevcut multi-select (CLAUDE.md §11.19) reuse.
+- Floating bulk toolbar'a "Özellik aç/kapat" CTA eklendi.
+- `<Modal>` primitive (focus trap + ESC + body scroll lock + §11.1
+  baseline) — feature picker (radio cards) + AÇIK/KAPALI value toggle +
+  selected count preview + warning banner.
+- `useConfirmDialog` (CLAUDE.md §11.18) destructive aksiyon gate.
+- ID limit 50 → 100 (feature_override için biraz daha geniş, eski
+  activate/deactivate batch'leriyle uyumlu).
+
+#### Fix 3 — Bulk owner segment mail (`/admin/members/bulk`)
+
+Yeni endpoint + 3 yardımcı modül:
+- `src/lib/admin-owner-segments.ts` — `resolveOwnerIdsForSegment(preset, manualIds)`
+  saf helper. 5 preset: all / trial_expiring_3d / inactive_14d /
+  high_volume / custom. Preset query + manuel intersection (admin
+  preset seçti + checkbox seçimi varsa, ikisinin kesişimi).
+- `src/lib/email/templates/owner-segment-mail.ts` — Pulse template
+  (CLAUDE.md §21 paterni reuse). Admin subject + body free-text
+  (escapeHtml + linebreak preserve), Buaze logo + lime accent CTA + TR/EN
+  greeting.
+- `src/lib/email/owner-segment-send.ts` — sequential render + send +
+  600ms throttle (CLAUDE.md §38.12 Resend free tier 2/sec cap altında
+  %20 margin paterni). Per-row Promise.allSettled mantığı sequential
+  loop ile (audit log per-call değil, tek summary).
+
+`POST /api/admin/members/bulk`:
+- `members:write` permission gate (CLAUDE.md §38.94 RBAC; superadmin
+  bypass, manager grant'lı ise erişebilir).
+- Zod `.strict()` body: action='send_email', segment enum, optional
+  ids[]≤500, payload { subject ≤ 200, body ≤ 8000, locale }.
+- Rate limit **1/dk/admin** (mass-send abuse koruması, mail spend
+  guard — Resend free tier 100 mail/saat altında).
+- `maxDuration: 90` (100 mail × 600ms = 60sn + buffer).
+- Hard cap 500 alıcı (`truncated: true` flag eğer aşılırsa).
+- Audit log tek satır summary (subject preview + count + segment;
+  body redacted — admin yazdı, KVKK gereksiz).
+
+UI — `src/app/admin/members/page.tsx`:
+- Tablo header'a select-all checkbox (indeterminate state) + her row'a
+  per-id checkbox.
+- PageHeader actions'a "Toplu mail" CTA (selection bağımsız — modal
+  içinde admin segment seçer; mevcut seçim varsa custom segment'a
+  default).
+- Floating bulk toolbar (selection > 0 iken) "Toplu mail gönder" CTA
+  + dismiss X.
+- `<Modal size=640>` compose: 5-segment radio + subject input (200 char
+  counter) + textarea (8000 char counter) + locale TR/EN toggle + info
+  banner (rate limit + audit disclaimer) + Send button (Loader2
+  spinner).
+- Filter / page değişiminde selection auto-clear (CLAUDE.md §11.21
+  paterni reuse).
+- Bulk mail success notice (5sn auto-dismiss, CLAUDE.md §38.15 dwell
+  timing).
+
+#### Fix 4 (bonus) — `/admin/dashboard` Operasyonel sinyaller section
+
+Mevcut 4-stat KPI + recently joined + needs attention (§11.9 §38.32)
+intact. Yeni 2-col grid section eklendi:
+- **SON TOPLU İŞLEMLER**: Last 5 `admin.*.bulk.*` audit event (last 30d).
+- **KRİTİK AUDIT EVENT'LERİ**: Last 5 destructive event (delete /
+  deactivate / impersonate / permission revoke).
+- Cross-link "Tümü" → `/admin/audit-logs` (Stage A3 §38.95).
+- Server-rendered (SSR), `prisma.$transaction` 2 paralel query +
+  actor name resolver (AdminUser.username lookup).
+- Component: `src/components/admin/AdminOperationalSignals.tsx`
+  presentational, lucide icon map per-action.
+
+#### Audit log ACTION_LABELS extension
+
+`src/lib/audit-log.ts` `ACTION_LABELS` map'ine 4 yeni entry:
+- `admin.restaurants.bulk.activate` / `.deactivate` (TR/EN)
+- `admin.restaurants.bulk.feature_override` (TR/EN)
+- `admin.owners.bulk.send_email` (TR/EN)
+
+**§5.2 admin master flag bulk override notu** (kanonik):
+
+| Önce | Sonra (Stage A5) |
+|---|---|
+| Per-restaurant feature-access endpoint (`/admin/restaurants/[id]/feature-access` PATCH) | + Bulk endpoint (`/admin/restaurants/bulk` action='feature_override') |
+| Single-restaurant rollout | Multi-restaurant (≤100) tek-feature × tek-değer rollout |
+| Audit log per-restaurant | Audit log tek satır + before snapshot per-id |
+| pulseAi cleanup tek `feedbackAiDraft.deleteMany` | Promise.allSettled per-id (per-row isolation §28.4) |
+
+Manager için hâlâ kapalı (`actor.role !== 'superadmin'` zorunlu —
+bulk operasyonel scope superadmin-typical). Per-restaurant
+feature-access mevcut endpoint manager için zaten yok (CLAUDE.md
+§38.94 superadmin-only intact); bulk de aynı role gate'i taşır.
+
+**§11.4 admin dashboard tablosu güncellemesi** (kanonik):
+
+| Section | Veri kaynağı | Mount |
+|---|---|---|
+| 4-stat KPI grid | restaurant + feedback + user agg (CLAUDE.md §11.9) | dashboard sm: + |
+| Recently joined | last 4 restaurant + owner plan | dashboard 2-col 2 |
+| Needs attention | trial expiring + expired + stale + quota + unverified | dashboard 2-col 1 |
+| Business growth chart | bucketByWeek 12 hafta restaurant | dashboard md: 2fr |
+| Plan distribution | plan bucket aggregate | dashboard md: 1fr |
+| **Operasyonel sinyaller** (§38.97) | AdminAuditLog last 5 bulk + last 5 destructive | dashboard 2-col grid |
+
+**Yapma**:
+- Bulk feature_override için per-feature ayrı endpoint açma — discriminated
+  union tek endpoint daha temiz; her yeni master flag eklendiğinde sadece
+  RESTAURANT_FEATURE_KEYS array genişletilir, schema değişmez.
+- Bulk owner mail için `sendCustomerCampaign` (CLAUDE.md §38.48 Wave 2)
+  helper'ını reuse etmek — owner mail KVKK marketing consent gate'i
+  gerektirmez (transactional admin↔owner iletişimi, customer mail farklı
+  semantik). Ayrı `sendOwnerSegmentMail` helper + `owner-segment-mail`
+  template doğru ayrım.
+- Bulk owner mail rate limit'i 1/dk'dan agresif kısma — Resend free tier
+  + abuse koruması; gerçek operasyonel ihtiyaç en fazla saatlik 5-10 mail
+  campaign'a eşit.
+- BI endpoint için Redis cache eklemek — process-local 60sn TTL yeterli
+  (CLAUDE.md §15.1 paterni). Multi-instance Vercel'de 60sn drift kabul.
+- BI section'ı mobile'da göstermek — owner-relevant değil, dar ekranda
+  4 grafik karışıklık. `hidden sm:block` kasıtlı.
+- Operasyonel sinyaller için yeni schema/index açmak — AdminAuditLog
+  zaten `[action, createdAt]` index'li (CLAUDE.md §11.4 sürdürülüyor),
+  IN clause + last 30d filter performant.
+- Bulk feature_override'da audit log atmak — destructive bulk, forensic
+  trail zorunlu (CLAUDE.md §29.6).
+- Owner mail compose modal'ında HTML editor eklemek — admin free-text +
+  linebreak preserve yeterli, owner mail body kısa transactional; rich
+  HTML scope creep + XSS surface açar (escapeHtml zaten body koruyor).
+
+**Yap**:
+- Yeni admin bulk action eklerken aynı paterni reuse: discriminated
+  union body schema + `.strict()` + role gate (manager/superadmin) +
+  rate limit + audit log helper + UI floating toolbar.
+- Yeni segment preset eklerken `OwnerSegmentPreset` literal genişlet +
+  `resolveOwnerIdsForSegment` switch case + UI `SEGMENT_OPTIONS` array.
+- Yeni audit action label eklerken `ACTION_LABELS` map güncellemesi
+  (TR/EN parity zorunlu — Stage A3 §38.95 viewer için).
+- Yeni mail flow'da Resend rate-limit guard (600ms throttle) + per-row
+  Promise.allSettled veya sequential pattern reuse — mass-send tek
+  noktada toplanır.
+- BI dataset eklemek (örn. ARPU, LTV, MAU) — `getBiSnapshot` aggregator
+  genişletilir + UI grid'ine yeni card; recharts ile mevcut chart
+  primitive'leri (Area / Bar / Pie) reuse.
+
+**Verification**:
+- `npm run lint`: 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: 221/221 pass, 29 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap): ✓ Compiled
+  successfully + 58/58 static pages + 3 yeni dynamic route
+  (`/api/admin/analytics/bi` + `/api/admin/analytics/bi/export` +
+  `/api/admin/members/bulk`)
+
+**Stage A5 closure** (Tarih 2026-05-06):
+- Branch `chore/admin-bi-bulk-ops-stageA5`
+- Toplam 13 dosya değişiklik (8 yeni + 5 edit)
+- Yeni dosyalar:
+  - `src/lib/admin-bi.ts`
+  - `src/lib/admin-owner-segments.ts`
+  - `src/lib/email/templates/owner-segment-mail.ts`
+  - `src/lib/email/owner-segment-send.ts`
+  - `src/components/admin/AdminBiSection.tsx`
+  - `src/components/admin/AdminOperationalSignals.tsx`
+  - `src/app/api/admin/analytics/bi/route.ts`
+  - `src/app/api/admin/analytics/bi/export/route.ts`
+  - `src/app/api/admin/members/bulk/route.ts`
+- Edit'lenen dosyalar:
+  - `src/app/api/admin/restaurants/bulk/route.ts` (feature_override branch)
+  - `src/app/admin/restaurants/page.tsx` (multi-select toolbar genişletme +
+    feature modal)
+  - `src/app/admin/members/page.tsx` (multi-select + bulk mail toolbar +
+    compose modal)
+  - `src/app/admin/dashboard/page.tsx` (Operasyonel sinyaller section
+    SSR fetch + mount)
+  - `src/app/admin/analytics/page.tsx` (BI section mount)
+  - `src/lib/audit-log.ts` (4 yeni ACTION_LABELS entry)
+- Schema migration: YOK
+- Yeni dep: YOK (recharts mevcut)
+- Test count: 221 (değişmedi — UI binding + endpoint integration test
+  scope dışı, helper'ların pure logic'i mevcut audit-log.ts /
+  api/validate / rbac üstüne kuruldu)
+- Operatör aksiyonu (PR sonrası): YOK — tüm değişiklikler runtime
+  auto-applied. Manuel smoke test:
+  - Superadmin → `/admin/analytics` → BI section görünür (sm:+ desktop
+    only) → 4 chart render + range chip toggle + CSV download.
+  - Superadmin → `/admin/restaurants` → 5 işletme select → "Özellik
+    aç/kapat" → modal'da "Pulse AI" + KAPALI seç → ConfirmDialog → 5
+    işletmede pulseAiEnabled=false + bekleyen FeedbackAiDraft temizlendi.
+  - Superadmin → `/admin/members` → 10 trial owner select → "Toplu mail"
+    → Pulse template → 60sn'de 10 mail Resend'den teslim + audit log
+    `admin.owners.bulk.send_email` 1 satır.
+  - Superadmin → `/admin/dashboard` → "Operasyonel sinyaller" section
+    en altta görünür → "Tümü" → `/admin/audit-logs` filtered.
+- Kalan riskler: BI helper sentinel PLAN_PRICES (Iyzico geldiğinde
+  gerçek invoice toplam); cohort retention plan-switch history yok
+  (today's plan ≈ past plan kabul); bulk mail rate limit Resend free
+  tier baz alınmış (Pro plan'a geçilirse 600ms → ~150ms throttle uygun).
+- **Sonraki aşama önerisi**: §38.B master backlog kalemleri — HIGH 4
+  Platforms 12-card grid (DEFER §38.30 product decision pending),
+  RECAPTCHA_ENFORCE flip (1-2 hafta soak), Prisma 7 upgrade (§5.4 Task
+  8). Veya yeni operatör talebi (Stage A2.1 sidebar UI gating, Stage A6
+  customer support inbox vb.).

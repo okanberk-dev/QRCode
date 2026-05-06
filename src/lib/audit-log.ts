@@ -196,6 +196,23 @@ export const ACTION_LABELS: Record<string, { tr: string; en: string }> = {
   // Permission grants (Stage A2 §38.94)
   'admin.permission.grant': { tr: 'Yetki verildi', en: 'Permission granted' },
   'admin.permission.revoke': { tr: 'Yetki geri alındı', en: 'Permission revoked' },
+  // Bulk operations (Stage A5 §38.97)
+  'admin.restaurants.bulk.activate': {
+    tr: 'Toplu işletme aktivasyonu',
+    en: 'Bulk restaurant activation',
+  },
+  'admin.restaurants.bulk.deactivate': {
+    tr: 'Toplu işletme pasifleştirildi',
+    en: 'Bulk restaurant deactivation',
+  },
+  'admin.restaurants.bulk.feature_override': {
+    tr: 'Toplu özellik geçişi',
+    en: 'Bulk feature override',
+  },
+  'admin.owners.bulk.send_email': {
+    tr: 'Toplu e-posta gönderildi (işletme sahipleri)',
+    en: 'Bulk email sent (owners)',
+  },
   // Owner-side actions (logged when owner self-modifies)
   'user.password.change': { tr: 'Şifre değiştirildi', en: 'Password changed' },
   'user.profile.update': { tr: 'Profil güncellendi', en: 'Profile updated' },

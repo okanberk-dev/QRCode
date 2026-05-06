@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download } from 'lucide-react';
+import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download, Settings2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
-import { AlertBanner, Avatar, Badge, type BadgeKind, CardSkeleton, EmptyState, Modal, PageHeader, type TabItem, Tabs } from '@/components/ui';
+import { AlertBanner, Avatar, Badge, type BadgeKind, CardSkeleton, EmptyState, Modal, PageHeader, type TabItem, Tabs, useConfirmDialog } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -48,6 +48,25 @@ interface Owner {
   isActive: boolean;
 }
 
+// Stage A5 §38.97 — bulk feature override (CLAUDE.md §5.2 master flags).
+// 6 boolean field; UI adapt'i feature-access endpoint label'larıyla parite.
+type FeatureKey =
+  | 'googleReviewManagementEnabled'
+  | 'pulseAiEnabled'
+  | 'menuEnabled'
+  | 'menuPublished'
+  | 'aiAnalyticsEnabled'
+  | 'externalPlatformsEnabled';
+
+const FEATURE_OPTIONS: Array<{ key: FeatureKey; label: string; hint: string }> = [
+  { key: 'googleReviewManagementEnabled', label: 'Google yorum yönetimi', hint: 'Sahteci yorum + AI cevap taslağı' },
+  { key: 'pulseAiEnabled', label: 'Pulse AI', hint: 'Otomatik yanıt taslakları + tema çıkarımı' },
+  { key: 'menuEnabled', label: 'Menü düzenleme', hint: 'Owner menü ekleyip yayınlayabilir' },
+  { key: 'menuPublished', label: 'Menü yayında', hint: 'Public /menu/[slug] sayfası açık' },
+  { key: 'aiAnalyticsEnabled', label: 'AI analitik', hint: 'Tema + weekly insight + sentiment progress' },
+  { key: 'externalPlatformsEnabled', label: 'Dış platformlar', hint: 'Yemeksepeti / Getir / Trendyol / Tripadvisor / Yelp / Foursquare ...' },
+];
+
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [owners, setOwners] = useState<Owner[]>([]);
@@ -78,6 +97,11 @@ export default function RestaurantsPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkNotice, setBulkNotice] = useState<string | null>(null);
+  // Stage A5 §38.97 — bulk feature override modal state.
+  const [showFeatureModal, setShowFeatureModal] = useState(false);
+  const [featureKey, setFeatureKey] = useState<FeatureKey>('pulseAiEnabled');
+  const [featureValue, setFeatureValue] = useState<boolean>(true);
+  const [confirmDialog, askConfirm] = useConfirmDialog();
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -260,6 +284,49 @@ export default function RestaurantsPage() {
     } finally {
       setBulkBusy(false);
     }
+  };
+
+  // Stage A5 §38.97 — bulk feature override apply.
+  const applyFeatureOverride = async () => {
+    if (selectedIds.size === 0 || bulkBusy) return;
+    const featureLabel = FEATURE_OPTIONS.find((f) => f.key === featureKey)?.label || featureKey;
+    askConfirm({
+      title: `${selectedIds.size} işletmede "${featureLabel}" değiştirilecek`,
+      body: `${featureValue ? 'Açık' : 'Kapalı'} olarak ayarlanacak. Owner panelleri anında etkilenecek; ${featureKey === 'pulseAiEnabled' && !featureValue ? 'bekleyen AI taslakları silinecek.' : 'mevcut veriler korunacak.'}`,
+      confirmLabel: featureValue ? 'Aç' : 'Kapat',
+      cancelLabel: 'Vazgeç',
+      variant: 'danger',
+      onConfirm: async () => {
+        setBulkBusy(true);
+        setBulkNotice(null);
+        try {
+          const res = await fetch('/api/admin/restaurants/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ids: Array.from(selectedIds),
+              action: 'feature_override',
+              payload: { feature: featureKey, value: featureValue },
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setBulkNotice(`${data.processed} işletmede "${featureLabel}" → ${featureValue ? 'açık' : 'kapalı'}`);
+            setShowFeatureModal(false);
+            setSelectedIds(new Set());
+            await fetchRestaurants();
+          } else {
+            const err = await res.json().catch(() => ({}));
+            setFetchError(err.error || 'Toplu özellik geçişi başarısız.');
+          }
+        } catch (e) {
+          console.error(e);
+          setFetchError('Bağlantı hatası — toplu özellik geçişi tamamlanamadı.');
+        } finally {
+          setBulkBusy(false);
+        }
+      },
+    });
   };
 
   const filteredRestaurants = useMemo(
@@ -660,12 +727,13 @@ export default function RestaurantsPage() {
         </Modal>
       )}
 
-      {/* PR10 — Bulk action floating toolbar (Stripe Dashboard pattern, §11). */}
+      {/* PR10 — Bulk action floating toolbar (Stripe Dashboard pattern, §11).
+          Stage A5 §38.97 — "Özellik aç/kapat" CTA eklendi. */}
       {selectedIds.size > 0 && (
         <div
           role="region"
           aria-label="Toplu işlem araç çubuğu"
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-2xl border border-[#0A0A0A] bg-white px-3 py-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.4)] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:max-w-[520px]"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center gap-2 rounded-2xl border border-[#0A0A0A] bg-white px-3 py-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.4)] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:max-w-[640px]"
         >
           <span aria-live="polite" className="text-[12px] font-semibold text-[#0A0A0A] px-2">
             {selectedIds.size} seçildi
@@ -691,6 +759,15 @@ export default function RestaurantsPage() {
           <button
             type="button"
             disabled={bulkBusy}
+            onClick={() => setShowFeatureModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-[#0A0A0A] px-3 py-1 text-[11px] font-semibold text-white hover:bg-[#1A1A1A] disabled:opacity-50 transition-colors"
+          >
+            <Settings2 size={11} strokeWidth={2.2} />
+            Özellik aç/kapat
+          </button>
+          <button
+            type="button"
+            disabled={bulkBusy}
             onClick={() => setSelectedIds(new Set())}
             aria-label="Seçimi temizle"
             className="ml-1 rounded-md p-1 hover:bg-[#FAFAFA] transition-colors disabled:opacity-50"
@@ -699,6 +776,119 @@ export default function RestaurantsPage() {
           </button>
         </div>
       )}
+
+      {/* Stage A5 §38.97 — Feature override modal */}
+      {showFeatureModal && (
+        <Modal
+          size={520}
+          onClose={() => setShowFeatureModal(false)}
+          title={
+            <div>
+              <p className="pulse-eyebrow text-[#737373]">Toplu özellik geçişi</p>
+              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+                {selectedIds.size} işletmede özellik aç/kapat
+              </h2>
+              <p className="mt-1 text-[12px] text-[#525252]">
+                Tek bir master flag, seçili tüm işletmelere uygulanır. Owner panelleri anında etkilenir.
+              </p>
+            </div>
+          }
+        >
+          <div className="space-y-5">
+            <AlertBanner kind="warn" icon={<Info size={14} strokeWidth={2} />}>
+              Bu işlem geri alınamaz şekilde audit log&apos;a yazılır. Pulse AI kapatılırsa bekleyen taslaklar silinir; menü kapatılırsa ayrıca yayın da kapanır.
+            </AlertBanner>
+
+            <div className="space-y-2">
+              <label className="pulse-eyebrow text-[#737373]">Özellik</label>
+              <div className="grid gap-1.5">
+                {FEATURE_OPTIONS.map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setFeatureKey(f.key)}
+                    aria-pressed={featureKey === f.key}
+                    className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                      featureKey === f.key
+                        ? 'border-[#0A0A0A] bg-[#FAFAFA]'
+                        : 'border-[#EDEDED] hover:border-[#A3A3A3]'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium text-[#0A0A0A]">{f.label}</div>
+                      <div className="mt-0.5 text-[11px] text-[#737373]">{f.hint}</div>
+                    </div>
+                    <span className="bz-mono mt-0.5 text-[10px] text-[#A3A3A3]">{f.key}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="pulse-eyebrow text-[#737373]">Değer</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFeatureValue(true)}
+                  aria-pressed={featureValue === true}
+                  className={`py-3 rounded-xl border pulse-eyebrow transition-colors ${
+                    featureValue
+                      ? 'bg-[#C6F24E] text-[#0A0A0A] border-[#A8D62E]'
+                      : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                  }`}
+                >
+                  <ToggleRight size={14} className="inline mr-1.5" strokeWidth={2} />
+                  AÇIK
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeatureValue(false)}
+                  aria-pressed={featureValue === false}
+                  className={`py-3 rounded-xl border pulse-eyebrow transition-colors ${
+                    !featureValue
+                      ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                      : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                  }`}
+                >
+                  <ToggleLeft size={14} className="inline mr-1.5" strokeWidth={2} />
+                  KAPALI
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3 text-[12px] text-[#525252]">
+              <span className="bz-mono uppercase tracking-wider text-[#737373]">Önizleme</span>
+              <p className="mt-1">
+                <strong>{selectedIds.size}</strong> işletmede{' '}
+                <strong>{FEATURE_OPTIONS.find((f) => f.key === featureKey)?.label}</strong>{' '}
+                <strong>{featureValue ? 'açılacak' : 'kapatılacak'}</strong>.
+              </p>
+            </div>
+
+            <div className="flex flex-col-reverse justify-end gap-2 border-t border-[#EDEDED] pt-4 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setShowFeatureModal(false)}
+                className="bz-btn-ghost"
+                disabled={bulkBusy}
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={applyFeatureOverride}
+                disabled={bulkBusy}
+                className="bz-btn-primary disabled:opacity-50"
+              >
+                {bulkBusy ? <Loader2 size={14} className="animate-spin" /> : <Settings2 size={14} strokeWidth={2.2} />}
+                Uygula
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {confirmDialog}
 
       {bulkNotice && (
         <div

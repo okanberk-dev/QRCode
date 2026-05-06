@@ -15,6 +15,9 @@ import AdminOverviewWidgets, {
   type AttentionRow,
   type RecentMember,
 } from '@/components/admin/AdminOverviewWidgets';
+import AdminOperationalSignals, {
+  type OperationalSignalRow,
+} from '@/components/admin/AdminOperationalSignals';
 
 export const metadata: Metadata = {
   title: 'Panel — Buaze Admin',
@@ -217,6 +220,69 @@ export default async function AdminDashboardPage() {
     (r) => r._count.feedbacks >= TRIAL_QUOTA * 0.9,
   ).length;
 
+  // Stage A5 §38.97 — Operational signals: last 5 bulk + last 5 destructive
+  // events from AdminAuditLog (last 30d). Server-render snapshot;
+  // cross-link "Tümü" → /admin/audit-logs.
+  const thirtyDaysAuditAgo = thirtyDaysAgo;
+  const BULK_ACTIONS = [
+    'admin.restaurants.bulk.activate',
+    'admin.restaurants.bulk.deactivate',
+    'admin.restaurants.bulk.feature_override',
+    'admin.owners.bulk.send_email',
+  ];
+  const DESTRUCTIVE_ACTIONS = [
+    'admin.users.delete',
+    'admin.members.deactivate',
+    'admin.restaurants.delete',
+    'admin.impersonate.start',
+    'admin.permission.revoke',
+  ];
+  const [bulkAuditRaw, destructiveAuditRaw] = await prisma.$transaction([
+    prisma.adminAuditLog.findMany({
+      where: { action: { in: BULK_ACTIONS }, createdAt: { gte: thirtyDaysAuditAgo } },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { id: true, action: true, actorId: true, actorSource: true, targetId: true, createdAt: true, payload: true },
+    }),
+    prisma.adminAuditLog.findMany({
+      where: { action: { in: DESTRUCTIVE_ACTIONS }, createdAt: { gte: thirtyDaysAuditAgo } },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      select: { id: true, action: true, actorId: true, actorSource: true, targetId: true, createdAt: true, payload: true },
+    }),
+  ]);
+
+  // Resolve actor names (admin usernames). Both bulk + destructive actor IDs.
+  const auditActorIds = Array.from(
+    new Set([...bulkAuditRaw, ...destructiveAuditRaw].map((r) => r.actorId)),
+  );
+  const auditActors =
+    auditActorIds.length > 0
+      ? await prisma.adminUser.findMany({
+          where: { id: { in: auditActorIds } },
+          select: { id: true, username: true },
+        })
+      : [];
+  const actorNameMap = new Map(auditActors.map((a) => [a.id, a.username]));
+
+  function mapAuditRow(row: typeof bulkAuditRaw[0]): OperationalSignalRow {
+    const payload = (row.payload as { count?: number } | null) || null;
+    const count = typeof payload?.count === 'number' ? payload.count : null;
+    return {
+      id: row.id,
+      action: row.action,
+      actorId: row.actorId,
+      actorSource: row.actorSource,
+      targetId: row.targetId,
+      createdAt: row.createdAt,
+      actorName: actorNameMap.get(row.actorId) || null,
+      count,
+    };
+  }
+
+  const bulkSignals = bulkAuditRaw.map(mapAuditRow);
+  const destructiveSignals = destructiveAuditRaw.map(mapAuditRow);
+
   // Each row deeplinks to the corresponding admin list with the matching
   // attention filter preset (CLAUDE.md §11.36). Backend mirrors these
   // attention values in /api/admin/members + /api/restaurants.
@@ -368,6 +434,13 @@ export default async function AdminDashboardPage() {
       {/* Recently joined + Needs attention — server-computed metrics (design 1:1).
           Mobile: stacks vertically (matches MAdminHome). Desktop: 2-col. */}
       <AdminOverviewWidgets locale="tr" members={recentMembers} attention={attention} />
+
+      {/* Stage A5 §38.97 — Operasyonel sinyaller: son 5 bulk + son 5 destructive
+          audit event. Cross-link Audit Log Viewer'a (Stage A3 §38.95). */}
+      <AdminOperationalSignals
+        bulkRows={bulkSignals}
+        destructiveRows={destructiveSignals}
+      />
     </div>
   );
 }
