@@ -10568,4 +10568,47 @@ CLAUDE.md §38.B "feedback PATCH UI wiring" backlog kapanışı. §38.56'da `Fee
 - Kalan iş (Stage 15+ scope): (a) login akışı UserSession.create assertion + Sentry capture, (b) prod log warn frequency analizi, (c) root cause confirmation, (d) Stage 9 disipline re-introduce. Operatör onayı + low-traffic window gerek.
 - **Sonraki aşama önerisi**: Stage 15 — login akışı UserSession.create hardening + diagnostic. Bu olmadan Stage 9 re-introduce edilmez.
 
+### 38.85 2026-05-06 — Stage 9-14 closure audit (clean — 0 drift)
+
+CLAUDE.md §38.79 + §38.80 + §38.83 + §38.84 stages 9-14 (PR #491-#494) closure audit. Production'a deploy edilmiş 4 PR için drift verification + backend disipline cross-check + verification commands.
+
+**Branch** `chore/audit-stage-9-14-closure-log`. Tek consolidated PR (CLAUDE.md §21.22). Schema migration **YOK**. Kod değişikliği yapılmadı — sadece dokümantasyon.
+
+**Audit method** (3 paralel Explore agent + manuel sanity grep):
+- Agent 1 (auth/security — Stage 9 + 14): `src/lib/auth.ts:isUserSessionRevoked` (Stage 14 fail-open intact + diagnostic warn), `src/lib/bcrypt-config.ts` (BCRYPT_COST=12 + JSDoc §38.79 ref), 14 actual `bcrypt.hash` callsite + 13 import (admin/login dual), `scripts/backfill-user-sessions.ts` (idempotent + collision-free `legacy:` prefix), `scripts/validate-env.js` (RECAPTCHA_ENFORCE optional list line 64), `src/app/api/admin/site-settings/upload/route.ts` (SVG raw branch yok, sharp pipeline rasterize) → **6/6 [OK]**
+- Agent 2 (resolver + Google — Stage 10): `platform-redirect-resolver.ts` 5-point Yelp/Foursquare (RedirectProvider literal + PROVIDER_FIELDS + PLATFORM_ID_TO_PROVIDER + ResolveRestaurantInput + allProviders), `sector-platforms.ts` food/hospitality, `restaurant-features.ts` EXTERNAL_REVIEW_PROVIDERS + isExternalPlatformField, `/api/restaurants` slug GET defansif select + null override, `/r/[slug]/page.tsx` RestaurantData interface, `tests/platform-redirect-resolver.test.ts` 4 yeni test (Yelp usable + Foursquare usable + sector_priority + 24h broken-skip), `google-business.ts` listLocationMedia + listLocationQuestions + QANDA_API_URL, `profile-stats/route.ts` IDOR + Promise.allSettled + reauth 401 + cache header, `google-reviews/page.tsx` ProfileStats interface + state + fire-and-forget fetch + checklist real data binding → **9/9 [OK]**
+- Agent 3 (feedback Stage 13): `/api/feedback/bulk/route.ts` bulk_mark_read enum + updateMany dispatch + role guard + audit log, `/api/feedback/[id]/route.ts` PATCH Zod `.strict()` + IDOR canWriteFeedback + validateBody + 400 no_updates, `feedbacks/page.tsx` onSelectFeedback skip-if-read + togglePending optimistic + bulkNotice 5s/8s, `FeedbackDetail.tsx` Bookmark + onTogglePending + amber palette + aria-pressed + i18n, `FeedbackListItem.tsx` isUnread mavi dot + font-bold + isPending Bookmark badge, `BulkActionToolbar.tsx` CheckCheck + onMarkRead + lime-soft, `admin/reviews/page.tsx` runBulk union + onMarkRead wiring → **7/7 [OK]**
+- Sanity grep (11 pattern): hepsi expected count'larla eşleşti — Stage 14 fail-open `if (!session)` auth.ts:122 + Stage 14 hotfix comment line 128, BCRYPT_COST 14 actual hash callsite + 13 import, Yelp/Foursquare 12 reference, bulk_mark_read 6 reference, togglePending+onTogglePending 6 reference, listLocationMedia+listLocationQuestions 2 unique export, SVG raw branch 0 occurrence, RECAPTCHA_ENFORCE 1 entry, tests Yelp/Foursquare 21 match, backfill-user-sessions.ts 3356 bytes, profile-stats endpoint 4462 bytes.
+
+**Findings**: **0 drift / clean / production-ready**.
+
+**Verification**:
+- `npm run lint`: 0 errors, 1 baseline warning (`canAccessRestaurant` unused @ feedback/bulk/route.ts:5 — pre-existing §38.58)
+- `npx tsc --noEmit`: 0 errors in `src/` (4 pre-existing `.next/types/...` baseline §21.13)
+- `npm test`: 186/186 pass, 22 suites, 12.2s (Stage 10 +4 yeni resolver test, baseline 182 → 186)
+- `npx next build` (stub env, `NODE_OPTIONS="--max-old-space-size=4096"`): ✓ Compiled 33.4s + ✓ 58/58 static pages (Prisma stub DB warnings beklenen — default 2GB heap crash ediyordu, 4GB ile pass)
+
+**Yapma**:
+- Stage 14 fail-open paterni `return false`'u `return true`'ya çevirme — production incident root cause (login `prisma.userSession.create` silent fail) henüz çözülmedi (Stage 15+ scope, §38.84 dokümante).
+- BCRYPT_COST sabitini düşürme — OWASP 2024 baseline 12, brute-force defense rate-limit + reCAPTCHA layered (§37.3 #6).
+- Yelp/Foursquare provider drift tek nokta'da güncellemek — §38.70 + §38.80 10-point disipline (RedirectProvider literal + PROVIDER_FIELDS + PLATFORM_ID_TO_PROVIDER + sector_priority + EXTERNAL_REVIEW_PROVIDERS + isExternalPlatformField + slug API select + /r/[slug] type + 3 endpoint Prisma select cron+health+manual test).
+- profile-stats endpoint'inde reauth signal'ı sadece soft-fail'a bırakma — `requiresReauth=true` parent endpoint 401 dönmeli (owner reconnect CTA, §38.80).
+- Q&A API call'unu reviews/media ile aynı host'a map etmek — Google Q&A ayrı `mybusinessq-and-a.googleapis.com/v1` endpoint'i (`QANDA_API_URL` const).
+- Build verification için default Node heap (2GB) kullanma — Stage 9-14 sonrası 4GB heap (`NODE_OPTIONS="--max-old-space-size=4096"`) gerekli, default crash ediyor.
+
+**Yap**:
+- Yeni audit ihtiyacı çıktığında bu §38.85 paterni reuse: 3 paralel Explore agent (auth/UI/test scope ayrımı) + sanity grep (her stage için expected count) + verification commands (lint + tsc + test + build) + closure log.
+- Stage 15+ planlama: §38.84 "Stage 9 re-introduce öncesi disipline checklist" paterni — login akışı `prisma.userSession.create` assertion + Sentry capture + prod log warn frequency analizi + canary test.
+- Yeni provider eklerken §38.70 + §38.80 10-point disipline (5 mevcut + 3 endpoint Prisma select + 2 UI binding) zorunlu — partial update drift kaynağı.
+- Stage 13 paterni reuse: yeni feedback PATCH alanı eklerken `validateBody` + Zod `.strict()` + IDOR + `canWriteFeedback` + UI optimistic + bulkNotice 5s/8s.
+
+**Stage 9-14 audit closure** (Tarih 2026-05-06):
+- Branch `chore/audit-stage-9-14-closure-log`
+- Stages audited: §38.79 (Stage 9 PR #491) + §38.80 (Stage 10 PR #492) + §38.83 (Stage 13 PR #493) + §38.84 (Stage 14 PR #494)
+- Findings: **0 drift / clean / production-ready**
+- Çalıştırılan kontroller: lint 0 err / tsc src 0 err / test 186/186 pass / build 58/58 static / sanity grep 11/11 expected count
+- Operatör aksiyonları (PR sonrası): YOK — sadece dokümantasyon, kod değişikliği yapılmadı. Pre-existing §38.B master backlog (RECAPTCHA_ENFORCE flip, UserSession Stage 15 re-introduce, HIGH 4 Platforms 12-card grid) intact.
+- Kalan riskler: Stage 14 §37.2 D bypass koruması kasıtlı undone — Vercel runtime log `[auth] UserSession row missing` warn frequency monitor (Stage 15 re-introduce öncesi).
+- **Sonraki aşama önerisi**: Stage 15 (login `prisma.userSession.create` hardening + Sentry capture) veya §38.B master backlog'tan başka kalem (RECAPTCHA_ENFORCE flip 1-2 hafta soak sonrası, HIGH 4 Platforms 12-card grid product decision pending). Operatör tetiği bekliyor.
+
 
