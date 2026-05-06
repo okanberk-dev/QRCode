@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { hasPermission } from '@/lib/rbac';
 
 // GET /api/admin/members/[id]/audit — last 50 admin actions targeting this
 // user. Joined with actor name/email so the timeline UI can show who did what.
@@ -22,8 +23,12 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // Stage A2 §38.94 — RBAC: audit_logs:read.
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
+  if (!admin) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  if (!(await hasPermission(admin.id, 'audit_logs', 'read'))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 

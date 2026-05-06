@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { hasPermission } from '@/lib/rbac';
 
 // GET /api/admin/members/[id] — full detail for the member detail page.
 // Returns user fields + counts (restaurants, feedback last 30d, invoices,
@@ -10,8 +11,12 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // Stage A2 §38.94 — RBAC: members:read.
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
+  if (!admin) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  if (!(await hasPermission(admin.id, 'members', 'read'))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   const { id } = await params;
@@ -89,9 +94,13 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Stage A2 §38.94 — RBAC: members:write.
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+  if (!admin) {
+    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+  }
+  if (!(await hasPermission(admin.id, 'members', 'write'))) {
+    return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
   }
   const adminId = typeof admin.id === 'string' ? admin.id : null;
   if (!adminId) return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
@@ -198,8 +207,12 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // Stage A2 §38.94 — RBAC: members:delete (destructive — soft delete).
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
+  if (!admin) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  if (!(await hasPermission(admin.id, 'members', 'delete'))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   const adminId = typeof admin.id === 'string' ? admin.id : null;

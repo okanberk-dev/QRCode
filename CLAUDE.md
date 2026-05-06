@@ -11375,3 +11375,200 @@ infrastructure (CLAUDE.md §38.76) reuse edildi.
   flow (admin'in owner gibi görme). Veya §38.B master backlog kalemleri (HIGH 4
   Platforms 12-card grid product decision, RECAPTCHA_ENFORCE flip 1-2 hafta
   soak sonrası).
+
+### 38.94 2026-05-06 — Stage A2 granular RBAC (permission-bazlı admin authorization)
+
+§38.93 cross-link kapanışından sonra, mevcut 2-tier (superadmin / manager)
+admin authorization modelini permission-bazlı genişlettik. Manager'a artık
+superadmin tarafından per-resource × per-action grant verilebilir
+(örn. `reviews:write`, `customers:read`).
+
+**Out of scope** (kullanıcı talimatı): cross-link UI (Stage A1 §38.93),
+audit log viewer (Stage A3), impersonation (Stage A4), BI dashboard (Stage A5),
+sidebar UI gating (Stage A2.1 backlog — backend guard'lar zaten enforce ediyor).
+
+**Schema migration** (`prisma/schema.prisma` + `prisma/migrations/20260506140000_add_admin_permissions/`):
+- Yeni `AdminPermission` model — `adminUserId × resource × action` unique
+  composite index. `expiresAt` opsiyonel (future scope: süre-sınırlı
+  temporary access). Cascade `onDelete` AdminUser silinince permission'lar da
+  silinir.
+- `AdminUser.permissions` reverse relation eklendi.
+- Migration breaking change yok (yeni tablo, default empty).
+
+**Helper** (`src/lib/rbac.ts` yeni dosya):
+- `RESOURCES` const — 11-element literal array (reviews / members / users /
+  customers / plans / site_settings / mail_templates / announcements / blog /
+  analytics / audit_logs). Yeni resource eklerken DB migration gerekmez,
+  sadece array genişletilir.
+- `ACTIONS` const — `['read', 'write', 'delete']` literal.
+- `hasPermission(adminUserId, resource, action)` saf fn:
+  - Superadmin role → her zaman true (bypass).
+  - Manager role → AdminPermission tablo lookup (cache 60sn TTL,
+    process-local, expiresAt aware).
+  - DB error → conservative deny (false), Sentry capture skip (caller
+    responsibility, spam önleme).
+- `requirePermission(adminUserId, resource, action)` → throws
+  `PermissionDeniedError` (403 mapping caller'a bırakılır).
+- `hasPermissions(adminUserId, [{resource, action}, ...])` bulk check —
+  sidebar gating için Map<resource:action, boolean> tek round-trip.
+- `invalidatePermissionCache(adminUserId)` — manuel cache temizleme (grant
+  / revoke sonrası caller endpoint çağırır).
+- `PERMISSION_PRESETS` — 3 hazır bundle (read_only_analyst,
+  reviews_moderator, content_editor). UI tek-tıklama grant kombinasyonları.
+- Defensive coercion: `adminUserId: string | unknown` accept — JWT payload
+  field'ı `unknown` typed, callsite'da explicit cast yapılmıyor; helper
+  içinde `toAdminId()` non-string'i null'a çevirir → conservative deny.
+
+**Endpoint guards** (8 critical migrate edildi, 13 superadmin-only intact):
+- `/api/admin/members` GET → `members:read`
+- `/api/admin/members` POST → `members:write`
+- `/api/admin/members/[id]` GET → `members:read`
+- `/api/admin/members/[id]` PUT → `members:write`
+- `/api/admin/members/[id]` DELETE → `members:delete`
+- `/api/admin/members/[id]/audit` GET → `audit_logs:read`
+- `/api/admin/users/[id]` GET → `users:read`
+- `/api/admin/users/[id]` PUT → `users:write`
+- `/api/admin/users/[id]` DELETE → `users:delete`
+- `/api/admin/users/[id]/audit` GET → `audit_logs:read`
+- `/api/admin/customers` GET (admin source path) → `customers:read`
+- `/api/admin/customers/by-key/[key]` GET → `customers:read`
+
+Kalan ~13 endpoint (export, send-password-reset, reactivate, invoices,
+restaurants/feature-access, billing, blog, announcements/[id], etc.)
+mevcut superadmin-only check'i intact tuttu — helper bypass ettiği için
+fonksiyonel davranış değişmedi. Gradual migration (opportunistic, dokunulduğunda
+güncellenir).
+
+**Permission CRUD endpoints** (yeni):
+- `GET /api/admin/users/[id]/permissions` — list grants.
+- `POST /api/admin/users/[id]/permissions` — grant single (Zod `.strict()`,
+  upsert, audit log `admin.permission.grant`).
+- `DELETE /api/admin/users/[id]/permissions/[permissionId]` — revoke single
+  (path consistency check, audit log `admin.permission.revoke`).
+- `GET /api/admin/me/permissions` — current actor's permission map (sidebar
+  gating altyapısı; superadmin auto-true tüm resource × action).
+- All endpoints: superadmin-only (manager kendi permission'unu yönetemez —
+  circular grant önlenir). Cache invalidate grant/revoke sonrası.
+
+**UI** (`src/app/admin/users/[id]/permissions/page.tsx` yeni):
+- Permission matrix grid: 11 resources × 3 actions = 33 hücre. Her hücre tek-
+  tıklama ile grant (lime-soft check) veya revoke (kırmızı hover). useConfirmDialog
+  destructive action için.
+- 3 preset bundle card — hover'da explanation + grant key list. "Apply"
+  → bulk grant (Promise.allSettled per-row isolation).
+- Active grants list — granted timestamp + expiresAt + revoke button.
+- Superadmin target için info banner ("yetki ataması gereksiz, helper
+  bypass ediyor").
+- `/admin/users/[id]` page'inden "Yetkileri yönet" link (Key icon).
+
+**Tests** (`tests/rbac.test.ts` yeni, 12 yeni unit test):
+- RESOURCES array doğrulama (11-element, snake_case format)
+- ACTIONS array doğrulama (read/write/delete)
+- 3 PERMISSION_PRESETS validity (resource + action enum match, no invalid
+  refs)
+- reviews_moderator: read+write var, delete yok
+- read_only_analyst: tüm grant'lar read action
+- content_editor: blog+announcements+mail_templates only, sensitive resources yok
+- expiresAt logic: past=expired, future=active, null=permanent
+- Cache key encoding `resource:action`
+- Action set duplicates / colon contamination
+
+Test count: 209 → 221 (+12).
+
+**§4.5 admin terminoloji genişleme** (kanonik):
+| Tier | Eski model | Yeni model (Stage A2) |
+|---|---|---|
+| Superadmin | Her şeye erişim (role check) | Her şeye erişim (helper bypass) |
+| Manager (legacy) | Restaurant scope (restaurantId) | Restaurant scope + opsiyonel cross-resource permission grants |
+| Manager (RBAC-aware) | — | superadmin tarafından grant edilmiş resource × action set'i |
+
+Manager artık iki katmanlı: (a) restaurantId ile scoped restaurant access
+(legacy intact), (b) superadmin grant'ları ile cross-resource access (yeni).
+
+**§11.10 sidebar permission-aware notu** (Stage A2.1 backlog):
+- Sidebar gating altyapısı hazır (`/api/admin/me/permissions` endpoint +
+  `hasPermissions` bulk check helper).
+- UI gating Stage A2.1'e ertelendi: backend guard'lar (requirePermission)
+  zaten enforce ediyor — manager permission yoksa endpoint 403 döner, UI'da
+  item görünse bile aksiyon başarısız olur. Sidebar visual gating UX polish.
+- Gradual rollout için NavItem config'e opsiyonel `requiresPermission?: AdminResource`
+  alanı eklenebilir (mevcut role-based gating kanonik kalır).
+
+**Yeni dosyalar (8)**:
+- `prisma/migrations/20260506140000_add_admin_permissions/migration.sql`
+- `src/lib/rbac.ts`
+- `tests/rbac.test.ts`
+- `src/app/api/admin/users/[id]/permissions/route.ts` (GET + POST)
+- `src/app/api/admin/users/[id]/permissions/[permissionId]/route.ts` (DELETE)
+- `src/app/api/admin/me/permissions/route.ts`
+- `src/app/admin/users/[id]/permissions/page.tsx`
+
+**Edit'lenen dosyalar (10)**:
+- `prisma/schema.prisma` (AdminPermission model + AdminUser.permissions reverse)
+- `src/app/api/admin/members/route.ts` (GET + POST guards)
+- `src/app/api/admin/members/[id]/route.ts` (GET + PUT + DELETE guards)
+- `src/app/api/admin/members/[id]/audit/route.ts` (GET guard)
+- `src/app/api/admin/users/[id]/route.ts` (GET + PUT + DELETE guards)
+- `src/app/api/admin/users/[id]/audit/route.ts` (GET guard)
+- `src/app/api/admin/customers/route.ts` (GET admin path guard)
+- `src/app/api/admin/customers/by-key/[key]/route.ts` (GET guard)
+- `src/app/admin/users/[id]/page.tsx` ("Yetkileri yönet" link Key icon)
+
+**Yapma**:
+- Sidebar gating'i bu PR'a sıkıştırma — backend guard'lar enforce ediyor;
+  UI gating ayrı PR (Stage A2.1) cleaner. AdminSidebar 600+ satır, NavConfig
+  refactor riski büyük.
+- Permission CRUD endpoint'lerinde manager'a self-grant izni verme — circular
+  privilege escalation. Server gate `admin.role !== 'superadmin'` zorunlu.
+- Helper'da `adminUserId: string` zorlaması yapma — JWT payload field'ı
+  `unknown` typed; `string | unknown` accept + içeride coerce daha güvenli
+  (callsite explicit cast yorgunluğu).
+- Existing 21 endpoint'in hepsini bu PR'da migrate etme — gradual rollout
+  daha az risk; superadmin-only check'ler helper ile uyumlu (bypass).
+- Permission preset'lerini DB'ye taşıma — kod-içi const yeterli (3 preset
+  yıllar boyu nadiren değişir; UI dinamik render eder).
+- `expiresAt` field'ını UI'da bu PR'da expose etme — backend ready ama UX
+  (date picker + cron cleanup) ayrı scope. Şu an grant'lar permanent.
+- AdminPermission tablosuna `restaurantId` scope ekleme — bu PR global
+  permissions; per-restaurant scope future genişleme (yeni schema field +
+  helper signature change gerekir).
+
+**Yap**:
+- Yeni admin endpoint eklerken `requirePermission(actor.id, resource, action)`
+  veya `if (!(await hasPermission(...))) return 403` paterni reuse
+  (CLAUDE.md §37.2 disipline + Stage A2 §38.94).
+- Yeni resource eklerken `RESOURCES` array genişlet + UI label map
+  (`RESOURCE_LABELS` `permissions/page.tsx`) güncelle. Migration gerekmez.
+- Yeni preset eklerken `PERMISSION_PRESETS` const'ına entry ekle — UI
+  dinamik render eder.
+- Cache miss tolere edilebilir; production'da Redis migration future scope
+  (helper signature aynı kalır, internal cache backend değişir).
+- Sidebar gating Stage A2.1'de geleceğinde NavItem config'e opsiyonel
+  `requiresPermission?: AdminResource` ekleyebilirsin; `hasPermissions` bulk
+  fetch tek round-trip ile O(1) lookup.
+
+**Verification** (Tarih 2026-05-06):
+- `npx eslint .` 0 errors, 0 warnings
+- `npx tsc --noEmit` 0 errors in `src/` (4 pre-existing `.next/types` baseline §21.13)
+- `npm test` 221/221 pass, 29 suites (209 → 221, +12 yeni rbac test)
+- `npx next build` (stub env, 4GB heap) ✓ Compiled successfully + 58/58 static
+  pages + ~7 yeni dynamic route (permissions CRUD + me/permissions)
+
+**Stage A2 closure** (Tarih 2026-05-06):
+- Branch `chore/admin-rbac-granular-stageA2`
+- Toplam 18 dosya değişiklik (8 yeni + 10 edit)
+- Schema migration: 1 (AdminPermission tablosu, breaking change yok)
+- Yeni dep: YOK
+- Test count: 209 → 221 (+12 rbac unit test)
+- Operatör aksiyonu (PR sonrası): Vercel build script `prisma migrate deploy`
+  otomatik AdminPermission tablosunu apply eder. Manuel smoke test:
+  superadmin → /admin/users/[managerId]/permissions → "reviews:read" ver →
+  manager login → /admin/reviews fetch'i 200 döner. Permission revoke →
+  manager fetch 403.
+- Kalan riskler: Sidebar UI gating yok (backend zaten enforce ediyor — UX
+  polish backlog). 13 endpoint hâlâ superadmin-only check'le (helper bypass
+  ile fonksiyonel uyumlu, gradual migration). expiresAt schema'da var ama UI
+  expose yok (cron cleanup gelecek scope).
+- **Sonraki aşama önerisi**: Stage A2.1 sidebar UI gating, ya da Stage A3
+  audit log viewer (admin için cross-tenant audit aggregate) veya §38.B
+  master backlog (HIGH 4 Platforms 12-card grid).
