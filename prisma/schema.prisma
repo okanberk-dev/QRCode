@@ -86,142 +86,148 @@ model UserSession {
 }
 
 model Restaurant {
-  id                            String    @id @default(cuid())
-  slug                          String    @unique
+  id                            String  @id @default(cuid())
+  slug                          String  @unique
   name                          String
-  category                      String    @default("Restoran")
+  category                      String  @default("Restoran")
   // Kısa açıklama (Section 1 — Genel Bilgiler). ≤280 char client+server slice.
   // Public review surface ve admin restaurant detail kartlarında gösterilir.
-  description                   String?   @db.Text
+  description                   String? @db.Text
   // İşletme web sitesi (Section 1). new URL() validation; null → "yok".
   website                       String?
   // Sosyal medya entegrasyonları (Section 3 — Faz 2). new URL() validate.
   // Boş string → null. UI'da IntegrationStatusBadge connected/not_configured.
-  instagramUrl                  String?   @map("instagram_url")
-  facebookUrl                   String?   @map("facebook_url")
-  whatsappUrl                   String?   @map("whatsapp_url")
-  reservationUrl                String?   @map("reservation_url")
+  instagramUrl                  String? @map("instagram_url")
+  facebookUrl                   String? @map("facebook_url")
+  whatsappUrl                   String? @map("whatsapp_url")
+  reservationUrl                String? @map("reservation_url")
   // "Diğer" custom platform — owner kendi review URL'i (TheFork, OpenTable,
   // sektör-spesifik) koyabilir. CLAUDE.md §X — domain validation YOK
   // (free-form, `website` ile aynı pattern). Label opsiyonel ama UI'da
   // gösterilir; URL düzgünse domain auto-extract ile fallback (host).
-  otherPlatformUrl              String?   @map("other_platform_url") @db.Text
-  otherPlatformLabel            String?   @map("other_platform_label")
-  otherPlatformEnabled          Boolean   @default(true) @map("other_platform_enabled")
+  otherPlatformUrl              String? @map("other_platform_url") @db.Text
+  otherPlatformLabel            String? @map("other_platform_label")
+  otherPlatformEnabled          Boolean @default(true) @map("other_platform_enabled")
   // Operasyonel ayarlar (Section 7 — Faz 3). "Geçici kapalı" — public /r/<slug>
   // sayfasında "Geçici olarak kapalıyız" banner tetiklemek için. closedReason
   // (≤500 char) opsiyonel; UI sebebi gösterir.
-  temporarilyClosed             Boolean   @default(false) @map("temporarily_closed")
-  closedReason                  String?   @map("closed_reason")
+  temporarilyClosed             Boolean @default(false) @map("temporarily_closed")
+  closedReason                  String? @map("closed_reason")
   address                       String?
   phone                         String?
-  workingHours                  String?   @map("working_hours")
+  workingHours                  String? @map("working_hours")
   // City (Pulse 2026-04 admin AdminBusinesses table). Null until owner fills
   // it in. Free-text Turkish city name; not validated against TR-IL list yet.
-  city                          String?   @map("city")
+  city                          String? @map("city")
   // KVKK aydınlatma metni (TEXT — uzun, @db.Text zorunlu). Doluysa admin
   // tablosunda "Tam" badge'i; boş ise "Eksik" görünür.
-  kvkkText                      String?   @map("kvkk_text") @db.Text
-  googlePlaceId                 String?   @map("google_place_id")
-  googleReviewUrl               String?   @map("google_review_url")
+  kvkkText                      String? @map("kvkk_text") @db.Text
+  googlePlaceId                 String? @map("google_place_id")
+  googleReviewUrl               String? @map("google_review_url")
   // Admin-gated Google Business Profile review management. Basic Places
   // search/linking can stay available, but fetching Google reviews, AI reply
   // drafting, and public Google reply writes require this per-restaurant flag.
-  googleReviewManagementEnabled Boolean   @default(false) @map("google_review_management_enabled")
+  googleReviewManagementEnabled Boolean @default(false) @map("google_review_management_enabled")
   // Package-ready feature entitlements. Owner-level preferences (enableAiDraft,
   // googleAiEnabled, per-platform toggles) sit under these admin-controlled
   // master switches so future paid plans can assign them automatically.
-  pulseAiEnabled                 Boolean   @default(true) @map("pulse_ai_enabled")
-  aiAnalyticsEnabled             Boolean   @default(true) @map("ai_analytics_enabled")
-  externalPlatformsEnabled       Boolean   @default(true) @map("external_platforms_enabled")
+  pulseAiEnabled                Boolean @default(true) @map("pulse_ai_enabled")
+  aiAnalyticsEnabled            Boolean @default(true) @map("ai_analytics_enabled")
+  externalPlatformsEnabled      Boolean @default(true) @map("external_platforms_enabled")
 
   // Google Rating Impact Tracking
-  initialGoogleRating           Float?    @map("initial_google_rating")
-  currentGoogleRating           Float?    @map("current_google_rating")
+  initialGoogleRating Float? @map("initial_google_rating")
+  currentGoogleRating Float? @map("current_google_rating")
 
   // Owner-tanımlı hedef puan — Analytics 14-haftalık trend chart'ında dashed
   // line + delta to target hint için (CLAUDE.md §38.25 + §38.26). Null = owner
   // henüz ayarlamadı, chart fallback olarak 4.0 industry default gösterir.
   // Range 1.0–5.0 (UI client-side validate); float çünkü 4.5 gibi yarım-puan
   // hedefler tipik (örn. fine dining 4.7 hedefler).
-  targetRating                  Float?    @map("target_rating")
+  targetRating Float? @map("target_rating")
 
-  getirYemekUrl                 String?   @map("getir_yemek_url")
-  yemekSepetiUrl                String?   @map("yemek_sepeti_url")
-  trendyolYemekUrl              String?   @map("trendyol_yemek_url")
+  getirYemekUrl           String?   @map("getir_yemek_url")
+  yemekSepetiUrl          String?   @map("yemek_sepeti_url")
+  trendyolYemekUrl        String?   @map("trendyol_yemek_url")
   // Konaklama / turizm segmenti için ek platformlar. Null = henüz
   // bağlanmadı; UI "Henüz bağlanmadı" gösterir.
-  tripAdvisorUrl                String?   @map("tripadvisor_url")
-  airbnbUrl                     String?   @map("airbnb_url")
-  bookingUrl                    String?   @map("booking_url")
-  yandexUrl                     String?   @map("yandex_url")
+  tripAdvisorUrl          String?   @map("tripadvisor_url")
+  airbnbUrl               String?   @map("airbnb_url")
+  bookingUrl              String?   @map("booking_url")
+  yandexUrl               String?   @map("yandex_url")
   // §38.52 — Yelp + Foursquare yorum platformları (kullanıcı talebi, hibrit
   // taksonomi: tasarım PagePlatforms 12 platform listesinden Yelp + Foursquare
   // eklendi; Zapier/HubSpot/Mailchimp skip — review-odaklı Buaze paterniyle).
-  yelpUrl                       String?   @map("yelp_url")
-  foursquareUrl                 String?   @map("foursquare_url")
+  yelpUrl                 String?   @map("yelp_url")
+  foursquareUrl           String?   @map("foursquare_url")
   // Per-platform enable flag — owner panelde toggle ile manuel kapatılabilir.
   // URL doluyken toggle off ise platform "passive" (varsayılana fallback).
   // Default true; URL boşsa UI yine "Henüz bağlanmadı" gösterir (enabled
   // = URL_var AND flag=true türetilir).
-  googleEnabled                 Boolean   @default(true) @map("google_enabled")
-  yemekSepetiEnabled            Boolean   @default(true) @map("yemeksepeti_enabled")
-  getirEnabled                  Boolean   @default(true) @map("getir_enabled")
-  trendyolEnabled               Boolean   @default(true) @map("trendyol_enabled")
-  tripAdvisorEnabled            Boolean   @default(true) @map("tripadvisor_enabled")
-  airbnbEnabled                 Boolean   @default(true) @map("airbnb_enabled")
-  bookingEnabled                Boolean   @default(true) @map("booking_enabled")
-  yandexEnabled                 Boolean   @default(true) @map("yandex_enabled")
+  googleEnabled           Boolean   @default(true) @map("google_enabled")
+  yemekSepetiEnabled      Boolean   @default(true) @map("yemeksepeti_enabled")
+  getirEnabled            Boolean   @default(true) @map("getir_enabled")
+  trendyolEnabled         Boolean   @default(true) @map("trendyol_enabled")
+  tripAdvisorEnabled      Boolean   @default(true) @map("tripadvisor_enabled")
+  airbnbEnabled           Boolean   @default(true) @map("airbnb_enabled")
+  bookingEnabled          Boolean   @default(true) @map("booking_enabled")
+  yandexEnabled           Boolean   @default(true) @map("yandex_enabled")
   // §38.52 — Yelp + Foursquare enable flags
-  yelpEnabled                   Boolean   @default(true) @map("yelp_enabled")
-  foursquareEnabled             Boolean   @default(true) @map("foursquare_enabled")
+  yelpEnabled             Boolean   @default(true) @map("yelp_enabled")
+  foursquareEnabled       Boolean   @default(true) @map("foursquare_enabled")
   // Owner's chosen fallback platform when a QR has no explicit ?platform=
   // query string. NULL → Google fallback (legacy default). Values mirror
   // Feedback.platform: google | yemeksepeti | getir | trendyol_go.
-  defaultRedirectPlatform       String?   @map("default_redirect_platform")
-  notificationEmail             String?   @map("notification_email")
-  primaryColor                  String    @default("#1a73e8")
-  isActive                      Boolean   @default(true) @map("is_active")
-  menuEnabled                   Boolean   @default(true) @map("menu_enabled")
-  menuPublished                 Boolean   @default(false) @map("menu_published")
-  menuLogoUrl                   String?   @map("menu_logo_url") @db.Text
-  menuUpdatedAt                 DateTime? @map("menu_updated_at")
-  menuTheme                     String    @default("classic") @map("menu_theme")
-  menuAccentColor               String?   @map("menu_accent_color")
+  defaultRedirectPlatform String?   @map("default_redirect_platform")
+  notificationEmail       String?   @map("notification_email")
+  primaryColor            String    @default("#1a73e8")
+  isActive                Boolean   @default(true) @map("is_active")
+  menuEnabled             Boolean   @default(true) @map("menu_enabled")
+  menuPublished           Boolean   @default(false) @map("menu_published")
+  menuLogoUrl             String?   @map("menu_logo_url") @db.Text
+  menuUpdatedAt           DateTime? @map("menu_updated_at")
+  menuTheme               String    @default("classic") @map("menu_theme")
+  menuAccentColor         String?   @map("menu_accent_color")
   // Pulse AI auto-draft (CLAUDE.md §15). Owner opts in per-restaurant. When
   // enabled, low-rating (≤3★) feedback POSTs trigger an async draft that
   // surfaces in the inbox. Default tone seeds suggest-reply when caller does
   // not override. Auto-send is intentionally NOT supported — owner approval is
   // always required (KVKK + brand voice).
-  enableAiDraft                 Boolean   @default(false) @map("enable_ai_draft")
-  googleAiEnabled               Boolean   @default(true) @map("google_ai_enabled")
-  aiDraftTone                   String    @default("warm") @map("ai_draft_tone") // warm | formal | apologetic
-  createdAt                     DateTime  @default(now()) @map("created_at")
-  updatedAt                     DateTime  @updatedAt @map("updated_at")
+  enableAiDraft           Boolean   @default(false) @map("enable_ai_draft")
+  googleAiEnabled         Boolean   @default(true) @map("google_ai_enabled")
+  aiDraftTone             String    @default("warm") @map("ai_draft_tone") // warm | formal | apologetic
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
 
   userId String? @map("user_id")
   user   User?   @relation(fields: [userId], references: [id])
 
-  feedbacks          Feedback[]
-  qrGenerations      QrGeneration[]
-  qrScans            QrScan[]
-  embedViews         EmbedView[]
-  adminUsers         AdminUser[]
-  menuCategories     MenuCategory[]
-  menuItems          MenuItem[]
-  analyticsEvents    MenuAnalyticsEvent[]
-  brandSettings      BrandSettings?
-  platformLinkChecks PlatformLinkCheck[]
-  platformRedirects  PlatformRedirectEvent[]
-  activationState    RestaurantActivationState?
+  feedbacks                Feedback[]
+  qrGenerations            QrGeneration[]
+  qrScans                  QrScan[]
+  embedViews               EmbedView[]
+  adminUsers               AdminUser[]
+  menuCategories           MenuCategory[]
+  menuItems                MenuItem[]
+  analyticsEvents          MenuAnalyticsEvent[]
+  brandSettings            BrandSettings?
+  platformLinkChecks       PlatformLinkCheck[]
+  platformRedirects        PlatformRedirectEvent[]
+  activationState          RestaurantActivationState?
   // Phase 8c+ §38.48 Wave 2 — Customers bulk action overlays.
   // Customers Feedback-derived dedupe paterni (CLAUDE.md §4.5) intact;
   // bu mini-modeller LEFT JOIN ile customer list'e overlay eder.
-  customerArchives        CustomerArchive[]
+  customerArchives         CustomerArchive[]
   customerSegmentOverrides CustomerSegmentOverride[]
-  customerEmailCampaigns  CustomerEmailCampaign[]
-  customerEmailLogs       CustomerEmailLog[]
+  customerEmailCampaigns   CustomerEmailCampaign[]
+  customerEmailLogs        CustomerEmailLog[]
 
+  // Stage 17 §38.87 — Hot path: getScopedRestaurantIds her dashboard
+  // request'inde `prisma.restaurant.findMany({ where: { userId } })`
+  // çağırıyor. FK üzerinde covering index olmadığı için Postgres
+  // sequential scan yapıyordu (Supabase performance advisor uyarısı —
+  // unindexed_foreign_keys: restaurants_user_id_fkey).
+  @@index([userId])
   @@map("restaurants")
 }
 
@@ -1319,11 +1325,11 @@ model SubscriptionPlan {
 // Owner-scope `getScopedRestaurantIds` ile filter (CLAUDE.md §4).
 
 model CustomerArchive {
-  id           String   @id @default(cuid())
-  restaurantId String   @map("restaurant_id")
-  contactKey   String   @map("contact_key") // lower(email) || phone
-  archivedAt   DateTime @default(now()) @map("archived_at")
-  archivedById String?  @map("archived_by_id") // nullable: actor sometimes is admin
+  id           String     @id @default(cuid())
+  restaurantId String     @map("restaurant_id")
+  contactKey   String     @map("contact_key") // lower(email) || phone
+  archivedAt   DateTime   @default(now()) @map("archived_at")
+  archivedById String?    @map("archived_by_id") // nullable: actor sometimes is admin
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@unique([restaurantId, contactKey])
@@ -1332,12 +1338,12 @@ model CustomerArchive {
 }
 
 model CustomerSegmentOverride {
-  id            String   @id @default(cuid())
-  restaurantId  String   @map("restaurant_id")
-  contactKey    String   @map("contact_key")
-  manualSegment String   @map("manual_segment") // 'vip' | 'loyal' | 'new' | 'risk' | 'churned'
-  setById       String?  @map("set_by_id")
-  setAt         DateTime @default(now()) @map("set_at")
+  id            String     @id @default(cuid())
+  restaurantId  String     @map("restaurant_id")
+  contactKey    String     @map("contact_key")
+  manualSegment String     @map("manual_segment") // 'vip' | 'loyal' | 'new' | 'risk' | 'churned'
+  setById       String?    @map("set_by_id")
+  setAt         DateTime   @default(now()) @map("set_at")
   restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@unique([restaurantId, contactKey])
@@ -1346,19 +1352,19 @@ model CustomerSegmentOverride {
 }
 
 model CustomerEmailCampaign {
-  id             String    @id @default(cuid())
-  restaurantId   String    @map("restaurant_id")
+  id             String             @id @default(cuid())
+  restaurantId   String             @map("restaurant_id")
   subject        String
-  body           String    @db.Text
-  recipientCount Int       @default(0) @map("recipient_count")
-  sentCount      Int       @default(0) @map("sent_count")
-  failedCount    Int       @default(0) @map("failed_count")
-  status         String    @default("draft") // 'draft' | 'sending' | 'sent' | 'failed'
-  scheduledAt    DateTime? @map("scheduled_at")
-  sentAt         DateTime? @map("sent_at")
-  createdById    String?   @map("created_by_id")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  body           String             @db.Text
+  recipientCount Int                @default(0) @map("recipient_count")
+  sentCount      Int                @default(0) @map("sent_count")
+  failedCount    Int                @default(0) @map("failed_count")
+  status         String             @default("draft") // 'draft' | 'sending' | 'sent' | 'failed'
+  scheduledAt    DateTime?          @map("scheduled_at")
+  sentAt         DateTime?          @map("sent_at")
+  createdById    String?            @map("created_by_id")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
   restaurant     Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   logs           CustomerEmailLog[]
 
@@ -1368,15 +1374,15 @@ model CustomerEmailCampaign {
 }
 
 model CustomerEmailLog {
-  id           String    @id @default(cuid())
-  campaignId   String    @map("campaign_id")
-  restaurantId String    @map("restaurant_id")
-  contactKey   String    @map("contact_key")
+  id           String                @id @default(cuid())
+  campaignId   String                @map("campaign_id")
+  restaurantId String                @map("restaurant_id")
+  contactKey   String                @map("contact_key")
   email        String
-  status       String    @default("pending") // 'pending' | 'sent' | 'failed' | 'unsubscribed'
-  errorMessage String?   @map("error_message") @db.Text
-  sentAt       DateTime? @map("sent_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
+  status       String                @default("pending") // 'pending' | 'sent' | 'failed' | 'unsubscribed'
+  errorMessage String?               @map("error_message") @db.Text
+  sentAt       DateTime?             @map("sent_at")
+  createdAt    DateTime              @default(now()) @map("created_at")
   campaign     CustomerEmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   restaurant   Restaurant            @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
