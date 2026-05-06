@@ -10611,4 +10611,78 @@ CLAUDE.md §38.79 + §38.80 + §38.83 + §38.84 stages 9-14 (PR #491-#494) closu
 - Kalan riskler: Stage 14 §37.2 D bypass koruması kasıtlı undone — Vercel runtime log `[auth] UserSession row missing` warn frequency monitor (Stage 15 re-introduce öncesi).
 - **Sonraki aşama önerisi**: Stage 15 (login `prisma.userSession.create` hardening + Sentry capture) veya §38.B master backlog'tan başka kalem (RECAPTCHA_ENFORCE flip 1-2 hafta soak sonrası, HIGH 4 Platforms 12-card grid product decision pending). Operatör tetiği bekliyor.
 
+### 38.82 2026-05-06 — Stage 12 Webhook Automation UI (CRUD + fan-out + UI + tests)
+
+CLAUDE.md §34.4 + §38.45 + §38.52 + §38.B "Webhook UI tam CRUD implementation" backlog kalemi kapatıldı. AutomationRule schema + endpoint'ler mevcut idi (CLAUDE.md §34.1 dokümante) ama UI yoktu — Stage 12 ile owner panel UI + endpoint hardening + webhook fan-out + /api/feedback entegrasyonu + tests tek consolidated PR.
+
+**Branch** `chore/webhook-automation-ui-stage12`. Tek consolidated PR (CLAUDE.md §21.22). Schema migration **EVET** — minimal 3 nullable field (`AutomationRule.lastFiredAt + lastFireStatus + lastFireResponseMs`), kullanıcı talebiyle "schema migration lazımsa ekle" izni dahil (CPU disipline §38.B'ye uyumlu — gereksiz commit yok, tek PR).
+
+**Kararlar** (Recommended ile devam):
+1. **Field name adaptasyonu**: Mevcut schema (trigger/threshold/action/target) korundu, UI labels TR/EN adapt
+2. **Trigger enum**: Mevcut (rating_lte/rating_gte/keyword/platform) — schema dokunulmadı
+3. **Webhook secret**: JWT_SECRET reuse (email-customer-campaign §38.48 paterni) — per-rule secret schema migration olmadan
+4. **Soft-delete**: Hard delete + `automation.delete` audit log entry (forensic trail)
+5. **Activity log**: AdminAuditLog reuse (`automation.fire.${ok|fail}` action format) + cheap UI badge için 3 lastFire field migration
+
+**Kapsam** (10 dosya — 5 yeni + 5 modified):
+
+Backend:
+- `prisma/schema.prisma` `AutomationRule` model — 3 yeni nullable field
+- `prisma/migrations/20260506083717_add_automation_rule_fire_telemetry/migration.sql` — ADD COLUMN nullable, breaking change yok
+- `src/lib/webhook-fanout.ts` (yeni, 270 satır) — `dispatchWebhook` + `dispatchMatchingRulesForFeedback` + `verifyWebhookSignature` + `ruleMatchesFeedback`. HMAC-SHA256 (`X-Buaze-Signature` header) + 3-retry exp backoff [100, 500, 1000ms] + 5s timeout. Fire result persistence: `automation_rules.lastFire*` update + AdminAuditLog `automation.fire.${ok|fail}` entry (atomic transaction §28.4)
+- `src/app/api/automations/route.ts` (full rewrite) — Zod `.strict()` (mass assignment guard) + audit log (`automation.create`) + rate limit 10/dk/actor + cache header (`private, s-maxage=30, stale-while-revalidate=120`) + lastFire field'lar serialize
+- `src/app/api/automations/[id]/route.ts` (full rewrite) — Zod `.strict()` PATCH + audit log (`automation.update`/`automation.delete` before/after snapshot) + rate limit 20/dk/actor + defensive select (CLAUDE.md §14.1)
+- `src/app/api/automations/[id]/test/route.ts` (yeni) — owner test endpoint, sample payload fire (event: 'test.webhook') + rate limit 5/dk/actor (abuse prevention)
+- `src/app/api/feedback/route.ts` (3 edit) — `dispatchMatchingRulesForFeedback` import + restaurant.userId select + line 220 sonrası fire-and-forget call (Promise.allSettled per-row isolation)
+
+UI:
+- `src/app/[locale]/dashboard/automations/page.tsx` (yeni) — server component, auth check + `prisma.$transaction([rules, activityLog, restaurants])` + Activity Log section (last 50 audit entries) inline render
+- `src/app/[locale]/dashboard/automations/_components/AutomationsManager.tsx` (yeni, 530 satır) — client component, Pulse table (desktop) + mobile card list + Add/Edit modal (Pulse Modal primitive §11.1 focus trap) + Delete confirm (useConfirmDialog §11.18) + Webhook test button + result display
+- `src/components/dashboard/UserDashboardShell.tsx` (4 edit) — Zap import + useTopBar `/automations` entry + AYARLAR group child + CommandPalette navItems entry
+
+Tests:
+- `tests/webhook-fanout.test.ts` (yeni, 20 test) — verifyWebhookSignature 6 (round-trip + tamper + ruleId-bound + payload-bound + empty + length mismatch) + ruleMatchesFeedback 13 (rating_lte/gte boundary + keyword case-insensitive TR + null guards + platform exact + unknown defensive) + WEBHOOK_HEADERS const 1. Total **186 → 206**.
+
+**Verification**:
+- `npm run lint`: 0 errors, 1 baseline warning (`canAccessRestaurant` unused @ feedback/bulk/route.ts:5 — pre-existing §38.58)
+- `npx tsc --noEmit`: 0 errors in `src/` (3 pre-existing `.next/types/...` baseline §21.13)
+- `npm test`: **206/206 pass**, 26 suites, 12.6s
+- `npx next build` (stub env, `NODE_OPTIONS="--max-old-space-size=4096"`): ✓ Compiled 52s + ✓ 58/58 static pages + 1 yeni dynamic `/dashboard/automations` (force-dynamic)
+
+**HMAC sözleşme** (webhook receiver implementation):
+- Header: `X-Buaze-Signature: <base64url(hmac(JWT_SECRET, ruleId+":"+payloadJson))>`
+- Header: `X-Buaze-Rule-Id: <ruleId>`
+- Header: `X-Buaze-Source: <event_name>` (e.g. `feedback.low_rating`, `test`)
+- Receiver verify: `verifyWebhookSignature(rawBody, ruleId, signature)` — timing-safe compare, length-mismatch guard
+- JWT_SECRET reuse — email-customer-campaign §38.48 paterni; per-rule secret schema migration olmadan
+
+**Retry sözleşme**: 3-attempt exponential backoff [100, 500, 1000ms], 5s timeout per attempt (AbortController), retriable status 5xx + 429, non-retriable 4xx exits early.
+
+**Yapma**:
+- AutomationRule schema'ya yeni field eklerken §38.82 paterni reuse — mevcut field name'leri (trigger/threshold/action/target) korunur, semantik label-only TR/EN adapt.
+- Webhook secret per-rule olarak schema'ya ekleme — JWT_SECRET reuse paterni (email-customer-campaign §38.48) ile uyumlu, schema bloat yok.
+- AdminAuditLog `actorSource` enum genişletme — schema String, free format. `actorSource: 'system'` veya 'webhook' eklemek tutarsızlık yaratır; rule.userId'i `parseOwnerRef()` ile 'admin'|'user' mapping yeterli.
+- Soft-delete `deletedAt` ekleme — hard delete + `automation.delete` audit log entry forensic trail için yeterli.
+- /api/automations endpoint'inde mevcut manuel validation paterni → toplu Zod migrate etmek (mevcut çalışan endpoint zaten dokunulmuş, ek manuel migration §28.3.3 mix-mode disipline'i bozar).
+- Test endpoint'i dry-run mode eklemek — gerçek dispatch + audit log production parity, dry-run owner UX'inde yanlış güven yaratır.
+- /api/feedback POST'ta webhook fan-out'u feedback insert ÖNCESİ tetiklemek — rule fail durumunda feedback save edilmemiş olur, Vercel function timeout riski. Fan-out HER ZAMAN feedback insert sonrası fire-and-forget.
+
+**Yap**:
+- Yeni webhook integration (örn. customer-campaign veya başka source) için `dispatchWebhook` reuse — HMAC + retry + persist tek source-of-truth.
+- Yeni dispatch source eklerken `source` literal genişlet ('feedback.low_rating', 'feedback.high_rating', 'test', vb.) — audit log filter için.
+- Yeni Activity log entry tipi için `action: 'automation.${verb}'` paterni izle — page.tsx `labelForAction` switch case ekle (TR/EN).
+- Webhook receiver implementations için public dokümantasyon: `verifyWebhookSignature(rawBody, ruleId, signature)` exposed signature; payload format `${ruleId}:${json}`, JWT_SECRET (env) HMAC key.
+- Yeni AutomationRule trigger tipi eklerken `ruleMatchesFeedback` switch case + `tests/webhook-fanout.test.ts` 2-3 test (positive + negative + edge case).
+
+**Stage 12 closure** (Tarih 2026-05-06):
+- Branch `chore/webhook-automation-ui-stage12`
+- Yeni dosyalar: 5 (webhook-fanout.ts + test endpoint + page.tsx + AutomationsManager.tsx + tests)
+- Modified dosyalar: 5 (schema.prisma + 2 endpoint hardening + feedback integration + UserDashboardShell)
+- Schema migration: 1 (3 nullable field, breaking change yok, Vercel `prisma migrate deploy` build script otomatik apply)
+- Test count: 186 → 206 (+20 webhook-fanout)
+- Çalıştırılan kontroller: lint 0 err / tsc src 0 err / test 206/206 / build 58/58 static + 1 yeni dynamic
+- Operatör aksiyonları (PR sonrası): Vercel `prisma migrate deploy` build script'i otomatik schema migration apply eder (CLAUDE.md §14.1). Manuel test: ngrok / webhook.site URL ile owner panel'den webhook rule oluştur + test fire + receiver HMAC verify (`crypto.createHmac('sha256', JWT_SECRET).update(ruleId+':'+rawBody).digest('base64url') === X-Buaze-Signature`).
+- Kalan riskler: dispatchWebhook fire-and-forget (feedback insert sonrası), Vercel function lifecycle 60s default timeout — webhook receiver çok yavaşsa (>5s × 3 retry = 15s) Vercel function context closed olabilir; AbortController per-attempt timeout bunu kontrol altında tutar ama edge case (>= 4 retry attempt + sleep) production izle.
+- **Sonraki aşama önerisi**: §38.B master backlog'tan: HIGH 4 Platforms 12-card grid (DEFER product decision), Stage 15 (UserSession re-introduce — operatör tetiği), RECAPTCHA_ENFORCE flip (1-2 hafta soak sonrası). Veya yeni feature scope.
+
 
