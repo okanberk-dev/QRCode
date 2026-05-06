@@ -1,16 +1,28 @@
+'use client';
+
+// Stage 16 §38.86 — ActivityFeed real-time push.
+//
+// Önce: server component, dashboard server component'inde Promise.all +
+// buildActivityFeed sonrası prop ile render (CLAUDE.md §38.31). Page reload
+// yeterli — düşük etkileşim.
+//
+// Şimdi: client component. `initialEvents` server-render snapshot, mount
+// sonrası `useRealtimeActivity` hook'u Supabase Realtime ile feedback
+// INSERT'lerini push'lar. 200ms debounce + 50 buffer cap (CLAUDE.md
+// §38.86 spec). Toast on new events, slide-in highlight, connection
+// state badge.
+//
+// Disable durumu (env yok / token endpoint 503): hook status='disabled'
+// döner — Live badge "Pasif" görünür, page reload mode korunur.
+
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowRight, Sparkles, X } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { tr as trLocale, enUS as enLocale } from 'date-fns/locale';
 import type { ActivityEvent, ActivitySentiment } from '@/lib/activity-feed';
 import { Eyebrow } from '@/components/ui';
-
-// Phase 8c+ §38.31 — CANLI AKIŞ timeline section. Tasarım kaynağı:
-// .design-owner-2026/project/page-dashboard.jsx ActivityRow line 120-132 +
-// section line 17-23 (mock 5-row).
-//
-// Server component — data prop ile gelir, helper buildActivityFeed pure
-// fonksiyon (dashboard server component'inde 4 query union edilir).
+import { useRealtimeActivity, type RealtimeStatus } from '@/hooks/useRealtimeActivity';
 
 const SENTIMENT_DOT: Record<ActivitySentiment, string> = {
   pos: '#16A34A',
@@ -18,8 +30,13 @@ const SENTIMENT_DOT: Record<ActivitySentiment, string> = {
   neg: '#DC2626',
 };
 
+const TOAST_AUTO_DISMISS_MS = 5000;
+
 export interface ActivityFeedProps {
-  /** En fazla 5-6 row önerilir; helper buildActivityFeed `limit` ile pre-slice. */
+  /**
+   * Server-render snapshot (CLAUDE.md §38.31). Hook bunu seed olarak alır,
+   * sonradan realtime INSERT'leri tepe'ye prepend eder.
+   */
   events: ActivityEvent[];
   /** "Tüm aktiviteyi gör" CTA href; default /dashboard/feedbacks. */
   viewAllHref?: string;
@@ -28,18 +45,136 @@ export interface ActivityFeedProps {
   className?: string;
 }
 
+interface BadgeStyle {
+  label: string;
+  dotClass: string;
+  /** Aria-live politeness; status değişimleri SR'a duyurulur. */
+  ariaLabel: string;
+}
+
+function describeStatus(status: RealtimeStatus, isTr: boolean): BadgeStyle {
+  if (status === 'connected') {
+    return {
+      label: isTr ? 'Canlı' : 'Live',
+      dotClass: 'bg-[#16A34A]',
+      ariaLabel: isTr ? 'Canlı bağlantı aktif' : 'Live connection active',
+    };
+  }
+  if (status === 'connecting' || status === 'reconnecting') {
+    return {
+      label: isTr ? 'Bağlanıyor' : 'Connecting',
+      dotClass: 'bg-[#D97706]',
+      ariaLabel: isTr ? 'Bağlantı kuruluyor' : 'Reconnecting',
+    };
+  }
+  if (status === 'offline') {
+    return {
+      label: isTr ? 'Çevrimdışı' : 'Offline',
+      dotClass: 'bg-[#DC2626]',
+      ariaLabel: isTr ? 'Bağlantı koptu' : 'Offline',
+    };
+  }
+  // idle | disabled
+  return {
+    label: isTr ? 'Pasif' : 'Standby',
+    dotClass: 'bg-[#737373]',
+    ariaLabel: isTr ? 'Canlı akış pasif — sayfa yenilemesi gerekli' : 'Live feed standby — refresh page',
+  };
+}
+
+function ConnectionBadge({ status, isTr }: { status: RealtimeStatus; isTr: boolean }) {
+  const style = describeStatus(status, isTr);
+  // `bz-pulse-dot` lime nabız animasyonu zaten globals.css'te (CLAUDE.md
+  // §11). Burada sadece connected status için reuse, diğer durumlarda
+  // statik renk göstergesi.
+  const isLive = status === 'connected';
+  return (
+    <span
+      role="status"
+      aria-live="polite"
+      aria-label={style.ariaLabel}
+      className="inline-flex items-center gap-1.5 text-[10.5px] font-medium tracking-wider uppercase text-[#525252]"
+    >
+      {isLive ? (
+        <span aria-hidden="true" className="bz-pulse-dot" />
+      ) : (
+        <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full ${style.dotClass}`} />
+      )}
+      <span>{style.label}</span>
+    </span>
+  );
+}
+
+function NewEventsToast({
+  count,
+  onDismiss,
+  isTr,
+}: {
+  count: number;
+  onDismiss: () => void;
+  isTr: boolean;
+}) {
+  // Auto-dismiss 5s sonra (CLAUDE.md §38.15 dwell timing — success tone).
+  useEffect(() => {
+    if (count === 0) return;
+    const timer = setTimeout(onDismiss, TOAST_AUTO_DISMISS_MS);
+    return () => clearTimeout(timer);
+  }, [count, onDismiss]);
+
+  if (count === 0) return null;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1.5 text-[12px] text-[#0A0A0A]"
+    >
+      <Sparkles size={12} aria-hidden="true" />
+      <span>
+        {isTr
+          ? count === 1
+            ? '1 yeni aktivite'
+            : `${count} yeni aktivite`
+          : count === 1
+            ? '1 new activity'
+            : `${count} new activities`}
+      </span>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="ml-1 rounded-full p-0.5 hover:bg-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-1"
+        aria-label={isTr ? 'Bildirimi kapat' : 'Dismiss notification'}
+      >
+        <X size={12} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 export function ActivityFeed({
-  events,
+  events: initialEvents,
   viewAllHref = '/dashboard/feedbacks',
   isTr = true,
   className = '',
 }: ActivityFeedProps) {
+  const { events, status, newEventIds, pendingToastCount, acknowledgeToast } =
+    useRealtimeActivity({ initialEvents, isTr });
+
+  // Toast'ı suppress edebileceğimiz local state — kullanıcı X'e bastıktan
+  // sonra aynı session'da yeni event gelirse tekrar açılır (yeni count
+  // hook tarafından artırılır).
+  const [toastSuppressed, setToastSuppressed] = useState(false);
+  useEffect(() => {
+    if (pendingToastCount === 0) setToastSuppressed(false);
+  }, [pendingToastCount]);
+
+  const toastCount = toastSuppressed ? 0 : pendingToastCount;
+
   if (events.length === 0) {
     return (
-      <section className={`bz-card p-5 sm:p-6 ${className}`}>
+      <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
         <header className="mb-3 flex items-center justify-between gap-3">
           <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
-          <span aria-hidden="true" className="bz-pulse-dot" />
+          <ConnectionBadge status={status} isTr={isTr} />
         </header>
         <p className="text-[13px] text-[#737373]">
           {isTr
@@ -51,20 +186,29 @@ export function ActivityFeed({
   }
 
   return (
-    <section className={`bz-card p-5 sm:p-6 ${className}`}>
-      <header className="mb-3 flex items-center justify-between gap-3">
+    <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
+      <header className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
-          <span aria-hidden="true" className="bz-pulse-dot" />
+          <ConnectionBadge status={status} isTr={isTr} />
         </div>
         <Link
           href={viewAllHref}
-          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] transition-colors"
+          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring"
         >
           {isTr ? 'Tüm aktiviteyi gör' : 'View all activity'}
           <ArrowRight size={11} strokeWidth={2} />
         </Link>
       </header>
+
+      <NewEventsToast
+        count={toastCount}
+        onDismiss={() => {
+          setToastSuppressed(true);
+          acknowledgeToast();
+        }}
+        isTr={isTr}
+      />
 
       <ol className="flex flex-col">
         {events.map((event, idx) => {
@@ -73,6 +217,7 @@ export function ActivityFeed({
             addSuffix: false,
             locale: isTr ? trLocale : enLocale,
           });
+          const isNew = newEventIds.has(event.id);
           const inner = (
             <>
               <span
@@ -99,20 +244,27 @@ export function ActivityFeed({
               </span>
             </>
           );
-          const className =
+          const baseClass =
             'flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0 ' +
             (idx < events.length - 1 ? 'border-b border-[#F2F2F2]' : '');
+          // Slide-in highlight: globals.css `activity-row-in` keyframe
+          // 1.2s lime-soft glow + translateY. Sadece newEventIds set'inde
+          // olan ID'lerde uygulanır; CSS reduced-motion blanket'i
+          // [style*='activity-row-in'] selector'ıyla yakalar.
+          const slideStyle = isNew
+            ? { animation: 'activity-row-in 600ms cubic-bezier(0.4, 0, 0.2, 1)' }
+            : undefined;
           return (
-            <li key={event.id}>
+            <li key={event.id} style={slideStyle}>
               {event.href ? (
                 <Link
                   href={event.href}
-                  className={`${className} hover:bg-[#FAFAFA] -mx-2 px-2 rounded-md transition-colors`}
+                  className={`${baseClass} hover:bg-[#FAFAFA] -mx-2 px-2 rounded-md bz-motion-spring`}
                 >
                   {inner}
                 </Link>
               ) : (
-                <div className={className}>{inner}</div>
+                <div className={baseClass}>{inner}</div>
               )}
             </li>
           );

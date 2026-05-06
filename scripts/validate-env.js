@@ -62,6 +62,13 @@ const optional = [
   // Production after Sentry `tags.reason:low score` rate is healthy. Surface
   // here so operators see it on fresh deploys.
   ['RECAPTCHA_ENFORCE', 'reCAPTCHA stays in monitor mode — low scores logged to Sentry but not blocked. Set "true" to enforce.'],
+  // Stage 16 §38.86 — Supabase Realtime push for ActivityFeed. All three
+  // must be set together; missing any one disables realtime gracefully
+  // (page reload mode korunur, CLAUDE.md §38.31). Surface here so a fresh
+  // deploy notices before the first dashboard open.
+  ['NEXT_PUBLIC_SUPABASE_URL', 'ActivityFeed realtime push disabled, falls back to page-reload mode'],
+  ['NEXT_PUBLIC_SUPABASE_ANON_KEY', 'ActivityFeed realtime push disabled, falls back to page-reload mode'],
+  ['SUPABASE_JWT_SECRET', '/api/realtime/token endpoint returns 503, ActivityFeed falls back to page-reload mode'],
 ];
 
 const missing = [];
