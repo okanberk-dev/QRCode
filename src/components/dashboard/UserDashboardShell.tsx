@@ -313,11 +313,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       id: 'crm',
       icon: UsersRound,
       label: 'CRM',
-      // §38.56 — tasarım a/shell.jsx CRM grup birebir: Müşteriler / Analitik /
-      // Kampanyalar (Yeni badge). Analitik mevcut /dashboard/analytics route'u
-      // kullanır (eskiden GENEL'deydi); Kampanyalar şu an placeholder route
-      // (`/dashboard/campaigns` 404 dönecek — sayfa açılana kadar "Yeni" badge
-      // hint olarak görünür).
+      // §38.56 — tasarım a/shell.jsx CRM grup: Müşteriler / Analitik / Kampanyalar.
+      // §38.99 — Kampanyalar artık canlı (placeholder rewrite), "Yeni" badge
+      // kaldırıldı. Admin master flag (Restaurant.campaignsEnabled §38.98) ile
+      // per-restaurant kapatılabilir; UI disabled mode AlertBanner gösterir.
       children: [
         { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
         { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
@@ -325,7 +324,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           href: `/${locale}/dashboard/campaigns`,
           icon: MessageSquareText,
           label: locale === 'tr' ? 'Kampanyalar' : 'Campaigns',
-          isNew: true,
         },
       ],
     },

@@ -217,6 +217,19 @@ export const ACTION_LABELS: Record<string, { tr: string; en: string }> = {
   'user.password.change': { tr: 'Şifre değiştirildi', en: 'Password changed' },
   'user.profile.update': { tr: 'Profil güncellendi', en: 'Profile updated' },
   'user.feedback.reply': { tr: 'Yoruma yanıt verildi', en: 'Feedback replied' },
+  // Owner campaigns (Stage §38.99)
+  'owner.campaigns.create': {
+    tr: 'Kampanya oluşturuldu',
+    en: 'Campaign created',
+  },
+  'owner.campaigns.send': {
+    tr: 'Kampanya gönderildi',
+    en: 'Campaign sent',
+  },
+  'owner.campaigns.delete': {
+    tr: 'Kampanya silindi',
+    en: 'Campaign deleted',
+  },
 };
 
 export function actionLabel(action: string, locale: 'tr' | 'en' = 'tr'): string {
