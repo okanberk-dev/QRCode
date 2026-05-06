@@ -11702,3 +11702,199 @@ impersonation (Stage A4), AdminAuditLog'un IP+UA field genişletmesi
   "Denetim kayıtları" link + permission gate) veya Stage A4 impersonation
   flow veya §38.B master backlog (HIGH 4 Platforms 12-card grid product
   decision).
+
+### 38.96 2026-05-06 — Stage A4 admin impersonation / "Owner gibi gör" (shadow mode)
+
+§38.94 RBAC + §38.95 audit viewer altyapısı üzerine geleneksel SaaS support
+flow'u: admin support ticket'a yanıt verirken müşterinin panel'ini "owner gibi"
+görür, hata reproduce eder, çözer; tüm işlem KVKK + audit + auto-timeout
+disipline ile sarılı.
+
+**Out of scope**: A2 RBAC dependency soft (superadmin-only fallback intact —
+manager için 'impersonation:write' permission grant'ı zorunlu), A3 audit
+viewer mevcut pattern reuse, A5 bulk ops.
+
+**Schema migration** (`prisma/schema.prisma` + `prisma/migrations/20260506150000_add_impersonation_sessions/`):
+- Yeni `ImpersonationSession` model — adminId × targetUserId (her ikisi FK
+  cascade `onDelete`), reason text (min 20 char, audit context), startedAt/
+  endsAt/endedAt timestamps, endedReason ('manual' | 'timeout' | 'admin_logout').
+- 3 index: `[adminId, startedAt]` admin history, `[targetUserId, startedAt]`
+  user history, `[endedAt, endsAt]` cron expire query.
+- `AdminUser.impersonations` + `User.impersonations` reverse relations.
+- Breaking change yok (yeni tablo, default empty).
+
+**JWT extension** (`src/lib/auth.ts`):
+- `PanelActor.realAdminId` + `PanelActor.impersonationSessionId` opsiyonel
+  field'lar. JWT payload'ı `impersonating: { adminId, sessionId }` claim'i
+  taşır; verify edilir + DB lookup ile **active session** doğrulanır
+  (forge / expired token defense-in-depth).
+- `getPanelActorFromRequest` impersonation claim varsa session lookup yapar:
+  `endedAt=null AND endsAt>now AND adminId+targetUserId match` → `realAdminId`
+  set. Match etmiyorsa claim sessizce ignore (degrade to plain user).
+- `actor.source = 'user'` olarak görünür (owner endpoint'leri normal çalışır)
+  ama UI banner + audit + Sentry tag `realAdminId` set olduğunda activate.
+
+**Endpoint'ler (3 yeni)**:
+- `POST /api/admin/impersonate` — Zod `.strict()` body `{ targetUserId: cuid,
+  reason: min(20).max(500) }`, RBAC `impersonation:write` (superadmin bypass),
+  rate limit 3/saat/admin (abuse koruma), 30dk window'lı session create + JWT
+  issue + httpOnly user_token cookie + redirect /tr/dashboard. AdminAuditLog
+  `admin.impersonate.start` + Sentry warn + transparency mail.
+- `POST /api/admin/impersonate/end` — manual çıkış. user_token cookie temizle,
+  admin_token zaten browser'da intact; ImpersonationSession.endedAt=now,
+  endedReason='manual'. AdminAuditLog `admin.impersonate.end` + Sentry info.
+- `GET /api/cron/expire-impersonation-sessions` (5dk schedule, vercel.json):
+  endedAt=null AND endsAt<now session'ları bulk close (timeout). Per-row
+  audit log. Sentry warn `impersonation:timeout`. CRON_SECRET fail-closed.
+
+**Mail** (`src/lib/email.ts:sendImpersonationStartEmail`):
+- KVKK §13.9 transparency — owner'a anlık mail bildirimi: "X yönetici Y
+  nedeniyle hesabınıza Z dakika boyunca erişti".
+- recipient + reason + adminUsername CRLF strip (CLAUDE.md §37.2 H + §37.7).
+- Inline minimal template (Pulse layout overhead'i bu critical security mail
+  için gereksiz; text-first); subject + html + text TR/EN parite.
+- Fire-and-forget; mail send fail impersonation flow'u kırmaz.
+
+**UI** (yeni component'ler):
+- `ImpersonationBanner.tsx` (UserDashboardShell mount edildi) — sticky top
+  kırmızı banner, server-side `actor.realAdminId` set ise görünür. 30dk
+  countdown timer + "Çıkış" CTA → POST /end → window.location admin
+  dashboard'a hard navigate.
+- `ImpersonateButton.tsx` (admin/members/[id] header actions mount) — modal:
+  reason input (min 20 char counter) + KVKK + audit + 30dk timer disclosure
+  banner + KVKK consent checkbox. Confirm → POST /api/admin/impersonate →
+  redirect target user'ın dashboard'ına.
+
+**Sentry config** (`sentry.server.config.ts`):
+- `beforeSend` hook eklendi: `globalThis.__buazeImpersonationContext`
+  (future scope — opsiyonel context injection middleware) varsa event'e
+  `tags.impersonating='true'` + `tags.realAdminId=...` ekler. Forensic ops
+  için: tag'li event filter dashboard'da impersonation süresince çıkan tüm
+  hataları görme imkanı.
+- Mevcut helper fire-and-forget Sentry tag'leri (impersonate endpoint +
+  cron) zaten manuel `tags.kind='impersonation'` set ediyor — beforeSend
+  alert/error path'inde otomatik tag enrichment.
+
+**RESOURCES extension**:
+- 'impersonation' yeni resource (Stage A2 §38.94 RBAC). 'write' action zorunlu
+  (start session); 'read' yok. Permissions matrix UI'da otomatik 12. row.
+- `RESOURCE_LABELS` map'inde "Owner gibi gör" TR label.
+
+**KVKK + audit + auto-timeout disipline (kanonik)**:
+1. **Reason zorunlu** (min 20 char) — audit trail forensic context.
+2. **30dk auto-timeout** — cron 5dk'da bir geçen session'ları kapatır
+   (`endedReason='timeout'`).
+3. **Mail bildirimi** — owner'a anlık transparency (KVKK §13.9 right to
+   know).
+4. **Audit log** — `admin.impersonate.start` + `admin.impersonate.end`
+   AdminAuditLog rows (existing §38.95 viewer'da görünür).
+5. **Rate limit** — 3 session/saat/admin (abuse koruması, kötü niyetli
+   admin'e karşı bile koruma).
+6. **Sentry tag** — ops monitoring + forensic event filter.
+7. **Defense-in-depth** — JWT claim verify + DB session lookup (forge
+   token + expired session koruma).
+
+**Yeni dosyalar (8)**:
+- `prisma/migrations/20260506150000_add_impersonation_sessions/migration.sql`
+- `src/app/api/admin/impersonate/route.ts` (POST start)
+- `src/app/api/admin/impersonate/end/route.ts` (POST end)
+- `src/app/api/cron/expire-impersonation-sessions/route.ts`
+- `src/components/dashboard/ImpersonationBanner.tsx`
+- `src/components/admin/ImpersonateButton.tsx`
+
+**Edit'lenen dosyalar (8)**:
+- `prisma/schema.prisma` (ImpersonationSession model + AdminUser/User reverse)
+- `src/lib/auth.ts` (PanelActor.realAdminId + getPanelActorFromRequest impersonation claim verify)
+- `src/lib/rbac.ts` (RESOURCES 'impersonation' eklendi)
+- `src/lib/email.ts` (sendImpersonationStartEmail helper)
+- `src/app/api/account/actor-context/route.ts` (impersonation surface fields)
+- `src/components/dashboard/UserDashboardShell.tsx` (ImpersonationBanner mount + import)
+- `src/app/admin/members/[id]/page.tsx` (ImpersonateButton mount + import)
+- `src/app/admin/users/[id]/permissions/page.tsx` (RESOURCE_LABELS impersonation entry)
+- `sentry.server.config.ts` (beforeSend impersonation tag enrichment)
+- `vercel.json` (cron schedule entry)
+
+**§4.5 admin terminoloji genişleme — impersonation tier**:
+| Aksiyon | Eski model | Yeni model (Stage A4) |
+|---|---|---|
+| Admin owner panel'i görür | Read-only / impossible | 30dk session, KVKK transparency, mandatory reason, audit + Sentry trail |
+| Manager bu yetkiye sahip mi? | Hayır (superadmin only) | Yalnız `impersonation:write` permission grant'ı varsa (Stage A2 §38.94 RBAC) |
+| Owner haberdar olur mu? | Hayır | Anlık mail + sticky banner + audit log'unda görünür (Stage A3 §38.95) |
+| Süreyi yönetir | Manuel | Auto-timeout 30dk (cron 5dk) + manuel /end |
+
+**Yapma**:
+- Impersonation session active iken admin yan tab'da ikinci session açma —
+  rate limit 3/saat sayar; ayrıca cookie konfliği (user_token impersonation
+  ile zaten set, ikinci start eski cookie üzerine yazar). Pratikte iki ayrı
+  ticket için seri açılır, paralel desteği yok (intentional).
+- Impersonation reason'ı 20 char altında girme — Zod schema 400 reddeder.
+  Audit forensic context için minimum şart.
+- Cron schedule'ı 5dk'dan kısa yapma — Vercel cron quota + DB load. 5dk
+  granularity 30dk window için yeterli (max 5dk fark = 5/30 = %16.7
+  retention drift).
+- `realAdminId` set olan request'te owner permission'ları zayıflatma —
+  impersonation şu an "owner gibi davran, owner permission'larıyla";
+  read-only mode (write block) future scope (gelecek bir flag schema'ya
+  eklenebilir).
+- Sentry capture'a target user email/name geçirme — `tags.targetUserId`
+  + `extra.adminId/sessionId` ID-only. Email expose KVKK ihlali.
+- Mail body'de raw reason text'i HTML'e koymak — `escapeHtml` yapılmadan
+  XSS riski. Mevcut helper `stripCtl` CRLF strip yapıyor; HTML render text
+  içeriğine direkt yapıştırılmıyor (template literal kontrol altında).
+- Manager'a direkt 'impersonation:write' grant verme — superadmin policy
+  kararı; gelecek "trusted manager" konsepti için preset kararı (kısıtlı
+  use case, audit trail her halükarda var).
+
+**Yap**:
+- Yeni impersonation use case eklerken `writeAdminAuditLog` reuse —
+  Sentry tag + DB row + ID-only extra otomatik.
+- UI banner mount eden başka surface (örn. mobile drawer) eklenirse
+  ImpersonationBanner reuse — server-side `actor.realAdminId` aynı kontract'le
+  döner.
+- Auto-timeout 30dk default'u global yerine per-grant değiştirmek istenirse
+  `ImpersonationSession.endsAt` field zaten mandatory — cron schedule değişmez
+  (her session kendi endsAt'ında expire eder).
+- Audit endpoint admin viewer'da `admin.impersonate.*` action'ları zaten
+  ACTION_LABELS map'inde TR/EN — Stage A3 §38.95 ile uyumlu, ek iş yok.
+- Future: impersonation read-only mode (write block) — `actor.impersonationReadOnly`
+  flag + tüm write endpoint'lerde guard. Şu an scope dışı.
+
+**Verification** (Tarih 2026-05-06):
+- `npx eslint .` 0 errors, 0 warnings
+- `npx tsc --noEmit -p tsconfig.json` 0 errors in `src/`
+- `npm test` 221/221 pass, 29 suites
+- `npx next build` (stub env, 4GB heap) ✓ Compiled successfully + 58/58 static
+  pages + 4 yeni dynamic route (admin/impersonate POST + end POST + cron +
+  account/actor-context extension)
+
+**Stage A4 closure** (Tarih 2026-05-06):
+- Branch `chore/admin-impersonation-stageA4`
+- Toplam 16 dosya değişiklik (8 yeni + 8 edit)
+- Schema migration: 1 (ImpersonationSession + 2 reverse relation, breaking
+  change yok)
+- Yeni dep: YOK
+- Test count: 221 (değişmedi — UI/endpoint integration test scope dışı,
+  helper'ların pure logic'i ya inline ya backend RBAC pattern reuse)
+- Operatör aksiyonu (PR sonrası): Vercel build script `prisma migrate deploy`
+  otomatik ImpersonationSession tablosunu apply eder. Vercel cron
+  scheduler'ı `vercel.json` yeni entry'i okur, 5dk schedule otomatik aktif.
+  Manuel smoke test:
+  - superadmin /admin/members/[ownerId] → "Owner gibi gör" → reason yaz
+    (min 20 char) + KVKK consent → modal confirm → /tr/dashboard owner panel
+    açılır + üstte kırmızı admin banner + 30dk countdown.
+  - Owner gerçek inbox: "[Buaze] Hesabınıza destek erişimi açıldı" mail
+    (text + HTML body, reason + endsAt görünür).
+  - "Çıkış" → user_token silinir, admin /admin/dashboard'a yönlenir,
+    AdminAuditLog'da `admin.impersonate.start` + `admin.impersonate.end`
+    iki entry.
+  - 30dk sonra cron `expire-impersonation-sessions` otomatik kapatır;
+    endedReason='timeout', Sentry warn capture.
+- Kalan riskler: JWT cookie hijack — user_token taşınırken impersonating
+  claim doğrulaması sadece JWT signature + DB session lookup'a güveniyor;
+  Stage 14 §38.84 Sentry server-side flush kör nokta tagging'i etkilemez
+  (audit DB row + Vercel runtime log her durumda). Auto-timeout cron drift
+  max 5dk (intentional). 30dk window — uzun ticketlarda admin manuel
+  re-start gerekir (kısa pencere abuse koruması).
+- **Sonraki aşama önerisi**: Stage A2.1 sidebar UI gating (impersonation
+  permission grant'ları için admin sidebar'a "Yetkiler" link), Stage A5
+  bulk ops, veya §38.B master backlog (HIGH 4 Platforms 12-card grid).

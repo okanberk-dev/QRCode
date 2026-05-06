@@ -27,6 +27,10 @@ export const RESOURCES = [
   'blog',
   'analytics',
   'audit_logs',
+  // Stage A4 §38.96 — admin impersonation flow ("Owner gibi gör"). 'write'
+  // action gerekli (start session); 'read' yok — superadmin OR grant'lı
+  // manager bu yetkiyle owner panel'ine geçebilir.
+  'impersonation',
 ] as const;
 
 export const ACTIONS = ['read', 'write', 'delete'] as const;
