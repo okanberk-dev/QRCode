@@ -10450,3 +10450,75 @@ UI binding (`google-reviews/page.tsx`):
 - Kalan riskler: Q&A API'nin Google tarafında deprecation pathway'i belirsiz — gelecekte 410 dönmeye başlarsa profile-stats endpoint'i `unansweredQuestions: null` ile graceful degrade eder (mevcut soft-fail kapsar). Yelp/Foursquare provider'ları için `PlatformLinkCheck` cron retest (CLAUDE.md §19.4.4) zaten 13 provider whitelist'inde — Stage 10 şemayı genişletmedi, mevcut testler intact.
 - **Sonraki aşama önerisi**: §38.2 master backlog'da kalan büyük scope'lar — CSP C grubu rollout (CLAUDE.md §37.8 strict `script-src` allowlist + nonce middleware, Report-Only mode 1-2 hafta soak gerek); HIGH 4 Platforms 12-card grid (DEFER §38.30 product decision pending); ya da Yelp/Foursquare için per-provider `PlatformLinkCheck` cron testleri (mevcut whitelist intact ama URL pattern heuristic'i §19.4.4'te yok). Veya operatör yeni odak talebi.
 
+### 38.83 2026-05-06 — Stage 13 feedback isRead + isPending UI wiring (4-fix bundle)
+
+CLAUDE.md §38.B "feedback PATCH UI wiring" backlog kapanışı. §38.56'da `Feedback.isRead` + `isPending` schema migration eklenmiş, §38.57'de `PATCH /api/feedback/[id]` endpoint backend hazır kalmıştı — Stage 13 UI binding + 1 yeni bulk action ile tüm flow'u uçtan uca aktif etti.
+
+**Branch** `chore/feedback-status-toggle-ui-stage13`. Tek consolidated PR (CLAUDE.md §21.22). Schema migration **YOK** (§38.56'da eklenmiş), yeni endpoint **YOK** (PATCH §38.57'de hazır), büyük UX refactor **YOK** (owner panele bulk bar eklenmedi — §38.B disipline + kullanıcı kararı).
+
+**4 fix bundle**:
+
+1. **`/api/feedback/bulk` `bulk_mark_read` action** (`src/app/api/feedback/bulk/route.ts`):
+   - Zod `Body.action` enum'a `'bulk_mark_read'` eklendi (mevcut `'flag' | 'unflag' | 'assign' | 'bulk_ai_reply'` + 1).
+   - Role guard: `flag/unflag/assign` ile aynı (superadmin/manager only) — admin-reviews surface intent (owner panelde bulk yok).
+   - Action dispatch: `prisma.feedback.updateMany({ where: { id: { in: allowedIds } }, data: { isRead: true } })`. Atomic + return count, flag/unflag patternleriyle parite (Promise.allSettled gereksiz).
+   - Audit log: `feedback.bulk.bulk_mark_read` (mevcut paterni reuse).
+   - Response shape değişmedi (`{ processed, skipped, action }`).
+
+2. **Owner panel mark-as-read on row click** (`src/app/[locale]/dashboard/feedbacks/page.tsx`):
+   - `onSelectFeedback(id)` içinde `feedbacks` array'inden seçilen row'u bul; `r.isRead === true` ise skip (gereksiz network).
+   - Optimistic state update: `setFeedbacks((prev) => prev.map((f) => f.id === id ? { ...f, isRead: true } : f))`.
+   - Fire-and-forget `fetch('/api/feedback/${id}', { method: 'PATCH', body: { isRead: true } })`. Failure'da silent fail (try/catch boş — `flagFeedback` paterni mirror).
+   - `counts.unread` zaten `feedbacks.filter((r) => r.isRead !== true).length` → optimistic update otomatik decrement.
+
+3. **FeedbackDetail Beklemede toggle** (`page.tsx` + `_components/FeedbackDetail.tsx`):
+   - Yeni `togglePending` async handler: optimistic state update + `bulkNotice` 5s success / 8s error (CLAUDE.md §38.15 dwell timing, mevcut useEffect auto-dismiss). Failure'da state revert + error notice.
+   - `FeedbackDetailProps.onTogglePending: () => void` prop eklendi.
+   - Mobile sticky-top ve desktop header'da Bookmark icon button (lucide `Bookmark`). Active.isPending true → amber palette (`#FDE68A/#FFFBEB/#92400E` Pulse warn token, §11), false → outline neutral. `aria-pressed` semantik.
+   - i18n: TR "Beklemeye al / Beklemeden çıkar / Beklemede" + EN "Mark pending / Remove from pending / Pending".
+
+4. **FeedbackListItem unread dot + isPending badge** (`_components/FeedbackListItem.tsx`):
+   - Yeni `isUnread` derive: `r.isRead === false || r.isRead === undefined` (eski feedback'ler default false, dot görünür).
+   - Avatar yanında 1.5×1.5 mavi dot (`#2563EB` Pulse info palette §11) — `role="img"` + `aria-label="Okunmamış"`.
+   - Müşteri adı: `isUnread ? 'font-bold' : 'font-semibold'` (visual emphasis on unread).
+   - `r.isPending` → sağ-side badge sırasında `Badge kind="warn"` + lucide `Bookmark` icon `fill="#92400E"`. Owner manuel "Beklemeye al" toggle'ladığında görünür; tab "Beklemede" filter ile birebir parite.
+
+5. **Admin/reviews `BulkActionToolbar` "Okundu işaretle" button** (`src/app/admin/reviews/page.tsx` + `_components/BulkActionToolbar.tsx`):
+   - `BulkActionToolbarProps.onMarkRead: () => void` prop eklendi.
+   - `runBulk` action union: `'flag' | 'unflag' | 'assign' | 'bulk_mark_read'`.
+   - Lime-soft palette button (`bg-[#EAF9B8] border-[#A8D62E]`, hover `#C6F24E`) — lucide `CheckCheck` icon "iki tick = okundu" semantic.
+   - Admin/reviews `<BulkActionToolbar onMarkRead={() => runBulk('bulk_mark_read')} ... />`.
+
+**Verification**:
+- `npm run lint`: 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx tsc --noEmit`: 0 errors in `src/`
+- `npm test`: 186/186 pass (Stage 10'dan kalan baseline; Stage 13 yeni unit test eklemedi — UI binding + bulk action backend integration test scope dışı)
+- `npx next build` (stub env): Compiled successfully + 58/58 static page (Prisma stub DB warnings beklenen)
+- Sanity grep: `bulk_mark_read` 6 hit (Zod enum + action branch + admin runBulk + ToolbarProps + admin onMarkRead + closure log) ✓; `togglePending`/`onTogglePending` 6 hit (handler + prop interface + page.tsx prop pass + 2 button bind + ARIA) ✓; `isUnread` + `isPending && ` 4 hit FeedbackListItem ✓; `Bookmark` import 2 hit (FeedbackDetail + FeedbackListItem) ✓; `CheckCheck` 3 hit (import + button + JSX) ✓.
+
+**Yapma**:
+- Owner panele bulk bar component eklemek — task scope-dışı (büyük UX refactor); admin/reviews mevcut bulk infra reuse yeterli.
+- `bulk_mark_read` için `Promise.allSettled` paterni — `updateMany` zaten atomic + return count, flag/unflag paternleriyle parite.
+- Role guard'ı `bulk_ai_reply` paterniyle (`restaurant_owner` dahil) genişletme — admin-only intent (owner mark-as-read on click otomatik aşağı, bulk gereksiz).
+- Audit log atlamak — destructive bulk için CLAUDE.md §29.6 paterni zorunlu, mevcut `feedback.bulk.${action}` template otomatik kapsar.
+- Mark-as-read PATCH'i her tıklamada atmak — `r.isRead === true` skip; gereksiz network çağrısı UX latency artırır + backend'e load bindirir.
+- Unread dot rengini lime ile karıştırmak — Pulse §11 `#C6F24E` lime CTA için; mavi (`#2563EB` info palette) "yeni/okunmamış" semantic'e doğru.
+- `togglePending` setTimeout ile dismiss timer kurma — mevcut useEffect (line 744-749) `bulkNotice` `tone === 'error' ? 8000 : 5000` zaten handle eder; ek setTimeout race + double-clear bug yaratır.
+
+**Yap**:
+- Yeni feedback PATCH alanı eklenirken (örn. `isArchived`, `priority`): backend `PATCH /api/feedback/[id]` Zod `.strict()` + UI `onTogglePending` paterni reuse — fire-and-forget + optimistic state + `bulkNotice` surface.
+- Yeni bulk action eklenirken `/api/feedback/bulk` Zod enum + action dispatch + audit log paterni mirror; `Promise.allSettled` per-row fail isolation gerekiyorsa flag/assign paterni, atomic mass update için `updateMany` flag/unflag paterni.
+- Yeni status badge eklerken `Badge` primitive (CLAUDE.md §11.x) `kind="warn|ok|danger|lime"` + lucide icon — custom inline style yerine.
+- Yeni admin-only bulk button eklerken `BulkActionToolbar` prop'a `on${Action}` ekle + `runBulk` action union genişlet + lime-soft / neutral palette ile semantic ayrım.
+
+**Stage 13 closure** (Tarih 2026-05-06):
+- Branch `chore/feedback-status-toggle-ui-stage13`
+- İncelenen UI surface'leri: 4 (owner panel page + FeedbackDetail + FeedbackListItem + admin/reviews BulkActionToolbar)
+- Yeni dosya yok
+- Edit'lenen dosyalar: 5 (api/feedback/bulk + page.tsx owner + FeedbackDetail + FeedbackListItem + admin/reviews/page + BulkActionToolbar)
+- Yeni unit test: 0 (UI binding + backend bulk integration test scope dışı; mevcut 186/186 baseline intact)
+- Çalıştırılan kontroller: lint 0 err / tsc src 0 err / next build 58/58 / test 186/186 / sanity grep clean
+- Operatör aksiyonları (PR sonrası): YOK — değişiklikler runtime auto-applied. Mevcut feedback'ler otomatik unread görünür (default false), owner tıkladıkça read state kazanır.
+- Kalan riskler: Owner mark-as-read PATCH başarısızlığı silent — eski feedback'ler için backend reject (rare; canWriteFeedback IDOR fail). Bu durumda dot kalmaz ama state mismatch (next page reload sonrası dot tekrar görünür). Acceptable — UX katlandığı durum nadiren.
+- **Sonraki aşama önerisi**: §38.B master backlog'da kalan büyük scope'lar — CSP C grubu rollout (§37.8 strict `script-src` + nonce middleware, Report-Only soak gerek); HIGH 4 Platforms 12-card grid (DEFER §38.30 product decision); ya da owner panel bulk bar component (yeni multi-select infra + checkbox column + floating toolbar — bilinçli scope creep ayrı PR). Veya operatör yeni odak talebi.
+

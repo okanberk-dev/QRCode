@@ -1,6 +1,6 @@
 'use client';
 
-import { Flag, Loader2, UserPlus, X } from 'lucide-react';
+import { CheckCheck, Flag, Loader2, UserPlus, X } from 'lucide-react';
 
 interface BulkActionToolbarProps {
   isTr: boolean;
@@ -9,6 +9,11 @@ interface BulkActionToolbarProps {
   onFlag: () => void;
   onUnflag: () => void;
   onAssign: () => void;
+  /**
+   * Stage 13 (CLAUDE.md §38.83) — toplu "okundu" işaretleme. Backend
+   * /api/feedback/bulk action `bulk_mark_read` çağırır + audit log.
+   */
+  onMarkRead: () => void;
   onClear: () => void;
 }
 
@@ -24,6 +29,7 @@ export function BulkActionToolbar({
   onFlag,
   onUnflag,
   onAssign,
+  onMarkRead,
   onClear,
 }: BulkActionToolbarProps) {
   if (count === 0) return null;
@@ -70,6 +76,21 @@ export function BulkActionToolbar({
           <UserPlus size={11} strokeWidth={2.2} />
         )}
         {isTr ? 'Bana ata' : 'Assign me'}
+      </button>
+      {/* Stage 13 — toplu "okundu" işaretleme (CLAUDE.md §38.83). Lime-soft
+          palette (CheckCheck = iki tick "okundu" semantic). */}
+      <button
+        type="button"
+        onClick={onMarkRead}
+        disabled={busy}
+        className="inline-flex items-center gap-1.5 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1 text-[11px] font-medium text-[#0A0A0A] hover:bg-[#C6F24E] transition-colors disabled:opacity-50"
+      >
+        {busy ? (
+          <Loader2 size={11} className="animate-spin" />
+        ) : (
+          <CheckCheck size={11} strokeWidth={2.2} />
+        )}
+        {isTr ? 'Okundu işaretle' : 'Mark as read'}
       </button>
       <button
         type="button"

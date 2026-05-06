@@ -13,7 +13,8 @@ import { coerceTone, generateReplyDraft, type AiDraftTone } from '@/lib/ai-draft
  * POST /api/feedback/bulk — toplu feedback eylemi.
  *
  * Auth: panel actor + role kontrol (action-bazlı):
- *   - flag/unflag/assign → superadmin / manager only (CLAUDE.md §4 IDOR)
+ *   - flag/unflag/assign/bulk_mark_read → superadmin / manager only
+ *     (CLAUDE.md §4 IDOR; admin reviews surface, owner panelinde bulk yok)
  *   - bulk_ai_reply → owner + manager + superadmin (§38.58 — owner için
  *     Yorumlar topbar "Toplu yanıtla" CTA, tasarım a/page-reviews.jsx:45)
  * IDOR: gönderilen id'ler scoped restaurantId'leri içinde **whitelist**
@@ -23,23 +24,26 @@ import { coerceTone, generateReplyDraft, type AiDraftTone } from '@/lib/ai-draft
  *   gerekirse repeated batch).
  *
  * Body shape (Zod):
- *   { ids: string[] (1..50), action: 'flag' | 'unflag' | 'assign' | 'bulk_ai_reply',
+ *   { ids: string[] (1..50), action: 'flag' | 'unflag' | 'assign' |
+ *     'bulk_ai_reply' | 'bulk_mark_read',
  *     tone?: 'warm' | 'apologetic' | 'formal', locale?: 'tr' | 'en' }
- *   - 'flag'   → FeedbackFlag upsert (varsa skip)
- *   - 'unflag' → FeedbackFlag deleteMany
- *   - 'assign' → FeedbackAssignment upsert (assigneeId = actor.id)
- *   - 'bulk_ai_reply' → Per-id generateReplyDraft + FeedbackAiDraft upsert.
+ *   - 'flag'           → FeedbackFlag upsert (varsa skip)
+ *   - 'unflag'         → FeedbackFlag deleteMany
+ *   - 'assign'         → FeedbackAssignment upsert (assigneeId = actor.id)
+ *   - 'bulk_ai_reply'  → Per-id generateReplyDraft + FeedbackAiDraft upsert.
  *      Pulse AI master gate (Restaurant.pulseAiEnabled) zorunlu; AI quota
  *      layered guard (CLAUDE.md §15.1). Owner sonra her draft'ı tek-tek
  *      onaylayıp gönderir (auto-send YOK).
+ *   - 'bulk_mark_read' → Feedback.isRead=true updateMany (Stage 13 §38.83).
+ *      Single atomic query + return count; flag/unflag patternleriyle parite.
  *
- * Response (flag/unflag/assign): { processed, skipped, action }
+ * Response (flag/unflag/assign/bulk_mark_read): { processed, skipped, action }
  * Response (bulk_ai_reply): { processed, skipped, action, drafts:
  *   [{ feedbackId, source: 'openai'|'template'|'template-fallback'|'skipped' }] }
  */
 const Body = z.object({
   ids: z.array(z.string().min(1)).min(1).max(50),
-  action: z.enum(['flag', 'unflag', 'assign', 'bulk_ai_reply']),
+  action: z.enum(['flag', 'unflag', 'assign', 'bulk_ai_reply', 'bulk_mark_read']),
   tone: z.enum(['warm', 'apologetic', 'formal']).optional(),
   locale: z.enum(['tr', 'en']).optional(),
 });
@@ -154,6 +158,16 @@ export async function POST(req: NextRequest) {
       ),
     );
     processed = results.filter((r) => r.status === 'fulfilled').length;
+  } else if (action === 'bulk_mark_read') {
+    // Stage 13 (CLAUDE.md §38.83) — toplu "okundu" işaretleme. Migration
+    // 20260505230000 (Feedback.isRead default false) ile zaten yazılır;
+    // updateMany atomic + return count, flag/unflag patternleriyle parite
+    // (Promise.allSettled gerektirmez).
+    const result = await prisma.feedback.updateMany({
+      where: { id: { in: allowedIds } },
+      data: { isRead: true },
+    });
+    processed = result.count;
   }
 
   // §38.58 — bulk_ai_reply: per-id generateReplyDraft + FeedbackAiDraft upsert.
