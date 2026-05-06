@@ -143,26 +143,9 @@ body {
 }
 
 /* ── Pulse button system ─────────────────────────────────────
- * Three canonical CTA patterns — apply on top of element type
- * (works on <a>, <Link>, <button>). Pair with rounded-full and
- * inline-flex / items-center / gap-2 utilities at the call site
- * so consumers can mix in icons. */
-.pulse-btn-primary {
-  background-color: #C6F24E;
-  color: #0A0A0A;
-  font-weight: 600;
-  font-size: 14px;
-  padding: 12px 22px;
-  border: 1px solid transparent;
-  transition: background-color 0.15s ease, transform 0.05s ease;
-}
-.pulse-btn-primary:hover {
-  background-color: #A8D62E;
-}
-.pulse-btn-primary:active {
-  transform: scale(0.98);
-}
-
+ * `pulse-btn-dark` graphite CTA primary surface. `pulse-btn-primary`
+ * (lime) and `pulse-btn-ghost` removed §38.101 (0 callsites — replaced
+ * by `bz-btn-primary` / `bz-btn-ghost` panel utilities). */
 .pulse-btn-dark {
   background-color: #0A0A0A;
   color: #ffffff;
@@ -177,20 +160,6 @@ body {
 }
 .pulse-btn-dark:active {
   transform: scale(0.98);
-}
-
-.pulse-btn-ghost {
-  background-color: transparent;
-  color: #0A0A0A;
-  font-weight: 500;
-  font-size: 14px;
-  padding: 12px 22px;
-  border: 1px solid #EDEDED;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-.pulse-btn-ghost:hover {
-  border-color: #0A0A0A;
-  background-color: #FAFAFA;
 }
 
 .pulse-blog-content blockquote {
@@ -399,38 +368,15 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pulse-btn-primary:active,
   .pulse-btn-dark:active,
   .pulse-card-hover:hover {
     transform: none !important;
   }
 }
 
-/* Custom animations for the stars and forms */
-@keyframes starPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.15); }
-  100% { transform: scale(1); }
-}
-
-.star-anim-pulse {
-  animation: starPulse 0.3s ease-in-out;
-}
-
-@keyframes slideUpFade {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-up {
-  animation: slideUpFade 0.5s ease-out forwards;
-}
+/* §38.101 — `starPulse` + `slideUpFade` keyframes + `.star-anim-pulse` +
+ * `.animate-slide-up` classes silindi (0 callsite, dead code).
+ * `pulse-heartbeat` aktif (12 callsite ECG dot + live indicators). */
 
 /* Pulse heartbeat — for the accent dot / ECG flicker */
 @keyframes pulseHeartbeat {
@@ -590,7 +536,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .pulse-heartbeat,
-  .animate-slide-up,
   .animate-slide-in,
   .bz-fade-up,
   .bz-scale-in {
@@ -1013,12 +958,8 @@ input::-webkit-inner-spin-button {
 }
 .bz-fade-in { animation: bz-fade-in 320ms ease both; }
 
-/* ── Sidebar item active glow on dark ── */
-.bz-side-item-active {
-  background: #C6F24E;
-  color: #0A0A0A !important;
-  font-weight: 600;
-}
+/* §38.101 — `.bz-side-item-active` removed (0 callsite — sidebar nav
+ * active state inline Tailwind `bg-[#C6F24E]` paterniyle uygulanır). */
 
 /* ── Skip-to-content link (a11y baseline for panel shells) ──
  * Hidden until keyboard-focused; lands above the panel chrome
@@ -1258,10 +1199,8 @@ input::-webkit-inner-spin-button {
   /* Pulse panel + marketing animations all disabled when the user prefers
      reduced motion. Covers explicit Pulse keyframes and Tailwind's native
      animate-* utilities (which don't auto-respect this preference).
-     Audit ref: CLAUDE.md §34.18 — `star-anim-pulse`, `animate-slide-up`,
-     `confetti-fly` added in the 2026-05 spot-check. */
-  .star-anim-pulse,
-  .animate-slide-up,
+     §38.101 — `star-anim-pulse` + `animate-slide-up` removed (0 callsite
+     dead code dropped from blanket). */
   .confetti-fly,
   .bz-pulse-dot,
   .bz-fade-in,
