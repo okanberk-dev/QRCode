@@ -42,7 +42,14 @@ export function safeParseJson<T = unknown>(
     // Local breadcrumb so the failure also lands in Vercel runtime logs
     // even if Sentry's serverless flush race drops the envelope (CLAUDE.md
     // §38.8 — server-side Sentry flush kör nokta is still open).
-    console.error('[safe-json] parse failed', {
+    //
+    // Stage 17 §38.87 — `console.warn` (not `console.error`): bu helper
+    // tüm caller'larda fail-safe fallback path'inde (template / empty
+    // result) kullanılıyor. Status 200, kullanıcı etkilenmiyor — Vercel
+    // runtime log "error" sayısını şişiriyordu (son 24h'de 9 entry,
+    // hepsi expected fallback). `warn` seviyesi aynı görünürlükte
+    // kalır ama `level=error` filter'ında temiz olur.
+    console.warn('[safe-json] parse failed', {
       message: err instanceof Error ? err.message : 'unknown',
       rawLength: typeof raw === 'string' ? raw.length : null,
       ...(ctx ?? {}),
