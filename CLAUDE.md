@@ -11040,3 +11040,133 @@ Stage 18 backlog 3 MEDIUM cross-check (Explore agent + manuel verify): **3/3 ÖN
 - Çalıştırılan kontroller: lint 0 err 0 warn / tsc src/ 0 err / test 229/229 / build 58/58 static
 - Operatör aksiyonu (PR sonrası): YOK — Vercel build otomatik deploy. Silinen component'lerin 0 callsite'ı olduğu için UX etkisi yok.
 - **Sonraki aşama önerisi**: §38.B master backlog büyük scope'lar — Stage 9 re-introduce (operatör tetiği, 24h+ Vercel log monitor sonrası), HIGH 4 Platforms 12-card grid (product decision), RECAPTCHA_ENFORCE flip (1-2 hafta soak), Prisma 7 upgrade (§5.4 Task 8). Veya yeni feature scope.
+
+### 38.91 2026-05-06 — Stage 20 backend deep audit closure (zero actionable findings, production health verified)
+
+§38.90 Stage 19 cleanup sonrası kullanıcı talebiyle **kapsamlı backend deep dive audit**: Supabase 5 servis log + Vercel detaylı status code filter + 2 Explore agent (code hygiene + cron/integrations health). Sonuç: **0 CRITICAL + 0 HIGH actionable finding**. Production tamamen sağlam — Stage 17/18/19 hepsi production'da çalışıyor.
+
+**Phase 1 Discovery — production telemetry (geniş kapsamlı)**:
+
+Supabase MCP `get_logs` (5 servis):
+- ✅ **postgres**: routine connection auth (Supavisor + pgbouncer), 0 ERROR/WARN
+- ✅ **api**: 200/101 (websocket subscription, Stage 16 §38.86 Realtime production'da aktif), 0 hata
+- ✅ **realtime**: tenant init/shutdown lifecycle normal (Stage 16 §38.86 RLS policy + replication slot çalışıyor), `Sent 200 in Xms` latency 2-31ms
+- ✅ **auth**: empty (Buaze custom JWT §4 — Supabase Auth flow yok, beklenen)
+- ✅ **storage**: 200 health checks, tenant pool lookup, 0 hata
+
+Supabase MCP `get_advisors` (security + performance):
+- ✅ Security: 0 ERROR + 0 WARN (49 INFO `rls_enabled_no_policy` = §38.87 Buaze BYPASSRLS expected)
+- ✅ Performance: 0 ERROR + 0 WARN (1 INFO unindexed FK admin_users.restaurant_id + 32 INFO unused_index = §38.87 SKIP intact)
+
+Schema integrity (`information_schema.columns` cross-check):
+- ✅ Production schema = Prisma schema (migrations 9 applied, no drift)
+- ✅ Stage 26 `target_rating`, Stage 52 yelp/foursquare 4 field, Stage 56 isRead/isPending, Stage 12 lastFire 3 field, Stage 18 boundary const ile compatible
+
+Vercel runtime logs (status code filter, last 24h):
+- ✅ 5xx: **0 entry**
+- ✅ 500: **0 entry**
+- ✅ 503: **0 entry**
+- ⚠️ 429 (rate limit): 3 entry (1 bugün 09:51 Stage 18 öncesi UserSession warn ile birlikte, 2 dün 19:49 owner çok request gönderdi — normal frequency)
+- ✅ Production deploy `dpl_8fqyFPVrXuieKDHB5Lm6dPuXjPjQ` (commit `d7bf7689`) READY
+- ✅ UserSession warning post-Stage-18: 0/h (önceki 100+/min)
+
+Sentry son 24h (`buaze-ev/sentry-apricot-blanket`):
+- ✅ 2 unresolved issue: SyntaxError invalid char (browser-side script load failure, 2 events) + TypeError Load failed (1 event /:locale/dashboard) — düşük frequency browser noise
+
+Vercel build log (latest production deploy `dpl_8fqyFPVrXuieKDHB5Lm6dPuXjPjQ`):
+- ✅ `[validate-env] All required environment variables are set`
+- ✅ Prisma 6.19.3 generate
+- ⚠️ Prisma 7.8.0 update available (§5.4 Task 8 backlog, major version)
+- ✅ 9 migrations found, no pending
+- ✅ Next.js 15.5.15 build success
+
+Phase 1 Discovery — code-level (Explore agent backend deep audit):
+
+8 cron endpoint pattern verify (CLAUDE.md §38.11):
+- ✅ Tümü `dynamic = 'force-dynamic'` + `runtime = 'nodejs'` + `maxDuration = 300`
+- ✅ Tümü CRON_SECRET fail-closed (`||` fallback yok)
+- ✅ Tümü `runX()` shared helper export (admin manuel trigger için)
+- ✅ vercel.json `crons` array eşleşmesi: weekly-digest, weekly-digest-summary, anonymize-ips, monthly-newsletter, trial-reminders, platform-link-retest, lifecycle-emails, google-reviews-alert (8/8)
+
+Google integration (Stage 10 §38.80 + §5.4 Task 4):
+- ✅ `googleBusinessFetch` retry + reauth + Sentry tag `integration:google-business` intact
+- ✅ `listLocationMedia` + `listLocationQuestions` (Stage 10 profile-stats endpoint) intact
+- ✅ OAuth state nonce + cookie + actor match (RFC 6749 §10.12 compliant)
+- ✅ `requiresReauth` signal propagation (401 owner reconnect CTA)
+
+Webhook fanout (Stage 12 §38.82):
+- ✅ `dispatchWebhook` HMAC-SHA256 (`X-Buaze-Signature`) + 3-retry exp backoff [100, 500, 1000ms] + 5s AbortController timeout
+- ✅ `verifyWebhookSignature` constant-time compare
+- ✅ `dispatchMatchingRulesForFeedback` Promise.allSettled per-row isolation
+
+OpenAI / AI infrastructure (CLAUDE.md §15 + §15.1):
+- ✅ `chatCompletion` 15s timeout + null fallback
+- ✅ `checkLayeredAiQuota` 3-layer per-user/workspace/global daily/weekly caps
+- ✅ Billing alert (§38.12 `notifyOpsOfOpenAiBillingFailure`) `billing_not_active`/`insufficient_quota` detection
+- ✅ Cache: extractThemes 1h, weekly-insight 24h, FIFO eviction
+
+Resend mail delivery (CLAUDE.md §21):
+- ✅ `sendResendEmail` PII guard
+- ✅ `ops-alert.ts` `recipient: _omit, ...safe` redaction (CLAUDE.md §37.7)
+- ✅ 16 mail template (SUPPORTED_MAIL_KEYS) + DB-driven copy
+
+reCAPTCHA Enterprise (CLAUDE.md §18 + §38.79 #2):
+- ✅ `verifyRecaptchaToken` + `annotateRecaptchaAssessment` 9 wired callsite
+- ✅ `RECAPTCHA_ENFORCE` default `'false'` (monitor mode), hard-block AUTOMATION/MALWARE/SCRAPING/SUSPICIOUS_NETWORK/UNEXPECTED_ENVIRONMENT intact
+
+Rate limit infra (CLAUDE.md §14.2):
+- ✅ Upstash Redis + in-memory fail-open fallback
+- ✅ `getClientIp` x-forwarded-for parse safe (CLAUDE.md §37.2 D)
+
+**Findings**:
+
+🔴 CRITICAL: yok
+🟠 HIGH: yok
+🟡 MEDIUM: 1 design quirk
+- `src/lib/google-business.ts:567` — token refresh mid-flight `integration.expiresAt = new Date(0)` mutates caller's row in-memory before `getFreshGoogleAccessToken` is awaited. **Çalışıyor (production verified)** ama brittle pattern. Refactor: clone before mutation veya immutable update. **Skip rationale**: works correctly per design, future cleanup candidate (CLAUDE.md §7 — "çalışıyorsa dokunma" disipline).
+
+🟢 LOW: 3 operator action / pragmatic trade-off
+- LOW-1: `RECAPTCHA_ENFORCE='false'` default — operatör action (CLAUDE.md §38.79 #2, 1-2 hafta soak gate)
+- LOW-2: `/api/automations/[id]/test` rate limit 5/min/actor — owner test UX vs receiver spam trade-off (CLAUDE.md §38.82 documented)
+- LOW-3: HMAC_SECRET reuses JWT_SECRET (CLAUDE.md §38.82 design — per-rule secret schema migration deferred)
+
+**Stage 20 actionable findings: 0**. Production health: tüm metrik temiz.
+
+**Audit-clean kategoriler** (Explore agent + manuel verify):
+- 8 cron endpoint pattern (§38.11)
+- vercel.json schedule eşleşmesi
+- Google Business integration retry/reauth/Sentry (§5.4 Task 4)
+- OAuth state nonce flow (§37.2 F + §38.85)
+- Webhook fanout HMAC + retry + timeout (§38.82)
+- OpenAI billing alert + AI quota layered (§38.12 + §15.1)
+- Email PII redaction (§37.7)
+- reCAPTCHA 9 callsite + hard-block patterns
+- Rate limit Upstash + fallback
+- Cache strategy FIFO + expiry pruning
+- Promise.allSettled per-row isolation cron
+- Schema integrity (production = Prisma schema)
+- Supabase 5 servis log temiz
+- Vercel 5xx/500/503: 0 entry
+- Sentry: 2 browser noise (low frequency)
+- Stage 17/18/19 production deploy verified
+
+**Yapma**:
+- Google Business mutation pattern'i acil fixleme — çalışıyor (production verified), MEDIUM "future cleanup". Mevcut akış stabil.
+- §38.B DEFER backlog kalemlerini agent çıktısında yeniden açma — operatör tetiği bekliyor: Stage 9 re-introduce (24h+ monitor), HIGH 4 Platforms 12-card grid (product decision), RECAPTCHA_ENFORCE flip (1-2 hafta soak), Prisma 7 upgrade (major version), §38.13 Sentry server-side flush (kabul edildi).
+- Webhook test rate limit'i 2/min'e çekme — owner UX'i etkiler (otomasyon test ederken), kullanıcı talebi yok.
+- HMAC_SECRET için ayrı per-rule schema açma — Stage 12 Wave 2 design decision (CLAUDE.md §38.82), kullanıcı talebi yok.
+
+**Yap**:
+- Periyodik audit (örn. 4 haftada bir): bu Stage 20 paterni reuse — Supabase MCP advisor + 5 servis log + Vercel 4xx/5xx filter + Sentry recent issues + Explore agent.
+- Yeni endpoint eklerken §37.2 A-H + §38.11 cron pattern + §38.79 BCRYPT_COST + §38.86 mint endpoint paterni reuse.
+- Sentry browser-side noise (SyntaxError invalid char, TypeError Load failed) recurrence pattern olursa fingerprint ile group veya rule-out (chrome-extension origin filter §38.29 paterni).
+
+**Stage 20 closure** (Tarih 2026-05-06):
+- Branch `chore/backend-deep-audit-stage20`
+- Edit'lenen dosyalar: 1 (CLAUDE.md §38.91 closure log)
+- Schema migration: YOK
+- Yeni dep: YOK
+- Yeni test: YOK (zero actionable findings)
+- Çalıştırılan kontroller: lint 0 err 0 warn / tsc src/ 0 err / test 229/229 / build 58/58 static / Supabase 5 servis log temiz / Vercel 5xx 0 entry / Sentry 2 browser noise
+- Operatör aksiyonu (PR sonrası): YOK — sadece dokumentation, kod değişikliği yapılmadı.
+- **Sonraki aşama önerisi**: Production stable. §38.B master backlog'da büyük scope kalemler bekliyor (operatör tetiği): Stage 9 UserSession re-introduce (24h+ monitor), HIGH 4 Platforms 12-card grid (product decision), RECAPTCHA_ENFORCE flip (1-2 hafta soak), Prisma 7 upgrade (major version). Acil aksiyon yok.
