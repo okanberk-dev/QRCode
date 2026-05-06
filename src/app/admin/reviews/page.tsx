@@ -383,7 +383,7 @@ function AdminReviewsContent() {
   // ============================================================
   // Bulk actions
   // ============================================================
-  const runBulk = async (action: 'flag' | 'unflag' | 'assign') => {
+  const runBulk = async (action: 'flag' | 'unflag' | 'assign' | 'bulk_mark_read') => {
     if (selectedIds.size === 0 || bulkBusy) return;
     setBulkBusy(true);
     try {
@@ -636,6 +636,7 @@ function AdminReviewsContent() {
         onFlag={() => runBulk('flag')}
         onUnflag={() => runBulk('unflag')}
         onAssign={() => runBulk('assign')}
+        onMarkRead={() => runBulk('bulk_mark_read')}
         onClear={() => setSelectedIds(new Set())}
       />
     </div>

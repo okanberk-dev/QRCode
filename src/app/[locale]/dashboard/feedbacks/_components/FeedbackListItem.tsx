@@ -1,5 +1,6 @@
 'use client';
 
+import { Bookmark } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import type { FeedbackRow } from './types';
@@ -29,6 +30,13 @@ export function FeedbackListItem({
         ? 'bg-[#FEE2E2] text-[#DC2626]'
         : 'bg-[#F5F5F5] text-[#0A0A0A]';
 
+  // Stage 13 (CLAUDE.md §38.83) — okunmamış sinyali. Backend
+  // Feedback.isRead default false (migration 20260505230000); eski
+  // feedback'ler de undefined → false sayılır, mavi dot görünür.
+  // Page'in onSelectFeedback handler'ı tıklamada PATCH atar + optimistic
+  // state update yapar, dot anında kaybolur.
+  const isUnread = r.isRead === false || r.isRead === undefined;
+
   return (
     <li data-feedback-id={r.id}>
       <button
@@ -41,12 +49,26 @@ export function FeedbackListItem({
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
+            {/* Stage 13 — unread dot (Pulse info palette §11). aria-label
+                screen reader için "Okunmamış" sinyali. */}
+            {isUnread && (
+              <span
+                className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#2563EB]"
+                role="img"
+                aria-label={isTr ? 'Okunmamış' : 'Unread'}
+                title={isTr ? 'Okunmamış' : 'Unread'}
+              />
+            )}
             <span
               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-heading text-[10px] font-semibold ${avatarBg}`}
             >
               {initials(r.customerName)}
             </span>
-            <span className="truncate text-[13px] font-semibold text-[#0A0A0A]">
+            <span
+              className={`truncate text-[13px] text-[#0A0A0A] ${
+                isUnread ? 'font-bold' : 'font-semibold'
+              }`}
+            >
               {r.customerName || (isTr ? 'Anonim' : 'Anonymous')}
             </span>
           </div>
@@ -70,6 +92,21 @@ export function FeedbackListItem({
             {r.restaurant?.name ? ` · ${r.restaurant.name}` : ''}
           </span>
           <span className="ml-auto flex items-center gap-1">
+            {/* Stage 13 — Beklemede badge (Bookmark icon, amber palette).
+                Owner manuel "Beklemeye al" toggle'ladığında görünür; tab
+                "Beklemede" filter ile birebir parite. */}
+            {r.isPending && (
+              <span title={isTr ? 'Beklemede' : 'Pending'}>
+                <Badge kind="warn">
+                  <Bookmark
+                    size={10}
+                    strokeWidth={2.2}
+                    fill="#92400E"
+                    aria-hidden="true"
+                  />
+                </Badge>
+              </span>
+            )}
             {r.hasPendingAiDraft && !r.isReplied && r.rating <= 3 && (
               <span title={isTr ? 'Pulse AI taslağı hazır' : 'Pulse AI draft ready'}>
                 <Badge kind="lime">

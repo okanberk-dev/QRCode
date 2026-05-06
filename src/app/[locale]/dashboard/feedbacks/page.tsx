@@ -575,6 +575,46 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     }
   };
 
+  // Stage 13 (CLAUDE.md §38.83) — Beklemede toggle. Optimistic state +
+  // bulkNotice surface reuse (mevcut useEffect 5s success / 8s error
+  // auto-dismiss, CLAUDE.md §38.15 dwell timing). PATCH başarısız ise
+  // state revert + error notice. flagFeedback paterni mirror.
+  const togglePending = async () => {
+    if (!active) return;
+    const newValue = active.isPending !== true;
+    const targetId = active.id;
+    setFeedbacks((prev) =>
+      prev.map((r) => (r.id === targetId ? { ...r, isPending: newValue } : r)),
+    );
+    setBulkNotice({
+      msg: isTr
+        ? newValue
+          ? 'Beklemeye alındı'
+          : 'Beklemeden çıkarıldı'
+        : newValue
+          ? 'Marked pending'
+          : 'Removed from pending',
+      tone: 'success',
+    });
+    try {
+      const res = await fetch(`/api/feedback/${targetId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPending: newValue }),
+      });
+      if (!res.ok) throw new Error('PATCH failed');
+    } catch {
+      // Revert optimistic update on failure
+      setFeedbacks((prev) =>
+        prev.map((r) => (r.id === targetId ? { ...r, isPending: !newValue } : r)),
+      );
+      setBulkNotice({
+        msg: isTr ? 'Beklemede güncellenemedi' : 'Could not update pending',
+        tone: 'error',
+      });
+    }
+  };
+
   // ============================================================
   // Mobile push-route handlers
   // ============================================================
@@ -596,6 +636,23 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setActiveId(id);
     // Push (not replace) so browser back returns to list view on mobile.
     router.push(buildUrl({ id, view: 'detail' }));
+
+    // Stage 13 (CLAUDE.md §38.83) — feedback'e tıklayınca otomatik
+    // mark-as-read. Already-read row'larda PATCH skip (gereksiz network).
+    // Optimistic state update + fire-and-forget; failure'da silent fail
+    // (flagFeedback paterni). counts.unread otomatik decrement eder.
+    const row = feedbacks.find((f) => f.id === id);
+    if (!row || row.isRead === true) return;
+    setFeedbacks((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, isRead: true } : f)),
+    );
+    fetch(`/api/feedback/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isRead: true }),
+    }).catch(() => {
+      /* non-blocking — eski feedback'ler için server reject edebilir */
+    });
   };
 
   const onBackToList = () => {
@@ -865,6 +922,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               showBackButton={isMobileDetailView}
               onBack={onBackToList}
               onFlag={flagFeedback}
+              onTogglePending={togglePending}
               sentReplies={sentReplies}
               sentLoading={sentLoading}
               aiLoading={aiLoading}

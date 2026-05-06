@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Flag, Loader2, Mail, MessageSquare, Plus, Sparkles } from 'lucide-react';
+import { ArrowLeft, Bookmark, Flag, Loader2, Mail, MessageSquare, Plus, Sparkles } from 'lucide-react';
 import { AlertBanner, Avatar } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import type {
@@ -26,6 +26,13 @@ interface FeedbackDetailProps {
 
   /** Flag toggle */
   onFlag: () => void;
+
+  /**
+   * Stage 13 (CLAUDE.md §38.83) — Beklemede toggle. PATCH
+   * /api/feedback/{id} { isPending: !current } + optimistic state.
+   * Page tarafında bulkNotice surface'ında 3.5s success/error notice.
+   */
+  onTogglePending: () => void;
 
   /** Sent replies thread */
   sentReplies: SentReply[];
@@ -56,7 +63,7 @@ const ASPECT_LABEL_TR = { service: 'Servis', food: 'Yemek', price: 'Fiyat', atmo
 const ASPECT_LABEL_EN = { service: 'Service', food: 'Food', price: 'Price', atmosphere: 'Atmosphere' };
 
 export function FeedbackDetail(props: FeedbackDetailProps) {
-  const { feedback: active, locale, showBackButton, onBack, onFlag, sentReplies, sentLoading } = props;
+  const { feedback: active, locale, showBackButton, onBack, onFlag, onTogglePending, sentReplies, sentLoading } = props;
   const isTr = locale === 'tr';
   const aspectLabel = isTr ? ASPECT_LABEL_TR : ASPECT_LABEL_EN;
   const customerAspects = active.aspects ?? null;
@@ -75,15 +82,52 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <ArrowLeft size={16} strokeWidth={2} />
             {isTr ? 'Yorumlar' : 'Reviews'}
           </button>
-          <button
-            type="button"
-            onClick={onFlag}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] px-2.5 py-1.5 text-[11px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
-            title={isTr ? 'Bayrakla işaretle' : 'Flag'}
-          >
-            <Flag size={12} strokeWidth={2} />
-            {isTr ? 'İşaretle' : 'Flag'}
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Stage 13 — Beklemede toggle (mobile sticky-top). Amber palette
+                Pulse warn token (CLAUDE.md §38.39). active.isPending true ise
+                fill + amber background, false ise outline + neutral. */}
+            <button
+              type="button"
+              onClick={onTogglePending}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                active.isPending
+                  ? 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E] hover:bg-[#FEF3C7]'
+                  : 'border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
+              }`}
+              title={
+                isTr
+                  ? active.isPending
+                    ? 'Beklemeden çıkar'
+                    : 'Beklemeye al'
+                  : active.isPending
+                    ? 'Remove from pending'
+                    : 'Mark as pending'
+              }
+              aria-pressed={active.isPending === true}
+            >
+              <Bookmark
+                size={12}
+                strokeWidth={2}
+                fill={active.isPending ? '#92400E' : 'none'}
+              />
+              {isTr
+                ? active.isPending
+                  ? 'Beklemede'
+                  : 'Beklemeye al'
+                : active.isPending
+                  ? 'Pending'
+                  : 'Mark pending'}
+            </button>
+            <button
+              type="button"
+              onClick={onFlag}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] px-2.5 py-1.5 text-[11px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
+              title={isTr ? 'Bayrakla işaretle' : 'Flag'}
+            >
+              <Flag size={12} strokeWidth={2} />
+              {isTr ? 'İşaretle' : 'Flag'}
+            </button>
+          </div>
         </div>
       )}
 
@@ -124,9 +168,41 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               </span>
             </div>
           </div>
-          {/* Desktop flag button (mobile sticky-top'ta zaten var) */}
+          {/* Desktop flag + pending toggle (mobile sticky-top'ta zaten var) */}
           {!showBackButton && (
             <div className="hidden lg:flex shrink-0 gap-1.5">
+              <button
+                type="button"
+                onClick={onTogglePending}
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                  active.isPending
+                    ? 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E] hover:bg-[#FEF3C7]'
+                    : 'border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
+                }`}
+                title={
+                  isTr
+                    ? active.isPending
+                      ? 'Beklemeden çıkar'
+                      : 'Beklemeye al'
+                    : active.isPending
+                      ? 'Remove from pending'
+                      : 'Mark as pending'
+                }
+                aria-pressed={active.isPending === true}
+              >
+                <Bookmark
+                  size={12}
+                  strokeWidth={2}
+                  fill={active.isPending ? '#92400E' : 'none'}
+                />
+                {isTr
+                  ? active.isPending
+                    ? 'Beklemede'
+                    : 'Beklemeye al'
+                  : active.isPending
+                    ? 'Pending'
+                    : 'Mark pending'}
+              </button>
               <button
                 type="button"
                 onClick={onFlag}
