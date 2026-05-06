@@ -10801,3 +10801,99 @@ Tests:
 - Operatör aksiyonları (PR sonrası): 4-step runbook (Vercel env, Supabase Dashboard publication, RLS SQL, smoke test). Eksik adım = graceful disable, dashboard kırılmaz.
 - Kalan riskler: feedback_replies realtime descoped (schema gap, gelecek scope); RLS scope drift max 1h (token TTL); 50+ restaurant id'li owner için subscribe filter cap'lendi (`slice(0, 50)`).
 - **Sonraki aşama önerisi**: §38.B master backlog'tan — HIGH 4 Platforms 12-card grid (DEFER product decision), Stage 15 (UserSession re-introduce — operatör tetiği), RECAPTCHA_ENFORCE flip (1-2 hafta soak sonrası), feedback_replies realtime (denormalize gerek). Veya yeni feature scope.
+
+### 38.87 2026-05-06 — Stage 17 Supabase advisor security + perf fix bundle (PR #501)
+
+§38.85 production audit'in açık bıraktığı Supabase advisor uyarılarını + Stage 16'da yazılan Realtime policy'sinin perf optimizasyonu kapatıldı. **Tek consolidated PR** (CLAUDE.md §21.22 stacked YOK), tek migration dosyası, build script otomatik apply (CLAUDE.md §14.1).
+
+**Survey methodology**: 3 paralel kaynak — Supabase MCP `get_advisors` (security + performance), Vercel MCP `get_runtime_logs` (level=error son 24h), CLAUDE.md §38.B master backlog cross-check.
+
+**Bulgular**:
+
+| Severity | Tip | Adet | Karar |
+|---|---|---|---|
+| 🔴 ERROR | `rls_disabled_in_public` (customer_*) | 4 | **FIX** |
+| 🟡 WARN | `auth_rls_initplan` (feedback Realtime) | 1 | **FIX** |
+| 🟢 INFO | `unindexed_foreign_keys` (restaurants.user_id) | 1 | **FIX** (hot path) |
+| 🟢 INFO | `unindexed_foreign_keys` (admin_users.restaurant_id) | 1 | SKIP (low volume) |
+| 🟢 INFO | `unused_index` (29 entry) | 29 | SKIP (low traffic; silmek migration drift) |
+| 🟢 INFO | `rls_enabled_no_policy` (49 tablo) | 49 | SKIP (Buaze Prisma BYPASSRLS, anon default deny zaten safe) |
+| 🟢 LOG | `[safe-json] parse failed` `console.error` | 9/24h | **FIX** (error→warn, kozmetik) |
+
+**Kapsam** (3 dosya, +226/-107 satır):
+- `prisma/schema.prisma` — `Restaurant` model'ine `@@index([userId])` (hot path: getScopedRestaurantIds her dashboard request'inde FK'den filter)
+- `prisma/migrations/20260506110000_security_perf_stage17/migration.sql` — 3 fix tek dosyada idempotent (IF NOT EXISTS / DROP IF EXISTS):
+  - 4 customer_* tablosu RLS enable + restrictive policy (`USING false WITH CHECK false` for anon + authenticated)
+  - feedback Realtime policy DROP + RECREATE — `current_setting()` yerine `(select current_setting())` paterni (Postgres init plan tek seferlik)
+  - `restaurants_user_id_idx` `CREATE INDEX IF NOT EXISTS`
+- `src/lib/safe-json.ts` — `console.error` → `console.warn` log seviyesi düşürme (helper fail-safe path'inde, status 200, kullanıcı etkilenmiyor — Vercel runtime log error sayısı temizlenir)
+
+**Fix #1 detay — customer_* RLS** (CRITICAL):
+§38.48 Wave 2'de eklenen 4 mini-model RLS aktive edilmemişti. Anon key public, **anon key bilen herkes okuyabilir/yazabilir** durumdaydı. Restrictive policy (`for all to anon, authenticated using (false) with check (false)`) tam deny.
+
+Buaze Prisma `postgres` rolü `BYPASSRLS=true` taşıdığı için (verify edildi: `pg_roles` query ile `postgres.rolbypassrls=true`) tüm CRUD endpoint'leri etkilenmedi — RLS sadece anon/authenticated rollerini engeller. Mevcut Buaze flow'unda bu rollerden customer_* tablolarına erişim **YOK** (Realtime feedback dışında, onun policy'si zaten var §38.86).
+
+**Fix #2 detay — feedback policy auth_rls_initplan** (PERF):
+Stage 16 §38.86'da yazdığımız RLS policy:
+```sql
+using (current_setting('request.jwt.claims', true)::jsonb -> 'restaurant_ids' ...)
+```
+`current_setting()` Postgres planner tarafından `STABLE` olarak işaretli ama tablo aliased olduğunda her satır için yeniden değerlendiriliyor. Subquery sarması (`(select current_setting(...))`) Postgres'in değeri **tek seferlik** plan'lattırmasını sağlar — büyük ölçekte (binlerce satır) önemli perf gain. Mantık aynı, sadece SQL form değişti.
+
+**Fix #3 detay — restaurants.user_id index** (PERF):
+`getScopedRestaurantIds` (`src/lib/panel-access.ts`) her owner panel request'inde:
+```ts
+prisma.restaurant.findMany({ where: { userId: actor.id }, select: { id: true } })
+```
+FK üzerinde covering index olmadığı için sequential scan. Owner sayısı arttıkça (CLAUDE.md §19.4.4 "10-50 restaurants" → 100+) bu hot path'in maliyeti lineer büyür. Index ekleyince O(log N) seek.
+
+**Fix #4 detay — safe-json log seviyesi** (KOZMETIK):
+`[safe-json] parse failed` log'u son 24h'de 9 kez tetiklendi (5 farklı feedback ID için OpenAI yanıt parse fail, hepsi `/api/feedback/[id]/suggest-reply` ya da `/summary` route'unda). CLAUDE.md §38.9 paterni: helper **fail-safe fallback** path'inde — caller (suggest-reply / extractThemes / weeklyInsight / google OAuth state / Resend response / ROI insight) parse fail durumunda template/empty fallback'a düşüyor, status 200 dönüyor, kullanıcı etkilenmiyor.
+
+`console.error` Vercel runtime log "error" sayısını gereksiz şişiriyordu — `level=error` filter'la audit yaparken false positive çıkarıyordu. `console.warn` aynı görünürlükte (Vercel runtime log'da `warning` level'da görünür) ama `level=error` filter'da temiz. Sentry capture aynı (zaten `Sentry.captureMessage` warning level kullanıyor mevcut helper'da).
+
+**Skip rationale**:
+- **49 INFO `rls_enabled_no_policy`**: Buaze Prisma BYPASSRLS rolü ile bağlanır → tüm CRUD bypass eder. Anon/authenticated rolleri için RLS açık + policy yok → default deny (PostgREST automatic). Bu durumda tablolar **safe**: anon erişim engellenir, Prisma/backend etkilenmez. Per-table policy yazmak gereksiz iş + yanlış pattern.
+- **29 INFO `unused_index`**: Düşük trafik nedeniyle henüz query path tetiklenmedi (örn. legal_consents, customer_email_*, lifecycle_email_logs). Migration ile commit edilmiş, silmek schema drift yaratır + trafik artınca yine gerekecek.
+- **admin_users.restaurant_id FK index**: 2 admin row, query path admin paneli içi — perf gain ihmal edilebilir.
+- **HIGH 4 Platforms 12-card grid**: Product decision pending (CLAUDE.md §38.30).
+- **Stage 15 UserSession re-introduce**: Login `prisma.userSession.create` assertion + Sentry capture lazım önce (CLAUDE.md §38.84). Büyük scope, ayrı PR.
+- **RECAPTCHA_ENFORCE flip**: Operatör action (1-2 hafta soak sonrası), CLAUDE.md §38.2.
+
+**Verification**:
+- `npm run lint`: 0 errors, 1 baseline warning
+- `npx tsc --noEmit`: 0 errors in `src/`
+- `npm test`: 229/229 pass
+- `npx next build`: ✓ Compiled + 58/58 static
+- `prisma validate`: schema valid
+- **Production verification (post-deploy)**:
+  - Build log: migration `20260506110000_security_perf_stage17` apply'landı
+  - Supabase advisor security: 4 ERROR `rls_disabled_in_public` → **0** (kapatıldı)
+  - Supabase advisor performance: 1 WARN `auth_rls_initplan` → **0** (kapatıldı), 1 INFO unindexed FK (restaurants) → **0** (kapatıldı, admin_users intentional skip)
+  - Toplam advisor önce: 4 ERROR + 1 WARN + 31 INFO → sonra: **0 ERROR + 0 WARN + 31 INFO** (49→49 RLS-no-policy unchanged + 29→31 unused-index +2 yeni eklenen index'ler henüz traffic almadı, query başlayınca normal)
+
+**Yapma**:
+- 49 INFO `rls_enabled_no_policy` için per-table policy yazma — Buaze Prisma BYPASSRLS, anon default deny zaten safe. Per-table policy yazmak için Prisma rolünü değiştirmek + Supabase Auth flow'una geçmek gerek (CLAUDE.md §4 custom JWT paterni bilinçli karar).
+- 29 INFO `unused_index` silme — düşük trafik nedeniyle henüz kullanılmadı, silmek migration drift + trafik artınca yine gerek.
+- `current_setting()` çağrısını her RLS policy'de (gelecek policy'ler de) `(select ...)` paterni olmadan kullanma — auth_rls_initplan WARN'i yeniden tetikler.
+- `safe-json.ts` `console.warn` yerine `console.log` yapma — Vercel runtime log `info` seviyesi `warning` filter'la görünmez; pattern fail'leri operasyonel olarak izlenmez hale gelir.
+- Migration apply'ı Supabase MCP `apply_migration` ile direct atma — Prisma migration history (`_prisma_migrations`) kaydı kaybolur. Vercel build script `prisma migrate deploy` doğru pattern.
+- Customer_* policy'lerini permissive (örn. owner-scoped) yazma — Buaze Prisma BYPASSRLS, anon/authenticated rolleri Buaze flow'unda customer_* tablolarına erişmez. Restrictive (`USING false`) en defansif pattern.
+
+**Yap**:
+- Yeni Supabase advisor uyarısı çıkarsa Stage 17 paterni reuse: ERROR/WARN/INFO triage + tek consolidated migration + skip rationale CLAUDE.md'de dokümante.
+- Yeni RLS policy yazarken `current_setting()` her zaman `(select current_setting(...))` paterniyle sarmala (Postgres init plan optimization).
+- Yeni FK ekleyince Prisma `@@index([fkColumn])` zorunlu (Supabase advisor INFO unindexed_foreign_keys çıkmasın). Hot path'lerde özellikle kritik.
+- Yeni "fail-safe fallback" log'u eklerken `console.warn` (CLAUDE.md §38.87 paterni) — `console.error` sadece **gerçek hata** (kullanıcı etkileniyorsa) için.
+- Periyodik audit (örn. 4 haftada bir): `get_advisors security + performance` çek + Vercel runtime logs error level filter çek + CLAUDE.md §38.B master backlog güncelle.
+
+**Stage 17 closure** (Tarih 2026-05-06):
+- Branch `chore/security-perf-stage17`
+- PR [#501](https://github.com/RiosenBeq/QRCode/pull/501) merge'lendi (commit `f3a0dc29`)
+- Yeni dosyalar: 1 (`prisma/migrations/20260506110000_security_perf_stage17/migration.sql`)
+- Modified: 2 (`prisma/schema.prisma` + `src/lib/safe-json.ts`)
+- Schema migration: 1 (RLS + policy + index, breaking change yok)
+- Test count: 229 (değişmedi)
+- Çalıştırılan kontroller: lint 0 err / tsc src 0 err / test 229/229 / build 58/58 / Supabase advisor post-deploy ERROR 0 + WARN 0 + INFO 31
+- Operatör aksiyonu (PR sonrası): YOK — Vercel build otomatik apply etti, advisor sonuçları doğrulandı.
+- **Sonraki aşama önerisi**: §38.B master backlog'tan kalan büyük scope'lar — Stage 15 UserSession re-introduce (login UserSession.create assertion gerek), HIGH 4 Platforms 12-card grid (product decision), RECAPTCHA_ENFORCE flip (1-2 hafta soak), feedback_replies realtime (denormalize gerek). Veya yeni feature scope.
