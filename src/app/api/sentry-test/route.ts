@@ -1,5 +1,6 @@
 import { NextResponse, after } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
+import { postSentryEnvelopeManually } from '@/lib/sentry-manual-envelope';
 
 // Explicit Node.js runtime — verifies the instrumentation 'nodejs' branch in
 // `instrumentation.ts:register()` is loaded for this route. Removes ambiguity
@@ -45,7 +46,8 @@ export async function GET() {
     );
   }
 
-  const dsnFingerprint = describeDsn(process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN);
+  const dsn = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN;
+  const dsnFingerprint = describeDsn(dsn);
 
   console.error(
     `[sentry-smoketest] handler entered NEXT_RUNTIME=${process.env.NEXT_RUNTIME ?? 'unset'} VERCEL=${process.env.VERCEL ?? 'unset'} dsn=${dsnFingerprint}`,
@@ -59,6 +61,26 @@ export async function GET() {
   );
 
   console.error(`[sentry-smoketest] captureException returned eventId=${eventId ?? 'undefined'}`);
+
+  // Stage 17 §38.88 — manual envelope POST diagnostic. SDK akışına dokunmaz,
+  // yan yana ikinci bir capture yapar (farklı eventId, farklı yol). Bu
+  // sayede SDK transport bug mı (manual ulaşıyor, SDK ulaşmıyor) yoksa
+  // egress firewall mı (ikisi de ulaşmıyor) net görülür.
+  const manualEventId = randomEventId();
+  const manualResult = await postSentryEnvelopeManually({
+    dsn,
+    eventId: manualEventId,
+    message:
+      '[Sentry manual transport] Synthetic event from /api/sentry-test — bypasses @sentry/nextjs SDK to disambiguate transport vs egress.',
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
+    release: process.env.VERCEL_GIT_COMMIT_SHA,
+  });
+  console.error(
+    `[sentry-manual-transport] eventId=${manualEventId} ok=${manualResult.ok} ` +
+      `status=${manualResult.status} statusText=${manualResult.statusText || 'n/a'} ` +
+      `host=${manualResult.endpointHost} durationMs=${manualResult.durationMs} ` +
+      `error=${manualResult.error ?? 'none'} body=${manualResult.bodyPreview ?? 'null'}`,
+  );
 
   // Schedule the flush via Next.js `after()`. The callback runs after the
   // response is returned; on Vercel Node runtime the function stays alive
@@ -78,15 +100,37 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: true,
-      eventId,
+      sdk: {
+        eventId,
+        flushPattern: 'after()-wrapped',
+      },
+      manualTransport: {
+        eventId: manualEventId,
+        ok: manualResult.ok,
+        status: manualResult.status,
+        statusText: manualResult.statusText,
+        host: manualResult.endpointHost,
+        durationMs: manualResult.durationMs,
+        error: manualResult.error ?? null,
+        bodyPreview: manualResult.bodyPreview,
+      },
       runtime: process.env.NEXT_RUNTIME ?? 'unset',
       vercel: process.env.VERCEL === '1',
       dsn: dsnFingerprint,
-      flushPattern: 'after()-wrapped',
-      note: 'Flush scheduled via Next.js 15 after(). Check Vercel runtime logs for the 4 console.error breadcrumbs; check Sentry dashboard within 30s.',
+      note:
+        'Two parallel capture paths — SDK (after()-flushed) and manual envelope POST (SDK bypassed). ' +
+        'Compare Sentry dashboard: if only manualTransport.eventId appears → SDK transport bug. ' +
+        'If neither → likely Vercel egress restriction. If both → flush race resolved.',
     },
     { status: 500 },
   );
+}
+
+// Sentry event id format: 32 lowercase hex characters. crypto.randomUUID
+// returns canonical 8-4-4-4-12 — strip dashes so the id matches what the
+// dashboard accepts.
+function randomEventId(): string {
+  return globalThis.crypto.randomUUID().replace(/-/g, '');
 }
 
 // Returns a non-secret DSN fingerprint suitable for log output: host plus
