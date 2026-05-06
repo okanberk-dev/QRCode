@@ -327,8 +327,14 @@ export default function MembersPage() {
       <div className="bz-card flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center">
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
+          {/* §38.77 — Mobile input UX (CLAUDE.md §38.74 paterni reuse).
+              inputMode="search" Safari klavye'de magnifier icon, autoCorrect
+              off (email/isim arama için autocorrect karışıklık yaratır). */}
           <input
             type="text"
+            inputMode="search"
+            autoCorrect="off"
+            spellCheck={false}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="İşletme sahibi ara (email veya isim)…"
@@ -505,8 +511,7 @@ export default function MembersPage() {
                         <div className="inline-flex items-center gap-1.5">
                           <Link
                             href={`/admin/members/${m.id}`}
-                            className="bz-btn-ghost"
-                            style={{ padding: '6px 12px', fontSize: 12 }}
+                            className="bz-btn-ghost min-h-[44px] sm:min-h-[36px] !px-3 !py-1.5 text-[12px]"
                             title="Detay"
                           >
                             <span className="hidden sm:inline">Detay</span>
@@ -514,8 +519,7 @@ export default function MembersPage() {
                           </Link>
                           <button
                             onClick={() => setBillingMember(m)}
-                            className="bz-btn-ghost"
-                            style={{ padding: '6px 12px', fontSize: 12 }}
+                            className="bz-btn-ghost min-h-[44px] sm:min-h-[36px] !px-3 !py-1.5 text-[12px]"
                             title="Faturalandırma"
                           >
                             <CreditCard size={12} strokeWidth={2} />
@@ -523,8 +527,7 @@ export default function MembersPage() {
                           </button>
                           <button
                             onClick={() => openEdit(m)}
-                            className="bz-btn-ghost"
-                            style={{ padding: '6px 12px', fontSize: 12 }}
+                            className="bz-btn-ghost min-h-[44px] sm:min-h-[36px] !px-3 !py-1.5 text-[12px]"
                           >
                             Düzenle
                           </button>

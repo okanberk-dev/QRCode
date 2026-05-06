@@ -10142,3 +10142,78 @@ Aşamalı refinement Stage 6: "admin panel UX ve bağlantı akışları". 3 para
 - Kalan riskler: useTopBar admin port DEFER; bulk toast unified DEFER; AdminMobileNav role-aware Stage 7 scope; sidebar 3+ level nesting future-proofing
 - **Sonraki aşama önerisi**: Stage 7 — admin paneli mobile kapsamlı QA (Stage 4 §38.74 owner mobile paterni admin'e port: bz-btn-icon-lg modal close + AdminMobileNav role-aware + admin pagination 44px + cross-restaurant tablo cascade). Veya kullanıcı yeni odak talebi.
 
+### 38.77 2026-05-05 — Stage 7 owner + admin panel kapsamlı mobile QA (4-fix bundle)
+
+Aşamalı refinement final: owner + admin panel kapsamlı mobile QA. 1 paralel Explore agent + manuel verify (3 false positive elendi). 4 gerçek admin mobile drift kapatıldı; owner panel zaten Stage 4 §38.74'te kapsamlı yapıldığı için Stage 7'de minimal residual. Branch `chore/panel-mobile-qa-final`.
+
+**Out of scope** (kullanıcı talimatı): Büyük desktop redesign, backend/API mantığı, daha önce oturmuş tasarım dilini bozacak değişiklikler.
+
+**Audit'te VERIFIED ✅ (zaten Stage 4-6'da yapıldı, fix gerekmedi)**:
+- Modal close button `bz-btn-icon-lg` 44x44 (Stage 4 §38.74)
+- Admin sidebar mobile drawer (`w-[280px] max-w-[85vw]` + safe-area + bz-elev-3)
+- admin/members pagination 44px (Stage 5 §38.75)
+- ConfirmDialog primitive admin destructive aksiyonlarda (Stage 6 §38.76)
+- Owner customer mobile card email/phone truncate (Stage 4 §38.74)
+- Owner CustomerDetailDrawer width md: cascade (Stage 4)
+- Owner FeedbackReplyComposer keyboard hints (Stage 4)
+- Owner QRCard buttons 44px mobile (Stage 4)
+
+**4 fix bundle**:
+
+1. **AdminMobileNav `grid-cols-5` → dynamic gridTemplateColumns** (line 36) — Eski `grid-cols-5` hardcoded'du; role-filtered `filteredItems.length` 4 item dönerse (manager) 1 empty cell + content sola kayıyordu. Inline `gridTemplateColumns: repeat(${filteredItems.length}, minmax(0, 1fr))` ile eşit-genişlik dağıtım. Tailwind safelist gerek yok (inline style). CLAUDE.md §38.76 DEFER notu kapatıldı.
+
+2. **admin/members 3 table action button touch target** (line 509/518/527) — `style={{ padding: '6px 12px', fontSize: 12 }}` (~32px height) → `bz-btn-ghost min-h-[44px] sm:min-h-[36px] !px-3 !py-1.5 text-[12px]`. Stage 4 §38.74 paterni admin table action row'larına port. 3 buton: Detay (Link) + Fatura + Düzenle. Mobile WCAG 2.5.5 (44x44 hedef), sm:+ 36px Pulse compact.
+
+3. **admin/customers pagination 44px mobile** (line 587-602) — Eski `px-3 py-1.5` (~32px height) → `px-3 min-h-[44px] sm:min-h-[32px]`. Stage 5 §38.75 admin/members paterni admin/customers'a port. Önceki/Sonraki button parite.
+
+4. **admin/members search input keyboard hints** (line 330-339) — Eski plain `<input type="text">` mobile keyboard generic. `inputMode="search"` Safari klavye'de magnifier icon, `autoCorrect="off" + spellCheck={false}` email/isim arama autocorrect karışıklık önler. Owner Stage 4 paterni admin search input'una port.
+
+**DEFER (Stage 7 disipline scope dışı / future)**:
+- **AdminMobileNav role-aware nav item çoğaltma** — superadmin için 7+ nav item gösterme (mevcut 5-item cap manager+superadmin için yeterli; daha fazla için "More" sheet pattern gerek, büyük UX scope).
+- **Admin tablo 6+ kolon mobile card list** — admin/blog reviews/customers vs zaten card list veya `lg:hidden` Pulse pattern kullanıyor (audit confirmed). Yeni drift yok.
+- **Admin tüm form input keyboard hints toplu sweep** — admin/members search yapıldı (high-traffic); diğer modal inputs (member edit modal date, restaurants create modal) low-traffic, toplu sweep scope creep.
+
+**Verification**:
+- `npm run lint` ✓ 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx next build` ✓ Compiled successfully + 58/58 static page (Prisma stub DB warnings beklenen)
+- `npx tsc --noEmit` ✓ 0 errors in `src/` (4 pre-existing `.next/types` baseline §21.13)
+- `npm test` ✓ 182/182 pass
+- Sanity grep: 4 fix landed (gridTemplateColumns dinamik / 5 admin/members min-h-44 / 2 admin/customers pagination 44 / inputMode="search")
+
+**Mobile QA breakpoint tablosu** (Stage 7 sonrası, owner Stage 4 + admin Stage 7):
+
+| Sayfa | 375px (iPhone SE) | 430px (iPhone Pro Max) | 768px (iPad portrait) | 1024px (laptop) | 1440px (desktop) |
+|---|---|---|---|---|---|
+| Owner Dashboard | hero card sm:hidden + KPI 2x2 | KPI 2x2 | KPI 2x2 | KPI 4-col | KPI 4-col + KANAL |
+| Owner Yorumlar | flex-col stack | stack | stack | flex-row 2-pane | 3-col grid |
+| Owner Müşteriler | 2-col KPI + card list + 44px pagination | 2-col KPI | 4-col KPI | 5-col + 6-col tablo | 5-col |
+| Owner QR | 2-col + form/preview stack + 44px | 44px | 36px sm | 4-col + 3-col | 4-col |
+| Owner Hesabım | compactNav + rightRail bottom | compact | nav top | 220+1fr | 220+1fr+320 |
+| Admin Dashboard | KPI 2-col stack | 2-col | 2-col | 4-col | 4-col |
+| Admin Müşteriler | filter pills + card list + 44px pagination | 44px | tablo | tablo | tablo |
+| Admin İşletme Sahipleri | search input + 44px action buttons + tablo `sm:min-w-[600px]` | 44px | tablo | tablo | tablo |
+| Admin Mobil Bottom Nav | dynamic grid (4 manager / 5 superadmin) | dynamic | hidden | hidden | hidden |
+| Customer drawer | full-screen | full-screen | sm:420px | md:480px | md:480px |
+
+**Yapma**:
+- AdminMobileNav `grid-cols-5` hardcoded geri çevirme — manager 4 item için empty cell drift yaratır.
+- AdminMobileNav 7+ item çoğaltma — Stage 7 disipline scope dışı; 5-item cap manager+superadmin için yeterli.
+- admin/members action button `style={{ padding }}` inline geri çevirme — Tailwind utility + min-h Pulse standart.
+- Admin form input'larında `inputMode="email/tel/numeric"` toplu uygulamak — sadece search yapıldı (high-traffic); modal date input gibi low-traffic inputs için scope creep.
+- Owner panel Stage 4 §38.74 paterni admin'e re-port etmek — bz-btn-icon-lg / drawer / pagination / composer zaten paritede.
+
+**Yap**:
+- Yeni admin mobile bottom nav item eklerken dynamic grid otomatik adapt eder (gridTemplateColumns).
+- Yeni admin tablo eklerken action button'lar `bz-btn-ghost min-h-[44px] sm:min-h-[36px]` paterni reuse.
+- Yeni admin pagination eklerken `min-h-[44px] sm:min-h-[32px/36px]` (button yüksekliği context'e göre) paterni reuse.
+- Yeni admin search input için `inputMode="search" autoCorrect="off" spellCheck={false}` paterni reuse.
+
+**Stage 7 closure** (Tarih 2026-05-05):
+- Branch `chore/panel-mobile-qa-final`
+- PR + merge için kullanıcı manuel müdahale (GitHub MCP disconnected bu session)
+- İncelenen dosyalar: 3 (AdminMobileNav.tsx + admin/members/page.tsx + admin/customers/page.tsx)
+- Yapılan değişiklikler: 4 fix (dynamic grid + 3 action button 44px + 2 pagination 44px + search input keyboard)
+- Kontroller: lint 0 err / build 58 page / tsc src 0 err / test 182/182 / sanity grep clean
+- Kalan riskler: AdminMobileNav 7+ item future scope; admin form input toplu keyboard hints sweep DEFER
+- **Aşamalı refinement complete**: Stage 1-7 toplam 33 fix bundle (Stage 1: 7 fix Apple polish + 13-page copy / Stage 2: 6 UX nav / Stage 3: 6 menu UX / Stage 4: 7 owner mobile / Stage 5: 6 admin polish / Stage 6: 3 admin UX / Stage 7: 4 mobile QA). Owner + admin panel Pulse design system uyumlu, accessible, mobile-friendly. Sonraki sprint'ler için backlog: §38.B master list (HIGH 4 Platforms 12-card grid, security follow-ups operatör onayı, AdminMobileNav 7+ item future, etc.).
+
