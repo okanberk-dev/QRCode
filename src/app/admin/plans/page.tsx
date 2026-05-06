@@ -131,7 +131,7 @@ export default async function AdminPlansPage() {
                   <div key={b.key}>
                     <div className="flex justify-between text-xs mb-1">
                       <span style={{ fontWeight: 500 }}>{b.label}</span>
-                      <span className="bz-mono" style={{ color: '#525252' }}>
+                      <span className="bz-mono text-[#525252]">
                         {b.count}
                       </span>
                     </div>
@@ -152,8 +152,7 @@ export default async function AdminPlansPage() {
             <Eyebrow>Son katılan ödeyen müşteriler</Eyebrow>
             <Link
               href="/admin/members"
-              className="inline-flex items-center gap-1 text-[12px] font-medium hover:opacity-70"
-              style={{ color: '#0A0A0A' }}
+              className="inline-flex items-center gap-1 text-[12px] font-medium hover:opacity-70 text-[#0A0A0A]"
             >
               Tümü
               <ArrowRight size={12} strokeWidth={2} />
@@ -210,7 +209,7 @@ export default async function AdminPlansPage() {
           <strong>Yol haritası:</strong> Bu sayfa şu an plan-dağılım okuma görünümü.
           Iyzico ödeme entegrasyonu (`/api/payments`) Wave 3.5 kapsamında devreye
           alınacak; o zamana kadar plan değişiklikleri{' '}
-          <Link href="/admin/members" className="underline" style={{ color: '#92400E' }}>
+          <Link href="/admin/members" className="underline text-[#92400E]">
             İşletme Sahipleri
           </Link>{' '}
           listesindeki inline-edit ile manuel yapılır.

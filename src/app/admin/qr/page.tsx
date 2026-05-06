@@ -498,8 +498,7 @@ function AdminQrContent() {
                       type="button"
                       onClick={() => requestDelete(rawItem)}
                       aria-label="QR'ı sil"
-                      className="bz-btn-icon"
-                      style={{ color: '#DC2626' }}
+                      className="bz-btn-icon text-[#DC2626]"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -533,7 +532,7 @@ function AdminQrContent() {
                   return (
                     <tr key={c.id}>
                       <td style={{ fontWeight: 600 }}>{c.name}</td>
-                      <td style={{ color: '#525252' }}>{c.branch || '—'}</td>
+                      <td className="text-[#525252]">{c.branch || '—'}</td>
                       <td>
                         {c.platform && PLATFORM_TO_CHIP[c.platform] ? (
                           <span className="inline-flex items-center gap-1.5">
@@ -546,13 +545,13 @@ function AdminQrContent() {
                             </span>
                           </span>
                         ) : (
-                          <span style={{ color: '#737373' }}>Genel</span>
+                          <span className="text-[#737373]">Genel</span>
                         )}
                       </td>
                       <td className="bz-mono" style={{ fontWeight: 600 }}>
                         {c.tableNumber || '—'}
                       </td>
-                      <td style={{ color: '#737373' }}>
+                      <td className="text-[#737373]">
                         {created.toLocaleDateString('tr-TR', {
                           day: '2-digit',
                           month: 'short',
@@ -578,8 +577,7 @@ function AdminQrContent() {
                             onClick={() => requestDelete(rawItem)}
                             aria-label="QR'ı sil"
                             title="Sil"
-                            className="bz-btn-icon"
-                            style={{ color: '#DC2626' }}
+                            className="bz-btn-icon text-[#DC2626]"
                           >
                             <Trash2 size={14} />
                           </button>

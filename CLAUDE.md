@@ -10002,3 +10002,86 @@ Aşamalı refinement Stage 4: "owner panel mobile kapsamlı QA". 3 paralel Explo
 - Kalan riskler: Feedbacks `?view=detail` mobile pattern büyük UX refactor (DEFER); MenuLivePreview modal trigger gelecek scope; server-side guard mega-component (Stage 3 §38.73 intact)
 - **Sonraki aşama önerisi**: Stage 5 — admin paneli polish (Apple-premium + UX + mobile responsive parity Stage 1-4 paterni reuse). Veya kullanıcı yeni odak talebi.
 
+### 38.75 2026-05-05 — Stage 5 admin panel design system polish (6-fix bundle)
+
+Aşamalı refinement Stage 5: "admin panel tasarımsal polish". 3 paralel Explore agent + manuel verify (4 false positive elendi). 6 gerçek admin design drift kapatıldı. Branch `chore/admin-design-system-fixes`.
+
+**Out of scope** (kullanıcı talimatı): Owner panel, admin UX bağlantı akışları (Stage 6), kapsamlı mobil QA (Stage 7), backend/API mantığı.
+
+**Audit'te VERIFIED ✅ (zaten Pulse uyumlu)**: AdminSidebar light theme + collapsible groups (§38.59 + §11.10), URL filter awareness (useUrlFilter §36), Badge primitive `kind` system, SuperadminBlock branded gating card, `<Modal>` primitive focus trap, EmptyState 10/12 sayfa, mobile safe-area padding.
+
+**6 fix bundle**:
+
+1. **4 yeni admin segment loading.tsx** (CLAUDE.md §11.17 content-shape paterni, owner Stage 1 §38.71 + Stage 3 §38.73 admin'e port):
+   - `/admin/dashboard/loading.tsx` — PageHeader + KPI 4-stat + 2-col chart + 2 widget skeleton
+   - `/admin/restaurants/loading.tsx` — PageHeader + 4-stat + filter toolbar + tablo desktop / mobile card
+   - `/admin/reviews/loading.tsx` — PageHeader + 4 quick stats + 5-tab strip + review list
+   - `/admin/customers/loading.tsx` — PageHeader + 4-stat + 6-pill toolbar + 7-col tablo / mobile card
+
+2. **`/admin/not-found.tsx`** — Admin spesifik 404 (admin/error.tsx paterni reuse). Lime-soft icon + "Sayfa bulunamadı" + Dashboard CTA. Admin marka diliyle.
+
+3. **admin/members pagination touch target** (line 535-549) — `style={{ padding: '6px 12px' }}` (38px) → `min-h-[44px] sm:min-h-[36px] text-[12px]` Tailwind utility. Stage 4 §38.74 paterni reuse.
+
+4. **Inline hex color → Tailwind utility** (admin/qr 5 callsite + admin/plans 3 callsite) — `style={{ color: '#DC2626|#525252|#737373|#0A0A0A|#92400E' }}` → `className="text-[#XXX]"`. Tailwind-first disipline §7.
+
+5. **Card chrome → bz-card primitive** (admin/site-settings + admin/members):
+   - `site-settings/page.tsx:27` `CARD = 'bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8'` → `'bz-card p-6 sm:p-8'`
+   - `members/page.tsx:377` `bg-white rounded-xl sm:rounded-2xl border border-[#EDEDED]` → `bz-card`
+   
+   CLAUDE.md §11 + §38.67 disipline.
+
+6. **`/admin/site-settings` SUPERADMIN page-level eyebrow** — eyebrow `SİTE AYARLARI` → `SUPERADMIN · SİTE AYARLARI` + `eyebrowPulse` lime dot (§11.4 dashboard paterni reuse). Mevcut lime Badge actions intact.
+
+**Audit skip (4 false positive)**:
+- AdminSidebar light theme + collapsible groups zaten doğru (§38.59 + §11.10)
+- URL filter awareness zaten (useUrlFilter §36)
+- Badge primitive consistency tüm admin sayfalarında zaten kullanılıyor
+- Loader2 hardcoded color → Pulse spinner primitive yok, technical debt DEFER
+
+**DEFER (Stage 7 mobile QA)**: AdminMobileNav `grid-cols-5` role-aware adapt — büyük UX scope.
+
+**Verification**:
+- `npm run lint` ✓ 0 errors, 1 baseline warning
+- `npx next build` ✓ 58/58 static page
+- `npx tsc --noEmit` ✓ 0 errors src/ (4 pre-existing .next/types §21.13)
+- `npm test` ✓ 182/182 pass
+
+**Owner ↔ Admin tasarım dili ayrımı** (Stage 5 sonrası):
+
+| Aspect | Owner panel | Admin panel |
+|---|---|---|
+| Sidebar theme | Light (Stage 1 §38.59) | Light (parity) |
+| Sidebar IA | 4-grup (GENEL/CRM/İŞLETME/AYARLAR) | 5-grup (Operasyon/İşletme/Hesaplar/İçerik/Mail) §11.10 |
+| Eyebrow style | `PANEL / GENEL BAKIŞ` business-oriented | `SUPERADMIN · X` operational scope |
+| Page header | Action-oriented Pulse Voice | Operational, kontrol-odaklı |
+| Primary CTA | Lime "Yorum İste" sticky (§38.39) | Ghost actions row |
+| Loading skeletons | Per-segment content-shape (§38.71/§38.73) | Per-segment content-shape (§38.75) |
+| Bulk actions | Floating bottom toast (§38.31) | Floating bottom toolbar (§11.19) |
+| Tablo pattern | Mobile card list + lg:tablo (§38.36) | Mobile card list + lg:tablo (parity) |
+| Brand identity | Pulse lime + graphite | Pulse lime + graphite + SUPERADMIN eyebrow scope |
+| Dashboard widget | Owner action-driven (PendingTasks + ActivityFeed) | Operational (recently joined + needs attention §11.4) |
+
+**Yapma**:
+- AdminSidebar dark theme'e geri çevirme — §38.59 paterni intact.
+- Admin `<Loader2>` callsite'larını toplu spinner primitive'e migrate — primitive yok, technical debt.
+- AdminMobileNav role-aware adapt — Stage 7 scope.
+- Admin/owner sidebar IA'ları aynileştirme — 4-grup vs 5-grup kasıtlı (§11.10).
+- Site-settings PageHeader'ından "Superadmin" badge'ini silme — eyebrow + badge çift visual cue intentional.
+- Inline hex `style={{ color }}` geri ekleme — Tailwind-first disipline §7.
+
+**Yap**:
+- Yeni admin sayfası eklerken `loading.tsx` content-shape skeleton paterni reuse zorunlu.
+- Yeni admin destructive button için `text-[#DC2626]` Tailwind utility.
+- Yeni admin card eklerken `bz-card` primitive reuse.
+- Yeni superadmin-only sayfa için eyebrow `SUPERADMIN · X` + `eyebrowPulse`.
+- Admin pagination 44px touch target paterni yeni admin tablolarına uygulanır.
+
+**Stage 5 closure** (Tarih 2026-05-05):
+- Branch `chore/admin-design-system-fixes`
+- PR + merge için kullanıcı manuel müdahale (GitHub MCP disconnected bu session)
+- İncelenen dosyalar: 9 (4 yeni loading.tsx + 1 not-found.tsx + 4 page edit)
+- Yapılan değişiklikler: 6 fix (4 loading.tsx + not-found.tsx + pagination 44px + inline hex → Tailwind + 2 bz-card + SUPERADMIN eyebrow)
+- Kontroller: lint 0 err / build 58 page / tsc src 0 err / test 182/182
+- Kalan riskler: AdminMobileNav role-aware Stage 7; Loader2 spinner primitive technical debt; admin destructive action visual differentiation (cosmetic, gelecek scope)
+- **Sonraki aşama önerisi**: Stage 6 — admin UX bağlantı akışları (cross-link, breadcrumb scoped routes, role-based redirects, Stage 2 §38.72 paterni reuse). Veya Stage 7 admin mobile QA, ya da kullanıcı yeni odak talebi.
+

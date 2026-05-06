@@ -24,7 +24,10 @@ interface SiteSettings {
   capterraUrl: string | null;
 }
 
-const CARD = 'bg-white rounded-2xl border border-[#EDEDED] p-6 sm:p-8';
+// §38.75 — Pulse `bz-card` primitive reuse (CLAUDE.md §11 + §38.67). Inline
+// `rounded-2xl border border-[#EDEDED]` permütasyonu yerine globals.css
+// `bz-card` token (border + radius + bg + soft shadow).
+const CARD = 'bz-card p-6 sm:p-8';
 const LABEL = 'block text-[12px] font-semibold text-[#1A1A1A] uppercase tracking-wider mb-2';
 const INPUT = 'bz-input';
 const HINT = 'text-[11px] font-medium text-[#6B7280] mt-1';
@@ -121,8 +124,12 @@ export default function SiteSettingsPage() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-5 pb-32">
+      {/* §38.75 — Eyebrow'a SUPERADMIN scope prefix eklendi (CLAUDE.md §11.4
+          dashboard SUPERADMIN eyebrow paterni reuse). Page-level scope net;
+          actions slot'undaki lime badge ek visual cue. */}
       <PageHeader
-        eyebrow="SİTE AYARLARI"
+        eyebrow="SUPERADMIN · SİTE AYARLARI"
+        eyebrowPulse
         title="Site ayarları"
         description="SEO metadatası, logo ve favicon — her değişiklik tüm site genelinde yansır."
         actions={
