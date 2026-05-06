@@ -57,6 +57,9 @@ export async function GET(req: NextRequest) {
           airbnbUrl: true,
           bookingUrl: true,
           yandexUrl: true,
+          // Stage 10 — Yelp + Foursquare resolver chain (CLAUDE.md §38.80).
+          yelpUrl: true,
+          foursquareUrl: true,
           // Per-platform enabled toggles — public review surface honours
           // them via `resolveBestRedirectPlatform` (CLAUDE.md §19.4.3).
           // Owner toggling a platform off in panel must take effect on
@@ -69,6 +72,8 @@ export async function GET(req: NextRequest) {
           airbnbEnabled: true,
           bookingEnabled: true,
           yandexEnabled: true,
+          yelpEnabled: true,
+          foursquareEnabled: true,
           externalPlatformsEnabled: true,
           primaryColor: true,
           isActive: true,
@@ -122,6 +127,8 @@ export async function GET(req: NextRequest) {
             airbnbUrl: null,
             bookingUrl: null,
             yandexUrl: null,
+            yelpUrl: null,
+            foursquareUrl: null,
             yemekSepetiEnabled: false,
             getirEnabled: false,
             trendyolEnabled: false,
@@ -129,6 +136,8 @@ export async function GET(req: NextRequest) {
             airbnbEnabled: false,
             bookingEnabled: false,
             yandexEnabled: false,
+            yelpEnabled: false,
+            foursquareEnabled: false,
             defaultRedirectPlatform: isExternalReviewProvider(restaurant.defaultRedirectPlatform)
               ? null
               : restaurant.defaultRedirectPlatform,

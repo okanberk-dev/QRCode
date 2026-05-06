@@ -21,6 +21,8 @@ function makeRestaurant(
     airbnbUrl: null,
     bookingUrl: null,
     yandexUrl: null,
+    yelpUrl: null,
+    foursquareUrl: null,
     externalPlatformsEnabled: true,
     googleEnabled: true,
     yemekSepetiEnabled: true,
@@ -30,6 +32,8 @@ function makeRestaurant(
     airbnbEnabled: true,
     bookingEnabled: true,
     yandexEnabled: true,
+    yelpEnabled: true,
+    foursquareEnabled: true,
     ...overrides,
   };
 }
@@ -260,4 +264,70 @@ test('external platformlar kapalıyken Google dışı yönlendirme kullanılmaz'
   assert.equal(result.provider, 'google');
   assert.equal(result.reason, 'sector_priority');
   assert.equal(result.fallback, true);
+});
+
+// Stage 10 — Yelp + Foursquare resolver chain (CLAUDE.md §38.80).
+
+test('Yelp requested — URL var, enabled → kullan', () => {
+  const restaurant = makeRestaurant({
+    yelpUrl: 'https://www.yelp.com/biz/foo',
+  });
+  const result = resolveBestRedirectPlatform({
+    restaurant,
+    requestedProvider: 'yelp',
+  });
+  assert.equal(result.provider, 'yelp');
+  assert.equal(result.url, 'https://www.yelp.com/biz/foo');
+  assert.equal(result.reason, 'requested');
+  assert.equal(result.fallback, false);
+});
+
+test('Foursquare requested — URL var, enabled → kullan', () => {
+  const restaurant = makeRestaurant({
+    foursquareUrl: 'https://foursquare.com/v/foo/12345',
+  });
+  const result = resolveBestRedirectPlatform({
+    restaurant,
+    requestedProvider: 'foursquare',
+  });
+  assert.equal(result.provider, 'foursquare');
+  assert.equal(result.url, 'https://foursquare.com/v/foo/12345');
+  assert.equal(result.reason, 'requested');
+});
+
+test('sector priority — food sektörü Yelp/Foursquare Tripadvisor sonrasında', () => {
+  // Food sektörü: google → yemeksepeti → getir → trendyol → tripadvisor →
+  // yelp → foursquare → yandex. Sadece Yelp dolu, requested yok → sektör
+  // priority Tripadvisor'ı atlar (URL yok), Yelp'i bulur.
+  const restaurant = makeRestaurant({
+    category: 'Restoran',
+    yelpUrl: 'https://www.yelp.com/biz/foo',
+  });
+  const result = resolveBestRedirectPlatform({ restaurant });
+  assert.equal(result.provider, 'yelp');
+  assert.equal(result.reason, 'sector_priority');
+  assert.equal(result.fallback, true);
+});
+
+test('broken-skip — son 24 saatte Yelp fail → sektör fallback Foursquare', () => {
+  const now = new Date('2026-05-06T12:00:00Z');
+  const recentFail = new Date('2026-05-06T10:00:00Z'); // 2 sa önce
+  const restaurant = makeRestaurant({
+    category: 'Restoran',
+    yelpUrl: 'https://www.yelp.com/biz/foo',
+    foursquareUrl: 'https://foursquare.com/v/foo/12345',
+  });
+  const latestChecks = new Map([
+    ['yelp', { ok: false, checkedAt: recentFail }],
+  ]);
+  const result = resolveBestRedirectPlatform({
+    restaurant,
+    requestedProvider: 'yelp',
+    latestChecks,
+    now,
+  });
+  // Yelp broken → sektör priority bir sonraki usable: Foursquare
+  assert.notEqual(result.provider, 'yelp');
+  assert.equal(result.provider, 'foursquare');
+  assert.equal(result.reason, 'sector_priority');
 });

@@ -10368,3 +10368,85 @@ Branch `claude/security-followups-stage9-hDUk5`. Tek consolidated PR (CLAUDE.md 
 - Kalan riskler: live cookie invalidation tek-seferlik re-login (intended); reCAPTCHA flip sonrası 24h spike monitoring; SVG malformed input sharp throw 500 (kabul, edge case).
 - **Sonraki aşama önerisi**: §38.2 master backlog HIGH 4 Platforms 12-card grid (DEFER §38.30); ya da CSP B/C grubu rollout (CLAUDE.md §37.8 — `Cross-Origin-Opener-Policy: same-origin-allow-popups` + Report-Only `script-src` allowlist + nonce middleware). Veya operatör yeni odak talebi.
 
+### 38.80 2026-05-06 — Stage 10 backend gap closures (3-fix bundle)
+
+§38.78 backend audit + §38.79 security follow-ups sonrası §38.B master backlog'unda 3 backend gap kalmıştı: §38.52'de eklenen Yelp/Foursquare taxonomy resolver chain'e bağlanmamıştı, §38.55 PROFİL SAĞLIĞI çek listesi Fotoğraf sayısı + Q&A bölümü için "— yakında" placeholder gösteriyordu (Google Business Profile API genişletme bekliyordu). Stage 10 hepsini tek consolidated PR ile kapattı. Backend-only — UI sadece PROFİL SAĞLIĞI gauge data binding'i değişti.
+
+**Branch** `chore/backend-gaps-stage10`. Tek PR (CLAUDE.md §21.22). Schema migration **YOK** (Yelp/Foursquare schema field'ları §38.52'de eklenmiş + Google API helpers external — local DB'ye dokunmuyor).
+
+**Fix 1 — Yelp + Foursquare resolver chain** (`src/lib/platform-redirect-resolver.ts` + `src/lib/sector-platforms.ts` + `src/lib/restaurant-features.ts` + `src/app/api/restaurants/route.ts` GET slug + `src/app/r/[slug]/page.tsx` + `tests/platform-redirect-resolver.test.ts`):
+
+§38.52'de PROVIDER_DOMAINS / PROVIDER_LABELS / PROVIDER_MAP / PATH_RULES / PLATFORM_DEFS 5 nokta drift'i kapanmış (taxonomy + UI), ama resolver chain (`resolveBestRedirectPlatform`) iki yeni provider'ı tanımıyordu → owner Yelp/Foursquare URL eklerse `/r/[slug]` `?platform=yelp` query yorumlanmıyor + sektör priority Yelp/Foursquare'ı atlıyordu (any_active fallback'te de hiç kullanılamıyordu). Stage 10 bu son halkayı kapattı:
+- `RedirectProvider` literal'a `'yelp' | 'foursquare'` eklendi
+- `PLATFORM_ID_TO_PROVIDER`: `yelp: 'yelp'`, `foursquare: 'foursquare'`
+- `ResolveRestaurantInput`: `yelpUrl`, `foursquareUrl`, `yelpEnabled`, `foursquareEnabled` field'ları
+- `PROVIDER_FIELDS`: `yelp: { url: 'yelpUrl', enabled: 'yelpEnabled' }`, `foursquare: { url: 'foursquareUrl', enabled: 'foursquareEnabled' }`
+- `allProviders` array genişletildi (any_active fallback için)
+- `SECTOR_PLATFORMS.food` + `.hospitality`: tripadvisor sonrasına `'yelp', 'foursquare'` eklendi (TR-side platforms önce, global directories sonra, search engines son priority)
+- `EXTERNAL_REVIEW_PROVIDERS` (`restaurant-features.ts`): Yelp/Foursquare `externalPlatformsEnabled` master flag'i ile gate edildi (admin master kapatınca public review surface'inde ikisi de skip — parity with delivery + tripadvisor)
+- `isExternalPlatformField`: 4 yeni field name (yelpUrl/foursquareUrl/yelpEnabled/foursquareEnabled) eklendi
+- `/api/restaurants?slug=` GET defansif `select` 4 yeni alanı taşır (CLAUDE.md §14.1 paterni); `externalPlatformsEnabled=false` durumunda public payload'dan strip edilir
+- `/r/[slug]/page.tsx` `RestaurantData` interface + resolver caller'a 4 yeni alan
+- `tests/platform-redirect-resolver.test.ts`: `makeRestaurant` helper genişletildi + 4 yeni unit test (Yelp requested usable / Foursquare requested usable / Yelp sector_priority Tripadvisor sonrası / Yelp 24h broken-skip → Foursquare fallback)
+
+**Fix 2 + 3 — Google Business Profile media + Q&A API** (`src/lib/google-business.ts` + yeni `src/app/api/restaurants/[id]/google/business/profile-stats/route.ts` + `src/app/[locale]/dashboard/google-reviews/page.tsx`):
+
+§38.55 PROFİL SAĞLIĞI checklist 4 item'dan 2'si placeholder'da kalmıştı:
+- Fotoğraf sayısı: Google Business Profile `media.list` API'si gerekiyordu
+- Q&A bölümü: Google Business Profile Q&A API'si (ayrı `mybusinessq-and-a.googleapis.com`) gerekiyordu
+
+Stage 10 her iki helper'ı `googleBusinessFetch` retry/reauth wrapper paterniyle (CLAUDE.md §5.4 Task 4 reuse) ekledi:
+- `listLocationMedia(integration, selection)` → `{ count }` (totalMediaItemCount canonical, fallback page slice length)
+- `listLocationQuestions(integration, selection)` → `{ totalCount, unansweredCount }` (totalAnswerCount=0 unanswered sayar; `answersPerQuestion=0` payload minimal)
+- Yeni `QANDA_API_URL` const (`https://mybusinessq-and-a.googleapis.com/v1`) — Q&A API ayrı Google product surface, owner Cloud projesinde devre dışı olabilir (403)
+
+Yeni endpoint `GET /api/restaurants/[id]/google/business/profile-stats` (mevcut `restaurants/[id]/google/business/*` paterniyle uyumlu — kullanıcı task'ında önerilen `/api/integrations/google/business/...` yerine):
+- IDOR: `getPanelActorFromRequest` + `canAccessRestaurant`
+- Gate'ler: `googleReviewManagementEnabled`, `getGoogleIntegrationForRestaurant`, `selectedGoogleLocation` (parity with reviews endpoint)
+- `Promise.allSettled([listLocationMedia, listLocationQuestions])` — Q&A 403'te media count gauge'i offline almaz
+- Reauth signal kazanır: helper'lardan biri `requiresReauth` döndüyse 401 + `GOOGLE_REAUTH_REQUIRED` (owner reconnect CTA)
+- Soft fail field-by-field: `mediaCount: null` veya `unansweredQuestions: null` → UI "— yakında" placeholder
+- Cache: `Cache-Control: private, s-maxage=60, stale-while-revalidate=300` (CLAUDE.md §19.3 owner-cache pattern)
+
+UI binding (`google-reviews/page.tsx`):
+- Yeni `ProfileStats` interface + `profileStats` state
+- `loadStatusAndReviews` içinde reviews fetch sonrası fire-and-forget profile-stats fetch (try/catch — soft fail, ana flow etkilenmez)
+- PROFİL SAĞLIĞI checklist 2 placeholder item replace'lendi:
+  - Fotoğraf sayısı: `mediaCount` non-null ise locale-formatted sayı (TR/EN), threshold `≥ 5` ok (heuristic)
+  - Q&A bölümü: `unansweredQuestions` non-null ise `0 → "Hepsi yanıtlandı"`, `>0 → "X yanıt bekliyor"`, ok `=== 0`
+
+**Verification**:
+- `npm run lint`: 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/` (4 pre-existing `.next/types/...` baseline §21.13)
+- `npm test`: 186/186 pass, 22 suites (182 + 4 yeni Yelp/Foursquare resolver test)
+- `npx next build` (stub env): Compiled successfully + 58/58 static page (Prisma stub DB warnings beklenen)
+- Sanity grep: `RedirectProvider` literal yelp+foursquare ✓ / `PROVIDER_FIELDS` 10 entry ✓ / `SECTOR_PLATFORMS.food` + `.hospitality` Yelp/Foursquare ✓ / `EXTERNAL_REVIEW_PROVIDERS` 9 entry ✓ / `listLocationMedia` + `listLocationQuestions` export ✓ / `profile-stats` route var ✓.
+
+**Yapma**:
+- `RedirectProvider` literal'a yeni provider eklerken sadece bir yere ekle — 5 nokta drift disipline (CLAUDE.md §38.52 + §38.80): literal + `PLATFORM_ID_TO_PROVIDER` + `ResolveRestaurantInput` + `PROVIDER_FIELDS` + `allProviders` + sector priority + `EXTERNAL_REVIEW_PROVIDERS` + `isExternalPlatformField` + slug API select + `/r/[slug]` `RestaurantData` type + resolver caller. Hepsi.
+- Q&A API'yi reviews/media ile aynı `BUSINESS_PROFILE_V4_URL` host'una map etme — Google Q&A ayrı `mybusinessq-and-a.googleapis.com/v1` endpoint'i. Yanlış host 404.
+- `Promise.allSettled` yerine `Promise.all` kullanma — Q&A API 403 (owner Cloud projesinde devre dışı) media count gauge'ini de offline alır. Allsettled per-helper graceful degrade için zorunlu.
+- profile-stats endpoint'inde reauth sinyalini sadece soft-fail'a koyma — bir helper `requiresReauth: true` döndüyse parent endpoint 401 dönmeli (owner reconnect CTA). Aksi halde gauge "boş" görünür ama owner ne yapacağını bilmez.
+- Yelp/Foursquare URL'lerini sektör whitelist dışı (örn. `clinic`, `legal`) sektörler için sektör priority'sine eklemek — `any_active` fallback zaten tüm provider'ları kapsar. Yanlış sektör'e priority gevşetme.
+- Schema migration eklemek — Yelp/Foursquare field'ları §38.52'de zaten eklenmiş, profile-stats sadece API çağrısı yapıyor, lokal DB'ye yazmıyor.
+- listLocationMedia / listLocationQuestions throw'larını profile-stats endpoint'inde catch etmeden bubble'lamak — `Promise.allSettled` zorunlu, mevcut try/catch yok.
+
+**Yap**:
+- Yeni resolver provider eklerken §38.80 disipline'i (10+ nokta) zorunlu — incomplete update'ler partial drift yaratır.
+- Yeni Google Business Profile helper eklerken `googleBusinessFetch` wrapper reuse zorunlu (CLAUDE.md §5.4 Task 4 retry/reauth/Sentry pattern).
+- Yeni Q&A benzeri "feature flag opsiyonel" Google API endpoint'i eklerken `Promise.allSettled` per-helper degrade zorunlu.
+- Yeni profile-stats benzeri owner-scoped Google endpoint'i için: `Cache-Control: private, s-maxage=60, stale-while-revalidate=300` standard (CLAUDE.md §19.3).
+- Yeni resolver test eklerken `makeRestaurant` helper'a yeni alanları varsayılan olarak ekle (eski test'ler kırılmaz).
+
+**Stage 10 closure** (Tarih 2026-05-06):
+- Branch `chore/backend-gaps-stage10`
+- İncelenen backend gap'ler: 3 (§38.52 resolver chain + §38.55 media API + §38.55 Q&A API)
+- Yeni dosyalar: `src/app/api/restaurants/[id]/google/business/profile-stats/route.ts`
+- Edit'lenen dosyalar: 7 (resolver lib + sector + restaurant-features + slug API + /r/[slug] type + google-business.ts + google-reviews UI)
+- Yeni unit test: 4 (Yelp usable / Foursquare usable / Yelp sector_priority / Yelp 24h broken-skip)
+- Toplam test: 186/186 pass (182 + 4)
+- Çalıştırılan kontroller: lint 0 err / prisma validate ✓ / next build 58/58 / tsc src 0 err / test 186/186 / sanity grep clean
+- Operatör aksiyonları (PR sonrası): yok — tüm değişiklikler runtime auto-applied. Q&A API ilk çağrıda 403 dönerse Google Cloud Console'da "My Business Q&A API" enable edilmeli (owner self-service). Sentry `tags.integration:google-business + tags.reason:GOOGLE_API_ERROR` log'u 403'leri yakalar — ops monitoring.
+- Kalan riskler: Q&A API'nin Google tarafında deprecation pathway'i belirsiz — gelecekte 410 dönmeye başlarsa profile-stats endpoint'i `unansweredQuestions: null` ile graceful degrade eder (mevcut soft-fail kapsar). Yelp/Foursquare provider'ları için `PlatformLinkCheck` cron retest (CLAUDE.md §19.4.4) zaten 13 provider whitelist'inde — Stage 10 şemayı genişletmedi, mevcut testler intact.
+- **Sonraki aşama önerisi**: §38.2 master backlog'da kalan büyük scope'lar — CSP C grubu rollout (CLAUDE.md §37.8 strict `script-src` allowlist + nonce middleware, Report-Only mode 1-2 hafta soak gerek); HIGH 4 Platforms 12-card grid (DEFER §38.30 product decision pending); ya da Yelp/Foursquare için per-provider `PlatformLinkCheck` cron testleri (mevcut whitelist intact ama URL pattern heuristic'i §19.4.4'te yok). Veya operatör yeni odak talebi.
+

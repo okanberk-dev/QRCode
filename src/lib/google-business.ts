@@ -7,6 +7,14 @@ const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const ACCOUNT_MANAGEMENT_URL = 'https://mybusinessaccountmanagement.googleapis.com/v1';
 const BUSINESS_INFORMATION_URL = 'https://mybusinessbusinessinformation.googleapis.com/v1';
 const BUSINESS_PROFILE_V4_URL = 'https://mybusiness.googleapis.com/v4';
+// Stage 10 — Google Business Profile Q&A API (CLAUDE.md §38.80, §38.55
+// PROFİL SAĞLIĞI backlog kapanışı). Separate endpoint family from the
+// account-management / business-information / business-profile-v4 surfaces
+// the rest of this module already calls. The Q&A API may be disabled by
+// default in some Google Cloud projects — callers must tolerate a 403 from
+// the wrapper as "API not enabled" and surface a `null` count rather than
+// failing the parent endpoint.
+const QANDA_API_URL = 'https://mybusinessq-and-a.googleapis.com/v1';
 
 export const GOOGLE_BUSINESS_SCOPE = 'https://www.googleapis.com/auth/business.manage';
 
@@ -773,4 +781,88 @@ export async function updateGoogleReviewReply(
   });
   if (!res.ok) throw new GoogleBusinessApiError(res);
   return res.data;
+}
+
+// Stage 10 — Google Business Profile media + Q&A helpers (CLAUDE.md §38.80,
+// §38.55 PROFİL SAĞLIĞI backlog kapanışı). Both back the per-restaurant
+// `/api/restaurants/[id]/google/business/profile-stats` endpoint that feeds
+// the owner panel "PROFİL SAĞLIĞI" gauge. The wrapper retry / reauth /
+// Sentry capture (CLAUDE.md §5.4 Task 4) is reused as-is.
+
+export interface GoogleLocationMediaSummary {
+  /**
+   * Total media item count (photos + videos) on the location's profile.
+   * Falls back to the page slice length when Google omits totalMediaItemCount
+   * (rare, but documented behaviour for very small profiles).
+   */
+  count: number;
+}
+
+/**
+ * Fetch a single page of media for the selected Google Business location and
+ * return a count summary. We only need the count for the PROFİL SAĞLIĞI
+ * heuristic, so a single page (size 100) is enough — busy profiles with
+ * >100 photos still report the canonical `totalMediaItemCount` field.
+ */
+export async function listLocationMedia(
+  integration: GoogleIntegrationRow,
+  selection: GoogleBusinessLocation,
+): Promise<GoogleLocationMediaSummary> {
+  const parent = `accounts/${selection.accountId}/locations/${selection.locationId}`;
+  const url = new URL(`${BUSINESS_PROFILE_V4_URL}/${parent}/media`);
+  url.searchParams.set('pageSize', '100');
+
+  const res = await googleBusinessFetch<{
+    mediaItems?: unknown[];
+    totalMediaItemCount?: number;
+  }>(integration, url.toString());
+  if (!res.ok) throw new GoogleBusinessApiError(res);
+
+  const total =
+    typeof res.data.totalMediaItemCount === 'number' ? res.data.totalMediaItemCount : null;
+  const pageLength = Array.isArray(res.data.mediaItems) ? res.data.mediaItems.length : 0;
+  return { count: total ?? pageLength };
+}
+
+export interface GoogleLocationQuestionsSummary {
+  totalCount: number;
+  unansweredCount: number;
+}
+
+/**
+ * Fetch a single page of Q&A questions for the selected location and return
+ * answered/unanswered counts. The Q&A API is a separate Google product
+ * surface (`mybusinessq-and-a.googleapis.com`) and may be disabled in the
+ * caller's Google Cloud project; the parent endpoint must tolerate this
+ * helper's failure and degrade to `null` counts rather than 5xx.
+ *
+ * `answersPerQuestion=0` is enough for the count heuristic — we only need
+ * `totalAnswerCount` per question, which is returned regardless. Avoiding
+ * the answer payload keeps the call fast and PII-free.
+ */
+export async function listLocationQuestions(
+  integration: GoogleIntegrationRow,
+  selection: GoogleBusinessLocation,
+): Promise<GoogleLocationQuestionsSummary> {
+  // Q&A API addresses locations directly (no `accounts/{id}/` prefix), unlike
+  // the reviews / media endpoints. Using the location's resource name keeps
+  // us aligned with Google's documented locator format.
+  const parent = `locations/${selection.locationId}`;
+  const url = new URL(`${QANDA_API_URL}/${parent}/questions`);
+  url.searchParams.set('pageSize', '50');
+  url.searchParams.set('answersPerQuestion', '0');
+
+  const res = await googleBusinessFetch<{
+    questions?: Array<{ totalAnswerCount?: number }>;
+    totalSize?: number;
+  }>(integration, url.toString());
+  if (!res.ok) throw new GoogleBusinessApiError(res);
+
+  const questions = Array.isArray(res.data.questions) ? res.data.questions : [];
+  const unansweredCount = questions.filter(
+    (q) => !q.totalAnswerCount || q.totalAnswerCount <= 0,
+  ).length;
+  const totalCount =
+    typeof res.data.totalSize === 'number' ? res.data.totalSize : questions.length;
+  return { totalCount, unansweredCount };
 }

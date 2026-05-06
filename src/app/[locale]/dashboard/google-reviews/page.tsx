@@ -73,6 +73,17 @@ interface GoogleStatus {
   syncedAt: string | null;
 }
 
+// Stage 10 — PROFİL SAĞLIĞI gauge data (CLAUDE.md §38.80, §38.55 backlog
+// kapanışı). Endpoint: /api/restaurants/[id]/google/business/profile-stats.
+// Soft failures degrade individual fields to `null` (UI shows "— yakında"
+// placeholder) without taking the gauge offline.
+interface ProfileStats {
+  profileComplete: boolean;
+  mediaCount: number | null;
+  totalQuestions: number | null;
+  unansweredQuestions: number | null;
+}
+
 const STAR_VALUE: Record<string, number> = { ONE: 1, TWO: 2, THREE: 3, FOUR: 4, FIVE: 5 };
 function starValue(starRating: string | undefined): number {
   return starRating ? STAR_VALUE[starRating] ?? 0 : 0;
@@ -511,6 +522,10 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [reviewsPayload, setReviewsPayload] = useState<ReviewsPayload | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
+  // Stage 10 — PROFİL SAĞLIĞI real data (CLAUDE.md §38.80). Best-effort
+  // fetch alongside reviews; null fields render "— yakında" placeholder
+  // instead of failing the gauge.
+  const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [replying, setReplying] = useState<Record<string, boolean>>({});
   const [drafting, setDrafting] = useState<Record<string, boolean>>({});
@@ -627,6 +642,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     setCheckedRestaurantId(null);
     setReviewsPayload(null);
     setReviewsError(null);
+    setProfileStats(null);
 
     try {
       const res = await fetch(`/api/restaurants/${restaurantId}/google/business/status`);
@@ -647,6 +663,24 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           replies[review.name] = review.reviewReply?.comment ?? "";
         }
         setReplyText(replies);
+
+        // Stage 10 — PROFİL SAĞLIĞI gauge real data (CLAUDE.md §38.80).
+        // Fire-and-forget: reviews UI is the primary signal, profile stats
+        // is a bonus sub-card. Endpoint already degrades soft on Google API
+        // failures (mediaCount / unansweredQuestions → null), and any 4xx
+        // here just means the gauge keeps rendering placeholder text — no
+        // need to surface a banner.
+        try {
+          const statsRes = await fetch(
+            `/api/restaurants/${restaurantId}/google/business/profile-stats`,
+          );
+          if (statsRes.ok) {
+            const statsData = (await statsRes.json()) as ProfileStats;
+            setProfileStats(statsData);
+          }
+        } catch {
+          // soft-fail — gauge keeps "— yakında" placeholder for null fields
+        }
       }
     } catch (err) {
       setReviewsError(err instanceof Error ? err.message : "Durum alınamadı.");
@@ -1178,14 +1212,36 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                         (reviewAnalysis.replied / reviewsPayload.totalReviewCount) * 100,
                       )
                     : 0;
-                // §38.55 — PROFİL SAĞLIĞI checklist 4 item (tasarım birebir
-                // page-google.jsx line 191-209). Heuristic placeholder
-                // pattern: Profil tamlığı + Yanıt oranı (mevcut data) /
-                // Fotoğraf sayısı + Q&A bölümü (Google Business Profile API
-                // genişletme gerek — backend gap, "yakında" hint).
+                // §38.55 + §38.80 — PROFİL SAĞLIĞI checklist 4 item (tasarım
+                // birebir page-google.jsx line 191-209). Profil tamlığı + Yanıt
+                // oranı mevcut response data'dan; Stage 10 ile Fotoğraf sayısı
+                // + Q&A bölümü Google Business Profile API'sinden (media + Q&A
+                // helpers — CLAUDE.md §38.80). profileStats null veya tek tek
+                // alan null → "— yakında" placeholder (Q&A API operatör Cloud
+                // projesinde devre dışı olabilir, gauge'ı offline almaz).
                 const profileComplete = Boolean(
-                  status?.connected && status?.selectedLocation?.title,
+                  profileStats?.profileComplete ??
+                    (status?.connected && status?.selectedLocation?.title),
                 );
+                const placeholder = isTr ? '— yakında' : '— soon';
+                const photoValue =
+                  profileStats && profileStats.mediaCount != null
+                    ? profileStats.mediaCount.toLocaleString(isTr ? 'tr-TR' : 'en-US')
+                    : placeholder;
+                const photoOk =
+                  profileStats?.mediaCount != null && profileStats.mediaCount >= 5;
+                const unanswered = profileStats?.unansweredQuestions;
+                const qaValue =
+                  profileStats && unanswered != null
+                    ? unanswered === 0
+                      ? isTr
+                        ? 'Hepsi yanıtlandı'
+                        : 'All answered'
+                      : isTr
+                        ? `${unanswered} yanıt bekliyor`
+                        : `${unanswered} pending`
+                    : placeholder;
+                const qaOk = unanswered != null && unanswered === 0;
                 const checklist: Array<{
                   label: string;
                   value: string;
@@ -1203,15 +1259,13 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                   },
                   {
                     label: isTr ? 'Fotoğraf sayısı' : 'Photo count',
-                    // Backend gap: Google Business Profile media.list API extension gerek (§38.55 backlog)
-                    value: isTr ? '— yakında' : '— soon',
-                    ok: false,
+                    value: photoValue,
+                    ok: photoOk,
                   },
                   {
                     label: isTr ? 'Q&A bölümü' : 'Q&A section',
-                    // Backend gap: Google Business Profile questions API extension gerek (§38.55 backlog)
-                    value: isTr ? '— yakında' : '— soon',
-                    ok: false,
+                    value: qaValue,
+                    ok: qaOk,
                   },
                 ];
                 const keywords = extractKeywords(reviewsPayload.reviews, 8);
