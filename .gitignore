@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code (transient worktrees + local-only settings)
+.claude/worktrees/
+.claude/settings.local.json
