@@ -701,7 +701,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                   ? 'Az kaldı — '
                   : 'Almost over — '
                 : ''}
-              <span className="font-semibold text-[#0A0A0A] underline">
+              <span className="font-semibold text-[#0A0A0A] hover:underline underline-offset-2">
                 {locale === 'tr' ? 'Plana yükselt' : 'Upgrade plan'}
               </span>
             </Link>

@@ -386,10 +386,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     segmentCounts[row.segment] += 1;
   }
 
-  // §38.36 + §38.47 — 5-stat KPI grid. Tasarım: .design-owner-2026/page-customers.jsx
-  // line 54-67 (5 KPI: Toplam / VIP / Ortalama LTV / Tekrar gelme / Risk altında).
-  // YoY + sektör benchmark deltaları SKIP (CLAUDE.md §35.8 — verifiable olmayan
-  // iddia, "sektör %48" gibi).
+  // §38.36 + §38.47 — 5-stat KPI grid (Toplam / VIP / Ortalama LTV /
+  // Tekrar gelme / Risk altında). YoY + sektör benchmark deltaları SKIP
+  // (CLAUDE.md §35.8 — verifiable olmayan iddia, "sektör %48" gibi).
   const totalCustomers = summaryRow ? Number(summaryRow.customers) : 0;
   const vipCount = segmentCounts.vip;
   const vipPct = totalCustomers > 0 ? (vipCount / totalCustomers) * 100 : 0;
@@ -520,11 +519,10 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         </AlertBanner>
       )}
 
-      {/* §38.36 + §38.47 — 5-stat KPI grid (TOPLAM / VIP / ORT. LTV / GERİ DÖNÜŞ
-          / RİSK ALTINDA). Tasarım: .design-owner-2026/page-customers.jsx:54-67.
-          §38.74 — Tablet portrait cascade: mobile 2-col → sm:3 → md:4 → lg:5
-          (CLAUDE.md §25.5 md: ara kademe). 768-1023px iPad'de 4-col real-estate
-          kullanılır (önceki 2-col wasted space). */}
+      {/* §38.36 + §38.47 — 5-stat KPI grid (TOPLAM / VIP / ORT. LTV / GERİ
+          DÖNÜŞ / RİSK ALTINDA). §38.74 — Tablet portrait cascade: mobile
+          2-col → sm:3 → md:4 → lg:5 (CLAUDE.md §25.5 md: ara kademe).
+          768-1023px iPad'de 4-col real-estate kullanılır. */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
         <StatCard
           label={isTr ? 'Toplam misafir' : 'Total guests'}
@@ -576,10 +574,9 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
 
       {/* §38.36 — TEK KONSOLİDE TOOLBAR (eski 2 ayrı bz-card filter section'ı
           birleştirildi: segment pills card + filter form card duplicate → tek
-          toolbar). Tasarım: .design-owner-2026/page-customers.jsx:70-84.
-          Search (URL form) + segment pills (URL Link) + range chips + restaurant
-          select. "Daha fazla filtre" + "Görünüm" tasarım button'ları SKIP
-          (CLAUDE.md §7 — backend yok). */}
+          toolbar). Search (URL form) + segment pills (URL Link) + range chips
+          + restaurant select. "Daha fazla filtre" + "Görünüm" tasarım
+          button'ları SKIP (CLAUDE.md §7 — backend yok). */}
       <form
         action={`/${locale}/dashboard/customers`}
         method="get"
@@ -745,12 +742,12 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         </div>
       ) : (
         <>
-          {/* §38.36 + §38.47 — Desktop table 8-col (tasarım line 108-122 birebir).
-              Eski "İletişim" sütunu drop (email Misafir altına taşındı, telefon
-              drawer'da). §38.47'de Kanal + Son konu kolonları eklendi (tasarım
-              parity). Sentiment SentimentBadge yerine SentimentSparkbar (0-100
-              score progress + number). Avatar bg sentiment-based (pos lime-soft
-              / neg red-soft / neu n100). */}
+          {/* §38.36 + §38.47 — Desktop table 8-col. Eski "İletişim" sütunu
+              drop (email Misafir altına taşındı, telefon drawer'da). §38.47'de
+              Kanal + Son konu kolonları eklendi. Sentiment SentimentBadge
+              yerine SentimentSparkbar (0-100 score progress + number).
+              Avatar bg sentiment-based (pos lime-soft / neg red-soft /
+              neu n100). */}
           <div className="bz-card hidden overflow-x-auto lg:block">
             <table className="bz-table w-full min-w-[1080px]">
               <thead>
@@ -884,8 +881,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
               const detailKey = `${r.restaurant_id}|${r.contact_key}`;
               const detailHref = buildHref({ detail: detailKey });
               // §38.40 — Mobile card sentiment-based avatar bg (desktop'taki
-              // pattern mobile'a port). Tasarım .design-owner-2026/page-customers.jsx
-              // line 131-134 — pos lime-soft / neg red-soft / neu n100.
+              // pattern mobile'a port): pos lime-soft / neg red-soft / neu n100.
               const avatarBg =
                 r.sentiment === 'neg' ? '#FEF2F2'
                 : r.sentiment === 'pos' ? '#EAF9B8'
