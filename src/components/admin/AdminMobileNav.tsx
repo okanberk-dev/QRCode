@@ -33,7 +33,15 @@ export default function AdminMobileNav() {
       className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#EDEDED] z-50 text-[#0A0A0A] shadow-[0_-4px_20px_0_rgba(0,0,0,0.04)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <ul className="grid grid-cols-5 items-center px-2 pt-2 pb-1.5">
+      {/* §38.77 — Dynamic grid: role-filtered item sayısına göre eşit
+          dağıtım. Eski `grid-cols-5` hardcoded'du; manager için 4 item
+          görünüyordu ama 5 col grid → 1 empty cell + content sola
+          kayıyordu. Inline gridTemplateColumns ile filteredItems.length
+          eşit-genişlik dağıtım (Tailwind safelist ihtiyacı yok). */}
+      <ul
+        className="grid items-center px-2 pt-2 pb-1.5"
+        style={{ gridTemplateColumns: `repeat(${filteredItems.length}, minmax(0, 1fr))` }}
+      >
         {filteredItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
           const Icon = item.icon;

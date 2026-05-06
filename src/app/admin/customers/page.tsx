@@ -584,18 +584,20 @@ export default function AdminCustomersPage() {
                 <p className="pulse-eyebrow text-[#6B7280]">
                   Sayfa {data?.meta.page} / {totalPages} · Toplam {data?.meta.total}
                 </p>
+                {/* §38.77 — Pagination 44px mobile touch target (Stage 4
+                    §38.74 paterni reuse). sm:+ 32px Pulse compact density. */}
                 <div className="flex gap-2">
                   <button
                     onClick={() => setPage(Math.max(1, page - 1))}
                     disabled={page <= 1 || loading}
-                    className="rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 pulse-eyebrow text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
+                    className="rounded-lg border border-[#EDEDED] bg-white px-3 min-h-[44px] sm:min-h-[32px] pulse-eyebrow text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
                   >
                     Önceki
                   </button>
                   <button
                     onClick={() => setPage(Math.min(totalPages, page + 1))}
                     disabled={page >= totalPages || loading}
-                    className="rounded-lg border border-[#EDEDED] bg-white px-3 py-1.5 pulse-eyebrow text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
+                    className="rounded-lg border border-[#EDEDED] bg-white px-3 min-h-[44px] sm:min-h-[32px] pulse-eyebrow text-[#0A0A0A] hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-40"
                   >
                     Sonraki
                   </button>
