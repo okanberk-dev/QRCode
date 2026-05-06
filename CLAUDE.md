@@ -10522,3 +10522,50 @@ CLAUDE.md §38.B "feedback PATCH UI wiring" backlog kapanışı. §38.56'da `Fee
 - Kalan riskler: Owner mark-as-read PATCH başarısızlığı silent — eski feedback'ler için backend reject (rare; canWriteFeedback IDOR fail). Bu durumda dot kalmaz ama state mismatch (next page reload sonrası dot tekrar görünür). Acceptable — UX katlandığı durum nadiren.
 - **Sonraki aşama önerisi**: §38.B master backlog'da kalan büyük scope'lar — CSP C grubu rollout (§37.8 strict `script-src` + nonce middleware, Report-Only soak gerek); HIGH 4 Platforms 12-card grid (DEFER §38.30 product decision); ya da owner panel bulk bar component (yeni multi-select infra + checkbox column + floating toolbar — bilinçli scope creep ayrı PR). Veya operatör yeni odak talebi.
 
+### 38.84 2026-05-06 — Stage 14 hotfix: Stage 9 UserSession fail-closed flip rollback (CRITICAL prod incident)
+
+**Production incident**: Stage 9 (PR #491) `isUserSessionRevoked` fail-closed flip (`if (!session) return true`) production deploy sonrası **mevcut + YENİ login'leri de** 401 dönmeye başladı. Operatör re-login denedi, panel 401 vermeye devam etti — yeni login akışı UserSession row create etmesine rağmen sonraki request'ler "row missing" sayılıp reject ediliyordu. Beklenen "single re-login" (CLAUDE.md §38.79 dokümante davranış) gerçekleşmedi.
+
+**Olası kök nedenler** (bu hotfix sonrası prod log'da incelenecek):
+
+1. **`prisma.userSession.create` silently failing**: `src/app/api/auth/login/route.ts:204-215` try/catch loglu ama hata atılmıyor; cookie set ediliyor, kullanıcı 200 OK alıp dashboard'a gidiyor → her sonraki request 401. `console.error` Vercel log'a düşse de operatöre görünmez.
+2. **Schema drift**: `UserSession` tablosu prod'da güncel mi? `tokenHash` UNIQUE constraint, `userId` FK Cascade — herhangi bir column missing P2022 atar.
+3. **JWT_SECRET runtime drift**: Login akışı `signJwt(getSecret())` ile imzalar, sonraki request `verifyJwt(getSecret())` ile doğrular. Aynı module instance ise ortak. Ama Vercel multi-region cold-start'ta secret okuma timing'i drift edebilir mi? (uzak ihtimal).
+4. **Cookie / tokenHash mismatch**: `signJwt` + `hashToken(token)` aynı `token` üstünde — login ve verify aynı kod path'i. Drift ihtimal düşük.
+
+**Acute fix** (Stage 14, bu hotfix):
+- `src/lib/auth.ts:isUserSessionRevoked()` flip geri alındı (`if (!session) return true` → `if (!session) return false`).
+- Pre-Stage 9 davranışa dönüş: legacy fail-open. Mevcut + yeni cookie'ler tekrar geçerli — panel restore edildi.
+- Diagnostic `console.warn` eklendi missing-row durumunda — Vercel runtime log'da pattern frequency görmek için: "[auth] UserSession row missing for incoming token — fail-open (Stage 14 hotfix §38.84). Investigate login UserSession.create silent failure if frequent."
+
+**Geri çekilen güvenlik disipline'i**:
+- §37.2 D paterni (force-logout / password-reset bypass koruması) **geçici olarak undone**. Stolen / pre-reset cookie bypass riski theoretical (no known active exploit), kabul edilen trade-off operatör panel restore için.
+- `scripts/backfill-user-sessions.ts` (Stage 9 §38.79) **artık no-op equivalent** — flip geri alındığı için backfill'e gerek yok, ama script intact (Stage 9 re-introduce sırasında reuse edilecek).
+
+**Yapma**:
+- Stage 9 flip'i tekrar enable etmek **önce login akışındaki sessiz fail'i çözmeden**. `prisma.userSession.create` fail durumunda 500 dönmeli (cookie set edilmemeli) — sessiz error log + UX inconsistency 401 storm'u tekrar yaratır.
+- Production'da `[auth] UserSession row missing` warn yüksek frekansta görünüyorsa Stage 9 disipline'i re-introduce etme — root cause çözülmemiş demektir.
+- Schema migration drift'i scripts/backfill-user-sessions.ts ile düzeltmeye çalışmak — script synthetic placeholder yazar, gerçek cookie tokenHash'leriyle eşleşmez (CLAUDE.md §38.79 dokümante).
+- Stage 9'u backout'tan sonra `passwordChangedAt` paterni (admin §37.3 #1) gibi alternatif bypass koruması scope creep — ayrı PR'da değerlendir.
+
+**Yap (Stage 9 re-introduce öncesi disipline checklist)**:
+- Login akışına assertion: `prisma.userSession.create` başarısızsa 500 dön + Sentry capture (sessiz fail eliminate). `try/catch` log-only paterni terk et.
+- Production smoke test: yeni login → `prisma.userSession.findUnique({ where: { tokenHash } })` row var mı doğrula (admin paneli "Aktif oturumlar" UI veya direkt SQL).
+- 24h Vercel runtime log monitoring: `[auth] UserSession row missing` warn frequency 0'a yakın olmalı (single-digit / day kabul, double-digit/hour ise root cause hâlâ var).
+- Re-introduce sonrası operatör low-traffic window'da deploy + canary test (kendi cookie'siyle önce dene).
+
+**Verification (hotfix)**:
+- `npm run lint`: 0 errors, 1 baseline warning
+- `npx tsc --noEmit`: 0 errors in `src/`
+- `npm test`: 186/186 pass
+- `npx next build` (stub env): Compiled + 58/58 static page
+
+**Stage 14 closure** (Tarih 2026-05-06, prod incident response):
+- Branch `hotfix/auth-usersession-revert`
+- Edit'lenen dosyalar: 2 (`src/lib/auth.ts` revert + diagnostic warn, `CLAUDE.md` §38.84 log)
+- Yeni dosya yok, schema migration yok, yeni endpoint yok
+- Operatör aksiyonları (PR merge sonrası): otomatik — Vercel deploy ile tüm cookie'ler tekrar geçerli, panel restore. Re-login gerekmez.
+- Kalan iş (Stage 15+ scope): (a) login akışı UserSession.create assertion + Sentry capture, (b) prod log warn frequency analizi, (c) root cause confirmation, (d) Stage 9 disipline re-introduce. Operatör onayı + low-traffic window gerek.
+- **Sonraki aşama önerisi**: Stage 15 — login akışı UserSession.create hardening + diagnostic. Bu olmadan Stage 9 re-introduce edilmez.
+
+
