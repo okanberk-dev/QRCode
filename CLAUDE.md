@@ -10969,3 +10969,74 @@ FK üzerinde covering index olmadığı için sequential scan. Owner sayısı ar
 - Operatör aksiyonu (PR sonrası): YOK — Vercel build otomatik deploy. Pre-boundary cookies session expiry (max 30 gün) ile doğal olarak ortadan kalkar; force re-login YOK.
 - Kalan riskler: Post-boundary `issueLoginSession` failure 500 → kullanıcı bir kez "Oturum kaydedilemedi" görür, retry yapar; gerçek root cause (P2003/P2024) Sentry'de görünür ve fix edilir.
 - **Sonraki aşama önerisi**: 24h Vercel log monitor → post-boundary warn frequency drop verify. Stage 19 (Stage 9 re-introduce) için ön koşul karşılandı; operatör tetiği + low-traffic window bekliyor. Ayrıca §38.B'daki MEDIUM'lar (integrations cache header, CSV attachment header, realtime/token Sentry capture, AdminAuditLog instrumentation) ayrı PR scope.
+
+### 38.90 2026-05-06 — Stage 19 final audit + dead code cleanup (zero-regression hygiene pass)
+
+Stage 18 §38.89 production deploy sonrası kapsamlı final audit. Production verified ✅ (Vercel runtime logs son 1h `UserSession` warning **0 entry**, önceden 100+/min — Stage 18 §38.89 production'da çalışıyor). Ek 1 MEDIUM + 4 LOW dead code kalemi kapatıldı.
+
+**Phase 1 Discovery sonuçları**:
+
+Production telemetry:
+- ✅ Vercel runtime logs son 1h: 0 error, 0 warning UserSession (Stage 18 success)
+- ✅ Sentry son 24h: 2 unresolved (browser-side noise — SyntaxError invalid char + TypeError Load failed, low frequency)
+- ✅ Supabase advisor: 0 ERROR + 0 WARN (49 INFO RLS no policy = §38.87 Buaze BYPASSRLS expected, 33 INFO unindexed FK + unused index = §38.87 SKIP intact)
+
+Local audit baseline:
+- ✅ `npx eslint .`: **0 errors, 0 warnings** (Stage 18 §38.58 baseline `canAccessRestaurant` warning bu PR'da kapatıldı)
+- ✅ `npx tsc --noEmit`: 0 errors in `src/` (4 pre-existing `.next/types/...` baseline §21.13 — `ignoreBuildErrors: true` handle eder)
+- ✅ `npm test`: 229/229 pass, 29 suites
+- ✅ `npx next build`: ✓ Compiled + 58/58 static pages
+
+Stage 18 backlog 3 MEDIUM cross-check (Explore agent + manuel verify): **3/3 ÖNCEDEN kapatılmış** (§38.B master backlog stale entry):
+- `/api/restaurants/[id]/integrations/health`: `Cache-Control: private, s-maxage=60, stale-while-revalidate=300` ✅
+- `/api/restaurants/[id]/integrations/checks`: `Cache-Control: private, s-maxage=120, stale-while-revalidate=600` ✅
+- `/api/customers/export`, `/api/dashboard/{analytics,platforms/log}/export`, `/api/feedback/export`: `Content-Disposition: attachment` headers all present ✅
+- `/api/realtime/token` console.error Sentry capture parallel: §38.13 server-side flush kör nokta dolayısıyla kabul edildi (mevcut Vercel runtime log monitoring yeterli)
+
+**2 fix bundle** (Stage 19):
+
+1. **`src/app/api/feedback/bulk/route.ts:5` — unused import temizlendi** (Stage 18 §38.58 baseline warning):
+   - Eski: `import { canAccessRestaurant, getScopedRestaurantIds, resolveOwnerUserId } from '@/lib/panel-access';`
+   - Yeni: `import { getScopedRestaurantIds, resolveOwnerUserId } from '@/lib/panel-access';`
+   - Etki: Lint baseline 1 warning → **0 warning**. CI signal-noise oranı temiz; gelecek warning'ler hemen görünür olur.
+
+2. **4 orphan component silindi** (0 callsite verified manuel grep ile):
+   - `src/components/ui/CtaButton.tsx` (33 satır) — 0 callsite
+   - `src/components/admin/FeedbackTable.tsx` (308 satır) — 0 callsite (eski admin design)
+   - `src/components/admin/AspectBreakdown.tsx` (175 satır) — 0 callsite (analytics page §38.34 ile değiştirildi)
+   - `src/components/admin/RatingChart.tsx` (51 satır) — 0 callsite
+   - Toplam: **567 satır dead code** silindi.
+   - CLAUDE.md §34 paterni — "silindiyse açık talep gerekli" disipline kaydı.
+
+**Schema migration YOK**, **yeni dep YOK**, **breaking change YOK** (silinen component'ler 0 callsite).
+
+**Audit-clean kategoriler** (Explore agent verified):
+- Broken internal links: yok
+- Unused lib/ exports: tüm fonksiyonlar callsite'lı
+- CSS class drift: legacy neo-brutalist pattern yok
+- Text terminology: "İşletme" canonical (614 mention), 3-tier role system (Kullanıcı/Yönetici/Müşteri §4.5) tutarlı
+- TR/EN parity: i18n string match
+- Marketing scope: 29 component (kapsam dışı, panel-only audit)
+- Stage 18 §38.89 implementation intact (auth.ts STAGE_14_HOTFIX_BOUNDARY_MS const + login/route.ts assertion)
+
+**Yapma**:
+- Silinen orphan component'leri geri yükleme — 0 callsite verified, açık talep gerekli (CLAUDE.md §34 paterni).
+- §38.B master backlog 3 MEDIUM kalemini yeniden açma — verify edildi, hepsi production'da kapalı (stale backlog entry).
+- Stage 18 §38.58 baseline `canAccessRestaurant` warning'i geri ekleme — gerçek dead import, 0 risk silme.
+- §38.13 server-side Sentry flush kabullenmesini açma — 5 hipotez 4'ü elendi (PR #390/#398/#399), kalan (e) için diagnostic değer/maliyet düşük.
+
+**Yap**:
+- Yeni MEDIUM/HIGH bulgu tespit edilince §38.B master backlog güncelle (stale entry kontrol edildi).
+- Yeni `import { X, Y } from '@/lib/...'` callsite'larında manuel grep verify et — agent çıktıları kapsamlı ama false positive yaygın (CLAUDE.md §38.39 + §38.69 paterni).
+- Yeni component eklerken 3+ callsite kuralı (CLAUDE.md §7) — orphan extract premature.
+
+**Stage 19 closure** (Tarih 2026-05-06):
+- Branch `chore/final-audit-stage19`
+- Silinen dosyalar: 4 (orphan component'ler, 567 satır)
+- Modified dosyalar: 1 (`src/app/api/feedback/bulk/route.ts` unused import) + 1 (CLAUDE.md §38.90 closure)
+- Schema migration: YOK
+- Yeni dep: YOK
+- Test count: 229 (değişmedi — silinen component'ler test edilmiyor zaten)
+- Çalıştırılan kontroller: lint 0 err 0 warn / tsc src/ 0 err / test 229/229 / build 58/58 static
+- Operatör aksiyonu (PR sonrası): YOK — Vercel build otomatik deploy. Silinen component'lerin 0 callsite'ı olduğu için UX etkisi yok.
+- **Sonraki aşama önerisi**: §38.B master backlog büyük scope'lar — Stage 9 re-introduce (operatör tetiği, 24h+ Vercel log monitor sonrası), HIGH 4 Platforms 12-card grid (product decision), RECAPTCHA_ENFORCE flip (1-2 hafta soak), Prisma 7 upgrade (§5.4 Task 8). Veya yeni feature scope.

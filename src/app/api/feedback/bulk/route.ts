@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant, getScopedRestaurantIds, resolveOwnerUserId } from '@/lib/panel-access';
+import { getScopedRestaurantIds, resolveOwnerUserId } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { validateBody } from '@/lib/api/validate';
 import { ApiErrors } from '@/lib/api-errors';
