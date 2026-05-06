@@ -226,7 +226,7 @@ export function AdminCustomerDrawer() {
         aria-modal="true"
         aria-labelledby="admin-customer-drawer-heading"
         className="fixed top-0 right-0 bottom-0 z-[51] w-full sm:w-[420px] md:w-[480px] bg-white flex flex-col bz-elev-3"
-        style={{ animation: 'cust-drawer-in 220ms cubic-bezier(0.4, 0, 0.2, 1)' }}
+        style={{ animation: 'cust-drawer-in 180ms cubic-bezier(0.4, 0, 0.2, 1)' }}
       >
         <div className="flex items-start justify-between gap-3 border-b border-[#EDEDED] p-5">
           <div className="flex min-w-0 items-start gap-3">

@@ -950,7 +950,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           <div
             className="h-full w-[280px] max-w-[85vw] bg-white border-r border-[#EDEDED] bz-elev-3 flex flex-col text-[#0A0A0A] overflow-y-auto"
             style={{
-              animation: 'bz-mob-drawer-in 220ms cubic-bezier(0.4, 0, 0.2, 1)',
+              animation: 'bz-mob-drawer-in 180ms cubic-bezier(0.4, 0, 0.2, 1)',
               paddingTop: 'env(safe-area-inset-top)',
               paddingBottom: 'env(safe-area-inset-bottom)',
             }}
@@ -1046,7 +1046,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                variant (mobile drawer ile aynı 220ms cubic-bezier easing). */
             className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl border-t border-[#EDEDED] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] bz-elev-3"
             style={{
-              animation: 'bz-mob-sheet-in 240ms cubic-bezier(0.4, 0, 0.2, 1)',
+              animation: 'bz-mob-sheet-in 200ms cubic-bezier(0.4, 0, 0.2, 1)',
             }}
           >
             <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#D4D4D4]" />

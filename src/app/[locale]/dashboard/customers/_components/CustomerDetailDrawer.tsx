@@ -244,7 +244,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
         aria-modal="true"
         aria-labelledby="customer-drawer-heading"
         className="fixed top-0 right-0 bottom-0 z-[51] w-full sm:w-[420px] md:w-[480px] bg-white flex flex-col bz-elev-3"
-        style={{ animation: 'cust-drawer-in 220ms cubic-bezier(0.4, 0, 0.2, 1)' }}
+        style={{ animation: 'cust-drawer-in 180ms cubic-bezier(0.4, 0, 0.2, 1)' }}
       >
         {/* CSS Performance §38.61 — `@keyframes cust-drawer-in` + reduced-motion
             override globals.css'e taşındı. Inline `style={{ animation: ... }}`
