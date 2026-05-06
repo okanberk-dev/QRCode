@@ -575,6 +575,18 @@ body {
   to   { width: 100%; }
 }
 
+/* Stage 16 §38.86 — ActivityFeed Realtime push slide-in highlight.
+ * Yeni event tepe'ye prepend edilince 600ms lime-soft glow + 4px translateY
+ * nudge. Inline `style={{ animation: 'activity-row-in ...' }}` ile element'e
+ * uygulanır; reduced-motion blanket [style*='activity-row-in'] ile yakalar
+ * (`bz-mob-sheet-in` paterni reuse, CLAUDE.md §38.61).
+ */
+@keyframes activity-row-in {
+  0%   { transform: translateY(-4px); background-color: rgba(198, 242, 78, 0.18); }
+  60%  { background-color: rgba(198, 242, 78, 0.12); }
+  100% { transform: translateY(0); background-color: rgba(198, 242, 78, 0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .pulse-heartbeat,
@@ -599,6 +611,7 @@ body {
   [style*='bz-mob-sheet-in'],
   [style*='buaze-splash-fill'],
   [style*='bzProgress'],
+  [style*='activity-row-in'],
   .animate-\[bzProgress_2\.2s_linear_forwards\] {
     animation: none !important;
   }

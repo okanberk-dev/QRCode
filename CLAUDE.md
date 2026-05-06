@@ -10686,3 +10686,118 @@ Tests:
 - **Sonraki aşama önerisi**: §38.B master backlog'tan: HIGH 4 Platforms 12-card grid (DEFER product decision), Stage 15 (UserSession re-introduce — operatör tetiği), RECAPTCHA_ENFORCE flip (1-2 hafta soak sonrası). Veya yeni feature scope.
 
 
+
+### 38.86 2026-05-06 — Stage 16 Owner ActivityFeed Supabase Realtime push
+
+CLAUDE.md §38.31 + §38.B "ActivityFeed real-time (websocket/SSE) — gelecek scope" backlog kalemi kapatıldı. Owner dashboard CANLI AKIŞ section'ı artık reload-bazlı yerine Supabase Realtime üzerinden push'lu çalışıyor: yeni `feedbacks` INSERT'i 200ms debounce + 50 event buffer ile listenin tepe'sine slide-in animasyonuyla yerleşir, "Canlı" badge bağlantı state'ini gösterir, yeni event toast sayacı 5sn auto-dismiss eder.
+
+**Tek consolidated PR** (CLAUDE.md §21.22 stacked YOK). **Schema migration YOK**. **Yeni dep YOK** — `@supabase/supabase-js` zaten kuruluydu (Storage `careers/apply` kullanımından).
+
+**Auth mismatch kapatması (kritik)**:
+- Buaze custom JWT (jose, CLAUDE.md §4) kullanır — Supabase Auth değil. Supabase RLS `auth.uid()` Supabase JWT bekler; anon key + filter güvensiz (saldırgan filter manipülasyonuyla başka restoranlara subscribe edebilir, §37 IDOR ihlali).
+- Çözüm: server-side mint pattern. `/api/realtime/token` endpoint'i Buaze JWT'yi `getPanelActorFromRequest` ile doğrular, `getScopedRestaurantIds` ile owner'ın erişim listesini çıkarır, `SUPABASE_JWT_SECRET` ile imzalı **kısa-ömürlü** (1h) Supabase-uyumlu JWT mint eder. Client `supabase.realtime.setAuth(token)` ile WebSocket auth context'ine yazar; client ~55min'de proactive refresh (channel kopmaz, header'da güncel token gider).
+
+**JWT shape** (Supabase Realtime + PostgREST canonical):
+```
+sub: <userId>          — auth.uid() bunu döner
+role: 'authenticated'  — Supabase RLS default authenticated policy
+aud: 'authenticated'   — JWT audience claim
+exp: now + 3600        — 1h short-lived
+iat: now
+user_id: <userId>      — RLS policy text karşılaştırması için (auth.uid()
+                         UUID cast'i Buaze CUID ile uyumsuz)
+restaurant_ids: [...]  — RLS membership claim, subquery'siz fast lookup
+```
+
+**RLS policy** (`docs/supabase-realtime-setup.sql` operator runbook'unda):
+```sql
+create policy "buaze_realtime_owner_can_subscribe_feedbacks"
+  on public.feedbacks for select to authenticated
+  using (
+    restaurant_id::text in (
+      select jsonb_array_elements_text(
+        coalesce((current_setting('request.jwt.claims', true)::jsonb -> 'restaurant_ids'), '[]'::jsonb)
+      )
+    )
+  );
+```
+JWT'ye gömülmüş `restaurant_ids` array'i RLS'te subquery yapmadan membership check'i sağlar (DB load yok). Token expire olunca scope güncellenir (owner yeni restoran ekledikten sonra max 1h gecikme).
+
+**Kapsam** (10 dosya — 7 yeni + 3 modified):
+
+Backend:
+- `src/lib/realtime-token.ts` (yeni) — `mintRealtimeToken({ userId, restaurantIds, ttlSeconds }) → { token, expiresAt }` + `verifyRealtimeToken(token)` (test helper). `SUPABASE_JWT_SECRET` unset → throw (caller endpoint 503 döndürür, public dev fallback YOK).
+- `src/app/api/realtime/token/route.ts` (yeni) — POST endpoint. CLAUDE.md §37.2 disipline:
+  - **A** auth boundary: `getPanelActorFromRequest` (custom JWT verify)
+  - **B** IDOR: `getScopedRestaurantIds` (owner-scoped, scope=null ⇒ 403 — superadmin descoped)
+  - **D** rate limit: 10/dk/actor (`realtime-token:${actor.source}:${actor.id}`)
+  - 503: SUPABASE_JWT_SECRET unset (graceful UI degrade — page reload mode korunur)
+  - Response: `Cache-Control: private, no-store` (token user-bound + short-lived)
+- `scripts/validate-env.js` — `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` + `SUPABASE_JWT_SECRET` optional listeye eklendi (eksikse fail-soft: realtime disabled, page reload korunur).
+- `.env.example` — 3 yeni env + operator runbook (4-step: Vercel env, Supabase Dashboard publication, RLS SQL, redeploy).
+- `docs/supabase-realtime-setup.sql` (yeni) — idempotent RLS + publication SQL. Operator runs ONCE per environment via Supabase SQL Editor.
+
+Frontend:
+- `src/lib/supabase-realtime.ts` (yeni) — `getSupabaseRealtimeClient()` module-level singleton (React StrictMode double-render güvenli) + `setRealtimeAuth(token)` + `teardownRealtimeClient()`. Env yok → `null` (graceful). `auth: { persistSession: false, autoRefreshToken: false }` çünkü Supabase Auth flow'unu kullanmıyoruz.
+- `src/lib/activity-feed-realtime.ts` (yeni) — saf fonksiyonlar (test edilebilir):
+  - `bufferActivityEvents({ existing, incoming, maxSize })` — dedupe by id (existing wins) + sort newest first + slice 50
+  - `feedbackInsertToActivity(row, isTr)` — Postgres snake_case row → `buildActivityFeed` adapter (helper reuse, drift sıfır CLAUDE.md §7)
+- `src/hooks/useRealtimeActivity.ts` (yeni) — React hook. Mount: token fetch → setAuth → channel subscribe with `restaurant_id=in.(...)` filter. Status enum: `idle | connecting | connected | reconnecting | offline | disabled`. 200ms debounce flush (pending queue → 1 setState → bufferActivityEvents). Token refresh 5min before expiry. Cleanup: removeChannel + clearTimeout × 3.
+- `src/components/dashboard/ActivityFeed.tsx` (server → **client**) — `'use client'` + `useRealtimeActivity({ initialEvents })`. Public API aynı (events/isTr/viewAllHref/className) — dashboard `page.tsx` dokunulmadı. Yeni alt component'ler:
+  - `ConnectionBadge` — `bz-pulse-dot` (lime, connected) / static dot (warn/danger/gray)
+  - `NewEventsToast` — sparkle + count + 5sn auto-dismiss + manual X
+  - Slide-in highlight: `style={{ animation: 'activity-row-in 600ms ...' }}` lime-soft glow + 4px translateY (1.2sn sonra `newEventIds` Set temizlenir)
+- `src/app/globals.css` (+keyframe + reduced-motion blanket selector):
+  - `@keyframes activity-row-in` — lime-soft glow + translateY nudge
+  - `[style*='activity-row-in']` reduced-motion blanket'e eklendi (CLAUDE.md §38.61 paterni reuse)
+
+Tests:
+- `tests/realtime-token.test.ts` (yeni, 8 test) — secret unset throw + HS256 sign+verify roundtrip + ttl clamp [60, 3600] + `aud:authenticated` enforcement + tamper rejection + empty restaurant_ids + id order preservation.
+- `tests/activity-feed-realtime.test.ts` (yeni, 15 test) — bufferActivityEvents 8 (empty incoming / dedupe / sort / cap / stable timestamps / default maxSize) + feedbackInsertToActivity 7 (malformed date / 5★ pos / 1★ neg / 3★ neu / null platform / KVKK consent false → "Müşteri" / EN copy parity).
+- Test count: 206 → **229** (+23).
+
+**MVP scope (descoped, §38.86 backlog)**:
+- `feedback_replies` INSERT realtime push — schema'da `restaurant_id` kolonu yok (sadece `feedback_id`); Supabase Realtime filter syntax'ı `feedback_id IN (subquery)` desteklemiyor. Reply realtime için ya schema denormalize (Replies'a restaurant_id eklemek) ya da extra fetch (reply INSERT → feedback metadata fetch round-trip) gerek. ROI düşük — owner reply'i kendi attığı için "Canlı" görme ihtiyacı azalt.
+- Superadmin realtime — `getScopedRestaurantIds` `null` döner (global scope). Browser'da service-role-equivalent token mint'i XSS amplification surface'i; admin paneli zaten realtime push gerektirmiyor (operasyonel görünüm farklı). 403 + page reload fallback.
+
+**Verification**:
+- `npm run lint`: 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx tsc --noEmit`: 0 errors in `src/`
+- `npm test`: 229/229 pass, 29 suites
+- `npx next build`: ✓ Compiled successfully + 58/58 static pages + 1 yeni dynamic `/api/realtime/token`
+
+**Operator aksiyonları (PR sonrası, low-traffic window)**:
+1. **Vercel env** (Production + Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_JWT_SECRET` (Supabase Dashboard → Settings → API → JWT Settings → JWT Secret).
+2. **Supabase Dashboard → Database → Replication**: `feedbacks` tablosunu `supabase_realtime` publication'ına ekle (UI veya SQL `alter publication ... add table`).
+3. **Supabase SQL Editor**: `docs/supabase-realtime-setup.sql` dosyasını çalıştır (idempotent — `IF NOT EXISTS` + `DROP POLICY IF EXISTS`).
+4. **Smoke test**: 2 browser (A + B), aynı owner hesabıyla A `/dashboard`'da. B'den `POST /api/feedback` (veya gerçek `/r/[slug]` form submit) → A'da CANLI AKIŞ tepe'sine satır anında insert + Live badge yeşil + lime toast sayacı.
+
+**Eğer bir env eksikse veya Dashboard adımları atlanırsa**: ActivityFeed `Pasif` badge gösterir, page reload-bazlı CANLI AKIŞ (CLAUDE.md §38.31) korunur. Dashboard kırılmaz, sadece push devre dışı.
+
+**Yapma**:
+- Anon key + filter-only güvenliğe geri dönme — saldırgan filter'ı manipüle edip başka restoranların feedback'lerine subscribe olabilir (CLAUDE.md §37 IDOR ihlali). RLS policy + JWT mint zorunlu.
+- `service_role` key'i client-side expose etme — bypass'lar RLS, XSS amplification surface'ı yaratır.
+- Superadmin için `service_role`-equivalent token mint etme — admin paneli `/admin/*` realtime gerekmiyor; owner dashboard'da superadmin nadir, descoped doğru.
+- `auth.uid()::uuid` kullanma RLS policy'de — Buaze User.id CUID format, UUID cast fail eder. `current_setting('request.jwt.claims', true)::jsonb` text-based access doğru.
+- Token TTL 1h'dan kısa yapma (örn. 15min) — refresh trafiği artar, marginal güvenlik kazancı (1h short-lived zaten yeterli, scope changes en geç 1h yansır).
+- Token TTL 24h'a çekme — RLS scope drift penceresi büyür (owner restoran ekledi → 24h sonra realtime erişiyor). 1h kabul edilebilir compromise.
+- ActivityFeed prop interface'ini değiştirme — dashboard `page.tsx` zaten `events`/`isTr`/`viewAllHref` geçiriyor; backward compat korundu (server snapshot prop'tan akar, hook üst pencerede push'lar).
+- Reply INSERT realtime push'u zorlama — schema gap (restaurant_id yok), denormalize veya extra fetch round-trip gerek; gelecek scope.
+
+**Yap**:
+- Yeni realtime tablo eklerken: (a) RLS policy ekle (`docs/supabase-realtime-setup.sql` idempotent paterni reuse), (b) publication'a `alter publication supabase_realtime add table ...`, (c) hook'ta yeni `.on('postgres_changes', { table: ... }, ...)` callback, (d) JWT claim'i yeterli mi kontrol et (yetmezse mint endpoint'inde claim genişlet — JWT size izle).
+- Yeni Buaze auth-protected realtime kullanım için `mintRealtimeToken` reuse — mevcut RLS pattern'i `restaurant_ids` claim'i ile çalışır.
+- Subscribe filter'ında 50+ restaurant_id varsa URL/header bloat riskine karşı `slice(0, 50)` cap (helper'da var); gerçek scale'de claim büyürse pagination düşün.
+- Test eklerken `bufferActivityEvents` saf fonksiyon paterni reuse — `feedbackInsertToActivity` `buildActivityFeed` üstüne thin adapter (drift sıfır §7).
+
+**Stage 16 closure** (Tarih 2026-05-06):
+- Branch `chore/activity-feed-realtime-stage16`
+- Yeni dosyalar: 7 (`realtime-token.ts` lib + endpoint route + `supabase-realtime.ts` lib + `activity-feed-realtime.ts` lib + `useRealtimeActivity.ts` hook + 2 test + `docs/supabase-realtime-setup.sql`)
+- Modified dosyalar: 4 (ActivityFeed.tsx → client, `globals.css` keyframe + reduced-motion, `validate-env.js` 3 env, `.env.example` 3 env + runbook)
+- Schema migration: YOK
+- Yeni dep: YOK (`@supabase/supabase-js` zaten kurulu)
+- Test count: 206 → 229 (+23)
+- Çalıştırılan kontroller: lint 0 err / tsc src 0 err / test 229/229 / build 58/58 static + 1 yeni dynamic
+- Operatör aksiyonları (PR sonrası): 4-step runbook (Vercel env, Supabase Dashboard publication, RLS SQL, smoke test). Eksik adım = graceful disable, dashboard kırılmaz.
+- Kalan riskler: feedback_replies realtime descoped (schema gap, gelecek scope); RLS scope drift max 1h (token TTL); 50+ restaurant id'li owner için subscribe filter cap'lendi (`slice(0, 50)`).
+- **Sonraki aşama önerisi**: §38.B master backlog'tan — HIGH 4 Platforms 12-card grid (DEFER product decision), Stage 15 (UserSession re-introduce — operatör tetiği), RECAPTCHA_ENFORCE flip (1-2 hafta soak sonrası), feedback_replies realtime (denormalize gerek). Veya yeni feature scope.
