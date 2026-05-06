@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Download, Loader2, Mail, MapPin, Phone, RefreshCw, Search, Star, Store, Users, X } from 'lucide-react';
 import { AlertBanner, PageHeader, StatCard } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
@@ -8,6 +9,7 @@ import { SegmentChip } from '@/components/customers/SegmentChip';
 import { SentimentBadge } from '@/components/customers/SentimentBadge';
 import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
 import { computeLastChannel, computeLastTopic } from '@/lib/customers';
+import AdminCustomerDrawer from './_components/AdminCustomerDrawer';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 type SegmentFilter = '' | CustomerSegment;
@@ -77,6 +79,18 @@ export default function AdminCustomersPage() {
 
   const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
   const [data, setData] = useState<CustomersResponse | null>(null);
+
+  // Drawer URL state — CLAUDE.md §38.93 (Stage A1) reuses owner pattern
+  // (CLAUDE.md §38.14 Phase 8d). ?detail=KEY param drawer açar; row click
+  // pushes the same param. Owner /dashboard/customers paterni mirror.
+  const router = useRouter();
+  const pathname = usePathname();
+  const drawerSearchParams = useSearchParams();
+  const openDrawer = (key: string) => {
+    const next = new URLSearchParams(drawerSearchParams.toString());
+    next.set('detail', key);
+    router.push(`${pathname}?${next.toString()}`, { scroll: false });
+  };
 
   // Filters — PR4 URL synced (useUrlFilter §28).
   const filters = useUrlFilter({
@@ -436,7 +450,29 @@ export default function AdminCustomersPage() {
                 <tbody className="divide-y divide-[#EDEDED]">
                   {rows.map((r) => {
                     return (
-                      <tr key={r.key} className="hover:bg-[#FFFFFF]/50">
+                      <tr
+                        key={r.key}
+                        role="link"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          // Don't fire when clicking nested actionable elements
+                          // (mailto/tel anchor, etc.). CLAUDE.md §11.16 paterni.
+                          if ((e.target as HTMLElement).closest('a, button, input, [role="button"]')) {
+                            return;
+                          }
+                          openDrawer(r.key);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            if ((e.target as HTMLElement).closest('a, button, input, [role="button"]')) {
+                              return;
+                            }
+                            e.preventDefault();
+                            openDrawer(r.key);
+                          }
+                        }}
+                        className="hover:bg-[#FFFFFF]/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E]"
+                      >
                         <td className="px-5 py-3 font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</td>
                         <td className="px-5 py-3 text-[#1A1A1A]">
                           <div className="flex flex-col gap-0.5">
@@ -523,11 +559,34 @@ export default function AdminCustomersPage() {
 
             {/* Mobile cards — Phase 8c+ Segment + Sentiment row eklendi
                 (CLAUDE.md §38.19, audit drawer-centric paterni — LTV mobile'da
-                gizli, admin paneli desktop-first kullanıma yönelik). */}
+                gizli, admin paneli desktop-first kullanıma yönelik). §38.93
+                drawer paterniyle row click → drawer açar (owner mobile parite). */}
             <div className="divide-y divide-[#EDEDED] lg:hidden">
               {rows.map((r) => {
                 return (
-                  <div key={r.key} className="p-4">
+                  <div
+                    key={r.key}
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest('a, button, input, [role="button"]:not([data-row-trigger])')) {
+                        return;
+                      }
+                      openDrawer(r.key);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        if ((e.target as HTMLElement).closest('a, button, input, [role="button"]:not([data-row-trigger])')) {
+                          return;
+                        }
+                        e.preventDefault();
+                        openDrawer(r.key);
+                      }
+                    }}
+                    data-row-trigger
+                    aria-label={`Müşteri detayı: ${r.name || 'İsimsiz'}`}
+                    className="p-4 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#C6F24E]"
+                  >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-[#0A0A0A]">{r.name || 'İsimsiz'}</p>
@@ -580,7 +639,9 @@ export default function AdminCustomersPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-between gap-3 border-t border-[#EDEDED] bg-[#FFFFFF] px-5 py-3">
+              <div
+                className="flex items-center justify-between gap-3 border-t border-[#EDEDED] bg-[#FFFFFF] px-5 py-3"
+              >
                 <p className="pulse-eyebrow text-[#6B7280]">
                   Sayfa {data?.meta.page} / {totalPages} · Toplam {data?.meta.total}
                 </p>
@@ -607,6 +668,9 @@ export default function AdminCustomersPage() {
           </>
         )}
       </div>
+
+      {/* Drawer mount — URL state ?detail=KEY (CLAUDE.md §38.93) */}
+      <AdminCustomerDrawer />
     </div>
   );
 }

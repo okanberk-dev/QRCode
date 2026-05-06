@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AlertTriangle, Mail, Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
+import Link from 'next/link';
+import { AlertTriangle, ExternalLink, Mail, Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { AlertBanner, Badge, Modal, PageHeader, TableSkeleton, useConfirmDialog } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
@@ -280,7 +281,12 @@ export default function UsersPage() {
                         <User size={18} strokeWidth={2} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="font-bold text-[#0A0A0A] text-[14px] truncate block">{user.username}</span>
+                        <Link
+                          href={`/admin/users/${user.id}`}
+                          className="font-bold text-[#0A0A0A] text-[14px] truncate block hover:underline"
+                        >
+                          {user.username}
+                        </Link>
                         {user.email ? (
                           <span className="text-[11px] text-[#737373] truncate flex items-center gap-1 mt-0.5">
                             <Mail size={10} strokeWidth={2} />
@@ -324,6 +330,13 @@ export default function UsersPage() {
                   </td>
                   <td className="px-2 py-4 sm:px-8 sm:py-6 text-right">
                     <div className="flex items-center justify-end gap-2 sm:gap-3">
+                      <Link
+                        href={`/admin/users/${user.id}`}
+                        className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#FAFAFA] active:translate-y-1 active:shadow-none transition-all"
+                        title="Detay"
+                      >
+                        <ExternalLink size={16} strokeWidth={2} />
+                      </Link>
                       <button
                         onClick={() => handleEdit(user)}
                         className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#C6F24E] active:translate-y-1 active:shadow-none transition-all"

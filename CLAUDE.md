@@ -11225,3 +11225,153 @@ Rate limit infra (CLAUDE.md §14.2):
 - Test count: 229 → 209 (-20 webhook-fanout)
 - Operatör aksiyonu: YOK (Vercel auto-deploy + migration)
 - Kalan riskler: yok (0 production data, 0 dependent feature)
+
+### 38.93 2026-05-06 — Stage A1 admin ↔ owner cross-link drift kapanışı (5-fix bundle)
+
+§38.76 Stage 6 admin → restaurants/[id] cross-link paterninin owner-side
+karşılığı. Owner panel'in admin tarafından soruşturulabilmesi için 4 ek detail
+yüzeyi + 1 owner back-link açıldı; mevcut MemberRestaurantsPanel + audit log
+infrastructure (CLAUDE.md §38.76) reuse edildi.
+
+**Out of scope** (kullanıcı talimatı): Yeni schema migration, RBAC genişletme
+(Stage A2), impersonation flow (Stage A4), bulk operations (Stage A5).
+
+**5 fix bundle**:
+
+1. **`/admin/users/[id]` yeni detail page** — AdminUser detail (CLAUDE.md §4.5
+   "Yöneticiler" tablosu). 4-stat KPI grid (Rol / Kapsam / Son şifre değişimi /
+   Audit izleme) + Hesap bilgileri kartı (`Row` primitive reuse) + Hızlı bağlantılar
+   kartı (manager kapsamlı restoran link + listeye dön) + audit timeline section
+   (last 50 entries, **actorId** filter — bu yöneticinin yaptığı işlemler).
+   Mevcut `/admin/users` list page'inde username + Detail icon button artık
+   `/admin/users/[id]` link'ine yönlendirir.
+   - Backend: `/api/admin/users/[id]/route.ts` GET handler eklendi
+     (passwordChangedAt + restaurantId scope + private cache 30s).
+   - Backend: `/api/admin/users/[id]/audit/route.ts` yeni endpoint —
+     actorId+actorSource='admin' filter (members audit'i targetId filter'lı).
+     Target resolver: User/Restaurant/AdminUser bulk fetch ile clickable link.
+   - Component: `UserAuditTimeline.tsx` (MemberAuditTimeline paterni reuse +
+     target field link rendering).
+   - **Active sessions panel DEFER**: AdminUser session tablosu yok (CLAUDE.md
+     §38.79 deferred); `passwordChangedAt` staleness pivot olarak page'de görünür
+     + dokümante.
+
+2. **`/admin/members/[id]` overview tab genişletme** — owner pulse iki yeni section.
+   Mevcut tab yapısı (overview/billing/invoices/restaurants/team/audit) intact
+   tutuldu; overview'a yeni 2-card grid eklendi:
+   - **MemberActivationPanel**: per-restaurant activation snapshot
+     (CLAUDE.md §19.5 + computeActivation helper reuse). Endpoint:
+     `/api/admin/members/[id]/activation` — Promise.all (state + qrGen + feedback
+     count) batch fetch + checklist compute. UI: progress bar (lime ≥80% / warn
+     ≥40% / graphite <40%) + 5-step chip strip + per-restaurant detay link.
+   - **MemberRecentFeedbacksPanel**: cross-restaurant son 10 yorum aggregate.
+     Endpoint: `/api/admin/members/[id]/recent-feedbacks` — admin tier (KVKK
+     consent filter atlandı, ops triage için anonim feedback'ler dahil).
+     Restaurant adı + admin link badge'lı list.
+
+3. **`/admin/customers` row click → AdminCustomerDrawer** — owner CustomerDetailDrawer
+   (CLAUDE.md §38.14 Phase 8d) admin variant'ı. Tasarım yapısı 1:1 (header +
+   stats grid + son konu/kanal meta + feedback timeline) + admin spesifik
+   "Yönetim bağlantıları" rail (İşletme detayı + İşletme sahibi cross-link).
+   - Backend: `/api/admin/customers/by-key/[key]/route.ts` yeni endpoint
+     (mevcut `/api/admin/customers/[id]` legacy User PUT/DELETE'le çakışmasın
+     diye `by-key/` prefix'i seçildi). Cross-restaurant scope (no owner
+     whitelist), restaurant + ownerUserId response'a embed.
+   - Component: `AdminCustomerDrawer.tsx` (owner drawer paterni mirror +
+     admin links + admin-locale TR-fixed).
+   - Page wiring: `useRouter`+`useSearchParams` ile `?detail=KEY` URL state
+     (CLAUDE.md §36 paterni); table row + mobile card `role="link"`/`role="button"` +
+     keyboard handler (CLAUDE.md §11.16 paterni). Drawer mount'u sayfa sonuna.
+
+4. **Owner panel `/dashboard/account` AdminBackLink** — admin actor için sticky
+   "Admin paneline dön" link, owner actor'lar için transparent.
+   - Backend: `/api/account/actor-context/route.ts` minimal actor surface
+     (source / role / restaurantId — no PII). `Cache-Control: private, no-store`.
+   - Component: `AdminBackLink.tsx` (mount sonrası fetch; `source==='admin'`
+     ise lime focus ring + ShieldCheck icon ile pill render eder, aksi halde
+     null). Manager scope'lu admin → `/admin/restaurants/[id]`, superadmin →
+     `/admin/dashboard`.
+   - Mount: PageHeader actions slot'unda Veri indir form'u yanına flex-wrap
+     row.
+
+5. **`/admin/users` list username + Detail button** — list row'undan detail
+   page'e ulaşılabilirlik (mevcut: sadece edit modal + delete). Username link
+   + ExternalLink icon button eklendi (mevcut Düzenle + Sil button'ları intact).
+
+**Yeni dosyalar (10)**:
+- `src/app/admin/users/[id]/page.tsx` (AdminUser detail page)
+- `src/app/admin/customers/_components/AdminCustomerDrawer.tsx`
+- `src/components/admin/UserAuditTimeline.tsx`
+- `src/components/admin/MemberActivationPanel.tsx`
+- `src/components/admin/MemberRecentFeedbacksPanel.tsx`
+- `src/components/dashboard/AdminBackLink.tsx`
+- `src/app/api/admin/users/[id]/audit/route.ts`
+- `src/app/api/admin/members/[id]/activation/route.ts`
+- `src/app/api/admin/members/[id]/recent-feedbacks/route.ts`
+- `src/app/api/admin/customers/by-key/[key]/route.ts`
+- `src/app/api/account/actor-context/route.ts`
+
+**Edit'lenen dosyalar (5)**:
+- `src/app/admin/members/[id]/page.tsx` (overview tab'a 2 yeni section + 2 import)
+- `src/app/admin/users/page.tsx` (Link + Detail button + ExternalLink import)
+- `src/app/admin/customers/page.tsx` (drawer URL state + row click handler + mount)
+- `src/app/[locale]/dashboard/account/page.tsx` (AdminBackLink mount actions slot)
+- `src/app/api/admin/users/[id]/route.ts` (GET method eklendi)
+
+**Yapma**:
+- AdminUser detail page'inde `createdAt` / `updatedAt` field'ı gösterme — schema'da
+  yok (CLAUDE.md §37.3 #1 closure single-field staleness pivot kararı). Sadece
+  `passwordChangedAt` görünür.
+- `/api/admin/customers/[id]` (legacy User PUT/DELETE) endpoint'ini drawer için
+  kullanma — `by-key/[key]` static prefix'le ayrı route açıldı, dynamic segment
+  collision önlemi.
+- `MemberRecentFeedbacksPanel` endpoint'inde KVKK consent filter zorunlu yapma —
+  admin tier ops triage gereği anonim feedback'ler dahil (owner panel'de KVKK
+  zorunluluğu intact, §13.5).
+- AdminBackLink'i sticky position ile mount etme — PageHeader actions slot'u
+  zaten üst-sağ sabit pozisyon; sticky compound layout drift kaynağı.
+- AdminCustomerDrawer'da owner endpoint'i (`/api/customers/[key]`) kullanma —
+  IDOR fail eder (admin scope owner whitelist'inde değil); admin endpoint zorunlu.
+- Member detail overview tab'ında activation/recent-feedbacks'i ayrı tab olarak
+  ekleme — owner pulse summary, drill-down için zaten per-restaurant detail
+  link'leri kart içinde.
+
+**Yap**:
+- Yeni admin-tier detail page eklerken aynı paterni reuse: 4-stat KPI grid +
+  2-card overview (info + audit) + ConfirmDialog primitive (destructive action).
+- Yeni cross-link rail eklerken `bz-card-soft` veya bordered list paterni
+  (AdminCustomerDrawer "YÖNETİM BAĞLANTILARI" section reuse).
+- Yeni audit endpoint eklerken target resolver pattern reuse (User/Restaurant/
+  AdminUser bulk fetch + clickable link with ArrowRight icon).
+- Yeni owner panel surface'inde admin actor visible olmalıysa AdminBackLink
+  reuse (pageHeader actions slot tipik mount noktası).
+- Yeni member detail panel için useEffect-based fetch + cancellation cleanup
+  paterni (MemberActivationPanel + MemberRecentFeedbacksPanel paterni reuse).
+
+**Verification** (Tarih 2026-05-06):
+- `npx eslint .` 0 errors, 0 warnings
+- `npx tsc --noEmit -p tsconfig.json` 0 errors in `src/`
+- `npm test` 209/209 pass, 25 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) ✓ Compiled successfully +
+  58/58 static pages + 6 yeni dynamic route (/admin/users/[id] page +
+  /api/admin/customers/by-key/[key] + /api/admin/users/[id]/audit +
+  /api/admin/members/[id]/{activation,recent-feedbacks} + /api/account/actor-context)
+
+**Stage A1 closure** (Tarih 2026-05-06):
+- Branch `chore/admin-owner-cross-links-stageA1`
+- Toplam 15 dosya değişiklik (10 yeni + 5 edit)
+- Schema migration: YOK
+- Yeni dep: YOK
+- Test count: 209 (değişmedi — UI binding + endpoint integration test scope dışı,
+  mevcut helper coverage yeterli)
+- Operatör aksiyonu (PR sonrası): YOK — Vercel auto-deploy. Manuel smoke test:
+  superadmin login → /admin/members → owner row click → /admin/members/[id]
+  → restaurant cross-link → admin/restaurants/[id] → reviews filter (Stage 6 §38.76
+  paterni). Round-trip 1-tıkla.
+- Kalan riskler: AdminUser session tablosu hâlâ yok (Stage 9 deferred §38.79);
+  `/api/account/actor-context` middleware tarafından owner panel'e admin'in
+  ulaşma yolu yoksa transparent kalır (impersonation Stage A4'e bağlı).
+- **Sonraki aşama önerisi**: Stage A2 RBAC genişletme veya Stage A4 impersonation
+  flow (admin'in owner gibi görme). Veya §38.B master backlog kalemleri (HIGH 4
+  Platforms 12-card grid product decision, RECAPTCHA_ENFORCE flip 1-2 hafta
+  soak sonrası).

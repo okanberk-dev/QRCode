@@ -27,6 +27,7 @@ import { BusinessPulseAiSettings } from "@/components/dashboard/settings/section
 import { AccountPlanWidget } from "@/components/dashboard/account/AccountPlanWidget";
 import { AccountInvoicesWidget } from "@/components/dashboard/account/AccountInvoicesWidget";
 import { AccountDangerZone } from "@/components/dashboard/account/AccountDangerZone";
+import AdminBackLink from "@/components/dashboard/AdminBackLink";
 
 /**
  * Workspace-level Settings hub (`/dashboard/account`) — unified Hub.
@@ -180,20 +181,27 @@ export default function AccountSettingsPage() {
           : "Manage your profile, business, team and subscription."
       }
       actions={
-        <form action="/api/account/export-data" method="POST" className="inline-flex">
-          <button
-            type="submit"
-            className="bz-btn"
-            title={
-              isTr
-                ? 'KVKK / GDPR veri dışa aktarımı (saatte 1)'
-                : 'KVKK / GDPR data export (1/hr)'
-            }
-          >
-            <Download size={13} />
-            {isTr ? 'Veri indir' : 'Export data'}
-          </button>
-        </form>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* CLAUDE.md §38.93 (Stage A1) — admin actor için "Admin paneline dön"
+              link, owner actor'lar için transparent (component fetch'le karar
+              verir). Manager scope'lu admin → /admin/restaurants/[id], superadmin
+              → /admin/dashboard. */}
+          <AdminBackLink />
+          <form action="/api/account/export-data" method="POST" className="inline-flex">
+            <button
+              type="submit"
+              className="bz-btn"
+              title={
+                isTr
+                  ? 'KVKK / GDPR veri dışa aktarımı (saatte 1)'
+                  : 'KVKK / GDPR data export (1/hr)'
+              }
+            >
+              <Download size={13} />
+              {isTr ? 'Veri indir' : 'Export data'}
+            </button>
+          </form>
+        </div>
       }
     />
   );

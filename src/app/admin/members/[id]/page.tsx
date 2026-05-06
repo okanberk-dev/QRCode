@@ -30,6 +30,8 @@ import MemberRestaurantsPanel from '@/components/admin/MemberRestaurantsPanel';
 import MemberTeamPanel from '@/components/admin/MemberTeamPanel';
 import MemberAuditTimeline from '@/components/admin/MemberAuditTimeline';
 import MemberBillingModal from '@/components/admin/MemberBillingModal';
+import MemberActivationPanel from '@/components/admin/MemberActivationPanel';
+import MemberRecentFeedbacksPanel from '@/components/admin/MemberRecentFeedbacksPanel';
 
 interface MemberDetail {
   user: {
@@ -369,7 +371,28 @@ export default function MemberDetailPage({
 
       {/* Tab content */}
       {activeTab === 'overview' && (
+        <>
+        {/* CLAUDE.md §38.93 (Stage A1) — admin tier owner pulse:
+            Activation snapshot + Recent feedbacks aggregate. Drill-down per
+            restaurant → /admin/restaurants/[id] (existing §38.76). */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4">
+          <section className="bz-card p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+              <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Aktivasyon kontrol listesi</h3>
+              <p className="text-[11px] text-[#737373]">Restoran başına 5 adımlık kurulum (CLAUDE.md §19.5)</p>
+            </div>
+            <MemberActivationPanel userId={id} />
+          </section>
+          <section className="bz-card p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
+              <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Son yorumlar</h3>
+              <p className="text-[11px] text-[#737373]">Tüm restoranlardan son 10 yorum</p>
+            </div>
+            <MemberRecentFeedbacksPanel userId={id} />
+          </section>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4">
           <section className="bz-card p-5 sm:p-6">
             <h3 className="text-[15px] font-semibold text-[#0A0A0A] mb-4">Hesap bilgileri</h3>
             <dl className="space-y-3 text-[13px]">
@@ -437,6 +460,7 @@ export default function MemberDetailPage({
             )}
           </section>
         </div>
+        </>
       )}
 
       {activeTab === 'billing' && (
