@@ -67,6 +67,41 @@ export async function POST(req: NextRequest) {
     where: { userId },
   });
 
+  // Stage A3 §38.95 — KVKK transparency: kendi audit log'u export'a dahil.
+  // Last 2 years (KVKK retention boundary). Both self-actions and admin
+  // actions targeting this user. Schema drift fail-soft → empty array.
+  let auditLogs: Array<{
+    id: string;
+    action: string;
+    actorSource: string;
+    targetId: string | null;
+    payload: unknown;
+    createdAt: Date;
+  }> = [];
+  try {
+    const auditWindowStart = new Date(Date.now() - 2 * 365 * 24 * 60 * 60 * 1000);
+    auditLogs = await prisma.adminAuditLog.findMany({
+      where: {
+        createdAt: { gte: auditWindowStart },
+        OR: [
+          { actorId: userId, actorSource: 'user' },
+          { targetId: userId },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        action: true,
+        actorSource: true,
+        targetId: true,
+        payload: true,
+        createdAt: true,
+      },
+    });
+  } catch {
+    auditLogs = [];
+  }
+
   const fileName = `buaze-veri-${user.email.replace(/[^a-z0-9]/gi, '_')}-${new Date()
     .toISOString()
     .slice(0, 10)}.json`;
@@ -76,6 +111,14 @@ export async function POST(req: NextRequest) {
     note: 'KVKK / GDPR Veri Dışa Aktarımı — Buaze hesabınla ilişkili veriler.',
     user,
     notifications: notifications ?? null,
+    auditLogs: auditLogs.map((e) => ({
+      id: e.id,
+      action: e.action,
+      actorSource: e.actorSource,
+      targetId: e.targetId,
+      payload: e.payload,
+      createdAt: e.createdAt.toISOString(),
+    })),
   };
 
   return new NextResponse(JSON.stringify(exportPayload, null, 2), {

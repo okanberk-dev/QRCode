@@ -23,6 +23,7 @@ import { BusinessNotificationSettings } from "@/components/dashboard/settings/se
 import { BusinessBillingSettings } from "@/components/dashboard/settings/sections/BusinessBillingSettings";
 import { BusinessUsersRolesSettings } from "@/components/dashboard/settings/sections/BusinessUsersRolesSettings";
 import { BusinessLegalSettings } from "@/components/dashboard/settings/sections/BusinessLegalSettings";
+import { BusinessActivityLogSettings } from "@/components/dashboard/settings/sections/BusinessActivityLogSettings";
 import { BusinessPulseAiSettings } from "@/components/dashboard/settings/sections/BusinessPulseAiSettings";
 import { AccountPlanWidget } from "@/components/dashboard/account/AccountPlanWidget";
 import { AccountInvoicesWidget } from "@/components/dashboard/account/AccountInvoicesWidget";
@@ -63,6 +64,7 @@ import AdminBackLink from "@/components/dashboard/AdminBackLink";
 const TABS: SettingsTab[] = [
   { id: "profile", label: "Profil", group: "settings" },
   { id: "security", label: "Güvenlik", group: "settings" },
+  { id: "activity", label: "Hesap aktivitesi", group: "settings" },
   { id: "notifications", label: "Bildirimler", group: "settings" },
   { id: "ai", label: "Pulse AI", group: "settings" },
   { id: "billing", label: "Plan & Faturalama", group: "settings" },
@@ -307,11 +309,31 @@ export default function AccountSettingsPage() {
         <BusinessAccountSecuritySettings locale={locale} />
       </SettingsSection>
 
+      {/* Stage A3 §38.95 — KVKK transparency: owner kendi audit log'unu görür. */}
+      <SettingsSection
+        id="activity"
+        active={active === "activity"}
+        eyebrow={isTr ? "03 — HESAP AKTİVİTESİ" : "03 — ACCOUNT ACTIVITY"}
+        title={isTr ? "Hesap aktivitesi" : "Account activity"}
+        description={
+          isTr
+            ? "Hesabınla ilgili tüm aksiyonlar — kendi yaptığın veya admin tarafından yapılan. KVKK §13.9 transparency."
+            : "All actions on your account — yours or admin-initiated. KVKK §13.9 transparency."
+        }
+        actions={
+          <span className="text-[#737373]" aria-hidden="true">
+            <ShieldCheck size={18} />
+          </span>
+        }
+      >
+        <BusinessActivityLogSettings locale={locale} />
+      </SettingsSection>
+
       {/* ÇALIŞMA ALANI */}
       <SettingsSection
         id="notifications"
         active={active === "notifications"}
-        eyebrow={isTr ? "03 — BİLDİRİM" : "03 — NOTIFICATIONS"}
+        eyebrow={isTr ? "04 — BİLDİRİM" : "04 — NOTIFICATIONS"}
         title={isTr ? "Bildirim ayarları" : "Notification settings"}
         description={
           isTr
@@ -330,7 +352,7 @@ export default function AccountSettingsPage() {
       <SettingsSection
         id="ai"
         active={active === "ai"}
-        eyebrow={isTr ? "04 — PULSE AI" : "04 — PULSE AI"}
+        eyebrow={isTr ? "05 — PULSE AI" : "05 — PULSE AI"}
         title={isTr ? "Pulse AI yanıt taslakları" : "Pulse AI reply drafts"}
         description={
           isTr
@@ -349,7 +371,7 @@ export default function AccountSettingsPage() {
       <SettingsSection
         id="billing"
         active={active === "billing"}
-        eyebrow={isTr ? "05 — FATURALANDIRMA" : "05 — BILLING"}
+        eyebrow={isTr ? "06 — FATURALANDIRMA" : "06 — BILLING"}
         title={isTr ? "Plan ve fatura geçmişi" : "Plan & invoices"}
         description={
           isTr
@@ -368,7 +390,7 @@ export default function AccountSettingsPage() {
       <SettingsSection
         id="team"
         active={active === "team"}
-        eyebrow={isTr ? "06 — KULLANICILAR" : "06 — USERS"}
+        eyebrow={isTr ? "07 — KULLANICILAR" : "07 — USERS"}
         title={isTr ? "Ekip ve roller" : "Team & roles"}
         description={
           isTr
@@ -391,7 +413,7 @@ export default function AccountSettingsPage() {
       <SettingsSection
         id="legal"
         active={active === "legal"}
-        eyebrow={isTr ? "07 — KVKK & YASAL" : "07 — LEGAL"}
+        eyebrow={isTr ? "08 — KVKK & YASAL" : "08 — LEGAL"}
         title={isTr ? "KVKK & yasal" : "KVKK & legal"}
         description={
           isTr

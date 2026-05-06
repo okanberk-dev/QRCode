@@ -11572,3 +11572,133 @@ Manager artık iki katmanlı: (a) restaurantId ile scoped restaurant access
 - **Sonraki aşama önerisi**: Stage A2.1 sidebar UI gating, ya da Stage A3
   audit log viewer (admin için cross-tenant audit aggregate) veya §38.B
   master backlog (HIGH 4 Platforms 12-card grid).
+
+### 38.95 2026-05-06 — Stage A3 audit log viewer + KVKK transparency
+
+§38.94 RBAC `audit_logs:read` permission'ı yerine geldi: artık AdminAuditLog
+tablosu için tam UI viewer (admin) + owner-side KVKK transparency
+(şeffaflık §13.9) açıldı. Existing inline `writeAudit` helper'ları yerine
+gelecek opportunistic migration için merkezi `writeAdminAuditLog` helper'ı
+kuruldu (Sentry tag + PII redaction layer).
+
+**Out of scope**: yeni schema (AdminAuditLog mevcut), bulk ops (Stage A5),
+impersonation (Stage A4), AdminAuditLog'un IP+UA field genişletmesi
+(future — şu an placeholder column'lar export CSV'de boş).
+
+**Yeni dosyalar (5)**:
+- `src/lib/audit-log.ts` — `writeAdminAuditLog` helper + Sentry capture +
+  `sanitizeAuditPayload` (PII guard) + `actionLabel` map (TR/EN human
+  readable action descriptions) + `maskEmail`/`maskPhone` utilities
+- `src/app/api/admin/audit-logs/route.ts` — paginated GET (Zod `.strict()`
+  query schema, RBAC `audit_logs:read`, range/source/action/actorId
+  filter, payload sanitization, $transaction batched count + findMany)
+- `src/app/api/admin/audit-logs/export/route.ts` — CSV download
+  (`audit_logs:read` + 5/dk rate limit + HARD_LIMIT 5000 + UTF-8 BOM
+  + 9 sütun: Tarih/Aktör/Kaynak/Aksiyon/Aksiyon Açıklaması/Hedef/Payload/
+  IP/UA — IP+UA placeholder)
+- `src/app/admin/audit-logs/page.tsx` — viewer UI: 24h retention disclosure
+  banner + filter toolbar (range chips + source select + action search debounce
+  + actorId chip clear) + table (timestamp/actor/source badge/action+label/
+  target/payload expand) + smart pagination ellipsis + CSV download button
+- `src/app/api/account/audit-log/route.ts` — owner-side endpoint, KVKK §13.9
+  trail. WHERE clause: actorId === user.id (kendi yaptıkları) OR targetId ===
+  user.id (admin kendisine yapanlar) — 2 yıl retention boundary
+- `src/components/dashboard/settings/sections/BusinessActivityLogSettings.tsx`
+  — owner KVKK section: AlertBanner disclosure + entry list (action label +
+  relative time + actor) + payload expand modal
+
+**Edit'lenen dosyalar (3)**:
+- `src/app/[locale]/dashboard/account/page.tsx` — yeni `activity` tab
+  TABS array'inde (3. konum), import + `<SettingsSection id="activity">`
+  render, eyebrow numerik kayma 04→05/05→06/06→07/07→08
+- `src/app/api/account/export-data/route.ts` — auditLogs section eklendi
+  (KVKK export'a kişisel audit trail dahil; 2 yıl window; fail-soft schema
+  drift)
+
+**Sentry tagging** (CLAUDE.md §37.7):
+- `writeAdminAuditLog` helper her invoke'ta `Sentry.captureMessage(`audit:${action}`, ...)`
+  fire-and-forget. `tags: { kind: 'audit-log', action, actorSource }` +
+  `extra: { actorId, targetId }` (PII guard — email/phone yok). Ops dashboard'da
+  per-action volume reports + audit anomaly detection.
+- Sentry config sanitize: `actorId/targetId` ID'lerdir, raw PII değil.
+- §38.13 server-side flush kör nokta intact — fire-and-forget, kayıp toleransı.
+
+**PII redaction layers** (defense-in-depth):
+1. Write-time: helper Sentry capture'da raw PII almaz (yalnız ID).
+2. Read-time (admin viewer + owner viewer): `sanitizeAuditPayload` recursive
+   walker email/phone key match → maskEmail/maskPhone. Raw veri DB'de durur
+   (KVKK soruşturmasında superadmin direct DB query yapabilir).
+3. Owner endpoint: aynı sanitize + actorLabel resolver "Yönetici (admin
+   username)" / "Sen" — admin email expose edilmez.
+
+**KVKK §13.9 disipline**:
+- Admin viewer 2 yıl saklanır (legitimate interest — hesap güvenliği +
+  KVKK soruşturma trail). UI banner explicit disclosure.
+- Owner kendi audit log'unu görür (hesap aktivitesi tab'ı) — şeffaflık
+  hakkı (KVKK + GDPR §15 right to access).
+- Export-data JSON export'a `auditLogs` field eklendi → owner verisini
+  yanında alabilir (right to portability).
+
+**Yapma**:
+- AdminAuditLog tablosuna `ipAddress` + `userAgent` field eklemeden CSV'de
+  IP/UA sütunlarını gerçek değerle doldurmaya çalışma — şu an placeholder
+  (boş string), schema extension future scope.
+- Owner audit endpoint'inde `actorSource: 'admin'` kayıtlarda admin email
+  expose etme — `actorLabel: '${username} (Yönetici)'` yeterli; KVKK admin
+  kişisel verisini gereksiz expose etmez.
+- Sentry capture'a payload geçirme — yalnız actorId + targetId ID'leri.
+  Payload'da maskelenmiş PII bile olsa Sentry'e PII gitmemeli (CLAUDE.md
+  §37.7).
+- Mevcut inline `writeAudit` fonksiyonlarını bu PR'da toplu migrate etme —
+  helper hazır, gradual migration (touched dosyalar opportunistic update).
+- Audit endpoint'lerinde IDOR kontrolünü atla — admin endpoint
+  `audit_logs:read` permission, owner endpoint `actor.source === 'user'` +
+  WHERE actorId/targetId === userId zorunlu.
+- Permission audit log'ları (`admin.permission.grant` / `admin.permission.revoke`)
+  superadmin self-grant olduğunda actorId === targetId olur — bu beklenen,
+  owner endpoint'inde görünmez (Stage A2 manager grant olmadıkça).
+- 2 yıl retention boundary'sini yumuşatma — KVKK legitimate interest gereği
+  (CLAUDE.md §13.9 dokümante). Cron cleanup future scope.
+
+**Yap**:
+- Yeni audit write callsite'ı eklerken `writeAdminAuditLog` helper'ı
+  kullan (Sentry tag + PII guard otomatik).
+- Yeni `ACTION_LABELS` entry eklerken TR + EN parite zorunlu (locale'a göre
+  fallback raw key).
+- Yeni resource × action audit eklenirken `actionLabel` map güncellemesi
+  şart — owner viewer aksi halde raw key gösterir (UX kötü).
+- Admin sidebar'a "Denetim kayıtları" link Stage A2.1'de eklenebilir
+  (sidebar UI gating PR ile birlikte) — şu an direct URL `/admin/audit-logs`.
+- Cron cleanup gerekirse: `prisma.adminAuditLog.deleteMany({ where: {
+  createdAt: { lt: 2yıl } } })` daily cron, audit row'ların eski sürümlerini
+  temizler. Schema/migration gerekmez.
+
+**Verification** (Tarih 2026-05-06):
+- `npx eslint .` 0 errors, 0 warnings
+- `npx tsc --noEmit -p tsconfig.json` 0 errors in `src/`
+- `npm test` 221/221 pass, 29 suites
+- `npx next build` (stub env, 4GB heap) ✓ Compiled successfully + 58/58
+  static pages + 3 yeni dynamic route (/admin/audit-logs page +
+  /api/admin/audit-logs + /api/admin/audit-logs/export + /api/account/audit-log)
+
+**Stage A3 closure** (Tarih 2026-05-06):
+- Branch `chore/audit-log-viewer-stageA3`
+- Toplam 8 dosya değişiklik (5 yeni + 3 edit)
+- Schema migration: YOK (AdminAuditLog mevcut)
+- Yeni dep: YOK
+- Test count: 221 (değişmedi — UI binding + endpoint integration test scope dışı,
+  helper fonksiyonların pure logic'i mevcut audit-log.ts içinde inline)
+- Operatör aksiyonu (PR sonrası): Vercel auto-deploy. Manuel smoke test:
+  - superadmin → `/admin/audit-logs` → filtre "user.delete" → 0 satır görünür
+    (henüz silme yok) → CSV indir → Excel TR-safe açılır.
+  - Owner login → `/dashboard/account?section=activity` → kendi audit log'u
+    görünür (admin entry'leri için "Yönetici (username)" actor + payload
+    masked).
+  - Owner KVKK export → JSON içinde `auditLogs` array'i dolu (2 yıl windowed).
+- Kalan riskler: Sentry capture fire-and-forget (server-side flush kör nokta
+  §38.13 intact, log kayıbı kabul). AdminAuditLog'a IP/UA field yok (CSV'de
+  placeholder boş kolon — future schema extension).
+- **Sonraki aşama önerisi**: Stage A2.1 sidebar UI gating (admin sidebar'a
+  "Denetim kayıtları" link + permission gate) veya Stage A4 impersonation
+  flow veya §38.B master backlog (HIGH 4 Platforms 12-card grid product
+  decision).
