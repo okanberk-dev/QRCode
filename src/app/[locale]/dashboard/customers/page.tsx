@@ -647,27 +647,41 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         {/* spacer lg+ */}
         <div className="hidden lg:block flex-1" aria-hidden />
 
-        {/* Range chips — horizontal scroll mobile */}
+        {/* Range chips — horizontal scroll mobile.
+            §38.106 — title attribute hint: default '30d' için "Varsayılan
+            filtre" tooltip'i, diğerleri için range açıklaması. Visceral
+            feedback: kullanıcı hangi pencerenin aktif olduğunu hover'da
+            görür (mobile'da uzun-tap iOS Safari + Android). */}
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar -mx-3 px-3 lg:mx-0 lg:px-0 lg:flex-wrap">
-          {(['7d', '30d', '90d', 'all'] as RangeKey[]).map((k) => (
-            <Link
-              key={k}
-              href={buildHref({ range: k, page: '1' })}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium bz-motion-spring ${
-                rangeKey === k
-                  ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                  : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
-              }`}
-            >
-              {k === '7d'
-                ? isTr ? 'Son 7 gün' : 'Last 7d'
-                : k === '30d'
-                  ? isTr ? '30 gün' : '30d'
-                  : k === '90d'
-                    ? isTr ? '90 gün' : '90d'
-                    : isTr ? 'Tümü' : 'All'}
-            </Link>
-          ))}
+          {(['7d', '30d', '90d', 'all'] as RangeKey[]).map((k) => {
+            const labelMap = {
+              '7d': { tr: 'Son 7 gün', en: 'Last 7d' },
+              '30d': { tr: '30 gün', en: '30d' },
+              '90d': { tr: '90 gün', en: '90d' },
+              all: { tr: 'Tümü', en: 'All' },
+            } as const;
+            const label = isTr ? labelMap[k].tr : labelMap[k].en;
+            const titleMap = {
+              '7d': { tr: 'Son 7 günün müşterileri', en: 'Customers from last 7 days' },
+              '30d': { tr: 'Son 30 gün — varsayılan filtre', en: 'Last 30 days — default filter' },
+              '90d': { tr: 'Son 90 günün müşterileri', en: 'Customers from last 90 days' },
+              all: { tr: 'Tüm müşteri geçmişi', en: 'Entire customer history' },
+            } as const;
+            return (
+              <Link
+                key={k}
+                href={buildHref({ range: k, page: '1' })}
+                title={isTr ? titleMap[k].tr : titleMap[k].en}
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium bz-motion-spring ${
+                  rangeKey === k
+                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
+                }`}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </div>
 
         {/* Restaurant select (multi-restaurant only) */}
