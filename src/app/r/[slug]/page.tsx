@@ -26,6 +26,9 @@ interface RestaurantData {
   airbnbUrl: string | null;
   bookingUrl: string | null;
   yandexUrl: string | null;
+  // Stage 10 — Yelp + Foursquare resolver chain (CLAUDE.md §38.80).
+  yelpUrl?: string | null;
+  foursquareUrl?: string | null;
   // Per-platform enabled toggles — `resolveBestRedirectPlatform` (CLAUDE.md
   // §19.4.3) bunları saygı gösterir. Owner panelden toggle off edilen bir
   // platform `/r/[slug]` redirect zincirinde atlanır.
@@ -37,6 +40,8 @@ interface RestaurantData {
   airbnbEnabled?: boolean;
   bookingEnabled?: boolean;
   yandexEnabled?: boolean;
+  yelpEnabled?: boolean;
+  foursquareEnabled?: boolean;
   externalPlatformsEnabled?: boolean;
   // Wave 4 broken-skip downstream (CLAUDE.md §19.4.5). Slug GET endpoint
   // son 24 saatlik PlatformLinkCheck'lerden provider başına latest sonucu
@@ -210,6 +215,8 @@ function ReviewContent() {
       airbnbUrl: restaurant.airbnbUrl,
       bookingUrl: restaurant.bookingUrl,
       yandexUrl: restaurant.yandexUrl,
+      yelpUrl: restaurant.yelpUrl ?? null,
+      foursquareUrl: restaurant.foursquareUrl ?? null,
       googleEnabled: restaurant.googleEnabled ?? true,
       yemekSepetiEnabled: restaurant.yemekSepetiEnabled ?? true,
       getirEnabled: restaurant.getirEnabled ?? true,
@@ -218,6 +225,8 @@ function ReviewContent() {
       airbnbEnabled: restaurant.airbnbEnabled ?? true,
       bookingEnabled: restaurant.bookingEnabled ?? true,
       yandexEnabled: restaurant.yandexEnabled ?? true,
+      yelpEnabled: restaurant.yelpEnabled ?? true,
+      foursquareEnabled: restaurant.foursquareEnabled ?? true,
       externalPlatformsEnabled: restaurant.externalPlatformsEnabled ?? true,
     },
     requestedProvider: explicitPlatform,

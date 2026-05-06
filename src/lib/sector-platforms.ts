@@ -18,9 +18,13 @@ export type SectorKey =
   | 'other';
 
 export const SECTOR_PLATFORMS: Record<SectorKey, PlatformId[]> = {
-  food: ['google', 'yemeksepeti', 'getir', 'trendyol', 'tripadvisor', 'yandex'],
+  // Yelp + Foursquare for food / hospitality verticals (Stage 10 — CLAUDE.md
+  // §38.80). Inserted after Tripadvisor on the priority chain: TR-side review
+  // platforms (yemeksepeti / getir / trendyol) come first, global directories
+  // (tripadvisor / yelp / foursquare) follow, search engines (yandex) last.
+  food: ['google', 'yemeksepeti', 'getir', 'trendyol', 'tripadvisor', 'yelp', 'foursquare', 'yandex'],
   delivery: ['google', 'yemeksepeti', 'getir', 'trendyol'],
-  hospitality: ['google', 'tripadvisor', 'booking', 'airbnb', 'yandex'],
+  hospitality: ['google', 'tripadvisor', 'booking', 'airbnb', 'yelp', 'foursquare', 'yandex'],
   clinic: ['google', 'yandex'],
   legal: ['google'],
   spa: ['google', 'yandex'],

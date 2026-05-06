@@ -33,7 +33,12 @@ export type RedirectProvider =
   | 'tripadvisor'
   | 'airbnb'
   | 'booking'
-  | 'yandex';
+  | 'yandex'
+  // Stage 10 — Yelp + Foursquare resolver chain (CLAUDE.md §38.80, §38.52
+  // taxonomy 5-nokta drift kapanışı). Both are external review providers
+  // gated by `externalPlatformsEnabled` (see restaurant-features.ts).
+  | 'yelp'
+  | 'foursquare';
 
 // PlatformId (UI vocabulary) ↔ RedirectProvider (storage vocabulary).
 // Tek farklılık: trendyol vs trendyol_go (CLAUDE.md §5 platform sistem).
@@ -47,6 +52,8 @@ const PLATFORM_ID_TO_PROVIDER: Partial<Record<PlatformId, RedirectProvider>> = {
   airbnb: 'airbnb',
   booking: 'booking',
   yandex: 'yandex',
+  yelp: 'yelp',
+  foursquare: 'foursquare',
 };
 
 export interface ResolveRestaurantInput {
@@ -61,6 +68,8 @@ export interface ResolveRestaurantInput {
   airbnbUrl: string | null;
   bookingUrl: string | null;
   yandexUrl: string | null;
+  yelpUrl: string | null;
+  foursquareUrl: string | null;
   // Enabled flag'leri
   googleEnabled: boolean;
   yemekSepetiEnabled: boolean;
@@ -70,6 +79,8 @@ export interface ResolveRestaurantInput {
   airbnbEnabled: boolean;
   bookingEnabled: boolean;
   yandexEnabled: boolean;
+  yelpEnabled: boolean;
+  foursquareEnabled: boolean;
   externalPlatformsEnabled?: boolean;
 }
 
@@ -85,6 +96,8 @@ const PROVIDER_FIELDS: Record<
   airbnb: { url: 'airbnbUrl', enabled: 'airbnbEnabled' },
   booking: { url: 'bookingUrl', enabled: 'bookingEnabled' },
   yandex: { url: 'yandexUrl', enabled: 'yandexEnabled' },
+  yelp: { url: 'yelpUrl', enabled: 'yelpEnabled' },
+  foursquare: { url: 'foursquareUrl', enabled: 'foursquareEnabled' },
 };
 
 export type ResolveReason =
@@ -229,6 +242,8 @@ export function resolveBestRedirectPlatform(opts: ResolveOptions): ResolveOutput
     'airbnb',
     'booking',
     'yandex',
+    'yelp',
+    'foursquare',
   ];
   for (const provider of allProviders) {
     if (triedProviders.has(provider)) continue;
