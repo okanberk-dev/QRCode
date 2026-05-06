@@ -10085,3 +10085,60 @@ Aşamalı refinement Stage 5: "admin panel tasarımsal polish". 3 paralel Explor
 - Kalan riskler: AdminMobileNav role-aware Stage 7; Loader2 spinner primitive technical debt; admin destructive action visual differentiation (cosmetic, gelecek scope)
 - **Sonraki aşama önerisi**: Stage 6 — admin UX bağlantı akışları (cross-link, breadcrumb scoped routes, role-based redirects, Stage 2 §38.72 paterni reuse). Veya Stage 7 admin mobile QA, ya da kullanıcı yeni odak talebi.
 
+### 38.76 2026-05-05 — Stage 6 admin panel UX & navigation fix bundle (3-fix bundle)
+
+Aşamalı refinement Stage 6: "admin panel UX ve bağlantı akışları". 3 paralel Explore agent + manuel verify (3+ false positive elendi). 3 gerçek admin UX drift kapatıldı (CLAUDE.md §38.72 owner Stage 2 paterni admin'e port). Branch `chore/admin-ux-navigation-fixes`.
+
+**Out of scope** (kullanıcı talimatı): Owner panel, büyük admin redesign, kapsamlı mobil QA (Stage 7), backend/API mantığı.
+
+**Audit'te VERIFIED ✅ (zaten doğru çalışıyor)**:
+- Sidebar collapsible group auto-expand (childActive flag intact)
+- panel-access.ts + admin-members.ts role gating (server-side IDOR korunuyor)
+- Mobile admin nav (AdminMobileNav) flat 5-item — Stage 7 mobile QA scope için bırakıldı
+- useConfirmDialog primitive 7+ admin sayfasında zaten kullanılıyor (sadece members/page.tsx exception'dı)
+
+**3 fix bundle**:
+
+1. **`/admin/members/page.tsx` window.confirm → useConfirmDialog** (line 201-206) — Native `window.confirm()` admin destructive aksiyonlarda tutarsızdı. CLAUDE.md §11.18 `useConfirmDialog` primitive (Modal-tabanlı, accessible, focus-trap, danger variant) reuse. Member soft-delete artık ConfirmDialog modal'ı açar, owner panelin diğer destructive aksiyonlarıyla parite. Mevcut `askConfirm({ title, body, confirmLabel, variant: 'danger', onConfirm })` API.
+
+2. **`/admin/site-settings` page-level 403 guard branded block** — Site-settings superadmin-only (CLAUDE.md §4.5). manager/restaurant_owner direct URL ile gelince eski davranış: kısa loading + inline AlertBanner "Ayarlar yüklenemedi. Superadmin yetkisi gerekli." (kullanıcı kalır, dashboard'a manuel back). Yeni: `!settings` durumunda full-page branded block (ShieldCheck lime-soft icon + "Sadece Superadmin" başlık + "Site Ayarları sayfası sadece superadmin..." açıklama + "Dashboard'a dön" lime CTA). `isPermissionError` heuristic: error message "superadmin" veya "Yetkisiz" string'i içerir mi. Mevcut `SuperadminBlock` component (ters yön — superadmin'i workspace-only sayfadan korur) burada uygun değil; inline pattern 3+ callsite olunca `RequireSuperadmin` extract edilir (CLAUDE.md §7).
+
+3. **`/admin/restaurants/[id]` cross-link enrichment** — Detail sayfası 2 yeni cross-link eklendi (Owner Stage 2 §38.72 paterni reuse):
+   - **İşletme Sahibi** kart'ında `meta.user.id` varsa name → Link (`/admin/members/[ownerId]`) + ExternalLink icon. Admin "kim sahip → diğer işletmeleri ne?" akışı tek-tıkla. Mevcut name read-only paragraph idi.
+   - **Yorum geçmişi** filter'lı CTA: `meta._count.feedbacks > 0` iken `<Link href="/admin/reviews?restaurantId=${id}">` `bz-btn-ghost` button. Admin detail'de "X yorum" sayısı gör → tıkla → filter'lı reviews listesi. (Restaurant id `id` scope'tan, RestaurantMeta type'ında `id` field yoktu — TS fix.)
+
+**DEFER (Stage 6 disipline scope dışı)**:
+- **useTopBar admin port** (Stage 2 §38.72 paterni) — büyük scope (~100 satır + 14 admin sayfa entry). Mevcut admin sayfalar Stage 5 §38.75'te PageHeader + back link kullanıyor (yeterli). Future scope.
+- **Bulk action toast pattern unified** — admin/restaurants:703 floating toast tek; diğer admin destructive aksiyonlar inline AlertBanner. Inconsistent ama "büyük admin redesign yapma" disipline.
+- **Members/Users/Customers terminology hint** — sidebar label'lar §4.5 kanonik ("İşletme Sahipleri" / "Yöneticiler" / "Müşteriler") doğru. Help text / tooltip cosmetic; gelecek scope.
+- **Sidebar 3+ level nesting** — current 2-level intact (`Operasyon > Yorumlar` çalışıyor); future-proofing gap.
+
+**Verification**:
+- `npm run lint` ✓ 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx next build` ✓ Compiled successfully + 58/58 static page (Prisma stub DB warnings beklenen)
+- `npx tsc --noEmit` ✓ 0 errors in `src/` — TS2339 `meta.id` drift fix edildi (`id` scope'tan kullanıldı). 4 pre-existing `.next/types` baseline §21.13.
+- `npm test` ✓ 182/182 pass
+- Sanity grep: 3 fix landed (window.confirm 0 / useConfirmDialog import + askConfirm callsite / ShieldCheck guard + isPermissionError heuristic / 2 cross-link members + reviews filter)
+
+**Yapma**:
+- `useConfirmDialog` callsite'larında `tone: 'danger'` prop kullanma — primitive `variant: 'default' | 'danger'` (CLAUDE.md §38.76 build TS drift fix).
+- SuperadminBlock site-settings'e wrap etme — component ters yön (workspace-only sayfaları superadmin'den koruma); site-settings için inline pattern doğru.
+- `meta?.id` veya `meta.id` kullanma — RestaurantMeta type'ında `id` yok; route params'tan `id` scope'a alınmış.
+- useTopBar admin port'u Stage 6'ya sıkıştırma — 14 admin sayfa entry + breadcrumb logic + section query parsing scope dışı.
+- Bulk action toast pattern unified yapmak — Stage 6 disipline "büyük admin redesign yapma".
+
+**Yap**:
+- Yeni admin destructive aksiyon eklerken `useConfirmDialog` reuse (CLAUDE.md §11.18 paterni).
+- Yeni superadmin-only sayfada page-level 403 guard pattern reuse (ShieldCheck + lime-soft icon + Dashboard CTA).
+- Yeni admin detail sayfasında ilgili kaynaklara cross-link ekleme (owner profile, filter'lı liste).
+- `RequireSuperadmin` wrapper extract koşulu: 3+ admin sayfa benzer guard pattern'a ihtiyaç duyduğunda.
+
+**Stage 6 closure** (Tarih 2026-05-05):
+- Branch `chore/admin-ux-navigation-fixes`
+- PR + merge için kullanıcı manuel müdahale (GitHub MCP disconnected bu session)
+- İncelenen dosyalar: 3 (admin/members/page.tsx + admin/site-settings/page.tsx + admin/restaurants/[id]/page.tsx)
+- Yapılan değişiklikler: 3 fix (useConfirmDialog migrate + page-level 403 guard + 2 cross-link)
+- Kontroller: lint 0 err / build 58 page / tsc src 0 err / test 182/182 / sanity grep clean
+- Kalan riskler: useTopBar admin port DEFER; bulk toast unified DEFER; AdminMobileNav role-aware Stage 7 scope; sidebar 3+ level nesting future-proofing
+- **Sonraki aşama önerisi**: Stage 7 — admin paneli mobile kapsamlı QA (Stage 4 §38.74 owner mobile paterni admin'e port: bz-btn-icon-lg modal close + AdminMobileNav role-aware + admin pagination 44px + cross-restaurant tablo cascade). Veya kullanıcı yeni odak talebi.
+
