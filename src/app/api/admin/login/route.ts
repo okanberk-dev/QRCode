@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { signJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { timingSafeEqual } from 'crypto';
 import { blockKey, isBlocked, rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
           /[A-Za-z]/.test(envPassword) &&
           /\d/.test(envPassword);
         if (envUsername && passwordOk) {
-          const defaultHash = await bcrypt.hash(envPassword, 12);
+          const defaultHash = await bcrypt.hash(envPassword, BCRYPT_COST);
           await prisma.adminUser.create({
             data: {
               username: envUsername.toLowerCase(),
@@ -156,7 +157,7 @@ export async function POST(req: NextRequest) {
         try {
           const adminCount = await prisma.adminUser.count();
           if (adminCount === 0) {
-            const hashedPassword = await bcrypt.hash(password, 12);
+            const hashedPassword = await bcrypt.hash(password, BCRYPT_COST);
             admin = await prisma.adminUser.create({
               data: {
                 username: envUsername.toLowerCase(),

@@ -57,6 +57,11 @@ const optional = [
   // any user-facing signal. Surface it at build time so a fresh deploy
   // notices before the first Monday cron tick.
   ['CRON_SECRET', 'every /api/cron/* endpoint returns 401, all batch jobs (digest, lifecycle, platform-link-retest, ...) stop running'],
+  // reCAPTCHA Enterprise hard-block toggle (CLAUDE.md §38.2 + §38.79). Default
+  // 'false' = monitor mode (Sentry breadcrumb only). Set to 'true' in Vercel
+  // Production after Sentry `tags.reason:low score` rate is healthy. Surface
+  // here so operators see it on fresh deploys.
+  ['RECAPTCHA_ENFORCE', 'reCAPTCHA stays in monitor mode — low scores logged to Sentry but not blocked. Set "true" to enforce.'],
 ];
 
 const missing = [];

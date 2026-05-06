@@ -3,6 +3,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { isStrongPassword } from '@/lib/validations';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -91,7 +92,7 @@ export async function PUT(req: NextRequest) {
     } = {};
 
     if (wantsPasswordChange) {
-      updateData.passwordHash = await bcrypt.hash(body.newPassword, 12);
+      updateData.passwordHash = await bcrypt.hash(body.newPassword, BCRYPT_COST);
     }
     if (wantsEmailChange) {
       updateData.email = normalizedEmail!;

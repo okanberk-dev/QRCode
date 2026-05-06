@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { isStrongPassword } from '@/lib/validations';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { ApiErrors } from '@/lib/api-errors';
 
 export async function GET(req: NextRequest) {
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_COST);
 
     try {
       const newUser = await prisma.$transaction(async (tx) => {

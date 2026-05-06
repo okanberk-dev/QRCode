@@ -109,7 +109,15 @@ async function isUserSessionRevoked(rawToken: string): Promise<boolean> {
       where: { tokenHash: hashToken(rawToken) },
       select: { revokedAt: true },
     });
-    if (!session) return false; // legacy / pre-feature session
+    // Stage 9 fail-closed flip (CLAUDE.md §38.79 / §38.2 #3): a missing
+    // UserSession row means either (a) the cookie pre-dates the feature
+    // and was never registered, or (b) it was deliberately revoked / never
+    // valid. Either way we treat it as revoked and force a fresh login.
+    // New logins always create a UserSession row, so legitimate traffic
+    // is unaffected. Operator should run scripts/backfill-user-sessions.ts
+    // and deploy this flip during a low-traffic window — every existing
+    // live cookie will be invalidated and require re-login (intended).
+    if (!session) return true;
     return session.revokedAt !== null;
   } catch (err) {
     // DB error → fail-CLOSED: a transient DB outage must not let a token

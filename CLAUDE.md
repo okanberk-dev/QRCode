@@ -10285,3 +10285,86 @@ Stage 1-7 frontend refinement sonrası backend audit. 2 paralel Explore agent (a
 - Çalıştırılan kontroller: lint 0 err / prisma validate ✓ / next build 58/58 / tsc src 0 err / test 182/182 / sanity grep clean
 - **Sonraki aşama önerisi**: §38.2 operatör onayı bekleyen security follow-ups (RECAPTCHA_ENFORCE flip, UserSession legacy backfill, SVG sanitize); 6 Medium DEFER opportunistic; AI quota superadmin edge case Stage 8'de değerlendirilebilir.
 
+### 38.79 2026-05-06 — Stage 9 security follow-ups (4-fix bundle)
+
+§38.78 backend audit'i kapatırken §38.2'de "operatör tetiği bekleyen" olarak ertelenen 4 security fix'i Stage 9'da kapatıldı. Stage 8 sonrası ön koşullar hazır:
+
+- §38.8 PR #383 reCAPTCHA Sentry breadcrumb 1+ hafta production soak
+- §37.2 D paterni (mail recipient guard) stable, UserSession backfill yazılabilir
+- sharp 0.34 SVG input desteği libvips'e bundled, rasterize approach hazır
+- §38.78 backend audit 14 bcrypt hash callsite map'lendi
+
+Branch `claude/security-followups-stage9-hDUk5`. Tek consolidated PR (CLAUDE.md §21.22 stacked YOK). Backend-only — UI/tasarım dokunulmadı.
+
+**4 fix bundle**:
+
+1. **RECAPTCHA_ENFORCE flip dokümantasyonu** (`scripts/validate-env.js`):
+   - Optional env listesine `RECAPTCHA_ENFORCE` eklendi (operatör için fresh deploy görünürlüğü).
+   - Kod değişikliği YOK — flip pure operator action (Vercel Production env scope).
+   - **Operatör rollout playbook** (PR sonrası, low-traffic window):
+     1. Sentry dashboard `tags.reason:low score` rate son 7 gün incele (target < %0.5 of total auth requests).
+     2. Vercel Settings → Env Variables → Production scope: `RECAPTCHA_ENFORCE=true`.
+     3. Smoke test (kendi login'i ÖNCE): `/api/admin/login` POST ile düşük skorlu reCAPTCHA token → reject doğrula. Aynı şekilde `/api/contact` + `/api/feedback` POST.
+     4. 24 saat Sentry hata oranı izle; spike olursa `false`'a flip + investigate.
+   - 9 wired callsite (auth/register, auth/login, auth/google, auth/forgot-password, auth/reset-password, admin/login, admin/forgot-password, admin/reset-password, feedback, roi/save) flip sonrası düşük skor token'ı reject eder.
+   - Hard-block bypass intact: score ≤ 0.1 veya `AUTOMATION/MALWARE/SCRAPING/SUSPICIOUS_NETWORK/UNEXPECTED_ENVIRONMENT` reason'ı flip'ten bağımsız her zaman block (`src/lib/recaptcha.ts:242-252`).
+
+2. **UserSession legacy fail-open kapatma** (`src/lib/auth.ts` + yeni script):
+   - `src/lib/auth.ts:112` `if (!session) return false` → `return true` flip (legacy fail-open kapatıldı). Comment güncel: "no UserSession row → invalidate (force re-login)".
+   - Yeni `scripts/backfill-user-sessions.ts` — `backfill-feedback-reply-source.ts` paterni reuse (Prisma Client + try/finally + idempotent + tsx). Active user'lar için synthetic placeholder session oluşturur (`tokenHash`: SHA-256 of `legacy:${userId}:${ts}:${random}`, `userAgent='backfill'`, `ipAddress='backfill'`, `revokedAt=null`).
+   - **Önemli**: Backfill script canlı cookie'leri korumaz (synthetic tokenHash gerçek SHA-256 ile çakışmaz). Tek amacı DB hygiene (her user'ın UserSession tablosunda en az 1 row'u var). Auth flip sonrası **mevcut canlı cookie'ler (UserSession deploy öncesi issued) tek-seferlik re-login gerektirir** — operatör low-traffic window'da deploy etmelidir.
+   - Etki: yeni login akışı (`/api/auth/login/route.ts:204-211`) UserSession create eder — regression yok. Reset-password (`/api/auth/reset-password/route.ts:85-88`) zaten tüm session'ları revoke ediyor — legitimate force-logout korunur. AdminUser etkilenmiyor (ayrı `isAdminTokenStale` + `passwordChangedAt` field §37.3 #1 closure).
+   - **Operatör rollout playbook**:
+     1. Lokal/staging: `DATABASE_URL=... npx tsx scripts/backfill-user-sessions.ts` (idempotent, dry-run benzeri output).
+     2. Production: aynı script (low-traffic window, örn. gece 03:00 UTC).
+     3. Auth flip otomatik (PR merge + Vercel deploy). Mevcut user'lar bir sonraki istekte 401 → re-login.
+     4. 24 saat Sentry/Vercel logs izle: `[auth] UserSession revoke check failed` sıklığı ≤ %0.1 olmalı.
+
+3. **SVG sanitize site-settings logo upload** (`src/app/api/admin/site-settings/upload/route.ts`):
+   - Eski: `image/svg+xml` upload edildiğinde raw buffer Supabase Storage'a yazılıyordu (line 59-62) → `<img src={s.logoUrl}>` veya `<link rel="icon" href={s.faviconUrl}>` üzerinden embedded `<script>` veya event handler XSS execution riski.
+   - Yeni: SVG dahil tüm input'lar sharp pipeline'dan geçer — output her zaman raster (logo: 512x512 inside WebP, favicon: 128x128 cover PNG). Raw vector saklanmaz; XSS vector tamamen ortadan kalkar.
+   - sharp 0.34.5 (libvips + librsvg) SVG input destekler. Vector advantage kayıp minimal (logo + favicon fixed-size).
+   - MIME allowlist intact (`LOGO_TYPES`, `FAVICON_TYPES`) — kullanıcı SVG/ICO yükleyebilir, sadece output rasterize.
+   - Mevcut try/catch malformed SVG'yi yakalar (sharp throw → 500 + "Yükleme başarısız").
+
+4. **bcrypt cost normalize** (`src/lib/bcrypt-config.ts` + 14 callsite):
+   - Yeni `src/lib/bcrypt-config.ts` — `BCRYPT_COST = 12` canonical sabit (OWASP 2024 baseline). Comment: cost değişikliklerinde mevcut hash'ler intact (bcrypt format cost bilgisini hash içinde tutar).
+   - **14 hash callsite migrate** edildi — her birine `import { BCRYPT_COST } from '@/lib/bcrypt-config'` + `bcrypt.hash(plain, BCRYPT_COST)`:
+     - 4 callsite cost 10 → 12 yükseltme: `account/2fa/verify/route.ts:71` (backup codes loop), `admin/reset-password/route.ts:144`, `admin/members/route.ts:114`. (Audit cost 10 olarak gösteriyordu.)
+     - 10 callsite cost 12 zaten doğru — sadece sabit'ten import.
+     - Login (`bcrypt.compare`) callsite'ları dokunulmadı (cost parametresi yok, hash değil).
+   - Mevcut user/admin password'leri intact: bcrypt format `$2b$10$...` veya `$2b$12$...` cost taşır; `bcrypt.compare()` her ikisini de doğrular. Migration gerekmez.
+   - Latency: yeni hash'ler her zaman cost 12 (~250ms). 4 cost 10 → 12 callsite'da ~150ms ek delay (admin reset, 2FA verify, member invite). Rate-limit (CLAUDE.md §14.2) + reCAPTCHA (#2 closure) layered defense — acceptable.
+
+**Yapma**:
+- `scripts/backfill-user-sessions.ts` synthetic tokenHash prefix'ini değiştirme — `legacy:` literal collision-free hash space koruması (gerçek JWT hash'leri SHA-256 hex, asla `legacy:` prefix'iyle başlamaz).
+- `isUserSessionRevoked` `if (!session) return false`'a geri çevirme — eski cookie'leri kabul eden fail-open paterni, force-logout/password-reset bypass riski.
+- Site-settings upload SVG için `outBuffer = buffer` raw branch'i geri ekleme — XSS regression. Tüm input'lar sharp pipeline'dan geçmek zorunda.
+- `BCRYPT_COST` sabit'ini başka değer (10, 14, vb.) yapma — OWASP 2024 baseline 12; cost düşürmek brute-force resistance %50 azaltır, cost yükseltmek (örn. 14) login latency'yi 1 saniye'ye çıkarır.
+- bcrypt cost değişikliği için migration yazma — bcrypt format cost'u hash içinde taşır, eski hash'ler `bcrypt.compare()` ile doğrulanmaya devam eder. Sadece YENİ hash'ler yeni cost kullanır.
+- `RECAPTCHA_ENFORCE` env'i required listeye taşıma — opsiyonel kalır (default `false` monitor mode anlamlı default).
+
+**Yap**:
+- Yeni endpoint password hash gerekirse: `import { BCRYPT_COST } from '@/lib/bcrypt-config'` + `bcrypt.hash(plain, BCRYPT_COST)` (CLAUDE.md §38.79 disipline). Inline literal `12` veya `10` yazma.
+- Yeni file upload endpoint'i SVG kabul edecekse: sharp pipeline'dan rasterize zorunlu (raw buffer storage YOK). `image/svg+xml` allowlist'te kalabilir ama output her zaman PNG/WebP.
+- Yeni auth-related schema ekleme (admin session table, OAuth provider, vb.) için: fail-closed pattern (CLAUDE.md §37.2 D + §38.79 #2 closure). Missing record → invalidate, NOT fail-open.
+- `RECAPTCHA_ENFORCE` flip sonrası yeni POST endpoint eklerken `verifyRecaptchaToken()` zorunlu — düşük skor reject otomatik geçerli olur.
+
+**Verification**:
+- `npm run lint` ✓ 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx prisma validate` ✓ schema valid (no schema change ama defansif)
+- `npx tsc --noEmit -p tsconfig.json` ✓ 0 errors in `src/`
+- `npm test` ✓ 182/182 pass, 22 suites
+- `npx next build` (stub env) ✓ Compiled successfully + 58/58 static page (Prisma stub DB warnings beklenen)
+- Sanity grep regression: `if (!session) return false` 0 hit; `bcrypt.hash(.*,\s*1[02])` 0 hit; `isSvg.*outBuffer = buffer` 0 hit; 13 BCRYPT_COST imports + 14 hash callsites with BCRYPT_COST.
+
+**Stage 9 closure** (Tarih 2026-05-06):
+- Branch `claude/security-followups-stage9-hDUk5`
+- İncelenen güvenlik alanları: 4 (reCAPTCHA enforcement, UserSession lifecycle, file upload sanitization, bcrypt config)
+- Bulunan/kapatılan riskler: 4 deferred (1 cosmetic dokümantasyon + 3 gerçek security hardening)
+- Yeni dosyalar: `src/lib/bcrypt-config.ts`, `scripts/backfill-user-sessions.ts`
+- Edit'lenen dosyalar: 16 (validate-env.js + auth.ts + site-settings/upload/route.ts + 13 bcrypt hash callsite)
+- Operatör aksiyonları (PR sonrası): (a) lokal/staging backfill script run, (b) production backfill script run, (c) Vercel `RECAPTCHA_ENFORCE=true` flip, (d) 24h Sentry monitoring.
+- Kalan riskler: live cookie invalidation tek-seferlik re-login (intended); reCAPTCHA flip sonrası 24h spike monitoring; SVG malformed input sharp throw 500 (kabul, edge case).
+- **Sonraki aşama önerisi**: §38.2 master backlog HIGH 4 Platforms 12-card grid (DEFER §38.30); ya da CSP B/C grubu rollout (CLAUDE.md §37.8 — `Cross-Origin-Opener-Policy: same-origin-allow-popups` + Report-Only `script-src` allowlist + nonce middleware). Veya operatör yeni odak talebi.
+

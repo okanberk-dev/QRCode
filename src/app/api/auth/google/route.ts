@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { prisma } from '@/lib/prisma';
 import { signJwt } from '@/lib/auth';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
         // Google tarafından gelen kullanıcı → parolasız hesap. Rastgele güçlü
         // bir hash saklıyoruz ki e-posta yolundan giriş denenemesin.
         const randomSecret = `${crypto.randomUUID()}${crypto.randomUUID()}`;
-        const passwordHash = await bcrypt.hash(randomSecret, 12);
+        const passwordHash = await bcrypt.hash(randomSecret, BCRYPT_COST);
         return prisma.user.create({
           data: {
             email: data.email,

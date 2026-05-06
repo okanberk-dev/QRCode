@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { prisma } from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/auth';
 import { verifyToken, generateBackupCodes } from '@/lib/totp';
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
   // Backup codes — plaintext döner (bir kerelik), DB'de bcrypt hash.
   const backupCodes = generateBackupCodes(8);
   const hashed = await Promise.all(
-    backupCodes.map((c) => bcrypt.hash(c.replace('-', ''), 10)),
+    backupCodes.map((c) => bcrypt.hash(c.replace('-', ''), BCRYPT_COST)),
   );
 
   await prisma.user.update({
