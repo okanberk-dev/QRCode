@@ -13,13 +13,16 @@ import {
   Crown,
   Download,
   Loader2,
+  Mail,
   Plus,
   RefreshCw,
   Search,
+  Send,
   Store,
   ToggleLeft,
   ToggleRight,
   Trash2,
+  X,
 } from 'lucide-react';
 import {
   AlertBanner,
@@ -83,6 +86,16 @@ const STATUS_FILTER_OPTIONS = [
   { v: 'all', l: 'Tümü (silinmiş dahil)' },
 ];
 
+// Stage A5 §38.97 — owner segment presets for bulk mail (lib/admin-owner-segments.ts ile parite).
+type SegmentPreset = 'all' | 'trial_expiring_3d' | 'inactive_14d' | 'high_volume' | 'custom';
+const SEGMENT_OPTIONS: Array<{ key: SegmentPreset; label: string; hint: string }> = [
+  { key: 'custom', label: 'Özel seçim', hint: 'Tablodan seçtiklerin' },
+  { key: 'all', label: 'Tüm aktif sahipler', hint: 'isActive=true tüm hesaplar' },
+  { key: 'trial_expiring_3d', label: 'Trial 3g kalan', hint: 'Conversion fırsatı' },
+  { key: 'inactive_14d', label: 'Pasif (14g+)', hint: 'updatedAt 14+ gün önce' },
+  { key: 'high_volume', label: 'Yüksek hacim (>50 yorum)', hint: 'Engagement > tipik' },
+];
+
 export default function MembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [meta, setMeta] = useState<Meta>({ total: 0, page: 1, perPage: 25, totalPages: 1 });
@@ -116,6 +129,16 @@ export default function MembersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Stage A5 §38.97 — bulk mail multi-select + compose modal state.
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showMailModal, setShowMailModal] = useState(false);
+  const [mailSegment, setMailSegment] = useState<SegmentPreset>('custom');
+  const [mailSubject, setMailSubject] = useState('');
+  const [mailBody, setMailBody] = useState('');
+  const [mailLocale, setMailLocale] = useState<'tr' | 'en'>('tr');
+  const [mailSending, setMailSending] = useState(false);
+  const [mailNotice, setMailNotice] = useState<string | null>(null);
 
   const [editPlan, setEditPlan] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
@@ -279,6 +302,66 @@ export default function MembersPage() {
     window.location.href = `/api/admin/members/export?${qp.toString()}`;
   };
 
+  // Stage A5 §38.97 — clear selection on filter change (CLAUDE.md §11.21
+  // bulk selection stale fix paterni reuse).
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [debouncedSearch, planFilter, statusFilter, attention, page]);
+
+  // Auto-dismiss bulk mail notice (5sn — CLAUDE.md §38.15 dwell timing).
+  useEffect(() => {
+    if (!mailNotice) return;
+    const t = setTimeout(() => setMailNotice(null), 5000);
+    return () => clearTimeout(t);
+  }, [mailNotice]);
+
+  const sendBulkMail = async () => {
+    if (mailSending) return;
+    if (!mailSubject.trim() || !mailBody.trim()) {
+      setError('Konu ve mesaj boş bırakılamaz.');
+      return;
+    }
+    if (mailSegment === 'custom' && selectedIds.size === 0) {
+      setError('Özel seçim için en az 1 işletme sahibi seçilmeli.');
+      return;
+    }
+    setMailSending(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/members/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send_email',
+          segment: mailSegment,
+          ids: selectedIds.size > 0 ? Array.from(selectedIds) : undefined,
+          payload: {
+            subject: mailSubject.trim(),
+            body: mailBody.trim(),
+            locale: mailLocale,
+          },
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setMailNotice(
+          `${data.sentCount}/${data.totalCount} mail gönderildi${data.failedCount > 0 ? ` (${data.failedCount} başarısız)` : ''}.`,
+        );
+        setShowMailModal(false);
+        setMailSubject('');
+        setMailBody('');
+        setSelectedIds(new Set());
+      } else {
+        setError(data.error || data.message || 'Toplu mail başarısız.');
+      }
+    } catch (e) {
+      console.error(e);
+      setError('Bağlantı hatası — mail gönderilemedi.');
+    } finally {
+      setMailSending(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
@@ -294,6 +377,19 @@ export default function MembersPage() {
             <button onClick={handleExport} className="bz-btn-ghost">
               <Download size={14} strokeWidth={2} />
               CSV
+            </button>
+            {/* Stage A5 §38.97 — segment-bazlı toplu mail (selection bağımsız;
+                modal içinde admin segment seçer) */}
+            <button
+              onClick={() => {
+                setMailSegment(selectedIds.size > 0 ? 'custom' : 'all');
+                setShowMailModal(true);
+              }}
+              className="bz-btn-ghost"
+              title="Tüm sahiplere veya segmente toplu mail gönder"
+            >
+              <Mail size={14} strokeWidth={2} />
+              Toplu mail
             </button>
             <button onClick={() => setShowCreate(true)} className="bz-btn-primary">
               <Plus size={14} strokeWidth={2} />
@@ -404,6 +500,28 @@ export default function MembersPage() {
             <table className="w-full text-left border-collapse sm:min-w-[600px]">
               <thead>
                 <tr className="bg-[#0A0A0A] pulse-eyebrow text-white/60">
+                  <th className="px-3 py-4 sm:pl-5 sm:pr-2 w-10">
+                    {/* Stage A5 §38.97 — bulk select-all (with indeterminate) */}
+                    <input
+                      type="checkbox"
+                      aria-label="Tümünü seç"
+                      checked={members.length > 0 && members.every((m) => selectedIds.has(m.id))}
+                      ref={(el) => {
+                        if (!el) return;
+                        const all = members.length > 0 && members.every((m) => selectedIds.has(m.id));
+                        const some = !all && members.some((m) => selectedIds.has(m.id));
+                        el.indeterminate = some;
+                      }}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedIds(new Set(members.map((m) => m.id)));
+                        } else {
+                          setSelectedIds(new Set());
+                        }
+                      }}
+                      className="h-3.5 w-3.5 accent-[#C6F24E] cursor-pointer"
+                    />
+                  </th>
                   <th className="px-3 py-4 sm:px-5">İŞLETME SAHİBİ</th>
                   <th className="hidden md:table-cell px-3 py-4 sm:px-5">PLAN</th>
                   <th className="hidden lg:table-cell px-3 py-4 sm:px-5">DENEME / BİTİŞ</th>
@@ -420,6 +538,7 @@ export default function MembersPage() {
                   const planMeta = PLAN_BADGE[m.plan] || { label: m.plan, kind: 'ghost' as const };
 
                   const memberHref = `/admin/members/${m.id}`;
+                  const isSelected = selectedIds.has(m.id);
                   return (
                     <tr
                       key={m.id}
@@ -438,8 +557,25 @@ export default function MembersPage() {
                         e.preventDefault();
                         router.push(memberHref);
                       }}
-                      className={`cursor-pointer hover:bg-[#FAFAFA] transition-all focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-inset ${m.isActive ? '' : 'opacity-60'}`}
+                      className={`cursor-pointer hover:bg-[#FAFAFA] transition-all focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-inset ${m.isActive ? '' : 'opacity-60'} ${isSelected ? 'bg-[#EAF9B8]/40' : ''}`}
                     >
+                      <td className="px-3 py-4 sm:pl-5 sm:pr-2 w-10">
+                        <input
+                          type="checkbox"
+                          aria-label={`${m.name || m.email} seç`}
+                          checked={isSelected}
+                          onChange={(e) => {
+                            setSelectedIds((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(m.id);
+                              else next.delete(m.id);
+                              return next;
+                            });
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-3.5 w-3.5 accent-[#0A0A0A] cursor-pointer"
+                        />
+                      </td>
                       <td className="px-3 py-4 sm:px-5">
                         <div className="flex items-center gap-3">
                           <div className="bz-avatar" style={{ width: 36, height: 36 }}>
@@ -720,6 +856,205 @@ export default function MembersPage() {
       )}
       {/* §38.76 — useConfirmDialog Modal mount (CLAUDE.md §11.18). */}
       {confirmDialog}
+
+      {/* Stage A5 §38.97 — bulk mail floating toolbar (Stripe pattern §11.19) */}
+      {selectedIds.size > 0 && !showMailModal && (
+        <div
+          role="region"
+          aria-label="Toplu mail araç çubuğu"
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center gap-2 rounded-2xl border border-[#0A0A0A] bg-white px-3 py-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.4)] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:max-w-[640px]"
+        >
+          <span aria-live="polite" className="text-[12px] font-semibold text-[#0A0A0A] px-2">
+            {selectedIds.size} sahip seçildi
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setMailSegment('custom');
+              setShowMailModal(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1 text-[11px] font-medium text-[#0A0A0A] hover:bg-[#C6F24E]/40 transition-colors"
+          >
+            <Mail size={11} strokeWidth={2.2} />
+            Toplu mail gönder
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedIds(new Set())}
+            aria-label="Seçimi temizle"
+            className="ml-1 rounded-md p-1 hover:bg-[#FAFAFA] transition-colors"
+          >
+            <X size={14} strokeWidth={2.2} />
+          </button>
+        </div>
+      )}
+
+      {/* Stage A5 §38.97 — opening with no selection: segment-bazlı toplu mail */}
+      {!selectedIds.size && !showMailModal && (
+        <div className="hidden">
+          {/* Reserved for future "Send to segment" CTA in PageHeader actions; not visible by default. */}
+        </div>
+      )}
+
+      {/* Stage A5 §38.97 — bulk mail compose modal */}
+      {showMailModal && (
+        <Modal
+          size={640}
+          onClose={() => {
+            if (!mailSending) setShowMailModal(false);
+          }}
+          title={
+            <div>
+              <p className="pulse-eyebrow text-[#737373]">Toplu mail</p>
+              <h2 className="mt-1 text-[20px] font-medium tracking-[-0.015em] text-[#0A0A0A]">
+                İşletme sahiplerine mesaj gönder
+              </h2>
+              <p className="mt-1 text-[12px] text-[#525252]">
+                Pulse şablonu (Buaze logo + lime accent) ile sarılır. Her gönderim audit log&apos;a yazılır.
+              </p>
+            </div>
+          }
+        >
+          <div className="space-y-5">
+            {error && <AlertBanner kind="danger">{error}</AlertBanner>}
+
+            <div className="space-y-2">
+              <label className="pulse-eyebrow text-[#737373]">Hedef segmenti</label>
+              <div className="grid gap-1.5">
+                {SEGMENT_OPTIONS.map((s) => {
+                  const disabled = s.key === 'custom' && selectedIds.size === 0;
+                  return (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => !disabled && setMailSegment(s.key)}
+                      disabled={disabled}
+                      aria-pressed={mailSegment === s.key}
+                      className={`flex items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                        mailSegment === s.key
+                          ? 'border-[#0A0A0A] bg-[#FAFAFA]'
+                          : 'border-[#EDEDED] hover:border-[#A3A3A3]'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] font-medium text-[#0A0A0A]">{s.label}</div>
+                        <div className="mt-0.5 text-[11px] text-[#737373]">{s.hint}</div>
+                      </div>
+                      {s.key === 'custom' && selectedIds.size > 0 && (
+                        <Badge kind="lime">{selectedIds.size}</Badge>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {mailSegment !== 'custom' && selectedIds.size > 0 && (
+                <p className="text-[11px] text-[#737373] mt-1">
+                  💡 Manuel seçimin (<strong>{selectedIds.size}</strong> kişi) preset filter ile kesişeceği için kapsam daralabilir. Sadece preset için seçimi temizle.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="pulse-eyebrow text-[#737373]">Konu</label>
+              <input
+                type="text"
+                value={mailSubject}
+                onChange={(e) => setMailSubject(e.target.value)}
+                maxLength={200}
+                placeholder="Buaze'den önemli bir bilgi..."
+                className="bz-input w-full"
+                disabled={mailSending}
+              />
+              <p className="text-[10px] text-[#A3A3A3] tabular-nums text-right">{mailSubject.length}/200</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="pulse-eyebrow text-[#737373]">Mesaj</label>
+              <textarea
+                value={mailBody}
+                onChange={(e) => setMailBody(e.target.value)}
+                maxLength={8000}
+                rows={8}
+                placeholder="Merhaba,&#10;&#10;Buaze ekibinden..."
+                className="bz-input w-full resize-y"
+                disabled={mailSending}
+              />
+              <p className="text-[10px] text-[#A3A3A3] tabular-nums text-right">{mailBody.length}/8000</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="pulse-eyebrow text-[#737373]">Şablon dili</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMailLocale('tr')}
+                  aria-pressed={mailLocale === 'tr'}
+                  className={`py-2 rounded-xl border pulse-eyebrow transition-colors ${
+                    mailLocale === 'tr'
+                      ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                      : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                  }`}
+                >
+                  TR
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMailLocale('en')}
+                  aria-pressed={mailLocale === 'en'}
+                  className={`py-2 rounded-xl border pulse-eyebrow transition-colors ${
+                    mailLocale === 'en'
+                      ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+                      : 'bg-white text-[#525252] border-[#EDEDED] hover:border-[#0A0A0A]'
+                  }`}
+                >
+                  EN
+                </button>
+              </div>
+              <p className="text-[10px] text-[#A3A3A3]">
+                Owner&apos;ın User.locale tercihi varsa o öncelikli; bu sadece template chrome (greeting + CTA).
+              </p>
+            </div>
+
+            <AlertBanner kind="info">
+              <span>
+                <strong>Resend rate limit:</strong> 600ms throttle/mail (free tier 2/sec). 100 mail ≈ 60sn.
+                Tek run&apos;da max 500 alıcı. Audit log&apos;a tek satır kayıt + per-recipient send result.
+              </span>
+            </AlertBanner>
+
+            <div className="flex flex-col-reverse justify-end gap-2 border-t border-[#EDEDED] pt-4 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setShowMailModal(false)}
+                className="bz-btn-ghost"
+                disabled={mailSending}
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={sendBulkMail}
+                disabled={mailSending}
+                className="bz-btn-primary disabled:opacity-50"
+              >
+                {mailSending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} strokeWidth={2.2} />}
+                {mailSending ? 'Gönderiliyor…' : 'Gönder'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Bulk mail success notice (5sn auto-dismiss) */}
+      {mailNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 rounded-full bg-[#0A0A0A] text-white px-4 py-2 text-[12px] font-semibold shadow-lg"
+        >
+          {mailNotice}
+        </div>
+      )}
     </div>
   );
 }

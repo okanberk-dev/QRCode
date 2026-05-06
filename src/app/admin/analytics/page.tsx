@@ -5,6 +5,7 @@ import { BarChart3, HelpCircle, Loader2, Star, TrendingUp, Globe2, AlertTriangle
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import ExportReportButton from '@/components/dashboard/ExportReportButton';
 import { PageHeader, PlatformChip, PLATFORMS, type PlatformId } from '@/components/ui';
+import AdminBiSection from '@/components/admin/AdminBiSection';
 
 const PLATFORM_OPTIONS: PlatformId[] = [
   'google',
@@ -618,6 +619,11 @@ export default function AdminAnalyticsPage() {
           </p>
         </section>
       )}
+
+      {/* Stage A5 §38.97 — cross-workspace BI section. sm:hidden olarak gizli
+          değil, mobile owner-relevant olmadığı için section kendisi
+          `hidden sm:block` ile gizleniyor. Tablet + desktop'ta görünür. */}
+      <AdminBiSection />
     </div>
   );
 }
