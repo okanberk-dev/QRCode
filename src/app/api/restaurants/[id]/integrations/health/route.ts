@@ -4,6 +4,7 @@ import { requireRestaurantAccess } from '@/lib/menu-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { getSectorPlatforms, detectSector } from '@/lib/sector-platforms';
 import { PROVIDER_MAP } from '@/lib/platform-link-test';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -105,6 +106,10 @@ export async function GET(
       whatsappUrl: true,
       website: true,
       reservationUrl: true,
+      // §38.78 — externalPlatformsEnabled gate parity (CLAUDE.md §5.2).
+      // /retest endpoint zaten bu flag ile external provider'ları skip
+      // ediyordu; /health + /checks parite getirilir (drift önleme).
+      externalPlatformsEnabled: true,
     },
   });
   if (!restaurant) return ApiErrors.notFound('İşletme bulunamadı');
@@ -146,7 +151,14 @@ export async function GET(
   let healthy = 0;
   let failing = 0;
 
+  // §38.78 — externalPlatformsEnabled gate parity (CLAUDE.md §5.2 + retest
+  // route line 91). Admin master flag kapalıyken Yemeksepeti / Getir /
+  // Trendyol / Tripadvisor / Airbnb / Booking / Yandex / Yelp / Foursquare
+  // sağlık snapshot'larında listelenmez (info leakage azaltılır).
+  const externalEnabled = (r['externalPlatformsEnabled'] as boolean) ?? true;
+
   for (const m of PROVIDER_MAP) {
+    if (!externalEnabled && isExternalReviewProvider(m.provider)) continue;
     const url = (r[m.urlField] as string | null) ?? null;
     const enabled = m.enabledField ? (r[m.enabledField] as boolean) : true;
     const latestCheck = latestByProvider[m.provider] ?? null;

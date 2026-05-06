@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireRestaurantAccess } from '@/lib/menu-access';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -34,6 +35,15 @@ export async function GET(
   const gate = await requireRestaurantAccess(req, id);
   if (!gate.ok) return gate.res;
 
+  // §38.78 — externalPlatformsEnabled gate parity (CLAUDE.md §5.2 + retest
+  // line 91, health route §38.78 fix). Admin master flag kapalıyken external
+  // provider check'leri response'a dahil edilmez.
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id },
+    select: { externalPlatformsEnabled: true },
+  });
+  const externalEnabled = restaurant?.externalPlatformsEnabled ?? true;
+
   const rows = await prisma.platformLinkCheck.findMany({
     where: { restaurantId: id },
     orderBy: { checkedAt: 'desc' },
@@ -51,6 +61,7 @@ export async function GET(
 
   const checks: Record<string, CheckEntry> = {};
   for (const row of rows) {
+    if (!externalEnabled && isExternalReviewProvider(row.provider)) continue;
     if (checks[row.provider]) continue; // önce gelen (en yeni) win
     checks[row.provider] = {
       ok: row.ok,

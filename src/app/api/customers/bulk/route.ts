@@ -102,9 +102,17 @@ export async function POST(req: NextRequest) {
   // Owner whitelist filter (IDOR).
   const parsedKeys = parseKeys(data.keys).filter((k) => scopedIds.includes(k.restaurantId));
   if (parsedKeys.length === 0) {
+    // §38.78 — Eski davranış: silent 200 + processed:0 + skipped:N (false-
+    // success UX). Yeni: 400 no_valid_keys. data.keys.length > 0 zaten Zod
+    // min(1) ile garanti; bu yüzden empty filter sebebi:
+    //   (a) malformed key format ("abc|def" parse fail) — operator data drift
+    //   (b) whitelist bypass denemesi (başkasının restaurantId|contactKey)
+    // Her iki durumda da 200 ok yanıltıcı; 400 explicit sinyal verir.
+    // Frontend (CustomersBulkBar) `res.ok` check'i mevcut error notice yolu
+    // ile kullanıcıya görünür hale getirir.
     return NextResponse.json(
-      { processed: 0, skipped: data.keys.length, action: data.action },
-      { status: 200 },
+      { error: 'no_valid_keys', message: 'Geçerli müşteri seçilmedi' },
+      { status: 400 },
     );
   }
 

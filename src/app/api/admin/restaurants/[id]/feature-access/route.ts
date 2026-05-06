@@ -1,13 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { validateBody } from '@/lib/api/validate';
 import {
   RESTAURANT_FEATURE_KEYS,
   RESTAURANT_FEATURE_SELECT,
   type RestaurantFeatureKey,
 } from '@/lib/restaurant-features';
 
-type FeaturePatch = Partial<Record<RestaurantFeatureKey, unknown>>;
+// §38.78 — Zod `.strict()` schema (CLAUDE.md §28.3 high-risk admin destructive
+// disipline). Mass assignment kapatıcı: schema dışı field'lar 400 ile reddedilir.
+// 6 boolean toggle + opsiyonel; her field opsiyonel (en az 1 zorunluluğu
+// `Object.keys(data).length === 0` check'inde, line ~50 mevcut).
+const PatchSchema = z.object({
+  googleReviewManagementEnabled: z.boolean().optional(),
+  pulseAiEnabled: z.boolean().optional(),
+  menuEnabled: z.boolean().optional(),
+  menuPublished: z.boolean().optional(),
+  aiAnalyticsEnabled: z.boolean().optional(),
+  externalPlatformsEnabled: z.boolean().optional(),
+}).strict();
+
+type PatchInput = z.infer<typeof PatchSchema>;
 
 export async function PATCH(
   req: NextRequest,
@@ -20,17 +35,15 @@ export async function PATCH(
 
   const { id } = await params;
 
-  let body: FeaturePatch;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Geçersiz JSON' }, { status: 400 });
-  }
+  const body = await req.json().catch(() => null);
+  const parsed = validateBody<PatchInput>(PatchSchema, body);
+  if (!parsed.ok) return parsed.response;
 
   const data: Partial<Record<RestaurantFeatureKey, boolean>> & { menuUpdatedAt?: Date } = {};
   for (const key of RESTAURANT_FEATURE_KEYS) {
-    if (typeof body[key] === 'boolean') {
-      data[key] = body[key];
+    const value = parsed.data[key];
+    if (typeof value === 'boolean') {
+      data[key] = value;
     }
   }
 
