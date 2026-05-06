@@ -560,29 +560,6 @@ model FeedbackTag {
   @@map("feedback_tags")
 }
 
-model AutomationRule {
-  id                 String    @id @default(cuid())
-  userId             String    @map("user_id")
-  restaurantId       String?   @map("restaurant_id")
-  trigger            String
-  threshold          String?
-  action             String
-  target             String?
-  isActive           Boolean   @default(true) @map("is_active")
-  // Stage 12 §38.82 — fire telemetry (cheap UI badge "Son tetik 2sa önce · 200 OK · 340ms")
-  // alternative AdminAuditLog raw query (payload->>'ruleId') olur ama indexsiz Postgres scan pahalı.
-  // 3 nullable field, schema bloat yok, owner panel tablo render'ı tek query.
-  lastFiredAt        DateTime? @map("last_fired_at")
-  lastFireStatus     String?   @map("last_fire_status")
-  lastFireResponseMs Int?      @map("last_fire_response_ms")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  @@index([userId, isActive])
-  @@index([userId, restaurantId])
-  @@map("automation_rules")
-}
-
 model ApiKey {
   id         String    @id @default(cuid())
   userId     String    @map("user_id")

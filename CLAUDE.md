@@ -11170,3 +11170,58 @@ Rate limit infra (CLAUDE.md §14.2):
 - Çalıştırılan kontroller: lint 0 err 0 warn / tsc src/ 0 err / test 229/229 / build 58/58 static / Supabase 5 servis log temiz / Vercel 5xx 0 entry / Sentry 2 browser noise
 - Operatör aksiyonu (PR sonrası): YOK — sadece dokumentation, kod değişikliği yapılmadı.
 - **Sonraki aşama önerisi**: Production stable. §38.B master backlog'da büyük scope kalemler bekliyor (operatör tetiği): Stage 9 UserSession re-introduce (24h+ monitor), HIGH 4 Platforms 12-card grid (product decision), RECAPTCHA_ENFORCE flip (1-2 hafta soak), Prisma 7 upgrade (major version). Acil aksiyon yok.
+
+### 38.92 2026-05-06 — Stage 21 Webhook Automation feature removal (zero usage cleanup)
+
+§38.82 Stage 12 Webhook Automation UI deploy edileli ~3 hafta geçti; production'da **0 rule, 0 owner, 0 fire, 0 audit event** (Supabase MCP cross-check). Buaze owner persona (KOBİ restoran sahibi) "webhook" kavramına uzak; mevcut 5 paralel mekanizma (low-rating-alert mail / Pulse AI auto-draft / Realtime push / PendingTasks / reply UI) zaten owner ihtiyacını karşılıyor. Kullanıcı kararı: tamamen kaldır (CLAUDE.md §34 paterni — "açık talep gerekli, gelecekte git history'den restore edilebilir").
+
+**Production usage data**:
+- `automation_rules` table: 0 rows
+- `automation_rules.last_fired_at IS NOT NULL`: 0
+- `admin_audit_logs WHERE action LIKE 'automation.%'`: 0 (son 30 gün)
+- Distinct owners using feature: 0 / 4 active
+
+**Silinen dosyalar (7, ~1936 satır)**:
+- `src/app/api/automations/route.ts` (165 satır)
+- `src/app/api/automations/[id]/route.ts` (218 satır)
+- `src/app/api/automations/[id]/test/route.ts` (99 satır)
+- `src/lib/webhook-fanout.ts` (318 satır)
+- `src/app/[locale]/dashboard/automations/page.tsx` (239 satır)
+- `src/app/[locale]/dashboard/automations/_components/AutomationsManager.tsx` (707 satır)
+- `tests/webhook-fanout.test.ts` (190 satır, 20 unit test)
+
+**Değiştirilen dosyalar (3)**:
+- `prisma/schema.prisma` — `AutomationRule` model silindi
+- `src/app/api/feedback/route.ts` — `dispatchMatchingRulesForFeedback` import + fire-and-forget call sil + orphan `restaurantOwnerUserId` const sil + select'ten `userId: true` sil
+- `src/components/dashboard/UserDashboardShell.tsx` — 4 yer (breadcrumb + sidebar nav + CommandPalette entry + `Zap` lucide import)
+
+**Yeni dosya (1)**:
+- `prisma/migrations/20260506130000_drop_automation_rules/migration.sql` — `DROP TABLE IF EXISTS "automation_rules"`. AutomationRule'da `@relation` FK yok (userId/restaurantId loose string ref) — safe drop, no cascade impact.
+
+**Audit log korundu**: `AdminAuditLog` rows with `action LIKE 'automation.%'` intentionally preserved (forensic trail). Şu an zaten 0 entry.
+
+**Verification**:
+- `npx eslint .`: 0 errors, 0 warnings
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: **209/209 pass**, 25 suites (önceki 229/229; -20 webhook-fanout test, -4 suite)
+- Build: lokal disk dolu nedeniyle CI'da Validate workflow doğrular
+
+**Operatör aksiyonu (PR merge sonrası)**: Vercel build script `prisma migrate deploy` otomatik `DROP TABLE automation_rules` apply eder (CLAUDE.md §14.1). Migration zero-row table drop ettiği için runtime impact YOK. Manuel rollback gerekmez.
+
+**Yapma**:
+- Webhook automation feature'ını talep gelmeden geri getirme — CLAUDE.md §34 paterni.
+- `AdminAuditLog` `automation.*` rows'unu silme — forensic trail korunmalı.
+- Migration'a `CASCADE` ekleme — AutomationRule'da FK yok, gereksiz.
+- Stage 12 §38.82 closure log'unu CLAUDE.md'den silme — historical decision context.
+
+**Yap**:
+- Yeni "0 kullanım" feature tespiti olunca aynı paterni reuse: production usage cross-check → §38.B backlog "DEFER for removal" not → kullanıcı onayı → silme PR + CLAUDE.md §38.X closure log + git history'den restore yolu.
+- Gelecekte multi-tenant SaaS / agency müşteri talep ederse Stage 12 §38.82'yi git commit `8d95036a` (PR #498)'den restore.
+- Yeni feature eklerken §34.4 "0 kullanım pattern" disipline: 3+ ay sonra production usage cross-check zorunlu.
+
+**Stage 21 closure** (Tarih 2026-05-06):
+- Branch `chore/remove-automation-feature-stage21`
+- Net etki: -1936 satır kod, -1 schema model, -20 test, -4 sidebar/palette/breadcrumb entry
+- Test count: 229 → 209 (-20 webhook-fanout)
+- Operatör aksiyonu: YOK (Vercel auto-deploy + migration)
+- Kalan riskler: yok (0 production data, 0 dependent feature)
