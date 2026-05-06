@@ -13,11 +13,21 @@ import {
 } from '@/components/ui';
 import AnalyticsFilterBar from '@/components/dashboard/analytics/AnalyticsFilterBar';
 import { HeatmapDayHour } from '@/components/dashboard/analytics/HeatmapDayHour';
-import type { InteractionTrendPoint } from '@/components/dashboard/analytics/InteractionTrendChart';
-// §38.34 — InteractionTrendChart ve WeeklyTrendChart silindi (kullanıcı kararı,
-// CLAUDE.md §38.34): tek chart Puan/Hacim/Sentiment toggle ile konsolidasyon.
-// InteractionTrendPoint type import KALDI (interactionData KPI sparkline için
-// hâlâ compute ediliyor; chart kullanılmıyor).
+// §38.107 — InteractionTrendChart + WeeklyTrendChart component'leri silindi
+// (CLAUDE.md §38.34 + §34.5 dead code cleanup). InteractionTrendPoint type
+// inline taşındı (KPI sparkline için interactionData hâlâ compute ediliyor;
+// chart render'ı PulseTrendChart Puan/Hacim/Sentiment toggle ile konsolide
+// edildi).
+interface InteractionTrendPoint {
+  /** Display label, dd/mm formatlı (ör. "01/05"). */
+  date: string;
+  /** Toplam QR taranma — qr_scans tablosundan gerçek event sayımı. */
+  scans: number;
+  /** Yorum count — Feedback tablosundan. Funnel: scans ⊇ reviews. */
+  reviews: number;
+  /** Yönlendirme — rating ≥ 4 + platform set. Funnel: reviews ⊇ redirects. */
+  redirects: number;
+}
 import { PulseTrendChart } from '@/components/dashboard/analytics/PulseTrendChart';
 import { AnalyticsKpiGrid } from '@/components/dashboard/analytics/AnalyticsKpiGrid';
 import { AiInsightsCard } from '@/components/dashboard/analytics/AiInsightsCard';
