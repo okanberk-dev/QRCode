@@ -10,11 +10,13 @@
 //    Caller (`useRealtimeActivity`) sadece bunu çağırır.
 //
 // MVP scope (CLAUDE.md §38.86):
-//  - Sadece feedbacks INSERT subscribe edilir
-//  - feedback_replies INSERT descoped — schema'da restaurant_id direkt yok
-//    (sadece feedback_id), filter'da `feedback_id IN (subquery)` Supabase
-//    Realtime tarafından desteklenmiyor. Reply realtime için ya schema
-//    denormalize ya da extra fetch lazım — gelecek scope.
+//  - Sadece Postgres `feedback` tablosuna INSERT subscribe edilir
+//    (Prisma model `Feedback` @@map("feedback") — tekil tablo adı).
+//  - `feedback_replies` (çoğul tablo) INSERT descoped — schema'da
+//    restaurant_id direkt yok (sadece feedback_id), filter'da
+//    `feedback_id IN (subquery)` Supabase Realtime tarafından
+//    desteklenmiyor. Reply realtime için ya schema denormalize ya da
+//    extra fetch lazım — gelecek scope.
 
 import { buildActivityFeed, type ActivityEvent } from './activity-feed';
 
