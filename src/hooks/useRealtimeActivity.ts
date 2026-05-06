@@ -3,7 +3,9 @@
 // Sorumluluklar:
 //  1. /api/realtime/token endpoint'inden JWT al
 //  2. Supabase singleton'a setAuth(token) yaz
-//  3. `feedbacks` INSERT subscribe et (filter: restaurant_id=in.(...))
+//  3. Postgres `feedback` tablosuna INSERT subscribe et (filter:
+//     restaurant_id=in.(...)). Tablo adı tekil — Prisma model `Feedback`
+//     `@@map("feedback")` kullanıyor (CLAUDE.md schema reference).
 //  4. Incoming row'ları activity event'e çevir + 200ms debounce'lu buffer'a it
 //  5. ~55min'de proactive token refresh (channel kopmaz)
 //  6. Component unmount → channel kapat + flush timer iptal
@@ -176,7 +178,10 @@ export function useRealtimeActivity({
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'feedbacks',
+            // Postgres tablosu `public.feedback` (tekil) — Prisma
+            // `@@map("feedback")` ile bağlı. `feedbacks` (çoğul) yazmak
+            // CHANNEL_ERROR + Pasif badge ile sonuçlanır.
+            table: 'feedback',
             filter: `restaurant_id=in.(${idsForFilter})`,
           },
           (payload) => {

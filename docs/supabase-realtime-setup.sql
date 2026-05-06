@@ -4,6 +4,12 @@
 -- query) ONCE per environment. Idempotent: every statement is guarded by
 -- `IF NOT EXISTS` / `DROP POLICY IF EXISTS` so rerunning is safe.
 --
+-- Tablo adı — KRITİK: Prisma model `Feedback` `@@map("feedback")` ile
+-- bağlı, yani Postgres tablosu **`public.feedback`** (tekil). `feedbacks`
+-- (çoğul) yazmak `relation does not exist` hatası verir. Diğer tablolar
+-- `feedback_replies`, `feedback_flags`, `feedback_assignments` çoğul
+-- adlandırma kullanır — bu yalnız ana tablonun tarihi tekil kalmış.
+--
 -- Threat model:
 --   * Browser holds an anon Supabase URL + anon key + a short-lived JWT
 --     minted by /api/realtime/token (CLAUDE.md §38.86). Anon URL/key are
@@ -25,17 +31,21 @@
 
 -- ----------------------------------------------------------------------
 -- 1) Enable Row Level Security on the table the Realtime client subscribes
--- to. ActivityFeed v1 (this stage) only consumes feedbacks INSERT.
--- feedback_replies is descoped (no restaurant_id column — needs a
+-- to. ActivityFeed v1 (this stage) only consumes `feedback` INSERT.
+-- `feedback_replies` is descoped (no restaurant_id column — needs a
 -- denormalization or extra fetch; tracked in CLAUDE.md §38.86 backlog).
 -- ----------------------------------------------------------------------
-alter table public.feedbacks enable row level security;
+alter table public.feedback enable row level security;
 
 -- ----------------------------------------------------------------------
 -- 2) Drop any earlier iteration of this policy so re-runs converge.
+-- Both the singular (current) and plural (Stage 16 typo) policy names
+-- are dropped; idempotent.
 -- ----------------------------------------------------------------------
+drop policy if exists "buaze_realtime_owner_can_subscribe_feedback"
+  on public.feedback;
 drop policy if exists "buaze_realtime_owner_can_subscribe_feedbacks"
-  on public.feedbacks;
+  on public.feedback;
 
 -- ----------------------------------------------------------------------
 -- 3) Recreate the SELECT policy. Note: Supabase Realtime postgres_changes
@@ -43,8 +53,8 @@ drop policy if exists "buaze_realtime_owner_can_subscribe_feedbacks"
 -- this scoped to authenticated role only; anon clients cannot satisfy
 -- the membership predicate.
 -- ----------------------------------------------------------------------
-create policy "buaze_realtime_owner_can_subscribe_feedbacks"
-  on public.feedbacks
+create policy "buaze_realtime_owner_can_subscribe_feedback"
+  on public.feedback
   for select
   to authenticated
   using (
@@ -72,9 +82,9 @@ begin
       from pg_publication_tables
       where pubname = 'supabase_realtime'
         and schemaname = 'public'
-        and tablename = 'feedbacks'
+        and tablename = 'feedback'
   ) then
-    alter publication supabase_realtime add table public.feedbacks;
+    alter publication supabase_realtime add table public.feedback;
   end if;
 end
 $$;
@@ -82,6 +92,6 @@ $$;
 -- ----------------------------------------------------------------------
 -- Smoke test (manual): from the Supabase SQL Editor, run with the JWT
 -- of a Buaze owner pasted via `set local "request.jwt.claims" to '...';`
--- and confirm `select count(*) from public.feedbacks` returns rows
+-- and confirm `select count(*) from public.feedback` returns rows
 -- only for that owner's restaurants.
 -- ----------------------------------------------------------------------
