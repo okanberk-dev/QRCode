@@ -663,10 +663,11 @@ input::-webkit-inner-spin-button {
   box-shadow: 0 12px 32px rgba(10, 10, 10, 0.10);
 }
 
-/* Motion: spring-like Apple easing — UI element lift/scale/opacity */
+/* Motion: spring-like Apple easing — UI element lift/scale/opacity.
+ * §38.102 — duration 200→150ms (Linear/Stripe SaaS snappier feel paterni). */
 .bz-motion-spring {
   transition-property: transform, box-shadow, background-color, border-color, color, opacity;
-  transition-duration: 200ms;
+  transition-duration: 150ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -956,7 +957,7 @@ input::-webkit-inner-spin-button {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.bz-fade-in { animation: bz-fade-in 320ms ease both; }
+.bz-fade-in { animation: bz-fade-in 220ms ease both; }
 
 /* §38.101 — `.bz-side-item-active` removed (0 callsite — sidebar nav
  * active state inline Tailwind `bg-[#C6F24E]` paterniyle uygulanır). */

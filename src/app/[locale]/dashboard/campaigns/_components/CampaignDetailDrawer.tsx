@@ -262,7 +262,7 @@ export function CampaignDetailDrawer({ campaignId, isTr, onClose, onChanged }: P
         aria-modal="true"
         aria-label={isTr ? 'Kampanya detayı' : 'Campaign detail'}
         className="fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] md:w-[480px] bg-white bz-elev-3 overflow-y-auto"
-        style={{ animation: 'cust-drawer-in 220ms cubic-bezier(0.4, 0, 0.2, 1)' }}
+        style={{ animation: 'cust-drawer-in 180ms cubic-bezier(0.4, 0, 0.2, 1)' }}
       >
         <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-[#EDEDED] px-5 py-4 flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">

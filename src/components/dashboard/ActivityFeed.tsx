@@ -252,7 +252,7 @@ export function ActivityFeed({
           // olan ID'lerde uygulanır; CSS reduced-motion blanket'i
           // [style*='activity-row-in'] selector'ıyla yakalar.
           const slideStyle = isNew
-            ? { animation: 'activity-row-in 600ms cubic-bezier(0.4, 0, 0.2, 1)' }
+            ? { animation: 'activity-row-in 350ms cubic-bezier(0.4, 0, 0.2, 1)' }
             : undefined;
           return (
             <li key={event.id} style={slideStyle}>
