@@ -1,9 +1,35 @@
 import * as jose from 'jose';
+import * as Sentry from '@sentry/nextjs';
 import { NextRequest } from 'next/server';
 import { prisma } from './prisma';
 import { hashToken } from './session-hash';
 
 export type AdminRole = 'superadmin' | 'manager';
+
+/**
+ * Stage 18 §38.89 — pre-Stage-14-hotfix cookie boundary.
+ *
+ * 2026-05-06T01:34:47 UTC = Stage 14 §38.84 hotfix production deploy
+ * (PR #494 commit `429dc6c1`). User cookies issued before this timestamp
+ * predate the Stage 18 §38.89 login `prisma.userSession.create`
+ * assertion. Pre-boundary cookies receive fail-open silent pass (no warn,
+ * no Sentry capture). Post-boundary cookies that hit `row missing` mean
+ * a real silent failure in the login session-create path — those still
+ * warn + capture so the Stage 9 re-introduce signal is preserved.
+ *
+ * Why a fixed timestamp instead of a backfill script:
+ * - The backfill script (`scripts/backfill-user-sessions.ts` §38.79)
+ *   inserts synthetic placeholder rows whose `tokenHash` cannot match
+ *   any real cookie's hash — backfilling does NOT silence warns for
+ *   pre-Stage-14 cookies. The only honest signal is JWT iat.
+ * - jose `setIssuedAt()` stamps `iat` server-side at sign time, so the
+ *   value can't be forged without invalidating the HS256 signature.
+ *
+ * If/when Stage 9 fail-closed flip is re-introduced, this constant
+ * becomes the boundary for "tokens that pre-date the fix can still
+ * pass" — same shape, different return value (silent pass vs revoke).
+ */
+const STAGE_14_HOTFIX_BOUNDARY_MS = 1778052887680;
 
 export interface PanelActor {
   id: string;
@@ -93,8 +119,16 @@ async function getTokenPayload(req: NextRequest, cookieName: 'admin_token' | 'us
  * UserSession revoke check (Section 8 — force-logout).
  *
  * Logout veya "Tüm diğer oturumlardan çıkış" UserSession.revokedAt set eder.
- * Burada her user_token isteği DB'ye 1 PK lookup atar (tokenHash UNIQUE index).
+ * Burada her user_token isteği DB'ya 1 PK lookup atar (tokenHash UNIQUE index).
  * Maliyet: ~1ms. Cache yok — revoke etkisi anında.
+ *
+ * Stage 18 §38.89 — pre-Stage-14-hotfix cookie boundary:
+ * Pre-boundary cookies (iat * 1000 < STAGE_14_HOTFIX_BOUNDARY_MS) silent
+ * pass — no warn, no Sentry. They predate the login session-create
+ * assertion and have no real way to land in `user_sessions`.
+ * Post-boundary cookies that hit `row missing` mean a real silent
+ * failure in `issueLoginSession` — those warn + Sentry capture so
+ * the Stage 9 re-introduce signal is preserved.
  *
  * Backward compat: UserSession kaydı YOKSA (eski login'ler) izin verilir.
  * Sadece revokedAt non-null ise reddedilir. Bu sayede Faz 3 öncesi cookie'ler
@@ -103,7 +137,7 @@ async function getTokenPayload(req: NextRequest, cookieName: 'admin_token' | 'us
  * Auth.ts'ye bilinçli olarak prisma import edildi — middleware (edge) auth.ts
  * import etmiyor, kendi inline jwt verify'sini kullanıyor.
  */
-async function isUserSessionRevoked(rawToken: string): Promise<boolean> {
+async function isUserSessionRevoked(rawToken: string, payload: jose.JWTPayload): Promise<boolean> {
   try {
     const session = await prisma.userSession.findUnique({
       where: { tokenHash: hashToken(rawToken) },
@@ -115,19 +149,50 @@ async function isUserSessionRevoked(rawToken: string): Promise<boolean> {
     // (`prisma.userSession.create` silently fail mi yoksa tokenHash drift
     // mi olduğu belirsiz). Acute fix: legacy fail-open (`return false`)
     // ile panel restore + missing-row warn ile prod log diagnostic.
-    // Stage 9 disipline (force-logout / password-reset bypass koruması)
-    // re-introduce edilirken **önce** login akışındaki UserSession
-    // create'i assert edecek guard eklenmeli (sessiz fail yerine 500
-    // dön + Sentry tag).
+    //
+    // Stage 18 §38.89: pre-boundary cookies silent pass; post-boundary
+    // cookies still warn + Sentry capture so a real silent fail in
+    // `issueLoginSession` is visible. Stage 9 re-introduce path: bump
+    // STAGE_14_HOTFIX_BOUNDARY_MS to Stage 18 deploy timestamp, flip
+    // post-boundary branch to `return true` (force re-login on stale
+    // cookies whose token row was never created).
     if (!session) {
-      // Diagnostic: prod Vercel log'da bu warn frequency'sini izleyelim
-      // — Stage 9 re-introduce öncesi login akışındaki silent fail
-      // pattern'ini inceleyebileceğimiz tek sinyal.
+      const iatSeconds = typeof payload.iat === 'number' ? payload.iat : null;
+      const iatMs = iatSeconds ? iatSeconds * 1000 : null;
+      const isPreBoundary = iatMs !== null && iatMs < STAGE_14_HOTFIX_BOUNDARY_MS;
+      if (isPreBoundary) {
+        // Pre-Stage-14 cookie. No row exists because the create flow had
+        // a silent-fail bug at issuance time. Fail-open with no diagnostic
+        // — these will naturally die out as cookies expire (max 30 days
+        // from rememberMe, 1 day default).
+        return false;
+      }
+      // Post-boundary cookie with no UserSession row → real silent
+      // failure in `issueLoginSession`. Surface to both Vercel runtime
+      // log AND Sentry (defensive — CLAUDE.md §38.13 server-side flush
+      // kör nokta). Sentry tag is throttled by tokenHash uniqueness so
+      // the same broken cookie does not flood the issue group.
       console.warn(
-        '[auth] UserSession row missing for incoming token — fail-open ' +
-          '(Stage 14 hotfix §38.84). Investigate login UserSession.create ' +
-          'silent failure if frequent.',
+        '[auth] UserSession row missing for post-boundary token — ' +
+          'real silent fail in issueLoginSession (Stage 18 §38.89). ' +
+          'Investigate prisma.userSession.create assertion.',
+        { iatMs, hasIat: iatSeconds !== null },
       );
+      Sentry.captureMessage('UserSession row missing for post-boundary token', {
+        level: 'warning',
+        tags: {
+          kind: 'auth-session-missing',
+          stage: '18',
+        },
+        extra: {
+          iatMs,
+          hasIat: iatSeconds !== null,
+          // PII guard (CLAUDE.md §37.7): no userId leak — payload.userId
+          // is the User PK; safe to include for triage. Email / phone /
+          // ipAddress excluded.
+          userId: typeof payload.userId === 'string' ? payload.userId : null,
+        },
+      });
       return false;
     }
     return session.revokedAt !== null;
@@ -207,7 +272,9 @@ export async function getUserFromRequest(req: NextRequest) {
   }
   // UserSession revoke check — sessions panelinden "Çıkış yap" yapılan token
   // burada engellenir. Cookie hâlâ tarayıcıda olabilir ama bu istek 401 alır.
-  if (await isUserSessionRevoked(rawToken)) {
+  // Stage 18 §38.89: payload geçirildi — pre-boundary cookies silent pass,
+  // post-boundary missing rows warn + Sentry capture.
+  if (await isUserSessionRevoked(rawToken, payload)) {
     return null;
   }
   return payload;
