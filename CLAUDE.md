@@ -10217,3 +10217,71 @@ Aşamalı refinement final: owner + admin panel kapsamlı mobile QA. 1 paralel E
 - Kalan riskler: AdminMobileNav 7+ item future scope; admin form input toplu keyboard hints sweep DEFER
 - **Aşamalı refinement complete**: Stage 1-7 toplam 33 fix bundle (Stage 1: 7 fix Apple polish + 13-page copy / Stage 2: 6 UX nav / Stage 3: 6 menu UX / Stage 4: 7 owner mobile / Stage 5: 6 admin polish / Stage 6: 3 admin UX / Stage 7: 4 mobile QA). Owner + admin panel Pulse design system uyumlu, accessible, mobile-friendly. Sonraki sprint'ler için backlog: §38.B master list (HIGH 4 Platforms 12-card grid, security follow-ups operatör onayı, AdminMobileNav 7+ item future, etc.).
 
+### 38.78 2026-05-06 — Backend audit + hardening (5-fix bundle)
+
+Stage 1-7 frontend refinement sonrası backend audit. 2 paralel Explore agent (auth/IDOR + validation/rate limit/secrets) + manuel verify (4 false positive elendi). 2 CRITICAL + 3 HIGH drift kapatıldı; 6 Medium operatör tetiği ya cosmetic, DEFER edildi.
+
+**Out of scope** (kullanıcı talimatı): Owner panel tasarım, admin panel tasarım, mobil UI, büyük frontend refactor, çalışan API contract sebepsiz değişimi, backend dışı dosyalar.
+
+**Kapsam**:
+- `src/app/api/admin/restaurants/[id]/feature-access/route.ts` (Zod `.strict()`)
+- `src/app/api/dashboard/{analytics,platforms/log}/export/route.ts` (rate limit)
+- `src/app/api/customers/unsubscribe/route.ts` (IP rate limit POST)
+- `src/app/api/restaurants/[id]/integrations/{health,checks}/route.ts` (externalPlatformsEnabled gate parity)
+- `src/app/api/customers/bulk/route.ts` (parsedKeys empty → 400)
+
+**Audit'te VERIFIED ✅** (zaten doğru çalışıyor): §37 (8-faz security audit, 21 fix kapatılmış) tüm yeni endpoint'lerde §37.2 A-H disipline uygulanmış. Auth boundary + IDOR whitelist + role gating + mass assignment + cron CRON_SECRET fail-closed tutarlı.
+
+**5 fix bundle**:
+
+1. **CRITICAL — `/api/admin/restaurants/[id]/feature-access` PATCH Zod `.strict()`**: Eski raw body iter `RESTAURANT_FEATURE_KEYS` üzerinden 6 boolean toggle accept ediyordu, mass assignment kapatıcı yoktu (CLAUDE.md §28.3 high-risk admin destructive disipline ihlali). `PatchSchema = z.object({...}).strict()` + `validateBody()` helper migrate. Schema dışı field'lar 400 invalid_field reddedilir.
+
+2. **CRITICAL — `/api/dashboard/{analytics,platforms/log}/export` rate limit**: 2 owner-scoped CSV export endpoint. analytics 10K row HARD_LIMIT + platforms/log 5K row HARD_LIMIT iyi DDoS guard'lar ama per-actor rate limit yoktu. Owner spam → DB/CPU exhaust riski. `rateLimit('analytics-export:${actor.id}', 5, 60_000)` + `rateLimit('platforms-log-export:${actor.id}', 5, 60_000)` (CLAUDE.md §14.2 paterni). 429 response.
+
+3. **HIGH — `/api/customers/unsubscribe` POST IP rate limit**: RFC 8058 one-click endpoint, token HMAC-verify timing-safe (verifyUnsubscribeToken constant-time compare iyi) ama IP rate limit yoktu. Token reuse loop + log bloat'a karşı `rateLimit('customer-unsubscribe:ip:${ip}', 10, 60_000)`. Rate limit aşıldığında RFC 8058 zorunluluğu gereği 200 + `ok: false` (mail client retry önleme).
+
+4. **HIGH — integrations/{health,checks} `externalPlatformsEnabled` gate parity**: `/retest` endpoint zaten `externalPlatformsEnabled=false` iken Yemeksepeti/Getir/Trendyol/Tripadvisor/Airbnb/Booking/Yandex/Yelp/Foursquare provider'ları skip ediyordu. `/health` + `/checks` aynı flag'i atlıyor → admin master kapalıyken bile owner external provider'ları sağlık snapshot'ında görüyordu (info leakage). `isExternalReviewProvider(provider)` filter eklendi (CLAUDE.md §5.2 admin master flag uniformity).
+
+5. **HIGH — `/api/customers/bulk` parsedKeys empty filter UX**: Eski davranış: `parsedKeys.length === 0` → silent 200 + `processed:0, skipped:N` (false-success). Yeni: `400 no_valid_keys` + message. Sebep: malformed key format (parse fail) veya whitelist bypass denemesi. Frontend `CustomersBulkBar` mevcut error notice yolu ile kullanıcıya görünür hale getirir; res.ok kontrol mevcut.
+
+**Skip edilen 6 Medium DEFER (operatör onayı / cosmetic)**:
+- AI quota fallback `ownerId ?? actor.id` superadmin shared key (Agent 1 #3) — superadmin DoS edge case
+- `/api/admin/lifecycle-emails/trigger` `source === 'admin'` defansif source check (Agent 1 #4) — getAdminFromRequest zaten filtreliyor
+- `/api/dashboard/analytics/export` invalid date 400 dönüş (Agent 1 #6) — şu an silent fallback default range
+- Rate limit window `qr-scan/embed-track` 30/dk → 30/5min (Agent 2 #6) — yüksek-trafik venue UX, prod data soak gerekir
+- `/api/feedback/[id]/summary` query Zod schema (Agent 2 #5) — locale-only query, low risk
+- reCAPTCHA `RECAPTCHA_ENFORCE` flip dokümantasyon (Agent 2 #8) — operatör tetiği §38.2
+
+**Verification**:
+- `npm run lint` ✓ 0 errors, 1 baseline warning (`canAccessRestaurant` pre-existing §38.58)
+- `npx prisma validate` ✓ schema valid (`DATABASE_URL=stub` env ile)
+- `npx prisma generate` ✓ Prisma Client (no schema change, regen baseline)
+- `npx next build` ✓ Compiled + 58/58 static page (Prisma stub DB warnings beklenen)
+- `npx tsc --noEmit` ✓ 0 errors src/ (4 pre-existing `.next/types` baseline §21.13)
+- `npm test` ✓ 182/182 pass
+- Sanity grep: 5 fix landed (PatchSchema/validateBody, rateLimit 2 export + unsubscribe + 60_000 windows, isExternalReviewProvider 2 endpoint, no_valid_keys 400)
+
+**Yapma**:
+- `feature-access` PATCH'te schema dışı field accept etme — `.strict()` zorunlu mass assignment koruması (CLAUDE.md §28.3.1 paterni).
+- Export endpoint'lerinde rate limit kaldırma — 10K/5K row HARD_LIMIT tek başına yetmez (DDoS amplification).
+- `customers/unsubscribe` POST 200 yerine 4xx döndürme — RFC 8058 zorunluluğu mail client retry önleme.
+- `externalPlatformsEnabled` gate'i `/health` `/checks` `/retest` 3 endpoint'inden birinde drop etme — admin master flag uniformity bozulur.
+- `customers/bulk` parsedKeys empty filter'ı silent 200 yapma — false-success UX, frontend operator confusion.
+
+**Yap**:
+- Yeni admin destructive PATCH endpoint eklerken Zod `.strict()` schema + `validateBody()` zorunlu (§28.3 disipline).
+- Yeni CSV/data export endpoint eklerken `rateLimit('export-name:${actor.id}', N, 60_000)` paterni reuse.
+- Yeni public POST endpoint eklerken IP rate limit + token timing-safe compare ikisi de zorunlu.
+- Admin master flag (feature-access) flag eklerken 3 ilgili endpoint'e (health/checks/retest pattern) gate parity check.
+
+**Stage backend audit closure** (Tarih 2026-05-06):
+- Branch `chore/backend-audit-and-hardening`
+- İncelenen backend alanları: 14 endpoint (auth + IDOR + validation + rate limit + secrets + role gating)
+- Bulunan Critical riskler: 2 (mass assignment + DDoS amplification)
+- Bulunan High riskler: 3 (rate limit + gate parity + UX false-success)
+- Bulunan Medium/Low riskler: 6 (DEFER, çoğu operatör tetiği)
+- Yapılan düzeltmeler: 5 (2 CRITICAL + 3 HIGH)
+- Ertelenen işler: 6 Medium DEFER + §38.2 operatör onayı bekleyen security follow-ups
+- Çalıştırılan kontroller: lint 0 err / prisma validate ✓ / next build 58/58 / tsc src 0 err / test 182/182 / sanity grep clean
+- **Sonraki aşama önerisi**: §38.2 operatör onayı bekleyen security follow-ups (RECAPTCHA_ENFORCE flip, UserSession legacy backfill, SVG sanitize); 6 Medium DEFER opportunistic; AI quota superadmin edge case Stage 8'de değerlendirilebilir.
+

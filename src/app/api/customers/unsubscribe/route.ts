@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyUnsubscribeToken } from '@/lib/email-customer-campaign';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 // §38.48 Wave 2 — Customer campaign unsubscribe endpoint.
 // Plan: Phase G.
@@ -254,6 +255,16 @@ export async function GET(req: NextRequest) {
 // hits this without confirmation. 200 + JSON (no redirect). Same logic as
 // GET, idempotent.
 export async function POST(req: NextRequest) {
+  // §38.78 — IP rate limit (CLAUDE.md §14.2 paterni). Token HMAC-verify
+  // timing-safe compare zaten brute-force engeller; rate limit token reuse
+  // loop + log bloat'a karşı ek savunma. RFC 8058 zorunluluğu: 200 OK her
+  // durumda (token geçersiz / rate limit aşıldığında bile retry önleme).
+  const ip = getClientIp(req.headers);
+  const limit = await rateLimit(`customer-unsubscribe:ip:${ip}`, 10, 60_000);
+  if (!limit.allowed) {
+    return NextResponse.json({ ok: false }, { status: 200 });
+  }
+
   const url = new URL(req.url);
   const token = url.searchParams.get('token');
   if (!token) {

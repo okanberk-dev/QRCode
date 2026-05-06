@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { rateLimit } from '@/lib/rate-limit';
 import { PLATFORMS, type PlatformId } from '@/components/ui';
 
 // §38.50 — Owner-scoped Analytics CSV export. Tasarımdaki "Rapor al" CTA bu
@@ -57,6 +58,14 @@ export async function GET(req: NextRequest) {
   // Owner only — admin'in analytics export'u ayrı (admin/customers/export var).
   if (actor.source !== 'user') {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  // §38.78 — Rate limit (CLAUDE.md §14.2 paterni). CSV export 10K row HARD_LIMIT
+  // taşır; per-actor 5/dk gate DDoS amplification + DB/CPU exhaust koruması.
+  // IDOR (getScopedRestaurantIds) hâlâ ana savunma; rate limit ikinci kat.
+  const limit = await rateLimit(`analytics-export:${actor.id}`, 5, 60_000);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'rate_limit' }, { status: 429 });
   }
 
   const scopedIds = await getScopedRestaurantIds(actor);

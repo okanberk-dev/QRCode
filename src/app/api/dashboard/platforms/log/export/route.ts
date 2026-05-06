@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { rateLimit } from '@/lib/rate-limit';
 import { PROVIDER_LABELS } from '@/lib/integration-domains';
 
 // §38.52 — Workspace-level Platform Bağlantı Log'u CSV export. Tasarım kaynağı:
@@ -39,6 +40,14 @@ export async function GET(req: NextRequest) {
   // Owner only — admin için ayrı endpoint açılabilir (gelecek scope).
   if (actor.source !== 'user') {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
+  // §38.78 — Rate limit (CLAUDE.md §14.2 paterni). Workspace 90 gün
+  // PlatformLinkCheck aggregate (5K row HARD_LIMIT) DDoS amplification + DB
+  // exhaust koruması.
+  const limit = await rateLimit(`platforms-log-export:${actor.id}`, 5, 60_000);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'rate_limit' }, { status: 429 });
   }
 
   const scopedIds = await getScopedRestaurantIds(actor);
