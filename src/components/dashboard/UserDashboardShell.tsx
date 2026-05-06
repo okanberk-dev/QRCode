@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound, Zap } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -72,6 +72,9 @@ function useTopBar(locale: Locale, pathname: string | null, section?: string | n
   if (rest.startsWith('/campaigns')) return { breadcrumb: isTr ? 'CRM / KAMPANYALAR' : 'CRM / CAMPAIGNS', title: isTr ? 'Kampanyalar' : 'Campaigns' };
   if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORMLAR' : 'PANEL / PLATFORMS', title: isTr ? 'Platform bağlantıları' : 'Review platforms' };
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
+  // Stage 12 §38.82 — Otomasyonlar (AYARLAR group child); webhook + email + assign
+  // automation rules. Sidebar entry + palette entry + breadcrumb hepsi tek nokta'da.
+  if (rest.startsWith('/automations')) return { breadcrumb: isTr ? 'AYARLAR / OTOMASYONLAR' : 'SETTINGS / AUTOMATIONS', title: isTr ? 'Otomasyonlar' : 'Automations' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
   if (rest.startsWith('/account')) {
     // §38.72 — section=X aktifken breadcrumb'a > ALT BAŞLIK ekle.
@@ -368,6 +371,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           href: `/${locale}/dashboard/account?section=notifications`,
           icon: Bell,
           label: copy.notifications,
+        },
+        // Stage 12 §38.82 — Otomasyonlar (webhook + email + assign rules).
+        // AYARLAR group: power-user feature, sıkça kullanılmaz ama net görünmeli.
+        {
+          href: `/${locale}/dashboard/automations`,
+          icon: Zap,
+          label: locale === 'tr' ? 'Otomasyonlar' : 'Automations',
         },
         // /guide sadece ilk 30 gün — onboarding sonrası gereksiz.
         ...(showGuide
@@ -1102,6 +1112,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           // §38.58 — Faturalama ayrı palette entry'si (Account base'inden
           // ayrılmış; tasarım a/shell.jsx:125 sidebar nav birebir).
           { href: `/${locale}/dashboard/account?section=billing`, label: locale === 'tr' ? 'Faturalama' : 'Billing', keywords: ['fatura', 'billing', 'invoice', 'plan', 'ödeme', 'payment', 'abonelik', 'subscription'] },
+          // Stage 12 §38.82 — Otomasyonlar palette entry (webhook + email + assign).
+          { href: `/${locale}/dashboard/automations`, label: locale === 'tr' ? 'Otomasyonlar' : 'Automations', keywords: ['otomasyon', 'automation', 'webhook', 'fan-out', 'slack', 'n8n', 'zapier', 'trigger', 'rule', 'kural'] },
         ]}
       />
     </div>

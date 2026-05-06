@@ -14,6 +14,7 @@ import { getNotificationPrefsForRestaurant } from '@/lib/notification-preference
 import { recordConsentBatch } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
+import { dispatchMatchingRulesForFeedback } from '@/lib/webhook-fanout';
 
 function parseAspectRating(value: unknown): number | null {
   const n = typeof value === 'number' ? value : Number(value);
@@ -91,6 +92,7 @@ export async function POST(req: NextRequest) {
     // Find restaurant by slug. Explicit `select` is mandatory (CLAUDE.md §14.1)
     // — drift-immune against schema-vs-DB lag in preview deploys.
     let restaurantId: string | null = null;
+    let restaurantOwnerUserId: string | null = null; // Stage 12 §38.82 — webhook fan-out için
     let notificationEmail: string | null = null;
     let restaurantName: string = 'Restoran';
     let aiDraftEnabled = false;
@@ -102,6 +104,7 @@ export async function POST(req: NextRequest) {
         where: { slug: restaurantSlug },
         select: {
           id: true,
+          userId: true, // Stage 12 §38.82 — automation rule owner ref
           name: true,
           notificationEmail: true,
           pulseAiEnabled: true,
@@ -112,6 +115,7 @@ export async function POST(req: NextRequest) {
       });
       if (restaurant) {
         restaurantId = restaurant.id;
+        restaurantOwnerUserId = restaurant.userId;
         notificationEmail = restaurant.notificationEmail;
         restaurantName = restaurant.name;
         aiDraftEnabled = restaurant.pulseAiEnabled && restaurant.enableAiDraft;
@@ -217,6 +221,28 @@ export async function POST(req: NextRequest) {
           console.error('Pulse AI auto-draft failed (non-fatal):', err);
         });
       }
+    }
+
+    // Stage 12 §38.82 — webhook automation fan-out (Promise.allSettled
+    // per-row isolation §28.4). Tüm rating'ler için: rule.trigger pattern
+    // (rating_lte / rating_gte / keyword / platform) match'i helper içinde.
+    // Fire-and-forget: webhook fail feedback'i etkilemez, owner panel
+    // activity log'da AdminAuditLog `automation.fire.fail` kaydı görür.
+    if (restaurantId && restaurantOwnerUserId) {
+      void dispatchMatchingRulesForFeedback({
+        feedbackId: feedback.id,
+        restaurantId,
+        restaurantOwnerUserId,
+        restaurantName,
+        rating: Number(rating),
+        comment: typeof comment === 'string' ? comment : null,
+        platform: feedbackPlatform,
+        branch: typeof branch === 'string' ? branch : null,
+        customerName: typeof name === 'string' ? name : null,
+        customerEmail: typeof email === 'string' ? email : null,
+      }).catch((err) => {
+        console.error('[feedback] automation fan-out failed (non-fatal):', err);
+      });
     }
 
     return NextResponse.json({ success: true, id: feedback.id, emailSent }, { status: 201 });
