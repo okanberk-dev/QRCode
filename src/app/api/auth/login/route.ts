@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { signJwt, getSecret } from '@/lib/auth';
@@ -198,6 +199,15 @@ export async function issueLoginSession(args: {
   // (logout'ta revokedAt set, getPanelActorFromRequest revoked ise null döner).
   // tokenHash UNIQUE constraint'i çatışmazsa bu insert'tir; çakışırsa (aynı
   // sub-second login retry) silently skip.
+  //
+  // Stage 18 §38.89 — assertion (CLAUDE.md §38.84 disipline checklist):
+  // Stage 14 hotfix dokümante etti: "Stage 9 re-introduce öncesi login
+  // akışındaki UserSession.create silent fail çözülmeli — sessiz error
+  // log + UX inconsistency 401 storm yaratıyor". Stage 18 fix: P2002
+  // duplicate (random secret + sub-second collision = impossible) hariç
+  // herhangi bir hata 500 döner + Sentry.captureException tag
+  // `login-session-create-failure`. Cookie set ETMEZ — kullanıcı yeniden
+  // dener, gerçek silent fail flood'u durur.
   const userAgent = req.headers.get('user-agent') ?? null;
   const ip = getClientIp(req.headers);
   try {
@@ -210,8 +220,42 @@ export async function issueLoginSession(args: {
       },
     });
   } catch (err) {
-    // P2002 duplicate token hash (impossible with random secret) — log + continue.
-    console.error('[AUTH_LOGIN] UserSession create failed:', (err as Error).message);
+    const errorObj = err as { code?: string; message?: string };
+    const isP2002 = errorObj.code === 'P2002';
+    if (isP2002) {
+      // P2002 duplicate token hash. Random secret + sub-second login
+      // retry could theoretically hit this; the existing token is valid
+      // so silently continue — cookie set with that token works.
+      console.warn('[AUTH_LOGIN] UserSession create P2002 (duplicate tokenHash) — continuing with existing row');
+    } else {
+      // All other errors (P2003 FK violation, P1001 connection timeout,
+      // P2024 connection_limit exhausted, network) → fail fast.
+      // Defensive console.error parallel to Sentry (CLAUDE.md §38.13
+      // server-side flush kör nokta — Vercel runtime log is the
+      // operator's only reliable signal).
+      console.error('[AUTH_LOGIN] UserSession create failed (returning 500):', errorObj.message ?? 'unknown', {
+        code: errorObj.code ?? null,
+        userId: user.id,
+      });
+      Sentry.captureException(err, {
+        tags: {
+          kind: 'login-session-create-failure',
+          stage: '18',
+          prismaCode: errorObj.code ?? 'unknown',
+        },
+        extra: {
+          userId: user.id,
+          // PII guard (CLAUDE.md §37.7): no email / phone / ipAddress
+          // in extra. userId only for triage.
+        },
+      });
+      return NextResponse.json(
+        {
+          error: 'Oturum kaydedilemedi. Lütfen tekrar deneyin.',
+        },
+        { status: 500 },
+      );
+    }
   }
 
   const response = NextResponse.json({

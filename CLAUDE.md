@@ -10897,3 +10897,75 @@ FK üzerinde covering index olmadığı için sequential scan. Owner sayısı ar
 - Çalıştırılan kontroller: lint 0 err / tsc src 0 err / test 229/229 / build 58/58 / Supabase advisor post-deploy ERROR 0 + WARN 0 + INFO 31
 - Operatör aksiyonu (PR sonrası): YOK — Vercel build otomatik apply etti, advisor sonuçları doğrulandı.
 - **Sonraki aşama önerisi**: §38.B master backlog'tan kalan büyük scope'lar — Stage 15 UserSession re-introduce (login UserSession.create assertion gerek), HIGH 4 Platforms 12-card grid (product decision), RECAPTCHA_ENFORCE flip (1-2 hafta soak), feedback_replies realtime (denormalize gerek). Veya yeni feature scope.
+
+### 38.89 2026-05-06 — Stage 18 UserSession warn flood fix + login session assertion (CRITICAL operator visibility)
+
+§38.84 Stage 14 hotfix'in açık bıraktığı iki gap kapatıldı: pre-Stage-14 cookie warn flood + login `prisma.userSession.create` silent fail koruması. CLAUDE.md §38.84 explicit "Stage 9 re-introduce öncesi disipline checklist" bu PR ile karşılandı.
+
+**Production sinyal** (Phase 1 Discovery — 2026-05-06 audit):
+- Vercel runtime logs son 24h: **100+ warning, hepsi `[auth] UserSession row missing for incoming token`** (sample window 09:52-10:00 UTC = 7 dk içinde 50+ warn → günde binlerce)
+- Sentry'de **0 capture** (CLAUDE.md §38.13 server-side flush kör nokta — operatör görünürlük gap)
+- Production state cross-check: 4 active users, 22 user_sessions (21 active + 1 revoked), sessions_last_24h=6 → yeni login akışı **ÇALIŞIYOR**
+- Sonuç: Pre-Stage-14-hotfix (PR #494 deploy 2026-05-06T01:34:47 UTC) cookie'ler hâlâ aktif + login akışı silent fail koruması yok → diagnostic warn flood + Stage 9 re-introduce sinyal kaybı
+
+**Plan kararları** (AskUserQuestion 4 Recommended):
+1. Sadece §38.84 fix (MEDIUM'lar ayrı PR — integrations cache header, CSV attachment header, realtime/token Sentry capture, AdminAuditLog instrumentation)
+2. JWT iat-bazlı silent pass (backfill script + flip alternative reddedildi — synthetic placeholder gerçek cookie'lerin tokenHash'iyle eşleşmez, warn'i silmiyor)
+3. Schema migration YOK
+4. Auto-deploy PR merge sonrası
+
+**2 fix bundle**:
+
+1. **`src/lib/auth.ts` — JWT iat-bazlı silent pass + Sentry capture**:
+   - Yeni `STAGE_14_HOTFIX_BOUNDARY_MS = 1778052887680` const (Stage 14 hotfix production deploy timestamp = 2026-05-06T01:34:47 UTC PR #494 `dpl_E4YYhgC8S9486Ju4fy3VLxuxKnW2`).
+   - `isUserSessionRevoked` signature: `(rawToken)` → `(rawToken, payload: jose.JWTPayload)`. Caller `getUserFromRequest` payload'ı zaten `verifyJwt` ile çıkarıyordu, parametre olarak geçirmek tek source-of-truth (drift sıfır + ek DB/CPU hop yok).
+   - Row missing branch:
+     - `iat * 1000 < STAGE_14_HOTFIX_BOUNDARY_MS` → silent pass (no warn, no Sentry). Cookie max 30 gün geçerli (rememberMe), doğal süreçte expire olur.
+     - `iat * 1000 >= STAGE_14_HOTFIX_BOUNDARY_MS` → `console.warn` (Vercel log) + `Sentry.captureMessage` (level: warning, tags: kind=auth-session-missing, stage=18, extra: iatMs/userId). PII guard (CLAUDE.md §37.7): email/phone/ipAddress yok.
+   - DB error catch path intact (fail-closed, `return true`).
+
+2. **`src/app/api/auth/login/route.ts` — `issueLoginSession` assertion**:
+   - Eski: `try/catch { console.error(...); }` silent fail → cookie set + 200 OK + sonraki her request "row missing" warn
+   - Yeni:
+     - **P2002 duplicate** (random secret + sub-second collision = teorik) → `console.warn` + continue (mevcut tokenHash valid, kullanıcı o session'a geri dönebilir)
+     - **Diğer tüm hatalar** (P2003 FK violation, P1001 connection timeout, P2024 connection_limit exhausted, network) → `console.error` (Vercel log) + `Sentry.captureException` (tags: kind=login-session-create-failure, stage=18, prismaCode) + `return NextResponse.json({error: 'Oturum kaydedilemedi. Lütfen tekrar deneyin.'}, {status: 500})` (cookie SET ETMEZ)
+   - Etki: Yeni gerçek silent fail durumunda kullanıcı 500 alır + retry yapar, warn flood durur, Sentry'de capture görünür.
+   - 3 callsite (`/api/auth/login`, `/api/auth/login/2fa`, `/api/team/accept-invite`) `issueLoginSession` paylaştığı için tek noktada fix yeterli.
+
+**`getUserFromRequest` change**: `isUserSessionRevoked(rawToken, payload)` — payload zaten `verifyJwt` ile elde edildi, ek DB hop yok. Tek satır değişiklik.
+
+**Schema/migration YOK**, **yeni dep YOK** (`@sentry/nextjs` zaten kurulu).
+
+**Yapma**:
+- `STAGE_14_HOTFIX_BOUNDARY_MS` constant'ı değiştirme — gerçek production deploy timestamp (1778052887680 = 2026-05-06T01:34:47 UTC PR #494 production deploy `dpl_E4YYhgC8S9486Ju4fy3VLxuxKnW2`). Yanlış değer pre-boundary'yi yanlış category'ye çevirir.
+- `isUserSessionRevoked`'a token parse'i ekleyip iat çıkarmak — `getUserFromRequest` zaten `verifyJwt(rawToken)` çağırıyor; payload param olarak geçirmek tek source-of-truth + ek DB/CPU hop YOK.
+- Pre-boundary cookies için Sentry capture yapmak — bu cookies expected expiry'ye kadar yaşayacak (30 gün max). Sentry quota'yı şişirir + sinyal-gürültü oranı bozulur.
+- `issueLoginSession`'da P2002'yi 500 yapmak — duplicate tokenHash valid token demektir, kullanıcı zaten geçerli session'a sahip, 500 UX regresyon olur.
+- AdminUser session'ları için aynı pattern — admin §37.3 #1 closure'da `passwordChangedAt` field paterniyle ayrı çözüldü, paralel implementation gereksiz.
+- Backfill script (`scripts/backfill-user-sessions.ts` §38.79) çalıştırma — synthetic placeholder rows'ın tokenHash'i gerçek cookie hash'leriyle eşleşmez, warn flood'u silmiyor. JWT iat boundary tek doğru yol.
+- Stage 9 fail-closed flip'i bu PR'da re-introduce etme — önce 24h warn frequency drop verify, sonra Stage 19'da bump + flip.
+
+**Yap**:
+- Yeni auth boundary fix gerektiğinde JWT iat-bazlı silent pass paterni reuse — schema field/migration yerine timestamp constant.
+- Yeni `prisma.create` silent fail riski olan akışlarda assertion paterni reuse: P2002 (duplicate) hariç tüm errors → 500 + Sentry capture + console.error parallel (CLAUDE.md §38.13 kör nokta).
+- Yeni Sentry capture eklerken PII guard zorunlu (CLAUDE.md §37.7): userId/restaurantId/hash only, email/phone/ipAddress YASAK.
+- Stage 18 deploy sonrası 24h Vercel log monitor: `[auth] UserSession row missing for post-boundary token` warn frequency 0'a yakın olmalı (single-digit/day kabul, double-digit/hour ise root cause hâlâ var).
+
+**Stage 9 re-introduce yolu** (gelecek PR — operatör tetiği bekliyor):
+- Bu PR Stage 9 disipline (force-logout / password-reset bypass koruması) re-introduce için **ön koşul** kapatır (silent fail engellendi, post-boundary warn = real signal).
+- 24h Vercel log monitor: post-Stage 18 deploy `[auth] UserSession row missing for post-boundary token` warn frequency 0'a yakın olmalı.
+- Frequency düşükse Stage 19'da `STAGE_14_HOTFIX_BOUNDARY_MS`'i `STAGE_18_DEPLOY_EPOCH_MS`'e bump + post-boundary branch `return true` flip. Pre-boundary user'ları tek-seferlik re-login alır (intended).
+
+**Production smoke test** (PR merge sonrası):
+- Vercel runtime logs son 1h `[auth] UserSession row missing for post-boundary token` filter — frequency drop bekleniyor (post-boundary = sadece gerçek silent fail). Pre-boundary warn'leri tamamen sessizleşir.
+- Sentry buaze-ev/sentry-apricot-blanket dashboard `kind:auth-session-missing` tag arama — 0 entry beklenir (yeni issued cookie'lerde silent fail yok). 24h'da 1+ entry görünürse Stage 9 re-introduce öncesi gerçek silent fail var demektir → root cause investigate (P2003 FK, P2024 connection_limit, etc.).
+
+**Stage 18 closure** (Tarih 2026-05-06):
+- Branch `chore/usersession-stage18-fix-warn-flood`
+- Edit'lenen dosyalar: 2 (`src/lib/auth.ts` STAGE_14_HOTFIX_BOUNDARY_MS const + isUserSessionRevoked refactor + getUserFromRequest payload pass; `src/app/api/auth/login/route.ts` issueLoginSession assertion + Sentry capture + Sentry import)
+- Schema migration: YOK
+- Yeni dep: YOK
+- Test count: 229 (değişmedi — pure logic refactor, mevcut integration coverage yeterli)
+- Operatör aksiyonu (PR sonrası): YOK — Vercel build otomatik deploy. Pre-boundary cookies session expiry (max 30 gün) ile doğal olarak ortadan kalkar; force re-login YOK.
+- Kalan riskler: Post-boundary `issueLoginSession` failure 500 → kullanıcı bir kez "Oturum kaydedilemedi" görür, retry yapar; gerçek root cause (P2003/P2024) Sentry'de görünür ve fix edilir.
+- **Sonraki aşama önerisi**: 24h Vercel log monitor → post-boundary warn frequency drop verify. Stage 19 (Stage 9 re-introduce) için ön koşul karşılandı; operatör tetiği + low-traffic window bekliyor. Ayrıca §38.B'daki MEDIUM'lar (integrations cache header, CSV attachment header, realtime/token Sentry capture, AdminAuditLog instrumentation) ayrı PR scope.
