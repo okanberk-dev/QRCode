@@ -109,15 +109,27 @@ async function isUserSessionRevoked(rawToken: string): Promise<boolean> {
       where: { tokenHash: hashToken(rawToken) },
       select: { revokedAt: true },
     });
-    // Stage 9 fail-closed flip (CLAUDE.md §38.79 / §38.2 #3): a missing
-    // UserSession row means either (a) the cookie pre-dates the feature
-    // and was never registered, or (b) it was deliberately revoked / never
-    // valid. Either way we treat it as revoked and force a fresh login.
-    // New logins always create a UserSession row, so legitimate traffic
-    // is unaffected. Operator should run scripts/backfill-user-sessions.ts
-    // and deploy this flip during a low-traffic window — every existing
-    // live cookie will be invalidated and require re-login (intended).
-    if (!session) return true;
+    // Stage 14 hotfix (CLAUDE.md §38.84): Stage 9 flip (`!session → true`)
+    // production'da yeni login'lerin UserSession row create akışıyla
+    // tutarsızlık çıkardı — re-login sonrası bile cookie 401 alıyordu
+    // (`prisma.userSession.create` silently fail mi yoksa tokenHash drift
+    // mi olduğu belirsiz). Acute fix: legacy fail-open (`return false`)
+    // ile panel restore + missing-row warn ile prod log diagnostic.
+    // Stage 9 disipline (force-logout / password-reset bypass koruması)
+    // re-introduce edilirken **önce** login akışındaki UserSession
+    // create'i assert edecek guard eklenmeli (sessiz fail yerine 500
+    // dön + Sentry tag).
+    if (!session) {
+      // Diagnostic: prod Vercel log'da bu warn frequency'sini izleyelim
+      // — Stage 9 re-introduce öncesi login akışındaki silent fail
+      // pattern'ini inceleyebileceğimiz tek sinyal.
+      console.warn(
+        '[auth] UserSession row missing for incoming token — fail-open ' +
+          '(Stage 14 hotfix §38.84). Investigate login UserSession.create ' +
+          'silent failure if frequent.',
+      );
+      return false;
+    }
     return session.revokedAt !== null;
   } catch (err) {
     // DB error → fail-CLOSED: a transient DB outage must not let a token
