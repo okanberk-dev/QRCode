@@ -31,6 +31,28 @@ export type AdminRole = 'superadmin' | 'manager';
  */
 const STAGE_14_HOTFIX_BOUNDARY_MS = 1778052887680;
 
+/**
+ * Stage 19 §38.103 — fail-closed re-introduce.
+ *
+ * Production deploy timestamp ~2026-05-06T17:00:00 UTC. Cookies issued
+ * AFTER this boundary, when their UserSession row is missing, MUST be
+ * treated as revoked (return true) — restoring §37.2 D force-logout /
+ * password-reset bypass protection.
+ *
+ * Three-tier matrix (cumulative):
+ *   1. iat < STAGE_14_HOTFIX_BOUNDARY_MS  → silent pass (legacy intact,
+ *      max 30 days natural expiry from 2026-05-06)
+ *   2. iat < STAGE_19_FAILCLOSED_BOUNDARY_MS → warn + Sentry + fail-open
+ *      (Stage 18 §38.89 pattern; Stage 14↔Stage 19 transition window)
+ *   3. iat >= STAGE_19_FAILCLOSED_BOUNDARY_MS → fail-closed (return true)
+ *
+ * Layer 2 (Stage 18 fail-open) preserved as a safety bridge: existing
+ * live cookies issued between Stage 14 hotfix and Stage 19 deploy keep
+ * their original behavior (warn-only) until they naturally expire. No
+ * re-login storm on flip-day.
+ */
+const STAGE_19_FAILCLOSED_BOUNDARY_MS = 1778086800000;
+
 export interface PanelActor {
   id: string;
   role: string;
@@ -166,41 +188,59 @@ async function isUserSessionRevoked(rawToken: string, payload: jose.JWTPayload):
     if (!session) {
       const iatSeconds = typeof payload.iat === 'number' ? payload.iat : null;
       const iatMs = iatSeconds ? iatSeconds * 1000 : null;
-      const isPreBoundary = iatMs !== null && iatMs < STAGE_14_HOTFIX_BOUNDARY_MS;
-      if (isPreBoundary) {
-        // Pre-Stage-14 cookie. No row exists because the create flow had
-        // a silent-fail bug at issuance time. Fail-open with no diagnostic
-        // — these will naturally die out as cookies expire (max 30 days
-        // from rememberMe, 1 day default).
+      // Tier 1 — pre-Stage-14 cookies (max 30-day natural expiry from
+      // 2026-05-06). No diagnostic; legacy fail-open intact.
+      if (iatMs !== null && iatMs < STAGE_14_HOTFIX_BOUNDARY_MS) {
         return false;
       }
-      // Post-boundary cookie with no UserSession row → real silent
-      // failure in `issueLoginSession`. Surface to both Vercel runtime
-      // log AND Sentry (defensive — CLAUDE.md §38.13 server-side flush
-      // kör nokta). Sentry tag is throttled by tokenHash uniqueness so
-      // the same broken cookie does not flood the issue group.
-      console.warn(
-        '[auth] UserSession row missing for post-boundary token — ' +
-          'real silent fail in issueLoginSession (Stage 18 §38.89). ' +
-          'Investigate prisma.userSession.create assertion.',
+      // Tier 2 — Stage 14↔Stage 19 transition window. Existing live
+      // cookies issued between hotfix and re-introduce keep Stage 18
+      // warn-only fail-open behavior. No re-login storm on flip-day.
+      // PII guard (§37.7): userId/iatMs only, no email/phone/ipAddress.
+      if (iatMs !== null && iatMs < STAGE_19_FAILCLOSED_BOUNDARY_MS) {
+        console.warn(
+          '[auth] UserSession row missing for Stage 14↔19 transition cookie — ' +
+            'fail-open per Stage 18 §38.89 pattern. Cookie will naturally ' +
+            'expire; no action required.',
+          { iatMs, hasIat: iatSeconds !== null },
+        );
+        Sentry.captureMessage('UserSession row missing (Stage 18 transition window)', {
+          level: 'warning',
+          tags: {
+            kind: 'auth-session-missing',
+            stage: '18-transition',
+          },
+          extra: {
+            iatMs,
+            hasIat: iatSeconds !== null,
+            userId: typeof payload.userId === 'string' ? payload.userId : null,
+          },
+        });
+        return false;
+      }
+      // Tier 3 — post-Stage-19 cookies with no UserSession row → real
+      // silent failure in issueLoginSession after the assertion. Fail
+      // CLOSED (return true) to restore §37.2 D force-logout /
+      // password-reset bypass protection. User is forced to re-login;
+      // Sentry escalates to error level for ops investigation.
+      console.error(
+        '[auth] UserSession row missing for post-Stage-19 token — fail-closed. ' +
+          'Real silent fail in issueLoginSession assertion. Investigate immediately.',
         { iatMs, hasIat: iatSeconds !== null },
       );
-      Sentry.captureMessage('UserSession row missing for post-boundary token', {
-        level: 'warning',
+      Sentry.captureMessage('UserSession row missing (post-Stage-19, fail-closed)', {
+        level: 'error',
         tags: {
           kind: 'auth-session-missing',
-          stage: '18',
+          stage: '19-failclosed',
         },
         extra: {
           iatMs,
           hasIat: iatSeconds !== null,
-          // PII guard (CLAUDE.md §37.7): no userId leak — payload.userId
-          // is the User PK; safe to include for triage. Email / phone /
-          // ipAddress excluded.
           userId: typeof payload.userId === 'string' ? payload.userId : null,
         },
       });
-      return false;
+      return true;
     }
     return session.revokedAt !== null;
   } catch (err) {
