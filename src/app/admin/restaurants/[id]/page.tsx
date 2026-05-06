@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, Code, BarChart3 } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, Code, BarChart3, Send } from 'lucide-react';
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
@@ -35,7 +35,8 @@ type FeatureToggleKey =
   | 'menuEnabled'
   | 'menuPublished'
   | 'aiAnalyticsEnabled'
-  | 'externalPlatformsEnabled';
+  | 'externalPlatformsEnabled'
+  | 'campaignsEnabled';
 
 export default function RestaurantDetailPage() {
   const params = useParams();
@@ -69,6 +70,7 @@ export default function RestaurantDetailPage() {
   const [pulseAiEnabled, setPulseAiEnabled] = useState(true);
   const [aiAnalyticsEnabled, setAiAnalyticsEnabled] = useState(true);
   const [externalPlatformsEnabled, setExternalPlatformsEnabled] = useState(true);
+  const [campaignsEnabled, setCampaignsEnabled] = useState(true);
   const [featureSaving, setFeatureSaving] = useState<FeatureToggleKey | null>(null);
   const [owners, setOwners] = useState<Owner[]>([]);
   const [meta, setMeta] = useState<RestaurantMeta | null>(null);
@@ -122,6 +124,7 @@ export default function RestaurantDetailPage() {
           setPulseAiEnabled(data.pulseAiEnabled ?? true);
           setAiAnalyticsEnabled(data.aiAnalyticsEnabled ?? true);
           setExternalPlatformsEnabled(data.externalPlatformsEnabled ?? true);
+          setCampaignsEnabled(data.campaignsEnabled ?? true);
         } else {
           setError('Bir hata oluştu');
         }
@@ -211,6 +214,7 @@ export default function RestaurantDetailPage() {
     if (next.externalPlatformsEnabled !== undefined) {
       setExternalPlatformsEnabled(Boolean(next.externalPlatformsEnabled));
     }
+    if (next.campaignsEnabled !== undefined) setCampaignsEnabled(Boolean(next.campaignsEnabled));
   };
 
   const saveFeatureSetting = async (patch: Partial<Record<FeatureToggleKey, boolean>>) => {
@@ -227,6 +231,7 @@ export default function RestaurantDetailPage() {
       menuPublished,
       aiAnalyticsEnabled,
       externalPlatformsEnabled,
+      campaignsEnabled,
     };
     const optimistic = { ...prev, ...patch };
     if (patch.menuEnabled === false) optimistic.menuPublished = false;
@@ -571,6 +576,15 @@ export default function RestaurantDetailPage() {
             checked={externalPlatformsEnabled}
             loading={featureSaving === 'externalPlatformsEnabled'}
             onChange={(next) => saveFeatureSetting({ externalPlatformsEnabled: next })}
+          />
+          <FeatureToggleCard
+            icon={<Send size={17} strokeWidth={2.2} />}
+            eyebrow="Pazarlama"
+            title="Kampanyalar"
+            description="Owner panelden müşterilere e-posta kampanyası gönderme. Sadece pazarlama onayı veren müşteriler hedef alınır."
+            checked={campaignsEnabled}
+            loading={featureSaving === 'campaignsEnabled'}
+            onChange={(next) => saveFeatureSetting({ campaignsEnabled: next })}
           />
           <FeatureToggleCard
             icon={menuPublished ? <Eye size={17} strokeWidth={2.2} /> : <EyeOff size={17} strokeWidth={2.2} />}

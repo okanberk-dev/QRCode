@@ -6,6 +6,7 @@ export const RESTAURANT_FEATURE_SELECT = {
   menuPublished: true,
   aiAnalyticsEnabled: true,
   externalPlatformsEnabled: true,
+  campaignsEnabled: true,
   updatedAt: true,
 } as const;
 
@@ -16,6 +17,8 @@ export const RESTAURANT_FEATURE_KEYS = [
   'menuPublished',
   'aiAnalyticsEnabled',
   'externalPlatformsEnabled',
+  // CLAUDE.md §38.98 — Owner panel campaigns feature. Default true (opt-out).
+  'campaignsEnabled',
 ] as const;
 
 export type RestaurantFeatureKey = (typeof RESTAURANT_FEATURE_KEYS)[number];
