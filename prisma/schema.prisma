@@ -696,9 +696,44 @@ model AdminUser {
   // single-field ile yürür.
   passwordChangedAt DateTime? @map("password_changed_at")
 
-  restaurant Restaurant? @relation(fields: [restaurantId], references: [id])
+  restaurant  Restaurant?       @relation(fields: [restaurantId], references: [id])
+  // Stage A2 §38.94 — granular permission grants (per-resource × per-action).
+  // Superadmin'ler için boş kalır (helper bypass eder); manager'lar için
+  // bu satırlar cross-resource access'i açar.
+  permissions AdminPermission[]
 
   @@map("admin_users")
+}
+
+// Stage A2 §38.94 — RBAC granular permission grants. Superadmin role
+// her şeye erişir (`hasPermission` helper'ı superadmin'i bypass eder).
+// Manager rolündeki AdminUser'lara superadmin tarafından atanmış per-resource
+// × per-action grant'lar bu tabloda durur.
+//
+// Resource enum'u kod tarafında `RESOURCES` const'ı (src/lib/rbac.ts) ile
+// senkron tutulur — DB tarafında string olarak saklanır (yeni resource
+// eklerken sadece kod güncellenir, migration gerekmez).
+//
+// Action enum'u: 'read' | 'write' | 'delete' (helper enforce eder; DB
+// constraint yok ki future-proof — yeni action eklenirse migration gerekmez).
+//
+// `expiresAt` future scope: süre-sınırlı temporary access grant (örn. denetim
+// için 30 gün read-only). Stage A2'de helper expiresAt'ı dikkate alır
+// (geçmiş expire ise hasPermission false döner).
+model AdminPermission {
+  id          String    @id @default(cuid())
+  adminUserId String    @map("admin_user_id")
+  resource    String
+  action      String
+  grantedById String    @map("granted_by_id")
+  grantedAt   DateTime  @default(now()) @map("granted_at")
+  expiresAt   DateTime? @map("expires_at")
+
+  adminUser AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@unique([adminUserId, resource, action])
+  @@index([adminUserId])
+  @@map("admin_permissions")
 }
 
 // Append-only log of privileged superadmin actions (user CRUD, role

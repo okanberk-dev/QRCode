@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   CalendarClock,
   Clock,
+  Key,
   Loader2,
   Mail,
   ShieldCheck,
@@ -236,6 +237,16 @@ export default function UserDetailPage({
         <section className="bz-card p-5 sm:p-6">
           <h3 className="text-[15px] font-semibold text-[#0A0A0A] mb-4">Hızlı bağlantılar</h3>
           <div className="space-y-2">
+            {/* Stage A2 §38.94 — RBAC permission management. Only meaningful
+                for manager role; superadmin auto-bypass. Page itself shows
+                an info banner if target is superadmin. */}
+            <Link
+              href={`/admin/users/${user.id}/permissions`}
+              className="bz-btn-ghost w-full justify-start"
+            >
+              <Key size={14} strokeWidth={2} />
+              <span>Yetkileri yönet</span>
+            </Link>
             {restaurant ? (
               <Link
                 href={`/admin/restaurants/${restaurant.id}`}

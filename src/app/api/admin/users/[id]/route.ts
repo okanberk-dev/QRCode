@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { hasPermission } from '@/lib/rbac';
 import { isStrongPassword } from '@/lib/validations';
 import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from '@/lib/bcrypt-config';
@@ -38,9 +39,13 @@ async function writeAudit(entry: {
 // Resilient — table missing (P2021/P2022 schema drift) durumlarında 404 değil
 // 500 dönerken Prisma error code preserve edilir; UI graceful degrade.
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // Stage A2 §38.94 — RBAC: users:read.
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+  if (!admin) {
+    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+  }
+  if (!(await hasPermission(admin.id, 'users', 'read'))) {
+    return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
   }
 
   const { id } = await params;
@@ -99,9 +104,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // Stage A2 §38.94 — RBAC: users:write.
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+  if (!admin) {
+    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+  }
+  if (!(await hasPermission(admin.id, 'users', 'write'))) {
+    return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
   }
 
   const { id } = await params;
@@ -204,9 +213,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  // Stage A2 §38.94 — RBAC: users:delete (destructive — admin role removal).
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+  if (!admin) {
+    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+  }
+  if (!(await hasPermission(admin.id, 'users', 'delete'))) {
+    return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
   }
 
   const { id } = await params;

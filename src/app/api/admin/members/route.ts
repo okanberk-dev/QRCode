@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { hasPermission } from '@/lib/rbac';
 import {
   buildInviteBase,
   buildInviteToken,
@@ -24,9 +25,13 @@ const VALID_LOCALES = new Set(['tr', 'en']);
 // active superset (status=active default) — older list UIs still see "all
 // active members" without changes.
 export async function GET(req: NextRequest) {
+  // Stage A2 §38.94 — RBAC-aware: superadmin bypass, manager needs members:read.
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+  if (!admin) {
+    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+  }
+  if (!(await hasPermission(admin.id, 'members', 'read'))) {
+    return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
   }
 
   const params = parseListMembersParams(req.nextUrl.searchParams);
@@ -75,8 +80,12 @@ export async function GET(req: NextRequest) {
 // can use to set their own password (mirrors the forgot-password flow but
 // triggered admin-side). Audit-logged.
 export async function POST(req: NextRequest) {
+  // Stage A2 §38.94 — manager needs members:write to create.
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
+  if (!admin) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 401 });
+  }
+  if (!(await hasPermission(admin.id, 'members', 'write'))) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
   const adminId = typeof admin.id === 'string' ? admin.id : null;

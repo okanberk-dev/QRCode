@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { hasPermission } from '@/lib/rbac';
 import {
   deriveCustomerFields,
   type CustomerSegment,
@@ -156,6 +157,10 @@ export async function GET(req: NextRequest) {
     // Restaurant owners have their own /dashboard/customers view (if any);
     // this endpoint is for panel staff.
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 403 });
+  }
+  // Stage A2 §38.94 — RBAC: customers:read.
+  if (actor.source === 'admin' && !(await hasPermission(actor.id, 'customers', 'read'))) {
+    return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
   }
 
   const { searchParams } = new URL(req.url);

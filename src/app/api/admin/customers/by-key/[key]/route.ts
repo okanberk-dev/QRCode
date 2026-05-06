@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { hasPermission } from '@/lib/rbac';
 import { deriveCustomerFields } from '@/lib/customers';
 
 // GET /api/admin/customers/by-key/[key] — admin-tier cross-restaurant customer
@@ -32,9 +33,13 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ key: string }> },
 ) {
+  // Stage A2 §38.94 — RBAC: customers:read.
   const admin = await getAdminFromRequest(req);
-  if (!admin || admin.role !== 'superadmin') {
-    return NextResponse.json({ error: 'Yetkisiz' }, { status: 403 });
+  if (!admin) {
+    return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
+  }
+  if (!(await hasPermission(admin.id, 'customers', 'read'))) {
+    return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
   }
 
   const { key } = await context.params;
