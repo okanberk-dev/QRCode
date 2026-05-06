@@ -138,6 +138,10 @@ model Restaurant {
   pulseAiEnabled                Boolean @default(true) @map("pulse_ai_enabled")
   aiAnalyticsEnabled            Boolean @default(true) @map("ai_analytics_enabled")
   externalPlatformsEnabled      Boolean @default(true) @map("external_platforms_enabled")
+  // Owner panel campaigns feature (CLAUDE.md §38.98). Default true for
+  // backwards-compat (existing owners keep access). Admin can opt-out via
+  // /admin/restaurants/[id]/feature-access PATCH or bulk feature_override.
+  campaignsEnabled              Boolean @default(true) @map("campaigns_enabled")
 
   // Google Rating Impact Tracking
   initialGoogleRating Float? @map("initial_google_rating")
