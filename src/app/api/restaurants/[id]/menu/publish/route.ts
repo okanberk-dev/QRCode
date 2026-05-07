@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireRestaurantAccess } from '@/lib/menu-access';
 
@@ -32,7 +33,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       menuPublished: b.menuPublished,
       menuUpdatedAt: new Date(),
     },
-    select: { id: true, menuPublished: true, menuEnabled: true, menuUpdatedAt: true },
+    select: { id: true, slug: true, menuPublished: true, menuEnabled: true, menuUpdatedAt: true },
   });
+  // Stage 27 §38.103 Fix M2 — publish state public menu görünürlük değişimi
+  // (menuPublished false → true / true → false). 1 saat ISR window stale
+  // kalmasın diye instant invalidate. touchMenuUpdated kullanılmadığı için
+  // inline çağrı (CLAUDE.md §7 — bu callsite-specific durum, helper drift
+  // gerekmiyor).
+  if (updated.slug) {
+    revalidatePath(`/menu/${updated.slug}`);
+  }
   return NextResponse.json({ restaurant: updated });
 }

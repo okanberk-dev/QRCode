@@ -11,9 +11,15 @@ export const dynamic = 'force-dynamic';
 const GA_MEASUREMENT_ID = 'G-Y1H5FLYZ9R';
 const YM_ID = 108768887;
 
+// Stage 27 §38.103 Fix M5 — Space Grotesk weight 600 unused removal.
+// Codebase-wide audit: `font-semibold` Space Grotesk üzerinde 0 callsite
+// (Inter body font'unda 20+ callsite intact). Tek 600-weight callsite
+// `solutions/restaurants/page.tsx:256` SVG illustration metni — Pulse §11
+// paterniyle uyumlu olarak weight 500'e çekildi (`bz-h-tight` zaten 500).
+// Latin subset 1 weight ≈ ~15 KB woff2 cold load tasarruf.
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '700'],
   display: 'swap',
   variable: '--font-space-grotesk',
 });

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getPanelActorFromRequest, isAdminRole } from '@/lib/auth';
 import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { prisma } from '@/lib/prisma';
@@ -62,12 +63,24 @@ export async function requireRestaurantAccess(
   return { ok: true as const, actor, isAdmin };
 }
 
+// Stage 27 §38.103 Fix M2 — public menu cache invalidation. `/menu/[slug]`
+// 1 saat ISR window kullanıyor (page-level revalidate=3600); owner save
+// sonrası müşteri menüsü en geç 1 saat sonra güncel olurdu. revalidatePath
+// instant invalidate eder → owner save sonrası 1-2sn (CDN propagation)
+// içinde public menü güncel. 7 menu save callsite (categories POST/PATCH/
+// DELETE + items POST/PATCH/DELETE + theme PATCH + reorder PATCH) tek
+// helper üzerinden invalidation kazanır. CLAUDE.md §14.1 defensive select
+// — minimal column (slug). revalidatePath fail-soft (Next.js internal).
 export async function touchMenuUpdated(restaurantId: string) {
   try {
-    await prisma.restaurant.update({
+    const updated = await prisma.restaurant.update({
       where: { id: restaurantId },
       data: { menuUpdatedAt: new Date() },
+      select: { slug: true },
     });
+    if (updated.slug) {
+      revalidatePath(`/menu/${updated.slug}`);
+    }
   } catch (error) {
     console.error('[touchMenuUpdated]', error);
   }

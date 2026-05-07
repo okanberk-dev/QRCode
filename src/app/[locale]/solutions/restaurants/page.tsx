@@ -253,7 +253,7 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
               ].map(([x, y], i) => (
                 <rect key={i} x={150 + x * 9} y={92 + y * 9} width="7" height="7" fill="#C6F24E" />
               ))}
-              <text x="170" y="152" textAnchor="middle" fontFamily="Space Grotesk" fontSize="9" fontWeight="600" fill="#0A0A0A">
+              <text x="170" y="152" textAnchor="middle" fontFamily="Space Grotesk" fontSize="9" fontWeight="500" fill="#0A0A0A">
                 {isTr ? 'TARA' : 'SCAN'}
               </text>
               <text x="170" y="164" textAnchor="middle" fontFamily="Space Grotesk" fontSize="7" fill="#737373">
