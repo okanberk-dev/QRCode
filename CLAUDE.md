@@ -14232,3 +14232,96 @@ intact (mevcut cookie-based prop fallback rolünde kalır).
   → TR. `?hl=en` query → EN. iframe `/embed/[slug]` → banner görünmez
   (intact §38.108).
 - Kalan riskler: yok (UI-only fix, server-side fallback intact).
+
+### 38.111 2026-05-07 — Stage 31e campaigns response shape fix (kullanıcı raporu: "admin enable etse de owner oluşturamıyor")
+
+§38.107 Stage 31a campaigns visibility revert sonrası kullanıcı bildirdi:
+admin `/admin/restaurants/[id]` "Paket & Özellik Erişimi" → "Kampanyalar"
+toggle'ını AÇ etse bile owner `/dashboard/campaigns`'da kampanya
+oluşturamıyor.
+
+**Root cause** (manuel audit + git blame):
+`CampaignsClient.tsx:78` mount sonrası `fetch('/api/restaurants')` →
+response body `{ data: enriched, meta: {...} }`. Eski kod
+`Array.isArray(data?.restaurants) ? data.restaurants.map(...) : []`
+şeklinde **yanlış key** okuyordu (`data.restaurants` her zaman undefined).
+Sonuç: `restaurants.length === 0`, EmptyState "Henüz işletme yok"
+render ediliyordu — sahibinin gerçek restoranı varken bile.
+
+Bu bug Stage §38.99 PR-2'den (CampaignsClient initial commit) beri
+mevcut. Owner panel campaigns sayfası launch'tan beri **kullanılamaz**
+durumdaydı; admin enable etse de UI restoran tespit etmiyordu.
+
+**Cross-check** (paterni doğru kullanan diğer caller'lar — drift yalnız
+CampaignsClient'ta):
+- `src/components/dashboard/google/GoogleReviewsHub.tsx`:
+  `Array.isArray(data?.data) ? data.data : []` ✓
+- `src/components/dashboard/CommandPalette.tsx`:
+  `Array.isArray(json) ? json : json?.data ?? []` ✓
+- `src/app/[locale]/dashboard/qr/page.tsx`, `dashboard/restaurants/page.tsx`,
+  `admin/team/page.tsx`, vb. tümü `data.data` paterni.
+
+**Fix** (`CampaignsClient.tsx:78` 1-line):
+```ts
+// Eski:
+Array.isArray(data?.restaurants) ? data.restaurants.map(...) : []
+// Yeni:
+Array.isArray(data?.data) ? data.data.map(...) : []
+```
+
+`Restaurant.campaignsEnabled` field'ı Prisma `include` ile zaten scalar
+field olarak dönüyor (CLAUDE.md §14.1 — admin list branch `include`
+tüm scalar'ları otomatik döndürür). Frontend mapping intact:
+`campaignsEnabled: r.campaignsEnabled !== false` (Stage 30 §38.106
+default false sonrası owner için doğru gate).
+
+**Etkilenen dosyalar (1)**:
+- `src/app/[locale]/dashboard/campaigns/_components/CampaignsClient.tsx`
+  (1 satır key swap + açıklayıcı yorum)
+- `CLAUDE.md` §38.111 closure
+
+**Schema migration**: yok. **Yeni dep**: yok. **Backend dokunulmadı** —
+endpoint response shape değişmedi (cross-callers etkilenmez).
+
+**Yapma**:
+- Endpoint response shape'ini değiştirme (`data: enriched` → `restaurants:
+  enriched`) — diğer 5+ caller `data.data` paterniyle uyumlu, kırılır.
+- Frontend mapping logic'ini başka şekilde düzeltmek (örn. `data?.data ??
+  data?.restaurants ?? []`) — defensive ama gereksiz, server'ın stabil
+  contract'ı `data:` key.
+- `CampaignsClient` test eklemek bu PR'a — integration test scope dışı,
+  GoogleReviewsHub + CommandPalette de test edilmemiş, mevcut paterni
+  takip eder.
+
+**Yap**:
+- Yeni `/api/restaurants` consumer'ı eklerken `data?.data` paterni reuse
+  (CommandPalette + GoogleReviewsHub kanonik referans).
+- Yeni endpoint'lerde response shape contract'ı `{ data, meta }` kalsın
+  (CLAUDE.md §28 paterni — admin list pagination kanonik).
+
+**Verification**:
+- `npm run lint` 0 / 0
+- `npx tsc --noEmit` 0 errors src/
+- `npm test` 274/274 pass intact
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. Admin `/admin/restaurants/[id]` → "Paket & Özellik Erişimi" → "Kampanyalar"
+   toggle AÇ → save.
+2. Owner login → `/dashboard/campaigns` → restoran listesi görünür (EmptyState
+   YOK) + "Yeni kampanya" button enabled.
+3. Compose modal → konu + mesaj → "Onaya gönder" → status `Onayda`.
+4. Admin `/admin/campaign-approvals` → onay → owner mail alır.
+
+#### Stage 31e closure (Tarih 2026-05-07)
+
+- Branch: `claude/campaigns-restaurants-shape-fix-stage31e` (fresh main üstüne,
+  Stage 31d §38.110 PR4 merged)
+- Edit'lenen dosyalar: 2 (CampaignsClient.tsx + CLAUDE.md)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 274 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Admin daha
+  önce campaignsEnabled toggle açtıysa owner /dashboard/campaigns'a
+  girdiğinde Compose modal artık çalışır. Admin tekrar toggle açmaya
+  gerek yok.
+- Kalan riskler: yok (UI-only fix, backend kontratı değişmedi).
