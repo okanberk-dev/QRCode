@@ -15994,3 +15994,106 @@ disipline):
 - Hukuki/disipline override: status tile + live ticker + scan-to-app
   QR HANDOFF spec'inden ALINMADI (kohort disclosure / fake
   testimonial / non-existent app çelişkileri).
+
+---
+
+### 38.124 2026-05-08 — Stage 43 Header floating pill scroll mode (HANDOFF Stage 40-defer)
+
+§38.121 backlog roadmap'tan **Öncelik 3 (Layout chrome advanced)** ikinci
+fix. HANDOFF premium-header.jsx scroll mode pattern: scrollY > 80px iken
+navbar full-width fixed bar'dan floating pill'e dönüşür (94vw + lateral
+margin + rounded-full + advanced backdrop-blur + drop shadow + ring).
+Otonom operasyon (kullanıcı talimatı: "değişmemişse sana onay direk yap").
+
+**3-aşamalı scroll davranışı**:
+
+| ScrollY | Mobile/Tablet (<lg) | Desktop (≥lg) |
+|---|---|---|
+| 0–40 | `border-b + bg-white/88` (top) | `lg:inset-x-0 lg:top-0` full-width |
+| 40–80 | `border-b border-[#E5E5E5] + bg-white/95 + shadow` (scrolled) | aynı geometry + bg/shadow |
+| >80 | aynı (mobile floating pill yok) | **floating pill**: `lg:top-[18px] lg:left-1/2 lg:-translate-x-1/2 lg:w-[94vw] lg:max-w-[1180px] lg:rounded-full lg:border-0 lg:bg-white/[0.78] lg:[backdrop-filter:blur(16px)_saturate(180%)] lg:shadow-[0_12px_40px_-16px_rgba(10,10,10,0.18)] lg:ring-1 lg:ring-black/5` |
+
+**Neden mobile'da floating pill yok**: Mobile drawer akışı (line 130-150)
+`mobileOpen ? 'fixed inset-x-0 top-0' : 'relative'` override ediyor.
+Drawer açıkken floating pill geometry mantıksız (drawer full-screen);
+mobile chrome kararlı kalmalı. Sadece `lg:` (≥1024px) tetikler.
+
+**State değişiklikleri**:
+- Eski tek `scrolled = scrollY > 40` → çift state (`scrolled = >40` +
+  `floating = >80`).
+- HANDOFF threshold 80 (premium-header.jsx line 53 birebir).
+- Mevcut `scrolled` → bg/shadow için intact; yeni `floating` → ek pill
+  geometry trigger.
+
+**Transition**: `transition-all duration-300` mevcut intact — geometry
++ bg + shadow + radius + ring hepsi yumuşak geçiş.
+
+**Etkilenen dosyalar (1)**:
+- `src/components/marketing/MarketingNavbarClient.tsx` — `floating`
+  state + scroll handler + `<nav>` className genişletme (~+25 satır)
+- `CLAUDE.md` — §38.124 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**: 383/383
+intact (presentational-only, helper logic yok).
+
+**Verification**:
+- `npx eslint .` ✓ 0 errors / 0 warnings
+- `npx tsc --noEmit` ✓ 0 errors in `src/` (4 pre-existing
+  `.next/types` baseline §21.13)
+- `npm test` ✓ 383/383 pass intact
+- `npx next build` (stub env) ✓ Compiled + 58/58 static page intact
+
+**Yapma**:
+- `floating` threshold'u 80'den düşürme — UX terslik (hero altında
+  floating pill çok erken). HANDOFF spec birebir 80px.
+- Mobile (`<lg`) breakpoint'inde floating pill geometry'yi enable
+  etme — mobile drawer + bottom nav akışıyla çakışır; mobile chrome
+  intact.
+- `bg-white/[0.78]` opacity düşürme (örn. 0.6) — backdrop blur
+  arkasında readability bozulur (linkler beyaz arkaplanda silik
+  görünür).
+- `backdrop-filter` Tailwind arbitrary `[backdrop-filter:...]`
+  syntax'i yerine class shorthand `backdrop-blur-md` kullanma —
+  HANDOFF spec `blur(16px) saturate(180%)` exact composite filter,
+  Tailwind preset'lerde tek class değil.
+- Webkit prefix'i (`[-webkit-backdrop-filter:...]`) atlama — Safari
+  16+ destekliyor ama eski Safari (15-) prefix'siz görünmez.
+- `ring-1 ring-black/5` yerine `border` kullanma — float pill
+  outline border-radius'la tam uyumsuz; `ring` Tailwind border-box
+  outside paterni daha temiz.
+
+**Yap**:
+- Yeni scroll threshold'lu state eklenirse (örn. mega menu trigger,
+  scroll-to-top button), aynı `useEffect onScroll` içinde compose et
+  — ek event listener YAGNI.
+- Floating pill içinde mega menu (`open === 'product'`) hâlâ aynı
+  positioning (`absolute top-full`) çalışıyor — geometry değişimi
+  CSS-only, JS state değişimi yok.
+
+#### Stage 43 closure (Tarih 2026-05-08)
+
+- Branch: `chore/header-floating-pill-stage43` (fresh main üstüne,
+  Stage 42 §38.123 PR #546 merged)
+- Edit'lenen dosyalar: 2 (MarketingNavbarClient.tsx + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Marketing surface'lerinde scroll >80px iken navbar floating pill'e
+  dönüşür (rounded + 94vw + lateral margin). Mobile chrome intact.
+- Kalan riskler: yok (presentational-only, mevcut layout pattern'i
+  intact, mobile fallback korunuyor).
+- **Sonraki aşama**: Stage 44 — Devam edecek defer backlog (E+F
+  primitive callsite entegrasyonu veya B mega menu IA). Kullanıcı
+  uyumakta — otonom karar.
+
+**Chat prompt history (Stage 43 §39.2 paterni)**:
+- 2026-05-08 kullanıcı (otonom operasyon talebi §38.123'te verbatim
+  quote): footer + header zinciri tamamen otonom. Stage 43 header
+  floating pill — HANDOFF spec birebir uygulandı (scroll threshold
+  80, geometry numbers, backdrop-filter composite).
+- AskUserQuestion yapılmadı: kullanıcı uyumakta, kararlar HANDOFF
+  spec'le aligned.
+- Hukuki/disipline override: yok (HANDOFF visual polish, fake-data
+  riski yok).
