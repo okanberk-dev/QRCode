@@ -35,7 +35,18 @@ export const MAIL_PLACEHOLDERS = {
   // §38.48 Wave 2 — owner authored customer campaign mail. Render fn vars
   // object'inde sadece restaurantName geçer; admin override'da bu token
   // valid kabul edilir, diğerleri 400 invalid_placeholder döner.
-  'customer-campaign': ['restaurantName'],
+  // Stage 31c §38.109 — footer enrichment için 3 ek placeholder:
+  // - senderEmail: from email (Restaurant.notificationEmail veya Buaze fallback)
+  // - iysId: İYS gönderim takip UUID (Stage 31b placeholder, null → "—")
+  // - sentAt: gönderim tarihi (locale-formatted), null → şu an
+  // Mail compliance footer block'unda render edilir (ETK m.5 + KVKK §10
+  // gönderici kimliği + transparency).
+  'customer-campaign': [
+    'restaurantName',
+    'senderEmail',
+    'iysId',
+    'sentAt',
+  ],
   // Stage 29 §38.105 — campaign moderation owner notifications.
   // Approved: ${ownerName} ${restaurantName} ${subject} ${sentCount} ${failedCount} ${dashboardUrl}
   // Rejected: ${ownerName} ${restaurantName} ${subject} ${reviewerNote} ${dashboardUrl}
