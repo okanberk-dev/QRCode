@@ -32,6 +32,10 @@ import {
   type DomainCheckResult,
   type IntegrationProvider,
 } from "@/lib/integration-domains";
+import {
+  MANAGED_REVIEW_PLATFORMS,
+  MANAGED_SOCIAL_PLATFORMS,
+} from "@/lib/platform-management";
 import { SettingsCard } from "../SettingsCard";
 import { UnsavedChangesBar } from "../UnsavedChangesBar";
 import { GoogleBusinessIntegrationPanel } from "./GoogleBusinessIntegrationPanel";
@@ -126,89 +130,14 @@ interface PlatformDef {
   placeholder: string;
 }
 
-const PLATFORM_DEFS: PlatformDef[] = [
-  {
-    id: "google",
-    urlKey: "googleReviewUrl",
-    enabledKey: "googleEnabled",
-    testProvider: "google",
-    label: "Google İşletme",
-    placeholder: "https://g.page/r/...",
-  },
-  {
-    id: "yemeksepeti",
-    urlKey: "yemekSepetiUrl",
-    enabledKey: "yemekSepetiEnabled",
-    testProvider: "yemeksepeti",
-    label: "Yemeksepeti",
-    placeholder: "https://www.yemeksepeti.com/restaurant/...",
-  },
-  {
-    id: "getir",
-    urlKey: "getirYemekUrl",
-    enabledKey: "getirEnabled",
-    testProvider: "getir",
-    label: "Getir Yemek",
-    placeholder: "https://getir.com/yemek/restaurant/...",
-  },
-  {
-    id: "trendyol",
-    urlKey: "trendyolYemekUrl",
-    enabledKey: "trendyolEnabled",
-    testProvider: "trendyol_go",
-    label: "Trendyol GO",
-    placeholder: "https://tgoapp.com/restaurant/...",
-  },
-  {
-    id: "tripadvisor",
-    urlKey: "tripAdvisorUrl",
-    enabledKey: "tripAdvisorEnabled",
-    testProvider: "tripadvisor",
-    label: "Tripadvisor",
-    placeholder: "https://www.tripadvisor.com/Restaurant_Review-...",
-  },
-  {
-    id: "airbnb",
-    urlKey: "airbnbUrl",
-    enabledKey: "airbnbEnabled",
-    testProvider: "airbnb",
-    label: "Airbnb",
-    placeholder: "https://www.airbnb.com/rooms/...",
-  },
-  {
-    id: "booking",
-    urlKey: "bookingUrl",
-    enabledKey: "bookingEnabled",
-    testProvider: "booking",
-    label: "Booking",
-    placeholder: "https://www.booking.com/hotel/tr/...",
-  },
-  {
-    id: "yandex",
-    urlKey: "yandexUrl",
-    enabledKey: "yandexEnabled",
-    testProvider: "yandex",
-    label: "Yandex",
-    placeholder: "https://yandex.com.tr/maps/org/...",
-  },
-  // §38.52 — Yelp + Foursquare yorum platformları (hibrit taksonomi).
-  {
-    id: "yelp",
-    urlKey: "yelpUrl",
-    enabledKey: "yelpEnabled",
-    testProvider: "yelp",
-    label: "Yelp",
-    placeholder: "https://www.yelp.com/biz/...",
-  },
-  {
-    id: "foursquare",
-    urlKey: "foursquareUrl",
-    enabledKey: "foursquareEnabled",
-    testProvider: "foursquare",
-    label: "Foursquare",
-    placeholder: "https://foursquare.com/v/...",
-  },
-];
+const PLATFORM_DEFS: PlatformDef[] = MANAGED_REVIEW_PLATFORMS.map((platform) => ({
+  id: platform.uiPlatformId as PlatformId,
+  urlKey: platform.urlField as keyof FormState,
+  enabledKey: platform.enabledField as keyof FormState,
+  testProvider: platform.provider,
+  label: platform.slug === "google" ? "Google İşletme" : platform.name,
+  placeholder: platform.placeholder,
+}));
 
 interface SocialDef {
   /** Logo path under /public/platforms/. */
@@ -220,27 +149,13 @@ interface SocialDef {
 }
 
 const SOCIAL_DEFS: SocialDef[] = [
-  {
-    key: "instagramUrl",
-    testProvider: "instagram",
-    label: "Instagram",
-    logoFile: "instagram",
-    placeholder: "https://instagram.com/isletmem",
-  },
-  {
-    key: "facebookUrl",
-    testProvider: "facebook",
-    label: "Facebook",
-    logoFile: "facebook",
-    placeholder: "https://facebook.com/isletmem",
-  },
-  {
-    key: "whatsappUrl",
-    testProvider: "whatsapp",
-    label: "WhatsApp",
-    logoFile: "whatsapp",
-    placeholder: "https://wa.me/905551112233",
-  },
+  ...MANAGED_SOCIAL_PLATFORMS.map((platform) => ({
+    key: platform.urlField as keyof FormState,
+    testProvider: platform.provider,
+    label: platform.name,
+    logoFile: platform.logoFile ?? "",
+    placeholder: platform.placeholder,
+  })),
   {
     key: "reservationUrl",
     testProvider: "reservation",
