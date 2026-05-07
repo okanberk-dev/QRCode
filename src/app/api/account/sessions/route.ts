@@ -16,7 +16,7 @@ export const runtime = 'nodejs';
 export async function GET(req: NextRequest) {
   const payload = await getUserFromRequest(req);
   if (!payload) return ApiErrors.unauthorized();
-  const userId = (payload.sub || (payload as { id?: string }).id) as string | undefined;
+  const userId = payload.userId;
   if (!userId) return ApiErrors.unauthorized();
 
   // Mevcut JWT'yi cookie'den al — current session badge için.

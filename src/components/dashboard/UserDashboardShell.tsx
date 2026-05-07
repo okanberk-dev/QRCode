@@ -450,7 +450,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
         <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
-          <BuazeLogo size={32} variant="on-dark" imageUrl={logoUrl} />
+          <BuazeLogo size={32} variant="default" imageUrl={logoUrl} className="shrink-0" />
           {!isCollapsed && (
             <span
               className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A] leading-none bz-h-tight animate-in fade-in slide-in-from-left-2 duration-300"

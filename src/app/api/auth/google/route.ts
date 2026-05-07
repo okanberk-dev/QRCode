@@ -7,6 +7,7 @@ import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-l
 import { verifyFirebaseIdToken, getFirebaseProjectId } from '@/lib/firebase-admin';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { handleOAuthSignIn, type OAuthDeps } from '@/lib/oauth';
+import { createUserSessionForToken } from '@/lib/user-session';
 
 export async function POST(req: NextRequest) {
   try {
@@ -102,6 +103,16 @@ export async function POST(req: NextRequest) {
         // Tablo henüz deploy edilmemişse sessizce true kabul et — dashboard'a yönlendirme güvenli.
         onboardingCompleted = true;
       }
+    }
+
+    const session = await createUserSessionForToken({
+      req,
+      userId: user.id,
+      token,
+      context: 'AUTH_GOOGLE',
+    });
+    if (!session.ok) {
+      return NextResponse.json({ error: session.error }, { status: 500 });
     }
 
     const response = NextResponse.json({

@@ -27,7 +27,7 @@ const TASK_ICON: Record<TaskType, typeof MessageSquareText> = {
 export interface PendingTasksProps {
   tasks: DashboardTask[];
   isTr?: boolean;
-  /** "Tümü" CTA href; default /dashboard/feedbacks. */
+  /** "Tümü" CTA href; default /tr/dashboard/feedbacks. */
   viewAllHref?: string;
   className?: string;
 }
@@ -35,7 +35,7 @@ export interface PendingTasksProps {
 export function PendingTasks({
   tasks,
   isTr = true,
-  viewAllHref = '/dashboard/feedbacks',
+  viewAllHref = isTr ? '/tr/dashboard/feedbacks' : '/en/dashboard/feedbacks',
   className = '',
 }: PendingTasksProps) {
   const totalLabel =

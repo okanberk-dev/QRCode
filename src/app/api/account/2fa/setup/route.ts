@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   maybeSweep();
   const payload = await getUserFromRequest(req);
   if (!payload) return ApiErrors.unauthorized();
-  const userId = (payload.sub || (payload as { id?: string }).id) as string | undefined;
+  const userId = payload.userId;
   if (!userId) return ApiErrors.unauthorized();
 
   const rl = await rateLimit(`2fa:setup:${userId}`, 5, 60 * 1000);

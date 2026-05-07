@@ -198,6 +198,7 @@ export function buildActivityFeed({
   isTr = true,
 }: BuildActivityFeedInput): ActivityEvent[] {
   const c = COPY[isTr ? 'tr' : 'en'];
+  const dashboardPrefix = `/${isTr ? 'tr' : 'en'}/dashboard`;
   const events: ActivityEvent[] = [];
 
   for (const f of feedbacks) {
@@ -214,7 +215,7 @@ export function buildActivityFeed({
       action: c.feedbackAction,
       target: platformTarget(f.rating, f.platform),
       sentiment: ratingToSentiment(f.rating),
-      href: `/dashboard/feedbacks?id=${f.id}`,
+      href: `${dashboardPrefix}/feedbacks?id=${f.id}`,
     });
   }
 
@@ -229,7 +230,7 @@ export function buildActivityFeed({
       action: isAi ? c.replyAiAction : c.replyManualAction,
       target: platformTarget(r.feedback.rating, r.feedback.platform),
       sentiment: ratingToSentiment(r.feedback.rating),
-      href: `/dashboard/feedbacks?id=${r.feedback.id}`,
+      href: `${dashboardPrefix}/feedbacks?id=${r.feedback.id}`,
     });
   }
 
@@ -242,7 +243,7 @@ export function buildActivityFeed({
       action: c.aiDraftAction,
       target: shortName(d.feedback.name, isTr),
       sentiment: 'neu',
-      href: `/dashboard/feedbacks?id=${d.feedback.id}`,
+      href: `${dashboardPrefix}/feedbacks?id=${d.feedback.id}`,
     });
   }
 

@@ -38,7 +38,7 @@ export interface ActivityFeedProps {
    * sonradan realtime INSERT'leri tepe'ye prepend eder.
    */
   events: ActivityEvent[];
-  /** "Tüm aktiviteyi gör" CTA href; default /dashboard/feedbacks. */
+  /** "Tüm aktiviteyi gör" CTA href; default /tr/dashboard/feedbacks. */
   viewAllHref?: string;
   isTr?: boolean;
   /** Wrapper className override (örn. layout grid item). */
@@ -152,8 +152,8 @@ function NewEventsToast({
 
 export function ActivityFeed({
   events: initialEvents,
-  viewAllHref = '/dashboard/feedbacks',
   isTr = true,
+  viewAllHref = isTr ? '/tr/dashboard/feedbacks' : '/en/dashboard/feedbacks',
   className = '',
 }: ActivityFeedProps) {
   const { events, status, newEventIds, pendingToastCount, acknowledgeToast } =

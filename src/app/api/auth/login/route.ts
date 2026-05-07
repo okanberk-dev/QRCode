@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { signJwt, getSecret } from '@/lib/auth';
-import { hashToken } from '@/lib/session-hash';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
+import { createUserSessionForToken } from '@/lib/user-session';
 import * as jose from 'jose';
 
 // 2FA challenge JWT — login sonrasında geçerli kullanıcının kimliğini taşıyan
@@ -208,54 +207,14 @@ export async function issueLoginSession(args: {
   // herhangi bir hata 500 döner + Sentry.captureException tag
   // `login-session-create-failure`. Cookie set ETMEZ — kullanıcı yeniden
   // dener, gerçek silent fail flood'u durur.
-  const userAgent = req.headers.get('user-agent') ?? null;
-  const ip = getClientIp(req.headers);
-  try {
-    await prisma.userSession.create({
-      data: {
-        userId: user.id,
-        tokenHash: hashToken(token),
-        userAgent: userAgent?.slice(0, 500) ?? null,
-        ipAddress: ip ?? null,
-      },
-    });
-  } catch (err) {
-    const errorObj = err as { code?: string; message?: string };
-    const isP2002 = errorObj.code === 'P2002';
-    if (isP2002) {
-      // P2002 duplicate token hash. Random secret + sub-second login
-      // retry could theoretically hit this; the existing token is valid
-      // so silently continue — cookie set with that token works.
-      console.warn('[AUTH_LOGIN] UserSession create P2002 (duplicate tokenHash) — continuing with existing row');
-    } else {
-      // All other errors (P2003 FK violation, P1001 connection timeout,
-      // P2024 connection_limit exhausted, network) → fail fast.
-      // Defensive console.error parallel to Sentry (CLAUDE.md §38.13
-      // server-side flush kör nokta — Vercel runtime log is the
-      // operator's only reliable signal).
-      console.error('[AUTH_LOGIN] UserSession create failed (returning 500):', errorObj.message ?? 'unknown', {
-        code: errorObj.code ?? null,
-        userId: user.id,
-      });
-      Sentry.captureException(err, {
-        tags: {
-          kind: 'login-session-create-failure',
-          stage: '18',
-          prismaCode: errorObj.code ?? 'unknown',
-        },
-        extra: {
-          userId: user.id,
-          // PII guard (CLAUDE.md §37.7): no email / phone / ipAddress
-          // in extra. userId only for triage.
-        },
-      });
-      return NextResponse.json(
-        {
-          error: 'Oturum kaydedilemedi. Lütfen tekrar deneyin.',
-        },
-        { status: 500 },
-      );
-    }
+  const session = await createUserSessionForToken({
+    req,
+    userId: user.id,
+    token,
+    context: 'AUTH_LOGIN',
+  });
+  if (!session.ok) {
+    return NextResponse.json({ error: session.error }, { status: 500 });
   }
 
   const response = NextResponse.json({
