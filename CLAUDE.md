@@ -14810,6 +14810,79 @@ Buaze Pulse §11 + §23.3 mevcut paterniyle redundant):
   animasyonlu placeholder yeni eklenir (Stage 36 scope) veya Stage 39
   Site FX'e ertelenir (gerçek kullanım site-fx).
 
+### 38.116 2026-05-08 — Stage 36 HANDOFF §8 step 3 (Primitives) gap analysis (docs only)
+
+§38.115 Stage 35 lib step kapandıktan sonra HANDOFF §8 step 3:
+Primitives. HANDOFF spec 5 primitive (`BuazeMark`, `QRCode`, `Stars`,
+`Mono`, `Pill`) listeler. Buaze Pulse §11 + §23.3 + §38.49 disipline
+ile gap analysis sonucu: **4/5 mevcut, 1 (QRCode) Stage 39'a defer**.
+
+**Gap analysis tablosu**:
+
+| HANDOFF spec | Buaze mevcut | Karar |
+|---|---|---|
+| `BuazeMark({ size, on='light' })` — speech bubble + ECG | `<BuazeLogo>` (CLAUDE.md §11 — different SVG, ECG line + lime accent) | ⏳ Tasarım farkı kabul (kullanıcı kararı §38.114 "tipografi ve marka kimliği intact"); BuazeLogo intact |
+| `QRCode({ size, progress })` — animasyonlu QR placeholder | YOK | ⏳ Stage 39 (Site FX) `<QRScanLoader />` ile beraber implement edilir (gerçek kullanım context'i orada) |
+| `Stars({ n, size })` + `Star({ filled, size })` | `<StarRow>` primitive (CLAUDE.md §23.3) | ✅ Mevcut |
+| `Mono({ children, color, size, ... })` | `pulse-eyebrow` Tailwind utility (JetBrains Mono uppercase tracked) | ✅ Mevcut (utility tercih, wrapper component değil — CLAUDE.md §38.49) |
+| `Pill({ children, dark? })` | `<Badge>` primitive (`kind: 'ok'/'warn'/'danger'/'info'/'lime'/'ghost'`) | ✅ Mevcut (variant API daha zengin) |
+
+**Sonuç**: HANDOFF §8 step 3 spec %80 mevcut Pulse §11 + §23.3 ile
+karşılanmış. `QRCode` Stage 39'a defer (gerçek kullanım `<QRScanLoader />`
+site-fx component'inde — site-library.jsx 12 parça scope'unda). Stage
+36 docs-only closure log + Stage 37 (Panel atoms) için zemin.
+
+**Out of scope**: Schema migration, kod değişikliği, BuazeLogo redesign
+(kullanıcı "Asla pivot etme" kararı intact).
+
+**Etkilenen dosyalar (1)**:
+- `CLAUDE.md` (§38.116 closure log + gap analysis tablosu)
+
+**Schema migration**: yok. **Yeni dep**: yok. **Code change**: yok.
+**Test count**: 342/342 intact.
+
+**Yapma**:
+- `BuazeMark` HANDOFF spec speech bubble + ECG SVG'yi `BuazeLogo`'ya
+  override etme — kullanıcı kararı "Asla pivot etme" (§38.114 §39
+  disipline) intact. Marka kimliği kararı.
+- `Mono` veya `Pill` wrapper component'larını taşıma — `pulse-eyebrow`
+  utility + `<Badge>` primitive (CLAUDE.md §38.49 dead utility class
+  disipline) ile redundant.
+- `QRCode` placeholder'ını Stage 36'da implement etme — Stage 39
+  (Site FX) `<QRScanLoader />` ile birlikte implement edilir (gerçek
+  callsite onboarding + loading state).
+
+**Yap**:
+- Stage 39 Site FX'te `<QRScanLoader />` implement edilirken HANDOFF
+  shared.jsx:131-185 `QRCode` paterni reuse — animasyonlu `progress`
+  prop, deterministik `seed` parameter ile pseudorandom dot pattern.
+- Yeni primitive ihtiyacı çıkarsa önce CLAUDE.md §23.3 + §38.49
+  cross-check (mevcut utility/primitive ile redundant mı kontrol).
+
+**Verification**:
+- Lint/tsc/test: docs-only PR — verify gerekmez (kod değişimi yok).
+
+#### Stage 36 closure (Tarih 2026-05-08)
+
+- Branch: `chore/handoff-primitives-stage36` (fresh main üstüne, Stage
+  35 §38.115 PR #538 merged)
+- Edit'lenen dosyalar: 1 (CLAUDE.md — §38.116 gap analysis)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 342/342 intact
+- Operatör aksiyonu (PR sonrası): yok — auto-merge `gh pr merge
+  --auto --squash` (CLAUDE.md §39.1 paterni).
+- Kalan riskler: yok (docs-only PR).
+- **Sonraki aşama**: Stage 37 — HANDOFF §8 step 4 (Panel atomları —
+  APButton, APIconButton, APChip, APSwitch, APCheckbox, APRadioGroup,
+  APSlider, APSegmented). Buaze'de mevcut: `<Toggle>` primitive (CLAUDE.md
+  §23.3 — `APSwitch` ile ~70% örtüşür), `<Badge>` primitive (`APChip`
+  ile redundant), `<Tabs>` (`APSegmented` benzeri), `bz-btn-*` button
+  utility'ler (`APButton` paterni — variant + size). Eksik: APSlider,
+  APStarInput, APRadioGroup, APIconButton (lucide ikon + size + tone +
+  badge). Stage 37 büyük scope (~5-7 yeni primitive).
+
 ---
 
 ## §39 — Auto-merge & Chat Prompt Logging Disipline (kanonik)
