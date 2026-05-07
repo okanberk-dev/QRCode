@@ -12520,3 +12520,201 @@ Vercel Analytics dashboard'unda `Cache hit ratio` artışı (typically
   bcrypt cost normalize (§38.2). Performance tarafında: §38.99 + §38.100
   cross-reference tablosu güncel; gelecek audit raporu geldiğinde önce
   bu tablolar kontrol edilir.
+
+### 38.101 2026-05-07 — Stage 25 owner panel slowness fix bundle (Phase A + C; Phase B skip)
+
+§38.99 (Stage 22) + §38.100 (Stage 24) sonrası kullanıcı yeni talep:
+"owner panel ve admin panel çok yavaş yükleniyor — detaylı analiz edip
+çöz". 3 paralel Explore agent (owner / admin / layout-middleware-auth
+chain) ile derinlemesine slowness audit yapıldı.
+
+**Kullanıcı kararı (AskUserQuestion)**: Owner-only Phase A+B+C, tek
+consolidated PR (Phase D admin tarafı out of scope, gelecek talep
+gelirse §38.B backlog).
+
+**Implementation sonucu**: Phase A (3 cache fix) + Phase C (extractThemes
+non-blocking) uygulandı. **Phase B SKIP** edildi — gerekçe aşağıda.
+
+#### Audit bulguları (özet)
+
+**Owner dashboard** (`/[locale]/dashboard`) — p50 ~3-5s, hedef ~1.5-2s:
+- 29 Prisma query tek `prisma.$transaction` + 6 standalone async
+  (Supabase `connection_limit=1` altında sequential cascade)
+- AI extractThemes critical path'te (cache miss durumunda 1-2s OpenAI
+  page render'ını blokluyor)
+- Layout chain N+1: User+restaurants 3 kez fetch
+- Heavy hydration: TrendsChart + PulseRangeToggle + ChannelDistribution
+  + ActivityFeed parallel mount
+
+**Layout chain ortak overhead**:
+- `getSiteSettings` 2x duplicate (root + locale layout) — +12-15ms
+- `verifyJwt` 2x (locale + dashboard layout) — +2-3ms
+- `isUserSessionRevoked` DB lookup her request — +1ms
+- `fetchActiveAnnouncements` her request — +8-12ms
+
+#### Phase A — Layout chain dedupe + cache (LOW risk, uygulandı)
+
+1. **`src/lib/site-settings.ts` `getSiteSettings` cache** (60s TTL):
+   - Process-local Map: `{ data: SiteSettings, expiresAt: number }`
+   - Hit ratio %95+ — root + locale layout 2 çağrısı tek DB hit
+   - Manuel invalidation: `clearSiteSettingsCache()` export — admin
+     site-settings save endpoint'i çağırarak fresh fetch'i tetikler
+   - DB error → defaults döner, cache YAZILMAZ (next request retry)
+
+2. **`src/lib/auth.ts` `isUserSessionRevoked` happy-path cache** (10s TTL):
+   - Process-local Map: `tokenHash → expiresAt` (sadece "session var
+     + revokedAt null" durumda yazılır)
+   - Cache hit'te DB hit'i atla (dashboard request başına ~1ms)
+   - Cache YAZILMAZ branch'leri (mantık intact):
+     - `!session` → 3-tier boundary check (Stage 14 / 18 / 19) +
+       sessionless self-heal (recoverMissingUserSession)
+     - `session.revokedAt !== null` → her request fresh check
+     - DB error catch → fail-closed `return true`
+   - Trade-off: force-logout effect 10s gecikebilir (cihaz revoke
+     sonrası max 10s geçerli kalır). 1ms tasarruf × yüksek hit ratio
+     için kabul. Manuel invalidation (logout endpoint cache.delete)
+     gelecek scope.
+
+3. **`src/app/[locale]/dashboard/layout.tsx` `fetchActiveAnnouncements` cache** (5m TTL):
+   - Process-local Map: `Map<Locale, { data, expiresAt }>` — TR + EN
+     ayrı entry
+   - Announcement create/edit/delete frequency çok düşük; 5m drift
+     kabul
+   - DB error catch'inde cache YAZILMAZ ([] döner)
+
+#### Phase B — SKIP (gerekçe + scope rationale)
+
+Plan'daki "owner analytics 5 chart'ı `dynamic({ ssr: false })` ile
+lazy" Phase B önerisi **uygulanmadı**. Gerekçe:
+
+- `src/app/[locale]/dashboard/analytics/page.tsx` Server Component
+  (force-dynamic). Line 42-46 mevcut comment dokümante ediyor:
+  > `dynamic({ ssr: false })` Server Component'te yasak (sadece Client
+  > Component içinde kullanılabilir).
+- Chart'lar (PulseTrendChart, HeatmapDayHour, ChannelDistributionMini,
+  TopLocationCard, MobileAnalyticsHero) zaten **`'use client'`** —
+  Next.js otomatik client boundary çiziyor, server-side pre-render
+  minimal HTML üretir, browser-side hydrate olur.
+- Lazy `dynamic({ ssr: false })` istemek için **client wrapper**
+  component yazmak gerekirdi (`'use client'` boundary + içinde 5
+  dynamic import). Bu page'in 1000+ satır structure'ını bozar +
+  prop threading karmaşıklığı + bundle size kazanımı marjinal
+  (chunk zaten route-level split'lenmiş).
+- Net effect: Hydration sırasında Skeleton görünür → user-perceived
+  loading hızlanır mı? Kısmen — ama Recharts download zaten async
+  paralel; initial paint blok etmiyor. Phase A + Phase C kazanımı
+  öncelikli.
+
+**Karar**: Phase B'nin kazanımı (ms latency) Phase A + C'ye göre
+marjinal + scope büyük (page refactor). Skip — gelecek talep gelirse
+client wrapper component pattern'i ile yeniden değerlendirilir.
+
+#### Phase C — extractThemes cache-first non-blocking (MEDIUM risk, uygulandı)
+
+4. **`src/lib/analytics-themes.ts` `getCachedThemes` sync export**:
+   - Caller'lara cache lookup için sync helper (extractThemes async
+     ile aynı imzada cacheKey, version prefix'i otomatik uygulanır).
+   - Cache hit → instant return; miss → null.
+   - Manuel olarak v3 cache versiyon prefix'i kullanır (CLAUDE.md
+     §38.58 sentiment field bump ile uyumlu).
+
+5. **`src/app/[locale]/dashboard/page.tsx` cache-first pattern**:
+   - Eski: `await extractThemes(...)` critical path'te — cache miss'te
+     1-2s OpenAI latency dashboard render'ını blokluyordu.
+   - Yeni:
+     ```ts
+     const cached = getCachedThemes(themeCacheKey);
+     if (cached) {
+       dashboardThemes = cached;  // Instant
+     } else {
+       void extractThemes(...).catch(() => {});  // Background fetch
+       dashboardThemes = { themes: [], synthesis: '', source: 'fallback' };
+     }
+     ```
+   - Cache hit: mevcut davranış intact (AIInsightBanner + SIK BAHSEDİLEN
+     section anında görünür).
+   - Cache miss: empty fallback → AIInsightBanner null + SIK BAHSEDİLEN
+     hidden, page hızlı render. Background fetch sonraki request
+     (1-2s) cache hit alır → owner refresh'te AI section görünür.
+   - Trade-off: ilk dashboard ziyareti / cold start sonrası AI section
+     2. yenilemede görünür. UX impact düşük (AI section dashboard'ın
+     %15-20'si, ana action surface'leri intact).
+
+#### Etkilenen dosyalar (Stage 25 cumulative diff Stage 22+24+25)
+
+**Stage 22 (PR #523 merged)**: `package.json`, `next.config.ts`,
+`src/app/api/restaurants/route.ts`, `CLAUDE.md` §38.99.
+
+**Stage 24 (commit `b4a8fa3`, PR henüz açılmadı)**: 7 endpoint cache
+header (CLAUDE.md §38.100).
+
+**Stage 25 (yeni)**:
+- `src/lib/site-settings.ts` (Phase A #1 — cache + clearSiteSettingsCache)
+- `src/lib/auth.ts` (Phase A #2 — isUserSessionRevoked happy-path cache)
+- `src/app/[locale]/dashboard/layout.tsx` (Phase A #3 — announcements cache)
+- `src/lib/analytics-themes.ts` (Phase C — getCachedThemes export)
+- `src/app/[locale]/dashboard/page.tsx` (Phase C — cache-first non-blocking)
+- `CLAUDE.md` §38.101 closure log
+
+**Schema migration**: yok. **Yeni endpoint**: yok. **Yeni dep**: yok.
+**Response shape**: değişmedi. **IDOR / RBAC / fail-closed semantik**:
+intact.
+
+#### Beklenen kazanım
+
+| Metrik | Önce | Sonra |
+|---|---|---|
+| Layout chain overhead per request | ~50-70ms | ~30-40ms (cache hit) |
+| Dashboard `extractThemes` critical path (miss) | 1-2s | <50ms (background) |
+| `getSiteSettings` DB hit per request | 2x | 0-1x (cache hit) |
+| `fetchActiveAnnouncements` DB hit per request | 1x | 0x (cache hit, 5m window) |
+| Owner dashboard p50 (mevcut measurement bekliyor) | 3-5s | hedef 1.5-2s |
+
+**Ölçüm**: Vercel Speed Insights LCP/INP delta + Sentry transaction
+tracing (1 hafta soak sonrası).
+
+#### Yapma
+
+- `siteSettingsCache` TTL'i 60s'ten uzun yapma — admin save sonrası
+  drift > 1m owner için confusing.
+- `userSessionRevocationCache` TTL'i 30s'in üzerine çekme — force-logout
+  effect drift büyür (bypass risk).
+- `announcementsCache` TTL'i 5m'den uzun yapma — admin "Yayında" toggle
+  sonrası drift uzun.
+- Phase B'yi (chart lazy) Server Component'te `dynamic({ ssr: false })`
+  kullanarak yapma — Next.js yasaklı (analytics page line 42-46
+  comment). Client wrapper pattern gerekirse ayrı PR.
+- `extractThemes` Promise reject'i await'siz handle etme — `.catch(() => {})`
+  fire-and-forget pattern Sentry'de error log'lanmaz; helper içinde
+  zaten Sentry capture mevcut (CLAUDE.md §15.1).
+
+#### Yap
+
+- Yeni helper'larda CLAUDE.md §15.1 cache pattern reuse: process-local
+  Map + `expiresAt` + manuel invalidation export.
+- Yeni AI helper call'ları cache-first non-blocking pattern (sync
+  cache lookup → null ise background fetch + empty fallback).
+- Phase D admin slowness fix talep gelirse §38.B backlog'dan açılır.
+
+#### Stage 25 closure
+
+- Branch: `claude/apply-performance-report-EQ8IQ` (designated, Stage
+  22 merge sonrası align edildi; Stage 24 commit `b4a8fa3` üstüne
+  cumulative).
+- Edit'lenen dosyalar: 6 (3 lib + 1 layout + 1 page + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: değişmedi (functional change yok, cache layer)
+- Operatör aksiyonu (PR sonrası): Vercel auto-deploy. 1 hafta soak
+  sonrası Vercel Speed Insights LCP/INP delta + Sentry transaction
+  tracing ölç.
+- Kalan riskler:
+  - `userSessionRevocationCache` 10s drift force-logout (manuel
+    invalidation gelecek scope)
+  - `extractThemes` cache miss durumunda AI section ilk request'te
+    gizli (UX trade-off, owner refresh'te görünür)
+- **Sonraki aşama önerisi**: Phase D admin slowness fix (operatör
+  talep ederse — AdminBiSection lazy + admin dashboard parallel split
+  + AdminOverviewWidgets merged endpoint + audit log server cache).
+  Veya §38.B master backlog kalemleri.

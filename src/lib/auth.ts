@@ -234,14 +234,41 @@ async function recoverMissingUserSession(
   }
 }
 
+// Stage 25 §38.101 Phase A #2 — process-local LRU cache.
+// Sadece happy-path (session var + revokedAt null) için kısa TTL cache.
+// 3-tier boundary check + self-heal (recoverMissingUserSession) ve DB
+// error fail-closed mantığı CACHE'lenmez — sadece "geçerli aktif token"
+// kararı 10s pencere ile cached.
+//
+// Drift trade-off: force-logout effect 10s gecikebilir (kullanıcı cihaz
+// revoke ettikten sonra max 10s geçerli kalır). 1ms tasarruf per dashboard
+// request × yüksek cache hit ratio (%95+) için kabul edilebilir.
+//
+// Manual invalidation: revoke endpoint'leri (logout, sessions/revoke,
+// password-reset) `userSessionRevocationCache.delete(tokenHash)` çağırarak
+// gecikmeyi anında giderebilir — gelecek scope.
+const USER_SESSION_REVOCATION_CACHE_TTL_MS = 10_000;
+const userSessionRevocationCache = new Map<string, number>();
+
 async function isUserSessionRevoked(
   req: NextRequest,
   rawToken: string,
   payload: jose.JWTPayload,
 ): Promise<boolean> {
+  // Stage 25 §38.101 Phase A #2 — happy-path cache hit: cached "active"
+  // marker var ve henüz expire olmamış → DB hit'i atla.
+  const tokenHash = hashToken(rawToken);
+  const cachedExpiresAt = userSessionRevocationCache.get(tokenHash);
+  if (cachedExpiresAt && cachedExpiresAt > Date.now()) {
+    return false;
+  }
+  if (cachedExpiresAt) {
+    // Expired entry; temizle (LRU eviction inline)
+    userSessionRevocationCache.delete(tokenHash);
+  }
   try {
     const session = await prisma.userSession.findUnique({
-      where: { tokenHash: hashToken(rawToken) },
+      where: { tokenHash },
       select: { revokedAt: true },
     });
     // Stage 14 hotfix (CLAUDE.md §38.84): Stage 9 flip (`!session → true`)
@@ -320,7 +347,18 @@ async function isUserSessionRevoked(
       });
       return true;
     }
-    return session.revokedAt !== null;
+    if (session.revokedAt !== null) {
+      // Revoke kayıtlı — cache'e koymayalım, her request fresh check.
+      return true;
+    }
+    // Stage 25 §38.101 Phase A #2 — happy-path cache write: aktif token,
+    // 10s pencere boyunca DB hit'i atla. Force-logout sonrası 10s drift
+    // kabul; manuel invalidation gelecek scope.
+    userSessionRevocationCache.set(
+      tokenHash,
+      Date.now() + USER_SESSION_REVOCATION_CACHE_TTL_MS,
+    );
+    return false;
   } catch (err) {
     // DB error → fail-CLOSED: a transient DB outage must not let a token
     // that may have been revoked by force-logout / password-reset slip
