@@ -1,8 +1,19 @@
-// CLAUDE.md §38.99 — Owner campaign send trigger.
+// Stage 29 §38.105 — Owner campaign submit-for-approval.
 //
-// Pipeline: draft campaign → resolveSegmentRecipients → sendCustomerCampaign
-// (mevcut §38.48 Wave 2 helper, sequential 600ms throttle, hasMarketingConsent
-// gate, per-row CustomerEmailLog audit, RFC 8058 unsubscribe headers).
+// Eski davranış (Wave 2 §38.48): draft → Resend pipeline (sequential 600ms
+// throttle) → status='sent'. Owner direkt send ederdi, hiçbir admin gate'i
+// geçmezdi.
+//
+// Yeni davranış: draft → status='pending_approval' + submittedAt + ops mail
+// (hello@buaze.com) + admin notification (in-app feed). Resend pipeline
+// çağrısı `/api/admin/campaigns/[id]/approve` endpoint'ine taşındı (single
+// source of truth). Reject olursa owner revize edip tekrar submit edebilir
+// ('rejected' → tekrar 'draft' yapılması gerek — gelecek scope; şu an
+// rejected terminal state ama yeni campaign create alternatif).
+//
+// Backward-compat: endpoint URL aynı, response shape değişti
+// (`{ result }` → `{ ok, status, recipientCount }`). Owner UI ComposeModal
+// "Şimdi gönder" → "Onaya gönder" CTA değişimi (Phase G).
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -12,7 +23,8 @@ import { canAccessRestaurant } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { validateBody } from '@/lib/api/validate';
 import { writeAdminAuditLog } from '@/lib/audit-log';
-import { sendCustomerCampaign } from '@/lib/email-customer-campaign';
+import { writeAdminNotification } from '@/lib/admin-notifications';
+import { notifyOpsOfCampaignSubmitted } from '@/lib/email/ops-alert';
 import { resolveSegmentRecipients } from '@/lib/customer-campaign-recipients';
 
 export const dynamic = 'force-dynamic';
@@ -35,7 +47,11 @@ export async function POST(
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   // Rate limit — single-campaign abuse koruması (5/dk/actor).
-  const limit = await rateLimit(`customer-campaigns-send:${actor.source}:${actor.id}`, 5, 60_000);
+  const limit = await rateLimit(
+    `customer-campaigns-submit:${actor.source}:${actor.id}`,
+    5,
+    60_000,
+  );
   if (!limit.allowed) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
@@ -54,6 +70,7 @@ export async function POST(
       subject: true,
       body: true,
       status: true,
+      createdById: true,
       restaurant: { select: { id: true, name: true, campaignsEnabled: true } },
     },
   });
@@ -67,28 +84,29 @@ export async function POST(
     return NextResponse.json({ error: 'campaigns_disabled' }, { status: 403 });
   }
 
-  // Status guard — only draft campaigns can be triggered. Sent/sending
-  // immutable (idempotency + KVKK audit trail).
+  // Status guard — only draft campaigns can be submitted. pending_approval/
+  // sent/failed immutable (admin approve flow tetiklenmiş veya bitmiş);
+  // rejected → draft transition gelecek scope (şu an owner re-submit için
+  // yeni campaign yaratır).
   if (campaign.status !== 'draft') {
-    return NextResponse.json({ error: 'campaign_not_sendable' }, { status: 409 });
+    return NextResponse.json({ error: 'campaign_not_submittable' }, { status: 409 });
   }
 
-  // Resolve recipients (KVKK + marketing consent + dedupe).
+  // Resolve recipients (preview-only — admin approve anında fresh resolve
+  // yeniden yapılır freshness için). KVKK 3-katman gate intact.
   const recipients = await resolveSegmentRecipients({
     restaurantId: campaign.restaurantId,
     onlyMarketingConsent: true,
   });
 
   if (recipients.length === 0) {
-    // No eligible audience — mark failed (no send attempts) instead of leaving
-    // status='draft' (UI treats draft as actionable). This preserves audit
-    // trail.
+    // No eligible audience — mark failed (no send attempts) instead of
+    // leaving status='draft' (UI treats draft as actionable).
     await prisma.customerEmailCampaign.update({
       where: { id },
       data: {
         status: 'failed',
         recipientCount: 0,
-        sentAt: new Date(),
       },
     });
     return NextResponse.json(
@@ -101,29 +119,89 @@ export async function POST(
     );
   }
 
-  // Trigger send pipeline (sequential 600ms throttle, mevcut helper).
-  const result = await sendCustomerCampaign({
-    campaignId: campaign.id,
-    restaurantId: campaign.restaurantId,
-    restaurantName: campaign.restaurant?.name ?? 'Buaze',
-    subject: campaign.subject,
-    body: campaign.body,
-    recipients,
+  // Status transition: draft → pending_approval. Resend pipeline burada
+  // tetiklenmez (admin approve endpoint'i çağırır).
+  const submittedAt = new Date();
+  await prisma.customerEmailCampaign.update({
+    where: { id },
+    data: {
+      status: 'pending_approval',
+      submittedAt,
+      // Recipient count snapshot — UI queue listing için. Admin approve
+      // anında fresh resolve edip gerçek count ile update edilir.
+      recipientCount: recipients.length,
+    },
   });
 
+  // Owner info (ops mail + admin notification için).
+  let ownerName: string | undefined;
+  let ownerEmail: string | undefined;
+  if (campaign.createdById) {
+    const owner = await prisma.user
+      .findUnique({
+        where: { id: campaign.createdById },
+        select: { name: true, email: true },
+      })
+      .catch(() => null);
+    ownerName = owner?.name ?? undefined;
+    ownerEmail = owner?.email ?? undefined;
+  }
+
+  const restaurantName = campaign.restaurant?.name ?? 'Buaze';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://buaze.com';
+  const adminUrl = `${appUrl}/admin/campaigns/${campaign.id}`;
+
+  // Ops mail (CLAUDE.md §21.33 paterni) — fire-and-forget, owner submit
+  // flow'u bloklanmaz (mail dispatch fail durumda console.error log).
+  void notifyOpsOfCampaignSubmitted({
+    campaignId: campaign.id,
+    restaurantName,
+    ownerName,
+    ownerEmail,
+    subject: campaign.subject,
+    recipientCount: recipients.length,
+    submittedAt,
+    adminUrl,
+  });
+
+  // Admin in-app notification (broadcast — tüm admin'ler queue gözlemleyebilir).
+  void writeAdminNotification({
+    adminId: null, // broadcast
+    type: 'campaign.submitted',
+    title: `Yeni kampanya onay bekliyor: ${restaurantName}`,
+    body: `${ownerName ? ownerName + ' · ' : ''}${campaign.subject.slice(0, 80)}`,
+    payload: {
+      campaignId: campaign.id,
+      restaurantId: campaign.restaurantId,
+      restaurantName,
+      ownerName: ownerName ?? null,
+      subject: campaign.subject,
+      recipientCount: recipients.length,
+      submittedAt: submittedAt.toISOString(),
+    },
+  });
+
+  // Audit log (CLAUDE.md §38.95).
   await writeAdminAuditLog({
     actorId: actor.id,
     actorSource: actor.source,
-    action: 'owner.campaigns.send',
+    action: 'admin.campaign.submit',
     targetId: campaign.id,
     payload: {
       restaurantId: campaign.restaurantId,
-      recipientCount: result.totalCount,
-      sentCount: result.sentCount,
-      failedCount: result.failedCount,
-      skippedCount: result.skippedCount,
+      restaurantName,
+      subjectPreview: campaign.subject.slice(0, 80),
+      recipientCount: recipients.length,
     },
   }).catch(() => undefined);
 
-  return NextResponse.json({ result }, { status: 200 });
+  return NextResponse.json(
+    {
+      ok: true,
+      status: 'pending_approval',
+      recipientCount: recipients.length,
+      submittedAt: submittedAt.toISOString(),
+    },
+    { status: 200 },
+  );
 }

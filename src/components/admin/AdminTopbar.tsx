@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import AdminCampaignBell from '@/components/admin/AdminCampaignBell';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 
 interface AdminTopbarProps {
@@ -32,6 +33,11 @@ export default function AdminTopbar({ announcements = [], displayName }: AdminTo
         announcements={announcements}
         panelBase="/admin"
       />
+      {/* Stage 29 §38.105 — Campaign moderation in-app bell. AdminNotification
+          feed (broadcast + per-admin). RBAC `campaigns:read` permission ile
+          gate'li (backend), UI'da sadece görünüyor — manager için 401/403
+          fallback'inde silent kalır. */}
+      <AdminCampaignBell locale={locale === 'en' ? 'en' : 'tr'} />
       <Link
         href="/admin/profile"
         className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] transition-colors hover:bg-[#1A1A1A]"

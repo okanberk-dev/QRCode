@@ -62,6 +62,14 @@ export const SUPPORTED_MAIL_KEYS = [
   'inactive-reactivation',
   // §38.48 Wave 2 — Owner → customer mass email campaign (CLAUDE.md §38.48).
   'customer-campaign',
+  // Stage 29 §38.105 — campaign moderation owner notification mails.
+  // Admin approve → owner-campaign-approved (delivery summary + dashboard CTA).
+  // Admin reject → owner-campaign-rejected (reviewer note + revize rehberi).
+  // Ops mail (notifyOpsOfCampaignSubmitted) ve admin in-app feed
+  // (writeAdminNotification) ayrı kanallar; bu 2 template owner mailbox'una
+  // gider.
+  'owner-campaign-approved',
+  'owner-campaign-rejected',
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];

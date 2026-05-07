@@ -34,6 +34,13 @@ interface CampaignDetail {
   failedCount: number;
   scheduledAt: string | null;
   sentAt: string | null;
+  // Stage 29 §38.105 — moderation timeline + reviewer note (CLAUDE.md
+  // §38.105). approvedById/rejectedById intentionally hidden — owner panel
+  // internal admin user ID görmemeli (PII concern).
+  submittedAt?: string | null;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
+  reviewerNote?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -377,13 +384,72 @@ export function CampaignDetailDrawer({ campaignId, isTr, onClose, onChanged }: P
                 </div>
               </div>
 
-              {/* Sent timestamp */}
-              {campaign.sentAt ? (
-                <div className="text-[11.5px] text-[#525252]">
-                  <span className="text-[#737373]">
-                    {isTr ? 'Gönderildi' : 'Sent at'}:
-                  </span>{' '}
-                  {formatDate(campaign.sentAt, isTr)}
+              {/* Stage 29 §38.105 — Moderation timeline (submitted, approved/rejected, sent).
+                  Status'a göre conditional render: pending_approval/rejected/sent her aşamada
+                  ilgili timestamp + reviewerNote (rejected'da amber bordered card). */}
+              {(campaign.submittedAt || campaign.approvedAt || campaign.rejectedAt || campaign.sentAt) ? (
+                <div className="rounded-[12px] border border-[#EDEDED] bg-[#FAFAFA] p-4">
+                  <div className="pulse-eyebrow text-[10.5px] text-[#737373] mb-3">
+                    {isTr ? 'ZAMAN ÇİZELGESİ' : 'TIMELINE'}
+                  </div>
+                  <ul className="space-y-2 text-[11.5px] text-[#525252]">
+                    {campaign.submittedAt ? (
+                      <li className="flex items-center gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#737373]" />
+                        <span className="text-[#737373]">
+                          {isTr ? 'Onaya gönderildi' : 'Submitted'}:
+                        </span>
+                        <span>{formatDate(campaign.submittedAt, isTr)}</span>
+                      </li>
+                    ) : null}
+                    {campaign.approvedAt ? (
+                      <li className="flex items-center gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#A8D62E]" />
+                        <span className="text-[#737373]">
+                          {isTr ? 'Onaylandı' : 'Approved'}:
+                        </span>
+                        <span>{formatDate(campaign.approvedAt, isTr)}</span>
+                      </li>
+                    ) : null}
+                    {campaign.rejectedAt ? (
+                      <li className="flex items-center gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#DC2626]" />
+                        <span className="text-[#737373]">
+                          {isTr ? 'Reddedildi' : 'Rejected'}:
+                        </span>
+                        <span>{formatDate(campaign.rejectedAt, isTr)}</span>
+                      </li>
+                    ) : null}
+                    {campaign.sentAt ? (
+                      <li className="flex items-center gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#0A0A0A]" />
+                        <span className="text-[#737373]">
+                          {isTr ? 'Gönderildi' : 'Sent'}:
+                        </span>
+                        <span>{formatDate(campaign.sentAt, isTr)}</span>
+                      </li>
+                    ) : null}
+                  </ul>
+                </div>
+              ) : null}
+
+              {/* Stage 29 §38.105 — Reviewer note (rejected status only).
+                  Amber bordered card — admin tarafından girilen gerekçe (min 20 char,
+                  endpoint zorunlu). Owner revize edip yeni campaign yaratırken gerekçeyi
+                  görür ve uygular. */}
+              {campaign.status === 'rejected' && campaign.reviewerNote ? (
+                <div className="rounded-[12px] border-l-[3px] border-l-[#FDE68A] border-y border-r border-y-[#FDE68A] border-r-[#FDE68A] bg-[#FFFBEB] p-4">
+                  <div className="pulse-eyebrow text-[10.5px] text-[#92400E] mb-1.5">
+                    {isTr ? 'BUAZE EKİBİ NOTU' : 'BUAZE TEAM NOTE'}
+                  </div>
+                  <div className="text-[12.5px] text-[#1A1A1A] whitespace-pre-wrap leading-[1.55]">
+                    {campaign.reviewerNote}
+                  </div>
+                  <div className="text-[11px] text-[#92400E] mt-3">
+                    {isTr
+                      ? 'Notu dikkate alarak yeni bir kampanya oluşturup tekrar onaya gönderebilirsin.'
+                      : 'Take this note into account, create a new campaign, and resubmit for approval.'}
+                  </div>
                 </div>
               ) : null}
 

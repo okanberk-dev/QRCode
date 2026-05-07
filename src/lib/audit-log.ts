@@ -230,6 +230,26 @@ export const ACTION_LABELS: Record<string, { tr: string; en: string }> = {
     tr: 'Kampanya silindi',
     en: 'Campaign deleted',
   },
+  // Stage 29 §38.105 — campaign moderation pipeline.
+  // Owner submit → admin approve/reject → Resend send (admin-triggered).
+  // submit/send action'ları AdminAuditLog'a actorSource='user' olarak yazılır
+  // (owner aksiyonu); approve/reject actorSource='admin' (admin aksiyonu).
+  'admin.campaign.submit': {
+    tr: 'Kampanya onaya gönderildi',
+    en: 'Campaign submitted for approval',
+  },
+  'admin.campaign.approve': {
+    tr: 'Kampanya onaylandı',
+    en: 'Campaign approved',
+  },
+  'admin.campaign.reject': {
+    tr: 'Kampanya reddedildi',
+    en: 'Campaign rejected',
+  },
+  'admin.campaign.send': {
+    tr: 'Kampanya gönderildi (admin)',
+    en: 'Campaign sent (admin)',
+  },
 };
 
 export function actionLabel(action: string, locale: 'tr' | 'en' = 'tr'): string {

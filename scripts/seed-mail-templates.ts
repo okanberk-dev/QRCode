@@ -550,6 +550,14 @@ const SEEDS: Array<{ key: string; locale: string; content: Copy }> = [
   // edilebilir; inline default fallback render fn'inde TR/EN dolu).
   { key: 'customer-campaign', locale: 'tr', content: {} },
   { key: 'customer-campaign', locale: 'en', content: {} },
+  // Stage 29 §38.105 — campaign moderation owner notification mails.
+  // Inline default render fn'inde TR/EN dolu (eyebrow/title/intro/etc.);
+  // admin /admin/mail-templates üzerinden override edebilir. Empty content
+  // {} = render fn inline default kullanır (loadMailCopy shallow merge).
+  { key: 'owner-campaign-approved', locale: 'tr', content: {} },
+  { key: 'owner-campaign-approved', locale: 'en', content: {} },
+  { key: 'owner-campaign-rejected', locale: 'tr', content: {} },
+  { key: 'owner-campaign-rejected', locale: 'en', content: {} },
 ];
 
 async function main() {

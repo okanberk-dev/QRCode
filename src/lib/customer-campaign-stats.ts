@@ -58,11 +58,11 @@ export function aggregateLogStats(
 
 /**
  * Status badge variant resolver for owner UI. Pulse Badge primitive `kind`
- * enum mapping (CLAUDE.md §11 + §23.3).
+ * enum mapping (CLAUDE.md §11 + §23.3 + §38.105 moderation extension).
  */
 export function campaignStatusBadge(
   status: string,
-): 'ok' | 'warn' | 'danger' | 'info' | 'ghost' {
+): 'ok' | 'warn' | 'danger' | 'info' | 'ghost' | 'lime' {
   switch (status) {
     case 'sent':
       return 'ok';
@@ -72,6 +72,15 @@ export function campaignStatusBadge(
       return 'danger';
     case 'draft':
       return 'ghost';
+    // Stage 29 §38.105 — moderation pipeline status'ları
+    case 'pending_approval':
+      return 'warn';
+    case 'approved':
+      // Transient state — Resend pipeline başlamadan önce kısa süreli
+      // (UI zaten 'sending' veya 'sent'/'failed' hızlıca tetiklenir).
+      return 'lime';
+    case 'rejected':
+      return 'danger';
     default:
       return 'ghost';
   }
@@ -86,6 +95,10 @@ export function campaignStatusLabel(
     sending: { tr: 'Gönderiliyor', en: 'Sending' },
     sent: { tr: 'Gönderildi', en: 'Sent' },
     failed: { tr: 'Başarısız', en: 'Failed' },
+    // Stage 29 §38.105 — moderation pipeline label'ları
+    pending_approval: { tr: 'Onayda', en: 'Pending approval' },
+    approved: { tr: 'Onaylandı', en: 'Approved' },
+    rejected: { tr: 'Reddedildi', en: 'Rejected' },
   };
   return map[status]?.[locale] ?? status;
 }

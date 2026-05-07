@@ -214,8 +214,23 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
         { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik' },
         { href: '/admin/qr', icon: QrCode, label: t('qr_codes') },
         ...(role === 'manager' ? [] : [{ href: '/admin/restaurants', icon: Store, label: t('restaurants') }]),
+        // Stage 29 §38.105 — Campaign moderation queue. Backend RBAC
+        // `campaigns:read` zorunlu; superadmin bypass + manager grant'lı
+        // ise erişim. UI role filter sadece superadmin'e gösteriyor —
+        // manager için RBAC permission grant durumunda admin tarafından
+        // ayrıca açılır (mevcut /admin/users/[id]/permissions paterni).
         ...(role === 'superadmin'
-          ? [{ href: '/admin/embed-usage', icon: Globe, label: locale === 'en' ? 'Embed usage' : 'Embed kullanımı' }]
+          ? [
+              {
+                // Stage 29 §38.105 — Customer email campaign moderation queue
+                // (mevcut /admin/campaigns QR placement campaigns ayrı concept;
+                // URL çakışmasını önlemek için /admin/campaign-approvals).
+                href: '/admin/campaign-approvals',
+                icon: Sparkles,
+                label: locale === 'en' ? 'Campaign approvals' : 'Kampanya Onayları',
+              },
+              { href: '/admin/embed-usage', icon: Globe, label: locale === 'en' ? 'Embed usage' : 'Embed kullanımı' },
+            ]
           : []),
       ],
     },

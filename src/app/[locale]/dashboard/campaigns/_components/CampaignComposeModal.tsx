@@ -289,10 +289,17 @@ export function CampaignComposeModal({ isTr, restaurantId, onClose, onCreated }:
         {confirmSend ? (
           <AlertBanner kind="warn" icon={<AlertTriangle size={14} strokeWidth={2.2} />}>
             {isTr
-              ? `${preview?.count ?? 0} müşteriye e-posta gönderilecek. Onaylıyor musun? Tekrar "Şimdi gönder"e bas.`
-              : `Email will be sent to ${preview?.count ?? 0} customers. Confirm? Click "Send now" again.`}
+              ? `${preview?.count ?? 0} müşteri için kampanya admin onayına gönderilecek. Admin onayladıktan sonra Buaze otomatik teslim eder. Tekrar "Onaya gönder"e bas.`
+              : `Campaign will be submitted to admin for approval (${preview?.count ?? 0} recipients). Buaze auto-delivers after approval. Click "Submit for approval" again.`}
           </AlertBanner>
-        ) : null}
+        ) : (
+          // Stage 29 §38.105 — moderation disclosure (admin onay zorunlu)
+          <AlertBanner kind="info">
+            {isTr
+              ? 'Tüm kampanyalar gönderilmeden önce Buaze admin onayından geçer. Onaylandıktan sonra otomatik teslim edilir; reddedilirse mail ile gerekçe paylaşılır.'
+              : 'All campaigns require Buaze admin approval before sending. Auto-delivered after approval; you receive an email with the reason if rejected.'}
+          </AlertBanner>
+        )}
       </div>
 
       <div className="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-[#EDEDED] flex-wrap">
@@ -328,11 +335,11 @@ export function CampaignComposeModal({ isTr, restaurantId, onClose, onCreated }:
           )}
           {confirmSend
             ? isTr
-              ? 'Onayla ve gönder'
-              : 'Confirm & send'
+              ? 'Onaya gönder'
+              : 'Submit for approval'
             : isTr
-              ? 'Şimdi gönder'
-              : 'Send now'}
+              ? 'Onaya gönder'
+              : 'Submit for approval'}
         </button>
       </div>
     </Modal>

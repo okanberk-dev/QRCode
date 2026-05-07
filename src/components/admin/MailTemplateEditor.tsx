@@ -250,6 +250,39 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'sentLine', label: 'Footer "Buaze ile gönderildi" prefix' },
     { key: 'sentSuffix', label: 'Footer suffix', hint: 'TR: "üzerinden iletildi." / EN: ""' },
   ],
+  // Stage 29 §38.105 — campaign moderation owner notifications.
+  'owner-campaign-approved': [
+    { key: 'eyebrow', label: 'Eyebrow' },
+    { key: 'title', label: 'Başlık' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      hint: '${ownerName} ve ${restaurantName} placeholder\'ları kullanılabilir',
+      placeholders: ['ownerName', 'restaurantName'],
+    },
+    { key: 'statsLabel', label: 'Stats başlık' },
+    { key: 'sentRow', label: '"Gönderilen" satırı' },
+    { key: 'failedRow', label: '"Başarısız" satırı' },
+    { key: 'ctaLabel', label: 'CTA buton metni' },
+    { key: 'footerHint', label: 'Footer ipucu', multiline: true },
+  ],
+  'owner-campaign-rejected': [
+    { key: 'eyebrow', label: 'Eyebrow' },
+    { key: 'title', label: 'Başlık' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      hint: '${ownerName} ve ${restaurantName} placeholder\'ları kullanılabilir',
+      placeholders: ['ownerName', 'restaurantName'],
+    },
+    { key: 'noteLabel', label: '"Gerekçe" başlığı' },
+    { key: 'nextStepsTitle', label: 'Sonraki adımlar başlığı' },
+    { key: 'nextStepsBody', label: 'Sonraki adımlar açıklama', multiline: true },
+    { key: 'ctaLabel', label: 'CTA buton metni' },
+    { key: 'footerHint', label: 'Footer ipucu', multiline: true },
+  ],
 };
 
 const TEMPLATE_LABELS: Record<string, string> = {
@@ -270,6 +303,8 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'upgrade-suggestion': 'Plan yükseltme önerisi',
   'inactive-reactivation': 'Tekrar canlandırma',
   'customer-campaign': 'Müşteri kampanyası',
+  'owner-campaign-approved': 'Kampanya onaylandı (owner)',
+  'owner-campaign-rejected': 'Kampanya reddedildi (owner)',
 };
 
 interface Props {

@@ -16,7 +16,27 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const PAGE_SIZE = 20;
-const VALID_STATUSES = ['draft', 'sending', 'sent', 'failed'] as const;
+// Stage 29 §38.105 — moderation pipeline status'ları eklendi.
+// 'draft'              owner kampanyayı yeni oluşturdu, henüz onaya
+//                      göndermedi (compose modal kaydet)
+// 'pending_approval'   owner submit etti, admin queue'da bekliyor
+// 'approved'           admin onayladı, transient state — Resend pipeline
+//                      çalışmaya başlar (kısa süreli, hızlıca 'sending')
+// 'rejected'           admin reddetti, reviewerNote gerekçeyi taşır;
+//                      owner revize edip yeniden submit edebilir (status
+//                      transition: 'rejected' → 'draft' → 'pending_approval')
+// 'sending'            Resend pipeline aktif, throttle ile teslim ediliyor
+// 'sent'               tüm recipient'lere gönderildi (kısmi failedCount OK)
+// 'failed'             pipeline fail (Resend outage, helper exception)
+const VALID_STATUSES = [
+  'draft',
+  'pending_approval',
+  'approved',
+  'rejected',
+  'sending',
+  'sent',
+  'failed',
+] as const;
 
 const ListQuerySchema = z.object({
   restaurantId: z.string().min(1).optional(),

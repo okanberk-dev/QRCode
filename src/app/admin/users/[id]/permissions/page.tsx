@@ -57,6 +57,7 @@ const RESOURCE_LABELS: Record<AdminResource, string> = {
   analytics: 'Analitik',
   audit_logs: 'Audit log',
   impersonation: 'Owner gibi gör',
+  campaigns: 'Kampanya onayları',
 };
 
 const ACTION_LABELS: Record<AdminAction, string> = {

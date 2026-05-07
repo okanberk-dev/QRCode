@@ -32,6 +32,13 @@ export async function GET(
       failedCount: true,
       scheduledAt: true,
       sentAt: true,
+      // Stage 29 §38.105 — moderation timeline + reviewer note.
+      submittedAt: true,
+      approvedById: true,
+      approvedAt: true,
+      rejectedById: true,
+      rejectedAt: true,
+      reviewerNote: true,
       createdById: true,
       createdAt: true,
       updatedAt: true,
@@ -67,6 +74,14 @@ export async function GET(
         failedCount: campaign.failedCount,
         scheduledAt: campaign.scheduledAt?.toISOString() ?? null,
         sentAt: campaign.sentAt?.toISOString() ?? null,
+        // Stage 29 §38.105 — moderation timestamps + reviewer note exposed
+        // to owner UI (CampaignDetailDrawer status timeline + rejected
+        // reason). approvedById/rejectedById intentionally hidden — owner
+        // panel internal admin user ID görmemeli (PII concern).
+        submittedAt: campaign.submittedAt?.toISOString() ?? null,
+        approvedAt: campaign.approvedAt?.toISOString() ?? null,
+        rejectedAt: campaign.rejectedAt?.toISOString() ?? null,
+        reviewerNote: campaign.reviewerNote,
         createdAt: campaign.createdAt.toISOString(),
         updatedAt: campaign.updatedAt.toISOString(),
       },
@@ -96,9 +111,11 @@ export async function DELETE(
   const access = await canAccessRestaurant(actor, campaign.restaurantId);
   if (!access) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  // Only draft campaigns are deletable. Sending/sent/failed are immutable
-  // (audit trail + KVKK retention).
-  if (campaign.status !== 'draft') {
+  // Only draft + rejected campaigns are deletable. pending_approval/
+  // approved/sending/sent/failed immutable (admin queue içinde olabilir
+  // veya audit trail + KVKK retention zorunlu). Rejected → owner revize
+  // edip yenisini açmak için silebilir (CLAUDE.md §38.105 paterni).
+  if (campaign.status !== 'draft' && campaign.status !== 'rejected') {
     return NextResponse.json({ error: 'campaign_not_deletable' }, { status: 409 });
   }
 

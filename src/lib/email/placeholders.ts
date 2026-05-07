@@ -36,6 +36,24 @@ export const MAIL_PLACEHOLDERS = {
   // object'inde sadece restaurantName geçer; admin override'da bu token
   // valid kabul edilir, diğerleri 400 invalid_placeholder döner.
   'customer-campaign': ['restaurantName'],
+  // Stage 29 §38.105 — campaign moderation owner notifications.
+  // Approved: ${ownerName} ${restaurantName} ${subject} ${sentCount} ${failedCount} ${dashboardUrl}
+  // Rejected: ${ownerName} ${restaurantName} ${subject} ${reviewerNote} ${dashboardUrl}
+  'owner-campaign-approved': [
+    'ownerName',
+    'restaurantName',
+    'subject',
+    'sentCount',
+    'failedCount',
+    'dashboardUrl',
+  ],
+  'owner-campaign-rejected': [
+    'ownerName',
+    'restaurantName',
+    'subject',
+    'reviewerNote',
+    'dashboardUrl',
+  ],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;

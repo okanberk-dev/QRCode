@@ -13252,3 +13252,277 @@ admin list + `/api/admin/analytics/bi` endpoint'lerinde).
   28 Faz 4 refactor (O5 customers media-query / A3 cursor pagination /
   A5 ref-based checkbox tracking — operatör onayı zorunlu, ayrı 3 PR).
   Performance scope büyük oranda kapatıldı (Stage 22-28 cumulative).
+
+### 38.105 2026-05-07 — Stage 29 campaign moderation system (admin approval queue + ops mail + admin notification feed)
+
+Owner kampanya gönderim akışına admin onay katmanı eklendi. Owner submit
+eder → ops mail (`hello@buaze.com`) + admin in-app notification feed
+(`AdminNotification` model) → admin queue UI'da onaylar/reddeder → Resend
+pipeline tetiklenir, owner mail ile bildirim alır. Tüm kampanyalar admin
+onayından zorunlu geçer (kullanıcı kararı — opt-in flag yok).
+
+#### Schema değişiklikleri
+
+`prisma/migrations/20260507180000_add_campaign_moderation_and_admin_notifications/`:
+- `CustomerEmailCampaign` genişletildi: `status` enum literal'leri
+  `pending_approval | approved | rejected` eklendi (string field intact);
+  yeni nullable field'lar `submittedAt + approvedById + approvedAt +
+  rejectedById + rejectedAt + reviewerNote` (hepsi default null, breaking
+  change yok).
+- Yeni `AdminNotification` model: `id + adminId? + type + title + body? +
+  payload Json? + readAt? + createdAt`. adminId nullable → broadcast
+  pattern (tüm admin'ler görür); targeted varyant gelecek scope.
+  Cascade: AdminUser silinince per-admin notifications temizlenir.
+
+#### Mevcut send akışından moderation pipeline'a geçiş
+
+| Önce | Sonra (Stage 29) |
+|---|---|
+| Owner POST `/api/customer-campaigns/[id]/send` → status=sending → Resend → status=sent | Owner POST `[id]/send` → status=`pending_approval` + submittedAt + ops mail + admin notification |
+| Admin gate yok | Admin POST `/api/admin/campaigns/[id]/approve` → status=approved → Resend pipeline (mevcut helper reuse) → sent/failed + owner mail + audit log |
+| Reject yolu yok | Admin POST `/api/admin/campaigns/[id]/reject` → status=rejected + reviewerNote (min 20 char) + owner mail + audit log |
+
+Mevcut `Restaurant.campaignsEnabled` master flag (CLAUDE.md §5.2) intact.
+`sendCustomerCampaign` helper (CLAUDE.md §38.48 Wave 2 + email-customer-
+campaign.ts) approve endpoint'inden çağrılır — single source of truth.
+
+#### Yeni endpoint'ler
+
+- `GET /api/admin/campaigns` — paginated queue (status filter,
+  pending_approval default, ?status=approved/rejected/sent/failed/all,
+  page/limit)
+- `GET /api/admin/campaigns/[id]` — detail (campaign + restaurant + owner
+  + creator + approver + rejecter + log stats)
+- `POST /api/admin/campaigns/[id]/approve` — Zod `.strict()` body
+  `{ note?: string ≤ 1000 }` + RBAC `campaigns:write` + rate limit
+  10/dk/admin
+- `POST /api/admin/campaigns/[id]/reject` — Zod body `{ note: min 20 max
+  1000 }` (forensic gerekçe zorunlu) + aynı guard'lar
+- `GET /api/admin/campaigns/[id]/logs` — CustomerEmailLog admin viewer
+  (delivery diagnose); email mask YOK (admin tier legitimate interest)
+- `GET /api/admin/notifications` — feed (broadcast + per-admin),
+  ?unreadOnly=true|false, paginated
+- `POST /api/admin/notifications` — mark all (per-admin); broadcast
+  notifications cross-admin drift kabul (gelecek
+  AdminNotificationRead pivot tablo scope)
+- `POST /api/admin/notifications/[id]/read` — mark single
+
+Tüm endpoint'ler: IDOR (`getAdminFromRequest` + `hasPermission`), Zod
+`.strict()` mass-assignment guard, rate limit (CLAUDE.md §14.2), audit
+log (CLAUDE.md §38.95 disipline), cache header `private, s-maxage=N,
+stale-while-revalidate=M` (CLAUDE.md §38.100).
+
+#### Yeni helper'lar
+
+- `src/lib/admin-notifications.ts` — `writeAdminNotification` fire-and-
+  forget helper (Sentry warning level capture + console.warn fail-soft).
+  Type literal: `'campaign.submitted' | 'campaign.approved' |
+  'campaign.rejected'` (gelecek extension için union).
+- `src/lib/email/ops-alert.ts` — `notifyOpsOfCampaignSubmitted` export.
+  Recipient chain: `OPS_EMAIL > NOTIFICATION_EMAIL > 'hello@buaze.com'`
+  (kullanıcı talebi explicit hard-coded ultimate fallback). Rate limit
+  10/5min/restaurant (CLAUDE.md §21.33 paterni).
+- `src/lib/email/owner-campaign-notify.ts` — `sendOwnerCampaignApprovedMail`
+  + `sendOwnerCampaignRejectedMail` Pulse template render + Resend
+  dispatch. Fire-and-forget owner mail bildirim.
+
+#### Yeni mail template'leri (2)
+
+- `src/lib/email/templates/owner-campaign-approved.ts` — admin onay
+  sonrası owner'a teslim özeti + dashboard CTA (sentCount + failedCount).
+- `src/lib/email/templates/owner-campaign-rejected.ts` — reviewerNote
+  amber bordered card + revize rehberi.
+
+5-nokta drift disipline (CLAUDE.md §21.26 paterni reuse): template +
+SUPPORTED_MAIL_KEYS + MAIL_PLACEHOLDERS + seed entry × 2 locale +
+MailTemplateEditor FIELDS_BY_TEMPLATE + TEMPLATE_LABELS.
+
+#### RBAC + audit + UI
+
+- `src/lib/rbac.ts` RESOURCES array'a `'campaigns'` eklendi (CLAUDE.md
+  §38.94 paterni). RBAC `campaigns:read` (queue + detail + logs);
+  `campaigns:write` (approve + reject). Superadmin bypass; manager için
+  explicit grant gerek (mevcut `/admin/users/[id]/permissions` paterni).
+- `src/lib/audit-log.ts` ACTION_LABELS map'e 4 yeni entry: `admin.campaign.
+  {submit,approve,reject,send}` TR/EN parite.
+- Admin sidebar Operasyon group'una "Kampanya Onayları" nav item
+  (superadmin role + Sparkles icon + `/admin/campaign-approvals` URL —
+  mevcut `/admin/campaigns` QR placement campaigns concept'i ile çakışmayı
+  önlemek için ayrı route).
+- `AdminCampaignBell` component — AdminTopbar'da feedback NotificationBell
+  yanında side-by-side mount. 60s polling + visibilitychange (CLAUDE.md
+  §38.100 paterni paralel) + dropdown panel (last 10 + mark-as-read +
+  click-through `/admin/campaign-approvals/[id]`).
+
+#### Owner UI değişiklikleri
+
+- `CampaignComposeModal`: "Şimdi gönder" → "Onaya gönder" CTA. Confirm
+  dialog body güncellendi ("admin onayından sonra gönderilecek" disclosure).
+  AlertBanner `kind="info"` moderation disclosure mount edildi.
+- `CampaignsList` + `customer-campaign-stats.ts`: `campaignStatusBadge`
+  + `campaignStatusLabel` 3 yeni status için extend (`pending_approval`
+  warn/Onayda, `approved` lime/Onaylandı, `rejected` danger/Reddedildi).
+- `CampaignDetailDrawer`: moderation timeline (created → submitted →
+  approved/rejected → sent dots+timestamps) + reviewerNote amber bordered
+  card (rejected status only). `approvedById`/`rejectedById` kasıtlı
+  hidden — owner internal admin user ID görmemeli (PII concern).
+- DELETE guard genişletildi: rejected status da silinebilir (revize
+  workflow için).
+
+#### Admin UI
+
+- `/admin/campaign-approvals/page.tsx` — moderation queue list (status
+  filter chips + paginated table + click-through detail).
+- `/admin/campaign-approvals/[id]/page.tsx` — detail page (subject + body
+  preview + recipient stats + approval/reject CTAs + audit history link
+  + logs link).
+- `AdminCampaignApprovalActions` client island — Modal primitive (CLAUDE.md
+  §11.1 focus trap) + approve/reject confirm flow (note input min 20 char
+  reject için zorunlu) + optimistic state + bulkNotice (5s success / 8s
+  error CLAUDE.md §38.15).
+
+#### Bug fix
+
+Owner panelde "kampanya oluşturulmuyor" raporu — ComposeModal POST'tan
+sonra "Şimdi gönder" çağrısı doğrudan Resend pipeline'ı tetikliyordu;
+mevcut bug muhtemelen `Restaurant.campaignsEnabled=false` veya marketing-
+consent'li müşteri yokluğu ile ilgili idi. Stage 29 admin moderation
+pipeline'ı bu akışı yeniden inşa etti — owner artık "Onaya gönder"
+diyince campaign queue'ya düşer ve admin onayladıktan sonra teslim
+edilir. Mevcut bug semantik olarak çözüldü (UX sözleşmesi değişti, send
+akışı admin'e devredildi).
+
+#### Etkilenen dosyalar (~32 dosya)
+
+**Schema (2)**: prisma/schema.prisma + migration SQL.
+
+**Backend yeni (8)**: `/api/admin/campaigns/route.ts` + `[id]/route.ts` +
+`[id]/approve` + `[id]/reject` + `[id]/logs` + `/api/admin/notifications/
+route.ts` + `[id]/read`.
+
+**Backend modify (3)**: `/api/customer-campaigns/route.ts` (VALID_STATUSES) +
+`[id]/route.ts` (response shape) + `[id]/send/route.ts` (davranış değişimi
+send → submit-for-approval).
+
+**Helper yeni (4)**: `admin-notifications.ts` + `email/owner-campaign-
+notify.ts` + 2 mail template (`owner-campaign-approved.ts` +
+`owner-campaign-rejected.ts`).
+
+**Helper modify (4)**: `email/ops-alert.ts` (notifyOpsOfCampaignSubmitted)
++ `rbac.ts` (RESOURCES + page label) + `audit-log.ts` (4 ACTION_LABELS) +
+`customer-campaign-stats.ts` (3 status badge/label).
+
+**Mail seed + editor (3)**: `scripts/seed-mail-templates.ts` (4 row) +
+`email/copy-loader.ts` (SUPPORTED_MAIL_KEYS) + `email/placeholders.ts`
+(MAIL_PLACEHOLDERS) + `MailTemplateEditor.tsx` (FIELDS_BY_TEMPLATE +
+TEMPLATE_LABELS).
+
+**Owner UI (3)**: ComposeModal + CampaignsList badge (helper extend) +
+CampaignDetailDrawer timeline + reviewer note.
+
+**Admin UI (4)**: AdminSidebar nav item + AdminTopbar mount AdminCampaignBell
++ `/admin/campaign-approvals/page.tsx` (queue) + `[id]/page.tsx` (detail)
++ `AdminCampaignApprovalActions` (client island).
+
+**Permissions UI (1)**: `permissions/page.tsx` RESOURCE_LABELS map
+genişletme (campaigns: 'Kampanya onayları').
+
+#### Verification
+
+- `npm run lint` → 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`
+- `npm test` → 274/274 pass (functional değişiklik test edilmiyor)
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) → ✓ Compiled +
+  static + 7 yeni dynamic route
+- Sanity grep regression: AdminNotification model + VALID_STATUSES
+  pending_approval + writeAdminNotification + notifyOpsOfCampaignSubmitted
+  + 'campaigns' RESOURCES + admin.campaign.* ACTION_LABELS + 2 mail
+  template + seed + copy-loader + placeholders + admin queue page +
+  detail page + approval actions
+
+#### Manuel smoke test (Vercel preview sonrası)
+
+1. Owner login → `/dashboard/campaigns` → Yeni kampanya → ComposeModal →
+   "Onaya gönder" → status `Onayda` (warn badge)
+2. `hello@buaze.com` mail kontrol — ops mail trigger
+3. Admin login → AdminTopbar Sparkles bell → "Yeni kampanya onay bekliyor"
+   notification (broadcast)
+4. AdminSidebar → "Kampanya Onayları" → queue listesi
+5. Detail page → "Onayla ve gönder" → confirm modal → onay
+6. Owner inbox: "Kampanyanız onaylandı" mail (sentCount + delivery
+   summary)
+7. CustomerEmailLog entry'leri (per-recipient delivery status)
+8. Audit history (`/admin/audit-logs?targetId=<campaignId>`):
+   `admin.campaign.submit` + `admin.campaign.approve` + `admin.campaign.send`
+   3 entry
+
+**Reject akışı**: Admin reject → note min 20 char → confirm. Owner mail
+"Kampanyanız onaylanmadı" + reviewerNote. Owner panel CampaignDetailDrawer'
+da reviewerNote amber bordered card (revize rehberi). Status `Reddedildi`
+(danger). Owner rejected campaign'ı silebilir → yeni campaign create.
+
+#### Yapma
+
+- Mevcut `[id]/send` endpoint'inde Resend pipeline'ı tutmak — admin
+  approve endpoint'i çağırır (single source of truth).
+- AdminNotification adminId'siz broadcast yerine her admin için ayrı
+  satır yaratmak — broadcast pattern (adminId=null) tek satır + WHERE
+  OR clause feed query.
+- Reject endpoint'inde note opsiyonel yapmak — forensic audit min 20
+  char zorunlu (CLAUDE.md §38.96 impersonation paterni paralel).
+- 'campaigns' RBAC permission'ı superadmin'e default vermek — RBAC
+  helper bypass eder (mevcut `hasPermission` paterni); explicit grant
+  manager için.
+- `Restaurant.campaignsEnabled` master flag'ini moderation pipeline ile
+  silmek — admin disable hâlâ create-time gate (admin moderation runtime
+  gate).
+- Owner panel CampaignsList'te `approvedById`/`rejectedById` raw render
+  etmek — internal admin user ID PII concern.
+- `notifyOpsOfCampaignSubmitted` recipient için yeni env eklemek —
+  mevcut `OPS_EMAIL || NOTIFICATION_EMAIL || 'hello@buaze.com'` chain
+  yeterli.
+- AdminNotificationBell'i 30s polling yapmak — 60s NotificationBell
+  paterni reuse (CLAUDE.md §38.100).
+- Approve endpoint Resend send fail durumunda status'u 'approved'
+  bırakmak — partial failure tracking için 'sent'/'failed' final state
+  zorunlu (UI'da sent badge görünür ama failedCount > 0).
+
+#### Yap
+
+- Yeni admin-side moderation event eklerken (örn. campaign auto-archive)
+  AdminNotification.type literal genişlet + UI label map + audit
+  ACTION_LABELS + RBAC permission gate.
+- Yeni mail template eklenirken §21.26 5-nokta drift disipline.
+- Approval modal pattern başka surface'ta (örn. blog moderation)
+  AdminCampaignApprovalActions paterni reuse — Modal primitive +
+  useConfirmDialog + min char note guard.
+- Schema field eklenirken nullable + default null (geri uyum)
+  zorunlu — Vercel build `prisma migrate deploy` otomatik apply
+  (CLAUDE.md §14.1 paterni).
+
+#### Stage 29 closure (Tarih 2026-05-07)
+
+- Branch: `claude/campaign-moderation-stage29` (fresh main üstüne, Stage
+  28 §38.104 merged)
+- Edit'lenen + yeni dosyalar: ~32 dosya
+- Schema migration: 1 (CustomerEmailCampaign extend + AdminNotification
+  yeni model, breaking change yok)
+- Yeni dep: yok
+- Test count: 274/274 pass intact (functional değişiklik scope dışı —
+  unit test eklenmedi, mevcut helper coverage yeterli)
+- Operatör aksiyonu (PR sonrası): Vercel build script `prisma migrate
+  deploy` otomatik schema migration apply eder (CLAUDE.md §14.1).
+  `scripts/seed-mail-templates.ts` 4 yeni row ekler (idempotent —
+  istediğinde manuel re-run). Hiçbir env değişikliği gerekmez.
+- Kalan riskler: AdminNotification broadcast cross-admin readAt drift
+  (gelecek AdminNotificationRead pivot tablo scope); reject sonrası
+  rejected → draft transition yok (owner yeni campaign yaratır
+  pragmatik).
+- **Sonraki aşama önerisi**: §38.B master backlog kalemleri operatör
+  tetiği bekliyor — HIGH 4 Platforms 12-card grid (DEFER §38.30 product
+  decision), Stage 9 UserSession re-introduce (operatör tetiği §38.84/
+  §38.89), RECAPTCHA_ENFORCE flip (1-2 hafta soak), Prisma 7 upgrade.
+  Stage 29 sonrası gelecek olası feature: campaign scheduled send
+  (gelecek tarihli onay sonrası queue), recurring campaigns, A/B
+  testing, AdminNotificationRead pivot tablo (broadcast read state
+  per-admin).
