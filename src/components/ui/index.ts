@@ -46,3 +46,19 @@ export {
   type APIconButtonSize,
   type APIconButtonTone,
 } from "./APIconButton";
+
+// Stage 38 §38.118 — HANDOFF §8 step 5 (Panel kartları) — 2 yeni card
+// (APAIDraftCard + APBillingCard). Mevcut Buaze cardlarıyla %70+
+// örtüşen 12 card spec'i skip; sadece yeni implementation gerektiren
+// 2 card eklendi. CLAUDE.md §38.49 + §38.118 paterni.
+export {
+  APAIDraftCard,
+  renderStars,
+  type APAIDraftCardProps,
+  type APAIDraftTone,
+} from "./APAIDraftCard";
+export {
+  APBillingCard,
+  computeQuotaPct,
+  type APBillingCardProps,
+} from "./APBillingCard";
