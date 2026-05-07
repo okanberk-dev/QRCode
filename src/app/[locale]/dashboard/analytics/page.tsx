@@ -37,6 +37,7 @@ import { MobileAnalyticsHero } from '@/components/dashboard/analytics/MobileAnal
 import { extractThemes } from '@/lib/analytics-themes';
 import { extractStructuredInsight } from '@/lib/weekly-structured-insight';
 import { calculateNPS } from '@/lib/analytics-nps';
+import { buildWeeklyTrend, getWeeklyTrendWindow } from '@/lib/analytics-weekly-trend';
 
 // Note: InteractionTrendChart taşır 'use client' direktifini — Next.js 15
 // otomatik client boundary çizer, server-side pre-render minimal HTML
@@ -214,6 +215,7 @@ async function renderAnalyticsPage({
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+  const trendWindow = getWeeklyTrendWindow(new Date(now), 14);
 
   // Apply platform + branch filters to all queries via shared base WHERE.
   const baseWhere = {
@@ -323,12 +325,10 @@ async function renderAnalyticsPage({
       where: { ...scanWhere, createdAt: { gte: windowStart, lte: windowEnd } },
       select: { createdAt: true },
     }),
-    // Phase 8c+ §38.25 — 14 haftalık trend için 98 günlük rating + createdAt
-    // serisi. Range filter'dan bağımsız sabit pencere; tasarım kaynağı
-    // .design-owner-2026/page-analytics.jsx 14-week trend paterni. Schema
-    // değişikliği yok — mevcut createdAt'ten haftalık aggregate JS-side.
+    // 14 haftalık trend: current ISO week dahil 14 bucket. Empty week'ler
+    // helper'da null rating üreterek chart line gap olarak görünür.
     prisma.feedback.findMany({
-      where: { ...baseWhere, createdAt: { gte: new Date(now - 98 * 24 * 60 * 60 * 1000) } },
+      where: { ...baseWhere, createdAt: { gte: trendWindow.start, lt: trendWindow.end } },
       select: { rating: true, createdAt: true },
     }),
   ]);
@@ -516,43 +516,11 @@ async function renderAnalyticsPage({
     }
   }
 
-  // ---- Phase 8c+ §38.25 — 14-haftalık trend bucket ----
-  // .design-owner-2026/page-analytics.jsx PUAN & HACİM TRENDİ paterni.
-  // Range filter'dan bağımsız sabit 98 gün penceresi (~14 hafta). Her hafta
-  // için ortalama puan + volume hesapla.
-  const WEEKS_TOTAL = 14;
-  // §38.34 — sentimentPct hesabı için highRatingCount (rating ≥4)
-  const weekBuckets: Array<{ ratingSum: number; volume: number; highRatingCount: number }> = Array.from(
-    { length: WEEKS_TOTAL },
-    () => ({ ratingSum: 0, volume: 0, highRatingCount: 0 }),
-  );
-  // Bugün dahil son 14 hafta — index 0 = en eski (98 gün önce), 13 = bu hafta.
-  const weekZero = new Date(now);
-  weekZero.setHours(0, 0, 0, 0);
-  // Pazartesi başlangıç (jsDay 0=Sun → 6, 1=Mon → 0)
-  const todayJsDay = weekZero.getDay();
-  const isoOffset = todayJsDay === 0 ? 6 : todayJsDay - 1;
-  weekZero.setDate(weekZero.getDate() - isoOffset); // Bu pazartesi
-  // 13 hafta öncesinin pazartesi'sine geri git
-  const trendStart = new Date(weekZero);
-  trendStart.setDate(trendStart.getDate() - 13 * 7);
-
-  for (const f of feedbacks98d) {
-    const ms = f.createdAt.getTime() - trendStart.getTime();
-    const weekIdx = Math.floor(ms / (7 * 24 * 60 * 60 * 1000));
-    if (weekIdx >= 0 && weekIdx < WEEKS_TOTAL) {
-      weekBuckets[weekIdx].ratingSum += f.rating;
-      weekBuckets[weekIdx].volume += 1;
-      if (f.rating >= 4) weekBuckets[weekIdx].highRatingCount += 1;
-    }
-  }
-  const weeklyTrend = weekBuckets.map((b, i) => ({
-    label: `H${i + 1}`,
-    rating: b.volume > 0 ? Math.round((b.ratingSum / b.volume) * 100) / 100 : 0,
-    volume: b.volume,
-    // §38.34 — sentimentPct heuristic: rating ≥4 / volume × 100. Boş hafta → 0.
-    sentimentPct: b.volume > 0 ? Math.round((b.highRatingCount / b.volume) * 100) : 0,
-  }));
+  const weeklyTrend = buildWeeklyTrend(feedbacks98d, {
+    now: new Date(now),
+    weeks: 14,
+    locale,
+  });
 
   // Phase 8c+ §38.26 — Owner-tanımlı hedef puan. Single-restaurant filter
   // aktifse o restoran'ın `targetRating`ini kullan; çoklu restoran (all-mode)

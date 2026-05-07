@@ -137,7 +137,7 @@ describe('feedbackInsertToActivity', () => {
     assert.equal(result!.action, 'yorum bıraktı');
     assert.equal(result!.sentiment, 'pos');
     assert.match(result!.target, /Google/);
-    assert.equal(result!.href, '/dashboard/feedbacks?id=feedback_xyz');
+    assert.equal(result!.href, '/tr/dashboard/feedbacks?id=feedback_xyz');
   });
 
   it('falls back to "Müşteri" when has_kvkk_consent is false (KVKK guard)', () => {
@@ -151,6 +151,7 @@ describe('feedbackInsertToActivity', () => {
   it('uses EN copy when isTr=false', () => {
     const result = feedbackInsertToActivity(makeRow(), false);
     assert.equal(result?.action, 'left a review');
+    assert.equal(result?.href, '/en/dashboard/feedbacks?id=feedback_xyz');
   });
 
   it('marks low rating (≤2) as negative sentiment', () => {

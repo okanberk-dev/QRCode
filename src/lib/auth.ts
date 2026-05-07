@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { NextRequest } from 'next/server';
 import { prisma } from './prisma';
 import { hashToken } from './session-hash';
+import { getClientIp } from './rate-limit';
 
 export type AdminRole = 'superadmin' | 'manager';
 
@@ -52,6 +53,18 @@ const STAGE_14_HOTFIX_BOUNDARY_MS = 1778052887680;
  * re-login storm on flip-day.
  */
 const STAGE_19_FAILCLOSED_BOUNDARY_MS = 1778086800000;
+
+/**
+ * 2026-05-07 hotfix boundary for sessionless token issuers.
+ *
+ * Stage 19 fail-closed was correct, but it exposed older token issuers
+ * (`/api/auth/google`, `/api/auth/register`, verify-email, refresh and
+ * impersonation) that still set `user_token` without a matching UserSession
+ * row. Tokens issued before this hotfix can be safely self-healed once by
+ * inserting the missing session row; tokens issued after this boundary must
+ * already have the row and remain fail-closed if it is absent.
+ */
+const SESSIONLESS_ISSUER_FIX_BOUNDARY_MS = 1778198400000; // 2026-05-08T00:00:00Z
 
 export interface PanelActor {
   id: string;
@@ -166,7 +179,66 @@ async function getTokenPayload(req: NextRequest, cookieName: 'admin_token' | 'us
  * Auth.ts'ye bilinçli olarak prisma import edildi — middleware (edge) auth.ts
  * import etmiyor, kendi inline jwt verify'sini kullanıyor.
  */
-async function isUserSessionRevoked(rawToken: string, payload: jose.JWTPayload): Promise<boolean> {
+async function recoverMissingUserSession(
+  req: NextRequest,
+  rawToken: string,
+  payload: jose.JWTPayload,
+): Promise<boolean> {
+  const userId = typeof payload.userId === 'string' ? payload.userId : null;
+  if (!userId) return false;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isActive: true },
+    });
+    if (!user?.isActive) return false;
+
+    await prisma.userSession.create({
+      data: {
+        userId,
+        tokenHash: hashToken(rawToken),
+        userAgent: req.headers.get('user-agent')?.slice(0, 500) ?? null,
+        ipAddress: getClientIp(req.headers) ?? null,
+      },
+    });
+    Sentry.captureMessage('UserSession row missing self-healed', {
+      level: 'warning',
+      tags: {
+        kind: 'auth-session-missing',
+        stage: 'sessionless-issuer-hotfix',
+      },
+      extra: {
+        userId,
+        iatMs: typeof payload.iat === 'number' ? payload.iat * 1000 : null,
+      },
+    });
+    return true;
+  } catch (err) {
+    const errorObj = err as { code?: string; message?: string };
+    if (errorObj.code === 'P2002') return true;
+    console.error('[auth] UserSession self-heal failed:', errorObj.message ?? 'unknown', {
+      code: errorObj.code ?? null,
+      userId,
+    });
+    Sentry.captureException(err, {
+      tags: {
+        kind: 'auth-session-self-heal-failure',
+        prismaCode: errorObj.code ?? 'unknown',
+      },
+      extra: {
+        userId,
+      },
+    });
+    return false;
+  }
+}
+
+async function isUserSessionRevoked(
+  req: NextRequest,
+  rawToken: string,
+  payload: jose.JWTPayload,
+): Promise<boolean> {
   try {
     const session = await prisma.userSession.findUnique({
       where: { tokenHash: hashToken(rawToken) },
@@ -217,6 +289,12 @@ async function isUserSessionRevoked(rawToken: string, payload: jose.JWTPayload):
           },
         });
         return false;
+      }
+      // Hotfix bridge — known sessionless issuer window. Create the missing
+      // row once so existing production tabs recover without forcing logout.
+      if (iatMs !== null && iatMs < SESSIONLESS_ISSUER_FIX_BOUNDARY_MS) {
+        const recovered = await recoverMissingUserSession(req, rawToken, payload);
+        return !recovered;
       }
       // Tier 3 — post-Stage-19 cookies with no UserSession row → real
       // silent failure in issueLoginSession after the assertion. Fail
@@ -321,10 +399,17 @@ export async function getUserFromRequest(req: NextRequest) {
   // burada engellenir. Cookie hâlâ tarayıcıda olabilir ama bu istek 401 alır.
   // Stage 18 §38.89: payload geçirildi — pre-boundary cookies silent pass,
   // post-boundary missing rows warn + Sentry capture.
-  if (await isUserSessionRevoked(rawToken, payload)) {
+  if (await isUserSessionRevoked(req, rawToken, payload)) {
     return null;
   }
-  return payload;
+  const userPayload = payload as jose.JWTPayload & { userId: string; impersonating?: unknown };
+  return {
+    ...userPayload,
+    userId: userPayload.userId,
+    id: userPayload.userId,
+    sub: userPayload.userId,
+    impersonating: userPayload.impersonating,
+  };
 }
 
 export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelActor | null> {
@@ -401,13 +486,14 @@ export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelA
       if (stillActive) {
         realAdminId = impersonating.adminId;
         impersonationSessionId = impersonating.sessionId;
+      } else {
+        return null;
       }
-      // Inactive/expired session → claim discarded silently. Token still
-      // valid as plain user token (less privilege). Refresh required for
-      // realAdminId to reappear; cron will have ended the session anyway.
     } catch (err) {
-      // DB error → conservative discard impersonation claim, treat as plain user.
+      // DB error → fail closed. An impersonation token must never degrade
+      // into a plain owner token in the admin browser.
       console.warn('[auth] impersonation session lookup failed', (err as Error).message);
+      return null;
     }
   }
 

@@ -4,6 +4,7 @@ import { signJwt, verifyJwt } from '@/lib/auth';
 import { hashToken } from '@/lib/session-hash';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { handleTokenRefresh, type RefreshDeps } from '@/lib/oauth';
+import { createUserSessionForToken } from '@/lib/user-session';
 
 /**
  * Sliding-expiry token refresh.
@@ -57,24 +58,22 @@ export async function POST(req: NextRequest) {
 
     const { token, user } = result;
 
-    // Best-effort UserSession rotate — old session row revoked, new one
-    // inserted with the rotated tokenHash. If UserSession isn't present
-    // (legacy cookie predating the table) we skip silently.
-    try {
+    const session = await createUserSessionForToken({
+      req,
+      userId: user.id,
+      token,
+      context: 'AUTH_REFRESH',
+    });
+    if (!session.ok) {
+      return NextResponse.json({ error: session.error }, { status: 500 });
+    }
+    const oldTokenHash = hashToken(oldToken);
+    const newTokenHash = hashToken(token);
+    if (oldTokenHash !== newTokenHash) {
       await prisma.userSession.updateMany({
-        where: { tokenHash: hashToken(oldToken), revokedAt: null },
+        where: { tokenHash: oldTokenHash, revokedAt: null },
         data: { revokedAt: new Date() },
       });
-      await prisma.userSession.create({
-        data: {
-          userId: user.id,
-          tokenHash: hashToken(token),
-          userAgent: req.headers.get('user-agent')?.slice(0, 500) ?? null,
-          ipAddress: ip ?? null,
-        },
-      });
-    } catch (err) {
-      console.error('[AUTH_REFRESH] session rotate failed:', (err as Error).message);
     }
 
     const isSecure =

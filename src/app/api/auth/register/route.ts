@@ -8,6 +8,7 @@ import { isStrongPassword } from '@/lib/validations';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { recordConsentBatch } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
+import { createUserSessionForToken } from '@/lib/user-session';
 
 export async function POST(req: NextRequest) {
   try {
@@ -168,6 +169,16 @@ export async function POST(req: NextRequest) {
       plan: user.plan,
       restaurantId: null,
     });
+
+    const session = await createUserSessionForToken({
+      req,
+      userId: user.id,
+      token,
+      context: 'AUTH_REGISTER',
+    });
+    if (!session.ok) {
+      return NextResponse.json({ error: session.error }, { status: 500 });
+    }
 
     const isSecure = process.env.NODE_ENV === 'production' && 
                      (req.headers.get('x-forwarded-proto') === 'https' || req.nextUrl.protocol === 'https:');

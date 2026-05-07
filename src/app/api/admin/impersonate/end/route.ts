@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { writeAdminAuditLog } from '@/lib/audit-log';
+import { hashToken } from '@/lib/session-hash';
 
 // Stage A4 §38.96 — impersonation çıkış endpoint.
 //
@@ -108,6 +109,13 @@ export async function POST(req: NextRequest) {
 
     // user_token sil — admin_token cookie zaten duruyor (impersonation start
     // sırasında silinmedi). Admin tekrar /admin/* path'ine erişir.
+    const rawUserToken = req.cookies.get('user_token')?.value;
+    if (rawUserToken) {
+      await prisma.userSession.updateMany({
+        where: { tokenHash: hashToken(rawUserToken), revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
     response.cookies.set('user_token', '', {
       httpOnly: true,
       secure: isSecure,

@@ -8,6 +8,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { writeAdminAuditLog } from '@/lib/audit-log';
 import { validateBody } from '@/lib/api/validate';
 import { sendImpersonationStartEmail } from '@/lib/email';
+import { createUserSessionForToken } from '@/lib/user-session';
 
 // Stage A4 §38.96 — admin "Owner gibi gör" / shadow mode endpoint.
 //
@@ -125,6 +126,20 @@ export async function POST(req: NextRequest) {
         sessionId: session.id,
       },
     });
+
+    const userSession = await createUserSessionForToken({
+      req,
+      userId: target.id,
+      token,
+      context: 'ADMIN_IMPERSONATE',
+    });
+    if (!userSession.ok) {
+      await prisma.impersonationSession.update({
+        where: { id: session.id },
+        data: { endedAt: new Date(), endedReason: 'manual' },
+      });
+      return NextResponse.json({ error: userSession.error }, { status: 500 });
+    }
 
     const response = NextResponse.json({
       ok: true,

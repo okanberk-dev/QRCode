@@ -12164,3 +12164,78 @@ feature-access mevcut endpoint manager için zaten yok (CLAUDE.md
   RECAPTCHA_ENFORCE flip (1-2 hafta soak), Prisma 7 upgrade (§5.4 Task
   8). Veya yeni operatör talebi (Stage A2.1 sidebar UI gating, Stage A6
   customer support inbox vb.).
+
+### 38.98 2026-05-07 — Owner panel 401 + logo hotfix
+
+**Kapanan hata zinciri**:
+- Console 401 endpointleri: `/api/feedback*`, `/api/restaurants*`,
+  `/api/realtime/token`, `/api/team`, `/api/account/actor-context`,
+  `/api/account/sessions`, `/api/billing/*`,
+  `/api/restaurants/[id]/activation`.
+- Console 404 endpointi: locale prefix'siz
+  `/dashboard/feedbacks?id=...&_rsc=...`.
+- Görsel drift: owner desktop sidebar beyaz zemin üstünde
+  `BuazeLogo variant="on-dark"` kullandığı için logo admin paneldeki gibi
+  tam görünmüyordu.
+
+**Root cause**:
+- Stage 19 fail-closed auth doğru şekilde her `user_token` için
+  `UserSession` row'u bekliyor; ancak Google login, register,
+  verify-email, refresh ve admin impersonation akışları token basarken bu
+  row'u üretmiyordu. Sonuç: imzalı cookie geçerli olsa bile owner API'leri
+  401 zincirine düşüyordu.
+- Bazı account endpointleri auth başarılı olsa bile owner JWT'deki canonical
+  `payload.userId` yerine legacy `sub/id` claim'i arıyordu.
+- Activity feed/realtime feedback linkleri `[locale]` route segmentini
+  kaçırıyordu.
+
+**Yapılan düzeltmeler**:
+- `src/lib/user-session.ts` ortak helper eklendi; `user_token` yazan owner
+  yolları cookie set etmeden önce `UserSession` oluşturuyor:
+  `/api/auth/login`, `/api/auth/google`, `/api/auth/register`,
+  `/api/auth/verify-email`, `/api/auth/refresh`,
+  `/api/admin/impersonate`.
+- Production'da zaten basılmış sessionless token'lar için sınırlı self-heal
+  eklendi: token imzası geçerli, `iat` hotfix boundary öncesi, kullanıcı
+  aktif ve sadece session row eksikse ilk API isteğinde row oluşturulur.
+  Hotfix sonrası sessionless token yine fail-closed kalır.
+- Impersonation token aktif `ImpersonationSession` bulamazsa plain owner
+  token'a düşmez; fail-closed döner. Impersonation end akışı ilgili
+  `UserSession` row'unu revoke eder.
+- Account endpointleri (`/api/account/sessions*`,
+  `/api/account/export-data`, `/api/account/2fa/*`) doğrudan
+  `payload.userId` okuyacak şekilde düzeltildi. `getUserFromRequest` ayrıca
+  geri uyum için `id/sub` alias döndürür.
+- Activity feed ve realtime feedback event href'leri locale-aware oldu:
+  `/tr/dashboard/feedbacks?id=...` veya `/en/dashboard/feedbacks?id=...`.
+  `ActivityFeed`/`PendingTasks` default fallback'leri de locale-aware.
+- Owner desktop sidebar `BuazeLogo` `variant="default"` + `shrink-0`
+  kullanıyor; mobile default davranış korundu.
+
+**Doğrulama**:
+- GitHub parity kontrolü: local `HEAD` / `origin/main`, GitHub
+  `RiosenBeq/qrcode` `main` ile aynı commit'teydi
+  (`b72b0a31d3b1a6d62017884b05a6d8da0fbe31c9`) ve hotfix bu bazdan
+  açıldı.
+- `npx tsc --noEmit -p tsconfig.json`: geçti.
+- `npx eslint .`: geçti.
+- `npm test`: 264/264 pass, 29 suite.
+- `git diff --check`: geçti.
+- Focused grep: account route'larında `payload.sub` / legacy `id` fallback
+  kalmadı; source/test feedback detail linkleri locale prefix'li; `user_token`
+  yazan owner issuer'ların tamamı `createUserSessionForToken` helper'ına
+  bağlı.
+
+**Browser smoke notu**:
+- `npm run dev` Next 15.5.15 ile `http://localhost:3000` üzerinde açıldı ve
+  `/tr/login` içerik render etti, Next error overlay yoktu.
+- Local workspace'te `.env.local` yok; sadece `.env.example` var. Browser
+  console/server log `DATABASE_URL` missing Prisma validation error verdi ve
+  dev server kapandı. Bu yüzden owner dashboard/yorumlar/işletmeler/hesap/
+  faturalandırma authenticated network smoke'u localde tamamlanamadı.
+
+**Kalan risk**:
+- Existing production tab'ları yalnız hotfix boundary öncesi ve aktif user
+  koşulunda self-heal olur. Boundary sonrası aynı issuer regresyonu olursa
+  fail-closed 401 tekrar görünür; yeni `user_token` issuer eklendiğinde
+  helper zorunlu.

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { signJwt } from '@/lib/auth';
-import { hashToken } from '@/lib/session-hash';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
+import { createUserSessionForToken } from '@/lib/user-session';
 
 export const dynamic = 'force-dynamic';
 
@@ -103,18 +103,14 @@ export async function GET(req: NextRequest) {
       plan: user.plan,
     });
 
-    const userAgent = req.headers.get('user-agent') ?? null;
-    try {
-      await prisma.userSession.create({
-        data: {
-          userId: user.id,
-          tokenHash: hashToken(jwt),
-          userAgent: userAgent?.slice(0, 500) ?? null,
-          ipAddress: ip ?? null,
-        },
-      });
-    } catch (err) {
-      console.error('[verify-email] UserSession create failed:', (err as Error).message);
+    const session = await createUserSessionForToken({
+      req,
+      userId: user.id,
+      token: jwt,
+      context: 'AUTH_VERIFY_EMAIL',
+    });
+    if (!session.ok) {
+      return NextResponse.json({ error: session.error }, { status: 500 });
     }
 
     const response = NextResponse.json({

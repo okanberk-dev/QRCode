@@ -19,7 +19,7 @@ export async function DELETE(
   const { id } = await params;
   const payload = await getUserFromRequest(req);
   if (!payload) return ApiErrors.unauthorized();
-  const userId = (payload.sub || (payload as { id?: string }).id) as string | undefined;
+  const userId = payload.userId;
   if (!userId) return ApiErrors.unauthorized();
 
   // Sadece kendi session'ını revoke edebilir.

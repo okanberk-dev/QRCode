@@ -1,407 +1,466 @@
 'use client';
 
-// §38.56 — PUAN & HACİM TRENDİ — Puan/Hacim/Sentiment 3-mode toggle restore
-// (tasarım a/page-analytics.jsx line 102-105 birebir). §38.34'te vardı,
-// §38.50'de simultaneous 3-series'a dönüştürülmüştü; yeni handoff bundle
-// toggle istiyor.
-//
-// Mode davranışı:
-//   - 'rating' (default): volume bars + rating line (lime) + target dashed
-//   - 'volume': öne çıkan volume bars (lime fill) + rating line muted
-//   - 'sentiment': sentiment % line (lime) + target dashed (50% line)
-//
-// Custom inline SVG — recharts kullanmaz. Client component (toggle state).
+import { useMemo, useState } from 'react';
+import {
+  Area,
+  Bar,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Line,
+  ReferenceLine,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { MeasuredChart } from '@/components/charts/MeasuredChart';
+import type { WeeklyTrendPoint } from '@/lib/analytics-weekly-trend';
 
-import { useState } from 'react';
-
-export interface PulseTrendPoint {
-  /** Etiket (örn. "H1"..."H14" veya "04 NIS"). */
-  label: string;
-  /** Ortalama puan (0-5). 0 = yorum yok (line gap). */
-  rating: number;
-  /** Yorum sayısı (volume). */
-  volume: number;
-  /**
-   * Pozitif sentiment yüzdesi (rating ≥4 / total). 0-100; volume=0 → 0.
-   * §38.50 sonrası simultaneous mode'da render edilmiyor; backwards-compat
-   * için type'da kalıyor (caller hâlâ pas geçiyor — silmek breaking).
-   */
-  sentimentPct?: number;
-}
+type TrendMode = 'rating' | 'volume' | 'sentiment';
 
 export interface PulseTrendChartProps {
-  /** N hafta seri (en eski → en yeni). */
-  weeks: PulseTrendPoint[];
-  /** Hedef puan (default 4.0; CLAUDE.md §38.26 Restaurant.targetRating). */
+  weeks: WeeklyTrendPoint[];
   targetRating?: number;
   isTr?: boolean;
 }
 
-const VB_W = 800;
-const VB_H = 240;
-const PAD_X = 40;
-const PAD_TOP = 12;
-const PAD_BOTTOM = 30;
-const VOL_BAND_H = 80; // alt 80px volume bars için ayrılır
-const LINE_BAND_H = VB_H - PAD_TOP - PAD_BOTTOM - VOL_BAND_H;
-
-function computeRatingYRange(
-  weeks: PulseTrendPoint[],
-  target: number,
-): { min: number; max: number } {
-  const ratings = weeks.filter((w) => w.rating > 0).map((w) => w.rating);
-  if (ratings.length === 0) return { min: 4.0, max: 5.0 };
-  const minR = Math.min(...ratings, target);
-  const maxR = Math.max(...ratings, target);
-  return { min: Math.max(0, minR - 0.2), max: Math.min(5, maxR + 0.2) };
+interface ChartDatum extends WeeklyTrendPoint {
+  ratingTarget: number;
+  sentimentTarget: number;
 }
 
-type TrendMode = 'rating' | 'volume' | 'sentiment';
+interface TooltipPayloadItem {
+  payload?: ChartDatum;
+}
+
+interface TrendTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  isTr: boolean;
+  mode: TrendMode;
+  targetRating: number;
+}
+
+const MODE_COPY: Record<TrendMode, { tr: string; en: string }> = {
+  rating: { tr: 'Puan', en: 'Rating' },
+  volume: { tr: 'Hacim', en: 'Volume' },
+  sentiment: { tr: 'Sentiment', en: 'Sentiment' },
+};
+
+function formatSigned(value: number, digits = 2) {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(digits)}`;
+}
+
+function formatNumber(value: number, locale: 'tr' | 'en') {
+  return value.toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US');
+}
+
+function TrendTooltip({
+  active,
+  payload,
+  isTr,
+  mode,
+  targetRating,
+}: TrendTooltipProps) {
+  if (!active) return null;
+  const row = payload?.find((item) => item.payload)?.payload;
+  if (!row) return null;
+  const locale = isTr ? 'tr' : 'en';
+  const ratingLabel = row.rating === null ? '—' : row.rating.toFixed(2);
+  const sentimentLabel = row.sentimentPct === null ? '—' : `%${row.sentimentPct}`;
+
+  return (
+    <div className="rounded-[12px] border border-[#EDEDED] bg-white px-3 py-2.5 shadow-[0_16px_40px_rgba(10,10,10,0.12)]">
+      <div className="bz-mono text-[10.5px] font-semibold text-[#0A0A0A]">
+        {row.label} · {row.rangeLabel}
+      </div>
+      <div className="mt-2 grid min-w-[180px] gap-1.5 text-[11.5px] text-[#525252]">
+        <div className="flex items-center justify-between gap-4">
+          <span>{isTr ? 'Ortalama puan' : 'Average rating'}</span>
+          <span className="bz-mono tabular-nums text-[#0A0A0A]">{ratingLabel}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span>{isTr ? 'Yorum hacmi' : 'Review volume'}</span>
+          <span className="bz-mono tabular-nums text-[#0A0A0A]">
+            {formatNumber(row.volume, locale)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span>{isTr ? 'Pozitif sentiment' : 'Positive sentiment'}</span>
+          <span className="bz-mono tabular-nums text-[#0A0A0A]">{sentimentLabel}</span>
+        </div>
+      </div>
+      {mode === 'rating' && row.rating !== null && (
+        <div className="bz-mono mt-2 border-t border-[#F5F5F5] pt-2 text-[10.5px] text-[#737373]">
+          {isTr ? 'Hedef farkı' : 'Target gap'}{' '}
+          <span className={row.rating >= targetRating ? 'text-[#16A34A]' : 'text-[#DC2626]'}>
+            {formatSigned(row.rating - targetRating)}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmptyTrendState({ isTr }: { isTr: boolean }) {
+  return (
+    <div className="mt-5 rounded-[14px] border border-dashed border-[#EDEDED] bg-[#FAFAFA] px-5 py-10 text-center">
+      <div className="pulse-eyebrow text-[10.5px] text-[#737373]">
+        {isTr ? 'VERİ BEKLENİYOR' : 'WAITING FOR DATA'}
+      </div>
+      <p className="mx-auto mt-2 max-w-[440px] text-[13px] leading-6 text-[#525252]">
+        {isTr
+          ? 'Bu aralıkta yorum olmadığı için çizgi bilinçli olarak boş bırakıldı. Yeni yorumlar geldikçe haftalık puan, hacim ve sentiment burada oluşur.'
+          : 'No reviews landed in this window, so the trend line is intentionally empty. Weekly rating, volume, and sentiment appear as new reviews arrive.'}
+      </p>
+    </div>
+  );
+}
 
 export function PulseTrendChart({
   weeks,
   targetRating = 4.0,
   isTr = true,
 }: PulseTrendChartProps) {
-  // §38.56 — Mode toggle state (tasarım birebir Puan/Hacim/Sentiment 3-tab).
   const [mode, setMode] = useState<TrendMode>('rating');
-
-  if (weeks.length < 2) {
-    return (
-      <section
-        className="bz-card p-5 sm:p-6"
-        aria-label={isTr ? 'Puan ve hacim trendi' : 'Rating and volume trend'}
-      >
-        <header className="mb-3">
-          <h3 className="pulse-eyebrow text-[10.5px] text-[#737373]">
-            {isTr ? 'PUAN VE HACİM TRENDİ' : 'RATING & VOLUME TREND'}
-          </h3>
-        </header>
-        <p className="text-center text-[13px] text-[#737373] py-8">
-          {isTr
-            ? 'Trend için yeterli haftalık veri yok (en az 2 hafta gerekli).'
-            : 'Not enough weekly data for trend (min 2 weeks needed).'}
-        </p>
-      </section>
-    );
-  }
-
-  const stepX = (VB_W - PAD_X * 2) / Math.max(1, weeks.length - 1);
-  const ratingRange = computeRatingYRange(weeks, targetRating);
-  const maxVolume = Math.max(...weeks.map((w) => w.volume), 1);
-
-  // Rating Y-position (üst band)
-  function ratingY(value: number): number {
-    if (ratingRange.max === ratingRange.min) {
-      return PAD_TOP + LINE_BAND_H / 2;
-    }
-    const ratio = (value - ratingRange.min) / (ratingRange.max - ratingRange.min);
-    return PAD_TOP + LINE_BAND_H * (1 - ratio);
-  }
-
-  // Volume bar Y-position (alt band)
-  const volBandTop = PAD_TOP + LINE_BAND_H;
-  function volumeY(value: number): number {
-    const ratio = value / maxVolume;
-    return volBandTop + VOL_BAND_H - ratio * VOL_BAND_H;
-  }
-
-  // Series points
-  const points = weeks.map((w, i) => ({
-    x: PAD_X + i * stepX,
-    y: ratingY(w.rating),
-    valid: w.rating > 0,
-    label: w.label,
-    rating: w.rating,
-    volume: w.volume,
-  }));
-
-  const validPoints = points.filter((p) => p.valid);
-  const linePath =
-    validPoints.length > 0
-      ? validPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-      : '';
-  const areaPath =
-    validPoints.length > 0
-      ? `${linePath} L ${validPoints[validPoints.length - 1].x} ${volBandTop} L ${validPoints[0].x} ${volBandTop} Z`
-      : '';
-
-  const targetY = ratingY(targetRating);
-  const lastValid = validPoints[validPoints.length - 1];
-  const lastValueLabel = lastValid ? lastValid.rating.toFixed(2) : null;
-
-  // Header subtitle: "Hedef X.X · şu an +/-Y.Y"
-  const lastRating = lastValid?.rating ?? null;
-  const headerHint =
-    lastRating !== null
-      ? (() => {
-          const diff = lastRating - targetRating;
-          const tag =
-            diff >= 0
-              ? isTr
-                ? `+${diff.toFixed(2)} üzerinde`
-                : `+${diff.toFixed(2)} above`
-              : isTr
-                ? `${diff.toFixed(2)} altında`
-                : `${diff.toFixed(2)} below`;
-          return isTr
-            ? `Hedef puan ${targetRating.toFixed(1)} · şu an ${tag}`
-            : `Target ${targetRating.toFixed(1)} · currently ${tag}`;
-        })()
+  const locale = isTr ? 'tr' : 'en';
+  const data = useMemo<ChartDatum[]>(
+    () =>
+      weeks.map((week) => ({
+        ...week,
+        ratingTarget: targetRating,
+        sentimentTarget: 50,
+      })),
+    [targetRating, weeks],
+  );
+  const pointsWithData = data.filter((week) => week.hasData);
+  const lastPoint = [...pointsWithData].reverse().find((week) => week.rating !== null) ?? null;
+  const previousPoint =
+    pointsWithData
+      .slice(0, Math.max(0, pointsWithData.length - 1))
+      .reverse()
+      .find((week) => week.rating !== null) ?? null;
+  const bestPoint = pointsWithData.reduce<ChartDatum | null>((best, week) => {
+    if (week.rating === null) return best;
+    if (!best || best.rating === null || week.rating > best.rating) return week;
+    return best;
+  }, null);
+  const avgVolume =
+    pointsWithData.length > 0
+      ? Math.round(pointsWithData.reduce((sum, week) => sum + week.volume, 0) / pointsWithData.length)
+      : 0;
+  const maxVolume = Math.max(1, ...data.map((week) => week.volume));
+  const lastRating = lastPoint?.rating ?? null;
+  const targetGap = lastRating === null ? null : lastRating - targetRating;
+  const ratingDelta =
+    lastRating !== null && previousPoint && previousPoint.rating !== null
+      ? lastRating - previousPoint.rating
       : null;
+  const hasAnyData = pointsWithData.length > 0;
+  const hasLowData = pointsWithData.length > 0 && pointsWithData.length < 3;
+
+  const headerHint =
+    targetGap === null
+      ? isTr
+        ? `Hedef puan ${targetRating.toFixed(1)}`
+        : `Target ${targetRating.toFixed(1)}`
+      : isTr
+        ? `Hedef puan ${targetRating.toFixed(1)} · şu an ${formatSigned(targetGap)}`
+        : `Target ${targetRating.toFixed(1)} · currently ${formatSigned(targetGap)}`;
 
   return (
     <section
       className="bz-card p-5 sm:p-6"
       aria-label={isTr ? 'Puan ve hacim trendi' : 'Rating and volume trend'}
     >
-      <header className="mb-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="pulse-eyebrow text-[10.5px] text-[#737373]">
             {isTr ? 'PUAN & HACİM TRENDİ' : 'RATING & VOLUME TREND'}
           </h3>
-          <div className="bz-h-tight mt-1 text-[16px] sm:text-[18px]">
+          <div className="bz-h-tight mt-1 text-[18px]">
             {isTr ? `${weeks.length} haftalık görünüm` : `${weeks.length}-week view`}
           </div>
-          {headerHint && (
-            <div className="bz-mono mt-1 text-[11px] text-[#737373] tabular-nums">
-              {headerHint}
-            </div>
-          )}
+          <div className="bz-mono mt-1 text-[11px] text-[#737373] tabular-nums">
+            {headerHint}
+          </div>
         </div>
-        {/* §38.56 — Mode toggle (tasarım a/page-analytics.jsx line 102-105
-            birebir 3-tab: Puan / Hacim / Sentiment). Default rating aktif. */}
         <div
           role="tablist"
           aria-label={isTr ? 'Trend modu' : 'Trend mode'}
-          className="inline-flex items-center gap-0.5 rounded-full border border-[#EDEDED] bg-[#FAFAFA] p-0.5"
+          className="inline-flex w-fit items-center gap-0.5 rounded-full border border-[#EDEDED] bg-[#FAFAFA] p-0.5"
         >
-          {(
-            [
-              { id: 'rating', tr: 'Puan', en: 'Rating' },
-              { id: 'volume', tr: 'Hacim', en: 'Volume' },
-              { id: 'sentiment', tr: 'Sentiment', en: 'Sentiment' },
-            ] as const
-          ).map((m) => {
-            const active = mode === m.id;
+          {(['rating', 'volume', 'sentiment'] as const).map((id) => {
+            const active = mode === id;
             return (
               <button
-                key={m.id}
+                key={id}
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => setMode(m.id)}
-                className={`inline-flex items-center rounded-full px-3 py-1 text-[11.5px] font-medium transition-colors ${
-                  active
-                    ? 'bg-[#0A0A0A] text-white'
-                    : 'text-[#525252] hover:bg-white'
+                onClick={() => setMode(id)}
+                className={`inline-flex items-center rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                  active ? 'bg-[#0A0A0A] text-white' : 'text-[#525252] hover:bg-white'
                 }`}
               >
-                {isTr ? m.tr : m.en}
+                {isTr ? MODE_COPY[id].tr : MODE_COPY[id].en}
               </button>
             );
           })}
         </div>
       </header>
 
-      <div className="overflow-x-auto no-scrollbar -mx-2 sm:mx-0">
-        <svg
-          viewBox={`0 0 ${VB_W} ${VB_H}`}
-          preserveAspectRatio="none"
-          className="block"
-          style={{ width: '100%', minWidth: 600, height: 240 }}
-          role="img"
-          aria-label={
-            isTr
-              ? `${weeks.length} haftalık puan ve hacim trendi`
-              : `${weeks.length}-week rating and volume trend`
-          }
-        >
-          <defs>
-            <linearGradient id="pulseTrendArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#C6F24E" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#C6F24E" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-
-          {/* Gridlines (yatay, hafif) */}
-          {[0.25, 0.5, 0.75].map((ratio) => (
-            <line
-              key={ratio}
-              x1={PAD_X}
-              x2={VB_W - PAD_X}
-              y1={PAD_TOP + LINE_BAND_H * ratio}
-              y2={PAD_TOP + LINE_BAND_H * ratio}
-              stroke="#EDEDED"
-              strokeWidth="1"
-            />
-          ))}
-
-          {/* Volume bars — mode'a göre öne çıkar (lime fill) veya soluk (gri).
-              §38.56: 'volume' mode'da bars ana focus + lime + büyük opacity. */}
-          {weeks.map((w, i) => {
-            const x = PAD_X + i * stepX;
-            const barW = Math.max(8, stepX * 0.5);
-            const barX = x - barW / 2;
-            const barY = volumeY(w.volume);
-            const barH = volBandTop + VOL_BAND_H - barY;
-            const barFill = mode === 'volume' ? '#C6F24E' : '#E5E5E5';
-            const barOpacity = mode === 'volume' ? 1 : mode === 'rating' ? 0.7 : 0.35;
-            return (
-              <rect
-                key={i}
-                x={barX}
-                y={barY}
-                width={barW}
-                height={Math.max(0, barH)}
-                fill={barFill}
-                opacity={barOpacity}
-                rx="1.5"
-              />
-            );
-          })}
-
-          {/* Rating area (lime gradient) — sadece rating mode'da */}
-          {mode === 'rating' && areaPath && (
-            <path d={areaPath} fill="url(#pulseTrendArea)" opacity="0.35" />
-          )}
-
-          {/* Target dashed line — rating + sentiment mode'da görünür */}
-          {mode !== 'volume' && (
-            <>
-              <line
-                x1={PAD_X}
-                x2={VB_W - PAD_X}
-                y1={mode === 'sentiment' ? PAD_TOP + LINE_BAND_H * 0.5 : targetY}
-                y2={mode === 'sentiment' ? PAD_TOP + LINE_BAND_H * 0.5 : targetY}
-                stroke="#A3A3A3"
-                strokeWidth="1.5"
-                strokeDasharray="6 4"
-              />
-              <text
-                x={VB_W - PAD_X + 4}
-                y={(mode === 'sentiment' ? PAD_TOP + LINE_BAND_H * 0.5 : targetY) + 4}
-                fontSize="10"
-                fontFamily="JetBrains Mono, monospace"
-                fill="#737373"
+      {!hasAnyData ? (
+        <EmptyTrendState isTr={isTr} />
+      ) : (
+        <>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-[12px] border border-[#EDEDED] bg-[#FAFAFA] p-3">
+              <div className="pulse-eyebrow text-[9.5px] text-[#737373]">
+                {isTr ? 'SON PUAN' : 'LATEST RATING'}
+              </div>
+              <div className="bz-mono mt-1 text-[18px] font-semibold tabular-nums text-[#0A0A0A]">
+                {lastRating === null ? '—' : lastRating.toFixed(2)}
+              </div>
+              <div
+                className={`mt-1 text-[11px] ${
+                  targetGap === null
+                    ? 'text-[#737373]'
+                    : targetGap >= 0
+                      ? 'text-[#16A34A]'
+                      : 'text-[#DC2626]'
+                }`}
               >
-                {mode === 'sentiment' ? '50%' : isTr ? 'HEDEF' : 'TARGET'}
-              </text>
-            </>
-          )}
+                {targetGap === null
+                  ? isTr
+                    ? 'hedef bekliyor'
+                    : 'target pending'
+                  : isTr
+                    ? `${formatSigned(targetGap)} hedef farkı`
+                    : `${formatSigned(targetGap)} target gap`}
+              </div>
+            </div>
+            <div className="rounded-[12px] border border-[#EDEDED] bg-white p-3">
+              <div className="pulse-eyebrow text-[9.5px] text-[#737373]">
+                {isTr ? 'EN İYİ HAFTA' : 'BEST WEEK'}
+              </div>
+              <div className="bz-mono mt-1 text-[18px] font-semibold tabular-nums text-[#0A0A0A]">
+                {bestPoint?.rating === null || !bestPoint ? '—' : bestPoint.rating.toFixed(2)}
+              </div>
+              <div className="mt-1 text-[11px] text-[#737373]">
+                {bestPoint ? `${bestPoint.label} · ${bestPoint.rangeLabel}` : isTr ? 'veri yok' : 'no data'}
+              </div>
+            </div>
+            <div className="rounded-[12px] border border-[#EDEDED] bg-white p-3">
+              <div className="pulse-eyebrow text-[9.5px] text-[#737373]">
+                {isTr ? 'ORT. HAFTALIK HACİM' : 'AVG WEEKLY VOLUME'}
+              </div>
+              <div className="bz-mono mt-1 text-[18px] font-semibold tabular-nums text-[#0A0A0A]">
+                {formatNumber(avgVolume, locale)}
+              </div>
+              <div className="mt-1 text-[11px] text-[#737373]">
+                {ratingDelta === null
+                  ? isTr
+                    ? 'puan trendi oluşuyor'
+                    : 'rating trend forming'
+                  : isTr
+                    ? `${formatSigned(ratingDelta)} son veri`
+                    : `${formatSigned(ratingDelta)} latest move`}
+              </div>
+            </div>
+          </div>
 
-          {/* Rating line — rating mode'da (volume mode'da gizli, sentiment'ta yerini sentiment line alır) */}
-          {mode === 'rating' && linePath && (
-            <path
-              d={linePath}
-              stroke="#A8D62E"
-              strokeWidth="2.5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
+          <div className="-mx-2 mt-5 overflow-x-auto px-2 sm:mx-0 sm:px-0">
+            <MeasuredChart className="h-[300px] w-full min-w-[680px] sm:h-[340px]">
+              {({ width, height }) => (
+                <ComposedChart
+                  width={width}
+                  height={height}
+                  data={data}
+                  margin={{ top: 18, right: 20, left: 0, bottom: 8 }}
+                >
+                  <defs>
+                    <linearGradient id="pulseRatingArea" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#C6F24E" stopOpacity={0.42} />
+                      <stop offset="100%" stopColor="#C6F24E" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="pulseSentimentArea" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#0A0A0A" stopOpacity={0.16} />
+                      <stop offset="100%" stopColor="#0A0A0A" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} stroke="#EDEDED" strokeDasharray="0" />
+                  <XAxis
+                    dataKey="label"
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    tick={{ fill: '#A3A3A3', fontSize: 11, fontWeight: 600 }}
+                    dy={8}
+                  />
+                  <YAxis
+                    yAxisId="rating"
+                    domain={[0, 5]}
+                    hide
+                    allowDataOverflow={false}
+                  />
+                  <YAxis
+                    yAxisId="volume"
+                    domain={[0, Math.max(4, Math.ceil(maxVolume * 1.35))]}
+                    hide
+                  />
+                  <YAxis yAxisId="sentiment" domain={[0, 100]} hide />
+                  <Tooltip
+                    cursor={{ stroke: '#0A0A0A', strokeWidth: 1, strokeDasharray: '3 3' }}
+                    content={({ active, payload }) => (
+                      <TrendTooltip
+                        active={active}
+                        payload={payload as unknown as TooltipPayloadItem[] | undefined}
+                        isTr={isTr}
+                        mode={mode}
+                        targetRating={targetRating}
+                      />
+                    )}
+                  />
+                  <Bar
+                    yAxisId="volume"
+                    dataKey="volume"
+                    radius={[6, 6, 2, 2]}
+                    barSize={mode === 'volume' ? 34 : 26}
+                    isAnimationActive={false}
+                  >
+                    {data.map((week) => (
+                      <Cell
+                        key={week.startIso}
+                        fill={mode === 'volume' ? '#C6F24E' : '#E5E5E5'}
+                        opacity={
+                          week.hasData
+                            ? mode === 'volume'
+                              ? 0.95
+                              : mode === 'rating'
+                                ? 0.58
+                                : 0.28
+                            : 0.12
+                        }
+                      />
+                    ))}
+                  </Bar>
+                  {(mode === 'rating' || mode === 'volume') && (
+                    <ReferenceLine
+                      yAxisId="rating"
+                      y={targetRating}
+                      stroke="#A3A3A3"
+                      strokeDasharray="6 6"
+                      strokeWidth={1.5}
+                      label={{
+                        value: isTr ? 'HEDEF' : 'TARGET',
+                        fill: '#737373',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        position: 'right',
+                      }}
+                    />
+                  )}
+                  {mode === 'sentiment' && (
+                    <ReferenceLine
+                      yAxisId="sentiment"
+                      y={50}
+                      stroke="#A3A3A3"
+                      strokeDasharray="6 6"
+                      strokeWidth={1.5}
+                      label={{
+                        value: '%50',
+                        fill: '#737373',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        position: 'right',
+                      }}
+                    />
+                  )}
+                  {mode === 'rating' && (
+                    <Area
+                      yAxisId="rating"
+                      type="monotone"
+                      dataKey="rating"
+                      connectNulls={false}
+                      stroke="none"
+                      fill="url(#pulseRatingArea)"
+                      activeDot={false}
+                      isAnimationActive={false}
+                    />
+                  )}
+                  {mode === 'sentiment' && (
+                    <Area
+                      yAxisId="sentiment"
+                      type="monotone"
+                      dataKey="sentimentPct"
+                      connectNulls={false}
+                      stroke="none"
+                      fill="url(#pulseSentimentArea)"
+                      activeDot={false}
+                      isAnimationActive={false}
+                    />
+                  )}
+                  {(mode === 'rating' || mode === 'volume') && (
+                    <Line
+                      yAxisId="rating"
+                      type="monotone"
+                      dataKey="rating"
+                      connectNulls={false}
+                      stroke={mode === 'rating' ? '#A8D62E' : '#737373'}
+                      strokeWidth={mode === 'rating' ? 3 : 2}
+                      dot={{ r: 3, fill: '#C6F24E', stroke: '#0A0A0A', strokeWidth: 1.5 }}
+                      activeDot={{ r: 5, fill: '#C6F24E', stroke: '#0A0A0A', strokeWidth: 2 }}
+                      isAnimationActive={false}
+                    />
+                  )}
+                  {mode === 'sentiment' && (
+                    <Line
+                      yAxisId="sentiment"
+                      type="monotone"
+                      dataKey="sentimentPct"
+                      connectNulls={false}
+                      stroke="#0A0A0A"
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: '#0A0A0A', stroke: '#C6F24E', strokeWidth: 1.5 }}
+                      activeDot={{ r: 5, fill: '#0A0A0A', stroke: '#C6F24E', strokeWidth: 2 }}
+                      isAnimationActive={false}
+                    />
+                  )}
+                </ComposedChart>
+              )}
+            </MeasuredChart>
+          </div>
 
-          {/* Sentiment line — 'sentiment' mode'da Y axis 0-100% (sentimentPct) */}
-          {mode === 'sentiment' && (() => {
-            function sentY(pct: number): number {
-              const ratio = Math.min(100, Math.max(0, pct)) / 100;
-              return PAD_TOP + LINE_BAND_H * (1 - ratio);
-            }
-            const sentPoints = weeks.map((w, i) => ({
-              x: PAD_X + i * stepX,
-              y: sentY(w.sentimentPct ?? 0),
-              valid: w.volume > 0,
-              pct: w.sentimentPct ?? 0,
-            }));
-            const sentValid = sentPoints.filter((p) => p.valid);
-            if (sentValid.length < 2) return null;
-            const sentPath = sentValid
-              .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`)
-              .join(' ');
-            return (
-              <path
-                d={sentPath}
-                stroke="#A8D62E"
-                strokeWidth="2.5"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            );
-          })()}
-
-          {/* Highlight points (every 5th, tasarımda) */}
-          {points.map((p, i) =>
-            p.valid && i % 5 === 0 ? (
-              <circle
-                key={`hp-${i}`}
-                cx={p.x}
-                cy={p.y}
-                r="3"
-                fill="#FFFFFF"
-                stroke="#A8D62E"
-                strokeWidth="2"
-              />
-            ) : null,
-          )}
-
-          {/* Last point lime tooltip */}
-          {lastValid && lastValueLabel && (
-            <g>
-              <circle
-                cx={lastValid.x}
-                cy={lastValid.y}
-                r="5"
-                fill="#C6F24E"
-                stroke="#0A0A0A"
-                strokeWidth="2"
-              />
-              <rect
-                x={lastValid.x - 28}
-                y={lastValid.y - 26}
-                width="56"
-                height="20"
-                rx="6"
-                fill="#0A0A0A"
-              />
-              <text
-                x={lastValid.x}
-                y={lastValid.y - 12}
-                fontSize="11"
-                fontFamily="JetBrains Mono, monospace"
-                fontWeight="600"
-                fill="#FFFFFF"
-                textAnchor="middle"
-                dominantBaseline="middle"
-              >
-                {lastValueLabel}
-              </text>
-            </g>
-          )}
-
-          {/* X axis labels (her 2 step'te, ya da son label) */}
-          {weeks.map((w, i) => {
-            if (i % 2 !== 0 && i !== weeks.length - 1) return null;
-            const x = PAD_X + i * stepX;
-            return (
-              <text
-                key={i}
-                x={x}
-                y={VB_H - 8}
-                fontSize="10"
-                fill="#A3A3A3"
-                textAnchor="middle"
-                fontFamily="JetBrains Mono, monospace"
-              >
-                {w.label}
-              </text>
-            );
-          })}
-        </svg>
-      </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[#F5F5F5] pt-3">
+            <span className="inline-flex items-center gap-1.5 text-[11.5px] text-[#525252]">
+              <span className="h-2 w-2 rounded-full bg-[#C6F24E]" aria-hidden />
+              {mode === 'rating'
+                ? isTr
+                  ? 'Puan çizgisi'
+                  : 'Rating line'
+                : mode === 'volume'
+                  ? isTr
+                    ? 'Hacim barları'
+                    : 'Volume bars'
+                  : isTr
+                    ? 'Pozitif sentiment'
+                    : 'Positive sentiment'}
+            </span>
+            <span className="text-[11.5px] text-[#A3A3A3]">·</span>
+            <span className="text-[11.5px] text-[#737373]">
+              {isTr
+                ? 'Boş haftalar çizgide gap olarak bırakılır.'
+                : 'Empty weeks are rendered as line gaps.'}
+            </span>
+            {hasLowData && (
+              <span className="ml-auto rounded-full bg-[#FFF7ED] px-2.5 py-1 text-[11px] font-medium text-[#C2410C]">
+                {isTr ? 'Düşük veri hacmi' : 'Low data volume'}
+              </span>
+            )}
+          </div>
+        </>
+      )}
     </section>
   );
 }
-
-export default PulseTrendChart;
