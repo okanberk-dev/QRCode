@@ -29,17 +29,27 @@ export async function GET(req: NextRequest) {
     orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
   });
 
-  return NextResponse.json({
-    data: members.map((m) => ({
-      id: m.id,
-      email: m.email,
-      name: m.name,
-      role: m.role,
-      status: m.status,
-      lastSeenAt: m.lastSeenAt?.toISOString() ?? null,
-      createdAt: m.createdAt.toISOString(),
-    })),
-  });
+  return NextResponse.json(
+    {
+      data: members.map((m) => ({
+        id: m.id,
+        email: m.email,
+        name: m.name,
+        role: m.role,
+        status: m.status,
+        lastSeenAt: m.lastSeenAt?.toISOString() ?? null,
+        createdAt: m.createdAt.toISOString(),
+      })),
+    },
+    {
+      headers: {
+        // Edge cache (CLAUDE.md §38.100 Stage 24). Team list — invite/remove
+        // mutation frequency düşük; 30s fresh + 2min SWR yeterli. `private`
+        // directive cookie-isolated.
+        'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120',
+      },
+    },
+  );
 }
 
 export async function POST(req: NextRequest) {

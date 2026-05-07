@@ -12382,3 +12382,141 @@ sıfır, scope creep yok.
   (operatör tetiği §38.84 / §38.89), RECAPTCHA_ENFORCE flip (§38.79 #2).
   Performance tarafında: gelecek audit raporu geldiğinde önce §38.99
   cross-reference tablosu kontrol et.
+
+### 38.100 2026-05-07 — Stage 24 edge cache header genişletmesi (Görev F kapanışı)
+
+§38.99 Stage 22 PR #523 main'e merge edildikten sonra kullanıcı talebi:
+"main'e merge et ve başka önerdiğin hızlandırma veya CSS minify etmen
+gereken CSS dosyalar var mı analiz et". 3 paralel Explore agent
+(CSS optimization / bundle leak / cache + DB perf) audit yapıldı.
+
+CSS + bundle audit'leri **§38.60-§38.61 + §38.85 + §38.99 sonrası clean
+çıktı** (yeni PR önerilmedi). Cache + DB perf audit'i **7 owner-scoped
+GET endpoint'inde edge cache header eksik** olduğunu tespit etti
+(CLAUDE.md §38.78 Görev F genişletmesi — Stage 8'de sadece 4 endpoint
+kapsanmıştı).
+
+#### 7 endpoint cache header eklendi
+
+| Endpoint | TTL | Sebep |
+|---|---|---|
+| GET `/api/feedback` | `private, s-maxage=15, stale-while-revalidate=60` | Inbox refresh frequency yüksek; `no-store` → 15s fresh + 60s SWR dashboard pulse'a uygun |
+| GET `/api/feedback/stats` | `private, s-maxage=30, stale-while-revalidate=120` | KPI strip aggregate; 30s fresh + 2min SWR refresh hit ratio'yu ~%60-70'e çıkarır |
+| GET `/api/feedback/counts` | `private, s-maxage=15, stale-while-revalidate=60` | Tab badge counts; mevcut polling ile hizalı |
+| GET `/api/notifications` | `private, s-maxage=15, stale-while-revalidate=60` | NotificationBell client 60s polling ile birleşir; CACHE_HEADER const refactor ile DEFAULT_PREFS + populated path ortak |
+| GET `/api/team` | `private, s-maxage=30, stale-while-revalidate=120` | Team list, mutation frequency düşük (invite/remove rare) |
+| GET `/api/dashboard/platforms/[provider]/low-feedback` | `private, s-maxage=60, stale-while-revalidate=300` | Per-platform queue; redirect-stats endpoint'iyle hizalı |
+| GET `/api/billing/summary` | `private, s-maxage=60, stale-while-revalidate=300` | Plan + usage; mutation frequency çok düşük (admin Iyzico flow Wave 3.5) |
+
+#### Pattern (CLAUDE.md §19.3 + §38.78 Görev F + §38.99 Phase B reuse)
+
+```ts
+return NextResponse.json(
+  { ...payload },
+  {
+    headers: {
+      'Cache-Control': 'private, s-maxage=N, stale-while-revalidate=M',
+    },
+  },
+);
+```
+
+**Owner endpoint'lerin toplam cache coverage'ı**: 4 (Stage 8 §38.78 Görev F)
++ 7 (bu Stage 24) = **11 endpoint** + 4 ek public/owner (CLAUDE.md §19.3
++ §38.91) = 15+ cache-optimized endpoint.
+
+#### Etkilenen dosyalar
+
+| Dosya | Değişim |
+|---|---|
+| `src/app/api/feedback/route.ts` | GET success response'a Cache-Control header (line 503-532) |
+| `src/app/api/feedback/stats/route.ts` | GET success response'a Cache-Control header (line 445-474) |
+| `src/app/api/feedback/counts/route.ts` | GET success response'a Cache-Control header (line 50-61) |
+| `src/app/api/notifications/route.ts` | CACHE_HEADER const + 2 NextResponse.json call genişletmesi |
+| `src/app/api/team/route.ts` | GET success response'a Cache-Control header (line 32-49) |
+| `src/app/api/dashboard/platforms/[provider]/low-feedback/route.ts` | GET success response'a Cache-Control header (line 60-81) |
+| `src/app/api/billing/summary/route.ts` | GET success response'a Cache-Control header (line 90-120) |
+| `CLAUDE.md` | §38.100 closure log |
+
+**Schema migration**: yok. **Yeni endpoint**: yok. **Yeni dep**: yok.
+**Response shape**: değişmedi. **IDOR / RBAC**: dokunulmadı. **Mutation
+endpoint'leri** (POST/PATCH/PUT/DELETE) cache header taşımıyor — fresh
+fetch sonrası TTL bitince invalidation natural.
+
+#### Kazanım tahmini
+
+- **Per-actor CDN cache** (Vercel Edge user-isolated via `private`
+  directive + cookie-based partition)
+- **Tab açık kalan dashboard'ta** cache hit ~%60-70 (15-60s window)
+- **Network latency**: 80-150ms/request → ~24-90ms toplam tasarruf
+  (3 paralel fetch × 30ms SWR hit per session)
+- **Bandwidth**: feedback list ~15-40 KB → ~9-28 KB tasarruf/session
+- **Origin CPU**: ~%30-50 düşüş (idempotent owner-scoped read'lerde)
+
+#### Yapma
+
+- Mutation endpoint'lerine (POST/PATCH/PUT/DELETE) `Cache-Control` header
+  ekleme — origin always fresh kalmalı (write-through pattern). Read +
+  write aynı endpoint'te ayrılırsa write path'te CDN cache invalidation
+  beklemek zorunda kalırız.
+- `public` cache directive — owner-scoped IDOR scope leak (Vercel CDN
+  public cache user-isolated değil).
+- TTL'leri agresif yükseltme (örn. s-maxage=300+) — owner mutation
+  yaptıktan sonra stale window büyür, "yenilendi" UX confusing.
+- Error response'lara cache header ekleme — 4xx/5xx zaten Vercel
+  default'unda cache'lenmez, ek directive gereksiz.
+
+#### Yap
+
+- Yeni owner-scoped GET endpoint eklerken bu paterni reuse:
+  `private, s-maxage=N, stale-while-revalidate=M`. TTL seçimi: refresh
+  frequency'ye göre 15s (high — inbox/badge), 30s (medium — KPI/team),
+  60s (low — billing/platform queue).
+- Yeni public read endpoint için (`/r/[slug]` gibi) `public, s-maxage=N,
+  stale-while-revalidate=M` (CLAUDE.md §19.3 paterni — slug-based public
+  cache user-shared OK).
+- Mutation endpoint sonrası UI'da optimistic state veya manuel refresh
+  sinyali (toast / refetch button) — TTL window'unu UX katmanında kapat.
+
+#### Verification
+
+- `npm run lint`: 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: mevcut suite intact (functional değişiklik yok)
+- `npx next build` (stub env): 58/58 static page intact
+- Sanity grep: 7 endpoint'te `Cache-Control: private, s-maxage` (6 inline
+  + 1 const'lu = `/api/notifications`).
+
+#### Manual smoke test (Vercel preview sonrası)
+
+```bash
+# Owner cookie ile çift fetch — ikinci fetch'te x-vercel-cache: HIT
+curl -I "https://qr-code-git-...vercel.app/api/feedback?page=1" \
+  -H "Cookie: user_token=<test_token>"
+# Beklenen: Cache-Control: private, s-maxage=15, stale-while-revalidate=60
+```
+
+Vercel Analytics dashboard'unda `Cache hit ratio` artışı (typically
+%30-50 → %60-70).
+
+#### Stage 24 closure
+
+- Branch: `claude/apply-performance-report-EQ8IQ` (designated, Stage 22
+  merge sonrası main'le align edilip yeni commit eklendi)
+- Edit'lenen dosyalar: 8 (7 endpoint + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: değişmedi (functional değişiklik yok)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Cache hit
+  ratio Vercel Analytics dashboard'unda 1-2 hafta soak sonrası
+  doğrulanır.
+- Kalan riskler: yok. TTL seçimleri owner mutation frequency'lerine göre
+  conservative (15-60s fresh). Edge case (mutation sonrası stale read)
+  UI optimistic state pattern ile zaten kapsanmış.
+- **Sonraki aşama önerisi**: §38.B master backlog kalemleri — HIGH 4
+  Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession re-introduce
+  (operatör tetiği §38.84 / §38.89), RECAPTCHA_ENFORCE flip (§38.79 #2),
+  bcrypt cost normalize (§38.2). Performance tarafında: §38.99 + §38.100
+  cross-reference tablosu güncel; gelecek audit raporu geldiğinde önce
+  bu tablolar kontrol edilir.

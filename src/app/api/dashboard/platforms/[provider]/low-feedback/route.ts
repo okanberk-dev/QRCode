@@ -57,19 +57,29 @@ export async function GET(
     },
   });
 
-  return NextResponse.json({
-    items: rows.map((row) => ({
-      id: row.id,
-      rating: row.rating,
-      name: row.hasKvkkConsent ? row.name : null,
-      comment: row.comment,
-      branch: row.branch,
-      tableNumber: row.tableNumber,
-      createdAt: row.createdAt.toISOString(),
-      restaurantId: row.restaurant?.id ?? null,
-      restaurantName: row.restaurant?.name ?? null,
-    })),
-    nextOffset: offset + rows.length,
-    hasMore: rows.length === limit,
-  });
+  return NextResponse.json(
+    {
+      items: rows.map((row) => ({
+        id: row.id,
+        rating: row.rating,
+        name: row.hasKvkkConsent ? row.name : null,
+        comment: row.comment,
+        branch: row.branch,
+        tableNumber: row.tableNumber,
+        createdAt: row.createdAt.toISOString(),
+        restaurantId: row.restaurant?.id ?? null,
+        restaurantName: row.restaurant?.name ?? null,
+      })),
+      nextOffset: offset + rows.length,
+      hasMore: rows.length === limit,
+    },
+    {
+      headers: {
+        // Edge cache (CLAUDE.md §38.100 Stage 24). Per-platform low-rating
+        // queue — owner check frequency saatlik bandda; 60s fresh + 5min
+        // SWR mevcut redirect-stats endpoint'iyle (300s/900sw) hizalı.
+        'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
+      },
+    },
+  );
 }

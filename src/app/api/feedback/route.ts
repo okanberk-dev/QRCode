@@ -500,28 +500,39 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-        // UI uses these flags to surface "feature unavailable" notices when
-        // schema sync hasn't happened yet (e.g. preview deploys, fresh DBs).
-        // PR15 — joinFilters: tier 3 fallback joinWhere drop ettiyse true;
-        // UI'da hasReply/isFlagged/isAssigned filter'lar pasif uyarısı.
-        degraded:
-          !joinsAvailable || !tagsAvailable || !aiDraftAvailable || !joinFiltersApplied
-            ? {
-                joins: !joinsAvailable,
-                tags: !tagsAvailable,
-                aiDraft: !aiDraftAvailable,
-                joinFilters: !joinFiltersApplied,
-              }
-            : null,
+    return NextResponse.json(
+      {
+        data,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+          // UI uses these flags to surface "feature unavailable" notices when
+          // schema sync hasn't happened yet (e.g. preview deploys, fresh DBs).
+          // PR15 — joinFilters: tier 3 fallback joinWhere drop ettiyse true;
+          // UI'da hasReply/isFlagged/isAssigned filter'lar pasif uyarısı.
+          degraded:
+            !joinsAvailable || !tagsAvailable || !aiDraftAvailable || !joinFiltersApplied
+              ? {
+                  joins: !joinsAvailable,
+                  tags: !tagsAvailable,
+                  aiDraft: !aiDraftAvailable,
+                  joinFilters: !joinFiltersApplied,
+                }
+              : null,
+        },
       },
-    });
+      {
+        headers: {
+          // Edge cache (CLAUDE.md §38.100 Stage 24 — Görev F genişletmesi).
+          // Owner-scoped inbox refresh frequency yüksek; 15s fresh + 60s SWR
+          // dashboard pulse'a uygun. `private` directive Vercel CDN'de
+          // user-isolated (cookie-based partition); IDOR scope intact.
+          'Cache-Control': 'private, s-maxage=15, stale-while-revalidate=60',
+        },
+      },
+    );
   } catch (error) {
     console.error('Failed to fetch feedback:', error);
     return ApiErrors.internalError('Veriler çekilemedi');

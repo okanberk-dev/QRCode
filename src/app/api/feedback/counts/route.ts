@@ -47,12 +47,21 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      all,
-      new: Math.max(0, all - replied),
-      attention,
-      replied,
-    });
+    return NextResponse.json(
+      {
+        all,
+        new: Math.max(0, all - replied),
+        attention,
+        replied,
+      },
+      {
+        headers: {
+          // Edge cache (CLAUDE.md §38.100 Stage 24). Tab badge counts —
+          // 15s fresh + 60s SWR mevcut polling intervalleriyle hizalı.
+          'Cache-Control': 'private, s-maxage=15, stale-while-revalidate=60',
+        },
+      },
+    );
   } catch (error) {
     console.error('[feedback/counts]', error);
     return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0 });
