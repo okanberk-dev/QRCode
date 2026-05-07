@@ -1,11 +1,23 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, HelpCircle, Loader2, Star, TrendingUp, Globe2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import ExportReportButton from '@/components/dashboard/ExportReportButton';
-import { PageHeader, PlatformChip, PLATFORMS, type PlatformId } from '@/components/ui';
-import AdminBiSection from '@/components/admin/AdminBiSection';
+import { PageHeader, PlatformChip, PLATFORMS, Skeleton, type PlatformId } from '@/components/ui';
+
+// Stage 28 §38.104 Fix A1 — recharts-heavy BI section hydration defer.
+// AdminBiSection MRR/Churn/NPS/Cohort 4 chart taşır (~35 KB recharts
+// gzipped). SSR'da pre-render anlamlı değil (admin-only data, client-side
+// fetch + chart render); `ssr: false` ile bundle hydration deferred →
+// analytics page initial paint hızlanır, BI section async hydrate olur.
+// Skeleton loading fallback CLAUDE.md §27 dynamic + §11.17 content-shape
+// paterni reuse.
+const AdminBiSection = dynamic(() => import('@/components/admin/AdminBiSection'), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[400px] w-full rounded-2xl" />,
+});
 
 const PLATFORM_OPTIONS: PlatformId[] = [
   'google',

@@ -13051,3 +13051,204 @@ endpoint'lerinde).
   - HIGH 4 Platforms 12-card grid (DEFER §38.30)
   - Stage 9 UserSession re-introduce (operatör tetiği §38.84/§38.89)
   - RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak)
+
+### 38.104 2026-05-07 — Stage 28 owner + admin panel performance hardening (revize Phase A+B+C, 5 fix)
+
+§38.99 (Stage 22) + §38.100 (Stage 24) + §38.101 (Stage 25) + §38.102
+(Stage 26) + §38.103 (Stage 27) sonrası kullanıcı talebiyle Stage 28
+owner + admin panel kalan low/medium-priority perf gap'ler kapatıldı.
+
+3 paralel Explore agent (Faz 1 quick wins / Faz 2 frontend / Faz 3
+backend cache) ile audit yapıldı; **2 false positive elendi** (CLAUDE.md
+§38.39 + §38.69 paterni):
+
+| Plan'daki fix | Audit sonucu | Karar |
+|---|---|---|
+| O2 NotificationBell visibility | `document.visibilitychange` listener **ZATEN VAR** (line 184-191) | **SKIP** |
+| O4 AnalyticsFilterBar debounce | `useTransition` **ZATEN AKTİF** tüm `router.replace`'ler için (implicit batching) | **SKIP** |
+| O3 Google reviews useMemo | `extractKeywords` zaten reviewAnalysis useMemo içinde — partial value | **YAP (partial)** |
+
+Kullanıcı **Recommended Phase A+B+C** seçti (5 fix, ~30 satır,
+LOW-MED risk, tek consolidated PR — CLAUDE.md §21.22 stacked YOK).
+
+#### 5 fix bundle
+
+**Fix O1 — `/api/feedback/[id]/draft` GET edge cache header**:
+- `src/app/api/feedback/[id]/draft/route.ts` line 8 sonrası
+  `DRAFT_CACHE_HEADERS` const eklendi
+  (`'private, s-maxage=15, stale-while-revalidate=60'`).
+- 5 success path'a header eklendi (pulseAiDisabled / autoDraftDisabled /
+  draft null / draft populated / degraded).
+- Mutation endpoint'leri (suggest-reply POST + bu DELETE) intact origin
+  always fresh.
+- Kazanım: 50-150ms per composer mount cross-tab refresh.
+- Risk: LOW (CLAUDE.md §38.100 Stage 24 paterni reuse).
+
+**Fix A1 — AdminBiSection lazy hydration**:
+- `src/app/admin/analytics/page.tsx` direct import → `dynamic` import.
+- `next/dynamic` import + `Skeleton` `@/components/ui` barrel'dan.
+- `dynamic(() => import('@/components/admin/AdminBiSection'),
+  { ssr: false, loading: () => <Skeleton className="h-[400px] w-full
+  rounded-2xl" /> })`.
+- Recharts heavy (Area + Bar + Pie) ~35 KB gzipped hydration deferred.
+- Kazanım: 60-120ms LCP analytics page initial paint.
+- Risk: LOW (CLAUDE.md §27 dynamic + §11.17 content-shape paterni).
+
+**Fix A2 — `/api/restaurants` admin list edge cache**:
+- `src/app/api/restaurants/route.ts` file-top `ADMIN_LIST_CACHE_HEADER`
+  const (`'private, s-maxage=30, stale-while-revalidate=120'`).
+- GET admin list branch `NextResponse.json(...)` 2nd param'a
+  `headers: { 'Cache-Control': ADMIN_LIST_CACHE_HEADER }`.
+- Mutation endpoint'leri (POST/PATCH/DELETE) intact.
+- Public slug lookup branch (CLAUDE.md §19.3) zaten cache'li, dokunulmadı.
+- Kazanım: 80-150ms repeat fetch.
+- Risk: LOW (CLAUDE.md §38.102 Stage 26 `/api/admin/me` paterni reuse).
+
+**Fix O3-partial — Google reviews `computeHealthScore` useMemo**:
+- `src/app/[locale]/dashboard/google-reviews/page.tsx` `reviewAnalysis`
+  useMemo (line 749-867) sonrası `healthScore` useMemo eklendi.
+- Deps: `[reviewsPayload, reviewAnalysis.replied]`.
+- IIFE'deki inline `computeHealthScore({...})` çağrısı (line ~1194)
+  → `const score = healthScore ?? 0`.
+- `extractKeywords` ZATEN reviewAnalysis useMemo içinde — dokunulmadı.
+- Kazanım: 50-100ms re-render (50+ review dashboard).
+- Risk: LOW.
+
+**Fix A4 — Admin BI process-local Map cache**:
+- `src/app/api/admin/analytics/bi/route.ts` module-level cache eklendi.
+- `biCache = new Map<string, { data: BiSnapshot; expiresAt: number }>()`
+  + `BI_CACHE_TTL_MS = 120_000` (2dk).
+- 3 helper: `getCachedBiSnapshot(range)`, `setCachedBiSnapshot(range,
+  data)`, `clearBiSnapshotCache()` (manuel invalidation export, admin
+  destructive aksiyon sonrası caller çağırır).
+- GET handler: cache lookup → hit ise instant return; miss ise
+  `getBiSnapshot(range)` compute + write + return.
+- HTTP Cache-Control header (`private, s-maxage=120,
+  stale-while-revalidate=600`) intact.
+- Kazanım: 100-200ms per range chip toggle hot path (cache hit).
+- Risk: MED (multi-instance Vercel'de 2dk drift kabul; NPS/MRR/churn
+  saatlik basislere yansır, fresh data 2dk içinde ulaşır).
+
+#### Etkilenen dosyalar (~50 satır net edit)
+
+- `src/app/api/feedback/[id]/draft/route.ts` (DRAFT_CACHE_HEADERS const +
+  5 success path)
+- `src/app/admin/analytics/page.tsx` (`next/dynamic` import + Skeleton +
+  AdminBiSection lazy wrap)
+- `src/app/api/restaurants/route.ts` (`ADMIN_LIST_CACHE_HEADER` const +
+  admin list branch header)
+- `src/app/[locale]/dashboard/google-reviews/page.tsx` (`healthScore`
+  useMemo + IIFE memoize reuse)
+- `src/app/api/admin/analytics/bi/route.ts` (process-local Map cache +
+  3 helper + GET handler integration)
+- `CLAUDE.md` §38.104 closure log
+
+**Yeni dosya**: yok. **Schema migration**: yok. **Yeni dep**: yok.
+**Response shape**: değişmedi. **IDOR / RBAC**: dokunulmadı.
+
+#### Yapma
+
+- O2 (NotificationBell skip-when-hidden) ekleme — zaten `visibility
+  listener` var (line 184-191), marjinal kazanım, scope creep.
+- O4 (AnalyticsFilterBar debounce) ekleme — `useTransition` zaten
+  implicit batching sağlıyor.
+- AdminBiSection için `ssr: true` lazy import — recharts hydration
+  defer için `ssr: false` zorunlu.
+- BI process-local cache TTL 5+ dakika — admin operasyonel görünüm
+  değişimi yavaşlar.
+- BI cache key'i daha granular yapma (örn. `${range}:${actorId}`) —
+  admin BI workspace-shared, range yeterli.
+- `extractKeywords` useMemo wrap'ini değiştirme — zaten reviewAnalysis
+  useMemo içinde.
+- Faz 4 fix'lerini (O5/A3/A5) bu PR'a sıkıştırma — operatör onayı
+  zorunlu, ayrı PR (DEFER §38.B).
+- Schema migration ekleme (Stage 28 scope dışı).
+- IIFE içindeki diğer compute'ları (tier, responseRate, profileComplete)
+  da useMemo'ya çekme — pure inline math, kompoze JSX değişkenleri için
+  IIFE pattern intact (CLAUDE.md §7).
+- Mutation endpoint'lerine cache header ekleme (suggest-reply POST,
+  feedback draft DELETE, /restaurants POST/PATCH/DELETE) — origin
+  always fresh disipline (CLAUDE.md §38.100).
+
+#### Yap
+
+- Yeni admin GET endpoint eklerken Cache-Control `private, s-maxage=N,
+  stale-while-revalidate=M` paterni reuse (CLAUDE.md §38.100 + §38.102
+  + §38.104).
+- Yeni AI helper / aggregate compute call'larında §15.1 process-local
+  Map cache paterni reuse — manuel invalidation export'lu.
+- Yeni recharts/heavy client component eklerken `dynamic({ ssr: false })`
+  + Skeleton fallback paterni reuse.
+- Yeni client component'te repeated compute (50+ item iteration) için
+  useMemo wrap zorunlu.
+- Audit önerisi alırken: agent çıktısını manuel verify et (false
+  positive yaygın — CLAUDE.md §38.39 + §38.69 paterni).
+- BI cache invalidation gerekirse (admin bulk feature_override veya
+  bulk send_email gibi cross-workspace impact aksiyonları sonrası):
+  `clearBiSnapshotCache()` import + caller'da çağırılır.
+
+#### Verification
+
+- `npm run lint`: 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: 274/274 pass (functional değişiklik yok)
+- `NODE_OPTIONS="--max-old-space-size=4096" npx next build` (stub env):
+  ✓ Compiled + 58/58 static page intact
+- Sanity grep regression:
+  - `grep -nE "DRAFT_CACHE_HEADERS|s-maxage=15" src/app/api/feedback/\[id\]/draft/route.ts`
+    → const + 5 success path
+  - `grep -nE "next/dynamic|AdminBiSection.*dynamic" src/app/admin/analytics/page.tsx`
+    → 1 hit + lazy
+  - `grep -nE "ADMIN_LIST_CACHE_HEADER" src/app/api/restaurants/route.ts`
+    → const + use
+  - `grep -nE "healthScore = useMemo" src/app/\[locale\]/dashboard/google-reviews/page.tsx`
+    → 1 hit
+  - `grep -nE "biCache|BI_CACHE_TTL_MS" src/app/api/admin/analytics/bi/route.ts`
+    → cache + TTL + getter + setter + invalidate
+
+#### Manuel smoke test (Vercel preview sonrası, opsiyonel)
+
+```bash
+# Owner composer mount cache
+curl -I "https://qr-code-git-...vercel.app/api/feedback/<id>/draft" \
+  -H "Cookie: user_token=<test>"
+# Beklenen: Cache-Control: private, s-maxage=15, stale-while-revalidate=60
+# 2. request: x-vercel-cache: HIT
+
+# Admin restaurants list cache
+curl -I "https://qr-code-git-...vercel.app/api/restaurants" \
+  -H "Cookie: admin_token=<test>"
+# Beklenen: Cache-Control: private, s-maxage=30, stale-while-revalidate=120
+
+# Admin BI snapshot cache (process-local + HTTP layered)
+# Page reload `/admin/analytics` → BI section initial render skeleton
+# Range chip toggle (30G → 90G → 30G) → 2. request hot path < 50ms
+# (process-local cache hit, no aggregate recompute)
+```
+
+Vercel Speed Insights LCP/INP delta + Vercel Analytics Cache hit ratio
+1 hafta soak sonrası ölç (`/api/feedback/[id]/draft` + `/api/restaurants`
+admin list + `/api/admin/analytics/bi` endpoint'lerinde).
+
+#### Stage 28 closure (Tarih 2026-05-07)
+
+- Branch: `claude/perf-stage28-owner-admin-P3qFx` (designated, fresh
+  main üstüne — Stage 22-27 cumulative kapanmış)
+- Edit'lenen dosyalar: 6 (5 fix + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 274 (değişmedi — functional değişiklik yok, cache layer
+  + lazy hydration + useMemo wrap)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. 1 hafta
+  soak sonrası Vercel Speed Insights + Cache hit ratio ölç.
+- Kalan riskler:
+  - BI process-local cache 2dk drift — admin destructive aksiyon
+    sonrası `clearBiSnapshotCache()` çağırılmıyor (gelecek scope).
+  - Multi-instance Vercel'de cache instance-bound (CLAUDE.md §15.1).
+- **Sonraki aşama önerisi**: §38.B master backlog kalemleri operatör
+  tetiği bekliyor — HIGH 4 Platforms 12-card grid (DEFER §38.30 product
+  decision), Stage 9 UserSession re-introduce (§38.84 / §38.89), Stage
+  28 Faz 4 refactor (O5 customers media-query / A3 cursor pagination /
+  A5 ref-based checkbox tracking — operatör onayı zorunlu, ayrı 3 PR).
+  Performance scope büyük oranda kapatıldı (Stage 22-28 cumulative).

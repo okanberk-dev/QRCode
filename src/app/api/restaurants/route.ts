@@ -8,6 +8,13 @@ import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-do
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
 import { isValidEmail, isValidHexColor } from '@/lib/validations';
 
+// Stage 28 §38.104 Fix A2 — admin restaurants list cross-tab refresh edge cache.
+// Restaurant mutation rare (admin POST/PATCH/DELETE always-fresh, no cache
+// directive). 30s fresh + 2min SWR window cross-tab admin tab'ları + page
+// reload'larda CDN edge'den döner. `private` directive admin token-isolated
+// (CLAUDE.md §38.102 Stage 26 `/api/admin/me` paterni reuse).
+const ADMIN_LIST_CACHE_HEADER = 'private, s-maxage=30, stale-while-revalidate=120';
+
 // Field → provider mapping for the eight platform URLs accepted by POST.
 // Lets us run the same `checkProviderUrl` hard-error gate the integration
 // settings UI uses (CLAUDE.md §19.4) on the create path too — a malicious
@@ -289,10 +296,13 @@ export async function GET(req: NextRequest) {
       avgRating: avgByRestaurant.get(r.id) ?? null,
     }));
 
-    return NextResponse.json({
-      data: enriched,
-      meta: { total, page, limit, totalPages: Math.ceil(total / limit) }
-    });
+    return NextResponse.json(
+      {
+        data: enriched,
+        meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      },
+      { headers: { 'Cache-Control': ADMIN_LIST_CACHE_HEADER } },
+    );
   } catch (error) {
     console.error('Failed to fetch restaurants:', error);
     return ApiErrors.internalError('İşletmeler çekilemedi');

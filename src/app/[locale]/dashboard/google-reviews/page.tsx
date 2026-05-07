@@ -866,6 +866,20 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     };
   }, [reviewsPayload]);
 
+  // Stage 28 §38.104 Fix O3-partial — health score memoize.
+  // PROFİL SAĞLIĞI gauge inline IIFE'inde (line ~1194) `computeHealthScore`
+  // her render'da yeniden çalışıyordu. 50+ review'lı dashboard'larda
+  // dependency array değişmediğinde re-render skip kazandırır.
+  // `extractKeywords` zaten reviewAnalysis useMemo içinde — dokunulmadı.
+  const healthScore = useMemo(() => {
+    if (!reviewsPayload) return null;
+    return computeHealthScore({
+      avgRating: reviewsPayload.averageRating,
+      total: reviewsPayload.totalReviewCount,
+      replied: reviewAnalysis.replied,
+    });
+  }, [reviewsPayload, reviewAnalysis.replied]);
+
   const statusIsReady = Boolean(
     activeRestaurantId && checkedRestaurantId === activeRestaurantId && status,
   );
@@ -1191,11 +1205,11 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                   Mevcut max-w-[1000px] 1-col layout'a sığdırmak için 2-col
                   responsive grid (sm+ side-by-side, mobile stack). */}
               {(() => {
-                const score = computeHealthScore({
-                  avgRating: reviewsPayload.averageRating,
-                  total: reviewsPayload.totalReviewCount,
-                  replied: reviewAnalysis.replied,
-                });
+                // Stage 28 §38.104 Fix O3-partial — memoized score reuse.
+                // healthScore useMemo (line ~875) `reviewsPayload` truthy
+                // guard'ı IIFE öncesi sağlandığı için non-null garanti
+                // (parent JSX `reviewsPayload && (...)` line 1042).
+                const score = healthScore ?? 0;
                 const tier =
                   score >= 85
                     ? { label: isTr ? 'Mükemmel' : 'Excellent', kind: 'lime' as const }
