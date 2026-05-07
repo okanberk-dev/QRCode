@@ -52,8 +52,9 @@ interface Detail {
   };
   owner: { id: string; name: string | null; email: string | null } | null;
   creator: { id: string; name: string | null; email: string | null } | null;
-  approver: { id: string; username: string } | null;
-  rejecter: { id: string; username: string } | null;
+  // Stage 30 §38.106 — backend `id` field expose etmiyor (PII).
+  approver: { username: string } | null;
+  rejecter: { username: string } | null;
   stats: {
     pending: number;
     sent: number;

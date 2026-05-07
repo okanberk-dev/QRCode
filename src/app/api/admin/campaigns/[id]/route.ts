@@ -135,8 +135,12 @@ export async function GET(
       creator: creator
         ? { id: creator.id, name: creator.name, email: creator.email }
         : null,
-      approver: approver ? { id: approver.id, username: approver.username } : null,
-      rejecter: rejecter ? { id: rejecter.id, username: rejecter.username } : null,
+      // Stage 30 §38.106 — admin approver/rejecter response'da `id` field
+      // expose edilmez (PII concern; UI sadece username'i kullanıyor zaten).
+      // Internal admin user ID'si endpoint payload'ında network trafiğinde
+      // expose edilmemeli (CLAUDE.md §37.7 + §38.105 paterni).
+      approver: approver ? { username: approver.username } : null,
+      rejecter: rejecter ? { username: rejecter.username } : null,
       stats,
     },
     {

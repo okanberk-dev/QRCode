@@ -20,6 +20,7 @@ import { CampaignsList } from './CampaignsList';
 import { CampaignComposeModal } from './CampaignComposeModal';
 import { CampaignDetailDrawer } from './CampaignDetailDrawer';
 import { CampaignsEmptyState } from './CampaignsEmptyState';
+import CampaignsLocked from './CampaignsLocked';
 
 interface RestaurantOption {
   id: string;
@@ -182,6 +183,22 @@ export function CampaignsClient({ locale }: ClientProps) {
     const qs = params.toString();
     router.replace(qs ? `?${qs}` : '', { scroll: false });
   };
+
+  // Stage 30 §38.106 — tier gate. Restaurants yüklendi + active restaurant
+  // entitled değilse (campaignsEnabled=false) interactive surface yerine
+  // CampaignsLocked screen render. Sidebar nav görünür kalır (özellik var,
+  // erişim yok semantic). Eğer hiçbir restoranı entitled değilse de aynı
+  // gating screen — ilk seçili restoran context taşır.
+  const hasAnyEntitled = restaurants.some((r) => r.campaignsEnabled);
+  if (restaurants.length > 0 && activeRestaurant && !hasAnyEntitled) {
+    return (
+      <CampaignsLocked
+        locale={locale}
+        restaurantName={activeRestaurant.name}
+        hasMultiple={restaurants.length > 1}
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">

@@ -13526,3 +13526,175 @@ da reviewerNote amber bordered card (revize rehberi). Status `Reddedildi`
   (gelecek tarihli onay sonrası queue), recurring campaigns, A/B
   testing, AdminNotificationRead pivot tablo (broadcast read state
   per-admin).
+
+### 38.106 2026-05-07 — Stage 30 campaign tier gate + Stage 29 audit fixes
+
+§38.105 Stage 29 deploy edildikten sonra kullanıcı 2 talep iletti:
+(a) Stage 29 kodlarının profesyonel/güvenli/performant olduğundan emin
+ol — geliştirilmesi gereken yerleri kapat. (b) Kampanya özelliği
+**ücretsiz user'lar tarafından bilinsin** (sidebar görünür) ama sadece
+**admin'in tanımladığı user'lar** kullanabilsin.
+
+3 paralel Explore agent (backend security + UI a11y + tier gate scope)
+audit yaptı. 2 false positive elendi (CLAUDE.md §38.39 + §38.69
+paterni — Agent 3 "endpoint campaignsEnabled taşımıyor" raporu yanlış,
+manuel verify: Prisma `findMany` + `include` scalar field'ları otomatik
+döndürür). 2 audit fix + 1 schema migration + 1 yeni component.
+
+Kullanıcı kararları (AskUserQuestion 2 soru, hepsi Recommended):
+- Mevcut tüm `campaignsEnabled=true` row'ları false yapan migration
+  (schema default değişimi + UPDATE all). Admin manuel enable eder.
+- Tek consolidated PR Stage 30 (audit fix + tier gate kombine).
+
+#### Audit fixes (2 high-value)
+
+**Fix 1 — Recipient cap (sendCustomerCampaign timeout safety)**:
+- `src/lib/email-customer-campaign.ts` — `MAX_RECIPIENTS_PER_CAMPAIGN
+  = 50` const + helper içinde hard guard (throw on overflow).
+- `src/app/api/customer-campaigns/[id]/send/route.ts` — pre-flight
+  check, owner-friendly 422 response (`campaign_too_large` + Türkçe
+  message + limit/actual fields).
+- Sebep: 50 recipient × 600ms throttle = 30s + Resend latency ~10s
+  ≈ 40s; admin approve endpoint maxDuration=60s; cap'i 50'de tutar
+  Vercel function timeout'a düşmeden batch tamamlanır. Real-world data:
+  KOBİ restoran tipik marketing-consent'li audience ≤200; gerçek
+  kullanım'da nadiren cap'a takılır.
+
+**Fix 2 — Admin detail endpoint PII removal**:
+- `src/app/api/admin/campaigns/[id]/route.ts` — response shape:
+  `approver: { id, username }` → `approver: { username }`. Aynı
+  rejecter için. Internal admin user ID network trafiğinde expose
+  edilmemeli (CLAUDE.md §37.7 PII guard + §38.105 owner panel paterni
+  paralel).
+- Detail page client interface güncellendi.
+
+**Audit'te elenen MEDIUM/LOW**:
+- AdminNotification broadcast cross-admin readAt drift — DEFER (pivot
+  table scope, dokümante edildi §38.105).
+- Modal padding `sm:p-6` mobile inconsistency — küçük cosmetic
+  (mevcut p-5 → mobile çalışıyor; ayrı opportunistic cleanup).
+- Mail template comment clarity — XSS-safe (escapeHtml > regex `<br />`
+  literal injection, deepSubstitute escape after); inline comment
+  cosmetic.
+
+#### Tier gate (admin entitlement model)
+
+**Schema migration** (`prisma/migrations/20260507200000_campaigns_default_false/`):
+- `Restaurant.campaignsEnabled` default `true` → `false`. Mevcut tüm
+  `true` row'ları UPDATE ile false'a çekildi (atomic backfill).
+- Production deploy sonrası mevcut beta user'lar için breaking — admin
+  per-restaurant manuel enable adımı gerekir (kullanıcı kararı). Yeni
+  restoranlar default OFF (`@default(false)`).
+
+**Yeni component**: `src/app/[locale]/dashboard/campaigns/_components/
+CampaignsLocked.tsx` — gating screen. Pulse design: graphite hero card
++ lime corner accent + 3 benefit list (Send/CheckCheck/Users icons) +
+"Pro özellik" Badge + primary CTA (mailto:support@buaze.com pre-filled
+subject + body) + secondary CTA (/help link). Multi-restaurant
+context-aware (hasMultiple flag + restaurantName).
+
+**CampaignsClient integration** (`_components/CampaignsClient.tsx`):
+- `hasAnyEntitled = restaurants.some((r) => r.campaignsEnabled)` —
+  hiçbir restoran entitled değilse CampaignsLocked screen render edilir;
+  page-level early return.
+- Multi-restaurant + bazı entitled durumda mevcut "(Pasif)" suffix +
+  isDisabled button intact (Stage 29 §38.105 paterni reuse).
+- Owner sidebar nav item her zaman görünür kalır (kullanıcı talebi:
+  "ücretsiz kullanıcılar bilsin"); page-level locked screen "Pro" framing
+  ile özellik tanıtımı + Buaze contact CTA gösterir.
+
+**Backend gate'ler intact**:
+- `Restaurant.campaignsEnabled` zaten admin master flag (§5.2).
+- `RESTAURANT_FEATURE_KEYS` array'inde `'campaignsEnabled'` mevcut
+  (admin /admin/restaurants/[id] feature-access endpoint Zod schema +
+  FeatureToggleCard UI Stage 29 öncesi kurulu).
+- POST `/api/customer-campaigns` + `[id]/send` + `preview-recipients`
+  endpoint'lerinde 403 `campaigns_disabled` gate intact.
+
+#### Etkilenen dosyalar (~7 dosya)
+
+**Schema (2)**: `prisma/schema.prisma` (default false + comment) +
+migration SQL (UPDATE all + ALTER COLUMN).
+
+**Backend audit fixes (3)**: `src/lib/email-customer-campaign.ts`
+(MAX_RECIPIENTS_PER_CAMPAIGN const + helper guard) + `[id]/send/route.ts`
+(422 pre-flight check) + `/api/admin/campaigns/[id]/route.ts`
+(approver/rejecter id PII removal).
+
+**UI (3)**: `CampaignsLocked.tsx` (yeni — gating screen) +
+`CampaignsClient.tsx` (CampaignsLocked import + hasAnyEntitled gate) +
+admin detail page interface update.
+
+**Docs (1)**: CLAUDE.md §38.106 closure log.
+
+#### Verification
+
+- `npm run lint` → 0 errors, 0 warnings
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`
+- `npm test` → 274/274 pass
+- `npx next build` (stub env, 4GB heap) → ✓ Compiled + 58/58 static
+- Sanity grep regression: 6 pattern landed (MAX_RECIPIENTS_PER_CAMPAIGN
+  const + helper guard + endpoint pre-flight; approver/rejecter `id`
+  removed in detail response; campaignsEnabled default false in
+  schema + migration UPDATE; CampaignsLocked import + hasAnyEntitled
+  early-return).
+
+#### Operatör aksiyonu (PR sonrası)
+
+- Vercel build script `prisma migrate deploy` otomatik schema migration
+  apply eder (CLAUDE.md §14.1) — UPDATE atomic + ALTER COLUMN default
+  change. Mevcut user'lar tek seferde gating screen görür.
+- **Manuel admin geçiş gerekir**: production beta user'ların
+  campaignsEnabled flag'i admin tarafından `/admin/restaurants/[id]`
+  feature-access toggle'ından entitled user'lar için tek-tek aktif
+  edilmeli. Aksi halde tüm owner'lar locked screen görür.
+- Hiçbir env değişikliği gerekmez.
+
+#### Yapma
+
+- Mevcut user'ların campaignsEnabled migration'ını skip etmek — kullanıcı
+  talebi explicit "tüm mevcut OFF" (Recommended seçim).
+- Sidebar nav item'ı disabled state'e çekmek — kullanıcı talebi
+  "ücretsiz user'lar bilsin"; sidebar görünür kalmalı, page-level
+  locked screen yeterli.
+- CampaignsLocked screen'de admin onay disclosure çıkarmak — KVKK
+  + spam koruma framing user trust için kritik.
+- Recipient cap'i 100+ yapmak — Vercel function timeout (60s) +
+  Resend rate limit margin (600ms throttle) için 50 üst sınır
+  güvenli; üzerine çıkarsa multi-batch send queue gerekir (gelecek
+  scope).
+- Admin detail endpoint'inde approver/rejecter id'yi geri eklemek —
+  PII concern (CLAUDE.md §37.7); UI sadece username kullanıyor zaten.
+
+#### Yap
+
+- Yeni admin master flag eklerken `RESTAURANT_FEATURE_KEYS` array
+  + `feature-access` Zod schema + `FeatureToggleCard` UI + owner UI
+  gating component (5 nokta drift disipline).
+- Yeni "Pro feature" gating screen eklerken CampaignsLocked paterni
+  reuse: graphite hero + lime accent + 3 benefit + Pro Badge + mailto
+  CTA + help link.
+- Recipient cap-bound mass-send akışları için 50/100 üst sınır +
+  pre-flight check + helper hard guard kombinasyonu (timeout safety).
+- Admin endpoint response'larında internal user ID expose etmemek
+  (sadece username/label). PII concern her zaman değerlendirilmeli.
+
+#### Stage 30 closure (Tarih 2026-05-07)
+
+- Branch: `claude/campaigns-tier-gate-stage30` (fresh main üstüne,
+  Stage 29 §38.105 merged)
+- Edit'lenen + yeni dosyalar: ~7 dosya
+- Schema migration: 1 (default change + UPDATE all, breaking — admin
+  manuel enable gerekli production'da)
+- Yeni dep: yok
+- Test count: 274/274 pass intact
+- Operatör aksiyonu (PR sonrası): admin per-restaurant feature-access
+  toggle'ından entitled user'lar için manuel enable. CLAUDE.md §5.2
+  paterni reuse.
+- Kalan riskler: Sidebar nav item locked durumda visual badge yok
+  (page-level locked screen yeterli — opportunistic gelecek polish).
+- **Sonraki aşama önerisi**: §38.B master backlog kalemleri operatör
+  tetiği bekliyor. Stage 30 sonrası gelecek olası genişlemeler:
+  campaign multi-batch send (50+ recipient için chunked queue),
+  campaign templates library (admin pre-defined templates), entitled
+  bulk activate (admin /admin/restaurants/bulk action='campaigns_enable').

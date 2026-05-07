@@ -119,6 +119,23 @@ export async function POST(
     );
   }
 
+  // Stage 30 §38.106 — recipient cap pre-flight check (admin approve
+  // pipeline timeout koruması). MAX_RECIPIENTS_PER_CAMPAIGN = 50 (helper'da
+  // hard guard). Owner submit etmeden önce uyarılır → kampanyayı küçük
+  // segment'lere böler veya higher-tier plan'a geçer.
+  const MAX_CAMPAIGN_RECIPIENTS = 50;
+  if (recipients.length > MAX_CAMPAIGN_RECIPIENTS) {
+    return NextResponse.json(
+      {
+        error: 'campaign_too_large',
+        message: `Tek seferde ${MAX_CAMPAIGN_RECIPIENTS} müşteriye kadar gönderim yapılabilir (mevcut hedef: ${recipients.length}). Kampanyayı daha küçük segment'lere böl veya Buaze ekibiyle iletişime geç.`,
+        limit: MAX_CAMPAIGN_RECIPIENTS,
+        actual: recipients.length,
+      },
+      { status: 422 },
+    );
+  }
+
   // Status transition: draft → pending_approval. Resend pipeline burada
   // tetiklenmez (admin approve endpoint'i çağırır).
   const submittedAt = new Date();

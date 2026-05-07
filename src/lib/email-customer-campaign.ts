@@ -19,6 +19,18 @@ import { sendResendEmail } from './email-internal';
 
 const RESEND_THROTTLE_MS = 600; // §38.12 paterni: ~1.6 req/sec, %20 margin under Resend free tier
 
+// Stage 30 §38.106 — recipient cap (Vercel function timeout safety).
+// 100 recipient × 600ms = 60s + Resend latency ~10s = 70s; admin approve
+// endpoint maxDuration=60s; cap'i daha düşük tut (50) — Vercel function
+// timeout'a düşmeden tüm batch tamamlanır. Üzerine çıkan caller hata
+// alır (admin queue'da retry edebilir veya owner kampanyayı küçük
+// segment'lere böler).
+//
+// Real-world data: KOBİ restoran tipik marketing-consent'li audience
+// ≤200; gerçek kullanım'da nadiren cap'a takılır. Cap'a çarpan owner
+// için "kampanyayı 2 partiye böl" guidance UI'da gelecek scope.
+const MAX_RECIPIENTS_PER_CAMPAIGN = 50;
+
 export interface CustomerCampaignRecipient {
   /** Cross-restaurant unique key: `${restaurantId}|${contactKey}`. */
   key: string;
@@ -113,8 +125,20 @@ export async function sendCustomerCampaign(args: {
   recipients: CustomerCampaignRecipient[];
   locale?: 'tr' | 'en';
 }): Promise<CustomerCampaignSendResult> {
-  const { campaignId, restaurantId, restaurantName, subject, body, recipients } = args;
+  const { campaignId, restaurantId, restaurantName, subject, body } = args;
   const locale = args.locale ?? 'tr';
+
+  // Stage 30 §38.106 — recipient cap. Vercel function timeout safety
+  // + Resend rate-limit margin. Kullanıcı `recipients.length > MAX` ise
+  // hard truncate yapmıyoruz (silent slice owner için yanıltıcı); caller
+  // tarafına "campaign_too_large" semantik throw eder.
+  if (args.recipients.length > MAX_RECIPIENTS_PER_CAMPAIGN) {
+    throw new Error(
+      `Campaign recipient count exceeds limit (${args.recipients.length} > ${MAX_RECIPIENTS_PER_CAMPAIGN}). ` +
+        `Owner should split into smaller segments or reach out to Buaze for higher-tier plan.`,
+    );
+  }
+  const recipients = args.recipients;
 
   // Mark campaign as sending; track recipient count up-front.
   await prisma.customerEmailCampaign.update({

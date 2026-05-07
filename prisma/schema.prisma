@@ -141,7 +141,12 @@ model Restaurant {
   // Owner panel campaigns feature (CLAUDE.md §38.98). Default true for
   // backwards-compat (existing owners keep access). Admin can opt-out via
   // /admin/restaurants/[id]/feature-access PATCH or bulk feature_override.
-  campaignsEnabled              Boolean @default(true) @map("campaigns_enabled")
+  // Stage 30 §38.106 — admin entitlement gate. Default `false` (yeni
+  // restoranlar için OFF; admin manuel olarak entitled user'ları enable
+  // eder — CLAUDE.md §5.2 paterni). Mevcut row'lar Stage 30 migration ile
+  // false'a çekildi; admin /admin/restaurants/[id] feature-access
+  // endpoint'inden tek-tek aktif edilir.
+  campaignsEnabled              Boolean @default(false) @map("campaigns_enabled")
 
   // Google Rating Impact Tracking
   initialGoogleRating Float? @map("initial_google_rating")
