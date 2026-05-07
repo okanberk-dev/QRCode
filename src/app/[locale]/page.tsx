@@ -10,7 +10,15 @@ import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustra
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
 import { ArrowUpRight, BarChart3, ChevronDown, Inbox, MessageCircleQuestion, QrCode, Sparkles, Star } from 'lucide-react';
 import MarqueeRow from '@/components/marketing/MarqueeRow';
-import HomeHero from '@/components/marketing/HomeHero';
+// Stage 41 §38.122 — HANDOFF §8 step 8 (Heroes A): 3 variant + ENV flag.
+// `HeroVariantPicker` is a Client Component that reads
+// `process.env.NEXT_PUBLIC_HERO_VARIANT` (build-time inlined) and dynamically
+// imports one of HeroCinematic / HeroStarClimb / HeroParallax with
+// `ssr: false`. Default 'cinematic'. Skeleton fallback during chunk load.
+// Mevcut `HomeHero` component'i intact bırakıldı (rollback path: bu import
+// satırını `HomeHero` ile değiştir + line 376'da `<HeroVariantPicker>` →
+// `<HomeHero>`).
+import HeroVariantPicker from '@/components/marketing/heroes/HeroVariantPicker';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
@@ -371,9 +379,9 @@ export default async function LandingPage({
       <main id="main-content">
 
       {/* ═══════════════════════════════════════════════════════════
-          1. HERO — Reputation OS edition
+          1. HERO — Stage 41 §38.122 variant picker (Cinematic / StarClimb / Parallax)
       ═══════════════════════════════════════════════════════════ */}
-      <HomeHero locale={locale} />
+      <HeroVariantPicker locale={locale} />
 
       {/* ═══════════════════════════════════════════════════════════
           2. LOGO STRIP — trusted brands

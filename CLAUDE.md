@@ -15671,3 +15671,201 @@ talebi) → Stage 34+ (HANDOFF migration talebi) gibi.
 - §39 disipline kuralını gerekirse genişlet (yeni handoff türleri,
   yeni auto-merge edge case'leri) — Stage X §38.Y closure log'da
   notla.
+
+---
+
+### 38.122 2026-05-08 — Stage 41 Heroes (A seçeneği — 3 variant + ENV flag, HANDOFF migration COMPLETE)
+
+§38.121 Stage 40b §38.121.1 Prompt 1 ile yeni session'da
+implementasyon başladı. HANDOFF §8 step 8 son adım: Heroes A
+seçeneği (3 variant + ENV flag + dynamic import). 5 yeni dosya
++ 2 edit (page.tsx + .env.example) + 1 docs edit (bu §). Tek
+consolidated PR (CLAUDE.md §21.22 stacked YOK).
+
+**Çıktı (5 yeni dosya)**:
+
+| Dosya | Tip | Süre/davranış | Karakter |
+|---|---|---|---|
+| `src/components/marketing/heroes/HeroCinematic.tsx` | Variant v1 | 9s loop, 5 sahne (QR pulse → tarama → form → AI yanıt → 4.8★) | Ürün-açıklama, sahneli, **default** |
+| `src/components/marketing/heroes/HeroStarClimb.tsx` | Variant v2 | 8s loop, 3.6→4.8 sayaç + 90 günlük climb chart | Veri-odaklı, kanıtlayıcı |
+| `src/components/marketing/heroes/HeroParallax.tsx` | Variant v3 | Sürekli, mouse-takipli 5-katmanlı 3D | İnteraktif, premium |
+| `src/components/marketing/heroes/HeroVariantPicker.tsx` | Wrapper | `process.env.NEXT_PUBLIC_HERO_VARIANT` → dynamic import | Client wrapper, `ssr: false` |
+| `src/components/marketing/heroes/hero-helpers.ts` | Pure helpers | Saf fonksiyonlar | `normalizeCursorOffset` + `layerTransform` + `generateClimbCurve` + scene timing constants |
+
+**Yeni test (1 dosya)**: `tests/hero-helpers.test.ts` — 18 unit
+test (cursor clamp 3 + layer transform 5 + climb curve 6 + scene
+timing 4). Test count: 365 → **383** (+18 yeni).
+
+**Page wiring** (`src/app/[locale]/page.tsx`):
+- Eski `import HomeHero from '@/components/marketing/HomeHero'` →
+  yeni `import HeroVariantPicker from
+  '@/components/marketing/heroes/HeroVariantPicker'`.
+- `<HomeHero locale={locale} />` → `<HeroVariantPicker locale={locale} />`.
+- Mevcut `HomeHero.tsx` (974 satır) **silinmedi** — rollback path
+  korundu (CLAUDE.md §34 disipline).
+
+**ENV** (`.env.example`):
+- Yeni `NEXT_PUBLIC_HERO_VARIANT="cinematic"` belgelendi.
+- 3 değer ('cinematic' | 'starclimb' | 'parallax'), default
+  'cinematic'. Geçersiz değer → fallback. Vercel: Settings → Env
+  Variables → Production scope; rebuild zorunlu (Next.js
+  `NEXT_PUBLIC_*` build-time inlined).
+
+**Animation engine reuse** (CLAUDE.md §38.115 Stage 35):
+- HeroCinematic + HeroStarClimb: `<Stage>` + `<Sprite>` engine
+  reuse — tab pause (HANDOFF §5.1) + reduced-motion (§5.2)
+  otomatik handle edilir.
+- HeroStarClimb: `useCountUp` (`@/lib/buaze`) reuse — 3.6→4.8
+  ticker animation.
+- HeroParallax: cursor-driven, `<Stage>` time-bazlı değil; doğrudan
+  event listener + RAF (idle drift) + manuel reduced-motion
+  detection + tab pause (visibilitychange).
+
+**Pulse §11 disipline (3 hero ortak)**:
+- Space Grotesk + tight tracking (italic REDDEDILDI §38.114 —
+  Instrument Serif kullanılmadı)
+- lime CTA (`#C6F24E`) + graphite ink (`#0A0A0A`) + lime-soft chip
+  (`#EAF9B8`) + lime-deep accent (`#A8D62E`)
+- lucide-react icon set (Star, Sparkles, QrCode, Scan, ArrowRight,
+  Play, TrendingUp, Zap)
+- inline hex + Tailwind utility (CLAUDE.md §11)
+- `bz-h-tight-2` heading + `pulse-eyebrow` mono uppercase
+
+**A11y disipline**:
+- Hero `<section>` `aria-label` (locale-aware "Buaze tanıtım
+  sahnesi" / "Buaze cinematic hero" vb.)
+- Decorative SVG `aria-hidden`
+- ClimbChart `<svg role="img" aria-label>` + tick `<text aria-hidden>`
+- Reduced-motion preference detect: HeroParallax cursor takip +
+  idle drift + review rotator hepsi disabled
+- Mobile fallback: HeroParallax 3D cluster `md:hidden`'da gizli,
+  tek inbox card görünür
+
+**Skeleton fallback** (HeroVariantPicker `<Suspense>`):
+- 640px min-height + `bz-skeleton` shimmer placeholder
+- Eyebrow + h1 + h2 + 2 paragraf + 2 button + aspect-square chart
+  alanı placeholder
+- `dynamic({ ssr: false })` chunk yüklenirken kullanıcı boş ekran
+  görmez
+
+**HANDOFF §6.1 disipline**:
+- `min-h-[640px]` ✓ (3 hero da)
+- `aspect-[16/9]` veya `min-h` (HANDOFF tek kuralı min-height) ✓
+- Scroll-padding-top scroll-anchor problemi yok
+
+**Verification**:
+- `npx eslint .` ✓ 0 errors / 0 warnings
+- `npx tsc --noEmit` ✓ 0 errors in `src/`
+- `npm test` ✓ 383/383 pass, 42 suites (365 → 383, +18)
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) ✓ Compiled
+  successfully + 58/58 static pages + 3 yeni dynamic hero chunk
+
+**Yapma**:
+- HeroCinematic'te HANDOFF Instrument Serif italic font yükleme —
+  kullanıcı kararı "Asla pivot etme" §38.114 intact.
+- HeroParallax'da `<Stage>` engine kullanma — cursor-driven RAF
+  + event listener daha temiz; time-bazlı animation engine'e
+  zorla bağlama yok.
+- `process.env.NEXT_PUBLIC_HERO_VARIANT`'i runtime-değişebilir
+  yapma — Next.js build-time inlined; rebuild zorunlu (Vercel
+  redeploy).
+- HomeHero.tsx'i silme — rollback path korunuyor (§34 disipline).
+- Hero'ları `<Suspense>`'siz mount etme — dynamic import chunk
+  yüklenirken boş ekran görünür; skeleton fallback zorunlu.
+- Hero'ların `<Sprite start end>` window'larını overlap'siz
+  yapma (Cinematic) — sahne geçişlerinde hard-cut yerine 0.2s
+  fade overlap UX akıcı.
+- HeroParallax mobile'da 3D cluster göstermek (`md:hidden`'ı
+  silmek) — small viewport'ta layout taşar; tek inbox card
+  fallback.
+
+**Yap**:
+- Yeni hero variant eklenirse `VARIANTS` map (HeroVariantPicker)
+  + `resolveVariant()` literal genişlet + `.env.example`
+  dokümante (3 nokta drift disipline).
+- Yeni animation gereği çıkarsa `<Stage>` + `<Sprite>` engine
+  reuse (CLAUDE.md §38.115 paterni).
+- A/B test ENV flag pattern başka surface'larda gerekirse
+  (örn. footer variant, pricing variant) HeroVariantPicker
+  paterni reuse.
+- HANDOFF migration tamamen kapandı (Stage 32-41); yeni tasarım
+  iterasyonları gelecek session'larda §38.121 backlog
+  roadmap'ten devam.
+
+#### Stage 41 closure (Tarih 2026-05-08)
+
+- Branch: `chore/handoff-heroes-stage41` (fresh main üstüne,
+  Stage 40b §38.121 PR #544 merged)
+- Yeni dosya: 6 (5 hero + 1 helper test)
+- Edit'lenen dosyalar: 3 (page.tsx + .env.example + CLAUDE.md)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 365 → **383** (+18 yeni hero helper test)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Default ENV `cinematic` set'li, mevcut `HomeHero` yerine
+  `HeroCinematic` görünür. A/B test için Vercel
+  `NEXT_PUBLIC_HERO_VARIANT='starclimb'` veya `'parallax'`
+  set + redeploy.
+- Kalan riskler: yok. HomeHero.tsx korundu (rollback path
+  intact); reduced-motion + tab pause + mobile fallback hepsi
+  kapsanmış.
+- **HANDOFF §8 migration COMPLETE** — Stage 32-41 (10 PR).
+
+#### Stage 32-41 final summary tablosu (HANDOFF migration COMPLETE)
+
+| PR | Stage | HANDOFF step | Tip | Highlights |
+|---|---|---|---|---|
+| #535 | 32 | (bonus) | Code | Cookie banner premium editorial |
+| #536 | 33 | §39 disipline | Docs | Auto-merge + chat prompt logging |
+| #537 | 34 | 1 Tokens & fonts | Docs gap | %95 mevcut |
+| #538 | 35 | 2 Lib (animation engine) | **Code** | 10 dosya, +68 test |
+| #539 | 36 | 3 Primitives | Docs gap | 4/5 mevcut |
+| #540 | 37 | 4 Panel atoms | **Code** | 4 yeni primitive, +9 test |
+| #541 | 38 | 5 Panel cards | **Code** | 2 yeni card, +14 test |
+| #542 | 39 | 6 Site FX | Docs gap | 9/12 mevcut |
+| #543 | 40 | 7 Layout chrome | Docs gap | %85 basic mevcut |
+| #544 | 40b | §38.121 backlog roadmap | Docs | Yeni session handoff prompts |
+| (bu PR) | 41 | 8 Heroes | **Code** | 3 variant + ENV flag, +18 test |
+
+**Toplam ölçüm**:
+- Test count: 274 → **383** (+109 yeni)
+- Schema migration: 0
+- Yeni dep: 0
+- Breaking change: 0
+- Pulse §11 + §23.3 design system intact (kullanıcı kararı
+  §38.114)
+
+**§38.B master backlog güncel** (HANDOFF migration COMPLETE
+sonrası — operatör tetiği bekleyen kalemler):
+- HIGH 4 Platforms 12-card grid (DEFER §38.30 — product decision)
+- Stage 9 UserSession re-introduce (operatör tetiği §38.84/§38.89)
+- RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak)
+- Prisma 7 upgrade (§5.4 Task 8 — major version)
+
+**§38.121 tasarım defer backlog** (gelecek session'lar için —
+§38.121.1 Prompt 2 paterni):
+- Öncelik 1: Yeni primitive callsite entegrasyonu (APAIDraftCard
+  → admin Inbox redesign, APBillingCard → admin /billing,
+  APSlider/APStarInput/APRadioGroup/APIconButton callsite'ları)
+- Öncelik 2: Stage 37/38 skip primitives (callsite olduğunda
+  extract — APButton, APSwitch lg, APCheckbox indeterminate, vb.)
+- Öncelik 3: Marketing redesign PR scope (Header floating pill,
+  mega menu, Footer city ticker, scan-to-app QR, BottomNav
+  dark theme)
+- Öncelik 4: Site FX defer (PulseLine, QRScanLoader,
+  RevealHeadline advanced)
+
+**Chat prompt history (Stage 41 §39.2 paterni)**:
+- 2026-05-08 kullanıcı (önceki session, §38.121): *"A'yı seçeceğim
+  ama başka session'da devam etmem için prompt verir misin? ve
+  tüm kalan tasarım işlerine"* → Stage 41 A seçeneği onaylı +
+  §38.121.1 Prompt 1 + Prompt 2 yeni session handoff prompt'ları
+  kalıcı kayıtta.
+- 2026-05-08 yeni session (bu): §38.121.1 Prompt 1 verbatim
+  copy-paste edildi — Stage 41 implementation başladı. Ek
+  AskUserQuestion yapılmadı; kararlar Stage 41 prompt'unda
+  zaten önceden onaylı (italic font REDDEDILDI, animation engine
+  reuse, ENV default 'cinematic', vb.).
+- Hukuki/disipline override: yok (HANDOFF spec ile çakışma yok;
+  Pulse §11 typography intact, Instrument Serif italic kullanma
+  kararı §38.114'te zaten dokümante).

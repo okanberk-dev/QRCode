@@ -1,0 +1,86 @@
+'use client';
+
+/**
+ * Stage 41 §38.122 — HANDOFF §8 step 8 (Heroes) — Variant picker.
+ *
+ * `NEXT_PUBLIC_HERO_VARIANT` env değişkenine göre 3 hero arasından
+ * dinamik import yapan client wrapper. HANDOFF §6.1 paterni:
+ *
+ *   const variant = process.env.NEXT_PUBLIC_HERO_VARIANT ?? 'cinematic';
+ *   const Hero = {
+ *     cinematic: dynamic(() => import('./HeroCinematic'), { ssr: false }),
+ *     starclimb: dynamic(() => import('./HeroStarClimb'), { ssr: false }),
+ *     parallax:  dynamic(() => import('./HeroParallax'),  { ssr: false }),
+ *   }[variant];
+ *
+ * `ssr: false` çünkü 3 hero da animation-heavy (`<Stage>` + RAF +
+ * mouse tracking) — SSR HTML pre-render'da statik snapshot anlamsız.
+ * Skeleton fallback Suspense ile.
+ *
+ * Page (Server Component) `<HeroVariantPicker locale={locale} />`
+ * mount eder; bu wrapper client-side `process.env.NEXT_PUBLIC_*`
+ * okur (Next.js inline replacement build-time'da).
+ */
+
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
+
+interface Props {
+  locale: 'tr' | 'en';
+}
+
+const HeroCinematic = dynamic(() => import('./HeroCinematic'), { ssr: false });
+const HeroStarClimb = dynamic(() => import('./HeroStarClimb'), { ssr: false });
+const HeroParallax = dynamic(() => import('./HeroParallax'), { ssr: false });
+
+const VARIANTS = {
+  cinematic: HeroCinematic,
+  starclimb: HeroStarClimb,
+  parallax: HeroParallax,
+} as const;
+
+type HeroVariantKey = keyof typeof VARIANTS;
+
+function resolveVariant(): HeroVariantKey {
+  const raw = process.env.NEXT_PUBLIC_HERO_VARIANT;
+  if (raw === 'cinematic' || raw === 'starclimb' || raw === 'parallax') {
+    return raw;
+  }
+  // Default — most product-explanatory + scene-driven (HANDOFF §6.1)
+  return 'cinematic';
+}
+
+function HeroSkeleton() {
+  return (
+    <section
+      className="relative min-h-[640px] overflow-hidden bg-[#FAFAFA]"
+      aria-hidden
+    >
+      <div className="mx-auto flex min-h-[640px] max-w-[1280px] flex-col items-center gap-10 px-5 py-[60px] sm:px-10 lg:flex-row lg:items-center lg:gap-16 lg:py-[88px]">
+        <div className="w-full max-w-[560px]">
+          <div className="bz-skeleton h-3 w-40 rounded" />
+          <div className="bz-skeleton mt-4 h-12 w-full rounded" />
+          <div className="bz-skeleton mt-2 h-12 w-3/4 rounded" />
+          <div className="bz-skeleton mt-6 h-4 w-full rounded" />
+          <div className="bz-skeleton mt-2 h-4 w-2/3 rounded" />
+          <div className="mt-8 flex gap-3">
+            <div className="bz-skeleton h-12 w-40 rounded-full" />
+            <div className="bz-skeleton h-12 w-32 rounded-full" />
+          </div>
+        </div>
+        <div className="bz-skeleton aspect-square w-full max-w-[480px] rounded-[28px] lg:max-w-[520px]" />
+      </div>
+    </section>
+  );
+}
+
+export default function HeroVariantPicker({ locale }: Props) {
+  const variant = resolveVariant();
+  const Hero = VARIANTS[variant];
+
+  return (
+    <Suspense fallback={<HeroSkeleton />}>
+      <Hero locale={locale} />
+    </Suspense>
+  );
+}
