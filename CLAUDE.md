@@ -14883,6 +14883,113 @@ site-fx component'inde — site-library.jsx 12 parça scope'unda). Stage
   APStarInput, APRadioGroup, APIconButton (lucide ikon + size + tone +
   badge). Stage 37 büyük scope (~5-7 yeni primitive).
 
+### 38.117 2026-05-08 — Stage 37 HANDOFF §8 step 4 (Panel atomları — 4 yeni primitive)
+
+§38.116 Stage 36 Primitives gap analysis sonrası HANDOFF §8 step 4:
+Panel atomları. HANDOFF spec 12 primitive listeler; Buaze gap
+analysis ile ~70% örtüşen 8 primitive skip (Toggle/Badge/Tabs/bz-btn-*
+mevcut), 4 yeni primitive eklendi.
+
+**Migrate edilen** (`src/components/ui/`):
+
+| Dosya | HANDOFF kaynak | Pulse §11 değişiklikler |
+|---|---|---|
+| `APSlider.tsx` | admin-panel.jsx:555-597 | Pointer events (touch + mouse) + keyboard ←/→/Home/End/PgUp/PgDn + `role="slider"` + aria-valuenow/min/max + focus-visible lime ring + step snap + `pulse-eyebrow` label utility |
+| `APStarInput.tsx` | admin-panel.jsx:600-621 | Native `<input type="radio">` (sr-only) + `role="radiogroup"` + keyboard ←/→/Home/End + lime-deep fill + hover preview |
+| `APRadioGroup.tsx` | admin-panel.jsx:496-518 | Generic `<T extends string>` typed value + native `<input type="radio">` + sublabel optional + row/col layout + per-option disabled |
+| `APIconButton.tsx` | admin-panel.jsx:210-257 | sm/md/lg size + 4 tone (default/lime/dark/ghost) + badge sayım (notification dot, 99+ overflow) + lucide icon ReactNode children (HANDOFF `name` string yerine, daha esnek) + aria-label zorunlu |
+| `tests/ap-slider.test.ts` | yeni | 9 unit test — pointerXToValue saf helper (clamp, step snap, custom ranges, negative range) |
+
+Tümü **Pulse §11 utility-first stilinde**: inline `style={{}}` minimum
+(sadece dinamik width/transform), Tailwind class kompakt + `pulse-eyebrow`
+mono label utility, inline hex (`#C6F24E`/`#0A0A0A`/`#A8D62E`/`#737373`)
+CLAUDE.md §11 paterni.
+
+**Skip edilen** (mevcut Buaze paterniyle redundant — CLAUDE.md §38.49
+dead utility class disipline):
+
+| HANDOFF spec | Buaze mevcut | Sebep |
+|---|---|---|
+| `APButton` (variant/size/icon/loading/disabled/badge/kbd/full) | `bz-btn-primary/lime/ghost/icon` utility (CLAUDE.md §23.2) + `Loader2` lucide pattern | Utility-first daha hafif; HANDOFF API zenginliği gerekirse 3+ callsite olunca extract |
+| `APSwitch` (lg 56×32 / md 46×28 / sm 36×22) | `<Toggle>` primitive (CLAUDE.md §23.3) `sm`/`md` size | ~%70 örtüşür; sadece `lg` size + `locked` prop eksik (gelecek scope) |
+| `APCheckbox` (indeterminate) | native `<input type="checkbox">` + Tailwind `peer-*` paterni | Mevcut form'larda native; `indeterminate` ihtiyacı çıkarsa extract |
+| `APSegmented` | `<Tabs>` primitive | `count badges` desteği yok ama `<Tabs>` zaten icon + label + count badge'i çocuk JSX olarak destekliyor |
+| `APChip` (tone/dot/icon/removable) | `<Badge>` primitive (CLAUDE.md §23.3) `kind: ok/warn/danger/info/lime/ghost` | Variant API zaten zengin; `removable` ihtiyacı çıkarsa Badge primitive'i extend |
+| `APToggleCard` (clickable card with switch) | yeni implementation gereği yok (mevcut settings panellerinde `<Field>` + `<Toggle>` paterni kullanılıyor) | Settings UX paterni mevcut; `APToggleCard` gerçek callsite çıkarsa extract |
+| `APFab` / `APSplitButton` / `APButtonGroup` | yeni implementation gereği yok (mevcut admin/owner panellerinde callsite yok) | YAGNI — gerçek kullanım zamanında extract |
+
+**Out of scope**: Schema migration, mevcut Buaze button/badge/toggle
+utility'lerini değiştirme, `APToggleCard`/`APFab`/`APSplitButton`/
+`APButtonGroup` (callsite yok), Stage 38 (Panel kartları) primitive'leri.
+
+**Etkilenen dosyalar (6)**:
+- 4 yeni primitive (`APSlider.tsx` + `APStarInput.tsx` + `APRadioGroup.tsx`
+  + `APIconButton.tsx`)
+- 1 yeni test (`tests/ap-slider.test.ts`)
+- 1 edit barrel export (`src/components/ui/index.ts` — 4 yeni export)
+- CLAUDE.md (§38.117 closure log)
+
+**Schema migration**: yok. **Yeni dep**: yok (React + lucide-react
+zaten var). **Test count**: 342 → **351** (+9 yeni APSlider helper).
+
+**Yapma**:
+- HANDOFF `APButton` ham kopyalama — Buaze `bz-btn-*` utility paterni
+  daha hafif (sadece className + lucide icon child).
+- `APSwitch` yeniden yazma — mevcut `<Toggle>` ile %70 örtüşür; sadece
+  `lg` size eksik (gelecek scope).
+- `APChip` ekleme — `<Badge>` primitive'in `kind` API'si zaten zengin.
+- `APStarInput` callsite'ında public review surface (`/r/[slug]`) star
+  input'unu replace etme — Pulse §38.107 paterni intact (mevcut StarRow
+  visual + custom click handler).
+- `APIconButton` ile mevcut `bz-btn-icon` utility'yi değiştirme — utility
+  32×32 fixed + ghost variant only; APIconButton sm/md/lg + 4 tone +
+  badge — farklı use case (notification bell, action toolbar).
+
+**Yap**:
+- Yeni admin/owner panel callsite'ında numeric input slider gerekirse
+  `<APSlider>` reuse — accessibility (keyboard nav + ARIA) zorunlu.
+- Yeni rating input gerekirse `<APStarInput>` reuse (review composer,
+  feedback survey, internal QA).
+- Yeni inline radio choice gerekirse `<APRadioGroup>` reuse (settings
+  modal'larında compact option list); büyük "tıklanabilir card" için
+  `<RadioCard>` (CLAUDE.md §23.3) tercih.
+- Yeni icon-only action button (notification bell, toolbar action)
+  gerekirse `<APIconButton>` reuse — `aria-label` zorunlu, badge
+  sayım support.
+
+**Verification**:
+- `npm run lint` 0 errors / 0 warnings
+- `npx tsc --noEmit` 0 errors in `src/` (4 pre-existing `.next/types`
+  baseline §21.13)
+- `npm test` 351/351 pass, 40 suites (342 → 351, +9 yeni)
+- `npx next build` ✓ Compiled + 58/58 static page intact
+
+#### Stage 37 closure (Tarih 2026-05-08)
+
+- Branch: `chore/handoff-panel-atoms-stage37` (fresh main üstüne, Stage
+  36 §38.116 PR #539 merged)
+- Edit'lenen dosyalar: 1 (`src/components/ui/index.ts` barrel) + 1
+  (CLAUDE.md)
+- Yeni dosya: 5 (4 primitive + 1 test)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 342 → 351 (+9 APSlider helper)
+- Operatör aksiyonu (PR sonrası): yok — auto-merge `gh pr merge
+  --auto --squash` (CLAUDE.md §39.1 paterni).
+- Kalan riskler: yok (yeni primitive'ler henüz hiç callsite yok —
+  Stage 38+ admin/owner panellerinde entegre edilirler).
+- **Sonraki aşama**: Stage 38 — HANDOFF §8 step 5 (Panel kartları —
+  APCard, APKpiCard, APInboxCard, APAIDraftCard, APLocationCard,
+  APTeamCard, APBillingCard, APAlertCard, APQRCard, APEmptyCard,
+  APQuickSettingsCard, APComposerCard). Buaze'de mevcut karşılıklar:
+  `<StatCard>` (APKpiCard sparkline + delta + icon paterni), `<EmptyState>`
+  (APEmptyCard), AlertBanner kind='danger' (APAlertCard), `<Modal>`
+  (APComposerCard backdrop). Eksik: APInboxCard (segmented + bulk action),
+  APAIDraftCard (graphite header + tone segmented + edit/approve),
+  APBillingCard (graphite header + AI quota progress), APQRCard
+  (animated QR + download/share), APLocationCard (pin icon tile),
+  APTeamCard (gradient avatar). Stage 38 büyük scope (~6-8 yeni card).
+
 ---
 
 ## §39 — Auto-merge & Chat Prompt Logging Disipline (kanonik)
