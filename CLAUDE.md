@@ -15195,6 +15195,86 @@ component'leri replace etme.
   edilebilir veya skip (callsite analizi gerek). Stage 40 da
   docs-only veya küçük code-PR olabilir.
 
+### 38.120 2026-05-08 — Stage 40 HANDOFF §8 step 7 (Layout chrome) gap analysis (docs only)
+
+§38.119 Stage 39 Site FX sonrası HANDOFF §8 step 7: Layout chrome
+(Header + BottomNav + Footer + CookieConsent). Buaze marketing
+chrome zaten mevcut; HANDOFF advanced feature'lar callsite-bazlı
+additive olarak defer edilir. Stage 40 docs-only closure log.
+
+**Gap analysis tablosu**:
+
+| HANDOFF spec | Buaze mevcut | Karar |
+|---|---|---|
+| `<Header>` (üstteyken fixed bar 64px, scroll > 80px floating pill 94vw blur(14px) saturate(140%)) | `<MarketingNavbar>` + `<MarketingNavbarClient>` (Stage 27 §38.103 polish — inline navigation, mobile drawer §38.39) | ✅ Mevcut chrome (basic). Floating pill scroll mode + mega menu HANDOFF advanced — additive feature, gelecek redesign PR scope |
+| `<Header>` mega menu (Product/Solutions/Resources 3-col + featured graphite tile, hover trigger) | Basit dropdown nav | ⏳ Mega menu Stage 40b code-PR scope (gerçek navigation IA değişikliği gerekirse) |
+| `<BottomNav>` (5-tab dock + center FAB QR -28px elevated, Light/Dark theme glassmorphism) | `<MobileBottomNav>` (CLAUDE.md §17 + §38.43 globally mounted, conditional FAB login state'e göre) | ✅ Mevcut (light theme intact); dark theme variant HANDOFF spec'inde — gelecek system-wide dark mode geçişi gerekiyor (kullanıcı talebi yok, defer) |
+| `<Footer>` (3-bloklu: italic anchor + canlı status tile'lar + city ticker; sağ newsletter lime card + scan-to-app QR card; ECG divider; editorial bottom rail) | `<MarketingFooter>` (CLAUDE.md §17 + §38.39 polish) | ✅ Mevcut (basic). City ticker + scan-to-app QR + canlı status tile'lar HANDOFF advanced — additive feature, gelecek redesign PR scope |
+| `<CookieConsent>` (card + modal, KVKK uyumlu, essential locked, 4 kategori) | `<CookieConsentBanner>` (Stage 32 §38.112 PR #535 premium editorial — synthetic italic + bottom-right floating + 4 kategori + v2 migration) | ✅ Mevcut (Stage 32 ile zaten birebir uyumlu — kullanıcı kararı §38.114 "Stage 32 intact, hiç dokunma") |
+
+**Sonuç**: HANDOFF §8 step 7 spec %85 mevcut Buaze marketing chrome'uyla
+karşılanmış. 4 advanced feature (floating pill scroll mode, mega menu,
+city ticker, scan-to-app QR card) callsite-bazlı additive — gerçek
+marketing redesign PR'ında ihtiyaç doğunca eklenir. CookieConsent
+zaten Stage 32 ile premium editorial.
+
+**Out of scope**: Schema migration, kod değişikliği, mevcut chrome
+component'leri replace etme, dark theme system-wide geçiş.
+
+**Etkilenen dosyalar (1)**:
+- `CLAUDE.md` (§38.120 closure log + 4-component gap analysis)
+
+**Schema migration**: yok. **Yeni dep**: yok. **Code change**: yok.
+**Test count**: 365/365 intact.
+
+**Yapma**:
+- 4 advanced feature'i (floating pill / mega menu / city ticker /
+  scan-to-app QR) preventif implement etme — CLAUDE.md §38.49 disipline,
+  callsite olmadan dead code.
+- Mevcut MarketingNavbar/MobileBottomNav/MarketingFooter/CookieConsentBanner'i
+  HANDOFF spec'e göre yeniden yazma — Buaze marketing pattern intact
+  (kullanıcı "Asla pivot etme" §38.114).
+- HANDOFF Header `position: fixed` mode değiştirme — mevcut sticky
+  navigation paterni stable, scroll behavior intact.
+- BottomNav dark theme variant zorla — mevcut light theme yeterli;
+  system-wide dark mode geçişi büyük scope (kullanıcı talebi yok).
+
+**Yap**:
+- Marketing redesign PR'ı (Stage 41 Heroes scope veya gelecek) içinde
+  HANDOFF advanced feature'lar (floating pill, mega menu, city ticker,
+  scan-to-app QR) gerekirse implementation: HANDOFF premium-header.jsx
+  (35 KB) + premium-footer.jsx (14 KB) referans olarak kullanılır,
+  mevcut Buaze chrome additive enhanced.
+- Yeni layout chrome ihtiyacı çıkarsa CLAUDE.md §11 + §17 + §38.39 +
+  §38.103 paterni cross-check zorunlu.
+
+**Verification**:
+- Lint/tsc/test: docs-only PR — verify gerekmez.
+
+#### Stage 40 closure (Tarih 2026-05-08)
+
+- Branch: `chore/handoff-layout-chrome-stage40` (fresh main üstüne,
+  Stage 39 §38.119 PR #542 merged)
+- Edit'lenen dosyalar: 1 (CLAUDE.md — §38.120 gap analysis)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 365/365 intact
+- Operatör aksiyonu (PR sonrası): yok — auto-merge (CLAUDE.md §39.1).
+- Kalan riskler: yok (docs-only PR; advanced feature'lar gelecek
+  redesign PR'larında additive eklenir).
+- **Sonraki aşama**: Stage 41 — HANDOFF §8 step 8 (Heroes — son
+  adım, 3 hero variant: HeroCinematic 9s loop / HeroStarClimb 8s
+  loop / HeroParallax mouse-tracked 5-katmanlı 3D). HANDOFF hero-v3.jsx
+  (15 KB) + HANDOFF spec ENV variant flag (`NEXT_PUBLIC_HERO_VARIANT`).
+  Mevcut Buaze `<HomeHero>` (§38.27 — greeting + KPI + AI banner +
+  activation, owner panel home; **marketing hero değil**). Marketing
+  homepage hero ayrı concern (`/[locale]/page.tsx`); Stage 41 büyük
+  scope (~1500-2000 satır kod, 3 hero variant + ENV flag + dynamic
+  import + `<Stage>` + `<Sprite>` engine §38.115 reuse). Kullanıcı
+  kararı bekleniyor: hangi 1 hero variant tercih edilir veya 3
+  variant + A/B test kurulur.
+
 ---
 
 ## §39 — Auto-merge & Chat Prompt Logging Disipline (kanonik)
