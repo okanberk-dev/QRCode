@@ -14606,6 +14606,94 @@ PR #535 timeline:
   intact. HANDOFF JSX prototip referans only — sadece component
   davranışları (animation/layout/structure) Buaze'ye entegre edilir.
 
+### 38.114 2026-05-08 — Stage 34 HANDOFF §8 step 1 (Tokens & fonts) gap analysis (docs only)
+
+§38.113 Stage 33 §39 disipline yerine geldikten sonra HANDOFF §8
+migration zinciri başladı. Step 1 = "Tokens & fonts". Buaze Pulse §11
+mevcut state ile HANDOFF spec gap analysis sonucu: **%95 mevcut, kod
+değişikliği gerekmez**. Stage 34 docs-only closure log + Stage 35
+(Lib) için zemin.
+
+**Gap analysis tablosu (HANDOFF §2 vs Buaze §11)**:
+
+| HANDOFF spec | Buaze mevcut | Karar |
+|---|---|---|
+| `ink: #0A0A0A` | `--color-brand-graphite: #0A0A0A` | ✅ Mevcut |
+| `paper: #FAFAFA` | `--color-brand-n50: #FAFAFA` | ✅ Mevcut |
+| `lime: #C6F24E` | `--color-brand-lime: #C6F24E` | ✅ Mevcut |
+| `limeDeep: #A8D62E` | `--color-brand-lime-deep: #A8D62E` | ✅ Mevcut |
+| `limeWash: #F7FAEF` | `--color-brand-lime-soft: #EAF9B8` (farklı hue) | ⏳ Component-PR'da gerekirse eklenir (orphan utility önleme — CLAUDE.md §38.49 disipline) |
+| `mute: rgba(10,10,10,0.55)` | `--color-text-muted: #525252` (≈ %55 alpha equivalent) | ✅ Mevcut (hex tercih, alpha-rgb Pulse §11 disipline değil) |
+| `muteSoft: rgba(10,10,10,0.4)` | `--color-text-light: #737373/#A3A3A3` | ✅ Mevcut |
+| `head: Instrument Serif italic` | Space Grotesk + tight tracking | ❌ **REDDEDILDI** (kullanıcı kararı "Asla pivot etme") — Pulse §11 intact |
+| `body: Inter` | `--font-inter` | ✅ Mevcut (CLAUDE.md §11) |
+| `mono: JetBrains Mono` | `--font-jetbrains-mono` | ✅ Mevcut |
+| `borderRadius card: 18px` | mixed (16px / 18px callsite-bazlı) | ⏳ Component-spesifik intact (Pulse §11 `bz-card` rounded-2xl 16px; Stage 32 cookie banner rounded-[22px] HANDOFF spec'le uyumlu component-PR'da) |
+| `borderRadius pill: 999px` | `rounded-full` Tailwind utility | ✅ Mevcut |
+| `boxShadow card` | `bz-elev-1` (CLAUDE.md §38.65) | ✅ Mevcut |
+| `boxShadow card-hover` | `bz-elev-2` | ✅ Mevcut |
+| `boxShadow lime-glow` | inline `shadow-[0_8px_20px_-8px_rgba(198,242,78,0.6)]` (Stage 32 cookie banner) | ⏳ 3+ callsite olunca utility extract (CLAUDE.md §7 abstraction kaçınma) |
+
+**Sonuç**: HANDOFF §8 step 1 spec %95 mevcut Pulse §11 ile
+karşılanmış. Eksik token (`limeWash`) ve utility (`lime-glow`)
+component-PR'larda ihtiyaç çıkarsa **per-PR eklenir**, Stage 34'te
+preventif ekleme yapılmaz (CLAUDE.md §38.49 dead utility class
+disipline).
+
+**Out of scope**: Schema migration, kod değişikliği, font yükleme.
+
+**Etkilenen dosyalar (1)**:
+- `CLAUDE.md` (§38.114 closure log + gap analysis tablosu)
+
+**Schema migration**: yok. **Yeni dep**: yok. **Code change**: yok.
+**Test count**: 274/274 intact (kod değişikliği yok).
+
+**Yapma**:
+- `limeWash`/`lime-glow` token/utility'lerini Stage 34'te preventif
+  ekleme — orphan utility CLAUDE.md §38.49 disipline ihlali. Stage
+  35+ component PR'larda ihtiyaç çıkarsa per-PR eklenir.
+- Instrument Serif italic font setup'ı `layout.tsx`'e ekleme —
+  kullanıcı kararı "Asla pivot etme" intact.
+- HANDOFF `tailwind.config.ts` extend bloğunu Buaze'ye taşıma —
+  Buaze Tailwind v4 `@theme {}` block kanonik (CLAUDE.md §11 +
+  §23.1); config dosyası YOK.
+- Border-radius standardizasyonu (16px → 18px sweep) — component-
+  spesifik karar; Pulse §11 mixed (`bz-card` 16px, modal 18-22px).
+
+**Yap**:
+- Stage 35+ component PR'larda HANDOFF spec'iyle çakışan token
+  ihtiyacı olursa CLAUDE.md §38.49 disipline ile değerlendir
+  (callsite count + dead utility check).
+- `bz-elev-X` token'ları HANDOFF `boxShadow card/card-hover`
+  yerine reuse (CLAUDE.md §38.65 paterni).
+- Yeni component eklenirse Pulse §11 `bz-card` + `pulse-eyebrow`
+  + `bz-h-tight` utility'leri kanonik öncelik.
+
+**Verification**:
+- Lint/tsc/test: docs-only PR, kod değişimi yok — verify gerekmez.
+- `git status` temiz, sadece CLAUDE.md edit.
+
+#### Stage 34 closure (Tarih 2026-05-08)
+
+- Branch: `chore/handoff-tokens-stage34` (fresh main üstüne, Stage
+  33 §38.113 PR #536 merged)
+- Edit'lenen dosyalar: 1 (CLAUDE.md — §38.114 gap analysis)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 274/274 intact (kod değişikliği yok)
+- Operatör aksiyonu (PR sonrası): yok — auto-merge `gh pr merge
+  --auto --squash` (CLAUDE.md §39.1 paterni).
+- Kalan riskler: yok (docs-only PR).
+- **Sonraki aşama**: Stage 35 — HANDOFF §8 step 2 (Lib —
+  `src/lib/buaze/{tokens.ts, hooks.ts, primitives.tsx}` +
+  `src/lib/anim/{stage.tsx, sprite.tsx, easing.ts, interpolate.ts}`).
+  Animation engine ve util'ler (useCountUp, useInView, BuazeMark,
+  QRCode, Stars, Mono, Pill) Buaze'de gap analysis: bazılar mevcut
+  (`StarRow`, `pulse-eyebrow` Mono pattern), bazılar eksik
+  (animation engine `<Stage>` + `<Sprite>` + interpolate). Eksik
+  olanlar yeni eklenir, mevcutlar intact.
+
 ---
 
 ## §39 — Auto-merge & Chat Prompt Logging Disipline (kanonik)
