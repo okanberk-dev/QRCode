@@ -15869,3 +15869,128 @@ sonrası — operatör tetiği bekleyen kalemler):
 - Hukuki/disipline override: yok (HANDOFF spec ile çakışma yok;
   Pulse §11 typography intact, Instrument Serif italic kullanma
   kararı §38.114'te zaten dokümante).
+
+---
+
+### 38.123 2026-05-08 — Stage 42 Footer premium editorial polish (HANDOFF Stage 40-defer 3-fix bundle)
+
+§38.121 backlog roadmap'tan **Öncelik 3 (Layout chrome advanced)**
+ilk fix bundle. HANDOFF premium-footer.jsx editorial enhancement'ları
+mevcut MarketingFooter.tsx'e additive olarak entegre edildi —
+fake-data riski olan (status tile'lar, live ticker, scan-to-app QR)
+kasıtlı SKIP edildi (CLAUDE.md §35.8 kohort disclosure + §35.10
+fake testimonial backlog + §19.1.1 wording compliance). Otonom
+operasyon (kullanıcı talimatı: "değişmemişse sana onay direk yap").
+
+**3 fix bundle**:
+
+1. **Top hairline + traveling lime spark** — footer'ın üst kenarına
+   ince hairline (`bg-white/8`) + 6s döngülü lime gradient sweep
+   (HANDOFF premium-footer:27-37 paterni). `bzEchoSweep` keyframe
+   yeni, reduced-motion blanket'a `[style*='bzEchoSweep']` selector
+   eklendi (CLAUDE.md §38.61 paterni).
+2. **HUGE editorial wordmark anchor** — footer üst bölümüne
+   `clamp(56px, 11vw, 168px)` synthetic italic Space Grotesk
+   "buaze." wordmark + lime nokta accent. CLAUDE.md §38.114
+   "Instrument Serif italic REDDEDILDI" disipline intact —
+   §38.112 Stage 32 cookie banner paterni reuse (synthetic italic
+   `style={{ fontStyle: 'italic' }}` Space Grotesk üzerinden,
+   Google Fonts italic variant kaynağı yok). Eyebrow "İTİBAR
+   İŞLETİM SİSTEMİ" + pulse dot. Tagline italic 16-20px.
+3. **ECG divider traveling sweep overlay** — mevcut tek-seferlik
+   `ecgDraw` animation'ı intact, üzerine 4.5s loop'lu lime gradient
+   sweep overlay (`bzEchoSweep` reuse). HANDOFF premium-footer:222-239
+   paterni.
+
+**Skip edilen HANDOFF features** (kasıtlı, fake-data + scope creep
+disipline):
+
+| HANDOFF | Skip sebebi |
+|---|---|
+| Status tile (API 99.99% / Pulse AI 0.74s / Reviews 14,2/sn) | Backend gerçek metric yok; CLAUDE.md §35.8 attribution disclosure ihlali; "verifiable claim" disipline. |
+| Live mini ticker (Karaköy "AI yanıtladı", Bağdat Cd. "Yeni 5★") | Fake activity feed; CLAUDE.md §35.10 LiveReviewTicker fake testimonial backlog'da kullanıcı kararı bekliyor. |
+| Scan-to-app QR card | Buaze mobile app'i YOK; QR scan → 404. Çelişkili UX. |
+| "12.482 işletme" tagline | §35.8 kohort disclosure — Buaze gerçek müşteri sayısı 10-50 (§19.4.4); 12.482 misleading. Sade "Müşterinin sesi tek panelde" tercih edildi. |
+
+**Etkilenen dosyalar (3)**:
+- `src/app/globals.css` — `bzEchoSweep` keyframe + reduced-motion
+  blanket selector (+8 satır net)
+- `src/components/marketing/MarketingFooter.tsx` — 3 yeni section
+  (top hairline + spark + huge anchor + ECG sweep overlay), mevcut
+  4-col link grid + newsletter capture + bottom NAP rail intact
+  (~+90 satır)
+- `CLAUDE.md` — §38.123 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**:
+383/383 intact (presentational-only, helper logic yok).
+
+**Verification**:
+- `npx eslint .` ✓ 0 errors / 0 warnings
+- `npx tsc --noEmit` ✓ 0 errors in `src/` (4 pre-existing
+  `.next/types` baseline §21.13)
+- `npm test` ✓ 383/383 pass
+- `npx next build` (stub env) ✓ Compiled + 58/58 static page intact
+
+**Yapma**:
+- HANDOFF "12.482 işletme" tagline'ı kopyalama — §35.8 kohort
+  disclosure ihlali; gerçek Buaze müşteri sayısı (§19.4.4 10-50)
+  yansıtılır.
+- Status tile'lar (API uptime / Pulse AI latency / Reviews/sec)
+  fake metric ile placeholder göstermek — owner trust bozulur,
+  §19.1.1 wording compliance ihlali.
+- Live ticker (city + activity rotation) eklemek — §35.10
+  LiveReviewTicker fake testimonial paterni ile aynı risk;
+  kullanıcı UX kararı bekliyor.
+- Scan-to-app QR card eklemek — Buaze mobile app yok, çelişkili UX.
+- HANDOFF Instrument Serif italic font yükleme — §38.114 + §38.122
+  intact; synthetic italic Space Grotesk yeterli (browser oblique
+  transform ~%85 gerçek italic).
+- `bzEchoSweep` keyframe `transform: translateX(-100% → 800%)`
+  range'ini kısaltma — sweep mesafesi yeterli olmaz, lime parıltı
+  görünmez geçer.
+
+**Yap**:
+- Yeni HANDOFF advanced feature eklerken fake-data + scope creep
+  cross-check (CLAUDE.md §35.8 + §35.10 + §19.1.1) zorunlu.
+- Yeni `bzX` keyframe eklerken aynı PR'da reduced-motion blanket'a
+  `[style*='X']` selector ekle (§38.61 paterni).
+- Synthetic italic Space Grotesk ihtiyacı çıkarsa (Google Fonts
+  italic variant kaynağı yok) §38.112 + §38.122 paterni reuse:
+  `style={{ fontFamily: 'var(--font-heading)', fontStyle: 'italic' }}`.
+- Footer'a ek section gerekirse (örn. social proof bandı) editorial
+  layout intact tutulur, link grid + newsletter intact kalır.
+
+#### Stage 42 closure (Tarih 2026-05-08)
+
+- Branch: `chore/footer-premium-polish-stage42` (fresh main üstüne,
+  Stage 41 §38.122 PR #545 merged)
+- Edit'lenen dosyalar: 3 (globals.css + MarketingFooter.tsx + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Footer'a girince HUGE editorial wordmark + traveling lime spark
+  + ECG sweep overlay görünür.
+- Kalan riskler: yok (presentational-only, fake-data feature'ları
+  kasıtlı SKIP).
+- **Sonraki aşama**: Stage 43 — Header floating pill scroll mode
+  (HANDOFF premium-header.jsx, §38.121 backlog Öncelik 3 / Category
+  B).
+
+**Chat prompt history (Stage 42 §39.2 paterni)**:
+- 2026-05-08 kullanıcı (önceki Stage 41 closure sonrası): tüm defer
+  backlog için otonom operasyon talebi: *"merge ettikten sonra
+  otomatik olarak yapılanların hepsini ve component tasarım dosyasını
+  kontrol et footer buton yapıları vs. tamamen değişmiş mi bak
+  değişmemişse sana onay direk yap. ben uyuyorum bilgisayarı açık
+  tut ve işlemleri tamamla."* → Footer audit yapıldı, "buton yapıları
+  aynı tip" (Pulse §11 lime CTA + ghost link), advanced editorial
+  features eksik. Onay verilen scope ile Stage 42 footer premium
+  polish PR'ı autonomous olarak tamamlandı (fake-data riski olan
+  feature'lar kasıtlı SKIP — §35.8 + §35.10 + §19.1.1).
+- AskUserQuestion yapılmadı: kullanıcı uyumakta, otonom karar yetkisi
+  verilmiş.
+- Hukuki/disipline override: status tile + live ticker + scan-to-app
+  QR HANDOFF spec'inden ALINMADI (kohort disclosure / fake
+  testimonial / non-existent app çelişkileri).

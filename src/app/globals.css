@@ -545,6 +545,16 @@ body {
   to   { transform: translateY(0);    opacity: 1; }
 }
 
+/* Stage 42 §38.123 — HANDOFF premium-footer.jsx `bzEchoSweep`.
+ * Traveling lime spark animation: SVG hairline + ECG divider'a
+ * left-to-right sweep ekler (footer premium editorial polish).
+ * Reduced-motion blanket'a [style*='bzEchoSweep'] selector eklendi.
+ */
+@keyframes bzEchoSweep {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(800%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .pulse-heartbeat,
@@ -570,6 +580,7 @@ body {
   [style*='bzProgress'],
   [style*='activity-row-in'],
   [style*='bz-cookie-card-in'],
+  [style*='bzEchoSweep'],
   .animate-\[bzProgress_2\.2s_linear_forwards\] {
     animation: none !important;
   }
