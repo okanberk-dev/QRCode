@@ -13698,3 +13698,99 @@ admin detail page interface update.
   campaign multi-batch send (50+ recipient için chunked queue),
   campaign templates library (admin pre-defined templates), entitled
   bulk activate (admin /admin/restaurants/bulk action='campaigns_enable').
+
+### 38.107 2026-05-07 — Stage 31a campaigns visibility revert (Stage 30 CampaignsLocked early-return geri alındı)
+
+§38.106 Stage 30 owner panel `/dashboard/campaigns` üzerine bir
+`CampaignsLocked` early-return UI'ı eklemişti — `campaignsEnabled=false`
+durumunda mevcut layout'un yerine "Pro özellik" pitch screen render
+ediyordu. Kullanıcı geri bildirimi: feature görünür kalsın ama disabled
+state + bilgilendirici banner ile (Stage 29 davranışı). Stage 31a
+CampaignsLocked early-return'ü kaldırır + mevcut AlertBanner'ı
+zenginleştirir + dead component dosyasını siler.
+
+**Out of scope**: Schema migration (`campaignsEnabled` default false)
+korunur; backend gate (POST `/api/customer-campaigns` 403) intact.
+Feature visibility revert sadece UI scope.
+
+**3 değişiklik**:
+
+1. **`CampaignsClient.tsx` early-return kaldırıldı** (line 187-201
+   önceki Stage 30 §38.106 tier gate `<CampaignsLocked>` render bloğu).
+   Mevcut `isDisabled` AlertBanner pattern (line ~277-283) zaten
+   campaignsEnabled false owner'a uygun semantic taşıyordu — sadece
+   tüm restoranları locked iken devre dışı kalıyordu (early-return
+   yüzünden). Şimdi her durumda layout görünür: KPI grid + restaurant
+   selector + filter chips + list + Compose modal. "Yeni kampanya"
+   butonu zaten `disabled={isDisabled || !activeRestaurantId}` taşıyor
+   — backend gate ile uyumlu.
+
+2. **AlertBanner enrichment**:
+   - `kind="warn"` → `kind="info"` (locked durum bilgilendirme,
+     uyarı değil — Pulse semantic)
+   - Copy revize: TR "Kampanya gönderim özelliği bu işletme için henüz
+     aktif değil. Buaze ekibine ulaşarak aktivasyon talep
+     edebilirsiniz." / EN paralel
+   - Yeni "Ekibe ulaş" / "Contact team" mailto CTA
+     (`support@buaze.com?subject=...`) banner içinde flex-end
+     `bz-btn-ghost` button — owner tek tıkla destek mail draft'ı açar
+   - sm:+ flex-row, mobile flex-col stack
+
+3. **`CampaignsLocked.tsx` silindi** (0 callsite kaldı, CLAUDE.md §34
+   paterni — "açık talep gerekli, gelecekte git history'den restore
+   edilebilir"). 198 satır dead code temizlendi.
+
+**Etkilenen dosyalar**:
+- `src/app/[locale]/dashboard/campaigns/_components/CampaignsClient.tsx`
+  (-15 +12 satır net: import remove + early-return remove + AlertBanner
+  expand + comment update)
+- `src/app/[locale]/dashboard/campaigns/_components/CampaignsLocked.tsx`
+  (sil, -198 satır)
+- `CLAUDE.md` §38.107 closure
+
+**Schema migration**: yok. **Yeni endpoint**: yok. **Yeni dep**: yok.
+**Response shape**: değişmedi. **IDOR / RBAC**: dokunulmadı.
+
+**Yapma**:
+- Stage 30 schema migration (`campaignsEnabled` default false)
+  revert etme — backend gate disipline (CLAUDE.md §38.106) korunur.
+- AlertBanner kind="warn" geri çevirme — locked state bilgilendirme,
+  uyarı değil; Pulse "info" semantic doğru.
+- "Yeni kampanya" butonun `disabled` prop'unu kaldırma — backend
+  POST 403 dönüyor; UI gate'i kaldırmak click sonrası error UX kötü.
+- `CampaignsLocked.tsx` dosyasını future scope için tutmak — 0
+  callsite dead code (CLAUDE.md §34); gelecek talep gelirse git
+  history'den restore edilir.
+- Restaurant selector'ı Stage 30 paterni gibi gizlemek — multi-restoran
+  owner farklı restoranlar arasında geçiş yapabilmeli (bazıları locked
+  bazıları açık olabilir).
+
+**Yap**:
+- Yeni "feature gate disabled state" UI eklenirken aynı paterni
+  reuse: AlertBanner kind="info" + mailto CTA + bz-btn-ghost.
+- Backend gate (403) + UI gate (disabled button) defense-in-depth —
+  her ikisi de korunmalı.
+
+**Verification**:
+- `npm run lint` 0 errors / 0 warnings (CLAUDE.md §38.49 baseline)
+- `npx tsc --noEmit -p tsconfig.json` 0 errors in `src/`
+- `npm test` 274/274 pass intact
+- `npx next build` (stub env) 58/58 static
+- Sanity grep: `CampaignsLocked` import ve component reference 0;
+  yorum satırı (1) historical context için intact.
+
+#### Stage 31a closure (Tarih 2026-05-07)
+
+- Branch: `claude/campaigns-visibility-revert-stage31a` (fresh main
+  üstüne, Stage 30 §38.106 merged + favicon PR #529 align)
+- Edit'lenen dosyalar: 2 (CampaignsClient.tsx + CLAUDE.md)
+- Silinen dosyalar: 1 (CampaignsLocked.tsx — 198 satır dead code)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 274/274 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  campaignsEnabled=false owner'lar artık `/dashboard/campaigns`'a
+  girdiğinde locked screen yerine layout + info banner görür.
+- Kalan riskler: yok (UI revert, backend gate intact).
+- **Sonraki aşama önerisi**: PR2 (Legal Consent Comprehensive) +
+  PR3 (Mail Compliance Enrichment) Stage 31 plan'ı (`/root/.claude/plans/`).
