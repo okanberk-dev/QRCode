@@ -74,8 +74,15 @@ export function CampaignsClient({ locale }: ClientProps) {
         if (!res.ok) throw new Error('restaurants_fetch_failed');
         const data = await res.json();
         if (cancelled) return;
-        const list: RestaurantOption[] = Array.isArray(data?.restaurants)
-          ? data.restaurants.map((r: { id: string; name: string; campaignsEnabled?: boolean }) => ({
+        // Stage 31e §38.111 — endpoint shape `{ data: enriched, meta: {...} }`.
+        // Eski kod `data?.restaurants` okuyordu (boş undefined → list = []),
+        // sonuç: owner her zaman "Henüz işletme yok" EmptyState görüyordu;
+        // admin campaignsEnabled toggle'ı açsa bile UI'da restoran
+        // listelenmediği için Compose modal hiç açılmıyordu. GoogleReviewsHub +
+        // CommandPalette zaten `data?.data` paterniyle uyumlu çalışıyor —
+        // CampaignsClient fix.
+        const list: RestaurantOption[] = Array.isArray(data?.data)
+          ? data.data.map((r: { id: string; name: string; campaignsEnabled?: boolean }) => ({
               id: r.id,
               name: r.name,
               campaignsEnabled: r.campaignsEnabled !== false,
