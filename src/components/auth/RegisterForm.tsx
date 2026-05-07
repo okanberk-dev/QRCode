@@ -59,6 +59,18 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: '', email: inviteEmail, businessName: '', password: '', website: '' });
 
+  // Stage 31b §38.108 — KVKK §10 + 6502 sayılı TKHK m.4 uyumlu üyelik onayı
+  // checkbox UI. Eski davranış (`recordConsentBatch` implicit log atıyordu —
+  // CLAUDE.md §21.27) UI'da görünür değildi → "kullanıcı görmediği belgelere
+  // onay vermiş sayılıyor" hukuki ihlal. 3 zorunlu (kullanım şartları +
+  // gizlilik politikası + KVKK aydınlatma) + 1 opsiyonel (ticari ileti / ETK
+  // m.6 default OFF — KVKK Açık Rıza + GDPR Art.7).
+  const [consentTerms, setConsentTerms] = useState(false);
+  const [consentPrivacy, setConsentPrivacy] = useState(false);
+  const [consentKvkk, setConsentKvkk] = useState(false);
+  const [consentMarketing, setConsentMarketing] = useState(false);
+  const allRequiredConsentsGiven = consentTerms && consentPrivacy && consentKvkk;
+
   // Email query'si ile gelmişse field'ı locked tut + bilgilendirici notice göster.
   useEffect(() => {
     if (inviteEmail && !form.email) {
@@ -160,6 +172,16 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
     e.preventDefault();
     setError('');
     setNotice('');
+    // Stage 31b §38.108 — UI gate (defense-in-depth; native `required` attr
+    // de aynı submit'i bloklar; aksi halde server-side fail-soft fallback).
+    if (!allRequiredConsentsGiven) {
+      setError(
+        locale === 'tr'
+          ? 'Devam etmek için Kullanım Şartları, Gizlilik Politikası ve KVKK Aydınlatma Metni onaylarını işaretle.'
+          : 'You must accept Terms of Service, Privacy Policy and KVKK Privacy Notice to continue.',
+      );
+      return;
+    }
     setLoading(true);
 
     try {
@@ -171,6 +193,10 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           ...form,
           recaptchaToken,
           locale,
+          // Stage 31b §38.108 — opsiyonel ETK m.6 ticari ileti opt-in.
+          // Default false (KVKK Açık Rıza + GDPR Art.7); kullanıcı checkbox
+          // ile bilinçli olarak işaretlerse server `recordConsent` log atar.
+          marketingConsent: consentMarketing,
           // Faz 4 § auto-activate — register handler'ı email match + token
           // valid ise TeamMember status'ünü 'active' yapar.
           ...(inviteToken ? { inviteToken } : {}),
@@ -288,22 +314,137 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
         />
       </div>
 
-      <p className="text-[12px] text-[#737373] leading-relaxed mt-1">
-        {locale === 'tr' ? 'Kayıt olarak ' : 'By signing up, you accept our '}
-        <Link href={`/${locale}/terms`} className="text-[#0A0A0A] font-semibold hover:text-[#A8D62E] transition-colors">
-          {locale === 'tr' ? 'Kullanım Şartları' : 'Terms of Service'}
-        </Link>
-        {locale === 'tr' ? ' ve ' : ' and '}
-        <Link href={`/${locale}/privacy`} className="text-[#0A0A0A] font-semibold hover:text-[#A8D62E] transition-colors">
-          {locale === 'tr' ? 'Gizlilik Politikası' : 'Privacy Policy'}
-        </Link>
-        {locale === 'tr' ? "'nı kabul etmiş olursunuz." : '.'}
-      </p>
+      {/* Stage 31b §38.108 — KVKK §10 + 6502 sayılı TKHK m.4 uyumlu 4
+          checkbox UI. 3 zorunlu (Kullanım Şartları + Gizlilik Politikası +
+          KVKK Aydınlatma Metni) + 1 opsiyonel (ticari ileti / ETK m.6 — default
+          OFF, KVKK Açık Rıza). Submit native `required` + JS gate
+          `allRequiredConsentsGiven` ile gate (defense-in-depth). */}
+      <fieldset className="space-y-2.5 mt-1.5 border-t border-[#EDEDED] pt-3">
+        <legend className="sr-only">
+          {locale === 'tr' ? 'Yasal Onaylar' : 'Legal Consents'}
+        </legend>
+
+        <label htmlFor="reg-consent-terms" className="flex items-start gap-2.5 cursor-pointer text-[12.5px] leading-relaxed text-[#525252]">
+          <input
+            id="reg-consent-terms"
+            type="checkbox"
+            required
+            checked={consentTerms}
+            onChange={(e) => setConsentTerms(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-1"
+          />
+          <span>
+            {locale === 'tr' ? (
+              <>
+                <Link href={`/${locale}/terms`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                  Kullanım Şartları
+                </Link>
+                &apos;nı okudum ve onaylıyorum.
+              </>
+            ) : (
+              <>
+                I have read and agree to the{' '}
+                <Link href={`/${locale}/terms`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                  Terms of Service
+                </Link>
+                .
+              </>
+            )}
+          </span>
+        </label>
+
+        <label htmlFor="reg-consent-privacy" className="flex items-start gap-2.5 cursor-pointer text-[12.5px] leading-relaxed text-[#525252]">
+          <input
+            id="reg-consent-privacy"
+            type="checkbox"
+            required
+            checked={consentPrivacy}
+            onChange={(e) => setConsentPrivacy(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-1"
+          />
+          <span>
+            {locale === 'tr' ? (
+              <>
+                <Link href={`/${locale}/privacy`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                  Gizlilik Politikası
+                </Link>
+                &apos;nı okudum ve onaylıyorum.
+              </>
+            ) : (
+              <>
+                I have read and agree to the{' '}
+                <Link href={`/${locale}/privacy`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                  Privacy Policy
+                </Link>
+                .
+              </>
+            )}
+          </span>
+        </label>
+
+        <label htmlFor="reg-consent-kvkk" className="flex items-start gap-2.5 cursor-pointer text-[12.5px] leading-relaxed text-[#525252]">
+          <input
+            id="reg-consent-kvkk"
+            type="checkbox"
+            required
+            checked={consentKvkk}
+            onChange={(e) => setConsentKvkk(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-1"
+          />
+          <span>
+            {locale === 'tr' ? (
+              <>
+                <Link href={`/${locale}/legal/kvkk-aydinlatma`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                  KVKK Aydınlatma Metni
+                </Link>
+                &apos;ni okudum ve kişisel verilerimin işlenmesine ilişkin bilgilendirildim.
+              </>
+            ) : (
+              <>
+                I have read the{' '}
+                <Link href={`/${locale}/legal/kvkk-aydinlatma`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                  KVKK Privacy Notice
+                </Link>{' '}
+                and understand how my personal data is processed.
+              </>
+            )}
+          </span>
+        </label>
+
+        <label htmlFor="reg-consent-marketing" className="flex items-start gap-2.5 cursor-pointer text-[12.5px] leading-relaxed text-[#525252] pt-1.5 border-t border-[#F5F5F5]">
+          <input
+            id="reg-consent-marketing"
+            type="checkbox"
+            checked={consentMarketing}
+            onChange={(e) => setConsentMarketing(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-1"
+          />
+          <span>
+            {locale === 'tr' ? (
+              <>
+                Buaze&apos;den ürün güncellemeleri, kampanya ve özel teklif içeren ticari iletiler (e-posta, SMS) almak istiyorum. Bu onayı{' '}
+                <Link href={`/${locale}/legal/ticari-ileti`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                  iletişim tercihleri
+                </Link>{' '}
+                sayfasından dilediğimde geri alabilirim. <span className="text-[#A3A3A3]">(İsteğe bağlı)</span>
+              </>
+            ) : (
+              <>
+                I would like to receive product updates, campaigns and special offers from Buaze (email, SMS). I can withdraw this consent anytime via the{' '}
+                <Link href={`/${locale}/legal/ticari-ileti`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                  communication preferences
+                </Link>{' '}
+                page. <span className="text-[#A3A3A3]">(Optional)</span>
+              </>
+            )}
+          </span>
+        </label>
+      </fieldset>
 
       <button
         type="submit"
         id="register-submit-btn"
-        disabled={loading}
+        disabled={loading || !allRequiredConsentsGiven}
         className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
       >
         {loading ? <Loader2 className="animate-spin" size={18} strokeWidth={2} /> : null}

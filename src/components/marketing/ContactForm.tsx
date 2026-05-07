@@ -62,6 +62,9 @@ export default function ContactForm({ t, locale }: ContactFormProps) {
       marketing: formData.get('marketing') === 'on',
       website: honeypot,
       renderedAt: renderedAtRef.current,
+      // Stage 31b §38.108 — locale geçirilir, server recordConsent log'unda
+      // doğru locale-bound LegalDocument snapshot referansı tutulur.
+      locale,
     };
 
     try {

@@ -13794,3 +13794,204 @@ Feature visibility revert sadece UI scope.
 - Kalan riskler: yok (UI revert, backend gate intact).
 - **Sonraki aşama önerisi**: PR2 (Legal Consent Comprehensive) +
   PR3 (Mail Compliance Enrichment) Stage 31 plan'ı (`/root/.claude/plans/`).
+
+### 38.108 2026-05-07 — Stage 31b legal consent comprehensive (Türk hukuku + GDPR)
+
+§38.107 Stage 31a campaigns visibility revert sonrası kullanıcı talebinin
+hukuki uyum bacağı: KVKK §10 + 6502 sayılı TKHK m.4 + ETK m.5/m.6/m.7 +
+GDPR Art.13/Art.28 + KVKK Çerez Kurulu kararı + ePrivacy Direktifi
+kapsamlı kapatma. 8 fix + schema migration + 2 yeni component + 1 yeni
+helper.
+
+**Out of scope** (kullanıcı talimatı): UI/tasarım dokunulmaz, çalışan
+backend kontrat değişimi, İYS API gerçek entegrasyonu (operatör credentials
+gerek), büyük frontend refactor.
+
+**8 fix bundle**:
+
+1. **Schema migration** (`prisma/migrations/20260508000000_legal_compliance_extension/`):
+   - `Restaurant.businessIdNumber String?` (VKN/TCKN — gerçek/tüzel kişi)
+   - `Restaurant.mersisNumber String?` (16 haneli tüzel kişi rejistre no)
+   - `Restaurant.physicalAddress String? @db.Text` (ETK m.5(1)(a) +
+     TKHK m.4 fiziki adres)
+   - `CustomerEmailCampaign.iysId String?` (İYS gönderim takip UUID)
+   - `CustomerEmailCampaign.iysChannelCode String?` (E_MARKETING / SMS / CALL)
+   - Tümü nullable + default null → backward compat. Vercel build script
+     `prisma migrate deploy` otomatik apply (CLAUDE.md §14.1).
+
+2. **`RegisterForm.tsx` 4 checkbox UI** (HIGH legal risk fix):
+   - Eski state: `/api/auth/register:99-114` `recordConsentBatch` 3 belge
+     **implicit log** atıyordu ama UI'da checkbox yoktu → kullanıcı
+     görmediği belgelere onay vermiş sayılıyor (KVKK §10 + TKHK m.4 ihlali).
+   - Yeni: 3 zorunlu (kullanım-sartlari + gizlilik-politikasi + kvkk-aydinlatma)
+     + 1 opsiyonel (ticari-ileti — ETK m.6 default OFF). `required` HTML
+     attr + `allRequiredConsentsGiven` JS gate (defense-in-depth). Submit
+     button disabled until 3 zorunlu işaretli. Tüm checkbox'lar `target="_blank"`
+     legal page link'leri taşır (kullanıcı belgeyi okuyabilir).
+
+3. **`/api/auth/register` backend ticari-ileti opt-in row**:
+   - Body destructure'a `marketingConsent` field eklendi.
+   - 3 zorunlu belge log atılmaya devam (defense-in-depth — UI bypass
+     edilmiş POST için de KVKK aydınlatma kapsanır).
+   - `marketingConsent === true` ise opsiyonel `ticari-ileti` row eklenir.
+
+4. **`/api/contact` recordConsent fix**:
+   - Mevcut endpoint KVKK + marketing field accept ediyordu ama
+     `recordConsent` çağrısı YOK (audit gap).
+   - Yeni: kvkk=true zorunlu (mevcut 400 gate intact), `subjectType: 'email'`
+     ile email-bound consent log. marketing=true ise opsiyonel ETK izni.
+   - `ContactForm.tsx` body'ye `locale` field eklendi (server-side
+     LegalDocument snapshot doğru locale bağlama).
+
+5. **`ensureOnboardingConsents` helper + `/api/onboarding/complete`**:
+   - Yeni `src/lib/legal/consent.ts:ensureOnboardingConsents` —
+     skip-if-already-recorded pattern. Register flow zaten log atıyorsa
+     duplicate yazmaz; Google sign-in user'lar (`/api/auth/google` consent
+     UI'sız) onboarding/complete sonrası 3 zorunlu belge backfill.
+   - Idempotent + fail-soft (CLAUDE.md §21.27 paterni).
+
+6. **CookieConsentBanner + ConditionalAnalytics + layout integration**
+   (`src/components/legal/`):
+   - `CookieConsentBanner.tsx`: 3 kategori (essential always-on / analytics
+     opt-out / marketing opt-out). 3 button (Tümünü kabul / Sadece zorunlu
+     / Kişiselleştir-modal). localStorage `bz_cookie_consent` +
+     `bz:cookie-consent-changed` window event reactive. Pulse design
+     (graphite + lime + Cookie icon) bottom-sheet. SSR-safe (mount sonrası
+     check). iframe context auto-skip (`/embed/*` parent site duplicate
+     UX önlemi).
+   - `ConditionalAnalytics.tsx`: GA + Yandex Metrica `Script` tag'leri
+     `analytics: true` consent durumunda render edilir. Eski state
+     (`layout.tsx` koşulsuz `lazyOnload`) KVKK Çerez Kurulu opt-in
+     kuralını ihlal ediyordu → fix.
+   - `app/layout.tsx`: cookies() locale detection (NEXT_LOCALE → fallback
+     'tr') + banner/conditional mount + Yandex noscript pixel intact
+     (consent gate tarafından sarılmış).
+
+7. **`src/lib/legal/iys.ts` placeholder helper**:
+   - `reportToIys({ campaignId, recipientEmail, channelCode, messageType })`
+     → `{ iysId: null, source: 'placeholder' }` döner (operatör credentials
+     yokken).
+   - Sentry warning level capture (production deploy sonrası operatör
+     görünürlük).
+   - `formatIysIdForFooter(iysId)` mail template footer için locale-aware
+     `—` fallback.
+   - Gelecek scope: operatör İYS API portal kaydı + IYS_BRAND_CODE/IYS_API_KEY/
+     IYS_API_SECRET env'leri set ettiğinde gerçek HTTPS POST + signature +
+     retry pipeline buraya implement edilir (ayrı PR).
+
+8. **`ensureCommercialPrefix` helper + GDPR Art.13 disclosure**:
+   - `src/lib/email-customer-campaign.ts:ensureCommercialPrefix(subject, locale)`
+     export. TR locale + subject "Reklam:" / "Promosyon:" / "Kampanya:"
+     / "Fırsat:" prefix taşımıyorsa otomatik "Reklam: " prefix. EN dokunulmadı
+     (ETK Türk hukuku, CAN-SPAM Act ek prefix UX gereksiz). Stage 31c PR3
+     mail send pipeline'ında call edilir.
+   - `src/lib/legal/templates/gizlilik.ts` TR + EN section 10:
+     "Veri Sorumlusu (Controller) ve Veri İşleyen (Processor)" — KVKK m.3(ç)
+     + GDPR Art.4(7)/Art.4(8)/Art.28 disclosure. Buaze ↔ Restaurant ilişkisi
+     (Buaze processor for end-customer data, controller for panel user data)
+     net açıklama.
+
+**Etkilenen dosyalar (~13 dosya)**:
+
+| Dosya | Değişim |
+|---|---|
+| `prisma/schema.prisma` | Restaurant 3 alan + CustomerEmailCampaign 2 alan |
+| `prisma/migrations/20260508000000_legal_compliance_extension/migration.sql` | YENİ |
+| `src/components/auth/RegisterForm.tsx` | 4 checkbox + submit gate |
+| `src/app/api/auth/register/route.ts` | marketingConsent body + opsiyonel ticari-ileti row |
+| `src/app/api/contact/route.ts` | recordConsent KVKK + marketing log |
+| `src/components/marketing/ContactForm.tsx` | locale field POST body |
+| `src/app/api/onboarding/complete/route.ts` | ensureOnboardingConsents call |
+| `src/lib/legal/consent.ts` | ensureOnboardingConsents helper |
+| `src/components/legal/CookieConsentBanner.tsx` | YENİ |
+| `src/components/legal/ConditionalAnalytics.tsx` | YENİ |
+| `src/app/layout.tsx` | banner + conditional analytics mount |
+| `src/lib/legal/iys.ts` | YENİ placeholder helper |
+| `src/lib/email-customer-campaign.ts` | ensureCommercialPrefix export |
+| `src/lib/legal/templates/gizlilik.ts` | section 10 GDPR Art.13/28 |
+| `CLAUDE.md` | §38.108 closure |
+
+**Schema migration impact**: 1 (5 yeni nullable alan, breaking change yok).
+Vercel build script otomatik `prisma migrate deploy` apply.
+
+**Yeni dep**: yok.
+
+**Yapma**:
+- `RegisterForm` checkbox'ları "tek kabul ediyorum" toggle ile birleştirme
+  — KVKK §10 her belge için ayrı onay zorunlu.
+- Ticari-ileti checkbox default true yapma — KVKK Açık Rıza + GDPR Art.7
+  ihlali (CLAUDE.md §19.1 paterni).
+- CookieConsentBanner için 3rd party lib (`cookieconsent`, `osano`)
+  ekleme — Pulse design + custom localStorage yeterli (CLAUDE.md §7).
+- Cookie banner essential kategorisini opt-out yapmak — site çalışmaz
+  (oturum, güvenlik, form gönderimi essential).
+- İYS API gerçek HTTP entegrasyonu bu PR'da açma — operatör portal
+  kaydı + credentials gerek, ayrı PR scope.
+- `ensureOnboardingConsents` lookup'unu zorunlu yapma — fail-soft;
+  log fail onboarding'i kırmamalı (CLAUDE.md §21.27 paterni).
+- Subject prefix EN locale'e uygulamak — ETK Türk hukuku, CAN-SPAM
+  Act header bandı UX kötü.
+- `ConditionalAnalytics` script'leri `lazyOnload` yerine `afterInteractive`
+  yapmak — page render kritik path'e GA/Yandex işlem yükü ekler
+  (CLAUDE.md §34.12 paterni).
+
+**Yap**:
+- Yeni consent UI eklenirken `recordConsent` veya `recordConsentBatch`
+  helper reuse (CLAUDE.md §21.27 paterni).
+- Yeni cookie kategorisi eklenirken (örn. preferences) `CookieConsentState`
+  literal genişlet + ConditionalAnalytics conditional render branch.
+- Yeni mail template'i ticari ileti içerirken `ensureCommercialPrefix`
+  call zorunlu (Stage 31c PR3 paterni).
+- İYS portal kaydı tamamlanınca `iys.ts` placeholder içini gerçek HTTPS
+  POST + signature + retry ile değiştir; çağrı taraflarının imzayla
+  çalışması intact kalır.
+- GDPR Art.13 disclosure başka legal template'a (örn. KVKK Aydınlatma)
+  eklemek istenirse aynı section 10 paterni reuse.
+
+**Verification**:
+- `npm run lint` 0 errors / 0 warnings
+- `npx tsc --noEmit -p tsconfig.json` 0 errors in `src/`
+- `npm test` 274/274 pass
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) ✓ Compiled +
+  static pages
+- `npx prisma validate` ✓ schema valid
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. `/tr/auth/register` → 4 checkbox görünür, 3 zorunlu boş iken submit
+   disabled, ticari-ileti opsiyonel.
+2. `/tr/contact` form post sonrası DB `LegalConsent` row (kvkk + marketing).
+3. `/tr/onboarding` Google sign-in user → `complete` sonrası 3 zorunlu
+   `LegalConsent` row insert.
+4. İlk ziyarette cookie banner görünür → "Sadece zorunlu" → GA/Yandex
+   network request yok. "Tümünü kabul et" → sayfa yenilenmeden GA/Yandex
+   yüklenir.
+5. `/embed/<slug>` iframe içinde banner görünmez.
+6. `/tr/legal/gizlilik-politikasi` → section 10 controller/processor
+   disclosure görünür.
+7. Vercel build log: `prisma migrate deploy` 1 yeni migration apply.
+
+#### Stage 31b closure (Tarih 2026-05-07)
+
+- Branch: `claude/legal-consent-comprehensive-stage31b`
+- Edit'lenen + yeni dosyalar: 13
+- Yeni dosyalar: 4 (`prisma/migrations/.../migration.sql`,
+  `src/components/legal/CookieConsentBanner.tsx`,
+  `src/components/legal/ConditionalAnalytics.tsx`,
+  `src/lib/legal/iys.ts`)
+- Schema migration: 1 (Restaurant 3 alan + CustomerEmailCampaign 2 alan)
+- Yeni dep: yok
+- Test count: 274 (functional değişiklik scope dışı; integration test
+  scope sınırlı)
+- Operatör aksiyonu (PR sonrası): Vercel auto-deploy + `prisma migrate
+  deploy` otomatik. Manuel: smoke test 7-step (yukarıda). İYS API
+  credentials gelecek scope.
+- Kalan riskler: İYS API gerçek entegrasyon henüz yok (placeholder logger).
+  Operatör Restaurant.businessIdNumber/mersisNumber/physicalAddress
+  alanlarını admin paneli üzerinden veya owner Settings → Brand Identity
+  bölümünden doldurmalı (UI mevcut; bu PR'da admin/owner UI alan
+  ekleme yapılmadı — Stage 31c PR3 mail footer enrichment'tan önce
+  doldurulması önerilir).
+- **Sonraki aşama önerisi**: PR3 (Mail Compliance Enrichment) — customer-
+  campaign template footer + Buaze attribution + İYS placeholder + subject
+  prefix runtime call + owner-campaign-{approved,rejected} template hafif
+  enrichment + Stage 31c §38.109 closure.

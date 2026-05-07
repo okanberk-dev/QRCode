@@ -3,6 +3,8 @@ import { sendContactAdminEmail, sendFormConfirmationEmail } from '@/lib/email';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { isValidEmail } from '@/lib/validations';
+import { recordConsent } from '@/lib/legal/consent';
+import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
 
 // Must stay in sync with ContactForm.tsx — form under this dwell time is bot-like.
 const MIN_FILL_MS = 2500;
@@ -91,6 +93,39 @@ export async function POST(req: NextRequest) {
     });
 
     if (!success) throw new Error('Mail sending failed');
+
+    // Stage 31b §38.108 — KVKK §10 + ETK m.6 consent log. /api/contact form
+    // KVKK + ticari ileti checkbox accept ediyordu ama recordConsent
+    // çağırmıyordu (audit gap). Şimdi kvkk=true zorunlu (yukarıda 400
+    // gate); marketing=true ise opsiyonel ETK izni log'lanır. Fire-and-
+    // forget — log fail mail send'i kırmamalı.
+    {
+      const ua = req.headers.get('user-agent');
+      const localeRaw = typeof body.locale === 'string' ? body.locale.toLowerCase() : 'tr';
+      const consentLocale: LegalLocale = isSupportedLegalLocale(localeRaw) ? localeRaw : 'tr';
+      void recordConsent({
+        key: 'kvkk-aydinlatma',
+        locale: consentLocale,
+        subjectType: 'email',
+        subjectId: email,
+        source: 'contact',
+        granted: true,
+        ipAddress: ip ?? null,
+        userAgent: ua,
+      });
+      if (marketing) {
+        void recordConsent({
+          key: 'ticari-ileti',
+          locale: consentLocale,
+          subjectType: 'email',
+          subjectId: email,
+          source: 'contact',
+          granted: true,
+          ipAddress: ip ?? null,
+          userAgent: ua,
+        });
+      }
+    }
 
     // User-facing confirmation — fire and forget; the contact submission
     // already succeeded internally, no reason to fail the request if this
