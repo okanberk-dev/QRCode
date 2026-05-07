@@ -144,8 +144,73 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
 
   return (
     <>
-    <footer className="bg-[#0A0A0A] text-white">
-      {/* ECG divider — animated lime heartbeat line */}
+    <footer className="relative bg-[#0A0A0A] text-white">
+      {/* Stage 42 §38.123 — top hairline + traveling lime spark.
+          HANDOFF premium-footer.jsx editorial polish — top edge'inde
+          ince hairline + 6s döngülü lime gradient sweep. Reduced-motion
+          blanket [style*='bzEchoSweep'] selector ile devre dışı. */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-white/8" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-px left-0 z-[1] h-[3px] w-[12%]"
+        style={{
+          background: 'linear-gradient(90deg, transparent, #C6F24E, transparent)',
+          boxShadow: '0 0 16px #C6F24E',
+          animation: 'bzEchoSweep 6s linear infinite',
+        }}
+      />
+
+      {/* Stage 42 §38.123 — HUGE editorial wordmark anchor.
+          HANDOFF premium-footer.jsx "bigtype" pattern. Pulse §11
+          synthetic italic Space Grotesk (CLAUDE.md §38.114 +
+          §38.112 paterni — Instrument Serif italic REDDEDILDI;
+          Space Grotesk + fontStyle:'italic' inline ile browser
+          oblique). Mobile clamp `clamp(56px, 11vw, 168px)`. */}
+      <div className="border-t border-[#1F1F1F] px-5 pb-6 pt-12 sm:px-10 sm:pt-14">
+        <div className="mx-auto max-w-[1240px]">
+          <div className="flex items-center gap-2.5">
+            <span
+              aria-hidden
+              className="bz-pulse-dot inline-block h-1.5 w-1.5 rounded-full"
+              style={{ background: '#C6F24E' }}
+            />
+            <span className="pulse-eyebrow text-[#C6F24E]">
+              {isTr ? 'İTİBAR İŞLETİM SİSTEMİ' : 'REPUTATION OPERATING SYSTEM'}
+            </span>
+          </div>
+          <h2
+            className="mt-7 text-[#F6F4EF]"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontStyle: 'italic',
+              fontSize: 'clamp(56px, 11vw, 168px)',
+              lineHeight: 0.92,
+              letterSpacing: '-0.04em',
+              fontWeight: 500,
+              margin: 0,
+            }}
+          >
+            buaze<span style={{ color: '#C6F24E' }}>.</span>
+          </h2>
+          <p
+            className="mt-5 max-w-[640px] text-[16px] leading-[1.45] text-white/70 sm:text-[18px] md:text-[20px]"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontStyle: 'italic',
+              fontWeight: 500,
+              letterSpacing: '-0.01em',
+            }}
+          >
+            {isTr
+              ? 'Bir QR. Bir yorum. Bir kazanç. Müşterinin sesi tek panelde.'
+              : 'One QR. One review. One win. The customer voice in one pane.'}
+          </p>
+        </div>
+      </div>
+
+      {/* ECG divider — animated lime heartbeat line + Stage 42 §38.123
+          traveling sweep gradient overlay. Mevcut tek-seferlik draw
+          intact; sweep loop'lu (6s) lime accent overlay. */}
       <div className="relative h-14 overflow-hidden border-t border-[#1F1F1F]">
         <svg
           viewBox="0 0 1440 56"
@@ -162,6 +227,14 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
             style={{ strokeDasharray: 2000, strokeDashoffset: 2000, animation: 'ecgDraw 3s ease-out forwards' }}
           />
         </svg>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 w-[12%]"
+          style={{
+            background: 'linear-gradient(90deg, transparent, rgba(198,242,78,0.55), transparent)',
+            animation: 'bzEchoSweep 4.5s linear infinite',
+          }}
+        />
       </div>
 
       {/* Newsletter capture */}
