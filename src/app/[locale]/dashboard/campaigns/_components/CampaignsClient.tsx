@@ -20,7 +20,6 @@ import { CampaignsList } from './CampaignsList';
 import { CampaignComposeModal } from './CampaignComposeModal';
 import { CampaignDetailDrawer } from './CampaignDetailDrawer';
 import { CampaignsEmptyState } from './CampaignsEmptyState';
-import CampaignsLocked from './CampaignsLocked';
 
 interface RestaurantOption {
   id: string;
@@ -184,22 +183,10 @@ export function CampaignsClient({ locale }: ClientProps) {
     router.replace(qs ? `?${qs}` : '', { scroll: false });
   };
 
-  // Stage 30 §38.106 — tier gate. Restaurants yüklendi + active restaurant
-  // entitled değilse (campaignsEnabled=false) interactive surface yerine
-  // CampaignsLocked screen render. Sidebar nav görünür kalır (özellik var,
-  // erişim yok semantic). Eğer hiçbir restoranı entitled değilse de aynı
-  // gating screen — ilk seçili restoran context taşır.
-  const hasAnyEntitled = restaurants.some((r) => r.campaignsEnabled);
-  if (restaurants.length > 0 && activeRestaurant && !hasAnyEntitled) {
-    return (
-      <CampaignsLocked
-        locale={locale}
-        restaurantName={activeRestaurant.name}
-        hasMultiple={restaurants.length > 1}
-      />
-    );
-  }
-
+  // Stage 31a §38.107 — Stage 30 CampaignsLocked early-return revert. Feature
+  // sidebar/page'de görünür kalır (Stage 29 davranışı). campaignsEnabled=false
+  // durumunda "Yeni kampanya" butonu disabled + AlertBanner info ("admin onayıyla
+  // aktif edilir"). Backend gate intact (POST 403 Stage 30 §38.106).
   return (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <PageHeader
@@ -275,10 +262,24 @@ export function CampaignsClient({ locale }: ClientProps) {
           ) : null}
 
           {isDisabled ? (
-            <AlertBanner kind="warn">
-              {isTr
-                ? 'Bu işletme için kampanya özelliği kapalı. Yeni kampanya oluşturulamaz, mevcut kampanyalar görüntülenebilir. Açtırmak için Buaze ekibiyle iletişime geçin.'
-                : 'Campaigns feature is disabled for this business. New campaigns cannot be created. Contact Buaze team to enable.'}
+            <AlertBanner kind="info">
+              <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <span className="text-[12.5px] leading-[1.55]">
+                  {isTr
+                    ? 'Kampanya gönderim özelliği bu işletme için henüz aktif değil. Buaze ekibine ulaşarak aktivasyon talep edebilirsiniz.'
+                    : 'The campaign feature is not yet active for this business. Contact the Buaze team to request activation.'}
+                </span>
+                <a
+                  href={`mailto:support@buaze.com?subject=${encodeURIComponent(
+                    isTr
+                      ? 'Kampanya özelliği için erişim talebi'
+                      : 'Campaign feature access request',
+                  )}`}
+                  className="bz-btn-ghost flex shrink-0 items-center gap-1.5 self-start whitespace-nowrap px-3 py-1.5 text-[12px] sm:self-auto"
+                >
+                  {isTr ? 'Ekibe ulaş' : 'Contact team'}
+                </a>
+              </div>
             </AlertBanner>
           ) : null}
 
