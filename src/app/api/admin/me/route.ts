@@ -17,6 +17,14 @@ async function loadSiteBranding(): Promise<{ logoUrl: string | null; faviconUrl:
   }
 }
 
+// Stage 26 §38.102 Fix #2 — cache header (CLAUDE.md §38.100 Stage 24 paterni
+// reuse). AdminSidebar her mount'ta `/api/admin/me` fetch ediyordu; admin
+// profile rare mutation (username + email + role rename), 30s fresh + 2min
+// SWR pencere yeterli. `private` directive Vercel CDN'de admin token-isolated
+// (cookie-based partition); IDOR scope intact. Cross-tab refresh'te
+// repeat fetch ~50-150ms → <10ms cache hit.
+const ADMIN_ME_CACHE_HEADER = 'private, s-maxage=30, stale-while-revalidate=120';
+
 export async function GET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
 
@@ -49,21 +57,24 @@ export async function GET(req: NextRequest) {
         });
         const restaurantIds = restaurants.map(r => r.id);
 
-        return NextResponse.json({
-          id: user.id,
-          username: user.email,
-          email: user.email,
-          name: user.name,
-          role: 'restaurant_owner',
-          plan: user.plan,
-          trialEndsAt: user.trialEndsAt,
-          restaurantId: restaurantIds[0] || null,
-          restaurantIds,
-          workspaceName: restaurants[0]?.name || user.name || user.email.split('@')[0],
-          locationCount: restaurants.length,
-          logoUrl,
-          faviconUrl,
-        });
+        return NextResponse.json(
+          {
+            id: user.id,
+            username: user.email,
+            email: user.email,
+            name: user.name,
+            role: 'restaurant_owner',
+            plan: user.plan,
+            trialEndsAt: user.trialEndsAt,
+            restaurantId: restaurantIds[0] || null,
+            restaurantIds,
+            workspaceName: restaurants[0]?.name || user.name || user.email.split('@')[0],
+            locationCount: restaurants.length,
+            logoUrl,
+            faviconUrl,
+          },
+          { headers: { 'Cache-Control': ADMIN_ME_CACHE_HEADER } },
+        );
       }
     } catch (e) {
       console.error('[ME] Failed to fetch user details:', e);
@@ -105,36 +116,42 @@ export async function GET(req: NextRequest) {
     }
 
     if (adminUser) {
-      return NextResponse.json({
-        id: adminUser.id,
-        username: adminUser.username,
-        email: adminUser.email || adminUser.username,
-        recoveryEmail: adminUser.email || null,
-        name: adminUser.username,
-        role: adminUser.role || 'superadmin',
-        plan: null,
-        trialEndsAt: null,
-        restaurantId: adminUser.restaurantId || null,
-        restaurantIds: adminUser.restaurantId ? [adminUser.restaurantId] : [],
-        logoUrl,
-        faviconUrl,
-      });
+      return NextResponse.json(
+        {
+          id: adminUser.id,
+          username: adminUser.username,
+          email: adminUser.email || adminUser.username,
+          recoveryEmail: adminUser.email || null,
+          name: adminUser.username,
+          role: adminUser.role || 'superadmin',
+          plan: null,
+          trialEndsAt: null,
+          restaurantId: adminUser.restaurantId || null,
+          restaurantIds: adminUser.restaurantId ? [adminUser.restaurantId] : [],
+          logoUrl,
+          faviconUrl,
+        },
+        { headers: { 'Cache-Control': ADMIN_ME_CACHE_HEADER } },
+      );
     }
   } catch (e) {
     console.error('[ME] Failed to fetch admin user:', e);
   }
 
   // Fallback (e.g. env-admin)
-  return NextResponse.json({
-    id: actor.id,
-    username: actor.username,
-    email: actor.email,
-    name: actor.username,
-    role: actor.role || 'superadmin',
-    plan: actor.plan,
-    trialEndsAt: null,
-    restaurantId: actor.restaurantId || null,
-    logoUrl,
-    faviconUrl,
-  });
+  return NextResponse.json(
+    {
+      id: actor.id,
+      username: actor.username,
+      email: actor.email,
+      name: actor.username,
+      role: actor.role || 'superadmin',
+      plan: actor.plan,
+      trialEndsAt: null,
+      restaurantId: actor.restaurantId || null,
+      logoUrl,
+      faviconUrl,
+    },
+    { headers: { 'Cache-Control': ADMIN_ME_CACHE_HEADER } },
+  );
 }
