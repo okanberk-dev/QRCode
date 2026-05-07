@@ -29,3 +29,20 @@ export { StarRow } from "./StarRow";
 export { StatCard, StatCardSkeleton, type DeltaKind } from "./StatCard";
 export { Tabs, type TabItem } from "./Tabs";
 export { Toggle } from "./Toggle";
+
+// Stage 37 §38.117 — HANDOFF §8 step 4 (Panel atomları) — 4 yeni primitive
+// (APSlider + APStarInput + APRadioGroup + APIconButton). HANDOFF
+// admin-panel.jsx spec birebir + Pulse §11 styling + a11y enhancement.
+export { APSlider, type APSliderProps } from "./APSlider";
+export { APStarInput, type APStarInputProps } from "./APStarInput";
+export {
+  APRadioGroup,
+  type APRadioGroupProps,
+  type APRadioOption,
+} from "./APRadioGroup";
+export {
+  APIconButton,
+  type APIconButtonProps,
+  type APIconButtonSize,
+  type APIconButtonTone,
+} from "./APIconButton";
