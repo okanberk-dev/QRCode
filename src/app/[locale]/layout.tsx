@@ -86,10 +86,12 @@ export async function generateMetadata({
     },
     icons: {
       icon: [
-        { url: s.faviconUrl || '/favicon.svg', type: 'image/svg+xml' },
+        // §38.106 — `?v=4` cache bust for circular favicon; CLAUDE.md
+        // §34.14 disipline (immutable header + query string version bump).
+        { url: s.faviconUrl || '/favicon.svg?v=4', type: 'image/svg+xml' },
       ],
-      shortcut: s.faviconUrl || '/favicon.svg',
-      apple: '/apple-touch-icon.svg',
+      shortcut: s.faviconUrl || '/favicon.svg?v=4',
+      apple: '/apple-touch-icon.svg?v=4',
     },
     manifest: '/site.webmanifest',
   };
