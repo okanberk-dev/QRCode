@@ -230,8 +230,23 @@ export function CampaignComposeModal({ isTr, restaurantId, onClose, onCreated }:
             autoComplete="off"
             disabled={submitting !== null}
           />
-          <div className={`text-right text-[10.5px] bz-mono tabular-nums mt-1 ${subjectCharColor}`}>
-            {subject.length}/150
+          <div className={`flex items-center justify-between mt-1 gap-2`}>
+            {/* Stage 31c §38.109 — ETK m.7(2) "Reklam:" subject prefix
+                preview hint. TR locale + subject prefix taşımıyorsa
+                helper otomatik prefix ekler — owner görsün ki sürpriz
+                olmasın. EN locale dokunulmaz. */}
+            {locale === 'tr' && subject.trim().length > 0 && !/^(reklam|promosyon|kampanya|f[ıi]rsat)[:\s]/i.test(subject.trim()) ? (
+              <span className="text-[10.5px] text-[#92400E] bz-mono">
+                {isTr
+                  ? 'ETK m.7 gereği "Reklam:" otomatik eklenecek.'
+                  : '"Reklam:" prefix will be added (Turkish ETK Art.7).'}
+              </span>
+            ) : (
+              <span />
+            )}
+            <span className={`text-[10.5px] bz-mono tabular-nums ${subjectCharColor}`}>
+              {subject.length}/150
+            </span>
           </div>
         </div>
 

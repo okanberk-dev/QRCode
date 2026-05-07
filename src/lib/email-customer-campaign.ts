@@ -149,8 +149,15 @@ export async function sendCustomerCampaign(args: {
   recipients: CustomerCampaignRecipient[];
   locale?: 'tr' | 'en';
 }): Promise<CustomerCampaignSendResult> {
-  const { campaignId, restaurantId, restaurantName, subject, body } = args;
+  const { campaignId, restaurantId, restaurantName, body } = args;
   const locale = args.locale ?? 'tr';
+
+  // Stage 31c §38.109 — ETK m.7(2) "Reklam:" subject prefix runtime guard.
+  // TR locale + subject zaten prefix'le başlamıyorsa "Reklam: " auto-prepend.
+  // EN dokunulmaz (CAN-SPAM Act header bandı UX gereksiz). Helper send
+  // pipeline single source of truth; UI compose preview hint paralel
+  // gösterir (CampaignComposeModal §38.109).
+  const subject = ensureCommercialPrefix(args.subject, locale);
 
   // Stage 30 §38.106 — recipient cap. Vercel function timeout safety
   // + Resend rate-limit margin. Kullanıcı `recipients.length > MAX` ise
@@ -163,6 +170,19 @@ export async function sendCustomerCampaign(args: {
     );
   }
   const recipients = args.recipients;
+
+  // Stage 31c §38.109 — restaurant.notificationEmail (sender identity, ETK
+  // m.5) + iysId placeholder (Stage 31b §38.108). Tek query, defansif select
+  // (CLAUDE.md §14.1 paterni). Restaurant doluysa notificationEmail; yoksa
+  // helper içinde 'hello@buaze.com' fallback. iysId şu an Restaurant
+  // schema'sında değil; CustomerEmailCampaign.iysId field'ı placeholder
+  // olarak null kalır (operatör credentials gelene kadar).
+  const restaurantMeta = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    select: { notificationEmail: true },
+  });
+  const senderEmail = restaurantMeta?.notificationEmail ?? null;
+  const sentAt = new Date();
 
   // Mark campaign as sending; track recipient count up-front.
   await prisma.customerEmailCampaign.update({
@@ -208,8 +228,20 @@ export async function sendCustomerCampaign(args: {
     let success = false;
     let errorMessage: string | null = null;
     try {
+      // Stage 31c §38.109 — render pipeline'a senderEmail + iysId + sentAt
+      // params. iysId şu an campaign-level alınmıyor (per-campaign placeholder
+      // null; operatör İYS API entegrasyonu gelince populate edilir);
+      // template footer'da `formatIysIdForFooter(null) === '—'` render eder.
       const rendered = await renderCustomerCampaign(
-        { restaurantName, subject, body, unsubscribeUrl },
+        {
+          restaurantName,
+          subject,
+          body,
+          unsubscribeUrl,
+          senderEmail,
+          iysId: null,
+          sentAt,
+        },
         locale,
       );
       success = await sendResendEmail({

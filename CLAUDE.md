@@ -13995,3 +13995,176 @@ Vercel build script otomatik `prisma migrate deploy` apply.
   campaign template footer + Buaze attribution + İYS placeholder + subject
   prefix runtime call + owner-campaign-{approved,rejected} template hafif
   enrichment + Stage 31c §38.109 closure.
+
+### 38.109 2026-05-07 — Stage 31c mail compliance enrichment (ETK m.5/m.7 + GDPR Art.13/Art.28)
+
+§38.107 Stage 31a (campaigns visibility revert) + §38.108 Stage 31b
+(legal consent comprehensive) sonrası kullanıcı talebinin son bacağı:
+mevcut Pulse mail template'leri kompakt unsubscribe link dışında
+ETK m.5/m.7 + GDPR Art.13/Art.28 + İYS Yönetmeliği gerekli compliance
+alanlarını taşımıyordu. Stage 31c send pipeline + 3 mail template'i
+Türk hukuku + GDPR Art.13/Art.28 + RFC 8058 disipline ile zenginleştirir.
+
+**Out of scope** (kullanıcı talimatı + plan): Owner panel "Brand
+Identity" UI'da Restaurant.businessIdNumber/mersisNumber/physicalAddress
+form alanı (Stage 31b §38.108 schema migration ile DB hazır; UI alan
+ekleme ayrı PR scope), İYS API gerçek HTTP entegrasyonu (operatör
+credentials), schema migration (Stage 31b kapanmış).
+
+**6 fix bundle**:
+
+1. **`customer-campaign` footer enrichment** (template + plain-text):
+   ETK m.5 + KVKK §10 + GDPR Art.13(1) + RFC 8058 compliance footer.
+   4 stack row:
+   - **Sender identity**: "Bu mail, **{restaurantName}** tarafından
+     **{senderEmail}** adresi üzerinden Buaze platformu (Buaze Bilişim A.Ş.)
+     aracılığıyla gönderilmiştir." EN paralel + Art.28 processor disclosure
+     ("operating as data processor under GDPR Art. 28").
+   - **Why did I receive this?**: Transparency disclosure (ETK m.5
+     yönlendirme + KVKK Açık Rıza kanıtı).
+   - **Unsubscribe + KVKK + Preferences**: 3 link satırı (Pulse divider'lı):
+     RFC 8058 one-click + Buaze KVKK Aydınlatma Metni + İletişim
+     Tercihleri page'leri.
+   - **İYS Takip ID + Sent on + Buaze attribution**: İYS placeholder
+     ("—" — Stage 31b §38.108 placeholder, operatör credentials gelene
+     kadar) + locale-aware tarih + sent-via-Buaze mono band.
+   Yeni `formatIysIdForFooter` helper'ı (Stage 31b `iys.ts`) reuse;
+   yeni `formatSentAt` saf fonksiyon (locale-aware `toLocaleDateString`).
+   `stripHtml` plain-text fallback (`<strong>` tag'leri text mode'da
+   strip).
+
+2. **`placeholders.ts` `customer-campaign` extend**: 3 yeni placeholder
+   token whitelist'e eklendi (`senderEmail`, `iysId`, `sentAt`). Admin
+   override'da bu token'ları kullanabilir (mevcut `restaurantName`
+   intact). Render fn `vars` object'inde set edilir.
+
+3. **`email-customer-campaign.ts` send pipeline wiring**:
+   - `ensureCommercialPrefix(args.subject, locale)` çağrısı send pipeline'ın
+     başında — TR locale + subject "Reklam:"/"Promosyon:"/"Kampanya:"/
+     "Fırsat:" prefix'i taşımıyorsa otomatik "Reklam: " prepend (Stage 31b
+     §38.108 helper export reuse). EN dokunulmaz.
+   - `prisma.restaurant.findUnique({ select: { notificationEmail: true } })`
+     defansif select (CLAUDE.md §14.1 paterni) → `senderEmail` resolve
+     ('hello@buaze.com' fallback helper içinde).
+   - `sentAt = new Date()` send anı snapshot.
+   - `renderCustomerCampaign({ ..., senderEmail, iysId: null, sentAt },
+     locale)` per-row call (iysId null — Stage 31b placeholder).
+
+4. **`owner-campaign-{approved,rejected}` Buaze attribution**:
+   Internal admin↔owner transactional mail (ETK kapsam dışı), minimal
+   hukuki transparency yeterli. CTA bölümü altına 1 satır mono uppercase
+   Buaze attribution + Privacy Policy link (TR/EN locale-aware).
+   Plain-text fallback de paralel.
+
+5. **`CampaignComposeModal.tsx` preview prefix hint**: TR locale +
+   subject doluysa + prefix yoksa amber inline hint "ETK m.7 gereği
+   'Reklam:' otomatik eklenecek." Owner compose sırasında prefix'i
+   görür → sürpriz olmaz. EN dokunulmaz. Char counter intact, hint sol
+   tarafa hizalı (flex justify-between).
+
+6. **CLAUDE.md §38.109 closure log**: bu section.
+
+**Etkilenen dosyalar (~5 dosya)**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/lib/email/templates/customer-campaign.ts` | Footer rewrite + senderEmail/iysId/sentAt params + formatSentAt + stripHtml |
+| `src/lib/email/placeholders.ts` | customer-campaign 3 yeni token whitelist |
+| `src/lib/email-customer-campaign.ts` | ensureCommercialPrefix call + Restaurant.notificationEmail fetch + render args |
+| `src/lib/email/templates/owner-campaign-approved.ts` | Buaze attribution footer block (HTML + text) |
+| `src/lib/email/templates/owner-campaign-rejected.ts` | Buaze attribution footer block (HTML + text) |
+| `src/app/[locale]/dashboard/campaigns/_components/CampaignComposeModal.tsx` | Subject prefix preview hint |
+| `CLAUDE.md` | §38.109 closure |
+
+**Schema migration**: yok (Stage 31b §38.108'de schema hazır + iysId nullable).
+
+**Yeni dep**: yok.
+
+**Yapma**:
+- Subject prefix EN locale'e uygulamak — ETK Türk hukuku, CAN-SPAM Act
+  header bandı UX gereksiz (Stage 31b §38.108 paterni intact).
+- `ensureCommercialPrefix` çağrısını render fn içine taşımak — render
+  fn yalnızca template render concern'ü; subject mutate'i pipeline'da
+  (single source of truth).
+- `iysId: null` durumunda footer gizlemek — `formatIysIdForFooter` `—`
+  döner (zaten bilgilendirici); ETK transparency için satır görünür
+  kalmalı.
+- owner-campaign templates için ETK m.5 sender identity disclosure
+  eklemek — internal admin↔owner mail, ticari ileti değil; Buaze
+  attribution yeterli.
+- Compose modal hint'i her locale'de göstermek — TR'ye özel; EN owner'da
+  alakasız.
+- `restaurant.notificationEmail` query'sini render fn içine taşımak —
+  per-recipient × N query (mass-send fan-out cost). Send pipeline
+  başında 1 kez fetch.
+- Plain-text mail içinde `<strong>` tag'lerini render etmek — `stripHtml`
+  tag'leri kaldırır (text mode'a uygun semantik).
+
+**Yap**:
+- Yeni mail template'inde compliance footer gerekirse customer-campaign
+  4-row pattern reuse (sender + neden + unsubscribe + IYS/sent-at).
+- Yeni placeholder eklenirken `MAIL_PLACEHOLDERS` whitelist + render
+  fn vars + admin editor `FIELDS_BY_TEMPLATE` 3 nokta drift disipline
+  (CLAUDE.md §21.26 paterni).
+- İYS API gerçek entegrasyon zamanı geldiğinde `iys.ts:reportToIys` 
+  içini doldur (CLAUDE.md §38.108); send pipeline `iysId: null`
+  parametresi `iysId: result.iysId` ile değiştirilir; template footer
+  otomatik gerçek UUID render eder.
+- `ensureCommercialPrefix` paterni başka mass-send akışında (örn.
+  newsletter) gerekirse helper reuse — TR locale + commercial intent
+  her ikisinde de önkoşul.
+- Compose modal ek hint'ler (örn. spam guard "tüm capsleri kaldır")
+  eklenirse aynı flex justify-between paterni reuse (sol info + sağ
+  counter).
+
+**Verification**:
+- `npm run lint` 0 errors / 0 warnings
+- `npx tsc --noEmit` 0 errors in `src/`
+- `npm test` 274/274 pass intact (template render integration test
+  scope dışı — mevcut helper coverage yeterli)
+- `npx next build` ✓ Compiled + 58/58 static
+- Sanity grep: `formatIysIdForFooter` import (1) + `ensureCommercialPrefix`
+  call (1) + customer-campaign footer Buaze + privacy + iys block
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. `/admin/dev/mail-preview?template=customer-campaign&locale=tr` →
+   footer 4 satır görünür (Gönderici / Neden / Unsubscribe+linkler /
+   IYS+tarih+Buaze).
+2. `?locale=en` → "data processor under GDPR Art. 28" disclosure
+   görünür.
+3. `?template=owner-campaign-approved&locale=tr` → CTA altında
+   "Bu mail Buaze platformu... gönderilmiştir." + Privacy link.
+4. Owner panel `/dashboard/campaigns` → Compose Modal → subject "Yeni
+   menü" yaz → amber hint "ETK m.7 gereği 'Reklam:' otomatik eklenecek."
+   görünür. Subject "Reklam: Yeni menü" yaz → hint kaybolur.
+5. Owner submit → admin approve → mail teslim → recipient inbox
+   subject: "Reklam: Yeni menü" (auto-prepend); footer'da gerçek
+   sender email + İYS Takip ID `—` + send tarihi.
+
+#### Stage 31c closure (Tarih 2026-05-07)
+
+- Branch: `claude/mail-compliance-enrichment-stage31c` (fresh main
+  üstüne, Stage 31b §38.108 merged)
+- Edit'lenen dosyalar: 6 (3 mail template + placeholders + send pipeline +
+  compose modal)
+- Yeni dosya: yok (Stage 31b helper'ları reuse)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 274 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Manuel:
+  dev preview ile 2 locale × 3 template smoke test (yukarıda 5-step
+  checklist).
+- Kalan riskler: İYS Takip ID null (Stage 31b §38.108 placeholder).
+  Operatör İYS portal kaydı + IYS_BRAND_CODE/IYS_API_KEY/IYS_API_SECRET
+  env'leri set ettiğinde `iys.ts:reportToIys` placeholder genişletilir;
+  send pipeline param güncellenir (`iysId: result.iysId`); template
+  footer otomatik gerçek UUID render eder. Restaurant.businessIdNumber
+  / mersisNumber / physicalAddress alanlarını admin/owner UI üzerinden
+  doldurma da bu PR'da yapılmadı (Stage 31b §38.108 dokümante).
+- **Sonraki aşama önerisi**: §38.B master backlog kalemleri operatör
+  tetiği bekliyor — HIGH 4 Platforms 12-card grid (DEFER §38.30 product
+  decision), Stage 9 UserSession re-introduce (operatör tetiği §38.84/
+  §38.89), RECAPTCHA_ENFORCE flip (1-2 hafta soak §38.79 #2), İYS API
+  gerçek entegrasyon (operatör credentials), Brand Identity UI alan
+  ekleme (admin /admin/restaurants/[id] feature-access form'una
+  businessIdNumber + mersisNumber + physicalAddress input'ları).
