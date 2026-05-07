@@ -442,29 +442,39 @@ export async function GET(req: NextRequest) {
       : 0;
     const avgRatingDelta = prevWeekAvgRating > 0 ? avgRating - prevWeekAvgRating : null;
 
-    return NextResponse.json({
-      totalCount,
-      todayCount,
-      avgRating,
-      lowRatingCount,
-      googleRedirectsCount,
-      distribution,
-      trends, // Detailed trend (count + rating)
-      dayDistribution, // Distribution by day of week
-      wordCloud,
-      aspects, // Food / Service / Atmosphere breakdown
-      googleConversion, // Google review conversion funnel + per-restaurant breakdown
-      platformDistribution, // Platform-based review counts
-      // §38.53 — KPI strip metric'leri
-      kpiStrip: {
-        thisWeekCount,
-        thisWeekDelta, // % change vs prev week
-        avgRatingDelta, // float diff vs prev week (null = no prev data)
-        avgResponseTimeMs, // null = no replies in 90d
-        replyRatePct, // 0-100
-        repliedCount, // for "X / Y replied" subtitle
+    return NextResponse.json(
+      {
+        totalCount,
+        todayCount,
+        avgRating,
+        lowRatingCount,
+        googleRedirectsCount,
+        distribution,
+        trends, // Detailed trend (count + rating)
+        dayDistribution, // Distribution by day of week
+        wordCloud,
+        aspects, // Food / Service / Atmosphere breakdown
+        googleConversion, // Google review conversion funnel + per-restaurant breakdown
+        platformDistribution, // Platform-based review counts
+        // §38.53 — KPI strip metric'leri
+        kpiStrip: {
+          thisWeekCount,
+          thisWeekDelta, // % change vs prev week
+          avgRatingDelta, // float diff vs prev week (null = no prev data)
+          avgResponseTimeMs, // null = no replies in 90d
+          replyRatePct, // 0-100
+          repliedCount, // for "X / Y replied" subtitle
+        },
       },
-    });
+      {
+        headers: {
+          // Edge cache (CLAUDE.md §38.100 Stage 24). KPI strip aggregate
+          // payload; 30s fresh + 2min SWR dashboard refresh hit ratio'sunu
+          // ~%60-70'e çıkarır. `private` directive cookie-isolated cache.
+          'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120',
+        },
+      },
+    );
   } catch (error) {
     console.error('Failed to fetch stats:', error);
     return NextResponse.json({ error: 'İstatistikler çekilemedi' }, { status: 500 });

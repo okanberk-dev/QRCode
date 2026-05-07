@@ -34,13 +34,25 @@ export async function GET(req: NextRequest) {
       weeklyReport: true,
     },
   });
-  if (!row) return NextResponse.json(DEFAULT_PREFS);
+  // Edge cache (CLAUDE.md §38.100 Stage 24). NotificationBell client-side
+  // 60s polling ile birleşir; `private` directive Vercel CDN'de user-isolated.
+  const CACHE_HEADER = 'private, s-maxage=15, stale-while-revalidate=60';
+  if (!row) {
+    return NextResponse.json(DEFAULT_PREFS, {
+      headers: { 'Cache-Control': CACHE_HEADER },
+    });
+  }
 
-  return NextResponse.json({
-    lowRatingEmail: row.lowRatingEmail,
-    dailyDigestEmail: row.dailyDigestEmail,
-    weeklyReport: row.weeklyReport,
-  });
+  return NextResponse.json(
+    {
+      lowRatingEmail: row.lowRatingEmail,
+      dailyDigestEmail: row.dailyDigestEmail,
+      weeklyReport: row.weeklyReport,
+    },
+    {
+      headers: { 'Cache-Control': CACHE_HEADER },
+    },
+  );
 }
 
 export async function PUT(req: NextRequest) {

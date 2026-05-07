@@ -87,28 +87,38 @@ export async function GET(req: NextRequest) {
       ? { brand: subscription.paymentBrand, last4: subscription.paymentLast4 }
       : null;
 
-  return NextResponse.json({
-    plan,
-    planLabel,
-    status: subscription?.status ?? 'active',
-    trialDaysLeft: isTrial ? trialDaysLeft(trialEnd) : null,
-    renewsAt: renewsAt ? renewsAt.toISOString() : null,
-    quota: { used, limit },
-    aiReplies: { used: aiRepliesUsed, limit: aiRepliesQuota },
-    paymentMethod,
-    // Pricing snapshot — Faz 2 owner-readonly billing card. Null when admin
-    // hasn't seeded values yet; UI falls back to plan-derived label.
-    amount: subscription?.amount ? Number(subscription.amount) : null,
-    currency: subscription?.currency ?? 'TRY',
-    billingCycle: subscription?.billingCycle ?? null,
-    // Billing address — never surface adminNotes (admin-only).
-    billingAddress: subscription
-      ? {
-          companyName: subscription.companyName,
-          taxNumber: subscription.taxNumber,
-          address: subscription.billingAddress,
-          city: subscription.billingCity,
-        }
-      : null,
-  });
+  return NextResponse.json(
+    {
+      plan,
+      planLabel,
+      status: subscription?.status ?? 'active',
+      trialDaysLeft: isTrial ? trialDaysLeft(trialEnd) : null,
+      renewsAt: renewsAt ? renewsAt.toISOString() : null,
+      quota: { used, limit },
+      aiReplies: { used: aiRepliesUsed, limit: aiRepliesQuota },
+      paymentMethod,
+      // Pricing snapshot — Faz 2 owner-readonly billing card. Null when admin
+      // hasn't seeded values yet; UI falls back to plan-derived label.
+      amount: subscription?.amount ? Number(subscription.amount) : null,
+      currency: subscription?.currency ?? 'TRY',
+      billingCycle: subscription?.billingCycle ?? null,
+      // Billing address — never surface adminNotes (admin-only).
+      billingAddress: subscription
+        ? {
+            companyName: subscription.companyName,
+            taxNumber: subscription.taxNumber,
+            address: subscription.billingAddress,
+            city: subscription.billingCity,
+          }
+        : null,
+    },
+    {
+      headers: {
+        // Edge cache (CLAUDE.md §38.100 Stage 24). Plan + usage data —
+        // mutation frequency çok düşük (admin Iyzico flow'u Wave 3.5);
+        // 60s fresh + 5min SWR billing widget refresh için yeterli.
+        'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
+      },
+    },
+  );
 }
