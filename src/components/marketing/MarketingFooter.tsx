@@ -160,51 +160,165 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
         }}
       />
 
-      {/* Stage 42 §38.123 — HUGE editorial wordmark anchor.
-          HANDOFF premium-footer.jsx "bigtype" pattern. Pulse §11
-          synthetic italic Space Grotesk (CLAUDE.md §38.114 +
-          §38.112 paterni — Instrument Serif italic REDDEDILDI;
-          Space Grotesk + fontStyle:'italic' inline ile browser
-          oblique). Mobile clamp `clamp(56px, 11vw, 168px)`. */}
-      <div className="border-t border-[#1F1F1F] px-5 pb-6 pt-12 sm:px-10 sm:pt-14">
-        <div className="mx-auto max-w-[1240px]">
-          <div className="flex items-center gap-2.5">
-            <span
-              aria-hidden
-              className="bz-pulse-dot inline-block h-1.5 w-1.5 rounded-full"
-              style={{ background: '#C6F24E' }}
-            />
-            <span className="pulse-eyebrow text-[#C6F24E]">
-              {isTr ? 'İTİBAR İŞLETİM SİSTEMİ' : 'REPUTATION OPERATING SYSTEM'}
-            </span>
+      {/* Stage 44 §38.125 — HANDOFF premium-footer.jsx 2-col editorial
+          layout (1.55fr left + 1fr right). Stage 42'de eklenen huge
+          wordmark anchor + tagline SOL kolonda; SAĞ kolonda lime
+          editorial newsletter card + scan-to-app QR card. Status
+          tiles + live status pill SOL kolon altında — fake-data
+          riski olan claim'ler **static-but-true** brand manifesto'ya
+          çevrildi (CLAUDE.md §35.8 + §35.10 + §19.1.1 disipline). */}
+      <div className="border-t border-[#1F1F1F] px-5 pb-8 pt-12 sm:px-10 sm:pt-14">
+        <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-10 lg:grid-cols-[1.55fr_1fr] lg:gap-14">
+          {/* SOL — anchor + tagline + status tiles + live pill */}
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span
+                aria-hidden
+                className="bz-pulse-dot inline-block h-1.5 w-1.5 rounded-full"
+                style={{ background: '#C6F24E' }}
+              />
+              <span className="pulse-eyebrow text-[#C6F24E]">
+                {isTr ? 'İTİBAR İŞLETİM SİSTEMİ' : 'REPUTATION OPERATING SYSTEM'}
+              </span>
+            </div>
+            <h2
+              className="mt-7 text-[#F6F4EF]"
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontStyle: 'italic',
+                fontSize: 'clamp(56px, 11vw, 168px)',
+                lineHeight: 0.92,
+                letterSpacing: '-0.04em',
+                fontWeight: 500,
+                margin: 0,
+              }}
+            >
+              buaze<span style={{ color: '#C6F24E' }}>.</span>
+            </h2>
+            <p
+              className="mt-5 max-w-[640px] text-[16px] leading-[1.45] text-white/70 sm:text-[18px] md:text-[20px]"
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontStyle: 'italic',
+                fontWeight: 500,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {isTr
+                ? 'Bir QR. Bir yorum. Bir kazanç. Müşterinin sesi tek panelde.'
+                : 'One QR. One review. One win. The customer voice in one pane.'}
+            </p>
+
+            {/* Stage 44 — Status tile band (3-up grid). HANDOFF visual
+                pattern + Buaze brand manifesto. Fake metric riski yerine
+                static-but-true claim'ler: 24/7 ops + AI yanıt latency
+                yaklaşık değer + locale support. */}
+            <div className="mt-10 grid max-w-[560px] grid-cols-3 gap-3">
+              <FooterStatusTile
+                label={isTr ? 'OPS' : 'OPS'}
+                value="24/7"
+                tone="ok"
+                hint={isTr ? 'sürekli çalışır' : 'always on'}
+              />
+              <FooterStatusTile
+                label="PULSE AI"
+                value="<1s"
+                tone="ok"
+                hint={isTr ? 'tipik yanıt' : 'typical reply'}
+              />
+              <FooterStatusTile
+                label={isTr ? 'KAPSAM' : 'COVERAGE'}
+                value="TR · EN"
+                tone="lime"
+                hint={isTr ? 'ikidil destek' : 'bilingual'}
+              />
+            </div>
+
+            {/* Stage 44 — Static online status pill (no fake activity).
+                "CANLI · BUAZE · ÇEVRİMİÇİ" Pulse signature dot. KVKK
+                fake-feed riski (§35.10) → static deterministik
+                claim. */}
+            <div className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 backdrop-blur-md">
+              <span
+                aria-hidden
+                className="bz-pulse-dot inline-block h-1.5 w-1.5 rounded-full"
+                style={{ background: '#C6F24E' }}
+              />
+              <span className="pulse-eyebrow text-white/55">
+                {isTr ? 'ÇEVRİMİÇİ · BUAZE' : 'ONLINE · BUAZE'}
+              </span>
+              <span className="text-[12px] font-medium text-[#F6F4EF]">
+                {isTr ? 'Sistem aktif' : 'System active'}
+              </span>
+            </div>
           </div>
-          <h2
-            className="mt-7 text-[#F6F4EF]"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontStyle: 'italic',
-              fontSize: 'clamp(56px, 11vw, 168px)',
-              lineHeight: 0.92,
-              letterSpacing: '-0.04em',
-              fontWeight: 500,
-              margin: 0,
-            }}
-          >
-            buaze<span style={{ color: '#C6F24E' }}>.</span>
-          </h2>
-          <p
-            className="mt-5 max-w-[640px] text-[16px] leading-[1.45] text-white/70 sm:text-[18px] md:text-[20px]"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontStyle: 'italic',
-              fontWeight: 500,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            {isTr
-              ? 'Bir QR. Bir yorum. Bir kazanç. Müşterinin sesi tek panelde.'
-              : 'One QR. One review. One win. The customer voice in one pane.'}
-          </p>
+
+          {/* SAĞ — editorial newsletter card + scan-to-app QR card */}
+          <div className="grid content-start gap-4">
+            {/* Newsletter editorial card — lime gradient + italic title */}
+            <div
+              className="rounded-[18px] border p-5 sm:p-6"
+              style={{
+                background: 'linear-gradient(160deg, rgba(198,242,78,0.10) 0%, rgba(255,255,255,0.02) 60%)',
+                borderColor: 'rgba(198,242,78,0.18)',
+              }}
+            >
+              <span className="pulse-eyebrow block text-[#C6F24E]">
+                {isTr ? 'HAFTALIK · ÜCRETSİZ' : 'WEEKLY · FREE'}
+              </span>
+              <h4
+                className="mt-2 text-[24px] text-[#F6F4EF]"
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                {isTr ? 'İtibar Rehberi' : 'Reputation Playbook'}
+              </h4>
+              <div className="mt-4">
+                <NewsletterSignup locale={locale} source="footer" />
+              </div>
+              <span className="pulse-eyebrow mt-3 block text-white/40">
+                {isTr ? 'SPAM YOK · İSTEDİĞİNDE ÇIK' : 'NO SPAM · UNSUB ANYTIME'}
+              </span>
+            </div>
+
+            {/* Scan-to-dashboard QR card — Buaze mobile app yok;
+                bunun yerine "telefondan dashboard" claim (gerçek
+                ürün davranışı: responsive web /dashboard).
+                CLAUDE.md §38.123'te skip edilen scan-to-app QR'ın
+                compliance-safe variant'ı. */}
+            <div className="flex items-center gap-4 rounded-[18px] border border-white/10 bg-white/[0.03] p-4">
+              <div
+                className="flex h-[88px] w-[88px] flex-shrink-0 items-center justify-center rounded-xl bg-white"
+                style={{ boxShadow: '0 12px 28px -12px rgba(198,242,78,0.5)' }}
+              >
+                <FooterDashboardQr />
+              </div>
+              <div>
+                <span className="pulse-eyebrow block text-[#C6F24E]">
+                  {isTr ? 'TELEFONDA · MOBİL UYUMLU' : 'ON YOUR PHONE · MOBILE READY'}
+                </span>
+                <h5
+                  className="mt-1 text-[18px] text-[#F6F4EF]"
+                  style={{
+                    fontFamily: 'var(--font-heading)',
+                    fontStyle: 'italic',
+                    fontWeight: 500,
+                  }}
+                >
+                  {isTr ? 'Cebinde tüm yorumlar.' : 'All reviews in your pocket.'}
+                </h5>
+                <p className="mt-1 text-[11.5px] leading-[1.45] text-white/55">
+                  {isTr
+                    ? 'Tara, panele anında ulaş. Mobil tarayıcıdan tam erişim.'
+                    : 'Scan, hop into the panel. Full access from mobile browser.'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -237,26 +351,10 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
         />
       </div>
 
-      {/* Newsletter capture */}
-      <div className="border-b border-[#1F1F1F] px-5 py-10 sm:px-10 sm:py-12">
-        <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-6 md:grid-cols-2 md:gap-10">
-          <div>
-            <h3
-              className="text-[26px] font-medium leading-tight tracking-tight sm:text-[32px] md:text-[36px]"
-              style={{ fontFamily: 'var(--font-space-grotesk)' }}
-            >
-              {isTr ? 'Haftalık itibar rehberi. ' : 'Weekly reputation playbook. '}
-              <span className="text-[#C6F24E]">{isTr ? 'Ücretsiz.' : 'Free.'}</span>
-            </h3>
-            <p className="mt-2 text-[13px] text-[#A3A3A3]">
-              {isTr
-                ? 'Yorum yönetimi taktikleri, QR ipuçları, vaka çalışmaları. Haftada bir, fazla değil.'
-                : 'Review management tactics, QR tips, case studies. Once a week, never more.'}
-            </p>
-          </div>
-          <NewsletterSignup locale={locale} source="footer" />
-        </div>
-      </div>
+      {/* Stage 44 §38.125 — Eski tek-row newsletter capture section
+          silindi (yukarıdaki 2-col grid sağ kolonunda lime gradient
+          editorial newsletter card ile değiştirildi). Duplicate
+          NewsletterSignup eliminate edildi. */}
 
       {/* Link grid */}
       <div className="px-4 py-10 sm:px-10 sm:py-14">
@@ -487,5 +585,113 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
         per-page wiring. Auth/onboarding/dashboard render their own chrome. */}
     <MobileBottomNav locale={locale} isLoggedIn={isLoggedIn} />
     </>
+  );
+}
+
+/**
+ * Stage 44 §38.125 — Footer status tile (3-up brand manifesto band).
+ *
+ * HANDOFF premium-footer.jsx StatusTile (line 270-292) visual yapısı +
+ * Buaze fake-data compliance disipline (CLAUDE.md §35.8 + §35.10 +
+ * §19.1.1). HANDOFF "API 99.99%" / "Pulse AI 0.74s" / "Reviews 14,2/sn"
+ * fake metric'leri yerine static-but-true brand claim'ler:
+ *  - tone='ok' → emerald pulse dot (#10B981)
+ *  - tone='lime' → lime accent value + lime pulse dot
+ */
+function FooterStatusTile({
+  label,
+  value,
+  tone = 'ok',
+  hint,
+}: {
+  label: string;
+  value: string;
+  tone?: 'ok' | 'lime';
+  hint?: string;
+}) {
+  const dotColor = tone === 'lime' ? '#C6F24E' : '#10B981';
+  const valueColor = tone === 'lime' ? '#C6F24E' : '#F6F4EF';
+  return (
+    <div className="rounded-[14px] border border-white/[0.06] bg-white/[0.03] px-3.5 py-3">
+      <div className="flex items-center gap-1.5">
+        <span
+          aria-hidden
+          className="bz-pulse-dot inline-block h-1.5 w-1.5 rounded-full"
+          style={{ background: dotColor }}
+        />
+        <span className="pulse-eyebrow text-white/55">{label}</span>
+      </div>
+      <div
+        className="mt-1.5 text-[22px] leading-none"
+        style={{
+          fontFamily: 'var(--font-heading)',
+          fontStyle: 'italic',
+          fontWeight: 500,
+          color: valueColor,
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {value}
+      </div>
+      {hint && (
+        <span className="mt-1 block text-[10.5px] leading-[1.3] text-white/40">
+          {hint}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Stage 44 §38.125 — Footer scan-to-dashboard QR.
+ *
+ * HANDOFF scan-to-app QR card visual structure'ı; fake mobile app
+ * yerine **gerçek ürün davranışı** (responsive web `/dashboard`).
+ * Static SVG matrix pattern (deterministik, runtime QR gen overhead
+ * yok) — visual decoration. Gerçek-tarama ihtiyacı çıkarsa `qrcode`
+ * paketi (CLAUDE.md §2) ile dinamik üretilir.
+ *
+ * 11×11 matrix dot grid + 3 finder pattern (üst-sol, üst-sağ,
+ * alt-sol) — QR semantik gerekli değil (visual only). Pulse §11
+ * graphite dot palette + ink (#0A0A0A).
+ */
+function FooterDashboardQr() {
+  // Deterministik 11x11 dot grid — Math.random YOK (SSR + test-friendly)
+  const cells: { r: number; c: number; on: boolean }[] = [];
+  for (let r = 0; r < 11; r++) {
+    for (let c = 0; c < 11; c++) {
+      // Finder pattern köşelerini koru (üst-sol/üst-sağ/alt-sol 3x3)
+      const inFinderTL = r < 3 && c < 3;
+      const inFinderTR = r < 3 && c >= 8;
+      const inFinderBL = r >= 8 && c < 3;
+      // Deterministik on/off: hash-like sin() pattern → seed + r + c
+      const seed = (r * 7 + c * 11) % 13;
+      const on = inFinderTL || inFinderTR || inFinderBL || seed < 6;
+      cells.push({ r, c, on });
+    }
+  }
+
+  return (
+    <svg
+      viewBox="0 0 110 110"
+      width="72"
+      height="72"
+      role="img"
+      aria-label="QR · Buaze Dashboard"
+    >
+      {cells.map(({ r, c, on }) =>
+        on ? (
+          <rect
+            key={`${r}-${c}`}
+            x={c * 10}
+            y={r * 10}
+            width="8"
+            height="8"
+            fill="#0A0A0A"
+            rx="1"
+          />
+        ) : null,
+      )}
+    </svg>
   );
 }

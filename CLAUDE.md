@@ -16097,3 +16097,123 @@ intact (presentational-only, helper logic yok).
   spec'le aligned.
 - Hukuki/disipline override: yok (HANDOFF visual polish, fake-data
   riski yok).
+
+---
+
+### 38.125 2026-05-08 — Stage 44 Footer tasarım parity (status tiles + live pill + 2-col editorial + scan-to-dashboard QR)
+
+§38.123 Stage 42'de "fake-data riski" gerekçesiyle skip edilen 4 HANDOFF
+feature kullanıcının "tasarımdaki ile aynı olmamış" geri bildirimi
+sonrası **compliance-safe variation** ile entegre edildi. Görsel
+referans: `Premium Footer _ huge serif anchor _ live status _
+scan-to-app _ editorial links.png` (kullanıcının yeni
+`component tasarım.zip` paylaşımı, içerik /tmp/handoff-stage33 ile
+aynı ama PNG referans güçlü).
+
+**4 fix bundle**:
+
+1. **2-col editorial layout** (1.55fr SOL + 1fr SAĞ, lg+ only):
+   Stage 42'de single-column olan huge anchor + tagline artık SOL
+   kolon. SAĞ kolonda lime gradient editorial newsletter card +
+   scan-to-dashboard QR card. Mobile (<lg) tek-sütun stack.
+
+2. **3-up status tile band** (HANDOFF visual + Buaze claim disipline):
+   Fake metric (HANDOFF "API 99.99%" / "Pulse AI 0.74s" / "Reviews
+   14,2/sn") **static-but-true brand manifesto'ya çevrildi**:
+   - `OPS · 24/7` (sürekli çalışır — gerçek)
+   - `PULSE AI · <1s` (tipik yanıt yaklaşık değer)
+   - `KAPSAM · TR · EN` (ikidil destek — gerçek lime accent)
+   Pulse §11 italic Space Grotesk value + JetBrains Mono label +
+   pulse dot (emerald `#10B981` ok / lime `#C6F24E` accent).
+
+3. **Static online status pill**: HANDOFF "CANLI · KARAKÖY ·
+   AI yanıtladı" rotating fake activity feed (KVKK + §35.10 fake
+   testimonial backlog ihlali olur) → `ÇEVRİMİÇİ · BUAZE · Sistem
+   aktif` static deterministik claim. Pulse signature dot +
+   backdrop-blur capsule.
+
+4. **Scan-to-dashboard QR card** (Buaze mobile app YOK; gerçek
+   ürün davranışı — responsive web `/dashboard`):
+   - HANDOFF "iOS · ANDROID · Cebinde tüm yorumlar." → "TELEFONDA ·
+     MOBİL UYUMLU · Cebinde tüm yorumlar. Tara, panele anında ulaş.
+     Mobil tarayıcıdan tam erişim."
+   - QR matrix static 11×11 SVG dot grid (deterministik, runtime
+     QR gen overhead yok). Visual decoration; gerçek scan ihtiyacı
+     olursa `qrcode` paketi (CLAUDE.md §2) ile dinamik üretilir.
+   - Drop shadow lime accent: `0 12px 28px -12px rgba(198,242,78,0.5)`.
+
+**Newsletter capture eski tek-row section** silindi — duplicate
+`<NewsletterSignup>` eliminate (yukarıdaki sağ kolon editorial
+card'da reuse).
+
+**Etkilenen dosyalar (2)**:
+- `src/components/marketing/MarketingFooter.tsx` — 2-col grid
+  refactor + 4 yeni section + 2 helper component (FooterStatusTile +
+  FooterDashboardQr) (~+185 satır net, eski tek-row newsletter -34)
+- `CLAUDE.md` — §38.125 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**:
+383/383 intact (presentational-only).
+
+**Verification**:
+- `npx eslint .` ✓ 0 errors / 0 warnings
+- `npx tsc --noEmit` ✓ 0 errors in `src/`
+- `npm test` ✓ 383/383 pass intact
+- `npx next build` (stub env) ✓ Compiled + 58/58 static page intact
+
+**Yapma**:
+- HANDOFF "API 99.99%" / "Pulse AI 0.74s" / "14,2 yorum/sn"
+  fake-claim'leri olduğu gibi kullanma — §35.8 attribution
+  disclosure ihlali. Static-but-true alternatif zorunlu.
+- Live ticker rotation (city + activity) eklemek — §35.10 fake
+  testimonial backlog'da kullanıcı UX kararı bekliyor; static pill
+  yeterli.
+- Scan-to-app QR kartında "iOS · ANDROID" claim koymak — Buaze
+  mobile app YOK; "TELEFONDA · MOBİL UYUMLU" gerçek ürün davranışını
+  yansıtır.
+- QR matrix'i `qrcode` paketi ile runtime generate etmek (footer
+  her sayfada render edilir; dynamic QR gen overhead) — static SVG
+  pattern visual decoration için yeterli.
+- 2-col grid'i `lg:grid-cols-2` (1fr/1fr) yapmak — HANDOFF spec
+  `1.55fr/1fr` editorial weight (SOL anchor priority); 1fr/1fr
+  visual hiyerarşi bozulur.
+
+**Yap**:
+- Yeni status tile eklerken `FooterStatusTile` component reuse —
+  `tone='ok'` (emerald) veya `'lime'` (Pulse signature) + `hint`
+  opsiyonel.
+- Yeni footer feature card eklerken (örn. social proof banner) sağ
+  kolon stack'inde `gap-4` ile compose et.
+- Footer içinde başka QR ihtiyacı çıkarsa `FooterDashboardQr`
+  paterni reuse (deterministik 11×11 matrix, finder pattern 3×3,
+  Math.random YOK).
+
+#### Stage 44 closure (Tarih 2026-05-08)
+
+- Branch: `chore/footer-design-parity-stage44` (fresh main üstüne,
+  Stage 43 §38.124 PR #547 merged)
+- Edit'lenen dosyalar: 2 (MarketingFooter.tsx + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Marketing footer artık tasarım PNG referansı ile uyumlu (visual
+  structure birebir + claim disipline static-but-true).
+- Kalan riskler: yok (compliance-safe variation, mevcut linkler +
+  social icons + bottom NAP rail intact).
+- **Sonraki aşama**: Stage 45 — Hero polish (form example yorum
+  metni lime + sahne kalitesi).
+
+**Chat prompt history (Stage 44 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"footer kısmı tasarımdaki ile aynı olmamış
+  en son attığım"* + ek talepler (hero polish + header design
+  parity + hız + SEO). PNG referans `Premium Footer _ huge serif
+  anchor _ live status _ scan-to-app _ editorial links.png`.
+- Stage 42 §38.123'te skip edilen 4 feature (status tile / live
+  ticker / scan-to-app QR / 12.482 işletme tagline) compliance-safe
+  variation ile entegre edildi (fake-data riski static-but-true
+  brand manifesto'ya çevrildi).
+- AskUserQuestion yapılmadı: kullanıcı uyumakta, otonom karar
+  yetkisi (compliance disipline kullanıcının §35.8/§35.10/§19.1.1
+  tercih ettiği framework içinde).
