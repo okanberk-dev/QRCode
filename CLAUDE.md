@@ -15102,6 +15102,99 @@ renderStars 7 + computeQuotaPct 7).
   partial coverage; çoğu yeni implementation. Stage 39 büyük scope (~600-1000
   satır + animation engine §38.115 reuse).
 
+### 38.119 2026-05-08 — Stage 39 HANDOFF §8 step 6 (Site FX) gap analysis (docs only)
+
+§38.118 Stage 38 Panel kartları sonrası HANDOFF §8 step 6: Site FX
+(12 component paralel). HANDOFF site-library.jsx (327 satır) gap
+analysis sonucu: **9/12 mevcut Buaze marketing surface'inde + 3 yeni
+component callsite gerek**. CLAUDE.md §38.49 disipline: callsite
+olmadan implementation YAGNI; gerçek hero/feature/landing redesign
+PR'ında ihtiyaç doğunca eklenir. Stage 39 docs-only closure.
+
+**Gap analysis tablosu**:
+
+| HANDOFF spec | Buaze mevcut | Karar |
+|---|---|---|
+| `<PulseLine>` (decoratif animated horizontal SVG line + lime accent dot) | YOK | ⏳ Yeni component — section divider veya hero corner; gerçek callsite çıkarsa implement |
+| `<QRScanLoader>` (animated QR placeholder dots, progress prop) | YOK (HANDOFF Stage 36 defer'lendi) | ⏳ Yeni component — onboarding loading state, QR generator preview; ilk callsite implementation |
+| `<StarClimber>` (3.6 → 4.8 sayaç + 90 günlük climb chart) | `useCountUp` (Stage 35 §38.115) + recharts AreaChart paterni | ✅ Mevcut helper'larla compose edilebilir |
+| `<LiveTicker>` (rolling text/avatar feed) | `LiveReviewTicker` (CLAUDE.md §17 marketing) | ✅ Mevcut |
+| `<SentimentDial>` (SVG arc gauge 0-1) | Analytics page Profil Sağlığı 92/100 SVG arc (Stage 19 §38.18) | ✅ Mevcut paterni reuse |
+| `<BigCounter>` (large stat counter) | `AnimatedCounter` (CLAUDE.md §17) | ✅ Mevcut |
+| `<Marquee>` (logo strip / customer list scroll) | `MarqueeRow` (CLAUDE.md §17) | ✅ Mevcut |
+| `<SweepCTA>` (final CTA blok with sweep animation) | Marketing CTA section'larında inline `bg-[#C6F24E]` + animation paterni | ✅ Mevcut (inline pattern; 3+ tekrar olunca extract) |
+| `<ToastRow>` (3-stack social proof notification) | `SocialProofToast` (CLAUDE.md §17 + §38.43) | ✅ Mevcut |
+| `<RevealHeadline>` (manifesto/about text reveal) | Marketing hero animation'ları (`animate-fade-up`/`animate-slide-up`) | ✅ Mevcut Tailwind utility |
+| `<FeatureCard>` (features grid hover) | Marketing feature grid (`hover:shadow-md` + lime accent) | ✅ Mevcut inline pattern (3+ callsite) |
+| `<FloatingMark>` (hero corner brand mark with float animation) | `BuazeLogo` + `bz-float` keyframe (Stage 27 §38.103) | ✅ Mevcut (animation utility class reuse) |
+
+**Sonuç**: HANDOFF §8 step 6 spec %75 mevcut Buaze marketing surface'iyle
+karşılanmış. 3 yeni component (`<PulseLine>` + `<QRScanLoader>` +
+`<RevealHeadline>` advanced variant) callsite olmadan implementation
+YAGNI (CLAUDE.md §38.49 dead utility class disipline). Gerçek hero/
+feature/landing redesign PR'ında (Stage 41 Heroes scope) ihtiyaç
+doğunca eklenir.
+
+**Out of scope**: Schema migration, kod değişikliği, mevcut Buaze
+Marquee/LiveTicker/AnimatedCounter/SocialProofToast/MarketingHero
+component'leri replace etme.
+
+**Etkilenen dosyalar (1)**:
+- `CLAUDE.md` (§38.119 closure log + 12-component gap analysis tablosu)
+
+**Schema migration**: yok. **Yeni dep**: yok. **Code change**: yok.
+**Test count**: 365/365 intact.
+
+**Yapma**:
+- 3 yeni component'i (PulseLine/QRScanLoader/advanced RevealHeadline)
+  callsite olmadan implement etme — CLAUDE.md §38.49 dead utility class
+  disipline; YAGNI prensibi.
+- Mevcut MarqueeRow/LiveReviewTicker/AnimatedCounter/SocialProofToast'i
+  HANDOFF spec'e göre yeniden yazma — Buaze marketing pattern intact
+  (Pulse §11 + §17 + §38.43 disipline).
+- HANDOFF Instrument Serif italic font yükleme — kullanıcı kararı
+  "Asla pivot etme" §38.114 intact.
+
+**Yap**:
+- Stage 41 (Heroes) PR'ında gerçek `<PulseLine>` callsite'ı ortaya
+  çıkarsa HANDOFF site-library.jsx:5-19 spec birebir implement et
+  (animated SVG path + lime accent dot + animation engine §38.115
+  reuse).
+- Onboarding loading state veya QR generator preview yeni callsite
+  olursa `<QRScanLoader>` site-library.jsx:21-53 spec'inden implement
+  edilir.
+- Mevcut hero text reveal advanced variant gerekirse (per-character
+  fade veya word-by-word) `<RevealHeadline>` site-library.jsx:266-286
+  spec referansı kullanılır.
+
+**Verification**:
+- Lint/tsc/test: docs-only PR — verify gerekmez (kod değişimi yok).
+
+#### Stage 39 closure (Tarih 2026-05-08)
+
+- Branch: `chore/handoff-site-fx-stage39` (fresh main üstüne, Stage
+  38 §38.118 PR #541 merged)
+- Edit'lenen dosyalar: 1 (CLAUDE.md — §38.119 gap analysis)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 365/365 intact
+- Operatör aksiyonu (PR sonrası): yok — auto-merge `gh pr merge
+  --auto --squash` (CLAUDE.md §39.1 paterni).
+- Kalan riskler: yok (docs-only PR; 3 yeni component callsite
+  ortaya çıkarsa gelecek PR'da implement edilir).
+- **Sonraki aşama**: Stage 40 — HANDOFF §8 step 7 (Layout chrome —
+  Header, BottomNav, Footer, CookieConsent). Buaze'de mevcut:
+  `<MarketingNavbar>` + `<MarketingNavbarClient>` (Stage 27 §38.103
+  polish), `<MobileBottomNav>` (CLAUDE.md §17 + §38.43 globally
+  mounted), `<MarketingFooter>`, `<CookieConsentBanner>` (Stage 32
+  §38.112 premium editorial). HANDOFF spec'e göre gap: floating
+  pill scroll mode (Header), mega menu (Header), city ticker
+  (Footer), scan-to-app QR (Footer). Bu 4 enhancement Stage 40
+  scope'unda — mevcut chrome'a additive feature olarak entegre
+  edilebilir veya skip (callsite analizi gerek). Stage 40 da
+  docs-only veya küçük code-PR olabilir.
+
 ---
 
 ## §39 — Auto-merge & Chat Prompt Logging Disipline (kanonik)
