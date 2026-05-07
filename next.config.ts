@@ -1,5 +1,14 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import withBundleAnalyzer from "@next/bundle-analyzer";
+
+// Bundle analyzer — manuel monitoring tool. `ANALYZE=true npm run build`
+// `.next/analyze/{client,nodejs,edge}.html` raporları üretir. Default
+// `enabled: false` → ANALYZE env yokken no-op (build davranışı değişmez).
+// CLAUDE.md §38.99 — yeni dep eklerken public bundle delta kontrolü için.
+const withAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 const firebaseAuthProxyTarget =
   process.env.FIREBASE_AUTH_PROXY_TARGET ||
@@ -233,7 +242,11 @@ const nextConfig: NextConfig = {
 // Always wrap with Sentry per the canonical SDK skill — when SENTRY_AUTH_TOKEN
 // is missing the plugin skips source-map upload silently; runtime SDK init is
 // gated separately on SENTRY_DSN inside instrumentation.ts / *.config.ts.
-export default withSentryConfig(nextConfig, {
+//
+// Wrap order (CLAUDE.md §38.99): `withBundleAnalyzer` Sentry'nin **içine**
+// sarılır — Sentry webpack plugin son aşamada çalışmalı (source map upload).
+// Analyzer önce nextConfig'i wrap eder; Sentry de output'u sarar.
+export default withSentryConfig(withAnalyzer(nextConfig), {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,

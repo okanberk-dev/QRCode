@@ -235,7 +235,11 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const [restaurants, total] = await Promise.all([
+    // Server-render read batch — Supabase pgbouncer connection_limit=1 disipline
+    // gereği `Promise.all` yerine `prisma.$transaction([...])` (CLAUDE.md §14.1
+    // + §38.99 Phase B). Tek connection üzerinden sıralı çalışır; pool queue
+    // riski olmadan iki query batch'lenir. Read-only → batch mode.
+    const [restaurants, total] = await prisma.$transaction([
       prisma.restaurant.findMany({
         where,
         orderBy: { createdAt: 'desc' },
