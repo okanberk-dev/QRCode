@@ -14491,3 +14491,234 @@ runtime migration, DB değişikliği yok).
   consumer (panel preference store backend), italic Space Grotesk
   variable font kaynak değişimi (Fontsource veya Google Fonts API
   italic eklemesi sonrası).
+
+**Chat prompt history (Stage 32 — Stage 33 §38.113'te eklendi)**:
+- 2026-05-07 kullanıcı: *"@.../Default Card... HTML ekteki çerez banner
+  html'i aşağıdaki de jsx dosyası buna göre çerez banner'ını böyle
+  tasarlar mısın?"* + 540-satır JSX prototip paste (BZ tokens + Stage
+  + Sprite + CookieCard + CookieModal + CCChip + CCToggle).
+- AskUserQuestion 4 kritik karar netleştirildi: italic font (synthetic
+  italic — Google Fonts kaynak yok) / 4 kategori (personalization
+  eklendi, v2 migration) / direct close (success view yok) / yeni
+  `bz-cookie-card-in` keyframe (480ms cubic-bezier). Hepsi Recommended.
+- Hukuki copy disipline: JSX prototipindeki "Sizi izlemiyoruz" claim'i
+  KVKK accurate "Çerezleri siz yönetirsiniz." ile değiştirildi
+  (analytics consent verildiğinde GA + Yandex aktive olduğu için
+  literal misleading olur).
+- 2026-05-07 follow-up kullanıcı: *"otomatik main merge'e göndermeni
+  istiyorum bu chatteki promptları ve claude md'ye de not almayı
+  unutma lütfen"* → PR #535 `gh pr merge --auto --squash` ile
+  enable + Validate CI yeşil olunca otomatik merge (2026-05-07T22:10:13Z).
+- 2026-05-07 follow-up kullanıcı: *"HANDOFF.md ve ekteki tüm *.jsx
+  dosyalarını oku, sırayla migration sırasını izle, her component
+  için ayrı PR aç"* → Stage 33 docs PR (bu) + Stage 34+ HANDOFF §8
+  migration step zinciri (8 PR).
+
+### 38.113 2026-05-08 — Stage 33 auto-merge & chat prompt logging disipline (docs only)
+
+§38.112 Stage 32 PR #535 merged sonrası kullanıcı 2 follow-up talep
+iletti: (a) PR otomatik main merge + chat prompt history kayıt, (b)
+component_tasarım.zip HANDOFF migration component-PR zinciri. Stage
+33 docs-only PR (a) talebine cevap verir + §39 kanonik disipline
+ekler; Stage 34 onwards (b) HANDOFF migration başlar.
+
+**Out of scope** (kullanıcı talimatı): Schema migration, kod davranış
+değişikliği, HANDOFF JSX kopyalama (Stage 34+ scope).
+
+**3 değişiklik**:
+
+1. **§38.112 closure log'a "Chat prompt history" mini-section** —
+   Stage 32 spesifik bağlam (kullanıcının orijinal talebi verbatim
+   quote + AskUserQuestion karar zinciri + follow-up talepleri).
+   Future session'lar bu history'yi okuyup duplicate iş yapmaktan
+   kaçınır.
+2. **§39 yeni kanonik disipline section** (CLAUDE.md sonuna) —
+   "Auto-merge & Chat Prompt Logging" kuralı dokümante. `gh pr merge
+   --auto --squash` paterni + per-PR closure log chat history
+   zorunluluğu.
+3. **§38.113 closure log** — bu Stage 33 spesifik kapanış.
+
+**Auto-merge işlemi (PR #535 örneği, kanonik pattern)**:
+- `gh pr view <num> --json statusCheckRollup` → CI durumu kontrol
+- `gh pr merge <num> --auto --squash` → CI yeşil olunca auto-merge
+  (`--delete-branch` flag avoid: lokal worktree konflikti yaratır;
+  branch GitHub repo settings "auto-delete after merge" ile silinir)
+- `gh pr view <num> --json state,mergedAt,mergedBy` → merge confirm
+
+PR #535 timeline:
+- 22:08:18 — branch push + PR open
+- 22:08:52 — Validate CI başla
+- 22:09 — `gh pr merge 535 --auto --squash` enable
+- 22:10:13 — Validate CI yeşil → auto-merge tetiklendi → state MERGED
+- Vercel deploy PENDING idi ama branch protection 403 (free GitHub
+  tier), Validate yeşili merge için yeterli oldu
+
+**Etkilenen dosyalar (1)**:
+- `CLAUDE.md` (§38.112 closure'a chat history + §38.113 Stage 33
+  closure log + §39 yeni kanonik disipline section)
+
+**Schema migration**: yok. **Yeni dep**: yok. **Code change**: yok.
+
+**Yapma**:
+- `gh pr merge --auto --squash --delete-branch` lokal worktree
+  konfliktinde branch silinme adımı atılır (auto-merge intact ama
+  lokal cleanup manuel) — `--delete-branch` flag'ini avoid et.
+- Auto-merge'ü branch protection HTTP 403 dönen private repo'da
+  zorlama — free GitHub tier branch protection desteklemiyor;
+  auto-merge yine çalışır (Validate CI yeşil olunca).
+- Chat prompt history'i her küçük PR'a ekleme — major design
+  handoff (HANDOFF.md, JSX prototip paste, 100+ satır kullanıcı
+  paste) durumunda zorunlu; trivial fix PR'ları için skip OK.
+- §39 disipline kuralını docs olmayan PR'larda inline mention
+  etme — kanonik referans, gelecek session'lar `§39` anchor ile
+  bulur.
+
+**Yap**:
+- Yeni major design handoff geldiğinde §38.112 paterni reuse:
+  closure log'a "Chat prompt history" mini-section + verbatim
+  quote + AskUserQuestion karar zinciri + follow-up talepler.
+- Yeni PR auto-merge talep edildiğinde `gh pr merge --auto --squash`
+  reuse + post-merge `gh pr view` ile state confirm.
+- Stage 34+ HANDOFF migration sırasında her component PR'ında §39
+  paterni izle (auto-merge enable + chat history ekle).
+
+**Verification**:
+- Lint/tsc/test: docs-only PR, kod değişimi yok — verify gerekmez.
+- `git status` temiz, sadece CLAUDE.md edit.
+
+#### Stage 33 closure (Tarih 2026-05-08)
+
+- Branch: `chore/auto-merge-disipline-stage33` (fresh main üstüne,
+  Stage 32 §38.112 PR #535 merged)
+- Edit'lenen dosyalar: 1 (CLAUDE.md — §38.112 chat history +
+  §38.113 closure + §39 kanonik disipline)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 274/274 intact (kod değişikliği yok)
+- Operatör aksiyonu (PR sonrası): yok — auto-merge `gh pr merge
+  --auto --squash` ile enable + Validate CI yeşil olunca otomatik
+  merge.
+- Kalan riskler: yok (docs-only PR).
+- **Sonraki aşama**: Stage 34 — HANDOFF §8 step 1 (Tokens & fonts
+  gap analysis). Buaze Pulse design system intact (kullanıcı kararı
+  "Asla pivot etme"), translations.ts intact, cookie banner Stage 32
+  intact. HANDOFF JSX prototip referans only — sadece component
+  davranışları (animation/layout/structure) Buaze'ye entegre edilir.
+
+---
+
+## §39 — Auto-merge & Chat Prompt Logging Disipline (kanonik)
+
+**Stage 33 §38.113'te tanımlandı.** Future session'lar bu §'yi
+referans alır.
+
+### §39.1 Auto-merge pattern (PR sonrası)
+
+Kullanıcı "otomatik main merge'e gönder" benzeri talep iletirse:
+
+1. **Pre-flight check**:
+   ```bash
+   gh pr view <num> --json state,mergeable,mergeStateStatus,statusCheckRollup
+   ```
+   - `mergeable: MERGEABLE` zorunlu
+   - `state: OPEN` zorunlu
+   - `statusCheckRollup` Validate workflow `IN_PROGRESS` veya `SUCCESS`
+     OK; `FAILURE` ise auto-merge **ETKİNLEŞTİRME** (kullanıcıya rapor
+     et)
+
+2. **Enable auto-merge**:
+   ```bash
+   gh pr merge <num> --auto --squash
+   ```
+   - `--auto` → CI yeşil olunca GitHub otomatik squash merge
+   - `--squash` → kanonik (Buaze CLAUDE.md §21.22 squash gotcha
+     mitigation; tek squash commit main history)
+   - `--delete-branch` **avoid** → lokal worktree konflikti yaratır
+     (`fatal: 'main' is already used by worktree at ...`); GitHub repo
+     settings "Automatically delete head branches" zaten branch silme
+     işlemini yapar
+
+3. **Post-merge confirm**:
+   ```bash
+   gh pr view <num> --json state,mergedAt,mergedBy
+   ```
+   - `state: MERGED` ile final doğrulama
+   - `mergedAt` timestamp closure log'a eklenir
+
+4. **Branch protection 403 fallback**: free GitHub tier private repo
+   branch protection desteklemiyor (`gh api repos/.../branches/main/
+   protection` HTTP 403). Auto-merge yine çalışır — Validate CI yeşil
+   yeterli (Vercel deploy PENDING blocking değil).
+
+### §39.2 Chat prompt logging pattern (her major PR closure'da)
+
+Major design handoff (HANDOFF.md, JSX prototip 100+ satır paste,
+ekran görüntüsü + spec) içeren PR'larda CLAUDE.md §38.X closure log'a
+**"Chat prompt history" mini-section** zorunlu:
+
+```markdown
+**Chat prompt history (Stage X)**:
+- YYYY-MM-DD kullanıcı: *"<verbatim quote, max 200 char>"* + bağlam
+  (paste boyutu, ekran görüntüsü sayısı, vb.)
+- AskUserQuestion N kritik karar netleştirildi: <karar başlık 1>
+  / <karar başlık 2> / ... — hepsi Recommended (veya alternatif).
+- Hukuki / disipline override: <varsa, örn. JSX'teki claim KVKK
+  accurate copy ile değiştirildi>.
+- YYYY-MM-DD follow-up kullanıcı: *"<verbatim follow-up>"* → next
+  Stage scope.
+```
+
+**Verbatim quote zorunluluğu**: kullanıcı talebini "memurca" yumuşatma;
+orijinal ifadeleri (yazım hatası dahil) koru. Future session bağlamı
+kaybetmez.
+
+**AskUserQuestion karar zinciri**: 2-4 kritik kararın başlıkları +
+seçilen seçenek (Recommended/alternative). Detaylı option text'leri
+ana §38.X log içinde dokümante; history özet.
+
+**Hukuki/disipline override flag**: JSX prototip / HANDOFF
+spec'inden Buaze disipline'i sebebiyle sapma varsa (örn. Stage 32
+"izlemiyoruz" claim'i KVKK-accurate copy ile değiştirildi) explicit
+not.
+
+**Follow-up zincir**: aynı session'da kullanıcının ardışık talepleri
+varsa hepsi history'de listelenir — Stage 32 → Stage 33 (auto-merge
+talebi) → Stage 34+ (HANDOFF migration talebi) gibi.
+
+### §39.3 Disipline rationale
+
+- **Future session bağlam koruması**: kullanıcının orijinal niyeti
+  (verbatim) bilinmeden HANDOFF'tan tekrar gelen aynı dosya scope
+  drift yaratır (CLAUDE.md §38.39 + §38.69 paterni paralel —
+  3-paralel agent + manuel verify yeterli değil; kullanıcı niyeti
+  authoritative).
+- **Disipline override audit trail**: Buaze disipline'i (Pulse §11
+  tipografi, §10 translations.ts, §13.5 KVKK) JSX prototip ile
+  çakıştığında karar gerekçesi closure log'da belge altına alınır.
+  Future session aynı çakışmayı tekrar yaşadığında redundant karar
+  zinciri tetiklenmez.
+- **Auto-merge audit trail**: PR merge timestamp + Validate CI
+  status + branch protection state closure log'da → future debug
+  (örn. "Stage 32 ne zaman main'e geçti, hangi commit'le, kim
+  merge etti") tek lookup.
+
+### §39.4 Yapma / Yap
+
+**Yapma**:
+- Major design handoff PR'ında "Chat prompt history" eklemeden
+  closure log atma — future session bağlam kaybeder.
+- Auto-merge'i `--delete-branch` ile çalıştırma — lokal worktree
+  konflikti.
+- Branch protection HTTP 403 görünce panik yapma — free tier
+  feature, auto-merge yine çalışır.
+- Verbatim kullanıcı quote'unu "düzeltme" — yazım hatası, Türkçe
+  yazım, kısaltmalar olduğu gibi korunur.
+
+**Yap**:
+- Yeni HANDOFF.md veya JSX paste 100+ satır geldiğinde §39.2
+  paterni reuse.
+- Yeni PR otomatik merge talebi geldiğinde §39.1 paterni reuse.
+- §39 disipline kuralını gerekirse genişlet (yeni handoff türleri,
+  yeni auto-merge edge case'leri) — Stage X §38.Y closure log'da
+  notla.
