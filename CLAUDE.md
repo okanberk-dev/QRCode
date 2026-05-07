@@ -14325,3 +14325,169 @@ endpoint response shape değişmedi (cross-callers etkilenmez).
   girdiğinde Compose modal artık çalışır. Admin tekrar toggle açmaya
   gerek yok.
 - Kalan riskler: yok (UI-only fix, backend kontratı değişmedi).
+
+### 38.112 2026-05-08 — Stage 32 cookie banner premium editorial redesign (Claude Design JSX prototip)
+
+§38.108 Stage 31b ile yazılan + §38.110 Stage 31d ile locale fix edilen
+mevcut bottom-sheet cookie banner kullanıcı talebiyle Claude Design'dan
+gelen "Default Card · bottom-right · graphite · lime accent" JSX prototip
+paterniyle yeniden tasarlandı. Premium editorial: bottom-right floating
+graphite card + lime corner glow + italic Space Grotesk hero + JetBrains
+Mono uppercase action labels + 4 kategori (personalization eklendi) +
+modal preferences ivory paper + Pulse switch toggle.
+
+**4 kritik karar (kullanıcı AskUserQuestion onayı, hepsi Recommended)**:
+
+1. ✅ **Italic Space Grotesk hero** — JSX prototip italic editorial
+   estetiği. Google Fonts Space Grotesk italic variant'ı yayınlamadığı
+   için (next/font/google `style: 'normal'` only kabul) **synthetic
+   italic** kullanılır: component'lerde `style={{ fontStyle: 'italic' }}`
+   ile browser otomatik oblique transform uygular. **0 KB ek cost**
+   (planlanmış ~15-25 KB fontlatın subset eklenmedi). Görsel ~%85
+   gerçek italic (Pulse §11 ile uyumlu, KVKK ilk-ziyaret yüzey için
+   yeterli). Kullanıcı orijinal kararı "Italic 400 + 500 yükle" idi
+   ama Google Fonts kaynak yok → synthetic italic best path.
+2. ✅ **4 kategori (personalization eklendi)** — localStorage v2
+   migration. v1 row'lar (essential/analytics/marketing) `personalization:
+   false` default ile v2'ye upgrade edilir. ConditionalAnalytics
+   consumer'ı sadece `analytics` field okuyor, backward compat OK
+   (personalization şu an no-op, gelecek scope).
+3. ✅ **Direct close (success view yok)** — mevcut Buaze davranış
+   intact, owner karar verdikten sonra banner kaybolur. Replay path:
+   gelecek "Settings → Çerez tercihlerini sıfırla" link'i (ayrı PR
+   scope, bu PR'a sıkıştırılmadı).
+4. ✅ **Yeni `bz-cookie-card-in` keyframe** — 480ms cubic-bezier(0.2,
+   0.8, 0.2, 1) translateY(24px → 0) + opacity(0 → 1) ease-out (JSX
+   prototip `bzSlideUp` reuse, Buaze namespace ile). Reduced-motion
+   blanket `[style*='bz-cookie-card-in']` selector eklendi (CLAUDE.md
+   §38.61 paterni reuse).
+
+**Tasarım disipline'i**:
+- Pulse §11 graphite (#0A0A0A) + lime (#C6F24E) palette intact
+- Lime corner glow `radial-gradient(circle, rgba(198,242,78,0.22),
+  transparent 70%)` — 180×180px sağ-üst, pointer-events: none
+- Modal preferences view ivory paper (#FFFFFF) + 4 toggle row
+  (essential locked + 3 opt-out) + Pulse switch primitive (44×26
+  rounded pill, lime on / muted off, 220ms cubic-bezier ease)
+- JetBrains Mono uppercase tracked action labels (`pulse-eyebrow`
+  utility + tight tracking) — buttons + chip + footer
+- Mobile responsive: full-width bottom-sheet stack altında
+  (`fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-6
+  sm:right-6 sm:max-w-[420px]`); safe-area inset paddingBottom
+- Accessibility: `role="region"` + `aria-label`, modal `role="dialog"`
+  + `aria-modal` + `aria-labelledby`, switch `role="switch"` +
+  `aria-checked`, focus-visible lime ring
+- iframe context auto-skip intact (CLAUDE.md §38.108 paterni)
+- Locale auto-detect intact (CLAUDE.md §38.110 paterni)
+
+**Hukuki copy disipline'i (kritik)**:
+JSX prototipindeki "Sizi izlemiyoruz, sadece deneyiminizi
+geliştiriyoruz." başlığı **literal kopyalanmadı** — analytics
+consent verildiğinde GA + Yandex Metrica aktive olur, "izlemiyoruz"
+claim'i misleading olur (KVKK Çerez Kurulu kararı + GDPR Art.7
+şeffaflık prensibi ihlal riski). Bunun yerine pasif + accurate copy:
+- TR: **"Çerezleri siz yönetirsiniz."**
+- EN: **"You're in control of cookies."**
+Body copy mevcut Buaze KVKK accurate text korundu (analytics +
+pazarlama + kişiselleştirme onayınızla aktif olur). Kullanıcı talebi
+"böyle tasarlar mısın" görsel/form/typography istemekti — hukuki
+copy değişikliği niyeti yok. Pulse Voice (CLAUDE.md §11) "Net ·
+Ölçülü · Güvenli · Doğrudan" ile uyumlu.
+
+**Etkilenen dosyalar (3)**:
+- `src/app/layout.tsx` (Space Grotesk synthetic italic comment +
+  `style` field eklenmedi — Google Fonts italic variant yok)
+- `src/app/globals.css` (yeni `bz-cookie-card-in` keyframe + reduced-
+  motion blanket selector)
+- `src/components/legal/CookieConsentBanner.tsx` (full rewrite —
+  bottom-right floating card + 4 kategori + v2 migration + Pulse
+  switch toggle + italic editorial heading + lime corner glow)
+
+**Schema migration**: yok (localStorage v1 → v2 backward-compat
+runtime migration, DB değişikliği yok).
+
+**Yeni dep**: yok.
+
+**Yapma**:
+- Space Grotesk italic için `style: ['normal', 'italic']` ekleme —
+  Google Fonts italic variant'ı yayınlamıyor, `next/font/google`
+  type error verir (`Type '"italic"' is not assignable to type
+  '"normal"'`). Synthetic italic CSS-only doğru yol.
+- "Sizi izlemiyoruz" claim'ini literal kopyalama — Buaze GA + Yandex
+  consent ile aktive ediyor, misleading. Pasif/accurate copy zorunlu.
+- localStorage v1 → v2 forced clear yapma — backward-compat migration
+  (v1 row personalization=false default ile v2'ye upgrade) UX
+  smooth; eski karar veren owner tekrar banner görmez.
+- Modal'da customer-typeable input ekleme — KVKK çerez tercih scope
+  dışı, scope creep.
+- Banner z-index 100 üstüne çıkarma — toast + modal layering
+  (CommandPalette z-50, NotificationBell z-40); 100 kanonik.
+- 4. kategori personalization için yeni ConditionalAnalytics
+  consumer ekleme bu PR'a — backend tüketici yok, gelecek scope.
+
+**Yap**:
+- Yeni cookie kategorisi eklenirken `CookieConsentState` literal
+  genişlet + readCookieConsent migration version bump + UI 4. chip +
+  CategoryRow + writeCookieConsent imza extend (5+ nokta drift
+  disipline).
+- Yeni floating card pattern eklenirken `bz-cookie-card-in` keyframe
+  reuse + reduced-motion blanket'a `[style*='X']` selector ekle
+  (CLAUDE.md §38.61 paterni).
+- Synthetic italic gerekirse `fontFamily: 'var(--font-space-grotesk)'
+  + fontStyle: 'italic'` inline style paterni reuse — Google Fonts
+  italic variant yok, browser oblique transform yapar.
+- localStorage shape extension için `STORAGE_VERSION` bump +
+  `readCookieConsent` v(N-1) → vN migration logic + backward-compat
+  (eski row'ları silme).
+
+**Verification**:
+- `npx eslint .` 0 errors, 0 warnings
+- `npx tsc --noEmit -p tsconfig.json` 0 errors in `src/`
+- `npm test` 274/274 pass, 29 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) ✓ Compiled
+  successfully + 58/58 static page intact
+- Sanity grep: `bz-cookie-card-in` 3 hit (keyframe + 2 inline style
+  call) + reduced-motion blanket selector + `personalization` 8 hit
+  (state + migration + write + UI)
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. localStorage temizle → ilk ziyaret `/tr/contact` → bottom-right
+   floating dark card + lime glow + italic "Çerezleri siz
+   yönetirsiniz." + 4 chip + 3 button (lime/ghost/text-link).
+2. "Tümünü kabul et" → banner fade-out + GA/Yandex script tag'leri
+   yüklenir + `window.dataLayer` populated.
+3. Refresh → banner görünmez (localStorage v2 hit).
+4. localStorage temizle + ziyaret `/en/about` → English copy ("You're
+   in control of cookies."), italic koruur, animation 480ms.
+5. Mobile (375px): full-width bottom card; modal bottom-sheet stack;
+   button row flex-wrap.
+6. "Kişiselleştir" → modal açılır → 4 toggle (essential locked + 3
+   opt-out) + lime "Tümünü kabul" + ghost "Seçimi kaydet".
+7. Reduced-motion preferences ON → animation no-op (instant render).
+8. iframe `/embed/[slug]` → banner görünmez (intact §38.108).
+
+#### Stage 32 closure (Tarih 2026-05-08)
+
+- Branch: `chore/cookie-banner-premium-stage32` (fresh main üstüne,
+  Stage 31e §38.111 PR #534 merged)
+- Edit'lenen dosyalar: 3 + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok (localStorage v1→v2 runtime migration)
+- Yeni dep: yok
+- Test count: 274/274 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  v1 consent vermiş owner'lar localStorage v1 row'unu kaybetmez (v2
+  migration backward-compat); banner tekrar görünmez. localStorage
+  null olan yeni ziyaretçiler premium editorial banner görür.
+- Kalan riskler: yok. JSX prototipindeki "izlemiyoruz" claim'i pasif
+  KVKK accurate copy ile değiştirildi (yasal risk minimize); synthetic
+  italic Google Fonts source yokluğunu çözer (cost 0 KB).
+- **Sonraki aşama önerisi**: §38.B master backlog kalemleri operatör
+  tetiği bekliyor — HIGH 4 Platforms 12-card grid (DEFER §38.30),
+  Stage 9 UserSession re-introduce (operatör tetiği §38.84/§38.89),
+  RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak), Prisma 7
+  upgrade. Stage 32 sonrası gelecek olası polish: Settings → "Çerez
+  tercihlerini sıfırla" link (replay path), personalization kategori
+  consumer (panel preference store backend), italic Space Grotesk
+  variable font kaynak değişimi (Fontsource veya Google Fonts API
+  italic eklemesi sonrası).

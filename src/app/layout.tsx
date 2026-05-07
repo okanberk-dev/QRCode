@@ -19,6 +19,15 @@ const YM_ID = 108768887;
 // `solutions/restaurants/page.tsx:256` SVG illustration metni — Pulse §11
 // paterniyle uyumlu olarak weight 500'e çekildi (`bz-h-tight` zaten 500).
 // Latin subset 1 weight ≈ ~15 KB woff2 cold load tasarruf.
+//
+// Stage 32 §38.112 — Premium editorial cookie consent banner hero başlığı
+// (`/components/legal/CookieConsentBanner.tsx`) italic Space Grotesk
+// kullanır (JSX prototip bottom-right floating card paterni). Google Fonts
+// Space Grotesk italic variant'ı yayınlamadığı için (next/font/google
+// type'ı `style: 'normal'` only kabul eder) **synthetic italic** kullanılır:
+// component'lerde `style={{ fontStyle: 'italic' }}` ile browser otomatik
+// oblique transform uygular. 0 KB ek cost, görsel ~%85 gerçek italic
+// (Pulse §11 ile uyumlu, KVKK ilk-ziyaret yüzey için yeterli).
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['400', '500', '700'],

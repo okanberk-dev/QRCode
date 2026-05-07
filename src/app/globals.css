@@ -533,6 +533,18 @@ body {
   100% { transform: translateY(0); background-color: rgba(198, 242, 78, 0); }
 }
 
+/* Stage 32 §38.112 — Premium editorial cookie consent banner.
+ * Bottom-right floating card 480ms cubic-bezier(0.2,0.8,0.2,1) translateY
+ * + opacity ease-out (JSX prototip `bzSlideUp` reuse, Buaze namespace ile).
+ * Inline `style={{ animation: 'bz-cookie-card-in ...' }}`; reduced-motion
+ * blanket [style*='bz-cookie-card-in'] selector ile yakalar (CLAUDE.md
+ * §38.61 paterni reuse).
+ */
+@keyframes bz-cookie-card-in {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .pulse-heartbeat,
@@ -557,6 +569,7 @@ body {
   [style*='buaze-splash-fill'],
   [style*='bzProgress'],
   [style*='activity-row-in'],
+  [style*='bz-cookie-card-in'],
   .animate-\[bzProgress_2\.2s_linear_forwards\] {
     animation: none !important;
   }
