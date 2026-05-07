@@ -97,7 +97,7 @@ export default function TrialBanner({
         type="button"
         onClick={dismiss}
         aria-label={isTr ? 'Banner\'ı kapat' : 'Dismiss banner'}
-        className="shrink-0 rounded-md p-1 transition-colors hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+        className="bz-btn-icon shrink-0"
       >
         <X size={14} strokeWidth={2} />
       </button>

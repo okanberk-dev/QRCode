@@ -265,7 +265,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
                 type="button"
                 onClick={() => setSegmentOpen(true)}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[12px] font-medium text-[#525252] hover:border-[#A3A3A3] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bz-btn bz-btn-sm disabled:opacity-50"
               >
                 <Tag size={12} strokeWidth={2.2} />
                 {isTr ? 'Segmentle' : 'Set segment'}
@@ -276,7 +276,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
                 type="button"
                 onClick={onUnarchive}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[12px] font-medium text-[#525252] hover:border-[#A3A3A3] disabled:opacity-50"
+                className="bz-btn bz-btn-sm disabled:opacity-50"
               >
                 {busy === 'unarchive' ? (
                   <Loader2 size={12} strokeWidth={2.2} className="animate-spin" />
@@ -290,7 +290,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
                 type="button"
                 onClick={onArchiveClick}
                 disabled={busy !== null}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[12px] font-medium text-[#525252] hover:border-[#A3A3A3] disabled:opacity-50"
+                className="bz-btn bz-btn-sm disabled:opacity-50"
               >
                 {busy === 'archive' ? (
                   <Loader2 size={12} strokeWidth={2.2} className="animate-spin" />

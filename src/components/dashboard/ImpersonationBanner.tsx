@@ -125,7 +125,7 @@ export default function ImpersonationBanner() {
           type="button"
           onClick={handleEnd}
           disabled={ending}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/40 bg-white/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider hover:bg-white hover:text-[#991B1B] disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          className="bz-btn-on-dark bz-btn-sm shrink-0 text-[11px] uppercase tracking-wider disabled:opacity-50"
           aria-label="Admin moddan çık"
         >
           <LogOut size={11} strokeWidth={2.5} />

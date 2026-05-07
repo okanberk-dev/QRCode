@@ -395,22 +395,22 @@ export default function UserPermissionsPage({
                             <Loader2 size={16} className="animate-spin mx-auto text-[#737373]" />
                           ) : granted ? (
                             <button
-                              type="button"
-                              onClick={() => permId && askRevoke(r, a, permId)}
-                              disabled={!!busyKey}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-[#EAF9B8] border border-[#A8D62E] text-[#0A0A0A] hover:bg-[#FEE2E2] hover:border-[#DC2626] hover:text-[#991B1B] disabled:opacity-50 transition-colors"
-                              title="Geri al"
+                      type="button"
+                      onClick={() => permId && askRevoke(r, a, permId)}
+                      disabled={!!busyKey}
+                      className="bz-btn-icon bg-[#EAF9B8] text-[#0A0A0A] hover:bg-[#FEE2E2] hover:text-[#991B1B] disabled:opacity-50"
+                      title="Geri al"
                               aria-label={`${RESOURCE_LABELS[r]} ${ACTION_LABELS[a]} yetkisini geri al`}
                             >
                               <Check size={14} strokeWidth={2.5} />
                             </button>
                           ) : (
                             <button
-                              type="button"
-                              onClick={() => grantPermission(r, a)}
-                              disabled={!!busyKey}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-dashed border-[#EDEDED] text-[#A3A3A3] hover:border-[#0A0A0A] hover:bg-[#FAFAFA] hover:text-[#0A0A0A] disabled:opacity-50 transition-colors"
-                              title="Ver"
+                      type="button"
+                      onClick={() => grantPermission(r, a)}
+                      disabled={!!busyKey}
+                      className="bz-btn-icon border border-dashed border-[#EDEDED] text-[#A3A3A3] disabled:opacity-50"
+                      title="Ver"
                               aria-label={`${RESOURCE_LABELS[r]} ${ACTION_LABELS[a]} yetkisi ver`}
                             >
                               <X size={14} strokeWidth={2} />
@@ -456,7 +456,7 @@ export default function UserPermissionsPage({
                     type="button"
                     onClick={() => askRevoke(p.resource, p.action, p.id)}
                     disabled={isBusy || !!busyKey}
-                    className="bz-btn-ghost text-[#DC2626] hover:bg-[#FEE2E2] hover:border-[#DC2626] disabled:opacity-50"
+                    className="bz-btn-danger disabled:opacity-50"
                     title="Yetkiyi kaldır"
                   >
                     {isBusy ? (

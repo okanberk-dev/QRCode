@@ -39,7 +39,7 @@ export function AccountDangerZone({ locale = "tr" }: AccountDangerZoneProps) {
           <button
             type="button"
             disabled
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#FCA5A5] bg-white/60 px-3 py-2 text-[12px] font-medium text-[#7F1D1D] cursor-not-allowed opacity-70"
+            className="bz-btn-danger flex-1 cursor-not-allowed opacity-70"
             aria-disabled="true"
             title={isTr ? "Yakında" : "Coming soon"}
           >
@@ -52,7 +52,7 @@ export function AccountDangerZone({ locale = "tr" }: AccountDangerZoneProps) {
           <button
             type="button"
             disabled
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-[#FCA5A5] bg-white/60 px-3 py-2 text-[12px] font-medium text-[#7F1D1D] cursor-not-allowed opacity-70"
+            className="bz-btn-danger flex-1 cursor-not-allowed opacity-70"
             aria-disabled="true"
             title={isTr ? "Yakında" : "Coming soon"}
           >

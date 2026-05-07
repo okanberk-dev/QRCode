@@ -373,7 +373,7 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
                         type="button"
                         onClick={() => revokeSession(s.id)}
                         disabled={revoking === s.id}
-                        className="inline-flex items-center gap-1 rounded-md border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1 text-[11px] font-medium text-[#991B1B] hover:bg-[#FEE2E2] disabled:opacity-50"
+                        className="bz-btn-danger bz-btn-sm text-[11px] disabled:opacity-50"
                         aria-label={isTr ? 'Bu oturumu sonlandır' : 'Revoke this session'}
                       >
                         {revoking === s.id ? (

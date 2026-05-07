@@ -52,7 +52,7 @@ export default function TrialExpiredPage() {
             {/* CTA */}
             <a
               href="mailto:hello@buaze.com?subject=Plan Yükseltme Talebi"
-              className="flex items-center justify-center gap-2 w-full bg-[#0A0A0A] hover:bg-[#1A1A1A] text-white font-bold py-3.5 rounded-2xl text-sm transition-all shadow-lg hover:shadow-xl"
+              className="bz-btn-primary w-full rounded-2xl text-sm shadow-lg"
             >
               <Zap size={16} className="text-[#C6F24E]" />
               Planı Yükselt — hello@buaze.com

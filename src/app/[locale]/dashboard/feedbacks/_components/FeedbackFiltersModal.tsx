@@ -117,11 +117,7 @@ export function FeedbackFiltersModal({
             <button
               type="button"
               onClick={() => setPlatformFilter('all')}
-              className={`px-3 py-1.5 text-[12px] font-medium rounded-full transition-colors ${
-                platformFilter === 'all'
-                  ? 'bg-[#0A0A0A] text-white'
-                  : 'border border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-              }`}
+              className={`${platformFilter === 'all' ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm`}
               aria-pressed={platformFilter === 'all'}
             >
               {isTr ? 'Tümü' : 'All'}
@@ -133,11 +129,7 @@ export function FeedbackFiltersModal({
                   key={pid}
                   type="button"
                   onClick={() => setPlatformFilter(isActive ? 'all' : pid)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[12px] font-medium rounded-full transition-colors ${
-                    isActive
-                      ? 'bg-[#EAF9B8] ring-1 ring-[#A8D62E] text-[#0A0A0A]'
-                      : 'border border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-                  }`}
+                  className={`${isActive ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm`}
                   aria-pressed={isActive}
                   title={PLATFORMS[pid].label}
                 >
@@ -158,11 +150,7 @@ export function FeedbackFiltersModal({
               onClick={() =>
                 setHasReplyFilter(hasReplyFilter === 'pending' ? 'all' : 'pending')
               }
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-full border transition-colors ${
-                hasReplyFilter === 'pending'
-                  ? 'border-[#A8D62E] bg-[#EAF9B8] text-[#0A0A0A]'
-                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-              }`}
+              className={`${hasReplyFilter === 'pending' ? 'bz-btn-lime' : 'bz-btn'} bz-btn-sm`}
               aria-pressed={hasReplyFilter === 'pending'}
             >
               <Mail size={12} strokeWidth={2.2} />
@@ -171,11 +159,7 @@ export function FeedbackFiltersModal({
             <button
               type="button"
               onClick={() => setFlaggedOnly(!flaggedOnly)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-full border transition-colors ${
-                flaggedOnly
-                  ? 'border-[#DC2626] bg-[#FEE2E2] text-[#991B1B]'
-                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-              }`}
+              className={`${flaggedOnly ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm`}
               aria-pressed={flaggedOnly}
             >
               <Flag size={12} strokeWidth={2.2} />

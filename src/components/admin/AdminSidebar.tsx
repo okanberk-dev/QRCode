@@ -513,7 +513,7 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
           <button
             onClick={handleLogout}
             title={t('logout')}
-            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-[13px] font-medium text-[#737373] transition-all hover:bg-[#FEF2F2] hover:text-[#991B1B] w-full`}
+            className="bz-btn-danger w-full"
           >
             <LogOut size={13} strokeWidth={2} />
             {!isCollapsed && <span>{t('logout')}</span>}
@@ -532,7 +532,7 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
         <button
           onClick={toggleSidebar}
           aria-label={isCollapsed ? (locale === 'tr' ? 'Menüyü genişlet' : 'Expand menu') : (locale === 'tr' ? 'Menüyü daralt' : 'Collapse menu')}
-          className="absolute -right-3 top-7 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#525252] shadow-sm hover:text-[#0A0A0A] hover:bg-[#FAFAFA] transition-all"
+          className="bz-btn-icon absolute -right-3 top-7 z-50 h-6 w-6 rounded-full bg-white shadow-sm"
         >
           {isCollapsed ? <ChevronRight size={13} strokeWidth={2.5} /> : <ChevronLeft size={13} strokeWidth={2.5} />}
         </button>
@@ -560,7 +560,7 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
           />
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#F2F2F2] text-[#0A0A0A] hover:bg-[#EDEDED] transition-colors"
+            className="bz-btn-icon bg-[#F2F2F2] text-[#0A0A0A]"
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

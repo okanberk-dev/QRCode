@@ -220,14 +220,14 @@ function Placeholder({
       {cta && (cta.href ? (
         <Link
           href={cta.href}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[#0A0A0A] bg-white px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#F5F5F5]"
+          className="bz-btn"
         >
           {cta.label}
         </Link>
       ) : (
         <button
           onClick={cta.onClick}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[#0A0A0A] bg-white px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#F5F5F5]"
+          className="bz-btn"
         >
           {cta.label}
         </button>

@@ -219,7 +219,7 @@ export default function MenuAnalyticsPage() {
             <button
               onClick={fetchAnalytics}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#0A0A0A] shadow-sm hover:bg-[#FFFFFF] active:scale-95 disabled:opacity-50"
+              className="bz-btn disabled:opacity-50"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
               {copy.refresh}
@@ -270,7 +270,7 @@ export default function MenuAnalyticsPage() {
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-semibold uppercase tracking-widest text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
+              className="bz-btn bz-btn-sm"
             >
               <X size={12} strokeWidth={2} />
               {copy.resetFilters}

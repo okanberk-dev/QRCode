@@ -303,7 +303,7 @@ export default function AdminNewslettersPage() {
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 pulse-eyebrow text-[#1A1A1A] hover:bg-[#FAFAFA] active:scale-95"
+              className="bz-btn bz-btn-sm"
             >
               <X size={12} strokeWidth={2} />
               Filtreleri temizle

@@ -411,7 +411,7 @@ export function GoogleBusinessIntegrationPanel({
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px] text-[#DC2626] hover:bg-[#FEF2F2] hover:border-[#FECACA]"
+                    className="bz-btn-danger text-[13px]"
                     onClick={disconnectGoogle}
                   >
                     {isTr ? "Bağlantıyı kes" : "Disconnect"}

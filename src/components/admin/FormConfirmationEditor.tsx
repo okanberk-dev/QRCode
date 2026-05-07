@@ -328,7 +328,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
               <button
                 type="button"
                 onClick={onPreview}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                className="bz-btn bz-btn-sm"
               >
                 <Eye size={14} /> Önizle ({VARIANTS.find((v) => v.key === activeVariant)?.label})
               </button>
@@ -336,7 +336,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
                 type="button"
                 onClick={onTestMail}
                 disabled={sendingTest}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+                className="bz-btn bz-btn-sm disabled:opacity-50"
               >
                 {sendingTest ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
                 Test mail at
@@ -344,7 +344,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
               <button
                 type="button"
                 onClick={() => setHistoryOpen(true)}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                className="bz-btn bz-btn-sm"
               >
                 <History size={14} /> Geçmiş
               </button>
@@ -354,7 +354,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
                   onClick={onRevert}
                   disabled={reverting}
                   title="Tüm 4 variant'ı kod-içi varsayılana sıfırla"
-                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-semibold text-red-700 hover:bg-red-50 active:scale-95 disabled:opacity-50"
+                  className="bz-btn-danger text-xs disabled:opacity-50"
                 >
                   {reverting ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
                   {/* Mobile'da kısa label (2-col grid'de taşmaz);
@@ -370,7 +370,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
               onClick={onSave}
               disabled={saving || !isDirty}
               title={!isDirty ? 'Değiştirecek bir şey yok' : 'Tüm 4 variant kaydedilir'}
-              className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#C6F24E] px-5 py-3 text-sm font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:text-xs"
+              className="bz-btn-lime w-full disabled:opacity-50 sm:w-auto"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
               Kaydet (4 variant)
@@ -406,7 +406,7 @@ export default function FormConfirmationEditor({ locale }: Props) {
             type="button"
             onClick={onSave}
             disabled={saving}
-            className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#C6F24E] px-5 py-3 text-sm font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            className="bz-btn-lime w-full disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             Tüm değişiklikleri kaydet

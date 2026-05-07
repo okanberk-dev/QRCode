@@ -172,7 +172,7 @@ export function AdminFeedbackReplyComposer({
             type="button"
             onClick={onSend}
             disabled={sending || !draft.trim()}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 sm:py-1.5 text-[12px] font-medium text-white hover:bg-[#1A1A1A] transition-colors disabled:opacity-40"
+            className="bz-btn-primary bz-btn-sm disabled:opacity-40"
           >
             {sending ? (
               <Loader2 size={12} strokeWidth={2} className="animate-spin" />

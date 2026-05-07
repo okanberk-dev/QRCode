@@ -257,7 +257,7 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
             <button
               type="button"
               onClick={closeForm}
-              className="text-[#737373] hover:text-[#0A0A0A]"
+              className="bz-btn-icon"
               aria-label="Formu kapat"
             >
               <X size={16} strokeWidth={2} />
@@ -363,7 +363,7 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
             <button
               type="button"
               onClick={closeForm}
-              className="flex-1 py-2.5 rounded-full border border-[#EDEDED] text-[12px] font-medium text-[#525252] hover:bg-white"
+              className="bz-btn-ghost flex-1 text-[12px]"
             >
               Vazgeç
             </button>
@@ -371,7 +371,7 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 py-2.5 rounded-full bg-[#0A0A0A] text-white text-[12px] font-semibold hover:bg-[#1A1A1A] disabled:opacity-50 transition-all flex items-center justify-center gap-1.5"
+              className="bz-btn-primary flex-1 text-[12px] disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -435,8 +435,9 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
                         href={inv.pdfUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
+                        className="bz-btn-icon"
                         title="PDF'i aç"
+                        aria-label="PDF'i aç"
                       >
                         <Download size={13} strokeWidth={2} />
                       </a>
@@ -444,16 +445,18 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
                     <button
                       type="button"
                       onClick={() => openEdit(inv)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
+                      className="bz-btn-icon"
                       title="Düzenle"
+                      aria-label="Düzenle"
                     >
                       <Pencil size={13} strokeWidth={2} />
                     </button>
                     <button
                       type="button"
                       onClick={() => setDeletingId(inv.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] hover:border-[#DC2626] hover:bg-red-50 hover:text-[#DC2626]"
+                      className="bz-btn-icon text-[#DC2626] hover:bg-[#FEF2F2]"
                       title="Sil"
+                      aria-label="Sil"
                     >
                       <Trash2 size={13} strokeWidth={2} />
                     </button>
@@ -469,7 +472,7 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
                       <button
                         type="button"
                         onClick={() => setDeletingId(null)}
-                        className="px-3 py-1.5 rounded-full border border-[#EDEDED] bg-white text-[11px] font-medium text-[#525252]"
+                        className="bz-btn bz-btn-sm"
                       >
                         Vazgeç
                       </button>
@@ -477,7 +480,7 @@ export default function MemberInvoicesPanel({ userId }: MemberInvoicesPanelProps
                         type="button"
                         onClick={handleDelete}
                         disabled={deleting}
-                        className="px-3 py-1.5 rounded-full bg-[#DC2626] text-white text-[11px] font-semibold hover:bg-[#B91C1C] disabled:opacity-50 flex items-center gap-1.5"
+                        className="bz-btn-danger bz-btn-sm disabled:opacity-50"
                       >
                         {deleting ? (
                           <Loader2 size={11} className="animate-spin" />

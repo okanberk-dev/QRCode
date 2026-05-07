@@ -141,7 +141,7 @@ function NewEventsToast({
       <button
         type="button"
         onClick={onDismiss}
-        className="ml-1 rounded-full p-0.5 hover:bg-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-1"
+        className="bz-btn-icon ml-1"
         aria-label={isTr ? 'Bildirimi kapat' : 'Dismiss notification'}
       >
         <X size={12} aria-hidden="true" />

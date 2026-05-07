@@ -576,14 +576,14 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     <button
                       type="button"
                       onClick={() => setEditorMode('write')}
-                      className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all ${editorMode === 'write' ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-white'}`}
+                      className={editorMode === 'write' ? 'bz-btn-primary bz-btn-sm' : 'bz-btn bz-btn-sm'}
                     >
                       Yaz
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditorMode('preview')}
-                      className={`rounded-xl px-4 py-2 text-xs font-semibold transition-all ${editorMode === 'preview' ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-white'}`}
+                      className={editorMode === 'preview' ? 'bz-btn-primary bz-btn-sm' : 'bz-btn bz-btn-sm'}
                     >
                       Public görünüm
                     </button>
@@ -591,7 +591,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   <button
                     type="button"
                     onClick={insertStarterTemplate}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#EAF9B8] px-4 py-2 text-xs font-semibold text-[#0A0A0A] hover:bg-[#C6F24E] transition-colors"
+                    className="bz-btn-lime bz-btn-sm"
                   >
                     <LayoutTemplate size={15} />
                     Hazır iskelet
@@ -614,7 +614,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                         key={label}
                         type="button"
                         onClick={() => runEditorCommand(command, value)}
-                        className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#525252] hover:bg-[#EAF9B8] hover:text-[#0A0A0A] transition-colors"
+                        className="bz-btn bz-btn-sm"
                         title={label}
                       >
                         <Icon size={15} />
@@ -624,7 +624,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     <button
                       type="button"
                       onClick={addLink}
-                      className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#525252] hover:bg-[#EAF9B8] hover:text-[#0A0A0A] transition-colors"
+                      className="bz-btn bz-btn-sm"
                     >
                       <Link2 size={15} />
                       <span className="hidden sm:inline">Link</span>
@@ -729,7 +729,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       type="button"
                       onClick={requestSlugSuggestion}
                       disabled={slugSuggesting || !form.title.trim()}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-[#EDEDED] bg-white px-3 text-[#737373] hover:text-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="bz-btn bz-btn-sm disabled:opacity-60"
                       title="Yapay zekâ ile SEO uyumlu slug öner"
                     >
                       {slugSuggesting ? (
@@ -778,7 +778,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       type="button"
                       onClick={requestReadTimeSuggestion}
                       disabled={readTimeSuggesting}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="bz-btn bz-btn-sm disabled:opacity-60"
                       title="Yapay zekâ ile içerik karmaşıklığına göre öner"
                     >
                       {readTimeSuggesting ? (

@@ -346,7 +346,7 @@ export default function AdminCustomersPage() {
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="inline-flex items-center gap-1 rounded-xl border border-[#EDEDED] bg-white px-3 py-2 pulse-eyebrow text-[#1A1A1A] hover:bg-[#FFFFFF] active:scale-95"
+              className="bz-btn bz-btn-sm"
             >
               <X size={12} strokeWidth={2} />
               Filtreleri temizle
@@ -679,11 +679,7 @@ function FilterToggle({ active, onClick, children }: { active: boolean; onClick:
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-3 py-1.5 transition-all active:scale-95 ${
-        active
-          ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-          : 'border-[#EDEDED] bg-white text-[#1A1A1A] hover:bg-[#FFFFFF]'
-      }`}
+      className={`${active ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm`}
     >
       {children}
     </button>

@@ -820,7 +820,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         <button
           onClick={toggleSidebar}
           aria-label={isCollapsed ? (locale === 'tr' ? 'Menüyü genişlet' : 'Expand menu') : (locale === 'tr' ? 'Menüyü daralt' : 'Collapse menu')}
-          className="absolute -right-3 top-7 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#525252] shadow-sm hover:text-[#0A0A0A] hover:bg-[#FAFAFA] transition-all"
+          className="bz-btn-icon absolute -right-3 top-7 z-50 h-6 w-6 rounded-full bg-white shadow-sm"
         >
           {isCollapsed ? <ChevronRight size={13} strokeWidth={2.5} /> : <ChevronLeft size={13} strokeWidth={2.5} />}
         </button>
@@ -898,7 +898,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               onClick={() => setPaletteOpen(true)}
               aria-label={locale === 'tr' ? 'Aramayı aç' : 'Open search'}
               title={locale === 'tr' ? 'Aramayı aç (⌘K)' : 'Open search (⌘K)'}
-              className="xl:hidden flex h-9 w-9 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#0A0A0A] hover:border-[#0A0A0A] hover:bg-[#EAF9B8]/40 active:scale-90 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
+              className="bz-btn-icon xl:hidden"
             >
               <Search size={15} strokeWidth={2.25} />
             </button>
@@ -1056,7 +1056,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 type="button"
                 onClick={() => setMoreOpen(false)}
                 aria-label="close"
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]"
+                className="bz-btn-icon"
               >
                 <X size={18} strokeWidth={2} />
               </button>
@@ -1090,7 +1090,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                     setMoreOpen(false);
                     handleLogout();
                   }}
-                  className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-medium text-[#DC2626] bz-motion-spring hover:bg-[#FEF2F2] hover:text-[#DC2626]"
+                  className="bz-btn-danger w-full justify-start"
                 >
                   <LogOut size={16} strokeWidth={2} />
                   <span>{copy.logout}</span>

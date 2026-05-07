@@ -128,7 +128,7 @@ export function FeedbackReplyComposer({
             type="button"
             onClick={onUseAiAndSend}
             disabled={aiLoading || !aiSuggestion || sendingReply}
-            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-2 sm:py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] bz-motion-spring disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bz-btn-lime w-full disabled:opacity-50 sm:w-auto"
             title={isTr ? 'AI taslağını doğrudan gönder' : 'Send the AI draft directly'}
           >
             {sendingReply ? (
@@ -142,7 +142,7 @@ export function FeedbackReplyComposer({
             type="button"
             onClick={onRegenerateAi}
             disabled={aiLoading || aiRegenerating}
-            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-full border border-white/20 px-4 py-2 sm:py-1.5 text-[12px] font-medium text-white hover:bg-white/10 bz-motion-spring disabled:opacity-50"
+            className="bz-btn-on-dark bz-btn-sm w-full sm:w-auto disabled:opacity-50"
           >
             <RotateCw size={12} strokeWidth={2} className={aiRegenerating ? 'animate-spin' : ''} />
             {isTr ? 'Yeniden öner' : 'Regenerate'}
@@ -180,7 +180,7 @@ export function FeedbackReplyComposer({
             type="button"
             onClick={onCopyAiToDraft}
             disabled={aiLoading || !aiSuggestion}
-            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-full border border-white/20 px-4 py-2 sm:py-1.5 text-[12px] font-medium text-white hover:bg-white/10 bz-motion-spring disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bz-btn-on-dark bz-btn-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
             title={isTr ? 'Taslağı düzenleme alanına kopyala' : 'Copy draft to editor'}
           >
             <Pencil size={12} strokeWidth={2} />
@@ -326,7 +326,7 @@ export function FeedbackReplyComposer({
                     : 'Sending…'
                   : undefined
             }
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 sm:py-1.5 text-[12px] font-medium text-white hover:bg-[#1A1A1A] bz-motion-spring disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+            className="bz-btn-primary bz-btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {sendingReply ? (
               <Loader2 size={12} strokeWidth={2} className="animate-spin" />

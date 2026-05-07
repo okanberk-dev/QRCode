@@ -234,7 +234,7 @@ export function AccountPlanWidget({
         </Link>
         <Link
           href={`/${locale}/pricing`}
-          className="inline-flex items-center justify-center rounded-full border border-white/20 hover:border-white/40 hover:bg-white/5 active:scale-[0.98] px-3 py-2 text-[12px] font-semibold text-white transition-colors"
+          className="bz-btn-on-dark bz-btn-sm"
         >
           {isTr ? "Yönet" : "Manage"}
         </Link>

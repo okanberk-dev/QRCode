@@ -193,11 +193,7 @@ export function FeedbackFiltersRail({
           <button
             type="button"
             onClick={onOpenFilters}
-            className={`relative flex w-full items-center justify-between rounded-lg border px-3 py-2 text-[12.5px] font-medium bz-motion-spring ${
-              hasActiveFilter
-                ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-            }`}
+            className={`relative w-full justify-between ${hasActiveFilter ? 'bz-btn-primary' : 'bz-btn'}`}
             aria-label={isTr ? 'Filtreler' : 'Filters'}
           >
             <span className="inline-flex items-center gap-1.5">

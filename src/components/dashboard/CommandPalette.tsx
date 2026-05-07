@@ -313,7 +313,7 @@ export default function CommandPalette({ open, onClose, locale, base, navItems }
             type="button"
             onClick={onClose}
             aria-label={isTr ? 'Kapat' : 'Close'}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+            className="bz-btn-icon"
           >
             <X size={14} strokeWidth={2} />
           </button>

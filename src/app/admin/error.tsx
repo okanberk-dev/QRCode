@@ -38,7 +38,7 @@ export default function AdminError({
           <button
             type="button"
             onClick={reset}
-            className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors"
+            className="bz-btn-primary w-full"
           >
             <RefreshCw size={16} strokeWidth={2} />
             Tekrar dene

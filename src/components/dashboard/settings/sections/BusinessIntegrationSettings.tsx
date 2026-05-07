@@ -897,8 +897,7 @@ function IntegrationCard({
           <button
             type="button"
             onClick={onClear}
-            className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white text-[12.5px] text-[#737373] hover:text-[#991B1B] hover:border-[#FECACA] sm:col-span-1"
-            style={{ minHeight: 40, padding: "0 14px" }}
+            className="bz-btn-danger col-span-2 sm:col-span-1"
             aria-label="URL'yi temizle"
             title="Kaldır"
           >
@@ -1082,9 +1081,10 @@ function CompactIntegrationCard({
             <button
               type="button"
               onClick={onClear}
-              className="bz-btn-ghost inline-flex items-center justify-center rounded-full text-[#737373] hover:text-[#991B1B]"
+              className="bz-btn-icon text-[#DC2626] hover:bg-[#FEF2F2]"
               style={{ width: 36, height: 36 }}
               title="Kaldır"
+              aria-label="Kaldır"
             >
               <Trash2 size={14} />
             </button>

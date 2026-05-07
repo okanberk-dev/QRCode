@@ -98,7 +98,7 @@ export function AIInsightBanner({
         </div>
         <Link
           href={actionHref}
-          className="self-start sm:self-center mt-2 sm:mt-0 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#C6F24E] hover:bg-[#A8D62E] px-4 py-1.5 text-[12px] font-semibold text-[#0A0A0A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+          className="bz-btn-lime bz-btn-sm mt-2 shrink-0 self-start sm:mt-0 sm:self-center"
         >
           {actionLabel ?? (isTr ? 'İncele' : 'Explore')}
           <ArrowRight size={12} strokeWidth={2.2} />
@@ -108,7 +108,7 @@ export function AIInsightBanner({
         type="button"
         onClick={handleDismiss}
         aria-label={isTr ? 'Gizle' : 'Dismiss'}
-        className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+        className="bz-btn-icon bz-btn-icon-on-dark shrink-0"
       >
         <X size={14} strokeWidth={2.2} />
       </button>
