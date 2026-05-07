@@ -9,7 +9,8 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "test": "node --import tsx --test tests/**/*.test.ts"
+    "test": "node --import tsx --test tests/**/*.test.ts",
+    "analyze": "ANALYZE=true npm run build"
   },
   "keywords": [],
   "author": "",
@@ -56,6 +57,7 @@
     "Edge >= 100"
   ],
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.5",
     "@prisma/client": "^6.19.3",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/bcryptjs": "^2.4.6",

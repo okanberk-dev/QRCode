@@ -12239,3 +12239,146 @@ feature-access mevcut endpoint manager için zaten yok (CLAUDE.md
   koşulunda self-heal olur. Boundary sonrası aynı issuer regresyonu olursa
   fail-closed 401 tekrar görünür; yeni `user_token` issuer eklendiğinde
   helper zorunlu.
+
+### 38.99 2026-05-07 — Stage 22 performance report selective application (PR-1, minimal scope)
+
+`performance_report.md` (1190 satır) CLAUDE.md cross-check ile değerlendirildi.
+3 paralel Explore agent (root layout / QR flow + HomeHero / admin dashboard +
+CSS) keşfi gösterdi ki rapordaki 11 önerinin %85-90'ı zaten ya uygulanmış ya
+da bilinçli olarak ertelenmiş. Kullanıcı kararı: **sadece minimal güvenli
+iyileştirmeler** (Phase A + Phase B). UX/security riski sıfır, görsel değişim
+sıfır, scope creep yok.
+
+**Performance report ↔ CLAUDE.md decision cross-reference tablosu**:
+
+| Report § | Öneri | Durum | CLAUDE.md ref / commit |
+|---|---|---|---|
+| §3.1 | Root `force-dynamic` kaldır | DEFER | §34.13 + §34.14 + §38.85 — `getSiteSettings()` + cookies bağımlılığı; cache strategy refactor + ISR canary test gerek |
+| §3.2 | QueryProvider root → admin/dashboard layout | DEFER (low value) | §27 — SSR-first kabul, panel %2 callsite, refactor on-demand |
+| §3.3 | GA/Yandex public-only | DEFER | §34.12 + §31 — `lazyOnload` strategy zaten optimum; Vercel SpeedInsights + Analytics RES için root mount zorunlu |
+| §3.4 | HomeHero static/motion split | UYGULANMIŞ | §38.38 commit `6b371af` — InboxCard typing 2.4s defer + clamp→breakpoint + lucide tree-shake; LCP optimize edildi |
+| §3.5 | `/r/[slug]` server-first | DEFER (UX/scope risk) | bilinçli kalıcı — 714 satır client; platform resolver + reCAPTCHA + KVKK consent + redirect overlay birbirine bağlı |
+| §3.6 | Admin dashboard 3 katman | UYGULANMIŞ | §11.4 PR #115 — 2-tx split (16 query, transaction batch'leri) |
+| §3.7 | Owner dashboard polling azalt | NA | §38.27 / §38.31 — polling yok zaten (server-render snapshot) |
+| §3.8 | Font weight azalt | UYGULANMIŞ | §38.60 — Inter weight 900 silindi, 12 weight (4+5+3) optimum |
+| §3.9 | CSS route-split | DEFER | §38.60 + §38.61 — CSS cleanup Wave 1+2 yapılmış, Marketing (`pulse-*`) ↔ Panel (`bz-*`) paralel sistem disipline |
+| §3.10 | Base64-in-DB menu storage migration | DEFER (future) | §3 bilinçli — Vercel ephemeral FS zorunluluğu; Storage migration future scope |
+| §3.11 | Bundle sızıntısı kontrolü | TEMİZ + analyzer eklendi | recharts/firebase/@react-pdf/@dnd-kit hepsi private route'larda; firebase auth public surface'inde lazy dynamic; `optimizePackageImports: ['lucide-react']` aktif (§34.13) |
+| Faz 1 §1 | Bundle analyzer setup | UYGULANDI (bu PR Phase A) | §38.99 |
+| Faz 1 §2 | Admin batch query `$transaction` migrate | UYGULANDI (bu PR Phase B) | §38.99 + §14.1 |
+
+#### Phase A — Bundle analyzer setup (Faz 1 §1 kapanış)
+
+- `@next/bundle-analyzer ^16.2.5` devDep eklendi (`package.json`).
+- `next.config.ts` wrap order: `withSentryConfig(withAnalyzer(nextConfig), ...)`.
+  - `withAnalyzer` Sentry'nin **içine** sarılır — Sentry webpack plugin son
+    aşamada çalışmalı (source map upload).
+  - Default `enabled: false` → `ANALYZE` env yokken no-op (build davranışı
+    değişmez).
+- `package.json` script: `"analyze": "ANALYZE=true npm run build"` (manuel
+  monitoring; CI'da koşmaz).
+- `.gitignore` cross-check: `.next/` zaten ignore'lı → analyzer output
+  `.next/analyze/` otomatik gitignore'da.
+
+#### Phase B — Admin list endpoint `Promise.all` → `prisma.$transaction`
+
+- `src/app/api/restaurants/route.ts` admin list branch (line 238-265 civarı):
+  - Eski: `await Promise.all([prisma.restaurant.findMany(...), prisma.restaurant.count(...)])`
+  - Yeni: `await prisma.$transaction([prisma.restaurant.findMany(...), prisma.restaurant.count(...)])`
+- Aynı queries, aynı response shape, aynı IDOR (`getScopedRestaurantIds`
+  intact).
+- Connection pool serial execution → `connection_limit=1` paternine uyum
+  (CLAUDE.md §14.1 kanonik disipline).
+- Read-only batch → `$transaction` interactive mode'a düşmez, batch mode.
+- Server-render request (admin list page); cron/outbound değil →
+  `Promise.allSettled` per-row isolation gerekmedi.
+- Aşağıdaki dependent `avgGroups` query (line 270 civarı) sequential
+  dependency (restaurantIds = restaurants.map((r) => r.id)) — ayrı kaldı,
+  intent değişmedi.
+
+#### Etkilenen dosyalar (bu PR)
+
+| Dosya | Değişim |
+|---|---|
+| `package.json` | `+1` devDep + `+1` script (analyze) |
+| `next.config.ts` | `+1` import + `+8` wrap helper + 1 satır wrap order |
+| `src/app/api/restaurants/route.ts` | 1 await `Promise.all` → `prisma.$transaction` + 4 satır açıklayıcı yorum |
+| `CLAUDE.md` | §38.99 closure log |
+
+**Schema migration**: yok. **Yeni endpoint**: yok. **Yeni dep
+(production-side)**: yok (analyzer devDep). **Response shape**: değişmedi.
+**IDOR / RBAC patternleri**: dokunulmadı.
+
+#### Verification
+
+- `npm run lint` → 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz).
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`.
+- `npm test` → mevcut suite intact (functional değişiklik yok).
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) → static page count
+  intact + 1 yeni dynamic route yok.
+- Sanity grep regression:
+  - `grep -E '"@next/bundle-analyzer"|"analyze"' package.json` → 2 hit
+  - `grep -E 'withBundleAnalyzer|ANALYZE' next.config.ts` → expected hits
+  - `grep -n 'prisma\.\$transaction\|Promise\.all\|Promise\.allSettled' src/app/api/restaurants/route.ts`
+    → admin list branch'te artık `$transaction`; `Promise.all` actual await
+    çağrısı yok (sadece açıklayıcı yorum referansı kaldı).
+- Manuel analyzer test (kullanıcı opsiyonel): `ANALYZE=true npm run build`
+  → `.next/analyze/{client,nodejs,edge}.html` raporları oluşur. Public
+  chunk'larda recharts/firebase/@react-pdf/@dnd-kit görünmemeli (sadece
+  admin/dashboard/auth chunk'larında).
+
+**Yapma**:
+- `withBundleAnalyzer`'ı Sentry'nin **dışına** sarma — Sentry webpack plugin
+  son aşamada çalışmalı, aksi halde source map upload kırılır.
+- `analyze` script'i CI'da koşturma — manuel monitoring aracı; CI'da
+  `next build` yeterli (validate-env + prisma migrate deploy + next build
+  canonical pipeline).
+- Admin list endpoint'in cron veya outbound HTTP path'lerini `$transaction`'a
+  çevirme — bu PR sadece server-render read batch'ini kapsar; per-row
+  isolation gereken yerlerde `Promise.allSettled` korunur (CLAUDE.md §14.1
+  + §28.4).
+- Performance report'taki diğer Faz'ları (3 = `/r/[slug]` server-first,
+  4 = HomeHero split, 6 = CSS route-split) bu PR'a sıkıştırma — kullanıcı
+  explicit "minimal güvenli" seçti. Yeni audit'lerde de bu disipline saygı
+  duyulmalı, duplicate iş yapılmamalı.
+- Performance audit raporlarını `unstable_cache` + ISR canary test olmadan
+  uygulamaya çalışma — §34.13 + §34.14 disipline.
+
+**Yap**:
+- Yeni dep eklerken `npm run analyze` ile public bundle delta kontrol et —
+  recharts/firebase/@react-pdf/@dnd-kit gibi heavy paketler public surface'e
+  sızıyor mu doğrula. Threshold: marketing/auth/r-slug/menu chunk'larında
+  bu paketler **görünmemeli**.
+- Yeni admin list-tier read batch query'si eklerken
+  `prisma.$transaction([...])` paterni reuse — `connection_limit=1`
+  disipline.
+- §38.99 cross-reference tablosunu güncel tut — gelecek performance
+  audit'lerinde duplicate iş yapılmasın. Yeni rapor geldiğinde önce bu
+  tabloyu kontrol et, hangi öneri zaten kapanmış.
+- Server-side cron veya outbound HTTP fan-out gerekirse `Promise.allSettled`
+  per-row isolation paterniyle ayrı tut (CLAUDE.md §28.4 paterni intact).
+- `/r/[slug]` server-first refactor talebi gelirse: 4 query parametresi
+  (platform / table / source / hl) + platform resolver + reCAPTCHA + KVKK
+  consent + redirect overlay zincirini birebir koruma testi zorunlu.
+  Mevcut 714 satır client component bilinçli karar; refactor küçük PR'larla
+  ve canary deployment ile.
+
+**Stage 22 closure**:
+- Branch `claude/apply-performance-report-EQ8IQ` (designated branch, task
+  description'da sabit).
+- Edit'lenen dosyalar: 4 (`package.json` + `next.config.ts` +
+  `src/app/api/restaurants/route.ts` + `CLAUDE.md`).
+- Yeni dosya: yok.
+- Schema migration: yok.
+- Yeni dep: 1 devDep (`@next/bundle-analyzer`) — production bundle
+  etkilenmez.
+- Test count: değişmedi (functional değişiklik yok, opt-in dev tooling).
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Manuel
+  `npm run analyze` opsiyonel monitoring (lokal/CI farketmez).
+- Kalan riskler: yok (functional değişiklik yok). `withSentryConfig` wrap
+  order doğrulandı; Sentry source map upload akışı bozulmadı.
+- **Sonraki aşama önerisi**: §38.B master backlog kalemleri — HIGH 4
+  Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession re-introduce
+  (operatör tetiği §38.84 / §38.89), RECAPTCHA_ENFORCE flip (§38.79 #2).
+  Performance tarafında: gelecek audit raporu geldiğinde önce §38.99
+  cross-reference tablosu kontrol et.
