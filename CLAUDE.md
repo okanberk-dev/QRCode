@@ -15275,6 +15275,286 @@ component'leri replace etme, dark theme system-wide geçiş.
   kararı bekleniyor: hangi 1 hero variant tercih edilir veya 3
   variant + A/B test kurulur.
 
+### 38.121 2026-05-08 — Stage 41 (Heroes A) + tasarım backlog roadmap (docs only)
+
+§38.120 Stage 40 Layout chrome gap analysis sonrası kullanıcı 2026-05-08
+follow-up: *"A'yı seçeceğim ama başka session'da devam etmem için
+prompt verir misin? ve tüm kalan tasarım işlerine"* → Stage 41 Heroes
+**A seçeneği** (3 variant + ENV flag) onaylandı; ayrı session'da devam.
+Bu Stage 40b docs PR'ı kalıcı roadmap ve session-handoff prompt'larını
+CLAUDE.md'ye işler.
+
+**HANDOFF migration 9 PR özet (Stage 32-40)**:
+
+| PR | Stage | HANDOFF step | Tip | Highlights |
+|---|---|---|---|---|
+| #535 | 32 | (bonus) | Code | Cookie banner premium editorial |
+| #536 | 33 | §39 disipline | Docs | Auto-merge + chat prompt logging |
+| #537 | 34 | 1 Tokens & fonts | Docs gap | %95 mevcut |
+| #538 | 35 | 2 Lib (animation engine) | **Code** | 10 dosya, +68 test |
+| #539 | 36 | 3 Primitives | Docs gap | 4/5 mevcut |
+| #540 | 37 | 4 Panel atoms | **Code** | 4 yeni primitive, +9 test |
+| #541 | 38 | 5 Panel cards | **Code** | 2 yeni card, +14 test |
+| #542 | 39 | 6 Site FX | Docs gap | 9/12 mevcut |
+| #543 | 40 | 7 Layout chrome | Docs gap | %85 basic mevcut |
+
+**Ölçüm**:
+- Test count: 274 → 365 (+91 yeni)
+- Schema migration: 0
+- Yeni dep: 0
+- Breaking change: 0
+- Pulse §11 + §23.3 design system intact (kullanıcı kararı §38.114)
+
+**Stage 41 (HANDOFF §8 step 8 son adım) — A seçeneği onaylı**:
+
+3 hero variant + ENV flag + dynamic import. Yeni session prompt'u
+aşağıda (§38.121.1).
+
+**Tasarım defer backlog roadmap** (gelecek session'lar için):
+
+A) **Stage 39-defer Site FX** (3 yeni component, callsite olduğunda):
+   - `<PulseLine>` — section divider veya hero corner
+   - `<QRScanLoader>` — onboarding loading state, QR generator preview
+   - `<RevealHeadline>` advanced — per-character / word-by-word
+
+B) **Stage 40-defer Layout chrome advanced** (callsite-bazlı additive):
+   - Header floating pill scroll mode (>80px scroll → 94vw blur)
+   - Header mega menu (3-col + featured graphite tile)
+   - Footer city ticker (Türkiye şehir adları rolling)
+   - Footer scan-to-app QR card (sağ kolona)
+   - BottomNav dark theme variant (system-wide dark mode geçişi gerek)
+
+C) **Stage 37-skip Panel atoms** (callsite olduğunda extract):
+   APButton / APSwitch lg / APCheckbox indeterminate / APSegmented
+   count badges / APChip removable / APToggleCard / APFab /
+   APSplitButton / APButtonGroup
+
+D) **Stage 38-skip Panel cards** (callsite olduğunda extract):
+   APInboxCard / APLocationCard / APTeamCard / APQRCard /
+   APQuickSettingsCard / APComposerCard
+
+E) **Yeni primitive callsite entegrasyonu** (gelecek redesign PR'ları):
+   - APAIDraftCard → admin Inbox AI Co-Pilot redesign
+   - APBillingCard → admin /billing veya yeni billing surface
+   - APSlider → settings panellerinde numeric input
+   - APStarInput → /r/[slug] review surface star input redesign
+   - APRadioGroup → settings modal'larında compact option list
+   - APIconButton → notification bell, action toolbar
+
+F) **Genel Buaze backlog** (§38.B master, HANDOFF dışı):
+   - HIGH 4 Platforms 12-card grid (DEFER §38.30 — product decision)
+   - Stage 9 UserSession re-introduce (operatör tetiği §38.84/§38.89)
+   - RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak)
+   - Prisma 7 upgrade (§5.4 Task 8 — major version)
+
+#### §38.121.1 — Yeni session handoff prompt'ları (kalıcı kayıt)
+
+**Prompt 1 — Stage 41 Heroes A seçeneği** (Stage 41 başlatmak için):
+
+Aşağıdaki prompt'u yeni Claude Code session'ında doğrudan kullan.
+Self-contained — yeni session bağlamı 0'dan kurar.
+
+```text
+Stage 41 — HANDOFF §8 step 8 son adım: Heroes (A seçeneği — 3 variant
++ ENV flag).
+
+KAPSAM: Marketing homepage'de 3 hero variant + dynamic import + A/B
+test capability. Mevcut /[locale]/page.tsx hero section'unu 3 variant
+ile değiştir.
+
+ÖNCE OKU (kanonik bağlam):
+- CLAUDE.md §38.114-§38.121 (HANDOFF migration Stage 34-40 closure
+  log'ları + §38.121 Stage 41 onayı + roadmap)
+- CLAUDE.md §39 (auto-merge + chat prompt logging disipline)
+- CLAUDE.md §38.115 Stage 35 — Lib animation engine `<Stage>` +
+  `<Sprite>` + `Easing` + `interpolate` + `animate` `src/lib/anim/`
+- CLAUDE.md §11 Pulse design tokens (Space Grotesk + tight tracking
+  intact, Instrument Serif italic REDDEDILDI §38.114)
+- CLAUDE.md §38.27 mevcut HomeHero (owner panel home, marketing hero
+  DEĞİL — karıştırma)
+- /tmp/handoff-stage33/Test 2/hero-v3.jsx (HANDOFF parallax variant
+  spec, 15 KB)
+- /tmp/handoff-stage33/Test 2/HANDOFF.md §6.1 (3 hero variant tablosu)
+
+KARARLAR (kullanıcı önceden onaylı, §38.114 + §38.121):
+- Tipografi: Pulse Space Grotesk + tight tracking intact
+- i18n: lib/translations.ts intact (next-intl yok)
+- Animation engine: §38.115 `<Stage>` + `<Sprite>` reuse
+- Reduced-motion: §5.2 — Stage primitive zaten handle ediyor
+- Tab pause: §5.1 — Stage primitive zaten handle ediyor
+
+DELIVERABLE:
+1. src/components/marketing/heroes/HeroCinematic.tsx — 9s loop:
+   QR pulse → tarama → form → AI yanıt → 4.8★ pop sahneleri
+   (`<Sprite start end>` ile)
+2. src/components/marketing/heroes/HeroStarClimb.tsx — 8s loop:
+   headline 3.6→4.8 sayaç (`useCountUp` reuse) + 90 günlük climb
+   chart (recharts AreaChart)
+3. src/components/marketing/heroes/HeroParallax.tsx — sürekli:
+   mouse-tracked 5-katmanlı 3D kart kümesi (transform: translate3d)
+4. src/app/[locale]/page.tsx — mevcut hero section'unu dynamic
+   import + ENV variant ile değiştir:
+   `const variant = process.env.NEXT_PUBLIC_HERO_VARIANT ??
+   'cinematic'; const Hero = { cinematic: dynamic(...), starclimb:
+   dynamic(...), parallax: dynamic(...) }[variant];`
+   `dynamic({ ssr: false })` + Suspense + Skeleton fallback
+5. .env.example — NEXT_PUBLIC_HERO_VARIANT belgele
+6. tests/hero-helpers.test.ts (varsa pure helper compute — örn.
+   parallax mouse offset clamp)
+7. CLAUDE.md §38.122 closure log + Stage 32-41 final summary tablosu
+   + §38.B master backlog 'HANDOFF migration COMPLETE' işaretle
+
+DİSİPLİN:
+- Animation engine §38.115 Stage primitive'i reuse zorunlu
+- Hero'lar `min-h-[640px]` veya `aspect-[16/9]` (HANDOFF §6.1 kuralı)
+- Scroll-padding-top scroll-anchor problemi olmamalı
+- `<Sprite>` render prop API: `<Sprite start={1} end={4}>{({progress,
+  localTime}) => ...}</Sprite>`
+- Pulse §11 utility-first + inline hex pattern + lucide icon
+- A/B test ENV flag default 'cinematic' (en sahneli + ürün açıklama)
+- A11y: `aria-label` hero region, decorative SVG `aria-hidden`
+
+VERIFY:
+- npx eslint . → 0 errors / 0 warnings
+- npx tsc --noEmit → 0 errors in src/
+- npm test → mevcut 365 + yeni helper test'leri pass
+- npx next build → 58/58 static page intact + 3 yeni dynamic
+  hero chunk
+
+PR PATTERN (CLAUDE.md §39.1):
+- Branch: chore/handoff-heroes-stage41 (fresh main üstüne)
+- Auto-merge: gh pr merge --auto --squash
+- Chat prompt history closure log §38.122
+
+Önce mevcut /[locale]/page.tsx hero section'una bak (nerede mount
+edilecek), sonra 3 hero implement et, en son ENV flag + dynamic
+import wire et. Tek konsolide PR (CLAUDE.md §21.22 stacked YOK).
+```
+
+**Prompt 2 — Tasarım defer backlog** (Stage 41 sonrası gelecek
+session'lar için):
+
+```text
+HANDOFF migration Stage 32-41 sonrası kalan defer'lenmiş tasarım
+işleri. Stage 41 Heroes (A) tamamlandıktan sonra bu prompt geçerli.
+
+ÖNCE OKU (kanonik bağlam):
+- CLAUDE.md §38.114-§38.122 (HANDOFF migration tüm closure log'ları)
+- CLAUDE.md §38.121 Stage 41 onayı + roadmap (defer backlog A-F)
+- CLAUDE.md §38.B master backlog (operatör tetiği bekleyen genel
+  Buaze backlog — HIGH 4 Platforms 12-card grid + Stage 9 UserSession
+  + RECAPTCHA_ENFORCE flip + Prisma 7)
+- CLAUDE.md §39 (auto-merge + chat prompt logging disipline)
+- CLAUDE.md §38.49 (dead utility class disipline — callsite olmadan
+  primitive eklemek YAGNI)
+- CLAUDE.md §7 (3+ tekrar olmadan abstraction kaçınma)
+- /tmp/handoff-stage33/Test 2/ HANDOFF bundle
+
+DEFER BACKLOG (öncelik sırasıyla — §38.121 roadmap):
+
+ÖNCELIK 1 (gerçek value katar — yeni primitive callsite entegrasyonu):
+- APAIDraftCard → admin Inbox AI Co-Pilot redesign (Stage 31 §38.34
+  replace)
+- APBillingCard → admin /billing veya yeni billing surface
+- APSlider → settings panellerinde numeric input (örn. quota)
+- APStarInput → /r/[slug] review surface star input redesign
+- APRadioGroup → settings modallerde compact option list
+- APIconButton → notification bell, action toolbar
+
+ÖNCELIK 2 (opportunistic — gerçek callsite çıkarsa Stage 37/38 skip):
+- APButton component (bz-btn-* utility'den geçiş)
+- APSwitch lg size (Toggle extend)
+- APCheckbox indeterminate
+- APSegmented count badges
+- APChip removable + icon
+- APToggleCard / APFab / APSplitButton / APButtonGroup
+- APInboxCard / APLocationCard / APTeamCard / APQRCard /
+  APQuickSettingsCard / APComposerCard
+
+ÖNCELIK 3 (marketing redesign PR scope — Stage 40-defer):
+- Header floating pill scroll mode
+- Header mega menu (3-col)
+- Footer city ticker
+- Footer scan-to-app QR card
+- BottomNav dark theme variant (system-wide gerek)
+
+ÖNCELIK 4 (Site FX defer — Stage 39):
+- <PulseLine>
+- <QRScanLoader>
+- <RevealHeadline> advanced
+
+ÖNCELIK 5 (genel Buaze backlog — §38.B master):
+- HIGH 4 Platforms 12-card grid (product decision)
+- Stage 9 UserSession re-introduce
+- RECAPTCHA_ENFORCE flip
+- Prisma 7 upgrade
+
+DİSİPLİN (her PR için):
+- Tek consolidated PR per backlog item (§21.22 stacked YOK)
+- Branch: chore/<descriptive-slug>-stage<N>
+- Auto-merge: gh pr merge --auto --squash (§39.1)
+- Chat prompt history closure log §38.X §39.2
+- CLAUDE.md §38.49 + §7 disipline — preventif YAGNI
+- Pulse §11 + §23.3 paterni intact (kullanıcı kararı §38.114)
+
+Yeni session başlatırken AskUserQuestion ile öncelik seçimi
+netleştir (1-5 arası hangi backlog item'ı). Her PR mevcut Buaze
+paterni cross-check zorunlu (CLAUDE.md §38.49 + §7).
+```
+
+**Bu prompt'lar §38.121.1 paterni ile kalıcı kayıtta** — gelecek
+session'lar bu §'yi okuyup yeni prompt elde edebilir; CLAUDE.md
+authoritative kaynak.
+
+**Out of scope**: Schema migration, kod değişikliği, Stage 41
+implementation (yeni session'da), defer backlog implementation
+(öncelik sırasıyla gelecek session'larda).
+
+**Etkilenen dosyalar (1)**:
+- `CLAUDE.md` (§38.121 closure log + Stage 32-40 final özet tablo
+  + §38.121.1 yeni session handoff prompt'ları + tasarım defer
+  backlog roadmap)
+
+**Schema migration**: yok. **Yeni dep**: yok. **Code change**: yok.
+**Test count**: 365/365 intact.
+
+**Yapma**:
+- Stage 41'i bu PR'a sıkıştırma — kullanıcı net biçimde "başka
+  session'da devam edeceğim" dedi; §38.121.1 prompt'u ile yeni session.
+- §38.121.1 prompt'larını yeniden yazma — CLAUDE.md authoritative,
+  diğer session'lar bu §'yi okuyup verbatim copy-paste eder.
+- Defer backlog item'larını preventif implement etme — YAGNI;
+  öncelik sırasıyla gelecek session'larda gerçek talep gelince.
+
+**Yap**:
+- Yeni session başlatırken §38.121.1 Prompt 1'i (Stage 41) doğrudan
+  kullan.
+- Stage 41 sonrası §38.121.1 Prompt 2'yi (tasarım defer backlog)
+  doğrudan kullan; AskUserQuestion ile öncelik 1-5 seçimi.
+- §38.121 roadmap güncel kalsın — yeni defer kalemler çıkarsa A-F
+  listelerine ekle (her closure log'da değil, sadece roadmap drift
+  varsa).
+
+**Verification**:
+- Lint/tsc/test: docs-only PR — verify gerekmez.
+
+#### Stage 40b closure (Tarih 2026-05-08)
+
+- Branch: `chore/handoff-backlog-roadmap-stage40b` (fresh main üstüne,
+  Stage 40 §38.120 PR #543 merged)
+- Edit'lenen dosyalar: 1 (CLAUDE.md — §38.121 + §38.121.1 yeni session
+  handoff prompt'ları)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 365/365 intact
+- Operatör aksiyonu (PR sonrası): yok — auto-merge (CLAUDE.md §39.1).
+- Kalan riskler: yok (docs-only roadmap PR; defer backlog gelecek
+  session'larda implement edilir).
+- **Sonraki aşama**: Stage 41 yeni session — §38.121.1 Prompt 1
+  doğrudan kullan. Veya defer backlog (öncelik 1: yeni primitive
+  callsite entegrasyonu) — §38.121.1 Prompt 2.
+
 ---
 
 ## §39 — Auto-merge & Chat Prompt Logging Disipline (kanonik)
