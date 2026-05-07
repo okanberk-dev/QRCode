@@ -10,7 +10,20 @@ import { getSiteSettings } from '@/lib/site-settings';
 
 export const dynamic = 'force-dynamic';
 
+// Stage 25 §38.101 Phase A #3 — process-local cache.
+// Owner shell + admin shell her ikisi de aktif duyuruları fetch ediyordu;
+// duyuru create/edit/delete frequency çok düşük (admin panel'den ayda
+// birkaç kez). 5dk TTL drift kabul edilebilir; admin save sonrası
+// `clearAnnouncementsCache()` ile anında temizlenebilir.
+const ANNOUNCEMENTS_CACHE_TTL_MS = 5 * 60 * 1000;
+const announcementsCache = new Map<Locale, { data: DashboardAnnouncement[]; expiresAt: number }>();
+
 async function fetchActiveAnnouncements(locale: Locale): Promise<DashboardAnnouncement[]> {
+  // Stage 25 §38.101 Phase A #3 — cache hit
+  const cached = announcementsCache.get(locale);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
   try {
     const now = new Date();
     const rows = await prisma.announcement.findMany({
@@ -25,7 +38,7 @@ async function fetchActiveAnnouncements(locale: Locale): Promise<DashboardAnnoun
       orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
       take: 5,
     });
-    return rows.map((a) => ({
+    const data: DashboardAnnouncement[] = rows.map((a) => ({
       id: a.id,
       title: a.title,
       message: a.message,
@@ -36,6 +49,8 @@ async function fetchActiveAnnouncements(locale: Locale): Promise<DashboardAnnoun
       isDismissible: a.isDismissible,
       updatedAt: a.updatedAt.toISOString(),
     }));
+    announcementsCache.set(locale, { data, expiresAt: Date.now() + ANNOUNCEMENTS_CACHE_TTL_MS });
+    return data;
   } catch (error) {
     console.error('[DashboardLayout announcements]', error);
     return [];

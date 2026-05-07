@@ -181,6 +181,28 @@ function parseLLMJson(raw: string): { themes: ThemeItem[]; synthesis: string } |
   return { themes, synthesis };
 }
 
+/**
+ * Stage 25 §38.101 Phase C — sync cache lookup helper.
+ *
+ * Dashboard page extractThemes critical path'tan çıkarmak için: cache hit
+ * varsa instant return; miss ise null. Caller cache miss durumunda
+ * `void extractThemes(...)` ile background fetch tetikler — sonraki
+ * request'te cache hit alır. Critical path 1-2s OpenAI latency'den 0ms'e
+ * iner.
+ *
+ * Cache key version prefix (`v3:`) helper içinde otomatik uygulanır;
+ * caller `cacheKey`'i versiyonsuz geçirir (extractThemes ile aynı
+ * imzada).
+ */
+export function getCachedThemes(cacheKey: string): ThemesResult | null {
+  const versionedKey = `${CACHE_KEY_VERSION}:${cacheKey}`;
+  const cached = cache.get(versionedKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.result;
+  }
+  return null;
+}
+
 export async function extractThemes(
   comments: Array<{ rating: number; comment: string }>,
   locale: 'tr' | 'en',

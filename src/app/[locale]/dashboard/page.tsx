@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { extractThemes } from '@/lib/analytics-themes';
+import { extractThemes, getCachedThemes } from '@/lib/analytics-themes';
 // §38.32 — deriveCustomerFields + CustomerSegment + SegmentChip artık
 // dashboard'da kullanılmıyor (BUGÜN BEKLEYEN feedback-detail render kaldırıldı).
 // Customers list/drawer'da hâlâ aktif (§38.17 paterni).
@@ -695,15 +695,36 @@ async function renderDashboardPage({
   }
 
   // SIK BAHSEDİLEN KONULAR — son 30 gün yorumlarından AI ile tema çıkarımı.
-  // extractThemes helper içinde min 8 yorum + OpenAI key kontrolü; yoksa
+  // extractThemes helper içinde min 4 yorum + OpenAI key kontrolü; yoksa
   // empty fallback (UI section gizli). Cache 1 saat (CLAUDE.md §34.9).
+  //
+  // Stage 25 §38.101 Phase C — cache-first non-blocking pattern:
+  // - Cache hit → instant return (mevcut davranış intact)
+  // - Cache miss → empty fallback bu request için + background fetch
+  //   (fire-and-forget) sonraki request cache hit alır
+  //
+  // Trade-off: cache miss ilk request'te AIInsightBanner + SIK BAHSEDİLEN
+  // section gizli kalır (synthesis/themes empty); 1-2s critical path
+  // OpenAI latency'si page render'ını blok etmez. 1 saat sonra cache
+  // expire olduğunda yine background populate. Owner ilk dashboard
+  // ziyareti veya cold start sonrası AI section'ı 2. yenilemede görür.
   const themeComments: Array<{ rating: number; comment: string }> = themesFeedbacks
     .filter((f): f is { rating: number; comment: string } =>
       typeof f.comment === 'string' && f.comment.length > 0,
     )
     .map((f) => ({ rating: f.rating, comment: f.comment }));
   const themeCacheKey = `dashboard-themes:${user.id}:30d`;
-  const dashboardThemes = await extractThemes(themeComments, locale, themeCacheKey, user.id);
+  const cachedDashboardThemes = getCachedThemes(themeCacheKey);
+  let dashboardThemes;
+  if (cachedDashboardThemes) {
+    dashboardThemes = cachedDashboardThemes;
+  } else {
+    // Background populate (fire-and-forget). Promise reject olursa Sentry
+    // helper içinde zaten yakalanır (CLAUDE.md §15.1 fail-safe pattern).
+    void extractThemes(themeComments, locale, themeCacheKey, user.id).catch(() => {});
+    // Empty fallback bu request için — UI section'ları null sentry geçer.
+    dashboardThemes = { themes: [], synthesis: '', source: 'fallback' as const };
+  }
 
   // §38.32 — BUGÜN BEKLEYEN refactor: eski 4-feedback inline detail render +
   // segment crossover (§38.17) kaldırıldı. Yeni 3-task summary (reply / platform

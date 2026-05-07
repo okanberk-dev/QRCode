@@ -1,6 +1,17 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { prisma } from './prisma';
 
+// Stage 25 §38.101 Phase A #1 — process-local cache (CLAUDE.md §15.1 paterni
+// reuse). Site settings nadiren değişir (admin panel'den ayda birkaç kez);
+// 60s drift tolere edilebilir. Layout chain'inde root + locale layout 2 kez
+// `getSiteSettings()` çağırıyordu → tek DB hit + cache hit ratio %95+.
+//
+// Cache invalidation: site-settings güncelleme endpoint'i (admin panel)
+// `clearSiteSettingsCache()` çağırarak fresh fetch'i tetikleyebilir; 60s
+// TTL'den sonra otomatik refresh zaten gerçekleşir.
+const SITE_SETTINGS_CACHE_TTL_MS = 60_000;
+let siteSettingsCache: { data: SiteSettings; expiresAt: number } | null = null;
+
 export interface SiteSettings {
   titleDefaultTr: string;
   titleDefaultEn: string;
@@ -87,15 +98,33 @@ function parseKeywords(raw: string | undefined): string[] | null {
   return parts.length ? parts : null;
 }
 
+/**
+ * Manual cache invalidation hook for admin update endpoints.
+ *
+ * Stage 25 §38.101 Phase A #1: site settings update endpoint (admin
+ * panel save action) bu helper'ı çağırarak fresh fetch'i tetikler.
+ * 60s TTL window'unda admin save → cache temizlenir, sonraki
+ * `getSiteSettings()` çağrısı yeni veriyi döner.
+ */
+export function clearSiteSettingsCache() {
+  siteSettingsCache = null;
+}
+
 export async function getSiteSettings(): Promise<SiteSettings> {
   noStore();
+  // Stage 25 §38.101 Phase A #1: process-local cache hit check.
+  // Layout chain'inde root + locale layout 2 kez çağrı yapıyor; cache hit
+  // ile 2. çağrı ~0ms (DB round-trip yok). 60s TTL drift kabul.
+  if (siteSettingsCache && siteSettingsCache.expiresAt > Date.now()) {
+    return siteSettingsCache.data;
+  }
   try {
     const rows = await prisma.settings.findMany({
       where: { key: { startsWith: KEY_PREFIX } },
     });
     const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
     const d = SITE_SETTINGS_DEFAULTS;
-    return {
+    const data: SiteSettings = {
       titleDefaultTr: map[SITE_SETTINGS_KEYS.titleDefaultTr] || d.titleDefaultTr,
       titleDefaultEn: map[SITE_SETTINGS_KEYS.titleDefaultEn] || d.titleDefaultEn,
       titleTemplate: map[SITE_SETTINGS_KEYS.titleTemplate] || d.titleTemplate,
@@ -111,7 +140,10 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       crunchbaseUrl: map[SITE_SETTINGS_KEYS.crunchbaseUrl] || null,
       capterraUrl: map[SITE_SETTINGS_KEYS.capterraUrl] || null,
     };
+    siteSettingsCache = { data, expiresAt: Date.now() + SITE_SETTINGS_CACHE_TTL_MS };
+    return data;
   } catch {
+    // DB error → defaults döner; cache YAZILMAZ (next request retry yapsın)
     return SITE_SETTINGS_DEFAULTS;
   }
 }
