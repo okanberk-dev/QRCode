@@ -69,6 +69,12 @@ export default function MarketingNavbarClient({
   const [mobileSection, setMobileSection] = useState<DropdownId>(null);
   const [, setLangMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // Stage 43 §38.124 — HANDOFF premium-header.jsx floating pill mode
+  // (scrollY > 80px). `scrolled` (>40) hâlâ background + shadow için;
+  // `floating` (>80) ek olarak floating pill geometry (94vw + rounded
+  // + lateral margin) tetikler. Sadece `lg:` desktop'ta uygulanır;
+  // mobile drawer akışı intact.
+  const [floating, setFloating] = useState(false);
 
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enter = (id: DropdownId) => {
@@ -93,7 +99,11 @@ export default function MarketingNavbarClient({
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 40);
+      setFloating(y > 80);
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -325,13 +335,30 @@ export default function MarketingNavbarClient({
 
   return (
     <>
+      {/* Stage 43 §38.124 — Header floating pill scroll mode (HANDOFF
+          premium-header.jsx >80px scroll trigger). Mobile drawer açıkken
+          `fixed inset-x-0 top-0` override; mobile/tablet'te (`lg:` öncesi)
+          inline relative + scrolled bg/shadow değişimi mevcut paterni
+          intact. `lg:` desktop'ta üç kademe:
+          - top (y≤40): `lg:inset-x-0 lg:top-0` full-width + border-b
+          - scrolled (40<y≤80): aynı geometry + bg-white/95 + shadow
+          - floating (y>80): `lg:top-[18px] lg:left-1/2 lg:-translate-x-1/2
+            lg:w-[94vw] lg:max-w-[1180px] lg:rounded-full + advanced
+            backdrop-blur(16px) saturate(180%) + ring + drop shadow`
+          transition-all 300ms cubic-bezier ile yumuşak geçiş. */}
       <nav
         className={`${
           mobileOpen ? 'fixed inset-x-0 top-0' : 'relative'
-        } lg:fixed lg:inset-x-0 lg:top-0 z-40 h-[64px] border-b backdrop-blur-2xl transition-all duration-300 ${
+        } z-40 h-[64px] backdrop-blur-2xl transition-all duration-300 ${
+          // Mobile/tablet (<lg) — mevcut davranış intact
           scrolled
-            ? 'border-[#E5E5E5] bg-white/95 shadow-[0_4px_24px_rgba(10,10,10,0.05)]'
-            : 'border-[#EDEDED] bg-white/88'
+            ? 'border-b border-[#E5E5E5] bg-white/95 shadow-[0_4px_24px_rgba(10,10,10,0.05)]'
+            : 'border-b border-[#EDEDED] bg-white/88'
+        } ${
+          // Desktop (≥lg) — floating pill mode (y>80)
+          floating
+            ? 'lg:fixed lg:top-[18px] lg:left-1/2 lg:-translate-x-1/2 lg:w-[94vw] lg:max-w-[1180px] lg:rounded-full lg:border-0 lg:bg-white/[0.78] lg:[backdrop-filter:blur(16px)_saturate(180%)] lg:[-webkit-backdrop-filter:blur(16px)_saturate(180%)] lg:shadow-[0_12px_40px_-16px_rgba(10,10,10,0.18)] lg:ring-1 lg:ring-black/5'
+            : 'lg:fixed lg:inset-x-0 lg:top-0 lg:translate-x-0'
         }`}
       >
         <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between gap-3 px-4 sm:gap-4 sm:px-8">
