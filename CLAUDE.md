@@ -14990,6 +14990,118 @@ zaten var). **Test count**: 342 → **351** (+9 yeni APSlider helper).
   (animated QR + download/share), APLocationCard (pin icon tile),
   APTeamCard (gradient avatar). Stage 38 büyük scope (~6-8 yeni card).
 
+### 38.118 2026-05-08 — Stage 38 HANDOFF §8 step 5 (Panel kartları — 2 yeni card)
+
+§38.117 Stage 37 Panel atomları sonrası HANDOFF §8 step 5: Panel
+kartları. HANDOFF spec 12 card type listeler; Buaze gap analysis ile
+%70+ örtüşen 10 card skip (StatCard/EmptyState/AlertBanner/Modal/Tabs/
+mevcut feedback inbox/AccountPlanWidget mevcut), **2 yeni card**
+eklendi (kullanıcı kararı **B** — yeni implementation).
+
+**Migrate edilen** (`src/components/ui/`):
+
+| Dosya | HANDOFF kaynak | Pulse §11 değişiklikler |
+|---|---|---|
+| `APAIDraftCard.tsx` | admin-panel.jsx:799-847 | Graphite header + lime accent (Sparkles icon + lime tint chip) + tone segmented (`<Tabs>` primitive reuse) + customer context (mono uppercase + renderStars helper) + reply paragraph + tag chips (`<Badge>` reuse) + 3 action button (refresh + edit + approve, lucide icons + aria-label + focus-visible lime ring) + loading state (Loader2 spin + disable) + locale TR/EN |
+| `APBillingCard.tsx` | admin-panel.jsx:904-938 | Graphite header + lime corner glow (radial-gradient pointer-events:none) + plan name synthetic italic Space Grotesk (CLAUDE.md §38.112 paterni reuse) + active chip + AI quota progress bar (`role="progressbar"` + aria-valuenow) + 2 action button (Manage ghost + Upgrade dark + lime sparkle) + locale TR/EN |
+| `tests/ap-cards.test.ts` | yeni | 14 unit test — `renderStars` (rounding + clamp) + `computeQuotaPct` (clamp + zero division + edge cases) |
+
+Tümü **standalone primitive** olarak `src/components/ui/`'de export
+edilir; mevcut callsite'lar dokunulmadı (admin Inbox AI Co-Pilot Stage
+31 §38.34 + Account Plan Widget Stage 38 §38.51 intact). Gelecek
+panel surface'lerinde reuse edilir.
+
+**Skip edilen** (mevcut Buaze paterniyle redundant — CLAUDE.md §38.49
+dead utility class disipline):
+
+| HANDOFF | Buaze mevcut |
+|---|---|
+| `APCard` | `bz-card` utility (CLAUDE.md §23.2) + `<Modal>` primitive |
+| `APKpiCard` | `<StatCard>` (CLAUDE.md §23.3 — sparkline + delta + icon zaten var) |
+| `APInboxCard` (segmented + bulk action) | Mevcut feedback inbox + `useUrlFilter` (CLAUDE.md §36) + bulk toolbar §38.31 |
+| `APAlertCard` | `<AlertBanner kind="danger">` |
+| `APEmptyCard` | `<EmptyState>` |
+| `APLocationCard` | Mevcut admin/restaurants liste pattern (Stage 11 §38.93) |
+| `APTeamCard` | Mevcut admin/users + owner/team + Avatar primitive |
+| `APQRCard` | Mevcut Buaze QR generator + `<QRCodeDownload>` (gelecek Site FX Stage 39) |
+| `APQuickSettingsCard` | Mevcut `<SettingsLayout>` (CLAUDE.md §38.51) |
+| `APComposerCard` | Mevcut `/r/[slug]` review surface (Stage 31a §38.107) |
+
+**Out of scope**: Schema migration, mevcut card pattern'leri değiştirme,
+2 yeni card için callsite entegrasyonu (admin Inbox + AccountPlanWidget'i
+APAIDraftCard/APBillingCard ile replace etmek — gerçek redesign scope,
+ayrı PR).
+
+**Etkilenen dosyalar (4)**:
+- 2 yeni card (`APAIDraftCard.tsx` + `APBillingCard.tsx`)
+- 1 yeni test (`tests/ap-cards.test.ts`)
+- 1 edit barrel (`src/components/ui/index.ts` — 2 yeni export bloğu +
+  helper export'ları `renderStars` + `computeQuotaPct`)
+- CLAUDE.md (§38.118 closure log)
+
+**Schema migration**: yok. **Yeni dep**: yok (lucide-react +
+existing primitives reuse). **Test count**: 351 → **365** (+14:
+renderStars 7 + computeQuotaPct 7).
+
+**Yapma**:
+- Mevcut admin Inbox AI Co-Pilot draft akışını (Stage 31 §38.34/§38.42)
+  APAIDraftCard ile silent replace etme — admin Inbox infrastructure
+  feedback/[id]/draft endpoint + auto-draft toggle + reduced-motion
+  disipline ile karmaşık; APAIDraftCard standalone primitive olarak
+  dokümante, gelecek redesign PR'ında entegre edilir.
+- Mevcut AccountPlanWidget'i (CLAUDE.md §38.51) APBillingCard ile
+  silent replace etme — owner Account → Plan & Faturalama tab'ı
+  zaten subscription summary fetch + 3 progress bar entegrasyonu
+  taşıyor; APBillingCard generic-purpose card, admin-side veya yeni
+  billing surface'lerde reuse edilir.
+- HANDOFF Instrument Serif italic font yükleme — kullanıcı kararı
+  "Asla pivot etme" §38.114 intact; APBillingCard plan name synthetic
+  italic Space Grotesk (CLAUDE.md §38.112 cookie banner paterni).
+- `Tabs` primitive `value` prop ile çağırma — `Tabs` API `active`
+  kullanıyor (CLAUDE.md §23.3); APAIDraftCard `active={tone}` paterni.
+- `renderStars` 0.5 yıldız (½★) destekleme — `Math.round` paterni
+  intact (HANDOFF spec birebir); half-star ihtiyacı çıkarsa Unicode
+  `★½` veya SVG fill % gerekir, ayrı scope.
+
+**Yap**:
+- Yeni AI draft / approval UI gerekirse `<APAIDraftCard>` reuse —
+  admin Inbox redesign veya owner Pulse AI dashboard'da entegre
+  edilebilir.
+- Yeni billing/subscription overview gerekirse `<APBillingCard>` reuse
+  — admin /admin/billing, owner Plan & Faturalama, yeni billing
+  surface'lerinde standalone card.
+- Yeni tone/category chip mapping gerekirse Badge primitive `kind`
+  enum'unu extend (CLAUDE.md §23.3).
+- `renderStars` + `computeQuotaPct` saf helper'lar başka card'larda
+  reuse edilebilir; export edildi.
+
+**Verification**:
+- `npm run lint` 0 errors / 0 warnings
+- `npx tsc --noEmit` 0 errors in `src/`
+- `npm test` 365/365 pass, 42 suites (351 → 365, +14 yeni)
+- `npx next build` ✓ Compiled + 58/58 static page intact
+
+#### Stage 38 closure (Tarih 2026-05-08)
+
+- Branch: `chore/handoff-panel-cards-stage38` (fresh main üstüne, Stage
+  37 §38.117 PR #540 merged)
+- Edit'lenen dosyalar: 1 (`src/components/ui/index.ts` barrel) + 1
+  (CLAUDE.md)
+- Yeni dosya: 3 (2 card + 1 test)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 351 → 365 (+14)
+- Operatör aksiyonu (PR sonrası): yok — auto-merge `gh pr merge
+  --auto --squash` (CLAUDE.md §39.1 paterni).
+- Kalan riskler: yok (yeni card'lar henüz hiç callsite yok — gelecek
+  redesign PR'ında entegre edilirler).
+- **Sonraki aşama**: Stage 39 — HANDOFF §8 step 6 (Site FX — 12 component
+  paralel: PulseLine, QRScanLoader, StarClimber, LiveTicker, SentimentDial,
+  BigCounter, Marquee, SweepCTA, ToastRow, RevealHeadline, FeatureCard,
+  FloatingMark). Buaze'de mevcut: Marquee/AnimatedCounter (mevcut marketing),
+  partial coverage; çoğu yeni implementation. Stage 39 büyük scope (~600-1000
+  satır + animation engine §38.115 reuse).
+
 ---
 
 ## §39 — Auto-merge & Chat Prompt Logging Disipline (kanonik)
