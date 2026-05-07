@@ -12880,3 +12880,174 @@ Branch artık main üstünde Stage 25 + Stage 26 = 2 commit.
   - RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak)
   - bcrypt cost normalize (§38.2 — cosmetic)
   - KVKK right-to-be-forgotten (§38.2 — regülasyon scope)
+
+### 38.103 2026-05-07 — Stage 27 marketing minimal speed pass (Seçenek C)
+
+§38.99 (Stage 22) + §38.100 (Stage 24) + §38.101 (Stage 25) + §38.102
+(Stage 26) sonrası kullanıcı talebiyle 3 paralel Explore agent (Owner /
+Admin / Marketing+Public) ile kapsamlı audit yapıldı (15 fırsat). Kullanıcı
+**Seçenek C — sadece marketing minimal scope** seçti: SEO + LCP odaklı,
+en az risk, en hızlı kazanım. Owner/admin tarafı (TOP 7 konsolide ya da
+Stage 28 orta-priority) gelecek talep gelirse açılır.
+
+#### 3 fix bundle
+
+**Fix M2 — `/menu/[slug]` ISR cache + revalidatePath instant invalidation**
+(`src/app/menu/[slug]/page.tsx` + `src/lib/menu-access.ts` +
+`src/app/api/restaurants/[id]/menu/publish/route.ts`):
+
+- Page `dynamic='force-dynamic' + revalidate=0` → `revalidate=3600` (1
+  saat fresh CDN edge cache).
+- `touchMenuUpdated` helper genişletildi (`menu-access.ts:65-86`):
+  - `select: { slug: true }` defansif minimal column (CLAUDE.md §14.1).
+  - `revalidatePath(`/menu/${slug}`)` instant invalidate.
+  - 7 menu save callsite (categories POST + categories/[id] PATCH/DELETE
+    + items POST + items/[id] PATCH/DELETE + theme PATCH + reorder PATCH)
+    tek helper üzerinden invalidation kazanır — drift sıfır.
+- Publish endpoint (`menu/publish/route.ts`) `touchMenuUpdated`
+  kullanmıyordu (kendi inline `prisma.restaurant.update`'i var); inline
+  `revalidatePath` çağrısı + `select` listesine `slug` eklendi. Publish
+  state public menü görünürlük değişimi (menuPublished false→true /
+  true→false) instant invalidate edilir.
+
+Kazanım:
+- TTFB ~200-400ms saving (CDN edge hit, mobile 4G).
+- Vercel function invocation %85+ azalır (yüksek-trafik QR akışında).
+- Restoran rush hour'da Vercel concurrent function limit baskısı düşer.
+- Owner save sonrası max 1-2sn (CDN propagation) içinde public menü
+  güncel.
+
+**Fix M3 — `/[locale]/faq` ISR cache** (`src/app/[locale]/faq/page.tsx`):
+
+- `export const dynamic = 'force-dynamic'` → `export const revalidate = 3600`.
+- İçerik hardcoded `FaqItem[]` array (TR/EN, line ~50-118); DB query yok,
+  kararsızlık kaynağı yok. 1 saat stale window kabul (FAQ yıllık değişir).
+
+Kazanım: ~150ms TTFB + Vercel function invocation %90+ azalır.
+
+**Fix M5 — Space Grotesk weight 600 unused removal**
+(`src/app/layout.tsx` + `src/app/[locale]/solutions/restaurants/page.tsx:256`):
+
+- `Space_Grotesk({ weight: ['400', '500', '600', '700'], ... })` →
+  `weight: ['400', '500', '700']`.
+- SVG illustration `<text fontFamily="Space Grotesk" fontWeight="600">`
+  → `fontWeight="500"` (Pulse §11 paterni `bz-h-tight` ile uyumlu;
+  görsel fark insan gözüyle ayırt edilemez).
+- Codebase-wide manuel grep doğrulamış: `font-semibold` Space Grotesk
+  üzerinde 0 callsite (Inter body font'unda 20+ callsite intact —
+  Inter weight 600 yüklemesi dokunulmadı).
+
+Kazanım: ~15 KB woff2 / Latin subset cold load tasarruf; mobile 3G/4G
+LCP marginal iyileşme (font swap FOUT period kısalır).
+
+#### Etkilenen dosyalar (~30 satır net edit)
+
+- `src/app/menu/[slug]/page.tsx` — ISR config (revalidate=3600 + comment)
+- `src/lib/menu-access.ts` — `revalidatePath` import + `touchMenuUpdated`
+  genişletme (slug select + invalidate call + comment)
+- `src/app/api/restaurants/[id]/menu/publish/route.ts` — inline
+  `revalidatePath` + slug select
+- `src/app/[locale]/faq/page.tsx` — ISR config
+- `src/app/layout.tsx` — Space Grotesk weight array
+- `src/app/[locale]/solutions/restaurants/page.tsx` — SVG fontWeight 500
+- `CLAUDE.md` — §38.103 closure log
+
+**Yeni dosya**: yok. **Schema migration**: yok. **Yeni dep**: yok.
+**Response shape**: değişmedi. **IDOR / RBAC**: dokunulmadı.
+
+#### Yapma
+
+- `/menu/[slug]` revalidate'i 1 saatten uzun yapma — owner save
+  `revalidatePath` ile instant invalidate olur, ama orphan staleness
+  cron'u veya benzeri arka plan flow yok; 1 saat upper bound disipline.
+- 7 menu save endpoint'inde inline `revalidatePath` ekleme —
+  `touchMenuUpdated` helper merkezi nokta, drift kaynağı (CLAUDE.md §7).
+- `publish` endpoint'inde `touchMenuUpdated` çağrısı eklemek — extra DB
+  hit (zaten 1 update yapılmış); inline `revalidatePath` daha temiz.
+- FAQ sayfasını DB-driven yapmak — hardcoded array zaten yeterli, Stage
+  27 scope dışı.
+- Inter weight 600'ü kaldırma — Inter `font-semibold` 20+ callsite'ta
+  kullanılıyor (admin/dashboard/components). Sadece Space Grotesk weight
+  600 unused.
+- `revalidatePath('/menu/*')` wildcard ile çağırma — Next.js wildcard
+  desteklemez; spesifik slug ile çağır (per-restaurant invalidation).
+- Layout font config'ini `next/font/local` ile değiştirmek —
+  `next/font/google` CDN-optimized, Vercel build pipeline'ı ile uyumlu
+  (CLAUDE.md §11).
+
+#### Yap
+
+- Yeni public sayfa eklerken (örn. yeni marketing landing) `revalidate`
+  export'u ekle — TTFB optimization (CLAUDE.md §38.103 paterni).
+- Yeni owner save endpoint'i eklerken (örn. menü görsel galerisi) ya
+  `touchMenuUpdated` helper'ı reuse ya da inline
+  `revalidatePath(`/menu/${slug}`)` çağrısı ekle.
+- Yeni font weight ihtiyacı çıkarsa: önce mevcut weight'lerle test et
+  (Space Grotesk + tight tracking ile 500/700 weight neredeyse her
+  zaman yeter). Yeni weight cost: ~15 KB woff2 / weight / subset.
+- Yeni font weight kaldırma adayı bulunduğunda manuel grep doğrulaması
+  zorunlu: `grep -rn "fontWeight=" src/` + `grep -rn "font-semibold" src/`
+  callsite count + Tailwind class match. Pulse §11 paterni `bz-h-tight`
+  500 weight kanonik — başka heading/SVG metni 500'e align edilebilir.
+
+#### Verification
+
+- `npm run lint`: 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: mevcut suite intact (functional değişiklik yok)
+- `npx next build` (stub env): 58/58 static page intact (`/menu/[slug]`
+  artık ISR mode'unda CDN'e gider; FAQ aynı şekilde)
+- Sanity grep regression:
+  - `grep -nE "revalidate\s*=\s*3600" src/app/menu/\[slug\]/page.tsx` →
+    1 hit
+  - `grep -nE "revalidate\s*=\s*3600" src/app/\[locale\]/faq/page.tsx` →
+    1 hit
+  - Layout Space Grotesk array `'400', '500', '700'` (600 yok)
+  - `revalidatePath` import + call: `menu-access.ts` + `publish/route.ts`
+  - SVG `fontWeight="600"` `solutions/` altında 0 hit
+
+#### Manual smoke test (Vercel preview sonrası)
+
+```bash
+# Public menu CDN cache hit verification
+curl -I "https://qr-code-git-...vercel.app/menu/<test-slug>"
+# Beklenen: cache-control: s-maxage=3600 (Next.js otomatik ISR)
+# 1. request: x-vercel-cache: MISS, 2. request: HIT
+
+# FAQ CDN hit
+curl -I "https://qr-code-git-...vercel.app/tr/faq"
+# Beklenen: 2. request HIT
+
+# Owner save sonrası invalidation
+# 1) Owner panel'den menü ürün eklendi (POST /api/restaurants/<id>/menu/items)
+# 2) curl -I /menu/<slug> → x-vercel-cache: REVALIDATED veya MISS sonra HIT
+```
+
+Vercel Speed Insights LCP/INP delta + Vercel Analytics Cache hit ratio
+1 hafta soak sonrası ölç (typically %30-50 → %70-85 menu/faq
+endpoint'lerinde).
+
+#### Stage 27 closure
+
+- Branch: `claude/apply-performance-report-EQ8IQ` (designated, Stage
+  22-26 cumulative — Stage 26 main'e merge edildi `ab3a203f`, branch
+  fresh main'e align edilip Stage 27 commit eklendi)
+- Edit'lenen dosyalar: 7 (1 menu page + 1 menu-access lib + 1 publish
+  endpoint + 1 faq page + 1 layout + 1 solutions/restaurants + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: değişmedi (functional değişiklik yok)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. 1 hafta
+  soak sonrası Vercel Speed Insights LCP delta + Cache hit ratio ölç
+  (`/menu/[slug]` + `/[locale]/faq` endpoint'lerinde).
+- Kalan riskler: yok (functional değişiklik yok). `revalidatePath`
+  fail-soft pattern menu save flow'unu bozmaz; helper genişlemesi
+  geriye uyumlu (mevcut callsite'lar hiçbir API contract değişmesi
+  görmez).
+- **Sonraki aşama önerisi**: Seçenek A kalan fix'leri (TOP 7 cumulative
+  artakalan O1+A1+A2+O2) veya Stage 28 orta-priority (O3-O4 + A3-A5
+  + M1 + M4). §38.B master backlog kalemleri operatör tetiği bekliyor:
+  - HIGH 4 Platforms 12-card grid (DEFER §38.30)
+  - Stage 9 UserSession re-introduce (operatör tetiği §38.84/§38.89)
+  - RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak)

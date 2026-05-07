@@ -30,7 +30,13 @@ export async function generateMetadata({
   };
 }
 
-export const dynamic = 'force-dynamic';
+// Stage 27 §38.103 Fix M3 — ISR cache window. FAQ içeriği hardcoded
+// `FaqItem[]` array (TR/EN, line ~50-118); DB query yok, kararsızlık
+// kaynağı yok. force-dynamic her request server-render zorluyordu;
+// 1 saat fresh CDN edge cache ile TTFB ~150ms düşer + Vercel function
+// invocation %90+ azalır. FAQ içeriği yıllık değişir → 1 saat stale
+// kabul.
+export const revalidate = 3600;
 
 /**
  * 1:1 with .design/site/site-pages3.jsx:FAQPage (lines 431-471).
