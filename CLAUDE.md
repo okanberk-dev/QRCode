@@ -14168,3 +14168,67 @@ credentials), schema migration (Stage 31b kapanmış).
   gerçek entegrasyon (operatör credentials), Brand Identity UI alan
   ekleme (admin /admin/restaurants/[id] feature-access form'una
   businessIdNumber + mersisNumber + physicalAddress input'ları).
+
+### 38.110 2026-05-07 — Stage 31d cookie banner client-side locale auto-detect (PR2 follow-up)
+
+§38.108 Stage 31b PR2 ile eklenen `CookieConsentBanner` server-side
+`NEXT_LOCALE` cookie'den locale prop alıyordu. Buaze URL-segment based
+i18n (`/[locale]/...`) kullanıyor; Next.js App Router otomatik
+NEXT_LOCALE cookie set etmiyor (eski Pages Router i18n config feature'ı).
+Sonuç: banner her zaman fallback 'tr' görünüyordu — kullanıcı `/en/`
+route'unda bile Türkçe metin görüyordu.
+
+**Fix**: client-side mount'ta `detectLocaleFromBrowser()` saf fonksiyon
+ile pathname/query parse:
+- `/^\/en(\/|$)/` → 'en'
+- `/^\/tr(\/|$)/` → 'tr'
+- Public surface'lerde (`/r/[slug]`, `/menu/[slug]`) locale segment yok
+  → `?hl=en` veya `?lang=en` query string fallback (CLAUDE.md public
+  review surface paterni)
+- Hiçbiri yoksa default 'tr'
+
+`CookieConsentBannerProps.locale` opsiyonel'e indirildi (pre-mount
+fallback). State `useState<'tr' | 'en'>(serverLocale)` mount sonrası
+`setLocale(detectLocaleFromBrowser())` ile override edilir. Layout.tsx
+intact (mevcut cookie-based prop fallback rolünde kalır).
+
+**Etkilenen dosyalar (1 dosya)**:
+- `src/components/legal/CookieConsentBanner.tsx` (+detectLocaleFromBrowser
+  helper + locale state + client-side override)
+- `CLAUDE.md` §38.110 closure
+
+**Verification**:
+- `npm run lint` 0 / 0
+- `npx tsc --noEmit` 0 errors src/
+- `npm test` 274/274 pass intact
+- `npx next build` ✓ 58/58 static
+
+**Yapma**:
+- Banner'ı server component'e çevirmek — locale detection client-side
+  pathname'e bağlı, server'da bilinmiyor (URL-segment app router).
+- `NEXT_LOCALE` cookie'yi middleware'de set etmek — Buaze URL-based
+  routing zaten doğru, cookie ek complexity getirir + Vercel CDN
+  partition farkı yaratır.
+- `navigator.language` browser locale fallback ekleme — kullanıcı
+  açıkça TR URL'inde EN tercih etse yanlış olur (URL > browser).
+
+**Yap**:
+- Yeni public surface'ler için `?hl=` query string i18n paterni reuse.
+- Yeni client component'lerde locale-aware behavior gerekirse
+  `detectLocaleFromBrowser` paterni reuse (export edilebilir, şu an
+  inline saf fn).
+
+#### Stage 31d closure (Tarih 2026-05-07)
+
+- Branch: `claude/cookie-banner-locale-fix-stage31d` (fresh main üstüne,
+  Stage 31c §38.109 PR3 merged)
+- Edit'lenen dosyalar: 2 (CookieConsentBanner.tsx + CLAUDE.md)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 274 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Manuel
+  smoke: `/en/contact` ziyaret et → cookie banner EN copy görünür
+  ("Cookie preferences" + "Accept all" + "Customize"). `/tr/contact`
+  → TR. `?hl=en` query → EN. iframe `/embed/[slug]` → banner görünmez
+  (intact §38.108).
+- Kalan riskler: yok (UI-only fix, server-side fallback intact).

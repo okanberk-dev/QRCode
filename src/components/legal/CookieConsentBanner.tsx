@@ -75,15 +75,54 @@ function writeCookieConsent(consent: Omit<CookieConsentState, 'version' | 'essen
 }
 
 export interface CookieConsentBannerProps {
-  locale: 'tr' | 'en';
+  /**
+   * Server-side fallback locale (NEXT_LOCALE cookie). Çoğu zaman 'tr'
+   * — Buaze cookie set etmiyor; gerçek locale Stage 31d §38.110 fix'inde
+   * client-side `window.location` pathname'inden detect ediliyor (`/en/...`
+   * veya `?hl=en` → 'en'; aksi 'tr'). Prop sadece pre-mount fallback.
+   */
+  locale?: 'tr' | 'en';
 }
 
-export default function CookieConsentBanner({ locale }: CookieConsentBannerProps) {
+/**
+ * Stage 31d §38.110 — client-side locale auto-detection.
+ *
+ * Buaze URL-segment based i18n (`/[locale]/...`); `NEXT_LOCALE` cookie
+ * genelde set edilmiyor → server prop her zaman 'tr' fallback'e düşüyordu.
+ * Banner her zaman TR görünüyordu (kullanıcı raporu).
+ *
+ * Fix: mount sonrası `window.location.pathname` parse + `?hl=en` query
+ * fallback. Public surface'lerde (`/r/[slug]`, `/menu/[slug]`) locale
+ * segment yok; query string `?hl=` kullanılır (CLAUDE.md public review
+ * surface paterni). Default 'tr'.
+ */
+function detectLocaleFromBrowser(): 'tr' | 'en' {
+  if (typeof window === 'undefined') return 'tr';
+  try {
+    // 1) Pathname check — `/en/...` veya `/en` exact
+    const path = window.location.pathname;
+    if (/^\/en(\/|$)/.test(path)) return 'en';
+    if (/^\/tr(\/|$)/.test(path)) return 'tr';
+    // 2) Query param fallback (public surface'ler için)
+    const search = new URLSearchParams(window.location.search);
+    const hl = (search.get('hl') || search.get('lang') || '').toLowerCase();
+    if (hl === 'en') return 'en';
+    if (hl === 'tr') return 'tr';
+  } catch {
+    /* swallow — exotic environment */
+  }
+  return 'tr';
+}
+
+export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: CookieConsentBannerProps) {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  // Server-side prop ilk render'da fallback; client mount sonrası
+  // `detectLocaleFromBrowser` ile pathname/query'den doğrulanır.
+  const [locale, setLocale] = useState<'tr' | 'en'>(serverLocale);
   const isTr = locale === 'tr';
 
   useEffect(() => {
@@ -98,6 +137,8 @@ export default function CookieConsentBanner({ locale }: CookieConsentBannerProps
       // Cross-origin iframe → window.top throws → kesinlikle iframe'iz, skip
       return;
     }
+    // Stage 31d §38.110 — client-side locale detection.
+    setLocale(detectLocaleFromBrowser());
     const existing = readCookieConsent();
     if (!existing) {
       setVisible(true);
