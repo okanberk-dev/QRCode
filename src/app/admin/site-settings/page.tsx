@@ -371,7 +371,7 @@ export default function SiteSettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="ml-auto flex items-center gap-2 bg-[#C6F24E] text-[#0A0A0A] font-semibold text-[14px] px-6 py-3 rounded-xl border border-[#EDEDED] hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+            className="bz-btn-lime ml-auto disabled:opacity-60"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
             {saving ? 'Kaydediliyor…' : 'Kaydet'}
@@ -425,7 +425,7 @@ const AssetUploader = ({ url, label, accept, aspect, onUpload, onRemove, uploadi
           <button
             onClick={() => ref.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 bg-[#0A0A0A] text-white font-bold text-[12px] px-4 py-2 rounded-xl hover:bg-[#1A1A1A] disabled:opacity-50 transition-colors"
+            className="bz-btn-primary bz-btn-sm disabled:opacity-50"
           >
             {uploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
             {uploading ? 'Yükleniyor…' : url ? 'Değiştir' : 'Yükle'}
@@ -433,7 +433,7 @@ const AssetUploader = ({ url, label, accept, aspect, onUpload, onRemove, uploadi
           {url && (
             <button
               onClick={onRemove}
-              className="flex items-center gap-1.5 bg-white text-red-600 border border-red-200 font-bold text-[12px] px-3 py-2 rounded-xl hover:bg-red-50 transition-colors"
+              className="bz-btn-danger bz-btn-sm"
             >
               <X size={13} />
               Kaldır

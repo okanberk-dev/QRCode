@@ -59,7 +59,7 @@ export default function DashboardError({
           <button
             type="button"
             onClick={reset}
-            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
+            className="bz-btn-primary"
           >
             <RefreshCw size={14} strokeWidth={2} />
             {isTr ? 'Tekrar dene' : 'Try again'}

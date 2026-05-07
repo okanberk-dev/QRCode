@@ -158,7 +158,7 @@ export default function AnnouncementBanner({ announcements, locale }: Props) {
               type="button"
               onClick={() => dismiss(a)}
               aria-label={copy.dismiss}
-              className="flex h-8 w-8 items-center justify-center rounded-xl transition-colors hover:bg-black/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
+              className="bz-btn-icon"
               style={{ color: style.text }}
             >
               <X size={16} strokeWidth={2} />

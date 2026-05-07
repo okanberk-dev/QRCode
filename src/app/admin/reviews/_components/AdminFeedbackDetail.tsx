@@ -65,7 +65,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A]"
+            className="bz-btn bz-btn-sm"
             aria-label={isTr ? 'Yorumlar listesine dön' : 'Back to reviews'}
           >
             <ArrowLeft size={16} strokeWidth={2} />
@@ -76,11 +76,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
               type="button"
               onClick={onFlag}
               disabled={flagging}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
-                active.isFlagged
-                  ? 'border-[#FCA5A5] bg-[#FEE2E2] text-[#991B1B]'
-                  : 'border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
-              }`}
+              className={`${active.isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
             >
               {flagging ? <Loader2 size={12} className="animate-spin" /> : <Flag size={12} />}
               {active.isFlagged ? (isTr ? 'Kaldır' : 'Unflag') : isTr ? 'İşaretle' : 'Flag'}
@@ -89,11 +85,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
               type="button"
               onClick={onAssign}
               disabled={assigning}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-50 ${
-                active.isAssigned
-                  ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                  : 'border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
-              }`}
+              className={`${active.isAssigned ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
             >
               {assigning ? (
                 <Loader2 size={12} className="animate-spin" />
@@ -152,11 +144,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                 type="button"
                 onClick={onFlag}
                 disabled={flagging}
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors disabled:opacity-50 ${
-                  active.isFlagged
-                    ? 'border-[#FCA5A5] bg-[#FEE2E2] text-[#991B1B] hover:border-[#DC2626]'
-                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A]'
-                }`}
+                className={`${active.isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
               >
                 {flagging ? <Loader2 size={12} className="animate-spin" /> : <Flag size={12} />}
                 {active.isFlagged
@@ -171,11 +159,7 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
                 type="button"
                 onClick={onAssign}
                 disabled={assigning}
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors disabled:opacity-50 ${
-                  active.isAssigned
-                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                    : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A]'
-                }`}
+                className={`${active.isAssigned ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
               >
                 {assigning ? (
                   <Loader2 size={12} className="animate-spin" />

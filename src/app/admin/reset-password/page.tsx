@@ -130,7 +130,7 @@ function ResetPasswordContent() {
                   </p>
                   <Link
                     href="/admin"
-                    className="mt-5 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0A0A0A] px-5 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A]"
+                    className="bz-btn-primary mt-5 min-h-[48px] w-full rounded-2xl text-[14px]"
                   >
                     Girişe git
                     <ArrowRight size={16} strokeWidth={2} />
@@ -217,7 +217,7 @@ function ResetPasswordContent() {
                       <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-[#737373] hover:bg-[#EAF9B8] hover:text-[#0A0A0A] transition-colors"
+                        className="bz-btn-icon absolute right-2 top-1/2 -translate-y-1/2"
                         aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                       >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -252,7 +252,7 @@ function ResetPasswordContent() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0A0A0A] px-5 py-3.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1A1A1A] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="bz-btn-primary min-h-[48px] w-full rounded-2xl text-[14px] disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {loading ? (
                       <Loader2 className="animate-spin" size={18} />

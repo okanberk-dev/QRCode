@@ -392,7 +392,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
             type="button"
             onClick={onPreview}
             disabled={isImmutable}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+            className="bz-btn bz-btn-sm disabled:opacity-50"
           >
             <Eye size={14} /> Önizle
           </button>
@@ -400,7 +400,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
             type="button"
             onClick={onSendTest}
             disabled={isImmutable}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+            className="bz-btn text-xs disabled:opacity-50"
           >
             <Mail size={14} /> Test mail at
           </button>
@@ -409,7 +409,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
               type="button"
               onClick={onDelete}
               disabled={deleting}
-              className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-semibold text-red-700 hover:bg-red-50 active:scale-95 disabled:opacity-50"
+              className="bz-btn-danger text-xs disabled:opacity-50"
             >
               {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
               Sil
@@ -421,7 +421,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
           type="button"
           onClick={onSave}
           disabled={!canSubmit}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#C6F24E] px-5 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] active:scale-95 disabled:opacity-50"
+          className="bz-btn-lime disabled:opacity-50"
         >
           {saving || sendingNow ? <Loader2 size={14} className="animate-spin" /> : mode === 'now' ? <Send size={14} /> : <Save size={14} />}
           {mode === 'now' ? 'Şimdi gönder' : mode === 'scheduled' ? 'Zamanla' : 'Taslağı kaydet'}

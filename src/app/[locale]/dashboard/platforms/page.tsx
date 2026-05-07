@@ -405,7 +405,7 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
                     type="button"
                     disabled
                     aria-disabled="true"
-                    className="inline-flex flex-1 cursor-not-allowed items-center justify-center gap-1.5 rounded-[12px] border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 text-[12px] font-medium text-[#A3A3A3]"
+                    className="bz-btn flex-1 cursor-not-allowed opacity-50"
                     title={isTr ? 'Yakında bağlanacak' : 'Coming soon'}
                   >
                     {isTr ? 'Yakında' : 'Coming soon'}

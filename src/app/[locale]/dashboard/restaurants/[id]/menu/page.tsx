@@ -764,7 +764,7 @@ export default function RestaurantMenuBuilderPage() {
           </div>
           <button
             onClick={() => router.push(`/${locale}/dashboard/restaurants/${id}/menu`)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-[11px] font-medium text-white hover:bg-white/20 active:scale-95"
+            className="bz-btn-on-dark bz-btn-sm text-[11px]"
           >
             <X size={14} strokeWidth={2} />
             {copy.exitPreview}
@@ -850,21 +850,21 @@ export default function RestaurantMenuBuilderPage() {
             <div className="flex flex-wrap gap-2">
               <Link
                 href={`/${locale}/dashboard/restaurants/${id}/menu?preview=1`}
-                className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                className="bz-btn"
               >
                 <Eye size={14} strokeWidth={2} />
                 {copy.preview}
               </Link>
               <button
                 onClick={() => setQrModal(true)}
-                className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                className="bz-btn"
               >
                 <QrCode size={14} strokeWidth={2} />
                 {copy.menuQr}
               </button>
               <Link
                 href={`/${locale}/dashboard/restaurants/${id}/menu/analytics`}
-                className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                className="bz-btn"
               >
                 <BarChart3 size={14} strokeWidth={2} />
                 {copy.analytics}
@@ -873,7 +873,7 @@ export default function RestaurantMenuBuilderPage() {
                 <Link
                   href={`/menu/${restaurant.slug}`}
                   target="_blank"
-                  className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+                  className="bz-btn"
                 >
                   <ChevronRight size={14} strokeWidth={2} />
                   {copy.viewPublic}
@@ -882,11 +882,7 @@ export default function RestaurantMenuBuilderPage() {
               <button
                 onClick={togglePublish}
                 disabled={publishBusy || !restaurant.menuEnabled}
-                className={`inline-flex items-center gap-2 rounded-full px-5 py-2 text-[13px] font-medium shadow-sm transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
-                  restaurant.menuPublished
-                    ? 'bg-[#FFFBEB] text-[#92400E] ring-1 ring-[#FDE68A] hover:bg-[#FEF3C7]'
-                    : 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
-                }`}
+                className={`${restaurant.menuPublished ? 'bz-btn-warn' : 'bz-btn-lime'} disabled:opacity-50`}
               >
                 {publishBusy ? <Loader2 size={14} className="animate-spin" /> : restaurant.menuPublished ? <EyeOff size={14} strokeWidth={2} /> : <Eye size={14} strokeWidth={2} />}
                 {restaurant.menuPublished ? copy.unpublish : copy.publish}
@@ -1041,7 +1037,7 @@ export default function RestaurantMenuBuilderPage() {
               <button
                 onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
                 disabled={!restaurant.menuEnabled}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                className="bz-btn-primary bz-btn-sm shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus size={14} strokeWidth={2.25} />
                 {copy.addItem}
@@ -1139,7 +1135,7 @@ export default function RestaurantMenuBuilderPage() {
               <button
                 onClick={() => setItemModal({ mode: 'create', data: { categoryId: activeCategory.id, isAvailable: true, isOutOfStock: false, badges: [], priceCents: 0 } })}
                 disabled={!restaurant.menuEnabled}
-                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-1.5 text-[12px] font-medium text-white transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                className="bz-btn-primary bz-btn-sm mt-1 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus size={12} strokeWidth={2.25} />
                 {copy.addItem}
@@ -1416,7 +1412,7 @@ function ItemModal({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+                  className="bz-btn-primary bz-btn-sm disabled:opacity-50"
                 >
                   {uploading ? <Loader2 size={13} className="animate-spin" /> : <ImageIcon size={13} strokeWidth={2} />}
                   {uploading ? copy.uploading : copy.uploadImage}
@@ -1587,14 +1583,14 @@ function ModalActions({ busy, copy, onClose }: { busy: boolean; copy: Record<str
       <button
         type="button"
         onClick={onClose}
-        className="rounded-full px-5 py-2.5 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+        className="bz-btn-ghost"
       >
         {copy.cancel}
       </button>
       <button
         type="submit"
         disabled={busy}
-        className="inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+        className="bz-btn-primary disabled:opacity-50"
       >
         {busy ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2} />}
         {copy.save}
@@ -1702,24 +1698,24 @@ function SortableCategoryRow({
         </div>
       </button>
       <div className="flex shrink-0 items-center gap-0.5 transition-opacity md:opacity-0 md:group-hover:opacity-100">
-        <button onClick={onMoveUp} disabled={isFirst} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] disabled:opacity-30 disabled:hover:bg-transparent" title="Up">
+        <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" title="Up" aria-label="Up">
           <ArrowUp size={14} strokeWidth={2} />
         </button>
-        <button onClick={onMoveDown} disabled={isLast} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] disabled:opacity-30 disabled:hover:bg-transparent" title="Down">
+        <button onClick={onMoveDown} disabled={isLast} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" title="Down" aria-label="Down">
           <ArrowDown size={14} strokeWidth={2} />
         </button>
         <button
           onClick={onToggleVisible}
-          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${category.isVisible ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-[#D97706]'}`}
+          className={`bz-btn-icon ${category.isVisible ? '' : 'text-[#D97706]'}`}
           title={copy.toggleVisible}
           aria-label={copy.toggleVisible}
         >
           {category.isVisible ? <Eye size={14} strokeWidth={2} /> : <EyeOff size={14} strokeWidth={2} />}
         </button>
-        <button onClick={onEdit} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A]" title={copy.editCategory} aria-label={copy.editCategory}>
+        <button onClick={onEdit} className="bz-btn-icon" title={copy.editCategory} aria-label={copy.editCategory}>
           <Edit2 size={14} strokeWidth={2} />
         </button>
-        <button onClick={onDelete} className="flex h-8 w-8 items-center justify-center rounded-lg text-[#DC2626] transition-colors hover:bg-[#FEF2F2]" title={copy.delete} aria-label={copy.delete}>
+        <button onClick={onDelete} className="bz-btn-icon text-[#DC2626] hover:bg-[#FEF2F2]" title={copy.delete} aria-label={copy.delete}>
           <Trash2 size={14} strokeWidth={2} />
         </button>
       </div>
@@ -1846,15 +1842,15 @@ function SortableItemRow({
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 border-t border-[#F5F5F5] pt-2 transition-opacity sm:border-t-0 sm:pt-0 md:opacity-0 md:group-hover:opacity-100">
-        <button onClick={onMoveUp} disabled={isFirst} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] disabled:opacity-30 disabled:hover:bg-transparent">
+        <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Up">
           <ArrowUp size={16} strokeWidth={2} />
         </button>
-        <button onClick={onMoveDown} disabled={isLast} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A] disabled:opacity-30 disabled:hover:bg-transparent">
+        <button onClick={onMoveDown} disabled={isLast} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Down">
           <ArrowDown size={16} strokeWidth={2} />
         </button>
         <button
           onClick={onToggleAvailable}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isAvailable ? 'text-[#525252] hover:text-[#0A0A0A]' : 'text-[#D97706]'}`}
+          className={`bz-btn-icon ${item.isAvailable ? '' : 'text-[#D97706]'}`}
           title={copy.toggleVisible}
           aria-label={copy.toggleVisible}
         >
@@ -1862,16 +1858,16 @@ function SortableItemRow({
         </button>
         <button
           onClick={onToggleOutOfStock}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[#EDEDED] ${item.isOutOfStock ? 'text-[#DC2626]' : 'text-[#525252] hover:text-[#0A0A0A]'}`}
+          className={`bz-btn-icon ${item.isOutOfStock ? 'text-[#DC2626]' : ''}`}
           title={copy.toggleOutOfStock}
           aria-label={copy.toggleOutOfStock}
         >
           <AlertTriangle size={16} strokeWidth={2} />
         </button>
-        <button onClick={onEdit} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#525252] transition-colors hover:bg-[#EDEDED] hover:text-[#0A0A0A]" aria-label={copy.editItem || 'Edit'}>
+        <button onClick={onEdit} className="bz-btn-icon" aria-label={copy.editItem || 'Edit'}>
           <Edit2 size={16} strokeWidth={2} />
         </button>
-        <button onClick={onDelete} className="flex h-9 w-9 items-center justify-center rounded-lg text-[#DC2626] transition-colors hover:bg-[#FEF2F2]" aria-label={copy.delete}>
+        <button onClick={onDelete} className="bz-btn-icon text-[#DC2626] hover:bg-[#FEF2F2]" aria-label={copy.delete}>
           <Trash2 size={16} strokeWidth={2} />
         </button>
       </div>
@@ -2080,7 +2076,7 @@ function ThemePanel({
                   type="button"
                   onClick={() => logoFileRef.current?.click()}
                   disabled={saving}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+                  className="bz-btn-primary bz-btn-sm disabled:opacity-50"
                 >
                   <ImageIcon size={13} strokeWidth={2} />
                   {copy.uploadImage}
@@ -2383,14 +2379,14 @@ function MenuQrModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full px-5 py-2.5 text-[13px] font-medium text-[#525252] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+            className="bz-btn"
           >
             {copy.cancel}
           </button>
           <button
             onClick={download}
             disabled={downloading || !previewSvg}
-            className="inline-flex items-center gap-2 rounded-full bg-[#C6F24E] px-6 py-2.5 text-[13px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:bg-[#A8D62E] active:scale-95 disabled:opacity-50"
+            className="bz-btn-lime disabled:opacity-50"
           >
             {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2} />}
             {copy.downloadQr}

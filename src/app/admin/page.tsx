@@ -280,7 +280,7 @@ function AdminLoginContent() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((prev) => !prev)}
-                      className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-[#737373] transition-colors hover:bg-[#EAF9B8] hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                      className="bz-btn-icon absolute right-2 top-1/2 -translate-y-1/2"
                       aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
                     >
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -307,7 +307,7 @@ function AdminLoginContent() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group mt-2 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_40px_-22px_rgba(10,10,10,0.65)] transition-all hover:-translate-y-px hover:bg-[#1A1A1A] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+                  className="bz-btn-primary mt-2 min-h-[54px] w-full text-[14px] shadow-[0_18px_40px_-22px_rgba(10,10,10,0.65)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading ? (
                     <Loader2 className="animate-spin" size={18} />

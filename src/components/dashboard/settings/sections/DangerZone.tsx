@@ -138,18 +138,7 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
               type="button"
               onClick={handleDeactivate}
               disabled={deactivateBusy || !restaurant.isActive}
-              className="mt-3 inline-flex items-center gap-1.5"
-              style={{
-                height: 36,
-                padding: "0 14px",
-                borderRadius: 999,
-                background: "#fff",
-                border: "1px solid #FECACA",
-                color: "#991B1B",
-                fontSize: 13,
-                cursor: !restaurant.isActive ? "not-allowed" : "pointer",
-                opacity: !restaurant.isActive ? 0.5 : 1,
-              }}
+              className="bz-btn-danger mt-3 disabled:opacity-50"
             >
               {deactivateBusy && <Loader2 size={14} className="animate-spin" />}
               {restaurant.isActive
@@ -247,21 +236,7 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
                 type="button"
                 onClick={handleDelete}
                 disabled={deleteBusy || deleteConfirmName.trim() !== restaurant.name}
-                className="inline-flex items-center gap-1.5"
-                style={{
-                  height: 36,
-                  padding: "0 16px",
-                  borderRadius: 999,
-                  background: "#991B1B",
-                  color: "#fff",
-                  fontSize: 13,
-                  cursor:
-                    deleteBusy || deleteConfirmName.trim() !== restaurant.name
-                      ? "not-allowed"
-                      : "pointer",
-                  opacity:
-                    deleteBusy || deleteConfirmName.trim() !== restaurant.name ? 0.5 : 1,
-                }}
+                className="bz-btn-danger disabled:opacity-50"
               >
                 {deleteBusy && <Loader2 size={14} className="animate-spin" />}
                 <AlertOctagon size={14} />

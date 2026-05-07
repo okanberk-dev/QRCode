@@ -200,7 +200,7 @@ export function BusinessWebsiteSettings({
             <button
               type="button"
               onClick={handleCopy}
-              className="absolute right-2 top-2 inline-flex items-center gap-1.5 rounded-md border border-[#EDEDED] bg-white px-2.5 py-1 text-[11px] font-medium text-[#0A0A0A] hover:bg-[#FAFAFA]"
+              className="bz-btn bz-btn-sm absolute right-2 top-2"
               aria-label={isTr ? 'Kodu kopyala' : 'Copy code'}
             >
               {copied ? (

@@ -51,7 +51,7 @@ export function BulkActionToolbar({
         type="button"
         onClick={onFlag}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1 text-[11px] font-medium text-[#0A0A0A] hover:bg-[#C6F24E] transition-colors disabled:opacity-50"
+        className="bz-btn-lime bz-btn-sm disabled:opacity-50"
       >
         {busy ? <Loader2 size={11} className="animate-spin" /> : <Flag size={11} strokeWidth={2.2} />}
         {isTr ? 'İşaretle' : 'Flag'}
@@ -60,7 +60,7 @@ export function BulkActionToolbar({
         type="button"
         onClick={onUnflag}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-3 py-1 text-[11px] font-medium text-[#525252] hover:bg-[#FAFAFA] transition-colors disabled:opacity-50"
+        className="bz-btn bz-btn-sm disabled:opacity-50"
       >
         {isTr ? 'Kaldır' : 'Unflag'}
       </button>
@@ -68,7 +68,7 @@ export function BulkActionToolbar({
         type="button"
         onClick={onAssign}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-3 py-1 text-[11px] font-medium text-[#525252] hover:bg-[#FAFAFA] transition-colors disabled:opacity-50"
+        className="bz-btn bz-btn-sm disabled:opacity-50"
       >
         {busy ? (
           <Loader2 size={11} className="animate-spin" />
@@ -83,7 +83,7 @@ export function BulkActionToolbar({
         type="button"
         onClick={onMarkRead}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1 text-[11px] font-medium text-[#0A0A0A] hover:bg-[#C6F24E] transition-colors disabled:opacity-50"
+        className="bz-btn-lime bz-btn-sm disabled:opacity-50"
       >
         {busy ? (
           <Loader2 size={11} className="animate-spin" />
@@ -96,7 +96,7 @@ export function BulkActionToolbar({
         type="button"
         onClick={onClear}
         aria-label={isTr ? 'Seçimi temizle' : 'Clear selection'}
-        className="ml-auto rounded-md p-1 hover:bg-[#FAFAFA] transition-colors"
+        className="bz-btn-icon ml-auto"
       >
         <X size={14} strokeWidth={2.2} />
       </button>

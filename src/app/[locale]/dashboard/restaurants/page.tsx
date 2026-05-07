@@ -428,13 +428,13 @@ export default function DashboardRestaurantsPage() {
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <Link
                       href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
-                      className="rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-4 py-2.5 text-center text-[12px] font-medium text-[#525252] hover:bg-[#0A0A0A] hover:text-white hover:border-[#0A0A0A] transition-colors"
+                      className="bz-btn-ghost justify-center text-[12px]"
                     >
                       {locale === 'tr' ? 'Detay aç' : 'Open details'} →
                     </Link>
                     <Link
                       href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
-                      className="rounded-full border border-[#0A0A0A] px-4 py-2.5 text-center text-[12px] font-medium text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white transition-colors"
+                      className="bz-btn-primary justify-center text-[12px]"
                     >
                       {copy.qr}
                     </Link>
@@ -532,7 +532,7 @@ export default function DashboardRestaurantsPage() {
                     <button
                       type="button"
                       onClick={() => setShowGoogleInfo((v) => !v)}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#EDEDED] bg-white text-[#0A0A0A] transition-all hover:bg-[#C6F24E]/20 active:scale-95"
+                      className="bz-btn-icon shrink-0"
                       aria-label="Info"
                     >
                       <Info size={15} strokeWidth={2} />
@@ -690,14 +690,14 @@ export default function DashboardRestaurantsPage() {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] hover:border-[#0A0A0A] transition-colors"
+                  className="bz-btn-ghost"
                 >
                   {locale === 'tr' ? 'İptal' : 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0A0A0A] px-5 py-2.5 text-[13px] font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-60 transition-colors"
+                  className="bz-btn-primary disabled:opacity-60"
                 >
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus size={14} strokeWidth={2} />}
                   {copy.add}

@@ -76,7 +76,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#0A0A0A]"
+            className="bz-btn bz-btn-sm"
             aria-label={isTr ? 'Yorumlar listesine dön' : 'Back to reviews'}
           >
             <ArrowLeft size={16} strokeWidth={2} />
@@ -89,11 +89,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <button
               type="button"
               onClick={onTogglePending}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
-                active.isPending
-                  ? 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E] hover:bg-[#FEF3C7]'
-                  : 'border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
-              }`}
+              className={`${active.isPending ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
               title={
                 isTr
                   ? active.isPending
@@ -121,7 +117,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             <button
               type="button"
               onClick={onFlag}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] px-2.5 py-1.5 text-[11px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
+              className="bz-btn bz-btn-sm"
               title={isTr ? 'Bayrakla işaretle' : 'Flag'}
             >
               <Flag size={12} strokeWidth={2} />
@@ -174,11 +170,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               <button
                 type="button"
                 onClick={onTogglePending}
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
-                  active.isPending
-                    ? 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E] hover:bg-[#FEF3C7]'
-                    : 'border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
-                }`}
+                className={`${active.isPending ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
                 title={
                   isTr
                     ? active.isPending
@@ -206,7 +198,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               <button
                 type="button"
                 onClick={onFlag}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#EDEDED] px-2.5 py-1.5 text-[11px] font-medium text-[#525252] hover:border-[#0A0A0A] transition-colors"
+                className="bz-btn bz-btn-sm"
                 title={isTr ? 'Bayrakla işaretle' : 'Flag'}
               >
                 <Flag size={12} strokeWidth={2} />
@@ -322,7 +314,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                               }
                             });
                           }}
-                          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#0A0A0A] px-2.5 py-1 text-[10.5px] font-semibold text-white hover:bg-[#1A1A1A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                          className="bz-btn-primary bz-btn-sm shrink-0 text-[10.5px]"
                         >
                           {isTr ? 'Yeniden dene' : 'Retry'}
                         </button>

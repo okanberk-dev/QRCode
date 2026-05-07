@@ -22,7 +22,7 @@ export default function AdminNotFound() {
         <div className="mt-7 flex flex-col gap-2.5">
           <Link
             href="/admin/dashboard"
-            className="min-h-[48px] w-full flex items-center justify-center gap-2 bg-[#0A0A0A] text-white font-medium py-3.5 rounded-full hover:bg-[#1A1A1A] transition-colors"
+            className="bz-btn-primary w-full"
           >
             <Home size={16} strokeWidth={2} />
             Dashboard&apos;a dön

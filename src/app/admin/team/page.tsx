@@ -277,14 +277,14 @@ function AdminTeamBody() {
           <div className="mt-5 flex items-center justify-end gap-2">
             <button
               onClick={() => setShowInvite(false)}
-              className="rounded-lg border border-[#EDEDED] bg-white px-4 py-2 text-[12px] font-medium text-[#525252] hover:bg-[#F5F5F5]"
+              className="bz-btn"
             >
               {isTr ? 'İptal' : 'Cancel'}
             </button>
             <button
               onClick={onInvite}
               disabled={sending || !inviteEmail.trim() || !inviteRestaurant}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-40"
+              className="bz-btn-lime disabled:opacity-40"
             >
               {sending ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
               {isTr ? 'Davet gönder' : 'Send invite'}

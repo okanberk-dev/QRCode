@@ -592,7 +592,7 @@ export default function RestaurantsPage() {
                   <button
                     type="button"
                     onClick={() => setShowGoogleInfo((v) => !v)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-white text-[#525252] transition-all hover:border-[#0A0A0A] hover:text-[#0A0A0A] active:scale-95"
+                    className="bz-btn-icon shrink-0"
                     aria-label="Bilgi"
                   >
                     <Info size={14} strokeWidth={2} />
@@ -760,7 +760,7 @@ export default function RestaurantsPage() {
             type="button"
             disabled={bulkBusy}
             onClick={() => setShowFeatureModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-[#0A0A0A] px-3 py-1 text-[11px] font-semibold text-white hover:bg-[#1A1A1A] disabled:opacity-50 transition-colors"
+            className="bz-btn-primary bz-btn-sm text-[11px] disabled:opacity-50"
           >
             <Settings2 size={11} strokeWidth={2.2} />
             Özellik aç/kapat

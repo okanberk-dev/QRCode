@@ -231,7 +231,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                   ? 'Plan değişikliği admin panelinden yapılır'
                   : 'Plan changes are managed via the admin panel'
               }
-              className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full bg-[#C6F24E]/40 px-4 py-2 text-[13px] font-medium text-[#0A0A0A]/50"
+              className="bz-btn-lime cursor-not-allowed opacity-50"
             >
               {isTr ? 'Planı yükselt' : 'Upgrade plan'}
             </button>
@@ -244,7 +244,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                   ? 'Plan değişikliği admin panelinden yapılır'
                   : 'Plan changes are managed via the admin panel'
               }
-              className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-white/20 bg-transparent px-4 py-2 text-[13px] font-medium text-white/50"
+              className="bz-btn-on-dark cursor-not-allowed text-white/50"
             >
               {isTr ? 'Planı değiştir' : 'Change plan'}
             </button>

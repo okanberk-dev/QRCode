@@ -316,7 +316,7 @@ export default function MemberDetailPage({
                 type="button"
                 onClick={() => setConfirmAction('deactivate')}
                 disabled={actionRunning === 'deactivate'}
-                className="bz-btn-ghost text-[#DC2626] hover:bg-red-50 hover:border-[#DC2626]"
+                className="bz-btn-danger"
                 title="Hesabı sil — DB'de korunur, geri alınabilir"
               >
                 <Ban size={14} strokeWidth={2} />

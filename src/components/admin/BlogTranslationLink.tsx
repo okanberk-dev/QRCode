@@ -189,7 +189,7 @@ export default function BlogTranslationLink({
               type="button"
               onClick={handleUnlink}
               disabled={saving}
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-3 py-1.5 text-[12px] font-semibold text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-60"
+              className="bz-btn-danger bz-btn-sm shrink-0 disabled:opacity-60"
             >
               {saving ? <Loader2 size={12} className="animate-spin" /> : <Unlink size={12} />}
               Bağlantıyı kaldır

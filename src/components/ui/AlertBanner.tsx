@@ -52,7 +52,7 @@ export function AlertBanner({
           type="button"
           onClick={onDismiss}
           aria-label="Kapat"
-          className="shrink-0 -mr-1 p-1 rounded-md hover:bg-black/5 transition-colors"
+          className="bz-btn-icon shrink-0 -mr-1"
           style={{ color: palette.text }}
         >
           <X size={14} strokeWidth={2} />

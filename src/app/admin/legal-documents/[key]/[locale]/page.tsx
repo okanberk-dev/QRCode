@@ -305,7 +305,7 @@ export default function LegalDocumentEditorPage({
               <button
                 type="button"
                 onClick={() => setShowDelete(true)}
-                className="bz-btn-ghost text-[#991B1B]"
+                className="bz-btn-danger"
               >
                 <Trash2 size={14} />
                 Sil

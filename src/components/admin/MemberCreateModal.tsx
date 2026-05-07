@@ -139,7 +139,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3 rounded-full bg-[#0A0A0A] text-white text-[13px] font-semibold hover:bg-[#1A1A1A]"
+            className="bz-btn-primary w-full"
           >
             Tamam
           </button>
@@ -216,7 +216,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 rounded-full border border-[#EDEDED] text-[13px] font-medium text-[#525252] hover:bg-[#FAFAFA]"
+              className="bz-btn-ghost flex-1"
             >
               Vazgeç
             </button>
@@ -224,7 +224,7 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
               type="button"
               onClick={handleSubmit}
               disabled={saving || !email.trim()}
-              className="flex-1 py-3 rounded-full bg-[#0A0A0A] text-white text-[13px] font-semibold hover:bg-[#1A1A1A] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              className="bz-btn-primary flex-1 disabled:opacity-50"
             >
               {saving ? (
                 <Loader2 size={16} className="animate-spin" />

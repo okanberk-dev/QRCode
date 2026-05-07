@@ -102,7 +102,7 @@ export default function AdminCampaignsPage() {
             <button
               onClick={fetchData}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 disabled:opacity-50"
+              className="bz-btn disabled:opacity-50"
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} strokeWidth={2} />}
               Yenile

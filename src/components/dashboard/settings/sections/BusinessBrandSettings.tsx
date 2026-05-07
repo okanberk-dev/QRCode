@@ -292,7 +292,7 @@ export function BusinessBrandSettings({
                 type="button"
                 onClick={handleRemoveCover}
                 disabled={savingCover}
-                className="text-[12px] text-[#737373] hover:text-[#DC2626] transition-colors flex items-center gap-1 self-start"
+                className="bz-btn-danger bz-btn-sm self-start disabled:opacity-50"
               >
                 <X size={12} strokeWidth={2} aria-hidden="true" />
                 Kapağı kaldır

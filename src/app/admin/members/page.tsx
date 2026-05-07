@@ -473,7 +473,7 @@ export default function MembersPage() {
             <button
               type="button"
               onClick={clearFilters}
-              className="text-[12px] text-[#737373] hover:text-[#0A0A0A] underline"
+              className="bz-btn bz-btn-sm"
             >
               Filtreleri temizle
             </button>
@@ -800,7 +800,7 @@ export default function MembersPage() {
                 <button
                   type="button"
                   onClick={() => setEditingMember(null)}
-                  className="flex-1 py-3 rounded-full border border-[#EDEDED] text-[13px] font-medium text-[#525252] hover:bg-[#FAFAFA] transition-colors"
+                  className="bz-btn-ghost flex-1"
                 >
                   İptal
                 </button>
@@ -808,7 +808,7 @@ export default function MembersPage() {
                   type="button"
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 py-3 rounded-full bg-[#0A0A0A] text-white text-[13px] font-semibold hover:bg-[#1A1A1A] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  className="bz-btn-primary flex-1 disabled:opacity-50"
                 >
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} strokeWidth={2} />}
                   Kaydet
@@ -819,7 +819,7 @@ export default function MembersPage() {
                   type="button"
                   onClick={handleSoftDelete}
                   disabled={saving}
-                  className="w-full py-3 rounded-full border border-[#FECACA] text-[13px] font-semibold text-[#991B1B] hover:bg-[#FEF2F2] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                  className="bz-btn-danger w-full disabled:opacity-50"
                 >
                   <Trash2 size={14} strokeWidth={2} />
                   Hesabı sil (geri alınabilir)

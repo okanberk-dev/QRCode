@@ -306,7 +306,7 @@ export default function BrandIdentityCard({
                 <button
                   type="button"
                   onClick={removeLogo}
-                  className="text-[12px] text-[#737373] hover:text-[#DC2626] transition-colors flex items-center gap-1 self-start"
+                  className="bz-btn-danger bz-btn-sm self-start"
                 >
                   <X size={12} strokeWidth={2} />
                   {isTr ? 'Logoyu kaldır' : 'Remove logo'}
@@ -373,7 +373,7 @@ export default function BrandIdentityCard({
                 <button
                   type="button"
                   onClick={removeFavicon}
-                  className="text-[12px] text-[#737373] hover:text-[#DC2626] transition-colors flex items-center gap-1 self-start"
+                  className="bz-btn-danger bz-btn-sm self-start"
                 >
                   <X size={12} strokeWidth={2} />
                   {isTr ? 'Faviconu kaldır' : 'Remove favicon'}

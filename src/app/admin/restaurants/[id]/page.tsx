@@ -516,14 +516,14 @@ export default function RestaurantDetailPage() {
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
               href={`/admin/restaurants/${id}/menu`}
-              className="inline-flex items-center gap-2 rounded-full border border-[#EDEDED] bg-white px-4 py-2 text-[13px] font-medium text-[#0A0A0A] shadow-sm transition-all hover:border-[#0A0A0A] active:scale-95"
+              className="bz-btn-ghost"
             >
               <Eye size={14} strokeWidth={2} />
               Menüyü Görüntüle
             </Link>
             <Link
               href={`/tr/dashboard/restaurants/${id}/menu`}
-              className="inline-flex items-center gap-2 rounded-full bg-[#0A0A0A] px-4 py-2 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95"
+              className="bz-btn-primary"
             >
               <UtensilsCrossed size={14} strokeWidth={2} />
               Menüyü Düzenle
@@ -882,7 +882,7 @@ export default function RestaurantDetailPage() {
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-[#FECACA] bg-white px-4 py-2.5 text-[13px] font-medium text-[#DC2626] transition-all hover:border-[#FCA5A5] hover:bg-[#FEF2F2] active:scale-95 disabled:opacity-50"
+            className="bz-btn-danger disabled:opacity-50"
           >
             <Trash2 size={14} strokeWidth={2} />
             {deleting ? 'Siliniyor…' : 'İşletmeyi Sil'}
@@ -892,7 +892,7 @@ export default function RestaurantDetailPage() {
             <Link
               href={`/r/${formData.slug}`}
               target="_blank"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-[#EDEDED] bg-white px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-all hover:border-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95"
+              className="bz-btn-ghost"
             >
               <ExternalLink size={14} strokeWidth={2} />
               Önizle
@@ -900,7 +900,7 @@ export default function RestaurantDetailPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-2.5 text-[13px] font-medium text-white shadow-sm transition-all hover:bg-[#1A1A1A] active:scale-95 disabled:opacity-50"
+              className="bz-btn-primary disabled:opacity-50"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} strokeWidth={2} />}
               {saving ? 'Kaydediliyor…' : 'Değişiklikleri Kaydet'}

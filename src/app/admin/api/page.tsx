@@ -267,14 +267,16 @@ function AdminApiBody() {
                         <button
                           onClick={() => onRotate(k.id)}
                           title={isTr ? 'Yenile' : 'Rotate'}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]"
+                          className="bz-btn-icon"
+                          aria-label={isTr ? 'Yenile' : 'Rotate'}
                         >
                           <RotateCw size={12} />
                         </button>
                         <button
                           onClick={() => onRevoke(k.id)}
                           title={isTr ? 'İptal et' : 'Revoke'}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#EDEDED] text-red-600 hover:border-red-300 hover:bg-red-50"
+                          className="bz-btn-icon text-[#DC2626] hover:bg-[#FEF2F2]"
+                          aria-label={isTr ? 'İptal et' : 'Revoke'}
                         >
                           <Trash2 size={12} />
                         </button>
@@ -307,7 +309,7 @@ function AdminApiBody() {
                     type="button"
                     disabled
                     aria-disabled="true"
-                    className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full border border-[#EDEDED] bg-[#FAFAFA] px-3 py-1.5 text-[12px] font-semibold text-[#A3A3A3]"
+                    className="bz-btn bz-btn-sm cursor-not-allowed opacity-50"
                   >
                     <Plus size={12} /> {isTr ? 'Endpoint ekle' : 'Add endpoint'}
                   </button>
@@ -426,14 +428,14 @@ function AdminApiBody() {
           <div className="mt-5 flex items-center justify-end gap-2">
             <button
               onClick={() => setShowKey(false)}
-              className="rounded-lg border border-[#EDEDED] bg-white px-4 py-2 text-[12px] font-medium text-[#525252] hover:bg-[#F5F5F5]"
+              className="bz-btn"
             >
               {isTr ? 'İptal' : 'Cancel'}
             </button>
             <button
               onClick={onCreate}
               disabled={creatingKey || !newKeyName.trim()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#C6F24E] px-4 py-2 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-40"
+              className="bz-btn-lime disabled:opacity-40"
             >
               {creatingKey ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
               {isTr ? 'Oluştur' : 'Create'}

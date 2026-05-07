@@ -463,7 +463,7 @@ export function CampaignDetailDrawer({ campaignId, isTr, onClose, onChanged }: P
                     type="button"
                     onClick={handleDelete}
                     disabled={actionLoading !== null}
-                    className="bz-btn-ghost flex items-center gap-1.5 px-3 min-h-[40px] text-[12.5px] text-[#DC2626] disabled:opacity-50"
+                    className="bz-btn-danger min-h-[40px] px-3 text-[12.5px] disabled:opacity-50"
                   >
                     {actionLoading === 'delete' ? (
                       <Loader2 size={14} className="animate-spin" />

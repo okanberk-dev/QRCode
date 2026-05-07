@@ -682,9 +682,27 @@ input::-webkit-inner-spin-button {
 }
 
 /* ── Buttons ── */
+.bz-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: #FFFFFF; color: #0A0A0A;
+  min-height: 32px;
+  font-size: 12.5px; font-weight: 600;
+  padding: 7px 12px; border-radius: 999px;
+  border: 1px solid #EDEDED;
+  cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  outline: none;
+}
+.bz-btn:hover { background: #FAFAFA; border-color: #D4D4D4; }
+.bz-btn:active { transform: scale(0.98); }
+.bz-btn:focus-visible { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198,242,78,0.4); }
+.bz-btn:disabled { background: #F5F5F5; color: #A3A3A3; cursor: not-allowed; transform: none; }
+
 .bz-btn-primary {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   background: #0A0A0A; color: #fff;
+  min-height: 38px;
   font-size: 13px; font-weight: 600;
   padding: 10px 16px; border-radius: 999px; border: 0;
   cursor: pointer; transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
@@ -700,6 +718,7 @@ input::-webkit-inner-spin-button {
 .bz-btn-lime {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   background: #C6F24E; color: #0A0A0A;
+  min-height: 38px;
   font-size: 13px; font-weight: 600;
   padding: 10px 16px; border-radius: 999px; border: 0;
   cursor: pointer; transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
@@ -715,6 +734,7 @@ input::-webkit-inner-spin-button {
 .bz-btn-ghost {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   background: transparent; color: #0A0A0A;
+  min-height: 38px;
   font-size: 13px; font-weight: 600;
   padding: 9px 14px; border-radius: 999px;
   border: 1px solid #EDEDED;
@@ -726,6 +746,57 @@ input::-webkit-inner-spin-button {
 .bz-btn-ghost:hover { background: #FAFAFA; border-color: #D4D4D4; }
 .bz-btn-ghost:focus-visible { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198,242,78,0.4); }
 
+.bz-btn-danger {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: #FFFFFF; color: #DC2626;
+  min-height: 38px;
+  font-size: 13px; font-weight: 600;
+  padding: 9px 14px; border-radius: 999px;
+  border: 1px solid #FECACA;
+  cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  outline: none;
+}
+.bz-btn-danger:hover { background: #FEF2F2; border-color: #FCA5A5; color: #991B1B; }
+.bz-btn-danger:active { transform: scale(0.98); }
+.bz-btn-danger:focus-visible { box-shadow: 0 0 0 3px rgba(220,38,38,0.18); }
+.bz-btn-danger:disabled { background: #F5F5F5; border-color: #EDEDED; color: #A3A3A3; cursor: not-allowed; transform: none; }
+
+.bz-btn-warn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: #FFFBEB; color: #92400E;
+  min-height: 38px;
+  font-size: 13px; font-weight: 600;
+  padding: 9px 14px; border-radius: 999px;
+  border: 1px solid #FDE68A;
+  cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  outline: none;
+}
+.bz-btn-warn:hover { background: #FEF3C7; border-color: #FCD34D; color: #78350F; }
+.bz-btn-warn:active { transform: scale(0.98); }
+.bz-btn-warn:focus-visible { box-shadow: 0 0 0 3px rgba(217,119,6,0.18); }
+.bz-btn-warn:disabled { background: #F5F5F5; border-color: #EDEDED; color: #A3A3A3; cursor: not-allowed; transform: none; }
+
+.bz-btn-on-dark {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: rgba(255,255,255,0.08); color: #FFFFFF;
+  min-height: 38px;
+  font-size: 13px; font-weight: 600;
+  padding: 9px 14px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  outline: none;
+}
+.bz-btn-on-dark:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.28); }
+.bz-btn-on-dark:active { transform: scale(0.98); }
+.bz-btn-on-dark:focus-visible { box-shadow: 0 0 0 3px rgba(198,242,78,0.35); }
+.bz-btn-on-dark:disabled { color: rgba(255,255,255,0.45); cursor: not-allowed; transform: none; }
+
 .bz-btn-icon {
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 8px;
@@ -735,6 +806,13 @@ input::-webkit-inner-spin-button {
 }
 .bz-btn-icon:hover { background: #F2F2F2; color: #0A0A0A; }
 .bz-btn-icon:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.6); color: #0A0A0A; }
+
+.bz-btn-icon-on-dark {
+  color: rgba(255,255,255,0.72);
+  border-color: transparent;
+}
+.bz-btn-icon-on-dark:hover { background: rgba(255,255,255,0.12); color: #FFFFFF; }
+.bz-btn-icon-on-dark:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.55); color: #FFFFFF; }
 
 /* §38.74 — Mobile-kritik close button variant. WCAG 2.5.5 (44x44px touch
    target) modal/drawer kapatma butonları için. Hover+focus ile bz-btn-icon
@@ -751,9 +829,25 @@ input::-webkit-inner-spin-button {
 .bz-btn-icon-lg:hover { background: #F2F2F2; color: #0A0A0A; }
 .bz-btn-icon-lg:focus-visible { box-shadow: 0 0 0 2px rgba(198,242,78,0.6); color: #0A0A0A; }
 
-/* Small variant — bz-btn-primary/lime/ghost ile birlikte kullanılır.
+/* Small variant — bz-btn/primary/lime/ghost/danger/warn/on-dark ile birlikte kullanılır.
    tokens.css line 127 birebir port. */
-.bz-btn-sm { font-size: 12px; padding: 7px 12px; }
+.bz-btn-sm { min-height: 32px; font-size: 12px; padding: 7px 12px; }
+
+@media (max-width: 640px) {
+  .bz-btn,
+  .bz-btn-primary,
+  .bz-btn-lime,
+  .bz-btn-ghost,
+  .bz-btn-danger,
+  .bz-btn-warn,
+  .bz-btn-on-dark {
+    min-height: 44px;
+  }
+
+  .bz-btn-sm {
+    min-height: 38px;
+  }
+}
 
 /* ── Status badges ── */
 .bz-badge {

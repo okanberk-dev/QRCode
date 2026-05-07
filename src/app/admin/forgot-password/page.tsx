@@ -150,7 +150,7 @@ function ForgotPasswordContent() {
                       const qs = isEmail ? '' : `?username=${encodeURIComponent(value)}`;
                       router.push(`/admin/reset-password${qs}`);
                     }}
-                    className="group mt-5 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)] transition-all hover:-translate-y-px hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                    className="bz-btn-primary mt-5 min-h-[52px] w-full text-[14px] shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)]"
                   >
                     Kodumu girdim
                     <ArrowRight
@@ -164,7 +164,7 @@ function ForgotPasswordContent() {
                     Kod gelmediyse{' '}
                     <button
                       type="button"
-                      className="font-semibold text-[#0A0A0A] underline-offset-4 hover:text-[#A8D62E] hover:underline"
+                      className="bz-btn bz-btn-sm"
                       onClick={() => setSubmitted(false)}
                     >
                       tekrar dene
@@ -218,7 +218,7 @@ function ForgotPasswordContent() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="group flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-6 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)] transition-all hover:-translate-y-px hover:bg-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+                    className="bz-btn-primary min-h-[54px] w-full text-[14px] shadow-[0_18px_40px_-22px_rgba(10,10,10,0.55)] disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {loading ? (
                       <Loader2 className="animate-spin" size={18} />

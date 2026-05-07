@@ -464,7 +464,7 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                     type="button"
                     onClick={() => setDeleteId(p.id)}
                     disabled={busyRowId === p.id}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[#FECACA] px-3 py-1.5 text-[12px] font-semibold text-[#991B1B] hover:bg-[#FEF2F2]"
+                    className="bz-btn-danger bz-btn-sm disabled:opacity-60"
                   >
                     <Trash2 size={12} /> Sil
                   </button>
@@ -490,7 +490,7 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                   setDeleteId(editingId);
                 }}
                 disabled={saving}
-                className="mr-auto inline-flex items-center gap-1.5 rounded-full border border-[#FECACA] px-4 py-2 text-[12px] font-semibold text-[#991B1B] hover:bg-[#FEF2F2] disabled:opacity-60"
+                className="bz-btn-danger mr-auto text-[12px] disabled:opacity-60"
               >
                 <Trash2 size={12} /> Bu paketi sil
               </button>
@@ -768,7 +768,7 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
               type="button"
               onClick={handleDelete}
               disabled={busyRowId !== null}
-              className="inline-flex items-center gap-2 rounded-full bg-[#DC2626] px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-[#991B1B] disabled:opacity-60"
+              className="bz-btn-danger disabled:opacity-60"
             >
               {busyRowId && <Loader2 size={14} className="animate-spin" />} Sil
             </button>

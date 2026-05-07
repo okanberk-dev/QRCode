@@ -125,11 +125,7 @@ export function FeedbackList({
             <button
               type="button"
               onClick={onOpenFilters}
-              className={`relative inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                hasActiveFilter
-                  ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-              }`}
+              className={`relative ${hasActiveFilter ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm`}
               aria-label={isTr ? 'Filtreler' : 'Filters'}
             >
               <SlidersHorizontal size={11} strokeWidth={2.2} />

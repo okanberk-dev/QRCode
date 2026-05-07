@@ -406,7 +406,7 @@ function ReviewCard({
                   type="button"
                   onClick={handleAiClick}
                   disabled={drafting}
-                  className="inline-flex items-center gap-1 rounded-full bg-[#C6F24E] px-3 py-1 text-[11.5px] font-medium text-[#0A0A0A] hover:bg-[#A8D62E] disabled:opacity-60"
+                  className="bz-btn-lime bz-btn-sm disabled:opacity-60"
                 >
                   {drafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                   {isTr ? 'AI yanıt' : 'AI reply'}
@@ -416,7 +416,7 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={handleManualClick}
-                  className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[11.5px] font-medium text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                  className="bz-btn bz-btn-sm"
                 >
                   <Send size={12} />
                   {isTr ? 'Manuel' : 'Manual'}
@@ -426,7 +426,7 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={handleEditReply}
-                  className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[11.5px] font-medium text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                  className="bz-btn bz-btn-sm"
                 >
                   <Edit3 size={12} />
                   {isTr ? 'Yanıtı düzenle' : 'Edit reply'}
@@ -435,11 +435,7 @@ function ReviewCard({
               <button
                 type="button"
                 onClick={onFlagToggle}
-                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11.5px] font-medium transition-colors ${
-                  flagged
-                    ? 'border-[#FDE68A] bg-[#FFFBEB] text-[#92400E]'
-                    : 'border-[#EDEDED] bg-white text-[#0A0A0A] hover:bg-[#FAFAFA]'
-                }`}
+                className={`${flagged ? 'bz-btn-warn' : 'bz-btn'} bz-btn-sm`}
                 aria-pressed={flagged}
               >
                 <Flag size={12} />
@@ -468,7 +464,7 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={() => setComposerOpen(false)}
-                  className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[11.5px] font-medium text-[#525252] hover:bg-[#FAFAFA]"
+                  className="bz-btn bz-btn-sm"
                 >
                   {isTr ? 'İptal' : 'Cancel'}
                 </button>
@@ -477,7 +473,7 @@ function ReviewCard({
                     type="button"
                     onClick={onDraft}
                     disabled={drafting}
-                    className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1 text-[11.5px] font-medium text-[#0A0A0A] hover:bg-[#FAFAFA] disabled:opacity-60"
+                    className="bz-btn bz-btn-sm disabled:opacity-60"
                   >
                     {drafting ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
                     {isTr ? 'AI taslağı' : 'AI draft'}
@@ -487,7 +483,7 @@ function ReviewCard({
                   type="button"
                   onClick={onSend}
                   disabled={replying || !value.trim()}
-                  className="inline-flex items-center gap-1 rounded-full bg-[#0A0A0A] px-3 py-1 text-[11.5px] font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-60"
+                  className="bz-btn-primary bz-btn-sm text-[11.5px] disabled:opacity-60"
                 >
                   {replying ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
                   {isTr ? "Google'a gönder" : 'Send to Google'}
@@ -1013,7 +1009,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="bz-btn-ghost inline-flex items-center gap-1.5 rounded-full text-[12px] text-[#DC2626] hover:bg-[#FEF2F2] hover:border-[#FECACA]"
+                className="bz-btn-danger text-[12px]"
                 onClick={async () => {
                   if (!confirm(isTr ? 'Google hesap bağlantısı kesilecek. Devam etmek istiyor musunuz?' : 'Google account will be disconnected. Continue?')) return;
                   try {
