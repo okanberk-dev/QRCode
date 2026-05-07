@@ -12718,3 +12718,165 @@ tracing (1 hafta soak sonrası).
   talep ederse — AdminBiSection lazy + admin dashboard parallel split
   + AdminOverviewWidgets merged endpoint + audit log server cache).
   Veya §38.B master backlog kalemleri.
+
+### 38.102 2026-05-07 — Stage 26 Phase D admin slowness fix (scope refresh)
+
+§38.101 Stage 25'te DEFER edilen Phase D admin slowness fix kullanıcı
+talebiyle açıldı: "atladıklarımız için önerdiğin gibi plan oluşturup yap".
+1 Explore agent ile Stage 25 sonrası güncel state doğrulandı; plan'daki
+4-fix backlog **scope refresh** edildi → sadece **2 fix** value/risk
+dengesinde kaldı.
+
+#### Scope refresh (audit sonrası)
+
+| Plan'daki fix | Karar | Sebep |
+|---|---|---|
+| AdminBiSection lazy + chart dynamic | **SKIP** | Recharts tree-shake zayıf; client wrapper component refactor scope büyük (analytics page 1000+ satır). Phase B Stage 25'te aynı sebeple skip edilmişti. Bundle weight ~35 KB gzipped — chunk zaten route-level split. |
+| Admin dashboard 2 sequential transaction → parallel | **YAP** | Batch 2 (attention metrics, 5 query) + Batch 3 (audit logs, 2 query) bağımsız; tek `$transaction` array'e merge → ~50-100ms tasarruf (sequential connection açma overhead'i kalkar). Risk LOW. |
+| AdminOverviewWidgets merged endpoint | **SKIP** | Mevcut tek-fetch (`/api/admin/members`) + server-side props (page.tsx attention array compute) zaten yeterli. Yeni `/api/admin/overview` endpoint duplication; widget reusability için mevcut pattern doğru. |
+| Audit log server cache | **SKIP** | Mevcut `Cache-Control: private, s-maxage=15, stale-while-revalidate=60` (Stage A3 §38.95) + Next.js request dedup yeterli. Process-local cache duplication. |
+| **Bonus quick win**: `/api/admin/me` cache | **YAP** | AdminSidebar her mount'ta `/api/admin/me` fetch ediyordu (line 157-165), cache header yok. `private 30s/120sw` Stage 24 paterni reuse → ~50-150ms tasarruf cross-tab refresh. Risk LOW. |
+
+#### Fix #1 — Admin dashboard transaction batch merge
+
+**`src/app/admin/dashboard/page.tsx`** (line ~195-253):
+
+Eski state (CLAUDE.md §11.4 PR #115 + §38.97 Stage A5 sonrası):
+- Batch 1 (line 73-116): 9-query `prisma.$transaction` (totalBusinesses,
+  reviews, owners, plan dist, recent restaurants)
+- Batch 2 (line 195-218): 5-query `prisma.$transaction` (attention metrics)
+- Batch 3 (line 240-253): 2-query `prisma.$transaction` (audit logs)
+- **Sequential cascade**: Batch 1 → Batch 2 → Batch 3
+
+Yeni state:
+- Batch 1 intact
+- Batch 2 + Batch 3 **tek `prisma.$transaction([...])` array'e merge**
+  edildi (7 query birleşik, destructure 7 result)
+- BULK_ACTIONS + DESTRUCTIVE_ACTIONS const tanımları transaction
+  öncesine taşındı
+- `quotaNearFull` compute transaction sonrasına taşındı
+
+CLAUDE.md §14.1 connection_limit=1 disipline:
+- 2 ayrı transaction → 2 connection açma round-trip
+- Tek transaction → 1 connection, 7 query serial
+- Net kazanım: ~50-100ms (sequential connection açma overhead'i kalkar)
+
+Query'ler bağımsız (Batch 2 attention metrics + Batch 3 audit findMany)
+— merge safe; transaction içinde sıralı serial execution semantik
+korunur.
+
+#### Fix #2 — `/api/admin/me` cache header
+
+**`src/app/api/admin/me/route.ts`**:
+
+Eski state: 3 success path (restaurant_owner / AdminUser / env-admin
+fallback) cache header taşımıyordu. AdminSidebar her mount'ta repeat
+fetch — cross-tab dashboard'da 50-150ms profile fetch.
+
+Yeni state: Tek const `ADMIN_ME_CACHE_HEADER = 'private, s-maxage=30,
+stale-while-revalidate=120'` + 3 success response'a header.
+
+Pattern (CLAUDE.md §38.100 Stage 24 paterni reuse):
+```ts
+return NextResponse.json(
+  { ...payload },
+  { headers: { 'Cache-Control': ADMIN_ME_CACHE_HEADER } },
+);
+```
+
+`private` directive Vercel CDN'de admin token-isolated (cookie-based
+partition); IDOR scope intact. Admin profile rare mutation (username +
+email + role rename) → 30s fresh + 2min SWR drift kabul. Cross-tab
+refresh 50-150ms → <10ms cache hit.
+
+#### Etkilenen dosyalar (Stage 26)
+
+| Dosya | Değişim |
+|---|---|
+| `src/app/admin/dashboard/page.tsx` | Batch 2+3 merge tek `$transaction([...])` (~30 satır net edit) |
+| `src/app/api/admin/me/route.ts` | Const ADMIN_ME_CACHE_HEADER + 3 success response header (~10 satır) |
+| `CLAUDE.md` | §38.102 closure log |
+
+**Yeni dosya**: yok. **Schema migration**: yok. **Yeni dep**: yok.
+**Response shape**: değişmedi. **IDOR / RBAC**: intact.
+
+#### Cumulative branch state (Stage 22-26)
+
+- Stage 22 ✅ MERGED (PR #523) — bundle analyzer + admin list `$transaction`
+- Stage 24 ✅ MERGED (PR #525) — 7 endpoint edge cache header
+- Stage 25 (commit `4dfa8b6c`) — owner panel slowness fix bundle
+- Stage 26 (yeni commit) — admin slowness fix bundle (Phase D scope refresh)
+
+Branch artık main üstünde Stage 25 + Stage 26 = 2 commit.
+
+#### Beklenen kazanım
+
+| Metrik | Önce | Sonra |
+|---|---|---|
+| Admin dashboard Batch 2+3 latency | ~300ms cumulative | ~150-200ms (tek transaction) |
+| `/api/admin/me` repeat fetch (cross-tab) | 50-150ms | <10ms cache hit |
+| Toplam admin dashboard p50 (hedef) | (mevcut measurement bekliyor) | ~150-300ms tasarruf |
+
+#### Verification
+
+- `npm run lint`: 0 errors, 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: 274/274 pass
+- `npx next build` (stub env): ✓ Compiled + 58/58 static
+- Sanity grep:
+  ```bash
+  grep -nE "prisma\.\$transaction" src/app/admin/dashboard/page.tsx
+  # Beklenen: 2 transaction (Batch 1 ayrı + Batch 2+3 merged)
+
+  grep -nE "Cache-Control.*private.*s-maxage=30" src/app/api/admin/me/route.ts
+  # Beklenen: 1 const referans + 3 success path
+  ```
+
+#### Yapma
+
+- Batch 2 + Batch 3 query'lerini `Promise.all` ile parallel transaction'a
+  bölme (2 connection açma overhead'i + pgbouncer pool stress) — tek
+  merged transaction daha güvenli (CLAUDE.md §14.1 disipline).
+- `/api/admin/me` cache TTL'i 60s'in üstüne çıkarma — admin profile
+  rename drift uzun olur; superadmin login sonrası eski admin gibi
+  görme riski.
+- AdminBiSection bu PR'a sıkıştırma (recharts tree-shake refactor scope
+  büyük); ayrı PR scope.
+- AdminOverviewWidgets merged endpoint açma (mevcut single-fetch +
+  server-side props yeterli).
+
+#### Yap
+
+- Yeni admin dashboard query batch eklerken Batch 1 dependency check;
+  bağımsızsa merged transaction'a ekle (CLAUDE.md §14.1 + §38.99 Phase
+  B + §38.102 Fix #1 paterni).
+- Yeni admin-scoped GET endpoint için Cache-Control `private, s-maxage=N,
+  stale-while-revalidate=M` paterni reuse (CLAUDE.md §38.100 Stage 24 +
+  §38.102 Fix #2 paterni).
+
+#### Stage 26 closure
+
+- Branch: `claude/apply-performance-report-EQ8IQ` (designated, Stage 25
+  commit `4dfa8b6c` üstüne cumulative)
+- Edit'lenen dosyalar: 3 (admin/dashboard/page + api/admin/me/route +
+  CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: değişmedi (functional change yok)
+- Operatör aksiyonu (PR sonrası): Vercel auto-deploy. 1 hafta soak
+  sonrası Vercel Analytics + Speed Insights admin dashboard latency
+  delta + `/api/admin/me` cache hit ratio ölç.
+- Kalan riskler:
+  - `/api/admin/me` cache 30s drift admin profile rename
+  - Transaction merge edge case: Batch 2 query'lerinden biri Batch 3 ile
+    sequential dependency oluşursa rollback gerekir (şu an bağımsız
+    doğrulandı)
+- **Sonraki aşama önerisi**: §38.B master backlog kalemleri tüm performance
+  scope kapatıldı (Stage 22 + 24 + 25 + 26). Operatör tetiği bekleyen
+  diğer kalemler:
+  - HIGH 4 Platforms 12-card grid (DEFER §38.30 — product decision)
+  - Stage 9 UserSession re-introduce (operatör tetiği §38.84/§38.89)
+  - RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak)
+  - bcrypt cost normalize (§38.2 — cosmetic)
+  - KVKK right-to-be-forgotten (§38.2 — regülasyon scope)

@@ -192,13 +192,37 @@ export default async function AdminDashboardPage() {
   //  5. Doğrulanmamış platform    → Restaurant has googleReviewUrl but googlePlaceId null
   const sevenDaysAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const nowDate = now;
+
+  // Stage 26 §38.102 — attention metrics (Batch 2) + operational signals
+  // (Batch 3) tek transaction'a merge edildi. CLAUDE.md §14.1
+  // connection_limit=1 disipline: 2 ayrı transaction yerine 7 query tek
+  // connection üstünden serial; sequential connection açma overhead'i
+  // (~50-100ms per round-trip) ortadan kalkar. Query'ler bağımsız (Batch 2
+  // attention metric counts, Batch 3 audit log findMany) — merge safe.
+  const thirtyDaysAuditAgo = thirtyDaysAgo;
+  const BULK_ACTIONS = [
+    'admin.restaurants.bulk.activate',
+    'admin.restaurants.bulk.deactivate',
+    'admin.restaurants.bulk.feature_override',
+    'admin.owners.bulk.send_email',
+  ];
+  const DESTRUCTIVE_ACTIONS = [
+    'admin.users.delete',
+    'admin.members.deactivate',
+    'admin.restaurants.delete',
+    'admin.impersonate.start',
+    'admin.permission.revoke',
+  ];
   const [
     trialExpiringSoon,
     trialExpired,
     staleAccounts,
     restaurantsForQuota,
     unverifiedPlatform,
+    bulkAuditRaw,
+    destructiveAuditRaw,
   ] = await prisma.$transaction([
+    // Batch 2 — attention metrics (CLAUDE.md §11.36 needs-attention deeplink)
     prisma.user.count({
       where: { plan: 'trial', trialEndsAt: { gt: nowDate, lte: sevenDaysAhead } },
     }),
@@ -215,29 +239,7 @@ export default async function AdminDashboardPage() {
     prisma.restaurant.count({
       where: { googleReviewUrl: { not: null }, googlePlaceId: null },
     }),
-  ]);
-  const quotaNearFull = restaurantsForQuota.filter(
-    (r) => r._count.feedbacks >= TRIAL_QUOTA * 0.9,
-  ).length;
-
-  // Stage A5 §38.97 — Operational signals: last 5 bulk + last 5 destructive
-  // events from AdminAuditLog (last 30d). Server-render snapshot;
-  // cross-link "Tümü" → /admin/audit-logs.
-  const thirtyDaysAuditAgo = thirtyDaysAgo;
-  const BULK_ACTIONS = [
-    'admin.restaurants.bulk.activate',
-    'admin.restaurants.bulk.deactivate',
-    'admin.restaurants.bulk.feature_override',
-    'admin.owners.bulk.send_email',
-  ];
-  const DESTRUCTIVE_ACTIONS = [
-    'admin.users.delete',
-    'admin.members.deactivate',
-    'admin.restaurants.delete',
-    'admin.impersonate.start',
-    'admin.permission.revoke',
-  ];
-  const [bulkAuditRaw, destructiveAuditRaw] = await prisma.$transaction([
+    // Batch 3 — operational signals (CLAUDE.md §38.97 Stage A5)
     prisma.adminAuditLog.findMany({
       where: { action: { in: BULK_ACTIONS }, createdAt: { gte: thirtyDaysAuditAgo } },
       orderBy: { createdAt: 'desc' },
@@ -251,6 +253,9 @@ export default async function AdminDashboardPage() {
       select: { id: true, action: true, actorId: true, actorSource: true, targetId: true, createdAt: true, payload: true },
     }),
   ]);
+  const quotaNearFull = restaurantsForQuota.filter(
+    (r) => r._count.feedbacks >= TRIAL_QUOTA * 0.9,
+  ).length;
 
   // Resolve actor names (admin usernames). Both bulk + destructive actor IDs.
   const auditActorIds = Array.from(
