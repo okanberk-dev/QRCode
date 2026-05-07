@@ -14694,6 +14694,122 @@ disipline).
   (animation engine `<Stage>` + `<Sprite>` + interpolate). Eksik
   olanlar yeni eklenir, mevcutlar intact.
 
+### 38.115 2026-05-08 — Stage 35 HANDOFF §8 step 2 (Lib — animation engine)
+
+§38.114 Stage 34 gap analysis sonrası HANDOFF §8 step 2: animation
+engine + util hooks Buaze'ye taşındı. shared.jsx (248 satır) +
+animations.jsx (673 satır) → ~600 satır production TS kod (showcase-
+only kontroller atıldı).
+
+**Migrate edilen** (`src/lib/anim/` + `src/lib/buaze/`):
+
+| Dosya | Kaynak | İçerik |
+|---|---|---|
+| `lib/anim/easing.ts` | animations.jsx:19-75 | 18 easing fonksiyonu (linear/Quad/Cubic/Quart/Expo/Sine/Back/Elastic) + `EasingFn` type + `EasingName` union |
+| `lib/anim/interpolate.ts` | animations.jsx:80-111 | `clamp` + `interpolate(input, output, ease)` Popmotion-style + `animate({from,to,start,end,ease})` single-segment |
+| `lib/anim/stage.tsx` | animations.jsx:115-485 (subset) | `<Stage>` + `useTime` + `useTimeline` + RAF loop + tab pause + reduced-motion bypass |
+| `lib/anim/sprite.tsx` | animations.jsx:120-151 | `<Sprite>` + `useSprite` + render prop API |
+| `lib/anim/index.ts` | — | Barrel export |
+| `lib/buaze/use-count-up.ts` | shared.jsx:211-227 | `useCountUp(target, durationMs)` RAF + reduced-motion + tab pause |
+| `lib/buaze/use-in-view.ts` | shared.jsx:230-242 | `useInView(ref, options)` IntersectionObserver one-shot |
+| `lib/buaze/index.ts` | — | Barrel export |
+| `tests/anim-easing.test.ts` | yeni | 50 unit test (linear identity + boundary + back/elastic + monotonic) |
+| `tests/anim-interpolate.test.ts` | yeni | 18 unit test (clamp + interpolate keyframes + animate single segment) |
+
+**Atılan** (showcase-only, production'da gereksiz):
+- `<Stage>` PlaybackBar (44px playback control panel)
+- Keyboard control (Space play/pause, ←/→ seek)
+- `localStorage` persist (`persistKey + ':t'`)
+- Auto-scale to viewport (ResizeObserver + Math.min)
+- `fps` prop (RAF native rate)
+- `hoverTime` (PlaybackBar scrub)
+- `<TextSprite>` / `<ImageSprite>` / `<RectSprite>` sample sprite'lar →
+  Stage 39 (Site FX) scope (gerçek kullanım context'i orada)
+
+**Skip edilen** (CLAUDE.md §38.49 dead utility class disipline —
+Buaze Pulse §11 + §23.3 mevcut paterniyle redundant):
+- `BZ` palette objesi → CSS `--color-brand-*` vars + inline hex pattern
+- `Mono` wrapper component → `pulse-eyebrow` Tailwind utility
+- `Pill` wrapper → `<Badge>` primitive (CLAUDE.md §23.3)
+- `Star`/`Stars` → `<StarRow>` primitive
+- `BuazeMark` → `<BuazeLogo>` component
+- `PhoneFrame` → showcase-only, production iframe context yok
+- `T` + `t()` translation helper → Buaze `lib/translations.ts` intact
+  (kullanıcı kararı "translations.ts intact", §38.114 §39 disipline)
+
+**Stage 39 (Site FX) için reserved**:
+- `QRCode({ size, progress, seed })` animasyonlu placeholder — gerçek
+  kullanım `<QRScanLoader />` site-fx component'inde
+
+**HANDOFF §5 disipline (CRITICAL)**:
+- §5.1 Tab pause — `Stage` + `useCountUp` `document.visibilityState ===
+  'hidden'` iken RAF teardown (battery save, tab throttle correct)
+- §5.2 Reduced motion — `Stage` `prefers-reduced-motion: reduce` iken
+  `time = duration` + `playing = false` (child sprite'lar final state
+  static render). `useCountUp` reduced-motion'da `target` direkt return.
+
+**Etkilenen dosyalar (10)**:
+- 8 yeni dosya (anim/easing + interpolate + stage + sprite + index ×
+  buaze/use-count-up + use-in-view + index)
+- 2 yeni test dosyası (anim-easing + anim-interpolate)
+- CLAUDE.md (§38.115 closure log)
+
+**Schema migration**: yok. **Yeni dep**: yok (React zaten var).
+**Test count**: 274 → **342** (+68: easing 50 + interpolate 18).
+
+**Yapma**:
+- `<Stage>`'e PlaybackBar ekleme — production'da debug aracı,
+  showcase-only.
+- `Stage` `localStorage` persist re-introduce etme — production
+  hero/site-fx loop'ları stateless olmalı.
+- `BZ` palette objesini `lib/buaze/`'a taşıma — Tailwind v4 `@theme {}`
+  + inline hex pattern (CLAUDE.md §11) kanonik.
+- `Mono`/`Pill`/`Star` wrapper'ları taşıma — Pulse primitive'ler ile
+  redundant (§38.49 dead utility class).
+- `useCountUp`'ta tab pause atlama — HANDOFF §5.1 CRITICAL, mobil
+  battery için zorunlu.
+- Stage 39 sample sprite'larını (TextSprite/ImageSprite/RectSprite)
+  bu PR'a sıkıştırma — gerçek kullanım context'i Site FX component'lerde.
+
+**Yap**:
+- Yeni hero/site-fx animasyonu eklerken `<Stage>` + `<Sprite>` + render
+  prop paterni reuse: `<Sprite start end>{({ progress }) => ...}</Sprite>`.
+- Yeni count-up callsite eklerken `useCountUp` reuse — KPI sparkline
+  + StatCard delta gibi sayısal animasyon için (CLAUDE.md §38.27 KPI
+  4-card grid candidate).
+- Yeni scroll-triggered animasyon eklerken `useInView` reuse —
+  fade-in feature card'lar (Stage 39 scope).
+- `interpolate` + `animate` saf fonksiyonlar — RAF dışı kullanım için
+  `<Sprite>` render prop içinde direkt çağrılır.
+
+**Verification**:
+- `npm run lint` 0 errors / 0 warnings
+- `npx tsc --noEmit` 0 errors in `src/` (4 pre-existing `.next/types`
+  baseline §21.13)
+- `npm test` 342/342 pass, 39 suites (274 → 342, +68 yeni)
+- `npx next build` ✓ Compiled + 58/58 static page intact
+
+#### Stage 35 closure (Tarih 2026-05-08)
+
+- Branch: `chore/handoff-tokens-stage34` üstüne (PR aynı branch'te
+  yapılır mı yoksa fresh branch'mi karar). **Karar**: fresh
+  `chore/handoff-anim-engine-stage35` (Stage 34 PR #537 zaten
+  auto-merge enable, paralel branch çakışmaz).
+- Edit'lenen dosyalar: 1 (CLAUDE.md)
+- Yeni dosya: 10 (8 lib + 2 test)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 342/342 pass (+68 yeni)
+- Operatör aksiyonu (PR sonrası): yok — auto-merge `gh pr merge
+  --auto --squash` (CLAUDE.md §39.1 paterni).
+- Kalan riskler: yok (animation engine henüz hiç callsite yok —
+  Stage 39 Site FX'te entegre edilir).
+- **Sonraki aşama**: Stage 36 — HANDOFF §8 step 3 (Primitives —
+  BuazeMark, QRCode, Stars, Mono, Pill). Buaze'de mevcut karşılıklar:
+  BuazeLogo, StarRow, pulse-eyebrow, Badge → çoğu skip; QRCode
+  animasyonlu placeholder yeni eklenir (Stage 36 scope) veya Stage 39
+  Site FX'e ertelenir (gerçek kullanım site-fx).
+
 ---
 
 ## §39 — Auto-merge & Chat Prompt Logging Disipline (kanonik)
