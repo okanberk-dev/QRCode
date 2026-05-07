@@ -1,14 +1,16 @@
 import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
-import Script from 'next/script';
+import { cookies } from 'next/headers';
 import './globals.css';
 import { getSiteSettings } from '@/lib/site-settings';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
+import CookieConsentBanner from '@/components/legal/CookieConsentBanner';
+import ConditionalAnalytics from '@/components/legal/ConditionalAnalytics';
+import { locales, defaultLocale, type Locale } from '@/lib/translations';
 
 export const dynamic = 'force-dynamic';
-const GA_MEASUREMENT_ID = 'G-Y1H5FLYZ9R';
 const YM_ID = 108768887;
 
 // Stage 27 §38.103 Fix M5 — Space Grotesk weight 600 unused removal.
@@ -121,11 +123,22 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Stage 31b §38.108 — Cookie consent banner için locale detection.
+  // Root layout `[locale]` URL segment'i taşımıyor (marketing + admin +
+  // public surface'larda farklı). NEXT_LOCALE cookie'si veya browser
+  // accept-language fallback. CookieConsentBanner bilingual; default 'tr'
+  // safe.
+  const cookieStore = await cookies();
+  const localeCookie = cookieStore.get('NEXT_LOCALE')?.value;
+  const detectedLocale: Locale = locales.includes(localeCookie as Locale)
+    ? (localeCookie as Locale)
+    : defaultLocale;
+
   return (
     <html lang="tr" className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}>
       <head>
@@ -146,45 +159,26 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={`${inter.className} antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-screen`}>
-        {/* Analytics scripts run on `lazyOnload` to keep them out of the
-            critical path. PageSpeed flagged ~410ms (GA) + ~399ms (Yandex)
-            of main-thread CPU during page load, all attributable to these
-            two libraries. `lazyOnload` runs them after the browser is idle,
-            so TBT and LCP recover without losing any tracking data. */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="lazyOnload"
-        />
-        <Script id="google-analytics" strategy="lazyOnload">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
-          `}
-        </Script>
-        {/* Yandex Metrica — webvisor disabled because the recording
-            sub-domain (mc.yandex.com/solid.ws) was failing DNS resolution
-            in production, surfacing as a console error on every page load,
-            and we don't currently consume the session-recording UI. Click
-            map + bounce + link tracking still run. */}
-        <Script id="yandex-metrica" strategy="lazyOnload">
-          {`
-            (function(m,e,t,r,i,k,a){
-              m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-              m[i].l=1*new Date();
-              for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}
-              k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
-            })(window,document,'script','https://mc.yandex.ru/metrika/tag.js?id=${YM_ID}','ym');
-            ym(${YM_ID},'init',{ssr:true,webvisor:false,clickmap:true,ecommerce:"dataLayer",accurateTrackBounce:true,trackLinks:true});
-          `}
-        </Script>
+        {/* Stage 31b §38.108 — KVKK Çerez Kurulu kararı + ePrivacy Direktifi
+            uyumlu opt-in çerez consent. GA + Yandex Metrica `Script` tag'leri
+            koşulsuz `lazyOnload` mount'tan ConditionalAnalytics component'ine
+            taşındı: localStorage `bz_cookie_consent.analytics === true`
+            durumunda render. Banner kullanıcı kararıyla dispatch ettiği
+            `bz:cookie-consent-changed` event'i ile script'ler reactive
+            olarak yüklenir. */}
+        <ConditionalAnalytics />
+        {/* Yandex Metrica noscript pixel — analytics consent opt-in
+            şartına bağlı; consent verilmediyse pixel yüklenmez. KVKK
+            Çerez Kurulu rehberi: opt-in tüm tracker'lar için zorunlu. */}
         <noscript
           dangerouslySetInnerHTML={{
             __html: `<div><img src="https://mc.yandex.ru/watch/${YM_ID}" style="position:absolute;left:-9999px;" alt="" /></div>`,
           }}
         />
         <QueryProvider>{children}</QueryProvider>
+        {/* Cookie consent banner — bottom-sheet, ilk ziyarette görünür,
+            iframe (`/embed/*`) context'te otomatik gizli. */}
+        <CookieConsentBanner locale={detectedLocale} />
         {/* Vercel telemetry — Speed Insights (Web Vitals: FCP/LCP/CLS/INP)
             ve Analytics (page views) birlikte mount'lı. RES (Real Experience
             Score) hesaplaması her iki sample stream'i de tüketir; tek başına

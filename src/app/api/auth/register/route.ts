@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email, password, name, website, recaptchaToken, locale, inviteToken } = await req.json();
+    const { email, password, name, website, recaptchaToken, locale, inviteToken, marketingConsent } = await req.json();
     const captchaLocale = locale === 'en' ? 'en' : 'tr';
 
     // Honeypot check
@@ -87,15 +87,27 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Kayıt onayı log'u — kullanıcı kayıt akışında kullanım şartları + gizlilik
-    // politikası + KVKK aydınlatma metnini kabul ediyor sayılır (UI bu üçünü
-    // tek "kayıt olarak kabul ediyorum" string'i altında toplar). ETK izni
-    // ayrı tutulur — register form'unda toplanmıyor (kullanıcı dashboard'tan
-    // bültene abone olduğunda toplanacak).
+    // Stage 31b §38.108 — Kayıt onayı log'u (KVKK §10 + 6502 sayılı TKHK m.4
+    // uyumlu). UI'da artık 4 explicit checkbox (3 zorunlu + 1 opsiyonel ticari
+    // ileti). RegisterForm submit gate `allRequiredConsentsGiven` 3 zorunlu
+    // checkbox işaretlenmeden POST atmaz, ek olarak server tarafında 3 zorunlu
+    // belge her durumda log'lanır (defense-in-depth — formdan bypass'lanmış
+    // POST gelirse de KVKK aydınlatma yükümlülüğü kapsanır).
+    //
+    // Opsiyonel ticari-ileti (ETK m.6 — KVKK Açık Rıza + GDPR Art.7) sadece
+    // kullanıcı checkbox'ı işaretlerse log'lanır; default false.
     {
       const ua = req.headers.get('user-agent');
       const localeRaw = typeof locale === 'string' ? locale.toLowerCase() : 'tr';
       const consentLocale: LegalLocale = isSupportedLegalLocale(localeRaw) ? localeRaw : 'tr';
+      const consentItems: Array<{ key: 'kullanim-sartlari' | 'gizlilik-politikasi' | 'kvkk-aydinlatma' | 'ticari-ileti'; granted: boolean }> = [
+        { key: 'kullanim-sartlari', granted: true },
+        { key: 'gizlilik-politikasi', granted: true },
+        { key: 'kvkk-aydinlatma', granted: true },
+      ];
+      if (marketingConsent === true) {
+        consentItems.push({ key: 'ticari-ileti', granted: true });
+      }
       void recordConsentBatch(
         {
           locale: consentLocale,
@@ -105,11 +117,7 @@ export async function POST(req: NextRequest) {
           ipAddress: ip ?? null,
           userAgent: ua,
         },
-        [
-          { key: 'kullanim-sartlari', granted: true },
-          { key: 'gizlilik-politikasi', granted: true },
-          { key: 'kvkk-aydinlatma', granted: true },
-        ],
+        consentItems,
       );
     }
 

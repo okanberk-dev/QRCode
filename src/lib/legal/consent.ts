@@ -86,3 +86,63 @@ export async function recordConsentBatch(
     ),
   );
 }
+
+/**
+ * Stage 31b §38.108 — Onboarding consent backfill.
+ *
+ * Onboarding `complete` endpoint'inde çağrılır. Register flow'u 3 zorunlu
+ * belgeye onay log atıyor (UI checkbox + recordConsentBatch). Ama:
+ *   - Google sign-in akışı (`/api/auth/google`) mevcut LegalConsent log
+ *     atmıyor (Google butonu UI'da yasal checkbox göstermez); bu user'lar
+ *     `/onboarding`'a düşer ve /complete sonrası 3 zorunlu belgeye onay
+ *     vermiş sayılır.
+ *   - "Davet sonrası" register akışı da onaylı sayılır.
+ *
+ * Pattern: lookup-first (LegalConsent missing belgeleri tespit) → eksikse
+ * recordConsent. Idempotent — onboarding tekrar çağrılırsa duplicate row
+ * yazmaz. Fail-soft: log fail onboarding'i kırmamalı (CLAUDE.md §21.27
+ * paterni reuse).
+ */
+export async function ensureOnboardingConsents(input: {
+  userId: string;
+  locale: LegalLocale;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}): Promise<void> {
+  const requiredKeys: LegalDocumentKey[] = [
+    'kullanim-sartlari',
+    'gizlilik-politikasi',
+    'kvkk-aydinlatma',
+  ];
+  try {
+    const existing = await prisma.legalConsent.findMany({
+      where: {
+        subjectType: 'user',
+        subjectId: input.userId,
+        documentKey: { in: requiredKeys as readonly string[] as string[] },
+        granted: true,
+      },
+      select: { documentKey: true },
+    });
+    const existingKeys = new Set(existing.map((c) => c.documentKey));
+    const missing = requiredKeys.filter((k) => !existingKeys.has(k));
+    if (missing.length === 0) return;
+    await recordConsentBatch(
+      {
+        locale: input.locale,
+        subjectType: 'user',
+        subjectId: input.userId,
+        source: 'onboarding',
+        ipAddress: input.ipAddress ?? null,
+        userAgent: input.userAgent ?? null,
+      },
+      missing.map((key) => ({ key, granted: true })),
+    );
+  } catch (err) {
+    // Fail-soft — onboarding flow'u kırmamalı (CLAUDE.md §21.27 paterni).
+    console.error('[legal] ensureOnboardingConsents failed', {
+      userId: input.userId,
+      err,
+    });
+  }
+}

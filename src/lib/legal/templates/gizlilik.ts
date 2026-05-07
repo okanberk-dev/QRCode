@@ -65,7 +65,17 @@ Bu politika güncellendiğinde sayfa başındaki "yürürlük tarihi" değiştir
 
 ## 9. İletişim
 
-Soru, talep ve şikâyetlerinizi {{KVKK_CONTACT_EMAIL}} adresine iletebilirsiniz.`,
+Soru, talep ve şikâyetlerinizi {{KVKK_CONTACT_EMAIL}} adresine iletebilirsiniz.
+
+## 10. Veri Sorumlusu (Controller) ve Veri İşleyen (Processor)
+
+KVKK m. 3(ç) ve m. 12 kapsamında Buaze, kullanım senaryosuna göre **iki farklı sıfat** taşır:
+
+**Buaze müşterisi olan işletmenin son müşterileri (geri bildirim, yorum, kampanya alıcıları) için:** Veri sorumlusu **işletmedir**; Buaze yalnızca işletmenin talimatları doğrultusunda veri işleyen sıfatıyla hareket eder. İşletme, son müşteriye karşı KVKK m. 10 aydınlatma yükümlülüğünü kendi adına yerine getirir.
+
+**Buaze hesabı olan işletme sahipleri (panel kullanıcıları) için:** Veri sorumlusu **Buaze**'dir. Buaze, ödeme, kullanıcı yönetimi ve hizmet sunumu için panel kullanıcılarının verilerini doğrudan işler.
+
+Bu ayrım, GDPR Art. 4(7) "controller" ve Art. 4(8) "processor" tanımlarıyla paraleldir; Avrupa Birliği'nde mukim son müşterilerle çalışan işletmeler için ayrı bir veri işleyici sözleşmesi (DPA) imzalanır.`,
 };
 
 export const GIZLILIK_EN = {
@@ -128,5 +138,15 @@ When this policy changes, the "effective from" date at the top is updated; for m
 
 ## 9. Contact
 
-For any questions, requests or complaints, contact us at {{KVKK_CONTACT_EMAIL}}.`,
+For any questions, requests or complaints, contact us at {{KVKK_CONTACT_EMAIL}}.
+
+## 10. Controller and Processor (GDPR Art. 4(7), Art. 4(8) and Art. 28)
+
+Under GDPR Article 13(1)(a) and KVKK Article 3(ç) / 12, Buaze acts in **two different capacities** depending on the context:
+
+**For the end-customers of a Buaze business operator (review feedback, campaign recipients):** the **business operator is the controller**; Buaze processes personal data only on the documented instructions of the controller, in the role of **processor** (GDPR Art. 4(8)). The controller is responsible for fulfilling the GDPR Art. 13/14 information obligation toward end-customers in its own name.
+
+**For the business operator's own panel users (the merchant accounts who sign up for Buaze):** Buaze is the **controller** (GDPR Art. 4(7)). Buaze directly processes panel user data for billing, account management and service delivery.
+
+A separate Data Processing Agreement (DPA) under GDPR Art. 28 is executed for business operators serving data subjects in the European Economic Area. The DPA covers sub-processor disclosure, security measures, breach notification timelines and data return / deletion at end of contract.`,
 };

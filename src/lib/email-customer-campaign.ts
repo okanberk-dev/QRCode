@@ -19,6 +19,30 @@ import { sendResendEmail } from './email-internal';
 
 const RESEND_THROTTLE_MS = 600; // §38.12 paterni: ~1.6 req/sec, %20 margin under Resend free tier
 
+/**
+ * Stage 31b §38.108 — ETK m.7(2) "ticari iletinin ticari amaçlı olduğu
+ * kolaylıkla anlaşılabilir şekilde" yorumlamasına saygı gösteren subject
+ * prefix guard. TR locale + subject zaten "Reklam:" / "Promosyon:" /
+ * "Kampanya:" / "Fırsat:" prefix'lerinden biriyle başlamıyorsa otomatik
+ * "Reklam: " prefix'i eklenir.
+ *
+ * EN locale dokunulmaz — ETK Türk hukuku, CAN-SPAM Act header bandı
+ * ("[ADV]" / "ADVERTISEMENT:") zorunlu değil; ek prefix UX'i bozar.
+ *
+ * Stage 31c PR3 mail template render pipeline'ı bu helper'ı çağırır.
+ * Helper export'lu — admin/dev/mail-preview owner panel preview hint
+ * için reuse edilebilir.
+ */
+const TR_COMMERCIAL_PREFIX_REGEX = /^(reklam|promosyon|kampanya|f[ıi]rsat)[:\s]/i;
+
+export function ensureCommercialPrefix(subject: string, locale: 'tr' | 'en'): string {
+  const trimmed = subject.trim();
+  if (locale !== 'tr') return trimmed;
+  if (!trimmed) return 'Reklam:';
+  if (TR_COMMERCIAL_PREFIX_REGEX.test(trimmed)) return trimmed;
+  return `Reklam: ${trimmed}`;
+}
+
 // Stage 30 §38.106 — recipient cap (Vercel function timeout safety).
 // 100 recipient × 600ms = 60s + Resend latency ~10s = 70s; admin approve
 // endpoint maxDuration=60s; cap'i daha düşük tut (50) — Vercel function

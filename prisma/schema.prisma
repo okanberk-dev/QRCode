@@ -152,6 +152,26 @@ model Restaurant {
   initialGoogleRating Float? @map("initial_google_rating")
   currentGoogleRating Float? @map("current_google_rating")
 
+  // Stage 31b §38.108 — ETK m.5 gönderici tanımlama yükümlülüğü ve
+  // İYS (İleti Yönetim Sistemi) entegrasyonu için işletme kimlik bilgileri.
+  // Hepsi nullable + default null (geri uyum); admin /admin/restaurants/[id]
+  // panelinden veya owner Settings → Brand Identity'den doldurulur. Mail
+  // template footer'larında (Stage 31c PR3) "Reklam: ..." gönderici kimliği
+  // olarak kullanılır.
+  // - businessIdNumber: Vergi Kimlik Numarası (VKN — tüzel kişi) veya TC
+  //   Kimlik Numarası (gerçek kişi). 10–11 haneli numerik string. Public
+  //   surface'lerde maskeli (***1234) gösterilir; raw değer admin/owner
+  //   gözünde kalır (KVKK data minimization).
+  // - mersisNumber: Mersis (Merkezi Sicil Kayıt Sistemi) no — 16 haneli
+  //   tüzel kişi rejistre numarası. ETK m.5 + ekonomik faaliyet yürüten
+  //   tüzel kişiler için zorunlu (KEP'in mail karşılığı paterni).
+  // - physicalAddress: ETK m.5(1)(a) "iletişim bilgileri" + ihtilaf
+  //   anında tüketicinin "fiziki adresi" görme hakkı (TKHK m.4). Mail
+  //   footer'da "Gönderici adres: ..." satırında render edilir.
+  businessIdNumber String? @map("business_id_number")
+  mersisNumber     String? @map("mersis_number")
+  physicalAddress  String? @db.Text @map("physical_address")
+
   // Owner-tanımlı hedef puan — Analytics 14-haftalık trend chart'ında dashed
   // line + delta to target hint için (CLAUDE.md §38.25 + §38.26). Null = owner
   // henüz ayarlamadı, chart fallback olarak 4.0 industry default gösterir.
@@ -1443,6 +1463,19 @@ model CustomerEmailCampaign {
   rejectedById   String?            @map("rejected_by_id")
   rejectedAt     DateTime?          @map("rejected_at")
   reviewerNote   String?            @map("reviewer_note") @db.Text
+  // Stage 31b §38.108 — İYS (İleti Yönetim Sistemi) tracking placeholder.
+  // Türkiye'de ticari elektronik ileti gönderen her gerçek/tüzel kişi
+  // İYS'ye kayıtlı olmak ve gönderim öncesi alıcının izin durumunu sorgulamak
+  // zorunda (ETK m.6 + İYS Yönetmeliği). Operatör İYS API credentials
+  // sağladığında `src/lib/legal/iys.ts:reportToIys` helper'ı bu alanları
+  // doldurur. Şu an placeholder: null kalır, mail footer'da `—` render
+  // edilir (Stage 31c PR3 mail template footer enrichment).
+  // - iysId: İYS gönderim takip ID (UUID) — alıcı ihtilaf çıkarırsa
+  //   "izin sorgulanmıştı" kanıtı olarak kullanılır.
+  // - iysChannelCode: 'E_MARKETING' | 'SMS' | 'CALL' (İYS kanonik
+  //   kanal kodları, mevcut akışta hep 'E_MARKETING').
+  iysId          String?            @map("iys_id")
+  iysChannelCode String?            @map("iys_channel_code")
   createdById    String?            @map("created_by_id")
   createdAt      DateTime           @default(now()) @map("created_at")
   updatedAt      DateTime           @updatedAt @map("updated_at")

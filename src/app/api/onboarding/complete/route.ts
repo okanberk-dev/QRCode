@@ -7,6 +7,9 @@ import { pulseLayout } from '@/lib/email/layout';
 import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '@/lib/email/components';
 import { PULSE } from '@/lib/email/tokens';
 import { sectorIdToLabel } from '@/lib/sectors';
+import { ensureOnboardingConsents } from '@/lib/legal/consent';
+import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
+import { getClientIp } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,6 +115,26 @@ export async function POST(req: NextRequest) {
       }),
     }).catch((err) => {
       console.error('[onboarding/complete] welcome mail failed', err);
+    });
+  }
+
+  // Stage 31b §38.108 — Onboarding consent backfill (skip-if-already-recorded).
+  // Register flow (4 checkbox UI) zaten log atıyor; bu helper yalnızca eksik
+  // belgeler için yazar. Google sign-in akışı LegalConsent oluşturmuyor —
+  // onboarding/complete bu boşluğu kapatır. Fire-and-forget; helper içinde
+  // try/catch fail-soft (CLAUDE.md §21.27 paterni).
+  {
+    const ua = req.headers.get('user-agent');
+    const localeCandidate =
+      typeof bodyObj.locale === 'string' ? bodyObj.locale.toLowerCase() : 'tr';
+    const consentLocale: LegalLocale = isSupportedLegalLocale(localeCandidate)
+      ? localeCandidate
+      : 'tr';
+    void ensureOnboardingConsents({
+      userId: actor.id,
+      locale: consentLocale,
+      ipAddress: getClientIp(req.headers) ?? null,
+      userAgent: ua,
     });
   }
 
