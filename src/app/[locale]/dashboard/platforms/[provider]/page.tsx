@@ -17,6 +17,10 @@ import {
   type PlatformManagerConfig,
   type PlatformManagerRow,
 } from '@/components/dashboard/platforms/PlatformProviderManager';
+import {
+  PlatformLowFeedbackPanel,
+  type PlatformLowFeedbackItem,
+} from '@/components/dashboard/platforms/PlatformLowFeedbackPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -126,33 +130,61 @@ export default async function PlatformProviderPage({ params }: PageProps) {
   const restaurantIds = restaurants.map((restaurant) => restaurant.id);
   const last30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  const [latestChecks, redirectGroups] = await prisma.$transaction([
-    prisma.platformLinkCheck.findMany({
-      where: {
-        restaurantId: { in: restaurantIds },
-        provider: platform.provider,
-      },
-      orderBy: { checkedAt: 'desc' },
-      take: Math.max(200, restaurantIds.length * 4),
-      select: {
-        restaurantId: true,
-        ok: true,
-        statusCode: true,
-        latencyMs: true,
-        error: true,
-        checkedAt: true,
-      },
-    }),
-    prisma.platformRedirectEvent.groupBy({
-      by: ['restaurantId'],
-      where: {
-        restaurantId: { in: restaurantIds },
-        provider: platform.provider,
-        createdAt: { gte: last30d },
-      },
-      _count: { _all: true },
-    }),
-  ]);
+  const lowFeedbackWhere = {
+    restaurantId: { in: restaurantIds },
+    platform: platform.provider,
+    rating: { lte: 3 },
+  } as const;
+
+  const [latestChecks, redirectGroups, lowFeedbackCount, lowFeedbackRows] =
+    await prisma.$transaction([
+      prisma.platformLinkCheck.findMany({
+        where: {
+          restaurantId: { in: restaurantIds },
+          provider: platform.provider,
+        },
+        orderBy: { checkedAt: 'desc' },
+        take: Math.max(200, restaurantIds.length * 4),
+        select: {
+          restaurantId: true,
+          ok: true,
+          statusCode: true,
+          latencyMs: true,
+          error: true,
+          checkedAt: true,
+        },
+      }),
+      prisma.platformRedirectEvent.groupBy({
+        by: ['restaurantId'],
+        where: {
+          restaurantId: { in: restaurantIds },
+          provider: platform.provider,
+          createdAt: { gte: last30d },
+        },
+        _count: { _all: true },
+      }),
+      prisma.feedback.count({
+        where: lowFeedbackWhere,
+      }),
+      prisma.feedback.findMany({
+        where: lowFeedbackWhere,
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: {
+          id: true,
+          rating: true,
+          name: true,
+          comment: true,
+          branch: true,
+          tableNumber: true,
+          hasKvkkConsent: true,
+          createdAt: true,
+          restaurant: {
+            select: { id: true, name: true },
+          },
+        },
+      }),
+    ]);
 
   const latestByRestaurant = new Map<string, PlatformLatestCheck>();
   for (const check of latestChecks) {
@@ -178,6 +210,18 @@ export default async function PlatformProviderPage({ params }: PageProps) {
     externalPlatformsEnabled: restaurant.externalPlatformsEnabled,
     redirects30d: redirectsByRestaurant.get(restaurant.id) ?? 0,
     latestCheck: latestByRestaurant.get(restaurant.id) ?? null,
+  }));
+
+  const lowFeedbackItems: PlatformLowFeedbackItem[] = lowFeedbackRows.map((row) => ({
+    id: row.id,
+    rating: row.rating,
+    name: row.hasKvkkConsent ? row.name : null,
+    comment: row.comment,
+    branch: row.branch,
+    tableNumber: row.tableNumber,
+    createdAt: row.createdAt.toISOString(),
+    restaurantId: row.restaurant?.id ?? null,
+    restaurantName: row.restaurant?.name ?? null,
   }));
 
   const connectedCount = rows.filter(
@@ -246,7 +290,7 @@ export default async function PlatformProviderPage({ params }: PageProps) {
               className={issueCount > 0 ? 'text-[#DC2626]' : 'text-[#737373]'}
             />
           }
-          delta={isTr ? 'son kayitli test' : 'latest saved test'}
+          delta={isTr ? 'son kayıtlı test' : 'latest saved test'}
           deltaKind={issueCount > 0 ? 'down' : 'neutral'}
         />
         <StatCard
@@ -283,6 +327,14 @@ export default async function PlatformProviderPage({ params }: PageProps) {
       </div>
 
       <PlatformProviderManager platform={platformConfig} rows={rows} locale={locale} />
+
+      <PlatformLowFeedbackPanel
+        providerSlug={platform.slug}
+        platformName={platform.name}
+        locale={locale}
+        total={lowFeedbackCount}
+        initialItems={lowFeedbackItems}
+      />
     </div>
   );
 }

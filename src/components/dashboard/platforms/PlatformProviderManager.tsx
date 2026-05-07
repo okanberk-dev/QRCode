@@ -1,7 +1,16 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, Save, TestTube2, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  ExternalLink,
+  Loader2,
+  Save,
+  TestTube2,
+  XCircle,
+} from 'lucide-react';
 import { Badge, Toggle } from '@/components/ui';
 import {
   checkProviderUrl,
@@ -70,6 +79,8 @@ interface TestResponse {
   checkedAt: string;
 }
 
+const ROW_PAGE_SIZE = 5;
+
 function buildInitialState(rows: PlatformManagerRow[]): Record<string, RowState> {
   return Object.fromEntries(
     rows.map((row) => [
@@ -100,7 +111,7 @@ function formatCheck(check: PlatformLatestCheck | null, locale: Locale) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
-  const status = check.statusCode ? `HTTP ${check.statusCode}` : locale === 'tr' ? 'yanit yok' : 'no response';
+  const status = check.statusCode ? `HTTP ${check.statusCode}` : locale === 'tr' ? 'yanıt yok' : 'no response';
   const latency =
     typeof check.latencyMs === 'number' ? ` · ${check.latencyMs}ms` : '';
   return `${label} · ${status}${latency}`;
@@ -117,7 +128,12 @@ export function PlatformProviderManager({
 }: PlatformProviderManagerProps) {
   const isTr = locale === 'tr';
   const [state, setState] = useState<Record<string, RowState>>(() => buildInitialState(rows));
-  const rowList = useMemo(() => Object.values(state), [state]);
+  const [visibleRowCount, setVisibleRowCount] = useState(ROW_PAGE_SIZE);
+  const rowList = useMemo(
+    () => rows.map((row) => state[row.restaurantId]).filter(Boolean),
+    [rows, state],
+  );
+  const visibleRows = rowList.slice(0, visibleRowCount);
 
   const updateRow = (restaurantId: string, patch: Partial<RowState>) => {
     setState((current) => ({
@@ -220,7 +236,7 @@ export function PlatformProviderManager({
 
   return (
     <div className="space-y-3">
-      {rowList.map((row) => {
+      {visibleRows.map((row) => {
         const validation = checkProviderUrl(platform.provider, row.url);
         const validationMessage = validation.ok
           ? null
@@ -270,7 +286,7 @@ export function PlatformProviderManager({
                   <Badge kind={badgeKind}>{badgeLabel}</Badge>
                   {rowDirty && (
                     <span className="rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] font-medium text-[#737373]">
-                      {isTr ? 'degisiklik var' : 'unsaved'}
+                      {isTr ? 'değişiklik var' : 'unsaved'}
                     </span>
                   )}
                 </div>
@@ -311,7 +327,7 @@ export function PlatformProviderManager({
                         }
                         disabled={externalDisabled}
                         size="sm"
-                        ariaLabel={isTr ? 'Platform aktifligi' : 'Platform active state'}
+                        ariaLabel={isTr ? 'Platform aktifliği' : 'Platform active state'}
                       />
                     </div>
                   ) : null}
@@ -345,7 +361,7 @@ export function PlatformProviderManager({
               <div className="grid min-w-[220px] grid-cols-2 gap-px overflow-hidden rounded-[10px] border border-[#EDEDED]">
                 <div className="bg-white p-2.5">
                   <div className="pulse-eyebrow mb-0.5 text-[9.5px] text-[#737373]">
-                    {isTr ? '30G YONLENDIRME' : '30D REDIRECTS'}
+                    {isTr ? '30G YÖNLENDİRME' : '30D REDIRECTS'}
                   </div>
                   <div className="bz-mono text-[13px] font-semibold tabular-nums text-[#0A0A0A]">
                     {formatCount(row.redirects30d, locale)}
@@ -421,6 +437,18 @@ export function PlatformProviderManager({
           </section>
         );
       })}
+      {rowList.length > visibleRowCount && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={() => setVisibleRowCount((count) => count + ROW_PAGE_SIZE)}
+            className="bz-btn inline-flex items-center gap-1.5 text-[12px]"
+          >
+            <ChevronDown size={13} />
+            {isTr ? 'Daha fazla göster' : 'Show more'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
