@@ -695,7 +695,8 @@ body {
   [style*='scbShine'],
   [style*='scbWave'],
   [style*='scbBlink'],
-  .animate-\[bzProgress_2\.2s_linear_forwards\] {
+  .animate-\[bzProgress_2\.2s_linear_forwards\],
+  .animate-\[bzProgress_1\.5s_linear_forwards\] {
     animation: none !important;
   }
 }
