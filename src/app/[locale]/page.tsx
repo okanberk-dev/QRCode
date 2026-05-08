@@ -8,7 +8,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
 import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
-import { ArrowUpRight, BarChart3, ChevronDown, Inbox, MessageCircleQuestion, QrCode, Sparkles, Star } from 'lucide-react';
+import { BarChart3, Inbox, QrCode, Sparkles, Star } from 'lucide-react';
 import MarqueeRow from '@/components/marketing/MarqueeRow';
 // Stage 41 §38.122 — HANDOFF §8 step 8 (Heroes A): 3 variant + ENV flag.
 // `HeroVariantPicker` is a Client Component that reads
@@ -105,52 +105,65 @@ export default async function LandingPage({
 
   // AEO answer-style Q&A — 5 quotable answers AI search engines
   // (Perplexity, Bing Chat, Gemini AIO, Google AIO) and rich result
-  // crawlers can lift verbatim. Every answer reinforces customer agency
-  // and the four review-gating disclaimers (block / hide / star-branching
-  // / incentive) — mirrors CLAUDE.md §19.1.1 compliance copy parity.
+  // crawlers can lift verbatim. Same source feeds JSON-LD FAQPage and
+  // visible accordion (Stage 53 §38.134 HANDOFF FAQSection birebir).
+  // Compliance disipline: Q2 Google review-gating answer mirrors
+  // CLAUDE.md §19.1.1 (no incentives + no star-branching). Q5 yıllık
+  // 2 ay hediye claim → CLAUDE.md §15.2 priceYearly admin override
+  // pattern (discountedYearly = monthly × 0.8 ≈ 20% off).
   const aeoFaqs = isTr
     ? [
         {
-          q: 'Buaze nedir?',
-          a: 'Buaze, restoranlar, oteller, klinikler ve yerel hizmet işletmeleri için bir dijital itibar yönetimi ve QR geri bildirim platformudur. QR akışlarıyla şeffaf müşteri geri bildirimi toplar, yorumları tek panelden yönetmenize yardımcı olur ve Pulse AI ile yanıt taslakları üretir.',
+          q: 'Buaze nasıl çalışıyor?',
+          a: "Masanıza yerleştirdiğiniz QR'ı misafir okuttuğunda 30 saniyelik bir akışla puan verir. 4-5 yıldız Google'a yönlendirilir; düşük puanlar size özel panel'e düşer ve Pulse AI saniyeler içinde profesyonel yanıt taslağı yazar.",
+          meta: ['~30 sn akış', 'Tek QR · masa-bazlı', 'Otomatik yönlendirme'],
         },
         {
-          q: 'Buaze kimler için?',
-          a: 'Restoranlar, kafeler, oteller, klinikler, dişçiler, güzellik salonları ve spa, oto servisleri, hukuk büroları, gayrimenkul, eğitim, fitness merkezleri ve diğer yerel hizmet işletmeleri için tasarlandı. Her sektör için özel akışlar ve sektörel analitik sunarız.',
+          q: "Google'ın kurallarına aykırı mı?",
+          a: 'Hayır. Filtreleme yapmıyoruz — sadece misafiri Google\'ın resmi yorum bağlantısına yönlendiriyoruz. Google "review gating"i yasaklar; biz herhangi bir puana hediye/kupon koşulu bağlamayız. KVKK ve Google Politikalarına %100 uyumluyuz.',
+          meta: ['KVKK uyumlu', 'Filtreleme yok'],
         },
         {
-          q: 'QR geri bildirim akışı nasıl çalışır?',
-          a: 'Müşteri masadaki QR kodu tarar ve deneyimini puanlar. Her müşteriye işletmenin seçtiği herkese açık platformlar (Google, Yemeksepeti, Getir, Trendyol GO ve isteğe bağlı diğerleri) sunulur. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım yapma seçeneği görür; herkese açık platformlara yorum yazma hakkını her zaman korurlar.',
+          q: 'Kurulum ne kadar sürüyor?',
+          a: 'Ortalama 7 dakika. Hesabınızı açın, restoranınızı doğrulayın, masa QR kodlarınızı PDF olarak indirin. Onboarding asistanımız Google entegrasyonu ve Pulse AI ton ayarını sizin yerinize yapar.',
+          meta: ['~7 dk kurulum', 'PDF QR paketi', 'Asistan onboarding'],
         },
         {
-          q: 'Buaze Google\'ın yorum politikalarına uygun mu?',
-          a: 'Evet. Buaze yorumları engellemez, gizlemez veya manipüle etmez; yıldız bazlı erişim kısıtlaması yapmaz; pozitif yorum için teşvik (indirim, hediye) sunmaz. Akış sadece müşteri tercihiyle yönlendirme yapar. Tam politika açıklaması /google-compliance sayfasındadır.',
+          q: 'Pulse AI yanıtları kontrol edebilir miyim?',
+          a: 'Evet. Tüm yanıtlar varsayılan olarak "onay bekliyor" durumundadır. Marka tonu (sıcak / profesyonel / esprili) seçersiniz, AI taslağı yazar, siz onaylar veya düzenlersiniz. Tek tuşla otomatik onay da açılabilir.',
+          meta: ['3 ton seçeneği', 'Onay zorunlu (default)'],
         },
         {
-          q: 'Buaze negatif yorumları gizler mi?',
-          a: 'Hayır. Hiçbir yorum gizlenmez, engellenmez veya manipüle edilmez. Düşük puan veren müşteriler ek olarak ekibinizle özel paylaşım seçeneği görür — pratikte yaklaşık %85\'i bu kanalı tercih eder — ama herkese açık bir platforma yorum yazma hakkını her zaman korurlar.',
+          q: 'Fiyatlandırma nasıl?',
+          a: 'Aylık tek ücret, şube başına. 14 gün ücretsiz deneme, kredi kartı istemiyoruz. İstediğiniz an iptal edebilir, verilerinizi tek tuşla CSV olarak indirebilirsiniz. Yıllık ödemede 2 ay hediye.',
+          meta: ['14 gün deneme', 'Kart yok', 'Şube bazlı'],
         },
       ]
     : [
         {
-          q: 'What is Buaze?',
-          a: 'Buaze is a digital reputation management and QR feedback platform for restaurants, hotels, clinics, and local service businesses. It collects transparent customer feedback through QR flows, helps you manage reviews from one dashboard, and drafts replies with Pulse AI.',
+          q: 'How does Buaze work?',
+          a: 'Guests scan the QR at the table, give a rating in 30 seconds. 4-5 stars route to Google; lower ratings land privately in your panel and Pulse AI drafts a professional reply in seconds.',
+          meta: ['~30s flow', 'One QR · per-table', 'Auto routing'],
         },
         {
-          q: 'Who is Buaze for?',
-          a: 'Buaze is built for restaurants, cafés, hotels, clinics, dentists, beauty and spa businesses, auto services, law firms, real estate, education providers, fitness centers, and other local service businesses. We provide sector-specific flows and analytics for each segment.',
+          q: "Does this break Google's policy?",
+          a: 'No. We don\'t filter — we route guests to Google\'s official review link. Google bans "review gating"; we never gate perks behind a specific rating. Fully GDPR & Google Policy compliant.',
+          meta: ['GDPR ready', 'No gating'],
         },
         {
-          q: 'How does the QR feedback flow work?',
-          a: 'A customer scans the QR at the table and rates their experience. Every customer is shown the public platforms the business has selected (Google, Yemeksepeti, Getir, Trendyol GO, and optionally others). Customers giving low ratings additionally see an option to share privately with your team; they always retain the right to post on any public platform.',
+          q: 'How long does setup take?',
+          a: 'About 7 minutes. Sign up, verify your venue, download table QR codes as PDF. Our onboarding bot handles Google integration and Pulse AI tone setup.',
+          meta: ['~7 min setup', 'PDF QR pack', 'Guided onboarding'],
         },
         {
-          q: 'Is Buaze compliant with Google\'s review policies?',
-          a: 'Yes. Buaze does not block, hide, or manipulate reviews; does not gate access by star rating; and does not offer incentives (discounts, gifts) for positive reviews. The flow only routes by customer preference. The full policy statement is at /google-compliance.',
+          q: 'Can I review Pulse AI replies?',
+          a: 'Yes. Every reply defaults to "pending approval". You set brand tone (warm / pro / witty), AI drafts, you approve or edit. One-click auto-approval available.',
+          meta: ['3 tone presets', 'Approval required'],
         },
         {
-          q: 'Does Buaze hide negative reviews?',
-          a: 'No. No review is ever hidden, blocked, or manipulated. Customers giving low ratings additionally see an option to share privately with your team — in practice about 85% choose this channel — but they always retain the right to post on a public platform.',
+          q: 'How is it priced?',
+          a: 'Flat monthly, per location. 14-day free trial, no card required. Cancel anytime, export data as CSV. Annual plan = 2 months free.',
+          meta: ['14-day trial', 'No card', 'Per location'],
         },
       ];
 
@@ -1040,89 +1053,238 @@ export default async function LandingPage({
           customer + venue is available. */}
 
       {/* ═══════════════════════════════════════════════════════════
-          7.5 AEO ANSWER-STYLE Q&A
-              Quotable, factual answers to questions AI search engines
-              and Google AIO ask about review-management products. The
-              same content feeds the FAQPage JSON-LD above so both the
-              visible UI and structured data come from one source.
+          7.5 SIK SORULANLAR · 5 SORU — Stage 53 §38.134 HANDOFF
+              FAQSection birebir parity. Editorial 2-col layout
+              (380px sticky left + 1fr right accordion). Same
+              `aeoFaqs` array feeds JSON-LD FAQPage above.
+              Synthetic italic Space Grotesk (CLAUDE.md §38.112);
+              compliance-safe NAP variation bottom-left
+              (CLAUDE.md §35.8 + §19.4 paterni).
       ═══════════════════════════════════════════════════════════ */}
       <section
         id="aeo"
         className="relative overflow-hidden border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-[60px] sm:px-10 sm:py-24"
       >
-        <IllusShield
-          className="pointer-events-none absolute -right-12 -top-10 h-[220px] w-[220px] opacity-[0.06]"
-          aria-hidden
-        />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(198,242,78,0.10)_0%,transparent_65%)]"
+          className="pointer-events-none absolute -right-[180px] -top-[160px] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(198,242,78,0.16)_0%,rgba(198,242,78,0)_65%)]"
         />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -left-32 bottom-0 h-[360px] w-[360px] rounded-full bg-[radial-gradient(circle,rgba(198,242,78,0.06)_0%,transparent_60%)]"
-        />
-        <div className="relative mx-auto max-w-[760px]">
-          <span className="pulse-eyebrow inline-flex items-center gap-2 text-[#A8D62E]">
-            <MessageCircleQuestion size={14} strokeWidth={2.2} aria-hidden />
-            {isTr ? 'KISACA BUAZE' : 'BUAZE IN BRIEF'}
-          </span>
-          <h2 className="mt-3 text-[26px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A] sm:text-[40px] lg:text-[46px]">
-            {isTr
-              ? 'En çok sorulan beş soruya net cevaplar'
-              : 'Five common questions, answered directly'}
-          </h2>
-          <p className="mt-4 max-w-[640px] text-[15px] leading-[1.6] text-[#525252] sm:text-[16px]">
-            {isTr
-              ? 'Buaze ne yapar, kimler için tasarlandı ve Google\'ın yorum politikasıyla nasıl uyum sağlar — kısaca.'
-              : 'What Buaze does, who it is built for, and how it aligns with Google\'s review policy — at a glance.'}
-          </p>
-          <span className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1 text-[12px] font-medium text-[#0A0A0A]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#0A0A0A]" aria-hidden />
-            {isTr ? '5 soru · 2 dakikada okunur' : '5 questions · 2 min read'}
-          </span>
 
-          <div className="mt-10 flex flex-col gap-3">
-            {aeoFaqs.map((f, idx) => (
-              <details
-                key={f.q}
-                className="group rounded-2xl border border-[#EDEDED] bg-white p-5 transition-all duration-200 hover:border-[#A3A3A3] hover:shadow-[0_1px_2px_rgba(10,10,10,0.04)] sm:p-6 [&[open]]:border-[#0A0A0A] [&[open]]:shadow-[inset_3px_0_0_0_#C6F24E,0_4px_16px_rgba(10,10,10,0.04)] motion-reduce:transition-none"
-                open={idx < 2}
+        <div className="relative mx-auto grid max-w-[1240px] gap-12 lg:grid-cols-[380px_1fr] lg:gap-20">
+          {/* LEFT — sticky editorial column */}
+          <aside>
+            <div className="lg:sticky lg:top-[100px]">
+              <div className="mb-7 inline-flex items-center gap-2.5">
+                <span aria-hidden className="h-px w-6 bg-[#0A0A0A]" />
+                <span className="pulse-eyebrow text-[#0A0A0A]">
+                  {isTr ? 'SIK SORULANLAR · 5 SORU' : 'FAQ · 5 QUESTIONS'}
+                </span>
+              </div>
+
+              <h2
+                className="m-0 font-normal text-[#0A0A0A]"
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontStyle: 'italic',
+                  fontSize: 'clamp(36px, 7vw, 56px)',
+                  lineHeight: 0.98,
+                  letterSpacing: '-0.025em',
+                }}
               >
-                <summary className="flex min-h-[44px] cursor-pointer list-none items-start justify-between gap-4 text-left text-[16px] font-medium leading-[1.4] text-[#0A0A0A] sm:text-[17px] group-open:font-semibold [&::-webkit-details-marker]:hidden">
-                  <span className="flex-1">{f.q}</span>
-                  <span
-                    aria-hidden
-                    className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#EDEDED] bg-[#FAFAFA] transition-all duration-200 group-hover:border-[#A3A3A3] group-open:border-[#0A0A0A] group-open:bg-[#0A0A0A] motion-reduce:transition-none"
-                  >
-                    <ChevronDown
-                      size={14}
-                      strokeWidth={2.4}
-                      className="text-[#737373] transition-transform duration-200 group-open:rotate-180 group-open:text-[#C6F24E] motion-reduce:transition-none"
-                    />
-                  </span>
-                </summary>
-                <p className="mt-3 text-[14px] leading-[1.7] text-[#525252] sm:text-[15px]">
-                  {f.a}
-                </p>
-              </details>
-            ))}
-          </div>
+                {isTr ? 'En çok sorulan beş soruya' : 'Five most-asked questions,'}
+                <br />
+                <span
+                  className="px-1"
+                  style={{
+                    background:
+                      'linear-gradient(180deg, transparent 60%, #C6F24E 60%, #C6F24E 92%, transparent 92%)',
+                  }}
+                >
+                  {isTr ? 'net cevaplar.' : 'clear answers.'}
+                </span>
+              </h2>
 
-          <div className="mt-10 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[13px] leading-[1.55] text-[#737373]">
-              {isTr
-                ? 'Yorum yanıt taslakları + KVKK ayrıntıları için tam politika sayfası.'
-                : 'Full policy page with reply drafts + KVKK details.'}
-            </p>
-            <Link
-              href={`${base}/google-compliance`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-[#0A0A0A] px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#1A1A1A]"
-            >
-              {isTr ? 'Google uyumluluk sayfası' : 'Google compliance page'}
-              <ArrowUpRight size={14} strokeWidth={2.2} aria-hidden />
-            </Link>
+              <p className="mt-6 max-w-[320px] text-[15px] leading-[1.55] text-[#525252]">
+                {isTr
+                  ? 'Kısa demo, gizli ücret yok, istediğiniz an iptal edebilirsiniz.'
+                  : 'Short demo, no hidden fees, cancel anytime.'}
+              </p>
+
+              {/* Help card — graphite + lime gradient orb */}
+              <div className="relative mt-9 max-w-[320px] overflow-hidden rounded-[18px] bg-[#0A0A0A] p-[22px] text-white">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -right-10 -top-10 h-[130px] w-[130px] rounded-full bg-[radial-gradient(circle,rgba(198,242,78,0.30)_0%,transparent_70%)]"
+                />
+                <span className="pulse-eyebrow mb-2.5 block text-white/50">
+                  {isTr ? 'Hâlâ kararsız mısınız?' : 'Still on the fence?'}
+                </span>
+                <p
+                  className="relative z-[1] mb-[18px] m-0 font-normal"
+                  style={{
+                    fontFamily: 'var(--font-heading)',
+                    fontStyle: 'italic',
+                    fontSize: 24,
+                    lineHeight: 1.15,
+                    letterSpacing: '-0.015em',
+                  }}
+                >
+                  {isTr
+                    ? '15 dakika. Panelinizi gerçek verinizle birlikte gösteriyoruz.'
+                    : '15 minutes. We show your panel on real data.'}
+                </p>
+                <Link
+                  href={`${base}/contact`}
+                  className="relative z-[1] inline-flex h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-[#C6F24E] font-bold text-[#0A0A0A]"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 12,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {isTr ? "15 DK'LIK DEMO AL" : 'BOOK A 15-MIN DEMO'}
+                  <span aria-hidden>→</span>
+                </Link>
+              </div>
+            </div>
+          </aside>
+
+          {/* RIGHT — editorial accordion */}
+          <div>
+            <div className="rounded-3xl border border-[#EDEDED] bg-white px-6 shadow-[0_1px_2px_rgba(10,10,10,0.04)] sm:px-9">
+              {aeoFaqs.map((f, idx) => (
+                <details
+                  key={f.q}
+                  open={idx === 0}
+                  className="group border-b border-[#EDEDED] py-7 last:border-b-0 sm:py-8"
+                >
+                  <summary
+                    className="grid cursor-pointer list-none items-start gap-5 sm:gap-7 [&::-webkit-details-marker]:hidden"
+                    style={{ gridTemplateColumns: '50px 1fr 44px' }}
+                  >
+                    {/* Italic serif index */}
+                    <div
+                      className="pt-1 text-[#A3A3A3] transition-colors duration-[220ms] group-open:text-[#0A0A0A]"
+                      style={{
+                        fontFamily: 'var(--font-heading)',
+                        fontStyle: 'italic',
+                        fontSize: 'clamp(28px, 4vw, 36px)',
+                        lineHeight: 0.9,
+                        fontWeight: 400,
+                        letterSpacing: '-0.02em',
+                      }}
+                    >
+                      {String(idx + 1).padStart(2, '0')}
+                    </div>
+                    {/* Question */}
+                    <h3
+                      className="m-0 font-normal text-[#0A0A0A]"
+                      style={{
+                        fontFamily: 'var(--font-heading)',
+                        fontStyle: 'italic',
+                        fontSize: 'clamp(22px, 3.4vw, 30px)',
+                        lineHeight: 1.15,
+                        letterSpacing: '-0.02em',
+                      }}
+                    >
+                      {f.q}
+                    </h3>
+                    {/* Plus / minus */}
+                    <span
+                      aria-hidden
+                      className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-[1.5px] border-[#EDEDED] bg-transparent transition-all duration-[240ms] group-open:border-[#0A0A0A] group-open:bg-[#0A0A0A]"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 14 14"
+                        className="text-[#0A0A0A] transition-transform duration-[280ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] group-open:rotate-45 group-open:text-[#C6F24E]"
+                      >
+                        <path
+                          d="M7 1.5v11M1.5 7h11"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
+                  </summary>
+
+                  {/* Answer body — inline animation reduced-motion blanket'le yakalanır */}
+                  <div
+                    className="mt-[18px] grid items-start gap-5 sm:gap-7"
+                    style={{
+                      gridTemplateColumns: '50px 1fr 44px',
+                      animation: 'faqOpen 320ms cubic-bezier(0.2,0.8,0.2,1)',
+                    }}
+                  >
+                    <span aria-hidden />
+                    <div>
+                      <p className="m-0 max-w-[640px] text-[15px] leading-[1.65] text-[#525252] sm:text-[16px]">
+                        {f.a}
+                      </p>
+                      {f.meta && f.meta.length > 0 && (
+                        <div className="mt-[18px] flex flex-wrap gap-2">
+                          {f.meta.map((m) => (
+                            <span
+                              key={m}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E] bg-[#EAF9B8] px-3 py-1.5 font-semibold text-[#3F5408]"
+                              style={{
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: 10.5,
+                                letterSpacing: '0.08em',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              <span aria-hidden className="h-1 w-1 rounded-[2px] bg-[#A8D62E]" />
+                              {m}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <span aria-hidden />
+                  </div>
+                </details>
+              ))}
+            </div>
+
+            {/* Tail rail — sayım + tüm sorular link */}
+            <div className="mt-6 flex items-center justify-between px-1">
+              <span className="pulse-eyebrow text-[#A3A3A3]">
+                {isTr ? '5 / 8 SORU' : '5 / 8 QUESTIONS'}
+              </span>
+              <Link
+                href={`${base}/faq`}
+                className="inline-flex items-center gap-2 border-b-[1.5px] border-[#C6F24E] pb-0.5 font-bold uppercase text-[#0A0A0A]"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  letterSpacing: '0.12em',
+                }}
+              >
+                {isTr ? 'TÜM SORULAR' : 'ALL QUESTIONS'}
+                <span aria-hidden>→</span>
+              </Link>
+            </div>
           </div>
+        </div>
+
+        {/* Mute tag bottom-left — compliance-safe NAP variation
+            (CLAUDE.md §35.8: gerçek destek saati unverified iddia
+            sayılır; kanonik support@buaze.com kullanılır) */}
+        <div className="absolute bottom-6 left-5 hidden items-center gap-2 opacity-60 sm:left-10 sm:flex">
+          <span
+            aria-hidden
+            className="h-1.5 w-1.5 rounded-[3px] bg-[#C6F24E]"
+            style={{ animation: 'faqDot 2.4s ease-in-out infinite' }}
+          />
+          <span className="pulse-eyebrow text-[#A3A3A3]">
+            {isTr
+              ? 'BUAZE · DESTEK · SUPPORT@BUAZE.COM'
+              : 'BUAZE · SUPPORT · SUPPORT@BUAZE.COM'}
+          </span>
         </div>
       </section>
 

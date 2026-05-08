@@ -598,6 +598,21 @@ body {
   50%      { opacity: 1;   transform: scale(1); }
 }
 
+/* Stage 53 §38.134 — homepage FAQ editorial accordion (HANDOFF FAQSection
+ * birebir). `faqOpen` answer reveal (320ms cubic-bezier ease-out + 4px
+ * translateY); `faqDot` bottom rail status dot pulse (2.4s ease-in-out
+ * scale + opacity). Inline `style={{ animation }}` paterni (Tailwind
+ * arbitrary class yok); reduced-motion blanket aşağıdaki [style*='X']
+ * selector'la otomatik yakalanır. */
+@keyframes faqOpen {
+  0%   { opacity: 0; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes faqDot {
+  0%, 100% { transform: scale(1);   opacity: 0.6; }
+  50%      { transform: scale(1.6); opacity: 0.2; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .pulse-heartbeat,
@@ -629,6 +644,8 @@ body {
   [style*='bz-rr-pulse'],
   [style*='bz-rr-dot'],
   [style*='bzFadeUp'],
+  [style*='faqOpen'],
+  [style*='faqDot'],
   .animate-\[bzProgress_2\.2s_linear_forwards\] {
     animation: none !important;
   }

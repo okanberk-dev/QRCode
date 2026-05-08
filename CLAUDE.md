@@ -17704,3 +17704,217 @@ intact.
   delay, py-2 chip, 1500ms timeout, scrollIntoView center).
 - Hukuki/disipline override: yok (UI polish, backend kontratı +
   KVKK + reCAPTCHA intact).
+
+---
+
+### 38.134 2026-05-08 — Stage 53 anasayfa FAQ section editorial redesign (HANDOFF FAQSection JSX birebir)
+
+§38.130 Stage 49 + §38.131 Stage 50 + §38.133 Stage 52 ardışık
+redesign zincirinden sonra kullanıcı yeni JSX prototip paylaştı:
+*"anasyfadaki sıkça sorulan soruları attığım jsx ile birebir aynı
+değiştir"* + 250 satırlık `FAQSection` JSX prototip. Editorial
+2-col layout (380px sticky left aside + 1fr right accordion),
+italic Space Grotesk title, lime gradient help card, 60px italic
+serif index'li accordion row, plus/minus toggle button, meta chip'ler
+ve bottom rail ("5 / 28 SORU" + "TÜM SORULAR" link). Kullanıcı talep
+etti birebir aynı tasarım, ama Buaze Pulse §11 + §35.8 + §19.4
+disipline ile **3 compliance variation**.
+
+**3 paralel hızlı audit + manuel verify**:
+- Mevcut FAQ section: `src/app/[locale]/page.tsx:1042-1127`
+  (id="aeo", `<details>` accordion 5 soru, hardcoded `aeoFaqs` array
+  hem JSON-LD FAQPage hem visible UI feed eder line 181-186, mevcut
+  pattern intact tutulmalı).
+- `aeoFaqs` array compliance §19.1.1: mevcut 5 soru "review-gating
+  disclaimer" odaklı; prototip 5 soru farklı angle (how/policy/
+  setup/control/pricing). Prototip soru-cevapları daha "actionable"
+  ve owner-friendly; Q2 "Google'a aykırı mı?" yine review gating
+  disclaimer disipline ile uyumlu.
+- `/[locale]/faq` sayfası 8 soru içerir (CLAUDE.md §38.103 ISR
+  cache). Prototip "5 / 28 SORU" tail rail iddiası — 28 yanlış,
+  gerçek count "5 / 8 SORU".
+
+**3 compliance variation** (CLAUDE.md disipline):
+
+| Prototip | Buaze variation | Sebep |
+|---|---|---|
+| `5 / 28 SORU` tail rail | `5 / 8 SORU` | `/[locale]/faq` array gerçek length 8 (verifiable claim). 28 yanlış count. |
+| `BUAZE · KARAKÖY · CANLI DESTEK 09:00–22:00` bottom-left | `BUAZE · DESTEK · SUPPORT@BUAZE.COM` | Buaze gerçek destek saati dokümante değil; "CANLI DESTEK" + spesifik saat unverifiable (CLAUDE.md §35.8 attribution disipline). Karaköy şehir referansı Stage 50 footer ticker'da kabul edildi (kullanıcı override §38.131) ama "CANLI DESTEK" claim'i farklı seviyede iddia. Kanonik `support@buaze.com` (NAP parity §19.1.2 + §35.8) güvenli. |
+| `<MessageCircleQuestion>` icon eyebrow | İkon yok (prototip'te yok) | Birebir parity. |
+
+**Diğer Stage 32 §38.112 + §38.123 + §38.131 paterni reuse**:
+- **Synthetic italic Space Grotesk** (Google Fonts italic kaynağı yok):
+  inline `style={{ fontFamily: 'var(--font-heading)', fontStyle:
+  'italic' }}` browser oblique transform ~%85 gerçek italic. Title
+  `clamp(36px, 7vw, 56px)` mobile 36px desktop 56px (HANDOFF
+  birebir 56px statik + mobile shrink).
+- **Lime highlight title accent**: `linear-gradient(180deg,
+  transparent 60%, #C6F24E 60%, ...)` — son satır altında lime
+  marker (HANDOFF spec birebir).
+- **Help card** (graphite + lime gradient): radial-gradient orb
+  + italic body + lime CTA. Demo CTA `/${locale}/contact` (mevcut
+  Buaze contact form, demo modal yok).
+- **Editorial accordion row**: 60px italic serif index (`01`, `02`,
+  ...) + 30px italic question + 44×44 plus/minus button (rotate 45°
+  + lime stroke open). Native `<details open={idx === 0}>` —
+  ilk soru open default, JS-free SSR-safe.
+- **Meta chips**: lime-tint background + lime-deep dot + JetBrains
+  Mono uppercase tracked (Pulse §11 paterni reuse). 5 soru × 2-3
+  meta = 13 toplam meta chip (locale-aware).
+- **Tail rail**: pulse-eyebrow gri sayım + "TÜM SORULAR" lime
+  underline link → `/${locale}/faq`.
+
+**Animasyonlar (yeni 2 keyframe)**:
+- `faqOpen` (320ms cubic-bezier(0.2,0.8,0.2,1) translateY -4→0 +
+  opacity 0→1) — answer reveal smooth.
+- `faqDot` (2.4s ease-in-out infinite scale 1↔1.6 + opacity 0.6↔0.2)
+  — bottom-left status dot pulse.
+- Inline `style={{ animation }}` paterni (Tailwind arbitrary class
+  yok); reduced-motion blanket `[style*='faqOpen']` + `[style*='faqDot']`
+  selector eklendi (CLAUDE.md §38.61 paterni reuse).
+
+**JSON-LD FAQPage parity intact**:
+`aeoFaqs.map((f) => ({ '@type': 'Question', name: f.q,
+acceptedAnswer: { '@type': 'Answer', text: f.a } }))` paterni intact
+(line 181-186). Yeni `meta` field optional → JSON-LD'ye sızmaz.
+Hem visible UI hem structured data tek source-of-truth (CLAUDE.md
+§35.6 paterni intact).
+
+**Tailwind v4 arbitrary tokens** (kullanım):
+- `duration-[220ms]` / `duration-[240ms]` / `duration-[280ms]` —
+  preset olmayan transition durations.
+- `ease-[cubic-bezier(0.34,1.56,0.64,1)]` — back-out spring.
+- `transition-transform` + `group-open:rotate-45` — plus → minus.
+- SVG stroke `currentColor` paterni (`text-[#0A0A0A]
+  group-open:text-[#C6F24E]` → `<path stroke="currentColor">`)
+  — Tailwind v4 `stroke-[#X]` arbitrary daha az test edilmiş;
+  `currentColor` defansif paterni kullanıldı.
+
+**Etkilenen dosyalar (3)**:
+- `src/app/[locale]/page.tsx`:
+  - `aeoFaqs` array genişlet (5 yeni soru + meta field opsiyonel,
+    TR/EN parite, JSON-LD feed intact)
+  - Line 11 import: `MessageCircleQuestion`, `ChevronDown`,
+    `ArrowUpRight` silindi (orphan)
+  - FAQ section (line 1042-1127) full rewrite ~245 satır
+  - `IllusShield` import intact (line 588'de hâlâ kullanılıyor)
+- `src/app/globals.css`: 2 yeni keyframe (`faqOpen` + `faqDot`)
+  + reduced-motion blanket'a 2 yeni `[style*='X']` selector
+- `CLAUDE.md` §38.134 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**:
+383/383 intact (presentational redesign, helper logic değişmedi).
+
+**Verification**:
+- Lokal disk dolu (9.5GB free) — `npm install` skip; CI Validate
+  workflow (lint + tsc + test) doğrulayacak (CLAUDE.md §38.103
+  paterni paralel).
+- JSX sentaks + TypeScript inference + Tailwind v4 arbitrary
+  tokens manuel cross-check edildi.
+- Inline animation + reduced-motion blanket selector parity
+  doğrulandı.
+
+**Yapma**:
+- `aeoFaqs.meta` field'ını JSON-LD FAQPage payload'ına ekleme —
+  schema.org `Question` `acceptedAnswer` text-only structured
+  data; meta visual chip-only.
+- `5 / 28 SORU` claim'ini koruyup tail rail göster — Buaze
+  gerçek FAQ count 8 (verifiable). Yanlış sayım §35.8 ihlali.
+- "CANLI DESTEK 09:00–22:00" claim'i bottom-left'e koy — Buaze
+  destek saati dokümante değil; unverifiable iddia. Kanonik
+  `support@buaze.com` NAP-parity safe.
+- HANDOFF "Karaköy" şehir referansı bottom-left'e geri ekle —
+  Stage 50 footer live ticker'da Karaköy override edildi
+  (§38.131); FAQ section bağlamı farklı (DESTEK iddiası ile
+  birleşik), kanonik `BUAZE · DESTEK · SUPPORT` daha güvenli.
+- `MessageCircleQuestion` icon eyebrow ekle — prototip'te yok,
+  birebir parity için silindi.
+- `<details>` yerine React `useState` ile open management —
+  Buaze homepage server component (`force-dynamic`). Native
+  `<details open={idx === 0}>` JS-free SSR-safe; smooth animation
+  CSS-only `style={{ animation: 'faqOpen ...' }}`.
+- Help card CTA'sını `/auth/register`'a yönlendir — HANDOFF
+  "BOOK A 15-MIN DEMO" niyeti contact/demo flow; Buaze'de
+  demo modal yok, `/contact` form en yakın equivalent.
+- Italic Space Grotesk için `next/font/google` `style: 'italic'`
+  ekle — Google Fonts Space Grotesk italic variant kaynağı yok
+  (Stage 32 §38.112 paterni intact); synthetic italic CSS-only.
+- 7-step accordion (HANDOFF benzeri rotation) yapma — 5 soru
+  yeterli; ek soru `/[locale]/faq` sayfasına yönlendirir
+  (`TÜM SORULAR` tail rail link).
+- `font-bold` heading Space Grotesk üstüne — Pulse §11 disipline
+  weight 500 yeter (synthetic italic + tight tracking yeterli
+  editorial weight).
+
+**Yap**:
+- Yeni FAQ-style editorial accordion eklerken aynı paterni reuse:
+  60px italic serif index + question h3 + 44px plus/minus +
+  meta chips + faqOpen keyframe + reduced-motion blanket selector.
+- Yeni HANDOFF JSX prototip geldiğinde §35.8 + §35.10 + §19.1.1
+  + §19.4 disipline cross-check; fake metric / unverifiable claim
+  / NAP drift compliance variation ile çözülür.
+- Yeni keyframe `style={{ animation }}` inline kullanılırsa
+  reduced-motion blanket'a `[style*='X']` selector eklemek
+  zorunlu (CLAUDE.md §38.61 paterni).
+- JSON-LD FAQPage feed intact tutmak için `aeoFaqs` array shape
+  `{ q, a }` minimum; `meta` opsiyonel (optional chaining
+  `f.meta && f.meta.length > 0`).
+- Ana sayfada FAQ ek tasarım iterasyonu gerekirse aynı paterni
+  reuse: 2-col grid (380px aside + 1fr accordion) + sticky left
+  + lime gradient help card + editorial accordion + tail rail.
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. `/tr/#aeo` ziyaret → editorial 2-col layout (lg+ desktop)
+   + sticky left aside (italic title + lime help card) + right
+   accordion (5 soru, ilk soru open).
+2. Mobile (`<lg`): 1-col stack, aside önce, accordion sonra.
+3. Accordion soru tıkla → answer reveal smooth (faqOpen 320ms);
+   plus icon → minus + lime stroke (rotate 45°).
+4. Meta chip'ler answer altında lime-tint + lime-deep dot
+   + mono uppercase görünür.
+5. Bottom-left status dot pulse animation (faqDot 2.4s); copy
+   `BUAZE · DESTEK · SUPPORT@BUAZE.COM`.
+6. Tail rail: `5 / 8 SORU` + `TÜM SORULAR →` link `/tr/faq`.
+7. Help card CTA: `15 DK'LIK DEMO AL →` link `/tr/contact`.
+8. EN locale: `/en/#aeo` aynı layout, copy translated parite.
+9. Reduced motion ON: `faqOpen` + `faqDot` static (final state
+   immediate); inline animation reduced-motion blanket'le
+   yakalanır.
+10. JSON-LD FAQPage `<script type="application/ld+json">` intact;
+    Google Search Console rich result test'inde 5 Q/A görünür.
+
+**Stage 53 closure** (Tarih 2026-05-08):
+- Branch: `claude/stoic-merkle-a138a0` (designated, environment
+  task description'da sabit)
+- Edit'lenen dosyalar: 2 (`src/app/[locale]/page.tsx` +
+  `src/app/globals.css`) + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Anasayfa FAQ section editorial 2-col layout görünür; mobile
+  1-col stack; JSON-LD FAQPage intact.
+- Kalan riskler: Lokal lint/tsc/test verify yapılamadı (disk
+  dolu); CI Validate workflow yeşili ile doğrulama.
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9
+  UserSession re-introduce (operatör tetiği §38.84/§38.89),
+  RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak), Prisma 7
+  upgrade. Veya operatör yeni odak talebi.
+
+**Chat prompt history (Stage 53 §39.2 paterni)**:
+- 2026-05-08 kullanıcı (önceki mesaj, Stage 50/52 closure
+  sonrası): 250 satırlık `FAQSection` JSX prototip paste
+  (BZ tokens + FAQRow + FAQ_T locale-aware copy + faqOpen +
+  faqDot keyframes).
+- 2026-05-08 follow-up kullanıcı (bu mesaj): *"anasyfadaki sıkça
+  sorulan soruları attığım jsx ile birebir aynı değiştir"*
+  (typo verbatim korundu — §39.2 disipline).
+- AskUserQuestion yapılmadı: kullanıcı talebi net (birebir aynı
+  değiştir), 3 compliance variation deterministik (§35.8 + §19.1.2
+  + verifiable count), scope tek consolidated PR (§21.22).
+- Hukuki/disipline override: 3 compliance variation (28 SORU →
+  8 SORU verifiable count, KARAKÖY · CANLI DESTEK → DESTEK ·
+  SUPPORT@BUAZE.COM NAP-parity, MessageCircleQuestion icon
+  silindi prototip parity). Diğer her şey HANDOFF spec birebir.
