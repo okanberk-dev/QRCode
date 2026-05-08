@@ -294,6 +294,13 @@ export async function GET(req: NextRequest) {
   const hasReplyParam = searchParams.get('hasReply'); // 'true' | 'false'
   const isFlaggedParam = searchParams.get('isFlagged'); // 'true'
   const isAssignedParam = searchParams.get('isAssigned'); // 'me'
+  // Stage 79 §38.159 — Feedback.isRead filter (Stage 56 §38.137 migration).
+  // NotificationBell + bottom nav badge'in gerçek backend isRead state'ini
+  // poll'lamak için gerekli. Schema: Boolean NOT NULL @default(false) —
+  // migration tüm eski rows false init eder. 'false' → okunmamış, 'true'
+  // → okundu. Geçersiz değer ignore (filter yok). Frontend mark-as-read
+  // PATCH /api/feedback/[id] (CLAUDE.md §38.83 Stage 13) ile sync.
+  const isReadParam = searchParams.get('isRead'); // 'true' | 'false'
   const sortOrder: 'asc' | 'desc' = sortOrderParam === 'asc' ? 'asc' : 'desc';
 
   const skip = (page - 1) * limit;
@@ -311,6 +318,19 @@ export async function GET(req: NextRequest) {
     baseWhere.hasKvkkConsent = true;
   } else if (kvkkFilter === 'false') {
     baseWhere.hasKvkkConsent = false;
+  }
+
+  // Stage 79 §38.159 — isRead filter (Feedback.isRead, Stage 56 §38.137).
+  // Schema: Boolean NOT NULL @default(false) — migration tüm eski rows
+  // false default ile init eder; null mümkün değil. 'false' (okunmamış)
+  // → isRead === false; 'true' (okundu) → isRead === true.
+  // NotificationBell `?rating=low&limit=5&isRead=false` query ile sadece
+  // okunmamış low-rating'ları çeker; bottom nav badge gerçek read state'ten
+  // derive edilir (CLAUDE.md §38.141 paterni intact, sadece source backend).
+  if (isReadParam === 'false') {
+    baseWhere.isRead = false;
+  } else if (isReadParam === 'true') {
+    baseWhere.isRead = true;
   }
 
   // Restaurant filter

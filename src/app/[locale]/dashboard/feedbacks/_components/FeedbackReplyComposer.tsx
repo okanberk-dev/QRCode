@@ -122,8 +122,10 @@ export function FeedbackReplyComposer({
           </p>
         )}
 
-        {/* Action row — mobile stack, sm+ row */}
-        <div className="mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
+        {/* Action row — mobile stack, sm+ row.
+            Stage 79 §38.159 — xl+ dar panel (~360px) için gap-1.5 kompakt
+            (4 button: Use & send + Regenerate + Tone select + Edit). */}
+        <div className="mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 xl:gap-1.5">
           <button
             type="button"
             onClick={onUseAiAndSend}
@@ -189,8 +191,24 @@ export function FeedbackReplyComposer({
         </div>
       </div>
 
-      {/* Reply textarea */}
-      <div className="mt-4 rounded-xl border border-[#EDEDED] p-4">
+      {/*
+        Reply textarea card.
+        Stage 79 §38.159 — Desktop (lg+) composer'ı detail panel'in alt
+        edge'ine sticky bağla. Body content (header/comment/AI summary/sent
+        replies/metadata/timeline) scroll edebilir; reply card her zaman
+        görünür kalır → kullanıcı yazınca Send button + KVKK consent +
+        replyNotice scroll'un en altında kayıp gitmez (kullanıcı raporu
+        "alta inilmiyor ne yazılacak görünmüyor" fix).
+        Mobile (<lg): sticky aktif değil (parent overflow-y-auto yok).
+        FeedbackDetail outer section `lg:overflow-y-auto` zaten scroll
+        context sağlıyor (§38.62). Sticky `bottom-0` ile detail panel
+        viewport bottom'una pin. Edge-to-edge styling: `lg:-mx-5 sm:lg:-mx-8`
+        body wrapper padding'i nötralize, `lg:rounded-none + lg:border-x-0
+        + lg:border-b-0 + lg:border-t` çerçeve sticky panel'e dönüşür.
+        Apple-soft top shadow `0_-4px_12px_-6px_rgba(10,10,10,0.06)` body↔
+        composer separation visual cue (CLAUDE.md §38.65 elev-2 paterni).
+      */}
+      <div className="mt-4 rounded-xl border border-[#EDEDED] p-4 lg:sticky lg:bottom-0 lg:z-10 lg:-mx-5 sm:lg:-mx-8 lg:px-5 sm:lg:px-8 lg:rounded-none lg:border-x-0 lg:border-b-0 lg:border-t lg:border-[#EDEDED] lg:bg-white lg:shadow-[0_-4px_12px_-6px_rgba(10,10,10,0.06)] lg:py-4">
         <div className="flex items-center justify-between gap-2">
           <label
             id="reply-textarea-label"
@@ -239,15 +257,20 @@ export function FeedbackReplyComposer({
             }
           }}
           onInput={(e) => {
-            // UX: textarea auto-grow — viewport-aware max height (küçük ekranda
-            // 50% viewport, masaüstünde max 480px). 'overflow-y: auto' max'a
-            // dayandığında textarea içinde scroll açar (parent zaten scrollable,
-            // kullanıcı uzun draft yazarken kontrolü kaybetmesin).
+            // UX: textarea auto-grow — viewport + breakpoint-aware max height.
+            // Stage 79 §38.159 — Desktop (lg+, 1024+px) detail panel sticky
+            // composer paterninde textarea cap 220px (composer alt edge'e
+            // sticky'leniyor; textarea aşırı büyürse composer body content'in
+            // çoğunu kapatır). Mobile push-route view: 50vh / 480px (full
+            // screen, body içinde scroll OK).
             const el = e.currentTarget;
             el.style.height = 'auto';
-            const cap = typeof window !== 'undefined'
-              ? Math.min(480, Math.round(window.innerHeight * 0.5))
-              : 480;
+            const isLg = typeof window !== 'undefined' && window.innerWidth >= 1024;
+            const cap = isLg
+              ? Math.min(220, Math.round(window.innerHeight * 0.32))
+              : typeof window !== 'undefined'
+                ? Math.min(480, Math.round(window.innerHeight * 0.5))
+                : 480;
             el.style.height = `${Math.min(el.scrollHeight, cap)}px`;
           }}
           placeholder={isTr ? `Merhaba ${customerFirst},` : `Hi ${customerFirst},`}
