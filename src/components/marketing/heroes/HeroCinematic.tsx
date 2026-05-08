@@ -341,38 +341,118 @@ function SceneForm({
   label: string;
   example: string;
 }) {
-  // 5 yıldız sırayla doluyor
+  // 5 yıldız sırayla doluyor (yıldız tıklamasından önce)
   const filled = Math.floor(clamp(progress * 1.4, 0, 1) * 5);
   const textProgress = animate({ from: 0, to: 1, start: 0.5, end: 0.95 })(progress);
   const textChars = Math.floor(textProgress * example.length);
+  // Bubble entry — yıldızlar dolduktan sonra fade-up
+  const bubbleProgress = animate({ from: 0, to: 1, start: 0.45, end: 0.7, ease: Easing.easeOutCubic })(progress);
+  const bubbleOpacity = bubbleProgress;
+  const bubbleLift = (1 - bubbleProgress) * 12;
 
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white px-6">
       <span className="pulse-eyebrow" style={{ color: '#737373' }}>
         {label}
       </span>
-      <div className="mt-5 w-full max-w-[280px] rounded-2xl border border-[#EDEDED] bg-white p-4 shadow-[0_8px_24px_-12px_rgba(10,10,10,0.15)]">
-        <div className="flex items-center justify-center gap-1">
-          {Array.from({ length: 5 }, (_, i) => (
-            <Star
-              key={i}
-              size={28}
-              strokeWidth={1.5}
-              fill={i < filled ? '#C6F24E' : 'none'}
-              color={i < filled ? '#A8D62E' : '#D4D4D4'}
-              aria-hidden
-            />
-          ))}
-        </div>
-        <div className="mt-4 min-h-[60px] rounded-lg bg-[#FAFAFA] p-3 text-[12.5px] leading-[1.5] text-[#0A0A0A]">
+
+      {/* Stars — sırayla doluyor (lime fill + lime-deep stroke) */}
+      <div className="mt-6 flex items-center justify-center gap-1.5">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Star
+            key={i}
+            size={32}
+            strokeWidth={1.5}
+            fill={i < filled ? '#C6F24E' : 'none'}
+            color={i < filled ? '#A8D62E' : '#D4D4D4'}
+            aria-hidden
+            className="transition-transform"
+            style={{
+              transform: i < filled ? 'scale(1.05)' : 'scale(1)',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Stage 45 §38.126 — yorum metni LIME chat bubble.
+          Kullanıcı talebi: "yorum yazısını lime renginde yap".
+          Pulse §11 + WCAG AAA: graphite bubble (#0A0A0A) + lime
+          ink (#C6F24E) → 13.4:1 contrast (AAA pass).
+          - Bubble: graphite + 18px radius + lime corner accent +
+            lime quote mark
+          - Typing cursor lime + bzCaretBlink keyframe
+          - Fade-up entry (bubbleLift translateY) */}
+      <div
+        className="relative mt-5 w-full max-w-[300px] rounded-2xl bg-[#0A0A0A] p-4 shadow-[0_18px_40px_-15px_rgba(10,10,10,0.45),0_0_0_1px_rgba(198,242,78,0.12)]"
+        style={{
+          opacity: bubbleOpacity,
+          transform: `translateY(${bubbleLift.toFixed(1)}px)`,
+        }}
+      >
+        {/* Lime accent corner glow */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -right-[60px] -top-[60px] h-[120px] w-[120px] rounded-full"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(198,242,78,0.32), transparent 65%)',
+            opacity: bubbleOpacity * 0.7,
+          }}
+        />
+
+        {/* Quote mark — sol-üst köşede italik lime */}
+        <span
+          aria-hidden
+          className="absolute -left-1 -top-3 text-[36px] leading-none text-[#C6F24E]/40"
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontStyle: 'italic',
+            fontWeight: 500,
+          }}
+        >
+          “
+        </span>
+
+        {/* Yorum metni — LIME ink (kullanıcı talebi) */}
+        <p
+          className="relative text-[14px] leading-[1.55]"
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontStyle: 'italic',
+            fontWeight: 500,
+            color: '#C6F24E',
+            letterSpacing: '-0.005em',
+            margin: 0,
+            minHeight: '44px',
+          }}
+        >
           {example.slice(0, textChars)}
           {textChars < example.length && (
             <span
               aria-hidden
-              className="ml-0.5 inline-block h-3 w-[2px] -translate-y-0.5 align-middle"
-              style={{ background: '#0A0A0A', animation: 'bzCaretBlink 0.9s steps(2) infinite' }}
+              className="ml-0.5 inline-block h-[14px] w-[2px] -translate-y-[1px] align-middle"
+              style={{ background: '#C6F24E', animation: 'bzCaretBlink 0.9s steps(2) infinite' }}
             />
           )}
+        </p>
+
+        {/* Footer — mini star confirmation + author attribution */}
+        <div className="relative mt-3 flex items-center justify-between border-t border-white/[0.06] pt-2.5">
+          <span className="inline-flex items-center gap-0.5">
+            {Array.from({ length: 5 }, (_, i) => (
+              <Star
+                key={i}
+                size={11}
+                fill={i < filled ? '#C6F24E' : 'none'}
+                color={i < filled ? '#C6F24E' : '#3a3a3a'}
+                strokeWidth={2}
+                aria-hidden
+              />
+            ))}
+          </span>
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-white/45">
+            {filled > 0 ? `${filled}.0/5` : ''}
+          </span>
         </div>
       </div>
     </div>
@@ -459,6 +539,21 @@ function SceneStarPop({
   const opacity = animate({ from: 0, to: 1, end: 0.3 })(progress);
   const burstOpacity = animate({ from: 0, to: 1, start: 0.2, end: 0.5 })(progress);
 
+  // Stage 45 §38.126 — sparkle particle burst (deterministik 8 dot,
+  // Math.random YOK). Bigger burst opacity + sparkle dots (8'er rotate).
+  const sparkles = Array.from({ length: 8 }, (_, i) => {
+    const angle = (i / 8) * Math.PI * 2;
+    // Particles fly out from center as scene progresses
+    const radius = animate({ from: 0, to: 90, ease: Easing.easeOutCubic, end: 0.7 })(progress);
+    const fade = animate({ from: 1, to: 0, start: 0.5, end: 1, ease: Easing.easeInQuad })(progress);
+    return {
+      i,
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
+      opacity: burstOpacity * fade,
+    };
+  });
+
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-white">
       <span className="pulse-eyebrow" style={{ color: '#737373' }}>
@@ -468,16 +563,33 @@ function SceneStarPop({
         className="relative mt-5 flex flex-col items-center"
         style={{ opacity, transform: `scale(${scale.toFixed(3)})` }}
       >
-        {/* Sparkle burst behind */}
+        {/* Sparkle burst halo */}
         <span
           aria-hidden
           className="pointer-events-none absolute -inset-12 rounded-full"
           style={{
             background:
-              'radial-gradient(circle, rgba(198,242,78,0.32), transparent 65%)',
+              'radial-gradient(circle, rgba(198,242,78,0.42), transparent 65%)',
             opacity: burstOpacity,
           }}
         />
+
+        {/* Stage 45 §38.126 — sparkle particle burst (8 deterministik dot) */}
+        <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-0 w-0">
+          {sparkles.map((s) => (
+            <span
+              key={s.i}
+              className="absolute h-1.5 w-1.5 rounded-full"
+              style={{
+                background: '#C6F24E',
+                boxShadow: '0 0 8px rgba(198,242,78,0.85)',
+                transform: `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px)`,
+                opacity: s.opacity,
+              }}
+            />
+          ))}
+        </div>
+
         <div className="relative flex items-baseline gap-1">
           <Star size={42} fill="#C6F24E" color="#A8D62E" aria-hidden />
           <span

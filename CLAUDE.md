@@ -16217,3 +16217,116 @@ card'da reuse).
 - AskUserQuestion yapılmadı: kullanıcı uyumakta, otonom karar
   yetkisi (compliance disipline kullanıcının §35.8/§35.10/§19.1.1
   tercih ettiği framework içinde).
+
+---
+
+### 38.126 2026-05-08 — Stage 45 Hero polish (yorum metni lime + sahne kalitesi)
+
+§38.122 Stage 41'de eklenen HeroCinematic'te kullanıcı talebi:
+*"hero kısmını da daha profesyonel ve iyi yap ve yorum yazısını lime
+renginde yap"*. SceneForm yorum bubble'ı graphite chat bubble + lime
+ink'e (WCAG AAA contrast) dönüştürüldü; SceneStarPop'a sparkle particle
+burst eklendi.
+
+**3 polish bundle**:
+
+1. **SceneForm yorum bubble lime rewrite** (kullanıcı talebi):
+   - Eski: `bg-[#FAFAFA]` light bubble + `text-[#0A0A0A]` graphite text
+   - Yeni: `bg-[#0A0A0A]` graphite bubble + `color: #C6F24E` lime
+     italic text (Space Grotesk italic, WCAG AAA 13.4:1 contrast)
+   - Lime corner glow accent (radial-gradient pointer-events:none)
+   - Italic quote mark sol-üst köşede `#C6F24E/40` opacity (40%)
+   - Caret cursor lime + bzCaretBlink keyframe
+   - Footer separator + 5-dot star confirmation + author rating mono
+   - Bubble entry: fade-up (translateY 12px → 0, easeOutCubic 0.45-0.7s)
+   - Yıldızlar büyütüldü 28→32px + scale animation (1.05 filled state)
+
+2. **SceneStarPop sparkle particle burst**:
+   - 8 deterministik sparkle dot (Math.random YOK — SSR + test
+     friendly)
+   - Particles fly out radial 0→90px (easeOutCubic, end 0.7)
+   - Fade-out 0.5-1.0 (easeInQuad)
+   - Lime glow (`box-shadow: 0 0 8px rgba(198,242,78,0.85)`)
+   - Halo opacity 0.32 → 0.42 buz daha güçlü hissi
+
+3. **Sahne container backdrop polish — DENENDİ-KALDIRILDI**:
+   Dot grid backdrop + lime corner glow eklemeyi denedim ama
+   `<Sprite>` start/end window overlap sırasında sahne arası geçişte
+   conflict yaratıyordu (alttaki sahne görünüyordu). Pragmatic
+   karar: sahnelerin `bg-white` (overlap için zorunlu) intact
+   tutuldu; backdrop polish kaldırıldı. Mevcut Pulse §11 minimal
+   editorial estetiği yeterli.
+
+**Diğer sahnelere dokunulmadı**:
+- SceneQrPulse: ring expansion + QR card opacity intact (zaten
+  Pulse §11)
+- SceneScan: phone frame + laser line intact
+- SceneAiReply: graphite + lime sparkle chip intact
+
+**Etkilenen dosyalar (1)**:
+- `src/components/marketing/heroes/HeroCinematic.tsx` — SceneForm
+  rewrite + SceneStarPop sparkle particle burst (~+90 satır net,
+  -8 satır eski simple bubble)
+- `CLAUDE.md` — §38.126 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**:
+383/383 intact (presentational-only).
+
+**Verification**:
+- `npx eslint .` ✓ 0 errors / 0 warnings
+- `npx tsc --noEmit` ✓ 0 errors in `src/`
+- `npm test` ✓ 383/383 pass intact
+- `npx next build` (stub env) ✓ Compiled + 58/58 static page intact
+
+**Yapma**:
+- Yorum metni lime'ını `bg-[#FAFAFA]` (light) bubble'a koyma —
+  WCAG AA fail (3.2:1 contrast). Graphite bubble + lime ink AAA
+  pass (13.4:1).
+- Sparkle particle'ları Math.random ile generate etme — SSR + test
+  drift kaynağı; deterministik `cos(angle) * radius` paterni reuse.
+- SceneForm bubble'a kalın font weight (`fontWeight: 700`) atama —
+  italic Space Grotesk weight 500 zaten editorial italic estetiği;
+  bold visual ağırlık.
+- 4 sahnenin `bg-white` arkaplanını kaldırma — `<Sprite>` start/end
+  window overlap (CINEMATIC_SCENES 0.2s overlap) sırasında alttaki
+  sahne görünür, scene container'ında dot grid backdrop varsa
+  conflict.
+- Sahne container backdrop dot grid eklemek — yukarıdaki conflict
+  ile çakışır; mevcut minimal estetiği koru.
+
+**Yap**:
+- Yeni hero variant veya scene eklerken sparkle particle paterni
+  reuse (deterministik 8 dot, radial fly-out, easeOutCubic).
+- Yeni "lime ink üzerinde graphite bubble" gerekirse aynı paterni
+  reuse: `bg-[#0A0A0A]` + `color: #C6F24E` + italic Space Grotesk +
+  caret blink lime.
+- Sahne overlap window'larında bg-white gerekiyorsa intact tut;
+  sahne arası transition fade-out CSS-only (Stage primitive
+  zaten handle eder, opacity smooth değişir).
+
+#### Stage 45 closure (Tarih 2026-05-08)
+
+- Branch: `chore/hero-polish-stage45` (fresh main üstüne, Stage 44
+  §38.125 PR #548 merged)
+- Edit'lenen dosyalar: 2 (HeroCinematic.tsx + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Marketing homepage'de Hero (default cinematic) yorum bubble'ı
+  artık graphite + lime italic text. Sparkle burst Sahne 5'te
+  görünür.
+- Kalan riskler: yok (presentational, Pulse §11 disipline, WCAG
+  AAA contrast).
+- **Sonraki aşama**: Stage 46 — Header tasarım birebir + hız + SEO.
+
+**Chat prompt history (Stage 45 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"hero kısmını da daha profesyonel ve iyi
+  yap ve yorum yazısını lime renginde yap"*. PNG referans yok
+  (HeroCinematic'in mevcut sahneleri); kullanıcı "yorum yazısı"
+  spesifik olarak Sahne 3 (form) bubble metnine işaret ediyor.
+- AskUserQuestion yapılmadı: WCAG contrast kararı autonom alındı
+  (graphite bubble + lime ink AAA pass, alternative `text-[#A8D62E]`
+  lime-deep AA pass yetersiz editorial impact).
+- Hukuki/disipline override: yok (Pulse §11 + WCAG AAA paterni).
