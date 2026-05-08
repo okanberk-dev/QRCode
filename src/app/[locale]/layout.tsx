@@ -4,13 +4,32 @@ import { ContactFloat } from '@/components/marketing/ContactFloat';
 import type { Metadata } from 'next';
 import { type Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { verifyJwt } from '@/lib/auth';
 import { getSiteSettings } from '@/lib/site-settings';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
 
-export const dynamic = 'force-dynamic';
+// Stage 83 §38.163 — `force-dynamic` removed so marketing pages under
+// `[locale]/*` can opt into ISR (`revalidate=N`) per route. Auth-aware
+// surfaces (ContactFloat hide-when-logged-in, MarketingNavbar login chip,
+// MobileBottomNav center CTA) moved from server-side `cookies()` reads to
+// client-side `/api/auth/me` probe via `useMarketingAuth` hook. See
+// CLAUDE.md §38.163 for the full structural rationale.
+//
+// Per-page `revalidate` directives only take effect when no ancestor
+// touches `cookies()` / `headers()` — that's why this layout chain had to
+// be cleaned up before the ISR rollout (Phase 2 of the same plan).
+export const revalidate = 3600;
+
+// Stage 83 §38.163 — declaring static params for the `[locale]` segment
+// is what lets Next.js prerender each locale variant of every marketing
+// page at build time (and serve subsequent visits from the Vercel CDN
+// edge). Without this, dynamic-segment pages fall back to `ƒ` even when
+// a `revalidate` directive is present. Locale list is fixed at two —
+// adding a third (de, fr) requires extending VALID_LOCALES + the
+// `tr/en` parallel translations object in `src/lib/translations.ts`.
+export async function generateStaticParams() {
+  return VALID_LOCALES.map((locale) => ({ locale }));
+}
 
 export async function generateMetadata({
   params,
@@ -114,18 +133,12 @@ export default async function LocaleLayout({
   const s = await getSiteSettings();
   const siteUrl = 'https://buaze.com';
 
-  // Detect whether the visitor is authenticated so we can hide chat-style
-  // floating support affordances (the ContactFloat) for signed-in users —
-  // they have proper in-app support channels from the dashboard.
-  let isLoggedIn = false;
-  const cookieStore = await cookies();
-  const token = cookieStore.get('user_token')?.value;
-  if (token) {
-    const payload = await verifyJwt(token);
-    if (payload && typeof payload.userId === 'string') {
-      isLoggedIn = true;
-    }
-  }
+  // Stage 83 §38.163 — auth-aware ContactFloat visibility moved to the
+  // client-side `useMarketingAuth` probe inside the component. We always
+  // mount the component here; it self-hides when the probe resolves an
+  // authenticated user. This unblocks ISR for the entire `[locale]/*`
+  // marketing tree without changing the visual outcome (anon users still
+  // see the float; signed-in users still don't).
 
   // JSON-LD structured data for richer search-engine appearance
   // (Organization + WebSite + SoftwareApplication schemas).
@@ -220,8 +233,11 @@ export default async function LocaleLayout({
         dangerouslySetInnerHTML={{ __html: jsonLdString(structuredData) }}
       />
       {children}
-      {/* ContactFloat is only shown to visitors (unauthenticated users). */}
-      {!isLoggedIn && <ContactFloat locale={locale} />}
+      {/* ContactFloat is only shown to visitors (unauthenticated users).
+          Stage 83 §38.163 — gating moved client-side via useMarketingAuth so
+          the entire marketing tree can ship as ISR. The component self-hides
+          when an authenticated session is detected post-mount. */}
+      <ContactFloat locale={locale} />
     </div>
   );
 }

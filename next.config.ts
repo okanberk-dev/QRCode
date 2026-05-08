@@ -36,8 +36,14 @@ const nextConfig: NextConfig = {
   // Tree-shake hint — lucide-react 1000+ icon export ediyor; default
   // tree-shake bu volume'da fail edebilir. `optimizePackageImports` Next 14+
   // feature: yalnız import edilen icon'lar bundle'a girer. CLAUDE.md §34.13.
+  //
+  // Stage 83 §38.163 — extended:
+  //   - framer-motion (~12 marketing/animation imports) is barrel-exported
+  //     and prone to dragging unused motion features into the chunk.
+  //   - date-fns is used by blog/case-study date formatting; the package
+  //     ships every locale + every fn unless tree-shake is hinted.
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: ['lucide-react', 'framer-motion', 'date-fns'],
   },
 
   async rewrites() {

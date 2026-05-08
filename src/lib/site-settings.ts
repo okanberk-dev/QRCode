@@ -1,4 +1,3 @@
-import { unstable_noStore as noStore } from 'next/cache';
 import { prisma } from './prisma';
 
 // Stage 25 §38.101 Phase A #1 — process-local cache (CLAUDE.md §15.1 paterni
@@ -111,10 +110,19 @@ export function clearSiteSettingsCache() {
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {
-  noStore();
   // Stage 25 §38.101 Phase A #1: process-local cache hit check.
   // Layout chain'inde root + locale layout 2 kez çağrı yapıyor; cache hit
   // ile 2. çağrı ~0ms (DB round-trip yok). 60s TTL drift kabul.
+  //
+  // Stage 83 §38.163 — `unstable_noStore()` removed. The previous noStore()
+  // call opted every caller (every marketing page chrome via the layout)
+  // into Next.js dynamic rendering, which silently pinned the entire
+  // `[locale]/*` tree to `ƒ` even after Phase 1's `cookies()` cleanup. The
+  // function still returns fresh data per render via the process-local
+  // cache (60s TTL); ISR `revalidate=N` controls when the page itself
+  // regenerates. Admin save endpoints call `revalidatePath('/', 'layout')`
+  // (api/admin/site-settings) + `clearSiteSettingsCache()` to surface
+  // logo/title/description edits immediately.
   if (siteSettingsCache && siteSettingsCache.expiresAt > Date.now()) {
     return siteSettingsCache.data;
   }

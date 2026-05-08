@@ -10,7 +10,9 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 
-export const dynamic = 'force-dynamic';
+// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
+// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
+// from the Vercel CDN edge for anonymous visitors.
 
 interface CaseStudyStat {
   label: { tr: string; en: string };

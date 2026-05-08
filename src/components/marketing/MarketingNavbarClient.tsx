@@ -32,6 +32,7 @@ import type { Locale, Translations } from '@/lib/translations';
 import { resolveBlogPair } from '@/lib/blog-translation-pairs';
 import BuazeLogo from './BuazeLogo';
 import WatchDemoButton from './WatchDemoButton';
+import { useMarketingAuth } from '@/hooks/useMarketingAuth';
 
 interface MarketingNavbarProps {
   locale: Locale;
@@ -39,7 +40,6 @@ interface MarketingNavbarProps {
   // permissive and only use a few keys via locale ternaries (mirrors the
   // pattern in MarketingFooter).
   t: Translations;
-  isLoggedIn?: boolean;
   logoUrl?: string | null;
 }
 
@@ -54,11 +54,17 @@ interface NavItem {
 
 export default function MarketingNavbarClient({
   locale,
-  isLoggedIn,
   logoUrl,
 }: MarketingNavbarProps) {
   const isTr = locale === 'tr';
   const base = `/${locale}`;
+
+  // Stage 83 §38.163 — auth state moved client-side. Anonymous default
+  // state means the "Giriş yap / Ücretsiz başla" CTA renders correctly
+  // on first paint for the dominant marketing audience (≥90% anon).
+  // Authenticated visitors see the chip swap to "Panel" / "Hesap" after
+  // the probe resolves (~50–200ms post-mount, invisible in practice).
+  const { isLoggedIn } = useMarketingAuth();
 
   const pathname = usePathname();
   const router = useRouter();

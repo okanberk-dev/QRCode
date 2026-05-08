@@ -1,11 +1,9 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import type { ReactElement } from 'react';
 import type { Locale } from '@/lib/translations';
 import NewsletterSignup from './NewsletterSignup';
 import MobileBottomNav from './MobileBottomNav';
 import FooterLiveTicker from './FooterLiveTicker';
-import { verifyJwt } from '@/lib/auth';
 
 interface MarketingFooterProps {
   locale: Locale;
@@ -72,25 +70,10 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
-  // Determine login state for the mobile bottom nav center CTA
-  // (Panel vs Try-Free). Same pattern as MarketingNavbar — server-side
-  // cookie read + jose verify, never trusts cookie presence alone.
-  let isLoggedIn = false;
-  try {
-    const cookieStore = await cookies();
-    const userToken = cookieStore.get('user_token')?.value;
-    const adminToken = cookieStore.get('admin_token')?.value;
-    if (userToken) {
-      const payload = await verifyJwt(userToken);
-      if (payload && typeof payload.userId === 'string') isLoggedIn = true;
-    }
-    if (!isLoggedIn && adminToken) {
-      const payload = await verifyJwt(adminToken);
-      if (payload && typeof payload.role === 'string') isLoggedIn = true;
-    }
-  } catch {
-    isLoggedIn = false;
-  }
+  // Stage 83 §38.163 — server-side cookies() / verifyJwt removed. The
+  // mobile bottom nav center CTA (Panel vs Try-Free) auth state now lives
+  // inside `MobileBottomNav` via the `useMarketingAuth` client hook.
+  // This unblocks ISR for the entire marketing tree (CLAUDE.md §38.163).
 
   const cols: { title: string; items: { label: string; href: string; badge?: string }[] }[] = [
     {
@@ -558,8 +541,10 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
 
     {/* Mobile + tablet bottom navigation — lg:hidden, fixed, safe-area aware.
         Mounted from the footer so every marketing surface inherits it without
-        per-page wiring. Auth/onboarding/dashboard render their own chrome. */}
-    <MobileBottomNav locale={locale} isLoggedIn={isLoggedIn} />
+        per-page wiring. Auth/onboarding/dashboard render their own chrome.
+        Stage 83 §38.163 — `isLoggedIn` prop dropped; the component owns
+        the auth probe via useMarketingAuth so this footer stays ISR-friendly. */}
+    <MobileBottomNav locale={locale} />
     </>
   );
 }

@@ -9,7 +9,8 @@ import { notFound } from 'next/navigation';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
 
-export const dynamic = 'force-dynamic';
+// Stage 83 §38.163 — ISR (1 day) for static corporate content.
+export const revalidate = 86400;
 
 export async function generateMetadata({
   params,

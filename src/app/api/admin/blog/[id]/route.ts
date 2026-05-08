@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { ApiErrors, getErrorCode } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
 import { sanitizeBlogContent } from '@/lib/blog-content';
+import { revalidateBlog } from '@/lib/marketing-revalidate';
 
 async function requireSuperadmin(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
@@ -188,6 +189,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       data: payload.data,
     });
 
+    // Stage 83 §38.163 — invalidate blog ISR caches so the edited post
+    // reflects immediately on /blog and /blog/[slug] (CLAUDE.md §38.163).
+    revalidateBlog(post.slug);
+
     return NextResponse.json({ post });
   } catch (error) {
     if (getErrorCode(error) === 'P2025') {
@@ -205,7 +210,15 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
   try {
     const { id } = await params;
+    // Capture slug before delete so we can revalidate the specific
+    // blog detail page in addition to the index.
+    const existing = await prisma.blogPost.findUnique({
+      where: { id },
+      select: { slug: true },
+    });
     await prisma.blogPost.delete({ where: { id } });
+    // Stage 83 §38.163 — invalidate so the deleted post 404s instantly.
+    revalidateBlog(existing?.slug);
     return NextResponse.json({ success: true });
   } catch (error) {
     if (getErrorCode(error) === 'P2025') {

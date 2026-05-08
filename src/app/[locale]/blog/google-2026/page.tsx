@@ -9,7 +9,9 @@ import BlogCopyLinkButton from '@/components/marketing/BlogCopyLinkButton';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 
-export const dynamic = 'force-dynamic';
+// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
+// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
+// from the Vercel CDN edge for anonymous visitors.
 
 const TITLE_TR = 'Google yorum politikaları 2026: yeni kurallar ve 7 ipucu';
 const TITLE_EN = 'Google review policies 2026: the new rules and 7 tips';
