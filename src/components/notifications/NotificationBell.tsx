@@ -313,9 +313,13 @@ export default function NotificationBell({
       {open && (
         <>
           {/* Backdrop on mobile so the user understands it's modal-ish.
-              Desktop stays without backdrop — feels like a normal dropdown. */}
+              Desktop stays without backdrop — feels like a normal dropdown.
+              §38.158 — z-[45] (was z-40): mobile sticky top bar + bottom
+              nav her ikisi de z-40 olduğu için aynı stacking ortamında
+              ambiguity vardı. Backdrop modal-tier başlangıcı (45) +
+              panel z-50 üstte → temiz hierarchy. */}
           <div
-            className="fixed inset-0 z-40 bg-black/10 sm:hidden"
+            className="fixed inset-0 z-[45] bg-black/10 sm:hidden"
             onClick={() => setOpen(false)}
             aria-hidden
           />

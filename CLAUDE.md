@@ -22421,3 +22421,224 @@ ve heronun altında da benzer kısım var orayı kaldır."*
   fonksiyonel risk (presentational only). Section 7.5 → hero altı
   taşıma duplicate "platforms below hero" UX clutter'ı çözer
   (kullanıcı net işaret etti).
+
+---
+
+### 38.158 2026-05-08 — Stage 78 owner panel overlap fix bundle + analytics 14-haftalık trend section silme (sticky desktop topbar + body scroll lock + impersonation banner placement + notification z-index hierarchy + PulseTrendChart removal)
+
+§38.157 Stage 77 marketing polish sonrası kullanıcı 2 raporu
+iletti: *"owner panelde yeni kayıt olduktan sonra side bar panelin
+üstüne geliyor bu ve bunun gibi tüm overlapleri analiz eder misin?
+ve sayfanın pixel perfectliğini bozan her şeyi analiz edip düzelt.
+Ek olarak analitik sayfasındaki 14 günlük analitik kısmını da
+kaldır."* (typo verbatim §39.2 disipline). Otonom mode + manuel
+audit + 5 fix bundle.
+
+**Root cause analysis** (kullanıcı'nın "side bar panelin üstüne
+geliyor" raporu):
+
+Desktop layout `<div className="lg:flex lg:h-screen lg:overflow-hidden">`
++ aside (h-full sidebar) + main wrapper (`lg:overflow-y-auto`).
+Desktop top bar `<div className="hidden lg:flex ...">` main
+wrapper'ın **içinde** ama sticky değil. Kullanıcı scroll
+yaptığında:
+- Topbar (breadcrumb + arama + bell + avatar) main ile birlikte
+  yukarı kayıp gözden kayboluyor.
+- Sidebar (aside) `h-full` + parent `h-screen` + `overflow-hidden`
+  → sabit kalıyor.
+- Sonuç: scroll sırasında "sidebar dominates view" görüntüsü →
+  kullanıcı "sidebar panelin üstüne geliyor" şeklinde rapor etti.
+
+Bu primary issue + 4 secondary overlap risk tespit edildi.
+
+**5 fix bundle**:
+
+1. **Sticky desktop topbar**
+   (`UserDashboardShell.tsx:910-928`): Önceki `<div className="hidden
+   lg:flex items-center justify-between gap-4 border-b
+   border-[#EDEDED] bg-white px-7 py-3.5">` → yeni
+   `<div className="hidden lg:sticky lg:top-0 lg:z-30 lg:flex
+   items-center justify-between gap-4 border-b border-[#EDEDED]
+   bg-white/95 backdrop-blur-xl px-7 py-3.5">`. Scroll sırasında
+   topbar görünür kalır; backdrop-blur Apple "frosted glass" tier
+   (CLAUDE.md §38.65); z-30 (sidebar collapse toggle z-50 altında,
+   mobile sticky pattern z-40 ile uyumlu hierarchy).
+
+2. **Body scroll lock for mobile drawer + More sheet**
+   (`UserDashboardShell.tsx:184-203`): Mobile drawer (`fixed inset-0
+   z-50 lg:hidden`) ve More sheet açıkken `document.body.style.
+   overflow = 'hidden'`. Önceki davranış: drawer açılınca arka
+   plandaki main hâlâ scroll edebiliyordu — overlap UX bozulması
+   (kullanıcı drawer ile etkileşim beklerken main scroll olunca
+   confusing). `<Modal>` primitive (CLAUDE.md §11.1) zaten body
+   scroll lock uygular; aynı disipline drawer + More sheet için.
+   CommandPalette (Radix Portal) kendi lock'unu yapıyor — yeni
+   useEffect onu kapsamaz.
+
+3. **Impersonation banner placement structural fix**
+   (`UserDashboardShell.tsx:842-857`): Önceki tek-katman wrapper
+   `<div className="lg:flex lg:h-screen lg:overflow-hidden">` +
+   `<ImpersonationBanner />` (sticky top-0 z-[60] w-full) flex item
+   olarak layout'u kırıyordu (impersonation aktifken width:100% +
+   row direction → sidebar + main cross-axis overflow). Yeni
+   yapı: outer column flex (`flex flex-col lg:h-screen
+   lg:overflow-hidden`) + banner birinci child + inner
+   `flex-1 lg:flex lg:min-h-0 lg:overflow-hidden` (sidebar + main
+   row layout intact). Banner null durumda görsel etki sıfır
+   (column ile single flex child = sadece inner). Admin
+   impersonation flow §38.96'de bu fix ile artık layout temiz.
+
+4. **NotificationBell mobile backdrop z-index**
+   (`NotificationBell.tsx:317-321`): Önceki `z-40` → `z-[45]`.
+   Mobile sticky top bar `z-40` + bottom nav `z-40` aynı stacking
+   ortamında ambiguity yaratıyordu. Backdrop modal-tier başlangıcı
+   z-[45] + panel z-50 → temiz hierarchy. Tailwind v4 arbitrary
+   value (preset z-45 yok).
+
+5. **Analytics 14-haftalık trend section removal**
+   (`analytics/page.tsx`): Kullanıcı talebi: "analitik sayfasındaki
+   14 günlük analitik kısmını da kaldır" (yapısal olarak 14
+   haftalık `PulseTrendChart`). Removal scope:
+   - JSX `<PulseTrendChart weeks={weeklyTrend} ... />` silindi
+   - `import { PulseTrendChart }` silindi
+   - `import { buildWeeklyTrend, getWeeklyTrendWindow }` silindi
+   - `const trendWindow = getWeeklyTrendWindow(...)` silindi
+   - `feedbacks98d` query (transaction) silindi
+   - `const weeklyTrend = buildWeeklyTrend(...)` silindi
+   - `resolvedTargetRating` KEPT (KPI subtitle hâlâ kullanıyor)
+   - Component dosyası `PulseTrendChart.tsx` orphan kaldı (CLAUDE.md
+     §34 — gelecek başka surface'ten reuse ihtiyacı çıkarsa restore
+     edilir, silinmedi)
+   - Helper dosyası `lib/analytics-weekly-trend.ts` orphan kaldı
+   - MainTrendChart 30-day daily stacked area + KPI 5-card +
+     SentimentDonut + TopMentionsPolarity intact — analitik akışı
+     sade tek-chart + KPI + breakdown ile devam eder
+
+**Etkilenen dosyalar (3 + docs)**:
+- `src/components/dashboard/UserDashboardShell.tsx` — body scroll
+  lock useEffect + outer column flex wrapper + sticky desktop
+  topbar (~30 satır net edit)
+- `src/components/notifications/NotificationBell.tsx` — backdrop
+  z-40 → z-[45] (1 satır + comment)
+- `src/app/[locale]/dashboard/analytics/page.tsx` — PulseTrendChart
+  + helper imports + transaction + weeklyTrend + JSX removal
+  (~30 satır net azalma)
+- `CLAUDE.md` §38.158 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**:
+yok. **Test count**: 404/404 pass intact.
+
+**Compliance disipline intact**:
+- §35.8 + §35.10 + §19.1.1 + §38.114 + §38.157 zinciri intact
+- Pulse §11 typography (Space Grotesk + Inter + JetBrains Mono +
+  synthetic italic, Instrument Serif italic YASAK) intact
+- §38.61 reduced-motion blanket etkilenmedi (yeni keyframe yok)
+- §11.1 Modal scroll lock paterni reuse
+- §38.65 Apple "frosted glass" tier reuse (backdrop-blur-xl)
+
+**Yapma**:
+- PulseTrendChart component dosyasını silmek — orphan ama
+  gelecek başka surface'tan reuse ihtiyacı çıkarsa restore edilir
+  (CLAUDE.md §34). Component zaten well-tested, dosya kalıcı.
+- Sticky desktop topbar z-30'u z-40'a çekmek — mobile sticky pattern
+  z-40 ile çakışır (mobile + desktop topbar farklı kategoriler;
+  desktop sidebar collapse toggle z-50 üzerinde olmalı, dolayısıyla
+  topbar z-30 doğru hierarchy).
+- Body scroll lock'u CommandPalette'a uygulamak — Radix Portal
+  zaten kendi lock'unu yapıyor, double-lock side effect olur.
+- Outer column flex wrapper'ı kaldırmak — impersonation aktifken
+  layout kırılır (eski tek-katman wrapper'a döner).
+- NotificationBell desktop backdrop eklemek — desktop normal
+  dropdown davranışı; backdrop sadece mobile için modal-ish hint.
+- buildWeeklyTrend / getWeeklyTrendWindow helper'larını silmek —
+  gelecek dashboard veya rapor surface'inde reuse ihtiyacı
+  çıkarsa restore yolunu kapatır.
+
+**Yap**:
+- Yeni mobile drawer/sheet eklenirse §38.158 body scroll lock
+  paterni reuse (`drawerOpen || moreOpen` extend).
+- Yeni sticky element ihtiyacı çıkarsa Pulse z-index hierarchy:
+  z-30 (desktop sticky topbar) < z-40 (mobile sticky + bottom nav)
+  < z-[45] (notification backdrop modal hint) < z-50 (modals,
+  drawers, palette, sidebar collapse toggle) < z-[60] (impersonation
+  banner global priority).
+- Yeni analytics chart eklenirse intentional simplicity koru —
+  MainTrendChart 30-day primary + KPI 5-card + SentimentDonut +
+  TopMentionsPolarity 4-element compose; ek chart UX clutter.
+- Outer column flex wrapper paterni başka surface'tan gerekirse
+  reuse: `<div className="min-h-screen flex flex-col">` + sticky
+  banner + `<div className="flex-1 lg:flex lg:min-h-0">` content.
+
+**Verification**:
+- `npx tsc --noEmit` 0 errors in `src/` (4 pre-existing `.next/types`
+  baseline §21.13 intact)
+- `npx eslint .` 0 errors, 2 baseline warnings
+- `npm test` 404/404 pass, 45 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) ✓ Compiled
+  successfully + 58/58 static page intact + analytics route
+  5.68 kB / 374 kB First Load JS (PulseTrendChart removal ile
+  marjinal azalma)
+- Sanity grep regression:
+  - `PulseTrendChart\b` 0 hit `analytics/page.tsx` (component dosyası
+    intact, sadece import + JSX silindi)
+  - `weeklyTrend\|getWeeklyTrendWindow\|feedbacks98d` 0 hit
+    `analytics/page.tsx`
+  - `lg:sticky lg:top-0 lg:z-30` 1 hit (yeni desktop sticky topbar)
+  - `body.style.overflow` 1 hit (yeni body scroll lock useEffect)
+  - `flex-1 lg:flex lg:min-h-0` 1 hit (yeni inner wrapper)
+  - `z-\[45\]` 1 hit `NotificationBell.tsx` (yeni backdrop z-index)
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. Desktop /dashboard ziyaret → topbar (breadcrumb + arama + bell +
+   avatar) görünür kalır + sayfa scroll edildiğinde sidebar +
+   topbar her ikisi de sabit, content scroll eder.
+2. Mobile /dashboard → hamburger tıkla → drawer açılır + arka
+   plan main scroll **kilitli** (önceki davranışta scroll devam
+   ediyordu).
+3. Mobile More sheet aç → aynı body scroll lock.
+4. NotificationBell mobile aç → backdrop z-[45] + panel z-50 +
+   sticky top bar z-40 → temiz stacking.
+5. Admin impersonation flow → ImpersonationBanner aktif → outer
+   column flex layout intact (sidebar + main + banner sticky-friendly,
+   önceki davranışta cross-axis overflow vardı).
+6. /dashboard/analytics → PulseTrendChart (PUAN & HACİM TRENDİ 14
+   haftalık) görünmez. MainTrendChart (30 günlük platform stacked
+   area) + KPI 5-card + SentimentDonut + TopMentionsPolarity intact.
+
+**Stage 78 closure** (Tarih 2026-05-08):
+- Branch: `claude/fix-layout-overlaps-fNOye` (designated worktree)
+- Edit'lenen dosyalar: 3 + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Owner
+  panel desktop scroll deneyimi yumuşak (sticky topbar + sticky
+  sidebar paralel); mobile drawer + More sheet body scroll lock'lı;
+  admin impersonation layout kırılmaz; analitik sayfası 14
+  haftalık trend section'sız sade.
+- Kalan riskler: yok (UI polish + presentational refactor; backend
+  kontrat dokunulmadı, KPI compute + sentiment + heatmap + main
+  chart hepsi intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya
+  operatör yeni odak talebi.
+
+**Chat prompt history (Stage 78 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"owner panelde yeni kayıt olduktan sonra
+  side bar panelin üstüne geliyor bu ve bunun gibi tüm overlapleri
+  analiz eder misin? ve sayfanın pixel perfectliğini bozan her şeyi
+  analiz edip düzelt. Ek olarak analitik sayfasındaki 14 günlük
+  analitik kısmını da kaldır."* (typo "side bar" + "günlük" verbatim
+  §39.2 disipline; "14 günlük" semantik = 14 haftalık PulseTrendChart).
+- AskUserQuestion **YAPILMADI** — kullanıcı talebi 2 net (overlap
+  analyze+fix + 14-haftalık trend remove), scope konservatif (5
+  dar fix). CLAUDE.md §35.8 + §35.10 + §19.1.1 compliance disipline
+  intact (UI/structural polish only, backend dokunulmadı).
+- **Disipline restoration**: §38.157 ile aynı pattern — kullanıcı
+  uzakta (otonom yetki implied), 2 net rapor scope kontrollü, 0
+  fonksiyonel risk (presentational + structural refactor + JSX
+  removal + helper imports). Pulse §11 typography + Stage 49→77
+  zinciri compliance intact.

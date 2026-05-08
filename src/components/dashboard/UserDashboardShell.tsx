@@ -181,6 +181,23 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const [moreOpen, setMoreOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // §38.158 — Mobile drawer + More sheet açıkken body scroll lock.
+  // Önceki davranış: drawer açılınca arka planda main hâlâ scroll
+  // edebiliyordu (overlap UX bozulması — kullanıcı drawer ile etkileşim
+  // beklerken main scroll olunca kafa karıştırıcı). Modal-tier overlay
+  // pattern: `<Modal>` primitive (CLAUDE.md §11.1) zaten body scroll lock
+  // uygular; aynı disipline drawer + More sheet için manuel lock.
+  // CommandPalette Radix Portal kendi lock'unu yapıyor, gerek yok.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const isModalOpen = drawerOpen || moreOpen;
+    if (!isModalOpen) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, [drawerOpen, moreOpen]);
   // Stage 60 §38.141 — Mobile bottom nav Yorumlar tab badge.
   // NotificationBell `buaze:notification-count` custom event'i ile
   // sync; tek source-of-truth NotificationBell internal poll. Mobile
@@ -823,13 +840,25 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   );
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] lg:flex lg:h-screen lg:overflow-hidden relative">
+    /* §38.158 — Shell yapısı `flex flex-col` + inner `lg:flex` çift katman:
+       Önceki tek-katman `lg:flex lg:h-screen lg:overflow-hidden` impersonation
+       banner aktifken kırılıyordu — sticky banner `width:100%` + flex row
+       parent → sidebar + main flex item'ları cross-axis'te overflow yapıyordu.
+       Yeni yapı: outer column flex (banner sticky-friendly) + inner
+       `lg:flex-1 lg:min-h-0 lg:overflow-hidden` (sidebar + main row layout
+       intact). Banner null durumda görsel etki sıfır (column ile single
+       flex child = sadece inner). */
+    <div className="min-h-screen bg-[#FFFFFF] flex flex-col lg:h-screen lg:overflow-hidden relative">
       {/* Stage A4 §38.96 — sticky impersonation banner. Server-side actor.realAdminId
-          set ise üstte kırmızı banner + 30dk countdown + "Çıkış" CTA. */}
+          set ise üstte kırmızı banner + 30dk countdown + "Çıkış" CTA.
+          §38.158 — banner artık outer column flex'in birinci child'ı
+          (eski lg:flex parent'ında flex item olarak layout'u bozuyordu);
+          banner null durumda inner container tüm yüksekliği alır. */}
       <ImpersonationBanner />
       <a href="#panel-main-content" className="bz-skip-link">
         {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
       </a>
+      <div className="flex-1 lg:flex lg:min-h-0 lg:overflow-hidden">
       {/* Desktop sidebar */}
       <aside className={`relative hidden h-full shrink-0 border-r border-[#EDEDED] lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-[248px]'}`}>
         {renderSidebar(navRef)}
@@ -882,8 +911,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         {/* Desktop top bar — always render (Pulse 2026-04 shell.jsx 1:1
             design); breadcrumb + title slot opsiyonel, search/bell/avatar
             sabit chrome. Page-level <PageHeader> primitive zaten her sayfada
-            başlık taşır; topBar slot SSR breadcrumb için. */}
-        <div className="hidden lg:flex items-center justify-between gap-4 border-b border-[#EDEDED] bg-white px-7 py-3.5">
+            başlık taşır; topBar slot SSR breadcrumb için.
+
+            §38.158 — `lg:sticky lg:top-0 lg:z-30` eklendi: kullanıcı raporu
+            "yeni kayıt olduktan sonra side bar panelin üstüne geliyor".
+            Önceki davranış: topbar scroll ile birlikte yukarı kayıyor (main
+            container `lg:overflow-y-auto`); sidebar h-screen olduğu için
+            sabit kalıyor → kullanıcı sidebar'ı dominant algılayıp "sidebar
+            panelin üstüne geliyor" şeklinde rapor etti. Sticky topbar +
+            backdrop-blur: scroll sırasında breadcrumb + arama + bell + avatar
+            görünür kalır, mobile sticky pattern (z-40) ile uyumlu z-30
+            (sidebar collapse toggle z-50'nin altında). bg-white/95 +
+            backdrop-blur Apple "frosted glass" tier (CLAUDE.md §38.65). */}
+        <div className="hidden lg:sticky lg:top-0 lg:z-30 lg:flex items-center justify-between gap-4 border-b border-[#EDEDED] bg-white/95 backdrop-blur-xl px-7 py-3.5">
           <div className="min-w-0">
             {topBar ? (
               <>
@@ -953,6 +993,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           {children}
         </main>
       </div>
+      </div>{/* §38.158 — close new wrapper (`flex-1 lg:flex lg:min-h-0`) */}
 
       {/* Mobile drawer — §38.63 Admin paneli (AdminSidebar.tsx:577) paterniyle
           uyumlu hale getirildi: role="dialog" aria-modal aria-label + safe-area
