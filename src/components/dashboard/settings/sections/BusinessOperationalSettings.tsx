@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Clock, Info } from "lucide-react";
-import { AlertBanner, Field, Toggle } from "@/components/ui";
+import { AlertBanner, Field, APSwitch } from "@/components/ui";
 import { SettingsCard } from "../SettingsCard";
 import { UnsavedChangesBar } from "../UnsavedChangesBar";
 
@@ -177,7 +177,7 @@ export function BusinessOperationalSettings({
         description="Renovasyon, tatil veya beklenmedik durumlarda işletmeyi geçici kapat."
       >
         <div className="flex items-center gap-3">
-          <Toggle
+          <APSwitch
             checked={form.temporarilyClosed}
             onChange={(next) => set("temporarilyClosed", next)}
             ariaLabel="Geçici kapalı"

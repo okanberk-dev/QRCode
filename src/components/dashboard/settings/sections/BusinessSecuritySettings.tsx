@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Lock } from "lucide-react";
-import { AlertBanner, Badge, Toggle } from "@/components/ui";
+import { AlertBanner, Badge, APSwitch } from "@/components/ui";
 import { SettingsCard } from "../SettingsCard";
 import { UnsavedChangesBar } from "../UnsavedChangesBar";
 
@@ -31,7 +31,7 @@ function isDirty(a: FormState, b: FormState) {
 /**
  * Section 8 — Güvenlik & Erişim.
  *
- * Tek alt-bölüm: İşletmeyi devre dışı bırak (isActive Toggle).
+ * Tek alt-bölüm: İşletmeyi devre dışı bırak (isActive APSwitch).
  *
  * KVKK aydınlatma + açık rıza metinleri Buaze tarafından merkezi olarak
  * yönetilir (`LegalDocument` modeli + `/admin/legal-documents`); işletme
@@ -126,7 +126,7 @@ export function BusinessSecuritySettings({
         }
       >
         <div className="flex items-center gap-3">
-          <Toggle
+          <APSwitch
             checked={form.isActive}
             onChange={(next) => set("isActive", next)}
             ariaLabel="İşletme aktif"

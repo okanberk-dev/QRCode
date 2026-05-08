@@ -11,7 +11,7 @@ import {
   TestTube2,
   XCircle,
 } from 'lucide-react';
-import { Badge, Toggle } from '@/components/ui';
+import { Badge, APSwitch } from '@/components/ui';
 import {
   checkProviderUrl,
   describeDomainError,
@@ -316,7 +316,7 @@ export function PlatformProviderManager({
                       <span className="text-[12px] font-medium text-[#525252]">
                         {isTr ? 'Aktif' : 'Active'}
                       </span>
-                      <Toggle
+                      <APSwitch
                         checked={row.enabled}
                         onChange={(checked) =>
                           updateRow(row.restaurantId, {

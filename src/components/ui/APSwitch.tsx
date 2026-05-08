@@ -20,7 +20,7 @@
  * ring, native button (keyboard space/enter activate).
  */
 
-import { Lock } from 'lucide-react';
+import { Loader2, Lock } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 export type APSwitchSize = 'sm' | 'md' | 'lg';
@@ -33,7 +33,11 @@ export interface APSwitchProps {
   sublabel?: ReactNode;
   disabled?: boolean;
   locked?: boolean;
+  /** Stage 72 — async operation feedback. Knob içinde Loader2 spin + aria-busy. */
+  loading?: boolean;
   ariaLabel?: string;
+  /** Stage 72 — outer wrapper className passthrough (legacy Toggle paterni). */
+  className?: string;
 }
 
 const SIZE_TOKENS: Record<APSwitchSize, { w: number; h: number; knob: number; pad: number }> = {
@@ -50,10 +54,12 @@ export function APSwitch({
   sublabel,
   disabled = false,
   locked = false,
+  loading = false,
   ariaLabel,
+  className = '',
 }: APSwitchProps) {
   const { w, h, knob, pad } = SIZE_TOKENS[size];
-  const isInactive = disabled || locked;
+  const isInactive = disabled || locked || loading;
   const left = checked ? w - knob - pad : pad;
 
   const button = (
@@ -61,6 +67,7 @@ export function APSwitch({
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-busy={loading || undefined}
       aria-label={ariaLabel ?? (typeof label === 'string' ? label : undefined)}
       aria-disabled={isInactive || undefined}
       onClick={() => !isInactive && onChange && onChange(!checked)}
@@ -93,16 +100,22 @@ export function APSwitch({
           transition: 'left 240ms cubic-bezier(0.2,0.8,0.2,1)',
         }}
       >
-        {locked ? <Lock size={knob * 0.5} color="#0A0A0A" strokeWidth={2.4} /> : null}
+        {loading ? (
+          <Loader2 size={knob * 0.55} color="#0A0A0A" strokeWidth={2.4} className="animate-spin" />
+        ) : locked ? (
+          <Lock size={knob * 0.5} color="#0A0A0A" strokeWidth={2.4} />
+        ) : null}
       </span>
     </button>
   );
 
-  if (!label) return button;
+  if (!label) {
+    return className ? <span className={className}>{button}</span> : button;
+  }
 
   return (
     <label
-      className={`inline-flex items-center gap-3 ${isInactive ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+      className={`inline-flex items-center gap-3 ${isInactive ? 'cursor-not-allowed' : 'cursor-pointer'} ${className}`}
     >
       {button}
       <span className="block">

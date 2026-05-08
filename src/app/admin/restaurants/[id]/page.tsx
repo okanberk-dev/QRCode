@@ -6,7 +6,7 @@ import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, 
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, Toggle, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, APSwitch, useConfirmDialog } from '@/components/ui';
 import { getSectorPlatforms } from '@/lib/sector-platforms';
 
 interface Owner {
@@ -989,7 +989,7 @@ function FeatureToggleCard({
             <p className="mt-1 text-[12px] leading-relaxed text-[#737373]">{description}</p>
           </div>
         </div>
-        <Toggle
+        <APSwitch
           checked={checked}
           onChange={onChange}
           loading={loading}

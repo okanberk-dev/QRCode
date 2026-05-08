@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
-import { AlertBanner, RadioCard, Skeleton, Toggle } from "@/components/ui";
+import { AlertBanner, RadioCard, Skeleton, APSwitch } from "@/components/ui";
 import type { Locale } from "@/lib/translations";
 
 type Tone = "warm" | "formal" | "apologetic";
@@ -167,7 +167,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
               )}
             </div>
 
-            {/* Toggle + tone radios — fetch tamamlanana kadar Toggle yanlış
+            {/* APSwitch + tone radios — fetch tamamlanana kadar APSwitch yanlış
                 "PASIF" göstermesin diye skeleton placeholder. CLAUDE.md §23.3
                 Skeleton primitive (panel scope). */}
             {!loaded ? (
@@ -200,7 +200,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                   </div>
                 )}
                 <div className="mt-4 flex items-start gap-3">
-                  <Toggle
+                  <APSwitch
                     checked={Boolean(s?.enableAiDraft)}
                     onChange={(next) => update(r.id, { enableAiDraft: next })}
                     disabled={s?.saving || !pulseEnabled}
@@ -221,7 +221,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                 </div>
 
                 <div className="mt-4 flex items-start gap-3 border-t border-[#EDEDED] pt-4">
-                  <Toggle
+                  <APSwitch
                     checked={Boolean(s?.googleAiEnabled)}
                     onChange={(next) => update(r.id, { googleAiEnabled: next })}
                     disabled={s?.saving || !pulseEnabled}
