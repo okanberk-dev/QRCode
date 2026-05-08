@@ -21,6 +21,31 @@ function parseAspectRating(value: unknown): number | null {
   return Math.round(n);
 }
 
+// §38.130 Stage 49 — public review surface tag chip picker whitelist.
+// Locale-agnostic ENUM key'leri (frontend label'ları locale'e göre map eder).
+// Whitelist server-side enforced; bilinmeyen key'ler silent drop edilir
+// (analytics garbage row önleme paterni — CLAUDE.md §13.5 paralel).
+const VALID_ASPECT_TAGS = new Set([
+  'food_taste',
+  'service_speed',
+  'temperature',
+  'portion',
+  'price',
+  'cleanliness',
+  'atmosphere',
+  'staff',
+  'music',
+  'wait_time',
+] as const);
+
+function sanitizeAspectTags(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  const filtered = value
+    .filter((tag): tag is string => typeof tag === 'string' && VALID_ASPECT_TAGS.has(tag as never))
+    .slice(0, 10);
+  return filtered.length > 0 ? Array.from(new Set(filtered)) : null;
+}
+
 export async function POST(req: NextRequest) {
   try {
     // `getClientIp` parses X-Forwarded-For correctly (first segment, trimmed).
@@ -55,7 +80,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { rating, name, email, phone, comment, source, branch, tableNumber, restaurantSlug, aspects, platform, website } = body;
+    const { rating, name, email, phone, comment, source, branch, tableNumber, restaurantSlug, aspects, aspectTags, platform, website } = body;
+
+    // §38.130 Stage 49 — sanitize once, reuse below.
+    const sanitizedAspectTags = sanitizeAspectTags(aspectTags);
 
     // Honeypot check
     if (website) {
@@ -143,6 +171,13 @@ export async function POST(req: NextRequest) {
         foodRating: parseAspectRating(aspects?.food),
         serviceRating: parseAspectRating(aspects?.service),
         atmosphereRating: parseAspectRating(aspects?.atmosphere),
+        // §38.130 Stage 49 — public review surface tag chip picker.
+        // Whitelist-filtered ENUM key array. null dönerse field hiç set
+        // edilmez (default null kalır) — Prisma.DbNull / JsonNull ayrımı
+        // gereksiz (kolon zaten nullable).
+        ...(sanitizedAspectTags && {
+          aspectsJson: sanitizedAspectTags as Prisma.InputJsonValue,
+        }),
       },
     });
 

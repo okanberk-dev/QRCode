@@ -485,6 +485,13 @@ model Feedback {
   serviceRating    Int?    @map("service_rating")
   atmosphereRating Int?    @map("atmosphere_rating")
 
+  // §38.130 Stage 49 — public review surface tag chip picker.
+  // 10 sabit aspect (Yemek tadı / Servis hızı / Sıcaklık / Porsiyon /
+  // Fiyat / Temizlik / Atmosfer / Personel ilgisi / Müzik / Bekleme).
+  // String array JSON serialize edilir; whitelist server-side enforced.
+  // Backward compat: nullable + default null (mevcut feedback'ler etkilenmez).
+  aspectsJson Json? @map("aspects_json")
+
   // §38.56 — Yorumlar Inbox tab kategorileri (Okunmamış / Beklemede).
   // isRead default false: yeni feedback owner inbox'ta açana kadar
   // okunmamış sayılır. Mark-as-read explicit owner aksiyonu gerektirir.
