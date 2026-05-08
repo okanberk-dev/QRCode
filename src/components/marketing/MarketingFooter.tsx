@@ -5,6 +5,7 @@ import type { Locale } from '@/lib/translations';
 import BuazeLogo from './BuazeLogo';
 import NewsletterSignup from './NewsletterSignup';
 import MobileBottomNav from './MobileBottomNav';
+import FooterLiveTicker from './FooterLiveTicker';
 import { getSiteSettings } from '@/lib/site-settings';
 import { verifyJwt } from '@/lib/auth';
 
@@ -121,7 +122,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
       title: isTr ? 'Şirket' : 'Company',
       items: [
         { label: isTr ? 'Hakkımızda' : 'About', href: `${base}/about` },
-        { label: isTr ? 'Müşteri hikayeleri' : 'Customer stories', href: `${base}/customer-stories` },
+        { label: isTr ? 'Müşteri hikayeleri' : 'Customer stories', href: `${base}/customer-stories`, badge: isTr ? 'YENİ' : 'NEW' },
         { label: isTr ? 'Vaka çalışmaları' : 'Case studies', href: `${base}/case-study` },
         { label: 'Blog', href: `${base}/blog` },
         { label: isTr ? 'Kariyer' : 'Careers', href: `${base}/careers`, badge: isTr ? '5 POZİSYON' : '5 ROLES' },
@@ -204,9 +205,14 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 letterSpacing: '-0.01em',
               }}
             >
+              {/* Stage 49 §38.130 Faz 2 — PremiumFooter spec birebir
+                  3-cümle italic editorial motto. "Müşterinin sesi tek
+                  panelde" sub-clause silindi (PremiumFooter spec'te
+                  yok). Verifiable brand manifesto, fake-claim YOK
+                  (CLAUDE.md §35.8 cohort disclosure intact). */}
               {isTr
-                ? 'Bir QR. Bir yorum. Bir kazanç. Müşterinin sesi tek panelde.'
-                : 'One QR. One review. One win. The customer voice in one pane.'}
+                ? 'Bir QR. Bir yorum. Bir kazanç.'
+                : 'One QR. One review. One win.'}
             </p>
 
             {/* Stage 44 — Status tile band (3-up grid). HANDOFF visual
@@ -234,23 +240,16 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
               />
             </div>
 
-            {/* Stage 44 — Static online status pill (no fake activity).
-                "CANLI · BUAZE · ÇEVRİMİÇİ" Pulse signature dot. KVKK
-                fake-feed riski (§35.10) → static deterministik
-                claim. */}
-            <div className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 backdrop-blur-md">
-              <span
-                aria-hidden
-                className="bz-pulse-dot inline-block h-1.5 w-1.5 rounded-full"
-                style={{ background: '#C6F24E' }}
-              />
-              <span className="pulse-eyebrow text-white/55">
-                {isTr ? 'ÇEVRİMİÇİ · BUAZE' : 'ONLINE · BUAZE'}
-              </span>
-              <span className="text-[12px] font-medium text-[#F6F4EF]">
-                {isTr ? 'Sistem aktif' : 'System active'}
-              </span>
-            </div>
+            {/* Stage 49 §38.130 Faz 1 — Static online status pill
+                (Stage 44 §38.125) yerine FooterLiveTicker rotation:
+                Karaköy / Bağdat / Cihangir / Çankaya / İzmir × 5
+                Buaze platform event'i (AI yanıtladı / Yeni 5★ yorum
+                / QR tarandı / Negatif yakalandı / Google'a yayınlandı).
+                Müşteri-spesifik fake testimonial DEĞİL — generic
+                platform feature events. Kullanıcı AskUserQuestion ile
+                §35.10 backlog kararını override etti (UX trust risk
+                kabul). */}
+            <FooterLiveTicker locale={locale} />
           </div>
 
           {/* SAĞ — editorial newsletter card + scan-to-app QR card */}
@@ -526,14 +525,21 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
           support@buaze.com") must match the LocalBusiness schema 1:1
           when that PR ships (Google NAP consistency rule). */}
       <div className="border-t border-[#1F1F1F] pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(2.5rem,env(safe-area-inset-left))] sm:pr-[max(2.5rem,env(safe-area-inset-right))] lg:pb-5">
-        <address className="not-italic mx-auto mb-4 flex max-w-[1240px] flex-col items-center gap-x-3 gap-y-1 text-center text-[12px] text-[#A3A3A3] sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4">
-          <span>Buaze Bilişim A.Ş.</span>
-          <span aria-hidden className="hidden sm:inline">·</span>
-          <span>Workinton Maslak, Kat 4 · Maslak / İstanbul</span>
-          <span aria-hidden className="hidden sm:inline">·</span>
+        {/* Stage 49 §38.130 Faz 5 — PremiumFooter spec uppercase mono
+            polish. CSS `text-transform: uppercase` (pulse-eyebrow utility)
+            görsel ALL CAPS, semantic content sentence case intact (NAP
+            parity için Organization JSON-LD'le aynı string — CLAUDE.md
+            §35.8 + §19.1.2 NAP consistency rule). support@buaze.com
+            lime tint + JetBrains Mono tracking-wider. */}
+        <address className="not-italic mx-auto mb-4 flex max-w-[1240px] flex-col items-center gap-x-3 gap-y-1 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-4">
+          <span className="pulse-eyebrow text-white/40">Buaze Bilişim A.Ş.</span>
+          <span aria-hidden className="hidden sm:inline text-white/20">·</span>
+          <span className="pulse-eyebrow text-white/40">Workinton Maslak, Kat 4 · Maslak / İstanbul</span>
+          <span aria-hidden className="hidden sm:inline text-white/20">·</span>
           <a
             href="mailto:support@buaze.com"
-            className="text-white transition-colors hover:text-[#C6F24E]"
+            className="pulse-eyebrow text-[#C6F24E] transition-colors hover:text-white"
+            style={{ letterSpacing: '0.18em' }}
           >
             support@buaze.com
           </a>

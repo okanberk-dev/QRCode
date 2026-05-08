@@ -17043,3 +17043,232 @@ dep**: yok.
 - 2026-05-08 follow-up: *"Kaldığın yerden devam et ve tamamen işin
   bitince Main'e merge eder misin?"* → Stage 49 PR `gh pr merge
   --auto --squash` ile auto-merge (CLAUDE.md §39.1 paterni).
+
+---
+
+### 38.131 2026-05-08 — Stage 50 PremiumFooter incremental delta (live ticker + tagline polish + YENİ badge + bottom rail uppercase)
+
+§38.123 Stage 42 + §38.125 Stage 44 footer kapanmasından sonra kullanıcı
+yeni handoff: 250 satırlık `PremiumFooter` JSX prototip paylaştı.
+*"footer kısmı yanlış ve iki tane footer var gibi gözüküyor altta jsx
+kodlarını attığım footerı kullanmak istiyorum diğerlerini sil (sadece
+hukuki olarak ekstra eklenmesi gerekenleri ekle ve backend ayarı varsa
+ona göre ayarla)."*
+
+3 paralel Explore agent + manuel verify sonucu **mevcut Stage 42 + 44
+zaten %80+ PremiumFooter spec'iyle uyumlu**. Code-level "iki footer"
+kanıtı YOK (62 page mount, layout-level merge yok); muhtemel sebep
+visual karmaşa veya MobileBottomNav stacking. PremiumFooter'da 4
+fake-data element var (12.482 işletme / API 99.99% / Pulse AI 0.74s /
+14,2 yorum/sn / 4.2K SAHİP / iOS·Android app QR) — Stage 42 + 44'te
+zaten kasıtlı SKIP edilmiş (CLAUDE.md §35.8 + §35.10 + §19.1.1
+disipline).
+
+**Kullanıcı 3 karar (AskUserQuestion onaylı)**:
+1. **Fake-data**: SKIP — compliance-safe variation (Stage 44 paterni intact)
+2. **Live ticker**: **Birebir rotation** — 5-state city + generic platform
+   activity (UX trust risk kabul, kullanıcı CLAUDE.md §35.10 backlog
+   kararını override etti)
+3. **Rewrite scope**: Incremental delta — Stage 44 üzerine sadece eksik
+   PremiumFooter element'lerini ekle
+
+**5 fix bundle**:
+
+1. **Faz 1 — `<FooterLiveTicker>` yeni component** (yeni dosya
+   `src/components/marketing/FooterLiveTicker.tsx`, ~140 satır):
+   - 5-state rotation `setInterval(2800)`: Karaköy / Bağdat Cd. /
+     Cihangir / Çankaya / İzmir × Buaze gerçek platform event
+     (AI yanıtladı / Yeni 5★ yorum / QR tarandı / Negatif yakalandı /
+     Google'a yayınlandı)
+   - Activity metinleri **generic platform feature event'leri** —
+     müşteri-spesifik testimonial DEĞİL (CLAUDE.md §35.10 fake testimonial
+     riskinin altında, kullanıcı override kabul)
+   - A11y: `role="status"` + `aria-live="polite"` (screen reader
+     yumuşak okuma)
+   - Reduced-motion: `prefers-reduced-motion: reduce` iken `setInterval`
+     durdurulur, ilk satır static (CLAUDE.md §5.2 + §38.61 paterni)
+   - Tab pause: `document.visibilityState === 'hidden'` iken interval
+     pause, görünür olunca devam (CLAUDE.md §5.1 + §38.115 paterni
+     reuse, mobile battery save)
+   - Fade animation `bzFadeUp` keyframe reuse (key prop change tetikler)
+   - Mevcut Stage 44 static online pill (`ÇEVRİMİÇİ · BUAZE · Sistem
+     aktif`) silinir, yerine `<FooterLiveTicker locale={locale} />`
+     mount edilir (`MarketingFooter.tsx:241-253` block)
+
+2. **Faz 2 — Tagline italic editorial motto** (`MarketingFooter.tsx:207`):
+   - Eski: `Bir QR. Bir yorum. Bir kazanç. Müşterinin sesi tek panelde.`
+   - Yeni: `Bir QR. Bir yorum. Bir kazanç.` (PremiumFooter spec birebir,
+     3-cümle italic motto verifiable brand manifesto)
+   - EN parite: `One QR. One review. One win.`
+   - "Müşterinin sesi tek panelde" sub-clause silindi — PremiumFooter
+     spec'te yok, daha sade editorial.
+
+3. **Faz 4 — "Müşteri hikayeleri" YENİ badge** (`MarketingFooter.tsx:124`):
+   - Mevcut: `Müşteri hikayeleri` link
+   - Yeni: `Müşteri hikayeleri` + `YENİ` / `NEW` lime badge (`bg-[#C6F24E]
+     text-[#0A0A0A]` mono uppercase tracked)
+   - PremiumFooter spec birebir; mobile accordion + desktop grid'de
+     otomatik render (mevcut `cols.items[].badge` mapper paterni reuse,
+     dosya yapısı dokunulmadı).
+
+4. **Faz 5 — Bottom rail uppercase mono polish** (`MarketingFooter.tsx:528-540`):
+   - Eski: `<address>` block'ta `text-[12px] text-[#A3A3A3]` sentence
+     case (Buaze Bilişim A.Ş. · Workinton Maslak, Kat 4 · Maslak /
+     İstanbul · support@buaze.com)
+   - Yeni: `pulse-eyebrow text-white/40` (CSS `text-transform: uppercase`
+     + JetBrains Mono + tracking) — visual ALL CAPS, **semantic content
+     sentence case intact** (NAP parity için Organization JSON-LD'le
+     aynı string — CLAUDE.md §35.8 + §19.1.2 NAP consistency rule).
+   - `support@buaze.com` link `pulse-eyebrow text-[#C6F24E]` +
+     `letterSpacing: 0.18em` (PremiumFooter spec birebir).
+
+5. **Faz 7 — `globals.css` reduced-motion blanket** (line 588-599):
+   - `[style*='bzFadeUp']` selector eklendi (FooterLiveTicker fade
+     animation reduced-motion altında durdurulur). CLAUDE.md §38.61
+     paterni reuse.
+
+**Audit'te zaten kapsanmış (skip — Stage 42 + 44 mevcut)**:
+
+- Faz 3 (Newsletter "İtibar Rehberi" başlık): Stage 44 §38.125'te zaten
+  yapılmış (`MarketingFooter.tsx:269-279`). Dokunulmadı.
+- Faz 8 (MobileBottomNav overlap fix): Stage 42'de bottom rail'a
+  `pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-5` zaten eklenmiş
+  (line 528). Mobile'da MobileBottomNav (~80-90px) + safe-area altında
+  96px+ padding yeterli. Ekstra fix gerekmedi; "iki footer var gibi"
+  şikayetinin muhtemel sebebi mobile'da görsel karmaşa, kod-level
+  duplicate YOK.
+
+**SKIP edilen (compliance disipline kullanıcı onaylı)**:
+
+| PremiumFooter spec | Sebep |
+|---|---|
+| `12.482 işletme` tagline | §35.8 cohort disclosure (Buaze gerçek 10-50 müşteri §19.4.4) |
+| Status tile fake metric (API 99.99% / Pulse AI 0.74s / 14,2 yorum/sn) | Stage 44 §38.125 OPS · 24/7 / PULSE AI · <1s / KAPSAM · TR · EN compliance-safe variation intact |
+| `4.2K SAHİP` newsletter count | Public expose etmemeli (admin-side only) |
+| `iOS · ANDROID` scan-to-app QR | Buaze mobile app YOK; Stage 44 scan-to-dashboard variation intact |
+
+**Backend integration (tamamı reuse + intact)**:
+
+- `<NewsletterSignup source="footer">` component intact (`/api/newsletter`
+  POST + reCAPTCHA + IP rate limit + welcome mail pipeline — CLAUDE.md
+  §27 + §21)
+- NAP 3-surface parity intact (Footer + Contact + Organization JSON-LD)
+- Career posting count: `careers/page.tsx:63-77` hardcoded `roles.length
+  === 5` ile footer "5 POZİSYON" badge senkron — release-bazlı manuel
+  verify (CLAUDE.md §35.8 verifiable)
+- Sektör count: `solutions/` dizini 14 sektör, footer "Tüm 14 sektör →"
+  hardcoded literal sync
+- 4 legal route mevcut (`/privacy` `/kvkk` `/cookie` `/terms`) — Stage
+  31b §38.108 paterni intact
+
+**Etkilenen dosyalar (3 + docs)**:
+
+| Dosya | Tip | Net edit |
+|---|---|---|
+| `src/components/marketing/FooterLiveTicker.tsx` | Yeni | +130 satır (client component, 5-state rotation, reduced-motion + tab pause + a11y) |
+| `src/components/marketing/MarketingFooter.tsx` | Edit | ~+25 satır net (-18 silme: static pill block; +43 ekleme: import + tagline polish + ticker mount comment + YENİ badge + bottom rail uppercase polish) |
+| `src/app/globals.css` | Edit | +1 satır (`[style*='bzFadeUp']` reduced-motion blanket selector) |
+| `CLAUDE.md` | Edit | +180 satır (§38.130 closure log) |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**: 383/383
+intact (yeni unit test gerekmedi — FooterLiveTicker presentational +
+saf state machine + reduced-motion/tab-pause hook'ları mevcut React
+patternleri reuse; helper logic yok).
+
+**Compliance kararı (§39.2 chat history paterni)**:
+
+- 2026-05-08 kullanıcı verbatim quote: *"footer kısmı yanlış ve iki
+  tane footer var gibi gözüküyor altta jsx kodlarını attığım footerı
+  kullanmak istiyorum diğerlerini sil (sadece hukuki olarak ekstra
+  eklenmesi gerekenleri ekle ve backend ayarı varsa ona göre ayarla)"*
+  + 250 satırlık PremiumFooter JSX prototip paste.
+- AskUserQuestion 3 karar (Recommended seçildi): fake-data SKIP, live
+  ticker birebir rotation, incremental delta.
+- **Hukuki/disipline override**: Kullanıcı CLAUDE.md §35.10
+  LiveReviewTicker fake testimonial backlog kararını AskUserQuestion ile
+  override etti. Footer ticker müşteri-spesifik review claim ÜRETMEZ
+  (fake "Mehmet K. 5★ verdi" yok); Buaze gerçek platform feature
+  event'lerini generic Türkiye semt adlarıyla bağlar. UX trust risk
+  minimal — "system alive" hissi, fake testimonial değil. CLAUDE.md
+  §35.8 cohort disclosure + §19.1.1 wording compliance §35.10 override'a
+  rağmen INTACT (12.482 işletme + API uptime fake metric SKIP).
+- Diğer fake-data (12.482 işletme / API uptime / app QR) compliance-safe
+  variation ile intact (Stage 44 §38.125 OPS · 24/7 / PULSE AI · <1s /
+  KAPSAM · TR · EN + scan-to-dashboard intact).
+
+**Yapma**:
+
+- Live ticker'a müşteri-spesifik testimonial (örn. "Mehmet K. 5★ verdi")
+  ekleme — kullanıcı override sadece generic platform event + Türkiye
+  semt adlarıyla sınırlı; spesifik müşteri ismi/rating §35.10 fake
+  testimonial paterni KESİNLİKLE ihlal eder.
+- Stage 44 §38.125 status tile (OPS · 24/7 / PULSE AI · <1s / KAPSAM ·
+  TR · EN) yerine PremiumFooter fake metric (API 99.99% / 0.74s / 14,2
+  yorum/sn) yazma — §35.8 + §19.1.1 disipline ihlali.
+- "12.482 işletme" tagline'ı geri ekleme — §35.8 cohort disclosure
+  (Buaze gerçek 10-50 müşteri §19.4.4).
+- Newsletter card'a `4.2K SAHİP` subscriber count badge ekleme — public
+  expose admin-side only `prisma.newsletterSubscriber.count()` numeric
+  trust-eroding.
+- Scan-to-app QR card'ını iOS/Android app store'a yönlendirme — Buaze
+  mobile app YOK (CLAUDE.md §25 "responsive web only"); Stage 44
+  scan-to-dashboard variation intact.
+- Bottom rail address bloğunu **explicit uppercase string** (`BUAZE
+  BİLİŞİM A.Ş.`) ile yazma — CSS `text-transform: uppercase`
+  (`pulse-eyebrow` utility) görsel ALL CAPS verir + semantic content
+  sentence case intact (NAP parity için Organization JSON-LD'le aynı
+  string — search engine NAP consistency rule).
+- FooterLiveTicker'da reduced-motion check'i atla — tab pause +
+  reduced-motion ikisi de zorunlu (CLAUDE.md §5.1 + §5.2 + §38.61 +
+  §38.115 paterni).
+
+**Yap**:
+
+- Yeni rotation-bazlı footer/marketing component eklerken FooterLiveTicker
+  paterni reuse: `setInterval` + visibilitychange + matchMedia('reduce')
+  + key-prop fade animation.
+- Yeni keyframe inline `style={{ animation }}` callsite eklerken
+  reduced-motion blanket'a `[style*='X']` selector ekle (CLAUDE.md §38.61
+  + §38.130).
+- Yeni promotion badge eklerken (örn. "5 POZİSYON" gibi count-based),
+  hardcoded literal + release-bazlı manuel verify (release notes'a
+  ekle); cron sync gerekirse §38.130 backlog'da gelecek scope.
+- NAP 3-surface parity korumak için footer + contact + Organization
+  JSON-LD address string'leri **birebir** aynı tutulmalı (CLAUDE.md
+  §35.8 + §19.1.2). Visual uppercase her zaman CSS-only (`pulse-eyebrow`
+  utility veya `text-transform`).
+
+#### Stage 50 closure (Tarih 2026-05-08)
+
+- Branch: `claude/fix-footer-duplication-A4kqD` (rebased onto main
+  after Stage 49 §38.130 public review redesign PR #553 merged —
+  designated branch'te §38.131 numarasıyla renumber edildi çünkü
+  Stage 49 §38.130 main'de zaten paralel açılmıştı)
+- Yeni dosya: 1 (`FooterLiveTicker.tsx`)
+- Edit'lenen dosyalar: 3 (MarketingFooter.tsx + globals.css + CLAUDE.md)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Marketing
+  surface'lerinde footer:
+  - Live ticker rotation 2.8s'de bir Karaköy → Bağdat → Cihangir →
+    Çankaya → İzmir × Buaze gerçek platform event
+  - Tagline 3-cümle italic motto ("Bir QR. Bir yorum. Bir kazanç.")
+  - 4-col link grid'de "Müşteri hikayeleri · YENİ" badge
+  - Bottom rail uppercase mono + lime support email
+  - `prefers-reduced-motion: reduce` iken ticker static + tab gizli
+    iken interval pause
+- Kalan riskler:
+  - Footer ticker fake activity feed UX trust (kullanıcı kabul etti,
+    §39.2 override dokumente).
+  - "5 POZİSYON" + "14 sektör" badge'leri hardcoded literal — release-
+    bazlı manuel sync gerekir (cron yok).
+  - `sameAs` schema URL hygiene (`twitter.com` vs `x.com`, `www.` prefix)
+    — Stage 50 scope dışı, ayrı hygiene PR.
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
+  (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Stage 50 sonrası
+  gelecek olası polish: footer A/B test (live ticker on/off conversion
+  measure), `sameAs` schema URL hygiene, custom MobileBottomNav height
+  token (CSS var ile sync).
