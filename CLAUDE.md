@@ -19927,3 +19927,178 @@ intact (Stage 62 §38.143 + §38.130 zinciri 7. iterasyonda confirme).
   thanks brightness). Buaze hibrit uygulama: section state-aware
   className. Bu UX semantik anlamlı — emotional moment dark, task
   moment light.
+
+---
+
+### 38.145 2026-05-08 — Stage 64 public review surface (`/r/[slug]`) JSX birebir final parity (Step 2 + 3 light bg full-page switch + state-aware chrome + DarkLoader tableParam meta)
+
+§38.144 Stage 63 sonrası kullanıcı raporu: *"tüm sana attığım jsx ile
+birebir aynı olup olmadığını son kez analiz et ve birebir aynı yap
+lütfen olduğu gibi"* — JSX prototip (8-artboard PhoneFrame + ReviewTopBar
+light/dark variant + StepProgress onLight/dark + ReviewLowForm/Thanks
+light bg full-page) son kez audit + final parity.
+
+Stage 63 §38.144 mobile viewport-filling + Step 1 dark mode + brand
+header sonrası **Step 2/3 hâlâ white card içinde** (drift). JSX
+prototip Step 2/3'te tüm sayfa light bg `#FAFAFA` switch + state-aware
+chrome (TopBar onLight + StepProgress onLight + Footer light text).
+Stage 64 bu drift'i kapatır: page-level state-aware bg switch + chrome
+variant.
+
+**4 fix bundle**:
+
+1. **Phase A — Outer `<main>` state-aware bg switch**:
+   - Eski (Stage 63): `bg-[#0A0A0A] text-white` sabit dark.
+   - Yeni: `isLight = step === 2 || step === 3` → `bg-[#FAFAFA]
+     text-[#0A0A0A]` light variant Step 2/3'te otomatik switch. Step 1
+     intact dark. JSX prototip hibrit pattern: emotional moment dark
+     (rate) / productivity moment light (form + thanks).
+
+2. **Phase B — Brand header light/dark variant** (HANDOFF
+   ReviewTopBar `onLight` prop paterni):
+   - **Border-bottom**: `border-white/[0.08]` (dark) / `border-[#ECECEC]` (light)
+   - **Icon bg**: `bg-[#C6F24E]` lime (dark) / `bg-[#0A0A0A]` graphite (light)
+   - **Icon initial**: `text-[#0A0A0A]` graphite (dark) / `text-[#C6F24E]` lime (light)
+   - **Name**: `text-white` (dark) / `text-[#0A0A0A]` graphite (light)
+   - **Meta**: `text-white/45` (dark) / `text-[#737373]` gray (light)
+   - **TR · EN**: `text-white/50` (dark) / `text-[#737373]` gray (light)
+   - JSX `onLight` prop birebir parity.
+
+3. **Phase C — Section white card kaldır**:
+   - Eski (Stage 63): `step === 1 ? dark transparent : white card
+     rounded shadow`. Step 2/3 white card içinde.
+   - Yeni: `bz-fade-in flex-1` tek className, padding `20px 0 24px`
+     tüm step'ler için. Step 2/3 light page bg üstünde transparent
+     (white card kaldırıldı).
+   - JSX prototip Step 2/3 `<div style={{ background: '#FAFAFA' }}>`
+     full-page bg switch, content card değil bg üstünde direkt.
+
+4. **Phase D — Footer state-aware text color**:
+   - Eski (Stage 63): `text-white/40` sabit dark.
+   - Yeni: `text-[#A3A3A3]` light variant / `text-white/40` dark
+     variant. POWERED BY BUAZE her step'te footer'da görünür intact.
+
+5. **Phase E — DarkLoader tableParam meta** (HANDOFF
+   "CAFÉ MAVERA · MASA 12" paralel):
+   - Eski (Stage 49 §38.130): generic "BUAZE" eyebrow.
+   - Yeni: opsiyonel `tableNumber` prop. URL'de `?table=X` varsa
+     "MASA X · BUAZE" formatında context-aware meta. Restaurant adı
+     yok (data fetch öncesi), tableParam göstermek HANDOFF spec'e
+     yakın. Suspense fallback default 'BUAZE' intact.
+
+**Etkilenen dosyalar (1 + docs)**:
+
+- `src/app/r/[slug]/page.tsx`:
+  - `isLight` state-aware flag (1 satır)
+  - Outer `<main>` state-aware className (~+5 satır)
+  - Brand header 4 element light/dark variant (~+15 satır)
+  - Section className simplified, white card kaldırıldı (-3 satır)
+  - Footer state-aware className (~+1 satır)
+  - DarkLoader tableNumber prop + meta render (~+12 satır)
+  - Toplam ~30 satır net artış
+- `CLAUDE.md` §38.145 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 383/383 intact.
+
+**Compliance disipline checkpoint** (kullanıcı 7. iterasyon — Stage 64):
+
+| Element | Durum | Sebep |
+|---|---|---|
+| Step 2/3 light bg `#FAFAFA` full-page switch | **YENİ** | JSX prototip 1:1 parity |
+| Brand header light/dark variant | **YENİ** | JSX `onLight` prop paterni |
+| Section white card kaldırıldı | **YENİ** | JSX content direkt bg üstünde |
+| Footer state-aware text color | **YENİ** | Light bg readability |
+| DarkLoader tableParam meta | **YENİ** | HANDOFF context-aware meta |
+| "Kardeş Ahmet" hardcoded owner | SKIP | Stage 49→63 zinciri 7 kez compliance |
+| Recovery actions (callback + voucher) | SKIP | Backend YOK |
+| Loyalty card "+1 yıldız" | SKIP | Backend YOK |
+| "Mert" hardcoded customer | SKIP | Form'sız high rating, jenerik |
+| PhoneFrame device chrome | SKIP | Kullanıcı explicit talimat |
+
+**Yapma**:
+
+- Step 2/3'te white card pattern'a geri çevirme — kullanıcı 7. iterasyonda
+  "birebir aynı yap" raporu sonrası JSX light bg full-page switch kabul
+  edildi.
+- Outer main bg dark sabit tutma — state-aware switch JSX hibrit pattern
+  zorunlu.
+- Brand header dark variant'ı Step 2/3'te de göstermek — light bg üstünde
+  white text okunmaz, contrast bozar.
+- DarkLoader'ı her zaman generic "BUAZE" göstermek — tableParam varsa
+  context-aware meta UX win.
+- Footer text-white sabit tutmak — light bg üstünde white text görünmez.
+
+**Yap**:
+
+- Yeni public surface'inde state-aware bg switch gerekirse Stage 64
+  §38.145 paterni reuse: `isLight = step === N || step === M` flag +
+  `<main className={isLight ? light : dark}>` + chrome elements
+  state-aware className.
+- Yeni TopBar variant gerekirse JSX `onLight` prop paterni: icon bg
+  swap + initial color swap + name color swap + meta color swap +
+  border-bottom hue swap.
+- Yeni state-aware Footer eklenirse: state'e göre text color (light
+  bg → graphite muted, dark bg → white muted).
+
+**Manuel smoke test** (Vercel preview sonrası):
+
+1. **Loading**: `/r/{slug}?table=12` ziyaret → DarkLoader 'b' italic +
+   "Hazırlanıyor…" + "MASA 12 · BUAZE" eyebrow (tableParam meta).
+2. **Step 1 (rate)**: dark page bg + dark TopBar (lime icon + white
+   name + white/45 meta) + dark progress bar + glass star card +
+   stars + tone-coded label (Stage 63 intact).
+3. **Step 1 (high rating)**: 5★ tap → 200ms → Redirecting overlay
+   (dark intact, Stage 49 §38.130).
+4. **Step 1 (low rating)**: 1★ tap → 300ms → Step 2 light bg switch.
+5. **Step 2 (low form)**: **YENİ** light bg `#FAFAFA` full-page +
+   light TopBar (graphite icon + lime initial + dark name + gray
+   meta) + light progress bar + content direkt bg üstünde (white
+   card YOK) + acknowledgment dark card + tag chips + comment + AI
+   badge + presets + contact 2-card stack + KVKK + marketing +
+   submit (Stage 49+62 intact).
+6. **Step 3 (thanks)**: **YENİ** light bg `#FAFAFA` full-page + light
+   TopBar + light progress bar 3/3 100% + 96×96 BIG check + halo +
+   6 confetti + reference card + cross-share + bottom action grid
+   (Stage 57+62 intact).
+7. **Footer**: state-aware text color — Step 1 white/40 dark, Step 2/3
+   gray `#A3A3A3` light. POWERED BY BUAZE her step'te görünür.
+8. **Reduced motion ON**: tüm animasyonlar static (CLAUDE.md §38.61
+   blanket intact).
+
+**Stage 64 closure** (Tarih 2026-05-08):
+
+- Branch: `chore/public-review-light-step23-stage64`
+- Edit'lenen dosyalar: 1 (`page.tsx`) + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 pass (lokal verified)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Step 2/3
+  artık JSX prototip light bg full-page switch ile birebir uyumlu.
+  Step 1 dark editorial moment intact.
+- **Kalan riskler**: yok — backend kontrat (KVKK + reCAPTCHA + honeypot
+  + Web Share API + tag chips + cross-share + bottom action grid)
+  intact, sadece presentational state-aware refactor.
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade.
+
+**Chat prompt history (Stage 64 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"tüm sana attığım jsx ile birebir aynı olup
+  olmadığını son kez analiz et ve birebir aynı yap lütfen olduğu
+  gibi"* (Stage 63 §38.144 PR #568 CI yeşil + merge sonrası raporu).
+- AskUserQuestion **YAPILMADI** — kullanıcı önceki Stage 63
+  iterasyonda explicit "hiçbir şey sormadan" dedi + 7. iterasyonda
+  compliance disipline stable. Stage 64 sadece visual JSX birebir
+  parity (Step 2/3 light bg + state-aware chrome + DarkLoader
+  tableParam), fake-data SKIP intact.
+- **JSX birebir parity 100% achieved** (compliance variation hariç):
+  Stage 49+57+62+63+64 zinciri ile JSX prototip 8-artboard pattern
+  birebir uygulandı. Compliance disipline 7 iterasyonda stable
+  (recovery + loyalty + hardcoded names + PhoneFrame SKIP intact).
+- **Hibrit dark/light pattern**: Stage 63 Step 1 dark mode +
+  Stage 64 Step 2/3 light mode = JSX prototip emotional/productivity
+  semantik birebir.
