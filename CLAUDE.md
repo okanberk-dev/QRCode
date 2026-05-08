@@ -17428,3 +17428,188 @@ intact (presentational değişim, helper logic yok).
   fix, 2 cosmetic LOW fix, 1 env-aware LOW fix), scope kontrollü.
 - Hukuki/disipline override: yok (KVKK + GDPR + ETK linkleri zaten
   doğru document'lara point ediyor; sadece public route'lar broken).
+
+---
+
+### 38.133 2026-05-08 — Stage 52 public review surface (`/r/[slug]`) auto-advance + mobile UX polish (4-fix bundle)
+
+§38.129 Stage 48 + §38.130 Stage 49 redesign sonrası kullanıcı raporu:
+*"restoran değerlendirme sayfası mobil uyumlu değil bunu mobil uyumlu
+yapıp UX olarak da geliştirir misin? Puan verince devam et demesin
+mesela direk sonraki aşamaya geçsin gibi."* Audit (1 Explore agent +
+manuel `Read` verify) sonucu 4 gerçek UX gap tespit edildi: rating
+1-3'te manuel "Devam et" butonu (UX friction), tag/preset chip touch
+target küçük (~28px), comment textarea mobile keyboard'da submit
+button kaybetme riski, redirect overlay 2.2s biraz uzun. Tek
+consolidated PR (CLAUDE.md §21.22) ile 4-fix bundle uygulandı.
+
+**4 fix bundle**:
+
+1. **Phase A — Auto-advance rating click (KRİTİK kullanıcı talebi)**:
+   - `handleStarClick` (line 399) genişletildi: rating ≥4 → 200ms delay
+     `triggerHighRedirect()` (mevcut Stage 48 davranışı intact); rating
+     1-3 → **300ms delay → `setStep(2)`** (yeni). 300ms değer rating
+     fill animasyonu + tone-coded pill `bz-fade-in` görünür kalsın diye
+     (200ms abrupt, 500ms tembel hisseder).
+   - `handleContinue` async fonksiyonu **tamamen silindi** (eski line
+     404-412). JSX "Devam et" / "Google'da paylaş" buton bloğu (eski
+     line 628-638) **silindi**. Auto-advance deterministic (300ms
+     timeout); manuel button confusing UX.
+   - `ArrowRight` lucide import (line 5) orphan oldu, silindi.
+   - Defensive: rating ≥4 button auto-advance fallback yok ama
+     `redirecting` state guard mevcut (timeout deterministik).
+
+2. **Phase B — Touch target boost (mobile WCAG 2.5.5)**:
+   - Tag chip picker (10 chip — line 727) `py-1.5` (~28px) →
+     `py-2` (~32px). Apple HIG dense chip exception 32-36px sektör
+     standardı (44×44 hard target chip layout'u bozar).
+   - Preset chip horizontal scroll (5 preset — line 804) aynı
+     pattern: `py-1.5` → `py-2`.
+   - Yıldız buton padding (`p-1.5` line 578) intact — 42px icon +
+     12px pad = 54px tap area zaten yeterli.
+
+3. **Phase C — Mobile keyboard avoidance (UX polish)**:
+   - `<textarea id="review-comment">` `onFocus` event handler eklendi
+     (~17 satır). `event.currentTarget.scrollIntoView({ block: 'center',
+     behavior: 'smooth' })` `requestAnimationFrame` içinde tetikleniyor
+     — iOS Safari + Android Chrome keyboard açıldığında textarea
+     viewport center'a kayar, submit button + KVKK checkbox altında
+     kaybolmasın.
+   - Reduced-motion blanket (CLAUDE.md §38.61): `window.matchMedia('
+     (prefers-reduced-motion: reduce)').matches` → `behavior: 'auto'`
+     (instant scroll, smooth atla).
+   - SSR-safe: `typeof window !== 'undefined'` guard.
+
+4. **Phase D — Redirect overlay timing (UX speed)**:
+   - `triggerHighRedirect` (eski line 388) `setTimeout` 2200ms →
+     **1500ms**. Mobile bekleme hissi azalır; lime progress bar
+     `bzProgress 2.2s` keyframe overlay kendi animasyonu, JS timeout
+     daha kısa = daha keskin transition. Kullanıcı progress bar'ın
+     bittiğini görmeden redirect olur (kasıtlı).
+   - `bzProgress` keyframe duration **dokunulmadı** — globals.css +
+     reduced-motion blanket drift kaynağı; JS-only fix tek noktadan.
+
+**Etkilenen dosyalar (1 + docs)**:
+- `src/app/r/[slug]/page.tsx` (~+38/-30 = +8 net satır)
+- `CLAUDE.md` §38.133 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**: 383/383
+intact (presentational, helper logic değişmedi). **LOC delta**:
+deletion büyük (handleContinue + button JSX) + addition küçük
+(auto-advance branch + scrollIntoView + chip padding swap + Stage
+52 yorum referansları).
+
+**Backend kontratı dokunulmadı**: `POST /api/feedback` body shape
+(rating + aspectTags + comment + KVKK + recaptcha + honeypot) +
+`/api/qr-scan` + `/api/platform-redirect` fire-and-forget tracking
+intact.
+
+**Korunan tasarım dili (kullanıcı kararı + CLAUDE.md disipline)**:
+- 3-step segmented progress (ADIM 1/3 → 2/3 → 3/3) §38.130
+- Color-coded rating label pill (≥4 lime / =3 amber / ≤2 red) §38.129
+- Tone-coded hint metni (RATING_HINTS locale-aware) §38.130
+- Dark hero card + brand chip + restaurant info §38.107
+- Owner acknowledgment card (jenerik "İşletme yönetimi") §38.130
+- 10 tag chip ENUM key whitelist + backend sanitize §38.130
+- 5 preset chip horizontal scroll §38.130
+- AI badge cosmetic decoration §38.130
+- KVKK + Açık Rıza + Marketing consent UI + opt-in default §19.1
+- reCAPTCHA + honeypot + safe-area inset + touchAction §38.129
+- Done screen radial pulse rays + reference number §38.129/§38.130
+- DarkLoader (loading screen) §38.130
+
+**Yapma**:
+- Manuel "Devam et" butonu fallback olarak görünür bırakma —
+  auto-advance deterministik (300ms timeout), JS fail durumu pratik
+  yok. Confusing UI.
+- Auto-advance delay'ini 200ms'ye düşürme (rating ≥4 ile parite) —
+  rating fill + tone-coded pill animation görünmez kalır, abrupt
+  transition.
+- Auto-advance delay'ini 500ms+ yapma — kullanıcı yıldız tap'tan
+  sonra "tıkladım mı?" düşünür, tembel hisseder.
+- Sticky bottom submit button mobile'da — büyük layout refactor,
+  mevcut form scroll content akışı intact (`scrollIntoView` daha
+  az invasive).
+- `bzProgress` keyframe duration'ını 1.5s'ye indirme — globals.css
+  + 3+ callsite drift; JS timeout fix tek noktadan.
+- Tag/preset chip'leri tamamen 44×44 yapma — chip dense layout
+  bozulur, görsel hiyerarşi kaybolur.
+- Hover handler'ları (`onMouseEnter`/`onMouseLeave` line 574-575)
+  kaldırma — desktop preview UX kasıtlı.
+- `scrollIntoView` SSR-unsafe yazma — `typeof window !== 'undefined'`
+  guard zorunlu (page.tsx `'use client'` ama `requestAnimationFrame`
+  içi çalıştırma bonus güvenlik).
+
+**Yap**:
+- Yeni multi-step form auto-advance gerekirse aynı paterni reuse:
+  `setTimeout(() => setStep(N), 300)` user input event handler içinde.
+  Manuel "Devam et" button skip — deterministic timeout doğru UX.
+- Yeni mobile-first form'da textarea/long-input gerekirse
+  `onFocus` `scrollIntoView({ block: 'center', behavior: smooth/auto })`
+  paterni reuse (CLAUDE.md §38.133 + §25 mobile patterns).
+- Yeni redirect/loading overlay timing kararı: JS timeout < animation
+  duration tercih (görsel sürpriz transition + UX speed).
+- Yeni dense chip set'leri için `py-2` (~32px) Apple HIG dense exception
+  reuse — `py-1.5` mobile reach gap.
+
+**Verification**:
+- `npm run lint` → 0 errors / 0 warnings
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`
+- `npm test` → 383/383 pass, 42 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) → ✓ Compiled +
+  58/58 static page intact, `/r/[slug]` route 11.3 kB (Stage 49 11.4
+  kB → -100 byte; handleContinue + button JSX silindi)
+- Sanity grep regression:
+  - `handleContinue|ArrowRight|py-1\.5` → 0 hit ✓
+  - `setStep\(2\)` → 1 hit (handleStarClick auto-advance branch)
+  - `setTimeout.*1500` → 1 hit (Phase D yeni timeout)
+  - `2200` → 1 hit (sadece Stage 52 yorum referansı, gerçek timeout 0)
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. **Desktop Chrome**: `/r/{slug}` ziyaret → 5★ tap → 200ms delay
+   → redirect overlay (1.5s) → external platform.
+2. **Desktop Chrome**: 1★ tap → 300ms delay → form ekranı (step 2)
+   açılır otomatik. "Devam et" butonu görünmez.
+3. **Desktop Chrome**: 3★ tap → 300ms delay → form ekranı.
+4. **Mobile (iOS Safari 375×667 iPhone SE)**:
+   - Yıldız tap'lerde haptic-like feedback (active:scale-90 intact)
+   - Tag chip py-2 daha rahat tıklanır (~32px height)
+   - Preset chip py-2 horizontal scroll smooth
+   - Comment textarea focus → keyboard açılır → form viewport
+     center'a smooth scroll, submit button + KVKK checkbox görünür
+5. **Mobile Android Chrome**: aynı akış intact
+6. **Reduced motion ON**: scrollIntoView `auto` (instant), rating
+   pill fade animation static, redirect overlay progress bar static
+
+**Stage 52 closure** (Tarih 2026-05-08):
+- Branch: `claude/mobile-review-page-Gl5f5` (designated, environment
+  task description'da sabit)
+- Edit'lenen dosyalar: 1 (`src/app/r/[slug]/page.tsx`) + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  /r/[slug] customer flow intact, ek auto-advance UX + chip touch
+  target boost + textarea keyboard avoidance + faster redirect
+  overlay.
+- Kalan riskler: yok (UI flow + presentational; backend kontrat
+  dokunulmadı, KVKK + reCAPTCHA + honeypot intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör
+  yeni odak talebi.
+
+**Chat prompt history (Stage 52 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"Restoran değerlendşrme sayfası mobil uyumlu
+  değil bunu nobil uyumlu yapıp UX olarak da geliştirir misin? Puan
+  verince devam et demesin mesela direk sonraki aşamaya geçsin givi"*
+  (typo'lar verbatim korundu — §39.2 disipline).
+- 1 Explore agent audit + manuel `Read` verify ile 4 gerçek UX gap
+  tespit edildi.
+- AskUserQuestion yapılmadı: kullanıcı talebi net (auto-advance +
+  mobil UX), 4 fix scope kontrollü, kararlar deterministik (300ms
+  delay, py-2 chip, 1500ms timeout, scrollIntoView center).
+- Hukuki/disipline override: yok (UI polish, backend kontratı +
+  KVKK + reCAPTCHA intact).

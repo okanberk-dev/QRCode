@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
-import { Star, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { Star, Check, Loader2 } from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
 import { buildGoogleReviewUrl } from '@/lib/google-review';
@@ -383,9 +383,13 @@ function ReviewContent() {
       });
 
       setRedirecting({ url: targetPlatformUrl, platformId: fallbackPlatformId });
+      // §38.133 Stage 52 — overlay timeout 2200ms → 1500ms. Mobile bekleme
+      // hissi azalır; `bzProgress` keyframe (2.2s sabit) overlay'in kendi
+      // animation'ı, JS timeout daha kısa = daha keskin transition. Görsel
+      // progress bar bittiğini görmeden redirect olur, kasıtlı.
       setTimeout(() => {
         window.location.href = targetPlatformUrl;
-      }, 2200);
+      }, 1500);
       return;
     }
     // No platform URL configured — drop straight to thanks
@@ -394,21 +398,17 @@ function ReviewContent() {
 
   const handleStarClick = (star: number) => {
     setRating(star);
-    // 4-5 yıldız tap → tasarım UX'i: doğrudan platforma yönlendir, "Devam et"
-    // gerekmez. 200ms delay yıldız fill animasyonunu görmek için.
+    // §38.133 Stage 52 — auto-advance her iki tarafta da tetikleniyor:
+    // 4-5 yıldız → 200ms delay (animasyon) → triggerHighRedirect platform
+    //   yönlendirmesi (mevcut Stage 48 davranışı intact).
+    // 1-3 yıldız → 300ms delay → setStep(2) form ekranı (yeni). Rating
+    //   fill animasyonu + tone-coded pill `bz-fade-in` görünür kalır,
+    //   sonra smooth geçer. Manuel "Devam et" butonu silindi.
     if (star >= 4 && !redirecting) {
       setTimeout(() => triggerHighRedirect(star), 200);
+    } else if (star <= 3) {
+      setTimeout(() => setStep(2), 300);
     }
-  };
-
-  const handleContinue = async () => {
-    if (rating === 0) return;
-    if (rating >= 4) {
-      // Defensive — star tap handler should have triggered this already.
-      if (!redirecting) triggerHighRedirect(rating);
-      return;
-    }
-    setStep(2);
   };
 
   // §38.130 Stage 49 — tag chip toggle. Click ekler/çıkarır; max 10 cap
@@ -622,20 +622,10 @@ function ReviewContent() {
                 )}
               </div>
 
-              {/* Devam et: 1-3 yıldız akışı için. 4-5 yıldız tap doğrudan
-                  redirect'i tetikler; bu buton onlar için redundant ama
-                  tasarımda görünür kalıyor (aria-disabled rating === 0). */}
-              <button
-                type="button"
-                onClick={handleContinue}
-                disabled={rating === 0}
-                className="bz-btn-primary mt-2 w-full justify-center py-3.5 text-[14px]"
-              >
-                {visibleRating >= 4
-                  ? (locale === 'tr' ? 'Google\'da paylaş' : 'Share on Google')
-                  : (locale === 'tr' ? 'Devam et' : 'Continue')}
-                <ArrowRight size={14} />
-              </button>
+              {/* §38.133 Stage 52 — "Devam et" butonu silindi. Auto-advance
+                  handleStarClick içinde deterministik (rating ≥4 → 200ms
+                  redirect, rating ≤3 → 300ms setStep(2)). Manuel button
+                  confusing UX yaratıyordu; rating verir vermez akış sürer. */}
             </div>
           )}
 
@@ -724,7 +714,7 @@ function ReviewContent() {
                         type="button"
                         onClick={() => toggleAspectTag(key)}
                         aria-pressed={selected}
-                        className={`bz-motion-spring inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+                        className={`bz-motion-spring inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[12.5px] font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
                           selected
                             ? 'bg-[#0A0A0A] text-white shadow-[0_4px_12px_-6px_rgba(10,10,10,0.4)]'
                             : 'border border-[#E5E5E5] bg-white text-[#0A0A0A] hover:border-[#A3A3A3]'
@@ -771,6 +761,24 @@ function ReviewContent() {
                     maxLength={500}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
+                    onFocus={(event) => {
+                      // §38.133 Stage 52 — mobile keyboard avoidance.
+                      // iOS Safari + Android Chrome focus event'inde
+                      // textarea'yı viewport center'a scroll'la → keyboard
+                      // açıldığında submit button + KVKK checkbox altında
+                      // kaybolmasın. CLAUDE.md §38.61 reduced-motion: smooth
+                      // → auto fallback (instant scroll).
+                      const target = event.currentTarget;
+                      const reduceMotion =
+                        typeof window !== 'undefined' &&
+                        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                      window.requestAnimationFrame(() => {
+                        target.scrollIntoView({
+                          block: 'center',
+                          behavior: reduceMotion ? 'auto' : 'smooth',
+                        });
+                      });
+                    }}
                     style={{ resize: 'none', fontFamily: 'inherit', paddingBottom: 28 }}
                     enterKeyHint="enter"
                   />
@@ -801,7 +809,7 @@ function ReviewContent() {
                       key={preset}
                       type="button"
                       onClick={() => appendPresetToComment(preset)}
-                      className="bz-motion-spring inline-flex shrink-0 items-center gap-1 rounded-full border border-[#C6F24E] bg-[#EAF9B8] px-2.5 py-1.5 text-[11.5px] font-medium text-[#0A0A0A] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E]"
+                      className="bz-motion-spring inline-flex shrink-0 items-center gap-1 rounded-full border border-[#C6F24E] bg-[#EAF9B8] px-2.5 py-2 text-[11.5px] font-medium text-[#0A0A0A] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A8D62E]"
                       style={{ scrollSnapAlign: 'start' }}
                     >
                       <span aria-hidden>+</span>
