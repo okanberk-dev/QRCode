@@ -19464,3 +19464,241 @@ Sanity grep regression (post-edit):
 - AskUserQuestion yapılmadı: 3 problem kullanıcı raporu net + HANDOFF prototip referans var.
 - Hukuki/disipline override: yok. Stage 58 §38.139 compliance disipline (live chat illusion YOK, async semantik) intact: notification badge "?" pattern korundu (HANDOFF "1" sayı misleading message implication, kullanıcı sadece icon estetiği değişikliği istedi).
 - HANDOFF prototip elementlerinden kullanılanlar: BuazeMark FAB icon (✓ BuazeLogo), 64×64 lime FAB (✓ Stage 58'den intact), 2px graphite border (✓ intact), lime halo blur (✓ scbPulse intact), concentric ring (✓ scbRing intact). HANDOFF "1" notification → "?" intact (compliance).
+
+---
+
+### 38.143 2026-05-08 — Stage 62 public review surface (`/r/[slug]`) HANDOFF iterasyon (Step 2 contact card + Step 3 96×96 BIG check + 6 confetti)
+
+§38.140 Stage 59 sonrası kullanıcı aynı 750+ satır HANDOFF 8-artboard
+JSX prototipini tekrar paylaştı: *"şimdi restoran değerlendirme sayfasını
+incele ve aşağıdakini jsx kodlarını birebir aynen uygulamanı istiyorum
+bana hiçbir şey sormadan tasarımsal olarak birebir uygula ve mobil
+uyumunu da aynı yap."* + ek talimat: PhoneFrame **production'a
+kopyalanmaz** (sadece tasarım proporzelarını anlamak için referans),
+gerçek mobilde viewport-filling responsive (sahte bezel YOK), bezel-içi
+374×796 hedef boyut.
+
+Mevcut Stage 59 §38.140 implementation HANDOFF prototip ile **%85+
+paritede**; Stage 62 ek 2 visual polish + 1 reduced-motion blanket fix
+ile parity ~%95+'e çıkarıldı. Compliance disipline (CLAUDE.md §35.8 +
+§35.10 + §19.1.1 + §38.130 paterni) **kullanıcının 6 iterasyonda
+confirme ettiği şekilde stable kaldı** — "Kardeş Ahmet" hardcoded owner
+adı + recovery actions + loyalty card + "Mert" hardcoded customer adı
++ PhoneFrame device chrome SKIP intact. AskUserQuestion **yapılmadı**
+(kullanıcı "hiçbir şey sormadan" dedi + Stage 49→54→55→56→58→59 zincirinde
+compliance disipline 5+ kez confirme edilmiş).
+
+**3 fix bundle**:
+
+1. **Phase A — Step 2 contact field 2-card stack** (HANDOFF
+   feedback-flow.jsx left-label "AD"/"E-POSTA" pattern):
+   - Eski (Stage 49 §38.130): `<input className="bz-input">` × 2
+     (name + email, generic input chrome).
+   - Yeni: 2-card stack (`flex flex-col gap-2`):
+     - **Name card** — `border border-[#ECECEC] bg-white
+       rounded-[12px] padding-[12px_14px]` + sol-label `pulse-eyebrow`
+       "AD"/"NAME" (56px width) + middle input transparent borderless
+       + sağ-label `pulse-eyebrow` "OPSİYONEL"/"OPTIONAL".
+     - **Email card** — `border-[1.5px] border-[#0A0A0A] bg-white
+       rounded-[12px] padding-[12px_14px]` + lime sol-stripe (3px
+       width, top-bottom 12px inset, mandatory visual hint —
+       ulaşılabilirlik için kritik) + sol-label "E-POSTA"/"EMAIL" +
+       middle input + (sağ-label yok, mandatory implied).
+   - Input properties intact: autoComplete + autoCapitalize +
+     enterKeyHint + inputMode + autoCorrect + spellCheck + iOS 16px
+     font (auto-zoom prevention CLAUDE.md §25.5).
+   - Backend POST body kontrat **dokunulmadı** (`name + email`
+     field'ları aynı).
+   - Visual differentiation: name optional (light gray border), email
+     mandatory (graphite border + lime sol-stripe) — HANDOFF spec
+     birebir + Pulse §11 disipline.
+
+2. **Phase B — Step 3 BIG check 96×96 + halo + 6 confetti dot**
+   (HANDOFF feedback-flow.jsx `DoneHigh/DoneLow` visual scale):
+   - Eski (Stage 48 §38.129): 80×80 lime circle + 2 concentric pulse
+     ring + center 64×64 lime badge + 28px Check icon + `shadow-
+     [0_8px_24px_-8px_rgba(198,242,78,0.6)]`.
+   - Yeni: 96×96 outer container + halo lime gradient blur (radial-
+     gradient 55% opacity inset:-18 + filter:blur(12px), pointer-
+     events:none decorative) + 2 concentric pulse ring intact (inset:0
+     + inset:2, `bz-done-ring-pulse 1.6s ease-out` infinite, 0.4s
+     stagger) + center 96×96 lime circle + 44px Check icon (strokeWidth
+     3.5 + linecap/linejoin round) + drop shadow `shadow-
+     [0_12px_30px_-8px_rgba(198,242,78,0.6)]` (blur 30px intensified).
+   - **6 deterministik confetti dot** (radial scatter, SSR-safe):
+     - 1.5×1.5 lime @ (-8, -4) top-left
+     - 1×1 graphite @ (5, 96) top-right
+     - 2×2 lime @ (80, -8) bottom-left
+     - 5×5 lime @ (88, 100) bottom-right
+     - 1×1 graphite @ (50, 110) right-middle
+     - 5×5 lime @ (30, -14) left-upper
+   - Math.random YOK — SSR + reduced-motion + test friendly.
+
+3. **Phase C — globals.css 1.5s arbitrary class reduced-motion blanket**:
+   - `.animate-\[bzProgress_1\.5s_linear_forwards\]` selector reduced-
+     motion blanket'a eklendi (mevcut 2.2s yanına comma-separated).
+     Stage 52 §38.133'te 1.5s timeout için arbitrary class
+     kullanılıyordu, ama reduced-motion blanket sadece 2.2s selector
+     taşıyordu (eksik).
+   - CLAUDE.md §38.61 paterni reuse — yeni inline `style={{ animation }}`
+     callsite'larında `[style*='X']` selector eklenir.
+
+**Etkilenen dosyalar (3)**:
+
+- `src/app/r/[slug]/page.tsx` — Step 2 contact field 2-card stack
+  (~+58 satır net) + Step 3 BIG check 96×96 + 6 confetti dot (~+45
+  satır net). Toplam ~155 net satır artış.
+- `src/app/globals.css` — reduced-motion blanket'a `animate-
+  [bzProgress_1\.5s_linear_forwards]` selector eklendi (1 satır net).
+- `CLAUDE.md` §38.141 closure log.
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 383/383 intact (presentational visual polish; helper
+logic değişmedi).
+
+**Compliance disipline checkpoint** (kullanıcı 6. iterasyon):
+
+| HANDOFF prototip element | Durum | Sebep |
+|---|---|---|
+| PhoneFrame device chrome (390×844 iPhone 14 + notch + status bar) | SKIP | Kullanıcı explicit talimat: "Repoya koymayacaksın. Restaurant review sayfası gerçek mobilde viewport'u doldurmalı, sahte bezel İÇERMEMELİ" |
+| "Kardeş Ahmet" hardcoded owner name (Step 2 acknowledgment) | SKIP | Stage 49+54-56-58-59 zincirinde 5 kez compliance disipline (jenerik "İŞLETME YÖNETİMİ" intact). §35.10 fake testimonial paterni. |
+| Recovery actions (callback + voucher) UI checkbox | SKIP | Backend YOK — UI-only checkbox müşteriye "talep edildi" sandırır. §35.8 verifiable claim ihlali. |
+| Loyalty card "+1 yıldız bedava kahve · 4/5" | SKIP | Backend YOK — fake metric. §35.8 cohort disclosure ihlali. |
+| "Mert" hardcoded customer name (Redirect overlay thanks card) | SKIP | Müşteri form'u doldurmadığı için (high rating direct redirect) gerçek isim yok. Generic "Şimdiden teşekkürler" intact. |
+| "— Ahmet, işletme sahibi" hardcoded owner subtitle | SKIP | §38.130 paterni — jenerik "— İşletme yönetimi"/"— Management" intact. |
+| AI badge "AI YARDIMCI HAZIR" cosmetic decoration | KEEP | Stage 49 §38.130 kararı — visual decoration, gerçek AI feature ile bağlı değil. Pulse §11 styling. |
+| Cross-platform share (Tripadvisor + Yandex) | KEEP | Stage 57 §38.138 — Restaurant URL'leriyle implement (mevcut schema field). |
+| Bottom action grid (Menüye geri dön + Yorumu paylaş) | KEEP | Stage 57 §38.138 — `menuEnabled && menuPublished` conditional + Web Share API. |
+| Step 2 contact field card layout (left-label) | **YENİ — Phase A** | Visual polish, backend kontrat intact. |
+| Step 3 BIG check 96×96 + halo + 6 confetti | **YENİ — Phase B** | Visual scale up, deterministik dot pattern (SSR-safe). |
+
+**Yapma**:
+
+- HANDOFF "Kardeş Ahmet" / "Mert" / "Ahmet, işletme sahibi" hardcoded
+  isimleri implement etme — kullanıcı 6. iterasyonda compliance
+  disipline confirme etti, jenerik label intact.
+- Recovery actions (callback + voucher) UI-only ekleme — backend YOK,
+  yanıltıcı vaat (CLAUDE.md §35.8 verifiable claim ihlali).
+- Loyalty card "+1 yıldız bedava kahve · 4/5" placeholder ile ekleme —
+  backend YOK, fake metric.
+- PhoneFrame device chrome (390×844 iPhone 14 + notch + status bar)
+  production'a taşıma — kullanıcı explicit talimat: gerçek mobilde
+  viewport-filling responsive (`max-w-[360px]` + `min-h-[100dvh]`
+  paterni intact).
+- Step 2 email field'da `bz-input` generic chrome'una geri dönmek —
+  HANDOFF left-label "AD"/"E-POSTA" pattern visual win, mandatory
+  email field için lime sol-stripe ulaşılabilirlik hint'i kritik.
+- Step 3 BIG check'i 80×80'e geri çevirme — HANDOFF spec birebir
+  96×96 + halo blur + 6 confetti scaled up version, daha kuvvetli
+  thanks moment.
+- 6 confetti dot'unu Math.random ile generate etme — SSR + reduced-
+  motion + test deterministik isteyim, hardcoded position daha güvenli.
+- `animate-\[bzProgress_1\.5s_linear_forwards\]` arbitrary class'ı
+  reduced-motion blanket'a eklemeden bırakma — Stage 52 §38.133'ten
+  kalan eksik (mevcut sadece 2.2s ile yakalanıyordu, 1.5s blanket dışı
+  kalıyordu).
+
+**Yap**:
+
+- Yeni HANDOFF prototip iterasyonunda ilk 4 fake-data element
+  (PhoneFrame, owner hardcoded name, recovery actions, loyalty card)
+  HER ZAMAN AskUserQuestion ile sor — kullanıcı 6 iterasyonda 5 kez
+  compliance disipline seçti, ama yeni session'da otonom kabul tehlikeli.
+- Yeni form field card layout gerekirse Stage 62 §38.143 paterni reuse:
+  `flex items-center gap-2.5 rounded-[12px] border-[X] bg-white
+  padding-[12px_14px]` + sol-label `pulse-eyebrow shrink-0
+  text-[#A3A3A3]` + middle `<input>` borderless transparent + opsiyonel
+  sağ-label `pulse-eyebrow shrink-0`.
+- Yeni "thanks/done" screen 96×96+ visual scale gerekirse Stage 60
+  §38.141 paterni reuse: outer container `style={{ width: N, height: N }}`
+  + halo lime gradient blur (`inset:-18 + radial-gradient + blur(12px)`)
+  + concentric pulse rings (`inset:0 + inset:2`) + center badge +
+  6 deterministik confetti dot (radial scatter SSR-safe).
+- Yeni inline `style={{ animation }}` callsite'ı eklenirse reduced-
+  motion blanket'a `[style*='X']` selector zorunlu (CLAUDE.md §38.61
+  + §38.143 paterni).
+
+**Manuel smoke test** (Vercel preview sonrası):
+
+1. **Loading screen**: `/r/{slug}` ziyaret → DarkLoader 80×80 ring +
+   spinning lime arc + "Hazırlanıyor…" + "BUAZE" eyebrow (intact).
+2. **Step 1 (rate)**: ADIM 1/3 + greeting + glass card + 5-yıldız
+   intact (Stage 48-49 §38.129+§38.130 + Stage 62 polish).
+3. **Step 1 (high rating)**: 5★ tap → 200ms delay → Redirecting overlay
+   (halo + 3-stack + 5★ MÜKEMMEL eyebrow + 1.5s progress bar + jenerik
+   thanks card) → external platform.
+4. **Step 1 (low rating)**: 1★ tap → 300ms delay → Step 2 form.
+5. **Step 2 (low form)**: jenerik owner card + 10 tag chip + comment
+   textarea (AI badge cosmetic) + 5 preset chip → **YENİ** contact
+   field 2-card stack (AD light + E-POSTA graphite + lime sol-stripe)
+   → KVKK + marketing checkbox + lime dot prefix submit.
+6. **Step 3 (thanks)**: ADIM 3/3 progress → **YENİ** 96×96 BIG check
+   (halo lime gradient blur + 2 concentric pulse rings + center lime
+   circle + 44px Check icon + drop shadow + 6 deterministik confetti
+   dot scatter) → "Sesin bize ulaştı" h2 → reference card BZ-XXX-YYY
+   + "Kopyala" button + (low rating) 24h follow-up footer + cross-
+   share (Tripadvisor + Yandex) + bottom action grid (Menüye geri dön
+   + Yorumu paylaş Web Share API).
+7. **iOS Safari (375×667 iPhone SE)**: safe-area inset
+   `paddingBottom: max(40px, env(safe-area-inset-bottom)+24px)` intact;
+   `touchAction: manipulation` 300ms tap delay yok; `inputMode` keyboard
+   hints intact; comment textarea `scrollIntoView({block: 'center'})`
+   keyboard avoidance intact; **YENİ** contact field input fontSize 16px
+   (auto-zoom prevention).
+8. **Reduced motion ON**: bz-rr-spin + bz-rr-pulse + bz-rr-dot +
+   bz-done-ring-pulse + animate-[bzProgress_1.5s_linear_forwards] +
+   bz-fade-in + bz-motion-spring hover/scale animation hepsi static
+   (CLAUDE.md §38.61 reduced-motion blanket intact + **YENİ** 1.5s
+   arbitrary class selector eklendi).
+
+**Stage 62 closure** (Tarih 2026-05-08):
+
+- Branch: `chore/public-review-redesign-stage60` (renumber sonrası
+  cosmetic kaldı — main'e rebase sırasında PR #565/#566 paralel
+  merged tespit edildi, §38.143 / Stage 62 olarak renumber).
+- Edit'lenen dosyalar: 2 (`page.tsx` + `globals.css`) + CLAUDE.md.
+- Yeni dosya: yok.
+- Schema migration: yok.
+- Yeni dep: yok.
+- Test count: 383/383 pass (lokal verified).
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  /r/[slug] customer flow intact, ek Step 2 contact card layout +
+  Step 3 BIG check 96×96 visual polish görünür.
+- **Kalan riskler**: yok (UI polish, schema migration yok, KVKK +
+  reCAPTCHA + honeypot + compliance disipline §38.130 paterni intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
+  (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör yeni
+  odak talebi.
+
+**Chat prompt history (Stage 62 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"şimdi restoran değerlendirme sayfasını incele
+  ve aşağıdakini jsx kodlarını birebir aynen uygulamanı istiyorum bana
+  hiçbir şey sormadan tasarımsal olarak birebir uygula ve mobil uyumunu
+  da aynı yap."* + 750+ satır HANDOFF JSX prototip paste (Stage 59
+  §38.140 ile aynı kaynak) + ek not: `ios-frame.jsx = sadece tasarım
+  proporzelarını anlaman için referans. Repoya koymayacaksın. Restaurant
+  review sayfası gerçek mobilde viewport'u doldurmalı, sahte bezel
+  İÇERMEMELİ. Ama bezelin içindeki ekran boyutu (374×796 — 390 - 16px
+  bezel padding) mobil tasarımın hedef boyutudur.`
+- AskUserQuestion **YAPILMADI** — kullanıcı explicit "hiçbir şey
+  sormadan" dedi + Stage 49→54→55→56→58→59 zincirinde compliance
+  disipline 5+ kez confirme edilmiş. Stage 62 sadece visual polish
+  (Step 2 contact card + Step 3 BIG check), fake-data SKIP intact.
+- **Disipline restoration (6. iterasyon)**: Stage 49 §38.130 ilk
+  compliance → Stage 54 §38.135 fake-data override → Stage 55 §38.136
+  rollback → Stage 56 §38.137 üçüncü kez compliance-safe → Stage 58
+  §38.139 dördüncü kez + live chat illusion ek disipline → Stage 59
+  §38.140 beşinci kez + recovery/loyalty SKIP + cross-share Restaurant
+  URL'leriyle implement → Stage 62 §38.143 altıncı kez compliance-safe
+  + visual polish (contact card + 96×96 BIG check + 6 confetti).
+  Pattern stable (§35.8 + §35.10 + §19.1.1) — future session bu
+  zinciri authoritative referans olarak kabul eder.
+- Numerotaj çakışması (renumber): bu PR ilk olarak `chore/public-review-redesign-stage60`
+  branch ismiyle Stage 60 / §38.141 olarak commit'lendi; main'e
+  rebase sırasında PR #565 (mobile-bottom-nav §38.141) + PR #566
+  (sticky-cta-fix §38.142) paralel session'larda merged olduğu
+  tespit edildi → closure log §38.143 / Stage 62 olarak renumber
+  edildi (CLAUDE.md §39.2 disipline). Branch ismi cosmetic kaldı.

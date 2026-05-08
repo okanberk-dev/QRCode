@@ -484,13 +484,20 @@ function ReviewContent() {
         ? `${restaurant?.name ?? 'Buaze'} hakkında deneyimini paylaş`
         : `Share your experience about ${restaurant?.name ?? 'Buaze'}`;
     try {
-      if (typeof navigator !== 'undefined' && 'share' in navigator) {
-        await navigator.share({ title, text, url });
+      if (typeof navigator === 'undefined') return;
+      // Stage 60 §38.141 — TypeScript `'share' in nav` narrowing sonrası
+      // negative branch'te `nav` tipinden `clipboard` property'si düşürülüyor
+      // (TS5+ daha agresif narrowing). Defansif cast: Navigator interface
+      // çoğu modern browser'da `clipboard` taşır, runtime check ile guard.
+      const nav: Navigator = navigator;
+      if ('share' in nav && typeof nav.share === 'function') {
+        await nav.share({ title, text, url });
         return;
       }
       // Web Share API yok → URL clipboard fallback
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
+      const clipboard: Clipboard | undefined = (nav as Navigator & { clipboard?: Clipboard }).clipboard;
+      if (clipboard?.writeText) {
+        await clipboard.writeText(url);
       }
     } catch {
       // User canceled or fail — silent.
@@ -919,29 +926,71 @@ function ReviewContent() {
                 </div>
               </div>
 
+              {/* §38.141 Stage 60 — HANDOFF feedback-flow.jsx contact card
+                  layout (left-label "AD"/"E-POSTA" pattern). Email field
+                  highlight: graphite border + lime sol-stripe (mandatory
+                  visual hint, ulaşılabilirlik için kritik). Backend kontrat
+                  intact: name + email POST body field'ları aynı. */}
+              <div className="flex flex-col gap-2" style={{ marginBottom: 14 }}>
+                <div
+                  className="flex items-center gap-2.5 rounded-[12px] border border-[#ECECEC] bg-white"
+                  style={{ padding: '12px 14px' }}
+                >
+                  <span
+                    className="pulse-eyebrow shrink-0 text-[#A3A3A3]"
+                    style={{ width: 56, fontSize: 9.5 }}
+                  >
+                    {locale === 'tr' ? 'AD' : 'NAME'}
+                  </span>
+                  <input
+                    className="min-w-0 flex-1 border-none bg-transparent text-[13.5px] font-medium text-[#0A0A0A] outline-none placeholder:text-[#A3A3A3]"
+                    placeholder={locale === 'tr' ? 'Adın' : 'Your name'}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    autoComplete="name"
+                    autoCapitalize="words"
+                    enterKeyHint="next"
+                    style={{ fontSize: 16 }}
+                  />
+                  <span
+                    className="pulse-eyebrow shrink-0 text-[#A3A3A3]"
+                    style={{ fontSize: 9 }}
+                  >
+                    {locale === 'tr' ? 'OPSİYONEL' : 'OPTIONAL'}
+                  </span>
+                </div>
+                <div
+                  className="relative flex items-center gap-2.5 rounded-[12px] border-[1.5px] border-[#0A0A0A] bg-white"
+                  style={{ padding: '12px 14px' }}
+                >
+                  <span
+                    className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-[#C6F24E]"
+                    aria-hidden
+                  />
+                  <span
+                    className="pulse-eyebrow shrink-0 text-[#A3A3A3]"
+                    style={{ width: 56, fontSize: 9.5 }}
+                  >
+                    {locale === 'tr' ? 'E-POSTA' : 'EMAIL'}
+                  </span>
+                  <input
+                    className="min-w-0 flex-1 border-none bg-transparent text-[13.5px] font-medium text-[#0A0A0A] outline-none placeholder:text-[#A3A3A3]"
+                    type="email"
+                    placeholder={locale === 'tr' ? 'ulaşmamız için' : 'so we can reach you'}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    inputMode="email"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    enterKeyHint="next"
+                    style={{ fontSize: 16 }}
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-col gap-2.5">
-                <input
-                  className="bz-input"
-                  placeholder={locale === 'tr' ? 'Adın (opsiyonel)' : 'Your name (optional)'}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoComplete="name"
-                  autoCapitalize="words"
-                  enterKeyHint="next"
-                />
-                <input
-                  className="bz-input"
-                  type="email"
-                  placeholder={locale === 'tr' ? 'E-posta · ulaşmamız için' : 'Email · so we can reach you'}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  inputMode="email"
-                  autoCapitalize="off"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  enterKeyHint="next"
-                />
 
                 {/* KVKK aydınlatma — submit gate; metin admin paneli yönetiminde */}
                 <label
@@ -1060,12 +1109,26 @@ function ReviewContent() {
                 </div>
               </div>
 
-              {/* Stage 48 §38.129 — HANDOFF feedback-flow.jsx `DoneHigh/DoneLow`
-                  radial pulse rays. 2 concentric lime ring expand outward +
-                  fade out (1.6s ease-out, infinite); ortada lime check badge
-                  shadow ile kalır. Reduced-motion blanket [style*='bz-done-ring-pulse']
-                  selector ile yakalanır (CLAUDE.md §38.61 paterni). */}
-              <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
+              {/* §38.141 Stage 60 — HANDOFF feedback-flow.jsx `DoneHigh/DoneLow`
+                  visual scale: 96×96 lime circle + halo lime gradient blur +
+                  2 concentric pulse rings + 6 deterministik confetti dot
+                  (Math.random YOK — SSR + reduced-motion friendly). Stage 48
+                  §38.129'daki 80×80'den HANDOFF spec birebir 96×96'ya scale.
+                  Reduced-motion blanket [style*='bz-done-ring-pulse'] selector
+                  ile yakalanır (CLAUDE.md §38.61 paterni). */}
+              <div className="relative mx-auto" style={{ width: 96, height: 96 }}>
+                {/* Halo lime gradient blur — subtle radial glow background */}
+                <span
+                  className="pointer-events-none absolute rounded-full"
+                  style={{
+                    inset: -18,
+                    background:
+                      'radial-gradient(circle, rgba(198,242,78,0.55) 0%, transparent 70%)',
+                    filter: 'blur(12px)',
+                  }}
+                  aria-hidden
+                />
+                {/* Concentric pulse rings */}
                 <span
                   className="absolute inset-0 rounded-full bg-[#C6F24E]"
                   style={{
@@ -1082,9 +1145,48 @@ function ReviewContent() {
                   }}
                   aria-hidden
                 />
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_8px_24px_-8px_rgba(198,242,78,0.6)]">
-                  <Check size={28} strokeWidth={3} className="text-[#0A0A0A]" />
+                {/* Center check badge — 96×96 lime circle + drop shadow */}
+                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_12px_30px_-8px_rgba(198,242,78,0.6)]">
+                  <Check
+                    size={44}
+                    strokeWidth={3.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-[#0A0A0A]"
+                  />
                 </div>
+                {/* 6 deterministik confetti dot — radial scatter, SSR-safe.
+                    HANDOFF spec birebir position + size + color. */}
+                <span
+                  className="pointer-events-none absolute h-1.5 w-1.5 rounded-full bg-[#C6F24E]"
+                  style={{ top: -8, left: -4 }}
+                  aria-hidden
+                />
+                <span
+                  className="pointer-events-none absolute h-1 w-1 rounded-full bg-[#0A0A0A]"
+                  style={{ top: 5, left: 96 }}
+                  aria-hidden
+                />
+                <span
+                  className="pointer-events-none absolute h-2 w-2 rounded-full bg-[#C6F24E]"
+                  style={{ top: 80, left: -8 }}
+                  aria-hidden
+                />
+                <span
+                  className="pointer-events-none absolute rounded-full bg-[#C6F24E]"
+                  style={{ top: 88, left: 100, width: 5, height: 5 }}
+                  aria-hidden
+                />
+                <span
+                  className="pointer-events-none absolute h-1 w-1 rounded-full bg-[#0A0A0A]"
+                  style={{ top: 50, left: 110 }}
+                  aria-hidden
+                />
+                <span
+                  className="pointer-events-none absolute rounded-full bg-[#C6F24E]"
+                  style={{ top: 30, left: -14, width: 5, height: 5 }}
+                  aria-hidden
+                />
               </div>
               <h2 className="bz-h-tight-2 text-[22px]" style={{ marginTop: 22 }}>
                 {locale === 'tr' ? 'Sesin bize ulaştı' : 'We hear you'}
