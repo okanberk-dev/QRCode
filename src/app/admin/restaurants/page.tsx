@@ -431,13 +431,23 @@ export default function RestaurantsPage() {
         }
       />
 
-      {/* Primary filter — plan tabs (1:1 design) */}
-      <Tabs
-        items={planTabs}
-        active={planFilter}
-        onChange={(id) => setPlanFilter(id as 'all' | 'pro' | 'growth' | 'starter' | 'trial')}
-        ariaLabel="Plan filter"
-      />
+      {/*
+        Stage 81 §38.161 — Filter toolbar mobile/tablet sticky-on-scroll
+        (owner Stage 80 §38.160 Fix 4 paterni paralel — owner restaurants
+        list `md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur
+        lg:static`). Admin parity: tablet portrait'da scroll sırasında
+        filter görünür kalır + topbar h-16 altında pin'lenir + Apple-soft
+        backdrop-blur. Desktop (lg+) inline normal akış (`lg:static`).
+      */}
+      <div className="md:sticky md:top-16 md:z-20 md:-mx-3 md:px-3 md:py-2 md:bg-white/95 md:backdrop-blur sm:md:rounded-xl lg:static lg:bg-transparent lg:backdrop-blur-none lg:py-0 lg:mx-0 lg:px-0">
+        {/* Primary filter — plan tabs (1:1 design) */}
+        <Tabs
+          items={planTabs}
+          active={planFilter}
+          onChange={(id) => setPlanFilter(id as 'all' | 'pro' | 'growth' | 'starter' | 'trial')}
+          ariaLabel="Plan filter"
+        />
+      </div>
 
       {/* Secondary control — status + search */}
       <div className="flex flex-col items-stretch justify-between gap-3 md:flex-row md:items-center">

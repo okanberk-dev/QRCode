@@ -437,17 +437,23 @@ export default function DashboardRestaurantsPage() {
                     `min-h-[44px]`, sm:+ desktop'ta mevcut padding intact.
                     Lime CTA + ghost dark + status toggle + public preview
                     sırası action priority hierarchy'siyle uyumlu.
+
+                    Stage 81 §38.161 — `min-h-[44px] sm:min-h-0` inline
+                    pattern → `bz-touch-target` utility migrate (CLAUDE.md
+                    §38.49 dead utility class disipline, callsite adopt).
+                    `sm:min-h-0 sm:min-w-0` override sm:+ desktop'ta
+                    utility override eder (button compact density intact).
                   */}
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <Link
                       href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
-                      className="bz-btn-ghost justify-center text-[12px] min-h-[44px] sm:min-h-0"
+                      className="bz-btn-ghost justify-center text-[12px] bz-touch-target sm:min-h-0 sm:min-w-0"
                     >
                       {locale === 'tr' ? 'Detay aç' : 'Open details'} →
                     </Link>
                     <Link
                       href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
-                      className="bz-btn-primary justify-center text-[12px] min-h-[44px] sm:min-h-0"
+                      className="bz-btn-primary justify-center text-[12px] bz-touch-target sm:min-h-0 sm:min-w-0"
                     >
                       {copy.qr}
                     </Link>
@@ -455,7 +461,7 @@ export default function DashboardRestaurantsPage() {
                       type="button"
                       disabled={actionLoadingId === restaurant.id}
                       onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
-                      className={`inline-flex items-center justify-center min-h-[44px] sm:min-h-0 rounded-full px-4 py-2.5 text-center text-[12px] font-medium bz-motion-spring disabled:opacity-60 ${
+                      className={`inline-flex items-center justify-center bz-touch-target sm:min-h-0 sm:min-w-0 rounded-full px-4 py-2.5 text-center text-[12px] font-medium bz-motion-spring disabled:opacity-60 ${
                         restaurant.isActive
                           ? 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
                           : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
@@ -468,7 +474,7 @@ export default function DashboardRestaurantsPage() {
                     <Link
                       href={`/r/${restaurant.slug}`}
                       target="_blank"
-                      className="inline-flex items-center justify-center gap-1.5 min-h-[44px] sm:min-h-0 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] bz-motion-spring hover:border-[#C6F24E]"
+                      className="inline-flex items-center justify-center gap-1.5 bz-touch-target sm:min-h-0 sm:min-w-0 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] bz-motion-spring hover:border-[#C6F24E]"
                       aria-label="Open public page"
                     >
                       <ExternalLink size={14} strokeWidth={2} />

@@ -49,11 +49,18 @@ export default function OnboardingNudge({ locale, steps, className = "" }: Onboa
         <div
           className="flex-1 grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
         >
+          {/*
+            Stage 81 §38.161 — Step link `transition-colors` →
+            `bz-motion-spring active:scale-[0.97] sm:active:scale-100`
+            (cross-card polish parity, CLAUDE.md §38.65 + §38.46
+            paterni reuse). Mobile tap feedback + smooth bg/border
+            transition.
+          */}
           {steps.map((s) => (
             <Link
               key={s.id}
               href={s.href}
-              className="flex flex-col gap-1.5 text-left p-2.5 rounded-[10px] transition-colors"
+              className="flex flex-col gap-1.5 text-left p-2.5 rounded-[10px] bz-motion-spring active:scale-[0.97] sm:active:scale-100"
               style={{
                 background: s.done
                   ? "rgba(198,242,78,0.12)"

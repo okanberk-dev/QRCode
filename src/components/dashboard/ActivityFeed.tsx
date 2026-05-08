@@ -197,10 +197,15 @@ export function ActivityFeed({
           touch target garantisi (WCAG 2.5.5). sm:+ desktop'ta
           mevcut compact link intact. Realtime push state (§38.86)
           aria-live polite NotificationBell ile aynı paterni paralel.
+
+          Stage 81 §38.161 — `min-h-[44px] sm:min-h-0` inline pattern
+          → `bz-touch-target` utility migrate (CLAUDE.md §38.49 dead
+          utility class disipline, callsite adopt). sm:+ desktop'ta
+          override gerekmez (utility sadece mobile'da min-h sağlar).
         */}
         <Link
           href={viewAllHref}
-          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring min-h-[44px] sm:min-h-0 px-2 sm:px-0 -mx-2 sm:mx-0 rounded-lg sm:rounded-none hover:bg-[#FAFAFA] sm:hover:bg-transparent"
+          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring bz-touch-target sm:min-h-0 sm:min-w-0 px-2 sm:px-0 -mx-2 sm:mx-0 rounded-lg sm:rounded-none hover:bg-[#FAFAFA] sm:hover:bg-transparent"
         >
           {isTr ? 'Tüm aktiviteyi gör' : 'View all activity'}
           <ArrowRight size={11} strokeWidth={2} />
@@ -265,7 +270,7 @@ export function ActivityFeed({
               {event.href ? (
                 <Link
                   href={event.href}
-                  className={`${baseClass} hover:bg-[#FAFAFA] -mx-2 px-2 rounded-md bz-motion-spring`}
+                  className={`${baseClass} hover:bg-[#FAFAFA] -mx-2 px-2 rounded-md bz-motion-spring active:scale-[0.97] sm:active:scale-100`}
                 >
                   {inner}
                 </Link>
