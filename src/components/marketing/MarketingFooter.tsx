@@ -205,38 +205,35 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 letterSpacing: '-0.01em',
               }}
             >
-              {/* Stage 49 §38.130 Faz 2 — PremiumFooter spec birebir
-                  3-cümle italic editorial motto. "Müşterinin sesi tek
-                  panelde" sub-clause silindi (PremiumFooter spec'te
-                  yok). Verifiable brand manifesto, fake-claim YOK
-                  (CLAUDE.md §35.8 cohort disclosure intact). */}
+              {/* Stage 53 §38.134 — HANDOFF 1:1 override (kullanıcı
+                  AskUserQuestion ile §35.8 cohort disclosure SKIP
+                  kararını override etti). PremiumFooter spec birebir
+                  4-cümle italic editorial motto. "12.482 işletmenin
+                  tek paneli" claim KVKK + ETK + Google "misleading
+                  business claims" risk taşır (Buaze gerçek 10-50
+                  müşteri §19.4.4); kullanıcı bilgilendirilmiş kararla
+                  override istedi. */}
               {isTr
-                ? 'Bir QR. Bir yorum. Bir kazanç.'
-                : 'One QR. One review. One win.'}
+                ? 'Bir QR. Bir yorum. Bir kazanç. 12.482 işletmenin tek paneli.'
+                : 'One QR. One review. One win. The single pane for 12,482 businesses.'}
             </p>
 
-            {/* Stage 44 — Status tile band (3-up grid). HANDOFF visual
-                pattern + Buaze brand manifesto. Fake metric riski yerine
-                static-but-true claim'ler: 24/7 ops + AI yanıt latency
-                yaklaşık değer + locale support. */}
+            {/* Stage 53 §38.134 — HANDOFF 1:1 override (kullanıcı
+                AskUserQuestion onaylı). Stage 44 §38.125'in compliance-
+                safe variation'ı (OPS · 24/7 / PULSE AI · <1s / KAPSAM ·
+                TR · EN) kaldırıldı, HANDOFF premium-footer.jsx fake
+                metric'leri restore edildi (API 99.99% / Pulse AI 0.74s /
+                Yorum/sn 14,2). hint param helper'dan kaldırıldı (HANDOFF
+                spec'te yok). KVKK + ETK risk: bu metric'ler measurable
+                product claim, future scope'da gerçek değerlerle
+                değiştirilmesi önerilir. */}
             <div className="mt-10 grid max-w-[560px] grid-cols-3 gap-3">
+              <FooterStatusTile label="API" value="99.99%" tone="ok" />
+              <FooterStatusTile label="Pulse AI" value="0.74s" tone="ok" />
               <FooterStatusTile
-                label={isTr ? 'OPS' : 'OPS'}
-                value="24/7"
-                tone="ok"
-                hint={isTr ? 'sürekli çalışır' : 'always on'}
-              />
-              <FooterStatusTile
-                label="PULSE AI"
-                value="<1s"
-                tone="ok"
-                hint={isTr ? 'tipik yanıt' : 'typical reply'}
-              />
-              <FooterStatusTile
-                label={isTr ? 'KAPSAM' : 'COVERAGE'}
-                value="TR · EN"
+                label={isTr ? 'YORUM/SN' : 'REVIEWS/SEC'}
+                value="14,2"
                 tone="lime"
-                hint={isTr ? 'ikidil destek' : 'bilingual'}
               />
             </div>
 
@@ -279,16 +276,31 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
               <div className="mt-4">
                 <NewsletterSignup locale={locale} source="footer" />
               </div>
+              {/* Stage 53 §38.134 — HANDOFF 1:1 override (kullanıcı
+                  AskUserQuestion onaylı). Stage 44 §38.125 yalnız
+                  "SPAM YOK · ÇIK" hint taşıyordu; HANDOFF spec birebir
+                  4.2K SAHİP subscriber count prefix'i restore edildi.
+                  Marketing puff claim — public expose admin-side only
+                  (CLAUDE.md §35.10 risk minor, kullanıcı override). */}
               <span className="pulse-eyebrow mt-3 block text-white/40">
-                {isTr ? 'SPAM YOK · İSTEDİĞİNDE ÇIK' : 'NO SPAM · UNSUB ANYTIME'}
+                {isTr
+                  ? '4.2K SAHİP · SPAM YOK · İSTEDİĞİNDE ÇIK'
+                  : '4.2K OWNERS · NO SPAM · UNSUB ANYTIME'}
               </span>
             </div>
 
-            {/* Scan-to-dashboard QR card — Buaze mobile app yok;
-                bunun yerine "telefondan dashboard" claim (gerçek
-                ürün davranışı: responsive web /dashboard).
-                CLAUDE.md §38.123'te skip edilen scan-to-app QR'ın
-                compliance-safe variant'ı. */}
+            {/* Stage 53 §38.134 — Scan-to-app QR card HANDOFF 1:1
+                override (kullanıcı AskUserQuestion onaylı). Stage 44
+                §38.125'in compliance-safe scan-to-dashboard variation
+                ("TELEFONDA · MOBİL UYUMLU") kaldırıldı, HANDOFF spec'in
+                "iOS · ANDROID" mobile app claim'i restore edildi.
+                CRITICAL RISK: Buaze native mobile app YOK — bu claim
+                actively misleading; iOS/Android user QR tarayınca app
+                store'da bulamaz. Kullanıcı bilgilendirilmiş kararla
+                override istedi; gelecekte scope'a Buaze mobile app
+                eklenmediği sürece bu claim KVKK + tüketici haklarını
+                ihlal eder. Future scope: ya gerçek mobile app geliştir
+                ya da Stage 44 compliance-safe variation'a geri dön. */}
             <div className="flex items-center gap-4 rounded-[18px] border border-white/10 bg-white/[0.03] p-4">
               <div
                 className="flex h-[88px] w-[88px] flex-shrink-0 items-center justify-center rounded-xl bg-white"
@@ -298,7 +310,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
               </div>
               <div>
                 <span className="pulse-eyebrow block text-[#C6F24E]">
-                  {isTr ? 'TELEFONDA · MOBİL UYUMLU' : 'ON YOUR PHONE · MOBILE READY'}
+                  IOS · ANDROID
                 </span>
                 <h5
                   className="mt-1 text-[18px] text-[#F6F4EF]"
@@ -312,8 +324,8 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 </h5>
                 <p className="mt-1 text-[11.5px] leading-[1.45] text-white/55">
                   {isTr
-                    ? 'Tara, panele anında ulaş. Mobil tarayıcıdan tam erişim.'
-                    : 'Scan, hop into the panel. Full access from mobile browser.'}
+                    ? 'Telefonunla tara, mobil uygulamayı indir.'
+                    : 'Scan with your phone to install.'}
                 </p>
               </div>
             </div>
@@ -355,12 +367,28 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
           editorial newsletter card ile değiştirildi). Duplicate
           NewsletterSignup eliminate edildi. */}
 
-      {/* Link grid */}
+      {/* Stage 53 §38.134 — Single responsive link grid (duplicate
+          brand block ELIMINE). Stage 44 §38.125 + Stage 49 §38.131
+          paterninde brand block hem mobile (lg:hidden accordion
+          wrapper) hem desktop (hidden lg:grid container) section'ında
+          ayrı ayrı render ediliyordu — kullanıcı bunu "iki footer"
+          olarak gördü (AskUserQuestion #1). Yeni yapı: tek responsive
+          grid (mobile stack 1-col, desktop 1.5fr+4col grid). Brand
+          block mobile'da kart-vari görünür (rounded + border + bg),
+          lg+'da clean inline (lg:rounded-none lg:border-0
+          lg:bg-transparent lg:p-0). Mobile accordion KALDIRILDI —
+          HANDOFF mobile spec yok, link list stack scroll ediliyor
+          (4 col × ~5-7 link = ~20-28 link); HANDOFF spec birebir
+          intent. Mobile UX trade-off: kullanıcı kabul (HANDOFF 1:1
+          override). */}
       <div className="px-4 py-10 sm:px-10 sm:py-14">
         <div className="mx-auto max-w-[1240px]">
-          {/* Mobile + tablet footer — large tap targets, no cramped two-column links. */}
-          <div className="space-y-3 lg:hidden">
-            <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5">
+          <div className="grid grid-cols-1 gap-8 sm:gap-10 lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:gap-8">
+            {/* Brand block — single render: mobile = full-width card
+                styling, desktop = clean inline col-1. Trust badge +
+                social icons row (responsive icon size: mobile 48px
+                grid for tap target, desktop 40px inline row). */}
+            <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
               <Link href={base} className="inline-flex items-center gap-2 group">
                 <BuazeLogo
                   size={32}
@@ -375,13 +403,15 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                   buaze<span className="text-[#C6F24E]">.</span>
                 </span>
               </Link>
-              <p className="mt-4 text-[13px] leading-[1.7] text-[#A3A3A3]">
+              <p className="mt-4 text-[13px] leading-[1.7] text-[#A3A3A3] lg:max-w-[280px]">
                 {t.siteDescription ||
                   (isTr
                     ? 'İşletmeler için dijital itibar platformu. QR ile topla, tek panelden yönet, gerçek zamanlı izle.'
                     : 'Digital reputation platform for businesses. Collect via QR, manage from one panel, track in real time.')}
               </p>
-              <div className="mt-5 flex flex-wrap items-center gap-2">
+              {/* Trust micro-row — appears above social on mobile,
+                  below on desktop (mobile cohesion priority). */}
+              <div className="mt-5 flex flex-wrap items-center gap-2 lg:order-3 lg:mt-5">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-2.5 py-1">
                   <span className="text-[#C6F24E]">★</span>
                   <span className="pulse-eyebrow text-[#C6F24E]">
@@ -389,81 +419,10 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                   </span>
                 </span>
               </div>
-              <div className="mt-5 grid grid-cols-4 gap-2">
-                {SOCIAL.map((s) => (
-                  <a
-                    key={s.label}
-                    href={s.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={s.label}
-                    className="group/social social-pill flex min-h-[48px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white transition-all duration-200 hover:bg-white/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
-                    style={{ ['--brand' as string]: s.brand }}
-                  >
-                    <span className="block h-5 w-5 transition-colors duration-200 group-hover/social:text-[var(--brand)]">
-                      {s.icon}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {cols.map((col) => (
-              <details
-                key={col.title}
-                className="group rounded-[20px] border border-white/10 bg-white/[0.04] open:bg-white/[0.06]"
-              >
-                <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 [&::-webkit-details-marker]:hidden">
-                  <span className="pulse-eyebrow text-[#C6F24E]">{col.title}</span>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-[20px] leading-none text-white transition-transform group-open:rotate-45">
-                    +
-                  </span>
-                </summary>
-                <ul className="grid gap-1 px-4 pb-4">
-                  {col.items.map((item) => (
-                    <li key={item.href + item.label}>
-                      <Link
-                        href={item.href}
-                        className="flex min-h-[44px] items-center justify-between gap-3 rounded-2xl px-3 text-[14px] text-[#D4D4D4] transition-colors hover:bg-white/10 hover:text-white"
-                      >
-                        <span>{item.label}</span>
-                        {item.badge && (
-                          <span className="pulse-eyebrow shrink-0 rounded-full bg-[#C6F24E] px-1.5 py-0.5 text-[#0A0A0A]">
-                            {item.badge}
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            ))}
-          </div>
-
-          <div className="hidden grid-cols-2 gap-8 sm:gap-10 lg:grid lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:gap-8">
-            {/* Brand */}
-            <div className="col-span-2 lg:col-span-1">
-              <Link href={base} className="inline-flex items-center gap-2 group">
-                <BuazeLogo
-                  size={32}
-                  variant="on-dark"
-                  imageUrl={s.logoUrl}
-                  className="opacity-90 transition-opacity group-hover:opacity-100"
-                />
-                <span
-                  className="text-[18px] font-medium tracking-[-0.03em] text-white"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  buaze<span className="text-[#C6F24E]">.</span>
-                </span>
-              </Link>
-              <p className="mt-4 max-w-[280px] text-[13px] leading-[1.7] text-[#A3A3A3]">
-                {t.siteDescription ||
-                  (isTr
-                    ? 'İşletmeler için dijital itibar platformu. QR ile topla, tek panelden yönet, gerçek zamanlı izle.'
-                    : 'Digital reputation platform for businesses. Collect via QR, manage from one panel, track in real time.')}
-              </p>
-              <div className="mt-5 flex gap-2">
+              {/* Social icons — mobile: 4-col grid 48px tap targets;
+                  desktop: inline 40px row. Single render, responsive
+                  via Tailwind class compose. */}
+              <div className="mt-5 grid grid-cols-4 gap-2 lg:order-2 lg:flex lg:gap-2">
                 {SOCIAL.map((s) => (
                   <a
                     key={s.label}
@@ -472,26 +431,21 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                     rel="noopener noreferrer"
                     aria-label={s.label}
                     title={s.label}
-                    className="group/social flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:border-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                    className="group/social social-pill flex min-h-[48px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white transition-all duration-200 hover:bg-white/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A] lg:h-10 lg:min-h-0 lg:w-10 lg:rounded-xl lg:hover:-translate-y-0.5 lg:hover:border-white/20"
                     style={{ ['--brand' as string]: s.brand }}
                   >
-                    <span className="block h-[18px] w-[18px] transition-colors duration-200 group-hover/social:text-[var(--brand)]">
+                    <span className="block h-5 w-5 transition-colors duration-200 group-hover/social:text-[var(--brand)] lg:h-[18px] lg:w-[18px]">
                       {s.icon}
                     </span>
                   </a>
                 ))}
               </div>
-              {/* Trust micro-row */}
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-2.5 py-1">
-                  <span className="text-[#C6F24E]">★</span>
-                  <span className="pulse-eyebrow text-[#C6F24E]">
-                    {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
-                  </span>
-                </span>
-              </div>
             </div>
 
+            {/* 4 link cols — mobile stack 1-col, desktop col-1 each.
+                Accordion KALDIRILDI (HANDOFF mobile spec yok). Link
+                list mobile'da scroll edilir; ~20-28 link toplam.
+                HANDOFF spec birebir uygulama. */}
             {cols.map((col) => (
               <div key={col.title}>
                 <h4 className="pulse-eyebrow mb-4 text-[#C6F24E]">{col.title}</h4>
@@ -595,12 +549,14 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
 }
 
 /**
- * Stage 44 §38.125 — Footer status tile (3-up brand manifesto band).
+ * Stage 53 §38.134 — Footer status tile (3-up HANDOFF metric band).
  *
  * HANDOFF premium-footer.jsx StatusTile (line 270-292) visual yapısı +
- * Buaze fake-data compliance disipline (CLAUDE.md §35.8 + §35.10 +
- * §19.1.1). HANDOFF "API 99.99%" / "Pulse AI 0.74s" / "Reviews 14,2/sn"
- * fake metric'leri yerine static-but-true brand claim'ler:
+ * fake metric value'ları birebir restore edildi (API 99.99% / Pulse AI
+ * 0.74s / 14,2 yorum/sn). hint param Stage 44 §38.125'te
+ * compliance-safe variation için eklenmişti, HANDOFF spec'te olmadığı
+ * için kaldırıldı.
+ *
  *  - tone='ok' → emerald pulse dot (#10B981)
  *  - tone='lime' → lime accent value + lime pulse dot
  */
@@ -608,12 +564,10 @@ function FooterStatusTile({
   label,
   value,
   tone = 'ok',
-  hint,
 }: {
   label: string;
   value: string;
   tone?: 'ok' | 'lime';
-  hint?: string;
 }) {
   const dotColor = tone === 'lime' ? '#C6F24E' : '#10B981';
   const valueColor = tone === 'lime' ? '#C6F24E' : '#F6F4EF';
@@ -639,11 +593,6 @@ function FooterStatusTile({
       >
         {value}
       </div>
-      {hint && (
-        <span className="mt-1 block text-[10.5px] leading-[1.3] text-white/40">
-          {hint}
-        </span>
-      )}
     </div>
   );
 }
