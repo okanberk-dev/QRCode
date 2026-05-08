@@ -89,7 +89,10 @@ export async function GET(req: NextRequest) {
 
       const usage = await collectUsage(user.restaurants[0]?.id);
       const userLocale: 'tr' | 'en' = user.locale === 'en' ? 'en' : 'tr';
-      const upgradeUrl = `${appUrl}/${userLocale}/dashboard/billing`;
+      // CLAUDE.md §38.132 — /dashboard/billing route YOK; account tab
+      // section deeplink (CLAUDE.md §38.51 SettingsLayout 7 tab — billing
+      // tab profile/security/notifications/ai/billing/team/legal).
+      const upgradeUrl = `${appUrl}/${userLocale}/dashboard/account?section=billing`;
 
       try {
         const ok = await sendTrialEndingEmail({
