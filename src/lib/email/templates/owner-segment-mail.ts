@@ -23,7 +23,14 @@ export interface OwnerSegmentMailParams {
   body: string;
   /** Hitap için (opsiyonel; varsa "Merhaba Ali," şeklinde greeting). */
   ownerName?: string | null;
-  /** Footer'da görünür panel link (`https://buaze.com/dashboard`). */
+  /**
+   * Footer'da görünür panel link override (full URL).
+   * CLAUDE.md §38.132 — Boşsa locale-aware
+   * `${NEXT_PUBLIC_APP_URL}/${locale}/dashboard` inşa edilir.
+   * Caller artık manuel `/dashboard` suffix vermez (eski caller davranışı:
+   * `process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com/dashboard'` →
+   * locale prefix yoktu, dashboard route 404'tu).
+   */
   appUrl?: string;
 }
 
@@ -47,7 +54,12 @@ export function renderOwnerSegmentMail(
 
   const safeBody = escapeHtml(params.body).replace(/\r?\n/g, '<br />');
   const safeGreeting = escapeHtml(greeting);
-  const appUrl = params.appUrl || 'https://buaze.com/dashboard';
+  // CLAUDE.md §38.132 — Locale-aware dashboard URL inşası.
+  // appUrl override edilmemişse env-aware base + recipient locale +
+  // `/dashboard` suffix (Next.js `/[locale]/dashboard` route'una uygun).
+  const baseAppUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') || 'https://buaze.com';
+  const appUrl = params.appUrl || `${baseAppUrl}/${isTr ? 'tr' : 'en'}/dashboard`;
   const safeAppUrl = escapeHtml(appUrl);
 
   const eyebrow = isTr ? 'BUAZE EKİBİ' : 'BUAZE TEAM';
