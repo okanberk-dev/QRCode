@@ -2,11 +2,9 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import type { ReactElement } from 'react';
 import type { Locale } from '@/lib/translations';
-import BuazeLogo from './BuazeLogo';
 import NewsletterSignup from './NewsletterSignup';
 import MobileBottomNav from './MobileBottomNav';
 import FooterLiveTicker from './FooterLiveTicker';
-import { getSiteSettings } from '@/lib/site-settings';
 import { verifyJwt } from '@/lib/auth';
 
 interface MarketingFooterProps {
@@ -70,9 +68,8 @@ const SOCIAL: SocialLink[] = [
  * ECG divider + newsletter capture + 4-col link grid + live "all systems
  * operational" dot on the bottom rail.
  */
-export default async function MarketingFooter({ locale, t }: MarketingFooterProps) {
+export default async function MarketingFooter({ locale }: MarketingFooterProps) {
   const base = `/${locale}`;
-  const s = await getSiteSettings();
   const isTr = locale === 'tr';
 
   // Determine login state for the mobile bottom nav center CTA
@@ -217,6 +214,41 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 : 'One QR. One review. One win.'}
             </p>
 
+            {/* Stage 56 §38.137 — Brand identity duplicate elimination.
+                Eski yapıda brand block hem üstte (huge anchor) hem altta
+                (logo + tagline + description + trust + social) iki kez
+                render ediliyordu — kullanıcının "iki footer gibi" şikayeti
+                buradan geliyordu. Trust badge + social icons üst brand
+                block'a entegre edildi (kullanıcı kararı AskUserQuestion
+                "Üst brand block'una entegre"); alt brand block tamamen
+                silindi. */}
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-2.5 py-1">
+                <span className="text-[#C6F24E]">★</span>
+                <span className="pulse-eyebrow text-[#C6F24E]">
+                  {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
+                </span>
+              </span>
+              <div className="flex gap-2">
+                {SOCIAL.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.label}
+                    title={social.label}
+                    className="group/social social-pill flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                    style={{ ['--brand' as string]: social.brand }}
+                  >
+                    <span className="block h-[18px] w-[18px] transition-colors duration-200 group-hover/social:text-[var(--brand)]">
+                      {social.icon}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+
             {/* Stage 55 §38.136 — Stage 54 §38.135 HANDOFF fake metric
                 rollback. Stage 44 §38.125 compliance-safe variation
                 restore: 24/7 ops + AI yanıt latency yaklaşık değer +
@@ -224,7 +256,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 (API 99.99% / 0.74s / 14,2 yorum-saniye) kaldırıldı —
                 gerçek monitoring backend ile inject edilmediği sürece
                 misleading claim riski taşıyordu. */}
-            <div className="mt-10 grid max-w-[560px] grid-cols-3 gap-3">
+            <div className="mt-8 grid max-w-[560px] grid-cols-3 gap-3">
               <FooterStatusTile
                 label={isTr ? 'OPS' : 'OPS'}
                 value="24/7"
@@ -367,82 +399,31 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
           editorial newsletter card ile değiştirildi). Duplicate
           NewsletterSignup eliminate edildi. */}
 
-      {/* Stage 55 §38.136 — Mobile accordion restore (Stage 54 §38.135
-          mobile UX gerileme fix). Brand block hâlâ tek render
-          (kullanıcının "iki footer" şikayeti çözümü intact §38.135);
-          link cols için mobile accordion + desktop grid responsive
-          split restore (Stage 49 §38.131 paterni reuse). Mobile'da
-          44-56px tap target accordion; desktop'ta açık 4-col grid.
-          Link cols 2 kez render (mobile + desktop) ama her viewport'ta
-          sadece biri visible — DOM-level "iki footer" duplicate DEĞİL
-          (brand block tek render + link cols responsive split). */}
+      {/* Stage 56 §38.137 — Brand block duplicate elimination
+          (kullanıcı raporu: "footer hala birebir değil 2 ayrı footer
+          gibi gözüküyor"). Eski yapıda brand identity (logo + buaze.
+          wordmark + description + trust badge + social icons) hem üst
+          block'ta (huge editorial anchor) hem alt block'ta (kart-vari
+          repeat) iki kez render ediliyordu — visual "iki footer" hissi
+          buradan geliyordu. Kullanıcı kararı (AskUserQuestion "Üst
+          brand block'una entegre"): trust badge + social icons üst
+          block'a taşındı, alt brand block tamamen silindi.
+
+          Alt blok artık SADECE link grid + bottom rail içerir:
+          - Desktop 4-col grid (lg:grid lg:grid-cols-4)
+          - Mobile accordion (lg:hidden) — Stage 49 §38.131 paterni
+            intact (44-56px tap target, <details> native semantic,
+            group-open chevron rotate)
+
+          Link cols hâlâ 2 kez render (desktop grid + mobile accordion)
+          ama her viewport'ta sadece biri visible — DOM-level duplicate
+          DEĞİL, sadece responsive split. */}
       <div className="px-4 py-10 sm:px-10 sm:py-14">
         <div className="mx-auto max-w-[1240px]">
-          {/* Tek grid: brand col-1 lg+, link cols col 2-5 lg+ (mobile
-              link cols hidden — accordion ayrı section'da). */}
-          <div className="grid grid-cols-1 gap-8 sm:gap-10 lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:gap-8">
-            {/* Brand block — single render: mobile = full-width card
-                styling, desktop = clean inline col-1. Trust badge +
-                social icons row (responsive icon size: mobile 48px
-                grid for tap target, desktop 40px inline row). */}
-            <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0">
-              <Link href={base} className="inline-flex items-center gap-2 group">
-                <BuazeLogo
-                  size={32}
-                  variant="on-dark"
-                  imageUrl={s.logoUrl}
-                  className="opacity-90 transition-opacity group-hover:opacity-100"
-                />
-                <span
-                  className="text-[18px] font-medium tracking-[-0.03em] text-white"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
-                  buaze<span className="text-[#C6F24E]">.</span>
-                </span>
-              </Link>
-              <p className="mt-4 text-[13px] leading-[1.7] text-[#A3A3A3] lg:max-w-[280px]">
-                {t.siteDescription ||
-                  (isTr
-                    ? 'İşletmeler için dijital itibar platformu. QR ile topla, tek panelden yönet, gerçek zamanlı izle.'
-                    : 'Digital reputation platform for businesses. Collect via QR, manage from one panel, track in real time.')}
-              </p>
-              {/* Trust micro-row — appears above social on mobile,
-                  below on desktop (mobile cohesion priority). */}
-              <div className="mt-5 flex flex-wrap items-center gap-2 lg:order-3 lg:mt-5">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C6F24E]/40 bg-[#C6F24E]/10 px-2.5 py-1">
-                  <span className="text-[#C6F24E]">★</span>
-                  <span className="pulse-eyebrow text-[#C6F24E]">
-                    {isTr ? '2.400+ İŞLETME' : '2,400+ BUSINESSES'}
-                  </span>
-                </span>
-              </div>
-              {/* Social icons — mobile: 4-col grid 48px tap targets;
-                  desktop: inline 40px row. Single render, responsive
-                  via Tailwind class compose. */}
-              <div className="mt-5 grid grid-cols-4 gap-2 lg:order-2 lg:flex lg:gap-2">
-                {SOCIAL.map((s) => (
-                  <a
-                    key={s.label}
-                    href={s.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={s.label}
-                    title={s.label}
-                    className="group/social social-pill flex min-h-[48px] items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-white transition-all duration-200 hover:bg-white/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A] lg:h-10 lg:min-h-0 lg:w-10 lg:rounded-xl lg:hover:-translate-y-0.5 lg:hover:border-white/20"
-                    style={{ ['--brand' as string]: s.brand }}
-                  >
-                    <span className="block h-5 w-5 transition-colors duration-200 group-hover/social:text-[var(--brand)] lg:h-[18px] lg:w-[18px]">
-                      {s.icon}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* 4 link cols — desktop only (lg:block); mobile'da
-                accordion ayrı section'da render edilir. */}
+          {/* Desktop: 4-col link grid (brand block silindi) */}
+          <div className="hidden lg:grid lg:grid-cols-4 lg:gap-8">
             {cols.map((col) => (
-              <div key={col.title} className="hidden lg:block">
+              <div key={col.title}>
                 <h4 className="pulse-eyebrow mb-4 text-[#C6F24E]">{col.title}</h4>
                 <ul className="space-y-2.5">
                   {col.items.map((item) => (
@@ -465,14 +446,14 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
             ))}
           </div>
 
-          {/* Stage 55 §38.136 — Mobile accordion link cols (lg:hidden).
-              Stage 49 §38.131 paterni reuse: 44-56px tap target,
-              <details> native semantic, group-open chevron rotate.
-              Brand block tek render (intact); link cols bu mobile
-              section'da + yukarıdaki desktop grid'de iki kez render
-              ediliyor — her viewport'ta sadece biri visible (DOM-level
-              "iki footer" duplicate DEĞİL). */}
-          <div className="mt-8 space-y-3 lg:hidden">
+          {/* Mobile accordion (lg:hidden) — Stage 49 §38.131 paterni
+              reuse: 44-56px tap target, <details> native semantic,
+              group-open chevron rotate. Brand block silindiği için
+              accordion artık footer'ın sadece içerik yapısını
+              taşıyor (üst block'taki anchor + tagline + status +
+              ticker + sosyal/trust + newsletter + scan QR mobile'da
+              kart-vari görünür). */}
+          <div className="space-y-3 lg:hidden">
             {cols.map((col) => (
               <details
                 key={col.title}
