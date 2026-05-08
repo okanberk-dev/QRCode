@@ -13,6 +13,9 @@ import {
 } from '@/components/ui';
 import AnalyticsFilterBar from '@/components/dashboard/analytics/AnalyticsFilterBar';
 import { HeatmapDayHour } from '@/components/dashboard/analytics/HeatmapDayHour';
+// §38.158 — Stage 78: PulseTrendChart (14 haftalık trend) kullanıcı talebiyle
+// kaldırıldı ("analitik sayfasındaki 14 günlük analitik kısmını da kaldır").
+// Aşağıdaki §38.107 + §38.50 yorum satırları historical context için intact.
 // §38.107 — InteractionTrendChart + WeeklyTrendChart component'leri silindi
 // (CLAUDE.md §38.34 + §34.5 dead code cleanup). InteractionTrendPoint type
 // inline taşındı (KPI sparkline için interactionData hâlâ compute ediliyor;
@@ -28,7 +31,10 @@ interface InteractionTrendPoint {
   /** Yönlendirme — rating ≥ 4 + platform set. Funnel: reviews ⊇ redirects. */
   redirects: number;
 }
-import { PulseTrendChart } from '@/components/dashboard/analytics/PulseTrendChart';
+// §38.158 — PulseTrendChart import kaldırıldı (14 haftalık trend section silindi).
+// Component dosyası `src/components/dashboard/analytics/PulseTrendChart.tsx`
+// orphan kaldı — 0 callsite. CLAUDE.md §34 silmiş feature paterni intact;
+// gelecek başka surface'tan reuse ihtiyacı çıkarsa restore edilir.
 import { AnalyticsKpiGrid } from '@/components/dashboard/analytics/AnalyticsKpiGrid';
 import { AiInsightsCard } from '@/components/dashboard/analytics/AiInsightsCard';
 import { ChannelDistributionMini } from '@/components/dashboard/analytics/ChannelDistributionMini';
@@ -45,7 +51,10 @@ import { TopMentionsPolarity } from '@/components/dashboard/analytics/TopMention
 import { extractThemes } from '@/lib/analytics-themes';
 import { extractStructuredInsight } from '@/lib/weekly-structured-insight';
 import { calculateNPS } from '@/lib/analytics-nps';
-import { buildWeeklyTrend, getWeeklyTrendWindow } from '@/lib/analytics-weekly-trend';
+// §38.158 — buildWeeklyTrend + getWeeklyTrendWindow import kaldırıldı
+// (PulseTrendChart 14-haftalık görünüm sadece bu helper'ları tüketiyordu).
+// Helper dosyası lib/analytics-weekly-trend.ts orphan kaldı — gelecek
+// dashboard veya rapor surface'inde reuse ihtiyacı çıkarsa restore edilir.
 import { buildPlatformDailyTrend } from '@/lib/analytics-platform-trend';
 
 // Note: InteractionTrendChart taşır 'use client' direktifini — Next.js 15
@@ -224,7 +233,9 @@ async function renderAnalyticsPage({
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
-  const trendWindow = getWeeklyTrendWindow(new Date(now), 14);
+  // §38.158 — `trendWindow` (14-haftalık ISO week range) PulseTrendChart
+  // ile birlikte silindi. KPI / heatmap / sentiment compute'ları
+  // `windowStart`/`windowEnd` kullanmaya devam eder.
 
   // Apply platform + branch filters to all queries via shared base WHERE.
   const baseWhere = {
@@ -254,7 +265,6 @@ async function renderAnalyticsPage({
     scansWindowCount,
     scansPrevWindowCount,
     scansWindowDaily,
-    feedbacks98d,
   ] = await prisma.$transaction([
     // Window feedback'leri — multi-purpose select: hour bucket, aspect avg,
     // theme analysis (comment), response time (replies). Tek query
@@ -334,12 +344,10 @@ async function renderAnalyticsPage({
       where: { ...scanWhere, createdAt: { gte: windowStart, lte: windowEnd } },
       select: { createdAt: true },
     }),
-    // 14 haftalık trend: current ISO week dahil 14 bucket. Empty week'ler
-    // helper'da null rating üreterek chart line gap olarak görünür.
-    prisma.feedback.findMany({
-      where: { ...baseWhere, createdAt: { gte: trendWindow.start, lt: trendWindow.end } },
-      select: { rating: true, createdAt: true },
-    }),
+    // §38.158 — 14 haftalık trend query (`feedbacks98d`) PulseTrendChart
+    // ile birlikte silindi. Yeni surface'ler için tekrar gerekirse
+    // `getWeeklyTrendWindow(now, N)` + `findMany({ rating, createdAt })`
+    // paterni reuse edilir (lib/analytics-weekly-trend.ts intact).
   ]);
 
   // Distinct branches for filter dropdown (across owned restaurants, not
@@ -525,11 +533,9 @@ async function renderAnalyticsPage({
     }
   }
 
-  const weeklyTrend = buildWeeklyTrend(feedbacks98d, {
-    now: new Date(now),
-    weeks: 14,
-    locale,
-  });
+  // §38.158 — `weeklyTrend` compute PulseTrendChart ile birlikte silindi.
+  // KPI delta + main chart 30-day stacked area + sentiment donut hâlâ
+  // `feedbacksWindow` üzerinden compute edilir (bu PR'da etkilenmedi).
 
   // Stage 66 §38.147 — HANDOFF AnalyticsDesktop main chart 30-day stacked
   // area data. Saf helper feedbacksWindow'dan daily platform breakdown
@@ -827,13 +833,14 @@ async function renderAnalyticsPage({
           paterni intact). */}
       <MainTrendChart points={platformTrendPoints} isTr={isTr} />
 
-      {/* §38.50 — PUAN VE HACİM TRENDİ 3-series simultaneous (tasarım birebir).
-          Toggle mode silindi — line + bars + target birlikte render. */}
-      <PulseTrendChart
-        weeks={weeklyTrend}
-        targetRating={resolvedTargetRating}
-        isTr={isTr}
-      />
+      {/* §38.158 — PUAN VE HACİM TRENDİ (PulseTrendChart 14 haftalık)
+          kullanıcı talebi ile kaldırıldı ("analitik sayfasındaki 14 günlük
+          analitik kısmını da kaldır"). MainTrendChart 30-day daily stacked
+          area + KPI 5-card delta + SentimentDonut + TopMentionsPolarity
+          intact — analitik akışı sade tek-chart + KPI + breakdown ile
+          devam eder. PulseTrendChart component dosyası orphan kaldı
+          (CLAUDE.md §34 paterni — gelecek başka surface'ten reuse
+          ihtiyacı çıkarsa restore edilir). */}
 
       {/* Stage 66 §38.147 — HANDOFF AnalyticsDesktop bottom 3-up grid
           (tasarım birebir parity). Sol KANAL DAĞILIMI (1.4fr) + Orta
