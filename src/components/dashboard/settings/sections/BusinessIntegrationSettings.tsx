@@ -19,7 +19,7 @@ import {
   Field,
   IntegrationStatusBadge,
   PlatformChip,
-  Toggle,
+  APSwitch,
   type IntegrationStatusKind,
   type PlatformId,
 } from "@/components/ui";
@@ -245,7 +245,7 @@ function formatRelative(iso: string, locale: "tr" | "en"): string {
  * kartı (Google / Yemeksepeti / Getir / Trendyol / Tripadvisor / Airbnb).
  * Alt kısım: 4 sosyal medya kartı (Instagram / Facebook / WhatsApp / Reservation).
  *
- * Her kart: PlatformChip + IntegrationStatusBadge + URL input + Enable Toggle
+ * Her kart: PlatformChip + IntegrationStatusBadge + URL input + Enable APSwitch
  * + "Test et" button + "Kaldır" (URL clear).
  *
  * Quality control (CLAUDE.md §19.4): `checkProviderUrl` 2-katmanlı sonuç döner.
@@ -605,7 +605,7 @@ export function BusinessIntegrationSettings({
                     fieldQuality[def.urlKey]?.result.severity === "error"
                   }
                   toggle={
-                    <Toggle
+                    <APSwitch
                       checked={enabled}
                       onChange={(next) => set(def.enabledKey, next as never)}
                       ariaLabel={`${def.label} aktif`}

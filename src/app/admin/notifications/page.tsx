@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Bell, Loader2, Mail } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
-import { AlertBanner, PageHeader, Toggle } from '@/components/ui';
+import { AlertBanner, PageHeader, APSwitch } from '@/components/ui';
 
 interface Prefs {
   lowRatingEmail: boolean;
@@ -160,7 +160,7 @@ function AdminNotificationsBody() {
                       <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">{row.desc[isTr ? 'tr' : 'en']}</p>
                     </div>
                   </div>
-                  <Toggle
+                  <APSwitch
                     checked={on}
                     onChange={() => toggle(row.key)}
                     loading={isPending}

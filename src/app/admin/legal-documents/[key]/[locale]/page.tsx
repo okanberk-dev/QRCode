@@ -18,7 +18,7 @@ import {
   Field,
   Modal,
   PageHeader,
-  Toggle,
+  APSwitch,
 } from '@/components/ui';
 import { renderLegalContent } from '@/lib/legal/render';
 
@@ -388,7 +388,7 @@ export default function LegalDocumentEditorPage({
                     Pasifleştirilirse public surface&apos;lerde gizlenir.
                   </div>
                 </div>
-                <Toggle checked={isActive} onChange={setIsActive} />
+                <APSwitch checked={isActive} onChange={setIsActive} />
               </div>
               <Field label="Yürürlük tarihi" hint="Public sayfada 'yürürlük: ...' olarak görünür.">
                 <input

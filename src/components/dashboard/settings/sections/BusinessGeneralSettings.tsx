@@ -7,7 +7,7 @@ import {
   BusinessStatusBadge,
   Field,
   PlatformChip,
-  Toggle,
+  APSwitch,
   type PlatformId,
 } from "@/components/ui";
 import { SECTORS, getSectorByLabel } from "@/lib/sectors";
@@ -438,7 +438,7 @@ export function BusinessGeneralSettings({
         }
       >
         <div className="flex items-center gap-3">
-          <Toggle
+          <APSwitch
             checked={form.isActive}
             onChange={(next) => set("isActive", next)}
             ariaLabel="İşletme aktif"

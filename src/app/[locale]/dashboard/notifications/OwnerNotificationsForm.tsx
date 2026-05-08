@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, Loader2, Mail } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
-import { AlertBanner, Toggle } from '@/components/ui';
+import { AlertBanner, APSwitch } from '@/components/ui';
 
 interface Prefs {
   lowRatingEmail: boolean;
@@ -195,7 +195,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
                     </p>
                   </div>
                 </div>
-                <Toggle
+                <APSwitch
                   checked={on}
                   onChange={() => toggle(row.key)}
                   loading={isPending}

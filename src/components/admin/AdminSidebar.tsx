@@ -313,14 +313,6 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
         icon: Mail,
         label: locale === 'en' ? 'Mail Preview (dev)' : 'Mail Önizleme (dev)',
       });
-      // Stage 68 §38.149 — Panel UI v2 showcase (24 AP* primitive canlı demo).
-      // CLAUDE.md §38.146 PR0 base sonrası dev-only erişim. Production'da
-      // sidebar'da görünmez; mevcut callsite'lar PR1-5'te kademeli migrate.
-      mailGroup?.children.push({
-        href: '/admin/dev/panel-ui',
-        icon: Sparkles,
-        label: locale === 'en' ? 'Panel UI v2 (dev)' : 'Panel UI v2 (dev)',
-      });
     }
   }
 
