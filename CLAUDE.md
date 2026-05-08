@@ -18482,3 +18482,225 @@ bottom rail.
 
 ---
 
+### 38.138 2026-05-08 — Stage 57 owner panel platform bağlantıları logo + sektör-bazlı filtering (workspace page client island)
+
+§38.45 Stage A1 + §38.52 Stage 10 + §38.117 Stage 37 platform
+infrastructure üstüne owner panel `/dashboard/platforms` workspace
+page'inde 2-fix bundle: (a) platform kartlarında initials text →
+mevcut `/public/platforms/{id}.svg` SVG envanteri (PlatformChip
+primitive paterni reuse), (b) restoran seçici + sektör-bazlı
+otomatik filtreleme + "tüm platformları göster" override (per-
+restaurant settings'te §38.52'den beri aktif olan `getSectorPlatforms`
+helper'ı workspace level'a yayıldı).
+
+**Audit önemli bulgu** — kullanıcı "internetten orijinal logoları
+ekle" dedi ama 3 paralel keşif sonucu **tüm 14 aktif platform için
+SVG zaten `/public/platforms/` altında mevcut** (yandex/yelp dahil
+— audit Agent #1'in "yok" raporu false positive idi, manuel `ls`
+ile doğrulandı 23 SVG). **Hiç yeni SVG yaratılmadı**: bu PR sadece
+mevcut envanteri reuse eder + PlatformChip paterni workspace page'e
+taşır. Eksik logo durumunda fallback brand-color + initials (logo
+replikası DEĞİL, generic UI styling — Pulse §11 paterni).
+
+**4 kullanıcı kararı (AskUserQuestion onaylı, hepsi Recommended)**:
+1. **Filter UX**: Restoran seçici + otomatik sektör filtresi (workspace
+   selector dropdown + spesifik restoran seçilince
+   `detectSector(category)` ile otomatik filter + "Tüm platformları
+   göster" override toggle).
+2. **Default view**: Tüm restoranlar + tüm platformlar (workspace
+   özet intact; spesifik restoran seçilirse filter aktif olur).
+3. **Logo approach**: Mevcut 24 SVG + eksikler için basit geometrik
+   SVG (sonuç olarak yeni SVG gerekmedi — tüm 14 aktif platform
+   zaten kapsanmış).
+4. **Scope**: Tek consolidated PR (CLAUDE.md §21.22 stacked YOK).
+
+**2 fix bundle**:
+
+1. **`PlatformsClient.tsx` yeni client island** (`src/app/[locale]/
+   dashboard/platforms/_components/`, ~390 satır):
+   - `'use client'` — useState (selectedRestaurantId + showAllPlatforms)
+     + useMemo (filteredPlatforms)
+   - **Logo render**: `getPlatformLogoSrc(platform)` saf helper —
+     `uiPlatformId` varsa `/platforms/{id}.svg` (trendyol/trendyol_go
+     ikisi de `trendyol-go.svg`'e map, PlatformChip paterni reuse);
+     `logoFile` varsa `/platforms/{logoFile}.svg` (instagram/facebook/
+     whatsapp social platforms); hiçbiri yoksa null → brand-color +
+     initials fallback (`bz-h-tight` styled monogram).
+   - **Filter logic**: `selectedRestaurantId === 'all' ||
+     showAllPlatforms || !detectedSector` → tüm platformlar; spesifik
+     restoran + sektör filter aktif → review category platformları
+     `SECTOR_PLATFORMS[detectedSector]` set'inde olanlarla sınırlı,
+     social/message/api platformları her zaman görünür (sector-
+     agnostic — Pulse §5.1 disipline).
+   - **UI elementleri**:
+     - Restaurant dropdown ("Tüm işletmeler (N)" + her restoran)
+     - Show-all checkbox (sadece spesifik restoran seçilince görünür)
+     - Sektör hint banner (lime-soft `#F7FAEF` + Layers icon —
+       "Bu işletme için {sectorLabel} sektörüne uygun platformlar
+       gösteriliyor. Sosyal medya ve mesajlaşma platformları her
+       sektör için aktiftir.")
+     - Platform card grid (mevcut server-rendered card render
+       logic'i client'a taşındı — kart yapısı Pulse §11 + §38.45
+       paterni intact)
+     - Empty state (sektör filtresinde 0 platform → "Tüm platformları
+       göster" CTA)
+     - Hidden indicator + "Hepsini göster" inline link
+     - Workspace tip card (default view'da görünür: "Bir işletme
+       seç → sektörüne uygun platformlar otomatik görünür.")
+   - **A11y**: `role="group"` filter bar + `aria-label` filter +
+     `aria-label` select dropdown + `aria-hidden` decorative initials
+     fallback.
+   - **i18n**: TR/EN parite (`SECTOR_LABELS` map 10 sektör, status
+     labels, CTA copy).
+
+2. **Server page edit** (`src/app/[locale]/dashboard/platforms/
+   page.tsx`, ~341 satır final, ~100 satır net azalma):
+   - Imports: `Settings` icon + `Badge` primitive removed (artık
+     PlatformsClient içinde). `PlatformsClient` + tipler eklendi.
+   - `RestaurantPlatformRow` type'ına `category: string` eklendi.
+   - `prisma.restaurant.findMany` select'ine `category: true`
+     eklendi (CLAUDE.md §14.1 defensive select paterni).
+   - **KPI grid + bilgi banner + kategori chip filter intact** —
+     workspace-level metrikler (totalConnected/pendingIssues/
+     totalReviews/activeCategoryCount) filter'dan etkilenmez (tüm
+     restoranlar üstünden hesaplanır, restoran selector sadece
+     görünen platform listesini etkiler — cleaner UX).
+   - Eski platform card grid bloğu (115 satır) silindi → tek
+     `<PlatformsClient locale={locale} restaurants={...}
+     platformSummaries={...} />` mount.
+   - `bz-card-soft` footer banner intact (İşletme listesi cross-link).
+
+**Per-restaurant settings parity** (cross-check, no edit):
+- `BusinessIntegrationSettings.tsx:28` `getSectorPlatforms` import
+  intact, line 314 `useMemo` aktif (CLAUDE.md §38.52 paterni). Sektör
+  filter zaten per-restaurant'ta vardı; bu PR aynı paterni workspace
+  level'a yayar — drift sıfır.
+
+**Etkilenen dosyalar (3)**:
+- `src/app/[locale]/dashboard/platforms/_components/PlatformsClient.tsx`
+  (yeni, ~390 satır)
+- `src/app/[locale]/dashboard/platforms/page.tsx` (~100 satır net
+  azalma — eski card grid silindi, client mount eklendi, imports
+  temizlendi, RestaurantPlatformRow + select genişletildi)
+- `CLAUDE.md` §38.138 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni SVG**: yok
+(mevcut `/public/platforms/` envanteri reuse). **Test count**:
+383/383 intact bekleniyor (presentational + filter logic, helper
+test'i yok — `getPlatformLogoSrc` saf fonksiyon ama tek caller, 3+
+callsite eşiği geçilmedi CLAUDE.md §7).
+
+**Yapma**:
+- Yeni platform logo SVG yaratma — tüm 14 aktif platform için mevcut
+  envanter yeterli; kopyrayt riski + Buaze paterni intact (existing
+  SVGs already in project from earlier stages).
+- Workspace KPI'ları restoran filter'ına göre re-compute etmek —
+  workspace özet intact (totalConnected/pendingIssues filter'dan
+  etkilenmez); restoran selector sadece görünen platform listesini
+  etkiler (cleaner UX, server-side compute reuse).
+- Server-side filtering (URL search param ile) — client-side state
+  daha responsive (instant restaurant switch + showAll toggle); SSR
+  intact (initial render tüm platformlar).
+- Sosyal medya / WhatsApp / Webhook platformlarını sektör filter'a
+  dahil etme — bu kategoriler sector-agnostic (her sektör Instagram +
+  Facebook + WhatsApp kullanabilir; Pulse §5.1 disipline).
+- `MANAGED_PLATFORM_DEFS` cross-restaurant aggregate (KPI) hesabını
+  client'a taşımak — server-render daha hızlı (zaten Prisma
+  `$transaction` batch ile compute ediliyor); client sadece görsel
+  filter.
+- PlatformChip primitive'i kullanmak (workspace card'da) — PlatformChip
+  `PlatformId` enum'u sınırlı (instagram/facebook/whatsapp yok); raw
+  `<img>` + helper daha esnek + scope kontrollü.
+- Mevcut sektör chip filter'ı (review/social/message/api) interactive
+  yapma — visual indicator + count, scope creep önleme (CLAUDE.md §7).
+
+**Yap**:
+- Yeni platform eklerken §38.117 Stage 37 paterni reuse (10-nokta
+  drift disipline `MANAGED_PLATFORM_DEFS` + `PROVIDER_DOMAINS` +
+  vb.) — yeni `uiPlatformId`/`logoFile` field'ları otomatik
+  `getPlatformLogoSrc` helper'ında çözülür.
+- Yeni sector eklerken `SECTOR_PLATFORMS` array genişlet +
+  `SECTOR_LABELS` map (TR/EN) güncelle (PlatformsClient otomatik
+  yeni sektörü destekler).
+- Workspace filter UX'i URL state'e (`?restaurant=X&showAll=true`)
+  taşıma gerekirse `useUrlFilter` (CLAUDE.md §36) reuse —
+  deeplink-friendly + browser back support.
+- Yeni client island gerekirse `_components/` paterni reuse (Pulse
+  §38.130 paterni — `PlatformsClient` benzeri saf island).
+
+**Verification (lokal)**:
+- `npm run lint` → lokal `node_modules` eksik (CLAUDE.md §38.103
+  paterni — disk dolu / yarışma); CI Validate workflow doğrulayacak
+  (lint + tsc + test + build paralel)
+- `npx tsc --noEmit` → lokal koşulamadı, CI ile doğrulanır
+- `npm test` → 383/383 intact bekleniyor (functional değişiklik
+  yok, presentational + filter)
+- `npx next build` → CI Validate ile (CLAUDE.md §21.19 paterni)
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. Owner login → `/tr/dashboard/platforms` → KPI grid + kategori
+   chip + workspace tip banner görünür → tüm 14 platform kartında
+   SVG logo (initials text yerine).
+2. Üst filter bar: "Tüm işletmeler (N)" dropdown default seçili →
+   show-all checkbox görünmez (workspace görünüm).
+3. Restoran seç (örn. Restoran 1) → dropdown güncel → show-all
+   checkbox görünür (default unchecked) → sektör hint banner
+   görünür (lime-soft `#F7FAEF` + sektör adı) → review platformları
+   sektöre göre filtrelendi (örn. food restoran için 8 review
+   platform: Google/Yemeksepeti/Getir/Trendyol/Tripadvisor/Yelp/
+   Foursquare/Yandex; clinic restoran için sadece 2: Google/Yandex).
+4. Social/message/api platformları (Instagram/Facebook/WhatsApp/
+   Webhook) her sektörde görünür — sektör-agnostic.
+5. "Tüm platformları göster" toggle ON → 14 platform görünür +
+   sektör hint banner kaybolur + "X platform sektör dışı gizlendi"
+   indicator kaybolur.
+6. EN locale (`/en/dashboard/platforms`) → tüm copy translated
+   parite.
+7. Mobile (375×667 iPhone SE) → filter bar flex-wrap (dropdown +
+   checkbox + count meta alt satıra düşer); kart grid 1-col stack.
+8. Reduced-motion ON → filter UI animation static (Pulse §38.61
+   blanket intact).
+
+**Stage 57 closure** (Tarih 2026-05-08):
+- Branch: `chore/platform-logos-filtering-stage56` (Stage 56
+  numarası §38.137'de paralel PR #561 ile çakıştı; renumber
+  Stage 57 §38.138 + branch ismi cosmetic kaldı)
+- Edit'lenen dosyalar: 2 (page.tsx + CLAUDE.md)
+- Yeni dosya: 1 (`PlatformsClient.tsx`)
+- Schema migration: yok
+- Yeni dep: yok
+- Yeni SVG dosyası: yok (mevcut `/public/platforms/` envanteri
+  reuse)
+- Test count: 383/383 intact bekleniyor
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Owner panel `/dashboard/platforms` workspace page artık platform
+  kartlarında SVG logo + restoran selector + sektör-bazlı otomatik
+  filter gösterir. Per-restaurant settings (`/restaurants/[id]/
+  settings?section=integrations`) sector filter intact.
+- Kalan riskler: yok (presentational + filter; backend kontrat
+  + IDOR + KVKK + Pulse §11 design system intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30 product decision —
+  bu PR ile sektör-bazlı filtering eklendi, 12-card grid product
+  scope hâlâ defer), Stage 9 UserSession re-introduce (operatör
+  tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2
+  hafta soak), Prisma 7 upgrade. Veya operatör yeni odak talebi.
+
+**Chat prompt history (Stage 57 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"owner panelinde platform bağlantıları
+  kısmında platformların logoları yok logolarını ekler misin?
+  internetten bul ve orjinal logolarını ekle hepsi için. Ayrıca
+  burada bir kurgu yapmamız lazım çünkü sadece restoranları seçince
+  veya işletme türüne göre onu seçince uygun platform bağlantıları
+  kısmı çıksın."*
+- AskUserQuestion 4 karar (hepsi Recommended): filter UX (restoran
+  selector + otomatik sektör), default view (workspace özet),
+  logo approach (mevcut SVG envanteri + initials fallback — kopyrayt
+  güvenli), PR scope (tek consolidated).
+- **Hukuki/disipline override**: kullanıcı "internetten orijinal
+  logoları ekle" talebi vardı, ama 3 paralel keşif sonucu **tüm 14
+  aktif platform için SVG zaten projede mevcut** (earlier stages'te
+  legitimate B2B nominative use için eklenmiş). **Yeni logo
+  yaratılmadı** — kopyrayt riski sıfır + Buaze paterni intact.
+  Eksik durumlarda PlatformChip-style brand-color + initials
+  fallback (logo replikası DEĞİL, generic UI styling).
