@@ -44,6 +44,7 @@ const ToastRow = nextDynamic(() => import('@/components/animations/ToastRow'));
 const Marquee = nextDynamic(() => import('@/components/animations/Marquee'));
 const SweepCTA = nextDynamic(() => import('@/components/animations/SweepCTA'));
 const SentimentDial = nextDynamic(() => import('@/components/animations/SentimentDial'));
+const SectionDivider = nextDynamic(() => import('@/components/animations/SectionDivider'));
 import PulseLine from '@/components/animations/PulseLine';
 import RevealHeadline from '@/components/animations/RevealHeadline';
 import FeatureCard from '@/components/animations/FeatureCard';
@@ -945,6 +946,16 @@ export default async function LandingPage({
           </div>
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          5.75 SECTION DIVIDER — editorial echo divider (Stage 73 §38.153)
+          Compliance-safe: 4 jenerik Buaze platform manifesto'ları
+          (fake testimonial YOK §35.10), live indicator counter
+          (1,2M YORUM YOK §35.8), synthetic italic Space Grotesk
+          (Instrument Serif YASAK §38.114). BENTO ↔ INDUSTRY TABS arası
+          editorial breath + brand reinforcement.
+      ═══════════════════════════════════════════════════════════ */}
+      <SectionDivider locale={locale} />
 
       {/* ═══════════════════════════════════════════════════════════
           6. INDUSTRY TABS — interactive sector switcher

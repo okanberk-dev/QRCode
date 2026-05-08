@@ -21549,3 +21549,250 @@ migration).
   showcase rollback **ölçülebilir değer** taşır. Kalan migrationlar
   her biri kendi PR'ı olarak ele alınmalı (CLAUDE.md §21.22 stacked
   YOK + §38.146 PR0 base disipline intact).
+
+---
+
+### 38.154 2026-05-08 — Stage 74 SectionDivider editorial echo divider (12. animation, anasayfa BENTO ↔ INDUSTRY TABS arası — compliance-safe variation)
+
+§38.152 Stage 72'de site-library.jsx 11 component cumulative placement
+tamamlandıktan sonra kullanıcı yeni HANDOFF JSX prototip paylaştı:
+SectionDivider (~250 satır, 4 hardcoded müşteri yorumu rotation +
+"BU HAFTA 1,2M YORUM" counter + lime corner glows + serif quote marks
++ pagination dots + traveling pulse line). Talep: *"anasayfada bir
+yere veya başka bir sayfaya da uygun görüyorsan aşağıdaki tasarımla
+birebir bir şey eklemeni ve aynı zamanda bunu mobil uyumlu da
+yapmanı istiyorum."* — visual structure 1:1 + mobil uyumlu.
+
+**4 CRITICAL compliance risk tespit edildi** (CLAUDE.md §35.8 +
+§35.10 + §19.1.1 disipline):
+
+| Element | Risk | Disipline ref |
+|---|---|---|
+| 4 hardcoded müşteri (Ayşe Kaya, Mehmet Özer, Selin Demir, Cem Aydın) | **CRITICAL** fake testimonial | §35.10 + Stage 49→72 zinciri 9+ kez compliance-safe |
+| "3.6 → 4.7 puan, 1 ay" specific claim | **HIGH** verifiable false | §35.8 cohort disclosure (Buaze gerçek 10-50 müşteri §19.4.4) |
+| "negatif yorum geldi, müşteriyi kazandık" success story | **HIGH** fake success narrative | §35.10 fake testimonial |
+| "BU HAFTA 1,2M YORUM" counter | **CRITICAL** verifiable false metric | §35.8 + §38.135 footer rollback paterni paralel |
+
+**3 kritik karar (AskUserQuestion onaylı, hepsi Recommended)**:
+
+1. *Quote içeriği*: **Compliance-safe variation** — 4 hardcoded
+   müşteri yerine 4 jenerik Buaze platform manifesto'ları (BUAZE
+   PANELİ + OTOMATİK TRİYAJ + BUAZE AI + TEK PANO). Visual yapı 1:1,
+   fake müşteri ismi YOK, avatar "b" Buaze brand mark, stars
+   decorative (semantic rating claim DEĞİL).
+2. *Counter metrik*: **Compliance-safe live indicator** — "BU HAFTA
+   1,2M YORUM" yerine yeşil pulse-dot + "GÜNCEL · BU SAYFA" /
+   "LIVE · THIS PAGE" mono uppercase tracked (CLAUDE.md §38.148
+   AnalyticsLiveIndicator paterni reuse). Verifiable + visual signal
+   intact.
+3. *Yerleştirme*: **Anasayfa Section 6.5 (BENTO ↔ INDUSTRY TABS
+   arası)** — Section 4 LiveTicker (3-stack rotation §38.149) ile
+   farklı surface, UX semantik conflict yok. Editorial breath +
+   brand reinforcement.
+
+**Compliance-safe content (4 jenerik Buaze platform manifesto'ları)**:
+
+| # | TR | EN | Label | Role |
+|---|---|---|---|---|
+| 1 | Bir QR. Bir yorum. Bir kazanç. | One QR. One review. One win. | BUAZE PANELİ / BUAZE PANEL | Restoran sesi tek panelde / The voice of the restaurant |
+| 2 | Düşük puan, kasaya gelmeden önce işletmeye ulaşır. | Low ratings reach the team before they reach the till. | OTOMATİK TRİYAJ / AUTO TRIAGE | Sinyal — gürültü değil / Signal — not noise |
+| 3 | Pulse AI restoran sesini öğrenir, tone-aware yanıt önerir. | Pulse AI learns your tone, suggests replies that fit. | BUAZE AI | Yapay zeka asistanı / AI assistant |
+| 4 | Tüm kanallardan gelen yorumlar tek panoda toplanır. | Every channel in one inbox. Calm. Searchable. Owned. | TEK PANO / ONE INBOX | Çoklu kanal entegrasyonu / Multi-channel integration |
+
+**Pulse §11 disipline intact** (kullanıcı kararı §38.114 + §38.122
++ §38.146 + §38.151 zinciri paralel):
+- Synthetic italic Space Grotesk (Instrument Serif italic YASAK)
+- Pulse hex palette inline + Tailwind v4 utility (lime #C6F24E +
+  graphite #0A0A0A + N50 #FAFAFA + lime-soft #EAF9B8)
+- JetBrains Mono uppercase tracked label/role (`pulse-eyebrow`
+  utility class)
+- Mevcut keyframe reuse: `bz-pulse-dot` (kicker dot + live indicator
+  inner pulse) + `bzEchoSweep` (traveling pulse line — CLAUDE.md
+  §38.123 footer'da tanımlı, reduced-motion blanket §38.61'de
+  kapsanıyor)
+
+**Mobile responsive disipline** (CLAUDE.md §25 + §38.74 paterni):
+- Quote font size: `clamp(22px, 5vw, 44px)` mobile 22px → desktop
+  44px
+- Padding: mobile `px-5 py-16` → sm `sm:px-12 sm:py-24` → lg
+  `lg:px-24 lg:py-28`
+- Top kicker: mobile inline row (`relative justify-between` +
+  paddingTop 5) → sm `sm:absolute sm:inset-x-0 sm:top-6 sm:px-8`
+  (corner positioned)
+- Decorative serif quote marks (`"` + `"`): `hidden sm:block`
+  (mobile gizli — small viewport'ta clutter önleme)
+- Avatar: `h-9 w-9` mobile → `sm:h-10 sm:w-10` desktop
+- Pagination dots margin: `mt-10` mobile → `sm:mt-12` desktop
+- Label font: `text-[12px]` mobile → `sm:text-[13px]` desktop
+
+**Animation engine** (`framer-motion useReducedMotion`):
+- Crossfade rotation: in 700ms → hold 4400ms → out 600ms → swap
+  (5700ms toplam loop)
+- Phase-driven opacity + translateY (in: 0 + 14px → in: 1 + 0 →
+  out: 0 + -14px)
+- Reduced motion: `prefersReducedMotion` true → static (ilk moment
+  görünür, rotation/transform off)
+- Page Visibility API: `document.visibilityState === 'hidden'`
+  iken interval pause (battery save, CLAUDE.md §5.1 paterni)
+- Cleanup: cancelled flag + 3 setTimeout clear + visibilitychange
+  removeEventListener
+
+**A11y disipline**:
+- `<section role="region" aria-label>` locale-aware
+- `<div role="status" aria-live="polite">` live indicator (screen
+  reader yumuşak okuma)
+- Decorative serif quote marks `aria-hidden`
+- Avatar `aria-hidden` (`<StarRow>` içeriden `role="img" aria-label`
+  kapsıyor)
+- Pagination dots `aria-hidden` (rotation index visual indicator,
+  semantic değil)
+- Hairline rules + lime corner glows + traveling pulse line tüm
+  decorative `aria-hidden`
+
+**Etkilenen dosyalar (3)**:
+- `src/components/animations/SectionDivider.tsx` (yeni, ~280 satır)
+- `src/app/[locale]/page.tsx` (1 dynamic import + Section 6.5 mount,
+  ~14 net satır)
+- `CLAUDE.md` §38.154 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok (framer-motion +
+react-intersection-observer Stage 66 §38.147 install zaten
+yapıldı). **Test count**: 404/404 intact bekleniyor (presentational
++ helper logic yok, framer-motion + StarRow primitive coverage
+mevcut).
+
+**Verification (lokal)**:
+- Lokal `node_modules` yok (disk %95 dolu — CLAUDE.md §38.103 +
+  §38.131 + §38.140 paterni). CI Validate workflow lint + tsc +
+  test + build doğrulayacak.
+- Manuel sanity check ✓: 'use client' directive + 8 hook reference
+  + import line 47 + mount line 958 (BENTO `</section>` line 947
+  sonrası, INDUSTRY TABS Section 6 line 962 öncesi)
+- JSX sentaks + TypeScript inference + Tailwind v4 utility manuel
+  cross-check edildi
+- `bz-pulse-dot` + `bzEchoSweep` keyframe reuse (zaten mevcut,
+  reduced-motion blanket §38.61'de kapsanıyor)
+
+**Mevcut placement summary** (Stage 66-73 cumulative — site-library
++ HANDOFF custom):
+
+| # | Component | İlk yerleştirme | Stage |
+|---|---|---|---|
+| 1 | LiveTicker | Anasayfa Section 4 (DARK FEATURE) | §38.149 |
+| 2-3 | PulseLine ×2 | Anasayfa Section 2-3 + 7-8 arası dividers | §38.150 |
+| 4 | RevealHeadline | Anasayfa Section 4.5 başlık | §38.150 |
+| 5 | StarClimber | Anasayfa Section 4.5 — Buaze cohort climb | §38.150 |
+| 6-7 | BigCounter ×2 | Anasayfa Section 4.5 — 10+ + 8+ | §38.150 |
+| 8 | ToastRow | Anasayfa Section 4.5 sağ kolon | §38.150 |
+| 9 | SweepCTA | Anasayfa Section 4.5 — /auth/register | §38.150 |
+| 10 | Marquee | Anasayfa Section 7.5 — 10 platform | §38.150 |
+| 11 | FeatureCard ×4 | Anasayfa Section 7.5 — 4 modül | §38.150 |
+| 12 | QRScanLoader | QR generator hero teaser | §38.152 |
+| 13 | SentimentDial | Anasayfa Section 4.5 sağ kolon ek | §38.152 |
+| **14** | **SectionDivider** | **Anasayfa Section 6.5 (BENTO ↔ INDUSTRY TABS)** | **§38.154** |
+
+**11/11 site-library.jsx component intact** + **1 yeni HANDOFF custom
+component** (SectionDivider) = **14 animation placement** anasayfa +
+solutions/qr-generator surface'inde verifiable.
+
+**Yapma**:
+- HANDOFF 4 hardcoded müşteri ismini (Ayşe Kaya, Mehmet Özer, Selin
+  Demir, Cem Aydın) literal kopyalamak — §35.10 + §35.8 + §19.1.1
+  CRITICAL compliance ihlali. Stage 49→72 zinciri 9+ kez
+  compliance-safe seçildi; kullanıcı 10. kez tekrar onayladı.
+- "3.6 → 4.7 puan" / "1,2M YORUM" / "kazandık" success story claim'lerini
+  literal eklemek — verifiable false metric (Buaze gerçek müşteri
+  10-50 §19.4.4).
+- Quote rotation interval'ını 5.7 saniyeden agresif kısaltmak (örn.
+  3s) — okuma + emotional impact için 4.4s hold + 1.3s transition
+  yeterli; kısa interval okumayı zorlaştırır.
+- Reduced motion altında rotation'ı zorlamak — `useReducedMotion`
+  zorunlu (CLAUDE.md §5.2 + §38.61 paterni intact).
+- `bz-pulse-dot` veya `bzEchoSweep` yerine yeni keyframe yaratmak —
+  mevcut keyframe'ler reduced-motion blanket'ında zaten kapsanıyor;
+  yeni keyframe selector eklenmesi gerekirdi (drift kaynağı).
+- Mobile'da decorative serif quote marks (`"` + `"`) görünür bırakmak
+  — small viewport'ta clutter, reading flow bozar; `hidden sm:block`
+  intact.
+- Top kicker + live indicator'ı mobile'da absolute corners'a
+  zorlamak — mobile'da inline row daha temiz UX, header overflow
+  riski minimize.
+- Avatar "b" yerine "B" capital veya restoran initial — Buaze brand
+  mark italic lowercase Pulse §11 paterni (kanonik §38.112 cookie
+  banner + §38.122 hero + §38.146 primitive zinciri).
+- Pagination dots'a click handler eklemek — passive rotation
+  indicator, manual control + gerekli accessibility (aria-pressed
+  tab key) scope creep.
+- Quote text'in tüm kelimelerini lime underline accent yapmak —
+  HANDOFF spec sadece son anlamlı kelimeyi vurgular; her kelime
+  vurgu visual hierarchy bozar.
+- Page Visibility API check'ini atlamak — tab gizli iken interval
+  CPU + battery harcar; CLAUDE.md §5.1 paterni zorunlu.
+
+**Yap**:
+- Yeni section divider veya editorial breath surface gerekirse
+  Stage 74 §38.154 paterni reuse: framer-motion useReducedMotion +
+  Page Visibility + setTimeout phase machine + jenerik content +
+  decorative quote marks + traveling pulse line.
+- HANDOFF prototip yeni iterasyon gelirse compliance disipline
+  pre-check zorunlu (4 fake-data category: hardcoded names + spesifik
+  metric + success narrative + verifiable false counter). Stage
+  49→73 zinciri authoritative referans.
+- Yeni live indicator gerekirse §38.148 AnalyticsLiveIndicator
+  paterni reuse: yeşil pulse-dot + locale-aware "GÜNCEL · {scope}"
+  mono uppercase.
+- Yeni quote rotation gerekirse 4-state state machine reuse:
+  in 700ms → hold 4400ms → out 600ms → swap. Daha hızlı okuma
+  isterse hold 3000ms minimum (4.4s sweet spot reading + emotional
+  impact balance).
+- Yeni inline `style={{ animation: 'X' }}` callsite'ı eklenirse
+  reduced-motion blanket'a `[style*='X']` selector zorunlu (§38.61
+  paterni). Mevcut `bzEchoSweep` zaten kapsanıyor; yeni keyframe
+  eklenirse ek selector gerekir.
+
+**Stage 74 closure** (Tarih 2026-05-08):
+- Branch: designated worktree (`amazing-wu-4f4a61`, Stage 72
+  §38.152 PR sonrası align)
+- Edit dosyaları: 2 (`src/app/[locale]/page.tsx` + `CLAUDE.md`)
+- Yeni dosya: 1 (`src/components/animations/SectionDivider.tsx`)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact bekleniyor
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Anasayfa Section 6.5 (BENTO ↔ INDUSTRY TABS arası) editorial
+  echo divider görünür (4 jenerik Buaze platform manifesto'ları
+  rotation + live indicator + decorative serif quote marks +
+  pagination dots + traveling pulse line).
+- Kalan riskler: yok. Compliance-safe variation (fake testimonial
+  + verifiable false metric SKIP), Pulse §11 typography intact,
+  framer-motion reduced-motion + Page Visibility built-in,
+  next/dynamic chunk split.
+- **Sonraki aşama**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya
+  operatör yeni odak talebi.
+
+**Chat prompt history (Stage 74 §39.2 paterni)**:
+- 2026-05-08 kullanıcı (önceki turn): *"claude md dsoyasını oku ve
+  kodları analiz et sana prompt vereceğim sonrasında"* (typo
+  "dsoyasını" verbatim §39.2 disipline) → context gathering.
+- 2026-05-08 kullanıcı (bu turn): *"anasayfada bir yere veya başka
+  bir sayfaya da uygun görüyorsan aşağıdaki tasarımla birebir bir
+  şey eklemeni ve aynı zamanda bunu mobil uyumlu da yapmanı
+  istiyorum"* + ~250 satır HANDOFF SectionDivider JSX prototip paste
+  (4 hardcoded müşteri yorumu + "1,2M YORUM" counter + decorative
+  serif quote marks + pagination dots + traveling pulse line +
+  bzEchoSweep keyframe).
+- AskUserQuestion 3 karar (hepsi Recommended): quote içeriği
+  (compliance-safe variation — 4 jenerik Buaze platform manifesto'ları)
+  / counter metrik (compliance-safe live indicator — §38.148 paterni)
+  / yerleştirme (Anasayfa Section 6.5 — BENTO ↔ INDUSTRY TABS arası).
+- **Disipline restoration (10. iterasyon)**: Stage 49 §38.130 ilk
+  compliance → Stage 54 §38.135 fake-data override → Stage 55
+  §38.136 rollback → Stage 56 §38.137 → Stage 58 §38.139 → Stage 59
+  §38.140 → Stage 62 §38.143 → Stage 63 §38.144 → Stage 64 §38.145
+  → Stage 67 §38.148 → Stage 74 §38.154 onuncu kez compliance-safe
+  + visual structure 1:1 + mobile responsive. Pattern stable
+  §35.8 + §35.10 + §19.1.1 — future session bu zinciri authoritative
+  referans olarak kabul eder.
