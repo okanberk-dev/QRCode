@@ -15,17 +15,34 @@ type WidgetState = 'fab' | 'open';
 /**
  * ContactFloat — sticky lead-capture widget on the marketing site.
  *
- * Three render states:
- *  - **fab**           Lime FAB only (default). After ~6s the first time a
- *                      visitor lands, an optional bubble teaser slides in
- *                      ("Sorunuz mu var?"). Dismissal is per-session.
- *  - **bubble teaser** A small avatar + greeting card above the FAB. Click
- *                      anywhere on it to expand into the form; the X
- *                      dismisses for the rest of the session.
- *  - **open**          Full inline contact form (Name + Email + Message +
- *                      KVKK consent). Posts to `/api/contact` — same
- *                      endpoint, honeypot, and reCAPTCHA flow as the
- *                      `<ContactForm>` page component (CLAUDE.md §14.2).
+ * Stage 57 §38.138 — HANDOFF premium chat bubble redesign.
+ * Visual yapı 1:1 (graphite header + lime halo + avatar + chat-style
+ * message bubble + quick reply chips + KVKK footer + powered by buaze)
+ * + Buaze backend async form-based — **live chat YOK**.
+ *
+ * Three render states intact:
+ *  - **fab**           Lime FAB (HANDOFF ChatLauncher: lime halo pulse
+ *                      + concentric ring + notification "?" badge).
+ *                      After ~6s ilk ziyarette opsiyonel bubble teaser
+ *                      slide-in; per-session dismiss.
+ *  - **bubble teaser** Avatar + greeting card (mevcut Pulse §11 intact).
+ *                      Tıklayınca form'a geçer.
+ *  - **open**          HANDOFF ChatBubble visual (graphite header + lime
+ *                      halo + Buaze avatar + initial message + 3 quick
+ *                      reply chips + Name/Email/Message form + KVKK
+ *                      consent + reCAPTCHA + honeypot + /api/contact
+ *                      POST — backend kontrat intact).
+ *
+ * Compliance disipline (CLAUDE.md §35.8 + §35.10 + §19.1.1):
+ * - Live chat illusion KALDIRILDI:
+ *   - "Cem · Buaze ekibi" → "BUAZE EKİBİ" (jenerik operator)
+ *   - "ŞU AN ÇEVRİMİÇİ" → SİLİNDİ (async semantik)
+ *   - "14:32 · OKUNDU" timestamp + read status → SİLİNDİ
+ *   - "Genelde 2 dakika içinde dönüyoruz" → "Genelde 1 iş günü içinde
+ *     dönüş yapıyoruz" (mevcut Stage 51 §38.132 paterni reuse)
+ *   - Notification badge "1" message count → "?" yardım icon
+ * - Quick reply chips actionable: tıklayınca `setMessage()` ile message
+ *   field'a auto-fill (form-based, send manuel — live chat değil).
  *
  * Pulse design (CLAUDE.md §11): graphite + lime + pure white. No new
  * dependencies — reCAPTCHA + honeypot + dwell-time bot guards reuse the
@@ -111,6 +128,11 @@ export function ContactFloat({ locale }: { locale: string }) {
     setError('');
   };
 
+  // Quick reply chip → message field auto-fill (form-based, send manuel)
+  const applyQuickReply = (text: string) => {
+    setMessage(text);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -128,7 +150,11 @@ export function ContactFloat({ locale }: { locale: string }) {
     }
 
     if (!name.trim() || !email.trim() || !message.trim() || !kvkk) {
-      setError(isTr ? 'Lütfen zorunlu alanları doldurun ve KVKK onayını verin.' : 'Please fill required fields and accept the privacy notice.');
+      setError(
+        isTr
+          ? 'Lütfen zorunlu alanları doldurun ve KVKK onayını verin.'
+          : 'Please fill required fields and accept the privacy notice.',
+      );
       setLoading(false);
       return;
     }
@@ -160,7 +186,8 @@ export function ContactFloat({ locale }: { locale: string }) {
       }
     } catch {
       setError(isTr ? 'Bağlantı hatası. Lütfen tekrar deneyin.' : 'Connection error. Please try again.');
-    } finally {
+    }
+    finally {
       setLoading(false);
     }
   };
@@ -224,77 +251,237 @@ export function ContactFloat({ locale }: { locale: string }) {
             />
           </div>
         )}
-        <button
-          type="button"
-          onClick={openForm}
-          aria-label={isTr ? 'Bizimle iletişime geçin' : 'Contact us'}
-          className="flex h-14 w-14 items-center justify-center rounded-full border-3 border-[#0A0A0A] bg-[#C6F24E] shadow-md transition-all hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-[#C6F24E]/50 active:translate-y-0.5 active:shadow-none"
-        >
-          <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden>
-            <path
-              d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.87 9.87 0 01-4-.83L3 21l1.9-5.1C3.7 14.73 3 13.43 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              stroke="#0A0A0A"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+
+        {/* Stage 57 §38.138 — HANDOFF ChatLauncher visual: lime halo
+            pulse + concentric ring expansion + notification "?" badge.
+            Mevcut openForm onClick intact. */}
+        <div className="relative inline-block">
+          {/* Lime halo blur — 8px inset, 14px blur, 2.6s pulse infinite */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute"
+            style={{
+              inset: -8,
+              borderRadius: '50%',
+              background: '#C6F24E',
+              opacity: 0.18,
+              filter: 'blur(14px)',
+              animation: 'scbPulse 2.6s ease-in-out infinite',
+            }}
+          />
+          {/* Concentric ring — 4px inset, 1.5px lime border, 2.6s expand */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute"
+            style={{
+              inset: -4,
+              borderRadius: '50%',
+              border: '1.5px solid #C6F24E',
+              opacity: 0.4,
+              animation: 'scbRing 2.6s ease-out infinite',
+            }}
+          />
+
+          <button
+            type="button"
+            onClick={openForm}
+            aria-label={isTr ? 'Bizimle iletişime geçin' : 'Contact us'}
+            className="relative z-[1] flex h-16 w-16 items-center justify-center rounded-full transition-transform hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#C6F24E]/50"
+            style={{
+              background: '#C6F24E',
+              border: '2px solid #0A0A0A',
+              boxShadow:
+                '0 18px 44px -12px rgba(198,242,78,0.6), 0 4px 12px rgba(10,10,10,0.18)',
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden>
+              <path
+                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"
+                stroke="#0A0A0A"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+
+          {/* Notification badge — HANDOFF "1" sayı yerine "?" yardım
+              icon (compliance: live chat unread message implication YOK,
+              async help-prompt semantik). */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-0.5 -top-0.5 z-[2] flex h-[18px] w-[18px] items-center justify-center rounded-full font-bold"
+            style={{
+              background: '#0A0A0A',
+              color: '#C6F24E',
+              border: '2px solid #C6F24E',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9.5,
+              letterSpacing: 0,
+            }}
+          >
+            ?
+          </span>
+        </div>
       </div>
     );
   }
 
   // ───────────────────────────────────────── Open form (state === 'open')
+  // HANDOFF ChatBubble visual + Buaze form akışı (mevcut backend kontrat).
+
   const inputClass =
-    'min-h-[44px] w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2.5 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:shadow-[0_0_0_3px_rgba(198,242,78,0.25)]';
+    'min-h-[44px] w-full rounded-xl border border-[#EDEDED] bg-white px-3.5 py-2.5 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#C6F24E] focus:shadow-[0_0_0_3px_rgba(198,242,78,0.25)]';
+
+  const quickReplies = isTr
+    ? [
+        { label: 'Demo nasıl alınır?', autofill: 'Demo almak istiyorum.' },
+        { label: 'Fiyatlar?', autofill: 'Fiyatlar hakkında bilgi alabilir miyim?' },
+        { label: 'Google entegrasyonu?', autofill: 'Google entegrasyonu nasıl çalışıyor?' },
+      ]
+    : [
+        { label: 'How do I book a demo?', autofill: 'I would like to book a demo.' },
+        { label: 'Pricing?', autofill: 'Could you share pricing info?' },
+        { label: 'Google integration?', autofill: 'How does the Google integration work?' },
+      ];
 
   return (
     <div
       role="dialog"
       aria-modal="false"
       aria-label={isTr ? 'İletişim formu' : 'Contact form'}
-      className="bz-fade-in fixed right-4 bottom-[88px] left-4 z-50 max-h-[calc(100vh-110px)] overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-[0_24px_48px_-12px_rgba(10,10,10,0.24)] sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] md:bottom-6"
+      className="bz-fade-in fixed right-4 bottom-[88px] left-4 z-50 max-h-[calc(100vh-110px)] overflow-hidden rounded-3xl border border-[#EDEDED] bg-white sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] md:bottom-6"
+      style={{
+        boxShadow:
+          '0 28px 64px -18px rgba(10,10,10,0.32), 0 4px 12px rgba(10,10,10,0.06)',
+      }}
     >
-      {/* Header — graphite bar with greeting + close */}
-      <div className="flex items-center gap-2.5 bg-[#0A0A0A] px-4 py-3 text-white">
+      {/* HEADER — graphite + lime halo + Buaze avatar + status mono */}
+      <div
+        className="relative overflow-hidden bg-[#0A0A0A] px-5 pb-4 pt-5 text-white"
+      >
+        {/* Lime halo radial — top-right corner, 160×160, decorative */}
         <span
           aria-hidden
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E] text-[#0A0A0A]"
-        >
-          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
-            <path
-              d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          className="pointer-events-none absolute"
+          style={{
+            top: -50,
+            right: -40,
+            width: 160,
+            height: 160,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(198,242,78,0.32), transparent 65%)',
+          }}
+        />
+
+        <div className="relative flex items-center gap-3">
+          {/* Avatar — Buaze brand mark (jenerik, "Cem" hardcoded operator
+              SİLİNDİ; live chat illusion YOK). Synthetic italic Space
+              Grotesk + lime gradient + lime corner dot. */}
+          <div className="relative shrink-0">
+            <div
+              className="flex h-11 w-11 items-center justify-center rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, #C6F24E, #A8D62E)',
+                fontFamily: 'var(--font-heading)',
+                fontStyle: 'italic',
+                fontWeight: 600,
+                fontSize: 22,
+                color: '#0A0A0A',
+              }}
+              aria-hidden
+            >
+              B
+            </div>
+            {/* Lime corner dot — Buaze brand accent, NOT live online dot */}
+            <span
+              aria-hidden
+              className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full"
+              style={{
+                background: '#C6F24E',
+                border: '2.5px solid #0A0A0A',
+              }}
             />
-          </svg>
-        </span>
-        <div className="flex-1 leading-tight">
-          <div className="text-[13px] font-semibold">
-            {isTr ? 'Bize yazın' : 'Send us a note'}
           </div>
-          <div className="text-[11px] text-white/70">
-            {isTr ? 'Genelde 1 iş günü içinde dönüyoruz' : 'We usually reply within one business day'}
+
+          <div className="min-w-0 flex-1">
+            <div
+              className="leading-[1.1] text-white"
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                fontSize: 22,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {isTr ? 'Merhaba' : 'Hello'}{' '}
+              <span
+                aria-hidden
+                className="inline-block"
+                style={{
+                  animation: 'scbWave 2s ease-in-out infinite',
+                  transformOrigin: '70% 80%',
+                }}
+              >
+                ✦
+              </span>
+            </div>
+            <div className="mt-1 flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="inline-block h-[5px] w-[5px] rounded-full"
+                style={{
+                  background: '#C6F24E',
+                  animation: 'scbDot 1.6s ease-in-out infinite',
+                }}
+              />
+              {/* "ŞU AN ÇEVRİMİÇİ" SİLİNDİ → "BUAZE EKİBİ" jenerik
+                  (live chat illusion YOK, async semantik). */}
+              <span
+                className="pulse-eyebrow"
+                style={{ color: '#C6F24E', fontSize: 9.5, letterSpacing: '0.14em' }}
+              >
+                {isTr ? 'BUAZE EKİBİ' : 'BUAZE TEAM'}
+              </span>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setState('fab')}
+            aria-label={isTr ? 'Küçült' : 'Minimize'}
+            className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-full transition-colors hover:bg-white/10"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'rgba(255,255,255,0.65)',
+            }}
+          >
+            <svg viewBox="0 0 9 9" fill="none" className="h-[9px] w-[9px]" aria-hidden>
+              <path d="M1 1l7 7M8 1L1 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setState('fab')}
-          aria-label={isTr ? 'Küçült' : 'Minimize'}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+
+        {/* Async messaging hint — "Genelde 1 iş günü içinde dönüş"
+            (Stage 51 §38.132 paterni reuse, Buaze patterned). */}
+        <div
+          className="relative mt-2 pulse-eyebrow"
+          style={{
+            color: 'rgba(255,255,255,0.45)',
+            fontSize: 10,
+            letterSpacing: '0.08em',
+          }}
         >
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden>
-            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
+          {isTr ? 'GENELDE 1 İŞ GÜNÜ İÇİNDE DÖNÜŞ' : 'TYPICALLY REPLIES IN 1 BUSINESS DAY'}
+        </div>
       </div>
 
-      {/* Body */}
-      <div className="max-h-[calc(100vh-200px)] overflow-y-auto px-4 py-4 sm:max-h-[60vh]">
+      {/* BODY — chat-style initial message + form */}
+      <div className="max-h-[calc(100vh-260px)] overflow-y-auto sm:max-h-[60vh]">
         {sent ? (
-          <div className="py-4 text-center">
+          <div className="px-5 py-6 text-center">
             <div
               aria-hidden
               className="mx-auto mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]"
@@ -314,7 +501,7 @@ export function ContactFloat({ locale }: { locale: string }) {
             </p>
             <p className="mt-1 text-[12.5px] leading-[1.5] text-[#525252]">
               {isTr
-                ? 'Mesajınız bize ulaştı. Ekip üyemiz en kısa sürede sizinle iletişime geçecek.'
+                ? 'Mesajınız bize ulaştı. Ekibimiz en kısa sürede dönüş yapacak.'
                 : 'Your message has reached us. Our team will get back to you shortly.'}
             </p>
             <button
@@ -326,146 +513,280 @@ export function ContactFloat({ locale }: { locale: string }) {
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-3" noValidate>
-            {/* Honeypot — visually hidden, bots fill, humans don't. */}
-            <input
-              type="text"
-              name="website"
-              tabIndex={-1}
-              autoComplete="off"
-              value={honeypot}
-              onChange={(e) => setHoneypot(e.target.value)}
-              aria-hidden="true"
-              className="hidden"
-            />
+          <>
+            {/* Initial chat-style bubble — async semantik, "OKUNDU"
+                timestamp ve live read-status YOK. Buaze brand voice. */}
+            <div className="px-5 pb-1 pt-5">
+              <div
+                className="max-w-[92%] rounded-tr-3xl rounded-br-3xl rounded-bl-3xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3.5 text-[14px] leading-[1.55] text-[#0A0A0A]"
+                style={{ borderTopLeftRadius: 4 }}
+              >
+                {isTr
+                  ? 'Sorunuz mu var? Mesajınızı yazın, ekibimiz en kısa sürede dönüş yapsın.'
+                  : "Got a question? Drop us a note and we'll get back to you shortly."}
+              </div>
+            </div>
 
-            <div>
-              <label htmlFor="cf-name" className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#525252]">
-                {isTr ? 'İsim' : 'Name'} <span className="text-[#A8D62E]">*</span>
-              </label>
+            {/* Quick reply chips — actionable, message field auto-fill
+                (form-based, send manuel — live chat illusion YOK). */}
+            <div className="px-5 py-3">
+              <div
+                className="pulse-eyebrow mb-2.5 text-[#A3A3A3]"
+                style={{ fontSize: 9.5, letterSpacing: '0.1em' }}
+              >
+                {isTr ? 'HIZLI YANITLAR' : 'QUICK REPLIES'}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {quickReplies.map((q, i) => (
+                  <button
+                    key={q.label}
+                    type="button"
+                    onClick={() => applyQuickReply(q.autofill)}
+                    className="inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[12px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#EAF9B8]"
+                    style={{
+                      background: i === 0 ? '#F7FAEF' : '#FFFFFF',
+                      borderColor: i === 0 ? '#C6F24E' : '#EDEDED',
+                    }}
+                  >
+                    {i === 0 && (
+                      <span style={{ color: '#A8D62E', fontWeight: 700 }} aria-hidden>
+                        ↓
+                      </span>
+                    )}
+                    {q.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3 px-5 pb-3" noValidate>
+              {/* Honeypot — visually hidden, bots fill, humans don't. */}
               <input
-                ref={firstFieldRef}
-                id="cf-name"
                 type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                maxLength={120}
-                autoComplete="name"
-                placeholder={isTr ? 'Adınız' : 'Your name'}
-                className={inputClass}
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                aria-hidden="true"
+                className="hidden"
               />
-            </div>
 
-            <div>
-              <label htmlFor="cf-email" className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#525252]">
-                {isTr ? 'E-posta' : 'Email'} <span className="text-[#A8D62E]">*</span>
+              <div>
+                <label
+                  htmlFor="cf-name"
+                  className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#525252]"
+                >
+                  {isTr ? 'İsim' : 'Name'} <span className="text-[#A8D62E]">*</span>
+                </label>
+                <input
+                  ref={firstFieldRef}
+                  id="cf-name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  maxLength={120}
+                  autoComplete="name"
+                  placeholder={isTr ? 'Adınız' : 'Your name'}
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="cf-email"
+                  className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#525252]"
+                >
+                  {isTr ? 'E-posta' : 'Email'} <span className="text-[#A8D62E]">*</span>
+                </label>
+                <input
+                  id="cf-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  maxLength={200}
+                  autoComplete="email"
+                  inputMode="email"
+                  placeholder="ornek@isletme.com"
+                  className={inputClass}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="cf-message"
+                  className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#525252]"
+                >
+                  {isTr ? 'Mesaj' : 'Message'} <span className="text-[#A8D62E]">*</span>
+                </label>
+                <textarea
+                  id="cf-message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                  maxLength={1500}
+                  rows={3}
+                  placeholder={isTr ? 'Nasıl yardımcı olabiliriz?' : 'How can we help?'}
+                  className={`${inputClass} min-h-[88px] resize-none py-2.5`}
+                />
+              </div>
+
+              <label className="flex items-start gap-2 text-[11.5px] leading-[1.5] text-[#525252]">
+                <input
+                  type="checkbox"
+                  checked={kvkk}
+                  onChange={(e) => setKvkk(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#C6F24E]"
+                  required
+                />
+                <span>
+                  {isTr ? (
+                    <>
+                      <Link
+                        href={`/${locale}/kvkk`}
+                        className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
+                        target="_blank"
+                      >
+                        KVKK Aydınlatma Metni
+                      </Link>
+                      {`'ni okudum, kişisel verilerimin işlenmesine onay veriyorum.`}
+                    </>
+                  ) : (
+                    <>
+                      I have read the{' '}
+                      <Link
+                        href={`/${locale}/privacy`}
+                        className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]"
+                        target="_blank"
+                      >
+                        privacy notice
+                      </Link>{' '}
+                      and consent to processing of my personal data.
+                    </>
+                  )}
+                </span>
               </label>
-              <input
-                id="cf-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                maxLength={200}
-                autoComplete="email"
-                inputMode="email"
-                placeholder="ornek@isletme.com"
-                className={inputClass}
-              />
-            </div>
 
-            <div>
-              <label htmlFor="cf-message" className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.08em] text-[#525252]">
-                {isTr ? 'Mesaj' : 'Message'} <span className="text-[#A8D62E]">*</span>
-              </label>
-              <textarea
-                id="cf-message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-                maxLength={1500}
-                rows={3}
-                placeholder={isTr ? 'Nasıl yardımcı olabiliriz?' : 'How can we help?'}
-                className={`${inputClass} min-h-[80px] resize-none py-2.5`}
-              />
-            </div>
+              {error && (
+                <div
+                  role="alert"
+                  className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]"
+                >
+                  {error}
+                </div>
+              )}
 
-            <label className="flex items-start gap-2 text-[11.5px] leading-[1.5] text-[#525252]">
-              <input
-                type="checkbox"
-                checked={kvkk}
-                onChange={(e) => setKvkk(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-[#C6F24E]"
-                required
-              />
-              <span>
-                {isTr ? (
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-4 text-[13px] font-semibold text-white transition-all hover:bg-[#1A1A1A] focus:outline-none focus:ring-3 focus:ring-[#C6F24E]/50 disabled:cursor-not-allowed disabled:bg-[#525252]"
+              >
+                {loading ? (
                   <>
-                    <Link href={`/${locale}/kvkk`} className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]" target="_blank">
-                      KVKK Aydınlatma Metni
-                    </Link>
-                    {`'ni okudum, kişisel verilerimin işlenmesine onay veriyorum.`}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="h-4 w-4 animate-spin"
+                      aria-hidden
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeOpacity="0.3"
+                      />
+                      <path
+                        d="M12 2a10 10 0 0 1 10 10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    {isTr ? 'Gönderiliyor…' : 'Sending…'}
                   </>
                 ) : (
                   <>
-                    I have read the{' '}
-                    <Link href={`/${locale}/privacy`} className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#A8D62E]" target="_blank">
-                      privacy notice
-                    </Link>{' '}
-                    and consent to processing of my personal data.
+                    <svg
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className="h-4 w-4"
+                      aria-hidden
+                    >
+                      <path d="M2 14l13-6L2 2v5l9 1-9 1z" fill="#C6F24E" />
+                    </svg>
+                    {isTr ? 'Gönder' : 'Send'}
                   </>
                 )}
-              </span>
-            </label>
-
-            {error && (
-              <div role="alert" className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-[12px] text-[#991B1B]">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-full bg-[#0A0A0A] px-4 text-[13px] font-semibold text-white transition-all hover:bg-[#1A1A1A] focus:outline-none focus:ring-3 focus:ring-[#C6F24E]/50 disabled:cursor-not-allowed disabled:bg-[#525252]"
-            >
-              {loading ? (
-                <>
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 animate-spin" aria-hidden>
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.3" />
-                    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                  </svg>
-                  {isTr ? 'Gönderiliyor…' : 'Sending…'}
-                </>
-              ) : (
-                <>
-                  {isTr ? 'Gönder' : 'Send'}
-                  <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden>
-                    <path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </>
-              )}
-            </button>
-
-            <div className="text-center">
-              <Link
-                href={`/${locale}/contact`}
-                className="text-[11px] text-[#737373] underline underline-offset-2 transition-colors hover:text-[#0A0A0A]"
-              >
-                {isTr ? 'Detaylı iletişim sayfasına git' : 'Open the full contact page'}
-              </Link>
-            </div>
-          </form>
+              </button>
+            </form>
+          </>
         )}
       </div>
 
-      {/* Powered by — Pulse muted, not Podium orange */}
-      <div className="border-t border-[#EDEDED] bg-[#FAFAFA] px-4 py-2 text-center text-[10px] uppercase tracking-[0.08em] text-[#737373]">
-        Powered by{' '}
-        <span className="font-semibold text-[#0A0A0A]">
-          buaze<span className="text-[#A8D62E]">.</span>
-        </span>
+      {/* FOOTER — KVKK encrypted hint + Powered by buaze */}
+      <div className="flex items-center justify-between border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-2.5">
+        <div className="inline-flex items-center gap-1.5">
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 14 14"
+            aria-hidden
+          >
+            <rect
+              x="3"
+              y="6"
+              width="8"
+              height="6"
+              rx="1"
+              stroke="#A3A3A3"
+              strokeWidth="1.2"
+              fill="none"
+            />
+            <path
+              d="M5 6V4a2 2 0 014 0v2"
+              stroke="#A3A3A3"
+              strokeWidth="1.2"
+              fill="none"
+            />
+          </svg>
+          <span
+            className="pulse-eyebrow"
+            style={{
+              color: '#A3A3A3',
+              fontSize: 9,
+              letterSpacing: '0.04em',
+            }}
+          >
+            {isTr ? 'KVKK uyumlu, şifreli kanal' : 'Encrypted, GDPR compliant'}
+          </span>
+        </div>
+        <div className="inline-flex items-center gap-1">
+          <span
+            className="pulse-eyebrow"
+            style={{
+              color: '#A3A3A3',
+              fontSize: 8.5,
+              letterSpacing: '0.06em',
+            }}
+          >
+            POWERED BY
+          </span>
+          <span
+            className="text-[#0A0A0A]"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontStyle: 'italic',
+              fontSize: 12,
+              fontWeight: 500,
+            }}
+          >
+            buaze<span className="text-[#A8D62E]">.</span>
+          </span>
+        </div>
       </div>
     </div>
   );

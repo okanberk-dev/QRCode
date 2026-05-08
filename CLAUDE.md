@@ -18704,3 +18704,135 @@ callsite eşiği geçilmedi CLAUDE.md §7).
   yaratılmadı** — kopyrayt riski sıfır + Buaze paterni intact.
   Eksik durumlarda PlatformChip-style brand-color + initials
   fallback (logo replikası DEĞİL, generic UI styling).
+### 38.139 2026-05-08 — Stage 58 sticky CTA bar + ContactFloat chat bubble premium editorial redesign (HANDOFF JSX prototip)
+
+> **Numerotaj çakışması notu**: Bu PR ilk olarak Stage 57 §38.138 numarasıyla
+> commit'lendi ve push edildi. Push sonrası rebase sırasında PR #562
+> (`feat(platforms): owner panel logo migration + sektör-bazlı filtering`)
+> paralel olarak main'e §38.138 / Stage 57 numarasıyla merged olduğu tespit
+> edildi. Conflict resolution sırasında my Stage Stage 58 / §38.139 olarak
+> renumber edildi (CLAUDE.md §39.2 disipline). Branch ismi
+> `chore/sticky-cta-chat-bubble-stage57` cosmetic intact kaldı; commit
+> message zaten "Stage 57" başlığı taşıyor (force-push hassas, değişmez).
+> Future session §38.139 anchor + Stage 58 label kanonik kabul eder.
+
+Kullanıcı yeni HANDOFF JSX prototip (StickyCTABar + ChatLauncher + ChatBubble + ChatScene) paylaştı. Mevcut Buaze counterpart'ları:
+- `StickyCtaBar.tsx` (101 satır) — basit Pulse §11 design, scroll threshold + sessionStorage dismiss + buaze:sticky-cta-visibility event
+- `ContactFloat.tsx` (472 satır) — 3-state akış (FAB → bubble teaser → expanded form), reCAPTCHA + honeypot + dwell-time + /api/contact POST. **Live chat değil — async email/form-based**.
+
+**AskUserQuestion 3 karar (kullanıcı onaylı, hepsi Recommended)**:
+
+1. *Scope*: **İkisi de redesign** (StickyCtaBar + ContactFloat parallel). Tek consolidated PR (CLAUDE.md §21.22 stacked YOK).
+2. *ChatBubble live chat semantik*: **Visual 1:1, async form-based metin** (Stage 56 §38.137 paterni). HANDOFF "ŞU AN ÇEVRİMİÇİ + 14:32 OKUNDU + Cem · Buaze ekibi + 'Genelde 2 dakika içinde dönüyoruz'" live chat illusion KALDIRILDI; Buaze backend async (form → /api/contact email pipeline) — fake live agent claim KVKK + ETK + tüketici hakları ihlali.
+3. *StickyCtaBar fake-data*: **Visual 1:1, compliance-safe** (Stage 56 §38.137 paterni). Avatar stack (M/A/K initials) + "312 ŞUBE BU AY" social proof block + "İLK 50 ŞUBEYE 30% İNDİRİM" promotion claim KALDIRILDI; jenerik "YENİ · 14 GÜN ÜCRETSİZ DENEME" eyebrow (verifiable Pulse promise).
+
+**3 fix bundle**:
+
+1. **8 yeni keyframe** (`globals.css`):
+   - `scbDot` (1.6s lime dot pulse)
+   - `scbPulse` (2.6s lime halo blur)
+   - `scbRing` (2.6s concentric ring expansion)
+   - `scbHair` (5s hairline traveling sweep)
+   - `scbSweep` (9s radial gradient sweep)
+   - `scbShine` (3.6s button shine)
+   - `scbWave` (2s sparkle rotation)
+   - `scbBlink` (1s input cursor blink — future use, dead-utility değil)
+   - Reduced-motion blanket'a 8 `[style*='scbX']` selector eklendi (CLAUDE.md §38.61 paterni reuse).
+
+2. **`StickyCtaBar.tsx` premium editorial redesign** (~100 → ~210 satır):
+   - Lime aura sweep (radial gradient blur 320×160 + 9s scbSweep)
+   - Hairline pulse (top edge linear-gradient + 5s scbHair)
+   - Pulse-dot eyebrow (compliance-safe: "YENİ · 14 GÜN ÜCRETSİZ DENEME")
+   - HUGE italic Space Grotesk headline (`clamp(20px, 2.4vw, 30px)` synthetic italic CLAUDE.md §38.112 paterni reuse) + lime highlight CSS gradient trick (transparent 60% → lime 60-92% → transparent 92%)
+   - Meta row 3 verifiable trust items (14 gün ücretsiz / Kart gerekmez / İstediğin zaman iptal — lime ✓ + mono uppercase)
+   - Lime CTA button (h-14 px-7 + shine animation 3.6s scbShine + arrow icon + lime-deep shadow)
+   - Dismiss button (rounded-full border white-12 + X icon)
+   - **AVATAR STACK + 312 ŞUBE BU AY KASITLI SİLİNDİ** (CLAUDE.md §35.8 + §35.10 + §19.1.1 disipline)
+   - Backend kontrat INTACT: scroll threshold 600px + sessionStorage `buaze.sticky.dismissed` + `buaze:sticky-cta-visibility` CustomEvent dispatcher + `hidden md:block` (mobile MobileBottomNav §38.43 zaten bottom CTA sağlıyor)
+
+3. **`ContactFloat.tsx` premium chat bubble redesign** (~472 → ~570 satır):
+   - **FAB redesign** (HANDOFF ChatLauncher):
+     - Lime halo blur (`inset: -8` + `opacity 0.18` + `blur(14px)` + 2.6s scbPulse)
+     - Concentric ring (`inset: -4` + `1.5px lime border` + 2.6s scbRing expansion)
+     - 64×64 lime FAB + 2px graphite border + lime-deep shadow
+     - Notification badge: HANDOFF "1" message count → **"?" yardım icon** (compliance: live chat unread message implication YOK, async help-prompt semantik)
+   - **Bubble teaser** intact (mevcut Pulse §11 design, kullanıcı tıklayınca form'a geçer)
+   - **Open form** (HANDOFF ChatBubble visual + Buaze form):
+     - Header: graphite + lime halo (top-right radial gradient 160×160 + 32% opacity decorative)
+     - Avatar: 44×44 lime gradient + synthetic italic "B" Space Grotesk + lime corner dot (Buaze brand mark, **"Cem · Buaze ekibi" hardcoded operator SİLİNDİ**)
+     - Greeting: italic Space Grotesk "Merhaba ✦" (HANDOFF birebir + scbWave 2s sparkle rotation)
+     - Status: lime dot scbDot + "BUAZE EKİBİ" mono uppercase (HANDOFF "ŞU AN ÇEVRİMİÇİ" SİLİNDİ — async semantik)
+     - Async hint: "GENELDE 1 İŞ GÜNÜ İÇİNDE DÖNÜŞ" (Stage 51 §38.132 paterni reuse, mevcut Buaze patterned)
+     - Initial chat-style bubble: rounded-tr/br/bl-3xl + rounded-tl-[4px] + bg-[#FAFAFA] + border + max-w-92% (HANDOFF birebir, **"14:32 · OKUNDU" timestamp + read status SİLİNDİ**)
+     - Quick reply chips (3 chip): tıklayınca **`setMessage()` ile message field'a auto-fill** (form-based, send manuel — live chat illusion YOK)
+     - Form: Name + Email + Message + KVKK consent + reCAPTCHA + honeypot + dwell-time guard (mevcut backend kontrat INTACT)
+     - Submit button: graphite + lime arrow icon
+     - Footer: lock icon + "KVKK uyumlu, şifreli kanal" + "POWERED BY buaze." (HANDOFF birebir)
+   - Backend kontrat INTACT: 3-state akış (fab/bubble/open) + ESC handler + auto-show 6sn + sessionStorage dismiss + reCAPTCHA + honeypot + dwell-time + /api/contact POST + hidden on auth/onboarding
+
+**Etkilenen dosyalar (3)**:
+- `src/app/globals.css` (~+50 satır: 8 yeni keyframe + 8 reduced-motion blanket selector)
+- `src/components/marketing/StickyCtaBar.tsx` (~+110 satır: full rewrite premium editorial)
+- `src/components/marketing/ContactFloat.tsx` (~+100 satır: FAB + open form visual redesign, mevcut form akışı intact)
+- `CLAUDE.md` §38.139 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**: 383/383 intact bekleniyor (presentational + state management dokunulmadı).
+
+**Verification (lokal)**:
+- Lokal disk %96 dolu (10Gi free) — `npm install` skip; CI Validate workflow doğrulayacak (CLAUDE.md §38.131 + §38.134 paterni).
+- Sanity grep regression:
+  - StickyCtaBar fake-data: "İLK 50" / "312 ŞUBE" / avatar M/A/K → 0 hit (kod gövdesinde; sadece yorum satırlarında "SİLİNDİ" notu)
+  - ContactFloat fake-data: "ŞU AN ÇEVRİMİÇİ" / "14:32" / "OKUNDU" / "Cem ·" / "2 dakika içinde dönüyoruz" → 0 hit (yorum satırlarında "SİLİNDİ" notu)
+  - Backend kontrat: `buaze.sticky.dismissed` + `sticky-cta-visibility` event + `/api/contact` + `getRecaptchaToken` + `MIN_FILL_MS` + `honeypot` hepsi hit ✓
+  - 8 yeni keyframe globals.css'te hit ✓
+  - 8 reduced-motion blanket `[style*='scbX']` selector hit ✓
+
+**Yapma**:
+- HANDOFF "ŞU AN ÇEVRİMİÇİ" + "14:32 · OKUNDU" + "Cem · Buaze ekibi" + "Genelde 2 dakika içinde dönüyoruz" live chat illusion'ı geri ekleme — Buaze backend async email pipeline (live chat **YOK**); fake live agent claim KVKK + ETK + tüketici hakları ihlali (CLAUDE.md §35.8 + §35.10 + §19.1.1 disipline §38.135 → §38.136 → §38.137 → §38.139 zincirinde stable şekilde compliance-safe).
+- StickyCtaBar avatar stack (M/A/K) + "312 ŞUBE BU AY" geri ekleme — fake testimonial + verifiable false cohort claim (Buaze gerçek müşteri 10-50 §19.4.4).
+- "İLK 50 ŞUBEYE 30% İNDİRİM" promotion eyebrow restore — verifiable kampanya değil; jenerik "14 GÜN ÜCRETSİZ DENEME" Pulse promise. Stage 46 §38.127 Pricing badge paterni ayrı (Header navbar'ında 30% zaten kampanya-bound).
+- Quick reply chip'leri "send butonu skip" yapma — form-based mantığı koruyor (auto-fill → kullanıcı düzenler/onaylar → manuel send). Live chat illusion YOK.
+- Notification badge "?" → "1" sayısına çevirme — message bekleniyor implication = live chat illusion.
+- ContactFloat live chat backend ekleme (WebSocket/SSE/polling) — büyük scope, CLAUDE.md §38.121.1 Prompt 2 backlog scope.
+- StickyCtaBar mobile'da gösterme (`hidden md:block` kaldırma) — mobile MobileBottomNav §38.43 zaten bottom CTA sağlıyor; çift sticky bottom UI kötü.
+
+**Yap**:
+- Yeni sticky CTA bar callsite eklenirse `StickyCtaBar` component reuse — scroll threshold + sessionStorage dismiss + buaze:sticky-cta-visibility event paterni intact.
+- Yeni async lead-capture widget gerekirse `ContactFloat` paterni reuse: 3-state akış (fab/bubble/open) + reCAPTCHA + honeypot + dwell-time + /api/contact POST.
+- HANDOFF "ChatLauncher" / "ChatBubble" benzeri prototip eklenirse compliance disipline pre-check zorunlu: live chat illusion (operator name, online status, read timestamp, response time promise) + fake metrics (cohort count, social proof avatars) **otomatik SKIP** edilir; visual structure 1:1 + async form-based metin standart.
+- Yeni `scbX` keyframe eklenirse globals.css `@keyframes` + reduced-motion blanket `[style*='X']` selector eşzamanlı eklenir (CLAUDE.md §38.61 paterni).
+- Quick reply chip pattern başka surface'ta gerekirse (örn. owner panel feedback composer template chips) `onClick → setField()` auto-fill paterni reuse.
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. Marketing surface'inde scroll > 600px → StickyCtaBar slide-in:
+   - Lime aura sweep + hairline pulse animations
+   - Pulse-dot eyebrow + HUGE italic + lime highlight
+   - Meta row 3 trust items + lime CTA shine + dismiss
+   - Avatar stack + 312 ŞUBE YOK
+   - Mobile (<md): görünmez (intact, MobileBottomNav var)
+2. Marketing surface'inde 6sn bekle → ContactFloat bubble teaser slide-in (mevcut intact)
+3. FAB tıkla → open form:
+   - Header graphite + lime halo + Buaze "B" avatar + scbWave ✦ + scbDot lime
+   - "BUAZE EKİBİ" + "GENELDE 1 İŞ GÜNÜ" mono uppercase
+   - Initial chat-style bubble (rounded asymmetric + bg-FAFAFA)
+   - 3 quick reply chips → tıkla → message field auto-fill
+   - Form (Name + Email + Message + KVKK) → submit → /api/contact POST → success state
+4. Reduced-motion ON → 8 scbX animation static (final state immediate, CLAUDE.md §38.61 blanket intact)
+5. ESC tuşu → form kapanır (FAB'a döner) — mevcut intact
+6. Mobile (375px) StickyCtaBar görünmez; ContactFloat fixed right-4 bottom-[88px] (MobileBottomNav üstünde)
+
+**Stage 58 closure** (Tarih 2026-05-08):
+- Branch: `chore/sticky-cta-chat-bubble-stage57` (fresh main üstüne, Stage 56 §38.137 PR #561 merged)
+- Edit'lenen dosyalar: 3 (`globals.css` + `StickyCtaBar.tsx` + `ContactFloat.tsx`) + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact bekleniyor (CI Validate doğrulayacak)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Marketing surface'lerinde scroll > 600px iken yeni premium editorial sticky CTA bar görünür; sağ alt köşede yeni HANDOFF chat bubble visual style ile FAB + form bulunur.
+- **Kalan riskler**: yok — backend kontrat (sessionStorage + buaze:sticky-cta-visibility event + /api/contact + reCAPTCHA + honeypot + dwell-time) intact; fake-data + live chat illusion compliance-safe variation'a rollback edildi.
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog — HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör yeni odak talebi.
+
+**Chat prompt history (Stage 58 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"şimdi aşağıdakini yap"* + 250+ satır HANDOFF JSX prototip paste (StickyCTABar + ChatLauncher + ChatBubble + ChatScene + 8 scbX keyframe). Önceki Stage 53/54/55/56 footer fake-data zincirinden tutarlılık örnekleri intact.
+- AskUserQuestion 3 karar: scope (ikisi de — Recommended) / chat live mi (async form-based — Recommended) / CTA fake-data (compliance-safe — Recommended). Hepsi Stage 56 §38.137 disipline ile uyumlu üçüncü/dördüncü iterasyon compliance disipline.
+- **Disipline restoration**: Stage 54 §38.135 fake-data override → Stage 55 §38.136 rollback → Stage 56 §38.137 üçüncü kez compliance-safe → Stage 58 §38.139 dördüncü kez compliance-safe + live chat illusion ek disipline. Pattern stable (§35.8 + §35.10 + §19.1.1 + async-vs-live-chat) — future session bu zinciri authoritative referans olarak kabul eder.
