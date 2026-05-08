@@ -18260,3 +18260,225 @@ intact (presentational değişim).
   fake-data SKIP kararı tekrar yürürlükte. Disipline override + geri
   alma zinciri §39.2 chat history'de tam dokumente — future session
   bu kararları authoritative kabul eder.
+
+---
+
+### 38.137 2026-05-08 — Stage 56 footer brand block duplicate elimination (visual "iki footer" hissi fix)
+
+§38.135 Stage 54 (HANDOFF 1:1 fake-data override) + §38.136 Stage 55
+(compliance-safe rollback) zincirinden sonra kullanıcı yeni handoff:
+*"footer hala birebir değil 2 ayrı footer gibi gözüküyor şimdi sana
+hem html hem de png dosyalarını atıyorum lütfen buna göre tasrımı
+1:1 düzenler misin bizim yazı tiplerimizle ama"* + HANDOFF
+PremiumFooter screenshot referansı.
+
+Manuel `Read` audit ile gerçek "iki footer" sorununun kök nedeni
+tespit edildi: brand kimliği (logo + "buaze." wordmark + description
++ trust badge + social icons) **iki kez render** ediliyordu —
+üstte HUGE editorial anchor + altta kart-vari repeat. HANDOFF
+screenshot'ta tek brand block var; ECG sonrası direkt link cols +
+bottom rail.
+
+**AskUserQuestion 2 karar (kullanıcı onaylı)**:
+
+1. *Fake-data*: **Visual 1:1, compliance-safe metin** (Recommended).
+   Stage 55 §38.136 disipline intact (KVKK + ETK + Google policy
+   risk SIFIR). Üçüncü iterasyondaki fake-data override talebi
+   reddedildi; sadece visual yapı 1:1 yapılır.
+2. *Sosyal/trust yer*: **Üst brand block'una entegre** (HANDOFF
+   spec birebir). Trust badge "2.400+ İŞLETME" + 4 social icon
+   (Instagram, X, LinkedIn, YouTube) üst kolonda anchor + tagline
+   altına; alt brand block tamamen elimine.
+
+**3 fix bundle**:
+
+1. **Üst brand block extension** (`MarketingFooter.tsx:215-250`):
+   - Tagline'dan sonra (italic motto) yeni satır:
+     `flex flex-wrap items-center gap-3` row ile trust badge +
+     social icons row.
+   - Trust badge: `inline-flex rounded-full border border-[#C6F24E]/40
+     bg-[#C6F24E]/10` lime tint (mevcut Stage 49 §38.131 paterni
+     reuse).
+   - 4 social icon: `h-10 w-10 rounded-xl border border-white/10
+     bg-white/[0.04] hover:-translate-y-0.5 hover:bg-white/10
+     active:scale-95 focus-visible:ring-2 focus-visible:ring-[#C6F24E]`.
+     `--brand` CSS variable ile per-platform hover glow (Instagram
+     pink, X white, LinkedIn blue, YouTube red).
+   - Status tiles `mt-10` → `mt-8` (üst block extension için
+     dikey ritim ayarı).
+
+2. **Alt brand block tamamen sil** (eski ~53 satır):
+   - `BuazeLogo` (32px on-dark variant) — silindi
+   - `<span>buaze<span>.</span></span>` text wordmark — silindi
+   - `<p>siteDescription || default</p>` — silindi
+   - Trust micro-row (2.400+ İŞLETME) — üst block'a taşındı
+   - Social icons row (4 icon) — üst block'a taşındı
+   - Tüm wrapper `<div className="rounded-[28px] border border-white/10
+     bg-white/[0.04] p-5 lg:rounded-none lg:border-0 ...">` — silindi
+
+3. **Alt blok grid restructure**:
+   - Eski: `lg:grid-cols-[1.5fr_repeat(4,1fr)]` (brand col-1 +
+     4 link col)
+   - Yeni: `hidden lg:grid lg:grid-cols-4 lg:gap-8` (sadece 4 link
+     col, brand col-1 silindiği için)
+   - Mobile accordion (`space-y-3 lg:hidden`) intact (Stage 49
+     §38.131 paterni reuse — 44-56px tap target, `<details>`
+     native semantic, group-open chevron rotate).
+
+**Orphan import cleanup**:
+- `BuazeLogo` import — silindi (artık callsite yok)
+- `getSiteSettings` import — silindi (artık callsite yok;
+  mevcut alt brand block'ta `s.logoUrl` BuazeLogo'ya geçiriliyordu)
+- `const s = await getSiteSettings()` — silindi
+- `t` parameter destructure — silindi (artık `t.siteDescription`
+  body'de kullanılmıyor; `t` interface'i opsiyonel olarak intact —
+  caller'lar geçirebilir, ignore edilir, backward compat).
+
+**Compliance disipline intact** (Stage 55 §38.136):
+- Tagline: `'Bir QR. Bir yorum. Bir kazanç.'` / `'One QR. One
+  review. One win.'` (verifiable brand manifesto)
+- Status tiles: `OPS · 24/7` / `PULSE AI · <1s` / `KAPSAM · TR · EN`
+  (static-but-true; "API 99.99%" / "Pulse AI 0.74s" / "YORUM/SN 14,2"
+  fake metric YOK)
+- Newsletter hint: `'SPAM YOK · İSTEDİĞİNDE ÇIK'` ("4.2K SAHİP"
+  prefix YOK)
+- Scan-to-dashboard QR: `'TELEFONDA · MOBİL UYUMLU'` ("IOS · ANDROID"
+  app claim YOK — Buaze native app YOK §25)
+
+**HANDOFF visual structure 1:1**:
+- 2-col editorial layout (1.55fr/1fr) intact
+- HUGE italic "buaze." anchor intact (clamp 56-168px synthetic
+  italic Space Grotesk + lime nokta)
+- 3-up status tile band intact (visual structure)
+- FooterLiveTicker rotation intact (Karaköy/Bağdat/Cihangir/Çankaya/
+  İzmir × 5 platform event)
+- Newsletter editorial card (lime gradient) intact
+- Scan-to-dashboard QR card intact
+- ECG divider + Stage 42 §38.123 lime sweep overlay intact
+- 4-col link grid (desktop) + mobile accordion intact
+- Bottom rail uppercase mono NAP + copyright + legal links intact
+
+**Etkilenen dosyalar (2)**:
+- `src/components/marketing/MarketingFooter.tsx` (~80 satır
+  değişim: 4 import sil + `s` + `t` destructure sil + üst block
+  extension +30 satır + alt block brand silme -53 satır + grid
+  restructure)
+- `CLAUDE.md` §38.137 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**:
+383/383 intact bekleniyor (presentational).
+
+**Verification (lokal)**:
+- Lokal disk %96 dolu (10Gi free) — `npm install` skip; CI
+  Validate workflow doğrulayacak (CLAUDE.md §38.131 + §38.134
+  paterni).
+- Sanity grep regression:
+  - `BuazeLogo\b` 0 hit ✓
+  - `getSiteSettings\|s\.logoUrl\|const s = ` 0 hit ✓
+  - `t\.siteDescription` 0 hit ✓
+  - `buaze<span` 1 hit (üst block tek render) ✓
+  - `SOCIAL\.map` 1 hit (üst block'a entegre) ✓
+  - `hidden lg:grid lg:grid-cols-4` 1 hit ✓
+  - `space-y-3 lg:hidden` 1 hit (mobile accordion) ✓
+
+**Yapma**:
+- Stage 54 §38.135 fake-data variation'ları (12.482 işletme + API
+  99.99% + 4.2K SAHİP + IOS·ANDROID) yeni session'da geri ekleme
+  — kullanıcı AskUserQuestion ile **üçüncü kez** Stage 55 §38.136
+  compliance-safe disipline'i seçti. CLAUDE.md §35.8 + §35.10 +
+  §19.1.1 disipline tekrar yürürlükte.
+- Alt blok'ta brand block geri ekleme — kullanıcının "iki footer"
+  şikayeti tam bu duplicate'ten kaynaklanıyordu. Brand kimliği
+  TEK render (üst block).
+- Trust badge'i veya social icons'u alt blok'a taşıma — kullanıcı
+  AskUserQuestion ile "Üst brand block'una entegre" seçti.
+- HANDOFF "iOS · ANDROID" / "12.482 işletme" / "API 99.99%" / "4.2K
+  SAHİP" claim'lerini admin override mail/footer/marketing surface'
+  lerinde reuse etme — verifiable false claim'ler her surface'te
+  aynı disipline ihlali.
+- `getSiteSettings()` cache'li (CLAUDE.md §38.101 Stage 25) —
+  silmek perf concern değil, kullanılmıyor olduğu için temizlik.
+- `t.siteDescription` interface'inden silmek — backward compat
+  break edebilir (caller'lar prop geçirir, optional ignore edilir).
+  Interface intact, body'de kullanılmıyor.
+
+**Yap**:
+- Yeni footer/marketing surface'inde brand kimliği duplicate
+  riskini cross-check zorunlu — `grep -c "buaze<span"` veya
+  `grep -c "BuazeLogo"` count > 1 ise duplicate var demek.
+- Yeni social icons callsite eklenirse `SOCIAL` array reuse
+  (4 platform: Instagram, X, LinkedIn, YouTube; per-platform
+  brand color CSS variable `--brand` + group-hover transition).
+- Yeni trust badge eklenirse "2.400+ İŞLETME" lime tint
+  paterni reuse (`inline-flex rounded-full border border-[#C6F24E]/40
+  bg-[#C6F24E]/10 px-2.5 py-1 + ★ + pulse-eyebrow text-[#C6F24E]`).
+- Yeni session'da fake-data tartışması olursa CLAUDE.md §38.135
+  (override) + §38.136 (rollback) + §38.137 (üçüncü kez
+  compliance-safe seçim) zinciri authoritative referans.
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. Mobile Chrome (375×667 iPhone SE) `/tr` ziyaret →
+   - Üst blok: pulse-dot eyebrow + HUGE italic "buaze." +
+     compliance-safe tagline + trust badge "2.400+ İŞLETME"
+     + 4 social icon row + 3-up status tile (OPS·24/7,
+     PULSE AI·<1s, KAPSAM·TR·EN) + FooterLiveTicker rotation
+   - Sağ üst blok: Newsletter card (lime gradient + İtibar
+     Rehberi) + Scan QR (TELEFONDA·MOBİL UYUMLU)
+   - ECG divider (lime sweep overlay)
+   - Mobile accordion: 4 link col (Ürün/Çözümler/Şirket/Kaynaklar)
+     56px tap target
+   - Bottom rail: NAP uppercase mono + copyright + legal links
+2. Desktop Chrome (1440×900) →
+   - Üst blok 2-col grid (1.55fr/1fr) intact
+   - ECG sonrası 4-col link grid (`hidden lg:grid lg:grid-cols-4`)
+   - Mobile accordion gizli (`lg:hidden`)
+   - **Brand block tek render** — alt blokta logo/buaze./description/
+     trust/social YOK
+3. Reduced-motion ON → ECG draw + sweep overlay + bz-pulse-dot
+   static + ticker durur (CLAUDE.md §38.61 blanket intact).
+
+**Stage 56 closure** (Tarih 2026-05-08):
+- Branch: `chore/footer-brand-elimination-stage56` (fresh main
+  üstüne, Stage 53 §38.134 + Stage 54 §38.135 + Stage 55 §38.136
+  PR'ları merged)
+- Edit'lenen dosyalar: 2 (`MarketingFooter.tsx` + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact bekleniyor (CI Validate doğrulayacak)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  marketing surface'lerinde footer artık tek brand block + temiz
+  link grid + bottom rail. Visual "iki footer" hissi tamamen
+  ortadan kalkar.
+- **Kalan riskler**: yok — Stage 55 §38.136 compliance disipline
+  intact, brand duplicate elimine, sosyal/trust üst block'a entegre,
+  alt block sade link grid + bottom rail.
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör
+  yeni odak talebi.
+
+**Chat prompt history (Stage 56 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"footer hala birebir değil 2 ayrı footer
+  gibi gözüküyor şimdi sana hem html hem de png dosyalarını
+  atıyorum lütfen buna göre tasrımı 1:1 düzenler misin bizim
+  yazı tiplerimizle ama"* + HANDOFF PremiumFooter PNG screenshot
+  + HTML reference. Önceki Stage 54 §38.135 fake-data override +
+  Stage 55 §38.136 rollback zinciriyle çelişen 1:1 talebi.
+- AskUserQuestion 2 karar:
+  1. *Fake-data*: "Visual 1:1, compliance-safe metin (Recommended)"
+     seçildi → Stage 55 §38.136 disipline intact, üçüncü iterasyon
+     compliance disipline yürürlükte.
+  2. *Sosyal/trust yer*: "Üst brand block'una entegre (HANDOFF spec
+     birebir)" seçildi → trust badge + social icons üst block'a
+     taşındı, alt brand block tamamen silindi.
+- **Disipline restoration**: Stage 54 §38.135 fake-data override →
+  Stage 55 §38.136 rollback → Stage 56 §38.137 üçüncü kez
+  compliance-safe seçim zinciri tam dokumente. Future session
+  CLAUDE.md §35.8 + §35.10 + §19.1.1 disipline'in §38.135-§38.137
+  zincirinde stable şekilde compliance-safe yönde olduğunu kabul
+  eder.
+
+---
+
