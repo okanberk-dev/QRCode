@@ -69,3 +69,53 @@ export {
   computeQuotaPct,
   type APBillingCardProps,
 } from "./APBillingCard";
+
+// Stage 65 §38.146 — HANDOFF JSX prototip (admin/owner panel UI v2
+// showcase) tam migrate (multiple PR — 184+ callsite). PR0 base ekle.
+// Pulse §11 hex map + synthetic italic Space Grotesk (CLAUDE.md
+// §38.112 + §38.122 paterni). 18 yeni primitive ekle; PR1-5'te mevcut
+// `bz-btn-*`/Toggle/Badge/Tabs callsite'ları kademeli migrate; PR6'da
+// dead utility/primitive'ler silinir (CLAUDE.md §34 + §38.49).
+export { APButton, type APButtonProps, type APButtonSize, type APButtonVariant } from "./APButton";
+export { APSwitch, type APSwitchProps, type APSwitchSize } from "./APSwitch";
+export { APChip, type APChipProps, type APChipTone } from "./APChip";
+export {
+  APSegmented,
+  type APSegmentedProps,
+  type APSegmentedOption,
+  type APSegmentedSize,
+} from "./APSegmented";
+export { APFab, type APFabProps, type APFabTone } from "./APFab";
+export { APSplitButton, type APSplitButtonProps } from "./APSplitButton";
+export {
+  APButtonGroup,
+  type APButtonGroupProps,
+  type APButtonGroupItem,
+} from "./APButtonGroup";
+export { APToggleCard, type APToggleCardProps } from "./APToggleCard";
+export { APCard, type APCardProps } from "./APCard";
+export { APKpiCard, type APKpiCardProps } from "./APKpiCard";
+export {
+  APInboxCard,
+  type APInboxCardProps,
+  type APInboxItem,
+} from "./APInboxCard";
+export { APAlertCard, type APAlertCardProps } from "./APAlertCard";
+export { APEmptyCard, type APEmptyCardProps } from "./APEmptyCard";
+export { APLocationCard, type APLocationCardProps } from "./APLocationCard";
+export {
+  APTeamCard,
+  type APTeamCardProps,
+  type APTeamRole,
+} from "./APTeamCard";
+export { APQRCard, type APQRCardProps } from "./APQRCard";
+export {
+  APQuickSettingsCard,
+  type APQuickSettingsCardProps,
+  type APQuickSettingsToggle,
+} from "./APQuickSettingsCard";
+export {
+  APComposerCard,
+  type APComposerCardProps,
+  type APComposerTag,
+} from "./APComposerCard";

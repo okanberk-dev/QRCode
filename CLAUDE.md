@@ -20102,3 +20102,174 @@ variant.
 - **Hibrit dark/light pattern**: Stage 63 Step 1 dark mode +
   Stage 64 Step 2/3 light mode = JSX prototip emotional/productivity
   semantik birebir.
+
+---
+
+### 38.146 2026-05-08 — Stage 65 PR0 HANDOFF JSX prototip 18 yeni AP* primitive (admin/owner panel UI v2 base)
+
+§38.121.1 Prompt 2 Öncelik 2 backlog kapatma. Kullanıcı 1300 satırlık
+HANDOFF JSX prototip paylaştı (admin/owner panel UI v2 showcase, 18
+primitive + 6 showcase frame + AP_T translation map). Plan mode'da
+3 paralel Explore agent + AskUserQuestion 2 karar (Tam migrate
+multiple PR + Pulse §11 intact synthetic italic) onayı sonrası
+**PR0 base** uygulandı: 18 yeni standalone AP* primitive eklendi,
+mevcut counterparts (`bz-btn-*` 124 dosya / Toggle 1 / Badge 57 /
+Tabs 2) **dokunulmadı**. PR1-5 sonraki batchlerde callsite migrate;
+PR6 cleanup mevcut counterparts'ı siler (CLAUDE.md §34 + §38.49
+disipline).
+
+**18 yeni primitive** (`src/components/ui/`):
+
+| Primitive | Satır | Tip | HANDOFF eşdeğeri | Mevcut Buaze counterpart |
+|---|---|---|---|---|
+| APButton | 165 | atom | bz-btn-{primary,lime,ghost,icon,...} (124 dosya) | bz-btn-* utility |
+| APSwitch | 110 | atom | Toggle (1 dosya) | Toggle primitive |
+| APChip | 105 | atom | Badge (57 dosya) | Badge primitive |
+| APSegmented | 110 | atom | Tabs (2 dosya) | Tabs primitive |
+| APFab | 75 | atom | yok | yok |
+| APSplitButton | 95 | atom | yok | yok |
+| APButtonGroup | 75 | atom | yok | yok |
+| APToggleCard | 110 | atom | yok | yok |
+| APCard | 75 | atom | bz-card utility (compose-friendly comp form) | bz-card class |
+| APKpiCard | 145 | card | StatCard (farklı API + sparkline) | StatCard primitive |
+| APInboxCard | 230 | compound | yok (FeedbackList custom inline) | yok |
+| APAlertCard | 110 | card | AlertBanner (farklı yapı, structured review) | AlertBanner primitive |
+| APEmptyCard | 80 | card | EmptyState (italic display + halo pulse) | EmptyState primitive |
+| APLocationCard | 110 | card | yok | yok |
+| APTeamCard | 105 | card | yok | yok |
+| APQRCard | 95 | card | yok | yok |
+| APQuickSettingsCard | 165 | compound | yok | yok |
+| APComposerCard | 200 | compound | yok (`/r/[slug]` zaten Stage 49+52+59) | yok |
+
+**Toplam ~2160 satır + index.ts barrel + CLAUDE.md log.**
+
+**BZ palette → Pulse hex mapping** (HANDOFF birebir intact):
+- BZ.lime → #C6F24E (Pulse `--color-brand-lime`)
+- BZ.limeDeep → #A8D62E (`--color-brand-lime-deep`)
+- BZ.limeWash → #EAF9B8 (`--color-brand-lime-soft`)
+- BZ.ink → #0A0A0A (`--color-brand-graphite`)
+- BZ.bg → #FAFAFA (`--color-brand-n50`)
+- BZ.mute → #525252 (`--color-text-muted`)
+- BZ.muteSoft → #737373 (`--color-text-light`)
+- BZ.fontHead Instrument Serif italic → **synthetic italic Space
+  Grotesk** (`fontFamily: 'var(--font-heading)' + fontStyle:
+  'italic'` paterni, CLAUDE.md §38.112 cookie banner + §38.122
+  hero paterni reuse). Google Fonts italic kaynağı yok, browser
+  oblique transform ~%85 gerçek italic — kullanıcı kararı §38.114
+  "Asla pivot etme" intact.
+- BZ.fontMono → JetBrains Mono (`var(--font-jetbrains-mono)`)
+- APIcon prototip inline svg → **lucide-react** (mevcut Buaze pattern,
+  50+ existing usage)
+- Showcase fonksiyonları (APButtonShowcase / APTogglesShowcase /
+  APKpiShowcase / APInboxShowcase / APOwnerShowcase / APAlertsShowcase)
+  **production'a alınmadı** (BZ tokens object Buaze'de yok, sadece
+  prototip referans — CLAUDE.md §16 disipline)
+- AP_T translation map + apt(key) helper **kullanılmadı** — Buaze
+  `lib/translations.ts` paterni reuse (CLAUDE.md §10 disipline);
+  primitive'ler caller'dan `string | ReactNode` accept ediyor
+  (locale-agnostic API)
+
+**Disipline checklist (PR0)**:
+- ✅ Pulse §11 hex palette + synthetic italic Space Grotesk
+- ✅ lucide-react icons (mevcut bz-btn-* utility'lerle uyumlu icon set)
+- ✅ Pulse `bz-card` + `bz-elev-1/2/3` + `bz-motion-spring` foundation
+  token reuse paterni (CLAUDE.md §38.65)
+- ✅ A11y: aria-label, role="switch"/"radiogroup"/"slider"/"tablist"/
+  "tab"/"group", aria-pressed, aria-checked, aria-busy,
+  focus-visible lime ring + offset
+- ✅ Mobile: 44×44 touch target lg size + sm/md compact (CLAUDE.md
+  §38.74 paterni)
+- ✅ TypeScript strict + props interface + export type
+- ✅ Reduced-motion: globals.css universal `*` reset blanket'i
+  (CLAUDE.md §38.61) zaten kapsar; yeni keyframe gerekmez (mevcut
+  `bz-motion-spring` reuse)
+- ✅ Generic prop API (compound primitives caller-controlled state +
+  fully reusable)
+- ✅ Mevcut callsite'lar dokunulmadı (PR1-5 batchlerinde kademeli migrate)
+
+**Sonraki PR'lar (sequence — CLAUDE.md §21.22 stacked YOK)**:
+
+| PR | Stage | Surface | Risk | Scope |
+|---|---|---|---|---|
+| PR1 | 66 | Public review (`/r/[slug]`) | CRITICAL | 1 dosya, 2 bz-btn-* + 1 Badge |
+| PR2 (3 batch) | 67-69 | Admin Panel | HIGH | 39 dosya × 3 batch |
+| PR3 (3 batch) | 70-72 | Owner Dashboard | HIGH | 28 dosya × 3 batch |
+| PR4 | 73 | Auth forms | MEDIUM | 4 form |
+| PR5 | 74 | Marketing | LOW | 2-3 dosya |
+| PR6 | 75 | Cleanup | LOW | bz-btn-* utility + Toggle/Badge/Tabs sil |
+
+**Yapma**:
+- HANDOFF Instrument Serif italic font yükleme — kullanıcı kararı
+  §38.114 "Asla pivot etme" intact; synthetic italic Space Grotesk
+  yeterli (CLAUDE.md §38.112 + §38.122 paterni reuse).
+- Showcase fonksiyonlarını production'a almak — BZ tokens object
+  Buaze'de yok, prototip referans (§16 disipline).
+- AP_T translation map + apt(key) helper Buaze'ye taşıma — mevcut
+  `lib/translations.ts` paterni intact (§10 disipline); primitive'ler
+  locale-agnostic API.
+- Mevcut bz-btn-*/Toggle/Badge/Tabs callsite'larını PR0'da migrate —
+  PR0 sadece base primitives ekler, callsite intact (PR1-5
+  batchlerinde kademeli migrate).
+- StatCard / EmptyState / AlertBanner / Modal mevcut primitives'i
+  silmek — APKpiCard / APEmptyCard / APAlertCard / APCard farklı
+  API ama Pulse-compliant; CLAUDE.md §38.49 disipline (3+ tekrar
+  olmadan abstraction extract premature).
+- Compound primitives (APInboxCard / APQuickSettingsCard /
+  APComposerCard) hardcoded data ile yazma — generic prop API
+  zorunlu (caller controls state + items).
+- HANDOFF showcase keyframes (bzSpin / bzPulseSlow) eklemek —
+  mevcut Tailwind `animate-spin` + `pulse-heartbeat` utility yeterli.
+
+**Yap**:
+- Yeni primitive eklerken Stage 37 §38.117 + Stage 38 §38.118 + Stage
+  47 §38.128 paterni reuse: 'use client' + JSDoc başlık + props
+  interface + export type + Pulse §11 hex palette.
+- Compound primitives için generic state prop API (caller controls
+  selection + tabs + items + form state).
+- Pulse §11 mapping yeni primitive'lerde sadık tut (BZ.fontHead
+  Instrument Serif italic → synthetic Space Grotesk paterni reuse).
+- Yeni callsite eklerken AP* primitive tercih et (PR0 sonrası);
+  mevcut callsite'lar PR1-5 batchlerinde migrate edilir.
+
+**Verification**:
+- `npm run lint` → 0 errors / 0 warnings (beklenen)
+- `npx tsc --noEmit` → 0 errors in `src/` (beklenen)
+- `npm test` → 383/383 pass intact (presentational, helper logic yok)
+- `npx next build` → 58/58 static page intact + barrel export update
+
+**Stage 65 closure** (Tarih 2026-05-08):
+- Branch: `chore/handoff-ap-primitives-stage62` (fresh main üstüne;
+  isim Stage 62'de açıldı, paralel PR #569 merge sonrası numara
+  Stage 65 §38.146'ya rebase'lendi)
+- Yeni dosyalar: 18 (`src/components/ui/AP{Button,Switch,Chip,Segmented,Fab,SplitButton,ButtonGroup,ToggleCard,Card,KpiCard,InboxCard,AlertCard,EmptyCard,LocationCard,TeamCard,QRCard,QuickSettingsCard,ComposerCard}.tsx`)
+- Edit dosyaları: 2 (`src/components/ui/index.ts` barrel + CLAUDE.md
+  §38.146)
+- Schema migration: yok
+- Yeni dep: yok (lucide-react + React zaten var)
+- Test count: 383/383 intact (yeni unit test gerekmedi)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  bz-btn-*/Toggle/Badge/Tabs callsite'lar etkilenmedi (PR1-5
+  batchlerinde kademeli migrate).
+- Kalan riskler: yok (yeni dosyalar, mevcut kontrat dokunulmadı,
+  regression riski 0).
+- **Sonraki aşama**: PR1 Stage 66 — Public review (`/r/[slug]`)
+  migrate (CRITICAL). 1 dosya, 2 bz-btn-* + 1 Badge. Sonra PR2-5
+  surface-bazlı kademeli migrate; PR6 cleanup (mevcut counterparts
+  sil).
+
+**Chat prompt history (Stage 65 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: 1300 satırlık HANDOFF JSX prototip paste
+  (BZ palette + 18 primitive + 6 showcase frame + AP_T) + *"sana
+  attığım jsx dosyasındakileri kullan ve karılığı varsa onları çıkar
+  bu jsx'tekilerini kullanmanı istiyorum profesyonel bir şekilde
+  yap bunu."*
+- AskUserQuestion 2 karar (kullanıcı seçimleri):
+  1. **Migration scope**: Tam migrate (multiple PR — 184+ callsite
+     kademeli refactor)
+  2. **Pulse §11 disipline**: Synthetic italic Space Grotesk +
+     Pulse hex palette mapping intact (Recommended)
+- Plan mode + 3 paralel Explore agent (HANDOFF prototip / Buaze
+  mevcut primitives / migration surface mapping) → ExitPlanMode
+  onayı.
+- Auto mode aktif: PR0 base primitives uygulandı (callsite migrate
+  PR1-5 batchlerinde).
