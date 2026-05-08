@@ -78,15 +78,22 @@ export function PendingTasks({
             const sev = SEVERITY_LABEL[task.severity];
             return (
               <li key={task.id}>
+                {/*
+                  Stage 80 §38.160 — Mobile tap row 56px height
+                  (uygulama-gibi UX); icon container 8 → 9 (32→36px)
+                  uyumlu CTA hissi. `bz-motion-spring` hover state
+                  intact. WCAG 2.5.5 (Target Size AA) 44×44 garantisi
+                  aşılır, dense list okunabilirlik korunur.
+                */}
                 <Link
                   href={task.href}
-                  className={`flex items-center gap-3 py-3 -mx-2 px-2 rounded-lg hover:bg-[#FAFAFA] bz-motion-spring ${
+                  className={`flex items-center gap-3 py-3 -mx-2 px-2 rounded-lg hover:bg-[#FAFAFA] bz-motion-spring min-h-[56px] sm:min-h-0 ${
                     idx < tasks.length - 1 ? 'border-b border-[#F2F2F2]' : ''
                   }`}
                 >
                   <span
                     aria-hidden="true"
-                    className="shrink-0 flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAFAFA] text-[#0A0A0A]"
+                    className="shrink-0 flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-[#FAFAFA] text-[#0A0A0A]"
                   >
                     <Icon size={14} strokeWidth={2} />
                   </span>

@@ -297,13 +297,20 @@ export default function DashboardRestaurantsPage() {
         </AlertBanner>
       )}
 
-      <div className="bz-card flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between">
+      {/*
+        Stage 80 §38.160 — Mobile filter toolbar sticky-on-scroll.
+        Topbar h-16 (64px) altında pin'lenir; tab + arama kutusu içerik
+        scroll'unda her zaman erişilebilir kalır. lg+ desktop'ta
+        non-sticky (mevcut layout intact). bg-white/95 + backdrop-blur
+        Apple-soft hissi (CLAUDE.md §38.46 + §38.65 paterni reuse).
+      */}
+      <div className="bz-card flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center lg:justify-between md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur lg:static lg:bg-white lg:backdrop-blur-none">
         <Tabs
           items={statusTabs}
           active={statusFilter}
           onChange={(id) => setStatusFilter(id as 'active' | 'all' | 'passive')}
           ariaLabel={locale === 'tr' ? 'İşletme durum filtresi' : 'Location status filter'}
-          className="overflow-x-auto"
+          className="overflow-x-auto no-scrollbar"
         />
         <div className="relative w-full lg:max-w-md">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
@@ -354,7 +361,7 @@ export default function DashboardRestaurantsPage() {
             return (
               <div
                 key={restaurant.id}
-                className={`overflow-hidden bz-card transition-colors ${!restaurant.isActive ? 'border-[#FECACA] bg-[#FFFBFB]' : 'hover:border-[#C6F24E]'}`}
+                className={`overflow-hidden bz-card bz-motion-spring ${!restaurant.isActive ? 'border-[#FECACA] bg-[#FFFBFB]' : 'hover:border-[#C6F24E] hover:bz-elev-2 bz-lift'}`}
               >
                 <div className="p-5 sm:p-6">
                   {/* Header — name + address + trend badge (AdminLocations design) */}
@@ -424,17 +431,23 @@ export default function DashboardRestaurantsPage() {
                     <p className="pulse-eyebrow text-[#737373] truncate">/r/{restaurant.slug}</p>
                   </div>
 
-                  {/* Action grid — detay / qr / activate-deactivate / open public */}
+                  {/*
+                    Stage 80 §38.160 — Action grid 4 button mobile 44px+
+                    touch target garantisi (WCAG 2.5.5 AA). Mobile'da
+                    `min-h-[44px]`, sm:+ desktop'ta mevcut padding intact.
+                    Lime CTA + ghost dark + status toggle + public preview
+                    sırası action priority hierarchy'siyle uyumlu.
+                  */}
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <Link
                       href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
-                      className="bz-btn-ghost justify-center text-[12px]"
+                      className="bz-btn-ghost justify-center text-[12px] min-h-[44px] sm:min-h-0"
                     >
                       {locale === 'tr' ? 'Detay aç' : 'Open details'} →
                     </Link>
                     <Link
                       href={`/${locale}/dashboard/qr?restaurant=${restaurant.id}`}
-                      className="bz-btn-primary justify-center text-[12px]"
+                      className="bz-btn-primary justify-center text-[12px] min-h-[44px] sm:min-h-0"
                     >
                       {copy.qr}
                     </Link>
@@ -442,7 +455,7 @@ export default function DashboardRestaurantsPage() {
                       type="button"
                       disabled={actionLoadingId === restaurant.id}
                       onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
-                      className={`rounded-full px-4 py-2.5 text-center text-[12px] font-medium transition-colors disabled:opacity-60 ${
+                      className={`inline-flex items-center justify-center min-h-[44px] sm:min-h-0 rounded-full px-4 py-2.5 text-center text-[12px] font-medium bz-motion-spring disabled:opacity-60 ${
                         restaurant.isActive
                           ? 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
                           : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
@@ -455,7 +468,7 @@ export default function DashboardRestaurantsPage() {
                     <Link
                       href={`/r/${restaurant.slug}`}
                       target="_blank"
-                      className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] hover:border-[#C6F24E] transition-colors"
+                      className="inline-flex items-center justify-center gap-1.5 min-h-[44px] sm:min-h-0 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-[12px] font-medium text-[#0A0A0A] bz-motion-spring hover:border-[#C6F24E]"
                       aria-label="Open public page"
                     >
                       <ExternalLink size={14} strokeWidth={2} />

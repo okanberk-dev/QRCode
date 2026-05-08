@@ -641,6 +641,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     // mark-as-read. Already-read row'larda PATCH skip (gereksiz network).
     // Optimistic state update + fire-and-forget; failure'da silent fail
     // (flagFeedback paterni). counts.unread otomatik decrement eder.
+    //
+    // Stage 80 §38.160 — PATCH sonrası `buaze:feedback-read` custom event
+    // dispatch. NotificationBell listener (§38.160 yeni) anında refetch
+    // eder; 60s polling beklemez. Bottom nav badge (§38.141 Stage 60
+    // event chain) anında düşer — kullanıcı raporu "okundu yapınca azalmıyor"
+    // fix.
     const row = feedbacks.find((f) => f.id === id);
     if (!row || row.isRead === true) return;
     setFeedbacks((prev) =>
@@ -650,9 +656,15 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isRead: true }),
-    }).catch(() => {
-      /* non-blocking — eski feedback'ler için server reject edebilir */
-    });
+    })
+      .then(() => {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('buaze:feedback-read'));
+        }
+      })
+      .catch(() => {
+        /* non-blocking — eski feedback'ler için server reject edebilir */
+      });
   };
 
   const onBackToList = () => {

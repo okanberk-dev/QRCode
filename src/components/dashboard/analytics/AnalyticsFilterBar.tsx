@@ -171,7 +171,7 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
                     updateMany([['range', r.id], ['customStart', null], ['customEnd', null]]);
                   }
                 }}
-                className={`px-3 py-1 text-[12px] font-medium rounded-md transition-colors ${
+                className={`px-3 py-2 sm:py-1 text-[12px] font-medium rounded-md transition-colors min-h-[40px] sm:min-h-0 ${
                   active
                     ? 'bg-[#0A0A0A] text-white'
                     : 'text-[#525252] hover:bg-[#F5F5F5]'
@@ -184,11 +184,13 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
           })}
         </div>
 
-        {/* §38.50 — Özel aralık trigger */}
+        {/* §38.50 — Özel aralık trigger.
+            Stage 80 §38.160 — mobile 44px touch target (`min-h-[44px]`),
+            desktop sm:+ kompakt kalır. */}
         <button
           type="button"
           onClick={() => setCustomOpen(true)}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-md border transition-colors ${
+          className={`inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 text-[12px] font-medium rounded-md border transition-colors min-h-[44px] sm:min-h-0 ${
             range === 'custom'
               ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
               : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
@@ -200,11 +202,11 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
           <span className="bz-mono tabular-nums max-w-[200px] truncate">{customLabel}</span>
         </button>
 
-        {/* §38.50 — Rapor al (CSV export) */}
+        {/* §38.50 — Rapor al (CSV export). Stage 80 §38.160 — mobile 44px. */}
         <a
           href={exportHref}
           download
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-md border border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA] transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 text-[12px] font-medium rounded-md border border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA] transition-colors min-h-[44px] sm:min-h-0"
           aria-label={isTr ? 'Rapor indir (CSV)' : 'Download report (CSV)'}
         >
           <Download size={13} />

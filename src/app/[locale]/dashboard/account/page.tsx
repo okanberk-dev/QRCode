@@ -192,17 +192,26 @@ export default function AccountSettingsPage() {
               → /admin/dashboard. */}
           <AdminBackLink />
           <form action="/api/account/export-data" method="POST" className="inline-flex">
+            {/*
+              Stage 80 §38.160 — Mobile (<sm) icon-only "Veri indir"; sm:+
+              text label görünür. 44px touch target garantisi mobile için
+              (`bz-touch-target`). Pulse §11 + WCAG 2.5.5 + §38.74 dense
+              chip exception (44×44 minimum action button mobile'da).
+            */}
             <button
               type="submit"
-              className="bz-btn"
+              className="bz-btn bz-touch-target sm:min-h-0 sm:min-w-0"
               title={
                 isTr
                   ? 'KVKK / GDPR veri dışa aktarımı (saatte 1)'
                   : 'KVKK / GDPR data export (1/hr)'
               }
+              aria-label={isTr ? 'Veri indir' : 'Export data'}
             >
               <Download size={13} />
-              {isTr ? 'Veri indir' : 'Export data'}
+              <span className="hidden sm:inline">
+                {isTr ? 'Veri indir' : 'Export data'}
+              </span>
             </button>
           </form>
         </div>

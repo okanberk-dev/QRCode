@@ -192,9 +192,15 @@ export function ActivityFeed({
           <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
           <ConnectionBadge status={status} isTr={isTr} />
         </div>
+        {/*
+          Stage 80 §38.160 — "Tüm aktiviteyi gör" CTA mobile 44px
+          touch target garantisi (WCAG 2.5.5). sm:+ desktop'ta
+          mevcut compact link intact. Realtime push state (§38.86)
+          aria-live polite NotificationBell ile aynı paterni paralel.
+        */}
         <Link
           href={viewAllHref}
-          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring"
+          className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A] bz-motion-spring min-h-[44px] sm:min-h-0 px-2 sm:px-0 -mx-2 sm:mx-0 rounded-lg sm:rounded-none hover:bg-[#FAFAFA] sm:hover:bg-transparent"
         >
           {isTr ? 'Tüm aktiviteyi gör' : 'View all activity'}
           <ArrowRight size={11} strokeWidth={2} />
