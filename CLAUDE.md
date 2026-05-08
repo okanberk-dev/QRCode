@@ -23412,3 +23412,234 @@ utility cleanup + admin sticky filter, helper logic değişmedi).
   §19.1.1 + §38.49 + §38.65 + §38.71 + §38.74 paterni reuse.
 - 3 paralel Explore agent + manuel verify + 3 yanlış pozitif eleme
   (CLAUDE.md §38.39 + §38.69 paterni).
+
+---
+
+### 38.162 2026-05-08 — Stage 82a owner Platform Bağlantıları sektör + restoran odaklı default refactor (PR1: workspace summary kaldır + tek-restoran auto-bind + çoklu empty state + sektör filter zorunlu)
+
+§38.45 Stage A1 + §38.138 Stage 57 owner platform infrastructure
+zincirinden sonra kullanıcı raporu: *"Owner panelde platform
+bağlantıları kısmı var orada sadece restorana özel bağlantılar çıksın
+hani onboarding sürecinde işaretliyorlardı ya veya yeni işletme
+eklerlerse o işletme profiline geçiş yapılsın soldaki en üstteki
+bölümden ve ona göre alanlar çıksın; restoran ise restoran odaklı
+clinic ise clinic odaklı gibi"* (typo verbatim §39.2 disipline).
+Workspace summary varsayılan davranışı kaldırılıp **direkt restoran
+seçim/profil moduna** geçildi.
+
+**3 kullanıcı kararı (AskUserQuestion onaylı)**:
+
+1. *Default view*: **Tek-restoran auto-bind + çoklu empty state**
+   (Recommended). Tek-restoran owner → otomatik o restorana bind +
+   sektör-bazlı platform listesi. Çoklu owner → "Bir işletme seçin"
+   empty state + toolbar dropdown ile seçim. "Tüm işletmeler" +
+   "Tüm platformları göster" toggle TAMAMEN KALDIRILIR.
+2. *Switcher placement*: **Mevcut toolbar dropdown intact**
+   (Recommended). Sayfa başında filter bar'daki `<select>` dropdown
+   korunur. Sektör filter zorunlu (her zaman aktif), override toggle
+   yok.
+3. *Scope*: **2 PR'a böl** — PR1 (Stage 82a §38.162) UX flow refactor
+   + PR2 (Stage 82b) KPI compute scope adjustment (workspace
+   aggregate yerine seçili restoran scope'unda KPI). Bu PR sadece
+   PR1 scope (UX flow); PR2 ayrı session.
+
+**5 fix bundle** (PR1 — `PlatformsClient.tsx` ~390 → ~315 satır
+restructure):
+
+1. **Default state**: `selectedRestaurantId` initial logic değişti.
+   - `restaurants.length === 1 ? restaurants[0].id : null`
+   - "all" option dropdown'dan **silindi** (workspace summary kaldırıldı)
+   - `null` state için empty state UI render edilir
+
+2. **Empty state UI** (çoklu owner, restoran seçilmemiş):
+   - Pulse §11 layout: lime icon (`bg-[#EAF9B8]` 12×12 + Building2
+     icon) + h2 "Bir işletme seçin" + p sub açıklama + büyük center
+     dropdown (`max-w-[360px]`)
+   - Locale parite: TR/EN copy
+   - `<select>` 11×44 px + `text-[14px]` (mobile-friendly 44px touch
+     target — CLAUDE.md §38.74 paterni)
+   - `disabled` placeholder option ("İşletme seçin…" / "Choose a
+     business…") + restaurant name list
+
+3. **Tek-restoran auto-bind**:
+   - `isSingleRestaurant = restaurants.length === 1` flag
+   - `!isSingleRestaurant` koşulu ile filter bar dropdown render edilir
+     (tek restoran owner için dropdown gizli)
+   - Sektör hint banner her durumda görünür (selected restaurant +
+     sektör match)
+
+4. **Sektör filter zorunlu**:
+   - `showAllPlatforms` state + override toggle **silindi**
+   - `filteredPlatforms` useMemo her zaman sektör filter uygular
+     (review category platformları sektör whitelist'inden, social/
+     message/api evrensel)
+   - `hiddenCount` + "X sektör dışı gizlendi" indicator + "Hepsini
+     göster" inline link **silindi**
+
+5. **Toolbar simplification**:
+   - "Tüm işletmeler" option dropdown'dan kaldırıldı
+   - "Tüm platformları göster" checkbox kaldırıldı
+   - Workspace tip card ("İpucu: Bir işletme seç → ...") **silindi**
+     (artık her zaman selected restaurant context'i + sektör hint
+     banner görünür)
+   - Filter bar layout: tek-row dropdown + sağ-sticky `bz-mono` count
+     hint ("`X/Y platform · {sectorLabel}`")
+
+**Page.tsx KPI grid + filter chips** (PR1 interim — PR2'ye kadar
+intact):
+- KPI 4-card workspace aggregate compute intact (totalConnected/
+  pendingIssuesCount/totalReviewsThisMonth/activeCategoryCount —
+  tüm restoranlar üstünden)
+- Category filter chips ("Tümü/Yorum/Sosyal/Mesaj/API") workspace
+  servis count intact
+- "Yeni bağlantı" + "Bağlantı log'u" CTA actions intact
+- PR2'de KPI compute scope `selectedRestaurantId` ile sync edilecek
+  (URL search param `?restaurant=<id>` desteği eklenecek)
+
+**Etkilenen dosyalar (1 + docs)**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/app/[locale]/dashboard/platforms/_components/PlatformsClient.tsx` | ~390 → ~315 satır: default state refactor + empty state UI + sektör filter zorunlu + toolbar simplification + workspace summary kaldırma |
+| `CLAUDE.md` | §38.162 closure log |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 pass intact (presentational + state refactor;
+helper logic değişmedi, mevcut `detectSector` + `SECTOR_PLATFORMS`
+intact).
+
+**Compliance disipline intact** (kullanıcı 14. iterasyon):
+- §35.8 + §35.10 + §19.1.1 + §38.114 + §38.130 zinciri intact (UI
+  flow refactor + state restructure; backend kontrat dokunulmadı,
+  KVKK + reCAPTCHA + honeypot + Pulse §11 design system intact)
+- Pulse §11 typography (Space Grotesk + tight tracking + lime
+  accent) intact
+- Empty state Pulse §11 paterni reuse: lime icon container + bz-h-tight
+  heading + bz-input + pulse-eyebrow label
+- §38.61 reduced-motion blanket etkilenmedi (yeni keyframe yok)
+- §38.74 mobile touch target (44px+) intact
+
+**Yapma**:
+- "Tüm işletmeler" option'ı dropdown'a geri eklemek — kullanıcı
+  kararı (AskUserQuestion §38.162) workspace summary tamamen
+  kaldırılır. Owner UX restoran odaklı flow.
+- "Tüm platformları göster" override toggle geri eklemek —
+  sektör filter zorunlu (CLAUDE.md §38.162). Owner sektör dışı
+  platform eklemek isterse per-restaurant settings (`/dashboard/
+  restaurants/[id]/settings#integrations`) kullanır.
+- Tek-restoran owner için empty state göstermek — `isSingleRestaurant`
+  flag ile auto-bind zorunlu (UX cluttered olmamalı).
+- Workspace tip card ("İpucu: Bir işletme seç → ...") geri eklemek —
+  artık her zaman selected restaurant context'i mevcut, tip
+  redundant.
+- Empty state'te "Tüm platformlar" workspace summary CTA'sı eklemek
+  — workspace summary tamamen kaldırıldı (kullanıcı kararı).
+- KPI grid'i bu PR'da seçili restoran scope'una çekmek — PR2 (Stage
+  82b) scope. PR1 sadece UX flow refactor.
+
+**Yap**:
+- Yeni surface'ta sektör-bazlı filter gerekirse PlatformsClient
+  paterni reuse: `detectSector(restaurant.category)` →
+  `SECTOR_PLATFORMS[sector]` whitelist set + review category filter +
+  social/message/api evrensel.
+- Yeni empty state pattern gerekirse Stage 82a §38.162 reuse: lime
+  icon container + bz-h-tight + bz-input dropdown + locale parite +
+  44px touch target.
+- Tek-restoran auto-bind paterni başka surface'ta gerekirse
+  (örn. owner reports/exports): `restaurants.length === 1 ?
+  restaurants[0].id : null` + conditional dropdown render.
+- PR2 (Stage 82b) KPI scope adjustment: page.tsx server component
+  searchParams `?restaurant=<id>` desteği + tek-restoran auto-bind +
+  KPI compute query'leri `where: { restaurantId: selected }` filter
+  + empty state placeholder card.
+
+**Verification**:
+- `npm run lint` → 0 errors / 1 baseline warning (pre-existing
+  APTeamCard ReactNode unused, scope dışı)
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`
+- `npm test` → 404/404 pass intact, 45 suites
+- `npx next build` → ✓ Compiled successfully (CI Validate doğrulayacak)
+
+**Sanity grep regression**:
+- `selectedRestaurantId === 'all'` 0 hit (workspace summary kaldırıldı)
+- `showAllPlatforms` 0 hit (override toggle silindi)
+- `'Tüm işletmeler'` / `'All businesses'` 0 hit (option silindi)
+- `Building2` import 1 hit (yeni empty state icon)
+- `isSingleRestaurant` 1 hit (auto-bind flag)
+- `selectedRestaurantId === null` veya `!selectedRestaurantId` 1 hit
+  (empty state branch)
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. **Tek-restoran owner login** → `/dashboard/platforms` → restoran
+   otomatik seçili (dropdown gizli) + sektör hint banner +
+   sektörüne özgü platform card grid görünür.
+2. **Çoklu-restoran owner login** → `/dashboard/platforms` → empty
+   state ("Bir işletme seçin" + lime icon + center dropdown) görünür.
+   Workspace summary card yok, "Tüm işletmeler" option yok.
+3. **Dropdown'dan restoran seç** → empty state kaybolur, filter bar
+   dropdown + sektör hint banner + sektör-bazlı platform card grid
+   görünür.
+4. **Sektör filter test**:
+   - **Restoran (food sector)**: Google + Yemeksepeti + Getir +
+     Trendyol + Tripadvisor + Yandex + Yelp + Foursquare + Instagram +
+     Facebook + WhatsApp + Webhook (12 platform)
+   - **Klinik (clinic sector)**: Google + Yandex + Instagram +
+     Facebook + WhatsApp + Webhook (6 platform — food platform'ları
+     gizli)
+   - **Otel (hotel/hospitality sector)**: Google + Tripadvisor +
+     Booking + Airbnb + Yelp + Foursquare + Yandex + Instagram +
+     Facebook + WhatsApp + Webhook (11 platform)
+5. **Mobile responsive (375×667 iPhone SE)**: filter bar flex-wrap +
+   dropdown 44px touch target + empty state center layout intact;
+   safe-area inset (CLAUDE.md §38.160 §25 paterni) intact.
+6. **Reduced motion**: yeni animation yok; mevcut motion-spring
+   (CLAUDE.md §38.61) blanket intact.
+
+**Stage 82a §38.162 closure** (Tarih 2026-05-08):
+
+- Branch: `chore/platforms-restoran-odakli-stage82a` (fresh main
+  üstüne, Stage 81 §38.161 PR sonrası align)
+- Edit'lenen dosyalar: 1 (`PlatformsClient.tsx`) + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  owner platform bağlantıları sayfası artık tek-restoran auto-bind
+  veya çoklu empty state ile açılır; sektör-bazlı platform listesi
+  zorunlu görünür.
+- Kalan riskler: yok (UI flow refactor + state restructure; backend
+  kontrat dokunulmadı, IDOR + KVKK + reCAPTCHA + honeypot + Pulse
+  §11 design system intact).
+- **Sonraki aşama**: PR2 Stage 82b — KPI compute scope adjustment
+  (workspace aggregate yerine seçili restoran scope'unda KPI grid +
+  URL search param `?restaurant=<id>` desteği + empty state placeholder
+  card). Veya §38.121.1 Prompt 2 defer backlog (HIGH 4 Platforms
+  12-card grid §38.30, Stage 9 UserSession §38.84/§38.89,
+  RECAPTCHA_ENFORCE flip §38.79 #2, Prisma 7 upgrade).
+
+**Chat prompt history (Stage 82a §38.162 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"Owner panelde platform bağlantıları kısmı
+  var orada sadece restorana özel bağlantılar çıksın hani onboarding
+  sürecinde işaretliyorlardı ya veya yeni işletme eklerlerse o
+  işletme profiline geçiş yapılsın soldaki en üstteki bölümden ve
+  ona göre alanlar çıksın; restoran ise restoran odaklı clinic ise
+  clinic odaklı gibi"* (typo verbatim §39.2 disipline: "soldaki en
+  üstteki bölümden" semantic = sidebar restoran selector veya
+  sayfa içi dropdown; "işaretliyorlardı" = onboarding sektör seçimi).
+- AskUserQuestion 3 karar (kullanıcı seçim):
+  1. **Default view**: "Tek-restoran auto-bind + çoklu empty state
+     (Recommended)" — workspace summary tamamen kaldırılır
+  2. **Switcher placement**: "Toolbar dropdown intact (Recommended)"
+     — mevcut filter bar `<select>` dropdown korunur
+  3. **Scope**: "2 PR'a böl" — PR1 UX flow refactor + PR2 KPI compute
+     scope (kullanıcı seçimi Recommended değil; daha küçük PR'lar
+     tercih)
+- **Disipline restoration (14. iterasyon)**: Stage 49 §38.130 →
+  Stage 81 §38.161 zinciri compliance disipline 13 kez stable; Stage
+  82a §38.162 ondördüncü kez backend kontrat dokunmadan UI flow
+  refactor + state restructure. CLAUDE.md §35.8 + §35.10 + §19.1.1
+  + §38.114 + §38.65 + §38.74 paterni reuse. Pulse §11 design system
+  + sektör-bazlı filter (CLAUDE.md §5.1 + §38.138 Stage 57 paterni)
+  intact.

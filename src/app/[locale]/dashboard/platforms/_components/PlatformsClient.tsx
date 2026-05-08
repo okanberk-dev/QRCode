@@ -1,21 +1,28 @@
 'use client';
 
-// Workspace `/dashboard/platforms` filter island — Stage 56 §38.137.
-// Sektör-bazlı platform filtresi + restoran selector + "tüm platformları göster"
-// override. Logo render: mevcut `/public/platforms/{id}.svg` envanteri reuse;
+// Workspace `/dashboard/platforms` filter island — Stage 56 §38.137
+// + Stage 82a §38.162 (restoran odaklı default refactor).
+//
+// Sektör-bazlı platform filtresi + restoran selector. Tek-restoran owner
+// otomatik o restorana bind; çoklu owner empty state + dropdown ile seçim
+// yapar. Workspace summary ("Tüm işletmeler") + "Tüm platformları göster"
+// override toggle KALDIRILDI — sektör filter her zaman zorunlu.
+//
+// Logo render: mevcut `/public/platforms/{id}.svg` envanteri reuse;
 // dosya yoksa PlatformChip-style initials fallback (brand color + monogram).
 //
 // CLAUDE.md disipline:
 // - §5.1 sector → platform whitelist (`SECTOR_PLATFORMS` reuse)
 // - §38.45 + §38.52 + §38.117 mevcut PLATFORM_DEFS taksonomisi
+// - §38.138 Stage 57 sektör filter mantığı (review category whitelist;
+//   social/message/api evrensel)
+// - §38.162 Stage 82a restoran odaklı default + workspace summary kaldırma
 // - §11 + §23.3 Pulse design tokens (`bz-card`, `bz-btn-*`, `pulse-eyebrow`)
-// - §11.13 useUrlFilter pattern (deeplink-friendly URL state)
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  AlertTriangle,
-  CheckCircle2,
+  Building2,
   Layers,
   Plug,
   Settings,
@@ -80,13 +87,20 @@ export default function PlatformsClient({
   platformSummaries,
 }: PlatformsClientProps) {
   const isTr = locale === 'tr';
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState<'all' | string>('all');
-  const [showAllPlatforms, setShowAllPlatforms] = useState(false);
 
-  const selectedRestaurant =
-    selectedRestaurantId === 'all'
-      ? null
-      : restaurants.find((r) => r.id === selectedRestaurantId) ?? null;
+  // Default state (CLAUDE.md §38.162 Stage 82a):
+  // - Tek-restoran owner → otomatik o restorana bind (dropdown gizli)
+  // - Çoklu owner → null → empty state ("Bir işletme seçin") +
+  //   dropdown ile seçim
+  // - "all" workspace summary KALDIRILDI (kullanıcı kararı, §38.162)
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(
+    restaurants.length === 1 ? restaurants[0].id : null,
+  );
+
+  const isSingleRestaurant = restaurants.length === 1;
+  const selectedRestaurant = selectedRestaurantId
+    ? restaurants.find((r) => r.id === selectedRestaurantId) ?? null
+    : null;
 
   const detectedSector = selectedRestaurant ? detectSector(selectedRestaurant.category) : null;
   const sectorLabel = detectedSector
@@ -97,48 +111,50 @@ export default function PlatformsClient({
 
   // Sector filtering only applies to review platforms — social/message/api
   // are sector-agnostic (every owner can use Instagram/Facebook/WhatsApp/
-  // Webhook regardless of business type).
+  // Webhook regardless of business type). Sektör filter zorunlu (Stage 82a
+  // — `showAllPlatforms` override toggle silindi).
   const filteredPlatforms = useMemo(() => {
-    if (selectedRestaurantId === 'all' || showAllPlatforms || !detectedSector) {
-      return platformSummaries;
-    }
+    if (!detectedSector) return platformSummaries;
     const sectorAllowedIds = new Set(SECTOR_PLATFORMS[detectedSector]);
     return platformSummaries.filter((p) => {
       if (p.category !== 'review') return true; // social/message/api always show
-      // Review platforms: must be in sector whitelist
       if (!p.uiPlatformId) return true; // no enum mapping — keep visible (defensive)
       return sectorAllowedIds.has(p.uiPlatformId);
     });
-  }, [selectedRestaurantId, showAllPlatforms, detectedSector, platformSummaries]);
+  }, [detectedSector, platformSummaries]);
 
-  const hiddenCount = platformSummaries.length - filteredPlatforms.length;
-  const filterActive = selectedRestaurantId !== 'all' && !showAllPlatforms && hiddenCount > 0;
-
-  return (
-    <div className="space-y-4">
-      {/* Filter bar: restaurant selector + show-all toggle */}
-      <div
-        className="bz-card flex flex-wrap items-center gap-3 p-3.5"
-        role="group"
-        aria-label={isTr ? 'Platform filtresi' : 'Platform filter'}
-      >
-        <label className="flex items-center gap-2">
+  // Empty state: çoklu owner + restoran seçilmemiş.
+  // Pulse §11 layout — lime icon + h2 + p sub + büyük center dropdown.
+  if (!selectedRestaurantId) {
+    return (
+      <div className="bz-card flex flex-col items-center gap-4 p-10 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
+          <Building2 size={20} strokeWidth={1.8} />
+        </div>
+        <div className="space-y-1.5">
+          <h2 className="bz-h-tight text-[18px] font-semibold text-[#0A0A0A]">
+            {isTr ? 'Bir işletme seçin' : 'Select a business'}
+          </h2>
+          <p className="max-w-[420px] text-[13px] leading-[1.6] text-[#525252]">
+            {isTr
+              ? 'Sektörünüze özgü platform bağlantılarını burada yönetin. İşletme seçtiğinizde sektörünüze uygun yorum kanalları + sosyal medya + mesajlaşma platformları otomatik filtrelenir.'
+              : 'Manage sector-specific platform links from here. Once you pick a business, review channels matching your sector + social + messaging platforms appear automatically.'}
+          </p>
+        </div>
+        <label className="flex w-full max-w-[360px] flex-col items-stretch gap-1.5">
           <span className="pulse-eyebrow text-[10.5px] text-[#737373]">
             {isTr ? 'İŞLETME' : 'BUSINESS'}
           </span>
           <select
-            value={selectedRestaurantId}
+            value=""
             onChange={(e) => {
-              setSelectedRestaurantId(e.target.value);
-              // Specific restaurant seçilince showAll'u resetle —
-              // sektör filter default aktif, owner override edebilir.
-              setShowAllPlatforms(false);
+              if (e.target.value) setSelectedRestaurantId(e.target.value);
             }}
-            className="bz-input h-9 min-w-[180px] text-[13px]"
+            className="bz-input h-11 w-full text-[14px]"
             aria-label={isTr ? 'İşletme seç' : 'Select business'}
           >
-            <option value="all">
-              {isTr ? `Tüm işletmeler (${restaurants.length})` : `All businesses (${restaurants.length})`}
+            <option value="" disabled>
+              {isTr ? 'İşletme seçin…' : 'Choose a business…'}
             </option>
             {restaurants.map((r) => (
               <option key={r.id} value={r.id}>
@@ -147,30 +163,51 @@ export default function PlatformsClient({
             ))}
           </select>
         </label>
-
-        {selectedRestaurantId !== 'all' && (
-          <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-[#525252]">
-            <input
-              type="checkbox"
-              checked={showAllPlatforms}
-              onChange={(e) => setShowAllPlatforms(e.target.checked)}
-              className="h-4 w-4 cursor-pointer rounded border-[#D4D4D4] accent-[#C6F24E]"
-            />
-            {isTr ? 'Tüm platformları göster (sektör filtresini kaldır)' : 'Show all platforms (clear sector filter)'}
-          </label>
-        )}
-
-        {filterActive && (
-          <span className="bz-mono ml-auto text-[11px] text-[#737373]">
-            {isTr
-              ? `${filteredPlatforms.length}/${platformSummaries.length} platform · ${hiddenCount} sektör dışı gizlendi`
-              : `${filteredPlatforms.length}/${platformSummaries.length} platforms · ${hiddenCount} hidden by sector filter`}
-          </span>
-        )}
       </div>
+    );
+  }
 
-      {/* Sector hint banner (specific restaurant + filter active) */}
-      {filterActive && sectorLabel && selectedRestaurant && (
+  return (
+    <div className="space-y-4">
+      {/* Filter bar — restoran selector (çoklu owner) + sektör hint.
+          Tek-restoran owner için dropdown gizli, sadece sektör hint
+          görünür (kullanıcı zaten o restorana bind'lı). */}
+      {!isSingleRestaurant && (
+        <div
+          className="bz-card flex flex-wrap items-center gap-3 p-3.5"
+          role="group"
+          aria-label={isTr ? 'İşletme seçici' : 'Business selector'}
+        >
+          <label className="flex items-center gap-2">
+            <span className="pulse-eyebrow text-[10.5px] text-[#737373]">
+              {isTr ? 'İŞLETME' : 'BUSINESS'}
+            </span>
+            <select
+              value={selectedRestaurantId}
+              onChange={(e) => setSelectedRestaurantId(e.target.value)}
+              className="bz-input h-9 min-w-[180px] text-[13px]"
+              aria-label={isTr ? 'İşletme seç' : 'Select business'}
+            >
+              {restaurants.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {sectorLabel && (
+            <span className="bz-mono ml-auto text-[11px] text-[#737373]">
+              {isTr
+                ? `${filteredPlatforms.length}/${platformSummaries.length} platform · ${sectorLabel}`
+                : `${filteredPlatforms.length}/${platformSummaries.length} platforms · ${sectorLabel}`}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Sector hint banner — selected restaurant + sektör match. */}
+      {sectorLabel && selectedRestaurant && (
         <div className="flex items-start gap-3 rounded-[14px] border border-[#EAF9B8] bg-[#F7FAEF] p-3.5">
           <Layers size={14} strokeWidth={2} className="mt-0.5 shrink-0 text-[#525252]" />
           <p className="flex-1 text-[12.5px] leading-[1.55] text-[#525252]">
@@ -192,22 +229,16 @@ export default function PlatformsClient({
         </div>
       )}
 
-      {/* Empty state — sektör filtresi sonrası 0 platform */}
+      {/* Empty state — sektör filter sonrası 0 platform (defansif edge case;
+          mevcut SECTOR_PLATFORMS map her sektör için ≥1 platform tutuyor). */}
       {filteredPlatforms.length === 0 && (
         <div className="bz-card flex flex-col items-center gap-3 p-10 text-center">
           <Plug size={22} strokeWidth={1.5} className="text-[#A3A3A3]" />
           <p className="text-[13.5px] text-[#525252]">
             {isTr
-              ? 'Bu sektör için henüz platform tanımlı değil. Tüm platformları görmek için filtreyi kaldır.'
-              : 'No platforms configured for this sector yet. Clear the filter to see all platforms.'}
+              ? 'Bu sektör için henüz platform tanımlı değil.'
+              : 'No platforms configured for this sector yet.'}
           </p>
-          <button
-            type="button"
-            onClick={() => setShowAllPlatforms(true)}
-            className="bz-btn-ghost text-[12px]"
-          >
-            {isTr ? 'Tüm platformları göster' : 'Show all platforms'}
-          </button>
         </div>
       )}
 
@@ -258,7 +289,6 @@ export default function PlatformsClient({
                     // §38.45 + §38.52). raw <img> base64 image disipline
                     // dışı (CLAUDE.md §3 menü ürün görselleri base64-in-DB);
                     // platform logoları static asset → next/image gerekmez.
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={logoSrc}
                       alt={platform.name}
@@ -348,39 +378,6 @@ export default function PlatformsClient({
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Hidden indicator — sector filter aktif ve bir kısım gizli */}
-      {filterActive && hiddenCount > 0 && (
-        <div className="flex items-center justify-center gap-2 text-[11.5px] text-[#737373]">
-          <CheckCircle2 size={12} className="text-[#A3A3A3]" />
-          <span>
-            {isTr
-              ? `${hiddenCount} platform sektör dışı olduğu için gizli.`
-              : `${hiddenCount} platforms hidden — outside sector scope.`}
-          </span>
-          <button
-            type="button"
-            onClick={() => setShowAllPlatforms(true)}
-            className="text-[#0A0A0A] underline underline-offset-2 hover:text-[#525252]"
-          >
-            {isTr ? 'Hepsini göster' : 'Show all'}
-          </button>
-        </div>
-      )}
-
-      {/* Subtle warning if any restoran has externalPlatformsEnabled=false
-          (admin master gate kapalı) — mevcut workspace logic'inde explicit
-          hint yoktu, bu PR'da küçük UX polish (CLAUDE.md §5.2). */}
-      {selectedRestaurantId === 'all' && (
-        <div className="bz-card-soft flex items-center gap-2 p-3 text-[11.5px] text-[#737373]">
-          <AlertTriangle size={12} className="shrink-0 text-[#A3A3A3]" />
-          <span>
-            {isTr
-              ? 'İpucu: Bir işletme seç → sektörüne uygun platformlar otomatik görünür.'
-              : 'Tip: Select a business → sector-relevant platforms appear automatically.'}
-          </span>
         </div>
       )}
     </div>
