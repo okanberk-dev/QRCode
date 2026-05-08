@@ -28,7 +28,11 @@ import { notFound } from 'next/navigation';
 // hydration ana iş parçacığını blocklamaz → mobile FCP/LCP iyileşmesi.
 // Vercel Speed Insights P75 mobile homepage 4.2s LCP idi (CLAUDE.md §31).
 const HomeIndustryTabs = nextDynamic(() => import('@/components/marketing/HomeIndustryTabs'));
-const LiveReviewTicker = nextDynamic(() => import('@/components/marketing/LiveReviewTicker'));
+// Stage 67 §38.148 — LiveReviewTicker (fake müşteri testimonial,
+// CLAUDE.md §35.10 ihlali) → LiveTicker (generic platform event
+// default §38.131 paterni paralel). Mevcut counterparts §38.146 + §38.147
+// PR0 base + PR1-5 migrate disipline.
+const LiveTicker = nextDynamic(() => import('@/components/animations/LiveTicker'));
 const StickyCtaBar = nextDynamic(() => import('@/components/marketing/StickyCtaBar'));
 const SocialProofToast = nextDynamic(() => import('@/components/marketing/SocialProofToast'));
 
@@ -474,9 +478,14 @@ export default async function LandingPage({
       ═══════════════════════════════════════════════════════════ */}
       <section className="bg-[#0A0A0A] text-white px-5 sm:px-10 py-[60px] sm:py-28">
         <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-          {/* Live stream card — auto-rotating review ticker, mirrors the
-              HeroProduct helper in .design/site/site-homepage-v3.jsx:174 */}
-          <LiveReviewTicker locale={locale} />
+          {/* Live stream card — auto-rotating activity ticker. Stage 67
+              §38.148 — LiveReviewTicker (fake müşteri "Mert D. ★★★★★"
+              hardcoded testimonial) → LiveTicker (generic platform event
+              default — Karaköy / Bağdat / Cihangir × generic action,
+              §35.10 + §38.131 paterni). Caller `items` prop ile real
+              backend feed (örn. /api/feedback workspace aggregate)
+              geçirebilir; default 5 generic event compliance-safe. */}
+          <LiveTicker locale={locale} />
 
           {/* Copy + feature grid */}
           <div>

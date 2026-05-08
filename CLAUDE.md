@@ -20671,3 +20671,189 @@ extractStructuredInsight intact.
   compliance-safe (live indicator + KPI 5-card intact + sentiment
   NPS-style heuristic). Pattern stable §35.8 + §35.10 + §19.1.1 —
   future session bu zinciri authoritative kabul eder.
+
+---
+
+### 38.149 2026-05-08 — Stage 68 PR1 callsite migrate (LiveReviewTicker → LiveTicker, anasayfa hero compliance win + 0 callsite cleanup)
+
+> **Numerotaj çakışması notu**: Bu PR ilk olarak Stage 67 §38.148 numarasıyla
+> commit edildi; ama paralel session'daki PR #572 (analytics page HANDOFF
+> parity) aynı Stage 67 §38.148 numarasını alıp main'e önce merged oldu.
+> Rebase sırasında çakışma tespit edildi; bu closure log §38.149 / Stage
+> 68 olarak renumber edildi (CLAUDE.md §39.2 disipline + §38.140 +
+> §38.143 + §38.144 paterni). Branch ismi `claude/sweet-meninsky-b56b78`
+> cosmetic kaldı; canonical numara §38.149 Stage 68.
+
+§38.147 Stage 66 PR0 base sonrası ilk surface migrate. Anasayfa
+(`src/app/[locale]/page.tsx:479`) `LiveReviewTicker` callsite'ı yeni
+`LiveTicker` ile değiştirildi; `LiveReviewTicker.tsx` 0 callsite kaldı,
+silindi. Otonom çalışma (kullanıcı 30dk uzakta — "kaldığın yerden
+devam et ve oto merge işlemi yap"). CLAUDE.md §35.10 fake testimonial
+disipline win — eski hardcoded "Mert D. ★★★★★ / Ayşe K. / Jenny A."
+fake müşteri testimonial'ları yerine generic platform event default
+(Karaköy / Bağdat / Cihangir × generic action).
+
+**3 fix bundle** (Stage 66 §38.147 PR0 base'den derive edilen kademeli
+migrate):
+
+1. **Anasayfa import + callsite migrate** (`src/app/[locale]/page.tsx`):
+   - Line 31 dynamic import: `LiveReviewTicker` →
+     `LiveTicker = nextDynamic(() => import('@/components/animations/LiveTicker'))`.
+   - Line 479 callsite: `<LiveReviewTicker locale={locale} />` →
+     `<LiveTicker locale={locale} />` (prop API birebir uyumlu).
+   - Hem dynamic chunk lazy-load (LiveTicker bundle initial load'a
+     girmez) hem framer-motion + react-intersection-observer chunk'ı
+     yeni LiveTicker ile birlikte yüklenir.
+   - Inline yorum: §35.10 + §38.131 paterni intact, caller real backend
+     feed override edebilir.
+
+2. **`LiveReviewTicker.tsx` silme** (0 callsite):
+   - `src/components/marketing/LiveReviewTicker.tsx` (~210 satır)
+     `git rm` ile silindi.
+   - `FooterLiveTicker.tsx` ayrı component (CLAUDE.md §38.131)
+     intact — silinmedi.
+   - `src/components/animations/index.ts` JSDoc yorum'da
+     `LiveReviewTicker` referansı kalır (PR1-5 zinciri henüz devam
+     ediyor; PR6 cleanup paterni dokümante).
+
+3. **CLAUDE.md §38.149 closure log** + Stage 66 §38.147 sonraki aşama
+   referansı + Stage 68 sonraki aşama (PR2 footer ticker ya da PR3
+   Features grid migrate).
+
+**Compliance win** (CLAUDE.md §35.10 + §35.8 + §19.1.1):
+
+| Eski LiveReviewTicker | Yeni LiveTicker default |
+|---|---|
+| Mert D. ★★★★★ "Çok hızlı ve kaliteli hizmet." (Google) | Karaköy ★★★★★ "Yeni 5★ yorum geldi." (generic) |
+| Ayşe K. ★★★★★ "Servis çok hızlıydı, mekan harika." (Tripadvisor) | Bağdat Cd. ★★★★★ "AI yanıtı gönderildi." (generic) |
+| Jenny A. ★★★★★ "Kahve mükemmeldi, tekrar geleceğim." (Yelp) | Cihangir ★★★★ "QR taraması alındı." (generic) |
+| Kemal Y. ★★★★ "Atmosfer çok güzeldi." (Foursquare) | Çankaya ★★★★★ "Google'a yorum yayınlandı." (generic) |
+| Selin Ö. ★★★★★ "Mutfak harika, servis hızlı." (Booking) | İzmir ★★★ "Düşük puan tespit edildi." (generic) |
+
+5 fake müşteri testimonial → 5 generic platform event (semt + action).
+KVKK + ETK + Google "fake reviews" policy + tüketici hakları + §35.10
+fake testimonial backlog uyumlu. Caller'ın real backend feed (örn.
+`/api/feedback` workspace aggregate veya Supabase Realtime CLAUDE.md
+§38.86) ile override imkanı intact (`items` prop opsiyonel).
+
+**LiveTicker yapısal davranış intact**:
+- 3-stack rotation (orijinal LiveReviewTicker visual paterni paralel)
+- `setInterval` 2400ms default + Page Visibility API pause (tab gizli
+  iken rotation durur, battery save)
+- AnimatePresence + framer-motion variants (slide-in + scale + opacity
+  cascade — orijinal manuel transform paterni yerine)
+- Reduced motion: rotation off + ilk 3 item static
+- A11y: `role="region"` + `aria-live="polite"` + `aria-label`
+  (locale-aware "Canlı aktivite akışı" / "Live activity feed")
+
+**Skip edilenler** (kasıtlı, PR2-5 ayrı scope):
+
+- `MarqueeRow` (page.tsx:403) — API farkı (eski `items: ReactNode[]`
+  PlatformLogo passing, yeni `items: string[]`). Caller refactor
+  scope büyük; ayrı PR (örn. PR2 veya PR3).
+- `SocialProofToast` (page.tsx:1328) — corner conversion toast
+  (fixed positioning, single rotating item) ≠ ToastRow (4-toast
+  grid showcase). UX intent farklı; ToastRow direkt counterpart
+  değil. Migrate edilmedi.
+- `HomeHero.tsx` internal `useCountUp` (5 callsite — reviews/stars/
+  time/score/total) — internal animation logic, kart-vari görsel
+  design. BigCounter generic component visual paterni HomeHero
+  custom kart layout'u ile uyumsuz; ayrı refactor scope (örn. PR4
+  Dashboard analytics surface migrate'inde değerlendirilebilir).
+- `FooterLiveTicker.tsx` ayrı component — CLAUDE.md §38.131 paterni
+  intact. Silinmez, başka migration ile etkilenmez.
+
+**Etkilenen dosyalar (3)**:
+- `src/app/[locale]/page.tsx` (~+8/-4 = +4 net satır — import + callsite
+  + inline yorum)
+- `src/components/marketing/LiveReviewTicker.tsx` SİLİNDİ (-210 satır)
+- `CLAUDE.md` §38.149 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok (Stage 66 §38.147 framer-
+motion + react-intersection-observer install zaten yapıldı).
+
+**Verification (lokal)**:
+- `npx eslint src/app/\[locale\]/page.tsx src/components/animations/`:
+  0 errors / 0 warnings
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/` (4 pre-existing
+  `.next/types/...` baseline §21.13)
+- `npm test`: 383/383 pass, 42 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap): ✓ Compiled
+  successfully + 58/58 static pages, EXIT=0
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. `/tr` (anasayfa) → "Dark Feature — live stream mock" section'ında
+   3-stack ticker görünür. Default 5 generic event rotation 2400ms
+   (Karaköy → Bağdat → Cihangir → Çankaya → İzmir).
+2. Fake müşteri isimleri ("Mert D., Ayşe K., Jenny A., Kemal Y.,
+   Selin Ö.") YOK.
+3. Avatar initial chip lime-soft bg + locale-aware text (TR/EN).
+4. `prefers-reduced-motion: reduce` ON → rotation off, ilk 3 item
+   static görünür.
+5. Tab gizli (background tab) → rotation pause (Page Visibility API).
+6. `/en` (anasayfa) → English copy parite ("New 5★ review received."
+   + "AI reply sent." + "QR scan recorded." + ...).
+
+**Yapma**:
+- HomeHero internal useCountUp 5 callsite'ını bu PR'a sıkıştırmak —
+  HomeHero kart-vari design + BigCounter generic component visual
+  uyumsuz. Refactor scope büyük (HomeHero ~470 satır), ayrı PR.
+- MarqueeRow migrate sırasında `items` ReactNode → string array dönüşümü
+  bu PR'a sıkıştırmak — caller logic değişimi gerek (PlatformLogo
+  component map'lenecek). Ayrı PR scope (örn. Stats şeridi yerleştirme
+  PR'ında değerlendirilebilir).
+- SocialProofToast'ı ToastRow ile değiştirmek — corner conversion
+  toast vs grid showcase, UX intent farklı. Direkt counterpart değil;
+  ToastRow yeni surface'lerde mount edilir (örn. dashboard inbox
+  bildirim grid'i).
+- LiveReviewTicker.tsx dosyasını silmeyip "deprecated" comment
+  bırakmak — 0 callsite (sanity grep doğrulandı), CLAUDE.md §34
+  disipline'i ile silmek doğru.
+- `FooterLiveTicker.tsx` migrate etmek — ayrı component (CLAUDE.md
+  §38.131), bu PR scope dışı.
+
+**Yap**:
+- Yeni surface migrate'lerde aynı paterni reuse: 1 callsite import +
+  callsite swap + counterpart 0 callsite ise sil + lokal verify +
+  CLAUDE.md §38.X closure log.
+- Real backend feed (örn. /api/feedback workspace aggregate) ile
+  override gerekirse caller `<LiveTicker items={apiItems}>` ile
+  geçirir; default 5 generic event compliance fallback.
+- Pre-existing `.next/types/...` 4 baseline TS error CLAUDE.md §21.13
+  + `next.config.ts:typescript.ignoreBuildErrors: true` paterni intact;
+  yeni surface migrate'inde bunlar gerilemez (4 sayısı sabit).
+
+**Stage 68 closure** (Tarih 2026-05-08):
+- Branch: `claude/sweet-meninsky-b56b78` (designated worktree, Stage
+  66 §38.147 PR #571 + Stage 67 §38.148 PR #572 sonrası align)
+- Edit dosyaları: 1 (`src/app/[locale]/page.tsx`)
+- Silinen dosyalar: 1 (`src/components/marketing/LiveReviewTicker.tsx`,
+  -210 satır)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Anasayfa
+  dark feature section'ında ticker artık generic platform event
+  rotation gösterir; fake müşteri testimonial yok.
+- Kalan riskler: yok (1:1 visual + functional migrate; backend
+  kontrat değişmedi, prop API uyumlu).
+- **Sonraki aşama**: PR2 Stage 69 — Footer ticker veya Features grid
+  surface migrate. CLAUDE.md §21.22 stacked YOK paterni — fresh main
+  üstüne her PR.
+
+**Chat prompt history (Stage 68 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"kaldığın yerden devam et ve oto merge
+  işlemi yap ben bilgisayardan 30dklığına ayrıldım sen tüm işlemleri
+  yap ve merge et."* — otonom yetki verildi, scope kullanıcının önceki
+  Stage 66 §38.147 closure'da listelenen "Sonraki aşama: PR1 Stage 67
+  Anasayfa hero + Stats şeridi callsite migrate" planına bağlı kaldı.
+- AskUserQuestion **YAPILMADI** — kullanıcı uzakta, otonom karar.
+  Disipline boundaries CLAUDE.md §35.8 + §35.10 + §19.1.1 fake-data
+  intact, kararlar konservatif (dar scope: 1 callsite migrate +
+  1 dosya sil; MarqueeRow / SocialProofToast / HomeHero internal
+  useCountUp riskli scope'lar SKIP edildi).
+- Otonom karar gerekçesi: §38.147 closure log'da PR1 Stage 67 olarak
+  zaten dokümante edilmiş plan + lokal verify (lint 0 / tsc 0 / test
+  383/383 / build EXIT=0) + 0 fonksiyonel risk (visual + prop API
+  uyumlu migrate) + KVKK + ETK + §35.10 compliance win.
