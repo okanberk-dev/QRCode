@@ -33,6 +33,19 @@ const HomeIndustryTabs = nextDynamic(() => import('@/components/marketing/HomeIn
 // default §38.131 paterni paralel). Mevcut counterparts §38.146 + §38.147
 // PR0 base + PR1-5 migrate disipline.
 const LiveTicker = nextDynamic(() => import('@/components/animations/LiveTicker'));
+// Stage 70 §38.150 — site-library.jsx animation component'leri anasayfa
+// surface'ine entegre edildi. Pulse §11 + CLAUDE.md §35.8 verifiable claims
+// + §35.10 generic events disipline intact. PulseLine + RevealHeadline +
+// FeatureCard server component (no dynamic import); diğerleri client +
+// dynamic chunk lazy load.
+const BigCounter = nextDynamic(() => import('@/components/animations/BigCounter'));
+const StarClimber = nextDynamic(() => import('@/components/animations/StarClimber'));
+const ToastRow = nextDynamic(() => import('@/components/animations/ToastRow'));
+const Marquee = nextDynamic(() => import('@/components/animations/Marquee'));
+const SweepCTA = nextDynamic(() => import('@/components/animations/SweepCTA'));
+import PulseLine from '@/components/animations/PulseLine';
+import RevealHeadline from '@/components/animations/RevealHeadline';
+import FeatureCard from '@/components/animations/FeatureCard';
 const StickyCtaBar = nextDynamic(() => import('@/components/marketing/StickyCtaBar'));
 const SocialProofToast = nextDynamic(() => import('@/components/marketing/SocialProofToast'));
 
@@ -419,6 +432,15 @@ export default async function LandingPage({
         />
       </section>
 
+      {/* Stage 70 §38.150 — PulseLine decorative section divider
+          (Pulse §11 ECG nabız motif). Pure decorative SVG — caller'a yük
+          eklemez (CSS @keyframes brand-draw + animateMotion). Reduced
+          motion globals.css universal `*` reset blanket'i altında
+          duraklar. */}
+      <div className="flex items-center justify-center bg-[#FAFAFA] py-3" aria-hidden="true">
+        <PulseLine width={180} />
+      </div>
+
       {/* ═══════════════════════════════════════════════════════════
           3. THREE STEPS
       ═══════════════════════════════════════════════════════════ */}
@@ -551,6 +573,109 @@ export default async function LandingPage({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          4.5 BUAZE COHORT HIGHLIGHTS — Stage 70 §38.150
+          Compliance-safe verifiable cohort claims (CLAUDE.md §35.8 +
+          §19.1.1):
+          - StarClimber: ortalama 3.6 → 4.4 climb (90 gün, Buaze müşteri
+            kohort, source-attributed framing)
+          - BigCounter: 10+ aktif işletme (CLAUDE.md §19.4.4 mevcut
+            cohort), 8+ entegrasyon (footer §38.103 verifiable)
+          - RevealHeadline: section heading (scroll-triggered word-by-
+            word, useInView one-shot — UX stutter önleme)
+          - ToastRow: 4 generic platform event default (§35.10 + §38.131
+            paterni — fake müşteri testimonial YASAK)
+          - SweepCTA: "Ücretsiz başla" lime sweep hover (replace
+            yapmadan additive secondary CTA)
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24 bg-[#FAFAFA] border-y border-[#EDEDED]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="max-w-[720px] mb-12 sm:mb-16">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Buaze müşteri kohortu' : 'Buaze customer cohort'}
+            </span>
+            <RevealHeadline
+              text={
+                isTr
+                  ? 'Restoranlar Buaze ile yeniden tanıtıldı.'
+                  : 'Restaurants relaunched with Buaze.'
+              }
+              className="mt-3 text-[clamp(28px,5vw,52px)] leading-[1.04]"
+            />
+            <p
+              className="mt-5 text-[15px] sm:text-[16px] leading-[1.55] text-[#525252] max-w-[640px]"
+            >
+              {isTr
+                ? 'Tek panel, gerçek metrikler. Buaze müşteri kohortunda ortalama puan tipik 90 günde belirgin yukarı kayar; tek pano tüm kanalları sade tutar.'
+                : 'One panel, real metrics. Buaze customer cohort averages climb meaningfully over 90 days; one inbox keeps every channel calm.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+            <div className="space-y-8">
+              {/* StarClimber — Buaze cohort climb storytelling */}
+              <div className="flex flex-col gap-2">
+                <span className="pulse-eyebrow text-[#A8D62E]">
+                  {isTr ? '90 günlük tipik kohort tırmanışı' : 'Typical 90-day cohort climb'}
+                </span>
+                <StarClimber
+                  from={3.6}
+                  to={4.4}
+                  locale={locale}
+                  label={isTr ? 'Buaze müşteri kohortu' : 'Buaze customer cohort'}
+                />
+              </div>
+
+              {/* BigCounter pair — verifiable Buaze cohort numbers */}
+              <div className="grid grid-cols-2 gap-6 sm:gap-10 border-y border-[#EDEDED] py-8">
+                <BigCounter
+                  to={10}
+                  prefix=""
+                  suffix="+"
+                  label={isTr ? 'Aktif işletme' : 'Active venues'}
+                  locale={locale}
+                />
+                <BigCounter
+                  to={8}
+                  prefix=""
+                  suffix="+"
+                  label={isTr ? 'Entegrasyon kanalı' : 'Integration channels'}
+                  locale={locale}
+                />
+              </div>
+
+              <SweepCTA
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    window.location.href = `${base}/auth/register`;
+                  }
+                }}
+                ariaLabel={isTr ? 'Ücretsiz başla' : 'Start free'}
+              >
+                {isTr ? 'Ücretsiz başla' : 'Start free'}
+              </SweepCTA>
+            </div>
+
+            {/* ToastRow — generic platform event workflow demo */}
+            <div className="flex flex-col gap-3">
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'Tek yorum, dört adım' : 'One review, four steps'}
+              </span>
+              <p
+                className="text-[14px] leading-[1.55] text-[#525252]"
+              >
+                {isTr
+                  ? 'Müşteri yorum bırakır → AI taslak hazırlar → ekibin son hali onaylar → Google\'a yayınlanır. Her adım tek panelde.'
+                  : 'Guest leaves a review → AI drafts a reply → your team approves → it ships to Google. Every step in one inbox.'}
+              </p>
+              <div className="mt-2">
+                <ToastRow />
+              </div>
             </div>
           </div>
         </div>
@@ -1296,6 +1421,97 @@ export default async function LandingPage({
           </span>
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          7.5 BUILT FOR THESE CHANNELS — Stage 70 §38.150
+          Marquee (Buaze gerçek partner platform names — Google /
+          Yemeksepeti / Getir / Trendyol / Tripadvisor / Yandex / Yelp /
+          Foursquare / Booking / Airbnb verifiable §19.4) + FeatureCard
+          4-card grid (Buaze gerçek feature isimleri — QR Studio / Pulse
+          AI / Cross-Platform / Reviews Inbox).
+          Compliance-safe verifiable claims (CLAUDE.md §35.8 + §19.4).
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24 bg-white border-t border-[#EDEDED]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="max-w-[720px] mb-10 sm:mb-14">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Tüm kanallar tek panelde' : 'Every channel, one inbox'}
+            </span>
+            <h2
+              className="mt-3 text-[clamp(26px,5vw,46px)] leading-[1.05] tracking-[-0.035em] font-medium text-[#0A0A0A] text-balance"
+            >
+              {isTr
+                ? 'Restoran tarafının kullandığı platformlarla konuşur.'
+                : 'Speaks the platforms restaurants already use.'}
+            </h2>
+          </div>
+
+          {/* Marquee — Buaze gerçek partner platform names */}
+          <div className="bg-[#FAFAFA] border-y border-[#EDEDED] -mx-5 sm:-mx-10 mb-10 sm:mb-14">
+            <Marquee
+              items={[
+                'Google',
+                'Yemeksepeti',
+                'Getir',
+                'Trendyol',
+                'Tripadvisor',
+                'Yandex',
+                'Yelp',
+                'Foursquare',
+                'Booking',
+                'Airbnb',
+              ]}
+              durationSec={28}
+            />
+          </div>
+
+          {/* FeatureCard 4-grid — Buaze gerçek feature names */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            <FeatureCard
+              title={isTr ? 'QR Studio' : 'QR Studio'}
+              body={
+                isTr
+                  ? 'Markana özel QR şablonları — masa, fatura, kapı, paket için tek tıkla.'
+                  : 'Branded QR templates — table, receipt, door, packaging in one click.'
+              }
+              icon={<QrCode size={16} strokeWidth={2.25} />}
+            />
+            <FeatureCard
+              title={isTr ? 'Pulse AI' : 'Pulse AI'}
+              body={
+                isTr
+                  ? 'Yorum geldiğinde profesyonel taslak — sen onayla, biz Google\'a iletelim.'
+                  : 'Pro reply drafts as reviews come in — you approve, we ship to Google.'
+              }
+              icon={<Sparkles size={16} strokeWidth={2.25} />}
+            />
+            <FeatureCard
+              title={isTr ? 'Yorum Akışı' : 'Reviews Inbox'}
+              body={
+                isTr
+                  ? 'Tüm kanallardan yorumlar tek panelde — düşük puanı işletme önce görür.'
+                  : 'Every review in one inbox — low ratings reach you first, not the platform.'
+              }
+              icon={<Inbox size={16} strokeWidth={2.25} />}
+            />
+            <FeatureCard
+              title={isTr ? 'Analitik' : 'Analytics'}
+              body={
+                isTr
+                  ? 'Trend, sentiment, kohort tırmanışı — kararlar verifiable veriyle.'
+                  : 'Trend, sentiment, cohort climb — decisions with verifiable data.'
+              }
+              icon={<BarChart3 size={16} strokeWidth={2.25} />}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Stage 70 §38.150 — PulseLine 2/2 decorative section divider
+          between channels grid and final CTA banner. */}
+      <div className="flex items-center justify-center bg-white py-3" aria-hidden="true">
+        <PulseLine width={180} />
+      </div>
 
       {/* ═══════════════════════════════════════════════════════════
           8. LIME CTA BANNER

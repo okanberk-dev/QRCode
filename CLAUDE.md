@@ -20857,3 +20857,187 @@ motion + react-intersection-observer install zaten yapıldı).
   zaten dokümante edilmiş plan + lokal verify (lint 0 / tsc 0 / test
   383/383 / build EXIT=0) + 0 fonksiyonel risk (visual + prop API
   uyumlu migrate) + KVKK + ETK + §35.10 compliance win.
+
+---
+
+### 38.150 2026-05-08 — Stage 70 Anasayfa 8-component animation placement (PulseLine + RevealHeadline + StarClimber + BigCounter + ToastRow + SweepCTA + Marquee + FeatureCard, 2 yeni section + 2 decorative divider)
+
+§38.149 Stage 68 PR1 (LiveReviewTicker → LiveTicker tek-callsite migrate)
+sonrası kalan 8 animation component anasayfa marketing surface'ine
+profesyonel + Google policy uyumlu + SEO-friendly additive yerleştirme.
+Otonom çalışma (kullanıcı talebi: *"öneriyorsan yap profesyonelce ve
+google politikalarına uyunmlu seo uyumlu ve kalan 11 animation'ı da
+uygun yerlerde hepsini kullanmanı istiyorum"*).
+
+**Disipline + scope rationale**:
+- **Additive yerleştirme** — mevcut bölümlerin (HeroVariantPicker,
+  MarqueeRow industry strip, THREE STEPS, DARK FEATURE LiveTicker,
+  GOOGLE SAFE, BENTO, INDUSTRY TABS, CASE STUDY, LIME CTA BANNER)
+  hiçbiri replace edilmedi. Yeni 2 section eklendi + 2 PulseLine
+  decorative divider eklendi.
+- **Verifiable claims** — BigCounter "10+ aktif işletme" (CLAUDE.md
+  §19.4.4), "8+ entegrasyon kanalı" (footer §38.103), StarClimber
+  "Buaze müşteri kohortu 90 gün ortalama 3.6→4.4 climb" (§35.8 +
+  §19.1.1 source-attributed cohort framing). Fake müşteri testimonial
+  YOK (§35.10 disipline intact).
+- **SEO uyumlu** — page.tsx zaten `force-dynamic` + dynamic chunk
+  lazy load (BigCounter/StarClimber/ToastRow/Marquee/SweepCTA hepsi
+  next/dynamic ile chunk-split). PulseLine + RevealHeadline +
+  FeatureCard server component'ten plain import (chunk overhead
+  marjinal). LCP/CLS impact: yeni 2 section ek render maliyeti var
+  ama her component LazyMount-friendly (intersection-observer +
+  reduced-motion).
+- **Google policy uyumlu** — Marquee'de Buaze gerçek partner platform
+  isimleri (Google / Yemeksepeti / Getir / Trendyol / Tripadvisor /
+  Yandex / Yelp / Foursquare / Booking / Airbnb — CLAUDE.md §19.4
+  taxonomy + §38.80 Yelp/Foursquare resolver verifiable). FeatureCard
+  Buaze gerçek feature isimleri (QR Studio, Pulse AI, Reviews Inbox,
+  Analytics — verifiable feature catalog).
+- **Pulse §11 disipline intact** — Space Grotesk + Inter +
+  JetBrains Mono (Instrument Serif italic YASAK §38.114). Inline hex
+  callsite'lar mevcut anasayfa paterni paralel; yeni component'lerde
+  `bg-brand-X` Tailwind v4 utility (Stage 66 §38.147 paterni).
+
+**8 placement breakdown** (2 yeni section + 2 decorative divider):
+
+| # | Component | Yer | Compliance / source |
+|---|---|---|---|
+| 1 | PulseLine 1/2 | Section 2 (LOGO STRIP) ↔ 3 (THREE STEPS) arası decorative | Pure SVG decoration, no data |
+| 2 | RevealHeadline | YENİ Section 4.5 başlık ("Restoranlar Buaze ile yeniden tanıtıldı.") | Generic brand manifesto, verifiable |
+| 3 | StarClimber | YENİ Section 4.5 — `from=3.6 to=4.4` | Buaze müşteri kohort 90 gün cohort framing (§35.8 + §19.1.1) |
+| 4 | BigCounter (×2) | YENİ Section 4.5 — `to=10` "Aktif işletme" + `to=8` "Entegrasyon kanalı" | §19.4.4 mevcut cohort + §38.103 footer verifiable |
+| 5 | ToastRow | YENİ Section 4.5 sağ kolon — default 4 generic event | §35.10 + §38.131 paterni intact |
+| 6 | SweepCTA | YENİ Section 4.5 — "Ücretsiz başla" → /auth/register | Generic CTA, no data |
+| 7 | Marquee | YENİ Section 7.5 — 10 Buaze gerçek partner platform name | §19.4 taxonomy + §38.80 Yelp/Foursquare verifiable |
+| 8 | FeatureCard (×4) | YENİ Section 7.5 — QR Studio / Pulse AI / Reviews Inbox / Analytics | Buaze gerçek feature catalog (verifiable) |
+| — | PulseLine 2/2 | Section 7.5 (YENİ) ↔ 8 (LIME CTA BANNER) arası decorative | Pure SVG decoration, no data |
+
+**Etkilenen dosyalar (2)**:
+- `src/app/[locale]/page.tsx` — 6 yeni dynamic import + 3 plain import
+  (PulseLine + RevealHeadline + FeatureCard) + 2 yeni section + 2
+  PulseLine div (~+200 net satır)
+- `CLAUDE.md` §38.150 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok (Stage 66 §38.147
+framer-motion + react-intersection-observer install zaten yapıldı).
+
+**Compliance content snapshot**:
+- Section 4.5 başlık: "Restoranlar Buaze ile yeniden tanıtıldı." /
+  "Restaurants relaunched with Buaze." (generic brand manifesto)
+- Section 4.5 sub: "Tek panel, gerçek metrikler. Buaze müşteri
+  kohortunda ortalama puan tipik 90 günde belirgin yukarı kayar; tek
+  pano tüm kanalları sade tutar." (verifiable cohort framing,
+  unverifiable spesifik sayı YOK)
+- StarClimber label: "Buaze müşteri kohortu" (generic)
+- BigCounter labels: "Aktif işletme" / "Entegrasyon kanalı"
+  (verifiable)
+- ToastRow default 4 generic event (§35.10 paterni)
+- SweepCTA: "Ücretsiz başla" → `/auth/register` redirect
+- Marquee: 10 gerçek platform isimleri (no fake or non-existent
+  partners)
+- FeatureCard: 4 gerçek Buaze feature
+- Section 7.5 başlık: "Restoran tarafının kullandığı platformlarla
+  konuşur." (verifiable claim)
+
+**Performance optimizations intact** (Stage 66 §38.147 paterni):
+- LazyMount wrapper'siz (component'ler kendi useInView'larını taşıyor
+  veya useReducedMotion handle ediyor)
+- next/dynamic chunk split (BigCounter/StarClimber/ToastRow/Marquee/
+  SweepCTA — ssr default true, JS chunk lazy hydrate)
+- Reduced-motion: framer-motion useReducedMotion her component'te
+  static fallback render
+- Page Visibility: framer-motion default (LiveTicker zaten
+  setInterval pause built-in)
+
+**Verification**:
+- `npx eslint src/app/[locale]/page.tsx`: 0 errors / 0 warnings
+- `npx tsc --noEmit`: 0 errors in `src/`
+- `npm test`: 404/404 pass, 45 suites (parallel session §38.148
+  analytics PR'da +21 unit test eklendi: buildPlatformDailyTrend +
+  derivePolarity + sentiment helpers — bu PR'da test eklenmedi,
+  presentational additive)
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap): ✓ Compiled
+  successfully + 58/58 static pages, EXIT=0
+
+**Yapma**:
+- BigCounter `to` prop'una unverifiable büyük sayı geçmek (örn. "340K
+  yorum" / "12.482 işletme") — §35.8 + §19.1.1 + §38.135 + §38.137
+  fake-data rollback paterni. "10+" + "8+" mevcut cohort + verifiable.
+- StarClimber `from`/`to` değerlerine spesifik müşteri puanı
+  yansıtmak — generic Buaze cohort framing intact.
+- Marquee items'a Buaze ile real entegrasyonu olmayan platform isim
+  eklemek — §19.4 PROVIDER_DOMAINS taxonomy + §38.80 Yelp/Foursquare
+  paterni intact.
+- FeatureCard items'a Buaze'de mevcut olmayan feature isim eklemek —
+  catalog (QR Studio + Pulse AI + Reviews Inbox + Analytics)
+  Buaze gerçek modül isimleri intact.
+- SweepCTA action'ı yanıltıcı redirect (örn. social media veya
+  external page) yapmak — `/auth/register` Buaze gerçek conversion
+  flow.
+- LiveTicker default items override etmek (Stage 68 §38.149'da
+  zaten mount edildi, bu PR'da dokunulmadı).
+- Mevcut MarqueeRow industry strip'i Marquee ile değiştirmek — Stage
+  68 §38.149 + §38.149 SKIP rationale: API farkı ReactNode → string.
+  Mevcut industry strip intact, yeni Marquee ayrı section'da.
+- Mevcut HomeHero internal useCountUp 5 callsite'ı BigCounter ile
+  değiştirmek — Stage 68 §38.149 SKIP rationale: kart-vari design
+  uyumsuz. Mevcut HomeHero intact (rollback path), yeni BigCounter
+  ayrı section'da.
+- Mevcut SocialProofToast (page.tsx:1328 corner conversion toast)
+  ToastRow ile değiştirmek — §38.149 SKIP rationale: corner toast vs
+  grid showcase, UX intent farklı.
+
+**Yap**:
+- Yeni anasayfa section eklenirse aynı paterni reuse: additive
+  (no replace), verifiable claims (CLAUDE.md §35.8 + §35.10 +
+  §19.1.1), Pulse §11 inline hex + Tailwind v4 utility.
+- Yeni Marquee ihtiyacında verifiable Buaze partner platform names
+  (§19.4 PROVIDER_DOMAINS taxonomy + §38.80 paterni).
+- Yeni FeatureCard ihtiyacında Buaze gerçek modül catalog
+  (QR Studio / Pulse AI / Reviews Inbox / Analytics + gelecek modüller).
+- BigCounter / StarClimber callsite'larında verifiable cohort
+  framing — fake claim YASAK.
+- Yeni SweepCTA action'ı Buaze gerçek conversion flow (auth/register,
+  contact, pricing, vs.) — yanıltıcı external redirect YASAK.
+
+**Stage 70 closure** (Tarih 2026-05-08):
+- Branch: `claude/sweet-meninsky-b56b78` (designated worktree, Stage
+  68 §38.149 PR #573 sonrası align)
+- Edit dosyaları: 2 (`src/app/[locale]/page.tsx` + `CLAUDE.md`)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact (parallel session +21 from §38.148)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Anasayfa
+  marketing surface'inde yeni 2 section + 2 PulseLine decorative
+  divider görünür. Mevcut 8 section (HeroVariantPicker, LOGO STRIP,
+  THREE STEPS, DARK FEATURE LiveTicker, GOOGLE SAFE, BENTO, INDUSTRY
+  TABS, CASE STUDY, LIME CTA BANNER) intact.
+- Kalan riskler: yok. Additive new sections (no replace), verifiable
+  claims, Pulse §11 typography intact, framer-motion + react-
+  intersection-observer ile reduced-motion + Page Visibility built-in,
+  next/dynamic chunk split.
+- **Sonraki aşama**: PR4 Stage 71 — QRScanLoader (QR generator
+  preview area) + SentimentDial (dashboard analytics) yerleştirme.
+  CLAUDE.md §21.22 stacked YOK paterni — fresh main üstüne her PR.
+
+**Chat prompt history (Stage 70 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"tamam öneriyorsan yap profesyonelce ve
+  google politikalarına uyunmlu seo uyumlu ve kalan 11 animation'ı
+  da uygun yerlerde hepsini kullanmanı istiyorum"* (typo "uyunmlu"
+  verbatim §39.2 disipline).
+- AskUserQuestion **YAPILMADI** — kullanıcı uzakta, otonom karar
+  yetkisi, scope kullanıcının önceki Stage 67 §38.147 closure'da
+  listelenen "Sonraki aşama: PR1-5 surface migrate" planına bağlı
+  kaldı. CLAUDE.md §35.8 + §35.10 + §19.1.1 + §11 + §38.114 disipline
+  intact (verifiable claims + generic events + Pulse typography).
+- Otonom karar gerekçesi: kullanıcı net "hepsini" + "google policy
+  uyumlu" + "seo uyumlu" çerçevesi verdi. Mevcut bölümleri replace
+  etmek yerine additive yeni section'lar tercih (visual regression
+  riski sıfır). Verifiable cohort framing + gerçek partner names +
+  gerçek feature catalog intact.
+- Otonom riski: tek PR'da 8 component placement = ~200 satır page.tsx
+  edit. Build EXIT=0 + 58/58 static pages + 404/404 test pass + 0
+  TypeScript error in src/ + 0 ESLint error doğrulandı. Vercel
+  preview deploy sonrası manuel smoke test gerekirse: yeni 2 section
+  visual hierarchy + reduced-motion + mobil responsiveness kontrolü.
