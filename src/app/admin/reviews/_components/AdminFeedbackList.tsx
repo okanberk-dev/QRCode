@@ -1,7 +1,7 @@
 'use client';
 
 import { Inbox, Loader2, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
-import { AlertBanner, EmptyState, Skeleton, Tabs } from '@/components/ui';
+import { AlertBanner, APCheckbox, EmptyState, Skeleton, Tabs } from '@/components/ui';
 import type { AdminTab, CountsResp, DegradedMeta, FeedbackRow } from './types';
 import { AdminFeedbackListItem } from './AdminFeedbackListItem';
 
@@ -142,29 +142,30 @@ export function AdminFeedbackList({
           </div>
         </div>
 
-        {/* Bulk select-all checkbox (sticky header in list) */}
+        {/* Bulk select-all checkbox (sticky header in list).
+            Stage 47 §38.128 — APCheckbox primitive entegre (manuel
+            ref-based indeterminate pattern → primitive). Pulse §11
+            lime fill + Indeterminate Minus icon (HANDOFF Toggles
+            görsel referansı). */}
         {filtered.length > 0 && (
-          <label className="flex items-center gap-2 px-1 pt-0.5 text-[11px] text-[#737373] cursor-pointer">
-            <input
-              type="checkbox"
+          <div className="flex items-center px-1 pt-0.5 text-[11px] text-[#737373]">
+            <APCheckbox
+              size="sm"
               checked={allSelected}
-              ref={(el) => {
-                if (el) el.indeterminate = someSelected;
-              }}
-              onChange={(e) => onToggleSelectAll(e.target.checked)}
-              aria-label={isTr ? 'Tümünü seç' : 'Select all'}
-              className="h-3.5 w-3.5 accent-[#0A0A0A] cursor-pointer"
+              indeterminate={someSelected}
+              onChange={onToggleSelectAll}
+              ariaLabel={isTr ? 'Tümünü seç' : 'Select all'}
+              label={
+                selectedIds.size > 0
+                  ? isTr
+                    ? `${selectedIds.size} seçildi`
+                    : `${selectedIds.size} selected`
+                  : isTr
+                    ? 'Tümünü seç'
+                    : 'Select all'
+              }
             />
-            <span>
-              {selectedIds.size > 0
-                ? isTr
-                  ? `${selectedIds.size} seçildi`
-                  : `${selectedIds.size} selected`
-                : isTr
-                  ? 'Tümünü seç'
-                  : 'Select all'}
-            </span>
-          </label>
+          </div>
         )}
       </div>
 

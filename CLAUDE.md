@@ -16477,3 +16477,150 @@ floating pill _ otomatik dönen _ mega menu.png`.
   net.
 - Hukuki/disipline override: yok ("%30" promotion claim gerçek
   kampanya referansı; kullanıcı Pricing sayfasında doğrulayabilir).
+
+---
+
+### 38.128 2026-05-08 — Stage 47 APCheckbox indeterminate primitive + 3 callsite migrate (admin panel button/toggle/checkbox audit)
+
+Kullanıcı talebi: *"site genelinde tasarımda olan butonları kullandığından
+emin ol admin panel ve owner panelde toogle veya tüm diğer buton
+yapılarını admin owner panel isimli dosyaları incele ve detaylıca
+kullan."* → admin/owner panel'lerde HANDOFF spec'le çakışan **gerçek
+drift** tespiti + primitive entegrasyonu. Görsel referans:
+`Toggles_Switches_Checkbox_Radio_Slider_Stars.png` + `Button System.png`
++ `admin-panel.jsx`.
+
+**Audit findings**:
+
+| Pattern | Buaze mevcut | HANDOFF spec | Drift |
+|---|---|---|---|
+| Toggle sizes | sm/md/lg ✓ (Toggle.tsx:13-31) | sm/md/lg ✓ | **YOK** (CLAUDE.md §38.117'deki "lg eksik" notu yanlış) |
+| Checkbox indeterminate | 5 callsite manuel `ref.indeterminate = ...` pattern | Built-in primitive | **VAR** — primitive yoktu (§38.117'de SKIP) |
+| Button variants | bz-btn-primary/lime/ghost/icon (4 utility) | 8 variant + 4 size + 7 tone + segmented + chip + FAB + split + full-width | Inline pattern + 50+ callsite bypass — büyük scope, ayrı PR'a defer |
+| Loading state | 11 inline `Loader2 + animate-spin + disabled` | Tek "YÜKLENİYOR" component variant | Drift var ama scope: 11 callsite manuel kalsın (CLAUDE.md §7) |
+| Star input | APStarInput primitive var (§38.117 explicit Yapma /r/[slug]) | HANDOFF 4-star input | Decision tutuldu — public review intact |
+| Slider | APSlider primitive var, callsite yok | HANDOFF 0-100 lime track | YAGNI §38.49 — gelecek callsite gerekirse entegre |
+
+**Bu PR'da fix**: 1 yeni primitive + 3 callsite migrate (gerçek drift):
+
+1. **`APCheckbox` primitive** (`src/components/ui/APCheckbox.tsx`):
+   - 3-state: unchecked / checked / **indeterminate** (Stage 37 §38.117'de
+     SKIP, 5 callsite ihtiyacı çıkınca extract)
+   - Native `<input type="checkbox">` sr-only + custom render
+   - Pulse §11: lime fill (`#C6F24E`) + graphite border default + lucide
+     `Check`/`Minus` icons + `bz-motion-spring` transition
+   - A11y: `aria-checked={indeterminate ? 'mixed' : checked}`,
+     focus-visible lime ring, `forwardRef` external ref, native required +
+     name/value form support
+   - Genişleyebilen API: `label?: ReactNode` (string veya custom JSX),
+     `labelClassName` (callsite custom typography — örn. mono uppercase
+     tracking), `inputProps` (`data-*` forward — DOM-query callsite'lar
+     için), `sublabel?` muted secondary text, `size: 'sm' | 'md'`
+   - 19 satır + 144 satır JSX ≈ 165 satır primitive
+
+2. **3 callsite migrate** (manuel `ref.indeterminate` pattern → primitive):
+   - `src/app/admin/reviews/_components/AdminFeedbackList.tsx` —
+     bulk select-all sticky list header (CLAUDE.md §11.12 paterni)
+   - `src/app/admin/restaurants/page.tsx` — bulk activate/deactivate
+     header (§11.19 paterni); `labelClassName="bz-mono uppercase
+     tracking-wider !text-[11px]"` ile mevcut typography intact
+   - `src/app/admin/members/page.tsx` — bulk mail header (§38.97
+     Stage A5); IIFE `(() => { ... })()` ile derived state hesaplaması
+     primitive props'a geçirilir
+
+3. **2 callsite SKIP** (controlled-state refactor scope creep):
+   - `src/app/[locale]/dashboard/customers/page.tsx` — 3 native
+     checkbox (table header select-all + table body row + mobile card
+     row); `CustomersBulkBar.tsx` `document.querySelector` +
+     `data-customer-key` DOM-query pattern ile uncontrolled state
+     yönetiyor. APCheckbox controlled (`checked + onChange`) API'siyle
+     migrate etmek tüm bulk infrastructure refactor gerektirir; ayrı
+     PR scope.
+
+**Etkilenen dosyalar (5)**:
+- `src/components/ui/APCheckbox.tsx` (yeni, ~165 satır)
+- `src/components/ui/index.ts` — barrel export entry
+- `src/app/admin/reviews/_components/AdminFeedbackList.tsx` —
+  bulk select-all migrate
+- `src/app/admin/restaurants/page.tsx` — bulk select-all migrate
+- `src/app/admin/members/page.tsx` — bulk select-all migrate
+- `CLAUDE.md` — §38.128 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**:
+383/383 intact (primitive presentational + native input fallback;
+unit test gelecek opportunistic).
+
+**Verification**:
+- `npx eslint .` ✓ 0 errors / 0 warnings
+- `npx tsc --noEmit` ✓ 0 errors in `src/`
+- `npm test` ✓ 383/383 pass intact
+- `npx next build` (stub env) ✓ Compiled + 58/58 static page intact
+
+**Yapma**:
+- HANDOFF spec'in 8 button variant + 4 size + 7 icon-tone + chip
+  removable + segmented count badge + FAB + split-button + full-width
+  primitive'lerini bu PR'a sıkıştırma — 50+ callsite refactor scope.
+  Mevcut `bz-btn-primary/lime/ghost/icon` utility-first pattern §11
+  intact; gelecek opportunistic refactor (CLAUDE.md §7 + §38.49 disipline).
+- 11 inline `Loader2 + animate-spin` callsite'ı `bz-btn-loading`
+  utility'sine zorla — manuel pattern okunabilir, 3+ tekrar (CLAUDE.md
+  §7) eşiği geçilse de risk/değer dengesi düşük.
+- APStarInput → /r/[slug] migrate (§38.117 explicit Yapma intact).
+- CustomersBulkBar 3 native checkbox callsite'ını APCheckbox'a
+  migrate — DOM-query uncontrolled state pattern karmaşık, controlled
+  state refactor gerektirir; ayrı PR.
+- APCheckbox `indeterminate` true iken `checked` görsel olarak override
+  etmek (mixed state önceliklidir) — visual hierarchy: indeterminate >
+  checked > unchecked.
+- APCheckbox `<label htmlFor>` wrap + `<input id>` ikilisini bozmak —
+  native click-target + screen reader semantik kritik.
+
+**Yap**:
+- Yeni indeterminate ihtiyacı çıkarsa `<APCheckbox indeterminate>`
+  reuse — `aria-checked='mixed'` otomatik.
+- Yeni bulk action toolbar eklerken APCheckbox primitive paterni
+  reuse: `size='sm'` + `label` + `ariaLabel` + `onChange` + opsiyonel
+  `labelClassName`.
+- Custom label typography gerekirse `labelClassName` prop ile
+  override (`!text-[N]px` priority + `bz-mono` + `uppercase` ile).
+- DOM-query pattern (örn. CustomersBulkBar) controlled state'e
+  refactor edilirse, APCheckbox `inputProps` `data-*` attr forward
+  hazır.
+
+#### Stage 47 closure (Tarih 2026-05-08)
+
+- Branch: `chore/button-toggle-checkbox-bundle-stage47` (fresh main
+  üstüne, Stage 46 §38.127 PR #550 merged)
+- Yeni dosya: 1 (`APCheckbox.tsx`)
+- Edit'lenen dosyalar: 5 (UI barrel + 3 admin callsite + CLAUDE.md)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Admin
+  panel bulk action toolbar'larında (reviews + restaurants + members)
+  select-all checkbox artık APCheckbox primitive (Pulse §11 lime fill
+  + indeterminate Minus icon).
+- Kalan riskler: yok (drop-in primitive replacement, native checkbox
+  semantik intact, form submit + a11y zorunlu davranış preserved).
+- **Sonraki aşama**: Opportunistic — CustomersBulkBar controlled
+  state refactor (3 callsite migrate); HANDOFF button variants
+  (`bz-btn-success`/`bz-btn-danger`/`bz-btn-outlined-lime`/loading
+  state) utility ekleme; 50+ inline button bypass auditi.
+
+**Chat prompt history (Stage 47 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"site genelinde tasarımda olan butonları
+  kullandığından emin ol admin panel ve owner panelde toogle veya tüm
+  diğer buton yapılarını admin owner panel isimli dosyaları incele ve
+  detaylıca kullan."* (görsel referans: HANDOFF Toggles + Button System
+  + Owner _ Locations PNG'leri).
+- Audit sonrası 5 indeterminate callsite ortaya çıktı; Stage 37
+  §38.117'de SKIP edilen APCheckbox primitive'i 4+ callsite ihtiyacı
+  ile extract edildi.
+- Toggle lg size, button variants, loading utility, removable chip,
+  segmented count, FAB, split, full-width gibi geniş HANDOFF
+  primitive'leri **callsite-bazlı entegre edilmedi** — CLAUDE.md
+  §7 + §38.49 disipline (mevcut Buaze utility-first pattern §11 zaten
+  Pulse uyumlu, 50+ callsite refactor scope creep).
+- AskUserQuestion yapılmadı: kullanıcı uyumakta, otonom karar yetkisi.
+- Hukuki/disipline override: yok (Pulse §11 + WCAG ARIA mixed state
+  paterni).
