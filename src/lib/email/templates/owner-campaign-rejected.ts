@@ -136,7 +136,7 @@ export async function renderOwnerCampaignRejected(
             ${isTr ? 'Bu mail Buaze platformu (Buaze Bilişim A.Ş.) tarafından gönderilmiştir.' : 'This email was sent by the Buaze platform (Buaze Bilişim A.Ş.).'}
           </div>
           <div style="font-family:${FONTS.body};font-size:11px;color:${PULSE.n500};margin-top:4px;">
-            <a href="https://buaze.com/${isTr ? 'tr' : 'en'}/privacy" style="color:${PULSE.graphite};text-decoration:underline;">${isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}</a>
+            <a href="https://buaze.com/${isTr ? 'tr/gizlilik' : 'en/privacy'}" style="color:${PULSE.graphite};text-decoration:underline;">${isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}</a>
           </div>
         </div>
       </td>
@@ -164,7 +164,7 @@ ${copyText.footerHint}
 
 —
 ${isTr ? 'Bu mail Buaze platformu (Buaze Bilişim A.Ş.) tarafından gönderilmiştir.' : 'This email was sent by the Buaze platform (Buaze Bilişim A.Ş.).'}
-${isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}: https://buaze.com/${isTr ? 'tr' : 'en'}/privacy`.trim();
+${isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}: https://buaze.com/${isTr ? 'tr/gizlilik' : 'en/privacy'}`.trim();
 
   return { subject, html, text };
 }
