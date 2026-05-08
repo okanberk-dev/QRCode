@@ -76,6 +76,24 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
         return null;
       }
 
+      // CLAUDE.md §38.156 — Browser extension JSON-LD parse fail.
+      // Some extensions (Honey, AI scrapers, ad blockers, SEO tools)
+      // walk the DOM looking for schema.org JSON-LD blocks and call
+      // `r["@context"].toLowerCase()` without checking that the block
+      // is well-formed. Buaze JSON-LD is well-formed (CLAUDE.md §35.6 +
+      // §37.6 `jsonLdString` helper escapes properly), but if a 3rd
+      // party script injects malformed JSON-LD or runs against a stale
+      // DOM snapshot, the extension throws and Sentry's global onerror
+      // captures it. Not actionable. Filter narrowly: must match the
+      // exact `["@context"].toLowerCase` substring (browser extension
+      // signature, never appears in Buaze code).
+      const isJsonLdContextNoise =
+        /\["@context"\]\.toLowerCase/i.test(fingerprint) ||
+        /'@context'\.toLowerCase/i.test(fingerprint);
+      if (isJsonLdContextNoise) {
+        return null;
+      }
+
       return event;
     },
   });

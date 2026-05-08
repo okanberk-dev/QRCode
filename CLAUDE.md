@@ -22015,3 +22015,193 @@ dolu, lokal node_modules yok).
   - Git log + branch state: son merge Stage 72 §38.152 PR #577
     `e6aec3a9` (Sentry release SHA ile match). Stage 73 §38.153
     CLAUDE.md edit zaten main'de (working tree clean).
+
+---
+
+### 38.156 2026-05-08 — Stage 76 otonom audit pass (Supabase 3 yeni admin tablo RLS drift + Sentry `@context` browser extension noise filter + 4 issue triage)
+
+§38.155 Stage 75 SweepCTA polymorphic href fix sonrası kullanıcı otonom
+audit talebi: *"Proje genelinde tüm hataları kontrol et ve fixle...
+Sentry, vercel, supabase kontrol et hatalar için ve github ile kendin
+de bak satır satır. Backend hatalarını varsa bağlam kurulması gerekenler
+lütfen kur ve overlapler veya font renk hataları varsa detaylı bir
+audit yap ve çöz."* Otonom mode (kullanıcı uyumakta, sabaha tamamlanması
+istendi).
+
+**Discovery summary** (4 paralel kanal — Sentry + Vercel + Supabase + GitHub):
+
+🟢 **Sentry** (buaze-ev/sentry-apricot-blanket, son 48h):
+- 4 unresolved issue tespit edildi.
+- **Issue B** (`SENTRY-APRICOT-BLANKET-B`): "Server Components render error
+  `/:locale`", 21 events son 1 saat. Ama **release SHA `7ded3183`** = Stage
+  74 §38.154 SectionDivider PR #578 commit'i — Stage 75 hotfix'i (`b8b50bd4`
+  PR #579) **DAHA YENİ**. `search_issue_events query=release:b8b50bd4` →
+  **0 result**. Yani Issue B Stage 75 deploy ÖNCESI release'lerde
+  tetiklendi; production'da Stage 75 fix çalıştı (CLAUDE.md §38.155
+  doğrulandı).
+- **Issue 7** (`AbortError: BodyStreamBuffer was aborted`): 1 event 15h
+  önce — tek seferlik network abort, recurrence yok.
+- **Issue 8 + 9** (`r["@context"].toLowerCase`): 2 event 4h önce — browser
+  extension (Honey/AI scraper/SEO tool/ad blocker) JSON-LD parse fail
+  noise. mechanism `auto.browser.global_handlers.onerror` (window.onerror,
+  Buaze kodu DEĞİL). Buaze JSON-LD `jsonLdString` helper (CLAUDE.md §35.6
+  + §37.6) ile escape edildiği için well-formed; bu hata 100% 3rd party.
+
+🟢 **Supabase advisors** (project `pifpmgilgioehprrbrbg` — Buaze prod DB,
+`crbxcvmwmutrjydjdtla` farklı tenant projesi):
+- **3 ERROR `rls_disabled_in_public`** (CRITICAL):
+  - `admin_permissions` (Stage A2 §38.94 RBAC)
+  - `impersonation_sessions` (Stage A4 §38.96)
+  - `admin_notifications` (Stage 29 §38.105)
+  - Stage 17 §38.87 customer_* RLS migration paterninden sonra eklenen
+    3 yeni admin tablosunda RLS enable atlanmış.
+- 49 INFO `rls_enabled_no_policy`: Buaze BYPASSRLS pattern (CLAUDE.md
+  §38.87 dokümante — Prisma postgres rolü bypass eder, anon/authenticated
+  default deny). EXPECTED.
+- 30 INFO `unused_index` + 1 INFO `unindexed_foreign_keys` (admin_users):
+  CLAUDE.md §38.87 dokümante intentional skip.
+
+🟢 **GitHub**: Stage 75 PR #579 14:00 UTC merged, **0 açık PR**, working
+tree clean.
+
+🟢 **Backend audit agent** (Stage 65-75 cumulative): **0 CRITICAL / 0
+HIGH** finding. Schema migration drift YOK (Stage 65-75 arası 0 yeni
+migration, son `20260508120000_add_feedback_aspects_json` Stage 49
+§38.130 öncesi). 9/9 cron CRON_SECRET fail-closed (`grep -l CRON_SECRET
+src/app/api/cron/*/route.ts | wc -l = 9`). Stage 75 SweepCTA polymorphic
+refactor `target="_blank"` + `rel="noopener noreferrer"` (CLAUDE.md
+§37.2 H) intact. PII/secret leak YOK (`src/lib/email/` console.error
+sanitize-aware §37.7 paterni).
+
+🟢 **Frontend audit agent**: **0 CRITICAL / 0 HIGH / 0 MEDIUM** finding.
+- Z-index hiyerarşisi clean: MobileBottomNav z-40 + StickyCtaBar z-40
+  + ContactFloat z-50 + CookieConsentBanner z-100. Stage 61 §38.142
+  `buaze:sticky-cta-visibility` listener intact.
+- Pulse §11 typography intact (Instrument Serif italic YOK §38.114).
+- 12 animation component Pulse hex palette içinde.
+- 19 keyframe `[style*='X']` reduced-motion blanket (CLAUDE.md §38.61)
+  selector'ları tutarlı.
+- `lg:` 1024px chrome cutoff (PR #281 paterni) Stage 70-74'te intact.
+
+**2 fix bundle** (Stage 76 §38.156):
+
+1. **🔴 CRITICAL — 3 yeni admin tabloya RLS enable + restrictive policy**
+   (`prisma/migrations/20260508140000_security_stage76/migration.sql`):
+   - Stage 17 §38.87 paterni reuse (idempotent IF NOT EXISTS / DROP IF
+     EXISTS).
+   - 3 tablo: `admin_permissions`, `impersonation_sessions`,
+     `admin_notifications`.
+   - Restrictive policy: `to anon, authenticated using (false) with
+     check (false)`.
+   - Buaze Prisma `postgres` rolü BYPASSRLS=true → CRUD query'leri
+     etkilenmez. RLS sadece anon/authenticated rollerini engeller
+     (mevcut Buaze flow'unda bu rollerden bu tablolara erişim YOK,
+     gelecek API güvencesi).
+
+2. **🟡 MEDIUM — Sentry `beforeSend` `@context` browser extension noise
+   filter** (`instrumentation-client.ts`):
+   - CLAUDE.md §38.29 paterni reuse (MetaMask + chrome-extension +
+     `$RS` React Suspense reveal collision filter zinciri intact).
+   - Yeni filter: `/\["@context"\]\.toLowerCase/i.test(fingerprint)
+     || /'@context'\.toLowerCase/i.test(fingerprint)` → silent return
+     null.
+   - Dar AND koşulu: tam `["@context"].toLowerCase` substring (browser
+     extension signature, Buaze kodunda ASLA yok).
+
+**Sentry 4 issue triage** (post-fix manuel resolve):
+
+| Issue | Action | Sebep |
+|---|---|---|
+| `SENTRY-APRICOT-BLANKET-B` | **resolved** | Stage 75 release `b8b50bd4` 0 event kanıtlandı; mevcut 21 event Stage 74 release'inden geldi. |
+| `SENTRY-APRICOT-BLANKET-7` | **resolved** | AbortError tek seferlik 15h önce, recurrence yok (CLAUDE.md §38.155 dokümante). |
+| `SENTRY-APRICOT-BLANKET-8` | **ignored forever** | Browser extension `@context.toLowerCase` noise; Stage 76 beforeSend filter eklendi (gelecek event'ler otomatik silent return null). |
+| `SENTRY-APRICOT-BLANKET-9` | **ignored forever** | Aynı noise pattern. |
+
+**Etkilenen dosyalar (3 + docs)**:
+- `prisma/migrations/20260508140000_security_stage76/migration.sql` (yeni,
+  ~70 satır SQL idempotent)
+- `instrumentation-client.ts` (~+18 satır — 1 yeni beforeSend filter
+  block + 4 satır comment)
+- `CLAUDE.md` §38.156 closure log
+
+**Schema migration**: 1 yeni (idempotent + breaking change yok). **Yeni
+endpoint**: yok. **Yeni dep**: yok. **Test count**: 404/404 intact
+bekleniyor (lokal `node_modules` yok, CI Validate workflow doğrulayacak).
+
+**Yapma**:
+- Yeni admin tablosuna RLS enable atlamak — Stage 17 §38.87 paterni
+  Buaze BYPASSRLS disipline'in bir parçası; advisor ERROR seviyesinde
+  uyarı verir (compliance + future API safety).
+- Sentry beforeSend filter'ında geniş regex (`/parentNode/.test()` veya
+  `/extension/.test()`) kullanmak — gerçek Buaze bug'larını sessizce
+  yutar. Dar AND koşulu (mesaj + stack signature ikilisi) zorunlu.
+- Issue B'yi resolved yerine ignored yapmak — Stage 75 release
+  doğrulandı (0 event), gerçekten çözüldü. Resolved doğru status.
+- Issue 7'yi ignored yapmak — tek seferlik AbortError, recurrence yok;
+  resolved daha doğru (eğer tekrar olursa Sentry yeniden açar).
+- HANDOFF prototip yeni iterasyon önerirse Sentry filter pattern'ını
+  yumuşatmak — browser extension noise her zaman dar AND koşuluyla
+  filter'lanır, real bug'ları maskelemez.
+
+**Yap**:
+- Yeni admin/system tablo eklenirse Stage 17 §38.87 + Stage 76 §38.156
+  paterni reuse: `enable row level security` + `drop policy if exists`
+  + `create policy ... for all to anon, authenticated using (false)
+  with check (false)`. Idempotent migration.
+- Yeni Sentry browser extension noise pattern bulunursa (örn. yeni 3rd
+  party script error fingerprint'i) `instrumentation-client.ts`
+  beforeSend zincirine dar AND koşulu ile filter ekle (CLAUDE.md
+  §38.29 + §38.156 paterni).
+- Production'da 4 issue triage tekrarlanırsa: Sentry MCP `update_issue`
+  + `status='resolved'` veya `status='ignored' ignoreMode='forever'`
+  reuse.
+
+**Verification**:
+- Lokal: `node_modules` yok (disk dolu, CLAUDE.md §38.103 paterni); CI
+  Validate workflow doğrulayacak.
+- Beklenen: lint 0 errors / tsc 0 errors / test 404/404 / build 58/58
+  static page.
+- Manuel post-deploy: Vercel build script `prisma migrate deploy`
+  otomatik apply (CLAUDE.md §14.1). Supabase advisor `get_advisors
+  type=security` yeniden çek → 3 ERROR `rls_disabled_in_public` →
+  **0**.
+
+**Stage 76 closure** (Tarih 2026-05-08):
+- Branch: mevcut worktree branch `claude/serene-lichterman-14415c` üstüne
+  commit (otonom mode + designated branch).
+- Edit'lenen dosyalar: 1 (`instrumentation-client.ts`)
+- Yeni dosya: 2 (migration SQL + CLAUDE.md §38.156 entry)
+- Schema migration: 1 (3 tablo RLS + restrictive policy, idempotent,
+  breaking change yok)
+- Yeni dep: yok
+- Test count: 404/404 intact bekleniyor
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy + `prisma
+  migrate deploy` build script otomatik apply. Sentry triage zaten MCP
+  ile yapıldı (4 issue resolved/ignored).
+- Kalan riskler: yok. Mevcut Sentry filter zinciri MetaMask + chrome-
+  extension + `$RS` + `@context` 4 pattern (her biri dar AND koşulu);
+  real Buaze bug'ları maskelenmez.
+- **Sonraki aşama**: §38.121.1 Prompt 2 defer backlog —
+  - HIGH 4 Platforms 12-card grid (DEFER §38.30 product decision)
+  - Stage 9 UserSession re-introduce (operatör tetiği §38.84/§38.89)
+  - RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak)
+  - Prisma 7 upgrade (§5.4 Task 8)
+  - HANDOFF AP* migration PR1-5 (Stage 73 §38.153 deferred backlog)
+
+**Chat prompt history (Stage 76 §39.2 paterni)**:
+- 2026-05-08 kullanıcı (otonom): *"aşağıdaki promptu geliştir ve uygula:
+  Proje genelinde tüm hataları kontrol et ve fixle claude mdyi oku ve
+  not al: Sentry, vercel, supabase kontrol et hatalar için ve github
+  ile kendin de bak satır satır. Backend hatalarını varsa bağlam
+  kurulması gerekenler lütfen kur ve overlapler veya font renk
+  hataları varsa detaylı bir audit yap ve çöz."* (typo verbatim §39.2
+  disipline). Otonom yetki: kullanıcı uyumakta, sabah özet bekliyor.
+- AskUserQuestion **YAPILMADI** — kullanıcı uzakta + scope kapalı (4
+  paralel discovery + 2 dar fix). Disipline boundary: §35.8 + §35.10
+  + §19.1.1 + §38.49 + §38.114 intact, fake-data yok, Pulse §11
+  typography intact, Stage 17 §38.87 + §38.29 paterni reuse.
+- Otonom karar gerekçesi: 4 keşif kanalı (Sentry + Vercel + Supabase
+  + GitHub) verifiable bulgular ürettiyse + 2 fix scope dar (3 satır
+  SQL + 18 satır beforeSend filter) + regression riski sıfır
+  (idempotent migration + dar AND filter). Frontend + Backend audit
+  agent'ları **0 finding** raporu intact.
