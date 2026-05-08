@@ -89,7 +89,7 @@ export default async function AdminLayout({
         <main
           id="panel-main-content"
           tabIndex={-1}
-          className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-28 lg:pb-0 bg-[#FAFAFA]'}`}
+          className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 bg-[#FAFAFA]'}`}
         >
           {showSidebar && (
             <AdminTopbar

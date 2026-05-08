@@ -88,18 +88,23 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
 
   return (
     <>
-      {/* Spacer so page content never hides behind the fixed nav */}
+      {/* Spacer so page content never hides behind the fixed nav.
+          Stage 60 §38.141 — HANDOFF floating pill paterni: 72px height +
+          12px lateral margin + 12px bottom-margin → spacer ~96px + safe-area
+          (eski 72px + safe-area). Content kayma önleme. */}
       <div
         aria-hidden="true"
         className="lg:hidden w-full"
-        style={{ height: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
+        style={{ height: 'calc(72px + 24px + env(safe-area-inset-bottom, 0px))' }}
       />
 
       <nav
         aria-label={locale === 'tr' ? 'Mobil alt menü' : 'Mobile bottom navigation'}
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#EDEDED]"
+        className="lg:hidden fixed left-3 right-3 z-40 mx-auto max-w-[520px]"
         style={{
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          // Stage 60 §38.141 — HANDOFF floating pill paterni: 12px bottom
+          // margin + safe-area inset (iOS home-indicator overlap önleme).
+          bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
           // iOS Safari fix: dinamik bottom-toolbar transition'ında fixed
           // element'in viewport ile re-position'ı titreşime yol açıyor.
           // GPU compositing layer'a taşımak nav'ı sayfa render'ından izole
@@ -109,67 +114,88 @@ export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavP
           backfaceVisibility: 'hidden',
         }}
       >
-        <ul className="flex items-stretch justify-around h-[72px] max-w-[520px] mx-auto px-2">
-          {items.map((item) => {
-            const active = isActive(item.href);
+        {/* Floating pill container — Stage 60 §38.141 HANDOFF birebir.
+            Glassmorphism: backdrop-blur(20px) saturate(180%) + translucent
+            white surface (rgba 0.85). Border subtle + shadow drop floating
+            depth. 28px borderRadius + 72px height. */}
+        <div
+          className="rounded-[28px] border border-[rgba(10,10,10,0.06)] shadow-[0_12px_30px_-12px_rgba(10,10,10,0.25)]"
+          style={{
+            background: 'rgba(255,255,255,0.85)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          }}
+        >
+          <ul className="flex h-[72px] items-center justify-around px-2">
+            {items.map((item) => {
+              const active = isActive(item.href);
 
-            if ('center' in item && item.center) {
-              // Prominent center CTA — Pulse lime circle, fully contained inside
-              // the bar so it never overlaps page content while scrolling.
-              // 52x52 inside 72px bar leaves ~10px breathing room top/bottom.
+              if ('center' in item && item.center) {
+                // Stage 60 §38.141 — HANDOFF center FAB: 56×56 (eski 52×52)
+                // + `-mt-7` (eski -mt-5) agresif elevation + 4px solid white
+                // border (pill bg ile harmanı kesen lime hot spot) + lime
+                // drop shadow `0 12px 24px -6px lime`. Active state scale 1.06
+                // sticky press feedback.
+                return (
+                  <li key={item.href} className="relative flex flex-1 items-center justify-center">
+                    <Link
+                      href={item.href}
+                      onClick={tapHaptic}
+                      className={`-mt-7 flex h-[56px] w-[56px] items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_12px_24px_-6px_rgba(198,242,78,0.7)] transition-transform duration-200 hover:bg-[#A8D62E] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
+                        active ? 'scale-[1.06]' : ''
+                      }`}
+                      style={{ border: '4px solid #FAFAFA' }}
+                      aria-label={item.label}
+                    >
+                      <item.Icon size={22} className="text-[#0A0A0A]" strokeWidth={2} />
+                    </Link>
+                  </li>
+                );
+              }
+
               return (
-                <li key={item.href} className="relative flex-1 flex items-center justify-center">
+                <li key={item.href} className="relative flex-1">
                   <Link
                     href={item.href}
                     onClick={tapHaptic}
-                    className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_4px_16px_rgba(198,242,78,0.5)] hover:bg-[#A8D62E] active:scale-90 transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-                    aria-label={item.label}
+                    className={`relative flex h-full flex-col items-center justify-center gap-1 rounded-md px-1 py-2 transition-all duration-150 active:scale-95 focus-visible:outline-none ${
+                      active ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
+                    }`}
+                    aria-current={active ? 'page' : undefined}
                   >
-                    <item.Icon size={22} className="text-[#0A0A0A]" strokeWidth={2} />
+                    <item.Icon
+                      size={20}
+                      strokeWidth={active ? 2 : 1.6}
+                      className={`transition-colors duration-150 ${
+                        active ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
+                      }`}
+                    />
+                    <span
+                      className={`text-[10px] leading-none tracking-tight transition-colors duration-150 ${
+                        active ? 'font-bold text-[#0A0A0A]' : 'font-medium text-[rgba(10,10,10,0.42)]'
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                    {/* Stage 60 §38.141 — HANDOFF active dot indicator (4×4
+                        lime, top-aligned with translateY -100%). Opacity fade
+                        on route change. Eski 32×2 graphite bar yerine subtle
+                        lime dot pulse — modern minimal accent. */}
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute top-1 left-1/2 h-1 w-1 -translate-x-1/2 -translate-y-full rounded-full bg-[#C6F24E] transition-opacity duration-200 ${
+                        active ? 'opacity-100' : 'opacity-0'
+                      }`}
+                      style={{
+                        boxShadow: active ? '0 0 8px rgba(198,242,78,0.8)' : 'none',
+                      }}
+                    />
                   </Link>
                 </li>
               );
-            }
-
-            return (
-              <li key={item.href} className="flex-1 relative">
-                <Link
-                  href={item.href}
-                  onClick={tapHaptic}
-                  className={`relative h-full flex flex-col items-center justify-center gap-1 px-1 py-2 transition-all duration-150 active:scale-95 active:bg-[#FAFAFA] focus-visible:outline-none focus-visible:bg-[#FAFAFA] rounded-md ${
-                    active ? 'text-[#0A0A0A]' : 'text-[#737373]'
-                  }`}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  <item.Icon
-                    size={20}
-                    strokeWidth={2}
-                    className={`transition-colors duration-150 ${
-                      active ? 'text-[#0A0A0A]' : 'text-[#737373]'
-                    }`}
-                  />
-                  <span
-                    className={`text-[10px] font-medium leading-none tracking-tight transition-colors duration-150 ${
-                      active ? 'text-[#0A0A0A]' : 'text-[#737373]'
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                  {/* Active indicator — centered via left:50% + translateX(-50%);
-                      design buaze-mobil/layout.jsx:549 uses 32×2 with subtle
-                      2px bottom corners (`borderRadius:'0 0 2px 2px'`).
-                      Opacity transition gives a soft fade-in on route change. */}
-                  <span
-                    aria-hidden="true"
-                    className={`absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-[#0A0A0A] rounded-b-[2px] transition-opacity duration-200 ${
-                      active ? 'opacity-100' : 'opacity-0'
-                    }`}
-                  />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+            })}
+          </ul>
+        </div>
       </nav>
     </>
   );

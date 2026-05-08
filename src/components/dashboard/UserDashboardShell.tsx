@@ -181,6 +181,23 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const [moreOpen, setMoreOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // Stage 60 §38.141 — Mobile bottom nav Yorumlar tab badge.
+  // NotificationBell `buaze:notification-count` custom event'i ile
+  // sync; tek source-of-truth NotificationBell internal poll. Mobile
+  // nav ek fetch yapmaz; aynı /api/notifications poll'u reuse eder.
+  const [notifUnreadCount, setNotifUnreadCount] = useState(0);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const expectedBase = `/${locale}/dashboard`;
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ base: string; count: number }>).detail;
+      if (detail?.base === expectedBase) {
+        setNotifUnreadCount(detail.count);
+      }
+    };
+    window.addEventListener('buaze:notification-count', handler);
+    return () => window.removeEventListener('buaze:notification-count', handler);
+  }, [locale]);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   // Collapsible group state — persists across navigations via localStorage.
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -922,7 +939,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         <main
           id="panel-main-content"
           tabIndex={-1}
-          className="min-w-0 flex-1 overflow-x-hidden bg-[#FAFAFA] pb-24 lg:pb-0"
+          // Stage 60 §38.141 — Floating pill mobile bottom nav 72px height
+          // + 12px bottom-margin + safe-area inset. Toplam ~120px content
+          // overlap önleme. lg+ desktop'ta nav görünmez (pb-0).
+          className="min-w-0 flex-1 overflow-x-hidden bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0"
         >
           {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 7 && (
             <TrialBanner locale={locale} daysLeft={trialDaysLeft} />
@@ -966,63 +986,124 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </div>
       )}
 
-      {/* Mobile bottom nav — 4 primary tabs + More (1:1 mobile-screens-1.jsx MBottomNav) */}
+      {/* Mobile bottom nav — Stage 60 §38.141 HANDOFF floating pill paterni.
+          Floating: 12px lateral margin + safe-area + 28px borderRadius.
+          Glassmorphism: backdrop-blur(20px) saturate(180%) + translucent
+          surface. 72px height. 4 primary tab + More + Yorumlar tab'ında
+          NotificationBell unread count badge (custom event listener). */}
       <nav
         aria-label={copy.dashboard}
-        className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#EDEDED] backdrop-blur-md shadow-[0_-4px_20px_0_rgba(10,10,10,0.06)] lg:hidden"
+        className="fixed left-3 right-3 z-40 mx-auto max-w-[520px] lg:hidden"
         style={{
-          background: 'rgba(255,255,255,0.94)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
         }}
       >
-        <ul className="flex items-stretch px-2 pt-2 pb-1.5">
-          {bottomNavItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
-            return (
-              <li key={item.href} className="flex-1 min-w-0">
-                <Link
-                  href={item.href}
-                  aria-label={item.label}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`relative flex flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-colors ${
-                    isActive ? 'text-[#0A0A0A]' : 'text-[#737373] hover:text-[#0A0A0A]'
-                  }`}
-                >
-                  <span
-                    className={`flex h-7 w-[38px] items-center justify-center rounded-full transition-colors ${
-                      isActive ? 'bg-[#0A0A0A] text-[#C6F24E]' : 'text-[#737373]'
+        <div
+          className="rounded-[28px] border border-[rgba(10,10,10,0.06)] shadow-[0_12px_30px_-12px_rgba(10,10,10,0.25)]"
+          style={{
+            background: 'rgba(255,255,255,0.85)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          }}
+        >
+          <ul className="flex h-[72px] items-stretch px-2">
+            {bottomNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+              const isFeedbacks = item.href === `/${locale}/dashboard/feedbacks`;
+              return (
+                <li key={item.href} className="min-w-0 flex-1">
+                  <Link
+                    href={item.href}
+                    aria-label={item.label}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`relative flex h-full flex-col items-center justify-center gap-1 rounded-md px-1 transition-all duration-150 active:scale-95 ${
+                      isActive ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
                     }`}
                   >
-                    <Icon size={16} strokeWidth={2} />
-                  </span>
-                  <span className="pulse-eyebrow truncate max-w-full" style={{ fontSize: 9.5 }}>{item.label}</span>
-                </Link>
-              </li>
-            );
-          })}
-          <li className="flex-1 min-w-0">
-            <button
-              type="button"
-              onClick={() => setMoreOpen(true)}
-              aria-label={copy.more}
-              aria-expanded={moreOpen}
-              aria-haspopup="dialog"
-              className={`relative flex w-full flex-col items-center gap-1 px-1 py-1.5 rounded-lg transition-colors ${
-                moreActive ? 'text-[#0A0A0A]' : 'text-[#737373] hover:text-[#0A0A0A]'
-              }`}
-            >
-              <span
-                className={`flex h-7 w-[38px] items-center justify-center rounded-full transition-colors ${
-                  moreActive ? 'bg-[#0A0A0A] text-[#C6F24E]' : 'text-[#737373]'
+                    <span className="relative">
+                      <Icon
+                        size={20}
+                        strokeWidth={isActive ? 2 : 1.6}
+                        className={`transition-colors duration-150 ${
+                          isActive ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
+                        }`}
+                      />
+                      {/* Stage 60 §38.141 — Yorumlar badge (NotificationBell
+                          unreadCount custom event). 14×14 lime pill, 2-digit
+                          + "99+" overflow. Visible only when count > 0. */}
+                      {isFeedbacks && notifUnreadCount > 0 && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute -right-2 -top-1 inline-flex h-[14px] min-w-[14px] items-center justify-center rounded-[7px] border-2 border-white bg-[#C6F24E] px-[3px] font-mono text-[8px] font-bold text-[#0A0A0A]"
+                          style={{
+                            background: '#C6F24E',
+                          }}
+                        >
+                          {notifUnreadCount > 99 ? '99+' : notifUnreadCount}
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      className={`text-[10px] leading-none tracking-tight transition-colors duration-150 ${
+                        isActive ? 'font-bold text-[#0A0A0A]' : 'font-medium text-[rgba(10,10,10,0.42)]'
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                    {/* Stage 60 §38.141 — Active dot indicator (4×4 lime, top
+                        translateY -100%). Subtle modern accent. */}
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute top-1 left-1/2 h-1 w-1 -translate-x-1/2 -translate-y-full rounded-full bg-[#C6F24E] transition-opacity duration-200 ${
+                        isActive ? 'opacity-100' : 'opacity-0'
+                      }`}
+                      style={{
+                        boxShadow: isActive ? '0 0 8px rgba(198,242,78,0.8)' : 'none',
+                      }}
+                    />
+                  </Link>
+                </li>
+              );
+            })}
+            <li className="min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => setMoreOpen(true)}
+                aria-label={copy.more}
+                aria-expanded={moreOpen}
+                aria-haspopup="dialog"
+                className={`relative flex h-full w-full flex-col items-center justify-center gap-1 rounded-md px-1 transition-all duration-150 active:scale-95 ${
+                  moreActive ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
                 }`}
               >
-                <MoreHorizontal size={16} strokeWidth={2} />
-              </span>
-              <span className="pulse-eyebrow truncate max-w-full" style={{ fontSize: 9.5 }}>{copy.more}</span>
-            </button>
-          </li>
-        </ul>
+                <MoreHorizontal
+                  size={20}
+                  strokeWidth={moreActive ? 2 : 1.6}
+                  className={`transition-colors duration-150 ${
+                    moreActive ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
+                  }`}
+                />
+                <span
+                  className={`text-[10px] leading-none tracking-tight transition-colors duration-150 ${
+                    moreActive ? 'font-bold text-[#0A0A0A]' : 'font-medium text-[rgba(10,10,10,0.42)]'
+                  }`}
+                >
+                  {copy.more}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute top-1 left-1/2 h-1 w-1 -translate-x-1/2 -translate-y-full rounded-full bg-[#C6F24E] transition-opacity duration-200 ${
+                    moreActive ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  style={{
+                    boxShadow: moreActive ? '0 0 8px rgba(198,242,78,0.8)' : 'none',
+                  }}
+                />
+              </button>
+            </li>
+          </ul>
+        </div>
       </nav>
 
       {/* Mobile "More" bottom sheet */}
