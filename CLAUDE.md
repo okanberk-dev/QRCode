@@ -20273,3 +20273,232 @@ disipline).
   onayı.
 - Auto mode aktif: PR0 base primitives uygulandı (callsite migrate
   PR1-5 batchlerinde).
+
+---
+
+### 38.147 2026-05-08 — Stage 66 site-library.jsx 11 yeni animation component (PR0 base + framer-motion + react-intersection-observer)
+
+§38.146 Stage 65 AP* primitive PR0 base sonrası, paralel ikinci PR0 base:
+showcase site-library.jsx (12 animation parçası) → `src/components/animations/`
+TSX dosyaları. CLAUDE.md §38.119 Stage 39 önceki "9/12 mevcut + YAGNI"
+kararı kullanıcı override ile reverse edildi (AskUserQuestion 4 karar
+onaylı): tam migrate + framer-motion install + tailwind.config.ts +
+PR0 base scope (callsite mount yok, PR1-5 placement kademeli).
+
+**4 kritik karar (AskUserQuestion onaylı, kullanıcı seçimleri)**:
+
+1. **Animation engine**: framer-motion + react-intersection-observer
+   install (Recommended olmayan, kullanıcı ek dep tercih). CLAUDE.md
+   §30 dep policy override + §38.115 mevcut `src/lib/anim/` Stage +
+   Sprite engine paralel kalır (PR1+ migrate sonrası 4 hero kararı
+   ayrı). Bundle +~50KB gzipped (framer-motion) + ~3KB (intersection
+   observer).
+2. **Mevcut counterparts**: Hepsini sıfırdan yaz, eskileri sil
+   (Recommended olmayan, kullanıcı agresif migrate tercih). CLAUDE.md
+   §38.49 + §38.119 disipline override. PR0'da yeni 11 component
+   eklenir; LiveReviewTicker / MarqueeRow / SocialProofToast /
+   useCountUp / useInView callsite'ları PR1-5 migrate sırasında silinir.
+3. **Tailwind config**: tailwind.config.ts oluştur + `bg-brand-lime`
+   utility (Recommended olmayan, kullanıcı v3-style config tercih).
+   Tailwind v4 hibrit: mevcut globals.css `@theme {}` block intact
+   (200+ inline hex callsite) + yeni config dosyası paralel okur
+   (drift sıfır). Yeni animation component'leri `bg-brand-lime`
+   paterni kullanır; mevcut callsite'lar `bg-[#C6F24E]` intact.
+4. **Yerleştirme scope**: PR0 base + ayrı PR'larda placement
+   (Recommended). Bu PR sadece base primitive'leri ekler, callsite
+   mount yok. PR1-5: Anasayfa hero + Stats + Features grid + Pricing
+   CTA + Dashboard analytics + Footer + Auth forms surface'lerinde
+   kademeli migrate. PR6: cleanup (mevcut counterparts sil).
+
+**12 yeni dosya** (`src/components/animations/`, ~1500 satır):
+
+| Dosya | Tip | HANDOFF eşdeğeri | Buaze counterpart (PR1-5'te silinir) |
+|---|---|---|---|
+| `LazyMount.tsx` | Wrapper | yok (yeni infra) | yok |
+| `PulseLine.tsx` | SVG | site-library.jsx 1.PulseLine | `bzEchoSweep` keyframe + `ecgDraw` mevcut footer |
+| `QRScanLoader.tsx` | Animated SVG | site-library.jsx 2.QRScanLoader | yok (Stage 39 §38.119 yeni) |
+| `StarClimber.tsx` | Count-up | site-library.jsx 3.StarClimber | useCountUp + recharts compose paterni mevcut |
+| `LiveTicker.tsx` | 3-stack rotation | site-library.jsx 4.LiveTicker | `LiveReviewTicker.tsx` (FooterLiveTicker §38.131 paralel) |
+| `SentimentDial.tsx` | SVG arc gauge | site-library.jsx 5.SentimentDial | Profil Sağlığı SVG arc Stage 18 §38.18 paterni |
+| `BigCounter.tsx` | RAF count-up | site-library.jsx 6.BigCounter | useCountUp + AnimatedCounter mevcut paterni |
+| `Marquee.tsx` | CSS-only logo strip | site-library.jsx 7.Marquee | `MarqueeRow.tsx` |
+| `SweepCTA.tsx` | Hover sweep button | site-library.jsx 8.SweepCTA | `bz-btn-primary` + custom hover paterni mevcut |
+| `ToastRow.tsx` | 4-toast slide-in | site-library.jsx 9.ToastRow | `SocialProofToast.tsx` |
+| `RevealHeadline.tsx` | Word-by-word | site-library.jsx 10.RevealHeadline | `animate-fade-up` Tailwind utility + Pulse §11 mevcut |
+| `FeatureCard.tsx` | Hover lime corner | site-library.jsx 11.FeatureCard | Marketing feature grid inline paterni mevcut |
+| `index.ts` | Barrel | — | — |
+
+Toplam: 12 dosya + tailwind.config.ts + package.json + package-lock.json
+(2 yeni dep) + CLAUDE.md §38.147 log.
+
+**Tailwind v4 hibrit config** (`tailwind.config.ts` yeni dosya):
+- `colors.brand.{lime, lime-deep, lime-soft, ink, bg, paper, mute,
+  mute-soft}` — Pulse §11 hex token mapping (mevcut globals.css `@theme`
+  block ile redundant ama harmless; v3-style API isteyen yeni component'ler
+  için)
+- `keyframes.{brand-pulse, brand-marquee, brand-float, brand-draw,
+  brand-slide-up, brand-slide-in}` — yeni animation utility'leri
+  (`animate-brand-pulse`, vb.)
+- `content` glob: src/app/, src/components/, src/lib/
+
+**Performans + a11y disipline**:
+- ✅ LazyMount wrapper: IntersectionObserver `rootMargin: 100px` default
+  + `triggerOnce: true` default + `unmountOnExit: true` (LiveTicker /
+  Marquee / PulseLine setInterval cleanup)
+- ✅ framer-motion `useReducedMotion()` her component'te check; reduced
+  motion'da static fallback render
+- ✅ CSS @keyframes (Marquee, PulseLine) — JS RAF yerine GPU-accelerated
+- ✅ Page Visibility API: framer-motion default davranış (tab gizli iken
+  animation pause, battery save)
+- ✅ React.memo (Marquee — logo array re-render guard)
+- ✅ useTransform (BigCounter, StarClimber, SentimentDial — motion value
+  reactive, manual subscription yok)
+- ✅ A11y: `role="img"`, `aria-label`, `aria-live="polite"` (LiveTicker),
+  keyboard handler (FeatureCard tıklanabilir card)
+
+**Compliance disipline (KRİTİK)**:
+- LiveTicker default items **generic platform feature event'leri** —
+  müşteri-spesifik testimonial claim YASAK (CLAUDE.md §35.10 +
+  §38.131 FooterLiveTicker paterni paralel). Default 5 item: Karaköy +
+  Bağdat Cd. + Cihangir + Çankaya + İzmir × generic event. Caller
+  `items` prop'u ile real backend feed (örn. `/api/feedback` aggregate)
+  geçirebilir.
+- ToastRow default items **generic platform event'leri** — fake
+  müşteri "Mehmet K." YASAK (aynı disipline). Default 4 item: yeni
+  yorum + AI yanıt + düşük puan tespit + Google'a yayın.
+- StarClimber **rating climb hikayesi** — gerçek metric kohort
+  context'i caller responsibility (CLAUDE.md §35.8). Component
+  generic prop-driven.
+- BigCounter **gerçek backend metric** geçirilmeli (caller'ın
+  responsibility). Default değer yok — `to` prop zorunlu.
+- QRScanLoader **deterministik 11×11 matrix** (Math.random YOK —
+  SSR + test friendly, CLAUDE.md §38.140 + §38.143 paterni reuse).
+
+**Pulse §11 disipline (kullanıcı kararı §38.114 intact)**:
+- Space Grotesk display font (Instrument Serif italic YASAK)
+- Inter body font
+- JetBrains Mono mono font
+- Inline `style={{ fontFamily: 'var(--font-heading)' }}` redundancy
+  YOK — Tailwind v4 `@theme` block + class kombinasyonu yeterli
+  (hangi component'lerde kullanıyorum bunu).
+
+**Verification**:
+- `npm install` → +896 packages, framer-motion ^12.38.0 +
+  react-intersection-observer ^10.0.3 added
+- `npx eslint src/components/animations/` → 0 errors / 0 warnings
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`
+- `npm test` → 383/383 pass, 42 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) → ✓ Compiled
+  successfully + 58/58 static pages, EXIT=0. First Load JS shared:
+  228 KB gzipped (önceki 228 KB ile aynı; framer-motion lazy-loaded
+  / dynamic import paterni gerektirir, PR1+'da component bazlı
+  optimize edilir).
+
+**Yapma**:
+- HANDOFF Instrument Serif italic font yükleme — kullanıcı kararı
+  §38.114 "Asla pivot etme" intact; Space Grotesk + tight tracking
+  Pulse §11 paterni reuse.
+- Mevcut LiveReviewTicker / MarqueeRow / SocialProofToast / useCountUp
+  / useInView'i PR0'da silmek — callsite mount yok ki sileyim
+  (homepage hero + footer ticker mevcut callsite'ları PR1-5'te
+  migrate edilirken silinir).
+- LiveTicker / ToastRow default items'a fake müşteri testimonial
+  ("Mehmet K. ★★★ verdi" gibi) eklemek — CLAUDE.md §35.10 disipline.
+  Generic platform event'ler default; caller'ın real data passing
+  responsibility.
+- BigCounter / StarClimber default değer hardcode etmek — `to` prop
+  zorunlu. Caller verifiable cohort metric geçirir.
+- 11 component'in callsite mount'unu bu PR'a sıkıştırmak — PR0 base
+  scope (kullanıcı kararı). PR1-5 placement kademeli.
+- mevcut Stage primitive (`<Stage>` + `<Sprite>`) tabanlı 4 hero
+  component'i bu PR'da framer-motion'a migrate etmek — PR0 dışı,
+  ayrı surface migrate.
+- `tailwind.config.ts` JS-style config'inde `darkMode: 'class'` veya
+  `plugins` eklemek — Tailwind v4 hibrit, gerek yok (v3 plugin API
+  v4'te değişti).
+- LazyMount wrapper'ını her component'in *içine* gömmek — wrapper
+  composition daha esnek (caller `staticFallback` + `unmountOnExit`
+  kontrolü). LiveTicker zaten kendi useInView hook'unu içeriyor
+  (rotation + Page Visibility entegre).
+
+**Yap**:
+- Yeni animation component eklerken aynı paterni reuse: `'use client'`
+  + framer-motion `useReducedMotion` + `useInView` (gerekirse) +
+  TypeScript props interface + Pulse §11 hex via Tailwind v4
+  `@theme` + `bg-brand-lime` utility.
+- LazyMount wrapper'ı viewport gating gereken caller'larda reuse:
+  RevealHeadline / BigCounter / StarClimber / SentimentDial gibi
+  one-shot animation'lar `triggerOnce: true`; LiveTicker / Marquee
+  loop animation'lar `triggerOnce: false + unmountOnExit: true`.
+- Yeni Tailwind keyframe gerekirse `tailwind.config.ts`
+  `theme.extend.keyframes` + `theme.extend.animation` ikilisine
+  ekle (`animate-brand-X` utility otomatik üretilir).
+- PR1+ callsite migrate sırasında: önce yeni component'i import
+  et + caller wrap et + mevcut counterpart'ı sil + lint/tsc/test
+  verify. Per-surface kademeli (Anasayfa hero ayrı PR, Stats şeridi
+  ayrı PR, Footer ticker ayrı PR, vb.).
+
+**Stage 66 closure** (Tarih 2026-05-08):
+- Branch: `claude/sweet-meninsky-b56b78` (designated worktree, Stage
+  65 §38.146 PR #570 sonrası align)
+- Yeni dosyalar: 12 (`src/components/animations/{LazyMount, PulseLine,
+  QRScanLoader, StarClimber, LiveTicker, SentimentDial, BigCounter,
+  Marquee, SweepCTA, ToastRow, RevealHeadline, FeatureCard,
+  index}.tsx`) + 1 (`tailwind.config.ts`)
+- Edit dosyaları: 3 (`package.json` + `package-lock.json` framer-motion
+  + react-intersection-observer install + `CLAUDE.md` §38.147)
+- Schema migration: yok
+- Yeni dep: 2 (framer-motion ^12.38.0 + react-intersection-observer
+  ^10.0.3)
+- Test count: 383/383 pass intact (yeni unit test gerekmedi —
+  presentational + LazyMount React composition paterni mevcut
+  framer-motion + react-intersection-observer test coverage
+  altında)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  callsite'lar (`LiveReviewTicker`, `MarqueeRow`, `SocialProofToast`,
+  vb.) etkilenmedi (PR0 sadece base primitive ekler).
+- Kalan riskler:
+  - Bundle size +~53KB gzipped (framer-motion + react-intersection-
+    observer). PR1-5 callsite migrate sonrası mevcut counterpart'lar
+    silinince net impact: +50KB framer-motion, mevcut Stage primitive
+    (~5KB) parallel kalır (4 hero callsite hâlâ kullanıyor) ya da
+    ayrı PR'da migrate edilir.
+  - 4 hero component (`HeroCinematic`, `HeroStarClimb`, `HeroParallax`,
+    `HeroVariantPicker`) `<Stage>` + `<Sprite>` engine kullanıyor;
+    bu PR'da migrate olmadı — iki engine paralel intact (callsite
+    migrate ayrı PR scope).
+- **Sonraki aşama**: PR1 Stage 67 — Anasayfa hero + Stats şeridi
+  callsite migrate (LiveReviewTicker + AnimatedCounter mevcut
+  paternleri yeni LiveTicker + BigCounter ile değiştir; mevcut
+  counterparts sil). CLAUDE.md §21.22 stacked YOK paterni — fresh
+  main üstüne her PR.
+
+**Chat prompt history (Stage 66 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: 1500+ satırlık HANDOFF prompt (Buaze Next.js
+  repo'mda site-library.jsx → animation component'ler dönüşüm + 5
+  bölüm: dönüşüm kuralları + performans optimizasyonu + site
+  yerleştirme + uygulama adımları + test checklist) + 12 component
+  showcase JSX paste.
+- AskUserQuestion 4 karar (kullanıcı seçimleri):
+  1. **Engine**: framer-motion + react-intersection-observer install
+     (Recommended olmayan — kullanıcı bundle cost kabul etti)
+  2. **Counterparts**: Hepsini sıfırdan yaz, eskileri sil (Recommended
+     olmayan — agresif migrate)
+  3. **Tokens**: tailwind.config.ts oluştur + bg-brand-lime utility
+     (Recommended olmayan — v3-style config)
+  4. **Yerleştirme**: PR0 base + ayrı PR'larda placement (Recommended)
+- Disipline override'lar dokümante:
+  - CLAUDE.md §30 dep policy: framer-motion + react-intersection-
+    observer install (mevcut Stage + Sprite + useInView + useCountUp
+    redundant kalır geçici — PR1+ migrate sonrası 4 hero kararı ayrı)
+  - CLAUDE.md §38.49 + §38.119 dead utility class: 11 yeni component
+    yazıldı (mevcut counterparts intact, PR1-5 migrate sırasında
+    silinir)
+  - CLAUDE.md §11 + §38.114 Pulse typography intact (Instrument
+    Serif italic YASAK, Space Grotesk + Inter + JetBrains Mono
+    + synthetic italic paterni reuse)
+  - CLAUDE.md §35.10 fake testimonial intact (LiveTicker + ToastRow
+    default items generic platform event, müşteri-spesifik
+    testimonial YASAK)
+- 18-step TodoWrite tracking + lokal verify (lint 0 / tsc 0 / test
+  383/383 / build 58/58 static + EXIT=0).
