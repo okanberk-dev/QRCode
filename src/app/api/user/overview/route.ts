@@ -59,16 +59,26 @@ export async function GET(req: NextRequest) {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * day);
     const sevenDaysAgo = new Date(now.getTime() - 7 * day);
 
+    // Stage 87 §38.167 — owner workspace overview; private cache 30s
+    // fresh + 2dk SWR (KPI compute, mutation periyodik). §38.100 paterni
+    // reuse.
+    const cacheHeaders = {
+      'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120',
+    };
+
     if (restaurantIds.length === 0) {
-      return NextResponse.json({
-        ...user,
-        restaurantsActive: 0,
-        totalReviews: 0,
-        reviews30d: 0,
-        reviews7d: 0,
-        repliesAll: 0,
-        replies30d: 0,
-      });
+      return NextResponse.json(
+        {
+          ...user,
+          restaurantsActive: 0,
+          totalReviews: 0,
+          reviews30d: 0,
+          reviews7d: 0,
+          repliesAll: 0,
+          replies30d: 0,
+        },
+        { headers: cacheHeaders },
+      );
     }
 
     const [totalReviews, reviews30d, reviews7d, repliesAll, replies30d] = await Promise.all([
@@ -92,15 +102,18 @@ export async function GET(req: NextRequest) {
         .catch(() => 0),
     ]);
 
-    return NextResponse.json({
-      ...user,
-      restaurantsActive: restaurantIds.length,
-      totalReviews,
-      reviews30d,
-      reviews7d,
-      repliesAll,
-      replies30d,
-    });
+    return NextResponse.json(
+      {
+        ...user,
+        restaurantsActive: restaurantIds.length,
+        totalReviews,
+        reviews30d,
+        reviews7d,
+        repliesAll,
+        replies30d,
+      },
+      { headers: cacheHeaders },
+    );
   } catch (error) {
     console.error('[USER_OVERVIEW]', error);
     return NextResponse.json({ error: 'internal' }, { status: 500 });

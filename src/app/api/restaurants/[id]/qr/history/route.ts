@@ -22,7 +22,15 @@ export async function GET(
     }
 
     const history = await getFeedbackQrHistory(id);
-    return NextResponse.json(dedupeQrRows(history), { status: 200 });
+    // Stage 87 §38.167 — restaurant-scoped QR generation history;
+    // cache header private 30s/120sw (QR generation periyodik, panel
+    // sayfası medium-frequency view). §38.100 paterni reuse.
+    return NextResponse.json(dedupeQrRows(history), {
+      status: 200,
+      headers: {
+        'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120',
+      },
+    });
   } catch (error) {
     console.error('QR history fetch error:', error);
     return NextResponse.json({ error: 'QR geçmişi alınamadı' }, { status: 500 });

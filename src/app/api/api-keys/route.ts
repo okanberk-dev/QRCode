@@ -70,7 +70,17 @@ export async function GET(req: NextRequest) {
     take: 100,
   });
 
-  return NextResponse.json({ data: keys.map(serializeKey) });
+  // Stage 87 §38.167 — owner-scoped API key list; cache header private
+  // 60s/300sw (key creation rare, mutation periyodik). §38.100 paterni
+  // reuse.
+  return NextResponse.json(
+    { data: keys.map(serializeKey) },
+    {
+      headers: {
+        'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
+      },
+    },
+  );
 }
 
 export async function POST(req: NextRequest) {

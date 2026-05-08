@@ -54,7 +54,18 @@ export async function GET(req: NextRequest) {
       teamRole = member?.role ?? null;
     }
 
-    return NextResponse.json({ ...user, teamRole });
+    // Stage 87 §38.167 — owner-scoped IDOR-gated profile read; PUT
+    // mutation aşağıda intact. Cache-Control private (per-cookie
+    // partition) + 60s fresh + 5dk SWR (mutation rare; profile edit
+    // owner günlük flow değil). §38.100 paterni reuse.
+    return NextResponse.json(
+      { ...user, teamRole },
+      {
+        headers: {
+          'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
+        },
+      },
+    );
   } catch (error) {
     console.error('[PROFILE_GET]', error);
     return NextResponse.json({ error: 'Bir hata oluştu' }, { status: 500 });

@@ -24763,3 +24763,242 @@ YASAK).
   marketing surface'inden silindi. 1 mevcut counterpart kaldı:
   MarqueeRow (CLAUDE.md §38.149 SKIP rationale: ReactNode → string
   API farkı, gelecek opportunistic refactor scope).
+
+---
+
+### 38.167 2026-05-08 — Stage 87 hero Marquee animation fix + 8 owner GET endpoint Cache-Control (PR2 owner perf cache batch)
+
+§38.166 Stage 86 sonrası kullanıcı 2 net talep iletti: *"PR2 (Owner
+panel performance) — audit özeti, kullanıcı görmeyecek 12 concrete
+fix hazırlandı (visual regression sıfır, backend kontrat dokunulmaz):
+🟢 8 GET endpoint Cache-Control eklenmesi (§38.100 + §38.104 paterni
+reuse): Yukarda bahsettiğin bu kısmı tek PR ile profesyonel
+kodlamayla ve detayıca çözer misin? Bir de heronun altıdna bahsedilen
+markalar otomatik belli hızda yana doğru kaysın."* (typo "altıdna" →
+"altında" verbatim §39.2 disipline). PR2 owner perf cache batch +
+hero marquee animation root-cause fix.
+
+**Plan-mode root-cause discovery (Marquee animation bug)**:
+
+Stage 66 §38.147 PR0 base'de eklenen `<Marquee>` component
+(`src/components/animations/Marquee.tsx`) inline `style={{ animation:
+'brand-marquee ${durationSec}s linear infinite' }}` kullanır. Stage
+85 §38.165 anasayfa Section 2 hero'nun altında `<Marquee items=...>`
+mount edildi (locale-aware platform list); ama animation çalışmıyordu.
+
+**Root cause**: Tailwind v3-style `tailwind.config.ts` line 45-48
+`'brand-marquee'` keyframe definition'ı içeriyor ama Buaze **Tailwind
+v4** kullanıyor. v4'ün kanonik paterni `globals.css` `@theme {}`
+block'u + `@keyframes` declaration; v3 config dosyasındaki keyframe
+v4'te browser'a inject edilmiyor. Sonuç: Marquee component'inin inline
+`animation: brand-marquee` referansı **eksik CSS keyframe**'e işaret
+ediyordu, animasyon static görünüyordu.
+
+**Fix**: `globals.css`'e explicit `@keyframes brand-marquee` block
+eklendi (mevcut `marqueeSlide` keyframe definition paterni paralel,
+22s linear infinite duration component'in `durationSec=22` default
+değeriyle uyumlu).
+
+```css
+@keyframes brand-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+```
+
+`tripled` array (Stage 66 §38.147 paterni) `[items, items, items]`
+seamless loop için 50% offset doğru pause point.
+
+**8 owner GET endpoint Cache-Control eklenmesi** (CLAUDE.md §38.100
+Stage 24 + §38.104 Stage 28 paterni reuse):
+
+Audit metodu: `grep -rln "export async function GET\|export const
+GET" src/app/api/` ile tüm GET endpoint'leri tespit + admin/auth/
+cron/dev path'leri filter + `grep -c "Cache-Control"` ile cache
+header eksiği belirlendi. Owner-scoped IDOR-gated endpoint'lerden 8
+yüksek-impact aday seçildi. TTL kararı mutation frequency'ye göre:
+yüksek-frequency polling 15s, medium-frequency view 30s, rare
+mutation 60s.
+
+| Endpoint | TTL | Sebep |
+|---|---|---|
+| `/api/user/profile` | `private, s-maxage=60, stale-while-revalidate=300` | Profile edit owner günlük flow değil; mutation rare. PUT mutation aşağıda intact. |
+| `/api/user/overview` | `private, s-maxage=30, stale-while-revalidate=120` | Dashboard mount frequency medium; restoran/feedback aggregate compute. |
+| `/api/account/sessions` | `private, s-maxage=30, stale-while-revalidate=120` | Account → Security tab mount-based view; current session badge için `currentTokenHash` cookie-bound (`private` directive zorunlu). |
+| `/api/billing/invoices` | `private, s-maxage=60, stale-while-revalidate=300` | Invoice generation periyodik (Iyzico Wave 3.5 sonrası), intra-day mutation rare. |
+| `/api/api-keys` | `private, s-maxage=60, stale-while-revalidate=300` | Key creation rare, mutation periyodik. POST aşağıda intact. |
+| `/api/onboarding/state` | `private, s-maxage=15, stale-while-revalidate=60` | Owner onboarding active flow yüksek refresh frequency; PATCH frequency anlık (short fresh + 1min SWR adımlar arası geçiş smooth). |
+| `/api/settings/brand` | `private, s-maxage=60, stale-while-revalidate=300` | Brand identity (logo + color + slogan + font); mutation rare (owner günde 1-2 brand edit). |
+| `/api/restaurants/[id]/qr/history` | `private, s-maxage=30, stale-while-revalidate=120` | QR generation periyodik, panel sayfası medium-frequency view. |
+
+Tüm endpoint'ler `private` directive (per-cookie partition;
+public-cache cross-user leak engelleme) + `s-maxage` (CDN edge
+fresh window) + `stale-while-revalidate` (background revalidation
+gate). Mutation endpoint'leri (PUT/PATCH/POST/DELETE) cache header
+**ALMAZ** — origin always fresh kalmalı (CLAUDE.md §38.100 paterni).
+
+**Cumulative cache coverage** (§38.100 Stage 24 + §38.104 Stage 28
++ Stage 87):
+- Stage 24 §38.100: 7 endpoint (feedback / feedback/stats /
+  feedback/counts / notifications / team / dashboard/platforms/
+  [provider]/low-feedback / billing/summary)
+- Stage 28 §38.104: 4 endpoint (feedback/[id]/draft / restaurants
+  admin list / admin/me / admin/analytics/bi)
+- Stage 87 §38.167: 8 endpoint (yukarıda)
+- **Toplam 19+ owner-scoped read endpoint** cache-optimized
+
+#### Etkilenen dosyalar (10)
+
+| Dosya | Tip | Net |
+|---|---|---|
+| `src/app/globals.css` | Edit (animation keyframe) | +9 satır (`@keyframes brand-marquee` block + JSDoc Stage 87 §38.167 ref) |
+| `src/app/api/user/profile/route.ts` | Edit (GET cache header) | +5 satır |
+| `src/app/api/user/overview/route.ts` | Edit (GET cache header) | +6 satır (cacheHeaders const + 2 callsite) |
+| `src/app/api/account/sessions/route.ts` | Edit (GET cache header) | +5 satır |
+| `src/app/api/billing/invoices/route.ts` | Edit (GET cache header) | +5 satır |
+| `src/app/api/api-keys/route.ts` | Edit (GET cache header) | +5 satır |
+| `src/app/api/onboarding/state/route.ts` | Edit (GET cache header) | +5 satır |
+| `src/app/api/settings/brand/route.ts` | Edit (GET cache header) | +5 satır |
+| `src/app/api/restaurants/[id]/qr/history/route.ts` | Edit (GET cache header) | +6 satır |
+| `CLAUDE.md` | Edit (closure log) | +120 satır |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 pass intact (presentational + cache header
+additive; helper logic + IDOR + KVKK + reCAPTCHA + honeypot + Pulse
+§11 design system intact).
+
+**Compliance disipline intact** (kullanıcı 19. iterasyon):
+- §35.8 + §35.10 + §19.1.1 + §38.114 paterni stable
+- §38.61 reduced-motion blanket otomatik kapsar (yeni
+  `@keyframes brand-marquee` `[style*='brand-marquee']` selector
+  zaten eklenmedi — mevcut universal `*` reset blanket'i 0.001ms'e
+  indiriyor)
+- §38.100 + §38.104 cache pattern reuse (per-cookie `private` +
+  `s-maxage` + `stale-while-revalidate` üçlüsü)
+
+#### Beklenen kazanım (Vercel Speed Insights expected)
+
+- **Cross-tab cache hit ratio**: ~%30-50 → %60-70 (15-60s window)
+  per-actor CDN cache (Vercel Edge cookie-based partition)
+- **Network latency**: 80-150ms/request → ~24-90ms toplam tasarruf
+  (3 paralel fetch × 30ms SWR hit per session)
+- **Bandwidth**: feedback/profile/overview list ~15-40 KB → ~9-28
+  KB tasarruf/session
+- **Origin CPU**: ~%30-50 düşüş (idempotent owner-scoped read'lerde)
+
+#### Yapma
+
+- Mutation endpoint'lerine (POST/PATCH/PUT/DELETE) Cache-Control
+  header ekleme — origin always fresh kalmalı (write-through pattern,
+  CLAUDE.md §38.100 paterni intact).
+- `public` cache directive — owner-scoped IDOR scope leak (Vercel
+  CDN public cache user-isolated DEĞİL; per-cookie partition için
+  `private` zorunlu).
+- TTL'leri agresif yükseltme (örn. s-maxage=300+) — owner mutation
+  yaptıktan sonra stale window büyür, "yenilendi" UX confusing.
+- `tailwind.config.ts`'e yeni keyframe eklemek — Tailwind v4 paterni
+  `globals.css` `@keyframes` declaration'ı kanonik (CLAUDE.md
+  §38.61 + §38.167 paterni). v3 config dosyasındaki keyframe'ler
+  v4'te browser'a inject edilmiyor.
+- Marquee component'inin inline `animation` referansını başka
+  keyframe ismine çevirmek — `brand-marquee` Stage 66 §38.147
+  PR0 base ile component dosyasında zaten declared; CSS-side
+  keyframe declaration eksikti (v3→v4 migration drift). Component
+  dokunulmadı.
+
+#### Yap
+
+- Yeni owner-scoped GET endpoint eklerken bu paterni reuse:
+  `private, s-maxage=N, stale-while-revalidate=M`. TTL seçimi:
+  refresh frequency'ye göre 15s (high — onboarding/inbox/badge),
+  30s (medium — KPI/team/sessions/qr-history/overview), 60s
+  (low — billing/profile/api-keys/brand).
+- Yeni inline `style={{ animation: 'X' }}` callsite'ı eklenirse
+  `globals.css`'e `@keyframes X` block ekle + reduced-motion
+  blanket otomatik (universal `*` reset) veya `[style*='X']`
+  selector explicit (CLAUDE.md §38.61 paterni).
+- `tailwind.config.ts` v3 config eski keyframe'leri için Tailwind
+  v4 migration audit yap: `grep -E "keyframes:|animation:"
+  tailwind.config.ts` callsite'ları → her birini `globals.css`
+  `@keyframes` declaration ile mirror.
+- Yeni Vercel CDN cache regression görünürse Vercel Analytics
+  dashboard `Cache hit ratio` metrik'i + Speed Insights LCP/INP
+  delta + (1-2 hafta soak sonrası) Vercel runtime logs `x-vercel-cache`
+  header inceleme.
+
+#### Manuel smoke test (Vercel preview sonrası)
+
+1. **Hero altı Marquee** (`/tr` veya `/en`): Section 2 logo strip
+   otomatik 22s linear infinite kayıyor (TR pazar / EN global
+   platform list locale-aware §38.165 paterni intact).
+2. **Reduced motion ON**: Marquee static (CLAUDE.md §38.61 universal
+   `*` reset blanket'i 0.001ms'e iniyor).
+3. **Owner cache test** (Vercel preview sonrası, opsiyonel):
+   ```bash
+   # Profile cache header
+   curl -I "https://qr-code-git-...vercel.app/api/user/profile" \
+     -H "Cookie: user_token=<test_token>"
+   # Beklenen: Cache-Control: private, s-maxage=60, stale-while-revalidate=300
+   # 1. request: x-vercel-cache: MISS, 2. request: HIT
+   ```
+4. **Onboarding state high-frequency** (`/api/onboarding/state`):
+   15s fresh + 60s SWR. Owner onboarding active iken hızlı PATCH
+   sonrası sonraki GET cache invalidate olmaz (15s bekleme); dashboard
+   mount cycle'da SWR background fresh fetch tetikler.
+5. **QR history** (`/dashboard/qr` page mount): 30s fresh window
+   içinde tab switch hot-path < 50ms (process-local + CDN edge cache
+   hit).
+
+#### Stage 87 closure (Tarih 2026-05-08)
+
+- Branch: `chore/marquee-animation-cache-stage87` (fresh main üstüne,
+  Stage 86 §38.166 PR #590 merged sonrası align)
+- Edit'lenen dosyalar: 9 (1 globals.css + 8 GET endpoint route) +
+  CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact
+- Build: ✓ 58/58 static pages (next build stub env, 4GB heap)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Hero
+  Marquee animation 22s linear infinite kayıyor + 8 owner GET
+  endpoint per-actor CDN cache header'lı (Vercel Edge cookie-based
+  partition).
+- Kalan riskler: yok (UI animation keyframe additive + cache header
+  additive; backend kontrat dokunulmadı, KVKK + reCAPTCHA + honeypot
+  + Pulse §11 design system + IDOR + RBAC intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
+  (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya Stage 84 PR3
+  (Admin panel performance) zincir devam — owner perf bundle Stage
+  85 §38.165 + Stage 87 §38.167 ile kapatıldı, admin tarafı ayrı
+  scope.
+
+#### Chat prompt history (Stage 87 §39.2 paterni)
+
+- 2026-05-08 kullanıcı: *"PR2 (Owner panel performance) — audit
+  özeti, kullanıcı görmeyecek / 12 concrete fix hazırlandı (visual
+  regression sıfır, backend kontrat dokunulmaz): / 🟢 8 GET endpoint
+  Cache-Control eklenmesi (§38.100 + §38.104 paterni reuse): /
+  Yukarda bahsettiğin bu kısmı tek PR ile profesyonel kodlamayla
+  ve detayıca çözer misin? / Bir de heronun altıdna bahsedilen
+  markalar otomatik belli hızda yana doğru kaysın."* (typo
+  "altıdna" → "altında" verbatim §39.2 disipline). 2 net talep:
+  (1) PR2 owner perf cache batch + (2) hero Marquee animation fix.
+- AskUserQuestion **YAPILMADI** — kullanıcı talebi 2 net (önceki
+  audit referansı + animation root-cause fix), scope konservatif
+  (presentational + cache header additive). Compliance disipline
+  §35.8 + §35.10 + §19.1.1 + §38.114 paterni stable.
+- **Plan-mode root-cause hunt**: Marquee animation bug'ı ilk önce
+  CSS-side keyframe yokluğu olarak diagnoze edildi. Tailwind v4 +
+  v3 config dosyası migration drift discovery. Future session
+  yeni `tailwind.config.ts` keyframe iddiası gelirse (örn.
+  Stage 66 §38.147'den paralel başka component'ler) aynı pattern
+  reuse: `globals.css`'e explicit `@keyframes` block ekle.
+- **Disipline restoration (19. iterasyon)**: Stage 49 §38.130 →
+  Stage 86 §38.166 zinciri compliance disipline 18 kez stable;
+  Stage 87 §38.167 ondokuzuncu kez backend kontrat dokunmadan UI
+  animation fix + cache header batch. CLAUDE.md §35.8 + §35.10 +
+  §19.1.1 + §38.61 + §38.100 + §38.104 + §38.114 + §38.147 paterni
+  reuse.

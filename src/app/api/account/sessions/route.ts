@@ -37,15 +37,25 @@ export async function GET(req: NextRequest) {
     take: 50,
   });
 
-  return NextResponse.json({
-    currentTokenHash,
-    sessions: sessions.map((s) => ({
-      id: s.id,
-      isCurrent: s.tokenHash === currentTokenHash,
-      userAgent: s.userAgent,
-      ipAddress: s.ipAddress,
-      lastSeenAt: s.lastSeenAt.toISOString(),
-      createdAt: s.createdAt.toISOString(),
-    })),
-  });
+  // Stage 87 §38.167 — owner-scoped UserSession list (Account →
+  // Security tab); cache header private 30s/120sw (mevcut session
+  // refresh interval'iyle uyumlu). §38.100 paterni reuse.
+  return NextResponse.json(
+    {
+      currentTokenHash,
+      sessions: sessions.map((s) => ({
+        id: s.id,
+        isCurrent: s.tokenHash === currentTokenHash,
+        userAgent: s.userAgent,
+        ipAddress: s.ipAddress,
+        lastSeenAt: s.lastSeenAt.toISOString(),
+        createdAt: s.createdAt.toISOString(),
+      })),
+    },
+    {
+      headers: {
+        'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120',
+      },
+    },
+  );
 }

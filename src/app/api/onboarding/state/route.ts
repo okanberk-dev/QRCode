@@ -14,11 +14,22 @@ export async function GET(req: NextRequest) {
     where: { userId: actor.id },
   });
 
-  return NextResponse.json({
-    step: row?.step ?? 1,
-    data: row?.data ?? null,
-    completedAt: row?.completedAt ?? null,
-  });
+  // Stage 87 §38.167 — onboarding progress polling; cache header
+  // private 15s/60sw (yüksek refresh frequency owner active flow,
+  // PATCH frequency anlık). §38.100 paterni reuse — short fresh +
+  // SWR 1min owner adımlar arası geçiş smooth.
+  return NextResponse.json(
+    {
+      step: row?.step ?? 1,
+      data: row?.data ?? null,
+      completedAt: row?.completedAt ?? null,
+    },
+    {
+      headers: {
+        'Cache-Control': 'private, s-maxage=15, stale-while-revalidate=60',
+      },
+    },
+  );
 }
 
 export async function PATCH(req: NextRequest) {
