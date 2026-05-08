@@ -4,6 +4,13 @@ import { jsonLdString } from '@/lib/seo/json-ld';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import QRGeneratorForm from '@/components/marketing/QRGeneratorForm';
+// Stage 71 §38.151 — site-library.jsx animation component'lerinin
+// sonraki yerleştirmesi: QRScanLoader hero altında küçük dekoratif
+// teaser olarak (Buaze QR generator'ın "ne ürettiğini" visualize eder).
+// Pulse §11 + framer-motion useReducedMotion + reduced-motion blanket
+// (CLAUDE.md §38.61) intact. Production'da gerçek QR canvas
+// QRGeneratorForm'da render edilir; bu sadece görsel teaser.
+import QRScanLoader from '@/components/animations/QRScanLoader';
 import { getTranslations, type Locale } from '@/lib/translations';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
@@ -131,6 +138,16 @@ export default async function QRGeneratorPage({
               ? 'Hesap açmadan, ücretsiz, sınırsız QR kod üret. Markana göre özelleştir, PDF olarak indir.'
               : 'Generate unlimited QR codes for free — no account required. Customize to your brand, download as PDF.'}
           </p>
+
+          {/* Stage 71 §38.151 — QRScanLoader animated teaser. Decorative
+              animated QR placeholder ile müşteri ürünü görselleştirir;
+              gerçek output QRGeneratorForm canvas'ta render edilir.
+              Pulse §11 disipline + framer-motion useReducedMotion (static
+              QR fallback). aria-hidden because QRGeneratorForm canvas
+              role="img" intact (a11y duplicate önleme). */}
+          <div className="mt-8 flex justify-center" aria-hidden="true">
+            <QRScanLoader size={120} scanDurationMs={2200} />
+          </div>
         </section>
 
         {/* ─── Generator (design 1:1: site-more.jsx:23-87) ─── */}

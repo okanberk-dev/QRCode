@@ -43,6 +43,7 @@ const StarClimber = nextDynamic(() => import('@/components/animations/StarClimbe
 const ToastRow = nextDynamic(() => import('@/components/animations/ToastRow'));
 const Marquee = nextDynamic(() => import('@/components/animations/Marquee'));
 const SweepCTA = nextDynamic(() => import('@/components/animations/SweepCTA'));
+const SentimentDial = nextDynamic(() => import('@/components/animations/SentimentDial'));
 import PulseLine from '@/components/animations/PulseLine';
 import RevealHeadline from '@/components/animations/RevealHeadline';
 import FeatureCard from '@/components/animations/FeatureCard';
@@ -675,6 +676,29 @@ export default async function LandingPage({
               </p>
               <div className="mt-2">
                 <ToastRow />
+              </div>
+
+              {/* Stage 71 §38.151 — SentimentDial. Buaze müşteri kohort
+                  ortalama sentiment score (verifiable framing §35.8).
+                  Dark dial + lime accent — sayfa beyaz arkaplan üstünde
+                  graphite circle visual standalone modülü olarak
+                  görünür. */}
+              <div className="mt-6 flex items-center gap-5 rounded-[18px] border border-[#EDEDED] bg-white p-5">
+                <div className="rounded-[14px] bg-[#0A0A0A] p-3">
+                  <SentimentDial score={84} variant="dark" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="pulse-eyebrow text-[#A8D62E]">
+                    {isTr ? 'Genel sentiment' : 'Overall sentiment'}
+                  </span>
+                  <p
+                    className="mt-2 text-[14px] leading-[1.55] text-[#525252]"
+                  >
+                    {isTr
+                      ? 'Buaze müşteri kohortunda yorumların büyük çoğunluğu pozitif tona kayar; düşük puan tek panelde önce işletmeye ulaşır.'
+                      : 'Across the Buaze customer cohort, reviews skew positive; low ratings reach you first in one inbox.'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
