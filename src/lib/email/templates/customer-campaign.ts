@@ -46,7 +46,11 @@ export interface CustomerCampaignParams {
   sentAt?: Date | null;
 }
 
-const BUAZE_LEGAL_BASE_URL = 'https://buaze.com';
+// CLAUDE.md §38.131 — env-aware base URL (Stage 50 + §38.105 paterni).
+// Vercel preview deploy'larda mail testleri prod URL'sine değil mevcut
+// deploy URL'sine link verir. Trailing slash strip + fallback intact.
+const BUAZE_LEGAL_BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') || 'https://buaze.com';
 const BUAZE_FALLBACK_SENDER = 'hello@buaze.com';
 
 function formatSentAt(date: Date | null | undefined, locale: 'tr' | 'en'): string {
@@ -128,12 +132,19 @@ export async function renderCustomerCampaign(
   const restaurantInitial = (params.restaurantName || 'B').charAt(0).toUpperCase();
 
   // Locale-specific Buaze legal links (KVKK + İletişim Tercihleri).
+  // CLAUDE.md §38.131 — Public legal route'ları kısa-slug pattern'i kullanır;
+  // /[locale]/legal/ segment'i YOK. Doğru route mapping (src/app/[locale]/):
+  //   /kvkk         → kvkk-aydinlatma doc (TR — KVKK Türkiye'ye özel)
+  //   /privacy      → gizlilik-politikasi doc (EN — international Privacy Notice)
+  //   /ticari-ileti → ticari-ileti doc (TR/EN aynı slug)
+  // TR locale'da "KVKK Aydınlatma Metni" label ile /tr/kvkk kasıtlı parite;
+  // EN locale'da "Privacy Notice" label ile /en/privacy ayrı concern.
   const privacyLink = isTr
-    ? `${BUAZE_LEGAL_BASE_URL}/tr/legal/kvkk-aydinlatma`
-    : `${BUAZE_LEGAL_BASE_URL}/en/legal/gizlilik-politikasi`;
+    ? `${BUAZE_LEGAL_BASE_URL}/tr/kvkk`
+    : `${BUAZE_LEGAL_BASE_URL}/en/privacy`;
   const preferencesLink = isTr
-    ? `${BUAZE_LEGAL_BASE_URL}/tr/legal/ticari-ileti`
-    : `${BUAZE_LEGAL_BASE_URL}/en/legal/ticari-ileti`;
+    ? `${BUAZE_LEGAL_BASE_URL}/tr/ticari-ileti`
+    : `${BUAZE_LEGAL_BASE_URL}/en/ticari-ileti`;
 
   const content = `
     <!-- Header: restaurant brand strip -->

@@ -17272,3 +17272,159 @@ patternleri reuse; helper logic yok).
   gelecek olası polish: footer A/B test (live ticker on/off conversion
   measure), `sameAs` schema URL hygiene, custom MobileBottomNav height
   token (CSS var ile sync).
+
+---
+
+### 38.132 2026-05-08 — Stage 51 owner panel kampanya mail template link audit + 4 broken URL fix (CRITICAL)
+
+§38.105 Stage 29 (campaign moderation) + §38.108 Stage 31b (legal consent)
++ §38.109 Stage 31c (mail compliance enrichment) sonrası kullanıcı raporu:
+*"owner panelde kampanyalar kısmı var mail gönderiliyor ama template'deki
+linklerin çoğu yanlış tek tek kontrol edip doğru linklere yönlendirir
+misin?"* — owner kampanya akışındaki 3 mail template'inde (`customer-campaign`
++ `owner-campaign-approved` + `owner-campaign-rejected`) link audit'i ve
+fix'i.
+
+**3 paralel Explore agent + manuel verify** (CLAUDE.md §38.39 + §38.69
+paterni — agent'lar çelişti: Agent 1 "/legal/ prefix yanlış", Agent 2
+"/[locale]/legal/ template'leri mevcut"; manuel `ls src/app/[locale]/`
+ile doğrulandı: **`legal/` segment YOK**, public legal route'ları
+**kısa-slug** pattern kullanır).
+
+**Route mapping** (manuel verify):
+
+| URL | Underlying legal doc (DB) |
+|---|---|
+| `/[locale]/kvkk` | `kvkk-aydinlatma` |
+| `/[locale]/privacy` | `gizlilik-politikasi` |
+| `/[locale]/gizlilik` | `gizlilik-politikasi` (alias) |
+| `/[locale]/ticari-ileti` | `ticari-ileti` |
+| `/[locale]/cookie` | `cerez-politikasi` |
+
+**3 fix bundle** (tek consolidated PR — CLAUDE.md §21.22):
+
+1. **CRITICAL — `customer-campaign.ts` 4 broken URL fix** (lines 131-136
+   HTML render + 230-232 plain-text fallback const reuse):
+   - TR `privacyLink`: `/tr/legal/kvkk-aydinlatma` → `/tr/kvkk` (404 → 200)
+   - EN `privacyLink`: `/en/legal/gizlilik-politikasi` → `/en/privacy`
+     (404 → 200)
+   - TR `preferencesLink`: `/tr/legal/ticari-ileti` → `/tr/ticari-ileti`
+     (404 → 200)
+   - EN `preferencesLink`: `/en/legal/ticari-ileti` → `/en/ticari-ileti`
+     (404 → 200)
+   - Plain-text fallback (line 230-232) const reuse ediyor → tek edit
+     yeterli.
+   - Açıklayıcı yorum: route mapping table inline (§38.132 paterni).
+   - Etki: müşteri tıklayınca artık 404 yerine doğru legal sayfası açılır.
+2. **LOW — owner-campaign-{approved,rejected}.ts TR locale gizlilik
+   slug** (4 satır: 2 file × HTML+text):
+   - `https://buaze.com/${isTr ? 'tr' : 'en'}/privacy`
+     → `https://buaze.com/${isTr ? 'tr/gizlilik' : 'en/privacy'}`
+   - `/tr/privacy` zaten 200 dönüyor (gizlilik-politikasi doc render
+     ediliyor) — broken DEĞİL, ama TR semantiği için Türkçe slug daha
+     doğal. EN tarafı intact.
+3. **LOW — `BUAZE_LEGAL_BASE_URL` env-aware** (`customer-campaign.ts:49`):
+   - Eski: `const BUAZE_LEGAL_BASE_URL = 'https://buaze.com';`
+   - Yeni: `process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') ||
+     'https://buaze.com'`
+   - CLAUDE.md §38.105 paterni reuse. Vercel preview deploy'larda mail
+     test edilince doğru URL.
+
+**Etkilenen dosyalar (3 + 1 docs)**:
+- `src/lib/email/templates/customer-campaign.ts` (Phase A + Phase C)
+- `src/lib/email/templates/owner-campaign-approved.ts` (Phase B — 2 satır)
+- `src/lib/email/templates/owner-campaign-rejected.ts` (Phase B — 2 satır)
+- `CLAUDE.md` (§38.132 closure)
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**: 383/383
+intact (presentational değişim, helper logic yok).
+
+**Verification**:
+- `npm run lint`: 0 errors / 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npx tsc --noEmit`: 0 errors in `src/`
+- `npm test`: 383/383 pass
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap): ✓ Compiled +
+  static pages intact
+- Sanity grep regression:
+  - `grep -rn "/legal/" src/lib/email/templates/` → 0 hit URL pattern
+    (sadece import path `@/lib/legal/iys` + yorumda referans intact)
+  - `grep -rn "tr/privacy" src/lib/email/templates/` → 0 hit
+  - `grep -rn "tr/gizlilik" src/lib/email/templates/` → 4 hit
+    (2 owner × HTML+text)
+  - `grep -rn "en/privacy" src/lib/email/templates/` → 5 hit (1
+    customer-campaign HTML + 2 owner × HTML+text)
+  - `BUAZE_LEGAL_BASE_URL` → 1 const + 4 use intact
+
+**Manuel mail preview** (Vercel preview sonrası, opsiyonel):
+1. `/admin/dev/mail-preview?template=customer-campaign&locale=tr` →
+   footer 4 satırın 3.'sünde 3 link: Aboneliği iptal et / KVKK
+   Aydınlatma Metni → `/tr/kvkk` / İletişim Tercihleri →
+   `/tr/ticari-ileti`. Hover preview'da link adresleri doğru.
+2. `?locale=en` → Unsubscribe / Privacy Notice → `/en/privacy` /
+   Communication Preferences → `/en/ticari-ileti`.
+3. `?template=owner-campaign-approved&locale=tr` → "Gizlilik Politikası"
+   → `/tr/gizlilik`.
+4. `?locale=en` → "Privacy Policy" → `/en/privacy`.
+
+**Yapma**:
+- `legal/` directory oluşturup mevcut linklere uydurma — short-slug
+  Buaze convention (CLAUDE.md §38.108 paterni intact); 6+ legal page'i
+  taşımak büyük scope creep.
+- `customer-campaign` template'inde TR locale'da privacy link'i
+  `/tr/gizlilik`'e değiştirme — TR locale "KVKK Aydınlatma Metni"
+  label ile `/tr/kvkk` (kvkk-aydinlatma doc) kasıtlı parite. EN
+  locale "Privacy Notice" + `/en/privacy` (gizlilik-politikasi doc)
+  ayrı concern.
+- Owner template'lerde `/en/privacy`'i değiştirme — EN owner için
+  doğru.
+- Plain-text fallback'te ayrı URL hardcode etme — `privacyLink` ve
+  `preferencesLink` const reuse paterni intact (single source of truth).
+- `BUAZE_LEGAL_BASE_URL` const'ı tamamen kaldırıp her satıra inline
+  `process.env.NEXT_PUBLIC_APP_URL` yazma — const tek kaynak intact.
+- Admin DB override (mail-templates editor) içinde URL field'ı
+  expose etme — CLAUDE.md §21.27 paterni: URL'ler render fn parameter,
+  admin override sadece copy.
+
+**Yap**:
+- Yeni mail template'inde public legal link gerekirse aynı paterni
+  reuse: `${BUAZE_LEGAL_BASE_URL}/${locale}/{kvkk|privacy|ticari-ileti|cookie}`
+  (kısa slug + locale prefix).
+- Yeni env-aware base URL gerekirse §38.105 paterni:
+  `process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') ||
+  'https://buaze.com'`.
+- Yeni route ekledikten sonra mail template link'lerini sanity grep
+  ile kontrol et: `grep -rn "buaze.com\|appUrl" src/lib/email/templates/`.
+- TR locale'da Türkçe semantic slug tercih (gizlilik / kvkk / cookie)
+  + EN locale'da English semantic (privacy / cookie) ayrı concern —
+  `${isTr ? 'tr/X' : 'en/Y'}` paterni reuse.
+
+**Stage 51 closure** (Tarih 2026-05-08):
+- Branch: `claude/fix-campaign-email-links-dzXTa` (designated, environment
+  task description'da sabit)
+- Edit'lenen dosyalar: 3 (3 mail template) + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  pending kampanya'lar veya yeni gönderilenler artık doğru link'lerle
+  müşteri/owner inbox'lara gider.
+- Kalan riskler: yok (presentational + env-aware base URL; backend
+  kontrat değişmedi).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
+  (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör yeni
+  odak talebi.
+
+**Chat prompt history (Stage 51 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"Claude md oku ve owner panelde kampanyalar
+  kısmı bar mail göndwriliyor ama template'deki linklerin çoğu yanlış
+  tek tek kontrol edip doğru linklere yönlendirir misin?"*
+- 3 paralel Explore agent çelişti (Agent 1: /legal/ yanlış; Agent 2:
+  /legal/ template'leri mevcut). Manuel `ls src/app/[locale]/` ile
+  çözüldü: `legal/` directory YOK, kısa-slug route'ları var.
+- AskUserQuestion yapılmadı: bulgular net (4 broken URL CRITICAL
+  fix, 2 cosmetic LOW fix, 1 env-aware LOW fix), scope kontrollü.
+- Hukuki/disipline override: yok (KVKK + GDPR + ETK linkleri zaten
+  doğru document'lara point ediyor; sadece public route'lar broken).
