@@ -40,9 +40,17 @@ function KpiCard({ kpi }: { kpi: KpiSpec }) {
         : 'text-[#737373]';
   return (
     <article
-      className="bz-card p-4 sm:p-5 flex flex-col gap-2"
+      className="bz-card relative overflow-hidden p-4 sm:p-5 flex flex-col gap-2"
       aria-label={kpi.label}
     >
+      {/* Stage 66 §38.147 — HANDOFF AnalyticsDesktop KPI lime sol stripe
+          (line 268-269 birebir). Visual signal: card'a Pulse signature
+          accent. 2.5px width lime, padding eşit (top/bottom 14px). */}
+      <span
+        aria-hidden="true"
+        className="absolute left-0 top-3.5 bottom-3.5 rounded-full bg-[#C6F24E]"
+        style={{ width: 2.5 }}
+      />
       <div className="pulse-eyebrow text-[10px] text-[#737373]">{kpi.label}</div>
       <div className="flex items-baseline justify-between gap-2">
         <span
