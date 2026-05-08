@@ -68,19 +68,29 @@ export async function GET(req: NextRequest) {
 
   if (!restaurant) return NextResponse.json({ error: 'restaurant_not_found' }, { status: 404 });
 
-  return NextResponse.json({
-    restaurantId,
-    name: restaurant.name,
-    logoUrl: settings?.logoUrl ?? restaurant.menuLogoUrl ?? null,
-    faviconUrl: settings?.faviconUrl ?? null,
-    coverImageUrl: settings?.coverImageUrl ?? null,
-    primaryColor: settings?.primaryColor ?? restaurant.primaryColor,
-    secondaryColor: settings?.secondaryColor ?? null,
-    accentColor: settings?.accentColor ?? restaurant.menuAccentColor ?? restaurant.primaryColor,
-    accentFont: settings?.accentFont ?? 'Space Grotesk',
-    slogan: settings?.slogan ?? null,
-    updatedAt: settings?.updatedAt?.toISOString() ?? null,
-  });
+  // Stage 87 §38.167 — Settings → Brand identity (logo + color +
+  // slogan + font); cache header private 60s/300sw (mutation rare —
+  // owner günde 1-2 brand edit). §38.100 paterni reuse.
+  return NextResponse.json(
+    {
+      restaurantId,
+      name: restaurant.name,
+      logoUrl: settings?.logoUrl ?? restaurant.menuLogoUrl ?? null,
+      faviconUrl: settings?.faviconUrl ?? null,
+      coverImageUrl: settings?.coverImageUrl ?? null,
+      primaryColor: settings?.primaryColor ?? restaurant.primaryColor,
+      secondaryColor: settings?.secondaryColor ?? null,
+      accentColor: settings?.accentColor ?? restaurant.menuAccentColor ?? restaurant.primaryColor,
+      accentFont: settings?.accentFont ?? 'Space Grotesk',
+      slogan: settings?.slogan ?? null,
+      updatedAt: settings?.updatedAt?.toISOString() ?? null,
+    },
+    {
+      headers: {
+        'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
+      },
+    },
+  );
 }
 
 export async function PUT(req: NextRequest) {

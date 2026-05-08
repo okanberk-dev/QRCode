@@ -34,5 +34,15 @@ export async function GET(req: NextRequest) {
     // mirrors BillingSubscription.adminNotes pattern).
   }));
 
-  return NextResponse.json({ data });
+  // Stage 87 §38.167 — owner workspace-scoped invoices list; cache
+  // header private 60s/300sw (invoice generation Iyzico Wave 3.5
+  // periyodik, intra-day mutation rare). §38.100 paterni reuse.
+  return NextResponse.json(
+    { data },
+    {
+      headers: {
+        'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
+      },
+    },
+  );
 }

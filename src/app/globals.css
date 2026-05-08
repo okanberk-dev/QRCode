@@ -486,6 +486,25 @@ body {
   will-change: transform;
 }
 
+/* Stage 87 §38.167 — `brand-marquee` keyframe (Marquee component
+   `src/components/animations/Marquee.tsx` Stage 66 §38.147 PR0 base
+   inline `style={{ animation: 'brand-marquee 22s linear infinite' }}`
+   kullanır). Eski `tailwind.config.ts` (v3-style) keyframe definition
+   Tailwind v4 `@theme {}` paterniyle uyumsuz — keyframe browser'a
+   inject edilmiyordu; kullanıcı raporu "heronun altıdna bahsedilen
+   markalar otomatik belli hızda yana doğru kaysın" fix.
+
+   3x duplicate (`tripled` array Marquee.tsx) sayesinde 0 → -50%
+   translateX seamless loop (orta kopyaya geri döner, ekrandan kayma
+   yok). Reduced-motion: blanket selector universal `*` reset zaten
+   kapatır (CLAUDE.md §38.61 paterni); bu inline `style={{ animation }}`
+   callsite ek selector gerektirmez (Marquee component kendi
+   `useReducedMotion` check'i ile static fallback render eder). */
+@keyframes brand-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
 /* CSS Performance §38.61 — 3 keyframe styled-jsx/inline `<style>` block'larından
  * konsolide edildi. Animation hâlâ component-level `animation:` veya
  * `animate-[name]` arbitrary class'ı ile referans verilir; yalnız keyframe
