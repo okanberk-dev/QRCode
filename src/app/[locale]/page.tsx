@@ -443,21 +443,39 @@ export default async function LandingPage({
             </h2>
           </div>
 
-          {/* Marquee — Buaze gerçek partner platform names */}
+          {/* Marquee — Buaze gerçek partner platform names.
+              Stage 85 §38.165: locale-aware items (CLAUDE.md §19.4 PROVIDER_DOMAINS
+              taxonomy + §35.8 verifiable claims).
+              - TR: Türkiye pazarı odaklı (Yemeksepeti/Getir/Trendyol GO front;
+                yurt içi yemek-delivery + global review platforms).
+              - EN: Uluslararası odak (Google/Tripadvisor/Yelp/Foursquare/Booking/
+                Airbnb global review + hospitality; TR-only delivery YOK). */}
           <div className="bg-[#FAFAFA] border-y border-[#EDEDED] -mx-5 sm:-mx-10 mb-10 sm:mb-14">
             <Marquee
-              items={[
-                'Google',
-                'Yemeksepeti',
-                'Getir',
-                'Trendyol',
-                'Tripadvisor',
-                'Yandex',
-                'Yelp',
-                'Foursquare',
-                'Booking',
-                'Airbnb',
-              ]}
+              items={
+                isTr
+                  ? [
+                      'Yemeksepeti',
+                      'Getir',
+                      'Trendyol',
+                      'Google',
+                      'Tripadvisor',
+                      'Yandex',
+                      'Yelp',
+                      'Foursquare',
+                      'Booking',
+                      'Airbnb',
+                    ]
+                  : [
+                      'Google',
+                      'Tripadvisor',
+                      'Yelp',
+                      'Foursquare',
+                      'Booking',
+                      'Airbnb',
+                      'Yandex',
+                    ]
+              }
               durationSec={28}
             />
           </div>
@@ -651,7 +669,8 @@ export default async function LandingPage({
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
-          4.5 BUAZE COHORT HIGHLIGHTS — Stage 70 §38.150
+          4.5 BUAZE COHORT HIGHLIGHTS — Stage 70 §38.150 +
+          Stage 85 §38.165 corporate premium polish
           Compliance-safe verifiable cohort claims (CLAUDE.md §35.8 +
           §19.1.1):
           - StarClimber: ortalama 3.6 → 4.4 climb (90 gün, Buaze müşteri
@@ -662,13 +681,27 @@ export default async function LandingPage({
             word, useInView one-shot — UX stutter önleme)
           - ToastRow: 4 generic platform event default (§35.10 + §38.131
             paterni — fake müşteri testimonial YASAK)
-          - SweepCTA: "Ücretsiz başla" lime sweep hover (replace
-            yapmadan additive secondary CTA)
+          - CTA group: primary SweepCTA + secondary outline anchor
+            (Pulse §11 button group paterni — kullanıcı raporu §38.165
+            "gözükmeyen buton yapısı" fix; corporate premium dual CTA)
+
+          Stage 85 §38.165 polish:
+          - Section padding artırıldı: py-[60px] sm:py-24 →
+            py-[80px] sm:py-28 lg:py-32 (corporate breathing room)
+          - Eyebrow lime pulse-dot indicator eklendi (Pulse §11)
+          - Headline tracking sıkılaştırıldı (-0.025em corporate)
+          - CTA group: SweepCTA + outline secondary "Demo iste" link
+          - Microcopy CTA altında (KVKK + ücretsiz disclaimer
+            verifiable claim, §35.8 paterni)
       ═══════════════════════════════════════════════════════════ */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 bg-[#FAFAFA] border-y border-[#EDEDED]">
+      <section className="px-5 sm:px-10 py-[80px] sm:py-28 lg:py-32 bg-[#FAFAFA] border-y border-[#EDEDED]">
         <div className="max-w-[1200px] mx-auto">
-          <div className="max-w-[720px] mb-12 sm:mb-16">
-            <span className="pulse-eyebrow text-[#737373]">
+          <div className="max-w-[760px] mb-14 sm:mb-20">
+            <span className="pulse-eyebrow inline-flex items-center gap-2 text-[#737373]">
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat"
+              />
               {isTr ? 'Buaze müşteri kohortu' : 'Buaze customer cohort'}
             </span>
             <RevealHeadline
@@ -677,10 +710,10 @@ export default async function LandingPage({
                   ? 'Restoranlar Buaze ile yeniden tanıtıldı.'
                   : 'Restaurants relaunched with Buaze.'
               }
-              className="mt-3 text-[clamp(28px,5vw,52px)] leading-[1.04]"
+              className="mt-4 text-[clamp(30px,5.5vw,56px)] leading-[1.02] tracking-[-0.025em]"
             />
             <p
-              className="mt-5 text-[15px] sm:text-[16px] leading-[1.55] text-[#525252] max-w-[640px]"
+              className="mt-6 text-[15px] sm:text-[17px] leading-[1.55] text-[#525252] max-w-[680px]"
             >
               {isTr
                 ? 'Tek panel, gerçek metrikler. Buaze müşteri kohortunda ortalama puan tipik 90 günde belirgin yukarı kayar; tek pano tüm kanalları sade tutar.'
@@ -688,8 +721,8 @@ export default async function LandingPage({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-            <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+            <div className="space-y-10">
               {/* StarClimber — Buaze cohort climb storytelling */}
               <div className="flex flex-col gap-2">
                 <span className="pulse-eyebrow text-[#A8D62E]">
@@ -704,7 +737,7 @@ export default async function LandingPage({
               </div>
 
               {/* BigCounter pair — verifiable Buaze cohort numbers */}
-              <div className="grid grid-cols-2 gap-6 sm:gap-10 border-y border-[#EDEDED] py-8">
+              <div className="grid grid-cols-2 gap-6 sm:gap-10 border-y border-[#EDEDED] py-10">
                 <BigCounter
                   to={10}
                   prefix=""
@@ -721,19 +754,44 @@ export default async function LandingPage({
                 />
               </div>
 
-              {/* Stage 75 §38.155 — production crash fix.
-                  Inline `onClick={() => window.location.href = ...}` Next.js
-                  15 hard error: "Event handlers cannot be passed to Client
-                  Component props" (Server Component → Client Component
-                  function reference serialization). SweepCTA polymorphic
-                  href prop alır + internal `<a>` render eder. SEO + a11y
-                  link semantik bonus. */}
-              <SweepCTA
-                href={`${base}/auth/register`}
-                ariaLabel={isTr ? 'Ücretsiz başla' : 'Start free'}
-              >
-                {isTr ? 'Ücretsiz başla' : 'Start free'}
-              </SweepCTA>
+              {/* Stage 85 §38.165 — corporate premium CTA group
+                  (kullanıcı raporu "gözükmeyen buton yapısı vs var orayı
+                  da daha kurumsal premiumlukta tasarla" fix).
+
+                  Stage 75 §38.155 — Server Component caller'larında inline
+                  arrow function YASAK ("Event handlers cannot be passed to
+                  Client Component props"); SweepCTA polymorphic href prop
+                  alır + internal `<a>` render eder.
+
+                  Dual CTA paterni: primary lime sweep ("Ücretsiz başla")
+                  + secondary outline anchor ("Demo iste" /pricing'e
+                  yönlenir, dünya üzerindeki Buaze gerçek pricing surface).
+                  Microcopy KVKK + ücretsiz disclaimer (§35.8 verifiable). */}
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <SweepCTA
+                    href={`${base}/auth/register`}
+                    ariaLabel={isTr ? 'Ücretsiz başla' : 'Start free'}
+                  >
+                    {isTr ? 'Ücretsiz başla' : 'Start free'}
+                  </SweepCTA>
+                  <a
+                    href={`${base}/pricing`}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#0A0A0A] bg-transparent px-6 py-3.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
+                    style={{ fontFamily: 'var(--font-body)' }}
+                  >
+                    {isTr ? 'Planları gör' : 'See plans'}
+                  </a>
+                </div>
+                <p
+                  className="text-[12px] leading-[1.5] text-[#737373]"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                >
+                  {isTr
+                    ? '14 gün ücretsiz · Kart gerekmez · KVKK + GDPR uyumlu'
+                    : '14-day free trial · No credit card · KVKK + GDPR compliant'}
+                </p>
+              </div>
             </div>
 
             {/* ToastRow — generic platform event workflow demo */}
