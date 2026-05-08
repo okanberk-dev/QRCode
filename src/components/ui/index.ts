@@ -47,6 +47,13 @@ export {
   type APIconButtonTone,
 } from "./APIconButton";
 
+// Stage 47 §38.128 — HANDOFF Toggles_Switches_Checkbox visual referansı +
+// admin-panel.jsx Inputs section. Indeterminate state desteğiyle native
+// input + custom render + lime fill. 4+ callsite (CustomersBulkBar +
+// admin/restaurants + admin/members + admin/reviews bulk action toolbar)
+// manuel ref-based pattern → primitive entegrasyonu.
+export { APCheckbox, type APCheckboxProps } from "./APCheckbox";
+
 // Stage 38 §38.118 — HANDOFF §8 step 5 (Panel kartları) — 2 yeni card
 // (APAIDraftCard + APBillingCard). Mevcut Buaze cardlarıyla %70+
 // örtüşen 12 card spec'i skip; sadece yeni implementation gerektiren

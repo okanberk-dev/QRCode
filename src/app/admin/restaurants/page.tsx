@@ -5,7 +5,7 @@ import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin,
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
-import { AlertBanner, Avatar, Badge, type BadgeKind, CardSkeleton, EmptyState, Modal, PageHeader, type TabItem, Tabs, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, APCheckbox, Avatar, Badge, type BadgeKind, CardSkeleton, EmptyState, Modal, PageHeader, type TabItem, Tabs, useConfirmDialog } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -966,24 +966,21 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
   // menu kart içine entegre edildi.
   return (
     <>
-      {/* Bulk select-all bar (sadece sayfada en az 1 kart varsa görünür) */}
+      {/* Bulk select-all bar (sadece sayfada en az 1 kart varsa görünür).
+          Stage 47 §38.128 — APCheckbox primitive (manuel ref-based
+          indeterminate pattern → primitive). Pulse §11 lime fill +
+          Indeterminate Minus icon. Mono uppercase label aynı. */}
       {rows.length > 0 && (
         <div className="mb-3 flex items-center justify-between gap-2 px-1 text-[11.5px] text-[#525252]">
-          <label className="inline-flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={allSelected}
-              ref={(el) => {
-                if (el) el.indeterminate = someSelected;
-              }}
-              onChange={(e) => onToggleSelectAll(e.target.checked)}
-              aria-label="Tümünü seç"
-              className="h-3.5 w-3.5 accent-[#0A0A0A] cursor-pointer"
-            />
-            <span className="bz-mono uppercase tracking-wider">
-              {allSelected ? 'Hepsi seçili' : someSelected ? `${selectedIds.size} seçili` : 'Tümünü seç'}
-            </span>
-          </label>
+          <APCheckbox
+            size="sm"
+            checked={allSelected}
+            indeterminate={someSelected}
+            onChange={onToggleSelectAll}
+            ariaLabel="Tümünü seç"
+            label={allSelected ? 'Hepsi seçili' : someSelected ? `${selectedIds.size} seçili` : 'Tümünü seç'}
+            labelClassName="bz-mono uppercase tracking-wider !text-[11px]"
+          />
           <span className="bz-mono text-[#737373]">{rows.length} işletme</span>
         </div>
       )}

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import {
   AlertBanner,
+  APCheckbox,
   Badge,
   type BadgeKind,
   EmptyState,
@@ -501,26 +502,31 @@ export default function MembersPage() {
               <thead>
                 <tr className="bg-[#0A0A0A] pulse-eyebrow text-white/60">
                   <th className="px-3 py-4 sm:pl-5 sm:pr-2 w-10">
-                    {/* Stage A5 §38.97 — bulk select-all (with indeterminate) */}
-                    <input
-                      type="checkbox"
-                      aria-label="Tümünü seç"
-                      checked={members.length > 0 && members.every((m) => selectedIds.has(m.id))}
-                      ref={(el) => {
-                        if (!el) return;
-                        const all = members.length > 0 && members.every((m) => selectedIds.has(m.id));
-                        const some = !all && members.some((m) => selectedIds.has(m.id));
-                        el.indeterminate = some;
-                      }}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedIds(new Set(members.map((m) => m.id)));
-                        } else {
-                          setSelectedIds(new Set());
-                        }
-                      }}
-                      className="h-3.5 w-3.5 accent-[#C6F24E] cursor-pointer"
-                    />
+                    {/* Stage A5 §38.97 — bulk select-all (with indeterminate).
+                        Stage 47 §38.128 — APCheckbox primitive entegre
+                        (manuel ref-based pattern → primitive). Pulse §11
+                        lime fill + Indeterminate Minus. */}
+                    {(() => {
+                      const allSelected =
+                        members.length > 0 && members.every((m) => selectedIds.has(m.id));
+                      const someSelected =
+                        !allSelected && members.some((m) => selectedIds.has(m.id));
+                      return (
+                        <APCheckbox
+                          size="sm"
+                          checked={allSelected}
+                          indeterminate={someSelected}
+                          onChange={(next) => {
+                            if (next) {
+                              setSelectedIds(new Set(members.map((m) => m.id)));
+                            } else {
+                              setSelectedIds(new Set());
+                            }
+                          }}
+                          ariaLabel="Tümünü seç"
+                        />
+                      );
+                    })()}
                   </th>
                   <th className="px-3 py-4 sm:px-5">İŞLETME SAHİBİ</th>
                   <th className="hidden md:table-cell px-3 py-4 sm:px-5">PLAN</th>
