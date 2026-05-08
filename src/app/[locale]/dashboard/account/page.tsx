@@ -27,7 +27,9 @@ import { BusinessActivityLogSettings } from "@/components/dashboard/settings/sec
 import { BusinessPulseAiSettings } from "@/components/dashboard/settings/sections/BusinessPulseAiSettings";
 import { AccountPlanWidget } from "@/components/dashboard/account/AccountPlanWidget";
 import { AccountInvoicesWidget } from "@/components/dashboard/account/AccountInvoicesWidget";
-import { AccountDangerZone } from "@/components/dashboard/account/AccountDangerZone";
+// Stage 79 §38.159 — AccountDangerZone tamamen kaldırıldı (kullanıcı kararı).
+// Backend yoktu (Iyzico Wave 3.5 sonrası scope), UI placeholder confusing UX
+// yaratıyordu. Right rail artık 2 widget: Plan + Invoices.
 import AdminBackLink from "@/components/dashboard/AdminBackLink";
 
 /**
@@ -220,9 +222,9 @@ export default function AccountSettingsPage() {
   }
 
   // §38.37 — Right rail (xl:+) — tasarım .design-owner-2026/page-account.jsx
-  // 320px sağ kolon paterni: Plan dark hero (usage bars) + Recent invoices +
-  // Danger zone. Eski 3 quick-nav button (PLAN/EKİP/KVKK) silindi (drift —
-  // tasarımda yok). Workspace data: teamCount + restaurantCount caller-side.
+  // 320px sağ kolon paterni: Plan dark hero (usage bars) + Recent invoices.
+  // Stage 79 §38.159 — AccountDangerZone (Hesabı dondur/sil placeholder)
+  // kaldırıldı. Backend yoktu, owner UX confusing idi. 2 widget kalır.
   const rightRail = (
     <>
       <AccountPlanWidget
@@ -231,7 +233,6 @@ export default function AccountSettingsPage() {
         restaurantCount={restaurants.length}
       />
       <AccountInvoicesWidget locale={locale} />
-      <AccountDangerZone locale={locale} />
     </>
   );
 

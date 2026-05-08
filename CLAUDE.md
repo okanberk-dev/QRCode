@@ -22642,3 +22642,237 @@ yok. **Test count**: 404/404 pass intact.
   fonksiyonel risk (presentational + structural refactor + JSX
   removal + helper imports). Pulse §11 typography + Stage 49→77
   zinciri compliance intact.
+
+---
+
+### 38.159 2026-05-08 — Stage 79 owner panel 3-fix bundle (DangerZone kaldır + FeedbackDetail composer sticky bottom + bottom nav badge backend isRead source)
+
+§38.158 Stage 78 sonrası kullanıcı 3 net UX/feature talebi: *"Owner
+panelde hesabı dondur hesabı sil gibi kısımlar var onları tamamen
+kaldır, ve yorumlar sayfasında sağdaki çıkan yorumda alta inilmiyor
+ne yazılacak görüşmüyor orayı daha güzel bir Uı ve UX yapar mısın
+(sadece sağ kısımda çıkan yorumdan bahsediyorum). Ek olarak bottom
+nav'da çıkan ve okundu okunmadı kısımları da gerçek değil onları da
+gerçek yap"* (typo'lar verbatim §39.2 disipline).
+
+3 fix bundle. Tek consolidated PR (CLAUDE.md §21.22). Schema migration
+**YOK**.
+
+#### Fix 1 — AccountDangerZone tamamen kaldır
+
+§38.37 Stage 27'de eklenmiş "Yakında" placeholder card (Hesabı dondur
++ Hesabı sil disabled button'lar). Backend YOK (Iyzico Wave 3.5 sonrası
+scope), kullanıcı UI'dan görünmesini bile istemiyor — owner UX kafası
+karışmasın.
+
+- `src/components/dashboard/account/AccountDangerZone.tsx` SİLİNDİ
+  (~70 satır, CLAUDE.md §34 paterni — 0 callsite primitive sil)
+- `src/app/[locale]/dashboard/account/page.tsx`:
+  - Line 30 `import AccountDangerZone` silindi (yorum referansı bırakıldı)
+  - Line 234 `<AccountDangerZone locale={locale} />` mount silindi
+- §38.51 Right rail → 2 widget kalır (Plan + Invoices)
+- Out of scope: `restaurants/[id]/settings/page.tsx` `<DangerZone>`
+  per-restaurant decommission (farklı concern) intact
+
+#### Fix 2 — FeedbackDetail composer sticky bottom (lg+ desktop)
+
+Detail panel content scroll açık iken composer (reply textarea card)
+her zaman görünür kalır — Send button + KVKK consent + replyNotice
+scroll edilmek zorunda değil. Kullanıcı raporu "alta inilmiyor ne
+yazılacak görünmüyor" fix.
+
+- `src/app/[locale]/dashboard/feedbacks/_components/FeedbackReplyComposer.tsx`:
+  - Reply textarea card outer div (line 193 önce, ~210 sonra) — `lg:sticky
+    lg:bottom-0 lg:z-10 lg:-mx-5 sm:lg:-mx-8 lg:px-5 sm:lg:px-8 lg:rounded-none
+    lg:border-x-0 lg:border-b-0 lg:border-t lg:bg-white lg:shadow-[0_-4px_12px_-6px_rgba(10,10,10,0.06)]
+    lg:py-4` eklendi
+  - Mevcut FeedbackDetail outer section `lg:overflow-y-auto` (§38.62)
+    sticky için scroll context sağlar — yeni wrapper gerekmedi
+  - Mobile (<lg): sticky aktif değil (parent overflow context yok),
+    composer flow doğal inline kalır — §38.15 + §38.143 mobile keyboard
+    avoidance paterni intact
+  - Edge-to-edge styling (lg+ stretch outside body padding) sticky
+    panel'in detail wrapper genişliği boyunca devam etmesini sağlar
+  - Apple-soft top shadow `0 -4px 12px -6px` Pulse §11 §38.65 elev-2
+    paterni — body↔composer separation visual cue
+  - Action row gap `xl:gap-1.5` xl: dar 360px detail panel için kompakt
+    (4 button: Use & send + Regenerate + Tone select + Edit)
+  - Textarea max-height responsive cap: lg+ 220px / 32vh (sticky composer
+    body content'in çoğunu kapatmasın), mobile 480px / 50vh (full-screen
+    push-route view intact)
+
+#### Fix 3 — Bottom nav badge gerçek `Feedback.isRead` source
+
+NotificationBell unread count'u backend `isRead=false` count'tan derive
+eder; inbox'ta okunan feedback'ler badge'den otomatik düşer. Eski
+davranış: localStorage `lastViewedAt` timestamp comparison — sadece
+NotificationBell dropdown OPEN'da güncellenir, inbox'ta okunan
+feedback'leri hâlâ "yeni" sayar (kullanıcı raporu "okundu okunmadı
+kısımları gerçek değil").
+
+- `src/app/api/feedback/route.ts` GET handler:
+  - `searchParams.get('isRead')` parse (`'true'` / `'false'`)
+  - Schema: `Feedback.isRead Boolean NOT NULL @default(false)` (Stage
+    56 §38.137 migration tüm eski rows false init eder; null tutulamaz)
+  - `'false'` → `baseWhere.isRead = false`
+  - `'true'` → `baseWhere.isRead = true`
+  - Geçersiz değer ignore (mevcut `kvkkFilter` paterni paralel)
+- `src/components/notifications/NotificationBell.tsx`:
+  - Fetch URL `/api/feedback?rating=low&limit=5` →
+    `/api/feedback?rating=low&limit=5&isRead=false` (backend artık sadece
+    okunmamış low-rating'ları döner)
+  - `unreadCount` useMemo: feedback için `attention.length` direkt
+    (backend filter zaten okunmamışları döndürüyor); announcement için
+    `lastViewedAt` karşılaştırması intact (markAllRead hâlâ announcement
+    read tracking için kullanılır)
+  - Polling cycle (60s) inbox PATCH `isRead=true` (CLAUDE.md §38.83
+    Stage 13) sonrası snapshot otomatik sync; custom event dispatch
+    `buaze:notification-count` (§38.141 Stage 60) bottom nav listener'a
+    yansır
+  - 5 callsite intact (admin topbar + admin sidebar + owner shell topbar
+    + owner shell drawer + owner QR page); sadece internal fetch URL
+    değişti
+
+#### Compliance disipline checkpoint (kullanıcı 11. iterasyon — Stage 79)
+
+| Element | Durum | Sebep |
+|---|---|---|
+| AccountDangerZone "Yakında" placeholder | KALDIRILDI | Backend YOK + owner UX confusing (§34 paterni — 0 callsite primitive sil) |
+| FeedbackDetail sticky composer | YENİ | UX win — body↔composer 2-region scroll model (§38.65 + §38.62 paterni reuse) |
+| Bottom nav badge backend-source | YENİ | Gerçek read state (§38.137 + §38.83 + §38.141 zinciri eksik halka tamamlandı) |
+| Per-restaurant DangerZone (settings tab) | INTACT | Farklı concern (decommission flow), kapsam dışı |
+| `Feedback.isRead` PATCH endpoint | INTACT | §38.83 Stage 13'te zaten mevcut |
+| `buaze:notification-count` custom event | INTACT | §38.141 Stage 60 paterni dokunulmadı |
+| Mobile composer keyboard avoidance | INTACT | §38.15 + §38.143 scrollIntoView focus center |
+
+#### Etkilenen dosyalar (5 + docs)
+
+- `src/components/dashboard/account/AccountDangerZone.tsx` SİLİNDİ
+- `src/app/[locale]/dashboard/account/page.tsx` (import + mount sil)
+- `src/app/[locale]/dashboard/feedbacks/_components/FeedbackReplyComposer.tsx`
+  (reply card lg:sticky + lg+ textarea cap + xl:gap-1.5)
+- `src/app/api/feedback/route.ts` (GET isRead query param parse)
+- `src/components/notifications/NotificationBell.tsx` (fetch URL +
+  unreadCount derive comment)
+- `CLAUDE.md` §38.159 closure log
+
+**Schema migration**: yok (Feedback.isRead Stage 56 §38.137'de zaten
+mevcut). **Yeni endpoint**: yok. **Yeni dep**: yok.
+
+#### Yapma
+
+- Sticky composer'ı `lg:sticky` yerine `xl:sticky` yapmak — 1024-1279px
+  lg breakpoint'inde detail panel `lg:flex-row` layout (~600px+ width),
+  sticky aynı şekilde yararlı. xl: ile sınırlamak lg: kullanıcı UX'inde
+  composer'ı kaybediyor olur.
+- Sticky composer wrapper'ına `lg:overflow-hidden` eklemek — outer
+  section'ın `lg:overflow-y-auto` scroll context'i sticky için zorunlu;
+  hidden eklemek sticky'yi kırar.
+- Reply card edge-to-edge styling'i (`lg:-mx-5 sm:lg:-mx-8`) atlamak —
+  sticky mode'da bg-white edge'lere kadar ulaşmazsa body content
+  composer arkasında transparent görünür (visual conflict).
+- Textarea max-height cap'ı lg+ için 220px üstüne çekmek — sticky
+  composer body content'in çoğunu kapatır (composer ~50%+ viewport).
+  Mobile cap (480px / 50vh) intact çünkü mobile push-route view full-
+  screen.
+- AccountDangerZone'u "DEFER" comment ile bırakmak (silmek yerine) —
+  CLAUDE.md §34 disipline 0 callsite primitive sil; gelecekte gerek
+  olursa git history'den restore edilir.
+- Backend `isRead = { not: true }` filter'ı kullanmak (`{ in: [false,
+  null] }` yerine) — Prisma'da `not: true` legacy null rows'u kapsar
+  ama explicit `in` array daha okunabilir + intent açık.
+- NotificationBell `lastViewedAt` localStorage logic'ini tamamen
+  kaldırmak — announcement track için intact (markAllRead announcement
+  read tracking için kullanılır). Sadece feedback unread artık backend-
+  source.
+- 5 NotificationBell callsite'ını ayrı ayrı update etmek — fetch URL
+  internal NotificationBell.tsx'inde; tüm callsite'lar otomatik yeni
+  davranışı alır (backward compat, prop signature değişmedi).
+
+#### Yap
+
+- Yeni feedback filter eklenirken `kvkkFilter` veya `isReadParam`
+  paterni reuse: `searchParams.get('X')` parse + `if/else if` branch
+  + `baseWhere.X = ...` (CLAUDE.md §38.83 + §38.137 + §38.159 paterni).
+- Yeni sticky bottom UI ihtiyacında §38.159 paterni reuse: `lg:sticky
+  lg:bottom-0 lg:z-10 + edge-to-edge negative margin + lg:rounded-none
+  + Apple-soft top shadow elev-2`. Parent'ta scroll context (`lg:overflow-
+  y-auto`) zorunlu.
+- Yeni component-level `useMemo` derive değişikliklerinde dep array'i
+  konservatif tut (`[announcements, attention, lastViewedAt, totalCount]`)
+  — gelecek refactor'lar için reactive guard.
+- Backend `Feedback.isRead` filter'ı yeni endpoint'lerde gerekirse
+  doğrudan boolean (`baseWhere.isRead = false` veya `= true`). Schema
+  NOT NULL @default(false), null tutulamaz (Stage 56 §38.137 migration
+  tüm eski rows false init eder).
+
+#### Verification
+
+- `npm run lint` → 0 errors / 0 warnings (CLAUDE.md §38.49 baseline
+  temiz)
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`
+- `npm test` → mevcut suite intact
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) → ✓ Compiled +
+  static pages
+
+#### Manuel smoke test (Vercel preview sonrası)
+
+1. `/[locale]/dashboard/account` → Account tab Profile + Plan + Invoices
+   görünür; "Hesabı dondur"/"Hesabı sil" UI tamamen kaybolmuş, danger
+   zone YOK.
+2. `/[locale]/dashboard/feedbacks` low-rating row tıkla → detail panel
+   sağda. Desktop'ta composer alt edge'e sticky pin'lenmiş; body content
+   (header/comment/AI summary/sent replies/metadata/timeline) scroll
+   edilebilir, composer her zaman görünür. Send button + KVKK consent +
+   AI suggestion her zaman erişilebilir. Cmd+Enter shortcut intact.
+3. Mobile push-route view: composer inline (sticky aktif değil, parent
+   overflow yok), §38.15 scrollIntoView focus center keyboard avoidance
+   intact.
+4. NotificationBell aç → badge unread count `Feedback.isRead=false +
+   rating ≤ 3` row sayısı (backend-driven). Yeni feedback gel → 60s
+   sonra badge yükselir. Inbox'ta row tıkla → PATCH isRead=true → ~60s
+   sonra polling cycle'da NotificationBell snapshot sync, badge düşer.
+   Bottom nav Yorumlar tab badge custom event listener üzerinden sync.
+
+#### Stage 79 closure (Tarih 2026-05-08)
+
+- Branch: `claude/improve-comments-notifications-g9DdV` (designated,
+  CLAUDE.md task description'da sabit)
+- Edit'lenen dosyalar: 5 (4 component/route + CLAUDE.md)
+- Silinen dosyalar: 1 (`AccountDangerZone.tsx`, ~70 satır)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: mevcut suite intact (presentational + 1 backend filter,
+  helper logic değişmedi)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  Account right rail 2 widget; Yorumlar detail panel composer sticky
+  alt edge; bottom nav badge gerçek isRead state'inden derive.
+- Kalan riskler: yok (UI polish + 1 backend GET filter additive,
+  backward-compat; KVKK + reCAPTCHA + honeypot + Pulse §11 design
+  system intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
+  (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör yeni
+  odak talebi.
+
+**Chat prompt history (Stage 79 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"Owner panelde hesabı dondur hesabı sil gibi
+  kısımlar var onları tamamen kaldır, ve yorumlar sayfasında sağdaki
+  çıkan yorumda alta inilmiyor ne yazılacak görüşmüyor orayı daha
+  güzel bir Uı ve UX yapar mısın (sadece sağ kısımda çıkan yorumdan
+  bahsediyorum). Ek olarak bottom nav'da çıkan ve okundu okunmadı
+  kısımları da gerçek değil onları da gerçek yap"* (typo'lar verbatim:
+  "görüşmüyor" → "görünmüyor", "Uı" → "UI"). 3 net talep.
+- AskUserQuestion plan mode'da kullanılmadı; plan dosyası yazıldı
+  (`a-a-daki-promptu-geli-tir-ve-twinkling-pnueli.md`) ve kullanıcı
+  ExitPlanMode ile onay verdi (edit yapmadan).
+- Stage 78 §38.158 main'e merge edilmişti (PR #582 Stage 78 §38.158
+  takenumber). Stage 79 §38.159 yeni numara olarak renumber.
+- **Disipline restoration (11. iterasyon)**: §35.8 + §35.10 + §19.1.1
+  + §38.114 Pulse typography + Stage 49→78 zinciri compliance intact.
+  Bu PR backend kontrat dokunmadan UI/UX polish + 1 GET filter additive
+  + 1 component sil. CLAUDE.md §34 + §38.62 + §38.65 + §38.83 + §38.137
+  + §38.141 paternleri reuse.

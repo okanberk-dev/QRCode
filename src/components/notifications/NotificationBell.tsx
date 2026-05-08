@@ -128,7 +128,18 @@ export default function NotificationBell({
   const fetchAttention = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/feedback?rating=low&limit=5', { cache: 'no-store' });
+      // Stage 79 §38.159 — `isRead=false` query param (CLAUDE.md §38.137
+      // Stage 56 Feedback.isRead migration). Backend artık sadece okunmamış
+      // low-rating feedback'leri döner; localStorage `lastViewedAt` timestamp
+      // karşılaştırması (eski paterni) feedback için artık relevant değil —
+      // unreadCount = attention.length direkt (mevcut useMemo logic intact;
+      // attention zaten unread filtered). Inbox'ta row tıklayınca PATCH
+      // isRead=true (CLAUDE.md §38.83 Stage 13) sonrası 60s polling cycle'da
+      // snapshot otomatik sync; bottom nav badge custom event (§38.141 Stage
+      // 60) ile yansır. lastViewedAt announcement track için intact.
+      const res = await fetch('/api/feedback?rating=low&limit=5&isRead=false', {
+        cache: 'no-store',
+      });
       if (!res.ok) {
         setAttention([]);
         return;
@@ -232,16 +243,21 @@ export default function NotificationBell({
   // `totalCount` on the very first render (before localStorage is read)
   // ensures the badge reflects reality immediately rather than briefly
   // flickering to 0.
+  //
+  // Stage 79 §38.159 — Feedback unread source backend (Feedback.isRead).
+  // `attention` zaten `isRead=false` filter'lı (fetch URL §38.159 fix);
+  // localStorage `lastViewedAt` karşılaştırması feedback için relevant
+  // değil. Inbox'ta row tıklayınca PATCH isRead=true → 60s polling cycle
+  // snapshot otomatik sync → unreadCount düşer → bottom nav custom event
+  // (§38.141 Stage 60) ile yansır. Announcements için lastViewedAt-driven
+  // logic intact (markAllRead announcement read tracking için kullanılır).
   const unreadCount = useMemo(() => {
     if (lastViewedAt === 0) return totalCount;
     const annNew = announcements.filter((a) => {
       const t = Date.parse(a.updatedAt);
       return Number.isFinite(t) && t > lastViewedAt;
     }).length;
-    const attNew = attention.filter((f) => {
-      const t = Date.parse(f.createdAt);
-      return Number.isFinite(t) && t > lastViewedAt;
-    }).length;
+    const attNew = attention.length;
     return annNew + attNew;
   }, [announcements, attention, lastViewedAt, totalCount]);
 
