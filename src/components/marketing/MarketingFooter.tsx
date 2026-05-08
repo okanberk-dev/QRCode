@@ -205,35 +205,43 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 letterSpacing: '-0.01em',
               }}
             >
-              {/* Stage 53 §38.134 — HANDOFF 1:1 override (kullanıcı
-                  AskUserQuestion ile §35.8 cohort disclosure SKIP
-                  kararını override etti). PremiumFooter spec birebir
-                  4-cümle italic editorial motto. "12.482 işletmenin
-                  tek paneli" claim KVKK + ETK + Google "misleading
-                  business claims" risk taşır (Buaze gerçek 10-50
-                  müşteri §19.4.4); kullanıcı bilgilendirilmiş kararla
-                  override istedi. */}
+              {/* Stage 55 §38.136 — Stage 54 §38.135 HANDOFF 1:1 override
+                  CRITICAL fake-data risk fix (kullanıcı talebi: "critical
+                  kalan riskleri fixle misin?"). "12.482 işletmenin tek
+                  paneli" verifiable false claim'i (Buaze gerçek 10-50
+                  müşteri §19.4.4 — KVKK + ETK + Google "misleading
+                  business claims" ihlali) Stage 49 §38.131 paterniyle
+                  3-cümle verifiable brand manifesto'ya geri çekildi. */}
               {isTr
-                ? 'Bir QR. Bir yorum. Bir kazanç. 12.482 işletmenin tek paneli.'
-                : 'One QR. One review. One win. The single pane for 12,482 businesses.'}
+                ? 'Bir QR. Bir yorum. Bir kazanç.'
+                : 'One QR. One review. One win.'}
             </p>
 
-            {/* Stage 53 §38.134 — HANDOFF 1:1 override (kullanıcı
-                AskUserQuestion onaylı). Stage 44 §38.125'in compliance-
-                safe variation'ı (OPS · 24/7 / PULSE AI · <1s / KAPSAM ·
-                TR · EN) kaldırıldı, HANDOFF premium-footer.jsx fake
-                metric'leri restore edildi (API 99.99% / Pulse AI 0.74s /
-                Yorum/sn 14,2). hint param helper'dan kaldırıldı (HANDOFF
-                spec'te yok). KVKK + ETK risk: bu metric'ler measurable
-                product claim, future scope'da gerçek değerlerle
-                değiştirilmesi önerilir. */}
+            {/* Stage 55 §38.136 — Stage 54 §38.135 HANDOFF fake metric
+                rollback. Stage 44 §38.125 compliance-safe variation
+                restore: 24/7 ops + AI yanıt latency yaklaşık değer +
+                locale support. Measurable olmayan static value'lar
+                (API 99.99% / 0.74s / 14,2 yorum-saniye) kaldırıldı —
+                gerçek monitoring backend ile inject edilmediği sürece
+                misleading claim riski taşıyordu. */}
             <div className="mt-10 grid max-w-[560px] grid-cols-3 gap-3">
-              <FooterStatusTile label="API" value="99.99%" tone="ok" />
-              <FooterStatusTile label="Pulse AI" value="0.74s" tone="ok" />
               <FooterStatusTile
-                label={isTr ? 'YORUM/SN' : 'REVIEWS/SEC'}
-                value="14,2"
+                label={isTr ? 'OPS' : 'OPS'}
+                value="24/7"
+                tone="ok"
+                hint={isTr ? 'sürekli çalışır' : 'always on'}
+              />
+              <FooterStatusTile
+                label="PULSE AI"
+                value="<1s"
+                tone="ok"
+                hint={isTr ? 'tipik yanıt' : 'typical reply'}
+              />
+              <FooterStatusTile
+                label={isTr ? 'KAPSAM' : 'COVERAGE'}
+                value="TR · EN"
                 tone="lime"
+                hint={isTr ? 'ikidil destek' : 'bilingual'}
               />
             </div>
 
@@ -276,31 +284,23 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
               <div className="mt-4">
                 <NewsletterSignup locale={locale} source="footer" />
               </div>
-              {/* Stage 53 §38.134 — HANDOFF 1:1 override (kullanıcı
-                  AskUserQuestion onaylı). Stage 44 §38.125 yalnız
-                  "SPAM YOK · ÇIK" hint taşıyordu; HANDOFF spec birebir
-                  4.2K SAHİP subscriber count prefix'i restore edildi.
-                  Marketing puff claim — public expose admin-side only
-                  (CLAUDE.md §35.10 risk minor, kullanıcı override). */}
+              {/* Stage 55 §38.136 — Stage 54 §38.135 fake-data rollback.
+                  "4.2K SAHİP" subscriber count prefix kaldırıldı (admin-
+                  only DB count expose marketing puff). Stage 49 §38.131
+                  sade compliance-safe hint restore. */}
               <span className="pulse-eyebrow mt-3 block text-white/40">
-                {isTr
-                  ? '4.2K SAHİP · SPAM YOK · İSTEDİĞİNDE ÇIK'
-                  : '4.2K OWNERS · NO SPAM · UNSUB ANYTIME'}
+                {isTr ? 'SPAM YOK · İSTEDİĞİNDE ÇIK' : 'NO SPAM · UNSUB ANYTIME'}
               </span>
             </div>
 
-            {/* Stage 53 §38.134 — Scan-to-app QR card HANDOFF 1:1
-                override (kullanıcı AskUserQuestion onaylı). Stage 44
-                §38.125'in compliance-safe scan-to-dashboard variation
-                ("TELEFONDA · MOBİL UYUMLU") kaldırıldı, HANDOFF spec'in
-                "iOS · ANDROID" mobile app claim'i restore edildi.
-                CRITICAL RISK: Buaze native mobile app YOK — bu claim
-                actively misleading; iOS/Android user QR tarayınca app
-                store'da bulamaz. Kullanıcı bilgilendirilmiş kararla
-                override istedi; gelecekte scope'a Buaze mobile app
-                eklenmediği sürece bu claim KVKK + tüketici haklarını
-                ihlal eder. Future scope: ya gerçek mobile app geliştir
-                ya da Stage 44 compliance-safe variation'a geri dön. */}
+            {/* Stage 55 §38.136 — Stage 54 §38.135 HIGH RISK actively
+                misleading claim rollback. "IOS · ANDROID" eyebrow ve
+                "Telefonunla tara, mobil uygulamayı indir." body
+                kaldırıldı (Buaze native mobile app YOK §25 — kullanıcı
+                QR tarayınca app store'da bulamaz, tüketici hakları
+                ihlali). Stage 44 §38.125 compliance-safe scan-to-
+                dashboard variation restore: gerçek ürün davranışı
+                (responsive web /dashboard). */}
             <div className="flex items-center gap-4 rounded-[18px] border border-white/10 bg-white/[0.03] p-4">
               <div
                 className="flex h-[88px] w-[88px] flex-shrink-0 items-center justify-center rounded-xl bg-white"
@@ -310,7 +310,7 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
               </div>
               <div>
                 <span className="pulse-eyebrow block text-[#C6F24E]">
-                  IOS · ANDROID
+                  {isTr ? 'TELEFONDA · MOBİL UYUMLU' : 'ON YOUR PHONE · MOBILE READY'}
                 </span>
                 <h5
                   className="mt-1 text-[18px] text-[#F6F4EF]"
@@ -324,8 +324,8 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                 </h5>
                 <p className="mt-1 text-[11.5px] leading-[1.45] text-white/55">
                   {isTr
-                    ? 'Telefonunla tara, mobil uygulamayı indir.'
-                    : 'Scan with your phone to install.'}
+                    ? 'Tara, panele anında ulaş. Mobil tarayıcıdan tam erişim.'
+                    : 'Scan, hop into the panel. Full access from mobile browser.'}
                 </p>
               </div>
             </div>
@@ -367,22 +367,19 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
           editorial newsletter card ile değiştirildi). Duplicate
           NewsletterSignup eliminate edildi. */}
 
-      {/* Stage 53 §38.134 — Single responsive link grid (duplicate
-          brand block ELIMINE). Stage 44 §38.125 + Stage 49 §38.131
-          paterninde brand block hem mobile (lg:hidden accordion
-          wrapper) hem desktop (hidden lg:grid container) section'ında
-          ayrı ayrı render ediliyordu — kullanıcı bunu "iki footer"
-          olarak gördü (AskUserQuestion #1). Yeni yapı: tek responsive
-          grid (mobile stack 1-col, desktop 1.5fr+4col grid). Brand
-          block mobile'da kart-vari görünür (rounded + border + bg),
-          lg+'da clean inline (lg:rounded-none lg:border-0
-          lg:bg-transparent lg:p-0). Mobile accordion KALDIRILDI —
-          HANDOFF mobile spec yok, link list stack scroll ediliyor
-          (4 col × ~5-7 link = ~20-28 link); HANDOFF spec birebir
-          intent. Mobile UX trade-off: kullanıcı kabul (HANDOFF 1:1
-          override). */}
+      {/* Stage 55 §38.136 — Mobile accordion restore (Stage 54 §38.135
+          mobile UX gerileme fix). Brand block hâlâ tek render
+          (kullanıcının "iki footer" şikayeti çözümü intact §38.135);
+          link cols için mobile accordion + desktop grid responsive
+          split restore (Stage 49 §38.131 paterni reuse). Mobile'da
+          44-56px tap target accordion; desktop'ta açık 4-col grid.
+          Link cols 2 kez render (mobile + desktop) ama her viewport'ta
+          sadece biri visible — DOM-level "iki footer" duplicate DEĞİL
+          (brand block tek render + link cols responsive split). */}
       <div className="px-4 py-10 sm:px-10 sm:py-14">
         <div className="mx-auto max-w-[1240px]">
+          {/* Tek grid: brand col-1 lg+, link cols col 2-5 lg+ (mobile
+              link cols hidden — accordion ayrı section'da). */}
           <div className="grid grid-cols-1 gap-8 sm:gap-10 lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:gap-8">
             {/* Brand block — single render: mobile = full-width card
                 styling, desktop = clean inline col-1. Trust badge +
@@ -442,12 +439,10 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
               </div>
             </div>
 
-            {/* 4 link cols — mobile stack 1-col, desktop col-1 each.
-                Accordion KALDIRILDI (HANDOFF mobile spec yok). Link
-                list mobile'da scroll edilir; ~20-28 link toplam.
-                HANDOFF spec birebir uygulama. */}
+            {/* 4 link cols — desktop only (lg:block); mobile'da
+                accordion ayrı section'da render edilir. */}
             {cols.map((col) => (
-              <div key={col.title}>
+              <div key={col.title} className="hidden lg:block">
                 <h4 className="pulse-eyebrow mb-4 text-[#C6F24E]">{col.title}</h4>
                 <ul className="space-y-2.5">
                   {col.items.map((item) => (
@@ -467,6 +462,46 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
                   ))}
                 </ul>
               </div>
+            ))}
+          </div>
+
+          {/* Stage 55 §38.136 — Mobile accordion link cols (lg:hidden).
+              Stage 49 §38.131 paterni reuse: 44-56px tap target,
+              <details> native semantic, group-open chevron rotate.
+              Brand block tek render (intact); link cols bu mobile
+              section'da + yukarıdaki desktop grid'de iki kez render
+              ediliyor — her viewport'ta sadece biri visible (DOM-level
+              "iki footer" duplicate DEĞİL). */}
+          <div className="mt-8 space-y-3 lg:hidden">
+            {cols.map((col) => (
+              <details
+                key={col.title}
+                className="group rounded-[20px] border border-white/10 bg-white/[0.04] open:bg-white/[0.06]"
+              >
+                <summary className="flex min-h-[56px] cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 [&::-webkit-details-marker]:hidden">
+                  <span className="pulse-eyebrow text-[#C6F24E]">{col.title}</span>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-[20px] leading-none text-white transition-transform group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <ul className="grid gap-1 px-4 pb-4">
+                  {col.items.map((item) => (
+                    <li key={item.href + item.label}>
+                      <Link
+                        href={item.href}
+                        className="flex min-h-[44px] items-center justify-between gap-3 rounded-2xl px-3 text-[14px] text-[#D4D4D4] transition-colors hover:bg-white/10 hover:text-white"
+                      >
+                        <span>{item.label}</span>
+                        {item.badge && (
+                          <span className="pulse-eyebrow shrink-0 rounded-full bg-[#C6F24E] px-1.5 py-0.5 text-[#0A0A0A]">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
             ))}
           </div>
         </div>
@@ -549,25 +584,30 @@ export default async function MarketingFooter({ locale, t }: MarketingFooterProp
 }
 
 /**
- * Stage 53 §38.134 — Footer status tile (3-up HANDOFF metric band).
+ * Stage 55 §38.136 — Footer status tile (3-up brand manifesto band,
+ * compliance-safe restore).
  *
  * HANDOFF premium-footer.jsx StatusTile (line 270-292) visual yapısı +
- * fake metric value'ları birebir restore edildi (API 99.99% / Pulse AI
- * 0.74s / 14,2 yorum/sn). hint param Stage 44 §38.125'te
- * compliance-safe variation için eklenmişti, HANDOFF spec'te olmadığı
- * için kaldırıldı.
+ * Buaze fake-data compliance disipline (CLAUDE.md §35.8 + §35.10 +
+ * §19.1.1). HANDOFF "API 99.99%" / "Pulse AI 0.74s" / "Reviews 14,2/sn"
+ * fake metric'leri yerine static-but-true brand claim'ler (Stage 44
+ * §38.125 paterni, Stage 54 §38.135 override sonrası restore).
  *
  *  - tone='ok' → emerald pulse dot (#10B981)
  *  - tone='lime' → lime accent value + lime pulse dot
+ *  - hint? → label altında muted brand manifesto açıklaması (örn.
+ *    "sürekli çalışır", "tipik yanıt", "ikidil destek")
  */
 function FooterStatusTile({
   label,
   value,
   tone = 'ok',
+  hint,
 }: {
   label: string;
   value: string;
   tone?: 'ok' | 'lime';
+  hint?: string;
 }) {
   const dotColor = tone === 'lime' ? '#C6F24E' : '#10B981';
   const valueColor = tone === 'lime' ? '#C6F24E' : '#F6F4EF';
@@ -593,6 +633,11 @@ function FooterStatusTile({
       >
         {value}
       </div>
+      {hint && (
+        <span className="mt-1 block text-[10.5px] leading-[1.3] text-white/40">
+          {hint}
+        </span>
+      )}
     </div>
   );
 }

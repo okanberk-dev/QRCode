@@ -18062,3 +18062,201 @@ intact.
   ANDROID") **çok daha agresif**. Future session bu override'ı
   yeniden değerlendirmeli; gerçek müşteri sayısı + mobile app
   durumu güncellendiğinde claim'ler doğrulanabilir hale gelmeli.
+
+---
+
+### 38.136 2026-05-08 — Stage 55 footer CRITICAL fake-data risk rollback (Stage 54 override geri çevrildi)
+
+§38.135 Stage 54'te kullanıcı bilgilendirilmiş kararla compliance
+disipline override etti, HANDOFF premium-footer.jsx fake-data
+element'leri restore edildi (12.482 işletme tagline + API/Pulse AI/
+yorum-saniye fake metric + 4.2K SAHİP + iOS·ANDROID app claim).
+Stage 54 closure §38.135'te 4 CRITICAL/HIGH/MODERATE/LOW risk
+dokumente edildi:
+- "12.482 işletme" KVKK + ETK + Google "misleading business claims"
+- "IOS · ANDROID" actively misleading (Buaze native app yok §25)
+- API/Pulse AI/yorum-saniye static metric'ler measurable değil
+- Mobile link list 44px tap target gerileme
+
+Kullanıcı talebi (2026-05-08, Stage 54 deploy sonrası): *"critical
+kalan riskleri fixler msin?"* → Stage 54 override geri çevrildi,
+4 risk'in hepsi compliance-safe variation'a restore edildi.
+AskUserQuestion yapılmadı — kullanıcı talebi net (§38.135 dokumente
+risk'lerin hepsini fix), kararlar deterministik (Stage 44 §38.125 +
+Stage 49 §38.131 paterni reuse).
+
+**6 fix bundle (Stage 54 § 38.135 rollback)**:
+
+1. **Tagline compliance-safe** (`MarketingFooter.tsx:213-220`):
+   - Eski (Stage 54): `'Bir QR. Bir yorum. Bir kazanç. 12.482
+     işletmenin tek paneli.'` / `'One QR. One review. One win. The
+     single pane for 12,482 businesses.'`
+   - Yeni (Stage 49 §38.131 paterni): `'Bir QR. Bir yorum. Bir
+     kazanç.'` / `'One QR. One review. One win.'`
+   - Verifiable brand manifesto, fake-claim YOK (CLAUDE.md §35.8
+     cohort disclosure intact).
+
+2. **Status tile compliance-safe** (`MarketingFooter.tsx:222-241`):
+   - Eski (Stage 54): `API · 99.99%` / `Pulse AI · 0.74s` /
+     `YORUM/SN · 14,2`
+   - Yeni (Stage 44 §38.125 paterni): `OPS · 24/7` (sürekli çalışır)
+     / `PULSE AI · <1s` (tipik yanıt) / `KAPSAM · TR · EN` (ikidil
+     destek). hint param her tile'da aktif.
+   - Static-but-true brand manifesto: 24/7 ops + AI yanıt latency
+     yaklaşık değer + locale support — measurable olmayan static
+     value'lar (API uptime, AI latency, reviews/sec) misleading
+     claim riskini elimine eder.
+
+3. **`FooterStatusTile.hint?` param restore** (helper signature):
+   - Stage 54'te HANDOFF spec birebir kaldırılmıştı; Stage 55'te
+     compliance-safe variation için geri eklendi (label altında
+     muted brand manifesto açıklaması — örn. "sürekli çalışır",
+     "tipik yanıt", "ikidil destek").
+
+4. **Newsletter compliance-safe** (`MarketingFooter.tsx:286-291`):
+   - Eski (Stage 54): `'4.2K SAHİP · SPAM YOK · İSTEDİĞİNDE ÇIK'`
+   - Yeni (Stage 49 §38.131 paterni): `'SPAM YOK · İSTEDİĞİNDE ÇIK'`
+   - "4.2K SAHİP" subscriber count prefix kaldırıldı (admin-only DB
+     count public expose marketing puff claim).
+
+5. **Scan-to-app QR compliance-safe** (`MarketingFooter.tsx:300-326`):
+   - Eski (Stage 54): `'IOS · ANDROID'` eyebrow + `'Telefonunla tara,
+     mobil uygulamayı indir.'` body
+   - Yeni (Stage 44 §38.125 paterni): `'TELEFONDA · MOBİL UYUMLU'`
+     eyebrow + `'Tara, panele anında ulaş. Mobil tarayıcıdan tam
+     erişim.'` body
+   - **HIGH RISK fix**: Stage 54'teki "IOS · ANDROID" claim Buaze
+     native mobile app YOK (§25 "responsive web only") iken
+     actively misleading idi. Compliance-safe scan-to-dashboard
+     variation gerçek ürün davranışını yansıtır (responsive web
+     /dashboard).
+
+6. **Mobile accordion restore + brand block tek render intact**:
+   - Eski yapı (Stage 54 §38.135): tek responsive grid (mobile stack
+     + desktop 1.5fr+4col grid). Brand block tek render (§38.135'in
+     "iki footer" çözümü intact). Mobile'da link list 44px tap target
+     KAYBEDİLDİ — ~20-28 link `text-[14px]` inline scroll, mobile UX
+     gerileme.
+   - Yeni yapı (hibrit): brand block hâlâ tek render (lg:rounded-none
+     lg:border-0 lg:bg-transparent lg:p-0 + mobile kart-vari styling)
+     ama link cols için **mobile accordion + desktop grid responsive
+     split restore**:
+     - Tek grid container'da brand col-1 lg+ + 4 link cols col 2-5
+       lg+ (`hidden lg:block` mobile'da gizli)
+     - Grid sonrası mobile-only accordion section (`mt-8 space-y-3
+       lg:hidden`) — `<details>` native semantic + 56px summary tap
+       target + 44px link tap target
+   - Link cols 2 kez render (mobile + desktop) ama her viewport'ta
+     sadece biri visible — **DOM-level "iki footer" duplicate DEĞİL**
+     (brand block hâlâ tek render, sadece link cols responsive split).
+
+**Yapı sonrası**:
+- Brand block tek render → §38.135 "iki footer" çözümü intact
+- Mobile UX restore → 44-56px tap target accordion (Stage 49 §38.131
+  paterni)
+- Compliance-safe variations → §35.8 cohort disclosure + §35.10 fake
+  testimonial + §19.1.1 wording + §25 mobile-only ürün gerçeği
+- HANDOFF spec'in editorial structure'ı hâlâ uygulanır: 2-col
+  editorial layout (1.55fr/1fr), HUGE serif anchor, 3-up status tile
+  band, FooterLiveTicker rotation, lime newsletter card, scan-to-
+  dashboard QR card, ECG divider + sweep overlay, bottom rail uppercase
+
+**Etkilenen dosyalar (1 + docs)**:
+
+| Dosya | Tip | Net edit |
+|---|---|---|
+| `src/components/marketing/MarketingFooter.tsx` | Edit | ~+50 satır net (5 compliance-safe rollback + mobile accordion restore section) |
+| `CLAUDE.md` | Edit | §38.136 closure log |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**: 383/383
+intact (presentational değişim).
+
+**Yapma**:
+- Stage 54 §38.135 fake-data variation'ları yeni session'da geri
+  ekleme — kullanıcı explicit "critical kalan riskleri fixle"
+  talebi ile rollback istedi. CLAUDE.md §35.8 + §35.10 + §19.1.1
+  disipline tekrar geçerli.
+- Mobile accordion'u tekrar kaldırma — Stage 54'te HANDOFF spec
+  birebir için kaldırılmıştı, Stage 55 mobile UX trade-off iptal
+  edildi (compliance-safe + 44-56px tap target).
+- Brand block'u mobile + desktop ayrı render eden Stage 49 paternine
+  geri dönme — kullanıcının "iki footer" şikayeti §38.135'te
+  çözüldü, brand block hâlâ tek render (link cols responsive split
+  ayrı concern).
+- HANDOFF "iOS · ANDROID" / "12.482 işletme" / "API 99.99%" / "4.2K
+  SAHİP" claim'lerini admin override mail/footer/marketing
+  surface'lerinde reuse etme — verifiable false claim'ler her
+  surface'te aynı disipline ihlali.
+
+**Yap**:
+- Yeni session'da fake-data tartışması olursa CLAUDE.md §38.136
+  rollback note + §39.2 chat history'i göster (kullanıcı kararı
+  authoritative — ilk override §38.135 + sonra rollback §38.136
+  zinciri ile).
+- Backend'de gerçek metric tracking pipeline kurulursa (Vercel
+  observability + Sentry + Upstash monitoring) status tile'a dynamic
+  injection eklenir; o zaman API uptime / AI latency / reviews/sec
+  doğrulanabilir claim'ler olur.
+- Buaze native mobile app gelecek scope'ta gerçekten geliştirilirse
+  scan-to-app QR card "IOS · ANDROID" eyebrow doğrulanabilir hale
+  gelir; o zaman Stage 54 §38.135 paterni geri açılabilir.
+- Yeni HANDOFF override talebi gelirse §39.2 chat history paterni
+  reuse — verbatim quote + AskUserQuestion karar zinciri + risk
+  severity classification (CRITICAL/HIGH/MODERATE/LOW).
+
+**Verification (lokal)**:
+- `npm run lint` → bekleniyor
+- `npx tsc --noEmit -p tsconfig.json` → bekleniyor
+- `npm test` → bekleniyor (383/383 intact bekleniyor)
+- `npx next build` (stub env) → bekleniyor
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. Mobile Chrome (375×667 iPhone SE) `/tr` ziyaret →
+   - Brand bloğu 1 kez kart-vari görünür
+   - Tagline: "Bir QR. Bir yorum. Bir kazanç." (12.482 işletme YOK)
+   - Status tile: OPS · 24/7 / PULSE AI · <1s / KAPSAM · TR · EN
+   - Newsletter "SPAM YOK · İSTEDİĞİNDE ÇIK"
+   - Scan QR "TELEFONDA · MOBİL UYUMLU" + "Tara, panele anında ulaş.
+     Mobil tarayıcıdan tam erişim."
+   - Link cols mobile accordion (4 details, 56px summary, 44px link)
+2. Desktop Chrome (1440×900) →
+   - Tek grid 1.5fr+4col, brand col-1 inline + 4 link col açık list
+   - Mobile accordion gizli (`lg:hidden`)
+3. Reduced-motion ON → ECG draw + sweep overlay + bz-pulse-dot static
+   + ticker durur (CLAUDE.md §38.61 blanket intact)
+
+**Stage 55 closure** (Tarih 2026-05-08):
+- Branch: `chore/footer-compliance-restore-stage55` (fresh main
+  üstüne, Stage 53 §38.134 FAQ + Stage 54 §38.135 footer override
+  PR'ları merged)
+- Edit'lenen dosyalar: 2 (`MarketingFooter.tsx` + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact bekleniyor
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Stage 54
+  fake-data risk'leri tamamen elimine edildi; KVKK + ETK + Google
+  policy + tüketici hakları intact.
+- **Kalan riskler**: yok — tüm Stage 54 §38.135 CRITICAL/HIGH/
+  MODERATE/LOW risk'leri compliance-safe variation'lara restore
+  edildi; mobile UX 44-56px tap target accordion ile düzeltildi.
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör
+  yeni odak talebi.
+
+**Chat prompt history (Stage 55 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"critical kalan riskleri fixler msin?"*
+  (Stage 54 §38.135 closure'da listelenmiş 4 CRITICAL/HIGH/MODERATE/
+  LOW risk'in fix talebi).
+- AskUserQuestion yapılmadı: talep net (§38.135 dokumente risk'leri
+  fix), kararlar deterministik (Stage 44 §38.125 + Stage 49 §38.131
+  compliance-safe paterni reuse).
+- **Disipline restoration**: Stage 54 §38.135'te kullanıcı
+  AskUserQuestion ile compliance disipline override etmişti; Stage 55
+  §38.136'da kullanıcı bu override'ı geri istedi (CRITICAL risk'lere
+  reaksiyon). CLAUDE.md §35.8 + §35.10 + §19.1.1 + §38.114 + §38.131
+  fake-data SKIP kararı tekrar yürürlükte. Disipline override + geri
+  alma zinciri §39.2 chat history'de tam dokumente — future session
+  bu kararları authoritative kabul eder.
