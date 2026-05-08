@@ -14,12 +14,14 @@ interface Props {
  * Conversion layer — sticky CTA bar at the bottom of the viewport.
  *
  * Stage 57 §38.138 — HANDOFF premium editorial redesign.
- * - HUGE italic Space Grotesk headline + lime highlight (CSS gradient trick).
- * - Pulse-dot eyebrow (compliance-safe: "YENİ · 14 GÜN ÜCRETSİZ DENEME"
- *   — HANDOFF "İLK 50 ŞUBEYE %30 İNDİRİM" promotion claim verifiable
- *   olmadığı için generic Pulse promise'a çevrildi).
- * - Meta row: 14 gün ücretsiz / Kart gerekmez / İstediğin zaman iptal
- *   (HANDOFF birebir, Buaze pricing'inde verifiable).
+ * Stage 79 §38.157 — kullanıcı talebi: meta row tamamen silindi
+ * ("İstediğin zaman iptal" + "Kart gerekmez" UX clutter); headline lime
+ * highlight tüm "ilk yorumunu yarın al." cümlesini kapsayacak şekilde
+ * solid lime marker'a çevrildi (eski yarı-band gradient'ten); padding
+ * + CTA height + headline scale daraltıldı (UX kompakt deneyim).
+ *
+ * - HUGE italic Space Grotesk headline + solid lime highlight marker
+ *   (Stage 79: full-coverage; eski transparent 60-92% gradient yarı-band).
  * - Lime CTA button + shine animation + arrow icon.
  * - Lime aura sweep (radial gradient 320×160 blur) + hairline pulse
  *   (linear-gradient sweep), 8 yeni keyframe globals.css'te (scbDot/
@@ -29,7 +31,9 @@ interface Props {
  * - Avatar stack (M/A/K initials) + "312 ŞUBE BU AY" social proof
  *   block KALDIRILDI (fake testimonial avatars + verifiable false
  *   cohort claim — Buaze gerçek müşteri 10-50 §19.4.4).
- * - Promotion eyebrow generic "14 GÜN ÜCRETSİZ DENEME" (verifiable).
+ * - Eyebrow + meta row Stage 79 tamamen kaldırıldı (kullanıcı talebi
+ *   "yeni 14 gün ücretsiz yazısı olmasın altta ve üstte" Stage 61
+ *   §38.142 + Stage 79 §38.157 finalize).
  *
  * Backend kontrat intact:
  * - sessionStorage dismiss (`buaze.sticky.dismissed`)
@@ -82,14 +86,19 @@ export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
 
   if (!stickyVisible) return null;
 
-  // Lime highlight gradient — HANDOFF spec birebir CSS trick
-  // (transparent 60% → lime 60-92% → transparent 92%) son satıra
-  // marker visual oluşturur.
+  // Stage 79 §38.157 — Lime highlight tüm cümleyi kapsasın (kullanıcı
+  // talebi: "ilk yorumunu yarın al. cümlesinin yarısı lime arka plan
+  // rengi onun tamamını gösterir yap"). Eski transparent 60-92% gradient
+  // yarı-band marker idi (sadece bottom 32% lime); şimdi solid lime
+  // background tüm text yüksekliğini kaplıyor + minimal border-radius +
+  // generous horizontal padding (sticker visual). Pulse §11 hex intact.
   const limeHighlight: React.CSSProperties = {
-    background:
-      'linear-gradient(180deg, transparent 60%, #C6F24E 60%, #C6F24E 92%, transparent 92%)',
+    background: '#C6F24E',
     color: '#0A0A0A',
-    padding: '0 6px',
+    padding: '0.05em 0.35em',
+    borderRadius: 4,
+    boxDecorationBreak: 'clone',
+    WebkitBoxDecorationBreak: 'clone',
   };
 
   return (
@@ -132,87 +141,46 @@ export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
       />
 
       <div
-        className="relative z-[1] mx-auto grid max-w-[1440px] items-center gap-8 px-6 py-5 md:grid-cols-[1fr_auto_auto] md:gap-9"
+        className="relative z-[1] mx-auto flex max-w-[1280px] items-center gap-6 px-6 py-3.5 md:gap-8"
         style={{
           paddingLeft: 'max(1.5rem, env(safe-area-inset-left))',
           paddingRight: 'max(1.5rem, env(safe-area-inset-right))',
         }}
       >
-        {/* LEFT: copy block — headline + minimal meta (compact).
-            Stage 61 §38.142 — kullanıcı talebi: "yeni 14 gün ücretsiz
-            yazısı olmasın altta ve üstte". Eyebrow ("YENİ · 14 GÜN
-            ÜCRETSİZ DENEME") + meta'daki duplicate "14 gün ücretsiz"
-            item silindi. Kalan 2 trust item (Kart gerekmez + İptal
-            anytime) verifiable claim olarak intact (CLAUDE.md §35.8). */}
-        <div className="flex flex-col gap-2">
-          {/* Headline — italic Space Grotesk (synthetic italic, CLAUDE.md
-              §38.112 paterni reuse) + lime highlight on second clause. */}
-          <h3
-            className="m-0 text-white"
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontStyle: 'italic',
-              fontSize: 'clamp(20px, 2.4vw, 30px)',
-              lineHeight: 1.1,
-              letterSpacing: '-0.02em',
-              fontWeight: 400,
-            }}
-          >
-            {isTr ? (
-              <>
-                Bugün başla, <span style={limeHighlight}>ilk yorumunu yarın al.</span>
-              </>
-            ) : (
-              <>
-                Start today, get your first <span style={limeHighlight}>review tomorrow.</span>
-              </>
-            )}
-          </h3>
+        {/* LEFT: headline only (Stage 79 §38.157 — meta row + eyebrow
+            tamamen silindi: "İstediğin zaman iptal" + "Kart gerekmez" UX
+            clutter, kullanıcı talebi). Lime highlight solid marker tüm
+            cümleyi kapsar (eski yarı-band gradient yerine). */}
+        <h3
+          className="m-0 flex-1 text-white"
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontStyle: 'italic',
+            fontSize: 'clamp(17px, 2vw, 26px)',
+            lineHeight: 1.15,
+            letterSpacing: '-0.02em',
+            fontWeight: 400,
+          }}
+        >
+          {isTr ? (
+            <>
+              Bugün başla, <span style={limeHighlight}>ilk yorumunu yarın al.</span>
+            </>
+          ) : (
+            <>
+              Start today, get your first <span style={limeHighlight}>review tomorrow.</span>
+            </>
+          )}
+        </h3>
 
-          {/* Meta row — 2 verifiable trust items (lime check + mono).
-              "14 gün ücretsiz" item Stage 61 §38.142 ile silindi
-              (kullanıcı talebi: "yeni 14 gün ücretsiz yazısı olmasın
-              altta ve üstte"). */}
-          <div className="mt-1 flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
-            {[
-              isTr ? 'Kart gerekmez' : 'No card required',
-              isTr ? 'İstediğin zaman iptal' : 'Cancel anytime',
-            ].map((label) => (
-              <div key={label} className="inline-flex items-center gap-1.5">
-                <svg width="11" height="11" viewBox="0 0 14 14" className="shrink-0" aria-hidden>
-                  <circle cx="7" cy="7" r="6" fill="#C6F24E" />
-                  <path
-                    d="M4 7l2 2 4-4"
-                    stroke="#0A0A0A"
-                    strokeWidth="1.6"
-                    fill="none"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span
-                  className="pulse-eyebrow"
-                  style={{
-                    color: 'rgba(255,255,255,0.75)',
-                    fontSize: 11,
-                    letterSpacing: '0.04em',
-                    textTransform: 'none',
-                  }}
-                >
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CENTER: lime CTA — shine animation + arrow icon.
+        {/* CENTER: lime CTA — shine animation + arrow icon. Stage 79
+            §38.157 — h-14 → h-12 daralt + px-7 → px-6 (kompakt UX).
             HANDOFF avatar stack + 312 ŞUBE BU AY social proof block
             KASITLI silindi (fake testimonial + verifiable false cohort
             claim — CLAUDE.md §35.8 + §35.10 + §19.1.1 disipline). */}
         <Link
           href={`/${locale}/auth/register`}
-          className="relative inline-flex h-14 items-center gap-3 overflow-hidden rounded-full px-7"
+          className="relative inline-flex h-12 shrink-0 items-center gap-2.5 overflow-hidden rounded-full px-6"
           style={{
             background: '#C6F24E',
             color: '#0A0A0A',
@@ -257,12 +225,13 @@ export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
           </svg>
         </Link>
 
-        {/* RIGHT: dismiss button — minimal outline, hover white-12 border. */}
+        {/* RIGHT: dismiss button — minimal outline (Stage 79 §38.157
+            kompakt: h-9 w-9 → h-8 w-8). */}
         <button
           type="button"
           onClick={onDismiss}
           aria-label={isTr ? 'Kapat' : 'Dismiss'}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full border bg-transparent transition-colors hover:bg-white/5"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-transparent transition-colors hover:bg-white/5"
           style={{
             borderColor: 'rgba(255,255,255,0.12)',
             color: 'rgba(255,255,255,0.5)',

@@ -9,7 +9,6 @@ import Link from 'next/link';
 import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
 import { BarChart3, Inbox, QrCode, Sparkles, Star } from 'lucide-react';
-import MarqueeRow from '@/components/marketing/MarqueeRow';
 // Stage 41 §38.122 — HANDOFF §8 step 8 (Heroes A): 3 variant + ENV flag.
 // `HeroVariantPicker` is a Client Component that reads
 // `process.env.NEXT_PUBLIC_HERO_VARIANT` (build-time inlined) and dynamically
@@ -220,13 +219,12 @@ export default async function LandingPage({
   };
 
   // ── Section content (inline locale, keeps translations.ts untouched) ──
-  // Audit §8.4 — fake-looking wordmarks ("HOTEL NORA", "LAW&CO", ...) were
-  // implying specific paying customers without consent, which is FTC and
-  // Reklam Kurulu deceptive-advertising risk. Replaced with industry
-  // categories until real customer logos with usage permission are added.
-  const industryCategories = isTr
-    ? ['Restoranlar', 'Oteller', 'Klinikler', 'Hukuk büroları', 'Kafeler', 'Spa & güzellik']
-    : ['Restaurants', 'Hotels', 'Clinics', 'Law firms', 'Cafés', 'Spa & wellness'];
+  // Stage 79 §38.157 — `industryCategories` const + `MarqueeRow` import
+  // Section 2 LOGO STRIP'in (eski Audit §8.4 "fake wordmark" sweep
+  // sonucu) silinmesi nedeniyle kaldırıldı. Yeni Section 2 BUILT FOR
+  // THESE CHANNELS (Marquee partner platforms + FeatureCard 4-grid)
+  // §38.157 ile hero altına taşındı; MarqueeRow industry chip strip
+  // duplicate "platforms below hero" UX clutter olarak temizlendi.
 
   // Three step cards — design `.design/site/site-homepage-v3.jsx:268-282 + 504-535`.
   // Each card carries an inline product-mock visual instead of a decorative illustration.
@@ -416,22 +414,92 @@ export default async function LandingPage({
       <HeroVariantPicker locale={locale} />
 
       {/* ═══════════════════════════════════════════════════════════
-          2. LOGO STRIP — trusted brands
+          2. BUILT FOR THESE CHANNELS — Stage 79 §38.157
+          Stage 70 §38.150'de footer üstüne yerleştirilmişti; kullanıcı
+          talebi ile hero altına taşındı (eski LOGO STRIP MarqueeRow
+          industry chip strip kaldırıldı — duplicate "platforms below
+          hero" UX clutter).
+          Marquee (Buaze gerçek partner platform names — Google /
+          Yemeksepeti / Getir / Trendyol / Tripadvisor / Yandex / Yelp /
+          Foursquare / Booking / Airbnb verifiable §19.4) + FeatureCard
+          4-card grid (Buaze gerçek feature isimleri — QR Studio / Pulse
+          AI / Cross-Platform / Reviews Inbox).
+          Compliance-safe verifiable claims (CLAUDE.md §35.8 + §19.4).
       ═══════════════════════════════════════════════════════════ */}
-      <section className="border-y border-[#EDEDED] bg-[#FAFAFA] py-4">
-        <MarqueeRow
-          eyebrow={isTr ? 'BUAZE\'İ KULLANAN İŞLETME TÜRLERİ' : 'BUILT FOR TEAMS LIKE THESE'}
-          itemClassName="shrink-0 px-10 sm:px-12"
-          items={industryCategories.map((name) => (
-            <span
-              key={name}
-              className="text-[16px] sm:text-[18px] font-semibold tracking-[0.08em] text-[#D4D4D4] whitespace-nowrap"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
-              {name}
+      <section className="px-5 sm:px-10 py-[60px] sm:py-24 bg-white border-t border-[#EDEDED]">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="max-w-[720px] mb-10 sm:mb-14">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'Tüm kanallar tek panelde' : 'Every channel, one inbox'}
             </span>
-          ))}
-        />
+            <h2
+              className="mt-3 text-[clamp(26px,5vw,46px)] leading-[1.05] tracking-[-0.035em] font-medium text-[#0A0A0A] text-balance"
+            >
+              {isTr
+                ? 'Restoran tarafının kullandığı platformlarla konuşur.'
+                : 'Speaks the platforms restaurants already use.'}
+            </h2>
+          </div>
+
+          {/* Marquee — Buaze gerçek partner platform names */}
+          <div className="bg-[#FAFAFA] border-y border-[#EDEDED] -mx-5 sm:-mx-10 mb-10 sm:mb-14">
+            <Marquee
+              items={[
+                'Google',
+                'Yemeksepeti',
+                'Getir',
+                'Trendyol',
+                'Tripadvisor',
+                'Yandex',
+                'Yelp',
+                'Foursquare',
+                'Booking',
+                'Airbnb',
+              ]}
+              durationSec={28}
+            />
+          </div>
+
+          {/* FeatureCard 4-grid — Buaze gerçek feature names */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            <FeatureCard
+              title={isTr ? 'QR Studio' : 'QR Studio'}
+              body={
+                isTr
+                  ? 'Markana özel QR şablonları — masa, fatura, kapı, paket için tek tıkla.'
+                  : 'Branded QR templates — table, receipt, door, packaging in one click.'
+              }
+              icon={<QrCode size={16} strokeWidth={2.25} />}
+            />
+            <FeatureCard
+              title={isTr ? 'Pulse AI' : 'Pulse AI'}
+              body={
+                isTr
+                  ? 'Yorum geldiğinde profesyonel taslak — sen onayla, biz Google\'a iletelim.'
+                  : 'Pro reply drafts as reviews come in — you approve, we ship to Google.'
+              }
+              icon={<Sparkles size={16} strokeWidth={2.25} />}
+            />
+            <FeatureCard
+              title={isTr ? 'Yorum Akışı' : 'Reviews Inbox'}
+              body={
+                isTr
+                  ? 'Tüm kanallardan yorumlar tek panelde — düşük puanı işletme önce görür.'
+                  : 'Every review in one inbox — low ratings reach you first, not the platform.'
+              }
+              icon={<Inbox size={16} strokeWidth={2.25} />}
+            />
+            <FeatureCard
+              title={isTr ? 'Analitik' : 'Analytics'}
+              body={
+                isTr
+                  ? 'Trend, sentiment, kohort tırmanışı — kararlar verifiable veriyle.'
+                  : 'Trend, sentiment, cohort climb — decisions with verifiable data.'
+              }
+              icon={<BarChart3 size={16} strokeWidth={2.25} />}
+            />
+          </div>
+        </div>
       </section>
 
       {/* Stage 70 §38.150 — PulseLine decorative section divider
@@ -1460,93 +1528,14 @@ export default async function LandingPage({
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          7.5 BUILT FOR THESE CHANNELS — Stage 70 §38.150
-          Marquee (Buaze gerçek partner platform names — Google /
-          Yemeksepeti / Getir / Trendyol / Tripadvisor / Yandex / Yelp /
-          Foursquare / Booking / Airbnb verifiable §19.4) + FeatureCard
-          4-card grid (Buaze gerçek feature isimleri — QR Studio / Pulse
-          AI / Cross-Platform / Reviews Inbox).
-          Compliance-safe verifiable claims (CLAUDE.md §35.8 + §19.4).
-      ═══════════════════════════════════════════════════════════ */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 bg-white border-t border-[#EDEDED]">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="max-w-[720px] mb-10 sm:mb-14">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Tüm kanallar tek panelde' : 'Every channel, one inbox'}
-            </span>
-            <h2
-              className="mt-3 text-[clamp(26px,5vw,46px)] leading-[1.05] tracking-[-0.035em] font-medium text-[#0A0A0A] text-balance"
-            >
-              {isTr
-                ? 'Restoran tarafının kullandığı platformlarla konuşur.'
-                : 'Speaks the platforms restaurants already use.'}
-            </h2>
-          </div>
-
-          {/* Marquee — Buaze gerçek partner platform names */}
-          <div className="bg-[#FAFAFA] border-y border-[#EDEDED] -mx-5 sm:-mx-10 mb-10 sm:mb-14">
-            <Marquee
-              items={[
-                'Google',
-                'Yemeksepeti',
-                'Getir',
-                'Trendyol',
-                'Tripadvisor',
-                'Yandex',
-                'Yelp',
-                'Foursquare',
-                'Booking',
-                'Airbnb',
-              ]}
-              durationSec={28}
-            />
-          </div>
-
-          {/* FeatureCard 4-grid — Buaze gerçek feature names */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-            <FeatureCard
-              title={isTr ? 'QR Studio' : 'QR Studio'}
-              body={
-                isTr
-                  ? 'Markana özel QR şablonları — masa, fatura, kapı, paket için tek tıkla.'
-                  : 'Branded QR templates — table, receipt, door, packaging in one click.'
-              }
-              icon={<QrCode size={16} strokeWidth={2.25} />}
-            />
-            <FeatureCard
-              title={isTr ? 'Pulse AI' : 'Pulse AI'}
-              body={
-                isTr
-                  ? 'Yorum geldiğinde profesyonel taslak — sen onayla, biz Google\'a iletelim.'
-                  : 'Pro reply drafts as reviews come in — you approve, we ship to Google.'
-              }
-              icon={<Sparkles size={16} strokeWidth={2.25} />}
-            />
-            <FeatureCard
-              title={isTr ? 'Yorum Akışı' : 'Reviews Inbox'}
-              body={
-                isTr
-                  ? 'Tüm kanallardan yorumlar tek panelde — düşük puanı işletme önce görür.'
-                  : 'Every review in one inbox — low ratings reach you first, not the platform.'
-              }
-              icon={<Inbox size={16} strokeWidth={2.25} />}
-            />
-            <FeatureCard
-              title={isTr ? 'Analitik' : 'Analytics'}
-              body={
-                isTr
-                  ? 'Trend, sentiment, kohort tırmanışı — kararlar verifiable veriyle.'
-                  : 'Trend, sentiment, cohort climb — decisions with verifiable data.'
-              }
-              icon={<BarChart3 size={16} strokeWidth={2.25} />}
-            />
-          </div>
-        </div>
-      </section>
+      {/* Stage 79 §38.157 — Section 7.5 (BUILT FOR THESE CHANNELS) hero
+          altına taşındı (Section 2 yerine geçti); orijinal LOGO STRIP
+          MarqueeRow industry chip strip kullanıcı talebi ile silindi.
+          Aşağıdaki PulseLine 2/2 intact — son content section ile
+          final CTA banner arasında decorative divider olarak çalışır. */}
 
       {/* Stage 70 §38.150 — PulseLine 2/2 decorative section divider
-          between channels grid and final CTA banner. */}
+          between previous content and final CTA banner. */}
       <div className="flex items-center justify-center bg-white py-3" aria-hidden="true">
         <PulseLine width={180} />
       </div>
