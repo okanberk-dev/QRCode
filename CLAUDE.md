@@ -17918,3 +17918,147 @@ Hem visible UI hem structured data tek source-of-truth (CLAUDE.md
   8 SORU verifiable count, KARAKÖY · CANLI DESTEK → DESTEK ·
   SUPPORT@BUAZE.COM NAP-parity, MessageCircleQuestion icon
   silindi prototip parity). Diğer her şey HANDOFF spec birebir.
+
+---
+
+### 38.135 2026-05-08 — Stage 54 footer HANDOFF 1:1 override + duplicate brand block elimination (compliance disipline override CRITICAL)
+
+§38.123 Stage 42 + §38.125 Stage 44 + §38.131 Stage 50 footer
+zincirinde fake-data riski olan 4 element (12.482 işletme tagline + API
+/Pulse AI/yorum-saniye fake metric + 4.2K SAHİP subscriber count +
+iOS·ANDROID mobile app QR claim) compliance disipline (CLAUDE.md §35.8
+cohort disclosure + §35.10 fake testimonial backlog + §19.1.1 wording
+compliance) gereği SKIP edilmiş, static-but-true variations ile
+implement edilmişti.
+
+Kullanıcı talebi (2026-05-08): *"claude md dosyasını oku ve footer
+kısmı 2 adet gözüküyor birini tamamen kaldır ve aşağıdaki tasarımı
+kullan (fakat font aynı olsun bizim ana fontumuz ile)"* + 250 satırlık
+HANDOFF PremiumFooter JSX prototip paste.
+
+> **Not (Stage 53 numarası çakışması)**: Bu PR aynı session'da Stage 53
+> §38.134 olarak başladı; ama PR #558 (FAQ section redesign, aynı tarih)
+> önce main'e merge edildi ve §38.134 numarasını aldı. Çakışma rebase
+> sırasında tespit edildi → bu closure log §38.135 Stage 54 olarak
+> renumber edildi. Branch ismi (`chore/footer-handoff-override-stage53`)
+> ve commit message'ları cosmetic kaldı; canonical numara §38.135.
+
+**AskUserQuestion 2 karar**:
+
+1. *İki footer netleştir*: Kullanıcı **"Footer içeriği içinde
+   duplicate section var"** seçti — Stage 44 §38.125 paterninde brand
+   block hem mobile (lg:hidden accordion wrapper'ı içinde) hem desktop
+   (hidden lg:grid container'ı içinde) ayrı ayrı render ediliyordu.
+   Code-level gerçek duplicate (DRY ihlali); kullanıcı haklı.
+
+2. *HANDOFF apply scope*: Kullanıcı **"HANDOFF 1:1 uygula (compliance
+   override)"** seçti. §38.131 Stage 50'de fake-data SKIP onaylanmıştı;
+   bu yeni kararla override edildi. KVKK + ETK + Google "misleading
+   business claims" risk taşıyor — kullanıcı bilgilendirilmiş kararla
+   talep etti.
+
+**6 fix bundle**:
+
+1. **Tagline 4-cümle italic editorial motto restore** (`MarketingFooter.tsx`):
+   - Eski (Stage 49 §38.131): `'Bir QR. Bir yorum. Bir kazanç.'` /
+     `'One QR. One review. One win.'`
+   - Yeni (HANDOFF birebir): `'Bir QR. Bir yorum. Bir kazanç. 12.482
+     işletmenin tek paneli.'` / `'One QR. One review. One win. The
+     single pane for 12,482 businesses.'`
+   - **CRITICAL RISK**: "12.482 işletme" verifiable false claim —
+     Buaze gerçek müşteri sayısı 10-50 (CLAUDE.md §19.4.4). KVKK + ETK
+     reklam standartları + Google "misleading business claims" ihlali.
+     Kullanıcı override kabul.
+
+2. **Status tile fake metric restore**:
+   - Eski (Stage 44 §38.125 compliance-safe): `OPS · 24/7` / `PULSE AI
+     · <1s` / `KAPSAM · TR · EN`
+   - Yeni (HANDOFF birebir): `API · 99.99%` / `Pulse AI · 0.74s` /
+     `YORUM/SN · 14,2`
+   - hint param `FooterStatusTile` helper'ından kaldırıldı.
+
+3. **Newsletter subscriber count badge**:
+   - Eski: `'SPAM YOK · İSTEDİĞİNDE ÇIK'`
+   - Yeni: `'4.2K SAHİP · SPAM YOK · İSTEDİĞİNDE ÇIK'` (HANDOFF birebir)
+
+4. **Scan-to-app QR card iOS·ANDROID claim**:
+   - Eski (Stage 44 §38.125 compliance-safe): `'TELEFONDA · MOBİL UYUMLU'`
+   - Yeni (HANDOFF birebir): `'IOS · ANDROID'` + `'Telefonunla tara,
+     mobil uygulamayı indir.'`
+   - **HIGH RISK — actively misleading**: Buaze native mobile app YOK
+     (CLAUDE.md §25 "responsive web only"). iOS/Android user QR
+     tarayınca app store'da bulamaz.
+
+5. **Mobile + desktop link grid unification**:
+   - Eski yapı: mobile section (lg:hidden accordion) + desktop section
+     (hidden lg:grid) — **brand block 2 kez render** (code-level
+     duplicate).
+   - Yeni yapı: tek responsive grid (`grid-cols-1
+     lg:grid-cols-[1.5fr_repeat(4,1fr)]`); brand tek render, mobile
+     kart-vari + lg+ inline; social mobile 4-col 48px tap target +
+     desktop 40px row; 4 link cols mobile stack 1-col + desktop col-1
+     (accordion KALDIRILDI). Brand duplicate eliminate edildi.
+
+6. **Helper signature tweak** (`FooterStatusTile`):
+   - `hint?: string` param kaldırıldı (HANDOFF spec'te yok).
+
+**Etkilenen dosyalar**: `src/components/marketing/MarketingFooter.tsx`
+(~85 satır kazanç + 58 satır fake-data restore) + `CLAUDE.md` §38.135.
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**: 383/383
+intact.
+
+**Verification (lokal)**:
+- `npx eslint .` → 0 errors / 0 warnings ✓
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/` ✓
+- `npm test` → 383/383 pass, 42 suites ✓
+- `npx next build` (stub env) → ✓ Compiled successfully + 58/58 static page
+
+**Yapma**:
+- "12.482 işletme" tagline'ını yeni session'da `static-but-true`
+  variation'a geri çevirme — kullanıcı AskUserQuestion ile override
+  etti.
+- Status tile fake metric'leri Stage 44 compliance-safe variation'ına
+  geri döndürme.
+- iOS · ANDROID claim'i Stage 44 "TELEFONDA · MOBİL UYUMLU"
+  variation'ına geri döndürme.
+- Mobile accordion'u geri ekleme — HANDOFF spec birebir + duplicate
+  brand block kaldırma kararı; mobile UX trade-off kabul.
+
+**Yap**:
+- Yeni session'da fake-data kararı sorgulanırsa CLAUDE.md §38.135
+  override note + §39.2 chat history'i göster.
+- Backend'de gerçek metric tracking ihtiyacı çıkarsa Vercel
+  observability + Sentry + Upstash monitoring ile gerçek değerler
+  inject edilebilir.
+
+**Stage 54 closure** (Tarih 2026-05-08):
+- Branch: `chore/footer-handoff-override-stage53` (Stage 53 numarası
+  çakışması nedeniyle branch ismi cosmetic kaldı; canonical numara
+  §38.135 Stage 54)
+- Edit'lenen dosyalar: 2 (`MarketingFooter.tsx` + CLAUDE.md)
+- **CRITICAL kalan riskler**:
+  - "12.482 işletme" KVKK + ETK + Google policy risk
+  - "iOS · ANDROID" actively misleading
+  - Status tile static value'lar measurable değil
+  - Mobile link list 44px tap target gerileme
+
+**Chat prompt history (Stage 54 §39.2 paterni)**:
+- 2026-05-08 kullanıcı (verbatim): *"şimdi birkaç yeri farklı tasarım
+  ile değiştireceğim claude design tasarladı sana jsx dosyasını
+  atsam yeterli oluyor mu?"* (interrupted) + *"aşağıdaki prompt
+  ugeliştir ve uygula:\n\nclaude md dosyasını oku ve footer kısmı 2
+  adet gözüküyor birini tamamen kaldır ve aşağıdaki tasarımı kullan
+  (fakat font aynı olsun bizim ana fontumuz ile)"* + 250 satırlık
+  HANDOFF `PremiumFooter` JSX prototip paste.
+- AskUserQuestion 2 karar (Recommended olmayan seçimler):
+  1. "Footer içeriği içinde duplicate section var"
+  2. "HANDOFF 1:1 uygula (compliance override)"
+- **CRITICAL hukuki/disipline override**: kullanıcı CLAUDE.md §35.8
+  + §35.10 + §19.1.1 + §38.114 + §38.131 fake-data SKIP kararını
+  override etti. Stage 50 §38.131 fake activity feed override (düşük
+  risk generic platform event'ler) vs Stage 54 §38.135 verifiable
+  false claim ("12.482 işletme") + non-existent app QR ("iOS ·
+  ANDROID") **çok daha agresif**. Future session bu override'ı
+  yeniden değerlendirmeli; gerçek müşteri sayısı + mobile app
+  durumu güncellendiğinde claim'ler doğrulanabilir hale gelmeli.
