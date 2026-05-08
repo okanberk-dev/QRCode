@@ -10,11 +10,10 @@ import {
   MessageSquare,
   Plug,
   Plus,
-  Settings,
 } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
-import { PageHeader, StatCard, EmptyState, Badge } from '@/components/ui';
+import { PageHeader, StatCard, EmptyState } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import {
   MANAGED_PLATFORM_DEFS,
@@ -22,6 +21,10 @@ import {
   type PlatformEnabledField,
   type PlatformUrlField,
 } from '@/lib/platform-management';
+import PlatformsClient, {
+  type PlatformSummaryRow,
+  type RestaurantInfo,
+} from './_components/PlatformsClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +35,7 @@ interface PageProps {
 type RestaurantPlatformRow = {
   id: string;
   name: string;
+  category: string;
   externalPlatformsEnabled: boolean;
 } & Record<PlatformUrlField, string | null> &
   Record<PlatformEnabledField, boolean>;
@@ -58,6 +62,7 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
     select: {
       id: true,
       name: true,
+      category: true,
       externalPlatformsEnabled: true,
       googleReviewUrl: true,
       yemekSepetiUrl: true,
@@ -307,123 +312,18 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {platformSummaries.map((platform) => {
-          const isConnected = platform.connected > 0;
-          const isPartial = platform.urlSet > platform.connected;
-          const status = platform.comingSoon
-            ? 'coming_soon'
-            : isConnected
-              ? 'connected'
-              : isPartial
-                ? 'inactive'
-                : 'available';
-          const statusBadgeKind: 'ok' | 'warn' | 'ghost' | 'info' =
-            status === 'connected'
-              ? 'ok'
-              : status === 'inactive'
-                ? 'warn'
-                : status === 'coming_soon'
-                  ? 'info'
-                  : 'ghost';
-          const statusLabel = isTr
-            ? status === 'connected'
-              ? 'Bağlı'
-              : status === 'inactive'
-                ? 'Pasif'
-                : status === 'coming_soon'
-                  ? 'Yakında'
-                  : 'Hazır'
-            : status === 'connected'
-              ? 'Connected'
-              : status === 'inactive'
-                ? 'Inactive'
-                : status === 'coming_soon'
-                  ? 'Coming soon'
-                  : 'Available';
-
-          return (
-            <div key={platform.slug} className="bz-card flex flex-col gap-3.5 p-4">
-              <div className="flex items-start gap-3">
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border text-[13px] font-semibold bz-h-tight"
-                  style={{
-                    backgroundColor: `${platform.accent}14`,
-                    color: platform.accent,
-                    borderColor: `${platform.accent}30`,
-                  }}
-                  aria-hidden
-                >
-                  {platform.initials}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14px] font-semibold tracking-[-0.01em] text-[#0A0A0A]">
-                    {platform.name}
-                  </div>
-                  <div className="bz-mono mt-0.5 text-[10.5px] uppercase tracking-[0.08em] text-[#737373]">
-                    {isTr ? platform.categoryLabel.tr : platform.categoryLabel.en}
-                  </div>
-                </div>
-                <Badge kind={statusBadgeKind}>{statusLabel}</Badge>
-              </div>
-
-              {platform.comingSoon ? (
-                <div className="rounded-[10px] border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-3">
-                  <div className="pulse-eyebrow mb-1 text-[9.5px] text-[#737373]">
-                    {isTr ? 'BACKEND HAZIR' : 'BACKEND READY'}
-                  </div>
-                  <p className="text-[11.5px] leading-[1.5] text-[#525252]">
-                    {isTr
-                      ? 'AutomationRule schema mevcut; arayüz bir sonraki fazda açılacak.'
-                      : 'AutomationRule schema is in place; UI opens in the next phase.'}
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[10px] border border-[#EDEDED]">
-                  <div className="bg-white p-2.5">
-                    <div className="pulse-eyebrow mb-0.5 text-[9.5px] text-[#737373]">
-                      {isTr ? 'BAGLI' : 'CONNECTED'}
-                    </div>
-                    <div className="bz-mono text-[12px] font-semibold tabular-nums text-[#0A0A0A]">
-                      {platform.connected}/{platform.total}
-                    </div>
-                  </div>
-                  <div className="border-l border-[#EDEDED] bg-white p-2.5">
-                    <div className="pulse-eyebrow mb-0.5 text-[9.5px] text-[#737373]">
-                      {isTr ? 'URL VAR' : 'URL SET'}
-                    </div>
-                    <div className="bz-mono text-[12px] font-semibold tabular-nums text-[#0A0A0A]">
-                      {platform.urlSet}/{platform.total}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                {platform.comingSoon ? (
-                  <button
-                    type="button"
-                    disabled
-                    aria-disabled="true"
-                    className="bz-btn flex-1 cursor-not-allowed opacity-50"
-                    title={isTr ? 'Yakında bağlanacak' : 'Coming soon'}
-                  >
-                    {isTr ? 'Yakında' : 'Coming soon'}
-                  </button>
-                ) : (
-                  <Link
-                    href={`/${locale}/dashboard/platforms/${platform.slug}`}
-                    className="bz-btn-ghost inline-flex flex-1 items-center justify-center gap-1.5 text-[12px]"
-                  >
-                    <Settings size={11} strokeWidth={2} />
-                    {isTr ? 'Yönet' : 'Manage'}
-                  </Link>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Platform card grid + restaurant selector + sector filter
+          (CLAUDE.md §38.137 Stage 56). Server tarafı KPI + kategori chip'leri
+          intact; client island sadece logo render + filtreleme yapar. */}
+      <PlatformsClient
+        locale={locale}
+        restaurants={restaurants.map<RestaurantInfo>((r) => ({
+          id: r.id,
+          name: r.name,
+          category: r.category,
+        }))}
+        platformSummaries={platformSummaries as PlatformSummaryRow[]}
+      />
 
       <div className="bz-card-soft flex items-center gap-3 p-4">
         <ExternalLink size={14} strokeWidth={2} className="shrink-0 text-[#737373]" />
