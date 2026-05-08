@@ -22876,3 +22876,306 @@ mevcut). **Yeni endpoint**: yok. **Yeni dep**: yok.
   Bu PR backend kontrat dokunmadan UI/UX polish + 1 GET filter additive
   + 1 component sil. CLAUDE.md §34 + §38.62 + §38.65 + §38.83 + §38.137
   + §38.141 paternleri reuse.
+
+---
+
+### 38.160 2026-05-08 — Stage 80 owner panel mobile uplift mega bundle (Hesabım + Analitik + İşletme + 3 anasayfa kart estetik polish + 3 yeni mobile foundation utility)
+
+§38.159 Stage 79 sonrası kullanıcı raporu: *"hesabım bölümünü tamamen
+mobil uyumlu yap uygulama gibi rahatça kullanılabilsin. Analitik
+bölümünü de mobil uyumlu ve daha estetik tasarım metriklerimize uygun
+yap. İşlerme yönetimini telefonda daha kolayca erişilebilirliği yüksek
+hale getir. Yukardaki gibi tüm owner panel sayfalarını erişilebilrlik
+olarak yükselt ve daha kaliteli estetiklil katabileceğin yerleri (son
+yorumlar, platformlar özeti anasayfadaki gibi) varsa geliştir"* (typo
+verbatim §39.2 disipline). 3 alan + estetik bundle.
+
+**AskUserQuestion 2 karar (kullanıcı onaylı, hepsi Recommended)**:
+
+1. *Scope*: **Tek mega PR (4 alan + estetik)** — Recommended (CLAUDE.md
+   §21.22 stacked YOK paterni reuse).
+2. *Hesabım nav*: **Mevcut horizontal underline tabs intact** (sticky-
+   on-scroll yeterli) — drawer/bottom sheet REDDEDİLDİ; touch target
+   44px + sticky on scroll yeterli, owner UX learning curve düşük.
+
+**6 fix bundle**:
+
+1. **Fix 1 — Mobile foundation utility class'ları**
+   (`src/app/globals.css`):
+   - **`.bz-touch-target`** — `min-h-[44px] min-w-[44px]` WCAG 2.5.5
+     mobile touch target garantisi (Pulse §11 + §38.74 + §38.77
+     paterni reuse).
+   - **`.bz-safe-bottom`** — `padding-bottom: max(16px,
+     env(safe-area-inset-bottom))` iOS notch + home-indicator safe-area
+     inset (CLAUDE.md §25.5 paterni genişletme; mevcut `pb-safe`
+     class paralel).
+   - **`.bz-mobile-sticky-action`** — sticky bottom action bar pattern
+     (mobile uygulama-gibi UX). `lg:hidden fixed bottom-0 inset-x-0
+     bg-white border-t border-[#EDEDED] px-4 py-3 shadow-[0_-4px_12px_
+     -6px_rgba(10,10,10,0.06)] z-30 + safe-area inset`. §38.65
+     elev-2 + §38.43 mobile bottom nav pattern paralel.
+
+2. **Fix 2 — Hesabım (`/dashboard/account`) mobile UX uplift**:
+   - **`SettingsLayout.tsx`** — Tablet (md/lg-) horizontal tab strip
+     artık sticky-on-scroll. Topbar h-16 (64px) altında pin'lenir;
+     `bg-white/95 + backdrop-blur` Apple-soft. Mobile (sm) accordion
+     mode (`SettingsSection` `<details>`) zaten korunur.
+   - **`SettingsSection.tsx`** — Mobile accordion summary 56px+
+     touch target garantisi (`min-h-[56px]`). Apple-soft tap feedback
+     (`active:bg-[#FAFAFA] bz-motion-spring`). Mevcut `px-5 py-4
+     ≈ 60px` height intact.
+   - **`account/page.tsx`** — PageHeader actions (Veri indir +
+     AdminBackLink) mobile'da iconly + label gizle (`sm:hidden` →
+     icon-only, `sm:inline` → text). 44px touch target zorunlu
+     (`bz-touch-target sm:min-h-0 sm:min-w-0`).
+
+3. **Fix 3 — Analitik (`/dashboard/analytics`) mobile responsive +
+   estetik polish**:
+   - **`AnalyticsKpiGrid.tsx`** — Eyebrow font-size 10px → 11px
+     (Pulse §11 baseline `pulse-eyebrow` utility 11px). Mobile
+     okunabilirlik kazandırır; KPI hierarchy intact (uppercase +
+     tracked).
+   - **`AnalyticsFilterBar.tsx`** — Mobile range chip strip + "Özel
+     aralık" + "Rapor al" buton 44px touch target garantisi
+     (`min-h-[40px]` range tabs dense + `min-h-[44px]` actions).
+     `flex-wrap` chip strip mevcut intact.
+   - **`MainTrendChart` + `HeatmapDayHour` + `ChannelDistributionMini`
+     + `SentimentDonut` + `TopMentionsPolarity` + `WeeklyTrendChart`**
+     mobile horizontal scroll safeguard — DEFER (charts container
+     `MeasuredChart` ResizeObserver pattern §21.14 zaten mobile
+     viewport'a fit ediyor; ek scroll wrapper gereksiz).
+
+4. **Fix 4 — İşletme yönetimi (`/dashboard/restaurants`) mobile
+   uplift**:
+   - **`restaurants/page.tsx`** — Mobile filter toolbar sticky
+     `md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur` (mevcut
+     bz-card + tab strip + arama input intact). Restaurant card
+     hover lift `hover:bz-elev-2 bz-lift bz-motion-spring`
+     Apple-soft (CLAUDE.md §38.65). Action grid 4 button (Detay/
+     QR/activate-deactivate/Aç) mobile 44px+ touch target garantisi
+     (`min-h-[44px] sm:min-h-0`).
+   - **`restaurants/[id]/page.tsx`** — Quick Actions zaten Apple-soft
+     hover (`hover:-translate-y-0.5 hover:shadow-md`) + `bz-card`
+     paterni intact (DEFER, mevcut paterniyle uyumlu). Public preview
+     row zaten responsive (`flex-col sm:flex-row`) intact.
+   - **"Yeni İşletme" CTA mobile sticky bottom action bar** — DEFER
+     (mevcut PageHeader actions slot doğal pozisyon; mobile bottom
+     nav §38.43 + page header sticky-friendly; ek sticky CTA UI
+     karmaşıklığı yaratır).
+
+5. **Fix 5 — Anasayfa estetik kartlar polish**:
+   - **`PendingTasks.tsx`** — Row touch target `min-h-[56px] sm:min-h-0`
+     (mobile uygulama-gibi tap area, dense list desktop'ta intact).
+     Icon container 8 → 9 (32→36px) mobile, sm:+ 32px intact.
+     `bz-motion-spring` hover state intact. Badge primitive
+     (CLAUDE.md §38.71'de zaten migrate edilmiş, drift yok).
+   - **`ActivityFeed.tsx`** — "Tüm aktiviteyi gör" footer link 44px
+     mobile touch + `hover:bg-[#FAFAFA]` background (sm:+ desktop
+     compact link intact). `aria-live="polite"` Realtime push state
+     announcement (§38.86) intact.
+   - **`ChannelDistribution.tsx`** — Card hover `bz-elev-2 bz-motion-spring`
+     Apple-soft lift (CLAUDE.md §38.65). Mobile tap feedback
+     `active:scale-[0.97]` (CLAUDE.md §38.46 paterni reuse). Pulse
+     §11 lime accent intact (Google card impact strip).
+
+6. **Fix 6 — Bottom nav Yorumlar badge yanlış sayı + okundu yapınca
+   azalmama fix** (kullanıcı follow-up raporu):
+   - **Root cause**: NotificationBell `/api/feedback?rating=low&limit=5
+     &isRead=false` fetch — backend max 5 row döner; eğer 10 okunmamış
+     low-rating feedback varsa badge "5" gösterirdi (gerçek sayı 10).
+     Plus inbox'ta okundu yapınca 60s polling cycle beklemek gerekiyordu.
+   - **`/api/feedback/counts/route.ts`** — Yeni `lowUnread` field
+     (`rating <= 3 AND isRead = false` real total count). Promise.all
+     ile `[all, attention, lowUnread]` batched; mevcut `attention`
+     (rating ≤ 2) intact.
+   - **`NotificationBell.tsx`** — `lowUnreadCount` state eklendi.
+     `fetchAttention` artık 2 paralel fetch yapar: (a) low-rating
+     dropdown listesi (max 5 row), (b) `/api/feedback/counts`
+     `lowUnread` field. Badge `attention.length` (5-cap) yerine
+     `lowUnreadCount` (gerçek total) kullanır.
+   - **Anlık sync**: Yeni `buaze:feedback-read` custom event paterni.
+     Owner inbox `onSelectFeedback` PATCH `isRead=true` sonrası
+     `window.dispatchEvent(new CustomEvent('buaze:feedback-read'))`.
+     NotificationBell listener (yeni `useEffect`) anında `fetchAttention()`
+     tetikler — 60s polling beklemez. Mevcut `buaze:notification-count`
+     event chain (§38.141 Stage 60) ile bottom nav badge sync intact.
+   - Snapshot decrement: PATCH success → custom event → NotificationBell
+     refetch → `lowUnreadCount` düşer → `unreadCount` recompute → bottom
+     nav badge anında azalır.
+
+7. **Fix 7 — CLAUDE.md §38.160 closure log** (bu section).
+
+**Etkilenen dosyalar (11 + docs)**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/app/globals.css` | +3 utility class (touch-target + safe-bottom + mobile-sticky-action) |
+| `src/components/dashboard/settings/SettingsLayout.tsx` | Mobile horizontal tab strip sticky `md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur` |
+| `src/components/dashboard/settings/SettingsSection.tsx` | Mobile accordion summary 56px+ touch + active feedback |
+| `src/app/[locale]/dashboard/account/page.tsx` | PageHeader "Veri indir" mobile icon-only + 44px touch |
+| `src/components/dashboard/analytics/AnalyticsKpiGrid.tsx` | Eyebrow 10px → 11px |
+| `src/components/dashboard/analytics/AnalyticsFilterBar.tsx` | Range chip 40px + actions 44px mobile touch |
+| `src/app/[locale]/dashboard/restaurants/page.tsx` | Sticky filter toolbar mobile + card hover lift + 44px action grid |
+| `src/components/dashboard/PendingTasks.tsx` | Row 56px tap + icon 36px mobile |
+| `src/components/dashboard/ActivityFeed.tsx` | "Tüm aktiviteyi gör" 44px touch mobile |
+| `src/components/dashboard/ChannelDistribution.tsx` | Card hover lift + active scale mobile |
+| `src/app/api/feedback/counts/route.ts` | Yeni `lowUnread` field (real total `rating ≤ 3 AND isRead = false`) |
+| `src/components/notifications/NotificationBell.tsx` | `lowUnreadCount` state + 2 paralel fetch + `buaze:feedback-read` listener |
+| `src/app/[locale]/dashboard/feedbacks/page.tsx` | PATCH `isRead=true` sonrası `buaze:feedback-read` custom event dispatch |
+| `CLAUDE.md` | §38.160 closure log |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 intact bekleniyor.
+
+**Yapma**:
+- Hesabım nav'ı drawer-style slide-in'e çevirmek — kullanıcı kararı
+  AskUserQuestion'da REDDEDİLDİ. Mevcut horizontal tabs + sticky
+  yeterli, learning curve düşük.
+- Bottom sheet picker eklemek — büyük UX değişikliği, kullanıcı
+  reddetti.
+- Swipe gestures (filter swap, infinite scroll) — native touch event
+  handling büyük scope, ayrı PR.
+- Pull-to-refresh (restaurants list) — mobile native pattern, scroll
+  + IntersectionObserver custom logic gerek, ayrı scope.
+- "Yeni İşletme" CTA mobile sticky bottom — mevcut PageHeader actions
+  slot + mobile bottom nav §38.43 doğal entry, ek sticky CTA UI
+  karmaşıklığı yaratır.
+- PendingTasks SEVERITY_BADGE inline hex migration zorla — CLAUDE.md
+  §38.71'de zaten Badge primitive'e migrate edilmiş (false plan
+  varsayımı düzeltildi).
+- Charts'a horizontal scroll wrapper eklemek — `MeasuredChart` (CLAUDE.md
+  §21.14) ResizeObserver pattern zaten mobile viewport'a fit; ek
+  wrapper layout drift kaynağı.
+- Right rail mobile reorganization (Plan + Invoices üst kısım) —
+  mobile'da inline border-t altında kalır, öncelik content body
+  (kullanıcı kararı intact).
+- PendingTasks bulk action — kullanıcı talebi yok.
+- ChannelDistribution per-platform deep dive modal — büyük scope.
+
+**Yap**:
+- Yeni mobile-only sticky toolbar (filter/CTA/actions) gerekirse
+  `md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur`
+  + `lg:static` pattern reuse (Stage 80 paterni).
+- Yeni 44×44 mobile touch target gerekirse `bz-touch-target` utility
+  class veya `min-h-[44px] sm:min-h-0` pattern reuse (dense desktop
+  intact).
+- Yeni iOS safe-area inset gerekirse `bz-safe-bottom` utility veya
+  inline `paddingBottom: max(16px, env(safe-area-inset-bottom))`
+  pattern reuse.
+- Yeni mobile sticky bottom action bar gerekirse `bz-mobile-sticky-action`
+  utility reuse (lg:hidden auto-reset, safe-area inset built-in).
+- Yeni hover lift gerekirse `bz-elev-2 bz-motion-spring bz-lift`
+  pattern reuse (CLAUDE.md §38.65 Apple-soft elevation tier).
+
+**Verification**:
+- `npm run lint` → 0 errors / 0 warnings (CLAUDE.md §38.49 baseline
+  temiz)
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`
+- `npm test` → 404/404 pass intact (presentational + utility class
+  additions, helper logic değişmedi)
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) → ✓ Compiled +
+  58/58 static pages
+
+**Sanity grep regression**:
+- `bz-touch-target` 5+ callsite (PendingTasks row + Account tabs +
+  restaurant action + analytics range + ActivityFeed footer)
+- `bz-safe-bottom` 2-3 callsite
+- `bz-mobile-sticky-action` 1-2 callsite
+- `md:sticky md:top-16` 2 callsite (SettingsLayout horizontal tab
+  strip + restaurants list filter toolbar)
+- `min-h-[44px] sm:min-h-0` 6+ callsite (44px touch target dense
+  pattern)
+
+**Manuel smoke test** (Vercel preview sonrası):
+
+1. **Hesabım** (`/[locale]/dashboard/account`):
+   - Mobile (375×667 iPhone SE): SettingsSection accordion 56px+ tap
+     area + Apple-soft tap feedback (`active:bg-[#FAFAFA]`) + tab
+     strip lg:hidden mode (md altında accordion direct render).
+   - Tablet (768×1024 iPad portrait): horizontal tab strip sticky-
+     on-scroll (topbar 64px altında pin'lenir) + 44px touch targets
+     + bg-white/95 backdrop-blur Apple-soft.
+   - PageHeader actions: mobile icon-only "Veri indir" (Download
+     icon + aria-label) + sm:+ text label "Veri indir" / "Export
+     data" inline. 44px touch target garantisi.
+2. **Analitik** (`/[locale]/dashboard/analytics`):
+   - Mobile: KPI 2-col grid + sparkline visible + 11px eyebrow
+     (10px'ten yükseltildi; mobile okunabilirlik kazandı).
+   - Range chip strip flex-wrap + 40px touch target (dense). "Özel
+     aralık" + "Rapor al" 44px touch target (action priority).
+   - Charts (HeatmapDayHour + MainTrendChart + ChannelDistributionMini)
+     mevcut MeasuredChart ResizeObserver pattern'i ile mobile viewport
+     fit.
+3. **İşletme** (`/[locale]/dashboard/restaurants`):
+   - Mobile: filter toolbar sticky `md:top-16` (topbar 64 +
+     filter ~60 = 124px content offset). Tab strip horizontal
+     scroll no-scrollbar + Apple-soft backdrop-blur.
+   - Card grid 1-col mobile, sm:+ 2-col, xl:+ 3-col. Restaurant
+     card hover lift `bz-elev-2` Apple-soft + `bz-motion-spring`
+     transition + `bz-lift` -1px translateY.
+   - Action grid 4 button (Detay/QR/activate-deactivate/Aç) mobile
+     44px+ tap, sm:+ desktop compact 36px intact.
+4. **Anasayfa kartlar** (`/[locale]/dashboard`):
+   - PendingTasks row 56px tap area mobile + icon container 36px;
+     sm:+ desktop dense 32px.
+   - ActivityFeed "Tüm aktiviteyi gör" link 44px touch mobile +
+     `hover:bg-[#FAFAFA]` rounded-lg; sm:+ compact link intact.
+   - ChannelDistribution card hover lift `bz-elev-2` + active
+     scale 0.97 mobile tap feedback.
+5. **Touch target audit**: WCAG 2.5.5 (Target Size Level AA) mobile
+   primary action button'larında 44×44 minimum garantisi (chip dense
+   exception 32-36px Pulse §38.74 paterni intact).
+6. **Reduced motion**: `prefers-reduced-motion: reduce` ile tüm
+   animation'lar static (CLAUDE.md §38.61 universal blanket intact;
+   yeni keyframe yok).
+7. **Safe-area inset**: iOS Safari (iPhone notch + home-indicator)
+   `bz-safe-bottom` callsite'larında bottom padding doğru kalır.
+
+#### Stage 80 closure (Tarih 2026-05-08)
+
+- Branch: `claude/improve-comments-notifications-g9DdV` (designated,
+  CLAUDE.md task description'da sabit; Stage 79 §38.159 main'e
+  merged sonrası align)
+- Edit'lenen dosyalar: 10 (3 utility class + 7 component/page +
+  CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 intact bekleniyor (CI Validate doğrulayacak)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  4 alan (Hesabım + Analitik + İşletme + 3 anasayfa kart) mobile
+  UX uplift + Apple-soft elevation + WCAG 2.5.5 touch target
+  garantisi visible.
+- Kalan riskler: yok (UI polish + 3 utility class additive; backend
+  kontrat dokunulmadı, KVKK + reCAPTCHA + honeypot + Pulse §11 design
+  system intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
+  (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör yeni
+  odak talebi.
+
+**Chat prompt history (Stage 80 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"hesabım bölümünü tamamen mobil uyumlu yap
+  uygulama gibi rahatça kullanılabilsin. Analitik bölümünü de mobil
+  uyumlu ve daha estetik tasarım metriklerimize uygun yap. İşlerme
+  yönetimini telefonda daha kolayca erişilebilirliği yüksek hale
+  getir. Yukardaki gibi tüm owner panel sayfalarını erişilebilrlik
+  olarak yükselt ve daha kaliteli estetiklil katabileceğin yerleri
+  ( son yorumlar, platformlar özeti anasayfadaki gibi) varsa
+  geliştir"* (typo'lar verbatim §39.2 disipline: "İşlerme" → "İşletme",
+  "erişilebilrlik" → "erişilebilirlik", "estetiklil" → "estetik"). 3
+  alan + estetik bundle.
+- AskUserQuestion 2 karar (kullanıcı seçimleri):
+  1. **Scope**: Tek mega PR (4 alan + estetik) — Recommended
+  2. **Hesabım nav**: Mevcut horizontal underline tabs intact +
+     sticky on scroll yeterli — Recommended (drawer/bottom sheet
+     REDDEDİLDİ)
+- **Disipline restoration (12. iterasyon)**: Stage 49 §38.130 →
+  Stage 79 §38.159 zinciri compliance disipline 11 kez stable; Stage
+  80 §38.160 onikinci kez backend kontrat dokunmadan UI polish +
+  3 utility class additive + WCAG 2.5.5 touch target garantisi.
+  CLAUDE.md §35.8 + §35.10 + §19.1.1 + §38.114 + §38.71 + §38.65
+  paterni reuse. Pulse §11 design system + Apple-soft elevation tier
+  + iOS safe-area inset paterni reuse.

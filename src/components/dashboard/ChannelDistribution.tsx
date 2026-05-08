@@ -79,7 +79,13 @@ function ChannelCard({
     Math.abs(googleImpact.diff) >= 0.05;
 
   return (
-    <div className="bz-card p-3.5 flex flex-col gap-2.5 shrink-0 w-[170px] sm:w-auto sm:shrink">
+    /*
+      Stage 80 §38.160 — Card Apple-soft hover lift `bz-elev-2` +
+      `bz-motion-spring` (CLAUDE.md §38.65). Mobile tap feedback
+      `active:scale-[0.97]` (CLAUDE.md §38.46 paterni reuse). Pulse
+      §11 lime accent intact (Google card impact strip).
+    */
+    <div className="bz-card p-3.5 flex flex-col gap-2.5 shrink-0 w-[170px] sm:w-auto sm:shrink bz-motion-spring hover:bz-elev-2 active:scale-[0.97] sm:active:scale-100">
       <div className="flex items-center justify-between gap-2.5">
         <div className="flex items-center gap-2 min-w-0">
           <span

@@ -112,6 +112,12 @@ export default function NotificationBell({
 
   const [open, setOpen] = useState(false);
   const [attention, setAttention] = useState<AttentionFeedback[]>([]);
+  // Stage 80 §38.160 — Real low-unread count (`rating <= 3 AND isRead =
+  // false`) backend `/api/feedback/counts` lowUnread field'ından gelir.
+  // attention array max 5 row cap'lenir (dropdown listesi); badge sayısı
+  // bu cap'ten bağımsız gerçek total. Inbox'ta okundu yapınca anında
+  // azalır (markFeedbackRead helper custom event ile sync).
+  const [lowUnreadCount, setLowUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [lastFetchedAt, setLastFetchedAt] = useState(0);
   const [lastViewedAt, setLastViewedAt] = useState(0);
@@ -130,23 +136,32 @@ export default function NotificationBell({
     try {
       // Stage 79 §38.159 — `isRead=false` query param (CLAUDE.md §38.137
       // Stage 56 Feedback.isRead migration). Backend artık sadece okunmamış
-      // low-rating feedback'leri döner; localStorage `lastViewedAt` timestamp
-      // karşılaştırması (eski paterni) feedback için artık relevant değil —
-      // unreadCount = attention.length direkt (mevcut useMemo logic intact;
-      // attention zaten unread filtered). Inbox'ta row tıklayınca PATCH
-      // isRead=true (CLAUDE.md §38.83 Stage 13) sonrası 60s polling cycle'da
-      // snapshot otomatik sync; bottom nav badge custom event (§38.141 Stage
-      // 60) ile yansır. lastViewedAt announcement track için intact.
-      const res = await fetch('/api/feedback?rating=low&limit=5&isRead=false', {
-        cache: 'no-store',
-      });
-      if (!res.ok) {
+      // low-rating feedback'leri döner; dropdown list 5-row cap'lenir.
+      //
+      // Stage 80 §38.160 — Badge gerçek total count için ek `/feedback/counts`
+      // GET (lowUnread field). attention.length max 5 cap'ten bağımsız real
+      // unread sayısı. Inbox'ta okundu yapınca PATCH isRead=true (§38.83
+      // Stage 13) sonrası `buaze:feedback-read` custom event tetiklenir
+      // (page-level listener) → NotificationBell anında refetch (60s polling
+      // beklemez) + bottom nav badge anında düşer.
+      const [listRes, countsRes] = await Promise.all([
+        fetch('/api/feedback?rating=low&limit=5&isRead=false', {
+          cache: 'no-store',
+        }),
+        fetch('/api/feedback/counts', { cache: 'no-store' }),
+      ]);
+      if (listRes.ok) {
+        const json = await listRes.json();
+        const list: AttentionFeedback[] = Array.isArray(json) ? json : json?.data ?? [];
+        setAttention(list);
+      } else {
         setAttention([]);
-        return;
       }
-      const json = await res.json();
-      const list: AttentionFeedback[] = Array.isArray(json) ? json : json?.data ?? [];
-      setAttention(list);
+      if (countsRes.ok) {
+        const counts = await countsRes.json();
+        const lu = Number(counts?.lowUnread);
+        setLowUnreadCount(Number.isFinite(lu) && lu >= 0 ? lu : 0);
+      }
     } catch {
       // Network blip — leave the previous snapshot intact rather than
       // flashing an empty list.
@@ -155,6 +170,17 @@ export default function NotificationBell({
       setLastFetchedAt(Date.now());
     }
   }, []);
+
+  // Stage 80 §38.160 — Inbox'ta row tıklanınca page-level PATCH isRead=true
+  // sonrası `buaze:feedback-read` custom event tetiklenir; NotificationBell
+  // 60s polling beklemeden anında refetch eder. Bottom nav badge sync
+  // mevcut `buaze:notification-count` event'i ile (§38.141 Stage 60).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = () => void fetchAttention();
+    window.addEventListener('buaze:feedback-read', handler);
+    return () => window.removeEventListener('buaze:feedback-read', handler);
+  }, [fetchAttention]);
 
   // Lazy fetch on first open, refresh if the snapshot is older than
   // STALE_MS so a long-idle tab still shows fresh data when re-opened.
@@ -237,29 +263,29 @@ export default function NotificationBell({
     setLastViewedAt(now);
   }, [scope]);
 
-  const totalCount = announcements.length + attention.length;
+  const totalCount = announcements.length + lowUnreadCount;
 
   // Unread = items strictly newer than `lastViewedAt`. Falling back to
   // `totalCount` on the very first render (before localStorage is read)
   // ensures the badge reflects reality immediately rather than briefly
   // flickering to 0.
   //
-  // Stage 79 §38.159 — Feedback unread source backend (Feedback.isRead).
-  // `attention` zaten `isRead=false` filter'lı (fetch URL §38.159 fix);
-  // localStorage `lastViewedAt` karşılaştırması feedback için relevant
-  // değil. Inbox'ta row tıklayınca PATCH isRead=true → 60s polling cycle
-  // snapshot otomatik sync → unreadCount düşer → bottom nav custom event
-  // (§38.141 Stage 60) ile yansır. Announcements için lastViewedAt-driven
-  // logic intact (markAllRead announcement read tracking için kullanılır).
+  // Stage 79 §38.159 + Stage 80 §38.160 — Feedback unread source backend
+  // (Feedback.isRead). Badge `lowUnreadCount` (real total `rating <= 3 AND
+  // isRead = false`, attention 5-row dropdown cap'inden bağımsız). Inbox'ta
+  // row tıklayınca PATCH isRead=true → `buaze:feedback-read` custom event
+  // → NotificationBell anında refetch → unreadCount düşer → bottom nav
+  // custom event (§38.141 Stage 60) ile yansır. Announcements için
+  // lastViewedAt-driven logic intact (markAllRead announcement read
+  // tracking için kullanılır).
   const unreadCount = useMemo(() => {
     if (lastViewedAt === 0) return totalCount;
     const annNew = announcements.filter((a) => {
       const t = Date.parse(a.updatedAt);
       return Number.isFinite(t) && t > lastViewedAt;
     }).length;
-    const attNew = attention.length;
-    return annNew + attNew;
-  }, [announcements, attention, lastViewedAt, totalCount]);
+    return annNew + lowUnreadCount;
+  }, [announcements, lastViewedAt, lowUnreadCount, totalCount]);
 
   const badgeText = useMemo(() => {
     if (unreadCount === 0) return '';

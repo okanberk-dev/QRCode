@@ -21,12 +21,21 @@ export async function GET(req: NextRequest) {
           : { restaurantId: { in: scoped } };
 
     if (baseWhere === null) {
-      return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0 });
+      return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0, lowUnread: 0 });
     }
 
-    const [all, attention] = await Promise.all([
+    // Stage 80 §38.160 — `lowUnread` count NotificationBell + bottom nav
+    // badge için. `rating <= 3 AND isRead = false` matches NotificationBell
+    // fetch URL filter (`/api/feedback?rating=low&isRead=false`) but
+    // returns the **gerçek total** instead of the 5-row dropdown cap.
+    // CLAUDE.md §38.137 Stage 56 (Feedback.isRead schema) + §38.83 Stage 13
+    // (PATCH endpoint) + §38.159 Stage 79 (backend filter wiring) zinciri.
+    const [all, attention, lowUnread] = await Promise.all([
       prisma.feedback.count({ where: baseWhere }),
       prisma.feedback.count({ where: { ...baseWhere, rating: { lte: 2 } } }),
+      prisma.feedback.count({
+        where: { ...baseWhere, rating: { lte: 3 }, isRead: false },
+      }),
     ]);
 
     // Replied count joins the FeedbackReply table which may not exist on
@@ -53,6 +62,7 @@ export async function GET(req: NextRequest) {
         new: Math.max(0, all - replied),
         attention,
         replied,
+        lowUnread,
       },
       {
         headers: {
@@ -64,6 +74,6 @@ export async function GET(req: NextRequest) {
     );
   } catch (error) {
     console.error('[feedback/counts]', error);
-    return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0 });
+    return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0, lowUnread: 0 });
   }
 }

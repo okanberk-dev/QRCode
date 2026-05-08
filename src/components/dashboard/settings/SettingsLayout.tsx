@@ -203,7 +203,16 @@ export function SettingsLayout({
                 />
               )}
             </div>
-            <div className="lg:hidden -mx-5 px-5 sm:-mx-7 sm:px-7 overflow-x-auto no-scrollbar">
+            {/*
+              Stage 80 §38.160 — Tablet (md/lg-) horizontal tab strip artık
+              sticky-on-scroll. Kullanıcı içerik aşağı scroll edince tab strip
+              topbar (64px) altında pin'lenir; tab geçişi her zaman erişilebilir
+              (mobile uygulama-gibi UX). Mobile (sm, ≤767px) bu blok zaten
+              gizli — accordion mode (line 133-141 children direct render).
+              `md:sticky md:top-16` UserDashboardShell topbar h-16 paterniyle
+              uyumlu; `bg-white/95 backdrop-blur` Apple-soft hissi.
+            */}
+            <div className="lg:hidden -mx-5 px-5 sm:-mx-7 sm:px-7 overflow-x-auto no-scrollbar md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur md:border-b md:border-[#EDEDED] md:py-2">
               <Tabs
                 items={tabItems}
                 active={active}

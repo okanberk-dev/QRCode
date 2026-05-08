@@ -51,7 +51,12 @@ function KpiCard({ kpi }: { kpi: KpiSpec }) {
         className="absolute left-0 top-3.5 bottom-3.5 rounded-full bg-[#C6F24E]"
         style={{ width: 2.5 }}
       />
-      <div className="pulse-eyebrow text-[10px] text-[#737373]">{kpi.label}</div>
+      {/*
+        Stage 80 §38.160 — Eyebrow font-size 10px → 11px (Pulse §11
+        baseline `pulse-eyebrow` utility default 11px). Mobile okunabilirlik
+        kazandırır; tasarımdaki KPI hierarchy intact (uppercase + tracked).
+      */}
+      <div className="pulse-eyebrow text-[11px] text-[#737373]">{kpi.label}</div>
       <div className="flex items-baseline justify-between gap-2">
         <span
           className="bz-mono tabular-nums"

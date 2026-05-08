@@ -50,11 +50,19 @@ export function SettingsSection({
       <details
         id={`section-${id}`}
         open={active}
-        className="bz-card scroll-mt-20"
+        className="bz-card scroll-mt-20 bz-motion-spring"
         style={{ padding: 0 }}
       >
+        {/*
+          Stage 80 §38.160 — Mobile accordion summary: 56px+ touch target
+          guarantee + Apple-soft tap feedback (`active:bg-[#FAFAFA]`).
+          Mevcut px-5 py-4 ≈ 60px height intact, `min-h-[56px]` minimum
+          garantilenir (WCAG 2.5.5 + dense exception tolerated). Tap
+          feedback kullanıcıya "uygulama gibi" hissi verir (CLAUDE.md
+          §38.46 + §38.65 paterni reuse).
+        */}
         <summary
-          className="flex items-center justify-between px-5 py-4 cursor-pointer list-none"
+          className="flex items-center justify-between px-5 py-4 cursor-pointer list-none min-h-[56px] active:bg-[#FAFAFA] bz-motion-spring"
           style={{ borderRadius: 16 }}
         >
           <div className="min-w-0">
