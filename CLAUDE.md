@@ -17449,11 +17449,43 @@ verify):
 - `src/app/api/admin/members/bulk/route.ts` (caller appUrl drop +
   yorum açıklaması)
 
+**Stage 51 deeper audit (kullanıcı follow-up: "başka mail varsa bul fixle ve merge et")**
+
+PR #555 ek commit sonrası kullanıcı tekrar kapsamlı audit istedi.
+`params.X` URL parameter caller'ları + admin path'leri + legal
+template'leri tarandı. 1 ek CRITICAL bug tespit edildi:
+
+6. **CRITICAL — `/dashboard/billing` route YOK, üç caller yanlış URL
+   kullanıyor**:
+   - Mevcut owner panel route'ları: `account/`, `analytics/`,
+     `announcements/`, `campaigns/`, `customers/`, `feedbacks/`,
+     `google-reviews/`, `guide/`, `integrations/`, `menu/`,
+     `notifications/`, `platforms/`, `profile/`, `qr/`, `restaurants/`
+     (CLAUDE.md §38.51 SettingsLayout 7 tab — billing tab `?section=billing`
+     deeplink ile `/dashboard/account` içinde).
+   - 3 yer yanlış route'u kullanıyordu:
+     - `src/app/api/cron/trial-reminders/route.ts:92`
+       `${appUrl}/${userLocale}/dashboard/billing`
+       → `${appUrl}/${userLocale}/dashboard/account?section=billing`
+     - `src/app/api/dev/email-preview/seeds.ts:149`
+       `${APP_URL}/tr/dashboard/billing`
+       → `${APP_URL}/tr/dashboard/account?section=billing`
+     - `src/lib/legal/templates/iade-iptal-politikasi.ts:57,124`
+       (TR + EN content) "Panel: /dashboard/billing → Aboneliği iptal et"
+       → "/dashboard/account?section=billing" (TR + EN parity)
+   - **Etki**: trial-ending mail her gün 1+3 gün kalan owner'lara
+     gönderiliyordu (CLAUDE.md §21.11 cron) — "Planı yükselt" CTA
+     `/dashboard/billing` 404 dönüyordu. Owner upgrade link'inde
+     conversion kaybı + iade politikası okuyan müşteri 404 görüyordu.
+   - Doğru deeplink: `/[locale]/dashboard/account?section=billing`
+     (CLAUDE.md §38.51 SettingsLayout `?section=` query string deeplink
+     desteği).
+
 **Stage 51 closure** (Tarih 2026-05-08):
 - Branch: `claude/fix-campaign-email-links-dzXTa` (designated, environment
   task description'da sabit)
-- Edit'lenen dosyalar: 7 (3 kampanya template + 3 ek template + 1 caller
-  endpoint) + CLAUDE.md
+- Edit'lenen dosyalar: 10 (3 kampanya template + 3 ek template + 1 admin
+  caller + 1 cron caller + 1 dev seeds + 1 legal template) + CLAUDE.md
 - Yeni dosya: yok
 - Schema migration: yok
 - Yeni dep: yok
