@@ -16480,6 +16480,166 @@ floating pill _ otomatik dönen _ mega menu.png`.
 
 ---
 
+### 38.129 2026-05-08 — Stage 48 public review surface (`/r/[slug]`) HANDOFF feedback-flow.jsx parity + mobile polish
+
+§38.128 Stage 47 APCheckbox sonrası kullanıcı talebi: *"restoran
+değerlendirme sayfası var o kısmı da birebir aynı yapar mısın ve
+tamamen mobil uyumlu olsun ve kolay olsun"* — `/r/[slug]` public
+review surface'ini HANDOFF feedback-flow.jsx (747 satır, 6 ekran)
+spec'i ile design-parity ve mobil-first hale getir.
+
+**Audit + scope rationale (compliance-safe + mobile-first)**:
+
+HANDOFF spec'inde 4 fake-data risk tespit edildi: trust bar metrics
+("12.482 işletme", "14,2 reviews/sec"), perks strip (gift cards), promo
+codes (BUAZE10 default), owner card name (default "Mert"). CLAUDE.md
+§35.8 (cohort disclosure) + §35.10 (fake testimonial) + §19.1.1
+(wording compliance) gereği bunlar **SKIP** edildi. Tag chip picker
+(Yemek/Servis/Hız/Atmosfer) backend kontrat değişikliği gerektirdiği
+için **ayrı PR scope**.
+
+Intro screen (yeni step 0) **SKIP** edildi — UX best practice'e göre
+rating-first conversion paterni intentional, ek ekran rating oranını
+düşürür.
+
+**4 polish bundle** (uygulanan):
+
+1. **Color-coded rating label pill** (`step === 1`, `visibleRating > 0`):
+   - Eski: plain `text-[#525252]` grey label
+   - Yeni: tone-coded pill (≥4 lime-soft `#EAF9B8` + graphite ink, =3
+     amber-soft `#FFFBEB` + amber `#92400E` ink, ≤2 red-soft `#FEF2F2`
+     + danger `#991B1B` ink) + dot prefix + `aria-live="polite"`
+     screen reader yumuşak okuma
+   - HANDOFF feedback-flow.jsx tone-coded label paterni 1:1
+
+2. **Segmented progress indicator** (step 1 + step 2):
+   - Eski: plain `1. ADIM` / `2. ADIM` eyebrow
+   - Yeni: `ADIM 1 / 2` + 2-segmentli rail görsel (step 1: 1 dolu / 1
+     boş; step 2: 2 dolu) — müşteri pacing duygusu kazanır
+   - `aria-hidden` rail dot'ları (semantic eyebrow zaten taşıyor)
+
+3. **Done screen radial pulse rays + animated check** (step 3):
+   - Eski: statik `h-16 w-16` lime circle + check icon
+   - Yeni: 2 concentric lime ring (`bz-done-ring-pulse` keyframe — 1.6s
+     ease-out infinite, 0.4s stagger) + lime check badge `shadow` +
+     locale-aware enriched body copy ("İşletme yönetimine ulaştırdık")
+   - HANDOFF DoneHigh/DoneLow visual reinforcement
+
+4. **Mobile UX polish**:
+   - `paddingBottom: max(40px, calc(env(safe-area-inset-bottom) + 24px))`
+     → iOS notch + home-indicator overlap önleme
+   - `touchAction: 'manipulation'` → iOS Safari 300ms tap delay kaldırma
+   - Mevcut `active:scale-90` (stars) + `bz-btn-primary` press feedback
+     intact (CLAUDE.md §38.65 `bz-motion-spring` paterni)
+   - `enterKeyHint` + `inputMode` zaten input'larda mevcut (§25.5)
+
+**Yeni keyframe** (`globals.css`):
+- `bz-done-ring-pulse` — 0% scale(0.5)/opacity(0.55) → 100% scale(2.4)/
+  opacity(0). Inline `style={{ animation }}`; reduced-motion blanket
+  `[style*='bz-done-ring-pulse']` selector ile yakalanır (CLAUDE.md
+  §38.61 paterni reuse).
+
+**Backend kontratı dokunulmadı**:
+- KVKK consent gate (kvkk default true submit-gate, marketing opt-in
+  false §19.1)
+- reCAPTCHA `feedback_submit` token + honeypot (`website` field)
+- `triggerHighRedirect(rating)` rating ≥4 platform resolver chain
+  (CLAUDE.md §19.4.3) intact
+- `latestChecks` Wave 4 broken-skip downstream intact (§19.4.5)
+- QR scan tracking + platform redirect tracking + analytics fire-and-forget
+
+**Etkilenen dosyalar (3)**:
+- `src/app/r/[slug]/page.tsx` (~50 satır net edit: page wrapper safe-area
+  + step 1 progress rail + color-coded label pill + step 2 progress rail
+  + step 3 radial pulse rays)
+- `src/app/globals.css` (+11 satır: yeni `bz-done-ring-pulse` keyframe +
+  reduced-motion blanket selector)
+- `CLAUDE.md` §38.129 closure
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**: 383/383
+intact (yeni unit test yok — UI polish, helper logic değişmedi).
+
+**Yapma**:
+- Trust bar / perks / promo codes / owner default name HANDOFF spec'inden
+  literal kopyalamak — fake metric / unverified claim KVKK + ETK
+  uyumsuz (CLAUDE.md §35.8 + §35.10 + §19.1.1 paterni).
+- Intro screen (yeni step 0) ekleme — UX best practice rating-first;
+  ek ekran conversion oranını düşürür.
+- Tag chip picker (Yemek/Servis/Hız/Atmosfer) bu PR'da implement etme
+  — backend `aspects` field'ı genişletme + Zod schema + helper extension
+  gerek; ayrı PR scope.
+- Rating label pill renklerini değiştirme (örn. ≥4 → graphite) — HANDOFF
+  spec lime-soft accent intentional, müşteri "doğru karar verdim" feedback'i.
+- `bz-done-ring-pulse` keyframe duration'ını 1s'e indirme — 1.6s ease-out
+  infinite stagger 0.4s human "exhale" timing'iyle uyumlu, daha hızlı
+  agresif görünür.
+- `touchAction: 'manipulation'` page-level yerine button-level uygulamak
+  — page wrapper tüm interactive element'lerde aynı davranışı sağlar
+  (drift sıfır).
+- KVKK / reCAPTCHA / honeypot / triggerHighRedirect logic'ine dokunma
+  — backend kontrat değişikliği büyük scope (§19.1 + §19.4.3 + §19.4.5).
+
+**Yap**:
+- Yeni feedback flow surface (örn. owner panel inbox quick-reply preview)
+  eklenirken aynı pill paterni reuse: `≥4 lime-soft / =3 amber-soft / ≤2
+  red-soft` tone-coded badge (CLAUDE.md §38.129 paterni).
+- Yeni multi-step form eklenirken segmented progress rail paterni reuse:
+  eyebrow + 2-segment rail + `aria-hidden` dot'lar (CLAUDE.md §38.129).
+- Yeni "thanks/done" screen eklenirken radial pulse rays paterni reuse:
+  `<span absolute inset-0>` lime ring + `style={{ animation: 'bz-done-ring-pulse ...' }}`
+  + reduced-motion blanket selector güncel (CLAUDE.md §38.61).
+- Yeni mobile-first surface eklenirken page wrapper safe-area + touch-action
+  zorunlu: `paddingBottom: 'max(...env(safe-area-inset-bottom)...)'` +
+  `touchAction: 'manipulation'` (CLAUDE.md §38.129).
+- Tag chip picker yeni PR olarak açılırsa: HANDOFF feedback-flow.jsx
+  `LowForm` chip section'ı reference + Zod `aspects: { food, service,
+  speed, atmosphere }` schema + `<Badge kind="ghost">` primitive reuse.
+
+**Verification**:
+- `npx eslint .` 0 errors / 0 warnings
+- `npx tsc --noEmit` 0 errors in `src/` (4 pre-existing `.next/types`
+  baseline §21.13)
+- `npm test` 383/383 pass, 42 suites
+- `npx next build` ✓ Compiled successfully + 58/58 static pages,
+  `/r/[slug]` route 9.43 kB intact
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. `/r/{slug}` ziyaret → dark hero + brand chip + ADIM 1/2 progress
+   rail + 5 yıldız (42px) + lime-soft pill (≥4) / amber-soft (=3) /
+   red-soft (≤2) tone-coded label.
+2. 5★ tap → 200ms delay yıldız fill → redirecting overlay (PlatformChip
+   + 2.2s lime progress) → external platform.
+3. 1-3★ tap → "Devam et" enabled → step 2 ADIM 2/2 progress rail (2 dolu).
+4. KVKK işaretli (default) + comment doldur → "Geri bildirimi gönder"
+   → reCAPTCHA token + honeypot guard → step 3 thanks.
+5. Step 3: 2 lime ring radial pulse + lime check badge shadow +
+   "İşletme yönetimine ulaştırdık" body.
+6. iOS Safari (375×667 iPhone SE) → safe-area home-indicator
+   overlap yok + 300ms tap delay yok + active:scale-90 yıldız press.
+7. Reduced motion ON → ring pulse + rating fill animation static
+   (final state immediate).
+
+**Stage 48 closure** (Tarih 2026-05-08):
+- Branch: `chore/public-review-design-parity-stage48`
+- Edit'lenen dosyalar: 2 + CLAUDE.md
+- Yeni dosya: yok (yeni keyframe globals.css'e inline eklendi)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  /r/[slug] customer flow intact, ek hover/tap ile yeni UX polish
+  görünür.
+- Kalan riskler: yok (UI polish + keyframe addition; backend kontrat
+  + reCAPTCHA + KVKK consent intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  Tag chip picker (HANDOFF LowForm chip section, backend aspects
+  schema + Zod genişletme), HIGH 4 Platforms 12-card grid (DEFER
+  §38.30 product decision), Stage 9 UserSession re-introduce
+  (operatör tetiği §38.84 / §38.89), RECAPTCHA_ENFORCE flip
+  (§38.79 #2). Veya operatör yeni odak talebi.
+
+---
+
 ### 38.128 2026-05-08 — Stage 47 APCheckbox indeterminate primitive + 3 callsite migrate (admin panel button/toggle/checkbox audit)
 
 Kullanıcı talebi: *"site genelinde tasarımda olan butonları kullandığından
