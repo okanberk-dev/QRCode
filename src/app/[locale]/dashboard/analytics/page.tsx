@@ -34,10 +34,19 @@ import { AiInsightsCard } from '@/components/dashboard/analytics/AiInsightsCard'
 import { ChannelDistributionMini } from '@/components/dashboard/analytics/ChannelDistributionMini';
 import { TopLocationCard } from '@/components/dashboard/analytics/TopLocationCard';
 import { MobileAnalyticsHero } from '@/components/dashboard/analytics/MobileAnalyticsHero';
+// Stage 66 §38.147 — HANDOFF AnalyticsDesktop redesign yeni component'lar.
+// LiveIndicator (compliance-safe static), MainTrendChart (30-day stacked
+// area + crosshair tooltip), SentimentDonut (SVG arc + center %),
+// TopMentionsPolarity (theme list + ↑↓· arrow).
+import { AnalyticsLiveIndicator } from '@/components/dashboard/analytics/AnalyticsLiveIndicator';
+import { MainTrendChart } from '@/components/dashboard/analytics/MainTrendChart';
+import { SentimentDonut } from '@/components/dashboard/analytics/SentimentDonut';
+import { TopMentionsPolarity } from '@/components/dashboard/analytics/TopMentionsPolarity';
 import { extractThemes } from '@/lib/analytics-themes';
 import { extractStructuredInsight } from '@/lib/weekly-structured-insight';
 import { calculateNPS } from '@/lib/analytics-nps';
 import { buildWeeklyTrend, getWeeklyTrendWindow } from '@/lib/analytics-weekly-trend';
+import { buildPlatformDailyTrend } from '@/lib/analytics-platform-trend';
 
 // Note: InteractionTrendChart taşır 'use client' direktifini — Next.js 15
 // otomatik client boundary çizer, server-side pre-render minimal HTML
@@ -522,6 +531,39 @@ async function renderAnalyticsPage({
     locale,
   });
 
+  // Stage 66 §38.147 — HANDOFF AnalyticsDesktop main chart 30-day stacked
+  // area data. Saf helper feedbacksWindow'dan daily platform breakdown
+  // üretir (Google + Tripadvisor + Buaze QR + Other 4-bucket). Backend
+  // gerek yok — mevcut feedbacksWindow query reuse (CLAUDE.md §7
+  // replication önleme).
+  const platformTrendPoints = buildPlatformDailyTrend(
+    feedbacksWindow.map((f) => ({
+      rating: f.rating,
+      platform: f.platform,
+      createdAt: f.createdAt,
+    })),
+    { windowDays, locale: isTr ? 'tr' : 'en', now: new Date(now) },
+  );
+
+  // Stage 66 §38.147 — HANDOFF AnalyticsDesktop sentiment donut overall
+  // breakdown. NPS-style heuristic: rating 5 = positive, rating 3-4 =
+  // neutral, rating 1-2 = negative. AI-bağımsız (extractThemes opsiyonel),
+  // her zaman compute edilebilir.
+  const ratingBuckets = { pos: 0, neu: 0, neg: 0 };
+  for (const f of feedbacksWindow) {
+    const r = f.rating ?? 0;
+    if (r === 5) ratingBuckets.pos += 1;
+    else if (r === 3 || r === 4) ratingBuckets.neu += 1;
+    else if (r >= 1 && r <= 2) ratingBuckets.neg += 1;
+  }
+  const sentimentTotal = ratingBuckets.pos + ratingBuckets.neu + ratingBuckets.neg;
+  const sentimentPos =
+    sentimentTotal > 0 ? Math.round((ratingBuckets.pos / sentimentTotal) * 100) : 0;
+  const sentimentNeu =
+    sentimentTotal > 0 ? Math.round((ratingBuckets.neu / sentimentTotal) * 100) : 0;
+  // Negative ensures sum = 100 (rounding compensation)
+  const sentimentNeg = sentimentTotal > 0 ? Math.max(0, 100 - sentimentPos - sentimentNeu) : 0;
+
   // Phase 8c+ §38.26 — Owner-tanımlı hedef puan. Single-restaurant filter
   // aktifse o restoran'ın `targetRating`ini kullan; çoklu restoran (all-mode)
   // veya hedef set edilmemişse 4.0 industry default.
@@ -656,6 +698,11 @@ async function renderAnalyticsPage({
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
+      {/* Stage 66 §38.147 — Live indicator (compliance-safe static). HANDOFF
+          "8 sn ÖNCE GÜNCELLENDİ" fake real-time timer compliance variation
+          ile değiştirildi: "GÜNCEL · BU SAYFA" / "LIVE · THIS PAGE". */}
+      <AnalyticsLiveIndicator isTr={isTr} />
+
       <PageHeader
         /* §38.66 — Analytics 5-col KPI + chart + heatmap + topic grid yoğun
            dashboard; hero h1 ezici hissedilir. titleScale="compact"
@@ -772,6 +819,14 @@ async function renderAnalyticsPage({
         isTr={isTr}
       />
 
+      {/* Stage 66 §38.147 — HANDOFF AnalyticsDesktop main chart 30-day
+          stacked area (primary daily trend). 4-series stacked: Google +
+          Tripadvisor + Buaze QR + Other. Crosshair tooltip + per-series
+          breakdown. PulseTrendChart 14-week complementary alt section'da
+          kalır (longitudinal weekly trend, Buaze-specific Stage 25 §38.25
+          paterni intact). */}
+      <MainTrendChart points={platformTrendPoints} isTr={isTr} />
+
       {/* §38.50 — PUAN VE HACİM TRENDİ 3-series simultaneous (tasarım birebir).
           Toggle mode silindi — line + bars + target birlikte render. */}
       <PulseTrendChart
@@ -780,12 +835,16 @@ async function renderAnalyticsPage({
         isTr={isTr}
       />
 
-      {/* §38.50 — Two-up grid: Sol KANAL DAĞILIMI / Sağ KONU SENTİMENT ANALİZİ
-          (tasarım birebir parity). Mevcut bottom KONU & DUYGU section
-          (line 944-1039 dark) buraya taşındı + light theme migration.
-          TopLocationCard sayfa altına ayrıldı. */}
+      {/* Stage 66 §38.147 — HANDOFF AnalyticsDesktop bottom 3-up grid
+          (tasarım birebir parity). Sol KANAL DAĞILIMI (1.4fr) + Orta
+          DUYGU DAĞILIMI donut (1fr) + Sağ EN ÇOK BAHSEDİLENLER (1fr).
+          Mevcut KONU SENTİMENT detaylı 3-segment progress bar section
+          silindi: SentimentDonut overall view (NPS-style rating-bazlı,
+          AI-bağımsız) + TopMentionsPolarity per-theme polarity arrow
+          (extractThemes data) ikilisi HANDOFF spec'ine birebir uyar +
+          owner için 2 farklı sentiment angle sunar (overall + per-theme). */}
       {showPlatformShare && (
-        <div className="grid gap-3.5 lg:grid-cols-[1fr_1.4fr]">
+        <div className="grid gap-3.5 lg:grid-cols-[1.4fr_1fr_1fr]">
           <ChannelDistributionMini
             channels={[
               ...platformShare.map((p) => ({
@@ -814,123 +873,22 @@ async function renderAnalyticsPage({
             isTr={isTr}
           />
 
-          {/* §38.50 — KONU SENTİMENT ANALİZİ (light theme). Tasarım kaynağı:
-              page-analytics.jsx line 232-260. Mevcut dark kart (line 944-1039)
-              silindi (CLAUDE.md §38.50 owner kararı). */}
-          {aiAnalyticsAvailable ? (
-            <section className="bz-card p-5 sm:p-6">
-              <header className="mb-3 flex items-start justify-between gap-2">
-                <div>
-                  <Eyebrow>{isTr ? 'KONU SENTİMENT ANALİZİ' : 'TOPIC SENTIMENT'}</Eyebrow>
-                  <div className="bz-h-tight mt-1 text-[16px] sm:text-[18px]">
-                    {isTr ? 'Müşterinin en sık dile getirdiği' : 'Most-mentioned themes'}
-                  </div>
-                </div>
-                {themes.source === 'openai' && (
-                  <span className="pulse-eyebrow shrink-0 inline-flex items-center gap-1 rounded-full border border-[#C6F24E] bg-[#EAF9B8] px-2 py-1 text-[#0A0A0A]">
-                    <span
-                      aria-hidden="true"
-                      className="bz-pulse-dot"
-                      style={{ background: '#A8D62E' }}
-                    />
-                    {isTr ? 'AI ile çıkarıldı' : 'AI extracted'}
-                  </span>
-                )}
-              </header>
+          {/* Stage 66 §38.147 — DUYGU DAĞILIMI donut. Rating distribution
+              NPS-style heuristic (rating 5 = positive, 3-4 = neutral,
+              1-2 = negative). AI-bağımsız, her zaman compute edilebilir. */}
+          <SentimentDonut
+            pos={sentimentPos}
+            neu={sentimentNeu}
+            neg={sentimentNeg}
+            isTr={isTr}
+            totalSample={sentimentTotal}
+          />
 
-              {themes.synthesis && (
-                <p className="mb-4 rounded-[10px] bg-[#FAFAFA] px-3 py-2.5 text-[12.5px] leading-[1.55] text-[#0A0A0A]">
-                  {themes.synthesis}
-                </p>
-              )}
-
-              {themes.themes.length === 0 ? (
-                <p className="text-[12px] text-[#737373]">
-                  {isTr
-                    ? themes.source === 'fallback'
-                      ? 'Yeterli yorum yok ya da AI servisi şu an pasif. En az 4 metinli yoruma ulaşınca AI çıkarımı burada görünür.'
-                      : 'Yorumlardan çıkan ortak tema yok.'
-                    : themes.source === 'fallback'
-                      ? 'Not enough comments yet, or AI service is paused. AI inference appears once at least 4 text comments are collected.'
-                      : 'No common themes from comments yet.'}
-                </p>
-              ) : (
-                <ol className="flex flex-col gap-3.5">
-                  {themes.themes.map((t) => {
-                    // §38.58 — 3-segment sentiment bar (tasarım birebir
-                    // a/page-analytics.jsx:228-235 + dashboard parity). pos%
-                    // tile rengini hâlâ belirler (≥80 lime / ≥70 amber / <70
-                    // red); progress bar 3-segment (lime + n300 + red) toplam
-                    // 100. v2 cache'ten gelen entry'lerde neu/neg yok →
-                    // graceful fallback (neg = 100 - pos heuristic).
-                    const hasSentiment = typeof t.sentimentPositivePct === 'number';
-                    const pos = hasSentiment ? (t.sentimentPositivePct as number) : 0;
-                    const neu = hasSentiment ? (t.sentimentNeutralPct ?? 0) : 0;
-                    const neg = hasSentiment
-                      ? (t.sentimentNegativePct ?? Math.max(0, 100 - pos - neu))
-                      : 0;
-                    const tileColor =
-                      pos >= 80 ? '#A8D62E' : pos >= 70 ? '#D97706' : '#DC2626';
-                    return (
-                      <li key={t.theme}>
-                        <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                          <span className="text-[13px] font-medium text-[#0A0A0A]">
-                            {t.theme}
-                          </span>
-                          <div className="flex items-baseline gap-2.5">
-                            <span className="bz-mono text-[10.5px] tabular-nums text-[#A3A3A3]">
-                              {t.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-                              {isTr ? 'söz' : 'mentions'}
-                            </span>
-                            {hasSentiment && (
-                              <span
-                                className="bz-mono text-[12px] font-semibold tabular-nums"
-                                style={{ color: tileColor }}
-                              >
-                                %{pos}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {hasSentiment && (
-                          <>
-                            <div
-                              className="flex h-2 overflow-hidden rounded-full bg-[#F5F5F5]"
-                              role="img"
-                              aria-label={
-                                isTr
-                                  ? `${pos}% pozitif, ${neu}% nötr, ${neg}% negatif`
-                                  : `${pos}% positive, ${neu}% neutral, ${neg}% negative`
-                              }
-                            >
-                              <div className="h-full" style={{ width: `${pos}%`, background: '#16A34A' }} />
-                              <div className="h-full" style={{ width: `${neu}%`, background: '#A3A3A3' }} />
-                              <div className="h-full" style={{ width: `${neg}%`, background: '#DC2626' }} />
-                            </div>
-                            <div className="mt-1 flex justify-between gap-3 bz-mono text-[10px]">
-                              <span className="text-[#16A34A] font-semibold">
-                                +{pos}% {isTr ? 'pozitif' : 'positive'}
-                              </span>
-                              <span className="text-[#737373]">
-                                {isTr ? 'nötr' : 'neutral'} {neu}%
-                              </span>
-                              <span className="text-[#DC2626] font-semibold">
-                                -{neg}% {isTr ? 'negatif' : 'negative'}
-                              </span>
-                            </div>
-                          </>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ol>
-              )}
-            </section>
-          ) : (
-            <section className="bz-card p-5 sm:p-6 flex items-center justify-center text-[13px] text-[#737373]">
-              {isTr ? 'AI sentiment analizi pasif.' : 'AI sentiment analysis paused.'}
-            </section>
-          )}
+          {/* Stage 66 §38.147 — EN ÇOK BAHSEDİLENLER per-theme polarity.
+              extractThemes themes[] data direkt. Polarity derive: pos% ≥60
+              → ↑ green, <35 → ↓ red, else → · neutral. AI yok ise empty
+              state ("yeterli veri yok"). */}
+          <TopMentionsPolarity themes={themes.themes} isTr={isTr} />
         </div>
       )}
 
