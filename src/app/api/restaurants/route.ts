@@ -87,6 +87,13 @@ export async function GET(req: NextRequest) {
           // `defaultRedirectPlatform` powers the public review surface's
           // auto-redirect behaviour for high ratings — public-safe.
           defaultRedirectPlatform: true,
+          // Stage 57 §38.138 — public review surface "Menüye geri dön" CTA
+          // (thanks screen bottom action grid). `menuEnabled` admin master
+          // flag + `menuPublished` owner publish toggle (CLAUDE.md §3 + §12).
+          // Yalnızca her ikisi true ise public `/menu/[slug]` 404 dönmez;
+          // UI conditional render ile button gizler (ölü link önleme).
+          menuEnabled: true,
+          menuPublished: true,
         },
       });
 

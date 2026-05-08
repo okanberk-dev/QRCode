@@ -18836,3 +18836,364 @@ Kullanıcı yeni HANDOFF JSX prototip (StickyCTABar + ChatLauncher + ChatBubble 
 - 2026-05-08 kullanıcı: *"şimdi aşağıdakini yap"* + 250+ satır HANDOFF JSX prototip paste (StickyCTABar + ChatLauncher + ChatBubble + ChatScene + 8 scbX keyframe). Önceki Stage 53/54/55/56 footer fake-data zincirinden tutarlılık örnekleri intact.
 - AskUserQuestion 3 karar: scope (ikisi de — Recommended) / chat live mi (async form-based — Recommended) / CTA fake-data (compliance-safe — Recommended). Hepsi Stage 56 §38.137 disipline ile uyumlu üçüncü/dördüncü iterasyon compliance disipline.
 - **Disipline restoration**: Stage 54 §38.135 fake-data override → Stage 55 §38.136 rollback → Stage 56 §38.137 üçüncü kez compliance-safe → Stage 58 §38.139 dördüncü kez compliance-safe + live chat illusion ek disipline. Pattern stable (§35.8 + §35.10 + §19.1.1 + async-vs-live-chat) — future session bu zinciri authoritative referans olarak kabul eder.
+
+---
+
+### 38.140 2026-05-08 — Stage 59 public review surface (`/r/[slug]`) HANDOFF 8-artboard prototip iterasyonu (greeting + glass card + Kopyala + cross-share + bottom grid + redirect overlay polish)
+
+§38.130 Stage 49 + §38.133 Stage 52 zincirinden sonra kullanıcı yeni 8-artboard JSX prototip paylaştı (`PhoneFrame` 390×844 + `ReviewLoading` + `ReviewRateEmpty/High/Low` + `ReviewLowForm` + `ReviewRedirecting` + `ReviewThanksLow/High`). Mevcut Stage 49+52 implementasyonu zaten %85 prototip uyumlu; bu PR additive 4 yeni element + 1 polish + 1 backend select extend ile tasarımı birebir kapatır. Compliance disipline §38.130 paterni intact (jenerik owner label, recovery skip, loyalty skip).
+
+**4 kritik karar (AskUserQuestion onaylı)**:
+
+1. *Owner name display* — **Recommended seçildi**: jenerik "İŞLETME YÖNETİMİ"
+   intact (§38.130 paterni). HANDOFF "ÜZGÜNÜZ · KARDEŞ AHMET" hardcoded
+   isim + redirecting overlay "— Ahmet, işletme sahibi" SKIP
+   (CLAUDE.md §35.10 fake testimonial + KVKK PII expose riski).
+2. *Recovery actions* — kullanıcı "decide for me" → Recommended (SKIP) seçildi.
+   Callback workflow + voucher generation backend YOK; UI-only çekirdek
+   yanıltıcı vaat (CLAUDE.md §35.8 verifiable claim disipline ihlali).
+3. *Loyalty card* — **Recommended seçildi**: SKIP. Loyalty program + voucher
+   redemption + müşteri kart geçmişi tracking backend YOK.
+4. *Cross-platform share* — **Recommended seçildi**: mevcut Restaurant
+   URL'leriyle implement (Stage 10 §38.80 + earlier — `tripAdvisorUrl`,
+   `yandexUrl`, `tripAdvisorEnabled`, `yandexEnabled` zaten slug GET
+   endpoint'inde + RestaurantData interface'inde mevcut).
+
+**10 fix bundle (Phase A-J)**:
+
+1. **Phase A — Greeting eyebrow + ask headline genişletme**
+   (`/r/[slug]/page.tsx` Step 1 üstü):
+   - "ADIM 1 / 3" eyebrow altına yeni satır: `MERHABA!` / `HELLO!`
+     pulse-eyebrow + lime pulse dot (`box-shadow: 0 0 10px #C6F24E`).
+   - h2 "Deneyimini puanla" → `Bugünkü deneyimini nasıl puanlardın?` /
+     `How was your experience today?` (HANDOFF spec birebir, balance
+     text-wrap).
+   - Sub: "Senin görüşün önemli..." → `Yıldızlara dokun · görüşün anında
+     işletmeye iletilir.` / `Tap a star · sent directly to the venue.`
+
+2. **Phase B — Star row card glassmorphism**:
+   - Yıldız + tone-coded label + hint trio'su yeni `<div className="rounded-[18px]
+     border border-[#ECECEC] bg-[#FAFAFA] px-3 py-4">` card içine sarıldı.
+     Beyaz parent card içinde subtle off-white separation (Buaze adapt:
+     HANDOFF prototipinde dark glassmorphism `rgba(255,255,255,0.04) +
+     backdrop-blur(20px)`; Pulse §11 white card içindeyiz, off-white
+     `#FAFAFA` Pulse N50 token uygun).
+   - Yıldız button hover state lime tint: `hover:bg-[#EAF9B8]/40`
+     (Pulse Lime Soft `#EAF9B8` 40% opacity). Desktop UX win;
+     active:scale-90 press feedback intact.
+   - Yıldız button width 56×56 ≈ HANDOFF target (42px Star icon + 12px
+     p-1.5 padding = 54px total).
+   - Empty state placeholder: `← seç →` / `← pick →` italic Space
+     Grotesk muted; `visibleRating > 0` toggle.
+
+3. **Phase D — Submit button lime dot prefix**: mevcut Stage 49 §38.130
+   implementasyonunda zaten var (line 933-938). Verify only.
+
+4. **Phase E — Reference card "Kopyala" button + low-rating 24h
+   follow-up footer**:
+   - Reference card layout: 2-col flex (sol talep no info + sağ Kopyala
+     button). Button click → clipboard API (HTTPS context) + legacy
+     `document.execCommand` fallback + `refCopied` 1.6sn UI feedback
+     ("Kopyalandı" + lime check icon).
+   - Low rating (rating ≤ 3) durumda card altına 24h follow-up footer
+     satırı: clock icon + "**24 saat** içinde işletme yönetimi
+     seninle iletişime geçecek." Yüksek puan (rating ≥ 4) thanks
+     ekranında bu footer gizlenir (no-platform-URL durumunda thanks
+     ekranı görünür ama follow-up vaat alakasız).
+
+5. **Phase F — Cross-platform share thanks ekranı**:
+   - Yeni section thanks screen'de (rating bağımsız): `DAHA FAZLASI` /
+     `MORE WAYS` eyebrow + 2 anchor link (Tripadvisor + Yandex).
+   - Conditional render: `restaurant.externalPlatformsEnabled !== false &&
+     restaurant.tripAdvisorUrl && restaurant.tripAdvisorEnabled !== false`
+     (her iki platform için ayrı). Owner panelden URL girilmiş + enable
+     edilmiş + admin master flag açıkken görünür.
+   - Visual: 32×32 brand color icon (Tripadvisor `#34E0A1` + lime "t"
+     italic; Yandex `#FFCC00` + graphite "y" italic) + flex label +
+     ExternalLink icon arrow.
+   - `target="_blank" rel="noopener noreferrer"` zorunlu (CLAUDE.md
+     §37.2 H paterni).
+
+6. **Phase G — Bottom action grid (Menüye + Yorumu paylaş)**:
+   - 2-col grid (`gridTemplateColumns: 1fr 1fr`) thanks ekranında en altta.
+   - **"Menüye geri dön"** (Utensils icon, ghost variant): conditional
+     render — yalnız `restaurant.menuEnabled && restaurant.menuPublished`
+     iken görünür (`/menu/[slug]` 404 önleme, ölü link engelleme).
+     Eksik durumda grid'in 1. cell'i `aria-hidden` placeholder (Yorumu
+     paylaş button'u 2. cell tek başına) + `gridColumn: '1 / -1'`
+     full-width.
+   - **"Yorumu paylaş"** (Share2 lime icon, primary graphite variant):
+     Web Share API trigger (`navigator.share({title, text, url})`).
+     Browser support check + clipboard fallback (URL copy). Title:
+     `{restaurant.name} · Görüşünü paylaş`; text + url locale-aware
+     `${origin}/${locale}/r/${slug}`.
+
+7. **Phase H — Redirecting overlay polish (full rewrite)**:
+   - **Halo lime gradient** (radial-gradient `rgba(198,242,78,0.33)`
+     + `filter: blur(40px)`, 280×280px, center positioned, `pointer-events-none`).
+   - **3-stack restaurant initial → arrow → platform chip**:
+     - Sol 72×72 white card + `restaurant.name[0].toLowerCase()` italic
+       Space Grotesk 36px (synthetic italic Stage 32 §38.112 paterni).
+     - Orta 3-dot stagger animation (`bz-rr-dot 1.2s ease-in-out infinite`,
+       0.15s stagger) + arrow icon (lime stroke).
+     - Sağ 72×72 white card + `<PlatformChip id={fallbackPlatformId} size={42}>`.
+   - **5-yıldız eyebrow + headline + sub**: `★ ★ ★ ★ ★ MÜKEMMEL` /
+     `★ ★ ★ ★ ★ EXCELLENT` lime pulse dot prefix; "Yönlendiriliyorsun"
+     headline; "Yorumun başkalarına yardımcı olacak. Sayfayı kapatma!"
+     sub.
+   - **Progress ring + status row**: 200px width + 1px height lime
+     progress bar (`animate-[bzProgress_1.5s_linear_forwards]` Stage 52
+     §38.133 1.5sn redirect timeout ile aligned, Stage 49'daki 2.2s'den
+     keskin transition + lime box-shadow glow). Status row: `HAZIRLANIYOR`
+     left + `1.5sn` right.
+   - **Bottom jenerik thanks card**: backdrop-blur-md card + 32×32 lime
+     avatar (italic restaurant initial) + "Şimdiden teşekkürler" / "Thanks
+     in advance" + "— İşletme yönetimi" / "— Management" jenerik label.
+     Owner ismi (Ahmet) + müşteri ismi (Mert) HARDCODED YOK (compliance,
+     §38.130 paterni intact).
+
+8. **Phase I — Slug GET select extend + RestaurantData interface**:
+   - `/api/restaurants/route.ts` slug branch select'e `menuEnabled: true`
+     + `menuPublished: true` eklendi (CLAUDE.md §3 + §12 — admin master
+     flag + owner publish toggle, public surface conditional render için).
+   - `RestaurantData` interface'e `menuEnabled?: boolean` +
+     `menuPublished?: boolean` opsiyonel field'lar.
+
+9. **Phase J — Keyframe + reduced-motion blanket**:
+   - `bz-rr-dot` keyframe Stage 49 §38.130'da zaten globals.css'te
+     definedi (yorum: "redirecting overlay 3-dot stagger — gelecek
+     scope, helper olarak kayıtlı"). Bu PR ilk gerçek callsite.
+   - Reduced-motion blanket'a `[style*='bz-rr-dot']` selector zaten
+     mevcut (CLAUDE.md §38.61 paterni).
+   - `bzProgress` arbitrary class duration `2.2s` → `1.5s` (Stage 52
+     §38.133 timeout ile aligned).
+
+10. **Compliance disipline kontrol** (HANDOFF SKIP elementleri):
+    - **PhoneFrame device chrome** (390×844 iPhone 14 frame): SKIP —
+      prototip-only görselleştirme, mevcut `max-w-[360px]` responsive
+      pattern intact.
+    - **"Kardeş Ahmet" hardcoded owner name**: SKIP — jenerik "İşletme
+      yönetimi" intact.
+    - **Recovery actions (callback + voucher cards)**: SKIP — backend
+      yok, UI-only yanıltıcı.
+    - **Loyalty card "+1 yıldız bedava kahve · 4/5"**: SKIP — backend
+      yok.
+    - **AI badge "AI YARDIMCI HAZIR"**: cosmetic decoration intact
+      (Stage 49 §38.130 kararı).
+    - **`weather: '23°'` i18n key**: orphan prototip key, callsite YOK
+      → kod değişikliği gerekmez.
+    - **Visit/table meta** ("Akşam ziyareti · Masa 12"): mevcut basit
+      `address` paragrafı yeterli (Stage 49 baseline intact).
+
+**Backend dokunulmadı**:
+- POST `/api/feedback` body shape (rating + aspectTags + comment + KVKK +
+  reCAPTCHA + honeypot) intact.
+- POST `/api/qr-scan` + `/api/platform-redirect` fire-and-forget tracking
+  intact.
+- Slug GET response shape genişletildi (2 yeni opsiyonel field —
+  `menuEnabled`, `menuPublished`); backward-compat (eski tüketicide
+  ignore edilir).
+
+**Etkilenen dosyalar (2 + docs)**:
+
+| Dosya | Tip | Net edit |
+|---|---|---|
+| `src/app/api/restaurants/route.ts` | Edit | +7 satır (slug select 2 yeni field + yorum) |
+| `src/app/r/[slug]/page.tsx` | Edit | ~+503/-82 = +421 net satır (4 import lucide + RestaurantData iface 2 alan + 2 helper fn copyReferenceNumber/shareReview + greeting eyebrow + star row glass card + reference Kopyala button + low-rating follow-up footer + cross-share section + bottom action grid + RedirectingOverlay rewrite) |
+| `CLAUDE.md` | Edit | §38.140 closure log |
+
+**Yeni dosya**: yok. **Schema migration**: yok. **Yeni dep**: yok.
+**Test count**: 383/383 intact bekleniyor (presentational +
+clipboard/share helper'ları DOM API; helper logic test scope dışı —
+mevcut auth + IDOR + Zod test'leri intact).
+
+**Verification (lokal)**:
+
+Lokal disk %96 dolu (9.1GB free) — `npm install` skip; CI Validate
+workflow doğrulayacak (CLAUDE.md §38.131 + §38.134 paterni).
+JSX sentaks + TypeScript inference + Tailwind v4 utility'ler manuel
+cross-check edildi.
+
+Sanity grep regression (post-edit):
+- `Stage 57 §38.138` orphan referans **YOK** → §38.140 / Stage 59
+  doğru numara (`§38.138` zaten PR #562 — owner panel platform logos
+  — tarafından alınmış; Stage 58 §38.139 PR #?? — sticky CTA + chat
+  bubble — tarafından alınmış). Numerotaj çakışması §39.2 paterni
+  ile dokumente.
+- `bz-rr-dot` 6 hit `/r/[slug]/page.tsx` (yeni redirecting overlay
+  callsite); 3 hit `globals.css` (keyframe + comment + reduced-motion
+  blanket).
+- `copyReferenceNumber` + `shareReview` + `refCopied` helper'ları + 4
+  callsite intact.
+- `menuEnabled` + `menuPublished` 6 hit page.tsx + 4 hit slug API
+  endpoint (select + comment).
+
+**Manuel smoke test** (Vercel preview sonrası):
+
+1. **Loading screen**: `/r/{slug}` ziyaret → DarkLoader 80×80 ring +
+   spinning lime arc + "Hazırlanıyor…" + "BUAZE" eyebrow.
+2. **Step 1 (rate, empty state)**: ADIM 1/3 progress + "MERHABA!" lime
+   pulse-dot eyebrow + h2 "Bugünkü deneyimini nasıl puanlardın?" + sub
+   "Yıldızlara dokun · görüşün anında işletmeye iletilir." + glass card
+   içinde 5-yıldız (visibleRating === 0 iken `← seç →` italic
+   placeholder).
+3. **Step 1 (high rating tap)**: 5★ tap → 200ms delay → redirecting
+   overlay (yeni polish: halo + initial card → 3-dot stagger + arrow →
+   PlatformChip card + 5-yıldız "MÜKEMMEL" eyebrow + headline + sub +
+   1.5sn progress bar + "HAZIRLANIYOR · 1.5sn" status row + bottom
+   "Şimdiden teşekkürler · — İşletme yönetimi" jenerik thanks card)
+   → 1.5sn sonra external platform.
+4. **Step 1 (low rating tap)**: 1★ tap → tone-coded "Çok kötüydü"
+   pill (red-soft) + hint "Bize anlat, düzeltelim" → 300ms delay →
+   ADIM 2/3 form ekranı.
+5. **Step 2 (low form)**: jenerik "ÜZGÜNÜZ · İŞLETME YÖNETİMİ"
+   acknowledgment card + 10 tag chip + comment textarea (AI badge
+   cosmetic intact + scrollIntoView mobile keyboard avoidance) + 5
+   preset chip horizontal scroll + KVKK + marketing consent + lime
+   dot prefix submit button.
+6. **Step 3 (thanks, low rating)**: ADIM 3/3 progress + radial pulse
+   rays (Stage 49 paterni) + "Sesin bize ulaştı" h2 + reference card
+   (BZ-CM3-XYZ format + "Kopyala" button → click → 1.6sn "Kopyalandı"
+   feedback + clock icon footer "24 saat içinde işletme yönetimi
+   seninle iletişime geçecek.") + cross-platform share section
+   (Tripadvisor + Yandex anchor link, `restaurant.tripAdvisorUrl` +
+   `restaurant.yandexUrl` doluysa) + bottom action grid ("Menüye
+   geri dön" if `menuEnabled && menuPublished` + "Yorumu paylaş"
+   Web Share API).
+7. **Step 3 (thanks, high rating no-platform-URL)**: aynı yapı; 24h
+   follow-up footer GİZLİ (rating > 3); cross-share + bottom grid
+   görünür.
+8. **iOS Safari (375×667 iPhone SE)**: safe-area inset
+   `paddingBottom: max(40px, env(safe-area-inset-bottom)+24px)` intact;
+   `touchAction: manipulation` 300ms tap delay yok; `inputMode` keyboard
+   hints intact; comment textarea `scrollIntoView({block: 'center'})`
+   keyboard avoidance.
+9. **Reduced motion ON**: `bz-rr-dot` + `bzProgress` + `bz-fade-in` +
+   `bz-done-ring-pulse` + `bz-motion-spring` hover/scale animation
+   hepsi static (CLAUDE.md §38.61 reduced-motion blanket intact).
+10. **Web Share API native**: iOS Safari "Yorumu paylaş" tap → native
+    share sheet (Mail/Messages/WhatsApp/...). Desktop Chrome/Firefox
+    Web Share API yok → URL clipboard'a kopyalanır (silent fallback).
+
+**§38.121.1 backlog güncelleme** (Stage 59 ile kapanan kalemler):
+- ✅ Public review surface HANDOFF 8-artboard prototip iterasyonu
+  (greeting + glass card + Kopyala + cross-share + bottom grid +
+  redirect overlay polish) — Stage 59 §38.140 ile kapatıldı.
+
+**Stage 59 closure** (Tarih 2026-05-08):
+- Branch: `chore/public-review-redesign-stage59` (fresh main üstüne,
+  Stage 58 §38.139 PR #?? merged sonrası align)
+- Edit'lenen dosyalar: 3 (slug API + page.tsx + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact bekleniyor (CI Validate doğrulayacak)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  /r/[slug] customer flow intact, ek greeting eyebrow + glass card
+  + reference Kopyala + low-rating follow-up + cross-share +
+  bottom action grid + redirecting overlay polish görünür.
+- **Kalan riskler**: yok (UI polish + 1 backend select extend, schema
+  migration yok, KVKK + reCAPTCHA + honeypot intact, compliance
+  disipline §38.130 paterni intact — owner PII expose YOK + recovery
+  actions SKIP + loyalty SKIP).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör
+  yeni odak talebi.
+
+**Yapma**:
+
+- HANDOFF "Kardeş Ahmet" + redirecting overlay "— Ahmet, işletme
+  sahibi" hardcoded isimleri implement etme — kullanıcı AskUserQuestion
+  ile **dördüncü kez** Stage 49+54-56-58 zincirinde compliance disipline
+  seçti (jenerik label intact). §35.10 fake testimonial paterni.
+- Recovery actions (callback + voucher) UI-only ekleme — backend YOK,
+  UI checkbox müşteriye "talep edildi" sandırır. Yanıltıcı vaat
+  (§35.8 verifiable claim ihlali).
+- Loyalty card "+1 yıldız bedava kahve · 4/5" placeholder ile
+  ekleme — backend YOK, fake metric (§35.8 cohort disclosure ihlali).
+- PhoneFrame device chrome (390×844 iPhone 14) production'a taşıma —
+  prototip-only görselleştirme; mevcut `max-w-[360px]` responsive
+  intact (CLAUDE.md §25 mobile-first paterni).
+- AI badge "AI YARDIMCI HAZIR"'ı gerçek AI feature ile bağlama —
+  cosmetic decoration karar Stage 49 §38.130'da onaylı.
+- HANDOFF "weather: 23°" i18n key implement etme — prototip orphan
+  key, mevcut callsite yok (zaten skip edildi).
+- Reference number "Kopyala" button'u Web Share API ile birleştirmek
+  — clipboard + share farklı UX intent'leri (kopyala-yapıştır vs
+  paylaşım sheet'i). Ayrı concern.
+- Web Share API'yi `await navigator.share()` block etmeden çağırma —
+  user cancel'ı try/catch ile silent yutmak gerek (UI exception sızdırmaz).
+- Cross-platform share section'ında `target="_blank"` rel="noopener
+  noreferrer"` atlamak — window.opener exposure + referrer leak
+  riski (CLAUDE.md §37.2 H paterni).
+- "Menüye geri dön" button'u `menuEnabled && menuPublished` check'siz
+  render etmek — ölü link (`/menu/[slug]` 404 dönen).
+- `bz-rr-dot` keyframe'i tekrar tanımlama — Stage 49 §38.130'da zaten
+  globals.css'te + reduced-motion blanket selector intact.
+- HANDOFF redirecting overlay "★★★★★ MÜKEMMEL" eyebrow'u rating'e göre
+  dinamikleştirme (4★ vs 5★ ayrımı) — visual decoration sabit 5-yıldız
+  brand reinforcement.
+- Star row card içinde glassmorphism `backdrop-blur` kullanma — Buaze
+  beyaz card içindeyiz, off-white `bg-[#FAFAFA]` Pulse N50 token
+  uygun (HANDOFF dark hero bg-rgba glass farklı bağlam).
+
+**Yap**:
+
+- Yeni HANDOFF prototip iterasyonunda 4 element (PhoneFrame, owner
+  hardcoded name, recovery actions, loyalty card) HER ZAMAN AskUserQuestion
+  ile sor — Stage 49+54-56-58 zincirinde kullanıcı her seferinde
+  compliance disipline seçti, ama yeni session'da sorulmadan otonom
+  kabul tehlikeli.
+- Cross-platform share için Restaurant model'inde `tripAdvisorUrl` +
+  `yandexUrl` + per-platform enable flag'i mevcut (Stage 10 §38.80) —
+  yeni schema migration gerekmez. Yeni provider eklenirse 5-nokta
+  drift disipline (CLAUDE.md §38.70 + §38.80): PROVIDER_DOMAINS +
+  PROVIDER_LABELS + PROVIDER_MAP + PATH_RULES + PLATFORM_DEFS +
+  RestaurantData interface + slug API select.
+- Yeni "menüye dön" benzeri public CTA gerekirse `restaurant.menuEnabled
+  && restaurant.menuPublished` conditional render zorunlu (404
+  önleme).
+- Yeni redirecting/transition overlay gerekirse halo + 3-stack visual
+  + 3-dot stagger + progress bar + bottom thanks card paterni reuse
+  (CLAUDE.md §38.140).
+- Web Share API yeni callsite (örn. menü sayfası "Menüyü paylaş")
+  gerekirse `shareReview` paterni reuse — try/catch + clipboard
+  fallback + `keepalive` opsiyonel.
+- Reference number formatter (`formatReferenceNumber`) başka surface'te
+  gerekirse reuse (CUID slice 3+3 char uppercase).
+- Yeni keyframe inline `style={{ animation }}` callsite'ı eklenirse
+  reduced-motion blanket'a `[style*='X']` selector ekleme zorunlu
+  (CLAUDE.md §38.61 paterni).
+
+**Chat prompt history (Stage 59 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"aşağıdaki jsx dosyası restoran değerlendirme
+  paneli için birebir uygular mısın tasarımı aynen:"* + 750+ satır
+  HANDOFF 8-artboard JSX prototip paste (PhoneFrame + ReviewLoading +
+  ReviewRateEmpty/High/Low + ReviewLowForm + ReviewRedirecting +
+  ReviewThanksLow/High + RR_T locale-aware copy + 8 keyframe).
+- AskUserQuestion 4 kritik karar: owner name (Recommended jenerik
+  "İŞLETME YÖNETİMİ") / recovery actions (decide for me → SKIP
+  Recommended) / loyalty card (Recommended SKIP) / cross-share
+  (Recommended Restaurant URL'leriyle implement). Hepsi Stage 49+54-56-58
+  zincirinde compliance disipline ile uyumlu **dördüncü kez**
+  iterasyon.
+- **Disipline restoration (5. iterasyon)**: Stage 49 §38.130 ilk
+  compliance disipline → Stage 54 §38.135 fake-data override → Stage
+  55 §38.136 rollback → Stage 56 §38.137 üçüncü kez compliance-safe
+  → Stage 58 §38.139 dördüncü kez compliance-safe + live chat
+  illusion ek disipline → Stage 59 §38.140 beşinci kez compliance-safe
+  + recovery/loyalty SKIP + cross-share Restaurant URL'leriyle
+  implement (mevcut backend reuse). Pattern stable (§35.8 + §35.10 +
+  §19.1.1) — future session bu zinciri authoritative referans olarak
+  kabul eder.
+- Numerotaj çakışması: bu PR ilk olarak `chore/restaurant-review-redesign-stage57`
+  branch ismiyle açıldı; CLAUDE.md fetch sonrası §38.138 (Stage 57
+  PR #562 platform logos) + §38.139 (Stage 58 sticky CTA + chat
+  bubble) numaraları paralel session'larda alınmış olduğu tespit
+  edildi → branch + closure log §38.140 / Stage 59 olarak renumber
+  edildi (CLAUDE.md §39.2 disipline). `Stage 57` cosmetic conflict
+  zarar vermez (branch `stage59` rename'li, commit message + PR
+  title `Stage 59` taşır).
