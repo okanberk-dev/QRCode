@@ -21041,3 +21041,219 @@ framer-motion + react-intersection-observer install zaten yapıldı).
   TypeScript error in src/ + 0 ESLint error doğrulandı. Vercel
   preview deploy sonrası manuel smoke test gerekirse: yeni 2 section
   visual hierarchy + reduced-motion + mobil responsiveness kontrolü.
+### 38.151 2026-05-08 — Stage 71 HANDOFF "Admin & Owner panel UI v2" showcase pages (24 AP* primitive canlı demo, dev-only)
+
+> **Numerotaj çakışması notu (CLAUDE.md §39.2)**: Bu PR ilk olarak
+> Stage 68 §38.149 numarasıyla branch'lendi ve commit'lendi (branch
+> ismi `chore/handoff-panel-ui-showcase-stage68` cosmetic intact).
+> Push sonrası rebase sırasında PR #573 (Stage 68 §38.149 PR1
+> callsite migrate) + PR #574 (Stage 70 §38.150 anasayfa animation
+> placement) paralel session'larda main'e merged olduğu tespit
+> edildi. Conflict resolution sırasında bu entry **§38.151 / Stage
+> 71** olarak renumber edildi. Branch + commit cosmetic kaldı,
+> closure log canonical numara §38.151 / Stage 71.
+
+§38.146 Stage 65'te eklenen 18 AP* primitive + Stage 37 §38.117'nin
+4 atomik primitive (APSlider/APStarInput/APRadioGroup/APIconButton) +
+Stage 47 §38.128 APCheckbox + Stage 38 §38.118 APAIDraftCard /
+APBillingCard zinciriyle toplam **24 AP* primitive** üretildi.
+Kullanıcı yeni HANDOFF JSX prototip paylaştı (~1200 satır, 24 AP*
+primitive + 6 Showcase fonksiyonu) ve istedi: *"analytics kısmını
+owner panel veya genel olarak her yerde aynı eklediğine emin ol ve
+aşağıdaki jsx dosyasını butonlar yapılmamış owner ve admin panelde
+genel panel olarak yap."* Bu istek 2 parçalı:
+
+1. **Analytics tutarlılık doğrulama** (3 paralel Explore agent +
+   manuel verify): Stage 67 §38.148 **INTACT** + sentiment heuristic
+   tutarlı (rating 5★=pos, 3-4★=neu, 1-2★=neg) + 5-KPI analytics vs
+   4-KPI dashboard intentional design separation (drift değil) — yeni
+   PR aksiyonu **YOK**.
+2. **Showcase pages mount**: 24 primitive'i 6 frame'de canlı render
+   eden dev-only sayfaları admin + owner panellerine ekle.
+
+**3 fix bundle**:
+
+1. **Yeni `<PanelUiShowcase surface>` shared component**
+   (`src/components/dev/PanelUiShowcase.tsx` — ~750 satır):
+   - 6 frame içinde 24 AP* primitive canlı render:
+     - **Frame 1 — APButton & APChip & APSegmented**: 8 variant
+       button (primary/secondary/dark/darkLime/ghost/danger/success/
+       limeOutline) + 4 size + loading + badge + kbd + APIconButton
+       (3 size + 4 tone) + APSegmented + 7 tone APChip + APFab
+       (lime + dark) + APSplitButton + APButtonGroup
+     - **Frame 2 — APSwitch & APCheckbox & APRadioGroup &
+       APSlider**: 3 size APSwitch + locked state + 3-state
+       APCheckbox (indeterminate dahil) + APRadioGroup + APSlider +
+       APStarInput + 2 APToggleCard
+     - **Frame 3 — APKpiCard**: 4-col grid (Ortalama Puan / Toplam
+       Yorum / Yanıt Oranı / Ort. Yanıt Süresi) sparkline + delta
+       chip (Stage 38 §38.118 paterni)
+     - **Frame 4 — APInboxCard & APAIDraftCard**: 2-col layout —
+       segmented filter inbox (3 sample item) + AI draft card (warm
+       tone + customer context + tags + 3 action button)
+     - **Frame 5 — APLocationCard & APTeamCard & APBillingCard &
+       APQRCard**: 2 location + 3 team (owner/admin/member) + Pulse
+       Pro billing card + QR card with synthetic italic "bz." mark
+     - **Frame 6 — APAlertCard & APEmptyCard & APComposerCard &
+       APQuickSettingsCard**: negatif uyarı + boş durum + 4-tag
+       composer + 3-toggle + slider + theme picker quick settings
+   - Caller-controlled state (useState içinde, primitive'ler
+     stateless intact).
+   - Surface prop (`'admin' | 'owner'`) DEV ONLY banner copy
+     farklılaşması.
+   - Pulse §11 disipline intact (Pulse hex map + synthetic italic
+     Space Grotesk + lime/graphite/N-scale palette + JetBrains Mono
+     uppercase eyebrow).
+
+2. **2 yeni dev-only page mount**:
+   - `src/app/admin/dev/panel-ui/page.tsx` — admin dev section'da
+     (Mail group altında, NODE_ENV !== 'production' guard).
+     `<PanelUiShowcase surface="admin" />`.
+   - `src/app/[locale]/dashboard/dev/panel-ui/page.tsx` — owner
+     locale-aware mirror, sidebar settings group altında dev-only
+     görünür. `<PanelUiShowcase surface="owner" />`.
+   - Her iki page `'use client'` + `<PageHeader>` + showcase mount.
+     Auth guard mevcut layout'lardan gelir (admin layout
+     `verifyJwt` + `isAdminRole` zorunlu, owner layout owner JWT
+     zorunlu).
+
+3. **Sidebar nav entries (NODE_ENV !== 'production' guard)**:
+   - `AdminSidebar.tsx`: mevcut `mail` group dev section'ına
+     `Sparkles` icon + "Panel UI v2 (dev)" entry eklendi (mail-preview
+     + lifecycle-emails ile aynı paterni reuse).
+   - `UserDashboardShell.tsx`: `settings` group `children` array'ine
+     conditional spread (`process.env.NODE_ENV !== 'production' ?
+     [{...}] : []`) ile "Panel UI v2 (dev)" entry. `Sparkles` icon
+     import eklendi.
+   - Production'da hiçbir surface'te sidebar item görünmez; route
+     hâlâ erişilebilir (admin/owner role guard intact) ama gizli
+     dev tool — operatör dev surface bağlamında.
+
+**Compliance disipline (CLAUDE.md §35.8 + §35.10 + §19.1.1 + §38.146
+paterni)**: Showcase'teki tüm sample data jenerik (özel müşteri
+ismi yok, fake metric/rating yok). Email + name + KPI value
+showcase placeholder; gerçek backend bağlantısı yok. Stage 49+54-
+56-58-59-60-62-63-64'teki public review surface compliance disipline
+zinciri intact (8. iterasyon). Migration scope **DEFER** edildi —
+339 bz-btn-* / Toggle / Badge / Tabs callsite (107 dosya) PR1-5'te
+kademeli migrate, PR6'da counterparts silinir (CLAUDE.md §38.146
+PR0 base + §34 + §38.49 dead utility class disipline intact).
+
+**Etkilenen dosyalar (5)**:
+- `src/components/dev/PanelUiShowcase.tsx` (yeni, ~750 satır)
+- `src/app/admin/dev/panel-ui/page.tsx` (yeni, ~30 satır)
+- `src/app/[locale]/dashboard/dev/panel-ui/page.tsx` (yeni, ~30 satır)
+- `src/components/admin/AdminSidebar.tsx` (+8 satır mail group dev
+  section, Sparkles import zaten mevcut)
+- `src/components/dashboard/UserDashboardShell.tsx` (+10 satır
+  settings group conditional spread + Sparkles import eklendi)
+
+**Schema migration**: yok. **Yeni endpoint**: yok. **Yeni dep**:
+yok (lucide-react zaten var; AP* primitive'ler Stage 65/47/38'de
+zaten mevcut). **Test count**: 404/404 intact (yeni unit test yok
+— UI showcase, helper logic değişmedi).
+
+**Verification**:
+- `npx tsc --noEmit -p tsconfig.json` → showcase + page'lerde 0 error
+  (sadece pre-existing `.next/types/...` baseline §21.13 + animations
+  framer-motion type drift PR #571'den intact)
+- `npx eslint .` → 2 pre-existing baseline warning (PlatformsClient
+  unused eslint-disable + APTeamCard unused ReactNode); showcase 0
+  warning
+- `npm test` → 404/404 pass, 45 suites
+- `npx next build` → ✓ Compiled successfully + her 2 panel-ui route
+  built (`.next/server/app/admin/dev/panel-ui/`, `.next/server/app/[locale]/dashboard/dev/panel-ui/`)
+
+**JSDoc comment-terminator fix**: Owner panel showcase page'in
+ilk versiyonunda `bz-btn-*/Toggle/Badge/Tabs` ifadesi JSDoc
+block-comment içinde `*/` sırası ile comment'i erken kapatıyordu
+(SWC parser TS1005 / TS1128 / TS1002 / TS1161 zinciri). Boşluklarla
+ayrılmış formata (`bz-btn-* / Toggle / Badge / Tabs`) çevrildi.
+Future session aynı drift riskine karşı: yorumda `*/` literal yerine
+`* /` veya `\*/` escape kullanılır (CLAUDE.md §38.59 + §39.2 paterni
+paralel).
+
+**Yapma**:
+- Showcase page'lerini production'da göstermek — dev-only intent
+  (NODE_ENV !== 'production' guard'la sidebar'da gizli; URL ile
+  doğrudan erişim hâlâ admin/owner role guard ile korunur, ama
+  "DEV ONLY" banner gerçek feature olmadığını belirtir).
+- 339 bz-btn-* callsite'ı bu PR'da migrate etmek — CLAUDE.md §38.146
+  PR0 base disipline (PR1-5 kademeli migrate, PR6 cleanup). Single
+  PR scope creep + regression test yükü çok büyük.
+- Showcase'e backend-bağlı sample data eklemek (gerçek müşteri
+  yorumları, gerçek KPI değerleri) — IDOR + KVKK + scope creep
+  riski. Generic placeholder yeterli.
+- HANDOFF Showcase fonksiyonlarını (APButtonShowcase, APTogglesShowcase,
+  vb.) verbatim port etmek — BZ tokens object Buaze'de yok, AP_T
+  translation map gereksiz (Buaze translations.ts paterni intact).
+  Mevcut 24 primitive Buaze export pattern'e uygun, doğrudan kullanılır.
+- HANDOFF Instrument Serif italic font yüklemek — kullanıcı kararı
+  §38.114 "Asla pivot etme" + §38.122 hero + §38.146 primitive
+  paterni intact (synthetic italic Space Grotesk).
+- Owner sidebar `Sparkles` icon yerine `Wrench` veya başka icon
+  zorunlu yapmak — Sparkles AP* showcase için lime accent ile
+  uyumlu, Pulse §11 brand reinforcement.
+- Showcase frame içinde primitive state'i global state veya zustand
+  ile yönetmek — caller-controlled stateless paterni intact (PR1-5
+  migrate sırasında consumer pattern öğrenebilir).
+
+**Yap**:
+- Yeni AP* primitive eklenirse showcase'a ek frame veya mevcut
+  frame'i genişlet (CLAUDE.md §38.146 paterni reuse).
+- Yeni dev tool sayfası eklenirse admin Mail group + owner Settings
+  group dev sections paterni reuse (NODE_ENV !== 'production' guard).
+- HANDOFF prototip yeni iterasyon gelirse 24 primitive'in mevcut
+  Pulse uyumlu API'siyle showcase güncellenir (BZ tokens object
+  port etmeye gerek yok).
+- Migration kademeli ilerlerse (PR1+): showcase page'i ile birebir
+  parite test etmek için dev surface'i smoke test referansı olarak
+  kullanılır.
+
+**Stage 68 closure** (Tarih 2026-05-08):
+- Branch: `chore/handoff-panel-ui-showcase-stage68` (fresh main
+  üstüne, Stage 67 §38.148 PR #573 merged sonrası align)
+- Edit'lenen dosyalar: 2 (AdminSidebar.tsx + UserDashboardShell.tsx)
+- Yeni dosyalar: 3 (PanelUiShowcase + admin page + owner page)
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Production'da sidebar'da panel-ui entry görünmez; dev/preview
+  surface'inde admin /admin/dev/panel-ui veya owner
+  /[locale]/dashboard/dev/panel-ui ile 24 primitive demo erişilir.
+- Kalan riskler: yok (UI showcase + dev-only guard + AP* primitive'ler
+  intact); migration scope deferred (PR1-5 §38.146 paterni intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya
+  AP* migration PR1 (Public review `/r/[slug]` 1 dosya, 2 bz-btn-*
+  + 1 Badge — CRITICAL surface, küçük scope CLAUDE.md §38.146
+  paterni reuse).
+
+**Chat prompt history (Stage 68 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"analytics kısmını owner panel veya genel
+  olarak her yerde aynı eklediğine emin ol ve aşağıdaki jsx dosyasını
+  butonlar yapılmamış owner ve admin panelde genel panel olarak
+  yap."* + ~1200 satır HANDOFF JSX prototip paste (24 AP* primitive
+  + 6 Showcase fonksiyonu).
+- AskUserQuestion **YAPILMADI** — kullanıcı 8. compliance disipline
+  iterasyonunda otonom karar yetkisi (Stage 49→54→55→56→58→59→60→62→
+  63→64→67 zinciri stable). Showcase page kararı deterministik
+  (HANDOFF Showcase fonksiyonları → mevcut 24 primitive doğrudan
+  reuse, BZ tokens port edilmedi, AP_T translation map skip — Buaze
+  paterniyle uyumlu).
+- 3 paralel Explore agent context gathering: (1) AP* parity %99
+  intact + showcase fonksiyonları deferred + 339 bz-btn-* callsite
+  scope → migration PR1-5 deferred kararı; (2) admin sidebar dev
+  section paterni mail group altında + owner sidebar dev section
+  YOK → owner sidebar'a yeni dev nav entry eklendi; (3) analytics
+  consistency Stage 67 INTACT + sentiment heuristic tutarlı +
+  intentional 5-KPI vs 4-KPI design drift → analytics tarafında
+  yeni PR aksiyon YOK.
+- Otonom karar gerekçesi: kullanıcı "hiçbir şey sormadan" disipline
+  9. iterasyonda stable + lokal verify yeşil (lint 0 baseline
+  warning hariç + tsc 0 + test 404/404 + build EXIT=0 her 2
+  panel-ui route built) + 0 fonksiyonel risk (dev-only + auth
+  guard intact + mevcut callsite'lar dokunulmadı).

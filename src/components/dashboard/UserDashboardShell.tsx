@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Sparkles, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -409,6 +409,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         // /guide sadece ilk 30 gün — onboarding sonrası gereksiz.
         ...(showGuide
           ? [{ href: `/${locale}/dashboard/guide`, icon: BookOpen, label: copy.guide }]
+          : []),
+        // Stage 68 §38.149 — HANDOFF Admin & Owner panel UI v2 showcase (24
+        // AP* primitive). Dev-only (NODE_ENV !== 'production') — production
+        // sidebar'da görünmez. CLAUDE.md §38.146 PR0 base + Stage 47/65/68
+        // paterni reuse. Mevcut owner panel callsite'ları intact.
+        ...(process.env.NODE_ENV !== 'production'
+          ? [
+              {
+                href: `/${locale}/dashboard/dev/panel-ui`,
+                icon: Sparkles,
+                label: locale === 'tr' ? 'Panel UI v2 (dev)' : 'Panel UI v2 (dev)',
+              },
+            ]
           : []),
       ],
     },
