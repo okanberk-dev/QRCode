@@ -146,7 +146,8 @@ export const SEEDS = {
     firstName: 'Mert',
     daysLeft: 3,
     usage: { reviews: 47, avgRating: 4.6, aiReplies: 38, growthPct: 184 },
-    upgradeUrl: `${APP_URL}/tr/dashboard/billing`,
+    // CLAUDE.md §38.132 — /dashboard/billing route YOK, account tab deeplink.
+    upgradeUrl: `${APP_URL}/tr/dashboard/account?section=billing`,
   }),
   'contact-admin': (): ContactAdminParams => ({
     name: 'Mert Demir',

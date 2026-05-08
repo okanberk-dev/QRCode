@@ -277,7 +277,7 @@ export async function renderRoiCustomerReport(
           ${copy.ctaSecondary}
         </a>
       </div>
-      <div style="margin-top:14px;font-size:11.5px;color:${PULSE.graphite};opacity:0.75;">${copy.ctaPlanLink}: <a href="${escapeHtml(params.pricingUrl)}" style="color:${PULSE.graphite};font-weight:600;text-decoration:underline;">${isTr ? 'buaze.com/fiyatlandirma' : 'buaze.com/pricing'}</a></div>
+      <div style="margin-top:14px;font-size:11.5px;color:${PULSE.graphite};opacity:0.75;">${copy.ctaPlanLink}: <a href="${escapeHtml(params.pricingUrl)}" style="color:${PULSE.graphite};font-weight:600;text-decoration:underline;">buaze.com/pricing</a></div>
     </div>
   `;
 

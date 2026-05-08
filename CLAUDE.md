@@ -17398,19 +17398,106 @@ intact (presentational değişim, helper logic yok).
   + EN locale'da English semantic (privacy / cookie) ayrı concern —
   `${isTr ? 'tr/X' : 'en/Y'}` paterni reuse.
 
+**Stage 51 ek audit (kullanıcı follow-up: "tüm maillerde kontrol et")**
+
+PR #555 review sırasında kullanıcı 24-template kapsamlı audit istedi.
+3 ek broken/cosmetic URL tespit edildi (mail-template-wide grep + manuel
+verify):
+
+3. **CRITICAL — `welcome.ts:108` `/help/page` 404**:
+   - Eski: `${baseAppUrl}/${isTr ? 'tr' : 'en'}/help/page`
+   - Yeni: `${baseAppUrl}/${isTr ? 'tr' : 'en'}/help`
+   - Sebep: CLAUDE.md §22 Help Center kanonik route'ları:
+     `/[locale]/help` (index), `/[locale]/help/category/[slug]`,
+     `/[locale]/help/[slug]` (detail), `/[locale]/help/search`.
+     `page.tsx` Next.js convention dosyası, URL path değil — `/help/page`
+     route'u YOK, kullanıcı 404 görüyordu.
+
+4. **CRITICAL — `owner-segment-mail.ts` + `bulk/route.ts` locale-aware
+   dashboard URL**:
+   - Eski caller: `appUrl: process.env.NEXT_PUBLIC_APP_URL ||
+     'https://buaze.com/dashboard'` → env varsa `/dashboard` suffix
+     YOK + locale prefix YOK; env yoksa locale prefix YOK
+   - Eski template default: `'https://buaze.com/dashboard'` (locale
+     prefix YOK)
+   - Sonuç: admin bulk-mail recipient owner'a gönderdiğinde "Panele git"
+     CTA → `https://buaze.com/dashboard` 404 (Next.js `/[locale]/dashboard`
+     route'una uygun değil)
+   - Yeni template: `appUrl ?? `${baseAppUrl}/${isTr ? 'tr' : 'en'}/dashboard``
+     locale-aware inşa (recipient locale render fn'ye zaten geliyor)
+   - Yeni caller: `appUrl` param'ını dropladı (template default doğru
+     locale-aware URL üretir)
+   - **Etki**: admin → owner toplu mail "Panele git" CTA artık recipient
+     locale'ine göre `/tr/dashboard` veya `/en/dashboard`'a doğru gider.
+
+5. **LOW — `roi-customer-report.ts:280` display text drift**:
+   - Eski: TR'de `buaze.com/fiyatlandirma`, EN'de `buaze.com/pricing`
+     (anchor display text)
+   - Yeni: TR + EN aynı `buaze.com/pricing` (gerçek route, `/fiyatlandirma`
+     route YOK)
+   - href intact (`params.pricingUrl` caller-derived, doğru çalışıyor):
+     `${appUrl}/${locale}/pricing`. Sadece display text route slug ile
+     parite kazandı (kullanıcı güveni — hover'da görünen URL ile
+     anchor text aynı).
+
+**3 ek dosya değişikliği**:
+- `src/lib/email/templates/welcome.ts` (line 108 fix + yorum)
+- `src/lib/email/templates/owner-segment-mail.ts` (locale-aware appUrl
+  default + interface comment update)
+- `src/lib/email/templates/roi-customer-report.ts` (line 280 display
+  text TR/EN parity)
+- `src/app/api/admin/members/bulk/route.ts` (caller appUrl drop +
+  yorum açıklaması)
+
+**Stage 51 deeper audit (kullanıcı follow-up: "başka mail varsa bul fixle ve merge et")**
+
+PR #555 ek commit sonrası kullanıcı tekrar kapsamlı audit istedi.
+`params.X` URL parameter caller'ları + admin path'leri + legal
+template'leri tarandı. 1 ek CRITICAL bug tespit edildi:
+
+6. **CRITICAL — `/dashboard/billing` route YOK, üç caller yanlış URL
+   kullanıyor**:
+   - Mevcut owner panel route'ları: `account/`, `analytics/`,
+     `announcements/`, `campaigns/`, `customers/`, `feedbacks/`,
+     `google-reviews/`, `guide/`, `integrations/`, `menu/`,
+     `notifications/`, `platforms/`, `profile/`, `qr/`, `restaurants/`
+     (CLAUDE.md §38.51 SettingsLayout 7 tab — billing tab `?section=billing`
+     deeplink ile `/dashboard/account` içinde).
+   - 3 yer yanlış route'u kullanıyordu:
+     - `src/app/api/cron/trial-reminders/route.ts:92`
+       `${appUrl}/${userLocale}/dashboard/billing`
+       → `${appUrl}/${userLocale}/dashboard/account?section=billing`
+     - `src/app/api/dev/email-preview/seeds.ts:149`
+       `${APP_URL}/tr/dashboard/billing`
+       → `${APP_URL}/tr/dashboard/account?section=billing`
+     - `src/lib/legal/templates/iade-iptal-politikasi.ts:57,124`
+       (TR + EN content) "Panel: /dashboard/billing → Aboneliği iptal et"
+       → "/dashboard/account?section=billing" (TR + EN parity)
+   - **Etki**: trial-ending mail her gün 1+3 gün kalan owner'lara
+     gönderiliyordu (CLAUDE.md §21.11 cron) — "Planı yükselt" CTA
+     `/dashboard/billing` 404 dönüyordu. Owner upgrade link'inde
+     conversion kaybı + iade politikası okuyan müşteri 404 görüyordu.
+   - Doğru deeplink: `/[locale]/dashboard/account?section=billing`
+     (CLAUDE.md §38.51 SettingsLayout `?section=` query string deeplink
+     desteği).
+
 **Stage 51 closure** (Tarih 2026-05-08):
 - Branch: `claude/fix-campaign-email-links-dzXTa` (designated, environment
   task description'da sabit)
-- Edit'lenen dosyalar: 3 (3 mail template) + CLAUDE.md
+- Edit'lenen dosyalar: 10 (3 kampanya template + 3 ek template + 1 admin
+  caller + 1 cron caller + 1 dev seeds + 1 legal template) + CLAUDE.md
 - Yeni dosya: yok
 - Schema migration: yok
 - Yeni dep: yok
 - Test count: 383/383 pass intact
 - Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
-  pending kampanya'lar veya yeni gönderilenler artık doğru link'lerle
-  müşteri/owner inbox'lara gider.
+  pending kampanya'lar + yeni welcome mail + admin bulk segment mail
+  + ROI customer report mail artık doğru link'lerle inbox'a gider.
 - Kalan riskler: yok (presentational + env-aware base URL; backend
-  kontrat değişmedi).
+  kontrat değişmedi; `owner-segment-mail` template internal default
+  caller'ın eski `appUrl: 'https://buaze.com/dashboard'` literal'ını
+  reproduce edemediği için backward-compat — caller artık doğru
+  locale-aware URL alır).
 - **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
   HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
   re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
@@ -17421,6 +17508,10 @@ intact (presentational değişim, helper logic yok).
 - 2026-05-08 kullanıcı: *"Claude md oku ve owner panelde kampanyalar
   kısmı bar mail göndwriliyor ama template'deki linklerin çoğu yanlış
   tek tek kontrol edip doğru linklere yönlendirir misin?"*
+- 2026-05-08 follow-up kullanıcı (PR #555 review sırasında): *"Tüm
+  maillerde kontrol et"* → 24 mail template kapsamlı audit. 3 ek
+  CRITICAL/LOW fix (welcome `/help/page` 404 + owner-segment-mail
+  locale-aware dashboard + roi-customer-report display text parity).
 - 3 paralel Explore agent çelişti (Agent 1: /legal/ yanlış; Agent 2:
   /legal/ template'leri mevcut). Manuel `ls src/app/[locale]/` ile
   çözüldü: `legal/` directory YOK, kısa-slug route'ları var.

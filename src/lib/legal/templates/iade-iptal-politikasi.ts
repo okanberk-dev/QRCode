@@ -54,7 +54,7 @@ Aşağıdaki kalemler iade edilmez:
 
 Cayma veya iade talebi:
 
-- **Panel:** /dashboard/billing → "Aboneliği iptal et" → kısmi iade gerekiyorsa "İade talep et" akışı
+- **Panel:** /dashboard/account?section=billing → "Aboneliği iptal et" → kısmi iade gerekiyorsa "İade talep et" akışı
 - **E-posta:** {{LEGAL_CONTACT_EMAIL}} adresine başvuru — talebin alındığı 24 saat içinde teyit ile yanıtlanır
 - **Form:** {{LEGAL_CONTACT_EMAIL}} adresine yapılan başvuruda en az aşağıdaki bilgilerin yer alması yeterlidir:
   - Adı soyadı / işletme adı
@@ -121,7 +121,7 @@ Refunds are not available for:
 
 Cancellation or refund request:
 
-- **Panel:** /dashboard/billing → "Cancel subscription" → "Request refund" if a partial refund applies
+- **Panel:** /dashboard/account?section=billing → "Cancel subscription" → "Request refund" if a partial refund applies
 - **E-mail:** Send to {{LEGAL_CONTACT_EMAIL}} — confirmation within 24 hours
 - **Form:** Include at minimum:
   - Name / company
