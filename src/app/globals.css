@@ -628,6 +628,7 @@ body {
   [style*='bz-rr-spin'],
   [style*='bz-rr-pulse'],
   [style*='bz-rr-dot'],
+  [style*='bzFadeUp'],
   .animate-\[bzProgress_2\.2s_linear_forwards\] {
     animation: none !important;
   }
