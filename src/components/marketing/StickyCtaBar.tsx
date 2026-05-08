@@ -138,34 +138,13 @@ export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
           paddingRight: 'max(1.5rem, env(safe-area-inset-right))',
         }}
       >
-        {/* LEFT: copy block — eyebrow + headline + meta row */}
+        {/* LEFT: copy block — headline + minimal meta (compact).
+            Stage 61 §38.142 — kullanıcı talebi: "yeni 14 gün ücretsiz
+            yazısı olmasın altta ve üstte". Eyebrow ("YENİ · 14 GÜN
+            ÜCRETSİZ DENEME") + meta'daki duplicate "14 gün ücretsiz"
+            item silindi. Kalan 2 trust item (Kart gerekmez + İptal
+            anytime) verifiable claim olarak intact (CLAUDE.md §35.8). */}
         <div className="flex flex-col gap-2">
-          {/* Eyebrow with live lime dot — compliance-safe promotion claim */}
-          <div className="inline-flex items-center gap-2.5">
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
-              style={{
-                background: 'rgba(198,242,78,0.12)',
-                borderColor: 'rgba(198,242,78,0.35)',
-              }}
-            >
-              <span
-                aria-hidden
-                className="inline-block h-1.5 w-1.5 rounded-full"
-                style={{
-                  background: '#C6F24E',
-                  animation: 'scbDot 1.6s ease-in-out infinite',
-                }}
-              />
-              <span
-                className="pulse-eyebrow"
-                style={{ color: '#C6F24E', fontSize: 9.5, letterSpacing: '0.14em' }}
-              >
-                {isTr ? 'YENİ · 14 GÜN ÜCRETSİZ DENEME' : 'NEW · 14-DAY FREE TRIAL'}
-              </span>
-            </span>
-          </div>
-
           {/* Headline — italic Space Grotesk (synthetic italic, CLAUDE.md
               §38.112 paterni reuse) + lime highlight on second clause. */}
           <h3
@@ -190,10 +169,12 @@ export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
             )}
           </h3>
 
-          {/* Meta row — 3 verifiable trust items (lime check + mono uppercase) */}
+          {/* Meta row — 2 verifiable trust items (lime check + mono).
+              "14 gün ücretsiz" item Stage 61 §38.142 ile silindi
+              (kullanıcı talebi: "yeni 14 gün ücretsiz yazısı olmasın
+              altta ve üstte"). */}
           <div className="mt-1 flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
             {[
-              isTr ? '14 gün ücretsiz' : '14-day free trial',
               isTr ? 'Kart gerekmez' : 'No card required',
               isTr ? 'İstediğin zaman iptal' : 'Cancel anytime',
             ].map((label) => (

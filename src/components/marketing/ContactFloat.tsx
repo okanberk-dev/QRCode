@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import BuazeLogo from '@/components/marketing/BuazeLogo';
 
 const MIN_FILL_MS = 2500;
 const BUBBLE_TEASER_DELAY_MS = 6000;
@@ -61,6 +62,15 @@ export function ContactFloat({ locale }: { locale: string }) {
   const [state, setState] = useState<WidgetState>('fab');
   const [showBubble, setShowBubble] = useState(false);
 
+  // Stage 61 §38.142 — StickyCtaBar visibility listener.
+  // StickyCtaBar fires `buaze:sticky-cta-visibility` CustomEvent on
+  // mount/scroll/dismiss. Burada tüketip ContactFloat'ı dynamic olarak
+  // yukarı kaydırıyoruz; aksi halde md+ desktop'ta sticky CTA açıkken
+  // FAB + open form sticky bandın arkasında kalıp X close button
+  // gözükmüyordu (kullanıcı raporu). Mobile'da sticky CTA `hidden md:block`
+  // — aşağıda md: prefix ile yalnız desktop offset uygulanır.
+  const [stickyCtaVisible, setStickyCtaVisible] = useState(false);
+
   // Form state
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -104,6 +114,23 @@ export function ContactFloat({ locale }: { locale: string }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [state]);
+
+  // Stage 61 §38.142 — StickyCtaBar visibility listener.
+  // CustomEvent contract: `detail.visible: boolean`. Sticky CTA bandının
+  // ContactFloat'ı kapatmasını önler (kullanıcı raporu: çarpı işareti
+  // gözükmüyordu). md+ desktop'ta sticky CTA visible iken FAB/open form
+  // ~140px yukarı kayar (sticky height ~120px + 20px breathing).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ visible: boolean }>).detail;
+      if (typeof detail?.visible === 'boolean') {
+        setStickyCtaVisible(detail.visible);
+      }
+    };
+    window.addEventListener('buaze:sticky-cta-visibility', handler);
+    return () => window.removeEventListener('buaze:sticky-cta-visibility', handler);
+  }, []);
 
   // Hide on auth + onboarding only — bu sayfalarda form gürültü olur
   // (kullanıcı zaten bir akışı tamamlıyor). Homepage en kritik conversion
@@ -197,7 +224,9 @@ export function ContactFloat({ locale }: { locale: string }) {
     return (
       <div
         aria-live="polite"
-        className="fixed right-4 bottom-[88px] md:right-6 md:bottom-6 z-50 flex flex-col items-end gap-3"
+        className={`fixed right-4 bottom-[88px] md:right-6 z-50 flex flex-col items-end gap-3 transition-[bottom] duration-300 ease-out ${
+          stickyCtaVisible ? 'md:bottom-[148px]' : 'md:bottom-6'
+        }`}
       >
         {showBubble && (
           <div
@@ -294,15 +323,12 @@ export function ContactFloat({ locale }: { locale: string }) {
                 '0 18px 44px -12px rgba(198,242,78,0.6), 0 4px 12px rgba(10,10,10,0.18)',
             }}
           >
-            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden>
-              <path
-                d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"
-                stroke="#0A0A0A"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            {/* Stage 61 §38.142 — HANDOFF ChatLauncher BuazeMark icon
+                paterni (kullanıcı talebi: "logonun ikonu olsun ve
+                estetik şekildeydi"). Önceden speech-bubble svg vardı;
+                BuazeLogo (`variant="on-lime"` graphite stroke + accent)
+                lime FAB üstünde brand-aligned. CLAUDE.md §11 paterni. */}
+            <BuazeLogo size={28} variant="on-lime" />
           </button>
 
           {/* Notification badge — HANDOFF "1" sayı yerine "?" yardım
@@ -350,7 +376,9 @@ export function ContactFloat({ locale }: { locale: string }) {
       role="dialog"
       aria-modal="false"
       aria-label={isTr ? 'İletişim formu' : 'Contact form'}
-      className="bz-fade-in fixed right-4 bottom-[88px] left-4 z-50 max-h-[calc(100vh-110px)] overflow-hidden rounded-3xl border border-[#EDEDED] bg-white sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] md:bottom-6"
+      className={`bz-fade-in fixed right-4 bottom-[88px] left-4 z-50 max-h-[calc(100vh-110px)] overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] ${
+        stickyCtaVisible ? 'md:bottom-[148px]' : 'md:bottom-6'
+      }`}
       style={{
         boxShadow:
           '0 28px 64px -18px rgba(10,10,10,0.32), 0 4px 12px rgba(10,10,10,0.06)',

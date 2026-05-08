@@ -19379,3 +19379,88 @@ Sanity grep regression (post-edit):
 - AskUserQuestion 4 karar (hepsi Recommended): Layout floating pill + backdrop-blur / Theme light only / Badge owner+admin dinamik marketing yok / Scope tek consolidated PR.
 - Hukuki/disipline override: yok (HANDOFF visual polish + badge sync, fake-data riski yok). Marketing badge SKIP CLAUDE.md §35.8 cohort disclosure paterniyle uyumlu.
 - Surface-specific intent koruma: HANDOFF prototip "scan" tab center FAB tüm 3 surface'e zorlamadı — owner/admin'de yapay primary CTA olur. Sadece marketing'de FAB doğal entry.
+
+---
+
+### 38.142 2026-05-08 — Stage 61 sticky CTA + ContactFloat overlap fix + StickyCtaBar daralt + ContactFloat FAB BuazeLogo icon
+
+§38.139 Stage 58 sticky CTA + chat bubble redesign sonrası kullanıcı 3 issue rapor etti:
+1. **Üst üste geliyor**: md+ desktop'ta StickyCtaBar (z-40, full-width, ~120px height) ContactFloat FAB/open form (z-50, `bottom-6` = 24px) ile dikey overlap → sticky bar bandı bubble'ın çarpı butonunu kapatıyordu (visual regression).
+2. **StickyCtaBar daralt**: "yeni 14 gün ücretsiz yazısı olmasın altta ve üstte" — eyebrow `YENİ · 14 GÜN ÜCRETSİZ DENEME` (üstte) + meta row'da `14 gün ücretsiz` item (altta) duplicate "14 gün" copy.
+3. **FAB icon**: HANDOFF ChatLauncher prototip'te `<BuazeMark size={28} />` lime FAB içinde estetik. Stage 58'de speech-bubble svg ile değiştirilmişti — kullanıcı "estetik şekildeydi" diyerek BuazeLogo geri istedi.
+
+**Tek consolidated PR** (CLAUDE.md §21.22). Schema migration **YOK**. Yeni keyframe **YOK** (mevcut scbDot/scbPulse/scbRing/scbHair/scbSweep/scbShine/scbWave/scbBlink intact). Backend kontrat dokunulmadı.
+
+**3 fix bundle**:
+
+1. **StickyCtaBar daralt** (`StickyCtaBar.tsx`):
+   - Eyebrow div block (eski lines 144-167) **tamamen silindi** — `YENİ · 14 GÜN ÜCRETSİZ DENEME` lime pill (border + dot + mono uppercase) artık görünmez. Visual gap kapanır, headline doğrudan üstten başlar.
+   - Meta row `14 gün ücretsiz` item silindi (line 196 array). Kalan 2 verifiable trust item: `Kart gerekmez` + `İstediğin zaman iptal` (CLAUDE.md §35.8 verifiable claim disipline intact). Lime check ✓ icon paterni intact.
+   - Headline + lime highlight + CTA button + dismiss intact.
+
+2. **ContactFloat sticky CTA visibility listener** (`ContactFloat.tsx`):
+   - Yeni `useState<boolean> stickyCtaVisible` state.
+   - Yeni `useEffect` listener `buaze:sticky-cta-visibility` CustomEvent (StickyCtaBar Stage 57 §38.139'da dispatch ediyordu, tüketici eksikti).
+   - FAB wrapper: `md:bottom-6` static → conditional `${stickyCtaVisible ? 'md:bottom-[148px]' : 'md:bottom-6'}` + `transition-[bottom] duration-300 ease-out` smooth.
+   - Open form: aynı conditional pattern.
+   - Mobile etkilenmez — sticky CTA `hidden md:block`, mobile ContactFloat `bottom-[88px]` MobileBottomNav §38.43 üstünde intact.
+   - Sticky CTA height ~120px + 28px breathing → 148px md+ offset.
+
+3. **ContactFloat FAB icon BuazeLogo** (`ContactFloat.tsx`):
+   - Eski 24-stroke speech-bubble svg path (line 297-305) silindi.
+   - Yeni `<BuazeLogo size={28} variant="on-lime" />` import edildi (`@/components/marketing/BuazeLogo`).
+   - `variant="on-lime"` → graphite stroke + graphite accent (lime FAB üzerinde homojen brand mark).
+   - Bubble teaser greeting card içindeki ayrı speech-bubble icon (`bg-[#0A0A0A] text-[#C6F24E]`) intact (kullanıcı sadece FAB icon'una değindi).
+   - Notification badge "?" (Stage 58 §38.139 disipline kararı — live chat unread message implication YOK) **intact**.
+
+**Etkilenen dosyalar (3)**:
+- `src/components/marketing/StickyCtaBar.tsx` (~25 satır net azalma — eyebrow block + 1 meta item silindi)
+- `src/components/marketing/ContactFloat.tsx` (~+30 satır — listener + state + dynamic offset + BuazeLogo import + svg→component)
+- `CLAUDE.md` §38.142 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni keyframe**: yok. **Test count**: 383/383 intact bekleniyor.
+
+**Backend kontrat intact**:
+- StickyCtaBar `buaze:sticky-cta-visibility` CustomEvent dispatch (Stage 57 paterni)
+- ContactFloat `/api/contact` POST + reCAPTCHA + honeypot + dwell-time
+- sessionStorage `buaze.sticky.dismissed` + `buaze.contact-float.bubble.dismissed` keys
+- WidgetState `'fab' | 'open'` + bubble teaser auto-show 6s
+
+**Yapma**:
+- `transition-[bottom]` Tailwind v4 arbitrary class'ı normal `transition-all` veya `transition-colors` ile değiştirme — `bottom` property'si specifik transition gerektirir; `all` daha pahalı (paint trigger), `colors` farklı concern.
+- Sticky CTA `md:bottom-[148px]` offset'i `[120px]` veya `[180px]` yapma — sticky height ~120px + 28px breathing (her iki uçta 14px) optimal görünüm. Daha az → bubble sticky'ye değer. Daha fazla → ContactFloat viewport center'a yakın, doğal bottom-right corner UX'i bozulur.
+- BuazeLogo `variant="default"` lime FAB üstünde kullanma — `accent` lime spark FAB lime ile karışır görünmez. `variant="on-lime"` graphite homojen logo doğru seçim.
+- StickyCtaBar eyebrow block'unu generic copy ile geri ekleme (örn. `BUAZE · LIVE`) — kullanıcı talebi explicit eyebrow YOK; visual gap kapanır + headline öne çıkar.
+- Meta row'dan `Kart gerekmez` veya `İstediğin zaman iptal` item'ı silme — bunlar verifiable trust signal (CLAUDE.md §35.8); silmek conversion için zararlı.
+- ContactFloat bubble teaser içindeki ayrı speech-bubble svg'yi de değiştirme — kullanıcı sadece FAB icon'una değindi; bubble teaser greeting card ayrı concern (Stage 58 §38.139 paterni intact).
+- StickyCtaBar dismiss button (X) silmek veya konumunu değiştirmek — kullanıcı "altta ve üstte" sadece eyebrow + meta'daki "14 gün ücretsiz" demek; X intact.
+
+**Yap**:
+- Yeni promotion eyebrow eklenirse generic Pulse promise (`YENİ · X` veya `LIVE · X`) lime pill paterni reuse — pulse-eyebrow + lime dot + scbDot animation.
+- Yeni sticky bandı ContactFloat ile birlikte mount edilirse aynı listener pattern reuse: `buaze:{sticky-name}-visibility` CustomEvent + state + dynamic md: offset.
+- Yeni FAB icon değişikliği gerekirse BuazeLogo `variant` seçimi: lime FAB → `on-lime`, graphite FAB → `on-dark`, beyaz FAB → `default`.
+- StickyCtaBar height değişikliği gerekirse `md:bottom-[148px]` offset'i de güncel — sticky height + 28px breathing kuralı.
+
+**Sanity grep regression**:
+- `Stage 61 §38.142` markers: 5 hit (StickyCtaBar 2 + ContactFloat 3)
+- `buaze:sticky-cta-visibility` listener + `stickyCtaVisible` + `md:bottom-[148px]`: 6 hit ContactFloat
+- `BuazeLogo` import + usage: 3 hit ContactFloat
+- Speech-bubble svg path: 1 hit (bubble teaser greeting card intact, FAB svg silindi)
+
+**Stage 61 closure** (Tarih 2026-05-08):
+- Branch: `chore/sticky-cta-chat-bubble-fix-stage61`
+- Edit'lenen dosyalar: 3 (StickyCtaBar + ContactFloat + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Yeni keyframe: yok
+- Test count: 383/383 intact bekleniyor
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Marketing surface'lerinde scroll > 600px → sticky CTA bar daha sade görünür (eyebrow yok, 2 meta trust item) + ContactFloat FAB sticky band'ın üzerine smooth kayar (300ms transition) + FAB içinde BuazeLogo brand-aligned mark.
+- **Kalan riskler**: yok. Mobile ContactFloat etkilenmez (sticky CTA `hidden md:block`); listener stickyCtaVisible default false → CustomEvent gelmediği surface'lerde mevcut `md:bottom-6` davranış intact.
+
+**Chat prompt history (Stage 61 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"şimdi stcky cta ve chat bubble üst üste geliyor çarpoı işaret gözükmüyor onu düzelt ve sticky kısmını daralt 'yeni 14 gün ücretsiz yazısı olmasın altta ve üstte'. ek olarak bubble açmada normalde logonun ikonu var ve estetik şekildeydi onu da o şekilde yapar mısın?"* + 318 satır HANDOFF ChatLauncher + ChatBubble + ChatScene JSX prototip paste (typo'lar verbatim korundu §39.2 disipline).
+- AskUserQuestion yapılmadı: 3 problem kullanıcı raporu net + HANDOFF prototip referans var.
+- Hukuki/disipline override: yok. Stage 58 §38.139 compliance disipline (live chat illusion YOK, async semantik) intact: notification badge "?" pattern korundu (HANDOFF "1" sayı misleading message implication, kullanıcı sadece icon estetiği değişikliği istedi).
+- HANDOFF prototip elementlerinden kullanılanlar: BuazeMark FAB icon (✓ BuazeLogo), 64×64 lime FAB (✓ Stage 58'den intact), 2px graphite border (✓ intact), lime halo blur (✓ scbPulse intact), concentric ring (✓ scbRing intact). HANDOFF "1" notification → "?" intact (compliance).
