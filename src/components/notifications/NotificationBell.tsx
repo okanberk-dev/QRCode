@@ -251,6 +251,21 @@ export default function NotificationBell({
     return String(unreadCount);
   }, [unreadCount]);
 
+  // Stage 60 §38.141 — Mobile bottom nav badge sync. NotificationBell
+  // unreadCount değiştiğinde global custom event yayınlar; mobile bottom
+  // nav (UserDashboardShell + AdminMobileNav) listener consume eder.
+  // `base` (panelBase) channel filter — owner + admin tab'ları aynı
+  // browser'da clobber etmez. Tek source-of-truth NotificationBell;
+  // mobile nav duplicate fetch yapmaz.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(
+      new CustomEvent('buaze:notification-count', {
+        detail: { base, count: unreadCount },
+      }),
+    );
+  }, [base, unreadCount]);
+
   const handleToggle = () => {
     setOpen((v) => {
       const next = !v;

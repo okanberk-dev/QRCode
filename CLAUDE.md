@@ -19197,3 +19197,185 @@ Sanity grep regression (post-edit):
   edildi (CLAUDE.md §39.2 disipline). `Stage 57` cosmetic conflict
   zarar vermez (branch `stage59` rename'li, commit message + PR
   title `Stage 59` taşır).
+
+---
+
+### 38.141 2026-05-08 — Stage 60 mobile bottom nav HANDOFF prototip uyarlaması (3 surface: marketing + owner + admin floating pill + glassmorphism + 56×56 FAB + active dot + Yorumlar badge)
+
+§38.39 + §38.43 + §38.74 + §38.77 + §38.46 zincirinden sonra kullanıcı yeni HANDOFF JSX prototip paylaştı (`MobileBottomNav` + `PhoneFrame` + `PhoneScreen` + `BottomNavBar` + `NavIcon` — ~318 satır). Talep: "hem admin/owner panel için uyarla hem de marketing sitesi için". 3 surface paralel update — Marketing (`MobileBottomNav.tsx`) + Owner (`UserDashboardShell.tsx` mobile bottom nav block) + Admin (`AdminMobileNav.tsx`) + NotificationBell custom event dispatch + admin layout main pb adjust = 5 dosya, +329/-138 = +191 net.
+
+**4 kritik karar (AskUserQuestion onaylı, hepsi Recommended)**:
+
+1. *Layout* — **Floating pill + backdrop-blur**: 12px lateral margin + 28px borderRadius + glassmorphism (`backdropFilter: blur(20px) saturate(180%)`) + translucent `rgba(255,255,255,0.85)` surface. iOS native dock pattern. GPU compositing maliyet trade-off kabul (modern iPhone/Android sorunsuz; düşük-end fallback: backdrop-filter unsupported → solid bg fallback browser default). HANDOFF spec birebir.
+2. *Theme* — **Light only**: Buaze sistem-wide dark mode geçişi yok (CLAUDE.md §38.74 Stage 4 + §11 Pulse signature). HANDOFF prototip dark variant prototip canvas demo; production'da light tek surface.
+3. *Badge* — **Owner+admin dinamik, marketing yok**: NotificationBell `unreadCount` internal state'i `buaze:notification-count` custom event ile global'e dispatch eder; mobile bottom nav (UserDashboardShell + AdminMobileNav) listener consume eder. Tek source-of-truth NotificationBell (mevcut /api/notifications poll'u reuse, mobile nav ek fetch yapmaz). Marketing anonim user → badge YOK (subscriber count public expose etmemeli §35.8 cohort disclosure).
+4. *Scope* — **Tek consolidated PR**: 3 surface birden + NotificationBell dispatch + admin layout pb. CLAUDE.md §21.22 stacked YOK paterni. Atomic deploy + ortak visual disipline.
+
+**5 dosya değişikliği**:
+
+| Dosya | Tip | Net |
+|---|---|---|
+| `src/components/marketing/MobileBottomNav.tsx` | Edit (full bottom nav rewrite) | -54/+76 = +22 net |
+| `src/components/dashboard/UserDashboardShell.tsx` | Edit (state listener + bottom nav rewrite + main pb) | -57/+122 = +65 net |
+| `src/components/admin/AdminMobileNav.tsx` | Edit (state listener + bottom nav rewrite, dynamic gridTemplateColumns intact) | -22/+111 = +89 net |
+| `src/components/notifications/NotificationBell.tsx` | Edit (custom event dispatch — `useEffect` block ekledi) | +15 |
+| `src/app/admin/layout.tsx` | Edit (main pb-28 → pb-[calc(96px+env(safe-area-inset-bottom,0px))]) | -1/+1 = 0 net |
+
+**Yeni ortak visual paterni (3 surface paylaşılır)**:
+
+```tsx
+// Floating pill container (3 dosyada birebir)
+<nav
+  className="lg:hidden fixed left-3 right-3 z-40 mx-auto max-w-[520px]"
+  style={{ bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}
+>
+  <div
+    className="rounded-[28px] border border-[rgba(10,10,10,0.06)] shadow-[0_12px_30px_-12px_rgba(10,10,10,0.25)]"
+    style={{
+      background: 'rgba(255,255,255,0.85)',
+      backdropFilter: 'blur(20px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+    }}
+  >
+    <ul className="flex h-[72px] items-center justify-around px-2">
+      {/* tabs */}
+    </ul>
+  </div>
+</nav>
+
+// Active dot indicator (top translateY -100%, 4×4 lime)
+<span
+  aria-hidden="true"
+  className={`pointer-events-none absolute top-1 left-1/2 h-1 w-1 -translate-x-1/2 -translate-y-full rounded-full bg-[#C6F24E] transition-opacity duration-200 ${
+    isActive ? 'opacity-100' : 'opacity-0'
+  }`}
+  style={{ boxShadow: isActive ? '0 0 8px rgba(198,242,78,0.8)' : 'none' }}
+/>
+
+// Stroke width active toggle
+<Icon size={20} strokeWidth={isActive ? 2 : 1.6} />
+
+// Color tones
+isActive ? 'text-[#0A0A0A]' : 'text-[rgba(10,10,10,0.42)]'
+```
+
+**Surface-specific implementations**:
+
+- **Marketing**: 5-item flat (Ana/Fiyatlar/center FAB/QR/İletişim). Center FAB **56×56** (eski 52×52) + `-mt-7` (eski -mt-5) + lime glow shadow `0_12px_24px_-6px_rgba(198,242,78,0.7)` + `4px solid #FAFAFA` border + active scale 1.06. Conditional FAB (login state'e göre Panel/Ücretsiz, §25.4 Pas 4 paterni intact).
+- **Owner**: 4 primary tab + More button = 5 cell. NotificationBell unread count badge "Yorumlar" tab'ında 14×14 lime pill (99+ overflow). FAB YOK (owner panelde center FAB yok, "Yorum İste" CTA sidebar'da §38.46).
+- **Admin**: Dynamic gridTemplateColumns role-aware (manager 4 / superadmin 5+, §38.77 paterni intact). NotificationBell unread count badge "Yorumlar" (`/admin/reviews`) tab'ında. FAB YOK (admin operasyonel, primary CTA değil).
+
+**Custom event broadcast pattern**:
+
+```tsx
+// NotificationBell dispatch
+useEffect(() => {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent('buaze:notification-count', {
+      detail: { base, count: unreadCount },
+    }),
+  );
+}, [base, unreadCount]);
+
+// Listener (UserDashboardShell + AdminMobileNav)
+useEffect(() => {
+  const handler = (event: Event) => {
+    const detail = (event as CustomEvent<{ base: string; count: number }>).detail;
+    if (detail?.base === expectedBase) setNotifUnreadCount(detail.count);
+  };
+  window.addEventListener('buaze:notification-count', handler);
+  return () => window.removeEventListener('buaze:notification-count', handler);
+}, [...]);
+```
+
+`base` field locale-aware (`/${locale}/dashboard` owner, `/admin` admin) channel filter — owner + admin tab'ları aynı browser'da clobber etmez. NotificationBell mevcut /api/notifications poll'u tek source-of-truth.
+
+**Spacer/main padding-bottom adjust** (3 surface):
+
+- **Marketing**: spacer `height: 'calc(72px + 24px + env(safe-area-inset-bottom))'` (eski `'calc(72px + env(safe-area-inset-bottom))'` — 24px ek lateral+bottom margin overlap önleme).
+- **Owner**: main `pb-[calc(96px+env(safe-area-inset-bottom,0px))]` (eski `pb-24` 96px sade — safe-area ekledim, floating pill bottom 12px + height 72 + safe-area iPhone 14 ~34px ≈ 118px overlap).
+- **Admin**: main `pb-[calc(96px+env(safe-area-inset-bottom,0px))]` (eski `pb-28` 112px sade — aynı paterne migrate).
+
+**Backend dokunulmadı**:
+- `/api/notifications` GET poll cadence intact (NotificationBell mevcut interval)
+- Schema migration YOK
+- Yeni endpoint YOK
+- Admin role detection (`/api/admin/me`) intact
+
+**Tasarım kararı: Center FAB 3 surface'te tutarlı mı?**:
+- **Marketing**: ✅ Center FAB var (Panel/Ücretsiz CTA, tasarım intent: anonim user'a primary entry).
+- **Owner**: ❌ Center FAB YOK (5 flat tab + More). Owner panelinde QR tab zaten flat; "Yorum İste" CTA sidebar'da §38.46.
+- **Admin**: ❌ Center FAB YOK (operasyonel, primary CTA yok). HANDOFF prototip "scan" tab center FAB → admin'de eşdeğer YOK.
+
+Bu farklılık kasıtlı — surface-specific UX intent. HANDOFF birebir parity tüm 3 surface'te center FAB zorlamak owner/admin'e yapay primary CTA eklerdi.
+
+**Compliance disipline intact**:
+- Marketing: badge YOK (anonim user, §35.8 cohort disclosure)
+- Owner+admin: badge gerçek count NotificationBell'den (§35.8 verifiable claim)
+- Reduced-motion: `transition-opacity` + `transition-colors` + `transition-all duration-150` hepsi globals.css universal `*` reset blanket'i (CLAUDE.md §38.61) altında 0.001ms'e iner. Yeni keyframe YOK; mevcut `bz-pulse-dot` (lime active dot box-shadow için kullanılmadı, sadece static box-shadow) reuse.
+
+**Yapma**:
+
+- **HANDOFF prototip dark variant'ı production'a taşıma** — Buaze sistem-wide dark mode geçişi YOK (§38.74 + §11 Pulse signature). Light single theme intact, dark variant gelecek scope (theme provider + per-surface override + palette extend büyük scope).
+- **Center FAB owner veya admin'e eklemek** — yapay primary CTA, mevcut UX intent (Yorum İste sidebar §38.46, admin no-CTA) bozulur.
+- **Mobile bottom nav'ı NotificationBell yerine direct /api/notifications poll yapma** — duplicate fetch + duplicate `lastViewedAt` localStorage yönetimi conflict yaratır. Custom event dispatch tek source-of-truth.
+- **Backdrop-blur'u Tailwind utility class `backdrop-blur-xl` (24px) ile değiştirme** — saturate(180%) composite filter Tailwind preset'lerde tek class değil; arbitrary `[backdrop-filter:blur(20px)_saturate(180%)]` çalışır ama Webkit prefix (eski Safari) için inline style tercih edildi.
+- **Floating pill bottom margin'ı 12px'ten azaltma** — visual depth + safe-area iPhone home-indicator overlap önleme; daha az margin pill tabanı home-indicator'ı kapatır.
+- **Active dot indicator rengi lime'ten graphite'e değiştirme** — HANDOFF prototip lime accent intentional (Pulse §11 brand reinforcement); graphite passive görünür.
+- **NotificationBell `useEffect` dispatch'i useState within component yerine global zustand/context'e taşıma** — overengineering; CustomEvent native browser API tek dosya çözüm yeterli (3+ listener çıkarsa context'e taşınabilir, mevcut 2 listener).
+- **Marketing badge'ini "QR Kod" tab'ında dinamik göstermek** (örn. session sayısı) — anonim user, public expose edilmemeli (§35.8). Marketing'de badge intentional skip.
+- **Admin AdminCampaignBell'i de custom event dispatch'a bind etmek** — AdminCampaignBell ayrı kanal (campaign moderation queue, §38.105); bu PR scope dışı. Future scope: AdminCampaignBell de aynı pattern reuse → admin Yorumlar badge'i 2 source merge (notif + campaign).
+
+**Yap**:
+
+- Yeni mobile bottom nav surface eklenirse aynı 3-pattern reuse: floating pill container + active dot indicator + stroke-width 2/1.6 toggle.
+- Yeni `<NotificationBell>` mount eklenirse `panelBase` prop'u yeni unique base value olmalı — listener filter doğru çalışır.
+- Yeni Tailwind v4 backdrop-filter compose ihtiyacı çıkarsa inline `style={{ backdropFilter, WebkitBackdropFilter }}` paterni reuse (Safari prefix zorunlu).
+- Yeni mobile bottom nav 6+ tab gerekirse (admin superadmin 6+ scenario): `gridTemplateColumns: repeat(filteredItems.length, minmax(0, 1fr))` dynamic intact (CLAUDE.md §38.77 paterni).
+- Yeni `bz-pulse-dot` keyframe veya inline animation eklenirse globals.css reduced-motion blanket selector eklemek zorunlu (§38.61 paterni).
+- Custom event broadcast pattern başka cross-component sync ihtiyaçları için reuse — örn. trial countdown timer, GoogleReviewsHub state sync. `buaze:{event-name}` namespace kanonik.
+
+**Verification (lokal)**:
+
+Lokal disk dolu (CLAUDE.md §38.103 + §38.131 + §38.134 + §38.140 paterni) — CI Validate workflow lint + tsc + test + build doğrulayacak.
+
+Sanity grep regression (post-edit):
+- `Stage 60 §38.141` markers: 16 hit (4 dosya × 4-5 marker; admin layout cosmetic 1-line edit'te markersız).
+- Floating pill markers (`rounded-[28px]` + `backdropFilter blur(20px)`): 9 hit (3 dosya × 3 marker).
+- Custom event channel `buaze:notification-count`: 7 hit (NotificationBell 1 dispatch + UserDashboardShell 3 state+listener+effect + AdminMobileNav 3 same).
+- Active dot lime indicator `h-1 w-1 rounded-full bg-[#C6F24E]`: 4 hit (3 surface; owner shell 2 because of MoreHorizontal button hosts dot too).
+
+**Manuel smoke test** (Vercel preview sonrası):
+
+1. **Marketing `/`** mobile (375×667): scroll → bottom nav floating pill (12px lateral + 28 borderRadius + glassmorphism) görünür; 5 tab (Ana/Fiyatlar/center FAB/QR/İletişim); FAB conditional (anonim "Ücretsiz" Sparkles, login "Panel" LayoutDashboard); active tab top'ta lime dot.
+2. **Marketing scroll up/down**: floating pill sticky intact + safe-area home-indicator overlap yok.
+3. **Owner `/dashboard`** mobile: 5 tab (Genel/Yorumlar/Menü/QR/More) floating pill; **Yorumlar** tab badge görünür eğer NotificationBell unread count > 0; active tab dot + bold label.
+4. **Owner Yorumlar bell badge sync**: topbar'da NotificationBell aç → mark all read → mobile bottom nav badge anında kaybolur (custom event dispatch).
+5. **Admin `/admin/dashboard`** mobile: dynamic 4-5 tab (manager 4 / superadmin 5+) floating pill; **Yorumlar** tab badge AdminAuditLog notifications + announcements unread count.
+6. **iOS Safari (375×667 iPhone SE)**: backdrop-blur smooth + safe-area home-indicator overlap yok + active:scale-95 tap feedback intact + 300ms tap delay yok (touchAction).
+7. **Reduced motion ON**: tüm `transition-*` 0.001ms'e iner (globals.css blanket); active dot opacity instant flip; HANDOFF "scale 1.06 active state" immediate (no ease).
+8. **Multi-tab sync** (Owner + Admin aynı browser): NotificationBell event channel `base` field ile filter — owner tab badge'i admin tab unread count'a yansımaz.
+
+**§38.121.1 backlog güncelleme** (Stage 60 ile kapanan kalemler):
+
+- ✅ Mobile bottom nav 3-surface HANDOFF prototip uyarlaması (floating pill + glassmorphism + 56×56 FAB + active dot + Yorumlar badge) — Stage 60 §38.141 ile kapatıldı.
+
+**Stage 60 closure** (Tarih 2026-05-08):
+
+- Branch: `chore/mobile-bottom-nav-handoff-stage60` (fresh main üstüne, Stage 59 §38.140 PR #564 merged sonrası align)
+- Edit'lenen dosyalar: 5 (3 mobile bottom nav + NotificationBell dispatch + admin layout pb) + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact bekleniyor (CI Validate doğrulayacak)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut 3 surface mobile bottom nav floating pill + glassmorphism + active dot + badge sync görünür; backend kontrat dokunulmadı.
+- **Kalan riskler**: yok (UI polish + custom event dispatch additive; backend kontrat intact, NotificationBell mevcut state güvende).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog — HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör yeni odak talebi.
+
+**Chat prompt history (Stage 60 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"aşağıda mobile bottom nav var bunu hep admin owner panel için uyarla hem de marketing sitesi için uyarlar mısın?"* + 318 satır HANDOFF JSX prototip paste (`MobileBottomNav` + `PhoneFrame` + `PhoneScreen` + `BottomNavBar` + `NavIcon`).
+- AskUserQuestion 4 karar (hepsi Recommended): Layout floating pill + backdrop-blur / Theme light only / Badge owner+admin dinamik marketing yok / Scope tek consolidated PR.
+- Hukuki/disipline override: yok (HANDOFF visual polish + badge sync, fake-data riski yok). Marketing badge SKIP CLAUDE.md §35.8 cohort disclosure paterniyle uyumlu.
+- Surface-specific intent koruma: HANDOFF prototip "scan" tab center FAB tüm 3 surface'e zorlamadı — owner/admin'de yapay primary CTA olur. Sadece marketing'de FAB doğal entry.
