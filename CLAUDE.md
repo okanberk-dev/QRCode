@@ -24505,3 +24505,261 @@ field, helper logic değişmedi).
   graphite avatar + platform footer). Compliance disipline intact:
   fake testimonial YOK, generic platform event + system source
   attribution.
+
+---
+
+### 38.166 2026-05-08 — Stage 86 ContactFloat dismiss-sync fix + SocialProofToast removal (CRITICAL §35.10 fake testimonial cleanup)
+
+§38.165 Stage 85 anasayfa marketing 4-fix bundle (PR #589) main'e
+merge edildikten sonra kullanıcı 2 net UX raporu iletti: *"Masaüstünde
+sticky barı kapatınca konuşma balonu aşağı inmiyor sticky bar kapanınca
+komuşma barı düzgün gözüksün. Ek olarak sol altta firma yorum yaptı
+şimdi gibi şeyler çıkıyor onu kaldırabilir miyiz"* (typo verbatim
+§39.2 disipline: "komuşma" → "konuşma").
+
+**2 fix bundle**:
+
+#### Fix 1 — StickyCtaBar `onDismiss` defensive direct dispatch (ContactFloat repositioning)
+
+**Root cause** (kullanıcı raporu "konuşma balonu aşağı inmiyor"):
+StickyCtaBar `useEffect [stickyVisible]` paterni dismiss anında 2
+event dispatch ediyor (cleanup `false` + new effect `false`), ama
+React batching / production build / strict mode timing edge case'lerinde
+event timing kayabiliyor. ContactFloat listener `setStickyCtaVisible
+(false)` tetiklenmeden kalıyor → `md:bottom-[148px]` class CSS class
+aynı kalıyor → konuşma balonu sticky bar'ın üstünde kalıyor.
+
+**Fix** (`src/components/marketing/StickyCtaBar.tsx`):
+- `onDismiss` handler genişletildi: `setDismissed(true)` sonrası
+  **explicit synchronous** `window.dispatchEvent(new CustomEvent
+  ('buaze:sticky-cta-visibility', { detail: { visible: false } }))`
+  fire eder.
+- Defensive guard: `typeof window !== 'undefined'` SSR-safe.
+- useEffect [stickyVisible] cleanup zinciri intact (backward-compat),
+  sadece dismiss button click anında **guaranteed sync** event
+  propagation eklendi.
+- ContactFloat listener tıklama anında `stickyCtaVisible(false)`
+  → re-render → `md:bottom-6` class → `transition-[bottom] duration-
+  300 ease-out` smooth animation 24px konuma kayar.
+
+**Pattern paralel**: §38.141 Stage 60 `buaze:notification-count` +
+§38.158 Stage 78 sticky desktop topbar + §38.142 Stage 61 ContactFloat
+listener ilk implementation. Bu fix sadece dismiss için defensive
+sync event ekler — useEffect chain intact.
+
+#### Fix 2 — SocialProofToast removal (CRITICAL §35.10 fake testimonial compliance)
+
+**Root cause** (kullanıcı raporu "sol altta firma yorum yaptı şimdi
+gibi şeyler"): `src/components/marketing/SocialProofToast.tsx`
+(~140 satır) bottom-left rotating toast component idi:
+- 5 hardcoded fake müşteri ismi: "Kadıköy Bistro / Hotel Nora /
+  Derma+ Klinik / Ark Kahve / Ren Spa"
+- 5 fake activity claim:
+  - "az önce 14 günlük denemeye başladı"
+  - "bu ay 284 yeni yorum topladı"
+  - "Google puanını 4.9'a yükseltti"
+  - "şimdi kaydoldu"
+  - "Yemeksepeti entegrasyonunu aktifleştirdi"
+- 3sn delay + 4.2sn visible + 8sn interval rotation cycle
+
+**CRITICAL compliance ihlali**:
+- §35.10 fake testimonial paterni — Buaze gerçek müşteri kohortu
+  10-50 (CLAUDE.md §19.4.4); "Hotel Nora · Bodrum · 284 yorum" gibi
+  spesifik müşteri + spesifik metric **verifiable false claim**.
+- §35.8 cohort disclosure — "Google puanını 4.9'a yükseltti" gibi
+  ratin claim'i source-attributed değil + verifiable değil.
+- §19.1.1 review-gating wording — "284 yorum topladı" Google policy
+  fake activity feed risk.
+- KVKK + ETK + tüketici hakları — fake metric + fake müşteri ismi
+  marketing puff yasaklı.
+
+Stage 49 §38.130 → Stage 85 §38.165 zincirinde compliance disipline
+17 kez stable; bu component pre-existing fake-data UI idi — Stage
+86 §38.166 kullanıcı talebi explicit removal request, 18. iterasyon
+compliance win.
+
+**Fix** (3 dosya + 1 silme):
+
+1. `src/app/[locale]/page.tsx`:
+   - Line 51 `nextDynamic SocialProofToast` import → uzun açıklayıcı
+     yorum (kullanıcı talebi + §35.10 ihlali + §34 paterni + future
+     scope: real backend feed LiveTicker §38.165 paterni reuse).
+   - Line 1651 `<SocialProofToast locale={locale} />` mount silindi
+     + yorum.
+
+2. `src/app/globals.css` line 62-66 — `--mobile-nav-h` CSS variable
+   yorum güncellendi: "(StickyCtaBar, SocialProofToast)" →
+   "(StickyCtaBar)" + Stage 86 §38.166 silinme notu.
+
+3. `src/components/animations/index.ts` JSDoc:
+   - Eski: "Mevcut counterparts (LiveReviewTicker, MarqueeRow,
+     SocialProofToast, useCountUp, useInView) PR1-5 callsite migrate
+     sırasında silinecek"
+   - Yeni: 2 silinmiş component dokümante (LiveReviewTicker §38.149
+     + SocialProofToast §38.166); 3 mevcut counterparts (MarqueeRow,
+     useCountUp, useInView) PR1-5 zinciri intact.
+
+4. `src/components/marketing/SocialProofToast.tsx` SİLİNDİ
+   (~140 satır, CLAUDE.md §34 — 0 callsite kaldı, file delete doğru).
+
+**Future scope**: Real "live activity" UI gerekirse `/api/feedback`
+workspace aggregate veya Supabase Realtime (CLAUDE.md §38.86) feed +
+LiveTicker §38.165 generic platform event source attribution paterni
+ile compliance-safe implement edilebilir (müşteri-spesifik isim
+YASAK).
+
+#### Etkilenen dosyalar (4 + docs)
+
+| Dosya | Tip | Değişim |
+|---|---|---|
+| `src/components/marketing/StickyCtaBar.tsx` | Edit | onDismiss defensive direct dispatch (~10 satır net) |
+| `src/app/[locale]/page.tsx` | Edit | SocialProofToast import + mount silindi (~5 satır net azalma) |
+| `src/components/marketing/SocialProofToast.tsx` | Sil | -140 satır (CLAUDE.md §34 paterni) |
+| `src/app/globals.css` | Edit | CSS variable yorum güncellendi (1 satır) |
+| `src/components/animations/index.ts` | Edit | JSDoc deprecated counterpart list update (~5 satır) |
+| `CLAUDE.md` | Edit | §38.166 closure log |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 pass intact.
+
+#### Verification
+
+- `npx eslint src/components/marketing/StickyCtaBar.tsx
+  src/app/[locale]/page.tsx src/components/animations/index.ts` → 0
+  errors / 0 warnings (CSS file ESLint scope dışı — CLAUDE.md §38.49
+  baseline temiz)
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`
+- `npm test` → 404/404 pass, 45 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) → ✓ Compiled
+  successfully + 236/236 static pages
+
+#### Sanity grep regression
+
+- `SocialProofToast` 4 hit (3 documentation comment intentional + 1
+  index.ts JSDoc reference; **0 actual code/import/JSX usage**)
+- `setDismissed(true)` 1 hit (StickyCtaBar onDismiss intact)
+- `buaze:sticky-cta-visibility` 4 hit:
+  - 2 dispatcher (StickyCtaBar useEffect cleanup + onDismiss yeni)
+  - 2 listener (ContactFloat addEventListener + removeEventListener)
+
+#### Compliance disipline checkpoint (kullanıcı 18. iterasyon)
+
+| Element | Durum | Sebep |
+|---|---|---|
+| ContactFloat dismiss-sync defensive dispatch | YENİ (Fix 1) | UX bug fix, kullanıcı raporu |
+| SocialProofToast complete removal | YENİ (Fix 2) | §35.10 fake testimonial compliance + kullanıcı explicit removal |
+| LiveTicker generic platform attribution | INTACT | §38.165 Stage 85 generic system event source paterni |
+| FooterLiveTicker generic activity feed | INTACT | §38.131 Stage 50 paterni |
+| StickyCtaBar verifiable claim ("ilk yorumunu yarın al.") | INTACT | §35.8 generic brand promise |
+| Pulse §11 typography (Space Grotesk + Inter + JetBrains Mono) | INTACT | §38.114 disipline |
+
+#### Yapma
+
+- SocialProofToast'ı geri eklemek — kullanıcı 18. iterasyonda explicit
+  removal request, fake-data §35.10 ihlali. Real "live activity" UI
+  ihtiyacı çıkarsa yeni implementation `/api/feedback` workspace
+  aggregate veya Supabase Realtime feed + LiveTicker §38.165 generic
+  platform event source attribution paterni reuse.
+- StickyCtaBar `onDismiss` direct dispatch'i kaldırmak — defensive
+  redundancy, useEffect chain alone may have edge case timing.
+- StickyCtaBar `useEffect [stickyVisible]` cleanup'ı kaldırmak —
+  initial mount + scroll trigger event dispatcher intact.
+- Bottom-left'e başka rotating toast component eklemek — kullanıcı
+  bilinçli kararla bu UI elementi kaldırdı.
+- "Live activity" benzeri bir UI gerekirse fake müşteri ismi /
+  spesifik metric ile re-implement etmek — CRITICAL §35.10 ihlali.
+
+#### Yap
+
+- Yeni dismiss-style button gerekirse aynı paterni reuse: `setState`
+  + `sessionStorage.setItem` + **explicit synchronous CustomEvent
+  dispatch** (defensive sync). Pattern paralel: §38.141 Stage 60
+  custom event broadcast + §38.142 Stage 61 ContactFloat listener.
+- Future "live activity" UI gerekirse:
+  - Real backend feed (Buaze workspace `/api/feedback` aggregate
+    veya Supabase Realtime §38.86)
+  - Generic platform event source attribution (LiveTicker §38.165
+    paterni reuse: `{ source: 'Karaköy', platform: 'Google', stars,
+    text }`, hardcoded müşteri ismi YASAK)
+  - Compliance disipline §35.8 + §35.10 + §19.1.1 mandatory
+    pre-implementation review
+
+#### Manuel smoke test (Vercel preview sonrası)
+
+1. `/tr` (anasayfa) desktop ≥1024px → scroll past 600px → sticky CTA
+   bar görünür → ContactFloat FAB md:bottom-[148px] (sticky bar üstüne
+   pozisyonlanır).
+2. Sticky CTA bar dismiss X tıkla → sticky bar kaybolur → ContactFloat
+   FAB anında md:bottom-6 (24px) konuma kayar (300ms `transition-
+   [bottom] ease-out` smooth).
+3. Sayfa yenile → sessionStorage `buaze.sticky.dismissed=1` intact →
+   sticky CTA görünmez (zaten dismissed) → ContactFloat md:bottom-6
+   (initial state).
+4. Sol-alt rotating toast YOK ("Kadıköy Bistro / Hotel Nora / ..."
+   görünmez).
+5. ContactFloat open form (FAB tıkla) sticky bar visible iken
+   md:bottom-[148px] + max-h dynamic; dismiss sonrası md:bottom-6 +
+   max-h normal — `transition-[bottom,max-height]` 300ms smooth.
+6. Mobile (375×667 iPhone SE) → sticky CTA `hidden md:block` zaten
+   görünmez, ContactFloat bottom-[88px] mobile MobileBottomNav §38.43
+   üstünde intact.
+7. Reduced-motion ON → animation static (CLAUDE.md §38.61 blanket
+   intact).
+
+#### Stage 86 closure (Tarih 2026-05-08)
+
+- Branch: `chore/contactfloat-fix-socialproof-remove-stage86` (fresh
+  main üstüne, Stage 85 §38.165 PR #589 merged sonrası align)
+- Edit'lenen dosyalar: 4 (StickyCtaBar + page.tsx + globals.css +
+  animations/index.ts) + CLAUDE.md
+- Silinen dosyalar: 1 (`SocialProofToast.tsx`, ~140 satır)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  marketing surface'lerinde bottom-left rotating toast tamamen
+  kaybolur; desktop sticky CTA dismiss sonrası ContactFloat
+  smooth transition ile bottom-6 konuma kayar.
+- Kalan riskler: yok (UI polish + presentational removal; backend
+  kontrat dokunulmadı, KVKK + reCAPTCHA + honeypot + Pulse §11 design
+  system intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
+  (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya Stage 84 PR2
+  (Owner panel performance) + PR3 (Admin panel performance) zincir
+  devam.
+
+#### Chat prompt history (Stage 86 §39.2 paterni)
+
+- 2026-05-08 kullanıcı (PR #589 merge sonrası): *"Aşağıdaki promptu
+  geliştir ve uygula: Masaüstünde sticky barı kapatınca konuşma
+  balonu aşağı inmiyor sticky bar kapanınca komuşma barı düzgün
+  gözüksün. Ek olarak sol altta firma yorum yaptı şimdi gibi şeyler
+  çıkıyor onu kaldırabilir miyiz."* (typo "komuşma" → "konuşma"
+  verbatim §39.2 disipline). 2 net UX talebi.
+- AskUserQuestion **YAPILMADI** — kullanıcı talebi 2 net (ContactFloat
+  dismiss-sync bug + SocialProofToast removal), scope konservatif
+  (presentational + 1 dosya silme). Compliance disipline §35.8 +
+  §35.10 + §19.1.1 + §38.114 paterni stable; kullanıcının "kaldıralım
+  mı?" sorusu zaten removal-direction (compliance win, fake-data
+  cleanup).
+- **Disipline restoration (18. iterasyon)**: Stage 49 §38.130 →
+  Stage 85 §38.165 zinciri compliance disipline 17 kez stable; Stage
+  86 §38.166 onsekizinci kez backend kontrat dokunmadan UI bug fix +
+  fake-testimonial cleanup. CLAUDE.md §35.8 + §35.10 + §19.1.1 +
+  §38.49 + §38.114 + §38.131 + §38.141 + §38.142 + §38.149 + §38.165
+  paterni reuse. Compliance disipline zinciri:
+  - §38.135 footer 1:1 fake-data override → §38.136 rollback
+  - §38.137 üçüncü kez compliance-safe
+  - §38.139 dördüncü kez (live chat illusion)
+  - §38.140-§38.149 5-9. iterasyon (public review surface)
+  - §38.150-§38.157 10-15. iterasyon (anasayfa marketing)
+  - §38.165 17. iterasyon (anasayfa 4-fix)
+  - **§38.166 18. iterasyon (SocialProofToast cleanup)** ← bu PR
+- LiveReviewTicker §38.149 + SocialProofToast §38.166 cumulative
+  removal: 2 fake testimonial component bottom-left/section-4
+  marketing surface'inden silindi. 1 mevcut counterpart kaldı:
+  MarqueeRow (CLAUDE.md §38.149 SKIP rationale: ReactNode → string
+  API farkı, gelecek opportunistic refactor scope).

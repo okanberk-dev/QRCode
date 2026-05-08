@@ -82,6 +82,21 @@ export default function StickyCtaBar({ locale, threshold = 600 }: Props) {
   const onDismiss = () => {
     sessionStorage.setItem('buaze.sticky.dismissed', '1');
     setDismissed(true);
+    // Stage 86 §38.166 — defensive synchronous dispatch (kullanıcı raporu:
+    // "Masaüstünde sticky barı kapatınca konuşma balonu aşağı inmiyor").
+    // useEffect [stickyVisible] cleanup + new effect ikilisi normalde
+    // `false` event'ini dispatch eder, ama React batching / strict mode /
+    // production build edge case'lerinde event timing kayar. Direct
+    // synchronous dispatch ContactFloat listener'ının click anında
+    // reposition ettiğini garanti eder (transition-[bottom] 300ms
+    // smooth animation tetiklenir).
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('buaze:sticky-cta-visibility', {
+          detail: { visible: false },
+        }),
+      );
+    }
   };
 
   if (!stickyVisible) return null;
