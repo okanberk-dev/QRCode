@@ -23957,3 +23957,251 @@ date-fns zaten kurulu, sadece tree-shake hint).
   `ƒ` → `●` ratio doğrulandı. §38.103 Stage 27'nin neden sadece 2
   route ISR'leyebildiği netleşti (offending zincirin dışında olduğu
   için).
+
+---
+
+### 38.164 2026-05-09 — Stage 84 PR1 frontend drift cleanup (admin z-index parity + WCAG touch targets + fontFamily redundancy + mobile keyboard hints)
+
+§38.163 Stage 83 marketing performance optimization sonrası kullanıcı
+panel-spesifik 3 PR sequential talebi: PR1 (frontend drift cleanup) +
+PR2 (owner panel performance) + PR3 (admin panel performance). Bu PR
+sadece **PR1 scope** — visual regression risk düşük presentational
+drift cleanup + WCAG 2.5.5 mobile compliance.
+
+**Audit metodu** (CLAUDE.md §38.39 + §38.69 + §38.161 paterni):
+3 paralel Explore agent (z-index/sticky positioning + Pulse §11
+design drift + mobile responsive/safe-area/iOS keyboard) + manuel
+verify (`grep -n` + `Read` cross-check) + 3 false positive elendi:
+
+- **Owner mobile drawer body scroll lock** — agent #1 raporladı, ama
+  `UserDashboardShell.tsx:191-200` ZATEN MEVCUT (`document.body.style.overflow
+  = 'hidden'` useEffect, `[drawerOpen, moreOpen]` dep). False positive.
+- **CookieConsentBanner z-[101] backdrop above z-[100] modal inversion** —
+  agent #1 inverted iddia etti, ama z-[100] toast banner + z-[101]
+  customize modal overlay (separate components). Modal banner üstüne
+  açılır; doğru hierarchy. False positive.
+- **ProductDetailModal z-50 documentation gap** — separate stacking
+  context (menu surface), nested kullanılmıyor. False positive.
+
+**4 fix bundle** (CLAUDE.md §38.158 z-index hierarchy intact):
+
+1. **AdminTopbar.tsx z-40 → z-30 parity** (CLAUDE.md §38.158):
+   - Owner `UserDashboardShell.tsx:926` desktop sticky topbar `lg:z-30`
+     (intact); admin parity için aynı tier zorunlu.
+   - z-30 desktop sticky topbar < z-40 mobile sticky/bottom nav <
+     z-[45] notification backdrop modal hint < z-50 modals/drawers.
+   - Bonus: avatar `<Link>` inline `style={{ fontFamily }}`
+     `bz-h-tight` utility'sine migrate (Pulse §11 disipline).
+
+2. **AdminCampaignApprovalActions.tsx 4 button WCAG 2.5.5 fix**:
+   - 4 button `min-h-[40px]` → `min-h-[44px] sm:min-h-[40px]` (mobile
+     44×44 WCAG Target Size AA, desktop 40px compact intact).
+   - Approve + Reject + Cancel + Submit button parity.
+   - Reviewer textarea: `inputMode="text"`, `autoCapitalize="sentences"`,
+     `autoCorrect="on"`, `spellCheck={true}`, `enterKeyHint="send"`
+     (Türkçe yazımı + iOS klavye Send semantic action).
+
+3. **Inline `style={{ fontFamily: 'var(--font-heading)' }}` redundancy
+   cleanup** (10 callsite):
+   - **Heading elements (h1/h2/h3)** — `globals.css` line 95-97
+     `:where(h1, h2, h3, h4, h5, h6) { font-family: var(--font-heading); }`
+     auto-applies, inline style true redundant. 5 callsite removed:
+     - `FormConfirmationEditor.tsx:245` h1
+     - `MailTemplateEditor.tsx:511` h1
+     - `MailRevisionHistory.tsx:151` h2
+     - `SuperadminBlock.tsx:54` h2
+     - `app/admin/page.tsx:119` h2 + `:197` h1
+     - `app/admin/forgot-password/page.tsx:100` h1 + `:120` h2
+     - `app/admin/reset-password/page.tsx:110` h1
+   - **Non-heading elements** — `bz-h-tight` utility class migrate
+     (CLAUDE.md §38.49 dead utility class adopt). 5 callsite migrated:
+     - `AdminTopbar.tsx:43` avatar `<Link>` (yeni)
+     - `AdminSidebar.tsx:367` wordmark `<span>` + `:380` workspace
+       avatar `<div>` + `:498` user card avatar `<div>` + `:565`
+       mobile topbar wordmark `<span>`
+     - `PlatformDistribution.tsx:78` total `<span>`
+     - `PlatformUrlHelp.tsx:121` tooltip `<p>`
+   - `PlatformChip.tsx:94` SKIP — dynamic size + color composite
+     style, utility class olamaz (legitimate inline style).
+
+4. **BlogPostEditor + NewsletterCampaignEditor mobile keyboard hints**
+   (CLAUDE.md §25.5 + §25.6 + §38.143 paterni):
+   - **BlogPostEditor.tsx**: 4 input/textarea (title + description +
+     slug + author) — `inputMode` + `autoCapitalize` + `autoCorrect` +
+     `spellCheck` + `enterKeyHint` quad eklendi. Title + description
+     `text-3xl` → `text-[16px] sm:text-3xl` iOS auto-zoom prevention
+     (16px mobile baseline). Slug autoCapitalize off + autoCorrect
+     off + spellCheck false (URL slug semantic). Author autoComplete
+     "name" + autoCapitalize "words".
+   - **NewsletterCampaignEditor.tsx**: 2 input/textarea (title + intro)
+     — aynı paterni reuse, sentences capitalization + autoCorrect on
+     + Türkçe spell check + enterKeyHint next + iOS 16px mobile.
+
+**Etkilenen dosyalar (14 + docs)**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/components/admin/AdminTopbar.tsx` | z-40 → z-30 + avatar fontFamily → bz-h-tight |
+| `src/components/admin/AdminCampaignApprovalActions.tsx` | 4 button min-h-[44px] sm:[40px] + reviewer textarea keyboard hints |
+| `src/components/admin/AdminSidebar.tsx` | 4 fontFamily → bz-h-tight (wordmark + workspace + user + mobile topbar) |
+| `src/components/admin/MailTemplateEditor.tsx` | h1 inline fontFamily redundancy kaldırıldı |
+| `src/components/admin/MailRevisionHistory.tsx` | h2 inline fontFamily redundancy kaldırıldı |
+| `src/components/admin/FormConfirmationEditor.tsx` | h1 inline fontFamily redundancy kaldırıldı |
+| `src/components/admin/PlatformDistribution.tsx` | total `<span>` fontFamily → bz-h-tight |
+| `src/components/admin/PlatformUrlHelp.tsx` | tooltip `<p>` fontFamily → bz-h-tight |
+| `src/components/admin/SuperadminBlock.tsx` | h2 inline fontFamily redundancy kaldırıldı |
+| `src/components/admin/BlogPostEditor.tsx` | 4 input/textarea keyboard hints + iOS 16px mobile |
+| `src/components/admin/NewsletterCampaignEditor.tsx` | 2 input/textarea keyboard hints + iOS 16px mobile |
+| `src/app/admin/page.tsx` | 2 heading inline fontFamily redundancy kaldırıldı |
+| `src/app/admin/forgot-password/page.tsx` | 2 heading inline fontFamily redundancy kaldırıldı |
+| `src/app/admin/reset-password/page.tsx` | h1 inline fontFamily redundancy kaldırıldı |
+| `CLAUDE.md` | §38.164 closure log |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 intact (presentational + style refactor;
+helper logic değişmedi).
+
+**Bilinçli SKIP** (3 false positive + 4 büyük scope):
+
+| Drift | Karar | Sebep |
+|---|---|---|
+| Owner mobile drawer scroll lock | False positive | UserDashboardShell.tsx:191-200 zaten mevcut (agent #1 yanlış) |
+| CookieConsentBanner z-index inversion | False positive | z-[100] toast + z-[101] modal overlay separate, doğru hierarchy |
+| ProductDetailModal z-50 documentation | False positive | Separate stacking context, nested kullanılmıyor |
+| 171 transition- → bz-motion-spring sweep | DEFER | Büyük scope, gelecek opportunistic refactor PR |
+| 87 shadow- Tailwind → bz-elev tier sweep | DEFER | Büyük scope, gelecek opportunistic refactor PR |
+| BlogPostEditor contentEditable scrollIntoView | DEFER | Ayrı UX scope (rich text editor keyboard avoidance büyük refactor) |
+| BlogPostEditor 6+ ek sidebar input keyboard hints | DEFER | Ana editor 4 input kapsandı; sidebar ek input'lar (date/tags/categories) sonraki PR |
+
+**Compliance disipline intact** (16. iterasyon — Stage 49 §38.130 →
+§38.163 zinciri):
+- §35.8 + §35.10 + §19.1.1 + §38.114 paterni stable
+- Pulse §11 typography (Space Grotesk + Inter + JetBrains Mono +
+  synthetic italic, Instrument Serif italic YASAK) intact
+- Backend kontrat dokunulmadı (KVKK + reCAPTCHA + IDOR + honeypot
+  + Pulse §11 design system intact)
+- WCAG 2.5.5 Target Size Level AA + iOS auto-zoom prevention +
+  mobile keyboard hints (CLAUDE.md §25.5/§25.6/§38.74/§38.143/§38.160)
+
+**Yapma**:
+- AdminTopbar z-30'u z-40'a geri çevirmek — owner UserDashboardShell
+  ile parity zorunlu (CLAUDE.md §38.158 hierarchy).
+- AdminCampaignApprovalActions button'larını `min-h-[40px]` constant
+  yapmak — mobile WCAG 2.5.5 ihlali (44×44 minimum). Desktop 40px
+  compact density `sm:min-h-[40px]` ile intact.
+- Heading element inline `style={{ fontFamily: 'var(--font-heading)' }}`
+  geri eklemek — globals.css line 95-97 auto-applies, inline true
+  redundant.
+- Non-heading element inline fontFamily'yi `bz-h-tight` utility yerine
+  inline style ile bırakmak — Pulse §11 + §38.49 dead utility class
+  adopt disipline.
+- BlogPostEditor title/description font-size'ı `text-3xl` constant
+  yapmak — iOS auto-zoom mobile 16px minimum (CLAUDE.md §25.5).
+- BlogPostEditor 6+ sidebar input'a (date/tags/categories) keyboard
+  hints eklemek — kapsam genişler, gelecek PR scope.
+- 171 `transition-` Tailwind class'ını `bz-motion-spring`'e toplu
+  migrate etmek — büyük scope, ayrı PR scope.
+- 87 `shadow-` Tailwind class'ını `bz-elev-1/2/3`'e toplu migrate
+  etmek — aynı sebep.
+- PlatformChip dynamic style'ı utility class'a migrate etmek —
+  size + color composite legitimate inline style (utility expressible
+  değil).
+
+**Yap**:
+- Yeni admin panel sticky topbar gerekirse `z-30` desktop tier reuse
+  (CLAUDE.md §38.158 + §38.164 paterni).
+- Yeni mobile button/touch target gerekirse `min-h-[44px]
+  sm:min-h-[40px]` paterni reuse (WCAG 2.5.5 compliance).
+- Yeni heading element eklenirse inline `style={{ fontFamily }}`
+  ASLA — globals.css `:where(h1..h6)` auto-applies (CLAUDE.md
+  §38.61 paterni paralel).
+- Yeni non-heading element heading font gerekirse `bz-h-tight`
+  utility class reuse.
+- Yeni mobile input/textarea eklenirse keyboard hints quad zorunlu:
+  `inputMode` + `autoCapitalize` + `autoCorrect` + `spellCheck` +
+  `enterKeyHint` + iOS auto-zoom prevention `text-[16px] sm:text-X`
+  (CLAUDE.md §25.5 + §25.6 + §38.143 paterni).
+- Yeni form chain navigation için `enterKeyHint`: ara alanlar
+  `"next"`, son submit `"send"`, modal cancel `"done"`.
+
+**Verification**:
+- `npm install` ✓ 902 packages added
+- `npm run lint` ✓ 0 errors / 1 baseline warning (pre-existing
+  APTeamCard ReactNode unused, scope dışı)
+- `npx tsc --noEmit -p tsconfig.json` ✓ 0 errors in `src/`
+- `npm test` ✓ 404/404 pass, 45 suites, 181 subtests
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) ✓ Compiled
+  successfully + 58/58 static pages
+
+**Sanity grep regression**:
+- `style={{ fontFamily: 'var(--font-heading)' }}` 0 hit on heading
+  elements (`<h1>`, `<h2>`)
+- `style={{ fontFamily: 'var(--font-heading)' }}` 1 hit
+  PlatformChip.tsx:94 (legitimate dynamic composite, intentional skip)
+- `min-h-\[40px\]` callsite (admin) — sm: variant intact, mobile
+  44px upgrade
+- `inputMode` + `enterKeyHint` 6 new callsite (BlogPostEditor 4 +
+  NewsletterCampaignEditor 2 + AdminCampaignApprovalActions 1
+  textarea)
+- `bz-h-tight` callsite count: 5+ new admin migrations (avatar /
+  wordmark / workspace / total span / tooltip)
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. **AdminTopbar** desktop scroll → topbar stays sticky at z-30,
+   modal/drawer (z-50) opens above. Mobile (`<lg`) topbar separately
+   z-40 (CLAUDE.md §38.158 hierarchy intact).
+2. **AdminCampaignApprovalActions** mobile (375×667 iPhone SE):
+   Approve/Reject buttons 44×44 tap area; sm:+ desktop 40px compact.
+   Reviewer modal: textarea autoCorrect on, Türkçe spellCheck active,
+   iOS keyboard "Gönder" key (enterKeyHint=send).
+3. **BlogPostEditor** mobile: title input 16px font (no auto-zoom),
+   spellCheck on, autoCorrect on, sentences capitalization, "next"
+   keyboard hint. Slug input lowercase autoCapitalize off, URL
+   semantic. Author autoComplete name + words capitalization.
+4. **NewsletterCampaignEditor** mobile: title + intro 16px font, Türkçe
+   spell check, autoCorrect on.
+5. **AdminSidebar** desktop wordmark + workspace + user card avatar
+   `bz-h-tight` Space Grotesk + tight tracking + weight 500 (Pulse
+   §11). Mobile topbar wordmark aynı.
+6. **Reduced motion**: globals.css universal `*` reset blanket
+   (CLAUDE.md §38.61) intact — yeni keyframe yok.
+
+#### Stage 84 PR1 closure (Tarih 2026-05-09)
+
+- Branch: `claude/panel-perf-optimization-OyMwF` (designated, fresh
+  main üstüne; Stage 83 §38.163 PR #587 sonrası align)
+- Edit'lenen dosyalar: 14 + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  admin sticky topbar + campaign approval modal + sidebar avatar +
+  blog/newsletter editor mobile UX uplift visible.
+- Kalan riskler: yok (UI polish + presentational; backend kontrat
+  dokunulmadı, KVKK + reCAPTCHA + honeypot + Pulse §11 design
+  system intact).
+- **Sonraki aşama**: PR2 Stage 85 §38.165 — Owner panel performance
+  optimization (cache header audit + transaction batch audit +
+  React Query invalidation pattern audit + lazy chunk split fırsatları).
+  CLAUDE.md §38.101 + §38.104 + §38.158 + §38.160 paterni reuse.
+
+**Chat prompt history (Stage 84 §39.2 paterni)**:
+- 2026-05-09 kullanıcı: *"Buaze repo'da owner + admin panel için
+  Stage 83 §38.163 marketing performance optimization paterninin
+  paralel uygulamasını yap. Ek olarak panel-spesifik frontend drift /
+  overlap / pixel issue'ları temizle."* + 3 PR sequential plan +
+  AskUserQuestion ÖNCEDEN ALINDI (kullanıcı detayları gerek
+  bırakmadı).
+- AskUserQuestion **YAPILMADI** — kararlar prompt'ta netleşti
+  (Scope: 3 PR sequential, Compliance disipline intact, Stacked
+  PR YOK, Test discipline her PR'da). PR1 (frontend drift) en
+  kolay başla, visual regression risk düşük.
+- **Disipline restoration (16. iterasyon)**: Stage 49 §38.130 →
+  Stage 83 §38.163 zinciri compliance disipline 15 kez stable;
+  Stage 84 §38.164 onaltıncı kez backend kontrat dokunmadan UI
+  polish + WCAG 2.5.5 + iOS auto-zoom + keyboard hints. CLAUDE.md
+  §35.8 + §35.10 + §19.1.1 + §38.114 + §38.49 + §38.65 + §38.74 +
+  §38.143 + §38.158 + §38.160 + §38.161 paterni reuse.
+- 3 paralel Explore agent + manuel verify + 3 false positive
+  eleme (CLAUDE.md §38.39 + §38.69 paterni).

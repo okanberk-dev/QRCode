@@ -258,6 +258,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
       <div className="space-y-5 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
         <div>
           <label className="pulse-eyebrow text-[#737373]">Başlık</label>
+          {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints + iOS auto-zoom önleme. */}
           <input
             type="text"
             value={value.title}
@@ -265,13 +266,19 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
             disabled={isImmutable}
             maxLength={200}
             placeholder="Sessiz misafiri duyabilmek sanatı"
-            className="mt-1.5 w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-[15px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] disabled:opacity-60"
+            inputMode="text"
+            autoCapitalize="sentences"
+            autoCorrect="on"
+            spellCheck={true}
+            enterKeyHint="next"
+            className="mt-1.5 w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-[16px] sm:text-[15px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] disabled:opacity-60"
           />
           <p className="mt-1 text-[11px] text-[#9CA3AF]">{value.title.length} / 200</p>
         </div>
 
         <div>
           <label className="pulse-eyebrow text-[#737373]">Intro</label>
+          {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints + iOS auto-zoom önleme. */}
           <textarea
             value={value.intro}
             onChange={(e) => setValue((v) => ({ ...v, intro: e.target.value }))}
@@ -279,7 +286,12 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
             rows={4}
             maxLength={2000}
             placeholder="Bu sayıda neler var…"
-            className="mt-1.5 w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-[14px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] disabled:opacity-60"
+            inputMode="text"
+            autoCapitalize="sentences"
+            autoCorrect="on"
+            spellCheck={true}
+            enterKeyHint="next"
+            className="mt-1.5 w-full rounded-xl border border-[#EDEDED] bg-white px-4 py-2.5 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] disabled:opacity-60"
           />
           <p className="mt-1 text-[11px] text-[#9CA3AF]">{value.intro.length} / 2000</p>
         </div>

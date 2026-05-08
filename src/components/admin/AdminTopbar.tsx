@@ -26,8 +26,10 @@ export default function AdminTopbar({ announcements = [], displayName }: AdminTo
   const { locale } = useAdminTranslation();
   const initial = (displayName?.trim()?.charAt(0) || 'A').toUpperCase();
 
+  // CLAUDE.md §38.164 (Stage 84): z-40 → z-30 — owner UserDashboardShell ile parity (§38.158 hierarchy:
+  // z-30 desktop sticky topbar < z-40 mobile sticky/bottom nav < z-[45] notification backdrop modal hint).
   return (
-    <div className="hidden lg:flex sticky top-0 z-40 items-center justify-end gap-2 border-b border-[#EDEDED] bg-white/95 px-4 py-2.5 backdrop-blur sm:px-6">
+    <div className="hidden lg:flex sticky top-0 z-30 items-center justify-end gap-2 border-b border-[#EDEDED] bg-white/95 px-4 py-2.5 backdrop-blur sm:px-6">
       <NotificationBell
         locale={locale === 'en' ? 'en' : 'tr'}
         announcements={announcements}
@@ -38,10 +40,12 @@ export default function AdminTopbar({ announcements = [], displayName }: AdminTo
           gate'li (backend), UI'da sadece görünüyor — manager için 401/403
           fallback'inde silent kalır. */}
       <AdminCampaignBell locale={locale === 'en' ? 'en' : 'tr'} />
+      {/* CLAUDE.md §38.164 (Stage 84): inline `style={{ fontFamily: 'var(--font-heading)' }}` redundancy
+          kaldırıldı. Avatar `<Link>` (heading değil) — `bz-h-tight` utility ile heading semantic.
+          Pulse §11 paterni: avatar initial Space Grotesk + tight tracking + weight 500. */}
       <Link
         href="/admin/profile"
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] transition-colors hover:bg-[#1A1A1A]"
-        style={{ fontFamily: 'var(--font-heading)' }}
+        className="bz-h-tight flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] transition-colors hover:bg-[#1A1A1A]"
         aria-label={displayName || 'Profile'}
         title={displayName || 'Profile'}
       >

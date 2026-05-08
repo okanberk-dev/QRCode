@@ -507,6 +507,8 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
 
             <div className="rounded-[28px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-7">
               <label className="pulse-eyebrow text-[#737373]">BAŞLIK</label>
+              {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints (CLAUDE.md §25.5/§25.6 paterni) +
+                  iOS auto-zoom önleme (text-[16px] mobile baseline). */}
               <input
                 type="text"
                 required
@@ -514,7 +516,12 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 value={form.title}
                 onChange={event => updateTitle(event.target.value)}
                 placeholder="Okuyucunun merak edeceği net bir başlık yazın"
-                className="mt-3 w-full border-0 bg-transparent text-3xl font-medium leading-tight tracking-[-0.045em] text-[#0A0A0A] outline-none placeholder:text-[#D4D4D4] sm:text-5xl"
+                inputMode="text"
+                autoCapitalize="sentences"
+                autoCorrect="on"
+                spellCheck={true}
+                enterKeyHint="next"
+                className="mt-3 w-full border-0 bg-transparent text-[16px] sm:text-3xl font-medium leading-tight tracking-[-0.045em] text-[#0A0A0A] outline-none placeholder:text-[#D4D4D4] sm:text-5xl"
               />
               {/* SEO char counter — Google snippet ~60 char truncate eder. */}
               <div className="mt-2 flex items-center justify-between text-[11px] font-medium">
@@ -536,6 +543,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   {form.title.length} / 180
                 </span>
               </div>
+              {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints. */}
               <textarea
                 required
                 rows={3}
@@ -543,7 +551,12 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 value={form.description}
                 onChange={event => setForm(f => ({ ...f, description: event.target.value }))}
                 placeholder="Blog kartlarında ve arama sonuçlarında görünecek kısa açıklama..."
-                className="mt-5 w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 text-base font-medium leading-7 text-[#525252] outline-none focus:border-[#C6F24E] focus:bg-white"
+                inputMode="text"
+                autoCapitalize="sentences"
+                autoCorrect="on"
+                spellCheck={true}
+                enterKeyHint="next"
+                className="mt-5 w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 text-[16px] sm:text-base font-medium leading-7 text-[#525252] outline-none focus:border-[#C6F24E] focus:bg-white"
               />
               {/* Meta description SEO ideal 140–160 char. */}
               <div className="mt-2 flex items-center justify-between text-[11px] font-medium">
@@ -715,6 +728,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 <div>
                   <label className="text-xs font-semibold text-[#737373]">Slug</label>
                   <div className="mt-2 flex gap-2">
+                    {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints + iOS auto-zoom önleme. */}
                     <input
                       type="text"
                       required
@@ -723,7 +737,12 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                         setSlugTouched(true);
                         setForm(f => ({ ...f, slug: createSlug(event.target.value) }));
                       }}
-                      className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                      inputMode="text"
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      enterKeyHint="next"
+                      className="w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[16px] sm:text-sm font-semibold outline-none focus:border-[#C6F24E]"
                     />
                     <button
                       type="button"
@@ -746,11 +765,18 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
 
                 <div>
                   <label className="text-xs font-semibold text-[#737373]">Yazar</label>
+                  {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints + iOS auto-zoom önleme. */}
                   <input
                     type="text"
                     value={form.author}
                     onChange={event => setForm(f => ({ ...f, author: event.target.value }))}
-                    className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                    inputMode="text"
+                    autoCapitalize="words"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="name"
+                    enterKeyHint="next"
+                    className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[16px] sm:text-sm font-semibold outline-none focus:border-[#C6F24E]"
                   />
                 </div>
 

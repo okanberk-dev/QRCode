@@ -116,10 +116,8 @@ export default function PlatformUrlHelp({ platform }: Props) {
       {open && (
         <div className="absolute left-0 top-7 z-50 w-72 rounded-2xl border border-[#EDEDED] bg-white p-4 text-[12px] font-medium text-[#0A0A0A] shadow-xl">
           <div className="flex items-start justify-between gap-2 pb-2 mb-2 border-b border-[#EDEDED]">
-            <p
-              className="text-[13px] font-semibold text-[#0A0A0A] tracking-[-0.01em]"
-              style={{ fontFamily: 'var(--font-heading)' }}
-            >
+            {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily → bz-h-tight (Pulse §11). */}
+            <p className="bz-h-tight text-[13px] font-semibold text-[#0A0A0A] tracking-[-0.01em]">
               {guide.title}
             </p>
             <button

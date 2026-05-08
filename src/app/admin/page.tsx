@@ -114,10 +114,9 @@ function AdminLoginContent() {
                 </span>
                 <span className="pulse-eyebrow text-white/80">YÖNETİCİ KONSOLU</span>
               </div>
-              <h2
-                className="mt-7 text-[44px] xl:text-[54px] font-medium leading-[1.02] tracking-[-0.04em] text-white"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
+              {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı —
+                  h2 globals.css :where(h1..h6) auto-applies. */}
+              <h2 className="mt-7 text-[44px] xl:text-[54px] font-medium leading-[1.02] tracking-[-0.04em] text-white">
                 Her yorum
                 <br />
                 bir <span className="text-[#C6F24E]">nabız.</span>
@@ -192,10 +191,8 @@ function AdminLoginContent() {
                   </span>
                   <span className="pulse-eyebrow text-[#0A0A0A]">YÖNETİCİ PANELİ</span>
                 </span>
-                <h1
-                  className="mt-5 text-[36px] sm:text-[44px] font-medium leading-[1.02] tracking-[-0.04em] text-[#0A0A0A]"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                >
+                {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı. */}
+                <h1 className="mt-5 text-[36px] sm:text-[44px] font-medium leading-[1.02] tracking-[-0.04em] text-[#0A0A0A]">
                   Tekrar hoş geldin.
                 </h1>
                 <p className="mt-3 max-w-[380px] text-[14px] sm:text-[15px] leading-[1.6] text-[#525252]">

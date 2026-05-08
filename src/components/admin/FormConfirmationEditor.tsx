@@ -242,7 +242,9 @@ export default function FormConfirmationEditor({ locale }: Props) {
 
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-7">
         <p className="pulse-eyebrow text-[#737373]">MAIL İÇERİĞİ / FORM-CONFIRMATION</p>
-        <h1 className="mt-1 flex flex-wrap items-center gap-3 text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.025em]" style={{ fontFamily: 'var(--font-heading)' }}>
+        {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı —
+            globals.css :where(h1..h6) auto-applies var(--font-heading). */}
+        <h1 className="mt-1 flex flex-wrap items-center gap-3 text-[24px] sm:text-[28px] font-medium text-[#0A0A0A] tracking-[-0.025em]">
           <Mail size={20} strokeWidth={2} />
           <span>Form onayı · {isEnglish ? 'English' : 'Türkçe'}</span>
           {isDirty && !loading && (
