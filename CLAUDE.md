@@ -24205,3 +24205,303 @@ helper logic değişmedi).
   §38.143 + §38.158 + §38.160 + §38.161 paterni reuse.
 - 3 paralel Explore agent + manuel verify + 3 false positive
   eleme (CLAUDE.md §38.39 + §38.69 paterni).
+
+---
+
+### 38.165 2026-05-08 — Stage 85 anasayfa marketing 4-fix bundle (Marquee locale-aware + FeatureCard mobile responsive + LiveTicker premium visual upgrade + Section 4.5 Cohort corporate premium CTA group)
+
+§38.164 Stage 84 panel frontend drift cleanup PR'ı (PR #588) main'e
+merge edildikten sonra kullanıcı yeni anasayfa marketing UX raporu
+iletti: *"Şimdi anasayfada hero bölümü altında markalar yazıyor o
+markalar kayan şekilde gitsin ve Türkiyede Türkiye'ye uygun markalar
+dışardan gelenlere de yurt sışına uygun markalar kaysın (en) Aynı
+şekilde altındaki 4 kart tasarımını da mobile de uygun yapalım ve
+bunların css'leribi de minify et. Her yorum, tek bir panelde.
+Kısmının orda yorumlar gelip gidiyor o yorum tasarımını da önceki
+tasarım daha güzeldi o kısımda ona göre değiştir. Buaze müşteri
+kohortu kısmında da gözükmeyen buton yapısı vs var orayı da daha
+kurumsal premumlukta tasarla"* (typo'lar verbatim §39.2 disipline:
+"sışına" → "dışına", "css'leribi" → "css'lerini", "premumlukta" →
+"premiumlukta"). 4 net UX talebi.
+
+**4 fix bundle**:
+
+1. **Fix 1 — Marquee locale-aware items** (`src/app/[locale]/page.tsx`):
+   - Eski: 10 platform sabit liste (`['Yemeksepeti', 'Getir',
+     'Trendyol', 'Google', 'Tripadvisor', 'Yandex', 'Yelp',
+     'Foursquare', 'Booking', 'Airbnb']`) tüm locale'ler için aynı.
+   - Yeni: ternary `isTr ? [TR pazar 10 platform] : [EN global 7
+     platform]`. TR locale: Yemeksepeti + Getir + Trendyol önde
+     (Türkiye yemek sipariş pazarı). EN locale: Google + Tripadvisor
+     + Yelp + Foursquare + Booking + Airbnb + Yandex (uluslararası
+     review platformları). Yemeksepeti + Getir + Trendyol Türkiye-
+     spesifik, EN audience'a sunmak yanıltıcı (CLAUDE.md §38.150
+     paterni — gerçek pazar erişimi reflect).
+   - Compliance disipline: tüm 10 platform Buaze gerçek partner
+     (CLAUDE.md §19.4 PROVIDER_DOMAINS taxonomy + §38.80 Yelp/
+     Foursquare resolver §38.150 anasayfa Section 7.5 paterni reuse).
+
+2. **Fix 2 — FeatureCard mobile responsive + CSS minify**
+   (`src/components/animations/FeatureCard.tsx`):
+   - **Mobile padding kompakt**: `p-6` → `p-5 sm:p-6` (mobile 20px /
+     desktop 24px Pulse §11 standard).
+   - **Mobile tap feedback**: `active:scale-[0.98] sm:active:scale-100`
+     eklendi (Apple-soft press feedback, §38.46 + §38.161 paterni
+     reuse).
+   - **Mobile typography optimize**: h3 `text-[22px]` → `text-[18px]
+     sm:text-[22px]` (mobile 18px / desktop 22px responsive scale).
+   - **Inline fontFamily redundancy temizliği** (CLAUDE.md §38.164
+     paterni paralel):
+     - h3: `style={{ fontFamily: 'var(--font-heading)' }}` SİLİNDİ
+       (`globals.css :where(h1..h6)` auto-applies — Stage 84 disipline
+       reuse).
+     - p body text: `style={{ fontFamily: 'var(--font-body)' }}`
+       SİLİNDİ (Tailwind body class default Inter font).
+   - CSS minify: redundant inline style kaldırma → ~6 satır net
+     azalma + render performans hafif iyileşme.
+
+3. **Fix 3 — LiveTicker premium visual upgrade**
+   (`src/components/animations/LiveTicker.tsx`):
+   - **Eski tasarım** (Stage 66 §38.147 PR0 base): 220×320 max-w
+     compact card + lime-soft avatar + plain typography +
+     attribution YOK.
+   - **Yeni tasarım** (premium editorial card paterni):
+     - **Responsive container**: `h-[260px] w-full max-w-[380px]
+       sm:h-[280px] sm:max-w-[420px]` (önceki sabit
+       `h-[220px] max-w-[320px]`).
+     - **Italic decorative quote mark** (Pulse §11 editorial accent
+       — homepage hero + analytics dialogs zaten italic Space Grotesk
+       decorative element kullanıyor): 64px italic Space Grotesk
+       lime-soft `&ldquo;` upper-right, `pointer-events-none
+       select-none aria-hidden`.
+     - **Graphite avatar premium contrast**: `bg-brand-lime-soft` →
+       `bg-brand-ink text-white` (eski lime-soft + graphite text
+       low-contrast; premium graphite circle + white initial daha
+       kuvvetli brand mark).
+     - **Italic source name typography**: italic Space Grotesk
+       weight 500 + `tracking-[-0.01em]` corporate refinement.
+     - **Footer platform attribution badge** (compliance-safe
+       generic system event source — CLAUDE.md §35.10 + §38.131
+       paterni paralel; müşteri-spesifik testimonial DEĞİL):
+       - Yeni `LiveTickerItem.platform?: string` field (opsiyonel)
+       - 5 default item generic platform attribution: Google /
+         Buaze / Tripadvisor / Google / Yandex
+       - Footer row: top border-t `border-black/[0.06]` + sol
+         "KAYNAK" / "SOURCE" mono uppercase tracked + sağ lime
+         pulse-dot + platform name
+     - **Card chrome refinement**: `rounded-[14px] p-3.5
+       shadow-[0_14px_30px_-10px]` → `rounded-[18px] p-5
+       shadow-[0_18px_40px_-12px]` (premium depth + larger radius
+       Apple-soft tier §38.65).
+     - **Stack rotation tuning**: y stagger `18 → 22`, scale
+       `0.05 → 0.04` (daha yumuşak transition); transition duration
+       `0.6 → 0.65`.
+   - Default 5 generic events refresh: TR + EN copy intact, sadece
+     platform attribution field eklendi.
+
+4. **Fix 4 — Section 4.5 Cohort corporate premium CTA group**
+   (`src/app/[locale]/page.tsx` lines 671-755):
+   - **Section padding artırıldı** (corporate breathing room):
+     `py-[60px] sm:py-24` → `py-[80px] sm:py-28 lg:py-32`. Header
+     mb `12 sm:16` → `14 sm:20`, max-w `720px` → `760px`.
+   - **Header eyebrow lime pulse-dot indicator** (Pulse §11
+     signature accent): `<span className="pulse-eyebrow inline-flex
+     items-center gap-2"> <span pulse-heartbeat lime dot /> ... </span>`.
+   - **Headline tracking sıkılaştırıldı**: `clamp(28px,5vw,52px)
+     leading-[1.04]` → `clamp(30px,5.5vw,56px) leading-[1.02]
+     tracking-[-0.025em]` (corporate display tier).
+   - **Body copy refinement**: `text-[15px] sm:text-[16px]
+     max-w-[640px]` → `text-[15px] sm:text-[17px] max-w-[680px]`
+     (mobile 15px desktop 17px bold reading + wider container).
+   - **Section grid spacing**: `gap-10 lg:gap-16` → `gap-12 lg:gap-20`
+     + `space-y-8` → `space-y-10` (left column inner) + `border-y
+     py-8` → `py-10` (BigCounter pair section).
+   - **CTA group fix** (kullanıcı raporu "gözükmeyen buton yapısı
+     vs var orayı da daha kurumsal premiumlukta tasarla"):
+     - Eski: tek `<SweepCTA>` standalone (lone primary button —
+       kullanıcı "gözükmeyen" hissi — single CTA visual weight
+       yetersiz).
+     - Yeni: dual CTA paterni:
+       - **Primary lime sweep**: `<SweepCTA href="/auth/register">`
+         "Ücretsiz başla" / "Start free" (Stage 75 §38.155
+         polymorphic href paterni intact).
+       - **Secondary outline anchor**: `<a href="/pricing">`
+         graphite border + transparent bg + hover:bg-graphite +
+         text-white invert pattern. "Planları gör" / "See plans"
+         CTA. focus-visible lime ring + offset (Pulse §11 a11y
+         standard).
+       - flex-col mobile + sm:flex-row desktop layout (`gap-3`
+         responsive stack).
+     - **Microcopy**: CTA group altında 12px muted disclaimer
+       (`text-[12px] leading-[1.5] text-[#737373]`):
+       - TR: "14 gün ücretsiz · Kart gerekmez · KVKK + GDPR uyumlu"
+       - EN: "14-day free trial · No credit card · KVKK + GDPR
+         compliant"
+       - Verifiable claim (CLAUDE.md §35.8 — Buaze gerçek 14-gün
+         trial + KVKK + GDPR compliance §38.108 paterni intact).
+
+**Compliance disipline intact** (kullanıcı 17. iterasyon):
+
+| Element | Durum | Sebep |
+|---|---|---|
+| Marquee locale-aware items | YENİ (Fix 1) | Verifiable claim §35.8 — TR pazar / EN global gerçek partner platform listesi |
+| FeatureCard mobile + minify | YENİ (Fix 2) | UI polish + CSS minify, Pulse §11 + §38.164 paterni |
+| LiveTicker premium card + platform attribution | YENİ (Fix 3) | Compliance-safe generic system event source (§35.10 paterni intact, fake testimonial YOK) |
+| Section 4.5 corporate premium CTA group | YENİ (Fix 4) | UI polish + verifiable claim disclaimer (§35.8 paterni) |
+| "Gerçek müşteri yorumları" rotation | SKIP | Stage 49→84 zinciri 16+ kez compliance-safe (§35.10 fake testimonial backlog'da kullanıcı UX kararı bekliyor) |
+| Section 4 LiveTicker müşteri ismi geri ekleme | SKIP | §35.10 disipline 16. iterasyon stable |
+| Pulse §11 typography (Space Grotesk + Inter + JetBrains Mono) | INTACT | §38.114 "Asla pivot etme" Instrument Serif italic YASAK |
+| Mobile keyboard hints + iOS 16px font | INTACT | §38.164 paterni intact |
+
+**Etkilenen dosyalar (3 + docs)**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/app/[locale]/page.tsx` | Marquee locale-aware items + Section 4.5 corporate premium polish (~+45 satır net) |
+| `src/components/animations/FeatureCard.tsx` | Mobile responsive padding/typography + inline fontFamily cleanup (~-6 satır net) |
+| `src/components/animations/LiveTicker.tsx` | Premium visual upgrade (italic quote mark + graphite avatar + platform footer + responsive container) + LiveTickerItem.platform field (~+85 satır net) |
+| `CLAUDE.md` | §38.165 closure log |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 pass intact (presentational + new optional
+field, helper logic değişmedi).
+
+**Verification**:
+- `npx eslint .` → 0 errors / 0 warnings
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`
+- `npm test` → 404/404 pass, 45 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) → ✓ Compiled
+  successfully + 236 static pages
+
+**Yapma**:
+- LiveTicker default items'a fake müşteri ismi ("Mehmet K.", "Ayşe
+  D." gibi) eklemek — kullanıcı 16+ iterasyonda compliance-safe
+  generic platform event seçti (§35.10 fake testimonial backlog
+  intact).
+- Marquee TR locale'e "Google" başa almak — Yemeksepeti + Getir +
+  Trendyol Türkiye-spesifik öncelik (yerel pazar reflect); Google
+  4. sırada zaten görünür.
+- Marquee EN locale'e Yemeksepeti/Getir/Trendyol eklemek —
+  Türkiye-spesifik platform, EN audience yanıltıcı (CLAUDE.md
+  §35.8 verifiable market reach).
+- FeatureCard h3 inline fontFamily geri eklemek — globals.css
+  `:where(h1..h6)` auto-applies (CLAUDE.md §38.164 paterni intact),
+  inline redundant.
+- LiveTicker eski 220×320 sabit boyutu geri çevirmek — kullanıcı
+  raporu "önceki tasarım daha güzeldi" — premium editorial card
+  daha kuvvetli brand presentation (italic quote mark + graphite
+  avatar + platform footer).
+- Section 4.5 single CTA paterne geri dönmek — kullanıcı raporu
+  "gözükmeyen buton" — dual CTA (primary lime + secondary outline)
+  visual weight + corporate premium feel.
+- Pricing link'i `/auth/register` ile değiştirmek — secondary CTA
+  intent farklı UX path: anonim user pricing katmanlarını
+  görsün/karşılaştırsın → register decision-aware.
+- LiveTicker `platform` field'ı zorunlu yapmak (`platform: string`
+  default'suz) — backward-compat kırar; opsiyonel intact (caller
+  override edebilir, default 5 item platform set).
+- Section 4.5 dual CTA mobile'da yatay layout zorlamak —
+  `flex-col sm:flex-row` doğru responsive (mobile dikey stack
+  44px touch target, desktop yatay corporate).
+
+**Yap**:
+- Yeni marketing surface'inde locale-aware platform list gerekirse
+  Stage 85 §38.165 paterni reuse: `isTr ? [TR pazar list] : [EN
+  global list]` ternary.
+- Yeni feature card (LiveTicker, ToastRow, FeatureCard benzeri)
+  eklerken Pulse §11 + §38.165 paterni reuse:
+  - Italic decorative quote mark editorial accent (lime-soft 64px
+    upper-right `pointer-events-none aria-hidden`)
+  - Graphite avatar premium contrast (`bg-brand-ink text-white`)
+  - Footer attribution row (`border-t border-black/[0.06] pt-2.5`
+    + mono "KAYNAK" + lime pulse-dot + platform name)
+- Yeni CTA group (corporate premium dual CTA) gerekirse Stage 85
+  §38.165 paterni reuse:
+  - Primary `<SweepCTA href>` lime sweep
+  - Secondary `<a>` graphite outline + hover:bg-graphite invert
+  - 12px microcopy disclaimer (verifiable claim §35.8)
+  - `flex-col sm:flex-row` responsive
+- Yeni heading element eklerken inline `style={{ fontFamily:
+  'var(--font-heading)' }}` ASLA — globals.css `:where(h1..h6)`
+  auto-applies (CLAUDE.md §38.164 + §38.165 paterni).
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. `/tr` (anasayfa) → Section 2 marquee scroll: Yemeksepeti →
+   Getir → Trendyol → Google → Tripadvisor → Yandex → Yelp →
+   Foursquare → Booking → Airbnb (TR pazar öncelik).
+2. `/en` (anasayfa) → Section 2 marquee scroll: Google →
+   Tripadvisor → Yelp → Foursquare → Booking → Airbnb → Yandex
+   (EN global, TR-spesifik platformlar yok).
+3. Section 2 FeatureCard mobile (375×667 iPhone SE) → 4 card
+   2-col grid + p-5 padding + 18px h3 + active:scale-[0.98] tap
+   feedback.
+4. Section 4 LiveTicker → 3-stack rotation 2400ms; her card:
+   italic decorative quote mark upper-right + graphite 36px
+   avatar + italic source name + 5-yıldız + body event copy +
+   footer row "KAYNAK · {platform}" lime pulse-dot.
+5. Section 4.5 Cohort corporate premium → eyebrow lime
+   pulse-dot indicator + headline `clamp(30px,5.5vw,56px)
+   tracking-[-0.025em]` + body 17px desktop + StarClimber +
+   BigCounter pair + dual CTA (primary lime "Ücretsiz başla" +
+   secondary outline "Planları gör") + 12px microcopy "14 gün
+   ücretsiz · Kart gerekmez · KVKK + GDPR uyumlu".
+6. Mobile (<sm) Section 4.5 dual CTA → flex-col stack, 44px+
+   touch target.
+7. Reduced motion ON → tüm animation static (CLAUDE.md §38.61
+   blanket intact).
+
+**Stage 85 closure** (Tarih 2026-05-08):
+- Branch: `chore/homepage-marketing-fixes-stage85` (fresh main
+  üstüne, Stage 84 §38.164 PR #588 merged sonrası align)
+- Edit'lenen dosyalar: 3 (page.tsx + FeatureCard.tsx +
+  LiveTicker.tsx) + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Anasayfa Section 2 marquee locale-aware görünür; Section 2 +
+  4 cards mobile responsive; LiveTicker premium editorial card +
+  platform attribution; Section 4.5 corporate premium dual CTA
+  group + microcopy.
+- Kalan riskler: yok (UI polish + 1 opsiyonel field LiveTickerItem;
+  backend kontrat dokunulmadı, KVKK + reCAPTCHA + honeypot +
+  Pulse §11 design system intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9
+  UserSession re-introduce (operatör tetiği §38.84/§38.89),
+  RECAPTCHA_ENFORCE flip (§38.79 #2 — 1-2 hafta soak), Prisma 7
+  upgrade. Veya Stage 84 PR2 (Owner panel performance) +
+  PR3 (Admin panel performance) zincir devam (audit hazır,
+  §38.164 closure'da scope dokümante).
+
+**Chat prompt history (Stage 85 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"Aşağıdaki promptu geliştir ve uygula:
+  Şimdi anasayfada hero bölümü altında markalar yazıyor o markalar
+  kayan şekilde gitsin ve Türkiyede Türkiye'ye uygun markalar
+  dışardan gelenlere de yurt sışına uygun markalar kaysın (en)
+  Aynı şekilde altındaki 4 kart tasarımını da mobile de uygun
+  yapalım ve bunların css'leribi de minify et. Her yorum, tek bir
+  panelde. Kısmının orda yorumlar gelip gidiyor o yorum tasarımını
+  da önceki tasarım daha güzeldi o kısımda ona göre değiştir.
+  Buaze müşteri kohortu kısmında da gözükmeyen buton yapısı vs
+  var orayı da daha kurumsal premumlukta tasarla"* (typo'lar
+  verbatim §39.2 disipline). 4 net UX talebi.
+- AskUserQuestion **YAPILMADI** — kullanıcı talebi 4 net (Marquee
+  locale + 4-card mobile + LiveTicker visual + Cohort CTA), scope
+  konservatif (presentational only + 1 opsiyonel field). CLAUDE.md
+  §35.8 + §35.10 + §19.1.1 + §38.114 compliance disipline 17.
+  iterasyonda stable.
+- **Disipline restoration (17. iterasyon)**: Stage 49 §38.130 →
+  Stage 84 §38.164 zinciri compliance disipline 16 kez stable;
+  Stage 85 §38.165 onyedinci kez backend kontrat dokunmadan
+  visual polish + locale-aware platform list + opsiyonel
+  attribution field. CLAUDE.md §35.8 + §35.10 + §19.1.1 + §38.114
+  + §38.46 + §38.65 + §38.131 + §38.150 + §38.161 + §38.164
+  paterni reuse.
+- LiveTicker premium upgrade kararı: kullanıcı raporu "önceki
+  tasarım daha güzeldi" — Stage 66 §38.147 PR0 base'in plain
+  card paterni yerine premium editorial card (italic quote mark +
+  graphite avatar + platform footer). Compliance disipline intact:
+  fake testimonial YOK, generic platform event + system source
+  attribution.

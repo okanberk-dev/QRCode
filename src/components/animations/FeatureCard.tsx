@@ -45,7 +45,9 @@ export default function FeatureCard({
   return (
     <motion.div
       onClick={onClick}
-      className={`group relative box-border h-full cursor-pointer overflow-hidden rounded-[18px] bg-brand-bg p-6 shadow-[0_0_0_1px_rgba(10,10,10,0.06)] ${
+      // Stage 85 §38.165: mobile padding kompakt (p-5 mobile, p-6 sm:+ desktop spacious).
+      // active:scale tap feedback mobile (CLAUDE.md §38.46 + §38.161 paterni).
+      className={`group relative box-border h-full cursor-pointer overflow-hidden rounded-[18px] bg-brand-bg p-5 shadow-[0_0_0_1px_rgba(10,10,10,0.06)] active:scale-[0.98] sm:p-6 sm:active:scale-100 ${
         className ?? ''
       }`}
       role={onClick ? 'button' : undefined}
@@ -91,16 +93,16 @@ export default function FeatureCard({
         <div className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] bg-brand-ink text-white">
           {icon ?? <Star size={16} fill="currentColor" />}
         </div>
-        <h3
-          className="mt-3.5 mb-1.5 text-[22px] leading-tight tracking-[-0.02em] text-brand-ink"
-          style={{ fontFamily: 'var(--font-heading)' }}
-        >
+        {/* Stage 85 §38.165: inline fontFamily redundancy kaldırıldı —
+            globals.css :where(h1..h6) auto-applies var(--font-heading)
+            (Stage 84 §38.164 paterni paralel). Mobile typography: text-[18px]
+            mobile + text-[22px] sm:+ (CSS minify — tek class shorthand). */}
+        <h3 className="mt-3.5 mb-1.5 text-[18px] sm:text-[22px] leading-tight tracking-[-0.02em] text-brand-ink">
           {title}
         </h3>
-        <p
-          className="m-0 text-[13px] leading-relaxed text-brand-mute-soft"
-          style={{ fontFamily: 'var(--font-body)' }}
-        >
+        {/* Stage 85 §38.165: body text default Inter font (Tailwind body class)
+            inline fontFamily redundancy kaldırıldı. */}
+        <p className="m-0 text-[13px] leading-relaxed text-brand-mute-soft">
           {body}
         </p>
       </div>

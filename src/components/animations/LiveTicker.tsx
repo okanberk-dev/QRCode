@@ -23,6 +23,15 @@
  * Original: site-library.jsx 4.LiveTicker. Konversiyon: hardcoded fake
  * testimonial → prop-driven items + generic compliance default;
  * setInterval + manual stack → AnimatePresence variants.
+ *
+ * Stage 85 §38.165 — Visual upgrade (premium editorial card paterni):
+ * - Responsive container (`max-w-[380px]` mobile / `420px` sm:+).
+ * - Italic decorative quote mark (Pulse §11 editorial accent).
+ * - Graphite avatar (premium contrast vs eski lime-soft).
+ * - Italic source name + tighter typography hierarchy.
+ * - Footer platform attribution badge (`item.platform` field —
+ *   compliance-safe system event source, müşteri-spesifik
+ *   testimonial DEĞİL).
  */
 
 import { Star } from 'lucide-react';
@@ -46,6 +55,12 @@ export interface LiveTickerItem {
   stars: number;
   /** Action text (TR + EN locale-aware). */
   text: { tr: string; en: string };
+  /**
+   * Platform attribution badge (generic — Google/Tripadvisor/Yemeksepeti
+   * vs Buaze gerçek partner). Müşteri review değil, system event source.
+   * Stage 85 §38.165 — compliance-safe visual upgrade.
+   */
+  platform?: string;
 }
 
 const DEFAULT_GENERIC_ITEMS: LiveTickerItem[] = [
@@ -54,35 +69,40 @@ const DEFAULT_GENERIC_ITEMS: LiveTickerItem[] = [
     initials: 'KK',
     source: 'Karaköy',
     stars: 5,
-    text: { tr: 'Yeni 5★ yorum geldi.', en: 'New 5★ review received.' },
+    text: { tr: 'Yeni 5★ yorum panelde.', en: 'New 5★ review in panel.' },
+    platform: 'Google',
   },
   {
     id: 'bagdat-1',
     initials: 'BC',
     source: 'Bağdat Cd.',
     stars: 5,
-    text: { tr: 'AI yanıtı gönderildi.', en: 'AI reply sent.' },
+    text: { tr: 'AI yanıt taslağı hazırlandı.', en: 'AI reply draft ready.' },
+    platform: 'Buaze',
   },
   {
     id: 'cihangir-1',
     initials: 'CH',
     source: 'Cihangir',
     stars: 4,
-    text: { tr: 'QR taraması alındı.', en: 'QR scan recorded.' },
+    text: { tr: 'QR taraması kaydedildi.', en: 'QR scan recorded.' },
+    platform: 'Tripadvisor',
   },
   {
     id: 'cankaya-1',
     initials: 'CK',
     source: 'Çankaya',
     stars: 5,
-    text: { tr: 'Google’a yorum yayınlandı.', en: 'Review published to Google.' },
+    text: { tr: 'Google\'a yorum yayınlandı.', en: 'Review published to Google.' },
+    platform: 'Google',
   },
   {
     id: 'izmir-1',
     initials: 'IZ',
     source: 'İzmir',
     stars: 3,
-    text: { tr: 'Düşük puan tespit edildi.', en: 'Low rating detected.' },
+    text: { tr: 'Düşük puan ekibe iletildi.', en: 'Low rating routed to team.' },
+    platform: 'Yandex',
   },
 ];
 
@@ -138,7 +158,7 @@ export default function LiveTicker({
 
   return (
     <div
-      className={`relative h-[220px] w-full max-w-[320px] ${className ?? ''}`}
+      className={`relative h-[260px] w-full max-w-[380px] sm:h-[280px] sm:max-w-[420px] ${className ?? ''}`}
       role="region"
       aria-live="polite"
       aria-label={locale === 'tr' ? 'Canlı aktivite akışı' : 'Live activity feed'}
@@ -146,56 +166,76 @@ export default function LiveTicker({
       <AnimatePresence mode="popLayout">
         {visible.map((item, stackIdx) => {
           const z = 3 - stackIdx;
-          const scale = 1 - stackIdx * 0.05;
-          const y = stackIdx * 18;
-          const opacity = 1 - stackIdx * 0.3;
+          const scale = 1 - stackIdx * 0.04;
+          const y = stackIdx * 22;
+          const opacity = 1 - stackIdx * 0.32;
 
           return (
             <motion.div
               key={`${item.id}-${idx}-${stackIdx}`}
-              className="absolute inset-x-0 rounded-[14px] bg-brand-paper p-3.5 shadow-[0_14px_30px_-10px_rgba(10,10,10,0.18)] ring-1 ring-black/5"
+              className="absolute inset-x-0 overflow-hidden rounded-[18px] bg-brand-paper p-5 shadow-[0_18px_40px_-12px_rgba(10,10,10,0.22)] ring-1 ring-black/5 sm:p-5"
               style={{ top: y, zIndex: z, transformOrigin: 'top center' }}
               initial={
                 stackIdx === 0
-                  ? { y: y + 20, scale, opacity: 0 }
+                  ? { y: y + 24, scale, opacity: 0 }
                   : { y, scale, opacity }
               }
               animate={{ y, scale, opacity }}
               exit={{
-                y: y - 16,
+                y: y - 18,
                 scale: scale + 0.04,
                 opacity: 0,
               }}
               transition={{
-                duration: prefersReducedMotion ? 0 : 0.6,
+                duration: prefersReducedMotion ? 0 : 0.65,
                 ease: [0.65, 0, 0.35, 1],
               }}
             >
-              <div className="flex gap-2.5">
-                <span
-                  className="inline-flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-brand-lime-soft text-xs text-brand-ink"
-                  style={{ fontFamily: 'var(--font-heading)' }}
-                  aria-hidden="true"
-                >
-                  {item.initials}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="text-xs font-semibold text-brand-ink"
-                      style={{ fontFamily: 'var(--font-body)' }}
+              {/* Editorial decorative italic quote mark — Pulse §11 paterni
+                  paralel (homepage hero + analytics dialogs zaten italic
+                  Space Grotesk decorative element kullanıyor). */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-1 -top-2 select-none text-[64px] leading-none text-brand-lime-soft"
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontStyle: 'italic',
+                  fontWeight: 500,
+                }}
+              >
+                &ldquo;
+              </span>
+
+              <div className="relative flex flex-col gap-3">
+                {/* Header row: graphite avatar + source meta + stars */}
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-ink text-[11px] font-semibold tracking-wider text-white"
+                    aria-hidden="true"
+                  >
+                    {item.initials}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="truncate text-[14px] leading-tight text-brand-ink"
+                      style={{
+                        fontFamily: 'var(--font-heading)',
+                        fontStyle: 'italic',
+                        fontWeight: 500,
+                        letterSpacing: '-0.01em',
+                      }}
                     >
                       {item.source}
-                    </span>
+                    </p>
                     <span
-                      className="inline-flex items-center gap-0.5"
+                      className="mt-0.5 inline-flex items-center gap-[3px]"
                       role="img"
                       aria-label={`${item.stars} of 5 stars`}
                     >
                       {[1, 2, 3, 4, 5].map((n) => (
                         <Star
                           key={n}
-                          size={9}
+                          size={11}
                           fill={n <= item.stars ? '#A8D62E' : 'none'}
                           stroke={n <= item.stars ? '#A8D62E' : '#D4D4D4'}
                           strokeWidth={1.5}
@@ -203,13 +243,36 @@ export default function LiveTicker({
                       ))}
                     </span>
                   </div>
-                  <p
-                    className="mt-0.5 text-xs leading-snug text-brand-mute-soft"
-                    style={{ fontFamily: 'var(--font-body)' }}
-                  >
-                    {locale === 'en' ? item.text.en : item.text.tr}
-                  </p>
                 </div>
+
+                {/* Body event copy */}
+                <p className="text-[13px] leading-relaxed text-brand-mute">
+                  {locale === 'en' ? item.text.en : item.text.tr}
+                </p>
+
+                {/* Footer: platform attribution badge (compliance-safe
+                    generic system event source — CLAUDE.md §35.10 + §38.131
+                    paterni paralel; müşteri-spesifik testimonial DEĞİL). */}
+                {item.platform ? (
+                  <div className="flex items-center justify-between border-t border-black/[0.06] pt-2.5">
+                    <span
+                      className="text-[10px] uppercase tracking-[0.18em] text-brand-mute-soft"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      {locale === 'tr' ? 'Kaynak' : 'Source'}
+                    </span>
+                    <span
+                      className="inline-flex items-center gap-1.5 text-[11px] font-medium text-brand-ink"
+                      style={{ fontFamily: 'var(--font-body)' }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="inline-block h-1.5 w-1.5 rounded-full bg-brand-lime"
+                      />
+                      {item.platform}
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </motion.div>
           );
