@@ -9,10 +9,14 @@
  * Tüm component'ler `'use client'` + framer-motion + react-intersection-observer.
  * LazyMount wrapper viewport gating + reduced-motion + tab pause sağlar.
  *
- * Mevcut counterparts (LiveReviewTicker, MarqueeRow, SocialProofToast,
- * useCountUp, useInView) PR1-5 callsite migrate sırasında silinecek
- * (CLAUDE.md §34 disipline). PR0 sadece base primitive ekler, callsite
- * mount yok.
+ * Mevcut counterparts (MarqueeRow, useCountUp, useInView) PR1-5 callsite
+ * migrate sırasında silinecek (CLAUDE.md §34 disipline). PR0 sadece base
+ * primitive ekler, callsite mount yok.
+ *
+ * Silinmiş counterparts:
+ * - LiveReviewTicker — Stage 68 §38.149 (LiveTicker migrate sonrası)
+ * - SocialProofToast — Stage 86 §38.166 (kullanıcı talebi + §35.10 fake
+ *   testimonial compliance disipline)
  */
 
 export { default as LazyMount } from './LazyMount';

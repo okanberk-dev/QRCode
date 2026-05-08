@@ -48,7 +48,18 @@ import PulseLine from '@/components/animations/PulseLine';
 import RevealHeadline from '@/components/animations/RevealHeadline';
 import FeatureCard from '@/components/animations/FeatureCard';
 const StickyCtaBar = nextDynamic(() => import('@/components/marketing/StickyCtaBar'));
-const SocialProofToast = nextDynamic(() => import('@/components/marketing/SocialProofToast'));
+// Stage 86 §38.166 — SocialProofToast kaldırıldı (kullanıcı talebi:
+// "sol altta firma yorum yaptı şimdi gibi şeyler çıkıyor onu kaldırabilir
+// miyiz"). 5 hardcoded fake müşteri ismi ("Kadıköy Bistro / Hotel Nora /
+// Derma+ Klinik / Ark Kahve / Ren Spa") + fake activity claim'leri ("az
+// önce 14 günlük denemeye başladı / 284 yorum topladı / Google 4.9'a
+// yükseltti") CLAUDE.md §35.10 fake testimonial paterni ihlali idi (Buaze
+// gerçek müşteri 10-50 §19.4.4). Compliance disipline win — kullanıcı
+// explicit removal request. Component dosyası §34 paterni gereği silindi
+// (0 callsite kaldı). Future scope: real backend feed (örn. /api/feedback
+// workspace aggregate) generic system event source attribution ile
+// implement edilebilir (LiveTicker §38.165 + FooterLiveTicker §38.131
+// paterni paralel).
 
 const VALID_LOCALES = ['tr', 'en'] as const;
 
@@ -1635,9 +1646,10 @@ export default async function LandingPage({
 
       <MarketingFooter locale={locale} t={t} />
 
-      {/* Conversion layer — client-only, renders only after user interacts */}
+      {/* Conversion layer — client-only, renders only after user interacts.
+          Stage 86 §38.166 — SocialProofToast mount silindi (fake testimonial
+          §35.10 disipline ihlali, kullanıcı explicit removal). */}
       <StickyCtaBar locale={locale} />
-      <SocialProofToast locale={locale} />
     </div>
   );
 }

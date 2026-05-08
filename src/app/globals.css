@@ -60,9 +60,10 @@
      nav is hidden and the desktop sidebar takes over. */
   --dash-bottom-nav-h: calc(76px + env(safe-area-inset-bottom, 0px));
   /* Marketing MobileBottomNav reserved height — used by sticky overlays
-     (StickyCtaBar, SocialProofToast) so they stack above the bar
-     without manually duplicating the env() math. Reset to 0 at md+
-     where MobileBottomNav is hidden. */
+     (StickyCtaBar) so they stack above the bar without manually
+     duplicating the env() math. Reset to 0 at md+ where MobileBottomNav
+     is hidden. SocialProofToast Stage 86 §38.166'da silindi
+     (§35.10 fake testimonial compliance). */
   --mobile-nav-h: calc(68px + env(safe-area-inset-bottom, 0px));
 }
 
