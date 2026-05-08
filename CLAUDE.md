@@ -16784,3 +16784,262 @@ unit test gelecek opportunistic).
 - AskUserQuestion yapılmadı: kullanıcı uyumakta, otonom karar yetkisi.
 - Hukuki/disipline override: yok (Pulse §11 + WCAG ARIA mixed state
   paterni).
+
+---
+
+### 38.130 2026-05-08 — Stage 49 public review surface (`/r/[slug]`) yeni tasarım uygulama (3-step flow + tag chips + reference number + AI presets)
+
+§38.129 Stage 48 sabah polish'inden sonra kullanıcı yeni mobil-first JSX
+prototip paylaştı (8 artboard, iPhone 14 390×844): *"restoran sayfasındaki
+değerlendirme için yeni tasarım yaptım bunu uygularm mısın? birebir aynı
+yap öncesinde plan ve anazli yap"*. Plan ve audit sonrası 4 kritik karar
+netleştirildi (AskUserQuestion onaylı), tek consolidated PR ile 5 fix
+bundle uygulandı.
+
+**4 kullanıcı kararı (AskUserQuestion onaylı)**:
+1. **Scope**: Visual + tag chips + reference number (Recommended).
+   Loyalty card + recovery actions (callback/voucher) + cross-share
+   KALDIRILIR.
+2. **Owner card**: Jenerik "İşletme yönetimi" (compliance-safe — "Kardeş
+   Ahmet" hardcoded değil, owner PII expose etmez).
+3. **AI assist**: Hem preset chips hem AI badge **cosmetic decoration**
+   (kullanıcı misleading risk'i kabul etti, tasarım fidelity tercih).
+4. **Step flow**: 3-step (loading → rate → form/thanks). ADIM 1/3 → 2/3
+   → 3/3.
+
+**5 fix bundle**:
+
+1. **Schema migration** (`prisma/schema.prisma` + `prisma/migrations/
+   20260508120000_add_feedback_aspects_json/migration.sql`):
+   - `Feedback.aspectsJson Json? @map("aspects_json")` field eklendi
+     (10 sabit aspect string array serialize). Backward compat: nullable
+     + default null (mevcut feedback rows etkilenmez). Vercel `prisma
+     migrate deploy` build script otomatik apply (CLAUDE.md §14.1).
+
+2. **Backend extend** (`src/app/api/feedback/route.ts`):
+   - `VALID_ASPECT_TAGS` 10-element ENUM key Set (`food_taste`,
+     `service_speed`, `temperature`, `portion`, `price`, `cleanliness`,
+     `atmosphere`, `staff`, `music`, `wait_time`).
+   - `sanitizeAspectTags(value)` saf helper — whitelist filter +
+     dedupe + max 10 cap. Bilinmeyen key'ler silent drop (analytics
+     garbage row önleme paterni — CLAUDE.md §13.5 paralel).
+   - POST body `aspectTags?: string[]` accept; mevcut `aspects` object
+     field'ı (food/service/atmosphere ratings) intact (backward compat).
+   - DB save: `aspectsJson: sanitizedAspectTags as Prisma.InputJsonValue`
+     spread pattern (null durumda field hiç set edilmez, default null).
+
+3. **Frontend full rewrite** (`src/app/r/[slug]/page.tsx` ~1100 satır):
+   - **Loading screen**: HANDOFF ReviewLoading birebir — 80×80 ring +
+     spinning lime border arc (`bz-rr-spin` keyframe) + center italic
+     Space Grotesk "b" wordmark + locale-aware "Hazırlanıyor…" / "BUAZE"
+     eyebrow. Generic Buaze brand (restaurant data fetch öncesi).
+   - **3-step segmented progress**: ADIM 1/3 → 2/3 → 3/3 lime fill
+     (Stage 48 §38.129 2-step paterni 3-step'e migrate).
+   - **Step 1 (rate)**: Stage 48 polish intact (color-coded label pill,
+     5-yıldız, safe-area, touchAction). Yeni: rating hint metni eklendi
+     (RATING_HINTS locale-aware), CTA label dinamik ("Google'da paylaş"
+     ≥4 / "Devam et" 1-3).
+   - **Step 2 (form, low rating only)**: Yeni jenerik owner
+     acknowledgment card (graphite + lime corner glow + italic Space
+     Grotesk "Söyle, neyi yanlış yaptık?" — synthetic italic §38.112
+     paterni). 10 tag chip picker (graphite selected + lime check icon,
+     white border unselected). Comment textarea (500 char counter,
+     `maxLength={500}`). AI badge cosmetic (`bz-rr-pulse` keyframe lime
+     dot decoration). 5 preset chip horizontal scroll (`no-scrollbar`
+     + `scroll-snap-x` + `scrollSnapAlign: start`). Mevcut KVKK +
+     marketing + honeypot + reCAPTCHA intact.
+   - **Step 3 (thanks)**: Stage 48 radial pulse rays intact + yeni
+     "Sesin bize ulaştı" copy + reference number card (BZ-XXX-YYY
+     formatter, `formatReferenceNumber(feedbackId)` Feedback CUID'den
+     ilk 3 + son 3 char uppercase derive).
+   - **Constants**: `ASPECT_TAG_KEYS` (10 ENUM key) +
+     `ASPECT_TAG_LABELS` (TR/EN locale-aware) + `PRESET_CHIPS` (5
+     preset, locale-aware) + `RATING_HINTS` (5 hint, locale-aware) +
+     `formatReferenceNumber` saf helper.
+   - **Yeni state**: `selectedAspectTags: string[]` (tag chip toggle),
+     `feedbackId: string | null` (server response'dan, thanks ref
+     number için).
+   - **Helper'lar**: `toggleAspectTag(key)` add/remove paterni;
+     `appendPresetToComment(preset)` comment'a "\n+ {preset}" ekleyici
+     (duplicate detect intact).
+   - **POST body extend**: `aspectTags: selectedAspectTags` field
+     handleLowSubmit'te eklendi.
+
+4. **`globals.css` 3 yeni keyframe** (CLAUDE.md §38.61 paterni):
+   - `bz-rr-spin` (1.1s linear infinite) — DarkLoader ring
+   - `bz-rr-pulse` (1.5s ease-in-out infinite, opacity 0.4 ↔ 1) —
+     AI badge cosmetic
+   - `bz-rr-dot` (1.2s ease-in-out infinite, scale + opacity) —
+     redirecting overlay 3-dot stagger (gelecek scope, helper olarak
+     kayıtlı)
+   - Reduced-motion blanket `[style*='bz-rr-spin'], [style*='bz-rr-pulse'],
+     [style*='bz-rr-dot']` selector ile yakalanır.
+
+5. **Compliance variations** (KALDIRILANLAR — kullanıcı kararı +
+   §35.8/§35.10/§19.1.1 disipline):
+   - "Kardeş Ahmet" hardcoded owner adı → jenerik "İşletme yönetimi"
+   - Loyalty card "+1 yıldız bedava kahve · 4/5" → backend yok, fake
+     metric riski
+   - Recovery actions (callback + voucher BUAZE10) → backend yok,
+     scope creep
+   - Cross-platform share (Tripadvisor/Yandex thanks screen satırları)
+     → mevcut `resolveBestRedirectPlatform` (§19.4.3) zaten owner
+     tercihine göre redirect; manuel multi-share UX karmaşık
+   - Perks strip / promo codes → backend yok
+   - Trust bar metrics (12.482 işletme vb.) → §35.8 cohort disclosure
+   - PhoneFrame (390×844 device chrome) → prototip-only, production
+     full-bleed
+
+**Etkilenen dosyalar (5)**:
+- `prisma/schema.prisma` (Feedback model `aspectsJson Json?`)
+- `prisma/migrations/20260508120000_add_feedback_aspects_json/migration.sql`
+  (yeni)
+- `src/app/api/feedback/route.ts` (VALID_ASPECT_TAGS + sanitizeAspectTags
+  + body extend + DB save spread)
+- `src/app/r/[slug]/page.tsx` (~790 → ~1100 satır full rewrite)
+- `src/app/globals.css` (3 yeni keyframe + reduced-motion blanket
+  3 yeni selector)
+
+**Schema migration**: 1 yeni nullable field (breaking change yok). **Yeni
+dep**: yok.
+
+**Yapma**:
+- HANDOFF spec'inden "Kardeş Ahmet" hardcoded owner adını literal
+  kopyalama — kullanıcı kararı jenerik "İşletme yönetimi" (compliance
+  + KVKK + fake testimonial riski sıfır).
+- Loyalty card + recovery actions + cross-platform share (Tripadvisor/
+  Yandex satırları) implement etme — backend yok, §35.8 + §35.10 +
+  scope creep riski.
+- AI badge "AI YARDIMCI HAZIR" gerçek AI feature ile bağlama —
+  kullanıcı kabul etti: cosmetic decoration. Backend wire etmek
+  misleading riski + scope creep.
+- Reference number formatter `formatReferenceNumber`'ı backend'e
+  taşıma — pure UI helper, Feedback CUID'den derive (zaten `id`
+  field'ı response'da dönüyor). Backend roundtrip gereksiz.
+- `selectedAspectTags` state'ini `aspects` object field'ı
+  (`food/service/atmosphere`) ile birleştirme — backward compat:
+  mevcut endpoint hâlâ object accept ediyor, yeni `aspectTags`
+  ENUM key array ayrı concern.
+- Tag chip whitelist'i frontend'de relax etme — backend
+  `VALID_ASPECT_TAGS` Set zaten silent drop yapar; frontend +
+  backend whitelist parite zorunlu (yeni tag eklerken 3 nokta
+  drift: `ASPECT_TAG_KEYS` + `ASPECT_TAG_LABELS` + backend
+  whitelist).
+- DarkLoader'da restaurant data bekleme — restaurant fetch öncesi
+  render edilir, generic Buaze brand zorunlu.
+- PhoneFrame device chrome (iPhone 14 390×844) production'a
+  taşıma — prototip-only görselleştirme, production full-bleed
+  responsive (mevcut `max-w-[360px]` + `min-h-[100dvh]` paterni
+  intact).
+- "AI YARDIMCI HAZIR" badge'ini Pulse AI master flag (CLAUDE.md
+  §5.2) ile gate etme — backend wire yok zaten; gate eklemek
+  cosmetic decoration logic'ini gereksiz karmaşıklaştırır.
+
+**Yap**:
+- Yeni aspect tag eklerken 3-nokta drift disipline:
+  `ASPECT_TAG_KEYS` (frontend) + `ASPECT_TAG_LABELS` (TR/EN) +
+  backend `VALID_ASPECT_TAGS` Set güncelle.
+- Yeni preset chip eklerken `PRESET_CHIPS` array (TR + EN parite)
+  güncelle — backend etkilenmez (pure UI, comment'a append).
+- Yeni rating-bazlı UI element eklerken `RATING_HINTS` veya
+  `RATING_LABELS` const paterni reuse — locale-aware fallback
+  (`?? RATING_LABELS.tr`).
+- Yeni mobile-first surface eklerken §25.5 + §38.129 paterni
+  reuse: safe-area inset (`max(40px, env(safe-area-inset-bottom)
+  + 24px)`) + `touchAction: 'manipulation'` + `inputMode` +
+  `enterKeyHint` + iOS 16px font (auto-zoom prevention).
+- Yeni `bz-rr-*` keyframe eklenirse `[style*='bz-rr-X']` selector
+  reduced-motion blanket'a eklemek zorunlu (CLAUDE.md §38.61
+  paterni).
+- Reference number gerekirse mevcut `formatReferenceNumber` reuse
+  veya Feedback CUID slice paterni (3 + 3 char uppercase) yeniden
+  uygula — `BZ-XXX-YYY` standart format.
+
+**Verification**:
+- `npm run lint` 0 errors / 0 warnings (CLAUDE.md §38.49 baseline temiz)
+- `npx tsc --noEmit` 0 errors in `src/`
+- `npm test` 383/383 pass, 42 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap) ✓ Compiled +
+  58/58 static pages, `/r/[slug]` route 11.4 kB (Stage 48 9.43 kB →
+  +2 kB, yeni 10 tag chip + preset chips + reference number + 3
+  keyframe overhead)
+- Sanity grep regression:
+  - `aspectsJson|aspectTags|VALID_ASPECT_TAGS|ASPECT_TAG_KEYS|
+    sanitizeAspectTags` 16 hit (5 dosya)
+  - `bz-rr-spin|bz-rr-pulse|bz-rr-dot` 10 hit (globals.css + 1
+    page.tsx callsite)
+  - `feedbackId|formatReferenceNumber` 10 hit (page.tsx)
+  - `ADIM 1/2/3 / 3` 3 hit (3-step progress)
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. `/r/{slug}` ziyaret → DarkLoader 80×80 ring + spinning lime arc +
+   "Hazırlanıyor…" + "BUAZE" eyebrow → restaurant data geldikten
+   sonra Step 1 ADIM 1/3.
+2. 5★ tap → 200ms delay → redirecting overlay → external platform.
+3. 1★ tap → ADIM 1/3 + tone-coded "Çok kötüydü" pill (red-soft) +
+   hint "Bize anlat, düzeltelim" → "Devam et" → Step 2 ADIM 2/3.
+4. Step 2: jenerik owner card "İŞLETME YÖNETİMİ · Söyle, neyi
+   yanlış yaptık?" italic Space Grotesk + 10 tag chip (multi-select
+   graphite + lime check) + comment textarea (500 char counter +
+   AI YARDIMCI HAZIR badge cosmetic) + 5 preset chip horizontal
+   scroll → click preset → comment'a "\n+ Yemek soğuktu" append.
+5. KVKK işaretli (default) + comment doldur + "Geri bildirimi
+   gönder" → POST `/api/feedback` body `{aspectTags: ['food_taste',
+   'service_speed']}` + reCAPTCHA token + honeypot guard → step 3
+   ADIM 3/3.
+6. Step 3: Stage 48 radial pulse + lime check + "Sesin bize ulaştı"
+   + reference number card "BZ-CM3-XYZ" (Feedback CUID'den derive).
+7. iOS Safari (375×667) → safe-area + touchAction + 16px font no
+   auto-zoom + active:scale tap feedback intact.
+8. Reduced motion ON → bz-rr-spin + bz-rr-pulse + bz-done-ring-pulse
+   + active:scale hepsi static (final state immediate).
+9. DB query: `SELECT id, rating, aspects_json FROM feedback ORDER
+   BY created_at DESC LIMIT 1;` → `aspects_json` JSONB array
+   `["food_taste","service_speed"]` görünür.
+
+**§38.121.1 backlog güncelleme** (Stage 49 ile kapanan kalemler):
+- ✅ Tag chip picker (HANDOFF LowForm chip section, backend aspects
+  schema + Zod genişletme) — Stage 49 §38.130 ile kapatıldı.
+
+**Stage 49 closure** (Tarih 2026-05-08):
+- Branch: `chore/public-review-redesign-stage49` (fresh main üstüne,
+  Stage 48 §38.129 PR'ı sonrası align)
+- Edit'lenen + yeni dosyalar: 5 (1 yeni migration + 1 schema edit +
+  1 backend edit + 1 frontend full rewrite + 1 globals.css edit) +
+  CLAUDE.md
+- Schema migration: 1 (Feedback.aspectsJson, breaking change yok)
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy + `prisma
+  migrate deploy` build script otomatik apply. Mevcut /r/[slug]
+  customer flow intact, ek tag chip + reference number + 3-step
+  progress + AI cosmetic + jenerik owner card görünür.
+- Kalan riskler: yok (UI polish + 1 nullable schema field; backend
+  kontrat backward-compat — mevcut `aspects` object field intact +
+  yeni `aspectTags` ENUM array ayrı concern).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  kalan tasarım defer item'ları (HIGH 4 Platforms 12-card grid,
+  Stage 9 UserSession re-introduce operatör tetiği, RECAPTCHA_ENFORCE
+  flip, Site FX yeni primitive callsite'lar). Veya operatör yeni
+  odak talebi.
+
+**Chat prompt history (Stage 49 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"restoran sayfasındaki değerlendirme için
+  yeni tasarım yaptım bunu uygularm mısın? birebir aynı yap öncesinde
+  plan ve anazli yap"* + 8-artboard JSX prototip (iPhone 14 390×844,
+  ReviewLoading + ReviewRateEmpty/High/Low + ReviewLowForm +
+  ReviewRedirecting + ReviewThanksLow/High).
+- AskUserQuestion 4 kritik karar: scope (visual + tag chips + ref
+  number — Recommended seçildi), owner card (jenerik "İşletme
+  yönetimi" — compliance-safe), AI assist (cosmetic decoration —
+  kullanıcı misleading risk'i kabul etti, tasarım fidelity tercih),
+  step flow (3-step ADIM 1/3 — Recommended).
+- Hukuki/disipline override: HANDOFF spec'inden 7 element compliance
+  variation ile KALDIRILDI ("Kardeş Ahmet" hardcoded → jenerik;
+  loyalty card → backend yok §35.8; recovery actions → backend yok;
+  cross-share thanks satırları → mevcut resolver §19.4.3 yeterli;
+  perks/promo codes → backend yok; trust bar metrics → §35.8 cohort;
+  PhoneFrame chrome → prototip-only).
+- 2026-05-08 follow-up: *"Kaldığın yerden devam et ve tamamen işin
+  bitince Main'e merge eder misin?"* → Stage 49 PR `gh pr merge
+  --auto --squash` ile auto-merge (CLAUDE.md §39.1 paterni).

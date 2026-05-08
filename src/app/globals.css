@@ -567,6 +567,37 @@ body {
   100% { transform: scale(2.4); opacity: 0; }
 }
 
+/* §38.130 Stage 49 — HANDOFF feedback-flow.jsx loading screen + AI
+ * assist + redirecting overlay 3 yeni keyframe.
+ *
+ * `bz-rr-spin` — DarkLoader 80×80 ring, 1.1s linear infinite. Lime
+ *   border-top arc döner; geri kalan rgba(255,255,255,0.1) ring sabit.
+ *
+ * `bz-rr-pulse` — comment textarea AI badge "AI YARDIMCI HAZIR" lime
+ *   dot. Cosmetic decoration (kullanıcı kabul etti, gerçek AI feature
+ *   ile bağlı değil). 1.5s ease-in-out infinite, opacity 0.4 ↔ 1.
+ *
+ * `bz-rr-dot` — redirecting overlay 3-dot stagger (gelecek scope —
+ *   şu an tasarımda mevcut ama mevcut RedirectingOverlay 1.5s progress
+ *   bar paterni intact; helper olarak globals'a kaydedilir).
+ *
+ * Inline `style={{ animation }}` yazılır; reduced-motion blanket
+ * [style*='X'] selector ile yakalanır (CLAUDE.md §38.61 paterni). */
+@keyframes bz-rr-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes bz-rr-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+@keyframes bz-rr-dot {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .pulse-heartbeat,
@@ -594,6 +625,9 @@ body {
   [style*='bz-cookie-card-in'],
   [style*='bzEchoSweep'],
   [style*='bz-done-ring-pulse'],
+  [style*='bz-rr-spin'],
+  [style*='bz-rr-pulse'],
+  [style*='bz-rr-dot'],
   .animate-\[bzProgress_2\.2s_linear_forwards\] {
     animation: none !important;
   }
