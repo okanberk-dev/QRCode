@@ -371,22 +371,37 @@ export function ContactFloat({ locale }: { locale: string }) {
         { label: 'Google integration?', autofill: 'How does the Google integration work?' },
       ];
 
+  // Stage 79 §38.157 — Desktop overflow fix: flex column layout
+  // (header shrink-0 + body flex-1 min-h-0 overflow-y-auto + footer
+  // shrink-0). Outer dialog max-h dinamik: stickyCtaVisible iken md+
+  // viewport - 280px (header 120 + footer 50 + bottom offset 148 +
+  // breathing 22 ≈ 340; 280 ≈ tighter calc), sakin durumda md+
+  // viewport - 110px (mevcut Stage 58 mobile baseline). Kullanıcı
+  // raporu: "açılır konuşma balonunu masaüstü versiyonda tam sığmıyor
+  // aşağıya kaydırdığım" — sticky CTA + open form üst üste binince
+  // form viewport top'undan taşıyordu, şimdi flex column içinde body
+  // shrinker olarak kalır; ana dialog max-h viewport sınırını respekt
+  // ediyor.
   return (
     <div
       role="dialog"
       aria-modal="false"
       aria-label={isTr ? 'İletişim formu' : 'Contact form'}
-      className={`bz-fade-in fixed right-4 bottom-[88px] left-4 z-50 max-h-[calc(100vh-110px)] overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] ${
-        stickyCtaVisible ? 'md:bottom-[148px]' : 'md:bottom-6'
+      className={`bz-fade-in fixed right-4 bottom-[88px] left-4 z-50 flex max-h-[calc(100dvh-110px)] flex-col overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom,max-height] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] ${
+        stickyCtaVisible
+          ? 'md:bottom-[148px] md:max-h-[calc(100dvh-280px)]'
+          : 'md:bottom-6 md:max-h-[calc(100dvh-110px)]'
       }`}
       style={{
         boxShadow:
           '0 28px 64px -18px rgba(10,10,10,0.32), 0 4px 12px rgba(10,10,10,0.06)',
       }}
     >
-      {/* HEADER — graphite + lime halo + Buaze avatar + status mono */}
+      {/* HEADER — graphite + lime halo + Buaze avatar + status mono.
+          Stage 79 §38.157 — shrink-0 (flex column root içinde body
+          flex-1 olarak shrinkable kalır). */}
       <div
-        className="relative overflow-hidden bg-[#0A0A0A] px-5 pb-4 pt-5 text-white"
+        className="relative shrink-0 overflow-hidden bg-[#0A0A0A] px-5 pb-4 pt-5 text-white"
       >
         {/* Lime halo radial — top-right corner, 160×160, decorative */}
         <span
@@ -506,8 +521,12 @@ export function ContactFloat({ locale }: { locale: string }) {
         </div>
       </div>
 
-      {/* BODY — chat-style initial message + form */}
-      <div className="max-h-[calc(100vh-260px)] overflow-y-auto sm:max-h-[60vh]">
+      {/* BODY — chat-style initial message + form. Stage 79 §38.157 —
+          flex-1 min-h-0 (parent flex column içinde body shrinker olarak
+          remaining height alır; eski statik max-h yerine viewport-aware
+          dynamic shrinking). overflow-y-auto natural scroll body içinde
+          içerik kaydırma. */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {sent ? (
           <div className="px-5 py-6 text-center">
             <div
@@ -755,8 +774,10 @@ export function ContactFloat({ locale }: { locale: string }) {
         )}
       </div>
 
-      {/* FOOTER — KVKK encrypted hint + Powered by buaze */}
-      <div className="flex items-center justify-between border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-2.5">
+      {/* FOOTER — KVKK encrypted hint + Powered by buaze. Stage 79
+          §38.157 — shrink-0 (flex column root içinde body flex-1 olarak
+          shrinkable kalır). */}
+      <div className="flex shrink-0 items-center justify-between border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-2.5">
         <div className="inline-flex items-center gap-1.5">
           <svg
             width="11"

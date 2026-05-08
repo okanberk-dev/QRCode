@@ -9,8 +9,17 @@
  *
  * Pulse §11 disipline: graphite QR matrix + lime tarama hattı + box-shadow
  * lime glow. Deterministik 11×11 matrix (Math.random YOK — SSR + test
- * friendly, CLAUDE.md §38.140 §38.143 disipline). Progress
- * tabanlı reveal (modules sırayla görünür).
+ * friendly, CLAUDE.md §38.140 §38.143 disipline).
+ *
+ * Stage 79 §38.157 — visibility fix:
+ * - Tailwind `bg-brand-paper` / `bg-brand-ink` utility'leri inline
+ *   `bg-[#FAFAFA]` / `bg-[#0A0A0A]` hex'lere çevrildi (Tailwind config
+ *   theme extend bağımlılığı kaldırıldı, kullanıcı raporu "QR
+ *   animasyonu renginden dolayı gözükmüyor siyahlaştırırsan gözükebilir").
+ * - Filled modules `brand-pulse` opacity-fade animasyonu kaldırıldı —
+ *   solid graphite static görünür kalır (pulse cycle 2640ms boyunca
+ *   modules görünmez oluyordu); sadece lime tarama hattı animasyonu
+ *   intact (visual scanning effect bu çizgiden geliyor).
  *
  * Tasarım kararı: Loop animation (sürekli yeniden tara) + reduced-motion
  * static QR (lazer hattı off).
@@ -90,7 +99,7 @@ export default function QRScanLoader({
       aria-label="QR code scanning animation"
     >
       <div
-        className="grid h-full w-full bg-brand-paper p-1"
+        className="grid h-full w-full bg-[#FAFAFA] p-1"
         style={{
           gridTemplateColumns: `repeat(11, 1fr)`,
           gridTemplateRows: `repeat(11, 1fr)`,
@@ -98,22 +107,17 @@ export default function QRScanLoader({
         aria-hidden="true"
       >
         {matrix.flat().map((filled, idx) => {
-          const r = Math.floor(idx / 11);
-          // Reveal threshold — modules row by row (orijinal progress
-          // tabanlı paterni paralel). Reduced motion'da hepsi visible.
+          // Stage 79 §38.157 — Filled modules solid graphite static
+          // (eski brand-pulse opacity fade animasyonu görünmezliğe
+          // sebep oluyordu). Sadece lime tarama hattı animasyonu kalır,
+          // QR matrix kararlı görünür.
           return (
             <div
               key={idx}
-              className={`${filled ? 'bg-brand-ink' : 'bg-transparent'}`}
+              className={filled ? 'bg-[#0A0A0A]' : 'bg-transparent'}
               style={{
                 width: moduleSize,
                 height: moduleSize,
-                opacity: prefersReducedMotion ? (filled ? 1 : 0) : undefined,
-                animation:
-                  !prefersReducedMotion && filled
-                    ? `brand-pulse ${scanDurationMs * 1.2}ms ease-in-out infinite`
-                    : undefined,
-                animationDelay: `${r * 60}ms`,
               }}
             />
           );

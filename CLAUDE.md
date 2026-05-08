@@ -22205,3 +22205,219 @@ bekleniyor (lokal `node_modules` yok, CI Validate workflow doğrulayacak).
   SQL + 18 satır beforeSend filter) + regression riski sıfır
   (idempotent migration + dar AND filter). Frontend + Backend audit
   agent'ları **0 finding** raporu intact.
+
+---
+
+### 38.157 2026-05-08 — Stage 77 marketing UX 4-fix bundle (StickyCtaBar daralt + lime full marker + ContactFloat desktop overflow + QRScanLoader visibility + Section 7.5 → hero altı)
+
+§38.156 Stage 76 sonrası kullanıcı 4 UX raporu iletti: *"sticky CTA
+yerinde 'İstediğin zaman iptal' 'Kart gerekmez' bu kısımları kaldır
+ve daha fazla daralt bu alanı UX olarak güzel bir deneyim sunsun ek
+olarak 'ilk yorumunu yarın al.' cümlesinin yarısı lime arka plan rengi
+onun tamamını gösterir yap. Sonrasında da açılır konuşma balonunu
+masaüstü versiyonda tam sığmıyor aşağıya kaydırdığım onu düzelt. QR
+stüdyosunda da qr animasyonu renginden dolayı gözükmüyor siyahlaştırırsan
+gözükebilir veya sen kontrol et. footer üstündeki 'Restoran tarafının
+kullandığı platformlarla konuşur.' kısmını heronun altındaki kısma al
+ve heronun altında da benzer kısım var orayı kaldır."*
+
+**4 fix bundle**:
+
+1. **StickyCtaBar daralt + lime highlight extension + meta row sil**
+   (`src/components/marketing/StickyCtaBar.tsx`):
+   - Meta row tamamen silindi: "İstediğin zaman iptal" + "Kart gerekmez"
+     2 trust item kaldırıldı (Stage 61 §38.142'de "14 gün ücretsiz"
+     silinmişti, Stage 77'de kalan 2 item da silindi). Eyebrow zaten
+     §38.142'de yok.
+   - Lime highlight gradient `transparent 60% → lime 60-92% → transparent
+     92%` (yarı-band marker) → solid `#C6F24E` background + 4px
+     border-radius + 0.05em/0.35em padding + `boxDecorationBreak: clone`
+     (line-wrap durumda her satıra ayrı sticker). Tüm "ilk yorumunu
+     yarın al." cümlesini kapsar (kullanıcı talebi birebir).
+   - Daralt: `py-5 → py-3.5` (-30% vertical), CTA `h-14 → h-12 + px-7
+     → px-6` (kompakt), dismiss `h-9 w-9 → h-8 w-8`, headline clamp
+     `(20px,2.4vw,30px) → (17px,2vw,26px)`. Grid wrapper `md:grid-cols-
+     [1fr_auto_auto] gap-9` → `flex items-center gap-6 md:gap-8` (basit
+     flex layout, `flex-1` headline + `shrink-0` CTA + dismiss).
+   - Backend kontrat intact: scroll threshold 600px + sessionStorage
+     dismiss + `buaze:sticky-cta-visibility` event dispatcher (Stage
+     61 §38.142 ContactFloat listener intact).
+
+2. **ContactFloat desktop overflow fix** (`src/components/marketing/
+   ContactFloat.tsx`):
+   - Eski: outer dialog `max-h-[calc(100vh-110px)] overflow-hidden` +
+     body `max-h-[calc(100vh-260px)] overflow-y-auto sm:max-h-[60vh]`.
+     Kullanıcı raporu: "açılır konuşma balonunu masaüstü versiyonda
+     tam sığmıyor aşağıya kaydırdığım" — sticky CTA visible iken
+     `bottom-[148px]` offset + `max-h-[calc(100vh-110px)]` viewport top
+     bound'unu aşıyordu (Stage 58 §38.139 + §38.142'de offset eklendi
+     ama max-h kompanze edilmedi).
+   - Yeni: flex column layout (`flex flex-col`) — header `shrink-0` +
+     body `flex-1 min-h-0 overflow-y-auto` + footer `shrink-0`.
+     Outer dialog `max-h` dynamic: `stickyCtaVisible` iken md+
+     `max-h-[calc(100dvh-280px)]` (header 120 + footer 50 + bottom
+     offset 148 + breathing 22 ≈ 340; 280 ≈ tighter calc, `100dvh`
+     mobile browser chrome aware). Sakin durumda md+
+     `max-h-[calc(100dvh-110px)]`. Mobile `100dvh-110px` baseline.
+   - `transition-[bottom]` → `transition-[bottom,max-height]` smooth
+     dual-property animation (CLAUDE.md §38.65 `bz-motion-spring`
+     paterni paralel).
+   - Backend kontrat intact: 3-state akış (fab/bubble/open) + ESC
+     handler + reCAPTCHA + honeypot + dwell-time + /api/contact POST.
+
+3. **QRScanLoader visibility fix** (`src/components/animations/
+   QRScanLoader.tsx`):
+   - Kullanıcı raporu: "QR stüdyosunda qr animasyonu renginden dolayı
+     gözükmüyor siyahlaştırırsan gözükebilir". Root cause: filled
+     modules `bg-brand-ink` + `animation: brand-pulse ${duration}ms`
+     opacity-fade cycle 2640ms boyunca modules'u opacity 0.3-1.0 arası
+     pulse'lıyordu (60ms row-stagger ile dalga efekti). Cycle çoğunda
+     modules opaque olmadığı için QR matrix görünmüyordu.
+   - Eski: `bg-brand-paper` + `bg-brand-ink` Tailwind theme extend
+     (Stage 66 §38.147 `tailwind.config.ts` v3-style config'den geliyor)
+     + `brand-pulse` animation per filled module + reduced-motion
+     fallback `opacity: filled ? 1 : 0`.
+   - Yeni: inline hex `bg-[#FAFAFA]` (paper) + `bg-[#0A0A0A]` (graphite)
+     + animation YOK (filled modules solid graphite static). Lime
+     tarama hattı animasyonu (line 130-132) intact — visual scanning
+     effect zaten lazer çizgisinden geliyor, modules pulse gereksizdi.
+   - Sonuç: QR matrix solid + clearly visible + lime line tek
+     animasyon. Reduced-motion artık ayrı opacity fallback'a gerek yok
+     (filled = solid bg-[#0A0A0A] her zaman; line off when reduced).
+
+4. **Anasayfa Section 7.5 → hero altı taşıma** (`src/app/[locale]/page.tsx`):
+   - Kullanıcı raporu: "footer üstündeki 'Restoran tarafının kullandığı
+     platformlarla konuşur.' kısmını heronun altındaki kısma al ve
+     heronun altında da benzer kısım var orayı kaldır."
+   - **Eski Section 2** (line 421-435 LOGO STRIP — MarqueeRow industry
+     chip strip "BUAZE'İ KULLANAN İŞLETME TÜRLERİ"): kullanıcı
+     "heronun altında da benzer kısım var" olarak işaret etti, **silindi**.
+   - **Eski Section 7.5** (line 1471-1546 BUILT FOR THESE CHANNELS —
+     Marquee partner platforms + h2 "Restoran tarafının kullandığı
+     platformlarla konuşur." + FeatureCard 4-grid): kullanıcı
+     "footer üstündeki" olarak işaret etti, hero altına **taşındı**.
+   - Yeni Section 2 = eski Section 7.5 içeriği (Marquee + h2 + FeatureCard
+     4-grid). Section 7.5 yerine açıklayıcı yorum + PulseLine 2/2
+     intact (eski son content section ile final CTA banner arasında
+     decorative divider olarak çalışmaya devam eder).
+   - Orphan cleanup (CLAUDE.md §34 paterni): `MarqueeRow` import (line
+     12) + `industryCategories` const (line 227-229) 0 callsite oldu,
+     **silindi** (yorumda referans bırakıldı, future session bağlam için).
+   - Yeni anasayfa flow: Hero → BUILT FOR THESE CHANNELS (platforms +
+     features) → THREE STEPS → DARK FEATURE → BUAZE COHORT HIGHLIGHTS
+     → GOOGLE SAFE → BENTO → SECTION DIVIDER → INDUSTRY TABS →
+     PLATFORM COVERAGE → QR GENERATOR TOOL TEASER → CASE STUDY → FAQ
+     → PulseLine 2/2 → CTA BANNER. UX: hero sonrası "ne yapıyor"
+     hemen partner platforms + 4 feature ile kanıtlanır (eski LOGO
+     STRIP industry chip strip "kim kullanıyor" implication yerine).
+
+**Compliance disipline intact**:
+
+- §35.8 verifiable claims — Marquee 10 partner platform + FeatureCard
+  4 module isimleri Buaze gerçek catalog (Pulse §11 + §38.150 paterni).
+  StickyCtaBar headline jenerik brand promise ("ilk yorumunu yarın al."
+  generic claim, kullanıcı kohort spesifik değil).
+- §35.10 fake testimonial intact — meta row silindi + avatar stack
+  + cohort claim §38.139 paterni intact.
+- §19.1.1 review-gating wording intact — UI değişimi yok.
+- Pulse §11 typography intact — synthetic italic Space Grotesk
+  (Instrument Serif italic YASAK §38.114) + lime/graphite/N-scale.
+
+**Etkilenen dosyalar (5 + docs)**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/components/marketing/StickyCtaBar.tsx` | Meta row sil + headline daralt + CTA height-12 + dismiss h-8 + lime solid marker |
+| `src/components/marketing/ContactFloat.tsx` | flex column layout + dynamic max-h |
+| `src/components/animations/QRScanLoader.tsx` | bg-brand-paper/brand-ink → inline hex + brand-pulse animation kaldırıldı |
+| `src/app/[locale]/page.tsx` | Section 2 LOGO STRIP → BUILT FOR THESE CHANNELS (eski 7.5 içeriği) + orphan import/const cleanup |
+| `CLAUDE.md` | §38.157 closure log |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 pass intact.
+
+**Verification**:
+- `npx eslint` 5 affected files: 0 errors / 0 warnings
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: 404/404 pass, 45 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap): ✓ Compiled
+  successfully + 58/58 static pages
+
+**Yapma**:
+- StickyCtaBar lime highlight'ı eski `transparent 60% → lime 60-92%`
+  yarı-band gradient'e geri çevirme — kullanıcı talebi birebir solid
+  marker. `boxDecorationBreak: clone` line-wrap edge case için zorunlu.
+- StickyCtaBar'a yeni eyebrow veya meta row geri ekleme — Stage 61
+  §38.142 + Stage 77 §38.157 zincirinde 2 kez kullanıcı kararı:
+  "yeni 14 gün ücretsiz yazısı olmasın altta ve üstte". UX clutter.
+- ContactFloat'ta `100vh` yerine `100dvh` kullanmamak — mobile browser
+  URL bar dynamic height (collapsing top chrome) için `dvh` daha
+  doğru viewport hesabı.
+- QRScanLoader'da `brand-pulse` animation'ı geri ekleme — visibility
+  fix'in tam tersi. Lime tarama hattı zaten "scanning" effect veriyor,
+  modules pulse gereksiz noise.
+- Section 2 LOGO STRIP'i geri ekleme — kullanıcı kararı duplicate
+  "platforms below hero" UX clutter. Yeni Section 2 (BUILT FOR THESE
+  CHANNELS) verifiable + actionable + compliance-safe.
+- `MarqueeRow` import'u geri ekleme — 0 callsite (CLAUDE.md §34
+  disipline). Yeni industry chip strip ihtiyacı çıkarsa kullanıcı
+  açık talep + farklı UX intent ile.
+
+**Yap**:
+- Yeni sticky CTA daraltma ihtiyacı çıkarsa Stage 77 paterni reuse:
+  flex layout + flex-1 + shrink-0 + clamp font scale.
+- Yeni dynamic max-h gerekirse ContactFloat paterni reuse: flex column
+  + min-h-0 body + dual-property transition (`transition-[bottom,max-
+  height]`).
+- Yeni hero altı section eklerken anasayfa Stage 77 §38.157 paterni
+  reuse: substantial first content section verifiable + actionable +
+  compliance-safe.
+- Orphan cleanup gerekirse CLAUDE.md §34 + §38.49 + §38.149 paterni
+  reuse: 0 callsite verify (`grep -rn`) + import + const sil + yorumda
+  referans bırak (future session bağlam).
+
+**Stage 77 closure** (Tarih 2026-05-08):
+- Branch: `claude/sleepy-thompson-d2db52` (designated worktree, fresh
+  main üstüne, Stage 76 §38.156 sonrası align).
+- Edit'lenen dosyalar: 5 (4 component + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Marketing
+  surface'lerinde scroll > 600px → daha kompakt sticky CTA görünür
+  (single-line headline + lime solid marker + CTA + dismiss);
+  desktop'ta open form artık viewport sınırlarını respekt eder; QR
+  stüdyosunda animasyonlu QR matrix solid graphite + lime tarama
+  hattı; anasayfa hero sonrası direkt platforms + features (eski LOGO
+  STRIP yerine).
+- Kalan riskler: yok (UI polish + presentational; backend kontrat
+  + KVKK + reCAPTCHA + honeypot intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
+  (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör yeni
+  odak talebi.
+
+**Chat prompt history (Stage 77 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"sticky CTA yerinde 'İstediğin zaman iptal'
+  'Kart gerekmez' bu kısımları kaldır ve daha fazla daralt bu alanı UX
+  olara kgüzel bir deneyim sunsun ek olarak 'ilk yorumunu yarın al.'
+  cümlesinin yarısı lime arka plan rengi onun tamamını gösterir yap.
+  Sonrasında da açılır konuşma balonunu masaüstü versiyonda tam
+  sığmıyor aşağıya kaydırdığım onu düzelt. QR stüdyosunda da qr
+  animasyonu renginden dolayı gözükmüyor siyahlaştırırsan gözükebilir
+  veya sen kontrol et. footer üstündeki 'Restoran tarafının kullandığı
+  platformlarla konuşur.' kısmını heronun altındaki kısma al ve
+  heronun altında da benzer kısım var orayı kaldır."* — 4 net UX
+  raporu (typo "olara kgüzel" → "olarak güzel" verbatim §39.2 disipline).
+- AskUserQuestion **YAPILMADI** — kullanıcı talebi net + scope
+  konservatif (4 dar fix). CLAUDE.md §35.8 + §35.10 + §19.1.1
+  compliance disipline intact (UI polish only, backend dokunulmadı,
+  fake-data yok). Pulse §11 typography intact. §38.61 reduced-motion
+  blanket etkilenmedi (yeni keyframe yok).
+- Otonom karar gerekçesi: 4 UX rapor net + lokal verify yeşil + 0
+  fonksiyonel risk (presentational only). Section 7.5 → hero altı
+  taşıma duplicate "platforms below hero" UX clutter'ı çözer
+  (kullanıcı net işaret etti).
