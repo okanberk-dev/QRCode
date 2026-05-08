@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
-import { Star, Check, Loader2 } from 'lucide-react';
+import { Star, Check, Loader2, Copy, Share2, Utensils, ExternalLink } from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
 import { buildGoogleReviewUrl } from '@/lib/google-review';
@@ -53,6 +53,11 @@ interface RestaurantData {
   // Phase 12.6 — owner-picked fallback when QR has no `?platform=` param.
   // NULL → resolver Google → sektör priority → any active (CLAUDE.md §19.4.3).
   defaultRedirectPlatform?: string | null;
+  // Stage 57 §38.138 — thanks screen "Menüye geri dön" conditional render.
+  // Yalnızca `menuEnabled && menuPublished` ise CTA görünür (`/menu/[slug]`
+  // 404 önleme). Mevcut owner publish toggle akışı intact (CLAUDE.md §12).
+  menuEnabled?: boolean;
+  menuPublished?: boolean;
 }
 
 // §38.130 Stage 49 — HANDOFF feedback-flow.jsx birebir parity. 5 rating
@@ -203,6 +208,10 @@ function ReviewContent() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [redirecting, setRedirecting] = useState<{ url: string; platformId: string } | null>(null);
+  // Stage 57 §38.138 — Reference number "Kopyala" button feedback state.
+  // Click sonrası 1.6sn "Kopyalandı" görünür, sonra reset. Clipboard API
+  // başarısız olursa selectable text fallback (input.select()).
+  const [refCopied, setRefCopied] = useState(false);
   // §38.130 Stage 49 — POST /api/feedback success response'undan gelen
   // feedback ID. Step 3 (thanks) reference number için kullanılır.
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
@@ -432,6 +441,62 @@ function ReviewContent() {
     });
   };
 
+  // Stage 57 §38.138 — Reference number "Kopyala" button. Clipboard API
+  // (HTTPS context'te async) → fallback document.execCommand (legacy).
+  // Başarılı → 1.6sn "Kopyalandı" feedback (refCopied state). Hata sessiz
+  // yutulur (kullanıcı yine reference numarasını manuel okuyabilir).
+  const copyReferenceNumber = async () => {
+    if (!feedbackId) return;
+    const ref = formatReferenceNumber(feedbackId);
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(ref);
+      } else {
+        // Legacy fallback (HTTP context veya eski browser)
+        const ta = document.createElement('textarea');
+        ta.value = ref;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setRefCopied(true);
+      setTimeout(() => setRefCopied(false), 1600);
+    } catch {
+      // Silent — clipboard yetkisi reddedildi veya context fail.
+    }
+  };
+
+  // Stage 57 §38.138 — Web Share API (mobile native share sheet).
+  // Browser support: iOS Safari 12+, Android Chrome 89+. Desktop Chrome
+  // sınırlı. Fallback: link clipboard'a kopyalanır + alert göster.
+  const shareReview = async () => {
+    if (typeof window === 'undefined') return;
+    const url = `${window.location.origin}/${locale}/r/${slug}`;
+    const title = restaurant?.name
+      ? `${restaurant.name} · ${locale === 'tr' ? 'Görüşünü paylaş' : 'Share your review'}`
+      : 'Buaze';
+    const text =
+      locale === 'tr'
+        ? `${restaurant?.name ?? 'Buaze'} hakkında deneyimini paylaş`
+        : `Share your experience about ${restaurant?.name ?? 'Buaze'}`;
+    try {
+      if (typeof navigator !== 'undefined' && 'share' in navigator) {
+        await navigator.share({ title, text, url });
+        return;
+      }
+      // Web Share API yok → URL clipboard fallback
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch {
+      // User canceled or fail — silent.
+    }
+  };
+
   const handleLowSubmit = async () => {
     if (!comment.trim()) {
       setError(
@@ -554,72 +619,107 @@ function ReviewContent() {
                   <span className="h-1 w-6 rounded-full bg-[#E5E5E5]" />
                 </div>
               </div>
-              <h2 className="bz-h-tight-2 mt-2 text-[22px]">
-                {locale === 'tr' ? 'Deneyimini puanla' : 'Rate your experience'}
+              {/* Stage 57 §38.138 — HANDOFF feedback-flow.jsx greeting eyebrow
+                  (lime pulse dot + "MERHABA!" / "HELLO!") + question h2 +
+                  sub copy. ADIM 1/3 ile arasına nefes alma satırı. */}
+              <div
+                className="mt-3 inline-flex items-center gap-1.5 pulse-eyebrow text-[#A8D62E] text-[10px]"
+                aria-hidden
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]"
+                  style={{ boxShadow: '0 0 10px #C6F24E' }}
+                />
+                {locale === 'tr' ? 'MERHABA!' : 'HELLO!'}
+              </div>
+              <h2
+                className="bz-h-tight-2 mt-2 text-[22px] leading-[1.15]"
+                style={{ textWrap: 'balance' }}
+              >
+                {locale === 'tr'
+                  ? 'Bugünkü deneyimini nasıl puanlardın?'
+                  : 'How was your experience today?'}
               </h2>
               <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">
                 {locale === 'tr'
-                  ? 'Senin görüşün önemli. Birkaç saniyeni alıyoruz.'
-                  : 'Your opinion matters. Just a few seconds.'}
+                  ? 'Yıldızlara dokun · görüşün anında işletmeye iletilir.'
+                  : 'Tap a star · sent directly to the venue.'}
               </p>
 
-              <div className="flex items-center justify-center gap-1.5" style={{ padding: '16px 0' }}>
-                {[1, 2, 3, 4, 5].map((s) => {
-                  const active = s <= visibleRating;
-                  return (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => handleStarClick(s)}
-                      onMouseEnter={() => setHover(s)}
-                      onMouseLeave={() => setHover(0)}
-                      aria-label={`${s} ${locale === 'tr' ? 'yıldız' : 'star'}`}
-                      aria-pressed={rating === s}
-                      className="rounded-full p-1.5 transition-transform active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-                    >
-                      <Star
-                        size={42}
-                        strokeWidth={0}
-                        fill={active ? '#C6F24E' : '#E5E5E5'}
-                        className={active ? 'text-[#C6F24E]' : 'text-[#E5E5E5]'}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Stage 57 §38.138 — HANDOFF star row card. Yıldız grid +
+                  tone-coded label + hint, off-white card içinde subtle
+                  separation. Hover state lime tint (desktop UX); active
+                  scale press feedback intact. Mobile-first 56×56 button
+                  area (Apple HIG WCAG 2.5.5 ≥44px tap target zaten karşılanıyor:
+                  42px icon + p-1.5 12px = 54px button). */}
+              <div className="mt-4 rounded-[18px] border border-[#ECECEC] bg-[#FAFAFA] px-3 py-4">
+                <div className="flex items-center justify-center gap-1" style={{ paddingBottom: 14 }}>
+                  {[1, 2, 3, 4, 5].map((s) => {
+                    const active = s <= visibleRating;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => handleStarClick(s)}
+                        onMouseEnter={() => setHover(s)}
+                        onMouseLeave={() => setHover(0)}
+                        aria-label={`${s} ${locale === 'tr' ? 'yıldız' : 'star'}`}
+                        aria-pressed={rating === s}
+                        className="bz-motion-spring rounded-2xl p-1.5 hover:bg-[#EAF9B8]/40 active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAFA]"
+                      >
+                        <Star
+                          size={42}
+                          strokeWidth={0}
+                          fill={active ? '#C6F24E' : '#E5E5E5'}
+                          className={active ? 'text-[#C6F24E]' : 'text-[#E5E5E5]'}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
 
-              {/* Stage 48 §38.129 — HANDOFF feedback-flow.jsx tone-coded
-                  rating label. ≥4 lime-soft + graphite ink, =3 amber-soft +
-                  amber ink, ≤2 red-soft + danger ink. Pill shape + dot
-                  prefix, müşteriye yıldız anlamını anında görselleştirir.
-                  §38.130 Stage 49 — hint metni eklendi (rating'e göre). */}
-              <div
-                className="mb-2 flex flex-col items-center justify-center gap-1.5"
-                style={{ minHeight: 50 }}
-                aria-live="polite"
-              >
-                {visibleRating > 0 && (
-                  <>
-                    <span
-                      className={`bz-fade-in inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium ${
-                        visibleRating >= 4
-                          ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                          : visibleRating === 3
-                            ? 'bg-[#FFFBEB] text-[#92400E]'
-                            : 'bg-[#FEF2F2] text-[#991B1B]'
-                      }`}
-                    >
+                {/* Stage 48 §38.129 — HANDOFF feedback-flow.jsx tone-coded
+                    rating label. ≥4 lime-soft + graphite ink, =3 amber-soft +
+                    amber ink, ≤2 red-soft + danger ink. Pill shape + dot
+                    prefix, müşteriye yıldız anlamını anında görselleştirir.
+                    §38.130 Stage 49 — hint metni eklendi (rating'e göre).
+                    Stage 57 §38.138 — placeholder "← seç →" empty state. */}
+                <div
+                  className="flex flex-col items-center justify-center gap-1.5"
+                  style={{ minHeight: 50 }}
+                  aria-live="polite"
+                >
+                  {visibleRating > 0 ? (
+                    <>
                       <span
-                        className="h-1.5 w-1.5 rounded-full bg-current opacity-70"
-                        aria-hidden
-                      />
-                      {labels[visibleRating - 1]}
+                        className={`bz-fade-in inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium ${
+                          visibleRating >= 4
+                            ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+                            : visibleRating === 3
+                              ? 'bg-[#FFFBEB] text-[#92400E]'
+                              : 'bg-[#FEF2F2] text-[#991B1B]'
+                        }`}
+                      >
+                        <span
+                          className="h-1.5 w-1.5 rounded-full bg-current opacity-70"
+                          aria-hidden
+                        />
+                        {labels[visibleRating - 1]}
+                      </span>
+                      <span className="text-[11.5px] text-[#737373]">
+                        {hints[visibleRating - 1]}
+                      </span>
+                    </>
+                  ) : (
+                    <span
+                      className="text-[12px] text-[#A3A3A3]"
+                      style={{ fontFamily: 'var(--font-heading)', fontStyle: 'italic' }}
+                      aria-hidden
+                    >
+                      ← {locale === 'tr' ? 'seç' : 'pick'} →
                     </span>
-                    <span className="text-[11.5px] text-[#737373]">
-                      {hints[visibleRating - 1]}
-                    </span>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
 
               {/* §38.133 Stage 52 — "Devam et" butonu silindi. Auto-advance
@@ -997,27 +1097,214 @@ function ReviewContent() {
 
               {/* §38.130 Stage 49 — Reference number card. Feedback ID'den
                   derive (BZ-XXX-YYY format). Müşteri ileride yönetim ile
-                  iletişimde bu numarayı paylaşabilir. */}
+                  iletişimde bu numarayı paylaşabilir.
+                  Stage 57 §38.138 — "Kopyala" button (clipboard API) +
+                  low-rating durumunda 24h follow-up footer. */}
               {feedbackId && (
                 <div
                   className="relative mx-auto mt-5 overflow-hidden rounded-[14px] border border-[#ECECEC] bg-white text-left"
-                  style={{ padding: '14px 16px', maxWidth: 280 }}
+                  style={{ padding: '14px 16px', maxWidth: 320 }}
                 >
                   <span
                     className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-[#C6F24E]"
                     aria-hidden
                   />
-                  <div className="pulse-eyebrow text-[#737373] text-[9px]" style={{ marginBottom: 4 }}>
-                    {locale === 'tr' ? 'TALEP NO' : 'REFERENCE'}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div
+                        className="pulse-eyebrow text-[#737373] text-[9px]"
+                        style={{ marginBottom: 4 }}
+                      >
+                        {locale === 'tr' ? 'TALEP NO' : 'REFERENCE'}
+                      </div>
+                      <div
+                        className="text-[15px] font-bold tracking-[0.04em] text-[#0A0A0A]"
+                        style={{ fontFamily: 'var(--font-mono)' }}
+                      >
+                        {formatReferenceNumber(feedbackId)}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={copyReferenceNumber}
+                      className="bz-motion-spring inline-flex shrink-0 items-center gap-1 rounded-[10px] bg-[#0A0A0A] px-3 py-2 text-[11px] font-semibold text-white hover:bg-[#1A1A1A] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                      aria-live="polite"
+                      aria-label={
+                        refCopied
+                          ? locale === 'tr'
+                            ? 'Talep numarası kopyalandı'
+                            : 'Reference number copied'
+                          : locale === 'tr'
+                            ? 'Talep numarasını kopyala'
+                            : 'Copy reference number'
+                      }
+                    >
+                      {refCopied ? (
+                        <>
+                          <Check size={11} strokeWidth={2.6} className="text-[#C6F24E]" />
+                          {locale === 'tr' ? 'Kopyalandı' : 'Copied'}
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={11} strokeWidth={2} />
+                          {locale === 'tr' ? 'Kopyala' : 'Copy'}
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <div
-                    className="text-[15px] font-bold tracking-[0.04em] text-[#0A0A0A]"
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                  >
-                    {formatReferenceNumber(feedbackId)}
-                  </div>
+                  {/* Low rating 24h follow-up footer — yalnızca düşük puan'da
+                      görünür (rating ≤ 3). Müşteriye doğrudan beklenti yönetimi:
+                      "yönetim 24 saat içinde dönüş yapacak". Yüksek puan
+                      durumda redirect overlay sırasında external platforma
+                      gidiyor, thanks ekranı görmüyor (no-platform-URL hariç). */}
+                  {rating <= 3 && (
+                    <div
+                      className="mt-3 flex items-center gap-2.5 border-t border-[#F5F5F5] pt-3 text-[11.5px] text-[#525252]"
+                    >
+                      <span
+                        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#F5F5F5]"
+                        aria-hidden
+                      >
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#0A0A0A" strokeWidth="1.5">
+                          <circle cx="6" cy="6" r="4.5" />
+                          <path d="M6 4v2.5l1.5 1" />
+                        </svg>
+                      </span>
+                      <span>
+                        <strong className="text-[#0A0A0A]">
+                          {locale === 'tr' ? '24 saat' : '24 hours'}
+                        </strong>
+                        {locale === 'tr'
+                          ? ' içinde işletme yönetimi seninle iletişime geçecek.'
+                          : ' — management will get back to you.'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* Stage 57 §38.138 — Cross-platform share thanks ekranı.
+                  Restaurant.tripAdvisorUrl + yandexUrl + per-platform enable
+                  flag (Stage 10 §38.80 + earlier) — owner panelden URL
+                  girilmiş + enable edilmiş + externalPlatformsEnabled true
+                  ise CTA'lar render. Müşteri yorumunu external community
+                  platformlarda da paylaşabilir. Yüksek puan veya thanks
+                  ekranında her durumda görünür (low rating'de bile owner
+                  isteyebilir → kullanıcı agency'sine saygı). */}
+              {(() => {
+                const externalEnabled = restaurant.externalPlatformsEnabled !== false;
+                const showTripadvisor =
+                  externalEnabled &&
+                  restaurant.tripAdvisorUrl &&
+                  restaurant.tripAdvisorEnabled !== false;
+                const showYandex =
+                  externalEnabled &&
+                  restaurant.yandexUrl &&
+                  restaurant.yandexEnabled !== false;
+                if (!showTripadvisor && !showYandex) return null;
+                return (
+                  <div
+                    className="mx-auto mt-3 overflow-hidden rounded-[14px] border border-[#ECECEC] bg-white text-left"
+                    style={{ padding: '14px 16px', maxWidth: 320 }}
+                  >
+                    <div
+                      className="pulse-eyebrow text-[#737373] text-[9px]"
+                      style={{ marginBottom: 10 }}
+                    >
+                      {locale === 'tr' ? 'DAHA FAZLASI' : 'MORE WAYS'}
+                    </div>
+                    {showTripadvisor && (
+                      <a
+                        href={restaurant.tripAdvisorUrl ?? '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bz-motion-spring flex items-center gap-3 border-b border-[#F5F5F5] py-2.5 last:border-b-0 hover:bg-[#FAFAFA]"
+                      >
+                        <span
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] text-white"
+                          style={{ background: '#34E0A1' }}
+                          aria-hidden
+                        >
+                          <span
+                            className="text-[15px] font-bold leading-none"
+                            style={{ fontFamily: 'var(--font-heading)' }}
+                          >
+                            t
+                          </span>
+                        </span>
+                        <span className="flex-1 text-[13px] font-medium text-[#0A0A0A]">
+                          {locale === 'tr'
+                            ? "Tripadvisor'da da paylaş"
+                            : 'Share on Tripadvisor'}
+                        </span>
+                        <ExternalLink size={14} className="text-[#A3A3A3]" />
+                      </a>
+                    )}
+                    {showYandex && (
+                      <a
+                        href={restaurant.yandexUrl ?? '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bz-motion-spring flex items-center gap-3 border-b border-[#F5F5F5] py-2.5 last:border-b-0 hover:bg-[#FAFAFA]"
+                      >
+                        <span
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[9px] text-[#0A0A0A]"
+                          style={{ background: '#FFCC00' }}
+                          aria-hidden
+                        >
+                          <span
+                            className="text-[15px] font-bold leading-none"
+                            style={{ fontFamily: 'var(--font-heading)' }}
+                          >
+                            y
+                          </span>
+                        </span>
+                        <span className="flex-1 text-[13px] font-medium text-[#0A0A0A]">
+                          {locale === 'tr'
+                            ? 'Yandex Haritalarda paylaş'
+                            : 'Share on Yandex Maps'}
+                        </span>
+                        <ExternalLink size={14} className="text-[#A3A3A3]" />
+                      </a>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Stage 57 §38.138 — Bottom action grid (Menüye geri dön +
+                  Yorumu paylaş Web Share API). "Menüye geri dön" yalnızca
+                  Restaurant.menuEnabled && menuPublished iken render edilir
+                  (404 önleme). Web Share API mobile native sheet, fallback
+                  URL clipboard kopyala (CLAUDE.md §25 mobile patterns). */}
+              <div
+                className="mx-auto mt-4 grid grid-cols-2 gap-2"
+                style={{ maxWidth: 320 }}
+              >
+                {restaurant.menuEnabled && restaurant.menuPublished ? (
+                  <a
+                    href={`/menu/${slug}`}
+                    className="bz-motion-spring inline-flex items-center justify-center gap-1.5 rounded-[14px] border border-[#ECECEC] bg-white py-3 text-[13px] font-semibold text-[#0A0A0A] hover:bg-[#FAFAFA] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                  >
+                    <Utensils size={14} strokeWidth={1.8} />
+                    {locale === 'tr' ? 'Menüye geri dön' : 'Back to menu'}
+                  </a>
+                ) : (
+                  <span aria-hidden />
+                )}
+                <button
+                  type="button"
+                  onClick={shareReview}
+                  className="bz-motion-spring inline-flex items-center justify-center gap-1.5 rounded-[14px] bg-[#0A0A0A] py-3 text-[13px] font-semibold text-white hover:bg-[#1A1A1A] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                  style={
+                    !restaurant.menuEnabled || !restaurant.menuPublished
+                      ? { gridColumn: '1 / -1' }
+                      : undefined
+                  }
+                >
+                  <Share2 size={14} strokeWidth={1.8} className="text-[#C6F24E]" />
+                  {locale === 'tr' ? 'Yorumu paylaş' : 'Share review'}
+                </button>
+              </div>
             </div>
           )}
         </section>
@@ -1104,27 +1391,154 @@ function RedirectingOverlay({
   platformId: string;
   restaurantName: string;
 }) {
+  // Stage 57 §38.138 — HANDOFF redirecting overlay polish. Halo (lime
+  // gradient blur) + restaurant initial card + 3-dot stagger arrow +
+  // platform chip card stack + 5-star eyebrow + status row + bottom
+  // jenerik thanks card. Compliance: owner ismi YOK (jenerik "İşletme
+  // yönetimi"); müşteri formu doldurmadığı için (high rating direct
+  // redirect) name field yok — generic "Şimdiden teşekkürler".
+  const initial = restaurantName.charAt(0).toLowerCase();
   return (
-    <div className="bz-fade-in fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[#0A0A0A] px-6 text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
-        <PlatformChip id={platformId} size={48} />
+    <div className="bz-fade-in fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden bg-[#0A0A0A] px-6 text-center">
+      {/* Halo lime gradient — pointer-events-none decorative */}
+      <span
+        className="pointer-events-none absolute h-[280px] w-[280px] rounded-full"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(198,242,78,0.33) 0%, transparent 70%)',
+          filter: 'blur(40px)',
+          top: '30%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+        aria-hidden
+      />
+
+      {/* Restaurant initial → 3-dot stagger arrow → platform chip stack */}
+      <div className="relative mb-10 flex items-center gap-3">
+        <div
+          className="flex h-[72px] w-[72px] items-center justify-center rounded-[18px] bg-white shadow-[0_12px_30px_-8px_rgba(0,0,0,0.5)]"
+          aria-hidden
+        >
+          <span
+            className="text-[36px] font-medium text-[#0A0A0A]"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontStyle: 'italic',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {initial}
+          </span>
+        </div>
+        <div className="flex flex-col items-center gap-0.5" aria-hidden>
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]"
+              style={{
+                opacity: 0.4 - i * 0.1,
+                animation: `bz-rr-dot 1.2s ease-in-out infinite ${i * 0.15}s`,
+              }}
+            />
+          ))}
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="#C6F24E"
+            strokeWidth="2"
+            className="mt-1"
+            aria-hidden
+          >
+            <path d="M5 10h10m-3-4l4 4-4 4" />
+          </svg>
+        </div>
+        <div
+          className="flex h-[72px] w-[72px] items-center justify-center rounded-[18px] bg-white shadow-[0_12px_30px_-8px_rgba(0,0,0,0.5)]"
+          aria-hidden
+        >
+          <PlatformChip id={platformId} size={42} />
+        </div>
       </div>
-      <h2 className="bz-h-tight-2 mb-2 text-[22px] text-white">
-        {locale === 'tr' ? 'Yönlendiriliyorsun…' : 'Redirecting…'}
+
+      {/* "★★★★★ MÜKEMMEL" eyebrow — visual decoration, lime accent */}
+      <div className="pulse-eyebrow mb-3 inline-flex items-center gap-2 text-[10px] text-[#A8D62E]">
+        <span
+          className="h-1.5 w-1.5 rounded-full bg-[#C6F24E]"
+          style={{ boxShadow: '0 0 10px #C6F24E' }}
+          aria-hidden
+        />
+        <span aria-hidden>★ ★ ★ ★ ★</span>{' '}
+        {locale === 'tr' ? 'MÜKEMMEL' : 'EXCELLENT'}
+      </div>
+
+      <h2
+        className="bz-h-tight-2 mb-2 text-[24px] text-white"
+        style={{ letterSpacing: '-0.02em' }}
+      >
+        {locale === 'tr' ? 'Yönlendiriliyorsun' : 'Redirecting'}
       </h2>
-      <p className="mb-6 max-w-[280px] text-[13px] text-white/60">
+      <p className="mb-6 max-w-[280px] text-[13px] leading-[1.55] text-white/55">
         {locale === 'tr'
-          ? `${restaurantName} için değerlendirmeni paylaşmak üzeresin.`
-          : `You're about to share your review for ${restaurantName}.`}
+          ? 'Yorumun başkalarına yardımcı olacak. Sayfayı kapatma!'
+          : "Your review helps others. Don't close this page!"}
       </p>
-      <div className="h-1 w-[180px] overflow-hidden rounded-full bg-white/10">
-        <div className="h-full bg-[#C6F24E] animate-[bzProgress_2.2s_linear_forwards]" style={{ width: 0 }} />
+
+      {/* Progress ring + status row — Stage 52 §38.133 1.5s timeout ile
+          aligned (eski 2.2s'den keskin transition). bzProgress keyframe
+          duration arbitrary class'tan gelir; globals.css tanımı sabit. */}
+      <div className="w-[200px]">
+        <div className="h-1 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full bg-[#C6F24E] animate-[bzProgress_1.5s_linear_forwards]"
+            style={{ width: 0, boxShadow: '0 0 12px #C6F24E' }}
+            aria-hidden
+          />
+        </div>
+        <div className="mt-2.5 flex items-center justify-between">
+          <span className="pulse-eyebrow text-[9.5px] text-white/40">
+            {locale === 'tr' ? 'HAZIRLANIYOR' : 'PREPARING'}
+          </span>
+          <span className="pulse-eyebrow text-[9.5px] text-[#A8D62E]">
+            1.5sn
+          </span>
+        </div>
       </div>
-      {/* CSS Performance §38.61 — `@keyframes bzProgress` styled-jsx block'undan
-          globals.css'e taşındı. `animate-[bzProgress_2.2s_linear_forwards]`
-          Tailwind arbitrary class'ı keyframe ismini referans verdiği için
-          tanım nereden gelirse gelsin animation çalışır; reduced-motion blanket
-          arbitrary class selector'unu da yakalar. */}
+
+      {/* Bottom jenerik thanks card. Compliance: owner ismi YOK ("Ahmet"
+          hardcoded değil — §38.130 paterni intact). Müşteri form'u
+          doldurmadığı için ad da yok — generic "Şimdiden teşekkürler".
+          Restaurant initial avatar + label + jenerik İşletme yönetimi. */}
+      <div
+        className="absolute left-6 right-6 inline-flex items-center gap-2.5 rounded-[16px] border border-white/10 bg-white/5 px-3.5 py-3 backdrop-blur-md"
+        style={{ bottom: 'max(36px, calc(env(safe-area-inset-bottom, 0px) + 20px))' }}
+      >
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C6F24E]">
+          <span
+            className="text-[15px] font-medium text-[#0A0A0A]"
+            style={{
+              fontFamily: 'var(--font-heading)',
+              fontStyle: 'italic',
+            }}
+            aria-hidden
+          >
+            {initial}
+          </span>
+        </div>
+        <div className="min-w-0 flex-1 text-left">
+          <div className="text-[11.5px] font-semibold text-white">
+            {locale === 'tr' ? 'Şimdiden teşekkürler' : 'Thanks in advance'}
+          </div>
+          <div className="text-[10px] text-white/50">
+            {locale === 'tr' ? '— İşletme yönetimi' : '— Management'}
+          </div>
+        </div>
+      </div>
+      {/* CSS Performance §38.61 — `@keyframes bzProgress` + `bz-rr-dot`
+          globals.css'te tanımlı; reduced-motion blanket selector'leri
+          [style*='bz-rr-dot'] + [class*='animate-[bzProgress_'] yakalar. */}
     </div>
   );
 }
