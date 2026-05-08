@@ -9,6 +9,7 @@ import {
 } from '@/lib/legal/keys';
 import { LEGAL_TEMPLATE_DEFAULTS } from '@/lib/legal/templates';
 import { invalidateLegalDocumentCache } from '@/lib/legal/loader';
+import { revalidateLegalDocument } from '@/lib/marketing-revalidate';
 
 export const dynamic = 'force-dynamic';
 
@@ -228,6 +229,10 @@ export async function PATCH(
   pruneRevisionsBackground(parsed.key, parsed.locale).catch(() => undefined);
 
   invalidateLegalDocumentCache(parsed.key, parsed.locale);
+  // Stage 83 §38.163 — flush ISR cache so the public legal page (kvkk,
+  // gizlilik, terms, etc.) reflects the edit instantly. Pages have 1-day
+  // ISR window otherwise (CLAUDE.md §38.163 Phase 2).
+  revalidateLegalDocument(parsed.key);
 
   return NextResponse.json({
     ok: true,
@@ -292,6 +297,10 @@ export async function DELETE(
   }
   pruneRevisionsBackground(parsed.key, parsed.locale).catch(() => undefined);
   invalidateLegalDocumentCache(parsed.key, parsed.locale);
+  // Stage 83 §38.163 — flush ISR cache so the public legal page (kvkk,
+  // gizlilik, terms, etc.) reflects the edit instantly. Pages have 1-day
+  // ISR window otherwise (CLAUDE.md §38.163 Phase 2).
+  revalidateLegalDocument(parsed.key);
   return NextResponse.json({ ok: true });
 }
 

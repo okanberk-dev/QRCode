@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
 import { sanitizeBlogContent } from '@/lib/blog-content';
+import { revalidateBlog } from '@/lib/marketing-revalidate';
 
 async function requireSuperadmin(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
@@ -188,6 +189,11 @@ export async function POST(req: NextRequest) {
     const post = await prisma.blogPost.create({
       data: payload.data,
     });
+
+    // Stage 83 §38.163 — invalidate blog ISR caches so the new post
+    // appears on /blog and /blog/[slug] without waiting for the 1h
+    // window. Fail-soft (helper swallows errors).
+    revalidateBlog(post.slug);
 
     return NextResponse.json({ post }, { status: 201 });
   } catch (error) {

@@ -14,7 +14,9 @@ export async function generateMetadata({
   return { title: `${doc.title} — Buaze`, description: doc.description };
 }
 
-export const dynamic = 'force-dynamic';
+// Stage 83 §38.163 — ISR (1 day) for legal/regulatory content. Save endpoints
+// hook revalidatePath() to invalidate immediately on edit (CLAUDE.md §38.163).
+export const revalidate = 86400;
 
 export default async function VeriIsleyiciPage({
   params,

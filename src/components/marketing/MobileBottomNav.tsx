@@ -4,9 +4,18 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Tag, Sparkles, LayoutDashboard, QrCode, Mail } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
+import { useMarketingAuth } from '@/hooks/useMarketingAuth';
 
 interface MobileBottomNavProps {
   locale: Locale;
+  /**
+   * Stage 83 §38.163 — `isLoggedIn` prop deprecated. Auth state is now
+   * resolved client-side via `useMarketingAuth` so the parent footer can
+   * be rendered as ISR. The prop is still accepted for backward-compat
+   * (callers passing it will be ignored — the hook is authoritative). To
+   * be removed in a follow-up cleanup PR once the marketing surface is
+   * fully migrated.
+   */
   isLoggedIn?: boolean;
 }
 
@@ -37,9 +46,15 @@ function tapHaptic() {
  *  - prefers-reduced-motion auto-disables transitions via globals.css blanket
  *  - Active indicator uses CSS transition so route changes ease in
  */
-export default function MobileBottomNav({ locale, isLoggedIn }: MobileBottomNavProps) {
+export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
   const pathname = usePathname();
   const base = `/${locale}`;
+
+  // Stage 83 §38.163 — auth state moved client-side via useMarketingAuth
+  // probe (CLAUDE.md §38.163). Anonymous default state means the center
+  // FAB renders the right CTA on first paint for ≥90% of cold marketing
+  // visits; authed users see the swap to "Panel" after the probe resolves.
+  const { isLoggedIn } = useMarketingAuth();
 
   // Normalize the current path so that trailing slashes don't break matching.
   const current = pathname.replace(/\/+$/, '') || '/';

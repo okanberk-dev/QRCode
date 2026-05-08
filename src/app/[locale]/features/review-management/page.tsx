@@ -18,7 +18,9 @@ import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLo
 import { jsonLdString } from '@/lib/seo/json-ld';
 import { getTranslations, type Locale } from '@/lib/translations';
 
-export const dynamic = 'force-dynamic';
+// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
+// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
+// from the Vercel CDN edge for anonymous visitors.
 
 const VALID_LOCALES = ['tr', 'en'] as const;
 

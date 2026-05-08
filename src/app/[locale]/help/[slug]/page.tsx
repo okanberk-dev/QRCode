@@ -12,7 +12,9 @@ import { CATEGORY_BY_SLUG } from '@/lib/help-categories';
 import { getStaticHelpArticle, getStaticHelpArticles, type StaticHelpArticle } from '@/lib/help-articles';
 import { sanitizeBlogContent } from '@/lib/blog-content';
 
-export const dynamic = 'force-dynamic';
+// Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
+// `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
+// from the Vercel CDN edge for anonymous visitors.
 
 interface PageParams {
   params: Promise<{ locale: Locale; slug: string }>;

@@ -4,6 +4,7 @@ import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
 import { isSupportedLegalKey, isSupportedLegalLocale } from '@/lib/legal/keys';
 import { invalidateLegalDocumentCache } from '@/lib/legal/loader';
+import { revalidateLegalDocument } from '@/lib/marketing-revalidate';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,6 +88,8 @@ export async function POST(
   });
 
   invalidateLegalDocumentCache(key, locale);
+  // Stage 83 §38.163 — flush ISR cache after revert (CLAUDE.md §38.163).
+  revalidateLegalDocument(key);
 
   return NextResponse.json({
     ok: true,

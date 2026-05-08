@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
+import { useMarketingAuth } from '@/hooks/useMarketingAuth';
 
 const MIN_FILL_MS = 2500;
 const BUBBLE_TEASER_DELAY_MS = 6000;
@@ -58,6 +59,13 @@ export function ContactFloat({ locale }: { locale: string }) {
   const base = `/${locale}`;
   const current = pathname.replace(/\/+$/, '') || '/';
   const isTr = locale === 'tr';
+
+  // Stage 83 §38.163 — auth-aware visibility moved client-side via
+  // useMarketingAuth (anonymous default → ≥90% of cold marketing
+  // visits see the float on first paint without waiting for the probe).
+  // Hook lives at the top to comply with rules-of-hooks; the early
+  // return below consults `isLoggedIn` after pathname guards.
+  const { isLoggedIn } = useMarketingAuth();
 
   const [state, setState] = useState<WidgetState>('fab');
   const [showBubble, setShowBubble] = useState(false);
@@ -136,7 +144,14 @@ export function ContactFloat({ locale }: { locale: string }) {
   // (kullanıcı zaten bir akışı tamamlıyor). Homepage en kritik conversion
   // surface, baloncuk orada **görünmeli** (eski "homepage'de gizle" exclusion
   // kaldırıldı, kullanıcı raporu gereği — CLAUDE.md §15.3).
-  if (current.startsWith(`${base}/auth`) || current === `${base}/onboarding`) {
+  // Stage 83 §38.163 — auth-gate added: authenticated users hide the float
+  // (they have in-app support channels). The hook lives at the top with
+  // the other useState calls (see line ~83) to comply with rules-of-hooks.
+  if (
+    current.startsWith(`${base}/auth`) ||
+    current === `${base}/onboarding` ||
+    isLoggedIn
+  ) {
     return null;
   }
 

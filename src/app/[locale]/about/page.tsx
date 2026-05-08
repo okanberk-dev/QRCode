@@ -4,7 +4,8 @@ import { jsonLdString } from '@/lib/seo/json-ld';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { IllusLighthouse } from '@/components/marketing/PulseIllustrations';
 
-export const dynamic = 'force-dynamic';
+// Stage 83 §38.163 — ISR (1 day) for static corporate content.
+export const revalidate = 86400;
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { getSiteSettings } from '@/lib/site-settings';
