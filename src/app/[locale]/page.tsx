@@ -651,12 +651,15 @@ export default async function LandingPage({
                 />
               </div>
 
+              {/* Stage 75 §38.155 — production crash fix.
+                  Inline `onClick={() => window.location.href = ...}` Next.js
+                  15 hard error: "Event handlers cannot be passed to Client
+                  Component props" (Server Component → Client Component
+                  function reference serialization). SweepCTA polymorphic
+                  href prop alır + internal `<a>` render eder. SEO + a11y
+                  link semantik bonus. */}
               <SweepCTA
-                onClick={() => {
-                  if (typeof window !== 'undefined') {
-                    window.location.href = `${base}/auth/register`;
-                  }
-                }}
+                href={`${base}/auth/register`}
                 ariaLabel={isTr ? 'Ücretsiz başla' : 'Start free'}
               >
                 {isTr ? 'Ücretsiz başla' : 'Start free'}

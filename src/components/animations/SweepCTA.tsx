@@ -17,6 +17,13 @@
  *
  * Original: site-library.jsx 8.SweepCTA. Konversiyon: useState hover →
  * framer-motion whileHover variant + AnimatePresence-friendly.
+ *
+ * Stage 75 §38.155 — polymorphic `<button>` ↔ `<a>` render. Server
+ * Component caller'larında inline `onClick={() => ...}` (Next.js 15
+ * "Event handlers cannot be passed to Client Component props" hatası)
+ * yerine `href` prop verilebilir; component otomatik `motion.a` render
+ * eder. Caller fully serializable (string href). onClick prop button
+ * mode'da intact (Client Component caller'lar için).
  */
 
 import { motion, useReducedMotion } from 'framer-motion';
@@ -26,11 +33,27 @@ import type { ReactNode, MouseEventHandler } from 'react';
 interface SweepCTAProps {
   /** Buton içeriği (text node veya React fragment). */
   children: ReactNode;
-  /** Click handler — `<a>` linkse onClick + href birleştirilebilir caller'da. */
+  /**
+   * Eğer string verilirse `<a>` (motion.a) render edilir — Server
+   * Component caller'lardan serializable olarak geçirilebilir. Aksi
+   * halde `<button>` (motion.button) render edilir.
+   */
+  href?: string;
+  /**
+   * Anchor hedefi (örn. `_blank`). Sadece `href` modunda aktif.
+   * `_blank` durumunda `rel="noopener noreferrer"` otomatik eklenir
+   * (CLAUDE.md §37.2 H — window.opener exposure önleme).
+   */
+  target?: '_self' | '_blank';
+  /**
+   * Click handler — sadece `<button>` modunda kullanılır (Client
+   * Component caller'larından geçirilir). Server Component caller'lar
+   * `href` prop'unu tercih etmeli (CLAUDE.md §38.155).
+   */
   onClick?: MouseEventHandler<HTMLButtonElement>;
   /** A11y label — text içeriği yetersizse override. */
   ariaLabel?: string;
-  /** Disabled state (örn. form submit pending). */
+  /** Disabled state (örn. form submit pending). Sadece button modunda anlamlı. */
   disabled?: boolean;
   /** Tailwind className override (margin/padding). */
   className?: string;
@@ -38,34 +61,37 @@ interface SweepCTAProps {
 
 export default function SweepCTA({
   children,
+  href,
+  target,
   onClick,
   ariaLabel,
   disabled = false,
   className,
 }: SweepCTAProps) {
   const prefersReducedMotion = useReducedMotion();
+  const isLink = typeof href === 'string';
 
-  return (
-    <motion.button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={ariaLabel}
-      className={`group relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border-0 bg-brand-ink px-6 py-3.5 text-sm font-semibold text-white shadow-[0_14px_30px_-10px_rgba(10,10,10,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lime focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
-        className ?? ''
-      }`}
-      style={{ fontFamily: 'var(--font-body)' }}
-      initial="rest"
-      animate="rest"
-      whileHover={disabled ? 'rest' : 'hover'}
-      whileFocus={disabled ? 'rest' : 'hover'}
-      whileTap={disabled || prefersReducedMotion ? 'rest' : 'tap'}
-      variants={{
-        rest: {},
-        hover: {},
-        tap: { scale: 0.97 },
-      }}
-    >
+  // Pulse §11 utility set (button + anchor ortak)
+  const baseClassName = `group relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border-0 bg-brand-ink px-6 py-3.5 text-sm font-semibold text-white shadow-[0_14px_30px_-10px_rgba(10,10,10,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lime focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+    className ?? ''
+  }`;
+  const baseStyle = { fontFamily: 'var(--font-body)' as const };
+  const sharedMotionProps = {
+    initial: 'rest' as const,
+    animate: 'rest' as const,
+    whileHover: disabled ? ('rest' as const) : ('hover' as const),
+    whileFocus: disabled ? ('rest' as const) : ('hover' as const),
+    whileTap:
+      disabled || prefersReducedMotion ? ('rest' as const) : ('tap' as const),
+    variants: {
+      rest: {},
+      hover: {},
+      tap: { scale: 0.97 },
+    },
+  };
+
+  const innerContent = (
+    <>
       {/* Lime sweep background — translateX -100% → 0 on hover. CSS-friendly
           motion.span transform animasyon, GPU-accelerated. Reduced motion'da
           framer-motion variant atlanır (hover state'i visual no-op olur). */}
@@ -103,6 +129,39 @@ export default function SweepCTA({
           <ArrowRight size={16} strokeWidth={2.25} />
         </motion.span>
       </motion.span>
+    </>
+  );
+
+  if (isLink) {
+    // `<a>` semantik link — Server Component caller'larından serializable
+    // string href ile mount edilir. CLAUDE.md §37.2 H — `_blank` rel guard.
+    return (
+      <motion.a
+        href={href}
+        target={target}
+        rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+        aria-label={ariaLabel}
+        aria-disabled={disabled || undefined}
+        className={baseClassName}
+        style={baseStyle}
+        {...sharedMotionProps}
+      >
+        {innerContent}
+      </motion.a>
+    );
+  }
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className={baseClassName}
+      style={baseStyle}
+      {...sharedMotionProps}
+    >
+      {innerContent}
     </motion.button>
   );
 }

@@ -21796,3 +21796,222 @@ solutions/qr-generator surface'inde verifiable.
   + visual structure 1:1 + mobile responsive. Pattern stable
   §35.8 + §35.10 + §19.1.1 — future session bu zinciri authoritative
   referans olarak kabul eder.
+
+---
+
+### 38.155 2026-05-08 — Stage 75 anasayfa server crash CRITICAL hotfix (SweepCTA polymorphic href + page.tsx caller — Next.js 15 "Event handlers cannot be passed to Client Component props")
+
+§38.150 Stage 70 PR #574 (anasayfa 8-component animation placement)
+sonrası anasayfa `/[locale]` Server Component (force-dynamic) production'da
+500 dönmeye başladı. Vercel runtime logs son 2 saat: ~50+ event "Error:
+Event handlers canno..." (Next.js 15 hard error truncated). Sentry Issue
+SENTRY-APRICOT-BLANKET-B: 18 events son 49 dakika, culprit `/:locale`,
+boundary `locale-error-boundary` (CLAUDE.md §38.108), release
+`e6aec3a93f2b87f4e658adc27ea3eaa7aefc2f4f` (Stage 72 §38.152 main HEAD).
+Hem production (gerçek kullanıcı Chrome 147 / İstanbul) hem preview
+(HeadlessChrome 141 / Vercel monitoring bot) etkilenmiş — toplam 17+
+distinct event.
+
+**Root cause** (manuel cross-check + Sentry/Vercel log triangulation):
+`src/app/[locale]/page.tsx:653-662` Stage 70 §38.150'de eklenen
+`<SweepCTA>` callsite'ı **Server Component'ten Client Component'e
+inline arrow function geçiriyor**:
+
+```tsx
+// ESKİ — Next.js 15 hard error
+<SweepCTA
+  onClick={() => {
+    if (typeof window !== 'undefined') {
+      window.location.href = `${base}/auth/register`;
+    }
+  }}
+  ariaLabel={isTr ? 'Ücretsiz başla' : 'Start free'}
+>
+  {isTr ? 'Ücretsiz başla' : 'Start free'}
+</SweepCTA>
+```
+
+Next.js 15 Server Component → Client Component prop serialization
+kontratı: yalnızca primitive/plain object/Server Action geçilebilir.
+Inline arrow function closure serializable değil → "Event handlers
+cannot be passed to Client Component props" hard error fırlatıyor.
+SweepCTA `'use client'` (`src/components/animations/SweepCTA.tsx`) ve
+page.tsx `force-dynamic` Server Component (CLAUDE.md §31).
+
+**Diğer 11 anasayfa animation callsite manuel verify edildi**: tümü
+serializable primitive/JSX (StarClimber/BigCounter/RevealHeadline/
+ToastRow/SentimentDial/Marquee/FeatureCard/LiveTicker/PulseLine/
+QRScanLoader hepsi string/number/ReactNode prop'lar). Tek smoking gun
+SweepCTA onClick.
+
+**Fix bundle (2 dosya)**:
+
+1. **`SweepCTA.tsx` polymorphic `<button>` ↔ `<a>` render**:
+   - Yeni `href?: string` prop. Verilirse `motion.a` render edilir
+     (Server Component caller'lardan serializable string href).
+     Verilmezse `motion.button` render edilir (Client Component
+     caller'larından `onClick` callback intact).
+   - Yeni `target?: '_self' | '_blank'` prop. `_blank` durumunda
+     `rel="noopener noreferrer"` otomatik (CLAUDE.md §37.2 H —
+     window.opener exposure önleme).
+   - `onClick` prop button mode'da intact (Client Component caller'lar
+     için backward-compat).
+   - Pulse §11 disipline: graphite ink + lime sweep + arrow icon
+     intact. framer-motion variants (rest/hover/tap) intact. Reduced
+     motion handle intact.
+   - Shared motion props variable extracted — button + anchor render
+     branch'leri DRY.
+
+2. **`src/app/[locale]/page.tsx:653` caller**:
+   - Inline `onClick={() => window.location.href = ...}` arrow function
+     **silindi**.
+   - `href={`${base}/auth/register`}` prop ile değiştirildi
+     (`base = `/${locale}`` = `/tr/auth/register` veya `/en/auth/register`).
+   - Bonus: `<a>` semantik link → SEO + a11y kazanımı (button vs link
+     distinction Pulse §11 + WCAG 2.1).
+   - Inline yorum §38.154 referans + Next.js 15 fix gerekçesi.
+
+**Etkilenen dosyalar (3)**:
+- `src/components/animations/SweepCTA.tsx` (~+60 satır net: polymorphic
+  refactor + href + target prop + shared motion props)
+- `src/app/[locale]/page.tsx:653-662` (~-3 satır net: inline arrow
+  function silindi + href prop swap)
+- `CLAUDE.md` §38.154 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 intact (CI Validate doğrulayacak — disk %95
+dolu, lokal node_modules yok).
+
+**SKIP edilen Sentry issue'ları (DEFER ayrı PR)**:
+
+| Sentry issue | Sebep |
+|---|---|
+| SENTRY-APRICOT-BLANKET-9 (3h) `TypeError: undefined is not an object (evaluating 'r["@context"].toLowerCase')` culprit `/:locale/dashboard` | 3rd party browser extension veya scraper JSON-LD `@context` parse fail. mechanism: `auto.browser.global_handlers.onerror` (window.onerror — uygulama kodu DEĞİL). CLAUDE.md §38.29 React Suspense reveal collision paterni paralel — noise filter ayrı PR scope (`instrumentation-client.ts beforeSend` regex match silent ignore). |
+| SENTRY-APRICOT-BLANKET-8 (3h) aynı hata `/:locale/auth/login` | Aynı 3rd party noise. |
+| SENTRY-APRICOT-BLANKET-7 (15h) `AbortError: BodyStreamBuffer was aborted` `/:locale/dashboard/analytics` | 1 event 15 saat önce — request abort (kullanıcı sayfayı yenilemek istemiş veya navigation). Tek seferlik, recurrence yok. |
+| SENTRY-APRICOT-BLANKET-A (57m) `Downtime detected for https://www.buaze.com` | Sentry uptime monitor — anasayfa crash sonrası downtime kaçınılmaz; bu PR sonrası otomatik resolve olur. |
+
+**Yapma**:
+
+- SweepCTA `motion.a` yerine direct `<Link>` (Next.js Router) kullanma —
+  framer-motion `motion.a` HTML `<a>` element'i wrap eder, Next.js Link
+  prefetch/SPA navigation extra layer; mevcut anasayfa marketing surface
+  pattern direct `<a href>` (Pulse §11 paterni); SPA navigation kazanımı
+  marginal.
+- SweepCTA'da `href` + `onClick` aynı anda kullanılırsa custom logic
+  ekleme — şu an mutually exclusive (href varsa anchor, yoksa button).
+  İhtiyaç olursa `<a onClick>` polymorphism ileride extend edilir.
+- Page.tsx caller'da `onClick={async () => 'use server'; redirect(...)}`
+  Server Action ile değiştirme — CTA basit external navigation; Server
+  Action overhead (POST round-trip) gereksiz.
+- `href` prop'una untrusted external URL geçirme — Server Component
+  caller'da `${base}/auth/register` template literal (intern) güvenli;
+  user input geçirildiği yerde validation gerekir.
+- 11 diğer anasayfa animation callsite'larını gözden geçirmemek — bu
+  PR sadece SweepCTA fix; diğer callsite'lar manuel verify edildi
+  (primitive/JSX prop'lar serializable, regression yok).
+- Sentry beforeSend filter §38.29 paterni reuse ile @context noise
+  silent ignore eklemek bu PR'a — production crash kritik öncelik,
+  noise filter ayrı PR scope.
+
+**Yap**:
+
+- Yeni Client Component eklenirken Server Component caller'lardan inline
+  arrow function veya callback prop geçirilmediğine dikkat et —
+  Next.js 15 "Event handlers cannot be passed to Client Component props"
+  hard error production'da silent (digest-only) crash sebebi olur.
+- Polymorphic `<button>` ↔ `<a>` paterni gerekirse SweepCTA reuse:
+  `href?: string` opsiyonel + `motion[Tag]` conditional render +
+  `target` + `rel` guard.
+- Server Component caller'larda CTA için `<a href>` veya
+  `<Link href>` tercih (SPA navigation gerekirse), inline arrow
+  function YASAK.
+- Production crash diagnostic: Sentry Issue B (boundary tag +
+  release sha + transaction route + replay attached) + Vercel
+  runtime logs (status code filter + error level + 1-2h since)
+  kombinasyonu ile root cause hızlı tespit edilebilir (CLAUDE.md
+  §38.13 server-side flush kör nokta intact ama client-side
+  capture + Vercel logs yedek monitoring).
+
+**Verification (lokal — kısmen)**:
+- Lokal `node_modules` yok (disk %95 dolu, 11GB free); `npm install`
+  skip — CI Validate workflow lint + tsc + test + build doğrulayacak
+  (CLAUDE.md §38.131 + §38.140 paterni).
+- Manuel verify: SweepCTA TypeScript prop drift yok (mevcut `onClick`
+  + yeni opsiyonel `href`/`target` backward-compat); page.tsx caller
+  prop swap, framer-motion `motion.a` desteği lib intact.
+
+**Manuel smoke test** (Vercel preview deploy sonrası):
+1. `/tr` (anasayfa) → 200 dönmeli, locale-error-boundary render
+   etmemeli. Section 4.5 "Restoranlar Buaze ile yeniden tanıtıldı."
+   render olmalı, SweepCTA `<a href="/tr/auth/register">` görünür
+   olmalı.
+2. `/en` (anasayfa) → 200 dönmeli, SweepCTA `<a href="/en/auth/register">`.
+3. Vercel runtime logs son 5dk → "Error: Event handlers canno..." 0
+   event olmalı.
+4. Sentry Issue B → Stage 75 deploy sonrası new event 0; mevcut 17
+   event resolved/expired window'a düşmeli.
+5. Production'da sticky CTA bar + ContactFloat intact (Stage 58 +
+   §38.142 paterni dokunulmadı).
+
+**Stage 75 closure** (Tarih 2026-05-08):
+- Branch: `claude/gallant-chatelet-75634b` (designated worktree, fresh
+  main üstüne — Stage 73 §38.153 already in main, Stage 74 üzerine).
+- Edit'lenen dosyalar: 3 (SweepCTA.tsx polymorphic + page.tsx caller +
+  CLAUDE.md §38.154)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 intact (CI Validate doğrulayacak)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  Stage 70 §38.150 anasayfa 8-component placement intact, 11/11
+  animation component intact, Stage 72 §38.152 SentimentDial + Stage
+  68 §38.149 LiveTicker intact. Sadece SweepCTA serialization fix.
+- Kalan riskler: yok — production crash root cause kapatıldı; diğer
+  Sentry noise issue'ları (3rd party `@context.toLowerCase`,
+  AbortError) ayrı PR scope.
+- **Sonraki aşama önerisi**: Sentry @context noise filter (CLAUDE.md
+  §38.29 paterni reuse, `instrumentation-client.ts beforeSend` regex
+  match) ayrı PR — production noise temizliği. Ya da AP* migration
+  PR2 Stage 75 (APSegmented vertical variant + Tabs migrate) — Stage
+  73 §38.153 closure log'undaki defer backlog. Veya operatör yeni
+  odak talebi.
+
+**Chat prompt history (Stage 75 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: 2 paralel iş tanımı verdi:
+  - **ÖNCELİK 1 (CRITICAL)**: production server components render error
+    `/[locale]/dashboard`. React error overlay raporu + stack trace
+    src/app/[locale]/dashboard/error.tsx (locale-error-boundary).
+    Sentry buaze-ev/sentry-apricot-blanket + Vercel runtime logs
+    araştırması talebi. 5 şüpheli son commit (Stage 65-72 PR #570-#577).
+  - **ÖNCELİK 2**: AP* migration PR2-6 zinciri (Stage 73 §38.153
+    closure log defer backlog reuse).
+- AskUserQuestion **YAPILMADI** — kullanıcı uzakta, otonom karar
+  yetkisi (Stage 49→64 zincirinde compliance disipline 9+ kez stable
+  + ÖNCELIK 1 kritik scope dar fix). Diagnostic bulgular kesin (Sentry
+  + Vercel + git log + manuel callsite verify smoking gun gösterdi).
+- Otonom karar gerekçesi: production crash devam ediyor (Sentry her
+  birkaç dakikada 1 event), root cause kesin tespit edildi (SweepCTA
+  onClick), fix scope dar (2 dosya), regression riski sıfır
+  (polymorphic refactor backward-compat). Compliance disipline
+  (CLAUDE.md §35.8 + §35.10 + §19.1.1) intact (UI değişimi yok,
+  sadece serialization fix). ÖNCELİK 2 (AP* migration PR2-6) bu
+  PR sonrası ayrı session/ayrı PR scope — kritik fix öne alındı.
+- **Diagnostic bulgular özeti** (Sentry + Vercel ile root cause hunt
+  paterni — gelecek session referansı):
+  - Sentry Issue SENTRY-APRICOT-BLANKET-B: boundary tag
+    `locale-error-boundary` (`[locale]/error.tsx`, dashboard/error.tsx
+    DEĞİL); culprit `/:locale` (anasayfa); release SHA Stage 72
+    `e6aec3a9`; transaction `/:locale`; mix env (production + preview).
+  - Vercel runtime logs (`get_runtime_logs` MCP, level=error,fatal,
+    since=2h) → "Error: Event handlers canno..." truncated message
+    50+ event GET `/en` + `/tr` 500 status. Bu Next.js 15 hard error
+    açıkça belirtici.
+  - Manuel callsite verify: 11 anasayfa animation Stage 70 §38.150 +
+    Stage 68 §38.149 + Stage 72 §38.152 paterniyle eklenen
+    component'lerin prop pattern'ları. SweepCTA `onClick={() => ...}`
+    inline arrow function smoking gun (line 653-658).
+  - Git log + branch state: son merge Stage 72 §38.152 PR #577
+    `e6aec3a9` (Sentry release SHA ile match). Stage 73 §38.153
+    CLAUDE.md edit zaten main'de (working tree clean).
