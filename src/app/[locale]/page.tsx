@@ -733,75 +733,133 @@ export default async function LandingPage({
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-            <div className="space-y-10">
-              {/* StarClimber — Buaze cohort climb storytelling */}
-              <div className="flex flex-col gap-2">
-                <span className="pulse-eyebrow text-[#A8D62E]">
+            {/* Stage 88 §38.168 — Cohort sol kolon güzelleştirme
+                (kullanıcı kararı "Cohort CTA group güzelleştir"):
+                - 3 module wrap'lı bordered card chrome (StarClimber +
+                  BigCounter split pair + Premium CTA card)
+                - Apple-soft shadow tier (CLAUDE.md §38.65 elev-1)
+                - Lime accent dot eyebrow indicator (Pulse §11 brand
+                  reinforcement)
+                - BigCounter pair tek-card 2-col split (gap-px hairline
+                  separator + symmetric padding) — eski border-y inline
+                  divider yerine premium grid bordered)
+                - CTA card relative + lime corner radial gradient
+                  decoration (HANDOFF §38.65 + §38.151 §38.123 paterni
+                  paralel)
+                - Microcopy 3 verifiable trust item lime check icon
+                  (verifiable §35.8 visual reinforcement) + flex-wrap
+                  responsive (mobile stack OK) */}
+            <div className="space-y-8">
+              {/* StarClimber bordered card */}
+              <div className="rounded-[18px] border border-[#EDEDED] bg-white p-6 shadow-[0_4px_24px_-12px_rgba(10,10,10,0.06)]">
+                <span className="pulse-eyebrow inline-flex items-center gap-2 text-[#525252]">
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 rounded-full bg-[#C6F24E] pulse-heartbeat"
+                  />
                   {isTr ? '90 günlük tipik kohort tırmanışı' : 'Typical 90-day cohort climb'}
                 </span>
-                <StarClimber
-                  from={3.6}
-                  to={4.4}
-                  locale={locale}
-                  label={isTr ? 'Buaze müşteri kohortu' : 'Buaze customer cohort'}
-                />
-              </div>
-
-              {/* BigCounter pair — verifiable Buaze cohort numbers */}
-              <div className="grid grid-cols-2 gap-6 sm:gap-10 border-y border-[#EDEDED] py-10">
-                <BigCounter
-                  to={10}
-                  prefix=""
-                  suffix="+"
-                  label={isTr ? 'Aktif işletme' : 'Active venues'}
-                  locale={locale}
-                />
-                <BigCounter
-                  to={8}
-                  prefix=""
-                  suffix="+"
-                  label={isTr ? 'Entegrasyon kanalı' : 'Integration channels'}
-                  locale={locale}
-                />
-              </div>
-
-              {/* Stage 85 §38.165 — corporate premium CTA group
-                  (kullanıcı raporu "gözükmeyen buton yapısı vs var orayı
-                  da daha kurumsal premiumlukta tasarla" fix).
-
-                  Stage 75 §38.155 — Server Component caller'larında inline
-                  arrow function YASAK ("Event handlers cannot be passed to
-                  Client Component props"); SweepCTA polymorphic href prop
-                  alır + internal `<a>` render eder.
-
-                  Dual CTA paterni: primary lime sweep ("Ücretsiz başla")
-                  + secondary outline anchor ("Demo iste" /pricing'e
-                  yönlenir, dünya üzerindeki Buaze gerçek pricing surface).
-                  Microcopy KVKK + ücretsiz disclaimer (§35.8 verifiable). */}
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <SweepCTA
-                    href={`${base}/auth/register`}
-                    ariaLabel={isTr ? 'Ücretsiz başla' : 'Start free'}
-                  >
-                    {isTr ? 'Ücretsiz başla' : 'Start free'}
-                  </SweepCTA>
-                  <a
-                    href={`${base}/pricing`}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#0A0A0A] bg-transparent px-6 py-3.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
-                    style={{ fontFamily: 'var(--font-body)' }}
-                  >
-                    {isTr ? 'Planları gör' : 'See plans'}
-                  </a>
+                <div className="mt-4">
+                  <StarClimber
+                    from={3.6}
+                    to={4.4}
+                    locale={locale}
+                    label={isTr ? 'Buaze müşteri kohortu' : 'Buaze customer cohort'}
+                  />
                 </div>
-                <p
-                  className="text-[12px] leading-[1.5] text-[#737373]"
-                  style={{ fontFamily: 'var(--font-body)' }}
-                >
-                  {isTr
-                    ? '14 gün ücretsiz · Kart gerekmez · KVKK + GDPR uyumlu'
-                    : '14-day free trial · No credit card · KVKK + GDPR compliant'}
-                </p>
+              </div>
+
+              {/* BigCounter pair — split bordered card with hairline
+                  separator (gap-px on neutral bg = visual 1px line) */}
+              <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[18px] bg-[#EDEDED] shadow-[0_4px_24px_-12px_rgba(10,10,10,0.06)]">
+                <div className="bg-white p-6">
+                  <BigCounter
+                    to={10}
+                    prefix=""
+                    suffix="+"
+                    label={isTr ? 'Aktif işletme' : 'Active venues'}
+                    locale={locale}
+                  />
+                </div>
+                <div className="bg-white p-6">
+                  <BigCounter
+                    to={8}
+                    prefix=""
+                    suffix="+"
+                    label={isTr ? 'Entegrasyon kanalı' : 'Integration channels'}
+                    locale={locale}
+                  />
+                </div>
+              </div>
+
+              {/* Stage 88 §38.168 — Cohort CTA premium card upgrade.
+                  Önceki Stage 85 §38.165 dual CTA + plain microcopy
+                  (kullanıcı raporu "düzgün olmamış") yerine premium
+                  bordered card + lime corner accent radial gradient +
+                  microcopy lime check icons (verifiable visual reinforcement).
+
+                  Stage 75 §38.155 — SweepCTA polymorphic href intact
+                  (Server Component caller'larında inline arrow function
+                  YASAK, "Event handlers cannot be passed to Client
+                  Component props"). Dual CTA: primary lime sweep
+                  + secondary outline anchor. Card chrome:
+                  rounded-[18px] + Apple-soft shadow elev-1 + ring-1
+                  border + lime corner glow (38.123 footer + 38.151
+                  primitive paterni paralel). */}
+              <div className="relative overflow-hidden rounded-[18px] bg-white p-6 sm:p-8 shadow-[0_8px_30px_-12px_rgba(10,10,10,0.10)] ring-1 ring-[#EDEDED]">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full"
+                  style={{
+                    background:
+                      'radial-gradient(circle, rgba(198,242,78,0.22) 0%, transparent 70%)',
+                  }}
+                />
+                <div className="relative flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <SweepCTA
+                      href={`${base}/auth/register`}
+                      ariaLabel={isTr ? 'Ücretsiz başla' : 'Start free'}
+                    >
+                      {isTr ? 'Ücretsiz başla' : 'Start free'}
+                    </SweepCTA>
+                    <a
+                      href={`${base}/pricing`}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#0A0A0A] bg-transparent px-6 py-3.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
+                    >
+                      {isTr ? 'Planları gör' : 'See plans'}
+                    </a>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[#525252]">
+                    {(isTr
+                      ? ['14 gün ücretsiz', 'Kart gerekmez', 'KVKK + GDPR uyumlu']
+                      : ['14-day free trial', 'No credit card', 'KVKK + GDPR compliant']
+                    ).map((label) => (
+                      <span
+                        key={label}
+                        className="inline-flex items-center gap-1.5"
+                      >
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 12 12"
+                          aria-hidden="true"
+                          className="shrink-0"
+                        >
+                          <path
+                            d="M2 6.5L5 9.5L10 3"
+                            stroke="#A8D62E"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                        </svg>
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -821,26 +879,33 @@ export default async function LandingPage({
                 <ToastRow />
               </div>
 
-              {/* Stage 71 §38.151 — SentimentDial. Buaze müşteri kohort
-                  ortalama sentiment score (verifiable framing §35.8).
-                  Dark dial + lime accent — sayfa beyaz arkaplan üstünde
-                  graphite circle visual standalone modülü olarak
-                  görünür. */}
-              <div className="mt-6 flex items-center gap-5 rounded-[18px] border border-[#EDEDED] bg-white p-5">
-                <div className="rounded-[14px] bg-[#0A0A0A] p-3">
-                  <SentimentDial score={84} variant="dark" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <span className="pulse-eyebrow text-[#A8D62E]">
-                    {isTr ? 'Genel sentiment' : 'Overall sentiment'}
-                  </span>
-                  <p
-                    className="mt-2 text-[14px] leading-[1.55] text-[#525252]"
-                  >
-                    {isTr
-                      ? 'Buaze müşteri kohortunda yorumların büyük çoğunluğu pozitif tona kayar; düşük puan tek panelde önce işletmeye ulaşır.'
-                      : 'Across the Buaze customer cohort, reviews skew positive; low ratings reach you first in one inbox.'}
-                  </p>
+              {/* Stage 88 §38.168 — SentimentDial card premium polish
+                  (sol kolon Cohort CTA card chrome paritesi). Apple-soft
+                  shadow elev-1 + ring-1 + lime corner radial gradient
+                  decoration (sol kolon CTA card paterni mirror). */}
+              <div className="relative mt-6 overflow-hidden rounded-[18px] bg-white p-5 shadow-[0_4px_24px_-12px_rgba(10,10,10,0.06)] ring-1 ring-[#EDEDED]">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full"
+                  style={{
+                    background:
+                      'radial-gradient(circle, rgba(198,242,78,0.18) 0%, transparent 70%)',
+                  }}
+                />
+                <div className="relative flex items-center gap-5">
+                  <div className="rounded-[14px] bg-[#0A0A0A] p-3">
+                    <SentimentDial score={84} variant="dark" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="pulse-eyebrow text-[#A8D62E]">
+                      {isTr ? 'Genel sentiment' : 'Overall sentiment'}
+                    </span>
+                    <p className="mt-2 text-[14px] leading-[1.55] text-[#525252]">
+                      {isTr
+                        ? 'Buaze müşteri kohortunda yorumların büyük çoğunluğu pozitif tona kayar; düşük puan tek panelde önce işletmeye ulaşır.'
+                        : 'Across the Buaze customer cohort, reviews skew positive; low ratings reach you first in one inbox.'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

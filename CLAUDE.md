@@ -25002,3 +25002,196 @@ additive; helper logic + IDOR + KVKK + reCAPTCHA + honeypot + Pulse
   animation fix + cache header batch. CLAUDE.md §35.8 + §35.10 +
   §19.1.1 + §38.61 + §38.100 + §38.104 + §38.114 + §38.147 paterni
   reuse.
+
+---
+
+### 38.168 2026-05-08 — Stage 88 ContactFloat mobile bottom nav overlap fix + LiveTicker rollback to PR0 base + Cohort CTA premium card upgrade
+
+§38.167 Stage 87 sonrası kullanıcı 3 talep iletti: *"Kaldığın yerden
+devam et... işin bitince En başında yaptığın değişiklikleri gözden
+geçir ve düzgün yaptığından emin ol (en başta verdiğim 4 değişiklik
+heronun altındaki kartlar kayan markalar promptu) çünkü düzgün
+olmamış ve sana bir tanesini eski hsline döndür ve bir tanesini de
+güzelleştir demiştim... mobilde de chat balonu aşağı kaydırınca
+scroll down yapınca bottom nav üstüne geliyor"* (typo "hsline" →
+"haline" verbatim §39.2 disipline). 3 fix bundle.
+
+**AskUserQuestion 2 karar** (kullanıcı seçim — Stage 85 §38.165 4 fix
+arasından):
+1. *Eski haline döndür*: **LiveTicker** ("Her yorum, tek bir panelde"
+   Section 4) — Stage 85'in premium editorial card refactor'ü Stage
+   66 §38.147 PR0 base sade haline geri döndürüldü.
+2. *Güzelleştir*: **Cohort CTA group** (Section 4.5) — visual
+   hierarchy + spacing + StarClimber/BigCounter bordered card chrome
+   + premium CTA card lime corner radial gradient + microcopy lime
+   check icons.
+
+**3 fix bundle**:
+
+#### Fix 1 — ContactFloat mobile FAB + open form bottom nav overlap fix
+
+**Root cause**: MobileBottomNav (CLAUDE.md §38.141 Stage 60) `bottom:
+calc(12px + env(safe-area-inset-bottom, 0px))` + `h-[72px]` = nav top
+edge `~84px + safe-area`. ContactFloat eski `bottom-[88px]` sabit +
+**safe-area-blind** iken iPhone notch/home-indicator (~34px) ekleyince
+FAB nav'ın **arkasına** kayıyordu.
+
+**Fix** (`src/components/marketing/ContactFloat.tsx`):
+- FAB wrapper (line 242 civarı) mobile bottom: `bottom-[88px]` →
+  `bottom-[calc(96px+env(safe-area-inset-bottom,0px))]` arbitrary
+  utility class.
+- Open form (line 405 civarı) aynı paterni reuse.
+- 84px nav top + 12px breathing gap = 96px + safe-area inset
+  dynamic. `md:` desktop sticky CTA visible iken `md:bottom-[148px]`
+  override (Stage 61 §38.142), sakin `md:bottom-6` (Stage 58 §38.139)
+  intact. Tailwind responsive override mobile arbitrary `[calc(...)]`'i
+  higher breakpoint'te kazanır (utility specificity OK).
+
+#### Fix 2 — LiveTicker rollback to Stage 66 PR0 base
+
+**Eski haline döndür** kararı (kullanıcı):
+- `src/components/animations/LiveTicker.tsx` rewrite (Stage 85
+  §38.165 premium editorial → Stage 66 §38.147 PR0 base):
+  - **Container compact**: `h-[260px]/sm:h-[280px] max-w-[380px]/
+    sm:420px` → `h-[220px] max-w-[320px]` sabit.
+  - **Avatar lime-soft restore**: `bg-brand-ink text-white`
+    (graphite premium contrast) → `bg-brand-lime-soft text-brand-ink`
+    (sade lime accent).
+  - **Card chrome compact**: `rounded-[18px] p-5 shadow-[0_18px_40px_-12px]`
+    → `rounded-[14px] p-3.5 shadow-[0_14px_30px_-10px]`.
+  - **Plain typography**: italic Space Grotesk source name →
+    `font-semibold text-[13px]` plain.
+  - **Decorative quote mark KALDIRILDI**: 64px italic upper-right
+    `&ldquo;` editorial accent silindi.
+  - **Footer attribution KALDIRILDI**: "KAYNAK · {platform}" mono
+    uppercase row + lime pulse-dot silindi.
+  - **Stack tuning revert**: y stagger `22 → 18`, scale `0.04 → 0.05`,
+    transition `0.65 → 0.6`.
+- `LiveTickerItem.platform?: string` field **opsiyonel intact**
+  (backward-compat) — gelecekteki bir LiveTicker variant'ı reuse
+  edebilir, default render etmiyor.
+- DEFAULT_GENERIC_ITEMS 5 item compliance-safe generic platform
+  event (§35.10 + §38.131 paterni intact).
+
+#### Fix 3 — Cohort CTA group güzelleştir (Section 4.5)
+
+**Güzelleştir** kararı (kullanıcı):
+- `src/app/[locale]/page.tsx` Section 4.5 sol kolon 3 module wrap'lı
+  bordered card chrome + sağ kolon SentimentDial card parite:
+  - **StarClimber bordered card**: `rounded-[18px] border bg-white p-6
+    shadow-[0_4px_24px_-12px]` Apple-soft elev-1 (CLAUDE.md §38.65) +
+    eyebrow lime pulse-dot indicator (Pulse §11 brand reinforcement).
+  - **BigCounter pair split bordered card**: tek-card 2-col split
+    (`grid grid-cols-2 gap-px overflow-hidden rounded-[18px] bg-[#EDEDED]`
+    hairline separator paterni + symmetric padding) — eski `border-y`
+    inline divider yerine premium grid bordered.
+  - **Premium CTA card** (kullanıcı raporu "düzgün olmamış" fix):
+    `rounded-[18px] bg-white p-6 sm:p-8 shadow-[0_8px_30px_-12px]
+    ring-1 ring-[#EDEDED]` + lime corner radial gradient decoration
+    (`-right-12 -top-12 h-40 w-40` `radial-gradient(circle,
+    rgba(198,242,78,0.22), transparent 70%)` — CLAUDE.md §38.123
+    footer + §38.151 primitive paterni paralel).
+  - **Microcopy lime check icons**: 3 verifiable trust item ("14 gün
+    ücretsiz / Kart gerekmez / KVKK + GDPR uyumlu") inline SVG check
+    icon (`stroke="#A8D62E"` lime-deep) + `flex flex-wrap items-center
+    gap-x-4 gap-y-2`. Eski plain text → visual reinforcement
+    (verifiable §35.8).
+  - **SentimentDial card parite**: sağ kolon `relative overflow-hidden
+    rounded-[18px] bg-white p-5 shadow-[0_4px_24px_-12px] ring-1
+    ring-[#EDEDED]` + lime corner radial gradient (sol kolon CTA card
+    paterni mirror).
+- Section spacing: `space-y-10` → `space-y-8` (3 bordered card
+  visual breathing intact).
+- Dual CTA structure intact (Stage 75 §38.155 polymorphic href
+  `<SweepCTA href>` + secondary outline `<a href>`).
+
+#### Etkilenen dosyalar (3 + docs)
+
+| Dosya | Tip | Net |
+|---|---|---|
+| `src/components/marketing/ContactFloat.tsx` | Edit | +12 satır (FAB + open form mobile bottom calc-aware) |
+| `src/components/animations/LiveTicker.tsx` | Rewrite | -90 satır (premium editorial → PR0 base sade) |
+| `src/app/[locale]/page.tsx` | Edit | +90 satır (Section 4.5 3 bordered card + microcopy lime check icons + SentimentDial card parite) |
+| `CLAUDE.md` | Edit | §38.168 closure log |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 pass intact.
+
+#### Yapma
+
+- ContactFloat mobile bottom değerini sabit pixel ile yazmak
+  (`bottom-[120px]` vb.) — iPhone safe-area inset dinamik (~34px
+  notch/home-indicator); calc-aware `env(safe-area-inset-bottom)`
+  zorunlu.
+- LiveTicker'a tekrar premium editorial card paterni (italic quote
+  mark + footer attribution + graphite avatar) eklemek — kullanıcı
+  açık kararla rollback istedi (Stage 85 §38.165 visual çok yoğun
+  hissetmiş).
+- LiveTickerItem.platform field'ını silmek — backward-compat opsiyonel
+  intact (gelecekteki LiveTicker variant'ı reuse edebilir).
+- Section 4.5 Cohort CTA card'ını sade plain `<div>` flex'e geri
+  döndürmek — kullanıcı "güzelleştir" kararı; Apple-soft shadow +
+  ring + lime corner gradient premium tasarım intent.
+- Microcopy lime check icon'larını text-only `·` separator'a geri
+  çevirmek — verifiable trust signal visual reinforcement
+  (§35.8 paterni).
+- BigCounter pair'a `border-y` inline divider geri eklemek — split
+  bordered card pattern daha premium (Pulse §11 + §38.65 elev-1).
+
+#### Yap
+
+- Yeni mobile `position: fixed` element ekleme MobileBottomNav üstünde
+  yer alacaksa `bottom-[calc(96px+env(safe-area-inset-bottom,0px))]`
+  paterni reuse (CLAUDE.md §38.74 + §38.160 + §38.168 paterni).
+- Yeni premium card chrome ihtiyacı çıkarsa Stage 88 paterni reuse:
+  `rounded-[18px] bg-white p-6 shadow-[0_8px_30px_-12px] ring-1
+  ring-[#EDEDED]` + opsiyonel lime corner radial gradient
+  (`absolute -right-12 -top-12 h-40 w-40` + `radial-gradient`).
+- Yeni microcopy trust signal listesi gerekirse lime check icon
+  inline SVG paterni reuse (`<svg width=12 height=12><path
+  stroke="#A8D62E" stroke-width=2>`).
+- BigCounter benzeri counter pair gerekirse split bordered card
+  paterni reuse: `grid grid-cols-2 gap-px overflow-hidden rounded-[18px]
+  bg-[#EDEDED]` + child cells `bg-white p-6`.
+- LiveTicker variant'ı (premium editorial) gelecek bir surface'te
+  gerekirse yeni component (`PremiumLiveTicker` vb.) olarak ayrı
+  dosya — sade Stage 88 LiveTicker base intact, drift sıfır.
+
+#### Verification
+
+- `npx eslint` (modified files): 0 errors / 0 warnings
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: 404/404 pass, 45 suites
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap): ✓ Compiled
+  successfully + 58/58 static pages
+
+#### Compliance disipline (kullanıcı 20. iterasyon)
+
+§35.8 + §35.10 + §19.1.1 + §38.114 paterni stable. Stage 49 §38.130
+→ Stage 87 §38.167 zinciri compliance disipline 19 kez stable;
+Stage 88 §38.168 yirminci kez backend kontrat dokunmadan UI fix +
+visual rollback + premium card upgrade. CLAUDE.md §38.65 + §38.74 +
+§38.123 + §38.131 + §38.151 + §38.160 + §38.165 + §38.167 paterni
+reuse.
+
+#### Stage 88 closure (Tarih 2026-05-08)
+
+- Branch: `chore/contactfloat-livecticker-cohort-stage88` (fresh main
+  üstüne, Stage 87 §38.167 PR #591 merged sonrası align)
+- Edit'lenen dosyalar: 3 (ContactFloat + LiveTicker + page.tsx) +
+  CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mobile
+  ContactFloat artık MobileBottomNav arkasına kaymıyor; LiveTicker
+  Section 4 sade compact card; Section 4.5 Cohort CTA + StarClimber +
+  BigCounter pair + SentimentDial premium bordered card chrome.
+- Kalan riskler: yok (UI polish + UI rollback + presentational; backend
+  kontrat dokunulmadı, KVKK + reCAPTCHA + honeypot + Pulse §11 design
+  system intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
+  (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade.
