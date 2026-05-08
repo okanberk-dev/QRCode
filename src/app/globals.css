@@ -555,6 +555,18 @@ body {
   to   { transform: translateX(800%); }
 }
 
+/* Stage 48 §38.129 — HANDOFF feedback-flow.jsx `DoneHigh/DoneLow`
+ * radial pulse rays for the public review surface (`/r/[slug]`)
+ * thanks step. Two concentric lime rings expand outward + fade to 0,
+ * sitting behind the green `Check` badge. Inline `style={{ animation }}`;
+ * reduced-motion blanket [style*='bz-done-ring-pulse'] selector ile
+ * yakalanır (CLAUDE.md §38.61 paterni reuse).
+ */
+@keyframes bz-done-ring-pulse {
+  0%   { transform: scale(0.5); opacity: 0.55; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .pulse-heartbeat,
@@ -581,6 +593,7 @@ body {
   [style*='activity-row-in'],
   [style*='bz-cookie-card-in'],
   [style*='bzEchoSweep'],
+  [style*='bz-done-ring-pulse'],
   .animate-\[bzProgress_2\.2s_linear_forwards\] {
     animation: none !important;
   }

@@ -381,7 +381,17 @@ function ReviewContent() {
         />
       )}
 
-      <div className="mx-auto flex min-h-[100dvh] max-w-[360px] flex-col px-6 pb-10 pt-2">
+      <div
+        className="mx-auto flex min-h-[100dvh] max-w-[360px] flex-col px-6 pt-2"
+        style={{
+          // Stage 48 §38.129 — iOS notch + home-indicator safe-area inset.
+          // Mevcut `pb-10` (40px) tablet/desktop tabanı; mobil ekranlarda
+          // home-indicator overlap'i önlemek için env() ile clamp.
+          paddingBottom: 'max(40px, calc(env(safe-area-inset-bottom, 0px) + 24px))',
+          // 300ms tap delay'ini iOS Safari'da kapatır; double-tap zoom yine çalışır.
+          touchAction: 'manipulation',
+        }}
+      >
         {/* Brand header — design padding 32/0/28 */}
         <header className="text-center" style={{ padding: '32px 0 28px' }}>
           <div
@@ -408,10 +418,21 @@ function ReviewContent() {
         >
           {step === 1 && (
             <div>
-              <span className="pulse-eyebrow text-[#737373]">
-                {locale === 'tr' ? '1. ADIM' : 'STEP 1'}
-              </span>
-              <h2 className="bz-h-tight-2 mt-1.5 text-[22px]">
+              {/* Stage 48 §38.129 — HANDOFF feedback-flow.jsx segmented
+                  progress indicator. Düşük puan formuna geçiş 2-adımlı;
+                  tek `pulse-eyebrow` text yerine eyebrow + 2-segmentli
+                  rail görsel pacing duygusu verir. Yüksek puan akışında
+                  step 2 rail dolmadan redirect olur (tasarım amacı). */}
+              <div className="flex items-center justify-between">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {locale === 'tr' ? 'ADIM 1 / 2' : 'STEP 1 OF 2'}
+                </span>
+                <div className="flex gap-1.5" aria-hidden>
+                  <span className="h-1 w-6 rounded-full bg-[#0A0A0A]" />
+                  <span className="h-1 w-6 rounded-full bg-[#E5E5E5]" />
+                </div>
+              </div>
+              <h2 className="bz-h-tight-2 mt-2 text-[22px]">
                 {locale === 'tr' ? 'Deneyimini puanla' : 'Rate your experience'}
               </h2>
               <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">
@@ -445,12 +466,34 @@ function ReviewContent() {
                 })}
               </div>
 
-              {/* Rating label — design 1:1: yalnızca rating > 0 iken render edilir */}
-              {visibleRating > 0 && (
-                <div className="bz-fade-in mb-4 text-center text-[13px] text-[#525252]" style={{ minHeight: 20 }}>
-                  {labels[visibleRating - 1]}
-                </div>
-              )}
+              {/* Stage 48 §38.129 — HANDOFF feedback-flow.jsx tone-coded
+                  rating label. ≥4 lime-soft + graphite ink, =3 amber-soft +
+                  amber ink, ≤2 red-soft + danger ink. Pill shape + dot
+                  prefix, müşteriye yıldız anlamını anında görselleştirir.
+                  `aria-live="polite"` screen reader değişimi yumuşak okur. */}
+              <div
+                className="mb-4 flex items-center justify-center"
+                style={{ minHeight: 28 }}
+                aria-live="polite"
+              >
+                {visibleRating > 0 && (
+                  <span
+                    className={`bz-fade-in inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium ${
+                      visibleRating >= 4
+                        ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+                        : visibleRating === 3
+                          ? 'bg-[#FFFBEB] text-[#92400E]'
+                          : 'bg-[#FEF2F2] text-[#991B1B]'
+                    }`}
+                  >
+                    <span
+                      className="h-1.5 w-1.5 rounded-full bg-current opacity-70"
+                      aria-hidden
+                    />
+                    {labels[visibleRating - 1]}
+                  </span>
+                )}
+              </div>
 
               {/* Devam et: 1-3 yıldız akışı için. 4-5 yıldız tap doğrudan
                   redirect'i tetikler; bu buton onlar için redundant ama
@@ -473,10 +516,19 @@ function ReviewContent() {
 
           {step === 2 && isLow && (
             <div>
-              <span className="pulse-eyebrow text-[#737373]">
-                {locale === 'tr' ? '2. ADIM' : 'STEP 2'}
-              </span>
-              <h2 className="bz-h-tight-2 text-[20px]" style={{ marginTop: 6 }}>
+              {/* Stage 48 §38.129 — eyebrow + progress rail (step 1 ile parite).
+                  Her iki segment dolu, müşteri "yarıdan fazlası bitti"
+                  pacing duygusu alır. */}
+              <div className="flex items-center justify-between">
+                <span className="pulse-eyebrow text-[#737373]">
+                  {locale === 'tr' ? 'ADIM 2 / 2' : 'STEP 2 OF 2'}
+                </span>
+                <div className="flex gap-1.5" aria-hidden>
+                  <span className="h-1 w-6 rounded-full bg-[#0A0A0A]" />
+                  <span className="h-1 w-6 rounded-full bg-[#0A0A0A]" />
+                </div>
+              </div>
+              <h2 className="bz-h-tight-2 text-[20px]" style={{ marginTop: 8 }}>
                 {locale === 'tr' ? 'Bize biraz daha anlatır mısın?' : 'Tell us a little more'}
               </h2>
               <p className="text-[12.5px] leading-[1.55] text-[#525252]" style={{ margin: '8px 0 18px' }}>
@@ -621,16 +673,39 @@ function ReviewContent() {
 
           {step === 3 && (
             <div className="bz-fade-in text-center" style={{ padding: '20px 0' }}>
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#C6F24E]">
-                <Check size={28} strokeWidth={3} className="text-[#0A0A0A]" />
+              {/* Stage 48 §38.129 — HANDOFF feedback-flow.jsx `DoneHigh/DoneLow`
+                  radial pulse rays. 2 concentric lime ring expand outward +
+                  fade out (1.6s ease-out, infinite); ortada lime check badge
+                  shadow ile kalır. Reduced-motion blanket [style*='bz-done-ring-pulse']
+                  selector ile yakalanır (CLAUDE.md §38.61 paterni). */}
+              <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
+                <span
+                  className="absolute inset-0 rounded-full bg-[#C6F24E]"
+                  style={{
+                    animation: 'bz-done-ring-pulse 1.6s ease-out infinite',
+                    transformOrigin: 'center',
+                  }}
+                  aria-hidden
+                />
+                <span
+                  className="absolute inset-2 rounded-full bg-[#C6F24E]"
+                  style={{
+                    animation: 'bz-done-ring-pulse 1.6s ease-out 0.4s infinite',
+                    transformOrigin: 'center',
+                  }}
+                  aria-hidden
+                />
+                <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_8px_24px_-8px_rgba(198,242,78,0.6)]">
+                  <Check size={28} strokeWidth={3} className="text-[#0A0A0A]" />
+                </div>
               </div>
-              <h2 className="bz-h-tight-2 text-[22px]" style={{ marginTop: 18 }}>
+              <h2 className="bz-h-tight-2 text-[22px]" style={{ marginTop: 22 }}>
                 {locale === 'tr' ? 'Teşekkürler!' : 'Thank you!'}
               </h2>
-              <p className="text-[13px] leading-[1.6] text-[#525252]" style={{ margin: '8px 0 0' }}>
+              <p className="text-[13px] leading-[1.6] text-[#525252]" style={{ margin: '10px 0 0' }}>
                 {locale === 'tr'
-                  ? 'Geri bildirimin alındı.'
-                  : 'Your feedback has been received.'}
+                  ? 'Geri bildirimin alındı. İşletme yönetimine ulaştırdık.'
+                  : 'Your feedback has been received and shared with the team.'}
               </p>
             </div>
           )}
