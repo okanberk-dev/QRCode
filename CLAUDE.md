@@ -19702,3 +19702,228 @@ logic değişmedi).
   (sticky-cta-fix §38.142) paralel session'larda merged olduğu
   tespit edildi → closure log §38.143 / Stage 62 olarak renumber
   edildi (CLAUDE.md §39.2 disipline). Branch ismi cosmetic kaldı.
+
+---
+
+### 38.144 2026-05-08 — Stage 63 public review surface (`/r/[slug]`) mobile viewport-filling + Step 1 dark mode + brand header HANDOFF ReviewTopBar paterni
+
+§38.143 Stage 62 sonrası kullanıcı raporu: *"hala tasarım ile bire bir
+değil ve mobil versiyonda tamamen kaplasın mobil uyumlu olsun istiyorum
+ama mobilde direk tüm sayfayı kaplamıyor küçük gözüküyor ve tasarımda
+dark bir şekilde veriliyor yıldız işaretlemesinin de tasarımı farklı
+jsx'i birebir uygulamanı istiyorum"*
+
+3 kritik UX fix (mobile width + Step 1 dark mode + brand header
+refactor). Mevcut Buaze "hero card + white card" pattern → JSX
+prototip "topbar + state-aware bg" pattern'a geçiş. Compliance disipline
+intact (Stage 62 §38.143 + §38.130 zinciri 7. iterasyonda confirme).
+
+**5 fix bundle**:
+
+1. **Phase A — Mobile viewport-filling fix** (`max-w-[360px]` constraint
+   kaldırıldı):
+   - Eski: `mx-auto flex min-h-[100dvh] max-w-[360px] flex-col px-6 pt-2`
+     — mobile 375px iPhone SE viewport'ta sağ-sol 7.5px boşluk; 430px
+     iPhone Pro Max'te 35px boşluk. Kullanıcı "küçük gözüküyor" raporu.
+   - Yeni: `flex min-h-[100dvh] flex-col px-5 pt-2 sm:mx-auto sm:max-w-[420px] sm:px-6`
+     — mobile (default) full-width `w-full` + 20px padding; sm:+ (640px+)
+     `max-w-[420px]` ortalanmış (desktop nice constraint).
+   - JSX prototip intent: gerçek mobilde tüm viewport dolar (sahte bezel
+     YOK, kullanıcı talimatı: "iso-frame.jsx referans, repoya
+     koymayacaksın").
+
+2. **Phase B — Brand header HANDOFF ReviewTopBar paterni** (kompakt
+   yatay toolbar):
+   - Eski: center-aligned hero (64×64 white circle + 22px bold name +
+     12px address paragraph + 32/0/28 padding).
+   - Yeni: yatay toolbar (`flex items-center gap-3 border-b
+     border-white/[0.08] padding-[14px_0_16px]`):
+     - 38×38 lime icon `bg-[#C6F24E]` + italic Space Grotesk lowercase
+       initial 22px (synthetic italic §38.112 paterni)
+     - middle stack: 16px italic name `truncate text-white` + mono
+       uppercase meta (table + visit veya address veya "BUAZE")
+     - sağ-meta: `pulse-eyebrow text-white/50 9.5px` "TR · EN" hint
+   - HANDOFF spec birebir; daha kompakt + daha sofistike + restoran
+     bağlamı (table + visit) öne çıkar.
+
+3. **Phase C — Section state-aware bg** (Step 1 dark / Step 2+3 white):
+   - Eski: tüm step'ler `rounded-[24px] bg-white p-6 text-[#0A0A0A]
+     shadow` white card içinde.
+   - Yeni: `step === 1` ise `bz-fade-in flex-1 text-white` (dark page
+     bg üstünde transparent, white card YOK); aksi halde white card
+     intact.
+   - JSX prototip intent: Step 1 (rate) dark mode + glass star card,
+     Step 2/3 white bg switch. Buaze hibrit uygulama: Step 1 dark
+     transparent + Step 2/3 white card (mevcut).
+
+4. **Phase D — Step 1 dark mode rewrite**:
+   - **Linear progress bar** (3-segment dot pattern silindi): `1 / 3`
+     mono left + 3px linear bar (lime fill 33% + bg-white/10 rail +
+     box-shadow lime glow).
+   - **Greeting eyebrow**: `text-[#C6F24E]` (white card variant
+     `text-[#A8D62E]` idi, dark bg üstünde lime daha kontrast).
+   - **h2**: `text-white` italic Space Grotesk 28px (white card variant
+     `bz-h-tight-2 text-[22px]` graphite idi).
+   - **Sub**: `text-white/55 text-[13px]` (graphite `#525252` idi).
+   - **Glass star card**: `rounded-[24px] border-white/[0.08]
+     bg-white/[0.04] backdrop-blur(20px)` (off-white `bg-[#FAFAFA]`
+     idi).
+   - **Stars**:
+     - Active fill `#C6F24E` lime intact + `transform: scale(1.04)` +
+       inner shadow `inset 0 0 16px rgba(198,242,78,0.25)` glow overlay.
+     - Inactive fill `rgba(255,255,255,0.1)` + stroke
+       `rgba(255,255,255,0.2)` (light gray `#E5E5E5` idi).
+     - Hover state `rgba(198,242,78,0.08)` lime tint dark glass üzerine
+       (light variant `hover:bg-[#EAF9B8]/40` idi).
+   - **Tone-coded label**: pill removed, italic Space Grotesk 18px
+     `text-white` (eski `bg-[#EAF9B8]/[#FFFBEB]/[#FEF2F2]` pill +
+     graphite/amber/danger ink idi). Hint `text-white/50` (gri idi).
+   - **Empty placeholder**: italic `text-white/40` (light gray
+     `text-[#A3A3A3]` idi).
+
+5. **Phase E — Step 2 + 3 progress bar linear pattern**:
+   - Eski (Stage 49 §38.130): 3-segment dot pattern (`h-1 w-6
+     rounded-full bg-[#0A0A0A]/[#E5E5E5]`).
+   - Yeni: linear progress bar (Step 1 ile birebir parallel; light
+     variant): `2 / 3` veya `3 / 3` mono left + linear bar lime fill
+     66.66% / 100% + bg `#ECECEC` rail.
+   - White card içinde light variant (Step 1 dark variant'a karşılık).
+
+**Etkilenen dosyalar (1 + docs)**:
+
+- `src/app/r/[slug]/page.tsx`:
+  - Outer wrapper full-width (1 satır)
+  - Brand header refactor (~+50 satır net)
+  - Section state-aware className (~+8 satır)
+  - Step 1 dark mode rewrite (~+50 satır net)
+  - Step 2 + 3 progress bar linear pattern (~+25 satır net)
+  - Toplam ~133 satır artış
+- `CLAUDE.md` §38.144 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 383/383 intact.
+
+**Compliance disipline checkpoint** (kullanıcı 7. iterasyon):
+
+| Element | Durum | Sebep |
+|---|---|---|
+| Mobile full-width viewport | **YENİ** | Kullanıcı raporu: mobilde küçük gözüküyor |
+| Brand header kompakt yatay toolbar | **YENİ** | HANDOFF ReviewTopBar paterni (38×38 lime + italic name + meta + TR·EN) |
+| Step 1 dark mode + glass star card | **YENİ** | Kullanıcı raporu: tasarımda dark + yıldız işaretlemesi farklı |
+| Step 2 + 3 progress bar linear pattern | **YENİ** | Step 1 ile parallel (3-dot drift kaldırıldı) |
+| Step 2 + 3 white card intact | KEEP | JSX prototip light bg switch (low form + thanks) |
+| TR · EN sağ-meta decorative | **YENİ** | HANDOFF spec birebir, dil toggle değil sadece label |
+| "Kardeş Ahmet" hardcoded owner | SKIP | Stage 49→62 zinciri 6 kez compliance disipline |
+| Recovery actions (callback + voucher) | SKIP | Backend YOK |
+| Loyalty card | SKIP | Backend YOK |
+| PhoneFrame device chrome | SKIP | Kullanıcı explicit talimat: gerçek mobilde viewport-filling |
+
+**Yapma**:
+
+- Mobile viewport'ta `max-w-[N]` constraint geri ekleme — kullanıcı
+  explicit raporu "tüm sayfayı kaplasın". Sadece sm:+ desktop için
+  `sm:max-w-[420px]` ortalama mantıklı.
+- Brand header'ı eski center-aligned hero pattern'a (64×64 + 22px
+  bold + address) geri çevirme — HANDOFF ReviewTopBar paterni daha
+  kompakt + restoran bağlamı (table + visit) görünür kılar.
+- Step 1'i tekrar white card içine sokma — JSX prototip dark mode
+  + glass star card kullanıcı net talebi. Hibrit yapı (Step 1 dark /
+  Step 2+3 white) UX semantik anlamlı: rate moment dark editorial,
+  form moment light productivity.
+- Glass star card `backdrop-blur` kaldırma — Apple Liquid Glass
+  Pulse §11 + iOS 26 paterni intact (CLAUDE.md §38.65 elevation
+  + §38.86 modal blur paterni paralel).
+- Stars active state `scale(1.04)` + inner shadow glow kaldırma —
+  HANDOFF spec birebir visual feedback.
+- Step 2 + 3 progress bar 3-dot pattern'a geri çevirme — Step 1
+  linear bar ile uyumsuz visual hierarchy.
+- Step 2 + 3 white card'ı dark mode'a çevirme — JSX prototip light
+  bg switch (form productivity + thanks brightness), dark mode form
+  okumayı zorlaştırır.
+
+**Yap**:
+
+- Yeni public flow surface'inde mobile viewport-filling gerekirse
+  Stage 63 §38.144 paterni reuse: `flex min-h-[100dvh] flex-col
+  px-5 pt-2 sm:mx-auto sm:max-w-[420px] sm:px-6` + `paddingBottom:
+  max(40px, env(safe-area-inset-bottom)+24px)` + `touchAction:
+  manipulation`.
+- Yeni header gerekirse HANDOFF ReviewTopBar paterni reuse: `flex
+  items-center gap-3 border-b border-X` + 38×38 lime icon italic +
+  italic name truncate + mono meta + sağ-eyebrow.
+- Yeni dark/light hibrit step yapısı gerekirse Stage 63 §38.144
+  paterni reuse: section state-aware className (`step === 1 ? dark
+  transparent : white card`).
+- Yeni dark glass card gerekirse: `rounded-[N] border-white/[0.08]
+  bg-white/[0.04] backdrop-blur(20px)` + lime accent on active +
+  inner shadow glow overlay.
+- Yeni linear progress bar gerekirse Stage 63 §38.144 paterni reuse:
+  mono left counter + 3px bar (`overflow-hidden rounded-full bg-X`)
+  + lime fill (`width: ${pct}%` + box-shadow glow).
+
+**Manuel smoke test** (Vercel preview sonrası):
+
+1. **Mobile (375×667 iPhone SE)**: `/r/{slug}` ziyaret → tüm viewport
+   dolu (sağ-sol boşluk YOK), 20px iç padding.
+2. **Brand header**: 38×38 lime icon italic 'm' + italic name truncate
+   + meta "MASA 12 · AKŞAM ZİYARETİ" (tableParam varsa) veya address
+   uppercase + sağ "TR · EN" mono.
+3. **Step 1 (rate)**: dark page bg + linear progress bar (lime fill
+   33%) + lime pulse-dot "MERHABA!" + italic h2 white 28px + sub
+   white/55 + dark glass star card (lime fill on active + inner glow
+   shadow + scale 1.04 active + hover lime tint) + tone-coded label
+   italic white + hint white/50 + empty placeholder italic white/40.
+4. **Step 1 (high rating)**: 5★ tap → 200ms → Redirecting overlay
+   intact (Stage 62 §38.143 95+).
+5. **Step 1 (low rating)**: 1★ tap → 300ms → Step 2 white card
+   (linear progress bar lime fill 66.66%, light variant).
+6. **Step 2 (low form)**: white card içinde owner card (graphite +
+   lime corner glow) + 10 tag chip + comment textarea (AI badge) +
+   5 preset chip + contact 2-card stack (Stage 62 §38.143 intact)
+   + KVKK + marketing + lime dot prefix submit.
+7. **Step 3 (thanks)**: white card içinde linear progress bar 100%
+   + 96×96 BIG check (halo + 6 confetti, Stage 62 §38.143 intact)
+   + reference card + cross-share + bottom action grid.
+8. **Reduced motion ON**: bz-rr-spin + bz-rr-pulse + bz-rr-dot +
+   bz-done-ring-pulse + bzProgress 1.5s + bz-fade-in + bz-motion-
+   spring hepsi static intact.
+9. **Desktop (1024×768)**: sm:max-w-[420px] ortalanmış content,
+   px-6 padding, dark bg side-fade.
+
+**Stage 63 closure** (Tarih 2026-05-08):
+
+- Branch: `chore/public-review-darkmode-stage63`
+- Edit'lenen dosyalar: 1 (`page.tsx`) + CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 pass (lokal verified)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mobile
+  müşteri akışı viewport-filling + Step 1 dark mode + brand header
+  kompakt toolbar. Step 2/3 white card form productivity intact.
+- **Kalan riskler**: yok — backend kontrat (KVKK + reCAPTCHA +
+  honeypot + Web Share API) intact, presentational visual refactor
+  + UX semantik upgrade.
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör
+  yeni odak talebi.
+
+**Chat prompt history (Stage 63 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"hala tasarım ile bire bir değil ve mobil
+  versiyonda tamamen kaplasın mobil uyumlu olsun istiyorum ama
+  mobilde direk tüm sayfayı kaplamıyor küçük gözüküyor ve tasarımda
+  dark bir şekilde veriliyor yıldız işaretlemesinin de tasarımı
+  farklı jsx'i birebir uygulamanı istiyorum"* (Stage 62 §38.143 PR
+  #567 merged sonrası raporu).
+- AskUserQuestion **YAPILMADI** — kullanıcı önceki Stage 62
+  iterasyonda explicit "hiçbir şey sormadan" dedi + 3 problem
+  raporu net (mobile width + dark mode + yıldız tasarımı). Pattern
+  stable: §35.8 + §35.10 + §19.1.1 disipline 7. iterasyonda intact.
+- **HANDOFF prototip 2-state design language**: dark Step 1 (rate
+  moment editorial impact) + light Step 2/3 (form productivity +
+  thanks brightness). Buaze hibrit uygulama: section state-aware
+  className. Bu UX semantik anlamlı — emotional moment dark, task
+  moment light.

@@ -577,60 +577,124 @@ function ReviewContent() {
       )}
 
       <div
-        className="mx-auto flex min-h-[100dvh] max-w-[360px] flex-col px-6 pt-2"
+        className="flex min-h-[100dvh] flex-col px-5 pt-2 sm:mx-auto sm:max-w-[420px] sm:px-6"
         style={{
           // Stage 48 §38.129 — iOS notch + home-indicator safe-area inset.
-          // Mevcut `pb-10` (40px) tablet/desktop tabanı; mobil ekranlarda
-          // home-indicator overlap'i önlemek için env() ile clamp.
+          // §38.144 Stage 63 — mobile viewport-filling: `max-w-[360px]`
+          // mobile constraint kaldırıldı; sm:+ sınırla. JSX prototip
+          // intent: gerçek mobilde tüm viewport dolar (sahte bezel YOK).
           paddingBottom: 'max(40px, calc(env(safe-area-inset-bottom, 0px) + 24px))',
           // 300ms tap delay'ini iOS Safari'da kapatır; double-tap zoom yine çalışır.
           touchAction: 'manipulation',
         }}
       >
-        {/* Brand header — design padding 32/0/28 */}
-        <header className="text-center" style={{ padding: '32px 0 28px' }}>
+        {/* Brand header — Stage 63 §38.144 — HANDOFF ReviewTopBar paterni:
+            kompakt yatay toolbar. 38×38 lime icon italic + italic name 16px
+            + mono uppercase meta (table + visit) + sağ TR · EN hint.
+            Eski center-aligned hero (64×64 + 22px bold + address) HANDOFF
+            spec'ine uydurulmak için yatay layout'a refactor edildi. */}
+        <header
+          className="flex items-center gap-3 border-b border-white/[0.08]"
+          style={{ padding: '14px 0 16px' }}
+        >
           <div
-            className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[26px] font-bold text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-[#C6F24E]"
+            aria-hidden
           >
-            {initial}
+            <span
+              className="text-[22px] text-[#0A0A0A]"
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                letterSpacing: '-0.02em',
+                lineHeight: 1,
+              }}
+            >
+              {initial.toLowerCase()}
+            </span>
           </div>
-          <h1
-            className="text-[22px] font-bold text-white"
-            style={{ fontFamily: 'var(--font-heading)', letterSpacing: '-0.02em', marginTop: 14 }}
+          <div className="min-w-0 flex-1">
+            <h1
+              className="truncate text-[16px] text-white"
+              style={{
+                fontFamily: 'var(--font-heading)',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                letterSpacing: '-0.01em',
+                lineHeight: 1,
+              }}
+            >
+              {restaurant.name}
+            </h1>
+            <div
+              className="pulse-eyebrow text-white/45"
+              style={{ fontSize: 9.5, marginTop: 4 }}
+            >
+              {tableParam
+                ? `${locale === 'tr' ? 'MASA' : 'TABLE'} ${tableParam} · ${
+                    locale === 'tr' ? 'AKŞAM ZİYARETİ' : 'EVENING VISIT'
+                  }`
+                : restaurant.address
+                  ? restaurant.address.toUpperCase()
+                  : 'BUAZE'}
+            </div>
+          </div>
+          <div
+            className="pulse-eyebrow shrink-0 text-white/50"
+            style={{ fontSize: 9.5 }}
+            aria-hidden
           >
-            {restaurant.name}
-          </h1>
-          {restaurant.address && (
-            <p className="text-[12px] text-white/55" style={{ marginTop: 4 }}>{restaurant.address}</p>
-          )}
+            TR · EN
+          </div>
         </header>
 
-        {/* White card */}
+        {/* §38.144 Stage 63 — state-aware section bg.
+            Step 1 (rate): dark page bg üstünde transparent + glass star
+            card (JSX prototip dark mode). Step 2 + 3: white card intact
+            (light bg switch). Wrapper'ın bg-[#0A0A0A] outer'ı zaten dark;
+            Step 1 burada yansır. */}
         <section
           key={step}
-          className="bz-fade-in rounded-[24px] bg-white p-6 text-[#0A0A0A] shadow-[0_12px_40px_rgba(0,0,0,0.5)]"
+          className={
+            step === 1
+              ? 'bz-fade-in flex-1 text-white'
+              : 'bz-fade-in rounded-[24px] bg-white p-6 text-[#0A0A0A] shadow-[0_12px_40px_rgba(0,0,0,0.5)]'
+          }
+          style={step === 1 ? { padding: '20px 0 24px' } : undefined}
         >
           {step === 1 && (
             <div>
-              {/* §38.130 Stage 49 — HANDOFF feedback-flow.jsx 3-step
-                  segmented progress (ADIM 1/3). Loading screen sayılmaz,
-                  rate → form → thanks 3-step görünür. */}
-              <div className="flex items-center justify-between">
-                <span className="pulse-eyebrow text-[#737373]">
-                  {locale === 'tr' ? 'ADIM 1 / 3' : 'STEP 1 OF 3'}
+              {/* §38.144 Stage 63 — HANDOFF StepProgress dark variant.
+                  ADIM 1/3 + linear progress bar (lime fill ~33%, dark
+                  rail). Buaze 3-segment dot pattern dark mode'da uyumsuz
+                  → JSX prototip linear bar pattern'a geçildi. */}
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="pulse-eyebrow text-white/60"
+                  style={{ fontSize: 9.5 }}
+                >
+                  1 / 3
                 </span>
-                <div className="flex gap-1.5" aria-hidden>
-                  <span className="h-1 w-6 rounded-full bg-[#0A0A0A]" />
-                  <span className="h-1 w-6 rounded-full bg-[#E5E5E5]" />
-                  <span className="h-1 w-6 rounded-full bg-[#E5E5E5]" />
+                <div
+                  className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/10"
+                  aria-hidden
+                >
+                  <div
+                    className="h-full rounded-full bg-[#C6F24E]"
+                    style={{
+                      width: '33.33%',
+                      boxShadow: '0 0 12px #C6F24E',
+                    }}
+                  />
                 </div>
               </div>
-              {/* Stage 57 §38.138 — HANDOFF feedback-flow.jsx greeting eyebrow
-                  (lime pulse dot + "MERHABA!" / "HELLO!") + question h2 +
-                  sub copy. ADIM 1/3 ile arasına nefes alma satırı. */}
+              {/* §38.144 Stage 63 — HANDOFF feedback-flow.jsx greeting +
+                  ask + sub. White card → dark page bg geçişi sonrası
+                  text renkleri white/55 muted scheme'e güncellendi. */}
               <div
-                className="mt-3 inline-flex items-center gap-1.5 pulse-eyebrow text-[#A8D62E] text-[10px]"
+                className="mt-6 inline-flex items-center gap-1.5 pulse-eyebrow text-[#C6F24E]"
+                style={{ fontSize: 10 }}
                 aria-hidden
               >
                 <span
@@ -640,29 +704,44 @@ function ReviewContent() {
                 {locale === 'tr' ? 'MERHABA!' : 'HELLO!'}
               </div>
               <h2
-                className="bz-h-tight-2 mt-2 text-[22px] leading-[1.15]"
-                style={{ textWrap: 'balance' }}
+                className="mt-2.5 text-white"
+                style={{
+                  fontFamily: 'var(--font-heading)',
+                  fontStyle: 'italic',
+                  fontWeight: 400,
+                  fontSize: 28,
+                  lineHeight: 1.1,
+                  letterSpacing: '-0.02em',
+                  textWrap: 'balance',
+                }}
               >
                 {locale === 'tr'
                   ? 'Bugünkü deneyimini nasıl puanlardın?'
                   : 'How was your experience today?'}
               </h2>
-              <p className="mt-2 text-[13px] leading-[1.55] text-[#525252]">
+              <p className="mt-3 text-[13px] leading-[1.55] text-white/55">
                 {locale === 'tr'
                   ? 'Yıldızlara dokun · görüşün anında işletmeye iletilir.'
                   : 'Tap a star · sent directly to the venue.'}
               </p>
 
-              {/* Stage 57 §38.138 — HANDOFF star row card. Yıldız grid +
-                  tone-coded label + hint, off-white card içinde subtle
-                  separation. Hover state lime tint (desktop UX); active
-                  scale press feedback intact. Mobile-first 56×56 button
-                  area (Apple HIG WCAG 2.5.5 ≥44px tap target zaten karşılanıyor:
-                  42px icon + p-1.5 12px = 54px button). */}
-              <div className="mt-4 rounded-[18px] border border-[#ECECEC] bg-[#FAFAFA] px-3 py-4">
-                <div className="flex items-center justify-center gap-1" style={{ paddingBottom: 14 }}>
+              {/* §38.144 Stage 63 — HANDOFF dark glass star row card.
+                  bg-white/[0.04] + backdrop-blur(20px) + border-white/[0.08].
+                  Active star lime fill, inactive rgba(255,255,255,0.1).
+                  Hover state lime tint dark glass üstünde. Mobile 56×56
+                  tap area (Apple HIG ≥44px), desktop UX preview hover. */}
+              <div
+                className="mt-6 rounded-[24px] border border-white/[0.08] bg-white/[0.04]"
+                style={{
+                  padding: '28px 14px 22px',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                }}
+              >
+                <div className="flex items-center justify-between gap-1" style={{ paddingBottom: 16 }}>
                   {[1, 2, 3, 4, 5].map((s) => {
                     const active = s <= visibleRating;
+                    const isHover = s === hover && !rating;
                     return (
                       <button
                         key={s}
@@ -672,54 +751,63 @@ function ReviewContent() {
                         onMouseLeave={() => setHover(0)}
                         aria-label={`${s} ${locale === 'tr' ? 'yıldız' : 'star'}`}
                         aria-pressed={rating === s}
-                        className="bz-motion-spring rounded-2xl p-1.5 hover:bg-[#EAF9B8]/40 active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAFAFA]"
+                        className="bz-motion-spring relative flex items-center justify-center rounded-2xl p-1.5 active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+                        style={{
+                          background: isHover ? 'rgba(198,242,78,0.08)' : 'transparent',
+                          transform: active ? 'scale(1.04)' : 'scale(1)',
+                        }}
                       >
                         <Star
                           size={42}
-                          strokeWidth={0}
-                          fill={active ? '#C6F24E' : '#E5E5E5'}
-                          className={active ? 'text-[#C6F24E]' : 'text-[#E5E5E5]'}
+                          strokeWidth={active ? 0 : 1.4}
+                          fill={active ? '#C6F24E' : 'rgba(255,255,255,0.1)'}
+                          stroke={active ? 'transparent' : 'rgba(255,255,255,0.2)'}
                         />
+                        {active && (
+                          <span
+                            className="pointer-events-none absolute rounded-2xl"
+                            style={{
+                              inset: -2,
+                              boxShadow: 'inset 0 0 16px rgba(198,242,78,0.25)',
+                            }}
+                            aria-hidden
+                          />
+                        )}
                       </button>
                     );
                   })}
                 </div>
 
-                {/* Stage 48 §38.129 — HANDOFF feedback-flow.jsx tone-coded
-                    rating label. ≥4 lime-soft + graphite ink, =3 amber-soft +
-                    amber ink, ≤2 red-soft + danger ink. Pill shape + dot
-                    prefix, müşteriye yıldız anlamını anında görselleştirir.
-                    §38.130 Stage 49 — hint metni eklendi (rating'e göre).
-                    Stage 57 §38.138 — placeholder "← seç →" empty state. */}
+                {/* §38.144 Stage 63 — HANDOFF dark mode tone-coded label.
+                    ≥4 lime + ink, =3 white + warn glow, ≤2 white + danger
+                    glow. Empty state italic Space Grotesk "← seç →" muted
+                    white. Pill backgrounds dark glass üstünde uyumlu. */}
                 <div
-                  className="flex flex-col items-center justify-center gap-1.5"
+                  className="flex flex-col items-center justify-center gap-1.5 text-center"
                   style={{ minHeight: 50 }}
                   aria-live="polite"
                 >
                   {visibleRating > 0 ? (
                     <>
                       <span
-                        className={`bz-fade-in inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium ${
-                          visibleRating >= 4
-                            ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                            : visibleRating === 3
-                              ? 'bg-[#FFFBEB] text-[#92400E]'
-                              : 'bg-[#FEF2F2] text-[#991B1B]'
-                        }`}
+                        className="bz-fade-in text-white"
+                        style={{
+                          fontFamily: 'var(--font-heading)',
+                          fontStyle: 'italic',
+                          fontWeight: 400,
+                          fontSize: 18,
+                          letterSpacing: '-0.01em',
+                        }}
                       >
-                        <span
-                          className="h-1.5 w-1.5 rounded-full bg-current opacity-70"
-                          aria-hidden
-                        />
                         {labels[visibleRating - 1]}
                       </span>
-                      <span className="text-[11.5px] text-[#737373]">
+                      <span className="text-[11.5px] text-white/50">
                         {hints[visibleRating - 1]}
                       </span>
                     </>
                   ) : (
                     <span
-                      className="text-[12px] text-[#A3A3A3]"
+                      className="text-[12px] text-white/40"
                       style={{ fontFamily: 'var(--font-heading)', fontStyle: 'italic' }}
                       aria-hidden
                     >
@@ -742,15 +830,27 @@ function ReviewContent() {
 
           {step === 2 && isLow && (
             <div>
-              {/* §38.130 Stage 49 — eyebrow + 3-step progress rail (1+2 dolu, 3 boş). */}
-              <div className="flex items-center justify-between">
-                <span className="pulse-eyebrow text-[#737373]">
-                  {locale === 'tr' ? 'ADIM 2 / 3' : 'STEP 2 OF 3'}
+              {/* §38.144 Stage 63 — HANDOFF StepProgress light variant
+                  (white card içinde): 2/3 + linear bar lime fill ~66%.
+                  Step 1 dark variant ile birebir parallel pattern. */}
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="pulse-eyebrow text-[#737373]"
+                  style={{ fontSize: 9.5 }}
+                >
+                  2 / 3
                 </span>
-                <div className="flex gap-1.5" aria-hidden>
-                  <span className="h-1 w-6 rounded-full bg-[#0A0A0A]" />
-                  <span className="h-1 w-6 rounded-full bg-[#0A0A0A]" />
-                  <span className="h-1 w-6 rounded-full bg-[#E5E5E5]" />
+                <div
+                  className="h-[3px] flex-1 overflow-hidden rounded-full bg-[#ECECEC]"
+                  aria-hidden
+                >
+                  <div
+                    className="h-full rounded-full bg-[#C6F24E]"
+                    style={{
+                      width: '66.66%',
+                      boxShadow: '0 0 12px rgba(198,242,78,0.6)',
+                    }}
+                  />
                 </div>
               </div>
 
@@ -1097,15 +1197,30 @@ function ReviewContent() {
 
           {step === 3 && (
             <div className="bz-fade-in text-center" style={{ padding: '20px 0' }}>
-              {/* §38.130 Stage 49 — eyebrow + 3-step progress rail (hepsi dolu). */}
-              <div className="flex items-center justify-between" style={{ marginBottom: 18 }}>
-                <span className="pulse-eyebrow text-[#737373]">
-                  {locale === 'tr' ? 'ADIM 3 / 3' : 'STEP 3 OF 3'}
+              {/* §38.144 Stage 63 — HANDOFF StepProgress light variant
+                  (Step 3 white card): 3/3 + linear bar tamamen dolu (100%).
+                  Step 1 + 2 ile birebir parallel pattern. */}
+              <div
+                className="flex items-center gap-2.5 text-left"
+                style={{ marginBottom: 22 }}
+              >
+                <span
+                  className="pulse-eyebrow text-[#737373]"
+                  style={{ fontSize: 9.5 }}
+                >
+                  3 / 3
                 </span>
-                <div className="flex gap-1.5" aria-hidden>
-                  <span className="h-1 w-6 rounded-full bg-[#0A0A0A]" />
-                  <span className="h-1 w-6 rounded-full bg-[#0A0A0A]" />
-                  <span className="h-1 w-6 rounded-full bg-[#0A0A0A]" />
+                <div
+                  className="h-[3px] flex-1 overflow-hidden rounded-full bg-[#ECECEC]"
+                  aria-hidden
+                >
+                  <div
+                    className="h-full rounded-full bg-[#C6F24E]"
+                    style={{
+                      width: '100%',
+                      boxShadow: '0 0 12px rgba(198,242,78,0.6)',
+                    }}
+                  />
                 </div>
               </div>
 
