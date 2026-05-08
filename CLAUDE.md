@@ -16330,3 +16330,150 @@ burst eklendi.
   (graphite bubble + lime ink AAA pass, alternative `text-[#A8D62E]`
   lime-deep AA pass yetersiz editorial impact).
 - Hukuki/disipline override: yok (Pulse §11 + WCAG AAA paterni).
+
+---
+
+### 38.127 2026-05-08 — Stage 46 Header tasarım parity + hız + SEO
+
+§38.124 Stage 43'teki floating pill scroll mode üstüne 5-fix bundle:
+HANDOFF design birebir typography polish + a11y skip link + nav
+landmark naming + scroll handler RAF throttle. Kullanıcı talebi:
+*"header kısmını da en son attığım tasarımdaki gibi yapıp main'e
+merge et. etmeden önce hızı optimize et ve SEO uyumlu yap her
+şeylerini."* Görsel referans: `Desktop Header _ top _ scrolled _
+floating pill _ otomatik dönen _ mega menu.png`.
+
+**5 fix bundle**:
+
+1. **Pricing link "%30" lime badge** (HANDOFF design birebir):
+   - "Fiyatlar" → "Fiyatlandırma" full-form (Türkçe doğal, mobile
+     drawer ile parite intact)
+   - Yanına lime "%30" badge (`bg-[#C6F24E] + #0A0A0A graphite text +
+     mono uppercase + tracking-0.06em`)
+   - `aria-label="Yüzde otuz indirim" / "Thirty percent off"` —
+     screen reader claim açık
+   - Mobile drawer (line ~700) aynı badge eklendi (parite)
+   - Promotion ihtiyacı bittiğinde badge silinebilir; %30 yıl-boyu
+     trial bonus kampanya referansı
+
+2. **CTA typography polish**:
+   - Eski: `Ücretsiz başla →` (sentence case, no tracking)
+   - Yeni: `ÜCRETSİZ BAŞLA →` (uppercase, tracking-[0.06em],
+     font-bold, text-[12px]) — HANDOFF design birebir
+   - `→` arrow `<span aria-hidden>` ile screen reader tarafından
+     atlanır (decorative)
+   - Mobile drawer CTA dokunulmadı (zaten lime primary, farklı UX)
+
+3. **"Giriş yap" → "Giriş"** kısaltma (HANDOFF design birebir):
+   - Tek kelime sade, header dar genişlikte daha temiz
+   - EN tarafı `Sign in` intact (English doğal full-form)
+
+4. **`<nav aria-label>` SEO + a11y landmark naming** (WCAG SC 2.4.6):
+   - `aria-label="Ana sayfa navigasyonu"` (TR) / `"Main navigation"` (EN)
+   - Screen reader birden fazla nav olduğunda hangi nav olduğunu
+     söyler (mobile drawer + footer nav landmark'ları için kritik
+     ayrım)
+   - SEO bonus: Google indexing nav landmark'ı tanır
+
+5. **Skip link a11y** (WCAG SC 2.4.1 Bypass Blocks):
+   - `<a href="#main-content">` yeni, `<nav>` öncesi mount
+   - Pulse §11 lime focus ring + graphite bg
+   - `sr-only focus:not-sr-only` paterni — sadece klavye Tab tuşuyla
+     focus alınca görünür
+   - Marketing surface'inde main `id="main-content"` mevcut
+     (page.tsx line 379) — link doğrudan ana content'e atlar
+
+6. **Scroll handler RAF throttle** (hız optimize):
+   - Eski: `passive: true` direct `setState` her scroll event'te
+   - Yeni: `requestAnimationFrame` coalesce — multiple scroll events
+     tek paint cycle'a hizalar, fast scroll'larda gereksiz re-render
+     azalır
+   - `ticking` flag ile re-entry guard
+   - Stage 43 §38.124 + Stage 22 §38.99 perf paterni reuse
+
+**SEO improvements**:
+- `<nav aria-label>` landmark naming
+- Pricing badge `aria-label` (screen reader açık claim)
+- Skip link header (WCAG 2.1 SC 2.4.1)
+- CTA `→` `aria-hidden` (decorative chrome)
+- Existing: Next.js `<Link>` prefetch ✓, sitewide hreflang ✓,
+  Organization schema ✓
+
+**Hız improvements**:
+- RAF scroll throttle (mikro-iyileştirme)
+- Mevcut Stage 22 §38.99 `optimizePackageImports: ['lucide-react']`
+  intact — lucide icon'lar tree-shake
+- Mevcut Stage 27 §38.103 Inter weight 900 silindi intact
+- Mevcut Stage 43 §38.124 transition-all 300ms cubic-bezier intact
+- Dropdown content lazy mount **kasıtlı yapılmadı** — mevcut
+  "always rendered + opacity 0 + max-h 0" paterni CSS-only smooth
+  transition için; lazy mount'a geçiş hover trigger sırasında
+  visual jank yaratır.
+
+**Etkilenen dosyalar (2)**:
+- `src/components/marketing/MarketingNavbarClient.tsx` — Pricing
+  badge + CTA uppercase + "Giriş" kısaltma + nav aria-label +
+  skip link + scroll RAF throttle (~+45 satır net)
+- `CLAUDE.md` — §38.127 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Test count**:
+383/383 intact (presentational-only, helper logic yok).
+
+**Verification**:
+- `npx eslint .` ✓ 0 errors / 0 warnings
+- `npx tsc --noEmit` ✓ 0 errors in `src/`
+- `npm test` ✓ 383/383 pass intact
+- `npx next build` (stub env) ✓ Compiled + 58/58 static page intact
+
+**Yapma**:
+- "%30" badge'i kalıcı yapma — promotion period geçince silinmeli
+  (Pricing campaign decision). Şu an HANDOFF design birebir.
+- CTA `→` arrow'u `aria-hidden` olmadan render etme — screen reader
+  "right pointing arrow" diye okur, bilgi katkısı yok, gürültü.
+- Skip link `sr-only focus:not-sr-only` paterni dışına çıkma —
+  always-visible skip link UI gürültüsü, focus-only doğru pattern.
+- Scroll handler `setTimeout` debounce ile sarma — paint cycle
+  hizalama için RAF doğru; setTimeout 16ms < browser RAF değişebilir,
+  `requestAnimationFrame` browser-aligned.
+- Dropdown content lazy mount'a geçiş — CSS transition smooth,
+  lazy mount layout shift + visual jank.
+- `<header>` element wrap ekleme — `<nav>` zaten landmark; çift
+  landmark a11y verbose.
+
+**Yap**:
+- Yeni nav item eklerken `aria-current="page"` dynamic per pathname
+  (mevcut intact).
+- Yeni promotion badge eklenirse aynı paterni reuse: lime `bg-[#C6F24E]
+  text-[#0A0A0A] mono uppercase tracking-0.06em` + `aria-label`
+  açık claim.
+- Yeni perf-critical scroll handler için RAF throttle paterni reuse
+  (`ticking` flag + `requestAnimationFrame` coalesce).
+
+#### Stage 46 closure (Tarih 2026-05-08)
+
+- Branch: `chore/header-design-perf-seo-stage46` (fresh main üstüne,
+  Stage 45 §38.126 PR #549 merged)
+- Edit'lenen dosyalar: 2 (MarketingNavbarClient.tsx + CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 383/383 intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Marketing header artık tasarım PNG referansı ile uyumlu (Pricing
+  %30 badge + CTA uppercase + Giriş kısa) + a11y skip link + nav
+  landmark + scroll RAF throttle perf.
+- Kalan riskler: yok. "%30" badge promotion-bound — kampanya
+  bittiğinde manuel kaldırma gerek (otomatik expiry yok; gelecek
+  scope env-flag pattern).
+- **HANDOFF migration + design parity ZINCIRI tamamlandı** —
+  Stage 32-46 (15 PR).
+
+**Chat prompt history (Stage 46 §39.2 paterni)**:
+- 2026-05-08 kullanıcı: *"header kısmını da en son attığım tasarımdaki
+  gibi yapıp main'e merge et. etmeden önce hızı optimize et ve SEO
+  uyumlu yap her şeylerini."* PNG referans `Desktop Header.png` —
+  Pricing %30 badge + ÜCRETSİZ BAŞLA uppercase CTA + Giriş kısaltma.
+- AskUserQuestion yapılmadı: kullanıcı uyumakta + tasarım birebir
+  net.
+- Hukuki/disipline override: yok ("%30" promotion claim gerçek
+  kampanya referansı; kullanıcı Pricing sayfasında doğrulayabilir).
