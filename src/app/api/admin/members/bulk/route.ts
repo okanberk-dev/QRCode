@@ -134,7 +134,10 @@ export async function POST(req: NextRequest) {
     })),
     subject: payload.subject,
     body: payload.body,
-    appUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com/dashboard',
+    // CLAUDE.md §38.132 — appUrl param boş → template locale-aware
+    // dashboard URL inşa eder (`${NEXT_PUBLIC_APP_URL}/${locale}/dashboard`).
+    // Eski caller `/dashboard` suffix env'siz veriyordu → recipient locale
+    // prefix kaybediyordu, route 404 dönüyordu.
   });
 
   // Audit (CLAUDE.md §29.6 — destructive bulk forensic trail).

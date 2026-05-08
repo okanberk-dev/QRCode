@@ -104,8 +104,10 @@ export async function renderWelcome(
   }).join('');
 
   // Resource grid — 2x2 — matches welcome.jsx:87-113
+  // CLAUDE.md §38.132 — /help index page mevcut; /help/page route YOK
+  // (CLAUDE.md §22 — `/help/[slug]` detail vs `/help` index ayrımı).
   const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
-  const helpHref = `${baseAppUrl}/${isTr ? 'tr' : 'en'}/help/page`;
+  const helpHref = `${baseAppUrl}/${isTr ? 'tr' : 'en'}/help`;
   const resourceCard = (r: { t: string; s: string; icon: string }) => `
     <a href="${helpHref}" style="display:block;padding:18px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:12px;text-decoration:none;">
       <div style="margin-bottom:10px;">
