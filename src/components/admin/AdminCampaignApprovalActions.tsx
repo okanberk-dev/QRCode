@@ -108,7 +108,7 @@ export default function AdminCampaignApprovalActions({
             setNote('');
           }}
           disabled={disabled || submitting}
-          className="bz-btn-primary flex items-center gap-1.5 px-4 min-h-[40px] text-[12.5px] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bz-btn-primary flex items-center gap-1.5 px-4 min-h-[44px] sm:min-h-[40px] text-[12.5px] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <CheckCircle2 size={14} />
           {isTr ? 'Onayla ve gönder' : 'Approve & send'}
@@ -120,7 +120,7 @@ export default function AdminCampaignApprovalActions({
             setNote('');
           }}
           disabled={disabled || submitting}
-          className="bz-btn-ghost flex items-center gap-1.5 px-4 min-h-[40px] text-[12.5px] text-[#DC2626] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bz-btn-ghost flex items-center gap-1.5 px-4 min-h-[44px] sm:min-h-[40px] text-[12.5px] text-[#DC2626] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <XCircle size={14} />
           {isTr ? 'Reddet' : 'Reject'}
@@ -195,6 +195,9 @@ export default function AdminCampaignApprovalActions({
                     ? 'GEREKÇE *'
                     : 'REASON *'}
               </label>
+              {/* CLAUDE.md §38.164 (Stage 84): keyboard hints (mobile UX)
+                  — admin reviewer textarea Türkçe yazımı için autoCorrect+spellCheck,
+                  enterKeyHint="send" iOS klavye "Gönder" semantik aksiyon. */}
               <textarea
                 id="reviewer-note"
                 value={note}
@@ -202,6 +205,11 @@ export default function AdminCampaignApprovalActions({
                 rows={5}
                 maxLength={1000}
                 disabled={submitting}
+                inputMode="text"
+                autoCapitalize="sentences"
+                autoCorrect="on"
+                spellCheck={true}
+                enterKeyHint="send"
                 placeholder={
                   openModal === 'approve'
                     ? isTr
@@ -228,7 +236,7 @@ export default function AdminCampaignApprovalActions({
                 type="button"
                 onClick={() => setOpenModal(null)}
                 disabled={submitting}
-                className="bz-btn-ghost px-4 min-h-[40px] text-[12.5px]"
+                className="bz-btn-ghost px-4 min-h-[44px] sm:min-h-[40px] text-[12.5px]"
               >
                 {isTr ? 'Vazgeç' : 'Cancel'}
               </button>
@@ -236,7 +244,7 @@ export default function AdminCampaignApprovalActions({
                 type="button"
                 onClick={() => void submit()}
                 disabled={submitting || !noteValid}
-                className={`flex items-center gap-1.5 px-4 min-h-[40px] text-[12.5px] disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`flex items-center gap-1.5 px-4 min-h-[44px] sm:min-h-[40px] text-[12.5px] disabled:opacity-50 disabled:cursor-not-allowed ${
                   openModal === 'approve' ? 'bz-btn-primary' : 'bz-btn-primary'
                 }`}
                 style={

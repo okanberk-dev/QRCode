@@ -95,10 +95,8 @@ function ForgotPasswordContent() {
                 <KeyRound size={22} strokeWidth={2} />
               </div>
               <span className="pulse-eyebrow text-[#737373]">YÖNETİCİ PANELİ</span>
-              <h1
-                className="mt-3 text-[30px] sm:text-[38px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
+              {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı. */}
+              <h1 className="mt-3 text-[30px] sm:text-[38px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A]">
                 Şifremi unuttum
               </h1>
               <p className="mx-auto mt-3 max-w-[360px] text-[13px] sm:text-[14px] leading-[1.6] text-[#525252]">
@@ -115,10 +113,8 @@ function ForgotPasswordContent() {
                   <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_18px_40px_-18px_rgba(168,214,46,0.6)]">
                     <Mail size={26} strokeWidth={2} className="text-[#0A0A0A]" />
                   </div>
-                  <h2
-                    className="text-[22px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
-                    style={{ fontFamily: 'var(--font-heading)' }}
-                  >
+                  {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı. */}
+                  <h2 className="text-[22px] font-medium tracking-[-0.03em] text-[#0A0A0A]">
                     Kodu gönderdik
                   </h2>
                   <p className="mx-auto mt-3 max-w-[340px] text-[13px] leading-[1.6] text-[#525252]">

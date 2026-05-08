@@ -105,10 +105,8 @@ function ResetPasswordContent() {
                 <ShieldCheck size={22} strokeWidth={2} />
               </div>
               <p className="pulse-eyebrow text-[#737373]">YÖNETİCİ PANELİ</p>
-              <h1
-                className="mt-2 text-[28px] sm:text-[34px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
+              {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı. */}
+              <h1 className="mt-2 text-[28px] sm:text-[34px] font-medium leading-[1.05] tracking-[-0.04em] text-[#0A0A0A]">
                 Yeni şifre belirle
               </h1>
               <p className="mt-2.5 text-[13px] sm:text-sm text-[#737373] leading-[1.55] max-w-[360px] mx-auto">

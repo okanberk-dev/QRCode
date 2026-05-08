@@ -363,8 +363,7 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
           <BuazeLogo size={32} variant="default" imageUrl={profile?.logoUrl} />
           {!isCollapsed && (
             <span
-              className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A] leading-none animate-in fade-in slide-in-from-left-2 duration-300"
-              style={{ fontFamily: 'var(--font-heading)' }}
+              className="bz-h-tight text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A] leading-none animate-in fade-in slide-in-from-left-2 duration-300"
             >
               buaze<span className="text-[#C6F24E]">.</span>
             </span>
@@ -375,9 +374,9 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
       {/* Workspace switcher */}
       <div className="px-3 pb-3">
         <div className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAFA] border border-[#EDEDED] ${isCollapsed ? 'px-2 py-2 justify-center' : 'px-3 py-2.5'}`}>
+          {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily → bz-h-tight utility (Pulse §11 disipline) */}
           <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="bz-h-tight flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold"
           >
             {workspaceName.charAt(0).toUpperCase()}
           </div>
@@ -493,9 +492,9 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
       {/* User card + locale switcher + logout */}
       <div className="border-t border-[#EDEDED] bg-[#FAFAFA] p-3">
         <div className="mb-2 flex items-center gap-2.5 rounded-xl bg-white border border-[#EDEDED] px-2.5 py-2">
+          {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily → bz-h-tight (Pulse §11 disipline). */}
           <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="bz-h-tight flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E]"
           >
             {initial}
           </div>
@@ -560,9 +559,9 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
       >
         <Link href="/admin/dashboard" className="flex items-center gap-2">
           <BuazeLogo size={26} variant="default" imageUrl={profile?.logoUrl} />
+          {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily → bz-h-tight (Pulse §11 disipline). */}
           <span
-            className="text-[16px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
+            className="bz-h-tight text-[16px] font-medium tracking-[-0.03em] text-[#0A0A0A]"
           >
             buaze<span className="text-[#C6F24E]">.</span>
           </span>

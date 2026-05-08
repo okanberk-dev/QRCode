@@ -73,9 +73,9 @@ export default function PlatformDistribution({ data, locale = 'tr' }: PlatformDi
       {/* Total */}
       <div className="flex items-center justify-between pt-4 border-t border-[#EDEDED] mt-4">
         <span className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'TOPLAM' : 'TOTAL'}</span>
+        {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily → bz-h-tight (Pulse §11). */}
         <span
-          className="text-[18px] font-medium text-[#0A0A0A] tabular-nums tracking-[-0.02em]"
-          style={{ fontFamily: 'var(--font-heading)' }}
+          className="bz-h-tight text-[18px] font-medium text-[#0A0A0A] tabular-nums tracking-[-0.02em]"
         >
           {total}
         </span>

@@ -49,10 +49,9 @@ export default function SuperadminBlock({ children }: { children: React.ReactNod
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF9B8] text-[#0A0A0A]">
             <ShieldCheck size={20} strokeWidth={2} />
           </div>
-          <h2
-            className="mt-4 text-[20px] font-medium text-[#0A0A0A]"
-            style={{ fontFamily: 'var(--font-heading)' }}
-          >
+          {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı —
+              h2 globals.css :where(h1..h6) auto-applies. */}
+          <h2 className="mt-4 text-[20px] font-medium text-[#0A0A0A]">
             {isTr ? 'Yönetici için değil' : 'Not for admin'}
           </h2>
           <p className="mt-2 text-[13px] leading-relaxed text-[#525252]">

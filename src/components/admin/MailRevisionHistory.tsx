@@ -148,7 +148,8 @@ export default function MailRevisionHistory({ templateKey, locale, open, onClose
         <div className="flex items-center justify-between border-b border-[#EDEDED] p-5">
           <div className="flex items-center gap-2">
             <History size={18} strokeWidth={2} className="text-[#0A0A0A]" />
-            <h2 className="text-[16px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+            {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily redundancy kaldırıldı. */}
+            <h2 className="text-[16px] font-medium text-[#0A0A0A]">
               Sürüm geçmişi
             </h2>
           </div>
