@@ -84,10 +84,17 @@ export function PendingTasks({
                   uyumlu CTA hissi. `bz-motion-spring` hover state
                   intact. WCAG 2.5.5 (Target Size AA) 44×44 garantisi
                   aşılır, dense list okunabilirlik korunur.
+
+                  Stage 81 §38.161 — Cross-card polish parity:
+                  - `hover:bz-elev-2` Apple-soft hover lift
+                    (ChannelDistribution + restaurants paterni paralel,
+                    CLAUDE.md §38.65 elevation tier)
+                  - `active:scale-[0.97] sm:active:scale-100` mobile
+                    tap feedback (CLAUDE.md §38.46 paterni reuse)
                 */}
                 <Link
                   href={task.href}
-                  className={`flex items-center gap-3 py-3 -mx-2 px-2 rounded-lg hover:bg-[#FAFAFA] bz-motion-spring min-h-[56px] sm:min-h-0 ${
+                  className={`flex items-center gap-3 py-3 -mx-2 px-2 rounded-lg hover:bg-[#FAFAFA] hover:bz-elev-2 bz-motion-spring active:scale-[0.97] sm:active:scale-100 min-h-[56px] sm:min-h-0 ${
                     idx < tasks.length - 1 ? 'border-b border-[#F2F2F2]' : ''
                   }`}
                 >

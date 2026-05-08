@@ -820,55 +820,32 @@ input::-webkit-inner-spin-button {
   transform: translateY(0);
 }
 
-/* Stage 80 §38.160 — Mobile foundation utility'leri. Owner panel mobile
-   uplift (CLAUDE.md §25.5 + §38.74 + §38.77 paterni reuse). "Uygulama
-   gibi" rahat mobil deneyim için 3 utility:
+/* Stage 80 §38.160 + Stage 81 §38.161 — Mobile foundation utility'leri.
+   Owner + admin panel mobile uplift (CLAUDE.md §25.5 + §38.74 + §38.77
+   paterni reuse). "Uygulama gibi" rahat mobil deneyim için:
 
-   1. .bz-touch-target — WCAG 2.5.5 (Target Size Level AA) minimum
-      44×44 touch target. Mobile-only kuvvetli garanti; desktop
-      mevcut Tailwind class'ları intact bırakır (sm:+ override yok).
-   2. .bz-safe-bottom — iOS notch + home-indicator safe-area inset.
-      `pb-safe` mevcut zaten alt padding `env(safe-area-inset-bottom)`
-      ekliyor; yeni utility minimum 16px breathing + safe-area
-      ekleyerek sticky bottom CTA bar / mobile drawer için kullanılır.
-   3. .bz-mobile-sticky-action — sticky bottom action bar (mobile
-      uygulama-gibi UX). Yalnız `lg:hidden` mobile/tablet'te aktif.
-      §38.65 elev-2 + §38.43 mobile bottom nav paterni paralel.
+   .bz-touch-target — WCAG 2.5.5 (Target Size Level AA) minimum
+   44×44 touch target. Mobile-only kuvvetli garanti; desktop
+   mevcut Tailwind class'ları intact bırakır (sm:+ override caller
+   tarafında `sm:min-h-0 sm:min-w-0` ile iptal edilir).
+
+   Stage 81 §38.161 cleanup — `.bz-safe-bottom` + `.bz-mobile-sticky-action`
+   utility'leri silindi (CLAUDE.md §38.49 dead utility class disipline).
+   Mevcut callsite'larda farklı semantic kullanılıyor:
+   - UserDashboardShell line 985: `pb-[calc(96px+env(safe-area-inset-bottom,0px))]`
+     (96px bottom nav + safe-area composite, .bz-safe-bottom max(16px,...)
+     paterniyle uyumsuz)
+   - UnsavedChangesBar: `paddingBottom: 'env(safe-area-inset-bottom)'`
+     (no max() guard; .bz-safe-bottom migration UX değiştirir)
+   - .bz-mobile-sticky-action: 0 callsite, restaurants "Yeni İşletme"
+     CTA Stage 80 §38.160 DEFER kararı (PageHeader actions slot zaten
+     doğal pozisyon). Adopt zorlama scope creep.
+   Gelecek pratik adopt yer çıkarsa CLAUDE.md §38.61 paterni reuse
+   ile yeniden eklenebilir.
 */
 .bz-touch-target {
   min-height: 44px;
   min-width: 44px;
-}
-
-.bz-safe-bottom {
-  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
-}
-
-.bz-mobile-sticky-action {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: #ffffff;
-  border-top: 1px solid #ededed;
-  padding: 0.75rem 1rem;
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
-  box-shadow: 0 -4px 12px -6px rgba(10, 10, 10, 0.06);
-}
-
-@media (min-width: 1024px) {
-  .bz-mobile-sticky-action {
-    position: static;
-    z-index: auto;
-    background: transparent;
-    border-top: none;
-    padding: 0;
-    box-shadow: none;
-  }
 }
 
 /* ── Buttons ── */

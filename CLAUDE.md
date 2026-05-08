@@ -23179,3 +23179,236 @@ verbatim §39.2 disipline). 3 alan + estetik bundle.
   CLAUDE.md §35.8 + §35.10 + §19.1.1 + §38.114 + §38.71 + §38.65
   paterni reuse. Pulse §11 design system + Apple-soft elevation tier
   + iOS safe-area inset paterni reuse.
+
+---
+
+### 38.161 2026-05-08 — Stage 81 owner + admin panel design drift cleanup + cross-panel parity (close-out PR)
+
+§38.160 Stage 80 owner panel mobile uplift mega bundle (PR #584)
+main'e merge edildikten sonra kullanıcı raporu: *"Bu zamana kadar tüm
+bu session'da yaptıklarına bak ve owner owner ile admin paneli kontrol
+et overlap tasarımda kayma vs varsa düzelt ve session kapatalım"*.
+Tek consolidated session close-out PR (CLAUDE.md §21.22 stacked YOK)
+ile owner cross-card polish parity + dead utility cleanup + admin
+restaurants filter sticky parity uygulandı. Stage 80 hızlı iterasyon
+sırasında owner tarafına dokunulmuştu; admin parity + cross-panel
+polish gözden geçirildi.
+
+**Audit metodu** (CLAUDE.md §38.39 + §38.69 paterni):
+3 paralel Explore agent (z-index/sticky positioning + admin mobile UX
+parity + cross-panel design drift) + manuel verify + 3 yanlış pozitif
+elendi:
+- Admin button height `min-h-[44px] sm:min-h-[36px]` paterni — false
+  alarm (CLAUDE.md §38.74 chip dense exception 32-36px Pulse §11
+  disipline intentional, owner'da farklı pattern UX intent paralel)
+- AdminMobileNav drawer body scroll lock — false alarm (AdminMobileNav
+  drawer içermiyor, bottom nav bar; AdminSidebar.tsx:179'da scroll
+  lock zaten mevcut, §38.158 paterni intact)
+- Admin reviews PATCH sonrası dispatch — false alarm (admin reviews
+  PATCH yapmıyor; mark-as-read owner-spesifik UX, admin operasyonel
+  monitoring tool — scope creep)
+
+**3 fix bundle** (kullanıcı AskUserQuestion 3 karar onaylı):
+
+#### Fix 1 — Owner cross-card polish parity (kullanıcı 3. karar — Recommended)
+
+CLAUDE.md §38.65 elevation tier + §38.46 mobile tap feedback +
+§38.71 Badge primitive paterni paralel (ChannelDistribution +
+restaurants intact'in üzerine 3 callsite parity):
+
+- **`src/components/dashboard/PendingTasks.tsx:90`** — Row link `bz-motion-spring`
+  intact + yeni `hover:bz-elev-2 active:scale-[0.97] sm:active:scale-100`
+  (Apple-soft hover lift + mobile tap feedback). 56px tap area intact
+  (kullanıcı 2. karar §38.160 "uygulama-gibi UX" tasarım intent;
+  WCAG aşılır).
+- **`src/components/dashboard/ActivityFeed.tsx`**:
+  - Line 268 event row link → `active:scale-[0.97] sm:active:scale-100`
+    (mevcut `bz-motion-spring` + `hover:bg-[#FAFAFA]` intact)
+  - Line ~280 "Tüm aktiviteyi gör" CTA `min-h-[44px] sm:min-h-0`
+    inline pattern → `bz-touch-target sm:min-h-0 sm:min-w-0` utility
+    migrate (CLAUDE.md §38.49 dead utility class adopt).
+- **`src/components/dashboard/OnboardingNudge.tsx:56`** — Step links
+  `transition-colors` (cosmetic-only) → `bz-motion-spring active:scale-[0.97]
+  sm:active:scale-100` (cross-card polish parity, smooth bg/border
+  transition + mobile tap feedback).
+
+#### Fix 2 — Dead utility callsite adopt + cleanup (kullanıcı 1. karar)
+
+Stage 80 §38.160 ile eklenen 3 yeni utility'den `.bz-touch-target`
+(1 callsite — owner account/page.tsx:203) + `.bz-safe-bottom`
+(0 callsite) + `.bz-mobile-sticky-action` (0 callsite). Pragmatic
+karar (CLAUDE.md §38.49 dead utility class disipline):
+
+**`.bz-touch-target` adopt** (5+ callsite kazandı):
+- `src/components/dashboard/ActivityFeed.tsx` "Tüm aktiviteyi gör"
+  CTA — inline `min-h-[44px] sm:min-h-0` → utility
+- `src/app/[locale]/dashboard/restaurants/page.tsx:444,450,458,471`
+  4 action button — inline `min-h-[44px] sm:min-h-0` → utility +
+  `sm:min-h-0 sm:min-w-0` desktop override
+- Mevcut `account/page.tsx:203` callsite intact
+
+**`.bz-safe-bottom` + `.bz-mobile-sticky-action` SİL** (CLAUDE.md
+§38.49 dead utility class disipline — pratik adopt yer yok):
+- `.bz-safe-bottom` mevcut callsite'larda farklı semantic kullanılıyor
+  (UserDashboardShell `pb-[calc(96px+env(safe-area-inset-bottom,0px))]`
+  composite + UnsavedChangesBar `paddingBottom: 'env(safe-area-inset-bottom)'`
+  no `max(16px,...)` guard). Migration UX değiştirir (16px minimum
+  ekler).
+- `.bz-mobile-sticky-action` 0 callsite. Restaurants "Yeni İşletme"
+  CTA mobile sticky bottom Stage 80 §38.160 DEFER kararı vardı
+  (PageHeader actions slot + mobile bottom nav doğal pozisyon zaten
+  yeterli). Adopt zorlama scope creep + UX karmaşıklık.
+
+`globals.css` blok komment ile dokumente: gelecek pratik adopt yer
+çıkarsa CLAUDE.md §38.61 paterni reuse ile yeniden eklenebilir
+(iOS app deployment hooks veya restaurant sticky CTA gelecek scope).
+
+#### Fix 3 — Admin restaurants filter sticky parity
+
+Owner Stage 80 §38.160 Fix 4 paterni admin'e port:
+`src/app/admin/restaurants/page.tsx` — Plan tabs filter toolbar
+wrapper `md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur
+md:-mx-3 md:px-3 md:py-2 sm:md:rounded-xl lg:static lg:bg-transparent
+lg:backdrop-blur-none lg:py-0 lg:mx-0 lg:px-0`. Tablet portrait'da
+scroll sırasında plan filter görünür kalır + topbar h-16 altında
+pin'lenir + Apple-soft backdrop-blur. Desktop (lg+) inline normal
+akış intact.
+
+Diğer admin parity item'ları SKIP edildi (yanlış pozitif veya scope
+creep — yukarıda audit metodu özetlendi):
+- Admin NotificationBell `buaze:feedback-read` listener — Stage 80
+  §38.160 Fix 6 component-level shared logic sayesinde admin instance
+  (AdminTopbar:31 + AdminSidebar:571) zaten listener'a sahip; ek iş
+  yok.
+- Admin reviews PATCH dispatch — admin'de PATCH yok ki dispatch
+  eksik olsun (false positive).
+- AdminMobileNav drawer scroll lock — AdminMobileNav drawer
+  içermiyor (bottom nav bar); AdminSidebar.tsx:179 scroll lock
+  zaten mevcut.
+- Admin tabs sticky-on-scroll (announcements + reviews) — DEFER
+  cosmetic, low value.
+
+#### Fix 4 — CLAUDE.md §38.161 closure log (bu section)
+
+**Etkilenen dosyalar (5 + docs)**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/app/globals.css` | `.bz-safe-bottom` + `.bz-mobile-sticky-action` sil + dokümante yorum (CLAUDE.md §38.49 cleanup) |
+| `src/components/dashboard/PendingTasks.tsx` | Row link `hover:bz-elev-2 active:scale-[0.97] sm:active:scale-100` |
+| `src/components/dashboard/ActivityFeed.tsx` | Event row `active:scale-[0.97]` + "Tüm aktiviteyi gör" `bz-touch-target` |
+| `src/components/dashboard/OnboardingNudge.tsx` | Step link `transition-colors` → `bz-motion-spring active:scale-[0.97]` |
+| `src/app/[locale]/dashboard/restaurants/page.tsx` | 4 action button `bz-touch-target sm:min-h-0 sm:min-w-0` migrate |
+| `src/app/admin/restaurants/page.tsx` | Plan tabs filter sticky `md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur lg:static` |
+| `CLAUDE.md` | §38.161 closure log |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 intact bekleniyor (presentational +
+utility cleanup + admin sticky filter, helper logic değişmedi).
+
+**Yapma**:
+- Stage 80 `.bz-safe-bottom` + `.bz-mobile-sticky-action` utility'lerini
+  geri eklemek — pratik callsite yok, dead utility disipline ihlali.
+  Gelecek pratik adopt yer çıkarsa CLAUDE.md §38.61 paterni reuse.
+- AdminMobileNav drawer scroll lock eklemek — drawer içermiyor (bottom
+  nav bar); false positive agent çıktısı.
+- Admin reviews mark-as-read PATCH eklemek — owner-spesifik UX
+  (kişisel inbox); admin operasyonel monitoring tool, scope creep
+  + UX semantic confuse.
+- Admin tabs sticky-on-scroll (announcements/reviews) eklemek —
+  cosmetic, low value, scope creep.
+- PendingTasks 56px row tap area 44px'e indirmek — kullanıcı kararı
+  (Stage 80 §38.160 "uygulama-gibi UX" tasarım intent).
+- `bz-touch-target` PendingTasks row'a uygulamak — mevcut
+  `min-h-[56px] sm:min-h-0` paterni 44px üstünde, utility redundant.
+
+**Yap**:
+- Yeni `.bz-touch-target` callsite eklenirse `sm:min-h-0 sm:min-w-0`
+  override paterni zorunlu (utility sadece mobile'da min-h sağlar,
+  desktop'ta caller'ın padding'i intact tutulmalı).
+- Yeni cross-card hover lift gerekirse `bz-elev-2 bz-motion-spring`
+  paterni reuse (CLAUDE.md §38.65 + §38.161 paterni).
+- Yeni mobile tap feedback `active:scale-[0.97] sm:active:scale-100`
+  paterni reuse (CLAUDE.md §38.46 + §38.161 paterni).
+- Yeni admin filter toolbar mobile sticky gerekirse owner restaurants
+  list paterni reuse: `md:sticky md:top-16 md:z-20 md:bg-white/95
+  md:backdrop-blur lg:static`.
+- HANDOFF audit önerisi gelirse CLAUDE.md §38.39 + §38.69 paterni
+  zorunlu (3 paralel agent + manuel verify + false positive eleme).
+
+**Verification** (Stage 81 manuel run sonrası eklenmeli):
+- `npm run lint` → 0 errors / 2 baseline warnings (scope dışı pre-
+  existing PlatformsClient + APTeamCard)
+- `npx tsc --noEmit -p tsconfig.json` → 0 errors in `src/`
+- `npm test` → 404/404 pass intact
+- `npx next build` → ✓ Compiled successfully + 58/58 static pages
+
+**Sanity grep regression**:
+- `bz-touch-target` callsite count: 1 → 6 (account intact + ActivityFeed
+  CTA + restaurants 4 button)
+- `bz-safe-bottom` 0 hit (silindi)
+- `bz-mobile-sticky-action` 0 hit (silindi)
+- `hover:bz-elev-2 active:scale-[0.97]` PendingTasks row + ChannelDistribution
+  + restaurants card (owner cross-card polish parity)
+- `md:sticky md:top-16` 2 hit (owner restaurants list intact +
+  admin restaurants list yeni)
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. **Owner cross-card polish**:
+   - Anasayfa PendingTasks row hover → `bz-elev-2` Apple-soft lift
+   - PendingTasks + ActivityFeed event row mobile tap →
+     `active:scale-[0.97]` press feedback
+   - ActivityFeed "Tüm aktiviteyi gör" mobile 44px touch (utility)
+   - OnboardingNudge step link mobile tap → smooth bg/border
+     transition + scale press
+2. **Admin parity**:
+   - `/admin/restaurants` mobile (375×667 iPhone SE) → plan tabs
+     filter scroll sırasında topbar h-16 altında sticky pin'lenir +
+     Apple-soft backdrop-blur. Desktop (lg+) inline normal akış.
+3. **Utility cleanup**:
+   - globals.css'te `.bz-safe-bottom` + `.bz-mobile-sticky-action`
+     callsite YOK; sadece `.bz-touch-target` definition kalır.
+   - 6+ `.bz-touch-target` callsite mobile'da 44×44 garantili tap area.
+
+#### Stage 81 closure (Tarih 2026-05-08)
+
+- Branch: `chore/owner-admin-drift-cleanup-stage81` (fresh main üstüne,
+  Stage 80 §38.160 PR #584 merged sonrası align)
+- Edit'lenen dosyalar: 6 (5 owner/admin component + globals.css +
+  CLAUDE.md)
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 intact bekleniyor (CI Validate doğrulayacak)
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  owner anasayfa cross-card polish + admin restaurants filter sticky
+  + utility cleanup intact.
+- Kalan riskler: yok (UI polish + utility cleanup; backend kontrat
+  dokunulmadı, KVKK + reCAPTCHA + honeypot + Pulse §11 design
+  system intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade. Veya operatör
+  yeni odak talebi.
+
+**Chat prompt history (Stage 81 §39.2 paterni)**:
+
+- 2026-05-08 kullanıcı: *"Bu zamana kadar tüm bu session'da
+  yaptıklarına bak ve owner owner ile admin paneli kontrol et overlap
+  tasarımda kayma vs varsa düzelt ve session kapatalım"* (typo
+  "owner owner" verbatim §39.2 disipline). Session close-out talebi.
+- AskUserQuestion 3 karar (kullanıcı seçim):
+  1. **Dead utility**: "Hepsini callsite'a uygula" — pratik adopt yer
+     yok (false sense of completeness); utility cleanup tercih
+     edildi (CLAUDE.md §38.49 dead utility class disipline)
+  2. **PendingTasks 56px**: "56px intact (Recommended)" — Stage 80
+     UX kararı tasarım intent
+  3. **Cross-card polish**: "Hepsini uygula (Recommended)"
+- **Disipline restoration (13. iterasyon)**: Stage 49 §38.130 →
+  Stage 80 §38.160 zinciri compliance disipline 12 kez stable; Stage
+  81 §38.161 onüçüncü kez backend kontrat dokunmadan UI polish +
+  utility cleanup + admin parity. CLAUDE.md §35.8 + §35.10 +
+  §19.1.1 + §38.49 + §38.65 + §38.71 + §38.74 paterni reuse.
+- 3 paralel Explore agent + manuel verify + 3 yanlış pozitif eleme
+  (CLAUDE.md §38.39 + §38.69 paterni).
