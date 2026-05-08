@@ -98,11 +98,23 @@ export default function MarketingNavbarClient({
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
+  // Stage 46 §38.127 — Scroll handler RAF throttle. Mevcut `passive`
+  // listener Tier 1 perf intact (browser scroll-blocking değil), ama
+  // scroll event'lerinde RAF coalesce ile state update'lerini paint
+  // cycle'a hizalar — fast scroll'larda gereksiz re-render azalır.
+  // Stage 43 §38.124 + Stage 22 §38.99 perf paterni reuse.
   useEffect(() => {
-    const onScroll = () => {
+    let ticking = false;
+    const computeAndApply = () => {
       const y = window.scrollY;
       setScrolled(y > 40);
       setFloating(y > 80);
+      ticking = false;
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(computeAndApply);
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -335,6 +347,18 @@ export default function MarketingNavbarClient({
 
   return (
     <>
+      {/* Stage 46 §38.127 — A11y skip link. Lighthouse a11y +
+          WCAG 2.1 SC 2.4.1 (Bypass Blocks). Klavye-only kullanıcı
+          Tab tuşuyla nav menüyü atlayıp direkt ana içeriğe geçer.
+          Marketing surface'inde main `id="main-content"` mevcut
+          (page.tsx line 379). Pulse §11 lime focus ring. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-[#0A0A0A] focus:px-4 focus:py-2 focus:text-[13px] focus:font-semibold focus:text-white focus:outline-none focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-2"
+      >
+        {isTr ? 'İçeriğe atla' : 'Skip to content'}
+      </a>
+
       {/* Stage 43 §38.124 — Header floating pill scroll mode (HANDOFF
           premium-header.jsx >80px scroll trigger). Mobile drawer açıkken
           `fixed inset-x-0 top-0` override; mobile/tablet'te (`lg:` öncesi)
@@ -345,8 +369,12 @@ export default function MarketingNavbarClient({
           - floating (y>80): `lg:top-[18px] lg:left-1/2 lg:-translate-x-1/2
             lg:w-[94vw] lg:max-w-[1180px] lg:rounded-full + advanced
             backdrop-blur(16px) saturate(180%) + ring + drop shadow`
-          transition-all 300ms cubic-bezier ile yumuşak geçiş. */}
+          transition-all 300ms cubic-bezier ile yumuşak geçiş.
+          Stage 46 §38.127 — `aria-label` ekle (SEO + a11y SC 2.4.6 +
+          WCAG landmark naming). Multiple `<nav>` durumlarında screen
+          reader hangi nav olduğunu söyler. */}
       <nav
+        aria-label={isTr ? 'Ana sayfa navigasyonu' : 'Main navigation'}
         className={`${
           mobileOpen ? 'fixed inset-x-0 top-0' : 'relative'
         } z-40 h-[64px] backdrop-blur-2xl transition-all duration-300 ${
@@ -493,11 +521,22 @@ export default function MarketingNavbarClient({
               </div>
             </DesktopDropdown>
 
+            {/* Stage 46 §38.127 — HANDOFF design birebir: Fiyatlandırma
+                + lime "%30" badge (mevcut kampanya/discount işareti).
+                "Fiyatlar" → "Fiyatlandırma" full-form. Badge promotion
+                ihtiyacı bittiğinde silinebilir; %30 yıl boyu 14-gün
+                ücretsiz trial bonus indirimi referansı. */}
             <Link
               href={`${base}/pricing`}
-              className="rounded-full px-3 py-1.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:text-[#0A0A0A]"
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-medium text-[#1A1A1A] transition-colors hover:text-[#0A0A0A]"
             >
-              {isTr ? 'Fiyatlar' : 'Pricing'}
+              {isTr ? 'Fiyatlandırma' : 'Pricing'}
+              <span
+                className="inline-flex items-center rounded bg-[#C6F24E] px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.06em] text-[#0A0A0A]"
+                aria-label={isTr ? 'Yüzde otuz indirim' : 'Thirty percent off'}
+              >
+                %30
+              </span>
             </Link>
 
             {/* Customers */}
@@ -554,13 +593,18 @@ export default function MarketingNavbarClient({
                   href={`${base}/auth/login`}
                   className="hidden sm:inline-flex text-[13px] font-medium text-[#525252] hover:text-[#0A0A0A]"
                 >
-                  {isTr ? 'Giriş yap' : 'Sign in'}
+                  {isTr ? 'Giriş' : 'Sign in'}
                 </Link>
+                {/* Stage 46 §38.127 — HANDOFF design birebir: CTA
+                    uppercase + tracking-wider, "ÜCRETSİZ BAŞLA →".
+                    Mevcut graphite primary intact; sadece typography
+                    polish (uppercase + 0.06em tracking). */}
                 <Link
                   href={`${base}/auth/register`}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-[#1A1A1A]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[12px] font-bold uppercase tracking-[0.06em] text-white transition-colors hover:bg-[#1A1A1A]"
                 >
-                  {isTr ? 'Ücretsiz başla' : 'Start free'} →
+                  {isTr ? 'Ücretsiz başla' : 'Start free'}
+                  <span aria-hidden>→</span>
                 </Link>
               </>
             )}
@@ -676,7 +720,15 @@ export default function MarketingNavbarClient({
                 className="flex items-center justify-between border-b border-[#EDEDED] px-1 py-4 text-[15px] font-semibold text-[#0A0A0A]"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
-                {isTr ? 'Fiyatlandırma' : 'Pricing'}
+                <span className="inline-flex items-center gap-2">
+                  {isTr ? 'Fiyatlandırma' : 'Pricing'}
+                  <span
+                    className="inline-flex items-center rounded bg-[#C6F24E] px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.06em] text-[#0A0A0A]"
+                    aria-label={isTr ? 'Yüzde otuz indirim' : 'Thirty percent off'}
+                  >
+                    %30
+                  </span>
+                </span>
                 <span className="text-[#737373]">→</span>
               </Link>
 
