@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * LiveTicker — Stage 66 §38.147 PR0 base.
+ * LiveTicker — Stage 66 §38.147 PR0 base + Stage 88 §38.168 rollback.
  *
  * 3-stack canlı yorum/aktivite akışı (rotation tabanlı). Marketing
  * surface'inde sosyal kanıt için kullanılır.
@@ -24,14 +24,18 @@
  * testimonial → prop-driven items + generic compliance default;
  * setInterval + manual stack → AnimatePresence variants.
  *
- * Stage 85 §38.165 — Visual upgrade (premium editorial card paterni):
- * - Responsive container (`max-w-[380px]` mobile / `420px` sm:+).
- * - Italic decorative quote mark (Pulse §11 editorial accent).
- * - Graphite avatar (premium contrast vs eski lime-soft).
- * - Italic source name + tighter typography hierarchy.
- * - Footer platform attribution badge (`item.platform` field —
- *   compliance-safe system event source, müşteri-spesifik
- *   testimonial DEĞİL).
+ * Stage 88 §38.168 — rollback to PR0 base (kullanıcı kararı).
+ * Önceki §38.165 premium editorial card paterni (italic quote mark
+ * decoration + graphite avatar + footer attribution) sade Stage 66
+ * paterniyle değiştirildi:
+ * - Compact container (`h-[220px] max-w-[320px]`).
+ * - Lime-soft avatar (önceki graphite reverse).
+ * - Plain typography (italic source name kaldırıldı).
+ * - No decorative quote mark.
+ * - No platform attribution footer (`item.platform` field opsiyonel
+ *   kalır backward-compat ama varsayılan render etmiyor — caller
+ *   isterse gelecekte yeni LiveTicker variant ile expose edilebilir).
+ * - Stack y stagger 18, scale 0.05, transition 0.6s.
  */
 
 import { Star } from 'lucide-react';
@@ -56,9 +60,10 @@ export interface LiveTickerItem {
   /** Action text (TR + EN locale-aware). */
   text: { tr: string; en: string };
   /**
-   * Platform attribution badge (generic — Google/Tripadvisor/Yemeksepeti
-   * vs Buaze gerçek partner). Müşteri review değil, system event source.
-   * Stage 85 §38.165 — compliance-safe visual upgrade.
+   * Platform attribution (Stage 85 §38.165'te eklendi, Stage 88 §38.168
+   * rollback'te varsayılan render'dan çıkarıldı). Backward-compat için
+   * tip intact — gelecekteki bir LiveTicker variant'ı bu field'ı reuse
+   * edebilir.
    */
   platform?: string;
 }
@@ -70,7 +75,6 @@ const DEFAULT_GENERIC_ITEMS: LiveTickerItem[] = [
     source: 'Karaköy',
     stars: 5,
     text: { tr: 'Yeni 5★ yorum panelde.', en: 'New 5★ review in panel.' },
-    platform: 'Google',
   },
   {
     id: 'bagdat-1',
@@ -78,7 +82,6 @@ const DEFAULT_GENERIC_ITEMS: LiveTickerItem[] = [
     source: 'Bağdat Cd.',
     stars: 5,
     text: { tr: 'AI yanıt taslağı hazırlandı.', en: 'AI reply draft ready.' },
-    platform: 'Buaze',
   },
   {
     id: 'cihangir-1',
@@ -86,7 +89,6 @@ const DEFAULT_GENERIC_ITEMS: LiveTickerItem[] = [
     source: 'Cihangir',
     stars: 4,
     text: { tr: 'QR taraması kaydedildi.', en: 'QR scan recorded.' },
-    platform: 'Tripadvisor',
   },
   {
     id: 'cankaya-1',
@@ -94,7 +96,6 @@ const DEFAULT_GENERIC_ITEMS: LiveTickerItem[] = [
     source: 'Çankaya',
     stars: 5,
     text: { tr: 'Google\'a yorum yayınlandı.', en: 'Review published to Google.' },
-    platform: 'Google',
   },
   {
     id: 'izmir-1',
@@ -102,7 +103,6 @@ const DEFAULT_GENERIC_ITEMS: LiveTickerItem[] = [
     source: 'İzmir',
     stars: 3,
     text: { tr: 'Düşük puan ekibe iletildi.', en: 'Low rating routed to team.' },
-    platform: 'Yandex',
   },
 ];
 
@@ -158,7 +158,7 @@ export default function LiveTicker({
 
   return (
     <div
-      className={`relative h-[260px] w-full max-w-[380px] sm:h-[280px] sm:max-w-[420px] ${className ?? ''}`}
+      className={`relative h-[220px] w-full max-w-[320px] ${className ?? ''}`}
       role="region"
       aria-live="polite"
       aria-label={locale === 'tr' ? 'Canlı aktivite akışı' : 'Live activity feed'}
@@ -166,76 +166,52 @@ export default function LiveTicker({
       <AnimatePresence mode="popLayout">
         {visible.map((item, stackIdx) => {
           const z = 3 - stackIdx;
-          const scale = 1 - stackIdx * 0.04;
-          const y = stackIdx * 22;
+          const scale = 1 - stackIdx * 0.05;
+          const y = stackIdx * 18;
           const opacity = 1 - stackIdx * 0.32;
 
           return (
             <motion.div
               key={`${item.id}-${idx}-${stackIdx}`}
-              className="absolute inset-x-0 overflow-hidden rounded-[18px] bg-brand-paper p-5 shadow-[0_18px_40px_-12px_rgba(10,10,10,0.22)] ring-1 ring-black/5 sm:p-5"
+              className="absolute inset-x-0 overflow-hidden rounded-[14px] bg-brand-paper p-3.5 shadow-[0_14px_30px_-10px_rgba(10,10,10,0.18)] ring-1 ring-black/5"
               style={{ top: y, zIndex: z, transformOrigin: 'top center' }}
               initial={
                 stackIdx === 0
-                  ? { y: y + 24, scale, opacity: 0 }
+                  ? { y: y + 20, scale, opacity: 0 }
                   : { y, scale, opacity }
               }
               animate={{ y, scale, opacity }}
               exit={{
-                y: y - 18,
-                scale: scale + 0.04,
+                y: y - 16,
+                scale: scale + 0.05,
                 opacity: 0,
               }}
               transition={{
-                duration: prefersReducedMotion ? 0 : 0.65,
+                duration: prefersReducedMotion ? 0 : 0.6,
                 ease: [0.65, 0, 0.35, 1],
               }}
             >
-              {/* Editorial decorative italic quote mark — Pulse §11 paterni
-                  paralel (homepage hero + analytics dialogs zaten italic
-                  Space Grotesk decorative element kullanıyor). */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute -right-1 -top-2 select-none text-[64px] leading-none text-brand-lime-soft"
-                style={{
-                  fontFamily: 'var(--font-heading)',
-                  fontStyle: 'italic',
-                  fontWeight: 500,
-                }}
-              >
-                &ldquo;
-              </span>
-
-              <div className="relative flex flex-col gap-3">
-                {/* Header row: graphite avatar + source meta + stars */}
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-ink text-[11px] font-semibold tracking-wider text-white"
-                    aria-hidden="true"
-                  >
-                    {item.initials}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="truncate text-[14px] leading-tight text-brand-ink"
-                      style={{
-                        fontFamily: 'var(--font-heading)',
-                        fontStyle: 'italic',
-                        fontWeight: 500,
-                        letterSpacing: '-0.01em',
-                      }}
-                    >
+              <div className="flex items-start gap-3">
+                <span
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-lime-soft text-[12px] font-semibold tracking-tight text-brand-ink"
+                  aria-hidden="true"
+                >
+                  {item.initials}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-[13px] font-semibold tracking-tight text-brand-ink">
                       {item.source}
                     </p>
                     <span
-                      className="mt-0.5 inline-flex items-center gap-[3px]"
+                      className="inline-flex items-center gap-[2px]"
                       role="img"
                       aria-label={`${item.stars} of 5 stars`}
                     >
                       {[1, 2, 3, 4, 5].map((n) => (
                         <Star
                           key={n}
-                          size={11}
+                          size={10}
                           fill={n <= item.stars ? '#A8D62E' : 'none'}
                           stroke={n <= item.stars ? '#A8D62E' : '#D4D4D4'}
                           strokeWidth={1.5}
@@ -243,36 +219,10 @@ export default function LiveTicker({
                       ))}
                     </span>
                   </div>
+                  <p className="mt-1 text-[12.5px] leading-snug text-brand-mute">
+                    {locale === 'en' ? item.text.en : item.text.tr}
+                  </p>
                 </div>
-
-                {/* Body event copy */}
-                <p className="text-[13px] leading-relaxed text-brand-mute">
-                  {locale === 'en' ? item.text.en : item.text.tr}
-                </p>
-
-                {/* Footer: platform attribution badge (compliance-safe
-                    generic system event source — CLAUDE.md §35.10 + §38.131
-                    paterni paralel; müşteri-spesifik testimonial DEĞİL). */}
-                {item.platform ? (
-                  <div className="flex items-center justify-between border-t border-black/[0.06] pt-2.5">
-                    <span
-                      className="text-[10px] uppercase tracking-[0.18em] text-brand-mute-soft"
-                      style={{ fontFamily: 'var(--font-mono)' }}
-                    >
-                      {locale === 'tr' ? 'Kaynak' : 'Source'}
-                    </span>
-                    <span
-                      className="inline-flex items-center gap-1.5 text-[11px] font-medium text-brand-ink"
-                      style={{ fontFamily: 'var(--font-body)' }}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="inline-block h-1.5 w-1.5 rounded-full bg-brand-lime"
-                      />
-                      {item.platform}
-                    </span>
-                  </div>
-                ) : null}
               </div>
             </motion.div>
           );

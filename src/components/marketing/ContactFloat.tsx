@@ -239,7 +239,20 @@ export function ContactFloat({ locale }: { locale: string }) {
     return (
       <div
         aria-live="polite"
-        className={`fixed right-4 bottom-[88px] md:right-6 z-50 flex flex-col items-end gap-3 transition-[bottom] duration-300 ease-out ${
+        // Stage 88 §38.168 — mobile FAB bottom position calc-aware:
+        // MobileBottomNav (CLAUDE.md §38.141 Stage 60) `bottom: calc(12px +
+        // env(safe-area-inset-bottom, 0px))` + h-[72px] = nav top edge at
+        // ~84px + safe-area. Eski `bottom-[88px]` safe-area-blind iken FAB
+        // iPhone notch/home-indicator altında nav'ın ARKASINA kayıyordu
+        // (kullanıcı raporu "scroll down yapınca bottom nav üstüne geliyor").
+        // Yeni: 84px nav top + 12px breathing gap = 96px + safe-area inset
+        // dynamic (CLAUDE.md §38.74 + §38.160 paterni reuse). md:+ desktop
+        // sticky CTA visible iken md:bottom-[148px] override (Stage 61
+        // §38.142), sakin md:bottom-6 (Stage 58 §38.139). Mobile arbitrary
+        // utility class md:+ swap'larıyla collide etmez (Tailwind responsive
+        // override `md:bottom-X` mobile bottom-[calc(...)]'i higher
+        // breakpoint'te kazanır).
+        className={`fixed right-4 bottom-[calc(96px+env(safe-area-inset-bottom,0px))] md:right-6 z-50 flex flex-col items-end gap-3 transition-[bottom] duration-300 ease-out ${
           stickyCtaVisible ? 'md:bottom-[148px]' : 'md:bottom-6'
         }`}
       >
@@ -402,7 +415,14 @@ export function ContactFloat({ locale }: { locale: string }) {
       role="dialog"
       aria-modal="false"
       aria-label={isTr ? 'İletişim formu' : 'Contact form'}
-      className={`bz-fade-in fixed right-4 bottom-[88px] left-4 z-50 flex max-h-[calc(100dvh-110px)] flex-col overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom,max-height] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] ${
+      // Stage 88 §38.168 — mobile open form bottom position calc-aware
+      // (FAB ile aynı paterni reuse). Eski `bottom-[88px]` safe-area-blind
+      // iken iPhone notch/home-indicator altında bottom nav'a çakışıyordu
+      // (kullanıcı raporu "scroll down yapınca bottom nav üstüne geliyor").
+      // Yeni: 96px nav clearance + safe-area inset dynamic. sm:+ desktop
+      // sticky CTA visible iken sm:bottom-[148px] override (intact §38.61
+      // + §38.142), sakin sm:bottom-6 (intact §38.58 §38.139).
+      className={`bz-fade-in fixed right-4 bottom-[calc(96px+env(safe-area-inset-bottom,0px))] left-4 z-50 flex max-h-[calc(100dvh-110px)] flex-col overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom,max-height] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] ${
         stickyCtaVisible
           ? 'md:bottom-[148px] md:max-h-[calc(100dvh-280px)]'
           : 'md:bottom-6 md:max-h-[calc(100dvh-110px)]'
