@@ -282,7 +282,7 @@ function ReviewContent() {
     });
   }, [restaurant?.slug, restaurant?.isActive, tableParam, explicitPlatform, sourceParam]);
 
-  if (loading) return <DarkLoader locale={locale} />;
+  if (loading) return <DarkLoader locale={locale} tableNumber={tableParam} />;
   if (isNotFound || !restaurant) return notFound();
 
   // Accepts: raw Place ID (ChIJ…), g.page/r/… link, search.google.com
@@ -565,9 +565,19 @@ function ReviewContent() {
   };
 
   const initial = restaurant.name.charAt(0).toUpperCase();
+  // §38.145 Stage 64 — page-level state-aware bg switch. Step 1 (rate)
+  // dark editorial moment; Step 2 + 3 (form + thanks) light productivity
+  // moment. JSX prototip hibrit pattern: ReviewRateInner dark, ReviewLowForm
+  // + ReviewThanks light bg #FAFAFA. TopBar + StepProgress + footer hepsi
+  // state-aware variant (onLight prop paterni).
+  const isLight = step === 2 || step === 3;
 
   return (
-    <main className="min-h-[100dvh] bg-[#0A0A0A] text-white">
+    <main
+      className={`min-h-[100dvh] ${
+        isLight ? 'bg-[#FAFAFA] text-[#0A0A0A]' : 'bg-[#0A0A0A] text-white'
+      }`}
+    >
       {redirecting && (
         <RedirectingOverlay
           locale={locale}
@@ -588,21 +598,27 @@ function ReviewContent() {
           touchAction: 'manipulation',
         }}
       >
-        {/* Brand header — Stage 63 §38.144 — HANDOFF ReviewTopBar paterni:
-            kompakt yatay toolbar. 38×38 lime icon italic + italic name 16px
-            + mono uppercase meta (table + visit) + sağ TR · EN hint.
-            Eski center-aligned hero (64×64 + 22px bold + address) HANDOFF
-            spec'ine uydurulmak için yatay layout'a refactor edildi. */}
+        {/* Brand header — Stage 63 §38.144 + Stage 64 §38.145 — HANDOFF
+            ReviewTopBar light/dark variant. JSX `onLight` prop paterni:
+            Step 1 dark variant (lime icon + white name + white/45 meta);
+            Step 2/3 light variant (graphite icon + lime initial + dark
+            name + gray meta). Border-bottom hue de state-aware. */}
         <header
-          className="flex items-center gap-3 border-b border-white/[0.08]"
+          className={`flex items-center gap-3 border-b ${
+            isLight ? 'border-[#ECECEC]' : 'border-white/[0.08]'
+          }`}
           style={{ padding: '14px 0 16px' }}
         >
           <div
-            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-[#C6F24E]"
+            className={`flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] ${
+              isLight ? 'bg-[#0A0A0A]' : 'bg-[#C6F24E]'
+            }`}
             aria-hidden
           >
             <span
-              className="text-[22px] text-[#0A0A0A]"
+              className={`text-[22px] ${
+                isLight ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
+              }`}
               style={{
                 fontFamily: 'var(--font-heading)',
                 fontStyle: 'italic',
@@ -616,7 +632,9 @@ function ReviewContent() {
           </div>
           <div className="min-w-0 flex-1">
             <h1
-              className="truncate text-[16px] text-white"
+              className={`truncate text-[16px] ${
+                isLight ? 'text-[#0A0A0A]' : 'text-white'
+              }`}
               style={{
                 fontFamily: 'var(--font-heading)',
                 fontStyle: 'italic',
@@ -628,7 +646,9 @@ function ReviewContent() {
               {restaurant.name}
             </h1>
             <div
-              className="pulse-eyebrow text-white/45"
+              className={`pulse-eyebrow ${
+                isLight ? 'text-[#737373]' : 'text-white/45'
+              }`}
               style={{ fontSize: 9.5, marginTop: 4 }}
             >
               {tableParam
@@ -641,7 +661,9 @@ function ReviewContent() {
             </div>
           </div>
           <div
-            className="pulse-eyebrow shrink-0 text-white/50"
+            className={`pulse-eyebrow shrink-0 ${
+              isLight ? 'text-[#737373]' : 'text-white/50'
+            }`}
             style={{ fontSize: 9.5 }}
             aria-hidden
           >
@@ -649,19 +671,15 @@ function ReviewContent() {
           </div>
         </header>
 
-        {/* §38.144 Stage 63 — state-aware section bg.
+        {/* §38.145 Stage 64 — state-aware section bg + content layout.
             Step 1 (rate): dark page bg üstünde transparent + glass star
-            card (JSX prototip dark mode). Step 2 + 3: white card intact
-            (light bg switch). Wrapper'ın bg-[#0A0A0A] outer'ı zaten dark;
-            Step 1 burada yansır. */}
+            card. Step 2 + 3: light page bg üstünde transparent (white
+            card kaldırıldı, JSX prototip light bg full-page switch).
+            Outer main bg state-aware otomatik handle ediyor (dark/light). */}
         <section
           key={step}
-          className={
-            step === 1
-              ? 'bz-fade-in flex-1 text-white'
-              : 'bz-fade-in rounded-[24px] bg-white p-6 text-[#0A0A0A] shadow-[0_12px_40px_rgba(0,0,0,0.5)]'
-          }
-          style={step === 1 ? { padding: '20px 0 24px' } : undefined}
+          className="bz-fade-in flex-1"
+          style={{ padding: '20px 0 24px' }}
         >
           {step === 1 && (
             <div>
@@ -1526,9 +1544,11 @@ function ReviewContent() {
           )}
         </section>
 
-        {/* Buaze badge — design 1:1 sade tek satır */}
+        {/* Buaze badge — Stage 64 §38.145 state-aware text color
+            (dark: white/40, light: graphite/40). HANDOFF spec birebir
+            POWERED BY BUAZE her step'te footer'da görünür. */}
         <footer
-          className="text-center text-white/40"
+          className={`text-center ${isLight ? 'text-[#A3A3A3]' : 'text-white/40'}`}
           style={{
             marginTop: 22,
             fontSize: 10,
@@ -1548,7 +1568,17 @@ function ReviewContent() {
 // §38.130 Stage 49 — HANDOFF ReviewLoading birebir parity. 80×80 ring +
 // lime spinner border + center BUAZE wordmark dot. Restaurant data fetch
 // öncesi render edildiği için restaurant.name yok — generic Buaze brand.
-function DarkLoader({ locale = 'tr' as Locale }: { locale?: Locale }) {
+// §38.145 Stage 64 — opsiyonel `tableNumber` prop ile context-aware meta:
+// "MASA X · BUAZE" formatında (HANDOFF "CAFÉ MAVERA · MASA 12" paralel,
+// restaurant adı yok ama tableParam URL'den gelir). Suspense fallback'te
+// default 'BUAZE' eyebrow.
+function DarkLoader({
+  locale = 'tr' as Locale,
+  tableNumber = '',
+}: {
+  locale?: Locale;
+  tableNumber?: string;
+}) {
   return (
     <main className="flex min-h-[100dvh] items-center justify-center bg-[#0A0A0A] px-10 text-white">
       <div className="flex flex-col items-center gap-5">
@@ -1592,7 +1622,11 @@ function DarkLoader({ locale = 'tr' as Locale }: { locale?: Locale }) {
           >
             {locale === 'tr' ? 'Hazırlanıyor…' : 'Loading…'}
           </div>
-          <div className="pulse-eyebrow text-white/45 text-[10px]">BUAZE</div>
+          <div className="pulse-eyebrow text-white/45 text-[10px]">
+            {tableNumber
+              ? `${locale === 'tr' ? 'MASA' : 'TABLE'} ${tableNumber} · BUAZE`
+              : 'BUAZE'}
+          </div>
         </div>
       </div>
     </main>
