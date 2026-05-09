@@ -25390,3 +25390,243 @@ yok. **Test count**: 404/404 pass intact.
   Stage 89 §38.169 yirmibirinci kez backend kontrat dokunmadan UI
   fix. CLAUDE.md §11 + §38.61 + §38.74 + §38.114 + §38.141 + §38.142
   + §38.157 + §38.160 + §38.168 paterni reuse.
+
+
+---
+
+### 38.170 2026-05-09 — Stage 90 anasayfa marketing 4-fix bundle (FeatureCard linksiz → href wire + Section 2 padding daralt + ToastRow 4 distinct vibrant icon + Section 4.5 heading + SweepCTA white-bordered default)
+
+§38.169 Stage 89 ContactFloat + bottom nav iOS Safari fix (PR #594)
+main'e merge edildikten sonra kullanıcı yeni anasayfa marketing UX
+raporu iletti: *"Ekteki kısımdaki kartların linki yok onları doğru
+linklere yönlendir ve altlarında gereksiz bir boşluk var. Ayrıca 2.
+attığım kohort kısmı ile iligli de bir başlık yok ve üstüne gelince
+yeişl olan buton beyaz gözüküyor; üstüne ondaki yazı fontunu üstüne
+gelmeyince siyh yap ve buton çerçevesi belli olsun. Bir de yeni yorum
+geldi ve yorum gogole'da yayınlandı kısımlarının solunda bir icon yok
+diğerlrinin var ve bir başlık da yap (kısacası bu alanı daha estetik
+tasarımımıza uygun bir şekilde tasarla ve mobil uyumlu olması da çok
+önemli)"* (typo'lar verbatim §39.2 disipline: "yeışıl" → "yeşil",
+"siyh" → "siyah", "iligli" → "ilgili", "diğerlrinin" → "diğerlerinin",
+"gogole'da" → "Google'da"). 4 net UX talebi.
+
+**4 fix bundle**:
+
+#### Fix 1 — FeatureCard linksiz → 4 doğru route href wire
+
+§38.147 Stage 66 PR0 base'de eklenen `<FeatureCard>` component
+(`src/components/animations/FeatureCard.tsx`) `onClick` callback
+prop'unu kabul ediyordu ama `href` prop'u yoktu. Stage 85 §38.165
+anasayfa Section 2 BUILT FOR THESE CHANNELS 4 FeatureCard mount
+edildiğinde callsite'lar `onClick` veya `href` geçirmediği için
+kartlar **link-less + cursor:pointer ama navigation yok** durumdaydı.
+
+**Fix** (component + page wiring):
+
+1. **`FeatureCard.tsx` href prop + Next Link wrapper**:
+   - Yeni `href?: string` prop. Verilirse Next `<Link>` ile sarılır
+     (Server Component caller'lardan serializable + prefetch + a11y
+     intact). `motion.div` wrapper outer + `<Link>` inner — animation
+     variants (lift + corner orb) intact.
+   - Yeni `ariaLabel?: string` prop (text içeriği yetersizse override).
+   - Mevcut `onClick` callback prop **intact** (yedek; gelecek dashboard
+     surface'leri için role="button" + Enter/Space keyDown).
+   - `FeatureCardInner` shared inner component (DRY — link branch +
+     button branch + static branch).
+   - `focus-visible:ring-2 focus-visible:ring-brand-lime focus-visible:ring-offset-2`
+     keyboard navigation a11y (Pulse §11 paterni reuse).
+
+2. **page.tsx Section 2 4 callsite href wire**:
+   - QR Studio → `${base}/solutions/qr-generator` (mevcut Stage 24
+     §38.103 ISR cache page)
+   - Pulse AI → `${base}/features/pulse-ai` (mevcut features sub-route)
+   - Yorum Akışı → `${base}/features/review-management` (mevcut
+     features sub-route)
+   - Analitik → `${base}/features/analytics-reports` (mevcut features
+     sub-route)
+   - `ariaLabel` her kart için locale-aware (TR/EN parite).
+
+#### Fix 2 — Section 2 → Section 3 arası boşluk daralt
+
+Eski Section 2 padding: `py-[60px] sm:py-24` (mobile 60+60, desktop
+96+96). Section 2 ↔ Section 3 arasında PulseLine divider band
+(`py-3` = 24px) + Section 3 `py-[60px] sm:py-28` (top 60-112px) =
+mobile ~144px / desktop ~232px gereksiz boşluk.
+
+**Fix**: Section 2 bottom padding ayrıştırıldı: `pt-[60px] pb-12
+sm:pt-24 sm:pb-16` (top intact, bottom mobile 48px / desktop 64px).
+Section 3 + PulseLine divider intact. Net azalma: mobile ~12px /
+desktop ~32px.
+
+#### Fix 3 — ToastRow defaults 4 distinct vibrant icon
+
+`ToastRow.tsx` default 4 item Stage 66 §38.147 PR0 base'de:
+- Item 1 "Yeni yorum geldi" — tone='pos' (graphite circle + Check)
+- Item 2 "AI yanıt taslağı" — tone='lime' (lime circle + Sparkles)
+- Item 3 "Düşük puan" — tone='neg' (red circle + AlertTriangle)
+- Item 4 "Google'a yayınlandı" — tone='pos' (graphite circle + ArrowUpRight)
+
+Kullanıcı raporu: items 1 ve 4 (her ikisi `pos` tone — graphite)
+icon görsel olarak invisible/zayıf. Items 2 (vibrant lime) ve 3
+(vibrant red) icon'ları belirgin. Causa: graphite-on-graphite
+düşük perception kontrast + size=12 strokeWidth=3 ince.
+
+**Fix** (4 distinct vibrant tone + visibility uplift):
+- Yeni `info` tone (mavi `#DBEAFE` bg + `#2563EB` icon container +
+  white icon) — `Send` icon ile item 4 için.
+- Item 1 tone değişti `pos` → `neu`: white bg + graphite circle +
+  `MessageSquareText` icon (chat bubble semantic).
+- Item 4 tone değişti `pos` → `info`: blue-soft bg + blue circle +
+  `Send` icon.
+- Items 2 + 3 tone intact (lime/neg).
+- Icon size 12 → 14 (16% daha büyük) + strokeWidth 3/2.5 → 2.5
+  uniform + container size h-6 w-6 → h-7 w-7 + container shadow
+  `shadow-[0_2px_6px_-2px]` (subtle visual depth).
+- TONE_TITLE: neg `text-[#DC2626]` → `text-[#991B1B]` (daha okunabilir
+  dark red); info `text-[#1E3A8A]` (dark blue).
+
+#### Fix 4 — Section 4.5 ToastRow group eyebrow+heading + SweepCTA white-bordered default
+
+**Section 4.5 ToastRow group heading eklendi** (kullanıcı raporu
+"bir başlık da yap"):
+- Mevcut: `<span pulse-eyebrow>Tek yorum, dört adım</span>` + `<p>` body
+- Yeni: eyebrow + `<h3>` heading "Bir yorum, dört adımda yayında." /
+  "One review, live in four steps." + paragraph + ToastRow.
+- h3 typography: `text-[24px] sm:text-[30px] font-medium leading-[1.1]
+  tracking-[-0.025em] text-[#0A0A0A] text-balance` (Pulse §11 standard
+  section heading).
+
+**SweepCTA white-bordered default** (kullanıcı raporu "üstüne
+gelmeyince siyah font ve buton çerçevesi belli olsun"):
+- Eski Stage 66 §38.147 default: `bg-brand-ink` (graphite) + `text-white`
+  + `shadow-[0_14px_30px_-10px_rgba(10,10,10,0.45)]` (graphite drop)
+  → kullanıcı default state'i "yeşil" veya "white" perceive ediyor.
+- Yeni default: `bg-white` + `border-[1.5px] border-[#0A0A0A]` (visible
+  graphite border) + `text-[#0A0A0A]` (black text) + `shadow-[0_8px_20px_
+  -10px_rgba(10,10,10,0.20)]` (soft graphite drop).
+- Hover: lime sweep slides in (`x: -100% → 0`) + text stays black
+  (lime `#C6F24E` + black `#0A0A0A` ~13:1 contrast WCAG AAA).
+- Foreground color flip rest=`#0A0A0A`/hover=`#0A0A0A` (eski
+  rest=`#FFF`/hover=`#0A0A0A` color flip kaldırıldı; black text her
+  state'te readable).
+- Hover shadow değişimi `shadow-[0_8px_...0.20]` → `shadow-[0_14px_...
+  rgba(198,242,78,0.45)]` (lime glow on hover, premium feel).
+
+**Secondary CTA visual ayrım** (page.tsx Section 4.5):
+- SweepCTA primary now also outlined → secondary "Planları gör" eski
+  `border bg-transparent hover:bg-[#0A0A0A] hover:text-white` outline
+  paterni primary ile çakışacaktı.
+- Yeni secondary: ghost link-style — `text-[#0A0A0A] underline
+  decoration-transparent hover:decoration-[#0A0A0A] underline-offset-4`
+  + arrow `→` (link semantic). Visual ağırlık primary CTA'da intact.
+
+**Etkilenen dosyalar (4 + docs)**:
+
+| Dosya | Değişim |
+|---|---|
+| `src/components/animations/FeatureCard.tsx` | href prop + Next Link wrapper + FeatureCardInner DRY refactor + ariaLabel + focus-visible ring (~+90/-20 satır net) |
+| `src/components/animations/SweepCTA.tsx` | white bg + 1.5px graphite border default + lime sweep hover + black text both states (~+10/-8 satır net) |
+| `src/components/animations/ToastRow.tsx` | new `info` tone + 4 distinct vibrant icons (MessageSquareText + Send eklendi, Check + ArrowUpRight kaldırıldı) + size 12→14 + container h-6 w-6 → h-7 w-7 + shadow (~+15/-8 satır net) |
+| `src/app/[locale]/page.tsx` | Section 2 padding ayrıştırma + 4 FeatureCard href + Section 4.5 ToastRow heading h3 + secondary CTA ghost-link refactor (~+30/-10 satır net) |
+| `CLAUDE.md` | §38.170 closure log |
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Test count**: 404/404 pass intact.
+
+**Compliance disipline intact** (kullanıcı 22. iterasyon):
+- §35.8 + §35.10 + §19.1.1 + §38.114 paterni stable (visual polish
+  + link wiring + ToastRow tone variation; backend kontrat dokunulmadı)
+- ToastRow default items hâlâ generic platform feature event'leri
+  (§35.10 + §38.131 paterni — fake müşteri testimonial YOK)
+- Pulse §11 typography (Space Grotesk + Inter + JetBrains Mono +
+  synthetic italic, Instrument Serif italic YASAK) intact
+
+**Yapma**:
+- FeatureCard outer'ı `motion.a` doğrudan render etmek (Next `<Link>`
+  yerine) — Next.js prefetch + client-side navigation kazanımı kaybolur.
+  `motion.div` outer + `<Link>` inner paterni intact.
+- FeatureCard `href` + `onClick` aynı anda kullanmak — branch logic
+  href öncelikli (link semantic > button); future scope ihtiyacı çıkarsa
+  ayrı `<Link onClick>` kombinasyonu.
+- SweepCTA default'u `bg-brand-ink` graphite'a geri çevirmek — kullanıcı
+  iki kez (Stage 90 §38.170) explicit "siyah font + visible border"
+  istedi.
+- SweepCTA hover'da text rengini white'a flip etmek — lime üzerinde
+  beyaz `#FFF`/`#C6F24E` ~1.6:1 contrast WCAG fail (siyah `#0A0A0A`/
+  `#C6F24E` ~13:1 AAA). Black on lime intact.
+- Secondary CTA'yı outlined style'a geri çevirmek — primary outlined +
+  secondary outlined visual hierarchy bozar; ghost-link açık ayrım.
+- ToastRow default `pos` tone item kaldırma — tone enum 5 distinct
+  (`pos`/`lime`/`neg`/`neu`/`info`) caller flexibility için intact;
+  default 4 item neu/lime/neg/info kullanır (pos hâlâ available).
+- `MessageSquareText` icon'unu `Check` ile geri değiştirmek — chat
+  bubble semantic "yeni yorum geldi" event ile daha uyumlu.
+- `Send` icon'unu `ArrowUpRight` ile geri değiştirmek — Send semantic
+  "Google'a yayınlandı" event ile daha kuvvetli paralellik.
+
+**Yap**:
+- Yeni FeatureCard callsite eklenirken `href` prop tercih (Next Link
+  prefetch + a11y); yalnız internal route (Buaze marketing/dashboard
+  surface). External link ihtiyacı çıkarsa `motion.a` direct render
+  pattern (gelecek scope, yeni primitive).
+- Yeni outlined CTA + ghost-link secondary kombinasyonu gerekirse
+  Stage 90 §38.170 paterni reuse: primary `bg-white border-[1.5px]
+  border-[#0A0A0A] text-[#0A0A0A] hover:lime-sweep` + secondary
+  `text-[#0A0A0A] underline decoration-transparent hover:decoration-[#0A0A0A]`.
+- Yeni ToastRow tone gerekirse `ToastTone` literal genişlet +
+  `TONE_BG` + `TONE_ICON_BG` + `TONE_TITLE` 3 noktalı drift disipline
+  (§38.49 paterni paralel).
+- Yeni heading h3 eklerken Pulse §11 paterni reuse: `text-[24px]
+  sm:text-[30px] font-medium leading-[1.1] tracking-[-0.025em]
+  text-[#0A0A0A] text-balance` + globals.css `:where(h1..h6)` auto-applied
+  font-family (CLAUDE.md §38.61 + §38.164).
+
+**Verification**:
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/` (4 pre-existing
+  `.next/types` baseline §21.13 intact).
+- `npx eslint`: 0 errors / 0 warnings (changed files).
+- `npm test`: 404/404 pass, 45 suites.
+- `npx next build` (stub env, NODE_OPTIONS 4GB heap): ✓ Compiled +
+  static pages, no marketing route regression.
+
+**Stage 90 closure** (Tarih 2026-05-09):
+- Branch: `chore/homepage-cards-cohort-stage90` (fresh main üstüne,
+  Stage 89 §38.169 PR #594 merged sonrası align).
+- Edit'lenen dosyalar: 4 (FeatureCard + SweepCTA + ToastRow + page.tsx)
+  + CLAUDE.md.
+- Yeni dosya: yok.
+- Schema migration: yok.
+- Yeni dep: yok.
+- Test count: 404/404 pass intact.
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy.
+  Anasayfa Section 2 4 kart linkli (QR Studio / Pulse AI / Yorum
+  Akışı / Analitik) + Section 4.5 ToastRow eyebrow+heading +
+  SweepCTA white-bordered default + ToastRow 4 distinct vibrant icon.
+- Kalan riskler: yok (UI polish + link wiring; backend kontrat
+  dokunulmadı, KVKK + reCAPTCHA + honeypot + Pulse §11 design
+  system intact).
+
+**Chat prompt history (Stage 90 §39.2 paterni)**:
+- 2026-05-09 kullanıcı (PR #594 merge sonrası): *"aşağıdaki promptu
+  geliştir ve uygula: Ekteki kısımdaki kartların linki yok onları
+  doğru linklere yönlendir ve altlarında gereksiz bir boşluk var.
+  Ayrıca 2. attığım kohort kısmı ile iligli de bir başlık yok ve
+  üstüne gelince yeişl olan buton beyaz gözüküyor; üstüne ondaki
+  yazı fontunu üstüne gelmeyince siyh yap ve buton çerçevesi belli
+  olsun. Bir de yeni yorum geldi ve yorum gogole'da yayınlandı
+  kısımlarının solunda bir icon yok diğerlrinin var ve bir başlık
+  da yap (kısacası bu alanı daha estetik tasarımımıza uygun bir
+  şekilde tasarla ve mobil uyumlu olması da çok önemli)"* (typo'lar
+  verbatim §39.2 disipline). 4 net UX talebi (FeatureCard linksiz +
+  excess space + Cohort heading + SweepCTA hover/default + ToastRow
+  iconless items + heading + estetik+mobile).
+- AskUserQuestion **YAPILMADI** — kullanıcı talebi 4 net (link wire
+  + padding + heading + button style + icons), scope konservatif
+  (presentational only). CLAUDE.md §35.8 + §35.10 + §19.1.1 +
+  §38.114 compliance disipline 21 iterasyonda stable; Stage 90
+  yirmiikinci kez backend kontrat dokunmadan UI polish.
+- **Disipline restoration (22. iterasyon)**: Stage 49 §38.130 → Stage
+  89 §38.169 zinciri compliance disipline 21 kez stable; Stage 90
+  §38.170 yirmiikinci kez visual polish + link wiring + tone variation.
+  CLAUDE.md §11 + §38.49 + §38.65 + §38.74 + §38.114 + §38.131 +
+  §38.147 + §38.150 + §38.151 + §38.155 + §38.165 paterni reuse.
