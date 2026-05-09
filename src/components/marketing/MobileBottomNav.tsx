@@ -115,15 +115,20 @@ export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
 
       <nav
         aria-label={locale === 'tr' ? 'Mobil alt menü' : 'Mobile bottom navigation'}
-        className="lg:hidden fixed left-3 right-3 z-40 mx-auto max-w-[520px]"
+        // Stage 89 §38.169 — fixed wrapper anchored at `bottom: 0` (constant)
+        // + padding-bottom respekts iOS safe-area. Eski `bottom: calc(12px +
+        // env(safe-area-inset-bottom))` paterni iOS Safari URL bar /
+        // bottom-toolbar transition'ında env() değeri 0 ↔ 34px arası jitter
+        // ediyordu → fixed nav viewport scroll'una göre yukarı/aşağı kayıyor
+        // gibi görünüyordu (kullanıcı raporu "bottom nav aşağı inerken yukarı
+        // kayıyor"). Yeni paternde wrapper sabit, sadece inner padding
+        // değişir → no reflow, no fixed re-position. Inner pill aynı visual
+        // konumda görünür (12px + safe-area gap from viewport bottom).
+        className="lg:hidden fixed bottom-0 left-3 right-3 z-40 mx-auto max-w-[520px]"
         style={{
-          // Stage 60 §38.141 — HANDOFF floating pill paterni: 12px bottom
-          // margin + safe-area inset (iOS home-indicator overlap önleme).
-          bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-          // iOS Safari fix: dinamik bottom-toolbar transition'ında fixed
-          // element'in viewport ile re-position'ı titreşime yol açıyor.
-          // GPU compositing layer'a taşımak nav'ı sayfa render'ından izole
-          // eder, scroll esnasındaki "bir üste çıkma" glitch'ini önler.
+          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+          // GPU compositing layer — backdrop-blur içeren pill için her
+          // ihtimale karşı (iOS Safari composited layer separation).
           transform: 'translate3d(0, 0, 0)',
           willChange: 'transform',
           backfaceVisibility: 'hidden',

@@ -239,20 +239,19 @@ export function ContactFloat({ locale }: { locale: string }) {
     return (
       <div
         aria-live="polite"
-        // Stage 88 §38.168 — mobile FAB bottom position calc-aware:
-        // MobileBottomNav (CLAUDE.md §38.141 Stage 60) `bottom: calc(12px +
-        // env(safe-area-inset-bottom, 0px))` + h-[72px] = nav top edge at
-        // ~84px + safe-area. Eski `bottom-[88px]` safe-area-blind iken FAB
-        // iPhone notch/home-indicator altında nav'ın ARKASINA kayıyordu
-        // (kullanıcı raporu "scroll down yapınca bottom nav üstüne geliyor").
-        // Yeni: 84px nav top + 12px breathing gap = 96px + safe-area inset
-        // dynamic (CLAUDE.md §38.74 + §38.160 paterni reuse). md:+ desktop
-        // sticky CTA visible iken md:bottom-[148px] override (Stage 61
-        // §38.142), sakin md:bottom-6 (Stage 58 §38.139). Mobile arbitrary
-        // utility class md:+ swap'larıyla collide etmez (Tailwind responsive
-        // override `md:bottom-X` mobile bottom-[calc(...)]'i higher
-        // breakpoint'te kazanır).
-        className={`fixed right-4 bottom-[calc(96px+env(safe-area-inset-bottom,0px))] md:right-6 z-50 flex flex-col items-end gap-3 transition-[bottom] duration-300 ease-out ${
+        // Stage 89 §38.169 — fixed wrapper anchored at `bottom: 0` (mobile)
+        // + padding-bottom respects iOS safe-area + nav clearance. Eski
+        // `bottom-[calc(96px+env(safe-area-inset-bottom,0px))]` paterni
+        // iOS Safari URL bar / bottom-toolbar transition'ında env() değeri
+        // değişimine bağlı olarak FAB pozisyonunu aniden değiştiriyordu;
+        // kullanıcı raporu "chat baloncuğu gözükmüyor" — FAB env() jitter
+        // sırasında viewport altına kayıyordu. Yeni paternde wrapper
+        // bottom: 0 constant; sadece padding-bottom reflow olur → fixed
+        // re-position yok. md:+ desktop'ta md:pb-0 override + md:bottom-6
+        // veya md:bottom-[148px] (Stage 58 §38.139 + Stage 61 §38.142
+        // sticky CTA visibility-aware dual offset intact).
+        // Pulse §11 + §38.74 + §38.160 mobile safe-area paterni reuse.
+        className={`fixed right-4 bottom-0 pb-[calc(96px+env(safe-area-inset-bottom,0px))] md:right-6 md:pb-0 z-50 flex flex-col items-end gap-3 transition-[bottom,padding-bottom] duration-300 ease-out ${
           stickyCtaVisible ? 'md:bottom-[148px]' : 'md:bottom-6'
         }`}
       >
@@ -415,14 +414,15 @@ export function ContactFloat({ locale }: { locale: string }) {
       role="dialog"
       aria-modal="false"
       aria-label={isTr ? 'İletişim formu' : 'Contact form'}
-      // Stage 88 §38.168 — mobile open form bottom position calc-aware
-      // (FAB ile aynı paterni reuse). Eski `bottom-[88px]` safe-area-blind
-      // iken iPhone notch/home-indicator altında bottom nav'a çakışıyordu
-      // (kullanıcı raporu "scroll down yapınca bottom nav üstüne geliyor").
-      // Yeni: 96px nav clearance + safe-area inset dynamic. sm:+ desktop
-      // sticky CTA visible iken sm:bottom-[148px] override (intact §38.61
-      // + §38.142), sakin sm:bottom-6 (intact §38.58 §38.139).
-      className={`bz-fade-in fixed right-4 bottom-[calc(96px+env(safe-area-inset-bottom,0px))] left-4 z-50 flex max-h-[calc(100dvh-110px)] flex-col overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom,max-height] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] ${
+      // Stage 89 §38.169 — open form fixed wrapper bottom-0 + margin-bottom
+      // env() (FAB paterniyle aynı, env() jitter eliminate; kullanıcı
+      // raporu "chat baloncuğu gözükmüyor"). margin-bottom kullanılır
+      // (padding-bottom outer rounded-3xl border + body shadow ile çakışır).
+      // Body padding-bottom intact (form + footer için ayrı concern).
+      // sm:+ desktop sticky CTA dual offset intact (Stage 58 §38.139 +
+      // Stage 61 §38.142). Mobile margin-bottom = 96px nav clearance +
+      // safe-area; sm:+ override `sm:mb-0` ile.
+      className={`bz-fade-in fixed right-4 bottom-0 left-4 z-50 mb-[calc(96px+env(safe-area-inset-bottom,0px))] sm:mb-0 flex max-h-[calc(100dvh-110px)] flex-col overflow-hidden rounded-3xl border border-[#EDEDED] bg-white transition-[bottom,margin-bottom,max-height] duration-300 ease-out sm:left-auto sm:bottom-6 sm:right-6 sm:w-[360px] ${
         stickyCtaVisible
           ? 'md:bottom-[148px] md:max-h-[calc(100dvh-280px)]'
           : 'md:bottom-6 md:max-h-[calc(100dvh-110px)]'
