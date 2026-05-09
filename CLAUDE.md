@@ -25195,3 +25195,198 @@ reuse.
   HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
   re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE flip
   (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade.
+
+---
+
+### 38.169 2026-05-09 — Stage 89 mobile bottom nav scroll jitter + ContactFloat FAB visibility fix (iOS Safari env() reflow → bottom-anchored padding pattern)
+
+§38.168 Stage 88 sonrası kullanıcı yeni mobil iOS rapor iletti
+(screenshot: footer area, bottom nav floating pill visible, FAB
+invisible): *"Alttaki bottom nav aşağı inerken yukarı kayıyor ve chat
+baloncuğu gözükmüyor çzer misin bu soruny ve main'e merge et"* (typo
+verbatim §39.2 disipline: "çzer" → "çözer", "soruny" → "sorunu"). 2
+net iOS Safari mobil bug.
+
+**Root cause** (iOS Safari dynamic toolbar transition):
+
+iOS Safari URL bar / bottom-toolbar visible/hidden transition
+sırasında `env(safe-area-inset-bottom)` değeri 0px ↔ ~34px arası
+değişir (toolbar visible iken 0, hidden iken home-indicator için
+34px). Mevcut hem MobileBottomNav hem ContactFloat FAB pozisyonları
+bu env() değerini doğrudan `bottom: calc(N + env(safe-area-inset-bottom))`
+calculation'ında kullanıyordu:
+
+- **MobileBottomNav** (Stage 60 §38.141): `bottom: calc(12px +
+  env(safe-area-inset-bottom, 0px))` — toolbar transition'ında
+  fixed nav'ın bottom değeri 12 ↔ 46px arası reflow eder, kullanıcı
+  scroll sırasında **nav yukarı kayıyor** olarak algılar.
+- **ContactFloat FAB** (Stage 88 §38.168): `bottom-[calc(96px+env(safe-area-inset-bottom,0px))]`
+  — aynı env() jitter; FAB pozisyonu reflow sırasında geçici olarak
+  viewport sınırının altına kayıp **görünmez** olabilir.
+
+Sticky CTA bar (StickyCtaBar §38.157) `hidden md:block` ile mobile'da
+zaten görünmediği için bu bug sadece mobil görünümde tetiklenir.
+GPU compositing layer trick (`transform: translate3d(0, 0, 0) +
+willChange + backfaceVisibility: hidden`) §38.141 Stage 60'tan beri
+mevcut ama env()-driven `bottom` reflow'u GPU layer ile çözülemez —
+layout-time computation, paint öncesi.
+
+**Fix paterni** — bottom-anchored padding (CLAUDE.md §38.169
+kanonik):
+
+`bottom: calc(N + env(...))` (env-driven layout reflow) →
+`bottom: 0` constant + `padding-bottom: calc(N + env(...))` (sadece
+inner spacing değişir). Outer fixed wrapper viewport bottom'a sabit
+anchor; iOS toolbar transition'ında reflow YOK. Inner pill/FAB
+visual olarak aynı pozisyonda (aynı `N + env()` offset from viewport
+bottom) görünür ama positioning calculation viewport'a değil parent
+wrapper padding'e relative.
+
+**3 fix bundle**:
+
+1. **MobileBottomNav.tsx** (line 116-130): wrapper className
+   `fixed left-3 right-3 z-40` + style `bottom: calc(...)` → wrapper
+   `fixed bottom-0 left-3 right-3 z-40` + style
+   `paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))'`.
+   Inner pill zaten wrapper içinde rendering, padding-bottom ile
+   12px + safe-area gap koruyarak viewport bottom'dan yükselir.
+   GPU compositing layer hint'leri (translate3d/willChange/
+   backfaceVisibility) intact.
+
+2. **ContactFloat.tsx FAB** (line 240-258 civarı): wrapper className
+   `fixed right-4 bottom-[calc(96px+env(safe-area-inset-bottom,0px))]
+   md:right-6 z-50` →
+   `fixed right-4 bottom-0 pb-[calc(96px+env(safe-area-inset-bottom,0px))]
+   md:right-6 md:pb-0 z-50`. md:+ desktop'ta `md:pb-0` override
+   padding'i sıfırlar; mevcut `md:bottom-6` veya `md:bottom-[148px]`
+   (sticky CTA visible iken §38.61 + §38.142 dual offset) çalışmaya
+   devam eder. Transition `transition-[bottom]` →
+   `transition-[bottom,padding-bottom]` smooth animation iki
+   property için.
+
+3. **ContactFloat.tsx open form** (line ~415 civarı): aynı pattern
+   `bottom-[calc(...)]` → `bottom-0 mb-[calc(...)] sm:mb-0`.
+   Padding-bottom yerine **margin-bottom** tercih edildi çünkü dialog
+   wrapper rounded-3xl + box shadow taşır; padding-bottom inner body
+   layout'u etkiler (mevcut `flex flex-col + body flex-1 min-h-0
+   overflow-y-auto` Stage 79 §38.157 paterni intact tutmak için).
+   margin-bottom outer wrapper offset için sade — body shadow + border
+   etkilenmez. transition `transition-[bottom,max-height]` →
+   `transition-[bottom,margin-bottom,max-height]`.
+
+**Etkilenen dosyalar (3)**:
+- `src/components/marketing/MobileBottomNav.tsx`
+- `src/components/marketing/ContactFloat.tsx`
+- `CLAUDE.md` §38.169 closure
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**:
+yok. **Test count**: 404/404 pass intact.
+
+**Yapma**:
+- `bottom: calc(N + env(safe-area-inset-bottom))` paterni mobile
+  fixed elementlerde kullanmak — iOS Safari toolbar transition'ında
+  position reflow ediyor (kullanıcı raporu §38.169). Stage 89
+  bottom-0 + padding-bottom paterni reuse.
+- Padding-bottom yerine margin-bottom kullanmamak — outer wrapper
+  border/shadow taşıyorsa padding inner layout'u etkiler. Outer
+  rounded/shadow için margin-bottom tercih edilir (ContactFloat
+  open form paterni).
+- `transform: translate3d` + `willChange` ile env() reflow'u
+  çözmeye çalışmak — bu GPU compositing hint'leri composited paint
+  için, layout-time env() değişimi reflow'unu önlemez.
+- ContactFloat FAB için `md:pb-0` override eklememek — mobile padding
+  desktop bottom-6 ile çakışır, FAB viewport sınırlarının dışına
+  kayar.
+- iOS Safari env() jitter'ı için `100dvh` (dynamic viewport height)
+  yeterli zannetmek — 100dvh viewport boyutu için doğru çözüm ama
+  env(safe-area-inset-bottom) ayrı reflow tetikleyicisi; bottom-anchored
+  padding paterni iki sorunu da çözer.
+
+**Yap**:
+- Yeni mobile fixed bottom element'i eklenirse §38.169 paterni
+  reuse: `fixed bottom-0` wrapper + `padding-bottom: calc(N +
+  env(safe-area-inset-bottom, 0px))` inner offset. Desktop override
+  `md:pb-0 md:bottom-X` veya `lg:pb-0 lg:bottom-X` (breakpoint
+  context'e göre).
+- Yeni outer rounded/shadow taşıyan dialog için margin-bottom tercih
+  (ContactFloat open form paterni reuse).
+- iOS Safari toolbar transition smoothness için CSS transition
+  property listesine `padding-bottom` veya `margin-bottom` ekle
+  (`transition-[bottom,padding-bottom] duration-300 ease-out`).
+- Yeni mobile bottom-anchored element ekleyince WCAG 2.5.5 (44×44
+  touch target) + iOS auto-zoom prevention (16px input font) +
+  safe-area inset disiplinleri (CLAUDE.md §25.5 + §38.74 + §38.160
+  paterni) cumulative kontrol et.
+
+**Verification**:
+- `npx eslint` (modified files): 0 errors / 0 warnings
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: 404/404 pass, 45 suites
+- `npx next build` (NODE_OPTIONS 4GB heap): ✓ Compiled successfully
+  + 58/58 static page intact
+
+**Manuel smoke test** (Vercel preview sonrası):
+1. **iOS Safari mobile (iPhone notch + 5G)**: anasayfa scroll
+   yap; bottom nav floating pill viewport bottom'a sabit kalır;
+   URL bar/toolbar transition'ında **yukarı kayma yok** (env()
+   reflow eliminate).
+2. **ContactFloat FAB**: scroll sırasında FAB lime sağ-üst köşede
+   nav pill'in 12px üzerinde her zaman görünür; toolbar transition'ında
+   **görünmezlik yok** (padding-bottom değişimi composited).
+3. **Desktop md+ (≥768px)**: sticky CTA visible iken FAB
+   `md:bottom-[148px]` (mevcut Stage 61 §38.142 dual offset
+   intact); sticky dismiss → FAB `md:bottom-6` smooth 300ms
+   transition (Stage 88 §38.168 mevcut animation intact).
+4. **Reduced motion ON**: `prefers-reduced-motion: reduce` ile
+   tüm transition'lar instant (CLAUDE.md §38.61 universal `*`
+   reset blanket intact).
+5. **Mobile open form**: ContactFloat FAB tıkla → open form mobile
+   `bottom-0 mb-[calc(96+env(...))]` ile nav clearance + safe-area
+   intact; sm:+ desktop `sm:mb-0 sm:bottom-6` override smooth.
+6. **Mobile drawer**: marketing surface'inde MobileBottomNav
+   floating pill scroll-stable; backdrop-blur + glassmorphism +
+   active:scale press feedback intact.
+
+**Stage 89 closure** (Tarih 2026-05-09):
+- Branch: `claude/fix-bottom-nav-chat-1ApqX` (designated, fresh
+  main üstüne, Stage 88 §38.168 PR #593 merged sonrası align)
+- Edit'lenen dosyalar: 2 (MobileBottomNav.tsx + ContactFloat.tsx) +
+  CLAUDE.md
+- Yeni dosya: yok
+- Schema migration: yok
+- Yeni dep: yok
+- Test count: 404/404 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mevcut
+  marketing surface'lerinde mobile bottom nav scroll-stable; FAB
+  iOS Safari toolbar transition'ında her zaman görünür intact.
+- Kalan riskler: yok (UI polish + presentational; backend kontrat
+  dokunulmadı, KVKK + reCAPTCHA + honeypot + Pulse §11 design
+  system intact).
+- **Sonraki aşama önerisi**: §38.121.1 Prompt 2 defer backlog —
+  HIGH 4 Platforms 12-card grid (DEFER §38.30), Stage 9 UserSession
+  re-introduce (operatör tetiği §38.84/§38.89), RECAPTCHA_ENFORCE
+  flip (§38.79 #2 — 1-2 hafta soak), Prisma 7 upgrade.
+
+**Chat prompt history (Stage 89 §39.2 paterni)**:
+- 2026-05-09 kullanıcı (PR #593 §38.168 Stage 88 merge sonrası):
+  *"Alttaki bottom nav aşağı inerken yukarı kayıyor ve chat
+  baloncuğu gözükmüyor çzer misin bu soruny ve main'e merge et"*
+  (typo "çzer" → "çözer", "soruny" → "sorunu" verbatim §39.2
+  disipline). Screenshot iOS Safari mobile (iPhone notch + 5G + 13%
+  battery): footer area, bottom nav floating pill visible, FAB
+  invisible.
+- AskUserQuestion **YAPILMADI** — kullanıcı talebi 2 net (bottom
+  nav scroll jitter + FAB invisibility) + screenshot evidence.
+  Otonom karar yetkisi (kullanıcı "merge et" direct execution
+  intent). Compliance disipline §35.8 + §35.10 + §19.1.1 + §38.114
+  paterni 21. iterasyonda stable.
+- **Root cause discovery**: iOS Safari URL bar / bottom-toolbar
+  transition `env(safe-area-inset-bottom)` değer jitter (0 ↔ 34px),
+  fixed element `bottom: calc(N + env(...))` paterninde reflow
+  trigger eder. Çözüm: `bottom: 0` constant + `padding-bottom`/`margin-bottom`
+  ile inner offset.
+- **Disipline restoration (21. iterasyon)**: Stage 49 §38.130 →
+  Stage 88 §38.168 zinciri compliance disipline 20 kez stable;
+  Stage 89 §38.169 yirmibirinci kez backend kontrat dokunmadan UI
+  fix. CLAUDE.md §11 + §38.61 + §38.74 + §38.114 + §38.141 + §38.142
+  + §38.157 + §38.160 + §38.168 paterni reuse.
