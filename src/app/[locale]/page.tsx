@@ -439,7 +439,7 @@ export default async function LandingPage({
           AI / Cross-Platform / Reviews Inbox).
           Compliance-safe verifiable claims (CLAUDE.md §35.8 + §19.4).
       ═══════════════════════════════════════════════════════════ */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-24 bg-white border-t border-[#EDEDED]">
+      <section className="px-5 sm:px-10 pt-[60px] pb-12 sm:pt-24 sm:pb-16 bg-white border-t border-[#EDEDED]">
         <div className="max-w-[1200px] mx-auto">
           <div className="max-w-[720px] mb-10 sm:mb-14">
             <span className="pulse-eyebrow text-[#737373]">
@@ -491,9 +491,13 @@ export default async function LandingPage({
             />
           </div>
 
-          {/* FeatureCard 4-grid — Buaze gerçek feature names */}
+          {/* FeatureCard 4-grid — Buaze gerçek feature names.
+              Stage 90 §38.170: 4 kart linksiz idi (kullanıcı raporu),
+              gerçek route'lara wire edildi (CLAUDE.md §38.170 paterni). */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             <FeatureCard
+              href={`${base}/solutions/qr-generator`}
+              ariaLabel={isTr ? 'QR Studio sayfasına git' : 'Go to QR Studio page'}
               title={isTr ? 'QR Studio' : 'QR Studio'}
               body={
                 isTr
@@ -503,6 +507,8 @@ export default async function LandingPage({
               icon={<QrCode size={16} strokeWidth={2.25} />}
             />
             <FeatureCard
+              href={`${base}/features/pulse-ai`}
+              ariaLabel={isTr ? 'Pulse AI özelliklerine git' : 'Go to Pulse AI features'}
               title={isTr ? 'Pulse AI' : 'Pulse AI'}
               body={
                 isTr
@@ -512,6 +518,8 @@ export default async function LandingPage({
               icon={<Sparkles size={16} strokeWidth={2.25} />}
             />
             <FeatureCard
+              href={`${base}/features/review-management`}
+              ariaLabel={isTr ? 'Yorum Akışı özelliklerine git' : 'Go to Reviews Inbox features'}
               title={isTr ? 'Yorum Akışı' : 'Reviews Inbox'}
               body={
                 isTr
@@ -521,6 +529,8 @@ export default async function LandingPage({
               icon={<Inbox size={16} strokeWidth={2.25} />}
             />
             <FeatureCard
+              href={`${base}/features/analytics-reports`}
+              ariaLabel={isTr ? 'Analitik özelliklerine git' : 'Go to Analytics features'}
               title={isTr ? 'Analitik' : 'Analytics'}
               body={
                 isTr
@@ -823,11 +833,15 @@ export default async function LandingPage({
                     >
                       {isTr ? 'Ücretsiz başla' : 'Start free'}
                     </SweepCTA>
+                    {/* Stage 90 §38.170: secondary CTA ghost-style görsel
+                        ayrım (SweepCTA primary white+border+lime hover;
+                        secondary inline-link black text + underline-on-hover).
+                        Pulse §11 disipline — primary visual weight intact. */}
                     <a
                       href={`${base}/pricing`}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#0A0A0A] bg-transparent px-6 py-3.5 text-sm font-semibold text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-full px-6 py-3.5 text-sm font-semibold text-[#0A0A0A] underline decoration-transparent decoration-1 underline-offset-4 transition-colors hover:decoration-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2"
                     >
-                      {isTr ? 'Planları gör' : 'See plans'}
+                      {isTr ? 'Planları gör →' : 'See plans →'}
                     </a>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[#525252]">
@@ -863,11 +877,20 @@ export default async function LandingPage({
               </div>
             </div>
 
-            {/* ToastRow — generic platform event workflow demo */}
+            {/* ToastRow — generic platform event workflow demo.
+                Stage 90 §38.170: heading h3 eklendi (kullanıcı raporu
+                "bir başlık da yap"); ToastRow defaults 4 distinct
+                visible icon güncellendi (kullanıcı raporu items 1+4
+                icon görünmüyor — §38.170 paterni). */}
             <div className="flex flex-col gap-3">
               <span className="pulse-eyebrow text-[#737373]">
                 {isTr ? 'Tek yorum, dört adım' : 'One review, four steps'}
               </span>
+              <h3 className="mt-1 text-[24px] sm:text-[30px] font-medium leading-[1.1] tracking-[-0.025em] text-[#0A0A0A] text-balance">
+                {isTr
+                  ? 'Bir yorum, dört adımda yayında.'
+                  : 'One review, live in four steps.'}
+              </h3>
               <p
                 className="text-[14px] leading-[1.55] text-[#525252]"
               >

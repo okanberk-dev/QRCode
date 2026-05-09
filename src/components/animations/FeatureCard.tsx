@@ -14,8 +14,16 @@
  *
  * Original: site-library.jsx 11.FeatureCard. Konversiyon: useState hover
  * → framer-motion whileHover variant + props'tan icon override.
+ *
+ * Stage 90 §38.170: `href` prop eklendi (Next.js `<Link>` ile sarılır).
+ * Anasayfa Section 2 BUILT FOR THESE CHANNELS 4 FeatureCard linksiz idi
+ * (kullanıcı raporu). Server Component caller'lardan serializable
+ * string href ile mount edilir; client-side prefetch + accessibility
+ * intact. onClick prop opsiyonel — yalnızca href verilmemiş callsite
+ * için yedek (gelecek dashboard surface'leri için).
  */
 
+import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Star } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -27,54 +35,37 @@ interface FeatureCardProps {
   body: string;
   /** Sol üst icon (lucide-react component). Default: Star. */
   icon?: ReactNode;
-  /** Click handler — kart anchor link'se caller wrap eder. */
+  /**
+   * Eğer string verilirse kart Next `<Link>` ile sarılır (Server
+   * Component caller'lardan serializable). Aksi halde click handler
+   * (onClick) mount edilir, semantic role="button". */
+  href?: string;
+  /** Click handler — sadece `href` verilmemiş callsite için yedek. */
   onClick?: () => void;
+  /** A11y label override (text içeriği yetersizse). */
+  ariaLabel?: string;
   /** Tailwind className override. */
   className?: string;
 }
 
-export default function FeatureCard({
+/**
+ * İç kart içeriği — link ve button render branch'leri arasında DRY.
+ * motion.div lift + corner orb animation'ları her iki sarmalayıcı için
+ * ortak (variants prop ile parent'tan stagger).
+ */
+function FeatureCardInner({
   title,
   body,
   icon,
-  onClick,
-  className,
-}: FeatureCardProps) {
-  const prefersReducedMotion = useReducedMotion();
-
+  prefersReducedMotion,
+}: {
+  title: string;
+  body: string;
+  icon?: ReactNode;
+  prefersReducedMotion: boolean;
+}) {
   return (
-    <motion.div
-      onClick={onClick}
-      // Stage 85 §38.165: mobile padding kompakt (p-5 mobile, p-6 sm:+ desktop spacious).
-      // active:scale tap feedback mobile (CLAUDE.md §38.46 + §38.161 paterni).
-      className={`group relative box-border h-full cursor-pointer overflow-hidden rounded-[18px] bg-brand-bg p-5 shadow-[0_0_0_1px_rgba(10,10,10,0.06)] active:scale-[0.98] sm:p-6 sm:active:scale-100 ${
-        className ?? ''
-      }`}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={
-        onClick
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onClick();
-              }
-            }
-          : undefined
-      }
-      initial="rest"
-      animate="rest"
-      whileHover={prefersReducedMotion ? 'rest' : 'hover'}
-      whileFocus={prefersReducedMotion ? 'rest' : 'hover'}
-      variants={{
-        rest: { y: 0 },
-        hover: { y: -4 },
-      }}
-      transition={{
-        duration: 0.3,
-        ease: [0.65, 0, 0.35, 1],
-      }}
-    >
+    <>
       {/* Lime corner orb — translate + scale on hover. Decorative,
           pointer-events:none. Reduced motion'da scale: 0 sabit kalır. */}
       <motion.div
@@ -106,6 +97,99 @@ export default function FeatureCard({
           {body}
         </p>
       </div>
+    </>
+  );
+}
+
+export default function FeatureCard({
+  title,
+  body,
+  icon,
+  href,
+  onClick,
+  ariaLabel,
+  className,
+}: FeatureCardProps) {
+  const prefersReducedMotion = useReducedMotion() ?? false;
+
+  // Stage 85 §38.165: mobile padding kompakt (p-5 mobile, p-6 sm:+ desktop spacious).
+  // active:scale tap feedback mobile (CLAUDE.md §38.46 + §38.161 paterni).
+  const baseClassName = `group relative box-border h-full overflow-hidden rounded-[18px] bg-brand-bg p-5 shadow-[0_0_0_1px_rgba(10,10,10,0.06)] active:scale-[0.98] sm:p-6 sm:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lime focus-visible:ring-offset-2 ${
+    className ?? ''
+  }`;
+
+  const sharedMotionProps = {
+    initial: 'rest' as const,
+    animate: 'rest' as const,
+    whileHover: prefersReducedMotion ? ('rest' as const) : ('hover' as const),
+    whileFocus: prefersReducedMotion ? ('rest' as const) : ('hover' as const),
+    variants: {
+      rest: { y: 0 },
+      hover: { y: -4 },
+    },
+    transition: {
+      duration: 0.3,
+      ease: [0.65, 0, 0.35, 1] as [number, number, number, number],
+    },
+  };
+
+  // Stage 90 §38.170: href verildiyse Next `<Link>` (motion.a wrapper)
+  // ile sarılır — semantic anchor link, prefetch + a11y intact.
+  if (typeof href === 'string') {
+    return (
+      <motion.div {...sharedMotionProps} className="h-full">
+        <Link
+          href={href}
+          aria-label={ariaLabel ?? title}
+          className={`${baseClassName} block cursor-pointer`}
+        >
+          <FeatureCardInner
+            title={title}
+            body={body}
+            icon={icon}
+            prefersReducedMotion={prefersReducedMotion}
+          />
+        </Link>
+      </motion.div>
+    );
+  }
+
+  // Click handler verildiyse semantic button-like card (eski davranış).
+  if (typeof onClick === 'function') {
+    return (
+      <motion.div
+        onClick={onClick}
+        className={`${baseClassName} cursor-pointer`}
+        role="button"
+        tabIndex={0}
+        aria-label={ariaLabel}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        {...sharedMotionProps}
+      >
+        <FeatureCardInner
+          title={title}
+          body={body}
+          icon={icon}
+          prefersReducedMotion={prefersReducedMotion}
+        />
+      </motion.div>
+    );
+  }
+
+  // Statik kart (link yok, click yok). Decorative.
+  return (
+    <motion.div className={baseClassName} {...sharedMotionProps}>
+      <FeatureCardInner
+        title={title}
+        body={body}
+        icon={icon}
+        prefersReducedMotion={prefersReducedMotion}
+      />
     </motion.div>
   );
 }

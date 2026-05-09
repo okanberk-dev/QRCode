@@ -7,13 +7,19 @@
  * primary CTA buton. Marketing surface'lerinde "ücretsiz başla / demo al"
  * gibi action button'larında kullanılır.
  *
- * Pulse §11 disipline: graphite ink default + lime sweep on hover + arrow
- * icon offset. framer-motion variants ile smooth transition (transform
- * + color hardware-accelerated).
+ * Pulse §11 disipline: white bg + 1.5px graphite border + black text
+ * default; hover'da lime sweep slides in + black text intact (yüksek
+ * contrast lime+ink). framer-motion variants ile smooth transition
+ * (transform + shadow hardware-accelerated).
+ *
+ * Stage 90 §38.170: kullanıcı raporu "üstüne gelmeyince siyah font ve
+ * buton çerçevesi belli olsun" — default state white bg + visible
+ * border + black text (önceki graphite bg + white text yerine). Hover
+ * state lime sweep + black text (lime üzerinde yüksek contrast intact).
  *
  * Reduced-motion: LazyMount + framer-motion useReducedMotion otomatik
- * handle. Reduced motion'da hover effect static graphite kalır (background
- * sweep yok, color flip yok).
+ * handle. Reduced motion'da hover effect static white kalır (background
+ * sweep yok).
  *
  * Original: site-library.jsx 8.SweepCTA. Konversiyon: useState hover →
  * framer-motion whileHover variant + AnimatePresence-friendly.
@@ -71,8 +77,10 @@ export default function SweepCTA({
   const prefersReducedMotion = useReducedMotion();
   const isLink = typeof href === 'string';
 
-  // Pulse §11 utility set (button + anchor ortak)
-  const baseClassName = `group relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border-0 bg-brand-ink px-6 py-3.5 text-sm font-semibold text-white shadow-[0_14px_30px_-10px_rgba(10,10,10,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lime focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+  // Pulse §11 utility set (button + anchor ortak).
+  // Stage 90 §38.170: white bg + 1.5px graphite border + black text default;
+  // hover state lime sweep slides in (foreground stays black for contrast).
+  const baseClassName = `group relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border-[1.5px] border-[#0A0A0A] bg-white px-6 py-3.5 text-sm font-semibold text-[#0A0A0A] shadow-[0_8px_20px_-10px_rgba(10,10,10,0.20)] transition-shadow hover:shadow-[0_14px_30px_-10px_rgba(198,242,78,0.45)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lime focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
     className ?? ''
   }`;
   const baseStyle = { fontFamily: 'var(--font-body)' as const };
@@ -107,12 +115,15 @@ export default function SweepCTA({
           ease: [0.65, 0, 0.35, 1],
         }}
       />
-      {/* Foreground content — color flip white ↔ ink. */}
+      {/* Foreground content — Stage 90 §38.170: text always black
+          (rest state on white bg, hover state on lime sweep). Lime
+          Pulse §11 token #C6F24E provides sufficient contrast for
+          black text (~13:1 contrast ratio, WCAG AAA). */}
       <motion.span
         className="relative z-10 inline-flex items-center gap-1.5"
         variants={{
-          rest: { color: '#FFFFFF' },
-          hover: prefersReducedMotion ? { color: '#FFFFFF' } : { color: '#0A0A0A' },
+          rest: { color: '#0A0A0A' },
+          hover: { color: '#0A0A0A' },
         }}
         transition={{ duration: 0.3 }}
       >

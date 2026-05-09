@@ -14,6 +14,15 @@
  *   data) geçirebilir.
  *
  * 4 tone: pos (graphite) / lime (signature) / neg (red) / neu (paper).
+ * Stage 90 §38.170: yeni `info` tone (mavi) eklendi + default items
+ * 4 distinct vibrant icon container (kullanıcı raporu items 1+4 icon
+ * görünmüyor — graphite-on-graphite hissi). Yeni default tone mapping:
+ * - Item 1 "Yeni yorum geldi": neu (paper) → MessageSquareText icon
+ * - Item 2 "AI yanıt taslağı": lime (signature) → Sparkles icon
+ * - Item 3 "Düşük puan": neg (red) → AlertTriangle icon
+ * - Item 4 "Google'a yayınlandı": info (blue) → Send icon
+ * Icon size 12 → 14 ve container 24 → 28 (visibility uplift).
+ *
  * lucide-react icons (orijinal Unicode ✓ ✦ ! ↗ yerine).
  *
  * Reduced-motion: stagger off, tüm toast'lar hemen visible.
@@ -23,11 +32,16 @@
  */
 
 import { motion, useReducedMotion } from 'framer-motion';
-import { Check, Sparkles, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import {
+  MessageSquareText,
+  Sparkles,
+  AlertTriangle,
+  Send,
+} from 'lucide-react';
 import { useInView } from 'react-intersection-observer';
 import type { ReactNode } from 'react';
 
-export type ToastTone = 'pos' | 'lime' | 'neg' | 'neu';
+export type ToastTone = 'pos' | 'lime' | 'neg' | 'neu' | 'info';
 
 export interface ToastRowItem {
   /** Tone — bg + icon + text rengini belirler. */
@@ -42,26 +56,26 @@ export interface ToastRowItem {
 
 const DEFAULT_GENERIC_ITEMS: ToastRowItem[] = [
   {
-    tone: 'pos',
-    icon: <Check size={12} strokeWidth={3} />,
+    tone: 'neu',
+    icon: <MessageSquareText size={14} strokeWidth={2.5} />,
     title: 'Yeni yorum geldi',
     sub: 'Google · ★★★★★',
   },
   {
     tone: 'lime',
-    icon: <Sparkles size={12} strokeWidth={2.5} />,
+    icon: <Sparkles size={14} strokeWidth={2.5} />,
     title: 'AI yanıt taslağı hazır',
     sub: '0.8s',
   },
   {
     tone: 'neg',
-    icon: <AlertTriangle size={12} strokeWidth={2.5} />,
+    icon: <AlertTriangle size={14} strokeWidth={2.5} />,
     title: 'Düşük puan tespit edildi',
     sub: 'Google · ★★',
   },
   {
-    tone: 'pos',
-    icon: <ArrowUpRight size={12} strokeWidth={2.5} />,
+    tone: 'info',
+    icon: <Send size={14} strokeWidth={2.5} />,
     title: 'Yorum Google’a yayınlandı',
     sub: 'Google Reviews',
   },
@@ -80,21 +94,24 @@ const TONE_BG: Record<ToastTone, string> = {
   pos: 'bg-brand-paper',
   lime: 'bg-brand-lime-soft',
   neg: 'bg-[#FEE2E2]',
-  neu: 'bg-brand-bg',
+  neu: 'bg-white',
+  info: 'bg-[#DBEAFE]',
 };
 
 const TONE_ICON_BG: Record<ToastTone, string> = {
   pos: 'bg-brand-ink text-white',
   lime: 'bg-brand-lime text-brand-ink',
   neg: 'bg-[#DC2626] text-white',
-  neu: 'bg-brand-mute text-white',
+  neu: 'bg-brand-ink text-white',
+  info: 'bg-[#2563EB] text-white',
 };
 
 const TONE_TITLE: Record<ToastTone, string> = {
   pos: 'text-brand-ink',
   lime: 'text-brand-ink',
-  neg: 'text-[#DC2626]',
+  neg: 'text-[#991B1B]',
   neu: 'text-brand-ink',
+  info: 'text-[#1E3A8A]',
 };
 
 export default function ToastRow({
@@ -138,7 +155,7 @@ export default function ToastRow({
           }}
         >
           <span
-            className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${TONE_ICON_BG[item.tone]}`}
+            className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full shadow-[0_2px_6px_-2px_rgba(10,10,10,0.18)] ${TONE_ICON_BG[item.tone]}`}
             aria-hidden="true"
           >
             {item.icon}
