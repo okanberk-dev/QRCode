@@ -27,8 +27,7 @@ export function resolveActiveRestaurantId<T extends ActiveBusinessRestaurant>({
   const storedId = normalizeRestaurantParam(storedRestaurantId);
   if (storedId && ids.has(storedId)) return storedId;
 
-  if (restaurants.length === 1) return restaurants[0].id;
-  return null;
+  return restaurants[0]?.id ?? null;
 }
 
 export function setRestaurantParam(
@@ -44,4 +43,3 @@ export function setRestaurantParam(
   }
   return params.toString();
 }
-

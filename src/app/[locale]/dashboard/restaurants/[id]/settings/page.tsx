@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { AlertOctagon, ArrowLeft, Building2, Clock, Globe, Loader2, Lock, Palette, Plug } from "lucide-react";
+import { AlertOctagon, ArrowLeft, Building2, Clock, Globe, Loader2, Lock, Palette } from "lucide-react";
 import { AlertBanner, BusinessStatusBadge, PageHeader } from "@/components/ui";
 import { SettingsLayout, type SettingsTab } from "@/components/dashboard/settings/SettingsLayout";
 import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
 import { BusinessGeneralSettings } from "@/components/dashboard/settings/sections/BusinessGeneralSettings";
 import { BusinessBrandSettings } from "@/components/dashboard/settings/sections/BusinessBrandSettings";
-import { BusinessIntegrationSettings } from "@/components/dashboard/settings/sections/BusinessIntegrationSettings";
-import { PlatformRedirectsPanel } from "@/components/dashboard/settings/sections/PlatformRedirectsPanel";
 import { BusinessWebsiteSettings } from "@/components/dashboard/settings/sections/BusinessWebsiteSettings";
 import { BusinessOperationalSettings } from "@/components/dashboard/settings/sections/BusinessOperationalSettings";
 import { BusinessSecuritySettings } from "@/components/dashboard/settings/sections/BusinessSecuritySettings";
@@ -71,7 +69,6 @@ interface RestaurantPayload {
 const SECTION_TABS: SettingsTab[] = [
   { id: "general", label: "Genel" },
   { id: "brand", label: "Marka" },
-  { id: "integrations", label: "Platform Bağlantıları" },
   { id: "website", label: "Web sitesi" },
   { id: "operations", label: "Operasyonel" },
   { id: "security", label: "Güvenlik" },
@@ -91,9 +88,11 @@ const VALID_SECTION_IDS = new Set(SECTION_TABS.filter((t) => !t.disabled).map((t
  */
 export default function RestaurantSettingsPage() {
   const params = useParams();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const locale = params.locale === "en" ? "en" : "tr";
   const id = params.id as string;
+  const requestedSection = searchParams.get("section");
 
   const [restaurant, setRestaurant] = useState<RestaurantPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,6 +105,12 @@ export default function RestaurantSettingsPage() {
   }, [searchParams]);
 
   const [active, setActive] = useState<string>(initialSection);
+
+  useEffect(() => {
+    if (requestedSection === "integrations") {
+      router.replace(`/${locale}/dashboard/platforms?restaurantId=${id}`);
+    }
+  }, [id, locale, requestedSection, router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -296,34 +301,9 @@ export default function RestaurantSettingsPage() {
       </SettingsSection>
 
       <SettingsSection
-        id="integrations"
-        active={active === "integrations"}
-        eyebrow="03 — PLATFORM BAĞLANTILARI"
-        title="Platform Bağlantıları"
-        description="Yorum platformları, sosyal medya kanalları ve varsayılan yönlendirme."
-        actions={
-          <span className="text-[#737373]" aria-hidden="true">
-            <Plug size={18} />
-          </span>
-        }
-      >
-        <BusinessIntegrationSettings
-          restaurant={restaurant}
-          locale={locale === "tr" ? "tr" : "en"}
-          onSaved={handleSaved}
-        />
-        <div className="mt-6">
-          <PlatformRedirectsPanel
-            restaurantId={restaurant.id}
-            locale={locale === "tr" ? "tr" : "en"}
-          />
-        </div>
-      </SettingsSection>
-
-      <SettingsSection
         id="website"
         active={active === "website"}
-        eyebrow="04 — WEB SİTESİ"
+        eyebrow="03 — WEB SİTESİ"
         title="Web sitesi entegrasyonu"
         description="İşletmenizin web sitesine yorum widget'ı yerleştirin."
         actions={
@@ -344,7 +324,7 @@ export default function RestaurantSettingsPage() {
       <SettingsSection
         id="operations"
         active={active === "operations"}
-        eyebrow="05 — OPERASYONEL"
+        eyebrow="04 — OPERASYONEL"
         title="Operasyonel ayarlar"
         description="Çalışma saatleri ve geçici kapalı durumu."
         actions={
@@ -362,7 +342,7 @@ export default function RestaurantSettingsPage() {
       <SettingsSection
         id="security"
         active={active === "security"}
-        eyebrow="06 — GÜVENLİK"
+        eyebrow="05 — GÜVENLİK"
         title="Güvenlik & erişim"
         description="İşletme aktiflik durumu."
         actions={
@@ -380,7 +360,7 @@ export default function RestaurantSettingsPage() {
       <SettingsSection
         id="danger"
         active={active === "danger"}
-        eyebrow="07 — TEHLİKELİ BÖLGE"
+        eyebrow="06 — TEHLİKELİ BÖLGE"
         title="Tehlikeli bölge"
         description="Geri alınamaz veya yıkıcı işlemler. Dikkatli kullan."
         actions={

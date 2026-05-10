@@ -286,12 +286,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     setActiveRestaurantId(next);
     if (next) {
       window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, next);
-      if (!queryRestaurantId && pathname && isBusinessScopedHref(pathname)) {
+      if (pathname && isBusinessScopedHref(pathname) && queryRestaurantId !== next) {
         const nextSearch = setRestaurantParam(searchParams.toString(), next);
         router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, { scroll: false });
       }
-    } else if (queryRestaurantId === 'all') {
-      window.localStorage.removeItem(ACTIVE_BUSINESS_STORAGE_KEY);
     }
   }, [workspaceRestaurants, queryRestaurantId]);
 
@@ -387,15 +385,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     return nextSearch ? `${hrefPath}?${nextSearch}` : hrefPath;
   };
 
-  const selectRestaurantScope = (restaurantId: string | null) => {
+  const selectRestaurantScope = (restaurantId: string) => {
     setActiveRestaurantId(restaurantId);
     setWorkspaceMenuOpen(false);
     if (typeof window !== 'undefined') {
-      if (restaurantId) {
-        window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
-      } else {
-        window.localStorage.removeItem(ACTIVE_BUSINESS_STORAGE_KEY);
-      }
+      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
     }
     const currentPath = pathname || `/${locale}/dashboard`;
     const nextSearch = setRestaurantParam(searchParams.toString(), restaurantId);
@@ -450,7 +444,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       groupInsight: isTr ? 'İçgörü' : 'Insight',
       groupInfo: isTr ? 'Bilgi' : 'Info',
       workspace: isTr ? 'BUAZE PANELİ' : 'BUAZE PANEL',
-      allBusinesses: isTr ? 'Tüm işletmeler' : 'All businesses',
       chooseBusiness: isTr ? 'İşletme değiştir' : 'Switch business',
     };
   }, [locale, isClinicMode]);
@@ -591,9 +584,8 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
   const primaryName =
     activeRestaurant?.name ??
-    (workspaceRestaurants.length > 1
-      ? copy.allBusinesses
-      : workspace?.primaryName ?? (locale === 'tr' ? 'İşletmen' : 'Your workspace'));
+    workspace?.primaryName ??
+    (locale === 'tr' ? 'İşletmen' : 'Your workspace');
   const locationCount = workspace?.locationCount ?? 0;
   const primaryInitial = (activeRestaurant?.name || workspace?.primaryName || displayName).charAt(0).toUpperCase();
 
@@ -663,26 +655,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             role="menu"
             className="absolute left-3 right-3 top-[calc(100%-10px)] z-50 overflow-hidden rounded-2xl border border-[#EDEDED] bg-white p-1.5 shadow-[0_24px_70px_-30px_rgba(10,10,10,0.35)]"
           >
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => selectRestaurantScope(null)}
-              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] transition-colors ${
-                !activeRestaurantId ? 'bg-[#F7FAEF] text-[#0A0A0A]' : 'text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
-              }`}
-            >
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F5F5F5]">
-                <Building2 size={14} strokeWidth={2} />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-semibold">{copy.allBusinesses}</span>
-                <span className="pulse-eyebrow mt-0.5 block text-[#737373]">
-                  {locationCount} {locale === 'tr' ? 'KONUM' : 'LOCATIONS'}
-                </span>
-              </span>
-              {!activeRestaurantId && <Check size={14} strokeWidth={2.4} />}
-            </button>
-            <div className="my-1 h-px bg-[#EDEDED]" />
             {workspaceRestaurants.map((restaurant) => {
               const selected = restaurant.id === activeRestaurantId;
               const clinic = detectSector(restaurant.category) === 'clinic';
@@ -1089,11 +1061,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             {workspaceRestaurants.length > 1 && (
               <select
                 value={activeRestaurantId ?? ''}
-                onChange={(event) => selectRestaurantScope(event.target.value || null)}
+                onChange={(event) => selectRestaurantScope(event.target.value)}
                 aria-label={copy.chooseBusiness}
                 className="max-w-[132px] rounded-lg border border-[#EDEDED] bg-white px-2 py-1.5 text-[11px] font-medium text-[#0A0A0A] outline-none focus:border-[#C6F24E]"
               >
-                <option value="">{locale === 'tr' ? 'Tümü' : 'All'}</option>
                 {workspaceRestaurants.map((restaurant) => (
                   <option key={restaurant.id} value={restaurant.id}>
                     {restaurant.name}
@@ -1112,6 +1083,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               panelBase={`/${locale}/dashboard`}
               reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
               notificationsSettingsHref={`/${locale}/dashboard/notifications`}
+              restaurantId={activeRestaurantId}
             />
             <button
               onClick={() => setDrawerOpen((v) => !v)}
@@ -1154,11 +1126,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             {workspaceRestaurants.length > 1 && (
               <select
                 value={activeRestaurantId ?? ''}
-                onChange={(event) => selectRestaurantScope(event.target.value || null)}
+                onChange={(event) => selectRestaurantScope(event.target.value)}
                 aria-label={copy.chooseBusiness}
                 className="hidden max-w-[220px] rounded-full border border-[#EDEDED] bg-white px-3 py-2 text-[12px] font-medium text-[#0A0A0A] outline-none transition-colors hover:border-[#0A0A0A] focus:border-[#C6F24E] xl:block"
               >
-                <option value="">{copy.allBusinesses}</option>
                 {workspaceRestaurants.map((restaurant) => (
                   <option key={restaurant.id} value={restaurant.id}>
                     {restaurant.name}
@@ -1194,6 +1165,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               panelBase={`/${locale}/dashboard`}
               reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
               notificationsSettingsHref={`/${locale}/dashboard/notifications`}
+              restaurantId={activeRestaurantId}
             />
             <Link
               href={`/${locale}/dashboard/account?section=profile`}

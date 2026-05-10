@@ -42,6 +42,8 @@ interface NotificationBellProps {
    *  cross-panel jump that previously dropped owners into the admin
    *  shell). */
   notificationsSettingsHref?: string;
+  /** Active owner business scope. When present, low-rating feedback notifications are scoped to it. */
+  restaurantId?: string | null;
   /** Optional accent (defaults to lime — Pulse). */
   iconColor?: string;
 }
@@ -76,6 +78,16 @@ function writeLastViewed(scope: string, ts: number) {
   }
 }
 
+function withSearchParams(href: string, values: Record<string, string | null | undefined>): string {
+  const [path, query = ''] = href.split('?');
+  const params = new URLSearchParams(query);
+  for (const [key, value] of Object.entries(values)) {
+    if (value) params.set(key, value);
+  }
+  const next = params.toString();
+  return next ? `${path}?${next}` : path;
+}
+
 /**
  * Sağ üstte bell + dropdown. Reuse target: owner DashboardShell + admin
  * AdminTopbar. Two data sources:
@@ -100,6 +112,7 @@ export default function NotificationBell({
   panelBase,
   reviewsHref,
   notificationsSettingsHref,
+  restaurantId,
   iconColor,
 }: NotificationBellProps) {
   const isTr = locale === 'tr';
@@ -119,6 +132,7 @@ export default function NotificationBell({
   // azalır (markFeedbackRead helper custom event ile sync).
   const [lowUnreadCount, setLowUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
   const [lastFetchedAt, setLastFetchedAt] = useState(0);
   const [lastViewedAt, setLastViewedAt] = useState(0);
 
@@ -144,11 +158,25 @@ export default function NotificationBell({
       // Stage 13) sonrası `buaze:feedback-read` custom event tetiklenir
       // (page-level listener) → NotificationBell anında refetch (60s polling
       // beklemez) + bottom nav badge anında düşer.
+      const feedbackParams = new URLSearchParams({
+        rating: 'low',
+        limit: '5',
+        isRead: 'false',
+      });
+      const countsParams = new URLSearchParams();
+      if (restaurantId) {
+        feedbackParams.set('restaurantId', restaurantId);
+        countsParams.set('restaurantId', restaurantId);
+      }
+
+      const countsQuery = countsParams.toString();
       const [listRes, countsRes] = await Promise.all([
-        fetch('/api/feedback?rating=low&limit=5&isRead=false', {
+        fetch(`/api/feedback?${feedbackParams.toString()}`, {
           cache: 'no-store',
         }),
-        fetch('/api/feedback/counts', { cache: 'no-store' }),
+        fetch(`/api/feedback/counts${countsQuery ? `?${countsQuery}` : ''}`, {
+          cache: 'no-store',
+        }),
       ]);
       if (listRes.ok) {
         const json = await listRes.json();
@@ -169,7 +197,7 @@ export default function NotificationBell({
       setLoading(false);
       setLastFetchedAt(Date.now());
     }
-  }, []);
+  }, [restaurantId]);
 
   // Stage 80 §38.160 — Inbox'ta row tıklanınca page-level PATCH isRead=true
   // sonrası `buaze:feedback-read` custom event tetiklenir; NotificationBell
@@ -255,13 +283,71 @@ export default function NotificationBell({
     };
   }, [open]);
 
-  // Mark all visible items as read whenever the dropdown is opened.
-  // Cheap, idempotent — clears the badge instantly.
-  const markAllRead = useCallback(() => {
+  // Opening the dropdown marks announcement-style items viewed locally.
+  // Feedback notifications use the backend `Feedback.isRead` state and are
+  // marked via item click or the explicit "mark all read" action.
+  const markAnnouncementsViewed = useCallback(() => {
     const now = Date.now();
     writeLastViewed(scope, now);
     setLastViewedAt(now);
   }, [scope]);
+
+  const attentionHref = useCallback(
+    (feedbackId: string) =>
+      withSearchParams(reviewsLink, {
+        focus: feedbackId,
+        restaurantId,
+      }),
+    [restaurantId, reviewsLink],
+  );
+
+  const markFeedbackRead = useCallback(
+    async (feedbackId: string) => {
+      setAttention((current) => current.filter((item) => item.id !== feedbackId));
+      setLowUnreadCount((current) => Math.max(0, current - 1));
+      try {
+        const res = await fetch(`/api/feedback/${feedbackId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isRead: true }),
+          keepalive: true,
+        });
+        if (!res.ok) throw new Error('mark_read_failed');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('buaze:feedback-read'));
+        }
+      } catch {
+        void fetchAttention();
+      }
+    },
+    [fetchAttention],
+  );
+
+  const markAllFeedbackRead = useCallback(async () => {
+    if (markingAllRead) return;
+    setMarkingAllRead(true);
+    markAnnouncementsViewed();
+    setAttention([]);
+    setLowUnreadCount(0);
+    try {
+      const res = await fetch('/api/feedback/read-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: 'low',
+          ...(restaurantId ? { restaurantId } : {}),
+        }),
+      });
+      if (!res.ok) throw new Error('mark_all_read_failed');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('buaze:feedback-read'));
+      }
+    } catch {
+      void fetchAttention();
+    } finally {
+      setMarkingAllRead(false);
+    }
+  }, [fetchAttention, markAnnouncementsViewed, markingAllRead, restaurantId]);
 
   const totalCount = announcements.length + lowUnreadCount;
 
@@ -311,7 +397,7 @@ export default function NotificationBell({
   const handleToggle = () => {
     setOpen((v) => {
       const next = !v;
-      if (next) markAllRead();
+      if (next) markAnnouncementsViewed();
       return next;
     });
   };
@@ -388,14 +474,31 @@ export default function NotificationBell({
                   <span className="pulse-eyebrow text-[#737373]">{totalCount}</span>
                 )}
               </div>
-              <Link
-                href={settingsLink}
-                onClick={() => setOpen(false)}
-                aria-label={isTr ? 'Bildirim ayarları' : 'Notification settings'}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
-              >
-                <Settings size={13} strokeWidth={2} />
-              </Link>
+              <div className="flex items-center gap-1.5">
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => void markAllFeedbackRead()}
+                    disabled={markingAllRead}
+                    className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-2.5 text-[11px] font-semibold text-[#0A0A0A] transition-colors hover:border-[#C6F24E] disabled:opacity-60"
+                  >
+                    {markingAllRead ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <CheckCircle2 size={12} />
+                    )}
+                    {isTr ? 'Tümünü okundu' : 'Mark all read'}
+                  </button>
+                )}
+                <Link
+                  href={settingsLink}
+                  onClick={() => setOpen(false)}
+                  aria-label={isTr ? 'Bildirim ayarları' : 'Notification settings'}
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+                >
+                  <Settings size={13} strokeWidth={2} />
+                </Link>
+              </div>
             </div>
 
             {/* Body — scrollable, max-height capped */}
@@ -452,8 +555,11 @@ export default function NotificationBell({
                     {attention.map((f) => (
                       <li key={f.id}>
                         <Link
-                          href={`${reviewsLink}?focus=${f.id}`}
-                          onClick={() => setOpen(false)}
+                          href={attentionHref(f.id)}
+                          onClick={() => {
+                            setOpen(false);
+                            void markFeedbackRead(f.id);
+                          }}
                           className="block rounded-xl px-3 py-2.5 transition-colors hover:bg-[#FAFAFA]"
                         >
                           <NotificationItem

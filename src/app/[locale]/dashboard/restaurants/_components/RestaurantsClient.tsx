@@ -28,6 +28,8 @@ interface RestaurantsClientProps {
   locale: Locale;
   initialRestaurants: Restaurant[];
   initialNotificationEmail: string;
+  selectedRestaurantId?: string | null;
+  hasMultipleRestaurants?: boolean;
 }
 
 type CreateStep = 0 | 1 | 2;
@@ -116,6 +118,8 @@ export default function RestaurantsClient({
   locale,
   initialRestaurants,
   initialNotificationEmail,
+  selectedRestaurantId = null,
+  hasMultipleRestaurants = false,
 }: RestaurantsClientProps) {
   const router = useRouter();
   const didBootstrapRef = useRef(false);
@@ -135,6 +139,10 @@ export default function RestaurantsClient({
   const [formData, setFormData] = useState<CreateFormData>(() =>
     createEmptyForm(initialNotificationEmail),
   );
+
+  useEffect(() => {
+    setRestaurants(initialRestaurants);
+  }, [initialRestaurants]);
 
   const copy = locale === 'tr'
     ? {
@@ -157,6 +165,7 @@ export default function RestaurantsClient({
         deactivate: 'Devre dışı bırak',
         activeStatus: 'Aktif',
         inactiveStatus: 'Devre dışı',
+        scopeHint: 'Diğer işletmeleri görüntülemek için sol üstten işletme seçin.',
       }
     : {
         title: 'My Businesses',
@@ -178,13 +187,16 @@ export default function RestaurantsClient({
         deactivate: 'Disable',
         activeStatus: 'Active',
         inactiveStatus: 'Disabled',
+        scopeHint: 'To view other businesses, choose them from the top-left business selector.',
       };
 
   const fetchRestaurants = async () => {
     setLoading(true);
     setFetchError('');
     try {
-      const response = await fetch(`/api/restaurants?status=${statusFilter}`);
+      const params = new URLSearchParams({ status: statusFilter });
+      if (selectedRestaurantId) params.set('restaurantId', selectedRestaurantId);
+      const response = await fetch(`/api/restaurants?${params.toString()}`);
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
         setFetchError(errData.error || `Sunucu hatası (${response.status})`);
@@ -207,10 +219,10 @@ export default function RestaurantsClient({
       if (statusFilter === 'active') return;
     }
     fetchRestaurants();
-    // fetchRestaurants is a stable closure capturing statusFilter via the
-    // existing scope; statusFilter is the only intentional trigger.
+    // fetchRestaurants captures status + selectedRestaurantId; both should
+    // refresh the scoped owner list.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
+  }, [statusFilter, selectedRestaurantId]);
 
   const handleNameChange = (name: string) => {
     if (isManualSlug) {
@@ -353,7 +365,11 @@ export default function RestaurantsClient({
     );
   }
 
-  const filtered = restaurants.filter(
+  const scopedRestaurants = selectedRestaurantId
+    ? restaurants.filter((restaurant) => restaurant.id === selectedRestaurantId)
+    : restaurants;
+
+  const filtered = scopedRestaurants.filter(
     (r) =>
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.category.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -390,6 +406,12 @@ export default function RestaurantsClient({
         </AlertBanner>
       )}
 
+      {hasMultipleRestaurants && selectedRestaurantId && (
+        <AlertBanner kind="info">
+          {copy.scopeHint}
+        </AlertBanner>
+      )}
+
       {/*
         Stage 80 §38.160 — Mobile filter toolbar sticky-on-scroll.
         Topbar h-16 (64px) altında pin'lenir; tab + arama kutusu içerik
@@ -418,7 +440,7 @@ export default function RestaurantsClient({
         </div>
       </div>
 
-      {restaurants.length === 0 ? (
+      {scopedRestaurants.length === 0 ? (
         <EmptyState
           icon={<Store size={22} />}
           title={emptyTitle}

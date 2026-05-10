@@ -1024,7 +1024,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
               : "To read and reply to reviews your customers left on Google from this page, you first need to connect your Google Business account."}
           </p>
           <button
-            onClick={() => router.push(`/${locale}/dashboard/restaurants/${activeRestaurantId}/settings?section=integrations`)}
+            onClick={() => router.push(`/${locale}/dashboard/platforms?restaurantId=${activeRestaurantId}`)}
             className="bz-btn-primary inline-flex items-center gap-2 px-6 rounded-full"
           >
             <ExternalLink size={16} />

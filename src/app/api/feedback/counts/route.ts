@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { normalizeRestaurantParam } from '@/lib/active-business';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -12,13 +13,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const requestedRestaurantId = normalizeRestaurantParam(
+      searchParams.get('restaurantId') ?? searchParams.get('restaurant'),
+    );
     const scoped = await getScopedRestaurantIds(actor);
     const baseWhere =
       scoped === null
-        ? {}
+        ? requestedRestaurantId
+          ? { restaurantId: requestedRestaurantId }
+          : {}
         : scoped.length === 0
           ? null
-          : { restaurantId: { in: scoped } };
+          : requestedRestaurantId
+            ? scoped.includes(requestedRestaurantId)
+              ? { restaurantId: requestedRestaurantId }
+              : null
+            : { restaurantId: { in: scoped } };
 
     if (baseWhere === null) {
       return NextResponse.json({ all: 0, new: 0, attention: 0, replied: 0, lowUnread: 0 });

@@ -15,6 +15,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { PageHeader, StatCard, EmptyState } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
+import { resolveActiveRestaurantId } from '@/lib/active-business';
 import {
   MANAGED_PLATFORM_DEFS,
   MANAGEABLE_PLATFORM_DEFS,
@@ -30,18 +31,29 @@ export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ restaurantId?: string; restaurant?: string }>;
 }
 
 type RestaurantPlatformRow = {
   id: string;
   name: string;
   category: string;
+  address: string | null;
+  city: string | null;
+  googlePlaceId: string | null;
   externalPlatformsEnabled: boolean;
+  defaultRedirectPlatform: string | null;
+  reservationUrl: string | null;
+  website: string | null;
+  otherPlatformUrl: string | null;
+  otherPlatformLabel: string | null;
+  otherPlatformEnabled: boolean;
 } & Record<PlatformUrlField, string | null> &
   Record<PlatformEnabledField, boolean>;
 
-export default async function OwnerPlatformsPage({ params }: PageProps) {
+export default async function OwnerPlatformsPage({ params, searchParams }: PageProps) {
   const { locale: localeParam } = await params;
+  const query = await searchParams;
   const locale: Locale = localeParam === 'en' ? 'en' : 'tr';
   const isTr = locale === 'tr';
 
@@ -63,7 +75,11 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
       id: true,
       name: true,
       category: true,
+      address: true,
+      city: true,
+      googlePlaceId: true,
       externalPlatformsEnabled: true,
+      defaultRedirectPlatform: true,
       googleReviewUrl: true,
       yemekSepetiUrl: true,
       getirYemekUrl: true,
@@ -77,6 +93,11 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
       instagramUrl: true,
       facebookUrl: true,
       whatsappUrl: true,
+      reservationUrl: true,
+      website: true,
+      otherPlatformUrl: true,
+      otherPlatformLabel: true,
+      otherPlatformEnabled: true,
       googleEnabled: true,
       yemekSepetiEnabled: true,
       getirEnabled: true,
@@ -123,7 +144,15 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
     );
   }
 
-  const restaurantIds = restaurants.map((r) => r.id);
+  const selectedRestaurantId = resolveActiveRestaurantId({
+    restaurants,
+    queryRestaurantId: query?.restaurantId ?? query?.restaurant,
+    storedRestaurantId: null,
+  });
+  const selectedRestaurants = selectedRestaurantId
+    ? restaurants.filter((restaurant) => restaurant.id === selectedRestaurantId)
+    : restaurants;
+  const restaurantIds = selectedRestaurants.map((r) => r.id);
   const monthStart = new Date();
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
@@ -149,7 +178,7 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
     let connected = 0;
     let urlSet = 0;
     if (platform.urlField) {
-      for (const restaurant of restaurants) {
+      for (const restaurant of selectedRestaurants) {
         const url = restaurant[platform.urlField];
         const hasUrl = typeof url === 'string' && url.trim().length > 0;
         const isEnabled = platform.enabledField ? Boolean(restaurant[platform.enabledField]) : true;
@@ -160,20 +189,17 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
         }
       }
     }
-    return { ...platform, connected, urlSet, total: restaurants.length };
+    return { ...platform, connected, urlSet, total: selectedRestaurants.length };
   });
 
   const manageableSummaries = platformSummaries.filter((platform) => !platform.comingSoon && platform.urlField);
   const totalConnected = manageableSummaries.reduce((sum, platform) => sum + platform.connected, 0);
-  const totalSlots = restaurants.length * MANAGEABLE_PLATFORM_DEFS.length;
+  const totalSlots = selectedRestaurants.length * MANAGEABLE_PLATFORM_DEFS.length;
   const activeCategorySet = new Set(
     manageableSummaries.filter((platform) => platform.connected > 0).map((platform) => platform.category),
   );
   const activeCategoryCount = activeCategorySet.size;
-  const firstMissing =
-    manageableSummaries.find((platform) => platform.urlSet < platform.total) ??
-    manageableSummaries.find((platform) => platform.slug === 'google');
-  const newConnectionHref = `/${locale}/dashboard/platforms/${firstMissing?.slug ?? 'google'}`;
+  const newConnectionHref = '#platform-wizard';
 
   return (
     <div className="space-y-5">
@@ -182,8 +208,8 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
         title={isTr ? 'Platform Bağlantıları' : 'Platform Links'}
         description={
           isTr
-            ? 'Yorumları, siparişleri ve mesajları tek panelde topla. Platformları tüm işletmeler için tek ekrandan yönet.'
-            : 'Collect reviews, orders, and messages in one panel. Manage every platform across all businesses from one workspace view.'
+            ? 'Yorum, sosyal medya ve mesaj bağlantılarını seçili işletme için tek akışta yönet.'
+            : 'Manage review, social, and messaging links for the selected business in one flow.'
         }
         actions={
           <div className="flex items-center gap-2">
@@ -317,20 +343,17 @@ export default async function OwnerPlatformsPage({ params }: PageProps) {
           intact; client island sadece logo render + filtreleme yapar. */}
       <PlatformsClient
         locale={locale}
-        restaurants={restaurants.map<RestaurantInfo>((r) => ({
-          id: r.id,
-          name: r.name,
-          category: r.category,
-        }))}
+        restaurants={restaurants.map<RestaurantInfo>((r) => ({ ...r }))}
         platformSummaries={platformSummaries as PlatformSummaryRow[]}
+        selectedRestaurantId={selectedRestaurantId}
       />
 
       <div className="bz-card-soft flex items-center gap-3 p-4">
         <ExternalLink size={14} strokeWidth={2} className="shrink-0 text-[#737373]" />
         <p className="flex-1 text-[12.5px] text-[#525252]">
           {isTr
-            ? 'Her platformun URL düzenleme, aktiflik ve test akışları artık kendi workspace yönetim sayfasında. İşletme ayarları tekil restoran detayları için korunur.'
-            : 'Each platform now has its own workspace management page for URL editing, activation, and tests. Business settings remain available for single-restaurant details.'}
+            ? 'Platform bağlantıları için tek kanonik yer burasıdır. Diğer işletmelere geçmek için sol üstteki işletme seçiciyi kullanın.'
+            : 'This is the single canonical place for platform links. Use the top-left business selector to switch businesses.'}
         </p>
         <Link href={`/${locale}/dashboard/restaurants`} className="bz-btn-ghost text-[12px]">
           {isTr ? 'İşletme listesi' : 'Business list'}
