@@ -648,7 +648,7 @@ export default function RestaurantDetailPage() {
                   <select
                     value={formData.userId}
                     onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
-                    className="w-full cursor-pointer rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                    className="bz-input w-full cursor-pointer rounded-2xl py-3 text-[14px]"
                   >
                     <option value="">Sahip atanmamış</option>
                     {owners.map((owner) => (
@@ -667,7 +667,7 @@ export default function RestaurantDetailPage() {
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full cursor-pointer rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                  className="bz-input w-full cursor-pointer rounded-2xl py-3 text-[14px]"
                 >
                   <option>Restoran</option>
                   <option>Kafe</option>

@@ -276,7 +276,7 @@ export default function AdminAuditLogsPage() {
           <select
             value={actorSource}
             onChange={(e) => setActorSource(e.target.value as SourceFilter)}
-            className="rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-bold text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="bz-input rounded-xl py-2 text-xs font-bold"
           >
             <option value="all">Tüm aktörler</option>
             <option value="admin">Yöneticiler</option>

@@ -3,14 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  X,
   Mail,
   Tag,
   Archive,
   ArchiveRestore,
   Loader2,
 } from 'lucide-react';
-import { Modal, useConfirmDialog } from '@/components/ui';
+import { Modal, PanelSelectionBar, useConfirmDialog } from '@/components/ui';
 import type { CustomerSegment } from '@/lib/customers';
 import type { Locale } from '@/lib/translations';
 
@@ -122,6 +121,14 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
   }, [notice]);
 
   const count = selected.size;
+  const clearSelection = () => {
+    setSelected(new Set());
+    document
+      .querySelectorAll<HTMLInputElement>('[data-customer-key]')
+      .forEach((cb) => {
+        cb.checked = false;
+      });
+  };
 
   if (count === 0 && !confirmDialog && !campaignOpen && !segmentOpen && !notice) {
     return null;
@@ -242,81 +249,56 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
     <>
       {/* Floating bottom toolbar */}
       {count > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 inset-x-4 sm:inset-x-auto">
-          <div className="mx-auto max-w-[640px] rounded-2xl border border-[#0A0A0A] bg-white bz-elev-2 px-4 py-2.5 flex items-center gap-2 flex-wrap">
-            <span className="bz-mono text-[12px] tabular-nums text-[#0A0A0A]" aria-live="polite">
-              {count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-              {isTr ? 'seçildi' : 'selected'}
-            </span>
-            <div className="h-4 w-px bg-[#EDEDED]" />
-            {!showArchived && (
-              <button
-                type="button"
-                onClick={() => setCampaignOpen(true)}
-                disabled={busy !== null}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#C6F24E] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Mail size={12} strokeWidth={2.2} />
-                {isTr ? 'Kampanya' : 'Campaign'}
-              </button>
-            )}
-            {!showArchived && (
-              <button
-                type="button"
-                onClick={() => setSegmentOpen(true)}
-                disabled={busy !== null}
-                className="bz-btn bz-btn-sm disabled:opacity-50"
-              >
-                <Tag size={12} strokeWidth={2.2} />
-                {isTr ? 'Segmentle' : 'Set segment'}
-              </button>
-            )}
-            {showArchived ? (
-              <button
-                type="button"
-                onClick={onUnarchive}
-                disabled={busy !== null}
-                className="bz-btn bz-btn-sm disabled:opacity-50"
-              >
-                {busy === 'unarchive' ? (
-                  <Loader2 size={12} strokeWidth={2.2} className="animate-spin" />
-                ) : (
-                  <ArchiveRestore size={12} strokeWidth={2.2} />
-                )}
-                {isTr ? 'Geri al' : 'Restore'}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onArchiveClick}
-                disabled={busy !== null}
-                className="bz-btn bz-btn-sm disabled:opacity-50"
-              >
-                {busy === 'archive' ? (
-                  <Loader2 size={12} strokeWidth={2.2} className="animate-spin" />
-                ) : (
-                  <Archive size={12} strokeWidth={2.2} />
-                )}
-                {isTr ? 'Arşivle' : 'Archive'}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setSelected(new Set());
-                document
-                  .querySelectorAll<HTMLInputElement>('[data-customer-key]')
-                  .forEach((cb) => {
-                    cb.checked = false;
-                  });
-              }}
-              className="ml-auto inline-flex items-center justify-center rounded-full border border-[#EDEDED] bg-white p-1.5 text-[#737373] hover:border-[#A3A3A3]"
-              aria-label={isTr ? 'Seçimi temizle' : 'Clear selection'}
-            >
-              <X size={12} strokeWidth={2.2} />
-            </button>
-          </div>
-        </div>
+        <PanelSelectionBar
+          count={count}
+          label={isTr ? 'MÜŞTERİ SEÇİLDİ' : 'CUSTOMERS SELECTED'}
+          countLocale={isTr ? 'tr-TR' : 'en-US'}
+          ariaLabel={isTr ? 'Toplu müşteri işlemleri' : 'Bulk customer actions'}
+          clearLabel={isTr ? 'Seçimi temizle' : 'Clear selection'}
+          onClear={clearSelection}
+          bottomOffset="owner"
+          actions={[
+            ...(!showArchived
+              ? [
+                  {
+                    key: 'campaign',
+                    label: isTr ? 'Kampanya' : 'Campaign',
+                    icon: <Mail size={13} strokeWidth={2.2} />,
+                    onClick: () => setCampaignOpen(true),
+                    disabled: busy !== null,
+                    variant: 'primary' as const,
+                  },
+                  {
+                    key: 'segment',
+                    label: isTr ? 'Segmentle' : 'Set segment',
+                    icon: <Tag size={13} strokeWidth={2.2} />,
+                    onClick: () => setSegmentOpen(true),
+                    disabled: busy !== null,
+                    variant: 'neutral' as const,
+                  },
+                ]
+              : []),
+            showArchived
+              ? {
+                  key: 'restore',
+                  label: isTr ? 'Geri al' : 'Restore',
+                  icon: <ArchiveRestore size={13} strokeWidth={2.2} />,
+                  onClick: onUnarchive,
+                  disabled: busy !== null,
+                  loading: busy === 'unarchive',
+                  variant: 'lime' as const,
+                }
+              : {
+                  key: 'archive',
+                  label: isTr ? 'Arşivle' : 'Archive',
+                  icon: <Archive size={13} strokeWidth={2.2} />,
+                  onClick: onArchiveClick,
+                  disabled: busy !== null,
+                  loading: busy === 'archive',
+                  variant: 'neutral' as const,
+                },
+          ]}
+        />
       )}
 
       {/* Notice (success/error) — auto-dismiss 3.5s */}

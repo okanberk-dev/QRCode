@@ -227,7 +227,7 @@ function AdminTeamBody() {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="name@company.com"
-                className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
+                className="bz-input mt-1 w-full rounded-lg py-2 text-[13px]"
               />
             </label>
             <label className="block">
@@ -235,7 +235,7 @@ function AdminTeamBody() {
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as TeamMember['role'])}
-                className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
+                className="bz-input mt-1 w-full rounded-lg py-2 text-[13px]"
               >
                 <option value="manager">{isTr ? 'Yönetici' : 'Manager'}</option>
                 <option value="staff">{isTr ? 'Personel' : 'Staff'}</option>
@@ -249,7 +249,7 @@ function AdminTeamBody() {
               <select
                 value={inviteRestaurant}
                 onChange={(e) => setInviteRestaurant(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-[#EDEDED] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0A0A0A]"
+                className="bz-input mt-1 w-full rounded-lg py-2 text-[13px]"
               >
                 <option value="">
                   {isTr ? '— Seç —' : '— Select —'}

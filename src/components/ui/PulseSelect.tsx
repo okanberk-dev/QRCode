@@ -143,6 +143,12 @@ export function PulseSelect({
         />
       </button>
       {open && (
+        <>
+          <div
+            className="fixed inset-0 z-20 bg-black/10 sm:hidden"
+            aria-hidden="true"
+            onClick={() => setOpen(false)}
+          />
         <div
           ref={popRef}
           role="listbox"
@@ -150,8 +156,7 @@ export function PulseSelect({
           aria-activedescendant={activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined}
           tabIndex={-1}
           onKeyDown={onListKeyDown}
-          className="bz-fade-in absolute left-0 right-0 z-30 mt-1.5 max-h-[280px] overflow-auto rounded-[12px] border border-[#EDEDED] bg-white p-1 shadow-lg outline-none"
-          style={{ minWidth: "100%" }}
+          className="bz-fade-in fixed inset-x-3 bottom-[calc(12px+env(safe-area-inset-bottom,0px))] z-30 max-h-[min(420px,70vh)] overflow-auto rounded-2xl border border-[#EDEDED] bg-white p-1.5 shadow-[0_24px_70px_-24px_rgba(0,0,0,0.55)] outline-none sm:absolute sm:left-0 sm:right-0 sm:bottom-auto sm:mt-1.5 sm:max-h-[280px] sm:rounded-[12px] sm:shadow-lg"
         >
           {options.length === 0 ? (
             <div className="px-3 py-2.5 text-[12px] text-[#737373]">—</div>
@@ -189,6 +194,7 @@ export function PulseSelect({
             })
           )}
         </div>
+        </>
       )}
     </div>
   );

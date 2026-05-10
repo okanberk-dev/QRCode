@@ -324,7 +324,7 @@ export default function AdminCustomersPage() {
           <select
             value={restaurantId}
             onChange={(e) => setRestaurantId(e.target.value)}
-            className="rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-bold text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="bz-input rounded-xl py-2 text-xs font-bold"
           >
             <option value="">Tüm restoranlar</option>
             {restaurants.map((r) => (

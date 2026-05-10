@@ -434,7 +434,7 @@ export default function UsersPage() {
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value, restaurantId: ''})}
-                  className="w-full px-4 sm:px-6 py-3.5 sm:py-4 rounded-xl border border-[#EDEDED] bg-[#FFFFFF] focus:ring-2 focus:ring-[#C6F24E] outline-none text-sm font-semibold appearance-none cursor-pointer shadow-sm"
+                  className="bz-input w-full cursor-pointer rounded-xl py-3.5 text-sm font-semibold shadow-sm sm:py-4"
                 >
                   <option value="manager">RESTORAN YÖNETİCİSİ</option>
                   <option value="superadmin">BUAZE YÖNETİCİSİ (SİSTEM GENELİ)</option>
@@ -470,7 +470,7 @@ export default function UsersPage() {
                         required={!isNewRestaurant}
                         value={formData.restaurantId}
                         onChange={(e) => setFormData({...formData, restaurantId: e.target.value})}
-                        className="w-full px-5 py-4 rounded-xl border border-[#EDEDED] focus:ring-2 focus:ring-[#C6F24E] bg-white text-sm font-semibold appearance-none cursor-pointer outline-none"
+                        className="bz-input w-full cursor-pointer rounded-xl py-4 text-sm font-semibold"
                       >
                         <option value="">İŞLETME SEÇİN...</option>
                         {restaurants.map(r => (
