@@ -32,23 +32,11 @@ import { useAdminTranslation } from './AdminTranslationProvider';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
+import type { AdminPanelProfile } from '@/lib/admin-profile';
 
 interface AdminSidebarProps {
   announcements?: DashboardAnnouncement[];
-}
-
-interface AdminProfile {
-  id: string;
-  username: string;
-  role: string;
-  restaurantId: string | null;
-  name?: string | null;
-  email?: string | null;
-  plan?: string | null;
-  trialEndsAt?: string | null;
-  logoUrl?: string | null;
-  workspaceName?: string | null;
-  locationCount?: number | null;
+  initialProfile?: AdminPanelProfile | null;
 }
 
 const SIDEBAR_GROUP_STATE_KEY = 'buaze.admin.sidebarGroups';
@@ -100,11 +88,11 @@ function saveSidebarScroll(scrollTop: number) {
   }
 }
 
-export default function AdminSidebar({ announcements = [] }: AdminSidebarProps = {}) {
+export default function AdminSidebar({ announcements = [], initialProfile = null }: AdminSidebarProps = {}) {
   const pathname = usePathname();
   const { t, locale, setLocale } = useAdminTranslation();
-  const [role, setRole] = useState('superadmin');
-  const [profile, setProfile] = useState<AdminProfile | null>(null);
+  const role = initialProfile?.role || 'manager';
+  const profile = initialProfile;
   const [mobileOpen, setMobileOpen] = useState(false);
   // Expanded-group state: { groupId: bool }. Persisted to localStorage so
   // navigating between pages doesn't collapse what the operator opened.
@@ -153,16 +141,6 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
     if (el) saveSidebarScroll(el.scrollTop);
     setMobileOpen(false);
   };
-
-  useEffect(() => {
-    fetch('/api/admin/me')
-      .then((res) => (res.ok ? res.json() : { role: 'manager' }))
-      .then((data) => {
-        setRole(data.role || 'manager');
-        setProfile(data);
-      })
-      .catch(() => setRole('manager'));
-  }, []);
 
   const handleLogout = async () => {
     try {
@@ -244,7 +222,6 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
         { href: '/admin/campaigns', icon: Sparkles, label: locale === 'en' ? 'Campaigns' : 'Kampanyalar' },
         { href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip' },
         { href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma' },
-        { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notification settings' : 'Bildirim ayarları' },
         { href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar' },
       ],
     },
@@ -253,9 +230,9 @@ export default function AdminSidebar({ announcements = [] }: AdminSidebarProps =
       id: 'manager-settings',
       icon: Bell,
       label: locale === 'en' ? 'Settings' : 'Ayarlar',
-      roles: ['manager'],
+      roles: ['superadmin', 'manager'],
       children: [
-        { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notification settings' : 'Bildirim ayarları' },
+        { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notifications' : 'Bildirimler' },
       ],
     },
   ];

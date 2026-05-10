@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { use, useEffect, useMemo, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   CheckCircle2,
@@ -23,6 +23,7 @@ import { AlertBanner, PageHeader } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import QuickReplyTemplates from '@/components/dashboard/google-reviews/QuickReplyTemplates';
 import { getQuickReplyTemplate } from '@/lib/quick-reply-templates';
+import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
 
 interface GoogleLocation {
   accountName: string;
@@ -507,6 +508,7 @@ function ReviewCard({
 function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const isTr = locale === 'tr';
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [restaurants, setRestaurants] = useState<Array<{ id: string; name: string }>>([]);
   const [activeRestaurantId, setActiveRestaurantId] = useState<string | null>(null);
@@ -619,10 +621,19 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         const res = await fetch('/api/restaurants?limit=50');
         if (res.ok) {
           const data = await res.json();
-          setRestaurants(data.data ?? []);
-          if (data.data?.length > 0) {
-            setActiveRestaurantId(data.data[0].id);
-          }
+          const list = data.data ?? [];
+          const requested = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
+          const stored =
+            typeof window !== 'undefined'
+              ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
+              : null;
+          const resolved = resolveActiveRestaurantId({
+            restaurants: list,
+            queryRestaurantId: requested,
+            storedRestaurantId: stored,
+          });
+          setRestaurants(list);
+          setActiveRestaurantId(resolved ?? list[0]?.id ?? null);
         }
       } catch (err) {
         console.error(err);
@@ -630,7 +641,18 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         setLoadingInitial(false);
       }
     })();
-  }, []);
+  }, [searchParams]);
+
+  const selectRestaurant = (restaurantId: string) => {
+    setActiveRestaurantId(restaurantId);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('restaurant');
+    params.set('restaurantId', restaurantId);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
 
   const loadStatusAndReviews = async (restaurantId: string) => {
     setStatusLoading(true);
@@ -938,7 +960,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           <select
             className="bz-input w-full max-w-sm"
             value={activeRestaurantId ?? ''}
-            onChange={(e) => setActiveRestaurantId(e.target.value)}
+            onChange={(e) => selectRestaurant(e.target.value)}
           >
             {restaurants.map((r) => (
               <option key={r.id} value={r.id}>{r.name}</option>
@@ -1582,7 +1604,8 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   );
 }
 
-export default function GoogleReviewsPage({ params }: { params: { locale: Locale } }) {
+export default function GoogleReviewsPage({ params }: { params: Promise<{ locale: Locale }> }) {
+  const { locale } = use(params);
   return (
     <Suspense
       fallback={
@@ -1591,7 +1614,7 @@ export default function GoogleReviewsPage({ params }: { params: { locale: Locale
         </div>
       }
     >
-      <GoogleReviewsContent locale={params.locale} />
+      <GoogleReviewsContent locale={locale} />
     </Suspense>
   );
 }

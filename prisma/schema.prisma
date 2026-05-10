@@ -748,7 +748,8 @@ model AdminUser {
   // Stage 29 §38.105 — admin in-app notification feed.
   // Cascade: AdminUser silinince per-admin notification'lar temizlenir;
   // broadcast (adminId=null) entry'ler korunur (her admin görsün diye).
-  notifications AdminNotification[]
+  notifications     AdminNotification[]
+  notificationReads AdminNotificationRead[]
 
   @@map("admin_users")
 }
@@ -1543,8 +1544,22 @@ model AdminNotification {
   createdAt DateTime   @default(now()) @map("created_at")
 
   admin     AdminUser? @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  reads     AdminNotificationRead[]
 
   @@index([adminId, readAt, createdAt])
   @@index([type, createdAt])
   @@map("admin_notifications")
+}
+
+model AdminNotificationRead {
+  notificationId String   @map("notification_id")
+  adminId        String   @map("admin_id")
+  readAt         DateTime @default(now()) @map("read_at")
+
+  notification AdminNotification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  admin        AdminUser         @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, adminId])
+  @@index([adminId, readAt])
+  @@map("admin_notification_reads")
 }

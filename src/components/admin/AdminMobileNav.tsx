@@ -6,21 +6,14 @@ import { LayoutDashboard, Store, QrCode, Inbox, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 
-export default function AdminMobileNav() {
+export default function AdminMobileNav({ role = 'manager' }: { role?: string }) {
   const pathname = usePathname();
   const { t } = useAdminTranslation();
-  const [role, setRole] = useState('manager');
   // Stage 60 §38.141 — Mobile bottom nav Yorumlar (reviews) badge.
   // NotificationBell `buaze:notification-count` custom event listener;
   // base='/admin' filter — owner tab clobber etmez. Tek source-of-truth
   // NotificationBell internal poll (mobile nav ek fetch yapmaz).
   const [notifUnreadCount, setNotifUnreadCount] = useState(0);
-  useEffect(() => {
-    fetch('/api/admin/me')
-      .then(res => res.ok ? res.json() : { role: 'manager' })
-      .then(data => setRole(data.role || 'manager'))
-      .catch(() => setRole('manager'));
-  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

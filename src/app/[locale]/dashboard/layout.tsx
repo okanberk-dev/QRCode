@@ -123,6 +123,13 @@ export default async function DashboardLayout({
         select: {
           id: true,
           name: true,
+          slug: true,
+          category: true,
+          primaryColor: true,
+          isActive: true,
+          campaignsEnabled: true,
+          menuEnabled: true,
+          externalPlatformsEnabled: true,
           _count: { select: { feedbacks: true } },
         },
         orderBy: { createdAt: 'asc' },
@@ -159,6 +166,18 @@ export default async function DashboardLayout({
         primaryName: user.restaurants[0]?.name ?? null,
         locationCount: user.restaurants.length,
         feedbackCount: totalFeedbacks,
+        restaurants: user.restaurants.map((restaurant) => ({
+          id: restaurant.id,
+          name: restaurant.name,
+          slug: restaurant.slug,
+          category: restaurant.category,
+          primaryColor: restaurant.primaryColor,
+          isActive: restaurant.isActive,
+          campaignsEnabled: restaurant.campaignsEnabled,
+          menuEnabled: restaurant.menuEnabled,
+          externalPlatformsEnabled: restaurant.externalPlatformsEnabled,
+          feedbackCount: restaurant._count.feedbacks,
+        })),
       }}
     >
       {children}

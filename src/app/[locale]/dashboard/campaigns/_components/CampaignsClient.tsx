@@ -20,6 +20,10 @@ import { CampaignsList } from './CampaignsList';
 import { CampaignComposeModal } from './CampaignComposeModal';
 import { CampaignDetailDrawer } from './CampaignDetailDrawer';
 import { CampaignsEmptyState } from './CampaignsEmptyState';
+import {
+  shouldShowCampaignRestaurantsEmptyState,
+} from '@/lib/campaigns-initial-state';
+import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
 
 interface RestaurantOption {
   id: string;
@@ -47,66 +51,64 @@ type StatusFilter = (typeof STATUS_FILTER_KEYS)[number];
 
 interface ClientProps {
   locale: Locale;
+  initialRestaurants: RestaurantOption[];
+  initialActiveRestaurantId: string | null;
 }
 
-export function CampaignsClient({ locale }: ClientProps) {
+export function CampaignsClient({ locale, initialRestaurants, initialActiveRestaurantId }: ClientProps) {
   const isTr = locale === 'tr';
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const detailId = searchParams?.get('detail') ?? null;
 
-  const [loading, setLoading] = useState(true);
-  const [restaurants, setRestaurants] = useState<RestaurantOption[]>([]);
-  const [activeRestaurantId, setActiveRestaurantId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [restaurantsLoading] = useState(false);
+  const [restaurants] = useState<RestaurantOption[]>(initialRestaurants);
+  const [activeRestaurantId, setActiveRestaurantId] = useState<string | null>(
+    () => {
+      const stored =
+        typeof window !== 'undefined'
+          ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
+          : null;
+      return resolveActiveRestaurantId({
+        restaurants: initialRestaurants,
+        queryRestaurantId: initialActiveRestaurantId,
+        storedRestaurantId: stored,
+      });
+    },
+  );
   const [campaigns, setCampaigns] = useState<CampaignListItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [composeOpen, setComposeOpen] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch user's restaurants on mount.
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch('/api/restaurants', { credentials: 'include' });
-        if (!res.ok) throw new Error('restaurants_fetch_failed');
-        const data = await res.json();
-        if (cancelled) return;
-        // Stage 31e §38.111 — endpoint shape `{ data: enriched, meta: {...} }`.
-        // Eski kod `data?.restaurants` okuyordu (boş undefined → list = []),
-        // sonuç: owner her zaman "Henüz işletme yok" EmptyState görüyordu;
-        // admin campaignsEnabled toggle'ı açsa bile UI'da restoran
-        // listelenmediği için Compose modal hiç açılmıyordu. GoogleReviewsHub +
-        // CommandPalette zaten `data?.data` paterniyle uyumlu çalışıyor —
-        // CampaignsClient fix.
-        const list: RestaurantOption[] = Array.isArray(data?.data)
-          ? data.data.map((r: { id: string; name: string; campaignsEnabled?: boolean }) => ({
-              id: r.id,
-              name: r.name,
-              campaignsEnabled: r.campaignsEnabled !== false,
-            }))
-          : [];
-        setRestaurants(list);
-        if (list.length > 0 && !activeRestaurantId) {
-          setActiveRestaurantId(list[0].id);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(isTr ? 'İşletmeler yüklenemedi.' : 'Failed to load restaurants.');
-          console.error('[campaigns] restaurants fetch', err);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [isTr, activeRestaurantId]);
+    const fromUrl = searchParams?.get('restaurantId') ?? searchParams?.get('restaurant');
+    if (fromUrl && restaurants.some((restaurant) => restaurant.id === fromUrl)) {
+      setActiveRestaurantId(fromUrl);
+    }
+  }, [searchParams, restaurants]);
+
+  const selectRestaurant = (restaurantId: string) => {
+    setActiveRestaurantId(restaurantId);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
+    }
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
+    params.delete('restaurant');
+    params.set('restaurantId', restaurantId);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
 
   // Fetch campaigns whenever restaurant or filter changes.
   useEffect(() => {
+    if (restaurantsLoading) {
+      return;
+    }
     if (!activeRestaurantId) {
+      setCampaigns([]);
       setLoading(false);
       return;
     }
@@ -136,7 +138,7 @@ export function CampaignsClient({ locale }: ClientProps) {
     return () => {
       cancelled = true;
     };
-  }, [activeRestaurantId, statusFilter, refreshTick, isTr]);
+  }, [activeRestaurantId, statusFilter, refreshTick, isTr, restaurantsLoading]);
 
   const activeRestaurant = useMemo(
     () => restaurants.find((r) => r.id === activeRestaurantId) ?? null,
@@ -144,6 +146,12 @@ export function CampaignsClient({ locale }: ClientProps) {
   );
 
   const isDisabled = activeRestaurant ? !activeRestaurant.campaignsEnabled : false;
+  const pageLoading = restaurantsLoading || loading;
+  const showNoRestaurantsState = shouldShowCampaignRestaurantsEmptyState({
+    restaurantsLoaded: !restaurantsLoading,
+    restaurantCount: restaurants.length,
+    campaignsLoading: loading,
+  });
 
   // KPI compute (client-side from full list — pagination caller responsibility)
   const kpi = useMemo(() => {
@@ -212,15 +220,15 @@ export function CampaignsClient({ locale }: ClientProps) {
               onClick={refresh}
               className="bz-btn-ghost flex items-center gap-1.5 px-3 min-h-[36px] text-[12px] sm:text-[13px]"
               aria-label={isTr ? 'Yenile' : 'Refresh'}
-              disabled={loading}
+              disabled={pageLoading}
             >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={14} className={pageLoading ? 'animate-spin' : ''} />
               <span className="hidden sm:inline">{isTr ? 'Yenile' : 'Refresh'}</span>
             </button>
             <button
               type="button"
               onClick={() => setComposeOpen(true)}
-              disabled={isDisabled || !activeRestaurantId}
+              disabled={isDisabled || !activeRestaurantId || restaurantsLoading}
               className="bz-btn-primary flex items-center gap-1.5 px-3.5 min-h-[40px] text-[12.5px] sm:text-[13.5px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus size={15} strokeWidth={2.4} />
@@ -236,7 +244,7 @@ export function CampaignsClient({ locale }: ClientProps) {
         </AlertBanner>
       ) : null}
 
-      {restaurants.length === 0 && !loading ? (
+      {showNoRestaurantsState ? (
         <EmptyState
           icon={<Sparkles size={32} className="text-[#A8D62E]" strokeWidth={2} />}
           title={isTr ? 'Henüz işletme yok' : 'No businesses yet'}
@@ -256,7 +264,7 @@ export function CampaignsClient({ locale }: ClientProps) {
               </span>
               <select
                 value={activeRestaurantId ?? ''}
-                onChange={(e) => setActiveRestaurantId(e.target.value)}
+                onChange={(e) => selectRestaurant(e.target.value)}
                 className="bz-input min-h-[36px] !py-1.5 !px-3 text-[12.5px] max-w-[260px]"
               >
                 {restaurants.map((r) => (
@@ -290,7 +298,7 @@ export function CampaignsClient({ locale }: ClientProps) {
             </AlertBanner>
           ) : null}
 
-          <CampaignsKpiGrid kpi={kpi} isTr={isTr} loading={loading} />
+          <CampaignsKpiGrid kpi={kpi} isTr={isTr} loading={pageLoading} />
 
           {/* Filter chip strip */}
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -321,7 +329,7 @@ export function CampaignsClient({ locale }: ClientProps) {
             })}
           </div>
 
-          {loading ? (
+          {pageLoading ? (
             <div className="bz-card p-12 flex items-center justify-center">
               <Loader2 size={20} className="animate-spin text-[#A3A3A3]" />
             </div>

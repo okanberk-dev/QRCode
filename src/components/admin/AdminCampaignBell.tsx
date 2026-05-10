@@ -60,9 +60,7 @@ export default function AdminCampaignBell({
   const fetchFeed = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/notifications?limit=10', {
-        cache: 'no-store',
-      });
+      const res = await fetch('/api/admin/notifications?limit=10');
       if (!res.ok) return;
       const data = (await res.json()) as {
         notifications: AdminNotificationItem[];
@@ -91,8 +89,10 @@ export default function AdminCampaignBell({
       if (document.visibilityState === 'visible') void fetchFeed();
     };
     document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('buaze:admin-notifications-changed', fetchFeed);
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('buaze:admin-notifications-changed', fetchFeed);
       if (pollTimerRef.current) clearInterval(pollTimerRef.current);
       pollTimerRef.current = null;
     };
@@ -113,16 +113,11 @@ export default function AdminCampaignBell({
   const markAsRead = useCallback(async (id: string) => {
     try {
       await fetch(`/api/admin/notifications/${id}/read`, { method: 'POST' });
-      setItems((prev) =>
-        prev.map((n) =>
-          n.id === id && !n.readAt ? { ...n, readAt: new Date().toISOString() } : n,
-        ),
-      );
-      setUnreadCount((c) => Math.max(0, c - 1));
+      void fetchFeed();
     } catch {
       /* silent */
     }
-  }, []);
+  }, [fetchFeed]);
 
   const markAllRead = useCallback(async () => {
     try {

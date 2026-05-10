@@ -19,7 +19,8 @@
 // - §38.162 Stage 82a restoran odaklı default + workspace summary kaldırma
 // - §11 + §23.3 Pulse design tokens (`bz-card`, `bz-btn-*`, `pulse-eyebrow`)
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Building2,
@@ -30,6 +31,7 @@ import {
 import { Badge } from '@/components/ui';
 import { detectSector, SECTOR_PLATFORMS } from '@/lib/sector-platforms';
 import type { ManagedPlatformDef } from '@/lib/platform-management';
+import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
 
 export interface RestaurantInfo {
   id: string;
@@ -87,6 +89,9 @@ export default function PlatformsClient({
   platformSummaries,
 }: PlatformsClientProps) {
   const isTr = locale === 'tr';
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlRestaurantId = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
 
   // Default state (CLAUDE.md §38.162 Stage 82a):
   // - Tek-restoran owner → otomatik o restorana bind (dropdown gizli)
@@ -94,8 +99,42 @@ export default function PlatformsClient({
   //   dropdown ile seçim
   // - "all" workspace summary KALDIRILDI (kullanıcı kararı, §38.162)
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(
-    restaurants.length === 1 ? restaurants[0].id : null,
+    () => {
+      const stored =
+        typeof window !== 'undefined'
+          ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
+          : null;
+      return resolveActiveRestaurantId({
+        restaurants,
+        queryRestaurantId: urlRestaurantId,
+        storedRestaurantId: stored,
+      });
+    },
   );
+
+  useEffect(() => {
+    const stored =
+      typeof window !== 'undefined'
+        ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
+        : null;
+    const next = resolveActiveRestaurantId({
+      restaurants,
+      queryRestaurantId: urlRestaurantId,
+      storedRestaurantId: stored,
+    });
+    setSelectedRestaurantId(next);
+  }, [restaurants, urlRestaurantId]);
+
+  const selectRestaurant = (restaurantId: string) => {
+    setSelectedRestaurantId(restaurantId);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('restaurant');
+    params.set('restaurantId', restaurantId);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
 
   const isSingleRestaurant = restaurants.length === 1;
   const selectedRestaurant = selectedRestaurantId
@@ -148,7 +187,7 @@ export default function PlatformsClient({
           <select
             value=""
             onChange={(e) => {
-              if (e.target.value) setSelectedRestaurantId(e.target.value);
+              if (e.target.value) selectRestaurant(e.target.value);
             }}
             className="bz-input h-11 w-full text-[14px]"
             aria-label={isTr ? 'İşletme seç' : 'Select business'}
@@ -184,7 +223,7 @@ export default function PlatformsClient({
             </span>
             <select
               value={selectedRestaurantId}
-              onChange={(e) => setSelectedRestaurantId(e.target.value)}
+              onChange={(e) => selectRestaurant(e.target.value)}
               className="bz-input h-9 min-w-[180px] text-[13px]"
               aria-label={isTr ? 'İşletme seç' : 'Select business'}
             >

@@ -50,11 +50,7 @@ export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
   const pathname = usePathname();
   const base = `/${locale}`;
 
-  // Stage 83 §38.163 — auth state moved client-side via useMarketingAuth
-  // probe (CLAUDE.md §38.163). Anonymous default state means the center
-  // FAB renders the right CTA on first paint for ≥90% of cold marketing
-  // visits; authed users see the swap to "Panel" after the probe resolves.
-  const { isLoggedIn } = useMarketingAuth();
+  const { isLoggedIn, pending: authPending } = useMarketingAuth();
 
   // Normalize the current path so that trailing slashes don't break matching.
   const current = pathname.replace(/\/+$/, '') || '/';
@@ -158,17 +154,26 @@ export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
                 // sticky press feedback.
                 return (
                   <li key={item.href} className="relative flex flex-1 items-center justify-center">
-                    <Link
-                      href={item.href}
-                      onClick={tapHaptic}
-                      className={`-mt-7 flex h-[56px] w-[56px] items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_12px_24px_-6px_rgba(198,242,78,0.7)] transition-transform duration-200 hover:bg-[#A8D62E] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
-                        active ? 'scale-[1.06]' : ''
-                      }`}
-                      style={{ border: '4px solid #FAFAFA' }}
-                      aria-label={item.label}
-                    >
-                      <item.Icon size={22} className="text-[#0A0A0A]" strokeWidth={2} />
-                    </Link>
+                    {authPending ? (
+                      <span
+                        className="-mt-7 flex h-[56px] w-[56px] items-center justify-center rounded-full bg-[#F5F5F5] ring-4 ring-[#FAFAFA]"
+                        aria-hidden="true"
+                      >
+                        <span className="h-5 w-5 rounded-full bg-[#EAEAEA]" />
+                      </span>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        onClick={tapHaptic}
+                        className={`-mt-7 flex h-[56px] w-[56px] items-center justify-center rounded-full bg-[#C6F24E] shadow-[0_12px_24px_-6px_rgba(198,242,78,0.7)] transition-transform duration-200 hover:bg-[#A8D62E] active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
+                          active ? 'scale-[1.06]' : ''
+                        }`}
+                        style={{ border: '4px solid #FAFAFA' }}
+                        aria-label={item.label}
+                      >
+                        <item.Icon size={22} className="text-[#0A0A0A]" strokeWidth={2} />
+                      </Link>
+                    )}
                   </li>
                 );
               }

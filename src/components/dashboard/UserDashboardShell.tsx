@@ -3,13 +3,19 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { BarChart3, Bell, BookOpen, Building2, Check, ChevronDown, ChevronLeft, ChevronRight, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
 import ImpersonationBanner from './ImpersonationBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
+import { detectSector } from '@/lib/sector-platforms';
+import {
+  ACTIVE_BUSINESS_STORAGE_KEY,
+  resolveActiveRestaurantId,
+  setRestaurantParam,
+} from '@/lib/active-business';
 
 // CLAUDE.md §38.100 — Mobile RES (Real Experience Score) iyileştirmesi.
 // NotificationBell + CommandPalette interactive bileşenler — initial dashboard
@@ -44,6 +50,18 @@ interface DashboardWorkspace {
   primaryName: string | null;
   locationCount: number;
   feedbackCount: number;
+  restaurants?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    category: string;
+    primaryColor: string;
+    isActive: boolean;
+    campaignsEnabled: boolean;
+    menuEnabled: boolean;
+    externalPlatformsEnabled: boolean;
+    feedbackCount: number;
+  }>;
 }
 
 interface UserDashboardShellProps {
@@ -152,11 +170,31 @@ function saveSidebarScroll(scrollTop: number) {
 export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, children }: UserDashboardShellProps) {
   void TOP_BAR_MAP;
   const pathname = usePathname();
+  const router = useRouter();
   // §38.58 — Faturalama nav item href'i `?section=billing` query taşır
   // (Account içinde billing subtab'a deeplink). Active state hesabı search
   // param'ı tüketir; aksi halde Account ve Faturalama her ikisi de active
   // görünür (aynı pathname).
   const searchParams = useSearchParams();
+  const workspaceRestaurants = useMemo(
+    () => workspace?.restaurants?.filter((restaurant) => restaurant.isActive) ?? [],
+    [workspace?.restaurants],
+  );
+  const queryRestaurantId = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
+  const [activeRestaurantId, setActiveRestaurantId] = useState<string | null>(() =>
+    resolveActiveRestaurantId({
+      restaurants: workspaceRestaurants,
+      queryRestaurantId,
+      storedRestaurantId: null,
+    }),
+  );
+  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false);
+  const workspaceMenuRef = useRef<HTMLDivElement | null>(null);
+  const activeRestaurant = useMemo(
+    () => workspaceRestaurants.find((restaurant) => restaurant.id === activeRestaurantId) ?? null,
+    [workspaceRestaurants, activeRestaurantId],
+  );
+  const isClinicMode = activeRestaurant ? detectSector(activeRestaurant.category) === 'clinic' : false;
   const matchHref = (href: string): boolean => {
     if (!pathname) return false;
     const [hrefPath, hrefQuery] = href.split('?');
@@ -237,6 +275,44 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     setIsCollapsed(collapsed);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const storedRestaurantId = window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY);
+    const next = resolveActiveRestaurantId({
+      restaurants: workspaceRestaurants,
+      queryRestaurantId,
+      storedRestaurantId,
+    });
+    setActiveRestaurantId(next);
+    if (next) {
+      window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, next);
+      if (!queryRestaurantId && pathname && isBusinessScopedHref(pathname)) {
+        const nextSearch = setRestaurantParam(searchParams.toString(), next);
+        router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, { scroll: false });
+      }
+    } else if (queryRestaurantId === 'all') {
+      window.localStorage.removeItem(ACTIVE_BUSINESS_STORAGE_KEY);
+    }
+  }, [workspaceRestaurants, queryRestaurantId]);
+
+  useEffect(() => {
+    if (!workspaceMenuOpen) return;
+    const onPointer = (e: MouseEvent) => {
+      if (workspaceMenuRef.current && !workspaceMenuRef.current.contains(e.target as Node)) {
+        setWorkspaceMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setWorkspaceMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [workspaceMenuOpen]);
+
   // User menu dropdown — outside click + ESC kapatır.
   useEffect(() => {
     if (!userMenuOpen) return;
@@ -286,6 +362,46 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     if (el) saveSidebarScroll(el.scrollTop);
     setDrawerOpen(false);
   };
+
+  const isBusinessScopedHref = (href: string) => {
+    const [hrefPath] = href.split('?');
+    const base = `/${locale}/dashboard`;
+    if (hrefPath === base) return true;
+    return [
+      `${base}/feedbacks`,
+      `${base}/google-reviews`,
+      `${base}/analytics`,
+      `${base}/customers`,
+      `${base}/campaigns`,
+      `${base}/qr`,
+      `${base}/menu`,
+      `${base}/restaurants`,
+      `${base}/platforms`,
+    ].some((prefix) => hrefPath === prefix || hrefPath.startsWith(`${prefix}/`));
+  };
+
+  const hrefWithActiveRestaurant = (href: string) => {
+    if (!activeRestaurantId || !isBusinessScopedHref(href)) return href;
+    const [hrefPath, hrefQuery = ''] = href.split('?');
+    const nextSearch = setRestaurantParam(hrefQuery, activeRestaurantId);
+    return nextSearch ? `${hrefPath}?${nextSearch}` : hrefPath;
+  };
+
+  const selectRestaurantScope = (restaurantId: string | null) => {
+    setActiveRestaurantId(restaurantId);
+    setWorkspaceMenuOpen(false);
+    if (typeof window !== 'undefined') {
+      if (restaurantId) {
+        window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
+      } else {
+        window.localStorage.removeItem(ACTIVE_BUSINESS_STORAGE_KEY);
+      }
+    }
+    const currentPath = pathname || `/${locale}/dashboard`;
+    const nextSearch = setRestaurantParam(searchParams.toString(), restaurantId);
+    router.push(nextSearch ? `${currentPath}?${nextSearch}` : currentPath, { scroll: false });
+  };
+
   const trialDaysLeft = getDaysLeft(user.trialEndsAt);
   // §38.72 — Search param-aware breadcrumb (?section=billing → "> FATURALAMA").
   const activeSection = searchParams.get('section');
@@ -313,12 +429,12 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     const isTr = locale === 'tr';
     return {
       dashboard: isTr ? 'Panel' : 'Dashboard',
-      feedbacks: isTr ? 'Yorumlar' : 'Feedbacks',
+      feedbacks: isClinicMode ? (isTr ? 'Hasta geri bildirimleri' : 'Patient feedback') : (isTr ? 'Yorumlar' : 'Feedbacks'),
       googleReviews: isTr ? 'Google Yorumları' : 'Google Reviews',
       analytics: isTr ? 'Analitik' : 'Analytics',
-      restaurants: isTr ? 'İşletmeler' : 'Locations',
+      restaurants: isClinicMode ? (isTr ? 'Klinikler' : 'Clinics') : (isTr ? 'İşletmeler' : 'Locations'),
       qr: 'QR',
-      menu: isTr ? 'Menü' : 'Menu',
+      menu: isClinicMode ? (isTr ? 'Hizmetler' : 'Services') : (isTr ? 'Menü' : 'Menu'),
       integrations: isTr ? 'Platform Bağlantıları' : 'Platform Links',
       guide: isTr ? 'Kılavuz' : 'Guide',
       account: isTr ? 'Hesabım' : 'Account',
@@ -326,7 +442,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       plan: isTr ? 'Plan' : 'Plan',
       trialLeft: isTr ? 'gün kaldı' : 'days left',
       more: isTr ? 'Daha fazla' : 'More',
-      customers: isTr ? 'Müşteriler' : 'Customers',
+      customers: isClinicMode ? (isTr ? 'Hastalar' : 'Patients') : (isTr ? 'Müşteriler' : 'Customers'),
       platforms: isTr ? 'Platform bağlantıları' : 'Review platforms',
       announcements: isTr ? 'Duyurular' : 'Announcements',
       notifications: isTr ? 'Bildirimler' : 'Notifications',
@@ -334,8 +450,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       groupInsight: isTr ? 'İçgörü' : 'Insight',
       groupInfo: isTr ? 'Bilgi' : 'Info',
       workspace: isTr ? 'BUAZE PANELİ' : 'BUAZE PANEL',
+      allBusinesses: isTr ? 'Tüm işletmeler' : 'All businesses',
+      chooseBusiness: isTr ? 'İşletme değiştir' : 'Switch business',
     };
-  }, [locale]);
+  }, [locale, isClinicMode]);
 
   // Sidebar navigation — keep the daily entry point flat, then collapse
   // related pages into operational groups so the sidebar stays compact.
@@ -389,7 +507,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       label: locale === 'tr' ? 'İşletme' : 'Business',
       children: [
         { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
-        { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
+        ...(!isClinicMode
+          ? [{ href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu }]
+          : []),
         { href: `/${locale}/dashboard/restaurants`, icon: Store, label: copy.restaurants },
         // /platforms ve /integrations aynı redirect'e (settings#integrations);
         // tek menü item bırakıldı. Eski /platforms route'u backward-compat.
@@ -435,7 +555,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
   const bottomNavItems = [
     { href: `/${locale}/dashboard`, icon: LayoutDashboard, label: copy.dashboard },
     { href: `/${locale}/dashboard/feedbacks`, icon: MessageSquareText, label: copy.feedbacks },
-    { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
+    isClinicMode
+      ? { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics }
+      : { href: `/${locale}/dashboard/menu`, icon: UtensilsCrossed, label: copy.menu },
     { href: `/${locale}/dashboard/qr`, icon: QrCode, label: copy.qr },
   ];
   const moreSheetItems = [
@@ -467,9 +589,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     window.location.href = `/${locale}/auth/login`;
   };
 
-  const primaryName = workspace?.primaryName ?? (locale === 'tr' ? 'İşletmen' : 'Your workspace');
+  const primaryName =
+    activeRestaurant?.name ??
+    (workspaceRestaurants.length > 1
+      ? copy.allBusinesses
+      : workspace?.primaryName ?? (locale === 'tr' ? 'İşletmen' : 'Your workspace'));
   const locationCount = workspace?.locationCount ?? 0;
-  const primaryInitial = (workspace?.primaryName || displayName).charAt(0).toUpperCase();
+  const primaryInitial = (activeRestaurant?.name || workspace?.primaryName || displayName).charAt(0).toUpperCase();
 
   // SidebarContent was previously declared as an inner function component
   // (`const SidebarContent = ({ navRef }) => …`). Every parent re-render
@@ -483,7 +609,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     <div className="flex h-full flex-col bg-white text-[#0A0A0A]">
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
-        <Link href={`/${locale}/dashboard`} className="flex items-center gap-2.5">
+        <Link href={hrefWithActiveRestaurant(`/${locale}/dashboard`)} className="flex items-center gap-2.5">
           <BuazeLogo size={32} variant="default" imageUrl={logoUrl} className="shrink-0" />
           {!isCollapsed && (
             <span
@@ -496,25 +622,98 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       </div>
 
       {/* Workspace switcher */}
-      <div className="px-3 pb-3">
-        <div className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAFA] border border-[#EDEDED] ${isCollapsed ? 'px-2 py-2 justify-center' : 'px-3 py-2.5'}`}>
+      <div className="relative px-3 pb-3" ref={workspaceMenuRef}>
+        <button
+          type="button"
+          onClick={() => setWorkspaceMenuOpen((open) => !open)}
+          aria-expanded={workspaceMenuOpen}
+          aria-haspopup="menu"
+          className={`flex w-full items-center gap-2.5 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] transition-colors hover:bg-[#F2F2F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] ${isCollapsed ? 'justify-center px-2 py-2' : 'px-3 py-2.5'}`}
+          title={isCollapsed ? primaryName : undefined}
+        >
           <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A] text-[12px] font-semibold bz-h-tight"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[12px] font-semibold text-[#0A0A0A] bz-h-tight"
+            style={{ background: activeRestaurant?.primaryColor || '#C6F24E' }}
           >
-            {primaryInitial}
+            {activeRestaurant ? primaryInitial : <Building2 size={14} strokeWidth={2} />}
           </div>
           {!isCollapsed && (
             <>
-              <div className="min-w-0 flex-1 animate-in fade-in slide-in-from-left-2 duration-300">
+              <div className="min-w-0 flex-1 text-left animate-in fade-in slide-in-from-left-2 duration-300">
                 <p className="truncate text-[13px] font-semibold text-[#0A0A0A] leading-tight">{primaryName}</p>
                 <p className="pulse-eyebrow text-[#525252] mt-0.5">
-                  {locationCount} {locale === 'tr' ? 'KONUM' : 'LOCATIONS'}
+                  {activeRestaurant
+                    ? detectSector(activeRestaurant.category) === 'clinic'
+                      ? locale === 'tr' ? 'KLİNİK MODU' : 'CLINIC MODE'
+                      : activeRestaurant.category.toUpperCase()
+                    : `${locationCount} ${locale === 'tr' ? 'KONUM' : 'LOCATIONS'}`}
                 </p>
               </div>
-              <ChevronDown size={14} className="text-[#737373] shrink-0" strokeWidth={2} />
+              <ChevronDown
+                size={14}
+                className={`shrink-0 text-[#737373] transition-transform ${workspaceMenuOpen ? 'rotate-180' : ''}`}
+                strokeWidth={2}
+              />
             </>
           )}
-        </div>
+        </button>
+
+        {workspaceMenuOpen && !isCollapsed && (
+          <div
+            role="menu"
+            className="absolute left-3 right-3 top-[calc(100%-10px)] z-50 overflow-hidden rounded-2xl border border-[#EDEDED] bg-white p-1.5 shadow-[0_24px_70px_-30px_rgba(10,10,10,0.35)]"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => selectRestaurantScope(null)}
+              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] transition-colors ${
+                !activeRestaurantId ? 'bg-[#F7FAEF] text-[#0A0A0A]' : 'text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
+              }`}
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F5F5F5]">
+                <Building2 size={14} strokeWidth={2} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold">{copy.allBusinesses}</span>
+                <span className="pulse-eyebrow mt-0.5 block text-[#737373]">
+                  {locationCount} {locale === 'tr' ? 'KONUM' : 'LOCATIONS'}
+                </span>
+              </span>
+              {!activeRestaurantId && <Check size={14} strokeWidth={2.4} />}
+            </button>
+            <div className="my-1 h-px bg-[#EDEDED]" />
+            {workspaceRestaurants.map((restaurant) => {
+              const selected = restaurant.id === activeRestaurantId;
+              const clinic = detectSector(restaurant.category) === 'clinic';
+              return (
+                <button
+                  key={restaurant.id}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => selectRestaurantScope(restaurant.id)}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] transition-colors ${
+                    selected ? 'bg-[#F7FAEF] text-[#0A0A0A]' : 'text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
+                  }`}
+                >
+                  <span
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold text-[#0A0A0A]"
+                    style={{ background: restaurant.primaryColor || '#C6F24E' }}
+                  >
+                    {restaurant.name.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{restaurant.name}</span>
+                    <span className="pulse-eyebrow mt-0.5 block text-[#737373]">
+                      {clinic ? (locale === 'tr' ? 'KLİNİK' : 'CLINIC') : restaurant.category.toUpperCase()} · {restaurant.feedbackCount}
+                    </span>
+                  </span>
+                  {selected && <Check size={14} strokeWidth={2.4} />}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* §38.59 — Sidebar search button kaldırıldı (kullanıcı kararı). Cmd+K
@@ -529,7 +728,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           --mini class'larını kullanır. */}
       <div className="px-3 pb-3">
         <Link
-          href={`/${locale}/dashboard/qr`}
+          href={hrefWithActiveRestaurant(`/${locale}/dashboard/qr`)}
           className={`bz-side-cta ${isCollapsed ? 'bz-side-cta--mini' : ''}`}
           title={isCollapsed ? (locale === 'tr' ? 'Yorum İste' : 'Request review') : undefined}
           onClick={handleNavClick}
@@ -557,7 +756,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={hrefWithActiveRestaurant(item.href)}
                 onClick={handleNavClick}
                 aria-current={isActive ? 'page' : undefined}
                 /* §38.65 — Apple HIG sidebar item polish: bz-motion-spring
@@ -670,7 +869,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                       return (
                         <Link
                           key={child.href}
-                          href={child.href}
+                          href={hrefWithActiveRestaurant(child.href)}
                           onClick={handleNavClick}
                           aria-current={isActive ? 'page' : undefined}
                           tabIndex={isExpanded ? 0 : -1}
@@ -877,7 +1076,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             (kullanıcı kararı: sticky header only). Önceki `backdrop-blur` (8px) →
             `backdrop-blur-xl` (24px) Liquid Glass referansı; sadece header katmanında. */}
         <div className="sticky top-0 z-40 flex items-center justify-between border-b border-[#EDEDED] bg-white/95 px-4 py-3 backdrop-blur-xl lg:hidden">
-          <Link href={`/${locale}/dashboard`} className="flex items-center gap-2">
+          <Link href={hrefWithActiveRestaurant(`/${locale}/dashboard`)} className="flex items-center gap-2">
             <BuazeLogo size={28} variant="default" imageUrl={logoUrl} />
             <span
               className="text-[18px] font-medium tracking-[-0.03em] text-[#0A0A0A] bz-h-tight"
@@ -887,6 +1086,21 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           </Link>
 
           <div className="flex items-center gap-2">
+            {workspaceRestaurants.length > 1 && (
+              <select
+                value={activeRestaurantId ?? ''}
+                onChange={(event) => selectRestaurantScope(event.target.value || null)}
+                aria-label={copy.chooseBusiness}
+                className="max-w-[132px] rounded-lg border border-[#EDEDED] bg-white px-2 py-1.5 text-[11px] font-medium text-[#0A0A0A] outline-none focus:border-[#C6F24E]"
+              >
+                <option value="">{locale === 'tr' ? 'Tümü' : 'All'}</option>
+                {workspaceRestaurants.map((restaurant) => (
+                  <option key={restaurant.id} value={restaurant.id}>
+                    {restaurant.name}
+                  </option>
+                ))}
+              </select>
+            )}
             {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 5 && (
               <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#EAF9B8] px-3 py-1 pulse-eyebrow text-[#0A0A0A]">
                 <Crown size={10} /> {trialDaysLeft}g
@@ -896,7 +1110,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               locale={locale}
               announcements={announcements}
               panelBase={`/${locale}/dashboard`}
-              reviewsHref={`/${locale}/dashboard/feedbacks`}
+              reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
               notificationsSettingsHref={`/${locale}/dashboard/notifications`}
             />
             <button
@@ -937,6 +1151,21 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             )}
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
+            {workspaceRestaurants.length > 1 && (
+              <select
+                value={activeRestaurantId ?? ''}
+                onChange={(event) => selectRestaurantScope(event.target.value || null)}
+                aria-label={copy.chooseBusiness}
+                className="hidden max-w-[220px] rounded-full border border-[#EDEDED] bg-white px-3 py-2 text-[12px] font-medium text-[#0A0A0A] outline-none transition-colors hover:border-[#0A0A0A] focus:border-[#C6F24E] xl:block"
+              >
+                <option value="">{copy.allBusinesses}</option>
+                {workspaceRestaurants.map((restaurant) => (
+                  <option key={restaurant.id} value={restaurant.id}>
+                    {restaurant.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
@@ -963,7 +1192,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               locale={locale}
               announcements={announcements}
               panelBase={`/${locale}/dashboard`}
-              reviewsHref={`/${locale}/dashboard/feedbacks`}
+              reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
               notificationsSettingsHref={`/${locale}/dashboard/notifications`}
             />
             <Link
@@ -1055,7 +1284,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
               return (
                 <li key={item.href} className="min-w-0 flex-1">
                   <Link
-                    href={item.href}
+                    href={hrefWithActiveRestaurant(item.href)}
                     aria-label={item.label}
                     aria-current={isActive ? 'page' : undefined}
                     className={`relative flex h-full flex-col items-center justify-center gap-1 rounded-md px-1 transition-all duration-150 active:scale-95 ${
@@ -1190,7 +1419,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 return (
                   <li key={item.href}>
                     <Link
-                      href={item.href}
+                      href={hrefWithActiveRestaurant(item.href)}
                       onClick={() => setMoreOpen(false)}
                       aria-current={isActive ? 'page' : undefined}
                       className={`flex items-center gap-3 rounded-xl px-4 py-3 text-[13px] bz-motion-spring ${
