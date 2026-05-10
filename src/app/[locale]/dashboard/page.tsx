@@ -132,6 +132,7 @@ async function renderDashboardPage({
           id: true,
           name: true,
           slug: true,
+          category: true,
           isActive: true,
           initialGoogleRating: true,
           currentGoogleRating: true,
@@ -142,7 +143,15 @@ async function renderDashboardPage({
   });
   if (!user) redirect(`/${locale}/auth/login`);
 
-  const restIds = user.restaurants.map((r) => r.id);
+  const ownedRestaurantIds = user.restaurants.map((r) => r.id);
+  const selectedRestaurantId =
+    typeof sp.restaurantId === 'string' && ownedRestaurantIds.includes(sp.restaurantId)
+      ? sp.restaurantId
+      : null;
+  const restIds = selectedRestaurantId ? [selectedRestaurantId] : ownedRestaurantIds;
+  const selectedRestaurant = selectedRestaurantId
+    ? user.restaurants.find((restaurant) => restaurant.id === selectedRestaurantId) ?? null
+    : null;
   const restIdIn = { in: restIds };
 
   // Time windows used by KPIs + trend.
@@ -748,6 +757,14 @@ async function renderDashboardPage({
   const hasRestaurant = user.restaurants.length > 0;
   const hasActiveRestaurant = user.restaurants.some((r) => r.isActive);
   const hasReviews = totalReviews > 0;
+  const scopedHref = (href: string) => {
+    if (!selectedRestaurantId) return href;
+    const [path, query = ''] = href.split('?');
+    const params = new URLSearchParams(query);
+    params.set('restaurantId', selectedRestaurantId);
+    const search = params.toString();
+    return search ? `${path}?${search}` : path;
+  };
   const onboardingSteps: OnboardingStep[] = [
     {
       id: 1,
@@ -759,25 +776,25 @@ async function renderDashboardPage({
       id: 2,
       label: isTr ? 'İlk işletmeyi ekle' : 'Add first business',
       done: hasRestaurant,
-      href: `/${locale}/dashboard/restaurants`,
+      href: scopedHref(`/${locale}/dashboard/restaurants`),
     },
     {
       id: 3,
       label: isTr ? 'İlk QR kodunu oluştur' : 'Generate first QR code',
       done: hasActiveRestaurant,
-      href: `/${locale}/dashboard/qr`,
+      href: scopedHref(`/${locale}/dashboard/qr`),
     },
     {
       id: 4,
       label: isTr ? 'Yorum platform bağlantılarını ekle' : 'Add review platform links',
       done: hasReviews,
-      href: `/${locale}/dashboard/integrations`,
+      href: scopedHref(`/${locale}/dashboard/platforms`),
     },
     {
       id: 5,
       label: isTr ? 'Müşteri yorumlarını izle' : 'Track customer feedback',
       done: hasReviews,
-      href: `/${locale}/dashboard/feedbacks`,
+      href: scopedHref(`/${locale}/dashboard/feedbacks`),
     },
   ];
 
@@ -817,25 +834,25 @@ async function renderDashboardPage({
       id: 'qr',
       icon: <QrCode size={18} strokeWidth={2} />,
       label: isTr ? 'QR' : 'QR',
-      href: `/${locale}/dashboard/qr`,
+      href: scopedHref(`/${locale}/dashboard/qr`),
     },
     {
       id: 'feedback',
       icon: <Star size={18} strokeWidth={2} />,
       label: isTr ? 'Yorumlar' : 'Reviews',
-      href: `/${locale}/dashboard/feedbacks`,
+      href: scopedHref(`/${locale}/dashboard/feedbacks`),
     },
     {
       id: 'menu',
       icon: <Building2 size={18} strokeWidth={2} />,
       label: isTr ? 'Menü' : 'Menu',
-      href: `/${locale}/dashboard/menu`,
+      href: scopedHref(`/${locale}/dashboard/menu`),
     },
     {
       id: 'platforms',
       icon: <ShieldCheck size={18} strokeWidth={2} />,
       label: isTr ? 'Platform' : 'Links',
-      href: `/${locale}/dashboard/integrations`,
+      href: scopedHref(`/${locale}/dashboard/platforms`),
     },
   ];
 
@@ -941,7 +958,7 @@ async function renderDashboardPage({
     : pendingCount > 0
       ? `Today ${pendingCount} review${pendingCount > 1 ? 's' : ''} await reply.`
       : "You're all caught up today 🎉";
-  const primaryRestaurantName = user.restaurants[0]?.name ?? '';
+  const primaryRestaurantName = selectedRestaurant?.name ?? user.restaurants[0]?.name ?? '';
   const dateText = nowDate.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
     weekday: 'long',
     day: 'numeric',
@@ -970,7 +987,7 @@ async function renderDashboardPage({
         actions={
           <>
             <Link
-              href={`/${locale}/dashboard/analytics`}
+              href={scopedHref(`/${locale}/dashboard/analytics`)}
               className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
             >
               <Download size={13} strokeWidth={2} />
@@ -983,7 +1000,7 @@ async function renderDashboardPage({
                 + delta + AI banner kapsam değişir. Default '7d'. */}
             <ScopeDropdown current={scopeUrlValue} isTr={isTr} />
             <Link
-              href={`/${locale}/dashboard/feedbacks`}
+              href={scopedHref(`/${locale}/dashboard/feedbacks`)}
               className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
             >
               <Plus size={13} strokeWidth={2} />
@@ -1068,7 +1085,7 @@ async function renderDashboardPage({
       {dashboardThemes.synthesis && (
         <AIInsightBanner
           insight={dashboardThemes.synthesis}
-          actionHref={`/${locale}/dashboard/analytics`}
+          actionHref={scopedHref(`/${locale}/dashboard/analytics`)}
           isTr={isTr}
         />
       )}
@@ -1078,10 +1095,10 @@ async function renderDashboardPage({
       {/* §38.43 — Activation checklist mobile'da gizli (tasarım .design-owner-2026/
           page-mobile-v2.jsx MobileDashboard'da yok). sm:block ile sadece tablet+
           desktop'ta görünür. CLAUDE.md §19.5 paterni intact. */}
-      {user.restaurants[0] && (
+      {(selectedRestaurant ?? user.restaurants[0]) && (
         <div className="hidden sm:block">
           <ActivationChecklistCard
-            restaurantId={user.restaurants[0].id}
+            restaurantId={(selectedRestaurant ?? user.restaurants[0]).id}
             locale={locale}
           />
         </div>
@@ -1194,7 +1211,7 @@ async function renderDashboardPage({
             </div>
           </div>
           <Link
-            href={`/${locale}/dashboard/analytics`}
+            href={scopedHref(`/${locale}/dashboard/analytics`)}
             className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#525252] hover:text-[#0A0A0A] transition-colors self-start sm:self-end"
           >
             {isTr ? 'Detaylı analitik' : 'Detailed analytics'}
@@ -1234,7 +1251,7 @@ async function renderDashboardPage({
         <PendingTasks
           tasks={dashboardTasks}
           isTr={isTr}
-          viewAllHref={`/${locale}/dashboard/feedbacks?tab=low&hasReply=false`}
+          viewAllHref={scopedHref(`/${locale}/dashboard/feedbacks?tab=low&hasReply=false`)}
         />
       </div>
 
@@ -1261,7 +1278,7 @@ async function renderDashboardPage({
               </h2>
             </div>
             <Link
-              href={`/${locale}/dashboard/analytics`}
+              href={scopedHref(`/${locale}/dashboard/analytics`)}
               className="text-[12px] text-[#525252] hover:text-[#0A0A0A] inline-flex items-center gap-1"
             >
               {isTr ? 'Tüm kanallar' : 'All channels'}
@@ -1372,7 +1389,7 @@ async function renderDashboardPage({
       <ActivityFeed
         events={activityEvents}
         isTr={isTr}
-        viewAllHref={`/${locale}/dashboard/feedbacks`}
+        viewAllHref={scopedHref(`/${locale}/dashboard/feedbacks`)}
       />
 
       </div>{/* §38.44 — KANAL+SIK BAHSEDİLEN+ActivityFeed 2-col grid wrapper close */}

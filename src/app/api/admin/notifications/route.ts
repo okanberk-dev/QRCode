@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { serializeAdminNotificationReadAt } from '@/lib/admin-notification-read-state';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -53,11 +54,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'invalid_actor' }, { status: 401 });
   }
 
-  // Feed scope: admin'e atanan + broadcast (adminId IS NULL).
-  const where: Prisma.AdminNotificationWhereInput = {
+  const feedWhere: Prisma.AdminNotificationWhereInput = {
     OR: [{ adminId }, { adminId: null }],
-    ...(unreadOnly === 'true' ? { readAt: null } : {}),
   };
+  const unreadWhere: Prisma.AdminNotificationWhereInput = {
+    OR: [
+      { adminId, readAt: null },
+      { adminId: null, reads: { none: { adminId } } },
+    ],
+  };
+  const where = unreadOnly === 'true' ? unreadWhere : feedWhere;
 
   const [notifications, total, unreadCount] = await prisma.$transaction([
     prisma.adminNotification.findMany({
@@ -74,15 +80,15 @@ export async function GET(req: NextRequest) {
         payload: true,
         readAt: true,
         createdAt: true,
+        reads: {
+          where: { adminId },
+          select: { readAt: true },
+          take: 1,
+        },
       },
     }),
     prisma.adminNotification.count({ where }),
-    prisma.adminNotification.count({
-      where: {
-        OR: [{ adminId }, { adminId: null }],
-        readAt: null,
-      },
-    }),
+    prisma.adminNotification.count({ where: unreadWhere }),
   ]);
 
   return NextResponse.json(
@@ -94,7 +100,7 @@ export async function GET(req: NextRequest) {
         title: n.title,
         body: n.body,
         payload: n.payload,
-        readAt: n.readAt?.toISOString() ?? null,
+        readAt: serializeAdminNotificationReadAt(n),
         createdAt: n.createdAt.toISOString(),
       })),
       page,
@@ -109,16 +115,6 @@ export async function GET(req: NextRequest) {
   );
 }
 
-// Mark all admin's unread notifications as read. Broadcast notifications
-// (adminId=null) için per-admin readAt state taşıyamıyoruz (single row
-// shared); bu MVP scope dışı (gelecek: AdminNotificationRead pivot tablo).
-// Şu an mark-all sadece per-admin notifications (adminId=actor.id) için
-// readAt set eder; broadcast intact (her admin için unread görünebilir
-// ama listede göründüğü için actually read accept edilir UX-wise).
-//
-// Pratik trade-off: broadcast notifications mark-as-read state cross-admin
-// drift olur; gerçek hayatta campaign moderation broadcast'i 1-2 saatte bir
-// tetiklenir, drift kabul edilebilir.
 export async function POST(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
   if (!admin) {
@@ -129,10 +125,37 @@ export async function POST(req: NextRequest) {
   if (!adminId) {
     return NextResponse.json({ error: 'invalid_actor' }, { status: 401 });
   }
-  const result = await prisma.adminNotification.updateMany({
-    where: { adminId, readAt: null },
-    data: { readAt: new Date() },
+  const now = new Date();
+  const result = await prisma.$transaction(async (tx) => {
+    const targeted = await tx.adminNotification.updateMany({
+      where: { adminId, readAt: null },
+      data: { readAt: now },
+    });
+    const broadcastUnread = await tx.adminNotification.findMany({
+      where: {
+        adminId: null,
+        reads: { none: { adminId } },
+      },
+      select: { id: true },
+    });
+    if (broadcastUnread.length > 0) {
+      await tx.adminNotificationRead.createMany({
+        data: broadcastUnread.map((notification) => ({
+          notificationId: notification.id,
+          adminId,
+          readAt: now,
+        })),
+        skipDuplicates: true,
+      });
+    }
+    return {
+      targetedCount: targeted.count,
+      broadcastCount: broadcastUnread.length,
+    };
   });
 
-  return NextResponse.json({ ok: true, updatedCount: result.count });
+  return NextResponse.json({
+    ok: true,
+    updatedCount: result.targetedCount + result.broadcastCount,
+  });
 }

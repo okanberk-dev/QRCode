@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, Suspense, use } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Download, Filter, Inbox, Loader2, Sparkles, X } from 'lucide-react';
 import { EmptyState, PageHeader } from '@/components/ui';
@@ -54,6 +54,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
   // Notification deep-link target — `?focus=<feedbackId>` from NotificationBell.
   const focusId = searchParams.get('focus');
+  const restaurantIdParam = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
 
   // Mobile push-route: `?view=detail` query'sini list/detail visibility
   // toggle olarak kullanır. Desktop (≥lg) bunu ignore eder ve daima
@@ -126,6 +127,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     if (platform !== 'all') query.append('platform', String(platform));
     if (hasReply === 'pending') query.append('hasReply', 'false');
     if (flagged) query.append('isFlagged', 'true');
+    if (restaurantIdParam && restaurantIdParam !== 'all') {
+      query.append('restaurantId', restaurantIdParam);
+    }
     return query;
   };
 
@@ -151,7 +155,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, rating, platform, hasReply, flagged]);
+  }, [days, rating, platform, hasReply, flagged, restaurantIdParam]);
 
   const loadMoreFeedbacks = async () => {
     if (loadingMore || !hasMore) return;
@@ -284,6 +288,37 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setSendEmail(true);
   }, [activeFeedbackId]);
 
+  const markFeedbackRead = useCallback(
+    async (id: string) => {
+      const row = feedbacks.find((feedback) => feedback.id === id);
+      if (!row || row.isRead === true) return;
+
+      const previousRead = row.isRead;
+      setFeedbacks((prev) =>
+        prev.map((feedback) => (feedback.id === id ? { ...feedback, isRead: true } : feedback)),
+      );
+
+      try {
+        const res = await fetch(`/api/feedback/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isRead: true }),
+        });
+        if (!res.ok) throw new Error('mark_read_failed');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('buaze:feedback-read'));
+        }
+      } catch {
+        setFeedbacks((prev) =>
+          prev.map((feedback) =>
+            feedback.id === id ? { ...feedback, isRead: previousRead } : feedback,
+          ),
+        );
+      }
+    },
+    [feedbacks],
+  );
+
   // ============================================================
   // Notification deep-link: scroll + lime pulse
   // ============================================================
@@ -292,13 +327,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     if (!feedbacks.some((r) => r.id === focusId)) return;
     focusAppliedRef.current = true;
     setActiveId(focusId);
+    void markFeedbackRead(focusId);
     requestAnimationFrame(() => {
       const el = document.querySelector<HTMLElement>(`[data-feedback-id="${focusId}"]`);
       el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setPulsedId(focusId);
       setTimeout(() => setPulsedId(null), 1800);
     });
-  }, [focusId, loading, feedbacks]);
+  }, [focusId, loading, feedbacks, markFeedbackRead]);
+
+  useEffect(() => {
+    if (loading || !activeId || !feedbacks.some((r) => r.id === activeId)) return;
+    void markFeedbackRead(activeId);
+  }, [activeId, feedbacks, loading, markFeedbackRead]);
 
   // ============================================================
   // Sent reply thread fetch on selection
@@ -636,35 +677,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setActiveId(id);
     // Push (not replace) so browser back returns to list view on mobile.
     router.push(buildUrl({ id, view: 'detail' }));
-
-    // Stage 13 (CLAUDE.md §38.83) — feedback'e tıklayınca otomatik
-    // mark-as-read. Already-read row'larda PATCH skip (gereksiz network).
-    // Optimistic state update + fire-and-forget; failure'da silent fail
-    // (flagFeedback paterni). counts.unread otomatik decrement eder.
-    //
-    // Stage 80 §38.160 — PATCH sonrası `buaze:feedback-read` custom event
-    // dispatch. NotificationBell listener (§38.160 yeni) anında refetch
-    // eder; 60s polling beklemez. Bottom nav badge (§38.141 Stage 60
-    // event chain) anında düşer — kullanıcı raporu "okundu yapınca azalmıyor"
-    // fix.
-    const row = feedbacks.find((f) => f.id === id);
-    if (!row || row.isRead === true) return;
-    setFeedbacks((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, isRead: true } : f)),
-    );
-    fetch(`/api/feedback/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isRead: true }),
-    })
-      .then(() => {
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('buaze:feedback-read'));
-        }
-      })
-      .catch(() => {
-        /* non-blocking — eski feedback'ler için server reject edebilir */
-      });
+    void markFeedbackRead(id);
   };
 
   const onBackToList = () => {
@@ -865,7 +878,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           yapışık görünüm bu sayede sağlanır. Header section yüksekliği:
           mobile 24+80+24+1 ≈ 129px, desktop 32+80+32+1 ≈ 145px → 160px buffer. */}
       <div
-        className="flex flex-col overflow-hidden bg-white lg:flex-row lg:h-[calc(100vh-160px)] lg:min-h-[540px] xl:grid xl:grid-cols-[300px_minmax(0,1fr)_minmax(0,360px)]"
+        className="flex flex-col overflow-hidden bg-white lg:flex-row lg:h-[calc(100vh-160px)] lg:min-h-[540px] xl:grid xl:grid-cols-[300px_400px_minmax(520px,1fr)]"
       >
         {/* ============ XL FILTER RAIL — visible only on xl: (≥1280px) ============ */}
         <FeedbackFiltersRail
@@ -915,17 +928,17 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         </aside>
 
         {/* ============ DETAIL ============
-            UX fix: lg:min-h-0 + lg:overflow-y-auto. Mevcut parent
+            UX fix: lg:min-h-0. Mevcut parent
             lg:h-[calc(100vh-160px)] sabit yükseklik (§38.62 sonrası, eskiden
             200px), detail body uzun olduğunda (yorum metni + composer +
             yanıtlar listesi) flex child default min-height: auto child'ı
             genişletir + parent overflow-hidden → composer alta inilemiyor
             (kullanıcı raporu). min-h-0 flex item shrink-to-content yapmasın,
-            overflow-y-auto kendi scroll'unu açar. */}
+            scroll ise FeedbackDetail içindeki tek container'da açılır. */}
         <div
           className={`flex-1 min-w-0 ${
             isMobileDetailView ? 'flex' : 'hidden lg:flex'
-          } flex-col lg:min-h-0 lg:overflow-y-auto`}
+          } flex-col lg:min-h-0`}
         >
           {active ? (
             <FeedbackDetail

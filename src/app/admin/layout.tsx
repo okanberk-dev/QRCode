@@ -3,9 +3,15 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import AnnouncementBanner, { type DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
-import { isAdminRole, verifyJwt } from '@/lib/auth';
+import { isAdminRole, verifyJwt, type PanelActor } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { AdminTranslationProvider } from '@/components/admin/AdminTranslationProvider';
+import { loadAdminPanelProfile, type AdminPanelProfile } from '@/lib/admin-profile';
+
+function getStringClaim(payload: Awaited<ReturnType<typeof verifyJwt>>, key: string) {
+  const value = payload?.[key];
+  return typeof value === 'string' && value.trim() ? value : null;
+}
 
 async function fetchActiveAnnouncements(locale: 'tr' | 'en'): Promise<DashboardAnnouncement[]> {
   try {
@@ -50,11 +56,24 @@ export default async function AdminLayout({
 
   let isAuthenticated = false;
   let payload: Awaited<ReturnType<typeof verifyJwt>> = null;
+  let actor: PanelActor | null = null;
 
   try {
     if (token) {
       payload = await verifyJwt(token);
-      isAuthenticated = !!payload && isAdminRole(payload.role);
+      const role = getStringClaim(payload, 'role');
+      isAuthenticated = !!payload && isAdminRole(role);
+      if (isAuthenticated && role) {
+        actor = {
+          id: getStringClaim(payload, 'id') || 'env-admin',
+          role,
+          restaurantId: getStringClaim(payload, 'restaurantId'),
+          username: getStringClaim(payload, 'username'),
+          email: getStringClaim(payload, 'email') || getStringClaim(payload, 'username'),
+          plan: getStringClaim(payload, 'plan'),
+          source: 'admin',
+        };
+      }
     }
   } catch {
     isAuthenticated = false;
@@ -75,7 +94,14 @@ export default async function AdminLayout({
   // We hide it if not authenticated.
   const showSidebar = isAuthenticated;
 
-  const announcements = showSidebar ? await fetchActiveAnnouncements(adminLocale) : [];
+  let announcements: DashboardAnnouncement[] = [];
+  let adminProfile: AdminPanelProfile | null = null;
+  if (showSidebar && actor) {
+    [announcements, adminProfile] = await Promise.all([
+      fetchActiveAnnouncements(adminLocale),
+      loadAdminPanelProfile(actor),
+    ]);
+  }
 
   return (
     <AdminTranslationProvider initialLocale={adminLocale}>
@@ -85,7 +111,7 @@ export default async function AdminLayout({
             {adminLocale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
           </a>
         )}
-        {showSidebar && <AdminSidebar announcements={announcements} />}
+        {showSidebar && <AdminSidebar announcements={announcements} initialProfile={adminProfile} />}
         <main
           id="panel-main-content"
           tabIndex={-1}
@@ -94,7 +120,7 @@ export default async function AdminLayout({
           {showSidebar && (
             <AdminTopbar
               announcements={announcements}
-              displayName={typeof payload?.username === 'string' ? payload.username : null}
+              displayName={adminProfile?.name || adminProfile?.username || null}
             />
           )}
           <div className={showSidebar ? "max-w-7xl mx-auto w-full pt-2 sm:pt-6" : "w-full max-w-full"}>
@@ -104,7 +130,7 @@ export default async function AdminLayout({
             {children}
           </div>
         </main>
-        {showSidebar && <AdminMobileNav />}
+        {showSidebar && <AdminMobileNav role={adminProfile?.role || actor?.role || 'manager'} />}
       </div>
     </AdminTranslationProvider>
   );

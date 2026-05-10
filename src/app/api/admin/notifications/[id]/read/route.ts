@@ -1,9 +1,8 @@
 // Stage 29 §38.105 — admin notification single mark-as-read endpoint.
 //
 // AdminNotificationBell dropdown panel'inde notification click → mark-as-read
-// + click-through. Broadcast notifications için (adminId=null) DB-side update
-// tüm admin'leri etkiler — pratik trade-off (CLAUDE.md §38.105 — gelecek
-// AdminNotificationRead pivot tablo scope).
+// + click-through. Broadcast notifications use per-admin read receipts so one
+// admin reading a broadcast does not hide it for everyone else.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -27,7 +26,16 @@ export async function POST(
   // halde 403 (başka admin'in targeted notification'ı).
   const notification = await prisma.adminNotification.findUnique({
     where: { id },
-    select: { id: true, adminId: true, readAt: true },
+    select: {
+      id: true,
+      adminId: true,
+      readAt: true,
+      reads: {
+        where: { adminId: typeof admin.id === 'string' ? admin.id : '' },
+        select: { readAt: true },
+        take: 1,
+      },
+    },
   });
   if (!notification) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
@@ -40,11 +48,31 @@ export async function POST(
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  // Idempotent — already read ise readAt update etme (timestamp drift yok).
+  if (notification.adminId === null) {
+    if (notification.reads[0]?.readAt) {
+      return NextResponse.json({ ok: true, alreadyRead: true });
+    }
+    await prisma.adminNotificationRead.upsert({
+      where: {
+        notificationId_adminId: {
+          notificationId: id,
+          adminId,
+        },
+      },
+      update: {
+        readAt: new Date(),
+      },
+      create: {
+        notificationId: id,
+        adminId,
+      },
+    });
+    return NextResponse.json({ ok: true });
+  }
+
   if (notification.readAt) {
     return NextResponse.json({ ok: true, alreadyRead: true });
   }
-
   await prisma.adminNotification.update({
     where: { id },
     data: { readAt: new Date() },

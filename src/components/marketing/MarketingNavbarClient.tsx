@@ -59,12 +59,7 @@ export default function MarketingNavbarClient({
   const isTr = locale === 'tr';
   const base = `/${locale}`;
 
-  // Stage 83 §38.163 — auth state moved client-side. Anonymous default
-  // state means the "Giriş yap / Ücretsiz başla" CTA renders correctly
-  // on first paint for the dominant marketing audience (≥90% anon).
-  // Authenticated visitors see the chip swap to "Panel" / "Hesap" after
-  // the probe resolves (~50–200ms post-mount, invisible in practice).
-  const { isLoggedIn } = useMarketingAuth();
+  const { isLoggedIn, pending: authPending } = useMarketingAuth();
 
   const pathname = usePathname();
   const router = useRouter();
@@ -586,7 +581,12 @@ export default function MarketingNavbarClient({
               <span>{otherLocale.toUpperCase()}</span>
             </button>
 
-            {isLoggedIn ? (
+            {authPending ? (
+              <div className="flex items-center gap-2" aria-hidden="true">
+                <span className="hidden h-5 w-12 rounded-full bg-[#F5F5F5] sm:inline-flex" />
+                <span className="inline-flex h-9 w-[132px] rounded-full bg-[#F5F5F5] ring-1 ring-[#EDEDED]" />
+              </div>
+            ) : isLoggedIn ? (
               <Link
                 href={`${base}/dashboard`}
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#1A1A1A]"
@@ -750,7 +750,12 @@ export default function MarketingNavbarClient({
 
               {/* Mobile bottom CTAs */}
               <div className="mt-6 space-y-2">
-                {isLoggedIn ? (
+                {authPending ? (
+                  <div className="space-y-2" aria-hidden="true">
+                    <span className="block min-h-[48px] rounded-full bg-[#F5F5F5] ring-1 ring-[#EDEDED]" />
+                    <span className="block min-h-[48px] rounded-full bg-[#FAFAFA] ring-1 ring-[#EDEDED]" />
+                  </div>
+                ) : isLoggedIn ? (
                   <Link
                     href={`${base}/dashboard`}
                     onClick={() => setMobileOpen(false)}

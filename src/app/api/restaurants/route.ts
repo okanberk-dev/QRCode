@@ -7,6 +7,7 @@ import { ApiErrors } from '@/lib/api-errors';
 import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-domains';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
 import { isValidEmail, isValidHexColor } from '@/lib/validations';
+import { normalizeGoogleReviewInput } from '@/lib/restaurant-google-input';
 
 // Stage 28 §38.104 Fix A2 — admin restaurants list cross-tab refresh edge cache.
 // Restaurant mutation rare (admin POST/PATCH/DELETE always-fresh, no cache
@@ -330,6 +331,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { name, slug, category, address, city, kvkkText, phone, googlePlaceId, googleReviewUrl, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, tripAdvisorUrl, airbnbUrl, bookingUrl, yandexUrl, userId: bodyUserId } = body;
+    const normalizedGoogle = normalizeGoogleReviewInput(
+      typeof googlePlaceId === 'string' && googlePlaceId.trim()
+        ? googlePlaceId
+        : googleReviewUrl,
+    );
+    const platformUrlBody = {
+      ...body,
+      googleReviewUrl: normalizedGoogle.googleReviewUrl,
+    };
 
     if (!name || !slug) {
       return ApiErrors.badRequest('Ad ve slug zorunludur', 'MISSING_FIELDS');
@@ -346,7 +356,7 @@ export async function POST(req: NextRequest) {
     // allows them — we only want to block clearly malicious or wrong-domain
     // values here (`wrong_protocol`, `wrong_domain`, `invalid_url`).
     for (const [field, provider] of Object.entries(URL_PROVIDER_MAP)) {
-      const value = body[field];
+      const value = platformUrlBody[field as keyof typeof platformUrlBody];
       if (typeof value !== 'string' || !value.trim()) continue;
       const result = checkProviderUrl(provider, value);
       if (!result.ok && result.severity === 'error') {
@@ -413,8 +423,8 @@ export async function POST(req: NextRequest) {
         city: typeof city === 'string' && city.trim() ? city.trim() : null,
         kvkkText: typeof kvkkText === 'string' && kvkkText.trim() ? kvkkText : null,
         phone: phone || null,
-        googlePlaceId: googlePlaceId || null,
-        googleReviewUrl: googleReviewUrl || null,
+        googlePlaceId: normalizedGoogle.googlePlaceId,
+        googleReviewUrl: normalizedGoogle.googleReviewUrl,
         notificationEmail: notificationEmail || null,
         primaryColor: primaryColor || '#C6F24E',
         getirYemekUrl: getirYemekUrl || null,

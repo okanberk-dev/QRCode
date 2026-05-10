@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Download, Grid3x3, List as ListIcon, Loader2, Plus, QrCode, Trash2 } from 'lucide-react';
 import {
   AlertBanner,
@@ -15,6 +15,7 @@ import {
 import { CreateQRModal, type QRGenerationResult } from '@/components/panel/qr/CreateQRModal';
 import { QRCard, type QRCardItem } from '@/components/panel/qr/QRCard';
 import { dedupeQrRows } from '@/lib/qr-signature';
+import { ACTIVE_BUSINESS_STORAGE_KEY } from '@/lib/active-business';
 
 interface Restaurant {
   id: string;
@@ -71,6 +72,8 @@ const PLATFORM_LABELS: Record<string, string> = {
 export default function DashboardQrPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const locale = params.locale === 'en' ? 'en' : 'tr';
   const isTr = locale === 'tr';
   const preselected = searchParams.get('restaurant') || searchParams.get('restaurantId') || '';
@@ -100,6 +103,20 @@ export default function DashboardQrPage() {
   // Filters
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [platformFilter, setPlatformFilter] = useState<string>('all');
+  const selectBranchFilter = (restaurantId: string) => {
+    setBranchFilter(restaurantId);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('restaurant');
+    if (restaurantId === 'all') {
+      params.delete('restaurantId');
+      if (typeof window !== 'undefined') window.localStorage.removeItem(ACTIVE_BUSINESS_STORAGE_KEY);
+    } else {
+      params.set('restaurantId', restaurantId);
+      if (typeof window !== 'undefined') window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
+    }
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
   // 1) Load restaurants
   useEffect(() => {
@@ -392,7 +409,7 @@ export default function DashboardQrPage() {
               className="bz-input"
               style={{ width: 'auto', paddingRight: 32 }}
               value={branchFilter}
-              onChange={(e) => setBranchFilter(e.target.value)}
+              onChange={(e) => selectBranchFilter(e.target.value)}
               aria-label={isTr ? 'Şube filtresi' : 'Branch filter'}
             >
               <option value="all">{isTr ? 'Tüm şubeler' : 'All branches'}</option>

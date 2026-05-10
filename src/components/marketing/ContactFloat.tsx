@@ -65,7 +65,7 @@ export function ContactFloat({ locale }: { locale: string }) {
   // visits see the float on first paint without waiting for the probe).
   // Hook lives at the top to comply with rules-of-hooks; the early
   // return below consults `isLoggedIn` after pathname guards.
-  const { isLoggedIn } = useMarketingAuth();
+  const { isLoggedIn, pending: authPending } = useMarketingAuth();
 
   const [state, setState] = useState<WidgetState>('fab');
   const [showBubble, setShowBubble] = useState(false);
@@ -150,6 +150,7 @@ export function ContactFloat({ locale }: { locale: string }) {
   if (
     current.startsWith(`${base}/auth`) ||
     current === `${base}/onboarding` ||
+    authPending ||
     isLoggedIn
   ) {
     return null;
