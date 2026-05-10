@@ -250,7 +250,7 @@ export default function MenuAnalyticsPage() {
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-bold text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="bz-input rounded-xl py-2 text-xs font-bold"
           >
             <option value="">{copy.allCategories}</option>
             {(data?.categories ?? []).map((c) => (
@@ -260,7 +260,7 @@ export default function MenuAnalyticsPage() {
           <select
             value={sourceType}
             onChange={(e) => setSourceType(e.target.value)}
-            className="rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-bold text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="bz-input rounded-xl py-2 text-xs font-bold"
           >
             <option value="">{copy.allSources}</option>
             {Object.entries(copy.sourceLabels).map(([key, label]) => (

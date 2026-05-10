@@ -19,6 +19,7 @@ export { Field } from "./Field";
 export { LegendDot } from "./LegendDot";
 export { Modal } from "./Modal";
 export { PageHeader } from "./PageHeader";
+export { PanelSelectionBar, type PanelSelectionAction } from "./PanelSelectionBar";
 export { PlatformChip, PLATFORMS, type PlatformId, type PlatformConfig } from "./PlatformChip";
 export { ProgressBar } from "./ProgressBar";
 export { PulseSelect, type PulseSelectOption } from "./PulseSelect";

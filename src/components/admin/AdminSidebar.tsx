@@ -498,7 +498,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
             <select
               value={locale}
               onChange={(e) => setLocale(e.target.value as 'tr' | 'en')}
-              className="bg-[#F2F2F2] text-[#0A0A0A] text-[11px] font-medium border-none rounded-md px-2 py-1 outline-none cursor-pointer"
+              className="bz-input h-8 w-[72px] rounded-md border-none bg-[#F2F2F2] py-0 text-[11px] font-medium cursor-pointer"
             >
               <option value="tr">TR</option>
               <option value="en">EN</option>

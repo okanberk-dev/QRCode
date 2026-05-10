@@ -1083,6 +1083,27 @@ input::-webkit-inner-spin-button {
 .bz-input:hover:not(:disabled) { border-color: #D4D4D4; }
 .bz-input:focus { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198,242,78,0.35); }
 .bz-input:disabled { background: #FAFAFA; color: #737373; cursor: not-allowed; }
+select.bz-input {
+  padding-right: 38px;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #737373 50%),
+    linear-gradient(135deg, #737373 50%, transparent 50%);
+  background-position:
+    calc(100% - 19px) calc(50% - 2px),
+    calc(100% - 13px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+select.bz-input:hover:not(:disabled) {
+  background-color: #FAFAFA;
+}
+select.bz-input:focus {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #0A0A0A 50%),
+    linear-gradient(135deg, #0A0A0A 50%, transparent 50%);
+}
+select.bz-input::-ms-expand { display: none; }
 
 /* Search wrapper — magnifier icon absolute pozisyonlu sol içeride.
    tokens.css line 170-179 birebir port. Kullanım:

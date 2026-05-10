@@ -5,7 +5,7 @@ import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin,
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
-import { AlertBanner, APCheckbox, Avatar, Badge, type BadgeKind, CardSkeleton, EmptyState, Modal, PageHeader, type TabItem, Tabs, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, APCheckbox, Avatar, Badge, type BadgeKind, CardSkeleton, EmptyState, Modal, PageHeader, PanelSelectionBar, type TabItem, Tabs, useConfirmDialog } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -645,7 +645,7 @@ export default function RestaurantsPage() {
                     <select
                       value={formData.userId}
                       onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
-                      className="w-full cursor-pointer rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                      className="bz-input w-full cursor-pointer rounded-2xl py-3 text-[14px]"
                     >
                       <option value="">Sahipsiz oluştur</option>
                       {owners.map((owner) => (
@@ -661,7 +661,7 @@ export default function RestaurantsPage() {
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    className="w-full cursor-pointer rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                    className="bz-input w-full cursor-pointer rounded-2xl py-3 text-[14px]"
                   >
                     <option>Restoran</option>
                     <option>Kafe</option>
@@ -740,51 +740,39 @@ export default function RestaurantsPage() {
       {/* PR10 — Bulk action floating toolbar (Stripe Dashboard pattern, §11).
           Stage A5 §38.97 — "Özellik aç/kapat" CTA eklendi. */}
       {selectedIds.size > 0 && (
-        <div
-          role="region"
-          aria-label="Toplu işlem araç çubuğu"
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center gap-2 rounded-2xl border border-[#0A0A0A] bg-white px-3 py-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.4)] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:max-w-[640px]"
-        >
-          <span aria-live="polite" className="text-[12px] font-semibold text-[#0A0A0A] px-2">
-            {selectedIds.size} seçildi
-          </span>
-          <button
-            type="button"
-            disabled={bulkBusy}
-            onClick={() => runBulk('activate')}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1 text-[11px] font-medium text-[#0A0A0A] hover:bg-[#C6F24E]/40 disabled:opacity-50 transition-colors"
-          >
-            <ToggleRight size={11} strokeWidth={2.2} />
-            Aktif et
-          </button>
-          <button
-            type="button"
-            disabled={bulkBusy}
-            onClick={() => runBulk('deactivate')}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-3 py-1 text-[11px] font-medium text-[#525252] hover:bg-[#FAFAFA] disabled:opacity-50 transition-colors"
-          >
-            <ToggleLeft size={11} strokeWidth={2.2} />
-            Duraklat
-          </button>
-          <button
-            type="button"
-            disabled={bulkBusy}
-            onClick={() => setShowFeatureModal(true)}
-            className="bz-btn-primary bz-btn-sm text-[11px] disabled:opacity-50"
-          >
-            <Settings2 size={11} strokeWidth={2.2} />
-            Özellik aç/kapat
-          </button>
-          <button
-            type="button"
-            disabled={bulkBusy}
-            onClick={() => setSelectedIds(new Set())}
-            aria-label="Seçimi temizle"
-            className="ml-1 rounded-md p-1 hover:bg-[#FAFAFA] transition-colors disabled:opacity-50"
-          >
-            <X size={14} strokeWidth={2.2} />
-          </button>
-        </div>
+        <PanelSelectionBar
+          count={selectedIds.size}
+          label="İŞLETME SEÇİLDİ"
+          ariaLabel="Toplu işlem araç çubuğu"
+          clearLabel="Seçimi temizle"
+          onClear={() => setSelectedIds(new Set())}
+          actions={[
+            {
+              key: 'activate',
+              label: 'Aktif et',
+              icon: <ToggleRight size={13} strokeWidth={2.2} />,
+              onClick: () => runBulk('activate'),
+              disabled: bulkBusy,
+              variant: 'primary',
+            },
+            {
+              key: 'deactivate',
+              label: 'Duraklat',
+              icon: <ToggleLeft size={13} strokeWidth={2.2} />,
+              onClick: () => runBulk('deactivate'),
+              disabled: bulkBusy,
+              variant: 'neutral',
+            },
+            {
+              key: 'features',
+              label: 'Özellik aç/kapat',
+              icon: <Settings2 size={13} strokeWidth={2.2} />,
+              onClick: () => setShowFeatureModal(true),
+              disabled: bulkBusy,
+              variant: 'lime',
+            },
+          ]}
+        />
       )}
 
       {/* Stage A5 §38.97 — Feature override modal */}

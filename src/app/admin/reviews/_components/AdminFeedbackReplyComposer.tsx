@@ -95,7 +95,7 @@ export function AdminFeedbackReplyComposer({
             onChange={(e) => setAiTone(e.target.value as AiTone)}
             disabled={suggesting}
             aria-label={isTr ? 'Pulse AI tonu' : 'Pulse AI tone'}
-            className="w-full sm:w-auto rounded-full border border-white/20 bg-transparent px-3 py-2 sm:py-1.5 text-[12px] font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50 outline-none focus:border-[#C6F24E]"
+            className="bz-input w-full rounded-full border-white/20 bg-transparent py-2 text-[12px] font-medium text-white hover:bg-white/10 disabled:opacity-50 sm:w-auto sm:py-1.5"
             style={{ colorScheme: 'dark' }}
           >
             <option value="warm" className="text-[#0A0A0A]">

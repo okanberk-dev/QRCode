@@ -1357,7 +1357,7 @@ function ItemModal({
             required
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="w-full bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="bz-input w-full rounded-2xl py-3 text-[14px]"
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>

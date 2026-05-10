@@ -1,6 +1,7 @@
 'use client';
 
-import { CheckCheck, Flag, Loader2, UserPlus, X } from 'lucide-react';
+import { CheckCheck, Flag, UserPlus } from 'lucide-react';
+import { PanelSelectionBar } from '@/components/ui';
 
 interface BulkActionToolbarProps {
   isTr: boolean;
@@ -35,72 +36,50 @@ export function BulkActionToolbar({
   if (count === 0) return null;
 
   return (
-    <div
-      role="region"
-      aria-label={isTr ? 'Toplu işlem araç çubuğu' : 'Bulk action toolbar'}
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center gap-2 rounded-2xl border border-[#0A0A0A] bg-white px-3 py-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.4)] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:max-w-[520px]"
-      style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
-    >
-      <span
-        aria-live="polite"
-        className="text-[12px] font-semibold text-[#0A0A0A] px-2 shrink-0"
-      >
-        {count} {isTr ? 'seçildi' : 'selected'}
-      </span>
-      <button
-        type="button"
-        onClick={onFlag}
-        disabled={busy}
-        className="bz-btn-lime bz-btn-sm disabled:opacity-50"
-      >
-        {busy ? <Loader2 size={11} className="animate-spin" /> : <Flag size={11} strokeWidth={2.2} />}
-        {isTr ? 'İşaretle' : 'Flag'}
-      </button>
-      <button
-        type="button"
-        onClick={onUnflag}
-        disabled={busy}
-        className="bz-btn bz-btn-sm disabled:opacity-50"
-      >
-        {isTr ? 'Kaldır' : 'Unflag'}
-      </button>
-      <button
-        type="button"
-        onClick={onAssign}
-        disabled={busy}
-        className="bz-btn bz-btn-sm disabled:opacity-50"
-      >
-        {busy ? (
-          <Loader2 size={11} className="animate-spin" />
-        ) : (
-          <UserPlus size={11} strokeWidth={2.2} />
-        )}
-        {isTr ? 'Bana ata' : 'Assign me'}
-      </button>
-      {/* Stage 13 — toplu "okundu" işaretleme (CLAUDE.md §38.83). Lime-soft
-          palette (CheckCheck = iki tick "okundu" semantic). */}
-      <button
-        type="button"
-        onClick={onMarkRead}
-        disabled={busy}
-        className="bz-btn-lime bz-btn-sm disabled:opacity-50"
-      >
-        {busy ? (
-          <Loader2 size={11} className="animate-spin" />
-        ) : (
-          <CheckCheck size={11} strokeWidth={2.2} />
-        )}
-        {isTr ? 'Okundu işaretle' : 'Mark as read'}
-      </button>
-      <button
-        type="button"
-        onClick={onClear}
-        aria-label={isTr ? 'Seçimi temizle' : 'Clear selection'}
-        className="bz-btn-icon ml-auto"
-      >
-        <X size={14} strokeWidth={2.2} />
-      </button>
-    </div>
+    <PanelSelectionBar
+      count={count}
+      label={isTr ? 'YORUM SEÇİLDİ' : 'REVIEWS SELECTED'}
+      countLocale={isTr ? 'tr-TR' : 'en-US'}
+      ariaLabel={isTr ? 'Toplu işlem araç çubuğu' : 'Bulk action toolbar'}
+      clearLabel={isTr ? 'Seçimi temizle' : 'Clear selection'}
+      onClear={onClear}
+      actions={[
+        {
+          key: 'flag',
+          label: isTr ? 'İşaretle' : 'Flag',
+          icon: <Flag size={13} strokeWidth={2.2} />,
+          onClick: onFlag,
+          disabled: busy,
+          loading: busy,
+          variant: 'primary',
+        },
+        {
+          key: 'unflag',
+          label: isTr ? 'Kaldır' : 'Unflag',
+          onClick: onUnflag,
+          disabled: busy,
+          variant: 'neutral',
+        },
+        {
+          key: 'assign',
+          label: isTr ? 'Bana ata' : 'Assign me',
+          icon: <UserPlus size={13} strokeWidth={2.2} />,
+          onClick: onAssign,
+          disabled: busy,
+          loading: busy,
+          variant: 'neutral',
+        },
+        {
+          key: 'read',
+          label: isTr ? 'Okundu' : 'Mark read',
+          icon: <CheckCheck size={13} strokeWidth={2.2} />,
+          onClick: onMarkRead,
+          disabled: busy,
+          loading: busy,
+          variant: 'lime',
+        },
+      ]}
+    />
   );
 }
 

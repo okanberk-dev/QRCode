@@ -261,7 +261,7 @@ export default function AdminNewslettersPage() {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as Status)}
-            className="rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-bold text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="bz-input rounded-xl py-2 text-xs font-bold"
           >
             <option value="active">Aktif</option>
             <option value="cancelled">İptal</option>
@@ -271,7 +271,7 @@ export default function AdminNewslettersPage() {
           <select
             value={localeFilter}
             onChange={(e) => setLocaleFilter(e.target.value as LocaleFilter)}
-            className="rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-bold text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="bz-input rounded-xl py-2 text-xs font-bold"
           >
             <option value="all">Tüm diller</option>
             <option value="tr">Türkçe</option>
@@ -281,7 +281,7 @@ export default function AdminNewslettersPage() {
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="rounded-xl border border-[#EDEDED] bg-white px-3 py-2 text-xs font-bold text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+            className="bz-input rounded-xl py-2 text-xs font-bold"
           >
             <option value="all">Tüm kaynaklar</option>
             {(data?.facets.sources ?? []).map((s) => (

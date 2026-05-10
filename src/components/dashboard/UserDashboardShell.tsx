@@ -1069,7 +1069,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 value={activeRestaurantId ?? ''}
                 onChange={(event) => selectRestaurantScope(event.target.value)}
                 aria-label={copy.chooseBusiness}
-                className="max-w-[132px] rounded-lg border border-[#EDEDED] bg-white px-2 py-1.5 text-[11px] font-medium text-[#0A0A0A] outline-none focus:border-[#C6F24E]"
+                className="bz-input h-9 max-w-[132px] rounded-lg py-0 text-[11px] font-medium"
               >
                 {workspaceRestaurants.map((restaurant) => (
                   <option key={restaurant.id} value={restaurant.id}>
@@ -1139,7 +1139,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 value={activeRestaurantId ?? ''}
                 onChange={(event) => selectRestaurantScope(event.target.value)}
                 aria-label={copy.chooseBusiness}
-                className="hidden max-w-[220px] rounded-full border border-[#EDEDED] bg-white px-3 py-2 text-[12px] font-medium text-[#0A0A0A] outline-none transition-colors hover:border-[#0A0A0A] focus:border-[#C6F24E] xl:block"
+                className="bz-input hidden h-9 max-w-[220px] rounded-full py-0 text-[12px] font-medium xl:block"
               >
                 {workspaceRestaurants.map((restaurant) => (
                   <option key={restaurant.id} value={restaurant.id}>

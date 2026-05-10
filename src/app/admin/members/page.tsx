@@ -22,7 +22,6 @@ import {
   ToggleLeft,
   ToggleRight,
   Trash2,
-  X,
 } from 'lucide-react';
 import {
   AlertBanner,
@@ -32,6 +31,7 @@ import {
   EmptyState,
   Modal,
   PageHeader,
+  PanelSelectionBar,
   TableSkeleton,
   useConfirmDialog,
 } from '@/components/ui';
@@ -865,34 +865,25 @@ export default function MembersPage() {
 
       {/* Stage A5 §38.97 — bulk mail floating toolbar (Stripe pattern §11.19) */}
       {selectedIds.size > 0 && !showMailModal && (
-        <div
-          role="region"
-          aria-label="Toplu mail araç çubuğu"
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-wrap items-center gap-2 rounded-2xl border border-[#0A0A0A] bg-white px-3 py-2 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.4)] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:max-w-[640px]"
-        >
-          <span aria-live="polite" className="text-[12px] font-semibold text-[#0A0A0A] px-2">
-            {selectedIds.size} sahip seçildi
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              setMailSegment('custom');
-              setShowMailModal(true);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[#A8D62E] bg-[#EAF9B8] px-3 py-1 text-[11px] font-medium text-[#0A0A0A] hover:bg-[#C6F24E]/40 transition-colors"
-          >
-            <Mail size={11} strokeWidth={2.2} />
-            Toplu mail gönder
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedIds(new Set())}
-            aria-label="Seçimi temizle"
-            className="ml-1 rounded-md p-1 hover:bg-[#FAFAFA] transition-colors"
-          >
-            <X size={14} strokeWidth={2.2} />
-          </button>
-        </div>
+        <PanelSelectionBar
+          count={selectedIds.size}
+          label="SAHİP SEÇİLDİ"
+          ariaLabel="Toplu mail araç çubuğu"
+          clearLabel="Seçimi temizle"
+          onClear={() => setSelectedIds(new Set())}
+          actions={[
+            {
+              key: 'mail',
+              label: 'Toplu mail gönder',
+              icon: <Mail size={13} strokeWidth={2.2} />,
+              onClick: () => {
+                setMailSegment('custom');
+                setShowMailModal(true);
+              },
+              variant: 'primary',
+            },
+          ]}
+        />
       )}
 
       {/* Stage A5 §38.97 — opening with no selection: segment-bazlı toplu mail */}
