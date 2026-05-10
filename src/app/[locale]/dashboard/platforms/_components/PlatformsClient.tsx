@@ -21,7 +21,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import {
   Building2,
   Layers,
@@ -29,6 +28,8 @@ import {
   Settings,
 } from 'lucide-react';
 import { Badge } from '@/components/ui';
+import { BusinessIntegrationSettings } from '@/components/dashboard/settings/sections/BusinessIntegrationSettings';
+import { PlatformRedirectsPanel } from '@/components/dashboard/settings/sections/PlatformRedirectsPanel';
 import { detectSector, SECTOR_PLATFORMS } from '@/lib/sector-platforms';
 import type { ManagedPlatformDef } from '@/lib/platform-management';
 import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
@@ -37,6 +38,39 @@ export interface RestaurantInfo {
   id: string;
   name: string;
   category: string;
+  address: string | null;
+  city: string | null;
+  googlePlaceId: string | null;
+  googleReviewUrl: string | null;
+  googleEnabled: boolean;
+  yemekSepetiUrl: string | null;
+  yemekSepetiEnabled: boolean;
+  getirYemekUrl: string | null;
+  getirEnabled: boolean;
+  trendyolYemekUrl: string | null;
+  trendyolEnabled: boolean;
+  tripAdvisorUrl: string | null;
+  tripAdvisorEnabled: boolean;
+  airbnbUrl: string | null;
+  airbnbEnabled: boolean;
+  bookingUrl: string | null;
+  bookingEnabled: boolean;
+  yandexUrl: string | null;
+  yandexEnabled: boolean;
+  yelpUrl: string | null;
+  yelpEnabled: boolean;
+  foursquareUrl: string | null;
+  foursquareEnabled: boolean;
+  externalPlatformsEnabled: boolean;
+  defaultRedirectPlatform: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  whatsappUrl: string | null;
+  reservationUrl: string | null;
+  website: string | null;
+  otherPlatformUrl: string | null;
+  otherPlatformLabel: string | null;
+  otherPlatformEnabled: boolean;
 }
 
 export interface PlatformSummaryRow extends ManagedPlatformDef {
@@ -49,6 +83,7 @@ interface PlatformsClientProps {
   locale: 'tr' | 'en';
   restaurants: RestaurantInfo[];
   platformSummaries: PlatformSummaryRow[];
+  selectedRestaurantId?: string | null;
 }
 
 // Logo source resolver: mevcut /public/platforms/ envanterinden file path
@@ -87,11 +122,17 @@ export default function PlatformsClient({
   locale,
   restaurants,
   platformSummaries,
+  selectedRestaurantId: initialSelectedRestaurantId = null,
 }: PlatformsClientProps) {
   const isTr = locale === 'tr';
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlRestaurantId = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
+  const [restaurantRows, setRestaurantRows] = useState<RestaurantInfo[]>(restaurants);
+
+  useEffect(() => {
+    setRestaurantRows(restaurants);
+  }, [restaurants]);
 
   // Default state (CLAUDE.md §38.162 Stage 82a):
   // - Tek-restoran owner → otomatik o restorana bind (dropdown gizli)
@@ -103,9 +144,9 @@ export default function PlatformsClient({
       const stored =
         typeof window !== 'undefined'
           ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
-          : null;
+          : initialSelectedRestaurantId;
       return resolveActiveRestaurantId({
-        restaurants,
+        restaurants: restaurantRows,
         queryRestaurantId: urlRestaurantId,
         storedRestaurantId: stored,
       });
@@ -118,12 +159,12 @@ export default function PlatformsClient({
         ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
         : null;
     const next = resolveActiveRestaurantId({
-      restaurants,
+      restaurants: restaurantRows,
       queryRestaurantId: urlRestaurantId,
       storedRestaurantId: stored,
     });
     setSelectedRestaurantId(next);
-  }, [restaurants, urlRestaurantId]);
+  }, [restaurantRows, urlRestaurantId]);
 
   const selectRestaurant = (restaurantId: string) => {
     setSelectedRestaurantId(restaurantId);
@@ -136,9 +177,9 @@ export default function PlatformsClient({
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 
-  const isSingleRestaurant = restaurants.length === 1;
+  const isSingleRestaurant = restaurantRows.length === 1;
   const selectedRestaurant = selectedRestaurantId
-    ? restaurants.find((r) => r.id === selectedRestaurantId) ?? null
+    ? restaurantRows.find((r) => r.id === selectedRestaurantId) ?? null
     : null;
 
   const detectedSector = selectedRestaurant ? detectSector(selectedRestaurant.category) : null;
@@ -195,7 +236,7 @@ export default function PlatformsClient({
             <option value="" disabled>
               {isTr ? 'İşletme seçin…' : 'Choose a business…'}
             </option>
-            {restaurants.map((r) => (
+            {restaurantRows.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}
               </option>
@@ -227,7 +268,7 @@ export default function PlatformsClient({
               className="bz-input h-9 min-w-[180px] text-[13px]"
               aria-label={isTr ? 'İşletme seç' : 'Select business'}
             >
-              {restaurants.map((r) => (
+              {restaurantRows.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name}
                 </option>
@@ -405,18 +446,70 @@ export default function PlatformsClient({
                       {isTr ? 'Yakında' : 'Coming soon'}
                     </button>
                   ) : (
-                    <Link
-                      href={`/${locale}/dashboard/platforms/${platform.slug}`}
+                    <a
+                      href="#platform-wizard"
                       className="bz-btn-ghost inline-flex flex-1 items-center justify-center gap-1.5 text-[12px]"
                     >
                       <Settings size={11} strokeWidth={2} />
                       {isTr ? 'Yönet' : 'Manage'}
-                    </Link>
+                    </a>
                   )}
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {selectedRestaurant && (
+        <div id="platform-wizard" className="scroll-mt-24 space-y-4">
+          <div className="bz-card p-4 sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'KURULUM AKIŞI' : 'SETUP FLOW'}
+                </p>
+                <h2 className="mt-1 text-[20px] font-semibold tracking-[-0.02em] text-[#0A0A0A] bz-h-tight">
+                  {isTr ? 'Platform bağlantı sihirbazı' : 'Platform connection wizard'}
+                </h2>
+                <p className="mt-2 text-[13px] leading-relaxed text-[#525252]">
+                  {isTr
+                    ? `${selectedRestaurant.name} için Google, yorum platformları, sosyal bağlantılar, varsayılan yönlendirme ve bağlantı sağlığını tek akışta yönetin.`
+                    : `Manage Google, review platforms, social links, default redirect, and connection health for ${selectedRestaurant.name} in one flow.`}
+                </p>
+              </div>
+              <div className="grid min-w-[260px] grid-cols-3 gap-2 rounded-2xl bg-[#F5F5F5] p-1.5">
+                {[
+                  isTr ? 'Google' : 'Google',
+                  isTr ? 'Platformlar' : 'Platforms',
+                  isTr ? 'Sağlık' : 'Health',
+                ].map((label, index) => (
+                  <div
+                    key={label}
+                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-white px-2 text-center text-[11.5px] font-semibold text-[#0A0A0A]"
+                  >
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C6F24E] text-[10px]">
+                      {index + 1}
+                    </span>
+                    <span className="truncate">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <BusinessIntegrationSettings
+            restaurant={selectedRestaurant}
+            locale={locale}
+            showWorkspaceOverviewLink={false}
+            onSaved={(next) => {
+              setRestaurantRows((rows) =>
+                rows.map((row) => (row.id === selectedRestaurant.id ? { ...row, ...next } : row)),
+              );
+            }}
+          />
+
+          <PlatformRedirectsPanel restaurantId={selectedRestaurant.id} locale={locale} />
         </div>
       )}
     </div>

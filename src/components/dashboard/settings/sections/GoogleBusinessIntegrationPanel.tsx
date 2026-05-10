@@ -165,7 +165,7 @@ export function GoogleBusinessIntegrationPanel({
   };
 
   const connectGoogle = async () => {
-    const returnTo = `/${locale}/dashboard/restaurants/${restaurant.id}/settings?section=integrations`;
+    const returnTo = `/${locale}/dashboard/platforms?restaurantId=${restaurant.id}`;
     const res = await fetch("/api/integrations/google/connect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -449,7 +449,7 @@ export function GoogleBusinessIntegrationPanel({
               {selectedLocation && (
                 <div className="space-y-3">
                   <a
-                    href={`/${locale}/dashboard/google-reviews`}
+                    href={`/${locale}/dashboard/google-reviews?restaurantId=${restaurant.id}`}
                     className="bz-btn-primary inline-flex items-center gap-1.5 rounded-full text-[13px]"
                   >
                     <ExternalLink size={14} />

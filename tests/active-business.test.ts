@@ -38,14 +38,14 @@ test('resolveActiveRestaurantId falls back to localStorage and then single resta
   );
 });
 
-test('resolveActiveRestaurantId returns all-business mode for multi-location fallback', () => {
+test('resolveActiveRestaurantId falls back to the first active restaurant for multi-location owners', () => {
   assert.equal(
     resolveActiveRestaurantId({
       restaurants,
       queryRestaurantId: null,
       storedRestaurantId: null,
     }),
-    null,
+    'rest-1',
   );
 });
 
@@ -62,4 +62,3 @@ test('setRestaurantParam writes canonical restaurantId and removes legacy restau
   );
   assert.equal(setRestaurantParam('scope=7d&restaurantId=rest-2', null), 'scope=7d');
 });
-

@@ -8,6 +8,7 @@ import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-do
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
 import { isValidEmail, isValidHexColor } from '@/lib/validations';
 import { normalizeGoogleReviewInput } from '@/lib/restaurant-google-input';
+import { normalizeRestaurantParam } from '@/lib/active-business';
 
 // Stage 28 §38.104 Fix A2 — admin restaurants list cross-tab refresh edge cache.
 // Restaurant mutation rare (admin POST/PATCH/DELETE always-fresh, no cache
@@ -197,6 +198,9 @@ export async function GET(req: NextRequest) {
     // - unverified_platform  → googleReviewUrl IS NOT NULL AND googlePlaceId IS NULL
     // Forces status=all so passive accounts surface too (deactivated trials etc.)
     const attention = adminParams.get('attention') || '';
+    const requestedRestaurantId = normalizeRestaurantParam(
+      adminParams.get('restaurantId') ?? adminParams.get('restaurant'),
+    );
     const ATTENTION_VALUES = new Set(['quota_full', 'unverified_platform']);
     const attentionActive = ATTENTION_VALUES.has(attention);
     const skip = (page - 1) * limit;
@@ -247,6 +251,27 @@ export async function GET(req: NextRequest) {
       const ALLOWED_PLANS = new Set(['pro', 'growth', 'starter', 'trial', 'monthly', 'yearly', 'free']);
       if (ALLOWED_PLANS.has(planFilter)) {
         where.user = { plan: planFilter };
+      }
+    }
+
+    if (requestedRestaurantId) {
+      const allowedByScope = scopedIds === null || scopedIds.includes(requestedRestaurantId);
+      if (!allowedByScope) {
+        where.id = { in: [] };
+      } else {
+        const currentIdFilter = where.id;
+        if (
+          currentIdFilter &&
+          typeof currentIdFilter === 'object' &&
+          'in' in currentIdFilter &&
+          Array.isArray(currentIdFilter.in)
+        ) {
+          where.id = currentIdFilter.in.includes(requestedRestaurantId)
+            ? requestedRestaurantId
+            : { in: [] };
+        } else {
+          where.id = requestedRestaurantId;
+        }
       }
     }
 

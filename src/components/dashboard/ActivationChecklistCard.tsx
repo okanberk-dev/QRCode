@@ -61,7 +61,7 @@ function ctaHref(step: ActivationStep, restaurantId: string, locale: string): st
     case "profile":
       return `/${locale}/dashboard/restaurants/${restaurantId}/settings?section=general`;
     case "google_link":
-      return `/${locale}/dashboard/restaurants/${restaurantId}/settings?section=integrations`;
+      return `/${locale}/dashboard/platforms?restaurantId=${restaurantId}`;
     case "qr_downloaded":
       return `/${locale}/dashboard/qr`;
     case "qr_printed_shared":

@@ -85,6 +85,7 @@ interface BusinessIntegrationSettingsProps {
   restaurant: RestaurantData;
   locale?: "tr" | "en";
   onSaved?: (next: RestaurantData) => void;
+  showWorkspaceOverviewLink?: boolean;
 }
 
 interface FormState {
@@ -258,6 +259,7 @@ export function BusinessIntegrationSettings({
   restaurant,
   locale = "tr",
   onSaved,
+  showWorkspaceOverviewLink = true,
 }: BusinessIntegrationSettingsProps) {
   const [form, setForm] = useState<FormState>(() => toForm(restaurant));
   const [initial, setInitial] = useState<FormState>(() => toForm(restaurant));
@@ -519,14 +521,16 @@ export function BusinessIntegrationSettings({
         </p>
         {/* §38.72 — Workspace uplink. Bu form per-restaurant; tüm işletmelerin
             platform durumu /dashboard/platforms workspace overview'da. */}
-        <a
-          href={`/${locale}/dashboard/platforms`}
-          className="bz-btn-ghost shrink-0 inline-flex items-center gap-1.5 text-[12.5px]"
-          title={isTr ? 'Tüm işletmelerin platform durumu' : 'All locations platform health'}
-        >
-          <Plug size={13} strokeWidth={2} />
-          {isTr ? 'Workspace özeti' : 'Workspace overview'}
-        </a>
+        {showWorkspaceOverviewLink && (
+          <a
+            href={`/${locale}/dashboard/platforms`}
+            className="bz-btn-ghost shrink-0 inline-flex items-center gap-1.5 text-[12.5px]"
+            title={isTr ? 'Tüm işletmelerin platform durumu' : 'All locations platform health'}
+          >
+            <Plug size={13} strokeWidth={2} />
+            {isTr ? 'Workspace özeti' : 'Workspace overview'}
+          </a>
+        )}
       </div>
       <AlertBanner kind="info">
         {isTr
