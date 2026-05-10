@@ -97,7 +97,7 @@ export function FeedbackFiltersRail({
   ];
 
   return (
-    <aside className="hidden xl:flex xl:flex-col xl:border-r xl:border-[#EDEDED] xl:bg-white xl:overflow-y-auto">
+    <aside className="hidden xl:flex xl:min-h-0 xl:flex-col xl:border-r xl:border-[#EDEDED] xl:bg-white xl:overflow-y-auto">
       {/* §38.62 — Tasarım `.design-owner-2026/page-reviews.jsx` parity:
           padding 20px 16px (py-5 px-4) + gap 22px (~space-y-[22px]).
           Önceki `p-4 space-y-5` (16px / 20px) küçük drift'ti. */}

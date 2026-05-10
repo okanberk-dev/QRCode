@@ -796,7 +796,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     // grid full-width content area'da render ediliyor → filter rail sol sidebar'a
     // yapışık (border-right). Header için ayrı padded wrapper (px-4 sm:px-7
     // py-6 lg:py-8) tasarımdaki PanelTopbar görünümünü taklit eder.
-    <div className="bg-white">
+    <div className="min-h-full bg-white lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
       {/* PageHeader — mobile detail view'inde gizle (sticky back zaten orada).
           Padded wrapper sadece header için, alt grid full-width. */}
       <div className={`px-4 sm:px-7 py-6 lg:py-8 border-b border-[#EDEDED] ${isMobileDetailView ? 'hidden lg:block' : ''}`}>
@@ -872,13 +872,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           a/page-reviews.jsx birebir). Mevcut WeekStatsCard rail'da
           (FeedbackFiltersRail içinde) Bu hafta özet hâlâ görünür. */}
 
-      {/* §38.62 — 3-col grid full-width (tasarım `padding: 0` parity).
-          `rounded-2xl border` kaldırıldı; bölücüler artık inline border-right
-          üzerinden (filter rail + review list sınır çizgileri). Sidebar'a
-          yapışık görünüm bu sayede sağlanır. Header section yüksekliği:
-          mobile 24+80+24+1 ≈ 129px, desktop 32+80+32+1 ≈ 145px → 160px buffer. */}
+      {/* 3-col grid full-width. Desktop'ta sabit 100vh hesabı yerine shell'in
+          flex alanını kullanır; liste, rail ve detay kendi içinde scroll eder. */}
       <div
-        className="flex flex-col overflow-hidden bg-white lg:flex-row lg:h-[calc(100vh-160px)] lg:min-h-[540px] xl:grid xl:grid-cols-[300px_400px_minmax(520px,1fr)]"
+        className="flex min-h-0 flex-1 flex-col bg-white lg:flex-row lg:overflow-hidden xl:grid xl:grid-cols-[300px_400px_minmax(520px,1fr)]"
       >
         {/* ============ XL FILTER RAIL — visible only on xl: (≥1280px) ============ */}
         <FeedbackFiltersRail
@@ -899,7 +896,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
         {/* ============ LEFT — list (orta kolon xl:'de) ============ */}
         <aside
-          className={`w-full flex-shrink-0 border-b border-[#EDEDED] lg:border-b-0 lg:border-r lg:w-[380px] xl:w-auto xl:flex-none ${
+          className={`min-h-0 w-full flex-shrink-0 border-b border-[#EDEDED] lg:border-b-0 lg:border-r lg:w-[380px] xl:w-auto xl:flex-none ${
             isMobileDetailView ? 'hidden lg:block' : 'block'
           }`}
         >
@@ -928,13 +925,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         </aside>
 
         {/* ============ DETAIL ============
-            UX fix: lg:min-h-0. Mevcut parent
-            lg:h-[calc(100vh-160px)] sabit yükseklik (§38.62 sonrası, eskiden
-            200px), detail body uzun olduğunda (yorum metni + composer +
-            yanıtlar listesi) flex child default min-height: auto child'ı
-            genişletir + parent overflow-hidden → composer alta inilemiyor
-            (kullanıcı raporu). min-h-0 flex item shrink-to-content yapmasın,
-            scroll ise FeedbackDetail içindeki tek container'da açılır. */}
+            `min-h-0` detail panelinin shell flex alanında taşmadan kendi
+            scroll konteynerini kullanmasını sağlar. */}
         <div
           className={`flex-1 min-w-0 ${
             isMobileDetailView ? 'flex' : 'hidden lg:flex'

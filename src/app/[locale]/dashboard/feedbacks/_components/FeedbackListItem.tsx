@@ -36,14 +36,36 @@ export function FeedbackListItem({
   // Page'in onSelectFeedback handler'ı tıklamada PATCH atar + optimistic
   // state update yapar, dot anında kaybolur.
   const isUnread = r.isRead === false || r.isRead === undefined;
+  const customerLabel = r.customerName || (isTr ? 'Anonim' : 'Anonymous');
+  const stateLabel = r.isReplied
+    ? isTr
+      ? 'yanıtlandı'
+      : 'replied'
+    : r.isPending
+      ? isTr
+        ? 'beklemede'
+        : 'pending'
+      : isUnread
+        ? isTr
+          ? 'okunmamış'
+          : 'unread'
+        : isTr
+          ? 'yanıt bekliyor'
+          : 'awaiting reply';
 
   return (
     <li data-feedback-id={r.id}>
       <button
+        id={`feedback-option-${r.id}`}
         type="button"
+        role="option"
+        aria-selected={isActive}
+        aria-label={`${customerLabel}, ${r.rating} ${isTr ? 'yıldız' : 'stars'}, ${stateLabel}`}
         onClick={() => onSelect(r.id)}
-        className={`flex w-full flex-col gap-1.5 border-b border-[#F5F5F5] px-4 py-3.5 text-left transition-colors ${
-          isActive ? 'bg-[#EAF9B8]' : 'hover:bg-[#FAFAFA]'
+        className={`flex w-full flex-col gap-1.5 border-b border-[#F5F5F5] px-4 py-3.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-inset ${
+          isActive
+            ? 'bg-[#EAF9B8] shadow-[inset_3px_0_0_#0A0A0A]'
+            : 'hover:bg-[#FAFAFA]'
         } ${isPulsed ? 'animate-pulse ring-2 ring-[#C6F24E]' : ''}`}
         aria-current={isActive ? 'true' : undefined}
       >
@@ -69,7 +91,7 @@ export function FeedbackListItem({
                 isUnread ? 'font-bold' : 'font-semibold'
               }`}
             >
-              {r.customerName || (isTr ? 'Anonim' : 'Anonymous')}
+              {customerLabel}
             </span>
           </div>
           <span className="pulse-eyebrow text-[#737373] shrink-0">

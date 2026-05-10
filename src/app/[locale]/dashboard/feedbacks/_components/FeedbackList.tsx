@@ -66,6 +66,44 @@ export function FeedbackList({
 }: FeedbackListProps) {
   const isTr = locale === 'tr';
 
+  const focusFeedbackOption = (id: string) => {
+    window.requestAnimationFrame(() => {
+      document.getElementById(`feedback-option-${id}`)?.focus();
+    });
+  };
+
+  const selectByKeyboard = (targetIndex: number) => {
+    if (filteredList.length === 0) return;
+    const boundedIndex = Math.max(0, Math.min(filteredList.length - 1, targetIndex));
+    const nextId = filteredList[boundedIndex]?.id;
+    if (!nextId) return;
+    onSelect(nextId);
+    focusFeedbackOption(nextId);
+  };
+
+  const handleListKeyDown = (event: React.KeyboardEvent<HTMLUListElement>) => {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const currentIndex = activeId
+      ? filteredList.findIndex((feedback) => feedback.id === activeId)
+      : -1;
+    if (event.key === 'Home') {
+      selectByKeyboard(0);
+      return;
+    }
+    if (event.key === 'End') {
+      selectByKeyboard(filteredList.length - 1);
+      return;
+    }
+    const nextIndex =
+      currentIndex === -1
+        ? event.key === 'ArrowUp'
+          ? filteredList.length - 1
+          : 0
+        : currentIndex + (event.key === 'ArrowDown' ? 1 : -1);
+    selectByKeyboard(nextIndex);
+  };
+
   // §38.56 — Tasarım a/page-reviews.jsx 5-tab birebir parity:
   // Tümü / Okunmamış / Düşük puan / Yanıtlandı / Beklemede.
   // Migration 20260505230000 Feedback.isRead + isPending field'ları
@@ -80,7 +118,11 @@ export function FeedbackList({
   ];
 
   return (
-    <div className="flex flex-col lg:h-full">
+    <div
+      className="flex min-h-0 flex-col lg:h-full"
+      role="region"
+      aria-label={isTr ? 'Yorum listesi' : 'Review list'}
+    >
       {degraded && (
         <div className="px-3 pt-3">
           <AlertBanner kind="warn">
@@ -181,7 +223,7 @@ export function FeedbackList({
         </div>
       )}
 
-      <div className="lg:flex-1 lg:overflow-y-auto">
+      <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         {loading ? (
           <div className="space-y-2 p-4" aria-hidden="true">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -205,7 +247,12 @@ export function FeedbackList({
           </div>
         ) : (
           <>
-            <ul>
+            <ul
+              role="listbox"
+              aria-label={isTr ? 'Yorumlar' : 'Reviews'}
+              aria-activedescendant={activeId ? `feedback-option-${activeId}` : undefined}
+              onKeyDown={handleListKeyDown}
+            >
               {filteredList.map((r) => (
                 <FeedbackListItem
                   key={r.id}
