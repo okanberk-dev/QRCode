@@ -1,5 +1,6 @@
 import type { PanelActor } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getSiteSettings } from '@/lib/site-settings';
 
 export interface AdminPanelProfile {
   id: string;
@@ -18,23 +19,8 @@ export interface AdminPanelProfile {
   faviconUrl?: string | null;
 }
 
-async function loadSiteBranding(): Promise<{ logoUrl: string | null; faviconUrl: string | null }> {
-  try {
-    const rows = await prisma.settings.findMany({
-      where: { key: { in: ['site.logo_url', 'site.favicon_url'] } },
-    });
-    const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-    return {
-      logoUrl: map['site.logo_url'] || null,
-      faviconUrl: map['site.favicon_url'] || null,
-    };
-  } catch {
-    return { logoUrl: null, faviconUrl: null };
-  }
-}
-
 export async function loadAdminPanelProfile(actor: PanelActor): Promise<AdminPanelProfile> {
-  const { logoUrl, faviconUrl } = await loadSiteBranding();
+  const { logoUrl, faviconUrl } = await getSiteSettings();
 
   if (actor.role === 'restaurant_owner') {
     try {

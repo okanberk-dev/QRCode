@@ -14,7 +14,17 @@ import { z } from 'zod';
 
 const ListQuerySchema = z.object({
   restaurantId: z.string().min(1).optional(),
-  status: z.enum(['draft', 'sending', 'sent', 'failed']).optional(),
+  status: z
+    .enum([
+      'draft',
+      'pending_approval',
+      'approved',
+      'rejected',
+      'sending',
+      'sent',
+      'failed',
+    ])
+    .optional(),
   page: z.coerce.number().int().min(1).max(1000).default(1).optional(),
 });
 
@@ -50,6 +60,13 @@ test('list query: empty input passes (defaults)', () => {
 test('list query: invalid status enum fails', () => {
   const r = ListQuerySchema.safeParse({ status: 'archived' });
   assert.equal(r.success, false);
+});
+
+test('list query: moderation statuses pass', () => {
+  for (const status of ['pending_approval', 'approved', 'rejected']) {
+    const r = ListQuerySchema.safeParse({ status });
+    assert.equal(r.success, true);
+  }
 });
 
 test('list query: page coerces string to number', () => {

@@ -1,10 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import nextDynamic from 'next/dynamic';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
-import NotificationBell from '@/components/notifications/NotificationBell';
-import AdminCampaignBell from '@/components/admin/AdminCampaignBell';
+import ViewportMount from '@/components/ui/ViewportMount';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
+
+const NotificationBell = nextDynamic(() => import('@/components/notifications/NotificationBell'), {
+  ssr: false,
+  loading: () => <span aria-hidden className="inline-flex h-9 w-9 shrink-0" />,
+});
+const AdminCampaignBell = nextDynamic(() => import('@/components/admin/AdminCampaignBell'), {
+  ssr: false,
+  loading: () => <span aria-hidden className="inline-flex h-9 w-9 shrink-0" />,
+});
 
 interface AdminTopbarProps {
   announcements?: DashboardAnnouncement[];
@@ -30,16 +39,26 @@ export default function AdminTopbar({ announcements = [], displayName }: AdminTo
   // z-30 desktop sticky topbar < z-40 mobile sticky/bottom nav < z-[45] notification backdrop modal hint).
   return (
     <div className="hidden lg:flex sticky top-0 z-30 items-center justify-end gap-2 border-b border-[#EDEDED] bg-white/95 px-4 py-2.5 backdrop-blur sm:px-6">
-      <NotificationBell
-        locale={locale === 'en' ? 'en' : 'tr'}
-        announcements={announcements}
-        panelBase="/admin"
-      />
+      <ViewportMount
+        query="(min-width: 1024px)"
+        fallback={<span aria-hidden className="inline-flex h-9 w-9 shrink-0" />}
+      >
+        <NotificationBell
+          locale={locale === 'en' ? 'en' : 'tr'}
+          announcements={announcements}
+          panelBase="/admin"
+        />
+      </ViewportMount>
       {/* Stage 29 §38.105 — Campaign moderation in-app bell. AdminNotification
           feed (broadcast + per-admin). RBAC `campaigns:read` permission ile
           gate'li (backend), UI'da sadece görünüyor — manager için 401/403
           fallback'inde silent kalır. */}
-      <AdminCampaignBell locale={locale === 'en' ? 'en' : 'tr'} />
+      <ViewportMount
+        query="(min-width: 1024px)"
+        fallback={<span aria-hidden className="inline-flex h-9 w-9 shrink-0" />}
+      >
+        <AdminCampaignBell locale={locale === 'en' ? 'en' : 'tr'} />
+      </ViewportMount>
       {/* CLAUDE.md §38.164 (Stage 84): inline `style={{ fontFamily: 'var(--font-heading)' }}` redundancy
           kaldırıldı. Avatar `<Link>` (heading değil) — `bz-h-tight` utility ile heading semantic.
           Pulse §11 paterni: avatar initial Space Grotesk + tight tracking + weight 500. */}

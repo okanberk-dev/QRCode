@@ -24,10 +24,12 @@ import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/Onb
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
 import AIInsightBanner from '@/components/dashboard/AIInsightBanner';
 import PulseRangeToggle from '@/components/dashboard/PulseRangeToggle';
+import ViewportMount from '@/components/ui/ViewportMount';
 import ChannelDistribution from '@/components/dashboard/ChannelDistribution';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import ScopeDropdown from '@/components/dashboard/ScopeDropdown';
 import { buildActivityFeed } from '@/lib/activity-feed';
+import { buildPlatformDailyTrend, type PlatformDailyPoint } from '@/lib/analytics-platform-trend';
 import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
 import PendingTasks from '@/components/dashboard/PendingTasks';
 import { buildPendingTasks } from '@/lib/dashboard-tasks';
@@ -398,7 +400,7 @@ async function renderDashboardPage({
     // Mevcut 7-day trendFeedbacks (mobile hero sparkline) etkilenmez.
     prisma.feedback.findMany({
       where: { restaurantId: restIdIn, createdAt: { gte: trendOldestStart } },
-      select: { createdAt: true, rating: true },
+      select: { createdAt: true, rating: true, platform: true },
     }),
     // §38.31 — KANAL DAĞILIMI delta için önceki scope window platform groupBy.
     // Mevcut platformGroups all-time aggregate; delta için aynı window'da
@@ -558,93 +560,50 @@ async function renderDashboardPage({
     trendsChartData.push({ date: dayLabels[labelIdx], count, avgRating: ratingAvg });
   }
 
-  // Phase 8c+ §38.30 — NABIZ chart 30G/90G/YTD bucket helpers + peak per
-  // range. 3 dataset trendFeedbacksRange (en geniş window) üzerinden
-  // tek pass. Tasarım kaynağı: page-dashboard.jsx line 230-247.
-  type TrendBucketRow = { createdAt: Date; rating: number };
-  function bucketDaily(rows: TrendBucketRow[], days: number) {
-    const buckets: { date: string; count: number; avgRating: number; dateMs: number }[] = [];
-    for (let i = 0; i < days; i++) {
-      const dayStart = new Date();
-      dayStart.setHours(0, 0, 0, 0);
-      dayStart.setDate(dayStart.getDate() - (days - 1 - i));
-      const dayEnd = new Date(dayStart);
-      dayEnd.setDate(dayEnd.getDate() + 1);
-      const dayRows = rows.filter(
-        (f) => f.createdAt >= dayStart && f.createdAt < dayEnd,
-      );
-      const count = dayRows.length;
-      const ratingSum = dayRows.reduce((sum, f) => sum + (f.rating || 0), 0);
-      const avgRating = count > 0 ? Math.round((ratingSum / count) * 10) / 10 : 0;
-      buckets.push({
-        // 30G ve 90G için "4 May" gibi kısa label; Recharts dense data'da
-        // tick interval'ını otomatik handle eder (XAxis dataKey="date").
-        date: dayStart.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
-          day: 'numeric',
-          month: 'short',
-        }),
-        count,
-        avgRating,
-        dateMs: dayStart.getTime(),
-      });
-    }
-    return buckets;
-  }
-
-  function bucketWeekly(rows: TrendBucketRow[], fromDate: Date) {
-    const buckets: { date: string; count: number; avgRating: number; dateMs: number }[] = [];
-    const start = new Date(fromDate);
-    start.setHours(0, 0, 0, 0);
-    let cursor = new Date(start);
-    while (cursor.getTime() < now) {
-      const weekEnd = new Date(cursor);
-      weekEnd.setDate(weekEnd.getDate() + 7);
-      const weekRows = rows.filter(
-        (f) => f.createdAt >= cursor && f.createdAt < weekEnd,
-      );
-      const count = weekRows.length;
-      const ratingSum = weekRows.reduce((sum, f) => sum + (f.rating || 0), 0);
-      const avgRating = count > 0 ? Math.round((ratingSum / count) * 10) / 10 : 0;
-      buckets.push({
-        date: cursor.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
-          day: 'numeric',
-          month: 'short',
-        }),
-        count,
-        avgRating,
-        dateMs: cursor.getTime(),
-      });
-      cursor = new Date(weekEnd);
-    }
-    return buckets;
-  }
+  // Phase 8c+ §38.30 — NABIZ chart artık analytics ana grafiğiyle aynı
+  // platform kırılımlı stacked area gövdesini kullanır. 30G/90G/YTD toggle
+  // korunur; datasetler analytics helper'ından üretildiği için tooltip ve
+  // platform bucket mantığı tek kaynakta kalır.
+  const trendLocale = isTr ? 'tr' : 'en';
+  const trendNow = new Date(now);
+  const ytdDays = Math.max(1, Math.ceil((now - ytdStart.getTime()) / 86400000) + 1);
+  const trendRows = trendFeedbacksRange.map((f) => ({
+    rating: f.rating,
+    platform: f.platform,
+    createdAt: f.createdAt,
+  }));
+  const trend30 = buildPlatformDailyTrend(trendRows, {
+    windowDays: 30,
+    locale: trendLocale,
+    now: trendNow,
+  });
+  const trend90 = buildPlatformDailyTrend(trendRows, {
+    windowDays: 90,
+    locale: trendLocale,
+    now: trendNow,
+  });
+  const trendYtd = buildPlatformDailyTrend(trendRows, {
+    windowDays: ytdDays,
+    locale: trendLocale,
+    now: trendNow,
+  });
 
   function findPeak(
-    buckets: { count: number; dateMs: number }[],
+    buckets: PlatformDailyPoint[],
   ): { dateText: string; count: number } | null {
-    if (buckets.length === 0) return null;
-    let peakIdx = 0;
-    let peakCount = 0;
-    for (let i = 0; i < buckets.length; i++) {
-      if (buckets[i].count > peakCount) {
-        peakCount = buckets[i].count;
-        peakIdx = i;
-      }
-    }
-    if (peakCount === 0) return null;
+    const peak = buckets.reduce<PlatformDailyPoint | null>(
+      (current, bucket) => (bucket.total > (current?.total ?? 0) ? bucket : current),
+      null,
+    );
+    if (!peak || peak.total === 0) return null;
     return {
-      dateText: new Date(buckets[peakIdx].dateMs).toLocaleDateString(
+      dateText: new Date(`${peak.isoDate}T00:00:00`).toLocaleDateString(
         isTr ? 'tr-TR' : 'en-US',
         { day: 'numeric', month: 'long' },
       ),
-      count: peakCount,
+      count: peak.total,
     };
   }
-
-  // 30G + 90G daily buckets, YTD weekly buckets (~18 hafta max → chart temiz).
-  const trend30 = bucketDaily(trendFeedbacksRange, 30);
-  const trend90 = bucketDaily(trendFeedbacksRange, 90);
-  const trendYtd = bucketWeekly(trendFeedbacksRange, ytdStart);
 
   const peak30 = findPeak(trend30);
   const peak90 = findPeak(trend90);
@@ -1097,10 +1056,12 @@ async function renderDashboardPage({
           desktop'ta görünür. CLAUDE.md §19.5 paterni intact. */}
       {(selectedRestaurant ?? user.restaurants[0]) && (
         <div className="hidden sm:block">
-          <ActivationChecklistCard
-            restaurantId={(selectedRestaurant ?? user.restaurants[0]).id}
-            locale={locale}
-          />
+          <ViewportMount query="(min-width: 640px)">
+            <ActivationChecklistCard
+              restaurantId={(selectedRestaurant ?? user.restaurants[0]).id}
+              locale={locale}
+            />
+          </ViewportMount>
         </div>
       )}
 
@@ -1229,13 +1190,12 @@ async function renderDashboardPage({
           isTr={isTr}
         />
 
-        {/* Legend dots — tasarım line 237-247 (Ortalama puan graphite line +
-            Günlük yorum hacmi gri swatch). Mobile'da gizli (peak hint
-            zaten yeterli sinyal verir). */}
+        {/* Legend dots — analytics ana grafiğiyle aynı platform dağılımı. Mobile'da
+            NABIZ kartı zaten gizli; desktop'ta hızlı okuma için kısa açıklama. */}
         <div className="hidden sm:flex items-center gap-4 mt-3 text-[11.5px] text-[#737373]">
           <span className="inline-flex items-center gap-1.5">
             <span className="inline-block w-3.5 h-0.5 rounded-sm bg-[#0A0A0A]" />
-            {isTr ? 'Ortalama puan' : 'Avg rating'}
+            {isTr ? 'Platform dağılımı' : 'Platform breakdown'}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span className="inline-block w-2 h-2 rounded-sm bg-[#EDEDED]" />

@@ -10,7 +10,7 @@
 //   - Admin master flag: Restaurant.campaignsEnabled (CLAUDE.md §38.98)
 //   - Audit log: owner.campaigns.{create,send,delete}
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader, AlertBanner, EmptyState } from '@/components/ui';
 import { Sparkles, Plus, RefreshCw, Loader2 } from 'lucide-react';
@@ -46,8 +46,23 @@ export interface CampaignListItem {
   createdAt: string;
 }
 
-const STATUS_FILTER_KEYS = ['all', 'draft', 'sending', 'sent', 'failed'] as const;
+const STATUS_FILTER_KEYS = [
+  'all',
+  'draft',
+  'pending_approval',
+  'approved',
+  'rejected',
+  'sending',
+  'sent',
+  'failed',
+] as const;
 type StatusFilter = (typeof STATUS_FILTER_KEYS)[number];
+
+interface CampaignsPagination {
+  page: number;
+  total: number;
+  pageSize: number;
+}
 
 interface ClientProps {
   locale: Locale;
@@ -63,6 +78,7 @@ export function CampaignsClient({ locale, initialRestaurants, initialActiveResta
   const detailId = searchParams?.get('detail') ?? null;
 
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [restaurantsLoading] = useState(false);
   const [restaurants] = useState<RestaurantOption[]>(initialRestaurants);
   const [activeRestaurantId, setActiveRestaurantId] = useState<string | null>(
@@ -79,6 +95,11 @@ export function CampaignsClient({ locale, initialRestaurants, initialActiveResta
     },
   );
   const [campaigns, setCampaigns] = useState<CampaignListItem[]>([]);
+  const [pagination, setPagination] = useState<CampaignsPagination>({
+    page: 1,
+    total: 0,
+    pageSize: 20,
+  });
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [composeOpen, setComposeOpen] = useState(false);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -91,10 +112,27 @@ export function CampaignsClient({ locale, initialRestaurants, initialActiveResta
     }
   }, [searchParams, restaurants]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = (event: Event) => {
+      const restaurantId = (event as CustomEvent<{ restaurantId?: string }>).detail?.restaurantId;
+      if (restaurantId && restaurants.some((restaurant) => restaurant.id === restaurantId)) {
+        setActiveRestaurantId(restaurantId);
+      }
+    };
+    window.addEventListener('buaze:active-restaurant-change', handler);
+    return () => window.removeEventListener('buaze:active-restaurant-change', handler);
+  }, [restaurants]);
+
   const selectRestaurant = (restaurantId: string) => {
     setActiveRestaurantId(restaurantId);
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
+      window.dispatchEvent(
+        new CustomEvent('buaze:active-restaurant-change', {
+          detail: { restaurantId },
+        }),
+      );
     }
     const params = new URLSearchParams(searchParams?.toString() ?? '');
     params.delete('restaurant');
@@ -102,43 +140,57 @@ export function CampaignsClient({ locale, initialRestaurants, initialActiveResta
     router.replace(`?${params.toString()}`, { scroll: false });
   };
 
-  // Fetch campaigns whenever restaurant or filter changes.
-  useEffect(() => {
-    if (restaurantsLoading) {
-      return;
-    }
-    if (!activeRestaurantId) {
-      setCampaigns([]);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    (async () => {
+  const fetchCampaigns = useCallback(
+    async (pageToLoad = 1, append = false) => {
+      if (restaurantsLoading) {
+        return;
+      }
+      if (!activeRestaurantId) {
+        setCampaigns([]);
+        setPagination({ page: 1, total: 0, pageSize: 20 });
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       try {
         const url = new URL('/api/customer-campaigns', window.location.origin);
         url.searchParams.set('restaurantId', activeRestaurantId);
+        url.searchParams.set('page', String(pageToLoad));
         if (statusFilter !== 'all') url.searchParams.set('status', statusFilter);
         const res = await fetch(url.toString(), { credentials: 'include' });
         if (!res.ok) throw new Error('campaigns_fetch_failed');
         const data = await res.json();
-        if (!cancelled) {
-          setCampaigns(Array.isArray(data?.campaigns) ? data.campaigns : []);
-          setError(null);
-        }
+        const nextCampaigns = Array.isArray(data?.campaigns) ? data.campaigns : [];
+        setCampaigns((current) => (append ? [...current, ...nextCampaigns] : nextCampaigns));
+        setPagination({
+          page: typeof data?.page === 'number' ? data.page : pageToLoad,
+          total: typeof data?.total === 'number' ? data.total : nextCampaigns.length,
+          pageSize: typeof data?.pageSize === 'number' ? data.pageSize : 20,
+        });
+        setError(null);
       } catch (err) {
-        if (!cancelled) {
-          setError(isTr ? 'Kampanyalar yüklenemedi.' : 'Failed to load campaigns.');
-          console.error('[campaigns] list fetch', err);
-        }
+        setError(isTr ? 'Kampanyalar yüklenemedi.' : 'Failed to load campaigns.');
+        console.error('[campaigns] list fetch', err);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (append) {
+          setLoadingMore(false);
+        } else {
+          setLoading(false);
+        }
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [activeRestaurantId, statusFilter, refreshTick, isTr, restaurantsLoading]);
+    },
+    [activeRestaurantId, isTr, restaurantsLoading, statusFilter],
+  );
+
+  // Fetch campaigns whenever restaurant or filter changes.
+  useEffect(() => {
+    void fetchCampaigns(1, false);
+  }, [fetchCampaigns, refreshTick]);
 
   const activeRestaurant = useMemo(
     () => restaurants.find((r) => r.id === activeRestaurantId) ?? null,
@@ -184,6 +236,11 @@ export function CampaignsClient({ locale, initialRestaurants, initialActiveResta
   }, [campaigns]);
 
   const refresh = () => setRefreshTick((t) => t + 1);
+  const hasMoreCampaigns = campaigns.length < pagination.total;
+  const loadMore = () => {
+    if (loading || loadingMore || !hasMoreCampaigns) return;
+    void fetchCampaigns(pagination.page + 1, true);
+  };
 
   const openDetail = (campaignId: string) => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
@@ -307,6 +364,9 @@ export function CampaignsClient({ locale, initialRestaurants, initialActiveResta
               const labels: Record<StatusFilter, { tr: string; en: string }> = {
                 all: { tr: 'Tümü', en: 'All' },
                 draft: { tr: 'Taslak', en: 'Draft' },
+                pending_approval: { tr: 'Onayda', en: 'Pending' },
+                approved: { tr: 'Onaylandı', en: 'Approved' },
+                rejected: { tr: 'Reddedildi', en: 'Rejected' },
                 sending: { tr: 'Gönderiliyor', en: 'Sending' },
                 sent: { tr: 'Gönderildi', en: 'Sent' },
                 failed: { tr: 'Başarısız', en: 'Failed' },
@@ -340,11 +400,38 @@ export function CampaignsClient({ locale, initialRestaurants, initialActiveResta
               onCreate={() => setComposeOpen(true)}
             />
           ) : (
-            <CampaignsList
-              campaigns={campaigns}
-              isTr={isTr}
-              onRowClick={openDetail}
-            />
+            <div className="space-y-3">
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[12px] text-[#737373]">
+                  {isTr
+                    ? `${pagination.total.toLocaleString('tr-TR')} kampanyadan ${campaigns.length.toLocaleString('tr-TR')} tanesi gösteriliyor`
+                    : `Showing ${campaigns.length.toLocaleString('en-US')} of ${pagination.total.toLocaleString('en-US')} campaigns`}
+                </p>
+                {pagination.total > pagination.pageSize ? (
+                  <span className="bz-mono text-[11px] text-[#A3A3A3]">
+                    {isTr ? `Sayfa ${pagination.page}` : `Page ${pagination.page}`}
+                  </span>
+                ) : null}
+              </div>
+              <CampaignsList
+                campaigns={campaigns}
+                isTr={isTr}
+                onRowClick={openDetail}
+              />
+              {hasMoreCampaigns ? (
+                <div className="flex justify-center pt-1">
+                  <button
+                    type="button"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="bz-btn-ghost inline-flex min-h-[38px] items-center gap-2 px-4 text-[12.5px] disabled:opacity-60"
+                  >
+                    {loadingMore ? <Loader2 size={14} className="animate-spin" /> : null}
+                    {isTr ? 'Daha fazla yükle' : 'Load more'}
+                  </button>
+                </div>
+              ) : null}
+            </div>
           )}
         </>
       )}
