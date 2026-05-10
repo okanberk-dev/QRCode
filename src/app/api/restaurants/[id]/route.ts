@@ -188,7 +188,7 @@ export async function PUT(
     // tripadvisor/airbnb when those URLs are filled in.
     const ALLOWED_DEFAULT_PLATFORMS = new Set([
       'google', 'yemeksepeti', 'getir', 'trendyol_go',
-      'tripadvisor', 'airbnb', 'booking', 'yandex',
+      'tripadvisor', 'airbnb', 'booking', 'yandex', 'yelp', 'foursquare',
     ]);
     if (defaultRedirectPlatform !== undefined && defaultRedirectPlatform !== null && defaultRedirectPlatform !== '') {
       if (typeof defaultRedirectPlatform !== 'string' || !ALLOWED_DEFAULT_PLATFORMS.has(defaultRedirectPlatform)) {

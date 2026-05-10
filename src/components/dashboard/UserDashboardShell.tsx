@@ -1199,7 +1199,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           // Stage 60 §38.141 — Floating pill mobile bottom nav 72px height
           // + 12px bottom-margin + safe-area inset. Toplam ~120px content
           // overlap önleme. lg+ desktop'ta nav görünmez (pb-0).
-          className="min-w-0 flex-1 overflow-x-hidden bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0"
+          className="flex min-w-0 min-h-0 flex-1 flex-col overflow-x-hidden bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0"
         >
           {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 7 && (
             <TrialBanner locale={locale} daysLeft={trialDaysLeft} />

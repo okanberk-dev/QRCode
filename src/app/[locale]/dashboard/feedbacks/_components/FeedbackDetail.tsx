@@ -69,7 +69,11 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
   const customerAspects = active.aspects ?? null;
 
   return (
-    <section className="flex flex-col bg-white lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+    <section
+      className="flex flex-col bg-white lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+      role="region"
+      aria-labelledby={`feedback-detail-title-${active.id}`}
+    >
       {/* Mobile sticky top — back button */}
       {showBackButton && (
         <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 backdrop-blur px-4 py-3 lg:hidden">
@@ -142,7 +146,10 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
             fg={active.rating >= 4 ? '#C6F24E' : '#FFFFFF'}
           />
           <div className="flex-1 min-w-0">
-            <h2 className="text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight">
+            <h2
+              id={`feedback-detail-title-${active.id}`}
+              className="text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight"
+            >
               {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
             </h2>
             <p className="pulse-eyebrow text-[#737373] mt-1">

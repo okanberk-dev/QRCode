@@ -20,6 +20,7 @@
 // - §11 + §23.3 Pulse design tokens (`bz-card`, `bz-btn-*`, `pulse-eyebrow`)
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Building2,
@@ -28,8 +29,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { Badge } from '@/components/ui';
-import { BusinessIntegrationSettings } from '@/components/dashboard/settings/sections/BusinessIntegrationSettings';
-import { PlatformRedirectsPanel } from '@/components/dashboard/settings/sections/PlatformRedirectsPanel';
 import { detectSector, SECTOR_PLATFORMS } from '@/lib/sector-platforms';
 import type { ManagedPlatformDef } from '@/lib/platform-management';
 import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
@@ -446,70 +445,23 @@ export default function PlatformsClient({
                       {isTr ? 'Yakında' : 'Coming soon'}
                     </button>
                   ) : (
-                    <a
-                      href="#platform-wizard"
+                    <Link
+                      href={`/${locale}/dashboard/platforms/${platform.slug}?restaurantId=${encodeURIComponent(selectedRestaurantId)}`}
                       className="bz-btn-ghost inline-flex flex-1 items-center justify-center gap-1.5 text-[12px]"
+                      aria-label={
+                        isTr
+                          ? `${platform.name} bağlantısını yönet`
+                          : `Manage ${platform.name} connection`
+                      }
                     >
                       <Settings size={11} strokeWidth={2} />
                       {isTr ? 'Yönet' : 'Manage'}
-                    </a>
+                    </Link>
                   )}
                 </div>
               </div>
             );
           })}
-        </div>
-      )}
-
-      {selectedRestaurant && (
-        <div id="platform-wizard" className="scroll-mt-24 space-y-4">
-          <div className="bz-card p-4 sm:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="pulse-eyebrow text-[#737373]">
-                  {isTr ? 'KURULUM AKIŞI' : 'SETUP FLOW'}
-                </p>
-                <h2 className="mt-1 text-[20px] font-semibold tracking-[-0.02em] text-[#0A0A0A] bz-h-tight">
-                  {isTr ? 'Platform bağlantı sihirbazı' : 'Platform connection wizard'}
-                </h2>
-                <p className="mt-2 text-[13px] leading-relaxed text-[#525252]">
-                  {isTr
-                    ? `${selectedRestaurant.name} için Google, yorum platformları, sosyal bağlantılar, varsayılan yönlendirme ve bağlantı sağlığını tek akışta yönetin.`
-                    : `Manage Google, review platforms, social links, default redirect, and connection health for ${selectedRestaurant.name} in one flow.`}
-                </p>
-              </div>
-              <div className="grid min-w-[260px] grid-cols-3 gap-2 rounded-2xl bg-[#F5F5F5] p-1.5">
-                {[
-                  isTr ? 'Google' : 'Google',
-                  isTr ? 'Platformlar' : 'Platforms',
-                  isTr ? 'Sağlık' : 'Health',
-                ].map((label, index) => (
-                  <div
-                    key={label}
-                    className="flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl bg-white px-2 text-center text-[11.5px] font-semibold text-[#0A0A0A]"
-                  >
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#C6F24E] text-[10px]">
-                      {index + 1}
-                    </span>
-                    <span className="truncate">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <BusinessIntegrationSettings
-            restaurant={selectedRestaurant}
-            locale={locale}
-            showWorkspaceOverviewLink={false}
-            onSaved={(next) => {
-              setRestaurantRows((rows) =>
-                rows.map((row) => (row.id === selectedRestaurant.id ? { ...row, ...next } : row)),
-              );
-            }}
-          />
-
-          <PlatformRedirectsPanel restaurantId={selectedRestaurant.id} locale={locale} />
         </div>
       )}
     </div>

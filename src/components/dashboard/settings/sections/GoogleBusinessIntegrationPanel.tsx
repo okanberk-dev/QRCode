@@ -26,6 +26,7 @@ interface GoogleBusinessIntegrationPanelProps {
   restaurant: RestaurantData;
   locale: "tr" | "en";
   dirty: boolean;
+  returnTo?: string;
   onGoogleLinkSelected: (next: {
     googlePlaceId: string | null;
     googleReviewUrl: string | null;
@@ -72,6 +73,7 @@ export function GoogleBusinessIntegrationPanel({
   restaurant,
   locale,
   dirty,
+  returnTo,
   onGoogleLinkSelected,
 }: GoogleBusinessIntegrationPanelProps) {
   const isTr = locale === "tr";
@@ -165,11 +167,11 @@ export function GoogleBusinessIntegrationPanel({
   };
 
   const connectGoogle = async () => {
-    const returnTo = `/${locale}/dashboard/platforms?restaurantId=${restaurant.id}`;
+    const callbackTarget = returnTo ?? `/${locale}/dashboard/platforms?restaurantId=${restaurant.id}`;
     const res = await fetch("/api/integrations/google/connect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ returnTo }),
+      body: JSON.stringify({ returnTo: callbackTarget }),
     });
     const data = await res.json();
     if (!res.ok || !data.url) {

@@ -199,7 +199,9 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
     manageableSummaries.filter((platform) => platform.connected > 0).map((platform) => platform.category),
   );
   const activeCategoryCount = activeCategorySet.size;
-  const newConnectionHref = '#platform-wizard';
+  const newConnectionHref = `/${locale}/dashboard/platforms/google${
+    selectedRestaurantId ? `?restaurantId=${encodeURIComponent(selectedRestaurantId)}` : ''
+  }`;
 
   return (
     <div className="space-y-5">
