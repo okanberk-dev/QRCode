@@ -13,7 +13,18 @@ function getStringClaim(payload: Awaited<ReturnType<typeof verifyJwt>>, key: str
   return typeof value === 'string' && value.trim() ? value : null;
 }
 
+const ADMIN_ANNOUNCEMENTS_CACHE_TTL_MS = 5 * 60 * 1000;
+const adminAnnouncementsCache = new Map<
+  'tr' | 'en',
+  { data: DashboardAnnouncement[]; expiresAt: number }
+>();
+
 async function fetchActiveAnnouncements(locale: 'tr' | 'en'): Promise<DashboardAnnouncement[]> {
+  const cached = adminAnnouncementsCache.get(locale);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+
   try {
     const now = new Date();
     const rows = await prisma.announcement.findMany({
@@ -28,7 +39,7 @@ async function fetchActiveAnnouncements(locale: 'tr' | 'en'): Promise<DashboardA
       orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
       take: 5,
     });
-    return rows.map((a) => ({
+    const data = rows.map((a) => ({
       id: a.id,
       title: a.title,
       message: a.message,
@@ -39,6 +50,11 @@ async function fetchActiveAnnouncements(locale: 'tr' | 'en'): Promise<DashboardA
       isDismissible: a.isDismissible,
       updatedAt: a.updatedAt.toISOString(),
     }));
+    adminAnnouncementsCache.set(locale, {
+      data,
+      expiresAt: Date.now() + ADMIN_ANNOUNCEMENTS_CACHE_TTL_MS,
+    });
+    return data;
   } catch (error) {
     console.error('[AdminLayout announcements]', error);
     return [];

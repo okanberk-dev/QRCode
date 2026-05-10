@@ -42,29 +42,31 @@ export function StatCard({
 
   return (
     <div
-      className={`bz-card relative p-4 sm:p-[18px] transition-shadow hover:shadow-sm ${className}`}
+      className={`bz-card relative min-w-0 p-3.5 sm:p-[18px] transition-shadow hover:shadow-sm ${className}`}
     >
-      <div className="flex justify-between items-start gap-2">
-        <Eyebrow>{label}</Eyebrow>
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <Eyebrow className="min-w-0 max-w-[calc(100%-2.25rem)] leading-[1.25] [overflow-wrap:anywhere]">
+          {label}
+        </Eyebrow>
         {icon && (
           <span
             aria-hidden="true"
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FAFAFA] text-[#525252]"
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FAFAFA] text-[#525252] sm:h-8 sm:w-8"
           >
             {icon}
           </span>
         )}
       </div>
       <div
-        className="bz-h-tight mt-2.5 sm:mt-3 text-[22px] sm:text-[28px] tabular-nums"
-        style={{ lineHeight: 1.05, letterSpacing: "-0.025em" }}
+        className="bz-h-tight mt-2.5 max-w-full text-[21px] leading-none tabular-nums [overflow-wrap:anywhere] sm:mt-3 sm:text-[27px]"
+        style={{ lineHeight: 1.02, letterSpacing: 0 }}
       >
         {value}
       </div>
       {delta && (
-        <div className="mt-2 sm:mt-2.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] sm:text-xs">
+        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] leading-snug sm:mt-2.5 sm:text-xs">
           <span
-            className="inline-flex items-center gap-1 font-semibold tabular-nums"
+            className="inline-flex min-w-0 items-center gap-1 font-semibold tabular-nums"
             style={{ color: deltaColor }}
           >
             {deltaKind === "up" && <TrendingUp size={12} strokeWidth={2} />}
@@ -72,7 +74,9 @@ export function StatCard({
             {delta}
           </span>
           {deltaSuffix && (
-            <span className="text-[10.5px] sm:text-[11px] text-[#737373]">{deltaSuffix}</span>
+            <span className="min-w-0 text-[10.5px] leading-snug text-[#737373] [overflow-wrap:anywhere] sm:text-[11px]">
+              {deltaSuffix}
+            </span>
           )}
         </div>
       )}

@@ -22,7 +22,7 @@ const VALID_ACTIONS = new Set([
 ]);
 
 async function loadActivationData(restaurantId: string) {
-  return Promise.all([
+  return prisma.$transaction([
     prisma.restaurant.findUnique({
       where: { id: restaurantId },
       select: {

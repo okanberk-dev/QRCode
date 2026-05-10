@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import nextDynamic from 'next/dynamic';
 import {
   BarChart3,
   Bell,
@@ -30,9 +31,14 @@ import {
 import Link from 'next/link';
 import { useAdminTranslation } from './AdminTranslationProvider';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
-import NotificationBell from '@/components/notifications/NotificationBell';
+import ViewportMount from '@/components/ui/ViewportMount';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { AdminPanelProfile } from '@/lib/admin-profile';
+
+const NotificationBell = nextDynamic(() => import('@/components/notifications/NotificationBell'), {
+  ssr: false,
+  loading: () => <span aria-hidden className="inline-flex h-9 w-9 shrink-0" />,
+});
 
 interface AdminSidebarProps {
   announcements?: DashboardAnnouncement[];
@@ -544,11 +550,16 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
           </span>
         </Link>
         <div className="flex items-center gap-2">
-          <NotificationBell
-            locale={locale === 'en' ? 'en' : 'tr'}
-            announcements={announcements}
-            panelBase="/admin"
-          />
+          <ViewportMount
+            query="(max-width: 1023.98px)"
+            fallback={<span aria-hidden className="inline-flex h-9 w-9 shrink-0" />}
+          >
+            <NotificationBell
+              locale={locale === 'en' ? 'en' : 'tr'}
+              announcements={announcements}
+              panelBase="/admin"
+            />
+          </ViewportMount>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="bz-btn-icon bg-[#F2F2F2] text-[#0A0A0A]"

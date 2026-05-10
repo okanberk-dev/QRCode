@@ -10,6 +10,7 @@ import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBa
 import TrialBanner from './TrialBanner';
 import ImpersonationBanner from './ImpersonationBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
+import ViewportMount from '@/components/ui/ViewportMount';
 import { detectSector } from '@/lib/sector-platforms';
 import {
   ACTIVE_BUSINESS_STORAGE_KEY,
@@ -390,6 +391,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     setWorkspaceMenuOpen(false);
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
+      window.dispatchEvent(
+        new CustomEvent('buaze:active-restaurant-change', {
+          detail: { restaurantId },
+        }),
+      );
     }
     const currentPath = pathname || `/${locale}/dashboard`;
     const nextSearch = setRestaurantParam(searchParams.toString(), restaurantId);
@@ -1077,14 +1083,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 <Crown size={10} /> {trialDaysLeft}g
               </span>
             )}
-            <NotificationBell
-              locale={locale}
-              announcements={announcements}
-              panelBase={`/${locale}/dashboard`}
-              reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
-              notificationsSettingsHref={`/${locale}/dashboard/notifications`}
-              restaurantId={activeRestaurantId}
-            />
+            <ViewportMount
+              query="(max-width: 1023.98px)"
+              fallback={<span aria-hidden className="inline-flex h-9 w-9 shrink-0" />}
+            >
+              <NotificationBell
+                locale={locale}
+                announcements={announcements}
+                panelBase={`/${locale}/dashboard`}
+                reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
+                notificationsSettingsHref={`/${locale}/dashboard/notifications`}
+                restaurantId={activeRestaurantId}
+              />
+            </ViewportMount>
             <button
               onClick={() => setDrawerOpen((v) => !v)}
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0A0A0A] text-[13px] font-semibold text-[#C6F24E] bz-h-tight"
@@ -1159,14 +1170,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             >
               <Search size={15} strokeWidth={2.25} />
             </button>
-            <NotificationBell
-              locale={locale}
-              announcements={announcements}
-              panelBase={`/${locale}/dashboard`}
-              reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
-              notificationsSettingsHref={`/${locale}/dashboard/notifications`}
-              restaurantId={activeRestaurantId}
-            />
+            <ViewportMount
+              query="(min-width: 1024px)"
+              fallback={<span aria-hidden className="inline-flex h-9 w-9 shrink-0" />}
+            >
+              <NotificationBell
+                locale={locale}
+                announcements={announcements}
+                panelBase={`/${locale}/dashboard`}
+                reviewsHref={hrefWithActiveRestaurant(`/${locale}/dashboard/feedbacks`)}
+                notificationsSettingsHref={`/${locale}/dashboard/notifications`}
+                restaurantId={activeRestaurantId}
+              />
+            </ViewportMount>
             <Link
               href={`/${locale}/dashboard/account?section=profile`}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A0A0A] text-[12px] font-semibold text-[#C6F24E] hover:bg-[#1A1A1A] transition-colors bz-h-tight"
@@ -1427,12 +1443,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       {/* Cmd/Ctrl+K command palette — searchable launcher across pages,
           locations, and reviews. The list of `navItems` here mirrors the
           sidebar nav so the user can jump to any tab without scrolling. */}
-      <CommandPalette
-        open={paletteOpen}
-        onClose={() => setPaletteOpen(false)}
-        locale={locale}
-        base={`/${locale}/dashboard`}
-        navItems={[
+      {paletteOpen && (
+        <CommandPalette
+          open={paletteOpen}
+          onClose={() => setPaletteOpen(false)}
+          locale={locale}
+          base={`/${locale}/dashboard`}
+          navItems={[
           { href: `/${locale}/dashboard`, label: copy.dashboard, keywords: ['panel', 'dashboard', 'genel'] },
           { href: `/${locale}/dashboard/feedbacks`, label: copy.feedbacks, keywords: ['yorum', 'review', 'feedback', 'inbox'] },
           { href: `/${locale}/dashboard/google-reviews`, label: copy.googleReviews, keywords: ['google', 'yorum', 'review', 'feedback'] },
@@ -1448,8 +1465,9 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           // §38.58 — Faturalama ayrı palette entry'si (Account base'inden
           // ayrılmış; tasarım a/shell.jsx:125 sidebar nav birebir).
           { href: `/${locale}/dashboard/account?section=billing`, label: locale === 'tr' ? 'Faturalama' : 'Billing', keywords: ['fatura', 'billing', 'invoice', 'plan', 'ödeme', 'payment', 'abonelik', 'subscription'] },
-        ]}
-      />
+          ]}
+        />
+      )}
     </div>
   );
 }
