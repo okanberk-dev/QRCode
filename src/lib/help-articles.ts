@@ -1514,6 +1514,188 @@ const MORE_ARTICLES: StaticHelpArticle[] = [
     ],
     policyNote: 'The 2FA and session practices in this guide qualify as <strong>technical security measures</strong> under GDPR/KVKK frameworks. They are key elements of the technical side of customer-data protection responsibility.',
   }),
+
+  // ────────────────────────────────────────────────────────────────
+  // Owner-panel feature documentation (PR 2, CLAUDE.md §35 plan).
+  // 5 articles × 2 locales = 10 entries. Each covers an owner-panel
+  // capability that is functional in the product but undocumented
+  // on public surfaces. HowTo schema is auto-emitted by the slug
+  // page (see help/[slug]/page.tsx) when sections >= 2.
+  // ────────────────────────────────────────────────────────────────
+
+  // 1. Bulk reply workflow (TR + EN)
+  article('tr', 'review-management', 70, 'nasil-toplu-yanit-gonderilir', 'Toplu yanıt nasıl gönderilir?', 'Birden fazla yoruma aynı anda yanıt gönderme akışı, batch sınırı ve Pulse AI ile çalışma.', ['toplu yanıt', 'bulk reply', 'yorum', 'verim'], {
+    lead: 'Buaze gelen kutusunda <strong>toplu yanıt</strong> akışı, aynı temayı taşıyan birden fazla yorumu tek seferde kapatmanıza imkan verir. Hedef, operatörün tekrar eden teşekkür mesajları için ekran başında saatler geçirmesini önlemektir.',
+    keyInsight: 'Toplu yanıt akışı bir <em>kestirme</em> değildir; her taslak yine size onaylama fırsatı verir. Otomatik gönderim yoktur — operatör son sözü söyler.',
+    sections: [
+      { title: 'Akış: seç → taslak üret → onayla → gönder', paragraphs: ['Gelen kutusunda checkbox\'larla yorumları seçin (maksimum <strong>50</strong> yorum / batch). Üstte beliren toolbar\'da "Toplu yanıtla" seçeneğine basın. Pulse AI her bir yoruma puana ve tonuna göre ayrı taslak üretir; sırayla görüntüler, operatör onaylar veya düzenler.'] },
+      { title: '50 yorum batch sınırı', paragraphs: ['Sınır rastgele değil: Resend API çağrı kotası, AI quota guard (CLAUDE.md §15.1) ve operatörün tek oturumda gerçekçi inceleyebileceği yorum hacmi birlikte değerlendirildi. Daha büyük bir batch hem maliyet hem dikkat dağınıklığı yaratıyordu.'], quote: '50 yorumun her biri farklı müşteri, farklı bağlam — toplu işlem yapsanız bile her birinin yanıtı kişiselleştirilmiş kalmalı.' },
+      { title: 'Hangi durumda toplu yanıt mantıklı?', items: ['Aynı hafta gelen onlarca 5 yıldızlı teşekkür yorumu', 'Bir kampanya sonrası benzer içerikli olumlu yorum dalgası', 'Çoklu şube sahipleri için günlük inbox boşaltma', 'Tekrar eden tek-cümlelik yorumlar (örn. "harika", "tavsiye ederim")'] },
+    ],
+    checklist: ['Seçim batch boyutu 50 yorum altında.', 'Pulse AI taslakları sırayla incelendi.', 'Her taslak operatör tarafından onaylandı.', 'E-posta gönderim flag\'i doğru seçildi (e-posta yok = dahili kayıt).', 'Gönderim sonrası inbox\'ta arşivlenmiş yorumlar doğrulandı.'],
+    faq: [
+      { q: 'Toplu yanıtta AI tonu nasıl belirleniyor?', a: 'Her yorum için ayrı: puanı 4-5 ise warm, 1-3 ise apologetic, varsayılan tone owner panelden seçilebilir.' },
+      { q: 'Batch sırasında bir taslağı atlamak mümkün mü?', a: 'Evet. "Atla" butonu o yorumu yanıtsız bırakır; sonraki taslağa geçer. Atlanan yorum inbox\'ta kalır.' },
+      { q: 'Hangi rol toplu yanıt yetkisine sahip?', a: 'Manager ve owner. Staff rolü kendi atanmış yorumlarına tekil yanıt verebilir; toplu işlem yapamaz.' },
+      { q: 'Toplu yanıt sonrası raporda nasıl görünür?', a: 'Her yanıt ayrı `FeedbackReply.source = "ai_copilot"` veya "manual" olarak loglanır — toplu işlem flag\'i yok, her yanıt bağımsız muhasebelenir.' },
+    ],
+  }),
+  article('en', 'review-management', 70, 'how-to-send-bulk-replies', 'How to send bulk replies', 'Reply to several reviews at once: batch size, Pulse AI workflow and when bulk action is the right tool.', ['bulk reply', 'workflow', 'efficiency', 'inbox'], {
+    lead: 'The <strong>bulk reply</strong> flow in the Buaze inbox lets you close several reviews on the same theme in one pass. The goal is to keep operators from spending hours on repetitive thank-you replies.',
+    keyInsight: 'Bulk reply is not a shortcut; every draft still goes through your approval. There is no auto-send — the operator has the last word.',
+    sections: [
+      { title: 'Flow: select → draft → approve → send', paragraphs: ['Tick the checkboxes next to the reviews in the inbox (max <strong>50</strong> reviews per batch). Click "Bulk reply" in the toolbar that appears. Pulse AI generates a separate draft per review based on the rating and tone; you step through them, approving or editing.'] },
+      { title: 'The 50-review batch cap', paragraphs: ['The cap is not arbitrary: it balances the Resend API quota, the AI quota guard (CLAUDE.md §15.1) and the realistic review-volume a single operator can review in one session. Larger batches drove up cost and reduced attention.'], quote: 'Each of the 50 reviews is a different customer in a different context — even in bulk, the reply should still feel personal.' },
+      { title: 'When does bulk reply make sense?', items: ['Dozens of 5-star thank-you reviews in the same week', 'A wave of similar positive reviews after a campaign', 'Daily inbox clearing for multi-location chain owners', 'Repeated one-line reviews (e.g. "great", "recommended")'] },
+    ],
+    checklist: ['Selection batch is below 50 reviews.', 'Pulse AI drafts reviewed one by one.', 'Each draft approved by the operator.', 'Email send flag set correctly (no email = internal record).', 'Archived reviews verified in the inbox after sending.'],
+    faq: [
+      { q: 'How is the AI tone decided in bulk reply?', a: 'Per review: rating 4-5 picks the warm tone, 1-3 picks apologetic; the default tone can be set in the owner panel.' },
+      { q: 'Can I skip a draft during the batch?', a: 'Yes. The "Skip" button leaves that review unanswered and moves to the next draft. Skipped reviews stay in the inbox.' },
+      { q: 'Which role can run bulk reply?', a: 'Manager and owner. Staff role can reply to their own assigned reviews one-by-one; bulk action is restricted.' },
+      { q: 'How does bulk reply show up in reporting?', a: 'Each reply logs as a separate `FeedbackReply.source = "ai_copilot"` or "manual" — no bulk flag, every reply is accounted for independently.' },
+    ],
+  }),
+
+  // 2. Customer segments (TR + EN)
+  article('tr', 'review-management', 71, 'musteri-segmentleri-nasil-yonetilir', 'Müşteri segmentleri nasıl yönetilir?', 'Buaze CRM\'inde VIP, Loyal, Risk ve Churned segmentlerini okuma, segment bazlı aksiyon alma ve LTV takibi.', ['segment', 'crm', 'vip', 'churn', 'müşteri'], {
+    lead: '<strong>Müşteri segmentleri</strong>, gelen kutusundaki yorumun arkasındaki ilişkinin değerini anlamanıza yardım eder. Aynı 3 yıldızlı yorum bir VIP\'ten geldiğinde anlamı, ilk-kez gelen bir müşteriden gelmesiyle aynı değildir.',
+    keyInsight: 'Segment, müşteriyi <em>etiketlemek</em> değildir; operasyonun aynı yorumu farklı önceliklerle ele almasına imkan verir.',
+    sections: [
+      { title: '5 kanonik segment', items: ['<strong>VIP</strong> — yüksek LTV + 3+ tekrar ziyaret + yüksek ortalama puan', '<strong>Loyal</strong> — düzenli tekrar ziyaret, stabil pozitif sinyal', '<strong>New</strong> — son 30 günde ilk yorumunu bırakan müşteri', '<strong>Risk</strong> — son yorum düşük + önceki yorumlardan negatif sapma', '<strong>Churned</strong> — 90+ gündür yeni yorum yok, önceki müşteri'] },
+      { title: 'Segment bazlı aksiyon', paragraphs: ['Risk segmentindeki bir müşteriden gelen düşük puanlı yorum yanıt önceliğini otomatik yükseltir. Churned segmenti CRM tablosunda ayrı filtre olarak görünür; kampanya hedeflemesi için (gelecekte) kullanılabilir. VIP segmentinin yorumlarına Pulse AI tonu otomatik "warm" seçilir.'] },
+      { title: 'LTV (Lifetime Value) okuma', paragraphs: ['LTV her müşterinin gönderdiği yorum sayısı + ortalama puan + son ziyaret tarihi heuristic\'i ile hesaplanır. Gerçek bir gelir verisi değildir — operasyonel öncelik sinyali. CRM tablosunda her satırda görünür, sıralanabilir.'] },
+    ],
+    checklist: ['CRM sayfasında 5 segmentin dağılımı incelendi.', 'Risk segmenti yorumlarına 24 saat içinde yanıt verildi.', 'LTV sıralaması yapılarak en değerli 20 müşterinin son yorumu okundu.', 'Churned segment ay sonu raporunda kayıp müşteri sayısı not edildi.', 'Segment değişimi (Loyal → Risk) sebepleri inceleme listesine alındı.'],
+    faq: [
+      { q: 'Segment otomatik mi atanır, manuel mi?', a: 'Otomatik. Heuristic (ziyaret sayısı + son puan + son ziyaret tarihi) her yeni yorumda yeniden hesaplanır.' },
+      { q: 'VIP segmentini manuel atamak mümkün mü?', a: 'Şu an değil. Heuristic algoritma yeterli sinyal toplayınca otomatik VIP\'e geçirir; manuel override gelecek scope\'ta.' },
+      { q: 'Churned müşteriyi geri kazanmak için Buaze ne öneriyor?', a: 'Buaze ürünü doğrudan bir kampanya yönetim aracı değil — segment listesi dışa CSV ile aktarılır, e-posta veya SMS kampanyası ayrı bir araçta çalıştırılır.' },
+      { q: 'Anonim yorumlar segment görüyor mu?', a: 'Hayır. Segment hesabı için müşteri kimliği (e-posta veya telefon) gerekir. Anonim yorumlar CRM tablosunda görünmez.' },
+    ],
+  }),
+  article('en', 'review-management', 71, 'how-to-manage-customer-segments', 'How to manage customer segments', 'Read VIP, Loyal, New, Risk and Churned segments in the Buaze CRM; act on each segment and follow lifetime value (LTV).', ['segments', 'crm', 'vip', 'churn', 'customers'], {
+    lead: '<strong>Customer segments</strong> help you understand the value of the relationship behind a review. The same 3-star review does not mean the same thing coming from a VIP as from a first-time guest.',
+    keyInsight: 'A segment is not a label; it lets operations handle the same review with different priorities.',
+    sections: [
+      { title: 'Five canonical segments', items: ['<strong>VIP</strong> — high LTV + 3+ repeat visits + high average rating', '<strong>Loyal</strong> — regular repeat visits, stable positive signal', '<strong>New</strong> — left their first review in the last 30 days', '<strong>Risk</strong> — latest review low + a negative shift vs prior reviews', '<strong>Churned</strong> — no new review for 90+ days, previously a customer'] },
+      { title: 'Action per segment', paragraphs: ['A low rating from a Risk-segment customer automatically raises the reply priority. The Churned segment appears as a separate CRM filter — useful (future) for campaign targeting. Reviews from the VIP segment default to a "warm" Pulse AI tone.'] },
+      { title: 'Reading LTV (Lifetime Value)', paragraphs: ['LTV is a heuristic based on review count + average rating + last visit date per customer. It is not actual revenue — it is an operational priority signal. It is visible in every CRM row and sortable.'] },
+    ],
+    checklist: ['Reviewed the distribution of the five segments on the CRM page.', 'Replied within 24h to Risk-segment reviews.', 'Sorted by LTV and read the latest review of your top-20 customers.', 'Recorded the lost-customer count of the Churned segment in month-end reporting.', 'Added segment shifts (Loyal → Risk) to the investigation list with reasons.'],
+    faq: [
+      { q: 'Are segments assigned automatically or manually?', a: 'Automatically. The heuristic (visit count + last rating + last visit date) recomputes on every new review.' },
+      { q: 'Can I assign VIP manually?', a: 'Not yet. Once the heuristic has enough signal it shifts the customer to VIP automatically; manual override is future scope.' },
+      { q: 'What does Buaze suggest to win back Churned customers?', a: 'Buaze is not a campaign management tool — the segment list exports as CSV and you run email/SMS campaigns in a separate tool.' },
+      { q: 'Do anonymous reviews get a segment?', a: 'No. Customer identity (email or phone) is required for segment computation. Anonymous reviews do not appear in the CRM.' },
+    ],
+  }),
+
+  // 3. Response time tracking (TR + EN)
+  article('tr', 'review-management', 72, 'yanit-suresi-nasil-takip-edilir', 'Yanıt süresi nasıl takip edilir?', 'Buaze\'de yanıt süresi medyanı, 8 saatlik geç-yanıt uyarısı ve operasyonel SLA pratiği.', ['yanıt süresi', 'sla', 'medyan', 'analitik'], {
+    lead: 'Yorumların gelmesi ile yanıtlanması arasındaki süre, müşteri için marka algısının en güçlü sinyallerinden biridir. Buaze analitik panelinde <strong>yanıt süresi medyanı</strong> bu sürenin operasyonel görünümüdür.',
+    keyInsight: 'Ortalama değil <em>medyan</em>: bir veya iki çok geç yanıt, gerçek operasyonel hızı saklamaz.',
+    sections: [
+      { title: 'Medyan neden ortalamadan iyi?', paragraphs: ['On yanıttan dokuzu 1 saatte gönderildi, biri 48 saat sürdü. Ortalama 5.7 saat — yanıltıcı. Medyan ~1 saat — gerçek. Bu yüzden Buaze her panel ekranında medyan + 90. yüzdelik (P90) gösterir; outlier saklanmaz.'] },
+      { title: '8 saatlik geç-yanıt uyarısı', paragraphs: ['Düşük puanlı (1-3 yıldız) bir yorum 8 saati geçtiğinde Buaze otomatik bir uyarı tetikler — yorum kart\'ında kırmızı bir saat ikonu ve bildirim. Bu eşik, Buaze müşteri kohortunda Pazartesi-Cuma akşam 18:00\'a kadar yanıtlanmayan yorumların müşteri için "ihmal edildim" hissi yarattığı pencereyle uyumlu.'], quote: 'Bir düşük puana 8 saat içinde dokunduğunuzda müşteri "ekip dinliyor" hisseder. 24 saati geçince genelde geri kazanılması zor olur.' },
+      { title: 'Şube ve operatör bazlı kırılım', paragraphs: ['Yanıt süresi panelde şube, atanan operatör ve vardiya bazlı kırılır. Hangi şubenin medyan yanıt süresi haftalık ortalamadan yüksek — operasyonel kararı doğrudan görürsünüz.'] },
+    ],
+    checklist: ['Haftalık raporda medyan yanıt süresi okundu.', '8 saati geçen düşük puanlı yorumlar incelendi.', 'Şube bazlı kırılım gözden geçirildi.', 'Operatör başına ortalama yanıt süresi karşılaştırıldı.', 'P90 değeri 24 saatin altında kaldı.'],
+    faq: [
+      { q: '8 saatlik eşik değiştirilebilir mi?', a: 'Şu an hayır — sabit eşik. İşletmenin SLA hedefi farklıysa medyan ve P90 değerleri yine görünür, sadece otomatik uyarı 8 saatte tetiklenir.' },
+      { q: 'Yanıt süresi sayacı ne zaman başlar?', a: 'Yorumun Buaze gelen kutusuna düştüğü an. Google API senkronu varsa Google\'da yorumun yayınlandığı an değil — Buaze\'ye düştüğü an temel alınır.' },
+      { q: 'Hafta sonu uyarısı çalışır mı?', a: 'Evet. Saat sayacı operasyonel iş gününe duyarsız — 7/24 tutar. İşletme tatil günü kapalıysa Pazartesi sabahı uyarı yığını gelir.' },
+      { q: 'Yanıt verildikten sonra rapor güncellenir mi?', a: 'Evet. Reply API çağrısı tetiklendiği an `repliedAt` damgalanır ve yanıt süresi gerçek değerle güncellenir.' },
+    ],
+    policyNote: '8 saatlik eşik bir <strong>operasyonel öneri</strong>dir, dış bir kural değildir. KVKK ve Google policy için yanıt zorunluluğu yok; eşik yalnızca müşteri ilişkisi disipline aracı.',
+  }),
+  article('en', 'review-management', 72, 'how-to-track-response-time', 'How to track response time', 'Read median reply time, the 8-hour late-reply alert and operational SLA discipline in Buaze.', ['response time', 'sla', 'median', 'analytics'], {
+    lead: 'The time between a review arriving and being answered is one of the strongest signals shaping brand perception. <strong>Median reply time</strong> in the Buaze analytics panel is the operational view of this time.',
+    keyInsight: 'Median, not mean: one or two very late replies should not hide the real operational pace.',
+    sections: [
+      { title: 'Why median beats mean', paragraphs: ['Nine of ten replies sent within an hour; one took 48 hours. Mean: 5.7h — misleading. Median: ~1h — real. That is why every Buaze panel surface shows median + 90th percentile (P90); outliers stay visible.'] },
+      { title: 'The 8-hour late-reply alert', paragraphs: ['When a low-rating (1-3 star) review crosses 8 hours unanswered, Buaze raises an automatic alert — a red clock icon on the review card and a notification. The threshold matches the window in which, across the Buaze customer cohort, reviews left unanswered until 18:00 on a weekday produce a "I was ignored" feeling.'], quote: 'Touch a low rating within 8 hours and the customer feels "the team is listening". Past 24 hours, recovery becomes hard.' },
+      { title: 'Per-branch and per-operator breakdown', paragraphs: ['Reply time breaks down by branch, assigned operator and shift in the panel. Which branch\'s median is above the weekly average — you see the operational decision directly.'] },
+    ],
+    checklist: ['Read median reply time in the weekly report.', 'Reviewed low-rating reviews older than 8 hours.', 'Audited the per-branch breakdown.', 'Compared average reply time per operator.', 'P90 stayed below 24 hours.'],
+    faq: [
+      { q: 'Is the 8-hour threshold configurable?', a: 'Not for now — it is fixed. If your business runs to a different SLA, median and P90 are still visible; only the automatic alert fires at 8 hours.' },
+      { q: 'When does the response-time counter start?', a: 'When the review lands in the Buaze inbox. With Google API sync, the moment of publication on Google is not used — the Buaze inbox arrival time is.' },
+      { q: 'Does the alert fire over weekends?', a: 'Yes. The hour counter is calendar-blind — it runs 24/7. If the business is closed on holidays, expect a backlog of alerts on Monday morning.' },
+      { q: 'Does the report update once a reply is sent?', a: 'Yes. The moment the reply API is called, `repliedAt` is stamped and reply time updates with the actual value.' },
+    ],
+    policyNote: 'The 8-hour threshold is an <strong>operational recommendation</strong>, not an external rule. KVKK and Google policy do not require replies; the threshold is purely a customer-relationship discipline tool.',
+  }),
+
+  // 4. Platform link health (TR + EN)
+  article('tr', 'integrations', 70, 'platform-baglantilarini-saglikli-tutma', 'Platform bağlantıları sağlıklı nasıl tutulur?', 'Google, Yemeksepeti, Getir ve diğer platform yorum bağlantılarının çalışır durumda kalması için otomatik retest cron\'u ve manuel kontroller.', ['platform', 'link', 'sağlık', 'retest', 'cron'], {
+    lead: 'Platform yorum bağlantısının bir gün sessizce kırılması, QR akışında o platforma yönlendirilen müşterilerin yorum yazamadan kaybedilmesi demektir. Buaze bu riski <strong>otomatik retest cron\'u</strong> ile kapatır.',
+    keyInsight: 'Yorum platformları haftada bir kez bile URL formatlarını değiştirebilir; manuel kontrole güvenmek riskli.',
+    sections: [
+      { title: 'Otomatik retest cron\'u', paragraphs: ['Buaze her gün <strong>04:00 UTC</strong>\'de tüm aktif platform bağlantılarını otomatik test eder. HEAD + GET (fallback) ile bağlantı erişilebilir mi, hangi HTTP code dönüyor, latency ne kadar — sonuç `PlatformLinkCheck` tablosuna yazılır. Owner panel "Platform Bağlantıları" sekmesinde son test sonucu rozet olarak görünür.'] },
+      { title: 'Manuel "tümünü yeniden test et" akışı', paragraphs: ['Ayarlar > Platform Bağlantıları üstünde "Tümünü yeniden test et" butonu, beklemeden tüm aktif platformları paralel test eder. Rate limit dakikada 5 — bir owner panel açık tutup spam edemez.'] },
+      { title: 'Broken-skip resolver davranışı', paragraphs: ['Son 24 saat içinde bir platformun bağlantısı <strong>başarısız test sonucu</strong> verdiyse Buaze, QR akışında o platforma yönlendirme yapmaz; alternatif fallback platform veya sektör öncelik sırasına geçer. Müşteri kırık linke düşürülmez.'], quote: 'Otomatik retest + broken-skip resolver birlikte, kırık bağlantının müşteri akışına sızmasını üç katmanlı korur: günlük kontrol, manuel kontrol ve runtime karar.' },
+    ],
+    checklist: ['Owner panelde "Platform Bağlantıları" sekmesi mount\'unda son test sonuçları rozetleri görünür.', 'Manuel retest haftada bir kez tetiklendi.', 'Test fail eden platformların yorum URL\'leri güncellendi.', 'Cron schedule (04:00 UTC) takvimle uyumlu, müşteri yoğun saatlerle çakışmıyor.', 'Sentry\'ye otomatik retest ile ilgili hata düşmedi.'],
+    faq: [
+      { q: 'Retest sırasında platform bir bot bloku verirse?', a: 'HTTP status code (403, 429) DB\'ye loglanır; "broken" sayılır ama owner panelinde detay görünür — operatör bunun gerçek bir kırılma mı yoksa bot koruması mı olduğunu inceler.' },
+      { q: 'Aynı platform her gün başarısız test veriyorsa?', a: 'Owner panel bağlantı URL\'sinin doğruluğunu kontrol etmenizi önerir. Çoğu platform URL formatını yılda 2-3 kez günceller; eski URL\'ler 301 redirect ile yaşayabilir ama testler 4xx döndürür.' },
+      { q: 'Cron testi maliyeti var mı?', a: 'Hayır. Sadece outbound HEAD/GET request — Vercel function invocation\'ı günde 1, request başına marjinal.' },
+      { q: 'Manuel "tümünü yeniden test et" sırasında diğer paneller etkilenir mi?', a: 'Hayır. Test paralel ama isolated; başka panel sayfasının render\'ını yavaşlatmaz.' },
+    ],
+    policyNote: 'Otomatik retest cron\'u <strong>günde 1 kez</strong> çalışır (saatlik veya 6 saatlik değil) çünkü daha agresif test platformların bot koruması tarafından "broken" false-positive olarak işaretlenebilir. Conservative + güvenilir.',
+  }),
+  article('en', 'integrations', 70, 'how-to-keep-platform-links-healthy', 'How to keep platform links healthy', 'Auto-retest cron and manual checks that keep your Google, Yemeksepeti, Getir and other review links functional.', ['platforms', 'links', 'health', 'retest', 'cron'], {
+    lead: 'If a review link silently breaks, customers routed to that platform from the QR flow are lost without leaving a review. Buaze closes this risk with an <strong>automatic retest cron</strong>.',
+    keyInsight: 'Review platforms can change their URL format from one week to the next; relying on manual checks is risky.',
+    sections: [
+      { title: 'The automatic retest cron', paragraphs: ['Buaze automatically tests every active platform link daily at <strong>04:00 UTC</strong>. HEAD + GET (fallback) check whether the link is reachable, what HTTP code it returns, and the latency — the result is written to the `PlatformLinkCheck` table. The latest result shows as a badge in the owner panel under "Platform Links".'] },
+      { title: 'Manual "retest all" flow', paragraphs: ['Settings > Platform Links has a "Retest all" button that fires parallel tests on every active platform without waiting. Rate limit: five per minute — no panel can spam by sitting open.'] },
+      { title: 'Broken-skip resolver behaviour', paragraphs: ['If a platform link returned a <strong>failed test result</strong> in the last 24 hours, Buaze does not route customers to that platform in the QR flow; the resolver falls back to an alternative platform or to the sector priority order. The customer is never sent to a broken link.'], quote: 'Auto-retest plus the broken-skip resolver close the leak in three layers: a daily check, a manual check, and a runtime decision.' },
+    ],
+    checklist: ['Latest test result badges visible on mount of the "Platform Links" panel section.', 'Triggered manual retest once a week.', 'Reviewed and updated URLs for any failing platforms.', 'Cron schedule (04:00 UTC) aligns with quiet customer hours.', 'No Sentry errors related to the auto-retest cron.'],
+    faq: [
+      { q: 'What if a platform serves a bot block during retest?', a: 'The HTTP status code (403, 429) is logged to the DB; it counts as "broken" but the owner panel shows the detail — the operator decides whether it is a real break or bot protection.' },
+      { q: 'What if the same platform fails every day?', a: 'The owner panel suggests verifying the link URL. Many platforms update URL formats 2-3 times a year; old URLs may live behind a 301 redirect, but tests return 4xx.' },
+      { q: 'Does the cron cost anything?', a: 'No. Just outbound HEAD/GET requests — Vercel function invocation runs once per day, with marginal per-request cost.' },
+      { q: 'Does the manual "retest all" affect other panels?', a: 'No. Tests run in parallel but isolated; rendering of other panel pages is not slowed down.'},
+    ],
+    policyNote: 'The auto-retest cron runs <strong>once a day</strong> (not hourly or every 6 hours) because more aggressive testing can be flagged as "broken" false-positives by platform bot protection. Conservative + reliable.',
+  }),
+
+  // 5. Weekly AI summary (TR + EN)
+  article('tr', 'review-management', 73, 'haftalik-ai-ozeti-nasil-okunur', 'Haftalık AI özeti nasıl okunur?', 'Pazartesi sabahı gelen TREND / WIN / RISK özetinin yapısı, kullanım önceliği ve operasyonel kararla bağlantısı.', ['haftalık özet', 'ai insight', 'trend', 'win', 'risk', 'rapor'], {
+    lead: 'Pazartesi sabahı operatöre gelen <strong>haftalık AI özeti</strong>, Pulse AI\'ın geçen haftaki yorumları okuyarak üç başlıkta sentezlediği bir rapordur: TREND, WIN, RISK. Amaç haftaya başlarken karara dönüştürülecek tek bir sinyal vermek.',
+    keyInsight: 'Üç başlık <em>özet</em> değil, <em>karar tetiği</em>dir. Her birinin altında o hafta yapılacak bir aksiyon var.',
+    sections: [
+      { title: 'Üç bölüm: TREND / WIN / RISK', items: ['<strong>TREND</strong> — geçen hafta yorumlarda en çok tekrar eden tema (pozitif veya negatif fark etmez). "Servis hızı" gibi.', '<strong>WIN</strong> — operasyonel bir kazanım, övgü veya yıldız patlaması. "Yeni menü 5 yıldızla karşılandı" gibi.', '<strong>RISK</strong> — düşük puanlı yorumlarda gözlemlenen yapısal bir sinyal. "Cumartesi akşamı bekleme süresi şikayetleri arttı" gibi.'] },
+      { title: 'Veri kaynağı + AI quota', paragraphs: ['Pulse AI haftalık özet için her restoran için en fazla <strong>30 yorum metni</strong> alır (analytics-themes ile aynı sınır değil — bu özetin token bütçesi). AI çağrısı CLAUDE.md §15.1\'deki "WEEKLY_INSIGHT_WORKSPACE_WEEK = 20" + "WEEKLY_INSIGHT_GLOBAL_WEEK = 200" kotaları altında çalışır. Quota aşılırsa rapor yine gönderilir ama AI bölümleri boş gelir.'] },
+      { title: 'Pazartesi sabahı zamanlaması', paragraphs: ['Cron 09:00 UTC\'de çalışır (Türkiye saatiyle 12:00). Operatörün haftaya başlarken inbox\'ında özet olur, ama ilk işle çakışmaz. Aynı gün 10:00 UTC\'de hello@buaze.com\'a "kim aldı" özeti ayrı bir mail olarak ops ekibine gönderilir (CLAUDE.md §21.38).'], quote: 'Pazartesi 12:00 + Türkiye saati, restoran/otel sahibi için haftayı planlama saati. AI özeti tam o saatte inbox\'a düşer — okumak için ayrı bir niyet gerekmez.' },
+    ],
+    checklist: ['Pazartesi sabahı haftalık özet e-postası alındı.', 'TREND bölümü incelendi, ekip toplantısında paylaşıldı.', 'WIN bölümü operasyonel kazanımı destekledi.', 'RISK bölümünden çıkan aksiyon haftalık plana eklendi.', 'AI bölümleri boş gelmediyse quota guard inceledi.'],
+    faq: [
+      { q: 'AI özeti hangi puan aralığını dikkate alır?', a: 'Hepsi — 1 ile 5 yıldız arası tüm yorumlar. AI risk başlığını düşük puanlardan, win başlığını yüksek puanlardan örnekler.' },
+      { q: 'Birden fazla şubem varsa özet nasıl gelir?', a: 'Owner profilindeki tüm şubeler için <em>tek bir konsolide</em> özet gelir. Şubelerin kendi özetlerini ayrı görmek için her şubenin notification e-postasını ayrı set etmek gerekir.' },
+      { q: 'AI bölümleri neden boş gelebilir?', a: 'İki sebep: (1) o hafta restoran için 1\'den az yorum (`MIN_TOTAL_FOR_AI = 1` eşiği), (2) workspace veya global haftalık AI quota aşıldı.' },
+      { q: 'AI özetini Pazartesi dışında almak mümkün mü?', a: 'Şu an cron sabit (Pazartesi 09:00 UTC). Owner panelden manuel tetikleme gelecek scope\'ta; o güne kadar haftalık tek rapor.' },
+    ],
+  }),
+  article('en', 'review-management', 73, 'how-to-read-weekly-ai-summary', 'How to read the weekly AI summary', 'The structure of the Monday-AM TREND / WIN / RISK summary, its usage priority and how it connects to operational decisions.', ['weekly summary', 'ai insight', 'trend', 'win', 'risk', 'report'], {
+    lead: 'The <strong>weekly AI summary</strong> that lands in the operator\'s inbox on Monday morning is a Pulse AI report that synthesises last week\'s reviews into three sections: TREND, WIN and RISK. The goal is to give a single decision-ready signal at the start of the week.',
+    keyInsight: 'The three sections are not a summary; they are a decision trigger. Each comes with an action for the week.',
+    sections: [
+      { title: 'Three sections: TREND / WIN / RISK', items: ['<strong>TREND</strong> — the most repeated theme in last week\'s reviews (positive or negative). E.g. "service speed".', '<strong>WIN</strong> — an operational gain, praise or rating spike. E.g. "the new menu was met with 5-star reviews".', '<strong>RISK</strong> — a structural signal in low-rating reviews. E.g. "wait-time complaints rose on Saturday evenings".'] },
+      { title: 'Data source + AI quota', paragraphs: ['Pulse AI reads up to <strong>30 review texts</strong> per restaurant for the weekly summary (different cap from analytics-themes — this is the summary\'s token budget). The AI call runs under the CLAUDE.md §15.1 quotas "WEEKLY_INSIGHT_WORKSPACE_WEEK = 20" + "WEEKLY_INSIGHT_GLOBAL_WEEK = 200". If quota is exceeded the report still ships but the AI sections come empty.'] },
+      { title: 'Monday-morning timing', paragraphs: ['The cron runs at 09:00 UTC (12:00 Turkey time). The summary lands in the operator\'s inbox at the start of the week without colliding with the first task. The same day at 10:00 UTC a separate "who got it" summary is sent to hello@buaze.com for the ops team (CLAUDE.md §21.38).'], quote: '12:00 Turkey time on a Monday is the planning hour for a restaurant or hotel owner. The AI summary lands exactly then — it takes no extra intent to read.' },
+    ],
+    checklist: ['Received the weekly summary email on Monday morning.', 'Read the TREND section and shared in the team meeting.', 'WIN section confirmed an operational win.', 'Added the action from the RISK section to the weekly plan.', 'If AI sections were not empty, reviewed the quota guard.'],
+    faq: [
+      { q: 'Which rating range does the AI summary cover?', a: 'All — 1 through 5 stars. The AI samples the RISK section from low ratings, the WIN section from high ratings.' },
+      { q: 'How does the summary work for multi-location owners?', a: 'A <em>single consolidated</em> summary is sent for all locations on the owner profile. To get a per-branch summary, set a separate notification email on each branch.' },
+      { q: 'Why might AI sections come empty?', a: 'Two reasons: (1) fewer than one review for the restaurant that week (the `MIN_TOTAL_FOR_AI = 1` threshold), (2) the workspace or global weekly AI quota was exceeded.' },
+      { q: 'Can I get the AI summary on a day other than Monday?', a: 'For now the cron is fixed (Monday 09:00 UTC). Manual triggering from the owner panel is future scope; until then one weekly report.' },
+    ],
+  }),
 ];
 
 STATIC_HELP_ARTICLES.push(...MORE_ARTICLES);

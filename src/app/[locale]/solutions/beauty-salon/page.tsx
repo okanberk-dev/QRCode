@@ -341,6 +341,7 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
               { href: `${base}/roi`, tr: 'ROI Hesaplayıcı', en: 'ROI Calculator' },
               { href: `${base}/solutions/qr-generator`, tr: 'Ücretsiz QR Oluştur', en: 'Free QR Generator' },
               { href: `${base}/google-compliance`, tr: 'Google Uyumluluğu', en: 'Google Compliance' },
+              { href: isTr ? `${base}/help/platform-baglantilarini-saglikli-tutma` : `${base}/help/how-to-keep-platform-links-healthy`, tr: 'Platform Bağlantılarını Sağlıklı Tut', en: 'Keep Platform Links Healthy' },
             ].map((r) => (
               <Link key={r.href} href={r.href} className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors">
                 <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">{isTr ? r.tr : r.en}</span>

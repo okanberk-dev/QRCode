@@ -365,8 +365,31 @@ export default async function PulseAiPage({
         </div>
       </section>
 
-      {/* Spec row */}
+      {/* Weekly AI digest — cross-link to owner-panel feature doc (PR 2) */}
       <section className="px-6 sm:px-10 py-16 sm:py-20">
+        <div className="mx-auto max-w-[820px]">
+          <span className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'PAZARTESİ SABAHI' : 'MONDAY MORNING'}
+          </span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+            {isTr ? 'Haftalık AI özeti: TREND / WIN / RISK' : 'Weekly AI summary: TREND / WIN / RISK'}
+          </h2>
+          <p className="mt-5 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+            {isTr
+              ? 'Pulse AI sadece tek tek yorumlara taslak üretmez — haftada bir kez, Pazartesi sabahı, geçen haftanın tüm yorumlarını okuyup üç başlıkta sentezler: TREND (tekrar eden tema), WIN (operasyonel kazanım) ve RISK (yapısal sinyal). Operatör haftaya başlarken inbox\'ında karara dönüştürülebilir tek bir özet bulur.'
+              : 'Pulse AI does more than draft replies one by one — once a week, on Monday morning, it reads through the previous week\'s reviews and synthesises them into three sections: TREND (recurring theme), WIN (operational gain) and RISK (structural signal). The operator starts the week with a single decision-ready summary in the inbox.'}
+          </p>
+          <Link
+            href={isTr ? `${base}/help/haftalik-ai-ozeti-nasil-okunur` : `${base}/help/how-to-read-weekly-ai-summary`}
+            className="mt-5 inline-flex items-center gap-1.5 text-[14px] font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:text-[#A8D62E]"
+          >
+            {isTr ? 'Haftalık özetin yapısını oku' : 'Read the weekly summary structure'} <ArrowRight size={13} />
+          </Link>
+        </div>
+      </section>
+
+      {/* Spec row */}
+      <section className="border-t border-[#EDEDED] px-6 sm:px-10 py-16 sm:py-20">
         <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-6 sm:grid-cols-3">
           {[
             {

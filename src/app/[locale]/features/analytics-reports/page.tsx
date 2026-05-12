@@ -636,6 +636,29 @@ export default async function AnalyticsReportsPage({
           </div>
         </section>
 
+        {/* ─── Response time tracking — cross-link to owner-panel feature doc (PR 2) ─── */}
+        <section className="border-t border-[#EDEDED] px-5 py-[60px] sm:px-10 sm:py-20">
+          <div className="mx-auto max-w-[820px]">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'OPERASYONEL DİSİPLİN' : 'OPERATIONAL DISCIPLINE'}
+            </span>
+            <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+              {isTr ? 'Yanıt süresi medyanı ve 8 saat alarmı' : 'Median reply time and the 8-hour alert'}
+            </h2>
+            <p className="mt-5 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+              {isTr
+                ? 'Yorum geldiği andan yanıtlanana kadar geçen süre, müşteri için marka algısının en güçlü sinyallerinden biridir. Buaze ortalama yerine medyan + P90 raporlar — bir veya iki çok geç yanıt gerçek operasyonel hızı saklamasın. Düşük puanlı yorumlar 8 saati geçince otomatik uyarı tetiklenir; eşik dış bir kural değil, operasyonel disiplin tetiği.'
+                : 'The time between a review arriving and being answered is one of the strongest brand signals for customers. Buaze reports median + P90 instead of an average, so one or two very late replies do not hide the real operational pace. Low-rating reviews trigger an automatic alert when they cross 8 hours; the threshold is not an external rule but an operational discipline trigger.'}
+            </p>
+            <Link
+              href={isTr ? `${base}/help/yanit-suresi-nasil-takip-edilir` : `${base}/help/how-to-track-response-time`}
+              className="mt-5 inline-flex items-center gap-1.5 text-[14px] font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4 hover:text-[#A8D62E]"
+            >
+              {isTr ? 'Yanıt süresi raporunun derinine in' : 'Dig into the response-time report'} <ArrowRight size={13} />
+            </Link>
+          </div>
+        </section>
+
         {/* ─── FAQ — visible accordion + FAQPage JSON-LD shares the same source ─── */}
         <section className="border-t border-[#EDEDED] px-5 py-[60px] sm:px-10 sm:py-20">
           <div className="mx-auto max-w-[860px]">
