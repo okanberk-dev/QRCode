@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Check, ExternalLink, Info, Loader2, MapPin, Palette, Plus, Search, ShieldCheck, Sparkles, Store } from 'lucide-react';

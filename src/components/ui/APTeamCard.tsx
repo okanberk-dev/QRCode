@@ -28,7 +28,6 @@
  * "Çevrimiçi/Çevrimdışı".
  */
 
-import { type ReactNode } from 'react';
 import { APCard } from './APCard';
 import { APChip, type APChipTone } from './APChip';
 

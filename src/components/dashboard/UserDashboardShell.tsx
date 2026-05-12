@@ -292,6 +292,11 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, { scroll: false });
       }
     }
+    // Effect intentionally re-runs only when workspace list or ?restaurantId
+    // query changes. pathname/searchParams/router are point-in-time reads —
+    // adding them would re-fire on every navigation and conflict with the
+    // router.replace() this effect issues (potential loop).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceRestaurants, queryRestaurantId]);
 
   useEffect(() => {
