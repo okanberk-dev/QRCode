@@ -90,7 +90,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const isTr = locale === 'tr';
-  const title = isTr ? 'Vaka Çalışmaları — Buaze' : 'Case Studies — Buaze';
+  const title = isTr
+    ? 'Vaka Çalışmaları — Buaze müşteri kohortundan örnekler'
+    : 'Case Studies — Examples from the Buaze customer cohort';
   const description = isTr
     ? 'Restoran, otel, klinik ve çok şubeli işletmelerin QR geri bildirim, Google yorum yönetimi ve itibar operasyonlarını nasıl büyüttüğünü inceleyin.'
     : 'Explore how restaurants, hotels, clinics and multi-location businesses grow QR feedback, Google review management and reputation operations.';

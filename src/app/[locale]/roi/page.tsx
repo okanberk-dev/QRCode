@@ -22,11 +22,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   const title = isTr
-    ? 'ROI Hesaplayıcı: QR Yorum Akışı 12 Ayda Ne Kadar Geri Döner? — Buaze'
+    ? 'ROI Hesaplayıcı — QR yorum akışının 12 aylık getirisi | Buaze'
     : 'ROI Calculator: 12-Month Return on QR Review Routing — Buaze';
   const description = isTr
-    ? 'Müşterilerinizi seçtiğiniz herkese açık platformlara şeffaf şekilde yönlendirin; düşük puan veren müşteriler önce ekibinizle özel paylaşım yapabilir. Pulse AI her yanıtta ~4 dk kazandırır. 12 aylık net kazancı slider\'larla hesapla.'
-    : 'Route customers transparently to the public platforms you have selected; customers giving low ratings can choose to share privately with your team first. Pulse AI saves ~4 minutes per reply. Calculate your 12-month net gain with sliders.';
+    ? 'QR yorum akışının 12 aylık getirisini slider\'larla hesaplayın: Pulse AI yanıt taslağı, müşteri tercihli platform seçimi, haftalık rapor. KVKK + Google uyumlu.'
+    : 'Calculate the 12-month net gain of QR review routing with sliders: Pulse AI reply drafts, customer-led platform choice and weekly reports. KVKK + Google compliant.';
   const url = `https://buaze.com/${locale}/roi`;
   return {
     metadataBase: new URL('https://buaze.com'),

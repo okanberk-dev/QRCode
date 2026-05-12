@@ -16,10 +16,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: (locale === 'tr' ? 'Buaze vs Excel/Spreadsheet | Dijital İtibar Karşılaştırması' : 'Buaze vs Spreadsheet | Digital Reputation Comparison') + ' | Buaze',
-    description: locale === 'tr' 
-      ? 'İtibarınızı Excel tablolarında mı takip ediyorsunuz? Manuel takibin risklerini ve Buaze\'nin otomasyon gücünü keşfedin.'
-      : 'Tracking reputation in spreadsheets? Discover the risks of manual tracking and the power of Buaze automation.',
+    title: (locale === 'tr' ? 'Buaze vs Excel — İtibar yönetimi karşılaştırması' : 'Buaze vs Spreadsheet | Digital Reputation Comparison') + ' | Buaze',
+    description: locale === 'tr'
+      ? 'İtibarınızı Excel tablolarında mı takip ediyorsunuz? Manuel takibin gecikme ve kör nokta risklerini, Buaze otomasyonunun ekip ritmindeki farkını keşfedin.'
+      : 'Tracking your reputation in spreadsheets? See how Buaze automation eliminates delays and blind spots, and how it changes your team\'s response cadence.',
   };
 }
 

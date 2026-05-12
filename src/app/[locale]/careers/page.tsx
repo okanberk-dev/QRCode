@@ -18,11 +18,13 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const title = locale === 'tr' ? 'Kariyer — Buaze' : 'Careers — Buaze';
+  const title = locale === 'tr'
+    ? 'Kariyer — Buaze\'de açık pozisyonlar ve değerler'
+    : 'Careers at Buaze — Open roles and how we work';
   const description =
     locale === 'tr'
-      ? 'Buaze\'de çalış — İstanbul merkezli, uzaktan-uyumlu, ürün odaklı ve hızlı büyüyen bir ekip. Açık pozisyonlara bak.'
-      : 'Work at Buaze — Istanbul-based, remote-friendly, product-driven and fast-growing. See open roles.';
+      ? 'Buaze\'de çalış: İstanbul merkezli, uzaktan-uyumlu, ürün odaklı bir SaaS ekibi. Tasarım, mühendislik, ürün ve müşteri başarısı için açık pozisyonları incele.'
+      : 'Work at Buaze: an Istanbul-based, remote-friendly, product-driven SaaS team. Explore open roles across design, engineering, product and customer success.';
   return {
     metadataBase: new URL('https://buaze.com'),
     title,
