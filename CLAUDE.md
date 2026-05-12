@@ -4872,6 +4872,7 @@ GitHub PR referansı.
 - §38.86-§38.88 — Stage 86-88 SocialProofToast removal + Marquee fix + Owner cache batch
 - §38.89-§38.91 — Stage 89-91 iOS Safari fixes + bottom nav clearance
 - §38.172 — Stage 92 (PR #603) anasayfa Section 4.5 Cohort spacing kompakt (Stage 85 corporate breathing geri çekme, mobile -70px / desktop -108px)
+- §38.173 — Stage 93 (PR #604) HeroCinematic eyebrow + rotating caption strip removal (BUAZE PULSE eyebrow + QR oluştur caption + orphan helpers + COPY field cleanup, ~85 satır azalma; cinematic stage 5 sahne intact)
 
 #### Stage 41 HANDOFF Heroes COMPLETE (Stage 32-41 final summary)
 
