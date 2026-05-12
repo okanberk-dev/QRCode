@@ -715,9 +715,13 @@ export default async function LandingPage({
           - Microcopy CTA altında (KVKK + ücretsiz disclaimer
             verifiable claim, §35.8 paterni)
       ═══════════════════════════════════════════════════════════ */}
-      <section className="px-5 sm:px-10 py-[80px] sm:py-28 lg:py-32 bg-[#FAFAFA] border-y border-[#EDEDED]">
+      {/* Stage 92 §38.172 — Section spacing daralt (kullanıcı raporu "çok
+          fazla boşluk"). Stage 85 §38.165 "corporate breathing room"
+          paterni geri çekildi; verifiable cohort content + 2-col bordered
+          card chrome intact, sadece padding/margin/gap kompaktlaştırıldı. */}
+      <section className="px-5 sm:px-10 py-[56px] sm:py-20 lg:py-24 bg-[#FAFAFA] border-y border-[#EDEDED]">
         <div className="max-w-[1200px] mx-auto">
-          <div className="max-w-[760px] mb-14 sm:mb-20">
+          <div className="max-w-[760px] mb-10 sm:mb-14">
             <span className="pulse-eyebrow inline-flex items-center gap-2 text-[#737373]">
               <span
                 aria-hidden="true"
@@ -731,10 +735,10 @@ export default async function LandingPage({
                   ? 'Restoranlar Buaze ile yeniden tanıtıldı.'
                   : 'Restaurants relaunched with Buaze.'
               }
-              className="mt-4 text-[clamp(30px,5.5vw,56px)] leading-[1.02] tracking-[-0.025em]"
+              className="mt-3 text-[clamp(28px,5vw,48px)] leading-[1.05] tracking-[-0.025em]"
             />
             <p
-              className="mt-6 text-[15px] sm:text-[17px] leading-[1.55] text-[#525252] max-w-[680px]"
+              className="mt-4 text-[15px] sm:text-[16px] leading-[1.55] text-[#525252] max-w-[640px]"
             >
               {isTr
                 ? 'Tek panel, gerçek metrikler. Buaze müşteri kohortunda ortalama puan tipik 90 günde belirgin yukarı kayar; tek pano tüm kanalları sade tutar.'
@@ -742,7 +746,7 @@ export default async function LandingPage({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
             {/* Stage 88 §38.168 — Cohort sol kolon güzelleştirme
                 (kullanıcı kararı "Cohort CTA group güzelleştir"):
                 - 3 module wrap'lı bordered card chrome (StarClimber +
@@ -758,8 +762,9 @@ export default async function LandingPage({
                   paralel)
                 - Microcopy 3 verifiable trust item lime check icon
                   (verifiable §35.8 visual reinforcement) + flex-wrap
-                  responsive (mobile stack OK) */}
-            <div className="space-y-8">
+                  responsive (mobile stack OK)
+                Stage 92 §38.172 — module space-y-8 → space-y-6 (kompakt). */}
+            <div className="space-y-6">
               {/* StarClimber bordered card */}
               <div className="rounded-[18px] border border-[#EDEDED] bg-white p-6 shadow-[0_4px_24px_-12px_rgba(10,10,10,0.06)]">
                 <span className="pulse-eyebrow inline-flex items-center gap-2 text-[#525252]">
@@ -905,8 +910,9 @@ export default async function LandingPage({
               {/* Stage 88 §38.168 — SentimentDial card premium polish
                   (sol kolon Cohort CTA card chrome paritesi). Apple-soft
                   shadow elev-1 + ring-1 + lime corner radial gradient
-                  decoration (sol kolon CTA card paterni mirror). */}
-              <div className="relative mt-6 overflow-hidden rounded-[18px] bg-white p-5 shadow-[0_4px_24px_-12px_rgba(10,10,10,0.06)] ring-1 ring-[#EDEDED]">
+                  decoration (sol kolon CTA card paterni mirror).
+                  Stage 92 §38.172 — mt-6 → mt-4 (spacing kompakt). */}
+              <div className="relative mt-4 overflow-hidden rounded-[18px] bg-white p-5 shadow-[0_4px_24px_-12px_rgba(10,10,10,0.06)] ring-1 ring-[#EDEDED]">
                 <div
                   aria-hidden="true"
                   className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full"
