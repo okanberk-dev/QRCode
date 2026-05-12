@@ -118,6 +118,17 @@ export default async function AutoServiceSolutionPage({ params }: { params: Prom
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      howToSteps={isTr ? [
+        { name: 'Servisi tanımla', text: 'Servis adı, kategori, adres ve bildirim e-postasını Buaze panelinde gir; Google yorum bağlantısını ekle.' },
+        { name: 'Araç teslimi noktasında QR sun', text: 'Müşteri aracı teslim alırken fatura altına veya teslim formuna QR yerleştir; usta/servis danışmanı etiketi URL parametresinde taşı.' },
+        { name: 'Usta ve danışmanları ekibe ekle', text: 'Servis sorumluları ve danışmanları Buaze ekibine davet et; düşük puanlar doğru ustanın inbox\'ına düşsün.' },
+        { name: 'Pulse AI ile teknik yanıt yaz', text: 'Pulse AI taslakları markaya özel, kısa ve teknik tonda — operatör onaylar, gönderir; usta bazlı analitiklerden hangi vardiyanın sonucu güçlü oku.' },
+      ] : [
+        { name: 'Identify the service centre', text: 'Enter service-centre name, category, address and notification email in the Buaze panel; add the Google review link.' },
+        { name: 'Offer the QR at vehicle hand-over', text: 'Place the QR on the invoice or hand-over form when the customer collects the vehicle; carry the technician/advisor tag in a URL parameter.' },
+        { name: 'Invite technicians and advisors', text: 'Add technicians and service advisors to your Buaze team so low ratings reach the right inbox.' },
+        { name: 'Reply in a technical tone via Pulse AI', text: 'Pulse AI drafts brand-specific, technical-tone replies — operator approves and sends; per-technician analytics show which shift performed best.' },
+      ]}
       illustration={<IllusAuto />}
     />
   );

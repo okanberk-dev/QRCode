@@ -118,6 +118,17 @@ export default async function BoutiqueHotelsSolutionPage({ params }: { params: P
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      howToSteps={isTr ? [
+        { name: 'Butik oteli tanımla', text: 'Tesis adı, kategori ve bildirim e-postasını Buaze panelinde gir; Booking, Tripadvisor, Airbnb ve Google yorum bağlantılarını ekle.' },
+        { name: 'Oda ve karşılama QR\'larını yerleştir', text: 'Her oda için oda numaralı QR + karşılama deskinde genel QR + kahvaltı/teras noktalarında ek temas noktaları kur.' },
+        { name: 'Resepsiyonu ekibe ekle', text: 'Resepsiyon, kat hizmetleri ve F&B sorumlularını Buaze ekibine davet et; oda/temas noktası bazlı düşük puanlar doğru ekibe düşsün.' },
+        { name: 'Pulse AI ile çok-dilli sıcak yanıt yaz', text: 'Misafir hangi dilde yazarsa Pulse AI o dilde sıcak tonda yanıt taslağı üretir — resepsiyon onaylar, gönderir.' },
+      ] : [
+        { name: 'Identify the boutique property', text: 'Enter property name, category and notification email in the Buaze panel; add Booking, Tripadvisor, Airbnb and Google review links.' },
+        { name: 'Place room and welcome-desk QRs', text: 'Use a room-numbered QR per room + a general QR at the welcome desk + extra touchpoints at breakfast/terrace if relevant.' },
+        { name: 'Invite reception and operations', text: 'Add reception, housekeeping and F&B leads to your Buaze team so room/touchpoint low ratings reach the right person.' },
+        { name: 'Reply warmly in any language via Pulse AI', text: 'Pulse AI drafts replies in the guest\'s language with a warm tone — reception approves and sends.' },
+      ]}
       illustration={<IllusBoutique />}
     />
   );

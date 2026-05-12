@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { jsonLdString } from '@/lib/seo/json-ld';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { ArrowRight, Check, Sparkles } from 'lucide-react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
@@ -153,10 +154,35 @@ export default async function PulseAiPage({
     ],
   };
 
+  const howToSchema = buildHowToSchema({
+    locale,
+    name: isTr ? 'Pulse AI ile yoruma 30 saniyede yanıt yazma' : 'Reply to a review in 30 seconds with Pulse AI',
+    description: isTr
+      ? 'Yeni bir yorum geldiğinde Pulse AI’ın taslağı nasıl üretip operatörün nasıl onayladığını gösterir.'
+      : 'Walks through how Pulse AI drafts a reply and how the operator approves and sends it.',
+    url: canonicalUrl,
+    steps: isTr
+      ? [
+          { name: 'Yorumu seç', text: 'Buaze gelen kutusunda yeni bir yorumu aç. Puan, platform ve müşteri adı solda görünür.' },
+          { name: 'Pulse AI taslağını üret', text: 'Sağ panelde "Taslak oluştur" butonuna bas. Pulse AI puana uygun tonda (sıcak, resmi veya özür) 2-4 cümlelik bir yanıt önerir.' },
+          { name: 'Düzenle veya onayla', text: 'Taslağı işletme ses tonuna uydurmak için doğrudan editörde değiştir. Tonu değiştirmek için tek tıkla yeniden öner.' },
+          { name: 'Yanıtı gönder', text: 'E-posta veya dahili kayıt seçeneğiyle "Gönder" butonuna bas. Yanıt müşteri kaydına işlenir ve raporlamaya yansır.' },
+        ]
+      : [
+          { name: 'Pick the review', text: 'Open a new review from the Buaze inbox. Rating, platform and customer name appear on the left.' },
+          { name: 'Generate the Pulse AI draft', text: 'Click "Generate draft" in the right pane. Pulse AI suggests a 2-4 sentence reply in a tone that matches the rating (warm, formal or apologetic).' },
+          { name: 'Edit or approve', text: 'Refine the draft in the editor to match your brand voice. One click re-runs the draft in a different tone.' },
+          { name: 'Send the reply', text: 'Click "Send" and pick email or internal-only. The reply is logged on the customer record and surfaces in reporting.' },
+        ],
+  });
+
   return (
     <div className="min-h-screen bg-white lg:pt-[64px]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(softwareSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
+      {howToSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(howToSchema) }} />
+      )}
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 
@@ -279,6 +305,30 @@ export default async function PulseAiPage({
             <span className="absolute -top-3 -right-3 inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-3 py-1 text-[11px] font-semibold text-[#0A0A0A]">
               ⚡ 1.4s
             </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Definitional — AEO conversational H2 (CLAUDE.md §35 sweep) */}
+      <section className="px-6 sm:px-10 py-16 sm:py-20">
+        <div className="mx-auto max-w-[820px]">
+          <span className="pulse-eyebrow text-[#737373]">
+            {isTr ? 'KISA TANIM' : 'IN BRIEF'}
+          </span>
+          <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+            {isTr ? 'Buaze Pulse AI nedir?' : 'What is Buaze Pulse AI?'}
+          </h2>
+          <div className="mt-5 space-y-4 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+            <p>
+              {isTr
+                ? 'Buaze Pulse AI, restoran, otel, klinik ve perakende işletmelerinin müşteri yorumlarına saniyeler içinde marka tonunda taslak yanıt üreten bir AI yardımcısıdır. Puanı, yorum dilini ve geçmiş sipariş bağlamını birlikte okur; işletmenin ses tonuna uygun, 2-4 cümlelik bir taslak hazırlar.'
+                : 'Buaze Pulse AI is an in-product assistant that drafts brand-tone replies to customer reviews in seconds for restaurants, hotels, clinics and retail operations. It reads the rating, the language of the review and the prior order context, then prepares a 2-4 sentence draft that fits the business voice.'}
+            </p>
+            <p>
+              {isTr
+                ? 'Pulse AI hiçbir yanıtı sizin yerinize göndermez — taslak panele düşer, operatör onaylar veya düzenler, sonra gönderir. AI hata yaparsa veya yetersiz kalırsa sistem otomatik olarak deterministik bir şablona düşer; yanıt kutusu hiçbir zaman boş kalmaz.'
+                : 'Pulse AI never publishes on your behalf — the draft lands in the panel, the operator approves or edits, and then sends. If the AI is unavailable, the system falls back to a deterministic template; the reply box is never left empty.'}
+            </p>
           </div>
         </div>
       </section>

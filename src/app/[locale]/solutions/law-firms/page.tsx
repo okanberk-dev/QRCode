@@ -8,6 +8,7 @@ import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion'
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getRelatedSolutions } from '@/lib/related-solutions';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -116,6 +117,29 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
       : 'Collect feedback from clients after every consultation. Rise in Google search rankings. Ethics-compliant, reputable digital presence.',
     faqs,
   });
+
+  const howTo = buildHowToSchema({
+    locale,
+    name: isTr ? 'Hukuk ofisinde Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a law firm',
+    description: isTr
+      ? 'Danışmanlık sonrası müvekkilden geri bildirim toplamak ve etik kurallara uyumlu profil oluşturmak için adımlar.'
+      : 'Steps to collect feedback after consultations and maintain an ethics-compliant public profile.',
+    url: `https://buaze.com/${locale}/solutions/law-firms`,
+    steps: isTr
+      ? [
+          { name: 'Ofisi tanımla', text: 'Hukuk ofisi adı, alanı, adresi ve bildirim e-postasını panelde gir; Google ve baro tarafından kabul edilen platformların yorum bağlantılarını ekle.' },
+          { name: 'Danışmanlık sonrası QR sun', text: 'Danışmanlık odası çıkışı veya fatura altına QR ekle; müvekkil reklamı değil, hizmet kalitesi geri bildirimi topla.' },
+          { name: 'Ortak ve sekreteryayı davet et', text: 'Ortaklar ve sekreteryayı Buaze ekibine ekle; rol bazlı görünürlük müvekkil mahremiyetini korur.' },
+          { name: 'Pulse AI ile resmi tonda yanıt yaz', text: 'Pulse AI yanıtları "formal" tonda taslak üretir — etik kurallara uyumlu, dava ayrıntısı içermez; ortak onaylar ve gönderir.' },
+        ]
+      : [
+          { name: 'Identify the firm', text: 'Enter firm name, practice area, address and notification email; add review links for Google and any bar-approved platforms.' },
+          { name: 'Offer the QR post-consultation', text: 'Place the QR at the consultation-room exit or on the invoice; collect service-quality feedback, not client advertising.' },
+          { name: 'Invite partners and reception', text: 'Add partners and reception staff to your Buaze team; role-based visibility preserves client confidentiality.' },
+          { name: 'Reply formally via Pulse AI', text: 'Pulse AI drafts replies in a formal tone — ethics-compliant, no case detail; partner approves and sends.' },
+        ],
+  });
+  if (howTo) jsonLd.push(howTo);
 
   return (
     <div className="min-h-screen bg-white lg:pt-[64px]">

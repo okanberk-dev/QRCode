@@ -118,6 +118,17 @@ export default async function SchoolsSolutionPage({ params }: { params: Promise<
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      howToSteps={isTr ? [
+        { name: 'Kurumu tanımla', text: 'Okul adı, kategori, adres ve bildirim e-postasını Buaze panelinde gir; Google yorum bağlantısını ekle.' },
+        { name: 'Veli bilgilendirme noktasına QR yerleştir', text: 'Veli toplantısı materyali, fatura altı veya kayıt formunda QR sun; sınıf/kademe etiketi için URL parametresi kullan.' },
+        { name: 'Müdür ve öğretmenleri ekibe ekle', text: 'Müdür, müdür yardımcısı ve kademe öğretmenlerini Buaze ekibine davet et; düşük puanlar doğru ekibin inbox\'ına düşsün.' },
+        { name: 'Pulse AI ile eğitim tonunda yanıt yaz', text: 'Pulse AI yanıtları sıcak ve profesyonel eğitim tonunda taslak üretir — müdür onaylar, gönderir; kademe bazlı analitiklerden örüntüleri oku.' },
+      ] : [
+        { name: 'Identify the institution', text: 'Enter school name, category, address and notification email in the Buaze panel; add the Google review link.' },
+        { name: 'Place the QR at parent-communication points', text: 'Offer the QR in parent-meeting materials, on the invoice or on the enrolment form; use a URL parameter for the class/grade tag.' },
+        { name: 'Invite principal and teachers', text: 'Add principal, vice principal and grade leads to your Buaze team so low ratings reach the right team.' },
+        { name: 'Reply in an education tone via Pulse AI', text: 'Pulse AI drafts replies in a warm, professional education tone — principal approves and sends; per-grade analytics show patterns.' },
+      ]}
       illustration={<IllusSchool />}
     />
   );

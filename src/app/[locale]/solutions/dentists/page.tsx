@@ -116,6 +116,17 @@ export default async function DentistSolutionPage({ params }: { params: Promise<
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      howToSteps={isTr ? [
+        { name: 'Kliniği KVKK uyumlu tanımla', text: 'Klinik adı, kategori ve KVKK aydınlatma metnini Buaze panelinde onayla; Google yorum bağlantısını ekle.' },
+        { name: 'Tedavi sonrası QR sun', text: 'Resepsiyon tezgahında veya tedavi sonrası bilgilendirme broşüründe QR; hekim etiketi için URL parametresi kullan.' },
+        { name: 'Hekim ve resepsiyonu ekibe ekle', text: 'Diş hekimlerini ve resepsiyonu Buaze ekibine davet et; düşük puanlar doğru hekimin görünür kalır.' },
+        { name: 'Pulse AI ile nazik yanıt yaz', text: 'Pulse AI yanıtları tedavi ayrıntısı içermez, sadece hizmet kalitesi tonunda taslak üretir — hekim onaylar, gönderir.' },
+      ] : [
+        { name: 'Set up the clinic KVKK-compliant', text: 'Confirm clinic name, category and the KVKK notice in the Buaze panel; add the Google review link.' },
+        { name: 'Offer the QR post-treatment', text: 'Place the QR at the reception desk or in a post-treatment information leaflet; use a URL parameter for the physician tag.' },
+        { name: 'Invite physicians and reception', text: 'Add dentists and reception to your Buaze team so low ratings stay visible to the right physician.' },
+        { name: 'Reply gently via Pulse AI', text: 'Pulse AI replies stay in a service-quality tone with no treatment detail — physician approves and sends.' },
+      ]}
       illustration={<IllusDentist />}
     />
   );

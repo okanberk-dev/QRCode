@@ -15,6 +15,7 @@ import {
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import { jsonLdString } from '@/lib/seo/json-ld';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getTranslations, type Locale } from '@/lib/translations';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -297,11 +298,36 @@ export default async function AnalyticsReportsPage({
     })),
   };
 
+  const howToSchema = buildHowToSchema({
+    locale,
+    name: isTr ? 'Buaze panelinde yorum analitiğini okuma' : 'Read review analytics in the Buaze panel',
+    description: isTr
+      ? 'Çekirdek KPI’ları, platform kırılımını, AI tema çıkarımını ve haftalık raporu okuma akışı.'
+      : 'How to read core KPIs, platform breakdown, AI theme extraction and the weekly digest.',
+    url: canonicalUrl,
+    steps: isTr
+      ? [
+          { name: 'Veri topla', text: 'QR ile gelen yorumlar + bağlı platformların API senkronu Buaze veri katmanına akar.' },
+          { name: 'KPI’ları ölç', text: 'Ortalama puan, yorum hacmi, yanıt süresi medyanı, NPS ve dönüşüm canlı KPI tile’larında görünür.' },
+          { name: 'Platform ve konuma göre karşılaştır', text: 'Platform kırılımı bar chart’ında her platformun yüzde payını okur, çok şubeli işletmelerde konum filtresiyle yan yana karşılaştırırsın.' },
+          { name: 'Haftalık özetle raporla', text: 'Pazartesi sabahı gönderilen e-posta, geçen haftanın KPI delta’ları + AI temalarını + öneriyi (TREND/WIN/RISK) tek mesajda toplar.' },
+        ]
+      : [
+          { name: 'Collect the data', text: 'Reviews from your QR flow plus the connected-platform API sync land in the Buaze data layer.' },
+          { name: 'Measure the KPIs', text: 'Average rating, review volume, median reply time, NPS and conversion show on live KPI tiles.' },
+          { name: 'Compare by platform and location', text: 'Read each platform\'s share on the breakdown bar chart; multi-location businesses compare branches side-by-side with the location filter.' },
+          { name: 'Report with the weekly digest', text: 'The Monday-AM email combines last week\'s KPI deltas, AI themes and a single recommendation (TREND/WIN/RISK).' },
+        ],
+  });
+
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(serviceSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(faqSchema) }} />
+      {howToSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(howToSchema) }} />
+      )}
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 
@@ -488,6 +514,85 @@ export default async function AnalyticsReportsPage({
                 </article>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ─── Conversational definitional H2 (AEO sweep, CLAUDE.md §35) ─── */}
+        <section className="px-5 py-[60px] sm:px-10 sm:py-20">
+          <div className="mx-auto max-w-[820px]">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'METRİK SEÇİMİ' : 'PICK YOUR METRICS'}
+            </span>
+            <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+              {isTr ? 'Hangi metrikleri ölçmeliyim?' : 'Which metrics should I track?'}
+            </h2>
+            <p className="mt-5 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+              {isTr
+                ? 'Buaze analitik paneli kararı kolaylaştıran beş çekirdek KPI etrafında kurulmuştur. Her biri günlük operasyonda anlamlı bir karara dönüşür:'
+                : 'The Buaze analytics panel is built around five core KPIs that translate directly into daily operational decisions:'}
+            </p>
+            <ul className="mt-5 space-y-3 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+              <li className="flex gap-3">
+                <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#C6F24E]" aria-hidden />
+                <span>
+                  <strong className="text-[#0A0A0A]">
+                    {isTr ? 'Ortalama puan' : 'Average rating'}
+                  </strong>{' '}
+                  —{' '}
+                  {isTr
+                    ? 'Marka algısının ana göstergesi; Google arama sıralamasını doğrudan etkiler.'
+                    : 'The main signal of brand perception; directly affects Google search ranking.'}
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#C6F24E]" aria-hidden />
+                <span>
+                  <strong className="text-[#0A0A0A]">
+                    {isTr ? 'Yorum hacmi' : 'Review volume'}
+                  </strong>{' '}
+                  —{' '}
+                  {isTr
+                    ? 'QR akışının verimliliğini gösterir; düşüş varsa QR yerleşimini gözden geçir.'
+                    : 'Shows the efficiency of your QR flow; a drop signals to revisit QR placement.'}
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#C6F24E]" aria-hidden />
+                <span>
+                  <strong className="text-[#0A0A0A]">
+                    {isTr ? 'Yanıt süresi medyanı' : 'Median reply time'}
+                  </strong>{' '}
+                  —{' '}
+                  {isTr
+                    ? 'Düşük puanlara ekibin ne kadar hızlı dokunduğunu gösterir; 8 saatten uzun süren yanıtlar uyarı tetikler.'
+                    : 'How fast your team reaches a low rating; replies longer than 8 hours trigger an alert.'}
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#C6F24E]" aria-hidden />
+                <span>
+                  <strong className="text-[#0A0A0A]">
+                    {isTr ? 'Platform dönüşümü' : 'Platform conversion'}
+                  </strong>{' '}
+                  —{' '}
+                  {isTr
+                    ? 'Hangi platforma kaç müşteri yönlendi; sektörel kazançların görünür hattı.'
+                    : 'How many customers were routed to each platform; the visible line of sector-level wins.'}
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#C6F24E]" aria-hidden />
+                <span>
+                  <strong className="text-[#0A0A0A]">
+                    {isTr ? 'Konum & şube karşılaştırması' : 'Location & branch comparison'}
+                  </strong>{' '}
+                  —{' '}
+                  {isTr
+                    ? 'Çoklu işletmelerde hangi şubenin öne çıktığını veya geride kaldığını yan yana göster.'
+                    : 'For multi-location businesses, see which branch leads or trails — side by side.'}
+                </span>
+              </li>
+            </ul>
           </div>
         </section>
 

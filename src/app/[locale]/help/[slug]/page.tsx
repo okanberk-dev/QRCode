@@ -9,8 +9,9 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
 import { CATEGORY_BY_SLUG } from '@/lib/help-categories';
-import { getStaticHelpArticle, getStaticHelpArticles, type StaticHelpArticle } from '@/lib/help-articles';
+import { getStaticHelpArticle, getStaticHelpArticles, type StaticHelpArticle, type BodyInput } from '@/lib/help-articles';
 import { sanitizeBlogContent } from '@/lib/blog-content';
+import { buildHowToSchema, type HowToStep } from '@/lib/seo/howto-schema';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
 // `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
@@ -166,6 +167,37 @@ export default async function HelpArticlePage({ params }: PageParams) {
     ],
   };
 
+  // HowTo schema — only emitted for static articles where the structured
+  // body is preserved (CLAUDE.md §22). DB articles ship without HowTo
+  // until a structured-body migration lands. Helper drops the node when
+  // step count < 2 (Google validator threshold).
+  const struct: BodyInput | undefined = (article as StaticHelpArticle).bodyStruct;
+  const howToSteps: HowToStep[] = struct
+    ? struct.sections
+        .filter((section) => (section.paragraphs?.length ?? 0) > 0 || (section.items?.length ?? 0) > 0)
+        .map((section) => ({
+          name: section.title,
+          text: [
+            ...(section.paragraphs ?? []),
+            ...(section.items?.length ? [section.items.join(' ')] : []),
+          ]
+            .join(' ')
+            .replace(/<[^>]+>/g, '')
+            .replace(/\s+/g, ' ')
+            .trim(),
+        }))
+        .filter((step) => step.text.length > 0)
+    : [];
+  const howToJsonLd = struct
+    ? buildHowToSchema({
+        locale,
+        name: article.title,
+        description: article.excerpt ?? struct.lead.replace(/<[^>]+>/g, '').slice(0, 160),
+        url: `https://buaze.com/${locale}/help/${slug}`,
+        steps: howToSteps,
+      })
+    : null;
+
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
       <script
@@ -176,6 +208,12 @@ export default async function HelpArticlePage({ params }: PageParams) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbJsonLd) }}
       />
+      {howToJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdString(howToJsonLd) }}
+        />
+      )}
       <MarketingNavbar locale={locale} t={t} />
 
       {/* Header — breadcrumb + category + title */}

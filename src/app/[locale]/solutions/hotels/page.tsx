@@ -9,6 +9,7 @@ import PlatformLogo from '@/components/marketing/PlatformLogo';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getRelatedSolutions } from '@/lib/related-solutions';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -124,6 +125,29 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
       : 'Booking.com, Tripadvisor, Airbnb and Google — manage all four from one panel. Collect reviews at check-out with room QRs.',
     faqs,
   });
+
+  const howTo = buildHowToSchema({
+    locale,
+    name: isTr ? 'Otelde Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a hotel',
+    description: isTr
+      ? 'Oda ve check-out QR’larıyla Booking, Tripadvisor, Airbnb ve Google yorumlarını tek panelden yönetmek için adımlar.'
+      : 'Steps to manage Booking, Tripadvisor, Airbnb and Google reviews from one panel via room and check-out QRs.',
+    url: `https://buaze.com/${locale}/solutions/hotels`,
+    steps: isTr
+      ? [
+          { name: 'Tesisi tanımla', text: 'Buaze panelinde otel adı, kategori, adres ve resepsiyon e-postasını gir; Booking, Tripadvisor, Airbnb ve Google yorum bağlantılarını ekle.' },
+          { name: 'QR’ları doğru noktalara yerleştir', text: 'Her oda için oda numaralı QR sticker + check-out tezgahında genel QR + kahvaltı/SPA gibi temas noktalarında ek QR’lar yerleştir.' },
+          { name: 'Resepsiyon ve operasyonu davet et', text: 'Resepsiyon, kat hizmetleri ve F&B sorumlularını Buaze ekibine ekle; oda/kat bazlı düşük puanları doğru ekip görsün.' },
+          { name: 'Pulse AI ile çoklu dil yanıt yaz', text: 'Misafir TR/EN/DE/RU hangisinde yazarsa Pulse AI o dilde yanıt taslağı üretir — resepsiyon onaylar, gönderir; oda numarası bazlı analitiklerden örüntüleri oku.' },
+        ]
+      : [
+          { name: 'Identify the property', text: 'In the Buaze panel, enter hotel name, category, address and front-desk email; add your Booking, Tripadvisor, Airbnb and Google review links.' },
+          { name: 'Place QRs at the right touchpoints', text: 'Place a room-numbered QR sticker in every room + a general QR at the check-out desk + extra QRs at breakfast/spa touchpoints if relevant.' },
+          { name: 'Invite front desk and operations', text: 'Add front-desk, housekeeping and F&B leads to your Buaze team so the right owner sees room/floor-level low ratings.' },
+          { name: 'Reply in any language via Pulse AI', text: 'Whichever language the guest writes in (TR/EN/DE/RU), Pulse AI drafts the reply in that language — front desk approves and sends; read room-level analytics to spot patterns.' },
+        ],
+  });
+  if (howTo) jsonLd.push(howTo);
 
   return (
     <div className="min-h-screen bg-white lg:pt-[64px]">

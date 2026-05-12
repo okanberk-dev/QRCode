@@ -8,6 +8,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { jsonLdString } from '@/lib/seo/json-ld';
+import { buildHowToSchema, type HowToStep } from '@/lib/seo/howto-schema';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import type { Locale, Translations } from '@/lib/translations';
@@ -30,6 +31,10 @@ interface SolutionPageLayoutProps {
   steps?: { title: string; desc: string; icon: ReactNode }[];
   benefits?: { title: string; desc: string; icon: ReactNode }[];
   faqs?: { q: string; a: string }[];
+  /** Optional HowTo step list. When supplied (>= 2 steps), a HowTo JSON-LD
+   *  block is emitted alongside Breadcrumb + Service + (optional) FAQPage.
+   *  See `src/lib/seo/howto-schema.ts`. */
+  howToSteps?: HowToStep[];
   isLoggedIn?: boolean;
   slug?: string;
   overview?: string;
@@ -75,6 +80,7 @@ export default function SolutionPageLayout({
   steps,
   benefits,
   faqs,
+  howToSteps,
   slug: slugProp,
   overview,
   illustration,
@@ -167,6 +173,17 @@ export default function SolutionPageLayout({
         acceptedAnswer: { '@type': 'Answer', text: f.a },
       })),
     });
+  }
+
+  if (howToSteps && howToSteps.length >= 2) {
+    const howTo = buildHowToSchema({
+      locale,
+      name: `${h1Prefix} ${h1Suffix}`,
+      description,
+      url: canonicalUrl,
+      steps: howToSteps,
+    });
+    if (howTo) jsonLdSchemas.push(howTo);
   }
 
   return (
