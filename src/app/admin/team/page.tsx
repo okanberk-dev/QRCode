@@ -224,10 +224,14 @@ function AdminTeamBody() {
               <span className="pulse-eyebrow text-[#737373]">{isTr ? 'E-POSTA' : 'EMAIL'}</span>
               <input
                 type="email"
+                inputMode="email"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="name@company.com"
-                className="bz-input mt-1 w-full rounded-lg py-2 text-[13px]"
+                className="bz-input mt-1 w-full rounded-lg py-2 text-[16px] sm:text-[13px]"
               />
             </label>
             <label className="block">
