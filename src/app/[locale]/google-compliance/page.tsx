@@ -17,10 +17,33 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }) {
   const { locale } = await params;
-  const t = getTranslations(locale);
+  const isTr = locale === 'tr';
+  // SEO-tuned metadata overrides the on-page t.google_compliance_page_title
+  // string (used as H1 + body context). Keep both surfaces in sync if the
+  // policy framing changes — search snippets and on-page heading should
+  // tell the same story.
+  const title = isTr
+    ? 'Google Uyumluluk & Güven — Yorum politikası | Buaze'
+    : 'Google Compliance & Trust — Review Policy | Buaze';
+  const description = isTr
+    ? 'Buaze, Google yorum politikalarına tam uyum sağlar: sahte yorum yok, teşvik yok, müşteri agency korunur. Şeffaf ve dürüst geri bildirim ekosistemini koruruz.'
+    : 'Buaze strictly adheres to Google review policies: no fake reviews, no incentives, customer agency preserved. We protect a transparent, honest feedback ecosystem.';
   return {
-    title: `${t.google_compliance_page_title} | Buaze`,
-    description: t.google_compliance_home_desc,
+    title,
+    description,
+    alternates: {
+      canonical: `https://buaze.com/${locale}/google-compliance`,
+      languages: {
+        tr: 'https://buaze.com/tr/google-compliance',
+        en: 'https://buaze.com/en/google-compliance',
+      },
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://buaze.com/${locale}/google-compliance`,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze' }],
+    },
   };
 }
 

@@ -17,9 +17,9 @@ export async function generateMetadata({
   const { locale } = await params;
   return {
     title: (locale === 'tr' ? 'Buaze vs Bireysel QR | Akıllı İtibar Yönetimi' : 'Buaze vs Individual QR | Smart Reputation Management') + ' | Buaze',
-    description: locale === 'tr' 
-      ? 'Ücretsiz statik QR kodları işletmeniz için ne kadar güvenli? Dinamik ve korumalı Buaze altyapısının farkını öğrenin.'
-      : 'How secure are free static QR codes for your business? Learn the difference of the dynamic and protected Buaze infrastructure.',
+    description: locale === 'tr'
+      ? 'Ücretsiz statik QR kodları işletmeniz için ne kadar güvenli? Dinamik Buaze QR\'lerinin platform yönlendirme, müşteri-led tercih ve panelin farkını öğrenin.'
+      : 'How secure are free static QR codes for your business? Learn how dynamic Buaze QR codes add platform routing, customer-led choice and a unified dashboard.',
   };
 }
 

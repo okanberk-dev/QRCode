@@ -23,12 +23,12 @@ export async function generateMetadata({
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Entegrasyonlar — Buaze'
-      : 'Integrations — Buaze';
+      ? 'Entegrasyonlar — Google, Yemeksepeti, Getir, Slack | Buaze'
+      : 'Integrations — Google, Slack, Teams, WhatsApp | Buaze';
   const description =
     locale === 'tr'
       ? 'İşletmenizde zaten kullandığınız araçlarla Buaze tek tıkla konuşur. Google, Yemeksepeti, Getir, Slack, Teams, WhatsApp, Zapier ve daha fazlası.'
-      : 'Buaze talks with the tools you already use. Google, Uber Eats, DoorDash, Deliveroo, Slack, Teams, WhatsApp, Zapier and more.';
+      : 'Buaze talks to the tools your team already uses: Google, Uber Eats, DoorDash, Deliveroo, Slack, Microsoft Teams, WhatsApp, Zapier and more — connect in clicks.';
   return {
     metadataBase: new URL('https://buaze.com'),
     title,

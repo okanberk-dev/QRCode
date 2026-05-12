@@ -20,7 +20,7 @@ export async function generateMetadata({
   const isTr = locale === 'tr';
   const title = isTr ? 'Nasıl Çalışır? — Buaze QR İtibar Yönetimi' : 'How It Works — Buaze QR Reputation Management';
   const description = isTr
-    ? 'Buaze ile dijital itibarınızı 3 basit adımda yönetmeye başlayın: QR kod oluştur, müşteri geri bildirimi topla, panelde takip et.'
+    ? 'Buaze ile dijital itibarınızı 3 adımda yönetmeye başlayın: QR kodunuzu yerleştirin, müşteri geri bildirimini toplayın, sonuçları panelde takip edin ve yanıtlayın.'
     : 'Start managing your digital reputation in 3 simple steps with Buaze: create a QR code, collect customer feedback, track in your dashboard.';
   return {
     title: { absolute: title },

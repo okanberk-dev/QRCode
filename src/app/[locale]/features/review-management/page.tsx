@@ -80,7 +80,7 @@ export async function generateMetadata({
       type: 'website',
       images: [
         {
-          url: 'https://buaze.com/opengraph-image',
+          url: '/opengraph-image',
           width: 1200,
           height: 630,
           alt: 'Buaze — Yorum Yönetimi',
@@ -92,7 +92,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: ['https://buaze.com/opengraph-image'],
+      images: ['/opengraph-image'],
     },
   };
 }

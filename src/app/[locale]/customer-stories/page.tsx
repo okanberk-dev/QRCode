@@ -6,6 +6,8 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { CUSTOMER_STORIES, storyText } from '@/lib/customer-stories';
+// Stage 94 §38.174 — CUSTOMER_STORIES enumerated in the page body for
+// direct-link visitors, but ItemList JSON-LD removed (E-E-A-T desindex).
 import { notFound } from 'next/navigation';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
@@ -54,20 +56,11 @@ export default async function CustomerStoriesPage({
   const isTr = locale === 'tr';
 
   const canonicalUrl = `https://buaze.com/${locale}/customer-stories`;
-  const itemListSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: isTr ? 'Buaze müşteri hikayeleri' : 'Buaze customer stories',
-    inLanguage: isTr ? 'tr-TR' : 'en-US',
-    url: canonicalUrl,
-    numberOfItems: CUSTOMER_STORIES.length,
-    itemListElement: CUSTOMER_STORIES.map((story, i) => ({
-      '@type': 'ListItem',
-      position: i + 1,
-      url: `https://buaze.com/${locale}/customer-stories/${story.slug}`,
-      name: storyText(story.title, locale),
-    })),
-  };
+  // Stage 94 §38.174 — ItemList JSON-LD removed; CLAUDE.md §35.10 deemed
+  // these 6 stories fictitious. BreadcrumbList kept for navigation context
+  // (not promotional). Page body still enumerates CUSTOMER_STORIES so
+  // direct-link visitors see something; sitemap also no longer emits
+  // canonical URLs (see sitemap.ts).
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -79,7 +72,6 @@ export default async function CustomerStoriesPage({
 
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] lg:pt-[64px]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">

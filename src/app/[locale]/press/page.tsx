@@ -36,7 +36,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const isTr = locale === 'tr';
-  const title = isTr ? 'Basın Kiti | Buaze' : 'Press Kit | Buaze';
+  const title = isTr
+    ? 'Basın Kiti — Şirket gerçekleri ve marka varlıkları | Buaze'
+    : 'Press Kit — Company facts and brand assets | Buaze';
   const description = isTr
     ? 'Buaze (şirket) hakkında basın kiti. Şirket gerçekleri, kurucu bilgileri, marka varlıkları ve medya iletişim — gazeteciler ve entity editörleri için tek nokta.'
     : 'Press kit for Buaze (the company). Company facts, founder details, brand assets and media contact — a single resource for journalists and entity editors.';
