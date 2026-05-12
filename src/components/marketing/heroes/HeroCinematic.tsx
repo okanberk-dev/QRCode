@@ -34,7 +34,6 @@ interface Props {
 
 const COPY = {
   tr: {
-    eyebrow: 'BUAZE PULSE — DİJİTAL İTİBAR İŞLETİM SİSTEMİ',
     title: 'Her yorum bir nabız.\nHer yanıt bir rakip.',
     subtitle:
       'QR ile geri bildirim topla, tek panelden yönet, Pulse AI taslakları ile saniyeler içinde yanıt ver.',
@@ -47,13 +46,6 @@ const COPY = {
       aiReply: 'AI TASLAĞI HAZIR',
       starPop: 'PUAN ARTAR',
     },
-    captions: {
-      qrPulse: 'QR oluştur',
-      scan: 'Müşteri tarar',
-      form: 'Yorum bırakır',
-      aiReply: 'AI taslak hazır',
-      starPop: '+1.2 puan',
-    },
     ratingLabel: 'GENEL PUAN',
     deltaLabel: '90 GÜN İÇİNDE',
     formExample: '"Tatlılar muhteşem, yine geleceğim!"',
@@ -62,7 +54,6 @@ const COPY = {
     aiTone: 'Sıcak · Onaylı',
   },
   en: {
-    eyebrow: 'BUAZE PULSE — DIGITAL REPUTATION OS',
     title: 'Every review is a pulse.\nEvery reply is a moat.',
     subtitle:
       'Collect feedback via QR, manage it from one dashboard, reply in seconds with Pulse AI drafts.',
@@ -74,13 +65,6 @@ const COPY = {
       form: 'LEAVES REVIEW',
       aiReply: 'AI DRAFT READY',
       starPop: 'RATING CLIMBS',
-    },
-    captions: {
-      qrPulse: 'Generate QR',
-      scan: 'Customer scans',
-      form: 'Leaves review',
-      aiReply: 'AI draft ready',
-      starPop: '+1.2 stars',
     },
     ratingLabel: 'AVG. RATING',
     deltaLabel: 'IN 90 DAYS',
@@ -112,20 +96,8 @@ export default function HeroCinematic({ locale }: Props): React.ReactElement {
       <div className="relative mx-auto flex min-h-[640px] max-w-[1280px] flex-col items-center gap-10 px-5 py-[60px] sm:px-10 lg:flex-row lg:items-center lg:gap-16 lg:py-[88px]">
         {/* SOL: copy */}
         <div className="relative z-10 w-full max-w-[560px]">
-          <span
-            className="pulse-eyebrow inline-flex items-center gap-2"
-            style={{ color: '#525252' }}
-          >
-            <span
-              aria-hidden
-              className="inline-block h-1.5 w-1.5 rounded-full"
-              style={{ background: '#C6F24E' }}
-            />
-            {copy.eyebrow}
-          </span>
-
           <h1
-            className="bz-h-tight-2 mt-4 whitespace-pre-line text-[38px] sm:text-[52px] md:text-[64px] lg:text-[72px]"
+            className="bz-h-tight-2 whitespace-pre-line text-[38px] sm:text-[52px] md:text-[64px] lg:text-[72px]"
             style={{
               color: '#0A0A0A',
               lineHeight: 0.95,
@@ -158,17 +130,6 @@ export default function HeroCinematic({ locale }: Props): React.ReactElement {
             </Link>
           </div>
 
-          {/* Live caption strip — sahne adı progress'e göre değişir */}
-          <div className="mt-8 hidden h-7 items-center gap-3 sm:flex">
-            <span
-              aria-hidden
-              className="bz-pulse-dot inline-block h-2 w-2 rounded-full"
-              style={{ background: '#C6F24E' }}
-            />
-            <Stage duration={CINEMATIC_DURATION} loop>
-              <SceneCaptionStrip captions={copy.captions} />
-            </Stage>
-          </div>
         </div>
 
         {/* SAĞ: cinematic stage */}
@@ -616,62 +577,3 @@ function SceneStarPop({
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Live caption strip (under primary CTA)
-// ─────────────────────────────────────────────────────────────
-
-interface SceneCaptions {
-  qrPulse: string;
-  scan: string;
-  form: string;
-  aiReply: string;
-  starPop: string;
-}
-
-function SceneCaptionStrip({ captions }: { captions: SceneCaptions }) {
-  return (
-    <>
-      <Sprite
-        start={CINEMATIC_SCENES.qrPulse.start}
-        end={CINEMATIC_SCENES.qrPulse.end}
-      >
-        <CaptionText text={captions.qrPulse} />
-      </Sprite>
-      <Sprite
-        start={CINEMATIC_SCENES.scan.start}
-        end={CINEMATIC_SCENES.scan.end}
-      >
-        <CaptionText text={captions.scan} />
-      </Sprite>
-      <Sprite
-        start={CINEMATIC_SCENES.form.start}
-        end={CINEMATIC_SCENES.form.end}
-      >
-        <CaptionText text={captions.form} />
-      </Sprite>
-      <Sprite
-        start={CINEMATIC_SCENES.aiReply.start}
-        end={CINEMATIC_SCENES.aiReply.end}
-      >
-        <CaptionText text={captions.aiReply} />
-      </Sprite>
-      <Sprite
-        start={CINEMATIC_SCENES.starPop.start}
-        end={CINEMATIC_SCENES.starPop.end}
-      >
-        <CaptionText text={captions.starPop} />
-      </Sprite>
-    </>
-  );
-}
-
-function CaptionText({ text }: { text: string }) {
-  return (
-    <span
-      className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em]"
-      style={{ color: '#525252' }}
-    >
-      {text}
-    </span>
-  );
-}
