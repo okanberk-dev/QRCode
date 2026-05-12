@@ -25748,3 +25748,115 @@ Stage 90 §38.170 zinciri compliance disipline 22 kez stable):
 - Audit metodu: 1 Explore agent + manuel verify + 1 false positive
   eleme (agent "admin nav yok" iddiası `grep AdminMobileNav admin/layout.tsx`
   ile çürütüldü).
+
+---
+
+### 38.172 2026-05-12 — Stage 92 anasayfa Section 4.5 Cohort spacing kompakt (Stage 85 "corporate breathing room" geri çekme + tek-section UI polish)
+
+§38.171 Stage 91 PR #602 merge edildikten sonra kullanıcı yeni
+anasayfa UX raporu iletti: *"ekte anasayfa kohort bölümün var ve çok
+fazla boşluk gözüküyor buradaki boşluğu azaltır mısın? ve main'e
+merge eder misin?"* + ekran görüntüsü Section 4.5 BUAZE MÜŞTERİ
+KOHORTU eyebrow ile description paragraph + 2-col grid arasında
+büyük boşluk. Stage 85 §38.165'te "corporate breathing room" için
+aggressive artırılan spacing'ler kompaktlaştırıldı.
+
+**Root cause** (Stage 85 §38.165 over-padding):
+
+| Element | Stage 85 öncesi | Stage 85 (§38.165) | Stage 92 (§38.172 yeni) |
+|---|---|---|---|
+| `<section>` padding | `py-[60px] sm:py-24` | `py-[80px] sm:py-28 lg:py-32` | `py-[56px] sm:py-20 lg:py-24` |
+| Header block bottom margin | `mb-12 sm:mb-16` | `mb-14 sm:mb-20` | `mb-10 sm:mb-14` |
+| RevealHeadline top margin | — | `mt-4` | `mt-3` |
+| Headline clamp | — | `clamp(30px,5.5vw,56px) leading-[1.02]` | `clamp(28px,5vw,48px) leading-[1.05]` |
+| Paragraph top margin | — | `mt-6` | `mt-4` |
+| Paragraph max-w | — | `max-w-[680px]` | `max-w-[640px]` |
+| Paragraph font-size | — | `text-[15px] sm:text-[17px]` | `text-[15px] sm:text-[16px]` |
+| 2-col grid gap | `gap-10 lg:gap-16` | `gap-12 lg:gap-20` | `gap-10 lg:gap-14` |
+| Sol kolon module space-y | `space-y-10` | `space-y-8` | `space-y-6` |
+| Sağ kolon SentimentDial top margin | — | `mt-6` | `mt-4` |
+
+**Net tasarruf** (mobile / desktop):
+- Section padding: -24 / -32 / -32 px (vertical her uçtan)
+- Header block: -16 / -24 px (alt)
+- Header inner: -4 / -8 / -8 px (eyebrow → headline → paragraph)
+- Grid gap: -8 / -24 px (sol ↔ sağ kolon arası)
+- Sol kolon module: -8 px (StarClimber ↔ BigCounter ↔ CTA arası)
+- Sağ kolon: -8 px (ToastRow ↔ SentimentDial arası)
+
+**Toplam visual kompaktlaştırma**: mobile ~70px / desktop ~108px
+section yüksekliğinden tasarruf. "Çok fazla boşluk" raporu net
+kapatıldı; verifiable cohort content + 2-col bordered card chrome
+(Stage 88 §38.168) + lime corner radial gradient + StarClimber +
+BigCounter pair + premium CTA card + microcopy lime check icons +
+SentimentDial card parite **intact**.
+
+**Etkilenen dosyalar (1 + docs)**:
+- `src/app/[locale]/page.tsx` (~10 satır net edit — 9 spacing class
+  + comment Stage 92 §38.172 reference)
+- `CLAUDE.md` §38.172 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**:
+yok. **Test count**: 423/423 pass (45 suites, 200 subtests).
+
+**Compliance disipline intact** (kullanıcı 24. iterasyon — Stage 49
+§38.130 → Stage 91 §38.171 zinciri compliance disipline 23 kez
+stable):
+- §35.8 + §35.10 + §19.1.1 + §38.114 paterni intact (presentational
+  spacing only, backend kontrat + content + verifiable cohort claims
+  dokunulmadı)
+- Pulse §11 typography (synthetic italic Space Grotesk, Instrument
+  Serif italic YASAK) intact
+- §38.61 reduced-motion blanket etkilenmedi (yeni keyframe yok)
+
+**Yapma**:
+- Section padding'i 60px+ altına çekme (mobile) — visual hierarchy
+  + section ayrımı kaybolur (üst BENTO + alt INDUSTRY TABS ile
+  birleşir).
+- Headline clamp lower bound 28px altına çekme — Pulse §11 corporate
+  display tier minimum.
+- Header block `mb-10 sm:mb-14` altında çekme — eyebrow + headline +
+  paragraph block ile 2-col grid arası visual rest kaybolur.
+- Grid gap `gap-10` altında çekme mobile için — sol ↔ sağ kolon
+  module separation kaybolur.
+- Sol kolon `space-y-6` altında çekme — StarClimber + BigCounter pair
+  + CTA card 3 bordered module arası nefes alma kaybolur.
+
+**Yap**:
+- Yeni section spacing değişikliği gerekirse Stage 92 §38.172 tablosu
+  intact tutarak relative adjust et (örn. tüm değerleri %20 daha
+  agresif kısaltma değil).
+- Stage 85 §38.165 "corporate breathing room" intent'i için ayrı
+  surface'te (örn. about / case-study) hâlâ uygulanabilir — bu PR
+  sadece Section 4.5 Cohort kompaktlaştırma.
+
+**Verification**:
+- `npm install` ✓ 896 packages
+- `npx eslint src/app/[locale]/page.tsx`: 0 errors / 0 warnings
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: 423/423 pass (45 suites, 200 subtests)
+- `npx next build` (stub env, 4GB heap): ✓ Compiled with warnings
+  (Prisma DATABASE_URL stub warning beklenen)
+
+**Stage 92 closure** (Tarih 2026-05-12):
+- Branch: `chore/cohort-spacing-compact-stage92` (fresh main üstüne,
+  Stage 91 §38.171 PR #602 merged sonrası rebase'lendi)
+- Test count: 423/423 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Section
+  4.5 Cohort artık mobile/desktop'ta kompakt spacing; verifiable
+  cohort content + 2-col card chrome intact.
+- Kalan riskler: yok (presentational spacing only).
+
+**Chat prompt history (Stage 92 §39.2 paterni)**:
+- 2026-05-12 kullanıcı: *"ekte anasayfa kohort bölümün var ve çok
+  fazla boşluk gözüküyor buradaki boşluğu azaltır mısın? ve main'e
+  merge eder misin?"* + ekran görüntüsü Section 4.5 BUAZE MÜŞTERİ
+  KOHORTU section'ı (eyebrow + headline + description + 2-col grid
+  arası fazla boşluk).
+- AskUserQuestion YAPILMADI — kullanıcı talebi net (spacing daralt
+  + main'e merge), scope konservatif (presentational only).
+- **Disipline restoration (24. iterasyon)**: Stage 85 §38.165
+  "corporate breathing room" intent'i tek-section (Section 4.5
+  Cohort) için geri çekildi; diğer marketing surface'lerde paterni
+  intact. CLAUDE.md §11 + §38.49 + §38.65 + §38.74 + §38.114 +
+  §38.131 + §38.150 + §38.151 + §38.165 + §38.168 paterni reuse.
