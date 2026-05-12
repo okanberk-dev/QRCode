@@ -13,9 +13,28 @@
  *     parallax:  dynamic(() => import('./HeroParallax'),  { ssr: false }),
  *   }[variant];
  *
- * `ssr: false` çünkü 3 hero da animation-heavy (`<Stage>` + RAF +
- * mouse tracking) — SSR HTML pre-render'da statik snapshot anlamsız.
- * Skeleton fallback Suspense ile.
+ * Stage 91 §38.171 — `ssr: false` → `ssr: true`:
+ * Önceki kararda animation-heavy oldukları için SSR atlanıyordu, ama
+ * bu marketing surface'inde **görsel flash bug** yaratıyordu:
+ *   1. SSR HTML: hero skeleton (min-h-[640px]) + Section 2 marquee (gerçek)
+ *   2. Client hydrate: hero chunk download → 100-300ms gecikme
+ *   3. Marquee scroll-anim hemen başlıyor → kullanıcı "anasayfaya
+ *      girince önce marquee gözüküyor sonra normale dönüyor" diye
+ *      algılıyor (asymmetric mount timing).
+ * `ssr: true` ile SSR HTML'de hero'nun statik ilk frame'i render edilir
+ * (framer-motion `initial` state + Stage primitive `time=0` + useEffect
+ * client-only kalır). Hydrate sonrası animation natural başlar.
+ * Skeleton fallback Suspense ile intact — chunk download anında
+ * görünür (1st visit + cache miss).
+ *
+ * SSR-safe doğrulaması:
+ *  - 3 hero `'use client'` directive
+ *  - `window` / `document` referansları `useEffect` içinde (client-only)
+ *  - `useReducedMotion()` SSR'da null → animated branch render (intended)
+ *  - `<Stage>` + `<Sprite>` Stage 35 §38.115 tab pause + reduced-motion
+ *    handle ediyor
+ *  - Hydration mismatch riski yok (framer-motion `initial` state SSR +
+ *    client uyumlu)
  *
  * Page (Server Component) `<HeroVariantPicker locale={locale} />`
  * mount eder; bu wrapper client-side `process.env.NEXT_PUBLIC_*`
@@ -29,9 +48,9 @@ interface Props {
   locale: 'tr' | 'en';
 }
 
-const HeroCinematic = dynamic(() => import('./HeroCinematic'), { ssr: false });
-const HeroStarClimb = dynamic(() => import('./HeroStarClimb'), { ssr: false });
-const HeroParallax = dynamic(() => import('./HeroParallax'), { ssr: false });
+const HeroCinematic = dynamic(() => import('./HeroCinematic'), { ssr: true });
+const HeroStarClimb = dynamic(() => import('./HeroStarClimb'), { ssr: true });
+const HeroParallax = dynamic(() => import('./HeroParallax'), { ssr: true });
 
 const VARIANTS = {
   cinematic: HeroCinematic,
