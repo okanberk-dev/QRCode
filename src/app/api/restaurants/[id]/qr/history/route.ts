@@ -51,6 +51,11 @@ async function getFeedbackQrHistory(restaurantId: string) {
         platform: true,
         serviceType: true,
         type: true,
+        // Stage 96 — colour fields (nullable). Owner panel uses these to
+        // re-render the same QR with the original palette on lazy preview
+        // + explicit download.
+        darkColor: true,
+        lightColor: true,
         createdAt: true,
       },
     });
@@ -79,6 +84,8 @@ async function getFeedbackQrHistory(restaurantId: string) {
       ...row,
       serviceType: null,
       type: 'feedback',
+      darkColor: null,
+      lightColor: null,
     }));
   }
 }

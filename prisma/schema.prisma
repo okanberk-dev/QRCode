@@ -454,6 +454,12 @@ model QrGeneration {
   platform    String?  @map("platform") // google | yemeksepeti | getir | trendyol_go
   serviceType String?  @map("service_type") // dine_in | takeout | delivery
   type        String   @default("feedback") @map("type") // feedback | menu
+  // Stage 96 — custom QR colour persistence. Hex strings (`#0A0A0A` etc).
+  // NULL = use platform defaults (black/white). Owner picks the colour at
+  // generation time; downstream downloads honour the same pair so
+  // re-rendering a saved QR stays visually identical.
+  darkColor   String?  @map("dark_color")
+  lightColor  String?  @map("light_color")
   createdAt   DateTime @default(now()) @map("created_at")
 
   restaurantId String     @map("restaurant_id")
