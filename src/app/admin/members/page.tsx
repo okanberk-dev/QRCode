@@ -1042,12 +1042,13 @@ export default function MembersPage() {
         </Modal>
       )}
 
-      {/* Bulk mail success notice (5sn auto-dismiss) */}
+      {/* Bulk mail success notice (5sn auto-dismiss).
+          §38.171 Stage 91 — mobile bottom nav clearance CSS var ile. */}
       {mailNotice && (
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 rounded-full bg-[#0A0A0A] text-white px-4 py-2 text-[12px] font-semibold shadow-lg"
+          className="fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 -translate-x-1/2 z-50 rounded-full bg-[#0A0A0A] text-white px-4 py-2 text-[12px] font-semibold shadow-lg lg:bottom-20"
         >
           {mailNotice}
         </div>

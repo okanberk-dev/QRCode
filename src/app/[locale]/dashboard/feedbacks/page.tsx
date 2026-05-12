@@ -996,12 +996,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       />
 
       {/* §38.58 — Bulk notice (CLAUDE.md §23.3.1 floating toolbar paterni).
-          Success/error tone-based palette; 5s/8s auto-dismiss (§38.15 dwell). */}
+          Success/error tone-based palette; 5s/8s auto-dismiss (§38.15 dwell).
+          §38.171 Stage 91 — `bottom-4` (16px hardcode) yerine `--dash-bottom-nav-h`
+          CSS var ile owner mobile bottom nav clearance (lg:+ otomatik 0). */}
       {bulkNotice && (
         <div
           role="status"
           aria-live="polite"
-          className={`fixed bottom-4 left-1/2 z-50 max-w-[560px] -translate-x-1/2 rounded-2xl border px-4 py-3 shadow-lg inset-x-4 sm:inset-x-auto ${
+          className={`fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 z-50 max-w-[560px] -translate-x-1/2 rounded-2xl border px-4 py-3 shadow-lg inset-x-4 lg:bottom-4 sm:inset-x-auto ${
             bulkNotice.tone === 'success'
               ? 'border-[#A8D62E] bg-[#0A0A0A] text-white'
               : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'

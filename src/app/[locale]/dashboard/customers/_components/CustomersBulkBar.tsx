@@ -256,7 +256,8 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
           ariaLabel={isTr ? 'Toplu müşteri işlemleri' : 'Bulk customer actions'}
           clearLabel={isTr ? 'Seçimi temizle' : 'Clear selection'}
           onClear={clearSelection}
-          bottomOffset="owner"
+          // CLAUDE.md §38.171 Stage 91 — bottomOffset prop kaldırıldı
+          // (primitive tek pattern her panel surface'i için doğru clearance verir).
           actions={[
             ...(!showArchived
               ? [
@@ -301,12 +302,14 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
         />
       )}
 
-      {/* Notice (success/error) — auto-dismiss 3.5s */}
+      {/* Notice (success/error) — auto-dismiss 3.5s.
+          §38.171 Stage 91 — mobile bottom nav clearance CSS var ile
+          (eski hardcoded `bottom-20` 80px iPhone safe-area ~110px nav altında kalıyordu). */}
       {notice && (
         <div
           role="status"
           aria-live="polite"
-          className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-50 rounded-full px-4 py-2 text-[12px] font-medium shadow-md ${
+          className={`fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 -translate-x-1/2 z-50 rounded-full px-4 py-2 text-[12px] font-medium shadow-md lg:bottom-20 ${
             notice.tone === 'success'
               ? 'bg-[#0A0A0A] text-white'
               : 'bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]'

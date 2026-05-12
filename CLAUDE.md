@@ -25630,3 +25630,121 @@ gelmeyince siyah font ve buton çerçevesi belli olsun"):
   §38.170 yirmiikinci kez visual polish + link wiring + tone variation.
   CLAUDE.md §11 + §38.49 + §38.65 + §38.74 + §38.114 + §38.131 +
   §38.147 + §38.150 + §38.151 + §38.155 + §38.165 paterni reuse.
+
+---
+
+### 38.171 2026-05-12 — Stage 91 panel selection/notice toolbar mobile bottom nav clearance bundle (PanelSelectionBar `bottomOffset` API sadeleştirme + 4 hardcoded `bottom-4`/`bottom-20` callsite migrate)
+
+§38.170 Stage 90 anasayfa marketing 4-fix bundle (PR #595) merge sonrası
+kullanıcı yeni panel mobile UX raporu iletti: *"owner ve admin panelde
+örneğin müşteri listesinde veya yorum sayfasında mobil kısımda seçim
+yaparken seçince bottom nav altında kallıyor o tarz seçimleri her
+seçim olan bölüm için bir şey kurar mısın ve mobil uyumlu bir yapıda
+kolay olsun işlemler"* (typo "kallıyor" verbatim §39.2 disipline).
+
+**Root cause** (mobile bottom nav clearance drift):
+- Owner mobile bottom nav (`UserDashboardShell.tsx:1267` + §38.141)
+  `h-[72px] + padding-bottom: calc(12px + env(safe-area-inset-bottom))`
+  → iPhone safe-area ~34px = nav total ~118px viewport bottom'tan.
+- Admin mobile bottom nav (`AdminMobileNav.tsx:68` + `admin/layout.tsx:149`
+  mount) aynı paterni intact.
+- `--dash-bottom-nav-h` CSS variable (`globals.css:61`) mobile için
+  `calc(76px + env(safe-area-inset-bottom, 0px))`, `lg:+` (1024px+)
+  otomatik `0px` (line 78). **ZATEN GLOBAL** — hem owner hem admin
+  layout'a inherit ediyor.
+- **Bug**: 4 callsite hardcoded `bottom-4` (16px) veya `bottom-20`
+  (80px) — mobile nav 118px+ yüksekliğinde, hardcoded değerler nav
+  arkasına geçiyor.
+- **Mevcut PanelSelectionBar primitive bug**: `bottomOffset='panel'`
+  default → `bottom-[calc(12px+env(safe-area-inset-bottom,0px))]` ~46px
+  → admin nav 118px ile clearance yetersiz. 3 admin callsite
+  (Members + Restaurants + Reviews/BulkActionToolbar) etkilendi.
+
+**5 fix bundle**:
+
+1. **PanelSelectionBar `bottomOffset` prop kaldırma** —
+   `'owner'|'panel'` ternary silindi. Tek pattern:
+   `bottom-[calc(var(--dash-bottom-nav-h)+12px)] lg:bottom-4`. Hem owner
+   hem admin panel surface için doğru clearance (mobile nav-aware
+   CSS var + desktop `lg:` override).
+2. **CustomersBulkBar `bottomOffset="owner"` prop sil** — primitive
+   default zaten doğru clearance veriyor.
+3. **feedbacks page `bulkNotice`** `fixed bottom-4` → `fixed
+   bottom-[calc(var(--dash-bottom-nav-h)+12px)] lg:bottom-4`.
+4. **3 toast notice** (`admin/restaurants:895` + `admin/members:1050` +
+   `CustomersBulkBar:310`) `fixed bottom-20` → `fixed
+   bottom-[calc(var(--dash-bottom-nav-h)+12px)] lg:bottom-20`.
+5. **Sticky save bar SKIP** (admin/site-settings:366 + owner
+   UnsavedChangesBar.tsx:74 `fixed inset-x-0 bottom-0`) — full-width
+   bottom-anchored intent, farklı UX scope.
+
+**Pattern (kanonik — gelecek panel surface'lerinde reuse)**:
+
+```tsx
+<div className="fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-50 lg:bottom-N ...">
+```
+
+Mobile (<lg): `--dash-bottom-nav-h` 76+safe-area + 12 gap = ~88-122px;
+Desktop (lg:+): CSS var 0px override, `lg:bottom-N` aktif. iPhone
+notch/home-indicator otomatik (`env()` CSS var içinde).
+
+**Etkilenen dosyalar (5 + docs)**:
+- `src/components/ui/PanelSelectionBar.tsx` (~-10 net satır API sadeleştirme)
+- `src/app/[locale]/dashboard/customers/_components/CustomersBulkBar.tsx`
+  (`bottomOffset` prop sil + notice toast migrate)
+- `src/app/[locale]/dashboard/feedbacks/page.tsx` (`bulkNotice` migrate)
+- `src/app/admin/restaurants/page.tsx` (`bulkNotice` migrate)
+- `src/app/admin/members/page.tsx` (`mailNotice` migrate)
+- `CLAUDE.md` §38.171 closure log
+
+**Schema migration**: yok. **Yeni dep**: yok. **Yeni endpoint**: yok.
+**Yeni utility class**: yok (mevcut `--dash-bottom-nav-h` CSS var
+reuse). **Test count**: 423/423 pass (45 suites, 200 subtests).
+
+**Compliance disipline intact** (23. iterasyon — Stage 49 §38.130 →
+Stage 90 §38.170 zinciri compliance disipline 22 kez stable):
+- §35.8 + §35.10 + §19.1.1 + §38.114 paterni stable
+- Pulse §11 typography intact, backend kontrat dokunulmadı
+- §38.169 bottom-anchored padding paterni paralel (env() reflow için
+  MobileBottomNav + ContactFloat FAB; notice toast/bulk toolbar
+  fixed `bottom: calc(N + var(...))` zaten reflow-safe)
+
+**Yapma**:
+- Hardcoded `bottom-4` veya `bottom-20` mobile için kullanmak — iPhone
+  safe-area ile mobile nav 118px+, hardcoded değerler nav arkasında.
+  Her zaman `--dash-bottom-nav-h` CSS var.
+- `lg:bottom-X` override silmek — desktop'ta CSS var 0px, visual
+  hierarchy intact tutulur.
+- Sticky save bar full-width pattern'ı bu paterne migrate etmek —
+  farklı UX intent (UnsavedChangesBar §38.158 paterni).
+- `env(safe-area-inset-bottom)` doğrudan kullanmak — CSS var zaten
+  env() içeriyor, manuel duplication drift kaynağı.
+
+**Yap**:
+- Yeni floating notice toast / bulk action toolbar eklerken Stage 91
+  paterni reuse: `fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)]
+  z-50 lg:bottom-X`.
+- `PanelSelectionBar` primitive nav-aware default — sadece content
+  prop'ları (count + actions + onClear) geçirilir.
+
+**Verification**:
+- `npm install` ✓ 896 packages
+- `npx eslint` 5 modified files: 0 errors / 0 warnings
+- `npx tsc --noEmit -p tsconfig.json`: 0 errors in `src/`
+- `npm test`: 423/423 pass (45 suites, 200 subtests)
+- `npx next build` (stub env, 4GB heap): ✓ Compiled successfully
+
+**Stage 91 closure** (Tarih 2026-05-12):
+- Branch: `chore/panel-selection-bottom-nav-clearance-stage91`
+- Test count: 423/423 pass intact
+- Operatör aksiyonu (PR sonrası): yok — Vercel auto-deploy. Mobile
+  panel surface'lerinde tüm bulk action toolbar + notice toast nav
+  üstünde tam visible.
+
+**Chat prompt history (Stage 91 §39.2 paterni)**:
+- 2026-05-12 kullanıcı: panel mobile bottom nav altında kalan selection
+  bar talebi (verbatim §39.2 disipline yukarıda).
+- AskUserQuestion YAPILMADI — talep net, scope konservatif.
+- Audit metodu: 1 Explore agent + manuel verify + 1 false positive
+  eleme (agent "admin nav yok" iddiası `grep AdminMobileNav admin/layout.tsx`
+  ile çürütüldü).

@@ -888,11 +888,13 @@ export default function RestaurantsPage() {
 
       {confirmDialog}
 
+      {/* §38.171 Stage 91 — toast notice mobile bottom nav clearance.
+          `--dash-bottom-nav-h` mobile 76px+safe-area, lg:+ otomatik 0. */}
       {bulkNotice && (
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 rounded-full bg-[#0A0A0A] text-white px-4 py-2 text-[12px] font-semibold shadow-lg"
+          className="fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 -translate-x-1/2 z-50 rounded-full bg-[#0A0A0A] text-white px-4 py-2 text-[12px] font-semibold shadow-lg lg:bottom-20"
         >
           {bulkNotice}
         </div>
