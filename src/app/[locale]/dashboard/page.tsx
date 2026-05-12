@@ -1123,7 +1123,7 @@ async function renderDashboardPage({
       {/* §38.43 — Quick Actions mobile'da gizli (tasarım .design-owner-2026/
           page-mobile-v2.jsx MobileDashboard'da yok; mobile bottom nav zaten
           5-item primary nav sağlıyor). sm:grid ile sadece tablet+ desktop. */}
-      <div className="hidden sm:grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+      <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {quickActions.map((a) => (
           <Link
             key={a.id}

@@ -558,7 +558,7 @@ export default function DashboardQrPage() {
       {/* List view */}
       {!loading && cardItems.length > 0 && view === 'list' && (
         <div className="bz-card overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="no-scrollbar overflow-x-auto">
             <table className="bz-table w-full">
               <thead>
                 <tr>

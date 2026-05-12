@@ -24,8 +24,8 @@ export default function DashboardError({
   }, [error, reset]);
 
   return (
-    <div className="mx-auto max-w-[640px] px-4 py-10 sm:px-8 lg:py-14">
-      <div className="rounded-2xl border border-[#EDEDED] bg-white p-6 shadow-sm sm:p-8">
+    <div className="mx-auto max-w-[640px] px-4 sm:px-7 py-6 lg:py-8">
+      <div className="bz-card p-6 sm:p-8">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-full bg-[#FAFAFA] p-2 text-[#0A0A0A]">
             {transient ? <Loader2 size={20} className="animate-spin" /> : <AlertTriangle size={20} />}
