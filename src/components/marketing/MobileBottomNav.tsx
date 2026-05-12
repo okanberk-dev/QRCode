@@ -50,7 +50,15 @@ export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
   const pathname = usePathname();
   const base = `/${locale}`;
 
-  const { isLoggedIn, pending: authPending } = useMarketingAuth();
+  // Stage 91 §38.171 — admin/user differentiation:
+  // - source === 'admin' → "Admin Panel" + /admin/dashboard
+  // - source === 'user' → "Panel" + /[locale]/dashboard
+  // - source === null → anon CTA (Ücretsiz / Try Free + /auth/register)
+  //
+  // Güvenlik: `source` /api/auth/me'den gelir (CLAUDE.md §38.163),
+  // admin label UI only — route protection server-side intact.
+  const { isLoggedIn, source, pending: authPending } = useMarketingAuth();
+  const isAdmin = source === 'admin';
 
   // Normalize the current path so that trailing slashes don't break matching.
   const current = pathname.replace(/\/+$/, '') || '/';
@@ -72,12 +80,23 @@ export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
       label: locale === 'tr' ? 'Fiyatlar' : 'Pricing',
       Icon: Tag,
     },
-    // Center prominent CTA (either "Try Free" or "Dashboard")
+    // Center prominent CTA — Stage 91 §38.171 admin/user/anon:
+    // - admin → "Admin Panel" + /admin/dashboard
+    // - user → "Panel" + /[locale]/dashboard
+    // - anon → "Ücretsiz" / "Try Free" + /auth/register
     {
       center: true as const,
-      href: isLoggedIn ? `${base}/dashboard` : `${base}/auth/register`,
+      href: isLoggedIn
+        ? isAdmin
+          ? '/admin/dashboard'
+          : `${base}/dashboard`
+        : `${base}/auth/register`,
       label: isLoggedIn
-        ? locale === 'tr'
+        ? isAdmin
+          ? locale === 'tr'
+            ? 'Admin Panel'
+            : 'Admin Panel'
+          : locale === 'tr'
           ? 'Panel'
           : 'Panel'
         : locale === 'tr'

@@ -59,7 +59,17 @@ export default function MarketingNavbarClient({
   const isTr = locale === 'tr';
   const base = `/${locale}`;
 
-  const { isLoggedIn, pending: authPending } = useMarketingAuth();
+  // Stage 91 §38.171 — admin/user differentiation:
+  // - source === 'admin' → "Admin Panel" label + /admin/dashboard href
+  // - source === 'user' → "Panel" label + /[locale]/dashboard href
+  // - source === null → anon CTA (Ücretsiz başla / Start free)
+  //
+  // Güvenlik: `source` field /api/auth/me'den gelir (CLAUDE.md §38.163),
+  // admin claim UI label only — route protection server-side (admin
+  // layout `verifyJwt` + `isAdminRole` zorunlu, middleware redirect).
+  const { isLoggedIn, source, pending: authPending } = useMarketingAuth();
+  const isAdmin = source === 'admin';
+  const dashboardHref = isAdmin ? '/admin/dashboard' : `${base}/dashboard`;
 
   const pathname = usePathname();
   const router = useRouter();
@@ -588,10 +598,17 @@ export default function MarketingNavbarClient({
               </div>
             ) : isLoggedIn ? (
               <Link
-                href={`${base}/dashboard`}
+                href={dashboardHref}
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#0A0A0A] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#1A1A1A]"
               >
-                {isTr ? 'Panel' : 'Dashboard'} →
+                {isAdmin
+                  ? isTr
+                    ? 'Admin Panel'
+                    : 'Admin Panel'
+                  : isTr
+                  ? 'Panel'
+                  : 'Dashboard'}{' '}
+                →
               </Link>
             ) : (
               <>
@@ -757,11 +774,18 @@ export default function MarketingNavbarClient({
                   </div>
                 ) : isLoggedIn ? (
                   <Link
-                    href={`${base}/dashboard`}
+                    href={dashboardHref}
                     onClick={() => setMobileOpen(false)}
                     className="block rounded-full bg-[#0A0A0A] px-4 py-3 text-center text-[14px] font-semibold text-white"
                   >
-                    {isTr ? 'Panele git' : 'Open dashboard'} →
+                    {isAdmin
+                      ? isTr
+                        ? 'Admin Panele git'
+                        : 'Open admin panel'
+                      : isTr
+                      ? 'Panele git'
+                      : 'Open dashboard'}{' '}
+                    →
                   </Link>
                 ) : (
                   <>
