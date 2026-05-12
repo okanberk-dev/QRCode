@@ -16,6 +16,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import PlatformLogo, { type PlatformId } from '@/components/marketing/PlatformLogo';
 import { jsonLdString } from '@/lib/seo/json-ld';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getTranslations, type Locale } from '@/lib/translations';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -349,11 +350,36 @@ export default async function ReviewManagementPage({
     })),
   };
 
+  const howToSchema = buildHowToSchema({
+    locale,
+    name: isTr ? 'Tüm yorum platformlarını tek panelde yönetme' : 'Manage every review platform from one panel',
+    description: isTr
+      ? 'Google, Yemeksepeti, Getir, Trendyol GO ve Tripadvisor yorumlarını Buaze gelen kutusunda toplama akışı.'
+      : 'How to bring Google, Yemeksepeti, Getir, Trendyol GO and Tripadvisor reviews into the Buaze inbox.',
+    url: canonicalUrl,
+    steps: isTr
+      ? [
+          { name: 'Platform bağlantılarını ekle', text: 'Ayarlar > Platform Bağlantıları altında Google Place ID, Yemeksepeti, Getir, Trendyol GO ve isteğe bağlı diğer platform yorum URL’lerini gir.' },
+          { name: 'Yorumları gelen kutusunda topla', text: 'Müşteri QR’dan akan yorumlar otomatik olarak Buaze gelen kutusuna düşer; aktif platform için Google API senkronu da yorumları getirir.' },
+          { name: 'Atama ve SLA ile takip et', text: 'Her yoruma bir ekip üyesi ata, beklenen yanıt süresini SLA olarak işaretle. Düşük puanlı yorumlar otomatik flag\'lenir.' },
+          { name: 'Yanıtla ve arşivle', text: 'Pulse AI taslak öner; operatör onaylar, gönderir ve yorumu arşivler. Tüm aksiyonlar müşteri kaydında loglanır.' },
+        ]
+      : [
+          { name: 'Add platform links', text: 'In Settings > Platform Links, enter your Google Place ID, Yemeksepeti, Getir, Trendyol GO and any other review URLs.' },
+          { name: 'Collect reviews in the inbox', text: 'Reviews from your QR flow land in the Buaze inbox automatically; the Google API sync pulls in active-platform reviews on top.' },
+          { name: 'Assign and SLA-track', text: 'Assign each review to a teammate and mark an expected reply window. Low-rating reviews flag automatically.' },
+          { name: 'Reply and archive', text: 'Pulse AI drafts the reply; the operator approves, sends and archives. Every action is logged on the customer record.' },
+        ],
+  });
+
   return (
     <div className="min-h-screen bg-white text-[#0A0A0A] lg:pt-[64px]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(serviceSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(faqSchema) }} />
+      {howToSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(howToSchema) }} />
+      )}
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 
@@ -483,6 +509,53 @@ export default async function ReviewManagementPage({
               <span className="absolute -top-3 -right-3 inline-flex items-center gap-1.5 rounded-full bg-[#C6F24E] px-3 py-1 text-[11px] font-semibold text-[#0A0A0A]">
                 {isTr ? '9+ platform' : '9+ platforms'}
               </span>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Conversational definitional H2s (AEO sweep, CLAUDE.md §35) ─── */}
+        <section className="px-5 py-[60px] sm:px-10 sm:py-20">
+          <div className="mx-auto max-w-[820px] space-y-12">
+            <div>
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'NEDEN ÖNEMLİ' : 'WHY IT MATTERS'}
+              </span>
+              <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+                {isTr ? 'Yorum yönetimi neden önemli?' : 'Why is review management important?'}
+              </h2>
+              <div className="mt-5 space-y-4 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+                <p>
+                  {isTr
+                    ? 'Bir restoranın, otelin veya kliniğin müşteri kararı çoğu zaman Google, Yemeksepeti veya Tripadvisor’daki son yorumlarla şekillenir. Yorumlar görünür, yıldız ortalaması arama sıralamasını doğrudan etkiler ve düşük puanlı bir yorum saatlerce yanıtsız kalırsa diğer adayları kaybettirir.'
+                    : 'For a restaurant, hotel or clinic, the customer decision is shaped by recent reviews on Google, Yemeksepeti or Tripadvisor. Reviews are public, the rating average directly affects search ranking, and a low-rating review left unanswered for hours costs other prospective customers.'}
+                </p>
+                <p>
+                  {isTr
+                    ? 'Yorum yönetimi sadece "yanıt yaz" değildir. Yorumun hangi şubeden, hangi vardiyadan, hangi masadan veya odadan geldiğini bilmek; düşük puana doğru kişinin doğru sürede yanıt vermesini sağlamak; operasyonu düzeltmek; ve müşteriyle ilişkiyi yapıcı kapatmak — disiplinli bir akış olmadan zamanla iz bırakmaz.'
+                    : 'Review management is more than "writing a reply". Knowing which branch, shift, table or room the review came from; making sure the right person replies to the low rating within the right window; fixing the operational issue; and closing the loop with the customer — without a disciplined flow, none of this leaves a lasting trace.'}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'TEK PANEL' : 'ONE PANEL'}
+              </span>
+              <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+                {isTr ? 'Tüm platformlar nasıl tek panelde toplanır?' : 'How do all platforms come into one panel?'}
+              </h2>
+              <div className="mt-5 space-y-4 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+                <p>
+                  {isTr
+                    ? 'Buaze panelinde Ayarlar > Platform Bağlantıları altında Google Place ID, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Airbnb, Booking ve Yandex yorum URL’lerini girersiniz. QR’dan gelen müşteri yorumları otomatik olarak gelen kutusuna düşer; Google Business Profile entegrasyonu açık ise Google yorumları API üzerinden de senkronlanır.'
+                    : 'In the Buaze panel under Settings > Platform Links, you add your Google Place ID plus Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Airbnb, Booking and Yandex review URLs. Reviews collected via QR land in the inbox automatically; with the Google Business Profile integration enabled, Google reviews also sync via the API.'}
+                </p>
+                <p>
+                  {isTr
+                    ? 'Her yorumun yanında platform rozeti, müşteri adı, puan ve geliş zamanı görünür. Yorumu bir ekip üyesine atayın, SLA süresini işaretleyin, Pulse AI ile taslak yanıt üretin, gönderin ve arşivleyin. Tüm bu aksiyonlar müşteri kaydında loglanır; analytics raporunda hangi platform, hangi şube veya hangi vardiya en çok yorum çekiyor — operasyonel kararı veriden alırsınız.'
+                    : 'Each review carries a platform badge, customer name, rating and timestamp. Assign it to a teammate, mark the SLA window, draft a reply with Pulse AI, send and archive. All actions are logged on the customer record; the analytics report shows which platform, branch or shift draws the most reviews — operational decisions are made from data.'}
+                </p>
+              </div>
             </div>
           </div>
         </section>

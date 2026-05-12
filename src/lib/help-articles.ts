@@ -8,20 +8,27 @@ export interface StaticHelpArticle {
   title: string;
   excerpt: string;
   body: string;
+  /**
+   * Structured body source. Surfaced so the slug page can emit HowTo
+   * JSON-LD without parsing the sanitized HTML output (the sanitizer
+   * strips `<script>` blocks, so schema must live alongside the article
+   * payload — see CLAUDE.md §22 + §37.6).
+   */
+  bodyStruct?: BodyInput;
   searchTags: string[];
   isPublished: true;
   order: number;
   updatedAt: Date;
 }
 
-type BodySection = {
+export type BodySection = {
   title: string;
   paragraphs?: string[];
   items?: string[];
   quote?: string;
 };
 
-type BodyInput = {
+export type BodyInput = {
   lead: string;
   keyInsight?: string;
   sections: BodySection[];
@@ -76,6 +83,7 @@ function article(
     title,
     excerpt,
     body: renderBody(body),
+    bodyStruct: body,
     searchTags: tags.map((tag) => tag.toLowerCase()),
     isPublished: true,
     order,

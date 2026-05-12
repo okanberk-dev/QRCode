@@ -116,6 +116,17 @@ export default async function GymSolutionPage({ params }: { params: Promise<{ lo
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      howToSteps={isTr ? [
+        { name: 'Salonu tanımla', text: 'Salon adı, kategori, adres ve bildirim e-postasını Buaze panelinde gir; Google ve sosyal medya yorum bağlantılarını ekle.' },
+        { name: 'Locker / çıkış noktasına QR yerleştir', text: 'Soyunma odası, kapı çıkış standı veya antrenman sonrası bilgilendirme noktasına QR ekle; antrenör etiketi için URL parametresi kullan.' },
+        { name: 'Antrenörleri ekibe ekle', text: 'Personal trainer\'ları ve operasyon sorumlularını Buaze ekibine davet et; düşük puanlar doğru antrenörün inbox\'ına düşsün.' },
+        { name: 'Pulse AI ile motivasyonel yanıt yaz', text: 'Pulse AI yanıtları sıcak ve motivasyonel tonda taslak üretir — antrenör onaylar, gönderir; antrenör bazlı analitiklerden örüntüleri oku.' },
+      ] : [
+        { name: 'Identify the gym', text: 'Enter gym name, category, address and notification email in the Buaze panel; add Google and social-media review links.' },
+        { name: 'Place the QR at the locker / exit point', text: 'Place the QR in the locker room, on an exit-door stand or in a post-workout information point; use a URL parameter for the trainer tag.' },
+        { name: 'Invite trainers', text: 'Add personal trainers and operations leads to your Buaze team so low ratings reach the right trainer.' },
+        { name: 'Reply in a motivational tone via Pulse AI', text: 'Pulse AI drafts replies in a warm, motivational tone — trainer approves and sends; per-trainer analytics show patterns.' },
+      ]}
       illustration={<IllusGym />}
     />
   );

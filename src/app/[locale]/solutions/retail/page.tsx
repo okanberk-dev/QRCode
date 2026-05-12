@@ -8,6 +8,7 @@ import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion'
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getRelatedSolutions } from '@/lib/related-solutions';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -134,6 +135,29 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
       : 'Customers scan the QR under the receipt on the way out. Routed to Google and Yandex. Multi-store, one panel.',
     faqs,
   });
+
+  const howTo = buildHowToSchema({
+    locale,
+    name: isTr ? 'Perakende mağazada Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a retail store',
+    description: isTr
+      ? 'Fiş altında veya kasa yanında QR ile müşteri yorumu toplayıp çok mağazalı operasyonu tek panelden yönetme adımları.'
+      : 'Steps to collect customer reviews via QR on the receipt or near the till and run multi-store operations from one panel.',
+    url: `https://buaze.com/${locale}/solutions/retail`,
+    steps: isTr
+      ? [
+          { name: 'Mağazaları tanımla', text: 'Her mağazayı ayrı işletme veya tek işletme + mağaza etiketi olarak panelde tanımla; Google ve Yandex bağlantılarını ekle.' },
+          { name: 'Fiş altına veya kasa yanına QR yerleştir', text: 'Fiş alt boşluğuna QR baskı + kasa yanındaki stand — müşteri kasadan çıkarken son temas noktası kazanılır.' },
+          { name: 'Mağaza müdürlerini ekibe ekle', text: 'Her mağaza müdürünü Buaze ekibine ekle; düşük puanları kendi mağazasında görsün, merkez yönetimi toplu raporu izlesin.' },
+          { name: 'Pulse AI ile yanıtla ve karşılaştır', text: 'Pulse AI taslak üretir, mağaza müdürü onaylar; mağaza bazlı analitiklerden hangi şube ortalama 4.7, hangi 4.2 — operasyonel karar tek panelde alınır.' },
+        ]
+      : [
+          { name: 'Identify each store', text: 'Set up each store as a separate business or single business + store tag; add Google and Yandex review links.' },
+          { name: 'Place the QR on the receipt or near the till', text: 'Print the QR at the bottom of the receipt + a stand near the till — the last-touch moment as customers leave.' },
+          { name: 'Invite store managers', text: 'Add each store manager to your Buaze team; let them see their own store\'s low ratings while head office tracks the aggregate.' },
+          { name: 'Reply and benchmark via Pulse AI', text: 'Pulse AI drafts the reply, store manager approves; per-store analytics show which branch averages 4.7 vs 4.2 — operational decisions in one panel.' },
+        ],
+  });
+  if (howTo) jsonLd.push(howTo);
 
   return (
     <div className="min-h-screen bg-white lg:pt-[64px]">

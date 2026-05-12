@@ -8,6 +8,7 @@ import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion'
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getRelatedSolutions } from '@/lib/related-solutions';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -116,6 +117,29 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
       : 'The moment service ends, your customer scans the QR. Ratings grow organically on Instagram, Google and Foursquare.',
     faqs,
   });
+
+  const howTo = buildHowToSchema({
+    locale,
+    name: isTr ? 'Güzellik salonu ve spa için Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a beauty salon or spa',
+    description: isTr
+      ? 'Hizmet bitiminde QR ile yorum toplayıp Instagram, Google ve Foursquare\'de organik puan büyütmek için adımlar.'
+      : 'Steps to collect reviews via QR at service end and grow ratings organically on Instagram, Google and Foursquare.',
+    url: `https://buaze.com/${locale}/solutions/beauty-salon`,
+    steps: isTr
+      ? [
+          { name: 'Salonu tanımla', text: 'Salon adı, kategori, Instagram/Google bağlantıları ve bildirim e-postasını panelde gir; uzman/seans bazlı raporlama için etiket alanlarını planla.' },
+          { name: 'Hizmet sonu QR’ını yerleştir', text: 'Resepsiyon tezgahında veya hizmet sonrası ayna önüne QR sticker yerleştir; uzman etiketi için URL parametresi kullan.' },
+          { name: 'Uzman ve resepsiyonu davet et', text: 'Uzmanları (kuaför, terapist, estetisyen) ve resepsiyonu Buaze ekibine ekle; her uzman kendi yorumlarını görsün, salon sahibi toplu performansı izlesin.' },
+          { name: 'Pulse AI ile sıcak tonda yanıt yaz', text: 'Pulse AI yanıtları "warm" tonda taslak üretir — salon sahibi onaylar, gönderir; uzman bazlı analitiklerden hangi seansın çevresinde memnuniyet düştüğünü oku.' },
+        ]
+      : [
+          { name: 'Identify the salon', text: 'Enter salon name, category, Instagram/Google links and notification email; plan tag fields for specialist/session-level reporting.' },
+          { name: 'Place the post-service QR', text: 'Place the QR sticker at reception or on the mirror; use a URL parameter for the specialist tag.' },
+          { name: 'Invite specialists and reception', text: 'Add specialists (stylists, therapists, aestheticians) and reception to your Buaze team; each specialist sees their own reviews while the owner tracks aggregate performance.' },
+          { name: 'Reply warmly via Pulse AI', text: 'Pulse AI drafts replies in a warm tone — owner approves and sends; read per-specialist analytics to spot where satisfaction dipped.' },
+        ],
+  });
+  if (howTo) jsonLd.push(howTo);
 
   return (
     <div className="min-h-screen bg-white lg:pt-[64px]">

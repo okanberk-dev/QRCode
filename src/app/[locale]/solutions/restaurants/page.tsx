@@ -8,6 +8,7 @@ import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion'
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getRelatedSolutions } from '@/lib/related-solutions';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -185,6 +186,29 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
       : 'Put a QR on the table — Buaze customer cohort sees an average +184% organic Google review growth in the first 90 days. Every guest gets the Google review link; private feedback is an optional extra step.',
     faqs,
   });
+
+  const howTo = buildHowToSchema({
+    locale,
+    name: isTr ? 'Restoran ve kafede Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a restaurant or café',
+    description: isTr
+      ? 'Masa, fatura, kapı veya paket noktasına QR koyup yorumları Buaze panelinden yönetmek için adımlar.'
+      : 'Steps to place QR codes at table, receipt, door or package touchpoints and run reviews from the Buaze panel.',
+    url: `https://buaze.com/${locale}/solutions/restaurants`,
+    steps: isTr
+      ? [
+          { name: 'İşletmeni tanımla', text: 'Buaze panelinde restoran/kafe adını, kategorisini, adresini ve bildirim e-postasını gir; Google Place ID veya yorum bağlantısını ekle.' },
+          { name: 'QR’ı doğru noktaya yerleştir', text: 'Masa QR’ı (masa numarasıyla), fatura QR’ı, kapıdaki veda standı veya paket içine kart — operasyon akışına uygun olanı seç.' },
+          { name: 'Mutfak ve servis ekibini davet et', text: 'Şube yöneticisi ve servis sorumlularını Buaze ekibine ekle; düşük puanlar için yanıt sorumluluğunu birlikte paylaş.' },
+          { name: 'Pulse AI ile dakikalar içinde yanıtla', text: 'Yeni yorum geldiğinde Pulse AI taslağı üret, gerekirse düzenle, gönder ve raporu kapat — şube/masa bazlı analitiklerden hangi vardiya kazandı oku.' },
+        ]
+      : [
+          { name: 'Identify your business', text: 'In the Buaze panel, enter restaurant/café name, category, address and notification email; add your Google Place ID or review link.' },
+          { name: 'Place the QR at the right touchpoint', text: 'Choose what fits your service: table QR (with table number), receipt QR, a stand at the exit, or a stickered card inside delivery bags.' },
+          { name: 'Invite kitchen and service leads', text: 'Add branch managers and floor leads to your Buaze team so the response load on low ratings is shared, not stuck on the owner.' },
+          { name: 'Reply within minutes via Pulse AI', text: 'When a review arrives, generate a Pulse AI draft, edit if needed, send and close the loop — then read branch/table-level analytics to see which shift won.' },
+        ],
+  });
+  if (howTo) jsonLd.push(howTo);
 
   return (
     <div className="min-h-screen bg-white lg:pt-[64px]">

@@ -10,6 +10,7 @@ import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { notFound } from 'next/navigation';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getRelatedSolutions } from '@/lib/related-solutions';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
@@ -196,6 +197,29 @@ export default async function DeliveryPage({
       : 'One QR inside every package routes the customer to the platform where they will actually leave a review. Works with Google, Yemeksepeti, Getir Yemek and Trendyol GO.',
     faqs,
   });
+
+  const howTo = buildHowToSchema({
+    locale,
+    name: isTr ? 'Paket serviste Buaze yorum akışını kurma' : 'Set up the Buaze review flow for delivery operations',
+    description: isTr
+      ? 'Paket içi QR ile Yemeksepeti, Getir, Trendyol GO ve Google yorumlarını tek panelde yönetmek için adımlar.'
+      : 'Steps to manage Yemeksepeti, Getir, Trendyol GO and Google reviews from one panel using an in-package QR.',
+    url: `https://buaze.com/${locale}/solutions/delivery`,
+    steps: isTr
+      ? [
+          { name: 'Mutfak/işletmeyi tanımla', text: 'Mutfak adı, kategori, Yemeksepeti/Getir/Trendyol GO restoran bağlantıları ve Google Place ID’yi panelde gir.' },
+          { name: 'Paket içi QR sticker hazırla', text: 'Her pakete sticker’lı kart ekle; URL parametresi ile platform seçimi ve isteğe bağlı sipariş ID etiketi taşı.' },
+          { name: 'Operasyon ekibini davet et', text: 'Şef, paketleyici ve müdür gibi sorumluları Buaze ekibine ekle; düşük puanlı yorumlarda otomatik flag çalışır.' },
+          { name: 'Pulse AI ile yorumlar arasından önceliklendir', text: 'Pulse AI gelen yorumları puana göre sıralar, taslak üretir; operatör onaylar, gönderir; platform bazlı analitiklerden hangi kanalın dönüşümü yüksek oku.' },
+        ]
+      : [
+          { name: 'Identify the kitchen / business', text: 'Enter kitchen name, category, Yemeksepeti/Getir/Trendyol GO restaurant links and Google Place ID in the panel.' },
+          { name: 'Prepare the in-package QR sticker', text: 'Add a stickered card to every package; pass platform choice and an optional order-ID tag via URL parameters.' },
+          { name: 'Invite the operations team', text: 'Add the chef, packer and shift manager to your Buaze team; low-rating reviews flag automatically.' },
+          { name: 'Prioritise replies via Pulse AI', text: 'Pulse AI sorts incoming reviews by rating and drafts replies; operator approves and sends; read per-platform analytics to see which channel converts.' },
+        ],
+  });
+  if (howTo) jsonLd.push(howTo);
 
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] lg:pt-[64px]">

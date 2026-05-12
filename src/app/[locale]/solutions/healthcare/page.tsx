@@ -8,6 +8,7 @@ import FaqAccordion, { type FaqItem } from '@/components/marketing/FaqAccordion'
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { buildSolutionSchema } from '@/lib/solution-schema';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getRelatedSolutions } from '@/lib/related-solutions';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -117,6 +118,29 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
       : 'KVKK-compliant patient feedback. Collect experience after treatment via QR and strengthen your Google profile.',
     faqs,
   });
+
+  const howTo = buildHowToSchema({
+    locale,
+    name: isTr ? 'Klinik ve sağlıkta Buaze yorum akışını kurma' : 'Set up the Buaze review flow for a clinic',
+    description: isTr
+      ? 'KVKK uyumlu hasta geri bildirimi için QR akışını kurmak ve yorumları yanıtlamak için adımlar.'
+      : 'Steps to set up a KVKK-compliant patient feedback QR flow and reply to reviews.',
+    url: `https://buaze.com/${locale}/solutions/healthcare`,
+    steps: isTr
+      ? [
+          { name: 'Kliniği KVKK uyumlu tanımla', text: 'İşletme adı, kategori ve KVKK aydınlatma metnini panelde onayla; bildirim e-postası ve Google yorum bağlantısını ekle.' },
+          { name: 'QR’ı resepsiyon veya muayene sonrası yerleştir', text: 'Resepsiyon tezgahı, muayene odası çıkışı veya tedavi sonrası bilgilendirme broşürüne QR koy; hekim etiketi için URL parametresi kullan.' },
+          { name: 'Hekim ve resepsiyonu ekibe ekle', text: 'Hekim, resepsiyon ve klinik müdürünü Buaze ekibine davet et; rol bazlı görünürlük tıbbi olmayan veriyi merkezde tutar.' },
+          { name: 'Pulse AI ile hassas yanıt yaz', text: 'Pulse AI yanıtları tıbbi ayrıntıya girmez, sadece hizmet kalitesi tonunda yanıt verir — operatör onaylar ve gönderir; hekim/şube bazlı analitiklerden örüntüleri oku.' },
+        ]
+      : [
+          { name: 'Set up the clinic KVKK-compliant', text: 'Confirm clinic name, category and the KVKK notice in the panel; add the notification email and Google review link.' },
+          { name: 'Place the QR at reception or post-visit', text: 'Place the QR at the reception desk, exit of the exam room, or in a post-treatment information leaflet; use a URL parameter for the physician tag.' },
+          { name: 'Invite physicians and reception', text: 'Invite physicians, reception and the clinic manager to your Buaze team; role-based visibility keeps non-medical data centralized.' },
+          { name: 'Reply gently via Pulse AI', text: 'Pulse AI replies stay in a service-quality tone with no medical detail — operator approves and sends; read physician/branch analytics to spot patterns.' },
+        ],
+  });
+  if (howTo) jsonLd.push(howTo);
 
   return (
     <div className="min-h-screen bg-white lg:pt-[64px]">

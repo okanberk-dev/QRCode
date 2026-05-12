@@ -118,6 +118,17 @@ export default async function VeterinarySolutionPage({ params }: { params: Promi
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      howToSteps={isTr ? [
+        { name: 'Kliniği tanımla', text: 'Veteriner kliniği adı, kategori, adres ve bildirim e-postasını Buaze panelinde gir; Google yorum bağlantısını ekle.' },
+        { name: 'Muayene sonrası QR sun', text: 'Resepsiyon tezgahında veya tedavi sonrası bilgilendirme noktasında QR yerleştir; veteriner etiketi için URL parametresi kullan.' },
+        { name: 'Veteriner ve resepsiyonu ekibe ekle', text: 'Veterinerleri ve resepsiyonu Buaze ekibine davet et; düşük puanlar doğru veterinerin inbox\'ına düşsün.' },
+        { name: 'Pulse AI ile empatik yanıt yaz', text: 'Pulse AI yanıtları evcil hayvan sahibine empatik tonda taslak üretir — veteriner onaylar, gönderir; veteriner bazlı analitiklerden örüntüleri oku.' },
+      ] : [
+        { name: 'Identify the clinic', text: 'Enter veterinary clinic name, category, address and notification email in the Buaze panel; add the Google review link.' },
+        { name: 'Offer the QR post-visit', text: 'Place the QR at the reception desk or in a post-treatment information point; use a URL parameter for the veterinarian tag.' },
+        { name: 'Invite veterinarians and reception', text: 'Add veterinarians and reception to your Buaze team so low ratings reach the right veterinarian.' },
+        { name: 'Reply with empathy via Pulse AI', text: 'Pulse AI drafts replies in an empathetic tone for the pet owner — veterinarian approves and sends; per-vet analytics show patterns.' },
+      ]}
       illustration={<IllusVet />}
     />
   );

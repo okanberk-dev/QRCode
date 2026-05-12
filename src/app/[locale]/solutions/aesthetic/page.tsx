@@ -118,6 +118,17 @@ export default async function AestheticSolutionPage({ params }: { params: Promis
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      howToSteps={isTr ? [
+        { name: 'KVKK uyumlu klinik profili kur', text: 'Klinik adı, kategori ve KVKK aydınlatma metnini Buaze panelinde onayla; Google yorum bağlantısını ekle.' },
+        { name: 'İşlem sonrası QR gönder', text: 'Botoks/dolguda 2-4 hafta, cerrahi işlemlerde 4-8 hafta beklenen değerlendirme penceresine göre QR bağlantısını hastaya ulaştır.' },
+        { name: 'Hekim ve resepsiyonu ekibe ekle', text: 'Estetik uzmanlarını ve resepsiyonu Buaze ekibine davet et; rol bazlı görünürlük hasta mahremiyetini korur.' },
+        { name: 'Pulse AI ile saygılı yanıt yaz', text: 'Pulse AI yanıtları işlem ayrıntısı içermez, sadece deneyim tonunda taslak üretir — operatör onaylar ve gönderir.' },
+      ] : [
+        { name: 'Set up a KVKK-compliant clinic profile', text: 'Confirm clinic name, category and KVKK notice in the Buaze panel; add the Google review link.' },
+        { name: 'Send the QR after the procedure', text: 'Deliver the QR link to the patient on a 2-4 week window for botox/fillers, 4-8 weeks for surgical procedures.' },
+        { name: 'Invite physicians and reception', text: 'Add aesthetic specialists and reception to your Buaze team; role-based visibility preserves patient privacy.' },
+        { name: 'Reply respectfully via Pulse AI', text: 'Pulse AI drafts replies in an experience-tone with no procedure detail — operator approves and sends.' },
+      ]}
       illustration={<IllusAesthetic />}
     />
   );

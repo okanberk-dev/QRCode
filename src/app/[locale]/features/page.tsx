@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { jsonLdString } from '@/lib/seo/json-ld';
+import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import {
@@ -153,10 +154,27 @@ export default async function FeaturesPage({
     ],
   };
 
+  const howToSchema = buildHowToSchema({
+    locale,
+    name: isTr ? 'Buaze ile yorum yönetimine başlama' : 'Get started with Buaze review management',
+    description: isTr
+      ? 'Buaze’in dört özelliğini tek panelde çalıştırmak için adımlar.'
+      : 'Steps to run all four Buaze features from a single panel.',
+    url: canonicalUrl,
+    steps: features.map((feature) => ({
+      name: feature.t,
+      text: feature.d,
+      url: `https://buaze.com${feature.href}`,
+    })),
+  });
+
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] lg:pt-[64px]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(itemListSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(breadcrumbSchema) }} />
+      {howToSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(howToSchema) }} />
+      )}
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 

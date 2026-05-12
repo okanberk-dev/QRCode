@@ -118,6 +118,17 @@ export default async function RealEstateSolutionPage({ params }: { params: Promi
       steps={steps}
       benefits={benefits}
       faqs={faqs}
+      howToSteps={isTr ? [
+        { name: 'Emlak ofisini tanımla', text: 'Ofis adı, kategori, adres ve bildirim e-postasını Buaze panelinde gir; Google yorum bağlantısını ekle.' },
+        { name: 'Satış / kira sonrası QR gönder', text: 'Tapu devir günü veya kira sözleşmesi imzasında müşteriye QR bağlantısını ulaştır; danışman etiketi için URL parametresi kullan.' },
+        { name: 'Danışmanları ekibe ekle', text: 'Emlak danışmanlarını ve ofis müdürünü Buaze ekibine davet et; düşük puanlar doğru danışmanın inbox\'ına düşsün.' },
+        { name: 'Pulse AI ile profesyonel yanıt yaz', text: 'Pulse AI yanıtları resmi tonda taslak üretir — danışman onaylar, gönderir; danışman bazlı analitiklerden örüntüleri oku.' },
+      ] : [
+        { name: 'Identify the agency', text: 'Enter agency name, category, address and notification email in the Buaze panel; add the Google review link.' },
+        { name: 'Send the QR after sale / lease', text: 'Deliver the QR link to the customer on title-transfer day or at lease signing; use a URL parameter for the agent tag.' },
+        { name: 'Invite agents', text: 'Add real-estate agents and the office manager to your Buaze team so low ratings reach the right agent.' },
+        { name: 'Reply professionally via Pulse AI', text: 'Pulse AI drafts replies in a formal tone — agent approves and sends; per-agent analytics show patterns.' },
+      ]}
       illustration={<IllusRealEstate />}
     />
   );
