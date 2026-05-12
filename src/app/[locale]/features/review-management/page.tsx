@@ -630,6 +630,63 @@ export default async function ReviewManagementPage({
           </div>
         </section>
 
+        {/* ─── Advanced workflows — cross-link to owner-panel feature docs (PR 2) ─── */}
+        <section className="border-t border-[#EDEDED] px-5 py-[60px] sm:px-10 sm:py-20">
+          <div className="mx-auto max-w-[1100px]">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'GELİŞMİŞ KULLANIM' : 'ADVANCED USAGE'}
+            </span>
+            <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+              {isTr ? 'Operasyonel derinlik' : 'Operational depth'}
+            </h2>
+            <p className="mt-4 max-w-[720px] text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+              {isTr
+                ? 'Yorum yönetimi modülü, gün geçtikçe gelen kutusu doldukça anlam kazanan iki ek akışı barındırır. Her ikisi de yardım merkezinde adım-adım anlatılır:'
+                : 'As the inbox fills day after day, two additional flows in the review-management module become meaningful. Both are documented step-by-step in the help centre:'}
+            </p>
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Link
+                href={isTr ? `${base}/help/nasil-toplu-yanit-gonderilir` : `${base}/help/how-to-send-bulk-replies`}
+                className="group flex flex-col rounded-2xl border border-[#EDEDED] bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-[#C6F24E]"
+              >
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'İŞ AKIŞI' : 'WORKFLOW'}
+                </span>
+                <h3 className="mt-3 text-[18px] font-semibold leading-tight text-[#0A0A0A]">
+                  {isTr ? 'Toplu yanıt ile zamanı 10x kısalt' : 'Cut reply time 10x with bulk reply'}
+                </h3>
+                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">
+                  {isTr
+                    ? 'Aynı temayı taşıyan onlarca yorumu tek seferde, Pulse AI taslakları + operatör onayıyla 50\'lik batch\'ler halinde kapatma.'
+                    : 'Close dozens of same-theme reviews in one pass via Pulse AI drafts and operator approval — in 50-batch sessions.'}
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1 text-[12px] font-medium text-[#737373] transition-colors group-hover:text-[#0A0A0A]">
+                  {isTr ? 'Rehberi oku' : 'Read the guide'} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+              <Link
+                href={isTr ? `${base}/help/musteri-segmentleri-nasil-yonetilir` : `${base}/help/how-to-manage-customer-segments`}
+                className="group flex flex-col rounded-2xl border border-[#EDEDED] bg-white p-6 transition-all hover:-translate-y-0.5 hover:border-[#C6F24E]"
+              >
+                <span className="pulse-eyebrow text-[#737373]">
+                  {isTr ? 'CRM' : 'CRM'}
+                </span>
+                <h3 className="mt-3 text-[18px] font-semibold leading-tight text-[#0A0A0A]">
+                  {isTr ? 'Müşteri segmentleri ile öncelikli yanıt' : 'Prioritise replies via customer segments'}
+                </h3>
+                <p className="mt-2 text-[14px] leading-[1.6] text-[#525252]">
+                  {isTr
+                    ? 'VIP / Loyal / New / Risk / Churned segmentleri, aynı yorumu farklı önceliklerle ele almanıza imkan verir. LTV sıralaması + segment bazlı aksiyon.'
+                    : 'VIP / Loyal / New / Risk / Churned segments let you handle the same review with different priorities. LTV-sorted, per-segment action.'}
+                </p>
+                <span className="mt-4 inline-flex items-center gap-1 text-[12px] font-medium text-[#737373] transition-colors group-hover:text-[#0A0A0A]">
+                  {isTr ? 'Rehberi oku' : 'Read the guide'} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* ─── FAQ — visible accordion + FAQPage JSON-LD shares the same source ─── */}
         <section className="border-t border-[#EDEDED] px-5 py-[60px] sm:px-10 sm:py-20">
           <div className="mx-auto max-w-[860px]">

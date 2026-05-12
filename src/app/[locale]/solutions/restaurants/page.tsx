@@ -456,6 +456,15 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
               </span>
               <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
             </Link>
+            <Link
+              href={isTr ? `${base}/help/platform-baglantilarini-saglikli-tutma` : `${base}/help/how-to-keep-platform-links-healthy`}
+              className="group flex items-center gap-3 bg-white border border-[#EDEDED] rounded-2xl p-4 hover:border-[#C6F24E] transition-colors"
+            >
+              <span className="text-[13px] font-medium text-[#0A0A0A] leading-tight">
+                {isTr ? 'Platform Bağlantılarını Sağlıklı Tut' : 'Keep Platform Links Healthy'}
+              </span>
+              <ChevronRight size={14} className="ml-auto text-[#A3A3A3] group-hover:text-[#0A0A0A] transition-colors" />
+            </Link>
           </div>
           {relatedSolutions.length > 0 && (
             <>
