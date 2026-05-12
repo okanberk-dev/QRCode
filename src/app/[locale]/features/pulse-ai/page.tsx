@@ -29,6 +29,7 @@ export async function generateMetadata({
       ? 'Buaze Pulse AI, her yoruma puan ve tonuna göre özel Türkçe yanıt taslağı üretir. Onay kontrollü, hızlı yanıt akışı.'
       : 'Buaze Pulse AI drafts rating-aware replies for every review. Approval-led, fast response flow.';
   return {
+    metadataBase: new URL('https://buaze.com'),
     title,
     description,
     alternates: {
@@ -37,6 +38,12 @@ export async function generateMetadata({
         tr: 'https://buaze.com/tr/features/pulse-ai',
         en: 'https://buaze.com/en/features/pulse-ai',
       },
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://buaze.com/${locale}/features/pulse-ai`,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze Pulse AI' }],
     },
   };
 }

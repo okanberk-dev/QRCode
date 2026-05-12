@@ -2,7 +2,6 @@ import { MetadataRoute } from 'next';
 import { prisma } from '@/lib/prisma';
 import { HELP_CATEGORIES } from '@/lib/help-categories';
 import { STATIC_HELP_ARTICLES } from '@/lib/help-articles';
-import { CUSTOMER_STORIES } from '@/lib/customer-stories';
 import { discoverPublicRoutes } from '@/lib/seo/route-discovery';
 
 export const revalidate = 3600;
@@ -84,24 +83,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('Sitemap case-study fetch error:', error);
   }
 
-  // Customer stories — static array, both locales rendered from same row.
-  CUSTOMER_STORIES.forEach((story) => {
-    const trUrl = `${BASE_URL}/tr/customer-stories/${story.slug}`;
-    const enUrl = `${BASE_URL}/en/customer-stories/${story.slug}`;
-    sitemapEntries.push({
-      url: trUrl,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-      alternates: { languages: { tr: trUrl, en: enUrl } },
-    });
-    sitemapEntries.push({
-      url: enUrl,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    });
-  });
+  // Stage 94 §38.174 — Customer stories desindex. CLAUDE.md §35.10
+  // flagged 6 fictitious case studies (Ark Bistro / Hotel Nora /
+  // Derma+ / Kahve Dükkan / Law&Co / Spa Ren) as E-E-A-T risk.
+  // Sitemap entries removed + Article/ItemList JSON-LD deleted from
+  // pages. Pages remain functional for direct-link visitors; routes
+  // are not emitted to crawlers via sitemap. Replace with real
+  // customer stories (§19.4.4) when permissions are in hand.
 
   // Published menu pages (public restaurant menus).
   try {

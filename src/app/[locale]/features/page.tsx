@@ -45,7 +45,12 @@ export async function generateMetadata({
         'x-default': 'https://buaze.com/en/features',
       },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/features` },
+    openGraph: {
+      title,
+      description,
+      url: `https://buaze.com/${locale}/features`,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze' }],
+    },
   };
 }
 

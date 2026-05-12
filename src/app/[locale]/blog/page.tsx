@@ -7,7 +7,10 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export const dynamic = 'force-dynamic';
+// Stage 94 §38.174 — force-dynamic → ISR. Blog list uses Prisma
+// `findMany` (no cookies/headers); 1h cache acceptable for marketing
+// surface, matches sitemap revalidate cadence.
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
@@ -15,19 +18,28 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const isTr = locale === 'tr';
+  const title = isTr
+    ? 'Blog & Rehberler — Yorum yönetimi & müşteri büyüme | Buaze'
+    : 'Blog & Guides — Review management & customer growth | Buaze';
+  const description = isTr
+    ? 'Yorum yönetimi, müşteri psikolojisi, KVKK + Google policy uyumu, QR strateji ve büyüme taktikleri — restoranlar, oteller, klinikler için haftalık uzman rehberleri.'
+    : 'Review management, customer psychology, KVKK and Google policy compliance, QR strategy and growth tactics — weekly expert guides for restaurants, hotels, clinics.';
   return {
-    title: {
-      absolute: locale === 'tr' ? 'Blog & Rehberler | Buaze' : 'Blog & Guides | Buaze',
-    },
-    description: locale === 'tr'
-      ? 'Yorum yönetimi, müşteri psikolojisi, büyüme taktikleri — haftalık uzman rehberleri.'
-      : 'Review management, customer psychology, growth tactics — weekly expert guides.',
+    title: { absolute: title },
+    description,
     alternates: {
       canonical: `https://buaze.com/${locale}/blog`,
       languages: {
         tr: 'https://buaze.com/tr/blog',
         en: 'https://buaze.com/en/blog',
       },
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://buaze.com/${locale}/blog`,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze' }],
     },
   };
 }

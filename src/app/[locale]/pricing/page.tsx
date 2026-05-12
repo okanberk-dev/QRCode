@@ -34,6 +34,7 @@ export async function generateMetadata({
       title,
       description,
       url: `https://buaze.com/${locale}/pricing`,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze' }],
     },
     alternates: {
       canonical: `https://buaze.com/${locale}/pricing`,

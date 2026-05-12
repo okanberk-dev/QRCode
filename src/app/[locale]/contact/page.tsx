@@ -3,7 +3,10 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import { jsonLdString } from '@/lib/seo/json-ld';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 
-export const dynamic = 'force-dynamic';
+// Stage 94 §38.174 — force-dynamic → ISR. Page body has no `cookies()`
+// or `headers()` access; ContactForm is a client component that POSTs
+// to /api/contact, so server-render context is not needed.
+export const revalidate = 3600;
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import ContactForm from '@/components/marketing/ContactForm';
@@ -15,14 +18,25 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const isTr = locale === 'tr';
+  const title = isTr
+    ? 'Buaze ile iletişime geçin — Demo, destek ve satış kanalları'
+    : 'Contact Buaze — Demo, support and sales channels';
+  const description = isTr
+    ? 'Demo talepleri, destek soruları ve satış için Buaze ekibine ulaşın. Türkçe + İngilizce destek, çalışma saatleri 09:00-18:00 (TRT), yanıt süresi 24 saatten az.'
+    : 'Reach the Buaze team for demo requests, support questions and sales. Turkish + English support, 09:00-18:00 (TRT), response time under 24 hours.';
   return {
-    title: locale === 'tr' ? 'İletişim — Buaze' : 'Contact — Buaze',
-    description: locale === 'tr'
-      ? 'Buaze ekibiyle iletişime geçin. Sorularınızı, demo taleplerinizi veya destek isteklerinizi iletin.'
-      : 'Get in touch with the Buaze team. Send your questions, demo requests, or support inquiries.',
+    title,
+    description,
     alternates: {
       canonical: `https://buaze.com/${locale}/contact`,
       languages: { tr: 'https://buaze.com/tr/contact', en: 'https://buaze.com/en/contact' },
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://buaze.com/${locale}/contact`,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze' }],
     },
   };
 }

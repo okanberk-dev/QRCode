@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { jsonLdString } from '@/lib/seo/json-ld';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, ShieldCheck, TrendingUp } from 'lucide-react';
@@ -80,33 +79,15 @@ export default async function CustomerStoryPage({
   const title = storyText(story.title, locale);
   const description = storyText(story.description, locale);
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: title,
-    description,
-    image: story.image,
-    author: { '@type': 'Organization', name: 'Buaze' },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Buaze',
-      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
-    },
-    mainEntityOfPage: `https://buaze.com/${locale}/customer-stories/${slug}`,
-    inLanguage: isTr ? 'tr-TR' : 'en-US',
-    about: [
-      sector,
-      isTr ? 'Google yorum yönetimi' : 'Google review management',
-      isTr ? 'QR geri bildirim sistemi' : 'QR feedback system',
-    ],
-  };
+  // Stage 94 §38.174 — Article JSON-LD removed. CLAUDE.md §35.10 deemed
+  // these 6 stories fictitious (Ark Bistro / Hotel Nora / Derma+ /
+  // Kahve Dükkan / Law&Co / Spa Ren); Article schema attached fake
+  // testimonial signal to Google. Pages remain functional for direct
+  // visitors; sitemap.ts no longer emits canonical URLs. Replace with
+  // real customer stories (§19.4.4) before reinstating Article schema.
 
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[#0A0A0A] lg:pt-[64px]">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-      />
       <MarketingNavbar locale={locale} t={t} />
       <main id="main-content">
 

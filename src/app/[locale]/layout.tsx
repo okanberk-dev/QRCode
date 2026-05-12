@@ -217,11 +217,11 @@ export default async function LocaleLayout({
       name: 'Buaze',
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web, iOS, Android',
-      offers: {
-        '@type': 'Offer',
-        price: '500',
-        priceCurrency: 'TRY',
-      },
+      // Stage 94 §38.174 — `offers` removed (was hardcoded TRY 500;
+      // drifted from /admin/plans actual prices Starter 499 / Growth
+      // 899 / Pro 1499). Misleading-business-claim risk per Google.
+      // SoftwareApplication remains valid without `offers`; rich
+      // result skips price rendering until DB-driven plan injection.
     },
   ];
 

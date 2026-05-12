@@ -26,7 +26,12 @@ export async function generateMetadata({
       canonical: `https://buaze.com/${locale}/faq`,
       languages: { tr: 'https://buaze.com/tr/faq', en: 'https://buaze.com/en/faq', 'x-default': 'https://buaze.com/en/faq' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/faq` },
+    openGraph: {
+      title,
+      description,
+      url: `https://buaze.com/${locale}/faq`,
+      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze' }],
+    },
   };
 }
 
