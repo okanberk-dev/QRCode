@@ -221,7 +221,7 @@ export default function AccountSettingsPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1200px] px-5 sm:px-7 py-12">
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
         <div className="flex items-center justify-center gap-2 text-[#737373] text-[13px]">
           <Loader2 size={14} className="animate-spin" />
           {isTr ? "Yükleniyor…" : "Loading…"}

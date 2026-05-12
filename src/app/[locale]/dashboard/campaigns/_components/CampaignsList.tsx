@@ -29,7 +29,7 @@ export function CampaignsList({ campaigns, isTr, onRowClick }: Props) {
   return (
     <div className="bz-card overflow-hidden p-0">
       {/* Desktop tablo */}
-      <div className="hidden lg:block overflow-x-auto">
+      <div className="hidden lg:block no-scrollbar overflow-x-auto">
         <table className="bz-table w-full text-[12.5px]">
           <thead>
             <tr>

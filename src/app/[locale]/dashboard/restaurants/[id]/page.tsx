@@ -119,14 +119,14 @@ export default function DashboardRestaurantDetailPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1100px] px-5 sm:px-7 py-6 lg:py-8">
+      <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8">
         {backLink}
         <div className="space-y-2">
           <div className="bz-skeleton h-3 w-28" />
           <div className="bz-skeleton h-8 w-72" />
           <div className="bz-skeleton h-3 w-48" />
         </div>
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <StatCardSkeleton />
           <StatCardSkeleton />
           <StatCardSkeleton />
@@ -242,7 +242,7 @@ export default function DashboardRestaurantDetailPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1100px] px-5 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8">
       {backLink}
 
       <PageHeader
