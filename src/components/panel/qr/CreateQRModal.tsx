@@ -82,6 +82,24 @@ const PLATFORM_META: Record<
 
 const FALLBACK_KEYS = ["google", "yemeksepeti", "getir", "trendyol_go"] as const;
 
+// Backend `/api/restaurants/[id]/qr` zaten `?dark=...&light=...` parametrelerini
+// destekliyor (`isValidHexColor` ile validate edilir). UI tarafında 6 sade
+// preset sunuyoruz; "graphite" Pulse §11 default'u, geri kalan 5 marka rengi
+// scanner kontrastına saygılı tonlar. Default'tan farklı bir preset seçilirse
+// submit query'sine eklenir; aksi halde backend default'una (`#000000/#fff`)
+// teslim edilir — fakat biz "graphite" intent'ini de Pulse hex'i (#0A0A0A) ile
+// göndererek tutarlılık sağlıyoruz.
+const QR_COLOR_PRESETS = [
+  { key: "graphite", labelTr: "Grafit", labelEn: "Graphite", dark: "#0A0A0A", light: "#FFFFFF" },
+  { key: "lime", labelTr: "Lime", labelEn: "Lime", dark: "#0A0A0A", light: "#EAF9B8" },
+  { key: "navy", labelTr: "Lacivert", labelEn: "Navy", dark: "#1E3A8A", light: "#FFFFFF" },
+  { key: "burgundy", labelTr: "Bordo", labelEn: "Burgundy", dark: "#7F1D1D", light: "#FFFFFF" },
+  { key: "forest", labelTr: "Orman", labelEn: "Forest", dark: "#14532D", light: "#FFFFFF" },
+  { key: "plum", labelTr: "Mor", labelEn: "Plum", dark: "#581C87", light: "#FFFFFF" },
+] as const;
+
+type QrColorKey = (typeof QR_COLOR_PRESETS)[number]["key"];
+
 export function CreateQRModal({
   restaurants,
   defaultRestaurantId,
@@ -99,6 +117,7 @@ export function CreateQRModal({
   const [tableNumber, setTableNumber] = useState("");
   const [linkType, setLinkType] = useState<"default" | "platform">("default");
   const [platform, setPlatform] = useState("google");
+  const [colorKey, setColorKey] = useState<QrColorKey>("graphite");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -175,6 +194,9 @@ export function CreateQRModal({
       const params = new URLSearchParams({ format: "svg" });
       if (tableNumber.trim()) params.set("table", tableNumber.trim());
       if (linkType === "platform") params.set("platform", platform);
+      const colorPreset = QR_COLOR_PRESETS.find((p) => p.key === colorKey) ?? QR_COLOR_PRESETS[0];
+      params.set("dark", colorPreset.dark);
+      params.set("light", colorPreset.light);
 
       const res = await fetch(`/api/restaurants/${restaurantId}/qr?${params.toString()}`);
       if (!res.ok) {
@@ -368,6 +390,51 @@ export function CreateQRModal({
             placeholder={isTr ? "Boş bırakılabilir" : "Optional"}
             maxLength={20}
           />
+        </Field>
+
+        <Field
+          label={isTr ? "QR rengi" : "QR color"}
+          hint={
+            isTr
+              ? "Tarama uyumu için yüksek kontrast tercih edin."
+              : "High contrast recommended for scanner reliability."
+          }
+        >
+          <div
+            role="radiogroup"
+            aria-label={isTr ? "QR renk seçenekleri" : "QR color options"}
+            className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
+          >
+            {QR_COLOR_PRESETS.map((p) => {
+              const active = colorKey === p.key;
+              const label = isTr ? p.labelTr : p.labelEn;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  aria-label={label}
+                  onClick={() => setColorKey(p.key)}
+                  className="flex min-h-[44px] flex-col items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[10.5px] font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
+                  style={{
+                    border: `1px solid ${active ? "#0A0A0A" : "#EDEDED"}`,
+                    background: active ? "#FAFAFA" : "#fff",
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    className="block h-6 w-6 rounded-md"
+                    style={{
+                      background: p.light,
+                      boxShadow: `inset 0 0 0 1px #EDEDED, inset 0 0 0 4px ${p.dark}`,
+                    }}
+                  />
+                  <span className="text-[#0A0A0A]">{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </Field>
 
         {error && (
