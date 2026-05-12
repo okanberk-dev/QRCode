@@ -240,18 +240,26 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
 
       {/* 3-stat grid */}
       <section className="px-5 sm:px-10 pb-[60px] sm:pb-24">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map((s) => (
-            <div key={s.label} className="bz-card p-6">
-              <div
-                className="text-[40px] sm:text-[48px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                {s.value}
+        <div className="mx-auto max-w-[1200px]">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {stats.map((s) => (
+              <div key={s.label} className="bz-card p-6">
+                <div
+                  className="text-[40px] sm:text-[48px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {s.value}
+                </div>
+                <div className="pulse-eyebrow mt-2 text-[#737373]">{s.label}</div>
               </div>
-              <div className="pulse-eyebrow mt-2 text-[#737373]">{s.label}</div>
-            </div>
-          ))}
+            ))}
+          </div>
+          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
+          <p className="mt-8 text-center text-[11px] text-[#737373] max-w-[720px] mx-auto leading-[1.55]">
+            {isTr
+              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
+              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
+          </p>
         </div>
       </section>
 
