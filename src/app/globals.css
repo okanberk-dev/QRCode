@@ -1083,27 +1083,64 @@ input::-webkit-inner-spin-button {
 .bz-input:hover:not(:disabled) { border-color: #D4D4D4; }
 .bz-input:focus { border-color: #0A0A0A; box-shadow: 0 0 0 3px rgba(198,242,78,0.35); }
 .bz-input:disabled { background: #FAFAFA; color: #737373; cursor: not-allowed; }
+/* ── Pulse-themed native <select> (Stage 97) ──
+   Native picker preserved (best mobile UX — iOS/Android open native sheet).
+   Visual layer is fully Pulse: SVG chevron, lime focus ring, smooth
+   colour transitions. The chevron colour state machine:
+     resting → #737373 (n500)
+     hover   → #525252 (n600, darker hint)
+     focus   → #0A0A0A (graphite — engaged)
+     disabled → #D4D4D4 (n300)
+   Each state crossfades via background-image swap + transition. The data
+   URI keeps the SVG single-file (no extra HTTP / asset cache concerns).
+   Mobile: 44px min-height (WCAG 2.5.5 touch target), 16px font (iOS
+   auto-zoom prevention) inherited from .bz-input base. */
 select.bz-input {
   padding-right: 38px;
   appearance: none;
-  background-image:
-    linear-gradient(45deg, transparent 50%, #737373 50%),
-    linear-gradient(135deg, #737373 50%, transparent 50%);
-  background-position:
-    calc(100% - 19px) calc(50% - 2px),
-    calc(100% - 13px) calc(50% - 2px);
-  background-size: 6px 6px, 6px 6px;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23737373' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='1.5 1.5 6 6.5 10.5 1.5'/%3E%3C/svg%3E");
+  background-position: right 14px center;
+  background-size: 12px 8px;
   background-repeat: no-repeat;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease,
+    background-image 150ms ease;
+}
+@media (max-width: 639px) {
+  select.bz-input { min-height: 44px; }
 }
 select.bz-input:hover:not(:disabled) {
   background-color: #FAFAFA;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23525252' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='1.5 1.5 6 6.5 10.5 1.5'/%3E%3C/svg%3E");
 }
 select.bz-input:focus {
-  background-image:
-    linear-gradient(45deg, transparent 50%, #0A0A0A 50%),
-    linear-gradient(135deg, #0A0A0A 50%, transparent 50%);
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%230A0A0A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='1.5 1.5 6 6.5 10.5 1.5'/%3E%3C/svg%3E");
+}
+select.bz-input:disabled {
+  cursor: not-allowed;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23D4D4D4' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='1.5 1.5 6 6.5 10.5 1.5'/%3E%3C/svg%3E");
 }
 select.bz-input::-ms-expand { display: none; }
+/* Native <option> rendering is platform-controlled (browser draws via OS
+   widget on Windows/macOS; on Linux + ChromeOS the browser may honour
+   limited CSS). Set safe fallbacks; iOS/Android picker ignores. */
+select.bz-input option {
+  background: #FFFFFF;
+  color: #0A0A0A;
+  padding: 8px 12px;
+  font-family: var(--font-body);
+}
+select.bz-input option:disabled {
+  color: #A3A3A3;
+}
+select.bz-input option:checked {
+  background: linear-gradient(0deg, #EAF9B8 0%, #EAF9B8 100%);
+  color: #0A0A0A;
+}
 
 /* Search wrapper — magnifier icon absolute pozisyonlu sol içeride.
    tokens.css line 170-179 birebir port. Kullanım:
