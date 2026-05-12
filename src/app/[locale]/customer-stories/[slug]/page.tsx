@@ -77,7 +77,6 @@ export default async function CustomerStoryPage({
   const isTr = locale === 'tr';
   const sector = storyText(story.sector, locale);
   const title = storyText(story.title, locale);
-  const description = storyText(story.description, locale);
 
   // Stage 94 §38.174 — Article JSON-LD removed. CLAUDE.md §35.10 deemed
   // these 6 stories fictitious (Ark Bistro / Hotel Nora / Derma+ /
