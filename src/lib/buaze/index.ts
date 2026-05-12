@@ -3,7 +3,7 @@
  *
  * Production usage:
  * ```ts
- * import { useCountUp, useInView } from '@/lib/buaze';
+ * import { useCountUp } from '@/lib/buaze';
  * ```
  *
  * NOT: HANDOFF shared.jsx'teki `BZ` palette + `Mono` + `Pill` + `Star`
@@ -16,9 +16,9 @@
  *  - `Star`/`Stars` → `<StarRow>` primitive
  *  - `BuazeMark` → `<BuazeLogo>` component
  *
- * `QRCode` (animasyonlu QR placeholder) Stage 39 (Site FX) scope'unda
- * eklenir (gerçek kullanımı orada).
+ * `useInView` HANDOFF shared.jsx çevirisiydi ama production'da hiçbir
+ * callsite tüketmedi (marketing surface'leri `react-intersection-observer`
+ * `useInView`'ini doğrudan import ediyor). 2026-05-12 cleanup'ta kaldırıldı.
  */
 
 export { useCountUp } from './use-count-up';
-export { useInView, type UseInViewOptions } from './use-in-view';

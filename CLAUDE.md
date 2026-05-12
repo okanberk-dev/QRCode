@@ -747,7 +747,7 @@ if (!quota.allowed) {
 
 **Kural aynı:** Hiçbir dosya `src/`'ye kopyalanmaz. `tokens.css` token referansı, JSX'ler görsel referans. Native app **yok** — mobil tamamen responsive web (§25).
 
-`design.md` repo kökünde — 15 PR'lık faz log'unu tutar.
+Pulse redesign faz log'u (8 phase, PR #39-#48) §38'de konsolide edildi; ayrı `design.md` 2026-05-12'de kaldırıldı, tarihsel ayrıntı `git log` üzerinden erişilebilir.
 
 ### `.design-owner-2026/` üçüncü handoff bundle (2026-05-04)
 
@@ -785,7 +785,7 @@ Claude Design `/v1/design/h/237b0j9_8BAp9h3YZqg08Q` bundle'ı git-tracked olarak
 
 ## 17. Pulse Redesign — Kalıcı Çıktılar
 
-Pulse design 15 draft PR'da uygulandı (PR #39 → #53). Tarihsel commit detayları için `git log` + `design.md`. Aşağıda **kalıcı kararlar** — tasarım kararları için §11, menü için §12, Pulse AI için §15.
+Pulse design 15 draft PR'da uygulandı (PR #39 → #53). Tarihsel commit detayları için `git log`. Aşağıda **kalıcı kararlar** — tasarım kararları için §11, menü için §12, Pulse AI için §15.
 
 22 dosya `.design/` altında (JSX prototipleri + canvas HTML + chat log). **Asla `src/`'ye kopyalanmaz** — yalnız referans. Pulse token'lar zaten `globals.css`, font'lar `layout.tsx`'te yüklü.
 
@@ -810,7 +810,7 @@ Tüm motion `prefers-reduced-motion: reduce` altında devre dışı (globals.css
 
 ### Faz log'u
 
-`design.md` — 15 PR zincirinin teknik günlüğü ("Backend açıkları" tablosu dahil). Tarihsel ayrıntı oradan; bu dosyada özetlemiyoruz.
+Pulse redesign 15 draft PR zincirinin tarihsel detayı `git log` üzerinden erişilebilir (eski `design.md` 2026-05-12 cleanup'ta kaldırıldı). Kalıcı kararlar §11 + §12 + §15'te.
 
 
 ---
@@ -3502,743 +3502,86 @@ Repo kökündeki `scripts/` (+ `prisma/` altındaki seed) — bir kerelik veya p
 
 > **Amaç:** Gelecek AI session'ları silinen şeyleri **yanlışlıkla yeniden inşa etmesin**. Bir feature/dosya silindiyse sebep belgelenir; aynı kullanıcı tekrar isteyene kadar geri eklenmez.
 
-### 34.1 2026-04-30 — Ölü kod denetimi (PR #256)
+### 34.1 Audit metodu (kanonik)
 
-3 paralel agent denetimi + manuel doğrulama. Kriter: `grep -rn` ile statik + dynamic import + string-action araması; 0 referans = orphan.
+Yeni ölü kod denetimi yaparken sıra:
 
-**Silinen npm paketi:**
-| Paket | Sebep |
-|---|---|
-| `jsonwebtoken` + `@types/jsonwebtoken` | 0 import; auth tamamen `jose` (`src/lib/auth.ts`) ile çalışıyor (8 yerde aktif). Geri eklemek için **gerçek bir Node-only JWT ihtiyacı** gerekir (jose edge-compatible, çoğu use-case karşılar). |
+1. **3 kategoriye böl** — npm deps, src/ dosyaları, API route'ları + Prisma alanları. Her kategori ayrı agent/pass.
+2. **Convention dosyalarını skip** — Next.js auto-load: `page.tsx`, `route.ts`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `default.tsx`, `opengraph-image.tsx`, `robots.ts`, `sitemap.ts`, `global-error.tsx`, `middleware.ts`, `instrumentation.ts`, `instrumentation-client.ts`, `sentry.{server,edge}.config.ts`.
+3. **3-yöntem doğrulama** — statik import + dynamic import + string-action (form action/fetch URL). Üçü de 0 olmalı.
+4. **Barrel pattern uyarısı** — `src/lib/X/index.ts` re-export edip caller `import { Helper } from '@/lib/X'` yaparsa, dosya ismi grep'iyle 0 görünür ama aktif. Barrel'i de tara.
+5. **CLAUDE.md çapraz kontrol** — §17, §18, §34.2 "hazırda korunan" listesi.
+6. **Build doğrulama** — `npx tsc --noEmit` + `npx next build` post-delete (`Compiled successfully` + N static page üretildi).
+7. **Stale comment temizliği** — silinen dosyaya yorum referansı parent'larda güncelle.
 
-**Silinen orphan component'ler (14):**
-- `src/components/{ReviewList,BusinessSummary,GoogleTabs}.tsx` — root-level legacy
-- `src/components/dashboard/PlatformEnableToggle.tsx`
-- `src/components/dashboard/settings/{ActiveSessionsTable,TwoFactorSetupModal}.tsx` — 2FA + aktif oturum kartları kullanıcı talebiyle kaldırıldı; backend `/api/account/2fa/*` ve `/api/account/sessions` endpoint'leri **korundu** (gelecek email magic-code 2FA için)
-- `src/components/marketing/{CustomerTestimonials,FeatureTabsUI,ProductShowcase,CtaBanner,CaseStudies,LegalPageLayout,VideoModal,AnimatedCounter}.tsx` — eski marketing eskizleri; aktif marketing component'leri (`MobileBottomNav`, `WatchDemoButton`, `LegalDocumentPage`) korundu
+### 34.2 Hazırda korunanlar (silinmemeli)
 
-**Silinen orphan API route'ları:**
-| Route | Sebep |
-|---|---|
-| `/api/careers/apply` | `careers/page.tsx` view-only (form yok); 203 satırlık page'de `<form>` / `fetch` / `action` / `apply` yok. Route iyi yazılmıştı (rate-limit + Supabase Storage + Resend mail + reCAPTCHA + attachment validation) ama 0 caller. **Geri eklerken:** önce careers page'ine başvuru formu eklenmeli (yoksa orphan tekrarı). |
-| `/api/case-studies` | `/[locale]/case-study/page.tsx` ve `/[slug]/page.tsx` doğrudan `prisma.caseStudy.findMany/findUnique` çağırıyor (server component SSR); API gateway'e gerek yok. **Geri eklerken:** yalnız client-side fetch ihtiyacı (örn. infinite scroll, real-time filter) ortaya çıkarsa. |
+Schema'da/kodda var ama 0 aktif callsite — kasten korundu:
 
-**Silinen orphan utility:**
-- `src/lib/zIndex.ts` (`Z.MODAL`, `Z.TOAST` sabitleri) — 0 import. Yeni Modal/Tooltip katmanları kullanılırken Tailwind `z-50/z-[60]` arbitrary değerleri yeterli. Tek-kaynak gerekirse §11 token paterni gibi `globals.css`'te tanımla.
-
-**Silinen orphan public asset'leri:**
-- `public/assets/3d-hero.png` (508 KB, 0 referans)
-- `public/uploads/admin ve isletme panel tasarımları/` (~2.1 MB, 21 tasarım dosyası) — Vercel'e geçişten kalan tortu (§3 base64-in-DB kararı). Kanonik tasarım kaynakları **`.design/` ve `.design-pulse-2026/`'da**; `public/uploads/*` runtime'da serve edilmiyor.
-
-**Hazırda korunanlar (silinmedi, "kasten orphan-benzeri"):**
 | Şey | Sebep |
 |---|---|
-| `CareerApplication` Prisma modeli | `/api/careers/apply` route silindi ama model schema'da kaldı; gelecekte careers form aktive edilirse migration gerekmez. AutomationRule / GoogleIntegration pattern'i (§18). |
+| `CareerApplication` Prisma modeli | careers/page.tsx form aktive olursa migration gerekmez |
 | `AutomationRule` model + `/api/automations/*` route'ları | UI yok, planlı feature |
 | `GoogleIntegration` model | OAuth flow setup var, tam bağlantı gelecek |
 | `NotificationPreference` model | Schema'da, kod minimal |
-| Billing fields (`billingAddress`, `taxNumber`, `discountActive`, `discountType`) | Iyzico Wave 3.5 hazırlığı |
-| `src/lib/api/validate.ts` (`validateBody` Zod helper) | §28 kanonik helper olarak öneriliyor; henüz hiçbir route benimsemedi ama yeni high-risk route'lar için **kasten korundu**. |
-
-### 34.2 False-positive korumaları (yanlışlıkla silinmemeliler)
-
-Agent'lar bu dosyaları orphan iddia etti **ama gerçekte aktif** — silinmedi:
-
-| Dosya | Gerçek kullanım |
-|---|---|
-| `src/components/marketing/MobileBottomNav.tsx` | `MarketingFooter.tsx:362`'de mount (CLAUDE.md §25.4). Conditional FAB (login state'e göre). |
-| `src/components/marketing/WatchDemoButton.tsx` | `MarketingNavbarClient.tsx:402` |
-| `src/components/dashboard/settings/UnsavedChangesBar.tsx` | 4 import |
-| `src/components/dashboard/settings/SettingsCard.tsx` | 8 import |
-
-**Yapma:** `grep -rln "FileName" | wc -l` çıktısına 0 görünce hemen "orphan" deme. **Ek doğrulama:**
-1. `grep -rn "from.*FileName"` (statik import)
-2. `grep -rn "import(.*FileName"` (dynamic import)
-3. Path-name ile (`@/components/path/FileName`) ara
-4. Yorumlardaki "git'te korundu" gibi ipuçlarını **stale comment** olarak işaretle, kanıt sayma
-
-### 34.3 Denetim metodu (gelecek temizlikler için)
-
-Yeni bir ölü kod denetimi yaparken aşağıdaki sırayı izle:
-
-1. **Kapsamı 3 kategoriye böl** — npm deps, src/ dosyaları, API route'ları + Prisma alanları. Her birini ayrı agent'la (veya ayrı pass'le) tara.
-2. **Convention dosyalarını kapsam dışı tut** — Next.js `page.tsx`, `route.ts`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`, `template.tsx`, `default.tsx`, `opengraph-image.tsx`, `robots.ts`, `sitemap.ts`, `global-error.tsx`, `middleware.ts`, `instrumentation.ts`, `instrumentation-client.ts`, `sentry.{server,edge}.config.ts`. Bunlar framework auto-load.
-3. **3-yöntem doğrulama** — statik import, dynamic import, string-based form action / fetch URL. Üçü de 0 olmalı.
-4. **CLAUDE.md çapraz kontrol** — silmeden önce CLAUDE.md'de o dosya/feature için "kasten korundu" notu var mı bak (§17, §18, §34.1 hazırda listesi).
-5. **Build doğrulama** — silmeden sonra `npx tsc --noEmit` + `npx next build` koş; "Compiled successfully" + 54 static page üretildi → güvenli.
-6. **Stale comment temizliği** — silinen dosyaya yorum referansı kalmışsa parent dosyada güncelle ("git'te" → "silindi, history'de").
-
-### 34.4 Yapma
-
-- **Boş bırakılan path'lere** silinmiş feature'ları yeniden inşa etme. Önce `git log --all --diff-filter=D --name-only -- '*FileName*'` ile silme kararının gerekçesini oku.
-- Geri eklemek için "olabilir gerekir" yetmez — kullanıcı **açık talep** etmeli (CLAUDE.md §7 scope disiplini).
-- `validate.ts` helper'ını silme — §28 kanonik öneri, gelecek route'lar için bekliyor.
-- `CareerApplication`, `AutomationRule`, `GoogleIntegration`, `NotificationPreference` modellerini silme — schema'da kaldıkları sürece preview deploy / staging ortamında DB'de yer kaplar ama silmek migration zorunluluğu doğurur.
-
-### 34.5 2026-05-01 — Owner dashboard ana sayfa konsolidasyonu
-
-Owner anasayfası (`src/app/[locale]/dashboard/page.tsx`, 1152 LOC) tekrarlayan KPI'lar + chart'lar nedeniyle yeniden inşa edildi. Üst kısım ile aşağıdaki "İleri İstatistikler" bölümü aynı 4 KPI'yı + 2 farklı trend chart'ı + 5-yıldız histogramı tekrar gösteriyordu. Kullanıcı talebi (2026-05): "Trend ile etkileşim analizini birleştir, tekrarlayan içerikler olmasın, profesyonel ama basit görünsün."
-
-**Silinen kapsam:**
-| Katman | Yer | Detay |
-|---|---|---|
-| Component | `src/components/dashboard/RestaurantAnalyticsPanel.tsx` (271 LOC) | "İleri İstatistikler" hub'ı — single call site (sadece dashboard/page.tsx); admin paneli §11.9'da zaten kaldırmıştı |
-| Component | `src/components/admin/StatsCards.tsx` (98 LOC) | RestaurantAnalyticsPanel'in 4-KPI grid'i; dashboard'ın `<StatCard>` primitive'i ile çakışıyordu |
-| Component | `src/components/admin/DayDistributionChart.tsx` (59 LOC) | Day-of-week BarChart; 7-day TrendsChart ile redundant |
-| Component | `src/components/admin/GoogleConversionPanel.tsx` (339 LOC) | Google funnel + leaderboard; `/dashboard/analytics` zaten benzer derin breakdown'lar taşıyor; ana sayfada sade kalsın diye kaldırıldı |
-| UI | Mobile-only `BUGÜN` hero + `SON 7 GÜN` bar + `SON YORUMLAR` list (page.tsx ~150 LOC) | Mobile + desktop unified responsive yapıya geçti |
-| UI | Desktop `BUGÜN` 3-card KPI row (page.tsx 686-714) | 4-stat KPI grid ile bilgi çakışıyordu — yesterday delta yerine prev-7-day delta tek kaynak |
-| UI | "Etkileşim eğilimi" custom BarChart (page.tsx 754-795) | Recharts AreaChart ile değiştirildi (TrendsChart, mobile + desktop unified) |
-| UI | Inline 5-bar puan dağılımı histogramı (page.tsx 797-825) | RatingChart component ile değiştirildi (DRY) |
-
-**Backend konsolidasyon:**
-- 27 ayrı Prisma query → tek `Promise.all` bloğu (13 paralel query)
-- `avgRating` 3× hesaplama → tek `restaurantRatings.groupBy` weighted source
-- `redirectCount` 5× hesaplama → 3'e indirildi (all-time + last7 + prev7)
-- `rating ≥ 4 + platform IS NOT NULL` filter 6+ tekrar → tek `REDIRECT_WHERE` const (file-local, abstraction değil — §7)
-- `qrScanCounts` proxy: `findMany` + JS match → `groupBy` (DB-side aggregation)
-- 30-day window query'leri tamamen kaldırıldı — KPI'lar artık tek pencere (last 7d) kullanıyor (kullanıcı kararı: "tek delta source, karışıklık olmasın")
-- Boş `restIds` fallback path'i kaldırıldı — Prisma `in: []` zaten 0 satır döndürür, defensive code gereksizdi
-
-**Yeni yapı:**
-```
-/dashboard (sade overview)
-├── PageHeader + OnboardingNudge
-├── Unified KPI Grid (mobile 2x2 → desktop 4-col, tek delta pencere)
-├── Quick Actions Grid (4-button, mobile + desktop unified)
-├── Trend & Etkileşim (TEK section — TrendsChart + footer 3-stat + /analytics linki)
-├── Yorum Görünümü (TEK section — RatingChart + PlatformDistribution 2-col)
-├── Son Yorumlar + QR Performansı (mevcut, unified responsive)
-├── Konum Performansı + Restaurants Section + Upgrade CTA (mevcut)
-```
-
-**Chart component'lerinin yeni call site'ları:**
-- `TrendsChart` — `dashboard/page.tsx`'te `dynamic({ ssr: false })` import (CLAUDE.md §21.14 ResponsiveContainer pattern)
-- `RatingChart` — `dashboard/page.tsx`'te direct import
-- `PlatformDistribution` — `dashboard/page.tsx`'te direct import
-- `/api/feedback/stats` endpoint — admin/analytics tarafından hâlâ tüketiliyor; **kontrat değişmedi**
-
-**Net etki:** -1010 LOC codebase azalma (page 1152→909, 4 component sil 767 LOC). Mobile UX değişimi: BUGÜN hero ve gün-spesifik 30d delta'ları kaldırıldı; karşılığında tek-delta-pencere (son 7 gün) tutarlı UX + Recharts AreaChart mobile'a yüklenir.
-
-**Geri eklemek için:** Kullanıcı **açık talep** etmeli (§34.4). Detaylı funnel/leaderboard/30d-window UX gerekli olursa `/dashboard/analytics` (zaten 454 LOC, range/platform/branch/restaurant URL-synced filtreler) genişletilmeli — ana sayfada ek section eklenmemeli (sade kalma kararı).
-
-### 34.6 2026-05-01 — Slack iletişim yüzeyi kaldırıldı
-
-Owner panel'deki Slack webhook bildirim ayarı kullanıcı talebiyle kaldırıldı. Tek-kanal e-posta'ya odaklanan kapsam.
-
-**Silinen kapsam:**
-| Katman | Yer | Ne silindi |
-|---|---|---|
-| UI | `src/app/[locale]/dashboard/notifications/OwnerNotificationsForm.tsx` | Slack webhook section + `Webhook` icon import + `slackWebhook` state + `webhookDirty` + `invalid_webhook` error handler + desc'teki Slack referansı |
-| UI | `src/app/admin/notifications/page.tsx` | Aynı `/api/notifications` endpoint'ini paylaşıyordu — Slack section + `Webhook` + `Check` icon import + Slack desc temizlendi (orphan UI önleyici) |
-| API | `src/app/api/notifications/route.ts` | `slackWebhook` URL parse + 500 char + `invalid_webhook` 400 + DEFAULT_PREFS field + select alanı + return alanı |
-| Helper | `src/lib/notification-preferences.ts` | `NotificationPrefs.slackWebhook` field + `postSlackWebhook` fan-out fonksiyonu + DEFAULTS field + select |
-| Feedback fan-out | `src/app/api/feedback/route.ts` | `postSlackWebhook` import + ≤3★ Slack mesaj formatlama bloğu (line 201-215) + yorum |
-| DB schema | `prisma/schema.prisma` `NotificationPreference` | `slackWebhook String? @map("slack_webhook")` kolonu kaldırılmıştır; migration akışında eski kolonlar ancak explicit migration ile düşürülür |
-| Type drift | `src/lib/scaffolding.ts` | `NotificationPreferences.slackWebhook` field + yorumda `slack_webhook` template satırı |
-| JSDoc | `src/components/dashboard/settings/sections/BusinessNotificationSettings.tsx` | "4 toggle" → "2 toggle" + Slack validation referansı |
-| JSDoc + desc | `src/app/[locale]/dashboard/account/page.tsx` | Section description Slack ifadesi + tab listesi yorumu (6 → 7 tab, ai eklenmiş; Slack/digest kaldırıldı) |
-
-**Out of scope (kasten dokunulmadı):**
-- Marketing surface'lerde "Slack ile entegrasyon" iddiaları (`integrations/page.tsx`, `careers/page.tsx`, `PlatformLogo.tsx`) — ayrı kapsam, kullanıcı talep dışı
-- `src/lib/help-articles.ts` `slack-discord-webhook-routing` ve diğer Slack mention'lı help article'lar — feature kalktı ama help article çelişkisi gelecek scope
-- `src/lib/email/templates/low-rating-alert.ts` "Mutfak Slack" suggested action — template hint
-- `src/app/api/automations/*` `invalid_webhook_url` — generic webhook (Slack özel değil), AutomationRule modeli backlog scope (CLAUDE.md §34.4)
-- `src/app/admin/api/page.tsx` + `src/app/admin/settings/page.tsx` Slack mock content / placeholder text
-- CLAUDE.md §21.33 backlog "Slack webhook alternative (ops mail yerine)" — bu ops-alert backlog scope, ayrı feature
-
-**DB drift uyarısı:** `slack_webhook` Postgres kolonu prod'da görünürse migration history içinde explicit drop kararı gerekir. Eski kayıtların `slack_webhook` değerleri kaybolacağı için bunu ayrı migration/PR olarak ele al; mevcut helper artık o kolonu select etmiyor (defensive `select` paterni §14.1).
-
-**Geri eklemek için:** Kullanıcı **açık talep** etmeli (§34.4). Webhook fan-out generic hale getirilebilir (Discord/Teams/custom URL desteği), tek-platform Slack-özel implementation tekrar yapılması önerilmez.
-
-### 34.7 2026-05-01 — Analytics sayfası "X gün etkileşim" chart fix
-
-`/dashboard/analytics` sayfasındaki "ETKİLEŞİM" chart'ı 90/30 gün range'lerde tamamen kırık görünüyordu. Custom `<BarChart>` primitive'i (`src/components/ui/BarChart.tsx`) `flex-1 + maxWidth: 28 + gap-2` ile sadece ~7-14 bar için tasarlanmıştı. 90 bar dizildiğinde her bar ~5px'e sıkışıp value badge'leri (`showValues`) bar üstüne yığılıyordu; ek olarak `interactionData`'da `label: ''` olduğu için x-axis label collision yaşanıyordu (kullanıcı bug raporu).
-
-**Fix:**
-- Yeni component: `src/components/dashboard/analytics/InteractionTrendChart.tsx` — Recharts AreaChart, dual-series (yorum + yönlendirme), dynamic x-axis tick interval (7d: her label, 30d: her 5, 90d: her ~length/6) — CLAUDE.md §13.8 mobile chart pattern'i ile birebir.
-- Backend `interactionData` shape değişti: `{ label: '', value }` → `{ date: 'dd/mm', scans, redirects }`. Redirects = aynı gün içinde rating ≥ 4 + platform set olanlar.
-- Lazy-load: `dynamic({ ssr: false })` import — recharts mobile bundle yükü ilk paint'te skeleton.
-- `<LegendDot>` ile chart başlığında siyah (Yorum) + lime-deep (Yönlendirme) iki seri etiketi.
-- "GÜNLÜK DAĞILIM" (Pzt-Paz, 7-bucket) BarChart'ı **dokunulmadı** — 7 öğe için BarChart layout'u sağlam.
-
-**Geri çekmek için:** Yeni `<InteractionTrendChart>` sadece bu sayfada kullanılır. Recharts bağımlılığı dashboard ana sayfasındaki `TrendsChart` ile zaten paylaşılıyor — ekstra bundle maliyet sıfır. Custom BarChart'a dönmek istenirse, range > 14 gün için thinning veya scrollable container gerekir (yeniden inşa şart).
-
-### 34.9 2026-05-01 — Analytics 2 bug fix + AI themes + 3 yeni metric
-
-Owner panel analytics sayfası kullanıcı şikayetleri sonrası genişletildi.
-
-**Bug fix:**
-| Yer | Sorun | Çözüm |
-|---|---|---|
-| `src/components/ui/BarChart.tsx` | `showValues` mode'da peak bar'ın value badge'i container'dan üste taşıyordu (Day distribution Pzt=5 example: badge bottom 116+28=144 > 140 height) | `topReserve = 24px` ek üst padding + bar max height `height - 24 - topReserve`; badge bottom `+6` (eski +28). Tüm BarChart `showValues` callsite'ları otomatik düzelir. |
-| `src/components/dashboard/analytics/AnalyticsFilterBar.tsx` | "Tüm şubeler" / "Tüm işletmeler" select dropdown native chevron text alanına biniyordu (max-w-[180px] dar) | `min-w + pr-8 (chevron alanı) + max-w` cascade — text-overflow'a uğramayan select |
-
-**Yeni: AI sentiment themes** (`src/lib/analytics-themes.ts`)
-- OpenAI `gpt-4o-mini` (mevcut `chatCompletion` helper reuse, §15) ile top 5 şikayet + top 5 övgü teması
-- Process-local cache (`Map<key, {result, expiresAt}>`, 1 saat TTL) — OpenAI maliyeti kontrolü, ~$0.0005/istek
-- Cache key: `userId:restaurantId:rangeKey:platform:branch` — filter-aware
-- JSON parse hardening: ` ```json ... ``` ` wrapper tolerasyon, schema validation, theme/count bounded
-- Fallback: API key yok / 8'den az yorum / parse fail → empty result, mevcut UI sade görünür
-- Sample 80 yorum × 200 char = ~500-700 input token
-
-**Yeni metric — Saat-bazlı dağılım (24-bucket BarChart)**
-- `feedbacksWindow` JS-side hour bucket (`createdAt.getHours()`)
-- Sparse label (her 3 saatte bir: 00, 03, 06, …, 21) → 24 bar layout temiz
-- Owner: "Personel + kapasite planlaması" footer hint
-- Mevcut "Günlük Dağılım" 7-bucket'ın yanında 2-col grid
-
-**Yeni metric — Yanıt performansı (low rating reply latency)**
-- 3 alt-metric: yanıt oranı (% replied) + medyan süre (saat) + 8h+ bekleyen sayım
-- 8h+ bekleyen > 0 → kırmızı uyarı bandı ("itibar riski")
-- Veri kaynağı: `feedbacksWindow.replies[0]?.createdAt - feedback.createdAt` median JS-side
-- Sadece `feedbacksWindow.filter(rating <= 3).length > 0` ise render edilir
-
-**Yeni metric — Aspect breakdown (yemek/servis/atmosfer)**
-- Schema'daki `Feedback.{food,service,atmosphere}Rating` opsiyonel alanlardan window-bound `_avg`
-- ≥ 5 örneklem yoksa o sub-metric boş ("—") gösterilir
-- 3'ü de boşsa section gizlenir (`showAspects` flag)
-
-**Backend konsolidasyon:**
-- `feedbacksWithComments` (90gün, ayrı query) → silindi
-- `feedbacksWindow` select genişletildi: `id, comment, foodRating, serviceRating, atmosphereRating, replies (take:1)` — multi-purpose tek query
-- Theme analysis, hour bucket, aspect avg, response time **hepsi tek query'den** beslendi (CLAUDE.md §7 replication önleme)
-- `STOP_WORDS` set + `tokenize()` orphan helper'lar silindi (eski sentiment word cloud yerine AI themes geldi)
-
-**Etki:** Analytics sayfası owner için 4 ek aksiyon-odaklı insight kazandı (peak hour staffing, reputation guard SLA, aspect-bazlı geliştirme, AI-extracted complaint themes). Mevcut design system (`bz-card`, `Eyebrow`, `StatCard`, `BarChart`) reuse, yeni primitive yok.
-
-**Geri çekmek için:** AI themes — `OPENAI_API_KEY` set edilmediğinde otomatik fallback empty (bozulmaz). Yeni metric'ler conditional render (data yoksa section gizli). BarChart fix global — eski peak-overflow davranışı geri alınmamalı.
-
-### 34.10 2026-05-01 — Embeddable public review widget
-
-İşletme sahipleri kendi web sitelerine **1 satır kod** yapıştırarak Buaze yorumlarını + ortalama puanı + "Yorumla" CTA'sını gömebilsin. "Powered by Buaze" footer ile her yerleştirme = pasif marketing channel + bedava SEO backlink + viral acquisition multiplier.
-
-**Yeni:**
-| Katman | Yer |
-|---|---|
-| Schema | `prisma/schema.prisma` `EmbedView` model — restaurantId + parentDomain + ip/ua + createdAt + 2 composite index |
-| Helper | `src/lib/embed-tracking.ts` `recordEmbedView({slug, referer, ip, ua})` — slug→restaurant, inactive silent (slug fingerprinting önleme), referer URL parse defansif |
-| API | `GET /api/embed/track?slug=...` — 1×1 transparent gif, JS-free fallback. `POST` — sessionStorage 30dk dedupe. Upstash rate-limit 60/dk/IP |
-| Embed page | `src/app/embed/[slug]/page.tsx` — iframe-safe Server Component, 3 son **`rating >= 4`** yorum + avg + CTA + Powered by Buaze. Theme `light\|dark`, size `compact\|full`. JS-free tracking pixel inline `<img>` |
-| Embed layout | `src/app/embed/[slug]/layout.tsx` — minimal wrapper, transparent bg, no nav |
-| Frame headers | `next.config.ts` `/embed/:path*` path-scoped: `X-Frame-Options: ALLOWALL` + `Content-Security-Policy: frame-ancestors *` (site genelinin SAMEORIGIN korumasını bozmaz) |
-| Script-tag wrapper | `public/buaze-embed.js` — `data-buaze=<slug>` script tag + auto-resize via postMessage; **origin enforce** `event.origin === 'https://buaze.com'` (fake message spoof önleme) |
-| Owner stats API | `/api/restaurants/[id]/embed-stats/route.ts` — IDOR `requireRestaurantAccess` + Zod query (days + limit), `groupBy(parentDomain)` |
-| Owner UI primitive | `src/components/dashboard/settings/sections/EmbedBrowserPreview.tsx` — Chrome-like browser frame mockup, mock parent site context (logo + nav + hero + iframe + footer), gerçek `<iframe>` içeride, mobile/desktop toggle |
-| Owner settings UI | `src/components/dashboard/settings/sections/BusinessWebsiteSettings.tsx` — embed kod kopyala + theme/size + iframe/script-tag toggle + privacy disclosure banner + browser-frame önizleme + son 30 gün kullanan siteler tablosu |
-| Settings tab | `src/app/[locale]/dashboard/restaurants/[id]/settings/page.tsx` — `SECTION_TABS`'a `website` eklendi (Faz 2'den önce, "Operasyonel"den önce); 04 numaralı eyebrow |
-| Admin API | `/api/admin/embed-usage/route.ts` — superadmin only, `groupBy(restaurantId, parentDomain)`, paginated |
-| Admin UI | `src/app/admin/embed-usage/page.tsx` — superadmin tablo: tüm işletme + parentDomain + 30/90 gün range chip + KPI özeti |
-| Sidebar | `src/components/admin/AdminSidebar.tsx` — superadmin "Operasyon" group'una "Embed kullanımı" item |
-
-**Güvenlik review (final pass — plan §🔒):**
-- **Path-scoped frame headers** — sadece `/embed/*`, site geneli SAMEORIGIN korumalı
-- **JS-free tracking pixel** — `script-src 'unsafe-inline'` ihtiyacı yok
-- **`rating >= 4` filter zorunlu** — düşük puan müşterisi yorumu **embed'de görünmez** (işletme reputation koruma)
-- **CTA `<a target="_blank" rel="noopener noreferrer">`** — window.opener exposure + referrer leak önleme
-- **postMessage origin enforce** — `buaze-embed.js` parent listener'da Buaze origin check
-- **Slug fingerprinting önleme** — inactive slug → silent 200 (DB row insert yok), enumeration imkansız
-- **Referer parse defansif** — `try/catch` + `new URL(referer).hostname` (full URL leak yok, sadece domain)
-- **IDOR + Zod** owner endpoint'inde + superadmin gate admin endpoint'inde
-- **Rate limit** Upstash 60/dk/IP — DDoS + slug brute-force koruması
-- **KVKK** — IP 90 gün retention (mevcut `anonymize-ips` cron'una eklenebilir)
-- **Owner site privacy disclosure banner** — settings UI'da "anonim trafik verisi toplanır, Privacy Policy'nize ekleyin" not
-
-**Yapı (browser-frame önizleme):** Owner soyut HTML kodunu anlamak için "nasıl görünecek" hayal etmek zorundaydı. Yeni `<EmbedBrowserPreview>` Chrome-like frame içinde gerçek iframe + mock parent context (logo + nav + hero + iframe + footer paragraf) gösterir. Theme/size toggle değişiminde iframe + kod **anlık** günceller. Mobile/desktop toggle (375px / 720px). Stripe Checkout integration page benchmark — visualize-edilebilir UI kopyalama oranını **%15-30 artırır**.
-
-**Out of scope (kasten):**
-- A/B test theme variantları
-- Custom CSS injection (security)
-- SRI hash (v1.1 hardening backlog)
-- Embed disable toggle (default aktif; ileride owner pause)
-- Bot UA filtering (raw kayıt; ileride dashboard segment)
-- Real-time updates (5dk CDN cache yeterli)
-
-**Geri çekmek için:** Kullanıcı **açık talep** etmeli (§34.4). Embed view tracking generic event store; `qr_scans` ile aynı pattern (PR #286). Yeniden inşa eden bilinçli karar gerektirir — viral marketing kanalı kapatmak ROI tersi.
-
-### 34.8 2026-05-01 — Gerçek QR scan tracking
-
-Owner panel'de "QR taranma" KPI'sı şimdiye dek **feedback count proxy**'siydi — yorum bırakmadan ayrılan müşteri görünmüyordu. Yeni `qr_scans` event tablosu ile gerçek scan tracking eklendi: scan→review conversion oranı, masa/platform breakdown, "tarayıp ayrıldı" boşluğu artık görünür.
-
-**Yeni:**
-| Katman | Yer |
-|---|---|
-| Schema | `prisma/schema.prisma` `QrScan` model — restaurantId, tableNumber, platform, source, sessionId, ipAddress, userAgent, createdAt + 3 composite index |
-| Helper | `src/lib/qr-scan.ts` `recordQrScan({ slug, ... })` — slug→restaurant resolve, inactive silent no-op (slug fingerprinting önleme, §13.5 pattern), input bounded |
-| API | `POST /api/qr-scan` — public, rate-limit 30/dk/IP (Upstash), body `{slug, tableNumber?, platform?, source?, sessionId?}` |
-| Client tracking | `src/app/r/[slug]/page.tsx` — useEffect mount sonrası fire-and-forget; sessionStorage dedupe key `bz_qr_scan:slug:table:platform` (30dk window); session UUID `bz_qr_scan_sid` sticky |
-
-**Owner panel entegrasyonu:**
-- Dashboard "QR taranma" KPI: `last7Total` (feedback proxy) → `last7Scans` (gerçek qrScan count). Delta `pctDelta(last7Scans, prev7Scans)`.
-- Dashboard "QR Performansı" section: `qrScanCounts` Map artık `QrScan.groupBy(['restaurantId', 'tableNumber', 'platform'])`'tan dolar.
-- Analytics page yeni KPI: **Dönüşüm oranı** = `(reviews / scans) × 100`. KPI grid `lg:grid-cols-5` → `lg:grid-cols-6`.
-- Analytics interaction chart: 2-seri (yorum + yönlendirme) → **3-seri funnel** (taranma → yorum → yönlendirme). Renk hierarchy: scans gri (üst funnel), reviews graphite (ana metrik), redirects lime-deep (aksiyon tamamlanmış).
-- Analytics "X gün taranma" KPI: feedback proxy → gerçek qrScan count.
-
-**KVKK + abuse koruması:**
-- IP/UA opsiyonel kayıt; `Feedback.ipAddress` ile aynı 90 gün retention prensibi (§13.9 cron eklenebilir).
-- SessionStorage dedupe (30dk) + Upstash rate limit (30/dk/IP) → refresh abuse + DDoS dual layer.
-- Inactive restaurant slug → silent 200 (slug enumeration imkansız).
-
-**Backend impact:**
-- Dashboard Promise.all: 13 query → 15 query (last7Scans + prev7Scans). qrScanGroups artık qrScan tablosundan, feedback'ten değil — tip imzası aynı.
-- Analytics Promise.all: 9 query → 12 query (scansWindowCount + scansPrevWindowCount + scansWindowDaily). Branch filter `QrScan`'e uygulanmaz (tabloda alan yok); platform filter uygulanır.
-- Boş restaurantIds fallback path silindi (Prisma `in: []` zaten 0 satır döner — dashboard pattern'ı ile tutarlı).
-
-**Geri çekmek için:** Kullanıcı **açık talep** etmeli (§34.4). Mevcut feedback-proxy "scan count"u veri kalitesi olarak çok zayıftı (yorum bırakmadan ayrılan tüm trafik kayboluyordu); yeniden geri dönmek SaaS metric güvenilirliğini kıran bir adım olur.
-
-**Backlog:**
-- IP anonimleştirme cron (`/api/cron/anonymize-ips` mevcut — `qr_scans.ip_address` da kapsama alınır, `IP_RETENTION_DAYS` env reuse).
-- Hour-of-day scan heatmap (analytics'te yeni section): scan saatlerini görsel pattern olarak göster — peak hour optimization için. Schema yeterli, sadece UI.
-- Source breakdown chart: `?source=qr|direct|table|link` parametresinin scan dağılımı — owner placement performance görür.
-- Real conversion funnel: scan → review → redirect → external platform — 4-step funnel chart.
-
-### 34.11 2026-05-01 — Performance pass: feedback/stats trend loop + Feedback indexes
-
-ChatGPT'den gelen kapsamlı performance audit promptunu doğruladıktan sonra (önerilerin %85'i zaten yapılmış) iki gerçek bottleneck düzeltildi:
-
-**Fix 1 — `/api/feedback/stats` 7-day trend loop (PR #293, merged 2026-05-01)**
-
-Önceki kod 7 günlük trend'i `for` loop içinde sıralı await'lerle çekiyordu — her iterasyon kendi içinde 2 query'yi `Promise.all` ile çalıştırıyordu ama dış loop sıralıydı:
-
-```ts
-// ÖNCE — 7 sequential round-trip × 2 query = 14 query, 7 await blok
-for (let i = 6; i >= 0; i--) {
-  const [count, agg] = await Promise.all([
-    prisma.feedback.count(...),
-    prisma.feedback.aggregate(...),
-  ]);
-}
-```
-
-7 gün × ~5-8ms RTT = ~35-50ms pure waiting her isteğe. Fix: 7 day window'ı önce bir `dayBuckets` array'i olarak hesapla, sonra tüm 14 query'yi tek `Promise.all`'da paralel fırlat. Wall-time → tek round-trip.
-
-**Yapma:** Range-bazlı day-by-day aggregate'i `for` loop'unda await etme. Pre-compute + Promise.all ile paralelize et. Eğer date bucketing kompleks oluyorsa `$queryRaw` + `date_trunc` daha temiz; loop pattern son çare.
-
-**Fix 2 — `Feedback` model 3 composite index (PR #297, merged 2026-05-01)**
-
-`prisma/schema.prisma` `Feedback` modelinde sadece `[restaurantId, createdAt]` ve `[ipAddress, createdAt]` index'leri vardı. `/api/feedback/stats` ve `/dashboard/analytics` aşağıdaki kombinasyonlarda filter ediyor:
-
-| Filter pattern | Eski plan | Yeni index |
-|---|---|---|
-| `restaurantId + rating ≥ 4 + createdAt` (Google conversion bucket) | bitmap combine `[restId, createdAt]` üzerinde | `@@index([restaurantId, rating, createdAt])` |
-| `restaurantId + platform + createdAt` (platform distribution) | bitmap combine | `@@index([restaurantId, platform, createdAt])` |
-| `restaurantId + branch + createdAt` (analytics branch filter) | bitmap combine | `@@index([restaurantId, branch, createdAt])` |
-
-Bitmap-combine fallback Postgres'te 30-50ms/query ekliyor (volume büyüdükçe daha kötü). Composite index = single-index seek. Risk düşük: pure additive, data değişmiyor; migration deploy akışında explicit index migration'ı olarak uygulanır.
-
-**Yapma:** "her olası filter kombinasyonuna" preventif index ekleme. Sadece **gerçek query path'lerinde** kullanılan kombinasyonlar için ekle (CLAUDE.md §7 abstraction kaçınma — index de bir form abstraction). Her index Postgres write maliyeti.
-
-**Yap:** Yeni endpoint eklerken filter shape'i mevcut index'lerle match etmiyorsa schema'ya yeni `@@index` ekle. Tek source of truth Prisma schema; SQL `CREATE INDEX` ile manuel ekleme YOK (drift riski).
-
-### Audit özeti — değişmeyenler (zaten optimize edilmiş)
-
-ChatGPT performance audit promptu 9 alan kapsıyordu; aşağıdakiler **zaten optimize edilmişti** ve dokunulmadı:
-
-| Alan | Mevcut durum |
-|---|---|
-| Owner dashboard query batching | 15 paralel query tek `Promise.all` (CLAUDE.md §34.5'in beyan ettiğinden daha sıkı) |
-| Dashboard fetch deduplication | Server component, useEffect+fetch yok, repeat fetch riski yok |
-| Marketing client component over-use | `MarketingNavbar` server, `MarketingNavbarClient` client — split doğru |
-| Font loading | Space Grotesk + Inter + JetBrains Mono — `display: 'swap'` + `subsets: ['latin']` set |
-| Image storage (marketing) | Inline SVG — HTTP request yok, optimization gereksiz |
-| Image storage (menü) | base64-in-DB (CLAUDE.md §3 zorunluluğu, `next/image` uyumsuz) |
-| Public caching | `/api/restaurants?slug=` 60s/300sw cached (CLAUDE.md §19.3) |
-| Third-party scripts | GA + Yandex `lazyOnload`, Sentry session replay disabled (CLAUDE.md §26) |
-| Speed Insights mount | Single root mount (CLAUDE.md §31) |
-
-**Out-of-scope kalanlar:** word cloud `take: 1000` (UI etkisi olabilir, ölçü almadan dokunma), `force-dynamic` ISR audit (CLAUDE.md root + locale layout'ta — `cookies()` için gerekli olabilir, ölçmeden kaldırma).
-
-### 34.12 2026-05-02 — Lighthouse audit ARIA fix + skipped findings
-
-Google PageSpeed (Lighthouse 13.0.1) raporu — Desktop 81 / Mobile 83. Kritik bulguların kanıt güçlü olanı düzeltildi, skip edilenler **bu bölümde sebepleriyle dokümante** edildi. **Yeni session bu raporu görünce yapılmış olanları yeniden inşa etmesin, skip kararlarını yeniden sorgulamadan değiştirmesin.**
-
-**Düzeltilen — Yasaklı ARIA (a11y critical):**
-
-Lighthouse "Öğeler, yasaklanmış ARIA özelliklerini kullanıyor" — generic `<span>` / `<div>` elementlerinde `aria-label` attribute'u WAI-ARIA 1.2 spec'ine göre **prohibited**. Element default role'u "generic" olduğu için aria-label kabul etmez, screen reader'lar bu name'i atlayabilir.
-
-5 yere `role="img"` eklendi:
-- `src/components/ui/StarRow.tsx` (`StarRow` primitive — N of 5 stars label)
-- `src/components/marketing/LiveReviewTicker.tsx` × 2 (active review + ticker rows)
-- `src/app/[locale]/page.tsx` (homepage hero "5 stars" review chip)
-- `src/app/[locale]/dashboard/feedbacks/_components/FeedbackListItem.tsx` (rating chip "★★★")
-
-**Yapma:** `<button>` / `<a>` / `<input>` / `<select>` gibi interactive element'lerde `aria-label` zaten meşru (implicit role'leri var) — `role="img"` eklemek **drift**. Sadece **generic span/div + aria-label** kombinasyonu yasak.
-
-**Yap:** Yeni dekoratif/semantik amaçlı non-interactive element'e aria-label eklerken `role="img"` (görsel-semantik) veya `role="status"` (live region) gibi explicit role belirt. CLAUDE.md §23.3.x primitive'leri yazarken bu disiplin kontrol edilmeli.
-
-**Skip edilen — sebepleriyle:**
-
-| Bulgu | Tahmini tasarruf | Skip sebebi |
-|---|---|---|
-| Eski JavaScript polyfills (`Array.prototype.at`, `flat`, `flatMap`, `Object.fromEntries`, `Object.hasOwn`, `String.prototype.trim*`, `Array.from`) | 24 KiB | `package.json` `browserslist` zaten modern target (`Chrome >= 100`, `Safari >= 15.4`, `iOS >= 15.4`). Next.js polyfill'leri `nomodule` script olarak serve ediliyor — modern user'a yüklenmiyor. Lighthouse user-agent'ı bu fallback'i çekiyor; gerçek user impact'i yok. Manual kaldırma yolu yok (Next.js compiler internal). |
-| Yandex Metrica `wss://mc.yandex.com/solid.ws` console error | 0 perf | `webvisor:false` set edilmiş ama Yandex SDK internal bağlantı denemesi `mc.yandex.com` (`.com` TLD) DNS'inde fail oluyor — TR ISP'lerinde `.com` TLD bazen resolve etmiyor. SDK config'te kapatma yolu yok; `mc.yandex.ru` (`.ru` TLD) ana script URL'inde zaten kullanılıyor. Çözüm yolu: Yandex Metrica'yı tamamen kaldırmak — TR pazarı bot/click tracking için tercih ediliyor, kaldırma kullanıcı kararı. CLAUDE.md `layout.tsx:103-107` zaten dokümante. |
-| Forced reflow `chunks/834-fea64....js:16:18740` 11ms peak | <11ms | Next.js production minified chunk; sourcemap olmadan kaynak imkansız. 11ms TBT'ye marjinal etki, prioritize edilemez. |
-| JavaScript yürütme süresi 2.4s (chunks/834-fea64 2217ms CPU) | Büyük | Code-splitting refactor scope'u büyük; her marketing route ayrı bundle gerektirir. CLAUDE.md §27 React Query + §11 Pulse design system zaten optimize. Real user 4G+ trafiğinde TBT acceptable (340-360ms turuncu, 600ms+ kırmızı eşik). |
-| Kullanılmayan JavaScript 175 KiB (GTM 65 / chunks/834 59 / Yandex 50) | Büyük | GTM + Yandex third-party — aktif kullanılan tracking, kaldırma marketing/conversion impact taşır. buaze chunks/834 muhtemelen common chunk; granular split refactor scope dışı. |
-| LCP 3.0s mobile / FCP 2.0s mobile | Major | `force-dynamic` root layout (CLAUDE.md §34.11 "ölçmeden kaldırma" disiplini); `getSiteSettings()` cookies() context için dynamic gerekli. Cache strategy refactor isolated PR olmalı, ölçü + canary test gerektirir. |
-| Total Blocking Time 340-360ms | Orta | Script Eval 2.2s + Style/Layout 1.2s — Pulse design system kompleksitesi (`bz-*` token'ları + tailwind v4 + radix primitives). CSS scope reduction büyük UX impact'i. |
-
-**Yap:** Yeni Lighthouse audit'i çıkarsa **bu listeyi referans al**: aynı bulgular tekrar geliyorsa bilinçli skip kararının değişmediğini doğrula. Yeni unique bulgu varsa fix.
+| Billing field'ları (`billingAddress`, `taxNumber`, `discountActive`, `discountType`) | Iyzico Wave 3.5 hazırlığı |
+| `src/lib/api/validate.ts` (`validateBody` Zod helper) | §28 kanonik öneri, yeni high-risk route'lar için |
+| 2FA + Sessions backend (`/api/account/2fa/*`, `/api/account/sessions`) | UI silinmiş, magic-code 2FA için backend kalmış |
 
 **Yapma:**
-- `browserslist` target'ı **daha gevşek** yapmak (eski browser support ekleyerek polyfills artar — yanlış yön)
-- GTM veya Yandex'i kaldırmak (kullanıcı talebi olmadan)
-- `force-dynamic`'i root/locale layout'tan kaldırmak (cookies() context kırılır, çok endpoint etkilenir)
-- Lighthouse score'u "kâğıtta" iyi göstermek için tracking script'leri kaldırmak — production decision'ı, performance audit'i gerekçe değil
+- Geri eklemek için "olabilir gerekir" yetmez — kullanıcı **açık talep** etmeli (§7 scope disiplini)
+- `git log --all --diff-filter=D --name-only -- '*FileName*'` ile silme gerekçesini oku, sonra karar ver
+- `validate.ts` helper'ını silme — §28 kanonik öneri, gelecek route'lar için bekliyor
 
-### 34.13 2026-05-02 — Hero LCP paint defer + bundle hint (PR #343)
+### 34.3 False-positive kayıt (silmeden önce dikkat)
 
-Lighthouse Mobile detaylı audit'inde "LCP element render delay 3,360ms" kanıtlandı. LCP element: homepage hero subtitle paragraph (`HomeHero.tsx`'te, parent client component). Kök neden: aynı `HomeHero` içinde `InboxCard` child component'inde **AI draft typing animation** (700ms `setTimeout` + 28ms × ~60 char `setInterval`) hydrasyon sonrası state update zinciri başlatıyor → her update layout recalc → subtitle paragraph paint geç oluyor.
+`grep -rln "FileName" | wc -l` 0 görünce hemen "orphan" deme:
 
-**Uygulanan 3 minimum-diff fix:**
-
-**(1) `HomeHero.tsx:777-805` InboxCard typing startDelay 700ms → 2400ms.**
-
-Typing animation kayıp olmaz, sadece LCP paint sonrasına ertelenir. Görsel demo değeri korunur (kullanıcı zaten hero'yu 2-3sn'de tarar).
-
-**Yapma:** Bu animation'ı silme, `0` startDelay yapma — UX kaybı. 2400ms (animation'ın doğal start'tan önceki rotator interval'inden sonra) tek kanıt güçlü değer.
-
-**(2) `HomeHero.tsx:597-602` subtitle `clamp(15px, 1.4vw, 18px)` inline style → Tailwind responsive (`text-[15px] sm:text-[16px] lg:text-[18px]`).**
-
-`clamp(min, vw, max)` browser'a viewport'a göre per-render hesap zorlatır; düşük-CPU mobile'da +50-200ms paint cost. Tailwind breakpoint mathematically eşit (mobile 15px / sm 16px / lg 18px) ve viewport hesabı paint öncesi gerekmez.
-
-**Yapma:** Diğer `clamp()` inline kullanımlarını (örn. headline `clamp(44px, 7.5vw, 92px)`) aynı pattern ile değiştirme — heading LCP element değil, fluid scaling görsel olarak heading'de daha kıymetli. Ölçü+visual regression olmadan toplu refactor scope dışı.
-
-**(3) `next.config.ts` `experimental.optimizePackageImports: ['lucide-react']`.**
-
-Lucide-react 1000+ icon export ediyor, default tree-shake bu volume'da fail edebilir. `optimizePackageImports` Next 14+ feature — sadece import edilen icon'lar bundle'a girer. Buaze 5 icon homepage'de + birkaç düzine site genelinde → bundle ~5-8 KiB azalır.
-
-**Yap:** Yeni heavy package eklerken (örn. `date-fns`, `lodash`) bu listeye ekle. Default Next.js bilinen paketleri zaten optimize ediyor (`@radix-ui/*`) ama explicit listing daha güvenli.
-
-**Yapma:** `optimizePackageImports`'a kullanılmayan paket eklemek — build zamanı analiz overhead artar.
-
-**Skip listesi (gerekçeleriyle, §34.12 ile tutarlı):**
-- `force-dynamic` kaldırma (root + admin) — cookies() + ISR cache canary test gerektirir
-- HomeHero `dynamic({ssr: true})` lazy — LCP paragraph hâlâ aynı component'te, fix değil
-- ReputationCluster Suspense boundary — child'lar tek client component'te, ayrı boundary efektif değil
-- @radix-ui/react-tabs replacement / GTM / Yandex unmount / code-splitting — büyük scope, tracking decision
-- Server-side feedback search — backend kontrat genişlemesi, §28 disiplini
-
-**Net etki tahmini:** LCP 3,360ms → ~2,400-2,600ms (~700-900ms kazanç), bundle ~5-8 KiB. Real user mobile 4G TBT'de görünür iyileşme.
-
-**Yeni session bu raporu görünce:** §34.13'teki 3 fix'in altındaki "Yapma" listesini izle. Performans audit raporu tekrar geldiğinde aynı bulgular için Skip listesi disipline yeniden değerlendir, kullanıcı tetiği yoksa yeniden inşa etme.
-
-### 34.14 2026-05-02 — PageSpeed pass #2: cache lifetimes + preconnect
-
-PageSpeed Insights ikinci tur (Lighthouse 13.0.1) — kullanıcı raporu paylaştı:
-
-| Metric | Mobile | Desktop |
+| Pattern | Yanıltıcı görünüm | Gerçek kullanım |
 |---|---|---|
-| First Contentful Paint | 2.7s 🟠 | 0.7s 🟢 |
-| Largest Contentful Paint | 4.2s 🔴 | 1.3s 🟠 |
-| Total Blocking Time | 1,210ms 🔴 | 380ms 🔴 |
-| Cumulative Layout Shift | 0.001 🟢 | 0.001 🟢 |
-| Speed Index | 6.2s 🔴 | 1.9s 🟠 |
+| Barrel re-export | `src/lib/X/index.ts` export, callsite `import { Helper } from '@/lib/X'` | Aktif (3-yöntem doğrulama gerekli) |
+| Email template registration | `src/lib/email.ts` `from './email/templates'` barrel | Aktif (24 template `templates/index.ts` üzerinden) |
+| Legal template registration | `LEGAL_TEMPLATE_DEFAULTS` from `@/lib/legal/templates` barrel | Aktif (14 template) |
+| Cron routes | Frontend `fetch` ref yok | Vercel scheduler tetikliyor (`vercel.json`) |
+| Convention dosyaları | Hiç import edilmez | Next.js auto-load (yukarıdaki liste) |
+| Comments "git'te korundu" | Stale yorum | Kanıt sayma; gerçek import'a bak |
 
-**Insights flagged:** Document request latency (mobil 840ms / desktop 240ms), Forced reflow, Network dependency tree, Use efficient cache lifetimes (74 KiB savings), Legacy JavaScript (24 KiB), Reduce unused JavaScript (174 KiB), Reduce JS execution time (1.8s), Minimize main-thread work (3.6s), Avoid long main-thread tasks (6 found).
+### 34.4 Kanonik kararlar (tekrarlayan sweep'lerin özü)
 
-**Uygulanan 2 fix (zero-risk, deterministik):**
+Tarihsel her sweep'in özelinde aynı operasyonel kararlar verildi — yeni perf/cleanup pass'i yaparken bunlardan başla:
 
-1. **Static asset `Cache-Control: public, max-age=31536000, immutable`** — `next.config.ts:headers()`. `public/` altındaki `buaze-embed.js`, `favicon.svg`, `apple-touch-icon.svg`, `site.webmanifest` için 1 yıl + immutable. PageSpeed "Use efficient cache lifetimes" insight'ının ~74 KiB savings target'ı. `llms.txt` 1 gün + 1 hafta SWR (markdown content değişebilir). `_next/static/*` Vercel CDN tarafından zaten immutable; bu fix `public/` static asset gap'ini kapatır. **Cache bust pattern**: dosya rename + query string `?v=N` (mevcut `layout.tsx` `?v=3` icon meta disiplini ile uyumlu).
+- **Performance**: `Promise.all` batching, composite index (filter shape match), image `decoding="async"` + below-fold `loading="lazy"`, Recharts AreaChart >14 gün range, Lucide `optimizePackageImports` next.config
+- **Lighthouse skip list** (kullanıcı tetiği olmadan dokunma): legacy JS polyfills (browserslist modern target — Lighthouse `nomodule` fetch ediyor), GTM/Yandex tracking (business decision — conversion impact), forced reflow (minified chunk, sourcemap yok), `force-dynamic` root/locale layout (cookies() context — ISR refactor canary gerek), JS execution time (Pulse §11 + Tailwind v4 + Radix kompleksitesi)
+- **Cache headers** (§19.3 + §40.6): static asset `public, max-age=31536000, immutable`; owner-scoped `private, s-maxage=N` (15s inbox / 30s KPI / 60s billing); public read `public, s-maxage=60, stale-while-revalidate=300`; mutation no-store
+- **Security zero-risk**: X-Permitted-Cross-Domain-Policies + X-Robots-Tag /api+/admin+/r + JSON-LD `jsonLdString()` helper (§37.6) + PII redaction console.error (§37.7) + Permissions-Policy expansion
+- **Tracking pixel minimization**: 3rd party `preconnect` (not just dns-prefetch — TLS pre-warm), Sentry release tagging (`NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA`)
+- **A11y**: WAI-ARIA 1.2 — non-interactive element + `aria-label` zorunlu `role="img"` (StarRow, LiveReviewTicker, hero rating chips)
+- **Auth flow**: bağımsız ön-tetikler `Promise.all` ile paralelize (reCAPTCHA + rate-limit + findUnique). bcrypt sequential kalır (`passwordHash` dependency). OWASP 2024 cost=12.
 
-2. **Preconnect for 3rd-party origins** — `app/layout.tsx`. Önceki `dns-prefetch` setup'ının üzerine `preconnect` eklendi (TLS handshake pre-warm — DNS + TCP + TLS, dns-prefetch sadece DNS). Targets: `mc.yandex.ru`, `www.googletagmanager.com`, `fonts.googleapis.com`, `fonts.gstatic.com` (woff2 origin için kritik). Fonts `crossOrigin="anonymous"` — woff2 anonymous CORS, attribute olmadan browser ikinci connection açar. PageSpeed "Network dependency tree" insight'ı için.
+### 34.5 Historical cleanup timeline (compact)
 
-**Tahmin edilen kazanç**: Mobile LCP ~200-400ms, repeat-view ~74 KiB tasarruf (dolayısıyla TTFB), font swap latency düşer.
+Detaylı bağlam için `git log` + PR referansı. Bu tablo sadece "neyin silindiği" envanteri.
 
-**Yapılmayan / kasten skip (kullanıcı tetiği yokken yeniden inşa edilmemeli):**
-
-| Insight | Sebep |
-|---|---|
-| Document request latency 840ms (mobile) | `force-dynamic` root + locale layout `cookies()` ihtiyacı için (CLAUDE.md §34.11). SSR cache strategy refactor isolated PR; ölçü + canary test gerek. |
-| Forced reflow | Next.js production minified chunk; sourcemap olmadan kaynak imkansız. CLAUDE.md §34.12 dokümante. |
-| Legacy JavaScript (24 KiB) | `browserslist` modern target zaten ayarlı (Chrome ≥100, Safari ≥15.4 vs); Lighthouse user-agent `nomodule` polyfill fallback'i çekiyor — gerçek user impact yok. CLAUDE.md §34.12. |
-| Reduce unused JavaScript (174 KiB) | GTM 65 KiB + chunks/834 59 KiB + Yandex 50 KiB. GTM/Yandex business decision (active tracking; kaldırma marketing/conversion impact). buaze chunks granular split refactor scope dışı. CLAUDE.md §34.12. |
-| Reduce JS execution time 1.8s + Main-thread work 3.6s | Pulse design system + Tailwind v4 + Radix kompleksitesi. CSS scope reduction büyük UX impact'i. CLAUDE.md §34.12. |
-| Avoid long main-thread tasks (6 found) | Yukarıdaki ile aynı kök; React Strict Mode + Suspense boundary refactor büyük scope. |
-| LCP element render delay | §34.13'te zaten kısmen ele alındı (700ms typing defer + Tailwind clamp→breakpoint + lucide tree-shake hint). Ek 3-fix listesi (force-dynamic kaldırma, ReputationCluster Suspense, code-splitting) aynı sebeplerle skip. |
-
-**100/100 hedefi gerçekçi mi?** Mevcut tracking stack (GTM + Yandex + Sentry + Speed Insights + Analytics + Vercel Preview Comments + Firebase Auth + reCAPTCHA) ve `force-dynamic` SSR ihtiyacı varken **Mobile 100 imkansız**. Realistic hedef: Mobile 75-85, Desktop 90-95. Bu fix'lerden sonra:
-- Desktop LCP 1.3s → ~1.0-1.1s
-- Mobile LCP 4.2s → ~3.6-3.9s
-- Repeat-view: cache header'ları sayesinde belirgin iyileşme
-
-**Sonraki adım gerçek 100'e yakınsa**:
-1. Operatör onayı ile GTM/Yandex tracking kaldırma (`?utm_source` ile UTM-only attribution gibi alternatif analytics)
-2. `force-dynamic` ↔ ISR cache strategy refactor (canary deploy gerekir)
-3. Component code-splitting + dynamic import sweep
-4. Font subset optimization (Latin-only zaten, Latin-Ext düşürülürse)
-5. Inline critical CSS + defer non-critical CSS
-
-Bunlar **operatör onayı bekleyen MEDIUM-HIGH scope** — kullanıcı açık talep etmedikçe dokunulmaz.
-
-**Yapma:**
-- `force-dynamic`'i kaldırma (cookies() + ISR canary test gerektirir)
-- GTM/Yandex unmount (business/conversion decision)
-- "Performance score" için tracking pixel kaldırma (production data gerek)
-- Aggressive code-splitting "olur belki" kafasıyla (lazy-load regression test gerek)
-
-**Yap:**
-- Kullanıcı agresif performance pass talep ederse §34.14 "Sonraki adım" listesini göster, hangisinin scope'ta olduğunu sor
-- Yeni 3rd party script eklenirken `dns-prefetch` + `preconnect` ekle (§34.14 paterni)
-
-### 34.15 2026-05-02 — Zero-risk security + ops bundle
-
-Kullanıcı "yapıyı bozmadan + etkisiz" ek iyileştirme istedi → 3 zero-risk bundle uygulandı:
-
-#### 1. `X-Permitted-Cross-Domain-Policies: none` (next.config.ts)
-
-Adobe Flash + Acrobat PDF cross-domain policy file (`crossdomain.xml`) lookup'ını engeller. Buaze hiç Flash/PDF cross-domain content servis etmiyor; legacy istemcinin bu file'ı bulup attacker'ın auto-trust kabul etmesine karşı modern security baseline header'ı.
-
-#### 2. `/api/health` uptime probe
-
-Vercel Monitor / UptimeRobot / BetterStack için lightweight DB-free endpoint:
-```ts
-GET /api/health → { ok: true, ts: <ms>, commit: <7-char-sha?> }
-Cache-Control: no-store
-```
-
-DB connection harcamaz, rate limit yok (probe'un kendisi rate-limit check'inden ucuz). Vercel `VERCEL_GIT_COMMIT_SHA` env varsa commit hash response'a eklenir (deploy traceability).
-
-#### 3. Robots.txt `crawlDelay: 2` (AI bot allowlist)
-
-GPTBot / Anthropic-ai / Perplexity / vb. AI bot rule'una `crawlDelay: 2` eklendi. Major search engines (Google, Bing) zaten Crawl-delay'i ignore eder — bu fix AI/SGE crawler'ların yeni domain ingestion'ında polite scraping davranışı için.
-
-**Atlanan zero-risk öneriler (kullanıcı tetiği yokken yeniden inşa edilmemeli):**
-
-| Öneri | Sebep |
-|---|---|
-| GTM `<noscript>` fallback | Buaze GA4 (`gtag.js`) kullanıyor, gerçek GTM container yok; GA4 noscript pixel desteklemiyor |
-| `<meta http-equiv="X-UA-Compatible">` | Next.js default zaten OK; marjinal |
-| ESLint `--fix` auto-fixable warning'ler | `node_modules` audit ortamında yoktu; lokal'de `npx eslint . --fix` çalıştırılabilir, davranış değişikliği yok |
-| `@ts-expect-error` / `@ts-ignore` audit | Grep-only, fix per-case kararı |
-| HSTS `preload` flag | Operatör kararı (HSTS preload listesine submit kalıcı; geri çekmek aylar) |
-| LCP image `fetchpriority="high"` | Touch-fest (component-bazlı), per-page karar |
-| Image `loading="lazy"` + `decoding="async"` | Aynı sebep |
-| Dynamic import sweep | Regression test gerek (lazy load failure modes) |
-
-**Yap:**
-- Yeni HTTP header eklenirken §34.15 disiplini izle: önce zero-risk kategorisinde mi kontrol et (mevcut request'i kırar mı?)
-- Yeni public endpoint'in monitoring'i için `/api/health` reuse — DB hit'siz pattern korunur
-- Yeni AI bot user-agent eklenirken `crawlDelay: 2` paterni uygulanır
-
-### 34.16 2026-05-02 — Zero-risk bundle #2: X-Robots-Tag + OG + Apple PWA + Sentry release
-
-İkinci zero-risk bundle. 4 maddeyi tek PR'da topladık; her biri runtime impact sıfır, regression test gerektirmiyor.
-
-#### 1. `X-Robots-Tag: noindex, nofollow, noarchive` (sensitive paths)
-
-`next.config.ts:headers()` üç path scope için header eklendi:
-- `/api/:path*` — JSON endpoints, hiçbir zaman indexable değil
-- `/admin/:path*` — internal panel
-- `/r/:path*` — public review surface (per-restaurant slug). Bunlar SEO-irrelevant, ve binlerce long-tail slug Google'a girerse marketing site signal'ını seyreltir
-
-Defense-in-depth: `robots.ts` disallow bot **önerisi**, `X-Robots-Tag` HTTP header **enforced** signal. Eski cache'lenmiş bot rule'una rağmen bot indekslemeye karar verirse header garantiler.
-
-#### 2. Open Graph metadata genişletme (`app/layout.tsx`)
-
-Mevcut `openGraph`/`twitter` metadata'sına eklendi:
-- `siteName: 'Buaze'`
-- `locale: 'tr_TR'`
-- `alternateLocale: ['en_US']`
-- `type: 'website'`
-- `url: 'https://buaze.com'`
-- OG image `type: 'image/png'`
-- Twitter `title` + `description` explicit set
-
-Slack / LinkedIn / WhatsApp link unfurl'lerinde "Buaze · TR" framing görünür; ham domain fallback eskisi gibi değil.
-
-#### 3. Apple PWA / iOS metadata (`app/layout.tsx`)
-
-Next.js Metadata API `appleWebApp` + `formatDetection` field'ları:
-- `appleWebApp.capable: true` — iOS "Add to Home Screen" → standalone app
-- `appleWebApp.statusBarStyle: 'black-translucent'` — Pulse koyu tema ile uyumlu status bar
-- `appleWebApp.title: 'Buaze'`
-- `formatDetection.telephone: false` — **Önemli**: Safari otomatik olarak sayfadaki sayısal string'leri `tel:` link'ine çevirir. Bu monospace stat tile'ları ("340.000+", "%72") bozardı — özellikle Pulse design system'in tasarımını. `false` ile auto-link kapatılır.
-
-Sıfır JS impact; sadece HTML metadata.
-
-#### 4. Sentry release tagging (`instrumentation-client.ts`)
-
-Server + edge config'inde `release: process.env.VERCEL_GIT_COMMIT_SHA` zaten vardı. Client-side eksikti — `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA` (Vercel build sırasında otomatik enjekte edilir) ile pinlendi.
-
-Sentry "Release Health" dashboard'unda her client error hangi commit'ten geldi görünür. Operatör DX: "X release'inden sonra X error rate'i arttı" diff'i yapılabilir. Lokal dev'de undefined kalır → Sentry "unknown release" olarak etiketler (collapse risk yok).
-
-**Yapma:**
-- `/r/:path*` X-Robots-Tag'i kaldırma — public review pages SEO-irrelevant, binlerce slug Google'a girerse marketing site signal seyrelir.
-- `format-detection: false`'ı `true`'ya çevirme — monospace stat tile'lar Safari'de otomatik `tel:` link'e çevrilir, Pulse design bozulur.
-- Sentry `release` field'ını manuel string ile pinleme — Vercel env injection'a güven.
-
-**Yap:**
-- Yeni private path eklenirken `X-Robots-Tag` da ekle (örn. `/internal/*`).
-- Yeni public marketing route eklenirken sitemap'e otomatik girer (CLAUDE.md §35.1 auto-discovery), X-Robots-Tag dokunma.
-
-### 34.17 2026-05-02 — Image attribute sweep (lazy + async decoding)
-
-PageSpeed "minimize image load" + LCP/Speed Index çalışmalarının devamı. 18 raw `<img>` elementi tarandı, position-aware attribute'lar eklendi.
-
-**Risk-aware kategorizasyon:**
-
-| Konum | Kategori | Eklenen |
+| Tarih | PR | Scope özet |
 |---|---|---|
-| `PlatformDistribution.tsx` 8 platform icon (chart legend) | Below-fold | `loading="lazy" decoding="async"` |
-| `MenuSplash.tsx` 1 logo | Above-fold (LCP candidate) | sadece `decoding="async"` |
-| `PublicMenuView.tsx` 7 restaurant logo (6 tema) | Above-fold (LCP candidate) | sadece `decoding="async"` |
-| `BrandIdentityCard.tsx` admin logo preview | Below-fold form | `loading="lazy" decoding="async"` |
-| `dashboard/restaurants/[id]/menu/page.tsx` ItemModal + ThemePanel | Below-fold form | `loading="lazy" decoding="async"` |
-| `admin/site-settings/page.tsx` AssetUploader preview | Below-fold form | `loading="lazy" decoding="async"` |
+| 2026-04-30 | #256 | Major orphan sweep — `jsonwebtoken` dep + 14 component (3 root legacy + 2FA UI cards + 8 marketing eski eskiz) + 2 API route (`/api/careers/apply`, `/api/case-studies`) + `zIndex.ts` util + 508KB hero png + 2.1MB public/uploads tasarım dosyaları |
+| 2026-05-01 | — | Owner dashboard ana sayfa konsolidasyonu — 4 component (`RestaurantAnalyticsPanel`, `StatsCards`, `DayDistributionChart`, `GoogleConversionPanel`) + 30d window query'ler kaldırıldı; 27→13 Promise.all query |
+| 2026-05-01 | — | Slack notification surface removal — webhook field + 4 katman (UI + API + helper + feedback fan-out) |
+| 2026-05-01 | — | Analytics chart fix — 90/30g BarChart→Recharts AreaChart; AI sentiment themes (`extract-themes` cache); hour-bazlı dağılım, response time, aspect breakdown |
+| 2026-05-01 | — | QR scan tracking — `QrScan` model + `/api/qr-scan` (feedback proxy yerine gerçek conversion funnel) |
+| 2026-05-01 | — | Embeddable public review widget — `EmbedView` model + `/embed/[slug]` + `buaze-embed.js` (1-satır iframe + Powered by Buaze footer) |
+| 2026-05-01 | #293, #297 | Perf: `/api/feedback/stats` 7-day trend loop → Promise.all; `Feedback` 3 composite index (rating + platform + branch) |
+| 2026-05-02 | — | Lighthouse audit: ARIA `role="img"` fix (5 yer); legacy JS + GTM/Yandex + forced reflow skip (operatör tetiği bekliyor) |
+| 2026-05-02 | #343 | Hero LCP defer — typing animation 700→2400ms startDelay; subtitle `clamp()`→Tailwind responsive; lucide `optimizePackageImports` |
+| 2026-05-02 | — | PageSpeed pass #2: static asset `max-age=31536000, immutable`; 3rd party `preconnect` (TLS pre-warm) |
+| 2026-05-02 | — | 3 zero-risk security bundle: X-Permitted-Cross-Domain-Policies + `/api/health` uptime probe + robots `crawlDelay: 2` AI bot; X-Robots-Tag `/api`+`/admin`+`/r`; OG metadata + Apple PWA + Sentry release `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA` |
+| 2026-05-02 | — | Image attribute sweep — 18 raw `<img>` → `loading="lazy" decoding="async"` (below-fold) veya sadece `decoding="async"` (LCP candidate hero/menu logo) |
+| 2026-05-02 | — | Auth flow paralelize — login + Google sign-in 4-tetik `Promise.all` (reCAPTCHA + rate-limit IP/email + findUnique). bcrypt sequential intact. |
+| 2026-05-12 | (this PR) | Dead code + dead .md sweep — `src/lib/sentiment.ts` (orphan word cloud helper) + `src/lib/buaze/use-in-view.ts` (barrel-only, 0 consumer) + 3 .md dosya (`design.md` 1220 satır 8-phase complete; `performance_report.md` 1189 satır superseded; `docs/RESTAURANT_GUIDE_TR.md` 52 satır help center §22 supersedes); CLAUDE.md §34 compact (880→~200 satır) + §41 future-session note-taking discipline |
 
-**Değiştirilmeyenler:**
-- `PublicMenuView.tsx` menu item image'ları (5 yer) — zaten `loading="lazy" decoding="async"` taşıyordu (CLAUDE.md §25.5 image CLS pattern)
-- `app/layout.tsx` Yandex 1×1 noscript pixel — already lazy-by-noscript
-- `api/admin/blog/seed/route.ts` raw HTML markup — DB'ye yazılan static HTML; React component değil
+---
 
-**Pattern disipline (yeni `<img>` eklerken):**
-
-```tsx
-// Above-fold / hero / LCP candidate:
-<img src={...} alt={...} decoding="async" className="..." />
-
-// Below-fold (chart legend, form preview, list item):
-<img src={...} alt={...} loading="lazy" decoding="async" className="..." />
-```
-
-**Yapma:**
-- LCP candidate (hero image, restaurant logo splash) `loading="lazy"` — ilk paint geç olur, LCP regression
-- `<Image>` (next/image) komponenti yerine raw `<img>` (CLAUDE.md §25.5 base64-in-DB için raw zorunlu)
-
-**Yap:**
-- Yeni `<img>`'a varsayılan olarak `decoding="async"` ekle (zero-risk, browser hint)
-- Below-fold ise `loading="lazy"` de ekle
-- Hero / LCP-candidate ise `fetchpriority="high"` düşün (per-page karar)
-
-### 34.18 2026-05-02 — Zero-risk bundle #3: SEO + a11y + PWA polish
-
-3 küçük geliştirme tek pas:
-
-#### 1. JSON-LD Organization schema — `areaServed` + `foundingDate`
-
-`src/app/[locale]/layout.tsx`'teki Organization schema zaten **zengindi** (sameAs, contactPoint, address, legalName, alternateName, logo, description, url). Tek gap: Organization root'unda service geography ve company founding year yoktu.
-
-```ts
-{
-  '@type': 'Organization',
-  // ... mevcut field'lar
-  areaServed: 'TR',
-  foundingDate: '2023',
-}
-```
-
-`areaServed` contactPoint level'ında zaten vardı (per-channel) ama Organization-level signal Knowledge Graph entries için kritik. `foundingDate` CLAUDE.md §35.8 "kuruluş yılı 2023" deklarasyonu ile tutarlı.
-
-#### 2. `prefers-reduced-motion` blanket — 3 eksik selector
-
-`src/app/globals.css` ana `prefers-reduced-motion: reduce` blanket'i çoğu Pulse + Tailwind animation'ı kapatıyordu, ama spot-check'te 3 keyframe açıkta kalmıştı:
-
-- `.star-anim-pulse` — public review surface yıldız tap animasyonu
-- `.animate-slide-up` — `slideUpFade` keyframe (form/card entrance)
-- `.confetti-fly` — onboarding finish (`confettiFly` keyframe)
-
-3'ü de blanket'e eklendi. Universal `transition-duration: 0.001ms` reset zaten var, sadece explicit `animation:` property'leri kapatıyordu.
-
-`ecgDraw` zaten ayrı `[style*='ecgDraw']` blanket'inde kapsanıyor (inline-styled element).
-
-#### 3. PWA manifest genişletme
-
-`public/site.webmanifest` mevcut SVG icon listesi + `name`/`short_name`/`background_color`/`theme_color` minimal seti. Web App Manifest spec'e uygun ek field'lar:
-
-| Yeni field | Etki |
-|---|---|
-| `id: '/'` | PWA unique identifier (browser install state) |
-| `orientation: 'portrait'` | Mobile install default |
-| `lang: 'tr'`, `dir: 'ltr'` | Content metadata |
-| `categories: ['business', 'productivity', 'utilities']` | App store categorisation |
-| Icon: `purpose: 'maskable'` ayrı 192/512 entries | Android adaptive icon support (Pixel/Galaxy launcher) |
-
-Mevcut `purpose: 'any maskable'` combined entry **best practice değil** — Chrome / Edge ayrı `any` ve `maskable` entry bekliyor. `any` purpose 180x180 + 192x192/512x512 maskable ayrı entry'lere bölündü.
-
-**Yapma:**
-- Organization schema'ya **var olmayan** sosyal medya hesabı uydurma (`sameAs` Google rich results dolandırıcılık sayar). Mevcut `sameAs: [instagram, twitter, linkedin, youtube]` Buaze gerçek hesapları olduğu varsayılıyor — yoksa SiteSettings ile null-filter yap (`.filter` zaten var).
-- `prefers-reduced-motion` blanket'e yeni keyframe'i sadece bireysel selector ile değil; universal `* { transition-duration: 0.001ms }` reset zaten kapsar — keyframe `animation` ise blanket'e selector ekle.
-- Manifest `purpose: 'any maskable'` combined entry kullanma — Chrome/Edge install prompt iconu doğru picking yapamaz.
-
-**Yap:**
-- Yeni Organization schema field eklerken Google's "Organization structured data guidelines"a uygun ol (sameAs gerçek public profile, contactPoint gerçek email)
-- Yeni motion (`@keyframes`) eklerken aynı anda `globals.css` reduced-motion blanket'ine selector ekle
-- PWA install ihtiyacı çıkarsa `categories` listesini güncelle (örn. yeni feature için `marketing` kategorisi)
-
-### 34.19 2026-05-02 — Auth flow latency optimization (login + Google sign-in)
-
-`/api/auth/login` ve `/api/auth/google` paralelize edildi. İki endpoint de network round-trip'leri sıralı çalıştırıyordu — bağımsız işlemleri `Promise.all` ile birlikte tetikleyerek wait time slowest leg'e indirgendi.
-
-#### `/api/auth/login` — 4-tetik paralelize
-
-**Önce (sequential):**
-```
-verifyRecaptchaToken (50-200ms)
-  ↓
-rateLimit IP    (5-10ms)
-  ↓
-rateLimit email (5-10ms)
-  ↓
-prisma.user.findUnique (10-30ms)
-  ↓
-bcrypt.compare (cost 12 — 100-200ms)
-  ↓
-Total: 170-450ms (network + crypto)
-```
-
-**Sonra (parallel ilk 4 + sequential bcrypt):**
-```
-Promise.all([
-  verifyRecaptchaToken,
-  rateLimit IP,
-  rateLimit email,
-  prisma.user.findUnique,
-])  ← max 50-200ms (slowest leg = reCAPTCHA)
-  ↓
-bcrypt.compare (100-200ms — sequential, passwordHash gerekiyor)
-  ↓
-Total: 150-400ms (~30-50ms kazanç)
-```
-
-bcrypt sequential kalır çünkü `user.passwordHash`'e ihtiyacı var. Cost 12 değişmedi (OWASP 2024 baseline; brute-force defense rate-limit + reCAPTCHA tarafından sağlanıyor).
-
-#### `/api/auth/google` — 2-tetik paralelize
-
-**Önce:** rate limit → reCAPTCHA → Firebase verifyIdToken → findUser
-**Sonra:** `Promise.all([rateLimit, recaptcha])` → verifyIdToken → findUser
-
-Firebase token verify ve findUser sequential kalır çünkü email token'dan çıkıyor.
-
-Kazanç ~50-150ms (slowest leg = reCAPTCHA assessment).
-
-#### Neden bcrypt cost 12 düşürmedik
-
-CLAUDE.md §37.3 deferred listesi #6 (bcrypt cost normalize 12/10/10) cosmetic; performans optimization'ı için cost düşürme **yapma** — OWASP 2024 baseline 12; rate-limit (10/IP/10dk + 5/email/10dk) + reCAPTCHA bot guard zaten yeterli savunma. Cost 10'a düşürmek brute-force resistance %50 azaltır, ~50ms kazanç değer altı.
-
-#### Neden Firebase popup CSP B grubu (COOP) hızlandırmaz
-
-Operatör sordu: "Firebase popup CSP B grubunu uygularsam hızlanır mı?"
-
-**Hayır.** `Cross-Origin-Opener-Policy: same-origin-allow-popups` bir **güvenlik header'ı** (Spectre process isolation). Performans etkisi:
-- ❌ LCP / TBT / Speed Index'i etkilemez
-- ❌ Page load süresini değiştirmez
-- ❌ Auth flow latency değişmez
-- ✅ Spectre saldırılarına karşı browser process isolation (defense-in-depth)
-
-`crossOriginIsolated` mode `SharedArrayBuffer` + high-resolution `performance.now()` açar — Buaze bu API'leri kullanmıyor → indirect kazanç da yok.
-
-CSP B grubu **performans için değil, sadece güvenlik defense-in-depth için** yapılır. Hız için `force-dynamic` → ISR refactor veya GTM/Yandex tracking removal çok daha etkili (CLAUDE.md §34.14).
-
-**Yapma:**
-- Login'de reCAPTCHA + rate-limit'i parallelize ederken bcrypt'i de parallelize etme — `passwordHash` gerek, sequential dependency
-- Auth flow'da `prisma.user.findUnique` `select` optimization'ı (CLAUDE.md §14.1) zaten var — explicit select yetersiz olur, all-fields read tutulur (login akışı tüm User row'unu kullanır)
-- bcrypt cost'u 10'a düşürme — OWASP 2024 baseline 12, brute-force defense gerektirir
-
-**Yap:**
-- Yeni auth-tarzı endpoint (örn. `/api/auth/sso/foo`) eklerken aynı paralelize pattern'i uygula
-- Sequential dependency varsa (örn. token → email → findUser) parallelize etme; data flow gerekirse korunur
+## 35. SEO Discovery & Structured Data
 
 `src/app/sitemap.ts` + `robots.ts` + `public/llms.txt` + `public/.well-known/security.txt` + `src/app/[locale]/blog/rss.xml/route.ts` — discovery + structured data infrastructure'ı. Yeni public sayfa eklerken aşağıdaki kuralları takip et.
 
@@ -5265,5 +4608,111 @@ origin always fresh.
 **Geri eklemek için**: kullanıcı **açık talep** etmeli (§7 scope
 disiplini). git history `git log --all --diff-filter=D --name-only --
 '*FileName*'` ile silme kararının gerekçesi okunur.
+
+---
+
+## §41 — Future Session Note-Taking Disipline (kanonik)
+
+Bu §, yeni session'ların CLAUDE.md'yi nasıl güncelleyeceğini tanımlar. §38 ve §40 örneklerinden çıkarılan kalıcı not-tutma kuralları.
+
+### §41.1 Closure log: ne zaman, nereye, nasıl
+
+**Yaz**:
+- Yeni `## §X` kanonik bölüm (disipline kuralı, runtime davranışı değiştiren karar)
+- Mevcut `## §X` bölümüne kısa update (yeni alt-pattern, hazırda korunan ek liste vb.)
+
+**Yazma**:
+- Stage-by-stage detaylı PR log'u (§38'in 167 closure log paterni **artık tekrarlanmıyor** — git log + PR description kaynak)
+- "Bonus" / "by the way" notlar (varsa `mcp__ccd_session__spawn_task` ile flag'le)
+- Bug fix tek satırlık açıklama (commit message kaynak)
+- Test sonucu / lint output (CI workflow + git log kaynak)
+
+### §41.2 Closure log template (yeni major karar için)
+
+```markdown
+### §X.Y — YYYY-MM-DD <başlık 1 satır>
+
+<2-3 cümle "neden bu karar verildi" özet — runtime/güvenlik/UX etkisi>
+
+**Disipline**:
+- <Yapma 1>: <gerekçe>
+- <Yapma 2>: <gerekçe>
+- <Yap 1>: <pattern + ref>
+
+**Etki**: <hangi dosyalar/route'lar/component'ler etkilendi — kısa>
+
+**Ref**: PR #XXX | git log --grep="<keyword>"
+```
+
+200 kelimeyi geçmemeli. Detay PR'da; CLAUDE.md disipline + audit trail.
+
+### §41.3 Compaction sinyalleri
+
+CLAUDE.md > 5000 satıra yaklaşırsa, compaction zamanı. Sinyaller:
+
+1. **Aynı pattern 3+ §'de tekrar** → kanonik §'ye taşı, diğerleri cross-ref olsun (`→ §X.Y`)
+2. **Stage-by-stage detay 50+ satır** → §38 paterniyle compact timeline'a indir, detay git log'a teslim
+3. **"Bonus" / "out-of-scope" liste 30+ satır** → §38.A master backlog'a konsolide
+4. **Code example 20+ satır** → minimum pattern (5-10 satır) + git ref
+5. **Tarihsel rationale 100+ satır** → "kanonik karar" özetine indir + git ref
+
+### §41.4 Hangi disipline kuralları kanonik §-lere taşınmalı
+
+Yeni session bir kural belirlediyse, hangi §'ye gider:
+
+| Konu | Kanonik § |
+|---|---|
+| Scope/quality genel | §7 |
+| Brand / Pulse design | §11 |
+| Menu sistemleri | §12 |
+| Menu analytics | §13 |
+| Vercel/build | §14 |
+| Mail system | §21 |
+| Pulse panel | §23 |
+| Mobil uyum | §25 |
+| Sentry | §26 |
+| React Query / Radix | §27 |
+| Validation Zod | §28 |
+| Dep policy | §30 |
+| Speed Insights | §31 |
+| Testing | §32 |
+| Scripts | §33 |
+| Cleanup history + method | §34 |
+| SEO discovery | §35 |
+| Security boundaries | §37 |
+| Session history (compact timeline) | §38 |
+| Auto-merge / chat logging | §39 |
+| Cross-stage patterns | §40 |
+| Note-taking disiplini (bu §) | §41 |
+
+Yeni konu ortaya çıkarsa yeni `## §X` ekle; ama önce `grep -n "^## " CLAUDE.md` ile mevcut §-lere baktıktan sonra (overlap riski).
+
+### §41.5 Audit cadence
+
+3-6 ayda bir veya CLAUDE.md > 5000 satıra çıkınca §41.3 sinyalleri sweep'i yapılır:
+
+1. **Inventory** — 3 paralel Explore agent (dead code + dead .md + CLAUDE.md compaction candidates)
+2. **Plan** — kullanıcıya AskUserQuestion ile kritik kararlar (silinecek mi compact mı, hangi §'ye konsolide)
+3. **Execute** — tek PR (kod sil + doc sil + CLAUDE.md compact + yeni disipline)
+4. **Verify** — tsc + lint + build + git diff stat (line balance)
+5. **Auto-merge** — §39 paterni
+
+Tarihsel referans: 2026-05-12 ilk büyük sweep (PR #605, 25.7K→5.3K satır), 2026-05-12 ikinci sweep (bu PR, 5.3K→~4.6K satır + 5 dead file).
+
+### §41.6 Yapma / Yap
+
+**Yapma**:
+- "Belki yararlı olur" §'si ekleme — kullanıcı open talep etmedikçe abstraction
+- Stage-by-stage closure log paterni geri getirme — §38 compact timeline kanonik
+- Aynı pattern'i 4. §'de tekrar etme — 3+ tekrar = kanonik §'ye taşı + cross-ref
+- Code example'da full implementation göstermek — pattern göster (5-10 satır + ellipsis)
+- "Geçmişte yaptığımız X" anlatma — git log kaynak
+
+**Yap**:
+- Yeni major karar → §41.2 template ile closure log
+- Yeni disipline → §41.4 tablosundaki uygun kanonik §'ye taşı
+- CLAUDE.md > 5000 satır → §41.3 sinyalleri sweep
+- PR sonrası auto-merge (§39 + `feedback_auto_merge_after_ci`)
+- Response sonunda 2-section change summary (`feedback_response_format`)
 
 ---
