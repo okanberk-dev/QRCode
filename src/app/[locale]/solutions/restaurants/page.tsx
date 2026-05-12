@@ -283,19 +283,27 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
 
       {/* 3-stat grid */}
       <section className="px-5 sm:px-10 py-[60px] sm:py-16">
-        <div className="mx-auto max-w-[1200px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {stats.map((s) => (
-            <div key={s.l} className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-7">
-              <div
-                className="text-[48px] sm:text-[56px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                {s.k}
+        <div className="mx-auto max-w-[1200px]">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {stats.map((s) => (
+              <div key={s.l} className="rounded-[14px] border border-[#EDEDED] bg-[#FAFAFA] p-7">
+                <div
+                  className="text-[48px] sm:text-[56px] font-medium leading-none tracking-[-0.03em] text-[#0A0A0A]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {s.k}
+                </div>
+                <div className="mt-2.5 text-[15px] font-semibold text-[#0A0A0A]">{s.l}</div>
+                <div className="mt-1 text-[12px] text-[#737373]">{s.d}</div>
               </div>
-              <div className="mt-2.5 text-[15px] font-semibold text-[#0A0A0A]">{s.l}</div>
-              <div className="mt-1 text-[12px] text-[#737373]">{s.d}</div>
-            </div>
-          ))}
+            ))}
+          </div>
+          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
+          <p className="mt-8 text-center text-[11px] text-[#737373] max-w-[720px] mx-auto leading-[1.55]">
+            {isTr
+              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
+              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
+          </p>
         </div>
       </section>
 

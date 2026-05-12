@@ -331,21 +331,29 @@ export default function SolutionPageLayout({
 
       {/* ─── Stats Bar ─── */}
       <section className="bg-[#C6F24E] border-y border-[#A8D62E] px-6 sm:px-10 py-14">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-          {displayStats.map((stat, i) => (
-            <div key={i}>
-              <div
-                className="text-[36px] sm:text-[52px] font-medium text-[#0A0A0A] leading-none tracking-[-0.03em]"
-                style={{ fontFamily: 'var(--font-heading)' }}
-              >
-                {stat.num}
+        <div className="max-w-[1200px] mx-auto">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            {displayStats.map((stat, i) => (
+              <div key={i}>
+                <div
+                  className="text-[36px] sm:text-[52px] font-medium text-[#0A0A0A] leading-none tracking-[-0.03em]"
+                  style={{ fontFamily: 'var(--font-heading)' }}
+                >
+                  {stat.num}
+                </div>
+                <div className="pulse-eyebrow text-[#0A0A0A]/70 mt-3">{stat.label}</div>
+                {stat.context && (
+                  <div className="text-[11px] text-[#0A0A0A]/60 mt-1">{stat.context}</div>
+                )}
               </div>
-              <div className="pulse-eyebrow text-[#0A0A0A]/70 mt-3">{stat.label}</div>
-              {stat.context && (
-                <div className="text-[11px] text-[#0A0A0A]/60 mt-1">{stat.context}</div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
+          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
+          <p className="mt-8 text-center text-[11px] text-[#0A0A0A]/65 max-w-[720px] mx-auto leading-[1.55]">
+            {isTr
+              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
+              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
+          </p>
         </div>
       </section>
 

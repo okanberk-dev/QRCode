@@ -493,6 +493,12 @@ export default async function DeliveryPage({
               </div>
             ))}
           </div>
+          {/* Stage 95 §38.175 — cohort disclosure per CLAUDE.md §35.8. */}
+          <p className="mt-8 text-center text-[11px] text-white/55 max-w-[720px] mx-auto leading-[1.55]">
+            {isTr
+              ? '* Metrikler Buaze müşteri kohortunda ilk 90 gün ortalamasıdır; sonuçlar sektöre, lokasyona ve operasyon disiplinine göre değişir.'
+              : '* Metrics reflect the Buaze customer cohort first 90-day average; results vary by sector, location and operational discipline.'}
+          </p>
         </div>
       </section>
 
