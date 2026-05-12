@@ -18,6 +18,11 @@ async function rememberFeedbackQr(params: {
   qrUrl: string;
   tableNumber: string | null;
   platform: string | null;
+  // Stage 96 — persist owner-chosen colour pair so subsequent downloads
+  // (lazy SVG re-fetch / explicit PNG / SVG download) honour the same
+  // pair. NULL → platform defaults (black/white).
+  darkColor: string | null;
+  lightColor: string | null;
 }) {
   try {
     await prisma.$transaction(async (tx) => {
@@ -36,10 +41,17 @@ async function rememberFeedbackQr(params: {
         // Aynı QR yeniden oluşturulduğunda createdAt'i de yenile — owner
         // panelinde "yeni QR" listesinin en üstüne taşınır. Distinct count
         // semantiği değişmez (CLAUDE.md §34.5'teki tek-row kuralı korunur),
-        // sadece "freshly-touched" görüntüsü.
+        // sadece "freshly-touched" görüntüsü. Renk override edilir — owner
+        // yeni renkle aynı slot'u yeniden ürettiğinde history'de güncel
+        // renk görünür.
         await tx.qrGeneration.update({
           where: { id: existing.id },
-          data: { qrUrl: params.qrUrl, createdAt: new Date() },
+          data: {
+            qrUrl: params.qrUrl,
+            createdAt: new Date(),
+            darkColor: params.darkColor,
+            lightColor: params.lightColor,
+          },
         });
         return;
       }
@@ -51,6 +63,8 @@ async function rememberFeedbackQr(params: {
           tableNumber: params.tableNumber,
           platform: params.platform,
           type: 'feedback',
+          darkColor: params.darkColor,
+          lightColor: params.lightColor,
         },
       });
     });
@@ -177,11 +191,20 @@ export async function GET(
     // Canonical QR history: one row per restaurant + platform + table
     // signature. Re-rendering/downloading the same QR updates the existing
     // record instead of growing the panel list indefinitely.
+    //
+    // Stage 96 — colour persistence. We only store a colour pair when the
+    // owner explicitly passed BOTH `dark` and `light` query params (i.e.
+    // they used the picker, not the default download). Solo override of a
+    // single field would be ambiguous — we don't want a stale "remembered"
+    // light/dark to leak into an otherwise default flow.
+    const persistColors = !!(darkRaw && lightRaw);
     await rememberFeedbackQr({
       restaurantId: restaurant.id,
       qrUrl,
       tableNumber: table || null,
       platform: sanitizedPlatform || null,
+      darkColor: persistColors ? dark : null,
+      lightColor: persistColors ? light : null,
     });
 
     const qrOptions = {

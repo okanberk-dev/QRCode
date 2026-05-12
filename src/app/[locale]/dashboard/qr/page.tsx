@@ -43,6 +43,10 @@ interface QrHistoryItem {
   platform: string | null;
   serviceType?: string | null;
   type?: string | null;
+  // Stage 96 — owner-chosen colour pair (NULL when classic default).
+  // Used to re-render previews + downloads with the original palette.
+  darkColor?: string | null;
+  lightColor?: string | null;
   createdAt: string;
   restaurantId: string;
 }
@@ -185,6 +189,12 @@ export default function DashboardQrPage() {
       const params = new URLSearchParams({ format: 'svg' });
       if (item.tableNumber) params.set('table', item.tableNumber);
       if (item.platform) params.set('platform', item.platform);
+      // Stage 96 — carry the persisted colour pair so the lazy preview
+      // matches what owner saved (not the platform default).
+      if (item.darkColor && item.lightColor) {
+        params.set('dark', item.darkColor);
+        params.set('light', item.lightColor);
+      }
       const res = await fetch(
         `/api/restaurants/${item.restaurantId}/qr?${params.toString()}`,
       );
@@ -257,6 +267,8 @@ export default function DashboardQrPage() {
       platform: result.platform,
       serviceType: null,
       type: 'feedback',
+      darkColor: result.darkColor,
+      lightColor: result.lightColor,
       createdAt: result.createdAt,
       restaurantId: result.restaurantId,
     };
@@ -337,6 +349,12 @@ export default function DashboardQrPage() {
     const params = new URLSearchParams({ format });
     if (item.tableNumber) params.set('table', item.tableNumber);
     if (item.platform) params.set('platform', item.platform);
+    // Stage 96 — carry the persisted colour pair so downloads match the
+    // owner's saved palette (not platform default black/white).
+    if (item.darkColor && item.lightColor) {
+      params.set('dark', item.darkColor);
+      params.set('light', item.lightColor);
+    }
     const res = await fetch(`/api/restaurants/${item.restaurantId}/qr?${params.toString()}`);
     if (!res.ok) return;
     const blob = await res.blob();
