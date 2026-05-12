@@ -12,6 +12,5 @@ konvansiyonuna uyum için var; gerçek içerik `CLAUDE.md`'de.)
 
 Diğer kalıcı belgeler:
 - `README.md` — repo intro
-- `design.md` — Pulse redesign faz log'u
-- `docs/RESTAURANT_GUIDE_TR.md` — restoran sahibi kullanıcı kılavuzu
-- `.design/` + `.design-pulse-2026/` — design handoff bundle'ları (referans, `src/`'ye kopyalanmaz)
+- `SECURITY_AUDIT_REPORT.md` — 2026-05-02 audit detayı (CLAUDE.md §37 referansı)
+- `.design/` + `.design-pulse-2026/` + `.design-owner-2026/` — design handoff bundle'ları (referans, `src/`'ye kopyalanmaz)
