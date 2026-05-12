@@ -21,8 +21,6 @@ interface PanelSelectionBarProps {
   onClear: () => void;
   clearLabel: string;
   countLocale?: string;
-  /** Owner pages have a mobile bottom nav; admin pages do not. */
-  bottomOffset?: 'owner' | 'panel';
 }
 
 const ACTION_CLASS: Record<NonNullable<PanelSelectionAction['variant']>, string> = {
@@ -32,6 +30,10 @@ const ACTION_CLASS: Record<NonNullable<PanelSelectionAction['variant']>, string>
   danger: 'border-[#FCA5A5] bg-[#FEF2F2] text-[#991B1B] hover:bg-[#FEE2E2]',
 };
 
+// CLAUDE.md §38.171 Stage 91 — owner + admin paneller mobile bottom nav'a
+// sahip (UserDashboardShell + AdminMobileNav). globals.css `--dash-bottom-nav-h`
+// mobile için 76px+safe-area, lg:+ otomatik 0 — tek pattern her panel surface'te
+// doğru clearance verir (eski `bottomOffset='owner'|'panel'` flag'i sadeleştirildi).
 export function PanelSelectionBar({
   count,
   label,
@@ -40,20 +42,14 @@ export function PanelSelectionBar({
   onClear,
   clearLabel,
   countLocale = 'tr-TR',
-  bottomOffset = 'panel',
 }: PanelSelectionBarProps) {
   if (count === 0) return null;
-
-  const bottomClass =
-    bottomOffset === 'owner'
-      ? 'bottom-[calc(var(--dash-bottom-nav-h)+12px)] lg:bottom-4'
-      : 'bottom-[calc(12px+env(safe-area-inset-bottom,0px))]';
 
   return (
     <div
       role="region"
       aria-label={ariaLabel}
-      className={`fixed inset-x-3 ${bottomClass} z-50 sm:left-1/2 sm:right-auto sm:w-[min(720px,calc(100vw-32px))] sm:-translate-x-1/2`}
+      className="fixed inset-x-3 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-50 lg:bottom-4 sm:left-1/2 sm:right-auto sm:w-[min(720px,calc(100vw-32px))] sm:-translate-x-1/2"
     >
       <div className="rounded-2xl border border-white/10 bg-[#0A0A0A] p-3 text-white shadow-[0_24px_70px_-24px_rgba(0,0,0,0.55)]">
         <div className="flex items-center gap-2">
