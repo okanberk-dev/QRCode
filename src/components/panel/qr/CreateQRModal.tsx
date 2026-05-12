@@ -2,9 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Loader2, QrCode, Link2 } from "lucide-react";
+import { AlertTriangle, Check, Loader2, QrCode, Link2, Palette } from "lucide-react";
 import { Field, Modal, PlatformChip, RadioCard, type PlatformId } from "@/components/ui";
 import { getSectorPlatforms } from "@/lib/sector-platforms";
+import {
+  QR_PRESETS,
+  DEFAULT_QR_PRESET_ID,
+  normaliseHex,
+  scoreContrast,
+  isContrastRisky,
+} from "@/lib/qr-colors";
 
 interface RestaurantOption {
   id: string;
@@ -34,6 +41,11 @@ export interface QRGenerationResult {
   qrUrl: string;
   svg: string;
   createdAt: string;
+  // Stage 96 — colour pair used at generation time. NULL when owner kept
+  // the default classic palette (black on white) — downstream callers
+  // skip persisting NULL pairs in DB.
+  darkColor: string | null;
+  lightColor: string | null;
 }
 
 interface CreateQRModalProps {
@@ -82,24 +94,6 @@ const PLATFORM_META: Record<
 
 const FALLBACK_KEYS = ["google", "yemeksepeti", "getir", "trendyol_go"] as const;
 
-// Backend `/api/restaurants/[id]/qr` zaten `?dark=...&light=...` parametrelerini
-// destekliyor (`isValidHexColor` ile validate edilir). UI tarafında 6 sade
-// preset sunuyoruz; "graphite" Pulse §11 default'u, geri kalan 5 marka rengi
-// scanner kontrastına saygılı tonlar. Default'tan farklı bir preset seçilirse
-// submit query'sine eklenir; aksi halde backend default'una (`#000000/#fff`)
-// teslim edilir — fakat biz "graphite" intent'ini de Pulse hex'i (#0A0A0A) ile
-// göndererek tutarlılık sağlıyoruz.
-const QR_COLOR_PRESETS = [
-  { key: "graphite", labelTr: "Grafit", labelEn: "Graphite", dark: "#0A0A0A", light: "#FFFFFF" },
-  { key: "lime", labelTr: "Lime", labelEn: "Lime", dark: "#0A0A0A", light: "#EAF9B8" },
-  { key: "navy", labelTr: "Lacivert", labelEn: "Navy", dark: "#1E3A8A", light: "#FFFFFF" },
-  { key: "burgundy", labelTr: "Bordo", labelEn: "Burgundy", dark: "#7F1D1D", light: "#FFFFFF" },
-  { key: "forest", labelTr: "Orman", labelEn: "Forest", dark: "#14532D", light: "#FFFFFF" },
-  { key: "plum", labelTr: "Mor", labelEn: "Plum", dark: "#581C87", light: "#FFFFFF" },
-] as const;
-
-type QrColorKey = (typeof QR_COLOR_PRESETS)[number]["key"];
-
 export function CreateQRModal({
   restaurants,
   defaultRestaurantId,
@@ -117,9 +111,18 @@ export function CreateQRModal({
   const [tableNumber, setTableNumber] = useState("");
   const [linkType, setLinkType] = useState<"default" | "platform">("default");
   const [platform, setPlatform] = useState("google");
-  const [colorKey, setColorKey] = useState<QrColorKey>("graphite");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Stage 96 — colour picker state. Default preset = classic (black on
+  // white). Owner can pick a preset, jump to "Özel" (custom), or directly
+  // type hex codes. Both fields stay in sync with `presetId` so visiting
+  // a preset clears any custom override naturally.
+  const [presetId, setPresetId] = useState<string>(DEFAULT_QR_PRESET_ID);
+  const initialPreset =
+    QR_PRESETS.find((p) => p.id === DEFAULT_QR_PRESET_ID) ?? QR_PRESETS[0];
+  const [dark, setDark] = useState<string>(initialPreset.dark);
+  const [light, setLight] = useState<string>(initialPreset.light);
 
   const activeRestaurant = useMemo(
     () => restaurants.find((r) => r.id === restaurantId),
@@ -181,9 +184,58 @@ export function CreateQRModal({
     }
   }, [linkType, availablePlatforms, platform]);
 
+  // Stage 96 — normalise + score the active colour pair. Hex normalisation
+  // lets the user type `#abc` or `#aabbcc` and the picker stays calm. Risky
+  // contrast (< 3:1) blocks save — scanners would struggle and the owner
+  // would only find out after printing.
+  const normDark = normaliseHex(dark);
+  const normLight = normaliseHex(light);
+  const colorsValid = !!(normDark && normLight);
+  const contrast = colorsValid
+    ? scoreContrast(normDark!, normLight!)
+    : null;
+  const contrastRisky = colorsValid && isContrastRisky(normDark!, normLight!);
+  const isCustomPalette = presetId === "custom";
+  // Persist only when owner actually deviated from the safe classic default
+  // OR explicitly used the custom picker — keeps DB rows clean.
+  const persistColors =
+    colorsValid &&
+    (presetId !== DEFAULT_QR_PRESET_ID ||
+      normDark !== "#000000" ||
+      normLight !== "#FFFFFF");
+
+  const applyPreset = (id: string) => {
+    if (id === "custom") {
+      setPresetId("custom");
+      return;
+    }
+    const p = QR_PRESETS.find((x) => x.id === id);
+    if (!p) return;
+    setPresetId(id);
+    setDark(p.dark);
+    setLight(p.light);
+  };
+
   const submit = async () => {
     if (!restaurantId) {
       setError(isTr ? "Lütfen bir işletme seçin." : "Please select a location.");
+      return;
+    }
+
+    if (!colorsValid) {
+      setError(
+        isTr
+          ? "Renk kodları geçersiz. #RRGGBB formatı kullan."
+          : "Invalid colour code. Use #RRGGBB format.",
+      );
+      return;
+    }
+    if (contrastRisky) {
+      setError(
+        isTr
+          ? "Renk kontrastı çok düşük — QR taranamayabilir. Daha koyu/açık bir pair seç."
+          : "Contrast too low — the QR may fail to scan. Pick a higher-contrast pair.",
+      );
       return;
     }
 
@@ -194,9 +246,10 @@ export function CreateQRModal({
       const params = new URLSearchParams({ format: "svg" });
       if (tableNumber.trim()) params.set("table", tableNumber.trim());
       if (linkType === "platform") params.set("platform", platform);
-      const colorPreset = QR_COLOR_PRESETS.find((p) => p.key === colorKey) ?? QR_COLOR_PRESETS[0];
-      params.set("dark", colorPreset.dark);
-      params.set("light", colorPreset.light);
+      if (persistColors) {
+        params.set("dark", normDark!);
+        params.set("light", normLight!);
+      }
 
       const res = await fetch(`/api/restaurants/${restaurantId}/qr?${params.toString()}`);
       if (!res.ok) {
@@ -243,6 +296,8 @@ export function CreateQRModal({
         qrUrl,
         svg,
         createdAt: new Date().toISOString(),
+        darkColor: persistColors ? normDark : null,
+        lightColor: persistColors ? normLight : null,
       });
 
       onClose();
@@ -392,48 +447,196 @@ export function CreateQRModal({
           />
         </Field>
 
+        {/* Stage 96 — QR colour picker. 6 curated scan-safe presets +
+            "Özel" custom hex pair. Live preview swatch + WCAG contrast
+            score + risky-pair block. CLAUDE.md §11 brand palette respected
+            (Pulse / lime accent surfaces only via preset, not direct UI). */}
         <Field
-          label={isTr ? "QR rengi" : "QR color"}
+          label={
+            <span className="inline-flex items-center gap-1.5">
+              <Palette size={12} strokeWidth={2} />
+              {isTr ? "QR rengi" : "QR colour"}
+            </span>
+          }
           hint={
             isTr
-              ? "Tarama uyumu için yüksek kontrast tercih edin."
-              : "High contrast recommended for scanner reliability."
+              ? "Marka renginle eşleştir veya hazır şablon seç. Düşük kontrast taramayı engeller."
+              : "Match your brand or pick a preset. Low contrast prevents scanning."
           }
         >
-          <div
-            role="radiogroup"
-            aria-label={isTr ? "QR renk seçenekleri" : "QR color options"}
-            className="grid grid-cols-3 gap-1.5 sm:grid-cols-6"
-          >
-            {QR_COLOR_PRESETS.map((p) => {
-              const active = colorKey === p.key;
-              const label = isTr ? p.labelTr : p.labelEn;
-              return (
-                <button
-                  key={p.key}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={label}
-                  onClick={() => setColorKey(p.key)}
-                  className="flex min-h-[44px] flex-col items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-[10.5px] font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-                  style={{
-                    border: `1px solid ${active ? "#0A0A0A" : "#EDEDED"}`,
-                    background: active ? "#FAFAFA" : "#fff",
-                  }}
-                >
-                  <span
-                    aria-hidden
-                    className="block h-6 w-6 rounded-md"
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+              {QR_PRESETS.map((p) => {
+                const active = presetId === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => applyPreset(p.id)}
+                    aria-pressed={active}
+                    title={isTr ? p.hintTr : p.hintEn}
+                    className="group flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 transition-colors"
                     style={{
-                      background: p.light,
-                      boxShadow: `inset 0 0 0 1px #EDEDED, inset 0 0 0 4px ${p.dark}`,
+                      border: `1px solid ${active ? "#0A0A0A" : "#EDEDED"}`,
+                      background: active ? "#FAFAFA" : "#FFFFFF",
                     }}
-                  />
-                  <span className="text-[#0A0A0A]">{label}</span>
-                </button>
-              );
-            })}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="flex h-6 w-6 items-center justify-center rounded-full"
+                      style={{
+                        background: p.light,
+                        border: `1px solid ${p.dark === p.light ? "#EDEDED" : "transparent"}`,
+                      }}
+                    >
+                      <span
+                        className="block h-3 w-3 rounded-full"
+                        style={{ background: p.dark }}
+                      />
+                    </span>
+                    <span className="truncate text-[11px] font-medium text-[#0A0A0A]">
+                      {isTr ? p.labelTr : p.labelEn}
+                    </span>
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={() => applyPreset("custom")}
+                aria-pressed={isCustomPalette}
+                title={isTr ? "Kendi renklerini gir" : "Pick your own colours"}
+                className="flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 transition-colors"
+                style={{
+                  border: `1px solid ${isCustomPalette ? "#0A0A0A" : "#EDEDED"}`,
+                  background: isCustomPalette ? "#FAFAFA" : "#FFFFFF",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex h-6 w-6 items-center justify-center rounded-full"
+                  style={{
+                    background:
+                      "conic-gradient(from 0deg, #FF6B6B, #FFD93D, #6BCB77, #4D96FF, #B47AEA, #FF6B6B)",
+                    border: "1px solid #EDEDED",
+                  }}
+                />
+                <span className="truncate text-[11px] font-medium text-[#0A0A0A]">
+                  {isTr ? "Özel" : "Custom"}
+                </span>
+              </button>
+            </div>
+
+            {isCustomPalette && (
+              <div className="flex flex-col gap-2.5 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex flex-col gap-1">
+                    <span className="pulse-eyebrow text-[#737373]">
+                      {isTr ? "Ön plan" : "Foreground"}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={normDark ?? "#000000"}
+                        onChange={(e) => setDark(e.target.value.toUpperCase())}
+                        aria-label={isTr ? "Ön plan rengi" : "Foreground colour"}
+                        className="h-10 w-10 shrink-0 cursor-pointer rounded border border-[#EDEDED] bg-white p-0"
+                      />
+                      <input
+                        type="text"
+                        value={dark}
+                        onChange={(e) => setDark(e.target.value)}
+                        placeholder="#000000"
+                        maxLength={7}
+                        spellCheck={false}
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        className="bz-input bz-mono flex-1 text-[14px] uppercase"
+                      />
+                    </div>
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="pulse-eyebrow text-[#737373]">
+                      {isTr ? "Arka plan" : "Background"}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={normLight ?? "#FFFFFF"}
+                        onChange={(e) => setLight(e.target.value.toUpperCase())}
+                        aria-label={isTr ? "Arka plan rengi" : "Background colour"}
+                        className="h-10 w-10 shrink-0 cursor-pointer rounded border border-[#EDEDED] bg-white p-0"
+                      />
+                      <input
+                        type="text"
+                        value={light}
+                        onChange={(e) => setLight(e.target.value)}
+                        placeholder="#FFFFFF"
+                        maxLength={7}
+                        spellCheck={false}
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        className="bz-input bz-mono flex-1 text-[14px] uppercase"
+                      />
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Live preview + contrast verdict. Stays compact when classic
+                default is active; full panel surfaces on any deviation. */}
+            {colorsValid && (
+              <div
+                className="flex items-center gap-3 rounded-xl border p-3"
+                style={{
+                  borderColor:
+                    contrast?.level === "risky"
+                      ? "#FECACA"
+                      : contrast?.level === "passable"
+                        ? "#FDE68A"
+                        : "#EDEDED",
+                  background:
+                    contrast?.level === "risky"
+                      ? "#FEF2F2"
+                      : contrast?.level === "passable"
+                        ? "#FFFBEB"
+                        : "#FAFAFA",
+                }}
+              >
+                {/* Swatch preview — `dark` foreground squares on `light`
+                    background mimicking a QR's visual signature. */}
+                <div
+                  aria-hidden="true"
+                  className="grid h-12 w-12 shrink-0 grid-cols-3 grid-rows-3 gap-[1px] rounded-md p-[3px]"
+                  style={{ background: normLight ?? "#FFFFFF", border: "1px solid #EDEDED" }}
+                >
+                  {[1, 0, 1, 0, 1, 0, 1, 1, 0].map((on, i) => (
+                    <span
+                      key={i}
+                      className="block rounded-[1px]"
+                      style={{
+                        background: on ? (normDark ?? "#000000") : "transparent",
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[#0A0A0A]">
+                    {contrast?.level === "risky" ? (
+                      <AlertTriangle size={13} strokeWidth={2.2} className="text-[#DC2626]" />
+                    ) : contrast?.level === "passable" ? (
+                      <AlertTriangle size={13} strokeWidth={2.2} className="text-[#D97706]" />
+                    ) : (
+                      <Check size={13} strokeWidth={2.4} className="text-[#16A34A]" />
+                    )}
+                    {isTr ? contrast?.messageTr : contrast?.messageEn}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-[#525252]">
+                    {isTr ? "Kontrast" : "Contrast"}: <span className="bz-mono">{contrast?.ratio.toFixed(2)}:1</span>
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </Field>
 
@@ -456,7 +659,7 @@ export function CreateQRModal({
             type="button"
             onClick={submit}
             className="bz-btn-primary inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
-            disabled={submitting || !restaurantId || platformLocked}
+            disabled={submitting || !restaurantId || platformLocked || !colorsValid || contrastRisky}
           >
             {submitting ? <Loader2 size={14} className="animate-spin" /> : <QrCode size={14} />}
             {submitting

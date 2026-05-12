@@ -939,7 +939,7 @@ async function renderAnalyticsPage({
               <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
                 {isTr ? 'Düşük puanlara yanıt süresi' : 'Reply latency for low ratings'}
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
                   <div className="pulse-eyebrow text-[#737373]">
                     {isTr ? 'YANIT ORANI' : 'REPLY RATE'}
@@ -996,7 +996,7 @@ async function renderAnalyticsPage({
               <div className="bz-h-tight mt-1 mb-4" style={{ fontSize: 18 }}>
                 {isTr ? 'Yemek · Servis · Atmosfer' : 'Food · Service · Atmosphere'}
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 {[
                   { key: 'food', data: aspectFood, tr: 'Yemek', en: 'Food' },
                   { key: 'service', data: aspectService, tr: 'Servis', en: 'Service' },
