@@ -3,7 +3,7 @@
 // CLAUDE.md §42 — Audit Center category CRUD (superadmin).
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, Plus, Pencil, Trash2, Save, Tag } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, Save, Sparkles, Tag } from 'lucide-react';
 import {
   AlertBanner,
   Badge,
@@ -77,6 +77,7 @@ export default function AuditCategoriesPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmEl, askConfirm] = useConfirmDialog();
+  const [seeding, setSeeding] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -131,6 +132,37 @@ export default function AuditCategoriesPage() {
     });
     setFormError(null);
     setModalOpen(true);
+  }
+
+  async function runSeed() {
+    if (
+      !confirm(
+        'Varsayılan denetim kategorileri ve şablonları yüklenecek/güncellenecek (18 kategori + 25 şablon + ~120 soru). Devam edilsin mi?',
+      )
+    ) {
+      return;
+    }
+    setSeeding(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/audits/seed', { method: 'POST' });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError(j.error || 'Seed başarısız');
+        return;
+      }
+      const json = await res.json();
+      const r = json.data as { categories: number; templates: number; questions: number; durationMs: number };
+      setNotice(
+        `Yüklendi: ${r.categories} kategori · ${r.templates} şablon · ${r.questions} soru (${r.durationMs}ms)`,
+      );
+      await load();
+      setTimeout(() => setNotice(null), 5000);
+    } catch {
+      setError('Bağlantı hatası');
+    } finally {
+      setSeeding(false);
+    }
   }
 
   async function handleSave() {
@@ -217,9 +249,21 @@ export default function AuditCategoriesPage() {
         title="Denetim kategorileri"
         description="Şablonları sektör ve konuya göre gruplayan taksonomi. Owner şablon oluştururken bu kategori listesinden seçer."
         actions={
-          <button className="bz-btn-primary" onClick={openCreate}>
-            <Plus size={14} strokeWidth={2} /> Yeni kategori
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="bz-btn-ghost"
+              onClick={runSeed}
+              disabled={seeding || loading}
+              title="Varsayılan 18 kategori + 25 şablon + ~120 soru yüklenir veya güncellenir"
+            >
+              {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              Varsayılan içeriği yükle
+            </button>
+            <button className="bz-btn-primary" onClick={openCreate}>
+              <Plus size={14} strokeWidth={2} /> Yeni kategori
+            </button>
+          </div>
         }
       />
 
