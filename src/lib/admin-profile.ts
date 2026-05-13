@@ -2,6 +2,33 @@ import type { PanelActor } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getSiteSettings } from '@/lib/site-settings';
 
+/**
+ * Fetch granular RBAC grants for a non-superadmin admin. Superadmin bypasses
+ * the DB (rbac.ts:hasPermission returns true unconditionally) so we skip the
+ * round-trip. Expired grants are filtered out. P2022 (column missing on a
+ * preview deploy that hasn't migrated yet) returns an empty list — sidebar
+ * silently degrades to role-only filtering.
+ */
+async function fetchAdminPermissions(adminUserId: string, role: string): Promise<string[]> {
+  if (role === 'superadmin') return [];
+  try {
+    const now = new Date();
+    const rows = await prisma.adminPermission.findMany({
+      where: {
+        adminUserId,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+      select: { resource: true, action: true },
+    });
+    return rows.map((r) => `${r.resource}:${r.action}`);
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    if (code === 'P2022') return [];
+    console.error('[admin-profile] Failed to fetch permissions:', err);
+    return [];
+  }
+}
+
 export interface AdminPanelProfile {
   id: string;
   username: string | null;
@@ -17,6 +44,14 @@ export interface AdminPanelProfile {
   locationCount?: number | null;
   logoUrl?: string | null;
   faviconUrl?: string | null;
+  /**
+   * Granular RBAC grants in `${resource}:${action}` format (e.g. `"reviews:read"`).
+   * Superadmin returns `[]` since `hasPermission()` bypasses DB lookup for them.
+   * Manager + staff carry the actual `AdminPermission` rows; sidebar uses this
+   * Set to filter nav items annotated with `permission: { resource, action }`.
+   * Expired grants (`expiresAt < now`) are excluded.
+   */
+  permissions: string[];
 }
 
 export async function loadAdminPanelProfile(actor: PanelActor): Promise<AdminPanelProfile> {
@@ -58,6 +93,7 @@ export async function loadAdminPanelProfile(actor: PanelActor): Promise<AdminPan
           locationCount: restaurants.length,
           logoUrl,
           faviconUrl,
+          permissions: [],
         };
       }
     } catch (error) {
@@ -96,25 +132,31 @@ export async function loadAdminPanelProfile(actor: PanelActor): Promise<AdminPan
     }
 
     if (adminUser) {
+      const role = adminUser.role || 'superadmin';
+      const permissions = await fetchAdminPermissions(adminUser.id, role);
       return {
         id: adminUser.id,
         username: adminUser.username,
         email: adminUser.email || adminUser.username,
         recoveryEmail: adminUser.email || null,
         name: adminUser.username,
-        role: adminUser.role || 'superadmin',
+        role,
         plan: null,
         trialEndsAt: null,
         restaurantId: adminUser.restaurantId || null,
         restaurantIds: adminUser.restaurantId ? [adminUser.restaurantId] : [],
         logoUrl,
         faviconUrl,
+        permissions,
       };
     }
   } catch (error) {
     console.error('[admin-profile] Failed to fetch admin profile:', error);
   }
 
+  // Token-only fallback (no AdminUser DB row matched the actor id — env-admin
+  // bootstrap path). Skip permissions fetch; behaves like superadmin/manager
+  // per the JWT claim.
   return {
     id: actor.id,
     username: actor.username,
@@ -127,5 +169,6 @@ export async function loadAdminPanelProfile(actor: PanelActor): Promise<AdminPan
     restaurantIds: actor.restaurantId ? [actor.restaurantId] : [],
     logoUrl,
     faviconUrl,
+    permissions: [],
   };
 }

@@ -44,6 +44,9 @@ interface UserDetail {
 const ROLE_LABEL: Record<string, { label: string; kind: BadgeKind }> = {
   superadmin: { label: 'Superadmin', kind: 'info' },
   manager: { label: 'Yönetici', kind: 'ok' },
+  // `staff` is the granular sub-tier; per-resource grants live in
+  // /admin/users/[id]/permissions (CLAUDE.md §37.2 RBAC).
+  staff: { label: 'Görevli', kind: 'lime' },
 };
 
 function dateLabel(iso: string | null): string {

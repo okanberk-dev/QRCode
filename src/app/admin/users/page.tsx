@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ExternalLink, Mail, Plus, Trash2, Loader2, Store, User, ShieldCheck, Search } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Key, Mail, Plus, Trash2, Loader2, Store, User, ShieldCheck, UserCog, Search } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { AlertBanner, Badge, Modal, PageHeader, TableSkeleton, useConfirmDialog } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
@@ -19,6 +19,26 @@ interface User {
 interface Restaurant {
   id: string;
   name: string;
+}
+
+// Centralised role display — `staff` is the new granular tier (CLAUDE.md
+// §37.2 RBAC infrastructure). Sidebar already filters by per-resource
+// `AdminPermission` grants for staff; here we just surface the label/badge.
+type RoleBadgeKind = 'info' | 'ok' | 'lime';
+function roleLabelFor(role: string): string {
+  if (role === 'superadmin') return 'Superadmin';
+  if (role === 'staff') return 'Görevli';
+  return 'Yönetici';
+}
+function roleBadgeKind(role: string): RoleBadgeKind {
+  if (role === 'superadmin') return 'info';
+  if (role === 'staff') return 'lime';
+  return 'ok';
+}
+function roleBadgeIcon(role: string) {
+  if (role === 'superadmin') return <ShieldCheck size={11} strokeWidth={2} />;
+  if (role === 'staff') return <UserCog size={11} strokeWidth={2} />;
+  return <Store size={11} strokeWidth={2} />;
 }
 
 export default function UsersPage() {
@@ -303,8 +323,8 @@ export default function UsersPage() {
                         )}
                         {/* Mobile-only badges */}
                         <div className="md:hidden flex items-center gap-1.5 flex-wrap mt-1.5">
-                          <Badge kind={user.role === 'superadmin' ? 'info' : 'ok'}>
-                            {user.role === 'superadmin' ? 'Superadmin' : 'Yönetici'}
+                          <Badge kind={roleBadgeKind(user.role)}>
+                            {roleLabelFor(user.role)}
                           </Badge>
                           {user.restaurant && (
                             <Badge kind="ghost">{user.restaurant.name}</Badge>
@@ -314,9 +334,9 @@ export default function UsersPage() {
                     </div>
                   </td>
                   <td className="hidden md:table-cell px-3 py-4 sm:px-6">
-                    <Badge kind={user.role === 'superadmin' ? 'info' : 'ok'}>
-                      {user.role === 'superadmin' ? <ShieldCheck size={11} strokeWidth={2} /> : <Store size={11} strokeWidth={2} />}
-                      {user.role === 'superadmin' ? 'Superadmin' : 'Yönetici'}
+                    <Badge kind={roleBadgeKind(user.role)}>
+                      {roleBadgeIcon(user.role)}
+                      {roleLabelFor(user.role)}
                     </Badge>
                   </td>
                   <td className="hidden md:table-cell px-4 py-4 sm:px-8 sm:py-6">
@@ -330,6 +350,16 @@ export default function UsersPage() {
                   </td>
                   <td className="px-2 py-4 sm:px-8 sm:py-6 text-right">
                     <div className="flex items-center justify-end gap-2 sm:gap-3">
+                      {user.role !== 'superadmin' && (
+                        <Link
+                          href={`/admin/users/${user.id}/permissions`}
+                          className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#EAF9B8] active:translate-y-1 active:shadow-none transition-all"
+                          title="Yetkileri yönet"
+                          aria-label={`${user.username} yetkileri yönet`}
+                        >
+                          <Key size={16} strokeWidth={2} />
+                        </Link>
+                      )}
                       <Link
                         href={`/admin/users/${user.id}`}
                         className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#FAFAFA] active:translate-y-1 active:shadow-none transition-all"
@@ -437,8 +467,16 @@ export default function UsersPage() {
                   className="bz-input w-full cursor-pointer rounded-xl py-3.5 text-sm font-semibold shadow-sm sm:py-4"
                 >
                   <option value="manager">RESTORAN YÖNETİCİSİ</option>
+                  <option value="staff">GÖREVLİ (BUAZE — KISITLI)</option>
                   <option value="superadmin">BUAZE YÖNETİCİSİ (SİSTEM GENELİ)</option>
                 </select>
+                {formData.role === 'staff' && (
+                  <p className="text-[11px] text-[#737373] ml-1 leading-[1.55]">
+                    Görevli hesabı varsayılan olarak sadece Dashboard + Profil görür.
+                    Kaydettikten sonra <span className="font-semibold text-[#0A0A0A]">Yetkileri yönet</span>
+                    {' '}ile hangi bölümleri görüp düzenleyebileceğini tek tek seçin.
+                  </p>
+                )}
               </div>
 
               {formData.role === 'manager' && (

@@ -283,7 +283,7 @@ export default function UserPermissionsPage({
               <strong>Superadmin için yetki ataması gereksiz.</strong>
               <p className="text-[12px] mt-1 opacity-80">
                 Superadmin role&apos;ü RBAC helper&apos;ında bypass edilir — her kaynak ve aksiyona her zaman erişir.
-                Bu sayfayı manager rolündeki yöneticiler için kullan.
+                Bu sayfayı yönetici veya görevli rolündeki kullanıcılar için kullan.
               </p>
             </div>
           </div>

@@ -182,13 +182,19 @@ export async function POST(req: NextRequest) {
         await annotateRecaptchaAssessment(captcha.assessmentName, 'PASSWORD_CORRECT');
       }
 
-      let payloadRole: 'superadmin' | 'manager' = 'superadmin';
+      // Stage: 'staff' role added (CLAUDE.md §37.2 granular RBAC). The
+      // login JWT must carry the exact stored role so `isAdminRole` +
+      // `loadAdminPanelProfile` can resolve grants on the next request.
+      // Coercing 'staff' → 'superadmin' would silently escalate privileges.
+      let payloadRole: 'superadmin' | 'manager' | 'staff' = 'superadmin';
       let payloadRestaurantId = null;
       let payloadId = 'env-admin';
       const payloadUsername = normalizedUsername;
 
       if (admin) {
-        payloadRole = admin.role === 'manager' ? 'manager' : 'superadmin';
+        if (admin.role === 'manager') payloadRole = 'manager';
+        else if (admin.role === 'staff') payloadRole = 'staff';
+        else payloadRole = 'superadmin';
         payloadRestaurantId = admin.restaurantId;
         payloadId = admin.id;
       }

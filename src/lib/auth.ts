@@ -5,7 +5,13 @@ import { prisma } from './prisma';
 import { hashToken } from './session-hash';
 import { getClientIp } from './rate-limit';
 
-export type AdminRole = 'superadmin' | 'manager';
+// Phase: admin panel — `staff` is the granular sub-tier (Stage A2 §38.94 RBAC
+// infrastructure). `superadmin` bypasses all permission checks; `manager` and
+// `staff` go through `AdminPermission` DB lookup (rbac.ts). UI-wise, `manager`
+// is restaurant-scoped (legacy semantics) while `staff` is "blank canvas":
+// superadmin grants per-resource read/write/delete via the existing 39-cell
+// matrix at /admin/users/[id]/permissions.
+export type AdminRole = 'superadmin' | 'manager' | 'staff';
 
 /**
  * Stage 18 §38.89 — pre-Stage-14-hotfix cookie boundary.
@@ -148,7 +154,7 @@ function getStringClaim(payload: Record<string, unknown> | null, key: string) {
 }
 
 export function isAdminRole(role: unknown): role is AdminRole {
-  return role === 'superadmin' || role === 'manager';
+  return role === 'superadmin' || role === 'manager' || role === 'staff';
 }
 
 async function getTokenPayload(req: NextRequest, cookieName: 'admin_token' | 'user_token') {

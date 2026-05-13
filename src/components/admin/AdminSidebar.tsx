@@ -34,6 +34,7 @@ import BuazeLogo from '@/components/marketing/BuazeLogo';
 import ViewportMount from '@/components/ui/ViewportMount';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { AdminPanelProfile } from '@/lib/admin-profile';
+import type { AdminAction, AdminResource } from '@/lib/rbac';
 
 const NotificationBell = nextDynamic(() => import('@/components/notifications/NotificationBell'), {
   ssr: false,
@@ -168,12 +169,29 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
 
   // Sidebar nav supports two entry kinds. Keep only the main landing page
   // flat; related admin surfaces live under compact collapsible groups.
+  //
+  // `permission` (optional): granular RBAC gate for the `staff` role only.
+  // Superadmin always bypasses; manager + restaurant_owner go through the
+  // role array. Staff role is "blank canvas" — `roles` array does NOT
+  // include 'staff' for sensitive items; instead the link/group becomes
+  // visible only if the staff admin holds the matching `AdminPermission`
+  // grant ({resource}:{action}, see src/lib/rbac.ts).  Empty groups are
+  // hidden after child filtering so the sidebar stays tight.
+  type Permission = { resource: AdminResource; action?: AdminAction };
   type NavItem = {
     type: 'item';
     href: string;
     icon: typeof LayoutDashboard;
     label: string;
     roles: string[];
+    permission?: Permission;
+  };
+  type NavChild = {
+    href: string;
+    icon: typeof LayoutDashboard;
+    label: string;
+    permission?: Permission;
+    roles?: string[];
   };
   type NavGroup = {
     type: 'group';
@@ -181,41 +199,42 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
     icon: typeof LayoutDashboard;
     label: string;
     roles: string[];
-    children: Array<{ href: string; icon: typeof LayoutDashboard; label: string }>;
+    children: NavChild[];
   };
   type Nav = NavItem | NavGroup;
 
+  // Build a O(1) lookup set from the admin's effective grants. Superadmin
+  // bypasses, so this stays empty + irrelevant in their session.
+  const permSet = new Set(initialProfile?.permissions ?? []);
+  const permKey = (p: Permission) => `${p.resource}:${p.action ?? 'read'}`;
+  const staffSees = (perm?: Permission) => !!perm && permSet.has(permKey(perm));
+
   const menuItems: Nav[] = [
-    { type: 'item', href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner'] },
+    { type: 'item', href: '/admin/dashboard', icon: LayoutDashboard, label: t('dashboard'), roles: ['superadmin', 'manager', 'restaurant_owner', 'staff'] },
     {
       type: 'group',
       id: 'operations',
       icon: Inbox,
       label: locale === 'en' ? 'Operations' : 'Operasyon',
-      roles: ['superadmin', 'manager', 'restaurant_owner'],
+      roles: ['superadmin', 'manager', 'restaurant_owner', 'staff'],
       children: [
-        { href: '/admin/reviews', icon: Inbox, label: locale === 'en' ? 'Reviews' : 'Yorumlar' },
-        { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik' },
+        { href: '/admin/reviews', icon: Inbox, label: locale === 'en' ? 'Reviews' : 'Yorumlar', permission: { resource: 'reviews', action: 'read' } },
+        { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik', permission: { resource: 'analytics', action: 'read' } },
         { href: '/admin/qr', icon: QrCode, label: t('qr_codes') },
-        ...(role === 'manager' ? [] : [{ href: '/admin/restaurants', icon: Store, label: t('restaurants') }]),
+        ...(role === 'manager' ? [] : [{ href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin'] }]),
         // Stage 29 §38.105 — Campaign moderation queue. Backend RBAC
-        // `campaigns:read` zorunlu; superadmin bypass + manager grant'lı
-        // ise erişim. UI role filter sadece superadmin'e gösteriyor —
-        // manager için RBAC permission grant durumunda admin tarafından
-        // ayrıca açılır (mevcut /admin/users/[id]/permissions paterni).
-        ...(role === 'superadmin'
-          ? [
-              {
-                // Stage 29 §38.105 — Customer email campaign moderation queue
-                // (mevcut /admin/campaigns QR placement campaigns ayrı concept;
-                // URL çakışmasını önlemek için /admin/campaign-approvals).
-                href: '/admin/campaign-approvals',
-                icon: Sparkles,
-                label: locale === 'en' ? 'Campaign approvals' : 'Kampanya Onayları',
-              },
-              { href: '/admin/embed-usage', icon: Globe, label: locale === 'en' ? 'Embed usage' : 'Embed kullanımı' },
-            ]
-          : []),
+        // `campaigns:read` zorunlu; superadmin bypass + grant'lı staff/manager
+        // ise erişim. Sidebar `permission` annotation'ı staff için aktif;
+        // superadmin direkt görür, manager için RBAC permission grant
+        // durumunda admin tarafından ayrıca açılır (mevcut /admin/users/[id]/permissions paterni).
+        {
+          href: '/admin/campaign-approvals',
+          icon: Sparkles,
+          label: locale === 'en' ? 'Campaign approvals' : 'Kampanya Onayları',
+          roles: ['superadmin'],
+          permission: { resource: 'campaigns', action: 'read' },
+        },
+        { href: '/admin/embed-usage', icon: Globe, label: locale === 'en' ? 'Embed usage' : 'Embed kullanımı', roles: ['superadmin'] },
       ],
     },
     {
@@ -241,62 +260,57 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
         { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notifications' : 'Bildirimler' },
       ],
     },
+    {
+      type: 'group',
+      id: 'accounts',
+      icon: Crown,
+      label: locale === 'en' ? 'Accounts' : 'Hesaplar',
+      roles: ['superadmin', 'staff'],
+      children: [
+        { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri', permission: { resource: 'members', action: 'read' } },
+        { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler', permission: { resource: 'users', action: 'read' } },
+        { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler', permission: { resource: 'customers', action: 'read' } },
+        { href: '/admin/plans', icon: CreditCard, label: locale === 'en' ? 'Subscriptions' : 'Abonelikler', permission: { resource: 'plans', action: 'read' } },
+      ],
+    },
+    {
+      type: 'group',
+      id: 'content',
+      icon: BookOpen,
+      label: locale === 'en' ? 'Content' : 'İçerik',
+      roles: ['superadmin', 'staff'],
+      children: [
+        { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog', permission: { resource: 'blog', action: 'read' } },
+        { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular', permission: { resource: 'announcements', action: 'read' } },
+        // Legal documents + site-settings have no `staff` granting path —
+        // hardcoded superadmin-only (no AdminResource mapping defined for legal-documents).
+        { href: '/admin/legal-documents', icon: ScrollText, label: locale === 'en' ? 'Legal Documents' : 'Hukuki Metinler', roles: ['superadmin'] },
+        { href: '/admin/site-settings', icon: Settings, label: locale === 'en' ? 'Site Settings' : 'Site Ayarları', permission: { resource: 'site_settings', action: 'read' } },
+      ],
+    },
+    {
+      type: 'group',
+      id: 'mail',
+      icon: Mail,
+      label: locale === 'en' ? 'Mail' : 'Mail',
+      roles: ['superadmin', 'staff'],
+      children: [
+        { href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter' : 'Bülten Aboneleri', permission: { resource: 'mail_templates', action: 'read' } },
+        { href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Campaigns' : 'Bülten Kampanyaları', permission: { resource: 'mail_templates', action: 'read' } },
+        { href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri', permission: { resource: 'mail_templates', action: 'read' } },
+        { href: '/admin/dev/lifecycle-emails', icon: Mail, label: locale === 'en' ? 'Lifecycle' : 'Yaşam Döngüsü', roles: ['superadmin'] },
+      ],
+    },
   ];
 
-  if (role === 'superadmin') {
-    menuItems.push(
-      {
-        type: 'group',
-        id: 'accounts',
-        icon: Crown,
-        label: locale === 'en' ? 'Accounts' : 'Hesaplar',
-        roles: ['superadmin'],
-        children: [
-          { href: '/admin/members', icon: Crown, label: locale === 'en' ? 'Business Owners' : 'İşletme Sahipleri' },
-          { href: '/admin/users', icon: Users, label: locale === 'en' ? 'Admins' : 'Yöneticiler' },
-          { href: '/admin/customers', icon: UsersRound, label: locale === 'en' ? 'Customers' : 'Müşteriler' },
-          { href: '/admin/plans', icon: CreditCard, label: locale === 'en' ? 'Subscriptions' : 'Abonelikler' },
-        ],
-      },
-      {
-        type: 'group',
-        id: 'content',
-        icon: BookOpen,
-        label: locale === 'en' ? 'Content' : 'İçerik',
-        roles: ['superadmin'],
-        children: [
-          { href: '/admin/blog', icon: BookOpen, label: locale === 'en' ? 'Blog' : 'Blog' },
-          { href: '/admin/announcements', icon: Megaphone, label: locale === 'en' ? 'Announcements' : 'Duyurular' },
-          {
-            href: '/admin/legal-documents',
-            icon: ScrollText,
-            label: locale === 'en' ? 'Legal Documents' : 'Hukuki Metinler',
-          },
-          { href: '/admin/site-settings', icon: Settings, label: locale === 'en' ? 'Site Settings' : 'Site Ayarları' },
-        ],
-      },
-      {
-        type: 'group',
-        id: 'mail',
-        icon: Mail,
-        label: locale === 'en' ? 'Mail' : 'Mail',
-        roles: ['superadmin'],
-        children: [
-          { href: '/admin/newsletters', icon: Mail, label: locale === 'en' ? 'Newsletter' : 'Bülten Aboneleri' },
-          { href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Campaigns' : 'Bülten Kampanyaları' },
-          { href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri' },
-          { href: '/admin/dev/lifecycle-emails', icon: Mail, label: locale === 'en' ? 'Lifecycle' : 'Yaşam Döngüsü' },
-        ],
-      },
-    );
-    if (process.env.NODE_ENV !== 'production') {
-      const mailGroup = menuItems.find((item): item is NavGroup => item.type === 'group' && item.id === 'mail');
-      mailGroup?.children.push({
-        href: '/admin/dev/mail-preview',
-        icon: Mail,
-        label: locale === 'en' ? 'Mail Preview (dev)' : 'Mail Önizleme (dev)',
-      });
-    }
+  if (role === 'superadmin' && process.env.NODE_ENV !== 'production') {
+    const mailGroup = menuItems.find((item): item is NavGroup => item.type === 'group' && item.id === 'mail');
+    mailGroup?.children.push({
+      href: '/admin/dev/mail-preview',
+      icon: Mail,
+      label: locale === 'en' ? 'Mail Preview (dev)' : 'Mail Önizleme (dev)',
+      roles: ['superadmin'],
+    });
   }
 
   menuItems.push({
@@ -304,8 +318,23 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
     href: '/admin/profile',
     icon: User,
     label: locale === 'en' ? 'Profile' : 'Profilim',
-    roles: ['superadmin', 'manager', 'restaurant_owner'],
+    roles: ['superadmin', 'manager', 'restaurant_owner', 'staff'],
   });
+
+  // Per-child visibility: staff role hides any child without an explicit
+  // permission grant OR whose `roles` array excludes them. Other roles
+  // see all children of the groups they can access (legacy behaviour).
+  function isChildAllowed(child: NavChild): boolean {
+    if (child.roles && !child.roles.includes(role)) return false;
+    if (role !== 'staff') return true;
+    return staffSees(child.permission);
+  }
+  // After filtering children, a group with zero allowed children should
+  // disappear from the sidebar entirely — empty accordions are noise.
+  function isGroupVisible(group: NavGroup): boolean {
+    if (!group.roles.includes(role)) return false;
+    return group.children.some(isChildAllowed);
+  }
 
   const roleLabel =
     role === 'superadmin'
@@ -381,12 +410,18 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
         className="flex-1 space-y-0.5 overflow-y-auto px-3"
       >
         {menuItems
-          .filter((i) => i.roles.includes(role))
-          .map((item, idx) => {
+          .filter((i) => {
+            if (i.type === 'group') return isGroupVisible(i);
+            // Flat items: role check + permission gate for staff
+            if (!i.roles.includes(role)) return false;
+            if (role !== 'staff' || !i.permission) return true;
+            return staffSees(i.permission);
+          })
+          .map((item, idx, visibleItems) => {
             // Subtle separator before each top-level group (visual clarity
             // when categories sit next to flat items).
             const showDividerBefore =
-              idx > 0 && item.type === 'group' && menuItems[idx - 1]?.type === 'item';
+              idx > 0 && item.type === 'group' && visibleItems[idx - 1]?.type === 'item';
 
             if (item.type === 'item') {
               const Icon = item.icon;
@@ -412,7 +447,8 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
             // when the active route lives inside one of the children
             // — operator never has to click to find where they are.
             const Icon = item.icon;
-            const childActive = item.children.some(
+            const allowedChildren = item.children.filter(isChildAllowed);
+            const childActive = allowedChildren.some(
               (c) => pathname === c.href || pathname?.startsWith(c.href + '/'),
             );
             const isExpanded = childActive || expandedGroups[item.id] === true;
@@ -446,7 +482,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
                 </button>
                 {!isCollapsed && isExpanded && (
                   <div className="mt-1 ml-5 space-y-0.5 border-l border-[#EDEDED] pl-3 pb-1">
-                    {item.children.map((child) => {
+                    {allowedChildren.map((child) => {
                       const ChildIcon = child.icon;
                       const isActive = pathname === child.href || pathname?.startsWith(child.href + '/');
                       return (
@@ -560,6 +596,18 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
               panelBase="/admin"
             />
           </ViewportMount>
+          {/* Mobile-only logout icon. Desktop keeps the labelled `bz-btn-danger`
+              button at the sidebar bottom; mobile users couldn't reach that
+              without opening the hamburger drawer + scrolling, so we surface
+              a direct icon here. Re-uses the same `handleLogout` POST. */}
+          <button
+            onClick={handleLogout}
+            className="bz-btn-icon bg-[#F2F2F2] text-[#0A0A0A]"
+            aria-label={locale === 'en' ? 'Sign out' : 'Çıkış yap'}
+            title={locale === 'en' ? 'Sign out' : 'Çıkış yap'}
+          >
+            <LogOut size={16} strokeWidth={2} />
+          </button>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="bz-btn-icon bg-[#F2F2F2] text-[#0A0A0A]"
