@@ -704,20 +704,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           sidebar görsel sadeleşti. Eski search button kapsamı: paletteOpen
           state intact, sadece sidebar tetikleyicisi UI'dan çıkarıldı. */}
 
-      {/* §38.39 — Primary CTA tasarım birebir: "Yorum İste" (tasarım kaynağı
-          .design-owner-2026/shell.jsx). Owner panel'de birincil aksiyon yorum
-          talep akışı. href intact (/dashboard/qr) — QR distribution yorum
-          isteme'nin operasyonel yöntemi. Phase 1'de eklenen .bz-side-cta +
-          --mini class'larını kullanır. */}
+      {/* Primary CTA — "QR oluştur" (kullanıcı talebi, eski "Yorum İste"
+          §38.39'dan rename). href intact (/dashboard/qr?new=1) — yeni
+          wizard'ı doğrudan açmak için query flag taşır. .bz-side-cta +
+          --mini Phase 1'den. */}
       <div className="px-3 pb-3">
         <Link
-          href={hrefWithActiveRestaurant(`/${locale}/dashboard/qr`)}
+          href={hrefWithActiveRestaurant(`/${locale}/dashboard/qr?new=1`)}
           className={`bz-side-cta ${isCollapsed ? 'bz-side-cta--mini' : ''}`}
-          title={isCollapsed ? (locale === 'tr' ? 'Yorum İste' : 'Request review') : undefined}
+          title={isCollapsed ? (locale === 'tr' ? 'QR oluştur' : 'Create QR') : undefined}
           onClick={handleNavClick}
         >
           <Plus size={14} strokeWidth={2.2} />
-          <span>{locale === 'tr' ? 'Yorum İste' : 'Request review'}</span>
+          <span>{locale === 'tr' ? 'QR oluştur' : 'Create QR'}</span>
         </Link>
       </div>
 

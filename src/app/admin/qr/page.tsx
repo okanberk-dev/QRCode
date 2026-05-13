@@ -12,7 +12,7 @@ import {
   PlatformChip,
   type PlatformId,
 } from '@/components/ui';
-import { CreateQRModal, type QRGenerationResult } from '@/components/panel/qr/CreateQRModal';
+import { CreateQRWizard, type QRGenerationResult } from '@/components/panel/qr/CreateQRWizard';
 import { QRCard, type QRCardItem } from '@/components/panel/qr/QRCard';
 import { dedupeQrRows } from '@/lib/qr-signature';
 
@@ -21,7 +21,9 @@ interface Restaurant {
   slug: string;
   name: string;
   isActive?: boolean;
-  // Forwarded to <CreateQRModal> so the platform grid can be filtered to
+  /** Workspace brand colour — wizard offers it as a "Marka" preset. */
+  primaryColor?: string | null;
+  // Forwarded to <CreateQRWizard> so the platform grid can be filtered to
   // (sector ∩ configured URLs) instead of the legacy hardcoded 4.
   category?: string | null;
   googlePlaceId?: string | null;
@@ -611,13 +613,14 @@ function AdminQrContent() {
       )}
 
       {showCreate && (
-        <CreateQRModal
+        <CreateQRWizard
           restaurants={restaurants
             .filter((r) => r.isActive !== false)
             .map((r) => ({
               id: r.id,
               name: r.name,
               slug: r.slug,
+              primaryColor: r.primaryColor ?? null,
               category: r.category ?? null,
               googlePlaceId: r.googlePlaceId ?? null,
               yemekSepetiUrl: r.yemekSepetiUrl ?? null,

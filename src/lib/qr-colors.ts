@@ -1,6 +1,6 @@
 // Stage 96 — QR colour palette + WCAG contrast helpers.
 //
-// The owner panel CreateQRModal lets owners customise the QR scan colours
+// The owner panel CreateQRWizard lets owners customise the QR scan colours
 // (dark = foreground modules, light = background). QR scanners need a
 // **contrast ratio of ≥ 3:1** to read reliably across lighting conditions
 // — below that, scan rate drops sharply, especially on phone cameras with

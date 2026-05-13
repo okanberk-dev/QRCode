@@ -12,7 +12,7 @@ import {
   PlatformChip,
   type PlatformId,
 } from '@/components/ui';
-import { CreateQRModal, type QRGenerationResult } from '@/components/panel/qr/CreateQRModal';
+import { CreateQRWizard, type QRGenerationResult } from '@/components/panel/qr/CreateQRWizard';
 import { QRCard, type QRCardItem } from '@/components/panel/qr/QRCard';
 import { dedupeQrRows } from '@/lib/qr-signature';
 import { ACTIVE_BUSINESS_STORAGE_KEY } from '@/lib/active-business';
@@ -22,7 +22,9 @@ interface Restaurant {
   slug: string;
   name: string;
   isActive?: boolean;
-  // Forwarded to <CreateQRModal> so the platform grid can be filtered to
+  /** Workspace brand colour — wizard offers it as a "Marka" preset. */
+  primaryColor?: string | null;
+  // Forwarded to <CreateQRWizard> so the platform grid can be filtered to
   // (sector ∩ configured URLs) instead of the legacy hardcoded 4.
   category?: string | null;
   googlePlaceId?: string | null;
@@ -81,6 +83,7 @@ export default function DashboardQrPage() {
   const locale = params.locale === 'en' ? 'en' : 'tr';
   const isTr = locale === 'tr';
   const preselected = searchParams.get('restaurant') || searchParams.get('restaurantId') || '';
+  const autoOpenWizard = searchParams.get('new') === '1';
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [items, setItems] = useState<QrHistoryItem[]>([]);
@@ -121,6 +124,20 @@ export default function DashboardQrPage() {
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
+
+  // Auto-open the wizard when sidebar/CTA passes `?new=1` and at least
+  // one restaurant exists. Strip the flag from URL after consuming so a
+  // refresh doesn't re-open the modal indefinitely.
+  useEffect(() => {
+    if (!autoOpenWizard) return;
+    if (!restaurantsLoaded) return;
+    if (restaurants.length === 0) return;
+    setShowCreate(true);
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('new');
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [autoOpenWizard, restaurantsLoaded, restaurants.length, pathname, router, searchParams]);
 
   // 1) Load restaurants
   useEffect(() => {
@@ -662,13 +679,14 @@ export default function DashboardQrPage() {
       )}
 
       {showCreate && (
-        <CreateQRModal
+        <CreateQRWizard
           restaurants={restaurants
             .filter((r) => r.isActive !== false)
             .map((r) => ({
               id: r.id,
               name: r.name,
               slug: r.slug,
+              primaryColor: r.primaryColor ?? null,
               category: r.category ?? null,
               googlePlaceId: r.googlePlaceId ?? null,
               yemekSepetiUrl: r.yemekSepetiUrl ?? null,
