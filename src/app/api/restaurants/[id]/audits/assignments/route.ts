@@ -1,11 +1,12 @@
 // CLAUDE.md §42 — Audit assignments (owner: list + create).
 
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
-import { ApiErrors } from '@/lib/api-errors';
+import { ApiErrors, getErrorCode, getErrorMessage } from '@/lib/api-errors';
 import { validateBody } from '@/lib/api/validate';
 import {
   AUDIT_ASSIGNEE_TYPES,
@@ -13,6 +14,7 @@ import {
   AUDIT_RECURRENCES,
 } from '@/lib/audits/types';
 import { generateAuditAssignmentToken } from '@/lib/audits/token';
+import { parseAuditDueAt } from '@/lib/audits/datetime';
 
 type Params = { id: string };
 
@@ -129,37 +131,58 @@ export async function POST(req: NextRequest, ctx: { params: Promise<Params> }) {
     }
   }
 
-  // Phase 3: Tüm atama tiplerinde token üretilir (team_member dahil). Owner
-  // hangi kanalla paylaşacağına karar verir; team_member için ekip içi
-  // private link, candidate/link için public dağıtım. Token Read-only
-  // erişim sağlar, KVKK consent submit zamanı yine zorunlu.
-  const token = await generateAuditAssignmentToken();
+  // dueAt guard — Invalid Date Prisma P2000 fırlatır (CLAUDE.md §42 helper).
+  const dueAt = parseAuditDueAt(data.dueAt);
+  if (!dueAt.ok) return ApiErrors.badRequest('Geçersiz tarih', 'INVALID_DUE_AT');
 
-  const created = await prisma.auditAssignment.create({
-    data: {
-      templateId: data.templateId,
-      restaurantId: id,
-      assigneeType: data.assigneeType,
-      assigneeTeamMemberId: data.assigneeTeamMemberId ?? null,
-      assigneeName: data.assigneeName ?? null,
-      assigneeEmail: data.assigneeEmail || null,
-      assigneePhone: data.assigneePhone ?? null,
-      dueAt: data.dueAt ? new Date(data.dueAt) : null,
-      recurrence: data.recurrence,
-      status: 'pending',
-      token,
-      internalNote: data.internalNote ?? null,
-      createdBy: actor.source,
-      createdById: actor.id,
-    },
-    select: {
-      id: true,
-      assigneeType: true,
-      status: true,
-      token: true,
-      dueAt: true,
-    },
-  });
+  try {
+    // Phase 3: Tüm atama tiplerinde token üretilir (team_member dahil). Owner
+    // hangi kanalla paylaşacağına karar verir; team_member için ekip içi
+    // private link, candidate/link için public dağıtım. Token Read-only
+    // erişim sağlar, KVKK consent submit zamanı yine zorunlu.
+    const token = await generateAuditAssignmentToken();
 
-  return NextResponse.json({ data: created }, { status: 201 });
+    const created = await prisma.auditAssignment.create({
+      data: {
+        templateId: data.templateId,
+        restaurantId: id,
+        assigneeType: data.assigneeType,
+        assigneeTeamMemberId: data.assigneeTeamMemberId ?? null,
+        assigneeName: data.assigneeName ?? null,
+        assigneeEmail: data.assigneeEmail || null,
+        assigneePhone: data.assigneePhone ?? null,
+        dueAt: dueAt.date,
+        recurrence: data.recurrence,
+        status: 'pending',
+        token,
+        internalNote: data.internalNote ?? null,
+        createdBy: actor.source,
+        createdById: actor.id,
+      },
+      select: {
+        id: true,
+        assigneeType: true,
+        status: true,
+        token: true,
+        dueAt: true,
+      },
+    });
+
+    return NextResponse.json({ data: created }, { status: 201 });
+  } catch (err) {
+    // CLAUDE.md §40.4 — try/catch + Sentry + Prisma code mapping
+    const code = getErrorCode(err);
+    console.error('[audit] assignments POST failed', { code, message: getErrorMessage(err) });
+    Sentry.captureException(err, {
+      tags: { route: 'restaurants/audits/assignments', method: 'POST', prismaCode: code },
+      extra: { restaurantId: id, actorId: actor.id },
+    });
+    if (code === 'P2002') return ApiErrors.conflict('Çakışan kayıt mevcut', 'UNIQUE_VIOLATION');
+    if (code === 'P2003') return ApiErrors.badRequest('İlişkili kayıt bulunamadı', 'FK_VIOLATION');
+    if (code === 'P2025') return ApiErrors.notFound('Kayıt bulunamadı');
+    return NextResponse.json(
+      { error: 'Atama oluşturulamadı', code: code || 'INTERNAL_SERVER_ERROR' },
+      { status: 500 },
+    );
+  }
 }

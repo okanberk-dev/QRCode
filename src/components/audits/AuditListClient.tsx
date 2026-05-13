@@ -9,7 +9,9 @@ import {
   Copy as CopyIcon,
   Loader2,
   Plus,
+  Search,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { getTranslations, type Locale } from '@/lib/translations';
 import {
@@ -20,7 +22,8 @@ import {
   EmptyState,
   PageHeader,
 } from '@/components/ui';
-import type { AuditSector, AuditScoringMode } from '@/lib/audits/types';
+import { useUrlFilter } from '@/hooks/useUrlFilter';
+import { AUDIT_SECTORS, type AuditSector, type AuditScoringMode } from '@/lib/audits/types';
 
 interface Restaurant {
   id: string;
@@ -70,6 +73,40 @@ const SCORE_LABEL_KEYS: Record<AuditScoringMode, 'audits_score_mode_percentage' 
   pass_fail: 'audits_score_mode_pass_fail',
 };
 
+type SectorFilter = 'all' | AuditSector;
+type StatusFilter = 'all' | 'published' | 'draft' | 'archived';
+
+// Inline filter pill — bu sayfada 14 instance (sektör 7 + durum 4 + arşiv +
+// extras). 3+ tekrarlı abstraction kaçınma ilkesi (CLAUDE.md §7) ihlal değil
+// çünkü tek dosya. Aynı pattern başka audit sayfasında çıkarsa
+// `src/components/audits/FilterPill.tsx`'e taşınır.
+function FilterPill({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={[
+        'rounded-full px-3 py-1 text-[12px] font-medium transition-colors',
+        'border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C6F24E]',
+        active
+          ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
+          : 'bg-white text-[#525252] border-[#EDEDED] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]',
+      ].join(' ')}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function AuditListClient({ locale, restaurants, initialActiveRestaurantId }: Props) {
   const t = getTranslations(locale);
   const [activeRestaurantId, setActiveRestaurantId] = useState<string>(
@@ -80,6 +117,28 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // URL-synced filter (CLAUDE.md §36). Defaults 'all' / '' — clean URL'de
+  // hiç query param yok. Browser back doğal çalışır, deeplink-friendly.
+  const filters = useUrlFilter<{ sector: SectorFilter; status: StatusFilter; q: string }>({
+    sector: 'all',
+    status: 'all',
+    q: '',
+  });
+  // Search input local state — debounced 300ms ile URL'e yazılır.
+  // URL = source of truth (mount'ta initial value oradan gelir).
+  const [searchInput, setSearchInput] = useState<string>(filters.values.q);
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      if (searchInput !== filters.values.q) filters.set('q', searchInput);
+    }, 300);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+  // URL geri ileri ile değişirse input'u senkronla.
+  useEffect(() => {
+    setSearchInput(filters.values.q);
+  }, [filters.values.q]);
 
   const load = useCallback(async () => {
     if (!activeRestaurantId) {
@@ -116,6 +175,25 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
     const published = templates.filter((tpl) => tpl.isPublished).length;
     return { total: templates.length, published, draft: templates.length - published };
   }, [templates]);
+
+  const filteredTemplates = useMemo(() => {
+    if (!templates) return null;
+    const q = filters.values.q.trim().toLowerCase();
+    return templates.filter((tpl) => {
+      if (filters.values.sector !== 'all' && tpl.sector !== filters.values.sector) return false;
+      if (filters.values.status === 'published' && !tpl.isPublished) return false;
+      if (filters.values.status === 'draft' && (tpl.isPublished || !tpl.isActive)) return false;
+      if (filters.values.status === 'archived' && tpl.isActive) return false;
+      if (q) {
+        const hay = `${tpl.title} ${tpl.description ?? ''} ${tpl.category?.labelTr ?? ''} ${tpl.category?.labelEn ?? ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [templates, filters.values.sector, filters.values.status, filters.values.q]);
+
+  const hasFilters =
+    filters.values.sector !== 'all' || filters.values.status !== 'all' || filters.values.q.trim() !== '';
 
   async function handleDuplicate(tplId: string) {
     if (!activeRestaurantId) return;
@@ -195,6 +273,107 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
         </div>
       </div>
 
+      {/* Filter rail — sector + status pill tabs + debounced search */}
+      {templates && templates.length > 0 && (
+        <div className="bz-card p-3 space-y-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative w-full lg:max-w-[320px]">
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#737373] pointer-events-none"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                className="bz-input pl-9 pr-9"
+                placeholder={t.audits_search_placeholder}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                aria-label={t.audits_search_placeholder}
+                enterKeyHint="search"
+              />
+              {searchInput && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-[#737373] hover:text-[#0A0A0A] focus-visible:outline-2 focus-visible:outline-[#C6F24E]"
+                  onClick={() => setSearchInput('')}
+                  aria-label={t.audits_clear_filters}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            {hasFilters && (
+              <button
+                type="button"
+                className="bz-btn-ghost self-start lg:self-auto"
+                onClick={() => {
+                  filters.reset();
+                  setSearchInput('');
+                }}
+              >
+                <X size={12} /> {t.audits_clear_filters}
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <span className="pulse-eyebrow text-[#525252] shrink-0">
+              {t.audits_filter_sector}
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              <FilterPill
+                active={filters.values.sector === 'all'}
+                onClick={() => filters.set('sector', 'all')}
+              >
+                {t.audits_filter_all}
+              </FilterPill>
+              {AUDIT_SECTORS.map((s) => (
+                <FilterPill
+                  key={s}
+                  active={filters.values.sector === s}
+                  onClick={() => filters.set('sector', s)}
+                >
+                  {t[`audits_sector_${s}` as 'audits_sector_food']}
+                </FilterPill>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <span className="pulse-eyebrow text-[#525252] shrink-0">
+              {t.audits_filter_status}
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              <FilterPill
+                active={filters.values.status === 'all'}
+                onClick={() => filters.set('status', 'all')}
+              >
+                {t.audits_filter_all}
+              </FilterPill>
+              <FilterPill
+                active={filters.values.status === 'published'}
+                onClick={() => filters.set('status', 'published')}
+              >
+                {t.audits_published}
+              </FilterPill>
+              <FilterPill
+                active={filters.values.status === 'draft'}
+                onClick={() => filters.set('status', 'draft')}
+              >
+                {t.audits_draft}
+              </FilterPill>
+              <FilterPill
+                active={filters.values.status === 'archived'}
+                onClick={() => filters.set('status', 'archived')}
+              >
+                {t.audits_archived}
+              </FilterPill>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading && !templates ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <CardSkeleton />
@@ -217,9 +396,27 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
             </div>
           }
         />
+      ) : !filteredTemplates || filteredTemplates.length === 0 ? (
+        <EmptyState
+          icon={<Search size={20} />}
+          title={t.audits_no_results_title}
+          body={t.audits_no_results_body}
+          action={
+            <button
+              type="button"
+              className="bz-btn-ghost"
+              onClick={() => {
+                filters.reset();
+                setSearchInput('');
+              }}
+            >
+              <X size={12} /> {t.audits_clear_filters}
+            </button>
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {templates.map((tpl) => (
+          {filteredTemplates.map((tpl) => (
             <article key={tpl.id} className="bz-card p-4 flex flex-col gap-2">
               <div className="flex items-start justify-between gap-2">
                 <Link

@@ -8,10 +8,11 @@
 // DELETE: hard delete — cascade question + assignments + responses.
 
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
-import { ApiErrors } from '@/lib/api-errors';
+import { ApiErrors, getErrorCode } from '@/lib/api-errors';
 import { validateBody } from '@/lib/api/validate';
 import {
   AUDIT_LOCALES,
@@ -191,7 +192,12 @@ export async function PATCH(
       },
     });
   } catch (err) {
-    console.warn('[audit] audits.templates.update log failed', (err as Error).message);
+    console.error('[audit] audits.templates.update log failed', (err as Error).message);
+    Sentry.captureMessage('admin audit log create failed', {
+      level: 'warning',
+      tags: { action: 'admin.audits.templates.update', prismaCode: getErrorCode(err) },
+      extra: { targetId: id, actorId: String(gate.admin.id) },
+    });
   }
 
   return NextResponse.json({ data: result });
@@ -227,7 +233,12 @@ export async function DELETE(
       },
     });
   } catch (err) {
-    console.warn('[audit] audits.templates.delete log failed', (err as Error).message);
+    console.error('[audit] audits.templates.delete log failed', (err as Error).message);
+    Sentry.captureMessage('admin audit log create failed', {
+      level: 'warning',
+      tags: { action: 'admin.audits.templates.delete', prismaCode: getErrorCode(err) },
+      extra: { targetId: id, actorId: String(gate.admin.id) },
+    });
   }
 
   return NextResponse.json({ ok: true });

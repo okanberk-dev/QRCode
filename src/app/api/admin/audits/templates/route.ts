@@ -7,10 +7,11 @@
 // kullanır.
 
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
-import { ApiErrors } from '@/lib/api-errors';
+import { ApiErrors, getErrorCode } from '@/lib/api-errors';
 import { validateBody } from '@/lib/api/validate';
 import {
   AUDIT_LOCALES,
@@ -168,7 +169,14 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.warn('[audit] audits.templates.create log failed', (err as Error).message);
+    // KVKK audit trail integrity riski — log fail'ı Sentry'ye yansıt
+    // (CLAUDE.md §37.7). Operation başarılı dönüyor; ops manuel inceler.
+    console.error('[audit] audits.templates.create log failed', (err as Error).message);
+    Sentry.captureMessage('admin audit log create failed', {
+      level: 'warning',
+      tags: { action: 'admin.audits.templates.create', prismaCode: getErrorCode(err) },
+      extra: { targetId: created.id, actorId: String(gate.admin.id) },
+    });
   }
 
   return NextResponse.json({ data: created }, { status: 201 });
