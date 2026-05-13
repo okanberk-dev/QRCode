@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight, Check, Copy, Download, Eye, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { ArrowUpRight, Check, Copy, Download, Eye, Layout, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { Badge, Eyebrow, PlatformChip, type PlatformId } from "@/components/ui";
 import { copyToClipboard } from "@/lib/clipboard";
 import { downloadPremiumQrPdf } from "@/lib/qr-premium-template";
+import { getTemplate } from "@/components/panel/qr/templates/registry";
 
 export interface QRCardItem {
   id: string;
@@ -27,6 +28,10 @@ export interface QRCardItem {
   darkColor?: string | null;
   /** Owner-chosen background hex (e.g. `#FFFFFF`). Paired with `darkColor`. */
   lightColor?: string | null;
+  /** Wave A — print/share template id picked in the wizard. NULL for
+   *  legacy rows (rendered as `classic` via registry fallback). Used to
+   *  surface the template badge + thread through downloads in Wave B. */
+  templateId?: string | null;
 }
 
 interface QRCardProps {
@@ -81,6 +86,11 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
       params.set("dark", item.darkColor);
       params.set("light", item.lightColor);
     }
+    // Wave A — thread templateId through so the server keeps the row's
+    // `template_id` in sync if the owner re-downloaded after picker change.
+    // Wave B replaces this with client-side html-to-image render against
+    // the actual template component.
+    if (item.templateId) params.set("template", item.templateId);
     const url = `/api/restaurants/${item.restaurantId}/qr?${params.toString()}`;
     const res = await fetch(url);
     if (!res.ok) return;
@@ -153,6 +163,10 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
     month: "short",
   });
 
+  // Wave A — `getTemplate` falls back to `classic` for null/legacy rows so
+  // every QR has a humane label, even before the migration backfills.
+  const template = getTemplate(item.templateId ?? null);
+
   return (
     <div className="bz-card relative overflow-hidden p-[18px]">
       {/* Header */}
@@ -200,6 +214,15 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
             {isTr ? "Varsayılan platform" : "Default platform"} · {defaultPlatformLabel}
           </span>
         )}
+      </div>
+
+      {/* Template badge — Wave A surface; Wave B swaps the static preview
+          above with the real template component. */}
+      <div className="mt-2 flex items-center gap-2 rounded-lg bg-[#FAFAFA] px-2.5 py-2">
+        <Layout size={12} className="text-[#737373]" />
+        <span className="text-[12px] text-[#525252] font-medium truncate">
+          {isTr ? "Şablon" : "Template"} · {template.meta.name}
+        </span>
       </div>
 
       {/* Stats */}

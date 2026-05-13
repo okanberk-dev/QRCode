@@ -56,6 +56,9 @@ async function getFeedbackQrHistory(restaurantId: string) {
         // + explicit download.
         darkColor: true,
         lightColor: true,
+        // Wave A — owner-chosen print/share template id (nullable for
+        // legacy rows + programmatic regeneration paths).
+        templateId: true,
         createdAt: true,
       },
     });
@@ -86,6 +89,7 @@ async function getFeedbackQrHistory(restaurantId: string) {
       type: 'feedback',
       darkColor: null,
       lightColor: null,
+      templateId: null,
     }));
   }
 }

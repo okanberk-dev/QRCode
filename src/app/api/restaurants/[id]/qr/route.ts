@@ -7,6 +7,7 @@ import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
 import { renderAestheticQrSvg } from '@/lib/qr-aesthetic';
 import { composePremiumQrPng } from '@/lib/qr-premium-png';
+import { isValidTemplateId } from '@/components/panel/qr/templates/registry';
 // Plain `qrcode` kept for `?style=plain` opt-out + sharp composite
 // fallback path (premium PNG render failure → mono QR rather than 500).
 import QRCode from 'qrcode';
@@ -27,6 +28,9 @@ async function rememberFeedbackQr(params: {
   // pair. NULL → platform defaults (black/white).
   darkColor: string | null;
   lightColor: string | null;
+  // Wave A — print/share template (`classic`, …). NULL when caller didn't
+  // pass `?template=` (legacy wizard path / programmatic regeneration).
+  templateId: string | null;
 }) {
   try {
     await prisma.$transaction(async (tx) => {
@@ -47,7 +51,8 @@ async function rememberFeedbackQr(params: {
         // semantiği değişmez (CLAUDE.md §34.5'teki tek-row kuralı korunur),
         // sadece "freshly-touched" görüntüsü. Renk override edilir — owner
         // yeni renkle aynı slot'u yeniden ürettiğinde history'de güncel
-        // renk görünür.
+        // renk görünür. Template aynı kurala uyar — explicit pass varsa
+        // güncellenir, null pass mevcut kaydı silmez.
         await tx.qrGeneration.update({
           where: { id: existing.id },
           data: {
@@ -55,6 +60,7 @@ async function rememberFeedbackQr(params: {
             createdAt: new Date(),
             darkColor: params.darkColor,
             lightColor: params.lightColor,
+            ...(params.templateId ? { templateId: params.templateId } : {}),
           },
         });
         return;
@@ -69,6 +75,7 @@ async function rememberFeedbackQr(params: {
           type: 'feedback',
           darkColor: params.darkColor,
           lightColor: params.lightColor,
+          templateId: params.templateId,
         },
       });
     });
@@ -127,6 +134,12 @@ export async function GET(
   const lightRaw = searchParams.get('light');
   const dark = darkRaw && isValidHexColor(darkRaw) ? darkRaw : DEFAULT_DARK;
   const light = lightRaw && isValidHexColor(lightRaw) ? lightRaw : DEFAULT_LIGHT;
+
+  // Wave A — print/share template id. Whitelist via registry so unknown
+  // strings don't poison `qr_generations.template_id`. Empty/invalid →
+  // NULL (legacy path; owner gets the classic preview on QRCard).
+  const templateRaw = searchParams.get('template');
+  const persistTemplate = isValidTemplateId(templateRaw) ? templateRaw : null;
 
   const widthRaw = searchParams.get('width');
   let width = DEFAULT_WIDTH;
@@ -210,6 +223,7 @@ export async function GET(
       platform: sanitizedPlatform || null,
       darkColor: persistColors ? dark : null,
       lightColor: persistColors ? light : null,
+      templateId: persistTemplate,
     });
 
     // Aesthetic Buaze QR — rounded modules + unified finder eyes. Used
