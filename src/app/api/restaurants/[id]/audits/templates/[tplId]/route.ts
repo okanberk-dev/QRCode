@@ -28,7 +28,12 @@ async function gate(req: NextRequest, restaurantId: string, write: boolean) {
 async function findTemplate(tplId: string, restaurantId: string) {
   return prisma.auditTemplate.findFirst({
     where: { id: tplId, restaurantId },
-    select: { id: true, restaurantId: true },
+    select: {
+      id: true,
+      restaurantId: true,
+      isPublished: true,
+      forkedFromId: true,
+    },
   });
 }
 
@@ -56,6 +61,13 @@ export async function GET(req: NextRequest, ctx: { params: Promise<Params> }) {
       createdById: true,
       createdAt: true,
       updatedAt: true,
+      forkedFromId: true,
+      // Reset CTA UI'da görünür mü kararı: forkedFromId varsa + kaynak
+      // hâlâ yayında ise. `forkedFrom.isPublished` zaten public; ekstra
+      // restaurantId leak'i yok (global template = restaurantId null).
+      forkedFrom: {
+        select: { id: true, title: true, isPublished: true, isActive: true },
+      },
       category: { select: { id: true, slug: true, labelTr: true, labelEn: true } },
       questions: {
         orderBy: { sortOrder: 'asc' },
@@ -98,6 +110,46 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<Params> }) 
       select: { id: true },
     });
     if (!cat) return ApiErrors.badRequest('Geçersiz kategori', 'INVALID_CATEGORY');
+  }
+
+  // Edit gating — kullanıcı kararı (CLAUDE.md §40.2):
+  //
+  //  (a) **Published lock**: owner published template'i doğrudan
+  //      düzenleyemez; önce `publish:false` ile draft'a almalı. Aynı
+  //      request'te `publish:false` ile birlikte içerik değişikliği
+  //      geçirmek serbest — single-shot "draft'a çek + düzenle" akışı
+  //      bu sayede mümkün. Sadece `publish` toggle (içerik değişikliği
+  //      yok) `published=true` durumunda yine geçerli.
+  //
+  //  (b) **Response lock**: yanıt almış template'lerde soru listesi
+  //      değiştirilemez (veri tutarsızlığı önleme). Meta düzenleme + new
+  //      `publish` durumu yine serbest. Owner yeni bir version istiyorsa
+  //      template'i duplicate edip yeni revizyona geçer.
+  const isContentEdit =
+    data.title !== undefined ||
+    data.description !== undefined ||
+    data.sector !== undefined ||
+    data.scoringMode !== undefined ||
+    data.passingScore !== undefined ||
+    data.locale !== undefined ||
+    data.categoryId !== undefined ||
+    Array.isArray(data.questions);
+
+  if (existing.isPublished && isContentEdit && data.publish !== false) {
+    return ApiErrors.badRequest(
+      'Yayındaki şablon doğrudan düzenlenemez. Önce yayından kaldır (taslağa al).',
+      'PUBLISHED_LOCKED',
+    );
+  }
+
+  if (Array.isArray(data.questions)) {
+    const responseCount = await prisma.auditResponse.count({ where: { templateId: tplId } });
+    if (responseCount > 0) {
+      return ApiErrors.badRequest(
+        'Yanıt almış şablonun soruları değiştirilemez. Yeni versiyon için şablonu çoğaltın.',
+        'RESPONSES_LOCK_QUESTIONS',
+      );
+    }
   }
 
   const result = await prisma.$transaction(async (tx) => {

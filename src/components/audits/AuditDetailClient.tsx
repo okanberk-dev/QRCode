@@ -19,7 +19,9 @@ import {
   FileText,
   Link2,
   Loader2,
+  Pencil,
   Plus,
+  RotateCcw,
   Trash2,
   User as UserIcon,
 } from 'lucide-react';
@@ -60,6 +62,13 @@ interface TemplateDetail {
   isPublished: boolean;
   isActive: boolean;
   category: { id: string; labelTr: string; labelEn: string } | null;
+  /** Fork kaynağı — Phase 5. Owner global katalog'tan fork ettiyse kaynak
+   *  id'si burada saklanır. Reset CTA görünürlüğü buna bağlı (CLAUDE.md
+   *  §40.2). NULL = sıfırdan yapılmış owner template'i; reset semantiği yok. */
+  forkedFromId?: string | null;
+  /** Kaynak global template'in current durumu — reset edilebilirlik
+   *  hesaplamak için. NULL ise kaynak silinmiş veya yayından alınmış. */
+  forkedFrom?: { isPublished: boolean; isActive: boolean } | null;
   questions: Array<{
     id: string;
     type: AuditQuestionType;
@@ -218,6 +227,54 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
 
   const csvHref = `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/responses/export`;
   const hasResponses = template._count.responses > 0;
+  // Reset CTA görünürlüğü — CLAUDE.md §40.2: fork kaynağı varsa + kaynak
+  // hâlâ yayında ise + yanıt yoksa. Diğer durumlarda buton görünmez (silent
+  // ineligibility owner kafası karıştırmaz; tooltip ile sebebi açıklamak
+  // 3+ tekrar olmadıkça gereksiz).
+  const canResetToDefault =
+    !!template.forkedFromId &&
+    !!template.forkedFrom?.isPublished &&
+    !!template.forkedFrom?.isActive &&
+    !hasResponses;
+
+  async function handleResetToDefault() {
+    askConfirm({
+      title: locale === 'tr' ? 'Varsayılana sıfırla' : 'Reset to default',
+      body:
+        locale === 'tr'
+          ? 'Sorular ve skorlama orijinal şablon kaynağından yeniden alınacak. Owner-eklediğin sorular silinir, başlık ve açıklama korunur. Şablon taslağa düşer.'
+          : 'Questions and scoring will be re-synced from the original fork source. Your custom questions will be removed; title and description are kept. The template will be unpublished.',
+      variant: 'danger',
+      confirmLabel: locale === 'tr' ? 'Sıfırla' : 'Reset',
+      cancelLabel: locale === 'tr' ? 'Vazgeç' : 'Cancel',
+      onConfirm: async () => {
+        setBusy(true);
+        setError(null);
+        try {
+          const res = await fetch(
+            `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/reset`,
+            { method: 'POST' },
+          );
+          if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            setError(j.error || (locale === 'tr' ? 'Sıfırlanamadı' : 'Reset failed'));
+            return;
+          }
+          setNotice(
+            locale === 'tr'
+              ? 'Şablon varsayılana sıfırlandı.'
+              : 'Template reset to default.',
+          );
+          router.refresh();
+          setTimeout(() => setNotice(null), 3500);
+        } catch {
+          setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
+        } finally {
+          setBusy(false);
+        }
+      },
+    });
+  }
 
   function copyLink(token: string) {
     const url = `${appUrl}/audits/${token}`;
@@ -326,6 +383,26 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
               >
                 <Download size={14} /> {t.audits_detail_csv_export}
               </a>
+            )}
+            <Link
+              href={`/${locale}/dashboard/audits/${template.id}/edit`}
+              className="bz-btn-ghost"
+              title={locale === 'tr' ? 'Şablonu düzenle' : 'Edit template'}
+            >
+              <Pencil size={14} />
+              {locale === 'tr' ? 'Düzenle' : 'Edit'}
+            </Link>
+            {canResetToDefault && (
+              <button
+                type="button"
+                className="bz-btn-ghost"
+                onClick={handleResetToDefault}
+                disabled={busy}
+                title={locale === 'tr' ? 'Fork kaynağına geri dön' : 'Reset to fork source'}
+              >
+                {busy ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                {locale === 'tr' ? 'Varsayılana sıfırla' : 'Reset to default'}
+              </button>
             )}
             <button
               type="button"

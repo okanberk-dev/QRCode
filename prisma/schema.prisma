@@ -1845,6 +1845,16 @@ model AuditTemplate {
   createdBy    String?        @map("created_by")
   createdById  String?        @map("created_by_id")
 
+  // Fork kaynağı — owner global katalogtan template fork ettiğinde, kaynak
+  // template'in id'si burada saklanır. "Varsayılana sıfırla" (owner UI)
+  // bu kaynağı bulup soruları + scoring ayarlarını yeniden senkronize eder
+  // (CLAUDE.md §40.2 — owner-side reset semantiği "fork kaynağına dön").
+  // Kaynak template silinirse SetNull → reset butonu UI'da kaybolur,
+  // mevcut owner template'i sağlam kalır.
+  forkedFromId String?        @map("forked_from_id")
+  forkedFrom   AuditTemplate? @relation("AuditTemplateFork", fields: [forkedFromId], references: [id], onDelete: SetNull)
+  forks        AuditTemplate[] @relation("AuditTemplateFork")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1856,6 +1866,7 @@ model AuditTemplate {
   @@index([restaurantId, isPublished, isActive])
   @@index([categoryId, isPublished])
   @@index([sector, isPublished])
+  @@index([forkedFromId])
   @@map("audit_templates")
 }
 
