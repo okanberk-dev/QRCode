@@ -49,6 +49,8 @@ interface Survey {
   kvkkText: string | null;
   collectMarketingConsent: boolean;
   collectContact: boolean;
+  couponCode: string | null;
+  couponLabel: string | null;
   restaurantId: string;
   createdAt: string;
   updatedAt: string;
@@ -363,6 +365,12 @@ export default function SurveyDetailClient({
                 label={t.survey_form_collect_marketing}
                 value={survey.collectMarketingConsent ? '✓' : '—'}
               />
+              {survey.couponCode && (
+                <Row
+                  label={locale === 'tr' ? 'Kupon kodu' : 'Coupon code'}
+                  value={survey.couponCode}
+                />
+              )}
             </dl>
 
             <div className="mt-4 border-t border-[#EDEDED] pt-4">

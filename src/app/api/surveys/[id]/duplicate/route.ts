@@ -30,6 +30,8 @@ export async function POST(
       kvkkText: true,
       collectMarketingConsent: true,
       collectContact: true,
+      couponCode: true,
+      couponLabel: true,
       restaurantId: true,
       questions: {
         select: { text: true, type: true, options: true, required: true, sortOrder: true },
@@ -64,6 +66,8 @@ export async function POST(
       kvkkText: source.kvkkText,
       collectMarketingConsent: source.collectMarketingConsent,
       collectContact: source.collectContact,
+      couponCode: source.couponCode,
+      couponLabel: source.couponLabel,
       questions: {
         create: source.questions.map((q) => ({
           text: q.text,

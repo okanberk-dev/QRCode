@@ -137,6 +137,8 @@ export default function SurveyWizardClient({
   const [kvkkText, setKvkkText] = useState('');
   const [collectContact, setCollectContact] = useState(true);
   const [collectMarketingConsent, setCollectMarketingConsent] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLabel, setCouponLabel] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -227,6 +229,8 @@ export default function SurveyWizardClient({
             kvkkText: kvkkText.trim() || null,
             collectMarketingConsent,
             collectContact,
+            couponCode: couponCode.trim() || null,
+            couponLabel: couponLabel.trim() || null,
             isPublished: publish,
             questions: questions.map((q) => ({
               text: q.text.trim(),
@@ -265,6 +269,8 @@ export default function SurveyWizardClient({
       kvkkText,
       collectMarketingConsent,
       collectContact,
+      couponCode,
+      couponLabel,
       questions,
       router,
       locale,
@@ -384,6 +390,10 @@ export default function SurveyWizardClient({
             setCollectContact={setCollectContact}
             collectMarketingConsent={collectMarketingConsent}
             setCollectMarketingConsent={setCollectMarketingConsent}
+            couponCode={couponCode}
+            setCouponCode={setCouponCode}
+            couponLabel={couponLabel}
+            setCouponLabel={setCouponLabel}
             t={t}
           />
         )}
@@ -920,6 +930,10 @@ function Step4Appearance({
   setCollectContact,
   collectMarketingConsent,
   setCollectMarketingConsent,
+  couponCode,
+  setCouponCode,
+  couponLabel,
+  setCouponLabel,
   t,
 }: {
   locale: Locale;
@@ -933,6 +947,10 @@ function Step4Appearance({
   setCollectContact: (v: boolean) => void;
   collectMarketingConsent: boolean;
   setCollectMarketingConsent: (v: boolean) => void;
+  couponCode: string;
+  setCouponCode: (v: string) => void;
+  couponLabel: string;
+  setCouponLabel: (v: string) => void;
   t: ReturnType<typeof getTranslations>;
 }) {
   return (
@@ -1024,6 +1042,53 @@ function Step4Appearance({
             />
             <span>{t.survey_form_collect_marketing}</span>
           </label>
+        </div>
+
+        {/* Coupon (design handoff Stage 99 — Sana özel kupon kartı) */}
+        <div className="rounded-2xl border border-dashed border-[#D4D2CC] bg-[#FAFAFA] p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="pulse-eyebrow text-[#6B6B66]">
+              {locale === 'tr' ? 'Tamamlama ödülü (opsiyonel)' : 'Completion reward (optional)'}
+            </span>
+            {couponCode && <Badge kind="lime">{couponCode}</Badge>}
+          </div>
+          <p className="mb-3 text-xs text-[#525252]">
+            {locale === 'tr'
+              ? 'Bir kupon kodu eklerseniz teşekkür ekranında kopyalanabilir kart olarak görünür. Boş bırakırsanız kart gizlenir.'
+              : 'Add a code to show it as a copyable card on the thank-you screen. Leave empty to hide.'}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
+            <Field
+              label={locale === 'tr' ? 'Kod' : 'Code'}
+              hint={`${couponCode.length} / 40`}
+            >
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase().slice(0, 40))}
+                placeholder="BUAZE10"
+                className="bz-input bz-mono uppercase tracking-wider"
+                maxLength={40}
+              />
+            </Field>
+            <Field
+              label={locale === 'tr' ? 'Açıklama (opsiyonel)' : 'Label (optional)'}
+              hint={`${couponLabel.length} / 120`}
+            >
+              <input
+                type="text"
+                value={couponLabel}
+                onChange={(e) => setCouponLabel(e.target.value.slice(0, 120))}
+                placeholder={
+                  locale === 'tr'
+                    ? '10% indirim · 30 gün geçerli'
+                    : '10% off · valid 30 days'
+                }
+                className="bz-input"
+                maxLength={120}
+              />
+            </Field>
+          </div>
         </div>
       </div>
     </div>

@@ -44,6 +44,8 @@ const PatchBody = z
     kvkkText: z.string().max(KVKK_TEXT_MAX).nullable().optional(),
     collectMarketingConsent: z.boolean().optional(),
     collectContact: z.boolean().optional(),
+    couponCode: z.string().max(40).nullable().optional(),
+    couponLabel: z.string().max(120).nullable().optional(),
     isActive: z.boolean().optional(),
     questions: z.array(QuestionPatch).min(1).max(MAX_QUESTIONS_PER_SURVEY).optional(),
   })
@@ -138,6 +140,12 @@ export async function PATCH(
         }),
         ...(data.collectContact !== undefined && {
           collectContact: data.collectContact,
+        }),
+        ...(data.couponCode !== undefined && {
+          couponCode: data.couponCode?.trim() || null,
+        }),
+        ...(data.couponLabel !== undefined && {
+          couponLabel: data.couponLabel?.trim() || null,
         }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },

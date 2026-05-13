@@ -51,6 +51,8 @@ const CreateBody = z
     kvkkText: z.string().max(KVKK_TEXT_MAX).optional().nullable(),
     collectMarketingConsent: z.boolean().optional().default(false),
     collectContact: z.boolean().optional().default(true),
+    couponCode: z.string().max(40).optional().nullable(),
+    couponLabel: z.string().max(120).optional().nullable(),
     isPublished: z.boolean().optional().default(false),
     questions: z.array(QuestionInput).min(1).max(MAX_QUESTIONS_PER_SURVEY),
   })
@@ -171,6 +173,8 @@ export async function POST(req: NextRequest) {
       kvkkText: data.kvkkText?.trim() || null,
       collectMarketingConsent: !!data.collectMarketingConsent,
       collectContact: data.collectContact !== false,
+      couponCode: data.couponCode?.trim() || null,
+      couponLabel: data.couponLabel?.trim() || null,
       questions: {
         create: data.questions.map((q, idx) => ({
           text: q.text.trim(),
