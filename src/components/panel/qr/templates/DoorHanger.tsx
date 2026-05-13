@@ -168,6 +168,7 @@ export const doorHangerMeta: TemplateMeta = {
   category: 'venue',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'rounded', finder: 'leaf', surface: '#C6F24E' },
   print: { widthMm: 100, heightMm: 200, bleedMm: 3 },
+  canvas: { width: 420, height: 700 },
   descriptionTr: 'Tepe deliği olan dikey poster — vitrine asılır.',
   descriptionEn: 'Vertical poster with top hole — hangs on door / window.',
 };

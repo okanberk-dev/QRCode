@@ -199,6 +199,7 @@ export const postcardMeta: TemplateMeta = {
   category: 'editorial',
   preview: { fg: '#9d3a1a', bg: '#F6F1E4', module: 'dot', finder: 'rounded', surface: '#e9e1d0' },
   print: { widthMm: 148, heightMm: 105, bleedMm: 3 },
+  canvas: { width: 700, height: 460 },
   descriptionTr: 'Vintage postcart — otel / butik / restoran için.',
   descriptionEn: 'Vintage postcard — hotel / boutique / restaurant.',
 };

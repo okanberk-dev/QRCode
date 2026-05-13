@@ -38,7 +38,10 @@ export function CounterPlaque({ qrPayload, business }: TemplateProps) {
           display: 'flex',
           gap: 22,
           boxShadow: '0 30px 50px -15px rgba(10,10,10,0.25), inset 0 1px 0 rgba(255,255,255,0.9)',
-          backdropFilter: 'blur(8px)',
+          // `backdropFilter` removed — html-to-image capture (Wave C
+          // client-side download) doesn't reliably reproduce CSS
+          // `backdrop-filter` across browsers, and the parent gradient
+          // is already smooth so the blur effect is imperceptible.
         }}
       >
         {/* Left text */}
@@ -128,6 +131,7 @@ export const counterPlaqueMeta: TemplateMeta = {
   category: 'venue',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'rounded', finder: 'rounded', surface: '#ECEEE7' },
   print: { widthMm: 150, heightMm: 100, bleedMm: 3 },
+  canvas: { width: 560, height: 480 },
   descriptionTr: 'Kasa yanında duran akrilik blok — kafe & take-away için.',
   descriptionEn: 'Acrylic block by the till — café / take-away use.',
 };

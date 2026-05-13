@@ -145,6 +145,7 @@ export const premiumBlackMeta: TemplateMeta = {
   category: 'editorial',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'square', finder: 'square', surface: '#0A0A0A' },
   print: { widthMm: 105, heightMm: 148, bleedMm: 3 },
+  canvas: { width: 560, height: 720 },
   descriptionTr: 'Lüks restoran / fine dining için italik serif tasarım.',
   descriptionEn: 'Italic serif design for fine-dining venues.',
 };

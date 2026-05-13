@@ -194,6 +194,7 @@ export const classicMeta: TemplateMeta = {
     surface: '#EAF9B8',
   },
   print: { widthMm: 100, heightMm: 125, bleedMm: 3 },
+  canvas: { width: 720, height: 900 },
   descriptionTr: 'Genel amaçlı — masaüstü standı, vitrin posteri, broşür.',
   descriptionEn: 'General purpose — table tent, window poster, flyer.',
 };

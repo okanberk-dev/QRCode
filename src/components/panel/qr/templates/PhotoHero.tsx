@@ -157,6 +157,7 @@ export const photoHeroMeta: TemplateMeta = {
   category: 'editorial',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'dot', finder: 'rounded', surface: '#0A0A0A' },
   print: { widthMm: 100, heightMm: 140, bleedMm: 3 },
+  canvas: { width: 420, height: 700 },
   descriptionTr: 'Tam taşma fotoğraf + QR overlay — şef önerisi / etkinlik.',
   descriptionEn: 'Full-bleed photo + QR overlay — chef\'s special / event.',
 };
