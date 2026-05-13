@@ -131,6 +131,8 @@ export const SURVEY_PUBLIC_SELECT = {
   kvkkText: true,
   collectMarketingConsent: true,
   collectContact: true,
+  couponCode: true,
+  couponLabel: true,
   restaurantId: true,
   restaurant: {
     select: {
@@ -172,6 +174,8 @@ export const SURVEY_OWNER_SELECT = {
   kvkkText: true,
   collectMarketingConsent: true,
   collectContact: true,
+  couponCode: true,
+  couponLabel: true,
   restaurantId: true,
   createdAt: true,
   updatedAt: true,

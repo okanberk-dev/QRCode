@@ -1977,3 +1977,159 @@ select.bz-input option:checked {
     color: #444;
   }
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+   Stage 99 — Public survey page (/s/[slug])
+   Design handoff a/nFAGytnqZwW98Ldy0d5Lig — Buaze Anket
+   Faithful port of the Claude Design prototype's CSS surface.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Outer frame: dark page bg, centered content, mobile-first */
+.bz-survey-frame {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+@media (min-width: 521px) {
+  .bz-survey-frame {
+    min-height: 780px;
+    border-radius: 28px;
+    box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.5);
+    margin: 22px 14px 60px;
+  }
+}
+
+/* Pulse-eyebrow — small tracked uppercase caps label */
+.bz-survey-eyebrow {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+/* Italic Space Grotesk heading */
+.bz-survey-head {
+  font-family: var(--font-heading), 'Space Grotesk', 'Inter', sans-serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  line-height: 1.08;
+}
+
+.bz-survey-mono {
+  font-family: var(--font-mono);
+}
+
+/* Tap motion — gentle press scale on buttons inside the survey surface */
+.bz-survey-tap {
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 180ms, border-color 180ms, box-shadow 180ms;
+}
+.bz-survey-tap:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Form input baseline for the survey surface */
+.bz-survey-field {
+  width: 100%;
+  border: 1.5px solid #E5E3DC;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 16px;
+  font-family: inherit;
+  color: #0A0A0A;
+  outline: none;
+  transition: border-color 160ms, box-shadow 160ms;
+}
+.bz-survey-field:focus {
+  border-color: #0A0A0A;
+  box-shadow: 0 0 0 4px rgba(10, 10, 10, 0.06);
+}
+.bz-survey-field::placeholder {
+  color: #A3A29C;
+}
+
+/* Page-transition animations — transform-only so frozen frames stay visible */
+@keyframes bzSurveySlideR {
+  from {
+    transform: translateX(20px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes bzSurveySlideL {
+  from {
+    transform: translateX(-20px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes bzSurveyFadeUp {
+  from {
+    transform: translateY(8px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes bzSurveyPop {
+  0% {
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes bzSurveyGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(198, 242, 78, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 14px rgba(198, 242, 78, 0);
+  }
+}
+@keyframes bzConfettiPop {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(var(--tx), var(--ty)) scale(0.5);
+  }
+}
+
+/* Animation classes — keep CSS class names public (PublicSurveyView uses them) */
+.anim-slideR {
+  animation: bzSurveySlideR 280ms cubic-bezier(0.22, 0.65, 0.32, 1.1) both;
+}
+.anim-slideL {
+  animation: bzSurveySlideL 280ms cubic-bezier(0.22, 0.65, 0.32, 1.1) both;
+}
+.anim-fade {
+  animation: bzSurveyFadeUp 320ms cubic-bezier(0.22, 0.65, 0.32, 1.1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-slideR,
+  .anim-slideL,
+  .anim-fade {
+    animation: none !important;
+  }
+  [style*="bzConfettiPop"],
+  [style*="bzSurveyPop"],
+  [style*="bzSurveyGlow"] {
+    animation: none !important;
+  }
+}

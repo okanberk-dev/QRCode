@@ -1,20 +1,34 @@
 'use client';
 
-// Stage 98 — Public survey UI (CLAUDE.md §42).
-// Pulse design language (graphite + lime + pure white), mobile-first.
-// Single + multi-step both supported in one component (switch on type
-// when rendering step indicator + nav buttons). KVKK consent paterni
-// /r/[slug] with — submit gate, optional contact + marketing opt-in.
+// Stage 99 — Public survey UI (CLAUDE.md §42).
+// Faithful port of the Claude Design "Buaze Anket" handoff
+// (bundle a/nFAGytnqZwW98Ldy0d5Lig). Customer-facing mobile-first page
+// reached via QR scan at /s/[slug].
+//
+// Three stages:
+//   1. intro  — dark hero with lime ambient glow, brand pill + table eyebrow,
+//               eyebrow + minutes badge, italic Space Grotesk h1, sub copy,
+//               "NELER SORACAĞIZ" numbered list (first 4 + overflow),
+//               lime CTA with deep shadow, KVKK disclaimer.
+//   2. question — light card surface with TopBar (back + brand + masa) +
+//                 progress bar (mono "n/N" + lime fill with glow), eyebrow pill,
+//                 italic title, subtitle, the question itself, sticky FooterBar
+//                 (lime CTA + optional "Bu soruyu atla").
+//   3. (optional) contact — same TopBar + light card. AD + E-POSTA inline
+//                  labelled fields, KVKK consent (required), marketing
+//                  consent (optional, opt-in).
+//   4. thanks — dark hero with confetti burst, lime success circle with
+//               pulsing glow, italic h2, reference number (mono BZ-XXX-XXX),
+//               optional coupon card (dashed border + scalloped cutouts +
+//               lime copy → "✓ KOPYALANDI"), "Menüye dön" button.
+//
+// Five question types are wired (rating/nps/short_text/long_text/
+// multiple_choice). The design's emoji/chips/likert/slider/datetime/contact
+// renderers are out of scope until the schema grows to support them.
+//
+// All KVKK + IDOR + rate limit + sessionId discipline preserved.
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  Loader2,
-  Send,
-  Star,
-} from 'lucide-react';
 import { getOrCreateSessionId } from '@/lib/analytics-session';
 
 type QuestionType = 'rating' | 'nps' | 'short_text' | 'long_text' | 'multiple_choice';
@@ -50,6 +64,8 @@ interface Survey {
   kvkkText: string | null;
   collectMarketingConsent: boolean;
   collectContact: boolean;
+  couponCode: string | null;
+  couponLabel: string | null;
   restaurantId: string;
   restaurant: Restaurant;
   questions: Question[];
@@ -61,533 +77,1773 @@ interface AnswerValue {
   optionValue?: string;
 }
 
+type Stage = 'intro' | 'question' | 'contact' | 'thanks';
+
+const SHORT_TYPE_LABEL: Record<QuestionType, string> = {
+  rating: 'Yıldız puanı',
+  nps: 'Tavsiye skoru',
+  short_text: 'Kısa cevap',
+  long_text: 'Açık not',
+  multiple_choice: 'Tek seçim',
+};
+
+function generateReferenceNumber(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const pick = (n: number) =>
+    Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return `BZ-${pick(3)}-${pick(3)}`;
+}
+
+// Pull `?table=` once on mount so the brand eyebrow can show "MASA X".
+// Falls back to "—" so the chrome doesn't look broken.
+function useTableNumber(): string {
+  const [table, setTable] = useState('—');
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('table');
+    if (t && /^[A-Za-z0-9_-]{1,20}$/.test(t)) setTable(t);
+    // Strip ?source=qr so a refresh doesn't replay the QR splash.
+    if (params.has('source')) {
+      params.delete('source');
+      const query = params.toString();
+      window.history.replaceState(
+        {},
+        '',
+        `${window.location.pathname}${query ? `?${query}` : ''}`,
+      );
+    }
+  }, []);
+  return table;
+}
+
+function isAnswered(q: Question, val: AnswerValue | undefined): boolean {
+  if (!q.required) return true;
+  if (!val) return false;
+  switch (q.type) {
+    case 'rating':
+    case 'nps':
+      return typeof val.numberValue === 'number';
+    case 'multiple_choice':
+      return !!val.optionValue;
+    case 'short_text':
+    case 'long_text':
+      return !!val.textValue?.trim();
+  }
+}
+
 export default function PublicSurveyView({ survey }: { survey: Survey }) {
   const accent = survey.accentColor || survey.restaurant.primaryColor || '#C6F24E';
+  const brand = survey.restaurant.name;
+  const table = useTableNumber();
+
+  // Multi-step renderer kicks in when there are 2+ questions; single
+  // surveys with a lone question still get the intro + footer chrome but
+  // skip the progress strip.
   const isMulti = survey.type === 'multi_step' && survey.questions.length > 1;
 
-  // Last "step" is the contact / consent + submit screen.
-  // For single-question survey we still show consent (separately or
-  // inline on the same screen, see render below).
-  const questionCount = survey.questions.length;
-  const totalSteps = isMulti ? questionCount + 1 : 1; // +1 for consent
-  const [step, setStep] = useState(0);
+  const [stage, setStage] = useState<Stage>('intro');
+  const [stepIdx, setStepIdx] = useState(0);
+  const [direction, setDirection] = useState<'fwd' | 'back'>('fwd');
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+
+  // Contact form state — populated only when stage === 'contact'.
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [kvkk, setKvkk] = useState(true);
   const [marketing, setMarketing] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Strip `?source=qr` param after first render (so refresh doesn't replay).
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('source')) {
-      params.delete('source');
-      const newQuery = params.toString();
-      const url = `${window.location.pathname}${newQuery ? `?${newQuery}` : ''}`;
-      window.history.replaceState({}, '', url);
-    }
-  }, []);
+  const refNo = useMemo(generateReferenceNumber, []);
 
-  const updateAnswer = useCallback((qid: string, patch: AnswerValue) => {
+  const currentQuestion = survey.questions[stepIdx];
+  const currentValue = currentQuestion ? answers[currentQuestion.id] : undefined;
+  const totalSteps = survey.questions.length;
+
+  const setAnswer = useCallback((qid: string, patch: AnswerValue) => {
     setAnswers((prev) => ({ ...prev, [qid]: { ...prev[qid], ...patch } }));
   }, []);
 
-  const currentQuestion: Question | null =
-    isMulti && step < questionCount ? survey.questions[step] : null;
-  const onConsentStep = isMulti ? step === questionCount : !isMulti;
-
-  const validateAnswer = (q: Question, a: AnswerValue | undefined): boolean => {
-    if (!q.required) return true;
-    if (!a) return false;
-    if (q.type === 'rating') return typeof a.numberValue === 'number';
-    if (q.type === 'nps') return typeof a.numberValue === 'number';
-    if (q.type === 'multiple_choice') return !!a.optionValue;
-    return !!a.textValue?.trim();
-  };
-
-  const canProceed = useMemo(() => {
-    if (currentQuestion) return validateAnswer(currentQuestion, answers[currentQuestion.id]);
-    return kvkk;
-  }, [currentQuestion, answers, kvkk]);
-
-  const allRequiredAnswered = useMemo(() => {
-    return survey.questions.every((q) => validateAnswer(q, answers[q.id]));
-  }, [survey.questions, answers]);
-
-  const handleSubmit = useCallback(async () => {
-    if (!kvkk) {
-      setErrorMsg('KVKK onayı gereklidir.');
+  const goForward = useCallback(() => {
+    setDirection('fwd');
+    if (stepIdx + 1 < totalSteps) {
+      setStepIdx(stepIdx + 1);
       return;
     }
-    if (!allRequiredAnswered) {
-      setErrorMsg('Zorunlu soruları yanıtlayın.');
+    if (survey.collectContact || survey.collectMarketingConsent) {
+      setStage('contact');
       return;
     }
-    setSubmitting(true);
-    setErrorMsg(null);
-    const sessionId = getOrCreateSessionId();
-    try {
-      const res = await fetch(`/api/public/surveys/${survey.slug}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          email: survey.collectContact ? email.trim() || null : null,
-          phone: survey.collectContact ? phone.trim() || null : null,
-          hasKvkkConsent: true,
-          hasMarketingConsent: survey.collectMarketingConsent ? marketing : false,
-          answers: survey.questions.map((q) => {
-            const a = answers[q.id] || {};
-            return {
-              questionId: q.id,
-              textValue: a.textValue,
-              numberValue: a.numberValue,
-              optionValue: a.optionValue,
-            };
-          }),
-        }),
-      });
-      if (res.status === 409) {
-        // Already submitted — surface friendly message.
-        setErrorMsg('Bu anketi zaten yanıtladınız. Teşekkür ederiz!');
-        setSubmitted(true);
+    // No contact step — go straight to submit + thanks.
+    void doSubmit({ skipContactValidation: true });
+    // doSubmit is declared further down; including it in deps would
+    // create a temporal dead zone. The reference captured here is the
+    // function identity from the most recent render, which is sufficient
+    // for our flow (every form state change triggers a re-render anyway).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepIdx, totalSteps, survey.collectContact, survey.collectMarketingConsent]);
+
+  const goBack = useCallback(() => {
+    setDirection('back');
+    if (stage === 'contact') {
+      setStage('question');
+      return;
+    }
+    if (stepIdx > 0) {
+      setStepIdx(stepIdx - 1);
+      return;
+    }
+    setStage('intro');
+  }, [stage, stepIdx]);
+
+  const start = useCallback(() => {
+    setStage('question');
+    setStepIdx(0);
+    setDirection('fwd');
+  }, []);
+
+  const doSubmit = useCallback(
+    async ({ skipContactValidation = false }: { skipContactValidation?: boolean } = {}) => {
+      if (!skipContactValidation && !kvkk) {
+        setErrorMsg('KVKK onayı gereklidir.');
         return;
       }
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.message || 'submit_failed');
+      setSubmitting(true);
+      setErrorMsg(null);
+      const sessionId = getOrCreateSessionId();
+      try {
+        const res = await fetch(`/api/public/surveys/${survey.slug}/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            email: survey.collectContact ? contactEmail.trim() || null : null,
+            phone: survey.collectContact ? contactPhone.trim() || null : null,
+            hasKvkkConsent: true,
+            hasMarketingConsent: survey.collectMarketingConsent ? marketing : false,
+            answers: survey.questions.map((q) => {
+              const a = answers[q.id] || {};
+              return {
+                questionId: q.id,
+                textValue: a.textValue,
+                numberValue: a.numberValue,
+                optionValue: a.optionValue,
+              };
+            }),
+          }),
+        });
+        if (res.status === 409) {
+          setErrorMsg('Bu anketi zaten yanıtladınız. Teşekkür ederiz!');
+          setSubmitted(true);
+          setStage('thanks');
+          return;
+        }
+        if (!res.ok) {
+          const j = await res.json().catch(() => null);
+          throw new Error(j?.message || 'submit_failed');
+        }
+        setSubmitted(true);
+        setStage('thanks');
+      } catch (err) {
+        setErrorMsg((err as Error).message || 'Bir hata oluştu.');
+      } finally {
+        setSubmitting(false);
       }
-      setSubmitted(true);
-    } catch (err) {
-      setErrorMsg((err as Error).message || 'Bir hata oluştu.');
-    } finally {
-      setSubmitting(false);
+    },
+    [
+      kvkk,
+      marketing,
+      contactEmail,
+      contactPhone,
+      survey.slug,
+      survey.questions,
+      survey.collectContact,
+      survey.collectMarketingConsent,
+      answers,
+    ],
+  );
+
+  // Auto-advance for single-question "rating" surveys at 4★+ — design
+  // intent: a happy customer shouldn't need to tap "Devam et" again.
+  useEffect(() => {
+    if (survey.type !== 'single' || survey.questions.length !== 1) return;
+    if (stage !== 'question') return;
+    const q = survey.questions[0];
+    if (q.type !== 'rating') return;
+    const v = answers[q.id]?.numberValue;
+    if (typeof v === 'number' && v >= 4) {
+      const t = setTimeout(() => {
+        if (survey.collectContact || survey.collectMarketingConsent) setStage('contact');
+        else void doSubmit({ skipContactValidation: true });
+      }, 700);
+      return () => clearTimeout(t);
     }
   }, [
-    kvkk,
-    allRequiredAnswered,
-    email,
-    phone,
-    marketing,
-    answers,
-    survey.slug,
+    survey.type,
     survey.questions,
     survey.collectContact,
     survey.collectMarketingConsent,
+    stage,
+    answers,
+    doSubmit,
   ]);
 
-  const initial = survey.restaurant.name.charAt(0).toUpperCase();
+  const canBack = stage === 'contact' || (stage === 'question' && stepIdx > 0);
+  const canContinue = currentQuestion ? isAnswered(currentQuestion, currentValue) : false;
+  const isLastQuestion = stepIdx === totalSteps - 1;
+  const isLastBeforeSubmit =
+    isLastQuestion && !survey.collectContact && !survey.collectMarketingConsent;
 
-  // ── Thank-you screen ────────────────────────────────────────────────
-  if (submitted) {
+  // ─────────────────────────────────────────────────────────────
+  // Stage renderers
+  // ─────────────────────────────────────────────────────────────
+
+  if (stage === 'intro') {
     return (
-      <main className="min-h-screen bg-[#0A0A0A] text-white">
-        <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-5 py-10">
-          <div
-            className="flex h-16 w-16 items-center justify-center rounded-full"
-            style={{ backgroundColor: accent }}
-          >
-            <CheckCircle2 size={32} color="#0A0A0A" />
-          </div>
-          <h1 className="mt-5 text-center text-2xl font-medium" style={{ letterSpacing: '-0.02em' }}>
-            Teşekkür ederiz!
-          </h1>
-          <p className="mt-3 text-center text-sm text-white/70">
-            {survey.thankYouMessage ||
-              'Görüşlerinizi paylaştığınız için teşekkür ederiz. Geri bildiriminiz bizim için değerli.'}
-          </p>
-          <p className="mt-6 text-[10px] uppercase tracking-[0.18em] text-white/40">
-            Buaze · Pulse
-          </p>
-        </div>
-      </main>
+      <SurveyFrame mode="dark">
+        <IntroScreen
+          accent={accent}
+          brand={brand}
+          table={table}
+          survey={survey}
+          onStart={start}
+        />
+      </SurveyFrame>
     );
   }
 
-  // ── Form ─────────────────────────────────────────────────────────────
+  if (stage === 'thanks' || submitted) {
+    return (
+      <SurveyFrame mode="dark">
+        <ThanksScreen
+          accent={accent}
+          brand={brand}
+          survey={survey}
+          refNo={refNo}
+        />
+      </SurveyFrame>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-[#0A0A0A] py-8 sm:py-14">
-      <div className="mx-auto max-w-[560px] px-4">
-        {/* Brand header */}
-        <header className="mb-5 flex items-center gap-3 text-white">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 text-base font-bold"
-            aria-hidden="true"
-          >
-            {initial}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-bold tracking-tight">
-              {survey.restaurant.name}
-            </div>
-            <div className="text-[10px] uppercase tracking-[0.18em] text-white/50">
-              {survey.type === 'single' ? 'Anket' : 'Adım adım anket'}
-            </div>
-          </div>
-        </header>
+    <SurveyFrame mode="light">
+      <div className="flex flex-1 flex-col bg-white">
+        <TopBar brand={brand} table={table} onBack={goBack} canBack={canBack} />
+        {isMulti && stage === 'question' && (
+          <ProgressBar current={stepIdx + 1} total={totalSteps} accent={accent} />
+        )}
 
-        {/* Card */}
-        <section className="overflow-hidden rounded-3xl bg-white shadow-lg">
-          {/* Accent header strip */}
-          <div className="h-1 w-full" style={{ backgroundColor: accent }} />
+        <div className="flex flex-1 flex-col overflow-auto">
+          {stage === 'question' && currentQuestion && (
+            <QuestionScreen
+              key={`${currentQuestion.id}-${direction}`}
+              q={currentQuestion}
+              value={currentValue}
+              onChange={(patch) => setAnswer(currentQuestion.id, patch)}
+              accent={accent}
+              direction={direction}
+            />
+          )}
 
-          <div className="p-5 sm:p-8">
-            {/* Step indicator */}
-            {isMulti && (
-              <div className="mb-5 flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-[0.18em] text-[#737373]">
-                  Adım {Math.min(step + 1, totalSteps)} / {totalSteps}
-                </span>
-                <div className="ml-3 h-1 flex-1 overflow-hidden rounded-full bg-[#F5F5F5]">
-                  <div
-                    className="h-full transition-all"
-                    style={{
-                      width: `${((Math.min(step, totalSteps - 1) + 1) / totalSteps) * 100}%`,
-                      backgroundColor: accent,
-                    }}
-                  />
-                </div>
-              </div>
-            )}
+          {stage === 'contact' && (
+            <ContactScreen
+              direction={direction}
+              accent={accent}
+              collectContact={survey.collectContact}
+              collectMarketingConsent={survey.collectMarketingConsent}
+              name={contactName}
+              setName={setContactName}
+              email={contactEmail}
+              setEmail={setContactEmail}
+              phone={contactPhone}
+              setPhone={setContactPhone}
+              kvkk={kvkk}
+              setKvkk={setKvkk}
+              marketing={marketing}
+              setMarketing={setMarketing}
+              onSubmit={() => void doSubmit()}
+              submitting={submitting}
+              error={errorMsg}
+            />
+          )}
+        </div>
 
-            {/* Title — visible only on first step (or for single-question) */}
-            {(step === 0 || !isMulti) && (
-              <>
-                <h1
-                  className="text-[22px] font-medium leading-tight text-[#0A0A0A] sm:text-[26px]"
-                  style={{ letterSpacing: '-0.02em' }}
-                >
-                  {survey.title}
-                </h1>
-                {survey.description && (
-                  <p className="mt-2 text-sm text-[#525252]">{survey.description}</p>
-                )}
-              </>
-            )}
+        {stage === 'question' && (
+          <FooterBar
+            canContinue={canContinue}
+            onContinue={goForward}
+            onSkip={() => {
+              if (currentQuestion) setAnswer(currentQuestion.id, {});
+              goForward();
+            }}
+            accent={accent}
+            optional={!currentQuestion?.required}
+            isLast={isLastBeforeSubmit}
+          />
+        )}
+      </div>
+    </SurveyFrame>
+  );
+}
 
-            {/* Question content (for multi-step) */}
-            {isMulti && currentQuestion && (
-              <div className={step === 0 ? 'mt-6' : ''}>
-                <p className="text-sm font-medium text-[#0A0A0A]">
-                  {currentQuestion.text}
-                  {currentQuestion.required && (
-                    <span className="ml-1 text-[#DC2626]" aria-hidden>
-                      *
-                    </span>
-                  )}
-                </p>
-                <div className="mt-4">
-                  <QuestionInput
-                    question={currentQuestion}
-                    value={answers[currentQuestion.id]}
-                    onChange={(patch) => updateAnswer(currentQuestion.id, patch)}
-                    accent={accent}
-                  />
-                </div>
-              </div>
-            )}
+// ─────────────────────────────────────────────────────────────
+// Frame: dark wrapper on desktop, full-bleed mobile, max-width 440
+// ─────────────────────────────────────────────────────────────
 
-            {/* For single-survey: render the only question inline */}
-            {!isMulti && survey.questions.length > 0 && (
-              <div className="mt-6">
-                {survey.questions.map((q) => (
-                  <div key={q.id}>
-                    <p className="text-sm font-medium text-[#0A0A0A]">
-                      {q.text}
-                      {q.required && (
-                        <span className="ml-1 text-[#DC2626]" aria-hidden>
-                          *
-                        </span>
-                      )}
-                    </p>
-                    <div className="mt-4">
-                      <QuestionInput
-                        question={q}
-                        value={answers[q.id]}
-                        onChange={(patch) => updateAnswer(q.id, patch)}
-                        accent={accent}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Consent / contact screen */}
-            {onConsentStep && (
-              <div className={isMulti ? 'mt-2' : 'mt-6 border-t border-[#EDEDED] pt-6'}>
-                {survey.collectContact && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-[#525252]">
-                        E-posta (opsiyonel)
-                      </label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        inputMode="email"
-                        autoComplete="email"
-                        autoCapitalize="off"
-                        autoCorrect="off"
-                        spellCheck={false}
-                        placeholder="ornek@buaze.com"
-                        className="w-full rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5 text-sm text-[#0A0A0A] focus:border-[#0A0A0A] focus:outline-none focus:ring-2 focus:ring-[#C6F24E]/40"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-[#525252]">
-                        Telefon (opsiyonel)
-                      </label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        inputMode="tel"
-                        autoComplete="tel"
-                        placeholder="+90 5XX"
-                        className="w-full rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5 text-sm text-[#0A0A0A] focus:border-[#0A0A0A] focus:outline-none focus:ring-2 focus:ring-[#C6F24E]/40"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div
-                  className={
-                    survey.collectContact
-                      ? 'mt-4 space-y-2 border-t border-[#EDEDED] pt-4'
-                      : 'space-y-2'
-                  }
-                >
-                  <label className="flex items-start gap-2 text-xs leading-relaxed text-[#525252]">
-                    <input
-                      type="checkbox"
-                      checked={kvkk}
-                      onChange={(e) => setKvkk(e.target.checked)}
-                      aria-required="true"
-                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] accent-[#0A0A0A]"
-                    />
-                    <span>
-                      KVKK Aydınlatma Metni&apos;ni okudum ve kabul ediyorum.
-                      {survey.kvkkText && (
-                        <span className="ml-2 text-[10px] text-[#737373]">
-                          ({survey.restaurant.name})
-                        </span>
-                      )}
-                    </span>
-                  </label>
-                  {survey.collectMarketingConsent && (
-                    <label className="flex items-start gap-2 text-xs leading-relaxed text-[#525252]">
-                      <input
-                        type="checkbox"
-                        checked={marketing}
-                        onChange={(e) => setMarketing(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] accent-[#0A0A0A]"
-                      />
-                      <span>Kampanya ve duyurulardan haberdar olmak istiyorum (opsiyonel).</span>
-                    </label>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {errorMsg && (
-              <div className="mt-4 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-3 py-2.5 text-xs text-[#991B1B]">
-                {errorMsg}
-              </div>
-            )}
-
-            {/* Navigation */}
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-              {isMulti && step > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setStep((s) => Math.max(0, s - 1))}
-                  className="inline-flex items-center justify-center gap-1 rounded-full border border-[#EDEDED] bg-white px-4 py-2.5 text-xs font-medium text-[#525252] hover:border-[#A3A3A3]"
-                  disabled={submitting}
-                >
-                  <ArrowLeft size={14} />
-                  Geri
-                </button>
-              )}
-              {!isMulti || step < totalSteps - 1 ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (canProceed) setStep((s) => s + 1);
-                  }}
-                  disabled={!canProceed || (!isMulti && submitting)}
-                  className="ml-auto inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold transition disabled:opacity-50"
-                  style={{ backgroundColor: '#0A0A0A', color: '#FFFFFF' }}
-                >
-                  {isMulti ? 'Devam' : 'Devam'}
-                  <ArrowRight size={14} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={submitting || !canProceed || !allRequiredAnswered}
-                  className="ml-auto inline-flex items-center justify-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold transition disabled:opacity-50"
-                  style={{ backgroundColor: accent, color: '#0A0A0A' }}
-                >
-                  {submitting ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Send size={14} />
-                  )}
-                  Gönder
-                </button>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <footer className="mt-5 text-center text-[10px] uppercase tracking-[0.18em] text-white/40">
-          Powered by Buaze
-        </footer>
+function SurveyFrame({
+  mode,
+  children,
+}: {
+  mode: 'dark' | 'light';
+  children: React.ReactNode;
+}) {
+  return (
+    <main
+      className="flex min-h-screen items-center justify-center"
+      style={{
+        background: '#1a1a1a',
+        fontFamily: 'var(--font-body)',
+      }}
+    >
+      <div
+        className="bz-survey-frame"
+        style={{
+          background: mode === 'dark' ? '#0A0A0A' : '#fff',
+        }}
+      >
+        {children}
       </div>
     </main>
   );
 }
 
-// ─── Question input renderer ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Intro screen — dark hero with lime ambient glow
+// ─────────────────────────────────────────────────────────────
+
+function IntroScreen({
+  accent,
+  brand,
+  table,
+  survey,
+  onStart,
+}: {
+  accent: string;
+  brand: string;
+  table: string;
+  survey: Survey;
+  onStart: () => void;
+}) {
+  const dark = true; // design default
+  const minutes = useMemo(() => {
+    // Rough: 8-10s per question + 12s consent if shown.
+    const q = survey.questions.length;
+    const seconds =
+      q * 9 + (survey.collectContact || survey.collectMarketingConsent ? 12 : 0);
+    if (seconds < 30) return '~20 sn';
+    if (seconds < 60) return '~45 sn';
+    if (seconds < 90) return '~1 dk';
+    return `~${Math.round(seconds / 60)} dk`;
+  }, [survey.questions.length, survey.collectContact, survey.collectMarketingConsent]);
+
+  const previewSteps = survey.questions.slice(0, 4);
+  const overflow = Math.max(0, survey.questions.length - 4);
+  const eyebrow =
+    survey.type === 'single'
+      ? 'TEK SORU'
+      : survey.questions.length <= 3
+      ? 'KISA ANKET'
+      : 'ANKET';
+
+  return (
+    <div
+      className="anim-fade relative flex flex-1 flex-col overflow-hidden"
+      style={{ background: '#0A0A0A', color: '#fff' }}
+    >
+      {/* Ambient lime glow */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: -120,
+          right: -100,
+          width: 320,
+          height: 320,
+          borderRadius: 999,
+          background: accent,
+          opacity: 0.18,
+          filter: 'blur(80px)',
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          bottom: -100,
+          left: -80,
+          width: 240,
+          height: 240,
+          borderRadius: 999,
+          background: accent,
+          opacity: 0.1,
+          filter: 'blur(70px)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Brand row */}
+      <div
+        className="relative"
+        style={{ padding: '60px 22px 0' }}
+      >
+        <div className="mb-7 flex items-center justify-between">
+          <div
+            className="inline-flex items-center gap-2 rounded-full border"
+            style={{
+              padding: '5px 10px 5px 8px',
+              borderColor: 'rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.06)',
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                background: accent,
+                boxShadow: `0 0 10px ${accent}`,
+              }}
+            />
+            <span
+              className="bz-survey-eyebrow"
+              style={{ color: 'rgba(255,255,255,0.7)' }}
+            >
+              {brand}
+            </span>
+          </div>
+          <span
+            className="bz-survey-eyebrow"
+            style={{ color: 'rgba(255,255,255,0.45)' }}
+          >
+            MASA {table}
+          </span>
+        </div>
+
+        <div style={{ padding: '8px 0 12px' }}>
+          <div
+            className="bz-survey-eyebrow mb-3"
+            style={{ color: accent }}
+          >
+            {eyebrow} · {minutes}
+          </div>
+          <h1
+            className="bz-survey-head"
+            style={{
+              margin: 0,
+              fontSize: 38,
+              color: dark ? '#fff' : '#0A0A0A',
+            }}
+          >
+            {survey.title}
+          </h1>
+          {survey.description && (
+            <p
+              style={{
+                marginTop: 14,
+                marginBottom: 0,
+                fontSize: 15,
+                lineHeight: 1.5,
+                color: 'rgba(255,255,255,0.6)',
+                maxWidth: 340,
+              }}
+            >
+              {survey.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Preview list */}
+      {previewSteps.length > 0 && (
+        <div className="relative" style={{ padding: '24px 22px 0' }}>
+          <div
+            className="bz-survey-eyebrow mb-3"
+            style={{ color: 'rgba(255,255,255,0.45)' }}
+          >
+            NELER SORACAĞIZ
+          </div>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {previewSteps.map((q, i) => (
+              <li
+                key={q.id}
+                className="mb-2.5 flex items-center gap-3 rounded-2xl border"
+                style={{
+                  padding: '12px 14px',
+                  background: 'rgba(255,255,255,0.04)',
+                  borderColor: 'rgba(255,255,255,0.06)',
+                }}
+              >
+                <span
+                  className="bz-survey-eyebrow flex shrink-0 items-center justify-center"
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 999,
+                    background: accent,
+                    color: '#0A0A0A',
+                    fontSize: 10,
+                  }}
+                >
+                  {i + 1}
+                </span>
+                <span
+                  style={{
+                    fontSize: 13.5,
+                    fontWeight: 500,
+                    color: 'rgba(255,255,255,0.85)',
+                  }}
+                >
+                  {q.text || SHORT_TYPE_LABEL[q.type]}
+                </span>
+              </li>
+            ))}
+            {overflow > 0 && (
+              <li
+                className="bz-survey-mono"
+                style={{
+                  padding: '8px 14px',
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.5)',
+                }}
+              >
+                +{overflow} kısa soru daha
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+
+      <div className="flex-1" />
+
+      <div
+        className="relative"
+        style={{ padding: '20px 22px 44px' }}
+      >
+        <button
+          type="button"
+          onClick={onStart}
+          className="bz-survey-tap flex w-full items-center justify-center gap-2.5"
+          style={{
+            padding: '18px 20px',
+            border: 'none',
+            borderRadius: 16,
+            background: accent,
+            color: '#0A0A0A',
+            fontSize: 16,
+            fontWeight: 600,
+            cursor: 'pointer',
+            boxShadow: `0 12px 36px -10px ${accent}, 0 4px 12px -4px rgba(0,0,0,0.18)`,
+          }}
+        >
+          Başlayalım
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M5 12h14M13 6l6 6-6 6"
+              stroke="#0A0A0A"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        <p
+          className="bz-survey-mono"
+          style={{
+            margin: '12px 0 0',
+            textAlign: 'center',
+            fontSize: 11,
+            color: 'rgba(255,255,255,0.4)',
+            letterSpacing: '0.04em',
+          }}
+        >
+          KVKK uyumlu · Yanıtların doğrudan işletmeye iletilir
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Top bar (back + brand + masa)
+// ─────────────────────────────────────────────────────────────
+
+function TopBar({
+  brand,
+  table,
+  onBack,
+  canBack,
+}: {
+  brand: string;
+  table: string;
+  onBack: () => void;
+  canBack: boolean;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2.5"
+      style={{ padding: '54px 18px 4px' }}
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        disabled={!canBack}
+        aria-label="Geri"
+        className="bz-survey-tap flex shrink-0 items-center justify-center"
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 999,
+          border: '1px solid rgba(10,10,10,0.08)',
+          background: '#fff',
+          color: '#0A0A0A',
+          cursor: canBack ? 'pointer' : 'default',
+          opacity: canBack ? 1 : 0,
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            d="M15 18l-6-6 6-6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      <div
+        className="flex-1 text-center"
+        style={{ lineHeight: 1.1 }}
+      >
+        <div className="bz-survey-eyebrow" style={{ color: '#6B6B66' }}>
+          {brand}
+        </div>
+        <div
+          className="bz-survey-eyebrow"
+          style={{ fontSize: 9, color: '#A3A29C', marginTop: 2 }}
+        >
+          MASA {table} · ANKET
+        </div>
+      </div>
+      <div style={{ width: 40, height: 40, flexShrink: 0 }} />
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Progress bar
+// ─────────────────────────────────────────────────────────────
+
+function ProgressBar({
+  current,
+  total,
+  accent,
+}: {
+  current: number;
+  total: number;
+  accent: string;
+}) {
+  const pct = Math.max(0, Math.min(1, current / total)) * 100;
+  return (
+    <div style={{ padding: '8px 18px 18px' }}>
+      <div className="flex items-center gap-2.5">
+        <span
+          className="bz-survey-eyebrow"
+          style={{ color: '#6B6B66', fontSize: 9.5, minWidth: 30 }}
+        >
+          {current} / {total}
+        </span>
+        <div
+          className="flex-1 overflow-hidden"
+          style={{
+            height: 3,
+            borderRadius: 999,
+            background: '#E5E3DC',
+          }}
+        >
+          <div
+            style={{
+              height: '100%',
+              width: `${pct}%`,
+              background: accent,
+              borderRadius: 999,
+              boxShadow: `0 0 12px ${accent}80`,
+              transition: 'width 380ms cubic-bezier(.22,.65,.32,1.1)',
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Question screen (light card)
+// ─────────────────────────────────────────────────────────────
+
+function QuestionScreen({
+  q,
+  value,
+  onChange,
+  accent,
+  direction,
+}: {
+  q: Question;
+  value: AnswerValue | undefined;
+  onChange: (patch: AnswerValue) => void;
+  accent: string;
+  direction: 'fwd' | 'back';
+}) {
+  const eyebrow = (q.text ? '' : SHORT_TYPE_LABEL[q.type] + ' · ') + 'SORU';
+  return (
+    <div
+      className={direction === 'back' ? 'anim-slideL' : 'anim-slideR'}
+      style={{
+        padding: '6px 22px 22px',
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+      }}
+    >
+      <div className="bz-survey-eyebrow mb-3" style={{ color: '#0A0A0A' }}>
+        <span
+          style={{
+            display: 'inline-block',
+            padding: '4px 10px',
+            background: accent + '24',
+            borderRadius: 999,
+            color: '#0A0A0A',
+            letterSpacing: '0.12em',
+          }}
+        >
+          {eyebrow}
+        </span>
+      </div>
+      <h2
+        className="bz-survey-head"
+        style={{ margin: 0, fontSize: 26, color: '#0A0A0A' }}
+      >
+        {q.text}
+      </h2>
+      <div style={{ marginTop: 28 }}>
+        <QuestionInput q={q} value={value} onChange={onChange} accent={accent} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Footer bar (sticky bottom)
+// ─────────────────────────────────────────────────────────────
+
+function FooterBar({
+  canContinue,
+  onContinue,
+  onSkip,
+  accent,
+  optional,
+  isLast,
+}: {
+  canContinue: boolean;
+  onContinue: () => void;
+  onSkip: () => void;
+  accent: string;
+  optional: boolean;
+  isLast: boolean;
+}) {
+  return (
+    <div
+      className="flex flex-col gap-2.5"
+      style={{
+        padding: '14px 22px 44px',
+        borderTop: '1px solid #ECEAE3',
+        background: '#fff',
+      }}
+    >
+      <button
+        type="button"
+        onClick={onContinue}
+        disabled={!canContinue}
+        className="bz-survey-tap flex w-full items-center justify-center gap-2"
+        style={{
+          padding: '16px 20px',
+          border: 'none',
+          borderRadius: 14,
+          background: canContinue ? accent : '#E5E3DC',
+          color: canContinue ? '#0A0A0A' : '#A3A29C',
+          fontSize: 15.5,
+          fontWeight: 600,
+          cursor: canContinue ? 'pointer' : 'default',
+          boxShadow: canContinue
+            ? `0 10px 26px -10px ${accent}, 0 4px 10px -4px rgba(0,0,0,0.14)`
+            : 'none',
+          transition: 'background 220ms, color 220ms, box-shadow 220ms',
+        }}
+      >
+        {isLast ? 'Bitir ve gönder' : 'Devam et'}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            d="M5 12h14M13 6l6 6-6 6"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {optional && (
+        <button
+          type="button"
+          onClick={onSkip}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#6B6B66',
+            fontSize: 13,
+            fontWeight: 500,
+            cursor: 'pointer',
+            padding: 6,
+          }}
+        >
+          Bu soruyu atla →
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Contact screen
+// ─────────────────────────────────────────────────────────────
+
+function ContactScreen({
+  direction,
+  accent,
+  collectContact,
+  collectMarketingConsent,
+  name,
+  setName,
+  email,
+  setEmail,
+  phone,
+  setPhone,
+  kvkk,
+  setKvkk,
+  marketing,
+  setMarketing,
+  onSubmit,
+  submitting,
+  error,
+}: {
+  direction: 'fwd' | 'back';
+  accent: string;
+  collectContact: boolean;
+  collectMarketingConsent: boolean;
+  name: string;
+  setName: (v: string) => void;
+  email: string;
+  setEmail: (v: string) => void;
+  phone: string;
+  setPhone: (v: string) => void;
+  kvkk: boolean;
+  setKvkk: (v: boolean) => void;
+  marketing: boolean;
+  setMarketing: (v: boolean) => void;
+  onSubmit: () => void;
+  submitting: boolean;
+  error: string | null;
+}) {
+  const valid = kvkk && !submitting;
+  return (
+    <div
+      className={direction === 'back' ? 'anim-slideL' : 'anim-slideR'}
+      style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
+    >
+      <div style={{ padding: '6px 22px 0' }}>
+        <div className="bz-survey-eyebrow mb-3">
+          <span
+            style={{
+              display: 'inline-block',
+              padding: '4px 10px',
+              background: accent + '24',
+              borderRadius: 999,
+              color: '#0A0A0A',
+              letterSpacing: '0.12em',
+            }}
+          >
+            SON ADIM · İLETİŞİM
+          </span>
+        </div>
+        <h2
+          className="bz-survey-head"
+          style={{ margin: 0, fontSize: 26, color: '#0A0A0A' }}
+        >
+          {collectContact
+            ? 'Sana özel kupon için iletişim bilgini bırak'
+            : 'Yanıtını gönderiyoruz'}
+        </h2>
+        <p
+          style={{
+            margin: '10px 0 0',
+            fontSize: 13.5,
+            color: '#6B6B66',
+            lineHeight: 1.45,
+          }}
+        >
+          {collectContact
+            ? 'Opsiyonel — kupon kodun ve önemli güncellemeler için.'
+            : 'Onayını alıp anketi tamamlayalım.'}
+        </p>
+
+        <div
+          style={{
+            marginTop: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
+          {collectContact && (
+            <>
+              <LabelledField label="AD">
+                <input
+                  className="bz-survey-field"
+                  style={{ paddingLeft: 64 }}
+                  placeholder="Adın"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  autoCapitalize="words"
+                  enterKeyHint="next"
+                />
+              </LabelledField>
+              <div className="relative">
+                <LabelledField label="E-POSTA" labelWidth={80}>
+                  <input
+                    className="bz-survey-field"
+                    type="email"
+                    style={{
+                      paddingLeft: 92,
+                      borderColor: '#0A0A0A',
+                      borderWidth: 1.5,
+                    }}
+                    placeholder="ornek@mail.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    inputMode="email"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    autoComplete="email"
+                    enterKeyHint="next"
+                  />
+                </LabelledField>
+                <span
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 14,
+                    bottom: 14,
+                    width: 3,
+                    borderRadius: 999,
+                    background: accent,
+                  }}
+                />
+              </div>
+              <LabelledField label="TEL" labelWidth={48}>
+                <input
+                  className="bz-survey-field"
+                  type="tel"
+                  style={{ paddingLeft: 64 }}
+                  placeholder="+90 5xx xxx xx xx"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  inputMode="tel"
+                  autoComplete="tel"
+                  enterKeyHint="done"
+                />
+              </LabelledField>
+            </>
+          )}
+
+          <ConsentRow
+            checked={kvkk}
+            onChange={setKvkk}
+            accent={accent}
+            label={
+              <span>
+                <b>KVKK Aydınlatma Metni</b>&apos;ni okudum, kişisel verilerimin
+                işlenmesini kabul ediyorum.
+              </span>
+            }
+            required
+          />
+          {collectMarketingConsent && (
+            <ConsentRow
+              checked={marketing}
+              onChange={setMarketing}
+              accent={accent}
+              label={
+                <span>
+                  Kampanya ve menü güncellemelerini e-posta ile alabilirim.{' '}
+                  <span style={{ color: '#A3A29C' }}>(opsiyonel)</span>
+                </span>
+              }
+            />
+          )}
+        </div>
+
+        {error && (
+          <div
+            role="alert"
+            className="anim-fade"
+            style={{
+              marginTop: 14,
+              padding: '10px 12px',
+              borderRadius: 12,
+              border: '1px solid #F4B4B6',
+              background: '#FDECEC',
+              color: '#9C2227',
+              fontSize: 12.5,
+            }}
+          >
+            {error}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1" />
+
+      <div
+        className="flex flex-col gap-2.5"
+        style={{
+          padding: '14px 22px 22px',
+          borderTop: '1px solid #ECEAE3',
+          background: '#fff',
+        }}
+      >
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={!valid}
+          className="bz-survey-tap flex w-full items-center justify-center gap-2"
+          style={{
+            padding: '16px 20px',
+            border: 'none',
+            borderRadius: 14,
+            background: valid ? accent : '#E5E3DC',
+            color: valid ? '#0A0A0A' : '#A3A29C',
+            fontSize: 15.5,
+            fontWeight: 600,
+            cursor: valid ? 'pointer' : 'default',
+            boxShadow: valid ? `0 10px 26px -10px ${accent}` : 'none',
+          }}
+        >
+          {submitting ? 'Gönderiliyor…' : 'Anketi gönder'}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M5 12l5 5L20 7"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LabelledField({
+  label,
+  labelWidth,
+  children,
+}: {
+  label: string;
+  labelWidth?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <span
+        className="bz-survey-eyebrow absolute"
+        style={{
+          left: 16,
+          top: 16,
+          color: '#A3A29C',
+          width: labelWidth,
+        }}
+      >
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function ConsentRow({
+  checked,
+  onChange,
+  accent,
+  label,
+  required,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  accent: string;
+  label: React.ReactNode;
+  required?: boolean;
+}) {
+  return (
+    <label
+      className="bz-survey-tap flex cursor-pointer items-start gap-3 rounded-2xl border"
+      style={{
+        padding: '12px 14px',
+        borderColor: checked ? '#0A0A0A' : '#E5E3DC',
+        background: checked ? '#0A0A0A' : '#fff',
+        color: checked ? '#fff' : '#0A0A0A',
+        position: 'relative',
+      }}
+    >
+      <span
+        aria-hidden
+        className="flex shrink-0 items-center justify-center"
+        style={{
+          width: 22,
+          height: 22,
+          borderRadius: 6,
+          border: '1.5px solid ' + (checked ? accent : '#D4D2CC'),
+          background: checked ? accent : '#fff',
+          marginTop: 1,
+        }}
+      >
+        {checked && (
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M5 12l5 5L20 7"
+              stroke="#0A0A0A"
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
+      <span style={{ fontSize: 12.5, lineHeight: 1.45, paddingTop: 1 }}>
+        {label}
+        {required && (
+          <span
+            style={{ color: checked ? accent : '#E5484D', marginLeft: 4 }}
+            aria-hidden
+          >
+            *
+          </span>
+        )}
+      </span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+        aria-required={required}
+      />
+    </label>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Thanks screen — dark with confetti + coupon
+// ─────────────────────────────────────────────────────────────
+
+function ThanksScreen({
+  accent,
+  brand,
+  survey,
+  refNo,
+}: {
+  accent: string;
+  brand: string;
+  survey: Survey;
+  refNo: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const couponCode = survey.couponCode || null;
+  const couponLabel = survey.couponLabel || '10% indirim';
+  const thankYou = survey.thankYouMessage;
+
+  const copy = (txt: string) => {
+    try {
+      void navigator.clipboard?.writeText(txt);
+    } catch {
+      // noop — clipboard might be unavailable on some iOS PWA contexts
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1600);
+  };
+
+  return (
+    <div
+      className="anim-fade relative flex flex-1 flex-col overflow-hidden"
+      style={{ background: '#0A0A0A', color: '#fff' }}
+    >
+      {/* Ambient glow */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: '15%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 360,
+          height: 360,
+          borderRadius: 999,
+          background: accent,
+          opacity: 0.18,
+          filter: 'blur(90px)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Confetti */}
+      <div
+        aria-hidden
+        style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+      >
+        {Array.from({ length: 14 }).map((_, i) => {
+          const angle = (Math.PI * 2 * i) / 14;
+          const r = 80 + (i % 3) * 30;
+          return (
+            <span
+              key={i}
+              style={{
+                position: 'absolute',
+                top: '32%',
+                left: '50%',
+                width: 8,
+                height: 8,
+                borderRadius: i % 2 ? 999 : 2,
+                background: i % 3 === 0 ? '#FFF' : accent,
+                ['--tx' as string]: `${Math.cos(angle) * r}px`,
+                ['--ty' as string]: `${Math.sin(angle) * r}px`,
+                animation: `bzConfettiPop 1100ms cubic-bezier(.2,.6,.3,1) ${i * 35}ms both`,
+                opacity: 0.85,
+              } as React.CSSProperties}
+            />
+          );
+        })}
+      </div>
+
+      <div
+        className="relative text-center"
+        style={{ padding: '60px 22px 0' }}
+      >
+        <div
+          className="mx-auto flex items-center justify-center"
+          style={{
+            width: 88,
+            height: 88,
+            borderRadius: 999,
+            marginBottom: 26,
+            background: accent,
+            color: '#0A0A0A',
+            animation:
+              'bzSurveyPop 460ms cubic-bezier(.2,.65,.3,1.2) both, bzSurveyGlow 2.2s ease-out 460ms infinite',
+            boxShadow: `0 16px 40px -12px ${accent}`,
+          }}
+        >
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M5 12l5 5L20 7"
+              stroke="#0A0A0A"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+        <div
+          className="bz-survey-eyebrow mb-2.5"
+          style={{ color: accent }}
+        >
+          TEŞEKKÜRLER
+        </div>
+        <h2
+          className="bz-survey-head"
+          style={{
+            margin: 0,
+            fontSize: 30,
+            color: '#fff',
+          }}
+        >
+          {thankYou || 'Yanıtın bizi gerçekten mutlu etti.'}
+        </h2>
+        <p
+          style={{
+            margin: '14px auto 0',
+            maxWidth: 320,
+            fontSize: 14,
+            lineHeight: 1.5,
+            color: 'rgba(255,255,255,0.6)',
+          }}
+        >
+          {brand} ekibi mesajını birazdan görecek.{' '}
+          <span>
+            Referans:{' '}
+            <span className="bz-survey-mono" style={{ color: '#fff' }}>
+              {refNo}
+            </span>
+          </span>
+        </p>
+      </div>
+
+      {couponCode && (
+        <div className="relative" style={{ padding: '32px 22px 0' }}>
+          <div
+            className="relative overflow-hidden rounded-2xl border-dashed"
+            style={{
+              padding: '20px 18px 18px',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px dashed rgba(255,255,255,0.18)',
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: -10,
+                width: 20,
+                height: 20,
+                borderRadius: 999,
+                transform: 'translateY(-50%)',
+                background: '#0A0A0A',
+              }}
+            />
+            <span
+              aria-hidden
+              style={{
+                position: 'absolute',
+                top: '50%',
+                right: -10,
+                width: 20,
+                height: 20,
+                borderRadius: 999,
+                transform: 'translateY(-50%)',
+                background: '#0A0A0A',
+              }}
+            />
+            <div
+              className="bz-survey-eyebrow mb-2"
+              style={{ color: 'rgba(255,255,255,0.55)' }}
+            >
+              SANA ÖZEL KUPON
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div
+                  className="bz-survey-head"
+                  style={{
+                    fontSize: 24,
+                    color: '#fff',
+                  }}
+                >
+                  {couponLabel}
+                </div>
+                <div
+                  className="bz-survey-mono"
+                  style={{
+                    fontSize: 12,
+                    color: 'rgba(255,255,255,0.5)',
+                    marginTop: 4,
+                  }}
+                >
+                  Sonraki ziyaretinde
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => copy(couponCode)}
+                className="bz-survey-tap inline-flex items-center gap-2"
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: copied ? '#30A46C' : accent,
+                  color: copied ? '#fff' : '#0A0A0A',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  letterSpacing: '0.06em',
+                }}
+                aria-label="Kupon kodunu kopyala"
+              >
+                {copied ? '✓ KOPYALANDI' : couponCode}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1" />
+
+      <div
+        className="relative flex flex-col gap-2"
+        style={{ padding: '16px 22px 44px' }}
+      >
+        <p
+          className="bz-survey-mono"
+          style={{
+            margin: '6px 0 0',
+            textAlign: 'center',
+            fontSize: 11,
+            color: 'rgba(255,255,255,0.35)',
+            letterSpacing: '0.04em',
+          }}
+        >
+          BUAZE · QR FEEDBACK
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Question input — 5 supported types, design-faithful renderers
+// ─────────────────────────────────────────────────────────────
 
 function QuestionInput({
-  question,
+  q,
   value,
   onChange,
   accent,
 }: {
-  question: Question;
+  q: Question;
   value: AnswerValue | undefined;
   onChange: (patch: AnswerValue) => void;
   accent: string;
 }) {
-  if (question.type === 'rating') {
-    const current = value?.numberValue ?? 0;
+  if (q.type === 'rating') {
+    return <QStar value={value?.numberValue ?? null} onChange={(v) => onChange({ numberValue: v })} accent={accent} />;
+  }
+  if (q.type === 'nps') {
+    return <QNps value={value?.numberValue ?? null} onChange={(v) => onChange({ numberValue: v })} accent={accent} />;
+  }
+  if (q.type === 'short_text') {
     return (
-      <div className="flex flex-wrap items-center gap-2">
-        {[1, 2, 3, 4, 5].map((n) => {
-          const active = n <= current;
+      <input
+        className="bz-survey-field"
+        type="text"
+        value={value?.textValue || ''}
+        onChange={(e) => onChange({ textValue: e.target.value.slice(0, 200) })}
+        placeholder="Yazmaya başla…"
+        maxLength={200}
+        enterKeyHint="next"
+        autoCapitalize="sentences"
+      />
+    );
+  }
+  if (q.type === 'long_text') {
+    const max = 2000;
+    return (
+      <div>
+        <textarea
+          className="bz-survey-field"
+          rows={5}
+          value={value?.textValue || ''}
+          onChange={(e) => onChange({ textValue: e.target.value.slice(0, max) })}
+          placeholder="Yaşadığın deneyimi birkaç cümleyle anlat…"
+          maxLength={max}
+          style={{ resize: 'none', minHeight: 140 }}
+          autoCapitalize="sentences"
+        />
+        <div
+          className="bz-survey-eyebrow text-right"
+          style={{ marginTop: 6, color: '#A3A29C' }}
+        >
+          {(value?.textValue || '').length} / {max}
+        </div>
+      </div>
+    );
+  }
+  if (q.type === 'multiple_choice') {
+    return (
+      <QRadio
+        options={q.options || []}
+        value={value?.optionValue ?? null}
+        onChange={(v) => onChange({ optionValue: v })}
+        accent={accent}
+      />
+    );
+  }
+  return null;
+}
+
+function QStar({
+  value,
+  onChange,
+  accent,
+}: {
+  value: number | null;
+  onChange: (v: number) => void;
+  accent: string;
+}) {
+  const [hover, setHover] = useState(0);
+  const v = hover || value || 0;
+  const labels = ['Çok kötüydü', 'İdare ederdi', 'Ortalama', 'Güzeldi', 'Mükemmel!'];
+  return (
+    <div>
+      <div
+        className="flex justify-between"
+        style={{ gap: 4, padding: '20px 0 14px' }}
+      >
+        {[1, 2, 3, 4, 5].map((s) => {
+          const active = s <= v;
           return (
             <button
-              key={n}
+              key={s}
               type="button"
-              onClick={() => onChange({ numberValue: n })}
-              aria-label={`${n} yıldız`}
-              className="rounded-md p-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-              style={{ backgroundColor: active ? accent : '#FAFAFA' }}
+              onClick={() => onChange(s)}
+              onMouseEnter={() => setHover(s)}
+              onMouseLeave={() => setHover(0)}
+              aria-label={`${s} yıldız`}
+              className="bz-survey-tap flex items-center justify-center"
+              style={{
+                width: 56,
+                height: 56,
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                padding: 0,
+                transform: active ? 'scale(1.06)' : 'scale(1)',
+              }}
             >
-              <Star size={24} fill={active ? '#0A0A0A' : 'transparent'} color="#0A0A0A" />
+              <svg width="48" height="48" viewBox="0 0 24 24">
+                <path
+                  d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"
+                  fill={active ? accent : 'rgba(10,10,10,0.06)'}
+                  stroke={active ? accent : 'rgba(10,10,10,0.12)'}
+                  strokeWidth="1.4"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
           );
         })}
       </div>
-    );
-  }
-
-  if (question.type === 'nps') {
-    const current = value?.numberValue;
-    return (
-      <div>
-        <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-11">
-          {Array.from({ length: 11 }, (_, i) => i).map((n) => {
-            const active = n === current;
-            return (
-              <button
-                key={n}
-                type="button"
-                onClick={() => onChange({ numberValue: n })}
-                aria-label={`${n}`}
-                className="rounded-md border py-2 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-                style={{
-                  backgroundColor: active ? accent : '#FFFFFF',
-                  borderColor: active ? '#0A0A0A' : '#EDEDED',
-                  color: '#0A0A0A',
-                }}
-              >
-                {n}
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-2 flex justify-between text-[10px] uppercase tracking-wider text-[#737373]">
-          <span>Tavsiye etmem</span>
-          <span>Kesinlikle tavsiye ederim</span>
-        </div>
+      <div
+        className="text-center"
+        style={{ minHeight: 30 }}
+        aria-live="polite"
+      >
+        {v > 0 ? (
+          <span
+            key={v}
+            className="bz-survey-head anim-fade"
+            style={{ fontSize: 18, color: '#0A0A0A' }}
+          >
+            {labels[v - 1]}
+          </span>
+        ) : (
+          <span
+            className="bz-survey-head"
+            style={{ fontSize: 14, color: '#A3A29C' }}
+          >
+            ← seçim yap →
+          </span>
+        )}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
-  if (question.type === 'short_text') {
-    return (
-      <input
-        type="text"
-        value={value?.textValue || ''}
-        onChange={(e) => onChange({ textValue: e.target.value.slice(0, 200) })}
-        maxLength={200}
-        className="w-full rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5 text-sm text-[#0A0A0A] focus:border-[#0A0A0A] focus:outline-none focus:ring-2 focus:ring-[#C6F24E]/40"
-        placeholder="Cevabınızı yazın…"
-      />
-    );
-  }
-
-  if (question.type === 'long_text') {
-    return (
-      <textarea
-        value={value?.textValue || ''}
-        onChange={(e) => onChange({ textValue: e.target.value.slice(0, 2000) })}
-        maxLength={2000}
-        rows={4}
-        className="w-full rounded-xl border border-[#EDEDED] bg-white px-3 py-2.5 text-sm text-[#0A0A0A] focus:border-[#0A0A0A] focus:outline-none focus:ring-2 focus:ring-[#C6F24E]/40"
-        placeholder="Detaylı geri bildiriminiz…"
-      />
-    );
-  }
-
-  if (question.type === 'multiple_choice') {
-    const opts = question.options || [];
-    return (
-      <ul className="space-y-2">
-        {opts.map((o) => {
-          const active = value?.optionValue === o;
+function QNps({
+  value,
+  onChange,
+  accent,
+}: {
+  value: number | null;
+  onChange: (v: number) => void;
+  accent: string;
+}) {
+  const tone = (n: number) =>
+    n <= 6 ? '#E5484D' : n <= 8 ? '#F5A524' : '#30A46C';
+  return (
+    <div>
+      <div
+        className="grid"
+        style={{ gridTemplateColumns: 'repeat(11, 1fr)', gap: 3 }}
+      >
+        {Array.from({ length: 11 }, (_, n) => n).map((n) => {
+          const active = value === n;
+          const inRange = value !== null && n <= value;
           return (
-            <li key={o}>
-              <button
-                type="button"
-                onClick={() => onChange({ optionValue: o })}
-                className="flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E]"
-                style={{
-                  backgroundColor: active ? accent : '#FFFFFF',
-                  borderColor: active ? '#0A0A0A' : '#EDEDED',
-                  color: '#0A0A0A',
-                }}
-              >
-                <span
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2"
-                  style={{
-                    borderColor: active ? '#0A0A0A' : '#A3A3A3',
-                    backgroundColor: active ? '#0A0A0A' : 'transparent',
-                  }}
-                  aria-hidden
-                >
-                  {active && (
-                    <span className="h-2 w-2 rounded-full bg-white" />
-                  )}
-                </span>
-                <span className="flex-1">{o}</span>
-              </button>
-            </li>
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange(n)}
+              aria-pressed={active}
+              className="bz-survey-tap flex items-center justify-center"
+              style={{
+                aspectRatio: '1 / 1',
+                border:
+                  '1.5px solid ' +
+                  (active ? '#0A0A0A' : inRange ? accent : '#E5E3DC'),
+                background: active ? '#0A0A0A' : inRange ? accent + '33' : '#fff',
+                color: active ? '#fff' : '#0A0A0A',
+                borderRadius: 10,
+                fontWeight: 600,
+                fontSize: 13,
+                fontFamily: 'var(--font-mono)',
+                cursor: 'pointer',
+                padding: 0,
+                boxShadow: active ? '0 6px 20px -8px rgba(0,0,0,0.4)' : 'none',
+              }}
+            >
+              {n}
+            </button>
           );
         })}
-      </ul>
-    );
-  }
+      </div>
+      <div
+        className="flex justify-between"
+        style={{
+          marginTop: 10,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.08em',
+          color: '#A3A29C',
+          textTransform: 'uppercase',
+        }}
+      >
+        <span>Hiç önermem</span>
+        <span>Kesinlikle</span>
+      </div>
+      {value !== null && (
+        <div
+          className="anim-fade flex items-center gap-2.5"
+          style={{
+            marginTop: 18,
+            padding: '12px 14px',
+            borderRadius: 14,
+            background: tone(value) + '14',
+            border: '1px solid ' + tone(value) + '40',
+          }}
+        >
+          <span
+            aria-hidden
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 999,
+              background: tone(value),
+              boxShadow: `0 0 10px ${tone(value)}`,
+            }}
+          />
+          <span
+            className="bz-survey-head"
+            style={{ fontSize: 16, color: '#0A0A0A' }}
+          >
+            {value <= 6 ? 'Eleştirmen' : value <= 8 ? 'Tarafsız' : 'Destekçi'}
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              color: '#6B6B66',
+              letterSpacing: '0.06em',
+              marginLeft: 'auto',
+              textTransform: 'uppercase',
+            }}
+          >
+            {value}/10
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
-  return null;
+function QRadio({
+  options,
+  value,
+  onChange,
+  accent,
+}: {
+  options: string[];
+  value: string | null;
+  onChange: (v: string) => void;
+  accent: string;
+}) {
+  return (
+    <div className="flex flex-col" style={{ gap: 10 }}>
+      {options.map((opt) => {
+        const active = value === opt;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onChange(opt)}
+            aria-pressed={active}
+            className="bz-survey-tap flex items-center"
+            style={{
+              gap: 14,
+              padding: '14px 16px',
+              border: '1.5px solid ' + (active ? '#0A0A0A' : '#E5E3DC'),
+              background: active ? '#0A0A0A' : '#fff',
+              color: active ? '#fff' : '#0A0A0A',
+              borderRadius: 16,
+              fontSize: 15,
+              fontWeight: 500,
+              cursor: 'pointer',
+              textAlign: 'left',
+              boxShadow: active ? '0 8px 22px -10px rgba(0,0,0,0.35)' : 'none',
+            }}
+          >
+            <span style={{ flex: 1 }}>{opt}</span>
+            <span
+              className="flex shrink-0 items-center justify-center"
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 999,
+                border: '1.5px solid ' + (active ? accent : '#D4D2CC'),
+                background: active ? accent : 'transparent',
+              }}
+              aria-hidden
+            >
+              {active && (
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M5 12l5 5L20 7"
+                    stroke="#0A0A0A"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
 }

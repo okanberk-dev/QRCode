@@ -1635,6 +1635,14 @@ model Survey {
   // İletişim alanları (email + phone) opsiyonel olarak göster. Default
   // true: owner takip etmek isteyebilir. False → tamamen anonim.
   collectContact          Boolean   @default(true) @map("collect_contact")
+  // Stage 99 — Tasarım handoff "Sana özel kupon" kartı. Owner anket
+  // tamamlama ödülü olarak bir kupon kodu (örn. "BUAZE10") tanımlayabilir.
+  // Null → kupon kartı public thanks ekranında gizlenir. couponLabel
+  // owner'ın kopyada yazacağı kısa açıklama ("10% indirim" gibi); null
+  // ise locale-aware default kullanılır. Tasarım: dashed border + dual
+  // scalloped cutouts + lime kopya butonu (CLAUDE.md §42).
+  couponCode              String?   @map("coupon_code")
+  couponLabel             String?   @map("coupon_label")
   createdAt               DateTime  @default(now()) @map("created_at")
   updatedAt               DateTime  @updatedAt @map("updated_at")
 
