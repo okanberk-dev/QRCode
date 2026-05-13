@@ -13,8 +13,10 @@ import {
   ArrowLeft,
   ClipboardCheck,
   Copy as CopyIcon,
+  Download,
   Eye,
   EyeOff,
+  FileText,
   Link2,
   Loader2,
   Plus,
@@ -187,6 +189,36 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
     }
   }
 
+  async function handleDuplicate() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/duplicate`,
+        { method: 'POST' },
+      );
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError(j.error || (locale === 'tr' ? 'Kopyalanamadı' : 'Duplicate failed'));
+        return;
+      }
+      const json = await res.json();
+      // Yeni şablonun detayına yönlendir.
+      if (json.data?.id) {
+        router.push(`/${locale}/dashboard/audits/${json.data.id}`);
+      } else {
+        router.refresh();
+      }
+    } catch {
+      setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const csvHref = `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/responses/export`;
+  const hasResponses = template._count.responses > 0;
+
   function copyLink(token: string) {
     const url = `${appUrl}/audits/${token}`;
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -279,16 +311,35 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
         title={template.title}
         description={template.description ?? undefined}
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link
               href={`/${locale}/dashboard/audits/${template.id}/results`}
               className="bz-btn-ghost"
             >
-              {locale === 'tr' ? 'Sonuçlar' : 'Results'}
+              <FileText size={14} /> {locale === 'tr' ? 'Sonuçlar' : 'Results'}
             </Link>
+            {hasResponses && (
+              <a
+                href={csvHref}
+                className="bz-btn-ghost"
+                download
+              >
+                <Download size={14} /> {t.audits_detail_csv_export}
+              </a>
+            )}
             <button
               type="button"
               className="bz-btn-ghost"
+              onClick={handleDuplicate}
+              disabled={busy}
+              title={t.audits_detail_duplicate}
+            >
+              {busy ? <Loader2 size={14} className="animate-spin" /> : <CopyIcon size={14} />}
+              {t.audits_detail_duplicate}
+            </button>
+            <button
+              type="button"
+              className={template.isPublished ? 'bz-btn-ghost' : 'bz-btn-primary'}
               onClick={togglePublish}
               disabled={busy}
             >
@@ -301,7 +352,12 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
               )}
               {template.isPublished ? t.audits_admin_unpublish : t.audits_admin_publish}
             </button>
-            <button type="button" className="bz-btn-icon" onClick={handleDeleteTemplate} aria-label={locale === 'tr' ? 'Sil' : 'Delete'}>
+            <button
+              type="button"
+              className="bz-btn-icon"
+              onClick={handleDeleteTemplate}
+              aria-label={locale === 'tr' ? 'Sil' : 'Delete'}
+            >
               <Trash2 size={14} />
             </button>
           </div>
