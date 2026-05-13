@@ -1,9 +1,9 @@
 /**
  * QR template registry — single source of truth for the wizard picker +
- * PDF/PNG export pipeline. Wave A ships with `classic` only; Wave B adds
- * the remaining 12 templates (TableTent, WindowSticker, ReceiptFooter,
- * PremiumBlack, MenuInsert, CounterPlaque, WalletCard, SocialPost,
- * DoorHanger, MinimalSwiss, Brutalist, Coaster, Postcard, PhotoHero).
+ * PDF/PNG export pipeline. 15 templates ship in Wave B (Classic + 14 from
+ * qaxx handoff). Wave C wires html-to-image + jspdf so the wizard's
+ * "Şablonu indir" actions render any of these as PNG/PDF without server
+ * round-trips.
  *
  * Adding a new template = import the entry + push it to `TEMPLATES`. The
  * picker, fallback resolver, and `getTemplate(id)` lookup pick it up
@@ -11,9 +11,39 @@
  */
 
 import { classicEntry } from './Classic';
+import { tableTentEntry } from './TableTent';
+import { windowStickerEntry } from './WindowSticker';
+import { receiptFooterEntry } from './ReceiptFooter';
+import { premiumBlackEntry } from './PremiumBlack';
+import { menuInsertEntry } from './MenuInsert';
+import { counterPlaqueEntry } from './CounterPlaque';
+import { walletCardEntry } from './WalletCard';
+import { socialPostEntry } from './SocialPost';
+import { doorHangerEntry } from './DoorHanger';
+import { minimalSwissEntry } from './MinimalSwiss';
+import { brutalistEntry } from './Brutalist';
+import { coasterEntry } from './Coaster';
+import { postcardEntry } from './Postcard';
+import { photoHeroEntry } from './PhotoHero';
 import type { TemplateEntry } from './types';
 
-export const TEMPLATES: readonly TemplateEntry[] = [classicEntry];
+export const TEMPLATES: readonly TemplateEntry[] = [
+  classicEntry,
+  tableTentEntry,
+  windowStickerEntry,
+  receiptFooterEntry,
+  premiumBlackEntry,
+  menuInsertEntry,
+  counterPlaqueEntry,
+  walletCardEntry,
+  socialPostEntry,
+  doorHangerEntry,
+  minimalSwissEntry,
+  brutalistEntry,
+  coasterEntry,
+  postcardEntry,
+  photoHeroEntry,
+];
 
 export const DEFAULT_TEMPLATE_ID = 'classic' as const;
 
