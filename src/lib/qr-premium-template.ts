@@ -245,14 +245,23 @@ function buildPremiumQrTemplateHtml({ qrSvg, title, qrUrl, locale }: PremiumQrTe
 
 export function downloadPremiumQrPdf(params: PremiumQrTemplateParams): boolean {
   if (typeof window === "undefined") return false;
-  const w = window.open("", "_blank", "noopener,noreferrer");
+  // Blob URL paterni: `window.open("", "_blank", "noopener,noreferrer")` +
+  // `w.document.write()` Chrome/Safari'de `noopener` flag'iyle birlikte
+  // çoğunlukla başarısız oluyor (yeni window opak, write engellenir veya
+  // null döner). HTML'i Blob olarak servis edip URL ile açmak modern,
+  // pop-up blocker'a dayanıklı + noopener güvenliği korunur.
+  const html = buildPremiumQrTemplateHtml(params);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const blobUrl = URL.createObjectURL(blob);
+  const w = window.open(blobUrl, "_blank", "noopener,noreferrer");
   if (!w) {
     // Pop-up blocked.
+    URL.revokeObjectURL(blobUrl);
     return false;
   }
-  const html = buildPremiumQrTemplateHtml(params);
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
+  // Blob URL'i Browser dökümanı yükledikten sonra revoke et. 60 sn yeterli
+  // — yazdırma dialog'u açılana kadar geçen süreyi cömertçe karşılar.
+  // Erken revoke print preview'u kırabilir.
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
   return true;
 }

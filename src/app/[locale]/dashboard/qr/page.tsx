@@ -272,6 +272,10 @@ export default function DashboardQrPage() {
         qrUrl: it.qrUrl,
         restaurantId: it.restaurantId,
         tableNumber: it.tableNumber,
+        // Forward owner-chosen palette so QRCard's download buttons
+        // (PNG + Premium PDF) request the API with `dark`/`light` params.
+        darkColor: it.darkColor,
+        lightColor: it.lightColor,
       };
     });
   }, [filteredItems, restaurantById, restaurants.length, isTr]);

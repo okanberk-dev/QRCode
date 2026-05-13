@@ -22,6 +22,11 @@ export interface QRCardItem {
   restaurantId: string;
   /** tableNumber — passed through to download endpoint */
   tableNumber: string | null;
+  /** Owner-chosen foreground hex (e.g. `#0A0A0A`). Forwarded to PNG/SVG
+   *  endpoint so downloads match the saved palette, not platform default. */
+  darkColor?: string | null;
+  /** Owner-chosen background hex (e.g. `#FFFFFF`). Paired with `darkColor`. */
+  lightColor?: string | null;
 }
 
 interface QRCardProps {
@@ -70,6 +75,12 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
     const params = new URLSearchParams({ format: "png" });
     if (item.tableNumber) params.set("table", item.tableNumber);
     if (item.platform) params.set("platform", item.platform);
+    // Owner-chosen palette → download endpoint. Pair only — API requires both
+    // (`isValidHexColor` + `persistColors = !!(darkRaw && lightRaw)`).
+    if (item.darkColor && item.lightColor) {
+      params.set("dark", item.darkColor);
+      params.set("light", item.lightColor);
+    }
     const url = `/api/restaurants/${item.restaurantId}/qr?${params.toString()}`;
     const res = await fetch(url);
     if (!res.ok) return;
@@ -95,6 +106,12 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
         const params = new URLSearchParams({ format: "svg" });
         if (item.tableNumber) params.set("table", item.tableNumber);
         if (item.platform) params.set("platform", item.platform);
+        // Same palette propagation as PNG download — premium template will
+        // render in owner's chosen colours rather than mono default.
+        if (item.darkColor && item.lightColor) {
+          params.set("dark", item.darkColor);
+          params.set("light", item.lightColor);
+        }
         const res = await fetch(`/api/restaurants/${item.restaurantId}/qr?${params.toString()}`);
         if (!res.ok) {
           setPremiumError(isTr ? "QR alınamadı, tekrar deneyin." : "Could not fetch QR.");

@@ -5,6 +5,10 @@ import { canAccessRestaurant } from '@/lib/panel-access';
 import { isValidTableIdentifier, isValidHexColor } from '@/lib/validations';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
+import { renderAestheticQrSvg } from '@/lib/qr-aesthetic';
+import { composePremiumQrPng } from '@/lib/qr-premium-png';
+// Plain `qrcode` kept for `?style=plain` opt-out + sharp composite
+// fallback path (premium PNG render failure → mono QR rather than 500).
 import QRCode from 'qrcode';
 
 const DEFAULT_DARK = '#000000';
@@ -146,7 +150,8 @@ export async function GET(
   try {
     const restaurant = await prisma.restaurant.findUnique({
       where: { id },
-      select: { id: true, slug: true, isActive: true, externalPlatformsEnabled: true },
+      // `name` needed for premium PNG headline (composePremiumQrPng).
+      select: { id: true, name: true, slug: true, isActive: true, externalPlatformsEnabled: true },
     });
 
     if (!restaurant) {
@@ -207,34 +212,98 @@ export async function GET(
       lightColor: persistColors ? light : null,
     });
 
-    const qrOptions = {
-      width,
-      margin: 2,
-      color: { dark, light },
-      errorCorrectionLevel: 'H' as const,
-    };
+    // Aesthetic Buaze QR — rounded modules + unified finder eyes. Used
+    // for both the inline SVG response (premium PDF template embeds this)
+    // and as the symbol layer inside the composited PNG.
+    //
+    // `style=plain` query gate keeps a path open for callers that need a
+    // raw qrcode (programmatic embed, regression tooling). Default is the
+    // branded variant per user request — "wizard kadar estetik".
+    const style = (searchParams.get('style') || 'aesthetic').toLowerCase();
+    const usePlain = style === 'plain';
 
     if (format === 'png') {
-      const pngBuffer = await QRCode.toBuffer(qrUrl, {
-        type: 'png',
-        ...qrOptions,
-      });
+      try {
+        const hostForFooter = (() => {
+          try {
+            const u = new URL(qrUrl);
+            const path = u.pathname.replace(/^\/+|\/+$/g, '');
+            const host = u.hostname.replace(/^www\./, '');
+            return path ? `${host}/${path.split('?')[0]}` : host;
+          } catch {
+            return 'buaze.com';
+          }
+        })();
 
-      return new NextResponse(new Uint8Array(pngBuffer), {
-        status: 200,
-        headers: {
-          'Content-Type': 'image/png',
-          'Content-Disposition': `attachment; filename="qr-${restaurant.slug}${table ? `-masa-${table}` : ''}.png"`,
-          'Cache-Control': 'no-store',
-        },
-      });
+        const pngBuffer = usePlain
+          ? await QRCode.toBuffer(qrUrl, {
+              type: 'png',
+              width,
+              margin: 2,
+              color: { dark, light },
+              errorCorrectionLevel: 'H' as const,
+            })
+          : await composePremiumQrPng({
+              data: qrUrl,
+              size: width,
+              dark,
+              light,
+              restaurantName: restaurant.name,
+              qrHost: hostForFooter,
+              locale: 'tr',
+            });
+
+        return new NextResponse(new Uint8Array(pngBuffer), {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/png',
+            'Content-Disposition': `attachment; filename="qr-${restaurant.slug}${table ? `-masa-${table}` : ''}.png"`,
+            'Cache-Control': 'no-store',
+          },
+        });
+      } catch (composeError) {
+        // Premium composite failed (sharp / svg parse). Fall back to plain
+        // qrcode PNG so the owner still gets a usable download — better a
+        // mono QR than a 500.
+        console.error('[QR] premium composite failed, falling back to plain:', composeError);
+        const fallback = await QRCode.toBuffer(qrUrl, {
+          type: 'png',
+          width,
+          margin: 2,
+          color: { dark, light },
+          errorCorrectionLevel: 'H' as const,
+        });
+        return new NextResponse(new Uint8Array(fallback), {
+          status: 200,
+          headers: {
+            'Content-Type': 'image/png',
+            'Content-Disposition': `attachment; filename="qr-${restaurant.slug}${table ? `-masa-${table}` : ''}.png"`,
+            'Cache-Control': 'no-store',
+          },
+        });
+      }
     }
 
-    // Default: SVG
-    const svgString = await QRCode.toString(qrUrl, {
-      type: 'svg',
-      ...qrOptions,
-    });
+    // Default: SVG. Always aesthetic unless caller opted into `style=plain`
+    // (parity with PNG branch). Premium PDF template (`qr-premium-template.ts`)
+    // consumes this SVG and frames it with HTML/CSS — rounded modules will
+    // visibly improve the printed output too.
+    const svgString = usePlain
+      ? await QRCode.toString(qrUrl, {
+          type: 'svg',
+          width,
+          margin: 2,
+          color: { dark, light },
+          errorCorrectionLevel: 'H' as const,
+        })
+      : renderAestheticQrSvg({
+          data: qrUrl,
+          size: width,
+          dark,
+          light,
+          margin: 2,
+          errorCorrectionLevel: 'H',
+        }).svg;
 
     return new NextResponse(svgString, {
       status: 200,
