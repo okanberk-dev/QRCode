@@ -15,6 +15,7 @@ import {
   Loader2,
   Plus,
   Save,
+  Sparkles,
 } from 'lucide-react';
 import {
   AlertBanner,
@@ -27,9 +28,11 @@ import {
   Tabs,
   type TabItem,
   TableSkeleton,
+  useConfirmDialog,
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { AUDIT_SECTORS, AUDIT_SCORING_MODES, type AuditSector, type AuditScoringMode } from '@/lib/audits/types';
+import SeedResultModal, { type SeedResult } from '@/components/admin/audits/SeedResultModal';
 
 interface CategoryRef {
   id: string;
@@ -121,6 +124,9 @@ export default function AuditTemplatesPage() {
   const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<SeedResult | null>(null);
+  const [confirmEl, askConfirm] = useConfirmDialog();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -203,6 +209,48 @@ export default function AuditTemplatesPage() {
     }
   }
 
+  function runSeed() {
+    askConfirm({
+      title: 'Varsayılan içeriği yükle',
+      body: (
+        <div className="space-y-2 text-[13px] text-[#525252]">
+          <p>
+            Denetim Merkezi için <strong className="text-[#0A0A0A]">18 kategori</strong>,{' '}
+            <strong className="text-[#0A0A0A]">25 şablon</strong> ve{' '}
+            <strong className="text-[#0A0A0A]">~120 soru</strong> yüklenir veya güncellenir.
+          </p>
+          <p>
+            Mevcut <em>title</em> değiştirilmemiş şablonlar güncellenir; manuel olarak başlık
+            değiştirdiğin satırlar dokunulmadan korunur — seed kendi orijinalini ayrı bir satır
+            olarak ekler.
+          </p>
+          <p className="text-[#737373]">İşlem birkaç saniye sürer. Operatör trafiğini etkilemez.</p>
+        </div>
+      ),
+      confirmLabel: 'Yükle',
+      cancelLabel: 'Vazgeç',
+      onConfirm: async () => {
+        setSeeding(true);
+        setError(null);
+        try {
+          const res = await fetch('/api/admin/audits/seed', { method: 'POST' });
+          if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            setError(j.error || 'Seed başarısız');
+            return;
+          }
+          const json = await res.json();
+          setSeedResult(json.data as SeedResult);
+          await load();
+        } catch {
+          setError('Bağlantı hatası');
+        } finally {
+          setSeeding(false);
+        }
+      },
+    });
+  }
+
   async function handleCreate() {
     setFormError(null);
     setCreating(true);
@@ -247,10 +295,20 @@ export default function AuditTemplatesPage() {
         title="Şablon kataloğu"
         description="Sektör başına yayınlanan hazır denetim şablonlarını yönet. Owner'lar bu kataloğu kendi denetimleri için fork eder."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link href="/admin/audits/categories" className="bz-btn-ghost">
               Kategoriler
             </Link>
+            <button
+              type="button"
+              className="bz-btn-ghost"
+              onClick={runSeed}
+              disabled={seeding || loading}
+              title="Varsayılan 18 kategori + 25 şablon + ~120 soru yüklenir veya güncellenir"
+            >
+              {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+              Varsayılan içeriği yükle
+            </button>
             <button className="bz-btn-primary" onClick={() => { setForm(EMPTY_FORM); setFormError(null); setCreateOpen(true); }}>
               <Plus size={14} strokeWidth={2} /> Yeni şablon
             </button>
@@ -310,12 +368,33 @@ export default function AuditTemplatesPage() {
       ) : !data || data.length === 0 ? (
         <EmptyState
           icon={<ClipboardCheck size={20} />}
-          title="Sonuç yok"
-          body="Filtreyi değiştir veya yeni bir şablon oluştur."
+          title={counts.total === 0 ? 'Henüz şablon yok' : 'Sonuç yok'}
+          body={
+            counts.total === 0
+              ? 'Buaze 6 sektör için hazır 18 kategori + 25 şablon ile başlatabilirsin. Sıfırdan ekleyeceksen "Yeni şablon" butonunu kullan.'
+              : 'Filtreyi değiştir veya yeni bir şablon oluştur.'
+          }
           action={
-            <button className="bz-btn-primary" onClick={() => setCreateOpen(true)}>
-              <Plus size={14} strokeWidth={2} /> Yeni şablon
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              {counts.total === 0 && (
+                <button
+                  type="button"
+                  className="bz-btn-primary"
+                  onClick={runSeed}
+                  disabled={seeding}
+                >
+                  {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                  Varsayılan içeriği yükle
+                </button>
+              )}
+              <button
+                type="button"
+                className={counts.total === 0 ? 'bz-btn-ghost' : 'bz-btn-primary'}
+                onClick={() => setCreateOpen(true)}
+              >
+                <Plus size={14} strokeWidth={2} /> Yeni şablon
+              </button>
+            </div>
           }
         />
       ) : (
@@ -497,6 +576,15 @@ export default function AuditTemplatesPage() {
           </div>
         </div>
       </Modal>}
+
+      {confirmEl}
+
+      {seedResult && (
+        <SeedResultModal
+          result={seedResult}
+          onClose={() => setSeedResult(null)}
+        />
+      )}
     </div>
   );
 }
