@@ -132,9 +132,17 @@ export default function MarketingNavbarClient({
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Lock body scroll when mobile drawer is open
+  // Lock body scroll when mobile drawer is open + broadcast state
+  // (Custom Event paterni CLAUDE.md §40.D) — MobileBottomNav listener'a
+  // drawer açıkken bottom nav'ı gizlemesi için sinyal verir. Drawer
+  // kapanınca bottom nav fade-in döner.
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('buaze:mobile-drawer', { detail: { open: mobileOpen } }),
+      );
+    }
     return () => {
       document.body.style.overflow = '';
     };

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Home, Tag, Sparkles, LayoutDashboard, QrCode, Mail } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { useMarketingAuth } from '@/hooks/useMarketingAuth';
@@ -59,6 +60,22 @@ export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
   // admin label UI only — route protection server-side intact.
   const { isLoggedIn, source, pending: authPending } = useMarketingAuth();
   const isAdmin = source === 'admin';
+
+  // Drawer state via custom event broadcast from MarketingNavbarClient
+  // (CLAUDE.md §40.D Custom Event paterni). Drawer açıkken bottom nav
+  // gizlenir — aksi halde drawer'ın altını örter ve son içerik (KVKK
+  // badge / dil toggle) bottom nav arkasında kalır. `aria-hidden` +
+  // `pointer-events-none` ile a11y intact; transition reduced-motion
+  // blanket altında kapanır (globals.css §40.3).
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  useEffect(() => {
+    const onDrawer = (e: Event) => {
+      const detail = (e as CustomEvent<{ open: boolean }>).detail;
+      setDrawerOpen(Boolean(detail?.open));
+    };
+    window.addEventListener('buaze:mobile-drawer', onDrawer);
+    return () => window.removeEventListener('buaze:mobile-drawer', onDrawer);
+  }, []);
 
   // Normalize the current path so that trailing slashes don't break matching.
   const current = pathname.replace(/\/+$/, '') || '/';
@@ -130,6 +147,7 @@ export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
 
       <nav
         aria-label={locale === 'tr' ? 'Mobil alt menü' : 'Mobile bottom navigation'}
+        aria-hidden={drawerOpen ? 'true' : undefined}
         // Stage 89 §38.169 — fixed wrapper anchored at `bottom: 0` (constant)
         // + padding-bottom respekts iOS safe-area. Eski `bottom: calc(12px +
         // env(safe-area-inset-bottom))` paterni iOS Safari URL bar /
@@ -139,13 +157,20 @@ export default function MobileBottomNav({ locale }: MobileBottomNavProps) {
         // kayıyor"). Yeni paternde wrapper sabit, sadece inner padding
         // değişir → no reflow, no fixed re-position. Inner pill aynı visual
         // konumda görünür (12px + safe-area gap from viewport bottom).
-        className="lg:hidden fixed bottom-0 left-3 right-3 z-40 mx-auto max-w-[520px]"
+        //
+        // `drawerOpen` (CLAUDE.md §40.D Custom Event paterni) — mobile drawer
+        // açıkken opacity-0 + translate-y-full ile gizlenir, pointer-events
+        // kapanır, a11y için `aria-hidden`. Drawer kapanınca fade-in döner.
+        className={`lg:hidden fixed bottom-0 left-3 right-3 z-40 mx-auto max-w-[520px] transition-[opacity,transform] duration-200 ease-out ${
+          drawerOpen
+            ? 'pointer-events-none translate-y-full opacity-0'
+            : 'translate-y-0 opacity-100'
+        }`}
         style={{
           paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
           // GPU compositing layer — backdrop-blur içeren pill için her
           // ihtimale karşı (iOS Safari composited layer separation).
-          transform: 'translate3d(0, 0, 0)',
-          willChange: 'transform',
+          willChange: 'transform, opacity',
           backfaceVisibility: 'hidden',
         }}
       >
