@@ -664,7 +664,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         {workspaceMenuOpen && !isCollapsed && (
           <div
             role="menu"
-            className="absolute left-3 right-3 top-[calc(100%-10px)] z-50 overflow-hidden rounded-2xl border border-[#EDEDED] bg-white p-1.5 shadow-[0_24px_70px_-30px_rgba(10,10,10,0.35)]"
+            className="bz-menu absolute left-3 right-3 top-[calc(100%-10px)] z-50"
           >
             {workspaceRestaurants.map((restaurant) => {
               const selected = restaurant.id === activeRestaurantId;
@@ -673,11 +673,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                 <button
                   key={restaurant.id}
                   type="button"
-                  role="menuitem"
+                  role="menuitemradio"
+                  aria-checked={selected}
                   onClick={() => selectRestaurantScope(restaurant.id)}
-                  className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[12px] transition-colors ${
-                    selected ? 'bg-[#F7FAEF] text-[#0A0A0A]' : 'text-[#525252] hover:bg-[#FAFAFA] hover:text-[#0A0A0A]'
-                  }`}
+                  className={`bz-menu-item ${selected ? 'is-selected' : ''}`}
                 >
                   <span
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold text-[#0A0A0A]"
@@ -686,12 +685,12 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                     {restaurant.name.charAt(0).toUpperCase()}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">{restaurant.name}</span>
-                    <span className="pulse-eyebrow mt-0.5 block text-[#737373]">
+                    <span className="block truncate text-[13px] font-semibold text-[#0A0A0A]">{restaurant.name}</span>
+                    <span className="pulse-eyebrow mt-0.5 block !text-[#A3A3A3]">
                       {clinic ? (locale === 'tr' ? 'KLİNİK' : 'CLINIC') : restaurant.category.toUpperCase()} · {restaurant.feedbackCount}
                     </span>
                   </span>
-                  {selected && <Check size={14} strokeWidth={2.4} />}
+                  {selected && <Check size={14} strokeWidth={2.4} className="!text-[#A8D62E]" />}
                 </button>
               );
             })}

@@ -58,6 +58,26 @@ export default function AdminBlogPage() {
     fetchPosts();
   }, [fetchPosts]);
 
+  // Outside click + Escape dismiss the action menu.
+  useEffect(() => {
+    if (!openMenu) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-action-menu-root]')) {
+        setOpenMenu(null);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenMenu(null);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [openMenu]);
+
   const handleSeed = async () => {
     setSeeding(true);
     setError('');
@@ -233,43 +253,49 @@ export default function AdminBlogPage() {
                       )}
                     </td>
                     <td>
-                      <div className="relative inline-block">
+                      <div className="relative inline-block" data-action-menu-root>
                         <button
                           className="bz-btn-icon"
                           onClick={() => setOpenMenu(openMenu === post.id ? null : post.id)}
                           aria-label="İşlemler"
+                          aria-haspopup="menu"
                           aria-expanded={openMenu === post.id}
                         >
                           <MoreHorizontal size={14} strokeWidth={2} />
                         </button>
                         {openMenu === post.id && (
                           <div
-                            className="absolute right-0 top-9 z-20 w-44 rounded-xl border border-[#EDEDED] bg-white shadow-lg"
+                            role="menu"
+                            className="bz-menu absolute right-0 top-9 z-30 w-48"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Link
+                              role="menuitem"
                               href={`/${post.locale}/blog/${post.slug}`}
                               target="_blank"
-                              className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                              className="bz-menu-item"
                               onClick={() => setOpenMenu(null)}
                             >
                               <Eye size={13} strokeWidth={2} />
                               Public görüntüle
                             </Link>
                             <Link
+                              role="menuitem"
                               href={`/admin/blog/${post.id}`}
-                              className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+                              className="bz-menu-item"
                               onClick={() => setOpenMenu(null)}
                             >
                               <Pencil size={13} strokeWidth={2} />
                               Düzenle
                             </Link>
+                            <div className="bz-menu-divider" />
                             <button
+                              role="menuitem"
                               onClick={() => {
                                 setOpenMenu(null);
                                 handleDelete(post.id, post.title);
                               }}
-                              className="flex w-full items-center gap-2 border-t border-[#EDEDED] px-3 py-2 text-[13px] text-[#991B1B] hover:bg-[#FEF2F2]"
+                              className="bz-menu-item danger"
                             >
                               <Trash2 size={13} strokeWidth={2} />
                               Sil

@@ -145,55 +145,50 @@ export function PulseSelect({
       {open && (
         <>
           <div
-            className="fixed inset-0 z-20 bg-black/10 sm:hidden"
+            className="bz-menu-backdrop"
             aria-hidden="true"
             onClick={() => setOpen(false)}
           />
-        <div
-          ref={popRef}
-          role="listbox"
-          id={listboxId}
-          aria-activedescendant={activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined}
-          tabIndex={-1}
-          onKeyDown={onListKeyDown}
-          className="bz-fade-in fixed inset-x-3 bottom-[calc(12px+env(safe-area-inset-bottom,0px))] z-30 max-h-[min(420px,70vh)] overflow-auto rounded-2xl border border-[#EDEDED] bg-white p-1.5 shadow-[0_24px_70px_-24px_rgba(0,0,0,0.55)] outline-none sm:absolute sm:left-0 sm:right-0 sm:bottom-auto sm:mt-1.5 sm:max-h-[280px] sm:rounded-[12px] sm:shadow-lg"
-        >
-          {options.length === 0 ? (
-            <div className="px-3 py-2.5 text-[12px] text-[#737373]">—</div>
-          ) : (
-            options.map((opt, idx) => {
-              const isSel = opt.value === value;
-              const isActive = idx === activeIndex;
-              return (
-                <button
-                  key={opt.value}
-                  id={`${listboxId}-${idx}`}
-                  type="button"
-                  role="option"
-                  aria-selected={isSel}
-                  onMouseEnter={() => setActiveIndex(idx)}
-                  onClick={() => {
-                    onChange(opt.value);
-                    setOpen(false);
-                    triggerRef.current?.focus();
-                  }}
-                  className={`flex w-full items-center justify-between gap-2 rounded-[8px] px-2.5 py-2 text-left text-[13px] transition-colors ${
-                    isActive
-                      ? "bg-[#EAF9B8] text-[#0A0A0A]"
-                      : isSel
-                        ? "bg-[#FAFAFA] text-[#0A0A0A]"
-                        : "text-[#0A0A0A] hover:bg-[#FAFAFA]"
-                  }`}
-                >
-                  <span className="truncate">{opt.label}</span>
-                  {isSel && (
-                    <Check size={13} strokeWidth={2.5} className="shrink-0 text-[#A8D62E]" aria-hidden="true" />
-                  )}
-                </button>
-              );
-            })
-          )}
-        </div>
+          <div
+            ref={popRef}
+            role="listbox"
+            id={listboxId}
+            aria-activedescendant={activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined}
+            tabIndex={-1}
+            onKeyDown={onListKeyDown}
+            className="bz-menu bz-menu--sheet sm:absolute sm:left-0 sm:right-0 sm:mt-1.5 sm:min-w-[200px]"
+          >
+            {options.length === 0 ? (
+              <div className="px-3 py-2.5 text-[12px] text-[#737373]">—</div>
+            ) : (
+              options.map((opt, idx) => {
+                const isSel = opt.value === value;
+                const isActive = idx === activeIndex;
+                return (
+                  <button
+                    key={opt.value}
+                    id={`${listboxId}-${idx}`}
+                    type="button"
+                    role="option"
+                    aria-selected={isSel}
+                    data-active={isActive ? "true" : undefined}
+                    onMouseEnter={() => setActiveIndex(idx)}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setOpen(false);
+                      triggerRef.current?.focus();
+                    }}
+                    className="bz-menu-item justify-between"
+                  >
+                    <span className="truncate">{opt.label}</span>
+                    {isSel && (
+                      <Check size={13} strokeWidth={2.5} className="!text-[#A8D62E]" aria-hidden="true" />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
         </>
       )}
     </div>
