@@ -46,6 +46,19 @@ function escapeXml(value: string): string {
  * is composited on top with `sharp.composite` so we never inline a giant
  * base64 SVG inside another SVG (which sharp doesn't reliably re-render).
  */
+// Vercel serverless (librsvg/sharp) container'ında 'Space Grotesk' /
+// 'JetBrains Mono' yüklü değil; fontconfig generic sans-serif/monospace'i
+// güvenilir bir physical font'a map edemediği durumda tüm glyph'ler tofu
+// (square box) olarak render olur — özellikle Türkçe ş/ğ/ı/ç. Listelere
+// `DejaVu Sans` + `Liberation Sans` (Linux base font'ları, full Latin
+// Extended-A glyph coverage) eklenince fallback chain Türkçe karakter
+// garantili çıkar. Brand fontları (Space Grotesk / JetBrains Mono) önde
+// kalır — client tarayıcı veya brand font yüklü makine bunları kullanır.
+const SANS_STACK =
+  "'Space Grotesk', 'DejaVu Sans', 'Liberation Sans', system-ui, -apple-system, 'Segoe UI', sans-serif";
+const MONO_STACK =
+  "ui-monospace, 'JetBrains Mono', 'DejaVu Sans Mono', 'Liberation Mono', 'SF Mono', Menlo, monospace";
+
 function buildFrameSvg(opts: {
   size: number;
   dark: string;
@@ -85,10 +98,10 @@ function buildFrameSvg(opts: {
   <circle cx="${size * 0.04}" cy="${size * 0.04}" r="${size * 0.1}" fill="#C6F24E" opacity="0.55"/>
 
   <!-- Eyebrow -->
-  <text x="${size / 2}" y="${size * 0.12}" font-family="ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace" font-size="${size * 0.028}" font-weight="600" fill="${dark}" fill-opacity="0.62" text-anchor="middle" letter-spacing="${size * 0.005}">${eyebrowSafe}</text>
+  <text x="${size / 2}" y="${size * 0.12}" font-family="${MONO_STACK}" font-size="${size * 0.028}" font-weight="600" fill="${dark}" fill-opacity="0.62" text-anchor="middle" letter-spacing="${size * 0.005}">${eyebrowSafe}</text>
 
   <!-- Headline (restaurant name) -->
-  <text x="${size / 2}" y="${size * 0.21}" font-family="'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="${size * 0.072}" font-weight="500" fill="${dark}" text-anchor="middle" letter-spacing="-${size * 0.0018}">${titleSafe}</text>
+  <text x="${size / 2}" y="${size * 0.21}" font-family="${SANS_STACK}" font-size="${size * 0.072}" font-weight="500" fill="${dark}" text-anchor="middle" letter-spacing="-${size * 0.0018}">${titleSafe}</text>
 
   <!-- QR card (white) — symbol composited on top -->
   <rect x="${cardX}" y="${cardY}" width="${cardOuter}" height="${cardOuter}" rx="${qrSlot.cardRadius}" ry="${qrSlot.cardRadius}" fill="#FFFFFF" filter="url(#cardShadow)"/>
@@ -96,13 +109,13 @@ function buildFrameSvg(opts: {
   <!-- CTA pill -->
   <g transform="translate(${size / 2}, ${size * 1.13})">
     <rect x="-${size * 0.13}" y="-${size * 0.038}" width="${size * 0.26}" height="${size * 0.076}" rx="${size * 0.038}" ry="${size * 0.038}" fill="#FFFFFF" stroke="${dark}" stroke-width="${Math.max(1.5, size * 0.0025)}"/>
-    <text x="0" y="${size * 0.012}" font-family="'Space Grotesk', system-ui, sans-serif" font-size="${size * 0.03}" font-weight="600" fill="${dark}" text-anchor="middle" letter-spacing="${size * 0.001}">${ctaSafe}</text>
+    <text x="0" y="${size * 0.012}" font-family="${SANS_STACK}" font-size="${size * 0.03}" font-weight="600" fill="${dark}" text-anchor="middle" letter-spacing="${size * 0.001}">${ctaSafe}</text>
     <circle cx="${size * 0.085}" cy="0" r="${size * 0.012}" fill="#C6F24E"/>
   </g>
 
   <!-- Footer -->
-  <text x="${size / 2}" y="${size * 1.27}" font-family="ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace" font-size="${size * 0.024}" font-weight="600" fill="${dark}" fill-opacity="0.55" text-anchor="middle" letter-spacing="${size * 0.004}">${footer}</text>
-  <text x="${size / 2}" y="${size * 1.305}" font-family="ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace" font-size="${size * 0.022}" font-weight="500" fill="${dark}" fill-opacity="0.7" text-anchor="middle">${hostSafe}</text>
+  <text x="${size / 2}" y="${size * 1.27}" font-family="${MONO_STACK}" font-size="${size * 0.024}" font-weight="600" fill="${dark}" fill-opacity="0.55" text-anchor="middle" letter-spacing="${size * 0.004}">${footer}</text>
+  <text x="${size / 2}" y="${size * 1.305}" font-family="${MONO_STACK}" font-size="${size * 0.022}" font-weight="500" fill="${dark}" fill-opacity="0.7" text-anchor="middle">${hostSafe}</text>
 </svg>`;
 }
 
@@ -176,4 +189,54 @@ export async function composePremiumQrPng(params: PremiumPngParams): Promise<Buf
     .toBuffer();
 
   return composite;
+}
+
+/**
+ * SVG karşılığı: tasarımlı frame + aesthetic QR tek standalone SVG.
+ * PNG composer ile aynı görsel kimliği üretir, ama sharp pipeline'ından
+ * geçmez — client'a doğrudan vector döner (yazıcı + Illustrator + tarayıcı
+ * uyumlu). Tarayıcı render ortamında font fallback chain daha akıllı
+ * çalıştığı için brand fontu (Space Grotesk) yüklü olmasa bile mojibake
+ * riski yok; yine de SANS/MONO stack DejaVu Sans/Liberation Sans
+ * fallback'i taşır.
+ */
+export function composePremiumQrSvg(params: PremiumPngParams): string {
+  const size = params.size ?? 1200;
+  const dark = params.dark ?? "#0A0A0A";
+  const light = params.light ?? "#FFFFFF";
+
+  const qrSize = Math.round(size * 0.52);
+  const cardPad = Math.round(size * 0.05);
+  const qrX = Math.round((size - qrSize) / 2);
+  const qrY = Math.round(size * 0.31);
+  const cardRadius = Math.round(size * 0.04);
+
+  const { svg: qrSvg } = renderAestheticQrSvg({
+    data: params.data,
+    size: qrSize,
+    dark,
+    light,
+    margin: 1,
+    errorCorrectionLevel: "H",
+  });
+
+  // Aesthetic helper sarmalayıcı `<svg ...>` döner. Frame içine güvenle
+  // gömmek için inner content'i ayıklayıp <g transform> ile yerleştir;
+  // nested SVG yerine düz markup daha taşınabilir (Illustrator + bazı
+  // PDF render'ları nested SVG'yi tutarsız kırpıyor).
+  const innerMatch = qrSvg.match(/<svg[^>]*>([\s\S]*)<\/svg>\s*$/);
+  const qrInner = innerMatch ? innerMatch[1] : qrSvg;
+
+  const frame = buildFrameSvg({
+    size,
+    dark,
+    restaurantName: params.restaurantName,
+    qrHost: params.qrHost,
+    locale: params.locale ?? "tr",
+    qrSlot: { x: qrX, y: qrY, size: qrSize, cardRadius, cardPad },
+  });
+
+  // Frame SVG'sinin kapanış `</svg>` öncesine QR group'unu enjekte et.
+  const qrGroup = `<g transform="translate(${qrX} ${qrY})">${qrInner}</g>`;
+  return frame.replace(/<\/svg>\s*$/, `${qrGroup}</svg>`);
 }

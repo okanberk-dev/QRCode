@@ -10,7 +10,7 @@ import { canAccessRestaurant } from '@/lib/panel-access';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { isValidHexColor } from '@/lib/validations';
 import { renderAestheticQrSvg } from '@/lib/qr-aesthetic';
-import { composePremiumQrPng } from '@/lib/qr-premium-png';
+import { composePremiumQrPng, composePremiumQrSvg } from '@/lib/qr-premium-png';
 
 const DEFAULT_DARK = '#000000';
 const DEFAULT_LIGHT = '#ffffff';
@@ -80,8 +80,23 @@ export async function GET(
     !hasLocalhostEnv && normalizedEnvUrl ? normalizedEnvUrl : 'https://buaze.com';
   const qrUrl = `${appUrl}/s/${survey.slug}?source=qr`;
 
-  const style = (searchParams.get('style') || 'aesthetic').toLowerCase();
-  const usePlain = style === 'plain';
+  // Style modes:
+  //   - 'plain'     → raw QR matrix (sade, frame yok)
+  //   - 'aesthetic' → rounded modules + unified finders (Buaze stil ama
+  //                   frame yok — küçük preview kutuları için ideal)
+  //   - 'designed'  → tasarımlı Lime hero frame + headline + footer
+  // Default: 'designed' (kullanıcı tek tıkla brand uyumlu çıktı alır).
+  // `preview=1` shortcut → frame'siz `aesthetic` (UI içindeki 128x128
+  // preview kutusunda lime hero küçücük sığmasın diye).
+  const preview = searchParams.get('preview') === '1';
+  const rawStyle = (searchParams.get('style') || '').toLowerCase();
+  const style: 'plain' | 'aesthetic' | 'designed' = preview
+    ? 'aesthetic'
+    : rawStyle === 'plain'
+      ? 'plain'
+      : rawStyle === 'aesthetic'
+        ? 'aesthetic'
+        : 'designed';
 
   if (format === 'png') {
     try {
@@ -95,28 +110,45 @@ export async function GET(
           return 'buaze.com';
         }
       })();
-      const pngBuffer = usePlain
-        ? await QRCode.toBuffer(qrUrl, {
-            type: 'png',
-            width,
-            margin: 2,
-            color: { dark, light },
-            errorCorrectionLevel: 'H' as const,
-          })
-        : await composePremiumQrPng({
-            data: qrUrl,
-            size: width,
-            dark,
-            light,
-            restaurantName: `${survey.restaurant.name} · ${survey.title}`.slice(0, 80),
-            qrHost: hostForFooter,
-            locale: 'tr',
-          });
+      let pngBuffer: Buffer;
+      if (style === 'plain') {
+        pngBuffer = await QRCode.toBuffer(qrUrl, {
+          type: 'png',
+          width,
+          margin: 2,
+          color: { dark, light },
+          errorCorrectionLevel: 'H' as const,
+        });
+      } else if (style === 'aesthetic') {
+        // Aesthetic SVG → PNG (frame'siz, sadece rounded modules). Sharp
+        // rasterise eder; ekstra composite yok.
+        const { svg } = renderAestheticQrSvg({
+          data: qrUrl,
+          size: width,
+          dark,
+          light,
+        });
+        const sharpMod = await import('sharp');
+        pngBuffer = await sharpMod
+          .default(Buffer.from(svg, 'utf-8'))
+          .png()
+          .toBuffer();
+      } else {
+        pngBuffer = await composePremiumQrPng({
+          data: qrUrl,
+          size: width,
+          dark,
+          light,
+          restaurantName: `${survey.restaurant.name} · ${survey.title}`.slice(0, 80),
+          qrHost: hostForFooter,
+          locale: 'tr',
+        });
+      }
       return new NextResponse(new Uint8Array(pngBuffer), {
         status: 200,
         headers: {
           'Content-Type': 'image/png',
-          'Content-Disposition': `attachment; filename="anket-${survey.slug}.png"`,
+          'Content-Disposition': `attachment; filename="anket-${survey.slug}${style === 'plain' ? '-sade' : ''}.png"`,
           'Cache-Control': 'no-store',
         },
       });
@@ -141,21 +173,45 @@ export async function GET(
   }
 
   // SVG branch
-  const svg = usePlain
-    ? await QRCode.toString(qrUrl, {
-        type: 'svg',
-        width,
-        margin: 2,
-        color: { dark, light },
-        errorCorrectionLevel: 'H' as const,
-      })
-    : renderAestheticQrSvg({ data: qrUrl, size: width, dark, light }).svg;
+  const hostForFooter = (() => {
+    try {
+      const u = new URL(qrUrl);
+      const path = u.pathname.replace(/^\/+|\/+$/g, '');
+      const host = u.hostname.replace(/^www\./, '');
+      return path ? `${host}/${path.split('?')[0]}` : host;
+    } catch {
+      return 'buaze.com';
+    }
+  })();
+
+  let svg: string;
+  if (style === 'plain') {
+    svg = await QRCode.toString(qrUrl, {
+      type: 'svg',
+      width,
+      margin: 2,
+      color: { dark, light },
+      errorCorrectionLevel: 'H' as const,
+    });
+  } else if (style === 'aesthetic') {
+    svg = renderAestheticQrSvg({ data: qrUrl, size: width, dark, light }).svg;
+  } else {
+    svg = composePremiumQrSvg({
+      data: qrUrl,
+      size: width,
+      dark,
+      light,
+      restaurantName: `${survey.restaurant.name} · ${survey.title}`.slice(0, 80),
+      qrHost: hostForFooter,
+      locale: 'tr',
+    });
+  }
 
   return new NextResponse(svg, {
     status: 200,
     headers: {
       'Content-Type': 'image/svg+xml',
-      'Content-Disposition': `attachment; filename="anket-${survey.slug}.svg"`,
+      'Content-Disposition': `attachment; filename="anket-${survey.slug}${style === 'plain' ? '-sade' : ''}.svg"`,
       'Cache-Control': 'no-store',
     },
   });

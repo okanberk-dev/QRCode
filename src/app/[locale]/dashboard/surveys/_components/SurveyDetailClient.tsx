@@ -302,9 +302,12 @@ export default function SurveyDetailClient({
                   aria-label="QR preview"
                 >
                   {/* Inline SVG preview via the API — raw img tag avoids next/image
-                      cost for a SVG that's already rate-limited and authorized. */}
+                      cost for a SVG that's already rate-limited and authorized.
+                      `preview=1` returns the aesthetic (frame'siz) variant so
+                      the small 128x128 thumbnail stays readable; full Lime
+                      frame would be illegible at this size. */}
                   <img
-                    src={`/api/surveys/${survey.id}/qr?format=svg&width=400`}
+                    src={`/api/surveys/${survey.id}/qr?format=svg&preview=1&width=400`}
                     alt={`QR ${survey.title}`}
                     className="h-full w-full"
                   />
@@ -315,14 +318,28 @@ export default function SurveyDetailClient({
                     className="bz-btn-primary inline-flex items-center gap-1 text-xs"
                   >
                     <Download size={12} />
-                    {t.survey_detail_qr_download_png}
+                    {t.survey_detail_qr_download_png_designed}
                   </a>
                   <a
                     href={`/api/surveys/${survey.id}/qr?format=svg&width=1000`}
+                    className="bz-btn-primary inline-flex items-center gap-1 text-xs"
+                  >
+                    <Download size={12} />
+                    {t.survey_detail_qr_download_svg_designed}
+                  </a>
+                  <a
+                    href={`/api/surveys/${survey.id}/qr?format=png&style=plain&width=1200`}
                     className="bz-btn-ghost inline-flex items-center gap-1 text-xs"
                   >
                     <Download size={12} />
-                    {t.survey_detail_qr_download_svg}
+                    {t.survey_detail_qr_download_png_plain}
+                  </a>
+                  <a
+                    href={`/api/surveys/${survey.id}/qr?format=svg&style=plain&width=1000`}
+                    className="bz-btn-ghost inline-flex items-center gap-1 text-xs"
+                  >
+                    <Download size={12} />
+                    {t.survey_detail_qr_download_svg_plain}
                   </a>
                 </div>
               </div>
