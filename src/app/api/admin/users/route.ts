@@ -70,7 +70,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (role !== 'superadmin' && role !== 'manager') {
+    // Stage: staff role added (CLAUDE.md §37.2 granular RBAC). Staff lives
+    // alongside manager in the AdminUser table — no schema change since
+    // `role` is a String column. Validation is the only gate keeping bogus
+    // values out.
+    if (role !== 'superadmin' && role !== 'manager' && role !== 'staff') {
       return ApiErrors.badRequest('Geçersiz rol', 'INVALID_ROLE');
     }
 

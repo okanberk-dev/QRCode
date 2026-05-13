@@ -119,7 +119,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const body = await req.json();
     const { password, role, restaurantId, email } = body;
 
-    if (role !== 'superadmin' && role !== 'manager') {
+    // Stage: staff role added (CLAUDE.md §37.2 granular RBAC). Staff
+    // doesn't need a restaurantId — its scope is per-resource grants in
+    // AdminPermission, not workspace boundary.
+    if (role !== 'superadmin' && role !== 'manager' && role !== 'staff') {
       return NextResponse.json({ error: 'Geçersiz rol' }, { status: 400 });
     }
     if (role === 'manager' && (typeof restaurantId !== 'string' || !restaurantId)) {
@@ -138,7 +141,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       select: { role: true, restaurantId: true, email: true },
     });
 
-    const data: Prisma.AdminUserUncheckedUpdateInput = { role, restaurantId: role === 'manager' ? restaurantId : null };
+    const data: Prisma.AdminUserUncheckedUpdateInput = {
+      role,
+      restaurantId: role === 'manager' ? restaurantId : null,
+    };
 
     if (password) {
       // Match the strength bar applied at create-time. The previous PUT

@@ -55,6 +55,15 @@ export async function getScopedRestaurantIds(actor: PanelActor) {
     return restaurants.map((restaurant) => restaurant.id);
   }
 
+  // Staff = granular RBAC tier (CLAUDE.md §37.2). No workspace scope —
+  // access is gated per-resource via AdminPermission. Returning [] makes
+  // any `where: { restaurantId: { in: scopedIds } }` query yield nothing,
+  // which is the safe default if a future API route forgets to wrap with
+  // `requirePermission()` before calling this helper.
+  if (actor.role === 'staff') {
+    return [];
+  }
+
   return null;
 }
 
