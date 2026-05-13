@@ -224,8 +224,16 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
     return created;
   });
 
-  // Owner notification (best-effort). notificationEmail boşsa skip.
+  // Owner notification (best-effort). notificationEmail boşsa skip + uyar.
+  // Observability: ops monitoring için sessiz skip yerine log düş — owner
+  // bildirim alamadığını fark etmeyebilir (Phase 1-3 audit FIX).
   const ownerEmail = assignment.template.restaurant.notificationEmail;
+  if (!ownerEmail) {
+    console.warn('[audit-completed] notify skipped — no notificationEmail', {
+      restaurantId: assignment.restaurantId,
+      templateId: assignment.template.id,
+    });
+  }
   if (ownerEmail) {
     const respondentDisplay =
       data.respondentName ||

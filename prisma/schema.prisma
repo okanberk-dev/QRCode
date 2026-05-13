@@ -1997,6 +1997,10 @@ model AuditResponse {
   reviewedById        String?          @map("reviewed_by_id")
   reviewedAt          DateTime?        @map("reviewed_at")
   reviewNote          String?          @map("review_note") @db.Text
+  // KVKK retention notu (CLAUDE.md §13.9 paterni): submit anında public
+  // surface'tan IP + UA toplanır (abuse/audit-trail). Phase 5'te Feedback
+  // ile aynı 90-day anonimleştirme cron'una eklenecek; şu an manuel
+  // temizlik mümkün (data subject talebi).
   ipAddress           String?          @map("ip_address")
   userAgent           String?          @map("user_agent") @db.Text
 

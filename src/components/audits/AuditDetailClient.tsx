@@ -280,6 +280,12 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
         description={template.description ?? undefined}
         actions={
           <div className="flex gap-2">
+            <Link
+              href={`/${locale}/dashboard/audits/${template.id}/results`}
+              className="bz-btn-ghost"
+            >
+              {locale === 'tr' ? 'Sonuçlar' : 'Results'}
+            </Link>
             <button
               type="button"
               className="bz-btn-ghost"
