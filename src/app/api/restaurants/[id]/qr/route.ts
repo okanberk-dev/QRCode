@@ -106,7 +106,32 @@ export async function GET(
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
     }
 
+    // Defansif actor shape guard. User raporu: wizard "QR kod oluşturulamadı
+    // (TypeError · Cannot read properties of undefined (reading 'id'))" —
+    // actor truthy döndü ama runtime'da `actor.id` undefined. Bu guard:
+    // (a) wizard'ı 500 yerine temiz 401 ile bilgilendirir,
+    // (b) Sentry warning event'i ile actor shape'ini production'da gözlenebilir
+    //     yapar (root cause sonraki PR'da JWT decode tarafında patch'lenir).
+    if (typeof actor.id !== 'string' || actor.id.length === 0) {
+      Sentry.captureMessage('QR generate: actor.id missing despite truthy actor', {
+        level: 'warning',
+        tags: { route: 'restaurants.qr.generate', kind: 'actor-id-missing' },
+        extra: {
+          actorKeys: Object.keys(actor),
+          source: actor.source ?? null,
+          role: actor.role ?? null,
+        },
+      });
+      return NextResponse.json(
+        { error: 'Yetkisiz erişim (oturum bilgisi eksik). Lütfen yeniden giriş yapın.' },
+        { status: 401 },
+      );
+    }
+
     const { id } = await params;
+    if (typeof id !== 'string' || id.length === 0) {
+      return NextResponse.json({ error: 'Geçersiz işletme kimliği' }, { status: 400 });
+    }
     const { searchParams } = new URL(req.url);
     const table = searchParams.get('table') || '';
     const format = (searchParams.get('format') || 'svg').toLowerCase();

@@ -17,7 +17,6 @@ import {
   Check,
   ChevronRight,
   Hash,
-  Layout,
   Link2,
   Loader2,
   Palette,
@@ -35,10 +34,6 @@ import {
   scoreContrast,
   isContrastRisky,
 } from "@/lib/qr-colors";
-import { defaultTemplateForCategory } from "@/lib/qr-template-for-sector";
-import { getTemplate } from "@/components/panel/qr/templates/registry";
-import { deriveInitials } from "@/components/panel/qr/Brand";
-import { TemplatePickerStep } from "@/components/panel/qr/TemplatePickerStep";
 
 interface RestaurantOption {
   id: string;
@@ -110,7 +105,11 @@ const PLATFORM_META: Record<
 
 const FALLBACK_KEYS = ["google", "yemeksepeti", "getir", "trendyol_go"] as const;
 
-type StepId = "target" | "color" | "template" | "preview";
+// Template step removed (Wave A simplification): server-side composePremiumQrPng
+// (Pulse Lime hero) is the single design now. Wave A registry kept in code for
+// future server-side template render but UI picker is hidden — owner doesn't
+// pick a layout, every QR ships with the canonical Pulse template.
+type StepId = "target" | "color" | "preview";
 
 interface StepDef {
   id: StepId;
@@ -136,15 +135,8 @@ const STEPS: StepDef[] = [
     labelEn: "Colour",
   },
   {
-    id: "template",
-    num: "03",
-    icon: <Layout size={14} strokeWidth={2.2} />,
-    labelTr: "Şablon",
-    labelEn: "Template",
-  },
-  {
     id: "preview",
-    num: "04",
+    num: "03",
     icon: <QrCode size={14} strokeWidth={2.2} />,
     labelTr: "Önizle & oluştur",
     labelEn: "Preview & create",
@@ -183,13 +175,7 @@ export function CreateQRWizard({
   const [dark, setDark] = useState<string>(initialPreset.dark);
   const [light, setLight] = useState<string>(initialPreset.light);
 
-  // ─── Step 3 — Template ─────────────────────────────────────────────────
-  // Initialised on first render via active restaurant's sector default; can
-  // be overridden by the picker. Reset when restaurant switches (different
-  // category → different sector default).
-  const [templateId, setTemplateId] = useState<string | null>(null);
-
-  // ─── Submission state (Step 4) ─────────────────────────────────────────
+  // ─── Submission state (Step 3) ─────────────────────────────────────────
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -249,18 +235,6 @@ export function CreateQRWizard({
   useEffect(() => {
     if (!restaurantId && restaurants[0]?.id) setRestaurantId(restaurants[0].id);
   }, [restaurantId, restaurants]);
-
-  // Reset template selection to the sector default when restaurant changes
-  // OR when wizard first opens with a restaurant pre-selected. Owner can
-  // still override via the picker — we only seed on identity change.
-  // We intentionally key on `id + category` (not the whole `activeRestaurant`
-  // object) so that an unchanged restaurant with a stable identity does not
-  // reset owner's manual template override on every render.
-  useEffect(() => {
-    if (!activeRestaurant) return;
-    setTemplateId(defaultTemplateForCategory(activeRestaurant.category ?? null));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeRestaurant?.id, activeRestaurant?.category]);
 
   // Keep `platform` valid against the dynamic list — when the active
   // restaurant changes (or its config doesn't include the current pick),
@@ -378,17 +352,11 @@ export function CreateQRWizard({
   const platformLocked = linkType === "platform" && availablePlatforms.length === 0;
   const canAdvanceFromTarget = !!restaurantId && !platformLocked;
   const canAdvanceFromColor = colorsValid && !contrastRisky;
-  // Template step always satisfies — the registry always has at least one
-  // entry (`classic`) and we seed templateId on restaurant change. Even if
-  // someone clears state, `getTemplate(null)` falls back gracefully.
-  const canAdvanceFromTemplate = !!getTemplate(templateId);
-  const canSubmit =
-    canAdvanceFromTarget && canAdvanceFromColor && canAdvanceFromTemplate;
+  const canSubmit = canAdvanceFromTarget && canAdvanceFromColor;
 
   const goNext = useCallback(() => {
     if (currentStep.id === "target" && !canAdvanceFromTarget) return;
     if (currentStep.id === "color" && !canAdvanceFromColor) return;
-    if (currentStep.id === "template" && !canAdvanceFromTemplate) return;
     if (stepIndex < STEPS.length - 1) {
       setStepIndex(stepIndex + 1);
     }
@@ -396,7 +364,6 @@ export function CreateQRWizard({
     currentStep.id,
     canAdvanceFromTarget,
     canAdvanceFromColor,
-    canAdvanceFromTemplate,
     stepIndex,
   ]);
 
@@ -416,11 +383,10 @@ export function CreateQRWizard({
       if (idx > stepIndex) {
         if (idx >= 1 && !canAdvanceFromTarget) return;
         if (idx >= 2 && !canAdvanceFromColor) return;
-        if (idx >= 3 && !canAdvanceFromTemplate) return;
         setStepIndex(idx);
       }
     },
-    [stepIndex, canAdvanceFromTarget, canAdvanceFromColor, canAdvanceFromTemplate],
+    [stepIndex, canAdvanceFromTarget, canAdvanceFromColor],
   );
 
   // ─── Final submission ──────────────────────────────────────────────────
@@ -455,10 +421,10 @@ export function CreateQRWizard({
         params.set("dark", normDark!);
         params.set("light", normLight!);
       }
-      // Wave A — template persists when owner moved past picker (always
-      // true here since the step seeds a default and won't advance with
-      // null). The server route validates against the registry whitelist.
-      if (templateId) params.set("template", templateId);
+      // Wave A registry intact — every QR persists with `classic` template.
+      // Server-side composePremiumQrPng (Pulse Lime) is the canonical render
+      // path; UI picker hidden until Wave D server-render expansion.
+      params.set("template", "classic");
 
       const res = await fetch(`/api/restaurants/${restaurantId}/qr?${params.toString()}`);
       if (!res.ok) {
@@ -517,7 +483,7 @@ export function CreateQRWizard({
         createdAt: new Date().toISOString(),
         darkColor: persistColors ? normDark : null,
         lightColor: persistColors ? normLight : null,
-        templateId: templateId ?? null,
+        templateId: "classic",
       });
       onClose();
     } catch {
@@ -537,7 +503,6 @@ export function CreateQRWizard({
     persistColors,
     normDark,
     normLight,
-    templateId,
     restaurants,
     onCreated,
     onClose,
@@ -597,8 +562,7 @@ export function CreateQRWizard({
               onClick={goNext}
               disabled={
                 (currentStep.id === "target" && !canAdvanceFromTarget) ||
-                (currentStep.id === "color" && !canAdvanceFromColor) ||
-                (currentStep.id === "template" && !canAdvanceFromTemplate)
+                (currentStep.id === "color" && !canAdvanceFromColor)
               }
               className="bz-btn-primary inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
             >
@@ -638,11 +602,7 @@ export function CreateQRWizard({
             const reachable =
               idx <= stepIndex ||
               (idx === 1 && canAdvanceFromTarget) ||
-              (idx === 2 && canAdvanceFromTarget && canAdvanceFromColor) ||
-              (idx === 3 &&
-                canAdvanceFromTarget &&
-                canAdvanceFromColor &&
-                canAdvanceFromTemplate);
+              (idx === 2 && canAdvanceFromTarget && canAdvanceFromColor);
             return (
               <button
                 key={s.id}
@@ -1089,32 +1049,7 @@ export function CreateQRWizard({
           </div>
         )}
 
-        {/* ───── STEP 3: TEMPLATE ─────────────────────────────────────── */}
-        {currentStep.id === "template" && (
-          <TemplatePickerStep
-            selectedId={templateId}
-            onSelect={setTemplateId}
-            qrPayload={
-              activeRestaurant?.slug
-                ? `https://buaze.com/r/${activeRestaurant.slug}?source=qr${
-                    tableNumber.trim()
-                      ? `&table=${encodeURIComponent(tableNumber.trim())}`
-                      : ""
-                  }${linkType === "platform" ? `&platform=${platform}` : ""}`
-                : SAMPLE_PREVIEW_URL
-            }
-            business={{
-              name: summaryRestaurantName,
-              initials: deriveInitials(summaryRestaurantName),
-              primaryColor: activeRestaurant?.primaryColor ?? null,
-              tableNumber: tableNumber.trim() || null,
-              platform: linkType === "platform" ? platform : null,
-            }}
-            locale={locale}
-          />
-        )}
-
-        {/* ───── STEP 4: PREVIEW & CREATE ─────────────────────────────── */}
+        {/* ───── STEP 3: PREVIEW & CREATE ─────────────────────────────── */}
         {currentStep.id === "preview" && (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
@@ -1191,15 +1126,6 @@ export function CreateQRWizard({
                       }}
                     />
                     <span className="bz-mono text-[11px]">{normLight}</span>
-                  </span>
-                }
-              />
-              <SummaryRow
-                label={isTr ? "Şablon" : "Template"}
-                value={
-                  <span className="inline-flex items-center gap-1.5">
-                    <Layout size={11} strokeWidth={2.4} className="text-[#737373]" />
-                    {getTemplate(templateId).meta.name}
                   </span>
                 }
               />
