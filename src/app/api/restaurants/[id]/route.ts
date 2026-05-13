@@ -166,6 +166,10 @@ export async function PUT(
       instagramUrl,
       facebookUrl,
       whatsappUrl,
+      // Stage 97 — opt-in WhatsApp channel for the public review surface.
+      // Validated below (boolean + 500-char text + cross-field guard).
+      whatsappReviewEnabled,
+      whatsappReviewMessage,
       reservationUrl,
       // "Diğer" custom platform (CLAUDE.md §X — owner free-form review URL)
       otherPlatformUrl,
@@ -250,6 +254,51 @@ export async function PUT(
         }
       } catch {
         return ApiErrors.badRequest(`Geçersiz ${name} adresi`, 'INVALID_SOCIAL_URL');
+      }
+    }
+
+    // Stage 97 — WhatsApp review opt-in (CLAUDE.md §19.1). Two
+    // dependent fields validated together so a malformed PATCH can't
+    // leave the review surface in an inconsistent state.
+    if (whatsappReviewEnabled !== undefined && typeof whatsappReviewEnabled !== 'boolean') {
+      return ApiErrors.badRequest(
+        'whatsappReviewEnabled bir boolean olmalı',
+        'INVALID_WHATSAPP_REVIEW_ENABLED',
+      );
+    }
+    if (
+      whatsappReviewMessage !== undefined &&
+      whatsappReviewMessage !== null &&
+      typeof whatsappReviewMessage !== 'string'
+    ) {
+      return ApiErrors.badRequest(
+        'whatsappReviewMessage bir metin olmalı',
+        'INVALID_WHATSAPP_REVIEW_MESSAGE',
+      );
+    }
+    if (whatsappReviewEnabled === true) {
+      // Cross-field guard: the toggle can only flip ON if a usable
+      // WhatsApp URL is present in the same payload OR already on the
+      // existing row. We re-fetch defensively (cheap select) instead of
+      // trusting the client.
+      const candidate =
+        typeof whatsappUrl === 'string' && whatsappUrl.trim()
+          ? whatsappUrl.trim()
+          : null;
+      let existingUrl: string | null = null;
+      if (!candidate) {
+        const existing = await prisma.restaurant.findUnique({
+          where: { id },
+          select: { whatsappUrl: true },
+        });
+        existingUrl = existing?.whatsappUrl ?? null;
+      }
+      const effective = candidate ?? existingUrl;
+      if (!effective || !checkProviderUrl('whatsapp', effective).ok) {
+        return ApiErrors.badRequest(
+          'WhatsApp linki olmadan bu özellik açılamaz.',
+          'INVALID_WHATSAPP_TOGGLE',
+        );
       }
     }
 
@@ -452,6 +501,14 @@ export async function PUT(
         }),
         ...(whatsappUrl !== undefined && {
           whatsappUrl: typeof whatsappUrl === 'string' && whatsappUrl.trim() ? whatsappUrl.trim().slice(0, 500) : null,
+        }),
+        // Stage 97 — WhatsApp review opt-in fields (validated above).
+        ...(whatsappReviewEnabled !== undefined && { whatsappReviewEnabled }),
+        ...(whatsappReviewMessage !== undefined && {
+          whatsappReviewMessage:
+            typeof whatsappReviewMessage === 'string' && whatsappReviewMessage.trim()
+              ? whatsappReviewMessage.trim().slice(0, 500)
+              : null,
         }),
         ...(reservationUrl !== undefined && {
           reservationUrl: typeof reservationUrl === 'string' && reservationUrl.trim() ? reservationUrl.trim().slice(0, 500) : null,

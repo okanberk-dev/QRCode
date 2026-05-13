@@ -104,6 +104,14 @@ model Restaurant {
   instagramUrl                  String? @map("instagram_url")
   facebookUrl                   String? @map("facebook_url")
   whatsappUrl                   String? @map("whatsapp_url")
+  // Opt-in WhatsApp channel surfaced on `/r/[slug]` thanks step when
+  // rating ≤ 3 (CLAUDE.md §19.1 — private feedback path, KVKK-clean).
+  // Owner toggles via WhatsAppReviewWizard; URL must be set OR the public
+  // surface silently hides the button (defensive). `whatsappReviewMessage`
+  // is an optional pre-filled WhatsApp deep-link `?text=` template; null/
+  // empty falls back to the locale-aware system default.
+  whatsappReviewEnabled         Boolean @default(false) @map("whatsapp_review_enabled")
+  whatsappReviewMessage         String? @map("whatsapp_review_message") @db.Text
   reservationUrl                String? @map("reservation_url")
   // "Diğer" custom platform — owner kendi review URL'i (TheFork, OpenTable,
   // sektör-spesifik) koyabilir. CLAUDE.md §X — domain validation YOK
