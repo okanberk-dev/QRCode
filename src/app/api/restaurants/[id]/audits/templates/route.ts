@@ -118,9 +118,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     });
 
     if (data.assignment?.enabled && data.assignment.assigneeType) {
-      const needsToken =
-        data.assignment.assigneeType === 'candidate' || data.assignment.assigneeType === 'link';
-      const token = needsToken ? await generateAuditAssignmentToken() : null;
+      // Phase 3: Tüm tiplerde token üretilir (CLAUDE.md §42 Phase 3 paterni).
+      const token = await generateAuditAssignmentToken();
       await tx.auditAssignment.create({
         data: {
           templateId: tpl.id,

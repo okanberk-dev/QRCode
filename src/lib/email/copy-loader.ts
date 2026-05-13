@@ -70,6 +70,10 @@ export const SUPPORTED_MAIL_KEYS = [
   // gider.
   'owner-campaign-approved',
   'owner-campaign-rejected',
+  // CLAUDE.md §42 Phase 3 — Denetim Merkezi yanıt tamamlandı bildirimi.
+  // Owner'a (Restaurant.notificationEmail) gönderilir. Skor + geçti/kaldı +
+  // panel detay link.
+  'audit-completed',
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];

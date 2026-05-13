@@ -17,6 +17,7 @@ import {
   renderUpgradeSuggestion,
   renderInactiveReactivation,
   renderWeeklyDigestSummary,
+  renderAuditCompleted,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -550,5 +551,42 @@ export async function sendNewsletterEmail(params: {
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       'Precedence': 'bulk',
     },
+  });
+}
+
+/**
+ * CLAUDE.md §42 Phase 3 — Audit yanıt tamamlandığında owner'a bildirim.
+ * Best-effort sender; submit endpoint catch'le çağırır (mail fail → submit
+ * yine başarılı dönsün).
+ */
+export async function sendAuditCompletedEmail(params: {
+  to: string;
+  restaurantName: string;
+  auditTitle: string;
+  respondentName?: string | null;
+  score: number;
+  passed: boolean | null;
+  passingScore: number | null;
+  panelUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderAuditCompleted(
+    {
+      restaurantName: params.restaurantName,
+      auditTitle: params.auditTitle,
+      respondentName: params.respondentName ?? null,
+      score: params.score,
+      passed: params.passed,
+      passingScore: params.passingScore,
+      panelUrl: params.panelUrl,
+    },
+    locale,
+  );
+  return sendResendEmail({
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
   });
 }

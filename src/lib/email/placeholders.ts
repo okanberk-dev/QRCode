@@ -65,6 +65,13 @@ export const MAIL_PLACEHOLDERS = {
     'reviewerNote',
     'dashboardUrl',
   ],
+  // CLAUDE.md §42 Phase 3 — audit-completed mail.
+  'audit-completed': [
+    'restaurantName',
+    'auditTitle',
+    'respondentName',
+    'score',
+  ],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;
