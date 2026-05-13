@@ -16,11 +16,20 @@
 // döner — Live badge "Pasif" görünür, page reload mode korunur.
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { ArrowRight, Sparkles, X } from 'lucide-react';
-import { formatDistanceToNowStrict } from 'date-fns';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ArrowRight,
+  ChevronRight,
+  MessageSquare,
+  Reply,
+  Settings,
+  Sparkles,
+  Star,
+  X,
+} from 'lucide-react';
+import { formatDistanceToNowStrict, isSameDay, subDays } from 'date-fns';
 import { tr as trLocale, enUS as enLocale } from 'date-fns/locale';
-import type { ActivityEvent, ActivitySentiment } from '@/lib/activity-feed';
+import type { ActivityEvent, ActivitySentiment, ActivityType } from '@/lib/activity-feed';
 import { Eyebrow } from '@/components/ui';
 import { useRealtimeActivity, type RealtimeStatus } from '@/hooks/useRealtimeActivity';
 
@@ -30,7 +39,63 @@ const SENTIMENT_DOT: Record<ActivitySentiment, string> = {
   neg: '#DC2626',
 };
 
+const TYPE_META: Record<
+  ActivityType,
+  { icon: typeof MessageSquare; tint: string; bg: string }
+> = {
+  feedback: { icon: MessageSquare, tint: '#0A0A0A', bg: '#FAFAFA' },
+  reply: { icon: Reply, tint: '#0A0A0A', bg: '#EAF9B8' },
+  ai_draft: { icon: Sparkles, tint: '#A8D62E', bg: '#0A0A0A' },
+  system: { icon: Settings, tint: '#737373', bg: '#F5F5F5' },
+};
+
 const TOAST_AUTO_DISMISS_MS = 5000;
+
+/**
+ * Group events into "Bugün / Dün / Daha eski" buckets so the timeline
+ * has visual rhythm beyond a single endless list. Buckets preserve
+ * timestamp-desc order within and across groups.
+ */
+function groupEventsByDay(
+  events: ActivityEvent[],
+  isTr: boolean,
+): { label: string; events: ActivityEvent[] }[] {
+  if (events.length === 0) return [];
+  const now = new Date();
+  const yesterday = subDays(now, 1);
+  const buckets = new Map<string, ActivityEvent[]>();
+  const labelToday = isTr ? 'Bugün' : 'Today';
+  const labelYesterday = isTr ? 'Dün' : 'Yesterday';
+  const labelOlder = isTr ? 'Daha eski' : 'Earlier';
+
+  for (const ev of events) {
+    let key = labelOlder;
+    if (isSameDay(ev.timestamp, now)) key = labelToday;
+    else if (isSameDay(ev.timestamp, yesterday)) key = labelYesterday;
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key)!.push(ev);
+  }
+  // Insertion order is preserved; events were already sorted desc.
+  const order: string[] = [];
+  for (const key of [labelToday, labelYesterday, labelOlder]) {
+    if (buckets.has(key)) order.push(key);
+  }
+  return order.map((key) => ({ label: key, events: buckets.get(key)! }));
+}
+
+/**
+ * Pulls a 1–5 star rating embedded in the `target` string (e.g.
+ * "★★★★★ Google" or "★★ — Müşteri T."). Returns null when no leading
+ * star sequence is present so non-feedback rows render normally.
+ */
+function extractRatingFromTarget(target: string | undefined): number | null {
+  if (!target) return null;
+  const match = target.match(/^(★+)/);
+  if (!match) return null;
+  const count = match[1].length;
+  if (count < 1 || count > 5) return null;
+  return count;
+}
 
 export interface ActivityFeedProps {
   /**
@@ -169,6 +234,8 @@ export function ActivityFeed({
 
   const toastCount = toastSuppressed ? 0 : pendingToastCount;
 
+  const groupedEvents = useMemo(() => groupEventsByDay(events, isTr), [events, isTr]);
+
   if (events.length === 0) {
     return (
       <section className={`bz-card p-5 sm:p-6 ${className}`} aria-busy={status === 'connecting'}>
@@ -176,11 +243,19 @@ export function ActivityFeed({
           <Eyebrow>{isTr ? 'CANLI AKIŞ' : 'LIVE FEED'}</Eyebrow>
           <ConnectionBadge status={status} isTr={isTr} />
         </header>
-        <p className="text-[13px] text-[#737373]">
-          {isTr
-            ? 'Henüz aktivite yok — yorum, yanıt veya AI taslağı geldikçe burada görünür.'
-            : 'No activity yet — feedback, replies, and AI drafts will surface here.'}
-        </p>
+        <div className="flex flex-col items-center gap-2.5 py-6 text-center">
+          <span
+            aria-hidden="true"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FAFAFA]"
+          >
+            <Sparkles size={16} strokeWidth={1.6} className="text-[#A3A3A3]" />
+          </span>
+          <p className="text-[13px] leading-[1.5] text-[#525252] max-w-[260px]">
+            {isTr
+              ? 'Henüz aktivite yok — yorum, yanıt veya AI taslağı geldikçe burada görünür.'
+              : 'No activity yet — feedback, replies, and AI drafts will surface here.'}
+          </p>
+        </div>
       </section>
     );
   }
@@ -221,66 +296,110 @@ export function ActivityFeed({
         isTr={isTr}
       />
 
-      <ol className="flex flex-col">
-        {events.map((event, idx) => {
-          const dotColor = SENTIMENT_DOT[event.sentiment];
-          const relativeTime = formatDistanceToNowStrict(event.timestamp, {
-            addSuffix: false,
-            locale: isTr ? trLocale : enLocale,
-          });
-          const isNew = newEventIds.has(event.id);
-          const inner = (
-            <>
-              <span
-                className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[58px] sm:w-[64px]"
-                aria-hidden="true"
-              >
-                {relativeTime}
-              </span>
-              <span
-                aria-hidden="true"
-                className="shrink-0 inline-block h-2 w-2 rounded-full mt-1.5"
-                style={{ background: dotColor }}
-              />
-              <span className="flex-1 min-w-0 text-[12.5px] leading-[1.5] text-[#525252]">
-                <strong className="font-semibold text-[#0A0A0A]">{event.actor}</strong>
-                {' '}
-                {event.action}
-                {event.target && (
+      <div className="flex flex-col gap-3">
+        {groupedEvents.map((group) => (
+          <section key={group.label} aria-label={group.label}>
+            <h3 className="bz-mono text-[10px] font-semibold tracking-[0.18em] uppercase text-[#A3A3A3] mb-1.5">
+              {group.label}
+            </h3>
+            <ol className="flex flex-col">
+              {group.events.map((event, idx) => {
+                const dotColor = SENTIMENT_DOT[event.sentiment];
+                const meta = TYPE_META[event.type];
+                const Icon = meta.icon;
+                const relativeTime = formatDistanceToNowStrict(event.timestamp, {
+                  addSuffix: false,
+                  locale: isTr ? trLocale : enLocale,
+                });
+                const isNew = newEventIds.has(event.id);
+                const inlineRating =
+                  event.type === 'feedback' ? extractRatingFromTarget(event.target) : null;
+                // Strip the leading "★★★★ " segment so we don't double-render
+                // when we surface stars as visual chips above.
+                const targetWithoutStars = inlineRating
+                  ? event.target?.replace(/^★+\s*[—-]?\s*/, '').trim() ?? ''
+                  : event.target;
+
+                const inner = (
                   <>
-                    {' — '}
-                    <span className="text-[#737373]">{event.target}</span>
+                    <span
+                      className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[52px] sm:w-[58px] pt-0.5"
+                      aria-hidden="true"
+                    >
+                      {relativeTime}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="relative shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-md mt-[1px]"
+                      style={{ background: meta.bg, color: meta.tint }}
+                    >
+                      <Icon size={11} strokeWidth={2.2} />
+                      <span
+                        className="absolute -bottom-0.5 -right-0.5 inline-block h-1.5 w-1.5 rounded-full ring-2 ring-white"
+                        style={{ background: dotColor }}
+                      />
+                    </span>
+                    <span className="flex-1 min-w-0 text-[12.5px] leading-[1.5] text-[#525252]">
+                      <strong className="font-semibold text-[#0A0A0A]">{event.actor}</strong>{' '}
+                      {event.action}
+                      {inlineRating !== null && (
+                        <span
+                          className="ml-1 inline-flex items-center align-middle gap-0.5"
+                          aria-label={`${inlineRating} ${isTr ? 'yıldız' : 'stars'}`}
+                        >
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              size={9}
+                              className={s <= inlineRating ? 'text-[#0A0A0A]' : 'text-[#EDEDED]'}
+                              fill={s <= inlineRating ? '#0A0A0A' : 'transparent'}
+                              strokeWidth={1.5}
+                            />
+                          ))}
+                        </span>
+                      )}
+                      {targetWithoutStars && (
+                        <>
+                          {' — '}
+                          <span className="text-[#737373]">{targetWithoutStars}</span>
+                        </>
+                      )}
+                    </span>
+                    {event.href && (
+                      <ChevronRight
+                        size={12}
+                        strokeWidth={2}
+                        className="shrink-0 self-center text-[#A3A3A3] opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-hidden="true"
+                      />
+                    )}
                   </>
-                )}
-              </span>
-            </>
-          );
-          const baseClass =
-            'flex items-start gap-2.5 py-2.5 first:pt-0 last:pb-0 ' +
-            (idx < events.length - 1 ? 'border-b border-[#F2F2F2]' : '');
-          // Slide-in highlight: globals.css `activity-row-in` keyframe
-          // 1.2s lime-soft glow + translateY. Sadece newEventIds set'inde
-          // olan ID'lerde uygulanır; CSS reduced-motion blanket'i
-          // [style*='activity-row-in'] selector'ıyla yakalar.
-          const slideStyle = isNew
-            ? { animation: 'activity-row-in 350ms cubic-bezier(0.4, 0, 0.2, 1)' }
-            : undefined;
-          return (
-            <li key={event.id} style={slideStyle}>
-              {event.href ? (
-                <Link
-                  href={event.href}
-                  className={`${baseClass} hover:bg-[#FAFAFA] -mx-2 px-2 rounded-md bz-motion-spring active:scale-[0.97] sm:active:scale-100`}
-                >
-                  {inner}
-                </Link>
-              ) : (
-                <div className={baseClass}>{inner}</div>
-              )}
-            </li>
-          );
-        })}
-      </ol>
+                );
+                const baseClass =
+                  'group flex items-start gap-2 py-2.5 first:pt-0 last:pb-0 ' +
+                  (idx < group.events.length - 1 ? 'border-b border-[#F2F2F2]' : '');
+                const slideStyle = isNew
+                  ? { animation: 'activity-row-in 350ms cubic-bezier(0.4, 0, 0.2, 1)' }
+                  : undefined;
+                return (
+                  <li key={event.id} style={slideStyle}>
+                    {event.href ? (
+                      <Link
+                        href={event.href}
+                        className={`${baseClass} hover:bg-[#FAFAFA] -mx-2 px-2 rounded-md bz-motion-spring active:scale-[0.97] sm:active:scale-100`}
+                      >
+                        {inner}
+                      </Link>
+                    ) : (
+                      <div className={baseClass}>{inner}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ))}
+      </div>
     </section>
   );
 }

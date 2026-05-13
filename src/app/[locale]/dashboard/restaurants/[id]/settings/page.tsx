@@ -3,7 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { AlertOctagon, ArrowLeft, Building2, Clock, Globe, Loader2, Lock, Palette } from "lucide-react";
+import {
+  AlertOctagon,
+  ArrowLeft,
+  Building2,
+  Check,
+  Clock,
+  ExternalLink,
+  Globe,
+  Link2,
+  Loader2,
+  Lock,
+  Palette,
+  QrCode,
+} from "lucide-react";
 import { AlertBanner, BusinessStatusBadge, PageHeader } from "@/components/ui";
 import { SettingsLayout, type SettingsTab } from "@/components/dashboard/settings/SettingsLayout";
 import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
@@ -13,6 +26,30 @@ import { BusinessWebsiteSettings } from "@/components/dashboard/settings/section
 import { BusinessOperationalSettings } from "@/components/dashboard/settings/sections/BusinessOperationalSettings";
 import { BusinessSecuritySettings } from "@/components/dashboard/settings/sections/BusinessSecuritySettings";
 import { DangerZone } from "@/components/dashboard/settings/sections/DangerZone";
+
+/**
+ * Amber dot rendered next to a tab label when that section has unfilled
+ * fields the owner should know about. Reuses the warning palette
+ * (#D97706 / #FFFBEB) to stay consistent with `<AlertBanner kind="warn">`.
+ */
+function IncompleteDot({ count, isTr }: { count: number; isTr: boolean }) {
+  return (
+    <span
+      role="status"
+      aria-label={
+        isTr
+          ? `${count} eksik alan`
+          : `${count} field${count > 1 ? 's' : ''} missing`
+      }
+      title={
+        isTr
+          ? `${count} eksik alan`
+          : `${count} field${count > 1 ? 's' : ''} missing`
+      }
+      className="inline-block h-1.5 w-1.5 rounded-full bg-[#D97706]"
+    />
+  );
+}
 
 interface RestaurantPayload {
   id: string;
@@ -66,16 +103,9 @@ interface RestaurantPayload {
   targetRating: number | null;
 }
 
-const SECTION_TABS: SettingsTab[] = [
-  { id: "general", label: "Genel" },
-  { id: "brand", label: "Marka" },
-  { id: "website", label: "Web sitesi" },
-  { id: "operations", label: "Operasyonel" },
-  { id: "security", label: "Güvenlik" },
-  { id: "danger", label: "Tehlikeli bölge" },
-];
-
-const VALID_SECTION_IDS = new Set(SECTION_TABS.filter((t) => !t.disabled).map((t) => t.id));
+const SECTION_IDS = ["general", "brand", "website", "operations", "security", "danger"] as const;
+type SectionId = (typeof SECTION_IDS)[number];
+const VALID_SECTION_IDS = new Set<string>(SECTION_IDS);
 
 /**
  * Per-restaurant Business Settings hub. Faz 1 — Genel + Marka.
@@ -97,6 +127,7 @@ export default function RestaurantSettingsPage() {
   const [restaurant, setRestaurant] = useState<RestaurantPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copyNotice, setCopyNotice] = useState<string | null>(null);
 
   const initialSection = useMemo<string>(() => {
     const fromUrl = searchParams.get("section");
@@ -105,6 +136,64 @@ export default function RestaurantSettingsPage() {
   }, [searchParams]);
 
   const [active, setActive] = useState<string>(initialSection);
+
+  /**
+   * Per-section "missing field" count derived from the loaded restaurant
+   * payload. Powers the amber dot on each tab so the owner knows where
+   * setup is incomplete without opening every section. We only flag
+   * sections whose data lives in `RestaurantPayload` — Brand identity is
+   * fetched by its own component, so we don't surface a count for it
+   * (would require a duplicate API hit).
+   */
+  const sectionIssues = useMemo<Record<SectionId, number>>(() => {
+    if (!restaurant) {
+      return {
+        general: 0,
+        brand: 0,
+        website: 0,
+        operations: 0,
+        security: 0,
+        danger: 0,
+      };
+    }
+    const generalMissing =
+      (restaurant.address ? 0 : 1) +
+      (restaurant.phone ? 0 : 1) +
+      (restaurant.notificationEmail ? 0 : 1);
+    const websiteMissing = restaurant.website ? 0 : 1;
+    // workingHours stored as JSON string — empty / null both count as
+    // unset. We don't try to parse or validate the JSON shape here;
+    // a non-null non-empty value is treated as "owner touched it".
+    const operationsMissing = restaurant.workingHours && restaurant.workingHours.trim().length > 0 ? 0 : 1;
+    return {
+      general: generalMissing,
+      brand: 0,
+      website: websiteMissing,
+      operations: operationsMissing,
+      security: 0,
+      danger: 0,
+    };
+  }, [restaurant]);
+
+  const sectionTabs = useMemo<SettingsTab[]>(() => {
+    const isTrLabel = locale === "tr";
+    const labels: Record<SectionId, { tr: string; en: string }> = {
+      general: { tr: "Genel", en: "General" },
+      brand: { tr: "Marka", en: "Brand" },
+      website: { tr: "Web sitesi", en: "Website" },
+      operations: { tr: "Operasyonel", en: "Operations" },
+      security: { tr: "Güvenlik", en: "Security" },
+      danger: { tr: "Tehlikeli bölge", en: "Danger zone" },
+    };
+    return SECTION_IDS.map((id) => {
+      const issues = sectionIssues[id];
+      return {
+        id,
+        label: isTrLabel ? labels[id].tr : labels[id].en,
+        badge: issues > 0 ? <IncompleteDot count={issues} isTr={isTrLabel} /> : undefined,
+      };
+    });
+  }, [locale, sectionIssues]);
 
   useEffect(() => {
     if (requestedSection === "integrations") {
@@ -234,6 +323,29 @@ export default function RestaurantSettingsPage() {
     );
   }
 
+  // Public review surface URL — used by the quick action chips. Falls back
+  // to relative `/r/{slug}` when env app URL is missing or local-host
+  // shaped (operator running `npm run dev` shouldn't surface a misleading
+  // localhost link to copy).
+  const envAppUrl = (process.env.NEXT_PUBLIC_APP_URL || "").trim().replace(/\/+$/, "");
+  const safePublicBase =
+    envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl) ? envAppUrl : "https://buaze.com";
+  const publicReviewUrl = `${safePublicBase}/r/${restaurant.slug}`;
+
+  const handleCopyPublicLink = async () => {
+    try {
+      await navigator.clipboard.writeText(publicReviewUrl);
+      setCopyNotice(locale === "tr" ? "Link kopyalandı." : "Link copied.");
+    } catch {
+      setCopyNotice(
+        locale === "tr"
+          ? "Link kopyalanamadı — tarayıcı izin vermedi."
+          : "Could not copy link — browser blocked it.",
+      );
+    }
+    setTimeout(() => setCopyNotice(null), 2400);
+  };
+
   const header = (
     <div>
       <Link
@@ -241,26 +353,66 @@ export default function RestaurantSettingsPage() {
         className="bz-mono text-[11px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1 mb-3"
       >
         <ArrowLeft size={12} />
-        İşletme özetine dön
+        {locale === "tr" ? "İşletme özetine dön" : "Back to business summary"}
       </Link>
       <PageHeader
-        eyebrow="İŞLETME AYARLARI"
+        eyebrow={locale === "tr" ? "İŞLETME AYARLARI" : "BUSINESS SETTINGS"}
         title={restaurant.name}
         description={`/r/${restaurant.slug}`}
         actions={
           <BusinessStatusBadge status={restaurant.isActive ? "active" : "disabled"} />
         }
       />
+      {/* Quick action strip — three chip-style links the owner reaches
+          from any settings tab. "Görüntüle" opens public review surface
+          in a new tab, "Linki kopyala" lands the same URL into clipboard
+          with a transient confirmation, "QR oluştur" deep-links into
+          the wizard with the restaurant pre-selected. */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <a
+          href={publicReviewUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
+        >
+          <ExternalLink size={12} strokeWidth={2.2} />
+          {locale === "tr" ? "Public sayfayı gör" : "View public page"}
+        </a>
+        <button
+          type="button"
+          onClick={handleCopyPublicLink}
+          className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
+        >
+          {copyNotice ? (
+            <>
+              <Check size={12} strokeWidth={2.4} className="text-[#16A34A]" />
+              <span>{copyNotice}</span>
+            </>
+          ) : (
+            <>
+              <Link2 size={12} strokeWidth={2.2} />
+              <span>{locale === "tr" ? "Linki kopyala" : "Copy link"}</span>
+            </>
+          )}
+        </button>
+        <Link
+          href={`/${locale}/dashboard/qr?new=1&restaurantId=${restaurant.id}`}
+          className="bz-btn-primary inline-flex items-center gap-1.5 text-[12px]"
+        >
+          <QrCode size={12} strokeWidth={2.2} />
+          {locale === "tr" ? "QR oluştur" : "Create QR"}
+        </Link>
+      </div>
     </div>
   );
 
   return (
     <SettingsLayout
-      tabs={SECTION_TABS}
+      tabs={sectionTabs}
       active={active}
       onChange={handleSectionChange}
       header={header}
-      ariaLabel="İşletme ayarları bölümleri"
+      ariaLabel={locale === "tr" ? "İşletme ayarları bölümleri" : "Business settings sections"}
     >
       <SettingsSection
         id="general"
