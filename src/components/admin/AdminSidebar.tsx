@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ClipboardCheck,
   CreditCard,
   Crown,
   FileEdit,
@@ -235,6 +236,9 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
           permission: { resource: 'campaigns', action: 'read' },
         },
         { href: '/admin/embed-usage', icon: Globe, label: locale === 'en' ? 'Embed usage' : 'Embed kullanımı', roles: ['superadmin'] },
+        // CLAUDE.md §42 — Denetim Merkezi şablon kataloğu (Faz 1: superadmin
+        // yönetir). Owner panel girişi Faz 2'de eklenecek.
+        { href: '/admin/audits/templates', icon: ClipboardCheck, label: locale === 'en' ? 'Audit Center' : 'Denetim Merkezi', roles: ['superadmin'] },
       ],
     },
     {
