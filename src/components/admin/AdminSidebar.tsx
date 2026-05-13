@@ -531,10 +531,15 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
               <Globe size={12} strokeWidth={2} className="text-[#737373]" />
               <span className="pulse-eyebrow text-[#737373]">{t('system_language')}</span>
             </div>
+            {/* Width `w-[88px]` — `select.bz-input` reserves 38px on the right
+                for the chevron + 12px left padding, leaving ~38px for the
+                "TR"/"EN" glyph. The previous `w-[72px]` only left ~22px,
+                clipping the label and visually swallowing the chevron. */}
             <select
               value={locale}
               onChange={(e) => setLocale(e.target.value as 'tr' | 'en')}
-              className="bz-input h-8 w-[72px] rounded-md border-none bg-[#F2F2F2] py-0 text-[11px] font-medium cursor-pointer"
+              aria-label={t('system_language')}
+              className="bz-input h-8 w-[88px] rounded-md border-none bg-[#F2F2F2] py-0 text-[11px] font-medium cursor-pointer"
             >
               <option value="tr">TR</option>
               <option value="en">EN</option>
