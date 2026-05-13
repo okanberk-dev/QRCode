@@ -963,7 +963,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           <div
             className="bz-user-menu"
             role="menu"
-            style={{ left: 12, right: 12 }}
           >
             {!isCollapsed && (
               <div className="px-2.5 py-2">

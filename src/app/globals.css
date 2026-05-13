@@ -1465,16 +1465,29 @@ select.bz-input option:checked {
 
 /* User menu dropdown (sidebar bottom). Opens UPWARD (`bottom: calc(100% + 8px)`)
  * so the same Pulse aesthetic as `.bz-menu` but with bottom-anchored
- * transform-origin and a reveal that grows from the trigger downward. */
+ * transform-origin and a reveal that grows from the trigger downward.
+ *
+ * Parity with `.bz-menu`: scroll guards (`max-height`, `overflow-y`,
+ * `overscroll-behavior`, `-webkit-overflow-scrolling`) protect against a
+ * tall list overflowing past the viewport top edge when the trigger is
+ * docked at the sidebar bottom on a short viewport.
+ *
+ * Default horizontal inset is 6px on each side so the menu visually breathes
+ * inside the sidebar without callsites needing inline `style={{ left, right }}`
+ * overrides; widen via the parent rail (sidebar width is the constraint). */
 .bz-user-menu {
   position: absolute;
   bottom: calc(100% + 8px);
-  left: 0;
-  right: 0;
+  left: 6px;
+  right: 6px;
   background: #FFFFFF;
   border: 1px solid #EDEDED;
   border-radius: 14px;
   padding: 6px;
+  max-height: min(420px, 70vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   z-index: 50;
   box-shadow:
     0 1px 2px rgba(10, 10, 10, 0.04),
@@ -1485,6 +1498,33 @@ select.bz-input option:checked {
 @keyframes bz-user-menu-in {
   from { opacity: 0; transform: translateY(6px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+/* Mobile bottom-sheet variant — mirrors `.bz-menu--sheet` so a sidebar
+ * user-menu opened on a phone docks at the bottom of the viewport with
+ * generous touch targets instead of squeezing upward from a 248px rail
+ * (which would otherwise misalign with the mobile drawer chrome). Combine
+ * the callsite with `.bz-menu-backdrop` for a tap-to-dismiss overlay. */
+@media (max-width: 639px) {
+  .bz-user-menu {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    max-height: min(70vh, 480px);
+    border-radius: 18px;
+    padding: 10px;
+    transform-origin: bottom center;
+    box-shadow:
+      0 1px 2px rgba(10, 10, 10, 0.04),
+      0 -8px 32px -8px rgba(10, 10, 10, 0.24);
+  }
+  .bz-user-menu-item {
+    min-height: 44px;
+    padding: 12px 12px;
+    font-size: 14px;
+  }
+  .bz-user-menu-divider { margin: 6px 4px; }
 }
 .bz-user-menu-item {
   display: flex;
