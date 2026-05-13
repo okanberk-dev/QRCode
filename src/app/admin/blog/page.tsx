@@ -111,9 +111,9 @@ export default function AdminBlogPage() {
           }
         } catch {
           setError('Silme başarısız.');
-        } finally {
-          setOpenMenu(null);
         }
+        // PulseMenu (Radix DropdownMenu) onSelect sonrası kendi state'ini
+        // kapatır — eski `setOpenMenu(null)` artık gereksiz.
       },
     });
   };
