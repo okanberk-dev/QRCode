@@ -371,25 +371,33 @@ export default function AuditTemplatesPage() {
                     )}
                   </td>
                   <td className="text-right">
-                    <button
-                      type="button"
-                      className="bz-btn-ghost"
-                      disabled={busyId === tpl.id || Boolean(tpl.restaurantId)}
-                      onClick={() => togglePublish(tpl)}
-                      title={tpl.restaurantId ? 'Restoran-özel şablon admin endpoint üzerinden yönetilmez' : ''}
-                    >
-                      {busyId === tpl.id ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : tpl.isPublished ? (
-                        <>
-                          <EyeOff size={14} /> Yayından kaldır
-                        </>
-                      ) : (
-                        <>
-                          <Eye size={14} /> Yayınla
-                        </>
-                      )}
-                    </button>
+                    <div className="inline-flex gap-2">
+                      <Link
+                        href={`/admin/audits/templates/${tpl.id}`}
+                        className="bz-btn-ghost"
+                      >
+                        Düzenle
+                      </Link>
+                      <button
+                        type="button"
+                        className="bz-btn-ghost"
+                        disabled={busyId === tpl.id || Boolean(tpl.restaurantId)}
+                        onClick={() => togglePublish(tpl)}
+                        title={tpl.restaurantId ? 'Restoran-özel şablon admin endpoint üzerinden yönetilmez' : ''}
+                      >
+                        {busyId === tpl.id ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : tpl.isPublished ? (
+                          <>
+                            <EyeOff size={14} /> Yayından kaldır
+                          </>
+                        ) : (
+                          <>
+                            <Eye size={14} /> Yayınla
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
