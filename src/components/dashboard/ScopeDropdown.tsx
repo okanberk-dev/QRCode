@@ -77,8 +77,9 @@ export function ScopeDropdown({ current, isTr = true }: ScopeDropdownProps) {
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="end"
-          sideOffset={6}
-          className="z-50 min-w-[180px] rounded-xl border border-[#EDEDED] bg-white p-1.5 shadow-lg focus:outline-none"
+          sideOffset={8}
+          collisionPadding={12}
+          className="bz-menu focus:outline-none"
         >
           {ORDER.map((value) => {
             const isCurrent = value === current;
@@ -86,15 +87,12 @@ export function ScopeDropdown({ current, isTr = true }: ScopeDropdownProps) {
               <DropdownMenu.Item
                 key={value}
                 onSelect={() => select(value)}
-                className={`flex items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-[13px] cursor-pointer outline-none transition-colors ${
-                  isCurrent
-                    ? 'bg-[#EAF9B8] text-[#0A0A0A] font-semibold'
-                    : 'text-[#0A0A0A] hover:bg-[#FAFAFA] focus:bg-[#FAFAFA]'
-                }`}
+                aria-selected={isCurrent || undefined}
+                className="bz-menu-item justify-between"
               >
                 <span>{isTr ? LABELS[value].tr : LABELS[value].en}</span>
                 {isCurrent && (
-                  <Check size={13} strokeWidth={2.5} className="text-[#A8D62E]" />
+                  <Check size={13} strokeWidth={2.5} className="!text-[#A8D62E]" />
                 )}
               </DropdownMenu.Item>
             );

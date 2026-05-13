@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download, Settings2 } from 'lucide-react';
+import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download, Settings2, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
@@ -1079,57 +1079,68 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
       </div>
 
       {/* Viewport-anchored action menu (kart içinde overflow clipping'e takılmaz).
-          Coords trigger button'ın bounding rect'ından alınır. */}
+          Coords trigger button'ın bounding rect'ından alınır. Mobile <640px:
+          `.bz-menu--sheet` override coord'ları nötralize edip bottom sheet'e
+          dönüştürür + backdrop tap-to-dismiss sağlar. */}
       {openRow && openMenu && (
-        <div
-          role="menu"
-          className="fixed z-50 w-48 rounded-xl border border-[#EDEDED] bg-white shadow-lg overflow-hidden"
-          style={{ top: openMenu.top, right: openMenu.right }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Link
-            href={`/admin/restaurants/${openRow.id}`}
-            role="menuitem"
-            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
+        <>
+          <div
+            className="bz-menu-backdrop"
+            aria-hidden="true"
             onClick={() => setOpenMenu(null)}
+          />
+          <div
+            role="menu"
+            className="bz-menu bz-menu--sheet fixed w-52"
+            style={{ top: openMenu.top, right: openMenu.right }}
+            onClick={(e) => e.stopPropagation()}
           >
-            Düzenle
-          </Link>
-          <Link
-            href={`/admin/restaurants/${openRow.id}/menu`}
-            role="menuitem"
-            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
-            onClick={() => setOpenMenu(null)}
-          >
-            <UtensilsCrossed size={13} strokeWidth={2} />
-            Menü
-          </Link>
-          <Link
-            href={`/admin/qr?restaurant=${openRow.id}`}
-            role="menuitem"
-            className="flex items-center gap-2 px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
-            onClick={() => setOpenMenu(null)}
-          >
-            <Link2 size={13} strokeWidth={2} />
-            QR yönetimi
-          </Link>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              onToggle(openRow.id, openRow.isActive);
-              setOpenMenu(null);
-            }}
-            className="flex w-full items-center gap-2 border-t border-[#EDEDED] px-3 py-2 text-[13px] text-[#0A0A0A] hover:bg-[#FAFAFA]"
-          >
-            {openRow.isActive ? (
-              <ToggleRight size={13} strokeWidth={2} />
-            ) : (
-              <ToggleLeft size={13} strokeWidth={2} />
-            )}
-            {openRow.isActive ? 'Duraklat' : 'Aktifleştir'}
-          </button>
-        </div>
+            <Link
+              href={`/admin/restaurants/${openRow.id}`}
+              role="menuitem"
+              className="bz-menu-item"
+              onClick={() => setOpenMenu(null)}
+            >
+              <Pencil size={13} strokeWidth={2} />
+              Düzenle
+            </Link>
+            <Link
+              href={`/admin/restaurants/${openRow.id}/menu`}
+              role="menuitem"
+              className="bz-menu-item"
+              onClick={() => setOpenMenu(null)}
+            >
+              <UtensilsCrossed size={13} strokeWidth={2} />
+              Menü
+            </Link>
+            <Link
+              href={`/admin/qr?restaurant=${openRow.id}`}
+              role="menuitem"
+              className="bz-menu-item"
+              onClick={() => setOpenMenu(null)}
+            >
+              <Link2 size={13} strokeWidth={2} />
+              QR yönetimi
+            </Link>
+            <div className="bz-menu-divider" />
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onToggle(openRow.id, openRow.isActive);
+                setOpenMenu(null);
+              }}
+              className="bz-menu-item"
+            >
+              {openRow.isActive ? (
+                <ToggleRight size={13} strokeWidth={2} />
+              ) : (
+                <ToggleLeft size={13} strokeWidth={2} />
+              )}
+              {openRow.isActive ? 'Duraklat' : 'Aktifleştir'}
+            </button>
+          </div>
+        </>
       )}
     </>
   );

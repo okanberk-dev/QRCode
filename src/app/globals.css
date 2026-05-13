@@ -1108,13 +1108,22 @@ select.bz-input {
     border-color 150ms ease,
     box-shadow 150ms ease,
     background-color 150ms ease,
-    background-image 150ms ease;
+    background-image 150ms ease,
+    transform 150ms ease;
 }
 @media (max-width: 639px) {
-  select.bz-input { min-height: 44px; }
+  select.bz-input {
+    /* WCAG 2.5.5 touch target on mobile + visual breathing room. */
+    min-height: 44px;
+    padding-right: 40px;
+    background-position: right 16px center;
+  }
 }
 select.bz-input:hover:not(:disabled) {
   background-color: #FAFAFA;
+  border-color: #D4D4D4;
+  /* Subtle 1px lift to signal "tappable" — matches Linear/Vercel pattern. */
+  box-shadow: 0 1px 2px rgba(10, 10, 10, 0.05);
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23525252' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='1.5 1.5 6 6.5 10.5 1.5'/%3E%3C/svg%3E");
 }
 select.bz-input:focus {
@@ -1454,7 +1463,9 @@ select.bz-input option:checked {
 }
 .bz-side-cta--mini span { display: none; }
 
-/* User menu dropdown (sidebar bottom). */
+/* User menu dropdown (sidebar bottom). Opens UPWARD (`bottom: calc(100% + 8px)`)
+ * so the same Pulse aesthetic as `.bz-menu` but with bottom-anchored
+ * transform-origin and a reveal that grows from the trigger downward. */
 .bz-user-menu {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -1462,35 +1473,202 @@ select.bz-input option:checked {
   right: 0;
   background: #FFFFFF;
   border: 1px solid #EDEDED;
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(10, 10, 10, 0.12);
+  border-radius: 14px;
   padding: 6px;
   z-index: 50;
-  animation: bz-fade-in 160ms ease both;
+  box-shadow:
+    0 1px 2px rgba(10, 10, 10, 0.04),
+    0 12px 32px -8px rgba(10, 10, 10, 0.18);
+  transform-origin: bottom left;
+  animation: bz-user-menu-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes bz-user-menu-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
 }
 .bz-user-menu-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
+  padding: 9px 11px;
+  border-radius: 10px;
   font-size: 13px;
   color: #1A1A1A;
   cursor: pointer;
-  transition: background-color 100ms ease;
+  transition: background-color 120ms ease, color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
 }
 .bz-user-menu-item:hover { background: #FAFAFA; }
 .bz-user-menu-item:focus-visible {
   outline: none;
   background: #FAFAFA;
-  box-shadow: 0 0 0 2px rgba(198, 242, 78, 0.6);
+  box-shadow: inset 0 0 0 2px rgba(198, 242, 78, 0.55);
 }
-.bz-user-menu-item.danger { color: #DC2626; }
-.bz-user-menu-item.danger:hover { background: #FEF2F2; }
+.bz-user-menu-item.danger { color: #B91C1C; }
+.bz-user-menu-item.danger:hover,
+.bz-user-menu-item.danger:focus-visible {
+  background: #FEF2F2;
+  color: #991B1B;
+}
 .bz-user-menu-divider {
   height: 1px;
   background: #EDEDED;
-  margin: 4px 2px;
+  margin: 5px 4px;
+}
+
+/* ── Generic dropdown menu primitive (panel scope) ──
+ * Used by native action menus, workspace switcher, PulseSelect listbox,
+ * Radix DropdownMenu content. Provides consistent Pulse aesthetic:
+ *  - subtle dual-layer shadow (1px sharp + 16px soft, Linear/Stripe pattern)
+ *  - 14px radius (matches `bz-card` family)
+ *  - 6px inner padding so items inside breathe
+ *  - smooth scale+fade reveal (180ms cubic ease-out)
+ *  - max-height with momentum scroll on iOS
+ * Mobile (≤639px): combine with `.bz-menu--sheet` for a bottom-sheet drawer
+ * (centered max-width, 44px touch targets, safe-area inset) — matches
+ * native iOS/Android picker UX patterns.
+ *
+ * Item states:
+ *  - hover / focus-visible      → #FAFAFA background, lime focus outline
+ *  - aria-selected="true"       → #F7FAEF subtle tint + bold
+ *  - data-active="true"         → #EAF9B8 lime fill (keyboard cursor)
+ *  - .danger                    → #B91C1C text + #FEF2F2 hover bg
+ */
+.bz-menu {
+  background: #FFFFFF;
+  border: 1px solid #EDEDED;
+  border-radius: 14px;
+  padding: 6px;
+  min-width: 180px;
+  max-height: min(420px, 70vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  box-shadow:
+    0 1px 2px rgba(10, 10, 10, 0.04),
+    0 12px 32px -8px rgba(10, 10, 10, 0.18);
+  animation: bz-menu-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top right;
+}
+@keyframes bz-menu-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.bz-menu-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.3;
+  color: #0A0A0A;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 120ms ease, color 120ms ease;
+  /* Avoid double-tap zoom + text selection on iOS Safari for nav items */
+  -webkit-tap-highlight-color: transparent;
+}
+.bz-menu-item > svg { flex-shrink: 0; color: #525252; }
+.bz-menu-item:hover { background: #FAFAFA; }
+.bz-menu-item:focus-visible {
+  outline: none;
+  background: #FAFAFA;
+  box-shadow: inset 0 0 0 2px rgba(198, 242, 78, 0.55);
+}
+.bz-menu-item[aria-selected="true"],
+.bz-menu-item.is-selected {
+  background: #F7FAEF;
+  font-weight: 600;
+}
+.bz-menu-item[data-active="true"],
+.bz-menu-item.is-active {
+  background: #EAF9B8;
+}
+.bz-menu-item.danger { color: #B91C1C; }
+.bz-menu-item.danger > svg { color: currentColor; }
+.bz-menu-item.danger:hover,
+.bz-menu-item.danger:focus-visible {
+  background: #FEF2F2;
+  color: #991B1B;
+}
+.bz-menu-item:disabled,
+.bz-menu-item[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.bz-menu-divider {
+  height: 1px;
+  background: #EDEDED;
+  margin: 5px 4px;
+}
+.bz-menu-label {
+  display: block;
+  padding: 6px 11px 4px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #A3A3A3;
+}
+
+/* Mobile bottom-sheet variant — combine with `.bz-menu`.
+ * Trigger callsite gives positioning hint via inline styles or Tailwind for
+ * ≥640px; this rule overrides at <640px to dock the menu at the bottom of
+ * the viewport with a generous touch surface.  Pair with `.bz-menu-backdrop`
+ * to give a tap-to-dismiss overlay. */
+@media (max-width: 639px) {
+  .bz-menu--sheet {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: auto !important;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: min(70vh, 480px);
+    border-radius: 18px;
+    padding: 10px;
+    transform-origin: bottom center;
+    animation: bz-menu-sheet-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    z-index: 80;
+    box-shadow:
+      0 2px 4px rgba(10, 10, 10, 0.06),
+      0 24px 64px -12px rgba(10, 10, 10, 0.32);
+  }
+  .bz-menu--sheet .bz-menu-item {
+    min-height: 44px;
+    padding: 11px 14px;
+    font-size: 14px;
+    border-radius: 12px;
+  }
+  .bz-menu--sheet .bz-menu-divider { margin: 6px 4px; }
+}
+@keyframes bz-menu-sheet-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tap-to-dismiss overlay for the mobile sheet variant. Desktop hides it. */
+.bz-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(10, 10, 10, 0.22);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  animation: bz-menu-backdrop-in 180ms ease both;
+}
+@keyframes bz-menu-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@media (min-width: 640px) {
+  .bz-menu-backdrop { display: none; }
 }
 
 /* Progress bar — used in sidebar plan card + activation checklist. */
@@ -1550,6 +1728,10 @@ select.bz-input option:checked {
   .bz-float,
   .bz-word-swap,
   .bz-caret-blink,
+  .bz-menu,
+  .bz-menu--sheet,
+  .bz-menu-backdrop,
+  .bz-user-menu,
   .pulse-heartbeat,
   .animate-marquee,
   .animate-slide-in,
