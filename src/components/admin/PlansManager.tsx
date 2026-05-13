@@ -11,7 +11,7 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react';
-import { AlertBanner, Badge, Modal } from '@/components/ui';
+import { AlertBanner, APSwitch, Badge, Modal } from '@/components/ui';
 import type { AdminPlanRow } from '@/lib/subscription-plans';
 
 interface FormState {
@@ -676,13 +676,13 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <ToggleField
+            <SwitchCard
               label="Yayında"
               hint="Pasif paketler public sayfada gizli"
               value={form.isActive}
               onChange={(v) => setForm((f) => ({ ...f, isActive: v }))}
             />
-            <ToggleField
+            <SwitchCard
               label="En popüler"
               hint="Aynı anda tek paket öne çıkarılabilir"
               value={form.isFeatured}
@@ -699,11 +699,12 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
           </div>
 
           <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
-            <ToggleField
+            <SwitchCard
               label="İndirim aktif"
               hint="Yüzde veya sabit tutar indirim"
               value={form.discountActive}
               onChange={(v) => setForm((f) => ({ ...f, discountActive: v }))}
+              flush
             />
             {form.discountActive && (
               <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -807,38 +808,41 @@ function Field({
   );
 }
 
-function ToggleField({
+/**
+ * Plan/feature toggle card with the canonical `APSwitch` primitive.
+ * `flush` variant drops the card chrome when used inside an existing
+ * surface (örn. discount alt-grid'i).
+ */
+function SwitchCard({
   label,
   hint,
   value,
   onChange,
+  flush = false,
 }: {
   label: string;
   hint?: string;
   value: boolean;
   onChange: (v: boolean) => void;
+  flush?: boolean;
 }) {
+  const content = (
+    <>
+      <div className="min-w-0">
+        <p className="text-[13px] font-semibold text-[#0A0A0A]">{label}</p>
+        {hint && <p className="mt-0.5 text-[11px] text-[#737373]">{hint}</p>}
+      </div>
+      <APSwitch checked={value} onChange={onChange} ariaLabel={label} />
+    </>
+  );
+
+  if (flush) {
+    return <div className="flex items-start justify-between gap-3">{content}</div>;
+  }
+
   return (
     <div className="flex items-start justify-between gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3">
-      <div>
-        <p className="text-[13px] font-semibold text-[#0A0A0A]">{label}</p>
-        {hint && <p className="text-[11px] text-[#737373]">{hint}</p>}
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={value}
-        onClick={() => onChange(!value)}
-        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-          value ? 'bg-[#0A0A0A]' : 'bg-[#D4D4D4]'
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-            value ? 'left-5' : 'left-0.5'
-          }`}
-        />
-      </button>
+      {content}
     </div>
   );
 }

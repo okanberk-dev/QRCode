@@ -23,13 +23,22 @@ export { PanelSelectionBar, type PanelSelectionAction } from "./PanelSelectionBa
 export { PlatformChip, PLATFORMS, type PlatformId, type PlatformConfig } from "./PlatformChip";
 export { ProgressBar } from "./ProgressBar";
 export { PulseSelect, type PulseSelectOption } from "./PulseSelect";
+export {
+  PulseMenu,
+  PulseMenuItem,
+  PulseMenuLabel,
+  PulseMenuDivider,
+  type PulseMenuProps,
+  type PulseMenuItemProps,
+  type PulseMenuAlign,
+  type PulseMenuSide,
+} from "./PulseMenu";
 export { RadioCard } from "./RadioCard";
 export { Skeleton, TableSkeleton, CardSkeleton } from "./Skeleton";
 export { Sparkline } from "./Sparkline";
 export { StarRow } from "./StarRow";
 export { StatCard, StatCardSkeleton, type DeltaKind } from "./StatCard";
 export { Tabs, type TabItem } from "./Tabs";
-export { Toggle } from "./Toggle";
 
 // Stage 37 §38.117 — HANDOFF §8 step 4 (Panel atomları) — 4 yeni primitive
 // (APSlider + APStarInput + APRadioGroup + APIconButton). HANDOFF
@@ -75,7 +84,7 @@ export {
 // showcase) tam migrate (multiple PR — 184+ callsite). PR0 base ekle.
 // Pulse §11 hex map + synthetic italic Space Grotesk (CLAUDE.md
 // §38.112 + §38.122 paterni). 18 yeni primitive ekle; PR1-5'te mevcut
-// `bz-btn-*`/Toggle/Badge/Tabs callsite'ları kademeli migrate; PR6'da
+// `bz-btn-*`/APSwitch/Badge/Tabs callsite'ları kademeli migrate; PR6'da
 // dead utility/primitive'ler silinir (CLAUDE.md §34 + §38.49).
 export { APButton, type APButtonProps, type APButtonSize, type APButtonVariant } from "./APButton";
 export { APSwitch, type APSwitchProps, type APSwitchSize } from "./APSwitch";

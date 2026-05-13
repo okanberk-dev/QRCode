@@ -10,6 +10,7 @@ import {
   EmptyState,
   PageHeader,
   PlatformChip,
+  PulseSelect,
   type PlatformId,
 } from '@/components/ui';
 import { CreateQRWizard, type QRGenerationResult } from '@/components/panel/qr/CreateQRWizard';
@@ -446,39 +447,37 @@ export default function DashboardQrPage() {
         </AlertBanner>
       )}
 
-      {/* Filter strip */}
+      {/* Filter strip — Pulse `PulseSelect` (iOS chevron fix + lime focus
+          ring + bz-menu dropdown). CLAUDE.md §23.3 kanonik form select
+          primitive. */}
       {restaurants.length > 0 && items.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {restaurants.length > 1 && (
-            <select
-              className="bz-input"
-              style={{ width: 'auto', paddingRight: 32 }}
+            <PulseSelect
               value={branchFilter}
-              onChange={(e) => selectBranchFilter(e.target.value)}
-              aria-label={isTr ? 'Şube filtresi' : 'Branch filter'}
-            >
-              <option value="all">{isTr ? 'Tüm şubeler' : 'All branches'}</option>
-              {restaurants.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+              onChange={selectBranchFilter}
+              ariaLabel={isTr ? 'Şube filtresi' : 'Branch filter'}
+              className="min-w-[170px]"
+              options={[
+                { value: 'all', label: isTr ? 'Tüm şubeler' : 'All branches' },
+                ...restaurants.map((r) => ({ value: r.id, label: r.name })),
+              ]}
+            />
           )}
-          <select
-            className="bz-input"
-            style={{ width: 'auto', paddingRight: 32 }}
+          <PulseSelect
             value={platformFilter}
-            onChange={(e) => setPlatformFilter(e.target.value)}
-            aria-label={isTr ? 'Platform filtresi' : 'Platform filter'}
-          >
-            <option value="all">{isTr ? 'Tüm platformlar' : 'All platforms'}</option>
-            <option value="general">{isTr ? 'Genel (sabitsiz)' : 'General (no pin)'}</option>
-            <option value="google">Google</option>
-            <option value="yemeksepeti">Yemeksepeti</option>
-            <option value="getir">Getir</option>
-            <option value="trendyol_go">Trendyol GO</option>
-          </select>
+            onChange={setPlatformFilter}
+            ariaLabel={isTr ? 'Platform filtresi' : 'Platform filter'}
+            className="min-w-[200px]"
+            options={[
+              { value: 'all', label: isTr ? 'Tüm platformlar' : 'All platforms' },
+              { value: 'general', label: isTr ? 'Genel (sabitsiz)' : 'General (no pin)' },
+              { value: 'google', label: 'Google' },
+              { value: 'yemeksepeti', label: 'Yemeksepeti' },
+              { value: 'getir', label: 'Getir' },
+              { value: 'trendyol_go', label: 'Trendyol GO' },
+            ]}
+          />
         </div>
       )}
 

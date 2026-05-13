@@ -6,7 +6,7 @@
 
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
-import { AlertBanner, Field, Modal, Toggle } from '@/components/ui';
+import { AlertBanner, APSwitch, Field, Modal } from '@/components/ui';
 import {
   AUDIT_QUESTION_TYPES,
   type AuditQuestionType,
@@ -321,7 +321,7 @@ export default function AuditQuestionEditor({ locale, open, draft, onClose, onSa
             />
           </Field>
           <Field label={t.audits_question_required}>
-            <Toggle checked={q.isRequired} onChange={(v) => setQ({ ...q, isRequired: v })} />
+            <APSwitch checked={q.isRequired} onChange={(v) => setQ({ ...q, isRequired: v })} />
           </Field>
         </div>
 

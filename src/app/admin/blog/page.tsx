@@ -14,7 +14,17 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { AlertBanner, Badge, EmptyState, PageHeader, TableSkeleton, useConfirmDialog } from '@/components/ui';
+import {
+  AlertBanner,
+  Badge,
+  EmptyState,
+  PageHeader,
+  PulseMenu,
+  PulseMenuDivider,
+  PulseMenuItem,
+  TableSkeleton,
+  useConfirmDialog,
+} from '@/components/ui';
 
 interface BlogPost {
   id: string;
@@ -39,7 +49,6 @@ export default function AdminBlogPage() {
   const [filterLocale, setFilterLocale] = useState<'all' | 'tr' | 'en'>('all');
   const [confirmDialog, askConfirm] = useConfirmDialog();
   const [search, setSearch] = useState('');
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -58,25 +67,9 @@ export default function AdminBlogPage() {
     fetchPosts();
   }, [fetchPosts]);
 
-  // Outside click + Escape dismiss the action menu.
-  useEffect(() => {
-    if (!openMenu) return;
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('[data-action-menu-root]')) {
-        setOpenMenu(null);
-      }
-    };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpenMenu(null);
-    };
-    document.addEventListener('mousedown', handleClick);
-    document.addEventListener('keydown', handleKey);
-    return () => {
-      document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('keydown', handleKey);
-    };
-  }, [openMenu]);
+  // Outside-click + ESC + focus restore artık `PulseMenu` (Radix) tarafından
+  // yönetilir; eski `openMenu` state + `data-action-menu-root` listener
+  // pattern'i (Phase 11.18 paterni) kaldırıldı.
 
   const handleSeed = async () => {
     setSeeding(true);
@@ -253,56 +246,43 @@ export default function AdminBlogPage() {
                       )}
                     </td>
                     <td>
-                      <div className="relative inline-block" data-action-menu-root>
-                        <button
-                          className="bz-btn-icon"
-                          onClick={() => setOpenMenu(openMenu === post.id ? null : post.id)}
-                          aria-label="İşlemler"
-                          aria-haspopup="menu"
-                          aria-expanded={openMenu === post.id}
-                        >
-                          <MoreHorizontal size={14} strokeWidth={2} />
-                        </button>
-                        {openMenu === post.id && (
-                          <div
-                            role="menu"
-                            className="bz-menu absolute right-0 top-9 z-30 w-48"
-                            onClick={(e) => e.stopPropagation()}
+                      <PulseMenu
+                        trigger={
+                          <button
+                            type="button"
+                            className="bz-btn-icon"
+                            aria-label="İşlemler"
                           >
-                            <Link
-                              role="menuitem"
-                              href={`/${post.locale}/blog/${post.slug}`}
-                              target="_blank"
-                              className="bz-menu-item"
-                              onClick={() => setOpenMenu(null)}
-                            >
-                              <Eye size={13} strokeWidth={2} />
-                              Public görüntüle
-                            </Link>
-                            <Link
-                              role="menuitem"
-                              href={`/admin/blog/${post.id}`}
-                              className="bz-menu-item"
-                              onClick={() => setOpenMenu(null)}
-                            >
-                              <Pencil size={13} strokeWidth={2} />
-                              Düzenle
-                            </Link>
-                            <div className="bz-menu-divider" />
-                            <button
-                              role="menuitem"
-                              onClick={() => {
-                                setOpenMenu(null);
-                                handleDelete(post.id, post.title);
-                              }}
-                              className="bz-menu-item danger"
-                            >
-                              <Trash2 size={13} strokeWidth={2} />
-                              Sil
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                            <MoreHorizontal size={14} strokeWidth={2} />
+                          </button>
+                        }
+                        className="w-48"
+                      >
+                        <PulseMenuItem
+                          icon={<Eye size={13} strokeWidth={2} />}
+                          onSelect={() => {
+                            window.open(`/${post.locale}/blog/${post.slug}`, '_blank', 'noopener');
+                          }}
+                        >
+                          Public görüntüle
+                        </PulseMenuItem>
+                        <PulseMenuItem
+                          icon={<Pencil size={13} strokeWidth={2} />}
+                          onSelect={() => {
+                            window.location.href = `/admin/blog/${post.id}`;
+                          }}
+                        >
+                          Düzenle
+                        </PulseMenuItem>
+                        <PulseMenuDivider />
+                        <PulseMenuItem
+                          icon={<Trash2 size={13} strokeWidth={2} />}
+                          danger
+                          onSelect={() => handleDelete(post.id, post.title)}
+                        >
+                          Sil
+                        </PulseMenuItem>
+                      </PulseMenu>
                     </td>
                   </tr>
                 ))}

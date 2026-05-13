@@ -4,9 +4,10 @@
  * Stage 65 §38.146 — HANDOFF JSX prototip APSwitch (~75 satır).
  *
  * iOS-style switch (sm/md/lg) + locked state + opsiyonel label/sublabel.
- * Mevcut `<Toggle>` primitive'inin (sm/md/lg) HANDOFF eşdeğeri. PR2'de
- * 1 admin/legal-documents callsite migrate edilir; PR6'da Toggle silinir
- * (CLAUDE.md §34 paterni — 0 callsite).
+ * **Buaze paneli için kanonik switch primitive** — eski `<Toggle>` (Stage
+ * 97 §38.177'de silindi, 0 callsite). Notification settings sayfasındaki
+ * görsel referans (HANDOFF tasarım): #C6F24E lime track + 240ms Apple
+ * easing + white knob with drop-shadow.
  *
  * HANDOFF spec birebir:
  *  - dims: sm 36×22 / md 46×28 / lg 56×32; knob = h - 6 (3px pad)

@@ -2,8 +2,8 @@
 
 import { useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Check, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import { PulseMenu, PulseMenuItem } from '@/components/ui';
 
 // Phase 8c+ §38.31 — Header "Bu hafta" dynamic dropdown (tasarım
 // page-dashboard.jsx line 174-176). 4 scope option — URL searchParam
@@ -55,8 +55,8 @@ export function ScopeDropdown({ current, isTr = true }: ScopeDropdownProps) {
   const triggerLabel = isTr ? LABELS[current].tr : LABELS[current].en;
 
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
+    <PulseMenu
+      trigger={
         <button
           type="button"
           className={`bz-btn-ghost inline-flex items-center gap-1.5 text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
@@ -72,34 +72,21 @@ export function ScopeDropdown({ current, isTr = true }: ScopeDropdownProps) {
             className={pending ? 'animate-pulse' : ''}
           />
         </button>
-      </DropdownMenu.Trigger>
-
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="end"
-          sideOffset={8}
-          collisionPadding={12}
-          className="bz-menu focus:outline-none"
-        >
-          {ORDER.map((value) => {
-            const isCurrent = value === current;
-            return (
-              <DropdownMenu.Item
-                key={value}
-                onSelect={() => select(value)}
-                aria-selected={isCurrent || undefined}
-                className="bz-menu-item justify-between"
-              >
-                <span>{isTr ? LABELS[value].tr : LABELS[value].en}</span>
-                {isCurrent && (
-                  <Check size={13} strokeWidth={2.5} className="!text-[#A8D62E]" />
-                )}
-              </DropdownMenu.Item>
-            );
-          })}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+      }
+    >
+      {ORDER.map((value) => {
+        const isCurrent = value === current;
+        return (
+          <PulseMenuItem
+            key={value}
+            onSelect={() => select(value)}
+            selected={isCurrent}
+          >
+            {isTr ? LABELS[value].tr : LABELS[value].en}
+          </PulseMenuItem>
+        );
+      })}
+    </PulseMenu>
   );
 }
 
