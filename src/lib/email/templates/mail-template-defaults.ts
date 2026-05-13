@@ -611,6 +611,35 @@ export const MAIL_INLINE_DEFAULTS: Record<
   'customer-campaign': { tr: CUSTOMER_CAMPAIGN_TR, en: CUSTOMER_CAMPAIGN_EN },
   'owner-campaign-approved': { tr: OWNER_CAMPAIGN_APPROVED_TR, en: OWNER_CAMPAIGN_APPROVED_EN },
   'owner-campaign-rejected': { tr: OWNER_CAMPAIGN_REJECTED_TR, en: OWNER_CAMPAIGN_REJECTED_EN },
+  // CLAUDE.md §42 Phase 3 — audit-completed bildirim.
+  'audit-completed': {
+    tr: {
+      eyebrow: 'Denetim Merkezi · Yeni yanıt',
+      titleLine: 'Bir denetim tamamlandı.',
+      introLine: '${respondentName}, "${auditTitle}" denetimini tamamladı.',
+      scoreLabel: 'Toplam puan',
+      passedLabel: 'Sonuç',
+      passedYes: 'Geçti',
+      passedNo: 'Kaldı',
+      passedUnknown: 'Puan hesaplandı',
+      ctaLabel: 'Yanıtı incele',
+      secondaryLine:
+        'Detay sayfasından soru-soru cevapları görüp, gerekirse manuel yeniden puanlama yapabilirsin.',
+    },
+    en: {
+      eyebrow: 'Audit Center · New response',
+      titleLine: 'An audit was completed.',
+      introLine: '${respondentName} completed "${auditTitle}".',
+      scoreLabel: 'Total score',
+      passedLabel: 'Result',
+      passedYes: 'Passed',
+      passedNo: 'Failed',
+      passedUnknown: 'Score recorded',
+      ctaLabel: 'Review response',
+      secondaryLine:
+        'Open the detail page to see answers question-by-question and re-score manually if needed.',
+    },
+  },
 };
 
 /**

@@ -129,8 +129,11 @@ export async function POST(req: NextRequest, ctx: { params: Promise<Params> }) {
     }
   }
 
-  const needsToken = data.assigneeType === 'candidate' || data.assigneeType === 'link';
-  const token = needsToken ? await generateAuditAssignmentToken() : null;
+  // Phase 3: Tüm atama tiplerinde token üretilir (team_member dahil). Owner
+  // hangi kanalla paylaşacağına karar verir; team_member için ekip içi
+  // private link, candidate/link için public dağıtım. Token Read-only
+  // erişim sağlar, KVKK consent submit zamanı yine zorunlu.
+  const token = await generateAuditAssignmentToken();
 
   const created = await prisma.auditAssignment.create({
     data: {

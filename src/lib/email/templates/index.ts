@@ -58,3 +58,7 @@ export type { InactiveReactivationParams } from './inactive-reactivation';
 // hello@buaze.com (CLAUDE.md §21.x weekly digest summary cron).
 export { renderWeeklyDigestSummary } from './weekly-digest-summary';
 export type { WeeklyDigestSummaryParams } from './weekly-digest-summary';
+
+// CLAUDE.md §42 Phase 3 — Denetim Merkezi yanıt tamamlandı bildirimi.
+export { renderAuditCompleted } from './audit-completed';
+export type { AuditCompletedParams } from './audit-completed';
