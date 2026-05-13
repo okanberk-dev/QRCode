@@ -32,7 +32,21 @@ interface InviteInfo {
   ok: true;
   email: string;
   ownerName: string | null;
+  role: string;
   roleLabel: string;
+  roleLabelEn: string;
+  /**
+   * Workspace restaurants the invitee will gain access to. When the owner
+   * didn't pin specific locations, this falls back to the owner's full
+   * restaurant list (same semantics as the team-invite mail template's
+   * "Tüm konumlar / All locations" line). The accept page renders this as
+   * chips so the user can confirm which business they're joining BEFORE
+   * filling out the signup form — this is the "o işletmeyi tanımlıyor mu?"
+   * answer the user explicitly asked for.
+   */
+  restaurantNames: string[];
+  /** True when the owner left "locations" blank (= access to all). */
+  allLocations: boolean;
   expiresAt: string;
   expired: boolean;
   hasAccount: boolean;
@@ -48,6 +62,13 @@ const ROLE_LABELS_TR: Record<string, string> = {
   manager: 'Yönetici',
   staff: 'Personel',
   viewer: 'Sadece görüntüleyici',
+};
+
+const ROLE_LABELS_EN: Record<string, string> = {
+  owner: 'Owner',
+  manager: 'Manager',
+  staff: 'Staff',
+  viewer: 'Viewer',
 };
 
 export async function GET(req: NextRequest): Promise<NextResponse<InviteInfo | InviteError>> {
@@ -73,6 +94,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<InviteInfo | I
       ownerId: true,
       email: true,
       role: true,
+      locations: true,
       status: true,
       inviteTokenExpiresAt: true,
     },
@@ -92,7 +114,17 @@ export async function GET(req: NextRequest): Promise<NextResponse<InviteInfo | I
     return NextResponse.json({ ok: false, error: 'expired' }, { status: 200 });
   }
 
-  const [owner, hasAccount] = await Promise.all([
+  // `locations` is Prisma `Json?` so it can arrive as a string[] (owner pinned
+  // specific restaurants), an empty array, or null (= owner left it blank, full
+  // workspace access). Narrow to a clean string[] before we hit Prisma.
+  const pinnedLocations = Array.isArray(member.locations)
+    ? (member.locations as unknown[]).filter(
+        (value): value is string => typeof value === 'string' && value.length > 0,
+      )
+    : [];
+  const allLocations = pinnedLocations.length === 0;
+
+  const [owner, hasAccount, restaurants] = await Promise.all([
     prisma.user.findUnique({
       where: { id: member.ownerId },
       select: { name: true, email: true },
@@ -101,13 +133,30 @@ export async function GET(req: NextRequest): Promise<NextResponse<InviteInfo | I
       where: { email: member.email },
       select: { id: true },
     }),
+    // IDOR-safe: only restaurants owned by the inviter (member.ownerId) so a
+    // malformed `locations` payload can never leak names from other tenants.
+    allLocations
+      ? prisma.restaurant.findMany({
+          where: { userId: member.ownerId },
+          select: { name: true },
+          orderBy: { name: 'asc' },
+        })
+      : prisma.restaurant.findMany({
+          where: { id: { in: pinnedLocations }, userId: member.ownerId },
+          select: { name: true },
+          orderBy: { name: 'asc' },
+        }),
   ]);
 
   return NextResponse.json({
     ok: true,
     email: member.email,
     ownerName: owner?.name ?? owner?.email ?? null,
+    role: member.role,
     roleLabel: ROLE_LABELS_TR[member.role] ?? 'Üye',
+    roleLabelEn: ROLE_LABELS_EN[member.role] ?? 'Member',
+    restaurantNames: restaurants.map((r) => r.name),
+    allLocations,
     expiresAt: member.inviteTokenExpiresAt?.toISOString() ?? '',
     expired: false,
     hasAccount: Boolean(hasAccount),
@@ -173,6 +222,32 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const localeStr: 'tr' | 'en' = body.locale === 'en' ? 'en' : 'tr';
+
+  // Cross-tenant active duplicate guard.
+  //
+  // `TeamMember` has a unique constraint on `[ownerId, email]`, which prevents
+  // an owner from sending two pending invites to the same address — but does
+  // NOT stop two DIFFERENT owners from each inviting the same email and the
+  // invitee accepting both, ending up active under multiple tenants. Buaze is
+  // a single-tenant-per-user product (User.role + at most one active
+  // TeamMember row), so we reject the second acceptance with a clear message
+  // instead of silently activating it. The check excludes the row we're about
+  // to accept so re-entry of an already-active invite still hits the
+  // `member.status === 'active'` idempotent branch above.
+  const conflictingActiveMembership = await prisma.teamMember.findFirst({
+    where: {
+      email: member.email,
+      status: 'active',
+      NOT: { id: member.id },
+    },
+    select: { id: true },
+  });
+  if (conflictingActiveMembership) {
+    return NextResponse.json(
+      { ok: false, error: 'cross_tenant_active' },
+      { status: 409 },
+    );
+  }
 
   // Davet edilen email zaten Buaze hesabı sahibi mi?
   const existingAccount = await prisma.user.findUnique({
