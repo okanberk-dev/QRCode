@@ -401,13 +401,14 @@ function SurveyFrame({
   mode: 'dark' | 'light';
   children: React.ReactNode;
 }) {
+  // Mobile (≤520px) — page bg = ink (#0A0A0A) so the frame is seamless
+  // with the dark intro/thanks screens (no visible border).
+  // Desktop (>520px) — page bg = #1a1a1a so the rounded 440px-wide card
+  // floats over a slightly lighter charcoal stage.
   return (
     <main
-      className="flex min-h-screen items-center justify-center"
-      style={{
-        background: '#1a1a1a',
-        fontFamily: 'var(--font-body)',
-      }}
+      className="bz-survey-stage flex min-h-screen items-center justify-center"
+      style={{ fontFamily: 'var(--font-body)' }}
     >
       <div
         className="bz-survey-frame"
@@ -499,7 +500,10 @@ function IntroScreen({
       {/* Brand row */}
       <div
         className="relative"
-        style={{ padding: '60px 22px 0' }}
+        style={{
+          padding:
+            'calc(60px + env(safe-area-inset-top, 0px)) 22px 0',
+        }}
       >
         <div className="mb-7 flex items-center justify-between">
           <div
@@ -633,7 +637,9 @@ function IntroScreen({
 
       <div
         className="relative"
-        style={{ padding: '20px 22px 44px' }}
+        style={{
+          padding: '20px 22px calc(44px + env(safe-area-inset-bottom, 0px))',
+        }}
       >
         <button
           type="button"
@@ -697,7 +703,9 @@ function TopBar({
   return (
     <div
       className="flex items-center gap-2.5"
-      style={{ padding: '54px 18px 4px' }}
+      style={{
+        padding: 'calc(28px + env(safe-area-inset-top, 0px)) 18px 4px',
+      }}
     >
       <button
         type="button"
@@ -870,7 +878,7 @@ function FooterBar({
     <div
       className="flex flex-col gap-2.5"
       style={{
-        padding: '14px 22px 44px',
+        padding: '14px 22px calc(44px + env(safe-area-inset-bottom, 0px))',
         borderTop: '1px solid #ECEAE3',
         background: '#fff',
       }}
@@ -1133,7 +1141,7 @@ function ContactScreen({
       <div
         className="flex flex-col gap-2.5"
         style={{
-          padding: '14px 22px 22px',
+          padding: '14px 22px calc(22px + env(safe-area-inset-bottom, 0px))',
           borderTop: '1px solid #ECEAE3',
           background: '#fff',
         }}
@@ -1352,7 +1360,9 @@ function ThanksScreen({
 
       <div
         className="relative text-center"
-        style={{ padding: '60px 22px 0' }}
+        style={{
+          padding: 'calc(60px + env(safe-area-inset-top, 0px)) 22px 0',
+        }}
       >
         <div
           className="mx-auto flex items-center justify-center"
@@ -1506,7 +1516,9 @@ function ThanksScreen({
 
       <div
         className="relative flex flex-col gap-2"
-        style={{ padding: '16px 22px 44px' }}
+        style={{
+          padding: '16px 22px calc(44px + env(safe-area-inset-bottom, 0px))',
+        }}
       >
         <p
           className="bz-survey-mono"

@@ -126,6 +126,9 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  // Enable safe-area-inset-* env vars on iOS (Stage 99 — public survey
+  // /s/[slug] uses them for the sticky footer + thanks coupon padding).
+  viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#FFFFFF' },
     { media: '(prefers-color-scheme: dark)', color: '#0A0A0A' },
