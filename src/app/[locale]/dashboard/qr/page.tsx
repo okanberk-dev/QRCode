@@ -49,6 +49,8 @@ interface QrHistoryItem {
   // Used to re-render previews + downloads with the original palette.
   darkColor?: string | null;
   lightColor?: string | null;
+  /** Wave A — print/share template id selected at QR creation time. */
+  templateId?: string | null;
   createdAt: string;
   restaurantId: string;
 }
@@ -276,6 +278,9 @@ export default function DashboardQrPage() {
         // (PNG + Premium PDF) request the API with `dark`/`light` params.
         darkColor: it.darkColor,
         lightColor: it.lightColor,
+        // Wave A — surface the selected print/share template on the card
+        // (badge + threaded through downloads).
+        templateId: it.templateId ?? null,
       };
     });
   }, [filteredItems, restaurantById, restaurants.length, isTr]);
@@ -290,6 +295,7 @@ export default function DashboardQrPage() {
       type: 'feedback',
       darkColor: result.darkColor,
       lightColor: result.lightColor,
+      templateId: result.templateId,
       createdAt: result.createdAt,
       restaurantId: result.restaurantId,
     };

@@ -478,6 +478,10 @@ model QrGeneration {
   // re-rendering a saved QR stays visually identical.
   darkColor   String?  @map("dark_color")
   lightColor  String?  @map("light_color")
+  // Print/share layout (`classic`, `table_tent`, `window_sticker`, …).
+  // Nullable for legacy rows + cron-generated QRs; owner picks via wizard.
+  // Registry source: `src/components/panel/qr/templates/registry.ts`.
+  templateId  String?  @map("template_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
   restaurantId String     @map("restaurant_id")
