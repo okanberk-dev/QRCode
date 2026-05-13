@@ -8,10 +8,11 @@
 // (atomic — şablon yayınlandı + atama gönderildi mantıksal birim).
 
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canWriteRestaurant, canAccessRestaurant } from '@/lib/panel-access';
-import { ApiErrors } from '@/lib/api-errors';
+import { ApiErrors, getErrorCode, getErrorMessage } from '@/lib/api-errors';
 import { validateBody } from '@/lib/api/validate';
 import { AuditTemplateSubmitSchema, type AuditTemplateSubmitInput } from '@/lib/audits/wizard-state';
 import { generateAuditAssignmentToken } from '@/lib/audits/token';
@@ -85,63 +86,102 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     return ApiErrors.badRequest('Yayın için en az 1 soru gerekli', 'NO_QUESTIONS');
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const tpl = await tx.auditTemplate.create({
-      data: {
-        restaurantId: id,
-        categoryId: data.categoryId ?? null,
-        title: data.title,
-        description: data.description ?? null,
-        sector: data.sector,
-        scoringMode: data.scoringMode,
-        passingScore: data.passingScore ?? null,
-        locale: data.locale,
-        isPublished: data.publish,
-        publishedAt: data.publish ? new Date() : null,
-        isActive: true,
-        createdBy: g.actor.source,
-        createdById: g.actor.id,
-        questions: {
-          create: data.questions.map((q, i) => ({
-            type: q.type,
-            prompt: q.prompt,
-            helpText: q.helpText ?? null,
-            options: (q.options ?? undefined) as unknown as object,
-            correctAnswer: (q.correctAnswer ?? undefined) as unknown as object,
-            weight: q.weight,
-            isRequired: q.isRequired,
-            sortOrder: q.sortOrder || (i + 1) * 10,
-          })),
-        },
-      },
-      select: { id: true, title: true, isPublished: true },
-    });
+  // dueAt guard — `<input type="date">` `value` boş string veya geçersiz
+  // ISO string ise `new Date(...)` `Invalid Date` döner ve Prisma reject
+  // eder (P2000). Burada erken 400 fırlat ki transaction'a inmeden anlamlı
+  // mesaj dönsün.
+  let parsedDueAt: Date | null = null;
+  if (data.assignment?.enabled && data.assignment.dueAt) {
+    const d = new Date(data.assignment.dueAt);
+    if (Number.isNaN(d.getTime())) {
+      return ApiErrors.badRequest('Geçersiz tarih', 'INVALID_DUE_AT');
+    }
+    parsedDueAt = d;
+  }
 
-    if (data.assignment?.enabled && data.assignment.assigneeType) {
-      // Phase 3: Tüm tiplerde token üretilir (CLAUDE.md §42 Phase 3 paterni).
-      const token = await generateAuditAssignmentToken();
-      await tx.auditAssignment.create({
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const tpl = await tx.auditTemplate.create({
         data: {
-          templateId: tpl.id,
           restaurantId: id,
-          assigneeType: data.assignment.assigneeType,
-          assigneeTeamMemberId: data.assignment.assigneeTeamMemberId ?? null,
-          assigneeName: data.assignment.assigneeName ?? null,
-          assigneeEmail: data.assignment.assigneeEmail ?? null,
-          assigneePhone: data.assignment.assigneePhone ?? null,
-          dueAt: data.assignment.dueAt ? new Date(data.assignment.dueAt) : null,
-          recurrence: data.assignment.recurrence ?? 'once',
-          status: 'pending',
-          token,
-          internalNote: data.assignment.internalNote ?? null,
+          categoryId: data.categoryId ?? null,
+          title: data.title,
+          description: data.description ?? null,
+          sector: data.sector,
+          scoringMode: data.scoringMode,
+          passingScore: data.passingScore ?? null,
+          locale: data.locale,
+          isPublished: data.publish,
+          publishedAt: data.publish ? new Date() : null,
+          isActive: true,
           createdBy: g.actor.source,
           createdById: g.actor.id,
+          questions: {
+            create: data.questions.map((q, i) => ({
+              type: q.type,
+              prompt: q.prompt,
+              helpText: q.helpText ?? null,
+              options: (q.options ?? undefined) as unknown as object,
+              correctAnswer: (q.correctAnswer ?? undefined) as unknown as object,
+              weight: q.weight,
+              isRequired: q.isRequired,
+              sortOrder: q.sortOrder || (i + 1) * 10,
+            })),
+          },
         },
+        select: { id: true, title: true, isPublished: true },
       });
+
+      if (data.assignment?.enabled && data.assignment.assigneeType) {
+        // Phase 3: Tüm tiplerde token üretilir (CLAUDE.md §42 Phase 3 paterni).
+        const token = await generateAuditAssignmentToken();
+        await tx.auditAssignment.create({
+          data: {
+            templateId: tpl.id,
+            restaurantId: id,
+            assigneeType: data.assignment.assigneeType,
+            assigneeTeamMemberId: data.assignment.assigneeTeamMemberId ?? null,
+            assigneeName: data.assignment.assigneeName ?? null,
+            assigneeEmail: data.assignment.assigneeEmail ?? null,
+            assigneePhone: data.assignment.assigneePhone ?? null,
+            dueAt: parsedDueAt,
+            recurrence: data.assignment.recurrence ?? 'once',
+            status: 'pending',
+            token,
+            internalNote: data.assignment.internalNote ?? null,
+            createdBy: g.actor.source,
+            createdById: g.actor.id,
+          },
+        });
+      }
+
+      return tpl;
+    });
+
+    return NextResponse.json({ data: result }, { status: 201 });
+  } catch (err) {
+    // Prisma exception → 400/409 ayrımı + Sentry capture (KVKK: actor.id +
+    // restaurantId log'lanır, payload PII içermez). Kullanıcı UI'da artık
+    // generic "Kaydetme başarısız" yerine spesifik mesaj görür.
+    const code = getErrorCode(err);
+    const message = getErrorMessage(err);
+    console.error('[audit] templates POST failed', { code, message });
+    Sentry.captureException(err, {
+      tags: { route: 'restaurants/audits/templates', method: 'POST', prismaCode: code },
+      extra: { restaurantId: id, actorId: g.actor.id, prismaMessage: message.slice(0, 500) },
+    });
+    if (code === 'P2002') {
+      return ApiErrors.conflict('Çakışan kayıt mevcut', 'UNIQUE_VIOLATION');
     }
-
-    return tpl;
-  });
-
-  return NextResponse.json({ data: result }, { status: 201 });
+    if (code === 'P2003') {
+      return ApiErrors.badRequest('İlişkili kayıt bulunamadı', 'FK_VIOLATION');
+    }
+    if (code === 'P2025') {
+      return ApiErrors.notFound('Kayıt bulunamadı');
+    }
+    return NextResponse.json(
+      { error: 'Denetim oluşturulamadı', code: code || 'INTERNAL_SERVER_ERROR' },
+      { status: 500 },
+    );
+  }
 }
