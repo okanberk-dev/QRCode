@@ -60,6 +60,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<Params> }) {
       isActive: true,
       createdBy: actor.source,
       createdById: actor.id,
+      // CLAUDE.md §40.2 — kaynak template'i kaydet ki owner "Varsayılana
+      // sıfırla" tıkladığında reset endpoint kaynağı resolve edebilsin.
+      forkedFromId: tplId,
       questions: {
         create: src.questions.map((q) => ({
           type: q.type,

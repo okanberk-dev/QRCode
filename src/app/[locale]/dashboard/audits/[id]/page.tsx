@@ -74,6 +74,8 @@ export default async function AuditDetailPage({ params }: PageProps) {
       locale: true,
       isPublished: true,
       isActive: true,
+      forkedFromId: true,
+      forkedFrom: { select: { isPublished: true, isActive: true } },
       category: { select: { id: true, labelTr: true, labelEn: true } },
       questions: {
         orderBy: { sortOrder: 'asc' },
@@ -115,6 +117,8 @@ export default async function AuditDetailPage({ params }: PageProps) {
         locale: template.locale,
         isPublished: template.isPublished,
         isActive: template.isActive,
+        forkedFromId: template.forkedFromId,
+        forkedFrom: template.forkedFrom,
         category: template.category,
         questions: template.questions.map((q) => ({
           id: q.id,
