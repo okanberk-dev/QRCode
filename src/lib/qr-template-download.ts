@@ -66,6 +66,67 @@ function nextFrame(): Promise<void> {
   });
 }
 
+/** Bekleme limiti — `document.fonts.ready` çoğu zaman <500ms döner; agresif
+ *  bir üst sınır kullanıcıyı sonsuza kadar bekletmez (font load fail durumu
+ *  için fallback path açık). */
+const FONTS_READY_TIMEOUT_MS = 1500;
+
+/** `getBoundingClientRect` 0×0 dönerse mount commit henüz tamamlanmamış —
+ *  50 ms aralıkla 3 retry yeterli; daha uzun beklersek owner spinner'ı
+ *  takılır gibi hisseder. */
+const BBOX_RETRY_DELAY_MS = 50;
+const BBOX_RETRY_LIMIT = 3;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+/**
+ * `nextFrame`'in güçlendirilmiş hâli — capture sırası gelmeden önce hem
+ * **web font yükleme** (Inter / Helvetica Neue) hem de **layout commit**
+ * tamamlanmış mı doğrular. Üç katmanlı guard:
+ *
+ *   1. `document.fonts.ready` await — font yüklenmeden rasterize edilirse
+ *      jsPDF + html-to-image text genişliklerini yanlış ölçer (bug 3).
+ *   2. İki ardışık `requestAnimationFrame` — mount commit + paint cycle.
+ *   3. `getBoundingClientRect()` width/height > 0 check — false ise
+ *      50 ms × 3 retry; hâlâ sıfırsa `false` döner ve caller boş PNG
+ *      üretmeden early-fail eder (bug 2).
+ *
+ * Browser-only — SSR caller'ları zaten `typeof window` early-return ile
+ * burayı çağırmaz.
+ */
+async function waitForCapturable(node: HTMLElement): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+
+  // 1) Web font load — `document.fonts.ready` Promise her zaman döner ama
+  //    bazı tarayıcılarda font fetch hâlâ devam ederken resolve eder.
+  //    `Promise.race` üst sınır ile çevirilerek owner'ı sonsuza bekletmeyiz.
+  //    `Document.fonts` lib.dom'da non-optional ama eski tarayıcı runtime'da
+  //    eksik olabilir → optional erişim + try/catch guard.
+  try {
+    const fontsApi = (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts;
+    if (fontsApi?.ready) {
+      await Promise.race([fontsApi.ready, delay(FONTS_READY_TIMEOUT_MS)]);
+    }
+  } catch {
+    // Font API hata atarsa (eski tarayıcı) sessizce geç — browser'ın
+    // kendi font fallback'ı raster'ı yine de doldurur.
+  }
+
+  // 2) Layout commit + paint
+  await nextFrame();
+
+  // 3) Bounding rect guard — node ölçüsüz ise capture başlatma.
+  let remaining = BBOX_RETRY_LIMIT;
+  while (remaining-- > 0) {
+    const rect = node.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) return true;
+    await delay(BBOX_RETRY_DELAY_MS);
+  }
+  return false;
+}
+
 function triggerBlobDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -85,13 +146,20 @@ export async function downloadTemplateAsPng(
 ): Promise<DownloadResult> {
   if (typeof window === 'undefined') return { ok: false, reason: 'unsupported' };
   try {
-    await nextFrame();
+    const ready = await waitForCapturable(node);
+    if (!ready) {
+      console.error('[QR template] PNG: node not capturable (0×0 after retry)');
+      return { ok: false, reason: 'snapshot_empty' };
+    }
     const blob = await toBlob(node, {
       pixelRatio: options.pixelRatio ?? 3,
       cacheBust: true,
       backgroundColor: '#FFFFFF',
     });
-    if (!blob || blob.size === 0) return { ok: false, reason: 'snapshot_empty' };
+    if (!blob || blob.size === 0) {
+      console.error('[QR template] PNG: toBlob returned empty');
+      return { ok: false, reason: 'snapshot_empty' };
+    }
     triggerBlobDownload(blob, safeFilename(options.filename, 'png'));
     return { ok: true };
   } catch (error) {
@@ -114,13 +182,20 @@ export async function downloadTemplateAsPdf(
 ): Promise<DownloadResult> {
   if (typeof window === 'undefined') return { ok: false, reason: 'unsupported' };
   try {
-    await nextFrame();
+    const ready = await waitForCapturable(node);
+    if (!ready) {
+      console.error('[QR template] PDF: node not capturable (0×0 after retry)');
+      return { ok: false, reason: 'snapshot_empty' };
+    }
     const dataUrl = await toPng(node, {
       pixelRatio: options.pixelRatio ?? 3,
       cacheBust: true,
       backgroundColor: '#FFFFFF',
     });
-    if (!dataUrl || dataUrl.length < 32) return { ok: false, reason: 'snapshot_empty' };
+    if (!dataUrl || dataUrl.length < 32) {
+      console.error('[QR template] PDF: toPng returned empty data URL');
+      return { ok: false, reason: 'snapshot_empty' };
+    }
 
     const { widthMm, heightMm, bleedMm = 0 } = options.meta.print;
     // Centre the template on the A4 page, respecting bleed as outer margin.
