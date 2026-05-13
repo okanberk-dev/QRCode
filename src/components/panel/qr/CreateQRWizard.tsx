@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import Link from "next/link";
-import QRCodeLib from "qrcode";
+import { renderAestheticQrSvg } from "@/lib/qr-aesthetic";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -304,24 +304,29 @@ export function CreateQRWizard({
     if (linkType === "platform") parts.push(`platform=${platform}`);
     const previewUrl = parts.length === 1 ? parts[0] : `${parts[0]}&${parts.slice(1).join("&")}`;
 
+    // Aesthetic rendering — rounded data modules + unified finder eyes,
+    // matching the server-side `/api/restaurants/[id]/qr?format=svg`
+    // output so the wizard preview is a faithful 1:1 of what owners will
+    // download. Synchronous helper (no fetch needed); we still gate
+    // `previewing` for the loading skeleton in case the calculation runs
+    // long on lower-end devices.
     let cancelled = false;
     setPreviewing(true);
-    QRCodeLib.toString(previewUrl, {
-      type: "svg",
-      errorCorrectionLevel: "H",
-      margin: 1,
-      width: 220,
-      color: { dark: normDark!, light: normLight! },
-    })
-      .then((svg) => {
-        if (!cancelled) setPreviewSvg(svg);
-      })
-      .catch(() => {
-        if (!cancelled) setPreviewSvg("");
-      })
-      .finally(() => {
-        if (!cancelled) setPreviewing(false);
+    try {
+      const { svg } = renderAestheticQrSvg({
+        data: previewUrl,
+        size: 220,
+        dark: normDark!,
+        light: normLight!,
+        margin: 1,
+        errorCorrectionLevel: "H",
       });
+      if (!cancelled) setPreviewSvg(svg);
+    } catch {
+      if (!cancelled) setPreviewSvg("");
+    } finally {
+      if (!cancelled) setPreviewing(false);
+    }
     return () => {
       cancelled = true;
     };
