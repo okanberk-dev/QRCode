@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, Building2, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardList, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Building2, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -454,6 +454,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       // Stage 98 — Surveys (CLAUDE.md §42). Anketler nav entry,
       // CRM group altında Customers/Analytics komşuluğunda.
       surveys: isTr ? 'Anketler' : 'Surveys',
+      // CLAUDE.md §42 Phase 2 — Audit Center. CRM group altında surveys
+      // komşusu (her ikisi de structured form-based veri toplama; audit
+      // internal team-side, survey customer-side).
+      audits: isTr ? 'Denetim Merkezi' : 'Audit Center',
       groupSetup: isTr ? 'Yapılandırma' : 'Setup',
       groupInsight: isTr ? 'İçgörü' : 'Insight',
       groupInfo: isTr ? 'Bilgi' : 'Info',
@@ -512,6 +516,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           href: `/${locale}/dashboard/surveys`,
           icon: ClipboardList,
           label: copy.surveys,
+        },
+        // §42 Phase 2 — Audit Center entry. Surveys yanında: ikisi de form
+        // tabanlı veri toplama. Audit = internal team/ops; survey = customer.
+        {
+          href: `/${locale}/dashboard/audits`,
+          icon: ClipboardCheck,
+          label: copy.audits,
         },
       ],
     },
