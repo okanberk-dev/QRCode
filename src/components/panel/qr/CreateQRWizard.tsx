@@ -462,6 +462,11 @@ export function CreateQRWizard({
 
       const res = await fetch(`/api/restaurants/${restaurantId}/qr?${params.toString()}`);
       if (!res.ok) {
+        // Server may have crashed before our outer try/catch could format
+        // a JSON error (auth/JWT verify, framework-level 5xx). In that
+        // case `res.json()` throws → data is null → we fall back to a
+        // status-code-aware message so owner can report something more
+        // actionable than the bare "oluşturulamadı."
         const data = await res.json().catch(() => null);
         if (res.status === 401) {
           setError(isTr ? "Oturumunuz sona erdi." : "Session expired.");
@@ -477,8 +482,18 @@ export function CreateQRWizard({
               ? "Çok fazla istek. Lütfen biraz bekleyin."
               : "Too many requests. Please wait.",
           );
+        } else if (data?.error) {
+          // Server-formatted message (includes Prisma code / sharp error
+          // detail when present — see route.ts outer catch). Best signal.
+          setError(data.error);
         } else {
-          setError(data?.error || (isTr ? "QR oluşturulamadı." : "QR generation failed."));
+          // Server returned a non-JSON body (Next.js framework default
+          // 5xx HTML). Surface the status code so ops can pivot to logs.
+          setError(
+            isTr
+              ? `QR oluşturulamadı (HTTP ${res.status}). Sayfayı yenileyip tekrar deneyin; sorun sürerse destek ile iletişime geçin.`
+              : `QR generation failed (HTTP ${res.status}). Refresh and retry; contact support if the issue persists.`,
+          );
         }
         return;
       }

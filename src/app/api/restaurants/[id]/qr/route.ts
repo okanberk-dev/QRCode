@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
@@ -91,76 +92,80 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  maybeSweep();
-
-  const actor = await getPanelActorFromRequest(req);
-  if (!actor) {
-    return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
-  }
-
-  const { id } = await params;
-  const { searchParams } = new URL(req.url);
-  const table = searchParams.get('table') || '';
-  const format = (searchParams.get('format') || 'svg').toLowerCase();
-  const platform = searchParams.get('platform') || '';
-
-  // Whitelist mirrors `/r/[slug]` `platformUrls` map + restaurant PUT
-  // `ALLOWED_DEFAULT_PLATFORMS`. Konaklama / catch-all sectors need
-  // tripadvisor + airbnb + booking + yandex so their QRs honour
-  // `?platform=` correctly.
-  const validPlatforms = [
-    'google', 'yemeksepeti', 'getir', 'trendyol_go',
-    'tripadvisor', 'airbnb', 'booking', 'yandex',
-  ];
-  const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : '';
-
-
-
-  if (format !== 'svg' && format !== 'png') {
-    return NextResponse.json({ error: 'Geçersiz format' }, { status: 400 });
-  }
-
-  // Validate optional table identifier — prevents arbitrary-length or
-  // characters that would break URL parsing / bloat the DB.
-  if (!isValidTableIdentifier(table)) {
-    return NextResponse.json(
-      { error: 'Geçersiz masa numarası (yalnızca harf, rakam, tire ve alt çizgi, maks. 20 karakter)' },
-      { status: 400 }
-    );
-  }
-
-  // Optional visual customisation — gracefully ignored if invalid.
-  const darkRaw = searchParams.get('dark');
-  const lightRaw = searchParams.get('light');
-  const dark = darkRaw && isValidHexColor(darkRaw) ? darkRaw : DEFAULT_DARK;
-  const light = lightRaw && isValidHexColor(lightRaw) ? lightRaw : DEFAULT_LIGHT;
-
-  // Wave A — print/share template id. Whitelist via registry so unknown
-  // strings don't poison `qr_generations.template_id`. Empty/invalid →
-  // NULL (legacy path; owner gets the classic preview on QRCard).
-  const templateRaw = searchParams.get('template');
-  const persistTemplate = isValidTemplateId(templateRaw) ? templateRaw : null;
-
-  const widthRaw = searchParams.get('width');
-  let width = DEFAULT_WIDTH;
-  if (widthRaw) {
-    const parsed = Number.parseInt(widthRaw, 10);
-    if (Number.isFinite(parsed) && parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) {
-      width = parsed;
-    }
-  }
-
-  // Per-user generation rate limit. Covers both legitimate admins and
-  // compromised credentials that would otherwise flood QrGeneration rows.
-  const rl = await rateLimit(`qr:gen:${actor.id}`, 120, 60 * 1000);
-  if (!rl.allowed) {
-    return NextResponse.json(
-      { error: 'Çok fazla QR isteği. Lütfen biraz bekleyin.' },
-      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
-    );
-  }
-
+  // Single outer try/catch covers EVERYTHING — auth lookup, params await,
+  // rate limit, render. Without this, throws above the previous try block
+  // (JWT verify, Upstash timeout, params parsing) bubble up to the Next.js
+  // framework which returns a generic HTML 500 page → wizard's `res.json()`
+  // fails → user sees the bare "QR oluşturulamadı" fallback with no clue
+  // what broke. Closure log §38.178 Bug 1 + user complaint trail.
   try {
+    maybeSweep();
+
+    const actor = await getPanelActorFromRequest(req);
+    if (!actor) {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const { searchParams } = new URL(req.url);
+    const table = searchParams.get('table') || '';
+    const format = (searchParams.get('format') || 'svg').toLowerCase();
+    const platform = searchParams.get('platform') || '';
+
+    // Whitelist mirrors `/r/[slug]` `platformUrls` map + restaurant PUT
+    // `ALLOWED_DEFAULT_PLATFORMS`. Konaklama / catch-all sectors need
+    // tripadvisor + airbnb + booking + yandex so their QRs honour
+    // `?platform=` correctly.
+    const validPlatforms = [
+      'google', 'yemeksepeti', 'getir', 'trendyol_go',
+      'tripadvisor', 'airbnb', 'booking', 'yandex',
+    ];
+    const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : '';
+
+    if (format !== 'svg' && format !== 'png') {
+      return NextResponse.json({ error: 'Geçersiz format' }, { status: 400 });
+    }
+
+    // Validate optional table identifier — prevents arbitrary-length or
+    // characters that would break URL parsing / bloat the DB.
+    if (!isValidTableIdentifier(table)) {
+      return NextResponse.json(
+        { error: 'Geçersiz masa numarası (yalnızca harf, rakam, tire ve alt çizgi, maks. 20 karakter)' },
+        { status: 400 }
+      );
+    }
+
+    // Optional visual customisation — gracefully ignored if invalid.
+    const darkRaw = searchParams.get('dark');
+    const lightRaw = searchParams.get('light');
+    const dark = darkRaw && isValidHexColor(darkRaw) ? darkRaw : DEFAULT_DARK;
+    const light = lightRaw && isValidHexColor(lightRaw) ? lightRaw : DEFAULT_LIGHT;
+
+    // Wave A — print/share template id. Whitelist via registry so unknown
+    // strings don't poison `qr_generations.template_id`. Empty/invalid →
+    // NULL (legacy path; owner gets the classic preview on QRCard).
+    const templateRaw = searchParams.get('template');
+    const persistTemplate = isValidTemplateId(templateRaw) ? templateRaw : null;
+
+    const widthRaw = searchParams.get('width');
+    let width = DEFAULT_WIDTH;
+    if (widthRaw) {
+      const parsed = Number.parseInt(widthRaw, 10);
+      if (Number.isFinite(parsed) && parsed >= MIN_WIDTH && parsed <= MAX_WIDTH) {
+        width = parsed;
+      }
+    }
+
+    // Per-user generation rate limit. Covers both legitimate admins and
+    // compromised credentials that would otherwise flood QrGeneration rows.
+    const rl = await rateLimit(`qr:gen:${actor.id}`, 120, 60 * 1000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Çok fazla QR isteği. Lütfen biraz bekleyin.' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+      );
+    }
+
     const restaurant = await prisma.restaurant.findUnique({
       where: { id },
       // `name` needed for premium PNG headline (composePremiumQrPng).
@@ -350,8 +355,16 @@ export async function GET(
     // Surface the underlying exception name + message to the wizard so
     // owners + ops can tell apart a Prisma column drift (P2022 / P2021)
     // from a sharp/render crash without digging through server logs.
-    // Stack/path stays in `console.error` only.
-    console.error('QR generation error:', error);
+    // Stack/path stays in `console.error` only — PII (req body) never
+    // logged (CLAUDE.md §37.7). Sentry capture with `route` tag so ops
+    // can pivot directly from production alert to root cause without
+    // digging through Vercel logs.
+    console.error('[QR] generation error:', error);
+    Sentry.captureException(error, {
+      tags: { route: 'restaurants.qr.generate' },
+      extra: { errorCode: (error as { code?: string } | undefined)?.code ?? null },
+    });
+
     const err = error as { name?: string; message?: string; code?: string } | undefined;
     const detailParts: string[] = [];
     if (err?.code) detailParts.push(err.code);
