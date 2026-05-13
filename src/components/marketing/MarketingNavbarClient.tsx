@@ -644,17 +644,26 @@ export default function MarketingNavbarClient({
         </div>
       </nav>
 
-      {/* Mobile + tablet drawer */}
+      {/* Mobile + tablet drawer.
+          Backdrop and drawer are positioned independently as siblings
+          (no shared `fixed inset-0` wrapper). The previous structure
+          (fixed wrapper + relative drawer + h-[calc(100dvh-64px)]) hit a
+          well-known iOS Safari bug where touch-scroll inside a `relative`
+          child of a `fixed` parent — with body overflow locked — silently
+          fails. The drawer now anchors `top-[64px] bottom-0` directly so
+          height is derived from real viewport bounds (no `dvh` reliance),
+          and `overscroll-contain` keeps the scroll chain inside the
+          drawer instead of leaking back to the locked body. */}
       {mobileOpen && (
-        <div className="fixed inset-0 top-[64px] z-40 lg:hidden">
+        <>
           <button
             type="button"
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            className="fixed inset-x-0 bottom-0 top-[64px] z-40 bg-black/30 backdrop-blur-sm lg:hidden"
           />
           <div
-            className="no-scrollbar relative ml-auto h-[calc(100dvh-64px)] w-full max-w-md overflow-y-auto rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl"
+            className="no-scrollbar fixed bottom-0 right-0 top-[64px] z-40 w-full max-w-md overflow-y-auto overscroll-contain rounded-tl-[28px] border-l border-[#EDEDED] bg-white shadow-2xl lg:hidden"
             style={{
               paddingBottom: 'env(safe-area-inset-bottom)',
               paddingLeft: 'env(safe-area-inset-left)',
@@ -827,7 +836,7 @@ export default function MarketingNavbarClient({
               </div>
             </nav>
           </div>
-        </div>
+        </>
       )}
     </>
   );
