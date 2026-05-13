@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react';
+import { ArrowUpRight, Inbox, Star } from 'lucide-react';
 import { PLATFORMS } from '@/components/ui';
 
 // Phase 8c+ §38.31 — KANAL DAĞILIMI 4-card grid. Tasarım kaynağı:
@@ -78,19 +78,36 @@ function ChannelCard({
     googleImpact &&
     Math.abs(googleImpact.diff) >= 0.05;
 
+  const isEmpty = channel.count === 0;
+
   return (
     /*
-      Stage 80 §38.160 — Card Apple-soft hover lift `bz-elev-2` +
-      `bz-motion-spring` (CLAUDE.md §38.65). Mobile tap feedback
-      `active:scale-[0.97]` (CLAUDE.md §38.46 paterni reuse). Pulse
-      §11 lime accent intact (Google card impact strip).
+      Stage 80 §38.160 — Card Apple-soft hover lift + spring motion.
+      Visual polish (Stage 92): subtle platform-tinted top accent bar
+      (3px gradient) for at-a-glance brand recognition + hover ↗ chip
+      hint. Empty-state branch (count=0) replaces big-number layout
+      with a muted "Henüz yorum yok" message + invitation CTA.
     */
-    <div className="bz-card p-3.5 flex flex-col gap-2.5 shrink-0 w-[170px] sm:w-auto sm:shrink bz-motion-spring hover:bz-elev-2 active:scale-[0.97] sm:active:scale-100">
+    <div
+      className="bz-card relative overflow-hidden p-3.5 flex flex-col gap-2.5 shrink-0 w-[170px] sm:w-auto sm:shrink bz-motion-spring hover:bz-elev-2 active:scale-[0.97] sm:active:scale-100 group"
+      style={{
+        // Soft platform-tinted background blob in the top-right corner.
+        // Pure cosmetic — supplies brand recognition without competing
+        // with the rating typography.
+        backgroundImage: `radial-gradient(circle at 100% 0%, ${meta.tone}10 0%, transparent 60%)`,
+      }}
+    >
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-[3px]"
+        style={{ background: meta.tone }}
+      />
+
       <div className="flex items-center justify-between gap-2.5">
         <div className="flex items-center gap-2 min-w-0">
           <span
             aria-hidden="true"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[10.5px] font-semibold text-white"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[10.5px] font-semibold text-white shadow-sm"
             style={{ background: meta.tone }}
           >
             {meta.short}
@@ -99,7 +116,7 @@ function ChannelCard({
             {fullLabel}
           </span>
         </div>
-        {delta && (
+        {delta && !isEmpty && (
           <span
             className={`text-[10.5px] font-semibold tabular-nums shrink-0 ${
               delta.tone === 'up'
@@ -112,33 +129,55 @@ function ChannelCard({
             {delta.text}
           </span>
         )}
+        {isEmpty && (
+          <ArrowUpRight
+            size={11}
+            strokeWidth={2.2}
+            className="shrink-0 text-[#A3A3A3] opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-hidden="true"
+          />
+        )}
       </div>
 
-      <div className="flex items-baseline justify-between gap-2">
-        <div className="flex items-baseline gap-1.5">
+      {isEmpty ? (
+        <div className="flex items-center gap-2 pt-0.5 pb-0.5">
           <span
-            className="bz-mono tabular-nums"
-            style={{ fontSize: 22, fontWeight: 600, lineHeight: 1, color: '#0A0A0A' }}
+            aria-hidden="true"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#FAFAFA] text-[#A3A3A3]"
           >
-            {ratingDisplay}
+            <Inbox size={13} strokeWidth={1.6} />
           </span>
-          <span className="flex gap-0.5" aria-hidden="true">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star
-                key={s}
-                size={9}
-                className={s <= ratingRound ? 'text-[#0A0A0A]' : 'text-[#EDEDED]'}
-                fill={s <= ratingRound ? '#0A0A0A' : 'transparent'}
-                strokeWidth={1.5}
-              />
-            ))}
+          <span className="text-[11.5px] leading-[1.35] text-[#737373]">
+            {isTr ? 'Henüz yorum yok' : 'No reviews yet'}
           </span>
         </div>
-        <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0">
-          {channel.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
-          {isTr ? 'yorum' : 'reviews'}
-        </span>
-      </div>
+      ) : (
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="flex items-baseline gap-1.5">
+            <span
+              className="bz-mono tabular-nums"
+              style={{ fontSize: 24, fontWeight: 600, lineHeight: 1, color: '#0A0A0A' }}
+            >
+              {ratingDisplay}
+            </span>
+            <span className="flex gap-0.5" aria-hidden="true">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star
+                  key={s}
+                  size={9}
+                  className={s <= ratingRound ? 'text-[#0A0A0A]' : 'text-[#EDEDED]'}
+                  fill={s <= ratingRound ? '#0A0A0A' : 'transparent'}
+                  strokeWidth={1.5}
+                />
+              ))}
+            </span>
+          </div>
+          <span className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0">
+            {channel.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
+            {isTr ? 'yorum' : 'reviews'}
+          </span>
+        </div>
+      )}
 
       {showImpact && googleImpact && (
         <div
