@@ -41,11 +41,11 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   AlertBanner,
+  APSwitch,
   Badge,
   Field,
   PageHeader,
   RadioCard,
-  Toggle,
 } from '@/components/ui';
 import { getTranslations, type Locale } from '@/lib/translations';
 import {
@@ -645,9 +645,10 @@ export default function AuditWizardClient({
                     : 'Leave off to save the template only; assign later from the detail page.'}
                 </p>
               </div>
-              <Toggle
+              <APSwitch
                 checked={state.assignmentEnabled}
                 onChange={(v) => setState({ ...state, assignmentEnabled: v })}
+                ariaLabel={locale === 'tr' ? 'Şimdi atama yap' : 'Create assignment now'}
               />
             </label>
 
