@@ -1984,7 +1984,19 @@ select.bz-input option:checked {
    Faithful port of the Claude Design prototype's CSS surface.
    ──────────────────────────────────────────────────────────────────────── */
 
-/* Outer frame: dark page bg, centered content, mobile-first */
+/* Outer stage — mobile (≤520px) ink so the frame blends seamlessly with
+   the dark hero/thanks screens (no visible border); desktop (>520px)
+   slightly lighter charcoal so the rounded 440px card looks elevated.
+   Mirrors Anket.html lines 36 + 178 from the design source. */
+.bz-survey-stage {
+  background: #0A0A0A;
+}
+@media (min-width: 521px) {
+  .bz-survey-stage {
+    background: #1a1a1a;
+  }
+}
+/* Frame: full-bleed on mobile, rounded shadowed card on desktop. */
 .bz-survey-frame {
   width: 100%;
   max-width: 440px;
