@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight, Check, Copy, Download, Eye, Trash2 } from "lucide-react";
+import { ArrowUpRight, Check, Copy, Download, Eye, Loader2, Sparkles, Trash2 } from "lucide-react";
 import { Badge, Eyebrow, PlatformChip, type PlatformId } from "@/components/ui";
 import { copyToClipboard } from "@/lib/clipboard";
+import { downloadPremiumQrPdf } from "@/lib/qr-premium-template";
 
 export interface QRCardItem {
   id: string;
@@ -58,6 +59,8 @@ const PLATFORM_LABEL: Record<string, string> = {
 
 export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "tr", onDelete }: QRCardProps) {
   const [copied, setCopied] = useState(false);
+  const [premiumLoading, setPremiumLoading] = useState(false);
+  const [premiumError, setPremiumError] = useState<string | null>(null);
 
   const isTr = locale === "tr";
   const platformChip = item.platform ? PLATFORM_TO_CHIP[item.platform] : null;
@@ -77,6 +80,46 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
     a.download = `qr-${item.name.replace(/\s+/g, "-")}.png`;
     a.click();
     URL.revokeObjectURL(objUrl);
+  };
+
+  // Pulse Lime hero template (window.print → kullanıcı Save as PDF). Mevcut
+  // `svg` prop set ise onu kullanır (modal'dan yeni üretim); aksi halde
+  // server'dan tek SVG fetch eder (history kartı için). CLAUDE.md §40 disipline:
+  // tek-yüzeyde fetch, server-rendered trusted markup.
+  const downloadPremium = async () => {
+    setPremiumError(null);
+    setPremiumLoading(true);
+    try {
+      let qrSvg = svg;
+      if (!qrSvg) {
+        const params = new URLSearchParams({ format: "svg" });
+        if (item.tableNumber) params.set("table", item.tableNumber);
+        if (item.platform) params.set("platform", item.platform);
+        const res = await fetch(`/api/restaurants/${item.restaurantId}/qr?${params.toString()}`);
+        if (!res.ok) {
+          setPremiumError(isTr ? "QR alınamadı, tekrar deneyin." : "Could not fetch QR.");
+          return;
+        }
+        qrSvg = await res.text();
+      }
+      const opened = downloadPremiumQrPdf({
+        qrSvg,
+        title: item.name,
+        qrUrl: item.qrUrl,
+        locale,
+      });
+      if (!opened) {
+        setPremiumError(
+          isTr
+            ? "Yeni sekme engellendi — tarayıcıda pop-up izni verin."
+            : "Pop-up blocked — allow pop-ups in your browser.",
+        );
+      }
+    } catch {
+      setPremiumError(isTr ? "Şablon hazırlanamadı." : "Could not prepare template.");
+    } finally {
+      setPremiumLoading(false);
+    }
   };
 
   const copy = async () => {
@@ -160,9 +203,38 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
         </div>
       </div>
 
+      {/* Premium PDF — Pulse Lime şablon (signature CTA) */}
+      <div className="mt-3.5 border-t border-[#EDEDED] pt-3">
+        <button
+          type="button"
+          onClick={downloadPremium}
+          disabled={premiumLoading}
+          aria-label={isTr ? "Premium PDF şablon indir" : "Download premium PDF template"}
+          className="bz-btn-lime inline-flex h-10 w-full items-center justify-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {premiumLoading ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Sparkles size={14} />
+          )}
+          {premiumLoading
+            ? isTr
+              ? "Hazırlanıyor…"
+              : "Preparing…"
+            : isTr
+              ? "Premium PDF şablon"
+              : "Premium PDF template"}
+        </button>
+        {premiumError && (
+          <p role="alert" className="mt-1.5 text-[11.5px] text-[#991B1B]">
+            {premiumError}
+          </p>
+        )}
+      </div>
+
       {/* Actions */}
       <div
-        className={`mt-3.5 grid gap-1 border-t border-[#EDEDED] pt-3 ${
+        className={`mt-2 grid gap-1 ${
           onDelete ? "grid-cols-4" : "grid-cols-3"
         }`}
       >
