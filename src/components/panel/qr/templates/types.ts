@@ -31,6 +31,21 @@ export interface TemplatePrint {
   bleedMm?: number;
 }
 
+/**
+ * Native CSS pixel dimensions of the rendered template root `<div>`.
+ *
+ * Used by QRCard to scale the off-screen-rendered template into the
+ * 128px preview box so what the owner sees *is* what they download
+ * (CLAUDE.md §23.7 — "wizard önizlemesi = indirilen birebir"). Without
+ * this, the small preview would either crop or distort because each
+ * template authors its own canvas size (720×900 Classic vs 760×460
+ * WalletCard).
+ */
+export interface TemplateCanvas {
+  width: number;
+  height: number;
+}
+
 export interface TemplateMeta {
   id: string;
   name: string;
@@ -39,6 +54,9 @@ export interface TemplateMeta {
   category: TemplateCategory;
   preview: TemplatePreview;
   print: TemplatePrint;
+  /** Native CSS canvas size of the rendered template root. Required for
+   *  QRCard's scaled inline preview — see `TemplateCanvas` doc. */
+  canvas: TemplateCanvas;
   /** TR/EN one-line description for the picker tooltip. */
   descriptionTr?: string;
   descriptionEn?: string;

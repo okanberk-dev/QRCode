@@ -131,6 +131,7 @@ export const coasterMeta: TemplateMeta = {
   category: 'venue',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'dot', finder: 'rounded', surface: '#EAF9B8' },
   print: { widthMm: 95, heightMm: 95, bleedMm: 3 },
+  canvas: { width: 520, height: 520 },
   descriptionTr: 'Yuvarlak içecek altlığı — kafe / bar için.',
   descriptionEn: 'Round drink coaster — café / bar use.',
 };

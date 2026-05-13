@@ -127,6 +127,7 @@ export const menuInsertMeta: TemplateMeta = {
   category: 'editorial',
   preview: { fg: '#3E2A14', bg: '#FAF7EC', module: 'dot', finder: 'rounded', surface: '#F6F1E4' },
   print: { widthMm: 90, heightMm: 130, bleedMm: 3 },
+  canvas: { width: 460, height: 640 },
   descriptionTr: 'Menünün arasına sıkıştırılan krem renkli ekart.',
   descriptionEn: 'Cream-paper insert slipped between menu pages.',
 };

@@ -302,15 +302,23 @@ export async function GET(
     // (parity with PNG branch). Premium PDF template (`qr-premium-template.ts`)
     // consumes this SVG and frames it with HTML/CSS — rounded modules will
     // visibly improve the printed output too.
-    const svgString = usePlain
-      ? await QRCode.toString(qrUrl, {
-          type: 'svg',
-          width,
-          margin: 2,
-          color: { dark, light },
-          errorCorrectionLevel: 'H' as const,
-        })
-      : renderAestheticQrSvg({
+    let svgString: string;
+    if (usePlain) {
+      svgString = await QRCode.toString(qrUrl, {
+        type: 'svg',
+        width,
+        margin: 2,
+        color: { dark, light },
+        errorCorrectionLevel: 'H' as const,
+      });
+    } else {
+      // `renderAestheticQrSvg` builds the matrix synchronously via
+      // `qrcode.create()`. On the off chance the helper throws (extreme
+      // payload length, qrcode version overflow) we fall back to the raw
+      // `qrcode` SVG so the owner still gets a usable artefact — better a
+      // mono QR than a 500 they can't recover from.
+      try {
+        svgString = renderAestheticQrSvg({
           data: qrUrl,
           size: width,
           dark,
@@ -318,6 +326,17 @@ export async function GET(
           margin: 2,
           errorCorrectionLevel: 'H',
         }).svg;
+      } catch (aestheticError) {
+        console.error('[QR] aesthetic SVG render failed, falling back to plain:', aestheticError);
+        svgString = await QRCode.toString(qrUrl, {
+          type: 'svg',
+          width,
+          margin: 2,
+          color: { dark, light },
+          errorCorrectionLevel: 'H' as const,
+        });
+      }
+    }
 
     return new NextResponse(svgString, {
       status: 200,
@@ -328,7 +347,20 @@ export async function GET(
       },
     });
   } catch (error) {
+    // Surface the underlying exception name + message to the wizard so
+    // owners + ops can tell apart a Prisma column drift (P2022 / P2021)
+    // from a sharp/render crash without digging through server logs.
+    // Stack/path stays in `console.error` only.
     console.error('QR generation error:', error);
-    return NextResponse.json({ error: 'QR kod oluşturulamadı' }, { status: 500 });
+    const err = error as { name?: string; message?: string; code?: string } | undefined;
+    const detailParts: string[] = [];
+    if (err?.code) detailParts.push(err.code);
+    if (err?.name && err.name !== 'Error') detailParts.push(err.name);
+    if (err?.message) detailParts.push(err.message.slice(0, 240));
+    const detail = detailParts.length > 0 ? ` (${detailParts.join(' · ')})` : '';
+    return NextResponse.json(
+      { error: `QR kod oluşturulamadı${detail}` },
+      { status: 500 },
+    );
   }
 }

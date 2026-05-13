@@ -41,7 +41,10 @@ export interface QRCardItem {
 
 interface QRCardProps {
   item: QRCardItem;
-  /** Optional: rendered SVG markup. If omitted, preview shows skeleton until fetched. */
+  /** @deprecated Preview now renders the chosen template inline via
+   *  `TemplatePreviewSlot`, so the legacy server-fetched SVG is no longer
+   *  needed. Kept as optional prop for backwards-compat with callers that
+   *  still pass it; the value is ignored. */
   svg?: string;
   defaultPlatformLabel?: string;
   locale?: "tr" | "en";
@@ -72,7 +75,68 @@ const PLATFORM_LABEL: Record<string, string> = {
   yandex: "Yandex",
 };
 
-export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "tr", onDelete }: QRCardProps) {
+/** Preview slot — fits the chosen template (any canvas size) into a square
+ *  thumbnail so the owner sees a scaled-down version of what they will
+ *  download. `transform: scale` + `transform-origin: top left` + outer
+ *  `overflow: hidden` clips the canvas; the inner wrapper centres it
+ *  inside the slot via translate. */
+const PREVIEW_SLOT_PX = 140;
+function TemplatePreviewSlot({
+  template,
+  qrPayload,
+  business,
+}: {
+  template: ReturnType<typeof getTemplate>;
+  qrPayload: string;
+  business: import("./templates/types").TemplateBusiness;
+}) {
+  const canvas = template.meta.canvas;
+  // Defensive fallback — legacy registry entries may not have `canvas` yet.
+  const canvasW = canvas?.width ?? 720;
+  const canvasH = canvas?.height ?? 900;
+  const scale = Math.min(PREVIEW_SLOT_PX / canvasW, PREVIEW_SLOT_PX / canvasH);
+  const scaledW = canvasW * scale;
+  const scaledH = canvasH * scale;
+  const { Component } = template;
+  return (
+    <div
+      style={{
+        width: PREVIEW_SLOT_PX,
+        height: PREVIEW_SLOT_PX,
+        overflow: "hidden",
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          width: scaledW,
+          height: scaledH,
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            width: canvasW,
+            height: canvasH,
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+            // Disable pointer events so the slot stays click-through to
+            // the card's overall click target (if any).
+            pointerEvents: "none",
+          }}
+          aria-hidden="true"
+        >
+          <Component qrPayload={qrPayload} business={business} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function QRCard({ item, svg: _svg, defaultPlatformLabel = "Google", locale = "tr", onDelete }: QRCardProps) {
   const [copied, setCopied] = useState(false);
   // Wave C — client-side template-aware download. The render wrapper only
   // mounts while `pendingDownload` is non-null; useEffect runs once the
@@ -200,17 +264,19 @@ export function QRCard({ item, svg, defaultPlatformLabel = "Google", locale = "t
         <Badge kind="ok">{isTr ? "Aktif" : "Active"}</Badge>
       </div>
 
-      {/* QR preview */}
-      <div className="flex justify-center rounded-xl border border-[#EDEDED] bg-white p-3.5">
-        {svg ? (
-          <div
-            className="h-[128px] w-[128px] [&>svg]:h-full [&>svg]:w-full"
-            dangerouslySetInnerHTML={{ __html: svg }}
-            aria-label={isTr ? "QR önizleme" : "QR preview"}
-          />
-        ) : (
-          <div className="bz-skeleton h-[128px] w-[128px] rounded-md" aria-hidden="true" />
-        )}
+      {/* Şablon preview — indirilecek artefakt'ın küçük (scaled) versiyonu.
+          Owner için "wizard önizleme = indirilen birebir" — küçük slot'a
+          fit ettirmek için `transform: scale(min(slotW/canvasW, slotH/canvasH))`
+          + `transform-origin: top left` + `overflow: hidden` clip. */}
+      <div
+        className="flex justify-center rounded-xl border border-[#EDEDED] bg-white p-3.5"
+        aria-label={isTr ? "Şablon önizleme" : "Template preview"}
+      >
+        <TemplatePreviewSlot
+          template={template}
+          qrPayload={item.qrUrl}
+          business={business}
+        />
       </div>
 
       {/* Platform binding row */}

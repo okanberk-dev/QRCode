@@ -217,6 +217,7 @@ export const tableTentMeta: TemplateMeta = {
   category: 'venue',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'square', finder: 'square', surface: '#0A0A0A' },
   print: { widthMm: 100, heightMm: 150, bleedMm: 3 },
+  canvas: { width: 320, height: 440 },
   descriptionTr: 'Katlanır masa standı — sıcak servis sırasında dikkat çeker.',
   descriptionEn: 'Folded table tent — catches attention during table service.',
 };

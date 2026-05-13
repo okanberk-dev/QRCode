@@ -153,6 +153,7 @@ export const brutalistMeta: TemplateMeta = {
   category: 'editorial',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'square', finder: 'square', surface: '#C6F24E' },
   print: { widthMm: 100, heightMm: 130, bleedMm: 3 },
+  canvas: { width: 520, height: 640 },
   descriptionTr: 'Kalın çerçeveler + büyük sans — yüksek kontrast.',
   descriptionEn: 'Heavy borders + oversize sans — high contrast.',
 };

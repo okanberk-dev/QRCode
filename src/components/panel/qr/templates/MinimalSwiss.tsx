@@ -154,6 +154,7 @@ export const minimalSwissMeta: TemplateMeta = {
   category: 'editorial',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'square', finder: 'square', surface: '#FAFAFA' },
   print: { widthMm: 100, heightMm: 140, bleedMm: 3 },
+  canvas: { width: 520, height: 720 },
   descriptionTr: 'Sıkı grid + büyük tipografi — sade ve teknik.',
   descriptionEn: 'Tight grid + oversized type — clean and technical.',
 };

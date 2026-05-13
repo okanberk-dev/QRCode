@@ -151,6 +151,7 @@ export const walletCardMeta: TemplateMeta = {
   category: 'loyalty',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'dot', finder: 'rounded', surface: '#C6F24E' },
   print: { widthMm: 86, heightMm: 54, bleedMm: 3 },
+  canvas: { width: 760, height: 460 },
   descriptionTr: 'Kartvizit ölçeğinde sadakat / yorum kartı (ön + arka).',
   descriptionEn: 'Credit-card-sized loyalty / review card (front + back).',
 };

@@ -144,6 +144,7 @@ export const receiptFooterMeta: TemplateMeta = {
   category: 'print',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'square', finder: 'square', surface: '#E8E5DE' },
   print: { widthMm: 80, heightMm: 200, bleedMm: 0 },
+  canvas: { width: 480, height: 720 },
   descriptionTr: 'Termal yazıcı adisyon altlığı — POS entegrasyonu için.',
   descriptionEn: 'Thermal receipt footer — for POS integrations.',
 };

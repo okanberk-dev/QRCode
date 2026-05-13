@@ -104,6 +104,7 @@ export const windowStickerMeta: TemplateMeta = {
   category: 'venue',
   preview: { fg: '#0A0A0A', bg: '#FAFAFA', module: 'dot', finder: 'circle', surface: '#0A0A0A' },
   print: { widthMm: 120, heightMm: 120, bleedMm: 2 },
+  canvas: { width: 540, height: 540 },
   descriptionTr: 'Vitrin/kapı için yuvarlak die-cut sticker.',
   descriptionEn: 'Round die-cut decal for storefront door / window.',
 };

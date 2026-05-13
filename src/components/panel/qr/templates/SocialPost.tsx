@@ -133,6 +133,7 @@ export const socialPostMeta: TemplateMeta = {
   category: 'editorial',
   preview: { fg: '#C6F24E', bg: '#0A0A0A', module: 'dot', finder: 'rounded', surface: '#C6F24E' },
   print: { widthMm: 100, heightMm: 100, bleedMm: 0 },
+  canvas: { width: 520, height: 520 },
   descriptionTr: '1080×1080 Instagram kare formatı — story/post için.',
   descriptionEn: '1080×1080 Instagram square — feed / story.',
 };
