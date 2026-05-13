@@ -236,9 +236,15 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
           permission: { resource: 'campaigns', action: 'read' },
         },
         { href: '/admin/embed-usage', icon: Globe, label: locale === 'en' ? 'Embed usage' : 'Embed kullanımı', roles: ['superadmin'] },
-        // CLAUDE.md §42 — Denetim Merkezi şablon kataloğu (Faz 1: superadmin
-        // yönetir). Owner panel girişi Faz 2'de eklenecek.
-        { href: '/admin/audits/templates', icon: ClipboardCheck, label: locale === 'en' ? 'Audit Center' : 'Denetim Merkezi', roles: ['superadmin'] },
+        // CLAUDE.md §42 — Denetim Merkezi (superadmin). 3 alt-yüzey:
+        //   1. Şablonlar (catalog + edit + question builder)
+        //   2. Kategoriler (sektör taksonomisi)
+        //   3. İstatistikler (sistem KPI + sektör breakdown + top templates +
+        //      per-restoran kullanım)
+        // Owner panel girişi `/dashboard/audits` ayrı route'tan açılır.
+        { href: '/admin/audits/templates', icon: ClipboardCheck, label: locale === 'en' ? 'Audit Templates' : 'Denetim Şablonları', roles: ['superadmin'] },
+        { href: '/admin/audits/categories', icon: ClipboardCheck, label: locale === 'en' ? 'Audit Categories' : 'Denetim Kategorileri', roles: ['superadmin'] },
+        { href: '/admin/audits/stats', icon: ClipboardCheck, label: locale === 'en' ? 'Audit Stats' : 'Denetim İstatistikleri', roles: ['superadmin'] },
       ],
     },
     {
