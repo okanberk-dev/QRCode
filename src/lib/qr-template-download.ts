@@ -99,24 +99,27 @@ function delay(ms: number): Promise<void> {
 async function waitForCapturable(node: HTMLElement): Promise<boolean> {
   if (typeof window === 'undefined') return false;
 
-  // 1) Web font load — `document.fonts.ready` ResolvePromise her zaman
-  //    döner ama bazı tarayıcılarda fontu indir hâlâ devam ederken
-  //    resolve eder. `Promise.race` üst sınır ile çevirilerek owner'ı
-  //    sonsuza bekletmiyoruz.
-  if (typeof document !== 'undefined' && 'fonts' in document && document.fonts?.ready) {
-    try {
-      await Promise.race([document.fonts.ready, delay(FONTS_READY_TIMEOUT_MS)]);
-    } catch {
-      // Font API hata atarsa (eski tarayıcı) sessizce geç — fallback'i
-      // browser'ın kendi font fallback'ı handle eder.
+  // 1) Web font load — `document.fonts.ready` Promise her zaman döner ama
+  //    bazı tarayıcılarda font fetch hâlâ devam ederken resolve eder.
+  //    `Promise.race` üst sınır ile çevirilerek owner'ı sonsuza bekletmeyiz.
+  //    `Document.fonts` lib.dom'da non-optional ama eski tarayıcı runtime'da
+  //    eksik olabilir → optional erişim + try/catch guard.
+  try {
+    const fontsApi = (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts;
+    if (fontsApi?.ready) {
+      await Promise.race([fontsApi.ready, delay(FONTS_READY_TIMEOUT_MS)]);
     }
+  } catch {
+    // Font API hata atarsa (eski tarayıcı) sessizce geç — browser'ın
+    // kendi font fallback'ı raster'ı yine de doldurur.
   }
 
   // 2) Layout commit + paint
   await nextFrame();
 
   // 3) Bounding rect guard — node ölçüsüz ise capture başlatma.
-  for (let attempt = 0; attempt < BBOX_RETRY_LIMIT; attempt++) {
+  let remaining = BBOX_RETRY_LIMIT;
+  while (remaining-- > 0) {
     const rect = node.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) return true;
     await delay(BBOX_RETRY_DELAY_MS);
