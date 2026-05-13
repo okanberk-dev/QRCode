@@ -96,6 +96,15 @@ export async function GET(req: NextRequest) {
           // UI conditional render ile button gizler (ölü link önleme).
           menuEnabled: true,
           menuPublished: true,
+          // Stage 97 — WhatsApp opt-in channel for low-rating customers
+          // on the thanks step (CLAUDE.md §19.1). Three explicit fields,
+          // no transitive PII; defensive select pattern (§14.1). Public
+          // surface re-validates `whatsappUrl` via `normalizeWhatsAppUrl`
+          // and silently hides the button when the URL is missing or
+          // invalid even if the toggle is on.
+          whatsappUrl: true,
+          whatsappReviewEnabled: true,
+          whatsappReviewMessage: true,
         },
       });
 

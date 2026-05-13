@@ -33,6 +33,11 @@ type RestaurantProviderRow = {
   otherPlatformUrl: string | null;
   otherPlatformLabel: string | null;
   otherPlatformEnabled: boolean;
+  // Stage 97 — opt-in WhatsApp channel for low-rating customers on the
+  // public review surface (CLAUDE.md §19.1). Owner toggles via the
+  // wizard mounted on this page when `platform.slug === 'whatsapp'`.
+  whatsappReviewEnabled: boolean;
+  whatsappReviewMessage: string | null;
 } & Record<PlatformUrlField, string | null> &
   Record<PlatformEnabledField, boolean>;
 
@@ -96,6 +101,9 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
       yandexEnabled: true,
       yelpEnabled: true,
       foursquareEnabled: true,
+      // Stage 97 — WhatsApp review opt-in (CLAUDE.md §19.1).
+      whatsappReviewEnabled: true,
+      whatsappReviewMessage: true,
     },
     orderBy: { createdAt: 'asc' },
   })) as RestaurantProviderRow[];

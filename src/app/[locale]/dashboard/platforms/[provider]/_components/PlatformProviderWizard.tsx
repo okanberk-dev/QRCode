@@ -9,9 +9,11 @@ import {
   CheckCircle2,
   ExternalLink,
   Loader2,
+  MessageCircle,
   Plug,
   RefreshCw,
   Trash2,
+  Wand2,
   XCircle,
 } from 'lucide-react';
 import {
@@ -26,6 +28,8 @@ import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker'
 import { SettingsCard } from '@/components/dashboard/settings/SettingsCard';
 import { UnsavedChangesBar } from '@/components/dashboard/settings/UnsavedChangesBar';
 import { GoogleBusinessIntegrationPanel } from '@/components/dashboard/settings/sections/GoogleBusinessIntegrationPanel';
+import { WhatsAppReviewWizard } from '@/components/dashboard/settings/WhatsAppReviewWizard';
+import { normalizeWhatsAppUrl, WHATSAPP_BRAND_GREEN } from '@/lib/whatsapp';
 import { ACTIVE_BUSINESS_STORAGE_KEY, setRestaurantParam } from '@/lib/active-business';
 import { checkProviderUrl, describeDomainError, type DomainCheckResult } from '@/lib/integration-domains';
 import {
@@ -66,6 +70,11 @@ export interface ProviderRestaurantInfo {
   instagramUrl: string | null;
   facebookUrl: string | null;
   whatsappUrl: string | null;
+  // Stage 97 — opt-in WhatsApp channel for low-rating customers on the
+  // public review surface (CLAUDE.md §19.1). Owner toggles via the
+  // wizard mounted on this page when `platform.slug === 'whatsapp'`.
+  whatsappReviewEnabled?: boolean;
+  whatsappReviewMessage?: string | null;
   reservationUrl: string | null;
   website: string | null;
   otherPlatformUrl: string | null;
@@ -195,6 +204,10 @@ export default function PlatformProviderWizard({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [latestCheck, setLatestCheck] = useState<LatestCheck | null>(null);
+  // Stage 97 — WhatsApp review opt-in wizard. Modal owns its own staged
+  // state and PUTs directly; on save we forward the partial back into
+  // the local restaurantRows so the marker pill flips immediately.
+  const [whatsappWizardOpen, setWhatsappWizardOpen] = useState(false);
 
   useEffect(() => {
     setRestaurantRows(restaurants);
@@ -578,6 +591,107 @@ export default function PlatformProviderWizard({
         </div>
       </SettingsCard>
 
+      {/* Stage 97 — WhatsApp review opt-in marker + wizard CTA. Visible
+          only on the WhatsApp provider page. The marker pill mirrors
+          the persisted `whatsappReviewEnabled` flag on the selected
+          restaurant; the wizard CTA opens a 3-step modal for full
+          setup (number → message template → preview & enable). The
+          CTA is gated until the saved URL normalises cleanly so we
+          don't tease an unusable feature. */}
+      {platform.slug === 'whatsapp' && (() => {
+        const persistedUrl = selectedRestaurant.whatsappUrl ?? '';
+        const normalized = normalizeWhatsAppUrl(persistedUrl);
+        const hasValidUrl = normalized.ok;
+        const reviewEnabled = selectedRestaurant.whatsappReviewEnabled === true;
+        const wizardDisabled = !hasValidUrl || dirty;
+        const wizardDisabledReason = !hasValidUrl
+          ? isTr
+            ? 'Önce geçerli bir WhatsApp numarası kaydet.'
+            : 'Save a valid WhatsApp number first.'
+          : dirty
+            ? isTr
+              ? 'Önce yukarıdaki değişiklikleri kaydet.'
+              : 'Save the pending changes first.'
+            : undefined;
+        return (
+          <SettingsCard
+            icon={
+              <MessageCircle
+                size={18}
+                strokeWidth={2}
+                style={{ color: WHATSAPP_BRAND_GREEN }}
+              />
+            }
+            title={isTr ? 'Değerlendirme sayfasında WhatsApp' : 'WhatsApp on review page'}
+            description={
+              isTr
+                ? '1–3 yıldız veren müşteriler değerlendirme sayfası sonunda WhatsApp hattınızı görür. Otomatik mesaj gönderilmez — müşteri butona tıklayınca uygulama kendi mesajıyla açılır.'
+                : 'Customers who rate 1–3★ see your WhatsApp line at the end of the review page. No auto-send — WhatsApp only opens when the customer taps.'
+            }
+            actions={
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold tracking-[0.06em] uppercase"
+                style={{
+                  background: hasValidUrl
+                    ? reviewEnabled
+                      ? '#EAF9B8'
+                      : '#F5F5F5'
+                    : '#FEF3C7',
+                  color: hasValidUrl
+                    ? reviewEnabled
+                      ? '#0A0A0A'
+                      : '#737373'
+                    : '#92400E',
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{
+                    background: hasValidUrl
+                      ? reviewEnabled
+                        ? '#A8D62E'
+                        : '#A3A3A3'
+                      : '#F59E0B',
+                  }}
+                />
+                {hasValidUrl
+                  ? reviewEnabled
+                    ? isTr ? 'Aktif' : 'Active'
+                    : isTr ? 'Pasif' : 'Off'
+                  : isTr ? 'Numara gerekli' : 'Number required'}
+              </span>
+            }
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[12.5px] leading-[1.55] text-[#525252]">
+                {hasValidUrl
+                  ? reviewEnabled
+                    ? isTr
+                      ? 'Müşteri 1–3 yıldız verirse WhatsApp butonu görünür. Mesaj şablonunu sihirbazdan düzenleyebilirsin.'
+                      : 'Customers giving 1–3★ see the WhatsApp button. Open the wizard to tweak the message template.'
+                    : isTr
+                      ? 'Bu özellik şu an pasif. Sihirbazı açıp etkinleştirebilirsin.'
+                      : 'Currently off. Open the wizard to enable.'
+                  : isTr
+                    ? 'Üstte geçerli bir numara veya wa.me linki kaydet, sonra sihirbazı aç.'
+                    : 'Save a valid number or wa.me link above, then open the wizard.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => setWhatsappWizardOpen(true)}
+                disabled={wizardDisabled}
+                title={wizardDisabledReason}
+                className="bz-btn-primary inline-flex shrink-0 items-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Wand2 size={13} strokeWidth={2.2} />
+                {isTr ? 'Sihirbazı aç' : 'Open wizard'}
+              </button>
+            </div>
+          </SettingsCard>
+        );
+      })()}
+
       {platform.category === 'review' && (
         <SettingsCard
           title={isTr ? 'Varsayılan yönlendirme' : 'Default redirect'}
@@ -608,6 +722,28 @@ export default function PlatformProviderWizard({
         saveLabel={isTr ? 'Kaydet' : 'Save'}
         resetLabel={isTr ? 'Geri al' : 'Reset'}
       />
+
+      {whatsappWizardOpen && platform.slug === 'whatsapp' && (
+        <WhatsAppReviewWizard
+          restaurantId={selectedRestaurant.id}
+          initialWhatsappUrl={selectedRestaurant.whatsappUrl ?? ''}
+          initialMessage={selectedRestaurant.whatsappReviewMessage ?? null}
+          initialEnabled={selectedRestaurant.whatsappReviewEnabled === true}
+          restaurantName={selectedRestaurant.name}
+          locale={locale}
+          onClose={() => setWhatsappWizardOpen(false)}
+          onSaved={(partial) => {
+            updateSelectedRestaurant({
+              whatsappUrl: partial.whatsappUrl,
+              whatsappReviewEnabled: partial.whatsappReviewEnabled,
+              whatsappReviewMessage: partial.whatsappReviewMessage,
+            });
+            setSuccess(
+              isTr ? 'WhatsApp ayarları güncellendi.' : 'WhatsApp settings updated.',
+            );
+          }}
+        />
+      )}
     </div>
   );
 }

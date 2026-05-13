@@ -2,12 +2,18 @@
 
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
-import { Star, Check, Loader2, Copy, Share2, Utensils, ExternalLink } from 'lucide-react';
+import { Star, Check, Loader2, Copy, MessageCircle, Share2, Utensils, ExternalLink } from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
 import { buildGoogleReviewUrl } from '@/lib/google-review';
 import { resolveBestRedirectPlatform } from '@/lib/platform-redirect-resolver';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import {
+  appendWhatsAppText,
+  buildWhatsAppMessage,
+  normalizeWhatsAppUrl,
+  WHATSAPP_BRAND_GREEN,
+} from '@/lib/whatsapp';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
 import { PlatformChip } from '@/components/ui';
 
@@ -58,6 +64,14 @@ interface RestaurantData {
   // 404 önleme). Mevcut owner publish toggle akışı intact (CLAUDE.md §12).
   menuEnabled?: boolean;
   menuPublished?: boolean;
+  // Stage 97 — opt-in WhatsApp channel for low-rating customers
+  // (CLAUDE.md §19.1). When `whatsappReviewEnabled === true` AND
+  // `whatsappUrl` normalises cleanly, the thanks step (rating ≤ 3)
+  // surfaces a "Message us on WhatsApp" button. Always silent-fail:
+  // missing/invalid URL hides the button even when the toggle is on.
+  whatsappUrl?: string | null;
+  whatsappReviewEnabled?: boolean;
+  whatsappReviewMessage?: string | null;
 }
 
 // §38.130 Stage 49 — HANDOFF feedback-flow.jsx birebir parity. 5 rating
@@ -1502,6 +1516,59 @@ function ReviewContent() {
                         <ExternalLink size={14} className="text-[#A3A3A3]" />
                       </a>
                     )}
+                  </div>
+                );
+              })()}
+
+              {/* Stage 97 — WhatsApp opt-in for low-rating customers
+                  (CLAUDE.md §19.1). Owner enables this in
+                  WhatsAppReviewWizard; we re-validate the URL here so a
+                  bad/cleared URL silently hides the button even when the
+                  toggle is on (defensive). Click opens the canonical
+                  wa.me URL with a pre-filled message in a new tab; no
+                  auto-redirect. KVKK-clean — customer must tap. */}
+              {(() => {
+                const lowRating = rating > 0 && rating <= 3;
+                if (!lowRating) return null;
+                if (!restaurant.whatsappReviewEnabled) return null;
+                const normalized = normalizeWhatsAppUrl(restaurant.whatsappUrl ?? '');
+                if (!normalized.ok) return null;
+                const ref = feedbackId
+                  ? formatReferenceNumber(feedbackId)
+                  : 'BZ-NEW';
+                const message = buildWhatsAppMessage({
+                  template: restaurant.whatsappReviewMessage ?? null,
+                  restaurantName: restaurant.name,
+                  rating,
+                  referenceNumber: ref,
+                  locale,
+                });
+                const href = appendWhatsAppText(normalized.url, message);
+                return (
+                  <div
+                    className="mx-auto mt-4 flex justify-center"
+                    style={{ maxWidth: 320 }}
+                  >
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={
+                        locale === 'tr'
+                          ? 'WhatsApp ile iletişime geç'
+                          : 'Message us on WhatsApp'
+                      }
+                      className="bz-motion-spring inline-flex w-full items-center justify-center gap-2 rounded-[14px] bg-[#0A0A0A] py-3 text-[13px] font-semibold text-white hover:bg-[#1A1A1A] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2"
+                    >
+                      <MessageCircle
+                        size={14}
+                        strokeWidth={2.2}
+                        style={{ color: WHATSAPP_BRAND_GREEN }}
+                      />
+                      {locale === 'tr'
+                        ? 'WhatsApp ile iletişime geç'
+                        : 'Message us on WhatsApp'}
+                    </a>
                   </div>
                 );
               })()}
