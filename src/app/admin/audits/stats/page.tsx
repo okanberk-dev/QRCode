@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, BarChart3, Loader2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, BarChart3, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import {
   AlertBanner,
   Badge,
@@ -175,6 +175,20 @@ export default function AuditStatsPage() {
             value={data.totals.avgScore != null ? `${data.totals.avgScore.toFixed(1)}` : '—'}
             deltaSuffix="100 üzerinden"
           />
+        </div>
+      ) : null}
+
+      {/* Sistem boş hint — şablon yokken operatöre seed yolunu göster */}
+      {data && data.totals.totalTemplates === 0 ? (
+        <div className="bz-card-soft p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1 text-[13px] text-[#525252] leading-relaxed">
+            <strong className="text-[#0A0A0A]">Sistem boş.</strong> Henüz şablon veya yanıt yok.
+            6 sektör için hazır 18 kategori + 25 şablon + ~120 soru ile başlamak için{' '}
+            <em>“Varsayılan içeriği yükle”</em> butonuna git.
+          </div>
+          <Link href="/admin/audits/templates" className="bz-btn-primary shrink-0">
+            <Sparkles size={14} /> Şablonlara git
+          </Link>
         </div>
       ) : null}
 

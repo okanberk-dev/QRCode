@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, Plus, Pencil, Trash2, Save, Sparkles, Tag } from 'lucide-react';
+import SeedResultModal, { type SeedResult } from '@/components/admin/audits/SeedResultModal';
 import {
   AlertBanner,
   Badge,
@@ -78,6 +79,7 @@ export default function AuditCategoriesPage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmEl, askConfirm] = useConfirmDialog();
   const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<SeedResult | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -134,35 +136,44 @@ export default function AuditCategoriesPage() {
     setModalOpen(true);
   }
 
-  async function runSeed() {
-    if (
-      !confirm(
-        'Varsayılan denetim kategorileri ve şablonları yüklenecek/güncellenecek (18 kategori + 25 şablon + ~120 soru). Devam edilsin mi?',
-      )
-    ) {
-      return;
-    }
-    setSeeding(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/admin/audits/seed', { method: 'POST' });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || 'Seed başarısız');
-        return;
-      }
-      const json = await res.json();
-      const r = json.data as { categories: number; templates: number; questions: number; durationMs: number };
-      setNotice(
-        `Yüklendi: ${r.categories} kategori · ${r.templates} şablon · ${r.questions} soru (${r.durationMs}ms)`,
-      );
-      await load();
-      setTimeout(() => setNotice(null), 5000);
-    } catch {
-      setError('Bağlantı hatası');
-    } finally {
-      setSeeding(false);
-    }
+  function runSeed() {
+    askConfirm({
+      title: 'Varsayılan içeriği yükle',
+      body: (
+        <div className="space-y-2 text-[13px] text-[#525252]">
+          <p>
+            Denetim Merkezi için <strong className="text-[#0A0A0A]">18 kategori</strong>,{' '}
+            <strong className="text-[#0A0A0A]">25 şablon</strong> ve{' '}
+            <strong className="text-[#0A0A0A]">~120 soru</strong> yüklenir veya güncellenir.
+          </p>
+          <p>
+            Mevcut <em>slug</em> ile eşleşen kategoriler güncellenir; admin tarafından elle eklenen
+            kategoriler etkilenmez.
+          </p>
+        </div>
+      ),
+      confirmLabel: 'Yükle',
+      cancelLabel: 'Vazgeç',
+      onConfirm: async () => {
+        setSeeding(true);
+        setError(null);
+        try {
+          const res = await fetch('/api/admin/audits/seed', { method: 'POST' });
+          if (!res.ok) {
+            const j = await res.json().catch(() => ({}));
+            setError(j.error || 'Seed başarısız');
+            return;
+          }
+          const json = await res.json();
+          setSeedResult(json.data as SeedResult);
+          await load();
+        } catch {
+          setError('Bağlantı hatası');
+        } finally {
+          setSeeding(false);
+        }
+      },
+    });
   }
 
   async function handleSave() {
@@ -288,11 +299,22 @@ export default function AuditCategoriesPage() {
         <EmptyState
           icon={<Tag size={20} />}
           title="Henüz kategori yok"
-          body="İlk kategoriyi ekleyerek şablonları gruplandırmaya başla."
+          body="Buaze 6 sektör için hazır 18 kategori + 25 şablon ile başlatabilirsin. Sıfırdan ekleyeceksen 'Yeni kategori' butonunu kullan."
           action={
-            <button className="bz-btn-primary" onClick={openCreate}>
-              <Plus size={14} strokeWidth={2} /> Yeni kategori
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <button
+                type="button"
+                className="bz-btn-primary"
+                onClick={runSeed}
+                disabled={seeding}
+              >
+                {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                Varsayılan içeriği yükle
+              </button>
+              <button className="bz-btn-ghost" onClick={openCreate}>
+                <Plus size={14} strokeWidth={2} /> Yeni kategori
+              </button>
+            </div>
           }
         />
       ) : (
@@ -430,6 +452,13 @@ export default function AuditCategoriesPage() {
       </Modal>}
 
       {confirmEl}
+
+      {seedResult && (
+        <SeedResultModal
+          result={seedResult}
+          onClose={() => setSeedResult(null)}
+        />
+      )}
     </div>
   );
 }
