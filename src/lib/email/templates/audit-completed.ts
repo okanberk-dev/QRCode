@@ -20,18 +20,34 @@ export interface AuditCompletedParams {
   panelUrl: string;
 }
 
+// Defense in depth (CLAUDE.md §37.2.G mail recipient guard pattern):
+// respondentName submit endpoint'inden gelir, owner inbox'una echo edilir.
+// Subject + headers'a girmiyor ama preheader pulseLayout'ta raw template
+// literal'a giriyor (layout.ts:75 hidden <div>). Newline/CR/tab strip +
+// escape HTML böylece preheader XSS + visual injection kapatılır.
+function sanitizeForMail(value: string, max = 200): string {
+  return value.replace(/[\r\n\t]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
 export async function renderAuditCompleted(
   params: AuditCompletedParams,
   locale: 'tr' | 'en' = 'tr',
 ): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
-  const respondent = params.respondentName?.trim() || (isTr ? 'Bir katılımcı' : 'Someone');
+  const respondentRaw = params.respondentName?.trim() || (isTr ? 'Bir katılımcı' : 'Someone');
+  const respondent = sanitizeForMail(respondentRaw);
+  // Subject/preheader'a giren tüm user/owner-controlled strings da
+  // sanitize (auditTitle owner-controlled ama owner panel input
+  // validation'ı geçmiş; defansif olarak yine strip ediyoruz).
+  const auditTitleSafe = sanitizeForMail(params.auditTitle);
   const subject = isTr
-    ? `Denetim tamamlandı · ${params.auditTitle} · ${params.score}/100`
-    : `Audit completed · ${params.auditTitle} · ${params.score}/100`;
-  const preheader = isTr
-    ? `${respondent}, "${params.auditTitle}" denetimini ${params.score}/100 ile tamamladı.`
-    : `${respondent} completed "${params.auditTitle}" with ${params.score}/100.`;
+    ? `Denetim tamamlandı · ${auditTitleSafe} · ${params.score}/100`
+    : `Audit completed · ${auditTitleSafe} · ${params.score}/100`;
+  // Preheader hidden <div>'e girer ama HTML parser yine parse eder → escape.
+  const preheaderRaw = isTr
+    ? `${respondent}, "${auditTitleSafe}" denetimini ${params.score}/100 ile tamamladı.`
+    : `${respondent} completed "${auditTitleSafe}" with ${params.score}/100.`;
+  const preheader = escapeHtml(preheaderRaw);
 
   const inlineDefault = isTr
     ? {
