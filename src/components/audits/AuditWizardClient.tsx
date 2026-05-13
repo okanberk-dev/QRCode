@@ -9,12 +9,36 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowRight,
+  Check,
+  Eye,
+  GripVertical,
+  ListChecks,
   Loader2,
   Pencil,
   Plus,
   Sparkles,
+  Target,
   Trash2,
+  UserCheck,
 } from 'lucide-react';
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   AlertBanner,
   Badge,
@@ -122,38 +146,160 @@ const QUESTION_TYPE_LABEL_EN: Record<AuditQuestionType, string> = {
   file: 'File',
 };
 
+// CLAUDE.md §42 Phase 2 — Sortable question row (PR-B DnD upgrade).
+// Drag handle GripVertical butonuna `attributes`/`listeners` bağlanır;
+// kalan kart UI mevcut yapıyı korur. Keyboard nav: tab → drag handle →
+// Space (pick up) → Arrow keys (move) → Space (drop). isDragging shadow
+// + ring ile ayırt edilir.
+function SortableQuestionItem({
+  q,
+  index,
+  locale,
+  qTypeLabel,
+  onEdit,
+  onRemove,
+}: {
+  q: AuditQuestionDraft;
+  index: number;
+  locale: Locale;
+  qTypeLabel: Record<AuditQuestionType, string>;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: q.id,
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    ...(isDragging
+      ? { boxShadow: '0 8px 20px -4px rgba(0,0,0,0.18)', zIndex: 20, opacity: 0.95 }
+      : {}),
+  };
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`bz-card p-3 flex items-start gap-2 ${isDragging ? 'ring-1 ring-[#C6F24E]' : ''}`}
+    >
+      <button
+        type="button"
+        className="bz-btn-icon cursor-grab active:cursor-grabbing touch-none"
+        aria-label={locale === 'tr' ? 'Sırayı değiştir' : 'Reorder'}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={14} />
+      </button>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge kind="ghost">{index + 1}</Badge>
+          <Badge kind="info">{qTypeLabel[q.type]}</Badge>
+          {q.isRequired ? null : (
+            <Badge kind="ghost">{locale === 'tr' ? 'opsiyonel' : 'optional'}</Badge>
+          )}
+          {q.weight > 1 && <Badge kind="warn">×{q.weight}</Badge>}
+        </div>
+        <p className="text-[14px] mt-1 text-[#0A0A0A] break-words">{q.prompt}</p>
+        {Array.isArray(q.options) && q.options.length > 0 && (
+          <p className="text-[12px] text-[#525252] mt-1">{q.options.join(' · ')}</p>
+        )}
+      </div>
+      <div className="flex flex-col gap-1">
+        <button
+          type="button"
+          className="bz-btn-icon"
+          onClick={onEdit}
+          aria-label={locale === 'tr' ? 'Düzenle' : 'Edit'}
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          type="button"
+          className="bz-btn-icon"
+          onClick={onRemove}
+          aria-label={locale === 'tr' ? 'Sil' : 'Remove'}
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+    </li>
+  );
+}
+
+// CLAUDE.md §42 Phase 2 — Wizard step indicator (visual upgrade PR-B).
+// Sade numara badge + chevron yerine: ikon + label + bağlantı çizgisi +
+// üst progress bar. Done state lime tick + lime-soft bg; active state
+// graphite ikon + lime ring; pending muted. Mobile horizontal scroll
+// (`no-scrollbar` overflow-x-auto), aria-current="step" semantik.
+const STEP_ICONS = [Sparkles, Target, ListChecks, UserCheck, Eye] as const;
+
 function StepIndicator({ step, locale }: { step: WizardStep; locale: Locale }) {
   const labels =
     locale === 'tr'
       ? ['Temel', 'Puanlama', 'Sorular', 'Atama', 'Önizleme']
       : ['Basics', 'Scoring', 'Questions', 'Assignment', 'Review'];
+  const totalSteps = labels.length;
+  // Progress: current step / (total - 1). Step 5 done state'te %100 dolu.
+  const progressPct = Math.round(((step - 1) / (totalSteps - 1)) * 100);
+
   return (
-    <ol className="flex items-center gap-1 sm:gap-2 text-[11px] flex-wrap">
-      {labels.map((label, i) => {
-        const active = step === (i + 1);
-        const done = step > (i + 1);
-        return (
-          <li
-            key={label}
-            className={`flex items-center gap-1.5 ${active ? 'text-[#0A0A0A] font-medium' : done ? 'text-[#166534]' : 'text-[#737373]'}`}
-          >
-            <span
-              className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] border ${
-                active
-                  ? 'bg-[#0A0A0A] text-white border-[#0A0A0A]'
-                  : done
-                    ? 'bg-[#C6F24E] text-[#0A0A0A] border-[#A8D62E]'
-                    : 'bg-white text-[#737373] border-[#EDEDED]'
-              }`}
+    <div className="bz-card p-3 sm:p-4">
+      {/* Üst sade progress bar — overflow-anchored, mobile'da hızlı feedback */}
+      <div className="relative h-1 bg-[#EDEDED] rounded-full mb-3 overflow-hidden">
+        <div
+          className="absolute inset-y-0 left-0 bg-[#C6F24E] transition-all duration-300 ease-out"
+          style={{ width: `${progressPct}%` }}
+          aria-hidden="true"
+        />
+      </div>
+
+      {/* Step list — horizontal scroll on mobile, equal grid on sm+ */}
+      <ol
+        className="no-scrollbar flex items-start justify-between gap-1 overflow-x-auto sm:gap-3"
+        aria-label={locale === 'tr' ? 'Wizard adımları' : 'Wizard steps'}
+      >
+        {labels.map((label, i) => {
+          const stepNum = i + 1;
+          const Icon = STEP_ICONS[i];
+          const active = step === stepNum;
+          const done = step > stepNum;
+          return (
+            <li
+              key={label}
+              className="flex min-w-[68px] flex-1 flex-col items-center gap-1.5 text-center"
+              aria-current={active ? 'step' : undefined}
             >
-              {i + 1}
-            </span>
-            {label}
-            {i < 4 && <span className="text-[#A3A3A3]">›</span>}
-          </li>
-        );
-      })}
-    </ol>
+              <span
+                className={[
+                  'relative inline-flex items-center justify-center w-9 h-9 rounded-full border transition-colors',
+                  active
+                    ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] ring-2 ring-[#C6F24E] ring-offset-2'
+                    : done
+                      ? 'bg-[#EAF9B8] text-[#0A0A0A] border-[#A8D62E]'
+                      : 'bg-white text-[#737373] border-[#EDEDED]',
+                ].join(' ')}
+              >
+                {done ? <Check size={16} strokeWidth={2.5} /> : <Icon size={16} />}
+              </span>
+              <span
+                className={[
+                  'text-[11px] leading-tight font-medium',
+                  active
+                    ? 'text-[#0A0A0A]'
+                    : done
+                      ? 'text-[#166534]'
+                      : 'text-[#737373]',
+                ].join(' ')}
+              >
+                <span className="pulse-eyebrow block">{stepNum}</span>
+                {label}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 
@@ -248,15 +394,23 @@ export default function AuditWizardClient({
     setState((prev) => ({ ...prev, questions: prev.questions.filter((q) => q.id !== id) }));
   }, []);
 
-  const moveQuestion = useCallback((id: string, dir: -1 | 1) => {
+  // @dnd-kit sensors — menu builder paterni (CLAUDE.md §12.1) ile birebir.
+  // Pointer threshold 8px → click ≠ drag; touch 150ms delay → mobil long-press;
+  // keyboard sortableKeyboardCoordinates → Space pick up + arrow move + Space drop.
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleQuestionDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
     setState((prev) => {
-      const idx = prev.questions.findIndex((q) => q.id === id);
-      if (idx === -1) return prev;
-      const target = idx + dir;
-      if (target < 0 || target >= prev.questions.length) return prev;
-      const next = [...prev.questions];
-      const [item] = next.splice(idx, 1);
-      next.splice(target, 0, item);
+      const oldIndex = prev.questions.findIndex((q) => q.id === active.id);
+      const newIndex = prev.questions.findIndex((q) => q.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      const next = arrayMove(prev.questions, oldIndex, newIndex);
       return { ...prev, questions: next.map((q, i) => ({ ...q, sortOrder: (i + 1) * 10 })) };
     });
   }, []);
@@ -436,8 +590,8 @@ export default function AuditWizardClient({
                 </p>
                 <p className="text-[12px] text-[#737373]">
                   {locale === 'tr'
-                    ? 'En az 1 soru ekle. Sırayı yukarı/aşağı ok ile değiştir.'
-                    : 'Add at least 1 question. Use arrows to reorder.'}
+                    ? 'En az 1 soru ekle. Sırayı sürükleyerek (veya tab + space ile) değiştir.'
+                    : 'Add at least 1 question. Drag to reorder (or use tab + space).'}
                 </p>
               </div>
               <button type="button" className="bz-btn-primary" onClick={openAddQuestion}>
@@ -450,64 +604,30 @@ export default function AuditWizardClient({
                 {locale === 'tr' ? 'Henüz soru yok' : 'No questions yet'}
               </div>
             ) : (
-              <ol className="space-y-2">
-                {state.questions.map((q, i) => (
-                  <li key={q.id} className="bz-card p-3 flex items-start gap-2">
-                    <div className="flex flex-col gap-0.5 pt-1">
-                      <button
-                        type="button"
-                        className="bz-btn-icon"
-                        onClick={() => moveQuestion(q.id, -1)}
-                        disabled={i === 0}
-                        aria-label={locale === 'tr' ? 'Yukarı taşı' : 'Move up'}
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        className="bz-btn-icon"
-                        onClick={() => moveQuestion(q.id, 1)}
-                        disabled={i === state.questions.length - 1}
-                        aria-label={locale === 'tr' ? 'Aşağı taşı' : 'Move down'}
-                      >
-                        ↓
-                      </button>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <Badge kind="ghost">{i + 1}</Badge>
-                        <Badge kind="info">{qTypeLabel[q.type]}</Badge>
-                        {q.isRequired ? null : <Badge kind="ghost">{locale === 'tr' ? 'opsiyonel' : 'optional'}</Badge>}
-                        {q.weight > 1 && <Badge kind="warn">×{q.weight}</Badge>}
-                      </div>
-                      <p className="text-[14px] mt-1 text-[#0A0A0A] break-words">{q.prompt}</p>
-                      {Array.isArray(q.options) && q.options.length > 0 && (
-                        <p className="text-[12px] text-[#525252] mt-1">
-                          {q.options.join(' · ')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <button
-                        type="button"
-                        className="bz-btn-icon"
-                        onClick={() => openEditQuestion(q)}
-                        aria-label={locale === 'tr' ? 'Düzenle' : 'Edit'}
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        className="bz-btn-icon"
-                        onClick={() => handleRemoveQuestion(q.id)}
-                        aria-label={locale === 'tr' ? 'Sil' : 'Remove'}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              <DndContext
+                sensors={dndSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleQuestionDragEnd}
+              >
+                <SortableContext
+                  items={state.questions.map((q) => q.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ol className="space-y-2">
+                    {state.questions.map((q, i) => (
+                      <SortableQuestionItem
+                        key={q.id}
+                        q={q}
+                        index={i}
+                        locale={locale}
+                        qTypeLabel={qTypeLabel}
+                        onEdit={() => openEditQuestion(q)}
+                        onRemove={() => handleRemoveQuestion(q.id)}
+                      />
+                    ))}
+                  </ol>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
         )}
