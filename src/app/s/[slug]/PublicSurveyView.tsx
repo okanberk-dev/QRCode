@@ -594,14 +594,18 @@ function IntroScreen({
                 }}
               >
                 <span
-                  className="bz-survey-eyebrow flex shrink-0 items-center justify-center"
+                  className="flex shrink-0 items-center justify-center"
                   style={{
                     width: 22,
                     height: 22,
                     borderRadius: 999,
                     background: accent,
                     color: '#0A0A0A',
-                    fontSize: 10,
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    letterSpacing: 0,
                   }}
                 >
                   {i + 1}
