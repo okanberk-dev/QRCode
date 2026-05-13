@@ -178,7 +178,7 @@ model Restaurant {
   //   footer'da "Gönderici adres: ..." satırında render edilir.
   businessIdNumber String? @map("business_id_number")
   mersisNumber     String? @map("mersis_number")
-  physicalAddress  String? @db.Text @map("physical_address")
+  physicalAddress  String? @map("physical_address") @db.Text
 
   // Owner-tanımlı hedef puan — Analytics 14-haftalık trend chart'ında dashed
   // line + delta to target hint için (CLAUDE.md §38.25 + §38.26). Null = owner
@@ -255,6 +255,10 @@ model Restaurant {
   platformLinkChecks       PlatformLinkCheck[]
   platformRedirects        PlatformRedirectEvent[]
   activationState          RestaurantActivationState?
+  // Stage 98 — Surveys feature (CLAUDE.md §42). Each restaurant owns its
+  // surveys; QR access per-survey via /s/[slug]. Cascade delete keeps
+  // SurveyResponse / SurveyAnswer trees clean.
+  surveys                  Survey[]
   // Phase 8c+ §38.48 Wave 2 — Customers bulk action overlays.
   // Customers Feedback-derived dedupe paterni (CLAUDE.md §4.5) intact;
   // bu mini-modeller LEFT JOIN ile customer list'e overlay eder.
@@ -750,15 +754,15 @@ model AdminUser {
   // single-field ile yürür.
   passwordChangedAt DateTime? @map("password_changed_at")
 
-  restaurant     Restaurant?            @relation(fields: [restaurantId], references: [id])
+  restaurant        Restaurant?             @relation(fields: [restaurantId], references: [id])
   // Stage A2 §38.94 — granular permission grants (per-resource × per-action).
   // Superadmin'ler için boş kalır (helper bypass eder); manager'lar için
   // bu satırlar cross-resource access'i açar.
-  permissions    AdminPermission[]
+  permissions       AdminPermission[]
   // Stage A4 §38.96 — admin impersonation sessions (support workflow).
   // Reverse relation; tek admin paralel session açabilir (örn. iki ayrı
   // owner için support ticket); cron 30dk sonra expire eder.
-  impersonations ImpersonationSession[] @relation("AdminImpersonations")
+  impersonations    ImpersonationSession[]  @relation("AdminImpersonations")
   // Stage 29 §38.105 — admin in-app notification feed.
   // Cascade: AdminUser silinince per-admin notification'lar temizlenir;
   // broadcast (adminId=null) entry'ler korunur (her admin görsün diye).
@@ -1548,17 +1552,17 @@ model CustomerEmailLog {
 // Index'ler: (adminId, readAt, createdAt) feed query (per-admin + unread filter
 // + chronological); (type, createdAt) admin filter + analytics.
 model AdminNotification {
-  id        String     @id @default(cuid())
-  adminId   String?    @map("admin_id") // null = broadcast (tüm admin'ler)
+  id        String    @id @default(cuid())
+  adminId   String?   @map("admin_id") // null = broadcast (tüm admin'ler)
   type      String // 'campaign.submitted' | 'campaign.approved' | 'campaign.rejected'
-  title     String     // TR display title (locale-aware caller eder)
-  body      String?    @db.Text // detail body (opsiyonel)
-  payload   Json?      // {campaignId, restaurantId, ownerName, ...}
-  readAt    DateTime?  @map("read_at")
-  createdAt DateTime   @default(now()) @map("created_at")
+  title     String // TR display title (locale-aware caller eder)
+  body      String?   @db.Text // detail body (opsiyonel)
+  payload   Json? // {campaignId, restaurantId, ownerName, ...}
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
-  admin     AdminUser? @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  reads     AdminNotificationRead[]
+  admin AdminUser?              @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  reads AdminNotificationRead[]
 
   @@index([adminId, readAt, createdAt])
   @@index([type, createdAt])
@@ -1576,4 +1580,160 @@ model AdminNotificationRead {
   @@id([notificationId, adminId])
   @@index([adminId, readAt])
   @@map("admin_notification_reads")
+}
+
+// Stage 98 — Survey system (CLAUDE.md §42). Restoran sahipleri yorum
+// sisteminden ayrı, hedeflenmiş anketler oluşturup QR ile dağıtır. İki
+// anket tipi destekleniyor:
+//   - single     : tek soru + KVKK + gönder (hızlı NPS / memnuniyet)
+//   - multi_step : adım göstergeli, soru başına bir ekran
+//
+// QR akışı her anket için ayrı: owner panelden anket detay sayfasında
+// /api/surveys/[id]/qr endpoint'i PNG/SVG üretir; QR /s/[slug] public
+// URL'sine yönlendirir. Slug @unique — çakışma olasılığı server-side
+// kontrol edilir (POST/duplicate path'lerinde).
+//
+// KVKK: Public surveys aynı /r/[slug] consent paternine uyar — KVKK onayı
+// submit zorunlu (action implies consent), marketing onayı default OFF
+// (opt-in, GDPR Article 7). hasKvkkConsent ve hasMarketingConsent her
+// response'a yazılır (audit trail).
+//
+// Retention: SurveyResponse.ipAddress KVKK 90-day anonimleştirme cron'una
+// (CLAUDE.md §13.9 + /api/cron/anonymize-ips) aday — şu an cron sadece
+// Feedback tablosunu tarıyor, ileride genişletilebilir.
+model Survey {
+  id                      String    @id @default(cuid())
+  restaurantId            String    @map("restaurant_id")
+  // Slug public /s/[slug] URL'i için. Owner panelden yaratım sırasında
+  // başlıktan türetilir, çakışma varsa server -2 / -3 suffix ekler.
+  slug                    String    @unique
+  title                   String
+  description             String?   @db.Text
+  // 'single' (tek soru) | 'multi_step' (aşamalı). Server-side enum
+  // validation (Zod). UI iki farklı public render path'i (PublicSurveyView
+  // component switch'i).
+  type                    String    @default("multi_step")
+  // Master switch — admin/owner pasif yapınca public /s/[slug] 404 döner.
+  // Soft-disable; response history korunur.
+  isActive                Boolean   @default(true) @map("is_active")
+  // Owner draft → publish ayrımı. isPublished=false iken public URL 404
+  // (draft test owner'a açık değil — preview path ayrı, /dashboard/surveys/[id]).
+  isPublished             Boolean   @default(false) @map("is_published")
+  publishedAt             DateTime? @map("published_at")
+  // Pulse design: accent rengi public form'da CTA + adım indicator için
+  // kullanılır. Null → restaurant.primaryColor fallback.
+  accentColor             String?   @map("accent_color")
+  // Owner kendi teşekkür mesajını yazabilir (TR/EN olmasa da bir locale —
+  // anket dili owner kararı). Null → locale-aware default.
+  thankYouMessage         String?   @map("thank_you_message") @db.Text
+  // Owner KVKK metnini override edebilir (mevcut restaurant.kvkkText
+  // paterni). Null → restaurant.kvkkText veya generic site KVKK fallback.
+  kvkkText                String?   @map("kvkk_text") @db.Text
+  // Marketing iznini sor (opt-in checkbox). Default false: çoğu anket
+  // marketing onayı toplamaya çalışmaz, sadece veri toplar.
+  collectMarketingConsent Boolean   @default(false) @map("collect_marketing_consent")
+  // İletişim alanları (email + phone) opsiyonel olarak göster. Default
+  // true: owner takip etmek isteyebilir. False → tamamen anonim.
+  collectContact          Boolean   @default(true) @map("collect_contact")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  restaurant Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  questions  SurveyQuestion[]
+  responses  SurveyResponse[]
+
+  @@index([restaurantId, isActive, createdAt])
+  @@index([slug])
+  @@map("surveys")
+}
+
+// Tek soru. Anket tipinden bağımsız (single tip 1 soru taşır, multi_step
+// 2-N soru taşır). sortOrder DnD ile yönetilir (mevcut menu builder
+// paterni — CLAUDE.md §12.1).
+//
+// `type`:
+//   - rating          : 1-5 yıldız
+//   - nps             : 0-10 Net Promoter Score
+//   - short_text      : tek satır metin (≤200 char)
+//   - long_text       : çok satır metin (≤2000 char)
+//   - multiple_choice : tek seçim, options JSON dizisi (2-6 seçenek)
+//
+// `options` yalnız multiple_choice için anlamlı: ["Seçenek 1", "Seçenek 2"].
+// Server-side max 6, min 2 zorlanır. JSON çünkü Postgres array tipini
+// Prisma'da kullanmak fazladan ceremoniel (mevcut MenuAnalyticsEvent
+// paterni — JSON metadata).
+model SurveyQuestion {
+  id        String   @id @default(cuid())
+  surveyId  String   @map("survey_id")
+  text      String   @db.Text
+  type      String
+  options   Json?
+  required  Boolean  @default(true)
+  // Stage'ler/sortlama için. POST'ta last + 10 atanır; reorder sonrası
+  // 0,1,2... sıkıştırılır (mevcut menu paterni).
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  survey  Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers SurveyAnswer[]
+
+  @@index([surveyId, sortOrder])
+  @@map("survey_questions")
+}
+
+// Bir müşterinin anketi (kısmen veya tam) doldurma kaydı. completedAt
+// null = devam ediyor / yarım kalmış; not null = tüm zorunlu sorular
+// yanıtlandı. Tamamlanma oranı (completion rate) bu field üzerinden
+// hesaplanır (analytics).
+//
+// sessionId localStorage'dan gelir (mevcut analytics-session.ts helper'ı
+// reuse — UUID, 30 dk idle rotate). Aynı session aynı ankete tekrar
+// gönderemez (DB unique constraint + client-side guard).
+model SurveyResponse {
+  id                  String    @id @default(cuid())
+  surveyId            String    @map("survey_id")
+  sessionId           String    @map("session_id")
+  email               String?
+  phone               String?
+  hasKvkkConsent      Boolean   @default(false) @map("has_kvkk_consent")
+  hasMarketingConsent Boolean   @default(false) @map("has_marketing_consent")
+  completedAt         DateTime? @map("completed_at")
+  ipAddress           String?   @map("ip_address")
+  userAgent           String?   @map("user_agent") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  survey  Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  answers SurveyAnswer[]
+
+  // Aynı session aynı ankete bir kez yanıt verir.
+  @@unique([surveyId, sessionId])
+  @@index([surveyId, createdAt])
+  @@index([surveyId, completedAt])
+  @@index([ipAddress, createdAt])
+  @@map("survey_responses")
+}
+
+// Tek bir soruya verilen cevap. type'a göre ilgili field doldurulur:
+//   - rating / nps        → numberValue
+//   - short_text / long_text → textValue
+//   - multiple_choice     → optionValue (seçilen seçeneğin text'i)
+//
+// Tek tablo, polymorphic değer sütunları — abstraction kaçınma ilkesi
+// (CLAUDE.md §7): tip başına 4 ayrı tablo overkill.
+model SurveyAnswer {
+  id          String   @id @default(cuid())
+  responseId  String   @map("response_id")
+  questionId  String   @map("question_id")
+  textValue   String?  @map("text_value") @db.Text
+  numberValue Int?     @map("number_value")
+  optionValue String?  @map("option_value")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  response SurveyResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  question SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([responseId, questionId])
+  @@index([questionId, createdAt])
+  @@map("survey_answers")
 }
