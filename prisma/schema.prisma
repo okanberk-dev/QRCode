@@ -259,6 +259,12 @@ model Restaurant {
   // surveys; QR access per-survey via /s/[slug]. Cascade delete keeps
   // SurveyResponse / SurveyAnswer trees clean.
   surveys                  Survey[]
+  // Denetim Merkezi (Audit Center). Owner's internal audits — hiring quizzes,
+  // operational checklists, KVKK self-checks. Templates can be private to a
+  // restaurant or global (restaurantId null = superadmin catalog).
+  auditTemplates           AuditTemplate[]
+  auditAssignments         AuditAssignment[]
+  auditResponses           AuditResponse[]
   // Phase 8c+ §38.48 Wave 2 — Customers bulk action overlays.
   // Customers Feedback-derived dedupe paterni (CLAUDE.md §4.5) intact;
   // bu mini-modeller LEFT JOIN ile customer list'e overlay eder.
@@ -1744,4 +1750,291 @@ model SurveyAnswer {
   @@unique([responseId, questionId])
   @@index([questionId, createdAt])
   @@map("survey_answers")
+}
+
+// =========================================================================
+// Denetim Merkezi — Internal Audit Center
+// =========================================================================
+//
+// CLAUDE.md §42. Restoran sahibinin kendi ekibi/operasyonu için quiz +
+// checklist + puanlama. Survey* modellerinden ayrı tutuldu: Survey müşteri-
+// facing public form'lar için (NPS, memnuniyet), Audit* iç kullanım için
+// (hiring quiz, operasyonel kontrol, eğitim).
+//
+// 6 model:
+//   - AuditCategory       : superadmin-yönetilen taksonomi (sektör + ikon)
+//   - AuditTemplate       : şablon (global = restaurantId null veya
+//                           restoran-özel = restaurantId dolu)
+//   - AuditQuestion       : sırayla sorular (single/multi/scale/text/yes_no)
+//   - AuditAssignment     : kime/ne zaman atandı (team member, candidate, link)
+//   - AuditResponse       : tamamlanan veya kısmi yanıt + skor
+//   - AuditAnswer         : tek soruya cevap + auto/manual puan
+//
+// Scoring modları:
+//   - percentage : (toplam doğru / toplam soru) × 100
+//   - weighted   : Σ(question.weight × correct) / Σ(weight) × 100
+//   - pass_fail  : passingScore eşiği üstü = passed
+//
+// IDOR: src/lib/audits/access.ts wrapper'ları kullanılır. Global template
+// (restaurantId null) yalnız superadmin tarafından yazılabilir; herkes
+// okuyup fork edebilir (kendi restoranına klon).
+
+// Audit kategorisi — superadmin tarafından yönetilir. Owner template
+// oluştururken kategori seçer; UI filter + sektör eşleştirmesi için.
+model AuditCategory {
+  id      String  @id @default(cuid())
+  slug    String  @unique
+  labelTr String  @map("label_tr")
+  labelEn String  @map("label_en")
+  // Sektör taksonomi — CLAUDE.md §5 platform sektör paterniyle uyumlu.
+  // food | hotel | retail | health | beauty | other. Schema'da string;
+  // helper'da literal union zorlanır.
+  sector  String  @default("other")
+  // Lucide icon adı (UI'da `<DynamicIcon name>` render). Boşsa default
+  // "ClipboardCheck" kullanılır.
+  iconKey String? @map("icon_key")
+  // UI sıralama. POST'ta last + 10; reorder sonrası sıkıştırılır.
+  order   Int     @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  templates AuditTemplate[]
+
+  @@index([sector, order])
+  @@map("audit_categories")
+}
+
+// Audit şablonu. restaurantId null = global (superadmin kataloğu);
+// restaurantId dolu = restoran-özel (owner kendi şablonu veya bir global
+// şablonu fork etmiş). Slug yok — public URL `/audits/[token]` üzerinden
+// AuditAssignment.token ile gider (her atama ayrı token).
+model AuditTemplate {
+  id           String         @id @default(cuid())
+  restaurantId String?        @map("restaurant_id")
+  restaurant   Restaurant?    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  categoryId   String?        @map("category_id")
+  category     AuditCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  title        String
+  description  String?        @db.Text
+  // Sektör snapshot (global template'lerde category.sector ile eşleşir;
+  // owner fork ederse kendi sektörünü override edebilir).
+  sector       String         @default("other")
+  // 'percentage' | 'weighted' | 'pass_fail'. Server-side enum (Zod).
+  scoringMode  String         @default("percentage") @map("scoring_mode")
+  // pass_fail için zorunlu (Int 0-100); percentage/weighted için opsiyonel
+  // (sadece "geçti" rozeti göstermek için).
+  passingScore Int?           @map("passing_score")
+  // Şablon dili — questions/options bu dilde yazılır. Owner i18n manuel
+  // yapar (henüz auto-translate yok).
+  locale       String         @default("tr")
+  // Yayın akışı — Survey paterniyle aynı. isPublished=false iken atama
+  // yapılamaz; draft olarak owner kendi yanıt deneyebilir.
+  isPublished  Boolean        @default(false) @map("is_published")
+  publishedAt  DateTime?      @map("published_at")
+  // Şablon arşivlendiğinde isActive=false; mevcut atamalar/yanıtlar
+  // okunabilir kalır ama yeni atama yapılamaz.
+  isActive     Boolean        @default(true) @map("is_active")
+  // Hangi tip atayıcı yarattı — denetim trail. 'superadmin' = Buaze
+  // global katalog; 'owner' = restoran sahibi; 'manager' = TeamMember.
+  // String — actor.source ile uyumlu (CLAUDE.md §4).
+  createdBy    String?        @map("created_by")
+  createdById  String?        @map("created_by_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  questions   AuditQuestion[]
+  assignments AuditAssignment[]
+  responses   AuditResponse[]
+
+  // Global katalog browse'u: restaurantId null + isPublished true + sector.
+  @@index([restaurantId, isPublished, isActive])
+  @@index([categoryId, isPublished])
+  @@index([sector, isPublished])
+  @@map("audit_templates")
+}
+
+// AuditQuestion — tek soru. type'a göre options/correctAnswer/scoringRule
+// kullanımı:
+//   - single (tek seçim çoktan seçmeli): options ["A", "B", ...]; correctAnswer
+//     = "A" (quiz mode için)
+//   - multi (çoklu seçim): options aynı; correctAnswer = ["A", "C"]
+//   - scale (1-5 Likert): options yok; correctAnswer opsiyonel (eşik puan)
+//   - text (serbest metin): options yok; correctAnswer yok (manuel score)
+//   - yes_no: options ["Evet", "Hayır"]; correctAnswer "Evet" veya "Hayır"
+//   - file: ek upload (Faz sonraki dalga — Supabase Storage gerekli)
+//
+// weight: weighted scoring için (default 1). isRequired=false → skip
+// edilebilir (atlandığında autoScore=0 sayılır).
+model AuditQuestion {
+  id            String        @id @default(cuid())
+  templateId    String        @map("template_id")
+  template      AuditTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  // Soru tipi: 'single' | 'multi' | 'scale' | 'text' | 'yes_no' | 'file'.
+  type          String
+  prompt        String        @db.Text
+  // Yardım metni — owner soruyu açıklayabilir ("Hijyen kurallarına dair...").
+  helpText      String?       @map("help_text") @db.Text
+  options       Json?
+  // Quiz mode için doğru cevap. Tipine göre string veya string[].
+  correctAnswer Json?         @map("correct_answer")
+  // Weighted scoring için ağırlık (Int 1-10). Default 1; pass_fail/percentage
+  // modunda yok sayılır.
+  weight        Int           @default(1)
+  // İleride genişletme için (partial credit, regex match vb.). Şimdilik
+  // null; helper auto-score basit eşitlik kontrolü yapar.
+  scoringRule   Json?         @map("scoring_rule")
+  isRequired    Boolean       @default(true) @map("is_required")
+  sortOrder     Int           @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  answers AuditAnswer[]
+
+  @@index([templateId, sortOrder])
+  @@map("audit_questions")
+}
+
+// AuditAssignment — bir denetimin kime ve ne zaman gideceği. Tek atama
+// birden çok yanıt üretebilir (recurrence) — her recurrence yeni
+// AuditAssignment row değil, mevcut row'un response listesi büyür.
+//
+// assigneeType:
+//   - 'team_member' : assigneeTeamMemberId dolu, panel akışı
+//   - 'candidate'   : candidateEmail/candidatePhone dolu, public link
+//   - 'self'        : owner kendi test ediyor (preview)
+//   - 'link'        : anonim public link, kime gittiği belirsiz
+//
+// recurrence:
+//   - 'once'    : tek atama, completedAt sonra status=completed
+//   - 'daily' / 'weekly' / 'monthly' : cron her döngüde yeni response
+//     oluşturma yetkisi verir (Faz 5 — /api/cron/audit-recurrence).
+//
+// token: assigneeType 'candidate' veya 'link' için public URL. 32 byte
+// hex. Cancel veya completion sonrası tokenRevoked=true yapılır.
+model AuditAssignment {
+  id                   String        @id @default(cuid())
+  templateId           String        @map("template_id")
+  template             AuditTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  restaurantId         String        @map("restaurant_id")
+  restaurant           Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  // 'team_member' | 'candidate' | 'self' | 'link'
+  assigneeType         String        @map("assignee_type")
+  // TeamMember.id (FK yok — Json locations paterniyle uyumlu)
+  assigneeTeamMemberId String?       @map("assignee_team_member_id")
+  // Aday için iletişim. team_member için null.
+  assigneeName         String?       @map("assignee_name")
+  assigneeEmail        String?       @map("assignee_email")
+  assigneePhone        String?       @map("assignee_phone")
+  // Notes — atayan kişi aday hakkında not bırakabilir (private).
+  internalNote         String?       @map("internal_note") @db.Text
+  // 'once' | 'daily' | 'weekly' | 'monthly'
+  recurrence           String        @default("once")
+  // İleri tarih — Faz 5 cron bu tarihte hatırlatma gönderir; geçtiyse
+  // overdue işaretler.
+  dueAt                DateTime?     @map("due_at")
+  // 'pending' | 'sent' | 'in_progress' | 'completed' | 'overdue' | 'cancelled'
+  status               String        @default("pending")
+  // Public link akışı için token. assigneeType 'candidate' veya 'link' iken
+  // dolu. Cancel/done sonrası tokenRevoked=true.
+  token                String?       @unique
+  tokenRevoked         Boolean       @default(false) @map("token_revoked")
+  // Atayan actor. createdBy actor.source ('superadmin'|'manager'|'owner');
+  // createdById actor.id.
+  createdBy            String?       @map("created_by")
+  createdById          String?       @map("created_by_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  responses AuditResponse[]
+
+  @@index([restaurantId, status, dueAt])
+  @@index([templateId, status])
+  @@index([assigneeTeamMemberId, status])
+  @@map("audit_assignments")
+}
+
+// AuditResponse — bir denetimi (kısmen veya tam) doldurma kaydı. score +
+// scorePercentage server-side computed (src/lib/audits/score.ts) — submit
+// anında veya manuel re-score sonrası set edilir.
+//
+// startedAt/completedAt timeline:
+//   - GET /audits/[token] ilk açılışta startedAt set + status 'in_progress'
+//   - POST submit'te completedAt + score hesap
+//   - completedAt null → kısmi/draft
+//
+// reviewedById: subjective text answer'lar için owner manuel re-score
+// yapınca işaretlenir (auditTrail).
+model AuditResponse {
+  id                  String           @id @default(cuid())
+  templateId          String           @map("template_id")
+  template            AuditTemplate    @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  assignmentId        String?          @map("assignment_id")
+  assignment          AuditAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+  restaurantId        String           @map("restaurant_id")
+  restaurant          Restaurant       @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  // Public link yanıtlarında respondentName/Email/Phone doludur (KVKK
+  // consent submit ile). Team member yanıtlarında teamMemberId dolu.
+  respondentName      String?          @map("respondent_name")
+  respondentEmail     String?          @map("respondent_email")
+  respondentPhone     String?          @map("respondent_phone")
+  teamMemberId        String?          @map("team_member_id")
+  // KVKK / marketing consent — public link akışı (CLAUDE.md §19.1)
+  hasKvkkConsent      Boolean          @default(false) @map("has_kvkk_consent")
+  hasMarketingConsent Boolean          @default(false) @map("has_marketing_consent")
+  // Skor — null iken kısmi; submit sonrası set. Int çünkü puan formülleri
+  // tam sayıya yuvarlar. scorePercentage 0-10000 sklı (2 ondalık duyarlık,
+  // 10000 = %100.00) — Decimal eklemekten kaçınma (Postgres int basit).
+  score               Int?             @map("score")
+  scorePercentage     Int?             @map("score_percentage")
+  passed              Boolean?         @map("passed")
+  startedAt           DateTime         @default(now()) @map("started_at")
+  completedAt         DateTime?        @map("completed_at")
+  // Manuel re-score sonrası owner/superadmin işaretler.
+  reviewedById        String?          @map("reviewed_by_id")
+  reviewedAt          DateTime?        @map("reviewed_at")
+  reviewNote          String?          @map("review_note") @db.Text
+  ipAddress           String?          @map("ip_address")
+  userAgent           String?          @map("user_agent") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  answers AuditAnswer[]
+
+  @@index([restaurantId, completedAt])
+  @@index([templateId, completedAt])
+  @@index([assignmentId, completedAt])
+  @@index([teamMemberId, completedAt])
+  @@map("audit_responses")
+}
+
+// AuditAnswer — tek soruya verilen cevap. Polymorphic value Json'da
+// (string veya string[] tip'e göre). autoScore = server-side computed;
+// manualScore = owner override (subjective text için).
+//
+// Final puan: manualScore ?? autoScore (manuel override önceliği).
+model AuditAnswer {
+  id          String        @id @default(cuid())
+  responseId  String        @map("response_id")
+  response    AuditResponse @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  questionId  String        @map("question_id")
+  question    AuditQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  // Cevap — type'a göre string, string[], number, ya da file URL. Json
+  // (polymorphic — Survey paterniyle aynı).
+  value       Json?
+  // Otomatik puan (server compute). Quiz mode için doğru cevapla eşleşme.
+  autoScore   Int?          @map("auto_score")
+  // Manuel override (text answer'ları için reviewer tarafından).
+  manualScore Int?          @map("manual_score")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([responseId, questionId])
+  @@index([questionId, createdAt])
+  @@map("audit_answers")
 }
