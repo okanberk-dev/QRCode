@@ -82,17 +82,21 @@ const PLATFORM_LABEL: Record<string, string> = {
 };
 
 /**
- * Build the server-side QR download URL. Single source of truth shared by:
- *   - PNG download button (large width=1080 for print) — `style: 'premium'`
- *     → Pulse Lime hero frame + headline + footer
- *   - PDF print flow — `style: 'plain'` → kullanıcı talebi: PDF'de
- *     **sadece QR matrix** (kullanıcının seçtiği renkler), arka plan Pulse
- *     tasarımı yok. Bonus: composePremiumQrPng SVG text "Space Grotesk"
- *     font'u Vercel serverless container'da sistem fontu yoksa Unicode
- *     tofu (kare yazı) render ediyordu; plain mode hiç text içermez →
- *     font sorunu yapısal olarak çözülür.
- *   - Inline thumbnail (width=240 for preview slot) — `style: 'premium'`
- *     (önizleme card'ı küçük frame'i taşır)
+ * Build the server-side QR download URL. Tüm callsite'lar `style: 'plain'`
+ * kullanır — kullanıcı talebi: "arka plan tasarım vs. olmasın, sadece QR
+ * kod gözüksün". Plain mode `QRCode.toBuffer` mono çıktı (yalnız QR module
+ * matrix, kullanıcının dark/light renkleri). Pulse Lime hero frame +
+ * headline + footer YOK; composePremiumQrPng SVG text rendering'i Vercel
+ * serverless'ta sistem fontu eksikliği nedeniyle kare yazı (tofu) üretiyordu
+ * → plain mode hiç text içermez = font sorunu yapısal olarak elimine.
+ *
+ * Callsite'lar:
+ *   - PNG download button (width=1080 print quality)
+ *   - PDF print flow (width=1080, browser print → Save as PDF)
+ *   - Inline thumbnail (width=240 preview slot)
+ *
+ * Tümü `style: 'plain'` ile wizard preview'la birebir tutarlı — owner'ın
+ * sihirbazda gördüğü QR aynı görsel kimlikle iner.
  */
 function buildQrUrl(
   item: Pick<QRCardItem, "restaurantId" | "tableNumber" | "platform" | "darkColor" | "lightColor">,
@@ -141,27 +145,30 @@ export function QRCard({
   const fileName = safeFileName(item.name);
 
   /**
-   * PNG download — server-side composed (Pulse Lime hero frame). Deterministic
-   * blob fetch; empty/HTTP-error guards surface actionable error to the owner
-   * rather than silent failure.
+   * PNG download — **plain QR** (yalnız QR matrix, kullanıcının seçtiği
+   * renklerde). Kullanıcı talebi: arka plan Pulse Lime tasarımı + headline
+   * + footer YOK; "sadece QR kod gözüksün, wizardda kullanıcının
+   * tasarladığı şekliyle". Bonus: Vercel serverless'ta composer SVG text
+   * font'unu bulamadığında kare yazı (tofu) çıkıyordu — plain mode hiç
+   * text içermez = font sorunu yapısal olarak çözülür.
    *
    * Cross-browser download trigger disipline:
    *  - Anchor element DOM'a append + click + **1000ms delay** sonra remove
    *    (iOS Safari + Chrome bazı sürümler `a.remove()` ile `URL.revokeObjectURL`
-   *    immediate çağrılınca download'ı iptal ediyor — boş PNG iniyor.
-   *    setTimeout ile defer browser'a transfer'i tamamlama süresi verir).
-   *  - `Content-Type` header `image/png` doğrulaması (server bir HTML 500 page
-   *    döndürürse — Vercel framework default — `res.ok` true olabilir ama
-   *    blob.type=text/html → kullanıcı bozuk dosya iner).
-   *  - `blob.size === 0` veya `< 100 byte` guard — composer sessiz fail
-   *    durumunda actionable error.
+   *    immediate çağrılınca download'ı iptal ediyor — boş PNG iniyor).
+   *  - `Content-Type` header `image/png` doğrulaması (server HTML 500 page
+   *    döndürürse `blob.type=text/html` → bozuk dosya iner).
+   *  - `blob.size < 100` guard — composer sessiz fail durumunda actionable
+   *    error.
    */
   const downloadPng = async () => {
     if (downloadingPng) return;
     setDownloadError(null);
     setDownloadingPng(true);
     try {
-      const res = await fetch(buildQrUrl(item, { format: "png", width: 1080 }));
+      const res = await fetch(
+        buildQrUrl(item, { format: "png", width: 1080, style: "plain" }),
+      );
       if (!res.ok) {
         setDownloadError(
           isTr
@@ -328,10 +335,10 @@ export function QRCard({
     month: "short",
   });
 
-  // Inline preview — small server-rendered PNG. Browser caches by URL +
-  // Cache-Control: no-store on the API, so first paint is one network
-  // round-trip; re-renders use the in-memory image without re-fetch.
-  const previewSrc = buildQrUrl(item, { format: "png", width: 240 });
+  // Inline preview — plain QR (sadece module matrix, kullanıcı renkleri).
+  // Kullanıcı talebi: arka plan Pulse Lime tasarımı yok, "sadece QR kod
+  // gözüksün". `style=plain` server `QRCode.toBuffer` mono mode'a yönelir.
+  const previewSrc = buildQrUrl(item, { format: "png", width: 240, style: "plain" });
 
   return (
     <div className="bz-card relative overflow-hidden p-[18px]">
@@ -348,9 +355,11 @@ export function QRCard({
         <Badge kind="ok">{isTr ? "Aktif" : "Active"}</Badge>
       </div>
 
-      {/* Inline preview — server-rendered thumbnail (Pulse Lime hero frame).
-          width=240 keeps payload ≤ 25 KB. Lazy-loaded so off-screen cards in
-          long lists don't block initial paint. */}
+      {/* Inline preview — plain QR thumbnail (sadece module matrix, kullanıcı
+          renklerinde). Pulse Lime hero frame yok; "kullanıcının tasarladığı
+          gibi" görünmesi için arka plan sade beyaz card. width=240 server
+          response ≤ 5 KB. Lazy-loaded; off-screen card'lar initial paint'i
+          bloklamaz. */}
       <div
         className="flex justify-center rounded-xl border border-[#EDEDED] bg-white p-3"
         aria-label={isTr ? "QR önizlemesi" : "QR preview"}
@@ -358,11 +367,11 @@ export function QRCard({
         <img
           src={previewSrc}
           alt={isTr ? "QR önizlemesi" : "QR preview"}
-          width={140}
-          height={140}
+          width={160}
+          height={160}
           loading="lazy"
           decoding="async"
-          className="h-[140px] w-[140px] object-contain"
+          className="h-[160px] w-[160px] object-contain"
         />
       </div>
 
@@ -401,9 +410,11 @@ export function QRCard({
         </div>
       </div>
 
-      {/* Primary download row — server-side PNG (Pulse Lime hero) +
-          browser print PDF. html-to-image + jsPDF kaldırıldı
-          (root-cause fix: client capture pipeline empty-PNG race). */}
+      {/* Primary download row — plain QR (sadece module matrix, kullanıcı
+          renklerinde). PNG: server-side `QRCode.toBuffer` mono. PDF:
+          aynı plain PNG + browser print → Save as PDF. Pulse Lime hero
+          frame YOK (kullanıcı talebi). html-to-image + jsPDF kaldırıldı
+          (PR #656 + #658 cleanup). */}
       <div className="mt-3.5 border-t border-[#EDEDED] pt-3 grid grid-cols-2 gap-2">
         <button
           type="button"
