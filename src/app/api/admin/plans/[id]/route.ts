@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
+import { revalidatePricing } from '@/lib/marketing-revalidate';
 import { toAdminRow } from '@/lib/subscription-plans';
 
 export const dynamic = 'force-dynamic';
@@ -124,6 +125,7 @@ export async function PATCH(
       }
       return tx.subscriptionPlan.update({ where: { id }, data });
     });
+    revalidatePricing();
     return NextResponse.json({ data: toAdminRow(updated) });
   } catch (error) {
     const code = (error as { code?: string })?.code;
@@ -144,6 +146,7 @@ export async function DELETE(
   const { id } = await params;
   try {
     await prisma.subscriptionPlan.delete({ where: { id } });
+    revalidatePricing();
     return NextResponse.json({ success: true });
   } catch (error) {
     const code = (error as { code?: string })?.code;
