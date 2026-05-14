@@ -29,8 +29,13 @@ export async function GET(
 
   // Defensive: yeni tablo migrate olmadıysa graceful degrade
   try {
-    const [delta, latestRow, restaurant] = await Promise.all([
-      getHealthSnapshotDelta(id),
+    // CLAUDE.md §40.1 — connection_limit=1 altında paralel read'leri
+    // `prisma.$transaction([...])` tek connection üstünde sıralar.
+    // `getHealthSnapshotDelta` regular Promise döndüğü için `$transaction`'a
+    // konamaz (mixed promise) — sequential çalıştırılır; içerde kendi
+    // `$transaction`'ı var, böylece 2 connection cycle total.
+    const delta = await getHealthSnapshotDelta(id);
+    const [latestRow, restaurant] = await prisma.$transaction([
       prisma.restaurantHealthSnapshot.findFirst({
         where: { restaurantId: id },
         orderBy: { capturedAt: 'desc' },

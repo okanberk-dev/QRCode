@@ -983,11 +983,14 @@ export async function runAuditSeed(): Promise<AuditSeedResult> {
       // garanti et. Aksi halde public link akışında options.map() boş
       // array döner, UI'da seçenek butonu render edilmez (CLAUDE.md
       // §42 — Audit options normalization, lib/audits/options.ts).
+      // Seed template'leri şu an sadece 'tr' locale; EN seed eklendiğinde
+      // SeedTemplate.locale type'ı 'tr' | 'en'a genişletilir + bu satır
+      // `t.locale` kullanır. Şimdilik 'tr' sabit (CLAUDE.md §38.180 Stage 100).
       const resolvedOptions =
         q.options !== undefined
           ? q.options
           : q.type === 'yes_no'
-            ? getYesNoDefaultOptions(t.locale === 'en' ? 'en' : 'tr')
+            ? getYesNoDefaultOptions('tr')
             : undefined;
       await prisma.auditQuestion.create({
         data: {

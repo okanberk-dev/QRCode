@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
+import { validateBody } from '@/lib/api/validate';
 import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-domains';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
 import { isValidEmail, isValidHexColor } from '@/lib/validations';
@@ -32,6 +34,42 @@ const URL_PROVIDER_MAP: Record<string, IntegrationProvider> = {
   bookingUrl: 'booking',
   yandexUrl: 'yandex',
 };
+
+// POST body schema. CLAUDE.md §28.3.1 + §40.5 — `.strict()` mass-assignment
+// koruması; tanımlı dışındaki field'lar 400 ile reddedilir. Detaylı
+// validation (hex color, email, platform URL provider check) runtime'da
+// devam eder — Zod sadece shape + length cap'leri uygular.
+const RestaurantPostBody = z
+  .object({
+    name: z.string().trim().min(1, 'Ad zorunludur').max(200),
+    slug: z
+      .string()
+      .trim()
+      .min(1, 'Slug zorunludur')
+      .max(60)
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        'Slug sadece küçük harf, rakam ve tire içerebilir',
+      ),
+    category: z.string().trim().max(100).optional().nullable(),
+    address: z.string().trim().max(500).optional().nullable(),
+    city: z.string().trim().max(100).optional().nullable(),
+    kvkkText: z.string().max(5000).optional().nullable(),
+    phone: z.string().max(50).optional().nullable(),
+    googlePlaceId: z.string().max(200).optional().nullable(),
+    googleReviewUrl: z.string().max(500).optional().nullable(),
+    notificationEmail: z.string().max(256).optional().nullable(),
+    primaryColor: z.string().max(9).optional().nullable(),
+    getirYemekUrl: z.string().max(500).optional().nullable(),
+    yemekSepetiUrl: z.string().max(500).optional().nullable(),
+    trendyolYemekUrl: z.string().max(500).optional().nullable(),
+    tripAdvisorUrl: z.string().max(500).optional().nullable(),
+    airbnbUrl: z.string().max(500).optional().nullable(),
+    bookingUrl: z.string().max(500).optional().nullable(),
+    yandexUrl: z.string().max(500).optional().nullable(),
+    userId: z.string().max(100).nullable().optional(),
+  })
+  .strict();
 
 // GET /api/restaurants - List all restaurants (admin) or get by slug (public)
 export async function GET(req: NextRequest) {
@@ -363,27 +401,43 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { name, slug, category, address, city, kvkkText, phone, googlePlaceId, googleReviewUrl, notificationEmail, primaryColor, getirYemekUrl, yemekSepetiUrl, trendyolYemekUrl, tripAdvisorUrl, airbnbUrl, bookingUrl, yandexUrl, userId: bodyUserId } = body;
+    // CLAUDE.md §28.3.1 + §40.5 — `validateBody` + `.strict()` Zod schema.
+    // Tanımsız field'lar 400 ile reddedilir (mass assignment koruması).
+    // Hex color / email / platform URL check'leri runtime'da devam eder.
+    const raw = await req.json().catch(() => null);
+    const parsed = validateBody<z.infer<typeof RestaurantPostBody>>(RestaurantPostBody, raw);
+    if (!parsed.ok) return parsed.response;
+    const {
+      name,
+      slug,
+      category,
+      address,
+      city,
+      kvkkText,
+      phone,
+      googlePlaceId,
+      googleReviewUrl,
+      notificationEmail,
+      primaryColor,
+      getirYemekUrl,
+      yemekSepetiUrl,
+      trendyolYemekUrl,
+      tripAdvisorUrl,
+      airbnbUrl,
+      bookingUrl,
+      yandexUrl,
+      userId: bodyUserId,
+    } = parsed.data;
+
     const normalizedGoogle = normalizeGoogleReviewInput(
       typeof googlePlaceId === 'string' && googlePlaceId.trim()
         ? googlePlaceId
         : googleReviewUrl,
     );
     const platformUrlBody = {
-      ...body,
+      ...parsed.data,
       googleReviewUrl: normalizedGoogle.googleReviewUrl,
     };
-
-    if (!name || !slug) {
-      return ApiErrors.badRequest('Ad ve slug zorunludur', 'MISSING_FIELDS');
-    }
-
-    // Validate slug format (lowercase alphanumeric + hyphens only)
-    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    if (!slugRegex.test(slug)) {
-      return ApiErrors.badRequest('Slug sadece küçük harf, rakam ve tire içerebilir', 'INVALID_SLUG');
-    }
 
     // Validate every platform URL on hard-error severity. Warnings (homepage
     // / not_review_link) pass through the same way the IntegrationCard UI
@@ -477,7 +531,12 @@ export async function POST(req: NextRequest) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return ApiErrors.conflict('Bu slug zaten kullanılıyor');
     }
-    console.error('Failed to create restaurant:', error);
+    // CLAUDE.md §37.7 — PII-safe error logging.
+    console.error('[restaurants:create] failed', {
+      actorId: actor.id,
+      errorName: error instanceof Error ? error.name : 'unknown',
+      errorMessage: error instanceof Error ? error.message.slice(0, 200) : 'non-error',
+    });
     return ApiErrors.internalError('İşletme oluşturulamadı');
   }
 }

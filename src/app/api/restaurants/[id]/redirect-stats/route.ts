@@ -49,13 +49,14 @@ export async function GET(
     : null;
 
   // 7d + 30d totals her zaman döner (UI top-stat kartları için), groupBy
-  // ise seçili range'e göre. Promise.all tek round-trip.
+  // ise seçili range'e göre. CLAUDE.md §40.1 — connection_limit=1 altında
+  // `prisma.$transaction([...])` paralel read'leri tek connection'a sıkıştırır.
   const groupByWhere: { restaurantId: string; createdAt?: { gte: Date } } = {
     restaurantId: id,
   };
   if (windowStart) groupByWhere.createdAt = { gte: windowStart };
 
-  const [last7Days, last30Days, byProviderRaw] = await Promise.all([
+  const [last7Days, last30Days, byProviderRaw] = await prisma.$transaction([
     prisma.platformRedirectEvent.count({
       where: {
         restaurantId: id,

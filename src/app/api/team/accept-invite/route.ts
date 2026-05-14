@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { prisma } from '@/lib/prisma';
-import { rateLimit, maybeSweep } from '@/lib/rate-limit';
+import { getClientIp, rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { isStrongPassword } from '@/lib/validations';
 import { issueLoginSession } from '@/app/api/auth/login/route';
 
@@ -73,7 +73,10 @@ const ROLE_LABELS_EN: Record<string, string> = {
 
 export async function GET(req: NextRequest): Promise<NextResponse<InviteInfo | InviteError>> {
   maybeSweep();
-  const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
+  // CLAUDE.md §37.2.D — `getClientIp()` parse normalization (XFF stuffing
+  // engelleyici). Ham `headers.get('x-forwarded-for')` `a, b, c` formatında
+  // tüm string'i key'e koyup pivot vector açıyordu.
+  const ip = getClientIp(req.headers);
   const rl = await rateLimit(`invite:lookup:${ip}`, 30, 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(
@@ -169,7 +172,8 @@ export async function GET(req: NextRequest): Promise<NextResponse<InviteInfo | I
 // okur.
 export async function POST(req: NextRequest): Promise<NextResponse> {
   maybeSweep();
-  const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
+  // CLAUDE.md §37.2.D — `getClientIp()` parse normalization.
+  const ip = getClientIp(req.headers);
   const rl = await rateLimit(`invite:accept:${ip}`, 10, 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(

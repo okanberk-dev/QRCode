@@ -66,11 +66,15 @@ export async function runLifecycleEmails(): Promise<LifecycleSummary> {
     console.error('[lifecycle-emails cron] buildLifecycleContexts failed', err);
   }
 
+  // CLAUDE.md §43 + §21.34 — monthly_health_report ayrı cron'da gönderilir
+  // (`/api/cron/monthly-health-report`). Lifecycle cron buradan sıfır kalır;
+  // counter Record<LifecycleEmailType, number> tip parity'si için ekli.
   const sent: Record<LifecycleEmailType, number> = {
     qr_not_downloaded: 0,
     first_feedback_tips: 0,
     upgrade_suggestion: 0,
     inactive_reactivation: 0,
+    monthly_health_report: 0,
   };
   let skipped = 0;
   let failures = 0;

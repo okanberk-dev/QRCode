@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recordEmbedView } from '@/lib/embed-tracking';
-import { rateLimit } from '@/lib/rate-limit';
+import { getClientIp, rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,17 +9,12 @@ export const dynamic = 'force-dynamic';
 const PIXEL_BASE64 = 'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 const PIXEL_BYTES = Buffer.from(PIXEL_BASE64, 'base64');
 
-function clientIp(req: NextRequest): string {
-  const xfwd = req.headers.get('x-forwarded-for');
-  if (xfwd) return xfwd.split(',')[0]?.trim() || 'unknown';
-  return (req as unknown as { ip?: string }).ip || 'unknown';
-}
-
 async function gateAndTrack(
   req: NextRequest,
   slug: string,
 ): Promise<NextResponse | null> {
-  const ip = clientIp(req);
+  // CLAUDE.md §37.2.D — `getClientIp()` parse normalization.
+  const ip = getClientIp(req.headers);
   const limit = await rateLimit(`embed-track:${ip}`, 60, 60 * 1000);
   if (!limit.allowed) {
     return NextResponse.json({ error: 'rate_limit' }, { status: 429 });
