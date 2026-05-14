@@ -148,7 +148,9 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const [posts, total] = await Promise.all([
+    // Stage 108 §38.188 — Promise.all → $transaction (CLAUDE.md §40.1
+    // Supabase pooler connection_limit=1 disipline).
+    const [posts, total] = await prisma.$transaction([
       prisma.blogPost.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -158,15 +160,26 @@ export async function GET(req: NextRequest) {
       prisma.blogPost.count({ where }),
     ]);
 
-    return NextResponse.json({
-      posts,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      }
-    });
+    return NextResponse.json(
+      {
+        posts,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+      {
+        headers: {
+          // Stage 108 §38.188 — admin list edge cache (CLAUDE.md §40.6).
+          // Blog post list mutates on admin create/edit/publish + ISR
+          // revalidation already triggers public surface refresh; 60s fresh
+          // + 5min SWR is plenty for the admin list view.
+          'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
+        },
+      },
+    );
   } catch (error) {
     console.error('[API blog GET]', error);
     return ApiErrors.internalError('Blog yazıları çekilemedi');

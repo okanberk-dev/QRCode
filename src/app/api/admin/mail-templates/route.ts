@@ -53,5 +53,18 @@ export async function GET(req: NextRequest) {
     }),
   );
 
-  return NextResponse.json({ data: grid });
+  return NextResponse.json(
+    { data: grid },
+    {
+      headers: {
+        // Stage 108 §38.188 — admin list edge cache (CLAUDE.md §40.6).
+        // Mail template grid mutates only when a superadmin edits/seeds a
+        // template; 60s fresh + 5min SWR keeps the index page snappy on
+        // back-and-forth navigation. PUT/DELETE responses bypass cache via
+        // mutation handler defaults (Next 15 routes — no cache directive
+        // means no-store).
+        'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
+      },
+    },
+  );
 }

@@ -56,8 +56,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'forbidden', hint: 'team is workspace-scoped' }, { status: 403 });
   }
 
+  // Stage 108 §38.188 — defensive `select` (CLAUDE.md §14.1). Without
+  // this, every TeamMember column ships in the response (incl. inviteToken,
+  // inviteTokenExpiresAt, locations array, ownerId) — extra bandwidth and
+  // accidental token leakage if the response body is ever logged. Schema
+  // drift (P2022) also turned into an issue if a future column is added
+  // before the migration runs in preview.
   const members = await prisma.teamMember.findMany({
     where: { ownerId },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      status: true,
+      lastSeenAt: true,
+      createdAt: true,
+    },
     orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
   });
 

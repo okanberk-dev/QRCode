@@ -25,7 +25,10 @@ export async function GET(req: NextRequest) {
   const skip = (page - 1) * limit;
 
   try {
-    const [announcements, total] = await Promise.all([
+    // Stage 108 §38.188 — Promise.all → $transaction (CLAUDE.md §40.1
+    // Supabase pooler connection_limit=1 disipline). Two parallel reads
+    // collapse onto a single pooled connection without queue contention.
+    const [announcements, total] = await prisma.$transaction([
       prisma.announcement.findMany({
         orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
         skip,
@@ -34,15 +37,27 @@ export async function GET(req: NextRequest) {
       prisma.announcement.count(),
     ]);
 
-    return NextResponse.json({
-      announcements,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      }
-    });
+    return NextResponse.json(
+      {
+        announcements,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      },
+      {
+        headers: {
+          // Stage 108 §38.188 — admin list edge cache (CLAUDE.md §40.6).
+          // Announcements mutate infrequently (admin manual create/edit).
+          // 60s fresh + 5min SWR keeps repeated paginations + cross-tab
+          // refreshes off the origin while still respecting `private`
+          // (admin cookie isolation).
+          'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
+        },
+      },
+    );
   } catch (error) {
     console.error('[API announcements GET]', error);
     return ApiErrors.internalError('Duyurular çekilemedi');

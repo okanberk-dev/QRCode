@@ -38,7 +38,10 @@ export async function GET(req: NextRequest) {
   const where = buildMembersWhere(params);
 
   try {
-    const [total, users] = await Promise.all([
+    // Stage 108 §38.188 — Promise.all → $transaction (CLAUDE.md §40.1
+    // Supabase pooler `connection_limit=1` disipline). Two parallel reads
+    // collapse onto a single pooled connection without queue contention.
+    const [total, users] = await prisma.$transaction([
       prisma.user.count({ where }),
       prisma.user.findMany({
         where,
@@ -60,15 +63,27 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json({
-      data: users,
-      meta: {
-        total,
-        page: params.page ?? 1,
-        perPage: params.perPage ?? 25,
-        totalPages: Math.max(1, Math.ceil(total / (params.perPage ?? 25))),
+    return NextResponse.json(
+      {
+        data: users,
+        meta: {
+          total,
+          page: params.page ?? 1,
+          perPage: params.perPage ?? 25,
+          totalPages: Math.max(1, Math.ceil(total / (params.perPage ?? 25))),
+        },
       },
-    });
+      {
+        headers: {
+          // Stage 108 §38.188 — admin list edge cache (CLAUDE.md §40.6).
+          // Members list mutates on create/edit/bulk-deactivate; 30s fresh
+          // + 2min SWR balances admin pagination hit rate against post-
+          // mutation staleness (mutations send `no-store` separately).
+          // `private` directive cookie-isolated.
+          'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120',
+        },
+      },
+    );
   } catch (error) {
     console.error('[MEMBERS GET]', error);
     return NextResponse.json({ error: 'Kullanıcılar alınamadı' }, { status: 500 });

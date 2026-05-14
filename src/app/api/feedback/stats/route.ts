@@ -74,28 +74,35 @@ export async function GET(req: NextRequest) {
     // Today filter (UTC — matches /feedback?days=today behaviour).
     const startOfToday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
 
-    // Basic stats
-    const totalCount = await prisma.feedback.count({ where: dateFilter });
-    const todayCount = await prisma.feedback.count({ where: { ...dateFilter, createdAt: { gte: startOfToday } } });
-    const lowRatingCount = await prisma.feedback.count({ where: { ...dateFilter, rating: { lte: 3 } } });
-    const googleRedirectsCount = await prisma.feedback.count({
-      where: { ...dateFilter, rating: { gte: 4 }, comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT }
-    });
-
-    // ─── Google Review Conversion ───
-    // A 4-5★ rating is a "conversion opportunity". We count it as actually
-    // sent to Google only if the parent Restaurant has a googlePlaceId set
-    // (otherwise /r/[slug] shows a thank-you page and no redirect happens).
-    const highRatingCount = await prisma.feedback.count({
-      where: { ...dateFilter, rating: { gte: 4 } },
-    });
-    const sentToGoogleCount = await prisma.feedback.count({
-      where: {
-        ...dateFilter,
-        rating: { gte: 4 },
-        restaurant: { googlePlaceId: { not: null } },
-      },
-    });
+    // Basic stats — Stage 108 §38.188: 6 sequential count() → single
+    // $transaction batch. Supabase pooler `connection_limit=1` (CLAUDE.md
+    // §40.1) tek connection üstünde batch'i sıralı çalıştırır ama 6 ayrı
+    // round-trip yerine 1 protocol round-trip → ~80-150ms latency tasarrufu
+    // owner KPI cold load'da. dateFilter immutable, scope intact.
+    const [totalCount, todayCount, lowRatingCount, googleRedirectsCount, highRatingCount, sentToGoogleCount] =
+      await prisma.$transaction([
+        prisma.feedback.count({ where: dateFilter }),
+        prisma.feedback.count({ where: { ...dateFilter, createdAt: { gte: startOfToday } } }),
+        prisma.feedback.count({ where: { ...dateFilter, rating: { lte: 3 } } }),
+        // 4-5★ ratings + special "google redirect" comment marker
+        prisma.feedback.count({
+          where: { ...dateFilter, rating: { gte: 4 }, comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT },
+        }),
+        // ─── Google Review Conversion ───
+        // A 4-5★ rating is a "conversion opportunity". Counted as actually
+        // sent to Google only if the parent Restaurant has a googlePlaceId set
+        // (otherwise /r/[slug] shows a thank-you page and no redirect happens).
+        prisma.feedback.count({
+          where: { ...dateFilter, rating: { gte: 4 } },
+        }),
+        prisma.feedback.count({
+          where: {
+            ...dateFilter,
+            rating: { gte: 4 },
+            restaurant: { googlePlaceId: { not: null } },
+          },
+        }),
+      ]);
     const missedHighRatings = highRatingCount - sentToGoogleCount;
     const conversionRate = highRatingCount > 0
       ? parseFloat(((sentToGoogleCount / highRatingCount) * 100).toFixed(1))
