@@ -120,7 +120,7 @@ Stripe/Linear/Vercel disiplini — her entity için tek terim. **"Üyeler" süpe
 
 ## 5. Platform Sistemi (Yorumları Ayrıştırma)
 
-Müşteri QR'dan gelirken URL'de `platform` parametresi taşıyor: `google | yemeksepeti | getir | trendyol_go | tripadvisor | airbnb | booking | yandex`. Konaklama segmenti (otel) için `tripadvisor | airbnb | booking`, TR pazarı arama alternatifi için `yandex` desteklenir. Bu değer:
+Müşteri QR'dan gelirken URL'de `platform` parametresi taşıyor: **10 yorum platformu** — `google | yemeksepeti | getir | trendyol_go | tripadvisor | airbnb | booking | yandex | yelp | foursquare` (§38.52 closure'da Yelp + Foursquare eklendi, NA/EU pazarları için). Konaklama segmenti (otel) için `tripadvisor | airbnb | booking`, TR pazarı arama alternatifi için `yandex`, US/CA için `yelp`, geo-check-in için `foursquare` desteklenir. Bu değer:
 - `Feedback.platform` sütununa yazılır
 - İstatistiklerde `groupBy({ by: ['platform'] })` ile ayrıştırılır
 - QR oluştururken `QrGeneration.platform` olarak da kaydedilir (history için)
@@ -131,7 +131,7 @@ Renkler & label haritası şu dosyalarda tekrarlanıyor (ortak modüle çıkarma
 - `src/components/admin/PlatformDistribution.tsx` → `PLATFORM_COLORS` (tek platform dağılım bileşeni — hem admin hem owner panelinde kullanılıyor)
 - `src/app/admin/qr/page.tsx` → `PLATFORM_BADGE`
 
-Yeni bir platform eklemek gerekirse: bu 3 haritaya + `prisma/schema.prisma`'daki ilgili enum/string alanına + QR public akışına (`/r/[slug]`) ekle.
+Yeni bir platform eklemek gerekirse (CLAUDE.md §19.4.3 paterni): `PROVIDER_DOMAINS` + `PROVIDER_LABELS` + `PROVIDER_MAP` + `PLATFORM_ID_TO_PROVIDER` + `PROVIDER_FIELDS` + (varsa) `PATH_RULES` + `VALID_PROVIDERS` + `FeedbackTable PLATFORM_CONFIG` + `PlatformDistribution PLATFORM_COLORS` + `admin/qr PLATFORM_BADGE` + `SECTOR_PLATFORMS` + `prisma/schema.prisma` `Restaurant.{provider}Url`/`{provider}Enabled` field + QR public akışına (`/r/[slug]`).
 
 ### 5.1 Google Maps / Business Profile entegrasyonu (2026-05)
 
@@ -172,7 +172,7 @@ Notlar:
 - `menuEnabled=false` olduğunda `menuPublished=false` yapılır ve owner menü oluşturma/düzenleme/publish API'leri server-side 403 döner. Public menü zaten `menuEnabled && menuPublished` ile görünür.
 - `pulseAiEnabled=false` olduğunda owner Pulse AI ayarları kilitlenir; feedback draft/suggest-reply ve Google review draft endpoint'leri AI üretmez. Admin master kapatma anında bekleyen `FeedbackAiDraft` kayıtları temizlenir; owner tercih alanları (`enableAiDraft`, `googleAiEnabled`, `aiDraftTone`) silinmez.
 - `aiAnalyticsEnabled=false` olduğunda owner analytics sayfası normal KPI/chart akışını korur; sadece AI tema çıkarımı / weekly AI insight çağrıları yapılmaz.
-- `externalPlatformsEnabled=false` olduğunda Google dışı review platformları (Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Airbnb, Booking, Yandex ve "Diğer") owner UI/API, QR üretimi, integration test/retest ve public `/r/[slug]` redirect resolver tarafında yok sayılır. Kayıtlı URL'ler ve owner platform tercihleri silinmez; gate tekrar açılınca kaldığı yerden kullanılabilir.
+- `externalPlatformsEnabled=false` olduğunda Google dışı review platformları (Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Airbnb, Booking, Yandex, Yelp, Foursquare ve "Diğer") owner UI/API, QR üretimi, integration test/retest ve public `/r/[slug]` redirect resolver tarafında yok sayılır. Kayıtlı URL'ler ve owner platform tercihleri silinmez; gate tekrar açılınca kaldığı yerden kullanılabilir.
 - Vercel env notu: `.env.local` gitignore altında kalır. Production'da `JWT_SECRET` boş bırakılmamalı; Pulse AI gerçek model çağrısı için `OPENAI_API_KEY` Production/Preview scope'larında dolu olmalı.
 
 ### 5.3 2026-05-03 oturum notları
@@ -235,7 +235,7 @@ src/
 │   ├── auth/                  # LoginForm, RegisterForm, ForgotPasswordForm, ResetPasswordForm
 │   ├── dashboard/             # OwnerShell, RestaurantAnalyticsPanel, menu/*
 │   ├── marketing/             # MarketingNavbar, MarketingFooter, MobileBottomNav, BuazeLogo, NewsletterSignup, ...
-│   ├── menu/                  # PublicMenuView (6 tema), ProductDetailModal, MenuSplash
+│   ├── menu/                  # PublicMenuView (7 tema), ProductDetailModal, MenuSplash
 │   ├── notifications/         # In-app notification components
 │   ├── panel/                 # Owner+admin paylaşılan shell parçaları
 │   ├── providers/             # QueryProvider (React Query root)
@@ -268,7 +268,7 @@ prisma/
 └── seed-case-studies.ts       # Case-study seed (manuel runner)
 scripts/
 ├── validate-env.js            # Build-time zorunlu env doğrulaması (§14.1)
-├── seed-mail-templates.ts     # 32 row mail template seed (16 template × 2 locale, §21.26)
+├── seed-mail-templates.ts     # 40 row mail template seed (20 template × 2 locale, §21.26)
 ├── seed-legal-documents.ts    # Legal metinleri DB'ye seed
 └── backfill-feedback-reply-source.ts  # FeedbackReply.source backfill (§21.20)
 tests/
@@ -402,12 +402,12 @@ Menü yapısı tek tip modern builder etrafında toplandı. Legacy `MenuEditor.t
 **Dosya:** `src/app/[locale]/dashboard/restaurants/[id]/menu/page.tsx`
 
 - **DnD:** `@dnd-kit/core` + `@dnd-kit/sortable`. `PointerSensor` (distance 8) + `TouchSensor` (150 ms delay) → iOS Safari dokunsal destek. Mevcut ok butonları erişilebilirlik fallback'i olarak kalır.
-- **Tema:** 4 preset — `classic` (default) / `modern` / `elegant` / `gastronomy`. `Restaurant.menuTheme` kolonu.
+- **Tema:** 7 preset — `classic` (default) / `modern` / `elegant` / `gastronomy` / `minimal` / `bistro` / `pulse`. `Restaurant.menuTheme` kolonu. Builder grid `sm:grid-cols-3` + `ThemeThumb` inline SVG preview.
 - **Accent renk:** 8 hazır swatch + native `<input type="color">`. `Restaurant.menuAccentColor` (null → `primaryColor` fallback).
 - **Logo:** `Restaurant.menuLogoUrl`. ThemePanel'de upload + preview + remove. `POST /api/restaurants/[id]/menu/upload` (kind=`logo`, 512x512 cover).
 - **Ürün görseli:** ItemModal'da dosya yükleme butonu + URL input (hybrid). Dosya seçildiğinde `compressImage()` (src/lib/client-image.ts) tarayıcıda Canvas ile 1600px max WebP'ye çevirir → request payload ~200-400 KB'a düşer → `kind=item` endpoint'ine gider → sharp server'da 1200px'e indirip base64 döner → form state → item satırı. Client compression **dep-free** (Canvas/OffscreenCanvas), API yoksa orijinal dosya olduğu gibi yüklenir.
 - **Logo:** `Restaurant.menuLogoUrl`. ThemePanel'de upload + preview + remove. `POST /api/restaurants/[id]/menu/upload` (kind=`logo`, 512x512 cover). Upload'tan önce `compressImage(file, { maxDim: 1024 })`.
-- **6 tema:** Builder'da `themes` array 6 item içerir (classic, modern, elegant, gastronomy, minimal, bistro). Grid `sm:grid-cols-3`. Her tema için `ThemeThumb` inline SVG preview.
+- **7 tema:** Builder'da `themes` array 6 item içerir (classic, modern, elegant, gastronomy, minimal, bistro). Grid `sm:grid-cols-3`. Her tema için `ThemeThumb` inline SVG preview.
 - **Quick toggle'lar:** Kategori satırında `isVisible` eye, ürün satırında `isAvailable` eye + `isOutOfStock` AlertTriangle. Modal açmadan tek tıkla değiştir — optimistic state + revert on failure.
 - **Menü QR:** `/api/restaurants/[id]/menu/qr?format=png|svg` → PNG/SVG indir. URL'de `?source=qr` attribution parametresi taşır (analytics attribution için kritik).
 - **Reorder perf:** `reorderCategories` / `reorderItems` sadece **error** durumunda `fetchAll()` çağırır (önceden her reorder'da yapıyordu — 2x network). Optimistic state zaten doğru.
@@ -416,13 +416,14 @@ Menü yapısı tek tip modern builder etrafında toplandı. Legacy `MenuEditor.t
 
 **Dosya:** `src/components/menu/PublicMenuView.tsx`
 
-Tek giriş noktası: `restaurant.menuTheme` üzerinden `switch` ile 6 layout component'i:
+Tek giriş noktası: `restaurant.menuTheme` üzerinden `switch` ile **7 layout component'i** (`validations.ts` `MENU_THEMES` const'ı + `PublicMenuView` switch case parity):
 - `ClassicLayout` (default) — gradient hero + liste kartları
 - `ModernLayout` — grid kartlar, fiyat overlay
 - `ElegantLayout` — magazine, tek sütun, Manrope heading
 - `GastronomyLayout` — koyu tema (#0E1525) + gold accent çerçeveli logo
 - `MinimalLayout` (yeni 2026-04) — tipografi ağırlıklı, tek sütun, ince divider
 - `BistroLayout` (yeni 2026-04) — cream bg (#FAF7F0), 2-sütun grid, kafe tarzı
+- `PulseLayout` — Buaze Pulse design system (graphite/lime/pure white §11 token'larıyla render)
 
 Paylaşılan helper'lar: `BadgeChip`, `BadgeChipOnDark`, `Placeholder`, `RestaurantMeta`, `EmptyState`, `Footer`.
 
@@ -520,7 +521,7 @@ Daily rollup tabloları **yok** — ham event'ler + composite index yeterli. ~10
 
 ### 13.7 Entegrasyon noktaları
 
-`PublicMenuView` (6 tema), `/r/[slug]/menu` (legacy), `/menu/[slug]` (SSR) — hepsi tracking'e bağlı. `disableAnalytics` prop'u admin preview'ı dışarda tutar.
+`PublicMenuView` (7 tema), `/r/[slug]/menu` (legacy), `/menu/[slug]` (SSR) — hepsi tracking'e bağlı. `disableAnalytics` prop'u admin preview'ı dışarda tutar.
 
 ### 13.8 Admin UI davranışları
 
@@ -1386,7 +1387,7 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 
 ### 21.12 Cron path listesi (mevcut)
 
-`vercel.json` `crons` array'inde 8 entry. Tek source-of-truth: `vercel.json`. CLAUDE.md tablosu sadece referans amaçlı — `vercel.json` değişirse bu tabloyu da güncelle.
+`vercel.json` `crons` array'inde **9 entry**. Tek source-of-truth: `vercel.json`. CLAUDE.md tablosu sadece referans amaçlı — `vercel.json` değişirse bu tabloyu da güncelle.
 
 | Path | Schedule | Amaç |
 |---|---|---|
@@ -1398,6 +1399,7 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 | `/api/cron/lifecycle-emails` | `0 8 * * *` | Her gün 08:00 UTC — owner lifecycle email akışı (§21.34) |
 | `/api/cron/platform-link-retest` | `0 4 * * *` | Her gün 04:00 UTC — aktif platform link'lerinin sağlık kontrolü (§19.4.4) |
 | `/api/cron/google-reviews-alert` | `0 * * * *` | Her saat — Google rating impact tracking + threshold uyarı (§37.3) |
+| `/api/cron/expire-impersonation-sessions` | `*/5 * * * *` | Her 5 dk — superadmin impersonation oturumlarını otomatik expire et (§37 deferred follow-up) |
 
 ### 21.13 Cron logic'i admin panelden tetikleme (anti-pattern: self-fetch)
 
@@ -1711,9 +1713,9 @@ Eski tarayıcı default isteklerini SVG'ye yönlendirir:
 
 **Next 16 hazırlığı**: `next lint` deprecated. ESLint CLI'a geçildi. `next/core-web-vitals` + `next/typescript` preset'leri aynen kalıyor; sadece lint runner değişti.
 
-### 21.26 DB-driven mail content (16 template — Pulse + lifecycle + ROI + verify-email)
+### 21.26 DB-driven mail content (20 template — Pulse + lifecycle + ROI + verify-email + campaign + audit)
 
-> **Sayım** (2026-05-04 audit): `src/lib/email/copy-loader.ts` `SUPPORTED_MAIL_KEYS` 16 template, `scripts/seed-mail-templates.ts` 32 row upsert (16 × 2 locale). Tarihsel olarak Phase 21.26 9 Pulse template ile başladı; 21.27-21.34 phase'leri ile lifecycle (4) + ROI (2) + verify-email (1) eklendi. Yeni template eklerken `SUPPORTED_MAIL_KEYS` + seed + bu sayıyı senkronize tut.
+> **Sayım** (2026-05-14 audit Wave 3): `src/lib/email/copy-loader.ts` `SUPPORTED_MAIL_KEYS` **20 template**, `scripts/seed-mail-templates.ts` 40 row upsert (20 × 2 locale). Tarihsel evrim: Phase 21.26 9 Pulse template, 21.27-21.34 lifecycle (4) + ROI (2) + verify-email (1) → 16; ardından §38.105 campaign moderation (3 template: customer-campaign, owner-campaign-approved, owner-campaign-rejected) + §38.180 audit-completed eklendi → 20. Yeni template eklerken `SUPPORTED_MAIL_KEYS` + seed + bu sayıyı senkronize tut.
 
 **Schema** (`prisma/schema.prisma` `MailTemplate`):
 - `key: String` — `'welcome' | 'newsletter' | 'trial-ending'` (MVP scope)
@@ -3487,7 +3489,7 @@ Repo kökündeki `scripts/` (+ `prisma/` altındaki seed) — bir kerelik veya p
 | Dosya | Komut | Amaç |
 |---|---|---|
 | `scripts/validate-env.js` | `node scripts/validate-env.js` | Build-time zorunlu env doğrulaması — eksik env varsa exit 1. `npm run build` ilk adımı (§14.1). |
-| `scripts/seed-mail-templates.ts` | `DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts` | 32 row mail template upsert (16 template × 2 locale, §21.26). Idempotent. Operator "kod default'larına dön" istediğinde de çalıştırılır. |
+| `scripts/seed-mail-templates.ts` | `DATABASE_URL=... npx tsx scripts/seed-mail-templates.ts` | 40 row mail template upsert (20 template × 2 locale, §21.26). Idempotent. Operator "kod default'larına dön" istediğinde de çalıştırılır. |
 | `scripts/seed-legal-documents.ts` | `DATABASE_URL=... npx tsx scripts/seed-legal-documents.ts` | KVKK / Terms / Cookie metinlerini DB'ye seed eder. Idempotent. |
 | `scripts/backfill-feedback-reply-source.ts` | `DATABASE_URL=... npx tsx scripts/backfill-feedback-reply-source.ts` | `FeedbackReply.source` NULL satırlarını `'manual'` ile doldurur. Tek seferlik, idempotent (§21.20). |
 | `prisma/seed-case-studies.ts` | `DATABASE_URL=... npx tsx prisma/seed-case-studies.ts` | Marketing case-study içeriği seed eder. Idempotent. |
