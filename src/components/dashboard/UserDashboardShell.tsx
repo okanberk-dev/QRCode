@@ -257,6 +257,21 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       new CustomEvent('buaze:mobile-drawer', { detail: { open: drawerOpen } }),
     );
   }, [drawerOpen]);
+
+  // ESC key closes the mobile drawer + "more" sheet — a11y baseline
+  // (CLAUDE.md §23.7 Phase 11.1). Workspace + user dropdown menus zaten
+  // kendi ESC handler'larına sahip (line ~330, ~349). Drawer + more
+  // sheet için ayrı listener — open state degiştiginde mount/unmount.
+  useEffect(() => {
+    if (!drawerOpen && !moreOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (drawerOpen) setDrawerOpen(false);
+      if (moreOpen) setMoreOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [drawerOpen, moreOpen]);
   // Stage 60 §38.141 — Mobile bottom nav Yorumlar tab badge.
   // NotificationBell `buaze:notification-count` custom event'i ile
   // sync; tek source-of-truth NotificationBell internal poll. Mobile
