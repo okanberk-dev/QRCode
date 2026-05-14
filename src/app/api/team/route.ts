@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { resolveOwnerUserId } from '@/lib/panel-access';
-import { isValidEmail } from '@/lib/validations';
+import { validateBody } from '@/lib/api/validate';
 import {
   INVITE_TOKEN_TTL_DAYS,
   generateInviteToken,
@@ -13,7 +14,38 @@ import { sendTeamInviteEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
-const VALID_ROLES = new Set(['owner', 'manager', 'staff', 'viewer']);
+// Wave 4 PR-8 audit fix (A4): Zod `.strict()` schema migration. Eski
+// manuel destructure + `body.locations !== undefined` mix-mode validation
+// (CLAUDE.md §28.3.1 — yeni endpoint disiplinine aykırıydı, schema
+// self-documentation eksikti + yeni field eklenirse silent mass-assignment
+// riski). Yeni schema mass-assignment kapatır (`.strict()` schema dışı
+// field'lar 400 ile reddedilir) + tip-güvenli `parsed.data`.
+//
+// `VALID_ROLES` set + manual `isValidEmail` korunmuş yardımcı validation
+// yerine Zod literal union + email() refinement → kontrat tek noktada.
+const InviteSchema = z
+  .object({
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .min(1)
+      .max(200)
+      .refine((v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), 'invalid_email'),
+    role: z.enum(['owner', 'manager', 'staff', 'viewer']).optional(),
+    name: z
+      .string()
+      .max(500)
+      .transform((v) => v.trim().slice(0, 120))
+      .optional()
+      .nullable(),
+    // `locations` is owner-controlled — IDOR whitelist owner'ın
+    // gerçekten sahip olduğu restoranlara karşı `findMany` ile yapılır
+    // (CLAUDE.md §37.2 B). Bu schema yalnız tip + boyut kontrolü
+    // (max 40 array, her id ≤ 64 char).
+    locations: z.array(z.string().max(64)).max(40).optional().nullable(),
+  })
+  .strict();
 
 export async function GET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
@@ -65,43 +97,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { email?: string; name?: string; role?: string; locations?: string[] } = {};
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
-  }
+  const rawBody = await req.json().catch(() => null);
+  const parsed = validateBody<z.infer<typeof InviteSchema>>(InviteSchema, rawBody);
+  if (!parsed.ok) return parsed.response;
 
-  const email = (body.email ?? '').trim().toLowerCase();
-  if (!email || !isValidEmail(email)) {
-    return NextResponse.json({ error: 'invalid_email' }, { status: 400 });
-  }
-  if (email.length > 200) {
-    return NextResponse.json({ error: 'email_too_long' }, { status: 400 });
-  }
+  const { email, role: roleInput, name: nameInput, locations: locationsInput } = parsed.data;
+  const role = roleInput ?? 'manager';
+  const name = nameInput && nameInput.length > 0 ? nameInput : null;
 
-  const role = body.role && VALID_ROLES.has(body.role) ? body.role : 'manager';
-  const name = typeof body.name === 'string' ? body.name.trim().slice(0, 120) || null : null;
-
-  // locations is optional. When provided it must be a string[]. Anything
-  // else (object, single string, mixed array) is a client bug — fail loud
-  // instead of silently storing null.
+  // IDOR whitelist — owner-controlled `locations` ASLA verbatim DB'ye
+  // yazılmaz. Owner'ın gerçek restoranlarıyla intersect; bilinmeyen
+  // id'ler sessizce drop. Tüm istek owner'ın hiçbir restoranını
+  // kapsamıyorsa 400 (UI hatası — kullanıcı UI'da olmayan bir
+  // restoran id'sini gönderemez, gönderiliyorsa client bug).
   let locations: string[] | null = null;
-  if (body.locations !== undefined && body.locations !== null) {
-    if (
-      !Array.isArray(body.locations) ||
-      !body.locations.every((x) => typeof x === 'string' && x.length <= 64)
-    ) {
-      return NextResponse.json({ error: 'invalid_locations' }, { status: 400 });
-    }
-    const requested = body.locations.slice(0, 40);
-
-    // IDOR — owner can only assign restaurants they actually own.
-    // Without this check the owner could include any tenant's restaurant
-    // id in `locations`, and `panel-access:getTeamMemberScope` would
-    // happily hand the invitee read+write access to that other tenant
-    // (panel-access reads `member.locations` verbatim). We intersect with
-    // the owner's actual restaurant set; any unknown id is dropped silent.
+  if (locationsInput !== undefined && locationsInput !== null) {
+    const requested = locationsInput;
     if (requested.length > 0) {
       const ownedRows = await prisma.restaurant.findMany({
         where: { id: { in: requested }, userId: actor.id },
@@ -109,7 +120,7 @@ export async function POST(req: NextRequest) {
       });
       const ownedSet = new Set(ownedRows.map((r) => r.id));
       const filtered = requested.filter((id) => ownedSet.has(id));
-      if (filtered.length === 0 && requested.length > 0) {
+      if (filtered.length === 0) {
         return NextResponse.json(
           { error: 'invalid_locations', hint: 'no requested location is owned by you' },
           { status: 400 },
@@ -117,7 +128,7 @@ export async function POST(req: NextRequest) {
       }
       locations = filtered;
     } else {
-      locations = requested;
+      locations = [];
     }
   }
 
@@ -194,17 +205,25 @@ export async function POST(req: NextRequest) {
     console.error('[team:invite] mail send failed:', (err as Error).message);
   });
 
-  return NextResponse.json({
-    ok: true,
-    member: {
-      id: member.id,
-      email: member.email,
-      name: member.name,
-      role: member.role,
-      status: member.status,
-      lastSeenAt: null,
-      lastInvitedAt: member.lastInvitedAt?.toISOString() ?? null,
-      createdAt: member.createdAt.toISOString(),
+  return NextResponse.json(
+    {
+      ok: true,
+      member: {
+        id: member.id,
+        email: member.email,
+        name: member.name,
+        role: member.role,
+        status: member.status,
+        lastSeenAt: null,
+        lastInvitedAt: member.lastInvitedAt?.toISOString() ?? null,
+        createdAt: member.createdAt.toISOString(),
+      },
     },
-  });
+    {
+      // CLAUDE.md §40.6 — mutation endpoint defansif `no-store`. Auth
+      // boundary zaten korur ama explicit yazmak CDN/proxy katmanlarında
+      // kaza eseri response cache'lemeyi engeller (§A5 audit fix).
+      headers: { 'Cache-Control': 'no-store' },
+    },
+  );
 }
