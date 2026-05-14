@@ -598,7 +598,12 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json(restaurant);
+    // CLAUDE.md §40.6 — mutation endpoint defansif `no-store` (A5 audit
+    // fix). Auth boundary zaten korur ama explicit yazmak CDN/proxy
+    // katmanlarında kaza eseri PUT response cache'lemeyi engeller.
+    return NextResponse.json(restaurant, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
   } catch (error) {
     console.error('Failed to update restaurant:', error);
     return ApiErrors.internalError('İşletme güncellenemedi');
@@ -689,7 +694,10 @@ export async function DELETE(
       console.warn('[audit] restaurant.delete write failed (non-fatal)', (auditErr as Error).message);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json(
+      { success: true },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch (error) {
     console.error('Failed to delete restaurant:', error);
     return ApiErrors.internalError('İşletme silinemedi');
