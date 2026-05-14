@@ -204,7 +204,7 @@ export default function AdminAnnouncementsPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[980px] px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SİSTEM DUYURULARI"
         title="Tüm işletmelere ulaş"

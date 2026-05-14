@@ -9,7 +9,7 @@ import { Skeleton, StatCardSkeleton } from "@/components/ui";
 export default function DashboardLoading() {
   return (
     <div
-      className="mx-auto max-w-[1200px] px-4 sm:px-7 py-8 lg:py-12 space-y-6 animate-in fade-in duration-200"
+      className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-6 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"

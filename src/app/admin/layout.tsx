@@ -139,12 +139,14 @@ export default async function AdminLayout({
               displayName={adminProfile?.name || adminProfile?.username || null}
             />
           )}
-          <div className={showSidebar ? "max-w-7xl mx-auto w-full pt-2 sm:pt-6" : "w-full max-w-full"}>
-            {showSidebar && announcements.length > 0 && (
-              <AnnouncementBanner announcements={announcements} locale={adminLocale} />
-            )}
-            {children}
-          </div>
+          {/* §42 canonical panel layout — admin shell only renders chrome
+              (topbar + announcement banner). Page wrappers handle their own
+              `mx-auto max-w-[1100|1200|1400] px-4 sm:px-7 py-6 lg:py-8`. Owner
+              shell parity (UserDashboardShell): no double-wrap, no extra pt. */}
+          {showSidebar && announcements.length > 0 && (
+            <AnnouncementBanner announcements={announcements} locale={adminLocale} />
+          )}
+          {children}
         </main>
         {showSidebar && <AdminMobileNav role={adminProfile?.role || actor?.role || 'manager'} />}
       </div>

@@ -1,12 +1,12 @@
 import { Skeleton, StatCardSkeleton, TableSkeleton } from '@/components/ui';
 
 // §40.10 — admin blog loading. Wrapper birebir page.tsx:133
-// (`mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5`).
+// (`mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5`).
 
 export default function AdminBlogLoading() {
   return (
     <div
-      className="mx-auto max-w-[1280px] space-y-3.5 px-4 sm:px-7 py-6 lg:py-8 animate-in fade-in duration-200"
+      className="mx-auto max-w-[1200px] space-y-3.5 px-4 sm:px-7 py-6 lg:py-8 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"

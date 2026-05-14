@@ -23,7 +23,7 @@ export default function MenuBuilderError({
   }, [error, reset]);
 
   return (
-    <div className="mx-auto max-w-[640px] px-4 py-12 sm:px-8 lg:py-16">
+    <div className="mx-auto max-w-[640px] px-4 sm:px-7 py-12 lg:py-16">
       <div className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-6 sm:p-8">
         <div className="flex items-start gap-3">
           <div className="shrink-0 rounded-full bg-[#DC2626]/10 p-2">
