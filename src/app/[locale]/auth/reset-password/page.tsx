@@ -59,7 +59,25 @@ export default async function ResetPasswordPage({
         </p>
 
         <div className="mt-7">
-          <Suspense fallback={<div className="h-52 animate-pulse bg-white rounded-lg" />}>
+          {/* Structural fallback — matches ResetPasswordForm geometry
+              (space-y-5 form with: 6-digit code label+56px input, password
+              label+44px input, 48px submit button, reCAPTCHA notice).
+              Previously `h-52 animate-pulse` (208px) undersized the form by
+              ~100px and caused a visible jump on hydration. */}
+          <Suspense fallback={
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <div className="bz-skeleton h-[10px] w-24 rounded-sm ml-1" />
+                <div className="bz-skeleton w-full h-14 rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <div className="bz-skeleton h-[10px] w-20 rounded-sm ml-1" />
+                <div className="bz-skeleton w-full h-11 rounded-xl" />
+              </div>
+              <div className="bz-skeleton w-full h-12 rounded-full" />
+              <div className="bz-skeleton h-[11px] w-3/4 rounded mx-auto mt-1" />
+            </div>
+          }>
             <ResetPasswordForm locale={locale} />
           </Suspense>
         </div>

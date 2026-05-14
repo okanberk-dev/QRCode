@@ -153,7 +153,12 @@ export function PlatformRedirectsPanel({
               {isTr ? "Lider platform" : "Top platform"}
             </Eyebrow>
             {loading && !stats ? (
-              <div className="bz-skeleton h-7 w-24 rounded" />
+              // Mirrors the loaded row exactly: 28x28 platform chip +
+              // bz-h-tight text-[15px] label, gap-2 inline-flex.
+              <div className="flex items-center gap-2">
+                <div className="bz-skeleton h-7 w-7 rounded-lg shrink-0" />
+                <div className="bz-skeleton h-[15px] w-24 rounded" />
+              </div>
             ) : topProviderUi ? (
               <div className="flex items-center gap-2">
                 <PlatformChip id={topProviderUi} size={28} />
@@ -282,7 +287,10 @@ function StatTile({
     <div className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4 sm:p-5">
       <Eyebrow className="mb-2">{label}</Eyebrow>
       {loading ? (
-        <div className="bz-skeleton h-7 w-16 rounded" />
+        // Skeleton height tracks the loaded value's `fontSize: 28 *
+        // lineHeight: 1.05 ≈ 29-30px` so the tile keeps the same total
+        // height during loading → loaded transition (CLS = 0).
+        <div className="bz-skeleton h-[29px] w-20 rounded" />
       ) : (
         <div
           className="bz-h-tight"

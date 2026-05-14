@@ -101,11 +101,16 @@ interface StatCardSkeletonProps {
 }
 
 export function StatCardSkeleton({ className = "" }: StatCardSkeletonProps) {
+  // Padding + child sizes track StatCard exactly so loading→loaded transition
+  // is CLS=0. Mobile p-3.5 (14px) → sm:p-[18px] (22.5px) matches StatCard:45.
+  // Eyebrow ~11px, value h-[21px] mobile → h-[27px] sm (matches text-[21px]
+  // mt-2.5 / sm:text-[27px] sm:mt-3 on the real card), delta h-[11px] mt-2 →
+  // h-3 mt-2.5 sm.
   return (
-    <div className={`bz-card p-[18px] ${className}`}>
-      <div className="bz-skeleton h-3 w-20" />
-      <div className="bz-skeleton mt-3 h-7 w-24" />
-      <div className="bz-skeleton mt-2.5 h-3 w-32" />
+    <div className={`bz-card p-3.5 sm:p-[18px] ${className}`}>
+      <div className="bz-skeleton h-[11px] w-20" />
+      <div className="bz-skeleton mt-2.5 sm:mt-3 h-[21px] sm:h-[27px] w-24" />
+      <div className="bz-skeleton mt-2 sm:mt-2.5 h-[11px] w-32" />
     </div>
   );
 }

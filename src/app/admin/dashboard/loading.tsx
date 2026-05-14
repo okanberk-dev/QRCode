@@ -9,7 +9,10 @@ import { Skeleton, StatCardSkeleton, CardSkeleton } from '@/components/ui';
 export default function AdminDashboardLoading() {
   return (
     <div
-      className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-6 animate-in fade-in duration-200"
+      // Matches `admin/dashboard/page.tsx:328` exactly: `max-w-[1280px] px-4
+      // sm:px-7 py-6 lg:py-8 space-y-3.5`. Previously `space-y-6` (24px) caused
+      // ~10px CLS per section gap when the real page mounted.
+      className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"

@@ -6,7 +6,10 @@ import { Skeleton, StatCardSkeleton } from '@/components/ui';
 export default function AdminReviewsLoading() {
   return (
     <div
-      className="mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8 space-y-5 animate-in fade-in duration-200"
+      // Matches `admin/reviews/page.tsx:495` exactly: `max-w-[1400px] px-4
+      // sm:px-7 py-6 lg:py-8 space-y-4`. Previously `space-y-5` caused 4px
+      // vertical CLS per section gap when the real page mounted.
+      className="mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8 space-y-4 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"
