@@ -205,17 +205,24 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                     onChange={(next) => update(r.id, { enableAiDraft: next })}
                     disabled={s?.saving || !pulseEnabled}
                     ariaLabel={
-                      isTr ? "Pulse AI taslaklarını otomatik hazırla" : "Auto-prepare Pulse AI drafts"
+                      isTr ? "Buaze yorumlarına otomatik AI taslak" : "Auto AI draft for Buaze feedback"
                     }
                   />
-                  <div className="text-[14px] text-[#0A0A0A]">
-                    <span className="font-semibold">
-                      {isTr ? "Pulse AI taslaklarını otomatik hazırla" : "Auto-prepare Pulse AI drafts"}
-                    </span>
-                    <span className="block text-[12px] text-[#737373] mt-0.5">
+                  <div className="text-[14px] text-[#0A0A0A] flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">
+                        {isTr ? "Buaze yorumlarına otomatik AI taslak" : "Auto AI draft for Buaze feedback"}
+                      </span>
+                      {Boolean(s?.enableAiDraft) && pulseEnabled && (
+                        <span className="text-[10px] tracking-[0.16em] uppercase bg-[#EAF9B8] text-[#0A0A0A] rounded px-1.5 py-0.5 font-mono">
+                          {isTr ? "AKTİF" : "ACTIVE"}
+                        </span>
+                      )}
+                    </div>
+                    <span className="block text-[12px] text-[#737373] mt-1 leading-relaxed">
                       {isTr
-                        ? "Açıksa 1-3★ yorum geldiğinde taslak inbox'a gelir. Kapalıyken otomatik taslak üretilmez; manuel öneri butonu ayrı kalır."
-                        : "When on, 1-3★ reviews get an inbox draft. When off, no draft is created automatically; the manual suggestion button stays separate."}
+                        ? "Yeni yorumlar geldiğinde Buaze otomatik taslak hazırlar; inbox'ı açtığınızda taslak hazır gelir. Arka plan görevi her saat eksik kalan taslakları tarar. Otomatik gönderim YOK — onayınız her zaman gerekir."
+                        : "When new reviews arrive, Buaze prepares the draft automatically; opens-ready in your inbox. A background job scans for missing drafts every hour. NO auto-send — your approval is always required."}
                     </span>
                   </div>
                 </div>
@@ -226,17 +233,24 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                     onChange={(next) => update(r.id, { googleAiEnabled: next })}
                     disabled={s?.saving || !pulseEnabled}
                     ariaLabel={
-                      isTr ? "Google yorumlarında Pulse AI kullan" : "Use Pulse AI for Google reviews"
+                      isTr ? "Google yorumlarına otomatik AI taslak" : "Auto AI draft for Google reviews"
                     }
                   />
-                  <div className="text-[14px] text-[#0A0A0A]">
-                    <span className="font-semibold">
-                      {isTr ? "Google yorumlarında Pulse AI kullan" : "Use Pulse AI for Google reviews"}
-                    </span>
-                    <span className="block text-[12px] text-[#737373] mt-0.5">
+                  <div className="text-[14px] text-[#0A0A0A] flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">
+                        {isTr ? "Google yorumlarına otomatik AI taslak" : "Auto AI draft for Google reviews"}
+                      </span>
+                      {Boolean(s?.googleAiEnabled) && pulseEnabled && (
+                        <span className="text-[10px] tracking-[0.16em] uppercase bg-[#EAF9B8] text-[#0A0A0A] rounded px-1.5 py-0.5 font-mono">
+                          {isTr ? "AKTİF" : "ACTIVE"}
+                        </span>
+                      )}
+                    </div>
+                    <span className="block text-[12px] text-[#737373] mt-1 leading-relaxed">
                       {isTr
-                        ? "Google yorumlarını yanıtlarken AI yardımcıyı aktif hale getirir."
-                        : "Enables AI assistant when replying to Google reviews."}
+                        ? "Saat başı çalışan görev, Google'da yanıtlanmamış tüm yorumlara taslak hazırlar; sayfayı açtığınızda taslak içeride bekler. Sadece manuel onayınız sonrası Google'a gider."
+                        : "An hourly job prepares drafts for every unanswered Google review; opens-ready when you visit the page. Drafts are only sent to Google after your manual approval."}
                     </span>
                   </div>
                 </div>

@@ -5069,3 +5069,84 @@ kullanır.
   scrolls)
 
 ---
+
+## §43 — Reputation Operating System Suite (kanonik, 2026-05)
+
+Buaze'nin "Reputation OS" pozisyonunu somut feature setine bağlayan
+4 katmanlı sistem.
+
+### §43.1 Mimari (4 katman)
+
+1. **Auto-draft sistemi** — Hem Buaze (internal) feedback hem Google
+   Business Profile reviews için arka planda AI yanıt taslağı.
+2. **Health snapshot history** — Baseline (Google connect anında) +
+   aylık snapshot + "Buaze öncesi vs şimdi" delta.
+3. **Monthly health report email** — Her ayın 1'i 10:00 UTC, owner'a
+   Pulse template ile sağlık skoru + öneriler.
+4. **Profile recommendations + UI** — Deterministik kurallar (Vision
+   API yok), öncelik sıralı 5 öneri kart'ı.
+
+### §43.2 Schema (yeni 2 tablo + 1 enum extension)
+
+- **`GoogleReviewAiDraft`** (`google_review_ai_drafts`):
+  `restaurantId` + `reviewName` `@@unique`; `body/tone/source/commentHash/generatedAt/latencyMs`; cascade on Restaurant delete.
+- **`RestaurantHealthSnapshot`** (`restaurant_health_snapshots`):
+  `kind: 'baseline' | 'monthly'`, Google + Feedback metric'leri, computed `healthScore`, `[restaurantId, kind, capturedAt] @@unique`.
+- **`LifecycleEmailType`** union'a `'monthly_health_report'` eklendi.
+
+Migration: `prisma/migrations/20260518000000_reputation_os_suite`.
+Tüm field'lar nullable + default'lu (CLAUDE.md §21.18).
+
+### §43.3 Health score formülü (saf fonksiyon)
+
+`src/lib/reputation/health-score.ts:computeHealthScore()`:
+- Profile completeness (40%): `profileComplete` 60% + `googleMediaCount` (10+→100, 4+→70, 1+→40, 0→0) 40%
+- Responsiveness (30%): feedback reply rate 60% + unanswered Q&A 40%
+- Reputation (30%): Google rating × confidence + feedback rating × confidence (weighted by count)
+- Composite: `profile×0.4 + responsiveness×0.3 + reputation×0.3`
+- Yeni restoranlar 30-40 başlar (room-to-grow). Test edilebilir, DB-agnostic.
+
+### §43.4 Cron schedule (4 yeni cron, vercel.json)
+
+| Path | Schedule | Görev |
+|---|---|---|
+| `/api/cron/feedback-autodraft` | `15 * * * *` | Son 48h içinde draft'sız Buaze feedback'leri tara (safety net) |
+| `/api/cron/google-reviews-autodraft` | `30 * * * *` | Bağlı tüm Google integrations × unreplied reviews → draft |
+| `/api/cron/monthly-health-snapshot` | `0 2 1 * *` | Aylık snapshot — 02:00 UTC |
+| `/api/cron/monthly-health-report` | `0 10 1 * *` | Aylık rapor maili — 10:00 UTC (snapshot'tan 8 saat sonra) |
+
+Auth: `Bearer ${CRON_SECRET}`. Self-fetch antipattern yok — `run*` shared helper export'lu.
+Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaurant. 429 → skip cycle.
+
+### §43.5 Baseline hook (OAuth callback)
+
+`POST /api/restaurants/[id]/google/business/locations/select` — owner ilk Google location seçtiğinde fire-and-forget `captureBaselineSnapshot(restaurantId)` çağırır. Idempotent — baseline yalnız bir kez.
+
+### §43.6 Endpoints + UI
+
+- `GET /api/restaurants/[id]/reputation/health` — score + breakdown + recommendations (owner-scoped, 5min cache).
+- `GET /api/restaurants/[id]/google/business/reviews` **EXTENDED** — response'a `drafts: Record<reviewName, {body, tone, source, generatedAt}>` eklendi.
+- `<ReputationHealthCard>` — Google Reviews sayfasında üstte mount. Score + delta + 3-pillar breakdown + öneri top 4.
+- `BusinessPulseAiSettings` (Account → Pulse AI) — 2 toggle "AKTİF" badge'i + "saat başı çalışır" açıklama. Cron'la bağlantı transparency.
+
+### §43.7 Mail template
+
+`src/lib/email/templates/monthly-health-report.ts`:
+- Dark hero + lime score (Pulse §11), 4-stat grid (Google/Buaze/reply-rate/photos), vs-last-month delta, top 5 recommendations (severity badge), CTA → panel.
+- Locale: TR + EN parity. Inline copy (DB-driven override gelecek scope).
+- Sender: `sendMonthlyHealthReportEmail`. Idempotency: `LifecycleEmailLog` cooldown 25 gün.
+
+### §43.8 Yapma / Yap
+
+**Yapma**:
+- Vision API entegrasyonu (deterministik kurallar mevcut, maliyet + KVKK + hata riski)
+- Auto-send Google'a yorum gönderme — owner onayı zorunlu
+- Cron'da paralel Google API call — quota patlatma
+- Baseline'ı OAuth response'una senkron bağlama
+
+**Yap**:
+- Yeni metric: `HealthSnapshotInput` + migration + `computeHealthScore` ağırlığı
+- Yeni öneri: `getProfileRecommendations()` içine deterministik threshold
+- Yeni cron: `vercel.json` + `run*` shared helper + CRON_SECRET guard (§14.1 + §21.13)
+
+---

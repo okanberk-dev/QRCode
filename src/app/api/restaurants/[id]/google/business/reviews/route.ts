@@ -11,6 +11,7 @@ import {
   GoogleBusinessApiError,
 } from '@/lib/google-business';
 import { googleBusinessErrorResponse } from '@/lib/google-business-response';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,42 @@ export async function GET(
       selection,
       req.nextUrl.searchParams.get('pageToken'),
     );
-    return NextResponse.json({ ...reviews, location: selection });
+
+    // Reputation OS — pre-loaded AI drafts. Cron taraması yaptıysa
+    // (`/api/cron/google-reviews-autodraft`) her unreplied review için
+    // GoogleReviewAiDraft satırı vardır; UI bunu kullanarak owner panel
+    // açtığında "Taslak Öner" butonuna basmadan taslağı gösterir.
+    //
+    // Defensive query: GoogleReviewAiDraft tablosu henüz migrate
+    // olmadıysa (preview deploy senaryoları, CLAUDE.md §19) hata kabul
+    // edip drafts:{} dön. Reviews listing yine başarılı.
+    let drafts: Record<string, { body: string; tone: string; source: string; generatedAt: string }> = {};
+    try {
+      const reviewNames = (reviews.reviews ?? [])
+        .map((r) => r.name)
+        .filter((n): n is string => typeof n === 'string' && n.length > 0);
+      if (reviewNames.length > 0) {
+        const rows = await prisma.googleReviewAiDraft.findMany({
+          where: { restaurantId: id, reviewName: { in: reviewNames } },
+          select: { reviewName: true, body: true, tone: true, source: true, generatedAt: true },
+        });
+        drafts = Object.fromEntries(
+          rows.map((row) => [
+            row.reviewName,
+            {
+              body: row.body,
+              tone: row.tone,
+              source: row.source,
+              generatedAt: row.generatedAt.toISOString(),
+            },
+          ]),
+        );
+      }
+    } catch (err) {
+      console.warn('[google reviews] draft preload skipped', err);
+    }
+
+    return NextResponse.json({ ...reviews, location: selection, drafts });
   } catch (error) {
     if (error instanceof GoogleBusinessApiError) {
       return googleBusinessErrorResponse(error, 'Google yorumları alınamadı.');

@@ -14,6 +14,7 @@ import {
   withSelectedGoogleLocation,
   listGoogleReviews,
 } from '@/lib/google-business';
+import { captureBaselineSnapshot } from '@/lib/reputation/snapshot';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -107,6 +108,12 @@ export async function POST(
       },
     }),
   ]);
+
+  // Reputation OS — fire-and-forget baseline snapshot. First location-select
+  // event = best moment to capture "before Buaze" state for monthly delta.
+  // Idempotent inside captureBaselineSnapshot (skips if baseline already
+  // exists); never blocks response.
+  void captureBaselineSnapshot(id);
 
   return NextResponse.json({
     selectedLocation: selectedGoogleLocation(nextCache, id),
