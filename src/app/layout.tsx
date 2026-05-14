@@ -170,7 +170,7 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className={`${inter.className} antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-screen`}>
+      <body className={`${inter.className} antialiased bg-[var(--color-background)] text-[var(--color-text-main)] min-h-dvh`}>
         {/* Stage 31b §38.108 — KVKK Çerez Kurulu kararı + ePrivacy Direktifi
             uyumlu opt-in çerez consent. GA + Yandex Metrica `Script` tag'leri
             koşulsuz `lazyOnload` mount'tan ConditionalAnalytics component'ine

@@ -1062,7 +1062,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
        `lg:flex-1 lg:min-h-0 lg:overflow-hidden` (sidebar + main row layout
        intact). Banner null durumda görsel etki sıfır (column ile single
        flex child = sadece inner). */
-    <div className="min-h-screen bg-[#FFFFFF] flex flex-col lg:h-screen lg:overflow-hidden relative">
+    <div className="min-h-dvh bg-[#FFFFFF] flex flex-col lg:h-screen lg:overflow-hidden relative">
       {/* Stage A4 §38.96 — sticky impersonation banner. Server-side actor.realAdminId
           set ise üstte kırmızı banner + 30dk countdown + "Çıkış" CTA.
           §38.158 — banner artık outer column flex'in birinci child'ı

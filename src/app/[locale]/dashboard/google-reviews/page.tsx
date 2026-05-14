@@ -908,7 +908,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const shouldShowStatusLoading = loadingInitial || statusLoading || Boolean(activeRestaurantId && !statusIsReady && !reviewsError);
 
   return (
-    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow={isTr ? 'GOOGLE YORUMLARI' : 'GOOGLE REVIEWS'}
         title={isTr ? 'Google Yorumları' : 'Google Reviews'}

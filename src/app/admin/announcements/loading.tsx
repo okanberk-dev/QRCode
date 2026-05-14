@@ -1,12 +1,12 @@
 import { Skeleton } from '@/components/ui';
 
 // §40.10 — admin announcements loading. Wrapper birebir page.tsx:207
-// (`mx-auto max-w-[980px] px-4 sm:px-7 py-6 lg:py-8`).
+// (`mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8`).
 
 export default function AdminAnnouncementsLoading() {
   return (
     <div
-      className="mx-auto max-w-[980px] space-y-5 px-4 sm:px-7 py-6 lg:py-8 animate-in fade-in duration-200"
+      className="mx-auto max-w-[1100px] space-y-5 px-4 sm:px-7 py-6 lg:py-8 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"

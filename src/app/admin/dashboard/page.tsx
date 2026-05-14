@@ -325,7 +325,7 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
       <PageHeader
         eyebrow="SİSTEM YÖNETİMİ"
         title="Panel"

@@ -1,12 +1,12 @@
 import { Skeleton, StatCardSkeleton } from '@/components/ui';
 
 // §40.10 — admin QR loading. Wrapper birebir page.tsx:363
-// (`mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-4`).
+// (`mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4`).
 
 export default function AdminQrLoading() {
   return (
     <div
-      className="mx-auto max-w-[1280px] space-y-4 px-4 sm:px-7 py-6 lg:py-8 animate-in fade-in duration-200"
+      className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"

@@ -4848,3 +4848,166 @@ Tarihsel referans: 2026-05-12 ilk büyük sweep (PR #605, 25.7K→5.3K satır), 
 - Response sonunda 2-section change summary (`feedback_response_format`)
 
 ---
+
+## §42 — Panel Layout Chrome (canonical, 2026-05)
+
+Owner + admin panel sayfalarında **tek tip** layout sistemi. Drift'i
+tetikleyici şeyler (admin shell double-wrap, eksik scrollbar gutter, 5
+ayrı max-width değeri, padding outlier'ları) Stage closure'da kapatıldı.
+Yeni panel sayfası eklerken bu §'ye göre yaz.
+
+### §42.1 Shell chrome (sadece chrome, içerik wrap'leme)
+
+**Owner shell** `src/components/dashboard/UserDashboardShell.tsx` ve
+**admin shell** `src/app/admin/layout.tsx` SADECE chrome render eder:
+sidebar + topbar + TrialBanner + AnnouncementBanner + drawer + bottom
+nav. **`<main>` içine başka `mx-auto max-w-*` wrapper KOYMA**. Children
+kendi wrapper'ını uygular.
+
+Tarihsel hata (Stage closure'da kapatıldı): admin shell `<div
+className="max-w-7xl mx-auto w-full pt-2 sm:pt-6">` ile çocukları
+sarıyordu. Sonuç:
+- `max-w-[1400px]` page'leri 1280px (max-w-7xl) sınırına takılıyordu
+- `mx-auto` page wrapper'ı `mx-auto` parent içinde double-centered olup
+  sidebar genişliği ile content edge'i drift yaratıyordu
+- `pt-2 sm:pt-6` her sayfaya ekstra üst padding ekliyordu (page'in kendi
+  `py-6 lg:py-8` üstüne)
+
+Owner shell hiç double-wrap kullanmıyordu (zaten doğru pattern). Admin
+artık owner ile parity.
+
+### §42.2 Sidebar (her iki panel parity)
+
+| Değer | Owner | Admin |
+|---|---|---|
+| Desktop expanded | `w-[248px]` | `w-[248px]` |
+| Desktop collapsed | `w-[68px]` | `w-[68px]` |
+| Mobile drawer | `w-[280px] max-w-[85vw]` | `w-[280px] max-w-[85vw]` |
+| Transition | `transition-all duration-300` | `transition-all duration-300` |
+| Sticky | `lg:flex` + `h-full` (flex parent) | `lg:flex` + flex parent |
+
+**Yapma:** Sidebar width'ini değiştirme — Pulse §11 + Phase 11.10
+canonical. Sidebar collapse toggle button `z-50`, sidebar kendisi flex
+parent içinde — `position: fixed` veya `position: absolute` KULLANMA.
+
+### §42.3 Page wrapper canonical (3 max-width)
+
+```tsx
+<div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+  {/* page content */}
+</div>
+```
+
+**Max-width seçimi**:
+
+| Token | Kullanım | Örnek |
+|---|---|---|
+| `max-w-[1100px]` | Settings / forms / profile / billing — narrow content | `/admin/settings`, `/dashboard/profile`, `/admin/billing` |
+| `max-w-[1200px]` | **DEFAULT** — most pages | `/admin/restaurants`, `/dashboard/feedbacks (most)`, `/admin/qr` |
+| `max-w-[1400px]` | Data-dense tables (8+ kolon) | `/admin/reviews`, `/admin/audits/templates`, `/admin/audits/stats` |
+| `max-w-[640px]` | Error states (intentionally narrow centered) | `/dashboard/menu/error.tsx`, segment `error.tsx` files |
+
+**Yasak** (980, 920, 1280):
+- `max-w-[980px]` → kullanma, `1100px` tercih
+- `max-w-[920px]` → kullanma (SurveyWizardClient hariç — focused single
+  flow wizard, intentional narrow form), `1100px` tercih
+- `max-w-[1280px]` → kullanma, `1200px` tercih (Tailwind `max-w-7xl`'in
+  arbitrary alias'ı — pixel-bouncing kaynağı)
+
+### §42.4 Padding canonical (tek pattern)
+
+```
+px-4 sm:px-7 py-6 lg:py-8
+```
+
+- **Mobile** (`<640px`): 16px horizontal · 24px vertical
+- **Tablet+** (`sm:` ≥640px): 28px horizontal
+- **Desktop** (`lg:` ≥1024px): 32px vertical
+
+**Yasak** (drift kaynakları):
+- `px-5` (mobile) → her zaman `px-4`
+- `sm:px-8` → her zaman `sm:px-7`
+- `py-12` → her zaman `py-6 lg:py-8` (sayfa wrapper'ı)
+- `py-8 lg:py-12` → her zaman `py-6 lg:py-8` (owner home Stage closure'da
+  düzeltildi)
+- `lg:py-12` / `lg:py-16` → SADECE error state (`max-w-[640px]` wrapper)
+
+**Space-y serbestlik**: `space-y-4` (compact) / `space-y-5` (default) /
+`space-y-6` (breath) seçilebilir — içerik yoğunluğuna göre. Tek değer
+zorlanmaz (Stage closure'da explicit kabul).
+
+### §42.5 Globals.css (root scroll behavior)
+
+```css
+html { scrollbar-gutter: stable; }       /* §42.5 — initial-load shift fix */
+body { min-height: 100dvh; overflow-x: hidden; ... }
+```
+
+- `scrollbar-gutter: stable` — scrollbar lane'i rezerve eder, content
+  fetch sırasında scrollbar görünüp viewport width'ini ~15px daraltma
+  bug'ını eliminate eder. **Pure CSS, zero JS, 1 satır**. Initial-load
+  CLS=0 kazanımı. Mobile (touch overlay scrollbar) etkilenmez.
+- `body { min-height: 100dvh }` — mobile address bar handling (`100vh`
+  yerine `100dvh`). Root layout `min-h-dvh`, locale layout `min-h-dvh`,
+  owner shell `min-h-dvh` — hepsi parity.
+- `body { overflow-x: hidden }` — global horizontal scroll önleyici,
+  table overflow `overflow-x-auto` wrapper içinde scoped (Phase 11.14
+  pattern).
+
+**Yapma:**
+- `min-h-screen` (Tailwind) kullanma — `min-h-dvh` tercih (mobile-safe).
+- `scrollbar-gutter` overrides ekleme — html selector tek source.
+- `overflow-x: auto` body'ye ekleme (table'lar scoped wrapper kullanır).
+
+### §42.6 Mobile breakpoint behavior
+
+| Element | < `lg` (1024px) | `lg:` desktop |
+|---|---|---|
+| Sidebar | hidden, hamburger drawer | `lg:flex` visible |
+| Bottom nav | floating pill `fixed bottom-3 z-40` | `lg:hidden` |
+| Topbar | sticky `z-40` | sticky `z-30` |
+| Trial banner | within scrollable main | within scrollable main |
+| Content `<main>` pb | `pb-[calc(96px+env(safe-area-inset-bottom,0px))]` (clear bottom nav) | `lg:pb-0` |
+
+Mobile breakpoint asimetrisi yok — hem owner hem admin aynı kuralları
+kullanır.
+
+### §42.7 Yeni panel sayfası checklist (kanonik)
+
+1. **Wrapper**: `mx-auto max-w-[1100|1200|1400] px-4 sm:px-7 py-6 lg:py-8 space-y-{4|5|6}`
+2. **Header**: `<PageHeader eyebrow="..." title="..." description="..." actions={...} />` (§23.3 primitive)
+3. **Loading**: aynı segment'te `loading.tsx` — wrapper class'ı page.tsx
+   ile birebir clone (CLS=0, §40.10 disipline)
+4. **Error**: aynı segment'te `error.tsx` — `<ErrorState onRetry>` veya
+   `max-w-[640px] px-4 sm:px-7 py-12 lg:py-16` wrapper (intentionally
+   narrow)
+5. **Table'lar**: `<div className="hidden overflow-x-auto lg:block">`
+   wrapper + `<div className="lg:hidden">` card-list fallback
+   (§23.6 + Phase 11.14)
+6. **Bulk actions**: floating bottom toolbar (Phase 11.12 + 11.19
+   pattern, §23.3.1)
+7. **Form input + select + menu + switch**: §23.3 kanonik primitive'ler
+   (PulseSelect / PulseMenu / APSwitch — native `<select>` veya
+   `<Toggle>` YASAK)
+
+### §42.8 Yapma / Yap (özet)
+
+**Yapma**:
+- Admin shell veya owner shell'e içerik wrapping ekleme — chrome only
+- Page wrapper'da yeni max-width (980/920/1280) veya padding outlier
+  (`px-5`, `py-12`, `sm:px-8`) yazma — §42.3 + §42.4 enforce
+- `min-h-screen` Tailwind utility kullanma — `min-h-dvh` tercih
+- Sidebar width'i değiştirme veya `position: fixed` yapma
+- `body { overflow-x: auto }` veya `overflow: scroll` ekleme
+
+**Yap**:
+- Yeni page eklerken §42.7 checklist'i takip et
+- 980/920/1280 max-width pattern'i değiştirirken aynı PR'da
+  `loading.tsx`'i de güncelle (CLS=0)
+- AnnouncementBanner / TrialBanner shell tarafından mount edilir,
+  page tarafında mount etme (duplicate)
+- Yeni shell yapısı ekleyen Phase'lerde `lg:overflow-hidden` + inner
+  `lg:overflow-y-auto` pattern intact tutulmalı (sidebar fixed, main
+  scrolls)
+
+---
