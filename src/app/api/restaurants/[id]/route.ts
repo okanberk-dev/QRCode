@@ -374,6 +374,13 @@ export async function PUT(
 
     // menuLogoUrl — base64 data URL or http(s) link. Cap inline size so an
     // owner can't bloat the row with multi-MB payloads straight into PUT.
+    //
+    // Wave 2 PR-4 audit fix (A3 SVG sanitize loose): eski `data:image/`
+    // prefix guard `data:image/svg+xml;base64,...` payload'ı kabul ediyordu
+    // → SVG `<script>` taşıyabilir + public menu surface'ında `<img src>`
+    // ile render edildiğinde stored XSS. Yeni whitelist: sadece raster
+    // formatlar (jpeg/png/webp/gif/avif). SVG ileride desteklenirse
+    // `sharp.rasterize()` veya `DOMPurify` sanitize ile ayrı pipeline.
     if (menuLogoUrl !== undefined && menuLogoUrl !== null && typeof menuLogoUrl === 'string' && menuLogoUrl !== '') {
       if (menuLogoUrl.length > MENU_LOGO_MAX_LEN) {
         return ApiErrors.badRequest(
@@ -381,10 +388,21 @@ export async function PUT(
           'MENU_LOGO_TOO_LARGE',
         );
       }
-      // Non-data URLs must be http(s) — same protocol check we apply to
-      // the integration URL set, so a `javascript:` href can't slip in
-      // here either.
-      if (!menuLogoUrl.startsWith('data:image/')) {
+      // Data URL whitelist — raster MIME types only. SVG ve diğer formatlar
+      // (text/html, application/*) kabul edilmez.
+      const DATA_URL_RASTER_RE = /^data:image\/(jpeg|jpg|png|webp|gif|avif);base64,/i;
+      const isDataUrl = menuLogoUrl.startsWith('data:');
+      if (isDataUrl) {
+        if (!DATA_URL_RASTER_RE.test(menuLogoUrl)) {
+          return ApiErrors.badRequest(
+            'Menü logosu yalnız JPEG/PNG/WebP/GIF/AVIF olabilir (SVG desteklenmiyor)',
+            'INVALID_MENU_LOGO_MIME',
+          );
+        }
+      } else {
+        // Non-data URLs must be http(s) — same protocol check we apply to
+        // the integration URL set, so a `javascript:` href can't slip in
+        // here either.
         try {
           const u = new URL(menuLogoUrl);
           if (!/^https?:$/.test(u.protocol)) {
