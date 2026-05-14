@@ -4,6 +4,7 @@ import { use, useEffect, useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
+  Building2,
   CheckCircle2,
   Loader2,
   MapPin,
@@ -37,6 +38,13 @@ interface GoogleLocation {
   placeId: string | null;
   mapsUri: string | null;
   newReviewUri: string | null;
+}
+
+interface GoogleBusinessAccountLite {
+  name: string;
+  accountName: string | null;
+  type: string | null;
+  role: string | null;
 }
 
 interface GoogleReview {
@@ -540,12 +548,20 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   // yönlendirmek yerine kullanıcı bu sayfadan direkt bağlanır + konum seçer.
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
+  // Google Business Profile hesabı (account) listesi — kullanıcının "Business
+  // Profile" sahibi olup olmadığını UI'da ayırt etmek için. Boş array =
+  // Google ile login oldu ama henüz işletme profili açmamış demektir.
+  const [inlineAccounts, setInlineAccounts] = useState<GoogleBusinessAccountLite[]>([]);
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [inlineLocations, setInlineLocations] = useState<GoogleLocation[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locationNotice, setLocationNotice] = useState<string | null>(null);
   const [locationRetryAfter, setLocationRetryAfter] = useState<number | null>(null);
   const [savingLocation, setSavingLocation] = useState<string | null>(null);
+  // Refresh token revoke / expired durumlarda "Yeniden Bağla" CTA flag'i.
+  // setLocationError ile birlikte set edilir; AlertBanner altında buton görünür.
+  const [needsReconnect, setNeedsReconnect] = useState(false);
 
   // Restoran değişiminde localStorage'dan flag set'ini yükle.
   useEffect(() => {
@@ -747,6 +763,13 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     if (!activeRestaurantId || connecting) return;
     setConnecting(true);
     setConnectError(null);
+    // Reauth flow'unda eski location error/notice/needsReconnect state'lerini
+    // de temizle — OAuth redirect başarılı olunca callback geri dönecek,
+    // taze state ile başlasın.
+    setLocationError(null);
+    setLocationNotice(null);
+    setNeedsReconnect(false);
+    setLocationRetryAfter(null);
     try {
       const returnTo = `/${locale}/dashboard/google-reviews?restaurantId=${activeRestaurantId}`;
       const res = await fetch('/api/integrations/google/connect', {
@@ -776,11 +799,14 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     setLocationError(null);
     setLocationNotice(null);
     setLocationRetryAfter(null);
+    setNeedsReconnect(false);
     try {
       const res = await fetch(`/api/restaurants/${activeRestaurantId}/google/business/locations`);
       const data = await res.json();
       if (res.ok && data?.warning === 'GOOGLE_RATE_LIMITED') {
         setInlineLocations(data.locations ?? []);
+        setInlineAccounts(Array.isArray(data.accounts) ? data.accounts : []);
+        setAccountsLoaded(true);
         setLocationNotice(
           data.message ||
             (isTr
@@ -809,9 +835,31 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           setLocationRetryAfter(Number.isFinite(retryAfter) ? retryAfter : null);
           return;
         }
+        if (res.status === 401 || data?.code === 'GOOGLE_REAUTH_REQUIRED' || data?.requiresReauth) {
+          // Refresh token süresi doldu / Google revoke etti. Owner için
+          // net mesaj + Yeniden Bağla CTA.
+          setLocationError(
+            isTr
+              ? 'Google bağlantınızın süresi doldu. "Yeniden bağla" diyerek izin verin.'
+              : 'Your Google connection expired. Click "Reconnect" to grant access again.',
+          );
+          setNeedsReconnect(true);
+          return;
+        }
+        if (data?.code === 'GOOGLE_NOT_CONNECTED') {
+          // İlk OAuth henüz yapılmamış / disconnect olmuş.
+          setLocationError(
+            isTr
+              ? 'Google hesabı bağlı değil. "Google Hesabını Bağla" ile bağlayın.'
+              : 'Google account not connected. Click "Connect Google Account".',
+          );
+          return;
+        }
         throw new Error(data?.error || (isTr ? 'Konumlar alınamadı.' : 'Failed to load locations.'));
       }
       setInlineLocations(data.locations ?? []);
+      setInlineAccounts(Array.isArray(data.accounts) ? data.accounts : []);
+      setAccountsLoaded(true);
     } catch (err) {
       setLocationError(err instanceof Error ? err.message : (isTr ? 'Konumlar alınamadı.' : 'Failed to load locations.'));
     } finally {
@@ -1240,9 +1288,22 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           </div>
 
           {locationError && (
-            <AlertBanner kind="danger" onDismiss={() => setLocationError(null)}>
-              {locationError}
-            </AlertBanner>
+            <div className="space-y-2">
+              <AlertBanner kind="danger" onDismiss={() => setLocationError(null)}>
+                {locationError}
+              </AlertBanner>
+              {needsReconnect && (
+                <button
+                  type="button"
+                  onClick={connectGoogleInline}
+                  disabled={connecting}
+                  className="bz-btn-primary inline-flex items-center gap-2 rounded-full text-[13px]"
+                >
+                  {connecting ? <Loader2 size={14} className="animate-spin" /> : <ExternalLink size={14} />}
+                  {isTr ? 'Yeniden bağla' : 'Reconnect'}
+                </button>
+              )}
+            </div>
           )}
           {locationNotice && !locationError && (
             <AlertBanner kind="warn" onDismiss={() => setLocationNotice(null)}>
@@ -1257,12 +1318,95 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                 {isTr ? 'Konumlar yükleniyor…' : 'Loading locations…'}
               </p>
             </div>
-          ) : inlineLocations.length === 0 && !locationError && !loadingLocations ? (
-            <p className="py-6 text-center text-[13px] text-[#737373]">
-              {isTr
-                ? 'Google hesabınızda Business Profile konumu bulunamadı.'
-                : 'No Business Profile locations found in your Google account.'}
-            </p>
+          ) : !loadingLocations && !locationError && accountsLoaded && inlineAccounts.length === 0 ? (
+            // No-account state — Google ile login oldu ama Business Profile yok.
+            // Kullanıcıya net bir mesaj + Google Business Profile'a yönlendirme.
+            <div className="py-6 px-2 rounded-xl bg-[#FFFBEB] border border-[#FDE68A]">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-[#FDE68A]">
+                  <Building2 size={18} strokeWidth={2} className="text-[#92400E]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="bz-h-tight text-[14px] text-[#0A0A0A]">
+                    {isTr
+                      ? 'Google işletme hesabınız yok'
+                      : 'No Google Business Profile account'}
+                  </p>
+                  <p className="text-[12.5px] text-[#525252] mt-1 leading-relaxed">
+                    {isTr
+                      ? 'Google ile giriş yaptınız ancak bu hesabın altında "Google Business Profile" (eski adıyla Google My Business) yok. Yorumları yönetmek için önce Google\'da bir işletme profili açmanız gerekiyor.'
+                      : 'You signed in with Google, but this account doesn\'t have a Google Business Profile (formerly Google My Business). To manage reviews, please create a business profile on Google first.'}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <a
+                      href="https://business.google.com/create"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px] rounded-full"
+                    >
+                      <ExternalLink size={13} />
+                      {isTr ? 'İşletme profili oluştur' : 'Create business profile'}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={loadInlineLocations}
+                      disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
+                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px] rounded-full"
+                    >
+                      <RefreshCw size={13} />
+                      {isTr ? 'Tekrar dene' : 'Try again'}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[#737373] mt-3 leading-relaxed">
+                    {isTr
+                      ? 'İşletme profilini doğruladıktan sonra (Google posta ile kart, telefon araması veya video doğrulama gönderir) buraya dönüp "Tekrar dene" deyin.'
+                      : 'After Google verifies your business (via postcard, phone, or video call), come back here and click "Try again".'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : !loadingLocations && !locationError && accountsLoaded && inlineLocations.length === 0 ? (
+            // Account exists but no location — owner Business Profile açtı ama
+            // henüz konum eklemedi. Distinct mesaj.
+            <div className="py-6 px-2 rounded-xl bg-[#FFFBEB] border border-[#FDE68A]">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-[#FDE68A]">
+                  <MapPin size={18} strokeWidth={2} className="text-[#92400E]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="bz-h-tight text-[14px] text-[#0A0A0A]">
+                    {isTr
+                      ? 'İşletme profilinde konum bulunamadı'
+                      : 'No location in your business profile'}
+                  </p>
+                  <p className="text-[12.5px] text-[#525252] mt-1 leading-relaxed">
+                    {isTr
+                      ? `${inlineAccounts.length} Google Business Profile hesabı bağlı, fakat henüz hiç konum (lokasyon) eklenmemiş. Google'da işletme konumu açıp doğruladıktan sonra burada görünecek.`
+                      : `${inlineAccounts.length} Google Business Profile account connected, but no location has been added yet. After you add and verify a location on Google, it will appear here.`}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <a
+                      href="https://business.google.com/locations"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px] rounded-full"
+                    >
+                      <ExternalLink size={13} />
+                      {isTr ? 'Google\'da konum ekle' : 'Add location on Google'}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={loadInlineLocations}
+                      disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
+                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px] rounded-full"
+                    >
+                      <RefreshCw size={13} />
+                      {isTr ? 'Tekrar dene' : 'Try again'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="grid gap-2 mt-4">
               {inlineLocations.map((location) => {

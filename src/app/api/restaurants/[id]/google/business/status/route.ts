@@ -33,6 +33,15 @@ export async function GET(
   const integration = await getGoogleIntegrationForRestaurant(actor, id);
   const cache = parseGoogleLocationsCache(integration?.locationsJson ?? null);
   const selectedLocation = selectedGoogleLocation(cache, id);
+  // Cache'lenmiş accounts üzerinden hızlı flag — UI ilk render'da owner'a
+  // "Business Profile yok" durumunu konum endpoint'i çağrılmadan gösterebilir.
+  // null = sync henüz yapılmamış (UI: locations endpoint'ini fetch eder),
+  // false = sync yapıldı, accounts boş (UI: "işletme profili açın" mesajı),
+  // true = sync yapıldı, accounts var.
+  const syncDone = Boolean(cache.syncedAt);
+  const hasBusinessProfile = syncDone ? cache.accounts.length > 0 : null;
+  const accountCount = cache.accounts.length;
+  const locationCount = cache.locations.length;
 
   return NextResponse.json(
     {
@@ -45,6 +54,9 @@ export async function GET(
       hasRefreshToken: Boolean(integration?.refreshToken),
       selectedLocation,
       syncedAt: cache.syncedAt,
+      hasBusinessProfile,
+      accountCount,
+      locationCount,
     },
     {
       // Owner-scoped status barely changes between requests — `private` so
