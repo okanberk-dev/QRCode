@@ -15,6 +15,7 @@ import {
   Badge,
   Field,
   Modal,
+  PulseSelect,
   type BadgeKind,
   useConfirmDialog,
 } from "@/components/ui";
@@ -476,17 +477,15 @@ export function BusinessUsersRolesSettings({
               />
             </Field>
             <Field label="Rol">
-              <select
-                className="bz-input"
+              <PulseSelect
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as typeof VALID_ROLES[number])}
-              >
-                {VALID_ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_LABELS[r as TeamRow["role"]]}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setInviteRole(value as typeof VALID_ROLES[number])}
+                options={VALID_ROLES.map((r) => ({
+                  value: r,
+                  label: ROLE_LABELS[r as TeamRow["role"]],
+                }))}
+                ariaLabel="Davet edilecek üye rolü"
+              />
             </Field>
             <div>
               <label className="block text-[12px] text-[#525252] mb-2">
@@ -556,17 +555,15 @@ export function BusinessUsersRolesSettings({
               </div>
             </div>
             <Field label="Rol">
-              <select
-                className="bz-input"
+              <PulseSelect
                 value={editRole}
-                onChange={(e) => setEditRole(e.target.value as typeof VALID_ROLES[number])}
-              >
-                {VALID_ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_LABELS[r as TeamRow["role"]]}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setEditRole(value as typeof VALID_ROLES[number])}
+                options={VALID_ROLES.map((r) => ({
+                  value: r,
+                  label: ROLE_LABELS[r as TeamRow["role"]],
+                }))}
+                ariaLabel="Üye rolü"
+              />
             </Field>
             <div>
               <label className="block text-[12px] text-[#525252] mb-2">

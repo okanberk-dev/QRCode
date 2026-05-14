@@ -10,6 +10,7 @@ import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBa
 import TrialBanner from './TrialBanner';
 import ImpersonationBanner from './ImpersonationBanner';
 import BuazeLogo from '@/components/marketing/BuazeLogo';
+import { PulseSelect } from '@/components/ui';
 import ViewportMount from '@/components/ui/ViewportMount';
 import { detectSector } from '@/lib/sector-platforms';
 import {
@@ -1101,18 +1102,16 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
           <div className="flex items-center gap-2">
             {workspaceRestaurants.length > 1 && (
-              <select
+              <PulseSelect
                 value={activeRestaurantId ?? ''}
-                onChange={(event) => selectRestaurantScope(event.target.value)}
-                aria-label={copy.chooseBusiness}
-                className="bz-input h-9 max-w-[132px] rounded-lg py-0 text-[11px] font-medium"
-              >
-                {workspaceRestaurants.map((restaurant) => (
-                  <option key={restaurant.id} value={restaurant.id}>
-                    {restaurant.name}
-                  </option>
-                ))}
-              </select>
+                onChange={selectRestaurantScope}
+                options={workspaceRestaurants.map((restaurant) => ({
+                  value: restaurant.id,
+                  label: restaurant.name,
+                }))}
+                ariaLabel={copy.chooseBusiness}
+                className="max-w-[132px]"
+              />
             )}
             {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 5 && (
               <span className="hidden sm:flex items-center gap-1.5 rounded-full bg-[#EAF9B8] px-3 py-1 pulse-eyebrow text-[#0A0A0A]">
@@ -1171,18 +1170,16 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             {workspaceRestaurants.length > 1 && (
-              <select
+              <PulseSelect
                 value={activeRestaurantId ?? ''}
-                onChange={(event) => selectRestaurantScope(event.target.value)}
-                aria-label={copy.chooseBusiness}
-                className="bz-input hidden h-9 max-w-[220px] rounded-full py-0 text-[12px] font-medium xl:block"
-              >
-                {workspaceRestaurants.map((restaurant) => (
-                  <option key={restaurant.id} value={restaurant.id}>
-                    {restaurant.name}
-                  </option>
-                ))}
-              </select>
+                onChange={selectRestaurantScope}
+                options={workspaceRestaurants.map((restaurant) => ({
+                  value: restaurant.id,
+                  label: restaurant.name,
+                }))}
+                ariaLabel={copy.chooseBusiness}
+                className="hidden max-w-[220px] xl:inline-block"
+              />
             )}
             <button
               type="button"

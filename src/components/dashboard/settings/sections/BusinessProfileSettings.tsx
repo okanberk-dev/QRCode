@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { AlertBanner, Eyebrow, Field } from "@/components/ui";
+import { AlertBanner, Eyebrow, Field, PulseSelect } from "@/components/ui";
 import type { Locale } from "@/lib/translations";
 
 interface BusinessProfileSettingsProps {
@@ -245,18 +245,16 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
             label={isTr ? "Saat dilimi" : "Time zone"}
             hint={isTr ? "Tarih/saat görünümü için" : "For date/time display"}
           >
-            <select
+            <PulseSelect
               value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              className="bz-input w-full"
-            >
-              <option value="">{isTr ? "Seçilmedi" : "Not set"}</option>
-              {TIMEZONE_OPTIONS.map((tz) => (
-                <option key={tz.value} value={tz.value}>
-                  {tz.label}
-                </option>
-              ))}
-            </select>
+              onChange={setTimezone}
+              options={[
+                { value: "", label: isTr ? "Seçilmedi" : "Not set" },
+                ...TIMEZONE_OPTIONS,
+              ]}
+              ariaLabel={isTr ? "Saat dilimi" : "Time zone"}
+              placeholder={isTr ? "Seçilmedi" : "Not set"}
+            />
           </Field>
         </div>
 
@@ -285,14 +283,16 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
           </p>
         </div>
         <Field label={isTr ? "Dil" : "Language"}>
-          <select
+          <PulseSelect
             value={locale}
-            onChange={(e) => handleLocaleChange(e.target.value)}
-            className="bz-input w-full md:w-[260px]"
-          >
-            <option value="tr">Türkçe</option>
-            <option value="en">English</option>
-          </select>
+            onChange={handleLocaleChange}
+            options={[
+              { value: "tr", label: "Türkçe" },
+              { value: "en", label: "English" },
+            ]}
+            ariaLabel={isTr ? "Panel dili" : "Panel language"}
+            className="md:w-[260px]"
+          />
         </Field>
       </div>
     </div>
