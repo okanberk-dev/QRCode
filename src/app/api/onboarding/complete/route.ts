@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
+import { validateBody } from '@/lib/api/validate';
 import { sendMail } from '@/lib/email';
 import { pulseLayout } from '@/lib/email/layout';
 import { renderEyebrow, renderH1, renderP, renderButton, spacer } from '@/lib/email/components';
@@ -13,20 +15,43 @@ import { getClientIp } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
+// CLAUDE.md §28.3.1 + §40.5 — bilinen field'lar Zod ile validate, geri kalanı
+// `.passthrough()` ile JSON storage'a iletilir (wizard form state ileride
+// field eklerse schema güncellemeden çalışır). `.strict()` burada DEĞİL —
+// onboarding wizard'ı kırar; mass assignment koruması ise OnboardingProgress
+// tablosunun yalnız `data: Json` kolonu olmasıyla doğal sınırlı (Restaurant
+// veya User tablolarına yazma yok).
+const OnboardingCompleteBody = z
+  .object({
+    bizName: z.string().trim().max(200).optional(),
+    sector: z.string().trim().max(80).optional(),
+    city: z.string().trim().max(100).optional(),
+    locale: z.string().max(10).optional(),
+  })
+  .passthrough();
+
 export async function POST(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor || actor.source !== 'user') {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  let body: unknown = null;
+  // Body opsiyonel — finish-later akışında boş POST kabul edilir.
+  // Boş body durumunda validate atla — eski davranış intact.
+  let body: Record<string, unknown> = {};
+  let raw: unknown = null;
   try {
-    body = await req.json();
+    raw = await req.json();
   } catch {
     /* optional */
   }
+  if (raw && typeof raw === 'object') {
+    const parsed = validateBody<z.infer<typeof OnboardingCompleteBody>>(OnboardingCompleteBody, raw);
+    if (!parsed.ok) return parsed.response;
+    body = parsed.data as Record<string, unknown>;
+  }
   const dataJson: Prisma.InputJsonValue | undefined =
-    body && typeof body === 'object' ? (body as Prisma.InputJsonValue) : undefined;
+    Object.keys(body).length > 0 ? (body as Prisma.InputJsonValue) : undefined;
 
   const row = await prisma.onboardingProgress.upsert({
     where: { userId: actor.id },

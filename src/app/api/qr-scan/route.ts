@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recordQrScan } from '@/lib/qr-scan';
-import { rateLimit } from '@/lib/rate-limit';
+import { getClientIp, rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,10 +11,8 @@ export const dynamic = 'force-dynamic';
  * surface; CLAUDE.md §14.2 pattern.
  */
 export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    (req as unknown as { ip?: string }).ip ||
-    'unknown';
+  // CLAUDE.md §37.2.D — `getClientIp()` parse normalization.
+  const ip = getClientIp(req.headers);
 
   const limit = await rateLimit(`qr-scan:ip:${ip}`, 30, 60 * 1000);
   if (!limit.allowed) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recordPlatformRedirect } from '@/lib/platform-redirect';
-import { rateLimit } from '@/lib/rate-limit';
+import { getClientIp, rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,10 +17,11 @@ export const dynamic = 'force-dynamic';
  * public surface (CLAUDE.md §14.2 pattern).
  */
 export async function POST(req: NextRequest) {
-  const ip =
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    (req as unknown as { ip?: string }).ip ||
-    'unknown';
+  // CLAUDE.md §37.2.D + §40.4.D — `getClientIp()` ham `x-forwarded-for`'u
+  // tek noktadan parse eder; saldırgan `XFF: a, b, c` ile rate-limit key
+  // pivot edemez (mevcut split(',')[0] paterni Stage 105 audit'inde tüm
+  // public POST'larda normalize edildi).
+  const ip = getClientIp(req.headers);
 
   const limit = await rateLimit(`platform-redirect:ip:${ip}`, 60, 60 * 1000);
   if (!limit.allowed) {

@@ -337,7 +337,9 @@ export async function getHealthSnapshotDelta(restaurantId: string): Promise<{
   latest: { score: number; capturedAt: Date } | null;
   previous: { score: number; capturedAt: Date } | null;
 }> {
-  const [baseline, latestTwo] = await Promise.all([
+  // CLAUDE.md §40.1 — connection_limit=1 altında paralel read'leri
+  // `prisma.$transaction([...])` tek connection üstünden sıralar.
+  const [baseline, latestTwo] = await prisma.$transaction([
     prisma.restaurantHealthSnapshot.findFirst({
       where: { restaurantId, kind: 'baseline' },
       orderBy: { capturedAt: 'asc' },

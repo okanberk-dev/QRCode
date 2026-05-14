@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { resolveOwnerUserId } from '@/lib/panel-access';
 import { validateBody } from '@/lib/api/validate';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +59,17 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  // CLAUDE.md §37.2.C + §40.4.C — privileged write endpoint'leri
+  // `rateLimit('endpoint:actor:${actor.id}', N, 60_000)` ile gate edilmeli.
+  // Owner-scoped preference write; 20/dk slider/checkbox burst için yeterli.
+  const rl = await rateLimit(`notifications-prefs:${actor.id}`, 20, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'rate_limit' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    );
+  }
 
   const userId = await resolveOwnerUserId(actor);
   if (!userId) return NextResponse.json({ error: 'forbidden' }, { status: 403 });

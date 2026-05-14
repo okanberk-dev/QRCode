@@ -52,7 +52,10 @@ export async function GET(
     // (her regen = +1 row) — distinct (tableNumber, platform, type) combo'larını
     // ayrıca count'luyoruz; aksi halde owner panelde "1 QR var ama 2 yazıyor"
     // false-positive'i çıkıyor.
-    const [restaurant, qrDistinctRows] = await Promise.all([
+    // CLAUDE.md §40.1 — Supabase pooler `connection_limit=1` altında same-request
+    // paralel Prisma read'leri `prisma.$transaction([...])` ile tek connection
+    // üstünden sıralı çalışmalı (Promise.all timeout riskini eler).
+    const [restaurant, qrDistinctRows] = await prisma.$transaction([
       prisma.restaurant.findUnique({
         where: { id },
         include: {
@@ -93,7 +96,14 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Failed to fetch restaurant:', error);
+    // CLAUDE.md §37.7 + §40.1.PII — raw error log'lama: Prisma error.meta
+    // PII (email/phone) içerebilir, Vercel logs'a + Sentry extra'ya gider.
+    // Sadece error type + truncated message log'la.
+    console.error('[restaurants:get] failed', {
+      restaurantId: id,
+      errorName: error instanceof Error ? error.name : 'unknown',
+      errorMessage: error instanceof Error ? error.message.slice(0, 200) : 'non-error',
+    });
     return ApiErrors.internalError('İşletme çekilemedi');
   }
 }
@@ -605,7 +615,12 @@ export async function PUT(
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {
-    console.error('Failed to update restaurant:', error);
+    // CLAUDE.md §37.7 — PII-safe error logging.
+    console.error('[restaurants:update] failed', {
+      restaurantId: id,
+      errorName: error instanceof Error ? error.name : 'unknown',
+      errorMessage: error instanceof Error ? error.message.slice(0, 200) : 'non-error',
+    });
     return ApiErrors.internalError('İşletme güncellenemedi');
   }
 }
@@ -699,7 +714,12 @@ export async function DELETE(
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch (error) {
-    console.error('Failed to delete restaurant:', error);
+    // CLAUDE.md §37.7 — PII-safe error logging.
+    console.error('[restaurants:delete] failed', {
+      restaurantId: id,
+      errorName: error instanceof Error ? error.name : 'unknown',
+      errorMessage: error instanceof Error ? error.message.slice(0, 200) : 'non-error',
+    });
     return ApiErrors.internalError('İşletme silinemedi');
   }
 }

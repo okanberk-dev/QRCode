@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
-import { rateLimit } from '@/lib/rate-limit';
+import { getClientIp, rateLimit } from '@/lib/rate-limit';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { isStrongPassword } from '@/lib/validations';
 
@@ -37,10 +37,8 @@ function timingSafeEqual(a: string, b: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const ip =
-      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-      req.headers.get('x-real-ip') ||
-      'unknown';
+    // CLAUDE.md §37.2.D — `getClientIp()` parse normalization.
+    const ip = getClientIp(req.headers);
 
     const rl = await rateLimit(`admin:reset:${ip}`, 10, 15 * 60 * 1000);
     if (!rl.allowed) {
