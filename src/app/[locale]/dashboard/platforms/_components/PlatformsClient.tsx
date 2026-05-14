@@ -28,7 +28,7 @@ import {
   Plug,
   Settings,
 } from 'lucide-react';
-import { Badge } from '@/components/ui';
+import { Badge, PulseSelect } from '@/components/ui';
 import { detectSector, SECTOR_PLATFORMS } from '@/lib/sector-platforms';
 import type { ManagedPlatformDef } from '@/lib/platform-management';
 import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
@@ -220,28 +220,26 @@ export default function PlatformsClient({
               : 'Manage sector-specific platform links from here. Once you pick a business, review channels matching your sector + social + messaging platforms appear automatically.'}
           </p>
         </div>
-        <label className="flex w-full max-w-[360px] flex-col items-stretch gap-1.5">
+        <div className="flex w-full max-w-[360px] flex-col items-stretch gap-1.5">
           <span className="pulse-eyebrow text-[10.5px] text-[#737373]">
             {isTr ? 'İŞLETME' : 'BUSINESS'}
           </span>
-          <select
+          <PulseSelect
             value=""
-            onChange={(e) => {
-              if (e.target.value) selectRestaurant(e.target.value);
+            onChange={(v) => {
+              if (v) selectRestaurant(v);
             }}
-            className="bz-input h-11 w-full text-[14px]"
-            aria-label={isTr ? 'İşletme seç' : 'Select business'}
-          >
-            <option value="" disabled>
-              {isTr ? 'İşletme seçin…' : 'Choose a business…'}
-            </option>
-            {restaurantRows.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </label>
+            options={[
+              {
+                value: '',
+                label: isTr ? 'İşletme seçin…' : 'Choose a business…',
+              },
+              ...restaurantRows.map((r) => ({ value: r.id, label: r.name })),
+            ]}
+            ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
+            className="w-full"
+          />
+        </div>
       </div>
     );
   }
@@ -257,23 +255,18 @@ export default function PlatformsClient({
           role="group"
           aria-label={isTr ? 'İşletme seçici' : 'Business selector'}
         >
-          <label className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <span className="pulse-eyebrow text-[10.5px] text-[#737373]">
               {isTr ? 'İŞLETME' : 'BUSINESS'}
             </span>
-            <select
+            <PulseSelect
               value={selectedRestaurantId}
-              onChange={(e) => selectRestaurant(e.target.value)}
-              className="bz-input h-9 min-w-[180px] text-[13px]"
-              aria-label={isTr ? 'İşletme seç' : 'Select business'}
-            >
-              {restaurantRows.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={selectRestaurant}
+              options={restaurantRows.map((r) => ({ value: r.id, label: r.name }))}
+              ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
+              className="min-w-[200px]"
+            />
+          </div>
 
           {sectorLabel && (
             <span className="bz-mono ml-auto text-[11px] text-[#737373]">

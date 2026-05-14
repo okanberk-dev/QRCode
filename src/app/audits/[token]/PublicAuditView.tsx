@@ -17,6 +17,7 @@ import type {
   AuditScoringMode,
   AuditSector,
 } from '@/lib/audits/types';
+import { normalizeQuestionOptions } from '@/lib/audits/options';
 
 interface Question {
   id: string;
@@ -71,9 +72,13 @@ interface Props {
   locale: Locale;
 }
 
-function getOptions(q: Question): string[] {
-  if (!Array.isArray(q.options)) return [];
-  return (q.options as unknown[]).filter((x): x is string => typeof x === 'string');
+function getOptions(q: Question, locale: 'tr' | 'en'): string[] {
+  // Frontend safety net — backend public GET zaten normalize ediyor
+  // (src/app/api/audits/[token]/route.ts) ama legacy/preview deploylarda
+  // çift güvence için aynı helper'ı burada da çağırıyoruz. yes_no için
+  // her zaman 2 seçenek garanti eder.
+  const normalized = normalizeQuestionOptions(q.type, q.options, locale);
+  return normalized ?? [];
 }
 
 export default function PublicAuditView({ token, locale }: Props) {
@@ -268,13 +273,15 @@ export default function PublicAuditView({ token, locale }: Props) {
 
   const accent = data.restaurant.primaryColor || '#C6F24E';
 
+  const estimatedMinutes = Math.max(1, Math.ceil(totalQuestions / 4));
+
   return (
     <main className="min-h-screen bg-[#0A0A0A] text-white">
-      <div className="max-w-[640px] mx-auto px-4 sm:px-6 py-10 sm:py-16">
+      <div className="max-w-[640px] mx-auto px-4 sm:px-6 py-8 sm:py-14">
         {/* Brand header */}
-        <header className="text-center mb-6">
+        <header className="text-center mb-6 sm:mb-8">
           <div
-            className="inline-flex items-center justify-center w-12 h-12 rounded-2xl text-[#0A0A0A] mb-3"
+            className="inline-flex items-center justify-center w-12 h-12 rounded-2xl text-[#0A0A0A] mb-3 shadow-[0_4px_24px_-8px_rgba(198,242,78,0.45)]"
             style={{ background: accent }}
           >
             <ClipboardCheck size={20} strokeWidth={2.5} />
@@ -289,100 +296,139 @@ export default function PublicAuditView({ token, locale }: Props) {
 
         {/* Step: intro */}
         {step === 'intro' && (
-          <div className="bg-white text-[#0A0A0A] rounded-3xl p-6 sm:p-8 bz-fade-in">
-            <p className="pulse-eyebrow text-[#525252]">{data.template.title}</p>
-            {data.template.description && (
-              <p className="text-[15px] text-[#525252] mt-2">{data.template.description}</p>
-            )}
-            <p className="text-[13px] text-[#737373] mt-3">
-              {isTr
-                ? `${totalQuestions} soru · yaklaşık ${Math.max(1, Math.ceil(totalQuestions / 4))} dakika`
-                : `${totalQuestions} questions · ~${Math.max(1, Math.ceil(totalQuestions / 4))} min`}
+          <div className="bg-white text-[#0A0A0A] rounded-3xl p-6 sm:p-8 bz-fade-in shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
+            <p className="pulse-eyebrow text-[#525252]">
+              {isTr ? 'BU DENETİM' : 'THIS AUDIT'}
             </p>
+            <h2 className="bz-h-tight-2 text-[22px] sm:text-[26px] mt-1 leading-tight">
+              {data.template.title}
+            </h2>
+            {data.template.description && (
+              <p className="text-[14px] sm:text-[15px] text-[#525252] mt-2 leading-relaxed">
+                {data.template.description}
+              </p>
+            )}
 
-            <hr className="my-5 border-[#EDEDED]" />
+            {/* Meta chips — soru sayısı + süre */}
+            <div className="flex flex-wrap gap-2 mt-4">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-3 py-1 text-[12px] text-[#525252]">
+                <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-[#0A0A0A]" />
+                {totalQuestions} {isTr ? 'soru' : 'questions'}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-3 py-1 text-[12px] text-[#525252]">
+                <span
+                  aria-hidden
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ background: accent }}
+                />
+                ~{estimatedMinutes} {isTr ? 'dk' : 'min'}
+              </span>
+            </div>
 
+            <hr className="my-5 sm:my-6 border-[#EDEDED]" />
+
+            {/* Contact (optional) — collapsed eyebrow + grid */}
             <div className="space-y-3">
-              <h2 className="bz-h-tight text-[14px]">
-                {isTr ? 'İletişim (opsiyonel)' : 'Contact (optional)'}
-              </h2>
+              <div>
+                <p className="pulse-eyebrow text-[#525252]">
+                  {isTr ? 'İLETİŞİM' : 'CONTACT'}
+                </p>
+                <p className="text-[12px] text-[#737373] mt-1">
+                  {isTr
+                    ? 'Opsiyonel — işletme cevabını görebilmek için.'
+                    : 'Optional — so the business can follow up.'}
+                </p>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="pulse-eyebrow text-[#525252] block mb-1">
+                  <label htmlFor="audit-name" className="pulse-eyebrow text-[#525252] block mb-1">
                     {isTr ? 'Ad' : 'Name'}
                   </label>
                   <input
+                    id="audit-name"
                     className="bz-input"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder={isTr ? 'Adın' : 'Your name'}
                     maxLength={200}
+                    autoComplete="name"
+                    autoCapitalize="words"
+                    enterKeyHint="next"
                   />
                 </div>
                 <div>
-                  <label className="pulse-eyebrow text-[#525252] block mb-1">E-posta</label>
+                  <label htmlFor="audit-email" className="pulse-eyebrow text-[#525252] block mb-1">
+                    {isTr ? 'E-posta' : 'Email'}
+                  </label>
                   <input
+                    id="audit-email"
                     className="bz-input"
                     type="email"
+                    inputMode="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="ad@buaze.com"
+                    autoComplete="email"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    enterKeyHint="next"
                   />
                 </div>
-                <div>
-                  <label className="pulse-eyebrow text-[#525252] block mb-1">
+                <div className="sm:col-span-2">
+                  <label htmlFor="audit-phone" className="pulse-eyebrow text-[#525252] block mb-1">
                     {isTr ? 'Telefon' : 'Phone'}
                   </label>
                   <input
+                    id="audit-phone"
                     className="bz-input"
                     type="tel"
                     inputMode="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+90 ..."
+                    autoComplete="tel"
+                    enterKeyHint="done"
                   />
                 </div>
               </div>
             </div>
 
-            <hr className="my-5 border-[#EDEDED]" />
+            <hr className="my-5 sm:my-6 border-[#EDEDED]" />
 
-            <label className="flex items-start gap-2 text-[13px] cursor-pointer">
-              <input
-                type="checkbox"
-                className="mt-0.5"
-                checked={kvkkOk}
-                onChange={(e) => setKvkkOk(e.target.checked)}
-              />
-              <span>
-                {isTr ? (
-                  <>
-                    {data.restaurant.kvkkText ||
-                      'Yanıtlarımın işletme tarafından iç değerlendirme amacıyla işlenmesini kabul ediyorum.'}{' '}
-                    <span className="text-[#737373]">*</span>
-                  </>
-                ) : (
-                  <>
-                    {data.restaurant.kvkkText ||
-                      'I consent to my responses being processed by the business for internal evaluation.'}{' '}
-                    <span className="text-[#737373]">*</span>
-                  </>
-                )}
-              </span>
-            </label>
-            <label className="flex items-start gap-2 text-[13px] cursor-pointer mt-2">
-              <input
-                type="checkbox"
-                className="mt-0.5"
-                checked={marketingOk}
-                onChange={(e) => setMarketingOk(e.target.checked)}
-              />
-              <span className="text-[#525252]">
-                {isTr
-                  ? 'İletişim için sonradan bana ulaşılabilir (opsiyonel).'
-                  : 'You may contact me for follow-up (optional).'}
-              </span>
-            </label>
+            {/* Consent block — tek kart içinde 2 checkbox, accent border solda */}
+            <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3 sm:p-4 space-y-3">
+              <label className="flex items-start gap-2.5 text-[13px] cursor-pointer leading-relaxed">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 accent-[#0A0A0A] shrink-0"
+                  checked={kvkkOk}
+                  onChange={(e) => setKvkkOk(e.target.checked)}
+                />
+                <span>
+                  {data.restaurant.kvkkText ||
+                    (isTr
+                      ? 'Yanıtlarımın işletme tarafından iç değerlendirme amacıyla işlenmesini kabul ediyorum.'
+                      : 'I consent to my responses being processed by the business for internal evaluation.')}{' '}
+                  <span className="text-[#DC2626]" aria-hidden>
+                    *
+                  </span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2.5 text-[13px] cursor-pointer leading-relaxed">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 accent-[#0A0A0A] shrink-0"
+                  checked={marketingOk}
+                  onChange={(e) => setMarketingOk(e.target.checked)}
+                />
+                <span className="text-[#525252]">
+                  {isTr
+                    ? 'İletişim için sonradan bana ulaşılabilir (opsiyonel).'
+                    : 'You may contact me for follow-up (optional).'}
+                </span>
+              </label>
+            </div>
 
             {submitError && (
               <div
@@ -405,42 +451,60 @@ export default function PublicAuditView({ token, locale }: Props) {
 
             <button
               type="button"
-              className="bz-btn-primary w-full mt-5 justify-center"
+              className="bz-btn-primary w-full mt-5 justify-center text-[14px] py-2.5"
               onClick={handleStartQuestions}
+              disabled={!kvkkOk}
+              aria-disabled={!kvkkOk}
             >
               {isTr ? 'Başla' : 'Start'} <ArrowRight size={14} />
             </button>
+            {!kvkkOk && (
+              <p className="text-[11px] text-[#737373] text-center mt-2">
+                {isTr ? 'Başlamak için onay gerekli.' : 'Consent is required to start.'}
+              </p>
+            )}
           </div>
         )}
 
         {/* Step: questions */}
         {step === 'questions' && currentQuestion && (
-          <div className="bg-white text-[#0A0A0A] rounded-3xl p-6 sm:p-8 bz-fade-in">
+          <div className="bg-white text-[#0A0A0A] rounded-3xl p-6 sm:p-8 bz-fade-in shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
             {/* Progress */}
-            <div className="flex items-center justify-between text-[11px] mb-1">
+            <div className="flex items-center justify-between text-[11px] mb-2">
               <span className="pulse-eyebrow text-[#525252]">
                 {isTr ? `Soru ${questionIndex + 1} / ${totalQuestions}` : `${questionIndex + 1} / ${totalQuestions}`}
               </span>
               <span className="bz-mono text-[#737373]">%{progress}</span>
             </div>
-            <div className="h-1.5 bg-[#EDEDED] rounded-full overflow-hidden mb-5">
+            <div
+              className="h-1.5 bg-[#EDEDED] rounded-full overflow-hidden mb-6"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progress}
+              aria-label={isTr ? 'Denetim ilerleme' : 'Audit progress'}
+            >
               <div
-                className="h-full transition-all duration-300"
+                className="h-full transition-all duration-300 ease-out"
                 style={{ width: `${progress}%`, background: accent }}
               />
             </div>
 
-            <h2 className="bz-h-tight-2 text-[20px] sm:text-[22px]">{currentQuestion.prompt}</h2>
+            <h2 className="bz-h-tight-2 text-[20px] sm:text-[22px] leading-snug">
+              {currentQuestion.prompt}
+            </h2>
             {currentQuestion.helpText && (
-              <p className="text-[13px] text-[#525252] mt-1.5">{currentQuestion.helpText}</p>
-            )}
-            {!currentQuestion.isRequired && (
-              <p className="text-[11px] text-[#737373] mt-1">
-                {isTr ? 'Bu soru opsiyonel' : 'This question is optional'}
+              <p className="text-[13px] text-[#525252] mt-1.5 leading-relaxed">
+                {currentQuestion.helpText}
               </p>
             )}
+            {!currentQuestion.isRequired && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-2 py-0.5 text-[10px] text-[#737373] mt-2 pulse-eyebrow">
+                {isTr ? 'OPSİYONEL' : 'OPTIONAL'}
+              </span>
+            )}
 
-            <div className="mt-4">
+            <div className="mt-5">
               <QuestionInput
                 question={currentQuestion}
                 value={answers[currentQuestion.id] ?? null}
@@ -492,7 +556,7 @@ export default function PublicAuditView({ token, locale }: Props) {
                 <button
                   type="button"
                   className="bz-btn-primary"
-                  disabled={submitting}
+                  disabled={submitting || !canAdvance}
                   onClick={handleSubmit}
                   aria-busy={submitting}
                 >
@@ -515,14 +579,14 @@ export default function PublicAuditView({ token, locale }: Props) {
 
         {/* Step: done */}
         {step === 'done' && (
-          <div className="bg-white text-[#0A0A0A] rounded-3xl p-8 text-center bz-fade-in">
+          <div className="bg-white text-[#0A0A0A] rounded-3xl p-8 sm:p-10 text-center bz-fade-in shadow-[0_24px_64px_-20px_rgba(0,0,0,0.45)]">
             <div
-              className="pulse-heartbeat inline-flex items-center justify-center w-16 h-16 rounded-full text-[#0A0A0A] mb-4"
+              className="pulse-heartbeat inline-flex items-center justify-center w-16 h-16 rounded-full text-[#0A0A0A] mb-4 shadow-[0_8px_24px_-8px_rgba(198,242,78,0.6)]"
               style={{ background: accent }}
             >
               <Check size={28} strokeWidth={2.5} />
             </div>
-            <h2 className="bz-h-tight-2 text-[22px]">
+            <h2 className="bz-h-tight-2 text-[24px] sm:text-[28px]">
               {isTr ? 'Teşekkürler!' : 'Thank you!'}
             </h2>
             <p className="text-[14px] text-[#525252] mt-2 max-w-[360px] mx-auto leading-relaxed">
@@ -531,17 +595,17 @@ export default function PublicAuditView({ token, locale }: Props) {
                 : 'Your response was received. The business will see this evaluation in their panel.'}
             </p>
             {result && (
-              <div className="mt-6 inline-block min-w-[220px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-5">
+              <div className="mt-6 inline-block min-w-[240px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-5">
                 <p className="pulse-eyebrow text-[#525252]">
                   {isTr ? 'Toplam puan' : 'Total score'}
                 </p>
-                <p className="text-[40px] font-medium mt-1 leading-none">
+                <p className="bz-mono text-[44px] font-medium mt-1 leading-none tracking-tight">
                   {result.score}
-                  <span className="text-[#A3A3A3] text-[18px]">/100</span>
+                  <span className="text-[#A3A3A3] text-[20px]">/100</span>
                 </p>
                 {result.passed != null && (
                   <div
-                    className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                    className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium ${
                       result.passed
                         ? 'bg-[#DCFCE7] text-[#166534]'
                         : 'bg-[#FEE2E2] text-[#991B1B]'
@@ -585,31 +649,58 @@ interface QuestionInputProps {
 }
 
 function QuestionInput({ question, value, onChange, onToggleMulti, accent, isTr }: QuestionInputProps) {
-  const options = getOptions(question);
+  const options = getOptions(question, isTr ? 'tr' : 'en');
+
+  // Empty options defensive fallback — backend + frontend normalize hala
+  // boş array dönerse (admin yanlış konfigürasyon), kullanıcıya açıklayıcı
+  // mesaj göster, sessiz kalma.
+  if (
+    (question.type === 'single' || question.type === 'yes_no' || question.type === 'multi') &&
+    options.length === 0
+  ) {
+    return (
+      <div className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] p-3 text-[12px] text-[#92400E] flex items-start gap-2">
+        <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" />
+        <span>
+          {isTr
+            ? 'Bu soruda seçenek tanımlanmamış. İşletme yöneticisi ayarları kontrol etmeli.'
+            : 'No options configured for this question. The business should review settings.'}
+        </span>
+      </div>
+    );
+  }
 
   if (question.type === 'single' || question.type === 'yes_no') {
     return (
-      <div className="space-y-2">
+      <div className="space-y-2" role="radiogroup" aria-label={isTr ? 'Seçenekler' : 'Options'}>
         {options.map((opt) => {
           const selected = value === opt;
           return (
             <button
               key={opt}
               type="button"
+              role="radio"
+              aria-checked={selected}
               onClick={() => onChange(opt)}
-              className={`w-full text-left rounded-xl border px-4 py-3 text-[14px] transition ${
+              className={`group w-full text-left rounded-xl border px-4 py-3 text-[14px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 flex items-center gap-3 ${
                 selected
-                  ? 'border-[#0A0A0A] bg-[#FAFAFA]'
-                  : 'border-[#EDEDED] hover:bg-[#FAFAFA]'
+                  ? 'border-[#0A0A0A] bg-[#FAFAFA] shadow-[inset_3px_0_0_0_#C6F24E]'
+                  : 'border-[#EDEDED] hover:border-[#A3A3A3] hover:bg-[#FAFAFA]'
               }`}
             >
               <span
-                className={`inline-block w-3 h-3 rounded-full border align-middle mr-3 ${
-                  selected ? 'border-[#0A0A0A]' : 'border-[#A3A3A3]'
+                className={`inline-flex items-center justify-center w-5 h-5 rounded-full border-2 shrink-0 transition ${
+                  selected ? 'border-[#0A0A0A]' : 'border-[#D4D4D4] group-hover:border-[#0A0A0A]'
                 }`}
-                style={selected ? { background: accent, borderColor: '#0A0A0A' } : {}}
-              />
-              {opt}
+              >
+                {selected && (
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-full"
+                    style={{ background: accent }}
+                  />
+                )}
+              </span>
+              <span className="flex-1">{opt}</span>
             </button>
           );
         })}
@@ -621,26 +712,33 @@ function QuestionInput({ question, value, onChange, onToggleMulti, accent, isTr 
     const arr = Array.isArray(value) ? value : [];
     return (
       <div className="space-y-2">
+        <p className="text-[11px] text-[#737373] mb-1">
+          {isTr ? 'Birden fazla seçebilirsin' : 'Select multiple'}
+        </p>
         {options.map((opt) => {
           const selected = arr.includes(opt);
           return (
             <button
               key={opt}
               type="button"
+              role="checkbox"
+              aria-checked={selected}
               onClick={() => onToggleMulti(opt)}
-              className={`w-full text-left rounded-xl border px-4 py-3 text-[14px] transition flex items-center gap-3 ${
-                selected ? 'border-[#0A0A0A] bg-[#FAFAFA]' : 'border-[#EDEDED] hover:bg-[#FAFAFA]'
+              className={`group w-full text-left rounded-xl border px-4 py-3 text-[14px] transition flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                selected
+                  ? 'border-[#0A0A0A] bg-[#FAFAFA] shadow-[inset_3px_0_0_0_#C6F24E]'
+                  : 'border-[#EDEDED] hover:border-[#A3A3A3] hover:bg-[#FAFAFA]'
               }`}
             >
               <span
-                className={`inline-flex items-center justify-center w-4 h-4 rounded border ${
-                  selected ? 'border-[#0A0A0A]' : 'border-[#A3A3A3]'
+                className={`inline-flex items-center justify-center w-5 h-5 rounded-md border-2 shrink-0 transition ${
+                  selected ? 'border-[#0A0A0A]' : 'border-[#D4D4D4] group-hover:border-[#0A0A0A]'
                 }`}
                 style={selected ? { background: accent, borderColor: '#0A0A0A' } : {}}
               >
-                {selected && <Check size={10} strokeWidth={3} />}
+                {selected && <Check size={12} strokeWidth={3} />}
               </span>
-              {opt}
+              <span className="flex-1">{opt}</span>
             </button>
           );
         })}
@@ -650,39 +748,59 @@ function QuestionInput({ question, value, onChange, onToggleMulti, accent, isTr 
 
   if (question.type === 'scale') {
     const numVal = typeof value === 'number' ? value : null;
+    const scaleLabels = isTr
+      ? ['Çok kötü', 'Kötü', 'Orta', 'İyi', 'Mükemmel']
+      : ['Very poor', 'Poor', 'Average', 'Good', 'Excellent'];
     return (
-      <div className="flex gap-2">
-        {[1, 2, 3, 4, 5].map((n) => {
-          const selected = numVal === n;
-          return (
-            <button
-              key={n}
-              type="button"
-              onClick={() => onChange(n)}
-              className={`flex-1 rounded-xl border py-3 text-[16px] font-medium transition ${
-                selected
-                  ? 'border-[#0A0A0A]'
-                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-              }`}
-              style={selected ? { background: accent, color: '#0A0A0A' } : {}}
-            >
-              {n}
-            </button>
-          );
-        })}
+      <div className="space-y-3">
+        <div className="flex gap-2" role="radiogroup" aria-label={isTr ? 'Puan' : 'Rating'}>
+          {[1, 2, 3, 4, 5].map((n) => {
+            const selected = numVal === n;
+            return (
+              <button
+                key={n}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                aria-label={`${n} — ${scaleLabels[n - 1]}`}
+                onClick={() => onChange(n)}
+                className={`flex-1 rounded-xl border py-3 text-[16px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+                  selected
+                    ? 'border-[#0A0A0A]'
+                    : 'border-[#EDEDED] text-[#525252] hover:border-[#A3A3A3] hover:bg-[#FAFAFA]'
+                }`}
+                style={selected ? { background: accent, color: '#0A0A0A' } : {}}
+              >
+                {n}
+              </button>
+            );
+          })}
+        </div>
+        {numVal !== null && (
+          <p className="text-[12px] text-[#525252] text-center bz-fade-in">
+            {scaleLabels[numVal - 1]}
+          </p>
+        )}
       </div>
     );
   }
 
   if (question.type === 'text') {
+    const textVal = typeof value === 'string' ? value : '';
     return (
-      <textarea
-        className="bz-input min-h-[120px]"
-        value={typeof value === 'string' ? value : ''}
-        onChange={(e) => onChange(e.target.value)}
-        maxLength={2000}
-        placeholder={isTr ? 'Yanıtın...' : 'Your answer...'}
-      />
+      <div>
+        <textarea
+          className="bz-input min-h-[120px]"
+          value={textVal}
+          onChange={(e) => onChange(e.target.value)}
+          maxLength={2000}
+          placeholder={isTr ? 'Yanıtın...' : 'Your answer...'}
+          spellCheck
+        />
+        <p className="text-[11px] text-[#A3A3A3] mt-1 text-right bz-mono">
+          {textVal.length} / 2000
+        </p>
+      </div>
     );
   }
 

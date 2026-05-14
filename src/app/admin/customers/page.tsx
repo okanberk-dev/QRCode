@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Download, Loader2, Mail, MapPin, Phone, RefreshCw, Search, Star, Store, Users, X } from 'lucide-react';
-import { AlertBanner, PageHeader, StatCard } from '@/components/ui';
+import { AlertBanner, PageHeader, PulseSelect, StatCard } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 import { SentimentBadge } from '@/components/customers/SentimentBadge';
@@ -321,16 +321,16 @@ export default function AdminCustomersPage() {
             ))}
           </div>
 
-          <select
+          <PulseSelect
             value={restaurantId}
-            onChange={(e) => setRestaurantId(e.target.value)}
-            className="bz-input rounded-xl py-2 text-xs font-bold"
-          >
-            <option value="">Tüm restoranlar</option>
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
+            onChange={setRestaurantId}
+            options={[
+              { value: '', label: 'Tüm restoranlar' },
+              ...restaurants.map((r) => ({ value: r.id, label: r.name })),
+            ]}
+            ariaLabel="Restoran filtresi"
+            className="min-w-[180px]"
+          />
 
           <div className="relative w-full flex-1 sm:w-auto sm:min-w-[200px]">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" strokeWidth={2} />

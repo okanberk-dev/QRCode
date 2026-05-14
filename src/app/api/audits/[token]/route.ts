@@ -14,6 +14,7 @@ import type {
   AuditScoringMode,
   AuditSector,
 } from '@/lib/audits/types';
+import { normalizeQuestionOptions } from '@/lib/audits/options';
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
@@ -128,7 +129,15 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
       type: q.type as AuditQuestionType,
       prompt: q.prompt,
       helpText: q.helpText,
-      options: q.options,
+      // Defansif normalize — yes_no/single/multi soruları için options
+      // eksikse template locale'a göre default doldur. Seed legacy
+      // veriler + admin tarafından eksik kaydedilmiş şablonlar için
+      // safety net. correctAnswer KASTEN EKSİK kalır (public).
+      options: normalizeQuestionOptions(
+        q.type as AuditQuestionType,
+        q.options,
+        assignment.template.locale === 'en' ? 'en' : 'tr',
+      ),
       weight: q.weight,
       isRequired: q.isRequired,
       sortOrder: q.sortOrder,

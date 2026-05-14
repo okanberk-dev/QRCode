@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ClipboardList, Eye, Loader2, Plus } from 'lucide-react';
 import { getTranslations, type Locale } from '@/lib/translations';
-import { AlertBanner, Badge, EmptyState, PageHeader, StatCard } from '@/components/ui';
+import { AlertBanner, Badge, EmptyState, PageHeader, PulseSelect, StatCard } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -112,24 +112,19 @@ export default function SurveysClient({
 
       {restaurants.length > 1 && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <label htmlFor="restaurant-scope" className="text-xs font-medium text-[#525252]">
+          <label className="text-xs font-medium text-[#525252]">
             {locale === 'tr' ? 'İşletme' : 'Business'}
           </label>
-          <select
-            id="restaurant-scope"
+          <PulseSelect
             value={activeRestaurantId ?? ''}
-            onChange={(e) => setActiveRestaurantId(e.target.value || null)}
-            className="bz-input h-9 w-auto min-w-[200px]"
-          >
-            <option value="">
-              {locale === 'tr' ? 'Tüm işletmeler' : 'All businesses'}
-            </option>
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setActiveRestaurantId(v || null)}
+            options={[
+              { value: '', label: locale === 'tr' ? 'Tüm işletmeler' : 'All businesses' },
+              ...restaurants.map((r) => ({ value: r.id, label: r.name })),
+            ]}
+            ariaLabel={locale === 'tr' ? 'İşletme seç' : 'Select business'}
+            className="min-w-[220px]"
+          />
         </div>
       )}
 

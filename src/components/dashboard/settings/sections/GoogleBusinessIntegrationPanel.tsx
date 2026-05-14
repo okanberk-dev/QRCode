@@ -86,6 +86,10 @@ export function GoogleBusinessIntegrationPanel({
   const [locations, setLocations] = useState<GoogleLocation[]>([]);
   const [locationsLoading, setLocationsLoading] = useState(false);
   const [locationsError, setLocationsError] = useState<string | null>(null);
+  // 429 GOOGLE_RATE_LIMITED durumunda backend stale cache + warning döner;
+  // bu durumda error değil sarı uyarı + retry-after countdown göster.
+  const [locationsNotice, setLocationsNotice] = useState<string | null>(null);
+  const [locationsRetryAfter, setLocationsRetryAfter] = useState<number | null>(null);
 
   useEffect(() => {
     setQuery(defaultQuery(restaurant));
@@ -93,6 +97,23 @@ export function GoogleBusinessIntegrationPanel({
     // object — this avoids re-running on unrelated restaurant prop mutations.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurant.id, restaurant.name, restaurant.address, restaurant.city]);
+
+  // 429 retry-after countdown: backend "X saniye sonra yenile" diyince
+  // butonu disabled tut + her saniye azaltarak görsel feedback ver.
+  useEffect(() => {
+    if (locationsRetryAfter === null || locationsRetryAfter <= 0) return;
+    const interval = setInterval(() => {
+      setLocationsRetryAfter((prev) => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [locationsRetryAfter]);
 
   const selectedLocation = status?.selectedLocation ?? null;
   const reviewManagementEnabled = status?.googleReviewManagementEnabled === true;
@@ -184,10 +205,46 @@ export function GoogleBusinessIntegrationPanel({
   const loadLocations = async () => {
     setLocationsLoading(true);
     setLocationsError(null);
+    setLocationsNotice(null);
+    setLocationsRetryAfter(null);
     try {
       const res = await fetch(`/api/restaurants/${restaurant.id}/google/business/locations`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Google konumları alınamadı.");
+      // 429 fallback path: backend status 200 + stale cache + warning döner.
+      if (res.ok && data?.warning === 'GOOGLE_RATE_LIMITED') {
+        setLocations(data.locations ?? []);
+        setLocationsNotice(
+          data.message ||
+            'Google API kotası doldu. Son güncel veriler gösteriliyor; birkaç dakika sonra yenileyin.',
+        );
+        const retryAfter = typeof data.retryAfterSeconds === 'number' ? data.retryAfterSeconds : null;
+        setLocationsRetryAfter(retryAfter);
+        setStatus((prev) => ({
+          googleReviewManagementEnabled: prev?.googleReviewManagementEnabled ?? true,
+          placesConfigured: prev?.placesConfigured ?? true,
+          oauthConfigured: prev?.oauthConfigured ?? true,
+          connected: true,
+          selectedLocation: data.selectedLocation ?? prev?.selectedLocation ?? null,
+          syncedAt: data.syncedAt ?? prev?.syncedAt ?? null,
+        }));
+        return;
+      }
+      if (!res.ok) {
+        // 429 ama cache yok → backend gerçek 429 döner; retry-after parse et.
+        if (res.status === 429) {
+          const retryHeader = res.headers.get('retry-after');
+          const retryAfter = retryHeader ? Number(retryHeader) : null;
+          setLocationsError(
+            data?.error ||
+              (retryAfter
+                ? `Google API kotası doldu. ${retryAfter} saniye sonra tekrar deneyin.`
+                : 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.'),
+          );
+          setLocationsRetryAfter(Number.isFinite(retryAfter) ? retryAfter : null);
+          return;
+        }
+        throw new Error(data?.error || 'Google konumları alınamadı.');
+      }
       setLocations(data.locations ?? []);
       setStatus((prev) => ({
         googleReviewManagementEnabled: prev?.googleReviewManagementEnabled ?? true,
@@ -422,15 +479,24 @@ export function GoogleBusinessIntegrationPanel({
                     type="button"
                     className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px]"
                     onClick={loadLocations}
-                    disabled={locationsLoading}
+                    disabled={locationsLoading || (locationsRetryAfter !== null && locationsRetryAfter > 0)}
                   >
                     {locationsLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                    {isTr ? "Konumları yenile" : "Refresh locations"}
+                    {locationsRetryAfter !== null && locationsRetryAfter > 0
+                      ? `${locationsRetryAfter}s`
+                      : isTr
+                        ? "Konumları yenile"
+                        : "Refresh locations"}
                   </button>
                 </div>
               </div>
 
               {locationsError && <AlertBanner kind="danger">{locationsError}</AlertBanner>}
+              {locationsNotice && !locationsError && (
+                <AlertBanner kind="warn" onDismiss={() => setLocationsNotice(null)}>
+                  {locationsNotice}
+                </AlertBanner>
+              )}
 
               {locations.length > 0 && (
                 <div className="grid gap-2">

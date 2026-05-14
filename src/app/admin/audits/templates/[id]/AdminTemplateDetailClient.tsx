@@ -44,6 +44,7 @@ import {
   EmptyState,
   Field,
   PageHeader,
+  useConfirmDialog,
 } from '@/components/ui';
 import AuditQuestionEditor from '@/components/audits/AuditQuestionEditor';
 import { type AuditQuestionDraft } from '@/lib/audits/wizard-state';
@@ -121,6 +122,7 @@ function randomId(): string {
 
 export default function AdminTemplateDetailClient({ templateId }: Props) {
   const router = useRouter();
+  const [confirmDialog, askConfirm] = useConfirmDialog();
 
   const [data, setData] = useState<TemplateData | null>(null);
   const [categories, setCategories] = useState<CategoryRef[]>([]);
@@ -246,8 +248,16 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
   };
 
   const handleDeleteQuestion = (id: string) => {
-    if (!confirm('Bu soru kalıcı olarak silinecek (kaydetmeden geri alabilirsiniz). Devam edilsin mi?')) return;
-    setQuestions((prev) => prev.filter((q) => q.id !== id).map((q, i) => ({ ...q, sortOrder: i })));
+    askConfirm({
+      title: 'Soruyu sil',
+      body: 'Bu soru listeden kaldırılacak. Kaydetmediğin sürece geri alabilirsin.',
+      confirmLabel: 'Sil',
+      cancelLabel: 'Vazgeç',
+      variant: 'danger',
+      onConfirm: () => {
+        setQuestions((prev) => prev.filter((q) => q.id !== id).map((q, i) => ({ ...q, sortOrder: i })));
+      },
+    });
   };
 
   const handleSave = async () => {
@@ -332,15 +342,8 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
     }
   };
 
-  const handleDelete = async () => {
+  const doDeleteTemplate = async () => {
     if (!data) return;
-    if (
-      !confirm(
-        `"${data.title}" şablonunu kalıcı olarak silmek istediğine emin misin? Sorular + atamalar + yanıtlar cascade silinir.`,
-      )
-    ) {
-      return;
-    }
     setSaving(true);
     try {
       const res = await fetch(`/api/admin/audits/templates/${data.id}`, { method: 'DELETE' });
@@ -355,6 +358,18 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDelete = () => {
+    if (!data) return;
+    askConfirm({
+      title: `"${data.title}" silinecek`,
+      body: 'Şablon, soruları, atamaları ve yanıtlar cascade silinir. Bu işlem geri alınamaz.',
+      confirmLabel: 'Kalıcı olarak sil',
+      cancelLabel: 'Vazgeç',
+      variant: 'danger',
+      onConfirm: doDeleteTemplate,
+    });
   };
 
   // §40.10 clean slate — skeleton render kaldırıldı; data gelene kadar null.
@@ -662,6 +677,9 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
         }}
         onSave={handleSaveQuestion}
       />
+
+      {/* Destructive confirm modal — CLAUDE.md §23.3.1 unification */}
+      {confirmDialog}
     </div>
   );
 }

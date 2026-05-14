@@ -31,10 +31,15 @@ export function googleBusinessErrorResponse(
     );
   }
   if (error.code === 'GOOGLE_RATE_LIMITED') {
-    return ApiErrors.tooManyRequests(
-      'Google API rate limit. Birkaç dakika sonra tekrar deneyin.',
-      'GOOGLE_RATE_LIMITED',
-    );
+    // Google'ın önerdiği Retry-After saniye olarak UI'a forward edilir.
+    // Yoksa konservatif default 60 saniye (Google quota dashboard'da
+    // "per minute" sınırı dolarsa tipik recovery süresi).
+    const retryAfter = error.retryAfterSeconds ?? 60;
+    const body =
+      retryAfter > 0
+        ? `Google API kotası doldu. ${retryAfter} saniye sonra tekrar deneyin.`
+        : 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.';
+    return ApiErrors.tooManyRequests(body, 'GOOGLE_RATE_LIMITED', retryAfter);
   }
   return NextResponse.json(
     { error: fallbackMessage, code: error.code },

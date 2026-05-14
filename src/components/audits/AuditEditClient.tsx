@@ -51,7 +51,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { AlertBanner, Badge, Field, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, Field, PageHeader, useConfirmDialog } from '@/components/ui';
 import { type Locale } from '@/lib/translations';
 import {
   AUDIT_SECTORS,
@@ -231,6 +231,7 @@ function SortableQuestionItem({
 export default function AuditEditClient({ locale, restaurantId, template, categories }: Props) {
   const isTr = locale === 'tr';
   const router = useRouter();
+  const [confirmDialog, askConfirm] = useConfirmDialog();
 
   // ─── State ────────────────────────────────────────────────────────────
   const [title, setTitle] = useState(template.title);
@@ -445,12 +446,7 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
     }
   }, [restaurantId, template.id, isTr, router]);
 
-  const reset = useCallback(async () => {
-    if (!canReset) return;
-    const confirmMsg = isTr
-      ? 'Sorular ve skorlama orijinal şablon kaynağından yeniden alınacak. Owner-eklediğin sorular silinir. Devam edilsin mi?'
-      : 'Questions and scoring will be re-synced from the original fork source. Your custom questions will be removed. Continue?';
-    if (!window.confirm(confirmMsg)) return;
+  const doReset = useCallback(async () => {
     setError(null);
     setResetting(true);
     try {
@@ -477,7 +473,21 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
     } finally {
       setResetting(false);
     }
-  }, [canReset, restaurantId, template.id, locale, isTr, router]);
+  }, [restaurantId, template.id, locale, isTr, router]);
+
+  const reset = useCallback(() => {
+    if (!canReset) return;
+    askConfirm({
+      title: isTr ? 'Varsayılana sıfırlanacak' : 'Reset to default',
+      body: isTr
+        ? 'Sorular ve skorlama orijinal şablon kaynağından yeniden alınacak. Senin eklediğin sorular silinir.'
+        : 'Questions and scoring will be re-synced from the original fork source. Your custom questions will be removed.',
+      confirmLabel: isTr ? 'Sıfırla' : 'Reset',
+      cancelLabel: isTr ? 'Vazgeç' : 'Cancel',
+      variant: 'danger',
+      onConfirm: doReset,
+    });
+  }, [canReset, askConfirm, isTr, doReset]);
 
   // ─── Render ───────────────────────────────────────────────────────────
   return (
@@ -797,6 +807,9 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
         onClose={() => setEditorOpen(false)}
         onSave={onSaveQuestion}
       />
+
+      {/* Reset / destructive confirm modal — CLAUDE.md §23.3.1 unification */}
+      {confirmDialog}
     </div>
   );
 }

@@ -45,6 +45,11 @@ export interface GoogleBusinessFailure {
    * should surface a "reconnect Google" CTA instead of a generic 500.
    */
   requiresReauth?: boolean;
+  /**
+   * Google API'den gelen `Retry-After` (saniye). 429 RESOURCE_EXHAUSTED
+   * durumunda dolu olur; UI buna göre "X saniye sonra tekrar dene" yazar.
+   */
+  retryAfterSeconds?: number;
 }
 
 /**
@@ -55,6 +60,7 @@ export class GoogleBusinessApiError extends Error {
   status: number;
   code: GoogleBusinessFailureCode;
   requiresReauth: boolean;
+  retryAfterSeconds: number | undefined;
 
   constructor(failure: GoogleBusinessFailure) {
     super(failure.message);
@@ -62,6 +68,7 @@ export class GoogleBusinessApiError extends Error {
     this.status = failure.status;
     this.code = failure.code;
     this.requiresReauth = Boolean(failure.requiresReauth);
+    this.retryAfterSeconds = failure.retryAfterSeconds;
   }
 }
 
@@ -290,8 +297,9 @@ function failure(
   code: GoogleBusinessFailureCode,
   message: string,
   requiresReauth = false,
+  retryAfterSeconds?: number,
 ): GoogleBusinessFailure {
-  return { ok: false, status, code, message, requiresReauth };
+  return { ok: false, status, code, message, requiresReauth, retryAfterSeconds };
 }
 
 /**
@@ -435,6 +443,26 @@ interface RawFetchOutcome {
   body: string | null;
   /** True when the fetch promise itself rejected (network / abort). */
   networkError: boolean;
+  /**
+   * Response başlığından parse edilen `Retry-After` (saniye). RFC 7231
+   * delta-seconds VEYA HTTP-date olabilir; ikinci durumu da çevirir.
+   * 429 dışında undefined kalır.
+   */
+  retryAfterSeconds?: number;
+}
+
+function parseRetryAfter(header: string | null): number | undefined {
+  if (!header) return undefined;
+  const trimmed = header.trim();
+  if (!trimmed) return undefined;
+  // delta-seconds (integer)
+  const asNum = Number(trimmed);
+  if (Number.isFinite(asNum) && asNum >= 0) return Math.ceil(asNum);
+  // HTTP-date
+  const asDate = Date.parse(trimmed);
+  if (!Number.isFinite(asDate)) return undefined;
+  const diff = Math.ceil((asDate - Date.now()) / 1000);
+  return diff > 0 ? diff : undefined;
 }
 
 async function rawFetchWithTimeout(
@@ -453,6 +481,8 @@ async function rawFetchWithTimeout(
       text,
       body: text || null,
       networkError: false,
+      retryAfterSeconds:
+        res.status === 429 ? parseRetryAfter(res.headers.get('retry-after')) : undefined,
     };
   } catch {
     return {
@@ -581,14 +611,27 @@ export async function googleBusinessFetch<T>(
 
     // Non-retriable 4xx → return immediately
     if (!isRetriableStatus(outcome.status, outcome.networkError)) {
-      const fail = failure(outcome.status, classifyOutcome(outcome), outcomeMessage(outcome));
+      const fail = failure(
+        outcome.status,
+        classifyOutcome(outcome),
+        outcomeMessage(outcome),
+        false,
+        outcome.retryAfterSeconds,
+      );
       captureGoogleBusinessFailure(fail, { url, attempts: attempt + 1, method });
       return fail;
     }
 
-    // Retriable: backoff if more attempts left
+    // Retriable: backoff if more attempts left. 429 ise Google'ın
+    // önerdiği Retry-After'a saygı duy (max 30 saniye'e clamp; çok uzun
+    // bekleme worker timeout'u tetikler).
     if (attempt < MAX_RETRIES) {
-      await sleep(RETRY_BACKOFF_MS[attempt] ?? 2000);
+      const defaultBackoff = RETRY_BACKOFF_MS[attempt] ?? 2000;
+      const respectedRetry =
+        outcome.status === 429 && outcome.retryAfterSeconds
+          ? Math.min(outcome.retryAfterSeconds * 1000, 30_000)
+          : defaultBackoff;
+      await sleep(respectedRetry);
     }
   }
 
@@ -605,6 +648,8 @@ export async function googleBusinessFetch<T>(
     finalOutcome.networkError ? 504 : finalOutcome.status,
     code,
     outcomeMessage(finalOutcome),
+    false,
+    finalOutcome.retryAfterSeconds,
   );
   captureGoogleBusinessFailure(fail, { url, attempts: MAX_RETRIES + 1, method });
   return fail;

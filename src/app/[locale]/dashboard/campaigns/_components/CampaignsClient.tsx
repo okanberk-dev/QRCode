@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { PageHeader, AlertBanner, EmptyState } from '@/components/ui';
+import { PageHeader, AlertBanner, EmptyState, PulseSelect } from '@/components/ui';
 import { Sparkles, Plus, RefreshCw, Loader2 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { CampaignsKpiGrid } from './CampaignsKpiGrid';
@@ -319,17 +319,16 @@ export function CampaignsClient({ locale, initialRestaurants, initialActiveResta
               <span className="pulse-eyebrow text-[10.5px] text-[#737373]">
                 {isTr ? 'İŞLETME' : 'BUSINESS'}
               </span>
-              <select
+              <PulseSelect
                 value={activeRestaurantId ?? ''}
-                onChange={(e) => selectRestaurant(e.target.value)}
-                className="bz-input min-h-[36px] !py-1.5 !px-3 text-[12.5px] max-w-[260px]"
-              >
-                {restaurants.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name} {!r.campaignsEnabled ? `(${isTr ? 'Pasif' : 'Disabled'})` : ''}
-                  </option>
-                ))}
-              </select>
+                onChange={selectRestaurant}
+                options={restaurants.map((r) => ({
+                  value: r.id,
+                  label: `${r.name}${!r.campaignsEnabled ? ` (${isTr ? 'Pasif' : 'Disabled'})` : ''}`,
+                }))}
+                ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
+                className="min-w-[200px] max-w-[280px]"
+              />
             </div>
           ) : null}
 

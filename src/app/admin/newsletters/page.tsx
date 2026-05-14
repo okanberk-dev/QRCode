@@ -14,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { getNewsletterSourceLabel } from '@/lib/newsletter-sources';
-import { PageHeader, StatCard, useConfirmDialog } from '@/components/ui';
+import { PageHeader, PulseSelect, StatCard, useConfirmDialog } from '@/components/ui';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 type Status = 'all' | 'active' | 'cancelled';
@@ -258,36 +258,43 @@ export default function AdminNewslettersPage() {
             ))}
           </div>
 
-          <select
+          <PulseSelect
             value={status}
-            onChange={(e) => setStatus(e.target.value as Status)}
-            className="bz-input rounded-xl py-2 text-xs font-bold"
-          >
-            <option value="active">Aktif</option>
-            <option value="cancelled">İptal</option>
-            <option value="all">Tümü</option>
-          </select>
+            onChange={(v) => setStatus(v as Status)}
+            options={[
+              { value: 'active', label: 'Aktif' },
+              { value: 'cancelled', label: 'İptal' },
+              { value: 'all', label: 'Tümü' },
+            ]}
+            ariaLabel="Durum filtresi"
+            className="min-w-[120px]"
+          />
 
-          <select
+          <PulseSelect
             value={localeFilter}
-            onChange={(e) => setLocaleFilter(e.target.value as LocaleFilter)}
-            className="bz-input rounded-xl py-2 text-xs font-bold"
-          >
-            <option value="all">Tüm diller</option>
-            <option value="tr">Türkçe</option>
-            <option value="en">English</option>
-          </select>
+            onChange={(v) => setLocaleFilter(v as LocaleFilter)}
+            options={[
+              { value: 'all', label: 'Tüm diller' },
+              { value: 'tr', label: 'Türkçe' },
+              { value: 'en', label: 'English' },
+            ]}
+            ariaLabel="Dil filtresi"
+            className="min-w-[130px]"
+          />
 
-          <select
+          <PulseSelect
             value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
-            className="bz-input rounded-xl py-2 text-xs font-bold"
-          >
-            <option value="all">Tüm kaynaklar</option>
-            {(data?.facets.sources ?? []).map((s) => (
-              <option key={s.value} value={s.value}>{getNewsletterSourceLabel(s.value, 'tr')} ({s.count})</option>
-            ))}
-          </select>
+            onChange={setSourceFilter}
+            options={[
+              { value: 'all', label: 'Tüm kaynaklar' },
+              ...(data?.facets.sources ?? []).map((s) => ({
+                value: s.value,
+                label: `${getNewsletterSourceLabel(s.value, 'tr')} (${s.count})`,
+              })),
+            ]}
+            ariaLabel="Kaynak filtresi"
+            className="min-w-[170px]"
+          />
 
           <div className="relative w-full flex-1 sm:w-auto sm:min-w-[200px]">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" strokeWidth={2} />

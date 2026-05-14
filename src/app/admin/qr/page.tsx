@@ -11,6 +11,7 @@ import {
   PageHeader,
   PlatformChip,
   type PlatformId,
+  PulseSelect,
 } from '@/components/ui';
 import { CreateQRWizard, type QRGenerationResult } from '@/components/panel/qr/CreateQRWizard';
 import { QRCard, type QRCardItem } from '@/components/panel/qr/QRCard';
@@ -376,34 +377,30 @@ function AdminQrContent() {
 
       {restaurants.length > 0 && items.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          <select
-            className="bz-input"
-            style={{ width: 'auto', paddingRight: 32 }}
+          <PulseSelect
             value={branchFilter}
-            onChange={(e) => setBranchFilter(e.target.value)}
-            aria-label="İşletme filtresi"
-          >
-            <option value="all">Tüm işletmeler</option>
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-          <select
-            className="bz-input"
-            style={{ width: 'auto', paddingRight: 32 }}
+            onChange={setBranchFilter}
+            options={[
+              { value: 'all', label: 'Tüm işletmeler' },
+              ...restaurants.map((r) => ({ value: r.id, label: r.name })),
+            ]}
+            ariaLabel="İşletme filtresi"
+            className="min-w-[180px]"
+          />
+          <PulseSelect
             value={platformFilter}
-            onChange={(e) => setPlatformFilter(e.target.value)}
-            aria-label="Platform filtresi"
-          >
-            <option value="all">Tüm platformlar</option>
-            <option value="general">Genel (sabitsiz)</option>
-            <option value="google">Google</option>
-            <option value="yemeksepeti">Yemeksepeti</option>
-            <option value="getir">Getir</option>
-            <option value="trendyol_go">Trendyol GO</option>
-          </select>
+            onChange={setPlatformFilter}
+            options={[
+              { value: 'all', label: 'Tüm platformlar' },
+              { value: 'general', label: 'Genel (sabitsiz)' },
+              { value: 'google', label: 'Google' },
+              { value: 'yemeksepeti', label: 'Yemeksepeti' },
+              { value: 'getir', label: 'Getir' },
+              { value: 'trendyol_go', label: 'Trendyol GO' },
+            ]}
+            ariaLabel="Platform filtresi"
+            className="min-w-[180px]"
+          />
         </div>
       )}
 
