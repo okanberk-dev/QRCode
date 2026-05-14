@@ -80,6 +80,8 @@ export default async function AdminDashboardPage() {
     ownersThirtyDaysAgo,
     restaurantsForGrowth,
     recentRestaurants,
+    menusEnabledCount,
+    menusPublishedCount,
   ] = await prisma.$transaction([
     prisma.restaurant.count(),
     prisma.restaurant.count({ where: { createdAt: { gte: oneDayAgo } } }),
@@ -113,6 +115,12 @@ export default async function AdminDashboardPage() {
         user: { select: { plan: true } },
       },
     }),
+    // Stage 109 §A1 — menu publish funnel metric (Yayında menü sayısı +
+    // publish rate). menuEnabled=true but menuPublished=false → "draft"
+    // bucket (operator için aksiyon edilebilir sinyal). admin/restaurants
+    // list'in menuStatus filter'ı ile birebir parity.
+    prisma.restaurant.count({ where: { menuEnabled: true } }),
+    prisma.restaurant.count({ where: { menuEnabled: true, menuPublished: true } }),
   ]);
 
   // 7-day review delta (design uniform "son 7 gün" suffix uses W-1 → W % change).
@@ -396,6 +404,58 @@ export default async function AdminDashboardPage() {
           deltaSuffix="son 7 gün"
           icon={<MessageSquare size={14} strokeWidth={2} />}
         />
+      </div>
+
+      {/* Stage 109 §A1 — Menu yayın akışı strip. Desktop ve mobile'da görünür.
+          Operator'a "kaç işletmenin menüsü canlı?" sinyalini KPI grid altında
+          tek satırda verir. Publish rate = published/enabled (0-100). Detail
+          link: /admin/restaurants?menuStatus=draft → operator çıkışı.
+          Card chrome bz-card, lime accent (Pulse §11). */}
+      <div className="bz-card p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <Eyebrow>MENÜ YAYIN AKIŞI</Eyebrow>
+            <div className="bz-h-tight mt-1" style={{ fontSize: 18 }}>
+              {menusPublishedCount} / {menusEnabledCount} canlı
+            </div>
+            <p className="mt-1 text-[12px] text-[#737373]">
+              Menü özelliği açık {menusEnabledCount} işletmenin {menusPublishedCount}&apos;si yayında.
+              {menusEnabledCount > menusPublishedCount && (
+                <>
+                  {' '}
+                  <a
+                    href="/admin/restaurants?menuStatus=draft"
+                    className="font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
+                  >
+                    Taslakta bekleyen {menusEnabledCount - menusPublishedCount}
+                  </a>
+                  {' '}işletme var.
+                </>
+              )}
+            </p>
+          </div>
+          <div className="flex flex-col items-end shrink-0">
+            <div
+              className="bz-h-tight tabular-nums"
+              style={{ fontSize: 28, color: '#0A0A0A' }}
+            >
+              {menusEnabledCount > 0
+                ? Math.round((menusPublishedCount / menusEnabledCount) * 100)
+                : 0}
+              <span className="text-[14px] text-[#737373]">%</span>
+            </div>
+            <div className="pulse-eyebrow text-[#737373]">YAYIN ORANI</div>
+          </div>
+        </div>
+        {menusEnabledCount > 0 && (
+          <div className="mt-4">
+            <ProgressBar
+              value={menusPublishedCount}
+              max={menusEnabledCount}
+              ariaLabel={`${menusPublishedCount} / ${menusEnabledCount} menü yayında`}
+            />
+          </div>
+        )}
       </div>
 
       {/* Desktop-only: Business growth + Plan distribution (1:1 design 2fr 1fr split) */}
