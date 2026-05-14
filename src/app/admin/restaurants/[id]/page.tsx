@@ -522,8 +522,8 @@ export default function RestaurantDetailPage() {
               <p className="text-[12px] text-[#737373]">Widget henüz hiçbir siteden yüklenmedi.</p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-[#EDEDED]">
-              <table className="w-full text-[13px]">
+            <div className="overflow-x-auto rounded-2xl border border-[#EDEDED]">
+              <table className="w-full min-w-[480px] text-[13px]">
                 <thead className="bg-[#FAFAFA]">
                   <tr className="text-left">
                     <th className="px-4 py-2.5 pulse-eyebrow text-[#737373]">ALAN ADI</th>

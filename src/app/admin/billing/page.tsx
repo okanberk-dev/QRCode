@@ -165,57 +165,59 @@ function AdminBillingBody() {
                 {isTr ? 'Henüz fatura yok.' : 'No invoices yet.'}
               </div>
             ) : (
-              <table className="w-full text-left text-[13px]">
-                <thead>
-                  <tr className="pulse-eyebrow border-b border-[#EDEDED] bg-[#FAFAFA] text-[#737373]">
-                    <th className="px-5 py-3 font-medium">{isTr ? 'TARİH' : 'DATE'}</th>
-                    <th className="px-5 py-3 font-medium">{isTr ? 'TUTAR' : 'AMOUNT'}</th>
-                    <th className="px-5 py-3 font-medium">{isTr ? 'DURUM' : 'STATUS'}</th>
-                    <th className="px-5 py-3 font-medium"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoices.map((inv) => (
-                    <tr key={inv.id} className="border-b border-[#EDEDED] last:border-0">
-                      <td className="px-5 py-3">{new Date(inv.date).toLocaleDateString(isTr ? 'tr-TR' : 'en-US')}</td>
-                      <td className="px-5 py-3 font-medium text-[#0A0A0A]">₺{inv.amount.toFixed(2)}</td>
-                      <td className="px-5 py-3">
-                        <span
-                          className={`pulse-eyebrow rounded px-2 py-1 ${
-                            inv.status === 'paid'
-                              ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                              : inv.status === 'pending'
-                                ? 'bg-[#F5F5F5] text-[#737373]'
-                                : 'bg-red-50 text-red-700'
-                          }`}
-                        >
-                          {inv.status === 'paid'
-                            ? isTr
-                              ? 'ÖDENDİ'
-                              : 'PAID'
-                            : inv.status === 'pending'
-                              ? isTr
-                                ? 'BEKLİYOR'
-                                : 'PENDING'
-                              : isTr
-                                ? 'BAŞARISIZ'
-                                : 'FAILED'}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        {inv.url ? (
-                          <a
-                            href={inv.url}
-                            className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A]"
-                          >
-                            <Download size={12} /> {isTr ? 'PDF' : 'PDF'}
-                          </a>
-                        ) : null}
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-left text-[13px]">
+                  <thead>
+                    <tr className="pulse-eyebrow border-b border-[#EDEDED] bg-[#FAFAFA] text-[#737373]">
+                      <th className="px-5 py-3 font-medium">{isTr ? 'TARİH' : 'DATE'}</th>
+                      <th className="px-5 py-3 font-medium">{isTr ? 'TUTAR' : 'AMOUNT'}</th>
+                      <th className="px-5 py-3 font-medium">{isTr ? 'DURUM' : 'STATUS'}</th>
+                      <th className="px-5 py-3 font-medium"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {invoices.map((inv) => (
+                      <tr key={inv.id} className="border-b border-[#EDEDED] last:border-0">
+                        <td className="px-5 py-3 whitespace-nowrap">{new Date(inv.date).toLocaleDateString(isTr ? 'tr-TR' : 'en-US')}</td>
+                        <td className="px-5 py-3 whitespace-nowrap font-medium text-[#0A0A0A]">₺{inv.amount.toFixed(2)}</td>
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <span
+                            className={`pulse-eyebrow rounded px-2 py-1 ${
+                              inv.status === 'paid'
+                                ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+                                : inv.status === 'pending'
+                                  ? 'bg-[#F5F5F5] text-[#737373]'
+                                  : 'bg-red-50 text-red-700'
+                            }`}
+                          >
+                            {inv.status === 'paid'
+                              ? isTr
+                                ? 'ÖDENDİ'
+                                : 'PAID'
+                              : inv.status === 'pending'
+                                ? isTr
+                                  ? 'BEKLİYOR'
+                                  : 'PENDING'
+                                : isTr
+                                  ? 'BAŞARISIZ'
+                                  : 'FAILED'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-right whitespace-nowrap">
+                          {inv.url ? (
+                            <a
+                              href={inv.url}
+                              className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A]"
+                            >
+                              <Download size={12} /> {isTr ? 'PDF' : 'PDF'}
+                            </a>
+                          ) : null}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
         </>

@@ -181,6 +181,19 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
     };
   }, [mobileOpen]);
 
+  // ESC key closes the mobile drawer — a11y baseline (CLAUDE.md §23.7
+  // Phase 11.1 focus trap + ESC handler paterni). Owner shell
+  // (UserDashboardShell.tsx) ve Modal primitive aynı kuralı uygular;
+  // admin'de eksikti.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobileOpen]);
+
   // Sidebar nav supports two entry kinds. Keep only the main landing page
   // flat; related admin surfaces live under compact collapsible groups.
   //

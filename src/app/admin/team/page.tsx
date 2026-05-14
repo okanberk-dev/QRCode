@@ -164,8 +164,8 @@ function AdminTeamBody() {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-[#EDEDED] bg-white">
-          <table className="w-full text-left text-[13px]">
+        <div className="overflow-x-auto rounded-2xl border border-[#EDEDED] bg-white">
+          <table className="w-full min-w-[560px] text-left text-[13px]">
             <thead>
               <tr className="pulse-eyebrow border-b border-[#EDEDED] bg-[#FAFAFA] text-[#737373]">
                 <th className="px-5 py-3 font-medium">{isTr ? 'ÜYE' : 'MEMBER'}</th>
