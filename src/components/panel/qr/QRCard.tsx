@@ -83,18 +83,20 @@ const PLATFORM_LABEL: Record<string, string> = {
 
 /**
  * Build the server-side QR download URL. Single source of truth shared by:
- *   - PNG download button (large width=1080 for print)
- *   - PDF print flow (same PNG, embedded in print window)
- *   - Inline thumbnail (width=240 for preview slot)
- *
- * `composePremiumQrPng` (`src/lib/qr-premium-png.ts`) renders the Pulse Lime
- * hero frame + headline + footer. Deterministic, no client-side capture
- * race (the html-to-image pipeline this replaces was producing empty PNGs
- * intermittently — see git log §38.178 + this fix's PR description).
+ *   - PNG download button (large width=1080 for print) — `style: 'premium'`
+ *     → Pulse Lime hero frame + headline + footer
+ *   - PDF print flow — `style: 'plain'` → kullanıcı talebi: PDF'de
+ *     **sadece QR matrix** (kullanıcının seçtiği renkler), arka plan Pulse
+ *     tasarımı yok. Bonus: composePremiumQrPng SVG text "Space Grotesk"
+ *     font'u Vercel serverless container'da sistem fontu yoksa Unicode
+ *     tofu (kare yazı) render ediyordu; plain mode hiç text içermez →
+ *     font sorunu yapısal olarak çözülür.
+ *   - Inline thumbnail (width=240 for preview slot) — `style: 'premium'`
+ *     (önizleme card'ı küçük frame'i taşır)
  */
 function buildQrUrl(
   item: Pick<QRCardItem, "restaurantId" | "tableNumber" | "platform" | "darkColor" | "lightColor">,
-  options: { format: "png" | "svg"; width?: number },
+  options: { format: "png" | "svg"; width?: number; style?: "premium" | "plain" },
 ): string {
   const params = new URLSearchParams({ format: options.format });
   if (item.tableNumber) params.set("table", item.tableNumber);
@@ -104,6 +106,10 @@ function buildQrUrl(
     params.set("light", item.lightColor);
   }
   if (options.width) params.set("width", String(options.width));
+  // `style=plain` server-side `usePlain` branch'ini tetikler →
+  // composePremiumQrPng yerine `QRCode.toBuffer` (font-bağımsız). Default
+  // (`premium`) eski davranış, query'e eklenmez.
+  if (options.style === "plain") params.set("style", "plain");
   return `/api/restaurants/${item.restaurantId}/qr?${params.toString()}`;
 }
 
@@ -138,6 +144,17 @@ export function QRCard({
    * PNG download — server-side composed (Pulse Lime hero frame). Deterministic
    * blob fetch; empty/HTTP-error guards surface actionable error to the owner
    * rather than silent failure.
+   *
+   * Cross-browser download trigger disipline:
+   *  - Anchor element DOM'a append + click + **1000ms delay** sonra remove
+   *    (iOS Safari + Chrome bazı sürümler `a.remove()` ile `URL.revokeObjectURL`
+   *    immediate çağrılınca download'ı iptal ediyor — boş PNG iniyor.
+   *    setTimeout ile defer browser'a transfer'i tamamlama süresi verir).
+   *  - `Content-Type` header `image/png` doğrulaması (server bir HTML 500 page
+   *    döndürürse — Vercel framework default — `res.ok` true olabilir ama
+   *    blob.type=text/html → kullanıcı bozuk dosya iner).
+   *  - `blob.size === 0` veya `< 100 byte` guard — composer sessiz fail
+   *    durumunda actionable error.
    */
   const downloadPng = async () => {
     if (downloadingPng) return;
@@ -153,10 +170,25 @@ export function QRCard({
         );
         return;
       }
-      const blob = await res.blob();
-      if (blob.size === 0) {
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("image/png")) {
         setDownloadError(
-          isTr ? "Boş dosya alındı, tekrar deneyin." : "Empty file received, please retry.",
+          isTr
+            ? "Sunucu beklenmedik içerik döndürdü. Sayfayı yenileyip tekrar deneyin."
+            : "Server returned unexpected content. Refresh and retry.",
+        );
+        return;
+      }
+      const blob = await res.blob();
+      // 100 byte threshold: bir PNG header bile en az ~70 byte (8 byte
+      // signature + 25 byte IHDR + 12 byte IEND); 100 byte altı kesin
+      // bozuk/empty render. Owner empty file değil actionable error
+      // görsün.
+      if (blob.size < 100) {
+        setDownloadError(
+          isTr
+            ? `Boş dosya alındı (${blob.size} B). Tekrar deneyin; sorun sürerse destek ile iletişime geçin.`
+            : `Empty file (${blob.size} B). Please retry; contact support if the issue persists.`,
         );
         return;
       }
@@ -164,11 +196,19 @@ export function QRCard({
       const a = document.createElement("a");
       a.href = objUrl;
       a.download = `qr-${fileName}.png`;
+      a.style.display = "none";
       document.body.appendChild(a);
       a.click();
-      a.remove();
-      URL.revokeObjectURL(objUrl);
-    } catch {
+      // Defer cleanup — iOS Safari + Chrome download race condition fix.
+      // Eğer `a.remove()` + `URL.revokeObjectURL` immediate çağrılırsa
+      // bazı browser sürümlerinde transfer iptal olur → kullanıcıya boş
+      // dosya iner. 1000ms yeterli (download stream başlamış olur).
+      setTimeout(() => {
+        a.remove();
+        URL.revokeObjectURL(objUrl);
+      }, 1000);
+    } catch (err) {
+      console.error("[QRCard] PNG download failed:", err);
       setDownloadError(
         isTr ? "Bağlantı hatası. İnternet bağlantınızı kontrol edin." : "Network error.",
       );
@@ -178,17 +218,26 @@ export function QRCard({
   };
 
   /**
-   * PDF print — same server-rendered PNG, embedded in a fresh window with
-   * `@page A5 portrait` print CSS + `window.print()`. Owner picks
-   * "Save as PDF" in the browser dialog. Avoids `jsPDF` dep entirely
-   * (CLAUDE.md §24.3 QRGeneratorForm reuse pattern).
+   * PDF print — **plain QR** (yalnız QR matrix, kullanıcının seçtiği
+   * renklerde). Kullanıcı talebi: PDF'de Pulse Lime hero frame + headline
+   * + footer yok; "sadece kullanıcının tasarladığı gibi insin". Bonus:
+   * composePremiumQrPng SVG text rendering'i Vercel serverless'ta
+   * sistem fontu eksikliği nedeniyle kare yazı (Unicode tofu) çıkarıyordu
+   * — plain mode hiç text içermez, font sorunu yapısal olarak çözülür.
+   *
+   * Server-rendered PNG'yi (style=plain) yeni window'a embed eder, A5
+   * portrait print CSS + `window.print()`. Owner "Save as PDF" seçer.
+   * jsPDF dep'siz (CLAUDE.md §24.3 QRGeneratorForm reuse pattern).
    */
   const printPdf = async () => {
     if (printingPdf) return;
     setDownloadError(null);
     setPrintingPdf(true);
     try {
-      const res = await fetch(buildQrUrl(item, { format: "png", width: 1080 }));
+      // PDF için plain QR — Pulse Lime hero frame yok, sadece QR.
+      const res = await fetch(
+        buildQrUrl(item, { format: "png", width: 1080, style: "plain" }),
+      );
       if (!res.ok) {
         setDownloadError(
           isTr
@@ -197,9 +246,22 @@ export function QRCard({
         );
         return;
       }
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("image/png")) {
+        setDownloadError(
+          isTr
+            ? "Sunucu beklenmedik içerik döndürdü. Sayfayı yenileyip tekrar deneyin."
+            : "Server returned unexpected content. Refresh and retry.",
+        );
+        return;
+      }
       const blob = await res.blob();
-      if (blob.size === 0) {
-        setDownloadError(isTr ? "Boş dosya alındı." : "Empty file.");
+      if (blob.size < 100) {
+        setDownloadError(
+          isTr
+            ? `Boş dosya alındı (${blob.size} B). Tekrar deneyin.`
+            : `Empty file (${blob.size} B). Please retry.`,
+        );
         return;
       }
       const dataUrl = await new Promise<string>((resolve, reject) => {
