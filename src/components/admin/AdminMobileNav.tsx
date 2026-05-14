@@ -14,6 +14,15 @@ export default function AdminMobileNav({ role = 'manager' }: { role?: string }) 
   // base='/admin' filter — owner tab clobber etmez. Tek source-of-truth
   // NotificationBell internal poll (mobile nav ek fetch yapmaz).
   const [notifUnreadCount, setNotifUnreadCount] = useState(0);
+  // Drawer state via custom event broadcast from AdminSidebar
+  // (CLAUDE.md §40.D Custom Event paterni — marketing
+  // MarketingNavbarClient ile aynı event ismi). Drawer açıkken bottom
+  // nav gizlenir — aksi halde DOM order itibariyle floating pill
+  // hamburger drawer'ın üzerine çıkıyor (bug raporu: "sidebar açılınca
+  // bottom nav hâlâ gözüküyor"). aria-hidden + pointer-events-none ile
+  // a11y intact; reduced-motion blanket (globals.css §40.3) altında
+  // transition kapanır.
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -23,8 +32,16 @@ export default function AdminMobileNav({ role = 'manager' }: { role?: string }) 
         setNotifUnreadCount(detail.count);
       }
     };
+    const onDrawer = (event: Event) => {
+      const detail = (event as CustomEvent<{ open: boolean }>).detail;
+      setDrawerOpen(Boolean(detail?.open));
+    };
     window.addEventListener('buaze:notification-count', handler);
-    return () => window.removeEventListener('buaze:notification-count', handler);
+    window.addEventListener('buaze:mobile-drawer', onDrawer);
+    return () => {
+      window.removeEventListener('buaze:notification-count', handler);
+      window.removeEventListener('buaze:mobile-drawer', onDrawer);
+    };
   }, []);
 
   const navItems = [
@@ -40,12 +57,25 @@ export default function AdminMobileNav({ role = 'manager' }: { role?: string }) 
   return (
     <nav
       aria-label="Mobil navigasyon"
-      className="lg:hidden fixed left-3 right-3 z-50 mx-auto max-w-[520px] text-[#0A0A0A]"
+      aria-hidden={drawerOpen ? 'true' : undefined}
+      // z-40 (eski z-50) — CLAUDE.md §40.3 hierarchy: z-30 desktop
+      // sticky topbar < z-40 mobile sticky/bottom nav < z-50 modals/
+      // drawers. Marketing MobileBottomNav + owner UserDashboardShell
+      // bottom nav ile parity. Drawer (z-50) artık üstte kalır + bu
+      // component drawer açıkken event ile gizlenir (defensive iki
+      // katman).
+      className={`lg:hidden fixed left-3 right-3 z-40 mx-auto max-w-[520px] text-[#0A0A0A] transition-[opacity,transform] duration-200 ease-out ${
+        drawerOpen
+          ? 'pointer-events-none translate-y-full opacity-0'
+          : 'translate-y-0 opacity-100'
+      }`}
       style={{
         // Stage 60 §38.141 — HANDOFF floating pill paterni: 12px bottom
         // margin + safe-area (iOS home-indicator overlap önleme). Eski
         // bottom-0 full-width yerine floating pill modern UX.
         bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+        willChange: 'transform, opacity',
+        backfaceVisibility: 'hidden',
       }}
     >
       {/* Floating pill container — Stage 60 §38.141 HANDOFF birebir.

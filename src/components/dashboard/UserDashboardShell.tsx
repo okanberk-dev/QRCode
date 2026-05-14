@@ -237,6 +237,18 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       document.body.style.overflow = original;
     };
   }, [drawerOpen, moreOpen]);
+  // Drawer state broadcast (CLAUDE.md §40.D Custom Event paterni).
+  // Marketing MarketingNavbarClient + admin AdminSidebar ile aynı event
+  // ismi (`buaze:mobile-drawer`). Owner panel'in bottom nav'ı aynı
+  // component'te olduğu için doğrudan local `drawerOpen` okuyabilir; bu
+  // broadcast harici listener'lar (örn. sticky CTA, marketing ribbon
+  // overlay) için single channel disiplinini korur.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(
+      new CustomEvent('buaze:mobile-drawer', { detail: { open: drawerOpen } }),
+    );
+  }, [drawerOpen]);
   // Stage 60 §38.141 — Mobile bottom nav Yorumlar tab badge.
   // NotificationBell `buaze:notification-count` custom event'i ile
   // sync; tek source-of-truth NotificationBell internal poll. Mobile
@@ -1272,12 +1284,27 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           Floating: 12px lateral margin + safe-area + 28px borderRadius.
           Glassmorphism: backdrop-blur(20px) saturate(180%) + translucent
           surface. 72px height. 4 primary tab + More + Yorumlar tab'ında
-          NotificationBell unread count badge (custom event listener). */}
+          NotificationBell unread count badge (custom event listener).
+
+          Drawer açıkken bottom nav fade-out (admin paterni ile parity —
+          AdminMobileNav `buaze:mobile-drawer` event listener'ı). Owner
+          shell drawer + bottom nav aynı component'te olduğu için event
+          broadcast yerine doğrudan local state okunur. `aria-hidden` +
+          `pointer-events-none` a11y intact. More sheet (`moreOpen`) açıkken
+          bottom nav görünür kalır — kullanıcı oradan navigate edebilsin
+          (kasıtlı UX). */}
       <nav
         aria-label={copy.dashboard}
-        className="fixed left-3 right-3 z-40 mx-auto max-w-[520px] lg:hidden"
+        aria-hidden={drawerOpen ? 'true' : undefined}
+        className={`fixed left-3 right-3 z-40 mx-auto max-w-[520px] lg:hidden transition-[opacity,transform] duration-200 ease-out ${
+          drawerOpen
+            ? 'pointer-events-none translate-y-full opacity-0'
+            : 'translate-y-0 opacity-100'
+        }`}
         style={{
           bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+          willChange: 'transform, opacity',
+          backfaceVisibility: 'hidden',
         }}
       >
         <div

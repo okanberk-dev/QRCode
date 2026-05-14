@@ -98,7 +98,11 @@ function saveSidebarScroll(scrollTop: number) {
 
 export default function AdminSidebar({ announcements = [], initialProfile = null }: AdminSidebarProps = {}) {
   const pathname = usePathname();
-  const { t, locale, setLocale } = useAdminTranslation();
+  // `setLocale` lives on /admin/profile (Dil tercihi card) — sidebar
+  // only consumes `locale` + `t`. Switching it from the sidebar's
+  // cramped bottom row was a UX papercut (chevron clipped, touch target
+  // too small on mobile drawer).
+  const { t, locale } = useAdminTranslation();
   const role = initialProfile?.role || 'manager';
   const profile = initialProfile;
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -159,10 +163,19 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
     window.location.href = '/admin';
   };
 
-  // Prevent body scroll when mobile drawer is open
+  // Prevent body scroll when mobile drawer is open + broadcast state
+  // (CLAUDE.md §40.D Custom Event paterni). AdminMobileNav listener'a
+  // drawer açıkken bottom nav'ı gizlemesi için sinyal verir; marketing
+  // MarketingNavbarClient ve owner UserDashboardShell ile aynı event
+  // ismi (`buaze:mobile-drawer`) — tek kanal.
   useEffect(() => {
     if (typeof document === 'undefined') return;
     document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('buaze:mobile-drawer', { detail: { open: mobileOpen } }),
+      );
+    }
     return () => {
       document.body.style.overflow = '';
     };
@@ -535,27 +548,10 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
           )}
         </div>
 
-        {!isCollapsed && (
-          <div className="flex items-center justify-between px-1 py-2 border-t border-[#EDEDED] animate-in fade-in duration-300">
-            <div className="flex items-center gap-1.5">
-              <Globe size={12} strokeWidth={2} className="text-[#737373]" />
-              <span className="pulse-eyebrow text-[#737373]">{t('system_language')}</span>
-            </div>
-            {/* Width `w-[88px]` — `select.bz-input` reserves 38px on the right
-                for the chevron + 12px left padding, leaving ~38px for the
-                "TR"/"EN" glyph. The previous `w-[72px]` only left ~22px,
-                clipping the label and visually swallowing the chevron. */}
-            <select
-              value={locale}
-              onChange={(e) => setLocale(e.target.value as 'tr' | 'en')}
-              aria-label={t('system_language')}
-              className="bz-input h-8 w-[88px] rounded-md border-none bg-[#F2F2F2] py-0 text-[11px] font-medium cursor-pointer"
-            >
-              <option value="tr">TR</option>
-              <option value="en">EN</option>
-            </select>
-          </div>
-        )}
+        {/* Locale switcher (TR/EN) moved to /admin/profile "Dil tercihi"
+            card. Sidebar bottom kept only avatar + logout — tight chrome
+            for mobile drawer + collapsed-sidebar parity (CLAUDE.md §40.3:
+            workspace + actions ayrımı). */}
 
         <div className="flex gap-1 mt-2">
           <button
