@@ -1,7 +1,7 @@
 'use client';
 
 import { Inbox, Loader2, RotateCcw, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
-import { AlertBanner, EmptyState, Skeleton, Tabs } from '@/components/ui';
+import { AlertBanner, EmptyState, Tabs } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import type { ActiveTab, DegradedMeta, FeedbackRow } from './types';
 import { FeedbackListItem } from './FeedbackListItem';
@@ -224,20 +224,7 @@ export function FeedbackList({
       )}
 
       <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-        {loading ? (
-          <div className="space-y-2 p-4" aria-hidden="true">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex gap-3">
-                <Skeleton className="h-7 w-7 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-3 w-1/2" />
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-3/4" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filteredList.length === 0 ? (
+        {loading ? null : filteredList.length === 0 ? (
           <div className="p-4">
             <EmptyState
               icon={<Inbox size={22} strokeWidth={1.5} />}

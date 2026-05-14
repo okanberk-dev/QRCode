@@ -25,7 +25,6 @@ import {
   Badge,
   EmptyState,
   PageHeader,
-  TableSkeleton,
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
@@ -180,9 +179,7 @@ export default function AdminCampaignApprovalsPage() {
       </div>
 
       {/* Queue table */}
-      {loading && !data ? (
-        <TableSkeleton rows={6} cols={6} />
-      ) : !data || data.campaigns.length === 0 ? (
+      {loading && !data ? null : !data || data.campaigns.length === 0 ? (
         <EmptyState
           icon={<Sparkles size={28} strokeWidth={1.5} />}
           title={isTr ? 'Kampanya yok' : 'No campaigns'}

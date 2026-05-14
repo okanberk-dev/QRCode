@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Star, TrendingUp, TrendingDown } from 'lucide-react';
-import { StatCardSkeleton } from '@/components/ui';
 
 // §38.53 — Yorumlar sayfası KPI 4-card strip. Tasarım kaynağı:
 // .design-owner-2026/page-feedbacks.jsx PageHeader altı 4-card grid:
@@ -74,17 +73,9 @@ export function KpiStrip({ isTr, filters }: KpiStripProps) {
     };
   }, [filters?.restaurantId, filters?.branch, filters?.platform]);
 
-  if (loading || !data) {
-    // §38.71 — Apple-premium content-shape skeleton (CLAUDE.md §11.17 paterni
-    // reuse). Eski animate-pulse div → StatCardSkeleton primitive.
-    return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <StatCardSkeleton key={i} />
-        ))}
-      </div>
-    );
-  }
+  // §40.10 (clean slate) — skeleton render kaldırıldı. Data yüklenene kadar
+  // hiçbir şey gösterme; flicker yerine net bir delay.
+  if (loading || !data) return null;
 
   const ratingDeltaSign = data.avgRatingDelta !== null && data.avgRatingDelta >= 0 ? '+' : '';
   const ratingDeltaUp = data.avgRatingDelta !== null && data.avgRatingDelta >= 0;

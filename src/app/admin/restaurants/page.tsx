@@ -5,7 +5,7 @@ import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin,
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
-import { AlertBanner, APCheckbox, Avatar, Badge, type BadgeKind, CardSkeleton, EmptyState, Modal, PageHeader, PanelSelectionBar, type TabItem, Tabs, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, APCheckbox, Avatar, Badge, type BadgeKind, EmptyState, Modal, PageHeader, PanelSelectionBar, type TabItem, Tabs, useConfirmDialog } from '@/components/ui';
 
 interface Restaurant {
   id: string;
@@ -342,18 +342,8 @@ export default function RestaurantsPage() {
     [restaurants, searchTerm],
   );
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
-        <PageHeader eyebrow="İŞLETMELER" title="Yükleniyor…" />
-        <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <CardSkeleton key={i} height={220} />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // §40.10 clean slate — skeleton return kaldırıldı; data gelene kadar null.
+  if (loading) return null;
 
   // Primary tabs — plan-bazlı (1:1 design AdminBusinesses, line 102-107)
   const planTabs: TabItem[] = [

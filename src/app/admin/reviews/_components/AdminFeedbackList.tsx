@@ -1,7 +1,7 @@
 'use client';
 
 import { Inbox, Loader2, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
-import { AlertBanner, APCheckbox, EmptyState, Skeleton, Tabs } from '@/components/ui';
+import { AlertBanner, APCheckbox, EmptyState, Tabs } from '@/components/ui';
 import type { AdminTab, CountsResp, DegradedMeta, FeedbackRow } from './types';
 import { AdminFeedbackListItem } from './AdminFeedbackListItem';
 
@@ -170,20 +170,7 @@ export function AdminFeedbackList({
       </div>
 
       <div className="lg:flex-1 lg:overflow-y-auto">
-        {loading ? (
-          <div className="space-y-2 p-4" aria-hidden="true">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex gap-3">
-                <Skeleton className="h-9 w-9 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-3 w-1/2" />
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-3/4" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
+        {loading ? null : filtered.length === 0 ? (
           <div className="p-6">
             <EmptyState
               icon={<Inbox size={22} strokeWidth={1.5} />}

@@ -1041,17 +1041,11 @@ export default function FeedbacksPage({
   // §38.49 — Client component → async edilemez (Next.js no-async-client-component
   // kuralı). React 18.3+ `use()` hook ile Promise client-side unwrap.
   const resolvedParams = use(params);
+  // §40.10 clean slate — Suspense fallback boş; çift skeleton flash riskini
+  // tamamen ortadan kaldırır. FeedbacksContent kendi loading state'iyle
+  // (boş layout) render eder; fetch tamamlanınca data dolar.
   return (
-    <Suspense
-      fallback={
-        <div className="flex flex-col items-center justify-center min-h-[60vh] bg-white">
-          <Loader2 className="animate-spin text-[#0A0A0A] w-8 h-8 mb-3" strokeWidth={2} />
-          <span className="pulse-eyebrow text-[#737373]">
-            {resolvedParams.locale === 'tr' ? 'YÜKLENİYOR' : 'LOADING'}
-          </span>
-        </div>
-      }
-    >
+    <Suspense fallback={null}>
       <FeedbacksContent locale={resolvedParams.locale} />
     </Suspense>
   );

@@ -32,7 +32,6 @@ import {
   Modal,
   PageHeader,
   PanelSelectionBar,
-  TableSkeleton,
   useConfirmDialog,
 } from '@/components/ui';
 import MemberBillingModal from '@/components/admin/MemberBillingModal';
@@ -502,9 +501,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
       </div>
 
       {/* Table */}
-      {loading ? (
-        <TableSkeleton rows={6} cols={5} />
-      ) : members.length === 0 ? (
+      {loading ? null : members.length === 0 ? (
         <EmptyState
           icon={<Store size={20} strokeWidth={2} />}
           title={filtersActive ? 'Filtreyle eşleşen sonuç yok' : 'Henüz kayıtlı işletme sahibi yok'}

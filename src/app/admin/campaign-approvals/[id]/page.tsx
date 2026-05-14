@@ -21,7 +21,6 @@ import {
   AlertBanner,
   Badge,
   PageHeader,
-  Skeleton,
 } from '@/components/ui';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import AdminCampaignApprovalActions from '@/components/admin/AdminCampaignApprovalActions';
@@ -127,15 +126,8 @@ export default function AdminCampaignApprovalDetailPage() {
     void fetchData();
   }, [fetchData]);
 
-  if (loading && !data) {
-    return (
-      <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
-        <Skeleton className="h-8 w-[280px]" />
-        <Skeleton className="h-[120px] w-full rounded-2xl" />
-        <Skeleton className="h-[200px] w-full rounded-2xl" />
-      </div>
-    );
-  }
+  // §40.10 clean slate — skeleton return kaldırıldı; data gelene kadar null.
+  if (loading && !data) return null;
 
   if (error || !data) {
     return (

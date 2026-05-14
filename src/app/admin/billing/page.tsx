@@ -5,7 +5,7 @@ import { CreditCard, Download, FileText, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
-import { AlertBanner, PageHeader, Badge, CardSkeleton, TableSkeleton } from '@/components/ui';
+import { AlertBanner, PageHeader, Badge } from '@/components/ui';
 
 interface BillingSummary {
   plan: string;
@@ -78,18 +78,7 @@ function AdminBillingBody() {
         </AlertBanner>
       )}
 
-      {loading ? (
-        // PR8 — content-shape skeletons (Linear/Stripe/Vercel pattern, §11).
-        // Layout reflow yok, perceived load süresi azalır.
-        <div className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-            <CardSkeleton height={220} />
-            <CardSkeleton height={220} />
-          </div>
-          <CardSkeleton height={120} />
-          <TableSkeleton rows={4} cols={4} />
-        </div>
-      ) : (
+      {loading ? null : (
         <>
           <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
             <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">

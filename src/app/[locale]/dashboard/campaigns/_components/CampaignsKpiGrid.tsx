@@ -3,7 +3,7 @@
 // CLAUDE.md §38.99 — Owner campaigns KPI grid (4-stat tile).
 
 import { Mail, Send, CheckCircle2, XCircle } from 'lucide-react';
-import { StatCard, StatCardSkeleton } from '@/components/ui';
+import { StatCard } from '@/components/ui';
 
 interface KpiInput {
   total: number;
@@ -19,16 +19,8 @@ interface Props {
 }
 
 export function CampaignsKpiGrid({ kpi, isTr, loading }: Props) {
-  if (loading) {
-    return (
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-        <StatCardSkeleton />
-      </div>
-    );
-  }
+  // §40.10 clean slate — skeleton render kaldırıldı; data gelene kadar null.
+  if (loading) return null;
 
   return (
     <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">

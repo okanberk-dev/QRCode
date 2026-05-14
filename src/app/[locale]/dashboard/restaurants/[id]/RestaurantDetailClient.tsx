@@ -23,7 +23,6 @@ import {
   Eyebrow,
   PageHeader,
   StatCard,
-  StatCardSkeleton,
 } from '@/components/ui';
 
 /**
@@ -43,7 +42,7 @@ import {
  *   - Public preview as a single-row affordance with copy + "open"
  *   - 2×2 Quick Actions grid: equal-weighted cards, "Ayarlar" gets a
  *     lime accent dot to signal it's the most-used jump
- *   - Skeleton loading state (StatCardSkeleton + bz-skeleton placeholders)
+ *   - Clean loading state (null until data arrives — §40.10 clean slate)
  *   - Optional warn banner when the location is temporarily closed
  */
 
@@ -128,44 +127,8 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
     </Link>
   );
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8">
-        {backLink}
-        <div className="space-y-2">
-          <div className="bz-skeleton h-3 w-28" />
-          <div className="bz-skeleton h-8 w-72" />
-          <div className="bz-skeleton h-3 w-48" />
-        </div>
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-        </div>
-        <div className="mt-4 bz-card p-4">
-          <div className="bz-skeleton h-4 w-2/3" />
-        </div>
-        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bz-card p-5">
-            <div className="bz-skeleton h-4 w-24" />
-            <div className="bz-skeleton mt-3 h-3 w-40" />
-          </div>
-          <div className="bz-card p-5">
-            <div className="bz-skeleton h-4 w-24" />
-            <div className="bz-skeleton mt-3 h-3 w-40" />
-          </div>
-          <div className="bz-card p-5">
-            <div className="bz-skeleton h-4 w-24" />
-            <div className="bz-skeleton mt-3 h-3 w-40" />
-          </div>
-          <div className="bz-card p-5">
-            <div className="bz-skeleton h-4 w-24" />
-            <div className="bz-skeleton mt-3 h-3 w-40" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // §40.10 clean slate — skeleton return kaldırıldı; data gelene kadar null.
+  if (loading) return null;
 
   if (error || !data) {
     return (

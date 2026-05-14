@@ -187,32 +187,7 @@ export default function AdminNotificationsPage() {
       ) : null}
 
       <section className="mt-5 overflow-hidden rounded-[16px] border border-[#EDEDED] bg-white">
-        {loading && items.length === 0 ? (
-          // Structural clone of the loaded `<ul className="divide-y …">`
-          // below (each row: 2.5x2.5 dot + title + type pill + body + meta
-          // row, p-4). Previously a generic `h-24` block which caused
-          // ~25px vertical CLS per row when the real list mounted.
-          <ul className="divide-y divide-[#EDEDED]">
-            {[0, 1, 2].map((key) => (
-              <li key={key} className="bg-white">
-                <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex min-w-0 flex-1 items-start gap-3">
-                    <span aria-hidden="true" className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-[#EDEDED] bz-skeleton" />
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="bz-skeleton h-[14px] w-44 rounded" />
-                        <div className="bz-skeleton h-[18px] w-16 rounded-full" />
-                      </div>
-                      <div className="bz-skeleton h-[12.5px] w-3/4 rounded" />
-                      <div className="bz-skeleton h-[11.5px] w-1/3 rounded" />
-                    </div>
-                  </div>
-                  <div className="bz-skeleton h-7 w-[88px] rounded-full self-start" />
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : items.length === 0 ? (
+        {loading && items.length === 0 ? null : items.length === 0 ? (
           <div className="p-10">
             <EmptyState
               icon={<Bell size={24} strokeWidth={1.8} />}
