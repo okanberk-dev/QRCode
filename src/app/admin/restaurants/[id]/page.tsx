@@ -8,6 +8,19 @@ import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, APSwitch, useConfirmDialog } from '@/components/ui';
 import { getSectorPlatforms } from '@/lib/sector-platforms';
+import { MENU_THEMES, type MenuTheme as MenuThemeKey } from '@/lib/validations';
+
+// Theme label map — matches owner builder copy (CLAUDE.md §12). TR-only here
+// because admin panel is Turkish-first (no /en/admin equivalent).
+const THEME_LABELS: Record<MenuThemeKey, string> = {
+  classic: 'Klasik',
+  modern: 'Modern',
+  elegant: 'Zarif',
+  gastronomy: 'Gastronomi',
+  minimal: 'Minimal',
+  bistro: 'Bistro',
+  pulse: 'Pulse',
+};
 
 interface Owner {
   id: string;
@@ -67,6 +80,14 @@ export default function RestaurantDetailPage() {
   });
   const [menuEnabled, setMenuEnabled] = useState(true);
   const [menuPublished, setMenuPublished] = useState(false);
+  // Menu theme override (Stage 109 §A2) — superadmin can adjust theme/accent/
+  // logo from admin panel without impersonating owner. Owner panel keeps
+  // primary control; this is a support/operations override.
+  const [menuTheme, setMenuTheme] = useState<MenuThemeKey>('classic');
+  const [menuAccentColor, setMenuAccentColor] = useState<string | null>(null);
+  const [menuLogoUrl, setMenuLogoUrl] = useState<string | null>(null);
+  const [themeSaving, setThemeSaving] = useState(false);
+  const [themeNotice, setThemeNotice] = useState<{ kind: 'success' | 'danger'; text: string } | null>(null);
   const [pulseAiEnabled, setPulseAiEnabled] = useState(true);
   const [aiAnalyticsEnabled, setAiAnalyticsEnabled] = useState(true);
   const [externalPlatformsEnabled, setExternalPlatformsEnabled] = useState(true);
@@ -121,6 +142,14 @@ export default function RestaurantDetailPage() {
           });
           setMenuEnabled(data.menuEnabled ?? true);
           setMenuPublished(data.menuPublished ?? false);
+          // Menu theme fields — defensive cast (server may return unknown value
+          // after manual SQL or future enum change; fall back to classic).
+          const theme = (MENU_THEMES as readonly string[]).includes(data.menuTheme)
+            ? (data.menuTheme as MenuThemeKey)
+            : 'classic';
+          setMenuTheme(theme);
+          setMenuAccentColor(data.menuAccentColor ?? null);
+          setMenuLogoUrl(data.menuLogoUrl ?? null);
           setPulseAiEnabled(data.pulseAiEnabled ?? true);
           setAiAnalyticsEnabled(data.aiAnalyticsEnabled ?? true);
           setExternalPlatformsEnabled(data.externalPlatformsEnabled ?? true);
@@ -253,6 +282,41 @@ export default function RestaurantDetailPage() {
       setError((e as Error).message);
     }
     setFeatureSaving(null);
+  };
+
+  // Menu theme save (Stage 109 §A2). Calls /api/admin/restaurants/[id]/menu-theme.
+  // Optimistic — UI reverts on failure. Accepts partial patch ({ menuTheme?,
+  // menuAccentColor?, menuLogoUrl? }). null accentColor clears override.
+  const saveMenuTheme = async (patch: {
+    menuTheme?: MenuThemeKey;
+    menuAccentColor?: string | null;
+    menuLogoUrl?: string | null;
+  }) => {
+    setThemeSaving(true);
+    setThemeNotice(null);
+    const prev = { theme: menuTheme, accent: menuAccentColor, logo: menuLogoUrl };
+    if (patch.menuTheme !== undefined) setMenuTheme(patch.menuTheme);
+    if (patch.menuAccentColor !== undefined) setMenuAccentColor(patch.menuAccentColor);
+    if (patch.menuLogoUrl !== undefined) setMenuLogoUrl(patch.menuLogoUrl);
+
+    try {
+      const res = await fetch(`/api/admin/restaurants/${id}/menu-theme`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Tema güncellenemedi');
+      setThemeNotice({ kind: 'success', text: 'Menü görünümü kaydedildi' });
+      setTimeout(() => setThemeNotice(null), 3000);
+    } catch (e) {
+      // Revert optimistic change
+      setMenuTheme(prev.theme);
+      setMenuAccentColor(prev.accent);
+      setMenuLogoUrl(prev.logo);
+      setThemeNotice({ kind: 'danger', text: (e as Error).message });
+    }
+    setThemeSaving(false);
   };
 
   const handleDelete = () => {
@@ -497,6 +561,152 @@ export default function RestaurantDetailPage() {
           {success}
         </AlertBanner>
       )}
+
+      {/* Menu visual override — Stage 109 §A2. Superadmin'in tema + accent +
+          logo'yu impersonation yapmadan ayarlayabildiği panel. Owner builder
+          (/[locale]/dashboard/restaurants/[id]/menu) primary control sahibi;
+          burası support/operations override için. Logo upload owner'a özel;
+          admin sadece clear edebilir. */}
+      <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+        <div className="flex flex-col gap-4 border-b border-[#EDEDED] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
+              <UtensilsCrossed size={18} strokeWidth={2} />
+            </div>
+            <div>
+              <p className="pulse-eyebrow text-[#737373]">Menü Görünümü</p>
+              <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Tema, renk ve logo</h3>
+              <p className="mt-1 text-[12px] leading-relaxed text-[#737373]">
+                Süperadmin override. Owner panelinden de düzenlenebilir; burada yapılan değişiklik anında müşteriye yansır.
+              </p>
+            </div>
+          </div>
+          {themeSaving && (
+            <span className="inline-flex shrink-0 items-center gap-1.5 text-[12px] text-[#737373]">
+              <Loader2 size={12} className="animate-spin" />
+              Kaydediliyor…
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-5 p-6">
+          {themeNotice && (
+            <AlertBanner
+              kind={themeNotice.kind}
+              icon={
+                themeNotice.kind === 'success' ? (
+                  <CheckCircle2 size={14} strokeWidth={2} className="mt-0.5" />
+                ) : (
+                  <AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />
+                )
+              }
+              onDismiss={() => setThemeNotice(null)}
+            >
+              {themeNotice.text}
+            </AlertBanner>
+          )}
+
+          {/* Theme selector — 7 chip horizontal scroll (compact, admin doesn't
+              need thumbnails — owner panel has those). */}
+          <div>
+            <p className="pulse-eyebrow mb-2 text-[#737373]">Tema</p>
+            <div className="flex flex-wrap gap-2">
+              {MENU_THEMES.map((t) => {
+                const active = menuTheme === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => saveMenuTheme({ menuTheme: t })}
+                    disabled={themeSaving}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12px] font-medium transition-all disabled:opacity-50 ${
+                      active
+                        ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white shadow-sm'
+                        : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]'
+                    }`}
+                  >
+                    {THEME_LABELS[t]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Accent color — color input + reset (clears override → falls back
+              to restaurant.primaryColor at render time). */}
+          <div>
+            <div className="mb-2 flex items-baseline justify-between">
+              <p className="pulse-eyebrow text-[#737373]">Vurgu rengi</p>
+              <span className="bz-mono text-[11px] text-[#A3A3A3]">
+                {(menuAccentColor ?? formData.primaryColor ?? '#C6F24E').toUpperCase()}
+                {!menuAccentColor && ' (varsayılan)'}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="relative inline-flex h-9 cursor-pointer items-center gap-2 overflow-hidden rounded-full border border-[#EDEDED] bg-white px-3 text-[12px] font-medium text-[#525252] transition-colors hover:border-[#0A0A0A] hover:text-[#0A0A0A]">
+                <input
+                  type="color"
+                  value={menuAccentColor ?? formData.primaryColor ?? '#C6F24E'}
+                  onChange={(e) => saveMenuTheme({ menuAccentColor: e.target.value })}
+                  disabled={themeSaving}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                />
+                <span
+                  className="inline-block h-5 w-5 rounded-full shadow-inner ring-1 ring-black/5"
+                  style={{ backgroundColor: menuAccentColor ?? formData.primaryColor ?? '#C6F24E' }}
+                />
+                Renk seç
+              </label>
+              {menuAccentColor && (
+                <button
+                  type="button"
+                  onClick={() => saveMenuTheme({ menuAccentColor: null })}
+                  disabled={themeSaving}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-50"
+                >
+                  Sıfırla (marka rengini kullan)
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Logo — read-only preview with clear button. Upload akışı owner
+              panel'e bırakılır (base64 sıkıştırma + sharp resize). Admin
+              sadece bozuk/yanlış logo'yu temizleyebilir. */}
+          <div>
+            <p className="pulse-eyebrow mb-2 text-[#737373]">Logo</p>
+            <div className="flex items-start gap-3 rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-4">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-[#EDEDED]">
+                {menuLogoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={menuLogoUrl} alt="logo" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[#A3A3A3]">
+                    <UtensilsCrossed size={20} strokeWidth={1.75} />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] leading-relaxed text-[#525252]">
+                  {menuLogoUrl
+                    ? 'Logo yüklü. Yeni logo yüklemek için owner panelini kullanın.'
+                    : 'Logo yüklü değil. Owner panelinden yükleyebilir.'}
+                </p>
+                {menuLogoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => saveMenuTheme({ menuLogoUrl: null })}
+                    disabled={themeSaving}
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252] transition-all hover:border-[#0A0A0A] hover:text-[#0A0A0A] disabled:opacity-50"
+                  >
+                    Logoyu temizle
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Feature entitlements — package-ready master switches */}
       <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
