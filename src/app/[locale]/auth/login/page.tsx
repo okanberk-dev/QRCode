@@ -85,7 +85,30 @@ export default async function LoginPage({
           </p>
 
           <div className="mt-8">
-            <Suspense fallback={<div className="h-80 animate-pulse bg-white rounded-lg" />}>
+            {/* Structural fallback — matches LoginForm geometry (gap-3.5 flex
+                col: Google CTA + OR divider + 2 input groups + submit + reCAPTCHA
+                line). Previously `h-80 animate-pulse` undersized the form by
+                ~140px and caused a visible jump on hydration. */}
+            <Suspense fallback={
+              <div className="flex flex-col gap-3.5">
+                <div className="bz-skeleton w-full h-12 rounded-[10px]" />
+                <div className="flex items-center gap-2.5 my-1">
+                  <div className="flex-1 h-px bg-[#EDEDED]" />
+                  <span className="pulse-eyebrow text-[#A3A3A3]">{locale === 'tr' ? 'YA DA' : 'OR'}</span>
+                  <div className="flex-1 h-px bg-[#EDEDED]" />
+                </div>
+                <div className="space-y-2">
+                  <div className="bz-skeleton h-[10px] w-16 rounded-sm" />
+                  <div className="bz-skeleton w-full h-12 rounded-[10px]" />
+                </div>
+                <div className="space-y-2">
+                  <div className="bz-skeleton h-[10px] w-20 rounded-sm" />
+                  <div className="bz-skeleton w-full h-12 rounded-[10px]" />
+                </div>
+                <div className="bz-skeleton w-full h-12 rounded-full mt-2" />
+                <div className="bz-skeleton h-[11px] w-3/4 rounded mx-auto mt-1" />
+              </div>
+            }>
               <LoginForm locale={locale} t={t} />
             </Suspense>
           </div>

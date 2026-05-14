@@ -123,20 +123,39 @@ export default function ActivationChecklistCard({
     }
   };
 
-  // Loading state — skeleton kart
+  // Loading state — structural clone of the loaded card so the transition
+  // is CLS=0. Container, header (eyebrow + h3 + subline), progress bar,
+  // and step rows (incl. right-side action button placeholder) all match
+  // the final markup at the same dimensions.
   if (loading && !result) {
     return (
-      <div className="bz-card p-5">
-        <div className="bz-skeleton h-5 w-40 rounded mb-3" />
-        <div className="bz-skeleton h-2 w-full rounded mb-4" />
-        <div className="space-y-2.5">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="bz-skeleton h-6 w-6 rounded-full" />
-              <div className="bz-skeleton h-4 flex-1 rounded" />
-            </div>
-          ))}
+      <div className="bz-card p-5 sm:p-6" aria-busy="true" aria-live="polite" role="status">
+        <span className="sr-only">{isTr ? "Kurulum yükleniyor…" : "Loading setup…"}</span>
+        {/* Header: eyebrow (pulse-eyebrow ~10px) + h3 (15-16px) + subline (12px) */}
+        <div className="flex items-start gap-3 mb-4">
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="bz-skeleton h-[10px] w-16 rounded-sm" />
+            <div className="bz-skeleton h-[16px] w-48 rounded" />
+            <div className="bz-skeleton h-[12px] w-32 rounded" />
+          </div>
+          {/* Dismiss button placeholder (only renders when ≥1 step done; reserve space) */}
+          <div className="bz-skeleton h-7 w-7 rounded-full shrink-0" />
         </div>
+        {/* Progress bar — h-2 mb-5 (matches final) */}
+        <div className="bz-skeleton h-2 w-full rounded-full mb-5" />
+        {/* Step list — 5 rows with h-7 icon + label + action pill (32x80) */}
+        <ul className="space-y-2">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <li
+              key={i}
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+            >
+              <div className="bz-skeleton h-7 w-7 rounded-full shrink-0" />
+              <div className="bz-skeleton h-[13.5px] flex-1 rounded" style={{ maxWidth: `${60 + ((i * 7) % 24)}%` }} />
+              <div className="bz-skeleton h-8 w-20 rounded-full shrink-0" />
+            </li>
+          ))}
+        </ul>
       </div>
     );
   }

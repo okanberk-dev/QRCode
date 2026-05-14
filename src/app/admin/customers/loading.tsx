@@ -7,7 +7,10 @@ import { Skeleton, StatCardSkeleton, TableSkeleton } from '@/components/ui';
 export default function AdminCustomersLoading() {
   return (
     <div
-      className="mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8 space-y-5 animate-in fade-in duration-200"
+      // Matches `admin/customers/page.tsx:254` exactly: `max-w-[1200px] space-y-4
+      // px-4 sm:px-7 py-6 lg:py-8`. Previously `max-w-[1400px] space-y-5` caused
+      // ~200px horizontal + 4px vertical CLS when real page mounted.
+      className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"

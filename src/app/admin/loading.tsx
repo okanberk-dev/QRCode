@@ -1,11 +1,13 @@
 // §38.59 — Admin panel root skeleton (Next.js segment loading.tsx).
-// Owner panel ile aynı paterni paylaşır (tasarım kaynağı a/page-system.jsx
-// Sayfa Anatomisi mock'u): üst graphite row + light gray rows + page header.
-// Admin shell (AdminSidebar + topbar) skeleton dışında — gerçek render kalır.
+// Fallback for any admin page without its own segment loading.tsx; matches
+// the most-common admin layout (`max-w-[1200px] space-y-4 px-4 sm:px-7
+// py-6 lg:py-8` — used by /admin/restaurants, /admin/customers, /admin/users,
+// /admin/billing, etc.). Pages with different widths (dashboard 1280px,
+// reviews 1400px) override this via their own loading.tsx.
 export default function AdminLoading() {
   return (
     <div
-      className="mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8 space-y-6 animate-in fade-in duration-200"
+      className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"

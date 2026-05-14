@@ -158,15 +158,22 @@ export default function AdminOverviewWidgets({ locale = 'tr', members: membersPr
           </Link>
         </div>
         {loading ? (
-          <div className="p-5 space-y-3">
+          // Row geometry matches the final loaded list (lines below): px-5 py-3
+          // container, 32x32 avatar (rounded={8} = `.bz-avatar` 8px), 13px title
+          // + 11px subline, 22px-tall badge (`.bz-badge` height = 22px).
+          <div>
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3">
+              <div
+                key={i}
+                className="flex items-center gap-3 px-5 py-3"
+                style={{ borderBottom: '1px solid #F5F5F5' }}
+              >
                 <Skeleton width={32} height={32} rounded={8} />
-                <div className="flex-1">
-                  <Skeleton height={12} width="40%" />
-                  <Skeleton height={10} width="60%" className="mt-1" />
+                <div className="flex-1 min-w-0">
+                  <Skeleton height={13} width="48%" />
+                  <Skeleton height={11} width="64%" className="mt-1" />
                 </div>
-                <Skeleton width={50} height={20} rounded={6} />
+                <Skeleton width={56} height={22} rounded={6} />
               </div>
             ))}
           </div>
@@ -211,11 +218,17 @@ export default function AdminOverviewWidgets({ locale = 'tr', members: membersPr
           </span>
         </div>
         {loading ? (
-          <div className="p-5 space-y-3">
+          // Row geometry matches the final attention rows (px-5 py-3.5
+          // container, 13px label, 22px-tall badge `.bz-badge` height).
+          <div>
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex justify-between items-center">
-                <Skeleton height={13} width="60%" />
-                <Skeleton width={32} height={20} rounded={6} />
+              <div
+                key={i}
+                className="flex justify-between items-center px-5 py-3.5"
+                style={{ borderBottom: '1px solid #F5F5F5' }}
+              >
+                <Skeleton height={13} width="58%" />
+                <Skeleton width={36} height={22} rounded={6} />
               </div>
             ))}
           </div>
