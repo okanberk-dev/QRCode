@@ -140,16 +140,18 @@ export function ContactFloat({ locale }: { locale: string }) {
     return () => window.removeEventListener('buaze:sticky-cta-visibility', handler);
   }, []);
 
-  // Hide on auth + onboarding only — bu sayfalarda form gürültü olur
-  // (kullanıcı zaten bir akışı tamamlıyor). Homepage en kritik conversion
-  // surface, baloncuk orada **görünmeli** (eski "homepage'de gizle" exclusion
-  // kaldırıldı, kullanıcı raporu gereği — CLAUDE.md §15.3).
-  // Stage 83 §38.163 — auth-gate added: authenticated users hide the float
-  // (they have in-app support channels). The hook lives at the top with
-  // the other useState calls (see line ~83) to comply with rules-of-hooks.
+  // Hide on auth + onboarding + dashboard (owner panel) — bu sayfalarda
+  // form gürültü olur (kullanıcı zaten bir akışı tamamlıyor) veya panel
+  // kullanıcılarının kendi support kanalları var. Homepage en kritik
+  // conversion surface, baloncuk orada **görünmeli** (eski "homepage'de
+  // gizle" exclusion kaldırıldı, kullanıcı raporu gereği — CLAUDE.md §15.3).
+  // Stage 83 §38.163 — auth-gate added: authenticated users hide the float.
+  // Path-based dashboard gate is deterministic — float never flashes during
+  // the ~50-200ms auth probe window on owner panel pages.
   if (
     current.startsWith(`${base}/auth`) ||
-    current === `${base}/onboarding` ||
+    current.startsWith(`${base}/onboarding`) ||
+    current.startsWith(`${base}/dashboard`) ||
     authPending ||
     isLoggedIn
   ) {
