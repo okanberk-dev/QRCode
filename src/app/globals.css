@@ -1680,7 +1680,12 @@ select.bz-input option:checked {
     width: auto !important;
     min-width: 0 !important;
     max-width: none !important;
-    max-height: min(70vh, 480px);
+    /* CLAUDE.md §40.3 mobile bottom nav (96px + safe-area, --dash-bottom-nav-h)
+       sheet'i alttan iter; 70vh hard limit landscape veya kısa viewport'ta nav
+       arkasına dökülmesini engelleyemiyordu. Üç-kademeli min(): viewport % +
+       hesaplanan dvh-clearance + 480px hard cap. Desktop'ta --dash-bottom-nav-h
+       0px (lg:+ override) → formül 100dvh-24px'e eşdeğer, hard cap devreye girer. */
+    max-height: min(70vh, calc(100dvh - var(--dash-bottom-nav-h, 0px) - 24px), 480px);
     border-radius: 18px;
     padding: 10px;
     transform-origin: bottom center;

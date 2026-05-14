@@ -261,7 +261,7 @@ export default function AdminBlogClient({ initialPosts }: AdminBlogClientProps) 
                             <MoreHorizontal size={14} strokeWidth={2} />
                           </button>
                         }
-                        className="w-48"
+                        className="sm:w-48"
                       >
                         <PulseMenuItem
                           icon={<Eye size={13} strokeWidth={2} />}
