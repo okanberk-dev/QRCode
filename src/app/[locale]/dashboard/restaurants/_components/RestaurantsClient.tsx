@@ -30,6 +30,13 @@ interface RestaurantsClientProps {
   initialNotificationEmail: string;
   selectedRestaurantId?: string | null;
   hasMultipleRestaurants?: boolean;
+  /**
+   * §22 franchise — `team_member` rolündeki kullanıcı (area manager) kendi
+   * lokasyonlarını yönetmek için bu sayfaya gelir. Başlık/alt yazı rol-aware,
+   * "Yeni İşletme" CTA team_member için gizli (backend `canWriteRestaurant`
+   * zaten reddediyor, UI'da gereksiz disabled state göstermiyoruz).
+   */
+  role?: string;
 }
 
 type CreateStep = 0 | 1 | 2;
@@ -120,7 +127,9 @@ export default function RestaurantsClient({
   initialNotificationEmail,
   selectedRestaurantId = null,
   hasMultipleRestaurants = false,
+  role = 'restaurant_owner',
 }: RestaurantsClientProps) {
+  const isTeamMember = role === 'team_member';
   const router = useRouter();
   const didBootstrapRef = useRef(false);
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants);
@@ -146,16 +155,21 @@ export default function RestaurantsClient({
 
   const copy = locale === 'tr'
     ? {
-        title: 'İşletmelerim',
-        subtitle: 'Restoranlarınızı, şubelerinizi veya mağazalarınızı tek panelden yönetin.',
+        eyebrow: isTeamMember ? 'YÖNETTİĞİN LOKASYONLAR' : 'İŞLETMELER',
+        title: isTeamMember ? 'Yönettiğin lokasyonlar' : 'İşletmelerim',
+        subtitle: isTeamMember
+          ? 'Sahibin sana atadığı lokasyonlar burada listelenir. Erişimin yalnızca bu listeyle sınırlıdır.'
+          : 'Restoranlarınızı, şubelerinizi veya mağazalarınızı tek panelden yönetin.',
         add: 'Yeni İşletme',
-        emptyTitle: 'Henüz işletme yok',
-        emptyText: 'İlk işletmenizi ekleyerek QR ve yorum toplamaya başlayın.',
+        emptyTitle: isTeamMember ? 'Henüz lokasyon atanmamış' : 'Henüz işletme yok',
+        emptyText: isTeamMember
+          ? 'İşletme sahibinden bir lokasyon yetkisi bekliyorsun. Atama yapıldığında burada görünür.'
+          : 'İlk işletmenizi ekleyerek QR ve yorum toplamaya başlayın.',
         manage: 'Yönet',
         qr: 'QR Kod',
         category: 'Kategori',
         reviews: 'Yorum',
-        search: 'İşletme ara',
+        search: isTeamMember ? 'Lokasyon ara' : 'İşletme ara',
         active: 'Aktif',
         all: 'Tümü',
         inactive: 'Devre Dışı Bırakılanlar',
@@ -165,19 +179,26 @@ export default function RestaurantsClient({
         deactivate: 'Devre dışı bırak',
         activeStatus: 'Aktif',
         inactiveStatus: 'Devre dışı',
-        scopeHint: 'Diğer işletmeleri görüntülemek için sol üstten işletme seçin.',
+        scopeHint: isTeamMember
+          ? 'Diğer lokasyonları görmek için sol üstten lokasyon seçin.'
+          : 'Diğer işletmeleri görüntülemek için sol üstten işletme seçin.',
       }
     : {
-        title: 'My Businesses',
-        subtitle: 'Manage your restaurants, branches, or stores from one panel.',
+        eyebrow: isTeamMember ? 'LOCATIONS YOU MANAGE' : 'BUSINESSES',
+        title: isTeamMember ? 'Locations you manage' : 'My Businesses',
+        subtitle: isTeamMember
+          ? 'Locations assigned to you by the owner are listed here. Your access is scoped to this list only.'
+          : 'Manage your restaurants, branches, or stores from one panel.',
         add: 'New Business',
-        emptyTitle: 'No business yet',
-        emptyText: 'Create your first business to start collecting feedback.',
+        emptyTitle: isTeamMember ? 'No locations assigned yet' : 'No business yet',
+        emptyText: isTeamMember
+          ? 'Waiting for the owner to grant access to a location. Assignments appear here.'
+          : 'Create your first business to start collecting feedback.',
         manage: 'Manage',
         qr: 'QR Code',
         category: 'Category',
         reviews: 'Reviews',
-        search: 'Search businesses',
+        search: isTeamMember ? 'Search locations' : 'Search businesses',
         active: 'Active',
         all: 'All',
         inactive: 'Disabled',
@@ -187,7 +208,9 @@ export default function RestaurantsClient({
         deactivate: 'Disable',
         activeStatus: 'Active',
         inactiveStatus: 'Disabled',
-        scopeHint: 'To view other businesses, choose them from the top-left business selector.',
+        scopeHint: isTeamMember
+          ? 'To view other locations, choose them from the top-left selector.'
+          : 'To view other businesses, choose them from the top-left business selector.',
       };
 
   const fetchRestaurants = async () => {
@@ -389,14 +412,16 @@ export default function RestaurantsClient({
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
-        eyebrow={locale === 'tr' ? 'İŞLETMELER' : 'BUSINESSES'}
+        eyebrow={copy.eyebrow}
         title={copy.title}
         description={copy.subtitle}
         actions={
-          <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
-            <Plus size={14} strokeWidth={2} />
-            {copy.add}
-          </button>
+          !isTeamMember ? (
+            <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
+              <Plus size={14} strokeWidth={2} />
+              {copy.add}
+            </button>
+          ) : undefined
         }
       />
 
@@ -446,7 +471,7 @@ export default function RestaurantsClient({
           title={emptyTitle}
           body={emptyText}
           action={
-            statusFilter !== 'passive' ? (
+            statusFilter !== 'passive' && !isTeamMember ? (
               <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
                 <Plus size={14} strokeWidth={2} />
                 {copy.add}

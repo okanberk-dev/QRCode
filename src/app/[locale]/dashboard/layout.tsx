@@ -1,8 +1,9 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { verifyJwt, isAdminRole } from '@/lib/auth';
+import { verifyJwt, isAdminRole, type PanelActor } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIds } from '@/lib/panel-access';
 import UserDashboardShell from '@/components/dashboard/UserDashboardShell';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { Locale } from '@/lib/translations';
@@ -119,22 +120,7 @@ export default async function DashboardLayout({
       trialEndsAt: true,
       createdAt: true,
       isActive: true,
-      restaurants: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          category: true,
-          primaryColor: true,
-          isActive: true,
-          campaignsEnabled: true,
-          menuEnabled: true,
-          externalPlatformsEnabled: true,
-          _count: { select: { feedbacks: true } },
-        },
-        orderBy: { createdAt: 'asc' },
-        take: 50,
-      },
+      role: true,
     },
   });
 
@@ -147,9 +133,46 @@ export default async function DashboardLayout({
     redirect(`/${locale}/pricing?trial=expired`);
   }
 
+  // §22 franchise destekli scope — sidebar workspace switcher + downstream
+  // page'ler doğru subset görür. Owner kendi sahip olduğu tüm restoranları,
+  // team_member (franchise area manager) `TeamMember.locations` array'indeki
+  // alt-küme'yi görür. Eski flat `prisma.user.findUnique({ restaurants })`
+  // pattern owner-only data dönüyordu; team_member için ya boş ya da
+  // owner-blind IDOR riski yaratıyordu (envanter notlarına bkz).
+  const actor: PanelActor = {
+    id: user.id,
+    role: user.role || 'restaurant_owner',
+    restaurantId: null,
+    username: null,
+    email: user.email,
+    plan: user.plan,
+    source: 'user',
+  };
+  const scopedIds = await getScopedRestaurantIds(actor);
+  const restaurants =
+    scopedIds && scopedIds.length > 0
+      ? await prisma.restaurant.findMany({
+          where: { id: { in: scopedIds } },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            category: true,
+            primaryColor: true,
+            isActive: true,
+            campaignsEnabled: true,
+            menuEnabled: true,
+            externalPlatformsEnabled: true,
+            _count: { select: { feedbacks: true } },
+          },
+          orderBy: { createdAt: 'asc' },
+          take: 50,
+        })
+      : [];
+
   const announcements = await fetchActiveAnnouncements(locale);
   const { logoUrl } = await getSiteSettings();
-  const totalFeedbacks = user.restaurants.reduce((sum, r) => sum + r._count.feedbacks, 0);
+  const totalFeedbacks = restaurants.reduce((sum, r) => sum + r._count.feedbacks, 0);
 
   return (
     <UserDashboardShell
@@ -163,10 +186,10 @@ export default async function DashboardLayout({
         trialEndsAt: user.trialEndsAt?.toISOString() || null,
       }}
       workspace={{
-        primaryName: user.restaurants[0]?.name ?? null,
-        locationCount: user.restaurants.length,
+        primaryName: restaurants[0]?.name ?? null,
+        locationCount: restaurants.length,
         feedbackCount: totalFeedbacks,
-        restaurants: user.restaurants.map((restaurant) => ({
+        restaurants: restaurants.map((restaurant) => ({
           id: restaurant.id,
           name: restaurant.name,
           slug: restaurant.slug,

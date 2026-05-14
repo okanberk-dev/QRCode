@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { verifyJwt, isAdminRole } from '@/lib/auth';
+import { verifyJwt, isAdminRole, type PanelActor } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIds } from '@/lib/panel-access';
 import type { Locale } from '@/lib/translations';
 import { resolveActiveRestaurantId } from '@/lib/active-business';
 import RestaurantsClient from './_components/RestaurantsClient';
@@ -25,43 +26,65 @@ export default async function DashboardRestaurantsPage({ params, searchParams }:
   if (!payload || typeof payload.userId !== 'string') {
     redirect(`/${locale}/auth/login?next=/${locale}/dashboard/restaurants`);
   }
-  const role = typeof payload.role === 'string' ? payload.role : 'restaurant_owner';
-  if (isAdminRole(role)) {
+  const tokenRole = typeof payload.role === 'string' ? payload.role : 'restaurant_owner';
+  if (isAdminRole(tokenRole)) {
     redirect(`/${locale}/auth/login?next=/${locale}/dashboard/restaurants`);
   }
 
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
     select: {
+      id: true,
       email: true,
-      restaurants: {
-        where: { isActive: true },
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          category: true,
-          notificationEmail: true,
-          primaryColor: true,
-          isActive: true,
-          createdAt: true,
-          _count: { select: { feedbacks: true } },
-        },
-        orderBy: { createdAt: 'asc' },
-      },
+      plan: true,
+      role: true,
     },
   });
 
   if (!user) redirect(`/${locale}/auth/login?next=/${locale}/dashboard/restaurants`);
 
+  // §22 franchise scope — owner kendi sahip olduğu tüm aktif restoranları,
+  // team_member (franchise area manager) `TeamMember.locations` subset'ini
+  // görür. Backend `getScopedRestaurantIds` her iki rol için doğru filtreyi
+  // döner; layout-side fix ile aynı pattern (CLAUDE.md §22 + panel-access).
+  const role = user.role || 'restaurant_owner';
+  const actor: PanelActor = {
+    id: user.id,
+    role,
+    restaurantId: null,
+    username: null,
+    email: user.email,
+    plan: user.plan,
+    source: 'user',
+  };
+  const scopedIds = await getScopedRestaurantIds(actor);
+  const restaurants =
+    scopedIds && scopedIds.length > 0
+      ? await prisma.restaurant.findMany({
+          where: { id: { in: scopedIds }, isActive: true },
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            category: true,
+            notificationEmail: true,
+            primaryColor: true,
+            isActive: true,
+            createdAt: true,
+            _count: { select: { feedbacks: true } },
+          },
+          orderBy: { createdAt: 'asc' },
+        })
+      : [];
+
   const selectedRestaurantId = resolveActiveRestaurantId({
-    restaurants: user.restaurants,
+    restaurants,
     queryRestaurantId: query?.restaurantId ?? query?.restaurant,
     storedRestaurantId: null,
   });
   const visibleRestaurants = selectedRestaurantId
-    ? user.restaurants.filter((restaurant) => restaurant.id === selectedRestaurantId)
-    : user.restaurants;
+    ? restaurants.filter((restaurant) => restaurant.id === selectedRestaurantId)
+    : restaurants;
 
   return (
     <RestaurantsClient
@@ -72,7 +95,8 @@ export default async function DashboardRestaurantsPage({ params, searchParams }:
       }))}
       initialNotificationEmail={user.email}
       selectedRestaurantId={selectedRestaurantId}
-      hasMultipleRestaurants={user.restaurants.length > 1}
+      hasMultipleRestaurants={restaurants.length > 1}
+      role={role}
     />
   );
 }
