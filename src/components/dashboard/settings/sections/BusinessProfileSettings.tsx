@@ -226,6 +226,7 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
               maxLength={32}
               placeholder="+90 5XX XXX XX XX"
               inputMode="tel"
+              enterKeyHint="next"
             />
           </Field>
           <Field
