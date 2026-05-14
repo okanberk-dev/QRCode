@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, User, Key, Check, Mail, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Loader2, User, Key, Check, Mail, ShieldCheck, AlertCircle, Globe } from 'lucide-react';
 import { AlertBanner, PageHeader } from '@/components/ui';
+import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 
 interface ProfileData {
   id: string;
@@ -12,6 +13,8 @@ interface ProfileData {
 }
 
 export default function AdminProfilePage() {
+  const { locale, setLocale } = useAdminTranslation();
+  const isTr = locale === 'tr';
   const [loading, setLoading] = useState(true);
   const [savingEmail, setSavingEmail] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
@@ -265,6 +268,54 @@ export default function AdminProfilePage() {
               >
                 {profile?.username}
                 {isEnvAdmin && ' (varsayılan — değiştirilemez)'}
+              </div>
+            </div>
+          </section>
+
+          {/* Language preference card — locale switcher moved here from
+              sidebar bottom row. Per-admin preference (ADMIN_LOCALE cookie
+              via AdminTranslationProvider); change reloads window so
+              SSR-rendered chrome (sidebar, topbar, breadcrumbs) re-renders
+              in the new language. Available to every admin role
+              (superadmin / manager / restaurant_owner / staff). */}
+          <section className="bz-card p-5 sm:p-7">
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAFAFA] border border-[#EDEDED]">
+                <Globe size={16} strokeWidth={2} />
+              </span>
+              <h3 className="bz-h-tight" style={{ fontSize: 17 }}>
+                {isTr ? 'Dil tercihi' : 'Language preference'}
+              </h3>
+            </div>
+            <p className="text-[13px] text-[#525252] leading-[1.55] mb-4">
+              {isTr
+                ? 'Panel arayüzünün dili. Tercih bu cihaza özel saklanır; değişiklik sayfayı yeniler.'
+                : 'Panel UI language. Preference is stored per device; switching reloads the page.'}
+            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="space-y-1.5 flex-1">
+                <label
+                  htmlFor="admin-locale-select"
+                  className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]"
+                >
+                  {isTr ? 'Arayüz dili' : 'Interface language'}
+                </label>
+                <select
+                  id="admin-locale-select"
+                  value={locale}
+                  onChange={(e) => setLocale(e.target.value as 'tr' | 'en')}
+                  className="bz-input cursor-pointer"
+                  aria-label={isTr ? 'Arayüz dili' : 'Interface language'}
+                >
+                  <option value="tr">Türkçe (TR)</option>
+                  <option value="en">English (EN)</option>
+                </select>
+              </div>
+              <div className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] px-3 py-2 text-[11px] text-[#525252] sm:max-w-[200px]">
+                <span>{isTr ? 'Şu anki dil:' : 'Current:'}</span>{' '}
+                <span className="font-mono font-semibold text-[#0A0A0A]">
+                  {locale.toUpperCase()}
+                </span>
               </div>
             </div>
           </section>

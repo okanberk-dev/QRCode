@@ -128,7 +128,12 @@ export function Modal({
       aria-modal="true"
       aria-label={ariaLabel || (typeof title === "string" ? title : undefined)}
       onClick={onClose}
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center"
+      // z-50 — CLAUDE.md §40.3 hierarchy: modals + drawers + palette live
+      // at z-50; cookie banner (z-[100]) ve impersonation banner (z-[60])
+      // bilinçli olarak üstte. Eski `z-[100]` cookie banner ile çakışıyordu:
+      // KVKK onay banner'ı modalları örtüyordu, modal CTA'sı tıklanamıyordu
+      // (cookie banner same z-index, later DOM render → topmost).
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       style={{
         background: "rgba(10,10,10,0.4)",
         backdropFilter: "blur(8px)",

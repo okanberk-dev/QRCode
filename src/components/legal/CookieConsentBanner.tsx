@@ -178,6 +178,22 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
     }
   }, []);
 
+  // ESC handler for "customize" modal (WCAG 2.1 dialog disipline). Banner
+  // başlangıç card'ı tarayıcı görünümünden çıkamaz (consent zorunlu) ama
+  // customize modal `role="dialog"` non-blocking secondary screen — ESC
+  // ile kapatılabilmeli. Backdrop click out zaten var; bu klavye eşi.
+  useEffect(() => {
+    if (!showCustomize) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setShowCustomize(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showCustomize]);
+
   if (!mounted || !visible) return null;
 
   const acceptAll = () => {
