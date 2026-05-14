@@ -72,17 +72,21 @@ export function SkPageHeader({
 
 /**
  * 4-stat KPI grid (StatCard equivalent). Mobile 2-col, desktop N-col.
- * Static class strings — see `SHELL_MAX_CLASS` note in this file.
+ *
+ * Inline literal grid-cols-* classes — Tailwind v4 picks up class strings
+ * that appear verbatim in source. The previous static `Record` map was
+ * also literal but the v4 scanner sometimes missed map values referenced
+ * by computed index; this inline branch removes that ambiguity.
  */
-const STAT_GRID_COLS: Record<2 | 3 | 4, string> = {
-  2: 'lg:grid-cols-2',
-  3: 'lg:grid-cols-3',
-  4: 'lg:grid-cols-4',
-};
-
 export function SkStatGrid({ count = 4 }: { count?: 2 | 3 | 4 }) {
+  const cols =
+    count === 4
+      ? 'grid grid-cols-2 lg:grid-cols-4 gap-3'
+      : count === 3
+        ? 'grid grid-cols-2 lg:grid-cols-3 gap-3'
+        : 'grid grid-cols-2 lg:grid-cols-2 gap-3';
   return (
-    <div className={`grid grid-cols-2 ${STAT_GRID_COLS[count]} gap-3`}>
+    <div className={cols}>
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="bz-card p-4 space-y-3">
           <SkBox className="h-3 w-16" />
@@ -120,15 +124,9 @@ export function SkCard({
 
 /**
  * Table skeleton — header strip + rows. Used by list pages.
- * Static class strings for grid-cols (see SHELL_MAX_CLASS note).
+ *
+ * Inline literal grid-cols-* classes (see SkStatGrid comment).
  */
-const TABLE_COLS_CLASS: Record<3 | 4 | 5 | 6, string> = {
-  3: 'grid-cols-3',
-  4: 'grid-cols-4',
-  5: 'grid-cols-5',
-  6: 'grid-cols-6',
-};
-
 export function SkTable({
   rows = 6,
   cols = 4,
@@ -136,12 +134,19 @@ export function SkTable({
   rows?: number;
   cols?: 3 | 4 | 5 | 6;
 }) {
-  const colsClass = TABLE_COLS_CLASS[cols];
+  const colsClass =
+    cols === 6
+      ? 'grid gap-3 grid-cols-6'
+      : cols === 5
+        ? 'grid gap-3 grid-cols-5'
+        : cols === 3
+          ? 'grid gap-3 grid-cols-3'
+          : 'grid gap-3 grid-cols-4';
   return (
     <div className="bz-card overflow-hidden">
       {/* Header strip */}
       <div className="border-b border-[#EDEDED] px-4 py-3">
-        <div className={`grid gap-3 ${colsClass}`}>
+        <div className={colsClass}>
           {Array.from({ length: cols }).map((_, i) => (
             <SkBox key={i} className="h-3 w-20" />
           ))}
@@ -151,7 +156,7 @@ export function SkTable({
       <div className="divide-y divide-[#EDEDED]">
         {Array.from({ length: rows }).map((_, r) => (
           <div key={r} className="px-4 py-4">
-            <div className={`grid gap-3 ${colsClass}`}>
+            <div className={colsClass}>
               {Array.from({ length: cols }).map((_, c) => (
                 <SkBox
                   key={c}
@@ -168,6 +173,8 @@ export function SkTable({
 
 /**
  * Card grid skeleton — N cards arranged in responsive grid.
+ * Inline full className per branch — guarantees Tailwind picks every
+ * responsive variant up (see SkStatGrid comment).
  */
 export function SkCardGrid({
   count = 6,
@@ -176,14 +183,14 @@ export function SkCardGrid({
   count?: number;
   cols?: 2 | 3 | 4;
 }) {
-  const colsClass =
-    cols === 2
-      ? 'sm:grid-cols-2'
-      : cols === 3
-        ? 'sm:grid-cols-2 lg:grid-cols-3'
-        : 'sm:grid-cols-2 lg:grid-cols-4';
+  const wrapperClass =
+    cols === 4
+      ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'
+      : cols === 2
+        ? 'grid grid-cols-1 sm:grid-cols-2 gap-4'
+        : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
   return (
-    <div className={`grid grid-cols-1 ${colsClass} gap-4`}>
+    <div className={wrapperClass}>
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="bz-card p-4 space-y-3">
           <SkBox className="h-5 w-32" />
@@ -234,22 +241,22 @@ export function SkTabStrip({ count = 5 }: { count?: number }) {
 
 /**
  * Wrapper for a complete page skeleton. Caller passes children which
- * sit inside the canonical `mx-auto max-w-[N] px-... py-... space-y-5`
- * shell.
+ * sit inside the canonical `mx-auto w-full max-w-[N] px-... py-...
+ * space-y-5` shell.
  *
  * `max` defaults to `1200px` (most pages); pass `1100` for settings /
  * forms, `1400` for data-dense tables, `640` for narrow error/empty
- * states. Static class strings — Tailwind v4 needs literal names to
- * generate utilities (template literal `max-w-[${N}px]` is not visible
- * to the scanner).
+ * states.
+ *
+ * **Width guarantee**: uses inline `style={{ maxWidth }}` instead of a
+ * Tailwind arbitrary `max-w-[Npx]` utility. In a `flex flex-col` parent
+ * (panel main element), Tailwind v4 sometimes failed to compile
+ * arbitrary max-w values pulled from a Record map by computed index —
+ * the resulting wrapper collapsed to intrinsic content width and
+ * appeared as a narrow stripe centered in the viewport. Inline style
+ * is render-time and bypasses the scanner entirely. `w-full` ensures
+ * the element stretches to parent width before max-width caps it.
  */
-const SHELL_MAX_CLASS: Record<640 | 1100 | 1200 | 1400, string> = {
-  640: 'max-w-[640px]',
-  1100: 'max-w-[1100px]',
-  1200: 'max-w-[1200px]',
-  1400: 'max-w-[1400px]',
-};
-
 export function SkPageShell({
   max = 1200,
   children,
@@ -259,7 +266,8 @@ export function SkPageShell({
 }) {
   return (
     <div
-      className={`mx-auto ${SHELL_MAX_CLASS[max]} px-4 sm:px-7 py-6 lg:py-8 space-y-5`}
+      className="mx-auto w-full px-4 sm:px-7 py-6 lg:py-8 space-y-5"
+      style={{ maxWidth: `${max}px` }}
     >
       {children}
     </div>
