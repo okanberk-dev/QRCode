@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { validateBody } from '@/lib/api/validate';
@@ -72,7 +73,28 @@ export async function PATCH(
           where: { feedback: { is: { restaurantId: id } } },
         });
       } catch (draftErr) {
-        console.warn('[admin restaurant feature-access] pending draft cleanup skipped:', draftErr);
+        // Owner panel audit Wave 2 PR-5 (C5): cleanup fail silent
+        // observability gap kapatıldı. Pulse AI master kapatılırken bekleyen
+        // draft'lar temizlenmezse owner inbox'ında stale draft görünür
+        // (UI rules disabled flag respekt ediyor ama DB drift olur).
+        // Sentry warning (§26.5 paterni — `route` tag + `extra` payload
+        // PII-safe `restaurantId` only, KVKK §37.7) → operatör dashboard'da
+        // görünür, manuel cleanup tetikleyebilir.
+        console.warn(
+          '[admin restaurant feature-access] pending draft cleanup skipped:',
+          draftErr,
+        );
+        Sentry.captureMessage('FeedbackAiDraft cleanup failed', {
+          level: 'warning',
+          tags: {
+            route: 'admin.feature-access.update',
+            trigger: 'pulseAiEnabled-disable',
+          },
+          extra: {
+            restaurantId: id,
+            error: (draftErr as Error)?.message ?? String(draftErr),
+          },
+        });
       }
     }
 
