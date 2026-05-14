@@ -262,14 +262,28 @@ export function validateMenuItem(body: unknown, opts: { partial?: boolean } = {}
     // Images are stored either as an http(s) URL or as an inline base64
     // data URL (produced by the upload endpoint). Max length ~300KB keeps
     // base64 headroom for ~220KB binary images (≈1200px WebP@80).
+    //
+    // Wave 2 PR-4 audit fix (A3 SVG sanitize loose): eski `data:image/`
+    // prefix guard `data:image/svg+xml;base64,...` payload'ı kabul ediyordu
+    // (SVG `<script>` → stored XSS). Yeni whitelist: sadece raster MIME
+    // (jpeg/png/webp/gif/avif). Upload endpoint zaten `sharp` ile WebP
+    // üretiyor (`menu/upload/route.ts:108`) — bu kontrol legacy + manual
+    // imageUrl POST'ları kapsar.
     const raw = typeof b.imageUrl === 'string' ? b.imageUrl.trim() : null;
     if (!raw) {
       out.imageUrl = null;
     } else {
-      const isDataUrl = raw.startsWith('data:image/');
-      const maxLen = isDataUrl ? 300_000 : 1000;
-      if (raw.length > maxLen) return { ok: false, error: 'Görsel çok büyük' };
-      if (!isDataUrl && !isValidUrl(raw)) return { ok: false, error: 'Görsel bağlantısı geçersiz' };
+      const DATA_URL_RASTER_RE = /^data:image\/(jpeg|jpg|png|webp|gif|avif);base64,/i;
+      const isDataUrl = raw.startsWith('data:');
+      if (isDataUrl) {
+        if (!DATA_URL_RASTER_RE.test(raw)) {
+          return { ok: false, error: 'Görsel formatı desteklenmiyor (yalnız JPEG/PNG/WebP/GIF/AVIF)' };
+        }
+        if (raw.length > 300_000) return { ok: false, error: 'Görsel çok büyük' };
+      } else {
+        if (raw.length > 1000) return { ok: false, error: 'Görsel bağlantısı çok uzun' };
+        if (!isValidUrl(raw)) return { ok: false, error: 'Görsel bağlantısı geçersiz' };
+      }
       out.imageUrl = raw;
     }
   }
