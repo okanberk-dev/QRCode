@@ -709,8 +709,8 @@ if (!quota.allowed) {
 `src/components/marketing/ContactFloat.tsx` — marketing surface'inde sticky lead-capture widget (chat-style bubble + inline form, `/contact` sayfasına gitmeden direkt `/api/contact` POST).
 
 **Mount koşulları:**
-- `src/app/[locale]/layout.tsx:215` — sadece **logged-out (anonymous)** kullanıcılarda render edilir. Logged-in panel kullanıcıları dashboard support kanallarını kullanır.
-- Component-içi gating (`ContactFloat.tsx:92`) — `auth/*` ve `onboarding` path'lerinde gizli (form akış gürültüsü olur). **Homepage hariç değil** — ana conversion surface'ında baloncuk görünür.
+- `src/app/[locale]/layout.tsx:240` — `[locale]/*` tree'sinin tüm sayfalarında mount edilir (marketing + dashboard); component kendi içinde gizleme kararını verir.
+- Component-içi gating (`ContactFloat.tsx:150-157`) — `auth/*`, `onboarding/*` ve `dashboard/*` path'lerinde **deterministik** gizli; ayrıca auth probe sonrası logged-in user'larda gizli. Path-based dashboard gate kritik: async auth probe çözülene kadar (~50-200ms) baloncuk owner panelde flash etmez. **Homepage hariç değil** — ana conversion surface'ında baloncuk görünür.
 
 **Bot guard parity:** `/contact` sayfasıyla aynı honeypot + dwell-time gate (`MIN_FILL_MS`).
 
