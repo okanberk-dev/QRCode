@@ -609,10 +609,25 @@ export async function DELETE(
   }
 
   try {
-    const currentRest = await prisma.restaurant.findUnique({ where: { id } });
+    // Snapshot for audit log + payload context before cascade wipe.
+    // `select` minimal — KVKK data minimization (no PII beyond what's needed
+    // to identify the deleted row in post-mortem).
+    const currentRest = await prisma.restaurant.findUnique({
+      where: { id },
+      select: { id: true, name: true, slug: true, category: true, userId: true },
+    });
     if (!currentRest) {
       return ApiErrors.notFound('İşletme bulunamadı');
     }
+
+    // Cascade counts captured pre-transaction for the audit payload — gives
+    // operator triage context ("delete wiped 1.2K feedbacks") without
+    // re-querying after the row vanishes.
+    const [feedbackCount, qrCount, menuItemCount] = await Promise.all([
+      prisma.feedback.count({ where: { restaurantId: id } }),
+      prisma.qrGeneration.count({ where: { restaurantId: id } }),
+      prisma.menuItem.count({ where: { restaurantId: id } }),
+    ]);
 
     // Hard delete: delete related records first to avoid foreign key constraints.
     // Restaurant has several cascading relations, but menu categories are
@@ -627,6 +642,34 @@ export async function DELETE(
       prisma.menuCategory.deleteMany({ where: { restaurantId: id } }),
       prisma.restaurant.delete({ where: { id } })
     ]);
+
+    // Append-only audit log (CLAUDE.md §37.2 C — destructive action audit
+    // zorunluluğu). Try/catch ile sarılı: AdminAuditLog tablosu drift /
+    // table missing durumunda DELETE mantığı çökmesin. `actorSource` JWT
+    // payload'tan ('admin' | 'user'); `targetId` silinen restoran id'si.
+    try {
+      await prisma.adminAuditLog.create({
+        data: {
+          actorId: actor.id,
+          actorSource: actor.source,
+          action: 'restaurant.delete',
+          targetId: id,
+          payload: {
+            name: currentRest.name,
+            slug: currentRest.slug,
+            category: currentRest.category,
+            ownerUserId: currentRest.userId,
+            cascade: {
+              feedback: feedbackCount,
+              qrGeneration: qrCount,
+              menuItem: menuItemCount,
+            },
+          },
+        },
+      });
+    } catch (auditErr) {
+      console.warn('[audit] restaurant.delete write failed (non-fatal)', (auditErr as Error).message);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
