@@ -37,6 +37,27 @@ async function getTeamMemberScope(actor: PanelActor): Promise<string[]> {
   );
 }
 
+/**
+ * §22 viewer-mode UI gating — `team_member` rolündeki kullanıcının
+ * `TeamMember.role` ('owner' | 'manager' | 'staff' | 'viewer') değerini döner.
+ * Owner / admin / manager actor'lar için `null` (gating uygulanmaz).
+ *
+ * Backend zaten `canWriteFeedback` + `canWriteRestaurant` ile viewer'ı write
+ * action'lardan reddediyor (`role !== 'viewer'` check). UI bu helper'la
+ * paralel olarak butonları gizler / disabled gösterir — owner viewer'a "read
+ * only" gibi davransın diye.
+ */
+export async function getTeamMemberRole(actor: PanelActor): Promise<string | null> {
+  if (actor.role !== 'team_member') return null;
+  const email = actor.email?.toLowerCase().trim();
+  if (!email) return null;
+  const member = await prisma.teamMember.findFirst({
+    where: { email, status: 'active' },
+    select: { role: true },
+  });
+  return member?.role ?? null;
+}
+
 export async function getScopedRestaurantIds(actor: PanelActor) {
   if (actor.role === 'manager') {
     return actor.restaurantId ? [actor.restaurantId] : [];

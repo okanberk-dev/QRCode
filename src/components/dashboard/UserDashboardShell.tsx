@@ -72,6 +72,13 @@ interface UserDashboardShellProps {
   workspace?: DashboardWorkspace;
   announcements?: DashboardAnnouncement[];
   logoUrl?: string | null;
+  /**
+   * §22 viewer-mode — `TeamMember.role='viewer'` ise true. Topbar altında
+   * kalıcı "Sadece okuma" banner'ı görünür; downstream sayfalar (restaurants
+   * list, feedbacks, vb.) bu flag ile write button'larını gizler. Backend
+   * `canWriteFeedback`/`canWriteRestaurant` zaten reddediyor — UI sync.
+   */
+  viewerMode?: boolean;
   children: React.ReactNode;
 }
 
@@ -169,7 +176,7 @@ function saveSidebarScroll(scrollTop: number) {
   }
 }
 
-export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, children }: UserDashboardShellProps) {
+export default function UserDashboardShell({ locale, user, workspace, announcements = [], logoUrl, viewerMode = false, children }: UserDashboardShellProps) {
   void TOP_BAR_MAP;
   const pathname = usePathname();
   const router = useRouter();
@@ -1236,6 +1243,23 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         >
           {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 7 && (
             <TrialBanner locale={locale} daysLeft={trialDaysLeft} />
+          )}
+          {viewerMode && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-2 border-b border-[#FDE68A] bg-[#FFFBEB] px-4 py-2 text-[12px] text-[#92400E] sm:px-7"
+            >
+              <span aria-hidden className="inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[#D97706]" />
+              <span className="font-medium">
+                {locale === 'tr' ? 'Sadece okuma yetkin var.' : 'Read-only access.'}
+              </span>
+              <span className="text-[#92400E]/80">
+                {locale === 'tr'
+                  ? 'Yanıt yazma, atama ve düzenleme aksiyonları işletme sahibi tarafından kapatıldı.'
+                  : 'Reply, assign and edit actions are disabled by the workspace owner.'}
+              </span>
+            </div>
           )}
           {announcements.length > 0 && (
             <AnnouncementBanner announcements={announcements} locale={locale} />

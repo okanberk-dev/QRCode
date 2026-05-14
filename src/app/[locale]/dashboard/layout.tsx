@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { verifyJwt, isAdminRole, type PanelActor } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { getScopedRestaurantIds, getTeamMemberRole } from '@/lib/panel-access';
 import UserDashboardShell from '@/components/dashboard/UserDashboardShell';
 import type { DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
 import type { Locale } from '@/lib/translations';
@@ -148,7 +148,16 @@ export default async function DashboardLayout({
     plan: user.plan,
     source: 'user',
   };
-  const scopedIds = await getScopedRestaurantIds(actor);
+  // §22 viewer-mode UI gating — team_member ise TeamMember.role'u çek;
+  // owner için null döner (gating uygulanmaz). Helper Owner/admin/manager için
+  // erken return ile DB hit yapmaz. `getScopedRestaurantIds` ile paralel
+  // (ikisi de team_member için kısa findFirst/findMany; owner için biri
+  // findMany biri no-op — Promise.all güvenli).
+  const [scopedIds, teamRole] = await Promise.all([
+    getScopedRestaurantIds(actor),
+    getTeamMemberRole(actor),
+  ]);
+  const viewerMode = teamRole === 'viewer';
   const restaurants =
     scopedIds && scopedIds.length > 0
       ? await prisma.restaurant.findMany({
@@ -179,6 +188,7 @@ export default async function DashboardLayout({
       locale={locale}
       announcements={announcements}
       logoUrl={logoUrl}
+      viewerMode={viewerMode}
       user={{
         name: user.name,
         email: user.email,

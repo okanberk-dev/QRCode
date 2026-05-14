@@ -28,8 +28,6 @@ interface RestaurantsClientProps {
   locale: Locale;
   initialRestaurants: Restaurant[];
   initialNotificationEmail: string;
-  selectedRestaurantId?: string | null;
-  hasMultipleRestaurants?: boolean;
   /**
    * §22 franchise — `team_member` rolündeki kullanıcı (area manager) kendi
    * lokasyonlarını yönetmek için bu sayfaya gelir. Başlık/alt yazı rol-aware,
@@ -37,6 +35,12 @@ interface RestaurantsClientProps {
    * zaten reddediyor, UI'da gereksiz disabled state göstermiyoruz).
    */
   role?: string;
+  /**
+   * §22 viewer-mode — `TeamMember.role='viewer'` ise true. Deaktifleştir /
+   * Aktifleştir butonu gizlenir; backend `canWriteRestaurant` zaten viewer'ı
+   * reddediyor (`role !== 'viewer'`), UI sync.
+   */
+  viewerMode?: boolean;
 }
 
 type CreateStep = 0 | 1 | 2;
@@ -125,11 +129,11 @@ export default function RestaurantsClient({
   locale,
   initialRestaurants,
   initialNotificationEmail,
-  selectedRestaurantId = null,
-  hasMultipleRestaurants = false,
   role = 'restaurant_owner',
+  viewerMode = false,
 }: RestaurantsClientProps) {
   const isTeamMember = role === 'team_member';
+  const canMutate = !viewerMode;
   const router = useRouter();
   const didBootstrapRef = useRef(false);
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants);
@@ -179,9 +183,6 @@ export default function RestaurantsClient({
         deactivate: 'Devre dışı bırak',
         activeStatus: 'Aktif',
         inactiveStatus: 'Devre dışı',
-        scopeHint: isTeamMember
-          ? 'Diğer lokasyonları görmek için sol üstten lokasyon seçin.'
-          : 'Diğer işletmeleri görüntülemek için sol üstten işletme seçin.',
       }
     : {
         eyebrow: isTeamMember ? 'LOCATIONS YOU MANAGE' : 'BUSINESSES',
@@ -208,17 +209,16 @@ export default function RestaurantsClient({
         deactivate: 'Disable',
         activeStatus: 'Active',
         inactiveStatus: 'Disabled',
-        scopeHint: isTeamMember
-          ? 'To view other locations, choose them from the top-left selector.'
-          : 'To view other businesses, choose them from the top-left business selector.',
       };
 
   const fetchRestaurants = async () => {
     setLoading(true);
     setFetchError('');
     try {
+      // §22 — Sayfa scope-blind. Switcher seçimi (?restaurantId=) bu listede
+      // filter etmez; owner/team_member kendi tüm scope'unu görür. Status
+      // filter (active/passive/all) tek query param.
       const params = new URLSearchParams({ status: statusFilter });
-      if (selectedRestaurantId) params.set('restaurantId', selectedRestaurantId);
       const response = await fetch(`/api/restaurants?${params.toString()}`);
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
@@ -242,10 +242,10 @@ export default function RestaurantsClient({
       if (statusFilter === 'active') return;
     }
     fetchRestaurants();
-    // fetchRestaurants captures status + selectedRestaurantId; both should
-    // refresh the scoped owner list.
+    // fetchRestaurants captures statusFilter; sayfa scope-blind olduğu için
+    // selectedRestaurantId dependency'si kaldırıldı.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, selectedRestaurantId]);
+  }, [statusFilter]);
 
   const handleNameChange = (name: string) => {
     if (isManualSlug) {
@@ -388,11 +388,11 @@ export default function RestaurantsClient({
     );
   }
 
-  const scopedRestaurants = selectedRestaurantId
-    ? restaurants.filter((restaurant) => restaurant.id === selectedRestaurantId)
-    : restaurants;
-
-  const filtered = scopedRestaurants.filter(
+  // §22 — Sayfa scope-blind. Sahibi/yönettiği TÜM restoranlar her zaman
+  // listelenir. Sidebar switcher seçimi (?restaurantId=) sadece downstream
+  // context-scoped sayfalarda (dashboard / feedbacks / analytics) etkili;
+  // bu sayfada owner tüm portföyü gözlemleyip yönetmek istediğini seçer.
+  const filtered = restaurants.filter(
     (r) =>
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.category.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -431,12 +431,6 @@ export default function RestaurantsClient({
         </AlertBanner>
       )}
 
-      {hasMultipleRestaurants && selectedRestaurantId && (
-        <AlertBanner kind="info">
-          {copy.scopeHint}
-        </AlertBanner>
-      )}
-
       {/*
         Stage 80 §38.160 — Mobile filter toolbar sticky-on-scroll.
         Topbar h-16 (64px) altında pin'lenir; tab + arama kutusu içerik
@@ -465,7 +459,7 @@ export default function RestaurantsClient({
         </div>
       </div>
 
-      {scopedRestaurants.length === 0 ? (
+      {restaurants.length === 0 ? (
         <EmptyState
           icon={<Store size={22} />}
           title={emptyTitle}
@@ -584,7 +578,11 @@ export default function RestaurantsClient({
                     `sm:min-h-0 sm:min-w-0` override sm:+ desktop'ta
                     utility override eder (button compact density intact).
                   */}
-                  <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div
+                    className={`mt-4 grid gap-2 ${
+                      canMutate ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-3'
+                    }`}
+                  >
                     <Link
                       href={`/${locale}/dashboard/restaurants/${restaurant.id}`}
                       className="bz-btn-ghost justify-center text-[12px] bz-touch-target sm:min-h-0 sm:min-w-0"
@@ -597,20 +595,26 @@ export default function RestaurantsClient({
                     >
                       {copy.qr}
                     </Link>
-                    <button
-                      type="button"
-                      disabled={actionLoadingId === restaurant.id}
-                      onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
-                      className={`inline-flex items-center justify-center bz-touch-target sm:min-h-0 sm:min-w-0 rounded-full px-4 py-2.5 text-center text-[12px] font-medium bz-motion-spring disabled:opacity-60 ${
-                        restaurant.isActive
-                          ? 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
-                          : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
-                      }`}
-                    >
-                      {actionLoadingId === restaurant.id
-                        ? locale === 'tr' ? 'İşleniyor...' : 'Working...'
-                        : restaurant.isActive ? copy.deactivate : copy.activate}
-                    </button>
+                    {/* §22 viewer-mode — Deaktifleştir / Aktifleştir backend
+                        `canWriteRestaurant` viewer'ı reddediyor; UI'da da
+                        gizliyoruz. Grid `grid-cols-1 sm:grid-cols-3`'e düşer
+                        (Detay / QR / Aç). */}
+                    {canMutate && (
+                      <button
+                        type="button"
+                        disabled={actionLoadingId === restaurant.id}
+                        onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
+                        className={`inline-flex items-center justify-center bz-touch-target sm:min-h-0 sm:min-w-0 rounded-full px-4 py-2.5 text-center text-[12px] font-medium bz-motion-spring disabled:opacity-60 ${
+                          restaurant.isActive
+                            ? 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
+                            : 'border border-[#C6F24E] bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
+                        }`}
+                      >
+                        {actionLoadingId === restaurant.id
+                          ? locale === 'tr' ? 'İşleniyor...' : 'Working...'
+                          : restaurant.isActive ? copy.deactivate : copy.activate}
+                      </button>
+                    )}
                     <Link
                       href={`/r/${restaurant.slug}`}
                       target="_blank"
