@@ -105,9 +105,19 @@ export async function PUT(req: NextRequest) {
     update: next,
   });
 
-  return NextResponse.json({
-    lowRatingEmail: row.lowRatingEmail,
-    dailyDigestEmail: row.dailyDigestEmail,
-    weeklyReport: row.weeklyReport,
-  });
+  return NextResponse.json(
+    {
+      lowRatingEmail: row.lowRatingEmail,
+      dailyDigestEmail: row.dailyDigestEmail,
+      weeklyReport: row.weeklyReport,
+    },
+    {
+      // Stage 108 §38.188 — mutation response MUST bypass any CDN/browser
+      // cache; GET response sets `private, s-maxage=15, stale-while-
+      // revalidate=60` so without `no-store` the toggle's prior value can
+      // linger in the edge cache for up to 75s after a flip. CLAUDE.md
+      // §40.6 mutation row.
+      headers: { 'Cache-Control': 'no-store, must-revalidate' },
+    },
+  );
 }

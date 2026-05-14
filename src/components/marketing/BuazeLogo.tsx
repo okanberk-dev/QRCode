@@ -26,7 +26,7 @@ export default function BuazeLogo({ size = 40, className = '', variant = 'defaul
 
   if (isUsableUrl && !imgFailed) {
     return (
-       
+
       <img
         src={imageUrl as string}
         width={size}
@@ -34,6 +34,11 @@ export default function BuazeLogo({ size = 40, className = '', variant = 'defaul
         className={className}
         alt="Buaze"
         style={{ objectFit: 'contain' }}
+        // Above-the-fold navbar mark on every surface. `decoding="async"`
+        // keeps the main thread free during PNG/SVG decode without
+        // `loading="lazy"` (which would defer the request and hurt LCP).
+        // Width/height attrs already prevent CLS. CLAUDE.md §40.1 + §38.A.
+        decoding="async"
         onError={() => setImgFailed(true)}
       />
     );
