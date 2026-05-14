@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useState, useTransition, useEffect, useRef } from 'react';
-import { Eyebrow, PlatformChip, PLATFORMS, PulseSelect, type PlatformId } from '@/components/ui';
-import { RotateCcw, Calendar, Download, X } from 'lucide-react';
+import { useState, useTransition, useEffect } from 'react';
+import { Eyebrow, Modal, PlatformChip, PLATFORMS, PulseSelect, type PlatformId } from '@/components/ui';
+import { RotateCcw, Calendar, Download } from 'lucide-react';
 
 /**
  * URL-synced filter bar for analytics surfaces.
@@ -84,29 +84,21 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
     });
   };
 
-  // §38.50 — Custom range modal state
+  // §38.50 — Custom range modal state. Audit Wave 1 (CLAUDE.md §40.3
+  // hierarchy violation: eski `z-[80]` impersonation banner'ı (z-[60])
+  // örtüyordu, manuel ESC + body-lock implementation focus trap'siz
+  // ve outside-click incomplete) ile birlikte `<Modal>` primitive'e
+  // migrate edildi. Modal primitive: z-50 canonical, focus trap,
+  // FOCUSABLE_SELECTOR Tab cycle, ESC handler, body scroll lock,
+  // backdrop click, focus restore — hepsi tek noktadan.
   const [customOpen, setCustomOpen] = useState(false);
   const [draftStart, setDraftStart] = useState(customStart);
   const [draftEnd, setDraftEnd] = useState(customEnd);
-  const customDialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setDraftStart(customStart);
     setDraftEnd(customEnd);
   }, [customStart, customEnd]);
-
-  useEffect(() => {
-    if (!customOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setCustomOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-    };
-  }, [customOpen]);
 
   const applyCustom = () => {
     if (!draftStart || !draftEnd) return;
@@ -290,74 +282,18 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
         )}
       </div>
 
-      {/* §38.50 — Özel aralık modal (basit date range picker) */}
+      {/* §38.50 — Özel aralık modal (basit date range picker).
+          Wave 1 PR-1 audit fix: custom div+role="dialog" yerine Modal
+          primitive (z-50 canonical hierarchy + focus trap + ESC + body
+          scroll lock + backdrop click + focus restore tek paketten). */}
       {customOpen && (
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="custom-range-title"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setCustomOpen(false);
-          }}
-        >
-          <div
-            ref={customDialogRef}
-            /* §38.67 — Custom date modal heavy shadow → bz-elev-3 Apple-soft. */
-            className="w-full max-w-[420px] rounded-2xl bg-white p-5 sm:p-6 bz-elev-3"
-          >
-            <header className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <h2
-                  id="custom-range-title"
-                  className="bz-h-tight text-[18px] text-[#0A0A0A]"
-                >
-                  {isTr ? 'Özel tarih aralığı' : 'Custom date range'}
-                </h2>
-                <p className="mt-1 text-[12px] text-[#737373]">
-                  {isTr
-                    ? 'Başlangıç ve bitiş tarihlerini seç (max 365 gün).'
-                    : 'Pick start and end dates (max 365 days).'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCustomOpen(false)}
-                aria-label={isTr ? 'Kapat' : 'Close'}
-                className="bz-btn-icon"
-              >
-                <X size={16} />
-              </button>
-            </header>
-
-            <div className="flex flex-col gap-3">
-              <label className="flex flex-col gap-1.5">
-                <span className="pulse-eyebrow text-[10px] text-[#737373]">
-                  {isTr ? 'BAŞLANGIÇ' : 'START'}
-                </span>
-                <input
-                  type="date"
-                  value={draftStart}
-                  onChange={(e) => setDraftStart(e.target.value)}
-                  className="bz-input"
-                  max={draftEnd || undefined}
-                />
-              </label>
-              <label className="flex flex-col gap-1.5">
-                <span className="pulse-eyebrow text-[10px] text-[#737373]">
-                  {isTr ? 'BİTİŞ' : 'END'}
-                </span>
-                <input
-                  type="date"
-                  value={draftEnd}
-                  onChange={(e) => setDraftEnd(e.target.value)}
-                  className="bz-input"
-                  min={draftStart || undefined}
-                />
-              </label>
-            </div>
-
-            <footer className="mt-5 flex items-center justify-between gap-3">
+        <Modal
+          title={isTr ? 'Özel tarih aralığı' : 'Custom date range'}
+          ariaLabel={isTr ? 'Özel tarih aralığı' : 'Custom date range'}
+          onClose={() => setCustomOpen(false)}
+          size={420}
+          footer={
+            <div className="flex w-full items-center justify-between gap-3">
               {range === 'custom' ? (
                 <button
                   type="button"
@@ -386,9 +322,41 @@ export default function AnalyticsFilterBar({ isTr, branches, restaurants }: Prop
                   {isTr ? 'Uygula' : 'Apply'}
                 </button>
               </div>
-            </footer>
+            </div>
+          }
+        >
+          <p className="mb-4 text-[12px] text-[#737373]">
+            {isTr
+              ? 'Başlangıç ve bitiş tarihlerini seç (max 365 gün).'
+              : 'Pick start and end dates (max 365 days).'}
+          </p>
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="pulse-eyebrow text-[10px] text-[#737373]">
+                {isTr ? 'BAŞLANGIÇ' : 'START'}
+              </span>
+              <input
+                type="date"
+                value={draftStart}
+                onChange={(e) => setDraftStart(e.target.value)}
+                className="bz-input"
+                max={draftEnd || undefined}
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="pulse-eyebrow text-[10px] text-[#737373]">
+                {isTr ? 'BİTİŞ' : 'END'}
+              </span>
+              <input
+                type="date"
+                value={draftEnd}
+                onChange={(e) => setDraftEnd(e.target.value)}
+                className="bz-input"
+                min={draftStart || undefined}
+              />
+            </label>
           </div>
-        </div>
+        </Modal>
       )}
     </section>
   );
