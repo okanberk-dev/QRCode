@@ -9,7 +9,6 @@ import {
   AlertBanner,
   Badge,
   type BadgeKind,
-  CardSkeleton,
   EmptyState,
   Field,
   Modal,
@@ -289,13 +288,7 @@ export default function AuditCategoriesPage() {
         </AlertBanner>
       )}
 
-      {loading && !data ? (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <CardSkeleton />
-          <CardSkeleton />
-          <CardSkeleton />
-        </div>
-      ) : !data || data.length === 0 ? (
+      {loading && !data ? null : !data || data.length === 0 ? (
         <EmptyState
           icon={<Tag size={20} />}
           title="Henüz kategori yok"

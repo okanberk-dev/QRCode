@@ -41,7 +41,6 @@ import {
   AlertBanner,
   Badge,
   type BadgeKind,
-  CardSkeleton,
   EmptyState,
   Field,
   PageHeader,
@@ -358,14 +357,8 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
     }
   };
 
-  if (loading && !data) {
-    return (
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
-        <CardSkeleton />
-        <CardSkeleton />
-      </div>
-    );
-  }
+  // §40.10 clean slate — skeleton render kaldırıldı; data gelene kadar null.
+  if (loading && !data) return null;
 
   if (!data) {
     return (

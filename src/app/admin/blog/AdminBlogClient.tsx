@@ -22,7 +22,6 @@ import {
   PulseMenu,
   PulseMenuDivider,
   PulseMenuItem,
-  TableSkeleton,
   useConfirmDialog,
 } from '@/components/ui';
 
@@ -198,9 +197,7 @@ export default function AdminBlogClient({ initialPosts }: AdminBlogClientProps) 
       {success && <AlertBanner kind="success">{success}</AlertBanner>}
 
       {/* Table — 1:1 design AdminBlog */}
-      {loading ? (
-        <TableSkeleton rows={6} cols={5} />
-      ) : filtered.length === 0 ? (
+      {loading ? null : filtered.length === 0 ? (
         <EmptyState
           icon={<BookOpen size={22} />}
           title="Yazı bulunamadı"

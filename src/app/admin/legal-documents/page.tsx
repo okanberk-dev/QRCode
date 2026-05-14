@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ScrollText } from 'lucide-react';
-import { AlertBanner, Badge, CardSkeleton, PageHeader, Tabs, type TabItem } from '@/components/ui';
+import { AlertBanner, Badge, PageHeader, Tabs, type TabItem } from '@/components/ui';
 
 interface DocCell {
   id: string | null;
@@ -130,14 +130,7 @@ export default function LegalDocumentsIndexPage() {
         </div>
       </AlertBanner>
 
-      {loading ? (
-        // PR8 — content-shape skeletons. Tipik 3 doküman grup'u için 3 kart.
-        <div className="space-y-3">
-          <CardSkeleton height={200} />
-          <CardSkeleton height={200} />
-          <CardSkeleton height={200} />
-        </div>
-      ) : grouped.length === 0 ? (
+      {loading ? null : grouped.length === 0 ? (
         <div className="rounded-2xl border border-[#EDEDED] bg-white p-10 text-center">
           <ScrollText size={28} className="mx-auto mb-3 text-[#A3A3A3]" />
           <p className="text-[14px] text-[#525252]">Filtrelere uyan metin bulunamadı.</p>

@@ -11,7 +11,7 @@ import type {
 // statik girmesin diye dynamic import.
 const PublicMenuView = dynamic(
   () => import('@/components/menu/PublicMenuView').then((m) => m.default ?? m),
-  { ssr: false, loading: () => <PreviewSkeleton /> },
+  { ssr: false, loading: () => null },
 );
 
 // Owner builder'ın tema panelinin yanına yerleşen mini phone mockup.
@@ -28,14 +28,6 @@ interface MenuLivePreviewProps {
   restaurant: RestaurantView;
   categories: MenuCategoryView[];
   locale: 'tr' | 'en';
-}
-
-function PreviewSkeleton() {
-  return (
-    <div className="flex h-[420px] items-center justify-center">
-      <div className="text-[11px] text-[#A3A3A3]">Önizleme yükleniyor…</div>
-    </div>
-  );
 }
 
 export function MenuLivePreview({ restaurant, categories, locale }: MenuLivePreviewProps) {

@@ -27,7 +27,6 @@ import {
   PageHeader,
   Tabs,
   type TabItem,
-  TableSkeleton,
   useConfirmDialog,
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
@@ -363,9 +362,7 @@ export default function AuditTemplatesPage() {
         </div>
       </div>
 
-      {loading && !data ? (
-        <TableSkeleton rows={6} cols={5} />
-      ) : !data || data.length === 0 ? (
+      {loading && !data ? null : !data || data.length === 0 ? (
         <EmptyState
           icon={<ClipboardCheck size={20} />}
           title={counts.total === 0 ? 'Henüz şablon yok' : 'Sonuç yok'}

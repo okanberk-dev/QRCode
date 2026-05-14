@@ -20,8 +20,6 @@ import {
   EmptyState,
   PageHeader,
   StatCard,
-  CardSkeleton,
-  TableSkeleton,
 } from '@/components/ui';
 import { AUDIT_SECTORS, type AuditSector } from '@/lib/audits/types';
 
@@ -147,13 +145,7 @@ export default function AuditStatsPage() {
       {error && <AlertBanner kind="danger" onDismiss={() => setError(null)}>{error}</AlertBanner>}
 
       {/* Sistem KPI grid */}
-      {loading && !data ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[0, 1, 2, 3].map((i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </div>
-      ) : data ? (
+      {loading && !data ? null : data ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             label="Toplam şablon"
@@ -198,9 +190,7 @@ export default function AuditStatsPage() {
           <BarChart3 size={16} strokeWidth={2} className="text-[#525252]" />
           <h2 className="bz-h-tight text-[15px]">Sektör başına dağılım</h2>
         </div>
-        {loading && !data ? (
-          <TableSkeleton rows={6} cols={4} />
-        ) : data ? (
+        {loading && !data ? null : data ? (
           <div className="bz-card overflow-hidden">
             <table className="bz-table">
               <thead>
@@ -237,9 +227,7 @@ export default function AuditStatsPage() {
       {/* En popüler 5 taslak */}
       <section className="space-y-2">
         <h2 className="bz-h-tight text-[15px]">En popüler şablonlar</h2>
-        {loading && !data ? (
-          <TableSkeleton rows={5} cols={4} />
-        ) : !data || data.topTemplates.length === 0 ? (
+        {loading && !data ? null : !data || data.topTemplates.length === 0 ? (
           <EmptyState
             title="Yanıt yok"
             body="Henüz tamamlanmış denetim yanıtı yok."
@@ -294,9 +282,7 @@ export default function AuditStatsPage() {
       {/* Per-restoran */}
       <section className="space-y-2">
         <h2 className="bz-h-tight text-[15px]">En aktif işletmeler</h2>
-        {loading && !data ? (
-          <TableSkeleton rows={5} cols={4} />
-        ) : !data || data.perRestaurant.length === 0 ? (
+        {loading && !data ? null : !data || data.perRestaurant.length === 0 ? (
           <EmptyState
             title="İşletme yanıtı yok"
             body="Henüz yanıt veren işletme yok."

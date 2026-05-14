@@ -6,7 +6,6 @@ import {
   AlertBanner,
   Badge,
   type BadgeKind,
-  CardSkeleton,
   EmptyState,
   Modal,
   PageHeader,
@@ -277,14 +276,7 @@ export default function AnnouncementsClient({
       )}
 
       {/* List */}
-      {loading ? (
-        // PR8 — content-shape skeletons (Linear/Stripe/Vercel pattern).
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <CardSkeleton key={i} height={180} />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
+      {loading ? null : filtered.length === 0 ? (
         <EmptyState
           icon={<Megaphone size={22} />}
           title="Henüz duyuru yok"

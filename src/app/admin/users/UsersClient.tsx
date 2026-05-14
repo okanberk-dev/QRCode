@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, ExternalLink, Key, Mail, Plus, Trash2, Loader2, Store, User, ShieldCheck, UserCog, Search } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
-import { AlertBanner, Badge, Modal, PageHeader, TableSkeleton, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, Badge, Modal, PageHeader, useConfirmDialog } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 
 interface User {
@@ -240,15 +240,8 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
     });
   };
 
-  if (loading && users.length === 0) {
-    return (
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
-        <PageHeader eyebrow="YÖNETİCİLER" title="Yükleniyor…" />
-        <TableSkeleton rows={6} cols={4} />
-      </div>
-    );
-  }
-
+  // §40.10 clean slate — skeleton return kaldırıldı; data gelene kadar
+  // boş zemin (page header + tab/filter chrome görünür kalır).
   return (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <PageHeader
