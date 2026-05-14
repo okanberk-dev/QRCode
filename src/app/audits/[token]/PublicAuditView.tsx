@@ -9,8 +9,8 @@
 // Backend kontratı: GET /api/audits/[token] → assignment + template +
 // questions (correctAnswer KASTEN EKSIK). POST submit → score response.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, ClipboardCheck, Loader2, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Check, ClipboardCheck, Loader2, X } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import type {
   AuditQuestionType,
@@ -91,6 +91,13 @@ export default function PublicAuditView({ token, locale }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [result, setResult] = useState<{ score: number; passed: boolean | null } | null>(null);
+  // §42 — submit error visible olunca scroll-into-view (long form sonu için)
+  const errorRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (submitError && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [submitError]);
 
   // Load template + questions
   useEffect(() => {
@@ -163,9 +170,41 @@ export default function PublicAuditView({ token, locale }: Props) {
     setQuestionIndex(0);
   }, [kvkkOk, totalQuestions, isTr]);
 
+  // §42 bug-prevention: submit'ten ÖNCE tüm required soruları kontrol et.
+  // Mevcut canAdvance yalnız o anki soruya bakıyordu — kullanıcı önceki
+  // bir required soruyu boş bıraktıysa son sorudaki "Gönder" backend
+  // `MISSING_REQUIRED` reddederdi, "son soruda devam etmiyor" hissi.
+  // Burada hangi soruda eksik olduğunu söyleyip otomatik o soruya geri
+  // götürüyoruz (UX: bilgilendirici, sessiz değil).
+  function findFirstMissingRequired(): number | null {
+    if (!data) return null;
+    for (let i = 0; i < data.questions.length; i += 1) {
+      const q = data.questions[i];
+      if (!q.isRequired) continue;
+      const v = answers[q.id];
+      if (v === undefined || v === null) return i;
+      if (typeof v === 'string' && v.trim().length === 0) return i;
+      if (Array.isArray(v) && v.length === 0) return i;
+    }
+    return null;
+  }
+
   const handleSubmit = useCallback(async () => {
     if (!data) return;
     setSubmitError(null);
+
+    // Pre-flight client check — backend mirror'ı (`MISSING_REQUIRED`).
+    const missingIdx = findFirstMissingRequired();
+    if (missingIdx !== null) {
+      setQuestionIndex(missingIdx);
+      setSubmitError(
+        isTr
+          ? `Bu soru zorunlu — yanıtı doldurup tekrar dene.`
+          : `This question is required — fill it in and try again.`,
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -202,6 +241,9 @@ export default function PublicAuditView({ token, locale }: Props) {
     } finally {
       setSubmitting(false);
     }
+    // findFirstMissingRequired closure'da kalır — answers/data değiştiğinde
+    // useCallback yeniden oluşturulur, böylece güncel state ile çalışır.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, answers, name, email, phone, marketingOk, token, isTr]);
 
   // Loading / error
@@ -343,9 +385,22 @@ export default function PublicAuditView({ token, locale }: Props) {
             </label>
 
             {submitError && (
-              <p className="text-[13px] text-[#DC2626] mt-3" role="alert">
-                {submitError}
-              </p>
+              <div
+                ref={errorRef}
+                role="alert"
+                className="mt-4 flex items-start gap-2 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 text-[13px] leading-snug text-[#991B1B]"
+              >
+                <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" />
+                <span className="flex-1">{submitError}</span>
+                <button
+                  type="button"
+                  aria-label={isTr ? 'Kapat' : 'Dismiss'}
+                  className="-mr-1 -mt-1 ml-2 rounded p-1 text-[#991B1B]/70 transition hover:bg-[#FECACA]/40 hover:text-[#991B1B]"
+                  onClick={() => setSubmitError(null)}
+                >
+                  <X size={12} />
+                </button>
+              </div>
             )}
 
             <button
@@ -397,9 +452,22 @@ export default function PublicAuditView({ token, locale }: Props) {
             </div>
 
             {submitError && (
-              <p className="text-[13px] text-[#DC2626] mt-3" role="alert">
-                {submitError}
-              </p>
+              <div
+                ref={errorRef}
+                role="alert"
+                className="mt-4 flex items-start gap-2 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 text-[13px] leading-snug text-[#991B1B]"
+              >
+                <AlertTriangle size={14} strokeWidth={2.2} className="mt-0.5 shrink-0" />
+                <span className="flex-1">{submitError}</span>
+                <button
+                  type="button"
+                  aria-label={isTr ? 'Kapat' : 'Dismiss'}
+                  className="-mr-1 -mt-1 ml-2 rounded p-1 text-[#991B1B]/70 transition hover:bg-[#FECACA]/40 hover:text-[#991B1B]"
+                  onClick={() => setSubmitError(null)}
+                >
+                  <X size={12} />
+                </button>
+              </div>
             )}
 
             <div className="flex items-center justify-between mt-6 gap-2">
@@ -424,11 +492,21 @@ export default function PublicAuditView({ token, locale }: Props) {
                 <button
                   type="button"
                   className="bz-btn-primary"
-                  disabled={!canAdvance || submitting}
+                  disabled={submitting}
                   onClick={handleSubmit}
+                  aria-busy={submitting}
                 >
-                  {submitting ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                  {isTr ? 'Gönder' : 'Submit'}
+                  {submitting ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      {isTr ? 'Gönderiliyor…' : 'Submitting…'}
+                    </>
+                  ) : (
+                    <>
+                      <Check size={14} />
+                      {isTr ? 'Gönder' : 'Submit'}
+                    </>
+                  )}
                 </button>
               )}
             </div>
@@ -439,7 +517,7 @@ export default function PublicAuditView({ token, locale }: Props) {
         {step === 'done' && (
           <div className="bg-white text-[#0A0A0A] rounded-3xl p-8 text-center bz-fade-in">
             <div
-              className="inline-flex items-center justify-center w-16 h-16 rounded-full text-[#0A0A0A] mb-4"
+              className="pulse-heartbeat inline-flex items-center justify-center w-16 h-16 rounded-full text-[#0A0A0A] mb-4"
               style={{ background: accent }}
             >
               <Check size={28} strokeWidth={2.5} />
@@ -447,24 +525,34 @@ export default function PublicAuditView({ token, locale }: Props) {
             <h2 className="bz-h-tight-2 text-[22px]">
               {isTr ? 'Teşekkürler!' : 'Thank you!'}
             </h2>
-            <p className="text-[14px] text-[#525252] mt-2">
+            <p className="text-[14px] text-[#525252] mt-2 max-w-[360px] mx-auto leading-relaxed">
               {isTr
-                ? 'Yanıtın alındı. İşletmeniz değerlendirmeyi görecek.'
-                : 'Your response was received. The business will see this evaluation.'}
+                ? 'Yanıtın alındı. İşletme değerlendirmeyi panelinde görecek.'
+                : 'Your response was received. The business will see this evaluation in their panel.'}
             </p>
             {result && (
-              <div className="mt-5 border border-[#EDEDED] rounded-2xl p-4 inline-block min-w-[200px]">
+              <div className="mt-6 inline-block min-w-[220px] rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-5">
                 <p className="pulse-eyebrow text-[#525252]">
                   {isTr ? 'Toplam puan' : 'Total score'}
                 </p>
-                <p className="text-[36px] font-medium mt-1">
+                <p className="text-[40px] font-medium mt-1 leading-none">
                   {result.score}
                   <span className="text-[#A3A3A3] text-[18px]">/100</span>
                 </p>
                 {result.passed != null && (
-                  <p
-                    className={`text-[13px] font-medium mt-1 ${result.passed ? 'text-[#166534]' : 'text-[#991B1B]'}`}
+                  <div
+                    className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                      result.passed
+                        ? 'bg-[#DCFCE7] text-[#166534]'
+                        : 'bg-[#FEE2E2] text-[#991B1B]'
+                    }`}
                   >
+                    <span
+                      aria-hidden
+                      className={`inline-block h-1.5 w-1.5 rounded-full ${
+                        result.passed ? 'bg-[#166534]' : 'bg-[#991B1B]'
+                      }`}
+                    />
                     {result.passed
                       ? isTr
                         ? 'Geçti'
@@ -472,7 +560,7 @@ export default function PublicAuditView({ token, locale }: Props) {
                       : isTr
                         ? 'Eşik aşılamadı'
                         : 'Below threshold'}
-                  </p>
+                  </div>
                 )}
               </div>
             )}

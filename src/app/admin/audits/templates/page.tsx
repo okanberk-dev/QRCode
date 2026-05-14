@@ -14,7 +14,6 @@ import {
   EyeOff,
   Loader2,
   Plus,
-  Save,
   Sparkles,
 } from 'lucide-react';
 import {
@@ -22,16 +21,15 @@ import {
   Badge,
   type BadgeKind,
   EmptyState,
-  Field,
-  Modal,
   PageHeader,
   Tabs,
   type TabItem,
   useConfirmDialog,
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
-import { AUDIT_SECTORS, AUDIT_SCORING_MODES, type AuditSector, type AuditScoringMode } from '@/lib/audits/types';
+import { AUDIT_SECTORS, type AuditSector, type AuditScoringMode } from '@/lib/audits/types';
 import SeedResultModal, { type SeedResult } from '@/components/admin/audits/SeedResultModal';
+import CreateTemplateWizard from './_components/CreateTemplateWizard';
 
 interface CategoryRef {
   id: string;
@@ -88,24 +86,6 @@ const SCOPE_TABS: TabItem[] = [
   { id: 'all', label: 'Tümü' },
 ];
 
-interface CreateForm {
-  title: string;
-  sector: AuditSector;
-  categoryId: string;
-  scoringMode: AuditScoringMode;
-  passingScore: string;
-  description: string;
-}
-
-const EMPTY_FORM: CreateForm = {
-  title: '',
-  sector: 'food',
-  categoryId: '',
-  scoringMode: 'percentage',
-  passingScore: '',
-  description: '',
-};
-
 export default function AuditTemplatesPage() {
   const filters = useUrlFilter({ scope: 'global', sector: 'all', published: 'all' });
   const scope = filters.values.scope as 'global' | 'restaurant' | 'all';
@@ -120,9 +100,6 @@ export default function AuditTemplatesPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
-  const [creating, setCreating] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
   const [seeding, setSeeding] = useState(false);
   const [seedResult, setSeedResult] = useState<SeedResult | null>(null);
   const [confirmEl, askConfirm] = useConfirmDialog();
@@ -250,42 +227,6 @@ export default function AuditTemplatesPage() {
     });
   }
 
-  async function handleCreate() {
-    setFormError(null);
-    setCreating(true);
-    try {
-      const body: Record<string, unknown> = {
-        title: form.title.trim(),
-        sector: form.sector,
-        scoringMode: form.scoringMode,
-      };
-      if (form.categoryId) body.categoryId = form.categoryId;
-      if (form.description.trim()) body.description = form.description.trim();
-      const pass = Number(form.passingScore);
-      if (Number.isFinite(pass) && pass > 0) body.passingScore = pass;
-
-      const res = await fetch('/api/admin/audits/templates', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setFormError(j.error || j.message || 'Oluşturulamadı');
-        return;
-      }
-      setCreateOpen(false);
-      setForm(EMPTY_FORM);
-      setNotice('Şablon oluşturuldu (taslak). Sorular eklendikten sonra yayınlayabilirsin.');
-      await load();
-      setTimeout(() => setNotice(null), 4000);
-    } catch {
-      setFormError('Bağlantı hatası');
-    } finally {
-      setCreating(false);
-    }
-  }
-
   return (
     <div className="mx-auto max-w-[1400px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
@@ -308,7 +249,7 @@ export default function AuditTemplatesPage() {
               {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
               Varsayılan içeriği yükle
             </button>
-            <button className="bz-btn-primary" onClick={() => { setForm(EMPTY_FORM); setFormError(null); setCreateOpen(true); }}>
+            <button className="bz-btn-primary" onClick={() => setCreateOpen(true)}>
               <Plus size={14} strokeWidth={2} /> Yeni şablon
             </button>
           </div>
@@ -395,184 +336,190 @@ export default function AuditTemplatesPage() {
           }
         />
       ) : (
-        <div className="bz-card overflow-hidden">
-          <table className="bz-table">
-            <thead>
-              <tr>
-                <th>Başlık</th>
-                <th>Sektör</th>
-                <th>Kategori</th>
-                <th>Mod</th>
-                <th className="text-right">Soru</th>
-                <th className="text-right">Yanıt</th>
-                <th>Durum</th>
-                <th className="text-right">Aksiyon</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((tpl) => (
-                <tr key={tpl.id}>
-                  <td>
-                    <div className="bz-h-tight text-[14px]">{tpl.title}</div>
-                    {tpl.description ? (
-                      <div className="text-[12px] text-[#737373] line-clamp-1">
+        <>
+          {/* Desktop tablo (lg+) */}
+          <div className="bz-card hidden overflow-hidden lg:block">
+            <table className="bz-table">
+              <thead>
+                <tr>
+                  <th>Başlık</th>
+                  <th>Sektör</th>
+                  <th>Kategori</th>
+                  <th>Mod</th>
+                  <th className="text-right">Soru</th>
+                  <th className="text-right">Yanıt</th>
+                  <th>Durum</th>
+                  <th className="text-right">Aksiyon</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((tpl) => (
+                  <tr key={tpl.id}>
+                    <td>
+                      <div className="bz-h-tight text-[14px]">{tpl.title}</div>
+                      {tpl.description ? (
+                        <div className="line-clamp-1 text-[12px] text-[#737373]">
+                          {tpl.description}
+                        </div>
+                      ) : null}
+                      {tpl.restaurantId && (
+                        <div className="mt-1 text-[11px] text-[#525252]">Restoran-özel</div>
+                      )}
+                    </td>
+                    <td>
+                      <Badge kind={SECTOR_BADGE[tpl.sector]}>{SECTOR_LABEL[tpl.sector]}</Badge>
+                    </td>
+                    <td className="text-[13px]">{tpl.category ? tpl.category.labelTr : '—'}</td>
+                    <td className="text-[13px]">
+                      {SCORING_LABEL[tpl.scoringMode]}
+                      {tpl.passingScore != null && (
+                        <span className="text-[11px] text-[#737373]"> · ≥{tpl.passingScore}</span>
+                      )}
+                    </td>
+                    <td className="bz-mono text-right">{tpl._count.questions}</td>
+                    <td className="bz-mono text-right">{tpl._count.responses}</td>
+                    <td>
+                      {tpl.isPublished ? (
+                        <Badge kind="ok">Yayında</Badge>
+                      ) : (
+                        <Badge kind="ghost">Taslak</Badge>
+                      )}
+                    </td>
+                    <td className="text-right">
+                      <div className="inline-flex gap-2">
+                        <Link
+                          href={`/admin/audits/templates/${tpl.id}`}
+                          className="bz-btn-ghost"
+                        >
+                          Düzenle
+                        </Link>
+                        <button
+                          type="button"
+                          className="bz-btn-ghost"
+                          disabled={busyId === tpl.id || Boolean(tpl.restaurantId)}
+                          onClick={() => togglePublish(tpl)}
+                          title={
+                            tpl.restaurantId
+                              ? 'Restoran-özel şablon admin endpoint üzerinden yönetilmez'
+                              : ''
+                          }
+                        >
+                          {busyId === tpl.id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : tpl.isPublished ? (
+                            <>
+                              <EyeOff size={14} /> Yayından kaldır
+                            </>
+                          ) : (
+                            <>
+                              <Eye size={14} /> Yayınla
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile card list (< lg) */}
+          <div className="space-y-3 lg:hidden">
+            {data.map((tpl) => (
+              <div key={tpl.id} className="bz-card p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="bz-h-tight truncate text-[15px]">{tpl.title}</div>
+                    {tpl.description && (
+                      <div className="mt-1 line-clamp-2 text-[12px] leading-snug text-[#737373]">
                         {tpl.description}
                       </div>
-                    ) : null}
+                    )}
                     {tpl.restaurantId && (
-                      <div className="text-[11px] text-[#525252] mt-1">
+                      <div className="mt-1 text-[10px] uppercase tracking-wider text-[#525252]">
                         Restoran-özel
                       </div>
                     )}
-                  </td>
-                  <td>
-                    <Badge kind={SECTOR_BADGE[tpl.sector]}>{SECTOR_LABEL[tpl.sector]}</Badge>
-                  </td>
-                  <td className="text-[13px]">
-                    {tpl.category ? tpl.category.labelTr : '—'}
-                  </td>
-                  <td className="text-[13px]">
+                  </div>
+                  {tpl.isPublished ? (
+                    <Badge kind="ok">Yayında</Badge>
+                  ) : (
+                    <Badge kind="ghost">Taslak</Badge>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge kind={SECTOR_BADGE[tpl.sector]}>{SECTOR_LABEL[tpl.sector]}</Badge>
+                  {tpl.category && (
+                    <span className="rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] text-[#525252]">
+                      {tpl.category.labelTr}
+                    </span>
+                  )}
+                  <span className="rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] text-[#525252]">
                     {SCORING_LABEL[tpl.scoringMode]}
-                    {tpl.passingScore != null && (
-                      <span className="text-[11px] text-[#737373]"> · ≥{tpl.passingScore}</span>
-                    )}
-                  </td>
-                  <td className="text-right bz-mono">{tpl._count.questions}</td>
-                  <td className="text-right bz-mono">{tpl._count.responses}</td>
-                  <td>
-                    {tpl.isPublished ? (
-                      <Badge kind="ok">Yayında</Badge>
-                    ) : (
-                      <Badge kind="ghost">Taslak</Badge>
-                    )}
-                  </td>
-                  <td className="text-right">
-                    <div className="inline-flex gap-2">
-                      <Link
-                        href={`/admin/audits/templates/${tpl.id}`}
-                        className="bz-btn-ghost"
-                      >
-                        Düzenle
-                      </Link>
-                      <button
-                        type="button"
-                        className="bz-btn-ghost"
-                        disabled={busyId === tpl.id || Boolean(tpl.restaurantId)}
-                        onClick={() => togglePublish(tpl)}
-                        title={tpl.restaurantId ? 'Restoran-özel şablon admin endpoint üzerinden yönetilmez' : ''}
-                      >
-                        {busyId === tpl.id ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : tpl.isPublished ? (
-                          <>
-                            <EyeOff size={14} /> Yayından kaldır
-                          </>
-                        ) : (
-                          <>
-                            <Eye size={14} /> Yayınla
-                          </>
-                        )}
-                      </button>
+                    {tpl.passingScore != null ? ` · ≥${tpl.passingScore}` : ''}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-2.5">
+                  <div className="text-center">
+                    <div className="pulse-eyebrow text-[#737373]">Soru</div>
+                    <div className="bz-mono mt-0.5 text-[15px] font-semibold">
+                      {tpl._count.questions}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="pulse-eyebrow text-[#737373]">Yanıt</div>
+                    <div className="bz-mono mt-0.5 text-[15px] font-semibold">
+                      {tpl._count.responses}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    href={`/admin/audits/templates/${tpl.id}`}
+                    className="bz-btn-ghost justify-center text-[12px]"
+                  >
+                    Düzenle
+                  </Link>
+                  <button
+                    type="button"
+                    className="bz-btn-ghost justify-center text-[12px]"
+                    disabled={busyId === tpl.id || Boolean(tpl.restaurantId)}
+                    onClick={() => togglePublish(tpl)}
+                  >
+                    {busyId === tpl.id ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : tpl.isPublished ? (
+                      <>
+                        <EyeOff size={14} /> Kaldır
+                      </>
+                    ) : (
+                      <>
+                        <Eye size={14} /> Yayınla
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
-      {createOpen && <Modal
+      <CreateTemplateWizard
+        open={createOpen}
+        categories={categories}
         onClose={() => setCreateOpen(false)}
-        title="Yeni global şablon"
-        size={560}
-      >
-        <div className="space-y-3">
-          {formError && <AlertBanner kind="danger">{formError}</AlertBanner>}
-          <Field label="Başlık" required>
-            <input
-              className="bz-input"
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="F&B yeni eleman temel quiz"
-            />
-          </Field>
-          <Field label="Açıklama" hint="Owner şablonu seçtiğinde göreceği özet metin">
-            <textarea
-              className="bz-input min-h-[80px]"
-              value={form.description}
-              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-            />
-          </Field>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Sektör">
-              <select
-                className="bz-input"
-                value={form.sector}
-                onChange={(e) => setForm((f) => ({ ...f, sector: e.target.value as AuditSector }))}
-              >
-                {AUDIT_SECTORS.map((s) => (
-                  <option key={s} value={s}>
-                    {SECTOR_LABEL[s]}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Kategori (opsiyonel)">
-              <select
-                className="bz-input"
-                value={form.categoryId}
-                onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
-              >
-                <option value="">— Yok —</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.labelTr}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Puanlama modu">
-              <select
-                className="bz-input"
-                value={form.scoringMode}
-                onChange={(e) => setForm((f) => ({ ...f, scoringMode: e.target.value as AuditScoringMode }))}
-              >
-                {AUDIT_SCORING_MODES.map((s) => (
-                  <option key={s} value={s}>
-                    {SCORING_LABEL[s]}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Geçme puanı (0-100)" hint="Boş = sadece skor göster">
-              <input
-                className="bz-input"
-                type="number"
-                min={0}
-                max={100}
-                value={form.passingScore}
-                onChange={(e) => setForm((f) => ({ ...f, passingScore: e.target.value }))}
-              />
-            </Field>
-          </div>
-          <p className="text-[12px] text-[#737373]">
-            Sorular bu adımda eklenmiyor — şablon taslak olarak oluşturulur, soru
-            ekleme + yayın akışı sonraki dalga (Faz 2 — yapım listesinde).
-          </p>
-          <div className="flex justify-end gap-2 pt-1">
-            <button type="button" className="bz-btn-ghost" onClick={() => setCreateOpen(false)} disabled={creating}>
-              Vazgeç
-            </button>
-            <button type="button" className="bz-btn-primary" onClick={handleCreate} disabled={creating || !form.title.trim()}>
-              {creating ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              Kaydet
-            </button>
-          </div>
-        </div>
-      </Modal>}
+        onCreated={(message) => {
+          setCreateOpen(false);
+          setNotice(message);
+          load();
+          setTimeout(() => setNotice(null), 4000);
+        }}
+      />
 
       {confirmEl}
 

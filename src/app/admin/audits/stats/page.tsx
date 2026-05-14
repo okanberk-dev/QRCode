@@ -191,36 +191,69 @@ export default function AuditStatsPage() {
           <h2 className="bz-h-tight text-[15px]">Sektör başına dağılım</h2>
         </div>
         {loading && !data ? null : data ? (
-          <div className="bz-card overflow-hidden">
-            <table className="bz-table">
-              <thead>
-                <tr>
-                  <th>Sektör</th>
-                  <th className="text-right">Şablon</th>
-                  <th className="text-right">Yanıt</th>
-                  <th className="text-right">Ort. Puan</th>
-                </tr>
-              </thead>
-              <tbody>
-                {AUDIT_SECTORS.map((sec) => {
-                  const row = data.sectorBreakdown.find((r) => r.sector === sec);
-                  const templates = row?.templates ?? 0;
-                  const responses = row?.responses ?? 0;
-                  const avgScore = row?.avgScore ?? null;
-                  return (
-                    <tr key={sec}>
-                      <td>
-                        <Badge kind={SECTOR_BADGE[sec]}>{SECTOR_LABEL[sec]}</Badge>
-                      </td>
-                      <td className="text-right bz-mono">{templates}</td>
-                      <td className="text-right bz-mono">{responses}</td>
-                      <td className="text-right bz-mono">{fmtScore(avgScore)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Desktop tablo (lg+) */}
+            <div className="bz-card hidden overflow-hidden lg:block">
+              <table className="bz-table">
+                <thead>
+                  <tr>
+                    <th>Sektör</th>
+                    <th className="text-right">Şablon</th>
+                    <th className="text-right">Yanıt</th>
+                    <th className="text-right">Ort. Puan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {AUDIT_SECTORS.map((sec) => {
+                    const row = data.sectorBreakdown.find((r) => r.sector === sec);
+                    const templates = row?.templates ?? 0;
+                    const responses = row?.responses ?? 0;
+                    const avgScore = row?.avgScore ?? null;
+                    return (
+                      <tr key={sec}>
+                        <td>
+                          <Badge kind={SECTOR_BADGE[sec]}>{SECTOR_LABEL[sec]}</Badge>
+                        </td>
+                        <td className="bz-mono text-right">{templates}</td>
+                        <td className="bz-mono text-right">{responses}</td>
+                        <td className="bz-mono text-right">{fmtScore(avgScore)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card list (< lg) */}
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:hidden">
+              {AUDIT_SECTORS.map((sec) => {
+                const row = data.sectorBreakdown.find((r) => r.sector === sec);
+                const templates = row?.templates ?? 0;
+                const responses = row?.responses ?? 0;
+                const avgScore = row?.avgScore ?? null;
+                return (
+                  <div key={sec} className="bz-card p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge kind={SECTOR_BADGE[sec]}>{SECTOR_LABEL[sec]}</Badge>
+                      <span className="bz-mono text-[11px] text-[#737373]">
+                        {fmtScore(avgScore)}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="pulse-eyebrow text-[#737373]">Şablon</div>
+                        <div className="bz-mono mt-0.5 text-[14px] font-semibold">{templates}</div>
+                      </div>
+                      <div>
+                        <div className="pulse-eyebrow text-[#737373]">Yanıt</div>
+                        <div className="bz-mono mt-0.5 text-[14px] font-semibold">{responses}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         ) : null}
       </section>
 
@@ -233,49 +266,93 @@ export default function AuditStatsPage() {
             body="Henüz tamamlanmış denetim yanıtı yok."
           />
         ) : (
-          <div className="bz-card overflow-hidden">
-            <table className="bz-table">
-              <thead>
-                <tr>
-                  <th>Başlık</th>
-                  <th>Sektör</th>
-                  <th>Durum</th>
-                  <th className="text-right">Yanıt</th>
-                  <th className="text-right">Ort. Puan</th>
-                  <th className="text-right">Aksiyon</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.topTemplates.map((t) => (
-                  <tr key={t.id}>
-                    <td>
-                      <div className="bz-h-tight text-[14px]">{t.title}</div>
-                    </td>
-                    <td>
-                      <Badge kind={SECTOR_BADGE[t.sector]}>{SECTOR_LABEL[t.sector]}</Badge>
-                    </td>
-                    <td>
-                      {t.isPublished ? (
-                        <Badge kind="ok">Yayında</Badge>
-                      ) : (
-                        <Badge kind="ghost">Taslak</Badge>
-                      )}
-                    </td>
-                    <td className="text-right bz-mono">{t.responseCount}</td>
-                    <td className="text-right bz-mono">{fmtScore(t.avgScore)}</td>
-                    <td className="text-right">
-                      <Link
-                        href={`/admin/audits/templates/${t.id}`}
-                        className="bz-btn-ghost"
-                      >
-                        Düzenle
-                      </Link>
-                    </td>
+          <>
+            {/* Desktop tablo (lg+) */}
+            <div className="bz-card hidden overflow-hidden lg:block">
+              <table className="bz-table">
+                <thead>
+                  <tr>
+                    <th>Başlık</th>
+                    <th>Sektör</th>
+                    <th>Durum</th>
+                    <th className="text-right">Yanıt</th>
+                    <th className="text-right">Ort. Puan</th>
+                    <th className="text-right">Aksiyon</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {data.topTemplates.map((t) => (
+                    <tr key={t.id}>
+                      <td>
+                        <div className="bz-h-tight text-[14px]">{t.title}</div>
+                      </td>
+                      <td>
+                        <Badge kind={SECTOR_BADGE[t.sector]}>{SECTOR_LABEL[t.sector]}</Badge>
+                      </td>
+                      <td>
+                        {t.isPublished ? (
+                          <Badge kind="ok">Yayında</Badge>
+                        ) : (
+                          <Badge kind="ghost">Taslak</Badge>
+                        )}
+                      </td>
+                      <td className="bz-mono text-right">{t.responseCount}</td>
+                      <td className="bz-mono text-right">{fmtScore(t.avgScore)}</td>
+                      <td className="text-right">
+                        <Link
+                          href={`/admin/audits/templates/${t.id}`}
+                          className="bz-btn-ghost"
+                        >
+                          Düzenle
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card list (< lg) */}
+            <div className="space-y-2 lg:hidden">
+              {data.topTemplates.map((t) => (
+                <div key={t.id} className="bz-card p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="bz-h-tight truncate text-[14px]">{t.title}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <Badge kind={SECTOR_BADGE[t.sector]}>{SECTOR_LABEL[t.sector]}</Badge>
+                        {t.isPublished ? (
+                          <Badge kind="ok">Yayında</Badge>
+                        ) : (
+                          <Badge kind="ghost">Taslak</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <Link
+                      href={`/admin/audits/templates/${t.id}`}
+                      className="bz-btn-ghost shrink-0 text-[11px]"
+                    >
+                      Düzenle
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] p-2">
+                    <div>
+                      <div className="pulse-eyebrow text-[#737373]">Yanıt</div>
+                      <div className="bz-mono mt-0.5 text-[13px] font-semibold">
+                        {t.responseCount}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="pulse-eyebrow text-[#737373]">Ort. Puan</div>
+                      <div className="bz-mono mt-0.5 text-[13px] font-semibold">
+                        {fmtScore(t.avgScore)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </section>
 
@@ -288,37 +365,72 @@ export default function AuditStatsPage() {
             body="Henüz yanıt veren işletme yok."
           />
         ) : (
-          <div className="bz-card overflow-hidden">
-            <table className="bz-table">
-              <thead>
-                <tr>
-                  <th>İşletme</th>
-                  <th className="text-right">Yanıt</th>
-                  <th className="text-right">Ort. Puan</th>
-                  <th className="text-right">Son yanıt</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.perRestaurant.map((r) => (
-                  <tr key={r.restaurantId}>
-                    <td>
-                      <Link
-                        href={`/admin/restaurants/${r.restaurantId}`}
-                        className="bz-h-tight text-[14px] hover:underline"
-                      >
-                        {r.name}
-                      </Link>
-                    </td>
-                    <td className="text-right bz-mono">{r.responseCount}</td>
-                    <td className="text-right bz-mono">{fmtScore(r.avgScore)}</td>
-                    <td className="text-right text-[13px] text-[#525252]">
-                      {fmtDate(r.latestResponseAt)}
-                    </td>
+          <>
+            {/* Desktop tablo (lg+) */}
+            <div className="bz-card hidden overflow-hidden lg:block">
+              <table className="bz-table">
+                <thead>
+                  <tr>
+                    <th>İşletme</th>
+                    <th className="text-right">Yanıt</th>
+                    <th className="text-right">Ort. Puan</th>
+                    <th className="text-right">Son yanıt</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {data.perRestaurant.map((r) => (
+                    <tr key={r.restaurantId}>
+                      <td>
+                        <Link
+                          href={`/admin/restaurants/${r.restaurantId}`}
+                          className="bz-h-tight text-[14px] hover:underline"
+                        >
+                          {r.name}
+                        </Link>
+                      </td>
+                      <td className="bz-mono text-right">{r.responseCount}</td>
+                      <td className="bz-mono text-right">{fmtScore(r.avgScore)}</td>
+                      <td className="text-right text-[13px] text-[#525252]">
+                        {fmtDate(r.latestResponseAt)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card list (< lg) */}
+            <div className="space-y-2 lg:hidden">
+              {data.perRestaurant.map((r) => (
+                <Link
+                  key={r.restaurantId}
+                  href={`/admin/restaurants/${r.restaurantId}`}
+                  className="bz-card block p-3 transition hover:border-[#C6F24E]"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="bz-h-tight truncate text-[14px]">{r.name}</div>
+                    <span className="bz-mono shrink-0 text-[11px] text-[#737373]">
+                      {fmtDate(r.latestResponseAt)}
+                    </span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] p-2">
+                    <div>
+                      <div className="pulse-eyebrow text-[#737373]">Yanıt</div>
+                      <div className="bz-mono mt-0.5 text-[13px] font-semibold">
+                        {r.responseCount}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="pulse-eyebrow text-[#737373]">Ort. Puan</div>
+                      <div className="bz-mono mt-0.5 text-[13px] font-semibold">
+                        {fmtScore(r.avgScore)}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </>
         )}
       </section>
     </div>
