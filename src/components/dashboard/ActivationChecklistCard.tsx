@@ -23,6 +23,14 @@ import type { ActivationResult, ActivationStep } from "@/lib/activation";
 interface ActivationChecklistCardProps {
   restaurantId: string;
   locale: "tr" | "en";
+  /**
+   * Server-side computed activation result. When supplied, the component
+   * skips its initial fetch + loading skeleton — eliminates the "double
+   * skeleton" flash where Next.js segment loading.tsx finishes and then
+   * this client component's own `loading=true` state shows another
+   * skeleton (CLAUDE.md §40.10).
+   */
+  initialResult?: ActivationResult;
 }
 
 const STEP_META: Record<
@@ -75,10 +83,15 @@ function ctaHref(step: ActivationStep, restaurantId: string, locale: string): st
 export default function ActivationChecklistCard({
   restaurantId,
   locale,
+  initialResult,
 }: ActivationChecklistCardProps) {
   const isTr = locale === "tr";
-  const [result, setResult] = useState<ActivationResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Server hydration: parent server-component pre-computed activation; skip
+  // own loading skeleton (CLAUDE.md §40.10 anti-double-skeleton pattern).
+  const [result, setResult] = useState<ActivationResult | null>(
+    initialResult ?? null,
+  );
+  const [loading, setLoading] = useState(initialResult === undefined);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,8 +113,12 @@ export default function ActivationChecklistCard({
   }, [restaurantId, isTr]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    // Only fetch when server didn't pre-hydrate. Patch actions still call
+    // load() to refresh after mutations.
+    if (initialResult === undefined) {
+      load();
+    }
+  }, [load, initialResult]);
 
   const performAction = async (action: string) => {
     if (busy) return;

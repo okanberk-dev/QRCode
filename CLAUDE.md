@@ -4661,6 +4661,86 @@ origin always fresh.
 disiplini). git history `git log --all --diff-filter=D --name-only --
 '*FileName*'` ile silme kararının gerekçesi okunur.
 
+### §40.10 Skeleton / loading.tsx disipline (kanonik)
+
+Premium SaaS hissi için skeleton loading **gerçek sayfanın strüktürel
+klonu** olmalıdır — wrapper, grid, gap, kart chrome, satır yüksekliği
+birebir; sadece görsel içerik shimmer ile değişir. Aksi halde Cumulative
+Layout Shift (CLS) Core Web Vitals'i bozar ve "zıplama" hissi premium
+algıyı düşürür.
+
+**Drift kuralı (Maintenance)**: Yeni `page.tsx` yazarken veya mevcut
+sayfanın wrapper'ını (`max-w-*`, `px-*`, `py-*`, `space-y-*`, grid
+template, gap) değiştirirken **aynı segment'in `loading.tsx`'i de
+güncellenmek zorunda**. Bu zorunlu — drift olursa loading→loaded geçişte
+CLS sıçraması oluşur. Pre-merge code review checklist:
+
+- [ ] `page.tsx` wrapper class'ı değişti mi? → `loading.tsx` aynı class'a güncelle.
+- [ ] Yeni section eklendi mi? → loading skeleton'a structural placeholder ekle.
+- [ ] Section silindi mi (örn. KPI strip §38.56)? → loading'den de sil.
+- [ ] Grid template (`grid-cols-[...]`) değişti mi? → loading'de aynı template.
+
+**Çift skeleton anti-pattern**:
+
+Eğer parent server-component (`page.tsx`) içinde `loading.tsx` varsa VE
+sayfa içindeki client component kendi `useState(true)` initial loading
+state'i ile **ikinci kez** skeleton render ediyorsa → çift skeleton flash:
+
+1. İlk: Next.js segment `loading.tsx` görünür (server fetch sırasında)
+2. İkinci: Page mount olur → client component mount olur → `loading=true` skeleton görünür
+3. Üçüncü: `useEffect` fetch tamamlanır → gerçek içerik
+
+Çözüm — **server hydration pattern**:
+
+```ts
+// Parent server-component (page.tsx):
+const initialData = await prisma.X.findUnique({ ... });
+return <ChildComponent initialData={initialData} />;
+
+// Child client component:
+interface Props {
+  initialData?: DataType;
+}
+const [data, setData] = useState(initialData ?? null);
+const [loading, setLoading] = useState(initialData === undefined);
+useEffect(() => {
+  if (initialData === undefined) load();  // ← sadece SSR data yoksa fetch
+}, []);
+```
+
+Mevcut canonical örnekler:
+- `AdminOverviewWidgets` — parent `members` + `attention` prop'larıyla
+  server-data geçirir; component `useState(!hasServerData)` ile skeleton
+  atlatır (CLAUDE.md §23.7 Phase 3.3 paterni)
+- `ActivationChecklistCard` — `initialResult?: ActivationResult` prop;
+  owner `dashboard/page.tsx` `prisma.$transaction` ile activation hesaplar
+  ve geçirir
+
+**Yapma**:
+- Yeni `useState(true)` initial loading state'i olan client component'i
+  parent server-data hydration olmadan loading.tsx olan bir sayfaya
+  mount etmek (otomatik çift skeleton).
+- "Sadece loading.tsx koy, client component kendi skeleton'ını da göstersin
+  zaten yüklenir" — kullanıcı 2 adım skeleton görür, premium hissi
+  bozulur.
+- `loading.tsx`'i wrapper'ı page.tsx'ten kopyalamadan yazmak — drift
+  başlangıcı.
+
+**Yap**:
+- Yeni client component fetch'i için `initialData` prop pattern'i
+- Yeni `loading.tsx` yazarken bire-bir page.tsx wrapper'ı klonla
+- 3+ wrapper class değişince hemen loading.tsx'i de güncelle
+- Eksik `loading.tsx` olan segment'lerin root fallback'leri (`admin/loading.tsx`,
+  `dashboard/loading.tsx`) en yaygın değerleri (1200, space-y-4) kullanır;
+  outlier sayfa (max-w-1280/1100) için kendi loading.tsx'ini yaz.
+
+**Vercel preview deploy disable**: `vercel.json`'a `"git": {
+"deploymentEnabled": { "main": true } }` eklenir — sadece main branch
+production deploy alır. PR'lar otomatik preview deploy yapmaz; main'e
+merge olunca tek production deploy tetiklenir. Maliyet + gereksiz build
+sayısı + Sentry release noise azalır. Operatör spesifik branch için
+preview gerekirse Vercel dashboard'dan manuel "Deploy" tetikleyebilir.
+
 ---
 
 ## §41 — Future Session Note-Taking Disipline (kanonik)
