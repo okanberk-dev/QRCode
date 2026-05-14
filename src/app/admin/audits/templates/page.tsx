@@ -259,7 +259,7 @@ export default function AuditTemplatesPage() {
       {error && <AlertBanner kind="danger" onDismiss={() => setError(null)}>{error}</AlertBanner>}
       {notice && <AlertBanner kind="success" onDismiss={() => setNotice(null)}>{notice}</AlertBanner>}
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="bz-card p-3">
           <div className="pulse-eyebrow text-[#525252]">Toplam</div>
           <div className="bz-h-tight text-[22px] mt-1">{counts.total}</div>
