@@ -99,3 +99,18 @@ export function revalidateMarketingChrome(): void {
     console.error('[revalidateMarketingChrome]', error);
   }
 }
+
+/**
+ * Invalidate the pricing page (TR + EN) after admin plan save/delete.
+ * Without this, the SubscriptionPlan changes admin made would be stale
+ * for up to 1h (ISR `revalidate=3600`) — including annual price override
+ * (CLAUDE.md §15.2 `priceYearlyTry`/`Usd`) drift.
+ */
+export function revalidatePricing(): void {
+  try {
+    revalidatePath('/tr/pricing');
+    revalidatePath('/en/pricing');
+  } catch (error) {
+    console.error('[revalidatePricing]', error);
+  }
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowUp,
@@ -8,6 +8,7 @@ import {
   Loader2,
   Pencil,
   Plus,
+  RotateCcw,
   Sparkles,
   Trash2,
 } from 'lucide-react';
@@ -132,6 +133,12 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: 'success' | 'danger'; message: string } | null>(null);
   const [seeding, setSeeding] = useState(false);
+  // Track whether admin has explicitly typed in yearly override fields during
+  // the current modal session. If untouched, changing monthly price auto-clears
+  // yearly so the public formula fallback (monthly × 12 × 0.8) reapplies —
+  // prevents stale overrides from drifting away from monthly. CLAUDE.md §15.2.
+  const yearlyTryTouchedRef = useRef(false);
+  const yearlyUsdTouchedRef = useRef(false);
 
   useEffect(() => {
     if (!notice || notice.kind !== 'success') return;
@@ -201,6 +208,8 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
       ...EMPTY_FORM,
       sortOrder: String((plans[plans.length - 1]?.sortOrder ?? 0) + 10),
     });
+    yearlyTryTouchedRef.current = false;
+    yearlyUsdTouchedRef.current = false;
     setError(null);
     setModalOpen(true);
   };
@@ -208,6 +217,8 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
   const openEdit = (p: AdminPlanRow) => {
     setEditingId(p.id);
     setForm(rowToForm(p));
+    yearlyTryTouchedRef.current = false;
+    yearlyUsdTouchedRef.current = false;
     setError(null);
     setModalOpen(true);
   };
@@ -556,7 +567,17 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                 type="number"
                 min={0}
                 value={form.priceTry}
-                onChange={(e) => setForm((f) => ({ ...f, priceTry: e.target.value }))}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    priceTry: next,
+                    // CLAUDE.md §15.2 — yıllık override admin elle dokunmadıysa
+                    // aylık değişince temizlenir → public sayfa formula
+                    // (monthly × 12 × 0.8) yeniden geçerli olur.
+                    priceYearlyTry: yearlyTryTouchedRef.current ? f.priceYearlyTry : '',
+                  }));
+                }}
                 className="bz-input"
               />
             </Field>
@@ -565,7 +586,14 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                 type="number"
                 min={0}
                 value={form.priceUsd}
-                onChange={(e) => setForm((f) => ({ ...f, priceUsd: e.target.value }))}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setForm((f) => ({
+                    ...f,
+                    priceUsd: next,
+                    priceYearlyUsd: yearlyUsdTouchedRef.current ? f.priceYearlyUsd : '',
+                  }));
+                }}
                 className="bz-input"
                 placeholder="EN sayfası için"
               />
@@ -588,40 +616,93 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
           {/* Yıllık fiyat — public pricing sayfasında "Yıllık" toggle'da
               gösterilir. Boş bırakılırsa frontend formula (aylık × 12 × 0.8)
               uygular; admin elle override ettiğinde DB değeri kullanılır.
-              CLAUDE.md §15.2 yıllık fiyat override pattern. */}
+              CLAUDE.md §15.2 yıllık fiyat override pattern.
+
+              Stale override koruması: admin aylık fiyatı değiştirip yıllık'a
+              dokunmazsa form yıllık'ı boşaltır (auto-clear) → kayıtta null
+              → public sayfada formula geçerli olur. Admin yıllık'a elle
+              değer girerse override "touched" sayılır ve aylık değişse de
+              korunur. */}
           <div className="grid gap-4 md:grid-cols-2">
             <Field
               label="Yıllık fiyat (TRY, opsiyonel)"
               hint="Boş bırakılırsa aylık × 12 × 0.8 (≈%20 indirim) hesaplanır."
             >
-              <input
-                type="number"
-                min={0}
-                value={form.priceYearlyTry}
-                onChange={(e) => setForm((f) => ({ ...f, priceYearlyTry: e.target.value }))}
-                className="bz-input"
-                placeholder={(() => {
-                  const m = parseInt(form.priceTry, 10);
-                  if (!Number.isFinite(m) || m <= 0) return 'örn. 4990';
-                  return `Otomatik: ${Math.round(m * 12 * 0.8).toLocaleString('tr-TR')}`;
-                })()}
+              <div className="flex items-stretch gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  value={form.priceYearlyTry}
+                  onChange={(e) => {
+                    yearlyTryTouchedRef.current = true;
+                    setForm((f) => ({ ...f, priceYearlyTry: e.target.value }));
+                  }}
+                  className="bz-input flex-1"
+                  placeholder={(() => {
+                    const m = parseInt(form.priceTry, 10);
+                    if (!Number.isFinite(m) || m <= 0) return 'örn. 4990';
+                    return `Otomatik: ${Math.round(m * 12 * 0.8).toLocaleString('tr-TR')}`;
+                  })()}
+                />
+                {form.priceYearlyTry.trim() !== '' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      yearlyTryTouchedRef.current = false;
+                      setForm((f) => ({ ...f, priceYearlyTry: '' }));
+                    }}
+                    className="bz-btn-ghost shrink-0 px-3"
+                    title="Otomatik formüle dön (aylık × 12 × 0.8)"
+                  >
+                    <RotateCcw size={13} />
+                  </button>
+                )}
+              </div>
+              {/* Public sayfada gösterilecek "aylık eşdeğeri" canlı önizleme */}
+              <YearlyDisplayHint
+                monthly={form.priceTry}
+                yearlyOverride={form.priceYearlyTry}
+                currency="TRY"
               />
             </Field>
             <Field
               label="Yıllık fiyat (USD, opsiyonel)"
               hint="USD aylık dolu ise yıllık otomatik hesaplanabilir, ya da elle gir."
             >
-              <input
-                type="number"
-                min={0}
-                value={form.priceYearlyUsd}
-                onChange={(e) => setForm((f) => ({ ...f, priceYearlyUsd: e.target.value }))}
-                className="bz-input"
-                placeholder={(() => {
-                  const u = parseInt(form.priceUsd, 10);
-                  if (!Number.isFinite(u) || u <= 0) return 'EN sayfası için';
-                  return `Otomatik: ${Math.round(u * 12 * 0.8)}`;
-                })()}
+              <div className="flex items-stretch gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  value={form.priceYearlyUsd}
+                  onChange={(e) => {
+                    yearlyUsdTouchedRef.current = true;
+                    setForm((f) => ({ ...f, priceYearlyUsd: e.target.value }));
+                  }}
+                  className="bz-input flex-1"
+                  placeholder={(() => {
+                    const u = parseInt(form.priceUsd, 10);
+                    if (!Number.isFinite(u) || u <= 0) return 'EN sayfası için';
+                    return `Otomatik: ${Math.round(u * 12 * 0.8)}`;
+                  })()}
+                />
+                {form.priceYearlyUsd.trim() !== '' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      yearlyUsdTouchedRef.current = false;
+                      setForm((f) => ({ ...f, priceYearlyUsd: '' }));
+                    }}
+                    className="bz-btn-ghost shrink-0 px-3"
+                    title="Otomatik formüle dön (aylık × 12 × 0.8)"
+                  >
+                    <RotateCcw size={13} />
+                  </button>
+                )}
+              </div>
+              <YearlyDisplayHint
+                monthly={form.priceUsd}
+                yearlyOverride={form.priceYearlyUsd}
+                currency="USD"
               />
             </Field>
           </div>
@@ -805,6 +886,62 @@ function Field({
       <div className="mt-1.5">{children}</div>
       {hint && <p className="mt-1 text-[11px] text-[#737373]">{hint}</p>}
     </div>
+  );
+}
+
+/**
+ * Live preview of the "per-month under annual" price that will show on the
+ * public /pricing page. Mirrors `toPublicPlan()` logic (CLAUDE.md §15.2):
+ *   override ? override / 12 : monthly × 0.8
+ * Helps admin spot stale overrides at a glance.
+ */
+function YearlyDisplayHint({
+  monthly,
+  yearlyOverride,
+  currency,
+}: {
+  monthly: string;
+  yearlyOverride: string;
+  currency: 'TRY' | 'USD';
+}) {
+  const m = parseInt(monthly, 10);
+  const y = parseInt(yearlyOverride, 10);
+  const hasMonthly = Number.isFinite(m) && m > 0;
+  const hasOverride = Number.isFinite(y) && y > 0;
+  if (!hasMonthly && !hasOverride) return null;
+
+  const perMonthYearly = hasOverride
+    ? Math.round(y / 12)
+    : hasMonthly
+      ? Math.round(m * 0.8)
+      : 0;
+  const isOverride = hasOverride;
+  const symbol = currency === 'TRY' ? '₺' : '$';
+  const formatted =
+    currency === 'TRY'
+      ? `${symbol}${perMonthYearly.toLocaleString('tr-TR')}`
+      : `${symbol}${perMonthYearly.toLocaleString('en-US')}`;
+
+  // Stale check: if override leaks more than 30% off vs monthly × 0.8 formula,
+  // flag it so admin notices when monthly was bumped without yearly being
+  // re-synced. 30% threshold avoids noise on legit deeper discounts.
+  const formulaPerMonth = hasMonthly ? Math.round(m * 0.8) : 0;
+  const stale =
+    isOverride && hasMonthly && formulaPerMonth > 0 && perMonthYearly < formulaPerMonth * 0.7;
+
+  return (
+    <p className={`mt-1 text-[11px] ${stale ? 'text-[#92400E]' : 'text-[#525252]'}`}>
+      Public sayfada gösterilecek: <strong>{formatted}/ay</strong> (yıllık){' '}
+      <span className="text-[#737373]">
+        — {isOverride ? 'manuel override' : 'aylık × 12 × 0.8'}
+      </span>
+      {stale && (
+        <>
+          {' '}
+          <span className="font-semibold">— override aylıktan kopmuş olabilir, sıfırlamayı düşünün.</span>
+        </>
+      )}
+    </p>
   );
 }
 

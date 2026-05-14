@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BarChart3, Bell, BookOpen, Building2, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Settings, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, Building2, Check, ChevronDown, ChevronLeft, ChevronRight, ClipboardCheck, ClipboardList, CreditCard, Crown, LayoutDashboard, LogOut, MessageSquareText, MoreHorizontal, Plug, Plus, QrCode, Search, Store, UserCircle, UtensilsCrossed, X, UsersRound } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import AnnouncementBanner, { type DashboardAnnouncement } from './AnnouncementBanner';
 import TrialBanner from './TrialBanner';
@@ -1014,22 +1014,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             )}
             {!isCollapsed && <div className="bz-user-menu-divider" />}
             <Link
-              href={`/${locale}/dashboard/account?section=profile`}
-              className="bz-user-menu-item"
-              role="menuitem"
-              onClick={() => setUserMenuOpen(false)}
-            >
-              <UserCircle size={14} strokeWidth={2} />
-              {locale === 'tr' ? 'Profilim' : 'Profile'}
-            </Link>
-            <Link
               href={`/${locale}/dashboard/account`}
               className="bz-user-menu-item"
               role="menuitem"
               onClick={() => setUserMenuOpen(false)}
             >
-              <Settings size={14} strokeWidth={2} />
-              {locale === 'tr' ? 'Ayarlar' : 'Settings'}
+              <UserCircle size={14} strokeWidth={2} />
+              {locale === 'tr' ? 'Hesabım' : 'My Account'}
             </Link>
             <div className="bz-user-menu-divider" />
             <Link

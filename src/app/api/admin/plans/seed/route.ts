@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
+import { revalidatePricing } from '@/lib/marketing-revalidate';
 
 const DEFAULTS = [
   {
@@ -106,6 +107,7 @@ export async function POST(req: NextRequest) {
       await prisma.subscriptionPlan.create({ data: plan });
       seeded++;
     }
+    revalidatePricing();
     return NextResponse.json({ success: true, seeded, force });
   } catch (error) {
     console.error('[plans seed] failed', error);

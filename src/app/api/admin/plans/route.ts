@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ApiErrors } from '@/lib/api-errors';
 import { getAdminFromRequest } from '@/lib/auth';
+import { revalidatePricing } from '@/lib/marketing-revalidate';
 import { getAllPlansForAdmin, toAdminRow } from '@/lib/subscription-plans';
 
 export const dynamic = 'force-dynamic';
@@ -112,6 +113,7 @@ export async function POST(req: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return tx.subscriptionPlan.create({ data: data as any });
     });
+    revalidatePricing();
     return NextResponse.json({ data: toAdminRow(created) }, { status: 201 });
   } catch (error) {
     console.error('[/api/admin/plans POST] failed:', error);
