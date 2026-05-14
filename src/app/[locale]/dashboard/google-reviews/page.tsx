@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useMemo, useState, Suspense } from 'react';
+import { use, useEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -558,6 +558,12 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [locationNotice, setLocationNotice] = useState<string | null>(null);
   const [locationRetryAfter, setLocationRetryAfter] = useState<number | null>(null);
+  // Backend `source: 'cache' | 'google' | 'empty'` döner — UI rozet
+  // (Önbellek) ve "Son senkron" zamanı için kullanılır (CLAUDE.md §5.1).
+  const [inlineLocationsSource, setInlineLocationsSource] = useState<'cache' | 'google' | 'empty' | null>(null);
+  const [inlineLocationsSyncedAt, setInlineLocationsSyncedAt] = useState<string | null>(null);
+  // Countdown 0'a ulaşınca tek-seferlik auto-retry tetikle.
+  const autoRetryFiredRef = useRef(false);
   const [savingLocation, setSavingLocation] = useState<string | null>(null);
   // Refresh token revoke / expired durumlarda "Yeniden Bağla" CTA flag'i.
   // setLocationError ile birlikte set edilir; AlertBanner altında buton görünür.
@@ -792,21 +798,29 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
 
   // Google Business Profile location'larını çek. 429 stale cache fallback'i
   // mevcut backend tarafında (CLAUDE.md §40.1 graceful degrade) — UI sarı
-  // banner + retry-after countdown gösterir.
-  const loadInlineLocations = async () => {
+  // banner + retry-after countdown gösterir. `force=true` sadece kullanıcı
+  // bilinçli "Konumları yenile" butonuna basınca gönderilir; otomatik
+  // mount fetch'i cache'i kullanır (CLAUDE.md §5.1 quota strategy).
+  const loadInlineLocations = async (force = false) => {
     if (!activeRestaurantId) return;
     setLoadingLocations(true);
     setLocationError(null);
     setLocationNotice(null);
     setLocationRetryAfter(null);
     setNeedsReconnect(false);
+    autoRetryFiredRef.current = false;
     try {
-      const res = await fetch(`/api/restaurants/${activeRestaurantId}/google/business/locations`);
+      const url = `/api/restaurants/${activeRestaurantId}/google/business/locations${
+        force ? '?force=true' : ''
+      }`;
+      const res = await fetch(url);
       const data = await res.json();
-      if (res.ok && data?.warning === 'GOOGLE_RATE_LIMITED') {
+      if (res.ok && (data?.warning === 'GOOGLE_RATE_LIMITED' || data?.warning === 'CLIENT_THROTTLED')) {
         setInlineLocations(data.locations ?? []);
         setInlineAccounts(Array.isArray(data.accounts) ? data.accounts : []);
         setAccountsLoaded(true);
+        setInlineLocationsSource(data.source ?? null);
+        setInlineLocationsSyncedAt(typeof data.syncedAt === 'string' ? data.syncedAt : null);
         setLocationNotice(
           data.message ||
             (isTr
@@ -860,6 +874,8 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
       setInlineLocations(data.locations ?? []);
       setInlineAccounts(Array.isArray(data.accounts) ? data.accounts : []);
       setAccountsLoaded(true);
+      setInlineLocationsSource(data.source ?? null);
+      setInlineLocationsSyncedAt(typeof data.syncedAt === 'string' ? data.syncedAt : null);
     } catch (err) {
       setLocationError(err instanceof Error ? err.message : (isTr ? 'Konumlar alınamadı.' : 'Failed to load locations.'));
     } finally {
@@ -909,7 +925,9 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status?.connected, status?.selectedLocation, activeRestaurantId]);
 
-  // 429 retry-after countdown
+  // 429 retry-after countdown + tek-seferlik auto-retry (CLAUDE.md §5.1).
+  // Sarı banner gören owner için manuel "yenile" gerek kalmadan otomatik
+  // tek tekrar denemesi yapılır. `autoRetryFiredRef` sonsuz loop'tan korur.
   useEffect(() => {
     if (locationRetryAfter === null || locationRetryAfter <= 0) return;
     const interval = setInterval(() => {
@@ -917,12 +935,18 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         if (prev === null) return null;
         if (prev <= 1) {
           clearInterval(interval);
+          if (!autoRetryFiredRef.current && status?.connected && activeRestaurantId) {
+            autoRetryFiredRef.current = true;
+            void loadInlineLocations(true);
+          }
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
+    // loadInlineLocations stable closure; status.connected sadece read.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationRetryAfter]);
 
   const draftReply = async (review: GoogleReview) => {
@@ -1273,10 +1297,25 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             </div>
             <button
               type="button"
-              onClick={loadInlineLocations}
+              onClick={() => loadInlineLocations(true)}
               disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
               className="bz-btn-ghost shrink-0 inline-flex items-center gap-1.5 rounded-full text-[12.5px]"
               aria-label={isTr ? 'Konumları yenile' : 'Refresh locations'}
+              title={
+                inlineLocationsSyncedAt
+                  ? `${isTr ? 'Son senkron' : 'Last sync'}: ${(() => {
+                      const ts = Date.parse(inlineLocationsSyncedAt);
+                      if (!Number.isFinite(ts)) return inlineLocationsSyncedAt;
+                      const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+                      if (diffSec < 60) return isTr ? 'az önce' : 'just now';
+                      const min = Math.floor(diffSec / 60);
+                      if (min < 60) return isTr ? `${min} dk önce` : `${min} min ago`;
+                      const hr = Math.floor(min / 60);
+                      if (hr < 24) return isTr ? `${hr} sa önce` : `${hr} h ago`;
+                      return isTr ? `${Math.floor(hr / 24)} gün önce` : `${Math.floor(hr / 24)}d ago`;
+                    })()}`
+                  : undefined
+              }
             >
               {loadingLocations ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
               {locationRetryAfter !== null && locationRetryAfter > 0
@@ -1349,7 +1388,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                     </a>
                     <button
                       type="button"
-                      onClick={loadInlineLocations}
+                      onClick={() => loadInlineLocations(true)}
                       disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
                       className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px] rounded-full"
                     >
@@ -1396,7 +1435,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                     </a>
                     <button
                       type="button"
-                      onClick={loadInlineLocations}
+                      onClick={() => loadInlineLocations(true)}
                       disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
                       className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px] rounded-full"
                     >
@@ -1408,32 +1447,54 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
               </div>
             </div>
           ) : (
-            <div className="grid gap-2 mt-4">
-              {inlineLocations.map((location) => {
-                const key = `${location.accountName}:${location.locationName}`;
-                const saving = savingLocation === key;
-                return (
-                  <button
-                    type="button"
-                    key={key}
-                    onClick={() => selectInlineLocation(location)}
-                    disabled={Boolean(savingLocation)}
-                    className="group rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3.5 text-left transition hover:border-[#0A0A0A] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-start gap-3"
-                  >
-                    <MapPin size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-[#737373] group-hover:text-[#0A0A0A]" />
-                    <div className="flex-1 min-w-0">
-                      <div className="bz-h-tight text-[14px] truncate">{location.title}</div>
-                      {location.address && (
-                        <div className="text-[12px] text-[#737373] mt-0.5 truncate">
-                          {location.address}
-                        </div>
-                      )}
-                    </div>
-                    {saving && <Loader2 size={14} className="animate-spin text-[#0A0A0A] shrink-0 mt-0.5" />}
-                  </button>
-                );
-              })}
-            </div>
+            <>
+              {inlineLocationsSyncedAt && (
+                <div className="mt-4 text-[11px] text-[#737373]">
+                  {isTr ? 'Son senkron' : 'Last sync'}: {(() => {
+                    const ts = Date.parse(inlineLocationsSyncedAt);
+                    if (!Number.isFinite(ts)) return inlineLocationsSyncedAt;
+                    const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+                    if (diffSec < 60) return isTr ? 'az önce' : 'just now';
+                    const min = Math.floor(diffSec / 60);
+                    if (min < 60) return isTr ? `${min} dk önce` : `${min} min ago`;
+                    const hr = Math.floor(min / 60);
+                    if (hr < 24) return isTr ? `${hr} sa önce` : `${hr} h ago`;
+                    return isTr ? `${Math.floor(hr / 24)} gün önce` : `${Math.floor(hr / 24)}d ago`;
+                  })()}
+                  {inlineLocationsSource === 'cache' && (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] text-[#525252]">
+                      {isTr ? 'Önbellek' : 'Cached'}
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="grid gap-2 mt-2">
+                {inlineLocations.map((location) => {
+                  const key = `${location.accountName}:${location.locationName}`;
+                  const saving = savingLocation === key;
+                  return (
+                    <button
+                      type="button"
+                      key={key}
+                      onClick={() => selectInlineLocation(location)}
+                      disabled={Boolean(savingLocation)}
+                      className="group rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3.5 text-left transition hover:border-[#0A0A0A] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-start gap-3"
+                    >
+                      <MapPin size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-[#737373] group-hover:text-[#0A0A0A]" />
+                      <div className="flex-1 min-w-0">
+                        <div className="bz-h-tight text-[14px] truncate">{location.title}</div>
+                        {location.address && (
+                          <div className="text-[12px] text-[#737373] mt-0.5 truncate">
+                            {location.address}
+                          </div>
+                        )}
+                      </div>
+                      {saving && <Loader2 size={14} className="animate-spin text-[#0A0A0A] shrink-0 mt-0.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       ) : (

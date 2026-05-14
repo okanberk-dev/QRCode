@@ -150,7 +150,7 @@ Endpoint'ler:
 - `POST /api/restaurants/[id]/google/places/search` — Places Text Search (Zod + canWriteRestaurant + rate limit)
 - `POST /api/restaurants/[id]/google/places/select` — `placeId` → review URL kaydı
 - `GET /api/restaurants/[id]/google/business/status` — config/connection/selected location
-- `GET /api/restaurants/[id]/google/business/locations` — Business Profile account/location sync
+- `GET /api/restaurants/[id]/google/business/locations` — Business Profile account/location sync (CLAUDE.md §5.1.1 quota strategy: 30 sn TTL + `?force=true` bypass + per-restaurant rate limit 6/dk + empty-cache 429 → 200+warning graceful degrade + UI auto-retry on countdown)
 - `POST /api/restaurants/[id]/google/business/locations/select` — restoranı GBP location'a eşler
 - `GET /api/restaurants/[id]/google/business/reviews` — seçili verified location yorumlarını listeler
 - `POST /api/restaurants/[id]/google/business/reviews/reply` — Google review reply update
@@ -161,6 +161,40 @@ Notlar:
 - Reviews API yalnızca ilgili Google hesabının owner/manager olduğu **verified** Business Profile location'larda çalışır.
 - Google review reply public alana gider; otomatik gönderme yok, owner metni görüp manuel gönderir.
 - **Mimari Not (2026-05):** Google yorumları karmaşıklığı nedeniyle `Ayarlar > Platform Bağlantıları` panelinden çıkarılıp tamamen müstakil bir **`/[locale]/dashboard/google-reviews`** sayfasına taşınmıştır. İşletme sahipleri, birden fazla restoranı varsa bu yeni sayfada restoran seçebilir, yorumları tek bir listede analiz edip (AI desteğiyle) cevaplayabilir. Ayarlar sekmesinde sadece eşleştirme (bağlantı ve lokasyon seçimi) bulunur.
+
+### 5.1.1 Google API quota strategy (2026-05)
+
+Google'ın varsayılan kotaları çok dar ve **proje-geneli** (TÜM Buaze kullanıcıları aynı projeyi paylaşır):
+- `accounts.list` → **1 istek/dakika/proje**
+- `locations.list` → 10 istek/dakika/proje
+- `reviews/media/Q&A` → tipik 60-300/dakika/proje
+
+Eski akış tek "konum seç" işleminde **5-6 quota birim** yakıyordu (locations refresh + select endpoint'in `listGoogleReviews` çağrısı + sayfa mount'taki tekrar fetch + media + Q&A). 2-3 owner aynı dakikada işlem yapınca kota patlıyordu.
+
+**Şu anki strateji (4 katman, `/api/restaurants/[id]/google/business/locations/route.ts`):**
+
+1. **Server-side TTL (30 sn)**: `?force=true` query yoksa cache son 30 sn'den taze ve `accounts.length > 0` ise Google'a hiç gidilmez, DB cache döner. Otomatik mount fetch + sub-component remount + status polling Google quota yakmaz.
+2. **`?force=true` bypass**: Sadece kullanıcı bilinçli "Konumları yenile" butonu/tekrar dene butonu basınca query'ye eklenir. Otomatik mount fetch'i (page mount + `loadInlineLocations()` auto-call from `selectedLocation === null` effect) cache kullanır.
+3. **Per-restaurant rate limit (6 force/dk)**: Upstash sliding-window. Rapid click veya parallel sub-component mount'tan kotaya basmayı önler. Limit aşılırsa cache varsa stale data + `warning: 'CLIENT_THROTTLED'` dön, yoksa 429 + retry-after.
+4. **Soft 429 fallback**: Google 429 dönerse (cache var ya da yok) endpoint **hep 200 + `warning: 'GOOGLE_RATE_LIMITED'` + boş/stale arrays + `retryAfterSeconds`** döner. UI sarı banner + countdown + tek-seferlik auto-retry gösterir (kırmızı hard error yerine).
+
+**Bonus**: `/api/restaurants/[id]/google/business/locations/select` POST artık `listGoogleReviews()` çağrısını **sadece `initialGoogleRating === null && currentGoogleRating === null`** olduğunda yapar. Rating zaten varsa quota yakmadan geçer; google-reviews sayfası mount olunca `/business/reviews` doğal olarak fresh rating'i getirir. Eski davranış her seçim için 1 quota burn ediyordu.
+
+**UI tarafı**:
+- `loadInlineLocations(force)` / `loadLocations(force)` — false default, manuel butonlar `true` geçer
+- Countdown 0'a düşünce `autoRetryFiredRef` guard'lı tek-seferlik auto-retry
+- "Son senkron: 2 dk önce · Önbellek" rozeti listenin üstünde — kullanıcı kaybolan kontrol hissini transparency ile geri kazanır
+
+**Yapma:**
+- Yeni Google API çağıran endpoint eklerken cache TTL'ı atlama — proje-geneli kotada her endpoint katkı yapar
+- "Refresh" butonunu otomatik tetikleme (page mount, focus regain, interval polling) — her tetik bir force fetch → quota burn
+- `locations/select` endpoint'inde tekrar `listGoogleReviews` veya başka quota-tüketen çağrı ekleme — happy path tek select için 0-1 quota olmalı
+- Soft 429 fallback'ini "no cache" durumunda hard 429'a düşürme — UI sarı banner + auto-retry pattern kırılır
+
+**Yap:**
+- Yeni `googleBusinessFetch`-tabanlı endpoint eklerken aynı 4-katman desenini uygula (TTL + force + rate-limit + soft 429)
+- Quota artışı gerekirse Google Cloud Console → "My Business Account Management API" + "My Business Business Information API" → Quotas → Request increase (24-48 saat onay)
+- `cache.syncedAt` her başarılı sync'te güncel kalmalı — UI rozeti güvenilmezse owner refresh dürtüsü artar
 
 ### 5.2 Paket & Özellik Erişimi (2026-05)
 
