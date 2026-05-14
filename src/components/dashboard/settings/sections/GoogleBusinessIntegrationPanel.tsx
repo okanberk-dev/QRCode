@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
   ExternalLink,
@@ -41,6 +41,26 @@ interface GoogleStatus {
   connected: boolean;
   selectedLocation: GoogleLocation | null;
   syncedAt: string | null;
+}
+
+// Locations endpoint'inin döndürdüğü cache metadata. Backend
+// "source: cache | google | empty" + cacheAgeSeconds + warning ile
+// nereden geldiğini bildirir; UI bu bilgiye göre rozet (cached) ve
+// auto-retry davranışı uygular (CLAUDE.md §5.1 quota strategy).
+type LocationSource = 'cache' | 'google' | 'empty';
+
+function formatRelativeTime(syncedAt: string | null, isTr: boolean): string | null {
+  if (!syncedAt) return null;
+  const ts = Date.parse(syncedAt);
+  if (!Number.isFinite(ts)) return null;
+  const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (diffSec < 60) return isTr ? 'az önce' : 'just now';
+  const min = Math.floor(diffSec / 60);
+  if (min < 60) return isTr ? `${min} dk önce` : `${min} min ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return isTr ? `${hr} sa önce` : `${hr} h ago`;
+  const days = Math.floor(hr / 24);
+  return isTr ? `${days} gün önce` : `${days}d ago`;
 }
 
 interface GooglePlace {
@@ -90,6 +110,14 @@ export function GoogleBusinessIntegrationPanel({
   // bu durumda error değil sarı uyarı + retry-after countdown göster.
   const [locationsNotice, setLocationsNotice] = useState<string | null>(null);
   const [locationsRetryAfter, setLocationsRetryAfter] = useState<number | null>(null);
+  // Backend cache mı yoksa fresh Google API mı? Owner'a sync rozet ile
+  // göster (CLAUDE.md §5.1 quota strategy — kullanıcı kaybolan kontrol
+  // hissini "Son sync: 2 dk önce" rozetiyle geri kazansın).
+  const [locationsSource, setLocationsSource] = useState<LocationSource | null>(null);
+  // Auto-retry guard: backend "X saniye sonra" diyince countdown 0'a
+  // gelince tek seferlik otomatik refresh tetiklensin. Sonsuz loop'tan
+  // korunmak için tek-seferlik flag tutulur.
+  const autoRetryFiredRef = useRef(false);
 
   useEffect(() => {
     setQuery(defaultQuery(restaurant));
@@ -100,6 +128,8 @@ export function GoogleBusinessIntegrationPanel({
 
   // 429 retry-after countdown: backend "X saniye sonra yenile" diyince
   // butonu disabled tut + her saniye azaltarak görsel feedback ver.
+  // Countdown 0'a ulaşınca tek-seferlik auto-retry tetikle (kullanıcı
+  // sayfada bekliyorsa elle tekrar tıklamasın). CLAUDE.md §5.1.
   useEffect(() => {
     if (locationsRetryAfter === null || locationsRetryAfter <= 0) return;
     const interval = setInterval(() => {
@@ -107,12 +137,21 @@ export function GoogleBusinessIntegrationPanel({
         if (prev === null) return null;
         if (prev <= 1) {
           clearInterval(interval);
+          // Auto-retry once: countdown sıfıra inerken, sarı banner görünen
+          // bir kullanıcı için butona basmadan tek otomatik tazeleme.
+          // autoRetryFiredRef sonsuz loop'tan korur.
+          if (!autoRetryFiredRef.current && status?.connected) {
+            autoRetryFiredRef.current = true;
+            void loadLocations(true);
+          }
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
+    // loadLocations stable closure; status.connected sadece read.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationsRetryAfter]);
 
   const selectedLocation = status?.selectedLocation ?? null;
@@ -202,20 +241,31 @@ export function GoogleBusinessIntegrationPanel({
     window.location.href = data.url;
   };
 
-  const loadLocations = async () => {
+  // `force=true` sadece kullanıcı bilinçli "Konumları yenile" butonuna
+  // basınca gönderilir. İlk mount + status remount cache'i kullanır →
+  // proje-geneli Google quota'sı korunur (CLAUDE.md §5.1).
+  const loadLocations = async (force = false) => {
     setLocationsLoading(true);
     setLocationsError(null);
     setLocationsNotice(null);
     setLocationsRetryAfter(null);
+    autoRetryFiredRef.current = false;
     try {
-      const res = await fetch(`/api/restaurants/${restaurant.id}/google/business/locations`);
+      const url = `/api/restaurants/${restaurant.id}/google/business/locations${
+        force ? '?force=true' : ''
+      }`;
+      const res = await fetch(url);
       const data = await res.json();
-      // 429 fallback path: backend status 200 + stale cache + warning döner.
-      if (res.ok && data?.warning === 'GOOGLE_RATE_LIMITED') {
+      // 429 / throttle fallback path: backend status 200 + stale cache +
+      // warning döner. UI sarı banner + countdown + auto-retry gösterir.
+      if (res.ok && (data?.warning === 'GOOGLE_RATE_LIMITED' || data?.warning === 'CLIENT_THROTTLED')) {
         setLocations(data.locations ?? []);
+        setLocationsSource(data.source ?? null);
         setLocationsNotice(
           data.message ||
-            'Google API kotası doldu. Son güncel veriler gösteriliyor; birkaç dakika sonra yenileyin.',
+            (isTr
+              ? 'Google API kotası doldu. Son güncel veriler gösteriliyor; birkaç dakika sonra yenileyin.'
+              : 'Google API quota exhausted. Showing last synced data; try again in a few minutes.'),
         );
         const retryAfter = typeof data.retryAfterSeconds === 'number' ? data.retryAfterSeconds : null;
         setLocationsRetryAfter(retryAfter);
@@ -230,22 +280,27 @@ export function GoogleBusinessIntegrationPanel({
         return;
       }
       if (!res.ok) {
-        // 429 ama cache yok → backend gerçek 429 döner; retry-after parse et.
+        // 429 ama cache de yok → backend gerçek 429 döner; retry-after parse et.
         if (res.status === 429) {
           const retryHeader = res.headers.get('retry-after');
           const retryAfter = retryHeader ? Number(retryHeader) : null;
           setLocationsError(
             data?.error ||
               (retryAfter
-                ? `Google API kotası doldu. ${retryAfter} saniye sonra tekrar deneyin.`
-                : 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.'),
+                ? (isTr
+                    ? `Google API kotası doldu. ${retryAfter} saniye sonra tekrar deneyin.`
+                    : `Google API quota exhausted. Try again in ${retryAfter}s.`)
+                : (isTr
+                    ? 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.'
+                    : 'Google API quota exhausted. Try again in a few minutes.')),
           );
           setLocationsRetryAfter(Number.isFinite(retryAfter) ? retryAfter : null);
           return;
         }
-        throw new Error(data?.error || 'Google konumları alınamadı.');
+        throw new Error(data?.error || (isTr ? 'Google konumları alınamadı.' : 'Failed to load locations.'));
       }
       setLocations(data.locations ?? []);
+      setLocationsSource(data.source ?? null);
       setStatus((prev) => ({
         googleReviewManagementEnabled: prev?.googleReviewManagementEnabled ?? true,
         placesConfigured: prev?.placesConfigured ?? true,
@@ -255,7 +310,7 @@ export function GoogleBusinessIntegrationPanel({
         syncedAt: data.syncedAt ?? prev?.syncedAt ?? null,
       }));
     } catch (err) {
-      setLocationsError(err instanceof Error ? err.message : "Google konumları alınamadı.");
+      setLocationsError(err instanceof Error ? err.message : (isTr ? "Google konumları alınamadı." : "Failed to load locations."));
     } finally {
       setLocationsLoading(false);
     }
@@ -478,8 +533,13 @@ export function GoogleBusinessIntegrationPanel({
                   <button
                     type="button"
                     className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 rounded-full text-[13px]"
-                    onClick={loadLocations}
+                    onClick={() => loadLocations(true)}
                     disabled={locationsLoading || (locationsRetryAfter !== null && locationsRetryAfter > 0)}
+                    title={
+                      status?.syncedAt
+                        ? `${isTr ? 'Son senkron' : 'Last sync'}: ${formatRelativeTime(status.syncedAt, isTr)}`
+                        : undefined
+                    }
                   >
                     {locationsLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                     {locationsRetryAfter !== null && locationsRetryAfter > 0
@@ -496,6 +556,17 @@ export function GoogleBusinessIntegrationPanel({
                 <AlertBanner kind="warn" onDismiss={() => setLocationsNotice(null)}>
                   {locationsNotice}
                 </AlertBanner>
+              )}
+
+              {locations.length > 0 && status?.syncedAt && (
+                <div className="text-[11px] text-[#737373]">
+                  {isTr ? 'Son senkron' : 'Last sync'}: {formatRelativeTime(status.syncedAt, isTr)}
+                  {locationsSource === 'cache' && (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[10px] text-[#525252]">
+                      {isTr ? 'Önbellek' : 'Cached'}
+                    </span>
+                  )}
+                </div>
               )}
 
               {locations.length > 0 && (

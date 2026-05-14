@@ -13,6 +13,7 @@ import {
   selectedGoogleLocation,
   withSelectedGoogleLocation,
   listGoogleReviews,
+  GoogleBusinessApiError,
 } from '@/lib/google-business';
 import { captureBaselineSnapshot } from '@/lib/reputation/snapshot';
 import { prisma } from '@/lib/prisma';
@@ -51,7 +52,7 @@ export async function POST(
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id },
-    select: { initialGoogleRating: true },
+    select: { initialGoogleRating: true, currentGoogleRating: true },
   });
   if (!restaurant) return ApiErrors.notFound('İşletme bulunamadı.');
 
@@ -71,22 +72,35 @@ export async function POST(
     location.newReviewUri ??
     (googlePlaceId ? googleReviewUrlFromPlaceId(googlePlaceId) : undefined);
 
-  // Fetch current rating from Google to use as initial/current rating.
-  // Fail-soft: rating is best-effort. `googleBusinessFetch` already emits a
-  // single Sentry event on failure (tagged `integration: 'google-business'`);
-  // here we only need a PII-safe local breadcrumb so this rare path is not
-  // silent. Reauth / rate-limit on rating fetch must not block the location
-  // selection happy path.
+  // Initial rating fetch — sadece henüz hiç rating yoksa Google'ı ara.
+  // Daha önce `loadStatusAndReviews()` veya başka bir akış rating'i
+  // doldurduysa burada quota yakmaya gerek yok; Google Reviews sayfası
+  // mount olduğunda `/business/reviews` zaten taze rating'i getirecek.
+  //
+  // Bu CLAUDE.md §5.1 quota math'ı için kritik: select endpoint'inin
+  // listGoogleReviews çağrısı ile aynı saniyede google-reviews/page.tsx
+  // `loadStatusAndReviews` da aynı reviews'u çekiyordu → 2 quota burn
+  // per location-select. Bu koşul ile fetch sıfıra iniyor (rating zaten
+  // varsa) veya 1'e (ilk kez seçildiyse).
+  //
+  // Fail-soft: rating best-effort. 429 / reauth / network hatası
+  // selection'ı bloklamaz; Sentry yukarıda capture eder.
+  const shouldFetchInitialRating =
+    restaurant.initialGoogleRating === null && restaurant.currentGoogleRating === null;
   const selectionForFetch = selectedGoogleLocation(nextCache, id);
   let fetchedRating: number | undefined;
-  if (selectionForFetch) {
+  if (shouldFetchInitialRating && selectionForFetch) {
     try {
       const res = await listGoogleReviews(integration, selectionForFetch);
       if (typeof res.averageRating === 'number') {
         fetchedRating = res.averageRating;
       }
-    } catch {
-      // Sentry already captured upstream; do not log raw error to avoid PII.
+    } catch (err) {
+      // GoogleBusinessApiError dahil her şey swallow — selection happy
+      // path bloklanmaz. Sentry yukarıda zaten capture etti.
+      if (err instanceof GoogleBusinessApiError) {
+        // breadcrumb-only, no PII
+      }
     }
   }
 
