@@ -323,27 +323,31 @@ export default function PublicMenuView({ restaurant, categories, locale = 'tr', 
 
 function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
-    <div className="min-h-full bg-[#FFFFFF]">
+    <div className="min-h-full bg-white">
+      {/* Hero — gradient + darker overlay for text contrast, refined depth */}
       <header className="relative overflow-hidden">
         <div
+          aria-hidden
           className="absolute inset-0"
-          style={{ background: `linear-gradient(135deg, ${accent} 0%, ${accent}cc 100%)` }}
+          style={{ background: `linear-gradient(135deg, ${accent} 0%, ${accent}d9 60%, ${accent}99 100%)` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-        <div className="relative px-5 pt-10 pb-8 sm:px-8 sm:pt-14 sm:pb-10">
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-transparent" />
+        <div className="relative px-5 pt-12 pb-10 sm:px-8 sm:pt-16 sm:pb-12">
           <div className="mx-auto flex max-w-2xl items-start gap-4 sm:gap-5">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/95 text-3xl font-semibold shadow-lg sm:h-20 sm:w-20 sm:text-4xl" style={{ color: accent }}>
+            <div
+              className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white text-[28px] font-medium shadow-[0_12px_28px_-12px_rgba(0,0,0,0.45)] sm:h-20 sm:w-20 sm:text-[36px]"
+              style={{ color: accent }}
+            >
               {restaurant.menuLogoUrl ? (
-                 
                 <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
               ) : (
                 restaurant.name.charAt(0).toUpperCase()
               )}
             </div>
             <div className="min-w-0 flex-1 text-white">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.25em] opacity-80">{restaurant.category}</p>
-              <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{restaurant.name}</h1>
-              <p className="mt-1 text-[11px] font-bold uppercase tracking-widest opacity-75">{copy.menuOf}</p>
+              <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/80">{restaurant.category}</p>
+              <h1 className="mt-1.5 text-[26px] font-medium leading-[1.05] tracking-[-0.02em] sm:text-[34px]">{restaurant.name}</h1>
+              <p className="mt-1.5 text-[10px] font-medium uppercase tracking-[0.28em] text-white/70">{copy.menuOf}</p>
             </div>
           </div>
           <RestaurantMeta restaurant={restaurant} variant="light" />
@@ -354,7 +358,7 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
         <EmptyState copy={copy} />
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-[#EDEDED]/80 bg-[#FFFFFF]/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-[#EDEDED] bg-white/95 backdrop-blur">
             <div className="mx-auto max-w-2xl overflow-x-auto px-3 py-3 no-scrollbar">
               <div className="flex gap-2">
                 {visibleCategories.map((c) => {
@@ -364,8 +368,8 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                       key={c.id}
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
-                      className={`shrink-0 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-widest transition-all ${
-                        isActive ? 'text-white shadow-sm' : 'bg-white text-[#0A0A0A] hover:bg-[#FFFFFF]'
+                      className={`shrink-0 rounded-full px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] transition-all ${
+                        isActive ? 'text-white shadow-sm' : 'border border-[#EDEDED] bg-white text-[#525252] hover:border-[#0A0A0A] hover:text-[#0A0A0A]'
                       }`}
                       style={isActive ? { backgroundColor: accent } : undefined}
                     >
@@ -377,18 +381,18 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
             </div>
           </nav>
 
-          <main className="mx-auto max-w-2xl space-y-10 px-4 py-8 sm:px-6 sm:py-10">
+          <main className="mx-auto max-w-2xl space-y-10 px-4 py-8 sm:px-6 sm:py-12">
             {visibleCategories.map((category) => {
               const items = category.items.filter((i) => i.isAvailable).sort((a, b) => a.sortOrder - b.sortOrder);
               if (items.length === 0) return null;
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-5">
-                    <h2 className="text-xl font-semibold tracking-tight text-[#0A0A0A] sm:text-2xl">{category.name}</h2>
+                    <h2 className="text-[22px] font-medium leading-tight tracking-[-0.02em] text-[#0A0A0A] sm:text-[26px]">{category.name}</h2>
                     {category.description && (
-                      <p className="mt-1 text-sm font-bold text-[#1A1A1A]">{category.description}</p>
+                      <p className="mt-1.5 text-[13px] leading-relaxed text-[#525252]">{category.description}</p>
                     )}
-                    <div className="mt-2 h-1 w-12 rounded-full" style={{ backgroundColor: accent }} />
+                    <div className="mt-3 h-[3px] w-12 rounded-full" style={{ backgroundColor: accent }} />
                   </div>
                   <div className="space-y-3">
                     {items.map((item) => (
@@ -397,41 +401,40 @@ function ClassicLayout({ restaurant, visibleCategories, activeId, accent, locale
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
                         onClick={() => onProductClick(item, category.id)}
-                        className={`flex cursor-pointer gap-4 rounded-2xl border border-[#EDEDED] bg-white p-3 shadow-sm transition-all sm:p-4 ${
+                        className={`flex cursor-pointer gap-4 rounded-2xl border border-[#EDEDED] bg-white p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#D4D4D4] hover:shadow-md active:scale-[0.99] sm:p-4 ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
-                        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[#EDEDED] sm:h-28 sm:w-28">
+                        <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[#F5F5F5] sm:h-28 sm:w-28">
                           {item.imageUrl ? (
-                             
                             <img
                               src={item.imageUrl}
                               alt={item.name}
                               loading="lazy"
                               decoding="async"
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                             />
                           ) : (
                             <Placeholder accent={accent} />
                           )}
                           {item.isOutOfStock && (
-                            <span className="absolute inset-x-0 bottom-0 bg-black/70 py-1 text-center text-[10px] font-semibold uppercase tracking-widest text-white">
+                            <span className="absolute inset-x-0 bottom-0 bg-black/75 py-1 text-center text-[9px] font-medium uppercase tracking-[0.2em] text-white">
                               {copy.outOfStock}
                             </span>
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-[15px] font-semibold leading-tight text-[#0A0A0A]">{item.name}</h3>
+                            <h3 className="text-[15px] font-medium leading-tight text-[#0A0A0A]">{item.name}</h3>
                             <span
-                              className="shrink-0 text-sm font-semibold sm:text-base"
-                              style={{ color: accent }}
+                              className="shrink-0 text-[15px] font-medium tabular-nums sm:text-base"
+                              style={{ color: accent, fontFamily: 'var(--font-mono)' }}
                             >
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
                           </div>
                           {item.description && (
-                            <p className="mt-1 line-clamp-3 text-xs font-bold text-[#1A1A1A] sm:text-[13px]">{item.description}</p>
+                            <p className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-[#525252] sm:text-[13px]">{item.description}</p>
                           )}
                           {item.badges.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1">
@@ -462,22 +465,21 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
   return (
     <div className="min-h-full bg-white">
       <header className="border-b border-[#EDEDED] bg-white">
-        <div className="mx-auto max-w-5xl px-5 py-7 sm:px-8">
+        <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
           <div className="flex items-center gap-4">
             <div
-              className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-semibold text-white shadow-md"
+              className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-[22px] font-medium text-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.2)]"
               style={{ backgroundColor: accent }}
             >
               {restaurant.menuLogoUrl ? (
-                 
                 <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
               ) : (
                 restaurant.name.charAt(0).toUpperCase()
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#6B7280]">{restaurant.category}</p>
-              <h1 className="truncate text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">{restaurant.name}</h1>
+              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#737373]">{restaurant.category}</p>
+              <h1 className="truncate text-[26px] font-medium leading-tight tracking-[-0.02em] text-[#0A0A0A] sm:text-[30px]">{restaurant.name}</h1>
             </div>
           </div>
           <RestaurantMeta restaurant={restaurant} variant="dark" />
@@ -498,11 +500,11 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                       key={c.id}
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
-                      className="shrink-0 rounded-full border-2 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-all"
+                      className="shrink-0 rounded-full border px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] transition-all"
                       style={{
                         borderColor: isActive ? accent : '#EDEDED',
                         backgroundColor: isActive ? accent : 'white',
-                        color: isActive ? '#fff' : '#0A0A0A',
+                        color: isActive ? '#fff' : '#525252',
                       }}
                     >
                       {c.name}
@@ -513,15 +515,19 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
             </div>
           </nav>
 
-          <main className="mx-auto max-w-5xl space-y-12 px-4 py-8 sm:px-6 sm:py-12">
+          <main className="mx-auto max-w-5xl space-y-12 px-4 py-8 sm:px-6 sm:py-14">
             {visibleCategories.map((category) => {
               const items = category.items.filter((i) => i.isAvailable).sort((a, b) => a.sortOrder - b.sortOrder);
               if (items.length === 0) return null;
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
                   <div className="mb-5 flex items-baseline gap-3">
-                    <h2 className="text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl">{category.name}</h2>
-                    <div className="h-1 flex-1 rounded-full bg-[#EDEDED]" />
+                    <h2 className="text-[24px] font-medium leading-tight tracking-[-0.02em] text-[#0A0A0A] sm:text-[28px]">{category.name}</h2>
+                    <div
+                      aria-hidden
+                      className="h-px flex-1 self-end"
+                      style={{ background: `linear-gradient(to right, ${accent}66, transparent)` }}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
                     {items.map((item) => (
@@ -530,33 +536,32 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
                         onClick={() => onProductClick(item, category.id)}
-                        className={`group cursor-pointer overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-sm transition-all hover:shadow-md ${
+                        className={`group cursor-pointer overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#D4D4D4] hover:shadow-lg active:scale-[0.99] ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
-                        <div className="relative aspect-square w-full overflow-hidden bg-[#FFFFFF]">
+                        <div className="relative aspect-square w-full overflow-hidden bg-[#F5F5F5]">
                           {item.imageUrl ? (
-                             
-                            <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                            <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
                           ) : (
                             <Placeholder accent={accent} />
                           )}
                           <span
-                            className="absolute bottom-2 right-2 rounded-lg px-2.5 py-1 text-[12px] font-semibold shadow-md backdrop-blur"
-                            style={{ backgroundColor: `${accent}f2`, color: '#fff' }}
+                            className="absolute bottom-2 right-2 rounded-lg px-2.5 py-1 text-[12px] font-medium tabular-nums shadow-[0_4px_12px_-2px_rgba(0,0,0,0.25)] backdrop-blur-md"
+                            style={{ backgroundColor: `${accent}f2`, color: '#fff', fontFamily: 'var(--font-mono)' }}
                           >
                             {formatPrice(item.priceCents, item.currency, priceLocale)}
                           </span>
                           {item.isOutOfStock && (
-                            <span className="absolute inset-x-0 top-0 bg-black/70 py-1 text-center text-[10px] font-semibold uppercase tracking-widest text-white">
+                            <span className="absolute inset-x-0 top-0 bg-black/75 py-1 text-center text-[9px] font-medium uppercase tracking-[0.22em] text-white">
                               {copy.outOfStock}
                             </span>
                           )}
                         </div>
                         <div className="space-y-1.5 p-3 sm:p-4">
-                          <h3 className="text-[13px] font-semibold leading-tight text-[#0A0A0A] sm:text-sm">{item.name}</h3>
+                          <h3 className="text-[13px] font-medium leading-tight text-[#0A0A0A] sm:text-[14px]">{item.name}</h3>
                           {item.description && (
-                            <p className="line-clamp-2 text-[11px] font-medium text-[#6B7280]">{item.description}</p>
+                            <p className="line-clamp-2 text-[11px] leading-relaxed text-[#737373]">{item.description}</p>
                           )}
                           {item.badges.length > 0 && (
                             <div className="flex flex-wrap gap-1 pt-1">
@@ -585,22 +590,22 @@ function ModernLayout({ restaurant, visibleCategories, activeId, accent, locale,
 
 function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
-    <div className="min-h-full bg-white" style={{ fontFamily: 'var(--font-heading), var(--font-body)' }}>
-      <header className="border-b border-[#EDEDED] bg-white">
-        <div className="mx-auto max-w-2xl px-6 py-12 text-center sm:py-16">
+    <div className="min-h-full bg-[#FCFBF8]">
+      {/* Magazine masthead — quiet, centered, breathing space */}
+      <header className="border-b border-[#E7E2D6] bg-[#FCFBF8]">
+        <div className="mx-auto max-w-2xl px-6 py-14 text-center sm:py-20">
           {restaurant.menuLogoUrl && (
-            <div className="mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full border border-[#EDEDED] bg-white shadow-sm sm:h-20 sm:w-20">
-              { }
+            <div className="mx-auto mb-5 h-16 w-16 overflow-hidden rounded-full border border-[#E7E2D6] bg-white shadow-[0_8px_20px_-12px_rgba(0,0,0,0.15)] sm:h-20 sm:w-20">
               <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
             </div>
           )}
-          <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#6B7280]">{restaurant.category}</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight text-[#0A0A0A] sm:text-5xl" style={{ fontFamily: 'var(--font-heading)' }}>
+          <p className="text-[9.5px] font-medium uppercase tracking-[0.42em] text-[#8C7E66]">{restaurant.category}</p>
+          <h1 className="mt-4 text-[40px] font-medium leading-[0.95] tracking-[-0.025em] text-[#1A1208] sm:text-[56px]">
             {restaurant.name}
           </h1>
-          <div className="mx-auto mt-4 h-0.5 w-12 rounded" style={{ backgroundColor: accent }} />
-          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#6B7280]">{copy.menuOf}</p>
-          <div className="mt-6 flex justify-center">
+          <div className="mx-auto mt-5 h-px w-16 rounded" style={{ backgroundColor: accent }} />
+          <p className="mt-5 text-[10px] font-medium uppercase italic tracking-[0.32em] text-[#8C7E66]">{copy.menuOf}</p>
+          <div className="mt-7 flex justify-center">
             <RestaurantMeta restaurant={restaurant} variant="dark" centered />
           </div>
         </div>
@@ -610,9 +615,9 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
         <EmptyState copy={copy} />
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-[#EDEDED] bg-white/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-[#E7E2D6] bg-[#FCFBF8]/95 backdrop-blur">
             <div className="mx-auto max-w-2xl overflow-x-auto px-3 py-3 no-scrollbar">
-              <div className="flex justify-center gap-4">
+              <div className="flex justify-center gap-5 sm:gap-6">
                 {visibleCategories.map((c) => {
                   const isActive = activeId === c.id;
                   return (
@@ -620,10 +625,10 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
                       key={c.id}
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
-                      className="shrink-0 border-b-2 px-1 py-1.5 text-[10px] font-bold uppercase tracking-[0.25em] transition-all"
+                      className="shrink-0 border-b-2 px-1 py-2 text-[10px] font-medium uppercase tracking-[0.3em] transition-all"
                       style={{
                         borderColor: isActive ? accent : 'transparent',
-                        color: isActive ? '#0A0A0A' : '#6B7280',
+                        color: isActive ? '#1A1208' : '#8C7E66',
                       }}
                     >
                       {c.name}
@@ -634,52 +639,55 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
             </div>
           </nav>
 
-          <main className="mx-auto max-w-2xl space-y-14 px-6 py-12 sm:py-16">
+          <main className="mx-auto max-w-2xl space-y-16 px-6 py-14 sm:py-20">
             {visibleCategories.map((category) => {
               const items = category.items.filter((i) => i.isAvailable).sort((a, b) => a.sortOrder - b.sortOrder);
               if (items.length === 0) return null;
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
-                  <div className="mb-8 text-center">
-                    <h2 className="text-2xl font-semibold tracking-tight text-[#0A0A0A] sm:text-3xl" style={{ fontFamily: 'var(--font-heading)' }}>
+                  <div className="mb-10 text-center">
+                    <p className="text-[9px] font-medium uppercase italic tracking-[0.4em] text-[#8C7E66]">— {locale === 'tr' ? 'BÖLÜM' : 'CHAPTER'} —</p>
+                    <h2 className="mt-2.5 text-[28px] font-medium leading-tight tracking-[-0.02em] text-[#1A1208] sm:text-[34px]">
                       {category.name}
                     </h2>
                     {category.description && (
-                      <p className="mx-auto mt-2 max-w-md text-sm font-medium italic text-[#6B7280]">{category.description}</p>
+                      <p className="mx-auto mt-3 max-w-md text-[14px] italic leading-relaxed text-[#8C7E66]">{category.description}</p>
                     )}
-                    <div className="mx-auto mt-3 h-px w-12 rounded" style={{ backgroundColor: accent }} />
+                    <div className="mx-auto mt-4 h-px w-12 rounded" style={{ backgroundColor: accent }} />
                   </div>
-                  <div className="divide-y divide-[#EDEDED]">
+                  <div className="divide-y divide-[#E7E2D6]">
                     {items.map((item) => (
                       <article
                         key={item.id}
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
                         onClick={() => onProductClick(item, category.id)}
-                        className={`flex cursor-pointer items-start gap-5 py-5 sm:py-6 ${item.isOutOfStock ? 'opacity-60' : ''}`}
+                        className={`flex cursor-pointer items-start gap-5 py-6 transition-colors hover:bg-[#F5F0E2]/40 sm:py-7 ${item.isOutOfStock ? 'opacity-60' : ''}`}
                       >
                         {item.imageUrl && (
                           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded sm:h-24 sm:w-24">
-                            { }
                             <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                            <h3 className="text-lg font-bold tracking-tight text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>{item.name}</h3>
-                            <div className="flex-1 border-b border-dotted border-[#1A1A1A]/30" />
-                            <span className="shrink-0 text-base font-semibold" style={{ color: accent }}>
+                            <h3 className="text-[18px] font-medium leading-tight tracking-[-0.015em] text-[#1A1208] sm:text-[19px]">{item.name}</h3>
+                            <div aria-hidden className="hidden flex-1 border-b border-dotted border-[#8C7E66]/40 sm:block" />
+                            <span
+                              className="shrink-0 text-[16px] font-medium tabular-nums sm:text-[17px]"
+                              style={{ color: accent, fontFamily: 'var(--font-mono)' }}
+                            >
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
                           </div>
                           {item.description && (
-                            <p className="mt-2 text-[13px] font-medium leading-relaxed text-[#6B7280]">{item.description}</p>
+                            <p className="mt-2 text-[13px] italic leading-relaxed text-[#8C7E66]">{item.description}</p>
                           )}
                           {item.isOutOfStock && (
-                            <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-red-600">{copy.outOfStock}</p>
+                            <p className="mt-2 text-[9px] font-medium uppercase tracking-[0.3em] text-[#991B1B]">{copy.outOfStock}</p>
                           )}
                           {item.badges.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
+                            <div className="mt-2.5 flex flex-wrap gap-1">
                               {item.badges.map((b) => (
                                 <BadgeChip key={b} badge={b} locale={locale} />
                               ))}
@@ -705,25 +713,29 @@ function ElegantLayout({ restaurant, visibleCategories, activeId, accent, locale
 
 function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
-    <div className="min-h-full bg-[#000000] text-white" style={{ fontFamily: 'var(--font-heading), var(--font-body)' }}>
+    <div className="min-h-full bg-[#0A0A0A] text-white">
+      {/* Hero — radial glow + sumptuous spacing, chef-driven dark */}
       <header className="relative overflow-hidden border-b border-white/10">
-        <div className="absolute inset-0 opacity-30" style={{ background: `radial-gradient(circle at 20% 20%, ${accent}44, transparent 60%)` }} />
-        <div className="relative mx-auto max-w-3xl px-6 py-14 text-center sm:py-20">
+        <div aria-hidden className="absolute inset-0 opacity-40" style={{ background: `radial-gradient(circle at 20% 0%, ${accent}55, transparent 55%)` }} />
+        <div aria-hidden className="absolute inset-0 opacity-30" style={{ background: `radial-gradient(circle at 80% 100%, ${accent}33, transparent 60%)` }} />
+        <div className="relative mx-auto max-w-3xl px-6 py-16 text-center sm:py-24">
           {restaurant.menuLogoUrl && (
-            <div className="mx-auto mb-5 h-20 w-20 overflow-hidden rounded-full p-[2px] shadow-lg sm:h-24 sm:w-24" style={{ backgroundColor: accent }}>
-              <div className="h-full w-full overflow-hidden rounded-full bg-[#000000]">
-                { }
+            <div
+              className="mx-auto mb-6 h-20 w-20 overflow-hidden rounded-full p-[2px] shadow-[0_18px_44px_-12px_rgba(0,0,0,0.6)] sm:h-24 sm:w-24"
+              style={{ backgroundColor: accent }}
+            >
+              <div className="h-full w-full overflow-hidden rounded-full bg-[#0A0A0A]">
                 <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
               </div>
             </div>
           )}
-          <p className="text-[10px] font-bold uppercase tracking-[0.4em]" style={{ color: accent }}>{restaurant.category}</p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl" style={{ fontFamily: 'var(--font-heading)' }}>
+          <p className="text-[10px] font-medium uppercase tracking-[0.42em]" style={{ color: accent }}>{restaurant.category}</p>
+          <h1 className="mt-5 text-[44px] font-medium leading-[0.92] tracking-[-0.025em] sm:text-[68px]">
             {restaurant.name}
           </h1>
-          <div className="mx-auto mt-5 h-0.5 w-16 rounded" style={{ backgroundColor: accent }} />
-          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.3em] text-white/60">{copy.menuOf}</p>
-          <div className="mt-6 flex justify-center">
+          <div className="mx-auto mt-6 h-px w-20 rounded" style={{ backgroundColor: accent }} />
+          <p className="mt-5 text-[10px] font-medium uppercase italic tracking-[0.32em] text-white/55">{copy.menuOf}</p>
+          <div className="mt-7 flex justify-center">
             <RestaurantMeta restaurant={restaurant} variant="ondark" accent={accent} centered />
           </div>
         </div>
@@ -733,9 +745,9 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
         <EmptyState copy={copy} dark />
       ) : (
         <>
-          <nav className="sticky top-0 z-30 border-b border-white/10 bg-[#000000]/95 backdrop-blur">
+          <nav className="sticky top-0 z-30 border-b border-white/10 bg-[#0A0A0A]/95 backdrop-blur">
             <div className="mx-auto max-w-3xl overflow-x-auto px-3 py-3 no-scrollbar">
-              <div className="flex gap-2 justify-center">
+              <div className="flex justify-center gap-2">
                 {visibleCategories.map((c) => {
                   const isActive = activeId === c.id;
                   return (
@@ -743,11 +755,11 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                       key={c.id}
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
-                      className="shrink-0 rounded-full border px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.25em] transition-all"
+                      className="shrink-0 rounded-full border px-4 py-1.5 text-[10px] font-medium uppercase tracking-[0.28em] transition-all"
                       style={{
-                        borderColor: isActive ? accent : 'rgba(255,255,255,0.2)',
+                        borderColor: isActive ? accent : 'rgba(255,255,255,0.18)',
                         backgroundColor: isActive ? accent : 'transparent',
-                        color: isActive ? '#000000' : 'rgba(255,255,255,0.75)',
+                        color: isActive ? '#0A0A0A' : 'rgba(255,255,255,0.7)',
                       }}
                     >
                       {c.name}
@@ -758,36 +770,38 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
             </div>
           </nav>
 
-          <main className="mx-auto max-w-3xl space-y-14 px-6 py-12 sm:py-16">
+          <main className="mx-auto max-w-3xl space-y-16 px-6 py-14 sm:py-20">
             {visibleCategories.map((category) => {
               const items = category.items.filter((i) => i.isAvailable).sort((a, b) => a.sortOrder - b.sortOrder);
               if (items.length === 0) return null;
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
-                  <div className="mb-8 text-center">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.4em]" style={{ color: accent }}>— {copy.menuOf} —</p>
-                    <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl" style={{ fontFamily: 'var(--font-heading)' }}>
+                  <div className="mb-10 text-center">
+                    <p className="text-[9px] font-medium uppercase tracking-[0.45em]" style={{ color: accent }}>
+                      — {locale === 'tr' ? 'BÖLÜM' : 'CHAPTER'} —
+                    </p>
+                    <h2 className="mt-3 text-[32px] font-medium leading-tight tracking-[-0.02em] sm:text-[42px]">
                       {category.name}
                     </h2>
                     {category.description && (
-                      <p className="mx-auto mt-2 max-w-md text-sm italic text-white/60">{category.description}</p>
+                      <p className="mx-auto mt-3 max-w-md text-[14px] italic leading-relaxed text-white/55">{category.description}</p>
                     )}
                   </div>
-                  <div className="space-y-5">
+                  <div className="space-y-4">
                     {items.map((item) => (
                       <article
                         key={item.id}
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
                         onClick={() => onProductClick(item, category.id)}
-                        className={`flex cursor-pointer gap-4 rounded-2xl border border-white/10 bg-white/5 p-4 transition-all hover:bg-white/10 sm:p-5 ${
+                        className={`group flex cursor-pointer gap-4 rounded-2xl border border-white/8 bg-white/[0.04] p-4 transition-all hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.99] sm:p-5 ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
+                        style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)' }}
                       >
                         <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-white/5 sm:h-28 sm:w-28">
                           {item.imageUrl ? (
-                             
-                            <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                            <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center" style={{ backgroundColor: `${accent}1A` }}>
                               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="1.5" aria-hidden>
@@ -796,25 +810,28 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                             </div>
                           )}
                           {item.isOutOfStock && (
-                            <span className="absolute inset-x-0 bottom-0 bg-black/80 py-1 text-center text-[10px] font-semibold uppercase tracking-widest text-white">
+                            <span className="absolute inset-x-0 bottom-0 bg-black/85 py-1 text-center text-[9px] font-medium uppercase tracking-[0.22em] text-white">
                               {copy.outOfStock}
                             </span>
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-3">
-                            <h3 className="text-base font-bold tracking-tight text-white sm:text-lg" style={{ fontFamily: 'var(--font-heading)' }}>
+                            <h3 className="text-[17px] font-medium leading-tight tracking-[-0.015em] text-white sm:text-[19px]">
                               {item.name}
                             </h3>
-                            <span className="shrink-0 text-base font-semibold sm:text-lg" style={{ color: accent }}>
+                            <span
+                              className="shrink-0 text-[17px] font-medium tabular-nums sm:text-[19px]"
+                              style={{ color: accent, fontFamily: 'var(--font-mono)' }}
+                            >
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
                           </div>
                           {item.description && (
-                            <p className="mt-1.5 line-clamp-3 text-[13px] font-medium leading-relaxed text-white/70">{item.description}</p>
+                            <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-white/65">{item.description}</p>
                           )}
                           {item.badges.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
+                            <div className="mt-2.5 flex flex-wrap gap-1">
                               {item.badges.map((b) => (
                                 <BadgeChipOnDark key={b} badge={b} locale={locale} accent={accent} />
                               ))}
@@ -827,8 +844,10 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
                 </section>
               );
             })}
-            <footer className="pt-4 pb-6 text-center text-[10px] font-bold uppercase tracking-widest text-white/60">
-              Powered by Buaze
+            <footer className="pt-6 pb-8 text-center">
+              <p className="text-[9px] font-medium uppercase tracking-[0.4em] text-white/45" style={{ fontFamily: 'var(--font-mono)' }}>
+                Powered by · Buaze
+              </p>
             </footer>
           </main>
         </>
@@ -843,19 +862,23 @@ function GastronomyLayout({ restaurant, visibleCategories, activeId, accent, loc
 function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
     <div className="min-h-full bg-white">
+      {/* Typography-first masthead — quiet, single horizontal stripe */}
       <header className="border-b border-[#EDEDED] bg-white">
-        <div className="mx-auto flex max-w-2xl items-center gap-4 px-5 py-6 sm:px-8 sm:py-8">
+        <div className="mx-auto flex max-w-2xl items-center gap-4 px-5 py-7 sm:px-8 sm:py-9">
           {restaurant.menuLogoUrl && (
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[#EDEDED] bg-white shadow-sm">
-              { }
               <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#6B7280]">{restaurant.category}</p>
-            <h1 className="truncate text-xl font-semibold tracking-tight text-[#0A0A0A] sm:text-2xl">{restaurant.name}</h1>
+            <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#737373]" style={{ fontFamily: 'var(--font-mono)' }}>
+              {restaurant.category}
+            </p>
+            <h1 className="truncate text-[22px] font-medium leading-tight tracking-[-0.02em] text-[#0A0A0A] sm:text-[26px]">{restaurant.name}</h1>
           </div>
-          <p className="hidden text-[11px] font-bold uppercase tracking-widest text-[#6B7280] sm:block">{copy.menuOf}</p>
+          <p className="hidden text-[10px] font-medium uppercase tracking-[0.22em] text-[#737373] sm:block" style={{ fontFamily: 'var(--font-mono)' }}>
+            {copy.menuOf}
+          </p>
         </div>
       </header>
 
@@ -865,7 +888,7 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
         <>
           <nav className="sticky top-0 z-30 border-b border-[#EDEDED] bg-white/95 backdrop-blur">
             <div className="mx-auto max-w-2xl overflow-x-auto px-3 py-3 no-scrollbar">
-              <div className="flex gap-4">
+              <div className="flex gap-5 sm:gap-6">
                 {visibleCategories.map((c) => {
                   const isActive = activeId === c.id;
                   return (
@@ -873,10 +896,11 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
                       key={c.id}
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
-                      className="shrink-0 py-1.5 text-[11px] font-bold uppercase tracking-widest transition-all"
+                      className="shrink-0 py-1.5 text-[10px] font-medium uppercase tracking-[0.25em] transition-all"
                       style={{
-                        color: isActive ? accent : '#6B7280',
+                        color: isActive ? '#0A0A0A' : '#737373',
                         borderBottom: `2px solid ${isActive ? accent : 'transparent'}`,
+                        fontFamily: 'var(--font-mono)',
                       }}
                     >
                       {c.name}
@@ -887,15 +911,23 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
             </div>
           </nav>
 
-          <main className="mx-auto max-w-2xl space-y-10 px-5 py-8 sm:px-8 sm:py-12">
+          <main className="mx-auto max-w-2xl space-y-12 px-5 py-10 sm:px-8 sm:py-14">
             {visibleCategories.map((category) => {
               const items = category.items.filter((i) => i.isAvailable).sort((a, b) => a.sortOrder - b.sortOrder);
               if (items.length === 0) return null;
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-20">
-                  <h2 className="mb-1 text-xs font-semibold uppercase tracking-[0.3em]" style={{ color: accent }}>{category.name}</h2>
+                  <div className="mb-4 flex items-baseline gap-3">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.32em]" style={{ color: accent, fontFamily: 'var(--font-mono)' }}>
+                      {category.name}
+                    </p>
+                    <div className="h-px flex-1" style={{ backgroundColor: `${accent}33` }} aria-hidden />
+                    <p className="text-[10px] font-medium tabular-nums text-[#A3A3A3]" style={{ fontFamily: 'var(--font-mono)' }}>
+                      {String(items.length).padStart(2, '0')}
+                    </p>
+                  </div>
                   {category.description && (
-                    <p className="mb-4 text-[13px] font-medium text-[#6B7280]">{category.description}</p>
+                    <p className="mb-5 text-[13px] leading-relaxed text-[#737373]">{category.description}</p>
                   )}
                   <div className="divide-y divide-[#EDEDED]">
                     {items.map((item) => (
@@ -904,25 +936,27 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
                         onClick={() => onProductClick(item, category.id)}
-                        className={`flex cursor-pointer items-center gap-4 py-4 transition-colors active:bg-[#FFFFFF] ${
+                        className={`flex cursor-pointer items-center gap-4 py-4 transition-colors hover:bg-[#FAFAFA] ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
                         {item.imageUrl && (
-                          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#FFFFFF] sm:h-16 sm:w-16">
-                            { }
+                          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-[#F5F5F5] sm:h-16 sm:w-16">
                             <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline gap-2">
-                            <h3 className="flex-1 truncate text-[15px] font-semibold text-[#0A0A0A]">{item.name}</h3>
-                            <span className="shrink-0 text-sm font-semibold tabular-nums text-[#0A0A0A]">
+                            <h3 className="flex-1 truncate text-[15px] font-medium text-[#0A0A0A]">{item.name}</h3>
+                            <span
+                              className="shrink-0 text-[14px] font-medium tabular-nums text-[#0A0A0A]"
+                              style={{ fontFamily: 'var(--font-mono)' }}
+                            >
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
                           </div>
                           {item.description && (
-                            <p className="mt-0.5 line-clamp-2 text-[12px] font-medium text-[#6B7280]">{item.description}</p>
+                            <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-[#737373]">{item.description}</p>
                           )}
                           {item.badges.length > 0 && (
                             <div className="mt-1.5 flex flex-wrap gap-1">
@@ -932,7 +966,7 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
                             </div>
                           )}
                           {item.isOutOfStock && (
-                            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-red-600">{copy.outOfStock}</p>
+                            <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.28em] text-[#991B1B]">{copy.outOfStock}</p>
                           )}
                         </div>
                       </article>
@@ -955,33 +989,38 @@ function MinimalLayout({ restaurant, visibleCategories, activeId, accent, locale
 function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale, copy, priceLocale, setProductRef, onCategoryClick, onProductClick }: LayoutProps) {
   return (
     <div className="min-h-full" style={{ backgroundColor: '#FAF7F0' }}>
+      {/* Warm cream masthead — radial accent glow, terra-cotta tones */}
       <header className="relative overflow-hidden">
         <div
           aria-hidden
           className="absolute inset-0 opacity-40"
-          style={{ background: `radial-gradient(circle at 80% 20%, ${accent}33, transparent 55%)` }}
+          style={{ background: `radial-gradient(circle at 80% 20%, ${accent}40, transparent 55%)` }}
         />
-        <div className="relative mx-auto flex max-w-3xl items-center gap-5 px-5 pt-10 pb-8 sm:px-8 sm:pt-14 sm:pb-10">
+        <div
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-px"
+          style={{ background: `linear-gradient(to right, transparent, ${accent}55, transparent)` }}
+        />
+        <div className="relative mx-auto flex max-w-3xl items-center gap-5 px-5 pt-12 pb-9 sm:px-8 sm:pt-16 sm:pb-11">
           <div
-            className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-white text-3xl font-semibold shadow-md sm:h-24 sm:w-24 sm:text-4xl"
+            className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-white text-[28px] font-medium shadow-[0_12px_28px_-12px_rgba(122,103,88,0.4)] sm:h-24 sm:w-24 sm:text-[34px]"
             style={{ color: accent }}
           >
             {restaurant.menuLogoUrl ? (
-               
               <img src={restaurant.menuLogoUrl} alt={restaurant.name} decoding="async" className="h-full w-full object-cover" />
             ) : (
               restaurant.name.charAt(0).toUpperCase()
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: accent }}>{restaurant.category}</p>
-            <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight text-[#2A1E15] sm:text-3xl" style={{ fontFamily: 'var(--font-heading)' }}>
+            <p className="text-[10px] font-medium uppercase tracking-[0.3em]" style={{ color: accent }}>{restaurant.category}</p>
+            <h1 className="mt-1.5 truncate text-[26px] font-medium leading-tight tracking-[-0.02em] text-[#2A1E15] sm:text-[32px]">
               {restaurant.name}
             </h1>
-            <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-[#7A6758]">{copy.menuOf}</p>
+            <p className="mt-1.5 text-[10px] font-medium uppercase italic tracking-[0.28em] text-[#7A6758]">{copy.menuOf}</p>
           </div>
         </div>
-        <div className="relative mx-auto max-w-3xl px-5 pb-5 sm:px-8">
+        <div className="relative mx-auto max-w-3xl px-5 pb-6 sm:px-8">
           <RestaurantMeta restaurant={restaurant} variant="dark" />
         </div>
       </header>
@@ -1000,11 +1039,13 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
                       key={c.id}
                       href={`#cat-${c.id}`}
                       onClick={() => onCategoryClick(c.id)}
-                      className="shrink-0 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-all"
+                      className="shrink-0 rounded-full px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.2em] transition-all"
                       style={{
                         backgroundColor: isActive ? accent : 'white',
-                        color: isActive ? '#fff' : '#2A1E15',
-                        boxShadow: isActive ? '0 6px 16px -8px rgba(0,0,0,0.25)' : undefined,
+                        color: isActive ? '#fff' : '#7A6758',
+                        boxShadow: isActive
+                          ? `0 8px 20px -10px ${accent}88`
+                          : '0 1px 0 rgba(232,224,210,0.6)',
                       }}
                     >
                       {c.name}
@@ -1015,19 +1056,26 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
             </div>
           </nav>
 
-          <main className="mx-auto max-w-3xl space-y-10 px-4 py-8 sm:px-6 sm:py-10">
+          <main className="mx-auto max-w-3xl space-y-10 px-4 py-10 sm:px-6 sm:py-12">
             {visibleCategories.map((category) => {
               const items = category.items.filter((i) => i.isAvailable).sort((a, b) => a.sortOrder - b.sortOrder);
               if (items.length === 0) return null;
               return (
                 <section key={category.id} id={`cat-${category.id}`} data-cat-id={category.id} className="scroll-mt-24">
-                  <div className="mb-4">
-                    <h2 className="text-xl font-semibold tracking-tight text-[#2A1E15] sm:text-2xl" style={{ fontFamily: 'var(--font-heading)' }}>
-                      {category.name}
-                    </h2>
-                    {category.description && (
-                      <p className="mt-1 text-sm italic text-[#7A6758]">{category.description}</p>
-                    )}
+                  <div className="mb-5 flex items-end gap-3">
+                    <div className="min-w-0">
+                      <h2 className="text-[22px] font-medium leading-tight tracking-[-0.02em] text-[#2A1E15] sm:text-[26px]">
+                        {category.name}
+                      </h2>
+                      {category.description && (
+                        <p className="mt-1.5 text-[13px] italic leading-relaxed text-[#7A6758]">{category.description}</p>
+                      )}
+                    </div>
+                    <span
+                      aria-hidden
+                      className="hidden h-px flex-1 self-center sm:block"
+                      style={{ background: `linear-gradient(to right, ${accent}55, transparent)` }}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3 sm:gap-4">
                     {items.map((item) => (
@@ -1036,30 +1084,32 @@ function BistroLayout({ restaurant, visibleCategories, activeId, accent, locale,
                         data-pid={item.id}
                         ref={(el) => setProductRef(item.id, el)}
                         onClick={() => onProductClick(item, category.id)}
-                        className={`group cursor-pointer overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-[#E8E0D2] transition-all hover:shadow-md active:scale-[0.98] ${
+                        className={`group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-[#E8E0D2] transition-all hover:-translate-y-1 hover:ring-[#D4C7B0] hover:shadow-lg active:scale-[0.98] ${
                           item.isOutOfStock ? 'opacity-60' : ''
                         }`}
                       >
                         <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#F3ECDF]">
                           {item.imageUrl ? (
-                             
-                            <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                            <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
                           ) : (
                             <Placeholder accent={accent} />
                           )}
                           {item.isOutOfStock && (
-                            <span className="absolute inset-x-0 top-0 bg-black/70 py-1 text-center text-[10px] font-semibold uppercase tracking-widest text-white">
+                            <span className="absolute inset-x-0 top-0 bg-black/75 py-1 text-center text-[9px] font-medium uppercase tracking-[0.22em] text-white">
                               {copy.outOfStock}
                             </span>
                           )}
                         </div>
-                        <div className="space-y-1 p-3 sm:p-4">
-                          <h3 className="line-clamp-2 text-[13px] font-semibold leading-tight text-[#2A1E15] sm:text-sm">{item.name}</h3>
+                        <div className="space-y-1.5 p-3 sm:p-4">
+                          <h3 className="line-clamp-2 text-[13px] font-medium leading-tight text-[#2A1E15] sm:text-[14px]">{item.name}</h3>
                           {item.description && (
-                            <p className="line-clamp-2 text-[11px] font-medium text-[#7A6758]">{item.description}</p>
+                            <p className="line-clamp-2 text-[11px] leading-relaxed text-[#7A6758]">{item.description}</p>
                           )}
                           <div className="flex items-center justify-between pt-1.5">
-                            <span className="text-sm font-semibold tabular-nums" style={{ color: accent }}>
+                            <span
+                              className="text-[14px] font-medium tabular-nums"
+                              style={{ color: accent, fontFamily: 'var(--font-mono)' }}
+                            >
                               {formatPrice(item.priceCents, item.currency, priceLocale)}
                             </span>
                             {item.badges.length > 0 && (
@@ -1339,15 +1389,15 @@ function RestaurantMeta({
 }) {
   const chipCls =
     variant === 'light'
-      ? 'bg-white/15 text-white/90 backdrop-blur'
+      ? 'bg-white/15 text-white/90 backdrop-blur ring-1 ring-white/15'
       : variant === 'ondark'
-      ? 'border text-white/80'
-      : 'bg-[#FFFFFF] text-[#1A1A1A] border border-[#EDEDED]';
+      ? 'border text-white/75'
+      : 'bg-white text-[#525252] border border-[#EDEDED]';
   const chipStyle =
-    variant === 'ondark' && accent ? { borderColor: `${accent}4D`, backgroundColor: `${accent}1A` } : undefined;
+    variant === 'ondark' && accent ? { borderColor: `${accent}4D`, backgroundColor: `${accent}14` } : undefined;
 
   return (
-    <div className={`mx-auto ${centered ? 'max-w-lg justify-center' : 'max-w-2xl'} mt-5 flex flex-wrap gap-2 text-xs font-bold`}>
+    <div className={`mx-auto ${centered ? 'max-w-lg justify-center' : 'max-w-2xl'} mt-5 flex flex-wrap gap-2 text-[12px] font-medium`}>
       {restaurant.address && (
         <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 ${chipCls}`} style={chipStyle}>
           <MapPin size={12} strokeWidth={2} />
@@ -1377,19 +1427,22 @@ function RestaurantMeta({
 function EmptyState({ copy, dark }: { copy: LayoutProps['copy']; dark?: boolean }) {
   return (
     <div className="mx-auto max-w-xl px-6 py-20 text-center">
-      <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full ${dark ? 'bg-white/10' : 'bg-[#EDEDED]'}`}>
-        <Sparkles size={28} className={dark ? 'text-white/50' : 'text-[#6B7280]'} strokeWidth={2} />
+      <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full ${dark ? 'bg-white/10' : 'bg-[#F5F5F5]'}`}>
+        <Sparkles size={28} className={dark ? 'text-white/50' : 'text-[#737373]'} strokeWidth={2} />
       </div>
-      <h2 className={`text-lg font-semibold ${dark ? 'text-white' : 'text-[#0A0A0A]'}`}>{copy.emptyTitle}</h2>
-      <p className={`mt-1 text-sm font-bold ${dark ? 'text-white/60' : 'text-[#1A1A1A]'}`}>{copy.emptyBody}</p>
+      <h2 className={`text-[20px] font-medium leading-tight tracking-[-0.02em] ${dark ? 'text-white' : 'text-[#0A0A0A]'}`}>{copy.emptyTitle}</h2>
+      <p className={`mt-2 text-[14px] leading-relaxed ${dark ? 'text-white/55' : 'text-[#525252]'}`}>{copy.emptyBody}</p>
     </div>
   );
 }
 
 function Footer() {
   return (
-    <footer className="pt-4 pb-6 text-center text-[10px] font-bold uppercase tracking-widest text-[#6B7280]">
-      Powered by Buaze
+    <footer
+      className="pt-6 pb-8 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-[#737373]"
+      style={{ fontFamily: 'var(--font-mono)' }}
+    >
+      Powered by · Buaze
     </footer>
   );
 }
