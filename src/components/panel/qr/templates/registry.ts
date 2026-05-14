@@ -1,66 +1,44 @@
 /**
- * QR template registry — single source of truth for the wizard picker +
- * PDF/PNG export pipeline. 15 templates ship in Wave B (Classic + 14 from
- * qaxx handoff). Wave C wires html-to-image + jspdf so the wizard's
- * "Şablonu indir" actions render any of these as PNG/PDF without server
- * round-trips.
+ * QR template id whitelist — server-side `isValidTemplateId` guard için
+ * minimum kontrat. Şu anda owner panel server-side composer
+ * (`composePremiumQrPng`) tek "classic" Pulse Lime frame'i üretir;
+ * persisted `template_id` value sadece schema integrity için kaydedilir,
+ * runtime render değil.
  *
- * Adding a new template = import the entry + push it to `TEMPLATES`. The
- * picker, fallback resolver, and `getTemplate(id)` lookup pick it up
- * automatically (CLAUDE.md §40.3 registry pattern parity).
+ * Wave A backlog: 15 hazır template (Classic + 14 qaxx handoff) JSX'leri
+ * `git log` üzerinden erişilebilir, server-side SVG composer'a port
+ * edilirse geri eklenir. Çıktı path'i değişmez (`templateId` çağrısı
+ * client'a görünür kalır).
  */
 
-import { classicEntry } from './Classic';
-import { tableTentEntry } from './TableTent';
-import { windowStickerEntry } from './WindowSticker';
-import { receiptFooterEntry } from './ReceiptFooter';
-import { premiumBlackEntry } from './PremiumBlack';
-import { menuInsertEntry } from './MenuInsert';
-import { counterPlaqueEntry } from './CounterPlaque';
-import { walletCardEntry } from './WalletCard';
-import { socialPostEntry } from './SocialPost';
-import { doorHangerEntry } from './DoorHanger';
-import { minimalSwissEntry } from './MinimalSwiss';
-import { brutalistEntry } from './Brutalist';
-import { coasterEntry } from './Coaster';
-import { postcardEntry } from './Postcard';
-import { photoHeroEntry } from './PhotoHero';
-import type { TemplateEntry } from './types';
+export const TEMPLATE_IDS = [
+  'classic',
+  'table_tent',
+  'window_sticker',
+  'receipt_footer',
+  'premium_black',
+  'menu_insert',
+  'counter_plaque',
+  'wallet_card',
+  'social_post',
+  'door_hanger',
+  'minimal_swiss',
+  'brutalist',
+  'coaster',
+  'postcard',
+  'photo_hero',
+] as const;
 
-export const TEMPLATES: readonly TemplateEntry[] = [
-  classicEntry,
-  tableTentEntry,
-  windowStickerEntry,
-  receiptFooterEntry,
-  premiumBlackEntry,
-  menuInsertEntry,
-  counterPlaqueEntry,
-  walletCardEntry,
-  socialPostEntry,
-  doorHangerEntry,
-  minimalSwissEntry,
-  brutalistEntry,
-  coasterEntry,
-  postcardEntry,
-  photoHeroEntry,
-];
+export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
-export const DEFAULT_TEMPLATE_ID = 'classic' as const;
-
-/** Resolve a templateId to its entry, falling back to `classic`. */
-export function getTemplate(id: string | null | undefined): TemplateEntry {
-  if (!id) return TEMPLATES[0];
-  return TEMPLATES.find((t) => t.meta.id === id) ?? TEMPLATES[0];
-}
+export const DEFAULT_TEMPLATE_ID: TemplateId = 'classic';
 
 /** All template IDs registered — useful for server-side validation. */
-export function getTemplateIds(): string[] {
-  return TEMPLATES.map((t) => t.meta.id);
+export function getTemplateIds(): readonly string[] {
+  return TEMPLATE_IDS;
 }
 
 /** Is the provided string a valid template id in the registry? */
-export function isValidTemplateId(id: unknown): id is string {
-  return typeof id === 'string' && TEMPLATES.some((t) => t.meta.id === id);
+export function isValidTemplateId(id: unknown): id is TemplateId {
+  return typeof id === 'string' && (TEMPLATE_IDS as readonly string[]).includes(id);
 }
-
-export type { TemplateEntry, TemplateMeta, TemplateProps, TemplateBusiness } from './types';
