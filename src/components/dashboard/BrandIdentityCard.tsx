@@ -11,7 +11,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { AlertBanner, ColorPicker, Eyebrow } from '@/components/ui';
+import { AlertBanner, ColorPicker, Eyebrow, PulseSelect } from '@/components/ui';
 import { compressImage } from '@/lib/client-image';
 
 interface BrandIdentityCardProps {
@@ -437,17 +437,12 @@ export default function BrandIdentityCard({
         <div>
           <Eyebrow>{isTr ? 'AKSAN FONTU' : 'ACCENT FONT'}</Eyebrow>
           <div className="mt-2">
-            <select
+            <PulseSelect
               value={form.accentFont}
-              onChange={(e) => setForm((p) => ({ ...p, accentFont: e.target.value }))}
-              className="bz-input"
-            >
-              {FONT_OPTIONS.map((font) => (
-                <option key={font} value={font}>
-                  {font}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setForm((p) => ({ ...p, accentFont: value }))}
+              options={FONT_OPTIONS.map((font) => ({ value: font, label: font }))}
+              ariaLabel={isTr ? 'Aksan fontu' : 'Accent font'}
+            />
           </div>
         </div>
       </div>

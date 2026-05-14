@@ -7,6 +7,7 @@ import {
   BusinessStatusBadge,
   Field,
   PlatformChip,
+  PulseSelect,
   APSwitch,
   type PlatformId,
 } from "@/components/ui";
@@ -262,20 +263,15 @@ export function BusinessGeneralSettings({
             />
           </Field>
           <Field label="Sektör">
-            <select
-              className="bz-input"
+            <PulseSelect
               value={sectorOption?.id ?? "diger"}
-              onChange={(e) => {
-                const opt = SECTORS.find((s) => s.id === e.target.value);
+              onChange={(value) => {
+                const opt = SECTORS.find((s) => s.id === value);
                 if (opt) set("category", opt.label);
               }}
-            >
-              {SECTORS.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.display.tr}
-                </option>
-              ))}
-            </select>
+              options={SECTORS.map((s) => ({ value: s.id, label: s.display.tr }))}
+              ariaLabel="Sektör"
+            />
           </Field>
           <Field
             label="Kısa açıklama"
