@@ -23,6 +23,7 @@ import {
 import { AlertBanner, PageHeader, PulseSelect } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import QuickReplyTemplates from '@/components/dashboard/google-reviews/QuickReplyTemplates';
+import { ReputationHealthCard } from '@/components/dashboard/google-reviews/ReputationHealthCard';
 import { getQuickReplyTemplate } from '@/lib/quick-reply-templates';
 import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
 
@@ -688,9 +689,21 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         if (!revRes.ok) throw new Error(revData?.error || "Google yorumları alınamadı.");
         setReviewsPayload(revData);
 
+        // Reply text seed sırası:
+        //   1. Var olan reviewReply.comment (owner zaten yanıtladıysa)
+        //   2. Pre-loaded AI draft (revData.drafts[reviewName].body) — cron
+        //      taraması yapılmışsa owner taslakla karşılaşır
+        //   3. Boş string (manuel "Taslak Öner" ile veya elle yazılır)
+        const drafts = (revData.drafts ?? {}) as Record<string, { body: string; tone: string; source: string }>;
         const replies: Record<string, string> = {};
         for (const review of (revData.reviews ?? []) as GoogleReview[]) {
-          replies[review.name] = review.reviewReply?.comment ?? "";
+          if (review.reviewReply?.comment) {
+            replies[review.name] = review.reviewReply.comment;
+          } else if (drafts[review.name]?.body) {
+            replies[review.name] = drafts[review.name].body;
+          } else {
+            replies[review.name] = '';
+          }
         }
         setReplyText(replies);
 
@@ -1322,6 +1335,13 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           </div>
 
           {reviewsError && <AlertBanner kind="danger">{reviewsError}</AlertBanner>}
+
+          {/* Reputation OS Suite — health score + recommendations card.
+              Üstte yer alır, owner ilk göz attığında bugün/baseline/öneri
+              özetini görür. CLAUDE.md §X. */}
+          {activeRestaurantId && status?.connected && status?.selectedLocation && (
+            <ReputationHealthCard restaurantId={activeRestaurantId} locale={locale} />
+          )}
 
           {reviewsPayload && (
             <div className="space-y-4">

@@ -272,6 +272,9 @@ model Restaurant {
   customerSegmentOverrides CustomerSegmentOverride[]
   customerEmailCampaigns   CustomerEmailCampaign[]
   customerEmailLogs        CustomerEmailLog[]
+  // Reputation OS — health snapshot history + Google review AI draft cache.
+  healthSnapshots          RestaurantHealthSnapshot[]
+  googleReviewAiDrafts     GoogleReviewAiDraft[]
 
   // Stage 17 §38.87 — Hot path: getScopedRestaurantIds her dashboard
   // request'inde `prisma.restaurant.findMany({ where: { userId } })`
@@ -591,6 +594,81 @@ model FeedbackAiDraft {
 
   @@index([feedbackId])
   @@map("feedback_ai_drafts")
+}
+
+// Reputation OS — Google review AI draft cache. Background cron generates
+// drafts for unreplied Google reviews so owner sees a suggested reply on
+// page load (no manual button needed). Unique key = (restaurantId, reviewName)
+// because Google review.name is the stable Business Profile resource path
+// (`accounts/<accId>/locations/<locId>/reviews/<reviewId>`). Idempotent —
+// next cron run skips drafts that exist and aren't stale (generatedAt > 24h).
+//
+// Differs from FeedbackAiDraft in that Google reviews are not stored in our
+// DB (live-fetched), so we key by external resource name instead of an
+// internal feedback FK. Restaurant relation cascade keeps cache clean when
+// owner deletes a restaurant.
+model GoogleReviewAiDraft {
+  id           String     @id @default(cuid())
+  restaurantId String     @map("restaurant_id")
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  // Google API resource path. Unique with restaurantId to allow same review
+  // across multiple restaurants (rare, but multi-tenant safety).
+  reviewName   String     @map("review_name") @db.Text
+  // Snapshot of the source review at draft time. Used to detect "review
+  // edited / star rating changed" so cron knows to regenerate.
+  rating       Int
+  commentHash  String?    @map("comment_hash") // sha256 of normalized comment
+  body         String     @db.Text
+  tone         String // warm | formal | apologetic
+  source       String     @default("ai_copilot") // ai_copilot | template_fallback
+  generatedAt  DateTime   @default(now()) @map("generated_at")
+  latencyMs    Int?       @map("latency_ms")
+
+  @@unique([restaurantId, reviewName])
+  @@index([restaurantId, generatedAt])
+  @@map("google_review_ai_drafts")
+}
+
+// Reputation OS — Health score snapshot history (CLAUDE.md §X — Reputation
+// Operating System Suite). Captures the "before vs after Buaze" picture
+// owners frequently ask for + powers the monthly health report email.
+//
+// Snapshot fields are nullable because (a) early snapshots may not have
+// Google connected yet, (b) Q&A API can return 403 (we render "—" instead
+// of failing the snapshot). `kind` distinguishes initial baseline (first
+// snapshot after Google OAuth) from monthly recurring snapshots.
+//
+// Idempotency: monthly cron skips if a snapshot for same month already
+// exists. Baseline created exactly once per restaurant (kind='baseline').
+model RestaurantHealthSnapshot {
+  id                  String     @id @default(cuid())
+  restaurantId        String     @map("restaurant_id")
+  restaurant          Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  // 'baseline' | 'monthly'. Baseline = Google OAuth ilk bağlanışta. Monthly =
+  // her ayın 1'inde cron.
+  kind                String
+  capturedAt          DateTime   @default(now()) @map("captured_at")
+  // Google Business Profile metrics
+  googleRating        Float?     @map("google_rating")
+  googleReviewCount   Int?       @map("google_review_count")
+  googleMediaCount    Int?       @map("google_media_count")
+  googleUnansweredQs  Int?       @map("google_unanswered_questions")
+  profileComplete    Int?       @map("profile_complete") // 0-100
+  // Feedback panel metrics (internal Buaze data)
+  feedbackTotal       Int?       @map("feedback_total")
+  feedbackAvgRating   Float?     @map("feedback_avg_rating")
+  feedbackLowRated    Int?       @map("feedback_low_rated") // 1-3★ count
+  feedbackReplied     Int?       @map("feedback_replied")
+  // Aggregate computed health score (0-100). Composite of profile quality
+  // + responsiveness + sentiment. Stored so monthly delta is cheap.
+  healthScore         Int?       @map("health_score")
+  // Optional notes (cron error message, partial fetch reason)
+  notes               String?    @db.Text
+
+  @@unique([restaurantId, kind, capturedAt])
+  @@index([restaurantId, capturedAt])
+  @@index([restaurantId, kind])
+  @@map("restaurant_health_snapshots")
 }
 
 model FeedbackFlag {

@@ -62,3 +62,11 @@ export type { WeeklyDigestSummaryParams } from './weekly-digest-summary';
 // CLAUDE.md §42 Phase 3 — Denetim Merkezi yanıt tamamlandı bildirimi.
 export { renderAuditCompleted } from './audit-completed';
 export type { AuditCompletedParams } from './audit-completed';
+
+// CLAUDE.md §X — Reputation OS Suite (monthly health report mail).
+// Her ayın 1'i 09:00 UTC, owner'a aylık sağlık skoru + delta + öneriler.
+export { renderMonthlyHealthReport } from './monthly-health-report';
+export type {
+  MonthlyHealthReportParams,
+  MonthlyHealthReportRecommendation,
+} from './monthly-health-report';

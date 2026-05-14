@@ -18,6 +18,7 @@ import {
   renderInactiveReactivation,
   renderWeeklyDigestSummary,
   renderAuditCompleted,
+  renderMonthlyHealthReport,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -31,6 +32,7 @@ import {
   type UpgradeSuggestionParams,
   type InactiveReactivationParams,
   type WeeklyDigestSummaryParams,
+  type MonthlyHealthReportParams,
 } from './email/templates';
 import { escapeHtml as _escapeHtml } from './email/escape';
 import { sendResendEmail } from './email-internal';
@@ -585,6 +587,23 @@ export async function sendAuditCompletedEmail(params: {
   );
   return sendResendEmail({
     to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
+}
+
+// ─── Monthly health report (Reputation OS Suite) ───────────────────────────
+// Her ayın 1'i 09:00 UTC, owner'a aylık sağlık skoru + delta + öneriler.
+// CLAUDE.md §X.
+
+export async function sendMonthlyHealthReportEmail(
+  params: MonthlyHealthReportParams & { to: string; locale?: 'tr' | 'en' },
+): Promise<boolean> {
+  const { to, locale, ...rest } = params;
+  const rendered = renderMonthlyHealthReport(rest, locale ?? 'tr');
+  return sendResendEmail({
+    to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,

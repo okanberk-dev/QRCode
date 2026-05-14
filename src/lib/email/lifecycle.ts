@@ -13,7 +13,9 @@ export type LifecycleEmailType =
   | 'qr_not_downloaded'
   | 'first_feedback_tips'
   | 'upgrade_suggestion'
-  | 'inactive_reactivation';
+  | 'inactive_reactivation'
+  // Reputation OS Suite — aylık sağlık raporu maili.
+  | 'monthly_health_report';
 
 export interface AlreadySentParams {
   userId?: string | null;
