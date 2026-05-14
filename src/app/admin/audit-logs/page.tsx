@@ -18,6 +18,7 @@ import {
   type BadgeKind,
   EmptyState,
   PageHeader,
+  PulseSelect,
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { actionLabel } from '@/lib/audit-log';
@@ -273,15 +274,17 @@ export default function AdminAuditLogsPage() {
             ))}
           </div>
 
-          <select
+          <PulseSelect
             value={actorSource}
-            onChange={(e) => setActorSource(e.target.value as SourceFilter)}
-            className="bz-input rounded-xl py-2 text-xs font-bold"
-          >
-            <option value="all">Tüm aktörler</option>
-            <option value="admin">Yöneticiler</option>
-            <option value="user">İşletme sahipleri</option>
-          </select>
+            onChange={(v) => setActorSource(v as SourceFilter)}
+            options={[
+              { value: 'all', label: 'Tüm aktörler' },
+              { value: 'admin', label: 'Yöneticiler' },
+              { value: 'user', label: 'İşletme sahipleri' },
+            ]}
+            ariaLabel="Aktör kaynağı"
+            className="min-w-[160px]"
+          />
 
           <div className="relative w-full flex-1 sm:w-auto sm:min-w-[200px]">
             <Search

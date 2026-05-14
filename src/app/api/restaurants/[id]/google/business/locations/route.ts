@@ -7,6 +7,7 @@ import {
   fetchGoogleBusinessLocations,
   getGoogleIntegrationForRestaurant,
   googleReviewManagementEnabled,
+  parseGoogleLocationsCache,
   selectedGoogleLocation,
   GoogleBusinessApiError,
 } from '@/lib/google-business';
@@ -48,9 +49,36 @@ export async function GET(
       locations: cache.locations,
       selectedLocation: selectedGoogleLocation(cache, id),
       syncedAt: cache.syncedAt,
+      stale: false,
     });
   } catch (error) {
     if (error instanceof GoogleBusinessApiError) {
+      // Google API quota tükendiyse (429 GOOGLE_RATE_LIMITED) DB'de
+      // saklanan son cache'i UI'a dön. Owner en azından eski
+      // location'ları görüp seçim yapabilir + retry-after süresi sonra
+      // yenileyebilir. CLAUDE.md §40.1 — graceful degrade, sessiz fail
+      // yerine stale data + warning flag.
+      if (error.code === 'GOOGLE_RATE_LIMITED') {
+        const cached = parseGoogleLocationsCache(integration.locationsJson);
+        if (cached.locations.length > 0 || cached.accounts.length > 0) {
+          return NextResponse.json(
+            {
+              accounts: cached.accounts,
+              locations: cached.locations,
+              selectedLocation: selectedGoogleLocation(cached, id),
+              syncedAt: cached.syncedAt,
+              stale: true,
+              warning: 'GOOGLE_RATE_LIMITED',
+              retryAfterSeconds: error.retryAfterSeconds ?? 60,
+              message:
+                error.retryAfterSeconds && error.retryAfterSeconds > 0
+                  ? `Google API kotası doldu. ${error.retryAfterSeconds} saniye sonra yenileyin. (Son güncel veriler gösteriliyor.)`
+                  : 'Google API kotası doldu. Birkaç dakika sonra yenileyin. (Son güncel veriler gösteriliyor.)',
+            },
+            { status: 200 },
+          );
+        }
+      }
       return googleBusinessErrorResponse(error, 'Google işletme konumları alınamadı.');
     }
     console.error('[google business locations] failed', { restaurantId: id });

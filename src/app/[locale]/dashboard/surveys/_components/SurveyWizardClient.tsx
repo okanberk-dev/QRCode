@@ -42,7 +42,7 @@ import {
   Gauge,
 } from 'lucide-react';
 import { getTranslations, type Locale } from '@/lib/translations';
-import { AlertBanner, Badge, Field, PageHeader } from '@/components/ui';
+import { AlertBanner, Badge, Field, PageHeader, PulseSelect } from '@/components/ui';
 import {
   OPTIONS_MAX,
   OPTIONS_MIN,
@@ -545,17 +545,12 @@ function Step1Type({
                 : 'This survey will target this business\'s customers.'
             }
           >
-            <select
+            <PulseSelect
               value={restaurantId}
-              onChange={(e) => setRestaurantId(e.target.value)}
-              className="bz-input"
-            >
-              {restaurants.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+              onChange={setRestaurantId}
+              options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
+              ariaLabel={locale === 'tr' ? 'İşletme seç' : 'Select business'}
+            />
           </Field>
         </div>
       )}

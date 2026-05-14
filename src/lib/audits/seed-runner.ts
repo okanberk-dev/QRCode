@@ -23,6 +23,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { getYesNoDefaultOptions } from './options';
 
 type AuditSectorLiteral = 'food' | 'hotel' | 'retail' | 'health' | 'beauty' | 'other';
 
@@ -978,13 +979,23 @@ export async function runAuditSeed(): Promise<AuditSeedResult> {
 
     for (let i = 0; i < t.questions.length; i += 1) {
       const q = t.questions[i];
+      // yes_no soruları için template locale'ına göre default options'u
+      // garanti et. Aksi halde public link akışında options.map() boş
+      // array döner, UI'da seçenek butonu render edilmez (CLAUDE.md
+      // §42 — Audit options normalization, lib/audits/options.ts).
+      const resolvedOptions =
+        q.options !== undefined
+          ? q.options
+          : q.type === 'yes_no'
+            ? getYesNoDefaultOptions(t.locale === 'en' ? 'en' : 'tr')
+            : undefined;
       await prisma.auditQuestion.create({
         data: {
           templateId,
           type: q.type,
           prompt: q.prompt,
           helpText: q.helpText ?? null,
-          options: q.options ?? undefined,
+          options: resolvedOptions,
           correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : undefined,
           weight: q.weight ?? 1,
           isRequired: q.isRequired ?? true,

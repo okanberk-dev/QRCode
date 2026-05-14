@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   CheckCircle2,
   Loader2,
+  MapPin,
   RefreshCw,
   Send,
   Sparkles,
@@ -19,7 +20,7 @@ import {
   Edit3,
   Plug,
 } from 'lucide-react';
-import { AlertBanner, PageHeader } from '@/components/ui';
+import { AlertBanner, PageHeader, PulseSelect } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import QuickReplyTemplates from '@/components/dashboard/google-reviews/QuickReplyTemplates';
 import { getQuickReplyTemplate } from '@/lib/quick-reply-templates';
@@ -534,6 +535,17 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [activeTab, setActiveTab] = useState<'all' | 'unreplied' | 'low'>('all');
   const [flaggedIds, setFlaggedIds] = useState<Set<string>>(new Set());
 
+  // Inline OAuth + location selection — Platform Bağlantıları sayfasına
+  // yönlendirmek yerine kullanıcı bu sayfadan direkt bağlanır + konum seçer.
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+  const [inlineLocations, setInlineLocations] = useState<GoogleLocation[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationNotice, setLocationNotice] = useState<string | null>(null);
+  const [locationRetryAfter, setLocationRetryAfter] = useState<number | null>(null);
+  const [savingLocation, setSavingLocation] = useState<string | null>(null);
+
   // Restoran değişiminde localStorage'dan flag set'ini yükle.
   useEffect(() => {
     if (!activeRestaurantId || typeof window === 'undefined') return;
@@ -713,6 +725,144 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
       void loadStatusAndReviews(activeRestaurantId);
     }
   }, [activeRestaurantId]);
+
+  // OAuth start — Google'a yönlendirir, callback sonrası bu sayfaya geri
+  // döner (Platform Bağlantıları'na atmıyor). returnTo URL'inde aktif
+  // restaurant ID korunur — kullanıcı bağlandıktan sonra aynı işletme
+  // scope'unda kalır.
+  const connectGoogleInline = async () => {
+    if (!activeRestaurantId || connecting) return;
+    setConnecting(true);
+    setConnectError(null);
+    try {
+      const returnTo = `/${locale}/dashboard/google-reviews?restaurantId=${activeRestaurantId}`;
+      const res = await fetch('/api/integrations/google/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ returnTo }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        setConnectError(data?.message || data?.error || (isTr ? 'Google OAuth başlatılamadı.' : 'Failed to start Google OAuth.'));
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setConnectError(isTr ? 'Bağlantı hatası.' : 'Network error.');
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  // Google Business Profile location'larını çek. 429 stale cache fallback'i
+  // mevcut backend tarafında (CLAUDE.md §40.1 graceful degrade) — UI sarı
+  // banner + retry-after countdown gösterir.
+  const loadInlineLocations = async () => {
+    if (!activeRestaurantId) return;
+    setLoadingLocations(true);
+    setLocationError(null);
+    setLocationNotice(null);
+    setLocationRetryAfter(null);
+    try {
+      const res = await fetch(`/api/restaurants/${activeRestaurantId}/google/business/locations`);
+      const data = await res.json();
+      if (res.ok && data?.warning === 'GOOGLE_RATE_LIMITED') {
+        setInlineLocations(data.locations ?? []);
+        setLocationNotice(
+          data.message ||
+            (isTr
+              ? 'Google API kotası doldu. Son güncel veriler gösteriliyor; birkaç dakika sonra yenileyin.'
+              : 'Google API quota exhausted. Showing last synced data; try refreshing in a few minutes.'),
+        );
+        if (typeof data.retryAfterSeconds === 'number') {
+          setLocationRetryAfter(data.retryAfterSeconds);
+        }
+        return;
+      }
+      if (!res.ok) {
+        if (res.status === 429) {
+          const retryHeader = res.headers.get('retry-after');
+          const retryAfter = retryHeader ? Number(retryHeader) : null;
+          setLocationError(
+            data?.error ||
+              (retryAfter
+                ? (isTr
+                    ? `Google API kotası doldu. ${retryAfter} saniye sonra tekrar deneyin.`
+                    : `Google API quota exhausted. Try again in ${retryAfter}s.`)
+                : (isTr
+                    ? 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.'
+                    : 'Google API quota exhausted. Try again in a few minutes.')),
+          );
+          setLocationRetryAfter(Number.isFinite(retryAfter) ? retryAfter : null);
+          return;
+        }
+        throw new Error(data?.error || (isTr ? 'Konumlar alınamadı.' : 'Failed to load locations.'));
+      }
+      setInlineLocations(data.locations ?? []);
+    } catch (err) {
+      setLocationError(err instanceof Error ? err.message : (isTr ? 'Konumlar alınamadı.' : 'Failed to load locations.'));
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  // Location seç → backend `googlePlaceId` + `googleReviewUrl` kaydeder,
+  // status reload eder, otomatik review listesi gelir.
+  const selectInlineLocation = async (location: GoogleLocation) => {
+    if (!activeRestaurantId || savingLocation) return;
+    setSavingLocation(`${location.accountName}:${location.locationName}`);
+    setLocationError(null);
+    try {
+      const res = await fetch(`/api/restaurants/${activeRestaurantId}/google/business/locations/select`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accountName: location.accountName,
+          locationName: location.locationName,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || (isTr ? 'Konum kaydedilemedi.' : 'Failed to save location.'));
+      // Status + reviews otomatik yüklensin
+      void loadStatusAndReviews(activeRestaurantId);
+    } catch (err) {
+      setLocationError(err instanceof Error ? err.message : (isTr ? 'Konum kaydedilemedi.' : 'Failed to save location.'));
+    } finally {
+      setSavingLocation(null);
+    }
+  };
+
+  // Connected ama location seçilmedi → otomatik locations çek.
+  useEffect(() => {
+    if (
+      status?.connected &&
+      !status.selectedLocation &&
+      activeRestaurantId &&
+      inlineLocations.length === 0 &&
+      !loadingLocations
+    ) {
+      void loadInlineLocations();
+    }
+    // Deliberately not depending on loadInlineLocations / loadingLocations
+    // to avoid re-run loop after fetch completes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status?.connected, status?.selectedLocation, activeRestaurantId]);
+
+  // 429 retry-after countdown
+  useEffect(() => {
+    if (locationRetryAfter === null || locationRetryAfter <= 0) return;
+    const interval = setInterval(() => {
+      setLocationRetryAfter((prev) => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [locationRetryAfter]);
 
   const draftReply = async (review: GoogleReview) => {
     if (!activeRestaurantId) return;
@@ -957,15 +1107,13 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           <label className="block text-[13px] font-medium text-[#262626] mb-2">
             {isTr ? "İşletme Seçin" : "Select Business"}
           </label>
-          <select
-            className="bz-input w-full max-w-sm"
+          <PulseSelect
             value={activeRestaurantId ?? ''}
-            onChange={(e) => selectRestaurant(e.target.value)}
-          >
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
+            onChange={selectRestaurant}
+            options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
+            ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
+            className="w-full max-w-sm"
+          />
         </div>
       )}
 
@@ -1012,24 +1160,124 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             {isTr ? "Tekrar dene" : "Try again"}
           </button>
         </div>
-      ) : !status?.connected || !status?.selectedLocation ? (
+      ) : !status?.connected ? (
+        // STEP 1 — Google bağlı değil. Inline Connect butonu.
         <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">
-          <Inbox size={40} strokeWidth={1.5} className="mx-auto text-[#A3A3A3] mb-4" />
+          <Plug size={40} strokeWidth={1.5} className="mx-auto text-[#A3A3A3] mb-4" />
           <h3 className="text-[18px] font-medium text-[#0A0A0A] mb-2">
             {isTr ? "Google hesabınız bağlı değil" : "Google account is not connected"}
           </h3>
           <p className="text-[14px] text-[#525252] max-w-md mx-auto mb-6">
-            {isTr 
-              ? "Müşterilerinizin Google'a bıraktığı yorumları bu sayfadan okumak ve yanıtlamak için önce Google Business hesabınızı bağlamanız gerekmektedir." 
-              : "To read and reply to reviews your customers left on Google from this page, you first need to connect your Google Business account."}
+            {isTr
+              ? "Müşterilerinizin Google'a bıraktığı yorumları bu sayfadan okumak ve yanıtlamak için Google Business hesabınızı bağlayın."
+              : "Connect your Google Business account to read and reply to reviews your customers left on Google."}
           </p>
+          {connectError && (
+            <div className="max-w-md mx-auto mb-4">
+              <AlertBanner kind="danger" onDismiss={() => setConnectError(null)}>
+                {connectError}
+              </AlertBanner>
+            </div>
+          )}
           <button
-            onClick={() => router.push(`/${locale}/dashboard/platforms?restaurantId=${activeRestaurantId}`)}
+            onClick={connectGoogleInline}
+            disabled={connecting}
             className="bz-btn-primary inline-flex items-center gap-2 px-6 rounded-full"
           >
-            <ExternalLink size={16} />
+            {connecting ? <Loader2 size={16} className="animate-spin" /> : <ExternalLink size={16} />}
             {isTr ? "Google Hesabını Bağla" : "Connect Google Account"}
           </button>
+          <p className="text-[12px] text-[#737373] mt-3">
+            {isTr
+              ? 'Google ile güvenli giriş yapacaksınız. Bu sayfaya geri döneceksiniz.'
+              : 'You will be redirected to Google for secure sign-in. You will return here.'}
+          </p>
+        </div>
+      ) : !status?.selectedLocation ? (
+        // STEP 2 — Google bağlı ama location seçilmedi. Inline location list.
+        <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-white p-6 sm:p-8">
+          <div className="flex items-start gap-3 mb-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF9B8]">
+              <MapPin size={20} strokeWidth={2} className="text-[#0A0A0A]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-[17px] font-medium text-[#0A0A0A]">
+                {isTr ? 'Konumunuzu seçin' : 'Select your location'}
+              </h3>
+              <p className="text-[13px] text-[#525252] mt-1 leading-relaxed">
+                {isTr
+                  ? 'Google hesabınız bağlandı. Yorumları çekmek istediğiniz Business Profile konumunu seçin.'
+                  : 'Your Google account is connected. Pick the Business Profile location to load reviews from.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={loadInlineLocations}
+              disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
+              className="bz-btn-ghost shrink-0 inline-flex items-center gap-1.5 rounded-full text-[12.5px]"
+              aria-label={isTr ? 'Konumları yenile' : 'Refresh locations'}
+            >
+              {loadingLocations ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+              {locationRetryAfter !== null && locationRetryAfter > 0
+                ? `${locationRetryAfter}s`
+                : isTr
+                  ? 'Yenile'
+                  : 'Refresh'}
+            </button>
+          </div>
+
+          {locationError && (
+            <AlertBanner kind="danger" onDismiss={() => setLocationError(null)}>
+              {locationError}
+            </AlertBanner>
+          )}
+          {locationNotice && !locationError && (
+            <AlertBanner kind="warn" onDismiss={() => setLocationNotice(null)}>
+              {locationNotice}
+            </AlertBanner>
+          )}
+
+          {loadingLocations && inlineLocations.length === 0 ? (
+            <div className="py-8 text-center">
+              <Loader2 size={24} className="animate-spin text-[#A3A3A3] mx-auto" />
+              <p className="text-[12.5px] text-[#737373] mt-2">
+                {isTr ? 'Konumlar yükleniyor…' : 'Loading locations…'}
+              </p>
+            </div>
+          ) : inlineLocations.length === 0 && !locationError && !loadingLocations ? (
+            <p className="py-6 text-center text-[13px] text-[#737373]">
+              {isTr
+                ? 'Google hesabınızda Business Profile konumu bulunamadı.'
+                : 'No Business Profile locations found in your Google account.'}
+            </p>
+          ) : (
+            <div className="grid gap-2 mt-4">
+              {inlineLocations.map((location) => {
+                const key = `${location.accountName}:${location.locationName}`;
+                const saving = savingLocation === key;
+                return (
+                  <button
+                    type="button"
+                    key={key}
+                    onClick={() => selectInlineLocation(location)}
+                    disabled={Boolean(savingLocation)}
+                    className="group rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3.5 text-left transition hover:border-[#0A0A0A] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-start gap-3"
+                  >
+                    <MapPin size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-[#737373] group-hover:text-[#0A0A0A]" />
+                    <div className="flex-1 min-w-0">
+                      <div className="bz-h-tight text-[14px] truncate">{location.title}</div>
+                      {location.address && (
+                        <div className="text-[12px] text-[#737373] mt-0.5 truncate">
+                          {location.address}
+                        </div>
+                      )}
+                    </div>
+                    {saving && <Loader2 size={14} className="animate-spin text-[#0A0A0A] shrink-0 mt-0.5" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : (
         <div className="mt-6 space-y-6">
