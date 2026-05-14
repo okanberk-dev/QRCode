@@ -474,6 +474,11 @@ export function BusinessUsersRolesSettings({
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="uye@isletmem.com"
                 autoComplete="email"
+                inputMode="email"
+                enterKeyHint="send"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
               />
             </Field>
             <Field label="Rol">
