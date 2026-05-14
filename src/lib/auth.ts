@@ -541,8 +541,26 @@ export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelA
     }
   }
 
+  // QR wizard root-cause fix: `userPayload.userId` runtime check.
+  // Önceki davranış: `userId as string` cast'i userId taşımayan token'ları
+  // sessizce kabul ediyor, `actor.id = undefined` oluyordu. Sonraki
+  // Prisma query'lerinde `where: { id: undefined }` → P2025 → owner "QR
+  // oluşturulamadı (PrismaClientKnownRequestError ...)" hatası alıyordu.
+  // PR #646 closure log'unda bu guard'ın eklendiği yazılmıştı ama
+  // aslında uygulanmamıştı (commit text yanıltıcı). Şimdi runtime guard:
+  // userId şekil bozuksa null döner → endpoint 401 görür, actionable
+  // "oturum bilgisi eksik" mesajı çıkar.
+  const userId = userPayload.userId;
+  if (typeof userId !== 'string' || userId.length === 0) {
+    console.warn('[auth] getPanelActorFromRequest: userPayload missing userId', {
+      hasUserId: 'userId' in (userPayload as Record<string, unknown>),
+      userIdType: typeof userId,
+    });
+    return null;
+  }
+
   return {
-    id: userPayload.userId as string,
+    id: userId,
     role: getStringClaim(userPayload, 'role') || 'restaurant_owner',
     restaurantId: getStringClaim(userPayload, 'restaurantId'),
     username: getStringClaim(userPayload, 'email'),

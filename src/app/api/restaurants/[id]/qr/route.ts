@@ -106,6 +106,24 @@ export async function GET(
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
     }
 
+    // QR wizard root-cause defensive guard (belt-and-suspenders with the
+    // upstream `auth.ts` runtime check). Eğer ileride bir başka kanal
+    // (admin token, impersonation) `actor.id` undefined ile gelirse
+    // sessiz P2025 yerine actionable 401 dönsün — "oturum bilgisi eksik,
+    // yeniden giriş yapın". Sentry warning event production'da ops'a
+    // sinyal verir, kök neden ayrı PR'da kapatılır.
+    if (typeof actor.id !== 'string' || actor.id.length === 0) {
+      Sentry.captureMessage('QR generate: actor.id missing', {
+        level: 'warning',
+        tags: { route: 'restaurants.qr.generate', kind: 'actor-id-missing' },
+        extra: { source: actor.source, role: actor.role },
+      });
+      return NextResponse.json(
+        { error: 'Oturum bilgisi eksik. Lütfen yeniden giriş yapın.' },
+        { status: 401 },
+      );
+    }
+
     const { id } = await params;
     const { searchParams } = new URL(req.url);
     const table = searchParams.get('table') || '';
