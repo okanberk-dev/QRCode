@@ -138,8 +138,12 @@ const STEPS: StepDef[] = [
     id: "preview",
     num: "03",
     icon: <QrCode size={14} strokeWidth={2.2} />,
-    labelTr: "Önizle & oluştur",
-    labelEn: "Preview & create",
+    // Mobile bottom-sheet modal is ~345px wide → 96px per pill →
+    // 54px for the truncated label. "Önizle & oluştur" (16 chars) used
+    // to truncate to "Önizle & olu…" on mobile. Shortened to a single
+    // word so the label stays readable across viewport widths.
+    labelTr: "Önizle",
+    labelEn: "Preview",
   },
 ];
 
@@ -292,8 +296,20 @@ export function CreateQRWizard({
   // differ slightly because the URL string differs, but the colour fidelity
   // is exact. Owners scan the *generated* QR not the preview, so this is
   // visually faithful and avoids server round-trips on every colour tap.
+  //
+  // Layout-shift fix (2026-05-14): `renderAestheticQrSvg` emits the SVG with
+  // hardcoded `width="N" height="N"` attributes (intrinsic size, needed
+  // server-side for `sharp` PNG composition). When we inject the SVG via
+  // `dangerouslySetInnerHTML` inside a smaller container the SVG keeps its
+  // intrinsic size and overflows — the QR modules appeared clipped or
+  // off-centre depending on the container. We strip the width/height attrs
+  // here so the viewBox-only SVG scales fluidly to fill its wrapper.
   const [previewSvg, setPreviewSvg] = useState<string>("");
   const [previewing, setPreviewing] = useState(false);
+  const previewSvgFluid = useMemo(
+    () => previewSvg.replace(/\s+width="\d+"\s+height="\d+"/i, ""),
+    [previewSvg],
+  );
 
   useEffect(() => {
     if (!colorsValid) {
@@ -514,8 +530,22 @@ export function CreateQRWizard({
 
   // Allow Enter on inputs in step 1/2 to advance; Cmd+Enter to submit on step 3.
   const headerRef = useRef<HTMLDivElement | null>(null);
+  // Step change → reset scroll so the new step starts at the top. The
+  // scrolling container is the Modal body (`overflow-y-auto`), not
+  // `headerRef` itself; calling `scrollTo` on a non-scrolling element is a
+  // silent no-op which used to leave step 3 partially scrolled out of view
+  // after a long step 2 (presets + custom panel + contrast banner). Walk
+  // up the DOM to find the actual scroll ancestor.
   useEffect(() => {
-    headerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    let el: HTMLElement | null = headerRef.current;
+    while (el && el !== document.body) {
+      const overflowY = window.getComputedStyle(el).overflowY;
+      if (overflowY === "auto" || overflowY === "scroll") {
+        el.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      el = el.parentElement;
+    }
   }, [stepIndex]);
 
   return (
@@ -1010,25 +1040,29 @@ export function CreateQRWizard({
               )}
             </div>
 
-            {/* Right — live preview */}
-            <div className="flex shrink-0 flex-col items-center gap-2 rounded-2xl border border-[#EDEDED] bg-white p-4 lg:w-[240px] lg:sticky lg:top-0">
+            {/* Right — live preview. Layout-shift fix (2026-05-14):
+                aspect-square + fluid width so the box scales naturally on
+                mobile (narrow modals) and desktop sticky rail. SVG is
+                injected with `[&>svg]:h-full [&>svg]:w-full [&>svg]:block`
+                so the viewBox-only output fills the container without
+                overflow. Single background (SVG paints its own light bg
+                via the `light` palette) — outer container only provides
+                the rounded frame. */}
+            <div className="mx-auto flex w-full max-w-[240px] shrink-0 flex-col items-center gap-2 rounded-2xl border border-[#EDEDED] bg-white p-4 lg:mx-0 lg:w-[240px] lg:sticky lg:top-0">
               <span className="pulse-eyebrow text-[#737373]">
                 {isTr ? "CANLI ÖNİZLEME" : "LIVE PREVIEW"}
               </span>
               <div
-                className="relative flex h-[200px] w-[200px] items-center justify-center rounded-xl"
-                style={{
-                  background: normLight ?? "#FFFFFF",
-                  border: "1px solid #EDEDED",
-                }}
+                className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border border-[#EDEDED]"
+                style={{ background: normLight ?? "#FFFFFF" }}
               >
-                {previewing && !previewSvg ? (
+                {previewing && !previewSvgFluid ? (
                   <Loader2 size={20} className="animate-spin text-[#A3A3A3]" />
-                ) : previewSvg ? (
+                ) : previewSvgFluid ? (
                   <div
-                    className="h-full w-full p-2"
+                    className="h-full w-full [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
                     aria-label={isTr ? "QR önizlemesi" : "QR preview"}
-                    dangerouslySetInnerHTML={{ __html: previewSvg }}
+                    dangerouslySetInnerHTML={{ __html: previewSvgFluid }}
                   />
                 ) : (
                   <QrCode size={48} className="text-[#D4D4D4]" strokeWidth={1.4} />
@@ -1047,20 +1081,24 @@ export function CreateQRWizard({
         {currentStep.id === "preview" && (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col items-center gap-3 rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-6">
+              {/* Layout-shift fix (2026-05-14): aspect-square + fluid
+                  max-width replaces the fixed 220/260 box. The SVG is
+                  injected with `[&>svg]:h-full [&>svg]:w-full` so the
+                  viewBox-only output scales naturally without overflow.
+                  Single background (SVG paints `light`); outer box is just
+                  the rounded frame. Honours iOS Safari narrow modal widths
+                  (modal hits 92vw bottom-sheet mode at sm-). */}
               <div
-                className="flex h-[220px] w-[220px] items-center justify-center rounded-xl sm:h-[260px] sm:w-[260px]"
-                style={{
-                  background: normLight ?? "#FFFFFF",
-                  border: "1px solid #EDEDED",
-                }}
+                className="relative flex aspect-square w-full max-w-[260px] items-center justify-center overflow-hidden rounded-xl border border-[#EDEDED]"
+                style={{ background: normLight ?? "#FFFFFF" }}
               >
-                {previewing && !previewSvg ? (
+                {previewing && !previewSvgFluid ? (
                   <Loader2 size={24} className="animate-spin text-[#A3A3A3]" />
-                ) : previewSvg ? (
+                ) : previewSvgFluid ? (
                   <div
-                    className="h-full w-full p-3"
+                    className="h-full w-full [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
                     aria-label={isTr ? "QR önizlemesi" : "QR preview"}
-                    dangerouslySetInnerHTML={{ __html: previewSvg }}
+                    dangerouslySetInnerHTML={{ __html: previewSvgFluid }}
                   />
                 ) : (
                   <QrCode size={64} className="text-[#D4D4D4]" strokeWidth={1.2} />
