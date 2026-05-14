@@ -1,16 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Check, Copy, Download, Eye, FileImage, FileText, Layout, Loader2, Trash2 } from "lucide-react";
+import { useState } from "react";
+import {
+  ArrowUpRight,
+  Check,
+  Copy,
+  Download,
+  Eye,
+  FileImage,
+  FileText,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import { Badge, Eyebrow, PlatformChip, type PlatformId } from "@/components/ui";
 import { copyToClipboard } from "@/lib/clipboard";
-import { getTemplate } from "@/components/panel/qr/templates/registry";
-import { deriveInitials } from "@/components/panel/qr/Brand";
-import { RenderTemplate } from "@/components/panel/qr/RenderTemplate";
-import {
-  downloadTemplateAsPdf,
-  downloadTemplateAsPng,
-} from "@/lib/qr-template-download";
 
 export interface QRCardItem {
   id: string;
@@ -33,18 +36,21 @@ export interface QRCardItem {
   darkColor?: string | null;
   /** Owner-chosen background hex (e.g. `#FFFFFF`). Paired with `darkColor`. */
   lightColor?: string | null;
-  /** Wave A — print/share template id picked in the wizard. NULL for
-   *  legacy rows (rendered as `classic` via registry fallback). Used to
-   *  surface the template badge + thread through downloads in Wave B. */
+  /** Wave A — print/share template id picked in the wizard. Persisted only
+   *  for backward-compat with legacy rows; root-cause fix (2026-05-14)
+   *  retired the client-side template renderer + html-to-image pipeline.
+   *  Field kept on the type so callers (admin + owner pages) still compile
+   *  without churn while the server-side composer always uses the Pulse
+   *  Lime classic frame. */
   templateId?: string | null;
 }
 
 interface QRCardProps {
   item: QRCardItem;
-  /** @deprecated Preview now renders the chosen template inline via
-   *  `TemplatePreviewSlot`, so the legacy server-fetched SVG is no longer
-   *  needed. Kept as optional prop for backwards-compat with callers that
-   *  still pass it; the value is ignored. */
+  /** @deprecated Lazy server-fetched SVG was used by an earlier preview
+   *  variant; the root-cause fix renders the QR preview inside the card
+   *  via a tiny inline `<img src="?format=png&width=240">`, so the value
+   *  is ignored. Kept as optional prop to avoid touching call sites. */
   svg?: string;
   defaultPlatformLabel?: string;
   locale?: "tr" | "en";
@@ -75,160 +81,175 @@ const PLATFORM_LABEL: Record<string, string> = {
   yandex: "Yandex",
 };
 
-/** Preview slot — fits the chosen template (any canvas size) into a square
- *  thumbnail so the owner sees a scaled-down version of what they will
- *  download. `transform: scale` + `transform-origin: top left` + outer
- *  `overflow: hidden` clips the canvas; the inner wrapper centres it
- *  inside the slot via translate. */
-const PREVIEW_SLOT_PX = 140;
-function TemplatePreviewSlot({
-  template,
-  qrPayload,
-  business,
-}: {
-  template: ReturnType<typeof getTemplate>;
-  qrPayload: string;
-  business: import("./templates/types").TemplateBusiness;
-}) {
-  const canvas = template.meta.canvas;
-  // Defensive fallback — legacy registry entries may not have `canvas` yet.
-  const canvasW = canvas?.width ?? 720;
-  const canvasH = canvas?.height ?? 900;
-  const scale = Math.min(PREVIEW_SLOT_PX / canvasW, PREVIEW_SLOT_PX / canvasH);
-  const scaledW = canvasW * scale;
-  const scaledH = canvasH * scale;
-  const { Component } = template;
-  return (
-    <div
-      style={{
-        width: PREVIEW_SLOT_PX,
-        height: PREVIEW_SLOT_PX,
-        overflow: "hidden",
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div
-        style={{
-          width: scaledW,
-          height: scaledH,
-          position: "relative",
-        }}
-      >
-        <div
-          style={{
-            width: canvasW,
-            height: canvasH,
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-            // Disable pointer events so the slot stays click-through to
-            // the card's overall click target (if any).
-            pointerEvents: "none",
-          }}
-          aria-hidden="true"
-        >
-          <Component qrPayload={qrPayload} business={business} />
-        </div>
-      </div>
-    </div>
-  );
+/**
+ * Build the server-side QR download URL. Single source of truth shared by:
+ *   - PNG download button (large width=1080 for print)
+ *   - PDF print flow (same PNG, embedded in print window)
+ *   - Inline thumbnail (width=240 for preview slot)
+ *
+ * `composePremiumQrPng` (`src/lib/qr-premium-png.ts`) renders the Pulse Lime
+ * hero frame + headline + footer. Deterministic, no client-side capture
+ * race (the html-to-image pipeline this replaces was producing empty PNGs
+ * intermittently — see git log §38.178 + this fix's PR description).
+ */
+function buildQrUrl(
+  item: Pick<QRCardItem, "restaurantId" | "tableNumber" | "platform" | "darkColor" | "lightColor">,
+  options: { format: "png" | "svg"; width?: number },
+): string {
+  const params = new URLSearchParams({ format: options.format });
+  if (item.tableNumber) params.set("table", item.tableNumber);
+  if (item.platform) params.set("platform", item.platform);
+  if (item.darkColor && item.lightColor) {
+    params.set("dark", item.darkColor);
+    params.set("light", item.lightColor);
+  }
+  if (options.width) params.set("width", String(options.width));
+  return `/api/restaurants/${item.restaurantId}/qr?${params.toString()}`;
 }
 
-export function QRCard({ item, svg: _svg, defaultPlatformLabel = "Google", locale = "tr", onDelete }: QRCardProps) {
+function safeFileName(name: string): string {
+  return name
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60) || "qr";
+}
+
+export function QRCard({
+  item,
+  svg: _svg,
+  defaultPlatformLabel = "Google",
+  locale = "tr",
+  onDelete,
+}: QRCardProps) {
   const [copied, setCopied] = useState(false);
-  // Wave C — client-side template-aware download. The render wrapper only
-  // mounts while `pendingDownload` is non-null; useEffect runs once the
-  // ref is populated, snapshots the node, then clears state.
-  const [pendingDownload, setPendingDownload] = useState<'png' | 'pdf' | null>(null);
+  const [downloadingPng, setDownloadingPng] = useState(false);
+  const [printingPdf, setPrintingPdf] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
-  const captureRef = useRef<HTMLDivElement | null>(null);
 
   const isTr = locale === "tr";
   const platformChip = item.platform ? PLATFORM_TO_CHIP[item.platform] : null;
   const platformLabel = item.platform ? PLATFORM_LABEL[item.platform] : null;
+  const fileName = safeFileName(item.name);
 
+  /**
+   * PNG download — server-side composed (Pulse Lime hero frame). Deterministic
+   * blob fetch; empty/HTTP-error guards surface actionable error to the owner
+   * rather than silent failure.
+   */
   const downloadPng = async () => {
-    const params = new URLSearchParams({ format: "png" });
-    if (item.tableNumber) params.set("table", item.tableNumber);
-    if (item.platform) params.set("platform", item.platform);
-    // Owner-chosen palette → download endpoint. Pair only — API requires both
-    // (`isValidHexColor` + `persistColors = !!(darkRaw && lightRaw)`).
-    if (item.darkColor && item.lightColor) {
-      params.set("dark", item.darkColor);
-      params.set("light", item.lightColor);
+    if (downloadingPng) return;
+    setDownloadError(null);
+    setDownloadingPng(true);
+    try {
+      const res = await fetch(buildQrUrl(item, { format: "png", width: 1080 }));
+      if (!res.ok) {
+        setDownloadError(
+          isTr
+            ? `İndirilemedi (HTTP ${res.status}). Lütfen tekrar deneyin.`
+            : `Download failed (HTTP ${res.status}). Please retry.`,
+        );
+        return;
+      }
+      const blob = await res.blob();
+      if (blob.size === 0) {
+        setDownloadError(
+          isTr ? "Boş dosya alındı, tekrar deneyin." : "Empty file received, please retry.",
+        );
+        return;
+      }
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objUrl;
+      a.download = `qr-${fileName}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objUrl);
+    } catch {
+      setDownloadError(
+        isTr ? "Bağlantı hatası. İnternet bağlantınızı kontrol edin." : "Network error.",
+      );
+    } finally {
+      setDownloadingPng(false);
     }
-    // Wave A — thread templateId through so the server keeps the row's
-    // `template_id` in sync if the owner re-downloaded after picker change.
-    // Wave B replaces this with client-side html-to-image render against
-    // the actual template component.
-    if (item.templateId) params.set("template", item.templateId);
-    const url = `/api/restaurants/${item.restaurantId}/qr?${params.toString()}`;
-    const res = await fetch(url);
-    if (!res.ok) return;
-    const blob = await res.blob();
-    const objUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = objUrl;
-    a.download = `qr-${item.name.replace(/\s+/g, "-")}.png`;
-    a.click();
-    URL.revokeObjectURL(objUrl);
   };
 
-  // Wave C — client-side template downloads (html-to-image + jspdf). The
-  // template is rendered off-screen via <RenderTemplate mode="capture">
-  // while `pendingDownload !== null`; the useEffect below snapshots it
-  // once the ref attaches, then clears the state to unmount the wrapper.
-  // Server-side `/api/restaurants/[id]/qr` is unchanged — programmatic API
-  // callers still get the mono-QR contract; this path is owner-only.
-  const template = getTemplate(item.templateId ?? null);
-  const baseName = item.branch || item.name;
-  const business = {
-    name: baseName,
-    initials: deriveInitials(baseName),
-    primaryColor: null,
-    tableNumber: item.tableNumber,
-    platform: item.platform,
-  } as const;
-
-  useEffect(() => {
-    if (!pendingDownload) return;
-    const node = captureRef.current;
-    if (!node) return;
-    const kind = pendingDownload;
-    const filename = `qr-${template.meta.id}-${baseName}`;
-    let cancelled = false;
-    (async () => {
-      try {
-        const result =
-          kind === 'pdf'
-            ? await downloadTemplateAsPdf(node, { meta: template.meta, filename })
-            : await downloadTemplateAsPng(node, { filename });
-        if (cancelled) return;
-        if (!result.ok) {
-          setDownloadError(
-            isTr
-              ? 'İndirme başarısız oldu, tekrar deneyin.'
-              : 'Download failed, please try again.',
-          );
-        }
-      } finally {
-        if (!cancelled) setPendingDownload(null);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // template + business + isTr are derived from `item` references so the
-    // effect intentionally keys only on the trigger to avoid re-running
-    // mid-snapshot.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingDownload]);
-
-  const startTemplateDownload = (kind: 'png' | 'pdf') => {
+  /**
+   * PDF print — same server-rendered PNG, embedded in a fresh window with
+   * `@page A5 portrait` print CSS + `window.print()`. Owner picks
+   * "Save as PDF" in the browser dialog. Avoids `jsPDF` dep entirely
+   * (CLAUDE.md §24.3 QRGeneratorForm reuse pattern).
+   */
+  const printPdf = async () => {
+    if (printingPdf) return;
     setDownloadError(null);
-    setPendingDownload(kind);
+    setPrintingPdf(true);
+    try {
+      const res = await fetch(buildQrUrl(item, { format: "png", width: 1080 }));
+      if (!res.ok) {
+        setDownloadError(
+          isTr
+            ? `Yazdırma hazırlanamadı (HTTP ${res.status}).`
+            : `Print failed (HTTP ${res.status}).`,
+        );
+        return;
+      }
+      const blob = await res.blob();
+      if (blob.size === 0) {
+        setDownloadError(isTr ? "Boş dosya alındı." : "Empty file.");
+        return;
+      }
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+      const w = window.open("", "_blank", "noopener,noreferrer");
+      if (!w) {
+        setDownloadError(
+          isTr
+            ? "Pop-up engellendi. Tarayıcı ayarlarından izin verin."
+            : "Popup blocked. Allow popups in your browser settings.",
+        );
+        return;
+      }
+      // Minimal printable HTML — A5 portrait, image centred. Print dialog
+      // auto-opens 250ms after load to give the browser time to paint.
+      const title = `QR · ${item.name}`;
+      w.document.open();
+      w.document.write(`<!doctype html>
+<html lang="${isTr ? "tr" : "en"}">
+<head>
+  <meta charset="utf-8" />
+  <title>${title.replace(/[<>]/g, "")}</title>
+  <style>
+    @page { size: A5 portrait; margin: 12mm; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    img { max-width: 100%; max-height: 100vh; height: auto; display: block; }
+  </style>
+</head>
+<body>
+  <img src="${dataUrl}" alt="QR" />
+  <script>
+    window.addEventListener('load', function () {
+      setTimeout(function () { window.print(); }, 250);
+    });
+  </script>
+</body>
+</html>`);
+      w.document.close();
+    } catch {
+      setDownloadError(
+        isTr ? "Bağlantı hatası. İnternet bağlantınızı kontrol edin." : "Network error.",
+      );
+    } finally {
+      setPrintingPdf(false);
+    }
   };
 
   const copy = async () => {
@@ -245,16 +266,17 @@ export function QRCard({ item, svg: _svg, defaultPlatformLabel = "Google", local
     month: "short",
   });
 
+  // Inline preview — small server-rendered PNG. Browser caches by URL +
+  // Cache-Control: no-store on the API, so first paint is one network
+  // round-trip; re-renders use the in-memory image without re-fetch.
+  const previewSrc = buildQrUrl(item, { format: "png", width: 240 });
+
   return (
     <div className="bz-card relative overflow-hidden p-[18px]">
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3.5">
         <div className="flex-1 min-w-0">
-          <div
-            className="bz-h-tight truncate"
-            style={{ fontSize: 15 }}
-            title={item.name}
-          >
+          <div className="bz-h-tight truncate" style={{ fontSize: 15 }} title={item.name}>
             {item.name}
           </div>
           {item.branch && (
@@ -264,18 +286,21 @@ export function QRCard({ item, svg: _svg, defaultPlatformLabel = "Google", local
         <Badge kind="ok">{isTr ? "Aktif" : "Active"}</Badge>
       </div>
 
-      {/* Şablon preview — indirilecek artefakt'ın küçük (scaled) versiyonu.
-          Owner için "wizard önizleme = indirilen birebir" — küçük slot'a
-          fit ettirmek için `transform: scale(min(slotW/canvasW, slotH/canvasH))`
-          + `transform-origin: top left` + `overflow: hidden` clip. */}
+      {/* Inline preview — server-rendered thumbnail (Pulse Lime hero frame).
+          width=240 keeps payload ≤ 25 KB. Lazy-loaded so off-screen cards in
+          long lists don't block initial paint. */}
       <div
-        className="flex justify-center rounded-xl border border-[#EDEDED] bg-white p-3.5"
-        aria-label={isTr ? "Şablon önizleme" : "Template preview"}
+        className="flex justify-center rounded-xl border border-[#EDEDED] bg-white p-3"
+        aria-label={isTr ? "QR önizlemesi" : "QR preview"}
       >
-        <TemplatePreviewSlot
-          template={template}
-          qrPayload={item.qrUrl}
-          business={business}
+        <img
+          src={previewSrc}
+          alt={isTr ? "QR önizlemesi" : "QR preview"}
+          width={140}
+          height={140}
+          loading="lazy"
+          decoding="async"
+          className="h-[140px] w-[140px] object-contain"
         />
       </div>
 
@@ -296,15 +321,6 @@ export function QRCard({ item, svg: _svg, defaultPlatformLabel = "Google", local
         )}
       </div>
 
-      {/* Template badge — Wave A surface; Wave B swaps the static preview
-          above with the real template component. */}
-      <div className="mt-2 flex items-center gap-2 rounded-lg bg-[#FAFAFA] px-2.5 py-2">
-        <Layout size={12} className="text-[#737373]" />
-        <span className="text-[12px] text-[#525252] font-medium truncate">
-          {isTr ? "Şablon" : "Template"} · {template.meta.name}
-        </span>
-      </div>
-
       {/* Stats */}
       <div className="mt-3 grid grid-cols-2 gap-2.5 text-[12px]">
         <div>
@@ -323,36 +339,37 @@ export function QRCard({ item, svg: _svg, defaultPlatformLabel = "Google", local
         </div>
       </div>
 
-      {/* Wave C — şablon-aware indirme. PDF baskı için lime CTA (primary),
-          PNG sosyal/dijital paylaşım için ghost (secondary). */}
+      {/* Primary download row — server-side PNG (Pulse Lime hero) +
+          browser print PDF. html-to-image + jsPDF kaldırıldı
+          (root-cause fix: client capture pipeline empty-PNG race). */}
       <div className="mt-3.5 border-t border-[#EDEDED] pt-3 grid grid-cols-2 gap-2">
         <button
           type="button"
-          onClick={() => startTemplateDownload('pdf')}
-          disabled={pendingDownload !== null}
-          aria-label={isTr ? "Şablonu PDF olarak indir" : "Download template as PDF"}
+          onClick={downloadPng}
+          disabled={downloadingPng}
+          aria-label={isTr ? "QR'ı PNG olarak indir" : "Download QR as PNG"}
           className="bz-btn-lime inline-flex h-10 w-full items-center justify-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {pendingDownload === 'pdf' ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <FileText size={14} />
-          )}
-          {isTr ? "Şablon PDF" : "Template PDF"}
-        </button>
-        <button
-          type="button"
-          onClick={() => startTemplateDownload('png')}
-          disabled={pendingDownload !== null}
-          aria-label={isTr ? "Şablonu PNG olarak indir" : "Download template as PNG"}
-          className="bz-btn-ghost inline-flex h-10 w-full items-center justify-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {pendingDownload === 'png' ? (
+          {downloadingPng ? (
             <Loader2 size={14} className="animate-spin" />
           ) : (
             <FileImage size={14} />
           )}
-          {isTr ? "Şablon PNG" : "Template PNG"}
+          {isTr ? "PNG indir" : "Download PNG"}
+        </button>
+        <button
+          type="button"
+          onClick={printPdf}
+          disabled={printingPdf}
+          aria-label={isTr ? "QR'ı PDF olarak yazdır" : "Print QR as PDF"}
+          className="bz-btn-ghost inline-flex h-10 w-full items-center justify-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {printingPdf ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <FileText size={14} />
+          )}
+          {isTr ? "PDF yazdır" : "Print PDF"}
         </button>
         {downloadError && (
           <p role="alert" className="col-span-2 -mt-1 text-[11.5px] text-[#991B1B]">
@@ -361,12 +378,8 @@ export function QRCard({ item, svg: _svg, defaultPlatformLabel = "Google", local
         )}
       </div>
 
-      {/* Actions */}
-      <div
-        className={`mt-2 grid gap-1 ${
-          onDelete ? "grid-cols-4" : "grid-cols-3"
-        }`}
-      >
+      {/* Utility actions — copy URL, open target, optional delete */}
+      <div className={`mt-2 grid gap-1 ${onDelete ? "grid-cols-4" : "grid-cols-3"}`}>
         <button
           type="button"
           onClick={downloadPng}
@@ -408,19 +421,6 @@ export function QRCard({ item, svg: _svg, defaultPlatformLabel = "Google", local
           </button>
         )}
       </div>
-
-      {/* Off-screen capture wrapper — mounts only while a template download
-          is in-flight. RenderTemplate handles the off-screen positioning;
-          we just provide the ref. */}
-      {pendingDownload !== null && (
-        <RenderTemplate
-          ref={captureRef}
-          templateId={item.templateId ?? null}
-          qrPayload={item.qrUrl}
-          business={business}
-          mode="capture"
-        />
-      )}
     </div>
   );
 }
