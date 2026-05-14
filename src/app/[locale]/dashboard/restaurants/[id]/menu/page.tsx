@@ -906,8 +906,9 @@ export default function RestaurantMenuBuilderPage() {
       {/* Menu Design (theme + accent color + logo) — yan panelde canlı
           önizleme: tema/accent/logo değiştirildiğinde anlık müşteri
           görünümü, save-and-see loop'u kaldırır. Mobile'da preview
-          panel gizli (340px phone mockup mobile'da kafa karıştırır). */}
-      <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+          panel gizli (340px phone mockup mobile'da kafa karıştırır).
+          Column 340px: 308 bezel + 16 stage padding + ~16 breathing. */}
+      <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
         <ThemePanel
           restaurant={restaurant}
           copy={copy}
