@@ -290,10 +290,25 @@ export async function GET(
               locale: 'tr',
             });
 
+        // Defensive: empty buffer should never reach the client. sharp /
+        // qrcode kütüphaneleri normal akışta throw eder, ama belirsiz bir
+        // sürüm uyumsuzluğunda 0-byte buffer döndürebilir → kullanıcıya
+        // boş PNG iner. Burada explicit guard ile fallback'e zorlayarak
+        // veya 500 dönerek bunu yakalıyoruz (Sentry capture ops için).
+        if (!pngBuffer || pngBuffer.length === 0) {
+          Sentry.captureMessage('QR composer returned empty buffer', {
+            level: 'warning',
+            tags: { route: 'restaurants.qr.generate', kind: 'empty-buffer', mode: usePlain ? 'plain' : 'premium' },
+            extra: { width, restaurantId: restaurant.id },
+          });
+          throw new Error('Composer returned empty buffer');
+        }
+
         return new NextResponse(new Uint8Array(pngBuffer), {
           status: 200,
           headers: {
             'Content-Type': 'image/png',
+            'Content-Length': String(pngBuffer.length),
             'Content-Disposition': `attachment; filename="qr-${restaurant.slug}${table ? `-masa-${table}` : ''}.png"`,
             'Cache-Control': 'no-store',
           },
@@ -303,6 +318,15 @@ export async function GET(
         // qrcode PNG so the owner still gets a usable download — better a
         // mono QR than a 500.
         console.error('[QR] premium composite failed, falling back to plain:', composeError);
+        Sentry.captureMessage('QR composer fallback to plain', {
+          level: 'warning',
+          tags: { route: 'restaurants.qr.generate', kind: 'composer-fallback' },
+          extra: {
+            error: (composeError as Error)?.message?.slice(0, 240) ?? String(composeError),
+            width,
+            restaurantId: restaurant.id,
+          },
+        });
         const fallback = await QRCode.toBuffer(qrUrl, {
           type: 'png',
           width,
@@ -310,10 +334,16 @@ export async function GET(
           color: { dark, light },
           errorCorrectionLevel: 'H' as const,
         });
+        if (!fallback || fallback.length === 0) {
+          // Fallback bile boş → bu kez 500 dön; outer catch action'lı
+          // hata mesajı + Sentry stack ile production'da görünür.
+          throw new Error('Plain QRCode fallback returned empty buffer');
+        }
         return new NextResponse(new Uint8Array(fallback), {
           status: 200,
           headers: {
             'Content-Type': 'image/png',
+            'Content-Length': String(fallback.length),
             'Content-Disposition': `attachment; filename="qr-${restaurant.slug}${table ? `-masa-${table}` : ''}.png"`,
             'Cache-Control': 'no-store',
           },

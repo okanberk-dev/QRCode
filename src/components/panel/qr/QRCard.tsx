@@ -138,6 +138,17 @@ export function QRCard({
    * PNG download — server-side composed (Pulse Lime hero frame). Deterministic
    * blob fetch; empty/HTTP-error guards surface actionable error to the owner
    * rather than silent failure.
+   *
+   * Cross-browser download trigger disipline:
+   *  - Anchor element DOM'a append + click + **1000ms delay** sonra remove
+   *    (iOS Safari + Chrome bazı sürümler `a.remove()` ile `URL.revokeObjectURL`
+   *    immediate çağrılınca download'ı iptal ediyor — boş PNG iniyor.
+   *    setTimeout ile defer browser'a transfer'i tamamlama süresi verir).
+   *  - `Content-Type` header `image/png` doğrulaması (server bir HTML 500 page
+   *    döndürürse — Vercel framework default — `res.ok` true olabilir ama
+   *    blob.type=text/html → kullanıcı bozuk dosya iner).
+   *  - `blob.size === 0` veya `< 100 byte` guard — composer sessiz fail
+   *    durumunda actionable error.
    */
   const downloadPng = async () => {
     if (downloadingPng) return;
@@ -153,10 +164,25 @@ export function QRCard({
         );
         return;
       }
-      const blob = await res.blob();
-      if (blob.size === 0) {
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("image/png")) {
         setDownloadError(
-          isTr ? "Boş dosya alındı, tekrar deneyin." : "Empty file received, please retry.",
+          isTr
+            ? "Sunucu beklenmedik içerik döndürdü. Sayfayı yenileyip tekrar deneyin."
+            : "Server returned unexpected content. Refresh and retry.",
+        );
+        return;
+      }
+      const blob = await res.blob();
+      // 100 byte threshold: bir PNG header bile en az ~70 byte (8 byte
+      // signature + 25 byte IHDR + 12 byte IEND); 100 byte altı kesin
+      // bozuk/empty render. Owner empty file değil actionable error
+      // görsün.
+      if (blob.size < 100) {
+        setDownloadError(
+          isTr
+            ? `Boş dosya alındı (${blob.size} B). Tekrar deneyin; sorun sürerse destek ile iletişime geçin.`
+            : `Empty file (${blob.size} B). Please retry; contact support if the issue persists.`,
         );
         return;
       }
@@ -164,11 +190,19 @@ export function QRCard({
       const a = document.createElement("a");
       a.href = objUrl;
       a.download = `qr-${fileName}.png`;
+      a.style.display = "none";
       document.body.appendChild(a);
       a.click();
-      a.remove();
-      URL.revokeObjectURL(objUrl);
-    } catch {
+      // Defer cleanup — iOS Safari + Chrome download race condition fix.
+      // Eğer `a.remove()` + `URL.revokeObjectURL` immediate çağrılırsa
+      // bazı browser sürümlerinde transfer iptal olur → kullanıcıya boş
+      // dosya iner. 1000ms yeterli (download stream başlamış olur).
+      setTimeout(() => {
+        a.remove();
+        URL.revokeObjectURL(objUrl);
+      }, 1000);
+    } catch (err) {
+      console.error("[QRCard] PNG download failed:", err);
       setDownloadError(
         isTr ? "Bağlantı hatası. İnternet bağlantınızı kontrol edin." : "Network error.",
       );
@@ -197,9 +231,22 @@ export function QRCard({
         );
         return;
       }
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("image/png")) {
+        setDownloadError(
+          isTr
+            ? "Sunucu beklenmedik içerik döndürdü. Sayfayı yenileyip tekrar deneyin."
+            : "Server returned unexpected content. Refresh and retry.",
+        );
+        return;
+      }
       const blob = await res.blob();
-      if (blob.size === 0) {
-        setDownloadError(isTr ? "Boş dosya alındı." : "Empty file.");
+      if (blob.size < 100) {
+        setDownloadError(
+          isTr
+            ? `Boş dosya alındı (${blob.size} B). Tekrar deneyin.`
+            : `Empty file (${blob.size} B). Please retry.`,
+        );
         return;
       }
       const dataUrl = await new Promise<string>((resolve, reject) => {
