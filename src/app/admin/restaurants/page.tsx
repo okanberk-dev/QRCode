@@ -76,6 +76,10 @@ export default function RestaurantsPage() {
     search: '',
     status: 'active' as 'active' | 'passive' | 'all',
     plan: 'all' as 'all' | 'pro' | 'growth' | 'starter' | 'trial',
+    // Menu publish status filter — client-side (data zaten payload'da).
+    // `published` = menuEnabled && menuPublished, `draft` = enabled && !published,
+    // `disabled` = !enabled. Operator menu yayın akışını taramak için kullanır.
+    menuStatus: 'all' as 'all' | 'published' | 'draft' | 'disabled',
     // attention: deeplink from /admin/dashboard "Needs attention" widget
     // (CLAUDE.md §11.36). Backend overrides status when set; UI surfaces an
     // info banner with "Filtreyi temizle" (clear) action.
@@ -87,6 +91,8 @@ export default function RestaurantsPage() {
   const setStatusFilter = (v: 'active' | 'passive' | 'all') => filters.set('status', v);
   const planFilter = filters.values.plan;
   const setPlanFilter = (v: 'all' | 'pro' | 'growth' | 'starter' | 'trial') => filters.set('plan', v);
+  const menuStatusFilter = filters.values.menuStatus;
+  const setMenuStatusFilter = (v: 'all' | 'published' | 'draft' | 'disabled') => filters.set('menuStatus', v);
   const attention = filters.values.attention;
   const clearAttention = () => filters.set('attention', '');
   // PR6 — Inline failure surface (Linear/Stripe pattern, CLAUDE.md §11).
@@ -180,7 +186,7 @@ export default function RestaurantsPage() {
   // selectedIds'de kalır ve bulk action onlara da uygulanır.
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [statusFilter, planFilter, searchTerm, attention]);
+  }, [statusFilter, planFilter, menuStatusFilter, searchTerm, attention]);
 
   // Auto-generate slug from name
   const handleNameChange = (name: string) => {
@@ -330,17 +336,39 @@ export default function RestaurantsPage() {
   };
 
   const filteredRestaurants = useMemo(
-    () =>
-      restaurants.filter(
-        (r) =>
-          r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          r.slug.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          r.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (r.user?.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (r.user?.name || '').toLowerCase().includes(searchTerm.toLowerCase()),
-      ),
-    [restaurants, searchTerm],
+    () => {
+      const term = searchTerm.toLowerCase();
+      return restaurants.filter((r) => {
+        // Search match (name / slug / category / owner email-or-name)
+        const matchesSearch =
+          r.name.toLowerCase().includes(term) ||
+          r.slug.toLowerCase().includes(term) ||
+          r.category.toLowerCase().includes(term) ||
+          (r.user?.email || '').toLowerCase().includes(term) ||
+          (r.user?.name || '').toLowerCase().includes(term);
+        if (!matchesSearch) return false;
+        // Menu status — client-side filter (data zaten payload'da, ek API trip yok)
+        if (menuStatusFilter === 'published' && !(r.menuEnabled && r.menuPublished)) return false;
+        if (menuStatusFilter === 'draft' && !(r.menuEnabled && !r.menuPublished)) return false;
+        if (menuStatusFilter === 'disabled' && r.menuEnabled) return false;
+        return true;
+      });
+    },
+    [restaurants, searchTerm, menuStatusFilter],
   );
+
+  // Menu publish counts — tab labels'da görünür (operator'a anında hacim sinyali)
+  const menuCounts = useMemo(() => {
+    let published = 0;
+    let draft = 0;
+    let disabled = 0;
+    for (const r of restaurants) {
+      if (!r.menuEnabled) disabled++;
+      else if (r.menuPublished) published++;
+      else draft++;
+    }
+    return { published, draft, disabled };
+  }, [restaurants]);
 
   // §40.10 clean slate — skeleton return kaldırıldı; data gelene kadar null.
   if (loading) return null;
@@ -360,6 +388,17 @@ export default function RestaurantsPage() {
     { id: 'active', label: 'Aktif' },
     { id: 'passive', label: 'Pasif' },
     { id: 'all', label: 'Hepsi' },
+  ];
+
+  // Menu publish filter — Stage 109 §A1 (admin menü görünürlüğü)
+  // operator menu yayın akışını taramak için ek filter strip. Counts
+  // label'da görünür → anında hacim sinyali (kaç işletmenin menüsü
+  // taslakta kalmış, kaç tanesi disabled vb.)
+  const menuTabs: TabItem[] = [
+    { id: 'all', label: `Tümü` },
+    { id: 'published', label: `Yayında (${menuCounts.published})` },
+    { id: 'draft', label: `Taslak (${menuCounts.draft})` },
+    { id: 'disabled', label: `Kapalı (${menuCounts.disabled})` },
   ];
 
   // CSV export — design `Dışa aktar` button (1:1, line 96)
@@ -438,6 +477,15 @@ export default function RestaurantsPage() {
           ariaLabel="Plan filter"
         />
       </div>
+
+      {/* Menu publish filter — Stage 109 §A1. Menu yayın yüzdesini
+          anında görmek + draft'ta takılı kalan işletmeleri yakalamak için. */}
+      <Tabs
+        items={menuTabs}
+        active={menuStatusFilter}
+        onChange={(id) => setMenuStatusFilter(id as 'all' | 'published' | 'draft' | 'disabled')}
+        ariaLabel="Menü yayın filtresi"
+      />
 
       {/* Secondary control — status + search */}
       <div className="flex flex-col items-stretch justify-between gap-3 md:flex-row md:items-center">
@@ -1039,6 +1087,16 @@ function RestaurantTable({ rows, onToggle, selectedIds, onToggleSelect, onToggle
               <div className="mt-3 flex items-center gap-1.5 flex-wrap">
                 <Badge kind={plan.kind}>{plan.label}</Badge>
                 {r.isActive ? <Badge kind="ok">Aktif</Badge> : <Badge kind="warn">Duraklatıldı</Badge>}
+                {/* Menu publish badge — Stage 109 §A1. enabled+published=ok,
+                    enabled+draft=warn, disabled=ghost. Operator filter
+                    sekmesi ile birebir parite. */}
+                {!r.menuEnabled ? (
+                  <Badge kind="ghost">Menü kapalı</Badge>
+                ) : r.menuPublished ? (
+                  <Badge kind="ok">Menü yayında</Badge>
+                ) : (
+                  <Badge kind="warn">Menü taslak</Badge>
+                )}
                 {r.category && (
                   <span className="text-[10.5px] uppercase tracking-wider text-[#A3A3A3] bz-mono">
                     {r.category}
