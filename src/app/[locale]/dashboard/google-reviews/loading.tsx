@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui";
 
 // §38.71 — Google Yorumları loading skeleton. Wrapper tracks the real page
-// (`dashboard/google-reviews/page.tsx:911`) exactly: `max-w-[1280px] px-4
+// (`dashboard/google-reviews/page.tsx:911`) exactly: `max-w-[1200px] px-4
 // sm:px-7 py-6 lg:py-8` — NO outer space-y (page uses scoped mb-5/mb-6/
 // mt-6 between sections). Content order: PageHeader → cross-link hint →
 // 2-col hero (dark sentiment + KPI grid) → 2-col body (reviews stream + side rail).
@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui";
 export default function GoogleReviewsLoading() {
   return (
     <div
-      className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 animate-in fade-in duration-200"
+      className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"

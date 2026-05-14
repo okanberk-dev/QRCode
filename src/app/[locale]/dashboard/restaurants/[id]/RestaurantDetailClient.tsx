@@ -169,7 +169,7 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
 
   if (error || !data) {
     return (
-      <div className="mx-auto max-w-[920px] px-5 sm:px-7 py-8">
+      <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8">
         <AlertBanner kind="danger">{error || (isTr ? 'İşletme bulunamadı.' : 'Not found.')}</AlertBanner>
         <div className="mt-4">
           <Link

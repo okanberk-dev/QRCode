@@ -1,13 +1,13 @@
 import { Skeleton, CardSkeleton } from '@/components/ui';
 
 // §40.10 — restaurant settings loading. Wrapper birebir page.tsx:298
-// (`mx-auto max-w-[1200px] px-5 sm:px-7 py-12`). SettingsCard içerikleri
+// (`mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8`). SettingsCard içerikleri
 // content-shape placeholder.
 
 export default function RestaurantSettingsLoading() {
   return (
     <div
-      className="mx-auto max-w-[1200px] space-y-6 px-5 sm:px-7 py-12 animate-in fade-in duration-200"
+      className="mx-auto max-w-[1200px] space-y-6 px-4 sm:px-7 py-6 lg:py-8 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"

@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui";
 
 // §38.71 — QR segment loading skeleton. Wrapper (max-w/padding/spacing)
-// tracks `dashboard/qr/page.tsx:426` exactly (max-w-[1280px], space-y-4,
+// tracks `dashboard/qr/page.tsx:426` exactly (max-w-[1200px], space-y-4,
 // px-4 sm:px-7 py-6 lg:py-8). Content shape mirrors the real loaded page:
 // PageHeader → filter chip strip → mobile aggregate 3-stat (md:hidden) →
 // 3-col QR card grid. The QR generator is a MODAL (not a section), so the
@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui";
 export default function QrLoading() {
   return (
     <div
-      className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-4 animate-in fade-in duration-200"
+      className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4 animate-in fade-in duration-200"
       aria-busy="true"
       aria-live="polite"
       role="status"
