@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { CreditCard, Crown, MessageSquare, Store } from 'lucide-react';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -423,12 +424,12 @@ export default async function AdminDashboardPage() {
               {menusEnabledCount > menusPublishedCount && (
                 <>
                   {' '}
-                  <a
+                  <Link
                     href="/admin/restaurants?menuStatus=draft"
                     className="font-medium text-[#0A0A0A] underline-offset-2 hover:underline"
                   >
                     Taslakta bekleyen {menusEnabledCount - menusPublishedCount}
-                  </a>
+                  </Link>
                   {' '}işletme var.
                 </>
               )}
