@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import OnboardingNudge, { type OnboardingStep } from '@/components/dashboard/OnboardingNudge';
 import ActivationChecklistCard from '@/components/dashboard/ActivationChecklistCard';
+import { computeActivation } from '@/lib/activation';
 import AIInsightBanner from '@/components/dashboard/AIInsightBanner';
 import PulseRangeToggle from '@/components/dashboard/PulseRangeToggle';
 import ViewportMount from '@/components/ui/ViewportMount';
@@ -918,6 +919,46 @@ async function renderDashboardPage({
       ? `Today ${pendingCount} review${pendingCount > 1 ? 's' : ''} await reply.`
       : "You're all caught up today 🎉";
   const primaryRestaurantName = selectedRestaurant?.name ?? user.restaurants[0]?.name ?? '';
+
+  // §40.10 anti-double-skeleton — server-compute activation here so the
+  // ActivationChecklistCard hydrates with data and skips its own loading
+  // skeleton flash (Next.js segment loading.tsx already covered the wait).
+  const activationTarget = selectedRestaurant ?? user.restaurants[0] ?? null;
+  let initialActivation: ReturnType<typeof computeActivation> | undefined;
+  if (activationTarget) {
+    try {
+      const [activationRestaurant, activationState, activationQrCount, activationFeedbackCount] =
+        await prisma.$transaction([
+          prisma.restaurant.findUnique({
+            where: { id: activationTarget.id },
+            select: {
+              name: true,
+              category: true,
+              googleReviewUrl: true,
+              googleEnabled: true,
+            },
+          }),
+          prisma.restaurantActivationState.findUnique({
+            where: { restaurantId: activationTarget.id },
+            select: { qrPrintedSharedAt: true, dismissedAt: true },
+          }),
+          prisma.qrGeneration.count({ where: { restaurantId: activationTarget.id } }),
+          prisma.feedback.count({ where: { restaurantId: activationTarget.id } }),
+        ]);
+      if (activationRestaurant) {
+        initialActivation = computeActivation({
+          restaurant: activationRestaurant,
+          state: activationState,
+          qrGenerationCount: activationQrCount,
+          feedbackCount: activationFeedbackCount,
+        });
+      }
+    } catch (activationError) {
+      // Soft-fail: client will refetch via own GET /activation endpoint.
+      console.error('[DashboardPage] activation hydration failed', activationError);
+    }
+  }
+
   const dateText = nowDate.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
     weekday: 'long',
     day: 'numeric',
@@ -1060,6 +1101,7 @@ async function renderDashboardPage({
             <ActivationChecklistCard
               restaurantId={(selectedRestaurant ?? user.restaurants[0]).id}
               locale={locale}
+              initialResult={initialActivation}
             />
           </ViewportMount>
         </div>
