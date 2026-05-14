@@ -34,11 +34,10 @@ import {
   scoreContrast,
   isContrastRisky,
 } from "@/lib/qr-colors";
-// Root-cause fix: template seçim adımı kaldırıldı (Wave A backlog'a
-// alındı). `defaultTemplateForCategory` + `getTemplate` + `TemplatePickerStep`
-// + `deriveInitials` import'ları silindi. Wizard artık 3-step (Hedef →
-// Renk → Önizle); template her zaman `classic` (server-side composer
-// `composePremiumQrPng` zaten Pulse Lime hero frame uygular).
+// Wizard 3-step: Hedef → Renk → Önizle. Template seçim adımı Wave A
+// backlog'a ertelendi; server-side composer `composePremiumQrPng` zaten
+// tek Pulse Lime hero frame'i üretir. Submit'te `templateId: null`
+// gönderilir, route `?template=` boş geldiğinde NULL kaydeder.
 
 interface RestaurantOption {
   id: string;
