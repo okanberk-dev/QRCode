@@ -311,47 +311,71 @@ export async function buildLifecycleContexts(
   for (const u of users) {
     const userLocale: 'tr' | 'en' = u.locale === 'en' ? 'en' : 'tr';
     for (const r of u.restaurants) {
-      const [qrFirst, qrCount, feedbackCount, lastFeedback] = await Promise.all([
-        prisma.qrGeneration.findFirst({
-          where: { restaurantId: r.id },
-          orderBy: { createdAt: 'asc' },
-          select: { createdAt: true },
-        }),
-        prisma.qrGeneration.count({ where: { restaurantId: r.id } }),
-        prisma.feedback.count({ where: { restaurantId: r.id } }),
-        prisma.feedback.findFirst({
-          where: { restaurantId: r.id },
-          orderBy: { createdAt: 'desc' },
-          select: { createdAt: true },
-        }),
-      ]);
+      // Wave A2 (CLAUDE.md §38.A): per-restaurant try/catch isolation.
+      // Previously Promise.all rejecting on a single bad query (Prisma P2022
+      // drift, connection drop) would propagate up and zero-out the entire
+      // batch (`contexts = []` in the cron handler), silently killing
+      // lifecycle emails for every user that day. Now a single bad restaurant
+      // just gets skipped.
+      //
+      // Promise.all → $transaction (CLAUDE.md §40.1 connection_limit=1
+      // pattern): Supabase pooler keeps these 4 reads on a single connection
+      // instead of contending for the pool.
+      try {
+        const [qrFirst, qrCount, feedbackCount, lastFeedback] = await prisma.$transaction([
+          prisma.qrGeneration.findFirst({
+            where: { restaurantId: r.id },
+            orderBy: { createdAt: 'asc' },
+            select: { createdAt: true },
+          }),
+          prisma.qrGeneration.count({ where: { restaurantId: r.id } }),
+          prisma.feedback.count({ where: { restaurantId: r.id } }),
+          prisma.feedback.findFirst({
+            where: { restaurantId: r.id },
+            orderBy: { createdAt: 'desc' },
+            select: { createdAt: true },
+          }),
+        ]);
 
-      // Last activity = max(user.updatedAt, last feedback) — user kendi
-      // panel'e girdi mi yoksa müşteriler hâlâ aktif mi.
-      const lastActivityAt =
-        lastFeedback && lastFeedback.createdAt > u.updatedAt
-          ? lastFeedback.createdAt
-          : u.updatedAt;
+        // Last activity = max(user.updatedAt, last feedback) — user kendi
+        // panel'e girdi mi yoksa müşteriler hâlâ aktif mi.
+        const lastActivityAt =
+          lastFeedback && lastFeedback.createdAt > u.updatedAt
+            ? lastFeedback.createdAt
+            : u.updatedAt;
 
-      contexts.push({
-        user: {
-          id: u.id,
-          email: u.email,
-          name: u.name,
-          plan: u.plan,
-          locale: userLocale,
-          createdAt: u.createdAt,
-          lastActivityAt,
-        },
-        restaurant: {
-          id: r.id,
-          name: r.name,
-          qrGenerationCount: qrCount,
-          qrFirstDownloadAt: qrFirst?.createdAt ?? null,
-          feedbackCount,
-        },
-        appUrl,
-      });
+        contexts.push({
+          user: {
+            id: u.id,
+            email: u.email,
+            name: u.name,
+            plan: u.plan,
+            locale: userLocale,
+            createdAt: u.createdAt,
+            lastActivityAt,
+          },
+          restaurant: {
+            id: r.id,
+            name: r.name,
+            qrGenerationCount: qrCount,
+            qrFirstDownloadAt: qrFirst?.createdAt ?? null,
+            feedbackCount,
+          },
+          appUrl,
+        });
+      } catch (err) {
+        // CLAUDE.md §37.7 PII redaction — log userId/restaurantId, never user payload.
+        const errMessage = err instanceof Error ? err.message.slice(0, 200) : 'unknown';
+        console.error('[lifecycle-emails] context build failed for restaurant', {
+          userId: u.id,
+          restaurantId: r.id,
+          errMessage,
+        });
+        // Skip this restaurant — next iteration continues for other restaurants
+        // (and other users). No ops alert here: context-build errors are
+        // surfaced via Sentry through console.error capture; this is a
+        // database-level signal, not a mail-delivery issue.
+      }
     }
   }
 

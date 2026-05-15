@@ -41,6 +41,11 @@ model User {
   // Used as a 20-hour dedup so a single cron tick can't fire repeatedly and
   // 4 daily ticks (1/2/3/4 days remaining) each send exactly one mail.
   lastTrialReminderAt       DateTime? @map("last_trial_reminder_at")
+  // Wave A5 (CLAUDE.md §38.A) — owner opt-out for trial-ending mails. When
+  // true, the trial-reminders cron skips this user entirely (no D-3 / D-1
+  // reminders). Defaults false to preserve the existing send behaviour for
+  // every user that signed up before the toggle landed.
+  disableTrialReminders     Boolean   @default(false) @map("disable_trial_reminders")
   // 2FA TOTP (Section 8 — Faz 3). totpSecret base32-encoded; verify edilmeden
   // önce twoFactorEnabled=false (geçici secret). Login flow `twoFactorEnabled=true`
   // ise login sonrası 6 haneli kod prompt'una zorlar.
@@ -808,11 +813,18 @@ model Campaign {
 }
 
 model NotificationPreference {
-  userId           String   @id @map("user_id")
-  lowRatingEmail   Boolean  @default(true) @map("low_rating_email")
-  dailyDigestEmail Boolean  @default(false) @map("daily_digest_email")
-  weeklyReport     Boolean  @default(true) @map("weekly_report")
-  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
+  userId         String   @id @map("user_id")
+  lowRatingEmail Boolean  @default(true) @map("low_rating_email")
+  // Wave A7 (CLAUDE.md §38.A) — `dailyDigestEmail` removed. The toggle was
+  // surfaced in /dashboard/notifications but **no backend cron consumed it**
+  // (no /api/cron/daily-digest existed). Owners flipped it and nothing
+  // happened. We chose deletion over implementation because the same
+  // information already lands in the Pulse weekly report (low-rating spikes
+  // are mailed instantly via `lowRatingEmail`, weekly trend via
+  // `weeklyReport`). If demand for a daily digest comes back we'd build a
+  // proper cron at the same time.
+  weeklyReport   Boolean  @default(true) @map("weekly_report")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("notification_preferences")
 }

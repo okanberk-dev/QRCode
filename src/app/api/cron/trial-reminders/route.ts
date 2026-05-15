@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendTrialEndingEmail } from '@/lib/email';
+import { notifyOpsOfMailFailure } from '@/lib/email/ops-alert';
 
 // CRITICAL — without these directives Vercel Pro defaults to a 60s function
 // timeout. trial-reminders fans out per-user mail sends (Resend HTTP layer);
@@ -42,6 +43,12 @@ export async function GET(req: NextRequest) {
       where: {
         plan: 'trial',
         isActive: true,
+        // Wave A5 — owner opt-out gate. NOT { disableTrialReminders: true }
+        // covers both `false` (default) and any legacy NULL rows that exist
+        // before the migration backfills the default. Belt-and-suspenders
+        // for a fresh deploy where Prisma generate already knows the field
+        // but the production DB hasn't seen the migration yet.
+        NOT: { disableTrialReminders: true },
         trialEndsAt: { gte: now, lte: windowEnd },
         OR: [
           { lastTrialReminderAt: null },
@@ -87,14 +94,20 @@ export async function GET(req: NextRequest) {
       }
       dayBuckets[String(daysLeft)] = (dayBuckets[String(daysLeft)] || 0) + 1;
 
-      const usage = await collectUsage(user.restaurants[0]?.id);
       const userLocale: 'tr' | 'en' = user.locale === 'en' ? 'en' : 'tr';
       // CLAUDE.md §38.132 — /dashboard/billing route YOK; account tab
       // section deeplink (CLAUDE.md §38.51 SettingsLayout 7 tab — billing
       // tab profile/security/notifications/ai/billing/team/legal).
       const upgradeUrl = `${appUrl}/${userLocale}/dashboard/account?section=billing`;
 
+      // Wave A1 (CLAUDE.md §38.A): per-user try/catch wrap covers BOTH
+      // collectUsage (Prisma read) + sendTrialEndingEmail (Resend HTTP) +
+      // prisma.user.update (lastTrialReminderAt). Previously collectUsage
+      // sat outside the try block — a transient Prisma error there would
+      // terminate the entire cron mid-cohort, leaving trailing users
+      // without their reminder.
       try {
+        const usage = await collectUsage(user.restaurants[0]?.id);
         const ok = await sendTrialEndingEmail({
           to: user.email,
           locale: userLocale,
@@ -111,15 +124,32 @@ export async function GET(req: NextRequest) {
           });
         } else {
           failed++;
-          // PII redaction (CLAUDE.md §37 KVKK / Sentry minimization): log
-          // userId, never the e-mail. Sentry auto-captures `extra` from
-          // console.error and the rough match for "trial reminder send
-          // failed" is the user.id — operators can pull the row from DB.
-          console.error('[TRIAL_REMINDERS] send failed', { userId: user.id, daysLeft, locale: userLocale });
+          // PII redaction (CLAUDE.md §37.7): log userId, never the e-mail.
+          console.error('[TRIAL_REMINDERS] send returned false', { userId: user.id, daysLeft, locale: userLocale });
+          // Wave A4 — ops alert wiring (CLAUDE.md §21.33). Trial reminder is
+          // a time-critical conversion mail; silent fail = lost upgrade.
+          // notifyOpsOfMailFailure is rate-limited (10/template/5dk) so a
+          // Resend outage doesn't bomb the inbox.
+          await notifyOpsOfMailFailure({
+            template: 'trial-ending',
+            recipient: user.email,
+            reason: 'send_returned_false',
+            userLocale,
+            metadata: { userId: user.id, daysLeft },
+          });
         }
       } catch (err) {
         failed++;
-        console.error('[TRIAL_REMINDERS] exception', { userId: user.id, err });
+        const errName = err instanceof Error ? err.name : 'unknown';
+        const errMessage = err instanceof Error ? err.message.slice(0, 200) : 'unknown';
+        console.error('[TRIAL_REMINDERS] exception', { userId: user.id, errName, errMessage });
+        await notifyOpsOfMailFailure({
+          template: 'trial-ending',
+          recipient: user.email,
+          reason: errMessage,
+          userLocale,
+          metadata: { userId: user.id, daysLeft, errName },
+        });
       }
 
       // Resend free-tier rate limit is 10 req/sec; 120 ms keeps us well under.
