@@ -6,6 +6,7 @@ import type { Locale } from '@/lib/translations';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { resolveActiveRestaurantId } from '@/lib/active-business';
+import { detectSector } from '@/lib/sector-platforms';
 import { CampaignsClient } from './_components/CampaignsClient';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,7 @@ export default async function OwnerCampaignsPage({ params, searchParams }: PageP
     select: {
       id: true,
       name: true,
+      category: true,
       campaignsEnabled: true,
     },
     orderBy: { createdAt: 'asc' },
@@ -54,6 +56,7 @@ export default async function OwnerCampaignsPage({ params, searchParams }: PageP
         id: restaurant.id,
         name: restaurant.name,
         campaignsEnabled: restaurant.campaignsEnabled !== false,
+        sector: detectSector(restaurant.category),
       }))}
       initialActiveRestaurantId={initialActiveRestaurantId}
     />

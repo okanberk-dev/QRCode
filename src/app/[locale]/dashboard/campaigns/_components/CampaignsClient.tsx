@@ -25,10 +25,13 @@ import {
 } from '@/lib/campaigns-initial-state';
 import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
 
+import type { SectorKey } from '@/lib/sector-platforms';
+
 interface RestaurantOption {
   id: string;
   name: string;
   campaignsEnabled: boolean;
+  sector?: SectorKey;
 }
 
 export interface CampaignListItem {
@@ -439,6 +442,9 @@ export function CampaignsClient({ locale, initialRestaurants, initialActiveResta
         <CampaignComposeModal
           isTr={isTr}
           restaurantId={activeRestaurantId}
+          sector={
+            restaurants.find((r) => r.id === activeRestaurantId)?.sector ?? null
+          }
           onClose={() => setComposeOpen(false)}
           onCreated={(campaignId) => {
             setComposeOpen(false);

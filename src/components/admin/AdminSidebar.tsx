@@ -20,6 +20,7 @@ import {
   LogOut,
   Mail,
   Megaphone,
+  MessageSquareText,
   QrCode,
   ScrollText,
   Settings,
@@ -260,6 +261,16 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
           label: locale === 'en' ? 'Campaign approvals' : 'Kampanya Onayları',
           roles: ['superadmin'],
           permission: { resource: 'campaigns', action: 'read' },
+        },
+        // Stage 119 §38.199 — Sektör bazlı kampanya şablon kataloğu. Owner
+        // panel /dashboard/campaigns'in "Şablon seç" picker'ı bu kataloğu
+        // tüketir. Buaze global rows (restaurantId=null); owner-saved rows
+        // (restaurantId set) admin tarafından düzenlenmez.
+        {
+          href: '/admin/customer-campaign-templates',
+          icon: MessageSquareText,
+          label: locale === 'en' ? 'Campaign templates' : 'Kampanya Şablonları',
+          roles: ['superadmin'],
         },
         { href: '/admin/embed-usage', icon: Globe, label: locale === 'en' ? 'Embed usage' : 'Embed kullanımı', roles: ['superadmin'] },
         // CLAUDE.md §42 — Denetim Merkezi (superadmin). 3 alt-yüzey:
