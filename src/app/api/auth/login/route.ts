@@ -5,6 +5,8 @@ import { signJwt, getSecret } from '@/lib/auth';
 import { rateLimit, resetRateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { annotateRecaptchaAssessment, verifyRecaptchaToken } from '@/lib/recaptcha';
 import { createUserSessionForToken } from '@/lib/user-session';
+import { describeDevice } from '@/lib/device-fingerprint';
+import { sendNewDeviceLoginEmail } from '@/lib/email';
 import * as jose from 'jose';
 
 // 2FA challenge JWT — login sonrasında geçerli kullanıcının kimliğini taşıyan
@@ -215,6 +217,35 @@ export async function issueLoginSession(args: {
   });
   if (!session.ok) {
     return NextResponse.json({ error: session.error }, { status: 500 });
+  }
+
+  // Wave D (CLAUDE.md §38.195) — new-device login security alert.
+  // session.isNewDevice is true only when the user has prior sessions
+  // AND none of them match the current fuzzy fingerprint
+  // (UA major + IP /16). Fire-and-forget; sender wires ops alert
+  // internally on send failure.
+  if (session.isNewDevice) {
+    const userAgent = req.headers.get('user-agent');
+    const ip = getClientIp(req.headers);
+    const desc = describeDevice(userAgent, ip);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+    // Best-effort locale resolution — User row was fetched above (user) so
+    // we can read the locale field directly when available.
+    const userLocale: 'tr' | 'en' = (
+      (user as unknown as { locale?: string }).locale === 'en' ? 'en' : 'tr'
+    );
+    sendNewDeviceLoginEmail({
+      to: user.email,
+      firstName: user.name,
+      accountEmail: user.email,
+      device: desc.device,
+      location: desc.location,
+      loggedInAt: new Date(),
+      resetUrl: `${appUrl}/${userLocale}/auth/forgot-password`,
+      locale: userLocale,
+    }).catch(() => {
+      // Sender already logs + ops-alerts on failure.
+    });
   }
 
   const response = NextResponse.json({

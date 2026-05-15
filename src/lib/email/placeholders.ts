@@ -85,6 +85,8 @@ export const MAIL_PLACEHOLDERS = {
   'rating-drop-alert': ['firstName', 'restaurantName', 'currentAvg', 'baselineAvg', 'delta', 'reviewCount'],
   'first-reply-celebration': ['ownerName', 'restaurantName'],
   'data-export-confirmation': ['firstName'],
+  // Wave D (CLAUDE.md §38.195) — new-device login.
+  'new-device-login': ['firstName', 'device', 'location'],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;

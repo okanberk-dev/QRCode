@@ -485,6 +485,27 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'notYouTitle', label: '"Sen bunu yapmadıysan?" başlık (kilitli)' },
     { key: 'notYouBody', label: '"Sen bunu yapmadıysan?" açıklama (kilitli)', multiline: true },
   ],
+  // Wave D (CLAUDE.md §38.195) — new-device login. 4 alan locked (statusText/notYou*).
+  'new-device-login': [
+    { key: 'eyebrow', label: 'Eyebrow' },
+    { key: 'title', label: 'Başlık 1. parça' },
+    { key: 'titleAccent', label: 'Başlık vurgu' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      placeholders: MAIL_PLACEHOLDERS['new-device-login'],
+    },
+    { key: 'cardEyebrow', label: 'Kart etiketi' },
+    { key: 'statusText', label: 'Status metni (kilitli)' },
+    { key: 'metaTime', label: 'Meta — saat etiketi' },
+    { key: 'metaDevice', label: 'Meta — cihaz etiketi' },
+    { key: 'metaLocation', label: 'Meta — konum etiketi' },
+    { key: 'metaAccount', label: 'Meta — hesap etiketi' },
+    { key: 'notYouTitle', label: '"Sen değil misin?" başlık (kilitli)' },
+    { key: 'notYouBody', label: '"Sen değil misin?" açıklama (kilitli)', multiline: true },
+    { key: 'notYouLink', label: 'Şifre sıfırlama link metni (kilitli)' },
+  ],
 };
 
 const TEMPLATE_LABELS: Record<string, string> = {
@@ -520,6 +541,8 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'rating-drop-alert': 'Puan düşüşü uyarısı',
   'first-reply-celebration': 'İlk Google yanıt kutlama',
   'data-export-confirmation': 'KVKK veri indirme onayı',
+  // Wave D (CLAUDE.md §38.195)
+  'new-device-login': 'Yeni cihazdan giriş (güvenlik)',
 };
 
 interface Props {

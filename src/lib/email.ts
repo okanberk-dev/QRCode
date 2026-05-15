@@ -29,6 +29,7 @@ import {
   renderRatingDropAlert,
   renderFirstReplyCelebration,
   renderDataExportConfirmation,
+  renderNewDeviceLogin,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -768,6 +769,40 @@ export async function sendDataExportConfirmationEmail(params: {
     await notifyOpsOfMailFailure({
       template: 'data-export-confirmation', recipient: params.to, reason: 'send_failed', userLocale: locale,
       metadata: { account: params.accountEmail },
+    });
+  }
+  return ok;
+}
+
+// ─── Wave D — new-device login security alert (CLAUDE.md §38.195) ───────
+
+export async function sendNewDeviceLoginEmail(params: {
+  to: string;
+  firstName?: string | null;
+  accountEmail: string;
+  device: string;
+  location: string;
+  loggedInAt?: Date;
+  resetUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderNewDeviceLogin(
+    {
+      firstName: params.firstName,
+      accountEmail: params.accountEmail,
+      device: params.device,
+      location: params.location,
+      loggedInAt: params.loggedInAt,
+      resetUrl: params.resetUrl,
+    },
+    locale,
+  );
+  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'new-device-login', recipient: params.to, reason: 'send_failed', userLocale: locale,
+      metadata: { account: params.accountEmail, device: params.device, location: params.location },
     });
   }
   return ok;

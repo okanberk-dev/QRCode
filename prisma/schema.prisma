@@ -97,12 +97,20 @@ model UserSession {
   tokenHash  String    @unique @map("token_hash")
   userAgent  String?   @map("user_agent")
   ipAddress  String?   @map("ip_address")
+  // Wave D (CLAUDE.md §38.195) — fuzzy device fingerprint for the
+  // "new device login" detection (user choice: UA major version + IP /16).
+  // First login on a given fingerprint fires the alert mail; subsequent
+  // logins from the same UA-major + IP-slash-16 are silent.
+  // 16-byte sha256 hex prefix (32 chars) — collision-resistant enough
+  // for forensic match, short enough for an index.
+  fingerprint String?  @map("fingerprint")
   lastSeenAt DateTime  @default(now()) @map("last_seen_at")
   createdAt  DateTime  @default(now()) @map("created_at")
   // null = active, non-null = revoked (force logout). Soft delete for audit.
   revokedAt  DateTime? @map("revoked_at")
 
   @@index([userId, revokedAt])
+  @@index([userId, fingerprint])
   @@map("user_sessions")
 }
 

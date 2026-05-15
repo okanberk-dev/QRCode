@@ -116,3 +116,7 @@ export type { FirstReplyCelebrationParams } from './first-reply-celebration';
 
 export { renderDataExportConfirmation } from './data-export-confirmation';
 export type { DataExportConfirmationParams } from './data-export-confirmation';
+
+// Wave D (CLAUDE.md §38.195) — new-device login security alert.
+export { renderNewDeviceLogin } from './new-device-login';
+export type { NewDeviceLoginParams } from './new-device-login';

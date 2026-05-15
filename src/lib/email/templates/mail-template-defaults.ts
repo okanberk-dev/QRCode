@@ -914,6 +914,44 @@ const DATA_EXPORT_CONFIRMATION_EN: FlatCopy = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// Wave D (CLAUDE.md §38.195) — new-device login security alert.
+// ───────────────────────────────────────────────────────────────────────
+
+const NEW_DEVICE_LOGIN_TR: FlatCopy = {
+  eyebrow: 'Güvenlik · Yeni cihaz',
+  title: 'Yeni cihazdan',
+  titleAccent: 'giriş yapıldı',
+  intro:
+    'Hesabına daha önce görmediğimiz bir cihaz veya konumdan giriş yapıldı. Bu sen değilsen aşağıdaki adımları hemen uygula.',
+  cardEyebrow: 'Giriş detayı',
+  statusText: 'Aktif oturum · Yeni cihaz',
+  metaTime: 'Giriş saati',
+  metaDevice: 'Cihaz',
+  metaLocation: 'Konum (IP /16)',
+  metaAccount: 'Hesap',
+  notYouTitle: 'Sen değil misin?',
+  notYouBody: 'Şifreni hemen sıfırla ve diğer oturumlardan çıkış yap. Şüpheli bir durum varsa support@buaze.com\'a yaz.',
+  notYouLink: 'Şifreyi sıfırla →',
+};
+
+const NEW_DEVICE_LOGIN_EN: FlatCopy = {
+  eyebrow: 'Security · New device',
+  title: 'New device',
+  titleAccent: 'sign-in',
+  intro:
+    "Your account was just accessed from a device or location we haven't seen before. If this wasn't you, follow the steps below immediately.",
+  cardEyebrow: 'Sign-in detail',
+  statusText: 'Active session · New device',
+  metaTime: 'Signed in at',
+  metaDevice: 'Device',
+  metaLocation: 'Location (IP /16)',
+  metaAccount: 'Account',
+  notYouTitle: "Wasn't you?",
+  notYouBody: 'Reset your password immediately and sign out of other sessions. Email support@buaze.com if anything looks suspicious.',
+  notYouLink: 'Reset password →',
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Combined registry — admin GET endpoint + seed script consume this.
 // Lifecycle defaults are re-exported from lifecycle-defaults.ts (no copy)
 // so render fns + admin editor share the same object reference.
@@ -993,6 +1031,8 @@ export const MAIL_INLINE_DEFAULTS: Record<
   'rating-drop-alert': { tr: RATING_DROP_ALERT_TR, en: RATING_DROP_ALERT_EN },
   'first-reply-celebration': { tr: FIRST_REPLY_CELEBRATION_TR, en: FIRST_REPLY_CELEBRATION_EN },
   'data-export-confirmation': { tr: DATA_EXPORT_CONFIRMATION_TR, en: DATA_EXPORT_CONFIRMATION_EN },
+  // Wave D (CLAUDE.md §38.195) — new-device login security alert.
+  'new-device-login': { tr: NEW_DEVICE_LOGIN_TR, en: NEW_DEVICE_LOGIN_EN },
 };
 
 /**
