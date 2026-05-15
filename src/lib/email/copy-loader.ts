@@ -83,6 +83,11 @@ export const SUPPORTED_MAIL_KEYS = [
   // Wave B4 (CLAUDE.md §38.193) — owner-initiated account deletion lifecycle.
   'account-deletion-scheduled', // 30-day grace start; carries cancel link.
   'account-deletion-canceled',  // confirmation that the schedule was revoked.
+  // Wave C (CLAUDE.md §38.194) — lifecycle expansion (2 cron + 2 sync).
+  'qr-no-scans-reminder',       // C1 cron
+  'rating-drop-alert',          // C2 cron
+  'first-reply-celebration',    // C3 sync from Google reply
+  'data-export-confirmation',   // C4 sync from /api/account/export-data
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];

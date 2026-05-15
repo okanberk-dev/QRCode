@@ -80,6 +80,11 @@ export const MAIL_PLACEHOLDERS = {
   // Wave B4 (CLAUDE.md §38.193) — account deletion lifecycle placeholders.
   'account-deletion-scheduled': ['firstName', 'daysRemaining', 'scheduledFor'],
   'account-deletion-canceled': ['firstName'],
+  // Wave C (CLAUDE.md §38.194) — lifecycle expansion placeholders.
+  'qr-no-scans-reminder': ['firstName', 'restaurantName', 'daysSinceQr'],
+  'rating-drop-alert': ['firstName', 'restaurantName', 'currentAvg', 'baselineAvg', 'delta', 'reviewCount'],
+  'first-reply-celebration': ['ownerName', 'restaurantName'],
+  'data-export-confirmation': ['firstName'],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;

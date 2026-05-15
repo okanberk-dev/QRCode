@@ -25,6 +25,10 @@ import {
   renderFirstFeedbackCelebration,
   renderAccountDeletionScheduled,
   renderAccountDeletionCanceled,
+  renderQrNoScansReminder,
+  renderRatingDropAlert,
+  renderFirstReplyCelebration,
+  renderDataExportConfirmation,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -659,6 +663,110 @@ export async function sendAccountDeletionCanceledEmail(params: {
       recipient: params.to,
       reason: 'send_failed',
       userLocale: locale,
+      metadata: { account: params.accountEmail },
+    });
+  }
+  return ok;
+}
+
+// ─── Wave C lifecycle senders (CLAUDE.md §38.194) ───────────────────────
+// Four new senders, all ops-alert wired. Crons (C1, C2) hit them with
+// LifecycleEmailLog cooldown gates upstream; sync callers (C3, C4) wire
+// their own idempotency.
+
+export async function sendQrNoScansReminderEmail(params: {
+  to: string;
+  firstName?: string | null;
+  restaurantName: string;
+  daysSinceQr: number;
+  qrUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderQrNoScansReminder(
+    { firstName: params.firstName, restaurantName: params.restaurantName, daysSinceQr: params.daysSinceQr, qrUrl: params.qrUrl },
+    locale,
+  );
+  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'qr-no-scans-reminder', recipient: params.to, reason: 'send_failed', userLocale: locale,
+      metadata: { restaurantName: params.restaurantName, daysSinceQr: params.daysSinceQr },
+    });
+  }
+  return ok;
+}
+
+export async function sendRatingDropAlertEmail(params: {
+  to: string;
+  firstName?: string | null;
+  restaurantName: string;
+  currentAvg: number;
+  baselineAvg: number;
+  delta: number;
+  reviewCount: number;
+  inboxUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderRatingDropAlert(
+    {
+      firstName: params.firstName, restaurantName: params.restaurantName,
+      currentAvg: params.currentAvg, baselineAvg: params.baselineAvg,
+      delta: params.delta, reviewCount: params.reviewCount, inboxUrl: params.inboxUrl,
+    },
+    locale,
+  );
+  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'rating-drop-alert', recipient: params.to, reason: 'send_failed', userLocale: locale,
+      metadata: { restaurantName: params.restaurantName, currentAvg: params.currentAvg, baselineAvg: params.baselineAvg, delta: params.delta },
+    });
+  }
+  return ok;
+}
+
+export async function sendFirstReplyCelebrationEmail(params: {
+  to: string;
+  ownerName?: string | null;
+  restaurantName: string;
+  reviewsUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderFirstReplyCelebration(
+    { ownerName: params.ownerName, restaurantName: params.restaurantName, reviewsUrl: params.reviewsUrl },
+    locale,
+  );
+  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'first-reply-celebration', recipient: params.to, reason: 'send_failed', userLocale: locale,
+      metadata: { restaurantName: params.restaurantName },
+    });
+  }
+  return ok;
+}
+
+export async function sendDataExportConfirmationEmail(params: {
+  to: string;
+  firstName?: string | null;
+  accountEmail: string;
+  ip?: string | null;
+  device?: string | null;
+  exportedAt?: Date;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderDataExportConfirmation(
+    { firstName: params.firstName, accountEmail: params.accountEmail, ip: params.ip, device: params.device, exportedAt: params.exportedAt },
+    locale,
+  );
+  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'data-export-confirmation', recipient: params.to, reason: 'send_failed', userLocale: locale,
       metadata: { account: params.accountEmail },
     });
   }

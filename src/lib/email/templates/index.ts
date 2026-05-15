@@ -99,3 +99,20 @@ export type { AccountDeletionScheduledParams } from './account-deletion-schedule
 
 export { renderAccountDeletionCanceled } from './account-deletion-canceled';
 export type { AccountDeletionCanceledParams } from './account-deletion-canceled';
+
+// Wave C (CLAUDE.md §38.194) — lifecycle expansion: 4 mails.
+//   C1 qr-no-scans-reminder       — cron (daily 09:00 UTC), per-restaurant 14g cooldown
+//   C2 rating-drop-alert          — cron (weekly Mon 11:00 UTC), 7g cooldown
+//   C3 first-reply-celebration    — sync from /api/.../google/reviews/reply POST, lifetime
+//   C4 data-export-confirmation   — sync from /api/account/export-data POST, no cooldown
+export { renderQrNoScansReminder } from './qr-no-scans-reminder';
+export type { QrNoScansReminderParams } from './qr-no-scans-reminder';
+
+export { renderRatingDropAlert } from './rating-drop-alert';
+export type { RatingDropAlertParams } from './rating-drop-alert';
+
+export { renderFirstReplyCelebration } from './first-reply-celebration';
+export type { FirstReplyCelebrationParams } from './first-reply-celebration';
+
+export { renderDataExportConfirmation } from './data-export-confirmation';
+export type { DataExportConfirmationParams } from './data-export-confirmation';

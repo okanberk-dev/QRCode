@@ -19,7 +19,15 @@ export type LifecycleEmailType =
   // Wave B5 (CLAUDE.md §38.B) — first feedback activation moment.
   // Synchronous trigger from /api/feedback POST when count === 1; uses the
   // lifecycle log table purely for idempotency (lifetime cooldown).
-  | 'first_feedback_celebration';
+  | 'first_feedback_celebration'
+  // Wave C (CLAUDE.md §38.194) — lifecycle expansion.
+  // qr_no_scans_reminder    — cron, 14d cooldown per restaurant
+  // rating_drop_alert       — cron, 7d cooldown per restaurant
+  // first_reply_celebration — sync from google reply, lifetime per restaurant
+  // (data-export-confirmation is sync per-action, no LifecycleEmailLog gate)
+  | 'qr_no_scans_reminder'
+  | 'rating_drop_alert'
+  | 'first_reply_celebration';
 
 export interface AlreadySentParams {
   userId?: string | null;

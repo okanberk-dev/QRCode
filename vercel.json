@@ -60,6 +60,14 @@
     {
       "path": "/api/cron/process-scheduled-deletions",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/qr-no-scans-reminder",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/rating-drop-alert",
+      "schedule": "0 11 * * 1"
     }
   ],
   "rewrites": [

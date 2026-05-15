@@ -789,6 +789,131 @@ const ACCOUNT_DELETION_CANCELED_EN: FlatCopy = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// Wave C (CLAUDE.md §38.194) — 4 lifecycle expansion templates.
+// ───────────────────────────────────────────────────────────────────────
+
+const QR_NO_SCANS_REMINDER_TR: FlatCopy = {
+  eyebrow: 'Aktivasyon · Tarama yok',
+  title: 'QR\'ın',
+  titleAccent: 'sessiz',
+  intro:
+    'QR\'ı oluşturduğundan beri ${daysSinceQr} gün geçti. Henüz tek tarama yok — yerleştirme veya tasarımda hızlıca düzeltebileceğin bir şey olabilir.',
+  tipsEyebrow: 'Hızlı 4 fikir',
+  tip1: 'Masa kartını her masaya tek tek yerleştir, menü tutucusunun arkasında kalmasın.',
+  tip2: 'Paket siparişlerin üstüne yapıştır — taşınırken müşterinin gözünden kaçmaz.',
+  tip3: 'Karşılama tahtasına yapıştır + yan tarafına "Buradan bir saniyede paylaş" yaz.',
+  tip4: 'Tasarımdan kontrast düşükse QR\'ı koyu tasarımla yeniden indir; %20 daha okunur.',
+  cta: 'QR\'ı yeniden indir →',
+};
+
+const QR_NO_SCANS_REMINDER_EN: FlatCopy = {
+  eyebrow: 'Activation · No scans',
+  title: 'Your QR is',
+  titleAccent: 'silent',
+  intro:
+    'It\'s been ${daysSinceQr} days since you created the QR and not a single scan. Likely a quick fix in placement or design.',
+  tipsEyebrow: '4 quick ideas',
+  tip1: 'Place a table card on each table, not hidden behind the menu stand.',
+  tip2: 'Stick it on every takeaway package — visible during transport.',
+  tip3: 'Mount it on your welcome board with "Share your stay in one second" beside it.',
+  tip4: 'Low contrast? Re-download in the dark variant — typically +20% scanability.',
+  cta: 'Re-download QR →',
+};
+
+const RATING_DROP_ALERT_TR: FlatCopy = {
+  eyebrow: 'Erken uyarı · Puan düşüşü',
+  title: 'Puanın',
+  titleAccent: 'düşüyor',
+  intro:
+    'Son 7 günde puan ortalaman ${currentAvg} oldu. Önceki 4 haftalık baseline ${baselineAvg} idi — düşüş ${delta} puan.',
+  cardEyebrow: 'Bu hafta',
+  currentLabel: 'Mevcut ortalama',
+  baselineLabel: 'Önceki 4 hafta',
+  deltaLabel: 'Fark',
+  reviewCountLabel: 'Yorum sayısı',
+  cta: 'Düşük puanları gör →',
+  actionTitle: 'Sıradaki 24 saatte 3 adım',
+  action1: 'Son 7 günün 1-3 puanlı yorumlarına yanıt yaz — geç yanıt verilen yorumlar Google\'da kalıcı hasar bırakır.',
+  action2: 'Tekrar eden şikayet konularını çıkar (servis, hijyen, hız) — operasyon ekibiyle paylaş.',
+  action3: 'Memnun müşterilerden Google yorumu iste — yeni 5\'ler ortalamayı hızlı toparlar.',
+};
+
+const RATING_DROP_ALERT_EN: FlatCopy = {
+  eyebrow: 'Early warning · Rating drop',
+  title: 'Your rating is',
+  titleAccent: 'sliding',
+  intro:
+    'You averaged ${currentAvg} over the past 7 days. The prior 4-week baseline was ${baselineAvg} — a drop of ${delta} points.',
+  cardEyebrow: 'This week',
+  currentLabel: 'Current average',
+  baselineLabel: 'Prior 4-week',
+  deltaLabel: 'Delta',
+  reviewCountLabel: 'Reviews',
+  cta: 'Open low-rating inbox →',
+  actionTitle: 'Three moves in the next 24 hours',
+  action1: 'Reply to every 1-3 star review from the last 7 days — late replies leave permanent Google damage.',
+  action2: 'Extract recurring complaint themes (service, hygiene, speed) and share with operations.',
+  action3: 'Ask satisfied customers for a Google review — fresh 5-stars rebalance the average quickly.',
+};
+
+const FIRST_REPLY_CELEBRATION_TR: FlatCopy = {
+  eyebrow: 'Reputation OS · İlk yanıt',
+  title: 'İlk Google',
+  titleAccent: 'yanıtın gitti',
+  intro:
+    'Bravo, ${restaurantName} için ilk Google yorum yanıtını gönderdin. Yanıtlanan yorumlar yanıtlanmayanlara göre %33 daha fazla yeni müşteriye dönüşür (Google internal data).',
+  habitTitle: 'Sıradaki refleks',
+  habitBody:
+    'Her sabah 5 dakika ayır: yeni gelen yorumları tara, 5 puanlara teşekkür et, 1-3 puanlara önce dinle sonra çöz yaklaşımıyla yaz.',
+  cta: 'Yorum panelini aç →',
+  note: 'Pulse AI tonu uyacak şekilde taslakları otomatik hazırlar. Onayla + minik dokunuş + gönder; 60 saniyede biten bir refleks.',
+};
+
+const FIRST_REPLY_CELEBRATION_EN: FlatCopy = {
+  eyebrow: 'Reputation OS · First reply',
+  title: 'Your first Google',
+  titleAccent: 'reply is live',
+  intro:
+    'You just sent the first Google review reply for ${restaurantName}. Replied reviews convert new customers 33% better than unreplied ones (Google internal data).',
+  habitTitle: 'The habit that follows',
+  habitBody: 'Block 5 minutes every morning: scan new reviews, thank 5-stars, listen-then-fix the 1-3s.',
+  cta: 'Open reviews panel →',
+  note: 'Pulse AI drafts replies in your tone. Approve + tweak + send — a 60-second daily habit.',
+};
+
+const DATA_EXPORT_CONFIRMATION_TR: FlatCopy = {
+  eyebrow: 'KVKK · Veri indirildi',
+  title: 'Veri',
+  titleAccent: 'indirildi',
+  intro:
+    'Hesabınla ilişkili tüm veriler JSON olarak indirildi (KVKK §11 erişim hakkı). Bu işlemi sen yaptıysan ek bir şey yapman gerekmiyor.',
+  cardEyebrow: 'İşlem detayı',
+  statusText: 'Başarılı · Dosya indirildi',
+  metaTime: 'İndirme saati',
+  metaIp: 'IP',
+  metaDevice: 'Cihaz',
+  metaAccount: 'Hesap',
+  notYouTitle: 'Sen bunu yapmadıysan?',
+  notYouBody: 'Hemen şifreni değiştir (Hesabım → Güvenlik) ve diğer oturumlardan çık. Şüphelendiğin bir durum varsa support@buaze.com\'a yaz.',
+};
+
+const DATA_EXPORT_CONFIRMATION_EN: FlatCopy = {
+  eyebrow: 'KVKK · Data downloaded',
+  title: 'Your data',
+  titleAccent: 'was exported',
+  intro:
+    'All data associated with your account was downloaded as JSON (KVKK §11 / GDPR Art. 20 access right). If this was you, nothing else to do.',
+  cardEyebrow: 'Export detail',
+  statusText: 'Success · File downloaded',
+  metaTime: 'Downloaded at',
+  metaIp: 'IP',
+  metaDevice: 'Device',
+  metaAccount: 'Account',
+  notYouTitle: "Wasn't you?",
+  notYouBody: 'Change your password immediately (Account → Security) and sign out of other sessions. Email support@buaze.com if anything looks off.',
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Combined registry — admin GET endpoint + seed script consume this.
 // Lifecycle defaults are re-exported from lifecycle-defaults.ts (no copy)
 // so render fns + admin editor share the same object reference.
@@ -863,6 +988,11 @@ export const MAIL_INLINE_DEFAULTS: Record<
     tr: ACCOUNT_DELETION_CANCELED_TR,
     en: ACCOUNT_DELETION_CANCELED_EN,
   },
+  // Wave C (CLAUDE.md §38.194) — lifecycle expansion defaults.
+  'qr-no-scans-reminder': { tr: QR_NO_SCANS_REMINDER_TR, en: QR_NO_SCANS_REMINDER_EN },
+  'rating-drop-alert': { tr: RATING_DROP_ALERT_TR, en: RATING_DROP_ALERT_EN },
+  'first-reply-celebration': { tr: FIRST_REPLY_CELEBRATION_TR, en: FIRST_REPLY_CELEBRATION_EN },
+  'data-export-confirmation': { tr: DATA_EXPORT_CONFIRMATION_TR, en: DATA_EXPORT_CONFIRMATION_EN },
 };
 
 /**

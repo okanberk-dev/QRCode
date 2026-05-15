@@ -79,6 +79,13 @@ export async function runLifecycleEmails(): Promise<LifecycleSummary> {
     // trigger in /api/feedback POST, not from this cron. Listed for TS Record
     // exhaustiveness (CLAUDE.md §43 monthly_health_report parity).
     first_feedback_celebration: 0,
+    // Wave C (CLAUDE.md §38.194) — placeholders for TS Record exhaustiveness.
+    // qr_no_scans_reminder + rating_drop_alert have dedicated crons; the
+    // first_reply_celebration counter is bumped from the Google reply sync
+    // path. None of these three increment from THIS cron.
+    qr_no_scans_reminder: 0,
+    rating_drop_alert: 0,
+    first_reply_celebration: 0,
   };
   let skipped = 0;
   let failures = 0;
