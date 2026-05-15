@@ -8,16 +8,22 @@ import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
+// Wave A5/A7 (CLAUDE.md §38.A) — `dailyDigestEmail` removed (orphan toggle,
+// no consumer cron); `disableTrialReminders` added as a User-level opt-out
+// for the conversion-time trial-ending mail (trial-reminders cron filters
+// on it). NotificationPreference covers reputation-time toggles; User-level
+// flag covers lifecycle-time toggles. Both surface through the same /api
+// endpoint for owner UX cohesion.
 const DEFAULT_PREFS = {
   lowRatingEmail: true,
-  dailyDigestEmail: false,
   weeklyReport: true,
+  disableTrialReminders: false,
 };
 
 const PreferencesBody = z.object({
   lowRatingEmail: z.boolean().optional(),
-  dailyDigestEmail: z.boolean().optional(),
   weeklyReport: z.boolean().optional(),
+  disableTrialReminders: z.boolean().optional(),
 }).strict();
 
 export async function GET(req: NextRequest) {
@@ -27,32 +33,28 @@ export async function GET(req: NextRequest) {
   const userId = await resolveOwnerUserId(actor);
   if (!userId) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  const row = await prisma.notificationPreference.findUnique({
-    where: { userId },
-    select: {
-      lowRatingEmail: true,
-      dailyDigestEmail: true,
-      weeklyReport: true,
-    },
-  });
+  // CLAUDE.md §40.1 connection_limit=1 — two reads on the same pool slot.
+  const [pref, user] = await prisma.$transaction([
+    prisma.notificationPreference.findUnique({
+      where: { userId },
+      select: { lowRatingEmail: true, weeklyReport: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { disableTrialReminders: true },
+    }),
+  ]);
+
   // Edge cache (CLAUDE.md §38.100 Stage 24). NotificationBell client-side
   // 60s polling ile birleşir; `private` directive Vercel CDN'de user-isolated.
   const CACHE_HEADER = 'private, s-maxage=15, stale-while-revalidate=60';
-  if (!row) {
-    return NextResponse.json(DEFAULT_PREFS, {
-      headers: { 'Cache-Control': CACHE_HEADER },
-    });
-  }
-
   return NextResponse.json(
     {
-      lowRatingEmail: row.lowRatingEmail,
-      dailyDigestEmail: row.dailyDigestEmail,
-      weeklyReport: row.weeklyReport,
+      lowRatingEmail: pref?.lowRatingEmail ?? DEFAULT_PREFS.lowRatingEmail,
+      weeklyReport: pref?.weeklyReport ?? DEFAULT_PREFS.weeklyReport,
+      disableTrialReminders: user?.disableTrialReminders ?? DEFAULT_PREFS.disableTrialReminders,
     },
-    {
-      headers: { 'Cache-Control': CACHE_HEADER },
-    },
+    { headers: { 'Cache-Control': CACHE_HEADER } },
   );
 }
 
@@ -84,32 +86,43 @@ export async function PUT(req: NextRequest) {
   const parsed = validateBody(PreferencesBody, body);
   if (!parsed.ok) return parsed.response;
 
-  const current = await prisma.notificationPreference.findUnique({
-    where: { userId },
-    select: {
-      lowRatingEmail: true,
-      dailyDigestEmail: true,
-      weeklyReport: true,
-    },
-  });
+  const [currentPref, currentUser] = await prisma.$transaction([
+    prisma.notificationPreference.findUnique({
+      where: { userId },
+      select: { lowRatingEmail: true, weeklyReport: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { disableTrialReminders: true },
+    }),
+  ]);
 
-  const next = {
-    lowRatingEmail: parsed.data.lowRatingEmail ?? current?.lowRatingEmail ?? DEFAULT_PREFS.lowRatingEmail,
-    dailyDigestEmail: parsed.data.dailyDigestEmail ?? current?.dailyDigestEmail ?? DEFAULT_PREFS.dailyDigestEmail,
-    weeklyReport: parsed.data.weeklyReport ?? current?.weeklyReport ?? DEFAULT_PREFS.weeklyReport,
+  const nextPref = {
+    lowRatingEmail: parsed.data.lowRatingEmail ?? currentPref?.lowRatingEmail ?? DEFAULT_PREFS.lowRatingEmail,
+    weeklyReport: parsed.data.weeklyReport ?? currentPref?.weeklyReport ?? DEFAULT_PREFS.weeklyReport,
   };
+  const nextDisable = parsed.data.disableTrialReminders
+    ?? currentUser?.disableTrialReminders
+    ?? DEFAULT_PREFS.disableTrialReminders;
 
-  const row = await prisma.notificationPreference.upsert({
-    where: { userId },
-    create: { userId, ...next },
-    update: next,
-  });
+  const [pref, user] = await prisma.$transaction([
+    prisma.notificationPreference.upsert({
+      where: { userId },
+      create: { userId, ...nextPref },
+      update: nextPref,
+    }),
+    prisma.user.update({
+      where: { id: userId },
+      data: { disableTrialReminders: nextDisable },
+      select: { disableTrialReminders: true },
+    }),
+  ]);
 
   return NextResponse.json(
     {
-      lowRatingEmail: row.lowRatingEmail,
-      dailyDigestEmail: row.dailyDigestEmail,
-      weeklyReport: row.weeklyReport,
+      lowRatingEmail: pref.lowRatingEmail,
+      weeklyReport: pref.weeklyReport,
+      disableTrialReminders: user.disableTrialReminders,
     },
     {
       // Stage 108 §38.188 — mutation response MUST bypass any CDN/browser

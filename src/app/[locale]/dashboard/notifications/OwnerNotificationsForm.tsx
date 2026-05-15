@@ -1,21 +1,32 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, Loader2, Mail } from 'lucide-react';
+import { Bell, Loader2, Mail, Clock } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import { AlertBanner, APSwitch } from '@/components/ui';
 
+// Wave A5/A7 (CLAUDE.md §38.A) — dailyDigestEmail removed (orphan toggle);
+// receiveTrialReminders added. UI keeps every toggle in POSITIVE semantics
+// ("ON = receive the mail") for cognitive uniformity, but the API still uses
+// `disableTrialReminders` (mirrors the DB schema). The form translates at
+// the API boundary: `disableTrialReminders = !receiveTrialReminders`.
 interface Prefs {
   lowRatingEmail: boolean;
-  dailyDigestEmail: boolean;
   weeklyReport: boolean;
+  receiveTrialReminders: boolean;
 }
 
 const DEFAULT_PREFS: Prefs = {
   lowRatingEmail: true,
-  dailyDigestEmail: false,
   weeklyReport: true,
+  receiveTrialReminders: true,
 };
+
+interface ApiPrefs {
+  lowRatingEmail?: boolean;
+  weeklyReport?: boolean;
+  disableTrialReminders?: boolean;
+}
 
 type Notice = { kind: 'success' | 'danger'; text: string } | null;
 
@@ -43,11 +54,13 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
       try {
         const res = await fetch('/api/notifications');
         if (!cancelled && res.ok) {
-          const json = (await res.json()) as Prefs;
+          const json = (await res.json()) as ApiPrefs;
           setPrefs({
-            lowRatingEmail: Boolean(json.lowRatingEmail),
-            dailyDigestEmail: Boolean(json.dailyDigestEmail),
-            weeklyReport: Boolean(json.weeklyReport),
+            lowRatingEmail: json.lowRatingEmail ?? DEFAULT_PREFS.lowRatingEmail,
+            weeklyReport: json.weeklyReport ?? DEFAULT_PREFS.weeklyReport,
+            // API uses `disableTrialReminders` (DB schema); UI inverts to
+            // `receiveTrialReminders` so every toggle is positive-semantic.
+            receiveTrialReminders: !(json.disableTrialReminders ?? false),
           });
         }
       } catch {
@@ -78,17 +91,24 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
     setPrefs(next); // optimistic
     setPendingKey(key);
     try {
+      // Translate UI semantics → API semantics. `receiveTrialReminders=true`
+      // means the owner WANTS the mail, so DB needs `disableTrialReminders=false`.
+      const payload: ApiPrefs = {
+        lowRatingEmail: next.lowRatingEmail,
+        weeklyReport: next.weeklyReport,
+        disableTrialReminders: !next.receiveTrialReminders,
+      };
       const res = await fetch('/api/notifications', {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(next),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
-        const saved = (await res.json()) as Prefs;
+        const saved = (await res.json()) as ApiPrefs;
         setPrefs({
-          lowRatingEmail: Boolean(saved.lowRatingEmail),
-          dailyDigestEmail: Boolean(saved.dailyDigestEmail),
-          weeklyReport: Boolean(saved.weeklyReport),
+          lowRatingEmail: saved.lowRatingEmail ?? DEFAULT_PREFS.lowRatingEmail,
+          weeklyReport: saved.weeklyReport ?? DEFAULT_PREFS.weeklyReport,
+          receiveTrialReminders: !(saved.disableTrialReminders ?? false),
         });
         flash('success', isTr ? 'Tercih güncellendi' : 'Preference updated');
       } else {
@@ -131,6 +151,21 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
       },
       icon: Bell,
       accent: '#C6F24E',
+    },
+    {
+      // Wave A5 — trial reminder opt-out. ON = receive (D-3 + D-1 reminders);
+      // OFF = silence the trial-ending mails entirely. The toggle persists
+      // beyond the trial period — once the owner upgrades the cron query
+      // skips them anyway (`plan: 'trial'` filter), so the value just sits
+      // dormant.
+      key: 'receiveTrialReminders',
+      label: { tr: 'Deneme süresi hatırlatmaları', en: 'Trial reminders' },
+      desc: {
+        tr: 'Deneme bitimine 3 gün ve 1 gün kala bilgilendirme e-postası. Sustur dersen hiçbir hatırlatma gönderilmez.',
+        en: 'Heads-up email at 3 days and 1 day before your trial ends. Switch off to silence both reminders.',
+      },
+      icon: Clock,
+      accent: '#FDE68A',
     },
   ];
 

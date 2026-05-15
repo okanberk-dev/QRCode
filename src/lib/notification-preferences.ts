@@ -1,14 +1,15 @@
 import { prisma } from '@/lib/prisma';
 
+// Wave A7 (CLAUDE.md §38.A) — `dailyDigestEmail` removed. The toggle never
+// had a backend consumer (no /api/cron/daily-digest existed). See schema
+// comment for the rollout rationale.
 export interface NotificationPrefs {
   lowRatingEmail: boolean;
-  dailyDigestEmail: boolean;
   weeklyReport: boolean;
 }
 
 const DEFAULTS: NotificationPrefs = {
   lowRatingEmail: true,
-  dailyDigestEmail: false,
   weeklyReport: true,
 };
 
@@ -21,14 +22,12 @@ export async function getNotificationPrefsForUser(
       where: { userId },
       select: {
         lowRatingEmail: true,
-        dailyDigestEmail: true,
         weeklyReport: true,
       },
     });
     if (!row) return DEFAULTS;
     return {
       lowRatingEmail: row.lowRatingEmail,
-      dailyDigestEmail: row.dailyDigestEmail,
       weeklyReport: row.weeklyReport,
     };
   } catch {

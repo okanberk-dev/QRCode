@@ -10,9 +10,18 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { sendWeeklyDigest } from '@/lib/email';
+import { notifyOpsOfMailFailure } from '@/lib/email/ops-alert';
 import { getNotificationPrefsForUser } from '@/lib/notification-preferences';
 import { extractWeeklyInsight, type WeeklyInsight } from '@/lib/weekly-insight';
 import { deriveCustomerFields, type CustomerSegment } from '@/lib/customers';
+
+// Wave A3 (CLAUDE.md §38.A) — hard cap on per-run restaurant count to keep
+// cron under the 300s maxDuration ceiling. At current scale (§19.4.4, 10-50
+// restoran kohortu) this never trips; once we exceed 200 we'll move to
+// cursor-based pagination + chunked send (CLAUDE.md §21.34 Phase 11.32
+// pattern, BATCH_SIZE=1000). For now a single warning log signals the day
+// we need the cursor pass.
+const BATCH_SIZE = 200;
 
 export interface WeeklyDigestRecipient {
   restaurantId: string;
@@ -48,19 +57,35 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  const restaurants = await prisma.restaurant.findMany({
-    where: { isActive: true },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      notificationEmail: true,
-      googlePlaceId: true,
-      aiAnalyticsEnabled: true,
-      userId: true,
-      user: { select: { email: true, locale: true } },
-    },
-  });
+  const [restaurants, totalActive] = await prisma.$transaction([
+    prisma.restaurant.findMany({
+      where: { isActive: true },
+      take: BATCH_SIZE,
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        notificationEmail: true,
+        googlePlaceId: true,
+        aiAnalyticsEnabled: true,
+        userId: true,
+        user: { select: { email: true, locale: true } },
+      },
+    }),
+    prisma.restaurant.count({ where: { isActive: true } }),
+  ]);
+
+  if (totalActive > BATCH_SIZE) {
+    // Surface to Sentry via console.error — we want ops to see "we just
+    // exceeded BATCH_SIZE, time to add cursor pagination" before users
+    // start complaining about missing digests.
+    console.error('[WEEKLY_DIGEST] BATCH_SIZE exceeded — trailing restaurants skipped this run', {
+      processed: BATCH_SIZE,
+      total: totalActive,
+      skippedCount: totalActive - BATCH_SIZE,
+    });
+  }
 
   let sent = 0;
   let skipped = 0;
@@ -91,6 +116,13 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       continue;
     }
 
+    // Wave A3 (CLAUDE.md §38.A) — per-restaurant try/catch wraps EVERYTHING
+    // from the Prisma read fan-out down through the Pulse AI extraction and
+    // the actual send. A single bad restaurant (P2022 drift, OpenAI 5xx,
+    // Resend outage) used to crash the entire cron mid-cohort. Now it
+    // increments `failed`, emits an ops alert, and the loop continues for
+    // the rest of the cohort.
+    try {
     const where = {
       restaurantId: rest.id,
       createdAt: { gte: sevenDaysAgo },
@@ -237,11 +269,32 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
           segmentCounts,
         });
         emailSent = ok;
-        if (ok) sent++;
-        else failed++;
+        if (ok) {
+          sent++;
+        } else {
+          failed++;
+          // Wave A4 (CLAUDE.md §21.33) — weekly digest is a recurring
+          // reputation signal; silent fail = owner thinks the system is
+          // dormant. ops-alert rate-limited 10/template/5dk.
+          await notifyOpsOfMailFailure({
+            template: 'weekly-report',
+            recipient: email,
+            reason: 'send_returned_false',
+            userLocale: locale,
+            metadata: { restaurantId: rest.id, total, avgRating },
+          });
+        }
       } catch (err) {
-        console.error('[WEEKLY_DIGEST] send failed for', rest.id, (err as Error).message);
         failed++;
+        const errMessage = err instanceof Error ? err.message.slice(0, 200) : 'unknown';
+        console.error('[WEEKLY_DIGEST] send threw', { restaurantId: rest.id, errMessage });
+        await notifyOpsOfMailFailure({
+          template: 'weekly-report',
+          recipient: email,
+          reason: errMessage,
+          userLocale: locale,
+          metadata: { restaurantId: rest.id, errName: err instanceof Error ? err.name : 'unknown' },
+        });
       }
     } else {
       sent++;
@@ -260,6 +313,19 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       hasAi,
       emailSent,
     });
+    } catch (err) {
+      // Wave A3 — outer try captures Prisma read failures, OpenAI extraction
+      // throws, anything before the send branch. Log + skip restaurant, do
+      // NOT emit ops alert here (these are internal infra errors, not
+      // mail-delivery failures); Sentry captures via console.error extra.
+      failed++;
+      const errMessage = err instanceof Error ? err.message.slice(0, 200) : 'unknown';
+      console.error('[WEEKLY_DIGEST] per-restaurant block failed', {
+        restaurantId: rest.id,
+        errName: err instanceof Error ? err.name : 'unknown',
+        errMessage,
+      });
+    }
   }
 
   return {

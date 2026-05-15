@@ -81,10 +81,9 @@
 // }
 //
 // model NotificationPreference {
-//   userId           String  @id @map("user_id")
-//   lowRatingEmail   Boolean @default(true)  @map("low_rating_email")
-//   dailyDigestEmail Boolean @default(false) @map("daily_digest_email")
-//   weeklyReport     Boolean @default(true)  @map("weekly_report")
+//   userId         String  @id @map("user_id")
+//   lowRatingEmail Boolean @default(true)  @map("low_rating_email")
+//   weeklyReport   Boolean @default(true)  @map("weekly_report")
 //   @@map("notification_preferences")
 // }
 //
@@ -324,7 +323,6 @@ export interface AutomationInput {
 
 export interface NotificationPreferences {
   lowRatingEmail: boolean;
-  dailyDigestEmail: boolean;
   weeklyReport: boolean;
 }
 
