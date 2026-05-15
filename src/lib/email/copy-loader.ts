@@ -74,6 +74,12 @@ export const SUPPORTED_MAIL_KEYS = [
   // Owner'a (Restaurant.notificationEmail) gönderilir. Skor + geçti/kaldı +
   // panel detay link.
   'audit-completed',
+  // Wave B (CLAUDE.md §38.B) — 4 new security + onboarding mails. Each
+  // ships with TR + EN inline defaults; admin CMS edits override per-locale.
+  'password-changed',         // B1 — security alert after /api/user/profile PUT.
+  'team-member-joined',       // B2 — owner notification after /api/team/accept-invite.
+  'team-member-removed',      // B3 — owner notification after /api/team/[id] DELETE.
+  'first-feedback-celebration', // B5 — activation moment on /api/feedback POST count=1.
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];

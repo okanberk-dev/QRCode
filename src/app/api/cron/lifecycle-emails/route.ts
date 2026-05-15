@@ -75,6 +75,10 @@ export async function runLifecycleEmails(): Promise<LifecycleSummary> {
     upgrade_suggestion: 0,
     inactive_reactivation: 0,
     monthly_health_report: 0,
+    // Wave B5 — placeholder; counter only reaches non-zero from the synchronous
+    // trigger in /api/feedback POST, not from this cron. Listed for TS Record
+    // exhaustiveness (CLAUDE.md §43 monthly_health_report parity).
+    first_feedback_celebration: 0,
   };
   let skipped = 0;
   let failures = 0;

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { sendFeedbackNotification } from '@/lib/email';
+import { sendFeedbackNotification, sendFirstFeedbackCelebrationEmail } from '@/lib/email';
+import { alreadySent, recordSent } from '@/lib/email/lifecycle';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { isValidRating, isValidEmail, isValidPhone, sanitizeText } from '@/lib/validations';
@@ -209,6 +210,71 @@ export async function POST(req: NextRequest) {
     // Notification preferences (owner toggles in /dashboard/account?section=notifications).
     // Pulled once per request — used to gate the low-rating mail.
     const notifPrefs = await getNotificationPrefsForRestaurant(restaurantId);
+
+    // Wave B5 (CLAUDE.md §38.B) — first-feedback celebration trigger.
+    // Fire-and-forget; checks (count === 1 just-inserted) AND
+    // (LifecycleEmailLog cooldown clear) to be safe against double-fire
+    // races (concurrent feedback POST + manual seed at the same second).
+    //
+    // Doesn't depend on `lowRatingEmail` opt-out — this is an activation
+    // moment, NOT a recurring alert. Owner gets at most one of these per
+    // restaurant for the lifetime of the account.
+    //
+    // Narrow `restaurantId` (typed `string | null` at the top of the handler)
+    // into a non-null local so the IIFE doesn't have to re-prove it. The
+    // feedback row above was created with this value so it's never null
+    // by the time we reach here, but TypeScript's flow analysis loses the
+    // narrowing across the async boundary.
+    const restaurantIdForCelebration: string = restaurantId!;
+    (async () => {
+      try {
+        const totalCount = await prisma.feedback.count({
+          where: { restaurantId: restaurantIdForCelebration },
+        });
+        if (totalCount !== 1) return;
+        const restWithOwner = await prisma.restaurant.findUnique({
+          where: { id: restaurantIdForCelebration },
+          select: {
+            name: true,
+            notificationEmail: true,
+            user: { select: { email: true, name: true, locale: true } },
+          },
+        });
+        if (!restWithOwner) return;
+        const recipient = restWithOwner.notificationEmail || restWithOwner.user?.email;
+        if (!recipient) return;
+        const already = await alreadySent({
+          restaurantId: restaurantIdForCelebration,
+          type: 'first_feedback_celebration',
+        });
+        if (already) return;
+        const ownerLocale: 'tr' | 'en' = restWithOwner.user?.locale === 'en' ? 'en' : 'tr';
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+        const ok = await sendFirstFeedbackCelebrationEmail({
+          to: recipient,
+          ownerName: restWithOwner.user?.name ?? null,
+          restaurantName: restWithOwner.name,
+          rating: Number(rating),
+          comment: typeof comment === 'string' ? comment : null,
+          feedbackUrl: `${appUrl}/${ownerLocale}/dashboard/feedbacks?id=${feedback.id}`,
+          locale: ownerLocale,
+        });
+        if (ok) {
+          await recordSent({
+            restaurantId: restaurantIdForCelebration,
+            type: 'first_feedback_celebration',
+            metadata: { feedbackId: feedback.id, rating },
+          });
+        }
+      } catch (err) {
+        console.error('[FEEDBACK_POST] first-feedback celebration failed', {
+          restaurantId: restaurantIdForCelebration,
+          errName: err instanceof Error ? err.name : 'unknown',
+        });
+      }
+    })().catch(() => {
+      // IIFE already swallows; defence-in-depth
+    });
 
     // Send email for 1, 2, 3 stars — but only when the owner has the
     // "low-rating alert" toggle enabled. When disabled the feedback is

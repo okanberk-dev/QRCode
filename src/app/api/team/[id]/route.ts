@@ -1,11 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
+import { sendTeamMemberRemovedEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
 const VALID_ROLES = new Set(['owner', 'manager', 'staff', 'viewer']);
 const VALID_STATUSES = new Set(['invited', 'active', 'revoked']);
+
+const ROLE_LABELS_TR: Record<string, string> = {
+  owner: 'Sahip',
+  manager: 'Yönetici',
+  staff: 'Personel',
+  viewer: 'Sadece görüntüleyici',
+};
+
+const ROLE_LABELS_EN: Record<string, string> = {
+  owner: 'Owner',
+  manager: 'Manager',
+  staff: 'Staff',
+  viewer: 'Viewer',
+};
 
 async function requireOwnedMember(req: NextRequest, id: string) {
   const actor = await getPanelActorFromRequest(req);
@@ -103,6 +118,73 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const access = await requireOwnedMember(req, id);
   if ('error' in access) return NextResponse.json({ error: access.error }, { status: access.status });
 
+  // Snapshot fields BEFORE the delete so we can mail the owner with the
+  // removed member's details. Prisma will null these out once delete fires.
+  const removedSnapshot = {
+    email: access.member.email,
+    name: access.member.name,
+    role: access.member.role,
+  };
+
   await prisma.teamMember.delete({ where: { id } });
+
+  // CLAUDE.md §37.2.A — when a team_member is hard-deleted their User
+  // session (if any) needs to be revoked. team_member is an active
+  // identity; leaving the cookie alive lets a removed teammate keep using
+  // the panel until their JWT expires. Mirrors password-changed.
+  try {
+    const userRow = await prisma.user.findUnique({
+      where: { email: removedSnapshot.email },
+      select: { id: true, role: true },
+    });
+    if (userRow?.role === 'team_member') {
+      await prisma.userSession.updateMany({
+        where: { userId: userRow.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+  } catch (err) {
+    console.error('[TEAM_DELETE] session revoke failed', {
+      memberId: id,
+      errName: err instanceof Error ? err.name : 'unknown',
+    });
+  }
+
+  // Wave B3 — fire-and-forget owner notification (mail goes to OWNER, not
+  // the removed member). All lookups + send happen inside the helper.
+  (async () => {
+    try {
+      const owner = await prisma.user.findUnique({
+        where: { id: access.actor.id },
+        select: { email: true, name: true, locale: true },
+      });
+      if (!owner?.email) return;
+
+      const ownerLocale: 'tr' | 'en' = owner.locale === 'en' ? 'en' : 'tr';
+      const roleLabel = ownerLocale === 'en'
+        ? (ROLE_LABELS_EN[removedSnapshot.role] ?? 'Member')
+        : (ROLE_LABELS_TR[removedSnapshot.role] ?? 'Üye');
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+      const teamUrl = `${appUrl}/${ownerLocale}/dashboard/account?section=team`;
+
+      await sendTeamMemberRemovedEmail({
+        to: owner.email,
+        ownerName: owner.name,
+        memberName: removedSnapshot.name || removedSnapshot.email,
+        memberEmail: removedSnapshot.email,
+        roleLabel,
+        teamUrl,
+        locale: ownerLocale,
+      });
+    } catch (err) {
+      console.error('[TEAM_DELETE] owner-notify failed', {
+        memberId: id,
+        errName: err instanceof Error ? err.name : 'unknown',
+      });
+    }
+  })().catch(() => {
+    // belt-and-suspenders, IIFE itself shouldn't throw past its try/catch
+  });
+
   return NextResponse.json({ ok: true });
 }

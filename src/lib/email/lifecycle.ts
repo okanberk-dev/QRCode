@@ -15,7 +15,11 @@ export type LifecycleEmailType =
   | 'upgrade_suggestion'
   | 'inactive_reactivation'
   // Reputation OS Suite — aylık sağlık raporu maili.
-  | 'monthly_health_report';
+  | 'monthly_health_report'
+  // Wave B5 (CLAUDE.md §38.B) — first feedback activation moment.
+  // Synchronous trigger from /api/feedback POST when count === 1; uses the
+  // lifecycle log table purely for idempotency (lifetime cooldown).
+  | 'first_feedback_celebration';
 
 export interface AlreadySentParams {
   userId?: string | null;

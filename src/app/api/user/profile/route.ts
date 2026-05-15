@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { verifyJwt } from '@/lib/auth';
+import { sendPasswordChangedEmail } from '@/lib/email';
+import { getClientIp } from '@/lib/rate-limit';
 
 export async function GET(req: NextRequest) {
   try {
@@ -180,6 +182,8 @@ export async function PUT(req: NextRequest) {
       updateData.passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
     }
 
+    const passwordWasChanged = updateData.passwordHash !== undefined;
+
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: updateData,
@@ -190,8 +194,52 @@ export async function PUT(req: NextRequest) {
         phoneNumber: true,
         position: true,
         timezone: true,
+        locale: true,
       },
     });
+
+    // Wave B1 (CLAUDE.md §38.B + §37.2.A): password change forces UserSession
+    // revoke + security-alert mail. Revoke FIRST (defence-in-depth — if the
+    // mail send fails the user is still protected). The mail itself fires
+    // fire-and-forget; we don't want a Resend hiccup to break the password
+    // change UX. The owner stays signed in on this device thanks to the
+    // updated cookie they'll receive on the next request? No — we revoke
+    // EVERY session (no preserve-current-session carve-out). This mirrors
+    // the forgot-password flow and matches user expectation: "I changed
+    // my password, log everyone (including me) out and let me sign in
+    // fresh with the new credentials."
+    if (passwordWasChanged) {
+      try {
+        await prisma.userSession.updateMany({
+          where: { userId: user.id, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+      } catch (err) {
+        // PII redaction (CLAUDE.md §37.7): log userId only.
+        console.error('[PROFILE_PUT] session revoke failed', {
+          userId: user.id,
+          errName: err instanceof Error ? err.name : 'unknown',
+        });
+      }
+
+      // Fire-and-forget. Failure is non-blocking; sender wires ops alert
+      // internally (CLAUDE.md §21.33).
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+      const userLocale: 'tr' | 'en' = updatedUser.locale === 'en' ? 'en' : 'tr';
+      const userAgent = req.headers.get('user-agent') ?? null;
+      const ip = getClientIp(req.headers);
+      sendPasswordChangedEmail({
+        to: updatedUser.email,
+        firstName: updatedUser.name,
+        resetUrl: `${appUrl}/${userLocale}/auth/forgot-password`,
+        ip,
+        device: userAgent ? userAgent.slice(0, 80) : null,
+        account: updatedUser.email,
+        locale: userLocale,
+      }).catch(() => {
+        // sender already logs + ops-alerts on failure
+      });
+    }
 
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error) {

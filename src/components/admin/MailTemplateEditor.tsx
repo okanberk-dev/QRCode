@@ -283,6 +283,85 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'ctaLabel', label: 'CTA buton metni' },
     { key: 'footerHint', label: 'Footer ipucu', multiline: true },
   ],
+  // Wave B1 (CLAUDE.md §38.B) — password-changed security alert. KVKK
+  // lock'lu 4 alan (statusText/notYouTitle/notYouBody/notYouLink) admin
+  // editor'da disabled görünür (locked-fields.ts).
+  'password-changed': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"Güvenlik · Bildirim"' },
+    { key: 'title', label: 'Başlık 1. parça', hint: '"Şifren"' },
+    { key: 'titleAccent', label: 'Başlık vurgu kelimesi', hint: '"güncellendi"' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      hint: '${firstName} placeholder kullanılabilir',
+      placeholders: MAIL_PLACEHOLDERS['password-changed'],
+    },
+    { key: 'cardEyebrow', label: 'Detay kart etiketi', hint: '"Değişiklik detayı"' },
+    { key: 'statusText', label: 'Status metni', hint: '"Başarılı · Şifre güncel"' },
+    { key: 'metaTime', label: 'Meta — saat etiketi' },
+    { key: 'metaIp', label: 'Meta — IP etiketi' },
+    { key: 'metaDevice', label: 'Meta — cihaz etiketi' },
+    { key: 'metaAccount', label: 'Meta — hesap etiketi' },
+    { key: 'notYouTitle', label: '"Sen değil misin?" başlık' },
+    { key: 'notYouBody', label: '"Sen değil misin?" açıklama', multiline: true },
+    { key: 'notYouLink', label: 'Şifre sıfırlama link metni' },
+  ],
+  // Wave B2 (CLAUDE.md §38.B) — team-member-joined owner notification.
+  'team-member-joined': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"Ekip · Yeni üye"' },
+    { key: 'title', label: 'Başlık 1. parça', hint: '"Ekibin"' },
+    { key: 'titleAccent', label: 'Başlık vurgu', hint: '"genişledi"' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      placeholders: MAIL_PLACEHOLDERS['team-member-joined'],
+    },
+    { key: 'cardEyebrow', label: 'Detay kart etiketi' },
+    { key: 'nameLabel', label: 'İsim etiketi' },
+    { key: 'roleLabelKey', label: 'Rol etiketi' },
+    { key: 'locationsLabel', label: 'Erişim etiketi' },
+    { key: 'cta', label: 'CTA buton metni' },
+    { key: 'note', label: 'Footer not metni', multiline: true },
+  ],
+  // Wave B3 (CLAUDE.md §38.B) — team-member-removed audit notification.
+  'team-member-removed': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"Ekip · Üye çıkarıldı"' },
+    { key: 'title', label: 'Başlık 1. parça' },
+    { key: 'titleAccent', label: 'Başlık vurgu' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      placeholders: MAIL_PLACEHOLDERS['team-member-removed'],
+    },
+    { key: 'cardEyebrow', label: 'Audit kayıt etiketi' },
+    { key: 'nameLabel', label: 'İsim etiketi' },
+    { key: 'emailLabel', label: 'E-posta etiketi' },
+    { key: 'roleLabelKey', label: 'Rol etiketi' },
+    { key: 'actionLabel', label: 'Aksiyon etiketi' },
+    { key: 'actionValue', label: 'Aksiyon değer metni' },
+    { key: 'cta', label: 'CTA buton metni' },
+    { key: 'note', label: 'Footer not metni', multiline: true },
+  ],
+  // Wave B5 (CLAUDE.md §38.B) — first feedback celebration.
+  'first-feedback-celebration': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"Aktivasyon · İlk yorum"' },
+    { key: 'title', label: 'Başlık 1. parça', hint: '"İlk yorumun"' },
+    { key: 'titleAccent', label: 'Başlık vurgu', hint: '"geldi"' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      placeholders: MAIL_PLACEHOLDERS['first-feedback-celebration'],
+    },
+    { key: 'quoteEyebrow', label: 'Yorum kart etiketi' },
+    { key: 'noComment', label: 'Yorum yoksa metin' },
+    { key: 'cta', label: 'CTA buton metni' },
+    { key: 'tipPositive', label: 'Pozitif puan ipucu (4-5)', multiline: true },
+    { key: 'tipLow', label: 'Düşük puan ipucu (1-3)', multiline: true },
+  ],
 };
 
 const TEMPLATE_LABELS: Record<string, string> = {
@@ -305,6 +384,11 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'customer-campaign': 'Müşteri kampanyası',
   'owner-campaign-approved': 'Kampanya onaylandı (owner)',
   'owner-campaign-rejected': 'Kampanya reddedildi (owner)',
+  // Wave B (CLAUDE.md §38.B)
+  'password-changed': 'Şifre değişti (güvenlik)',
+  'team-member-joined': 'Yeni ekip üyesi',
+  'team-member-removed': 'Ekip üyesi çıkarıldı',
+  'first-feedback-celebration': 'İlk yorum kutlaması',
 };
 
 interface Props {

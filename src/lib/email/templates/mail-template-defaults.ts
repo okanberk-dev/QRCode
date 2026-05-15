@@ -583,6 +583,140 @@ const OWNER_CAMPAIGN_REJECTED_EN: FlatCopy = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// Wave B (CLAUDE.md §38.B) — 4 new templates: password change confirmation,
+// team join / team remove owner notifications, and the first-feedback
+// activation moment celebration. Each template's render fn carries the
+// same inline default shape; we duplicate the literals here so seed +
+// admin GET fallback share one source of truth.
+// ───────────────────────────────────────────────────────────────────────
+
+const PASSWORD_CHANGED_TR: FlatCopy = {
+  eyebrow: 'Güvenlik · Bildirim',
+  title: 'Şifren',
+  titleAccent: 'güncellendi',
+  intro:
+    'Hesabının şifresi az önce başarıyla değiştirildi. Bu işlemi sen yaptıysan ek bir şey yapman gerekmiyor.',
+  cardEyebrow: 'Değişiklik detayı',
+  statusText: 'Başarılı · Şifre güncel',
+  metaTime: 'Değişiklik saati',
+  metaIp: 'IP',
+  metaDevice: 'Cihaz',
+  metaAccount: 'Hesap',
+  notYouTitle: 'Sen değil misin?',
+  notYouBody:
+    'Hesabını hemen koru: linki kullanarak yeni bir şifre belirle ve destek ekibine haber ver.',
+  notYouLink: 'Şifreyi sıfırla →',
+};
+
+const PASSWORD_CHANGED_EN: FlatCopy = {
+  eyebrow: 'Security · Notice',
+  title: 'Your password',
+  titleAccent: 'was updated',
+  intro:
+    'The password on your account was just changed successfully. If you made this change, nothing else to do.',
+  cardEyebrow: 'Change detail',
+  statusText: 'Success · Password current',
+  metaTime: 'Changed at',
+  metaIp: 'IP',
+  metaDevice: 'Device',
+  metaAccount: 'Account',
+  notYouTitle: "Wasn't you?",
+  notYouBody:
+    'Protect your account immediately: use the link below to set a new password and reach out to support.',
+  notYouLink: 'Reset password →',
+};
+
+const TEAM_MEMBER_JOINED_TR: FlatCopy = {
+  eyebrow: 'Ekip · Yeni üye',
+  title: 'Ekibin',
+  titleAccent: 'genişledi',
+  intro:
+    'Davet ettiğin ${memberName} ekibine katıldı. Bu üyenin yetkilerini istediğin zaman Hesabım → Ekip sekmesinden güncelleyebilirsin.',
+  cardEyebrow: 'Yeni üye detayı',
+  nameLabel: 'İsim',
+  roleLabelKey: 'Rol',
+  locationsLabel: 'Erişim',
+  cta: 'Ekibi gör →',
+  note: 'Bu üyenin yetkilerini istediğin zaman Hesabım → Ekip sekmesinden güncelleyebilirsin.',
+};
+
+const TEAM_MEMBER_JOINED_EN: FlatCopy = {
+  eyebrow: 'Team · New member',
+  title: 'Your team',
+  titleAccent: 'just grew',
+  intro:
+    '${memberName} accepted your invite and joined the workspace. You can update permissions anytime from Account → Team.',
+  cardEyebrow: 'Member detail',
+  nameLabel: 'Name',
+  roleLabelKey: 'Role',
+  locationsLabel: 'Access',
+  cta: 'Open team →',
+  note: "You can update this member's permissions anytime under Account → Team.",
+};
+
+const TEAM_MEMBER_REMOVED_TR: FlatCopy = {
+  eyebrow: 'Ekip · Üye çıkarıldı',
+  title: 'Bir üye',
+  titleAccent: 'ayrıldı',
+  intro:
+    '${memberName} ekipten çıkarıldı. Paneline erişimi anında kapatıldı.',
+  cardEyebrow: 'Audit kaydı',
+  nameLabel: 'İsim',
+  emailLabel: 'E-posta',
+  roleLabelKey: 'Rol',
+  actionLabel: 'Aksiyon',
+  actionValue: 'Erişim kapatıldı · Oturumlar sonlandırıldı',
+  cta: 'Ekibi gör →',
+  note: "Bu işlemi sen yapmadıysan Hesabım → Audit log'undan kaydı inceleyebilirsin.",
+};
+
+const TEAM_MEMBER_REMOVED_EN: FlatCopy = {
+  eyebrow: 'Team · Member removed',
+  title: 'A teammate',
+  titleAccent: 'has left',
+  intro:
+    '${memberName} has been removed from your workspace. Their access was revoked instantly.',
+  cardEyebrow: 'Audit record',
+  nameLabel: 'Name',
+  emailLabel: 'Email',
+  roleLabelKey: 'Role',
+  actionLabel: 'Action',
+  actionValue: 'Access revoked · Sessions ended',
+  cta: 'Open team →',
+  note: "If you didn't make this change, review the entry under Account → Audit log.",
+};
+
+const FIRST_FEEDBACK_CELEBRATION_TR: FlatCopy = {
+  eyebrow: 'Aktivasyon · İlk yorum',
+  title: 'İlk yorumun',
+  titleAccent: 'geldi',
+  intro:
+    '${restaurantName} için ilk müşteri yorumu panele düştü. Hemen yanıt verirsen müşterinin kalıcı bir hatırasını oluşturmuş olursun.',
+  quoteEyebrow: 'Müşterinin sözleri',
+  noComment: 'Müşteri yorum yazmadı — sadece yıldız bıraktı.',
+  cta: 'Yorumu gör →',
+  tipPositive:
+    'Yüksek puanlı yorumlara 24 saat içinde teşekkür et — müşteri sadakatini iki katına çıkarır.',
+  tipLow:
+    'Düşük puanlarda önce dinle, sonra çöz: müşteri hatasını kabul edilen restoranı tekrar dener.',
+};
+
+const FIRST_FEEDBACK_CELEBRATION_EN: FlatCopy = {
+  eyebrow: 'Activation · First review',
+  title: 'Your first review',
+  titleAccent: 'is in',
+  intro:
+    '${restaurantName} just got its first customer review. A reply within the first hours builds lasting customer memory.',
+  quoteEyebrow: 'What the customer said',
+  noComment: 'No written comment — only the star rating.',
+  cta: 'Open the review →',
+  tipPositive:
+    'Thank high-rated reviews within 24 hours — it doubles repeat-customer loyalty.',
+  tipLow:
+    'For low ratings, listen first then fix: customers retry a restaurant that admits mistakes.',
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Combined registry — admin GET endpoint + seed script consume this.
 // Lifecycle defaults are re-exported from lifecycle-defaults.ts (no copy)
 // so render fns + admin editor share the same object reference.
@@ -639,6 +773,14 @@ export const MAIL_INLINE_DEFAULTS: Record<
       secondaryLine:
         'Open the detail page to see answers question-by-question and re-score manually if needed.',
     },
+  },
+  // Wave B (CLAUDE.md §38.B) — 4 new template defaults registered.
+  'password-changed': { tr: PASSWORD_CHANGED_TR, en: PASSWORD_CHANGED_EN },
+  'team-member-joined': { tr: TEAM_MEMBER_JOINED_TR, en: TEAM_MEMBER_JOINED_EN },
+  'team-member-removed': { tr: TEAM_MEMBER_REMOVED_TR, en: TEAM_MEMBER_REMOVED_EN },
+  'first-feedback-celebration': {
+    tr: FIRST_FEEDBACK_CELEBRATION_TR,
+    en: FIRST_FEEDBACK_CELEBRATION_EN,
   },
 };
 

@@ -19,6 +19,10 @@ import {
   renderWeeklyDigestSummary,
   renderAuditCompleted,
   renderMonthlyHealthReport,
+  renderPasswordChanged,
+  renderTeamMemberJoined,
+  renderTeamMemberRemoved,
+  renderFirstFeedbackCelebration,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -33,6 +37,9 @@ import {
   type InactiveReactivationParams,
   type WeeklyDigestSummaryParams,
   type MonthlyHealthReportParams,
+  // Wave B (CLAUDE.md §38.B) — type imports omitted; public senders below
+  // inline their param objects, so the template-side `*Params` types are
+  // not re-exported through email.ts.
 } from './email/templates';
 import { escapeHtml as _escapeHtml } from './email/escape';
 import { sendResendEmail } from './email-internal';
@@ -401,6 +408,177 @@ export async function sendVerifyEmail(params: {
       recipient: params.to,
       reason: 'send_failed',
       metadata: { locale },
+    });
+  }
+  return ok;
+}
+
+// ─── Password changed confirmation (Wave B1, CLAUDE.md §38.B) ───────────
+// Fires from /api/user/profile PUT whenever the owner saves a new password.
+// Companion to forgot-password (reset flow). Same ops-alert wiring as
+// forgot-password / verify-email — a missed delivery on a password change
+// is a security observability gap, not just a UX hiccup.
+
+export async function sendPasswordChangedEmail(params: {
+  to: string;
+  firstName?: string | null;
+  resetUrl: string;
+  ip?: string | null;
+  device?: string | null;
+  account?: string | null;
+  changedAt?: Date;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderPasswordChanged(
+    {
+      firstName: params.firstName,
+      resetUrl: params.resetUrl,
+      ip: params.ip,
+      device: params.device,
+      account: params.account,
+      changedAt: params.changedAt,
+    },
+    locale,
+  );
+  const ok = await sendResendEmail({
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'password-changed',
+      recipient: params.to,
+      reason: 'send_failed',
+      userLocale: locale,
+      metadata: { locale, account: params.account ?? null },
+    });
+  }
+  return ok;
+}
+
+// ─── Team membership changes (Wave B2/B3, CLAUDE.md §38.B) ──────────────
+// Both senders fire-and-forget from the team management endpoints; they
+// mail the OWNER (not the member). Ops alert wired because team changes
+// surface security context — silent fail leaves the owner unaware of
+// access changes.
+
+export async function sendTeamMemberJoinedEmail(params: {
+  to: string;
+  ownerName?: string | null;
+  memberName: string;
+  roleLabel: string;
+  locationNames: string[] | null;
+  teamUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderTeamMemberJoined(
+    {
+      ownerName: params.ownerName,
+      memberName: params.memberName,
+      roleLabel: params.roleLabel,
+      locationNames: params.locationNames,
+      teamUrl: params.teamUrl,
+    },
+    locale,
+  );
+  const ok = await sendResendEmail({
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'team-member-joined',
+      recipient: params.to,
+      reason: 'send_failed',
+      userLocale: locale,
+      metadata: { memberName: params.memberName, role: params.roleLabel },
+    });
+  }
+  return ok;
+}
+
+export async function sendTeamMemberRemovedEmail(params: {
+  to: string;
+  ownerName?: string | null;
+  memberName: string;
+  memberEmail: string;
+  roleLabel: string;
+  teamUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderTeamMemberRemoved(
+    {
+      ownerName: params.ownerName,
+      memberName: params.memberName,
+      memberEmail: params.memberEmail,
+      roleLabel: params.roleLabel,
+      teamUrl: params.teamUrl,
+    },
+    locale,
+  );
+  const ok = await sendResendEmail({
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'team-member-removed',
+      recipient: params.to,
+      reason: 'send_failed',
+      userLocale: locale,
+      metadata: { memberName: params.memberName, role: params.roleLabel },
+    });
+  }
+  return ok;
+}
+
+// ─── First feedback celebration (Wave B5, CLAUDE.md §38.B) ──────────────
+// Fires fire-and-forget from /api/feedback POST when count === 1 for the
+// restaurant. Idempotency is enforced upstream via LifecycleEmailLog
+// (lifetime cooldown on type='first_feedback_celebration').
+
+export async function sendFirstFeedbackCelebrationEmail(params: {
+  to: string;
+  ownerName?: string | null;
+  restaurantName: string;
+  rating: number;
+  comment?: string | null;
+  feedbackUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderFirstFeedbackCelebration(
+    {
+      ownerName: params.ownerName,
+      restaurantName: params.restaurantName,
+      rating: params.rating,
+      comment: params.comment,
+      feedbackUrl: params.feedbackUrl,
+    },
+    locale,
+  );
+  const ok = await sendResendEmail({
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'first-feedback-celebration',
+      recipient: params.to,
+      reason: 'send_failed',
+      userLocale: locale,
+      metadata: { restaurantName: params.restaurantName, rating: params.rating },
     });
   }
   return ok;

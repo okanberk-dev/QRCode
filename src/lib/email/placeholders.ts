@@ -72,6 +72,11 @@ export const MAIL_PLACEHOLDERS = {
     'respondentName',
     'score',
   ],
+  // Wave B (CLAUDE.md §38.B) — 4 new templates placeholder whitelist.
+  'password-changed': ['firstName'],
+  'team-member-joined': ['ownerName', 'memberName'],
+  'team-member-removed': ['ownerName', 'memberName'],
+  'first-feedback-celebration': ['ownerName', 'restaurantName'],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;
