@@ -14,6 +14,27 @@ interface BillingSummary {
   renewsAt: string | null;
   quota: { used: number; limit: number };
   paymentMethod: { brand: string; last4: string } | null;
+  // §15.2 canonical billing — marketing /pricing parity.
+  amount?: number | null;
+  yearlyTotal?: number | null;
+  currency?: string | null;
+  billingCycle?: string | null;
+  subscriptionPlanId?: string | null;
+  tier?: { id: string; name: string | null; isFeatured: boolean } | null;
+}
+
+function formatCurrency(value: number | null | undefined, currency: string | null | undefined, isTr: boolean): string {
+  if (value == null) return '';
+  const cur = currency || 'TRY';
+  try {
+    return new Intl.NumberFormat(isTr ? 'tr-TR' : 'en-US', {
+      style: 'currency',
+      currency: cur,
+      maximumFractionDigits: 0,
+    }).format(value);
+  } catch {
+    return `${cur} ${value.toFixed(0)}`;
+  }
 }
 
 interface Invoice {
@@ -88,6 +109,31 @@ function AdminBillingBody() {
                   <h2 className="mt-1 text-[24px] font-medium text-[#0A0A0A]">
                     {summary?.planLabel || (isTr ? 'Trial' : 'Trial')}
                   </h2>
+                  {/* §15.2 canonical billing — marketing /pricing parity satırı.
+                      Tier'a bağlı subscription'da ₺X/ay + cycle + yıllık toplam
+                      gösterimi. Admin override varsa hep amount kullanılır. */}
+                  {summary?.amount != null ? (
+                    <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <span className="text-[20px] font-medium text-[#0A0A0A]" style={{ fontFamily: 'var(--font-heading)' }}>
+                        {formatCurrency(summary.amount, summary.currency, isTr)}
+                      </span>
+                      <span className="text-[12px] text-[#737373]">
+                        {summary.billingCycle === 'yearly'
+                          ? isTr ? '/ yıl' : '/ year'
+                          : summary.billingCycle === 'monthly'
+                            ? isTr ? '/ ay' : '/ mo'
+                            : ''}
+                      </span>
+                      {summary.billingCycle === 'yearly' && summary.yearlyTotal != null && summary.tier ? (
+                        <span className="text-[11px] text-[#737373]">
+                          ·{' '}
+                          {isTr
+                            ? `aylık eş değer ${formatCurrency(Math.round(summary.yearlyTotal / 12), summary.currency, isTr)}`
+                            : `≈ ${formatCurrency(Math.round(summary.yearlyTotal / 12), summary.currency, isTr)}/mo`}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <p className="mt-1 text-[13px] text-[#525252]">
                     {summary?.trialDaysLeft
                       ? isTr

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Check, Loader2, ShieldCheck } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Check, Loader2, RotateCcw, ShieldCheck } from 'lucide-react';
 import { AlertBanner, Modal, Tabs, type TabItem } from '@/components/ui';
 import MemberInvoicesPanel from './MemberInvoicesPanel';
 
@@ -13,7 +13,24 @@ interface MemberBillingModalProps {
   onSaved: () => void;
 }
 
+interface TierCatalogRow {
+  id: string;
+  nameTr: string;
+  nameEn: string;
+  priceTry: number;
+  priceUsd: number | null;
+  priceYearlyTry: number | null;
+  priceYearlyUsd: number | null;
+  monthlyAmount: number | null;
+  yearlyAmountTotal: number | null;
+  yearlyAmountMonthly: number | null;
+  isFeatured: boolean;
+}
+
 interface BillingForm {
+  /** Canonical tier link (SubscriptionPlan.id veya '' = legacy/yok). */
+  subscriptionPlanId: string;
+  /** Legacy lifecycle bucket — `trial / monthly / yearly / enterprise / free`. */
   plan: string;
   status: string;
   renewsAt: string;
@@ -30,6 +47,7 @@ interface BillingForm {
 }
 
 const EMPTY: BillingForm = {
+  subscriptionPlanId: '',
   plan: 'trial',
   status: 'active',
   renewsAt: '',
@@ -66,6 +84,7 @@ const CYCLE_OPTIONS = [
 
 const ERROR_LABELS: Record<string, string> = {
   invalid_plan: 'Geçersiz plan değeri.',
+  invalid_subscription_plan_id: 'Seçili paket artık aktif değil — listeden yeniden seçin.',
   invalid_status: 'Geçersiz durum değeri.',
   invalid_renews_at: 'Geçersiz yenileme tarihi.',
   invalid_payment_brand: 'Ödeme markası 50 karakteri aşamaz.',
@@ -82,6 +101,14 @@ const ERROR_LABELS: Record<string, string> = {
   user_not_found: 'Kullanıcı bulunamadı.',
 };
 
+function formatCurrency(value: number | null, currency: string): string {
+  if (value == null) return '';
+  if (currency === 'USD') return `$${value.toLocaleString('en-US')}`;
+  if (currency === 'EUR') return `€${value.toLocaleString('en-US')}`;
+  if (currency === 'GBP') return `£${value.toLocaleString('en-US')}`;
+  return `₺${value.toLocaleString('tr-TR')}`;
+}
+
 export default function MemberBillingModal({
   userId,
   email,
@@ -90,11 +117,15 @@ export default function MemberBillingModal({
   onSaved,
 }: MemberBillingModalProps) {
   const [form, setForm] = useState<BillingForm>(EMPTY);
+  const [catalog, setCatalog] = useState<TierCatalogRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'plan' | 'invoices'>('plan');
+  // Admin tutar kutusuna dokunduysa tier/cycle değişikliği auto-fill yapmaz
+  // (CLAUDE.md §15.2 stale-override koruması).
+  const amountTouchedRef = useRef(false);
 
   const tabs: TabItem[] = [
     { id: 'plan', label: 'Plan & Adres' },
@@ -110,7 +141,9 @@ export default function MemberBillingModal({
         const data = await res.json();
         if (cancelled) return;
         const sub = data.subscription;
+        setCatalog(Array.isArray(data.catalog) ? data.catalog : []);
         setForm({
+          subscriptionPlanId: sub?.subscriptionPlanId ?? '',
           plan: sub?.plan ?? data.user.planFromUser ?? 'trial',
           status: sub?.status ?? 'active',
           renewsAt: sub?.renewsAt ? sub.renewsAt.split('T')[0] : '',
@@ -125,6 +158,7 @@ export default function MemberBillingModal({
           billingCity: sub?.billingCity ?? '',
           adminNotes: sub?.adminNotes ?? '',
         });
+        amountTouchedRef.current = sub?.amount != null;
       } catch {
         if (!cancelled) setError('Faturalandırma bilgileri yüklenemedi.');
       } finally {
@@ -136,6 +170,75 @@ export default function MemberBillingModal({
       cancelled = true;
     };
   }, [userId]);
+
+  // §15.2 canonical resolver — admin tier+cycle seçince auto-fill için
+  // expected amount hesaplama. Backend `resolveBillingAmount` ile aynı
+  // mantık (USD/TRY × monthly/yearly), DB-validated input → rounding-safe.
+  const selectedTier = useMemo(
+    () =>
+      form.subscriptionPlanId
+        ? catalog.find((c) => c.id === form.subscriptionPlanId) ?? null
+        : null,
+    [form.subscriptionPlanId, catalog],
+  );
+  const expectedAmount = useMemo<number | null>(() => {
+    if (!selectedTier) return null;
+    if (form.billingCycle === 'yearly') return selectedTier.yearlyAmountTotal;
+    if (form.billingCycle === 'monthly') return selectedTier.monthlyAmount;
+    return null;
+  }, [selectedTier, form.billingCycle]);
+
+  const applyTier = (id: string) => {
+    setForm((f) => {
+      const tier = id ? catalog.find((c) => c.id === id) ?? null : null;
+      // Tier seçilirken cycle yoksa 'monthly' default (en yaygın). Legacy
+      // plan field'ı (lifecycle bucket) cycle ile aynı tutulur — kullanıcı
+      // tier+yearly seçtiğinde plan='yearly' otomatik set.
+      const nextCycle = f.billingCycle || (tier ? 'monthly' : f.billingCycle);
+      const nextPlan = nextCycle === 'yearly' || nextCycle === 'monthly' ? nextCycle : f.plan;
+      const nextAmount =
+        amountTouchedRef.current && f.amount
+          ? f.amount
+          : tier
+            ? String(
+                (nextCycle === 'yearly' ? tier.yearlyAmountTotal : tier.monthlyAmount) ?? '',
+              )
+            : f.amount;
+      return {
+        ...f,
+        subscriptionPlanId: id,
+        billingCycle: nextCycle,
+        plan: nextPlan,
+        amount: nextAmount,
+      };
+    });
+  };
+
+  const applyCycle = (cycle: string) => {
+    setForm((f) => {
+      const nextPlan = cycle === 'yearly' || cycle === 'monthly' ? cycle : f.plan;
+      const tier = f.subscriptionPlanId
+        ? catalog.find((c) => c.id === f.subscriptionPlanId) ?? null
+        : null;
+      const nextAmount =
+        amountTouchedRef.current && f.amount
+          ? f.amount
+          : tier
+            ? String(
+                (cycle === 'yearly' ? tier.yearlyAmountTotal : tier.monthlyAmount) ?? '',
+              )
+            : f.amount;
+      return { ...f, billingCycle: cycle, plan: nextPlan, amount: nextAmount };
+    });
+  };
+
+  const resetAmountToCanonical = () => {
+    amountTouchedRef.current = false;
+    setForm((f) => ({
+      ...f,
+      amount: expectedAmount != null ? String(expectedAmount) : '',
+    }));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -149,6 +252,7 @@ export default function MemberBillingModal({
           plan: form.plan,
           status: form.status,
           renewsAt: form.renewsAt || null,
+          subscriptionPlanId: form.subscriptionPlanId || null,
           paymentBrand: form.paymentBrand || null,
           paymentLast4: form.paymentLast4 || null,
           amount: form.amount === '' ? null : form.amount,
@@ -220,9 +324,32 @@ export default function MemberBillingModal({
             </AlertBanner>
           )}
 
-          {/* Plan + Status */}
+          {/* §15.2 canonical tier link — marketing /pricing kart tier'larıyla
+              parity. Tier seçilince cycle + amount otomatik doldurulur; admin
+              elle override edebilir (RotateCcw → kanonik tutara dön).
+              Boş = legacy/enterprise/free → manuel akış. */}
+          <Field
+            label="Paket (marketing tier)"
+            hint="/pricing sayfasındaki tier'lardan birini bağla → tutar otomatik doldurulur."
+          >
+            <select
+              value={form.subscriptionPlanId}
+              onChange={(e) => applyTier(e.target.value)}
+              className="bz-input"
+            >
+              <option value="">— Tier bağlı değil (legacy / manuel) —</option>
+              {catalog.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nameTr || t.nameEn}
+                  {t.isFeatured ? ' · En popüler' : ''}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          {/* Plan + Status — legacy bucket */}
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Plan">
+            <Field label="Plan (lifecycle bucket)" hint="trial / monthly / yearly / enterprise / free">
               <select
                 value={form.plan}
                 onChange={(e) => setForm((f) => ({ ...f, plan: e.target.value }))}
@@ -250,18 +377,46 @@ export default function MemberBillingModal({
             </Field>
           </div>
 
-          {/* Amount + Currency + Cycle */}
+          {/* Amount + Currency + Cycle — tier bağlı ise canonical auto-fill */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <Field label="Tutar">
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                placeholder="0.00"
-                className="bz-input"
-              />
+            <Field
+              label="Tutar"
+              hint={
+                expectedAmount != null && !amountTouchedRef.current
+                  ? `Otomatik (${form.billingCycle === 'yearly' ? 'yıllık toplam' : 'aylık'}): ${formatCurrency(expectedAmount, form.currency)}`
+                  : expectedAmount != null && amountTouchedRef.current
+                    ? `Beklenen (tier'dan): ${formatCurrency(expectedAmount, form.currency)} — admin override'da`
+                    : undefined
+              }
+            >
+              <div className="flex items-stretch gap-2">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.amount}
+                  onChange={(e) => {
+                    amountTouchedRef.current = true;
+                    setForm((f) => ({ ...f, amount: e.target.value }));
+                  }}
+                  placeholder={
+                    expectedAmount != null
+                      ? String(expectedAmount)
+                      : '0.00'
+                  }
+                  className="bz-input flex-1"
+                />
+                {selectedTier && expectedAmount != null && amountTouchedRef.current ? (
+                  <button
+                    type="button"
+                    onClick={resetAmountToCanonical}
+                    title="Tier+cycle'a göre kanonik tutara dön"
+                    className="bz-btn-ghost shrink-0 px-3"
+                  >
+                    <RotateCcw size={13} />
+                  </button>
+                ) : null}
+              </div>
             </Field>
             <Field label="Para birimi">
               <select
@@ -279,7 +434,7 @@ export default function MemberBillingModal({
             <Field label="Periyot">
               <select
                 value={form.billingCycle}
-                onChange={(e) => setForm((f) => ({ ...f, billingCycle: e.target.value }))}
+                onChange={(e) => applyCycle(e.target.value)}
                 className="bz-input"
               >
                 {CYCLE_OPTIONS.map((c) => (
@@ -290,6 +445,31 @@ export default function MemberBillingModal({
               </select>
             </Field>
           </div>
+
+          {/* Canonical preview — tier+cycle seçildiğinde marketing /pricing'de
+              gözükecek tutarı admin'e göster (parity reassurance). */}
+          {selectedTier && form.billingCycle ? (
+            <div className="rounded-xl bg-[#FAFAFA] border border-[#EDEDED] px-3 py-2 text-[12px] text-[#525252] flex items-center gap-2">
+              <ShieldCheck size={12} strokeWidth={2} className="text-[#0A0A0A] shrink-0" />
+              <span>
+                Marketing /pricing eşi:{' '}
+                <strong className="text-[#0A0A0A]">
+                  {selectedTier.nameTr || selectedTier.nameEn}
+                </strong>{' '}
+                ·{' '}
+                {form.billingCycle === 'yearly' ? 'Yıllık' : 'Aylık'}
+                {form.billingCycle === 'yearly' && selectedTier.yearlyAmountMonthly != null
+                  ? ` · ${formatCurrency(selectedTier.yearlyAmountMonthly, form.currency)}/ay`
+                  : null}
+                {form.billingCycle === 'yearly' && selectedTier.yearlyAmountTotal != null
+                  ? ` (yıllık toplam ${formatCurrency(selectedTier.yearlyAmountTotal, form.currency)})`
+                  : null}
+                {form.billingCycle === 'monthly' && selectedTier.monthlyAmount != null
+                  ? ` · ${formatCurrency(selectedTier.monthlyAmount, form.currency)}/ay`
+                  : null}
+              </span>
+            </div>
+          ) : null}
 
           <Field label="Yenileme tarihi">
             <input

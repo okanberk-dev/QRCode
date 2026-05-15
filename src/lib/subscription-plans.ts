@@ -5,8 +5,22 @@ export interface PublicPlan {
   id: string;
   name: string;
   description: string;
+  /** Aylık liste fiyatı (indirimsiz). */
   priceMonthly: number;
-  priceYearly: number; // monthly * 0.80 (built-in 20% annual)
+  /**
+   * Aylık-eşdeğer fiyat YILLIK plan altında (gösterim için).
+   * `Math.round(priceYearlyTotal / 12)` — rounding-clean değildir, sadece
+   * "₺X/ay" kart başlığı için kullanılır. Toplam yıllık tutar gerektiğinde
+   * her zaman `priceYearlyTotal` kullanın (çarpma rounding bug'ı önlemek için).
+   */
+  priceYearly: number;
+  /**
+   * Yıllık TOPLAM tutar (kanonik). `BillingSubscription.amount` hesaplaması
+   * + marketing kartı altında "X TRY/yıl" satırı buradan beslenir. Admin
+   * override (SubscriptionPlan.priceYearlyTry/Usd) → bu değer; yoksa formula
+   * `discountedMonthly × 12 × 0.8` (≈%20 yıllık indirim).
+   */
+  priceYearlyTotal: number;
   period: string;
   features: string[];
   buttonText: string;
@@ -142,15 +156,21 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
     row.discountType,
     row.discountValue,
   );
-  // Yıllık fiyat öncelik:
-  //   1. Admin override (priceYearlyTry/Usd dolu) — DB değeri / 12 → aylık-eşdeğeri
-  //   2. Formula fallback — aylık × 0.8 (≈%20 yıllık indirim)
-  // Public sayfa "₺X/ay" formatında gösterdiği için annual ÷ 12 yapılır.
+  // Yıllık fiyat öncelik (CLAUDE.md §15.2):
+  //   1. Admin override (priceYearlyTry/Usd dolu, > 0) → DB değeri kanonik YILLIK TOPLAM
+  //   2. Formula fallback → `discountedMonthly × 12 × 0.8` (≈%20 yıllık indirim)
+  //
+  // Rounding disiplini: `priceYearlyTotal` her zaman authoritative; aylık-eşdeğer
+  // `priceYearly = round(total / 12)` SADECE kart başlığı gösterimi için
+  // (`₺X/ay`). "TRY/yıl" satırı veya billing summary tutarı her zaman
+  // `priceYearlyTotal`'dan beslenir — yoksa `Math.round(total / 12) × 12 ≠ total`
+  // rounding error'ı marketing × 12 ≠ admin'in yazdığı değer bug'ına yol açar.
   const adminYearly = isTr ? row.priceYearlyTry : row.priceYearlyUsd;
-  const yearlyMonthly =
+  const priceYearlyTotal =
     adminYearly != null && adminYearly > 0
-      ? Math.round(adminYearly / 12)
-      : Math.round(discountedMonthly * 0.8);
+      ? adminYearly
+      : Math.round(discountedMonthly * 12 * 0.8);
+  const yearlyMonthly = Math.round(priceYearlyTotal / 12);
 
   return {
     id: row.id,
@@ -158,6 +178,7 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
     description: isTr ? row.descriptionTr : row.descriptionEn,
     priceMonthly: baseMonthly,
     priceYearly: yearlyMonthly,
+    priceYearlyTotal,
     period: row.period,
     features: isTr ? row.featuresTr : row.featuresEn,
     buttonText: isTr ? row.buttonTextTr : row.buttonTextEn,
@@ -172,6 +193,96 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
       discountedMonthly,
     },
   };
+}
+
+/**
+ * Canonical billing amount resolver — `BillingSubscription` ile marketing
+ * pricing arasında **tek source of truth**.
+ *
+ * Mevcut paterndeki sorun: admin "Pro · Yıllık" demek için iki ayrı kavram
+ * vardı (plan="yearly" ile tier'ı kaybetmek vs amount'u el ile yazmak).
+ * Yeni model: `subscriptionPlanId` tier'ı taşır, `billingCycle` cycle'ı
+ * taşır, amount otomatik resolve edilir; admin "amount" alanı sadece manuel
+ * override için (örn. promosyon, sezonluk).
+ *
+ * @param plan - SubscriptionPlan satırı (admin row formatında); `null` ise
+ *   legacy/trial owner → null sonuç (UI fallback PLAN_LABELS davranışına döner)
+ * @param billingCycle - 'monthly' | 'yearly' | null; null ise plan.period
+ *   tahmin edilir (legacy davranış)
+ * @param currency - 'TRY' | 'USD' (varsayılan TRY); USD null gelirse TRY'ye düşer
+ * @returns canonical amount + meta (label, formula vs override flag)
+ */
+export function resolveBillingAmount(
+  plan: AdminPlanRow | null,
+  billingCycle: 'monthly' | 'yearly' | null | undefined,
+  currency: 'TRY' | 'USD' = 'TRY',
+): {
+  amount: number | null;
+  amountYearlyTotal: number | null;
+  amountMonthly: number | null;
+  source: 'override' | 'formula' | 'none';
+  tierName: string | null;
+  cycle: 'monthly' | 'yearly' | null;
+} {
+  if (!plan) {
+    return {
+      amount: null,
+      amountYearlyTotal: null,
+      amountMonthly: null,
+      source: 'none',
+      tierName: null,
+      cycle: billingCycle ?? null,
+    };
+  }
+  const cycle: 'monthly' | 'yearly' =
+    billingCycle === 'yearly' || billingCycle === 'monthly'
+      ? billingCycle
+      : plan.period === 'year'
+        ? 'yearly'
+        : 'monthly';
+  const baseMonthly =
+    currency === 'USD'
+      ? (plan.priceUsd ?? Math.round(plan.priceTry / 30))
+      : plan.priceTry;
+  const discountedMonthly = applyDiscount(
+    baseMonthly,
+    plan.discountActive,
+    plan.discountType,
+    plan.discountValue,
+  );
+  const adminYearly = currency === 'USD' ? plan.priceYearlyUsd : plan.priceYearlyTry;
+  const yearlyTotal =
+    adminYearly != null && adminYearly > 0
+      ? adminYearly
+      : Math.round(discountedMonthly * 12 * 0.8);
+  const yearlyMonthly = Math.round(yearlyTotal / 12);
+  const source: 'override' | 'formula' =
+    adminYearly != null && adminYearly > 0 ? 'override' : 'formula';
+  // Aylık döngüsünde owner faturası ayda `discountedMonthly` kadar; yıllık
+  // döngüsünde yıllık toplam `yearlyTotal` kadar (12 ayda bir tahsil edilir).
+  const amount = cycle === 'yearly' ? yearlyTotal : discountedMonthly;
+  return {
+    amount,
+    amountYearlyTotal: yearlyTotal,
+    amountMonthly: cycle === 'yearly' ? yearlyMonthly : discountedMonthly,
+    source,
+    tierName: plan.nameTr || plan.nameEn || null,
+    cycle,
+  };
+}
+
+/**
+ * Aktif paketlerin **admin-row** formatında listesi (canonical billing
+ * resolver için). `getAllPlansForAdmin` zaten her şeyi döner ama
+ * `MemberBillingModal` ve `/api/admin/members/[id]/billing` yalnızca aktif
+ * tier'ları seçilebilir görmek ister.
+ */
+export async function getActivePlansAsAdmin(): Promise<AdminPlanRow[]> {
+  const rows = await prisma.subscriptionPlan.findMany({
+    where: { isActive: true },
+    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+  });
+  return rows.map(toAdminRow);
 }
 
 export async function getActivePlans(locale: 'tr' | 'en'): Promise<PublicPlan[]> {

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { resolveOwnerUserId } from '@/lib/panel-access';
 import { PLAN_QUOTA, PLAN_QUOTA_AI_REPLIES, PLAN_LABELS } from '@/lib/constants';
+import { resolveBillingAmount, toAdminRow } from '@/lib/subscription-plans';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,12 +23,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'forbidden', hint: 'billing is workspace-scoped' }, { status: 403 });
   }
 
-  const [user, subscription, restaurants] = await Promise.all([
+  // §40.1 — Supabase pooler connection_limit=1; aynı request içinde 3 paralel
+  // read $transaction'a alındı (yeni: subscriptionPlan join'i de aynı pool slot'unda).
+  const [user, subscription, restaurants] = await prisma.$transaction([
     prisma.user.findUnique({
       where: { id: userId },
       select: { plan: true, trialEndsAt: true, locale: true },
     }),
-    prisma.billingSubscription.findUnique({ where: { userId } }),
+    prisma.billingSubscription.findUnique({
+      where: { userId },
+      include: { subscriptionPlan: true },
+    }),
     prisma.restaurant.findMany({
       where: { userId },
       select: { id: true },
@@ -40,8 +46,35 @@ export async function GET(req: NextRequest) {
   // for trial users who haven't hit checkout yet.
   const plan = subscription?.plan ?? user.plan ?? 'trial';
   const locale = user.locale === 'en' ? 'en' : 'tr';
-  const planLabel = PLAN_LABELS[plan]?.[locale] ?? plan;
+  // §15.2 canonical billing label öncelik: gerçek tier ismi (Starter/Growth/Pro)
+  // > legacy PLAN_LABELS bucket > raw plan key. Marketing pricing kartında
+  // gözüken tier ismi ile owner kartı parity tutar.
+  const tierName = subscription?.subscriptionPlan
+    ? locale === 'en'
+      ? subscription.subscriptionPlan.nameEn
+      : subscription.subscriptionPlan.nameTr
+    : null;
+  const planLabel = tierName ?? PLAN_LABELS[plan]?.[locale] ?? plan;
   const renewsAt = subscription?.renewsAt ?? null;
+
+  // §15.2 canonical amount — eğer subscription tier'a bağlıysa
+  // resolveBillingAmount kanonik tutarı verir; admin `amount` field'ı doluysa
+  // override olarak kullanılır (örn. sezonluk indirim).
+  const tierBilling = subscription?.subscriptionPlan
+    ? resolveBillingAmount(
+        toAdminRow(subscription.subscriptionPlan),
+        subscription.billingCycle === 'yearly' || subscription.billingCycle === 'monthly'
+          ? subscription.billingCycle
+          : null,
+        subscription.currency === 'USD' ? 'USD' : 'TRY',
+      )
+    : null;
+  const overrideAmount = subscription?.amount ? Number(subscription.amount) : null;
+  // Display amount: admin override > tier-derived (cycle-aware) > null
+  const displayAmount = overrideAmount ?? tierBilling?.amount ?? null;
+  // Yıllık toplam — sadece tier bağlıysa hesaplanır; legacy `amount` override'da
+  // owner cycle bilgisi olmadığı için yıllık toplam türetilemez (null).
+  const yearlyTotal = tierBilling?.amountYearlyTotal ?? null;
 
   // Prefer the subscription's own trial end (payment provider will set it
   // once checkout succeeds), fall back to the User's onboarding trial.
@@ -79,6 +112,7 @@ export async function GET(req: NextRequest) {
           }),
         ]);
 
+
   const limit = PLAN_QUOTA[plan] ?? PLAN_QUOTA.trial;
   const aiRepliesQuota = PLAN_QUOTA_AI_REPLIES[plan] ?? PLAN_QUOTA_AI_REPLIES.trial;
 
@@ -99,9 +133,21 @@ export async function GET(req: NextRequest) {
       paymentMethod,
       // Pricing snapshot — Faz 2 owner-readonly billing card. Null when admin
       // hasn't seeded values yet; UI falls back to plan-derived label.
-      amount: subscription?.amount ? Number(subscription.amount) : null,
+      // §15.2 canonical: `amount` admin override > tier-derived; UI yıllık
+      // toplam göstermek için `yearlyTotal` field'ını kullanır (kanonik DB
+      // değeri, rounding-safe).
+      amount: displayAmount,
+      yearlyTotal,
       currency: subscription?.currency ?? 'TRY',
       billingCycle: subscription?.billingCycle ?? null,
+      subscriptionPlanId: subscription?.subscriptionPlanId ?? null,
+      tier: subscription?.subscriptionPlan
+        ? {
+            id: subscription.subscriptionPlan.id,
+            name: tierName,
+            isFeatured: subscription.subscriptionPlan.isFeatured,
+          }
+        : null,
       // Billing address — never surface adminNotes (admin-only).
       billingAddress: subscription
         ? {

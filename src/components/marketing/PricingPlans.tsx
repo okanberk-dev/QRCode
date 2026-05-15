@@ -173,11 +173,15 @@ export default function PricingPlans({
                       {monthlyPeriod}
                     </span>
                     <span>·</span>
+                    {/* CLAUDE.md §15.2 rounding disiplini: yıllık toplam tutar her
+                        zaman `priceYearlyTotal` (kanonik DB değeri veya formula
+                        sonucu), `priceYearly × 12` DEĞİL — rounding error'ı
+                        marketing × 12 ≠ admin'in yazdığı tutar bug'ına yol açar. */}
                     <span>
                       {billing === 'yearly'
                         ? isTr
-                          ? `₺${(p.priceYearly * 12).toLocaleString('tr-TR')}/yıl`
-                          : `$${(p.priceYearly * 12).toLocaleString('en-US')}/year`
+                          ? `₺${p.priceYearlyTotal.toLocaleString('tr-TR')}/yıl`
+                          : `$${p.priceYearlyTotal.toLocaleString('en-US')}/year`
                         : isTr
                           ? `${formatPrice(p.priceMonthly - p.discount.discountedMonthly)} tasarruf`
                           : `Save ${formatPrice(p.priceMonthly - p.discount.discountedMonthly)}`}

@@ -1341,13 +1341,24 @@ model CareerApplication {
 
 model BillingSubscription {
   userId         String    @id @map("user_id")
-  plan           String    @default("trial") // trial | monthly | yearly | enterprise
+  /// Legacy lifecycle bucket — `trial | monthly | yearly | enterprise | free`.
+  /// **Tier'ı temsil etmez** (`subscriptionPlanId` o iş için var); cycle +
+  /// lifecycle karışımı (örn. "yearly" = paying yearly, "trial" = onboarding
+  /// pending). Yeni billing flow'ları `subscriptionPlanId` + `billingCycle`
+  /// ikilisini canonical tutar (CLAUDE.md §15.2 + §38.200).
+  plan           String    @default("trial")
   status         String    @default("active") // active | past_due | canceled
   trialEndsAt    DateTime? @map("trial_ends_at")
   renewsAt       DateTime? @map("renews_at")
   providerRef    String?   @unique @map("provider_ref")
   paymentBrand   String?   @map("payment_brand")
   paymentLast4   String?   @map("payment_last4")
+  /// Canonical tier link — marketing `/pricing` ile parity (Starter / Growth /
+  /// Pro tier'ları DB-driven). Null ise legacy/trial; `resolveBillingAmount`
+  /// (`subscription-plans.ts`) bunu + `billingCycle`'ı kullanarak amount
+  /// türetir. Plan silinirse `SetNull` (audit history korunur).
+  subscriptionPlanId String?           @map("subscription_plan_id")
+  subscriptionPlan   SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id], onDelete: SetNull)
   // Pricing snapshot (Faz 2 — owner-readonly billing card). Manual values
   // until Iyzico provider wires real payment events. amount in major currency
   // unit (TRY default); billingCycle is informational, mirrors plan suffix.
@@ -1367,6 +1378,7 @@ model BillingSubscription {
   adminNotes     String?   @map("admin_notes") @db.Text
   updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
 
+  @@index([subscriptionPlanId])
   @@map("billing_subscriptions")
 }
 
@@ -1584,6 +1596,11 @@ model SubscriptionPlan {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Reverse relation — owner subscriptions referencing this tier
+  // (CLAUDE.md §15.2 canonical billing). Tier silinirse `SetNull` ile
+  // mevcut subscription'lar legacy `plan` field'ına düşer.
+  billingSubscriptions BillingSubscription[]
 
   @@index([isActive, sortOrder])
   @@map("subscription_plans")
