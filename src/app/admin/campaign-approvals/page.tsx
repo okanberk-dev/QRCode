@@ -191,7 +191,48 @@ export default function AdminCampaignApprovalsPage() {
         />
       ) : (
         <div className="bz-card overflow-hidden p-0">
-          <div className="overflow-x-auto">
+          {/* Mobile card list */}
+          <div className="flex flex-col gap-2.5 p-3 lg:hidden">
+            {data.campaigns.map((c) => (
+              <div key={c.id} className="bz-card p-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="bz-h-tight text-[13px] truncate">
+                        {c.restaurantName ?? c.restaurantId}
+                      </span>
+                      <Badge kind={campaignStatusBadge(c.status)}>
+                        {campaignStatusLabel(c.status, isTr ? 'tr' : 'en')}
+                      </Badge>
+                    </div>
+                    <div className="mt-1 text-[12px] text-[#1A1A1A] truncate">
+                      {c.subject}
+                    </div>
+                    <div className="mt-1 text-[11px] text-[#737373] bz-mono truncate">
+                      {c.ownerEmail ?? c.ownerName ?? '—'}
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px] text-[#737373]">
+                      <span className="bz-mono">
+                        {c.recipientCount} {isTr ? 'alıcı' : 'recipients'}
+                      </span>
+                      <span className="text-[#A3A3A3]">·</span>
+                      <span>{formatDateTime(c.submittedAt ?? c.createdAt, isTr)}</span>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/admin/campaign-approvals/${c.id}`}
+                    className="bz-btn-ghost inline-flex shrink-0 items-center gap-1 px-3 min-h-[32px] text-[11.5px]"
+                  >
+                    {isTr ? 'Detay' : 'Detail'}
+                    <ExternalLink size={11} />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="overflow-x-auto hidden lg:block">
             <table className="bz-table w-full">
               <thead>
                 <tr>

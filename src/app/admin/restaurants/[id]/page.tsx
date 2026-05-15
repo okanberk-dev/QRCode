@@ -370,7 +370,7 @@ export default function RestaurantDetailPage() {
     allowedPlatforms.has('trendyol');
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6 md:p-10">
+    <div className="mx-auto max-w-[1200px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
         <div className="absolute inset-x-0 top-0 h-[3px]" style={{ backgroundColor: formData.primaryColor }} aria-hidden />
@@ -522,7 +522,38 @@ export default function RestaurantDetailPage() {
               <p className="text-[12px] text-[#737373]">Widget henüz hiçbir siteden yüklenmedi.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-[#EDEDED]">
+            <>
+            {/* Mobile card list */}
+            <div className="flex flex-col gap-2.5 lg:hidden">
+              {embedStats.byDomain.map((d) => (
+                <div key={d.domain} className="bz-card p-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div
+                      className="min-w-0 flex-1 truncate font-medium text-[#0A0A0A]"
+                      style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                    >
+                      {d.domain}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[14px] font-semibold tabular-nums text-[#0A0A0A]">
+                        {d.count.toLocaleString('tr-TR')}
+                      </div>
+                      <div className="text-[11px] text-[#737373]">
+                        {d.lastSeen
+                          ? `${Math.max(0, Math.floor((Date.now() - new Date(d.lastSeen).getTime()) / 60000))} dk önce`
+                          : '—'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <p className="px-1 text-[11px] text-[#737373]">
+                Toplam {embedStats.totalViews.toLocaleString('tr-TR')} görüntü · son 30 gün
+              </p>
+            </div>
+
+            {/* Desktop table */}
+            <div className="overflow-x-auto rounded-2xl border border-[#EDEDED] hidden lg:block">
               <table className="w-full min-w-[480px] text-[13px]">
                 <thead className="bg-[#FAFAFA]">
                   <tr className="text-left">
@@ -547,6 +578,7 @@ export default function RestaurantDetailPage() {
                 Toplam {embedStats.totalViews.toLocaleString('tr-TR')} görüntü · son 30 gün
               </div>
             </div>
+            </>
           )}
         </section>
       </div>

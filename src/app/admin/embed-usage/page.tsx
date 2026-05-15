@@ -171,7 +171,53 @@ function Body() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Mobile card list */}
+            <div className="flex flex-col gap-2.5 p-3 lg:hidden">
+              {data.rows.map((r, i) => (
+                <div key={`${r.restaurantId}-${r.parentDomain}-${i}`} className="bz-card p-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      {r.slug ? (
+                        <Link
+                          href={`/admin/restaurants/${r.restaurantId}`}
+                          className="text-[13px] font-semibold text-[#0A0A0A] hover:underline"
+                        >
+                          {r.restaurantName}
+                        </Link>
+                      ) : (
+                        <span className="text-[13px] font-semibold text-[#0A0A0A]">
+                          {r.restaurantName}
+                        </span>
+                      )}
+                      {r.slug && (
+                        <div className="mt-0.5 text-[11px] text-[#737373] bz-mono truncate">
+                          /{r.slug}
+                        </div>
+                      )}
+                      <div className="mt-1 text-[12px] text-[#525252] truncate">
+                        {r.parentDomain}
+                      </div>
+                      <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px] text-[#737373]">
+                        <span>{relativeTime(r.firstSeen, isTr)}</span>
+                        <span className="text-[#A3A3A3]">·</span>
+                        <span>{relativeTime(r.lastSeen, isTr)}</span>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <div className="text-[15px] font-semibold tabular-nums text-[#0A0A0A]">
+                        {r.count.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
+                      </div>
+                      <div className="pulse-eyebrow text-[#A3A3A3]">
+                        {isTr ? 'GÖRÜNTÜ' : 'VIEWS'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="overflow-x-auto hidden lg:block">
               <table className="w-full text-[13px]">
                 <thead className="bg-[#FAFAFA]">
                   <tr className="text-left">
