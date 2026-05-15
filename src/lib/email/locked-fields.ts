@@ -45,6 +45,18 @@ export const LOCKED_MAIL_FIELDS: Partial<Record<MailTemplateKey, Set<string>>> =
     'notYouBody',  // security guidance copy
     'notYouLink',  // reset CTA — must point at the genuine reset flow
   ]),
+  // Wave B4 (CLAUDE.md §38.193) — deletion confirmation security disclosure.
+  // Same phishing-defence as password-changed: if an admin reworded
+  // "Sen bunu yapmadıysan?" the owner might mistake the mail for a
+  // phishing attempt and ignore a legitimate scheduled deletion, or vice
+  // versa. KVKK note ("mali kayıt 10 yıl") also locked because it carries
+  // legal commitment.
+  'account-deletion-scheduled': new Set([
+    'statusText',   // "30 gün geri sayım · İptal hakkı saklı"
+    'note',         // KVKK m.7 disclosure
+    'notYouTitle',  // "Sen bunu yapmadıysan?"
+    'notYouBody',   // security guidance copy
+  ]),
 };
 
 export function isFieldLocked(templateKey: string, fieldKey: string): boolean {

@@ -23,6 +23,8 @@ import {
   renderTeamMemberJoined,
   renderTeamMemberRemoved,
   renderFirstFeedbackCelebration,
+  renderAccountDeletionScheduled,
+  renderAccountDeletionCanceled,
   type FormType,
   type NewsletterPost,
   type WeeklyReportParams,
@@ -579,6 +581,85 @@ export async function sendFirstFeedbackCelebrationEmail(params: {
       reason: 'send_failed',
       userLocale: locale,
       metadata: { restaurantName: params.restaurantName, rating: params.rating },
+    });
+  }
+  return ok;
+}
+
+// ─── Account deletion lifecycle (Wave B4, CLAUDE.md §38.B + §38.193) ────
+// Owner-initiated soft-delete with a 30-day grace window. One mail fires
+// when the deletion is scheduled (carries the cancel link); a second
+// fires when the cancel is exercised. Hard-delete itself is executed by
+// /api/cron/process-scheduled-deletions — no separate "deleted" mail
+// because the inbox would be unreachable at that point.
+
+export async function sendAccountDeletionScheduledEmail(params: {
+  to: string;
+  firstName?: string | null;
+  accountEmail: string;
+  scheduledFor: Date;
+  daysRemaining: number;
+  cancelUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderAccountDeletionScheduled(
+    {
+      firstName: params.firstName,
+      accountEmail: params.accountEmail,
+      scheduledFor: params.scheduledFor,
+      daysRemaining: params.daysRemaining,
+      cancelUrl: params.cancelUrl,
+    },
+    locale,
+  );
+  const ok = await sendResendEmail({
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'account-deletion-scheduled',
+      recipient: params.to,
+      reason: 'send_failed',
+      userLocale: locale,
+      metadata: { account: params.accountEmail, daysRemaining: params.daysRemaining },
+    });
+  }
+  return ok;
+}
+
+export async function sendAccountDeletionCanceledEmail(params: {
+  to: string;
+  firstName?: string | null;
+  accountEmail: string;
+  dashboardUrl: string;
+  locale?: 'tr' | 'en';
+}): Promise<boolean> {
+  const locale = params.locale ?? 'tr';
+  const rendered = await renderAccountDeletionCanceled(
+    {
+      firstName: params.firstName,
+      accountEmail: params.accountEmail,
+      dashboardUrl: params.dashboardUrl,
+    },
+    locale,
+  );
+  const ok = await sendResendEmail({
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
+  if (!ok) {
+    await notifyOpsOfMailFailure({
+      template: 'account-deletion-canceled',
+      recipient: params.to,
+      reason: 'send_failed',
+      userLocale: locale,
+      metadata: { account: params.accountEmail },
     });
   }
   return ok;

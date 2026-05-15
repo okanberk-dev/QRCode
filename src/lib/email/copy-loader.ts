@@ -80,6 +80,9 @@ export const SUPPORTED_MAIL_KEYS = [
   'team-member-joined',       // B2 — owner notification after /api/team/accept-invite.
   'team-member-removed',      // B3 — owner notification after /api/team/[id] DELETE.
   'first-feedback-celebration', // B5 — activation moment on /api/feedback POST count=1.
+  // Wave B4 (CLAUDE.md §38.193) — owner-initiated account deletion lifecycle.
+  'account-deletion-scheduled', // 30-day grace start; carries cancel link.
+  'account-deletion-canceled',  // confirmation that the schedule was revoked.
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];
