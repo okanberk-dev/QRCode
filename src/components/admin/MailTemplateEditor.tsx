@@ -409,6 +409,82 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'cta', label: 'CTA buton metni' },
     { key: 'footer', label: 'Footer not metni', multiline: true },
   ],
+  // Wave C1 (CLAUDE.md §38.194) — QR taranmıyor hatırlatma.
+  'qr-no-scans-reminder': [
+    { key: 'eyebrow', label: 'Eyebrow' },
+    { key: 'title', label: 'Başlık 1. parça' },
+    { key: 'titleAccent', label: 'Başlık vurgu' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      placeholders: MAIL_PLACEHOLDERS['qr-no-scans-reminder'],
+    },
+    { key: 'tipsEyebrow', label: 'İpuçları başlığı' },
+    { key: 'tip1', label: 'İpucu 1', multiline: true },
+    { key: 'tip2', label: 'İpucu 2', multiline: true },
+    { key: 'tip3', label: 'İpucu 3', multiline: true },
+    { key: 'tip4', label: 'İpucu 4', multiline: true },
+    { key: 'cta', label: 'CTA buton metni' },
+  ],
+  // Wave C2 — puan düşüşü uyarısı.
+  'rating-drop-alert': [
+    { key: 'eyebrow', label: 'Eyebrow' },
+    { key: 'title', label: 'Başlık 1. parça' },
+    { key: 'titleAccent', label: 'Başlık vurgu' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      placeholders: MAIL_PLACEHOLDERS['rating-drop-alert'],
+    },
+    { key: 'cardEyebrow', label: 'Kart etiketi' },
+    { key: 'currentLabel', label: 'Mevcut ortalama etiketi' },
+    { key: 'baselineLabel', label: 'Baseline etiketi' },
+    { key: 'deltaLabel', label: 'Delta etiketi' },
+    { key: 'reviewCountLabel', label: 'Yorum sayısı etiketi' },
+    { key: 'cta', label: 'CTA buton metni' },
+    { key: 'actionTitle', label: 'Aksiyon başlığı' },
+    { key: 'action1', label: 'Aksiyon 1', multiline: true },
+    { key: 'action2', label: 'Aksiyon 2', multiline: true },
+    { key: 'action3', label: 'Aksiyon 3', multiline: true },
+  ],
+  // Wave C3 — ilk Google yanıtı kutlaması.
+  'first-reply-celebration': [
+    { key: 'eyebrow', label: 'Eyebrow' },
+    { key: 'title', label: 'Başlık 1. parça' },
+    { key: 'titleAccent', label: 'Başlık vurgu' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      placeholders: MAIL_PLACEHOLDERS['first-reply-celebration'],
+    },
+    { key: 'habitTitle', label: 'Alışkanlık başlığı' },
+    { key: 'habitBody', label: 'Alışkanlık metni', multiline: true },
+    { key: 'cta', label: 'CTA buton metni' },
+    { key: 'note', label: 'Footer not', multiline: true },
+  ],
+  // Wave C4 — KVKK veri export onayı. Locked field 2 alan (notYouTitle, notYouBody).
+  'data-export-confirmation': [
+    { key: 'eyebrow', label: 'Eyebrow' },
+    { key: 'title', label: 'Başlık 1. parça' },
+    { key: 'titleAccent', label: 'Başlık vurgu' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      placeholders: MAIL_PLACEHOLDERS['data-export-confirmation'],
+    },
+    { key: 'cardEyebrow', label: 'Kart etiketi' },
+    { key: 'statusText', label: 'Status metni' },
+    { key: 'metaTime', label: 'Meta — saat etiketi' },
+    { key: 'metaIp', label: 'Meta — IP etiketi' },
+    { key: 'metaDevice', label: 'Meta — cihaz etiketi' },
+    { key: 'metaAccount', label: 'Meta — hesap etiketi' },
+    { key: 'notYouTitle', label: '"Sen bunu yapmadıysan?" başlık (kilitli)' },
+    { key: 'notYouBody', label: '"Sen bunu yapmadıysan?" açıklama (kilitli)', multiline: true },
+  ],
 };
 
 const TEMPLATE_LABELS: Record<string, string> = {
@@ -439,6 +515,11 @@ const TEMPLATE_LABELS: Record<string, string> = {
   // Wave B4 (CLAUDE.md §38.193)
   'account-deletion-scheduled': 'Hesap silme planlandı',
   'account-deletion-canceled': 'Hesap silme iptal',
+  // Wave C (CLAUDE.md §38.194)
+  'qr-no-scans-reminder': 'QR taranmıyor (hatırlatma)',
+  'rating-drop-alert': 'Puan düşüşü uyarısı',
+  'first-reply-celebration': 'İlk Google yanıt kutlama',
+  'data-export-confirmation': 'KVKK veri indirme onayı',
 };
 
 interface Props {

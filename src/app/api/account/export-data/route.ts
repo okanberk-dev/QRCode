@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/auth';
-import { rateLimit, maybeSweep } from '@/lib/rate-limit';
+import { rateLimit, maybeSweep, getClientIp } from '@/lib/rate-limit';
 import { ApiErrors } from '@/lib/api-errors';
+import { sendDataExportConfirmationEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -120,6 +121,23 @@ export async function POST(req: NextRequest) {
       createdAt: e.createdAt.toISOString(),
     })),
   };
+
+  // Wave C4 (CLAUDE.md §38.194) — KVKK §11 transparency: every successful
+  // export triggers a confirmation mail to the owner's mailbox. This is the
+  // audit trail an owner uses to spot a hijacked session that exported their
+  // data. Fire-and-forget (we don't want a Resend hiccup to break the
+  // download response).
+  sendDataExportConfirmationEmail({
+    to: user.email,
+    firstName: user.name,
+    accountEmail: user.email,
+    ip: getClientIp(req.headers),
+    device: (req.headers.get('user-agent') ?? '').slice(0, 80) || null,
+    exportedAt: new Date(),
+    locale: user.locale === 'en' ? 'en' : 'tr',
+  }).catch(() => {
+    // sender wires ops-alert on failure
+  });
 
   return new NextResponse(JSON.stringify(exportPayload, null, 2), {
     status: 200,

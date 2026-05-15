@@ -14,6 +14,9 @@ import {
 } from '@/lib/google-business';
 import { googleBusinessErrorResponse } from '@/lib/google-business-response';
 import { rateLimit } from '@/lib/rate-limit';
+import { prisma } from '@/lib/prisma';
+import { sendFirstReplyCelebrationEmail } from '@/lib/email';
+import { alreadySent, recordSent } from '@/lib/email/lifecycle';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,6 +75,56 @@ export async function POST(
       parsed.data.reviewName,
       parsed.data.comment,
     );
+
+    // Wave C3 (CLAUDE.md §38.194) — first reply celebration. Fire-and-forget;
+    // LifecycleEmailLog cooldown (lifetime per restaurant) keeps this to a
+    // single mail per restaurant for the lifetime of the account. We check
+    // BEFORE sending so a Google reply edit (which would call this endpoint
+    // a second time) doesn't double-fire.
+    (async () => {
+      try {
+        const already = await alreadySent({
+          restaurantId: id,
+          type: 'first_reply_celebration',
+        });
+        if (already) return;
+        const rest = await prisma.restaurant.findUnique({
+          where: { id },
+          select: {
+            name: true,
+            notificationEmail: true,
+            user: { select: { email: true, name: true, locale: true } },
+          },
+        });
+        if (!rest) return;
+        const recipient = rest.notificationEmail || rest.user?.email;
+        if (!recipient) return;
+        const userLocale: 'tr' | 'en' = rest.user?.locale === 'en' ? 'en' : 'tr';
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+        const ok = await sendFirstReplyCelebrationEmail({
+          to: recipient,
+          ownerName: rest.user?.name ?? null,
+          restaurantName: rest.name,
+          reviewsUrl: `${appUrl}/${userLocale}/dashboard/google-reviews`,
+          locale: userLocale,
+        });
+        if (ok) {
+          await recordSent({
+            restaurantId: id,
+            type: 'first_reply_celebration',
+            metadata: { reviewName: parsed.data.reviewName },
+          });
+        }
+      } catch (err) {
+        console.error('[GOOGLE_REPLY] first-reply celebration failed', {
+          restaurantId: id,
+          errName: err instanceof Error ? err.name : 'unknown',
+        });
+      }
+    })().catch(() => {
+      // IIFE already swallows; defence-in-depth
+    });
+
     return NextResponse.json({ reply });
   } catch (error) {
     if (error instanceof GoogleBusinessApiError) {

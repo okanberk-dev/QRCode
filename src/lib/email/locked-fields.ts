@@ -57,6 +57,14 @@ export const LOCKED_MAIL_FIELDS: Partial<Record<MailTemplateKey, Set<string>>> =
     'notYouTitle',  // "Sen bunu yapmadıysan?"
     'notYouBody',   // security guidance copy
   ]),
+  // Wave C4 (CLAUDE.md §38.194) — data export KVKK §11 disclosure.
+  // Same lock rationale: the "wasn't you?" copy is the user's only
+  // forensic recovery prompt if their account is hijacked and someone
+  // ran the export. Reworded copy → owner ignores legitimate alert.
+  'data-export-confirmation': new Set([
+    'notYouTitle',
+    'notYouBody',
+  ]),
 };
 
 export function isFieldLocked(templateKey: string, fieldKey: string): boolean {
