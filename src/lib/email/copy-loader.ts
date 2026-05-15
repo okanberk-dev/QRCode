@@ -88,6 +88,8 @@ export const SUPPORTED_MAIL_KEYS = [
   'rating-drop-alert',          // C2 cron
   'first-reply-celebration',    // C3 sync from Google reply
   'data-export-confirmation',   // C4 sync from /api/account/export-data
+  // Wave D (CLAUDE.md §38.195) — new-device login security alert.
+  'new-device-login',
 ] as const;
 
 export type MailTemplateKey = (typeof SUPPORTED_MAIL_KEYS)[number];

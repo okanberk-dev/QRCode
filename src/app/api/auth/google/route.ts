@@ -8,6 +8,8 @@ import { verifyFirebaseIdToken, getFirebaseProjectId } from '@/lib/firebase-admi
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { handleOAuthSignIn, type OAuthDeps } from '@/lib/oauth';
 import { createUserSessionForToken } from '@/lib/user-session';
+import { describeDevice } from '@/lib/device-fingerprint';
+import { sendNewDeviceLoginEmail } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
   try {
@@ -113,6 +115,31 @@ export async function POST(req: NextRequest) {
     });
     if (!session.ok) {
       return NextResponse.json({ error: session.error }, { status: 500 });
+    }
+
+    // Wave D (CLAUDE.md §38.195) — new-device alert for Google sign-in.
+    // Skip when isNewUser is true (just created account, first session);
+    // session.isNewDevice already returns false in that case (no prior
+    // sessions) so this is defence-in-depth.
+    if (session.isNewDevice && !isNewUser) {
+      const userAgent = req.headers.get('user-agent');
+      const desc = describeDevice(userAgent, ip);
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+      const userLocale: 'tr' | 'en' = (
+        (user as unknown as { locale?: string }).locale === 'en' ? 'en' : 'tr'
+      );
+      sendNewDeviceLoginEmail({
+        to: user.email,
+        firstName: user.name,
+        accountEmail: user.email,
+        device: desc.device,
+        location: desc.location,
+        loggedInAt: new Date(),
+        resetUrl: `${appUrl}/${userLocale}/auth/forgot-password`,
+        locale: userLocale,
+      }).catch(() => {
+        // sender wires ops-alert internally
+      });
     }
 
     const response = NextResponse.json({
