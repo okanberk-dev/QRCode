@@ -150,7 +150,7 @@ export async function renderOwnerCampaignApproved(
       <td class="bz-pad" style="padding:0 40px 32px;">
         <div style="border-top:1px solid ${PULSE.n200};padding-top:14px;">
           <div style="font-family:${FONTS.mono};font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:${PULSE.n500};">
-            ${isTr ? 'Bu mail Buaze platformu (Buaze Bilişim A.Ş.) tarafından gönderilmiştir.' : 'This email was sent by the Buaze platform (Buaze Bilişim A.Ş.).'}
+            ${isTr ? 'Bu mail Buaze platformu tarafından gönderilmiştir.' : 'This email was sent by the Buaze platform.'}
           </div>
           <div style="font-family:${FONTS.body};font-size:11px;color:${PULSE.n500};margin-top:4px;">
             <a href="${privacyHref}" style="color:${PULSE.graphite};text-decoration:underline;">${isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}</a>
@@ -178,7 +178,7 @@ ${copyText.ctaLabel}: ${params.dashboardUrl}
 ${copyText.footerHint}
 
 —
-${isTr ? 'Bu mail Buaze platformu (Buaze Bilişim A.Ş.) tarafından gönderilmiştir.' : 'This email was sent by the Buaze platform (Buaze Bilişim A.Ş.).'}
+${isTr ? 'Bu mail Buaze platformu tarafından gönderilmiştir.' : 'This email was sent by the Buaze platform.'}
 ${isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}: ${privacyHref}`.trim();
 
   return { subject, html, text };

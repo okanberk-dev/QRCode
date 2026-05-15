@@ -86,7 +86,7 @@ export async function renderCustomerCampaign(
     // Stage 31c §38.109 — compliance footer copy (ETK m.5 + KVKK §10).
     senderTitle: 'Gönderici bilgisi',
     senderBody:
-      'Bu mail, <strong>${restaurantName}</strong> tarafından <strong>${senderEmail}</strong> adresi üzerinden Buaze platformu (Buaze Bilişim A.Ş.) aracılığıyla gönderilmiştir.',
+      'Bu mail, <strong>${restaurantName}</strong> tarafından <strong>${senderEmail}</strong> adresi üzerinden Buaze platformu aracılığıyla gönderilmiştir.',
     whyTitle: 'Bu maili neden aldım?',
     whyBody:
       '${restaurantName} müşteri programına kayıt olduğun veya geri bildirim formunda iletişim onayı verdiğin için.',
@@ -102,7 +102,7 @@ export async function renderCustomerCampaign(
     sentSuffix: '',
     senderTitle: 'Sender information',
     senderBody:
-      'This email was sent by <strong>${restaurantName}</strong> via <strong>${senderEmail}</strong> through the Buaze platform (Buaze Bilişim A.Ş., operating as data processor under GDPR Art. 28).',
+      'This email was sent by <strong>${restaurantName}</strong> via <strong>${senderEmail}</strong> through the Buaze platform.',
     whyTitle: 'Why did I receive this?',
     whyBody:
       'You opted in to ${restaurantName}\'s customer program or consented to marketing communications via the feedback form.',

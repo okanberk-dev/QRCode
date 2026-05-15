@@ -56,8 +56,9 @@ export function renderHeader(opts: { eyebrow?: string; dark?: boolean } = {}): s
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${bg};${borderBottom}">
       <tr>
-        <td style="padding:24px 32px;" align="left" valign="middle">${renderLogo({ size: 20, dark })}</td>
-        <td style="padding:24px 32px;" align="right" valign="middle">${opts.eyebrow ? renderEyebrow(opts.eyebrow, eyebrowColor) : ''}</td>
+        <!-- §38.198 — Header padding 24px 32px → 28px 36px; logo + eyebrow shell çerçevesine bitişik durmasın. -->
+        <td style="padding:28px 36px;" align="left" valign="middle">${renderLogo({ size: 20, dark })}</td>
+        <td style="padding:28px 36px;" align="right" valign="middle">${opts.eyebrow ? renderEyebrow(opts.eyebrow, eyebrowColor) : ''}</td>
       </tr>
     </table>
   `;
@@ -76,9 +77,10 @@ export function renderFooter(params: FooterParams = {}): string {
   const links = isTr ? ['buaze.com', 'Yardım', 'Gizlilik'] : ['buaze.com', 'Help', 'Privacy'];
   const linksLabel = isTr ? 'Bağlantılar' : 'Links';
   const followCopy = isTr ? 'Bizi takip et — vakalar, tüyolar, perde arkası.' : 'Follow us — cases, tips, behind the scenes.';
-  const address = isTr
-    ? `BUAZE BİLİŞİM A.Ş.<br/>Maslak Mah. Eski Büyükdere Cad.<br/>No:1 Sarıyer / İstanbul`
-    : `BUAZE BİLİŞİM INC.<br/>Maslak Dist. Eski Büyükdere Ave.<br/>No:1 Sarıyer / İstanbul`;
+  // §38.198 — Tüzel kişilik (Buaze Bilişim A.Ş.) ve adres satırı kaldırıldı.
+  // Henüz şirket kurulmadığı için hukuki disclosure üretmek yanıltıcı; sadece
+  // "Buaze" brand name yeterli. Şirket kurulduğunda buraya geri eklenir.
+  const tagline = isTr ? 'Her yorum bir nabız.' : 'Every review is a pulse.';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
   // §38.197 — /help/page route YOK (CLAUDE.md §22 /help index vs
   // /help/[slug] detail ayrımı). Footer link 35 mail template'inden
@@ -92,22 +94,28 @@ export function renderFooter(params: FooterParams = {}): string {
 
   return `
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.n50};border-top:1px solid ${PULSE.n200};">
+      <!-- §38.198 — Footer padding yatay 32px → 36px, dikey breathing
+           28/18/20/18 → 32/22/24/22 ile shell çerçevesine bitişik
+           durmasın. Tagline italic 11px N500. -->
       <tr>
-        <td style="padding:28px 32px 8px;">
+        <td style="padding:32px 36px 14px;">
           ${renderEcgDivider({ color: PULSE.lime, height: 18 })}
         </td>
       </tr>
       <tr>
-        <td style="padding:18px 32px 0;">
+        <td style="padding:22px 36px 0;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
             <tr>
               <td class="stack-col" valign="top" style="font-family:${FONTS.body};">
                 ${renderLogo({ size: 16 })}
-                <div style="font-size:11px;color:${PULSE.n500};margin-top:8px;line-height:1.5;">${address}</div>
+                <!-- §38.198 — Adres satırı yerine kısa Pulse tagline.
+                     Hukuki disclosure (A.Ş. + Maslak adres) henüz şirket
+                     kurulmadığı için kaldırıldı; gelecek scope. -->
+                <div style="font-size:11px;color:${PULSE.n500};margin-top:10px;line-height:1.5;font-style:italic;">${tagline}</div>
               </td>
               <td class="stack-col" valign="top" align="right" style="font-family:${FONTS.body};">
                 ${renderEyebrow(linksLabel, PULSE.n500)}
-                <div style="font-size:12px;color:${PULSE.n700};line-height:1.8;margin-top:8px;">
+                <div style="font-size:12px;color:${PULSE.n700};line-height:1.8;margin-top:10px;">
                   <a href="${appUrl}" style="color:${PULSE.n700};text-decoration:none;border-bottom:1px solid ${PULSE.n300};">${links[0]}</a>
                   <span style="color:${PULSE.n300};margin:0 8px;">·</span>
                   <a href="${helpHref}" style="color:${PULSE.n700};text-decoration:none;border-bottom:1px solid ${PULSE.n300};">${links[1]}</a>
@@ -120,7 +128,7 @@ export function renderFooter(params: FooterParams = {}): string {
         </td>
       </tr>
       <tr>
-        <td style="padding:20px 32px 0;font-family:${FONTS.body};">
+        <td style="padding:24px 36px 0;font-family:${FONTS.body};">
           <a href="${INSTAGRAM_URL}" style="display:inline-block;padding:10px 14px;background:${PULSE.pure};border:1px solid ${PULSE.n200};border-radius:999px;text-decoration:none;vertical-align:middle;">
             <span style="display:inline-block;vertical-align:middle;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;" aria-hidden="true">
@@ -135,11 +143,12 @@ export function renderFooter(params: FooterParams = {}): string {
         </td>
       </tr>
       <tr>
-        <td style="padding:18px 32px 28px;">
-          <div style="border-top:1px solid ${PULSE.n200};padding-top:14px;font-family:${FONTS.body};font-size:11px;color:${PULSE.n400};">
+        <td style="padding:22px 36px 32px;">
+          <div style="border-top:1px solid ${PULSE.n200};padding-top:16px;font-family:${FONTS.body};font-size:11px;color:${PULSE.n400};">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td class="stack-col" align="left">© ${new Date().getFullYear()} Buaze Bilişim — ${isTr ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}</td>
+                <!-- §38.198 — "Buaze Bilişim" → "Buaze". -->
+                <td class="stack-col" align="left">© ${new Date().getFullYear()} Buaze — ${isTr ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}</td>
                 <td class="stack-col" align="right">${unsubBlock}</td>
               </tr>
             </table>
