@@ -56,10 +56,13 @@ export async function sendOwnerSegmentMail(args: {
         r.locale ?? 'tr',
       );
       ok = await sendResendEmail({
+        template: 'owner-segment-mail',
+        locale: r.locale ?? 'tr',
         to: r.email,
         subject: rendered.subject,
         html: rendered.html,
         text: rendered.text,
+        logMetadata: { userId: r.id },
       });
       if (!ok) error = 'sendResendEmail returned false';
     } catch (err) {

@@ -849,6 +849,45 @@ model NotificationPreference {
   @@map("notification_preferences")
 }
 
+// Wave F (CLAUDE.md §38.B + §38.196) — mail delivery audit log.
+//
+// Every outbound mail (transactional + lifecycle + cron) writes a row
+// the moment Resend acks the request. Row keeps the template key, the
+// recipient address, the send outcome, and a tiny metadata bag for
+// forensic recovery (KVKK §13 / soruşturma).
+//
+// Retention: 2 years. Beyond that the daily prune cron deletes rows
+// (cron implementation deferred — see §21.34 lifecycle pattern). KVKK
+// m.7 financial-record exception doesn't apply: this table is
+// operational telemetry, not a billing receipt.
+//
+// PII discipline: only the recipient email is stored — no Subject, no
+// HTML body, no IP. Sender helper already redacts internally; this
+// table is the audit trail, not a copy of the mail itself.
+model MailDeliveryLog {
+  id          String   @id @default(cuid())
+  // Template key from SUPPORTED_MAIL_KEYS (e.g. 'password-changed',
+  // 'low-rating-alert'). Non-DB-driven render-only templates write
+  // their own slug (e.g. 'contact-admin').
+  template    String
+  // Resend recipient address — the inbox the mail was directed to.
+  recipient   String
+  // 'sent' | 'failed' | 'dropped' (Resend webhook future state).
+  status      String
+  // Free-form forensic context (userId, restaurantId, locale, error
+  // reason). String|number|null|undefined values only — no PII bodies.
+  metadata    Json?
+  // Owner panel locale used for the rendered copy at send time. Useful
+  // for "did the recipient get TR or EN?" debugging.
+  locale      String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([template, createdAt])
+  @@index([recipient, createdAt])
+  @@index([status, createdAt])
+  @@map("mail_delivery_logs")
+}
+
 model AdminUser {
   id                String    @id @default(cuid())
   username          String    @unique

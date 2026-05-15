@@ -245,6 +245,8 @@ export async function sendCustomerCampaign(args: {
         locale,
       );
       success = await sendResendEmail({
+        template: 'customer-campaign',
+        locale,
         to: recipient.email,
         subject: rendered.subject,
         html: rendered.html,
@@ -255,6 +257,7 @@ export async function sendCustomerCampaign(args: {
           'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
           'Precedence': 'bulk',
         },
+        logMetadata: { campaignId, restaurantId },
       });
       if (!success) {
         errorMessage = 'sendResendEmail returned false (check Resend logs)';

@@ -127,7 +127,15 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
     }, locale);
   }
 
-  const ok = await sendResendEmail({ to: recipientEmail, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const ok = await sendResendEmail({
+    template: data.rating <= 3 ? 'low-rating-alert' : 'new-review',
+    locale,
+    to: recipientEmail,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { rating: data.rating, feedbackId: data.feedbackId },
+  });
   if (!ok) {
     // Phase 8: critical mail. Low-rating alert that doesn't reach the
     // owner means a complaint goes unanswered for hours; positive
@@ -178,7 +186,14 @@ export async function sendWeeklyDigest(params: WeeklyDigestParams): Promise<bool
     },
     params.locale,
   );
-  return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  return sendResendEmail({
+    template: 'weekly-report',
+    locale: params.locale,
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
 }
 
 // ─── Weekly digest summary (ops mail to hello@buaze.com) ─────────────────
@@ -197,6 +212,8 @@ export async function sendWeeklyDigestSummary(args: {
 }): Promise<boolean> {
   const rendered = renderWeeklyDigestSummary(args.data, args.locale ?? 'tr');
   return sendResendEmail({
+    template: 'weekly-digest-summary',
+    locale: args.locale ?? 'tr',
     to: args.to,
     subject: rendered.subject,
     html: rendered.html,
@@ -218,7 +235,15 @@ export async function sendPasswordResetEmail(params: {
     { code: params.code, resetUrl: params.resetUrl, ip: params.ip, device: params.device },
     params.locale ?? 'tr',
   );
-  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const ok = await sendResendEmail({
+    template: 'forgot-password',
+    locale: params.locale ?? 'tr',
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { ip: params.ip ?? null, device: params.device ?? null },
+  });
   if (!ok) {
     // Phase 8: a forgot-password mail that bounces locks the user out
     // of their account. Surface to ops so support can manually issue
@@ -243,7 +268,14 @@ export async function sendWelcomeEmail(params: {
   const locale = params.locale ?? 'tr';
   const dashboardUrl = `${appUrl()}/${locale}/dashboard`;
   const rendered = await renderWelcome({ firstName: params.firstName, dashboardUrl } satisfies WelcomeParams, locale);
-  return sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  return sendResendEmail({
+    template: 'welcome',
+    locale,
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
 }
 
 // ─── Stage A4 §38.96 — Impersonation start mail (KVKK transparency) ─────
@@ -350,10 +382,13 @@ adresinden bize ulaşın.
 — Buaze Ekibi`;
 
   return sendResendEmail({
+    template: 'impersonation-start',
+    locale: params.locale ?? 'tr',
     to: recipient,
     subject,
     html,
     text,
+    logMetadata: { adminUsername },
     headers: {
       // No marketing tracking for transactional security mail.
       'X-Buaze-Mail-Type': 'impersonation-start',
@@ -374,6 +409,8 @@ export async function sendTeamInviteEmail(params: TeamInviteParams & {
   const { to, locale, ...rest } = params;
   const rendered = renderTeamInvite(rest, locale ?? 'tr');
   return sendResendEmail({
+    template: 'team-invite',
+    locale: locale ?? 'tr',
     to,
     subject: rendered.subject,
     html: rendered.html,
@@ -404,6 +441,8 @@ export async function sendVerifyEmail(params: {
     locale,
   );
   const ok = await sendResendEmail({
+    template: 'verify-email',
+    locale,
     to: params.to,
     subject: rendered.subject,
     html: rendered.html,
@@ -449,10 +488,13 @@ export async function sendPasswordChangedEmail(params: {
     locale,
   );
   const ok = await sendResendEmail({
+    template: 'password-changed',
+    locale,
     to: params.to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
+    logMetadata: { account: params.account ?? null },
   });
   if (!ok) {
     await notifyOpsOfMailFailure({
@@ -493,10 +535,13 @@ export async function sendTeamMemberJoinedEmail(params: {
     locale,
   );
   const ok = await sendResendEmail({
+    template: 'team-member-joined',
+    locale,
     to: params.to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
+    logMetadata: { memberName: params.memberName, role: params.roleLabel },
   });
   if (!ok) {
     await notifyOpsOfMailFailure({
@@ -531,10 +576,13 @@ export async function sendTeamMemberRemovedEmail(params: {
     locale,
   );
   const ok = await sendResendEmail({
+    template: 'team-member-removed',
+    locale,
     to: params.to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
+    logMetadata: { memberName: params.memberName, role: params.roleLabel },
   });
   if (!ok) {
     await notifyOpsOfMailFailure({
@@ -574,10 +622,13 @@ export async function sendFirstFeedbackCelebrationEmail(params: {
     locale,
   );
   const ok = await sendResendEmail({
+    template: 'first-feedback-celebration',
+    locale,
     to: params.to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
+    logMetadata: { restaurantName: params.restaurantName, rating: params.rating },
   });
   if (!ok) {
     await notifyOpsOfMailFailure({
@@ -619,10 +670,13 @@ export async function sendAccountDeletionScheduledEmail(params: {
     locale,
   );
   const ok = await sendResendEmail({
+    template: 'account-deletion-scheduled',
+    locale,
     to: params.to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
+    logMetadata: { account: params.accountEmail, daysRemaining: params.daysRemaining },
   });
   if (!ok) {
     await notifyOpsOfMailFailure({
@@ -653,10 +707,13 @@ export async function sendAccountDeletionCanceledEmail(params: {
     locale,
   );
   const ok = await sendResendEmail({
+    template: 'account-deletion-canceled',
+    locale,
     to: params.to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
+    logMetadata: { account: params.accountEmail },
   });
   if (!ok) {
     await notifyOpsOfMailFailure({
@@ -688,7 +745,15 @@ export async function sendQrNoScansReminderEmail(params: {
     { firstName: params.firstName, restaurantName: params.restaurantName, daysSinceQr: params.daysSinceQr, qrUrl: params.qrUrl },
     locale,
   );
-  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const ok = await sendResendEmail({
+    template: 'qr-no-scans-reminder',
+    locale,
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { restaurantName: params.restaurantName, daysSinceQr: params.daysSinceQr },
+  });
   if (!ok) {
     await notifyOpsOfMailFailure({
       template: 'qr-no-scans-reminder', recipient: params.to, reason: 'send_failed', userLocale: locale,
@@ -718,7 +783,20 @@ export async function sendRatingDropAlertEmail(params: {
     },
     locale,
   );
-  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const ok = await sendResendEmail({
+    template: 'rating-drop-alert',
+    locale,
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: {
+      restaurantName: params.restaurantName,
+      currentAvg: params.currentAvg,
+      baselineAvg: params.baselineAvg,
+      delta: params.delta,
+    },
+  });
   if (!ok) {
     await notifyOpsOfMailFailure({
       template: 'rating-drop-alert', recipient: params.to, reason: 'send_failed', userLocale: locale,
@@ -740,7 +818,15 @@ export async function sendFirstReplyCelebrationEmail(params: {
     { ownerName: params.ownerName, restaurantName: params.restaurantName, reviewsUrl: params.reviewsUrl },
     locale,
   );
-  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const ok = await sendResendEmail({
+    template: 'first-reply-celebration',
+    locale,
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { restaurantName: params.restaurantName },
+  });
   if (!ok) {
     await notifyOpsOfMailFailure({
       template: 'first-reply-celebration', recipient: params.to, reason: 'send_failed', userLocale: locale,
@@ -764,7 +850,15 @@ export async function sendDataExportConfirmationEmail(params: {
     { firstName: params.firstName, accountEmail: params.accountEmail, ip: params.ip, device: params.device, exportedAt: params.exportedAt },
     locale,
   );
-  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const ok = await sendResendEmail({
+    template: 'data-export-confirmation',
+    locale,
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { account: params.accountEmail },
+  });
   if (!ok) {
     await notifyOpsOfMailFailure({
       template: 'data-export-confirmation', recipient: params.to, reason: 'send_failed', userLocale: locale,
@@ -798,7 +892,15 @@ export async function sendNewDeviceLoginEmail(params: {
     },
     locale,
   );
-  const ok = await sendResendEmail({ to: params.to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const ok = await sendResendEmail({
+    template: 'new-device-login',
+    locale,
+    to: params.to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { account: params.accountEmail, device: params.device, location: params.location },
+  });
   if (!ok) {
     await notifyOpsOfMailFailure({
       template: 'new-device-login', recipient: params.to, reason: 'send_failed', userLocale: locale,
@@ -826,11 +928,14 @@ export async function sendFormConfirmationEmail(params: {
     params.locale ?? 'tr',
   );
   return sendResendEmail({
+    template: `form-confirmation:${params.formType}`,
+    locale: params.locale ?? 'tr',
     to: params.to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
     attachments: params.attachments,
+    logMetadata: { formType: params.formType },
   });
 }
 
@@ -842,7 +947,15 @@ export async function sendFormConfirmationEmail(params: {
 export async function sendContactAdminEmail(params: ContactAdminParams & { to: string | string[]; replyTo?: string; locale?: 'tr' | 'en' }): Promise<boolean> {
   const { to, replyTo, locale, ...rest } = params;
   const rendered = renderContactAdmin(rest, locale ?? 'tr');
-  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text, replyTo });
+  return sendResendEmail({
+    template: 'contact-admin',
+    locale: locale ?? 'tr',
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    replyTo,
+  });
 }
 
 // ─── Customer reply (low rating → customer) ─────────────────────────────
@@ -850,7 +963,16 @@ export async function sendContactAdminEmail(params: ContactAdminParams & { to: s
 export async function sendCustomerReplyEmail(params: CustomerReplyParams & { to: string; locale?: 'tr' | 'en'; replyTo?: string }): Promise<boolean> {
   const { to, locale, replyTo, ...rest } = params;
   const rendered = await renderCustomerReply(rest, locale ?? 'tr');
-  const ok = await sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text, replyTo });
+  const ok = await sendResendEmail({
+    template: 'customer-reply',
+    locale: locale ?? 'tr',
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    replyTo,
+    logMetadata: { restaurantName: params.restaurantName },
+  });
   if (!ok) {
     // Phase 8: a customer-reply mail that doesn't land means a low-
     // rating customer never hears back from the owner — direct hit on
@@ -870,7 +992,15 @@ export async function sendCustomerReplyEmail(params: CustomerReplyParams & { to:
 export async function sendTrialEndingEmail(params: TrialEndingParams & { to: string; locale?: 'tr' | 'en' }): Promise<boolean> {
   const { to, locale, ...rest } = params;
   const rendered = await renderTrialEnding(rest, locale ?? 'tr');
-  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  return sendResendEmail({
+    template: 'trial-ending',
+    locale: locale ?? 'tr',
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+    logMetadata: { daysLeft: params.daysLeft },
+  });
 }
 
 // ─── Wave B lifecycle senders (CLAUDE.md §21.34) ────────────────────────
@@ -881,32 +1011,64 @@ export async function sendQrNotDownloadedEmail(
   params: QrNotDownloadedParams & { to: string; locale?: 'tr' | 'en' },
 ): Promise<boolean> {
   const { to, locale, ...rest } = params;
-  const rendered = await renderQrNotDownloaded(rest, locale ?? 'tr');
-  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const loc = locale ?? 'tr';
+  const rendered = await renderQrNotDownloaded(rest, loc);
+  return sendResendEmail({
+    template: 'qr-not-downloaded',
+    locale: loc,
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
 }
 
 export async function sendFirstFeedbackTipsEmail(
   params: FirstFeedbackTipsParams & { to: string; locale?: 'tr' | 'en' },
 ): Promise<boolean> {
   const { to, locale, ...rest } = params;
-  const rendered = await renderFirstFeedbackTips(rest, locale ?? 'tr');
-  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const loc = locale ?? 'tr';
+  const rendered = await renderFirstFeedbackTips(rest, loc);
+  return sendResendEmail({
+    template: 'first-feedback-tips',
+    locale: loc,
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
 }
 
 export async function sendUpgradeSuggestionEmail(
   params: UpgradeSuggestionParams & { to: string; locale?: 'tr' | 'en' },
 ): Promise<boolean> {
   const { to, locale, ...rest } = params;
-  const rendered = await renderUpgradeSuggestion(rest, locale ?? 'tr');
-  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const loc = locale ?? 'tr';
+  const rendered = await renderUpgradeSuggestion(rest, loc);
+  return sendResendEmail({
+    template: 'upgrade-suggestion',
+    locale: loc,
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
 }
 
 export async function sendInactiveReactivationEmail(
   params: InactiveReactivationParams & { to: string; locale?: 'tr' | 'en' },
 ): Promise<boolean> {
   const { to, locale, ...rest } = params;
-  const rendered = await renderInactiveReactivation(rest, locale ?? 'tr');
-  return sendResendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text });
+  const loc = locale ?? 'tr';
+  const rendered = await renderInactiveReactivation(rest, loc);
+  return sendResendEmail({
+    template: 'inactive-reactivation',
+    locale: loc,
+    to,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
 }
 
 // ─── Newsletter (monthly cron) ──────────────────────────────────────────
@@ -946,6 +1108,8 @@ export async function sendNewsletterEmail(params: {
     || process.env.NOTIFICATION_EMAIL?.trim()
     || 'unsubscribe@buaze.com';
   return sendResendEmail({
+    template: 'newsletter',
+    locale: params.locale ?? 'tr',
     to: params.to,
     subject: rendered.subject,
     html: rendered.html,
@@ -955,6 +1119,7 @@ export async function sendNewsletterEmail(params: {
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       'Precedence': 'bulk',
     },
+    logMetadata: { issueNumber: params.issueNumber ?? null },
   });
 }
 
@@ -988,10 +1153,13 @@ export async function sendAuditCompletedEmail(params: {
     locale,
   );
   return sendResendEmail({
+    template: 'audit-completed',
+    locale,
     to: params.to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
+    logMetadata: { auditTitle: params.auditTitle, score: params.score },
   });
 }
 
@@ -1003,11 +1171,15 @@ export async function sendMonthlyHealthReportEmail(
   params: MonthlyHealthReportParams & { to: string; locale?: 'tr' | 'en' },
 ): Promise<boolean> {
   const { to, locale, ...rest } = params;
-  const rendered = renderMonthlyHealthReport(rest, locale ?? 'tr');
+  const loc = locale ?? 'tr';
+  const rendered = renderMonthlyHealthReport(rest, loc);
   return sendResendEmail({
+    template: 'monthly-health-report',
+    locale: loc,
     to,
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
+    logMetadata: { restaurantName: params.restaurantName, latestScore: params.latest?.score ?? null },
   });
 }
