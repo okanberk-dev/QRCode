@@ -4,15 +4,17 @@ import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
 import { uploadToStorage, isStorageConfigured } from '@/lib/supabase-storage';
 
-type Kind = 'logo' | 'favicon';
+type Kind = 'logo' | 'favicon' | 'og';
 
 const RASTER_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const LOGO_TYPES = [...RASTER_TYPES, 'image/svg+xml'];
 const FAVICON_TYPES = [...RASTER_TYPES, 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon'];
+const OG_TYPES = [...RASTER_TYPES, 'image/svg+xml'];
 
 const MAX_BYTES: Record<Kind, number> = {
   logo: 2 * 1024 * 1024,
   favicon: 1 * 1024 * 1024,
+  og: 2 * 1024 * 1024,
 };
 
 export async function POST(req: NextRequest) {
@@ -33,12 +35,12 @@ export async function POST(req: NextRequest) {
     const kind = typeof kindRaw === 'string' ? (kindRaw as Kind) : null;
 
     if (!file) return ApiErrors.badRequest('Dosya bulunamadı');
-    if (!kind || !['logo', 'favicon'].includes(kind)) {
-      return ApiErrors.badRequest('Geçersiz kind (logo|favicon)');
+    if (!kind || !['logo', 'favicon', 'og'].includes(kind)) {
+      return ApiErrors.badRequest('Geçersiz kind (logo|favicon|og)');
     }
 
     const allowed =
-      kind === 'logo' ? LOGO_TYPES : FAVICON_TYPES;
+      kind === 'logo' ? LOGO_TYPES : kind === 'og' ? OG_TYPES : FAVICON_TYPES;
     if (!allowed.includes(file.type)) {
       return ApiErrors.badRequest(`Geçersiz dosya türü: ${file.type}`);
     }
@@ -65,6 +67,14 @@ export async function POST(req: NextRequest) {
       outBuffer = await sharp(buffer)
         .resize(512, 512, { fit: 'inside', withoutEnlargement: true })
         .webp({ quality: 90 })
+        .toBuffer();
+      outExt = 'webp';
+      outMime = 'image/webp';
+    } else if (kind === 'og') {
+      // Social share card — Open Graph / Twitter summary_large_image spec.
+      outBuffer = await sharp(buffer)
+        .resize(1200, 630, { fit: 'cover' })
+        .webp({ quality: 85 })
         .toBuffer();
       outExt = 'webp';
       outMime = 'image/webp';

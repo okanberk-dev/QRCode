@@ -43,7 +43,9 @@ export async function generateMetadata({
   const title = locale === 'tr' ? s.titleDefaultTr : s.titleDefaultEn;
   const description = locale === 'tr' ? s.descriptionTr : s.descriptionEn;
   const keywords = locale === 'tr' ? s.keywordsTr : s.keywordsEn;
-  const ogImage = locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
+  const ogImage =
+    s.ogImageUrl ||
+    (locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png');
 
   return {
     metadataBase: new URL('https://buaze.com'),

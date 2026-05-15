@@ -184,9 +184,10 @@ function AdminSettingsBody() {
               title={isTr ? 'API & Webhook' : 'API & Webhooks'}
               body={
                 isTr
-                  ? 'Kişisel API anahtarları oluştur, webhook hedefleri tanımla. /api/api-keys uç noktası hazır, UI sonraki aşamada.'
-                  : 'Personal API tokens and webhook targets. /api/api-keys endpoint is live; UI ships next.'
+                  ? 'API anahtarlarını oluştur, döndür ve iptal et; webhook hedeflerini yönet. Tam arayüz “API” sayfasında hazır.'
+                  : 'Create, rotate and revoke API keys and manage webhook targets. Full UI is ready on the "API" page.'
               }
+              cta={{ label: isTr ? 'API sayfasını aç' : 'Open API page', href: '/admin/api' }}
             />
           )}
         </section>

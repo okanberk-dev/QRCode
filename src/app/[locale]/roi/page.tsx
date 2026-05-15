@@ -6,6 +6,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import RoiCalculator from '@/components/marketing/RoiCalculator';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { getSiteSettings } from '@/lib/site-settings';
 import { notFound } from 'next/navigation';
 
 const VALID_LOCALES = ['tr', 'en'] as const;
@@ -21,6 +22,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const isTr = locale === 'tr';
+  const s = await getSiteSettings();
   const title = isTr
     ? 'ROI Hesaplayıcı — QR yorum akışının 12 aylık getirisi | Buaze'
     : 'ROI Calculator: 12-Month Return on QR Review Routing — Buaze';
@@ -69,9 +71,9 @@ export async function generateMetadata({
       locale: isTr ? 'tr_TR' : 'en_US',
       images: [
         {
-          url: 'https://buaze.com/favicon.svg',
-          width: 512,
-          height: 512,
+          url: s.ogImageUrl || 'https://buaze.com/favicon.svg',
+          width: 1200,
+          height: 630,
           alt: 'Buaze ROI Hesaplayıcı',
         },
       ],
@@ -80,7 +82,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: ['https://buaze.com/favicon.svg'],
+      images: [s.ogImageUrl || 'https://buaze.com/favicon.svg'],
     },
     robots: {
       index: true,
@@ -102,6 +104,7 @@ export default async function RoiPage({
   const t = getTranslations(locale);
   const base = `/${locale}`;
   const isTr = locale === 'tr';
+  const s = await getSiteSettings();
   const url = `https://buaze.com/${locale}/roi`;
 
   // SSS — hem görünür accordion'a hem FAQPage JSON-LD'ye beslenir.
@@ -179,7 +182,7 @@ export default async function RoiPage({
           '@type': 'Organization',
           name: 'Buaze',
           url: 'https://buaze.com',
-          logo: 'https://buaze.com/favicon.svg',
+          logo: s.logoUrl || 'https://buaze.com/favicon.svg',
         },
       },
       {
