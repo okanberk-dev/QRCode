@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Check } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { verifyJwt } from '@/lib/auth';
+import { verifyUserTokenForLayout } from '@/lib/auth';
 import { getSiteSettings } from '@/lib/site-settings';
 
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -35,11 +35,12 @@ export default async function RegisterPage({
 }) {
   const { locale } = await params;
 
-  // Auth check: Redirect to dashboard if already logged in
+  // Auth check: Redirect to dashboard if already logged in.
+  // §38.189 hotfix — see login/page.tsx; same redirect-loop guard.
   const cookieStore = await cookies();
   const token = cookieStore.get('user_token')?.value;
   if (token) {
-    const payload = await verifyJwt(token);
+    const payload = await verifyUserTokenForLayout(token);
     if (payload && typeof payload.userId === 'string') {
       redirect(`/${locale}/dashboard`);
     }
