@@ -6,7 +6,7 @@ import LoginForm from '@/components/auth/LoginForm';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { verifyJwt } from '@/lib/auth';
+import { verifyUserTokenForLayout } from '@/lib/auth';
 import { getSiteSettings } from '@/lib/site-settings';
 
 import BuazeLogo from '@/components/marketing/BuazeLogo';
@@ -35,11 +35,15 @@ export default async function LoginPage({
 }) {
   const { locale } = await params;
 
-  // Auth check: Redirect to dashboard if already logged in
+  // Auth check: Redirect to dashboard if already logged in.
+  // §38.189 hotfix — must match dashboard layout's `verifyUserTokenForLayout`
+  // (UserSession revoke + tier matrix). Bare `verifyJwt` here caused a redirect
+  // loop: dashboard layout rejected revoked sessions → /auth/login → login
+  // saw a signature-valid token → /dashboard → loop. Parity restored.
   const cookieStore = await cookies();
   const token = cookieStore.get('user_token')?.value;
   if (token) {
-    const payload = await verifyJwt(token);
+    const payload = await verifyUserTokenForLayout(token);
     if (payload && typeof payload.userId === 'string') {
       redirect(`/${locale}/dashboard`);
     }
