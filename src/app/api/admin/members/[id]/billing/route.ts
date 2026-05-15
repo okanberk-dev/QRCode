@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { resolveBillingAmount, toAdminRow } from '@/lib/subscription-plans';
 
 // Admin per-user billing management — Faz 3 of Marka Kimliği + Billing flow.
 // Owner-side endpoint (/api/billing/summary) reads same row but excludes
@@ -60,15 +61,47 @@ export async function GET(
 
   const { id: userId } = await params;
 
-  const [user, subscription] = await Promise.all([
+  // §15.2 canonical billing — admin needs both the subscription row AND the
+  // full active tier catalog (Starter/Growth/Pro) for the modal dropdown +
+  // amount auto-fill. `$transaction` keeps it on one pooler connection
+  // (CLAUDE.md §40.1).
+  const [user, subscription, plans] = await prisma.$transaction([
     prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, email: true, name: true, plan: true, trialEndsAt: true },
     }),
     prisma.billingSubscription.findUnique({ where: { userId } }),
+    prisma.subscriptionPlan.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    }),
   ]);
 
   if (!user) return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
+
+  // Public catalog projection — `MemberBillingModal` consumes this for the
+  // tier dropdown + amount placeholder (CLAUDE.md §15.2 single source of
+  // truth with /pricing). Only the editable fields, no marketing chrome.
+  const catalog = plans.map((row) => {
+    const admin = toAdminRow(row);
+    const monthly = resolveBillingAmount(admin, 'monthly');
+    const yearly = resolveBillingAmount(admin, 'yearly');
+    return {
+      id: admin.id,
+      nameTr: admin.nameTr,
+      nameEn: admin.nameEn,
+      priceTry: admin.priceTry,
+      priceUsd: admin.priceUsd,
+      priceYearlyTry: admin.priceYearlyTry,
+      priceYearlyUsd: admin.priceYearlyUsd,
+      // Pre-computed canonical amounts; modal renders without re-running
+      // the resolver client-side.
+      monthlyAmount: monthly.amount,
+      yearlyAmountTotal: yearly.amountYearlyTotal,
+      yearlyAmountMonthly: yearly.amountMonthly,
+      isFeatured: admin.isFeatured,
+    };
+  });
 
   return NextResponse.json({
     user: {
@@ -83,6 +116,7 @@ export async function GET(
           plan: subscription.plan,
           status: subscription.status,
           renewsAt: subscription.renewsAt?.toISOString() ?? null,
+          subscriptionPlanId: subscription.subscriptionPlanId,
           paymentBrand: subscription.paymentBrand,
           paymentLast4: subscription.paymentLast4,
           amount: subscription.amount ? Number(subscription.amount) : null,
@@ -96,6 +130,7 @@ export async function GET(
           updatedAt: subscription.updatedAt.toISOString(),
         }
       : null,
+    catalog,
   });
 }
 
@@ -131,6 +166,21 @@ export async function PUT(
   const plan = typeof body.plan === 'string' && VALID_PLANS.has(body.plan) ? body.plan : null;
   if (plan === null && body.plan !== undefined) {
     return NextResponse.json({ error: 'invalid_plan' }, { status: 400 });
+  }
+
+  // Canonical tier link (CLAUDE.md §15.2). String → SubscriptionPlan.id
+  // existence check; null/empty → clear link (admin "Tier yok" diyebilmeli,
+  // legacy enterprise/free row'ları için). undefined → dokunma.
+  let subscriptionPlanId: string | null | undefined;
+  if (body.subscriptionPlanId === null || body.subscriptionPlanId === '') {
+    subscriptionPlanId = null;
+  } else if (typeof body.subscriptionPlanId === 'string') {
+    const sp = await prisma.subscriptionPlan.findUnique({
+      where: { id: body.subscriptionPlanId },
+      select: { id: true },
+    });
+    if (!sp) return NextResponse.json({ error: 'invalid_subscription_plan_id' }, { status: 400 });
+    subscriptionPlanId = sp.id;
   }
 
   const status = typeof body.status === 'string' && VALID_STATUS.has(body.status) ? body.status : null;
@@ -200,6 +250,7 @@ export async function PUT(
     ...(plan !== null ? { plan } : {}),
     ...(status !== null ? { status } : {}),
     ...(renewsAt !== undefined ? { renewsAt } : {}),
+    ...(subscriptionPlanId !== undefined ? { subscriptionPlanId } : {}),
     paymentBrand,
     paymentLast4,
     amount,
@@ -234,6 +285,7 @@ export async function PUT(
             ? {
                 plan: before.plan,
                 status: before.status,
+                subscriptionPlanId: before.subscriptionPlanId,
                 amount: before.amount ? Number(before.amount) : null,
                 currency: before.currency,
                 billingCycle: before.billingCycle,
@@ -243,6 +295,8 @@ export async function PUT(
           after: {
             plan: subscriptionAfterPlan(plan, before?.plan ?? 'trial'),
             status: subscriptionAfterStatus(status, before?.status ?? 'active'),
+            subscriptionPlanId:
+              subscriptionPlanId !== undefined ? subscriptionPlanId : before?.subscriptionPlanId ?? null,
             amount,
             currency,
             billingCycle,
@@ -266,6 +320,7 @@ export async function PUT(
       plan: subscription.plan,
       status: subscription.status,
       renewsAt: subscription.renewsAt?.toISOString() ?? null,
+      subscriptionPlanId: subscription.subscriptionPlanId,
       paymentBrand: subscription.paymentBrand,
       paymentLast4: subscription.paymentLast4,
       amount: subscription.amount ? Number(subscription.amount) : null,

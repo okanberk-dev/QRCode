@@ -13,9 +13,46 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, getScopedRestaurantIds } from '@/lib/panel-access';
 import { validateBody } from '@/lib/api/validate';
 import { writeAdminAuditLog } from '@/lib/audit-log';
+import { runCampaignTemplateSeed } from '@/lib/customer-campaign-templates/seed-runner';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+/**
+ * Module-level idempotency flag — Stage 119 §38.199 + §38.200 closure log.
+ *
+ * Vercel serverless cold-start başına bir kez `customerCampaignTemplate`
+ * tablosunda global (`restaurantId: null`, `isPublished: true`) satır var
+ * mı kontrol edilir; yoksa `runCampaignTemplateSeed()` ile 60-satır canonical
+ * catalog otomatik yüklenir. Owner'ın ilk ziyaretinde admin "Varsayılan
+ * içeriği yükle" butonuna basmadan da şablon picker'da satır görünür.
+ *
+ * Sonraki request'ler `templateCatalogChecked = true` flag'i ile hot path'i
+ * 1 query bile koşmaz. Aynı instance'da admin seed unpublish ederse veya
+ * tabloyu manuel temizlerse cold-start'a kadar etkili olmaz — kabul edilen
+ * trade-off (idempotent operatör tetiği `/api/admin/customer-campaign-templates/seed`
+ * her zaman elle koşulabilir).
+ */
+let templateCatalogChecked = false;
+
+async function ensureCatalogSeeded(): Promise<void> {
+  if (templateCatalogChecked) return;
+  try {
+    const cnt = await prisma.customerCampaignTemplate.count({
+      where: { restaurantId: null, isPublished: true },
+    });
+    if (cnt === 0) {
+      await runCampaignTemplateSeed();
+    }
+  } catch (err) {
+    // Seed başarısız olsa bile picker boş satırla render edilebilir; owner
+    // "Boş şablonla başla" CTA'sını kullanır. Hata log'da kalır, request
+    // bloklanmaz.
+    console.warn('[customer-campaign-templates] lazy seed failed', err);
+  } finally {
+    templateCatalogChecked = true;
+  }
+}
 
 const VALID_SECTORS = [
   'food',
@@ -114,6 +151,11 @@ function toPayload(
 export async function GET(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  // Lazy seed — instance başına 1 kez, tablo boşsa otomatik catalog yükle.
+  // CLAUDE.md §38.200: owner şablon picker'ı admin seed butonuna bağımlı
+  // olmadan ilk ziyarette dolu görünmeli.
+  await ensureCatalogSeeded();
 
   const scopedIds = await getScopedRestaurantIds(actor);
   if (scopedIds === null) {
