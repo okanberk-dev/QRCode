@@ -267,8 +267,13 @@ export default async function AdminDashboardPage() {
   ).length;
 
   // Resolve actor names (admin usernames). Both bulk + destructive actor IDs.
+  // Stage A — null actorId (KVKK hard-delete anonimizasyon) filter dışı.
   const auditActorIds = Array.from(
-    new Set([...bulkAuditRaw, ...destructiveAuditRaw].map((r) => r.actorId)),
+    new Set(
+      [...bulkAuditRaw, ...destructiveAuditRaw]
+        .map((r) => r.actorId)
+        .filter((id): id is string => typeof id === 'string'),
+    ),
   );
   const auditActors =
     auditActorIds.length > 0
@@ -289,7 +294,7 @@ export default async function AdminDashboardPage() {
       actorSource: row.actorSource,
       targetId: row.targetId,
       createdAt: row.createdAt,
-      actorName: actorNameMap.get(row.actorId) || null,
+      actorName: row.actorId ? actorNameMap.get(row.actorId) || null : null,
       count,
     };
   }

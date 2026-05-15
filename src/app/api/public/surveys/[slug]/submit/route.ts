@@ -88,7 +88,9 @@ export async function POST(
       isActive: true,
       isPublished: true,
       collectContact: true,
-      collectMarketingConsent: true,
+      // Stage B — collectMarketingConsent gate dropped. Marketing consent is
+      // now always submitter-controlled via the public form checkbox tied
+      // to Buaze-managed /acik-riza (same as /r/[slug] flow).
       restaurant: { select: { isActive: true } },
       questions: {
         select: { id: true, type: true, required: true, options: true },
@@ -222,9 +224,10 @@ export async function POST(
         email: survey.collectContact ? stripCtl(data.email, 200) : null,
         phone: survey.collectContact ? stripCtl(data.phone, 40) : null,
         hasKvkkConsent: true,
-        hasMarketingConsent: survey.collectMarketingConsent
-          ? !!data.hasMarketingConsent
-          : false,
+        // Stage B — marketing consent flows directly from the submitter's
+        // checkbox (Buaze-managed /acik-riza link), not gated by an owner-
+        // configured survey field. Mirrors /r/[slug] consent semantics.
+        hasMarketingConsent: !!data.hasMarketingConsent,
         completedAt: new Date(),
         ipAddress: ip || null,
         userAgent,

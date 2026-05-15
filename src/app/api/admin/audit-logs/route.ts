@@ -104,7 +104,10 @@ export async function GET(req: NextRequest) {
   let total = 0;
   let entries: Array<{
     id: string;
-    actorId: string;
+    // Stage A — actorId nullable (KVKK hard-delete sets NULL on anonymised
+    // audit rows; the row survives so the trail stays continuous but the
+    // PII actor reference is severed).
+    actorId: string | null;
     actorSource: string;
     action: string;
     targetId: string | null;
@@ -137,11 +140,20 @@ export async function GET(req: NextRequest) {
   }
 
   // Resolve actor names — bulk fetch User + AdminUser (avoid N+1).
+  // Stage A — null actorId (anonimleştirilmiş kayıtlar) atlanır.
   const adminIds = Array.from(
-    new Set(entries.filter((e) => e.actorSource === 'admin').map((e) => e.actorId)),
+    new Set(
+      entries
+        .filter((e) => e.actorSource === 'admin' && e.actorId)
+        .map((e) => e.actorId as string),
+    ),
   );
   const userIds = Array.from(
-    new Set(entries.filter((e) => e.actorSource === 'user').map((e) => e.actorId)),
+    new Set(
+      entries
+        .filter((e) => e.actorSource === 'user' && e.actorId)
+        .map((e) => e.actorId as string),
+    ),
   );
 
   let adminUsers: Array<{ id: string; username: string; email: string | null; role: string }> = [];
@@ -184,12 +196,12 @@ export async function GET(req: NextRequest) {
           email: string | null;
           role: string | null;
         } | null = null;
-        if (e.actorSource === 'admin') {
+        if (e.actorSource === 'admin' && e.actorId) {
           const a = adminMap.get(e.actorId);
           if (a) {
             actor = { id: a.id, label: a.username, email: a.email, role: a.role };
           }
-        } else if (e.actorSource === 'user') {
+        } else if (e.actorSource === 'user' && e.actorId) {
           const u = userMap.get(e.actorId);
           if (u) {
             actor = { id: u.id, label: u.name || u.email, email: u.email, role: 'restaurant_owner' };

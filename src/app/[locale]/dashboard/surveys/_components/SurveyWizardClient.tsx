@@ -134,9 +134,11 @@ export default function SurveyWizardClient({
   ]);
   const [accentColor, setAccentColor] = useState<string>('#C6F24E');
   const [thankYouMessage, setThankYouMessage] = useState('');
-  const [kvkkText, setKvkkText] = useState('');
+  // Stage B — survey-level KVKK + marketing consent override removed. The
+  // public form now uses Buaze-managed /kvkk + /acik-riza legal pages (same
+  // pattern as /r/[slug] — CLAUDE.md §19.1). `collectContact` is a UX
+  // choice (e-mail/phone field visibility) and stays.
   const [collectContact, setCollectContact] = useState(true);
-  const [collectMarketingConsent, setCollectMarketingConsent] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [couponLabel, setCouponLabel] = useState('');
   const [saving, setSaving] = useState(false);
@@ -226,8 +228,6 @@ export default function SurveyWizardClient({
             description: description.trim() || null,
             accentColor,
             thankYouMessage: thankYouMessage.trim() || null,
-            kvkkText: kvkkText.trim() || null,
-            collectMarketingConsent,
             collectContact,
             couponCode: couponCode.trim() || null,
             couponLabel: couponLabel.trim() || null,
@@ -266,8 +266,6 @@ export default function SurveyWizardClient({
       description,
       accentColor,
       thankYouMessage,
-      kvkkText,
-      collectMarketingConsent,
       collectContact,
       couponCode,
       couponLabel,
@@ -384,12 +382,8 @@ export default function SurveyWizardClient({
             setAccentColor={setAccentColor}
             thankYouMessage={thankYouMessage}
             setThankYouMessage={setThankYouMessage}
-            kvkkText={kvkkText}
-            setKvkkText={setKvkkText}
             collectContact={collectContact}
             setCollectContact={setCollectContact}
-            collectMarketingConsent={collectMarketingConsent}
-            setCollectMarketingConsent={setCollectMarketingConsent}
             couponCode={couponCode}
             setCouponCode={setCouponCode}
             couponLabel={couponLabel}
@@ -919,12 +913,8 @@ function Step4Appearance({
   setAccentColor,
   thankYouMessage,
   setThankYouMessage,
-  kvkkText,
-  setKvkkText,
   collectContact,
   setCollectContact,
-  collectMarketingConsent,
-  setCollectMarketingConsent,
   couponCode,
   setCouponCode,
   couponLabel,
@@ -936,12 +926,8 @@ function Step4Appearance({
   setAccentColor: (v: string) => void;
   thankYouMessage: string;
   setThankYouMessage: (v: string) => void;
-  kvkkText: string;
-  setKvkkText: (v: string) => void;
   collectContact: boolean;
   setCollectContact: (v: boolean) => void;
-  collectMarketingConsent: boolean;
-  setCollectMarketingConsent: (v: boolean) => void;
   couponCode: string;
   setCouponCode: (v: string) => void;
   couponLabel: string;
@@ -1008,16 +994,11 @@ function Step4Appearance({
           />
         </Field>
 
-        <Field label={t.survey_form_kvkk_label} hint={`${kvkkText.length} / 4000`}>
-          <textarea
-            value={kvkkText}
-            onChange={(e) => setKvkkText(e.target.value.slice(0, 4000))}
-            placeholder={t.survey_form_kvkk_placeholder}
-            className="bz-input min-h-[100px]"
-            maxLength={4000}
-          />
-        </Field>
-
+        {/* Stage B — KVKK textarea + marketing consent checkbox removed.
+            Survey public form now renders Buaze-managed /kvkk + /acik-riza
+            links (same pattern as /r/[slug]); per-survey owner override
+            no longer exists. `collectContact` (e-mail/phone field) is a UX
+            choice and stays. */}
         <div className="space-y-2 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
           <label className="flex items-start gap-2 text-sm">
             <input
@@ -1028,15 +1009,11 @@ function Step4Appearance({
             />
             <span>{t.survey_form_collect_contact}</span>
           </label>
-          <label className="flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={collectMarketingConsent}
-              onChange={(e) => setCollectMarketingConsent(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-[#EDEDED]"
-            />
-            <span>{t.survey_form_collect_marketing}</span>
-          </label>
+          <p className="text-[11px] text-[#737373]">
+            {locale === 'tr'
+              ? 'KVKK Aydınlatma Metni ve İletişim İzni, Buaze tarafından yönetilir; her ankette otomatik olarak gösterilir.'
+              : 'KVKK notice & marketing consent are managed by Buaze and shown automatically on every survey.'}
+          </p>
         </div>
 
         {/* Coupon (design handoff Stage 99 — Sana özel kupon kartı) */}

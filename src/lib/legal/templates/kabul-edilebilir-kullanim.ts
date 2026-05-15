@@ -59,6 +59,23 @@ Bu politikaya aykırı davranış tespit edildiğinde {{COMPANY_NAME}} aşağıd
 - Yetkili kamu kurumlarına bildirimde bulunulması (5651 m. 8/13 + TCK ihlali),
 - Üçüncü kişi taleplerinin kullanıcıya rücu edilmesi.
 
+### 5.1 Sahte yorum / review-gating manipülasyonu — özel yaptırım
+
+Sahte yorum üretimi, ücret karşılığı yorum, yıldız zorlama veya Buaze yönlendirme motorunu hile ile review-gating'e dönüştürme tespit edildiğinde otomatik olarak:
+
+- Hesap derhal feshedilir,
+- 3 (üç) ay süreyle aynı işletme/yönetici Buaze platformuna **yeniden kayıt yasağı** uygulanır,
+- Üretilen sahte yorumlar arşivlenir ve Google + ilgili 3. parti platformlara teknik delille bildirilir (Google Ads Policy m. "Fake Reviews"),
+- Tüketici aldatması nedeniyle açılabilecek davalarda Buaze kanıt sunma hakkını saklı tutar.
+
+### 5.2 KVKK / telif / kanun ihlali — yargısız fesih
+
+KVKK ihlali (yetkisiz veri yükleme, 3. kişi PII paylaşımı), telif hakkı ihlali (markaya/eserlere yetkisiz kullanım) veya 5651 / TCK kapsamına giren içerik tespit edilirse Buaze, **0 (sıfır) ihtar süresi ile** hesabı askıya alır veya feshederek erişimi keser. Yetkili merciler tarafından kararlaştırılan içerik kaldırma talepleri en geç 4 saat içinde uygulanır.
+
+### 5.3 Tekrarlı ihlal — 3-strike kuralı
+
+Aynı kullanıcı 90 (doksan) gün içinde **3 (üç) ayrı uyarı** alırsa, Buaze 4. ihlalde herhangi bir ek değerlendirme yapmaksızın hesabı **kalıcı olarak fesheder**. Kalıcı fesih sonrası tüm ödenmiş ücretler Buaze'de kalır.
+
 Buaze, ihlalden dolayı **doğrudan veya dolaylı zarar görmesi** halinde tazminat hakkını saklı tutar. Kullanıcı, ihlal sebebiyle Buaze aleyhine açılan davalarda Buaze'yi **savunma maliyeti dahil** zararsız tutmayı taahhüt eder (indemnity).
 
 ## 6. İhbar ve şikâyet mekanizması
@@ -124,6 +141,23 @@ When a breach is detected, {{COMPANY_NAME}} may apply the following measures **w
 - Forfeiture of paid subscription fees,
 - Reporting to competent public authorities (Internet Law Art. 8/13 + Penal Code violations),
 - Recourse / chargeback of any third-party claim against the user.
+
+### 5.1 Fake reviews / review-gating manipulation — special enforcement
+
+When fake-review production, paid reviews, star-rating coercion or fraudulent use of Buaze's routing engine for review-gating is detected, automatically:
+
+- The account is terminated immediately,
+- The business / operator is **banned from re-registering** on Buaze for 3 (three) months,
+- Fake reviews are archived and reported with technical evidence to Google + relevant third-party platforms (Google Ads Policy "Fake Reviews"),
+- Buaze reserves the right to submit evidence in any consumer-deception lawsuit.
+
+### 5.2 KVKK / IP / criminal violations — extrajudicial termination
+
+For KVKK violations (unauthorised data uploads, sharing third-party PII), IP infringement (unauthorised brand/work use) or content falling under Internet Law No. 5651 / Penal Code, Buaze suspends or terminates the account with **0 (zero) cure period**. Authority-ordered takedowns are executed within 4 hours.
+
+### 5.3 Repeated violations — 3-strike rule
+
+If a user receives **3 separate warnings within 90 (ninety) days**, Buaze **permanently terminates** the account on the 4th violation without further review. All paid fees are forfeited.
 
 Buaze reserves the right to claim compensation for damages — direct or indirect — arising from the breach. The user agrees to **indemnify and hold Buaze harmless** (including defence costs) in any third-party claim caused by the user's breach.
 

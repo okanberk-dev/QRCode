@@ -15,7 +15,6 @@ import {
   TITLE_MAX,
   DESCRIPTION_MAX,
   THANK_YOU_MAX,
-  KVKK_TEXT_MAX,
   QUESTION_TEXT_MAX,
   OPTIONS_MIN,
   OPTIONS_MAX,
@@ -48,8 +47,10 @@ const CreateBody = z
       .optional()
       .nullable(),
     thankYouMessage: z.string().max(THANK_YOU_MAX).optional().nullable(),
-    kvkkText: z.string().max(KVKK_TEXT_MAX).optional().nullable(),
-    collectMarketingConsent: z.boolean().optional().default(false),
+    // Stage B — kvkkText + collectMarketingConsent removed from owner UI/API.
+    // Public survey form uses Buaze-managed /kvkk + /acik-riza pages (§19.1).
+    // Schema columns are kept (deprecated) for backward compat; new rows
+    // never write to them.
     collectContact: z.boolean().optional().default(true),
     couponCode: z.string().max(40).optional().nullable(),
     couponLabel: z.string().max(120).optional().nullable(),
@@ -170,8 +171,6 @@ export async function POST(req: NextRequest) {
       publishedAt: data.isPublished ? new Date() : null,
       accentColor: data.accentColor || null,
       thankYouMessage: data.thankYouMessage?.trim() || null,
-      kvkkText: data.kvkkText?.trim() || null,
-      collectMarketingConsent: !!data.collectMarketingConsent,
       collectContact: data.collectContact !== false,
       couponCode: data.couponCode?.trim() || null,
       couponLabel: data.couponLabel?.trim() || null,

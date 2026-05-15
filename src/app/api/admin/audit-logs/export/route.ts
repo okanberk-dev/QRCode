@@ -84,7 +84,8 @@ export async function GET(req: NextRequest) {
 
   let entries: Array<{
     id: string;
-    actorId: string;
+    // Stage A — actorId nullable (KVKK hard-delete anonimizasyon).
+    actorId: string | null;
     actorSource: string;
     action: string;
     targetId: string | null;
@@ -112,12 +113,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'fetch_failed' }, { status: 500 });
   }
 
-  // Resolve actor labels (bulk fetch).
+  // Resolve actor labels (bulk fetch). Stage A — null actorId atlanır.
   const adminIds = Array.from(
-    new Set(entries.filter((e) => e.actorSource === 'admin').map((e) => e.actorId)),
+    new Set(
+      entries
+        .filter((e) => e.actorSource === 'admin' && e.actorId)
+        .map((e) => e.actorId as string),
+    ),
   );
   const userIds = Array.from(
-    new Set(entries.filter((e) => e.actorSource === 'user').map((e) => e.actorId)),
+    new Set(
+      entries
+        .filter((e) => e.actorSource === 'user' && e.actorId)
+        .map((e) => e.actorId as string),
+    ),
   );
   let adminUsers: Array<{ id: string; username: string; email: string | null }> = [];
   let users: Array<{ id: string; email: string; name: string | null }> = [];
@@ -149,11 +158,13 @@ export async function GET(req: NextRequest) {
 
   const lines = [headers.map(csvEscape).join(',')];
   for (const e of entries) {
-    let actorLabel = e.actorId;
-    if (e.actorSource === 'admin') {
+    // Stage A — anonimleştirilmiş satırlarda actorId null; label sütununa
+    // "—" yazılır, audit izi korunur.
+    let actorLabel: string = e.actorId ?? '—';
+    if (e.actorSource === 'admin' && e.actorId) {
       const a = adminMap.get(e.actorId);
       if (a) actorLabel = a.username;
-    } else if (e.actorSource === 'user') {
+    } else if (e.actorSource === 'user' && e.actorId) {
       const u = userMap.get(e.actorId);
       if (u) actorLabel = u.name || u.email;
     }

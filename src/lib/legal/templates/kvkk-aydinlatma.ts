@@ -114,7 +114,18 @@ Haklarınızı kullanmak için "Veri Sorumlusuna Başvuru Usul ve Esasları Hakk
 
 başvurabilirsiniz. Başvurularınız en geç 30 gün içinde ücretsiz olarak sonuçlandırılır. Talebin niteliği gereği maliyet doğması halinde Kişisel Verileri Koruma Kurulu tarafından belirlenen tarifedeki ücret talep edilebilir.
 
-## 10. Güncellemeler
+## 10. Birlikte okunan belgeler
+
+Bu Aydınlatma Metni, aşağıdaki belgelerle birlikte okunur ve uygulanır:
+
+- [Açık Rıza Metni](/acik-riza) — pazarlama, profilleme ve yurt dışı veri aktarımı için açık rıza beyanı,
+- [Ticari Elektronik İleti İzni](/ticari-ileti) — ETK m. 6 kapsamında onay süreci ve IYS kaydı,
+- [Çerez Politikası](/cookie) — ePrivacy + KVKK Kurulu uyumlu çerez kullanımı,
+- [Veri İşleyici Sözleşmesi (DPA)](/veri-isleyici-sozlesmesi) — işletme veri sorumluları için alt-yüklenici listesi ve sorumluluk dağılımı.
+
+Pazarlama içerikli iletişim için detaylar [Ticari Elektronik İleti İzni](/ticari-ileti) ve [Açık Rıza Metni](/acik-riza) sayfalarındadır.
+
+## 11. Güncellemeler
 
 Bu metin, mevzuat değişiklikleri veya işleme süreçlerimizdeki güncellemeler doğrultusunda revize edilebilir. Güncel sürüm her zaman bu sayfada yayımlanır; yürürlük tarihi metnin başında belirtilir.`,
 };
@@ -215,7 +226,18 @@ You may exercise your rights — pursuant to the Communiqué on Application Proc
 
 Applications are answered free of charge within 30 days. A fee set by the Personal Data Protection Authority may apply if the request entails additional cost.
 
-## 10. Updates
+## 10. Documents read together
+
+This Notice is read together with:
+
+- [Explicit Consent Notice](/acik-riza) — explicit consent for marketing, profiling and cross-border transfers,
+- [Commercial Electronic Message Consent](/ticari-ileti) — opt-in flow and IYS registration under Law No. 6563 Art. 6,
+- [Cookie Policy](/cookie) — ePrivacy + Turkish DPA-compliant cookie use,
+- [Data Processing Agreement (DPA)](/veri-isleyici-sozlesmesi) — sub-processor list and liability allocation for business data controllers.
+
+For marketing communications, see [Commercial Electronic Message Consent](/ticari-ileti) and [Explicit Consent Notice](/acik-riza).
+
+## 11. Updates
 
 This notice may be revised in line with regulatory or operational changes. The latest version is always published here; the effective date appears at the top.`,
 };

@@ -29,10 +29,22 @@ Bu politika, {{COMPANY_NAME}} tarafından sunulan SaaS aboneliğinin iptali ve i
 - İptal sonrası ödenmiş dönem sonuna kadar hizmet alınmaya devam edilir; **dönem sonunda otomatik yenileme yapılmaz**.
 - Aboneliğin yenilendiği gün dahilinde aynı dönem için iptal talep edilirse, hizmet henüz **kullanılmamış** ise tam iade yapılır; başlatılmışsa kısmi iade kuralı (m. 2) uygulanır.
 
+### 3.1 Yarım kullanılmış aylık abonelik
+
+Aylık abonelik döneminde aboneliği erken sonlandıran üye için **pro-rata (orantılı) iade yapılmaz** — bu, dijital hizmet niteliği ve hizmetin tüm ay boyunca erişilebilir olması sebebiyledir (TKHK m. 15/1-h). Üye, dönem bitimine kadar hizmet kullanma hakkını korur; yenileme tarihi geldiğinde abonelik otomatik kapanır.
+
+Cayma hakkı süresi (m. 2) ve hizmet ifa edilmemesi gibi yasal istisnalar bu kuraldan etkilenmez.
+
+### 3.2 Fiyat / kapsam değişikliği sonrası iptal
+
+Buaze, [Kullanım Sözleşmesi](/kullanim-sozlesmesi) m. 16 ve [Kullanım Şartları](/kullanim-sartlari) m. 6 uyarınca fiyat veya plan kapsamını 30 (otuz) gün önceden bildirim ile değiştirebilir. Bu değişiklik üyeye fesih hakkı vermez; mevcut plan abonelik dönemi sonuna kadar **eski kapsam + eski fiyat** ile devam eder. Sonraki dönemde yeni kapsam / fiyat geçerli olur.
+
+Üye yeni kapsamı kabul etmiyorsa abonelik döneminin sonunda yenileme yapmayarak ayrılabilir; ancak içinde bulunulan dönemin iadesi talep edilemez.
+
 ## 4. İade hesabı
 
-- Aylık abonelik: kullanılan gün sayısı × günlük birim fiyat tutarı kesilir.
-- Yıllık abonelik: kullanılan ay sayısı × aylık birim fiyat tutarı kesilir; kalan iade edilir.
+- Aylık abonelik: **pro-rata iade yok** (m. 3.1) — kullanılan gün hesabı sadece cayma hakkı süresinde uygulanır.
+- Yıllık abonelik: kullanılan ay sayısı × aylık birim fiyat tutarı kesilir; kalan iade edilir (cayma hakkı kapsamında).
 - Hediye / promosyon dönemi varsa, indirim yansıması iadeden düşülür.
 - Vergi (KDV) iade tutarına dahil olarak hesaplanır; fatura iptal / iade faturası ile düzenlenir.
 
@@ -96,10 +108,22 @@ This policy explains how {{COMPANY_NAME}} handles cancellation and refund reques
 - After cancellation, the service remains active until the end of the paid period; **no auto-renewal** at period end.
 - If cancellation is requested on the day of renewal and the new period has not been used, a full refund is issued; otherwise the pro-rata rule (Section 2) applies.
 
+### 3.1 Partially used monthly subscription
+
+For users who end a monthly subscription early, **no pro-rata refund** is provided — the service is a digital subscription available throughout the month (Law No. 6502 Art. 15/1-h). The user retains access until the end of the billing period; auto-renewal stops at the renewal date.
+
+Statutory exceptions (the withdrawal window in Section 2, non-performance, etc.) are not affected.
+
+### 3.2 Cancellation after price / scope changes
+
+Under [User Agreement](/kullanim-sozlesmesi) Section 16 and [Terms](/kullanim-sartlari) Section 6, Buaze may amend pricing or plan scope with **30 (thirty) days'** prior notice. Such changes **do not give the user a right to terminate**; the current plan continues at the **old scope and price** until the end of the period. The new scope / price applies in the following period.
+
+If the user does not accept the new scope, they may simply not renew at the end of the period; the current period is not refundable.
+
 ## 4. Refund calculation
 
-- Monthly subscription: charge = days used × daily unit price.
-- Annual subscription: charge = months used × monthly unit price; remainder refunded.
+- Monthly subscription: **no pro-rata refund** (Section 3.1) — daily-usage maths only applies inside the withdrawal window.
+- Annual subscription: charge = months used × monthly unit price; remainder refunded (within the withdrawal window).
 - Promotional discounts are deducted from the refund.
 - VAT is included in the refund; an invoice cancellation / credit note is issued.
 

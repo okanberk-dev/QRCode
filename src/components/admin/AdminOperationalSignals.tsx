@@ -22,7 +22,9 @@ import { actionLabel } from '@/lib/audit-log';
 export interface OperationalSignalRow {
   id: string;
   action: string;
-  actorId: string;
+  // Stage A — actorId nullable; the KVKK hard-delete flow severs the
+  // actor reference but keeps the row for an unbroken audit trail.
+  actorId: string | null;
   actorSource: string;
   targetId: string | null;
   createdAt: Date;
@@ -86,7 +88,8 @@ function SignalRow({ row, accent }: { row: OperationalSignalRow; accent: 'lime' 
           )}
         </div>
         <div className="mt-0.5 text-[11px] text-[#737373]">
-          {row.actorName || row.actorId.slice(0, 6) + '…'} · {formatRelative(row.createdAt)}
+          {row.actorName || (row.actorId ? row.actorId.slice(0, 6) + '…' : 'Anonim')} ·{' '}
+          {formatRelative(row.createdAt)}
         </div>
       </div>
     </div>

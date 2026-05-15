@@ -501,29 +501,31 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
           <p className="pulse-eyebrow text-[#A3A3A3]">
             © {new Date().getFullYear()} BUAZE BİLİŞİM A.Ş. · İSTANBUL
           </p>
-          {/* Legal mini-links — compact bottom-of-funnel surface */}
+          {/* Stage D (legal-compliance-update) — footer legal-link strip
+              trimmed to the minimum required by Turkish law:
+                · KVKK Art.10 → KVKK Aydınlatma Metni
+                · KVKK Art.5/1 → Açık Rıza Metni (forms collect consent)
+                · ePrivacy + KVKK Kurulu → Çerez Politikası
+                · 6563 e-Commerce + TBK → Kullanım Şartları
+                · 6502 TKHK + Distance Contracts Reg. → Mesafeli Sözleşme
+                · TKHK Art.11 → İade / İptal Politikası
+              Other legal pages (Gizlilik, Ticari İleti, Sözleşme,
+              Kabul Edilebilir Kullanım, Google Uyumu) stay in the sitemap
+              and are linked from inside KVKK / Şartlar / Sözleşme pages
+              (Stage C inline cross-references). */}
           <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             {[
-              { label: isTr ? 'Gizlilik' : 'Privacy', href: `${base}/privacy` },
-              ...(isTr ? [{ label: 'KVKK', href: `${base}/kvkk` }] : []),
-              { label: isTr ? 'Şartlar' : 'Terms', href: `${base}/terms` },
+              { label: isTr ? 'KVKK' : 'Privacy', href: `${base}/kvkk` },
+              ...(isTr ? [{ label: 'Açık Rıza', href: `${base}/acik-riza` }] : []),
               { label: isTr ? 'Çerez' : 'Cookies', href: `${base}/cookie` },
+              { label: isTr ? 'Şartlar' : 'Terms', href: `${base}/terms` },
               ...(isTr
-                ? [
-                    { label: 'Açık Rıza', href: `${base}/acik-riza` },
-                    { label: 'Ticari İleti', href: `${base}/ticari-ileti` },
-                    { label: 'Sözleşme', href: `${base}/kullanim-sozlesmesi` },
-                    { label: 'Mesafeli Sözleşme', href: `${base}/mesafeli-hizmet-sozlesmesi` },
-                    { label: 'İade & İptal', href: `${base}/iade-iptal-politikasi` },
-                    { label: 'Kullanım Politikası', href: `${base}/kabul-edilebilir-kullanim` },
-                  ]
-                : [
-                    { label: 'Agreement', href: `${base}/kullanim-sozlesmesi` },
-                    { label: 'Distance Contract', href: `${base}/mesafeli-hizmet-sozlesmesi` },
-                    { label: 'Refund Policy', href: `${base}/iade-iptal-politikasi` },
-                    { label: 'Acceptable Use', href: `${base}/kabul-edilebilir-kullanim` },
-                  ]),
-              { label: isTr ? 'Google Uyumu' : 'Google compliance', href: `${base}/google-compliance` },
+                ? [{ label: 'Mesafeli Sözleşme', href: `${base}/mesafeli-hizmet-sozlesmesi` }]
+                : []),
+              {
+                label: isTr ? 'İade & İptal' : 'Refund Policy',
+                href: `${base}/iade-iptal-politikasi`,
+              },
             ].map((item) => (
               <li key={item.href}>
                 <Link

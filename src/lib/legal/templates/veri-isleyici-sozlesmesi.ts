@@ -58,18 +58,25 @@ Buaze, KVKK m. 12/3 uyarınca veri sorumlusu ile birlikte veri güvenliğinden m
 
 ## 6. Alt veri işleyenler
 
-Buaze, hizmetin sunulması için aşağıdaki kategori alt yüklenicileri kullanır:
+Buaze, hizmetin sunulması için aşağıdaki alt yüklenicileri **açıkça onaylı** olarak kullanır:
 
-- Bulut altyapı (sunucu / veri tabanı barındırma)
-- E-posta gönderim sağlayıcısı
-- Hata izleme / gözlem (Sentry vb.)
-- Ödeme altyapısı
+| Alt yüklenici | Hizmet kategorisi | Veri lokasyonu |
+|---|---|---|
+| Supabase | PostgreSQL veritabanı + dosya depolama | EU (Frankfurt) |
+| Vercel | Hosting / serverless çalıştırma | ABD (us-east-1) |
+| Resend | İşlemsel e-posta gönderimi | ABD |
+| OpenAI | Pulse AI yanıt önerileri (taslak) | ABD |
+| Sentry | Hata izleme + performans | ABD |
+| Upstash | Rate limit + cache | EU (Frankfurt) |
+| Firebase | Google OAuth (yalnız oturum açma) | AB / ABD |
 
-Güncel alt yüklenici listesi {{LEGAL_CONTACT_EMAIL}} adresinden talep üzerine sağlanır. Yeni alt yüklenici eklenmesi durumunda 30 gün önceden bildirim yapılır; İşletme makul gerekçe ile itiraz edebilir.
+İşletme, hesap oluşturarak bu alt yüklenici listesini açıkça kabul eder. Yeni alt yüklenici eklenmesi durumunda 30 gün önceden bildirim yapılır; İşletme makul gerekçe ile itiraz edebilir, itirazı kabul edilirse hizmet etkilenen kısımda yeniden konfigüre edilir veya İşletme dönem sonunda aboneliği fesheder (iade yapılmaz).
 
 ## 7. Yurt dışı aktarım
 
-KVKK m. 9 koşulları (yeterli korumaya sahip ülke kararı veya taahhütname) sağlanmadıkça yurt dışına aktarım yapılmaz. Mevcut altyapı sağlayıcılarımızın bulunduğu bölgeler {{LEGAL_CONTACT_EMAIL}} adresinden talep üzerine paylaşılır.
+KVKK m. 9 kapsamında, alt-yüklenicilerin bulunduğu ülkelere veri aktarımı gerçekleşir. **ABD** (Vercel, Resend, OpenAI, Sentry, Firebase) için Kişisel Verileri Koruma Kurulu'nun yeterli koruma kararı bulunmadığından, transfer KVKK m. 9/2(b) **açık rıza** ve/veya m. 9/2(a) **taahhütname** çerçevesinde yapılır.
+
+İşletme, platformu kullanmaya başlamasıyla yurt dışı aktarım açık rızasını verir; aktarım yalnızca yukarıdaki tabloda belirtilen amaçlarla yapılır. Açık rıza geri alındığında ilgili hizmet özellikleri (Pulse AI taslak, transactional mail, hata izleme) devre dışı kalır.
 
 ## 8. Veri ihlali bildirimi
 
@@ -79,7 +86,13 @@ KVKK m. 9 koşulları (yeterli korumaya sahip ülke kararı veya taahhütname) s
 
 ## 9. Denetim hakkı
 
-İşletme, yılda bir kez ve makul süre öncesinden bildirim yaparak, Buaze'nin bu sözleşmeye ve KVKK m. 12'ye uyumunu denetleyebilir. Denetim; uzaktan veya kabul edilmiş üçüncü taraf denetim raporu (örn. ISO 27001) ile yürütülür.
+İşletme, KVKK m. 12 uyumunu yalnızca **belgesel inceleme** yoluyla doğrulayabilir. Buaze, talep üzerine ve yılda bir kez:
+
+- Güvenlik politika özetlerini,
+- Varsa SOC 2 / ISO 27001 türü 3. taraf denetim raporlarının kapak ve sonuç sayfalarını,
+- Yıllık veri ihlali istatistiklerini (anonimleştirilmiş) paylaşır.
+
+Bu hak, **Buaze altyapısına yerinde fiziksel erişim, kaynak kod incelemesi, çalışan görüşmesi veya altyapı testleri içermez**. KVKK Kurulu'nun yasal soruşturma talepleri saklıdır. Daha kapsamlı denetim ihtiyacı doğarsa taraflar ek protokol imzalayarak masrafı talep eden tarafın üstlendiği bir çerçeve belirler.
 
 ## 10. Sözleşme süresi ve sona erme
 
@@ -149,18 +162,25 @@ Under KVKK Art. 12/3 Buaze is jointly responsible with the controller for data s
 
 ## 6. Sub-processors
 
-Buaze relies on the following categories of sub-processors:
+Buaze relies on the following **explicitly approved** sub-processors:
 
-- Cloud infrastructure (hosting and database)
-- E-mail provider
-- Error tracking / observability (e.g. Sentry)
-- Payment processor
+| Sub-processor | Service category | Data region |
+|---|---|---|
+| Supabase | PostgreSQL database + file storage | EU (Frankfurt) |
+| Vercel | Hosting / serverless runtime | USA (us-east-1) |
+| Resend | Transactional e-mail | USA |
+| OpenAI | Pulse AI draft suggestions | USA |
+| Sentry | Error tracking + performance | USA |
+| Upstash | Rate limit + cache | EU (Frankfurt) |
+| Firebase | Google OAuth (sign-in only) | EU / USA |
 
-The current list is available on request from {{LEGAL_CONTACT_EMAIL}}. Buaze gives 30 days' notice before adding a new sub-processor; the Business may object on reasonable grounds.
+By creating an account the Business expressly accepts this sub-processor list. Buaze gives 30 days' notice before adding a new sub-processor; the Business may object on reasonable grounds, in which case the affected service is reconfigured or the Business may terminate the subscription at the end of the period (no refund).
 
 ## 7. Cross-border transfers
 
-No transfers outside Türkiye are made unless KVKK Art. 9 requirements (adequacy decision or undertaking) are met. Provider regions are available on request.
+Personal data is transferred to sub-processor regions listed above. **USA transfers** (Vercel, Resend, OpenAI, Sentry, Firebase) take place under KVKK Art. 9/2(b) **explicit consent** and/or Art. 9/2(a) **undertaking**, since the Turkish data protection authority has not issued an adequacy decision for the USA.
+
+The Business gives explicit consent for cross-border transfers when activating the platform; transfers are limited to the purposes listed in the table above. If consent is withdrawn, the related service features (Pulse AI drafts, transactional mail, error tracking) are disabled.
 
 ## 8. Data breach notification
 
@@ -170,7 +190,13 @@ No transfers outside Türkiye are made unless KVKK Art. 9 requirements (adequacy
 
 ## 9. Audit right
 
-The Business may audit Buaze's compliance with this agreement and KVKK Art. 12 once per year, with reasonable prior notice. Audits may be conducted remotely or via accepted third-party reports (e.g. ISO 27001).
+The Business may verify Buaze's KVKK Art. 12 compliance by **documentary review only**. On request, once per year, Buaze shares:
+
+- A summary of its security policies,
+- Where available, the cover and summary pages of third-party audit reports (SOC 2 / ISO 27001),
+- Anonymised annual data-breach statistics.
+
+This right **does not include** on-site physical access, source-code review, staff interviews or infrastructure testing. KVKK Authority statutory investigations are unaffected. If a more extensive audit becomes necessary, the parties shall sign an additional protocol whose costs are borne by the requesting party.
 
 ## 10. Term and termination
 
