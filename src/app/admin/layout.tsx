@@ -3,7 +3,12 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import AnnouncementBanner, { type DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
-import { isAdminRole, verifyJwt, type PanelActor } from '@/lib/auth';
+import {
+  isAdminRole,
+  verifyAdminTokenForLayout,
+  verifyJwt,
+  type PanelActor,
+} from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { AdminTranslationProvider } from '@/components/admin/AdminTranslationProvider';
 import { loadAdminPanelProfile, type AdminPanelProfile } from '@/lib/admin-profile';
@@ -76,7 +81,11 @@ export default async function AdminLayout({
 
   try {
     if (token) {
-      payload = await verifyJwt(token);
+      // CLAUDE.md §38 audit-api-401 — staleness-aware verifier matches the
+      // API gate. Without it a token issued before the most recent admin
+      // password rotation would render the panel chrome only for every
+      // downstream fetch to 401.
+      payload = await verifyAdminTokenForLayout(token);
       const role = getStringClaim(payload, 'role');
       isAuthenticated = !!payload && isAdminRole(role);
       if (isAuthenticated && role) {
