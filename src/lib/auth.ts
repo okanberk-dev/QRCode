@@ -432,6 +432,94 @@ export async function getAdminFromRequest(req: NextRequest) {
   return payload;
 }
 
+/**
+ * Layout-friendly verifier — same gate as `getUserFromRequest` minus the
+ * NextRequest dependency. Server components use `cookies()` from
+ * `next/headers` and don't have a NextRequest, so this is the shape they
+ * can call before deciding to `redirect()`.
+ *
+ * Returns the JWT payload when:
+ *   - signature valid
+ *   - `userId` claim present
+ *   - UserSession row not revoked (or missing within the legacy tiers /
+ *     sessionless-issuer recovery window — same matrix as
+ *     `isUserSessionRevoked`)
+ *
+ * Returns null when:
+ *   - signature invalid / missing claim
+ *   - UserSession row revoked
+ *   - post-Stage-19 token with no UserSession row (fail-closed)
+ *   - DB error (fail-closed, mirroring API behaviour)
+ *
+ * Recovery path (`recoverMissingUserSession`) is NOT triggered here —
+ * it needs user-agent + IP from the request. If a token is in the
+ * recovery window with no session row, the layout passes through and
+ * the next API call (with NextRequest) handles the self-heal. The
+ * trade-off: one extra page load before the row is recreated, but the
+ * user is never bounced to login during the legitimate recovery window.
+ *
+ * CLAUDE.md §38 audit-api-401 fix — without this, dashboard layout +
+ * APIs disagreed on whether a token was still valid. Users with revoked
+ * sessions could land on the dashboard but every fetch returned 401
+ * (NotificationBell polling, realtime-token refresh, audits/templates,
+ * etc.). Layout now matches API; revoked sessions redirect to login.
+ */
+export async function verifyUserTokenForLayout(
+  rawToken: string,
+): Promise<jose.JWTPayload | null> {
+  const payload = await verifyJwt(rawToken);
+  if (!payload || typeof payload.userId !== 'string') return null;
+
+  try {
+    const tokenHash = hashToken(rawToken);
+    const session = await prisma.userSession.findUnique({
+      where: { tokenHash },
+      select: { revokedAt: true },
+    });
+
+    if (session) {
+      if (session.revokedAt !== null) return null;
+      return payload;
+    }
+
+    // Session row missing — replicate tier matrix from
+    // `isUserSessionRevoked`. Keep these branches in sync if the API
+    // helper changes; the two MUST agree, otherwise the 401-spam bug
+    // re-emerges.
+    const iatSeconds = typeof payload.iat === 'number' ? payload.iat : null;
+    const iatMs = iatSeconds ? iatSeconds * 1000 : null;
+
+    // Tier 1 — pre-Stage-14 legacy cookies: silent pass.
+    if (iatMs !== null && iatMs < STAGE_14_HOTFIX_BOUNDARY_MS) return payload;
+    // Tier 2 — Stage 14↔Stage 19 transition window: silent pass.
+    if (iatMs !== null && iatMs < STAGE_19_FAILCLOSED_BOUNDARY_MS) return payload;
+    // Recovery window — pass through; next API call self-heals.
+    if (iatMs !== null && iatMs < SESSIONLESS_ISSUER_FIX_BOUNDARY_MS) return payload;
+
+    // Tier 3 — post-Stage-19, post-hotfix, no session row: fail closed.
+    return null;
+  } catch {
+    // DB error → fail closed (consistent with API helper).
+    return null;
+  }
+}
+
+/**
+ * Layout-friendly admin verifier — same gate as `getAdminFromRequest`
+ * minus the NextRequest dependency. Used by `admin/layout.tsx` and the
+ * admin-as-owner branch in `dashboard/layout.tsx` so a token rotated
+ * after a password reset can't keep a logged-in admin floating on a
+ * page where every API call 401s.
+ */
+export async function verifyAdminTokenForLayout(
+  rawToken: string,
+): Promise<jose.JWTPayload | null> {
+  const payload = await verifyJwt(rawToken);
+  if (!payload || !isAdminRole(payload.role)) return null;
+  if (await isAdminTokenStale(payload)) return null;
+  return payload;
+}
+
 export async function getUserFromRequest(req: NextRequest) {
   const rawToken = req.cookies.get('user_token')?.value || getBearerToken(req);
   if (!rawToken) return null;

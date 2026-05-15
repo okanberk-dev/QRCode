@@ -1,7 +1,12 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { verifyJwt, isAdminRole, type PanelActor } from '@/lib/auth';
+import {
+  isAdminRole,
+  verifyAdminTokenForLayout,
+  verifyUserTokenForLayout,
+  type PanelActor,
+} from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getScopedRestaurantIds, getTeamMemberRole } from '@/lib/panel-access';
 import UserDashboardShell from '@/components/dashboard/UserDashboardShell';
@@ -74,9 +79,13 @@ export default async function DashboardLayout({
   // an admin_token (not a user_token), so we let them through with a thin
   // "Admin görünümü" bar instead of the owner shell. The underlying APIs
   // gate on requireRestaurantAccess which already allows these roles.
+  //
+  // CLAUDE.md §38 audit-api-401 — use the staleness-aware verifier so a
+  // password-rotated admin token doesn't render this branch only for every
+  // API call to 401.
   const adminToken = cookieStore.get('admin_token')?.value;
   if (adminToken) {
-    const adminPayload = await verifyJwt(adminToken);
+    const adminPayload = await verifyAdminTokenForLayout(adminToken);
     if (adminPayload && isAdminRole(adminPayload.role)) {
       return (
         <div className="min-h-screen bg-[#FFFFFF]">
@@ -105,7 +114,12 @@ export default async function DashboardLayout({
     redirect(`/${locale}/auth/login`);
   }
 
-  const payload = await verifyJwt(token);
+  // CLAUDE.md §38 audit-api-401 — full session check (matches API
+  // `getUserFromRequest`). Bare `verifyJwt` previously admitted tokens
+  // whose UserSession was revoked (logout-elsewhere, password reset,
+  // post-Stage-19 missing row) — APIs rejected them and the user
+  // bounced between rendering and 401 spam.
+  const payload = await verifyUserTokenForLayout(token);
   if (!payload || typeof payload.userId !== 'string') {
     redirect(`/${locale}/auth/login`);
   }
