@@ -70,3 +70,23 @@ export type {
   MonthlyHealthReportParams,
   MonthlyHealthReportRecommendation,
 } from './monthly-health-report';
+
+// Wave B1 (CLAUDE.md §38.B) — password-changed security alert.
+// /api/user/profile PUT içinde şifre alanı set edildiğinde tetiklenir.
+export { renderPasswordChanged } from './password-changed';
+export type { PasswordChangedParams } from './password-changed';
+
+// Wave B2 (CLAUDE.md §38.B) — team-member-joined owner confirmation.
+// /api/team/accept-invite POST sonrası, davet eden owner'a bilgi.
+export { renderTeamMemberJoined } from './team-member-joined';
+export type { TeamMemberJoinedParams } from './team-member-joined';
+
+// Wave B3 (CLAUDE.md §38.B) — team-member-removed owner audit confirmation.
+// /api/team/[id] DELETE sonrası, owner'a "kim çıkarıldı" kaydı + audit log link.
+export { renderTeamMemberRemoved } from './team-member-removed';
+export type { TeamMemberRemovedParams } from './team-member-removed';
+
+// Wave B5 (CLAUDE.md §38.B) — first feedback activation celebration.
+// /api/feedback POST sonrası `count === 1` durumunda fire-once.
+export { renderFirstFeedbackCelebration } from './first-feedback-celebration';
+export type { FirstFeedbackCelebrationParams } from './first-feedback-celebration';

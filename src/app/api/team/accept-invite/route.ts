@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getClientIp, rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { isStrongPassword } from '@/lib/validations';
 import { issueLoginSession } from '@/app/api/auth/login/route';
+import { sendTeamMemberJoinedEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -70,6 +71,81 @@ const ROLE_LABELS_EN: Record<string, string> = {
   staff: 'Staff',
   viewer: 'Viewer',
 };
+
+/**
+ * Wave B2 (CLAUDE.md §38.B) — fire-and-forget notification to the OWNER
+ * after a member successfully joins. Looks up owner contact + workspace
+ * restaurants in a single $transaction (CLAUDE.md §40.1) and dispatches
+ * the mail through the public sender (ops alert wired). Caller never
+ * awaits; any failure is contained inside the helper.
+ */
+async function notifyOwnerOfJoin(opts: {
+  ownerId: string;
+  memberId: string;
+  memberEmail: string;
+  memberName: string | null;
+  memberRole: string;
+}): Promise<void> {
+  try {
+    const [owner, memberRow] = await prisma.$transaction([
+      prisma.user.findUnique({
+        where: { id: opts.ownerId },
+        select: { email: true, name: true, locale: true },
+      }),
+      prisma.teamMember.findUnique({
+        where: { id: opts.memberId },
+        select: { locations: true },
+      }),
+    ]);
+    if (!owner?.email) return;
+
+    const ownerLocale: 'tr' | 'en' = owner.locale === 'en' ? 'en' : 'tr';
+    const roleLabel = ownerLocale === 'en'
+      ? (ROLE_LABELS_EN[opts.memberRole] ?? 'Member')
+      : (ROLE_LABELS_TR[opts.memberRole] ?? 'Üye');
+
+    // Resolve location names — same IDOR-safe path the GET handler uses.
+    const pinnedLocations = Array.isArray(memberRow?.locations)
+      ? (memberRow.locations as unknown[]).filter(
+          (value): value is string => typeof value === 'string' && value.length > 0,
+        )
+      : [];
+    const allLocations = pinnedLocations.length === 0;
+    const restaurants = allLocations
+      ? await prisma.restaurant.findMany({
+          where: { userId: opts.ownerId },
+          select: { name: true },
+          orderBy: { name: 'asc' },
+        })
+      : await prisma.restaurant.findMany({
+          where: { id: { in: pinnedLocations }, userId: opts.ownerId },
+          select: { name: true },
+          orderBy: { name: 'asc' },
+        });
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+    const teamUrl = `${appUrl}/${ownerLocale}/dashboard/account?section=team`;
+
+    await sendTeamMemberJoinedEmail({
+      to: owner.email,
+      ownerName: owner.name,
+      memberName: opts.memberName || opts.memberEmail,
+      roleLabel,
+      locationNames: allLocations ? null : restaurants.map((r) => r.name),
+      teamUrl,
+      locale: ownerLocale,
+    });
+  } catch (err) {
+    // Sender already logs/alerts on send failure; we only need to swallow
+    // unexpected throws (e.g. Prisma connection drop) so the caller's
+    // success path isn't gated on the notification.
+    console.error('[ACCEPT_INVITE] owner-notify failed', {
+      ownerId: opts.ownerId,
+      memberId: opts.memberId,
+      errName: err instanceof Error ? err.name : 'unknown',
+    });
+  }
+}
 
 export async function GET(req: NextRequest): Promise<NextResponse<InviteInfo | InviteError>> {
   maybeSweep();
@@ -204,6 +280,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     select: {
       id: true,
       email: true,
+      role: true,
       status: true,
       inviteTokenExpiresAt: true,
       ownerId: true,
@@ -270,6 +347,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         inviteTokenExpiresAt: null,
       },
     });
+
+    // Wave B2 — fire-and-forget owner notification. Member name comes from
+    // the existing User row (they're already in the system).
+    const existingUserName = await prisma.user
+      .findUnique({ where: { id: existingAccount.id }, select: { name: true } })
+      .then((u) => u?.name ?? null)
+      .catch(() => null);
+    notifyOwnerOfJoin({
+      ownerId: member.ownerId,
+      memberId: member.id,
+      memberEmail: member.email,
+      memberName: existingUserName,
+      memberRole: member.role,
+    }).catch(() => {
+      // already-swallowed inside helper, defence-in-depth
+    });
+
     return NextResponse.json({ ok: true, redirectTo: `/${localeStr}/dashboard` });
   }
 
@@ -330,6 +424,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       },
     });
     return user;
+  });
+
+  // Wave B2 — fire-and-forget owner notification for the new account path.
+  notifyOwnerOfJoin({
+    ownerId: member.ownerId,
+    memberId: member.id,
+    memberEmail: member.email,
+    memberName: name,
+    memberRole: member.role,
+  }).catch(() => {
+    // helper swallows internally; defence-in-depth catch
   });
 
   // Direct login — issueLoginSession cookie + UserSession row create yapar.

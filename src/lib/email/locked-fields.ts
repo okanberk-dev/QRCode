@@ -37,6 +37,14 @@ export const LOCKED_MAIL_FIELDS: Partial<Record<MailTemplateKey, Set<string>>> =
     'notYouTitle', // "Sen değil misin?" — abuse-recovery prompt
     'notYouBody', // ignore-mail security guidance
   ]),
+  // Wave B1 (CLAUDE.md §38.B) — password-changed security disclosure.
+  // Same phishing-defence rationale as forgot-password / verify-email.
+  'password-changed': new Set([
+    'statusText',  // "Başarılı · Şifre güncel" — change confirmation
+    'notYouTitle', // "Sen değil misin?" — abuse-recovery prompt
+    'notYouBody',  // security guidance copy
+    'notYouLink',  // reset CTA — must point at the genuine reset flow
+  ]),
 };
 
 export function isFieldLocked(templateKey: string, fieldKey: string): boolean {
