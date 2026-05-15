@@ -27,6 +27,7 @@ import { BusinessActivityLogSettings } from "@/components/dashboard/settings/sec
 import { BusinessPulseAiSettings } from "@/components/dashboard/settings/sections/BusinessPulseAiSettings";
 import { AccountPlanWidget } from "@/components/dashboard/account/AccountPlanWidget";
 import { AccountInvoicesWidget } from "@/components/dashboard/account/AccountInvoicesWidget";
+import { AccountDangerZone } from "@/components/dashboard/account/AccountDangerZone";
 // Stage 79 §38.159 — AccountDangerZone tamamen kaldırıldı (kullanıcı kararı).
 // Backend yoktu (Iyzico Wave 3.5 sonrası scope), UI placeholder confusing UX
 // yaratıyordu. Right rail artık 2 widget: Plan + Invoices.
@@ -88,6 +89,10 @@ interface RestaurantOption {
 interface UserProfile {
   email: string;
   name: string | null;
+  // Wave B4 (CLAUDE.md §38.193) — danger-zone surface state.
+  // ISO timestamp from /api/user/profile GET when a delete is scheduled;
+  // null otherwise.
+  scheduledDeletionAt?: string | null;
 }
 
 interface AccountSettingsClientProps {
@@ -155,6 +160,7 @@ export default function AccountSettingsClient({
           setProfile({
             email: profileData.email ?? "",
             name: profileData.name ?? null,
+            scheduledDeletionAt: profileData.scheduledDeletionAt ?? null,
           });
         }
         // §38.37 — /api/team response shape farklı kontratlarla dönebilir
@@ -335,7 +341,21 @@ export default function AccountSettingsClient({
           </span>
         }
       >
-        <BusinessAccountSecuritySettings locale={locale} />
+        <div className="space-y-4">
+          <BusinessAccountSecuritySettings locale={locale} />
+          {/* Wave B4 (CLAUDE.md §38.193) — danger zone re-introduced now that
+              POST /api/account/delete + POST /api/account/delete/cancel are
+              live. Hidden until the profile fetch resolves so the SSR/CSR
+              boundary doesn't briefly render the destructive card with stale
+              state. */}
+          {profile && (
+            <AccountDangerZone
+              locale={locale}
+              scheduledDeletionAt={profile.scheduledDeletionAt ?? null}
+              accountEmail={profile.email}
+            />
+          )}
+        </div>
       </SettingsSection>
 
       {/* Stage A3 §38.95 — KVKK transparency: owner kendi audit log'unu görür. */}

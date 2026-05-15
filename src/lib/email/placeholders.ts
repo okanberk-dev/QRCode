@@ -77,6 +77,9 @@ export const MAIL_PLACEHOLDERS = {
   'team-member-joined': ['ownerName', 'memberName'],
   'team-member-removed': ['ownerName', 'memberName'],
   'first-feedback-celebration': ['ownerName', 'restaurantName'],
+  // Wave B4 (CLAUDE.md §38.193) — account deletion lifecycle placeholders.
+  'account-deletion-scheduled': ['firstName', 'daysRemaining', 'scheduledFor'],
+  'account-deletion-canceled': ['firstName'],
 } as const;
 
 export type MailTemplateKeyForPlaceholders = keyof typeof MAIL_PLACEHOLDERS;

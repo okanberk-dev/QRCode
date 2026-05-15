@@ -36,6 +36,10 @@ export async function GET(req: NextRequest) {
         plan: true,
         trialEndsAt: true,
         createdAt: true,
+        // Wave B4 (CLAUDE.md §38.193) — danger-zone surface needs the
+        // scheduled deletion countdown to render the "Vazgeç" state inline.
+        // Token itself stays server-side; UI never sees it.
+        scheduledDeletionAt: true,
       },
     });
 

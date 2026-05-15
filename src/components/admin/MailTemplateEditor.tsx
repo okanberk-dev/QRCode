@@ -362,6 +362,53 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'tipPositive', label: 'Pozitif puan ipucu (4-5)', multiline: true },
     { key: 'tipLow', label: 'Düşük puan ipucu (1-3)', multiline: true },
   ],
+  // Wave B4 (CLAUDE.md §38.193) — account deletion scheduled (30g grace).
+  // Locked field 4 alan (statusText/note/notYouTitle/notYouBody) phishing
+  // ve KVKK m.7 disclosure (locked-fields.ts).
+  'account-deletion-scheduled': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"Hesap silme · Onay alındı"' },
+    { key: 'title', label: 'Başlık 1. parça', hint: '"Hesabın"' },
+    { key: 'titleAccent', label: 'Başlık vurgu', hint: '"30 gün içinde silinecek"' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      placeholders: MAIL_PLACEHOLDERS['account-deletion-scheduled'],
+    },
+    { key: 'cardEyebrow', label: 'Detay kart etiketi' },
+    { key: 'statusText', label: 'Status metni' },
+    { key: 'metaAccountLabel', label: 'Hesap meta etiketi' },
+    { key: 'metaScheduledLabel', label: 'Silinme tarihi etiketi' },
+    { key: 'metaCountdownLabel', label: 'Kalan süre etiketi' },
+    {
+      key: 'metaCountdownValue',
+      label: 'Kalan süre değeri',
+      hint: '${daysRemaining} placeholder kullanılabilir',
+      placeholders: MAIL_PLACEHOLDERS['account-deletion-scheduled'],
+    },
+    { key: 'cta', label: 'İptal CTA buton metni' },
+    { key: 'note', label: 'KVKK uyarı metni (kilitli)', multiline: true },
+    { key: 'notYouTitle', label: '"Sen bunu yapmadıysan?" başlık' },
+    { key: 'notYouBody', label: '"Sen bunu yapmadıysan?" açıklama', multiline: true },
+  ],
+  // Wave B4 — account deletion canceled confirmation.
+  'account-deletion-canceled': [
+    { key: 'eyebrow', label: 'Eyebrow', hint: '"Hesap silme · İptal edildi"' },
+    { key: 'title', label: 'Başlık 1. parça', hint: '"Hesabın"' },
+    { key: 'titleAccent', label: 'Başlık vurgu', hint: '"güvende"' },
+    {
+      key: 'intro',
+      label: 'Giriş paragrafı',
+      multiline: true,
+      placeholders: MAIL_PLACEHOLDERS['account-deletion-canceled'],
+    },
+    { key: 'cardEyebrow', label: 'Durum kart etiketi' },
+    { key: 'accountLabel', label: 'Hesap etiketi' },
+    { key: 'statusLabel', label: 'Durum etiketi' },
+    { key: 'statusValue', label: 'Durum değer metni' },
+    { key: 'cta', label: 'CTA buton metni' },
+    { key: 'footer', label: 'Footer not metni', multiline: true },
+  ],
 };
 
 const TEMPLATE_LABELS: Record<string, string> = {
@@ -389,6 +436,9 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'team-member-joined': 'Yeni ekip üyesi',
   'team-member-removed': 'Ekip üyesi çıkarıldı',
   'first-feedback-celebration': 'İlk yorum kutlaması',
+  // Wave B4 (CLAUDE.md §38.193)
+  'account-deletion-scheduled': 'Hesap silme planlandı',
+  'account-deletion-canceled': 'Hesap silme iptal',
 };
 
 interface Props {

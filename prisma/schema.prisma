@@ -46,6 +46,18 @@ model User {
   // reminders). Defaults false to preserve the existing send behaviour for
   // every user that signed up before the toggle landed.
   disableTrialReminders     Boolean   @default(false) @map("disable_trial_reminders")
+  // Wave B4 (CLAUDE.md §38.B) — owner-initiated soft delete with a 30-day
+  // grace window (AskUserQuestion choice). `scheduledDeletionAt` is the
+  // wall-clock at which the cron actually hard-deletes the row (cascade
+  // chain §37.9 + financial-record anonymisation §38.0 migration
+  // 20260518000000_user_hard_delete_anonymize). `deletionCancelToken` is
+  // the unique token embedded in the "click to undo" link inside the
+  // confirmation mail — owner can revoke the scheduled deletion any time
+  // during the grace window. Both fields default null (no scheduled
+  // deletion); they are cleared together on cancel OR when the cron
+  // completes the wipe.
+  scheduledDeletionAt       DateTime? @map("scheduled_deletion_at")
+  deletionCancelToken       String?   @unique @map("deletion_cancel_token")
   // 2FA TOTP (Section 8 — Faz 3). totpSecret base32-encoded; verify edilmeden
   // önce twoFactorEnabled=false (geçici secret). Login flow `twoFactorEnabled=true`
   // ise login sonrası 6 haneli kod prompt'una zorlar.

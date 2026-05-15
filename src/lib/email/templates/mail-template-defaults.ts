@@ -717,6 +717,78 @@ const FIRST_FEEDBACK_CELEBRATION_EN: FlatCopy = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
+// Wave B4 (CLAUDE.md §38.193) — account deletion lifecycle defaults.
+// Two mails: schedule confirmation (carries cancel link) + cancel
+// confirmation (audit trail).
+// ───────────────────────────────────────────────────────────────────────
+
+const ACCOUNT_DELETION_SCHEDULED_TR: FlatCopy = {
+  eyebrow: 'Hesap silme · Onay alındı',
+  title: 'Hesabın',
+  titleAccent: '30 gün içinde silinecek',
+  intro:
+    'Hesap silme talebini aldık. Aşağıdaki tarihte verin kalıcı olarak silinecek. İstediğin zaman vazgeçebilirsin.',
+  cardEyebrow: 'Silme detayı',
+  statusText: '30 gün geri sayım · İptal hakkı saklı',
+  metaAccountLabel: 'Hesap',
+  metaScheduledLabel: 'Silinme tarihi',
+  metaCountdownLabel: 'Kalan süre',
+  metaCountdownValue: '${daysRemaining} gün',
+  cta: 'Hesap silmeyi iptal et →',
+  note:
+    'Süre dolduğunda restoran kayıtları, yorumlar, QR\'lar ve abonelik geçmişin kalıcı olarak silinir. KVKK m.7 gereği mali kayıtlar anonim biçimde 10 yıl saklanır.',
+  notYouTitle: 'Sen bunu yapmadıysan?',
+  notYouBody: 'Yukarıdaki "İptal" butonuna hemen tıkla. Aksiyon olmadan hesabın 30 gün içinde silinir.',
+};
+
+const ACCOUNT_DELETION_SCHEDULED_EN: FlatCopy = {
+  eyebrow: 'Account delete · Confirmed',
+  title: 'Your account',
+  titleAccent: 'will be deleted in 30 days',
+  intro:
+    'We received your deletion request. Your data will be permanently removed on the date below — you can cancel any time.',
+  cardEyebrow: 'Deletion detail',
+  statusText: '30-day countdown · Cancel any time',
+  metaAccountLabel: 'Account',
+  metaScheduledLabel: 'Deletion date',
+  metaCountdownLabel: 'Time remaining',
+  metaCountdownValue: '${daysRemaining} days',
+  cta: 'Cancel account deletion →',
+  note:
+    'When the window closes, your restaurant records, reviews, QR codes and subscription history are permanently deleted. Per KVKK Article 7 financial records are retained anonymised for 10 years.',
+  notYouTitle: "Didn't request this?",
+  notYouBody: 'Click the "Cancel" button above immediately. Without action your account will be deleted in 30 days.',
+};
+
+const ACCOUNT_DELETION_CANCELED_TR: FlatCopy = {
+  eyebrow: 'Hesap silme · İptal edildi',
+  title: 'Hesabın',
+  titleAccent: 'güvende',
+  intro:
+    'Hesap silme talebini iptal ettin. Hesabın aktif kalıyor, hiçbir veri silinmedi.',
+  cardEyebrow: 'Durum güncellendi',
+  accountLabel: 'Hesap',
+  statusLabel: 'Durum',
+  statusValue: 'Aktif · Veri güvende',
+  cta: 'Panele dön →',
+  footer: 'Bu maili saklayabilirsin — herhangi bir aksiyon gerekmiyor. İstediğin zaman ayarlardan tekrar başlatabilirsin.',
+};
+
+const ACCOUNT_DELETION_CANCELED_EN: FlatCopy = {
+  eyebrow: 'Account delete · Canceled',
+  title: 'Your account',
+  titleAccent: 'is safe',
+  intro:
+    'You canceled the deletion request. Your account stays active and no data was removed.',
+  cardEyebrow: 'Status updated',
+  accountLabel: 'Account',
+  statusLabel: 'Status',
+  statusValue: 'Active · Data safe',
+  cta: 'Back to panel →',
+  footer: 'You can archive this mail — no action needed. You can restart from settings any time.',
+};
+
+// ───────────────────────────────────────────────────────────────────────
 // Combined registry — admin GET endpoint + seed script consume this.
 // Lifecycle defaults are re-exported from lifecycle-defaults.ts (no copy)
 // so render fns + admin editor share the same object reference.
@@ -781,6 +853,15 @@ export const MAIL_INLINE_DEFAULTS: Record<
   'first-feedback-celebration': {
     tr: FIRST_FEEDBACK_CELEBRATION_TR,
     en: FIRST_FEEDBACK_CELEBRATION_EN,
+  },
+  // Wave B4 (CLAUDE.md §38.193) — account deletion lifecycle defaults.
+  'account-deletion-scheduled': {
+    tr: ACCOUNT_DELETION_SCHEDULED_TR,
+    en: ACCOUNT_DELETION_SCHEDULED_EN,
+  },
+  'account-deletion-canceled': {
+    tr: ACCOUNT_DELETION_CANCELED_TR,
+    en: ACCOUNT_DELETION_CANCELED_EN,
   },
 };
 

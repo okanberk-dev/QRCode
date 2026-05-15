@@ -90,3 +90,12 @@ export type { TeamMemberRemovedParams } from './team-member-removed';
 // /api/feedback POST sonrası `count === 1` durumunda fire-once.
 export { renderFirstFeedbackCelebration } from './first-feedback-celebration';
 export type { FirstFeedbackCelebrationParams } from './first-feedback-celebration';
+
+// Wave B4 (CLAUDE.md §38.B + §38.193) — owner-initiated account deletion
+// with 30-day grace + cancel-by-token. Two mails — one on schedule, one
+// on cancel.
+export { renderAccountDeletionScheduled } from './account-deletion-scheduled';
+export type { AccountDeletionScheduledParams } from './account-deletion-scheduled';
+
+export { renderAccountDeletionCanceled } from './account-deletion-canceled';
+export type { AccountDeletionCanceledParams } from './account-deletion-canceled';
