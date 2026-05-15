@@ -36,6 +36,18 @@ const SEEDS: Array<{ key: string; locale: string; content: Copy }> = Object.entr
 );
 
 async function main() {
+  // Audit fix (final audit, post Wave A-F): guard against accidental
+  // production execution. Seed force-upserts every MailTemplate row,
+  // overwriting any admin-customized copy. The CI / Vercel build never
+  // invokes this script (only `prisma migrate deploy`), but a curl-paste
+  // accident or a misrun `npm run` shouldn't be able to wipe live
+  // edits. Operators who genuinely need to reset prod templates set
+  // ALLOW_SEED_IN_PROD=true and accept the consequences.
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_SEED_IN_PROD !== 'true') {
+    console.error('[seed] Refusing to run in production. Set ALLOW_SEED_IN_PROD=true to override.');
+    process.exit(1);
+  }
+
   const prisma = new PrismaClient();
   try {
     let upserted = 0;
