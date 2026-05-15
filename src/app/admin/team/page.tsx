@@ -164,7 +164,46 @@ function AdminTeamBody() {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-[#EDEDED] bg-white">
+        <>
+        {/* Mobile card list */}
+        <div className="flex flex-col gap-2.5 lg:hidden">
+          {members.map((m) => {
+            const role = ROLE_STYLE[m.role];
+            const st = STATUS_STYLE[m.status];
+            return (
+              <div key={m.id} className="bz-card p-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0A0A0A] text-[11px] font-semibold text-white">
+                    {(m.name || m.email).charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-[#0A0A0A]">{m.name || m.email}</p>
+                    {m.name && (
+                      <p className="truncate text-[11px] text-[#737373]">{m.email}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2.5 flex items-center gap-2 flex-wrap text-[11px] text-[#737373]">
+                  <span className={`pulse-eyebrow rounded px-2 py-1 ${role.cls}`}>
+                    {role[isTr ? 'tr' : 'en']}
+                  </span>
+                  <span className={`pulse-eyebrow rounded px-2 py-1 ${st.cls}`}>
+                    {st[isTr ? 'tr' : 'en']}
+                  </span>
+                  <span className="text-[#A3A3A3]">·</span>
+                  <span>
+                    {m.lastSeenAt
+                      ? new Date(m.lastSeenAt).toLocaleDateString(isTr ? 'tr-TR' : 'en-US')
+                      : '—'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop table */}
+        <div className="overflow-x-auto rounded-2xl border border-[#EDEDED] bg-white hidden lg:block">
           <table className="w-full min-w-[560px] text-left text-[13px]">
             <thead>
               <tr className="pulse-eyebrow border-b border-[#EDEDED] bg-[#FAFAFA] text-[#737373]">
@@ -206,6 +245,7 @@ function AdminTeamBody() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {showInvite && (

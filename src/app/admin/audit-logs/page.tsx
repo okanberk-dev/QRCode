@@ -328,7 +328,68 @@ export default function AdminAuditLogsPage() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Mobile card list */}
+            <div className="flex flex-col gap-2.5 p-3 lg:hidden">
+              {rows.map((entry) => {
+                const isExpanded = expandedRow === entry.id;
+                const sourceMeta =
+                  SOURCE_BADGE[entry.actorSource] || {
+                    label: entry.actorSource,
+                    kind: 'ghost' as BadgeKind,
+                  };
+                return (
+                  <div key={entry.id} className="bz-card p-3.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[13px] font-semibold text-[#0A0A0A] truncate">
+                        {entry.actor?.label || entry.actorId}
+                      </span>
+                      <Badge kind={sourceMeta.kind}>{sourceMeta.label}</Badge>
+                    </div>
+                    {entry.actor?.email && (
+                      <div className="mt-0.5 text-[11px] text-[#737373] font-mono truncate">
+                        {entry.actor.email}
+                      </div>
+                    )}
+                    <div className="mt-2 text-[12px] font-medium text-[#0A0A0A]">
+                      {actionLabel(entry.action, 'tr')}
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 flex-wrap text-[11px] text-[#737373]">
+                      <span className="font-mono text-[#A3A3A3]">{entry.action}</span>
+                      <span className="text-[#A3A3A3]">·</span>
+                      <span className="tabular-nums">{dateLabel(entry.createdAt)}</span>
+                      {entry.targetId && (
+                        <>
+                          <span className="text-[#A3A3A3]">·</span>
+                          <span className="font-mono truncate max-w-[140px]">
+                            {entry.targetId}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {entry.payload != null && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedRow(isExpanded ? null : entry.id)}
+                        className="mt-2 text-[11px] text-[#525252] hover:text-[#0A0A0A] underline"
+                      >
+                        {isExpanded ? 'Payload gizle' : 'Payload göster'}
+                      </button>
+                    )}
+                    {isExpanded && entry.payload != null && (
+                      <pre
+                        className="mt-2 overflow-x-auto rounded-lg border border-[#EDEDED] bg-[#FAFAFA] p-3 text-[11px] text-[#262626]"
+                        style={{ fontFamily: 'var(--font-mono)' }}
+                      >
+                        {JSON.stringify(entry.payload, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop table */}
+            <div className="overflow-x-auto hidden lg:block">
               <table className="w-full text-left text-[13px]" style={{ minWidth: 900 }}>
                 <thead className="bg-[#FAFAFA] border-b border-[#EDEDED]">
                   <tr className="pulse-eyebrow text-[#737373]">

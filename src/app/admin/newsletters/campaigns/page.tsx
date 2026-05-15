@@ -85,7 +85,7 @@ export default function AdminCampaignsPage() {
   const totalPages = data?.meta.totalPages ?? 1;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 md:p-8">
+    <div className="mx-auto max-w-[1200px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 sm:p-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">

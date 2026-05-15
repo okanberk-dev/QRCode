@@ -211,7 +211,58 @@ function AdminBillingBody() {
                 {isTr ? 'Henüz fatura yok.' : 'No invoices yet.'}
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+              {/* Mobile card list */}
+              <div className="flex flex-col gap-2.5 p-3 lg:hidden">
+                {invoices.map((inv) => (
+                  <div key={inv.id} className="bz-card p-3.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[14px] font-semibold text-[#0A0A0A]">
+                          ₺{inv.amount.toFixed(2)}
+                        </div>
+                        <div className="mt-1 text-[11px] text-[#737373]">
+                          {new Date(inv.date).toLocaleDateString(isTr ? 'tr-TR' : 'en-US')}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <span
+                          className={`pulse-eyebrow rounded px-2 py-1 ${
+                            inv.status === 'paid'
+                              ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+                              : inv.status === 'pending'
+                                ? 'bg-[#F5F5F5] text-[#737373]'
+                                : 'bg-red-50 text-red-700'
+                          }`}
+                        >
+                          {inv.status === 'paid'
+                            ? isTr
+                              ? 'ÖDENDİ'
+                              : 'PAID'
+                            : inv.status === 'pending'
+                              ? isTr
+                                ? 'BEKLİYOR'
+                                : 'PENDING'
+                              : isTr
+                                ? 'BAŞARISIZ'
+                                : 'FAILED'}
+                        </span>
+                        {inv.url ? (
+                          <a
+                            href={inv.url}
+                            className="inline-flex items-center gap-1 text-[12px] text-[#525252] hover:text-[#0A0A0A]"
+                          >
+                            <Download size={12} /> PDF
+                          </a>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <div className="overflow-x-auto hidden lg:block">
                 <table className="w-full min-w-[480px] text-left text-[13px]">
                   <thead>
                     <tr className="pulse-eyebrow border-b border-[#EDEDED] bg-[#FAFAFA] text-[#737373]">
@@ -264,6 +315,7 @@ function AdminBillingBody() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
           </section>
         </>
