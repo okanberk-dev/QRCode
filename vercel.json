@@ -63,7 +63,7 @@
     },
     {
       "path": "/api/cron/qr-no-scans-reminder",
-      "schedule": "0 9 * * *"
+      "schedule": "30 9 * * *"
     },
     {
       "path": "/api/cron/rating-drop-alert",
