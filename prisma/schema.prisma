@@ -297,6 +297,7 @@ model Restaurant {
   customerSegmentOverrides CustomerSegmentOverride[]
   customerEmailCampaigns   CustomerEmailCampaign[]
   customerEmailLogs        CustomerEmailLog[]
+  customerCampaignTemplates CustomerCampaignTemplate[]
   // Reputation OS — health snapshot history + Google review AI draft cache.
   healthSnapshots          RestaurantHealthSnapshot[]
   googleReviewAiDrafts     GoogleReviewAiDraft[]
@@ -1700,6 +1701,62 @@ model CustomerEmailLog {
   @@index([campaignId])
   @@index([restaurantId, createdAt])
   @@map("customer_email_logs")
+}
+
+// Stage 119 §38.199 — Reusable campaign templates (sector-aware, locale-aware).
+// CustomerEmailCampaign pre-fill catalog. AuditTemplate fork paterni reuse
+// (CLAUDE.md §40.2): restaurantId=null + isPublished=true = global Buaze
+// catalog (admin manages); restaurantId set = owner's own saved template
+// (owner CRUD; optionally `forkedFromId` points to source global template).
+//
+// Field semantics:
+// - `key`: stable identifier for global templates (e.g. 'food.reactivation.tr').
+//   Used by seed script's idempotent upsert + future "code defaults" reset.
+//   Owner templates have key=null (no canonical handle).
+// - `sector`: SectorKey (food/clinic/hospitality/legal/spa/retail/fitness/
+//   education/delivery/other). Filter axis for owner picker.
+// - `locale`: 'tr' | 'en'. Owner picker shows only matching locale.
+// - `category`: bucket label for grouping in picker UI ('reactivation' |
+//   'special-offer' | 'feedback-request' | 'custom'). Custom = owner-defined.
+// - `subject` + `body`: campaign pre-fill content. Same shape as
+//   CustomerEmailCampaign.subject/body (1-150 chars + 1-10000 chars).
+// - `isPublished`: global templates only (admin gate). Owner templates
+//   skip this (always usable by their owner).
+//
+// Indexes:
+// - (sector, locale, isPublished) — owner picker query hot path.
+// - (restaurantId, sector, locale) — owner's "my templates" list.
+// - (forkedFromId) — admin can see "how many forks exist" for a global.
+model CustomerCampaignTemplate {
+  id            String  @id @default(cuid())
+  // Stable handle for seeded global templates (e.g. 'food.reactivation.tr').
+  // Null for owner-saved templates.
+  key           String? @unique
+  title         String
+  description   String? @db.Text
+  sector        String  @default("other")
+  locale        String  @default("tr")
+  category      String  @default("custom") // 'reactivation' | 'special-offer' | 'feedback-request' | 'custom'
+  subject       String
+  body          String  @db.Text
+  isPublished   Boolean @default(false) @map("is_published")
+  // Owner-saved templates point to a restaurant. Null = global catalog (admin).
+  restaurantId  String? @map("restaurant_id")
+  restaurant    Restaurant? @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  // Fork lineage — owner copied a global template; allows "what global is
+  // this based on?" lookup. Source delete: SetNull (owner template lives on).
+  forkedFromId  String? @map("forked_from_id")
+  forkedFrom    CustomerCampaignTemplate? @relation("CampaignTemplateFork", fields: [forkedFromId], references: [id], onDelete: SetNull)
+  forks         CustomerCampaignTemplate[] @relation("CampaignTemplateFork")
+  createdById   String? @map("created_by_id")
+  updatedById   String? @map("updated_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([sector, locale, isPublished])
+  @@index([restaurantId, sector, locale])
+  @@index([forkedFromId])
+  @@map("customer_campaign_templates")
 }
 
 // Stage 29 §38.105 — admin in-app notification feed.
