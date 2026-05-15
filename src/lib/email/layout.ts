@@ -45,8 +45,10 @@ img { -ms-interpolation-mode:bicubic; border:0; outline:none; text-decoration:no
 a { color:${PULSE.graphite}; }
 @media only screen and (max-width: 600px) {
   table.bz-shell { width:100% !important; }
-  td.bz-pad { padding:24px 20px !important; }
-  td.bz-pad-tight { padding:18px 20px !important; }
+  /* §38.198 — Mobile içerik shell çerçevesine bitişik durmasın:
+     bz-pad 24/20 → 28/22, bz-pad-tight 18/20 → 22/22. */
+  td.bz-pad { padding:28px 22px !important; }
+  td.bz-pad-tight { padding:22px 22px !important; }
   td.stack-col { display:block !important; width:100% !important; padding:8px 0 !important; border-right:none !important; text-align:left !important; }
   td.col-half { width:100% !important; display:block !important; padding:6px 0 !important; }
   table.stack-row, table.stack-row > tbody, table.stack-row > tbody > tr { display:block !important; width:100% !important; }
@@ -81,7 +83,10 @@ a { color:${PULSE.graphite}; }
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:${PULSE.n100};opacity:0;">${preheader}</div>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${PULSE.n100};">
   <tr>
-    <td align="center" style="padding:24px 12px;">
+    <!-- §38.198 — Outer viewport→shell padding 24/12 → 32/16. Desktop'ta
+         shell çevresinde N100 zemin biraz daha cömert görünür; mobile'da
+         16px yatay margin shell border-radius'ını breathe ettirir. -->
+    <td align="center" style="padding:32px 16px;">
       <table role="presentation" class="bz-shell" cellpadding="0" cellspacing="0" border="0" width="640" style="width:640px;max-width:640px;background:${PULSE.pure};border-radius:14px;overflow:hidden;">
         <tr><td>${renderHeader({ eyebrow, dark: darkHeader })}</td></tr>
         <tr><td>${content}</td></tr>
