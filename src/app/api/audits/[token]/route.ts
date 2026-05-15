@@ -55,7 +55,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
           isPublished: true,
           isActive: true,
           restaurant: {
-            select: { id: true, name: true, isActive: true, primaryColor: true, kvkkText: true },
+            // Stage B — restaurant.kvkkText dropped from public audit
+            // payload. Public audit form uses Buaze-managed /kvkk +
+            // /acik-riza pages (CLAUDE.md §19.1) like /r/[slug] + /s/[slug].
+            select: { id: true, name: true, isActive: true, primaryColor: true },
           },
           questions: {
             orderBy: { sortOrder: 'asc' },
@@ -122,7 +125,6 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
       id: assignment.template.restaurant.id,
       name: assignment.template.restaurant.name,
       primaryColor: assignment.template.restaurant.primaryColor,
-      kvkkText: assignment.template.restaurant.kvkkText,
     },
     questions: assignment.template.questions.map((q) => ({
       id: q.id,

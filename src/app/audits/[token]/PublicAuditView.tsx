@@ -44,7 +44,8 @@ interface RestaurantMeta {
   id: string;
   name: string;
   primaryColor: string | null;
-  kvkkText: string | null;
+  // Stage B — kvkkText dropped from public audit payload. Consent block
+  // now links to Buaze-managed /kvkk + /acik-riza (CLAUDE.md §19.1).
 }
 
 interface AssignmentMeta {
@@ -398,6 +399,11 @@ export default function PublicAuditView({ token, locale }: Props) {
 
             {/* Consent block — tek kart içinde 2 checkbox, accent border solda */}
             <div className="rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-3 sm:p-4 space-y-3">
+              {/* Stage B — Buaze-managed KVKK + Açık Rıza + Ticari İleti
+                  links (CLAUDE.md §19.1). Audit center owner cannot override
+                  legal text; consent texts flow through site-wide legal
+                  pages. Locale-aware paths use the audit template's locale
+                  (TR default, EN fallback). */}
               <label className="flex items-start gap-2.5 text-[13px] cursor-pointer leading-relaxed">
                 <input
                   type="checkbox"
@@ -406,10 +412,27 @@ export default function PublicAuditView({ token, locale }: Props) {
                   onChange={(e) => setKvkkOk(e.target.checked)}
                 />
                 <span>
-                  {data.restaurant.kvkkText ||
-                    (isTr
-                      ? 'Yanıtlarımın işletme tarafından iç değerlendirme amacıyla işlenmesini kabul ediyorum.'
-                      : 'I consent to my responses being processed by the business for internal evaluation.')}{' '}
+                  {isTr ? 'Okudum, anladım — ' : 'I have read and understood the '}
+                  <a
+                    href={`/${isTr ? 'tr' : 'en'}/kvkk`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#0A0A0A] underline hover:text-[#A8D62E]"
+                  >
+                    {isTr ? 'KVKK Aydınlatma Metni' : 'KVKK Privacy Notice'}
+                  </a>
+                  {isTr ? ' ve ' : ' and '}
+                  <a
+                    href={`/${isTr ? 'tr' : 'en'}/acik-riza`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#0A0A0A] underline hover:text-[#A8D62E]"
+                  >
+                    {isTr ? 'Açık Rıza Metni' : 'Explicit Consent'}
+                  </a>
+                  {isTr
+                    ? ' kapsamında yanıtlarımın işlenmesini kabul ediyorum.'
+                    : ' for processing my responses.'}{' '}
                   <span className="text-[#DC2626]" aria-hidden>
                     *
                   </span>
@@ -423,9 +446,16 @@ export default function PublicAuditView({ token, locale }: Props) {
                   onChange={(e) => setMarketingOk(e.target.checked)}
                 />
                 <span className="text-[#525252]">
-                  {isTr
-                    ? 'İletişim için sonradan bana ulaşılabilir (opsiyonel).'
-                    : 'You may contact me for follow-up (optional).'}
+                  {isTr ? 'Kampanya ve duyurular için ' : 'For follow-up via '}
+                  <a
+                    href={`/${isTr ? 'tr' : 'en'}/ticari-ileti`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#0A0A0A] underline hover:text-[#A8D62E]"
+                  >
+                    {isTr ? 'Ticari Elektronik İleti İzni' : 'Commercial Electronic Message Consent'}
+                  </a>
+                  {isTr ? ' kapsamında iletişim onayı veriyorum (opsiyonel).' : ' (optional).'}
                 </span>
               </label>
             </div>

@@ -27,8 +27,8 @@ export async function POST(
       type: true,
       accentColor: true,
       thankYouMessage: true,
-      kvkkText: true,
-      collectMarketingConsent: true,
+      // Stage B — kvkkText + collectMarketingConsent not selected during
+      // duplicate; the copy uses Buaze-managed legal pages (§19.1).
       collectContact: true,
       couponCode: true,
       couponLabel: true,
@@ -63,8 +63,6 @@ export async function POST(
       isPublished: false,
       accentColor: source.accentColor,
       thankYouMessage: source.thankYouMessage,
-      kvkkText: source.kvkkText,
-      collectMarketingConsent: source.collectMarketingConsent,
       collectContact: source.collectContact,
       couponCode: source.couponCode,
       couponLabel: source.couponLabel,

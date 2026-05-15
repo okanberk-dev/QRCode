@@ -929,7 +929,10 @@ model ImpersonationSession {
 // changed what" report.
 model AdminAuditLog {
   id          String   @id @default(cuid())
-  actorId     String   @map("actor_id")
+  // Nullable — Stage A hard-delete sets to NULL when the actor's User row is
+  // permanently wiped (KVKK right-to-be-forgotten). The row survives so the
+  // audit trail stays continuous, but the PII actor reference is severed.
+  actorId     String?  @map("actor_id")
   actorSource String   @map("actor_source") // 'admin' | 'user'
   action      String // e.g. 'admin.users.update', 'admin.users.delete'
   targetId    String?  @map("target_id")
@@ -1433,7 +1436,11 @@ model LegalVariable {
 
 model BillingInvoice {
   id            String   @id @default(cuid())
-  userId        String   @map("user_id")
+  // Nullable — Stage A hard-delete sets to NULL when the User row is wiped.
+  // The invoice row stays for KVKK m.7 financial retention (10 years) with
+  // payload preserved (amount, description) but the personal user reference
+  // is severed.
+  userId        String?  @map("user_id")
   // Human-readable invoice number (display only) — e.g. "INV-2026-04".
   // Generated server-side at create time when admin omits one. Distinct
   // from `id` (cuid) which stays as primary key for FK stability.
@@ -1714,11 +1721,15 @@ model Survey {
   // Owner kendi teşekkür mesajını yazabilir (TR/EN olmasa da bir locale —
   // anket dili owner kararı). Null → locale-aware default.
   thankYouMessage         String?   @map("thank_you_message") @db.Text
-  // Owner KVKK metnini override edebilir (mevcut restaurant.kvkkText
-  // paterni). Null → restaurant.kvkkText veya generic site KVKK fallback.
+  /// @deprecated Stage B (legal-compliance-update) — owner-authored KVKK
+  /// override removed from the survey wizard. Public form now links to
+  /// Buaze-managed /kvkk + /acik-riza (CLAUDE.md §19.1). Column kept
+  /// nullable for legacy rows (CLAUDE.md §40.2 preview deploy safety);
+  /// new writes never touch it.
   kvkkText                String?   @map("kvkk_text") @db.Text
-  // Marketing iznini sor (opt-in checkbox). Default false: çoğu anket
-  // marketing onayı toplamaya çalışmaz, sadece veri toplar.
+  /// @deprecated Stage B — owner-level marketing consent toggle removed.
+  /// Marketing opt-in is now always offered on the public form, tied to
+  /// Buaze-managed /acik-riza. Column kept for legacy rows.
   collectMarketingConsent Boolean   @default(false) @map("collect_marketing_consent")
   // İletişim alanları (email + phone) opsiyonel olarak göster. Default
   // true: owner takip etmek isteyebilir. False → tamamen anonim.

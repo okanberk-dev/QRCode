@@ -128,8 +128,8 @@ export const SURVEY_PUBLIC_SELECT = {
   isActive: true,
   accentColor: true,
   thankYouMessage: true,
-  kvkkText: true,
-  collectMarketingConsent: true,
+  // Stage B — kvkkText + collectMarketingConsent dropped from public read.
+  // PublicSurveyView now links to Buaze-managed /kvkk + /acik-riza (§19.1).
   collectContact: true,
   couponCode: true,
   couponLabel: true,
@@ -140,7 +140,6 @@ export const SURVEY_PUBLIC_SELECT = {
       name: true,
       slug: true,
       primaryColor: true,
-      kvkkText: true,
       isActive: true,
     },
   },
@@ -171,8 +170,9 @@ export const SURVEY_OWNER_SELECT = {
   publishedAt: true,
   accentColor: true,
   thankYouMessage: true,
-  kvkkText: true,
-  collectMarketingConsent: true,
+  // Stage B — kvkkText + collectMarketingConsent removed from owner edit
+  // flow. Schema columns kept @deprecated for legacy data; new writes
+  // never touch them (CLAUDE.md §40.2 preview deploy safety).
   collectContact: true,
   couponCode: true,
   couponLabel: true,

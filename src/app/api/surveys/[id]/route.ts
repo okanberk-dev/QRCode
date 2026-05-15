@@ -11,7 +11,6 @@ import {
   TITLE_MAX,
   DESCRIPTION_MAX,
   THANK_YOU_MAX,
-  KVKK_TEXT_MAX,
   QUESTION_TEXT_MAX,
   OPTION_TEXT_MAX,
   MAX_QUESTIONS_PER_SURVEY,
@@ -41,8 +40,9 @@ const PatchBody = z
       .nullable()
       .optional(),
     thankYouMessage: z.string().max(THANK_YOU_MAX).nullable().optional(),
-    kvkkText: z.string().max(KVKK_TEXT_MAX).nullable().optional(),
-    collectMarketingConsent: z.boolean().optional(),
+    // Stage B — kvkkText + collectMarketingConsent removed from owner UI/API.
+    // Schema columns retained as @deprecated (CLAUDE.md §40.2 nullable +
+    // default preview deploy safety); no writes from new code paths.
     collectContact: z.boolean().optional(),
     couponCode: z.string().max(40).nullable().optional(),
     couponLabel: z.string().max(120).nullable().optional(),
@@ -131,12 +131,6 @@ export async function PATCH(
         ...(data.accentColor !== undefined && { accentColor: data.accentColor || null }),
         ...(data.thankYouMessage !== undefined && {
           thankYouMessage: data.thankYouMessage?.trim() || null,
-        }),
-        ...(data.kvkkText !== undefined && {
-          kvkkText: data.kvkkText?.trim() || null,
-        }),
-        ...(data.collectMarketingConsent !== undefined && {
-          collectMarketingConsent: data.collectMarketingConsent,
         }),
         ...(data.collectContact !== undefined && {
           collectContact: data.collectContact,

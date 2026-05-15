@@ -45,7 +45,15 @@ Buaze, anonimleştirilmiş ve toplulaştırılmış (kişisel veri içermeyen) v
 
 ## 6. Hizmet seviyesi ve değişiklik hakkı
 
-Buaze; planlı bakım, altyapı arızası veya zorunlu güvenlik güncellemeleri sebebiyle hizmette kesinti yaşayabilir. Buaze, makul ölçüde önceden bildirim yaparak Şartları, fiyatları veya hizmet özelliklerini değiştirme hakkını saklı tutar.
+Buaze; planlı bakım, altyapı arızası veya zorunlu güvenlik güncellemeleri sebebiyle hizmette kesinti yaşayabilir.
+
+Buaze, ürün kararı çerçevesinde **tek taraflı olarak**:
+
+- Plan / paket içeriğini ekleyebilir veya çıkarabilir (yeni özellik açma, deneysel özelliği kaldırma vb.),
+- Hizmet özelliklerini güncelleyebilir, yeni modüller ekleyebilir veya kullanım kalıbı düşük olanları emekliye ayırabilir,
+- Şartları ve fiyatları 30 (otuz) gün önceden elektronik bildirim ile değiştirebilir.
+
+Kullanıcı bildirim sonrası platformu kullanmaya devam ederse değişikliği kabul etmiş sayılır. Mevcut plan kapsamı küçülüyorsa Buaze, kullanım dönemi sonuna kadar Kullanıcı için orijinal kapsamı korur; sonraki dönemde yeni kapsam geçerli olur.
 
 ## 7. Sorumluluk sınırları
 
@@ -57,13 +65,30 @@ Türk Borçlar Kanunu m. 115/2 uyarınca **ağır kusur** veya **kasıt** halind
 
 ## 8. Hesabın askıya alınması veya silinmesi
 
-Kullanıcı, hesabını dilediği zaman silebilir. Buaze, Şartlar'a aykırı davrandığını tespit ettiği hesapları önceden bildirimsiz askıya alabilir veya silebilir. Bu durumda işlenen veriler KVKK Aydınlatma Metni'nde belirtilen süreler çerçevesinde saklanmaya devam eder.
+Kullanıcı, hesabını dilediği zaman silebilir. Buaze aşağıdaki hallerde **önceden bildirimsiz** olarak hesabı askıya alabilir veya kalıcı olarak silebilir:
 
-## 9. Uyuşmazlık çözümü ve yetkili mahkeme
+- Bu Şartlar'a veya [Kabul Edilebilir Kullanım Politikası](/kabul-edilebilir-kullanim)'na aykırı davranış,
+- 30 günden uzun süredir ödememe,
+- Sahte yorum üretimi, review-gating manipülasyonu veya Google Politika ihlali,
+- KVKK / TCK / 5651 kapsamında yetkili merci kararı,
+- Yetkisiz erişim, exploit denemesi veya güvenlik olayı şüphesi,
+- Hesap sahibinin gerçekliğinin doğrulanamaması (sahte kimlik, ödeme dolandırıcılığı vb.).
 
-Bu Şartlar Türk hukukuna tabidir. {{TKHK_THRESHOLD_AMOUNT}} TL altındaki tüketici uyuşmazlıkları Tüketici Hakem Heyeti'ne, üzerindekiler Tüketici Mahkemeleri'ne; tüketici sıfatı taşımayan ihtilaflar ise {{COMPANY_COURT_CITY}} mahkeme ve icra dairelerine sunulur.
+Askıya almadan sonraki 30 gün içinde Kullanıcı durumu çözmezse hesap kalıcı silinebilir. Bu durumda işlenen veriler KVKK Aydınlatma Metni'nde belirtilen süreler çerçevesinde saklanmaya devam eder; ödenmiş bedellerin iadesi yapılmaz.
 
-## 10. Bildirim
+## 9. Elektronik akit
+
+Bu Şartlar, Türk Borçlar Kanunu m. 14, 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği m. 5 kapsamında elektronik ortamda akdedilmiş bir sözleşmedir. Kayıt formunun gönderilmesi, "okudum ve kabul ediyorum" işaretlenmesi veya platforma giriş yapılması, akdin elektronik onayı sayılır. Kullanıcı bu yöntemle akdedilen Şartlar'ın geçerliliğine itiraz etmez.
+
+## 10. Uyuşmazlık çözümü ve yetkili mahkeme
+
+Bu Şartlar Türk hukukuna tabidir. {{TKHK_THRESHOLD_AMOUNT}} TL altındaki tüketici uyuşmazlıkları Tüketici Hakem Heyeti'ne, üzerindekiler Tüketici Mahkemeleri'ne; tüketici sıfatı taşımayan ihtilaflar ise {{COMPANY_COURT_CITY}} mahkeme ve icra dairelerine sunulur. Buaze, B2B (tüketici sıfatı taşımayan) müşterilerle uyuşmazlıklarda [Platform Kullanım Sözleşmesi](/kullanim-sozlesmesi) m. 15'te belirlenen tahkim seçeneğini saklı tutar.
+
+## 11. Birlikte okunan belgeler
+
+Bu Şartlar; [Platform Kullanım Sözleşmesi](/kullanim-sozlesmesi), [Kabul Edilebilir Kullanım Politikası](/kabul-edilebilir-kullanim), [KVKK Aydınlatma Metni](/kvkk), [Açık Rıza Metni](/acik-riza), [Çerez Politikası](/cookie), [Mesafeli Hizmet Sözleşmesi](/mesafeli-hizmet-sozlesmesi), [İade ve İptal Politikası](/iade-iptal-politikasi), [Google Politika Uyumu](/google-compliance) ile birlikte okunur ve uygulanır.
+
+## 12. Bildirim
 
 Buaze'ye yapılacak yazılı bildirimler {{LEGAL_CONTACT_EMAIL}} adresine veya {{COMPANY_ADDRESS}} adresine yapılır. Kullanıcı'ya yapılacak bildirimler ise hesabında kayıtlı e-posta adresine gönderilir; bildirim gönderildiği an tebliğ edilmiş sayılır.`,
 };

@@ -163,6 +163,16 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
   const [billingMember, setBillingMember] = useState<Member | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
+  // Stage A — hard delete (KVKK right-to-be-forgotten) two-step UX state.
+  // First step (askConfirm cascade warning) sets `hardDeleteOpen=true`; the
+  // typing-confirm modal renders + holds the email input. doHardDelete()
+  // verifies the typed string matches editingMember.email before POSTing.
+  const [hardDeleteOpen, setHardDeleteOpen] = useState(false);
+  const [hardDeleteInput, setHardDeleteInput] = useState('');
+  const [hardDeleteError, setHardDeleteError] = useState<string | null>(null);
+  const [hardDeleting, setHardDeleting] = useState(false);
+  const HARD_DELETE_GRACE_DAYS = 7;
+
   // URL'den gelen filter (browser back / deeplink) input'a yansımalı; aksi
   // halde mount'taki debouncedSearch snapshot'ı korunur ve liste filtreli
   // ama input boş görünür.
@@ -281,6 +291,68 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
       alert('Bağlantı hatası.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Stage A — KVKK right-to-be-forgotten hard delete. Two-step UX:
+  //   1. First confirm shows the cascade warning + "Kalıcı sil" CTA.
+  //   2. Custom typing-confirm modal requires admin to type the e-mail address
+  //      before the DELETE request is sent (lifted irreversibly-destructive
+  //      action behind a deliberate friction layer).
+  const handleHardDelete = () => {
+    if (!editingMember || editingMember.isActive) return;
+    const memberLabel = editingMember.name || editingMember.email;
+    askConfirm({
+      title: `"${memberLabel}" kalıcı olarak silinsin mi?`,
+      body:
+        'Tüm restoran kayıtları, yorumlar, menüler, QR analitiği ve oturumlar GERİ ALINAMAYACAK biçimde silinir. Faturalandırma kayıtları KVKK m.7 gereği saklanır ama kullanıcı bağlantısı kopartılır. Audit log girdileri de anonimleştirilir.',
+      confirmLabel: 'Devam et',
+      cancelLabel: 'Vazgeç',
+      variant: 'danger',
+      onConfirm: () => {
+        setHardDeleteInput('');
+        setHardDeleteError(null);
+        setHardDeleteOpen(true);
+      },
+    });
+  };
+
+  const doHardDelete = async () => {
+    if (!editingMember) return;
+    if (hardDeleteInput.trim().toLowerCase() !== editingMember.email.toLowerCase()) {
+      setHardDeleteError('Eşleşmedi — kullanıcının e-postasını birebir yazın.');
+      return;
+    }
+    setHardDeleting(true);
+    setHardDeleteError(null);
+    try {
+      const res = await fetch(`/api/admin/members/${editingMember.id}/hard-delete`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setHardDeleteOpen(false);
+        setEditingMember(null);
+        setSuccess('Kullanıcı kalıcı olarak silindi.');
+        fetchMembers();
+      } else {
+        const data = await res.json().catch(() => null);
+        if (data?.error === 'grace_period_active') {
+          setHardDeleteError(
+            data?.message ||
+              `${data?.graceDays || 7}-gün bekleme süresi tamamlanmadı (${data?.elapsedDays ?? 0} gün geçti).`,
+          );
+        } else if (data?.error === 'must_deactivate_first') {
+          setHardDeleteError('Kullanıcı önce pasifleştirilmelidir.');
+        } else if (data?.error === 'rate_limited') {
+          setHardDeleteError('Çok fazla istek. Bir dakika sonra tekrar deneyin.');
+        } else {
+          setHardDeleteError(data?.message || data?.error || 'Kalıcı silme başarısız.');
+        }
+      }
+    } catch {
+      setHardDeleteError('Bağlantı hatası.');
+    } finally {
+      setHardDeleting(false);
     }
   };
 
@@ -847,6 +919,119 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                   Hesabı sil (geri alınabilir)
                 </button>
               )}
+              {!editingMember.isActive && (() => {
+                // Pasif kullanıcı — kalıcı silme butonu. Mevcut soft-delete
+                // tarihinden 7 gün geçmediyse buton disabled + countdown.
+                const deactivatedTs = editingMember.deactivatedAt
+                  ? new Date(editingMember.deactivatedAt).getTime()
+                  : Date.now();
+                const elapsedDays = Math.floor(
+                  (Date.now() - deactivatedTs) / (1000 * 60 * 60 * 24),
+                );
+                const eligible = elapsedDays >= HARD_DELETE_GRACE_DAYS;
+                const remaining = Math.max(0, HARD_DELETE_GRACE_DAYS - elapsedDays);
+                return (
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleHardDelete}
+                      disabled={!eligible || saving || hardDeleting}
+                      className="bz-btn-danger w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={
+                        eligible
+                          ? 'Kullanıcı ve tüm verileri kalıcı olarak silinir (geri alınamaz)'
+                          : `${remaining} gün sonra kalıcı silinebilir`
+                      }
+                    >
+                      <Trash2 size={14} strokeWidth={2} />
+                      Kalıcı sil (geri alınamaz)
+                    </button>
+                    {!eligible && (
+                      <p className="text-[11px] text-[#737373]">
+                        Pasifleştirme üzerinden {elapsedDays} gün geçti. Kalıcı silme {HARD_DELETE_GRACE_DAYS} gün sonra ({remaining} gün kaldı) açılır — KVKK gözden geçirme süresi.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Stage A — typing-confirm modal for irreversible hard-delete. Lifts
+          the action behind a deliberate friction layer: admin must type the
+          exact e-mail address before the DELETE call is fired. */}
+      {hardDeleteOpen && editingMember && (
+        <Modal
+          size={520}
+          onClose={() => {
+            if (!hardDeleting) {
+              setHardDeleteOpen(false);
+              setHardDeleteInput('');
+              setHardDeleteError(null);
+            }
+          }}
+          title="Kalıcı silme onayı"
+        >
+          <div className="space-y-4">
+            <AlertBanner kind="danger">
+              Bu işlem GERİ ALINAMAZ. Kullanıcı ve tüm restoran verileri (yorumlar, menüler, QR kayıtları, analitikler, oturumlar) kalıcı olarak silinir.
+            </AlertBanner>
+            <p className="text-sm text-[#525252]">
+              Onaylamak için kullanıcının e-postasını birebir yazın:
+            </p>
+            <p className="rounded-lg bg-[#FAFAFA] border border-[#EDEDED] px-3 py-2 text-sm font-mono text-[#0A0A0A]">
+              {editingMember.email}
+            </p>
+            <input
+              type="email"
+              value={hardDeleteInput}
+              onChange={(e) => {
+                setHardDeleteInput(e.target.value);
+                if (hardDeleteError) setHardDeleteError(null);
+              }}
+              placeholder="kullanici@ornek.com"
+              autoComplete="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              inputMode="email"
+              className="bz-input w-full"
+              disabled={hardDeleting}
+            />
+            {hardDeleteError && (
+              <AlertBanner kind="danger">{hardDeleteError}</AlertBanner>
+            )}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setHardDeleteOpen(false);
+                  setHardDeleteInput('');
+                  setHardDeleteError(null);
+                }}
+                disabled={hardDeleting}
+                className="bz-btn-ghost flex-1"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={doHardDelete}
+                disabled={
+                  hardDeleting ||
+                  hardDeleteInput.trim().toLowerCase() !==
+                    editingMember.email.toLowerCase()
+                }
+                className="bz-btn-danger flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {hardDeleting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Trash2 size={14} strokeWidth={2} />
+                )}
+                Kalıcı sil
+              </button>
             </div>
           </div>
         </Modal>

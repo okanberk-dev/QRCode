@@ -46,8 +46,9 @@ interface Survey {
   publishedAt: string | null;
   accentColor: string | null;
   thankYouMessage: string | null;
-  kvkkText: string | null;
-  collectMarketingConsent: boolean;
+  // Stage B — kvkkText + collectMarketingConsent dropped from owner select.
+  // Survey detail view no longer surfaces owner-managed KVKK content; the
+  // public form uses Buaze-managed /kvkk + /acik-riza pages (§19.1).
   collectContact: boolean;
   couponCode: string | null;
   couponLabel: string | null;
@@ -378,10 +379,8 @@ export default function SurveyDetailClient({
                 label={t.survey_form_collect_contact}
                 value={survey.collectContact ? '✓' : '—'}
               />
-              <Row
-                label={t.survey_form_collect_marketing}
-                value={survey.collectMarketingConsent ? '✓' : '—'}
-              />
+              {/* Stage B — collectMarketingConsent row removed. Marketing
+                  consent is now always offered on the public form. */}
               {survey.couponCode && (
                 <Row
                   label={locale === 'tr' ? 'Kupon kodu' : 'Coupon code'}

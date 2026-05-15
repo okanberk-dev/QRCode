@@ -47,7 +47,8 @@ interface Restaurant {
   name: string;
   slug: string;
   primaryColor: string;
-  kvkkText: string | null;
+  // Stage B — restaurant.kvkkText dropped from public payload. Public
+  // survey form now links to Buaze-managed /{locale}/kvkk (§19.1).
   isActive: boolean;
 }
 
@@ -61,8 +62,8 @@ interface Survey {
   isActive: boolean;
   accentColor: string | null;
   thankYouMessage: string | null;
-  kvkkText: string | null;
-  collectMarketingConsent: boolean;
+  // Stage B — kvkkText + collectMarketingConsent dropped. KVKK + marketing
+  // consent now flow through Buaze-managed pages (/kvkk + /acik-riza).
   collectContact: boolean;
   couponCode: string | null;
   couponLabel: string | null;
@@ -174,18 +175,17 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
       setStepIdx(stepIdx + 1);
       return;
     }
-    if (survey.collectContact || survey.collectMarketingConsent) {
-      setStage('contact');
-      return;
-    }
-    // No contact step — go straight to submit + thanks.
-    void doSubmit({ skipContactValidation: true });
+    // Stage B — contact stage is ALWAYS reached now: it carries the
+    // mandatory KVKK consent + optional marketing consent block tied to
+    // Buaze-managed legal pages. Contact fields (e-mail / phone) are
+    // hidden when `collectContact: false` but the consent block stays.
+    setStage('contact');
     // doSubmit is declared further down; including it in deps would
     // create a temporal dead zone. The reference captured here is the
     // function identity from the most recent render, which is sufficient
     // for our flow (every form state change triggers a re-render anyway).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepIdx, totalSteps, survey.collectContact, survey.collectMarketingConsent]);
+  }, [stepIdx, totalSteps]);
 
   const goBack = useCallback(() => {
     setDirection('back');
@@ -224,7 +224,9 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
             email: survey.collectContact ? contactEmail.trim() || null : null,
             phone: survey.collectContact ? contactPhone.trim() || null : null,
             hasKvkkConsent: true,
-            hasMarketingConsent: survey.collectMarketingConsent ? marketing : false,
+            // Stage B — marketing consent always flows from the submitter
+            // checkbox (Buaze-managed /acik-riza link).
+            hasMarketingConsent: marketing,
             answers: survey.questions.map((q) => {
               const a = answers[q.id] || {};
               return {
@@ -262,13 +264,14 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
       survey.slug,
       survey.questions,
       survey.collectContact,
-      survey.collectMarketingConsent,
       answers,
     ],
   );
 
   // Auto-advance for single-question "rating" surveys at 4★+ — design
   // intent: a happy customer shouldn't need to tap "Devam et" again.
+  // Stage B — contact stage is now always reached (mandatory consent gate)
+  // so we always transition to it, never skip straight to submit.
   useEffect(() => {
     if (survey.type !== 'single' || survey.questions.length !== 1) return;
     if (stage !== 'question') return;
@@ -276,27 +279,17 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
     if (q.type !== 'rating') return;
     const v = answers[q.id]?.numberValue;
     if (typeof v === 'number' && v >= 4) {
-      const t = setTimeout(() => {
-        if (survey.collectContact || survey.collectMarketingConsent) setStage('contact');
-        else void doSubmit({ skipContactValidation: true });
-      }, 700);
+      const t = setTimeout(() => setStage('contact'), 700);
       return () => clearTimeout(t);
     }
-  }, [
-    survey.type,
-    survey.questions,
-    survey.collectContact,
-    survey.collectMarketingConsent,
-    stage,
-    answers,
-    doSubmit,
-  ]);
+  }, [survey.type, survey.questions, stage, answers]);
 
   const canBack = stage === 'contact' || (stage === 'question' && stepIdx > 0);
   const canContinue = currentQuestion ? isAnswered(currentQuestion, currentValue) : false;
   const isLastQuestion = stepIdx === totalSteps - 1;
-  const isLastBeforeSubmit =
-    isLastQuestion && !survey.collectContact && !survey.collectMarketingConsent;
+  // Stage B — contact stage is always reached now (KVKK consent gate);
+  // last question never goes straight to submit.
+  const isLastBeforeSubmit = false;
 
   // ─────────────────────────────────────────────────────────────
   // Stage renderers
@@ -354,7 +347,6 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
               direction={direction}
               accent={accent}
               collectContact={survey.collectContact}
-              collectMarketingConsent={survey.collectMarketingConsent}
               name={contactName}
               setName={setContactName}
               email={contactEmail}
@@ -441,15 +433,15 @@ function IntroScreen({
 }) {
   const dark = true; // design default
   const minutes = useMemo(() => {
-    // Rough: 8-10s per question + 12s consent if shown.
+    // Rough: 8-10s per question + 12s consent stage (always shown
+    // post-Stage B for KVKK + marketing consent).
     const q = survey.questions.length;
-    const seconds =
-      q * 9 + (survey.collectContact || survey.collectMarketingConsent ? 12 : 0);
+    const seconds = q * 9 + 12;
     if (seconds < 30) return '~20 sn';
     if (seconds < 60) return '~45 sn';
     if (seconds < 90) return '~1 dk';
     return `~${Math.round(seconds / 60)} dk`;
-  }, [survey.questions.length, survey.collectContact, survey.collectMarketingConsent]);
+  }, [survey.questions.length]);
 
   const previewSteps = survey.questions.slice(0, 4);
   const overflow = Math.max(0, survey.questions.length - 4);
@@ -947,7 +939,6 @@ function ContactScreen({
   direction,
   accent,
   collectContact,
-  collectMarketingConsent,
   name,
   setName,
   email,
@@ -965,7 +956,6 @@ function ContactScreen({
   direction: 'fwd' | 'back';
   accent: string;
   collectContact: boolean;
-  collectMarketingConsent: boolean;
   name: string;
   setName: (v: string) => void;
   email: string;
@@ -1094,31 +1084,59 @@ function ContactScreen({
             </>
           )}
 
+          {/* Stage B — Buaze-managed legal links. KVKK + marketing consent
+              flow through site-wide /tr/kvkk + /tr/acik-riza + /tr/ticari-ileti
+              pages (the survey route is TR-only at the moment; if EN is added
+              later, locale state should be hoisted here as /r/[slug] does). */}
           <ConsentRow
             checked={kvkk}
             onChange={setKvkk}
             accent={accent}
             label={
               <span>
-                <b>KVKK Aydınlatma Metni</b>&apos;ni okudum, kişisel verilerimin
-                işlenmesini kabul ediyorum.
+                Okudum, anladım —{' '}
+                <a
+                  href="/tr/kvkk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#0A0A0A', textDecoration: 'underline' }}
+                >
+                  KVKK Aydınlatma Metni
+                </a>{' '}
+                ve{' '}
+                <a
+                  href="/tr/acik-riza"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#0A0A0A', textDecoration: 'underline' }}
+                >
+                  Açık Rıza Metni
+                </a>{' '}
+                kapsamında verilerimin işlenmesine açık rıza veriyorum.
               </span>
             }
             required
           />
-          {collectMarketingConsent && (
-            <ConsentRow
-              checked={marketing}
-              onChange={setMarketing}
-              accent={accent}
-              label={
-                <span>
-                  Kampanya ve menü güncellemelerini e-posta ile alabilirim.{' '}
-                  <span style={{ color: '#A3A29C' }}>(opsiyonel)</span>
-                </span>
-              }
-            />
-          )}
+          <ConsentRow
+            checked={marketing}
+            onChange={setMarketing}
+            accent={accent}
+            label={
+              <span>
+                Kampanya ve duyurular için{' '}
+                <a
+                  href="/tr/ticari-ileti"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#0A0A0A', textDecoration: 'underline' }}
+                >
+                  Ticari Elektronik İleti İzni
+                </a>{' '}
+                kapsamında iletişim onayı veriyorum{' '}
+                <span style={{ color: '#A3A29C' }}>(opsiyonel)</span>.
+              </span>
+            }
+          />
         </div>
 
         {error && (
