@@ -7,6 +7,7 @@
 // email.ts and re-uses this module.
 
 import { safeParseJson } from '@/lib/safe-json';
+import { recordMailDelivery } from '@/lib/email/delivery-log';
 
 function defaultReplyTo(): string | undefined {
   const env = process.env.RESEND_REPLY_TO?.trim()
@@ -33,6 +34,9 @@ export async function sendResendEmail({
   replyTo,
   headers,
   attachments,
+  template,
+  locale,
+  logMetadata,
 }: {
   to: string | string[];
   subject: string;
@@ -46,11 +50,40 @@ export async function sendResendEmail({
    *  gibi binary dosyalar için. Resend tek mail başına ~40MB toplam attach
    *  size izin veriyor; pratikte tek PDF için sınır değil. */
   attachments?: ResendAttachment[];
+  /** Wave F (CLAUDE.md §38.196) — template key for delivery audit log.
+   *  Optional only for the legacy sendMail wrapper; public senders should
+   *  always pass it (forensic queries need to filter by template). */
+  template?: string;
+  /** Owner panel locale used for the rendered copy (TR/EN). Stored as
+   *  audit context, never used at send time. */
+  locale?: 'tr' | 'en' | null;
+  /** Free-form forensic context — userId, restaurantId, errorName, etc.
+   *  PII bodies forbidden (subject + html + text already stripped). */
+  logMetadata?: Record<string, string | number | null | undefined>;
 }): Promise<boolean> {
   const resendKey = process.env.RESEND_API_KEY?.trim();
 
+  // Wave F (CLAUDE.md §38.196) — audit log writer. Fire-and-forget;
+  // wraps every exit path so success + failure both land in the table.
+  // Recipient is normalised to a string for the log row (multi-recipient
+  // sends use the joined form for forensic clarity).
+  const recipientForLog = Array.isArray(to) ? to.join(',') : to;
+  const logTemplate = template ?? 'unknown';
+  const logDelivery = (status: 'sent' | 'failed', extra?: Record<string, string | number | null | undefined>) => {
+    recordMailDelivery({
+      template: logTemplate,
+      recipient: recipientForLog,
+      status,
+      locale: locale ?? null,
+      metadata: { ...(logMetadata ?? {}), ...(extra ?? {}) },
+    }).catch(() => {
+      // helper already swallows; defence-in-depth
+    });
+  };
+
   if (!resendKey) {
     console.error('[Buaze Email] RESEND_API_KEY missing — cannot send email.');
+    logDelivery('failed', { reason: 'resend_api_key_missing' });
     return false;
   }
 
@@ -91,6 +124,7 @@ export async function sendResendEmail({
 
     if (!response.ok) {
       console.error(`[Buaze Email] Resend HTTP ${response.status}:`, responseText);
+      logDelivery('failed', { reason: 'resend_http_error', httpStatus: response.status });
       return false;
     }
 
@@ -102,15 +136,22 @@ export async function sendResendEmail({
     });
     if (!parsed) {
       console.error('[Buaze Email] Resend non-JSON 2xx body:', responseText);
+      logDelivery('failed', { reason: 'resend_non_json_body' });
       return false;
     }
     if (typeof parsed.id !== 'string' || !parsed.id) {
       console.error('[Buaze Email] Resend 2xx without id:', responseText);
+      logDelivery('failed', { reason: 'resend_missing_id' });
       return false;
     }
+    logDelivery('sent', { resendId: parsed.id });
     return true;
   } catch (error) {
     console.error('[Buaze Email] Network exception:', error);
+    logDelivery('failed', {
+      reason: 'network_exception',
+      errName: error instanceof Error ? error.name : 'unknown',
+    });
     return false;
   }
 }

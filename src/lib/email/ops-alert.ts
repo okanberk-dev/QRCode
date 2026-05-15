@@ -129,10 +129,13 @@ export async function notifyOpsOfMailFailure(params: OpsAlertParams): Promise<vo
 
   try {
     const ok = await sendResendEmail({
+      template: `ops-alert:mail-failure:${params.template}`,
+      locale: params.userLocale ?? 'tr',
       to,
       subject,
       html: `<pre style="font-family:monospace;white-space:pre-wrap;">${text.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c))}</pre>`,
       text,
+      logMetadata: { failedTemplate: params.template, reason: params.reason ?? null },
     });
     if (!ok) {
       console.error('[ops-alert] dispatch returned false — both primary mail AND ops alert failed');
@@ -214,10 +217,13 @@ export async function notifyOpsOfOpenAiBillingFailure(
 
   try {
     await sendResendEmail({
+      template: 'ops-alert:openai-billing',
+      locale: 'tr',
       to,
       subject,
       html: `<pre style="font-family:monospace;white-space:pre-wrap;">${text.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c))}</pre>`,
       text,
+      logMetadata: { status: params.status, errorType: params.errorType ?? null, source: params.source ?? null },
     });
   } catch (err) {
     console.error('[ops-alert] OpenAI billing dispatch threw:', err);
@@ -307,10 +313,13 @@ export async function notifyOpsOfCampaignSubmitted(
 
   try {
     await sendResendEmail({
+      template: 'ops-alert:campaign-submitted',
+      locale: 'tr',
       to,
       subject,
       html: `<pre style="font-family:monospace;white-space:pre-wrap;">${text.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c))}</pre>`,
       text,
+      logMetadata: { campaignId: params.campaignId, restaurantName: params.restaurantName, recipientCount: params.recipientCount },
     });
   } catch (err) {
     console.error('[ops-alert] Campaign submitted dispatch threw:', err);

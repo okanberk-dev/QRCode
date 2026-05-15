@@ -285,11 +285,14 @@ export async function POST(req: NextRequest) {
         locale,
       );
       sendResendEmail({
+        template: 'roi-customer-report',
+        locale,
         to: email,
         subject: customerRendered.subject,
         html: customerRendered.html,
         text: customerRendered.text,
         attachments,
+        logMetadata: { plan: pdfData.plan, netGain: pdfData.netGain },
       }).catch((err) => console.error('[roi/save] customer mail failed', err));
     }
 
@@ -336,11 +339,14 @@ export async function POST(req: NextRequest) {
         locale,
       );
       sendResendEmail({
+        template: 'roi-admin-notification',
+        locale,
         to: salesInbox,
         replyTo: email,
         subject: adminRendered.subject,
         html: adminRendered.html,
         text: adminRendered.text,
+        logMetadata: { plan: pdfData.plan, sector: pdfData.sector },
       }).catch((err) => console.error('[roi/save] admin sales mail failed', err));
     }
   }

@@ -39,10 +39,13 @@ export async function sendOwnerCampaignApprovedMail(
       params.locale ?? 'tr',
     );
     return await sendResendEmail({
+      template: 'owner-campaign-approved',
+      locale: params.locale ?? 'tr',
       to: params.to,
       subject: rendered.subject,
       html: rendered.html,
       text: rendered.text,
+      logMetadata: { restaurantName: params.restaurantName, sentCount: params.sentCount },
     });
   } catch (err) {
     console.error('[owner-campaign-notify] approved mail dispatch failed:', err);
@@ -75,10 +78,13 @@ export async function sendOwnerCampaignRejectedMail(
       params.locale ?? 'tr',
     );
     return await sendResendEmail({
+      template: 'owner-campaign-rejected',
+      locale: params.locale ?? 'tr',
       to: params.to,
       subject: rendered.subject,
       html: rendered.html,
       text: rendered.text,
+      logMetadata: { restaurantName: params.restaurantName },
     });
   } catch (err) {
     console.error('[owner-campaign-notify] rejected mail dispatch failed:', err);
