@@ -52,7 +52,13 @@ a { color:${PULSE.graphite}; }
   table.stack-row, table.stack-row > tbody, table.stack-row > tbody > tr { display:block !important; width:100% !important; }
   table.grid-4 td.cell { display:inline-block !important; width:50% !important; box-sizing:border-box; }
   .badge-absolute { position:static !important; display:inline-block !important; margin:0 0 8px 0 !important; top:auto !important; right:auto !important; }
+  /* §38.197 — Bar chart label squish guard. 7-bar weekly-report'da 320px
+     viewport'ta cell ~45px; default 11/10px label çakışıyordu. Mobile'da
+     10/9px ile rahat sığar, hâlâ okunabilir. iOS auto-zoom tetiklenmez
+     (bar chart number/label form input değil, span). */
   table.bar-chart td { padding:0 2px !important; }
+  table.bar-chart td > div:first-child { font-size:10px !important; }
+  table.bar-chart td > div:last-child { font-size:9px !important; letter-spacing:0.05em !important; }
   h1.bz-h1 { font-size:28px !important; line-height:1.15 !important; }
   h1.bz-h1-lg { font-size:32px !important; line-height:1.1 !important; }
   /* trial-ending plan price + similar bold display numbers in cards */

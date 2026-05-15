@@ -37,9 +37,13 @@ export async function runRatingDropAlert(): Promise<Summary> {
 
   // Restaurants with ≥ MIN_REVIEWS_LAST_WEEK reviews in the last 7 days
   // (statistical floor). Then compute baseline + delta per row.
+  //
+  // §38.197 — Hesabı silinmek üzere planlanmış owner'a rating drop
+  // uyarısı gönderme (30g grace lifecycle suppression paterni).
   const candidates = await prisma.restaurant.findMany({
     where: {
       isActive: true,
+      user: { scheduledDeletionAt: null },
       feedbacks: { some: { createdAt: { gte: sevenDaysAgo } } },
     },
     take: BATCH_SIZE,

@@ -46,6 +46,9 @@ export async function runMonthlyHealthReport(): Promise<MonthlyHealthReportSumma
     where: {
       isActive: true,
       googleReviewManagementEnabled: true,
+      // §38.197 — Hesabı silinmek üzere planlanmış owner'a aylık health
+      // raporu gönderme (30g grace lifecycle suppression paterni).
+      user: { scheduledDeletionAt: null },
     },
     take: BATCH_SIZE,
     orderBy: { updatedAt: 'desc' },

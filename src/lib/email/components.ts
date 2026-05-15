@@ -80,7 +80,10 @@ export function renderFooter(params: FooterParams = {}): string {
     ? `BUAZE BİLİŞİM A.Ş.<br/>Maslak Mah. Eski Büyükdere Cad.<br/>No:1 Sarıyer / İstanbul`
     : `BUAZE BİLİŞİM INC.<br/>Maslak Dist. Eski Büyükdere Ave.<br/>No:1 Sarıyer / İstanbul`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
-  const helpHref = `${appUrl}/${isTr ? 'tr' : 'en'}/help/page`;
+  // §38.197 — /help/page route YOK (CLAUDE.md §22 /help index vs
+  // /help/[slug] detail ayrımı). Footer link 35 mail template'inden
+  // çağrılıyor → daha önce her birinde dead 404 link rendered.
+  const helpHref = `${appUrl}/${isTr ? 'tr' : 'en'}/help`;
   const privacyHref = `${appUrl}/${isTr ? 'tr' : 'en'}/privacy`;
 
   const unsubBlock = params.unsubscribeUrl

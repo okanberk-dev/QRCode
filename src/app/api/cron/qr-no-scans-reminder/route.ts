@@ -34,6 +34,10 @@ export async function runQrNoScansReminder(): Promise<Summary> {
   const candidates = await prisma.restaurant.findMany({
     where: {
       isActive: true,
+      // §38.197 — Hesabı silinmek üzere planlanmış owner'a "QR'ın tarama
+      // almıyor, yerini değiştir!" hatırlatması göndermez. 30g grace
+      // boyunca lifecycle/marketing mail'ler suppressed.
+      user: { scheduledDeletionAt: null },
       qrGenerations: { some: { createdAt: { lte: sevenDaysAgo } } },
     },
     take: BATCH_SIZE,
