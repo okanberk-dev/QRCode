@@ -288,7 +288,15 @@ export async function buildLifecycleContexts(
   appUrl: string,
 ): Promise<LifecycleApplyParams[]> {
   const users = await prisma.user.findMany({
-    where: { id: { in: userIds }, isActive: true },
+    where: {
+      id: { in: userIds },
+      isActive: true,
+      // §38.197 — Hesabı silinmek üzere planlanmış kullanıcıya lifecycle
+      // mail gönderme. 30 günlük grace boyunca "Upgrade!" veya "Come back!"
+      // mail'i ayrılmaya karar vermiş kullanıcıya UX-toxic. Owner cancel
+      // ederse scheduledDeletionAt → null, akış kaldığı yerden devam eder.
+      scheduledDeletionAt: null,
+    },
     select: {
       id: true,
       email: true,

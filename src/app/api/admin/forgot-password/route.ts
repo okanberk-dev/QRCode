@@ -48,6 +48,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // §38.197 — Per-identifier rate limit parity with user-side
+    // (`/api/auth/forgot-password` 3/30min/email). IP gate alone isn't
+    // enough — a botnet rotating IPs could still spam recovery codes
+    // toward a single admin username. 3/30min/identifier matches user
+    // flow; generic OK response masks enumeration either way.
+    const identifierLimit = await rateLimit(
+      `admin:forgot:id:${rawIdentifier}`,
+      3,
+      30 * 60 * 1000,
+    );
+    if (!identifierLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Çok fazla istek. Lütfen biraz bekle.' },
+        { status: 429, headers: { 'Retry-After': String(identifierLimit.retryAfterSeconds) } },
+      );
+    }
+
     // reCAPTCHA — admin login already gates with this, the recovery flow
     // gives an attacker the same code-issuance surface so it needs the same
     // bot guard. Soft-fails to OK in monitor mode (CLAUDE.md §18) just like

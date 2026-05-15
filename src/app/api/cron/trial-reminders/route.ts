@@ -43,6 +43,10 @@ export async function GET(req: NextRequest) {
       where: {
         plan: 'trial',
         isActive: true,
+        // §38.197 — Hesabı silinmek üzere planlanmış kullanıcıya trial
+        // hatırlatması gönderme. Ayrılmaya karar vermiş owner'a "Premium'a
+        // geç!" mail'i UX-toxic.
+        scheduledDeletionAt: null,
         // Wave A5 — owner opt-out gate. NOT { disableTrialReminders: true }
         // covers both `false` (default) and any legacy NULL rows that exist
         // before the migration backfills the default. Belt-and-suspenders

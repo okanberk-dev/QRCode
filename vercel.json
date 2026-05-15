@@ -19,7 +19,7 @@
     },
     {
       "path": "/api/cron/monthly-newsletter",
-      "schedule": "0 9 1 * *"
+      "schedule": "0 12 1 * *"
     },
     {
       "path": "/api/cron/trial-reminders",
@@ -55,7 +55,7 @@
     },
     {
       "path": "/api/cron/monthly-health-report",
-      "schedule": "0 10 1 * *"
+      "schedule": "0 13 1 * *"
     },
     {
       "path": "/api/cron/process-scheduled-deletions",

@@ -50,10 +50,26 @@ export async function runGoogleReviewsAlert() {
       // Find if this restaurant is active and has googleReviewManagementEnabled
       const restaurant = await prisma.restaurant.findUnique({
         where: { id: restaurantId },
-        select: { name: true, notificationEmail: true, isActive: true, googleReviewManagementEnabled: true, currentGoogleRating: true, user: { select: { email: true } } },
+        select: {
+          name: true,
+          notificationEmail: true,
+          isActive: true,
+          googleReviewManagementEnabled: true,
+          currentGoogleRating: true,
+          // §38.197 — scheduledDeletionAt'i fetch + check (findUnique unique
+          // field where'i destekler, kompoze filter için after-fetch check).
+          user: { select: { email: true, scheduledDeletionAt: true } },
+        },
       });
 
-      if (!restaurant || !restaurant.isActive || !restaurant.googleReviewManagementEnabled) {
+      if (
+        !restaurant ||
+        !restaurant.isActive ||
+        !restaurant.googleReviewManagementEnabled ||
+        // §38.197 — Hesabı silinmek üzere planlanmış owner'a Google düşük
+        // puanlı yorum bildirimi gönderme (30g grace lifecycle suppression).
+        restaurant.user?.scheduledDeletionAt
+      ) {
         continue;
       }
 

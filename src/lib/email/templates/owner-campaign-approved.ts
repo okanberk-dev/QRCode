@@ -31,6 +31,11 @@ export async function renderOwnerCampaignApproved(
   locale: 'tr' | 'en' = 'tr',
 ): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
+  // §38.197 — env-aware privacy URL. Hardcoded `https://buaze.com/...`
+  // staging/preview deploy'larda canonical değil; NEXT_PUBLIC_APP_URL
+  // env'inden derive ederek doğru host'a çık.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const privacyHref = `${appUrl}/${isTr ? 'tr/gizlilik' : 'en/privacy'}`;
   const subject = isTr
     ? `Kampanyanız onaylandı ve gönderildi — ${params.subject}`
     : `Your campaign was approved and sent — ${params.subject}`;
@@ -148,7 +153,7 @@ export async function renderOwnerCampaignApproved(
             ${isTr ? 'Bu mail Buaze platformu (Buaze Bilişim A.Ş.) tarafından gönderilmiştir.' : 'This email was sent by the Buaze platform (Buaze Bilişim A.Ş.).'}
           </div>
           <div style="font-family:${FONTS.body};font-size:11px;color:${PULSE.n500};margin-top:4px;">
-            <a href="https://buaze.com/${isTr ? 'tr/gizlilik' : 'en/privacy'}" style="color:${PULSE.graphite};text-decoration:underline;">${isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}</a>
+            <a href="${privacyHref}" style="color:${PULSE.graphite};text-decoration:underline;">${isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}</a>
           </div>
         </div>
       </td>
@@ -174,7 +179,7 @@ ${copyText.footerHint}
 
 —
 ${isTr ? 'Bu mail Buaze platformu (Buaze Bilişim A.Ş.) tarafından gönderilmiştir.' : 'This email was sent by the Buaze platform (Buaze Bilişim A.Ş.).'}
-${isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}: https://buaze.com/${isTr ? 'tr/gizlilik' : 'en/privacy'}`.trim();
+${isTr ? 'Gizlilik Politikası' : 'Privacy Policy'}: ${privacyHref}`.trim();
 
   return { subject, html, text };
 }

@@ -57,9 +57,12 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+  // §38.197 — Owner hesabı silinmek üzere planlanmışsa (30g grace)
+  // weekly digest gönderme. "Ayrılıyorum" diyen owner'a haftalık özet
+  // UX-toxic + Resend kotası yakar.
   const [restaurants, totalActive] = await prisma.$transaction([
     prisma.restaurant.findMany({
-      where: { isActive: true },
+      where: { isActive: true, user: { scheduledDeletionAt: null } },
       take: BATCH_SIZE,
       orderBy: { createdAt: 'asc' },
       select: {
@@ -73,7 +76,9 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
         user: { select: { email: true, locale: true } },
       },
     }),
-    prisma.restaurant.count({ where: { isActive: true } }),
+    prisma.restaurant.count({
+      where: { isActive: true, user: { scheduledDeletionAt: null } },
+    }),
   ]);
 
   if (totalActive > BATCH_SIZE) {
