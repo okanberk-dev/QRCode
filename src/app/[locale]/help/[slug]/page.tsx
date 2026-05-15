@@ -12,6 +12,7 @@ import { CATEGORY_BY_SLUG } from '@/lib/help-categories';
 import { getStaticHelpArticle, getStaticHelpArticles, type StaticHelpArticle, type BodyInput } from '@/lib/help-articles';
 import { sanitizeBlogContent } from '@/lib/blog-content';
 import { buildHowToSchema, type HowToStep } from '@/lib/seo/howto-schema';
+import { getSiteSettings } from '@/lib/site-settings';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
 // `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
@@ -95,6 +96,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
   const t = getTranslations(locale);
   const base = `/${locale}`;
   const isTr = locale === 'tr';
+  const s = await getSiteSettings();
 
   let article: Awaited<ReturnType<typeof prisma.helpArticle.findUnique>> | StaticHelpArticle | null = null;
   try {
@@ -145,13 +147,13 @@ export default async function HelpArticlePage({ params }: PageParams) {
     datePublished: article.updatedAt.toISOString(),
     dateModified: article.updatedAt.toISOString(),
     inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
-    image: 'https://buaze.com/favicon.svg',
+    image: s.ogImageUrl || 'https://buaze.com/favicon.svg',
     author: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',
       url: 'https://buaze.com',
-      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+      logo: { '@type': 'ImageObject', url: s.logoUrl || 'https://buaze.com/favicon.svg' },
     },
     mainEntityOfPage: `https://buaze.com/${locale}/help/${slug}`,
   };

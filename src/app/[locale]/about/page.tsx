@@ -75,7 +75,7 @@ export default async function AboutPage({
         legalName: 'Buaze Bilişim A.Ş.',
         alternateName: ['Buaze (the company)', 'Buaze SaaS'],
         url: 'https://buaze.com',
-        logo: 'https://buaze.com/favicon.svg',
+        logo: settings.logoUrl || 'https://buaze.com/favicon.svg',
         foundingDate: '2023',
         foundingLocation: {
           '@type': 'Place',

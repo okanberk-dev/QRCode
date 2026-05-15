@@ -7,6 +7,7 @@ import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { getSiteSettings } from '@/lib/site-settings';
 import { notFound } from 'next/navigation';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
@@ -58,6 +59,7 @@ export default async function PulseAiPage({
   if (!VALID.includes(locale as typeof VALID[number])) notFound();
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
+  const s = await getSiteSettings();
   const base = `/${locale}`;
 
   const cards = isTr
@@ -141,7 +143,7 @@ export default async function PulseAiPage({
       '@type': 'Organization',
       name: 'Buaze',
       url: 'https://buaze.com',
-      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+      logo: { '@type': 'ImageObject', url: s.logoUrl || 'https://buaze.com/favicon.svg' },
     },
   };
   const breadcrumbSchema = {

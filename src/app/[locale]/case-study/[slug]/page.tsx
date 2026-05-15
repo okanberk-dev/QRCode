@@ -9,6 +9,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
 import { prisma } from '@/lib/prisma';
+import { getSiteSettings } from '@/lib/site-settings';
 
 // Stage 83 §38.163 — ISR inherits `revalidate = 3600` (1h) from
 // `[locale]/layout.tsx`. CLAUDE.md §38.163 — marketing pages now ship
@@ -98,6 +99,8 @@ export default async function CaseStudyPage({
   });
   if (!study || !study.isPublished) notFound();
 
+  const s = await getSiteSettings();
+
   const others = await prisma.caseStudy.findMany({
     where: { isPublished: true, slug: { not: slug } },
     orderBy: { publishedAt: 'desc' },
@@ -136,7 +139,7 @@ export default async function CaseStudyPage({
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',
-      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+      logo: { '@type': 'ImageObject', url: s.logoUrl || 'https://buaze.com/favicon.svg' },
     },
     mainEntityOfPage: canonicalUrl,
     inLanguage: isTr ? 'tr-TR' : 'en-US',

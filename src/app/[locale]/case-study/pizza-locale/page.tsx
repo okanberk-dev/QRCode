@@ -9,6 +9,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 // from the Vercel CDN edge for anonymous visitors.
 import { getTranslations } from '@/lib/translations';
 import type { Locale } from '@/lib/translations';
+import { getSiteSettings } from '@/lib/site-settings';
 import Link from 'next/link';
 
 export async function generateMetadata({
@@ -40,6 +41,7 @@ export default async function PizzaLocaleCaseStudy({
   const t = getTranslations(locale);
   const base = `/${locale}`;
   const isTr = locale === 'tr';
+  const s = await getSiteSettings();
 
   const metrics = [
     {
@@ -154,7 +156,7 @@ export default async function PizzaLocaleCaseStudy({
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',
-      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+      logo: { '@type': 'ImageObject', url: s.logoUrl || 'https://buaze.com/favicon.svg' },
     },
     mainEntityOfPage: canonicalUrl,
     inLanguage: isTr ? 'tr-TR' : 'en-US',

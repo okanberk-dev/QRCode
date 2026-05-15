@@ -32,19 +32,37 @@ const LABEL = 'block text-[12px] font-semibold text-[#1A1A1A] uppercase tracking
 const INPUT = 'bz-input';
 const HINT = 'text-[11px] font-medium text-[#6B7280] mt-1';
 
+type AssetKind = 'logo' | 'favicon' | 'og';
+const ASSET_FIELD: Record<AssetKind, 'logoUrl' | 'faviconUrl' | 'ogImageUrl'> = {
+  logo: 'logoUrl',
+  favicon: 'faviconUrl',
+  og: 'ogImageUrl',
+};
+
 export default function SiteSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const initialRef = useRef<SiteSettings | null>(null);
   const [activeLang, setActiveLang] = useState<Lang>('tr');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [uploading, setUploading] = useState<'logo' | 'favicon' | null>(null);
+  const [uploading, setUploading] = useState<AssetKind | null>(null);
+
+  // Dirty-track: baseline snapshot on load / after persist. Save button is
+  // disabled when nothing changed (no more empty saves / "always enabled").
+  const dirty =
+    !!settings &&
+    !!initialRef.current &&
+    JSON.stringify(settings) !== JSON.stringify(initialRef.current);
 
   useEffect(() => {
     fetch('/api/admin/site-settings')
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))
-      .then((data) => setSettings(data.settings))
+      .then((data) => {
+        setSettings(data.settings);
+        initialRef.current = data.settings;
+      })
       .catch(() => setError('Ayarlar yüklenemedi. Superadmin yetkisi gerekli.'))
       .finally(() => setLoading(false));
   }, []);
@@ -68,7 +86,8 @@ export default function SiteSettingsPage() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Kaydetme başarısız');
       }
-      setSuccess('Ayarlar başarıyla kaydedildi. Site metadatası birkaç saniye içinde güncellenir.');
+      initialRef.current = settings; // baseline reset → Kaydet pasifleşir
+      setSuccess('Ayarlar kaydedildi. Site metadatası anında güncellenir.');
       setTimeout(() => setSuccess(''), 5000);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Hata');
@@ -77,7 +96,27 @@ export default function SiteSettingsPage() {
     }
   };
 
-  const handleUpload = async (file: File, kind: 'logo' | 'favicon') => {
+  // Single-field persist — used by image upload/remove so a manual "Kaydet"
+  // is no longer required (2-step friction removed). Baseline is advanced
+  // for that field so the change does not register as unsaved.
+  const persistField = async (
+    field: 'logoUrl' | 'faviconUrl' | 'ogImageUrl',
+    value: string | null,
+  ) => {
+    const res = await fetch('/api/admin/site-settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: value }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Kaydetme başarısız');
+    }
+    setSettings((s) => (s ? { ...s, [field]: value } : s));
+    if (initialRef.current) initialRef.current = { ...initialRef.current, [field]: value };
+  };
+
+  const handleUpload = async (file: File, kind: AssetKind) => {
     setUploading(kind);
     setError('');
     try {
@@ -87,9 +126,8 @@ export default function SiteSettingsPage() {
       const res = await fetch('/api/admin/site-settings/upload', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Yükleme başarısız');
-      if (kind === 'logo') update('logoUrl', data.url);
-      if (kind === 'favicon') update('faviconUrl', data.url);
-      setSuccess('Dosya yüklendi. Değişikliği kalıcı yapmak için Kaydet butonuna basın.');
+      await persistField(ASSET_FIELD[kind], data.url);
+      setSuccess('Görsel yüklendi ve kaydedildi.');
       setTimeout(() => setSuccess(''), 5000);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Yükleme hatası');
@@ -98,9 +136,15 @@ export default function SiteSettingsPage() {
     }
   };
 
-  const handleRemove = (kind: 'logo' | 'favicon') => {
-    if (kind === 'logo') update('logoUrl', null);
-    if (kind === 'favicon') update('faviconUrl', null);
+  const handleRemove = async (kind: AssetKind) => {
+    setError('');
+    try {
+      await persistField(ASSET_FIELD[kind], null);
+      setSuccess('Görsel kaldırıldı ve kaydedildi.');
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Kaldırma hatası');
+    }
   };
 
   if (loading) {
@@ -298,6 +342,19 @@ export default function SiteSettingsPage() {
             previewClass="aspect-square w-full max-w-[128px] bg-[#FFFFFF] rounded-xl p-3 border border-[#EDEDED]"
           />
         </div>
+
+        <div className="mt-6 border-t border-[#EDEDED] pt-6">
+          <AssetUploader
+            url={settings.ogImageUrl}
+            label="Sosyal paylaşım görseli (OG image)"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            aspect="1200×630 — link önizlemesi (boşsa varsayılan kullanılır)"
+            onUpload={(f) => handleUpload(f, 'og')}
+            onRemove={() => handleRemove('og')}
+            uploading={uploading === 'og'}
+            previewClass="aspect-[1200/630] w-full max-w-[360px] bg-[#0A0A0A] rounded-xl p-2"
+          />
+        </div>
       </div>
 
       {/* ─── Kart 3: Entity Profile URLs ─── */}
@@ -365,13 +422,17 @@ export default function SiteSettingsPage() {
       {/* ─── Sticky Save Bar ─── */}
       <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-[#EDEDED] shadow-lg z-30 p-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
-          <p className="text-[12px] text-[#6B7280] font-medium hidden sm:block">
-            Değişiklikler tüm site genelinde yansır.
+          <p className="text-[12px] font-medium hidden sm:block">
+            {dirty ? (
+              <span className="text-[#92400E]">Kaydedilmemiş değişiklik var.</span>
+            ) : (
+              <span className="text-[#6B7280]">Tüm değişiklikler kaydedildi.</span>
+            )}
           </p>
           <button
             onClick={handleSave}
-            disabled={saving}
-            className="bz-btn-lime ml-auto disabled:opacity-60"
+            disabled={saving || !dirty}
+            className="bz-btn-lime ml-auto disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
             {saving ? 'Kaydediliyor…' : 'Kaydet'}

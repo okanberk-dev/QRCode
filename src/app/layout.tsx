@@ -89,7 +89,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: 'https://buaze.com',
       images: [
         {
-          url: '/opengraph-image',
+          url: s.ogImageUrl || '/opengraph-image',
           width: 1200,
           height: 630,
           alt: 'Buaze - Every review is a pulse',
@@ -101,7 +101,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: 'summary_large_image',
       title: s.titleDefaultTr,
       description: s.descriptionTr,
-      images: ['/opengraph-image'],
+      images: [s.ogImageUrl || '/opengraph-image'],
     },
     // Apple PWA / iOS metadata — improves the "Add to Home Screen" UX:
     // standalone display, dark status bar on the lime-on-black brand,

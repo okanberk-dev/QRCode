@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma';
 import { sanitizeBlogContent } from '@/lib/blog-content';
 import { blogDateToIso } from '@/lib/blog-date';
 import { resolveBlogPairFromDb } from '@/lib/blog-translation-pairs';
+import { getSiteSettings } from '@/lib/site-settings';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
@@ -192,6 +193,7 @@ export default async function BlogPostPage({
   const t = getTranslations(locale);
   const base = `/${locale}`;
   const isTr = locale === 'tr';
+  const s = await getSiteSettings();
 
   const post = await prisma.blogPost.findUnique({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -258,7 +260,7 @@ export default async function BlogPostPage({
       name: 'Buaze',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://buaze.com/favicon.svg',
+        url: s.logoUrl || 'https://buaze.com/favicon.svg',
       },
       address: {
         '@type': 'PostalAddress',
