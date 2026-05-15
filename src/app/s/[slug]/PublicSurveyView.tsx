@@ -180,11 +180,6 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
     // Buaze-managed legal pages. Contact fields (e-mail / phone) are
     // hidden when `collectContact: false` but the consent block stays.
     setStage('contact');
-    // doSubmit is declared further down; including it in deps would
-    // create a temporal dead zone. The reference captured here is the
-    // function identity from the most recent render, which is sufficient
-    // for our flow (every form state change triggers a re-render anyway).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIdx, totalSteps]);
 
   const goBack = useCallback(() => {
@@ -286,9 +281,9 @@ export default function PublicSurveyView({ survey }: { survey: Survey }) {
 
   const canBack = stage === 'contact' || (stage === 'question' && stepIdx > 0);
   const canContinue = currentQuestion ? isAnswered(currentQuestion, currentValue) : false;
-  const isLastQuestion = stepIdx === totalSteps - 1;
   // Stage B — contact stage is always reached now (KVKK consent gate);
-  // last question never goes straight to submit.
+  // last question never goes straight to submit, so the "is this the
+  // final step before the dialog closes?" hint is permanently false.
   const isLastBeforeSubmit = false;
 
   // ─────────────────────────────────────────────────────────────

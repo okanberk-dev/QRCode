@@ -40,7 +40,9 @@ export async function GET(req: NextRequest) {
   // (targetId match). KVKK transparency requires both perspectives.
   let entries: Array<{
     id: string;
-    actorId: string;
+    // Stage A — actorId nullable; the hard-delete flow sets it NULL on
+    // anonymised audit rows (KVKK right-to-be-forgotten).
+    actorId: string | null;
     actorSource: string;
     action: string;
     targetId: string | null;
@@ -77,8 +79,14 @@ export async function GET(req: NextRequest) {
 
   // Resolve actor labels for admin-source entries (owner doesn't need to know
   // admin email/role beyond username for KVKK trail).
+  // Stage A — anonimleştirilmiş kayıtların actorId'i null olabilir; filter
+  // ve dedupe sırasında bunları atla.
   const adminIds = Array.from(
-    new Set(entries.filter((e) => e.actorSource === 'admin').map((e) => e.actorId)),
+    new Set(
+      entries
+        .filter((e) => e.actorSource === 'admin' && e.actorId)
+        .map((e) => e.actorId as string),
+    ),
   );
   let adminUsers: Array<{ id: string; username: string; role: string }> = [];
   try {
@@ -98,7 +106,8 @@ export async function GET(req: NextRequest) {
       data: entries.map((e) => {
         let actorLabel: string;
         if (e.actorSource === 'admin') {
-          const a = adminMap.get(e.actorId);
+          // Hard-delete sonrası actorId null olabilir — anonim aktör.
+          const a = e.actorId ? adminMap.get(e.actorId) : null;
           actorLabel = a ? `${a.username} (Yönetici)` : 'Yönetici';
         } else {
           actorLabel = 'Sen';

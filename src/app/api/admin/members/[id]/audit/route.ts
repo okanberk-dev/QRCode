@@ -36,7 +36,8 @@ export async function GET(
 
   let entries: Array<{
     id: string;
-    actorId: string;
+    // Stage A — actorId nullable (KVKK hard-delete anonimizasyon).
+    actorId: string | null;
     actorSource: string;
     action: string;
     payload: unknown;
@@ -73,9 +74,14 @@ export async function GET(
   }
 
   // Resolve actor names — actorSource='admin' → AdminUser, 'user' → User. Bulk
-  // fetch for both to avoid N+1.
-  const adminIds = entries.filter((e) => e.actorSource === 'admin').map((e) => e.actorId);
-  const userIds = entries.filter((e) => e.actorSource === 'user').map((e) => e.actorId);
+  // fetch for both to avoid N+1. Stage A — anonimleştirilmiş null actorId
+  // satırları (KVKK hard-delete) atlanır.
+  const adminIds = entries
+    .filter((e) => e.actorSource === 'admin' && e.actorId)
+    .map((e) => e.actorId as string);
+  const userIds = entries
+    .filter((e) => e.actorSource === 'user' && e.actorId)
+    .map((e) => e.actorId as string);
 
   // AdminUser model'inde `name` field'ı yok — display name için `username`
   // kullanılır (CLAUDE.md §4 — AdminUser tablosunda superadmin/manager için
@@ -115,8 +121,12 @@ export async function GET(
 
   return NextResponse.json({
     data: entries.map((e) => {
-      const actor =
-        e.actorSource === 'admin' ? adminMap.get(e.actorId) : userMap.get(e.actorId);
+      // Stage A — null actorId (KVKK anonimleştirme) durumunda actor null.
+      const actor = !e.actorId
+        ? undefined
+        : e.actorSource === 'admin'
+          ? adminMap.get(e.actorId)
+          : userMap.get(e.actorId);
       return {
         id: e.id,
         action: e.action,

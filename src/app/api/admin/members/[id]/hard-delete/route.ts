@@ -63,7 +63,7 @@ export async function DELETE(
   const limit = await rateLimit(`admin-hard-delete:${adminId}`, 5, 60_000);
   if (!limit.allowed) {
     return NextResponse.json(
-      { error: 'rate_limited', retryAfter: limit.retryAfter ?? 60 },
+      { error: 'rate_limited', retryAfter: limit.retryAfterSeconds || 60 },
       { status: 429 },
     );
   }
