@@ -4,6 +4,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { canWriteRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { validateBody } from '@/lib/api/validate';
+import { getLocaleFromRequest } from '@/lib/api/locale';
 import {
   getGoogleIntegrationForRestaurant,
   googleReviewManagementEnabled,
@@ -33,10 +34,15 @@ export async function POST(
   if (!actor) return ApiErrors.unauthorized();
 
   const { id } = await params;
+  // Fix #7 — locale-aware error mesajları
+  const locale = getLocaleFromRequest(req);
+  const isTr = locale === 'tr';
   if (!(await canWriteRestaurant(actor, id))) return ApiErrors.forbidden();
   if (!(await googleReviewManagementEnabled(id))) {
     return ApiErrors.forbidden(
-      'Google yorum yönetimi bu işletme için kapalı.',
+      isTr
+        ? 'Google yorum yönetimi bu işletme için kapalı.'
+        : 'Google review management is disabled for this business.',
       'GOOGLE_REVIEW_MANAGEMENT_DISABLED',
     );
   }
@@ -48,7 +54,9 @@ export async function POST(
   const limit = await rateLimit(`google-review-reply:${actor.id}:${id}`, 20, 60_000);
   if (!limit.allowed) {
     return ApiErrors.tooManyRequests(
-      'Çok fazla Google yorum yanıtı denemesi. Biraz bekleyip tekrar deneyin.',
+      isTr
+        ? 'Çok fazla Google yorum yanıtı denemesi. Biraz bekleyip tekrar deneyin.'
+        : 'Too many Google reply attempts. Wait a moment and try again.',
       'RATE_LIMITED',
       limit.retryAfterSeconds,
     );
@@ -56,17 +64,31 @@ export async function POST(
 
   const integration = await getGoogleIntegrationForRestaurant(actor, id);
   if (!integration) {
-    return ApiErrors.badRequest('Google Business Profile hesabı bağlı değil.', 'GOOGLE_NOT_CONNECTED');
+    return ApiErrors.badRequest(
+      isTr
+        ? 'Google Business Profile hesabı bağlı değil.'
+        : 'Google Business Profile account is not connected.',
+      'GOOGLE_NOT_CONNECTED',
+    );
   }
 
   const selection = selectedGoogleLocation(parseGoogleLocationsCache(integration.locationsJson), id);
   if (!selection) {
-    return ApiErrors.badRequest('Bu işletme için Google Business konumu seçilmemiş.', 'GOOGLE_LOCATION_NOT_SELECTED');
+    return ApiErrors.badRequest(
+      isTr
+        ? 'Bu işletme için Google Business konumu seçilmemiş.'
+        : 'No Google Business location selected for this business.',
+      'GOOGLE_LOCATION_NOT_SELECTED',
+    );
   }
 
   const expectedPrefix = `accounts/${selection.accountId}/locations/${selection.locationId}/reviews/`;
   if (!parsed.data.reviewName.startsWith(expectedPrefix)) {
-    return ApiErrors.forbidden('Bu yorum seçili Google konumuna ait değil.');
+    return ApiErrors.forbidden(
+      isTr
+        ? 'Bu yorum seçili Google konumuna ait değil.'
+        : 'This review does not belong to the selected Google location.',
+    );
   }
 
   try {
@@ -128,9 +150,16 @@ export async function POST(
     return NextResponse.json({ reply });
   } catch (error) {
     if (error instanceof GoogleBusinessApiError) {
-      return googleBusinessErrorResponse(error, 'Google yorum yanıtı gönderilemedi.');
+      return googleBusinessErrorResponse(
+        error,
+        'Google yorum yanıtı gönderilemedi.',
+        'Failed to publish Google reply.',
+        locale,
+      );
     }
     console.error('[google review reply] failed', { restaurantId: id });
-    return ApiErrors.internalError('Google yorum yanıtı gönderilemedi.');
+    return ApiErrors.internalError(
+      isTr ? 'Google yorum yanıtı gönderilemedi.' : 'Failed to publish Google reply.',
+    );
   }
 }

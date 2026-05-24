@@ -28,6 +28,7 @@ import { BusinessPulseAiSettings } from "@/components/dashboard/settings/section
 import { AccountPlanWidget } from "@/components/dashboard/account/AccountPlanWidget";
 import { AccountInvoicesWidget } from "@/components/dashboard/account/AccountInvoicesWidget";
 import { AccountDangerZone } from "@/components/dashboard/account/AccountDangerZone";
+import { GoogleConnectFlashBanner } from "@/components/dashboard/google/GoogleConnectFlashBanner";
 // Stage 79 §38.159 — AccountDangerZone tamamen kaldırıldı (kullanıcı kararı).
 // Backend yoktu (Iyzico Wave 3.5 sonrası scope), UI placeholder confusing UX
 // yaratıyordu. Right rail artık 2 widget: Plan + Invoices.
@@ -280,6 +281,12 @@ export default function AccountSettingsClient({
       ariaLabel={isTr ? "Hesap ayarları bölümleri" : "Account settings sections"}
       rightRail={rightRail}
     >
+      {/* §38 audit Fix #1 — OAuth callback ?google=* flash banner.
+          Default callback target /tr/dashboard/account?section=notifications
+          olduğu için bu sayfa connected/cancelled/state-* status'lerini
+          en az %50 zamanda yakalar. */}
+      <GoogleConnectFlashBanner locale={locale} />
+
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>
           {error}

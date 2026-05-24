@@ -1,6 +1,8 @@
 import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import type { PanelActor } from '@/lib/auth';
+import type { Locale } from '@/lib/translations';
+import { decryptToken, encryptToken } from '@/lib/google-token-crypto';
 
 const PLACES_SEARCH_URL = 'https://places.googleapis.com/v1/places:searchText';
 const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -34,6 +36,42 @@ export type GoogleBusinessFailureCode =
   | 'GOOGLE_NETWORK_ERROR'
   | 'GOOGLE_API_ERROR'
   | 'GOOGLE_NOT_CONFIGURED';
+
+/**
+ * CLAUDE.md §38 audit Fix #7 — locale-aware error messages.
+ * UI tarafında `isTr` switch yapıyordu; API artık locale'i tüketip
+ * mesajı doğru dilde döner. Default 'tr' (CLAUDE.md §22.9).
+ */
+const GOOGLE_FAILURE_MESSAGES: Record<GoogleBusinessFailureCode, Record<Locale, string>> = {
+  GOOGLE_REAUTH_REQUIRED: {
+    tr: 'Google bağlantısı süresi doldu. Hesabı yeniden bağlayın.',
+    en: 'Google connection expired. Reconnect the account.',
+  },
+  GOOGLE_RATE_LIMITED: {
+    tr: 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.',
+    en: 'Google API quota exhausted. Try again in a few minutes.',
+  },
+  GOOGLE_SERVER_ERROR: {
+    tr: 'Google sunucusu geçici hata döndü. Tekrar deneyin.',
+    en: 'Google server returned a temporary error. Try again.',
+  },
+  GOOGLE_NETWORK_ERROR: {
+    tr: 'Google API isteği ağ hatası nedeniyle başarısız.',
+    en: 'Google API request failed due to a network error.',
+  },
+  GOOGLE_API_ERROR: {
+    tr: 'Google API yanıtı çözümlenemedi.',
+    en: 'Google API response could not be parsed.',
+  },
+  GOOGLE_NOT_CONFIGURED: {
+    tr: 'Google OAuth client config eksik.',
+    en: 'Google OAuth client config is missing.',
+  },
+};
+
+export function googleFailureMessage(code: GoogleBusinessFailureCode, locale: Locale = 'tr'): string {
+  return GOOGLE_FAILURE_MESSAGES[code][locale];
+}
 
 export interface GoogleBusinessFailure {
   ok: false;
@@ -341,14 +379,25 @@ export type GoogleAccessTokenResult =
 export async function getFreshGoogleAccessToken(
   integration: GoogleIntegrationRow,
 ): Promise<GoogleAccessTokenResult> {
+  // Fix #6 — token decrypt (backward-compat: plain text row'lar olduğu
+  // gibi döner — `decryptToken` v1: prefix yoksa passthrough).
   if (integration.expiresAt.getTime() > Date.now() + 60_000) {
-    return { ok: true, accessToken: integration.accessToken };
+    try {
+      return { ok: true, accessToken: decryptToken(integration.accessToken) };
+    } catch {
+      // decrypt fail (key mismatch / corruption) → reauth tetikle
+      return {
+        ok: false,
+        code: 'GOOGLE_REAUTH_REQUIRED',
+        message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
+      };
+    }
   }
   if (!integration.refreshToken) {
     return {
       ok: false,
       code: 'GOOGLE_REAUTH_REQUIRED',
-      message: 'Google bağlantısı yenilenemedi. Hesabı yeniden bağlayın.',
+      message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
     };
   }
 
@@ -358,14 +407,25 @@ export async function getFreshGoogleAccessToken(
     return {
       ok: false,
       code: 'GOOGLE_NOT_CONFIGURED',
-      message: 'Google OAuth client config eksik.',
+      message: googleFailureMessage('GOOGLE_NOT_CONFIGURED'),
+    };
+  }
+
+  let refreshTokenPlain: string;
+  try {
+    refreshTokenPlain = decryptToken(integration.refreshToken);
+  } catch {
+    return {
+      ok: false,
+      code: 'GOOGLE_REAUTH_REQUIRED',
+      message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
     };
   }
 
   const body = new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
-    refresh_token: integration.refreshToken,
+    refresh_token: refreshTokenPlain,
     grant_type: 'refresh_token',
   });
 
@@ -391,11 +451,13 @@ export async function getFreshGoogleAccessToken(
           };
         }
         const expiresAt = new Date(Date.now() + Math.max(60, data.expires_in ?? 3600) * 1000);
+        // Fix #6 — yeni access token encrypt'lenerek DB'ye yazılır.
+        const encryptedAccess = encryptToken(data.access_token);
         await prisma.googleIntegration.update({
           where: { id: integration.id },
-          data: { accessToken: data.access_token, expiresAt },
+          data: { accessToken: encryptedAccess, expiresAt },
         });
-        integration.accessToken = data.access_token;
+        integration.accessToken = encryptedAccess;
         integration.expiresAt = expiresAt;
         return { ok: true, accessToken: data.access_token };
       }
@@ -414,7 +476,7 @@ export async function getFreshGoogleAccessToken(
         return {
           ok: false,
           code: 'GOOGLE_REAUTH_REQUIRED',
-          message: 'Google bağlantısı geçersiz. Hesabı yeniden bağlayın.',
+          message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
         };
       }
       // 5xx → fall through to retry
@@ -432,7 +494,7 @@ export async function getFreshGoogleAccessToken(
   return {
     ok: false,
     code: 'GOOGLE_NETWORK_ERROR',
-    message: 'Google token sunucusuna ulaşılamadı.',
+    message: googleFailureMessage('GOOGLE_NETWORK_ERROR'),
   };
 }
 
@@ -512,7 +574,7 @@ function classifyOutcome(outcome: RawFetchOutcome): GoogleBusinessFailureCode {
 }
 
 function outcomeMessage(outcome: RawFetchOutcome): string {
-  if (outcome.networkError) return 'Google API isteği ağ hatası nedeniyle başarısız.';
+  if (outcome.networkError) return googleFailureMessage('GOOGLE_NETWORK_ERROR');
   // Body snippet may include Google's error JSON. Limit to 500 chars and never
   // include caller-provided request body / Authorization header.
   return outcome.text.slice(0, 500) || `Google API HTTP ${outcome.status}`;
@@ -579,7 +641,7 @@ export async function googleBusinessFetch<T>(
       try {
         data = outcome.text ? (JSON.parse(outcome.text) as T) : ({} as T);
       } catch {
-        const fail = failure(outcome.status, 'GOOGLE_API_ERROR', 'Google API yanıtı çözümlenemedi.');
+        const fail = failure(outcome.status, 'GOOGLE_API_ERROR', googleFailureMessage('GOOGLE_API_ERROR'));
         captureGoogleBusinessFailure(fail, { url, attempts: attempt + 1, method });
         return fail;
       }
@@ -604,7 +666,7 @@ export async function googleBusinessFetch<T>(
       continue;
     }
     if (outcome.status === 401) {
-      const fail = failure(401, 'GOOGLE_REAUTH_REQUIRED', 'Google bağlantısı süresi doldu. Hesabı yeniden bağlayın.', true);
+      const fail = failure(401, 'GOOGLE_REAUTH_REQUIRED', googleFailureMessage('GOOGLE_REAUTH_REQUIRED'), true);
       captureGoogleBusinessFailure(fail, { url, attempts: attempt + 1, method });
       return fail;
     }

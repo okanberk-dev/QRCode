@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
+import * as Sentry from '@sentry/nextjs';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import type { PanelActor } from '@/lib/auth';
 import { GOOGLE_BUSINESS_SCOPE } from '@/lib/google-business';
@@ -14,6 +15,12 @@ const SCOPES = [GOOGLE_BUSINESS_SCOPE];
 // nonce expires before it can be replayed against a different actor.
 const STATE_TTL_SECONDS = 12 * 60;
 export const GOOGLE_OAUTH_STATE_COOKIE = 'bz_google_oauth_state';
+
+// CLAUDE.md §38 audit Fix #3 — GOOGLE_REDIRECT_URI yoksa fallback ile
+// request origin'i kullanır. Production'da www.buaze.com vs buaze.com gibi
+// subdomain mismatch'i Google "redirect_uri_mismatch" hatası üretir.
+// Cold start başına bir kez Sentry warn → ops fark eder.
+let warnedRedirectUriFallback = false;
 
 function ownerRef(actor: PanelActor) {
   return actor.source === 'user' ? actor.id : `admin:${actor.id}`;
@@ -45,6 +52,21 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Fix #3 — Vercel env'de GOOGLE_REDIRECT_URI yok ise Sentry warn
+  // (cold start başına 1 kez). Google Cloud Console authorized URI ile
+  // mismatch → callback 400 → owner stranded.
+  if (!process.env.GOOGLE_REDIRECT_URI && !warnedRedirectUriFallback) {
+    warnedRedirectUriFallback = true;
+    Sentry.captureMessage(
+      'GOOGLE_REDIRECT_URI env not set; OAuth fallback uses request origin which may not match Google Cloud Console authorized URI.',
+      {
+        level: 'warning',
+        tags: { integration: 'google-oauth', reason: 'redirect-uri-fallback' },
+        extra: { fallbackOrigin: req.nextUrl.origin },
+      },
+    );
+  }
+
   // OAuth 2.0 RFC 6749 §10.12 — the `state` parameter MUST be
   // unguessable per-request and verified on callback. Without that
   // verification the callback is a CSRF sink: an attacker can hand
@@ -74,7 +96,17 @@ export async function POST(req: NextRequest) {
     process.env.NODE_ENV === 'production' &&
     (req.headers.get('x-forwarded-proto') === 'https' || req.nextUrl.protocol === 'https:');
 
-  const response = NextResponse.json({ ok: true, configured: true, url: url.toString() });
+  const response = NextResponse.json({
+    ok: true,
+    configured: true,
+    url: url.toString(),
+    // Debug-only field: prod'a config leak yok, sadece dev'de görünür.
+    // Owner "neden bağlanmıyor" troubleshooting'inde redirect URI'yi
+    // doğrulamak için.
+    ...(process.env.NODE_ENV === 'development' && {
+      redirectUri: redirectUri(req),
+    }),
+  });
   response.cookies.set(GOOGLE_OAUTH_STATE_COOKIE, nonce, {
     httpOnly: true,
     secure: isSecure,

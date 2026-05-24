@@ -51,6 +51,17 @@ const optional = [
   ['SUPABASE_STORAGE_BUCKET', 'careers attachment uploads return 503'],
   ['KV_REST_API_URL', 'rate limiter falls back to per-instance in-memory mode'],
   ['KV_REST_API_TOKEN', 'rate limiter falls back to per-instance in-memory mode'],
+  // CLAUDE.md §38 audit Fix #2 — Google OAuth env'leri. Eksikse owner
+  // panelde "Google hesabını bağla" butonu config error döner, callback
+  // çalışmaz. Build-time warn ile operatör fresh deploy'da fark eder.
+  ['GOOGLE_CLIENT_ID', 'Google OAuth — owner "Google hesabını bağla" returns 200+configured:false, button silently fails'],
+  ['GOOGLE_CLIENT_SECRET', 'Google OAuth callback — token exchange impossible, callback returns ?google=token-error'],
+  ['GOOGLE_REDIRECT_URI', 'Google OAuth callback — fallback to request origin which may not match Cloud Console authorized URI'],
+  ['GOOGLE_MAPS_API_KEY', 'Google Places API search — owner cannot search business name in Platform Bağlantıları panel'],
+  // CLAUDE.md §38 audit Fix #6 — AES-256-GCM at-rest token encryption.
+  // Eksikse Google access/refresh tokens plain text storage'a graceful
+  // degrade eder (feature çalışır ama at-rest encryption disipline aktif değil).
+  ['ENCRYPTION_KEY', 'Google token at-rest encryption disabled, falls back to plain text (backward-compat mode). Generate: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"'],
   // Cron endpoints (/api/cron/*) reject every request with 401 when this is
   // missing — fail-closed. That hides silently broken automation: weekly
   // digest, lifecycle emails, platform link retest, etc. all stop without

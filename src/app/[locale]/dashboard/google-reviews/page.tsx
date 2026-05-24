@@ -25,6 +25,7 @@ import { AlertBanner, PageHeader, PulseSelect } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import QuickReplyTemplates from '@/components/dashboard/google-reviews/QuickReplyTemplates';
 import { ReputationHealthCard } from '@/components/dashboard/google-reviews/ReputationHealthCard';
+import { GoogleConnectFlashBanner } from '@/components/dashboard/google/GoogleConnectFlashBanner';
 import { getQuickReplyTemplate } from '@/lib/quick-reply-templates';
 import { ACTIVE_BUSINESS_STORAGE_KEY, resolveActiveRestaurantId } from '@/lib/active-business';
 
@@ -1144,6 +1145,9 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
+      {/* §38 audit Fix #1 — connect button returnTo bu sayfa, callback
+          ?google=connected|state-*|token-* status'lerini yakalar. */}
+      <GoogleConnectFlashBanner locale={isTr ? 'tr' : 'en'} />
       <PageHeader
         eyebrow={isTr ? 'GOOGLE YORUMLARI' : 'GOOGLE REVIEWS'}
         title={isTr ? 'Google Yorumları' : 'Google Reviews'}

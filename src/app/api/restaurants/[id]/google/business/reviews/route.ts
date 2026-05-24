@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
+import { getLocaleFromRequest } from '@/lib/api/locale';
 import {
   getGoogleIntegrationForRestaurant,
   googleReviewManagementEnabled,
@@ -23,22 +24,37 @@ export async function GET(
   if (!actor) return ApiErrors.unauthorized();
 
   const { id } = await params;
+  // Fix #7 — locale-aware error mesajları
+  const locale = getLocaleFromRequest(req);
+  const isTr = locale === 'tr';
   if (!(await canAccessRestaurant(actor, id))) return ApiErrors.forbidden();
   if (!(await googleReviewManagementEnabled(id))) {
     return ApiErrors.forbidden(
-      'Google yorum yönetimi bu işletme için kapalı.',
+      isTr
+        ? 'Google yorum yönetimi bu işletme için kapalı.'
+        : 'Google review management is disabled for this business.',
       'GOOGLE_REVIEW_MANAGEMENT_DISABLED',
     );
   }
 
   const integration = await getGoogleIntegrationForRestaurant(actor, id);
   if (!integration) {
-    return ApiErrors.badRequest('Google Business Profile hesabı bağlı değil.', 'GOOGLE_NOT_CONNECTED');
+    return ApiErrors.badRequest(
+      isTr
+        ? 'Google Business Profile hesabı bağlı değil.'
+        : 'Google Business Profile account is not connected.',
+      'GOOGLE_NOT_CONNECTED',
+    );
   }
 
   const selection = selectedGoogleLocation(parseGoogleLocationsCache(integration.locationsJson), id);
   if (!selection) {
-    return ApiErrors.badRequest('Bu işletme için Google Business konumu seçilmemiş.', 'GOOGLE_LOCATION_NOT_SELECTED');
+    return ApiErrors.badRequest(
+      isTr
+        ? 'Bu işletme için Google Business konumu seçilmemiş.'
+        : 'No Google Business location selected for this business.',
+      'GOOGLE_LOCATION_NOT_SELECTED',
+    );
   }
 
   try {
@@ -85,9 +101,16 @@ export async function GET(
     return NextResponse.json({ ...reviews, location: selection, drafts });
   } catch (error) {
     if (error instanceof GoogleBusinessApiError) {
-      return googleBusinessErrorResponse(error, 'Google yorumları alınamadı.');
+      return googleBusinessErrorResponse(
+        error,
+        'Google yorumları alınamadı.',
+        'Failed to fetch Google reviews.',
+        locale,
+      );
     }
     console.error('[google reviews] failed', { restaurantId: id });
-    return ApiErrors.internalError('Google yorumları çekilemedi.');
+    return ApiErrors.internalError(
+      isTr ? 'Google yorumları çekilemedi.' : 'Failed to fetch Google reviews.',
+    );
   }
 }
