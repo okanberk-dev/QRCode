@@ -8,7 +8,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
 import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
-import { BarChart3, Inbox, QrCode, Sparkles, Star } from 'lucide-react';
+import { ArrowUpRight, BarChart3, ClipboardCheck, ClipboardList, Inbox, QrCode, Send, Sparkles, Star } from 'lucide-react';
 // Stage 41 §38.122 — HANDOFF §8 step 8 (Heroes A): 3 variant + ENV flag.
 // `HeroVariantPicker` is a Client Component that reads
 // `process.env.NEXT_PUBLIC_HERO_VARIANT` (build-time inlined) and dynamically
@@ -601,6 +601,104 @@ export default async function LandingPage({
                   <div className="mt-4">{visual}</div>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          3.5 REPUTATION OS SUITE — operational depth (Stage 134 §38.214)
+          Owner panel /dashboard/{audits,surveys,campaigns} marketing
+          parity. 3-card grid · Pulse §11 lime accent · 3-step "geri
+          bildirim toplama" sonrası "operasyona dökme" narrative'i.
+          Anchor href'leri yeni /features/{audit-center,surveys,
+          campaigns} detay sayfalarına gider.
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="border-y border-[#EDEDED] bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-24">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="max-w-[760px]">
+            <span className="pulse-eyebrow text-[#737373]">
+              {isTr ? 'BUAZE REPUTATION OS' : 'BUAZE REPUTATION OS'}
+            </span>
+            <h2 className="mt-4 text-[28px] sm:text-[44px] lg:text-[52px] font-medium leading-[1.04] tracking-[-0.035em] text-[#0A0A0A] text-balance">
+              {isTr ? (
+                <>
+                  Geri bildirimden{' '}
+                  <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">
+                    operasyona
+                  </span>
+                  .
+                </>
+              ) : (
+                <>
+                  From feedback to{' '}
+                  <span className="inline-block bg-[#C6F24E] rounded-md px-3 -skew-y-1">
+                    operations
+                  </span>
+                  .
+                </>
+              )}
+            </h2>
+            <p className="mt-5 text-[15px] sm:text-[17px] text-[#525252] leading-[1.6] max-w-[640px]">
+              {isTr
+                ? 'Yorum yönetimi tek başına yeterli değil. Buaze; operasyonel disiplin (denetim), derin müşteri sesi (anketler) ve yeniden etkileşim (kampanyalar) ile feedback döngüsünü kapatır — hepsi tek panelde.'
+                : 'Review management alone is not enough. Buaze closes the feedback loop with operational discipline (audits), deep customer voice (surveys) and re-engagement (campaigns) — all in one panel.'}
+            </p>
+          </div>
+
+          <div className="mt-10 sm:mt-12 grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
+            {[
+              {
+                eyebrow: isTr ? 'DENETİM MERKEZİ' : 'AUDIT CENTER',
+                title: isTr ? 'Operasyonu ölç, geliştir' : 'Measure operations, improve',
+                body: isTr
+                  ? 'Hijyen denetimi, işe alım quiz\'i, KVKK uyumluluk, ekip eğitim değerlendirmesi. 6 sektör için hazır şablon · 5 soru tipi · 3 skor modu.'
+                  : 'Hygiene audits, hiring quizzes, KVKK compliance, team training assessments. Ready templates for 6 sectors · 5 question types · 3 scoring modes.',
+                icon: ClipboardCheck,
+                href: `${base}/features/audit-center`,
+              },
+              {
+                eyebrow: isTr ? 'ANKETLER' : 'SURVEYS',
+                title: isTr ? 'NPS, CSAT ve özel sorular' : 'NPS, CSAT and custom questions',
+                body: isTr
+                  ? 'QR\'dan açılan kısa anket, NPS / CSAT / yıldız ve metin soruları, opsiyonel kupon teşviki. Google\'dan bağımsız müşteri sesi.'
+                  : 'Short surveys opened from QR, NPS / CSAT / star and text questions, optional coupon reward. Customer voice independent of Google.',
+                icon: ClipboardList,
+                href: `${base}/features/surveys`,
+              },
+              {
+                eyebrow: isTr ? 'KAMPANYALAR' : 'CAMPAIGNS',
+                title: isTr ? 'Müşterini geri kazan' : 'Win your customers back',
+                body: isTr
+                  ? 'Sektörel hazır şablon kütüphanesi, onay kontrollü gönderim, gerçek zamanlı teslimat takibi. ETK + İYS uyumlu CRM akışı.'
+                  : 'Sector-specific template library, approval-led send, real-time delivery tracking. ETK + IYS compliant CRM flow.',
+                icon: Send,
+                href: `${base}/features/campaigns`,
+              },
+            ].map((suite) => (
+              <Link
+                key={suite.eyebrow}
+                href={suite.href}
+                className="group bz-card relative flex flex-col gap-5 p-6 sm:p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-30px_rgba(10,10,10,0.18)]"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#EAF9B8] text-[#0A0A0A]">
+                    <suite.icon size={20} strokeWidth={2} />
+                  </span>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#EDEDED] text-[#737373] transition-colors group-hover:border-[#0A0A0A] group-hover:bg-[#0A0A0A] group-hover:text-white">
+                    <ArrowUpRight size={14} />
+                  </span>
+                </div>
+                <div>
+                  <span className="pulse-eyebrow text-[#A8D62E]">{suite.eyebrow}</span>
+                  <h3 className="mt-2 text-[20px] sm:text-[22px] font-medium leading-[1.15] tracking-[-0.02em] text-[#0A0A0A]">
+                    {suite.title}
+                  </h3>
+                  <p className="mt-3 text-[13px] sm:text-[14px] leading-[1.65] text-[#525252]">
+                    {suite.body}
+                  </p>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
