@@ -1411,78 +1411,108 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                 {isTr ? 'Konumlar yükleniyor…' : 'Loading locations…'}
               </p>
             </div>
-          ) : !loadingLocations && !locationError && accountsLoaded && inlineAccounts.length === 0 ? (
+          ) : !loadingLocations && !locationError && accountsLoaded && inlineAccounts.length === 0 && inlineLocationsSource !== 'empty' && (locationRetryAfter === null || locationRetryAfter === 0) ? (
             // No-account state — Google ile login oldu ama Business Profile yok.
-            // Kullanıcıya net bir mesaj + Google Business Profile'a yönlendirme.
-            <div className="py-6 px-2 rounded-xl bg-[#FFFBEB] border border-[#FDE68A]">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-[#FDE68A]">
-                  <Building2 size={18} strokeWidth={2} className="text-[#92400E]" />
+            // §38.205 — `inlineLocationsSource !== 'empty'` + countdown=0 guard
+            // false-positive'ı önler: Google API quota tükendiğinde de cache
+            // boş döner, eskiden bu mesaj yanlış pozitif olarak görünüyordu
+            // (kullanıcı işletmesini yönettiği halde "Business Profile yok"
+            // diyordu). Quota fail durumunda artık yukarıdaki sarı banner
+            // gösterilir ve "no business" final-state mesajı suppressed kalır.
+            //
+            // UI/UX — Pulse lime palette (CLAUDE.md §11): amber warning yerine
+            // welcoming lime soft accent. Owner "hata aldım" yerine "bir
+            // adım eksik kalmış" hissi alır.
+            <div className="py-6 px-4 rounded-2xl bg-[#EAF9B8]/40 border border-[#C6F24E]/50">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] shadow-sm">
+                  <Building2 size={20} strokeWidth={2} className="text-[#0A0A0A]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="bz-h-tight text-[14px] text-[#0A0A0A]">
+                  <p className="bz-h-tight text-[15px] text-[#0A0A0A]">
                     {isTr
-                      ? 'Google işletme hesabınız yok'
-                      : 'No Google Business Profile account'}
+                      ? 'Bu Google hesabında işletme profili bulunamadı'
+                      : 'No Business Profile in this Google account'}
                   </p>
-                  <p className="text-[12.5px] text-[#525252] mt-1 leading-relaxed">
+                  <p className="text-[13px] text-[#525252] mt-1.5 leading-relaxed">
                     {isTr
-                      ? 'Google ile giriş yaptınız ancak bu hesabın altında "Google Business Profile" (eski adıyla Google My Business) yok. Yorumları yönetmek için önce Google\'da bir işletme profili açmanız gerekiyor.'
-                      : 'You signed in with Google, but this account doesn\'t have a Google Business Profile (formerly Google My Business). To manage reviews, please create a business profile on Google first.'}
+                      ? 'İki olası neden var: (1) Google Business Profile başka bir Google hesabınızda olabilir — aşağıdan "Farklı hesapla bağlan"a tıklayıp doğru hesabı seçin. (2) Henüz hiç işletme profili açmadıysanız Google\'da bir tane oluşturun.'
+                      : 'Two possible reasons: (1) Your Google Business Profile may be under a different Google account — click "Switch Google account" below to pick the right one. (2) If you haven\'t created one yet, set up a Business Profile on Google.'}
                   </p>
-                  <div className="flex flex-wrap gap-2 mt-3">
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        // Disconnect mevcut Google integration + fresh OAuth
+                        // (prompt=select_account ile account picker).
+                        try {
+                          await fetch('/api/integrations/google/disconnect', { method: 'POST' });
+                        } catch {
+                          // best-effort — connect yine yapılır
+                        }
+                        await connectGoogleInline();
+                      }}
+                      disabled={connecting}
+                      className="bz-btn-primary inline-flex items-center gap-1.5 text-[13px] rounded-full"
+                    >
+                      {connecting ? <Loader2 size={14} className="animate-spin" /> : <Unplug size={14} />}
+                      {isTr ? 'Farklı hesapla bağlan' : 'Switch Google account'}
+                    </button>
                     <a
                       href="https://business.google.com/create"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px] rounded-full"
+                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[13px] rounded-full"
                     >
                       <ExternalLink size={13} />
-                      {isTr ? 'İşletme profili oluştur' : 'Create business profile'}
+                      {isTr ? 'Yeni profil oluştur' : 'Create new profile'}
                     </a>
                     <button
                       type="button"
                       onClick={() => loadInlineLocations(true)}
                       disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
-                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px] rounded-full"
+                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[13px] rounded-full"
                     >
                       <RefreshCw size={13} />
-                      {isTr ? 'Tekrar dene' : 'Try again'}
+                      {isTr ? 'Yenile' : 'Refresh'}
                     </button>
                   </div>
-                  <p className="text-[11px] text-[#737373] mt-3 leading-relaxed">
-                    {isTr
-                      ? 'İşletme profilini doğruladıktan sonra (Google posta ile kart, telefon araması veya video doğrulama gönderir) buraya dönüp "Tekrar dene" deyin.'
-                      : 'After Google verifies your business (via postcard, phone, or video call), come back here and click "Try again".'}
-                  </p>
+                  <div className="mt-4 pt-3 border-t border-[#C6F24E]/30 flex items-start gap-2">
+                    <Sparkles size={12} className="shrink-0 text-[#525252] mt-0.5" />
+                    <p className="text-[11.5px] text-[#525252] leading-relaxed">
+                      {isTr
+                        ? 'İpucu: Yeni profil açtıktan sonra Google doğrulama (posta, telefon veya video) bekleyebilir. Doğrulama tamamlanınca burada otomatik görünecek.'
+                        : 'Tip: After creating a new profile, Google may require verification (postcard, phone, or video). Once verified, it will appear here automatically.'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          ) : !loadingLocations && !locationError && accountsLoaded && inlineLocations.length === 0 ? (
+          ) : !loadingLocations && !locationError && accountsLoaded && inlineLocations.length === 0 && inlineLocationsSource !== 'empty' ? (
             // Account exists but no location — owner Business Profile açtı ama
-            // henüz konum eklemedi. Distinct mesaj.
-            <div className="py-6 px-2 rounded-xl bg-[#FFFBEB] border border-[#FDE68A]">
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-[#FDE68A]">
-                  <MapPin size={18} strokeWidth={2} className="text-[#92400E]" />
+            // henüz konum eklemedi. Distinct mesaj. Pulse lime UX.
+            <div className="py-6 px-4 rounded-2xl bg-[#EAF9B8]/40 border border-[#C6F24E]/50">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] shadow-sm">
+                  <MapPin size={20} strokeWidth={2} className="text-[#0A0A0A]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="bz-h-tight text-[14px] text-[#0A0A0A]">
+                  <p className="bz-h-tight text-[15px] text-[#0A0A0A]">
                     {isTr
-                      ? 'İşletme profilinde konum bulunamadı'
-                      : 'No location in your business profile'}
+                      ? 'Profilinizde henüz konum yok'
+                      : 'No location in your profile yet'}
                   </p>
-                  <p className="text-[12.5px] text-[#525252] mt-1 leading-relaxed">
+                  <p className="text-[13px] text-[#525252] mt-1.5 leading-relaxed">
                     {isTr
-                      ? `${inlineAccounts.length} Google Business Profile hesabı bağlı, fakat henüz hiç konum (lokasyon) eklenmemiş. Google'da işletme konumu açıp doğruladıktan sonra burada görünecek.`
-                      : `${inlineAccounts.length} Google Business Profile account connected, but no location has been added yet. After you add and verify a location on Google, it will appear here.`}
+                      ? `${inlineAccounts.length} Business Profile hesabınız bağlı, fakat henüz hiç konum (lokasyon) eklenmemiş. Google'da işletme konumu açıp doğruladıktan sonra burada görünecek.`
+                      : `${inlineAccounts.length} Business Profile account connected, but no location has been added yet. Add and verify a location on Google to see it here.`}
                   </p>
-                  <div className="flex flex-wrap gap-2 mt-3">
+                  <div className="flex flex-wrap gap-2 mt-4">
                     <a
                       href="https://business.google.com/locations"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px] rounded-full"
+                      className="bz-btn-primary inline-flex items-center gap-1.5 text-[13px] rounded-full"
                     >
                       <ExternalLink size={13} />
                       {isTr ? 'Google\'da konum ekle' : 'Add location on Google'}
@@ -1491,10 +1521,10 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                       type="button"
                       onClick={() => loadInlineLocations(true)}
                       disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
-                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px] rounded-full"
+                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[13px] rounded-full"
                     >
                       <RefreshCw size={13} />
-                      {isTr ? 'Tekrar dene' : 'Try again'}
+                      {isTr ? 'Yenile' : 'Refresh'}
                     </button>
                   </div>
                 </div>

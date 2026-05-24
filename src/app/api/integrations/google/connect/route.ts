@@ -89,7 +89,13 @@ export async function POST(req: NextRequest) {
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('scope', SCOPES.join(' '));
   url.searchParams.set('access_type', 'offline');
-  url.searchParams.set('prompt', 'consent');
+  // §38.205 — `consent select_account` ikilisi: owner her Google connect'te
+  // hem consent ekranını hem account chooser'ı görür. Daha önce sadece
+  // `consent` vardı → Google "son login olunan hesap" ile auto-login
+  // yapıyordu, bu da "yanlış hesapla bağlandım" durumunu kullanıcı için
+  // görünmez yapıyordu (especially Business Profile başka hesapta ise).
+  // `select_account` Google'ın multi-account picker'ını tetikler.
+  url.searchParams.set('prompt', 'consent select_account');
   url.searchParams.set('state', state);
 
   const isSecure =
