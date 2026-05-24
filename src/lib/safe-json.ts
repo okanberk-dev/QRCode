@@ -24,18 +24,56 @@ import * as Sentry from '@sentry/nextjs';
  * `maskGoogleUrl` (`src/lib/google-business.ts`) and the recaptcha
  * `buildSoftPassSentryEnvelope` PII check.
  */
+/**
+ * Strip GPT-style markdown code fence wrapper around JSON.
+ *
+ * Production logs (§38.B Stage 122) showed `feedback-summary` warning
+ * spam where OpenAI `gpt-4o-mini` returned `\`\`\`json\n{...}\n\`\`\``
+ * envelope despite the prompt asking for raw JSON. The model defaults
+ * to markdown formatting in some completions. Strip the fence so
+ * downstream `JSON.parse` succeeds without polluting Sentry.
+ *
+ * Behavior: only strips when the raw blob OPENS with a fence — leaves
+ * any prose preceding the JSON untouched (those are legitimate parse
+ * failures the caller should learn about).
+ */
+function stripMarkdownFence(raw: string): string {
+  const trimmed = raw.trim();
+  // ```json\n / ```JSON\n / ```\n (with or without language tag)
+  const open = trimmed.match(/^```(?:json|JSON)?\s*\n?/);
+  if (!open) return raw;
+  const body = trimmed.slice(open[0].length);
+  return body.replace(/\s*```\s*$/, '');
+}
+
 export function safeParseJson<T = unknown>(
   raw: string,
   ctx?: Record<string, unknown>,
 ): T | null {
+  if (typeof raw !== 'string') return null;
+
+  // Fast path — most callsites send valid JSON.
   try {
     return JSON.parse(raw) as T;
   } catch (err) {
+    // Recovery path — try once after stripping a markdown fence envelope.
+    // Only the OpenAI-using callers tend to hit this; everyone else's
+    // payload reaches the report path below unchanged.
+    const stripped = stripMarkdownFence(raw);
+    if (stripped !== raw) {
+      try {
+        return JSON.parse(stripped) as T;
+      } catch {
+        // Both attempts failed — fall through to report with the
+        // original error (more informative than the second one).
+      }
+    }
+
     Sentry.captureException(err, {
       tags: { kind: 'json-parse-failure' },
       extra: {
-        rawSnippet: typeof raw === 'string' ? raw.slice(0, 200) : null,
-        rawLength: typeof raw === 'string' ? raw.length : null,
+        rawSnippet: raw.slice(0, 200),
+        rawLength: raw.length,
         ...(ctx ?? {}),
       },
     });
@@ -51,7 +89,7 @@ export function safeParseJson<T = unknown>(
     // kalır ama `level=error` filter'ında temiz olur.
     console.warn('[safe-json] parse failed', {
       message: err instanceof Error ? err.message : 'unknown',
-      rawLength: typeof raw === 'string' ? raw.length : null,
+      rawLength: raw.length,
       ...(ctx ?? {}),
     });
     return null;
