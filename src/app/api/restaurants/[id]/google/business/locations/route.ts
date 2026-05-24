@@ -178,20 +178,35 @@ export async function GET(
   } catch (error) {
     if (error instanceof GoogleBusinessApiError) {
       if (error.code === 'GOOGLE_RATE_LIMITED') {
-        // (3) Google API quota tükendiyse, cache varsa stale data + warning
-        // ile graceful degrade et. Cache yoksa da hard 429 yerine 200 +
-        // boş array + warning dön — UI sarı banner + auto-retry countdown
-        // ile recover etsin (kırmızı error yerine).
-        // CLAUDE.md §40.1 — graceful degrade, sessiz fail yerine
-        // explicit warning + retry-after.
+        // (3) Google API quota tükendi → graceful degrade.
         //
-        // §38.209 — Quota fail durumunda DB cache'ine "empty stamp"
-        // yazıyoruz: sonraki request'lerde EMPTY_CACHE_FRESH_SECONDS
-        // boyunca cache hit olur, Google'a tekrar gidilmez. Eskiden
-        // syncedAt güncellenmiyordu → ageSec hep cache TTL'inden büyük
-        // → her request Google'a gidiyordu → quota burn loop. Bu fix
-        // negative cache mekanizmasının kalıcılığını sağlar.
-        const retryAfter = error.retryAfterSeconds ?? 60;
+        // §38.211 — Auto-retry KALDIRILDI (anti-pattern for shared quota).
+        // Google quota proje-geneli (1 req/min, §5.1.1): TÜM Buaze
+        // kullanıcıları aynı kotayı paylaşır. Auto-retry her client'ın
+        // retry'ı quota'yı tekrar tüketir → hep birlikte 429 alırlar →
+        // sonsuz döngü. §38.209 cache TTL + negative cache + exponential
+        // backoff yumuşatıcıydı ama temel sorunu çözmüyordu çünkü:
+        //   - Owner ilk connect = cache yok → quota dolu → empty stamp
+        //   - 60s sonra auto-retry force=true → cache bypass → Google'a
+        //     tekrar git → quota hâlâ dolu (başka client'lar da retry'da)
+        //     → 60s countdown tekrar başlar → loop.
+        //
+        // Manuel intervention only paterni (best practice for shared API
+        // quotas): countdown yok, auto-retry yok. Owner sandwich card
+        // (§38.208) ile "Farklı hesapla bağlan" alternatifini görür veya
+        // manuel "Yenile" butonu (UI side 60s cooldown). Response:
+        //   - `retryAfterSeconds` GÖNDERILMEZ → frontend countdown
+        //     başlatmaz (eski semantic kırılır, yeni davranış: hiç
+        //     countdown yok)
+        //   - `warning: 'GOOGLE_RATE_LIMITED'` mevcut (UI sarı banner
+        //     informational)
+        //   - Mesaj rewrite: "auto-retry" wording çıkarıldı, owner-
+        //     actionable: "Birkaç dakika bekleyin veya farklı hesapla
+        //     bağlanın"
+        //
+        // Empty stamp write korunur (§38.209 negative cache 90s pencere
+        // intact) — sayfa refresh / restaurant switch'te Google'a
+        // gitmemek için.
         const hasCache = cached.locations.length > 0 || cached.accounts.length > 0;
         if (!hasCache) {
           // İlk quota fail — empty stamp yaz ki sonraki request'ler
@@ -221,14 +236,16 @@ export async function GET(
             source: hasCache ? 'cache' : 'empty',
             cacheAgeSeconds: hasCache ? ageSec : 0,
             warning: 'GOOGLE_RATE_LIMITED',
-            retryAfterSeconds: retryAfter,
+            // §38.211 — retryAfterSeconds intentionally omitted; frontend
+            // would start a countdown + auto-retry which burns the
+            // project-wide quota for everyone.
             message: isTr
               ? (hasCache
-                ? `Google API kotası doldu. ${retryAfter} saniye sonra tekrar denenecek. (Son güncel veriler gösteriliyor.)`
-                : `Google API kotası şu an dolu (tüm Buaze kullanıcıları aynı kotayı paylaşır). ${retryAfter} saniye sonra otomatik tekrar denenecek.`)
+                ? `Google API kotası şu an dolu (tüm Buaze kullanıcıları aynı kotayı paylaşır). Son güncel veriler gösteriliyor; birkaç dakika sonra "Yenile" ile tekrar deneyin.`
+                : `Google API kotası şu an dolu (tüm Buaze kullanıcıları aynı kotayı paylaşır). Birkaç dakika bekleyin veya farklı bir Google hesabıyla bağlanmayı deneyin.`)
               : (hasCache
-                ? `Google API quota exhausted. Auto-retry in ${retryAfter}s. (Showing last synced data.)`
-                : `Google API quota currently exhausted (shared across all Buaze users). Auto-retry in ${retryAfter}s.`),
+                ? `Google API quota currently exhausted (shared across all Buaze users). Showing last synced data; click "Refresh" again in a few minutes.`
+                : `Google API quota currently exhausted (shared across all Buaze users). Wait a few minutes or try connecting with a different Google account.`),
           },
           { status: 200 },
         );

@@ -571,20 +571,13 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   // (Önbellek) ve "Son senkron" zamanı için kullanılır (CLAUDE.md §5.1).
   const [inlineLocationsSource, setInlineLocationsSource] = useState<'cache' | 'google' | 'empty' | null>(null);
   const [inlineLocationsSyncedAt, setInlineLocationsSyncedAt] = useState<string | null>(null);
-  // Countdown 0'a ulaşınca tek-seferlik auto-retry tetikle.
-  const autoRetryFiredRef = useRef(false);
-  // §38.209 — Auto-retry attempt counter. Backoff schedule: 60s → 120s →
-  // STOP. 2 deneme yetersizse owner manuel intervention yapar (sandwich
-  // card görünüyor, "Farklı hesapla bağlan" CTA hazır). Eski davranışta
-  // tek-seferlik kontrol vardı; ama autoRetryFiredRef restoran switch /
-  // mount cycle'da reset olduğu için pratikte sınırsız retry oluyordu.
-  // Counter manuel trigger'larda resetlenir, auto-retry kendisi bumps.
-  const autoRetryAttemptRef = useRef(0);
-  const MAX_AUTO_RETRY_ATTEMPTS = 2;
-  // §38.207 — Auto-retry'ın bir kez tetiklendiğini state olarak tut
-  // (ref re-render tetiklemez). Banner'ın altında "Auto-retry yapıldı,
-  // hâlâ sonuç yok ise farklı hesapla dene" hint render etmek için.
-  const [hasAutoRetried, setHasAutoRetried] = useState(false);
+  // §38.211 — Auto-retry tamamen kaldırıldı (shared API quota
+  // anti-pattern). Eski state'ler (autoRetryFiredRef, autoRetryAttemptRef,
+  // MAX_AUTO_RETRY_ATTEMPTS, hasAutoRetried) silindi — quota fail
+  // durumunda owner sandwich card (§38.208) ile direkt manuel
+  // intervention seçenekleri görüyor. Countdown UI sadece "Yenile" buton
+  // disable amaçlı (locationRetryAfter state korunur, tick decrement
+  // yapar ama retry tetiği yok).
   // §38.206 — Smart "Bu hesapla devam et" akışı. Kullanıcı empty state'te
   // "Bu Google hesabıyla devam et" tıkladıysa flag set edilir; loadInlineLocations
   // force=true ile fresh accounts fetch atılır. Hâlâ accounts boş dönerse
@@ -819,12 +812,9 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     // sıfırlanır; sonraki restoran için kullanıcı tekrar smart fallback
     // alabilsin (force refresh flag stale kalmasın).
     setHasAttemptedSameAccount(false);
-    // §38.207 — Auto-retry flag'i de restoran değişiminde reset.
-    // §38.209 — Attempt counter da reset; yeni restoran = fresh
-    // exponential backoff window.
-    autoRetryFiredRef.current = false;
-    autoRetryAttemptRef.current = 0;
-    setHasAutoRetried(false);
+    // §38.211 — Auto-retry state'leri kaldırıldı; restoran change'de
+    // ek reset yok. locationRetryAfter zaten setLoadingLocations true
+    // sırasında setLocationRetryAfter(null) ile temizleniyor.
   }, [activeRestaurantId]);
 
   // OAuth start — Google'a yönlendirir, callback sonrası bu sayfaya geri
@@ -867,26 +857,18 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   // banner + retry-after countdown gösterir. `force=true` sadece kullanıcı
   // bilinçli "Konumları yenile" butonuna basınca gönderilir; otomatik
   // mount fetch'i cache'i kullanır (CLAUDE.md §5.1 quota strategy).
-  const loadInlineLocations = async (force = false, opts: { resetAutoRetry?: boolean } = {}) => {
+  const loadInlineLocations = async (force = false, _opts: { resetAutoRetry?: boolean } = {}) => {
     if (!activeRestaurantId) return;
     setLoadingLocations(true);
     setLocationError(null);
     setLocationNotice(null);
     setLocationRetryAfter(null);
     setNeedsReconnect(false);
-    // §38.207 — Auto-retry sonsuz loop bug fix. Eskiden bu fonksiyon her
-    // çağrıda flag'i `false`'a resetliyordu; ama auto-retry kendisi de
-    // `loadInlineLocations(true)` çağırıyor → countdown her bittiğinde
-    // tekrar fire ediliyor → quota her dakika 1 burn → owner hiç işletme
-    // göremiyor. Reset artık SADECE bilinçli manuel trigger'larda yapılır
-    // (restaurant change useEffect, manual "Yenile" buton click, OAuth
-    // başarılı bağlantı). Auto-retry kendini reset etmez.
-    // §38.209 — autoRetryAttemptRef counter da manuel trigger'da resetlenir.
-    if (opts.resetAutoRetry) {
-      autoRetryFiredRef.current = false;
-      autoRetryAttemptRef.current = 0;
-      setHasAutoRetried(false);
-    }
+    // §38.211 — Auto-retry KALDIRILDI (shared API quota anti-pattern,
+    // §40.4). resetAutoRetry opt is no-op (signature korunuyor backwards-
+    // compat için, ileride state geri eklenirse caller'lar değişmesin).
+    // `force` parametresi yine manuel button click vs otomatik
+    // remount ayırt eder — backend cache TTL strategy buna güveniyor.
     try {
       const url = `/api/restaurants/${activeRestaurantId}/google/business/locations${
         force ? '?force=true' : ''
@@ -902,29 +884,32 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         setLocationNotice(
           data.message ||
             (isTr
-              ? 'Google API kotası doldu. Son güncel veriler gösteriliyor; birkaç dakika sonra yenileyin.'
-              : 'Google API quota exhausted. Showing last synced data; try refreshing in a few minutes.'),
+              ? 'Google API kotası şu an dolu (tüm Buaze kullanıcıları aynı kotayı paylaşır). Birkaç dakika bekleyin veya farklı bir Google hesabıyla bağlanmayı deneyin.'
+              : 'Google API quota currently exhausted (shared across all Buaze users). Wait a few minutes or try connecting with a different Google account.'),
         );
-        if (typeof data.retryAfterSeconds === 'number') {
-          setLocationRetryAfter(data.retryAfterSeconds);
-        }
+        // §38.211 — UI-side cooldown only (auto-retry kaldırıldı).
+        // Backend artık `retryAfterSeconds` göndermiyor (§38.211 backend
+        // fix). Frontend manuel "Yenile" mash önleyici için 60s countdown
+        // başlatır — bu sadece buton disable + display amaçlı, hiçbir
+        // retry tetiği YOK. Sandwich card (§38.208) owner'a "Farklı
+        // hesapla bağlan" alternatifini hemen sunuyor.
+        setLocationRetryAfter(60);
         return;
       }
       if (!res.ok) {
         if (res.status === 429) {
-          const retryHeader = res.headers.get('retry-after');
-          const retryAfter = retryHeader ? Number(retryHeader) : null;
+          // §38.211 — Hard 429 sadece rate-limit (CLIENT_THROTTLED) için
+          // tetiklenir; Google quota fail (§38.211 backend fix) artık
+          // 200 + warning paterniyle dönüyor (yukarıdaki branch).
+          // Backend rate-limit retry-after header gönderir ama auto-retry
+          // YOK — owner manuel "Yenile" cooldown'unu bekler. setLocationRetryAfter
+          // çağrılmaz → countdown UI tetiklenmez.
           setLocationError(
             data?.error ||
-              (retryAfter
-                ? (isTr
-                    ? `Google API kotası doldu. ${retryAfter} saniye sonra tekrar deneyin.`
-                    : `Google API quota exhausted. Try again in ${retryAfter}s.`)
-                : (isTr
-                    ? 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.'
-                    : 'Google API quota exhausted. Try again in a few minutes.')),
+              (isTr
+                ? 'Çok sık yenileme. Birkaç dakika sonra tekrar deneyin.'
+                : 'Too many refresh requests. Try again in a few minutes.'),
           );
-          setLocationRetryAfter(Number.isFinite(retryAfter) ? retryAfter : null);
           return;
         }
         if (res.status === 401 || data?.code === 'GOOGLE_REAUTH_REQUIRED' || data?.requiresReauth) {
@@ -1005,13 +990,24 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status?.connected, status?.selectedLocation, activeRestaurantId]);
 
-  // 429 retry-after countdown + exponential backoff auto-retry
-  // (CLAUDE.md §5.1 + §38.209).
-  // Sarı banner gören owner için manuel "yenile" gerek kalmadan otomatik
-  // 2 deneme yapılır. Daha sonra otomatik retry durur — sandwich card
-  // (§38.208) zaten görünüyor, owner "Farklı hesapla bağlan" yapabilir.
-  // `autoRetryFiredRef` mevcut countdown için tek-seferlik guard,
-  // `autoRetryAttemptRef` tüm session boyunca attempt counter.
+  // §38.211 — Auto-retry KALDIRILDI (anti-pattern for shared API quota).
+  // Google quota proje-geneli (1 req/min/proje, §5.1.1): TÜM Buaze
+  // kullanıcıları aynı kotayı paylaşır. Eski auto-retry her client'ın
+  // retry'ı quota'yı tekrar tüketiyordu → hep birlikte 429 alırlardı →
+  // sonsuz döngü. §38.207 auto-retry self-loop fix + §38.209 exponential
+  // backoff yumuşatıcıydı ama temel sorunu çözmüyordu çünkü farklı
+  // client'lar aynı window içinde retry tetikliyordu.
+  //
+  // Yeni paterni — manuel intervention only:
+  //   - Countdown UI sadece "Yenile" buton disable + display amaçlı
+  //   - Tick'ler decrement yapar; 0'a ulaştığında HİÇBİR retry tetiği yok
+  //   - Owner sandwich card (§38.208) ile "Farklı hesapla bağlan"
+  //     alternatifini direkt görür, veya 60s cooldown sonrası manuel
+  //     "Yenile" tıklayabilir
+  //
+  // Eski auto-retry state'leri (autoRetryFiredRef, autoRetryAttemptRef,
+  // MAX_AUTO_RETRY_ATTEMPTS, hasAutoRetried) tamamen silindi — drift
+  // kaynağıydı.
   useEffect(() => {
     if (locationRetryAfter === null || locationRetryAfter <= 0) return;
     const interval = setInterval(() => {
@@ -1019,33 +1015,12 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         if (prev === null) return null;
         if (prev <= 1) {
           clearInterval(interval);
-          const canRetry =
-            !autoRetryFiredRef.current &&
-            autoRetryAttemptRef.current < MAX_AUTO_RETRY_ATTEMPTS &&
-            status?.connected &&
-            activeRestaurantId;
-          if (canRetry) {
-            autoRetryFiredRef.current = true;
-            autoRetryAttemptRef.current += 1;
-            setHasAutoRetried(true);
-            // §38.207 — Auto-retry kendini reset etmemeli; flag yalnız
-            // manuel trigger'larda (mount, restaurant change, manuel
-            // button click) reset olur. Eski davranışta `loadInlineLocations`
-            // her çağrıda flag'i resetliyordu → sonsuz loop, quota burn.
-            // §38.209 — Bu auto-retry attempt counter'ı bump eder; sonraki
-            // quota fail'de yeni 60s countdown başlasa bile attempt
-            // MAX'a ulaşmışsa retry tetiklenmez (sandwich card owner'a
-            // alternative gösteriyor).
-            void loadInlineLocations(true);
-          }
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-    // loadInlineLocations stable closure; status.connected sadece read.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationRetryAfter]);
 
   const draftReply = async (review: GoogleReview) => {
@@ -1483,12 +1458,8 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                     <div className="flex-1 min-w-0">
                       <p className="text-[12.5px] text-[#0A0A0A] leading-relaxed">
                         {isTr
-                          ? hasAutoRetried
-                            ? 'Otomatik tekrar denenmiş ama Google quota hâlâ dolu. Beklemek istemiyorsanız farklı bir Google hesabıyla bağlanmayı deneyin — Business Profile genelde kayıt olduğunuz hesaptan farklı bir Google hesabındadır.'
-                            : 'Beklemek istemiyorsanız farklı bir Google hesabıyla bağlanmayı deneyebilirsiniz. Business Profile genelde Buaze\'ye kayıt olduğunuz Google hesabından farklı bir hesapta olur — doğru hesabı seçmek quota\'yı bypass edebilir.'
-                          : hasAutoRetried
-                            ? 'Auto-retry already attempted but Google quota is still exhausted. Instead of waiting, try a different Google account — your Business Profile is usually under a different account.'
-                            : 'Instead of waiting, you can try a different Google account. Your Google Business Profile is usually under a different Google account than the one you signed up with — picking the right account may bypass the quota.'}
+                          ? 'Beklemek istemiyorsanız farklı bir Google hesabıyla bağlanmayı deneyebilirsiniz. Business Profile genelde Buaze\'ye kayıt olduğunuz Google hesabından farklı bir hesapta olur — doğru hesabı seçmek quota\'yı bypass edebilir.'
+                          : 'Instead of waiting, you can try a different Google account. Your Google Business Profile is usually under a different Google account than the one you signed up with — picking the right account may bypass the quota.'}
                       </p>
                       <button
                         type="button"
@@ -1498,9 +1469,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                           } catch {
                             // best-effort
                           }
-                          autoRetryFiredRef.current = false;
-                          autoRetryAttemptRef.current = 0;
-                          setHasAutoRetried(false);
+                          // §38.211 — Auto-retry state'leri kaldırıldı.
                           setHasAttemptedSameAccount(false);
                           await connectGoogleInline();
                         }}
