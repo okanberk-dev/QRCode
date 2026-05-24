@@ -143,3 +143,180 @@ export async function lsFetch<T = unknown>(
     clearTimeout(timer);
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// Typed SDK helpers (Wave 2, §44.9 — CLAUDE.md §38.218)
+//
+// Spec audit cross-checked against:
+//   • docs.lemonsqueezy.com/api (REST reference)
+//   • github.com/lmsqueezy/lemonsqueezy.js (official SDK source)
+//
+// JSON:API envelope:
+//   POST /v1/checkouts → { data: { type, attributes, relationships } }
+//   PATCH /v1/subscriptions/{id} → { data: { type, id, attributes } }
+//   DELETE /v1/subscriptions/{id} → no body
+//   GET /v1/subscriptions/{id} → returns subscription envelope; attributes.urls
+//     carries signed customer_portal + update_payment_method URLs (24h TTL).
+//
+// All amounts in MINOR unit (cents/kuruş) — convert at boundaries.
+// ─────────────────────────────────────────────────────────────────────
+
+export interface CreateCheckoutParams {
+  variantId: string | number;
+  /** Buaze custom data — webhook'ta `meta.custom_data` olarak gelir. */
+  customData: {
+    user_id: string;
+    plan_id?: string;
+    billing_cycle?: 'monthly' | 'yearly';
+    currency?: 'USD' | 'TRY';
+    [key: string]: unknown;
+  };
+  /** Pre-fill checkout form. Owner zaten kayıtlı, email/name biliriyor. */
+  email?: string;
+  name?: string;
+  /** Successful checkout sonrası nereye dön. */
+  redirectUrl?: string;
+  /**
+   * Force test mode regardless of config — used by smoke tests. Production
+   * caller'lar bunu set ETMEZ; lib `LEMON_SQUEEZY_MODE='test'` env ile
+   * test_mode body field'ını otomatik ayarlar.
+   */
+  forceTestMode?: boolean;
+}
+
+interface LsCheckoutAttributes {
+  url: string;
+  expires_at: string | null;
+  test_mode: boolean;
+  [key: string]: unknown;
+}
+
+/**
+ * Create a Lemon Squeezy checkout session.
+ *
+ * Returns the signed checkout URL (`data.attributes.url`) that the owner
+ * is redirected to. SDK reference: `src/checkouts/index.ts:createCheckout`.
+ */
+export async function createCheckout(
+  params: CreateCheckoutParams,
+): Promise<LemonSqueezyFetchResult<LemonSqueezyApiResponse<{
+  id: string;
+  type: 'checkouts';
+  attributes: LsCheckoutAttributes;
+}>>> {
+  const config = getLemonSqueezyConfig();
+  if (!config.enabled) {
+    return {
+      ok: false,
+      status: 503,
+      reason: 'not_configured',
+      message: config.disabledReason ?? 'lemon_squeezy_disabled',
+    };
+  }
+
+  const testMode = params.forceTestMode ?? config.mode === 'test';
+
+  return lsFetch<{
+    id: string;
+    type: 'checkouts';
+    attributes: LsCheckoutAttributes;
+  }>('/v1/checkouts', {
+    method: 'POST',
+    body: {
+      data: {
+        type: 'checkouts',
+        attributes: {
+          test_mode: testMode,
+          checkout_data: {
+            email: params.email,
+            name: params.name,
+            custom: params.customData,
+          },
+          product_options: params.redirectUrl
+            ? { redirect_url: params.redirectUrl }
+            : undefined,
+        },
+        relationships: {
+          store: {
+            data: { type: 'stores', id: String(config.storeId) },
+          },
+          variant: {
+            data: { type: 'variants', id: String(params.variantId) },
+          },
+        },
+      },
+    },
+  });
+}
+
+interface LsSubscriptionAttributes {
+  status: string;
+  cancelled: boolean;
+  renews_at: string | null;
+  ends_at: string | null;
+  /**
+   * Signed customer-facing URLs (24h TTL). `customer_portal` is the one
+   * owner is sent to for "Manage subscription". Fresh fetch every click.
+   */
+  urls?: {
+    update_payment_method?: string;
+    customer_portal?: string;
+    customer_portal_update_subscription?: string;
+  };
+  [key: string]: unknown;
+}
+
+/**
+ * Retrieve a Lemon Squeezy subscription. Used by `/api/billing/portal`
+ * to fetch the short-lived `urls.customer_portal` signed URL.
+ */
+export async function getSubscription(
+  subscriptionId: string | number,
+): Promise<LemonSqueezyFetchResult<LemonSqueezyApiResponse<{
+  id: string;
+  type: 'subscriptions';
+  attributes: LsSubscriptionAttributes;
+}>>> {
+  return lsFetch(`/v1/subscriptions/${encodeURIComponent(String(subscriptionId))}`);
+}
+
+/**
+ * Soft-cancel a subscription. Lemon Squeezy semantic: owner retains access
+ * until `ends_at` (current period end). DB row update (cancelAtPeriodEnd:
+ * true) is handled by webhook handler (`subscription_cancelled` event).
+ */
+export async function cancelSubscription(
+  subscriptionId: string | number,
+): Promise<LemonSqueezyFetchResult<LemonSqueezyApiResponse<{
+  id: string;
+  type: 'subscriptions';
+  attributes: LsSubscriptionAttributes;
+}>>> {
+  return lsFetch(`/v1/subscriptions/${encodeURIComponent(String(subscriptionId))}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Reactivate a cancelled subscription that's still in grace period
+ * (i.e. `cancelled: true` but `ends_at` not yet reached). Lemon Squeezy:
+ * PATCH with `cancelled: false`.
+ */
+export async function reactivateSubscription(
+  subscriptionId: string | number,
+): Promise<LemonSqueezyFetchResult<LemonSqueezyApiResponse<{
+  id: string;
+  type: 'subscriptions';
+  attributes: LsSubscriptionAttributes;
+}>>> {
+  return lsFetch(`/v1/subscriptions/${encodeURIComponent(String(subscriptionId))}`, {
+    method: 'PATCH',
+    body: {
+      data: {
+        type: 'subscriptions',
+        id: String(subscriptionId),
+        attributes: { cancelled: false },
+      },
+    },
+  });
+}

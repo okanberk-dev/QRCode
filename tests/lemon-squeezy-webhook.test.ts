@@ -367,3 +367,243 @@ describe('webhook primitives integration', () => {
     assert.equal(hash, hashAgain);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────
+// Wave 2 — Lemon Squeezy SDK helper request shape tests (§38.218)
+//
+// Verify the helpers send JSON:API envelopes that match the official SDK
+// spec (cross-checked against lmsqueezy/lemonsqueezy.js source). We mock
+// global fetch, capture the request body + URL, then restore.
+// ─────────────────────────────────────────────────────────────────────
+
+import {
+  createCheckout,
+  getSubscription,
+  cancelSubscription,
+  reactivateSubscription,
+} from '../src/lib/lemon-squeezy/client';
+
+interface CapturedRequest {
+  url: string;
+  method: string;
+  headers: Record<string, string>;
+  body: string | null;
+}
+
+function withMockedFetch(
+  responseBody: unknown,
+  responseStatus = 200,
+): { capture: { last: CapturedRequest | null }; restore: () => void } {
+  const original = globalThis.fetch;
+  const capture: { last: CapturedRequest | null } = { last: null };
+
+  // @ts-expect-error — test stub
+  globalThis.fetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+    capture.last = {
+      url: String(input),
+      method: init.method ?? 'GET',
+      headers: (init.headers ?? {}) as Record<string, string>,
+      body: typeof init.body === 'string' ? init.body : null,
+    };
+    return new Response(JSON.stringify(responseBody), {
+      status: responseStatus,
+      headers: { 'Content-Type': 'application/vnd.api+json' },
+    });
+  };
+
+  return {
+    capture,
+    restore: () => {
+      globalThis.fetch = original;
+    },
+  };
+}
+
+describe('Wave 2 — createCheckout request shape', () => {
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    __resetLemonSqueezyConfigForTests();
+    process.env.LEMON_SQUEEZY_API_KEY = 'test_abc123';
+    process.env.LEMON_SQUEEZY_STORE_ID = '99999';
+    process.env.LEMON_SQUEEZY_WEBHOOK_SECRET = 'secret';
+    process.env.LEMON_SQUEEZY_MODE = 'test';
+  });
+
+  it('builds the JSON:API envelope per LS SDK spec', async () => {
+    const mock = withMockedFetch({
+      data: { id: 'co_1', type: 'checkouts', attributes: { url: 'https://lemons.squeezy/checkout/1', expires_at: null, test_mode: true } },
+    });
+    try {
+      const result = await createCheckout({
+        variantId: 12345,
+        customData: { user_id: 'user_abc', plan_id: 'plan_pro', billing_cycle: 'monthly', currency: 'USD' },
+        email: 'owner@example.com',
+        name: 'Owner Name',
+        redirectUrl: 'https://buaze.com/dashboard/account',
+      });
+
+      assert.equal(result.ok, true, 'helper should succeed');
+      assert.ok(mock.capture.last, 'fetch should have been called');
+      assert.equal(mock.capture.last!.method, 'POST');
+      assert.equal(mock.capture.last!.url, 'https://api.lemonsqueezy.com/v1/checkouts');
+
+      const body = JSON.parse(mock.capture.last!.body!);
+      assert.equal(body.data.type, 'checkouts');
+      assert.equal(body.data.relationships.store.data.type, 'stores');
+      assert.equal(body.data.relationships.store.data.id, '99999');
+      assert.equal(body.data.relationships.variant.data.type, 'variants');
+      assert.equal(body.data.relationships.variant.data.id, '12345');
+      // test_mode must reflect config.mode='test'
+      assert.equal(body.data.attributes.test_mode, true);
+      // checkout_data envelope shape (snake_case at boundary)
+      assert.equal(body.data.attributes.checkout_data.email, 'owner@example.com');
+      assert.equal(body.data.attributes.checkout_data.name, 'Owner Name');
+      assert.deepEqual(body.data.attributes.checkout_data.custom, {
+        user_id: 'user_abc',
+        plan_id: 'plan_pro',
+        billing_cycle: 'monthly',
+        currency: 'USD',
+      });
+      // redirect URL becomes product_options.redirect_url
+      assert.equal(body.data.attributes.product_options.redirect_url, 'https://buaze.com/dashboard/account');
+    } finally {
+      mock.restore();
+    }
+  });
+
+  it('respects production mode (test_mode: false)', async () => {
+    // live_ prefix + production mode passes mode/key sanity
+    process.env.LEMON_SQUEEZY_API_KEY = 'live_xyz789';
+    process.env.LEMON_SQUEEZY_MODE = 'production';
+    __resetLemonSqueezyConfigForTests();
+
+    const mock = withMockedFetch({
+      data: { id: 'co_2', type: 'checkouts', attributes: { url: 'https://lemons.squeezy/checkout/2', expires_at: null, test_mode: false } },
+    });
+    try {
+      await createCheckout({
+        variantId: 1,
+        customData: { user_id: 'user_x' },
+      });
+      const body = JSON.parse(mock.capture.last!.body!);
+      assert.equal(body.data.attributes.test_mode, false);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  it('returns not_configured when env is missing', async () => {
+    delete process.env.LEMON_SQUEEZY_API_KEY;
+    __resetLemonSqueezyConfigForTests();
+    const result = await createCheckout({
+      variantId: 1,
+      customData: { user_id: 'user_x' },
+    });
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.reason, 'not_configured');
+      assert.equal(result.status, 503);
+    }
+  });
+});
+
+describe('Wave 2 — subscription helpers (get / cancel / reactivate)', () => {
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    __resetLemonSqueezyConfigForTests();
+    process.env.LEMON_SQUEEZY_API_KEY = 'test_abc';
+    process.env.LEMON_SQUEEZY_STORE_ID = '1';
+    process.env.LEMON_SQUEEZY_WEBHOOK_SECRET = 's';
+    process.env.LEMON_SQUEEZY_MODE = 'test';
+  });
+
+  it('getSubscription GETs /v1/subscriptions/{id}', async () => {
+    const mock = withMockedFetch({
+      data: {
+        id: '42',
+        type: 'subscriptions',
+        attributes: {
+          status: 'active',
+          cancelled: false,
+          renews_at: '2026-12-01T00:00:00Z',
+          ends_at: null,
+          urls: { customer_portal: 'https://portal.example/jwt' },
+        },
+      },
+    });
+    try {
+      const result = await getSubscription(42);
+      assert.equal(result.ok, true);
+      assert.equal(mock.capture.last!.method, 'GET');
+      assert.equal(mock.capture.last!.url, 'https://api.lemonsqueezy.com/v1/subscriptions/42');
+    } finally {
+      mock.restore();
+    }
+  });
+
+  it('cancelSubscription DELETEs /v1/subscriptions/{id}', async () => {
+    const mock = withMockedFetch({
+      data: {
+        id: '7',
+        type: 'subscriptions',
+        attributes: {
+          status: 'cancelled',
+          cancelled: true,
+          renews_at: '2026-06-01T00:00:00Z',
+          ends_at: '2026-06-01T00:00:00Z',
+        },
+      },
+    });
+    try {
+      const result = await cancelSubscription('7');
+      assert.equal(result.ok, true);
+      assert.equal(mock.capture.last!.method, 'DELETE');
+      assert.equal(mock.capture.last!.url, 'https://api.lemonsqueezy.com/v1/subscriptions/7');
+      assert.equal(mock.capture.last!.body, null);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  it('reactivateSubscription PATCHes with cancelled:false', async () => {
+    const mock = withMockedFetch({
+      data: {
+        id: '7',
+        type: 'subscriptions',
+        attributes: { status: 'active', cancelled: false, renews_at: '2026-07-01T00:00:00Z', ends_at: null },
+      },
+    });
+    try {
+      const result = await reactivateSubscription('7');
+      assert.equal(result.ok, true);
+      assert.equal(mock.capture.last!.method, 'PATCH');
+      const body = JSON.parse(mock.capture.last!.body!);
+      assert.equal(body.data.type, 'subscriptions');
+      assert.equal(body.data.id, '7');
+      assert.equal(body.data.attributes.cancelled, false);
+    } finally {
+      mock.restore();
+    }
+  });
+
+  it('encodes subscription IDs in the URL path', async () => {
+    // Defensive — subscription IDs are numeric in LS but the helper accepts
+    // strings; if a caller ever passes a weird value, we should encode.
+    const mock = withMockedFetch({
+      data: { id: 'safe', type: 'subscriptions', attributes: { status: 'active', cancelled: false, renews_at: null, ends_at: null } },
+    });
+    try {
+      await getSubscription('abc/123');
+      assert.equal(
+        mock.capture.last!.url,
+        'https://api.lemonsqueezy.com/v1/subscriptions/abc%2F123',
+      );
+    } finally {
+      mock.restore();
+    }
+  });
+});

@@ -15,8 +15,18 @@
 export { getLemonSqueezyConfig, __resetLemonSqueezyConfigForTests } from './config';
 export type { LemonSqueezyConfig, LemonSqueezyMode } from './config';
 
-export { lsFetch } from './client';
-export type { LemonSqueezyFetchOptions, LemonSqueezyFetchResult } from './client';
+export {
+  lsFetch,
+  createCheckout,
+  getSubscription,
+  cancelSubscription,
+  reactivateSubscription,
+} from './client';
+export type {
+  LemonSqueezyFetchOptions,
+  LemonSqueezyFetchResult,
+  CreateCheckoutParams,
+} from './client';
 
 export {
   verifyLemonSqueezySignature,
