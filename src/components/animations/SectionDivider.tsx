@@ -61,7 +61,7 @@ export default function SectionDivider({ locale }: SectionDividerProps) {
             {
               text: 'Bir QR. Bir yorum. Bir kazanç.',
               label: 'BUAZE PANELİ',
-              role: 'Restoran sesi tek panelde',
+              role: 'İşletmenin sesi tek panelde',
               accents: ['kazanç.'],
             },
             {
@@ -71,7 +71,7 @@ export default function SectionDivider({ locale }: SectionDividerProps) {
               accents: ['ulaşır.'],
             },
             {
-              text: 'Pulse AI restoran sesini öğrenir, tone-aware yanıt önerir.',
+              text: 'Pulse AI işletmenizin sesini öğrenir, tone-aware yanıt önerir.',
               label: 'BUAZE AI',
               role: 'Yapay zeka asistanı',
               accents: ['önerir.'],
@@ -87,7 +87,7 @@ export default function SectionDivider({ locale }: SectionDividerProps) {
             {
               text: 'One QR. One review. One win.',
               label: 'BUAZE PANEL',
-              role: 'The voice of the restaurant',
+              role: 'The voice of your business',
               accents: ['win.'],
             },
             {
@@ -227,8 +227,11 @@ export default function SectionDivider({ locale }: SectionDividerProps) {
         </div>
       </div>
 
-      {/* Center stage */}
-      <div className="relative flex flex-col items-center justify-center px-5 py-16 text-center sm:px-12 sm:py-24 lg:px-24 lg:py-28">
+      {/* Center stage — Stage 136 §38.216 padding kompakt
+          (kullanıcı: "componenti aşağıdan yukardan biraz küçült çok büyük
+          durmasın"): mobile py-16 → py-12, sm py-24 → py-16, lg py-28 →
+          py-20. Pulse §11 hierarchy korunur, sadece visual weight azaltıldı. */}
+      <div className="relative flex flex-col items-center justify-center px-5 py-12 text-center sm:px-12 sm:py-16 lg:px-24 lg:py-20">
         {/* Decorative serif quote marks — desktop only */}
         <span
           aria-hidden
@@ -279,7 +282,9 @@ export default function SectionDivider({ locale }: SectionDividerProps) {
             style={{
               fontFamily: 'var(--font-heading)',
               fontStyle: 'italic',
-              fontSize: 'clamp(22px, 5vw, 44px)',
+              // Stage 136 §38.216 — quote font kompakt: clamp 22-44 → 20-36px,
+              // section padding küçültmesiyle dengeli görsel hierarchy.
+              fontSize: 'clamp(20px, 4.4vw, 36px)',
               lineHeight: 1.22,
               letterSpacing: '-0.012em',
               fontWeight: 400,
@@ -307,8 +312,8 @@ export default function SectionDivider({ locale }: SectionDividerProps) {
             })}
           </p>
 
-          {/* Attribution: Buaze brand mark + label + role */}
-          <div className="mt-7 flex items-center justify-center gap-3.5 sm:mt-8">
+          {/* Attribution — Stage 136 §38.216 mt-7 sm:mt-8 → mt-5 sm:mt-6 */}
+          <div className="mt-5 flex items-center justify-center gap-3.5 sm:mt-6">
             <span
               aria-hidden
               className="flex h-9 w-9 items-center justify-center rounded-full text-[#0A0A0A] sm:h-10 sm:w-10"
@@ -339,8 +344,8 @@ export default function SectionDivider({ locale }: SectionDividerProps) {
           </div>
         </div>
 
-        {/* Pagination dots */}
-        <div className="mt-10 flex gap-1.5 sm:mt-12">
+        {/* Pagination dots — Stage 136 §38.216 mt-10 sm:mt-12 → mt-7 sm:mt-9 */}
+        <div className="mt-7 flex gap-1.5 sm:mt-9">
           {moments.map((_, i) => (
             <span
               key={i}

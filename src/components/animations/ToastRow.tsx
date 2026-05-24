@@ -27,13 +27,20 @@
  *
  * Reduced-motion: stagger off, tüm toast'lar hemen visible.
  *
+ * Stage 136 §38.216 — card 1 icon visibility fix: image'da "Yeni yorum
+ * geldi" kartı icon container'ı boş beyaz görünüyordu (kullanıcı raporu).
+ * Tone `neu` (bg-white card + bg-brand-ink icon container) Tailwind v4
+ * brand-ink class resolution edge case'inde silent fail edebilir; tone
+ * `pos`'a çevrildi + TONE_ICON_BG hex inline (`bg-[#0A0A0A]`) guarantee
+ * + tüm 4 card için shadow + hover translate-y polish.
+ *
  * Original: site-library.jsx 9.ToastRow. Konversiyon: inline animation
  * delay → framer-motion staggerChildren variants + AnimatePresence-friendly.
  */
 
 import { motion, useReducedMotion } from 'framer-motion';
 import {
-  MessageSquareText,
+  MessageCircle,
   Sparkles,
   AlertTriangle,
   Send,
@@ -54,28 +61,31 @@ export interface ToastRowItem {
   sub: string;
 }
 
+// Stage 136 §38.216 — card 1 tone neu → pos (graphite container guarantee),
+// MessageSquareText → MessageCircle (daha modern + chat-like form), icon
+// size 14 → 15 (+1px visibility), strokeWidth 2.5 → 2.2 (premium SaaS).
 const DEFAULT_GENERIC_ITEMS: ToastRowItem[] = [
   {
-    tone: 'neu',
-    icon: <MessageSquareText size={14} strokeWidth={2.5} />,
+    tone: 'pos',
+    icon: <MessageCircle size={15} strokeWidth={2.2} />,
     title: 'Yeni yorum geldi',
     sub: 'Google · ★★★★★',
   },
   {
     tone: 'lime',
-    icon: <Sparkles size={14} strokeWidth={2.5} />,
+    icon: <Sparkles size={15} strokeWidth={2.2} />,
     title: 'AI yanıt taslağı hazır',
     sub: '0.8s',
   },
   {
     tone: 'neg',
-    icon: <AlertTriangle size={14} strokeWidth={2.5} />,
+    icon: <AlertTriangle size={15} strokeWidth={2.2} />,
     title: 'Düşük puan tespit edildi',
     sub: 'Google · ★★',
   },
   {
     tone: 'info',
-    icon: <Send size={14} strokeWidth={2.5} />,
+    icon: <Send size={15} strokeWidth={2.2} />,
     title: 'Yorum Google’a yayınlandı',
     sub: 'Google Reviews',
   },
@@ -90,28 +100,42 @@ interface ToastRowProps {
   className?: string;
 }
 
+// Stage 136 §38.216 — brand-* class'ları hex inline'a çevrildi (Tailwind v4
+// content scanner edge case'inde brand-ink resolution silent fail edebilir,
+// kullanıcı raporu "card 1 icon görünmüyor"). #0A0A0A graphite + #FFFFFF
+// paper kanonik Pulse §11.
 const TONE_BG: Record<ToastTone, string> = {
-  pos: 'bg-brand-paper',
-  lime: 'bg-brand-lime-soft',
+  pos: 'bg-white',
+  lime: 'bg-[#EAF9B8]',
   neg: 'bg-[#FEE2E2]',
   neu: 'bg-white',
   info: 'bg-[#DBEAFE]',
 };
 
 const TONE_ICON_BG: Record<ToastTone, string> = {
-  pos: 'bg-brand-ink text-white',
-  lime: 'bg-brand-lime text-brand-ink',
+  pos: 'bg-[#0A0A0A] text-white',
+  lime: 'bg-[#C6F24E] text-[#0A0A0A]',
   neg: 'bg-[#DC2626] text-white',
-  neu: 'bg-brand-ink text-white',
+  neu: 'bg-[#0A0A0A] text-white',
   info: 'bg-[#2563EB] text-white',
 };
 
 const TONE_TITLE: Record<ToastTone, string> = {
-  pos: 'text-brand-ink',
-  lime: 'text-brand-ink',
+  pos: 'text-[#0A0A0A]',
+  lime: 'text-[#0A0A0A]',
   neg: 'text-[#991B1B]',
-  neu: 'text-brand-ink',
+  neu: 'text-[#0A0A0A]',
   info: 'text-[#1E3A8A]',
+};
+
+// Stage 136 §38.216 — toast hover translate-y + per-tone border accent
+// (visual variety + premium SaaS feedback).
+const TONE_BORDER: Record<ToastTone, string> = {
+  pos: 'ring-[#EDEDED]',
+  lime: 'ring-[#C6F24E]/30',
+  neg: 'ring-[#FECACA]',
+  neu: 'ring-[#EDEDED]',
+  info: 'ring-[#BFDBFE]',
 };
 
 export default function ToastRow({
@@ -144,7 +168,7 @@ export default function ToastRow({
       {items.map((item, idx) => (
         <motion.div
           key={idx}
-          className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 ring-1 ring-black/5 ${TONE_BG[item.tone]}`}
+          className={`group flex items-center gap-3 rounded-xl px-3.5 py-3 ring-1 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-16px_rgba(10,10,10,0.18)] ${TONE_BG[item.tone]} ${TONE_BORDER[item.tone]}`}
           variants={{
             hidden: { opacity: 0, x: -12 },
             visible: { opacity: 1, x: 0 },
@@ -155,20 +179,20 @@ export default function ToastRow({
           }}
         >
           <span
-            className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full shadow-[0_2px_6px_-2px_rgba(10,10,10,0.18)] ${TONE_ICON_BG[item.tone]}`}
+            className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-[0_4px_10px_-3px_rgba(10,10,10,0.22)] ${TONE_ICON_BG[item.tone]}`}
             aria-hidden="true"
           >
             {item.icon}
           </span>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div
-              className={`text-xs font-semibold ${TONE_TITLE[item.tone]}`}
+              className={`text-[13px] font-semibold leading-tight ${TONE_TITLE[item.tone]}`}
               style={{ fontFamily: 'var(--font-body)' }}
             >
               {item.title}
             </div>
             <div
-              className="text-[10px] text-brand-mute"
+              className="mt-0.5 text-[10px] leading-tight text-[#737373]"
               style={{ fontFamily: 'var(--font-mono)' }}
             >
               {item.sub}

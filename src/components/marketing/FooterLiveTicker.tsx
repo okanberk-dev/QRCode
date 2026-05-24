@@ -110,10 +110,18 @@ export default function FooterLiveTicker({ locale }: FooterLiveTickerProps) {
   const liveLabel = isTr ? 'CANLI' : 'LIVE';
 
   return (
+    // Stage 136 §38.216 — Google snippet'ten gizleme (kullanıcı talebi:
+    // "footerdaki canlı olan kısmı ve canlı diye yazan kısımları google'dan
+    // gizle"). Google'ın resmi `data-nosnippet` attribute'u tüm child
+    // content'in SERP snippet'ine girmesini engeller (rich result &
+    // featured snippet'lerde gizli). Görsel olarak intact, sadece
+    // crawler/snippet level'inde excluded. Reference:
+    // https://developers.google.com/search/docs/crawling-indexing/special-tags
     <div
       role="status"
       aria-live="polite"
       aria-label={isTr ? 'Canlı sistem aktivitesi' : 'Live system activity'}
+      data-nosnippet
       className="mt-6 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 backdrop-blur-md"
     >
       <span
