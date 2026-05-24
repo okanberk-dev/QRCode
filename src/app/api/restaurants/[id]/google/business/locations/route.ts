@@ -4,6 +4,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { canWriteRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { rateLimit } from '@/lib/rate-limit';
+import { getLocaleFromRequest } from '@/lib/api/locale';
 import {
   fetchGoogleBusinessLocations,
   getGoogleIntegrationForRestaurant,
@@ -49,17 +50,27 @@ export async function GET(
   if (!actor) return ApiErrors.unauthorized();
 
   const { id } = await params;
+  // Fix #7 — locale-aware error mesajları
+  const locale = getLocaleFromRequest(req);
+  const isTr = locale === 'tr';
   if (!(await canWriteRestaurant(actor, id))) return ApiErrors.forbidden();
   if (!(await googleReviewManagementEnabled(id))) {
     return ApiErrors.forbidden(
-      'Google yorum yönetimi bu işletme için kapalı.',
+      isTr
+        ? 'Google yorum yönetimi bu işletme için kapalı.'
+        : 'Google review management is disabled for this business.',
       'GOOGLE_REVIEW_MANAGEMENT_DISABLED',
     );
   }
 
   const integration = await getGoogleIntegrationForRestaurant(actor, id);
   if (!integration) {
-    return ApiErrors.badRequest('Google Business Profile hesabı bağlı değil.', 'GOOGLE_NOT_CONNECTED');
+    return ApiErrors.badRequest(
+      isTr
+        ? 'Google Business Profile hesabı bağlı değil.'
+        : 'Google Business Profile account is not connected.',
+      'GOOGLE_NOT_CONNECTED',
+    );
   }
 
   const force = req.nextUrl.searchParams.get('force') === 'true';
@@ -104,11 +115,15 @@ export async function GET(
         cacheAgeSeconds: ageSec,
         warning: 'CLIENT_THROTTLED',
         retryAfterSeconds: rl.retryAfterSeconds,
-        message: `Çok sık yenileme. ${rl.retryAfterSeconds} saniye sonra tekrar deneyin. (Son güncel veriler gösteriliyor.)`,
+        message: isTr
+          ? `Çok sık yenileme. ${rl.retryAfterSeconds} saniye sonra tekrar deneyin. (Son güncel veriler gösteriliyor.)`
+          : `Too many refresh requests. Try again in ${rl.retryAfterSeconds}s. (Showing last synced data.)`,
       });
     }
     return ApiErrors.tooManyRequests(
-      `Çok sık yenileme. ${rl.retryAfterSeconds} saniye sonra tekrar deneyin.`,
+      isTr
+        ? `Çok sık yenileme. ${rl.retryAfterSeconds} saniye sonra tekrar deneyin.`
+        : `Too many refresh requests. Try again in ${rl.retryAfterSeconds}s.`,
       'CLIENT_THROTTLED',
       rl.retryAfterSeconds,
     );
@@ -152,9 +167,13 @@ export async function GET(
             cacheAgeSeconds: ageSec,
             warning: 'GOOGLE_RATE_LIMITED',
             retryAfterSeconds: retryAfter,
-            message: hasCache
-              ? `Google API kotası doldu. ${retryAfter} saniye sonra otomatik tekrar denenecek. (Son güncel veriler gösteriliyor.)`
-              : `Google API kotası doldu. ${retryAfter} saniye sonra otomatik tekrar denenecek.`,
+            message: isTr
+              ? (hasCache
+                ? `Google API kotası doldu. ${retryAfter} saniye sonra otomatik tekrar denenecek. (Son güncel veriler gösteriliyor.)`
+                : `Google API kotası doldu. ${retryAfter} saniye sonra otomatik tekrar denenecek.`)
+              : (hasCache
+                ? `Google API quota exhausted. Auto-retry in ${retryAfter}s. (Showing last synced data.)`
+                : `Google API quota exhausted. Auto-retry in ${retryAfter}s.`),
           },
           { status: 200 },
         );
@@ -162,7 +181,9 @@ export async function GET(
       if (error.requiresReauth) {
         return NextResponse.json(
           {
-            error: 'Google bağlantısı süresi doldu. Hesabı yeniden bağlayın.',
+            error: isTr
+              ? 'Google bağlantısı süresi doldu. Hesabı yeniden bağlayın.'
+              : 'Google connection expired. Reconnect the account.',
             code: 'GOOGLE_REAUTH_REQUIRED',
             requiresReauth: true,
           },
@@ -170,11 +191,18 @@ export async function GET(
         );
       }
       return NextResponse.json(
-        { error: 'Google işletme konumları alınamadı.', code: error.code },
+        {
+          error: isTr
+            ? 'Google işletme konumları alınamadı.'
+            : 'Failed to fetch Google business locations.',
+          code: error.code,
+        },
         { status: 502 },
       );
     }
     console.error('[google business locations] failed', { restaurantId: id });
-    return ApiErrors.internalError('Google işletme konumları çekilemedi.');
+    return ApiErrors.internalError(
+      isTr ? 'Google işletme konumları çekilemedi.' : 'Failed to fetch Google business locations.',
+    );
   }
 }

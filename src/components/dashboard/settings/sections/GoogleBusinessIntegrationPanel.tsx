@@ -10,6 +10,7 @@ import {
   Search,
 } from "lucide-react";
 import { AlertBanner, Field } from "@/components/ui";
+import { GoogleConnectFlashBanner } from "@/components/dashboard/google/GoogleConnectFlashBanner";
 import { SettingsCard } from "../SettingsCard";
 
 interface RestaurantData {
@@ -379,6 +380,10 @@ export function GoogleBusinessIntegrationPanel({
       }
     >
       <div className="space-y-5">
+        {/* §38 audit Fix #1 — Platform Bağlantıları sekmesi de callback
+            returnTo'su; callback success/failure'i burada da görünür. */}
+        <GoogleConnectFlashBanner locale={locale} />
+
         {statusLoading ? (
           <div className="flex items-center gap-2 text-[13px] text-[#737373]">
             <Loader2 size={14} className="animate-spin" />
