@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import nextDynamic from 'next/dynamic';
 import {
   ArrowRight,
   ChevronDown,
@@ -11,12 +12,21 @@ import {
   Smile,
   ListChecks,
   Star,
+  Utensils,
+  BookOpen,
+  Stethoscope,
+  ShoppingBag,
+  Sparkles,
+  Dumbbell,
 } from 'lucide-react';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import { jsonLdString } from '@/lib/seo/json-ld';
 import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getTranslations, type Locale } from '@/lib/translations';
+
+// Stage 135 §38.215 — sticky CTA (desktop/tablet, mobile MobileBottomNav).
+const StickyCtaBar = nextDynamic(() => import('@/components/marketing/StickyCtaBar'));
 
 // Stage 134 §38.214 — /features/surveys marketing surface.
 // Owner panel /dashboard/surveys backend marketing parity. Pattern source:
@@ -344,7 +354,7 @@ export default async function SurveysPage({
                   {isTr ? 'ANKETLER' : 'SURVEYS'}
                 </span>
               </div>
-              <h1 className="mt-5 text-[38px] font-medium leading-[0.98] tracking-[-0.035em] text-white sm:text-[60px] md:text-[48px] lg:text-[72px]">
+              <h1 className="mt-5 text-[40px] font-medium leading-[0.98] tracking-[-0.035em] text-white sm:text-[56px] md:text-[52px] lg:text-[76px]">
                 {isTr ? (
                   <>
                     Müşteri sesini{' '}
@@ -396,8 +406,10 @@ export default async function SurveysPage({
               </ul>
             </div>
 
-            {/* Mobile survey mockup */}
-            <div className="relative">
+            {/* Mobile survey mockup — mobile max-w stabilization (Stage 135
+                §38.215): mobile portrait'ta hero card 100vw doldurmasın,
+                420px üst sınır + center; sm+'da grid sütunu tam doldurur. */}
+            <div className="relative mx-auto w-full max-w-[440px] sm:max-w-none">
               <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.18)] sm:p-6">
                 <div className="flex items-center justify-between">
                   <span className="pulse-eyebrow text-[#A8D62E]">{surveyMock.eyebrow}</span>
@@ -440,38 +452,41 @@ export default async function SurveysPage({
           </div>
         </section>
 
-        {/* ─── AEO definitional H2s ─── */}
+        {/* ─── AEO definitional H2s + pull quote accent (Stage 135 §38.215) ─── */}
         <section className="px-5 py-[60px] sm:px-10 sm:py-20">
-          <div className="mx-auto max-w-[820px] space-y-12">
+          <div className="mx-auto max-w-[820px] space-y-12 sm:space-y-16">
             <div>
-              <span className="pulse-eyebrow text-[#737373]">
+              <span className="pulse-eyebrow text-[#A8D62E]">
                 {isTr ? 'NEDEN ÖNEMLİ' : 'WHY IT MATTERS'}
               </span>
-              <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+              <h2 className="mt-3 text-[28px] sm:text-[40px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
                 {isTr ? 'NPS ve CSAT anketleri neden önemli?' : 'Why are NPS and CSAT surveys important?'}
               </h2>
-              <div className="mt-5 space-y-4 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+              <div className="mt-5 space-y-4 text-[15px] sm:text-[17px] leading-[1.65] text-[#525252]">
                 <p>
                   {isTr
                     ? 'Google ya da Yemeksepeti yorumu kamuya açıktır; bu sebeple müşteri çoğu zaman güçlü bir duygu (çok olumlu veya çok olumsuz) yaşamadığı sürece yazmaz. Bu "orta" deneyimler işletmen için en değerli geri bildirimdir — operasyonel iyileştirme önerilerini taşır.'
                     : 'A Google or Yemeksepeti review is public; customers tend to write only when they experience strong emotion (very positive or very negative). The "middle" experiences in between are the most valuable feedback for your business — they carry operational improvement signals.'}
                 </p>
-                <p>
-                  {isTr
-                    ? 'NPS (Net Promoter Score) müşterinin işletmeni tavsiye etme olasılığını ölçer; CSAT (Customer Satisfaction) belirli bir deneyimin memnuniyet seviyesini ölçer. İkisi birlikte hem stratejik (büyüme potansiyeli) hem operasyonel (servis hızı, lezzet, atmosfer) sinyaller verir. QR ile düşük sürtünmede toplanırsa yanıt oranı ortalama %40-60\'a çıkar — Google yorum oranının çok üzerinde.'
-                    : 'NPS (Net Promoter Score) measures how likely a customer is to recommend your business; CSAT (Customer Satisfaction) measures satisfaction with a specific experience. Together they deliver both strategic (growth potential) and operational (service speed, taste, atmosphere) signals. Collected via QR with low friction, response rate climbs to around 40-60% — far above Google review rates.'}
-                </p>
               </div>
+              {/* Pull quote accent — featured snippet eligibility + visual rhythm */}
+              <blockquote className="mt-6 rounded-r-2xl border-l-[3px] border-[#C6F24E] bg-[#EAF9B8]/30 px-5 py-4 sm:px-6 sm:py-5">
+                <p className="text-[15px] sm:text-[17px] font-medium leading-[1.55] text-[#0A0A0A]">
+                  {isTr
+                    ? '"NPS + CSAT, müşterinin kamuda söylemediği iyileştirme sinyallerini işletmeye taşır. QR ile düşük sürtünmede toplanır — Google yorum oranının çok üzerinde."'
+                    : '"NPS + CSAT carry the improvement signals customers don\'t say publicly to your business. QR collects them with low friction — far above Google review rates."'}
+                </p>
+              </blockquote>
             </div>
 
             <div>
-              <span className="pulse-eyebrow text-[#737373]">
+              <span className="pulse-eyebrow text-[#A8D62E]">
                 {isTr ? 'TASARIM' : 'DESIGN'}
               </span>
-              <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+              <h2 className="mt-3 text-[28px] sm:text-[40px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
                 {isTr ? 'Etkili bir müşteri anketi nasıl tasarlanır?' : 'How do you design an effective customer survey?'}
               </h2>
-              <div className="mt-5 space-y-4 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+              <div className="mt-5 space-y-4 text-[15px] sm:text-[17px] leading-[1.65] text-[#525252]">
                 <p>
                   {isTr
                     ? 'Pratik kurallar: 1) 5 sorudan fazla olmasın — 60 saniyenin altında tamamlanmalı, 2) İlk soru yıldız veya NPS olsun — düşük puanda kalan müşteriyi takip et, 3) Açık metin sadece 1-2 yerde olsun (sebep + öneri), 4) Ödül opsiyonel ama yanıt oranını %30-50 artırır, 5) Mobil-first — formun max-width 920px, font 16px+ (iOS auto-zoom önleme).'
@@ -517,9 +532,9 @@ export default async function SurveysPage({
           </div>
         </section>
 
-        {/* ─── SPEC ROW ─── */}
+        {/* ─── SPEC ROW (Stage 135 §38.215 polish) ─── */}
         <section className="px-5 py-[60px] sm:px-10 sm:py-20">
-          <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-3">
             {[
               {
                 l: isTr ? 'SORU TİPİ' : 'QUESTION TYPES',
@@ -543,17 +558,116 @@ export default async function SurveysPage({
                   : 'Static QR (PNG/SVG) + shareable URL · SMS/WhatsApp friendly',
               },
             ].map((k) => (
-              <div key={k.l} className="rounded-2xl border border-[#EDEDED] bg-white p-6">
-                <p className="pulse-eyebrow text-[#737373]">{k.l}</p>
+              <div
+                key={k.l}
+                className="group rounded-2xl border border-[#EDEDED] bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#0A0A0A] hover:shadow-[0_18px_40px_-22px_rgba(10,10,10,0.18)]"
+              >
+                <p className="pulse-eyebrow text-[#A8D62E]">{k.l}</p>
                 <p
-                  className="mt-2 text-[28px] font-medium leading-none tracking-tight text-[#0A0A0A] sm:text-[36px]"
+                  className="mt-3 text-[44px] font-medium leading-none tracking-tight text-[#0A0A0A] sm:text-[56px]"
                   style={{ fontFamily: 'var(--font-space-grotesk)' }}
                 >
                   {k.v}
                 </p>
-                <p className="mt-2 text-[12px] leading-[1.55] text-[#525252]">{k.sub}</p>
+                <p className="mt-3 text-[13px] leading-[1.55] text-[#525252]">{k.sub}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* ─── SECTOR CROSS-LINK — "Hangi sektörler için ideal?" (Stage 135
+            §38.215). SEO + GEO impact: feature × sektör matrix snippet
+            ("nps survey for restaurants"); her pill /solutions/<sektor>
+            sayfasına gider. 6 sektör + "Hepsi" CTA. ─── */}
+        <section className="border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-[60px] sm:px-10 sm:py-20">
+          <div className="mx-auto max-w-[1200px]">
+            <div className="max-w-[680px]">
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'SEKTÖRLER' : 'SECTORS'}
+              </span>
+              <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+                {isTr ? 'Hangi sektörler için ideal?' : 'Best fit for which sectors?'}
+              </h2>
+              <p className="mt-3 max-w-[600px] text-[14px] sm:text-[15px] leading-[1.65] text-[#525252]">
+                {isTr
+                  ? 'Anketler her sektör için çalışır; aşağıda en sık kullanılan örnek senaryolar. QR + slug yapısı operasyonuna uyacak şekilde özelleştirilebilir.'
+                  : 'Surveys work for any sector; below are the most common scenarios. The QR + slug structure adapts to your operation.'}
+              </p>
+            </div>
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  icon: Utensils,
+                  label: isTr ? 'Restoran & Kafe' : 'Restaurant & Café',
+                  sub: isTr ? 'Masa NPS, servis sonrası CSAT' : 'Table NPS, post-service CSAT',
+                  href: `${base}/solutions/restaurants`,
+                },
+                {
+                  icon: BookOpen,
+                  label: isTr ? 'Otel' : 'Hotel',
+                  sub: isTr ? 'Konaklama sonrası memnuniyet' : 'Post-stay satisfaction',
+                  href: `${base}/solutions/hotels`,
+                },
+                {
+                  icon: Stethoscope,
+                  label: isTr ? 'Klinik & Sağlık' : 'Clinic & Health',
+                  sub: isTr ? 'Hasta deneyimi, randevu sonrası' : 'Patient experience, post-visit',
+                  href: `${base}/solutions/healthcare`,
+                },
+                {
+                  icon: Sparkles,
+                  label: isTr ? 'Güzellik & Spa' : 'Beauty & Spa',
+                  sub: isTr ? 'Hizmet sonrası geri bildirim' : 'Post-treatment feedback',
+                  href: `${base}/solutions/beauty-salon`,
+                },
+                {
+                  icon: ShoppingBag,
+                  label: isTr ? 'Perakende' : 'Retail',
+                  sub: isTr ? 'Mağaza içi deneyim, ürün NPS' : 'In-store experience, product NPS',
+                  href: `${base}/solutions/retail`,
+                },
+                {
+                  icon: Dumbbell,
+                  label: isTr ? 'Spor & Fitness' : 'Sports & Fitness',
+                  sub: isTr ? 'Ders + üyelik memnuniyeti' : 'Class + membership satisfaction',
+                  href: `${base}/solutions/gym`,
+                },
+              ].map((sec) => (
+                <Link
+                  key={sec.label}
+                  href={sec.href}
+                  className="group flex items-start gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#0A0A0A] sm:p-5"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF9B8] text-[#0A0A0A]">
+                    <sec.icon size={18} strokeWidth={2} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-semibold leading-tight text-[#0A0A0A]">
+                      {sec.label}
+                    </p>
+                    <p className="mt-1 text-[12px] leading-[1.5] text-[#737373]">{sec.sub}</p>
+                  </div>
+                  <ArrowRight
+                    size={14}
+                    className="mt-1 shrink-0 text-[#A3A3A3] transition-all group-hover:translate-x-0.5 group-hover:text-[#0A0A0A]"
+                  />
+                </Link>
+              ))}
+            </div>
+            <div className="mt-7 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <Link
+                href={`${base}/solutions`}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0A0A0A] bg-transparent px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white"
+              >
+                {isTr ? 'Tüm sektörlere bak' : 'See all sectors'}
+                <ArrowRight size={14} />
+              </Link>
+              <span className="text-[12px] text-[#737373]">
+                {isTr
+                  ? 'Sektörünü göremiyor musun? Sıfırdan anket yazma yine 5 dakika sürer.'
+                  : "Don't see your sector? Writing a survey from scratch still takes 5 minutes."}
+              </span>
+            </div>
           </div>
         </section>
 
@@ -629,6 +743,9 @@ export default async function SurveysPage({
 
       </main>
       <MarketingFooter locale={locale} t={t} />
+      {/* Stage 135 §38.215 — desktop/tablet sticky CTA (mobile MobileBottomNav
+          §25.4 Pas 4 footer'da zaten). */}
+      <StickyCtaBar locale={locale} />
     </div>
   );
 }

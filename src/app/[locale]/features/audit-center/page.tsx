@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import nextDynamic from 'next/dynamic';
 import {
   ArrowRight,
   ClipboardCheck,
@@ -9,12 +10,23 @@ import {
   ChevronDown,
   ClipboardList,
   FileBarChart,
+  Utensils,
+  BookOpen,
+  Stethoscope,
+  ShoppingBag,
+  Sparkles,
+  Scale,
 } from 'lucide-react';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import { jsonLdString } from '@/lib/seo/json-ld';
 import { buildHowToSchema } from '@/lib/seo/howto-schema';
 import { getTranslations, type Locale } from '@/lib/translations';
+
+// Stage 135 §38.215 — desktop/tablet sticky CTA (mobile: MobileBottomNav
+// MarketingFooter'da zaten mount, §25.4 Pas 4). dynamic import → chunk
+// split, ssr default true.
+const StickyCtaBar = nextDynamic(() => import('@/components/marketing/StickyCtaBar'));
 
 // Stage 134 §38.214 — /features/audit-center marketing surface.
 // Stage 100 §38.180 Audit Center backend (`/dashboard/audits/*`) marketing
@@ -350,7 +362,7 @@ export default async function AuditCenterPage({
                   {isTr ? 'DENETİM MERKEZİ' : 'AUDIT CENTER'}
                 </span>
               </div>
-              <h1 className="mt-5 text-[38px] font-medium leading-[0.98] tracking-[-0.035em] text-white sm:text-[60px] md:text-[48px] lg:text-[72px]">
+              <h1 className="mt-5 text-[40px] font-medium leading-[0.98] tracking-[-0.035em] text-white sm:text-[56px] md:text-[52px] lg:text-[76px]">
                 {isTr ? (
                   <>
                     Operasyonu ölç,{' '}
@@ -402,8 +414,10 @@ export default async function AuditCenterPage({
               </ul>
             </div>
 
-            {/* Score card mockup */}
-            <div className="relative">
+            {/* Score card mockup — mobile max-w stabilization (Stage 135
+                §38.215): mobile portrait'ta hero card 100vw doldurmasın,
+                420px üst sınır + center; sm+'da grid sütunu tam doldurur. */}
+            <div className="relative mx-auto w-full max-w-[440px] sm:max-w-none">
               <div className="rounded-2xl border border-[#EDEDED] bg-white p-5 shadow-[0_32px_80px_-20px_rgba(0,0,0,0.18)] sm:p-6">
                 <div className="flex items-center justify-between">
                   <span className="pulse-eyebrow text-[#737373]">
@@ -472,38 +486,41 @@ export default async function AuditCenterPage({
           </div>
         </section>
 
-        {/* ─── AEO definitional H2s ─── */}
+        {/* ─── AEO definitional H2s + pull quote accent (Stage 135 §38.215) ─── */}
         <section className="px-5 py-[60px] sm:px-10 sm:py-20">
-          <div className="mx-auto max-w-[820px] space-y-12">
+          <div className="mx-auto max-w-[820px] space-y-12 sm:space-y-16">
             <div>
-              <span className="pulse-eyebrow text-[#737373]">
+              <span className="pulse-eyebrow text-[#A8D62E]">
                 {isTr ? 'NEDEN ÖNEMLİ' : 'WHY IT MATTERS'}
               </span>
-              <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+              <h2 className="mt-3 text-[28px] sm:text-[40px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
                 {isTr ? 'Denetim Merkezi neden önemli?' : 'Why does the Audit Center matter?'}
               </h2>
-              <div className="mt-5 space-y-4 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+              <div className="mt-5 space-y-4 text-[15px] sm:text-[17px] leading-[1.65] text-[#525252]">
                 <p>
                   {isTr
                     ? 'Müşteri yorumlarınızı yönetmek tek başına yeterli değildir. Düşük puanın sebebi vardı: muhtemelen bir vardiyada hijyen kontrolü atlandı, bir adayın eğitimi eksik kaldı, yeni şube açılışında checklist çalışmadı. Buaze Denetim Merkezi bu sebebi bulup düzeltmek için tasarlandı.'
                     : 'Managing customer reviews is not enough by itself. There was a reason for the low rating: a shift missed a hygiene check, a candidate\'s training was incomplete, the new branch opening checklist did not run. The Buaze Audit Center is designed to find and fix that reason.'}
                 </p>
-                <p>
-                  {isTr
-                    ? 'Operasyonel disiplin yorumun kalitesini şekillendirir. Mutfak açılış checklist\'i her gün doğru saatte çalıştığında, servis personeli temel hijyen quiz\'inden geçtiğinde, KVKK formu doğru imzalandığında — yorumlarınız bu disiplini yansıtır. Denetim olmadan yorum yönetimi sebep-sonuç bağı kurmadan reaktif kalır.'
-                    : 'Operational discipline shapes the quality of your reviews. When the kitchen opening checklist runs on time daily, when service staff pass the basic hygiene quiz, when the KVKK form is signed correctly — your reviews mirror this discipline. Without audits, review management stays reactive, missing the cause-and-effect link.'}
-                </p>
               </div>
+              {/* Pull quote accent — featured snippet eligibility + visual rhythm */}
+              <blockquote className="mt-6 rounded-r-2xl border-l-[3px] border-[#C6F24E] bg-[#EAF9B8]/30 px-5 py-4 sm:px-6 sm:py-5">
+                <p className="text-[15px] sm:text-[17px] font-medium leading-[1.55] text-[#0A0A0A]">
+                  {isTr
+                    ? '"Operasyonel disiplin yorumun kalitesini şekillendirir. Denetim olmadan yorum yönetimi sebep-sonuç bağı kurmadan reaktif kalır."'
+                    : '"Operational discipline shapes the quality of your reviews. Without audits, review management stays reactive — missing the cause-and-effect link."'}
+                </p>
+              </blockquote>
             </div>
 
             <div>
-              <span className="pulse-eyebrow text-[#737373]">
+              <span className="pulse-eyebrow text-[#A8D62E]">
                 {isTr ? 'TEK PANEL' : 'ONE PANEL'}
               </span>
-              <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.1] tracking-[-0.03em] text-[#0A0A0A]">
+              <h2 className="mt-3 text-[28px] sm:text-[40px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
                 {isTr ? 'Buaze ile diğer audit araçlardan farkı ne?' : 'How is Buaze different from other audit tools?'}
               </h2>
-              <div className="mt-5 space-y-4 text-[15px] sm:text-[16px] leading-[1.65] text-[#525252]">
+              <div className="mt-5 space-y-4 text-[15px] sm:text-[17px] leading-[1.65] text-[#525252]">
                 <p>
                   {isTr
                     ? 'Çoğu audit yazılımı tek başına çalışır — şablonlar, formlar, sonuçlar bir sistem; müşteri yorumları başka bir sistem. Buaze\'de Denetim Merkezi, Yorum Yönetimi ve Pulse AI aynı operasyon panelinde buluşur. Düşük puanlı yorum geldiğinde o gün hangi denetim skoru düşüktü tek tıkla görürsün.'
@@ -549,9 +566,9 @@ export default async function AuditCenterPage({
           </div>
         </section>
 
-        {/* ─── SPEC ROW — 3 verifiable stats ─── */}
+        {/* ─── SPEC ROW — 3 verifiable stats (Stage 135 §38.215 polish) ─── */}
         <section className="px-5 py-[60px] sm:px-10 sm:py-20">
-          <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-3">
             {[
               {
                 l: isTr ? 'HAZIR ŞABLON' : 'READY TEMPLATES',
@@ -575,17 +592,116 @@ export default async function AuditCenterPage({
                   : 'Percentage, weighted, pass/fail',
               },
             ].map((k) => (
-              <div key={k.l} className="rounded-2xl border border-[#EDEDED] bg-white p-6">
-                <p className="pulse-eyebrow text-[#737373]">{k.l}</p>
+              <div
+                key={k.l}
+                className="group rounded-2xl border border-[#EDEDED] bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#0A0A0A] hover:shadow-[0_18px_40px_-22px_rgba(10,10,10,0.18)]"
+              >
+                <p className="pulse-eyebrow text-[#A8D62E]">{k.l}</p>
                 <p
-                  className="mt-2 text-[28px] font-medium leading-none tracking-tight text-[#0A0A0A] sm:text-[36px]"
+                  className="mt-3 text-[44px] font-medium leading-none tracking-tight text-[#0A0A0A] sm:text-[56px]"
                   style={{ fontFamily: 'var(--font-space-grotesk)' }}
                 >
                   {k.v}
                 </p>
-                <p className="mt-2 text-[12px] leading-[1.55] text-[#525252]">{k.sub}</p>
+                <p className="mt-3 text-[13px] leading-[1.55] text-[#525252]">{k.sub}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* ─── SECTOR CROSS-LINK — "Hangi sektörler için ideal?" (Stage 135
+            §38.215). SEO + GEO impact: feature × sektör matrix snippet
+            ("audit-center for restaurants"); her pill /solutions/<sektor>
+            sayfasına gider. 6 sektör + "Hepsi" CTA. ─── */}
+        <section className="border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-[60px] sm:px-10 sm:py-20">
+          <div className="mx-auto max-w-[1200px]">
+            <div className="max-w-[680px]">
+              <span className="pulse-eyebrow text-[#737373]">
+                {isTr ? 'SEKTÖRLER' : 'SECTORS'}
+              </span>
+              <h2 className="mt-3 text-[26px] sm:text-[36px] font-medium leading-[1.05] tracking-[-0.03em] text-[#0A0A0A]">
+                {isTr ? 'Hangi sektörler için ideal?' : 'Best fit for which sectors?'}
+              </h2>
+              <p className="mt-3 max-w-[600px] text-[14px] sm:text-[15px] leading-[1.65] text-[#525252]">
+                {isTr
+                  ? 'Denetim Merkezi 6 sektör için hazır şablon taşır; ama yapıyı kendi operasyonuna göre düzenleyebileceğin için her sektör için kullanılabilir.'
+                  : 'The Audit Center ships ready templates for 6 sectors; you can also tailor the structure to any operation, so any sector can use it.'}
+              </p>
+            </div>
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                {
+                  icon: Utensils,
+                  label: isTr ? 'Restoran & Kafe' : 'Restaurant & Café',
+                  sub: isTr ? 'Mutfak açılış, servis senaryosu' : 'Kitchen opening, service scenario',
+                  href: `${base}/solutions/restaurants`,
+                },
+                {
+                  icon: BookOpen,
+                  label: isTr ? 'Otel' : 'Hotel',
+                  sub: isTr ? 'Housekeeping günlük, check-out' : 'Daily housekeeping, check-out',
+                  href: `${base}/solutions/hotels`,
+                },
+                {
+                  icon: Stethoscope,
+                  label: isTr ? 'Klinik & Sağlık' : 'Clinic & Health',
+                  sub: isTr ? 'Sterilizasyon, KVKK hasta verisi' : 'Sterilization, KVKK patient data',
+                  href: `${base}/solutions/healthcare`,
+                },
+                {
+                  icon: ShoppingBag,
+                  label: isTr ? 'Perakende' : 'Retail',
+                  sub: isTr ? 'Mağaza açılış, şikayet senaryosu' : 'Store opening, complaint scenario',
+                  href: `${base}/solutions/retail`,
+                },
+                {
+                  icon: Sparkles,
+                  label: isTr ? 'Güzellik & Spa' : 'Beauty & Spa',
+                  sub: isTr ? 'Master self-assessment' : 'Master self-assessment',
+                  href: `${base}/solutions/beauty-salon`,
+                },
+                {
+                  icon: Scale,
+                  label: isTr ? 'Hukuk Ofisi' : 'Legal',
+                  sub: isTr ? 'KVKK + danışmanlık akışı' : 'KVKK + consultation flow',
+                  href: `${base}/solutions/law-firms`,
+                },
+              ].map((sec) => (
+                <Link
+                  key={sec.label}
+                  href={sec.href}
+                  className="group flex items-start gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#0A0A0A] sm:p-5"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EAF9B8] text-[#0A0A0A]">
+                    <sec.icon size={18} strokeWidth={2} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[14px] font-semibold leading-tight text-[#0A0A0A]">
+                      {sec.label}
+                    </p>
+                    <p className="mt-1 text-[12px] leading-[1.5] text-[#737373]">{sec.sub}</p>
+                  </div>
+                  <ArrowRight
+                    size={14}
+                    className="mt-1 shrink-0 text-[#A3A3A3] transition-all group-hover:translate-x-0.5 group-hover:text-[#0A0A0A]"
+                  />
+                </Link>
+              ))}
+            </div>
+            <div className="mt-7 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <Link
+                href={`${base}/solutions`}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[#0A0A0A] bg-transparent px-5 py-2.5 text-[13px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#0A0A0A] hover:text-white"
+              >
+                {isTr ? 'Tüm sektörlere bak' : 'See all sectors'}
+                <ArrowRight size={14} />
+              </Link>
+              <span className="text-[12px] text-[#737373]">
+                {isTr
+                  ? 'Sektörünü göremiyor musun? Sıfırdan şablon yazma yine 5 dakika sürer.'
+                  : "Don't see your sector? Writing a template from scratch still takes 5 minutes."}
+              </span>
+            </div>
           </div>
         </section>
 
@@ -661,6 +777,10 @@ export default async function AuditCenterPage({
 
       </main>
       <MarketingFooter locale={locale} t={t} />
+      {/* Stage 135 §38.215 — desktop/tablet sticky CTA (`hidden md:block`
+          intact, scroll threshold 600px). Mobile MobileBottomNav §25.4
+          Pas 4 zaten footer'da. */}
+      <StickyCtaBar locale={locale} />
     </div>
   );
 }
