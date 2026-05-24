@@ -573,6 +573,14 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [inlineLocationsSyncedAt, setInlineLocationsSyncedAt] = useState<string | null>(null);
   // Countdown 0'a ulaşınca tek-seferlik auto-retry tetikle.
   const autoRetryFiredRef = useRef(false);
+  // §38.206 — Smart "Bu hesapla devam et" akışı. Kullanıcı empty state'te
+  // "Bu Google hesabıyla devam et" tıkladıysa flag set edilir; loadInlineLocations
+  // force=true ile fresh accounts fetch atılır. Hâlâ accounts boş dönerse
+  // "Bu hesapta gerçekten Business Profile yok" mesajı + buton disabled olur
+  // ve user "Farklı hesapla bağlan" akışına yönlendirilir. State sayfa
+  // unmount / restoran değişikliğinde sıfırlanır (sonraki restoran için
+  // fresh state).
+  const [hasAttemptedSameAccount, setHasAttemptedSameAccount] = useState(false);
   const [savingLocation, setSavingLocation] = useState<string | null>(null);
   // Refresh token revoke / expired durumlarda "Yeniden Bağla" CTA flag'i.
   // setLocationError ile birlikte set edilir; AlertBanner altında buton görünür.
@@ -795,6 +803,10 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     if (activeRestaurantId) {
       void loadStatusAndReviews(activeRestaurantId);
     }
+    // §38.206 — Restoran değişikliğinde "Bu hesapla devam et" denemesi
+    // sıfırlanır; sonraki restoran için kullanıcı tekrar smart fallback
+    // alabilsin (force refresh flag stale kalmasın).
+    setHasAttemptedSameAccount(false);
   }, [activeRestaurantId]);
 
   // OAuth start — Google'a yönlendirir, callback sonrası bu sayfaya geri
@@ -1413,16 +1425,24 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             </div>
           ) : !loadingLocations && !locationError && accountsLoaded && inlineAccounts.length === 0 && inlineLocationsSource !== 'empty' && (locationRetryAfter === null || locationRetryAfter === 0) ? (
             // No-account state — Google ile login oldu ama Business Profile yok.
-            // §38.205 — `inlineLocationsSource !== 'empty'` + countdown=0 guard
-            // false-positive'ı önler: Google API quota tükendiğinde de cache
-            // boş döner, eskiden bu mesaj yanlış pozitif olarak görünüyordu
-            // (kullanıcı işletmesini yönettiği halde "Business Profile yok"
-            // diyordu). Quota fail durumunda artık yukarıdaki sarı banner
-            // gösterilir ve "no business" final-state mesajı suppressed kalır.
             //
-            // UI/UX — Pulse lime palette (CLAUDE.md §11): amber warning yerine
-            // welcoming lime soft accent. Owner "hata aldım" yerine "bir
-            // adım eksik kalmış" hissi alır.
+            // §38.205 — `inlineLocationsSource !== 'empty'` + countdown=0 guard
+            // false-positive'ı önler (quota dolu + cache empty → mesaj gösterme).
+            //
+            // §38.206 — Gerçek dünya gözlemi (CLAUDE.md §38.206 closure log):
+            // kullanıcılar Buaze'ye kişisel Google ile kayıt oluyor ama
+            // Google Business Profile **farklı** Google hesabında. CTA
+            // hierarchy bu gözleme göre kurgulandı:
+            //
+            //   1. PRIMARY (lime, default vurgu): "Farklı Google hesabıyla
+            //      bağlan" — owner gerçek niyeti (Business Profile başka
+            //      hesapta).
+            //   2. SECONDARY (ghost, smart fallback): "Bu hesapla devam et"
+            //      — owner emin ise force refresh dener; hâlâ boş ise
+            //      `hasAttemptedSameAccount` flag set + buton disabled
+            //      + warning text + Primary CTA'ya yönlendirir.
+            //   3. TERTIARY (ghost, son çare): "Yeni profil oluştur" —
+            //      gerçekten Business Profile yoksa Google'a yönlendirir.
             <div className="py-6 px-4 rounded-2xl bg-[#EAF9B8]/40 border border-[#C6F24E]/50">
               <div className="flex items-start gap-4">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#C6F24E] shadow-sm">
@@ -1431,32 +1451,77 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                 <div className="flex-1 min-w-0">
                   <p className="bz-h-tight text-[15px] text-[#0A0A0A]">
                     {isTr
-                      ? 'Bu Google hesabında işletme profili bulunamadı'
-                      : 'No Business Profile in this Google account'}
+                      ? 'Google Business hesabınız muhtemelen farklı bir Google hesabında'
+                      : 'Your Google Business account is likely under a different Google account'}
                   </p>
                   <p className="text-[13px] text-[#525252] mt-1.5 leading-relaxed">
                     {isTr
-                      ? 'İki olası neden var: (1) Google Business Profile başka bir Google hesabınızda olabilir — aşağıdan "Farklı hesapla bağlan"a tıklayıp doğru hesabı seçin. (2) Henüz hiç işletme profili açmadıysanız Google\'da bir tane oluşturun.'
-                      : 'Two possible reasons: (1) Your Google Business Profile may be under a different Google account — click "Switch Google account" below to pick the right one. (2) If you haven\'t created one yet, set up a Business Profile on Google.'}
+                      ? 'Genelde Buaze\'ye kayıt olduğunuz Google hesabı (kişisel e-postanız) ile Google Business Profile\'ın bağlı olduğu Google hesabı farklı olur. İşletmenizin Google yorumlarını yönetmek için doğru hesabı seçin.'
+                      : 'Most people sign up to Buaze with their personal Google account, but their Google Business Profile is linked to a different Google account (often a business email). To manage your Google reviews, please pick the right account.'}
                   </p>
+                  {hasAttemptedSameAccount && (
+                    <div className="mt-3 flex items-start gap-2 rounded-xl bg-white border border-[#FDE68A] px-3 py-2.5">
+                      <Sparkles size={13} className="shrink-0 text-[#92400E] mt-0.5" />
+                      <p className="text-[12px] text-[#92400E] leading-relaxed">
+                        {isTr
+                          ? 'Bu Google hesabında gerçekten Business Profile yok. Lütfen "Farklı hesapla bağlan" diyerek doğru hesabı seçin veya yeni bir profil oluşturun.'
+                          : 'This Google account really has no Business Profile. Please pick the right account via "Switch Google account" or create a new profile.'}
+                      </p>
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-2 mt-4">
                     <button
                       type="button"
                       onClick={async () => {
-                        // Disconnect mevcut Google integration + fresh OAuth
-                        // (prompt=select_account ile account picker).
+                        // PRIMARY — Disconnect mevcut Google integration + fresh OAuth.
+                        // `prompt=consent select_account` (§38.205 + connect/route.ts)
+                        // Google account picker'ını her seferinde tetikler →
+                        // owner Business Profile sahibi olduğu hesabı seçer.
                         try {
                           await fetch('/api/integrations/google/disconnect', { method: 'POST' });
                         } catch {
                           // best-effort — connect yine yapılır
                         }
+                        setHasAttemptedSameAccount(false);
                         await connectGoogleInline();
                       }}
                       disabled={connecting}
                       className="bz-btn-primary inline-flex items-center gap-1.5 text-[13px] rounded-full"
                     >
                       {connecting ? <Loader2 size={14} className="animate-spin" /> : <Unplug size={14} />}
-                      {isTr ? 'Farklı hesapla bağlan' : 'Switch Google account'}
+                      {isTr ? 'Farklı Google hesabıyla bağlan' : 'Connect with a different Google account'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        // SECONDARY — Owner "Hayır, kayıt olduğum hesap doğru"
+                        // diyorsa force refresh ile Google API'den fresh
+                        // accounts fetch dener. Cache bypass.
+                        setHasAttemptedSameAccount(true);
+                        await loadInlineLocations(true);
+                      }}
+                      disabled={
+                        loadingLocations ||
+                        (locationRetryAfter !== null && locationRetryAfter > 0) ||
+                        hasAttemptedSameAccount
+                      }
+                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[13px] rounded-full"
+                      title={
+                        hasAttemptedSameAccount
+                          ? isTr
+                            ? 'Bu hesap denendi, Business Profile bulunamadı'
+                            : 'This account was tried, no Business Profile found'
+                          : undefined
+                      }
+                    >
+                      {loadingLocations && hasAttemptedSameAccount ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={13} />
+                      )}
+                      {hasAttemptedSameAccount
+                        ? (isTr ? 'Denendi — Business Profile yok' : 'Tried — no Business Profile')
+                        : (isTr ? 'Bu hesapla devam et' : 'Continue with this account')}
                     </button>
                     <a
                       href="https://business.google.com/create"
@@ -1467,22 +1532,13 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                       <ExternalLink size={13} />
                       {isTr ? 'Yeni profil oluştur' : 'Create new profile'}
                     </a>
-                    <button
-                      type="button"
-                      onClick={() => loadInlineLocations(true)}
-                      disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
-                      className="bz-btn-ghost inline-flex items-center gap-1.5 text-[13px] rounded-full"
-                    >
-                      <RefreshCw size={13} />
-                      {isTr ? 'Yenile' : 'Refresh'}
-                    </button>
                   </div>
                   <div className="mt-4 pt-3 border-t border-[#C6F24E]/30 flex items-start gap-2">
                     <Sparkles size={12} className="shrink-0 text-[#525252] mt-0.5" />
                     <p className="text-[11.5px] text-[#525252] leading-relaxed">
                       {isTr
-                        ? 'İpucu: Yeni profil açtıktan sonra Google doğrulama (posta, telefon veya video) bekleyebilir. Doğrulama tamamlanınca burada otomatik görünecek.'
-                        : 'Tip: After creating a new profile, Google may require verification (postcard, phone, or video). Once verified, it will appear here automatically.'}
+                        ? 'İpucu: Google Business Profile sahibiyseniz, "Farklı hesapla bağlan"a tıklayın ve işletmenizin kayıtlı olduğu Google hesabını seçin. Eğer hiç profil açmadıysanız "Yeni profil oluştur" ile başlayın; Google posta/telefon/video doğrulama bekleyebilir.'
+                        : 'Tip: If you own a Google Business Profile, click "Connect with a different Google account" and pick the Google account it\'s registered under. If you haven\'t created one yet, start with "Create new profile"; Google may require verification (postcard, phone, or video).'}
                     </p>
                   </div>
                 </div>
