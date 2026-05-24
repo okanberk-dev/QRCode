@@ -79,7 +79,7 @@ export function UnsavedChangesBar({
       }}
     >
       <div
-        className="mx-auto max-w-[1280px] m-3 sm:m-4"
+        className="mx-auto max-w-[1440px] m-3 sm:m-4"
         style={{
           background: "#FAFAFA",
           border: "1px solid #EDEDED",

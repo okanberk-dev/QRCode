@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, Code, BarChart3, Send } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, BarChart3, Send } from 'lucide-react';
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
@@ -95,8 +95,6 @@ export default function RestaurantDetailPage() {
   const [featureSaving, setFeatureSaving] = useState<FeatureToggleKey | null>(null);
   const [owners, setOwners] = useState<Owner[]>([]);
   const [meta, setMeta] = useState<RestaurantMeta | null>(null);
-  const [embedStats, setEmbedStats] = useState<{ totalViews: number; byDomain: { domain: string; count: number; lastSeen: string | null }[] } | null>(null);
-  const [embedStatsLoading, setEmbedStatsLoading] = useState(false);
 
   useEffect(() => {
     const fetchRestaurant = async () => {
@@ -179,22 +177,6 @@ export default function RestaurantDetailPage() {
       }
     })();
   }, []);
-
-  // Widget embed stats — hangi domain bu işletmenin widget'ını yüklüyor
-  useEffect(() => {
-    if (!id || loading) return;
-    let cancelled = false;
-    setEmbedStatsLoading(true);
-    (async () => {
-      try {
-        const res = await fetch(`/api/restaurants/${id}/embed-stats?days=30&limit=15`);
-        if (!cancelled && res.ok) setEmbedStats(await res.json());
-      } catch { /* sessiz hata */ } finally {
-        if (!cancelled) setEmbedStatsLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [id, loading]);
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault();
@@ -499,88 +481,6 @@ export default function RestaurantDetailPage() {
           )}
         </section>
 
-        {/* Widget embed kullanımı — admin-only */}
-        <section className="rounded-3xl border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#EAF9B8] text-[#0A0A0A]">
-              <Globe size={18} strokeWidth={2} />
-            </div>
-            <div>
-              <p className="pulse-eyebrow text-[#737373]">Widget</p>
-              <h2 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">Kullanan siteler</h2>
-              <p className="mt-0.5 text-[12px] text-[#737373]">Son 30 günde bu işletmenin widget&apos;ını yükleyen alan adları.</p>
-            </div>
-          </div>
-          {embedStatsLoading ? (
-            <div className="flex items-center gap-2 text-[13px] text-[#737373] py-4">
-              <Loader2 size={14} className="animate-spin" />
-              Yükleniyor…
-            </div>
-          ) : !embedStats || embedStats.byDomain.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-6 text-center">
-              <Code size={22} className="mx-auto mb-2 text-[#A3A3A3]" />
-              <p className="text-[12px] text-[#737373]">Widget henüz hiçbir siteden yüklenmedi.</p>
-            </div>
-          ) : (
-            <>
-            {/* Mobile card list */}
-            <div className="flex flex-col gap-2.5 lg:hidden">
-              {embedStats.byDomain.map((d) => (
-                <div key={d.domain} className="bz-card p-3.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div
-                      className="min-w-0 flex-1 truncate font-medium text-[#0A0A0A]"
-                      style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
-                    >
-                      {d.domain}
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <div className="text-[14px] font-semibold tabular-nums text-[#0A0A0A]">
-                        {d.count.toLocaleString('tr-TR')}
-                      </div>
-                      <div className="text-[11px] text-[#737373]">
-                        {d.lastSeen
-                          ? `${Math.max(0, Math.floor((Date.now() - new Date(d.lastSeen).getTime()) / 60000))} dk önce`
-                          : '—'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <p className="px-1 text-[11px] text-[#737373]">
-                Toplam {embedStats.totalViews.toLocaleString('tr-TR')} görüntü · son 30 gün
-              </p>
-            </div>
-
-            {/* Desktop table */}
-            <div className="overflow-x-auto rounded-2xl border border-[#EDEDED] hidden lg:block">
-              <table className="w-full min-w-[480px] text-[13px]">
-                <thead className="bg-[#FAFAFA]">
-                  <tr className="text-left">
-                    <th className="px-4 py-2.5 pulse-eyebrow text-[#737373]">ALAN ADI</th>
-                    <th className="px-4 py-2.5 pulse-eyebrow text-[#737373] text-right">GÖRÜNTÜ</th>
-                    <th className="px-4 py-2.5 pulse-eyebrow text-[#737373] text-right">SON</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {embedStats.byDomain.map((d) => (
-                    <tr key={d.domain} className="border-t border-[#EDEDED] hover:bg-[#FAFAFA]">
-                      <td className="px-4 py-3 font-medium truncate max-w-[300px]" style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{d.domain}</td>
-                      <td className="px-4 py-3 text-right tabular-nums font-medium">{d.count.toLocaleString('tr-TR')}</td>
-                      <td className="px-4 py-3 text-right text-[#737373] text-[12px]">
-                        {d.lastSeen ? `${Math.max(0, Math.floor((Date.now() - new Date(d.lastSeen).getTime()) / 60000))} dk önce` : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="border-t border-[#EDEDED] bg-[#FAFAFA] px-4 py-2 text-[11px] text-[#737373]">
-                Toplam {embedStats.totalViews.toLocaleString('tr-TR')} görüntü · son 30 gün
-              </div>
-            </div>
-            </>
-          )}
-        </section>
       </div>
 
       {error && (

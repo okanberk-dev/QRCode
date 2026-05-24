@@ -258,10 +258,10 @@ export function SkTabStrip({ count = 5 }: { count?: number }) {
  * the element stretches to parent width before max-width caps it.
  */
 export function SkPageShell({
-  max = 1200,
+  max = 1440,
   children,
 }: {
-  max?: 640 | 1100 | 1200 | 1400;
+  max?: 640 | 920 | 1100 | 1200 | 1280 | 1400 | 1440 | 1600;
   children: ReactNode;
 }) {
   return (

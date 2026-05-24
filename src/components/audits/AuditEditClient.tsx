@@ -487,7 +487,7 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
 
   // ─── Render ───────────────────────────────────────────────────────────
   return (
-    <div className="mx-auto max-w-[960px] px-4 sm:px-7 py-6 lg:py-8 pb-32 sm:pb-8">
+    <div className="mx-auto max-w-[920px] px-4 sm:px-7 py-6 lg:py-8 pb-32 sm:pb-8">
       <div className="mb-3">
         <button
           type="button"
@@ -796,7 +796,7 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
 
       {/* Action bar — sticky bottom on mobile, inline on desktop */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EDEDED] bg-white p-3 sm:static sm:mt-5 sm:rounded-2xl sm:border sm:bg-[#FAFAFA]">
-        <div className="mx-auto flex max-w-[960px] flex-row items-center justify-end gap-2 px-1 sm:px-0">
+        <div className="mx-auto flex max-w-[920px] flex-row items-center justify-end gap-2 px-1 sm:px-0">
           <button
             type="button"
             onClick={() => router.push(`/${locale}/dashboard/audits/${template.id}`)}

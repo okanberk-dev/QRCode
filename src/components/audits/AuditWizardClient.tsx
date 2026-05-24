@@ -511,7 +511,7 @@ export default function AuditWizardClient({
   const isFork = Boolean(forkSource);
 
   return (
-    <div className="mx-auto max-w-[900px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[920px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow={isFork ? (locale === 'tr' ? 'ŞABLON KOPYASI' : 'TEMPLATE COPY') : (locale === 'tr' ? 'YENİ DENETİM' : 'NEW AUDIT')}
         eyebrowColor="#C6F24E"

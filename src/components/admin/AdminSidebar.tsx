@@ -14,7 +14,6 @@ import {
   CreditCard,
   Crown,
   FileEdit,
-  Globe,
   Inbox,
   LayoutDashboard,
   LogOut,
@@ -272,7 +271,6 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
           label: locale === 'en' ? 'Campaign templates' : 'Kampanya Şablonları',
           roles: ['superadmin'],
         },
-        { href: '/admin/embed-usage', icon: Globe, label: locale === 'en' ? 'Embed usage' : 'Embed kullanımı', roles: ['superadmin'] },
         // CLAUDE.md §42 — Denetim Merkezi (superadmin). 3 alt-yüzey:
         //   1. Şablonlar (catalog + edit + question builder)
         //   2. Kategoriler (sektör taksonomisi)

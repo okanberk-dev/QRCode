@@ -191,7 +191,7 @@ export default function AuditResponseDetailClient({
 
   if (loading && !data) {
     return (
-      <main className="mx-auto max-w-[900px] px-4 sm:px-7 py-6 lg:py-8">
+      <main className="mx-auto max-w-[920px] px-4 sm:px-7 py-6 lg:py-8">
         <Loader2 size={20} className="animate-spin" />
       </main>
     );
@@ -199,14 +199,14 @@ export default function AuditResponseDetailClient({
 
   if (!data) {
     return (
-      <main className="mx-auto max-w-[900px] px-4 sm:px-7 py-6 lg:py-8">
+      <main className="mx-auto max-w-[920px] px-4 sm:px-7 py-6 lg:py-8">
         <AlertBanner kind="danger">{error || 'Yanıt bulunamadı'}</AlertBanner>
       </main>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[900px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[920px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <div>
         <Link
           href={`/${locale}/dashboard/audits/${template.id}/results`}
