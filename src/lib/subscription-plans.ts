@@ -62,6 +62,13 @@ export interface AdminPlanRow {
   discountValue: number | null;
   discountLabelTr: string | null;
   discountLabelEn: string | null;
+  /** Payment provider — 'manual' | 'lemon_squeezy' | 'iyzico' (CLAUDE.md §44). */
+  paymentProvider: string;
+  /** Lemon Squeezy variant ID slots (4 — USD/TRY × monthly/yearly). */
+  lsVariantIdUsdMonthly: string | null;
+  lsVariantIdUsdYearly: string | null;
+  lsVariantIdTryMonthly: string | null;
+  lsVariantIdTryYearly: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -115,6 +122,11 @@ export function toAdminRow(row: {
   discountValue: number | null;
   discountLabelTr: string | null;
   discountLabelEn: string | null;
+  paymentProvider?: string;
+  lsVariantIdUsdMonthly?: string | null;
+  lsVariantIdUsdYearly?: string | null;
+  lsVariantIdTryMonthly?: string | null;
+  lsVariantIdTryYearly?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): AdminPlanRow {
@@ -142,6 +154,11 @@ export function toAdminRow(row: {
     discountValue: row.discountValue,
     discountLabelTr: row.discountLabelTr,
     discountLabelEn: row.discountLabelEn,
+    paymentProvider: row.paymentProvider ?? 'manual',
+    lsVariantIdUsdMonthly: row.lsVariantIdUsdMonthly ?? null,
+    lsVariantIdUsdYearly: row.lsVariantIdUsdYearly ?? null,
+    lsVariantIdTryMonthly: row.lsVariantIdTryMonthly ?? null,
+    lsVariantIdTryYearly: row.lsVariantIdTryYearly ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

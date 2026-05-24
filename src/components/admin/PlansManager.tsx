@@ -40,6 +40,13 @@ interface FormState {
   discountValue: string;
   discountLabelTr: string;
   discountLabelEn: string;
+  /** Payment provider (CLAUDE.md §44). 'manual' tier'lar checkout butonu
+   *  göstermez; 'lemon_squeezy' tier'lar 4 variant slot kullanır. */
+  paymentProvider: 'manual' | 'lemon_squeezy' | 'iyzico';
+  lsVariantIdUsdMonthly: string;
+  lsVariantIdUsdYearly: string;
+  lsVariantIdTryMonthly: string;
+  lsVariantIdTryYearly: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -65,6 +72,11 @@ const EMPTY_FORM: FormState = {
   discountValue: '',
   discountLabelTr: '',
   discountLabelEn: '',
+  paymentProvider: 'manual',
+  lsVariantIdUsdMonthly: '',
+  lsVariantIdUsdYearly: '',
+  lsVariantIdTryMonthly: '',
+  lsVariantIdTryYearly: '',
 };
 
 function rowToForm(p: AdminPlanRow): FormState {
@@ -91,6 +103,13 @@ function rowToForm(p: AdminPlanRow): FormState {
     discountValue: p.discountValue != null ? String(p.discountValue) : '',
     discountLabelTr: p.discountLabelTr || '',
     discountLabelEn: p.discountLabelEn || '',
+    paymentProvider: (p.paymentProvider === 'lemon_squeezy' || p.paymentProvider === 'iyzico'
+      ? p.paymentProvider
+      : 'manual') as FormState['paymentProvider'],
+    lsVariantIdUsdMonthly: p.lsVariantIdUsdMonthly ?? '',
+    lsVariantIdUsdYearly: p.lsVariantIdUsdYearly ?? '',
+    lsVariantIdTryMonthly: p.lsVariantIdTryMonthly ?? '',
+    lsVariantIdTryYearly: p.lsVariantIdTryYearly ?? '',
   };
 }
 
@@ -119,6 +138,14 @@ function formToBody(f: FormState) {
       f.discountActive && f.discountValue.trim() !== '' ? parseInt(f.discountValue, 10) : null,
     discountLabelTr: f.discountActive ? f.discountLabelTr.trim() || null : null,
     discountLabelEn: f.discountActive ? f.discountLabelEn.trim() || null : null,
+    paymentProvider: f.paymentProvider,
+    // 4 variant slot — boş = null (provider değişikliği eski mapping'i sıfırlamaz,
+    // admin elle silmek isterse boş bırakır). LS değilken send boş string, backend
+    // null'a çevirir (idempotent partial PATCH).
+    lsVariantIdUsdMonthly: f.lsVariantIdUsdMonthly.trim(),
+    lsVariantIdUsdYearly: f.lsVariantIdUsdYearly.trim(),
+    lsVariantIdTryMonthly: f.lsVariantIdTryMonthly.trim(),
+    lsVariantIdTryYearly: f.lsVariantIdTryYearly.trim(),
   };
 }
 
@@ -831,6 +858,97 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                 </Field>
               </div>
             )}
+
+            {/* ── Ödeme sağlayıcı + Lemon Squeezy variant mapping (CLAUDE.md §44) ── */}
+            <div className="bz-card-soft p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[13px] font-semibold text-[#0A0A0A]">Ödeme sağlayıcı</p>
+                  <p className="mt-0.5 text-[11px] text-[#737373]">
+                    <strong>manual</strong> = admin elle yönetir (enterprise/legacy).{' '}
+                    <strong>lemon_squeezy</strong> = self-service checkout. Variant
+                    ID&apos;leri Lemon Squeezy dashboard&apos;ından kopyalayın.
+                  </p>
+                </div>
+              </div>
+              <Field label="Sağlayıcı">
+                <select
+                  value={form.paymentProvider}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      paymentProvider: e.target.value as FormState['paymentProvider'],
+                    }))
+                  }
+                  className="bz-input"
+                >
+                  <option value="manual">manual (admin yönetir)</option>
+                  <option value="lemon_squeezy">lemon_squeezy (self-service)</option>
+                  <option value="iyzico">iyzico (yakında — Wave 3.5)</option>
+                </select>
+              </Field>
+              {form.paymentProvider === 'lemon_squeezy' && (
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field
+                    label="USD aylık variant ID"
+                    hint="Lemon Squeezy → Products → Variant URL'deki sayı"
+                  >
+                    <input
+                      type="text"
+                      value={form.lsVariantIdUsdMonthly}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, lsVariantIdUsdMonthly: e.target.value }))
+                      }
+                      placeholder="789012"
+                      className="bz-input bz-mono"
+                    />
+                  </Field>
+                  <Field label="USD yıllık variant ID">
+                    <input
+                      type="text"
+                      value={form.lsVariantIdUsdYearly}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, lsVariantIdUsdYearly: e.target.value }))
+                      }
+                      placeholder="789013"
+                      className="bz-input bz-mono"
+                    />
+                  </Field>
+                  <Field label="TRY aylık variant ID">
+                    <input
+                      type="text"
+                      value={form.lsVariantIdTryMonthly}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, lsVariantIdTryMonthly: e.target.value }))
+                      }
+                      placeholder="789014"
+                      className="bz-input bz-mono"
+                    />
+                  </Field>
+                  <Field label="TRY yıllık variant ID">
+                    <input
+                      type="text"
+                      value={form.lsVariantIdTryYearly}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, lsVariantIdTryYearly: e.target.value }))
+                      }
+                      placeholder="789015"
+                      className="bz-input bz-mono"
+                    />
+                  </Field>
+                </div>
+              )}
+              {form.paymentProvider === 'lemon_squeezy' && (
+                <AlertBanner kind="info" className="mt-3">
+                  <p className="text-[12px] leading-[1.5]">
+                    Boş bırakılan slot için o (currency × cycle) kombinasyonu
+                    owner panelinde checkout butonu görünmez. Hibrit USD+TRY
+                    fiyatlama için en az 2 slot (USD aylık + TRY aylık)
+                    önerilir.
+                  </p>
+                </AlertBanner>
+              )}
+            </div>
           </div>
         </div>
       </Modal>

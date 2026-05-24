@@ -148,6 +148,14 @@ export async function GET(req: NextRequest) {
             isFeatured: subscription.subscriptionPlan.isFeatured,
           }
         : null,
+      // §44.9 Wave 2 — Lemon Squeezy self-service signals. Owner UI
+      // (BillingReadOnlyCard) uses these to decide which CTAs to show:
+      //   source='lemon_squeezy' + cancelAtPeriodEnd=false → "İptal et"
+      //   source='lemon_squeezy' + cancelAtPeriodEnd=true → "Yeniden başlat"
+      //   source='lemon_squeezy' → "Aboneliği yönet" (portal)
+      //   no subscription / source='manual' → manual flow CTA disabled
+      source: subscription?.source ?? null,
+      cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
       // Billing address — never surface adminNotes (admin-only).
       billingAddress: subscription
         ? {

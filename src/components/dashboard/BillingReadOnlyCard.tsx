@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { CreditCard, Download, FileText, Loader2, Lock, Receipt } from 'lucide-react';
-import { AlertBanner, Badge, Eyebrow } from '@/components/ui';
+import { AlertBanner, Badge, Eyebrow, Modal } from '@/components/ui';
 
 interface BillingReadOnlyCardProps {
   isTr: boolean;
@@ -23,6 +23,9 @@ interface BillingSummary {
   billingCycle: string | null;
   subscriptionPlanId?: string | null;
   tier?: { id: string; name: string | null; isFeatured: boolean } | null;
+  /** §44 Lemon Squeezy self-service signals — null/'manual' = no LS sub. */
+  source?: 'manual' | 'lemon_squeezy' | 'iyzico' | null;
+  cancelAtPeriodEnd?: boolean;
   billingAddress: {
     companyName: string | null;
     taxNumber: string | null;
@@ -90,6 +93,19 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // §44.9 Wave 2 — self-service action state
+  const [busyAction, setBusyAction] = useState<'portal' | 'cancel' | 'reactivate' | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [notice, setNotice] = useState<{ kind: 'success' | 'danger'; message: string } | null>(null);
+
+  const reload = async () => {
+    try {
+      const res = await fetch('/api/billing/summary');
+      if (res.ok) setSummary(await res.json());
+    } catch {
+      // best-effort; existing summary stays visible
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -122,6 +138,92 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
       cancelled = true;
     };
   }, [isTr]);
+
+  useEffect(() => {
+    if (!notice || notice.kind !== 'success') return;
+    const t = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  const handlePortal = async () => {
+    setBusyAction('portal');
+    try {
+      const res = await fetch('/api/billing/portal');
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; url?: string };
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setNotice({
+        kind: 'danger',
+        message: isTr
+          ? 'Müşteri portalı açılamadı. Lütfen tekrar deneyin.'
+          : 'Customer portal could not open. Please try again.',
+      });
+    } catch {
+      setNotice({
+        kind: 'danger',
+        message: isTr ? 'Bağlantı hatası.' : 'Network error.',
+      });
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleCancel = async () => {
+    setBusyAction('cancel');
+    try {
+      const res = await fetch('/api/billing/cancel', { method: 'POST' });
+      if (res.ok) {
+        setShowCancelConfirm(false);
+        setNotice({
+          kind: 'success',
+          message: isTr
+            ? 'Aboneliğiniz dönem sonunda iptal olacak. Bu süreye kadar tüm özellikler aktif.'
+            : 'Your subscription will cancel at period end. All features remain active until then.',
+        });
+        await reload();
+      } else {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setNotice({
+          kind: 'danger',
+          message: isTr
+            ? `İptal başarısız: ${data.error ?? 'bilinmeyen hata'}`
+            : `Cancel failed: ${data.error ?? 'unknown error'}`,
+        });
+      }
+    } catch {
+      setNotice({ kind: 'danger', message: isTr ? 'Bağlantı hatası.' : 'Network error.' });
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleReactivate = async () => {
+    setBusyAction('reactivate');
+    try {
+      const res = await fetch('/api/billing/reactivate', { method: 'POST' });
+      if (res.ok) {
+        setNotice({
+          kind: 'success',
+          message: isTr ? 'Aboneliğiniz yeniden başlatıldı.' : 'Subscription reactivated.',
+        });
+        await reload();
+      } else {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setNotice({
+          kind: 'danger',
+          message: isTr
+            ? `Yeniden başlatma başarısız: ${data.error ?? 'bilinmeyen hata'}`
+            : `Reactivate failed: ${data.error ?? 'unknown error'}`,
+        });
+      }
+    } catch {
+      setNotice({ kind: 'danger', message: isTr ? 'Bağlantı hatası.' : 'Network error.' });
+    } finally {
+      setBusyAction(null);
+    }
+  };
 
   const dateFormat = (iso: string) => {
     try {
@@ -173,6 +275,16 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
         <div className="mb-4">
           <AlertBanner kind="danger" onDismiss={() => setError(null)}>
             {error}
+          </AlertBanner>
+        </div>
+      )}
+      {notice && (
+        <div className="mb-4">
+          <AlertBanner
+            kind={notice.kind === 'success' ? 'success' : 'danger'}
+            onDismiss={() => setNotice(null)}
+          >
+            {notice.message}
           </AlertBanner>
         </div>
       )}
@@ -246,33 +358,67 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                   : 'No renewal scheduled'}
           </p>
 
+          {/* §44.9 Wave 2 — Self-service Lemon Squeezy CTA's. Three states:
+              (a) no LS sub → "Planı yükselt" link to /pricing
+              (b) active LS sub → Manage portal + Cancel
+              (c) cancelled-pending LS sub → Reactivate + disabled "İptal edildi" */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              title={
-                isTr
-                  ? 'Plan değişikliği admin panelinden yapılır'
-                  : 'Plan changes are managed via the admin panel'
-              }
-              className="bz-btn-lime cursor-not-allowed opacity-50"
-            >
-              {isTr ? 'Planı yükselt' : 'Upgrade plan'}
-            </button>
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              title={
-                isTr
-                  ? 'Plan değişikliği admin panelinden yapılır'
-                  : 'Plan changes are managed via the admin panel'
-              }
-              className="bz-btn-on-dark cursor-not-allowed text-white/50"
-            >
-              {isTr ? 'Planı değiştir' : 'Change plan'}
-            </button>
+            {summary?.source === 'lemon_squeezy' && summary?.cancelAtPeriodEnd ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleReactivate}
+                  disabled={busyAction !== null}
+                  className="bz-btn-lime disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {busyAction === 'reactivate' && (
+                    <Loader2 size={14} className="animate-spin" aria-hidden />
+                  )}
+                  {isTr ? 'Aboneliği yeniden başlat' : 'Reactivate subscription'}
+                </button>
+                <span className="text-[12px] text-[#A3A3A3]">
+                  {isTr
+                    ? 'İptal planlandı — dönem sonuna kadar aktif.'
+                    : 'Cancellation scheduled — active until period end.'}
+                </span>
+              </>
+            ) : summary?.source === 'lemon_squeezy' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePortal}
+                  disabled={busyAction !== null}
+                  className="bz-btn-lime disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {busyAction === 'portal' && (
+                    <Loader2 size={14} className="animate-spin" aria-hidden />
+                  )}
+                  {isTr ? 'Aboneliği yönet' : 'Manage subscription'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCancelConfirm(true)}
+                  disabled={busyAction !== null}
+                  className="bz-btn-on-dark text-white/80 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isTr ? 'İptal et' : 'Cancel'}
+                </button>
+              </>
+            ) : (
+              <>
+                <a
+                  href={isTr ? '/tr/pricing' : '/en/pricing'}
+                  className="bz-btn-lime inline-flex items-center"
+                >
+                  {isTr ? 'Planı yükselt' : 'Upgrade plan'}
+                </a>
+                <span className="text-[11px] text-[#A3A3A3]">
+                  {isTr
+                    ? '/pricing sayfasından paket seç — Lemon Squeezy ile güvenli ödeme.'
+                    : 'Pick a plan on /pricing — secure checkout via Lemon Squeezy.'}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -462,6 +608,58 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
           </>
         )}
       </div>
+
+      {/* §44.9 Wave 2 — Cancel confirm modal. Soft-cancel: dönem sonuna
+          kadar erişim. Owner explicitly bilgilendirilir. */}
+      {showCancelConfirm && (
+        <Modal
+          onClose={() => setShowCancelConfirm(false)}
+          size={460}
+          title={isTr ? 'Aboneliği iptal et?' : 'Cancel subscription?'}
+          footer={
+            <>
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirm(false)}
+                className="bz-btn-ghost"
+              >
+                {isTr ? 'Vazgeç' : 'Keep subscription'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={busyAction !== null}
+                className="bz-btn-danger disabled:opacity-60"
+              >
+                {busyAction === 'cancel' && (
+                  <Loader2 size={14} className="animate-spin" aria-hidden />
+                )}
+                {isTr ? 'Evet, iptal et' : 'Yes, cancel'}
+              </button>
+            </>
+          }
+        >
+          <div className="space-y-2 text-[13px] leading-[1.55] text-[#525252]">
+            <p>
+              {isTr
+                ? 'Aboneliğiniz hemen sonlanmaz — mevcut dönemin sonuna kadar tüm özellikler aktif kalır.'
+                : 'Your subscription does not end immediately — all features remain active until the end of the current period.'}
+            </p>
+            {summary?.renewsAt && (
+              <p className="text-[#0A0A0A] font-medium">
+                {isTr
+                  ? `Erişiminiz ${dateFormat(summary.renewsAt)} tarihine kadar devam edecek.`
+                  : `Access will continue until ${dateFormat(summary.renewsAt)}.`}
+              </p>
+            )}
+            <p className="text-[12px] text-[#737373]">
+              {isTr
+                ? 'O tarihe kadar fikrinizi değiştirirseniz tek tıkla yeniden başlatabilirsiniz.'
+                : 'Change your mind anytime before that date and reactivate with one click.'}
+            </p>
+          </div>
+        </Modal>
+      )}
     </section>
   );
 }
