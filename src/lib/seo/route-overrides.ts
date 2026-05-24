@@ -45,6 +45,15 @@ export const ROUTE_OVERRIDES: Record<string, RouteMeta> = {
   'how-it-works': { priority: 0.8, changefreq: 'monthly' },
   features: { priority: 0.85, changefreq: 'monthly' },
   'features/pulse-ai': { priority: 0.8, changefreq: 'monthly' },
+  // Stage 135 §38.215 — Reputation OS suite (audit/surveys/campaigns)
+  // detay sayfaları; 0.8 features/pulse-ai paterniyle parity. Tüm 3
+  // FAQPage + Service + HowTo + BreadcrumbList JSON-LD taşır.
+  'features/audit-center': { priority: 0.8, changefreq: 'monthly' },
+  'features/surveys': { priority: 0.8, changefreq: 'monthly' },
+  'features/campaigns': { priority: 0.8, changefreq: 'monthly' },
+  // /features/review-management + /features/analytics-reports heuristic
+  // default 0.7 ile çalışıyor — Stage 134 priority audit gerekiyorsa
+  // ayrı PR (kapsam dışı).
   integrations: { priority: 0.8, changefreq: 'monthly' },
   // ROI + google-compliance now ship FAQPage JSON-LD (PR #298 and the
   // 2026-05 compliance copy parity pass); bumped to 0.8 to match `/faq`
