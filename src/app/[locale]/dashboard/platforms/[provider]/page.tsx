@@ -116,7 +116,7 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
 
   if (restaurants.length === 0 || !selectedRestaurantId) {
     return (
-      <div className="mx-auto max-w-[1100px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
+      <div className="mx-auto max-w-[1280px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
         <PageHeader
           titleScale="compact"
           eyebrow={isTr ? 'PLATFORM BAĞLANTILARI' : 'PLATFORM LINKS'}
@@ -154,7 +154,7 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         titleScale="compact"
         eyebrow={isTr ? 'PLATFORM SİHİRBAZI' : 'PLATFORM WIZARD'}

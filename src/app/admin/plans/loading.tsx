@@ -11,7 +11,7 @@ import {
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1200}>
+    <SkPageShell max={1440}>
       <SkPageHeader withActions titleWidth="w-44" />
       <SkStatGrid count={4} />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

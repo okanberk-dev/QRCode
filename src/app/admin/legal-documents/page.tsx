@@ -74,7 +74,7 @@ export default function LegalDocumentsIndexPage() {
   }, [docs]);
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="HUKUKİ METİNLER"
         title="Sözleşmeler ve onay metinleri"

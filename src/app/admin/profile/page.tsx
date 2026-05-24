@@ -133,7 +133,7 @@ export default function AdminProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <PageHeader eyebrow="PROFİL" title="Profilim" />
 
       {/* Kurtarma e-postası eksik uyarısı — şifremi unuttum akışı bunsuz

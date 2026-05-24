@@ -96,7 +96,7 @@ export default function ImpersonationBanner() {
       aria-live="assertive"
       className="sticky top-0 z-[60] w-full bg-[#991B1B] text-white border-b-2 border-[#7F1D1D]"
     >
-      <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-2 sm:px-7">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-2 sm:px-7">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <ShieldAlert size={16} strokeWidth={2.5} className="shrink-0" />
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] font-medium leading-tight">

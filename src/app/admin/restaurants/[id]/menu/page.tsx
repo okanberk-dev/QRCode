@@ -132,7 +132,7 @@ export default async function AdminRestaurantMenuPage({ params }: AdminMenuPageP
   const accent = restaurant.menuAccentColor || restaurant.primaryColor || '#C6F24E';
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <Link
         href={`/admin/restaurants/${restaurant.id}`}
         className="bz-mono text-[11px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1"

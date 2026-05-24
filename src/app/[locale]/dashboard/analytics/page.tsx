@@ -703,7 +703,7 @@ async function renderAnalyticsPage({
   );
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-3.5">
       {/* Stage 66 §38.147 — Live indicator (compliance-safe static). HANDOFF
           "8 sn ÖNCE GÜNCELLENDİ" fake real-time timer compliance variation
           ile değiştirildi: "GÜNCEL · BU SAYFA" / "LIVE · THIS PAGE". */}

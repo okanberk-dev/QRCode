@@ -94,7 +94,7 @@ export default function SurveysClient({
     : `/${locale}/dashboard/surveys/new`;
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow={locale === 'tr' ? 'CRM · ANKETLER' : 'CRM · SURVEYS'}
         title={t.surveys_title}

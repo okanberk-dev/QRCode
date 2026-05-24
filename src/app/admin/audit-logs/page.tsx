@@ -204,7 +204,7 @@ export default function AdminAuditLogsPage() {
   }, [page, totalPages]);
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM KAYITLARI"
         eyebrowColor="#C6F24E"

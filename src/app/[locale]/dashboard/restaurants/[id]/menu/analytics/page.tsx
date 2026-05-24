@@ -192,7 +192,7 @@ export default function MenuAnalyticsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
       {/* Header */}
       <div className="flex flex-col gap-4 bz-card p-5 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

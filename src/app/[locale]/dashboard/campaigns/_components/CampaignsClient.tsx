@@ -263,7 +263,7 @@ export function CampaignsClient({ locale, initialRestaurants, initialActiveResta
   // durumunda "Yeni kampanya" butonu disabled + AlertBanner info ("admin onayıyla
   // aktif edilir"). Backend gate intact (POST 403 Stage 30 §38.106).
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <PageHeader
         eyebrow={isTr ? 'CRM / KAMPANYALAR' : 'CRM / CAMPAIGNS'}
         title={isTr ? 'Kampanyalar' : 'Campaigns'}

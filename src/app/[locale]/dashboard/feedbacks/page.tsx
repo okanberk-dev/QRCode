@@ -792,7 +792,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   return (
     // §38.62 — Pixel-perfect parity: tasarım `.design-owner-2026/page-reviews.jsx`
     // `contentStyle={{ padding: 0, background: '#FFFFFF' }}` override ediyor.
-    // Outer `mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8` kaldırıldı; 3-col
+    // Outer `mx-auto max-w-[1600px] px-4 sm:px-7 py-6 lg:py-8` kaldırıldı; 3-col
     // grid full-width content area'da render ediliyor → filter rail sol sidebar'a
     // yapışık (border-right). Header için ayrı padded wrapper (px-4 sm:px-7
     // py-6 lg:py-8) tasarımdaki PanelTopbar görünümünü taklit eder.

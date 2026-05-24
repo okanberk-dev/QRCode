@@ -224,7 +224,7 @@ export default function NewsletterCampaignEditor({ initial }: { initial?: Campai
   const canSubmit = value.title.trim().length > 0 && value.intro.trim().length > 0 && value.postIds.length > 0 && !saving && !isImmutable;
 
   return (
-    <div className="mx-auto max-w-[1100px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1280px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <Link
         href="/admin/newsletters/campaigns"
         className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#737373] hover:text-[#0A0A0A] transition-colors"

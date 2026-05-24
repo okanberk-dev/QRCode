@@ -243,7 +243,7 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
   // §40.10 clean slate — skeleton return kaldırıldı; data gelene kadar
   // boş zemin (page header + tab/filter chrome görünür kalır).
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <PageHeader
         eyebrow="YÖNETİCİLER"
         title="Yöneticiler"

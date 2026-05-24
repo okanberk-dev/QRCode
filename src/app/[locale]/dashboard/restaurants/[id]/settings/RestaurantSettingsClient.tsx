@@ -322,7 +322,7 @@ export default function RestaurantSettingsClient({
 
   if (error || !restaurant) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
         <AlertBanner kind="danger">
           {error || "İşletme bulunamadı."}
         </AlertBanner>

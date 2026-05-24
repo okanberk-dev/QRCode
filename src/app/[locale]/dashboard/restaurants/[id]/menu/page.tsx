@@ -776,7 +776,7 @@ export default function RestaurantMenuBuilderPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6 px-4 sm:px-7 py-6 pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:py-8 lg:pb-8">
+    <div className="mx-auto max-w-[1600px] space-y-6 px-4 sm:px-7 py-6 pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:py-8 lg:pb-8">
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
         {restaurant.menuPublished && (

@@ -114,7 +114,7 @@ export default function UserDetailPage({
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
         <PageHeader eyebrow="YÖNETİCİLER / DETAY" title="Yükleniyor…" />
         <div className="bz-card p-10 flex items-center justify-center text-[13px] text-[#737373] gap-2">
           <Loader2 size={14} className="animate-spin" />
@@ -126,7 +126,7 @@ export default function UserDetailPage({
 
   if (error && !data) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
         <PageHeader eyebrow="YÖNETİCİLER / DETAY" title="Hata" />
         <AlertBanner kind="danger">{error}</AlertBanner>
         <Link href="/admin/users" className="bz-btn-ghost inline-flex">
@@ -143,7 +143,7 @@ export default function UserDetailPage({
   const roleMeta = ROLE_LABEL[user.role] || { label: user.role, kind: 'ghost' as BadgeKind };
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <Link
         href="/admin/users"
         className="text-[12px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1.5"

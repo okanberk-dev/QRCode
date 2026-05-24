@@ -217,7 +217,7 @@ export default function UserPermissionsPage({
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
         <PageHeader eyebrow="YETKİLER" title="Yükleniyor…" />
         <div className="bz-card p-10 flex items-center justify-center text-[13px] text-[#737373] gap-2">
           <Loader2 size={14} className="animate-spin" />
@@ -229,7 +229,7 @@ export default function UserPermissionsPage({
 
   if (error && !data) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
         <PageHeader eyebrow="YETKİLER" title="Hata" />
         <AlertBanner kind="danger">{error}</AlertBanner>
         <Link href={`/admin/users/${id}`} className="bz-btn-ghost inline-flex">
@@ -245,7 +245,7 @@ export default function UserPermissionsPage({
   const isSuperadmin = data.target.role === 'superadmin';
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <Link
         href={`/admin/users/${id}`}
         className="text-[12px] text-[#737373] hover:text-[#0A0A0A] inline-flex items-center gap-1.5"

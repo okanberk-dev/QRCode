@@ -255,7 +255,7 @@ export default function LegalDocumentEditorPage({
   const previewBlocks = useMemo(() => renderLegalContent(content), [content]);
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
       <Link
         href="/admin/legal-documents"
         className="mb-4 inline-flex items-center gap-1.5 text-[12.5px] text-[#737373] hover:text-[#0A0A0A]"
