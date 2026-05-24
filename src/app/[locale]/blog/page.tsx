@@ -39,7 +39,7 @@ export async function generateMetadata({
       title,
       description,
       url: `https://buaze.com/${locale}/blog`,
-      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Buaze' }],
+      images: [{ url: '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze' }],
     },
   };
 }
