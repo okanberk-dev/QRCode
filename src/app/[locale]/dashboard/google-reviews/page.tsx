@@ -573,6 +573,14 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [inlineLocationsSyncedAt, setInlineLocationsSyncedAt] = useState<string | null>(null);
   // Countdown 0'a ulaşınca tek-seferlik auto-retry tetikle.
   const autoRetryFiredRef = useRef(false);
+  // §38.209 — Auto-retry attempt counter. Backoff schedule: 60s → 120s →
+  // STOP. 2 deneme yetersizse owner manuel intervention yapar (sandwich
+  // card görünüyor, "Farklı hesapla bağlan" CTA hazır). Eski davranışta
+  // tek-seferlik kontrol vardı; ama autoRetryFiredRef restoran switch /
+  // mount cycle'da reset olduğu için pratikte sınırsız retry oluyordu.
+  // Counter manuel trigger'larda resetlenir, auto-retry kendisi bumps.
+  const autoRetryAttemptRef = useRef(0);
+  const MAX_AUTO_RETRY_ATTEMPTS = 2;
   // §38.207 — Auto-retry'ın bir kez tetiklendiğini state olarak tut
   // (ref re-render tetiklemez). Banner'ın altında "Auto-retry yapıldı,
   // hâlâ sonuç yok ise farklı hesapla dene" hint render etmek için.
@@ -812,7 +820,10 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     // alabilsin (force refresh flag stale kalmasın).
     setHasAttemptedSameAccount(false);
     // §38.207 — Auto-retry flag'i de restoran değişiminde reset.
+    // §38.209 — Attempt counter da reset; yeni restoran = fresh
+    // exponential backoff window.
     autoRetryFiredRef.current = false;
+    autoRetryAttemptRef.current = 0;
     setHasAutoRetried(false);
   }, [activeRestaurantId]);
 
@@ -870,8 +881,10 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     // göremiyor. Reset artık SADECE bilinçli manuel trigger'larda yapılır
     // (restaurant change useEffect, manual "Yenile" buton click, OAuth
     // başarılı bağlantı). Auto-retry kendini reset etmez.
+    // §38.209 — autoRetryAttemptRef counter da manuel trigger'da resetlenir.
     if (opts.resetAutoRetry) {
       autoRetryFiredRef.current = false;
+      autoRetryAttemptRef.current = 0;
       setHasAutoRetried(false);
     }
     try {
@@ -992,9 +1005,13 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status?.connected, status?.selectedLocation, activeRestaurantId]);
 
-  // 429 retry-after countdown + tek-seferlik auto-retry (CLAUDE.md §5.1).
+  // 429 retry-after countdown + exponential backoff auto-retry
+  // (CLAUDE.md §5.1 + §38.209).
   // Sarı banner gören owner için manuel "yenile" gerek kalmadan otomatik
-  // tek tekrar denemesi yapılır. `autoRetryFiredRef` sonsuz loop'tan korur.
+  // 2 deneme yapılır. Daha sonra otomatik retry durur — sandwich card
+  // (§38.208) zaten görünüyor, owner "Farklı hesapla bağlan" yapabilir.
+  // `autoRetryFiredRef` mevcut countdown için tek-seferlik guard,
+  // `autoRetryAttemptRef` tüm session boyunca attempt counter.
   useEffect(() => {
     if (locationRetryAfter === null || locationRetryAfter <= 0) return;
     const interval = setInterval(() => {
@@ -1002,13 +1019,23 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         if (prev === null) return null;
         if (prev <= 1) {
           clearInterval(interval);
-          if (!autoRetryFiredRef.current && status?.connected && activeRestaurantId) {
+          const canRetry =
+            !autoRetryFiredRef.current &&
+            autoRetryAttemptRef.current < MAX_AUTO_RETRY_ATTEMPTS &&
+            status?.connected &&
+            activeRestaurantId;
+          if (canRetry) {
             autoRetryFiredRef.current = true;
+            autoRetryAttemptRef.current += 1;
             setHasAutoRetried(true);
             // §38.207 — Auto-retry kendini reset etmemeli; flag yalnız
             // manuel trigger'larda (mount, restaurant change, manuel
             // button click) reset olur. Eski davranışta `loadInlineLocations`
             // her çağrıda flag'i resetliyordu → sonsuz loop, quota burn.
+            // §38.209 — Bu auto-retry attempt counter'ı bump eder; sonraki
+            // quota fail'de yeni 60s countdown başlasa bile attempt
+            // MAX'a ulaşmışsa retry tetiklenmez (sandwich card owner'a
+            // alternative gösteriyor).
             void loadInlineLocations(true);
           }
           return 0;
@@ -1472,6 +1499,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                             // best-effort
                           }
                           autoRetryFiredRef.current = false;
+                          autoRetryAttemptRef.current = 0;
                           setHasAutoRetried(false);
                           setHasAttemptedSameAccount(false);
                           await connectGoogleInline();
