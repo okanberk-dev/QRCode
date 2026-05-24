@@ -573,6 +573,10 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [inlineLocationsSyncedAt, setInlineLocationsSyncedAt] = useState<string | null>(null);
   // Countdown 0'a ulaşınca tek-seferlik auto-retry tetikle.
   const autoRetryFiredRef = useRef(false);
+  // §38.207 — Auto-retry'ın bir kez tetiklendiğini state olarak tut
+  // (ref re-render tetiklemez). Banner'ın altında "Auto-retry yapıldı,
+  // hâlâ sonuç yok ise farklı hesapla dene" hint render etmek için.
+  const [hasAutoRetried, setHasAutoRetried] = useState(false);
   // §38.206 — Smart "Bu hesapla devam et" akışı. Kullanıcı empty state'te
   // "Bu Google hesabıyla devam et" tıkladıysa flag set edilir; loadInlineLocations
   // force=true ile fresh accounts fetch atılır. Hâlâ accounts boş dönerse
@@ -807,6 +811,9 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     // sıfırlanır; sonraki restoran için kullanıcı tekrar smart fallback
     // alabilsin (force refresh flag stale kalmasın).
     setHasAttemptedSameAccount(false);
+    // §38.207 — Auto-retry flag'i de restoran değişiminde reset.
+    autoRetryFiredRef.current = false;
+    setHasAutoRetried(false);
   }, [activeRestaurantId]);
 
   // OAuth start — Google'a yönlendirir, callback sonrası bu sayfaya geri
@@ -849,14 +856,24 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   // banner + retry-after countdown gösterir. `force=true` sadece kullanıcı
   // bilinçli "Konumları yenile" butonuna basınca gönderilir; otomatik
   // mount fetch'i cache'i kullanır (CLAUDE.md §5.1 quota strategy).
-  const loadInlineLocations = async (force = false) => {
+  const loadInlineLocations = async (force = false, opts: { resetAutoRetry?: boolean } = {}) => {
     if (!activeRestaurantId) return;
     setLoadingLocations(true);
     setLocationError(null);
     setLocationNotice(null);
     setLocationRetryAfter(null);
     setNeedsReconnect(false);
-    autoRetryFiredRef.current = false;
+    // §38.207 — Auto-retry sonsuz loop bug fix. Eskiden bu fonksiyon her
+    // çağrıda flag'i `false`'a resetliyordu; ama auto-retry kendisi de
+    // `loadInlineLocations(true)` çağırıyor → countdown her bittiğinde
+    // tekrar fire ediliyor → quota her dakika 1 burn → owner hiç işletme
+    // göremiyor. Reset artık SADECE bilinçli manuel trigger'larda yapılır
+    // (restaurant change useEffect, manual "Yenile" buton click, OAuth
+    // başarılı bağlantı). Auto-retry kendini reset etmez.
+    if (opts.resetAutoRetry) {
+      autoRetryFiredRef.current = false;
+      setHasAutoRetried(false);
+    }
     try {
       const url = `/api/restaurants/${activeRestaurantId}/google/business/locations${
         force ? '?force=true' : ''
@@ -966,7 +983,9 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
       inlineLocations.length === 0 &&
       !loadingLocations
     ) {
-      void loadInlineLocations();
+      // §38.207 — Restaurant change / status update = fresh context,
+      // auto-retry flag'i resetlenebilir (yeni quota window olabilir).
+      void loadInlineLocations(false, { resetAutoRetry: true });
     }
     // Deliberately not depending on loadInlineLocations / loadingLocations
     // to avoid re-run loop after fetch completes.
@@ -985,6 +1004,11 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           clearInterval(interval);
           if (!autoRetryFiredRef.current && status?.connected && activeRestaurantId) {
             autoRetryFiredRef.current = true;
+            setHasAutoRetried(true);
+            // §38.207 — Auto-retry kendini reset etmemeli; flag yalnız
+            // manuel trigger'larda (mount, restaurant change, manuel
+            // button click) reset olur. Eski davranışta `loadInlineLocations`
+            // her çağrıda flag'i resetliyordu → sonsuz loop, quota burn.
             void loadInlineLocations(true);
           }
           return 0;
@@ -1363,7 +1387,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             </div>
             <button
               type="button"
-              onClick={() => loadInlineLocations(true)}
+              onClick={() => loadInlineLocations(true, { resetAutoRetry: true })}
               disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
               className="bz-btn-ghost shrink-0 inline-flex items-center gap-1.5 rounded-full text-[12.5px]"
               aria-label={isTr ? 'Konumları yenile' : 'Refresh locations'}
@@ -1411,9 +1435,51 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
             </div>
           )}
           {locationNotice && !locationError && (
-            <AlertBanner kind="warn" onDismiss={() => setLocationNotice(null)}>
-              {locationNotice}
-            </AlertBanner>
+            <div className="space-y-2">
+              <AlertBanner kind="warn" onDismiss={() => setLocationNotice(null)}>
+                {locationNotice}
+              </AlertBanner>
+              {/* §38.207 — Auto-retry tetiklendi ama hâlâ accounts boş ise
+                  ek hint kart: countdown beklemeden alternatif aksiyon.
+                  Google API quota proje-geneli (CLAUDE.md §5.1.1: 1 istek/
+                  dk/proje), TÜM Buaze kullanıcıları paylaşır. Yoğun
+                  saatlerde 60s wait bazen yetmez. Owner farklı hesapla
+                  bağlanmak isteyebilir (alternative OAuth client + farklı
+                  Business Profile = fresh quota). */}
+              {hasAutoRetried && inlineAccounts.length === 0 && (
+                <div className="rounded-xl bg-white border border-[#FDE68A] px-4 py-3">
+                  <div className="flex items-start gap-3">
+                    <Sparkles size={14} className="shrink-0 text-[#92400E] mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12.5px] text-[#0A0A0A] leading-relaxed">
+                        {isTr
+                          ? 'Otomatik tekrar denenmiş ama Google quota hâlâ dolu. Beklemek yerine farklı bir Google hesabıyla bağlanmayı deneyebilirsiniz — Business Profile genelde farklı bir Google hesabınızdadır.'
+                          : 'Auto-retry already attempted but Google quota is still exhausted. Instead of waiting, you can try connecting with a different Google account — your Business Profile is usually under a different account.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await fetch('/api/integrations/google/disconnect', { method: 'POST' });
+                          } catch {
+                            // best-effort
+                          }
+                          autoRetryFiredRef.current = false;
+                          setHasAutoRetried(false);
+                          setHasAttemptedSameAccount(false);
+                          await connectGoogleInline();
+                        }}
+                        disabled={connecting}
+                        className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px] rounded-full mt-2"
+                      >
+                        {connecting ? <Loader2 size={13} className="animate-spin" /> : <Unplug size={13} />}
+                        {isTr ? 'Farklı Google hesabıyla bağlan' : 'Switch Google account'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {loadingLocations && inlineLocations.length === 0 ? (
@@ -1496,9 +1562,10 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                       onClick={async () => {
                         // SECONDARY — Owner "Hayır, kayıt olduğum hesap doğru"
                         // diyorsa force refresh ile Google API'den fresh
-                        // accounts fetch dener. Cache bypass.
+                        // accounts fetch dener. Cache bypass. Manuel trigger
+                        // → auto-retry flag'i resetlenir (§38.207).
                         setHasAttemptedSameAccount(true);
-                        await loadInlineLocations(true);
+                        await loadInlineLocations(true, { resetAutoRetry: true });
                       }}
                       disabled={
                         loadingLocations ||
@@ -1575,7 +1642,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                     </a>
                     <button
                       type="button"
-                      onClick={() => loadInlineLocations(true)}
+                      onClick={() => loadInlineLocations(true, { resetAutoRetry: true })}
                       disabled={loadingLocations || (locationRetryAfter !== null && locationRetryAfter > 0)}
                       className="bz-btn-ghost inline-flex items-center gap-1.5 text-[13px] rounded-full"
                     >
