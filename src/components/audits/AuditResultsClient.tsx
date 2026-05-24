@@ -22,6 +22,10 @@ import {
 } from '@/components/ui';
 import { getTranslations, type Locale } from '@/lib/translations';
 import type { AuditScoringMode } from '@/lib/audits/types';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+} from '@/lib/audits/error-humanizer';
 
 interface ResponseRow {
   id: string;
@@ -111,8 +115,8 @@ export default function AuditResultsClient({ locale, template }: Props) {
         `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/responses?${buildQs().toString()}`,
       );
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || (locale === 'tr' ? 'Yükleme başarısız' : 'Failed to load'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = (await res.json()) as FetchResponse;
@@ -147,12 +151,8 @@ export default function AuditResultsClient({ locale, template }: Props) {
         `/api/restaurants/${template.restaurantId}/audits/templates/${template.id}/responses/export?${qs.toString()}`,
       );
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        if (res.status === 429) {
-          setError(locale === 'tr' ? 'Çok sık indiriyorsun, 60sn sonra tekrar dene.' : 'Too many exports, retry in 60s.');
-        } else {
-          setError(j.error || (locale === 'tr' ? 'CSV indirilemedi' : 'CSV export failed'));
-        }
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       const blob = await res.blob();

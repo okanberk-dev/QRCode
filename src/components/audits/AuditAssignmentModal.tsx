@@ -11,6 +11,11 @@ import {
   type AuditAssigneeType,
   type AuditRecurrence,
 } from '@/lib/audits/types';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+  isLikelyEmail,
+} from '@/lib/audits/error-humanizer';
 
 interface TeamMemberRef {
   id: string;
@@ -89,6 +94,11 @@ export default function AuditAssignmentModal({
           setSubmitting(false);
           return;
         }
+        if (email.trim() && !isLikelyEmail(email)) {
+          setError(locale === 'tr' ? 'Geçerli bir e-posta girin' : 'Enter a valid email');
+          setSubmitting(false);
+          return;
+        }
         body.assigneeName = name.trim() || null;
         body.assigneeEmail = email.trim() || null;
         body.assigneePhone = phone.trim() || null;
@@ -102,8 +112,8 @@ export default function AuditAssignmentModal({
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || j.message || (locale === 'tr' ? 'Atama başarısız' : 'Assignment failed'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       onCreated();
@@ -164,27 +174,52 @@ export default function AuditAssignmentModal({
         )}
 
         {assigneeType === 'candidate' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label={locale === 'tr' ? 'Ad' : 'Name'}>
-              <input className="bz-input" value={name} onChange={(e) => setName(e.target.value)} />
-            </Field>
-            <Field label="E-posta">
-              <input
-                className="bz-input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </Field>
-            <Field label={locale === 'tr' ? 'Telefon' : 'Phone'}>
-              <input
-                className="bz-input"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </Field>
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label={locale === 'tr' ? 'Ad' : 'Name'}>
+                <input
+                  className="bz-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                  autoCapitalize="words"
+                  enterKeyHint="next"
+                />
+              </Field>
+              <Field label={locale === 'tr' ? 'E-posta' : 'Email'}>
+                <input
+                  className="bz-input"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="next"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ad@buaze.com"
+                />
+              </Field>
+              <Field label={locale === 'tr' ? 'Telefon' : 'Phone'}>
+                <input
+                  className="bz-input"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  enterKeyHint="done"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+90 ..."
+                />
+              </Field>
+            </div>
+            <p className="text-[12px] text-[#737373]">
+              {locale === 'tr'
+                ? 'En az e-posta veya telefondan biri zorunlu.'
+                : 'At least email or phone is required.'}
+            </p>
+          </>
         )}
 
         {(assigneeType === 'candidate' || assigneeType === 'link') && (

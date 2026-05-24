@@ -22,6 +22,10 @@ import {
   StatCard,
 } from '@/components/ui';
 import { AUDIT_SECTORS, type AuditSector } from '@/lib/audits/types';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+} from '@/lib/audits/error-humanizer';
 
 const SECTOR_LABEL: Record<AuditSector, string> = {
   food: 'Yeme & İçme',
@@ -99,8 +103,8 @@ export default function AuditStatsPage() {
     try {
       const res = await fetch('/api/admin/audits/stats', { cache: 'no-store' });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || 'İstatistikler yüklenemedi');
+        const parsed = await parseAuditErrorResponse(res, 'tr');
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();

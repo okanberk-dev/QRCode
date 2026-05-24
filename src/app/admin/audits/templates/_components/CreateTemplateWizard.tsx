@@ -20,6 +20,10 @@ import {
   type AuditScoringMode,
   type AuditSector,
 } from '@/lib/audits/types';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+} from '@/lib/audits/error-humanizer';
 
 interface CategoryRef {
   id: string;
@@ -149,8 +153,8 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || j.message || 'Oluşturulamadı');
+        const parsed = await parseAuditErrorResponse(res, 'tr');
+        setError(summarizeAuditError(parsed));
         return;
       }
       reset();

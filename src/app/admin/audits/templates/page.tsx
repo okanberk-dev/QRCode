@@ -28,6 +28,10 @@ import {
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { AUDIT_SECTORS, type AuditSector, type AuditScoringMode } from '@/lib/audits/types';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+} from '@/lib/audits/error-humanizer';
 import SeedResultModal, { type SeedResult } from '@/components/admin/audits/SeedResultModal';
 import CreateTemplateWizard from './_components/CreateTemplateWizard';
 
@@ -115,8 +119,8 @@ export default function AuditTemplatesPage() {
 
       const res = await fetch(`/api/admin/audits/templates?${qs.toString()}`);
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || 'Yükleme başarısız');
+        const parsed = await parseAuditErrorResponse(res, 'tr');
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
@@ -172,9 +176,8 @@ export default function AuditTemplatesPage() {
         body: JSON.stringify({ isPublished: !tpl.isPublished }),
       });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        if (j.code === 'NO_QUESTIONS') setError('Yayın için en az 1 soru ekle.');
-        else setError(j.error || 'İşlem başarısız');
+        const parsed = await parseAuditErrorResponse(res, 'tr');
+        setError(summarizeAuditError(parsed));
         return;
       }
       setNotice(tpl.isPublished ? 'Yayından kaldırıldı.' : 'Yayınlandı.');
@@ -211,8 +214,8 @@ export default function AuditTemplatesPage() {
         try {
           const res = await fetch('/api/admin/audits/seed', { method: 'POST' });
           if (!res.ok) {
-            const j = await res.json().catch(() => ({}));
-            setError(j.error || 'Seed başarısız');
+            const parsed = await parseAuditErrorResponse(res, 'tr');
+            setError(summarizeAuditError(parsed));
             return;
           }
           const json = await res.json();

@@ -64,6 +64,11 @@ import {
   type AuditWizardState,
   type WizardStep,
 } from '@/lib/audits/wizard-state';
+import {
+  parseAuditErrorResponse,
+  isLikelyEmail,
+  type ParsedAuditError,
+} from '@/lib/audits/error-humanizer';
 import AuditQuestionEditor, { makeQuestionId } from './AuditQuestionEditor';
 
 interface Restaurant {
@@ -341,7 +346,9 @@ export default function AuditWizardClient({
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingDraft, setEditingDraft] = useState<AuditQuestionDraft | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ParsedAuditError | null>(null);
+  // Field-level inline errors (assignment step) — yalın string map
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
 
   const categoriesForSector = useMemo(
     () => categories.filter((c) => c.sector === state.sector || c.sector === 'other'),
@@ -362,12 +369,33 @@ export default function AuditWizardClient({
       if (!state.assigneeType) return false;
       if (state.assigneeType === 'team_member') return Boolean(state.assigneeTeamMemberId);
       if (state.assigneeType === 'candidate') {
-        return Boolean(state.assigneeEmail.trim() || state.assigneePhone.trim());
+        // En az 1 iletişim (email veya tel) gerekli + varsa email format doğrulansın.
+        // Boş bırakılan email/tel kabul (caller'ın 1 tanesi yeterli kuralı).
+        if (!state.assigneeEmail.trim() && !state.assigneePhone.trim()) return false;
+        if (state.assigneeEmail.trim() && !isLikelyEmail(state.assigneeEmail)) return false;
+        return true;
       }
       return true;
     }
     return true;
   }, [step, state]);
+
+  // Inline email validation onBlur — kullanıcı son sürçmeyi step'ten ayrılmadan görsün.
+  const validateAssigneeEmailOnBlur = useCallback(() => {
+    const v = state.assigneeEmail.trim();
+    if (!v) {
+      setFieldErrors((p) => ({ ...p, assigneeEmail: null }));
+      return;
+    }
+    if (!isLikelyEmail(v)) {
+      setFieldErrors((p) => ({
+        ...p,
+        assigneeEmail: locale === 'tr' ? 'Geçerli bir e-posta girin' : 'Enter a valid email',
+      }));
+    } else {
+      setFieldErrors((p) => ({ ...p, assigneeEmail: null }));
+    }
+  }, [state.assigneeEmail, locale]);
 
   const openAddQuestion = useCallback(() => {
     setEditingDraft(null);
@@ -419,6 +447,26 @@ export default function AuditWizardClient({
     async (publish: boolean) => {
       if (submitting) return;
       setError(null);
+      // Step 4 inline email check tekrarla — kullanıcı geri dönüp düzenlemiş olabilir.
+      if (state.assignmentEnabled && state.assigneeType === 'candidate') {
+        if (state.assigneeEmail.trim() && !isLikelyEmail(state.assigneeEmail)) {
+          setError({
+            title: locale === 'tr' ? 'Bazı alanları kontrol et' : 'Some fields need attention',
+            details: [
+              locale === 'tr'
+                ? 'Atama: E-posta — Geçerli bir e-posta girin'
+                : 'Assignment: Email — Enter a valid email',
+            ],
+            code: 'validation_error',
+          });
+          setStep(4);
+          setFieldErrors((p) => ({
+            ...p,
+            assigneeEmail: locale === 'tr' ? 'Geçerli bir e-posta girin' : 'Enter a valid email',
+          }));
+          return;
+        }
+      }
       setSubmitting(true);
       try {
         const payload = toSubmitPayload(state, publish);
@@ -428,20 +476,31 @@ export default function AuditWizardClient({
           body: JSON.stringify(payload),
         });
         if (!res.ok) {
-          const j = await res.json().catch(() => ({}));
-          if (Array.isArray(j.issues) && j.issues.length > 0) {
-            setError(
-              j.issues.map((i: { path: string; message: string }) => `${i.path}: ${i.message}`).join(', '),
-            );
-          } else {
-            setError(j.error || j.message || (locale === 'tr' ? 'Kaydetme başarısız' : 'Save failed'));
+          const parsed = await parseAuditErrorResponse(res, locale);
+          setError(parsed);
+          // Validation error ise hangi step'te olduğunu bul + oraya geri dön.
+          if (parsed.code === 'validation_error' && parsed.details.length > 0) {
+            const first = parsed.details[0];
+            if (/Başlık|Title|İşletme|Sektör|Sector|Açıklama|Description|Kategori|Category/.test(first)) {
+              setStep(1);
+            } else if (/Geçme|Passing|Skorlama|Scoring/.test(first)) {
+              setStep(2);
+            } else if (/Soru|Question/.test(first)) {
+              setStep(3);
+            } else if (/Atama|Assignment|E-posta|Email|Telefon|Phone/.test(first)) {
+              setStep(4);
+            }
           }
           return;
         }
         const json = await res.json();
         router.push(`/${locale}/dashboard/audits/${json.data.id}`);
       } catch {
-        setError(locale === 'tr' ? 'Bağlantı hatası' : 'Connection error');
+        setError({
+          title: locale === 'tr' ? 'Bağlantı hatası' : 'Connection error',
+          details: [],
+          code: null,
+        });
       } finally {
         setSubmitting(false);
       }
@@ -468,7 +527,20 @@ export default function AuditWizardClient({
 
       <StepIndicator step={step} locale={locale} />
 
-      {error && <AlertBanner kind="danger" onDismiss={() => setError(null)}>{error}</AlertBanner>}
+      {error && (
+        <AlertBanner kind="danger" onDismiss={() => setError(null)}>
+          <div className="space-y-1">
+            <p className="font-medium">{error.title}</p>
+            {error.details.length > 0 && (
+              <ul className="list-disc pl-5 space-y-0.5 text-[13px]">
+                {error.details.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </AlertBanner>
+      )}
 
       <div className="bz-card p-4 sm:p-6 space-y-4">
         {step === 1 && (
@@ -566,15 +638,29 @@ export default function AuditWizardClient({
                 <input
                   className="bz-input"
                   type="number"
+                  inputMode="numeric"
                   min={0}
                   max={100}
+                  step={1}
                   value={state.passingScore ?? ''}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') {
+                      setState({ ...state, passingScore: null });
+                      return;
+                    }
+                    // Floor + clamp — Zod `.int().min(0).max(100)` katı.
+                    const n = Math.floor(Number(raw));
+                    if (!Number.isFinite(n)) {
+                      setState({ ...state, passingScore: null });
+                      return;
+                    }
                     setState({
                       ...state,
-                      passingScore: e.target.value ? Number(e.target.value) : null,
-                    })
-                  }
+                      passingScore: Math.max(0, Math.min(100, n)),
+                    });
+                  }}
+                  placeholder="0-100"
                 />
               </Field>
             )}
@@ -600,8 +686,21 @@ export default function AuditWizardClient({
             </div>
 
             {state.questions.length === 0 ? (
-              <div className="bz-card-soft p-6 text-center text-[#525252] text-[13px]">
-                {locale === 'tr' ? 'Henüz soru yok' : 'No questions yet'}
+              <div className="bz-card-soft p-8 sm:p-10 text-center">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#EAF9B8] mb-3">
+                  <ListChecks size={22} className="text-[#0A0A0A]" />
+                </div>
+                <p className="bz-h-tight text-[16px] mb-1">
+                  {locale === 'tr' ? 'Henüz soru eklemediniz' : 'No questions added yet'}
+                </p>
+                <p className="text-[13px] text-[#525252] mb-4 max-w-[360px] mx-auto">
+                  {locale === 'tr'
+                    ? 'Denetimi tamamlamak için en az 1 soru gerekli. Soruyu tek tık ile ekleyebilirsin.'
+                    : 'You need at least 1 question to complete the audit. Add your first one with one click.'}
+                </p>
+                <button type="button" className="bz-btn-primary" onClick={openAddQuestion}>
+                  <Plus size={14} /> {locale === 'tr' ? 'İlk soruyu ekle' : 'Add first question'}
+                </button>
               </div>
             ) : (
               <DndContext
@@ -694,31 +793,62 @@ export default function AuditWizardClient({
                 )}
 
                 {state.assigneeType === 'candidate' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label={locale === 'tr' ? 'Ad' : 'Name'}>
-                      <input
-                        className="bz-input"
-                        value={state.assigneeName}
-                        onChange={(e) => setState({ ...state, assigneeName: e.target.value })}
-                      />
-                    </Field>
-                    <Field label="E-posta">
-                      <input
-                        className="bz-input"
-                        type="email"
-                        value={state.assigneeEmail}
-                        onChange={(e) => setState({ ...state, assigneeEmail: e.target.value })}
-                      />
-                    </Field>
-                    <Field label={locale === 'tr' ? 'Telefon' : 'Phone'}>
-                      <input
-                        className="bz-input"
-                        type="tel"
-                        value={state.assigneePhone}
-                        onChange={(e) => setState({ ...state, assigneePhone: e.target.value })}
-                      />
-                    </Field>
-                  </div>
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <Field label={locale === 'tr' ? 'Ad' : 'Name'}>
+                        <input
+                          className="bz-input"
+                          value={state.assigneeName}
+                          onChange={(e) => setState({ ...state, assigneeName: e.target.value })}
+                          autoComplete="name"
+                          autoCapitalize="words"
+                          enterKeyHint="next"
+                        />
+                      </Field>
+                      <Field
+                        label={locale === 'tr' ? 'E-posta' : 'Email'}
+                        error={fieldErrors.assigneeEmail ?? undefined}
+                      >
+                        <input
+                          className="bz-input"
+                          type="email"
+                          inputMode="email"
+                          autoComplete="email"
+                          autoCapitalize="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          enterKeyHint="next"
+                          value={state.assigneeEmail}
+                          onChange={(e) => {
+                            setState({ ...state, assigneeEmail: e.target.value });
+                            // Type ederken eski hatayı temizle (anlık feedback yerine onBlur).
+                            if (fieldErrors.assigneeEmail) {
+                              setFieldErrors((p) => ({ ...p, assigneeEmail: null }));
+                            }
+                          }}
+                          onBlur={validateAssigneeEmailOnBlur}
+                          placeholder="ad@buaze.com"
+                        />
+                      </Field>
+                      <Field label={locale === 'tr' ? 'Telefon' : 'Phone'}>
+                        <input
+                          className="bz-input"
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          enterKeyHint="done"
+                          value={state.assigneePhone}
+                          onChange={(e) => setState({ ...state, assigneePhone: e.target.value })}
+                          placeholder="+90 ..."
+                        />
+                      </Field>
+                    </div>
+                    <p className="text-[12px] text-[#737373]">
+                      {locale === 'tr'
+                        ? 'En az e-posta veya telefondan biri zorunlu.'
+                        : 'At least email or phone is required.'}
+                    </p>
+                  </>
                 )}
 
                 {(state.assigneeType === 'candidate' || state.assigneeType === 'link') && (

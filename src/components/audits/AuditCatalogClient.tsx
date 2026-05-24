@@ -20,6 +20,10 @@ import {
   PageHeader,
 } from '@/components/ui';
 import { AUDIT_SECTORS, type AuditSector, type AuditScoringMode } from '@/lib/audits/types';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+} from '@/lib/audits/error-humanizer';
 
 interface Restaurant {
   id: string;
@@ -104,8 +108,8 @@ export default function AuditCatalogClient({
       if (sectorFilter !== 'all') qs.set('sector', sectorFilter);
       const res = await fetch(`/api/audits/catalog?${qs.toString()}`);
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || (locale === 'tr' ? 'Yükleme başarısız' : 'Failed to load'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
@@ -134,8 +138,8 @@ export default function AuditCatalogClient({
         { method: 'POST' },
       );
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || (locale === 'tr' ? 'Kopyalama başarısız' : 'Fork failed'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();

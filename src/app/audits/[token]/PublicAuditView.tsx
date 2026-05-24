@@ -18,6 +18,11 @@ import type {
   AuditSector,
 } from '@/lib/audits/types';
 import { normalizeQuestionOptions } from '@/lib/audits/options';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+  isLikelyEmail,
+} from '@/lib/audits/error-humanizer';
 
 interface Question {
   id: string;
@@ -211,6 +216,14 @@ export default function PublicAuditView({ token, locale }: Props) {
       return;
     }
 
+    // Email format sanity — optional alan ama doluysa kontrol et.
+    if (email.trim() && !isLikelyEmail(email)) {
+      setSubmitError(
+        isTr ? 'E-posta geçerli görünmüyor.' : 'Email does not look valid.',
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -230,13 +243,13 @@ export default function PublicAuditView({ token, locale }: Props) {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
         if (res.status === 409) {
           setSubmitError(isTr ? 'Bu denetim zaten tamamlandı.' : 'This audit was already completed.');
           setStep('done');
-        } else {
-          setSubmitError(j.error || j.message || (isTr ? 'Gönderim başarısız' : 'Submit failed'));
+          return;
         }
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setSubmitError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
@@ -250,7 +263,7 @@ export default function PublicAuditView({ token, locale }: Props) {
     // findFirstMissingRequired closure'da kalır — answers/data değiştiğinde
     // useCallback yeniden oluşturulur, böylece güncel state ile çalışır.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, answers, name, email, phone, marketingOk, token, isTr]);
+  }, [data, answers, name, email, phone, marketingOk, token, isTr, locale]);
 
   // Loading / error
   if (loadError) {
