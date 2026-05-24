@@ -26,14 +26,33 @@ export const dynamic = 'force-dynamic';
 //   1. Server-side TTL (CACHE_FRESH_SECONDS): cache N sn taze ise Google'a
 //      hiç gitme, doğrudan DB cache'ini dön. Owner istemediği sürece
 //      quota yakılmaz.
-//   2. force=true query param: kullanıcı bilinçli "yenile" butonuna basarsa
+//   2. Negative cache (EMPTY_CACHE_FRESH_SECONDS): cache boş (accounts:[])
+//      durumunda DA TTL respect et. Aksi halde yeni-connect veya quota
+//      fail sonrası "boş cache" sürekli reject edilip her sayfa
+//      yenilemede yeni Google çağrısı başlatılıyor → quota burn loop.
+//      §38.207 auto-retry self-loop fix'i bunu kısmen kapatıyordu ama
+//      restaurant switch / sayfa yenileme flag'i reset edip yeniden
+//      başlatıyordu. Negative cache kalıcı olarak kapatır.
+//   3. force=true query param: kullanıcı bilinçli "yenile" butonuna basarsa
 //      cache'i bypass eder ve Google'ı çağırır.
-//   3. Per-restaurant rate limit: 6 force-refresh/dakika — rapid click
-//      veya bot ile quota burn'ünü kısıtlar.
-//   4. 429 + empty cache: hard 429 yerine 200 + warning + boş array dön —
+//   4. Per-restaurant rate limit: 3 force-refresh/dakika — rapid click
+//      veya bot ile quota burn'ünü kısıtlar (eski 6/dk yeterli değildi).
+//   5. 429 + empty cache: hard 429 yerine 200 + warning + boş array dön —
 //      UI sarı banner + auto-retry countdown göstersin (kırmızı error
 //      yerine).
-const CACHE_FRESH_SECONDS = 30;
+//
+// Math (§38.209):
+//   - Google quota window: 60s (1 req/min/proje)
+//   - CACHE_FRESH_SECONDS = 120s: dakikada birden fazla owner cache miss
+//     olsa bile bir tanesi başarılı fetch yapıp cache yazar, diğerleri
+//     2 dakika boyunca cache hit. Hot path quota maliyeti: %75 azalır.
+//   - EMPTY_CACHE_FRESH_SECONDS = 90s: quota fail sonrası boş cache 90s
+//     korunur (Google quota window'u + 30s buffer). Owner bu pencerede
+//     sayfa yenilese de Google'a tekrar gitmez, mevcut empty state
+//     gösterilir. 90s sonra ya cache stale olur ya owner manuel force
+//     refresh yapar — her halükarda quota burn döngüsü kırılır.
+const CACHE_FRESH_SECONDS = 120;
+const EMPTY_CACHE_FRESH_SECONDS = 90;
 
 function cacheAgeSeconds(cache: GoogleLocationsCache): number | null {
   if (!cache.syncedAt) return null;
@@ -77,14 +96,24 @@ export async function GET(
   const cached = parseGoogleLocationsCache(integration.locationsJson);
   const ageSec = cacheAgeSeconds(cached);
 
-  // (1) TTL fast-path: force=false + cache taze + en az 1 account var ise
-  // Google'a hiç gitme. Dashboard ilk yüklemede, refresh butonu olmayan
-  // sub-component remount'larda quota yakmaz.
+  // (1) TTL fast-path: force=false + cache taze ise Google'a hiç gitme.
+  // CLAUDE.md §38.209 — Cache TTL artık 2 katmanlı:
+  //   - Positive cache (accounts mevcut): CACHE_FRESH_SECONDS = 120s
+  //   - Negative cache (accounts:[] — yeni connect veya quota fail
+  //     sonrası empty): EMPTY_CACHE_FRESH_SECONDS = 90s
+  // Eski davranışta `accounts.length > 0` ZORUNLU idi → boş cache HİÇ
+  // kullanılmıyordu → her sayfa yenileme/restaurant switch Google'a
+  // gidiyordu → quota burn loop. Negative cache bu loop'u kırar:
+  // owner gerçekten Business Profile yoksa veya quota fail empty
+  // döndürdüyse, 90s boyunca sessiz tutulur. 90s sonra ya owner manuel
+  // force refresh yapar ya cache stale olur — her halükarda yeni Google
+  // çağrısı bilinçli aksiyona bağlanır.
+  const hasAccounts = cached.accounts.length > 0;
+  const effectiveTtl = hasAccounts ? CACHE_FRESH_SECONDS : EMPTY_CACHE_FRESH_SECONDS;
   const canServeFromCache =
     !force &&
     ageSec !== null &&
-    ageSec < CACHE_FRESH_SECONDS &&
-    cached.accounts.length > 0;
+    ageSec < effectiveTtl;
 
   if (canServeFromCache) {
     return NextResponse.json({
@@ -93,15 +122,16 @@ export async function GET(
       selectedLocation: selectedGoogleLocation(cached, id),
       syncedAt: cached.syncedAt,
       stale: false,
-      source: 'cache',
+      source: hasAccounts ? 'cache' : 'empty',
       cacheAgeSeconds: ageSec,
     });
   }
 
-  // (2) Rate limit: force refresh kotayı tüketir. Per-restaurant 6/dakika.
-  // Owner panel buton mash veya parallel sub-component mount'tan koruma —
-  // proje-geneli Google quota'sının korunması için gerekli.
-  const rl = await rateLimit(`google-locations:${id}`, 6, 60_000);
+  // (2) Rate limit: force refresh kotayı tüketir. Per-restaurant 3/dakika.
+  // §38.209 — Eski 6/dk Google'ın 1 req/min/proje quota'sına göre
+  // gevşekti. Manuel "Yenile" butonuna 3 kere basabilen yeter; bot/spam
+  // koruması için yeterli, gerçek owner intent'ini engellemiyor.
+  const rl = await rateLimit(`google-locations:${id}`, 3, 60_000);
   if (!rl.allowed) {
     // Cache varsa kullanıcıya kapatmak yerine son sync'i + uyarıyı dön.
     if (cached.accounts.length > 0 || cached.locations.length > 0) {
@@ -154,26 +184,51 @@ export async function GET(
         // ile recover etsin (kırmızı error yerine).
         // CLAUDE.md §40.1 — graceful degrade, sessiz fail yerine
         // explicit warning + retry-after.
+        //
+        // §38.209 — Quota fail durumunda DB cache'ine "empty stamp"
+        // yazıyoruz: sonraki request'lerde EMPTY_CACHE_FRESH_SECONDS
+        // boyunca cache hit olur, Google'a tekrar gidilmez. Eskiden
+        // syncedAt güncellenmiyordu → ageSec hep cache TTL'inden büyük
+        // → her request Google'a gidiyordu → quota burn loop. Bu fix
+        // negative cache mekanizmasının kalıcılığını sağlar.
         const retryAfter = error.retryAfterSeconds ?? 60;
         const hasCache = cached.locations.length > 0 || cached.accounts.length > 0;
+        if (!hasCache) {
+          // İlk quota fail — empty stamp yaz ki sonraki request'ler
+          // negative cache hit yapsın. Sadece syncedAt'i refresh et;
+          // accounts/locations zaten boş.
+          const emptyStampedCache: GoogleLocationsCache = {
+            ...cached,
+            syncedAt: new Date().toISOString(),
+          };
+          await prisma.googleIntegration
+            .update({
+              where: { id: integration.id },
+              data: { locationsJson: emptyStampedCache as unknown as Prisma.InputJsonValue },
+            })
+            .catch(() => {
+              // DB write fail Google quota response'unu bloklamasın.
+              // Sonraki request yine quota dolu görünürse warning döner.
+            });
+        }
         return NextResponse.json(
           {
             accounts: cached.accounts,
             locations: cached.locations,
             selectedLocation: selectedGoogleLocation(cached, id),
-            syncedAt: cached.syncedAt,
+            syncedAt: hasCache ? cached.syncedAt : new Date().toISOString(),
             stale: true,
             source: hasCache ? 'cache' : 'empty',
-            cacheAgeSeconds: ageSec,
+            cacheAgeSeconds: hasCache ? ageSec : 0,
             warning: 'GOOGLE_RATE_LIMITED',
             retryAfterSeconds: retryAfter,
             message: isTr
               ? (hasCache
-                ? `Google API kotası doldu. ${retryAfter} saniye sonra otomatik tekrar denenecek. (Son güncel veriler gösteriliyor.)`
-                : `Google API kotası doldu. ${retryAfter} saniye sonra otomatik tekrar denenecek.`)
+                ? `Google API kotası doldu. ${retryAfter} saniye sonra tekrar denenecek. (Son güncel veriler gösteriliyor.)`
+                : `Google API kotası şu an dolu (tüm Buaze kullanıcıları aynı kotayı paylaşır). ${retryAfter} saniye sonra otomatik tekrar denenecek.`)
               : (hasCache
                 ? `Google API quota exhausted. Auto-retry in ${retryAfter}s. (Showing last synced data.)`
-                : `Google API quota exhausted. Auto-retry in ${retryAfter}s.`),
+                : `Google API quota currently exhausted (shared across all Buaze users). Auto-retry in ${retryAfter}s.`),
           },
           { status: 200 },
         );
