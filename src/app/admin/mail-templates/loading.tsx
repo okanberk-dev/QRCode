@@ -11,7 +11,7 @@ import {
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1200}>
+    <SkPageShell max={1100}>
       <SkPageHeader withActions titleWidth="w-44" />
       <div className="flex items-center gap-2">
         <SkBox className="h-3 w-16" />
