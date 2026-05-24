@@ -524,6 +524,14 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [restaurants, setRestaurants] = useState<Array<{ id: string; name: string }>>([]);
   const [activeRestaurantId, setActiveRestaurantId] = useState<string | null>(null);
   const [loadingInitial, setLoadingInitial] = useState(true);
+  // §38.B Stage 122 — workspace fetch silent fail bug. Previously
+  // `/api/restaurants?limit=50` 4xx/5xx left `restaurants=[]` +
+  // `activeRestaurantId=null` without any UI signal — the page stuck
+  // on a spinner with no recovery path. Surface the fetch failure as
+  // an AlertBanner with retry CTA so owners can act instead of staring
+  // at an empty page.
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [reloadWorkspaceKey, setReloadWorkspaceKey] = useState(0);
 
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -653,31 +661,58 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
 
   useEffect(() => {
     (async () => {
+      setWorkspaceError(null);
       try {
         const res = await fetch('/api/restaurants?limit=50');
-        if (res.ok) {
-          const data = await res.json();
-          const list = data.data ?? [];
-          const requested = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
-          const stored =
-            typeof window !== 'undefined'
-              ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
-              : null;
-          const resolved = resolveActiveRestaurantId({
-            restaurants: list,
-            queryRestaurantId: requested,
-            storedRestaurantId: stored,
-          });
-          setRestaurants(list);
-          setActiveRestaurantId(resolved ?? list[0]?.id ?? null);
+        if (!res.ok) {
+          // §38.B Stage 122 — surface non-2xx instead of silently leaving
+          // `restaurants=[]` + `activeRestaurantId=null`. Previously the
+          // page sat on the spinner with no recovery path.
+          const errData = await res.json().catch(() => ({}));
+          setWorkspaceError(
+            errData?.error ||
+              (isTr
+                ? `İşletme listesi alınamadı (HTTP ${res.status}).`
+                : `Failed to load businesses (HTTP ${res.status}).`),
+          );
+          return;
         }
+        const data = await res.json();
+        const list = data.data ?? [];
+        if (!list.length) {
+          // §38.B Stage 122 — owner workspace gerçekten boş (yeni hesap,
+          // henüz restaurant eklenmedi). Spinner çekilince empty state
+          // görünür; aşağıdaki "no business" branch tetiklenir.
+          setRestaurants([]);
+          setActiveRestaurantId(null);
+          return;
+        }
+        const requested = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
+        const stored =
+          typeof window !== 'undefined'
+            ? window.localStorage.getItem(ACTIVE_BUSINESS_STORAGE_KEY)
+            : null;
+        const resolved = resolveActiveRestaurantId({
+          restaurants: list,
+          queryRestaurantId: requested,
+          storedRestaurantId: stored,
+        });
+        setRestaurants(list);
+        setActiveRestaurantId(resolved ?? list[0]?.id ?? null);
       } catch (err) {
-        console.error(err);
+        console.error('[google-reviews] workspace fetch failed', {
+          message: err instanceof Error ? err.message : 'unknown',
+        });
+        setWorkspaceError(
+          isTr
+            ? 'İşletme listesi alınamadı. Bağlantını kontrol edip tekrar dene.'
+            : 'Failed to load businesses. Check your connection and try again.',
+        );
       } finally {
         setLoadingInitial(false);
       }
     })();
-  }, [searchParams]);
+  }, [searchParams, isTr, reloadWorkspaceKey]);
 
   const selectRestaurant = (restaurantId: string) => {
     setActiveRestaurantId(restaurantId);
@@ -1223,7 +1258,22 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         </span>
       </div>
 
-      {shouldShowStatusLoading ? (
+      {workspaceError ? (
+        // §38.B Stage 122 — `/api/restaurants?limit=50` fail. Previously
+        // silent (spinner stuck forever); now surfaces with retry CTA so
+        // the owner can recover without reloading the whole page.
+        <div className="mt-6 space-y-4">
+          <AlertBanner kind="danger">{workspaceError}</AlertBanner>
+          <button
+            type="button"
+            className="bz-btn-ghost inline-flex items-center gap-1.5 rounded-full text-[12px]"
+            onClick={() => setReloadWorkspaceKey((n) => n + 1)}
+          >
+            <RefreshCw size={13} />
+            {isTr ? 'Tekrar dene' : 'Try again'}
+          </button>
+        </div>
+      ) : shouldShowStatusLoading ? (
         <LoadingPanel label={isTr ? "Google yorumları hazırlanıyor..." : "Preparing Google reviews..."} />
       ) : restaurants.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-8 text-center">

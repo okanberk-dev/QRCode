@@ -367,24 +367,36 @@ function ReviewContent() {
   // the "Devam et" button. Accepts the selected rating explicitly so it works
   // before React state has flushed.
   const triggerHighRedirect = (selectedRating: number) => {
-    // Log the high rating (fire-and-forget) — preserves analytics & redirect attribution
-    try {
-      fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rating: selectedRating,
-          source: sourceParam,
-          branch: restaurant.name,
-          tableNumber: tableParam,
-          comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT,
-          restaurantSlug: slug,
-          platform: resolution.provider || null,
+    // Log the high rating (fire-and-forget) — preserves analytics & redirect attribution.
+    //
+    // §38.B Stage 122 — reCAPTCHA token opportunistically obtained but
+    // NOT awaited before redirect. Backend was warning `tokenType:
+    // 'undefined'` on every high-rating tap because this callsite
+    // never sent a token (only the `handleLowSubmit` path did). The
+    // promise chain below resolves the token in the background, then
+    // POSTs with `keepalive: true` so the request survives the
+    // immediate `window.location.href` redirect that follows. Redirect
+    // UX is untouched (no `await`); backend log noise drops.
+    getRecaptchaToken('feedback_submit')
+      .catch(() => null)
+      .then((recaptchaToken) =>
+        fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          keepalive: true,
+          body: JSON.stringify({
+            rating: selectedRating,
+            source: sourceParam,
+            branch: restaurant.name,
+            tableNumber: tableParam,
+            comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT,
+            restaurantSlug: slug,
+            platform: resolution.provider || null,
+            recaptchaToken,
+          }),
         }),
-      });
-    } catch (e) {
-      console.error('Failed to log high rating', e);
-    }
+      )
+      .catch((e) => console.error('Failed to log high rating', e));
 
     if (targetPlatformUrl) {
       // Platform redirect tracking — fire-and-forget POST, owner panel

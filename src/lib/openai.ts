@@ -133,8 +133,36 @@ export async function chatCompletion(
     const content = data.choices?.[0]?.message?.content?.trim();
     return content && content.length > 0 ? content : null;
   } catch (err) {
-    console.error('[openai] request failed', err);
-    Sentry.captureException(err, { tags: { service: 'openai' } });
+    // AbortError (timeout) is an *expected* operational signal — the
+    // caller already falls back to a template/empty result and the user
+    // sees the fallback UI without a 5xx. Routing this through
+    // `console.error` + `captureException` was inflating Vercel
+    // `level=error` log counts (§38.B Stage 122 audit) and creating
+    // false-alarm Sentry issues that ops triaged repeatedly.
+    //
+    // Network errors and unexpected exceptions stay at `error` level —
+    // those still warrant on-call attention.
+    const isAbort =
+      err instanceof Error &&
+      (err.name === 'AbortError' ||
+        (err as { code?: number }).code === 20 /* DOMException ABORT_ERR */);
+    if (isAbort) {
+      console.warn('[openai] request aborted (timeout)', {
+        timeoutMs: opts.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+        model: opts.model || DEFAULT_MODEL,
+      });
+      Sentry.captureMessage('OpenAI request aborted (timeout)', {
+        level: 'warning',
+        tags: { service: 'openai', kind: 'abort' },
+        extra: {
+          timeoutMs: opts.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+          model: opts.model || DEFAULT_MODEL,
+        },
+      });
+    } else {
+      console.error('[openai] request failed', err);
+      Sentry.captureException(err, { tags: { service: 'openai' } });
+    }
     return null;
   } finally {
     clearTimeout(timeout);
