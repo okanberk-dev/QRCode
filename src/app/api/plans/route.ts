@@ -11,7 +11,17 @@ export async function GET(req: NextRequest) {
     const plans = await getActivePlans(locale);
     return NextResponse.json(
       { data: plans },
-      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' } },
+      {
+        headers: {
+          // §38.219 Stage 139 — cache TTL azaltıldı 60s → 10s; admin
+          // fiyat düzenleme sonrası "marketing'de değişmedi" hissini
+          // önler. Pricing page'in ISR cache'i `revalidatePath` ile
+          // anında invalidate olduğu için bu REST endpoint daha kısa
+          // TTL ile public clients (Buaze SDK, third-party embed) için
+          // hâlâ CDN-friendly kalır.
+          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=60',
+        },
+      },
     );
   } catch (error) {
     console.error('[/api/plans] failed:', error);

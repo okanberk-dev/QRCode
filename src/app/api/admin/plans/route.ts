@@ -136,7 +136,10 @@ export async function POST(req: NextRequest) {
       return tx.subscriptionPlan.create({ data: data as any });
     });
     revalidatePricing();
-    return NextResponse.json({ data: toAdminRow(created) }, { status: 201 });
+    return NextResponse.json(
+      { data: toAdminRow(created), revalidated: true },
+      { status: 201, headers: { 'Cache-Control': 'no-store, must-revalidate' } },
+    );
   } catch (error) {
     console.error('[/api/admin/plans POST] failed:', error);
     return ApiErrors.internalError('Plan oluşturulamadı');
