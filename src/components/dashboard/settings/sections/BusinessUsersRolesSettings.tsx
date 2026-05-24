@@ -144,7 +144,18 @@ export function BusinessUsersRolesSettings({
       const res = await fetch("/api/team");
       if (!res.ok) throw new Error("load_failed");
       const data = await res.json();
-      const rawMembers = Array.isArray(data?.members) ? data.members : [];
+      // §38.210 — Response shape drift fix. Backend `/api/team` GET
+      // canonical Buaze API paterniyle `{ data: [...members] }` döndürür
+      // (`/api/admin/customers` paralelinde). Eski kod sadece `data.members`
+      // arıyordu — undefined → boş array → owner header'da "3 kişi" görüyor
+      // (AccountSettingsClient 3-shape defansif paterni §38.37) ama tablo
+      // boş kalıyordu. Şimdi AccountSettingsClient ile parity — canonical
+      // `data.data` öncelikli + legacy `data.members` + raw array fallback.
+      const rawMembers =
+        Array.isArray(data?.data) ? data.data
+        : Array.isArray(data?.members) ? data.members
+        : Array.isArray(data) ? data
+        : [];
       const rows: TeamRow[] = rawMembers.map(
         (m: Partial<TeamRow> & { locations?: string[] | null }): TeamRow => ({
           id: String(m.id),

@@ -58,10 +58,16 @@ export async function GET(req: NextRequest) {
 
   // Stage 108 §38.188 — defensive `select` (CLAUDE.md §14.1). Without
   // this, every TeamMember column ships in the response (incl. inviteToken,
-  // inviteTokenExpiresAt, locations array, ownerId) — extra bandwidth and
-  // accidental token leakage if the response body is ever logged. Schema
-  // drift (P2022) also turned into an issue if a future column is added
-  // before the migration runs in preview.
+  // inviteTokenExpiresAt, ownerId) — extra bandwidth and accidental token
+  // leakage if the response body is ever logged. Schema drift (P2022)
+  // also turned into an issue if a future column is added before the
+  // migration runs in preview.
+  // §38.210 — UI-needed fields added: `locations` (edit modal pre-fill,
+  // "X konum" badge in row) + `lastInvitedAt` (UI-side "Daveti yenile"
+  // cooldown guard; server also enforces 1h limit). Sensitive fields
+  // (`inviteToken`, `inviteTokenExpiresAt`, `ownerId`) intentionally
+  // remain excluded — read this code as: ALL UI-needed projections in
+  // the select, all sensitive secrets out.
   const members = await prisma.teamMember.findMany({
     where: { ownerId },
     select: {
@@ -70,7 +76,9 @@ export async function GET(req: NextRequest) {
       name: true,
       role: true,
       status: true,
+      locations: true,
       lastSeenAt: true,
+      lastInvitedAt: true,
       createdAt: true,
     },
     orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
@@ -84,7 +92,9 @@ export async function GET(req: NextRequest) {
         name: m.name,
         role: m.role,
         status: m.status,
+        locations: m.locations,
         lastSeenAt: m.lastSeenAt?.toISOString() ?? null,
+        lastInvitedAt: m.lastInvitedAt?.toISOString() ?? null,
         createdAt: m.createdAt.toISOString(),
       })),
     },
