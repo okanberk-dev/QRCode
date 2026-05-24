@@ -364,7 +364,7 @@ export default function SiteSettingsPage() {
 
       {/* ─── Sticky Save Bar ─── */}
       <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-[#EDEDED] shadow-lg z-30 p-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-3">
+        <div className="mx-auto max-w-[1100px] flex items-center justify-between gap-3">
           <p className="text-[12px] text-[#6B7280] font-medium hidden sm:block">
             Değişiklikler tüm site genelinde yansır.
           </p>

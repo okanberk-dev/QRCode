@@ -16,7 +16,7 @@ import {
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import PublicMenuView, { type MenuCategoryView, type MenuItemView, type RestaurantView } from '@/components/menu/PublicMenuView';
-import { Modal, useConfirmDialog } from '@/components/ui';
+import { Modal, PulseSelect, useConfirmDialog } from '@/components/ui';
 import { MenuLivePreview } from './_components/MenuLivePreview';
 import { MENU_THEMES, type MenuAllergen, type MenuBadge, type MenuTheme } from '@/lib/validations';
 import { formatPrice, parsePriceInput } from '@/lib/format';
@@ -776,7 +776,7 @@ export default function RestaurantMenuBuilderPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 pb-24 sm:p-6 sm:pb-24 md:p-10 lg:pb-10">
+    <div className="mx-auto max-w-[1400px] space-y-6 px-4 sm:px-7 py-6 pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:py-8 lg:pb-8">
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
         {restaurant.menuPublished && (
@@ -1354,16 +1354,13 @@ function ItemModal({
         className="space-y-5"
       >
         <Field label={locale === 'tr' ? 'Kategori' : 'Category'}>
-          <select
-            required
+          <PulseSelect
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="bz-input w-full rounded-2xl py-3 text-[14px]"
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+            onChange={setCategoryId}
+            ariaLabel={locale === 'tr' ? 'Kategori' : 'Category'}
+            className="w-full"
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          />
         </Field>
         <Field label={copy.itemName}>
           <input

@@ -22,6 +22,7 @@ import {
   Badge,
   Field,
   PlatformChip,
+  PulseSelect,
   type PlatformId,
 } from '@/components/ui';
 import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker';
@@ -434,18 +435,16 @@ export default function PlatformProviderWizard({
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             {restaurantRows.length > 1 && (
-              <select
+              <PulseSelect
                 value={selectedRestaurant.id}
-                onChange={(event) => selectRestaurant(event.target.value)}
-                className="bz-input h-10 min-w-[220px] text-[13px]"
-                aria-label={isTr ? 'İşletme seç' : 'Select business'}
-              >
-                {restaurantRows.map((restaurant) => (
-                  <option key={restaurant.id} value={restaurant.id}>
-                    {restaurant.name}
-                  </option>
-                ))}
-              </select>
+                onChange={selectRestaurant}
+                ariaLabel={isTr ? 'İşletme seç' : 'Select business'}
+                className="min-w-[220px]"
+                options={restaurantRows.map((restaurant) => ({
+                  value: restaurant.id,
+                  label: restaurant.name,
+                }))}
+              />
             )}
             <Link href={`/${locale}/dashboard/platforms?restaurantId=${selectedRestaurant.id}`} className="bz-btn">
               <ArrowLeft size={13} strokeWidth={2} />

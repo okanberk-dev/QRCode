@@ -1,7 +1,7 @@
 'use client';
 
 import { Flag, Mail, RotateCcw } from 'lucide-react';
-import { Modal, PlatformChip, PLATFORMS } from '@/components/ui';
+import { Modal, PlatformChip, PLATFORMS, PulseSelect } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import type { HasReplyFilter, PlatformFilter } from './types';
 import { PLATFORM_OPTIONS } from './utils';
@@ -80,33 +80,35 @@ export function FeedbackFiltersModal({
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="pulse-eyebrow text-[#737373]">{isTr ? 'TARİH' : 'DATE'}</span>
-            <select
+            <PulseSelect
               value={daysFilter}
-              onChange={(e) => setDaysFilter(e.target.value)}
-              aria-label={isTr ? 'Tarih aralığı' : 'Date range'}
-              className="bz-input cursor-pointer"
-            >
-              <option value="all">{isTr ? 'Tüm zamanlar' : 'All time'}</option>
-              <option value="1">{isTr ? 'Bugün' : 'Today'}</option>
-              <option value="7">{isTr ? 'Son 7 gün' : 'Last 7 days'}</option>
-              <option value="30">{isTr ? 'Son 30 gün' : 'Last 30 days'}</option>
-            </select>
+              onChange={setDaysFilter}
+              ariaLabel={isTr ? 'Tarih aralığı' : 'Date range'}
+              className="w-full"
+              options={[
+                { value: 'all', label: isTr ? 'Tüm zamanlar' : 'All time' },
+                { value: '1', label: isTr ? 'Bugün' : 'Today' },
+                { value: '7', label: isTr ? 'Son 7 gün' : 'Last 7 days' },
+                { value: '30', label: isTr ? 'Son 30 gün' : 'Last 30 days' },
+              ]}
+            />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="pulse-eyebrow text-[#737373]">{isTr ? 'PUAN' : 'RATING'}</span>
-            <select
+            <PulseSelect
               value={filterRating}
-              onChange={(e) => setFilterRating(e.target.value)}
-              aria-label={isTr ? 'Puan filtresi' : 'Rating filter'}
-              className="bz-input cursor-pointer"
-            >
-              <option value="all">{isTr ? 'Tüm puanlar' : 'All ratings'}</option>
-              <option value="5">5 ★</option>
-              <option value="4">4 ★</option>
-              <option value="3">3 ★</option>
-              <option value="2">2 ★</option>
-              <option value="1">1 ★</option>
-            </select>
+              onChange={setFilterRating}
+              ariaLabel={isTr ? 'Puan filtresi' : 'Rating filter'}
+              className="w-full"
+              options={[
+                { value: 'all', label: isTr ? 'Tüm puanlar' : 'All ratings' },
+                { value: '5', label: '5 ★' },
+                { value: '4', label: '4 ★' },
+                { value: '3', label: '3 ★' },
+                { value: '2', label: '2 ★' },
+                { value: '1', label: '1 ★' },
+              ]}
+            />
           </label>
         </div>
 

@@ -163,7 +163,7 @@ export function PlatformTrendChartBody({
   }
 
   return (
-    <div className="-mx-2 mt-5 overflow-x-auto px-2 sm:mx-0 sm:px-0">
+    <div className="-mx-2 mt-5 overflow-x-auto no-scrollbar px-2 sm:mx-0 sm:px-0">
       <MeasuredChart className={heightClassName}>
         {({ width, height }) => (
           <ComposedChart

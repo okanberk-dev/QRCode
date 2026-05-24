@@ -43,7 +43,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
 
   if (error) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
+      <div className="mx-auto max-w-[640px] px-4 sm:px-7 py-12 lg:py-16">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-semibold text-red-700">{error}</div>
       </div>
     );
@@ -51,7 +51,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
 
   if (!campaign) {
     return (
-      <div className="mx-auto flex max-w-4xl items-center justify-center p-16">
+      <div className="mx-auto flex max-w-[640px] items-center justify-center px-4 sm:px-7 py-12 lg:py-16">
         <Loader2 size={22} className="animate-spin text-[#0A0A0A]" />
       </div>
     );
