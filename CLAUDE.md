@@ -909,7 +909,9 @@ Pulse redesign 15 draft PR zincirinin tarihsel detayı `git log` üzerinden eri�
 | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `SUPABASE_STORAGE_BUCKET` | Opsiyonel | Careers attachment + site-settings görselleri; eksikse 503 |
 | `CRON_SECRET` | Cron kullanılıyorsa | `/api/cron/*` endpoint'leri `Authorization: Bearer ${CRON_SECRET}` zorunlu |
 | `IP_RETENTION_DAYS` | Opsiyonel | Default 90; KVKK IP anonimleştirme cron'u için |
-| `IYZICO_*` (POS, henüz yok) | Yok | Wave 3.5'te eklenecek |
+| `IYZICO_*` (POS, henüz yok) | Yok | Wave 3.5'te eklenecek (TR pazar) |
+| `LEMON_SQUEEZY_API_KEY` + `LEMON_SQUEEZY_STORE_ID` + `LEMON_SQUEEZY_WEBHOOK_SECRET` | Opsiyonel | Lemon Squeezy payment provider (CLAUDE.md §44). Eksikse webhook 503, mevcut manuel admin akışı intact. Foundation PR §38.217 sadece schema + lib + webhook; checkout endpoint sonraki PR |
+| `LEMON_SQUEEZY_MODE` | Opsiyonel | `'test'` (default) veya `'production'`. Mode/key prefix mismatch (test_xxx + production) → Sentry error + integration disabled (silent live charge önleme) |
 | `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, projectId, appId) | Opsiyonel | Google Sign-in client config; eksikse OAuth butonu UI'da disable, e-posta+şifre flow intact |
 | `FIREBASE_AUTH_PROXY_TARGET` | Opsiyonel | `__/auth/*` path'lerini Firebase'e proxy'ler (`next.config.ts:rewrites`); boşsa rewrite hiç eklenmez |
 | `FIREBASE_ADMIN_PROJECT_ID` | Opsiyonel | Server-side Firebase Admin SDK için (token verify) |
@@ -4321,6 +4323,7 @@ GitHub PR referansı.
 - §38.182 — Stage 102 (PR TBD) Skeleton wave 4 — owner settings page server hydration. Kullanıcı sorusu: "Owner paneldeki tüm sayfalara skeleton loading iyi midir?" Cevap: server hydration daha iyi (skeleton flash → 0). Stage 101 wave 3 audit kapsam dışıydı — `dashboard/restaurants/[id]/settings/page.tsx` (532 LOC, 4× useState loading, 3× useEffect, tek `/api/restaurants/${id}` fetch ile 50-field payload). 3 paralel Explore agent envanteri owner panel'in geri kalanını gösterdi: ya zaten Stage 101'de done (account/qr/restaurants/[id]), ya zaten server-rendered (analytics/platforms/restaurants list), ya statik/redirect (announcements/menu hub/guide/profile/notifications/integrations), ya defer (`google-reviews` ~1620 LOC, `feedbacks` ~800 LOC, `restaurants/[id]/menu` ~1700 LOC). **Bu PR sadece settings page**. **Pattern**: (1) `page.tsx` → `RestaurantSettingsClient.tsx` rename + `initialRestaurant?: RestaurantPayload | null` prop, (2) `useState(initialRestaurant ?? null)` + `useState(initialRestaurant === undefined)` + `useRef(initialRestaurant !== undefined)`, (3) `useEffect` skipFirstFetchRef guard ile ilk fetch atla, (4) yeni `page.tsx` server component — cookies + verifyJwt + `prisma.restaurant.findFirst({ where: { id, userId }, select: { ...50 fields explicit, §14.1 defensive } })` + 50-field mapping block, (5) `if (loading) return null` clean-slate (eski "Yükleniyor..." spinner kaldırıldı). **Sapma**: parent `RestaurantDetailClient` not-found durumda `initialData = null` kullanırken bu PR `undefined` kullanır → team_member fallback senaryosunda client-fetch çalışır, gereksiz error UI gösterilmez (settings page'in security/danger section'ları team_member erişimi için kritik). **Cross-token scope**: `user_token && !adminToken` only. **Etki**: settings page'inde skeleton/spinner flash tamamen elimine — owner direct load anında content görür. Backend `/api/restaurants/[id]` kontratı dokunulmadı. **Audit out**: google-reviews wave 5 candidate (complex multi-state, ayrı sweep), feedbacks/menu builder Stage 101'de zaten defer. **§40.10 wave 4 line item** eklendi (settings page hydrated callsite listesine).
 
 - §38.211 — Stage 131 (PR #715) Google Business auto-retry tamamen kaldırıldı — shared API quota anti-pattern. Kullanıcı raporu (verbatim): *"google yorumlarında kesinlikle girmiyor"* + ekran görüntüsü: 56s countdown + "Son senkron: az önce" + sandwich card görünür. §38.209 cache TTL strategy (120s positive + 90s negative + empty stamp write + exponential backoff 2 attempt) yumuşatıcıydı ama **owner hâlâ kotaya takılıyordu** çünkü temel sorun auto-retry'ın kendisiydi. **Root cause analizi (shared quota anti-pattern)**: Google API quota proje-geneli (1 req/min/proje, §5.1.1) — TÜM Buaze kullanıcıları aynı kotayı paylaşır. Owner ilk kez connect olduğunda cache yok → quota fail → empty stamp yazılıyor (§38.209 fix) → 60s countdown başlıyor → auto-retry force=true → cache bypass → Google'a tekrar git → ama bu sırada **başka Buaze client'ları da retry'da** → quota yine dolu (başkaları yakmış) → 429 → tekrar 60s countdown → loop. §38.207 self-loop fix (autoRetryFiredRef counter), §38.209 exponential backoff (MAX_AUTO_RETRY_ATTEMPTS=2) — hiçbiri **multi-client shared quota** problemini çözmüyordu çünkü farklı browser sekmeleri / farklı owner'lar / restoran switch cycle'ları aynı window içinde retry tetikliyordu. Pratik gözlem: ekran görüntüsü "Son senkron: az önce" ve **yine 56s countdown** — auto-retry tetiklenmiş, yine fail, yine countdown. Best practice for shared API quotas: **manuel intervention only**. **Fix bundle (4 değişim, 2 dosya)**: **Backend (`/api/restaurants/[id]/google/business/locations/route.ts`)**: (A) Quota fail response'tan `retryAfterSeconds` field'ı KALDIRILDI. Eskiden bu field frontend'in countdown + auto-retry'ı tetikliyordu; artık gönderilmiyor. (B) Mesaj rewrite — "auto-retry" wording çıkarıldı, owner-actionable: "Birkaç dakika bekleyin veya farklı hesapla bağlanın". `warning: 'GOOGLE_RATE_LIMITED'` ve empty stamp write (§38.209 negative cache) korunur. **Frontend (`/[locale]/dashboard/google-reviews/page.tsx`)**: (C) Auto-retry state'leri (`autoRetryFiredRef`, `autoRetryAttemptRef`, `MAX_AUTO_RETRY_ATTEMPTS`, `hasAutoRetried`) tamamen SİLİNDİ. Sandwich card copy variant'ı (`hasAutoRetried` flag-based) tek-variant'a indirildi. (D) Auto-retry useEffect tamamen kaldırıldı; tick decrement bloğu korundu (`locationRetryAfter` state'i UI cooldown amaçlı — "Yenile" buton 60s disable + countdown göstergesi, retry tetiği YOK). Backend `retryAfterSeconds` göndermese de frontend `setLocationRetryAfter(60)` quota fail durumunda UI-side cooldown başlatır (mash önleyici). Hard 429 path basitleştirildi (rate-limit retry-after handling kaldırıldı). **Etki**: 2 dosya — frontend ~+27/-49 satır (net azalma — 22 satır dead code temizliği), backend ~+22/-7 satır. Backend response shape kontrat değişimi: `retryAfterSeconds` artık dönmüyor, defansif drop frontend'de mevcut (rolling deploy window'unda eski backend response gelirse frontend `setLocationRetryAfter(60)` UI-side sabit cooldown başlatır). **Disipline (yeni §40.4 ek — shared API quota anti-pattern)**: Proje-geneli quota (Google Business 1/min/proje, OpenAI bulk, Anthropic API tier limit) altında çalışan endpoint'lerde **auto-retry YASAK**. Farklı client'ların retry'ı quota'yı tekrar tüketir → hep birlikte 429 alırlar → owner perspectifinden "hiç çalışmıyor" görünür. Manuel intervention only paterni: sandwich card / alternative action CTA + manuel "Yenile" buton (UI-side cooldown 60s, mash önleyici) + sarı banner (informational). Backend `retryAfterSeconds` field'ı sadece tek-client quota'ları için (rate-limited public API'ler, Resend mail send, vb.) anlamlı — proje-geneli quota'da göndermek frontend'i yanıltır. **Yapma**: Shared quota durumunda auto-retry tetikleme (exponential backoff bile shared quota'da çalışmaz çünkü cooperative clients arası senkronizasyon yok). Countdown UI'ı auto-retry trigger'ına bağlama — UI cooldown ve retry semantic ayrı concern'ler. `retryAfterSeconds` backend'ten gelmiyorsa "default 60s" assume etme — backend semantic'i değişmiş olabilir, defansif drop. **Yap**: Yeni shared-quota endpoint'i eklerken backend response'ta `retryAfterSeconds` ASLA gönderme. Mesaj actionable yaz ("birkaç dakika bekleyin veya alternative X"). UI'da owner için **direct manuel intervention CTA** (sandwich card paterni, §38.208). Countdown UI sadece "Yenile" buton disable amaçlı; retry tetiği yok. Operatör follow-up: quota artışı **GCP Console** üzerinden request edilebilir (24-48 saat onay süreci) — kod-level yumuşatma proje-geneli quota'nın temel kısıtını çözmez. **Chat prompt history (Stage 131)**: 2026-05-24 kullanıcı verbatim: *"google yorumlarında kesinlikle girmiyor"* (§38.209 PR #713 deploy sonrası). Ekran görüntüsü: 56s countdown + "Son senkron: az önce" + sandwich card görünür → smoking gun "auto-retry yine tetiklendi, yine quota dolu". Diagnostic chain: §38.209 backend cache TTL + negative cache yeterli görünüyordu ama yine fail → multi-client shared quota gerçeği anlaşıldı (Buaze kullanıcıları paralel olarak retry yapıyor). §38.211 auto-retry'ı tamamen kaldırarak quota burn loop'unu kırar. Operatör action: GCP Console'da quota increase request (zaten CLAUDE.md §5.1.1'de dokümante).
+- §38.217 — Stage 137 (PR TBD) Lemon Squeezy billing foundation — schema + lib + webhook handler + idempotency table + 11 event taxonomy + tests. Kullanıcı talebi (verbatim): *"sisteme lemon squeezy sitesinin API'sini ekleyeceğim ödeme için gerekli altyapıyı yapar mısın"*. AskUserQuestion 3 karar: scope = "Foundation önce (Önerilen)" + currency = "Dual: USD + TRY (hybrid)" + manuel/automated = "Hybrid (Önerilen)". Bu PR write-side billing'in **infrastructure foundation**'ı; checkout endpoint + owner UI + admin variant mapping sonraki PR (CLAUDE.md §44.9 backlog). **Schema (1 yeni tablo + 11 yeni field)**: `BillingSubscription` (4: source / lemonSqueezyCustomerId / lemonSqueezyVariantId / cancelAtPeriodEnd) + `BillingInvoice` (2: receiptUrl / source) + `SubscriptionPlan` (5: paymentProvider + 4 variant ID slot) + yeni `LemonSqueezyEvent` tablosu (id/payloadHash @unique/eventName/resourceType/resourceId/payload Json/processedAt/error/receivedCount/createdAt + 4 index). Migration `20260525000000_lemon_squeezy_foundation` **additive only** — mevcut row'lar source='manual' + paymentProvider='manual' default'larıyla intact, manuel admin akışı (MemberBillingModal) bozulmaz. `providerRef @unique` (existing) Lemon Squeezy resource ID için reuse (subscription ID + order ID), yeni explicit kolonlar (lemonSqueezyCustomerId, vb.) farklı semantik gerektirenler için. **Env (4 optional + validate-env.js + .env.example)**: `LEMON_SQUEEZY_API_KEY` (test_xxx | live_xxx) + `LEMON_SQUEEZY_STORE_ID` + `LEMON_SQUEEZY_WEBHOOK_SECRET` + `LEMON_SQUEEZY_MODE` ('test' | 'production'). Mode/key prefix mismatch (örn. test_ key + production mode) → `getLemonSqueezyConfig` `enabled: false` + Sentry error (silent live charges riski önleme; legacy unprefixed keys sessiz pass). **Lib (`src/lib/lemon-squeezy/` 5 dosya)**: (1) `config.ts` — env access + mode/key sanity + module-cached + `__resetLemonSqueezyConfigForTests`. (2) `types.ts` — hand-written TS types, no SDK dep (`openai.ts` §15 paterni paralel — `@lemonsqueezy/lemonsqueezy.js` 30KB gzip ek dep yapılmadı, CLAUDE.md §30 minimum-dep disipline). 15 event name literal union + LemonSqueezy{Subscription,Order,Invoice}Attributes + envelope types. (3) `webhook.ts` — `verifyLemonSqueezySignature` (HMAC-SHA256 timing-safe + length check + try/catch hex parse) + `computePayloadHash` (SHA256 hex idempotency key) + `parseLemonSqueezyPayload` (defansif JSON parse, minimal shape garanti: meta.event_name + data.id + data.type zorunlu — Zod kullanılmadı, payload zaman içinde genişler, brittle olmasın) + `isKnownLemonSqueezyEvent` type guard. (4) `client.ts` — `lsFetch<T>(path, opts)` fetch wrapper, 8s default timeout (Vercel 10s gateway limit altında), Sentry tag `integration: 'lemon-squeezy'` + PII redaction (error body sadece status + ilk error title slice, customer email log YOK). Foundation PR'da kullanılmıyor — sonraki PR checkout/portal/cancel endpoint'leri tüketecek. (5) `event-handlers.ts` — `dispatchLemonSqueezyEvent(payload)` main entry + 11 event handler. **Event taxonomy (CLAUDE.md §44.6)**: subscription_created/updated/resumed/unpaused → `handleSubscriptionUpsert` (BillingSubscription upsert with tier link via 4-slot variant lookup); subscription_cancelled → `cancelAtPeriodEnd: true`, status `active` (dönem sonuna kadar erişim, LS pattern); subscription_expired → status `canceled`; subscription_paused → status `past_due`; subscription_payment_success/recovered → BillingInvoice paid + parent sub `active`; subscription_payment_failed → BillingInvoice failed + parent sub `past_due` + Sentry warn (notifyOpsOfBillingFailure helper sonraki PR scope, §21.33 paterni); subscription_payment_refunded → BillingInvoice refunded; order_created/refunded → one-time payment BillingInvoice; license_key_* → `unsupported_yet` (Buaze SaaS, license-based değil). **User resolution strategy**: `meta.custom_data.user_id` (preferred, checkout endpoint pass eder) → `data.attributes.user_email` lookup fallback → null (event row processedAt: null kalır, admin manuel retry). **Tier resolution**: `data.attributes.variant_id` → `SubscriptionPlan.findFirst WHERE one_of_4_slots = variant_id`, eşleşen slot'tan billingCycle (monthly/yearly) + currency (USD/TRY) derive. Unmapped → subscriptionPlanId null (legacy plan fallback, §15.2 canonical). **Webhook endpoint (`POST /api/webhooks/lemon-squeezy`)**: dynamic + nodejs + maxDuration: 30. Flow: rawBody read → signature verify (invalid → 401) → SHA256 payload hash → Prisma create LemonSqueezyEvent (P2002 dedupe → 200 + receivedCount increment) → defansif parse → dispatch → mark processed (error column captures failure). **Hep 200 dön** sonrası signature OK (LS retry storm önleme); failed handler `processedAt: null` + `error: <reason>` kalır, admin manuel replay candidate. GET probe ops health check (config status, no secrets). **Tests (`tests/lemon-squeezy-webhook.test.ts`)**: signature verify 8 case (valid / empty secret / missing header / empty header / wrong secret / tampered body / wrong length / non-hex), payload hash 3 case (deterministic / different bodies / whitespace sensitive), parse 8 case (valid / malformed / missing meta / missing event_name / missing data / missing data.id / null / array root), known event guard 4 case, config 8 case (enabled / missing each env / mode/key mismatch × 2 / legacy prefix). Total ~30 test, pure logic, no DB, no network. Handler integration tests next PR (DB gerek). **CLAUDE.md updates**: §44 yeni kanonik bölüm (10 alt-section) + §18 env table (Lemon Squeezy 2 row) + §38.B timeline (bu §38.217). **Webhook idempotency pattern (yeni kanonik §44.4)**: payload SHA256 hash UNIQUE constraint + P2002 catch — yeni provider eklerken (Iyzico Wave 3.5, Stripe, PayPal) bu paterni reuse. **Disipline (yeni §40.4 ek — webhook signature + idempotency)**: External webhook handler 3 garantili adım — (i) raw body BEFORE JSON parse (signature exact bytes), (ii) HMAC timing-safe verify (length check first, Buffer.from('hex') try/catch, timingSafeEqual same-length required), (iii) payload hash dedupe via DB UNIQUE constraint (P2002 catch + increment counter, NEVER manual lookup race). Yeni provider için bu 3 adım kanonik. **Yapma**: signature verify atlayıp dispatch'e geçme (fake event → ücretsiz Pro tier mount, security CRITICAL); subscription_cancelled'da DB row silmek (LS cancel = scheduled, owner dönem sonuna kadar erişim); failed handler'da 500 dönmek (LS retry storm); LS amount field'ını MAJOR unit olarak saklamak (LS minor unit gönderiyor — cents/kuruş, `minorToMajor(n)` helper ile çevir). **Yap**: Yeni LS event-handler eklerken: idempotent upsert + `resolveUserId` (custom_data preferred) + `resolveTierFromVariant` (4 slot) + Prisma sequential await (CLAUDE.md §40.1 connection_limit=1, Promise.all yasak); admin override için BillingSubscription.source field intact tut (audit trail). Manuel akış (`MemberBillingModal`) deprecate edilmez — enterprise/legacy/refund use case'leri için kalır (hybrid §44.5). **Etki**: 12 dosya — `prisma/schema.prisma` (3 model extension + 1 yeni model) + migration SQL + `.env.example` (4 yeni env section) + `scripts/validate-env.js` (4 optional entry) + 5 yeni lib dosyası (`src/lib/lemon-squeezy/{config,types,webhook,client,event-handlers,index}.ts`) + 1 yeni webhook route (`src/app/api/webhooks/lemon-squeezy/route.ts`) + 1 yeni test (`tests/lemon-squeezy-webhook.test.ts`) + CLAUDE.md (§44 + §18 + §38.B). Backend kontratları dokunulmadı (UI-only refactor değil — yeni feature). Lokal node_modules yok, CI Validate workflow doğrulayacak (CLAUDE.md §38.186 paterni). **Chat prompt history (Stage 137)**: 2026-05-25 kullanıcı verbatim (yukarıda) + AskUserQuestion 3 karar (scope: Foundation önce / currency: Dual USD+TRY / manuel-otomatik: Hybrid). Hukuki/disipline override yok — CLAUDE.md §15.2 canonical billing parity + §40.4 PII discipline + §40.1 connection_limit=1 + §28.3.1 Zod kullanılmadı (payload genişleyebilir, brittle olmasın — runtime minimal şekil garanti yeterli, §28.1 elle validation kabul alanı).
 - §38.216 — Stage 136 (PR TBD) Marketing polish bundle — restoran wording / panelde-nokta / ToastRow card / SectionDivider kompakt / FooterLiveTicker nosnippet. Kullanıcı talebi (verbatim): *"anasayfada <Restoran tarafının kullandığı platformlarla konuşur.> restoran olarak sabitlemiş bunu genel işletmeler olarak bahset ve diğer yerlerde de böyle ise seoda falan düzelt. ekteki resimde de Her yorum, tek bir panelde. yazan ksıımda sondaki noktayı kaldır (heroda da kaldır) ve daha güzel estetik tasarla mobil uyumlu yap. ekteki yeni yorum geldi kısmının ikonu yok bu kısmı da daha efektif güzel tasarla. <PulseAIrestoransesiniöğrenir,tone-awareyanıtönerir.> kısmnıın componentini aşağıdan yukardan biraz küçült çok büyük durmasın. footerdaki canlı olan kısmı ve canlı diye yazan kısımları google'dan gizle."* 5 paralel polish bundle. **Madde 1 (restoran→işletme)**: `[locale]/page.tsx:452` "Restoran tarafının kullandığı platformlarla konuşur." → "İşletmenizin kullandığı platformlarla konuşur" (TR + EN parallel) + sondaki nokta kaldırıldı; `[locale]/page.tsx:159` FAQ "restoranınızı doğrulayın" → "işletmenizi doğrulayın" + "masa QR" → "lokasyon bazlı QR" (genel sektör framing); `SectionDivider.tsx:64` role 'Restoran sesi tek panelde' → 'İşletmenin sesi tek panelde' + line 74 'Pulse AI restoran sesini öğrenir' → 'Pulse AI işletmenizin sesini öğrenir' + line 90 EN 'The voice of the restaurant' → 'The voice of your business'. Sektör-sabit wording genel B2B framing'e geçti (restoran sadece sektör örneği olarak `/solutions/restaurants` + `meta description` 'Built for restaurants, hotels, clinics...' korundu — Google SERP traffic için intact). **Madde 2 (panelde + hero nokta + estetik)**: dark feature h2 (line 729-743) "Her yorum, tek bir panelde." sondaki nokta KALDIRILDI + estetik upgrade: chip `relative inline-block` wrapper + `bz-pulse-dot` decorative dot lime üst-sağ köşede (-top-1 -right-1 + boxShadow ring 4px rgba lime) + chip lime glow shadow (`0 10px 30px -10px rgba(198,242,78,0.45)`). h2 sizing `text-[28px] sm:text-[40px] lg:text-[52px]` → `text-[32px] sm:text-[44px] lg:text-[56px]` (+4px her tier, modern h2 weight). 3 hero variantında da sondaki nokta KALDIRILDI: `HeroCinematic.tsx:37/57` TR "Her yorum bir nabız.\nHer yanıt bir rakip." → noktasız (her iki satır); EN "Every review is a pulse.\nEvery reply is a moat." → noktasız. `HeroParallax.tsx:42/62` TR "Yorumları yönet,\npuanı yükselt." + EN "Manage reviews,\nclimb the rating." → sondaki nokta kaldırıldı. `HeroStarClimb` titleLead zaten noktasız (animated counter + climbs to) — dokunulmadı. Modern marketing pattern (Apple/Linear/Stripe hero h1 noktasız). **Madde 3 (ToastRow card 1 icon)**: `DEFAULT_GENERIC_ITEMS[0]` tone `neu` → `pos` (Tailwind v4 `brand-ink` content scanner edge case'inde silent fail; tone change + hex inline guarantee). `MessageSquareText` → `MessageCircle` (modern chat-like icon). 4 card için icon size 14→15, strokeWidth 2.5→2.2 (premium SaaS). `TONE_BG` + `TONE_ICON_BG` + `TONE_TITLE` brand-* class'ları hex inline'a çevrildi: `bg-brand-paper` → `bg-white`, `bg-brand-lime-soft` → `bg-[#EAF9B8]`, `bg-brand-ink text-white` → `bg-[#0A0A0A] text-white`, `bg-brand-lime text-brand-ink` → `bg-[#C6F24E] text-[#0A0A0A]` (Pulse §11 kanonik). Yeni `TONE_BORDER` map (5 tone × ring color, visual variety). Card markup: padding `px-3 py-2.5` → `px-3.5 py-3` + gap `2.5` → `3` + icon container `h-7 w-7` → `h-8 w-8` (visibility uplift) + hover `-translate-y-0.5` + shadow `[0_12px_28px_-16px_rgba(10,10,10,0.18)]` (depth feedback). Title font `text-xs` → `text-[13px]` + sub `mt-0.5 leading-tight` (typography hierarchy). **Madde 4 (SectionDivider kompakt)**: center stage padding `py-16 sm:py-24 lg:py-28` → `py-12 sm:py-16 lg:py-20` (mobile -16px / sm -32px / lg -32px). Quote font `clamp(22px,5vw,44px)` → `clamp(20px,4.4vw,36px)` (mobile -2px, max -8px). Attribution mt-7 sm:mt-8 → mt-5 sm:mt-6. Pagination dots mt-10 sm:mt-12 → mt-7 sm:mt-9. Total visual weight ~30% azaltıldı; "Pulse AI işletmenizin sesini öğrenir" moment'ı kullanıcı'nın talebine göre kompakt. **Madde 5 (FooterLiveTicker Google nosnippet)**: `data-nosnippet` attribute eklendi root wrapper'a (Google'ın resmi SERP snippet exclude attribute'u). Görsel olarak intact — kullanıcı "CANLI · KARAKÖY AI yanıtladı" rotation badge'i görüyor; Google snippet'inde gizli (search results'ta "Buaze | ... · CANLI · İzmir Pushed to Google" gibi tuhaf preview önlenir). Reference: https://developers.google.com/search/docs/crawling-indexing/special-tags. Visual + semantic intact (role="status" + aria-live="polite" SR korunur). **Etki**: 5 dosya — `[locale]/page.tsx` (3 fix: restoran wording + FAQ + panelde h2) + `SectionDivider.tsx` (4 fix: TR + EN role + 3 padding) + `HeroCinematic.tsx` (TR + EN sondaki nokta) + `HeroParallax.tsx` (TR + EN sondaki nokta) + `ToastRow.tsx` (card 1 icon + hex tokens + visual polish) + `FooterLiveTicker.tsx` (data-nosnippet) + CLAUDE.md. Backend kontratları dokunulmadı. **Disipline (§40.3 ek — Tailwind v4 brand-* class resolution defensive pattern)**: Yeni component eklerken `bg-brand-ink` / `text-brand-mute` gibi Tailwind v4 config-defined brand class'larını **kullanma**; doğrudan hex inline tercih (`bg-[#0A0A0A]` / `text-[#525252]`). Stage 66 §38.147'de eklenen `tailwind.config.ts` brand tokens hâlâ valid ama Tailwind v4 content scanner edge case'inde sessizce fail edebilir (Stage 136 §38.216 ToastRow card 1 icon visibility raporu); hex inline %100 güvenli + Pulse §11 kanonik. **Disipline (§40.3 ek — hero h1 + h2 noktasız)**: Modern marketing hero h1 + h2 başlıklarında sondaki nokta KALDIRILMALI (Apple/Linear/Stripe pattern). Kullanıcı talebi Stage 136 §38.216 ile pivot edildi; yeni hero/h2 yazılırken nokta KOYMA. **Disipline (§40.4 ek — data-nosnippet pattern)**: SERP snippet'ten gizlemek istediğin dinamik/rotating live content (footer ticker, "az önce çıkan yorum" feed) için `data-nosnippet` attribute root wrapper'a. Visual + SR semantic intact; sadece Google snippet'inde excluded. `aria-hidden` SR'ı bozar (SR kullanıcı içeriği duyamaz); `data-nosnippet` doğru pattern. **Chat prompt history (Stage 136)**: 2026-05-25 kullanıcı verbatim (yukarıda) — 5 paralel polish bundle, AskUserQuestion atlandı (talepler deterministik + ekran görüntüsü context'i net). Restoran wording audit Anasayfa + SectionDivider'da hedeflendi, `solutions/restaurants` sektör sayfası + `meta description fallback` bilinçli olarak intact bırakıldı (Google SERP traffic için sektör örneği gerekli).
 - §38.215 — Stage 135 (PR TBD) Marketing Reputation OS — audit + surveys polish + sitemap priority + feature inventory audit. Kullanıcı talebi (verbatim): *"başka owner panelde olan eklemeyi unuttuğum bir şey var mı bak ve anketler sayfası ile denetim merkezini daha estetik ve mobil uyumlu yapıp sitemapa da gerekli eklemeleri yapıp merge et"*. AskUserQuestion 2 karar: scope = "Sadece anketler + denetim merkezi (HIGH gap §38.A backlog'a defer)" + polish = "tümü 4 item (hero + AEO + sektör + sticky CTA + spec)". **Feature inventory audit** (Explore agent): owner sidebar nav vs marketing nav + `/features/*` keşfi 3 HIGH gap tespit etti: (1) **Google Yorumları** — owner panelde prominent (`/dashboard/google-reviews`, Stage 125-129 + §43 Reputation OS), marketing'de "Review Management" altında implicit, özel landing yok; (2) **QR yönetimi** — `/solutions/qr-generator` design tool var ama `/features/qr-studio` (history + edit + analytics) yok; (3) **Menü** — owner panelde full feature (`/dashboard/restaurants/[id]/menu` DnD builder + 7 tema + analytics), marketing'de hiç bahsedilmiyor. §38.A backlog'a HIGH 3 entry eklendi; ayrı PR'da kapatılır. **Sitemap update** (`route-overrides.ts`): 3 yeni sayfa explicit priority `0.8` (features/pulse-ai paterni); `/features/audit-center`, `/features/surveys`, `/features/campaigns`. Default heuristic 0.7'den manuel override; FAQPage + Service + HowTo + BreadcrumbList JSON-LD'lerle FAQ rich snippet eligibility tutarlı. **Polish bundle (4 item × 2 sayfa)**: (A) **Hero h1 cascade** — eski `text-[38px] sm:text-[60px] md:text-[48px] lg:text-[72px]` → yeni `text-[40px] sm:text-[56px] md:text-[52px] lg:text-[76px]` (mobile +2px daha rahat, sm-lg cascade smoother, lg desktop +4px premium visual weight). (B) **Hero mockup mobile max-w** — eski `<div className="relative">` → `<div className="relative mx-auto w-full max-w-[440px] sm:max-w-none">` (mobile portrait'ta hero card 100vw doldurmaz, 440px üst sınır + center; sm+'da grid sütunu tam doldurur). (C) **AEO H2 pull quote accent** — her 2 H2 bölümünün altına `<blockquote>` (border-l-[3px] border-[#C6F24E] + bg-[#EAF9B8]/30 + px-5 py-4 sm:px-6 sm:py-5 + medium leading-[1.55] text). Featured snippet eligibility artırır + visual rhythm + bölümler arası dikey divider rolü. Section spacing `space-y-12 sm:space-y-16` (eski space-y-12 daraydı). Pulse eyebrow color `text-[#737373]` → `text-[#A8D62E]` (lime-deep, bölüm sinyalı güçlendi). H2 boyut `text-[26px] sm:text-[36px]` → `text-[28px] sm:text-[40px]`. (D) **Spec row visual polish** — number boyutu `text-[28px] sm:text-[36px]` → `text-[44px] sm:text-[56px]` (premium SaaS hierarchy), eyebrow `text-[#737373]` → `text-[#A8D62E]` (lime-deep accent), card `hover:-translate-y-1 + hover:border-[#0A0A0A] + hover:shadow-[0_18px_40px_-22px_rgba(10,10,10,0.18)]` (depth feedback). Mobile gap `gap-6` → `gap-4 sm:gap-5` (kompakt). (E) **Sektör cross-link section (yeni)** — Spec row + FAQ arasına yeni "Hangi sektörler için ideal?" section: 6 sektör grid (audit: restoran/otel/klinik/perakende/güzellik/hukuk; survey: restoran/otel/klinik/güzellik/perakende/spor) × icon + label + sub + ilgili `/solutions/<sektor>` link. Mobile 1-col, sm: 2-col, lg: 3-col. Section bottom CTA: "Tüm sektörlere bak" ghost buton + "Sektörünü göremiyor musun?" caption. SEO + GEO impact: feature × sektör matrix snippet ("audit-center for restaurants" / "nps survey for hotels"); 12 internal cross-link (2 sayfa × 6 sektör). (F) **Sticky CTA mobile/desktop** — `<StickyCtaBar locale={locale} />` MarketingFooter altında mount. `hidden md:block` intact (mobile MobileBottomNav §25.4 Pas 4 footer'da zaten). dynamic import → chunk split, ssr default true. Conversion uplift; 600px scroll threshold (HANDOFF default). **Etki**: 4 dosya — `audit-center/page.tsx` + `surveys/page.tsx` + `route-overrides.ts` + CLAUDE.md. ~+360 satır net (her sayfa ~+170 satır sektör cross-link section + pull quote + import + StickyCtaBar mount). Backend kontratları dokunulmadı. Campaigns sayfası DOKUNULMADI (Stage 134 zaten yeterli; kullanıcı talebi sadece audit + surveys). **Disipline (yeni §40.7 ek — feature page polish 4-item checklist)**: yeni feature detay sayfası eklendiğinde veya mevcut sayfada UX iyileştirmesi yapılacağında 4 kanonik polish item kontrolü — (i) hero h1 cascade `text-[40px] sm:text-[56px] md:text-[52px] lg:text-[76px]` (mobile + smooth cascade + desktop weight), (ii) hero mockup mobile `max-w-[440px] mx-auto sm:max-w-none` (portrait overflow önleme), (iii) AEO H2 pull quote accent (`<blockquote>` border-l-[3px] border-[#C6F24E] + bg-[#EAF9B8]/30 + medium-weight text — featured snippet + visual divider), (iv) sektör cross-link section (6 sektör grid + /solutions/<sektor> linkler + "Tüm sektörlere bak" CTA — SEO/GEO matrix). Bonus 5: spec row hover polish + sticky CTA mount. **Yapma**: 4 polish item'ı tek sayfaya uygulamak yerine farklı sayfalara dağıtma (premium SaaS consistency için tüm feature sayfalarda paralel uygula — Stage 135 audit + surveys başlangıç, gelecek session kalan 4 feature sayfasını sıralı kapatır). Hero mockup `max-w-none` mobile için kullanma (overflow vertical hero card görsel hierarchy bozulur). Sektör cross-link section'a 12+ sektör koyma (6 sweet spot — 3-col grid lg'de 2 row, scroll fatigue yok). **Yap**: yeni feature sayfasında bu 4 item baseline; AEO H2 pull quote için spesifik feature value cümle hazırla (örn. audit: "operasyonel disiplin yorumun kalitesini şekillendirir", survey: "NPS + CSAT, müşterinin kamuda söylemediği iyileştirme sinyallerini taşır"). Sektör list owner panel feature spec'ine uyumlu olmalı (audit 6 sektör template kütüphanesi ile parity, survey 6 sektör en sık kullanılan senaryo). **HIGH 3 gap §38.A backlog ek**: (1) `/features/google-reviews` — Google Business Profile entegrasyonu (Stage 125-129 + §43 Reputation OS suite) marketing parity; auto-draft + rating impact tracking + health snapshot vurgusu. (2) `/features/qr-studio` — QR oluşturma + edit + history + analytics (mevcut `/solutions/qr-generator` design-only). (3) `/features/menu` — DnD builder + 7 tema + analytics (`Restaurant.menuEnabled` master flag + base64-in-DB §3 mimari). Her biri Stage 134 paterniyle ~600 satır + navbar entry + JSON-LD 4-tier. **Chat prompt history (Stage 135)**: 2026-05-25 kullanıcı verbatim (yukarıda) + AskUserQuestion 2 karar (scope: sadece audit + surveys; polish: 4 item tümü). Owner sidebar audit Explore agent tarafından, 3 HIGH gap + 2 MEDIUM gap (Restaurants multi-location + Integrations detail) raporlandı; HIGH 3'ü §38.A'ya not edildi, MEDIUM 2'si scope dışı (mevcut sayfalarda implicit, ayrı talep gelene kadar bekler). Hukuki/disipline override yok.
 - §38.214 — Stage 134 (PR TBD) Marketing Reputation OS suite — 3 owner panel feature için marketing parity (detay sayfaları + navbar + anasayfa section). Kullanıcı talebi (verbatim): *"Owner panelde olan özeliklerde marketing sayfalarında da oluştur ve bahset; öneli olanlara anasayfada da yer ver güzel estetik bir şekilde: 1: Denetim Merkezi kısmına anasayfada da yer ver ve header kısmında menülerinde uygun olan bir kısmı seçip altına sayfa oluşturup estetik seo ve geo uyumlu bir şekilde yap. 2: anketler için benzerini yap 3: kampanyalar kısmı için de"*. AskUserQuestion 4 karar: URL = `/features/{audit-center,surveys,campaigns}` (mevcut feature path parity) + Navbar = Product dropdown FEATURES column'unda (8 item) + Anasayfa = 3-step flow sonrası yeni "Reputation OS suite" 3-card section + Scope = tek PR auto-merge. **Detay sayfaları (3 yeni)**: `src/app/[locale]/features/{audit-center,surveys,campaigns}/page.tsx` — `/features/review-management` paterninin birebir uygulaması. Her sayfa: dark hero + mockup card (audit score / mobile survey / approval flow) + 2 AEO definitional H2 ("Neden önemli?" + "Buaze ile farkı") + 4-up operating loop + 3 spec row + 5 FAQ + lime CTA. SEO: title 50-60 char + description 140-160 char + canonical + hreflang TR/EN/x-default + openGraph + Twitter Card. JSON-LD: `Service` (with OfferCatalog) + `BreadcrumbList` (3 level) + `FAQPage` + `HowTo` (4 step). Pulse §11 design intact (graphite + lime + N50). Inline `isTr` TR/EN ternary (CLAUDE.md §7 — yeni translation key yok, mevcut feature pages paterni). Mobile-first (px-5 sm:px-10, py-[60px] sm:py-24, text-[38px] sm:text-[60px] md:text-[48px] lg:text-[72px]). Compliance: zero fake metric (Buaze cohort + curated template counts), zero review-gating wording, customer agency framing (CLAUDE.md §19.1.1 + §35.8 + §35.10). **Owner panel feature-spec mapping**: audit-center → Stage 100 §38.180 (25+ template / 5 question types / 3 scoring modes / 6 sectors); surveys → /dashboard/surveys (single + multi-step / 5 types / QR + slug / coupon reward / KVKK §13.9); campaigns → Stage 119 §38.199 + §38.200 (60 ready templates / approval flow / ETK §5 + IYS compliance / real-time delivery tracking). **Navbar entegrasyonu**: `MarketingNavbarClient.tsx` `productCol1` array'ine 3 yeni item eklendi (5 → 8 item). 3 yeni lucide icon import: ClipboardCheck + ClipboardList + Send. Dropdown widthClass `w-[680px]` korundu (mevcut 3-col grid `[1.2fr_1fr_1fr]` yeterli; FEATURES column ~480px yüksek olur, premium SaaS dropdown discipline kabul). Mobile drawer otomatik fayda aldı (`[...productCol1, ...productCol2]` spread, accordion içinde scroll). **Anasayfa "Reputation OS suite" section**: `[locale]/page.tsx` 3-step flow sonrası, dark features öncesi yerleştirildi. Eyebrow "BUAZE REPUTATION OS" + h2 "Geri bildirimden operasyona" (lime accent skew rotation) + 640px subtitle + 3-card grid (Pulse `bz-card` + hover translate-y + lime icon container + ArrowUpRight rotated CTA badge). Mobile: 1-col stack, sm: 1-col, lg: 3-col. Border-y + bg-[#FAFAFA] section divider (3-step → operations → dark feature visual rhythm). Yeni 4 icon import (ArrowUpRight + ClipboardCheck + ClipboardList + Send). **Etki**: 5 dosya — 3 yeni `/features/{audit-center,surveys,campaigns}/page.tsx` (~600 satır × 3) + `MarketingNavbarClient.tsx` (+18 satır) + `[locale]/page.tsx` (+85 satır section + 4 icon import) + CLAUDE.md (§38.214 closure log + §38.B timeline). Backend kontratları dokunulmadı. tsc + lint clean (lokal node_modules yok, CI Validate workflow doğrulayacak). **Disipline (yeni §40.4 ek — marketing/panel parity pattern)**: Yeni owner panel feature backend'i tamamlandığında (örn. Stage 100 audit + §38.199 campaigns) marketing parity zaman zaman defer edilir; bu PR sonradan kapatmanın kanonik formu. Çekirdek 4-adım: (i) `/features/<slug>/page.tsx` mevcut paterni (review-management) klonla — hero + AEO H2 + operating loop + spec + FAQ + CTA, (ii) navbar `productCol1` array'ine yeni item ekle (icon + sub label TR/EN), (iii) anasayfa 3-step sonrası "suite" section'a 3-card grid (eğer 3+ feature varsa) veya tekil card mevcut bento'ya ekleme, (iv) JSON-LD 4-tier (Service + Breadcrumb + FAQPage + HowTo) — `buildHowToSchema` helper reuse. Translation key eklemeyin — inline `isTr` ternary mevcut paterni izle (CLAUDE.md §7). Compliance check zorunlu: fake metric YOK, customer agency wording, Pulse §11 visual. **Yapma**: yeni feature için translations.ts'ye key ekleme (mevcut feature pages 0 key kullanır); navbar'a yeni dropdown column ekleme (mevcut FEATURES sütunu 8 item'a kadar kabul eder); anasayfada yeni section koymadan navbar'a eklemek (UX gap — nav'dan tıklayan kullanıcı detail page'e iner, ama "anasayfada gördüm" expectation bozulur). **Yap**: yeni owner feature backend tamamlandığında 4-adım marketing parity'i bir PR'da kapat (audit + survey + campaign gibi semantically grouped feature'lar için tek PR daha narrative coherent); navbar/anasayfa cross-link'leri "Daha fazla:" footer'da tutarlı (audit-center → surveys + campaigns + review-management; semantic graph). **Chat prompt history (Stage 134)**: 2026-05-25 kullanıcı verbatim (yukarıda) + AskUserQuestion 4 karar netleştirildi (URL pattern + navbar entegrasyonu + anasayfa yerleşim + scope). Hukuki/disipline override yok — buaze brand voice + Pulse §11 + compliance §19.1.1 + §35.8 + §35.10 hepsi intact.
@@ -5350,5 +5353,234 @@ Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaur
 - Yeni metric: `HealthSnapshotInput` + migration + `computeHealthScore` ağırlığı
 - Yeni öneri: `getProfileRecommendations()` içine deterministik threshold
 - Yeni cron: `vercel.json` + `run*` shared helper + CRON_SECRET guard (§14.1 + §21.13)
+
+---
+
+## §44 — Lemon Squeezy Billing Foundation (kanonik, 2026-05)
+
+Buaze write-side billing entegrasyonu. CLAUDE.md §15.2 canonical billing
+parity ile birlikte çalışır — read-side (marketing `/pricing`, admin
+`/admin/plans`, owner `BillingReadOnlyCard`) intact, bu §write-side
+(checkout + webhook + subscription lifecycle).
+
+### §44.1 Mimari (5 katman)
+
+1. **Schema extensions** — `BillingSubscription` (4 LS field) +
+   `BillingInvoice` (2 field) + `SubscriptionPlan` (5 field: payment
+   provider + 4 variant ID slot) + yeni `LemonSqueezyEvent` tablosu
+   (webhook audit + idempotency).
+2. **Lib** — `src/lib/lemon-squeezy/{config,types,webhook,client,
+   event-handlers,index}.ts`. No SDK dep (`openai.ts` §15 fetch wrapper
+   paterni paralel). Module-cached config + boot-time mode/key
+   prefix mismatch detection.
+3. **Webhook endpoint** — `POST /api/webhooks/lemon-squeezy`. Sırasıyla:
+   read raw body → HMAC-SHA256 signature verify → SHA256 payload hash
+   insert (P2002 dedupe) → defansif JSON parse → dispatch → mark
+   processed. Signature OK sonrası **her zaman 200** dön (LS retry
+   storm önleme).
+4. **Hybrid manual + automated** (CLAUDE.md §44.5) — `BillingSubscription.source`
+   field (`'manual' | 'lemon_squeezy'`) audit trail; admin
+   `MemberBillingModal` LS-created rows üzerinde override yapabilir,
+   `source` orijinal yaratıcıyı korur.
+5. **Currency strategy** (CLAUDE.md §44.2) — Dual USD + TRY (user kararı,
+   AskUserQuestion). Her tier için 4 variant slot
+   (`lsVariantIdUsdMonthly/Yearly` + `lsVariantIdTryMonthly/Yearly`).
+   Variant lookup `currency` + `billingCycle` derive eder.
+
+### §44.2 Env vars (4 optional)
+
+| Env | Eksikse |
+|---|---|
+| `LEMON_SQUEEZY_API_KEY` | `lsFetch()` `not_configured` döner, webhook 503 |
+| `LEMON_SQUEEZY_STORE_ID` | Admin `/admin/plans` variant ID girişi disabled |
+| `LEMON_SQUEEZY_WEBHOOK_SECRET` | Webhook her POST'ta 503 — LS retry storm |
+| `LEMON_SQUEEZY_MODE` | Default `'test'` — production'da explicit set zorunlu |
+
+**Mode/key prefix sanity**: `test_xxx` API key + `production` mode
+mismatch → `getLemonSqueezyConfig()` `enabled: false` + Sentry error
+(silent live charges riski önleme). Legacy prefix yok formatta sessiz
+geçer (eski LS hesapları).
+
+### §44.3 Schema fields
+
+```prisma
+model BillingSubscription {
+  // ... existing fields ...
+  source                  String   @default("manual")    // 'manual' | 'lemon_squeezy'
+  lemonSqueezyCustomerId  String?  @map("...")           // Portal URL signing için
+  lemonSqueezyVariantId   String?  @map("...")           // Tier reverse lookup
+  cancelAtPeriodEnd       Boolean  @default(false)       // "iptal et" flag, expire ayrı
+  // providerRef (existing @unique) reused for LS subscription ID
+  // status (existing) reused with LS mapping (mapLsStatusToBuazeStatus)
+}
+
+model BillingInvoice {
+  // ... existing ...
+  receiptUrl  String?  @map("receipt_url")
+  source      String   @default("manual")
+}
+
+model SubscriptionPlan {
+  // ... existing ...
+  paymentProvider       String  @default("manual")   // 'manual' | 'lemon_squeezy' | 'iyzico'
+  lsVariantIdUsdMonthly String?
+  lsVariantIdUsdYearly  String?
+  lsVariantIdTryMonthly String?
+  lsVariantIdTryYearly  String?
+}
+
+model LemonSqueezyEvent {
+  id            String    @id
+  payloadHash   String    @unique           // SHA256 hex — idempotency key
+  eventName     String                      // meta.event_name
+  resourceType  String?                     // data.type
+  resourceId    String?                     // data.id
+  payload       Json                        // full payload, forensics
+  processedAt   DateTime?                   // null = pending, set = done
+  error         String?   @db.Text          // last error if handler failed
+  receivedCount Int       @default(1)       // LS retry counter
+  createdAt     DateTime  @default(now())
+}
+```
+
+### §44.4 Webhook idempotency pattern (kanonik)
+
+Lemon Squeezy retry stratejisi: aynı endpoint çağrısı tekrar gönderiliyor
+(aynı body, aynı imza). Idempotency için **payload SHA256 hash**'i tablo
+UNIQUE constraint — duplicate delivery P2002 ile yakalanır:
+
+```ts
+const payloadHash = computePayloadHash(rawBody);
+try {
+  await prisma.lemonSqueezyEvent.create({ data: { payloadHash, ... } });
+} catch (err) {
+  if (err.code === 'P2002') {
+    await prisma.lemonSqueezyEvent.update({
+      where: { payloadHash },
+      data: { receivedCount: { increment: 1 } },
+    });
+    return NextResponse.json({ ok: true, deduped: true }, { status: 200 });
+  }
+  throw err;
+}
+```
+
+Bu pattern **yeni webhook endpoint'leri için kanonik** — Iyzico, Stripe,
+PayPal, başka provider eklenirken aynı payloadHash strategy reuse edilir.
+
+### §44.5 Hybrid mode (manuel + Lemon Squeezy)
+
+Owner self-service Lemon Squeezy üzerinden subscribe/upgrade/cancel yapar.
+Admin `MemberBillingModal` manuel override için kalır:
+
+- **Enterprise deal'lar** — custom fiyat, off-platform anlaşma
+- **Legacy / grandfathered users** — early adopter custom pricing
+- **Refund / credit** — admin manuel credit verir, audit log'lanır
+- **Iyzico TR pazar** — gelecek scope (CLAUDE.md §44.7 backlog)
+
+`BillingSubscription.source` field audit kaynak — LS-created row üzerine
+admin override yapabilir, `source` orijinal yaratıcıyı kayıt tutar
+(`'lemon_squeezy'`). Future migration (Iyzico Wave 3.5) source
+field'ından hangi row'ların değişeceğini bilir.
+
+### §44.6 Event handler taxonomy (11 event)
+
+| Event | Side effect |
+|---|---|
+| `subscription_created` / `_updated` / `_resumed` / `_unpaused` | `handleSubscriptionUpsert` — BillingSubscription upsert (status + cancelAtPeriodEnd + renewsAt + tier link) |
+| `subscription_cancelled` | `cancelAtPeriodEnd: true`, status `active` (dönem sonuna kadar erişim) |
+| `subscription_expired` | status `canceled`, cancelAtPeriodEnd `false` |
+| `subscription_paused` | status `past_due` (UI banner için) |
+| `subscription_payment_success` / `_recovered` | `BillingInvoice` upsert (paid) + parent sub status `active` |
+| `subscription_payment_failed` | `BillingInvoice` (failed) + parent sub `past_due` + Sentry warning |
+| `subscription_payment_refunded` | `BillingInvoice.status: 'refunded'` |
+| `order_created` | `BillingInvoice` upsert (one-time payment, foundation skeleton) |
+| `order_refunded` | `BillingInvoice.status: 'refunded'` |
+| `license_key_*` | Skeleton (Buaze SaaS, license-based değil) — `unsupported_yet` return |
+
+### §44.7 KVKK + PII discipline (§40.4.PII paterni)
+
+Lemon Squeezy webhook payload'larında `user_email` + `user_name` gelir.
+Bu PII Buaze tarafında:
+
+- **DB'de**: `LemonSqueezyEvent.payload Json` — forensics + admin replay
+  için saklanır. Owner UI'a render edilirken redacted (sadece sub status
+  + amount görünür).
+- **Sentry**: `extra` field'lar `userId` + `lsCustomerId` + sayısal ID'ler
+  taşır, **email/name asla**. `sendDefaultPii: false` (CLAUDE.md §26.2)
+  SDK tarafı redact zaten devrede.
+- **Console**: `console.error` Sentry `extra` ile otomatik kapılır
+  (CLAUDE.md §40.4.PII) — `userId` + `eventName` + `payloadHash` log'la,
+  raw payload **asla**.
+
+### §44.8 Tests (CLAUDE.md §32 paterni)
+
+`tests/lemon-squeezy-webhook.test.ts` — pure logic, no DB:
+- HMAC-SHA256 signature verify (valid / invalid secret / missing header /
+  length mismatch / non-hex)
+- Payload SHA256 hash determinism + collision resistance
+- Defansif JSON parse (valid / malformed / missing fields / null / array)
+- Known event type guard
+- Config sanity (4 disabled reasons + mode/key mismatch detection +
+  legacy prefix silent pass)
+
+Handler integration testleri **next PR** scope (DB gerek). Foundation
+primitives coverage yeterli.
+
+### §44.9 Backlog (gelecek scope, §38.A'ya bakılır)
+
+**Bu foundation PR'da YOK** — sonraki PR'larda:
+
+1. **Checkout endpoint** — `POST /api/billing/checkout` — `lsFetch('/v1/checkouts', POST)`
+   ile checkout session create + `custom_data.user_id` set + signed
+   checkout URL döndür.
+2. **Customer portal** — `POST /api/billing/portal` — `lsFetch('/v1/customers/{id}', GET)`
+   ile signed portal URL fetch (LS portal URLs short-lived JWT).
+3. **Cancel endpoint** — `POST /api/billing/cancel` — `lsFetch('/v1/subscriptions/{id}', DELETE)`
+   ile soft cancel (cancelAtPeriodEnd true gönder).
+4. **Owner UI** — `/dashboard/account` Billing section "Upgrade",
+   "Manage", "Cancel" butonları. `BillingReadOnlyCard` extension.
+5. **Admin variant mapping** — `/admin/plans` editör'üne `paymentProvider`
+   dropdown + 4 variant ID input (USD/TRY × monthly/yearly).
+6. **Admin LemonSqueezyEvent UI** — `/admin/billing/events` failed
+   handler retry + payload forensics (operatör için).
+7. **Iyzico Wave 3.5** — TR pazar için ayrı provider. `BillingSubscription.source`
+   = `'iyzico'`, `SubscriptionPlan.paymentProvider` = `'iyzico'`.
+8. **Ops alert webhook** — `notifyOpsOfBillingFailure` helper
+   (`notifyOpsOfMailFailure` §21.33 paterni) — `subscription_payment_failed`
+   eventlerinde admin'e mail.
+
+### §44.10 Yapma / Yap
+
+**Yapma**:
+- Webhook signature verify atlamak — fake event POST'la herkes Pro tier
+  mount edebilir (security CRITICAL)
+- Payload hash dışı dedupe kullanmak (eventName + resourceId + timestamp
+  vb.) — Lemon Squeezy event_id field'ı yok, payload hash deterministik
+  en güvenli
+- `req.json()` çağırıp sonra signature verify — body bir kez okunabilir,
+  signature raw bytes üzerinde
+- `subscription_cancelled` event'inde DB row silmek — owner dönem sonuna
+  kadar erişim hakkı taşır, sadece `cancelAtPeriodEnd: true` flag
+- Failed handler'da 500 dönmek — LS retry storm; signature OK ise her
+  zaman 200, `error` column ile admin manuel retry
+- API key'i client bundle'a koymak (NEXT_PUBLIC_) — full account erişimi,
+  server-only zorunlu
+- Test mode key (test_xxx) + production mode kombinasyonu — silent live
+  charge riski; `getLemonSqueezyConfig` boot'ta yakalar
+- Mevcut admin manuel akışı (`MemberBillingModal`) deprecate etmek —
+  enterprise/legacy/refund use case'leri için kalır (hybrid §44.5)
+
+**Yap**:
+- Yeni webhook provider eklerken (Iyzico, Stripe, PayPal) `payloadHash`
+  idempotency paterni reuse — kanonik §44.4
+- Yeni handler eklerken: idempotent upsert + `resolveUserId` (custom_data
+  preferred, email fallback) + `resolveTierFromVariant` (4 slot) +
+  Prisma `connection_limit=1` paralel okuma yapma (CLAUDE.md §40.1)
+- LS amount field'ları minor unit (cents/kuruş) — `minorToMajor(n)` helper
+  ile MAJOR'a çevir, BillingInvoice.amount Decimal(10,2) MAJOR unit
+- Subscription cancel ≠ delete; expire ayrı event (LS internal job)
+- Variant ID yeni eklenirken admin `/admin/plans` editöründe TR/USD ×
+  monthly/yearly 4 slot doldur, eksik slot = o kombinasyon checkout disabled
 
 ---
