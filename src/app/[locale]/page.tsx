@@ -156,7 +156,7 @@ export default async function LandingPage({
         },
         {
           q: 'Kurulum ne kadar sürüyor?',
-          a: 'Ortalama 7 dakika. Hesabınızı açın, restoranınızı doğrulayın, masa QR kodlarınızı PDF olarak indirin. Onboarding asistanımız Google entegrasyonu ve Pulse AI ton ayarını sizin yerinize yapar.',
+          a: 'Ortalama 7 dakika. Hesabınızı açın, işletmenizi doğrulayın, lokasyon bazlı QR kodlarınızı PDF olarak indirin. Onboarding asistanımız Google entegrasyonu ve Pulse AI ton ayarını sizin yerinize yapar.',
           meta: ['~7 dk kurulum', 'PDF QR paketi', 'Asistan onboarding'],
         },
         {
@@ -449,8 +449,8 @@ export default async function LandingPage({
               className="mt-3 text-[clamp(26px,5vw,46px)] leading-[1.05] tracking-[-0.035em] font-medium text-[#0A0A0A] text-balance"
             >
               {isTr
-                ? 'Restoran tarafının kullandığı platformlarla konuşur.'
-                : 'Speaks the platforms restaurants already use.'}
+                ? 'İşletmenizin kullandığı platformlarla konuşur'
+                : 'Speaks the platforms your business already uses'}
             </h2>
           </div>
 
@@ -723,22 +723,45 @@ export default async function LandingPage({
             <span className="pulse-eyebrow text-[#C6F24E]">
               {isTr ? 'Merkezi yönetim' : 'Central control'}
             </span>
-            <h2 className="mt-4 text-[28px] sm:text-[40px] lg:text-[52px] font-medium leading-[1.02] tracking-[-0.035em] text-white">
+            {/* Stage 136 §38.216 — h2 sondaki nokta kaldırıldı (kullanıcı talebi:
+                "Her yorum, tek bir panelde. yazan kısmındaki sondaki noktayı
+                kaldır + heroda da kaldır"). Chip estetik upgrade: shadow-lime
+                glow + relative wrapper + bz-pulse-dot decorative dot lime
+                üst-sağ köşede. Mobile responsive (sm:bigger). */}
+            <h2 className="mt-4 text-[32px] sm:text-[44px] lg:text-[56px] font-medium leading-[1.02] tracking-[-0.035em] text-white">
               {isTr ? (
                 <>
                   Her yorum, tek bir{' '}
-                  <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
-                    panelde
+                  <span className="relative inline-block">
+                    <span
+                      aria-hidden
+                      className="bz-pulse-dot absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[#C6F24E]"
+                      style={{ boxShadow: '0 0 0 4px rgba(198,242,78,0.18)' }}
+                    />
+                    <span
+                      className="inline-block -skew-y-1 rounded-lg bg-[#C6F24E] px-3 text-[#0A0A0A]"
+                      style={{ boxShadow: '0 10px 30px -10px rgba(198,242,78,0.45)' }}
+                    >
+                      panelde
+                    </span>
                   </span>
-                  .
                 </>
               ) : (
                 <>
                   Every review in a single{' '}
-                  <span className="inline-block bg-[#C6F24E] text-[#0A0A0A] rounded-lg px-3 -skew-y-1">
-                    panel
+                  <span className="relative inline-block">
+                    <span
+                      aria-hidden
+                      className="bz-pulse-dot absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[#C6F24E]"
+                      style={{ boxShadow: '0 0 0 4px rgba(198,242,78,0.18)' }}
+                    />
+                    <span
+                      className="inline-block -skew-y-1 rounded-lg bg-[#C6F24E] px-3 text-[#0A0A0A]"
+                      style={{ boxShadow: '0 10px 30px -10px rgba(198,242,78,0.45)' }}
+                    >
+                      panel
+                    </span>
                   </span>
-                  .
                 </>
               )}
             </h2>

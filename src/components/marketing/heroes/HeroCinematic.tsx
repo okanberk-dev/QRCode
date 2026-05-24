@@ -34,7 +34,7 @@ interface Props {
 
 const COPY = {
   tr: {
-    title: 'Her yorum bir nabız.\nHer yanıt bir rakip.',
+    title: 'Her yorum bir nabız\nHer yanıt bir rakip',
     subtitle:
       'QR ile geri bildirim topla, tek panelden yönet, Pulse AI taslakları ile saniyeler içinde yanıt ver.',
     primaryCta: '14 gün ücretsiz dene',
@@ -54,7 +54,7 @@ const COPY = {
     aiTone: 'Sıcak · Onaylı',
   },
   en: {
-    title: 'Every review is a pulse.\nEvery reply is a moat.',
+    title: 'Every review is a pulse\nEvery reply is a moat',
     subtitle:
       'Collect feedback via QR, manage it from one dashboard, reply in seconds with Pulse AI drafts.',
     primaryCta: 'Start 14-day free trial',
