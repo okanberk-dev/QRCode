@@ -160,7 +160,19 @@ export async function PATCH(
       return tx.subscriptionPlan.update({ where: { id }, data });
     });
     revalidatePricing();
-    return NextResponse.json({ data: toAdminRow(updated) });
+    return NextResponse.json(
+      { data: toAdminRow(updated), revalidated: true },
+      {
+        headers: {
+          // §40.6 mutation paterni — bu response edge cache'lenmesin
+          // (Stage 108 §38.188 admin GET cache header eklemiş ama
+          // PATCH/POST/DELETE response'larında no-store yoktu). Owner UI
+          // PATCH sonrası fresh `/api/admin/plans` GET attığında 30s
+          // edge cache'inde eski tutar görmesin.
+          'Cache-Control': 'no-store, must-revalidate',
+        },
+      },
+    );
   } catch (error) {
     const code = (error as { code?: string })?.code;
     if (code === 'P2025') return ApiErrors.notFound('Plan bulunamadı');
@@ -181,7 +193,10 @@ export async function DELETE(
   try {
     await prisma.subscriptionPlan.delete({ where: { id } });
     revalidatePricing();
-    return NextResponse.json({ success: true });
+    return NextResponse.json(
+      { success: true, revalidated: true },
+      { headers: { 'Cache-Control': 'no-store, must-revalidate' } },
+    );
   } catch (error) {
     const code = (error as { code?: string })?.code;
     if (code === 'P2025') return ApiErrors.notFound('Plan bulunamadı');

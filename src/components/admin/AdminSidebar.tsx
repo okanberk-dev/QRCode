@@ -21,6 +21,7 @@ import {
   Megaphone,
   MessageSquareText,
   QrCode,
+  Search as SearchIcon,
   ScrollText,
   Settings,
   Sparkles,
@@ -619,6 +620,18 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
           </span>
         </Link>
         <div className="flex items-center gap-2">
+          {/* §38.219 Stage 139 — Mobile search trigger. Dispatches the same
+              CustomEvent that desktop topbar uses; one palette instance
+              handles both. */}
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent('buaze:admin-search-open'))}
+            className="bz-btn-icon bg-[#F2F2F2] text-[#0A0A0A]"
+            aria-label={locale === 'en' ? 'Search' : 'Ara'}
+            title={locale === 'en' ? 'Search' : 'Ara'}
+          >
+            <SearchIcon size={16} strokeWidth={2} />
+          </button>
           <ViewportMount
             query="(max-width: 1023.98px)"
             fallback={<span aria-hidden className="inline-flex h-9 w-9 shrink-0" />}

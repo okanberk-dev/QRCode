@@ -349,6 +349,42 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
     }
   };
 
+  /**
+   * §38.219 Stage 139 — Inline price field PATCH. Modal'a girmeden tek
+   * field güncellenir; success notice'da marketing /pricing'in 30s içinde
+   * yansıyacağı bilgisi verilir (admin "değişmedi" hissini önler).
+   */
+  const savePriceInline = async (id: string, field: string, nextValue: number | null) => {
+    setBusyRowId(id);
+    try {
+      const res = await fetch(`/api/admin/plans/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: nextValue }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setNotice({
+          kind: 'danger',
+          message: data?.error || 'Fiyat güncellenemedi. Lütfen tekrar deneyin.',
+        });
+        return false;
+      }
+      await refreshPlans();
+      setNotice({
+        kind: 'success',
+        message:
+          'Fiyat güncellendi. Marketing /pricing sayfasında 30 saniye içinde yansıyacak.',
+      });
+      return true;
+    } catch {
+      setNotice({ kind: 'danger', message: 'Bağlantı hatası.' });
+      return false;
+    } finally {
+      setBusyRowId(null);
+    }
+  };
+
   const moveUp = (idx: number) => {
     if (idx === 0) return;
     const a = sortedPlans[idx];
@@ -440,14 +476,64 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                   <p className="mt-1 text-[12px] leading-snug text-[#525252] line-clamp-2">
                     {p.descriptionTr}
                   </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-[12px] text-[#737373]">
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>
-                      ₺{p.priceTry.toLocaleString('tr-TR')}
-                      {p.priceUsd != null ? ` · $${p.priceUsd}` : ''} / {p.period}
-                    </span>
-                    <span>·</span>
+                  {/* §38.219 Stage 139 — Inline editable price cells.
+                      Click → input opens → Enter/blur saves → toast 'Marketing 30s'.
+                      Eski 'Düzenle' modal'ı tam form için hâlâ açık (description,
+                      features, discount, Lemon Squeezy variant). */}
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-[#737373]">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] uppercase tracking-wider text-[#A3A3A3]">
+                        Aylık
+                      </span>
+                      <InlinePriceCell
+                        planId={p.id}
+                        field="priceTry"
+                        value={p.priceTry}
+                        currency="TRY"
+                        label="Aylık TRY fiyat"
+                        busy={busyRowId === p.id}
+                        onSave={savePriceInline}
+                        required
+                      />
+                      <span className="text-[#D4D4D4]">·</span>
+                      <InlinePriceCell
+                        planId={p.id}
+                        field="priceUsd"
+                        value={p.priceUsd}
+                        currency="USD"
+                        label="Aylık USD fiyat"
+                        busy={busyRowId === p.id}
+                        onSave={savePriceInline}
+                      />
+                    </div>
+                    <span className="text-[#D4D4D4]">·</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] uppercase tracking-wider text-[#A3A3A3]">
+                        Yıllık
+                      </span>
+                      <InlinePriceCell
+                        planId={p.id}
+                        field="priceYearlyTry"
+                        value={p.priceYearlyTry}
+                        currency="TRY"
+                        label="Yıllık TRY fiyat (toplam)"
+                        busy={busyRowId === p.id}
+                        onSave={savePriceInline}
+                      />
+                      <span className="text-[#D4D4D4]">·</span>
+                      <InlinePriceCell
+                        planId={p.id}
+                        field="priceYearlyUsd"
+                        value={p.priceYearlyUsd}
+                        currency="USD"
+                        label="Yıllık USD fiyat (toplam)"
+                        busy={busyRowId === p.id}
+                        onSave={savePriceInline}
+                      />
+                    </div>
+                    <span className="text-[#D4D4D4]">·</span>
                     <span>{p.featuresTr.length} özellik</span>
-                    <span>·</span>
+                    <span className="text-[#D4D4D4]">·</span>
                     <span>Sıra {p.sortOrder}</span>
                   </div>
                 </div>
@@ -1099,5 +1185,156 @@ function SwitchCard({
     <div className="flex items-start justify-between gap-3 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3">
       {content}
     </div>
+  );
+}
+
+/**
+ * §38.219 Stage 139 — Inline editable price cell.
+ *
+ * Initial: read-only formatted price (mono font, hover shows pencil hint).
+ * Click → switches to controlled <input>, auto-focus + select.
+ * Enter or blur → commit (PATCH single field via onSave handler).
+ * Esc → revert + close without save.
+ * Loading: inline spinner.
+ *
+ * `required` field (e.g. priceTry) cannot be cleared to null — empty input
+ * reverts to original value. Optional fields (USD, yearly) accept empty
+ * input which serializes as null (admin "clear override" intent).
+ */
+function InlinePriceCell({
+  planId,
+  field,
+  value,
+  currency,
+  label,
+  busy,
+  required = false,
+  onSave,
+}: {
+  planId: string;
+  field: string;
+  value: number | null;
+  currency: 'TRY' | 'USD';
+  label: string;
+  busy: boolean;
+  required?: boolean;
+  onSave: (planId: string, field: string, nextValue: number | null) => Promise<boolean>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  const startEdit = () => {
+    if (busy) return;
+    setDraft(value != null ? String(value) : '');
+    setEditing(true);
+  };
+
+  const cancel = () => {
+    setDraft(value != null ? String(value) : '');
+    setEditing(false);
+  };
+
+  const commit = async () => {
+    const trimmed = draft.trim();
+    let nextValue: number | null;
+    if (trimmed === '') {
+      if (required) {
+        // Required field cannot be cleared; revert silently.
+        cancel();
+        return;
+      }
+      nextValue = null;
+    } else {
+      const n = parseInt(trimmed, 10);
+      if (!Number.isFinite(n) || n < 0) {
+        // Invalid input — revert + close (notice handled at parent if needed).
+        cancel();
+        return;
+      }
+      nextValue = n;
+    }
+    // No change → just close, skip PATCH.
+    if (nextValue === value) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    const success = await onSave(planId, field, nextValue);
+    setSaving(false);
+    setEditing(false);
+    if (!success) {
+      // Parent shows the error notice; we already closed the editor.
+    }
+  };
+
+  const formatDisplay = (v: number) =>
+    currency === 'TRY' ? `₺${v.toLocaleString('tr-TR')}` : `$${v}`;
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={startEdit}
+        disabled={busy}
+        title={`${label} — düzenlemek için tıkla`}
+        className="group inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-50"
+        style={{ fontFamily: 'var(--font-mono)' }}
+      >
+        {value != null ? (
+          formatDisplay(value)
+        ) : (
+          <span className="text-[#A3A3A3]">—</span>
+        )}
+        <Pencil
+          size={9}
+          className="opacity-0 transition-opacity group-hover:opacity-50 group-focus-visible:opacity-50"
+          aria-hidden
+        />
+      </button>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border border-[#C6F24E] bg-white px-1 py-0.5 ring-2 ring-[#C6F24E]/30">
+      <span className="text-[11px] text-[#737373]">{currency === 'TRY' ? '₺' : '$'}</span>
+      <input
+        ref={inputRef}
+        type="number"
+        inputMode="numeric"
+        min={0}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            void commit();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancel();
+          }
+        }}
+        disabled={saving}
+        aria-label={label}
+        className="w-16 border-0 bg-transparent p-0 text-[12px] font-medium text-[#0A0A0A] focus:outline-none disabled:opacity-50"
+        style={{ fontFamily: 'var(--font-mono)' }}
+      />
+      {saving ? (
+        <Loader2 size={10} className="animate-spin text-[#737373]" aria-hidden />
+      ) : (
+        <span className="text-[9px] text-[#A3A3A3]" aria-hidden>
+          ↵
+        </span>
+      )}
+    </span>
   );
 }

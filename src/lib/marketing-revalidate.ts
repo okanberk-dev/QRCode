@@ -105,11 +105,29 @@ export function revalidateMarketingChrome(): void {
  * Without this, the SubscriptionPlan changes admin made would be stale
  * for up to 1h (ISR `revalidate=3600`) — including annual price override
  * (CLAUDE.md §15.2 `priceYearlyTry`/`Usd`) drift.
+ *
+ * §38.219 Stage 139 — Defansif aggressive invalidation. Pricing
+ * page'i 4 yöntemle invalidate ediyoruz çünkü:
+ *   1. `revalidatePath('/tr/pricing')` — concrete locale path
+ *   2. `revalidatePath('/en/pricing')` — diğer locale
+ *   3. `revalidatePath('/[locale]/pricing', 'page')` — dynamic segment
+ *      pattern (Next.js 14+). Bazı edge-case'lerde sadece concrete path
+ *      yetmez (örn. ISR cache key dynamic param ile composite).
+ *   4. `revalidatePath('/', 'layout')` — root layout cascades to all
+ *      pages. Pricing footer/header'da plan-derived content varsa (örn.
+ *      "Pro plan başlangıç ₺X" banner) onu da yakalar. Vercel CDN'de
+ *      düşük maliyet, defansif overlap.
+ *
+ * `revalidate*` calls fail-soft (try/catch swallow) — admin save flow
+ * cache infra unavailable durumunda da kırılmaz.
  */
 export function revalidatePricing(): void {
   try {
     revalidatePath('/tr/pricing');
     revalidatePath('/en/pricing');
+    // Dynamic segment fallback for the [locale] pattern. Next.js 14+
+    // requires the 'page' type marker when the path contains brackets.
+    revalidatePath('/[locale]/pricing', 'page');
   } catch (error) {
     console.error('[revalidatePricing]', error);
   }
