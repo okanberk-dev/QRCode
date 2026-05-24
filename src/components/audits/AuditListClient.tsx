@@ -222,7 +222,7 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
   }
 
   return (
-    <div className="mx-auto max-w-[1280px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow={locale === 'tr' ? 'DENETİM MERKEZİ' : 'AUDIT CENTER'}
         eyebrowColor="#C6F24E"

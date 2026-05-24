@@ -126,7 +126,7 @@ export function SettingsLayout({
   }, []);
 
   return (
-    <div className={`mx-auto px-5 sm:px-7 py-6 lg:py-8 ${rightRail ? 'max-w-[1440px]' : 'max-w-[1440px]'}`}>
+    <div className={`mx-auto max-w-[1440px] px-5 sm:px-7 py-6 lg:py-8`}>
       {header && <div className="mb-6 sm:mb-8">{header}</div>}
 
       {/* Mobile (sm): all sections render as accordion via children */}
