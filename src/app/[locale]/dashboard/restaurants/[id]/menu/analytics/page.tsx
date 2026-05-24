@@ -13,7 +13,7 @@ import {
 import { formatPct } from '@/lib/analytics-heuristics';
 import type { Locale } from '@/lib/translations';
 import { MeasuredChart } from '@/components/charts/MeasuredChart';
-import { AlertBanner } from '@/components/ui';
+import { AlertBanner, PulseSelect } from '@/components/ui';
 
 type Range = '7d' | '30d' | '90d' | 'all';
 
@@ -247,26 +247,24 @@ export default function MenuAnalyticsPage() {
               </button>
             ))}
           </div>
-          <select
+          <PulseSelect
             value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="bz-input rounded-xl py-2 text-xs font-bold"
-          >
-            <option value="">{copy.allCategories}</option>
-            {(data?.categories ?? []).map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          <select
+            onChange={setCategoryId}
+            ariaLabel={copy.allCategories}
+            options={[
+              { value: '', label: copy.allCategories },
+              ...(data?.categories ?? []).map((c) => ({ value: c.id, label: c.name })),
+            ]}
+          />
+          <PulseSelect
             value={sourceType}
-            onChange={(e) => setSourceType(e.target.value)}
-            className="bz-input rounded-xl py-2 text-xs font-bold"
-          >
-            <option value="">{copy.allSources}</option>
-            {Object.entries(copy.sourceLabels).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
+            onChange={setSourceType}
+            ariaLabel={copy.allSources}
+            options={[
+              { value: '', label: copy.allSources },
+              ...Object.entries(copy.sourceLabels).map(([key, label]) => ({ value: key, label })),
+            ]}
+          />
           {hasActiveFilters && (
             <button
               onClick={resetFilters}

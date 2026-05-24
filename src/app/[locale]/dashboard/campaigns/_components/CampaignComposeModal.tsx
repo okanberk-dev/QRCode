@@ -10,7 +10,7 @@
 //                 created (best-effort; failure surfaces a warn banner).
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, AlertBanner } from '@/components/ui';
+import { Modal, AlertBanner, PulseSelect } from '@/components/ui';
 import {
   Loader2,
   Mail,
@@ -466,35 +466,26 @@ export function CampaignComposeModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-[#525252] mb-1" htmlFor="template-category">
+                    <span className="block text-[11px] text-[#525252] mb-1">
                       {isTr ? 'Kategori' : 'Category'}
-                    </label>
-                    <select
-                      id="template-category"
+                    </span>
+                    <PulseSelect
                       value={templateCategory}
-                      onChange={(e) =>
+                      onChange={(v) =>
                         setTemplateCategory(
-                          e.target.value as
-                            | 'reactivation'
-                            | 'special-offer'
-                            | 'feedback-request'
-                            | 'custom',
+                          v as 'reactivation' | 'special-offer' | 'feedback-request' | 'custom',
                         )
                       }
-                      className="bz-input w-full"
+                      ariaLabel={isTr ? 'Kategori' : 'Category'}
+                      className="w-full"
                       disabled={submitting !== null}
-                    >
-                      <option value="custom">{isTr ? 'Özel' : 'Custom'}</option>
-                      <option value="reactivation">
-                        {isTr ? 'Geri kazanma' : 'Reactivation'}
-                      </option>
-                      <option value="special-offer">
-                        {isTr ? 'Özel teklif' : 'Special offer'}
-                      </option>
-                      <option value="feedback-request">
-                        {isTr ? 'Geri bildirim' : 'Feedback'}
-                      </option>
-                    </select>
+                      options={[
+                        { value: 'custom', label: isTr ? 'Özel' : 'Custom' },
+                        { value: 'reactivation', label: isTr ? 'Geri kazanma' : 'Reactivation' },
+                        { value: 'special-offer', label: isTr ? 'Özel teklif' : 'Special offer' },
+                        { value: 'feedback-request', label: isTr ? 'Geri bildirim' : 'Feedback' },
+                      ]}
+                    />
                   </div>
                 </div>
               ) : null}
