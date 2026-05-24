@@ -15,6 +15,7 @@ import {
   AuditQuestionSchema,
   type AuditQuestionDraft,
 } from '@/lib/audits/wizard-state';
+import { humanizeAuditIssues } from '@/lib/audits/error-humanizer';
 import { getTranslations, type Locale } from '@/lib/translations';
 
 interface Props {
@@ -154,10 +155,19 @@ export default function AuditQuestionEditor({ locale, open, draft, onClose, onSa
     };
     const parsed = AuditQuestionSchema.safeParse(candidate);
     if (!parsed.success) {
-      const issues = parsed.error.issues
-        .map((i) => `${i.path.join('.')}: ${i.message}`)
-        .join(', ');
-      setError(issues || (locale === 'tr' ? 'Doğrulama hatası' : 'Validation error'));
+      // Humanize Zod path/message — kullanıcı "options: ..." yerine
+      // "Seçenekler — Bu soru tipi en az 2 seçenek gerektirir" görür.
+      const friendly = humanizeAuditIssues(
+        parsed.error.issues.map((i) => ({
+          path: i.path.join('.'),
+          message: i.message,
+        })),
+        locale,
+      );
+      setError(
+        friendly.join(' • ') ||
+          (locale === 'tr' ? 'Doğrulama hatası' : 'Validation error'),
+      );
       return;
     }
     onSave(candidate);
@@ -314,10 +324,16 @@ export default function AuditQuestionEditor({ locale, open, draft, onClose, onSa
             <input
               className="bz-input"
               type="number"
+              inputMode="numeric"
               min={1}
               max={10}
+              step={1}
               value={q.weight}
-              onChange={(e) => setQ({ ...q, weight: Math.max(1, Math.min(10, Number(e.target.value) || 1)) })}
+              onChange={(e) => {
+                const n = Math.floor(Number(e.target.value));
+                const clamped = Number.isFinite(n) ? Math.max(1, Math.min(10, n)) : 1;
+                setQ({ ...q, weight: clamped });
+              }}
             />
           </Field>
           <Field label={t.audits_question_required}>

@@ -60,6 +60,10 @@ import {
   type AuditSector,
 } from '@/lib/audits/types';
 import type { AuditQuestionDraft } from '@/lib/audits/wizard-state';
+import {
+  parseAuditErrorResponse,
+  type ParsedAuditError,
+} from '@/lib/audits/error-humanizer';
 import AuditQuestionEditor, { makeQuestionId } from './AuditQuestionEditor';
 
 interface CategoryRef {
@@ -321,22 +325,28 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
   // ─── Save / Unpublish / Reset ─────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ParsedAuditError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // Inline string → ParsedAuditError shape (client-side validation banner)
+  const showError = useCallback(
+    (title: string) => setError({ title, details: [], code: null }),
+    [],
+  );
 
   const submit = useCallback(async () => {
     setError(null);
     setNotice(null);
     if (!title.trim()) {
-      setError(isTr ? 'Başlık boş olamaz.' : 'Title is required.');
+      showError(isTr ? 'Başlık boş olamaz.' : 'Title is required.');
       return;
     }
     if (questions.length === 0) {
-      setError(isTr ? 'En az 1 soru ekle.' : 'Add at least 1 question.');
+      showError(isTr ? 'En az 1 soru ekle.' : 'Add at least 1 question.');
       return;
     }
     if (scoringMode === 'pass_fail' && (!passingScore || passingScore <= 0)) {
-      setError(
+      showError(
         isTr
           ? 'Geçti/Kaldı modu için pozitif bir geçme puanı gerekli.'
           : 'Pass/Fail mode requires a positive passing score.',
@@ -355,7 +365,7 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
             description: description.trim() || null,
             sector,
             scoringMode,
-            passingScore: scoringMode === 'pass_fail' ? passingScore : passingScore,
+            passingScore,
             locale: tplLocale,
             categoryId,
             questions: questions.map((q, i) => ({
@@ -372,23 +382,8 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
         },
       );
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        const code = data?.code;
-        if (code === 'PUBLISHED_LOCKED') {
-          setError(
-            isTr
-              ? 'Bu şablon yayında. Düzenlemek için önce yayından kaldır.'
-              : 'Template is published. Unpublish it first to edit.',
-          );
-        } else if (code === 'RESPONSES_LOCK_QUESTIONS') {
-          setError(
-            isTr
-              ? 'Yanıt almış şablonun soruları değiştirilemez. Çoğaltarak yeni versiyon oluştur.'
-              : 'Cannot change questions after responses. Duplicate to create a new version.',
-          );
-        } else {
-          setError(data?.error || (isTr ? 'Kaydedilemedi.' : 'Save failed.'));
-        }
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(parsed);
         return;
       }
       setNotice(isTr ? 'Şablon güncellendi.' : 'Template updated.');
@@ -398,7 +393,7 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
         router.push(`/${locale}/dashboard/audits/${template.id}`);
       }, 600);
     } catch {
-      setError(isTr ? 'Bağlantı hatası.' : 'Network error.');
+      showError(isTr ? 'Bağlantı hatası.' : 'Network error.');
     } finally {
       setSaving(false);
     }
@@ -416,6 +411,7 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
     locale,
     isTr,
     router,
+    showError,
   ]);
 
   const unpublishAndEdit = useCallback(async () => {
@@ -431,8 +427,8 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
         },
       );
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(data?.error || (isTr ? 'Yayından kaldırılamadı.' : 'Unpublish failed.'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(parsed);
         return;
       }
       router.refresh();
@@ -440,11 +436,11 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
         isTr ? 'Yayından kaldırıldı. Şimdi düzenleyebilirsin.' : 'Unpublished. You can edit now.',
       );
     } catch {
-      setError(isTr ? 'Bağlantı hatası.' : 'Network error.');
+      showError(isTr ? 'Bağlantı hatası.' : 'Network error.');
     } finally {
       setSaving(false);
     }
-  }, [restaurantId, template.id, isTr, router]);
+  }, [restaurantId, template.id, locale, isTr, router, showError]);
 
   const doReset = useCallback(async () => {
     setError(null);
@@ -455,8 +451,8 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
         { method: 'POST' },
       );
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(data?.error || (isTr ? 'Sıfırlanamadı.' : 'Reset failed.'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(parsed);
         return;
       }
       setNotice(
@@ -469,11 +465,11 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
         router.refresh();
       }, 700);
     } catch {
-      setError(isTr ? 'Bağlantı hatası.' : 'Network error.');
+      showError(isTr ? 'Bağlantı hatası.' : 'Network error.');
     } finally {
       setResetting(false);
     }
-  }, [restaurantId, template.id, locale, isTr, router]);
+  }, [restaurantId, template.id, locale, isTr, router, showError]);
 
   const reset = useCallback(() => {
     if (!canReset) return;
@@ -563,7 +559,16 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
       {error && (
         <div className="mt-4">
           <AlertBanner kind="danger" onDismiss={() => setError(null)}>
-            {error}
+            <div className="space-y-1">
+              <p className="font-medium">{error.title}</p>
+              {error.details.length > 0 && (
+                <ul className="list-disc pl-5 space-y-0.5 text-[13px]">
+                  {error.details.map((d, i) => (
+                    <li key={i}>{d}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </AlertBanner>
         </div>
       )}
@@ -704,12 +709,24 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
           >
             <input
               type="number"
+              inputMode="numeric"
               min={0}
               max={100}
+              step={1}
               value={passingScore ?? ''}
               onChange={(e) => {
-                const v = e.target.value;
-                setPassingScore(v === '' ? null : Number(v));
+                const raw = e.target.value;
+                if (raw === '') {
+                  setPassingScore(null);
+                  return;
+                }
+                // Floor + clamp — Zod `.int().min(0).max(100)` katı.
+                const n = Math.floor(Number(raw));
+                if (!Number.isFinite(n)) {
+                  setPassingScore(null);
+                  return;
+                }
+                setPassingScore(Math.max(0, Math.min(100, n)));
               }}
               disabled={contentLocked}
               className="bz-input"

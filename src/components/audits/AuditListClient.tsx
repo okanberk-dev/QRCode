@@ -24,6 +24,10 @@ import {
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { AUDIT_SECTORS, type AuditSector, type AuditScoringMode } from '@/lib/audits/types';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+} from '@/lib/audits/error-humanizer';
 
 interface Restaurant {
   id: string;
@@ -153,8 +157,8 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
         `/api/restaurants/${activeRestaurantId}/audits/templates?drafts=true`,
       );
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || (locale === 'tr' ? 'Yükleme başarısız' : 'Failed to load'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
@@ -205,8 +209,8 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
         { method: 'POST' },
       );
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || (locale === 'tr' ? 'Kopyalanamadı' : 'Duplicate failed'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       setNotice(locale === 'tr' ? 'Şablon kopyalandı' : 'Template duplicated');

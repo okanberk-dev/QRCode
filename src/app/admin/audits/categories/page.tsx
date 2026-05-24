@@ -16,6 +16,10 @@ import {
   useConfirmDialog,
 } from '@/components/ui';
 import { AUDIT_SECTORS, type AuditSector } from '@/lib/audits/types';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+} from '@/lib/audits/error-humanizer';
 
 interface Category {
   id: string;
@@ -86,8 +90,8 @@ export default function AuditCategoriesPage() {
     try {
       const res = await fetch('/api/admin/audits/categories');
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || 'Yükleme başarısız');
+        const parsed = await parseAuditErrorResponse(res, 'tr');
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
@@ -159,8 +163,8 @@ export default function AuditCategoriesPage() {
         try {
           const res = await fetch('/api/admin/audits/seed', { method: 'POST' });
           if (!res.ok) {
-            const j = await res.json().catch(() => ({}));
-            setError(j.error || 'Seed başarısız');
+            const parsed = await parseAuditErrorResponse(res, 'tr');
+            setError(summarizeAuditError(parsed));
             return;
           }
           const json = await res.json();
@@ -206,11 +210,12 @@ export default function AuditCategoriesPage() {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        if (res.status === 409) setFormError('Bu slug zaten kullanılıyor.');
-        else if (Array.isArray(j.issues) && j.issues.length > 0) {
-          setFormError(j.issues.map((i: { path: string; message: string }) => `${i.path}: ${i.message}`).join(', '));
-        } else setFormError(j.error || j.message || 'Kaydetme başarısız');
+        if (res.status === 409) {
+          setFormError('Bu slug zaten kullanılıyor.');
+          return;
+        }
+        const parsed = await parseAuditErrorResponse(res, 'tr');
+        setFormError(summarizeAuditError(parsed));
         return;
       }
       setModalOpen(false);
@@ -237,8 +242,8 @@ export default function AuditCategoriesPage() {
             method: 'DELETE',
           });
           if (!res.ok) {
-            const j = await res.json().catch(() => ({}));
-            setError(j.error || 'Silinemedi');
+            const parsed = await parseAuditErrorResponse(res, 'tr');
+            setError(summarizeAuditError(parsed));
             return;
           }
           setNotice('Kategori silindi.');

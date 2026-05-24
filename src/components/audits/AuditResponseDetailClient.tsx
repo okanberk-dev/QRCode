@@ -14,6 +14,10 @@ import {
 } from '@/components/ui';
 import { getTranslations, type Locale } from '@/lib/translations';
 import type { AuditQuestionType, AuditScoringMode } from '@/lib/audits/types';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+} from '@/lib/audits/error-humanizer';
 
 interface QuestionRow {
   id: string;
@@ -123,8 +127,8 @@ export default function AuditResponseDetailClient({
     try {
       const res = await fetch(`/api/restaurants/${restaurantId}/audits/responses/${responseId}`);
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || (locale === 'tr' ? 'Yükleme başarısız' : 'Failed to load'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
@@ -171,8 +175,8 @@ export default function AuditResponseDetailClient({
         }),
       });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || (locale === 'tr' ? 'Kaydetme başarısız' : 'Save failed'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       setNotice(locale === 'tr' ? 'Skor yeniden hesaplandı.' : 'Score recomputed.');

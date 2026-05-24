@@ -49,6 +49,10 @@ import {
 import AuditQuestionEditor from '@/components/audits/AuditQuestionEditor';
 import { type AuditQuestionDraft } from '@/lib/audits/wizard-state';
 import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+} from '@/lib/audits/error-humanizer';
+import {
   AUDIT_LOCALES,
   AUDIT_SCORING_MODES,
   AUDIT_SECTORS,
@@ -169,8 +173,8 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
           setError('Şablon bulunamadı');
           return;
         }
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || 'Yüklenemedi');
+        const parsed = await parseAuditErrorResponse(res, 'tr');
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
@@ -299,8 +303,8 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
         body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || j.message || 'Kaydedilemedi');
+        const parsed = await parseAuditErrorResponse(res, 'tr');
+        setError(summarizeAuditError(parsed));
         return;
       }
       setNotice('Şablon güncellendi.');
@@ -324,12 +328,8 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
         body: JSON.stringify({ isPublished: !data.isPublished }),
       });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        if (j.code === 'NO_QUESTIONS') {
-          setError('Yayın için en az 1 soru gerekli.');
-        } else {
-          setError(j.error || 'İşlem başarısız');
-        }
+        const parsed = await parseAuditErrorResponse(res, 'tr');
+        setError(summarizeAuditError(parsed));
         return;
       }
       setNotice(data.isPublished ? 'Yayından kaldırıldı.' : 'Yayınlandı.');
@@ -348,8 +348,8 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
     try {
       const res = await fetch(`/api/admin/audits/templates/${data.id}`, { method: 'DELETE' });
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || 'Silinemedi');
+        const parsed = await parseAuditErrorResponse(res, 'tr');
+        setError(summarizeAuditError(parsed));
         return;
       }
       router.push('/admin/audits/templates');

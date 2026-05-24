@@ -41,6 +41,10 @@ import type {
   AuditScoringMode,
   AuditSector,
 } from '@/lib/audits/types';
+import {
+  parseAuditErrorResponse,
+  summarizeAuditError,
+} from '@/lib/audits/error-humanizer';
 import AuditAssignmentModal from './AuditAssignmentModal';
 
 interface TeamMemberRef {
@@ -157,8 +161,8 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
         `/api/restaurants/${template.restaurantId}/audits/assignments?templateId=${template.id}`,
       );
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || (locale === 'tr' ? 'Yükleme başarısız' : 'Failed to load'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
@@ -187,8 +191,8 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
         },
       );
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || (locale === 'tr' ? 'İşlem başarısız' : 'Action failed'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       // Refresh server data — Next router refresh.
@@ -207,8 +211,8 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
         { method: 'POST' },
       );
       if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        setError(j.error || (locale === 'tr' ? 'Kopyalanamadı' : 'Duplicate failed'));
+        const parsed = await parseAuditErrorResponse(res, locale);
+        setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
@@ -256,8 +260,8 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
             { method: 'POST' },
           );
           if (!res.ok) {
-            const j = await res.json().catch(() => ({}));
-            setError(j.error || (locale === 'tr' ? 'Sıfırlanamadı' : 'Reset failed'));
+            const parsed = await parseAuditErrorResponse(res, locale);
+            setError(summarizeAuditError(parsed));
             return;
           }
           setNotice(
@@ -308,8 +312,8 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
             { method: 'DELETE' },
           );
           if (!res.ok) {
-            const j = await res.json().catch(() => ({}));
-            setError(j.error || (locale === 'tr' ? 'İptal başarısız' : 'Revoke failed'));
+            const parsed = await parseAuditErrorResponse(res, locale);
+            setError(summarizeAuditError(parsed));
             return;
           }
           setNotice(locale === 'tr' ? 'Atama iptal edildi' : 'Assignment revoked');
@@ -339,8 +343,8 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
             { method: 'DELETE' },
           );
           if (!res.ok) {
-            const j = await res.json().catch(() => ({}));
-            setError(j.error || (locale === 'tr' ? 'Silme başarısız' : 'Delete failed'));
+            const parsed = await parseAuditErrorResponse(res, locale);
+            setError(summarizeAuditError(parsed));
             return;
           }
           router.push(`/${locale}/dashboard/audits`);
