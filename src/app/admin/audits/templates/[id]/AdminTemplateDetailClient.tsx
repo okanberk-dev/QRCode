@@ -377,7 +377,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
 
   if (!data) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
         {error && <AlertBanner kind="danger">{error}</AlertBanner>}
         <EmptyState
           icon={<ClipboardCheck size={20} />}
@@ -394,7 +394,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · DENETİM ŞABLONU"
         eyebrowColor="#C6F24E"

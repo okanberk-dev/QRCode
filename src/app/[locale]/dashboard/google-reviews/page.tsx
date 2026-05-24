@@ -1217,7 +1217,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const shouldShowStatusLoading = loadingInitial || statusLoading || Boolean(activeRestaurantId && !statusIsReady && !reviewsError);
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
       {/* §38 audit Fix #1 — connect button returnTo bu sayfa, callback
           ?google=connected|state-*|token-* status'lerini yakalar. */}
       <GoogleConnectFlashBanner locale={isTr ? 'tr' : 'en'} />

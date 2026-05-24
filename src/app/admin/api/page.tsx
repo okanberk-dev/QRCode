@@ -182,7 +182,7 @@ function AdminApiBody() {
   };
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <PageHeader
         eyebrow={isTr ? 'API & WEBHOOK' : 'API & WEBHOOKS'}
         title={isTr ? 'API anahtarları & webhook\'lar' : 'API keys & webhooks'}

@@ -95,7 +95,7 @@ export default async function AdminAnalyticsPage({
   });
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-6 sm:px-7 lg:py-8 space-y-3.5">
+    <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-7 lg:py-8 space-y-3.5">
       <AnalyticsLiveIndicator isTr={isTr} />
 
       <PageHeader

@@ -263,7 +263,7 @@ export default function AdminCampaignTemplatesPage() {
   }, [stats]);
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1600px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="SUPERADMIN · KAMPANYA ŞABLONLARI"
         eyebrowColor="#C6F24E"

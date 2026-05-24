@@ -82,7 +82,7 @@ function AdminBillingBody() {
   const usedPct = summary ? Math.min(100, Math.round((summary.quota.used / Math.max(1, summary.quota.limit)) * 100)) : 0;
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       <PageHeader
         eyebrow={isTr ? 'FATURALANDIRMA' : 'BILLING'}
         title={isTr ? 'Plan & faturalar' : 'Plan & invoices'}

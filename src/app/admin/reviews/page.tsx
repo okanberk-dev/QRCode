@@ -492,7 +492,7 @@ function AdminReviewsContent() {
   // Render
   // ============================================================
   return (
-    <div className="mx-auto max-w-[1400px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+    <div className="mx-auto max-w-[1600px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
       {/* PageHeader — mobile detail view'inde gizli */}
       <div className={isMobileDetailView ? 'hidden lg:block' : ''}>
         <PageHeader

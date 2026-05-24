@@ -150,7 +150,7 @@ export default function SiteSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-5 pb-32">
+    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-5 pb-32">
       {/* §38.75 — Eyebrow'a SUPERADMIN scope prefix eklendi (CLAUDE.md §11.4
           dashboard SUPERADMIN eyebrow paterni reuse). Page-level scope net;
           actions slot'undaki lime badge ek visual cue. */}
@@ -364,7 +364,7 @@ export default function SiteSettingsPage() {
 
       {/* ─── Sticky Save Bar ─── */}
       <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-white border-t border-[#EDEDED] shadow-lg z-30 p-4">
-        <div className="mx-auto max-w-[1100px] flex items-center justify-between gap-3">
+        <div className="mx-auto max-w-[1280px] flex items-center justify-between gap-3">
           <p className="text-[12px] text-[#6B7280] font-medium hidden sm:block">
             Değişiklikler tüm site genelinde yansır.
           </p>

@@ -93,7 +93,7 @@ export default async function DashboardMenuPage({
   // first business before they can manage a menu.
   if (restaurants.length === 0) {
     return (
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
         <PageHeader
           eyebrow={isTr ? 'MENÜ' : 'MENU'}
           title={isTr ? 'Menü' : 'Menu'}
@@ -142,7 +142,7 @@ export default async function DashboardMenuPage({
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-6">
       <PageHeader
         eyebrow={isTr ? 'MENÜ' : 'MENU'}
         title={isTr ? 'Menü' : 'Menu'}

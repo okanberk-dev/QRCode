@@ -356,7 +356,7 @@ export default function AuditDetailClient({ locale, template, teamMembers, appUr
   }
 
   return (
-    <div className="mx-auto max-w-[1100px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1280px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <div>
         <Link
           href={`/${locale}/dashboard/audits`}

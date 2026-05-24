@@ -972,7 +972,7 @@ async function renderDashboardPage({
          py-6 lg:py-8 (24/32px) → py-8 lg:py-12 (32/48px). Hesabım §38.37'de
          zaten `py-12` generous; Dashboard daha breathing room kazanır.
          Yoğun layout sayfaları (Yorumlar/Müşteriler/Analitik) korunur. */
-      className="mx-auto max-w-[1200px] space-y-6 px-4 sm:px-7 py-6 lg:py-8"
+      className="mx-auto max-w-[1440px] space-y-6 px-4 sm:px-7 py-6 lg:py-8"
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <PageHeader

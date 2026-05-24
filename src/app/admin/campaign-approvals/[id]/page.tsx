@@ -131,7 +131,7 @@ export default function AdminCampaignApprovalDetailPage() {
 
   if (error || !data) {
     return (
-      <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
+      <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
         <Link
           href="/admin/campaign-approvals"
           className="bz-btn-ghost inline-flex items-center gap-1 px-3 min-h-[34px] text-[12px]"
@@ -149,7 +149,7 @@ export default function AdminCampaignApprovalDetailPage() {
   const ownerEmail = data.owner?.email ?? data.creator?.email ?? '';
 
   return (
-    <div className="mx-auto max-w-[1100px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
+    <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <Link
         href="/admin/campaign-approvals"
         className="bz-btn-ghost inline-flex items-center gap-1 px-3 min-h-[34px] text-[12px]"

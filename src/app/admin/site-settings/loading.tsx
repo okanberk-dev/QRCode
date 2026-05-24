@@ -11,7 +11,7 @@ import {
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1100}>
+    <SkPageShell max={1280}>
       <SkPageHeader withActions titleWidth="w-44" />
       <SkForm rows={4} />
       <SkForm rows={4} />

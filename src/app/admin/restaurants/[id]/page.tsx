@@ -370,7 +370,7 @@ export default function RestaurantDetailPage() {
     allowedPlatforms.has('trendyol');
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] space-y-5 px-4 sm:px-7 py-6 lg:py-8">
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
         <div className="absolute inset-x-0 top-0 h-[3px]" style={{ backgroundColor: formData.primaryColor }} aria-hidden />

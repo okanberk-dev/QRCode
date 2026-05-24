@@ -11,7 +11,7 @@ import {
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1200}>
+    <SkPageShell max={1440}>
       <SkPageHeader withActions titleWidth="w-32" />
       <SkTabStrip count={5} />
       <div className="bz-card p-5 space-y-4">

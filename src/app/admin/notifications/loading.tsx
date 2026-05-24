@@ -10,7 +10,7 @@ import {
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1100}>
+    <SkPageShell max={1280}>
       <SkPageHeader titleWidth="w-44" />
       <div className="bz-card p-5 space-y-3">
         <SkBox className="h-5 w-44" />

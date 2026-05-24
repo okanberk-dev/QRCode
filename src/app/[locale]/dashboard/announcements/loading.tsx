@@ -10,7 +10,7 @@ import {
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1100}>
+    <SkPageShell max={1280}>
       <SkPageHeader titleWidth="w-40" />
       <SkCardGrid count={4} cols={2} />
     </SkPageShell>

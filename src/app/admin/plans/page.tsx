@@ -76,7 +76,7 @@ export default async function AdminPlansPage() {
   const managedPlans = await getAllPlansForAdmin().catch(() => []);
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 sm:px-7 py-6 lg:py-8">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="ABONELİKLER"
         title="Plan yönetimi"
