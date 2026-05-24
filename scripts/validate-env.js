@@ -80,6 +80,13 @@ const optional = [
   ['NEXT_PUBLIC_SUPABASE_URL', 'ActivityFeed realtime push disabled, falls back to page-reload mode'],
   ['NEXT_PUBLIC_SUPABASE_ANON_KEY', 'ActivityFeed realtime push disabled, falls back to page-reload mode'],
   ['SUPABASE_JWT_SECRET', '/api/realtime/token endpoint returns 503, ActivityFeed falls back to page-reload mode'],
+  // CLAUDE.md §44 — Lemon Squeezy payment provider. Foundation PR adds
+  // schema + lib + webhook handler; eksik env'ler webhook'u 503'lerken
+  // mevcut manuel admin billing akışı (MemberBillingModal) intact kalır.
+  ['LEMON_SQUEEZY_API_KEY', 'Lemon Squeezy checkout + portal endpoints disabled. Webhook handler still verifies signatures but skips API callbacks. Existing manual admin billing flow intact.'],
+  ['LEMON_SQUEEZY_STORE_ID', 'Lemon Squeezy variant lookup disabled — admin /admin/plans cannot wire LS variant IDs.'],
+  ['LEMON_SQUEEZY_WEBHOOK_SECRET', 'Webhook signature verification disabled — endpoint returns 503 on every POST. Lemon Squeezy retry storm if this happens in production.'],
+  ['LEMON_SQUEEZY_MODE', "Defaults to 'test' if unset. Production deploy MUST set this to 'production' explicitly (lib boots in safe mode if mismatch with API key prefix)."],
 ];
 
 const missing = [];

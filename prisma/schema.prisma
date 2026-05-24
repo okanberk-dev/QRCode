@@ -1376,9 +1376,32 @@ model BillingSubscription {
   // Free-text admin notes — visible only on admin panel; never surfaced
   // owner-side (privacy: ops may store internal context like discount reason).
   adminNotes     String?   @map("admin_notes") @db.Text
+  // ── Lemon Squeezy fields (CLAUDE.md §44, 2026-05) ──
+  // `providerRef` (existing @unique) reused for Lemon Squeezy subscription
+  // ID (data.id from webhook). Below are LS-specific extensions only.
+  //
+  // Audit which provider created/owns this row. 'manual' = admin
+  // MemberBillingModal (legacy/enterprise/discount overrides), 'lemon_squeezy'
+  // = self-service checkout flow. Hybrid mode (CLAUDE.md §44.5) — both
+  // coexist; manuel admin can override LS-created rows but `source` tracks
+  // original creator for audit + Stripe/Iyzico future migration.
+  source                  String   @default("manual") @map("source")
+  // Lemon Squeezy customer ID (data.attributes.customer_id). Needed to
+  // generate signed customer portal URLs (LS portal URLs are short-lived
+  // JWT, can't be cached — fresh API call each "Manage subscription" click).
+  lemonSqueezyCustomerId  String?  @map("lemon_squeezy_customer_id")
+  // Which Lemon Squeezy variant this subscription is on. Joined with
+  // SubscriptionPlan.lsVariantId{Usd,Try}{Monthly,Yearly} to resolve tier.
+  lemonSqueezyVariantId   String?  @map("lemon_squeezy_variant_id")
+  // True when owner clicked "Cancel" but subscription stays active until
+  // `renewsAt` (LS pattern — cancellation is "scheduled at period end",
+  // owner keeps access until then). UI: amber banner "Aboneliğin X tarihinde
+  // sona erecek" + "Yeniden başlat" CTA.
+  cancelAtPeriodEnd       Boolean  @default(false) @map("cancel_at_period_end")
   updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
 
   @@index([subscriptionPlanId])
+  @@index([lemonSqueezyCustomerId])
   @@map("billing_subscriptions")
 }
 
@@ -1539,6 +1562,17 @@ model BillingInvoice {
   // Admin-only notes (NEVER returned via owner endpoints; analogous to
   // BillingSubscription.adminNotes privacy guard).
   adminNotes    String?  @map("admin_notes") @db.Text
+  // ── Lemon Squeezy fields (CLAUDE.md §44, 2026-05) ──
+  // `providerRef` (existing @unique) reused for Lemon Squeezy order ID
+  // (data.id from order_created webhook). Below are LS-specific extensions only.
+  //
+  // Public receipt URL from Lemon Squeezy (data.attributes.urls.receipt).
+  // Used as `pdfUrl` fallback — owner panel can link directly to LS receipt.
+  receiptUrl    String?  @map("receipt_url")
+  // Audit which provider created this invoice. 'manual' = admin
+  // BillingInvoiceModal (Iyzico Wave 3.5'a kadar manuel kayıt), 'lemon_squeezy'
+  // = webhook-generated from subscription_payment_success / order_created.
+  source        String   @default("manual") @map("source")
   issuedAt      DateTime @default(now()) @map("issued_at")
   updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
 
@@ -1594,6 +1628,22 @@ model SubscriptionPlan {
   discountLabelTr String? @map("discount_label_tr")
   discountLabelEn String? @map("discount_label_en")
 
+  // ── Lemon Squeezy variant mapping (CLAUDE.md §44, 2026-05) ──
+  // Hybrid USD + TRY (CLAUDE.md §44.2 — user-selected): bir tier 4 variant
+  // taşıyabilir (USD monthly/yearly + TRY monthly/yearly). Admin /admin/plans
+  // editöründen her plan için variant ID'leri girilir. Null variant = o
+  // (currency, cycle) kombinasyonu Lemon Squeezy'de yok, checkout button
+  // disabled.
+  //
+  // `paymentProvider` audit + routing — 'manual' tier'lar checkout button'u
+  // hiç göstermez (enterprise/legacy), 'lemon_squeezy' tier'lar self-service
+  // akışta. Iyzico ileride 'iyzico' eklenecek (Wave 3.5).
+  paymentProvider       String  @default("manual") @map("payment_provider")
+  lsVariantIdUsdMonthly String? @map("ls_variant_id_usd_monthly")
+  lsVariantIdUsdYearly  String? @map("ls_variant_id_usd_yearly")
+  lsVariantIdTryMonthly String? @map("ls_variant_id_try_monthly")
+  lsVariantIdTryYearly  String? @map("ls_variant_id_try_yearly")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -1604,6 +1654,62 @@ model SubscriptionPlan {
 
   @@index([isActive, sortOrder])
   @@map("subscription_plans")
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// Lemon Squeezy webhook event audit + idempotency table (CLAUDE.md §44).
+//
+// Lemon Squeezy webhook retry stratejisi: aynı endpoint çağrısı tekrar
+// gönderiliyor (aynı body, aynı imza). Idempotency için her payload'ın
+// SHA256 hash'i tablo-level UNIQUE constraint ile dedupe edilir — duplicate
+// delivery `P2002` ile yakalanır, sessizce 200 dönülür (caller'ı
+// memnun etmek), `received_count` artırılır.
+//
+// Bu tablo audit trail aynı zamanda: webhook payload forensics, event
+// replay (manuel admin trigger), processing state takip (processedAt/error).
+// Retention: süresiz (mali kayıt + KVKK m.7 finansal audit, BillingInvoice
+// paterniyle paralel — §37.9).
+//
+// PII discipline (§40.4): user_email + user_name LS payload'ında geliyor;
+// `payload Json` field'ı bunları taşır ama UI'a render edilirken redacted.
+// console.error PII YASAK — `eventName` + `resourceId` + `payloadHash` log'la,
+// raw payload Sentry `extra` ile geçer (sendDefaultPii: false, §26.2 ile
+// SDK tarafı redact).
+// ──────────────────────────────────────────────────────────────────────────
+model LemonSqueezyEvent {
+  id            String    @id @default(cuid())
+  // SHA256 hex of raw request body — unique per delivery attempt of the
+  // same event. Lemon Squeezy retries the same body, so retries naturally
+  // collide here and get deduped via P2002 catch (no manual lookup needed).
+  payloadHash   String    @unique @map("payload_hash")
+  // From `meta.event_name` field (subscription_created, order_created, etc.)
+  eventName     String    @map("event_name")
+  // Lemon Squeezy resource type — 'subscriptions' | 'orders' | 'subscription-invoices'
+  // | 'license-keys'. From `data.type`. Allows quick lookup ("show all
+  // events for subscription 12345").
+  resourceType  String?   @map("resource_type")
+  // Lemon Squeezy resource ID — `data.id`. For subscriptions/orders this
+  // joins with BillingSubscription.providerRef / BillingInvoice.providerRef.
+  resourceId    String?   @map("resource_id")
+  // Full JSON payload — forensics + admin replay. PII (user_email/name)
+  // present, owner UI'a render edilirken redacted.
+  payload       Json
+  // Processing state. processedAt null + error null → pending (cron pickup).
+  // processedAt set + error null → success.
+  // processedAt set + error set → failed (admin retry candidate).
+  processedAt   DateTime? @map("processed_at")
+  // Last error if processing failed. Sentry capture ayrıca yapılır (tag
+  // integration: 'lemon-squeezy'). Null on success.
+  error         String?   @db.Text
+  // How many times this hash was received (Lemon Squeezy retry counter).
+  // Each duplicate increments this — debug aracı.
+  receivedCount Int       @default(1) @map("received_count")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([eventName, createdAt])
+  @@index([resourceType, resourceId])
+  @@index([processedAt])
+  @@map("lemon_squeezy_events")
 }
 
 // Phase 8c+ §38.48 Wave 2 — Customer overlay mini-models.
