@@ -1439,22 +1439,29 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
               <AlertBanner kind="warn" onDismiss={() => setLocationNotice(null)}>
                 {locationNotice}
               </AlertBanner>
-              {/* §38.207 — Auto-retry tetiklendi ama hâlâ accounts boş ise
-                  ek hint kart: countdown beklemeden alternatif aksiyon.
-                  Google API quota proje-geneli (CLAUDE.md §5.1.1: 1 istek/
-                  dk/proje), TÜM Buaze kullanıcıları paylaşır. Yoğun
-                  saatlerde 60s wait bazen yetmez. Owner farklı hesapla
-                  bağlanmak isteyebilir (alternative OAuth client + farklı
-                  Business Profile = fresh quota). */}
-              {hasAutoRetried && inlineAccounts.length === 0 && (
+              {/* §38.208 — Sarı banner görünüyor + accounts boş ise direkt
+                  sandwich hint kart. Eski koşul `hasAutoRetried` kullanıcıyı
+                  60 sn countdown beklemeye zorluyordu — sayfa yeni açıldı
+                  ve sarı banner var ise henüz auto-retry tetiklenmedi →
+                  sandwich kart görünmüyordu. Şimdi: sarı banner görünür
+                  görmez "Farklı hesapla bağlan" alternatif aksiyon kartı
+                  beraberinde görünür. Owner countdown'u beklemek zorunda
+                  değil. (CLAUDE.md §5.1.1 quota proje-geneli, 1 req/dk,
+                  tüm Buaze kullanıcıları paylaşır — bekleme bazen yetmez,
+                  alternative hesap önerisi her durumda anlamlı.) */}
+              {inlineAccounts.length === 0 && (
                 <div className="rounded-xl bg-white border border-[#FDE68A] px-4 py-3">
                   <div className="flex items-start gap-3">
                     <Sparkles size={14} className="shrink-0 text-[#92400E] mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <p className="text-[12.5px] text-[#0A0A0A] leading-relaxed">
                         {isTr
-                          ? 'Otomatik tekrar denenmiş ama Google quota hâlâ dolu. Beklemek yerine farklı bir Google hesabıyla bağlanmayı deneyebilirsiniz — Business Profile genelde farklı bir Google hesabınızdadır.'
-                          : 'Auto-retry already attempted but Google quota is still exhausted. Instead of waiting, you can try connecting with a different Google account — your Business Profile is usually under a different account.'}
+                          ? hasAutoRetried
+                            ? 'Otomatik tekrar denenmiş ama Google quota hâlâ dolu. Beklemek istemiyorsanız farklı bir Google hesabıyla bağlanmayı deneyin — Business Profile genelde kayıt olduğunuz hesaptan farklı bir Google hesabındadır.'
+                            : 'Beklemek istemiyorsanız farklı bir Google hesabıyla bağlanmayı deneyebilirsiniz. Business Profile genelde Buaze\'ye kayıt olduğunuz Google hesabından farklı bir hesapta olur — doğru hesabı seçmek quota\'yı bypass edebilir.'
+                          : hasAutoRetried
+                            ? 'Auto-retry already attempted but Google quota is still exhausted. Instead of waiting, try a different Google account — your Business Profile is usually under a different account.'
+                            : 'Instead of waiting, you can try a different Google account. Your Google Business Profile is usually under a different Google account than the one you signed up with — picking the right account may bypass the quota.'}
                       </p>
                       <button
                         type="button"
