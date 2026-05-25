@@ -159,6 +159,24 @@ const nextConfig: NextConfig = {
           { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
           { key: 'Permissions-Policy', value: PERMISSIONS_POLICY },
           { key: 'Content-Security-Policy', value: SITE_CSP },
+          // Cross-Origin-Opener-Policy — Firebase Google sign-in popup uses
+          // `signInWithPopup` which polls `popup.closed` and calls
+          // `popup.close()` after the auth callback completes. Modern Chrome
+          // emits "Cross-Origin-Opener-Policy policy would block the
+          // window.closed/close call" warnings when COOP is unset, and the
+          // strict `same-origin` variant breaks Firebase popup entirely.
+          //
+          // `same-origin-allow-popups` is the canonical choice:
+          //   - opener can still call `popup.closed` / `popup.close()` on
+          //     same-origin popups (Firebase auth iframe + Buaze auth windows)
+          //   - cross-origin popups remain isolated (Spectre-class protection
+          //     preserved at the cross-origin boundary)
+          //   - Firebase resmi rehberi tam olarak bu değeri öneriyor
+          //     (https://firebase.google.com/docs/auth/web/redirect-best-practices)
+          //
+          // CLAUDE.md §37.8 B-group — operatör onayı + Firebase popup runtime
+          // test sonrası site-wide enforce. Stage closure §38.227.
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
         ],
       },
       // /embed/* — public iframe widget. Sadece bu path için frame
