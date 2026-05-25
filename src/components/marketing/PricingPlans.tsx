@@ -212,16 +212,37 @@ export default function PricingPlans({
                 ))}
               </ul>
 
-              <Link
-                href={p.buttonHref.startsWith('http') ? p.buttonHref : `${base}${p.buttonHref}`}
-                className={`block min-h-[48px] w-full rounded-full py-3.5 text-center text-[14px] font-medium transition-colors ${
-                  isDark
-                    ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
-                    : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
-                }`}
-              >
-                {p.buttonText || (billing === 'monthly' ? monthlyCta : yearlyCta)}
-              </Link>
+              {/* §44 Stage 148 (§38.228) — Dodo checkout wiring.
+                  Eğer plan'in admin tarafından `paymentProvider='dodo_payments'`
+                  + `dodoProductId` set ise CTA Dodo static checkout link'ine
+                  gider (/api/checkout?productId=X — SDK Dodo hosted checkout
+                  sayfasına 302 redirect yapar). Aksi halde mevcut fallback
+                  (`buttonHref`, genelde register/contact). Dodo product ID
+                  yoksa checkout butonu görünmez (plan listede kalır ama "Yakında"
+                  hissi vermez — buttonHref hep dolu, register/contact fallback). */}
+              {p.paymentProvider === 'dodo_payments' && p.dodoProductId ? (
+                <a
+                  href={`/api/checkout?productId=${encodeURIComponent(p.dodoProductId)}`}
+                  className={`block min-h-[48px] w-full rounded-full py-3.5 text-center text-[14px] font-medium transition-colors ${
+                    isDark
+                      ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
+                      : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
+                  }`}
+                >
+                  {p.buttonText || (billing === 'monthly' ? monthlyCta : yearlyCta)}
+                </a>
+              ) : (
+                <Link
+                  href={p.buttonHref.startsWith('http') ? p.buttonHref : `${base}${p.buttonHref}`}
+                  className={`block min-h-[48px] w-full rounded-full py-3.5 text-center text-[14px] font-medium transition-colors ${
+                    isDark
+                      ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
+                      : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
+                  }`}
+                >
+                  {p.buttonText || (billing === 'monthly' ? monthlyCta : yearlyCta)}
+                </Link>
+              )}
             </article>
           );
         })}
