@@ -75,6 +75,40 @@ export default async function AdminPlansPage() {
   // Boş ise PlansManager kullanıcıya "Varsayılan paketleri yükle" butonu sunar.
   const managedPlans = await getAllPlansForAdmin().catch(() => []);
 
+  // §38.224 — Per-plan user count + DB-driven MRR.
+  // Eski: hardcoded `paidOwners * 749` (drift kaynağı, sayfada yazılan
+  // fiyatlarla eşleşmiyordu).
+  // Yeni: her tier'ın aylık TRY fiyatı × o tier'daki active user count
+  // toplamı. Trial user'lar MRR'ye dahil değil. Discount varsa indirimli
+  // aylık tutar kullanılır (CLAUDE.md §15.2 canonical billing parity).
+  //
+  // planUsage map: { [planId]: count } — PlansManager'a prop geçilir,
+  // her tier card'ında "X işletme bu paketi kullanıyor" badge gösterilir.
+  const planUsage: Record<string, number> = {};
+  let mrrTry = 0;
+  for (const tier of managedPlans) {
+    // Plan key fuzzy match: tier.nameTr (lowercase) → o key'i içeren
+    // user.plan satırlarını say. Pro/Growth/Starter standart adlar.
+    const tierKey = tier.nameTr.toLowerCase();
+    const usersForTier = owners.filter((o) => {
+      const plan = (o.plan || 'trial').toLowerCase();
+      // Skip trial (MRR'ye dahil değil); plan string'i tier name içeriyor mu
+      return plan !== 'trial' && plan.includes(tierKey);
+    });
+    planUsage[tier.id] = usersForTier.length;
+    // Active discount varsa indirimli aylık fiyat kullan; yoksa list price.
+    let monthlyShown = tier.priceTry;
+    if (tier.discountActive && tier.discountValue != null && tier.discountValue > 0) {
+      if (tier.discountType === 'percent') {
+        const pct = Math.min(100, Math.max(0, tier.discountValue));
+        monthlyShown = Math.max(0, Math.round(tier.priceTry * (1 - pct / 100)));
+      } else {
+        monthlyShown = Math.max(0, tier.priceTry - tier.discountValue);
+      }
+    }
+    mrrTry += usersForTier.length * monthlyShown;
+  }
+
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
@@ -108,10 +142,11 @@ export default async function AdminPlansPage() {
         />
         <StatCard
           label="Aylık MRR (tahmini)"
-          value={`₺${(paidOwners * 749).toLocaleString('tr-TR')}`}
-          delta="Iyzico bağlantısı bekleniyor"
-          deltaKind="neutral"
+          value={`₺${mrrTry.toLocaleString('tr-TR')}`}
+          delta={mrrTry > 0 ? 'DB tier fiyatları' : 'Henüz ödeyen yok'}
+          deltaKind={mrrTry > 0 ? 'up' : 'neutral'}
           icon={<CreditCard size={14} strokeWidth={2} />}
+          accent={mrrTry > 0 ? '#C6F24E' : undefined}
         />
       </div>
 
@@ -191,28 +226,32 @@ export default async function AdminPlansPage() {
       </div>
 
       {/* Manageable plan cards — DB-driven via /api/admin/plans CRUD.
-          Public /pricing fetches the same rows. */}
-      <PlansManager initialPlans={managedPlans} />
+          Public /pricing fetches the same rows. §38.224: tier card pattern
+          (marketing /pricing parity) + per-plan user count badge. */}
+      <PlansManager initialPlans={managedPlans} initialUsage={planUsage} />
 
-      {/* Roadmap note */}
+      {/* Roadmap note — Stage 142 §38.222 Dodo Payments canlıya alındı.
+          Iyzico Wave 3.5 TR pazar için ayrı provider. */}
       <div
         className="mt-4 p-4 rounded-xl flex gap-3 flex-col sm:flex-row"
-        style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}
+        style={{ background: '#EAF9B8', border: '1px solid #C6F24E' }}
       >
         <CreditCard
           size={18}
-          color="#92400E"
+          color="#0A0A0A"
           strokeWidth={2}
           style={{ flexShrink: 0, marginTop: 2 }}
         />
-        <div style={{ fontSize: 12.5, color: '#92400E', lineHeight: 1.55 }}>
-          <strong>Yol haritası:</strong> Bu sayfa şu an plan-dağılım okuma görünümü.
-          Iyzico ödeme entegrasyonu (`/api/payments`) Wave 3.5 kapsamında devreye
-          alınacak; o zamana kadar plan değişiklikleri{' '}
-          <Link href="/admin/members" className="underline text-[#92400E]">
+        <div style={{ fontSize: 12.5, color: '#0A0A0A', lineHeight: 1.55 }}>
+          <strong>Ödeme entegrasyonu:</strong> Dodo Payments canlıda (Stage 142
+          §38.222). Bir tier için `paymentProvider=&apos;dodo_payments&apos;` +
+          `dodoProductId=&apos;pdt_xxx&apos;` set edildiğinde owner billing
+          panelinde &quot;Aboneliği yönet&quot; CTA aktif olur. Iyzico TR pazar
+          için ayrı provider (Wave 3.5). Manuel plan değişiklikleri{' '}
+          <Link href="/admin/members" className="underline text-[#0A0A0A] font-medium">
             İşletme Sahipleri
           </Link>{' '}
-          listesindeki inline-edit ile manuel yapılır.
+          listesindeki MemberBillingModal ile yapılır.
         </div>
       </div>
     </div>

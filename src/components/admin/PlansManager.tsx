@@ -136,8 +136,18 @@ function formToBody(f: FormState) {
   };
 }
 
-export default function PlansManager({ initialPlans }: { initialPlans: AdminPlanRow[] }) {
+interface PlansManagerProps {
+  initialPlans: AdminPlanRow[];
+  /** Per-plan user count (planId → count). §38.224 — Each tier card shows
+   *  "X işletme bu paketi kullanıyor" badge. Server-side compute in
+   *  /admin/plans/page.tsx; live updates not wired (planUsage is a snapshot,
+   *  refreshing the page recalculates it). */
+  initialUsage?: Record<string, number>;
+}
+
+export default function PlansManager({ initialPlans, initialUsage }: PlansManagerProps) {
   const [plans, setPlans] = useState<AdminPlanRow[]>(initialPlans);
+  const planUsage = initialUsage ?? {};
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -432,57 +442,141 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {sortedPlans.map((p, idx) => (
-            <article
-              key={p.id}
-              className={`rounded-2xl border bg-white p-4 sm:p-5 ${
-                p.isFeatured ? 'border-[#0A0A0A]' : 'border-[#EDEDED]'
-              }`}
-            >
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="bz-h-tight text-[16px]">{p.nameTr}</span>
-                    <span className="text-[12px] text-[#737373]">/ {p.nameEn}</span>
-                    {p.isFeatured && (
-                      <Badge kind="lime" dot={false}>
-                        <span className="inline-flex items-center gap-1">
-                          <Crown size={10} /> En popüler
-                        </span>
-                      </Badge>
-                    )}
+        /* §38.224 — Tier card grid (marketing /pricing parity).
+           Featured tier dark variant (bg-[#0A0A0A] + lime accent), normal tier
+           white + EDEDED border. InlinePriceCell'lar hero price'ın altında —
+           Stage 139 inline edit pattern korunur, modal full-form ile aynı. */
+        <div
+          className={`grid gap-5 ${
+            sortedPlans.length === 1
+              ? 'grid-cols-1 max-w-[420px]'
+              : sortedPlans.length === 2
+                ? 'grid-cols-1 md:grid-cols-2'
+                : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+          }`}
+        >
+          {sortedPlans.map((p, idx) => {
+            const isDark = p.isFeatured;
+            const userCount = planUsage[p.id] ?? 0;
+            const hasDiscount =
+              p.discountActive && p.discountValue != null && p.discountValue > 0;
+            return (
+              <article
+                key={p.id}
+                className={`relative flex flex-col rounded-3xl p-6 sm:p-7 ${
+                  isDark
+                    ? 'bg-[#0A0A0A] text-white shadow-[0_20px_60px_rgba(10,10,10,0.18)]'
+                    : 'border border-[#EDEDED] bg-white'
+                } ${!p.isActive ? 'opacity-70' : ''}`}
+              >
+                {/* "En popüler" badge — top-center (featured) */}
+                {isDark && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="pulse-eyebrow whitespace-nowrap rounded-full bg-[#C6F24E] px-4 py-1.5 text-[#0A0A0A]">
+                      <Crown size={10} className="inline mr-1 -mt-0.5" /> EN POPÜLER
+                    </span>
+                  </div>
+                )}
+
+                {/* Status badges row — Pasif / İndirim */}
+                {(!p.isActive || hasDiscount) && (
+                  <div className="mb-3 flex flex-wrap items-center gap-1.5">
                     {!p.isActive && <Badge kind="off">Pasif</Badge>}
-                    {p.discountActive && p.discountValue != null && (
+                    {hasDiscount && p.discountValue != null && (
                       <Badge kind="warn">
                         İndirim{' '}
-                        {p.discountType === 'percent' ? `${p.discountValue}%` : `-${p.discountValue}`}
+                        {p.discountType === 'percent'
+                          ? `${p.discountValue}%`
+                          : `-${p.discountValue}`}
                       </Badge>
                     )}
                   </div>
-                  <p className="mt-1 text-[12px] leading-snug text-[#525252] line-clamp-2">
-                    {p.descriptionTr}
+                )}
+
+                {/* Hero: Tier name + Description + User count */}
+                <div className={`${isDark ? 'pt-2' : ''} mb-5`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2
+                        className={`bz-h-tight text-[22px] ${isDark ? 'text-white' : 'text-[#0A0A0A]'}`}
+                      >
+                        {p.nameTr}
+                      </h2>
+                      <p
+                        className={`text-[11.5px] mt-0.5 ${isDark ? 'text-white/60' : 'text-[#A3A3A3]'}`}
+                      >
+                        / {p.nameEn}
+                      </p>
+                    </div>
+                  </div>
+                  <p
+                    className={`mt-2.5 text-[12.5px] leading-snug line-clamp-2 ${
+                      isDark ? 'text-white/70' : 'text-[#525252]'
+                    }`}
+                  >
+                    {p.descriptionTr || '—'}
                   </p>
-                  {/* §38.219 Stage 139 — Inline editable price cells.
-                      Click → input opens → Enter/blur saves → toast 'Marketing 30s'.
-                      Eski 'Düzenle' modal'ı tam form için hâlâ açık (description,
-                      features, discount, Lemon Squeezy variant). */}
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-[#737373]">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] uppercase tracking-wider text-[#A3A3A3]">
-                        Aylık
-                      </span>
-                      <InlinePriceCell
-                        planId={p.id}
-                        field="priceTry"
-                        value={p.priceTry}
-                        currency="TRY"
-                        label="Aylık TRY fiyat"
-                        busy={busyRowId === p.id}
-                        onSave={savePriceInline}
-                        required
+                  {/* Per-plan user count badge */}
+                  <div className="mt-3">
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                        isDark
+                          ? 'bg-white/10 text-white'
+                          : userCount > 0
+                            ? 'bg-[#EAF9B8] text-[#0A0A0A]'
+                            : 'bg-[#FAFAFA] text-[#737373]'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-1.5 w-1.5 rounded-full ${
+                          isDark ? 'bg-[#C6F24E]' : userCount > 0 ? 'bg-[#A8D62E]' : 'bg-[#A3A3A3]'
+                        }`}
                       />
-                      <span className="text-[#D4D4D4]">·</span>
+                      {userCount > 0
+                        ? `${userCount} işletme bu paketi kullanıyor`
+                        : 'Henüz kullanan yok'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Price hero — Aylık TRY (large) + USD (secondary) + Yıllık (sub).
+                    Hepsi InlinePriceCell ile click-to-edit. */}
+                <div
+                  className={`mb-5 border-b pb-5 ${isDark ? 'border-white/10' : 'border-[#EDEDED]'}`}
+                >
+                  <div className="flex items-baseline gap-2">
+                    <InlinePriceCell
+                      planId={p.id}
+                      field="priceTry"
+                      value={p.priceTry}
+                      currency="TRY"
+                      label="Aylık TRY fiyat"
+                      busy={busyRowId === p.id}
+                      onSave={savePriceInline}
+                      required
+                      variant="hero"
+                      dark={isDark}
+                    />
+                    <span
+                      className={`pulse-eyebrow ${isDark ? 'text-white/60' : 'text-[#737373]'}`}
+                    >
+                      /ay
+                    </span>
+                  </div>
+                  {/* USD secondary + Yıllık row */}
+                  <div
+                    className={`mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] ${
+                      isDark ? 'text-white/60' : 'text-[#525252]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`text-[10px] uppercase tracking-wider ${
+                          isDark ? 'text-white/40' : 'text-[#A3A3A3]'
+                        }`}
+                      >
+                        USD
+                      </span>
                       <InlinePriceCell
                         planId={p.id}
                         field="priceUsd"
@@ -491,12 +585,17 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                         label="Aylık USD fiyat"
                         busy={busyRowId === p.id}
                         onSave={savePriceInline}
+                        dark={isDark}
                       />
                     </div>
-                    <span className="text-[#D4D4D4]">·</span>
+                    <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] uppercase tracking-wider text-[#A3A3A3]">
-                        Yıllık
+                      <span
+                        className={`text-[10px] uppercase tracking-wider ${
+                          isDark ? 'text-white/40' : 'text-[#A3A3A3]'
+                        }`}
+                      >
+                        Yıllık ₺
                       </span>
                       <InlinePriceCell
                         planId={p.id}
@@ -506,8 +605,18 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                         label="Yıllık TRY fiyat (toplam)"
                         busy={busyRowId === p.id}
                         onSave={savePriceInline}
+                        dark={isDark}
                       />
-                      <span className="text-[#D4D4D4]">·</span>
+                    </div>
+                    <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`text-[10px] uppercase tracking-wider ${
+                          isDark ? 'text-white/40' : 'text-[#A3A3A3]'
+                        }`}
+                      >
+                        Yıllık $
+                      </span>
                       <InlinePriceCell
                         planId={p.id}
                         field="priceYearlyUsd"
@@ -516,73 +625,170 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                         label="Yıllık USD fiyat (toplam)"
                         busy={busyRowId === p.id}
                         onSave={savePriceInline}
+                        dark={isDark}
                       />
                     </div>
-                    <span className="text-[#D4D4D4]">·</span>
-                    <span>{p.featuresTr.length} özellik</span>
-                    <span className="text-[#D4D4D4]">·</span>
-                    <span>Sıra {p.sortOrder}</span>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => moveUp(idx)}
-                    disabled={idx === 0 || busyRowId === p.id}
-                    className="bz-btn-icon"
-                    aria-label="Yukarı taşı"
-                  >
-                    <ArrowUp size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveDown(idx)}
-                    disabled={idx === sortedPlans.length - 1 || busyRowId === p.id}
-                    className="bz-btn-icon"
-                    aria-label="Aşağı taşı"
-                  >
-                    <ArrowDown size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => togglePlanField(p.id, { isFeatured: !p.isFeatured })}
-                    disabled={busyRowId === p.id}
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-colors ${
-                      p.isFeatured
-                        ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                        : 'border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
+                {/* Features list — first 5 + "+ N daha" */}
+                <ul className="mb-5 flex-1 space-y-2">
+                  {p.featuresTr.slice(0, 5).map((feat, fi) => (
+                    <li
+                      key={`${p.id}-feat-${fi}`}
+                      className={`flex items-start gap-2.5 text-[13px] ${
+                        isDark ? 'text-white' : 'text-[#0A0A0A]'
+                      }`}
+                    >
+                      <span
+                        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
+                          isDark ? 'bg-[#C6F24E]' : 'bg-[#EAF9B8]'
+                        }`}
+                      >
+                        <Crown size={9} className="text-[#0A0A0A]" strokeWidth={3} />
+                      </span>
+                      <span className="line-clamp-2">{feat}</span>
+                    </li>
+                  ))}
+                  {p.featuresTr.length > 5 && (
+                    <li
+                      className={`text-[11px] ${
+                        isDark ? 'text-white/50' : 'text-[#737373]'
+                      } pl-6`}
+                    >
+                      + {p.featuresTr.length - 5} özellik daha
+                    </li>
+                  )}
+                  {p.featuresTr.length === 0 && (
+                    <li
+                      className={`text-[12px] italic ${
+                        isDark ? 'text-white/40' : 'text-[#A3A3A3]'
+                      }`}
+                    >
+                      Henüz özellik eklenmemiş — Düzenle ile ekle
+                    </li>
+                  )}
+                </ul>
+
+                {/* Meta + actions footer */}
+                <div
+                  className={`flex flex-col gap-3 pt-4 border-t ${
+                    isDark ? 'border-white/10' : 'border-[#EDEDED]'
+                  }`}
+                >
+                  <div
+                    className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] ${
+                      isDark ? 'text-white/50' : 'text-[#737373]'
                     }`}
                   >
-                    <Crown size={12} /> {p.isFeatured ? 'En popüler' : 'En popüler yap'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => togglePlanField(p.id, { isActive: !p.isActive })}
-                    disabled={busyRowId === p.id}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-[#EDEDED] px-3 py-1.5 text-[12px] font-semibold text-[#525252] hover:border-[#0A0A0A]"
-                  >
-                    {p.isActive ? 'Yayında' : 'Pasif'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openEdit(p)}
-                    className="bz-btn-ghost inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px]"
-                  >
-                    <Pencil size={12} /> Düzenle
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeleteId(p.id)}
-                    disabled={busyRowId === p.id}
-                    className="bz-btn-danger bz-btn-sm disabled:opacity-60"
-                  >
-                    <Trash2 size={12} /> Sil
-                  </button>
+                    <span>Sıra {p.sortOrder}</span>
+                    <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
+                    <span>{p.featuresTr.length} özellik</span>
+                    {p.paymentProvider !== 'manual' && (
+                      <>
+                        <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
+                        <span
+                          className={`font-medium ${
+                            isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
+                          }`}
+                        >
+                          {p.paymentProvider === 'dodo_payments' ? 'Dodo' : 'Iyzico'}
+                          {p.dodoProductId ? ' ✓' : ' (eksik)'}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => moveUp(idx)}
+                      disabled={idx === 0 || busyRowId === p.id}
+                      className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+                        isDark
+                          ? 'border border-white/15 text-white/70 hover:bg-white/10 disabled:opacity-30'
+                          : 'border border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A] disabled:opacity-40'
+                      }`}
+                      aria-label="Yukarı taşı"
+                    >
+                      <ArrowUp size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveDown(idx)}
+                      disabled={idx === sortedPlans.length - 1 || busyRowId === p.id}
+                      className={`inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors ${
+                        isDark
+                          ? 'border border-white/15 text-white/70 hover:bg-white/10 disabled:opacity-30'
+                          : 'border border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A] disabled:opacity-40'
+                      }`}
+                      aria-label="Aşağı taşı"
+                    >
+                      <ArrowDown size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => togglePlanField(p.id, { isFeatured: !p.isFeatured })}
+                      disabled={busyRowId === p.id}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                        p.isFeatured
+                          ? isDark
+                            ? 'bg-[#C6F24E] text-[#0A0A0A]'
+                            : 'bg-[#0A0A0A] text-white'
+                          : isDark
+                            ? 'border border-white/15 text-white/70 hover:bg-white/10'
+                            : 'border border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
+                      }`}
+                      aria-label={p.isFeatured ? 'En popüler tier' : 'En popüler yap'}
+                    >
+                      <Crown size={10} />
+                      {p.isFeatured ? 'Popüler' : 'Popüler yap'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => togglePlanField(p.id, { isActive: !p.isActive })}
+                      disabled={busyRowId === p.id}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                        isDark
+                          ? 'border border-white/15 text-white/70 hover:bg-white/10'
+                          : 'border border-[#EDEDED] text-[#525252] hover:border-[#0A0A0A]'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-1.5 w-1.5 rounded-full ${
+                          p.isActive ? 'bg-[#A8D62E]' : 'bg-[#A3A3A3]'
+                        }`}
+                      />
+                      {p.isActive ? 'Yayında' : 'Pasif'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openEdit(p)}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                        isDark
+                          ? 'border border-white/15 text-white/80 hover:bg-white/10'
+                          : 'border border-[#EDEDED] text-[#0A0A0A] hover:bg-[#FAFAFA]'
+                      }`}
+                    >
+                      <Pencil size={10} /> Düzenle
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteId(p.id)}
+                      disabled={busyRowId === p.id}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors disabled:opacity-60 ${
+                        isDark
+                          ? 'border border-white/10 text-white/50 hover:bg-red-500/20 hover:text-red-200'
+                          : 'border border-[#FECACA] bg-white text-[#991B1B] hover:bg-[#FEF2F2]'
+                      }`}
+                      aria-label="Paketi sil"
+                    >
+                      <Trash2 size={10} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
 
@@ -1162,6 +1368,8 @@ function InlinePriceCell({
   busy,
   required = false,
   onSave,
+  variant = 'inline',
+  dark = false,
 }: {
   planId: string;
   field: string;
@@ -1171,6 +1379,11 @@ function InlinePriceCell({
   busy: boolean;
   required?: boolean;
   onSave: (planId: string, field: string, nextValue: number | null) => Promise<boolean>;
+  /** 'inline' (default): small text (12px); 'hero': large display price
+   *  (40-52px Space Grotesk) for tier card hero. §38.224 */
+  variant?: 'inline' | 'hero';
+  /** Dark variant for featured tier cards (white text on graphite bg). */
+  dark?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -1231,33 +1444,134 @@ function InlinePriceCell({
   const formatDisplay = (v: number) =>
     currency === 'TRY' ? `₺${v.toLocaleString('tr-TR')}` : `$${v}`;
 
+  // §38.224 — Hero variant: large display price (40-52px Space Grotesk) for
+  // tier card hero section. Inline variant: small mono price (12px) for
+  // secondary cells (USD, yearly).
+  const isHero = variant === 'hero';
+
   if (!editing) {
+    if (isHero) {
+      return (
+        <button
+          type="button"
+          onClick={startEdit}
+          disabled={busy}
+          title={`${label} — düzenlemek için tıkla`}
+          className={`group inline-flex items-baseline rounded-md px-2 py-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-50 ${
+            dark
+              ? 'hover:bg-white/5 focus-visible:bg-white/5 text-[#C6F24E]'
+              : 'hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA] text-[#0A0A0A]'
+          }`}
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontWeight: 500,
+            letterSpacing: '-0.03em',
+          }}
+        >
+          <span className="text-[40px] sm:text-[48px] leading-none">
+            {value != null ? formatDisplay(value) : '—'}
+          </span>
+          <Pencil
+            size={12}
+            className={`ml-1.5 opacity-0 transition-opacity group-hover:opacity-50 group-focus-visible:opacity-60 ${
+              dark ? 'text-white' : 'text-[#737373]'
+            }`}
+            aria-hidden
+          />
+        </button>
+      );
+    }
     return (
       <button
         type="button"
         onClick={startEdit}
         disabled={busy}
         title={`${label} — düzenlemek için tıkla`}
-        className="group inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-50"
+        className={`group inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] disabled:cursor-not-allowed disabled:opacity-50 ${
+          dark
+            ? 'text-white hover:bg-white/10 focus-visible:bg-white/10'
+            : 'text-[#0A0A0A] hover:bg-[#FAFAFA] focus-visible:bg-[#FAFAFA]'
+        }`}
         style={{ fontFamily: 'var(--font-mono)' }}
       >
         {value != null ? (
           formatDisplay(value)
         ) : (
-          <span className="text-[#A3A3A3]">—</span>
+          <span className={dark ? 'text-white/40' : 'text-[#A3A3A3]'}>—</span>
         )}
         <Pencil
           size={9}
-          className="opacity-0 transition-opacity group-hover:opacity-50 group-focus-visible:opacity-50"
+          className={`opacity-0 transition-opacity group-hover:opacity-50 group-focus-visible:opacity-50 ${
+            dark ? 'text-white' : ''
+          }`}
           aria-hidden
         />
       </button>
     );
   }
 
+  // Editor — hero variant uses larger input; both share ring-lime active state.
+  if (isHero) {
+    return (
+      <span
+        className={`inline-flex items-baseline gap-1 rounded-md border-2 border-[#C6F24E] px-2 py-1 ring-2 ring-[#C6F24E]/30 ${
+          dark ? 'bg-white/5' : 'bg-white'
+        }`}
+      >
+        <span
+          className={`text-[28px] ${dark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'}`}
+          style={{ fontFamily: 'var(--font-heading)', fontWeight: 500 }}
+        >
+          {currency === 'TRY' ? '₺' : '$'}
+        </span>
+        <input
+          ref={inputRef}
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              void commit();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              cancel();
+            }
+          }}
+          disabled={saving}
+          aria-label={label}
+          className={`w-24 border-0 bg-transparent p-0 text-[36px] sm:text-[44px] leading-none focus:outline-none disabled:opacity-50 ${
+            dark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
+          }`}
+          style={{
+            fontFamily: 'var(--font-heading)',
+            fontWeight: 500,
+            letterSpacing: '-0.03em',
+          }}
+        />
+        {saving ? (
+          <Loader2 size={14} className="animate-spin text-[#737373]" aria-hidden />
+        ) : (
+          <span className={`text-[11px] ${dark ? 'text-white/40' : 'text-[#A3A3A3]'}`} aria-hidden>
+            ↵
+          </span>
+        )}
+      </span>
+    );
+  }
+
   return (
-    <span className="inline-flex items-center gap-1 rounded-md border border-[#C6F24E] bg-white px-1 py-0.5 ring-2 ring-[#C6F24E]/30">
-      <span className="text-[11px] text-[#737373]">{currency === 'TRY' ? '₺' : '$'}</span>
+    <span
+      className={`inline-flex items-center gap-1 rounded-md border border-[#C6F24E] px-1 py-0.5 ring-2 ring-[#C6F24E]/30 ${
+        dark ? 'bg-white/10' : 'bg-white'
+      }`}
+    >
+      <span className={`text-[11px] ${dark ? 'text-white/60' : 'text-[#737373]'}`}>
+        {currency === 'TRY' ? '₺' : '$'}
+      </span>
       <input
         ref={inputRef}
         type="number"
@@ -1277,13 +1591,15 @@ function InlinePriceCell({
         }}
         disabled={saving}
         aria-label={label}
-        className="w-16 border-0 bg-transparent p-0 text-[12px] font-medium text-[#0A0A0A] focus:outline-none disabled:opacity-50"
+        className={`w-16 border-0 bg-transparent p-0 text-[12px] font-medium focus:outline-none disabled:opacity-50 ${
+          dark ? 'text-white' : 'text-[#0A0A0A]'
+        }`}
         style={{ fontFamily: 'var(--font-mono)' }}
       />
       {saving ? (
         <Loader2 size={10} className="animate-spin text-[#737373]" aria-hidden />
       ) : (
-        <span className="text-[9px] text-[#A3A3A3]" aria-hidden>
+        <span className={`text-[9px] ${dark ? 'text-white/40' : 'text-[#A3A3A3]'}`} aria-hidden>
           ↵
         </span>
       )}
