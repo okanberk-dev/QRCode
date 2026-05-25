@@ -309,8 +309,14 @@ async function handleSubscriptionOnHold(payload: DodoPayloadShape): Promise<void
 // ─────────────────────────────────────────────────────────────────────
 // Webhook handler — exported as POST per Dodo SDK Next.js convention
 // ─────────────────────────────────────────────────────────────────────
+//
+// Stage 142 §38.222 sonrası signature verify fail teşhisi için 401 path'inde
+// diagnostic instrumentation wrap'i (`withVerifyDiagnostics`) eklendi.
+// Production-safe — raw secret YOK, sadece length + prefix snippet + header
+// presence + body message (Standard Webhooks library error mesajları).
+// Sentry warning + tags `integration: 'dodo-payments', kind: 'signature_verify_fail'`.
 
-export const POST = Webhooks({
+const sdkWebhookHandler = Webhooks({
   webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_SECRET,
   // Catch-all — fires for every event. Use for audit / Sentry breadcrumb.
   // PII discipline (§40.4): redact customer email/name from console.
@@ -380,6 +386,56 @@ export const POST = Webhooks({
     }
   },
 });
+
+// 401 diagnostic wrapper — Standard Webhooks library secret/signature
+// mismatch'lerini Sentry'ye warning olarak yansıtır. Production-safe:
+// raw secret YOK, sadece length + prefix snippet (whsec_ var mı yok mu) +
+// header presence + 401 body message ("Missing required headers" / "No matching
+// signature found" / "Message timestamp too old" / "Secret can't be empty.").
+export const POST = async (req: NextRequest): Promise<NextResponse> => {
+  // Clone body once — both SDK ve diagnostic wrapper okuyabilsin
+  // (NextRequest body bir kez okunabilir). SDK kendi clone'unu kullanır
+  // ama biz wrapper'da headers ile body content-length'i log'larız.
+  const startTime = Date.now();
+  const response = await sdkWebhookHandler(req);
+  if (response.status === 401 || response.status === 500) {
+    // Hata path'i — diagnostic log + Sentry warning
+    const clone = response.clone();
+    const bodyMessage = await clone.text().catch(() => '<body unavailable>');
+    const secret = process.env.DODO_PAYMENTS_WEBHOOK_SECRET ?? '';
+    const sigHeader = req.headers.get('webhook-signature') ?? '';
+    const diagnostic = {
+      status: response.status,
+      bodyMessage: bodyMessage.slice(0, 200),
+      durationMs: Date.now() - startTime,
+      headers: {
+        hasId: Boolean(req.headers.get('webhook-id')),
+        hasTimestamp: Boolean(req.headers.get('webhook-timestamp')),
+        hasSignature: Boolean(sigHeader),
+        signaturePrefix: sigHeader.slice(0, 6), // "v1," veya başka
+        signatureLength: sigHeader.length,
+      },
+      secret: {
+        present: secret.length > 0,
+        length: secret.length,
+        hasWhsecPrefix: secret.startsWith('whsec_'),
+        // İlk 8 char (whsec_ varsa "whsec_xx" gelir, raw için ilk 8 byte)
+        first8Chars: secret.slice(0, 8),
+      },
+      mode: process.env.DODO_PAYMENTS_ENVIRONMENT ?? 'test_mode',
+    };
+    console.error('[dodo-webhook] verify fail', diagnostic);
+    Sentry.captureMessage('Dodo webhook signature verify failed', {
+      level: 'warning',
+      tags: {
+        integration: 'dodo-payments',
+        kind: response.status === 401 ? 'signature_verify_fail' : 'webhook_server_error',
+      },
+      extra: diagnostic,
+    });
+  }
+  return response;
+};
 
 // Ops health probe — no secrets, just config status.
 export function GET() {
