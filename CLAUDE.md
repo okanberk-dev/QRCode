@@ -900,7 +900,7 @@ Pulse redesign 15 draft PR zincirinin tarihsel detayı `git log` üzerinden eri�
 
 > **Kanonik kaynak:** `.env.example` — tüm env'lerin tam listesi orada (build script `node scripts/validate-env.js` ile zorunluları doğrular). Aşağıdaki tablo seçilmiş highlight'tır; çatışma halinde `.env.example` baz alınır.
 
-**Stratejik karar:** Yeni external provider eklenmiyor. Resend (mail) + Supabase Storage (dosya) + OpenAI (Pulse AI) yeterli. POS (Iyzico/Stripe) kasıtlı ertelenmiş — billing read-side canlı, write-side yok.
+**Stratejik karar:** Yeni external provider eklenmiyor. Resend (mail) + Supabase Storage (dosya) + OpenAI (Pulse AI) + Dodo Payments (write-side billing, Stage 142 §38.222) yeterli. Stage 149 §38.229 — Iyzico provider iptal edildi (geçmişte planlanmıştı, Dodo Payments yerine geçince gerek kalmadı).
 
 | Env | Zorunluluk | Etki |
 |---|---|---|
@@ -911,7 +911,6 @@ Pulse redesign 15 draft PR zincirinin tarihsel detayı `git log` üzerinden eri�
 | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` + `SUPABASE_STORAGE_BUCKET` | Opsiyonel | Careers attachment + site-settings görselleri; eksikse 503 |
 | `CRON_SECRET` | Cron kullanılıyorsa | `/api/cron/*` endpoint'leri `Authorization: Bearer ${CRON_SECRET}` zorunlu |
 | `IP_RETENTION_DAYS` | Opsiyonel | Default 90; KVKK IP anonimleştirme cron'u için |
-| `IYZICO_*` (POS, henüz yok) | Yok | Wave 3.5'te eklenecek (TR pazar) |
 | `DODO_PAYMENTS_API_KEY` + `DODO_PAYMENTS_WEBHOOK_SECRET` | Opsiyonel | Dodo Payments payment provider (CLAUDE.md §44, Stage 140 §38.220 Lemon Squeezy yerine + Stage 142 §38.222 `/api/` path migration). Eksikse `/api/checkout` + `/api/customer-portal` runtime error + webhook 401; mevcut manuel admin akışı (MemberBillingModal) intact. SDK signature verify HMAC kendisi yapar. |
 | `DODO_PAYMENTS_RETURN_URL` + `DODO_PAYMENTS_ENVIRONMENT` | Opsiyonel | RETURN_URL: successful checkout sonrası geri yönlendirme (lokal localhost:3000/success; prod buaze.com/dashboard/account). ENVIRONMENT: `'test_mode'` (default) veya `'live_mode'` — production'da explicit set zorunlu + live_ API key. |
 | `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, projectId, appId) | Opsiyonel | Google Sign-in client config; eksikse OAuth butonu UI'da disable, e-posta+şifre flow intact |
@@ -3217,7 +3216,7 @@ Buaze 125+ API endpoint'i çoğunlukla elle validation kullanıyor (CLAUDE.md §
 3. **Zod sadece yeni veya yüksek-risk modüller için.** Mevcut bir route'a sadece zaten o feature için PR açmışsan ekle.
 4. **Zod tercih edilen alanlar:**
    - Google Business Profile entegrasyonu (gelecek)
-   - Billing / subscription / invoice flow'ları (Iyzico Wave 3.5)
+   - Billing / subscription / invoice flow'ları (Dodo Payments §44)
    - Campaign create / update
    - QR create / update
    - Onboarding multi-step state
@@ -3396,7 +3395,7 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
   - Error boundary'ler (`global-error.tsx` + segment `error.tsx` dosyaları `reportBoundaryError` ile yapıyor)
   - API failure'lar (`onRequestError` zaten yakalıyor)
   - Cron failure'lar (cron handler `try/catch` + `captureException` + tag `{ cron: 'name' }`)
-  - Önemli integration failure'lar (OpenAI, Resend, Iyzico — fallback öncesi capture)
+  - Önemli integration failure'lar (OpenAI, Resend, Dodo Payments — fallback öncesi capture)
 
 **Yapma:**
 - Microservice'lere bölme
@@ -3462,7 +3461,6 @@ Backend mimari kararları. **Mevcut monolith Next.js yapı korunur** — microse
 
 | Lib | Tetik koşul |
 |---|---|
-| `iyzipay-node` (veya REST direct) | Iyzico Wave 3.5 başlatıldığında billing write-side için |
 | `react-hook-form` | Bir form 8+ alana çıktığında veya complex validation chain gerekirse |
 | `next-intl` | 3. locale eklenirken (TR + EN dışı) — current pattern 2 locale için uygun, 3+ ölçeklemiyor |
 | `@upstash/qstash` | Cron yeterli olmazsa — async job queue ihtiyacı çıkarsa (delay scheduling, retry policy) |
@@ -3610,7 +3608,7 @@ Schema'da/kodda var ama 0 aktif callsite — kasten korundu:
 | `AutomationRule` model + `/api/automations/*` route'ları | UI yok, planlı feature |
 | `GoogleIntegration` model | OAuth flow setup var, tam bağlantı gelecek |
 | `NotificationPreference` model | Schema'da, kod minimal |
-| Billing field'ları (`billingAddress`, `taxNumber`, `discountActive`, `discountType`) | Iyzico Wave 3.5 hazırlığı |
+| Billing field'ları (`billingAddress`, `taxNumber`, `discountActive`, `discountType`) | Dodo Payments webhook + admin manual override (§44.5) tüketiyor |
 | `src/lib/api/validate.ts` (`validateBody` Zod helper) | §28 kanonik öneri, yeni high-risk route'lar için |
 | 2FA + Sessions backend (`/api/account/2fa/*`, `/api/account/sessions`) | UI silinmiş, magic-code 2FA için backend kalmış |
 
@@ -4096,7 +4094,7 @@ XSS savunmasının gerçek kapısı, ama mevcut inline + 3rd party script'leri k
 
 **Yapma**: Strict CSP'yi doğrudan enforce ile ekleme — 3rd party script'ler kırılır (white-screen production). Report-Only ile başla.
 
-**Yap**: Yeni 3rd party script eklenirken (örn. Iyzico Wave 3.5, yeni analytics widget) C grubu allowlist'i de güncelle.
+**Yap**: Yeni 3rd party script eklenirken (örn. yeni analytics widget, payment provider) C grubu allowlist'i de güncelle.
 
 ### 37.9 Prisma cascade audit (2026-05)
 
@@ -4200,7 +4198,7 @@ bu §38.0 özeti.
 - HIGH 4 Platforms 12-card grid (§38.30) — multi-restaurant aggregate view
 - API & Webhook tab UI (`/api/api-keys` + `/webhooks` backend hazır, UI scope büyük)
 - 2FA + Sessions + SSO UI (backend kalmış, UI silinmiş, low adoption — §34.1)
-- Account freeze + delete backend (Iyzico Wave 3.5 sonrası)
+- Account freeze + delete backend (Stage 113 §38.193 Wave B4 ile delete grace + cron canlı; freeze ayrı endpoint scope)
 - **Marketing feature parity** (Stage 135 §38.215 audit) — owner sidebar'da prominent ama marketing'de detay sayfası yok:
   - `/features/google-reviews` — Google Business Profile entegrasyonu (Stage 125-129 + §43 Reputation OS suite). Auto-draft + rating impact tracking + health snapshot vurgusu.
   - `/features/qr-studio` — QR oluşturma + edit + history + analytics (mevcut `/solutions/qr-generator` sadece design tool).
@@ -4324,6 +4322,7 @@ GitHub PR referansı.
 - §38.182 — Stage 102 (PR TBD) Skeleton wave 4 — owner settings page server hydration. Kullanıcı sorusu: "Owner paneldeki tüm sayfalara skeleton loading iyi midir?" Cevap: server hydration daha iyi (skeleton flash → 0). Stage 101 wave 3 audit kapsam dışıydı — `dashboard/restaurants/[id]/settings/page.tsx` (532 LOC, 4× useState loading, 3× useEffect, tek `/api/restaurants/${id}` fetch ile 50-field payload). 3 paralel Explore agent envanteri owner panel'in geri kalanını gösterdi: ya zaten Stage 101'de done (account/qr/restaurants/[id]), ya zaten server-rendered (analytics/platforms/restaurants list), ya statik/redirect (announcements/menu hub/guide/profile/notifications/integrations), ya defer (`google-reviews` ~1620 LOC, `feedbacks` ~800 LOC, `restaurants/[id]/menu` ~1700 LOC). **Bu PR sadece settings page**. **Pattern**: (1) `page.tsx` → `RestaurantSettingsClient.tsx` rename + `initialRestaurant?: RestaurantPayload | null` prop, (2) `useState(initialRestaurant ?? null)` + `useState(initialRestaurant === undefined)` + `useRef(initialRestaurant !== undefined)`, (3) `useEffect` skipFirstFetchRef guard ile ilk fetch atla, (4) yeni `page.tsx` server component — cookies + verifyJwt + `prisma.restaurant.findFirst({ where: { id, userId }, select: { ...50 fields explicit, §14.1 defensive } })` + 50-field mapping block, (5) `if (loading) return null` clean-slate (eski "Yükleniyor..." spinner kaldırıldı). **Sapma**: parent `RestaurantDetailClient` not-found durumda `initialData = null` kullanırken bu PR `undefined` kullanır → team_member fallback senaryosunda client-fetch çalışır, gereksiz error UI gösterilmez (settings page'in security/danger section'ları team_member erişimi için kritik). **Cross-token scope**: `user_token && !adminToken` only. **Etki**: settings page'inde skeleton/spinner flash tamamen elimine — owner direct load anında content görür. Backend `/api/restaurants/[id]` kontratı dokunulmadı. **Audit out**: google-reviews wave 5 candidate (complex multi-state, ayrı sweep), feedbacks/menu builder Stage 101'de zaten defer. **§40.10 wave 4 line item** eklendi (settings page hydrated callsite listesine).
 
 - §38.211 — Stage 131 (PR #715) Google Business auto-retry tamamen kaldırıldı — shared API quota anti-pattern. Kullanıcı raporu (verbatim): *"google yorumlarında kesinlikle girmiyor"* + ekran görüntüsü: 56s countdown + "Son senkron: az önce" + sandwich card görünür. §38.209 cache TTL strategy (120s positive + 90s negative + empty stamp write + exponential backoff 2 attempt) yumuşatıcıydı ama **owner hâlâ kotaya takılıyordu** çünkü temel sorun auto-retry'ın kendisiydi. **Root cause analizi (shared quota anti-pattern)**: Google API quota proje-geneli (1 req/min/proje, §5.1.1) — TÜM Buaze kullanıcıları aynı kotayı paylaşır. Owner ilk kez connect olduğunda cache yok → quota fail → empty stamp yazılıyor (§38.209 fix) → 60s countdown başlıyor → auto-retry force=true → cache bypass → Google'a tekrar git → ama bu sırada **başka Buaze client'ları da retry'da** → quota yine dolu (başkaları yakmış) → 429 → tekrar 60s countdown → loop. §38.207 self-loop fix (autoRetryFiredRef counter), §38.209 exponential backoff (MAX_AUTO_RETRY_ATTEMPTS=2) — hiçbiri **multi-client shared quota** problemini çözmüyordu çünkü farklı browser sekmeleri / farklı owner'lar / restoran switch cycle'ları aynı window içinde retry tetikliyordu. Pratik gözlem: ekran görüntüsü "Son senkron: az önce" ve **yine 56s countdown** — auto-retry tetiklenmiş, yine fail, yine countdown. Best practice for shared API quotas: **manuel intervention only**. **Fix bundle (4 değişim, 2 dosya)**: **Backend (`/api/restaurants/[id]/google/business/locations/route.ts`)**: (A) Quota fail response'tan `retryAfterSeconds` field'ı KALDIRILDI. Eskiden bu field frontend'in countdown + auto-retry'ı tetikliyordu; artık gönderilmiyor. (B) Mesaj rewrite — "auto-retry" wording çıkarıldı, owner-actionable: "Birkaç dakika bekleyin veya farklı hesapla bağlanın". `warning: 'GOOGLE_RATE_LIMITED'` ve empty stamp write (§38.209 negative cache) korunur. **Frontend (`/[locale]/dashboard/google-reviews/page.tsx`)**: (C) Auto-retry state'leri (`autoRetryFiredRef`, `autoRetryAttemptRef`, `MAX_AUTO_RETRY_ATTEMPTS`, `hasAutoRetried`) tamamen SİLİNDİ. Sandwich card copy variant'ı (`hasAutoRetried` flag-based) tek-variant'a indirildi. (D) Auto-retry useEffect tamamen kaldırıldı; tick decrement bloğu korundu (`locationRetryAfter` state'i UI cooldown amaçlı — "Yenile" buton 60s disable + countdown göstergesi, retry tetiği YOK). Backend `retryAfterSeconds` göndermese de frontend `setLocationRetryAfter(60)` quota fail durumunda UI-side cooldown başlatır (mash önleyici). Hard 429 path basitleştirildi (rate-limit retry-after handling kaldırıldı). **Etki**: 2 dosya — frontend ~+27/-49 satır (net azalma — 22 satır dead code temizliği), backend ~+22/-7 satır. Backend response shape kontrat değişimi: `retryAfterSeconds` artık dönmüyor, defansif drop frontend'de mevcut (rolling deploy window'unda eski backend response gelirse frontend `setLocationRetryAfter(60)` UI-side sabit cooldown başlatır). **Disipline (yeni §40.4 ek — shared API quota anti-pattern)**: Proje-geneli quota (Google Business 1/min/proje, OpenAI bulk, Anthropic API tier limit) altında çalışan endpoint'lerde **auto-retry YASAK**. Farklı client'ların retry'ı quota'yı tekrar tüketir → hep birlikte 429 alırlar → owner perspectifinden "hiç çalışmıyor" görünür. Manuel intervention only paterni: sandwich card / alternative action CTA + manuel "Yenile" buton (UI-side cooldown 60s, mash önleyici) + sarı banner (informational). Backend `retryAfterSeconds` field'ı sadece tek-client quota'ları için (rate-limited public API'ler, Resend mail send, vb.) anlamlı — proje-geneli quota'da göndermek frontend'i yanıltır. **Yapma**: Shared quota durumunda auto-retry tetikleme (exponential backoff bile shared quota'da çalışmaz çünkü cooperative clients arası senkronizasyon yok). Countdown UI'ı auto-retry trigger'ına bağlama — UI cooldown ve retry semantic ayrı concern'ler. `retryAfterSeconds` backend'ten gelmiyorsa "default 60s" assume etme — backend semantic'i değişmiş olabilir, defansif drop. **Yap**: Yeni shared-quota endpoint'i eklerken backend response'ta `retryAfterSeconds` ASLA gönderme. Mesaj actionable yaz ("birkaç dakika bekleyin veya alternative X"). UI'da owner için **direct manuel intervention CTA** (sandwich card paterni, §38.208). Countdown UI sadece "Yenile" buton disable amaçlı; retry tetiği yok. Operatör follow-up: quota artışı **GCP Console** üzerinden request edilebilir (24-48 saat onay süreci) — kod-level yumuşatma proje-geneli quota'nın temel kısıtını çözmez. **Chat prompt history (Stage 131)**: 2026-05-24 kullanıcı verbatim: *"google yorumlarında kesinlikle girmiyor"* (§38.209 PR #713 deploy sonrası). Ekran görüntüsü: 56s countdown + "Son senkron: az önce" + sandwich card görünür → smoking gun "auto-retry yine tetiklendi, yine quota dolu". Diagnostic chain: §38.209 backend cache TTL + negative cache yeterli görünüyordu ama yine fail → multi-client shared quota gerçeği anlaşıldı (Buaze kullanıcıları paralel olarak retry yapıyor). §38.211 auto-retry'ı tamamen kaldırarak quota burn loop'unu kırar. Operatör action: GCP Console'da quota increase request (zaten CLAUDE.md §5.1.1'de dokümante).
+- §38.229 — Stage 149 (PR TBD) Iyzico removal + checkout JSON→302 redirect fix. Kullanıcı talebi (verbatim): *"iyzico wave 3.5 kısmını her yerden kaldır nerede geçiyorsa ve iptal onun yerine dodo payments yaptık"* + *"admin webhook event audit gerekliyse yap ve diğer şeyler de gerekliycse profesyonelce yap maine merge et"* + *"kaldığın yerden devam et ve fiyatlandırma da al diyince böyle diyor {'checkout_url':'https://test.checkout.dodopayments.com/buy/pdt_0NfZD3pbkJVz1Zx0972sy?quantity=1&redirect_url=https%3A%2F%2Fbuaze.com%2Fdashboard%2Faccount'}"*. 2 ayak: **(A) Iyzico kaldırma** (tüm kod tabanı). `paymentProvider` enum slot `'manual' | 'dodo_payments' | 'iyzico'` → `'manual' | 'dodo_payments'`. Schema değişikliği YOK — Prisma `paymentProvider String @default("manual")` zaten string, enum constraint yok; mevcut DB row'larda 'iyzico' yok (Stage 137 §38.217 Lemon Squeezy zaten silindi Stage 140'ta, Iyzico prod'a hiç ulaşmadı). Type narrow yeterli + defensive code (`p.paymentProvider === 'dodo_payments' ? 'dodo_payments' : 'manual'`). **6 kod dosyası**: `src/lib/subscription-plans.ts` (PublicPlan.paymentProvider + toPublicPlan + AdminPlanRow doc), `src/components/dashboard/BillingReadOnlyCard.tsx` (BillingSummary.source type narrow), `src/components/admin/PlansManager.tsx` (FormState type narrow + rowToForm defensive + provider badge `'Dodo'` only + select option 'iyzico' kaldırıldı), `src/app/api/admin/plans/route.ts` + `src/app/api/admin/plans/[id]/route.ts` (`ALLOWED_PAYMENT_PROVIDERS` set'inden 'iyzico' kaldırıldı). **13 comment cleanup dosyası**: `prisma/schema.prisma` (4 yorum — payment provider enum + BillingSubscription audit + BillingInvoice source), `src/app/admin/plans/page.tsx` (3 yer — description + roadmap), `src/app/admin/dashboard/page.tsx` (2 yer — MRR sentinel), `src/app/api/billing/{summary,invoices}/route.ts`, `src/app/api/admin/members/[id]/invoices/route.ts`, `src/components/dashboard/BillingReadOnlyCard.tsx`, `src/components/dashboard/settings/sections/BusinessBillingSettings.tsx`, `src/components/dashboard/account/AccountPlanWidget.tsx`, `src/app/[locale]/dashboard/account/AccountSettingsClient.tsx` (Wave B4 reference fix), `src/lib/admin-bi.ts` (2 yorum), `src/lib/scaffolding.ts` (2 yorum — Stripe/Iyzico → Dodo Payments), `src/lib/legal/variables.ts` (PAYMENT_PROVIDER defaultValue 'Iyzico' → 'Dodo Payments'). **Tarihsel migration SQL** (`prisma/migrations/20260525000001_remove_lemon_squeezy/migration.sql`) dokunulmadı — geçmiş arşiv intact. **(B) Checkout JSON → 302 redirect fix** (kritik user-facing bug). Dodo SDK GET handler `Checkout({ type: 'static' })` JSON `{ checkout_url: 'https://test.checkout.dodopayments.com/buy/<pdt_id>?...' }` döndürüyordu. Browser `<a href="/api/checkout?productId=X">` tıklandığında JSON görüyordu (kullanıcı verbatim raporu); Dodo hosted page'e otomatik redirect YAPMIYORDU. Marketing /pricing + owner panel plan picker akışları silent broken. **Fix**: `/api/checkout/route.ts` rewrite — SDK handler module-level init (cold start optimize), `redirectFromSdkResponse(sdkResp, kind)` helper: SDK call internal → JSON parse → `data.checkout_url` extract → `NextResponse.redirect(url, 302)`. SDK 4xx/5xx fail durumunda response pass-through (debug için kullanıcı body görür) + Sentry warning. `checkout_url` parse fail / missing → 502 + Sentry error. Hem GET (static) hem POST (session) handler bu wrapper'ı kullanır. **CLAUDE.md güncellemeleri**: §18 (`IYZICO_*` env table row kaldırıldı, strategic note Dodo'ya geçti), §28 (Zod preferred billing alanı "Iyzico Wave 3.5" → "Dodo Payments §44"), §29 (önemli integration "Iyzico" → "Dodo Payments"), §30 (`iyzipay-node` dep table row kaldırıldı), §34.1 (hazırda korunan billing field'ları rationale güncel), §37.8 (yeni 3rd party script örneği "Iyzico Wave 3.5" → "yeni payment provider"), §38.A backlog (account freeze + delete entry Wave B4 §38.193 closure'la güncel), §44.1 + §44.3 (paymentProvider + source enum 2-state, 'iyzico' iptal notu eklendi), §44.3.1 + §44.3.2 webhook docs (Iyzico mentions → generic provider örneği), §44.5 Hybrid (Iyzico TR pazar item iptal), §44.9 backlog (Iyzico Wave 3.5 item kaldırıldı), §44.10 Yap rule (yeni provider örneği "Iyzico" → "Stripe / başka TR provider"). **Out of scope (operatör onayı bekleyen)**: Admin webhook event audit UI (`/admin/billing/events`) — kullanıcı "gerekliyse yap" dedi, mevcut Dodo dashboard + Sentry warnings + BillingInvoice DB audit trail yeterli (üst operasyonel ihtiyaç gelmedikçe ek UI gereksiz, §44.9'da backlog item olarak intact). Ops alert helper `notifyOpsOfBillingFailure` ayrı PR'a defer (CLAUDE.md §21.33 paterni reuse). **Disipline (yeni §44.5+ ek — provider deprecation pattern)**: Bir external provider planı iptal edildiğinde 3 katman temizliği yapılır: (i) kod tarafı type narrow (TypeScript enum slot drop) + defensive runtime fallback (legacy DB row için 'manual'a düşür), (ii) dokümantasyon (CLAUDE.md backlog item ✅ closed, references future-tense'den past-tense'e, replacement provider'a redirect), (iii) test/migration impact — schema string field'ında migration gerekmez (Prisma enum yerine string kullanılırken yeni constraint yok). **Yapma**: tarihsel closure log Iyzico mentions silme (audit trail bozulur — Stage X §38.X PR # historical context). Schema'dan field tipi drop etmek (DB column'u eski 'iyzico' string'leri tutsa bile defensive runtime narrow ile sorun yok). Migration ile DB'deki eski 'iyzico' row'ları update etmek (production'da hiç yoktu — gereksiz risk). **Yap**: type narrow + defensive runtime fallback (legacy row + future drift için). Stage closure log'da neden iptal edildi rationale ekle. CLAUDE.md replacement provider'a redirect ettir (gelecek session'lar provider eklerken yeni provider paterni izlesin). **Chat prompt history (Stage 149)**: 2026-05-26 kullanıcı 3 verbatim talep — (1) Iyzico kaldırma + Dodo replacement, (2) admin webhook audit gerekliyse, (3) checkout JSON görünüyor (URL paylaştı). AskUserQuestion atlanmadı — talep deterministik; admin webhook audit UI scope-defer kararı kullanıcı "gerekliyse" ifadesi + mevcut Dodo dashboard yeterli analizi. Hukuki/disipline override yok.
 - §38.228 — Stage 148 (PR TBD) Dodo checkout wiring — marketing /pricing CTAs + owner panel inline plan picker. Kullanıcı raporu (verbatim): *"dodo payments için fiyatlandırmadan üye girişi yapınca yükselt diyince de checkout ekranına vs. gitmiyor bunları da çözüp maine merge eder misin? ve owner panelde de direk yükselt diyince checkout kısmına gidebilir."* Stage 140 §38.220 Dodo foundation + Stage 145 §38.225 USD-only seed + Stage 146 §38.226 DB tier doğru product ID binding tamamlandı, ama CLAUDE.md §44.9 backlog'unda "/pricing checkout wiring" hâlâ açıktı — marketing kart CTA'sı `buttonHref` fallback ile register/contact'a gidiyordu, Dodo product ID'ler render katmanına ulaşmıyordu. Owner panel `BillingReadOnlyCard` "Planı yükselt" da `/tr/pricing`'e link atıyordu (marketing turu, fazla adım). **Fix bundle (3 dosya)**: **(A) `src/lib/subscription-plans.ts`** — `PublicPlan` interface'ine `paymentProvider: 'manual' | 'dodo_payments' | 'iyzico'` + `dodoProductId: string | null` field'ları eklendi. `toPublicPlan(row, locale)` projeksiyon bu field'ları expose ediyor — admin tarafından set edilmiş value'lar marketing + owner panel render katmanına nüfuz ediyor. `AdminPlanRow`'da zaten mevcut bu field'lar (Stage 140 schema migration); sadece public surface'e expose. **(B) `src/components/marketing/PricingPlans.tsx`** — CTA conditional split: `paymentProvider === 'dodo_payments'` + `dodoProductId` non-null ise raw `<a href="/api/checkout?productId=<id>">` (Dodo SDK static checkout handler, Dodo hosted page'e 302 redirect chain takip eder). Aksi halde mevcut Next `<Link href={buttonHref}>` fallback (register/contact legacy akışı). Wired olmayan tier "Yakında" benzeri visual değişmiyor — kart aynı görünür, butonun href'i sadece register'a düşer (graceful degrade). **(C) `src/components/dashboard/BillingReadOnlyCard.tsx`** — "Planı yükselt" hero CTA: `<a href="/pricing">` → `<button onClick={handleOpenPicker}>`. Yeni `pickerOpen` + `pickerPlans` + `pickerLoading` + `pickerError` state, `handleOpenPicker` `/api/plans?locale=...` lazy-fetch (modal açıldığında, mount-scope cache). Modal primitive (`<Modal onClose title size={780}>`) — children içinde 3-col `<ul>` plan grid: tier name + description + monthlyShown (discount-aware) + first 4 features + CTA. Wired tier'lar `<a href="/api/checkout?productId=<id>">` lime/dark Pulse pill, wired-değil tier'lar disabled "Yakında" + title attribute açıklayıcı. **Modal primitive note**: `<Modal>` `open` prop almıyor (CLAUDE.md §23.3); conditional render paterni `{pickerOpen && <Modal>...}` kullanıldı (existing customer + restaurants + menu callsite paterniyle parity). `description` prop yok — subtitle children içine taşındı (`-mt-1 mb-4` spacing). Modal `size` `number | string` kabul ediyor; 780px Pulse 3-col grid breakpoint için optimum (sm: 2-col fallback, lg: 3-col). **Etki**: 3 dosya (subscription-plans.ts +~12/-0 + PricingPlans.tsx ~+25/-9 + BillingReadOnlyCard.tsx ~+155/-5) + CLAUDE.md (§44.9 ✅ + §38.228). Backend kontratları intact (`/api/checkout` GET handler + Dodo SDK + `/api/plans` GET endpoint hiç dokunulmadı). **Disipline (yeni §44 ek — Dodo product ID wiring discipline)**: yeni tier eklenirken admin /admin/plans editöründe `paymentProvider: 'dodo_payments'` + `dodoProductId: 'pdt_xxx'` set ZORUNLU (yoksa marketing + owner panel UI CTA'sı silent fallback'e düşer — kullanıcı "Subscribe" tıklasa register'a gider, beklenmeyen davranış). Bu marketing parity + owner self-service akışı için single config source. Yeni currency eklenmesi gerekirse (EUR/GBP) Dodo dashboard'a yeni product ID + admin paneline yeni field eklemek gerekir (tek-product-per-tier paterni intact). **Yapma**: `<Link>` (Next router) ile `/api/checkout?productId=...` çağırma — `<a>` raw HTML anchor kullan. Next router internal navigation cache + prefetch route handler'ı yanlış yorumlayabilir (Dodo SDK 302 redirect chain'i kesintiye uğrar). API route'a navigate ederken her zaman raw anchor. Wired olmayan tier için "Disabled" + tooltip ekle (UI tarafında durumu açıklayıcı yap, kullanıcı "neden tıklayamıyorum" sormasın). Marketing /pricing'i kaldırıp sadece owner panel modal'ı kullanma — public discovery için marketing kartları kritik (logged-out kullanıcı registration funnel). **Yap**: Yeni Dodo wired tier eklerken: schema `paymentProvider='dodo_payments'` + `dodoProductId='pdt_xxx'` set (admin /admin/plans inline edit veya seed endpoint), Dodo dashboard product oluştur + ID kopyala. Owner self-service akışında Webhook handler kullanıcıyı `metadata.user_id` yoksa email lookup ile resolve eder (mevcut Dodo SDK paterni intact). Marketing pricing + owner panel modal aynı `/api/checkout?productId=<id>` static endpoint'i tüketir — drift kaynağı yok. **Chat prompt history (Stage 148)**: 2026-05-25 kullanıcı verbatim (yukarıda) + §44.9 backlog'u "/pricing checkout wiring" hâlâ açık olarak listeliyordu, bu PR'da kapatıldı. AskUserQuestion atlanmadı — talep deterministik (CLAUDE.md §44 mimari ve backlog plan zaten dokümanteydi, sadece UI render katmanına çıkarmak kaldı). Hukuki/disipline override yok — Pulse §11 + Modal §23.3 + Dodo SDK §44 hepsi intact.
 - §38.227 — Stage 147 (PR TBD) Firebase Google sign-in COOP fix (CLAUDE.md §37.8 B-grubu kapama). Kullanıcı raporu: browser console'da Firebase popup auth sırasında 8× `Cross-Origin-Opener-Policy policy would block the window.closed call` + 2× `window.close call` warning + `/api/auth/google 403`. **Kök neden**: `next.config.ts` `headers()` array'inde COOP header **set DEĞİL** → Vercel/Chrome default davranışında Firebase `signInWithPopup`'ın same-origin popup'ına `popup.closed` polling + `popup.close()` cleanup çağrıları "would block" warning'i tetikliyordu. Bu warning her çağrıda DOM exception throw etmiyordu ama Firebase auth state machine'i destabilize ediyordu (popup işlemi tamamlanıyor ama opener context cleanup hatalı). **Fix**: site-wide `Cross-Origin-Opener-Policy: same-origin-allow-popups` header eklendi (`next.config.ts:160` `/:path*` source). `-allow-popups` variant kanonik: (i) same-origin popup'a `.closed`/`.close()` erişimi açık (Firebase auth iframe + popup için zorunlu), (ii) cross-origin popup'a opener context isolation korunur (Spectre-class protection intact), (iii) Firebase resmi rehberi tam olarak bu değeri öneriyor. CLAUDE.md §37.8 B-grubu COOP item ✅ kapatıldı (CORP backlog kalır). **403 not'u**: `/api/auth/google` endpoint kendisi 403 göndermiyor; 403 muhtemelen ya (a) COOP destabilization → idToken corrupt → recaptcha action mismatch (Vercel'de `RECAPTCHA_ENFORCE='true'` set edildiyse hard 403, §37.3 deferred #2), ya da (b) `handleOAuthSignIn` email_verified=false / isActive=false (`oauth.ts:74/154`). COOP fix popup akışını stabilize edince 403 muhtemelen ortadan kalkar; hâlâ devam ederse operatör Vercel env'de `RECAPTCHA_ENFORCE=false` doğrulamalı (monitor mode, soft-pass). **Etki**: 1 dosya — `next.config.ts` (+15/-1 satır site-wide headers array). CLAUDE.md §37.8 + bu §38.227. Backend kontratları + auth flow + reCAPTCHA + Firebase SDK callsite hiç dokunulmadı. **Disipline (CLAUDE.md §37.8 enforcement)**: yeni 3rd-party popup-based auth/sign-in flow eklerken (Apple Sign-in, GitHub OAuth popup, vb.) COOP `same-origin-allow-popups` site-wide enforce zaten kapsar — özel path override gerekmez. Strict `same-origin` veya `same-origin-allow-popups-to-any-popup` (deneysel) **YASAK** — Firebase popup auth'u koparır. **Chat prompt history (Stage 147)**: 2026-05-25 kullanıcı verbatim: *"aşağıdaki hatayı çöz ve maine merge et"* + browser console log (8× COOP warning + 2× window.close warning + 2× `/api/auth/google` 403 + Grammarly-check Permissions-Policy `unload` violation — bu sonuncusu noise, third-party extension'dan, code-level fix gerektirmez). AskUserQuestion atlanmadı — talep deterministik (COOP fix CLAUDE.md §37.8 B-grubu backlog'ta hazır, operatör tetiği bekliyordu). Hukuki/disipline override yok — Pulse §11 + Auth flow §40.4.A + Security §37.8 hepsi intact.
 - §38.226 — Stage 146 (PR TBD) /admin/plans perf — 3 sequential Prisma read → $transaction batch + production DB rows direct fix. Kullanıcı talebi: *"şimdi tüm hız sorunlarını da optimize et ve maine yollayıp bu session'ı kapat"* + *"tüm her şeyi sen yap ben yapamıyorum"* (operatör force-seed yapamıyor). 2 ayak: **(A) DB direct fix** (Supabase MCP execute_sql) — Stage 145 sonrası mevcut SubscriptionPlan row'larında 3 critical drift tespit: (i) Growth tier dodo_product_id `pdt_0NfZDHioCEcSDhghMHLae` (Scale ID) yanlış → `pdt_0NfZD3pbkJVz1Zx0972sy` (Growth ID) düzeltildi, (ii) price_try 2/1999/2490 hâlâ dolu → 0/0/0 set, (iii) price_usd 1/59/83 Dodo dashboard'la drift → 1/40/100 set (Starter $1 test / Growth $40 / Scale $100). 3 UPDATE single SQL transaction. **(B) /admin/plans/page.tsx perf** — 3 sequential Prisma read (owners + recentPaid + managedPlans) → `Promise.all([$transaction([owners, recentPaid]), getAllPlansForAdmin()])`. owners + recentPaid tek `$transaction` (CLAUDE.md §40.1 Supabase pooler connection_limit=1, tek protocol round-trip); managedPlans helper kendi pool client'ı alıyor, paralel `Promise.all`. Cold load ~80-150ms tasarruf (3 RT → 2 RT — managedPlans paralel + owners/recentPaid batched). **Operatör follow-up YOK** — kullanıcı force-seed yapamadığı için Supabase MCP ile direct DB fix uygulandı. Production /admin/plans'ı reload'la, 3 tier USD-only ($1/$40/$100) + doğru Dodo binding görünür. **Chat prompt history (Stage 146)**: 2026-05-25 kullanıcı verbatim (yukarıda) + *"tüm her şeyi sen yap ben yapamıyorum"*. AskUserQuestion atlandı (talep deterministik: perf + DB fix + maine + session close). Supabase MCP project ID `pifpmgilgioehprrbrbg`, organization vercel_icfg_nrsLLY8Wi070Kv6P4SDfB1IU.
@@ -5431,13 +5430,13 @@ field'ları eklendi.
    `app/<segment>/route.ts` Vercel adapter finalize çakışması olası
    kök neden).
 3. **Schema** — `SubscriptionPlan.paymentProvider` ('manual' |
-   'dodo_payments' | 'iyzico') + `SubscriptionPlan.dodoProductId` (1
-   product ID per tier — Lemon Squeezy 4-variant matrix'ten farklı,
-   Dodo product = SaaS tier, customer cycle/currency'i checkout
-   sayfasında seçer). `BillingSubscription.providerCustomerId` (Dodo
-   customer_id, /api/customer-portal redirect için). `BillingSubscription.source`
-   ('manual' | 'dodo_payments' | 'iyzico') + `cancelAtPeriodEnd` generic
-   field korunur.
+   'dodo_payments') + `SubscriptionPlan.dodoProductId` (1 product ID per
+   tier — Lemon Squeezy 4-variant matrix'ten farklı, Dodo product = SaaS
+   tier, customer cycle/currency'i checkout sayfasında seçer).
+   `BillingSubscription.providerCustomerId` (Dodo customer_id,
+   /api/customer-portal redirect için). `BillingSubscription.source`
+   ('manual' | 'dodo_payments') + `cancelAtPeriodEnd` generic field
+   korunur. Stage 149 §38.229 — eski 'iyzico' enum slot iptal edildi.
 4. **Hybrid manual + automated** — `BillingSubscription.source` field
    audit trail; admin `MemberBillingModal` Dodo-created row'ları
    override edebilir (enterprise/legacy/discount), `source` orijinal
@@ -5459,24 +5458,27 @@ field'ları eklendi.
 
 ```prisma
 model BillingSubscription {
-  source              String   @default("manual")    // 'manual' | 'dodo_payments' | 'iyzico'
+  source              String   @default("manual")    // 'manual' | 'dodo_payments'
   providerCustomerId  String?  @map("provider_customer_id")  // Dodo customer_id
   cancelAtPeriodEnd   Boolean  @default(false)       // generic scheduled-cancel flag
   // providerRef (existing @unique) reused — holds Dodo subscription_id
 }
 
 model SubscriptionPlan {
-  paymentProvider String  @default("manual")    // 'manual' | 'dodo_payments' | 'iyzico'
+  paymentProvider String  @default("manual")    // 'manual' | 'dodo_payments'
   dodoProductId   String?                       // 1 product ID per tier
 }
 ```
+
+Stage 149 §38.229 — eski 'iyzico' enum slot iptal edildi (Dodo Payments tek
+self-service sağlayıcı; admin manual override hybrid §44.5 intact).
 
 Lemon Squeezy 4-variant matrix (USD/TRY × monthly/yearly) **YOK** — Dodo
 paterni: 1 product ID, customer cycle/currency'i checkout sayfasında seçer.
 
 ### §44.3.1 Webhook URL canonical domain (Stage 143 §38.223)
 
-External webhook entegrasyonu kurarken provider dashboard'taki webhook URL **her zaman canonical domain** olmalı (Buaze için `https://www.buaze.com/api/webhook/<provider>`). Apex (`https://buaze.com/...`) Vercel platform-level 307 redirect dönüyor; webhook delivery sistemleri (Dodo, Stripe, Iyzico, vb.) 3xx **takip etmez** (body persistency + idempotency riski) → Failed sayar, POST hiç function'a ulaşmaz.
+External webhook entegrasyonu kurarken provider dashboard'taki webhook URL **her zaman canonical domain** olmalı (Buaze için `https://www.buaze.com/api/webhook/<provider>`). Apex (`https://buaze.com/...`) Vercel platform-level 307 redirect dönüyor; webhook delivery sistemleri (Dodo, Stripe, vb.) 3xx **takip etmez** (body persistency + idempotency riski) → Failed sayar, POST hiç function'a ulaşmaz.
 
 **Doğrulama** (yeni webhook entegrasyonu öncesi):
 ```bash
@@ -5487,7 +5489,7 @@ curl -X POST https://<apex>/api/webhook/xxx -d '{}' -H "Content-Type: applicatio
 
 ### §44.3.2 Webhook handler diagnostic wrapper pattern (Stage 143 §38.223)
 
-Yeni webhook entegrasyonu (Iyzico Wave 3.5, Stripe, PayPal, vb.) eklerken signature verify failure path'lerinde structured diagnostic log + Sentry warning ekle. PII-safe (raw secret YOK):
+Yeni webhook entegrasyonu (Stripe, PayPal, vb.) eklerken signature verify failure path'lerinde structured diagnostic log + Sentry warning ekle. PII-safe (raw secret YOK):
 
 ```ts
 const sdkWebhookHandler = Webhooks({ webhookKey: process.env.X_SECRET, ... });
@@ -5522,7 +5524,7 @@ Production'da 30 saniyede kök neden tespit (apex redirect, secret mismatch, hea
 
 **Yapma**: Raw secret değer log'la (KVKK + güvenlik). Customer email/name diagnostic'e ekle. Body content (sadece error message slice 200).
 
-**Yap**: Yeni webhook handler eklerken bu paterni klonla, `Sentry.captureMessage` tag'lerini provider ismine göre güncelle (`integration: 'iyzico' / 'stripe' / ...`).
+**Yap**: Yeni webhook handler eklerken bu paterni klonla, `Sentry.captureMessage` tag'lerini provider ismine göre güncelle (`integration: 'stripe' / 'paypal' / ...`).
 
 ### §44.4 Webhook event taxonomy
 
@@ -5547,7 +5549,9 @@ Owner self-service Dodo üzerinden subscribe/upgrade/cancel yapar. Admin
 - **Enterprise deal'lar** — custom fiyat, off-platform anlaşma
 - **Legacy / grandfathered users** — early adopter pricing
 - **Refund / credit** — admin manuel credit (audit log'lanır)
-- **Iyzico TR pazar** — gelecek scope (`paymentProvider='iyzico'`)
+
+Stage 149 §38.229 — eski "Iyzico TR pazar" planı iptal edildi; Dodo Payments
+tek self-service sağlayıcı, admin manual override hybrid yeterli.
 
 `BillingSubscription.source` audit kaynak; Dodo-created row üzerine admin
 override yapılabilir, `source='dodo_payments'` korunur.
@@ -5602,14 +5606,15 @@ picker Modal → her tier için aynı static checkout link.
 
 🚧 **Admin event audit UI** — `/admin/billing/events` — Dodo webhook
 event'lerini tablo halinde göster + failed handler retry. Şu an Dodo
-dashboard'tan görülebilir.
-
-🚧 **Iyzico Wave 3.5** — TR pazar için ayrı provider. `paymentProvider`
-enum'da `'iyzico'` slot mevcut; helper + webhook + product ID field ayrı
-PR.
+dashboard'tan görülebilir (üst ihtiyaç gelmedikçe ek UI gereksiz).
 
 🚧 **Ops alert** — `notifyOpsOfBillingFailure` helper (CLAUDE.md §21.33
 paterni) — `payment.failed` event'lerinde admin'e mail.
+
+> Stage 149 §38.229 — eski "Iyzico Wave 3.5" backlog item iptal edildi.
+> Dodo Payments tek self-service sağlayıcı; ileride başka TR-spesifik
+> provider gereği çıkarsa yeni `paymentProvider` enum literal + helper +
+> webhook + product ID field eklenir (§44.4 generic pattern reuse).
 
 ### §44.10 Yapma / Yap
 
@@ -5633,9 +5638,10 @@ paterni) — `payment.failed` event'lerinde admin'e mail.
 - Yeni Dodo event handler eklerken: idempotent upsert + `resolveUserId`
   (metadata preferred) + `resolveTierFromProduct` + Prisma sequential
   await (CLAUDE.md §40.1 connection_limit=1)
-- Yeni payment provider eklerken (Iyzico) `BillingSubscription.source`
-  + `paymentProvider` enum literal ekle, `providerCustomerId` field
-  reuse (generic), `providerRef` reuse (subscription/transaction ID)
+- Yeni payment provider eklerken (gelecek: Stripe / başka TR provider)
+  `BillingSubscription.source` + `paymentProvider` enum literal ekle,
+  `providerCustomerId` field reuse (generic), `providerRef` reuse
+  (subscription/transaction ID)
 - Dodo product ID admin `/admin/plans` editöründen set edilir; eksik =
   o tier'da checkout button gizli
 - Webhook handler'da error catch + Sentry capture (tags: `integration:

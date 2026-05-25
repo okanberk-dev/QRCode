@@ -127,7 +127,7 @@ export default async function AdminPlansPage() {
       <PageHeader
         eyebrow="ABONELİKLER"
         title="Plan yönetimi"
-        description="Müşterilerinin plan dağılımını izle, paket fiyatlandırmasını incele. Iyzico ödeme entegrasyonu Wave 3.5'te canlıya alınacak — şimdilik write-side okuma modunda."
+        description="Müşterilerinin plan dağılımını izle, paket fiyatlandırmasını incele. Dodo Payments ile self-service checkout aktif — admin manuel override (enterprise/legacy/refund) intact."
       />
 
       <div className="grid gap-3.5 grid-cols-2 lg:grid-cols-4 mb-4">
@@ -244,7 +244,8 @@ export default async function AdminPlansPage() {
       <PlansManager initialPlans={managedPlans} initialUsage={planUsage} />
 
       {/* Roadmap note — Stage 142 §38.222 Dodo Payments canlıya alındı.
-          Iyzico Wave 3.5 TR pazar için ayrı provider. */}
+          Stage 149 §38.229 — Iyzico provider iptal edildi (Dodo Payments
+          tek self-service sağlayıcı). */}
       <div
         className="mt-4 p-4 rounded-xl flex gap-3 flex-col sm:flex-row"
         style={{ background: '#EAF9B8', border: '1px solid #C6F24E' }}
@@ -259,8 +260,8 @@ export default async function AdminPlansPage() {
           <strong>Ödeme entegrasyonu:</strong> Dodo Payments canlıda (Stage 142
           §38.222). Bir tier için `paymentProvider=&apos;dodo_payments&apos;` +
           `dodoProductId=&apos;pdt_xxx&apos;` set edildiğinde owner billing
-          panelinde &quot;Aboneliği yönet&quot; CTA aktif olur. Iyzico TR pazar
-          için ayrı provider (Wave 3.5). Manuel plan değişiklikleri{' '}
+          panelinde &quot;Aboneliği yönet&quot; CTA aktif olur. Manuel plan
+          değişiklikleri{' '}
           <Link href="/admin/members" className="underline text-[#0A0A0A] font-medium">
             İşletme Sahipleri
           </Link>{' '}

@@ -41,8 +41,9 @@ interface FormState {
   discountLabelTr: string;
   discountLabelEn: string;
   /** Payment provider (CLAUDE.md §44). 'manual' tier'lar checkout butonu
-   *  göstermez; 'dodo_payments' tier'lar `dodoProductId` slot'u kullanır. */
-  paymentProvider: 'manual' | 'dodo_payments' | 'iyzico';
+   *  göstermez; 'dodo_payments' tier'lar `dodoProductId` slot'u kullanır.
+   *  Stage 149 §38.229 — eski 'iyzico' enum slot kaldırıldı (provider iptal). */
+  paymentProvider: 'manual' | 'dodo_payments';
   dodoProductId: string;
 }
 
@@ -99,8 +100,10 @@ function rowToForm(p: AdminPlanRow): FormState {
     discountValue: p.discountValue != null ? String(p.discountValue) : '',
     discountLabelTr: p.discountLabelTr || '',
     discountLabelEn: p.discountLabelEn || '',
-    paymentProvider: (p.paymentProvider === 'dodo_payments' || p.paymentProvider === 'iyzico'
-      ? p.paymentProvider
+    // Stage 149 §38.229 — 'iyzico' provider iptal edildi; legacy DB row'larda
+    // bu değer kalmış olabilir, defansif olarak 'manual'a düşür.
+    paymentProvider: (p.paymentProvider === 'dodo_payments'
+      ? 'dodo_payments'
       : 'manual') as FormState['paymentProvider'],
     dodoProductId: p.dodoProductId ?? '',
   };
@@ -667,7 +670,11 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                             isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
                           }`}
                         >
-                          {p.paymentProvider === 'dodo_payments' ? 'Dodo' : 'Iyzico'}
+                          {/* Stage 149 §38.229 — Iyzico kaldırıldı; sadece
+                              dodo_payments badge gösterilir. Manual tier'lar
+                              `paymentProvider !== 'manual'` guard'ı ile zaten
+                              bu satıra girmiyor. */}
+                          Dodo
                           {p.dodoProductId ? ' ✓' : ' (eksik)'}
                         </span>
                       </>
@@ -1079,9 +1086,10 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   }
                   className="bz-input"
                 >
+                  {/* Stage 149 §38.229 — Iyzico iptal edildi. Yalnız 2 seçenek:
+                      manual (admin override) ve dodo_payments (self-service). */}
                   <option value="manual">manual (admin yönetir)</option>
                   <option value="dodo_payments">dodo_payments (self-service)</option>
-                  <option value="iyzico">iyzico (yakında — Wave 3.5)</option>
                 </select>
               </Field>
               {form.paymentProvider === 'dodo_payments' && (

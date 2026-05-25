@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 
 const ALLOWED_PERIODS = new Set(['month', 'year', 'one-time']);
 const ALLOWED_DISCOUNT_TYPES = new Set(['percent', 'fixed']);
-const ALLOWED_PAYMENT_PROVIDERS = new Set(['manual', 'dodo_payments', 'iyzico']);
+// Stage 149 §38.229 — Iyzico provider iptal edildi; sadece manual + dodo_payments.
+const ALLOWED_PAYMENT_PROVIDERS = new Set(['manual', 'dodo_payments']);
 const PRODUCT_ID_RE = /^[a-zA-Z0-9_-]{1,80}$/;
 
 function asString(v: unknown, max = 1000): string {

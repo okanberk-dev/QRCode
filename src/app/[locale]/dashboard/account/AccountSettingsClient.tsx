@@ -29,9 +29,10 @@ import { AccountPlanWidget } from "@/components/dashboard/account/AccountPlanWid
 import { AccountInvoicesWidget } from "@/components/dashboard/account/AccountInvoicesWidget";
 import { AccountDangerZone } from "@/components/dashboard/account/AccountDangerZone";
 import { GoogleConnectFlashBanner } from "@/components/dashboard/google/GoogleConnectFlashBanner";
-// Stage 79 §38.159 — AccountDangerZone tamamen kaldırıldı (kullanıcı kararı).
-// Backend yoktu (Iyzico Wave 3.5 sonrası scope), UI placeholder confusing UX
-// yaratıyordu. Right rail artık 2 widget: Plan + Invoices.
+// Stage 79 §38.159 — AccountDangerZone removed (kullanıcı kararı) → §38.193
+// Stage 113'te Wave B4 ile geri eklendi (account deletion + 30g grace + cron).
+// Wave B4 backend canlı; DangerZone import edilebilir, bu dosya right-rail
+// 2 widget'la (Plan + Invoices) intact kalır.
 import AdminBackLink from "@/components/dashboard/AdminBackLink";
 
 /**

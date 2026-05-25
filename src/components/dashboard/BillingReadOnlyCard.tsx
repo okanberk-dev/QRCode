@@ -25,8 +25,9 @@ interface BillingSummary {
   subscriptionPlanId?: string | null;
   tier?: { id: string; name: string | null; isFeatured: boolean } | null;
   /** §44 self-service provider signals — null/'manual' = manual admin flow.
-   *  'dodo_payments' = self-service (Dodo customer portal + cancel via portal). */
-  source?: 'manual' | 'dodo_payments' | 'iyzico' | null;
+   *  'dodo_payments' = self-service (Dodo customer portal + cancel via portal).
+   *  Stage 149 §38.229 — eski 'iyzico' enum slot kaldırıldı (provider iptal). */
+  source?: 'manual' | 'dodo_payments' | null;
   cancelAtPeriodEnd?: boolean;
   /** Dodo customer_id — needed for /customer-portal redirect. */
   providerCustomerId?: string | null;
@@ -90,9 +91,9 @@ function formatCurrency(amount: number, currency: string | null, locale: 'tr' | 
  * screenshot: dark "Mevcut Plan" hero + payment method + billing address +
  * invoice table.
  *
- * All edit CTAs are disabled with a banner explaining management lives in
- * the admin panel (Iyzico provider wiring deferred to Wave 3.5 per
- * CLAUDE.md §18). Owner cannot self-serve billing changes.
+ * Self-service via Dodo Payments customer portal (Stage 142 §38.222) when
+ * `summary.source === 'dodo_payments'`; otherwise admin-managed (manual
+ * override hybrid §44.5). Owner sees "Aboneliği yönet" → Dodo portal redirect.
  */
 export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) {
   const [summary, setSummary] = useState<BillingSummary | null>(null);
