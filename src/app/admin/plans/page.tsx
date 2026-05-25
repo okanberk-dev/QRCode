@@ -34,11 +34,33 @@ export default async function AdminPlansPage() {
   const payload = await verifyJwt(token);
   if (!payload || !isAdminRole(payload.role as string | undefined)) redirect('/admin');
 
-  // Plan distribution from User table (workspace owners). Backend untouched.
-  const owners = await prisma.user.findMany({
-    where: { role: 'restaurant_owner' },
-    select: { id: true, plan: true, trialEndsAt: true, isActive: true, createdAt: true },
-  });
+  // §38.226 Stage 146 perf optimize — 3 sequential Prisma read tek
+  // $transaction batch'e alındı (CLAUDE.md §40.1 + §40.10 — Supabase pooler
+  // connection_limit=1, paralel read'ler tek connection üstünde sıralı
+  // çalışır). Pre-fix: 3 protocol round-trip; post-fix: 1 protocol RT
+  // (~80-150ms cold load tasarrufu).
+  //
+  // `getAllPlansForAdmin()` internal'da kendi prisma çağrılarını yapar;
+  // helper'ı transaction içine alamadığımız için 2 ana read'i (owners +
+  // recentPaid) transaction'la, managedPlans paralel `Promise.all`'a
+  // alındı — managedPlans helper kendi pool client'ını alır, ortak
+  // transaction'a girmez ama paralel çalışır.
+  const [ownersAndPaid, managedPlans] = await Promise.all([
+    prisma.$transaction([
+      prisma.user.findMany({
+        where: { role: 'restaurant_owner' },
+        select: { id: true, plan: true, trialEndsAt: true, isActive: true, createdAt: true },
+      }),
+      prisma.user.findMany({
+        where: { role: 'restaurant_owner', plan: { not: 'trial' } },
+        select: { id: true, name: true, email: true, plan: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+    ]),
+    getAllPlansForAdmin().catch(() => []),
+  ]);
+  const [owners, recentPaid] = ownersAndPaid;
 
   const totalOwners = owners.length;
   const activeOwners = owners.filter((o) => o.isActive).length;
@@ -64,18 +86,6 @@ export default async function AdminPlansPage() {
     if (bucket) bucket.count += 1;
     else planBuckets[planBuckets.length - 1].count += 1; // fallback to trial
   }
-
-  // Recently joined paid customers (last 5).
-  const recentPaid = await prisma.user.findMany({
-    where: { role: 'restaurant_owner', plan: { not: 'trial' } },
-    select: { id: true, name: true, email: true, plan: true, createdAt: true },
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-  });
-
-  // Subscription plans — DB-driven, managed by PlansManager below.
-  // Boş ise PlansManager kullanıcıya "Varsayılan paketleri yükle" butonu sunar.
-  const managedPlans = await getAllPlansForAdmin().catch(() => []);
 
   // §38.224 — Per-plan user count + DB-driven MRR.
   // §38.225 Stage 145 — USD-only MRR (priceUsd primary, priceTry kaldırıldı).
