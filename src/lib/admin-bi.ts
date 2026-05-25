@@ -7,8 +7,9 @@
 //   4. Active vs trial cohort retention (kohort bazlı, signup ay'a göre)
 //
 // Helper saf: input window, output bucket array. CLAUDE.md §11.9 paterni
-// reuse — MRR PLAN_PRICES sentinel sabiti dashboard ile aynı; Iyzico
-// billing geldiğinde gerçek invoice toplamı.
+// reuse — MRR PLAN_PRICES sentinel sabiti dashboard ile aynı; Dodo Payments
+// (Stage 142 §38.222) webhook invoice volume büyüdüğünde gerçek invoice
+// toplamına geçilebilir.
 //
 // Out of scope: per-workspace breakdown, SaaS metrics dashboard
 // (Baremetrics-tarzı), kohort retention curves grafiksel render. Şu an
@@ -17,8 +18,8 @@
 import { prisma } from '@/lib/prisma';
 
 // MRR sentinel prices — admin/dashboard + admin/plans ile aynı source.
-// CLAUDE.md §38.32 paterni: kod-içi sentinel; Iyzico billing geldiğinde
-// gerçek invoice tablosu kullanılır.
+// CLAUDE.md §38.32 paterni: kod-içi sentinel; Dodo Payments webhook invoice
+// volume büyüdüğünde gerçek BillingInvoice toplamına geçilebilir.
 export const PLAN_PRICES: Record<string, number> = {
   pro: 1499,
   growth: 899,

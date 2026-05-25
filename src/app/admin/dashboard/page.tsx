@@ -28,8 +28,9 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 // Plan tier sentinel prices used by the MRR estimation. Same source-of-truth
-// the /admin/plans page uses for its own MRR widget — when Iyzico billing
-// lands the prices move out of code.
+// the /admin/plans page uses for its own MRR widget — Dodo Payments webhook
+// invoices (Stage 142 §38.222) feed BillingInvoice rows; long-term MRR can
+// shift to DB sum once invoice volume is sufficient.
 const PLAN_PRICES: Record<string, number> = {
   pro: 1499,
   growth: 899,
@@ -135,8 +136,8 @@ export default async function AdminDashboardPage() {
     (o) => o.plan === 'trial' && o.trialEndsAt && o.trialEndsAt > now,
   ).length;
 
-  // Estimated MRR (sentinel prices). Iyzico billing geldiğinde gerçek invoice
-  // toplamı kullanılır.
+  // Estimated MRR (sentinel prices). Dodo Payments webhook invoice volume
+  // büyüdüğünde gerçek BillingInvoice toplamına geçilebilir (Stage 142 §38.222).
   const computeMrr = (rows: { plan: string | null }[]) =>
     rows.reduce((acc, o) => {
       const plan = (o.plan || 'trial').toLowerCase();

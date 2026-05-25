@@ -224,7 +224,8 @@ export function AccountPlanWidget({
           (transparent border). Tasarım line 207: `style={{ flex: 1 }}` lime +
           `style={{ borderColor: 'rgba(255,255,255,0.18)', color: '#FFF' }}`
           ghost. Her ikisi de /pricing'e gider — placeholder subtree;
-          gerçek "Yönet" Iyzico Wave 3.5 sonrası ayrı endpoint'e yönlenir. */}
+          gerçek "Yönet" Dodo customer portal (Stage 142 §38.222) üzerinden
+          BillingReadOnlyCard CTA'sıyla ayrı yapılır. */}
       <div className="mt-5 grid grid-cols-2 gap-2">
         <Link
           href={`/${locale}/pricing`}

@@ -172,8 +172,8 @@ export async function GET(req: NextRequest) {
     {
       headers: {
         // Edge cache (CLAUDE.md §38.100 Stage 24). Plan + usage data —
-        // mutation frequency çok düşük (admin Iyzico flow'u Wave 3.5);
-        // 60s fresh + 5min SWR billing widget refresh için yeterli.
+        // mutation frequency düşük (admin manual override + Dodo webhook
+        // events); 60s fresh + 5min SWR billing widget refresh için yeterli.
         'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
       },
     },

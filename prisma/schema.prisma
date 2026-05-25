@@ -1359,9 +1359,10 @@ model BillingSubscription {
   /// türetir. Plan silinirse `SetNull` (audit history korunur).
   subscriptionPlanId String?           @map("subscription_plan_id")
   subscriptionPlan   SubscriptionPlan? @relation(fields: [subscriptionPlanId], references: [id], onDelete: SetNull)
-  // Pricing snapshot (Faz 2 — owner-readonly billing card). Manual values
-  // until Iyzico provider wires real payment events. amount in major currency
-  // unit (TRY default); billingCycle is informational, mirrors plan suffix.
+  // Pricing snapshot (Faz 2 — owner-readonly billing card). Dodo Payments
+  // webhook events (Stage 142 §38.222) populates this row; admin manual override
+  // (MemberBillingModal) yine destekli. amount major currency unit (USD default,
+  // §38.225); billingCycle informational, mirrors plan suffix.
   amount         Decimal?  @db.Decimal(10, 2)
   currency       String?   @default("TRY")
   billingCycle   String?   @map("billing_cycle") // monthly | yearly
@@ -1378,10 +1379,10 @@ model BillingSubscription {
   adminNotes     String?   @map("admin_notes") @db.Text
   // ── Payment provider fields (CLAUDE.md §44, generic) ──
   // `providerRef` (existing @unique) holds the active provider's subscription
-  // ID (Dodo Payments subscription_id, Iyzico tx ref, Stripe sub_xxx). `source`
-  // records who created the row — manual admin or one of the self-service
-  // providers. Manual admin can override provider-created rows (hybrid §44.5)
-  // but `source` tracks original creator for audit + future provider migration.
+  // ID (Dodo Payments subscription_id). `source` records who created the row
+  // — manual admin or self-service Dodo. Manual admin can override
+  // Dodo-created rows (hybrid §44.5) but `source` tracks original creator for
+  // audit. Stage 149 §38.229 — Iyzico iptal edildi; sadece manual + dodo.
   source                  String   @default("manual") @map("source")
   // Provider customer ID — distinct from `providerRef` (subscription) in
   // Dodo's data model. Needed for /customer-portal redirect (Dodo's portal
@@ -1556,16 +1557,18 @@ model BillingInvoice {
   // Admin-only notes (NEVER returned via owner endpoints; analogous to
   // BillingSubscription.adminNotes privacy guard).
   adminNotes    String?  @map("admin_notes") @db.Text
-  // ── Lemon Squeezy fields (CLAUDE.md §44, 2026-05) ──
-  // `providerRef` (existing @unique) reused for Lemon Squeezy order ID
-  // (data.id from order_created webhook). Below are LS-specific extensions only.
+  // ── Dodo Payments fields (CLAUDE.md §44, Stage 142 §38.222) ──
+  // `providerRef` (existing @unique) reused for Dodo Payments invoice/payment
+  // ID (data.id from payment.succeeded webhook). Below are Dodo-specific
+  // extensions only.
   //
-  // Public receipt URL from Lemon Squeezy (data.attributes.urls.receipt).
-  // Used as `pdfUrl` fallback — owner panel can link directly to LS receipt.
+  // Public receipt URL from Dodo Payments (data.attributes.receipt_url).
+  // Used as `pdfUrl` fallback — owner panel can link directly to Dodo receipt.
   receiptUrl    String?  @map("receipt_url")
   // Audit which provider created this invoice. 'manual' = admin
-  // BillingInvoiceModal (Iyzico Wave 3.5'a kadar manuel kayıt), 'lemon_squeezy'
-  // = webhook-generated from subscription_payment_success / order_created.
+  // BillingInvoiceModal (enterprise/legacy/refund override), 'dodo_payments'
+  // = webhook-generated from payment.succeeded. Stage 149 §38.229 — Iyzico
+  // iptal edildi; sadece manual + dodo_payments.
   source        String   @default("manual") @map("source")
   issuedAt      DateTime @default(now()) @map("issued_at")
   updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
@@ -1627,8 +1630,8 @@ model SubscriptionPlan {
   //                       (enterprise / legacy / discount). Checkout button
   //                       hidden on the public /pricing card.
   //   • 'dodo_payments' — self-service flow. Owner clicks /pricing CTA →
-  //                       /checkout → Dodo hosted page.
-  //   • 'iyzico'        — TR market future provider (Wave 3.5).
+  //                       /api/checkout → Dodo hosted page (Stage 142 §38.222).
+  //   (Stage 149 §38.229 — eski 'iyzico' enum slot iptal edildi.)
   //
   // `dodoProductId` is the Dodo Payments product ID for this tier (Dodo
   // product = a SaaS subscription tier; the customer picks billing cycle

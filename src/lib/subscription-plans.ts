@@ -35,13 +35,14 @@ export interface PublicPlan {
     discountedMonthly: number;
   };
   /**
-   * §44 Dodo Payments checkout wiring (Stage 148 §38.228).
+   * §44 Dodo Payments checkout wiring (Stage 148 §38.228, Stage 149 §38.229
+   * Iyzico drop).
    * Marketing /pricing kartı + owner panel "Planı yükselt" modal'ı bu iki
    * field'ı kontrol eder: `paymentProvider === 'dodo_payments'` + `dodoProductId`
    * non-null ise CTA `/api/checkout?productId=<id>` (Dodo static checkout)
    * link verir. Aksi halde fallback `buttonHref` (legacy register/contact akışı).
    */
-  paymentProvider: 'manual' | 'dodo_payments' | 'iyzico';
+  paymentProvider: 'manual' | 'dodo_payments';
   dodoProductId: string | null;
 }
 
@@ -71,7 +72,7 @@ export interface AdminPlanRow {
   discountValue: number | null;
   discountLabelTr: string | null;
   discountLabelEn: string | null;
-  /** Payment provider — 'manual' | 'dodo_payments' | 'iyzico' (CLAUDE.md §44). */
+  /** Payment provider — 'manual' | 'dodo_payments' (CLAUDE.md §44). */
   paymentProvider: string;
   /** Dodo Payments product ID — admin /admin/plans editöründen set edilir.
    *  Null = tier henüz Dodo product'a bağlı değil (checkout button gizli). */
@@ -213,10 +214,12 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
       label: (isTr ? row.discountLabelTr : row.discountLabelEn) || '',
       discountedMonthly,
     },
-    // §44 Stage 148 — Dodo checkout wiring. Field'lar AdminPlanRow'da zaten
-    // var (admin /admin/plans editöründen set edilir); UI consumer'ları
-    // (PricingPlans + BillingReadOnlyCard plan picker) bu projeksiyonu okur.
-    paymentProvider: (row.paymentProvider as 'manual' | 'dodo_payments' | 'iyzico') ?? 'manual',
+    // §44 Stage 148 — Dodo checkout wiring (Stage 149 §38.229 Iyzico drop).
+    // Field'lar AdminPlanRow'da zaten var (admin /admin/plans editöründen
+    // set edilir); UI consumer'ları (PricingPlans + BillingReadOnlyCard plan
+    // picker) bu projeksiyonu okur. Tip narrow 'manual' | 'dodo_payments'
+    // — eski 'iyzico' enum slot kaldırıldı (Iyzico iptal edildi).
+    paymentProvider: (row.paymentProvider === 'dodo_payments' ? 'dodo_payments' : 'manual'),
     dodoProductId: row.dodoProductId ?? null,
   };
 }
