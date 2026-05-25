@@ -9,11 +9,9 @@ export const dynamic = 'force-dynamic';
 
 const ALLOWED_PERIODS = new Set(['month', 'year', 'one-time']);
 const ALLOWED_DISCOUNT_TYPES = new Set(['percent', 'fixed']);
-const ALLOWED_PAYMENT_PROVIDERS = new Set(['manual', 'lemon_squeezy', 'iyzico']);
-// Lemon Squeezy variant IDs are numeric in their API but we store as
-// string to keep the door open for future provider IDs (Iyzico uses
-// alphanumeric tokens). Liberal: alnum + dashes, 1-40 chars.
-const VARIANT_ID_RE = /^[a-zA-Z0-9_-]{1,40}$/;
+const ALLOWED_PAYMENT_PROVIDERS = new Set(['manual', 'dodo_payments', 'iyzico']);
+// Dodo Payments product IDs (and future provider IDs) — liberal alnum + dashes.
+const PRODUCT_ID_RE = /^[a-zA-Z0-9_-]{1,80}$/;
 
 function asString(v: unknown, max = 1000): string {
   return typeof v === 'string' ? v.trim().slice(0, max) : '';
@@ -118,7 +116,7 @@ export async function PATCH(
     data.discountLabelEn = asString(body.discountLabelEn, 40) || null;
   }
 
-  // ── Lemon Squeezy variant mapping (CLAUDE.md §44.9 Wave 2) ──
+  // ── Payment provider routing (CLAUDE.md §44, Stage 140 §38.220) ──
   if (body.paymentProvider !== undefined) {
     const provider = asString(body.paymentProvider, 20);
     if (!ALLOWED_PAYMENT_PROVIDERS.has(provider)) {
@@ -127,23 +125,14 @@ export async function PATCH(
       data.paymentProvider = provider;
     }
   }
-  // 4 variant slot — explicit empty string means "clear", null preserves
-  // the current value (admin partial PATCH semantics).
-  for (const field of [
-    'lsVariantIdUsdMonthly',
-    'lsVariantIdUsdYearly',
-    'lsVariantIdTryMonthly',
-    'lsVariantIdTryYearly',
-  ] as const) {
-    if (body[field] !== undefined) {
-      const v = asString(body[field], 40);
-      if (v === '') {
-        data[field] = null;
-      } else if (!VARIANT_ID_RE.test(v)) {
-        errors.push(`${field}: geçersiz variant ID (alnum/dash, 1-40 karakter).`);
-      } else {
-        data[field] = v;
-      }
+  if (body.dodoProductId !== undefined) {
+    const v = asString(body.dodoProductId, 80);
+    if (v === '') {
+      data.dodoProductId = null;
+    } else if (!PRODUCT_ID_RE.test(v)) {
+      errors.push('dodoProductId: geçersiz product ID (alnum/dash, 1-80 karakter).');
+    } else {
+      data.dodoProductId = v;
     }
   }
 

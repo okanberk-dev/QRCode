@@ -62,13 +62,11 @@ export interface AdminPlanRow {
   discountValue: number | null;
   discountLabelTr: string | null;
   discountLabelEn: string | null;
-  /** Payment provider — 'manual' | 'lemon_squeezy' | 'iyzico' (CLAUDE.md §44). */
+  /** Payment provider — 'manual' | 'dodo_payments' | 'iyzico' (CLAUDE.md §44). */
   paymentProvider: string;
-  /** Lemon Squeezy variant ID slots (4 — USD/TRY × monthly/yearly). */
-  lsVariantIdUsdMonthly: string | null;
-  lsVariantIdUsdYearly: string | null;
-  lsVariantIdTryMonthly: string | null;
-  lsVariantIdTryYearly: string | null;
+  /** Dodo Payments product ID — admin /admin/plans editöründen set edilir.
+   *  Null = tier henüz Dodo product'a bağlı değil (checkout button gizli). */
+  dodoProductId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -123,10 +121,7 @@ export function toAdminRow(row: {
   discountLabelTr: string | null;
   discountLabelEn: string | null;
   paymentProvider?: string;
-  lsVariantIdUsdMonthly?: string | null;
-  lsVariantIdUsdYearly?: string | null;
-  lsVariantIdTryMonthly?: string | null;
-  lsVariantIdTryYearly?: string | null;
+  dodoProductId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): AdminPlanRow {
@@ -155,10 +150,7 @@ export function toAdminRow(row: {
     discountLabelTr: row.discountLabelTr,
     discountLabelEn: row.discountLabelEn,
     paymentProvider: row.paymentProvider ?? 'manual',
-    lsVariantIdUsdMonthly: row.lsVariantIdUsdMonthly ?? null,
-    lsVariantIdUsdYearly: row.lsVariantIdUsdYearly ?? null,
-    lsVariantIdTryMonthly: row.lsVariantIdTryMonthly ?? null,
-    lsVariantIdTryYearly: row.lsVariantIdTryYearly ?? null,
+    dodoProductId: row.dodoProductId ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

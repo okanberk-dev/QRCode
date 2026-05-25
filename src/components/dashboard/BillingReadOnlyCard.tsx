@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { CreditCard, Download, FileText, Loader2, Lock, Receipt } from 'lucide-react';
-import { AlertBanner, Badge, Eyebrow, Modal } from '@/components/ui';
+import { AlertBanner, Badge, Eyebrow } from '@/components/ui';
 
 interface BillingReadOnlyCardProps {
   isTr: boolean;
@@ -23,9 +23,12 @@ interface BillingSummary {
   billingCycle: string | null;
   subscriptionPlanId?: string | null;
   tier?: { id: string; name: string | null; isFeatured: boolean } | null;
-  /** §44 Lemon Squeezy self-service signals — null/'manual' = no LS sub. */
-  source?: 'manual' | 'lemon_squeezy' | 'iyzico' | null;
+  /** §44 self-service provider signals — null/'manual' = manual admin flow.
+   *  'dodo_payments' = self-service (Dodo customer portal + cancel via portal). */
+  source?: 'manual' | 'dodo_payments' | 'iyzico' | null;
   cancelAtPeriodEnd?: boolean;
+  /** Dodo customer_id — needed for /customer-portal redirect. */
+  providerCustomerId?: string | null;
   billingAddress: {
     companyName: string | null;
     taxNumber: string | null;
@@ -93,19 +96,12 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // §44.9 Wave 2 — self-service action state
-  const [busyAction, setBusyAction] = useState<'portal' | 'cancel' | 'reactivate' | null>(null);
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  // §44 Dodo Payments self-service — portal redirect is the only inline
+  // action; cancel + reactivate are handled inside Dodo's customer portal
+  // (subscription management UI is full-featured there). This keeps Buaze
+  // tarafını basit + Dodo'nun kendi UX'ine güvenir.
+  const [busyAction, setBusyAction] = useState<'portal' | null>(null);
   const [notice, setNotice] = useState<{ kind: 'success' | 'danger'; message: string } | null>(null);
-
-  const reload = async () => {
-    try {
-      const res = await fetch('/api/billing/summary');
-      if (res.ok) setSummary(await res.json());
-    } catch {
-      // best-effort; existing summary stays visible
-    }
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -145,84 +141,25 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
     return () => clearTimeout(t);
   }, [notice]);
 
-  const handlePortal = async () => {
-    setBusyAction('portal');
-    try {
-      const res = await fetch('/api/billing/portal');
-      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; url?: string };
-      if (res.ok && data.url) {
-        window.location.href = data.url;
-        return;
-      }
+  // §44 Stage 140 — Dodo customer portal redirect.
+  // /customer-portal SDK route handler signed portal URL döndürür ve
+  // 302 redirect yapar. customer_id query param zorunlu (Dodo customer ID,
+  // BillingSubscription.providerCustomerId'den geliyor — webhook'ta set
+  // edilir).
+  const handlePortal = () => {
+    if (!summary?.providerCustomerId) {
       setNotice({
         kind: 'danger',
         message: isTr
-          ? 'Müşteri portalı açılamadı. Lütfen tekrar deneyin.'
-          : 'Customer portal could not open. Please try again.',
+          ? 'Müşteri ID bulunamadı. Abonelik henüz aktif değil olabilir.'
+          : 'Customer ID not found. The subscription may not be active yet.',
       });
-    } catch {
-      setNotice({
-        kind: 'danger',
-        message: isTr ? 'Bağlantı hatası.' : 'Network error.',
-      });
-    } finally {
-      setBusyAction(null);
+      return;
     }
-  };
-
-  const handleCancel = async () => {
-    setBusyAction('cancel');
-    try {
-      const res = await fetch('/api/billing/cancel', { method: 'POST' });
-      if (res.ok) {
-        setShowCancelConfirm(false);
-        setNotice({
-          kind: 'success',
-          message: isTr
-            ? 'Aboneliğiniz dönem sonunda iptal olacak. Bu süreye kadar tüm özellikler aktif.'
-            : 'Your subscription will cancel at period end. All features remain active until then.',
-        });
-        await reload();
-      } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setNotice({
-          kind: 'danger',
-          message: isTr
-            ? `İptal başarısız: ${data.error ?? 'bilinmeyen hata'}`
-            : `Cancel failed: ${data.error ?? 'unknown error'}`,
-        });
-      }
-    } catch {
-      setNotice({ kind: 'danger', message: isTr ? 'Bağlantı hatası.' : 'Network error.' });
-    } finally {
-      setBusyAction(null);
-    }
-  };
-
-  const handleReactivate = async () => {
-    setBusyAction('reactivate');
-    try {
-      const res = await fetch('/api/billing/reactivate', { method: 'POST' });
-      if (res.ok) {
-        setNotice({
-          kind: 'success',
-          message: isTr ? 'Aboneliğiniz yeniden başlatıldı.' : 'Subscription reactivated.',
-        });
-        await reload();
-      } else {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setNotice({
-          kind: 'danger',
-          message: isTr
-            ? `Yeniden başlatma başarısız: ${data.error ?? 'bilinmeyen hata'}`
-            : `Reactivate failed: ${data.error ?? 'unknown error'}`,
-        });
-      }
-    } catch {
-      setNotice({ kind: 'danger', message: isTr ? 'Bağlantı hatası.' : 'Network error.' });
-    } finally {
-      setBusyAction(null);
-    }
+    setBusyAction('portal');
+    // Dodo SDK GET handler signed URL üretir + 302 dön. window.location
+    // redirect chain'i otomatik takip eder.
+    window.location.href = `/customer-portal?customer_id=${encodeURIComponent(summary.providerCustomerId)}`;
   };
 
   const dateFormat = (iso: string) => {
@@ -358,31 +295,13 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                   : 'No renewal scheduled'}
           </p>
 
-          {/* §44.9 Wave 2 — Self-service Lemon Squeezy CTA's. Three states:
-              (a) no LS sub → "Planı yükselt" link to /pricing
-              (b) active LS sub → Manage portal + Cancel
-              (c) cancelled-pending LS sub → Reactivate + disabled "İptal edildi" */}
+          {/* §44 Stage 140 — Dodo Payments self-service CTAs. Two states:
+              (a) no Dodo sub → "Planı yükselt" link to /pricing
+              (b) active Dodo sub → "Aboneliği yönet" → customer portal
+              Cancel + reactivate Dodo'nun customer portal'unda yapılır
+              (full-featured UI orada; Buaze tarafı basit tek-CTA). */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            {summary?.source === 'lemon_squeezy' && summary?.cancelAtPeriodEnd ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handleReactivate}
-                  disabled={busyAction !== null}
-                  className="bz-btn-lime disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {busyAction === 'reactivate' && (
-                    <Loader2 size={14} className="animate-spin" aria-hidden />
-                  )}
-                  {isTr ? 'Aboneliği yeniden başlat' : 'Reactivate subscription'}
-                </button>
-                <span className="text-[12px] text-[#A3A3A3]">
-                  {isTr
-                    ? 'İptal planlandı — dönem sonuna kadar aktif.'
-                    : 'Cancellation scheduled — active until period end.'}
-                </span>
-              </>
-            ) : summary?.source === 'lemon_squeezy' ? (
+            {summary?.source === 'dodo_payments' ? (
               <>
                 <button
                   type="button"
@@ -395,14 +314,15 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                   )}
                   {isTr ? 'Aboneliği yönet' : 'Manage subscription'}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCancelConfirm(true)}
-                  disabled={busyAction !== null}
-                  className="bz-btn-on-dark text-white/80 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isTr ? 'İptal et' : 'Cancel'}
-                </button>
+                <span className="text-[11px] text-[#A3A3A3]">
+                  {summary?.cancelAtPeriodEnd
+                    ? isTr
+                      ? 'İptal planlandı — dönem sonuna kadar aktif. Portaldan yeniden başlatabilirsiniz.'
+                      : 'Cancellation scheduled — active until period end. Reactivate from the portal.'
+                    : isTr
+                      ? 'Fatura, ödeme yöntemi, iptal ve yeniden başlatma için müşteri portalı.'
+                      : 'Invoices, payment method, cancel & reactivate via customer portal.'}
+                </span>
               </>
             ) : (
               <>
@@ -414,8 +334,8 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                 </a>
                 <span className="text-[11px] text-[#A3A3A3]">
                   {isTr
-                    ? '/pricing sayfasından paket seç — Lemon Squeezy ile güvenli ödeme.'
-                    : 'Pick a plan on /pricing — secure checkout via Lemon Squeezy.'}
+                    ? '/pricing sayfasından paket seç — Dodo Payments ile güvenli ödeme.'
+                    : 'Pick a plan on /pricing — secure checkout via Dodo Payments.'}
                 </span>
               </>
             )}
@@ -609,57 +529,10 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
         )}
       </div>
 
-      {/* §44.9 Wave 2 — Cancel confirm modal. Soft-cancel: dönem sonuna
-          kadar erişim. Owner explicitly bilgilendirilir. */}
-      {showCancelConfirm && (
-        <Modal
-          onClose={() => setShowCancelConfirm(false)}
-          size={460}
-          title={isTr ? 'Aboneliği iptal et?' : 'Cancel subscription?'}
-          footer={
-            <>
-              <button
-                type="button"
-                onClick={() => setShowCancelConfirm(false)}
-                className="bz-btn-ghost"
-              >
-                {isTr ? 'Vazgeç' : 'Keep subscription'}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={busyAction !== null}
-                className="bz-btn-danger disabled:opacity-60"
-              >
-                {busyAction === 'cancel' && (
-                  <Loader2 size={14} className="animate-spin" aria-hidden />
-                )}
-                {isTr ? 'Evet, iptal et' : 'Yes, cancel'}
-              </button>
-            </>
-          }
-        >
-          <div className="space-y-2 text-[13px] leading-[1.55] text-[#525252]">
-            <p>
-              {isTr
-                ? 'Aboneliğiniz hemen sonlanmaz — mevcut dönemin sonuna kadar tüm özellikler aktif kalır.'
-                : 'Your subscription does not end immediately — all features remain active until the end of the current period.'}
-            </p>
-            {summary?.renewsAt && (
-              <p className="text-[#0A0A0A] font-medium">
-                {isTr
-                  ? `Erişiminiz ${dateFormat(summary.renewsAt)} tarihine kadar devam edecek.`
-                  : `Access will continue until ${dateFormat(summary.renewsAt)}.`}
-              </p>
-            )}
-            <p className="text-[12px] text-[#737373]">
-              {isTr
-                ? 'O tarihe kadar fikrinizi değiştirirseniz tek tıkla yeniden başlatabilirsiniz.'
-                : 'Change your mind anytime before that date and reactivate with one click.'}
-            </p>
-          </div>
-        </Modal>
-      )}
+      {/* §44 Stage 140 — Cancel modal kaldırıldı. Dodo'da cancel/reactivate
+          customer portal içinde tam UI ile yapılır (renewsAt countdown,
+          grace period info, payment method update — hepsi tek surface).
+          "Aboneliği yönet" buton portal'a yönlendirir. */}
     </section>
   );
 }
