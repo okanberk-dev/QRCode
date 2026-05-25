@@ -136,7 +136,14 @@ export default function MemberBillingModal({
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch(`/api/admin/members/${userId}/billing`);
+        // §38.224 — Modal her açıldığında fresh catalog fetch (Stage 139
+        // PlansManager inline price edit sonrası /admin/plans sayfasındaki
+        // tier fiyatları güncellenmiş olabilir). `cache: 'no-store'` ile
+        // browser cache + Vercel edge cache bypass; modal canonical billing
+        // amount'u her zaman fresh /admin/plans state'inden alır.
+        const res = await fetch(`/api/admin/members/${userId}/billing`, {
+          cache: 'no-store',
+        });
         if (!res.ok) throw new Error('load_failed');
         const data = await res.json();
         if (cancelled) return;
