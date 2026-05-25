@@ -34,6 +34,15 @@ export interface PublicPlan {
     label: string;
     discountedMonthly: number;
   };
+  /**
+   * §44 Dodo Payments checkout wiring (Stage 148 §38.228).
+   * Marketing /pricing kartı + owner panel "Planı yükselt" modal'ı bu iki
+   * field'ı kontrol eder: `paymentProvider === 'dodo_payments'` + `dodoProductId`
+   * non-null ise CTA `/api/checkout?productId=<id>` (Dodo static checkout)
+   * link verir. Aksi halde fallback `buttonHref` (legacy register/contact akışı).
+   */
+  paymentProvider: 'manual' | 'dodo_payments' | 'iyzico';
+  dodoProductId: string | null;
 }
 
 export interface AdminPlanRow {
@@ -204,6 +213,11 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
       label: (isTr ? row.discountLabelTr : row.discountLabelEn) || '',
       discountedMonthly,
     },
+    // §44 Stage 148 — Dodo checkout wiring. Field'lar AdminPlanRow'da zaten
+    // var (admin /admin/plans editöründen set edilir); UI consumer'ları
+    // (PricingPlans + BillingReadOnlyCard plan picker) bu projeksiyonu okur.
+    paymentProvider: (row.paymentProvider as 'manual' | 'dodo_payments' | 'iyzico') ?? 'manual',
+    dodoProductId: row.dodoProductId ?? null,
   };
 }
 

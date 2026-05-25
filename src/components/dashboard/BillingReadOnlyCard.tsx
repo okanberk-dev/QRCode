@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CreditCard, Download, FileText, Loader2, Lock, Receipt } from 'lucide-react';
-import { AlertBanner, Badge, Eyebrow } from '@/components/ui';
+import { Check, CreditCard, Download, FileText, Loader2, Lock, Receipt } from 'lucide-react';
+import { AlertBanner, Badge, Eyebrow, Modal } from '@/components/ui';
+import type { PublicPlan } from '@/lib/subscription-plans';
 
 interface BillingReadOnlyCardProps {
   isTr: boolean;
@@ -105,6 +106,15 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
   const [busyAction, setBusyAction] = useState<'portal' | null>(null);
   const [notice, setNotice] = useState<{ kind: 'success' | 'danger'; message: string } | null>(null);
 
+  // §44 Stage 148 (§38.228) — Owner-side plan picker modal for self-service
+  // upgrade. Triggered by "Planı yükselt" CTA in the dark hero. Fetches the
+  // public plan catalog (/api/plans) lazily on open so the card mount stays
+  // cheap. Each tier card opens Dodo static checkout via /api/checkout?productId=X.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerPlans, setPickerPlans] = useState<PublicPlan[] | null>(null);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [pickerError, setPickerError] = useState<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -164,6 +174,28 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
     // Dodo SDK GET handler signed URL üretir + 302 dön. window.location
     // redirect chain'i otomatik takip eder.
     window.location.href = `/api/customer-portal?customer_id=${encodeURIComponent(summary.providerCustomerId)}`;
+  };
+
+  // §44 Stage 148 — open plan picker modal + lazy-load /api/plans.
+  // Cache plans across re-opens (DB değişikliği nadir, owner aynı modal'ı
+  // birkaç kez açabilir). 10s fresh + 60s SWR header (/api/plans, §38.219)
+  // browser cache'inde zaten korunuyor; bu state mount-scope cache.
+  const handleOpenPicker = async () => {
+    setPickerOpen(true);
+    if (pickerPlans !== null || pickerLoading) return;
+    setPickerLoading(true);
+    setPickerError(null);
+    try {
+      const localeParam = isTr ? 'tr' : 'en';
+      const res = await fetch(`/api/plans?locale=${localeParam}`);
+      if (!res.ok) throw new Error('plans_failed');
+      const json = (await res.json()) as { data?: PublicPlan[] };
+      setPickerPlans(json.data ?? []);
+    } catch {
+      setPickerError(isTr ? 'Paketler yüklenemedi.' : 'Plans could not load.');
+    } finally {
+      setPickerLoading(false);
+    }
   };
 
   const dateFormat = (iso: string) => {
@@ -330,16 +362,22 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
               </>
             ) : (
               <>
-                <a
-                  href={isTr ? '/tr/pricing' : '/en/pricing'}
+                {/* §44 Stage 148 (§38.228) — Inline plan picker modal yerine
+                    /pricing'e link atılıyordu (kullanıcı raporu: "yükselt
+                    deyince checkout ekranına gitmiyor"). Modal Dodo product ID
+                    wired tier'ları gösterir, owner tek tıkla static checkout'a
+                    gider — marketing pricing turunu tamamen atlar. */}
+                <button
+                  type="button"
+                  onClick={handleOpenPicker}
                   className="bz-btn-lime inline-flex items-center"
                 >
                   {isTr ? 'Planı yükselt' : 'Upgrade plan'}
-                </a>
+                </button>
                 <span className="text-[11px] text-[#A3A3A3]">
                   {isTr
-                    ? '/pricing sayfasından paket seç — Dodo Payments ile güvenli ödeme.'
-                    : 'Pick a plan on /pricing — secure checkout via Dodo Payments.'}
+                    ? 'Paket seç ve Dodo Payments ile güvenli ödemeye geç.'
+                    : 'Pick a plan and continue to secure checkout via Dodo Payments.'}
                 </span>
               </>
             )}
@@ -537,6 +575,167 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
           customer portal içinde tam UI ile yapılır (renewsAt countdown,
           grace period info, payment method update — hepsi tek surface).
           "Aboneliği yönet" buton portal'a yönlendirir. */}
+
+      {/* §44 Stage 148 (§38.228) — Plan picker modal. Owner panel'da inline
+          tier seçimi yaparak marketing /pricing turunu atlatır. Dodo product
+          ID wired tier'lar "Yükselt" CTA'sıyla Dodo static checkout'a gider;
+          wired olmayan tier'lar "Yakında" badge + disabled state gösterir
+          (admin paneli üzerinden product ID set edilince otomatik aktif).
+
+          Modal primitive `open` prop almıyor — conditional render kullanılır
+          (CLAUDE.md §23.3, mevcut customer + restaurants + menu callsite
+          paterni). `description` field'ı da yok; children içinde subtitle. */}
+      {pickerOpen && (
+      <Modal
+        onClose={() => setPickerOpen(false)}
+        size={780}
+        title={isTr ? 'Paket seç' : 'Pick a plan'}
+      >
+        <p className="-mt-1 mb-4 text-[13px] text-[#737373] leading-snug">
+          {isTr
+            ? 'Tek tıkla güvenli ödemeye geç. İptal istediğiniz zaman müşteri portalından yapılır.'
+            : 'Continue to secure checkout in one click. Cancel anytime via the customer portal.'}
+        </p>
+        {pickerLoading && (
+          <div className="flex items-center justify-center gap-2 py-10 text-[13px] text-[#737373]">
+            <Loader2 size={14} className="animate-spin" />
+            {isTr ? 'Paketler yükleniyor…' : 'Loading plans…'}
+          </div>
+        )}
+        {pickerError && (
+          <div className="my-4">
+            <AlertBanner kind="danger">{pickerError}</AlertBanner>
+          </div>
+        )}
+        {!pickerLoading && !pickerError && pickerPlans && pickerPlans.length === 0 && (
+          <p className="py-10 text-center text-[13px] text-[#737373]">
+            {isTr
+              ? 'Henüz aktif paket bulunmuyor. Lütfen daha sonra tekrar deneyin.'
+              : 'No active plans yet. Please try again later.'}
+          </p>
+        )}
+        {!pickerLoading && !pickerError && pickerPlans && pickerPlans.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {pickerPlans.map((p) => {
+              const wired = p.paymentProvider === 'dodo_payments' && Boolean(p.dodoProductId);
+              const isDark = p.isFeatured;
+              const monthlyShown = p.discount.active ? p.discount.discountedMonthly : p.priceMonthly;
+              return (
+                <div
+                  key={p.id}
+                  className={`flex flex-col rounded-2xl p-5 ${
+                    isDark
+                      ? 'bg-[#0A0A0A] text-white'
+                      : 'border border-[#EDEDED] bg-white'
+                  }`}
+                >
+                  {isDark && (
+                    <div className="mb-2">
+                      <span className="pulse-eyebrow inline-block rounded-full bg-[#C6F24E] px-3 py-1 text-[#0A0A0A]">
+                        {isTr ? 'EN POPÜLER' : 'MOST POPULAR'}
+                      </span>
+                    </div>
+                  )}
+                  <h3
+                    className={`text-[18px] font-medium tracking-[-0.02em] ${
+                      isDark ? 'text-white' : 'text-[#0A0A0A]'
+                    }`}
+                  >
+                    {p.name}
+                  </h3>
+                  <p
+                    className={`mt-1 text-[12px] leading-snug ${
+                      isDark ? 'text-white/70' : 'text-[#525252]'
+                    }`}
+                  >
+                    {p.description}
+                  </p>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span
+                      className={`text-[28px] font-medium leading-none tracking-[-0.03em] ${
+                        isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
+                      }`}
+                      style={{ fontFamily: 'var(--font-heading)' }}
+                    >
+                      {monthlyShown === 0
+                        ? isTr ? 'Ücretsiz' : 'Free'
+                        : `$${monthlyShown.toLocaleString('en-US')}`}
+                    </span>
+                    {monthlyShown > 0 && (
+                      <span
+                        className={`pulse-eyebrow ${isDark ? 'text-white/60' : 'text-[#737373]'}`}
+                      >
+                        {isTr ? '/ AY' : '/ MO'}
+                      </span>
+                    )}
+                  </div>
+                  <ul className="mt-3 mb-4 flex-1 space-y-1.5">
+                    {p.features.slice(0, 4).map((feat) => (
+                      <li
+                        key={feat}
+                        className={`flex items-start gap-2 text-[12px] ${
+                          isDark ? 'text-white/90' : 'text-[#0A0A0A]'
+                        }`}
+                      >
+                        <Check
+                          size={11}
+                          strokeWidth={2.5}
+                          className={`mt-0.5 shrink-0 ${
+                            isDark ? 'text-[#C6F24E]' : 'text-[#A8D62E]'
+                          }`}
+                        />
+                        {feat}
+                      </li>
+                    ))}
+                    {p.features.length > 4 && (
+                      <li
+                        className={`pl-5 text-[11px] ${
+                          isDark ? 'text-white/50' : 'text-[#737373]'
+                        }`}
+                      >
+                        {isTr
+                          ? `+ ${p.features.length - 4} özellik daha`
+                          : `+ ${p.features.length - 4} more`}
+                      </li>
+                    )}
+                  </ul>
+                  {wired ? (
+                    <a
+                      href={`/api/checkout?productId=${encodeURIComponent(p.dodoProductId!)}`}
+                      className={`block min-h-[40px] w-full rounded-full py-2.5 text-center text-[13px] font-medium transition-colors ${
+                        isDark
+                          ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'
+                          : 'border border-[#0A0A0A] text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-white'
+                      }`}
+                    >
+                      {isTr ? 'Bu paketle devam et' : 'Continue with this plan'}
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="block min-h-[40px] w-full rounded-full bg-[#FAFAFA] py-2.5 text-center text-[13px] font-medium text-[#A3A3A3] cursor-not-allowed"
+                      title={
+                        isTr
+                          ? 'Bu paketin Dodo ürün ID\'si henüz set edilmedi.'
+                          : 'Dodo product ID is not yet set for this plan.'
+                      }
+                    >
+                      {isTr ? 'Yakında' : 'Coming soon'}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p className="pulse-eyebrow mt-6 text-center text-[#737373]">
+          {isTr
+            ? 'GÜVENLİ ÖDEME · İSTEDİĞİNDE İPTAL · TAAHHÜTSÜZ'
+            : 'SECURE PAYMENT · CANCEL ANYTIME · NO COMMITMENT'}
+        </p>
+      </Modal>
+      )}
     </section>
   );
 }
