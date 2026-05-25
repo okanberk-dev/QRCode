@@ -141,11 +141,13 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
     return () => clearTimeout(t);
   }, [notice]);
 
-  // §44 Stage 140 — Dodo customer portal redirect.
-  // /customer-portal SDK route handler signed portal URL döndürür ve
+  // §44 Stage 142 — Dodo customer portal redirect.
+  // /api/customer-portal SDK route handler signed portal URL döndürür ve
   // 302 redirect yapar. customer_id query param zorunlu (Dodo customer ID,
   // BillingSubscription.providerCustomerId'den geliyor — webhook'ta set
-  // edilir).
+  // edilir). Stage 142'de route /api/ altına taşındı (Stage 141 stub
+  // sonrası, top-level /customer-portal Vercel adapter finalize çakışması
+  // olası kök neden).
   const handlePortal = () => {
     if (!summary?.providerCustomerId) {
       setNotice({
@@ -159,7 +161,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
     setBusyAction('portal');
     // Dodo SDK GET handler signed URL üretir + 302 dön. window.location
     // redirect chain'i otomatik takip eder.
-    window.location.href = `/customer-portal?customer_id=${encodeURIComponent(summary.providerCustomerId)}`;
+    window.location.href = `/api/customer-portal?customer_id=${encodeURIComponent(summary.providerCustomerId)}`;
   };
 
   const dateFormat = (iso: string) => {
