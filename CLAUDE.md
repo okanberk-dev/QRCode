@@ -910,8 +910,8 @@ Pulse redesign 15 draft PR zincirinin tarihsel detayı `git log` üzerinden eri�
 | `CRON_SECRET` | Cron kullanılıyorsa | `/api/cron/*` endpoint'leri `Authorization: Bearer ${CRON_SECRET}` zorunlu |
 | `IP_RETENTION_DAYS` | Opsiyonel | Default 90; KVKK IP anonimleştirme cron'u için |
 | `IYZICO_*` (POS, henüz yok) | Yok | Wave 3.5'te eklenecek (TR pazar) |
-| `LEMON_SQUEEZY_API_KEY` + `LEMON_SQUEEZY_STORE_ID` + `LEMON_SQUEEZY_WEBHOOK_SECRET` | Opsiyonel | Lemon Squeezy payment provider (CLAUDE.md §44). Eksikse webhook 503, mevcut manuel admin akışı intact. Foundation PR §38.217 sadece schema + lib + webhook; checkout endpoint sonraki PR |
-| `LEMON_SQUEEZY_MODE` | Opsiyonel | `'test'` (default) veya `'production'`. Mode/key prefix mismatch (test_xxx + production) → Sentry error + integration disabled (silent live charge önleme) |
+| `DODO_PAYMENTS_API_KEY` + `DODO_PAYMENTS_WEBHOOK_SECRET` | Opsiyonel | Dodo Payments payment provider (CLAUDE.md §44, Stage 140 §38.220 Lemon Squeezy yerine). Eksikse `/checkout` + `/customer-portal` runtime error + webhook 401; mevcut manuel admin akışı (MemberBillingModal) intact. SDK signature verify HMAC kendisi yapar. |
+| `DODO_PAYMENTS_RETURN_URL` + `DODO_PAYMENTS_ENVIRONMENT` | Opsiyonel | RETURN_URL: successful checkout sonrası geri yönlendirme (lokal localhost:3000/success; prod buaze.com/dashboard/account). ENVIRONMENT: `'test_mode'` (default) veya `'live_mode'` — production'da explicit set zorunlu + live_ API key. |
 | `NEXT_PUBLIC_FIREBASE_*` (apiKey, authDomain, projectId, appId) | Opsiyonel | Google Sign-in client config; eksikse OAuth butonu UI'da disable, e-posta+şifre flow intact |
 | `FIREBASE_AUTH_PROXY_TARGET` | Opsiyonel | `__/auth/*` path'lerini Firebase'e proxy'ler (`next.config.ts:rewrites`); boşsa rewrite hiç eklenmez |
 | `FIREBASE_ADMIN_PROJECT_ID` | Opsiyonel | Server-side Firebase Admin SDK için (token verify) |
@@ -4323,8 +4323,10 @@ GitHub PR referansı.
 - §38.182 — Stage 102 (PR TBD) Skeleton wave 4 — owner settings page server hydration. Kullanıcı sorusu: "Owner paneldeki tüm sayfalara skeleton loading iyi midir?" Cevap: server hydration daha iyi (skeleton flash → 0). Stage 101 wave 3 audit kapsam dışıydı — `dashboard/restaurants/[id]/settings/page.tsx` (532 LOC, 4× useState loading, 3× useEffect, tek `/api/restaurants/${id}` fetch ile 50-field payload). 3 paralel Explore agent envanteri owner panel'in geri kalanını gösterdi: ya zaten Stage 101'de done (account/qr/restaurants/[id]), ya zaten server-rendered (analytics/platforms/restaurants list), ya statik/redirect (announcements/menu hub/guide/profile/notifications/integrations), ya defer (`google-reviews` ~1620 LOC, `feedbacks` ~800 LOC, `restaurants/[id]/menu` ~1700 LOC). **Bu PR sadece settings page**. **Pattern**: (1) `page.tsx` → `RestaurantSettingsClient.tsx` rename + `initialRestaurant?: RestaurantPayload | null` prop, (2) `useState(initialRestaurant ?? null)` + `useState(initialRestaurant === undefined)` + `useRef(initialRestaurant !== undefined)`, (3) `useEffect` skipFirstFetchRef guard ile ilk fetch atla, (4) yeni `page.tsx` server component — cookies + verifyJwt + `prisma.restaurant.findFirst({ where: { id, userId }, select: { ...50 fields explicit, §14.1 defensive } })` + 50-field mapping block, (5) `if (loading) return null` clean-slate (eski "Yükleniyor..." spinner kaldırıldı). **Sapma**: parent `RestaurantDetailClient` not-found durumda `initialData = null` kullanırken bu PR `undefined` kullanır → team_member fallback senaryosunda client-fetch çalışır, gereksiz error UI gösterilmez (settings page'in security/danger section'ları team_member erişimi için kritik). **Cross-token scope**: `user_token && !adminToken` only. **Etki**: settings page'inde skeleton/spinner flash tamamen elimine — owner direct load anında content görür. Backend `/api/restaurants/[id]` kontratı dokunulmadı. **Audit out**: google-reviews wave 5 candidate (complex multi-state, ayrı sweep), feedbacks/menu builder Stage 101'de zaten defer. **§40.10 wave 4 line item** eklendi (settings page hydrated callsite listesine).
 
 - §38.211 — Stage 131 (PR #715) Google Business auto-retry tamamen kaldırıldı — shared API quota anti-pattern. Kullanıcı raporu (verbatim): *"google yorumlarında kesinlikle girmiyor"* + ekran görüntüsü: 56s countdown + "Son senkron: az önce" + sandwich card görünür. §38.209 cache TTL strategy (120s positive + 90s negative + empty stamp write + exponential backoff 2 attempt) yumuşatıcıydı ama **owner hâlâ kotaya takılıyordu** çünkü temel sorun auto-retry'ın kendisiydi. **Root cause analizi (shared quota anti-pattern)**: Google API quota proje-geneli (1 req/min/proje, §5.1.1) — TÜM Buaze kullanıcıları aynı kotayı paylaşır. Owner ilk kez connect olduğunda cache yok → quota fail → empty stamp yazılıyor (§38.209 fix) → 60s countdown başlıyor → auto-retry force=true → cache bypass → Google'a tekrar git → ama bu sırada **başka Buaze client'ları da retry'da** → quota yine dolu (başkaları yakmış) → 429 → tekrar 60s countdown → loop. §38.207 self-loop fix (autoRetryFiredRef counter), §38.209 exponential backoff (MAX_AUTO_RETRY_ATTEMPTS=2) — hiçbiri **multi-client shared quota** problemini çözmüyordu çünkü farklı browser sekmeleri / farklı owner'lar / restoran switch cycle'ları aynı window içinde retry tetikliyordu. Pratik gözlem: ekran görüntüsü "Son senkron: az önce" ve **yine 56s countdown** — auto-retry tetiklenmiş, yine fail, yine countdown. Best practice for shared API quotas: **manuel intervention only**. **Fix bundle (4 değişim, 2 dosya)**: **Backend (`/api/restaurants/[id]/google/business/locations/route.ts`)**: (A) Quota fail response'tan `retryAfterSeconds` field'ı KALDIRILDI. Eskiden bu field frontend'in countdown + auto-retry'ı tetikliyordu; artık gönderilmiyor. (B) Mesaj rewrite — "auto-retry" wording çıkarıldı, owner-actionable: "Birkaç dakika bekleyin veya farklı hesapla bağlanın". `warning: 'GOOGLE_RATE_LIMITED'` ve empty stamp write (§38.209 negative cache) korunur. **Frontend (`/[locale]/dashboard/google-reviews/page.tsx`)**: (C) Auto-retry state'leri (`autoRetryFiredRef`, `autoRetryAttemptRef`, `MAX_AUTO_RETRY_ATTEMPTS`, `hasAutoRetried`) tamamen SİLİNDİ. Sandwich card copy variant'ı (`hasAutoRetried` flag-based) tek-variant'a indirildi. (D) Auto-retry useEffect tamamen kaldırıldı; tick decrement bloğu korundu (`locationRetryAfter` state'i UI cooldown amaçlı — "Yenile" buton 60s disable + countdown göstergesi, retry tetiği YOK). Backend `retryAfterSeconds` göndermese de frontend `setLocationRetryAfter(60)` quota fail durumunda UI-side cooldown başlatır (mash önleyici). Hard 429 path basitleştirildi (rate-limit retry-after handling kaldırıldı). **Etki**: 2 dosya — frontend ~+27/-49 satır (net azalma — 22 satır dead code temizliği), backend ~+22/-7 satır. Backend response shape kontrat değişimi: `retryAfterSeconds` artık dönmüyor, defansif drop frontend'de mevcut (rolling deploy window'unda eski backend response gelirse frontend `setLocationRetryAfter(60)` UI-side sabit cooldown başlatır). **Disipline (yeni §40.4 ek — shared API quota anti-pattern)**: Proje-geneli quota (Google Business 1/min/proje, OpenAI bulk, Anthropic API tier limit) altında çalışan endpoint'lerde **auto-retry YASAK**. Farklı client'ların retry'ı quota'yı tekrar tüketir → hep birlikte 429 alırlar → owner perspectifinden "hiç çalışmıyor" görünür. Manuel intervention only paterni: sandwich card / alternative action CTA + manuel "Yenile" buton (UI-side cooldown 60s, mash önleyici) + sarı banner (informational). Backend `retryAfterSeconds` field'ı sadece tek-client quota'ları için (rate-limited public API'ler, Resend mail send, vb.) anlamlı — proje-geneli quota'da göndermek frontend'i yanıltır. **Yapma**: Shared quota durumunda auto-retry tetikleme (exponential backoff bile shared quota'da çalışmaz çünkü cooperative clients arası senkronizasyon yok). Countdown UI'ı auto-retry trigger'ına bağlama — UI cooldown ve retry semantic ayrı concern'ler. `retryAfterSeconds` backend'ten gelmiyorsa "default 60s" assume etme — backend semantic'i değişmiş olabilir, defansif drop. **Yap**: Yeni shared-quota endpoint'i eklerken backend response'ta `retryAfterSeconds` ASLA gönderme. Mesaj actionable yaz ("birkaç dakika bekleyin veya alternative X"). UI'da owner için **direct manuel intervention CTA** (sandwich card paterni, §38.208). Countdown UI sadece "Yenile" buton disable amaçlı; retry tetiği yok. Operatör follow-up: quota artışı **GCP Console** üzerinden request edilebilir (24-48 saat onay süreci) — kod-level yumuşatma proje-geneli quota'nın temel kısıtını çözmez. **Chat prompt history (Stage 131)**: 2026-05-24 kullanıcı verbatim: *"google yorumlarında kesinlikle girmiyor"* (§38.209 PR #713 deploy sonrası). Ekran görüntüsü: 56s countdown + "Son senkron: az önce" + sandwich card görünür → smoking gun "auto-retry yine tetiklendi, yine quota dolu". Diagnostic chain: §38.209 backend cache TTL + negative cache yeterli görünüyordu ama yine fail → multi-client shared quota gerçeği anlaşıldı (Buaze kullanıcıları paralel olarak retry yapıyor). §38.211 auto-retry'ı tamamen kaldırarak quota burn loop'unu kırar. Operatör action: GCP Console'da quota increase request (zaten CLAUDE.md §5.1.1'de dokümante).
+- §38.220 — Stage 140 (PR TBD) Lemon Squeezy tam kaldırma + Dodo Payments foundation. Kullanıcı talebi (verbatim): *"lemon squezzy'i tamamen kaldır ve dodo payment'a geçeceğiz: Next.js App Router projem var. Dodo Payments entegrasyonu yapacağız. ... @dodopayments/nextjs paketini kullan ... Checkout route: app/checkout/route.ts GET static + POST session ... Webhook route: app/api/webhook/dodo-payments/route.ts POST: Webhooks({ webhookKey, onPayload }) ... (Opsiyonel) Customer Portal: app/customer-portal/route.ts"*. Stage 137-139 Lemon Squeezy entegrasyonu prod'a hiç deploy edilmedi (env'ler set edilmedi, schema'da row yok) — schema migration safe (sıfır data kaybı). **Removal**: 12 dosya silindi — `src/lib/lemon-squeezy/{config,types,webhook,client,event-handlers,index}.ts` (6) + `src/app/api/billing/{checkout,portal,cancel,reactivate}/route.ts` (4) + `src/app/api/webhooks/lemon-squeezy/route.ts` + `tests/lemon-squeezy-webhook.test.ts`. Schema rollback migration `20260525000001_remove_lemon_squeezy`: `BillingSubscription.lemonSqueezyCustomerId/VariantId` drop, `SubscriptionPlan.lsVariantId{UsdMonthly,UsdYearly,TryMonthly,TryYearly}` drop, `LemonSqueezyEvent` table drop, **generic** `BillingSubscription.providerCustomerId` field eklendi (Dodo customer_id, /customer-portal redirect için). `cancelAtPeriodEnd` + `source` + `paymentProvider` generic field korundu (Dodo + Iyzico reuse). **Add**: `@dodopayments/nextjs@^1.46.0` npm dep eklendi (CLAUDE.md §30 dep policy — kullanıcı explicit istedi, server-only, Next.js App Router native paketi). 3 yeni route handler — (1) `src/app/checkout/route.ts` GET (static checkout link, marketing /pricing kartlarından `?productId=` ile) + POST (session checkout, owner dashboard'tan custom_data ile), (2) `src/app/api/webhook/dodo-payments/route.ts` POST — `Webhooks({ webhookKey, onPayload, on<EventName> })` SDK paterni; 8 event handler (payment.succeeded → BillingInvoice paid; payment.failed → failed + Sentry warn; payment.refunded → refunded; subscription.active/renewed → upsert + providerCustomerId set + tier link; subscription.on_hold → past_due; subscription.cancelled → cancelAtPeriodEnd:true + status:active grace; subscription.expired → canceled). User resolution: `payload.data.metadata.user_id` (checkout custom_data) → `payload.data.customer.email` lookup fallback. Tier resolution: `payload.data.product_id` → `SubscriptionPlan.dodoProductId` lookup. (3) `src/app/customer-portal/route.ts` GET — `CustomerPortal({ bearerToken, environment })` — owner "Aboneliği yönet" → signed portal URL → Dodo'nun full UI (cancel/reactivate/payment method/billing address). **UI cleanup**: `PlansManager` paymentProvider dropdown 'lemon_squeezy' → 'dodo_payments' + 4 LS variant slot → 1 `dodoProductId` field (Dodo paterni: product = tier, customer cycle/currency'i checkout'ta seçer). `BillingReadOnlyCard` source check + endpoint URLs güncellendi: 3-state CTA → 2-state (no Dodo sub → /pricing link, active Dodo sub → "Aboneliği yönet" → /customer-portal). Inline cancel modal + reactivate button + confirm dialog **kaldırıldı** — Dodo portal full UI içerir, double-source drift kaynağı. `/api/billing/summary` response'a `providerCustomerId` field eklendi (UI redirect query param için). `AdminPlanRow` + `toAdminRow` projection cleanup (4 lsVariantId field drop, 1 dodoProductId add). **Env**: 4 `LEMON_SQUEEZY_*` env entry .env.example + validate-env.js'den silindi; 4 `DODO_PAYMENTS_*` (API_KEY, WEBHOOK_SECRET, RETURN_URL, ENVIRONMENT) eklendi. **CLAUDE.md**: §44 tamamen yeniden yazıldı (§44.0 tarihsel not + §44.1-44.10 Dodo paterniyle); §18 env table 2 LS row → 2 Dodo row; bu §38.220 closure log. Disipline (yeni §44.6 kanonik): self-service portal-driven cancel/reactivate flow — provider'ın kendi UI'sı (Dodo customer portal) full subscription management içeriyorsa, Buaze tarafında özel cancel modal yapma (UX inconsistency + drift kaynağı). Tek CTA "Aboneliği yönet" → portal redirect; webhook events DB'yi senkronize tutar. Disipline (yeni §44.4 kanonik): Dodo SDK signature verify'i HMAC ile kendi yapar (`webhookKey` parameter), manuel idempotency tablosu (Lemon Squeezy paterni) **gereksiz** — SDK route handler factory exports kullanılır. **Etki**: 12 dosya silindi + 4 yeni dosya (3 route handler + 1 migration SQL) + 7 dosya modified (schema.prisma, subscription-plans.ts, plans/route.ts + [id]/route.ts, billing/summary/route.ts, PlansManager.tsx, BillingReadOnlyCard.tsx) + .env.example + validate-env.js + package.json + CLAUDE.md (§44 rewrite + §18 + §38.220). Backend kontratları minimal değişim: `/api/billing/summary` response'a `providerCustomerId` field eklendi; `/api/admin/plans` POST + PATCH validation `dodoProductId` field kabul eder. **Chat prompt history (Stage 140)**: 2026-05-25 kullanıcı verbatim (yukarıda) — Lemon Squeezy "tamamen kaldır" + Dodo Payments minimal SDK template. AskUserQuestion atılmadı (talimat çok net, scope deterministik). Schema migration rollback safe (Stage 137 prod'a deploy edilmedi). WebFetch ile Dodo Next.js adapter docs çekildi (`/developer-resources/nextjs-adaptor.md`) → SDK named exports + route handler example doğrulandı. `@dodopayments/nextjs` dep version `^1.46.0` package.json'a eklendi (lokal install yok §38.186 paterni — CI yükler). Hukuki/disipline override yok.
 - §38.219 — Stage 139 (PR TBD) Admin /admin/plans price sync bug + inline price edit + Cmd+K palette. Kullanıcı raporu (verbatim, ek talep): *"admin panelde abonelikler sayfasında fiyatları değiştiğimde marketingde fiyatlandırma tarafında değişsin istiyorum ama hata var ve UI UX olarak değiştirme olarak daha basit daha işlevsel yap ve tüm hataları analiz edip fixle ek olarak admin panele de search bar getir"*. AskUserQuestion 2 karar: UI/UX = "Inline fiyat edit (Önerilen)" + Search = "Cmd+K command palette (Önerilen)". 3 ayak — bug fix + inline edit + Cmd+K. **(A) Bug analizi + fix (revalidate)**: Mevcut akış (PATCH `revalidatePricing()` çağrısı + `revalidatePath('/tr/pricing')`+`/en/pricing` + locale layout `revalidate=3600` ISR) yapısal olarak sağlamdı, ama 3 katmanlı pekiştirme yapıldı. (1) `revalidatePricing()` (`src/lib/marketing-revalidate.ts`) 4. çağrı eklendi: `revalidatePath('/[locale]/pricing', 'page')` — Next.js 14+ dynamic segment pattern. Defansif overlap (Vercel CDN edge'inde concrete path bazen yetersiz). (2) `/api/plans` public GET cache TTL 60s → **10s** (`s-maxage=10, stale-while-revalidate=60`). Admin değişiklik sonrası "30 saniye içinde marketing'de değişmedi" hissini önler. ISR cache anında `revalidatePath` ile invalidate olur; bu REST endpoint sadece public SDK/embed clients için (mevcut pricing page DB direct). (3) Admin POST + PATCH + DELETE response'larına `Cache-Control: no-store, must-revalidate` header + `revalidated: true` flag eklendi (Stage 108 §38.188 mutation row paterni; daha önce notifications PUT'a uygulanmıştı, plans endpoint'ine extend edildi). Owner UI PATCH sonrası fresh `/api/admin/plans` GET attığında 30s edge cache'inde eski tutar görmesin. **(B) Inline price edit UI**: Yeni `InlinePriceCell` component (PlansManager.tsx bottom) — initial state read-only mono span (₺499 / $19), hover'da Pencil icon opacity 0→50, click → input opens (auto-focus + select). Enter veya blur commit (PATCH single field). Esc revert. Required field (priceTry) empty submit silently reverts; optional fields (priceUsd / priceYearlyTry / priceYearlyUsd) empty submit → null (admin "override sil" semantic). Loading state: inline `Loader2` spinner. Success notice: lime AlertBanner "Fiyat güncellendi. Marketing /pricing sayfasında 30 saniye içinde yansıyacak". Yeni `savePriceInline(planId, field, nextValue)` helper `togglePlanField` paralel (per-row PATCH, ek success message). PlansManager row layout: önceki tek mono span "₺499 · $19 / month" yerine 4 inline cell (Aylık TRY/USD + Yıllık TRY/USD), her biri ayrı edit. Eski "Düzenle" modal'ı full edit için (description / features / discount / Lemon Squeezy variant ID) HÂLÂ açık. UX paradigma: en sık aksiyon = fiyat değişikliği = en az tuş; modal sadece çoklu field düzenleme için. **(C) AdminCommandPalette (Cmd+K)**: Yeni `src/components/admin/AdminCommandPalette.tsx` — owner CommandPalette paterninin admin variant'ı (CLAUDE.md §38.B Stage 110). 26 statik admin route catalog (Dashboard / İşletmeler / Yorumlar / Müşteriler / QR / Analitik / Sahipler / Yöneticiler / Faturalandırma / Abonelikler / Kampanyalar / Bülten / Mail / Denetim / Blog / Duyurular / Hukuki / Site Ayarları / API / Audit Log / Profil) + lazy fetch (`/api/restaurants?limit=8` + `/api/admin/customers?limit=8`) son işletme + müşteri hitleri. Trigger paths çift: Cmd+K (Mac) / Ctrl+K (Win) keyboard global listener + `buaze:admin-search-open` CustomEvent (CLAUDE.md §38.D paterni). Modal a11y baseline: input auto-focus + select, ESC + outside click close, ↑↓ navigate, Enter activate, focus restore on close, body scroll lock. Turkish-aware normalize (NFD + lowercase 'tr-TR') ile keyword match. Nav hits route'a navigate; restaurant hits `/admin/restaurants/[id]`'e; customer hits `/admin/customers?focus=[id]`'e. **Trigger UI**: AdminTopbar (desktop `hidden lg:flex`) sol kısımda search button — placeholder "Sayfa, işletme veya müşteri ara…" + xl+ ekranda `⌘ K` kbd hint. AdminSidebar mobile sticky topbar'a yeni search icon button (`bz-btn-icon`). İki giriş de CustomEvent dispatch eder; palette tek instance handles both (AdminTopbar Fragment root, palette mounted OUTSIDE `hidden lg:flex` div → mobile'da da DOM'da). z-index: palette `z-[60]` (CLAUDE.md §40.3 hierarchy: > z-50 modals/drawers/palette > z-40 mobile sticky/bottom nav > z-30 desktop topbar). **Etki**: 8 dosya — `src/lib/marketing-revalidate.ts` (+9 satır defansif comments), `src/app/api/plans/route.ts` (cache header 60→10s), `src/app/api/admin/plans/route.ts` (POST response + cache header), `src/app/api/admin/plans/[id]/route.ts` (PATCH + DELETE response + cache header), `src/components/admin/PlansManager.tsx` (+savePriceInline helper, row layout inline cells, InlinePriceCell component ~140 satır), yeni `src/components/admin/AdminCommandPalette.tsx` (~340 satır), `src/components/admin/AdminTopbar.tsx` (search trigger button + Cmd+K kbd hint + palette mount + Fragment root), `src/components/admin/AdminSidebar.tsx` (mobile search icon + SearchIcon import). Backend kontratları intact — sadece response cache headers + revalidated flag eklendi. **Disipline (yeni §40.4 ek — admin save → marketing revalidate)**: Admin write endpoint'i public marketing copy etkiliyorsa 4-katmanlı defansif invalidation zorunlu: (i) `revalidatePath(<concrete>)` her locale için, (ii) `revalidatePath('/[locale]/<path>', 'page')` dynamic segment fallback, (iii) response'ta `Cache-Control: no-store, must-revalidate` (admin client refetch fresh data alsın), (iv) public REST endpoint'in `s-maxage` TTL'i admin değişiklik frekansına uygun (10-60s; ISR ile redundant ama defansif). **Disipline (yeni §40.3 ek — inline edit pattern)**: List row'larında sık değişen tek-field state için inline edit (Notion/Stripe paterni). Required vs optional field ayrı handle: required boş submit revert; optional boş submit null (clear override semantic). Auto-focus + select on edit start, Enter/blur commit, Esc revert. Loading state per-row + success toast (downstream impact bilgisi, örn. "marketing'de 30s içinde yansıyacak" — admin "değişmedi" hissi). **Disipline (yeni §40.3 ek — Cmd+K palette mount pattern)**: Tek palette instance + CustomEvent dispatch (CLAUDE.md §38.D) ile çoklu trigger noktası. Desktop topbar + mobile sidebar buttons aynı CustomEvent (`buaze:<panel>-search-open`) dispatch eder; palette tek listener. Fragment root + palette mount OUTSIDE responsive-hidden div (mobile'da display:none gizlerse listener çalışmaz). **Chat prompt history (Stage 139)**: 2026-05-25 kullanıcı verbatim (yukarıda) + AskUserQuestion 2 karar: UI/UX = Inline fiyat edit / Search = Cmd+K command palette. Bug analizi öncesi `revalidatePath` zaten doğru çağrılıyordu — kullanıcının "hata var" raporu spesifik mesaj içermediği için defansif 4-katman pekiştirme + observable UI (success notice with "marketing'de 30s yansıyacak" hint) tercih edildi. Cmd+K palette owner shell paterni (Stage 110 §38.190) reuse, admin context için 26 statik route + 2 lazy data source.
 - §38.218 — Stage 138 (PR TBD) Lemon Squeezy Wave 2 — spec audit + 3 API endpoint + admin variant mapping + owner UI CTAs. Kullanıcı talebi (verbatim, geliştirilmiş): *"Stage 137 foundation'ından devam et: docs.lemonsqueezy.com/api + github.com/lmsqueezy/lemonsqueezy.js okuyup cross-check + Wave 2 (checkout + portal + cancel + admin/owner UI) sorunsuz şekilde + kendin verify et"*. **Faz 1 — Spec audit (no drift)**: SDK source (`src/checkouts/index.ts`, `src/subscriptions/index.ts`, `src/customers/index.ts`, `src/webhooks/types.ts`) `gh api` ile çekildi (WebFetch docs sitesi 403 — `lemonsqueezy.com/help/webhooks` ve `/api` rate-limit/bot block). 15 event name listesi foundation ile 1:1 match (`subscription_*` 11 + `order_created/refunded` 2 + `license_key_*` 2). Webhook envelope (`meta.event_name` + `data.{type,id,attributes}`) doğrulandı. Signature pattern X-Signature + HMAC-SHA256 hex. **Keşif**: Subscription `attributes.urls.customer_portal` direkt subscription endpoint'inden geliyor (`GET /v1/subscriptions/{id}`), customer endpoint ayrı çağrılmasına gerek yok — portal endpoint daha temiz, 1 round-trip tasarrufu. Foundation'da kritik drift YOK. **Faz 2 — Wave 2 implementation (5 ana çıktı)**: **(A) client.ts SDK helpers** — `createCheckout({variantId, customData, email, name, redirectUrl, forceTestMode})` JSON:API envelope (`data.type='checkouts' + relationships.{store,variant} + attributes.{test_mode, checkout_data.{email,name,custom}, product_options.redirect_url}`) SDK source paterniyle birebir. `getSubscription(id)` GET. `cancelSubscription(id)` DELETE. `reactivateSubscription(id)` PATCH cancelled:false. Hepsi `lsFetch` üzerine ince typed wrapper; not_configured sentinel + Sentry tag + PII redact intact. **(B) 4 API endpoint**: (1) `POST /api/billing/checkout` Zod `.strict()` body (planId/billingCycle/currency/redirectPath?) + `$transaction([plan, user])` + paymentProvider !== 'lemon_squeezy' → 409 + 4-slot variant lookup → 409 missing_variant + rate limit `checkout:user:${userId}` 10/dk + Sentry tag `integration: 'lemon-squeezy' / plan_id:` (PII discipline — no email). (2) `GET /api/billing/portal` source check + getSubscription → `urls.customer_portal` extract (24h JWT TTL, fresh fetch every click — caching YOK §44.9 paterni) + 20/dk rate. (3) `POST /api/billing/cancel` cancelSubscription DELETE + idempotent (cancelAtPeriodEnd zaten true ise alreadyScheduled:true 200) + 5/dk rate + DB update intentionally webhook'a bırakıldı (single source of truth, §44.6). (4) `POST /api/billing/reactivate` reactivateSubscription PATCH + idempotent (cancelAtPeriodEnd false ise alreadyActive:true). **(C) Admin /admin/plans variant mapping** — `PlansManager.tsx` `FormState` + `EMPTY_FORM` + `rowToForm` + `formToBody` 5 yeni field (paymentProvider + 4 variant slot). Modal UI'a yeni `bz-card-soft` section: provider dropdown + conditional 4 variant input (sadece lemon_squeezy seçildiğinde, USD/TRY × monthly/yearly placeholder örneği) + info AlertBanner (boş slot = checkout button gizli). Backend `/api/admin/plans` POST + `/[id]` PATCH 5 yeni field validation (`ALLOWED_PAYMENT_PROVIDERS` set + `VARIANT_ID_RE = /^[a-zA-Z0-9_-]{1,40}$/`). `toAdminRow` projection genişledi + `AdminPlanRow` interface 5 yeni field (paymentProvider zorunlu, 4 variant nullable). **(D) Owner BillingReadOnlyCard** — `/api/billing/summary` response `source` + `cancelAtPeriodEnd` field eklendi. UI 3-state CTA: no LS sub → /pricing link, active LS sub → "Aboneliği yönet" (portal redirect) + "İptal et" (confirm modal), cancelled-pending → "Aboneliği yeniden başlat" + "İptal planlandı" caption. `handlePortal/handleCancel/handleReactivate` fetch wrappers + busy state + success/error AlertBanner (4sn auto-dismiss success). Confirm Modal Pulse §11 paterniyle (renewsAt tarihi vurgu, "fikrinizi değiştirirseniz tek tıkla reactivate" reassurance). **(E) Tests** — `tests/lemon-squeezy-webhook.test.ts` +9 case (createCheckout body shape × test_mode/production/not_configured 3, getSubscription URL 1, cancelSubscription DELETE no-body 1, reactivateSubscription PATCH body 1, encodeURIComponent 1, integration 2). `globalThis.fetch` mock + restore paterni — gerçek network çağrısı yok, request shape doğrulanır. Toplam 30 → 39 test. **§44.9 backlog**: 5/8 item closed (1-5: checkout/portal/cancel-reactivate/owner UI/admin variant), 3 kalan defer (admin LS event UI / Iyzico / ops alert / marketing pricing checkout wire). **Etki**: 11 dosya — `src/lib/lemon-squeezy/client.ts` (+4 helper) + `src/lib/lemon-squeezy/index.ts` (barrel) + `src/lib/subscription-plans.ts` (AdminPlanRow + toAdminRow) + 4 yeni API route (checkout/portal/cancel/reactivate) + `src/app/api/admin/plans/[id]/route.ts` + `src/app/api/admin/plans/route.ts` (5 field validation) + `src/app/api/billing/summary/route.ts` (source + cancelAtPeriodEnd surface) + `src/components/admin/PlansManager.tsx` (modal section) + `src/components/dashboard/BillingReadOnlyCard.tsx` (CTAs + modal) + `tests/lemon-squeezy-webhook.test.ts` (+9 case) + CLAUDE.md (§44.9 backlog güncel + bu §38.218). Schema değişikliği YOK (Stage 137 yeterli). Backend kontratları intact (sadece ek field'lar + ek endpoint'ler). **Disipline (yeni §44.4+ ek — webhook idempotency single source of truth)**: Self-service action endpoint'leri (cancel/reactivate) Lemon Squeezy çağrısı sonrası DB row'u **preemptive update ETMEZ** — webhook handler 1-2 saniye sonra zaten doğru state'i write eder, double-write drift kaynağı. UI optimism için endpoint response'una `cancelledAt`/`endsAt`/`renewsAt` field'ı dön ama DB tek source webhook. **Disipline (yeni §44.3 ek — JSON:API request shape kanonik)**: Yeni LS endpoint helper'ı eklerken (örn. updateSubscriptionItem) SDK source paterniyle bire-bir hizalan: `{ data: { type, id?, attributes: {...snake_case}, relationships?: {...} } }`. JS SDK `convertKeys` camelCase→snake_case bizde yok — boundary'de manuel snake_case yaz (örn. `test_mode`, `checkout_data`, `product_options`). camelCase boundary'de gönderilirse LS sessizce field'ları drop eder. **Disipline (yeni §44.9 ek — UI 3-state CTA pattern)**: Self-service abone management UI'larında her zaman 3-state branch: (1) no sub → upgrade CTA + /pricing link, (2) active → manage + cancel ikilisi, (3) cancelled-pending grace period → reactivate + "scheduled" caption. cancelAtPeriodEnd flag boolean, edge case değil — UI default state machine. **Yapma**: subscription cancel sonrası DB row update preemptive yapma (webhook tek source). Marketing /pricing checkout butonlarını henüz `/api/billing/checkout`'a bağlama (sonraki PR scope — owner BillingReadOnlyCard'tan link şu an yeterli). Test mode + production mode kombinasyonunda forceTestMode kullanma — config.mode otomatik switch'ler, bilinçli test override sadece smoke test için. Owner UI'da redirectPath olarak external URL kabul etme — Zod regex `/^\/[a-zA-Z0-9/_-]*$/` ile local path only (open-redirect önleme, §37.2.G paterni). **Yap**: Yeni LS self-service endpoint için 5-adım: (i) `client.ts` typed helper + JSON:API envelope, (ii) `/api/billing/<action>` route + Zod + auth + rate limit + IDOR, (iii) DB row update'ı webhook'a bırak (single source), (iv) UI 3-state CTA + confirm modal (destructive aksiyonlar için), (v) success/error AlertBanner + busy state. Spec audit her yeni helper'da: SDK source `src/<resource>/index.ts` + `src/<resource>/types.ts` cross-check zorunlu — body shape drift Lemon Squeezy'de sessiz fail'e neden olur. **Chat prompt history (Stage 138)**: 2026-05-25 kullanıcı verbatim: *"aşağıdaki promptu geliştir ve uygula — kaldığın yerden devam et + docs.lemonsqueezy.com/api + github.com/lmsqueezy/lemonsqueezy.js analiz et + sorunsuz yap + kendin de dene"*. Geliştirilmiş prompt 3-fazlı: spec audit / Wave 2 implementation / verify. AskUserQuestion atlandı (talimat deterministik + scope CLAUDE.md §44.9 backlog'ta zaten tanımlıydı). Hukuki/disipline override yok. WebFetch docs sitesi 403 (Lemon Squeezy bot block) — GitHub SDK source `gh api` ile çekildi, kanonik fact'ler oradan doğrulandı. Lokal tsc/lint visual review (node_modules yok §38.186 paterni); CI Validate workflow + Vercel preview deploy gerçek doğrulamayı yapacak.
+- **(Stage 140 §38.220'de tamamen kaldırıldı — Dodo Payments'a geçildi. Aşağıdaki Stage 137-139 Lemon Squeezy referansları tarihsel kayıt için korunmuştur, kod artık main'de yok.)**
 - §38.217 — Stage 137 (PR TBD) Lemon Squeezy billing foundation — schema + lib + webhook handler + idempotency table + 11 event taxonomy + tests. Kullanıcı talebi (verbatim): *"sisteme lemon squeezy sitesinin API'sini ekleyeceğim ödeme için gerekli altyapıyı yapar mısın"*. AskUserQuestion 3 karar: scope = "Foundation önce (Önerilen)" + currency = "Dual: USD + TRY (hybrid)" + manuel/automated = "Hybrid (Önerilen)". Bu PR write-side billing'in **infrastructure foundation**'ı; checkout endpoint + owner UI + admin variant mapping sonraki PR (CLAUDE.md §44.9 backlog). **Schema (1 yeni tablo + 11 yeni field)**: `BillingSubscription` (4: source / lemonSqueezyCustomerId / lemonSqueezyVariantId / cancelAtPeriodEnd) + `BillingInvoice` (2: receiptUrl / source) + `SubscriptionPlan` (5: paymentProvider + 4 variant ID slot) + yeni `LemonSqueezyEvent` tablosu (id/payloadHash @unique/eventName/resourceType/resourceId/payload Json/processedAt/error/receivedCount/createdAt + 4 index). Migration `20260525000000_lemon_squeezy_foundation` **additive only** — mevcut row'lar source='manual' + paymentProvider='manual' default'larıyla intact, manuel admin akışı (MemberBillingModal) bozulmaz. `providerRef @unique` (existing) Lemon Squeezy resource ID için reuse (subscription ID + order ID), yeni explicit kolonlar (lemonSqueezyCustomerId, vb.) farklı semantik gerektirenler için. **Env (4 optional + validate-env.js + .env.example)**: `LEMON_SQUEEZY_API_KEY` (test_xxx | live_xxx) + `LEMON_SQUEEZY_STORE_ID` + `LEMON_SQUEEZY_WEBHOOK_SECRET` + `LEMON_SQUEEZY_MODE` ('test' | 'production'). Mode/key prefix mismatch (örn. test_ key + production mode) → `getLemonSqueezyConfig` `enabled: false` + Sentry error (silent live charges riski önleme; legacy unprefixed keys sessiz pass). **Lib (`src/lib/lemon-squeezy/` 5 dosya)**: (1) `config.ts` — env access + mode/key sanity + module-cached + `__resetLemonSqueezyConfigForTests`. (2) `types.ts` — hand-written TS types, no SDK dep (`openai.ts` §15 paterni paralel — `@lemonsqueezy/lemonsqueezy.js` 30KB gzip ek dep yapılmadı, CLAUDE.md §30 minimum-dep disipline). 15 event name literal union + LemonSqueezy{Subscription,Order,Invoice}Attributes + envelope types. (3) `webhook.ts` — `verifyLemonSqueezySignature` (HMAC-SHA256 timing-safe + length check + try/catch hex parse) + `computePayloadHash` (SHA256 hex idempotency key) + `parseLemonSqueezyPayload` (defansif JSON parse, minimal shape garanti: meta.event_name + data.id + data.type zorunlu — Zod kullanılmadı, payload zaman içinde genişler, brittle olmasın) + `isKnownLemonSqueezyEvent` type guard. (4) `client.ts` — `lsFetch<T>(path, opts)` fetch wrapper, 8s default timeout (Vercel 10s gateway limit altında), Sentry tag `integration: 'lemon-squeezy'` + PII redaction (error body sadece status + ilk error title slice, customer email log YOK). Foundation PR'da kullanılmıyor — sonraki PR checkout/portal/cancel endpoint'leri tüketecek. (5) `event-handlers.ts` — `dispatchLemonSqueezyEvent(payload)` main entry + 11 event handler. **Event taxonomy (CLAUDE.md §44.6)**: subscription_created/updated/resumed/unpaused → `handleSubscriptionUpsert` (BillingSubscription upsert with tier link via 4-slot variant lookup); subscription_cancelled → `cancelAtPeriodEnd: true`, status `active` (dönem sonuna kadar erişim, LS pattern); subscription_expired → status `canceled`; subscription_paused → status `past_due`; subscription_payment_success/recovered → BillingInvoice paid + parent sub `active`; subscription_payment_failed → BillingInvoice failed + parent sub `past_due` + Sentry warn (notifyOpsOfBillingFailure helper sonraki PR scope, §21.33 paterni); subscription_payment_refunded → BillingInvoice refunded; order_created/refunded → one-time payment BillingInvoice; license_key_* → `unsupported_yet` (Buaze SaaS, license-based değil). **User resolution strategy**: `meta.custom_data.user_id` (preferred, checkout endpoint pass eder) → `data.attributes.user_email` lookup fallback → null (event row processedAt: null kalır, admin manuel retry). **Tier resolution**: `data.attributes.variant_id` → `SubscriptionPlan.findFirst WHERE one_of_4_slots = variant_id`, eşleşen slot'tan billingCycle (monthly/yearly) + currency (USD/TRY) derive. Unmapped → subscriptionPlanId null (legacy plan fallback, §15.2 canonical). **Webhook endpoint (`POST /api/webhooks/lemon-squeezy`)**: dynamic + nodejs + maxDuration: 30. Flow: rawBody read → signature verify (invalid → 401) → SHA256 payload hash → Prisma create LemonSqueezyEvent (P2002 dedupe → 200 + receivedCount increment) → defansif parse → dispatch → mark processed (error column captures failure). **Hep 200 dön** sonrası signature OK (LS retry storm önleme); failed handler `processedAt: null` + `error: <reason>` kalır, admin manuel replay candidate. GET probe ops health check (config status, no secrets). **Tests (`tests/lemon-squeezy-webhook.test.ts`)**: signature verify 8 case (valid / empty secret / missing header / empty header / wrong secret / tampered body / wrong length / non-hex), payload hash 3 case (deterministic / different bodies / whitespace sensitive), parse 8 case (valid / malformed / missing meta / missing event_name / missing data / missing data.id / null / array root), known event guard 4 case, config 8 case (enabled / missing each env / mode/key mismatch × 2 / legacy prefix). Total ~30 test, pure logic, no DB, no network. Handler integration tests next PR (DB gerek). **CLAUDE.md updates**: §44 yeni kanonik bölüm (10 alt-section) + §18 env table (Lemon Squeezy 2 row) + §38.B timeline (bu §38.217). **Webhook idempotency pattern (yeni kanonik §44.4)**: payload SHA256 hash UNIQUE constraint + P2002 catch — yeni provider eklerken (Iyzico Wave 3.5, Stripe, PayPal) bu paterni reuse. **Disipline (yeni §40.4 ek — webhook signature + idempotency)**: External webhook handler 3 garantili adım — (i) raw body BEFORE JSON parse (signature exact bytes), (ii) HMAC timing-safe verify (length check first, Buffer.from('hex') try/catch, timingSafeEqual same-length required), (iii) payload hash dedupe via DB UNIQUE constraint (P2002 catch + increment counter, NEVER manual lookup race). Yeni provider için bu 3 adım kanonik. **Yapma**: signature verify atlayıp dispatch'e geçme (fake event → ücretsiz Pro tier mount, security CRITICAL); subscription_cancelled'da DB row silmek (LS cancel = scheduled, owner dönem sonuna kadar erişim); failed handler'da 500 dönmek (LS retry storm); LS amount field'ını MAJOR unit olarak saklamak (LS minor unit gönderiyor — cents/kuruş, `minorToMajor(n)` helper ile çevir). **Yap**: Yeni LS event-handler eklerken: idempotent upsert + `resolveUserId` (custom_data preferred) + `resolveTierFromVariant` (4 slot) + Prisma sequential await (CLAUDE.md §40.1 connection_limit=1, Promise.all yasak); admin override için BillingSubscription.source field intact tut (audit trail). Manuel akış (`MemberBillingModal`) deprecate edilmez — enterprise/legacy/refund use case'leri için kalır (hybrid §44.5). **Etki**: 12 dosya — `prisma/schema.prisma` (3 model extension + 1 yeni model) + migration SQL + `.env.example` (4 yeni env section) + `scripts/validate-env.js` (4 optional entry) + 5 yeni lib dosyası (`src/lib/lemon-squeezy/{config,types,webhook,client,event-handlers,index}.ts`) + 1 yeni webhook route (`src/app/api/webhooks/lemon-squeezy/route.ts`) + 1 yeni test (`tests/lemon-squeezy-webhook.test.ts`) + CLAUDE.md (§44 + §18 + §38.B). Backend kontratları dokunulmadı (UI-only refactor değil — yeni feature). Lokal node_modules yok, CI Validate workflow doğrulayacak (CLAUDE.md §38.186 paterni). **Chat prompt history (Stage 137)**: 2026-05-25 kullanıcı verbatim (yukarıda) + AskUserQuestion 3 karar (scope: Foundation önce / currency: Dual USD+TRY / manuel-otomatik: Hybrid). Hukuki/disipline override yok — CLAUDE.md §15.2 canonical billing parity + §40.4 PII discipline + §40.1 connection_limit=1 + §28.3.1 Zod kullanılmadı (payload genişleyebilir, brittle olmasın — runtime minimal şekil garanti yeterli, §28.1 elle validation kabul alanı).
 - §38.216 — Stage 136 (PR TBD) Marketing polish bundle — restoran wording / panelde-nokta / ToastRow card / SectionDivider kompakt / FooterLiveTicker nosnippet. Kullanıcı talebi (verbatim): *"anasayfada <Restoran tarafının kullandığı platformlarla konuşur.> restoran olarak sabitlemiş bunu genel işletmeler olarak bahset ve diğer yerlerde de böyle ise seoda falan düzelt. ekteki resimde de Her yorum, tek bir panelde. yazan ksıımda sondaki noktayı kaldır (heroda da kaldır) ve daha güzel estetik tasarla mobil uyumlu yap. ekteki yeni yorum geldi kısmının ikonu yok bu kısmı da daha efektif güzel tasarla. <PulseAIrestoransesiniöğrenir,tone-awareyanıtönerir.> kısmnıın componentini aşağıdan yukardan biraz küçült çok büyük durmasın. footerdaki canlı olan kısmı ve canlı diye yazan kısımları google'dan gizle."* 5 paralel polish bundle. **Madde 1 (restoran→işletme)**: `[locale]/page.tsx:452` "Restoran tarafının kullandığı platformlarla konuşur." → "İşletmenizin kullandığı platformlarla konuşur" (TR + EN parallel) + sondaki nokta kaldırıldı; `[locale]/page.tsx:159` FAQ "restoranınızı doğrulayın" → "işletmenizi doğrulayın" + "masa QR" → "lokasyon bazlı QR" (genel sektör framing); `SectionDivider.tsx:64` role 'Restoran sesi tek panelde' → 'İşletmenin sesi tek panelde' + line 74 'Pulse AI restoran sesini öğrenir' → 'Pulse AI işletmenizin sesini öğrenir' + line 90 EN 'The voice of the restaurant' → 'The voice of your business'. Sektör-sabit wording genel B2B framing'e geçti (restoran sadece sektör örneği olarak `/solutions/restaurants` + `meta description` 'Built for restaurants, hotels, clinics...' korundu — Google SERP traffic için intact). **Madde 2 (panelde + hero nokta + estetik)**: dark feature h2 (line 729-743) "Her yorum, tek bir panelde." sondaki nokta KALDIRILDI + estetik upgrade: chip `relative inline-block` wrapper + `bz-pulse-dot` decorative dot lime üst-sağ köşede (-top-1 -right-1 + boxShadow ring 4px rgba lime) + chip lime glow shadow (`0 10px 30px -10px rgba(198,242,78,0.45)`). h2 sizing `text-[28px] sm:text-[40px] lg:text-[52px]` → `text-[32px] sm:text-[44px] lg:text-[56px]` (+4px her tier, modern h2 weight). 3 hero variantında da sondaki nokta KALDIRILDI: `HeroCinematic.tsx:37/57` TR "Her yorum bir nabız.\nHer yanıt bir rakip." → noktasız (her iki satır); EN "Every review is a pulse.\nEvery reply is a moat." → noktasız. `HeroParallax.tsx:42/62` TR "Yorumları yönet,\npuanı yükselt." + EN "Manage reviews,\nclimb the rating." → sondaki nokta kaldırıldı. `HeroStarClimb` titleLead zaten noktasız (animated counter + climbs to) — dokunulmadı. Modern marketing pattern (Apple/Linear/Stripe hero h1 noktasız). **Madde 3 (ToastRow card 1 icon)**: `DEFAULT_GENERIC_ITEMS[0]` tone `neu` → `pos` (Tailwind v4 `brand-ink` content scanner edge case'inde silent fail; tone change + hex inline guarantee). `MessageSquareText` → `MessageCircle` (modern chat-like icon). 4 card için icon size 14→15, strokeWidth 2.5→2.2 (premium SaaS). `TONE_BG` + `TONE_ICON_BG` + `TONE_TITLE` brand-* class'ları hex inline'a çevrildi: `bg-brand-paper` → `bg-white`, `bg-brand-lime-soft` → `bg-[#EAF9B8]`, `bg-brand-ink text-white` → `bg-[#0A0A0A] text-white`, `bg-brand-lime text-brand-ink` → `bg-[#C6F24E] text-[#0A0A0A]` (Pulse §11 kanonik). Yeni `TONE_BORDER` map (5 tone × ring color, visual variety). Card markup: padding `px-3 py-2.5` → `px-3.5 py-3` + gap `2.5` → `3` + icon container `h-7 w-7` → `h-8 w-8` (visibility uplift) + hover `-translate-y-0.5` + shadow `[0_12px_28px_-16px_rgba(10,10,10,0.18)]` (depth feedback). Title font `text-xs` → `text-[13px]` + sub `mt-0.5 leading-tight` (typography hierarchy). **Madde 4 (SectionDivider kompakt)**: center stage padding `py-16 sm:py-24 lg:py-28` → `py-12 sm:py-16 lg:py-20` (mobile -16px / sm -32px / lg -32px). Quote font `clamp(22px,5vw,44px)` → `clamp(20px,4.4vw,36px)` (mobile -2px, max -8px). Attribution mt-7 sm:mt-8 → mt-5 sm:mt-6. Pagination dots mt-10 sm:mt-12 → mt-7 sm:mt-9. Total visual weight ~30% azaltıldı; "Pulse AI işletmenizin sesini öğrenir" moment'ı kullanıcı'nın talebine göre kompakt. **Madde 5 (FooterLiveTicker Google nosnippet)**: `data-nosnippet` attribute eklendi root wrapper'a (Google'ın resmi SERP snippet exclude attribute'u). Görsel olarak intact — kullanıcı "CANLI · KARAKÖY AI yanıtladı" rotation badge'i görüyor; Google snippet'inde gizli (search results'ta "Buaze | ... · CANLI · İzmir Pushed to Google" gibi tuhaf preview önlenir). Reference: https://developers.google.com/search/docs/crawling-indexing/special-tags. Visual + semantic intact (role="status" + aria-live="polite" SR korunur). **Etki**: 5 dosya — `[locale]/page.tsx` (3 fix: restoran wording + FAQ + panelde h2) + `SectionDivider.tsx` (4 fix: TR + EN role + 3 padding) + `HeroCinematic.tsx` (TR + EN sondaki nokta) + `HeroParallax.tsx` (TR + EN sondaki nokta) + `ToastRow.tsx` (card 1 icon + hex tokens + visual polish) + `FooterLiveTicker.tsx` (data-nosnippet) + CLAUDE.md. Backend kontratları dokunulmadı. **Disipline (§40.3 ek — Tailwind v4 brand-* class resolution defensive pattern)**: Yeni component eklerken `bg-brand-ink` / `text-brand-mute` gibi Tailwind v4 config-defined brand class'larını **kullanma**; doğrudan hex inline tercih (`bg-[#0A0A0A]` / `text-[#525252]`). Stage 66 §38.147'de eklenen `tailwind.config.ts` brand tokens hâlâ valid ama Tailwind v4 content scanner edge case'inde sessizce fail edebilir (Stage 136 §38.216 ToastRow card 1 icon visibility raporu); hex inline %100 güvenli + Pulse §11 kanonik. **Disipline (§40.3 ek — hero h1 + h2 noktasız)**: Modern marketing hero h1 + h2 başlıklarında sondaki nokta KALDIRILMALI (Apple/Linear/Stripe pattern). Kullanıcı talebi Stage 136 §38.216 ile pivot edildi; yeni hero/h2 yazılırken nokta KOYMA. **Disipline (§40.4 ek — data-nosnippet pattern)**: SERP snippet'ten gizlemek istediğin dinamik/rotating live content (footer ticker, "az önce çıkan yorum" feed) için `data-nosnippet` attribute root wrapper'a. Visual + SR semantic intact; sadece Google snippet'inde excluded. `aria-hidden` SR'ı bozar (SR kullanıcı içeriği duyamaz); `data-nosnippet` doğru pattern. **Chat prompt history (Stage 136)**: 2026-05-25 kullanıcı verbatim (yukarıda) — 5 paralel polish bundle, AskUserQuestion atlandı (talepler deterministik + ekran görüntüsü context'i net). Restoran wording audit Anasayfa + SectionDivider'da hedeflendi, `solutions/restaurants` sektör sayfası + `meta description fallback` bilinçli olarak intact bırakıldı (Google SERP traffic için sektör örneği gerekli).
 - §38.215 — Stage 135 (PR TBD) Marketing Reputation OS — audit + surveys polish + sitemap priority + feature inventory audit. Kullanıcı talebi (verbatim): *"başka owner panelde olan eklemeyi unuttuğum bir şey var mı bak ve anketler sayfası ile denetim merkezini daha estetik ve mobil uyumlu yapıp sitemapa da gerekli eklemeleri yapıp merge et"*. AskUserQuestion 2 karar: scope = "Sadece anketler + denetim merkezi (HIGH gap §38.A backlog'a defer)" + polish = "tümü 4 item (hero + AEO + sektör + sticky CTA + spec)". **Feature inventory audit** (Explore agent): owner sidebar nav vs marketing nav + `/features/*` keşfi 3 HIGH gap tespit etti: (1) **Google Yorumları** — owner panelde prominent (`/dashboard/google-reviews`, Stage 125-129 + §43 Reputation OS), marketing'de "Review Management" altında implicit, özel landing yok; (2) **QR yönetimi** — `/solutions/qr-generator` design tool var ama `/features/qr-studio` (history + edit + analytics) yok; (3) **Menü** — owner panelde full feature (`/dashboard/restaurants/[id]/menu` DnD builder + 7 tema + analytics), marketing'de hiç bahsedilmiyor. §38.A backlog'a HIGH 3 entry eklendi; ayrı PR'da kapatılır. **Sitemap update** (`route-overrides.ts`): 3 yeni sayfa explicit priority `0.8` (features/pulse-ai paterni); `/features/audit-center`, `/features/surveys`, `/features/campaigns`. Default heuristic 0.7'den manuel override; FAQPage + Service + HowTo + BreadcrumbList JSON-LD'lerle FAQ rich snippet eligibility tutarlı. **Polish bundle (4 item × 2 sayfa)**: (A) **Hero h1 cascade** — eski `text-[38px] sm:text-[60px] md:text-[48px] lg:text-[72px]` → yeni `text-[40px] sm:text-[56px] md:text-[52px] lg:text-[76px]` (mobile +2px daha rahat, sm-lg cascade smoother, lg desktop +4px premium visual weight). (B) **Hero mockup mobile max-w** — eski `<div className="relative">` → `<div className="relative mx-auto w-full max-w-[440px] sm:max-w-none">` (mobile portrait'ta hero card 100vw doldurmaz, 440px üst sınır + center; sm+'da grid sütunu tam doldurur). (C) **AEO H2 pull quote accent** — her 2 H2 bölümünün altına `<blockquote>` (border-l-[3px] border-[#C6F24E] + bg-[#EAF9B8]/30 + px-5 py-4 sm:px-6 sm:py-5 + medium leading-[1.55] text). Featured snippet eligibility artırır + visual rhythm + bölümler arası dikey divider rolü. Section spacing `space-y-12 sm:space-y-16` (eski space-y-12 daraydı). Pulse eyebrow color `text-[#737373]` → `text-[#A8D62E]` (lime-deep, bölüm sinyalı güçlendi). H2 boyut `text-[26px] sm:text-[36px]` → `text-[28px] sm:text-[40px]`. (D) **Spec row visual polish** — number boyutu `text-[28px] sm:text-[36px]` → `text-[44px] sm:text-[56px]` (premium SaaS hierarchy), eyebrow `text-[#737373]` → `text-[#A8D62E]` (lime-deep accent), card `hover:-translate-y-1 + hover:border-[#0A0A0A] + hover:shadow-[0_18px_40px_-22px_rgba(10,10,10,0.18)]` (depth feedback). Mobile gap `gap-6` → `gap-4 sm:gap-5` (kompakt). (E) **Sektör cross-link section (yeni)** — Spec row + FAQ arasına yeni "Hangi sektörler için ideal?" section: 6 sektör grid (audit: restoran/otel/klinik/perakende/güzellik/hukuk; survey: restoran/otel/klinik/güzellik/perakende/spor) × icon + label + sub + ilgili `/solutions/<sektor>` link. Mobile 1-col, sm: 2-col, lg: 3-col. Section bottom CTA: "Tüm sektörlere bak" ghost buton + "Sektörünü göremiyor musun?" caption. SEO + GEO impact: feature × sektör matrix snippet ("audit-center for restaurants" / "nps survey for hotels"); 12 internal cross-link (2 sayfa × 6 sektör). (F) **Sticky CTA mobile/desktop** — `<StickyCtaBar locale={locale} />` MarketingFooter altında mount. `hidden md:block` intact (mobile MobileBottomNav §25.4 Pas 4 footer'da zaten). dynamic import → chunk split, ssr default true. Conversion uplift; 600px scroll threshold (HANDOFF default). **Etki**: 4 dosya — `audit-center/page.tsx` + `surveys/page.tsx` + `route-overrides.ts` + CLAUDE.md. ~+360 satır net (her sayfa ~+170 satır sektör cross-link section + pull quote + import + StickyCtaBar mount). Backend kontratları dokunulmadı. Campaigns sayfası DOKUNULMADI (Stage 134 zaten yeterli; kullanıcı talebi sadece audit + surveys). **Disipline (yeni §40.7 ek — feature page polish 4-item checklist)**: yeni feature detay sayfası eklendiğinde veya mevcut sayfada UX iyileştirmesi yapılacağında 4 kanonik polish item kontrolü — (i) hero h1 cascade `text-[40px] sm:text-[56px] md:text-[52px] lg:text-[76px]` (mobile + smooth cascade + desktop weight), (ii) hero mockup mobile `max-w-[440px] mx-auto sm:max-w-none` (portrait overflow önleme), (iii) AEO H2 pull quote accent (`<blockquote>` border-l-[3px] border-[#C6F24E] + bg-[#EAF9B8]/30 + medium-weight text — featured snippet + visual divider), (iv) sektör cross-link section (6 sektör grid + /solutions/<sektor> linkler + "Tüm sektörlere bak" CTA — SEO/GEO matrix). Bonus 5: spec row hover polish + sticky CTA mount. **Yapma**: 4 polish item'ı tek sayfaya uygulamak yerine farklı sayfalara dağıtma (premium SaaS consistency için tüm feature sayfalarda paralel uygula — Stage 135 audit + surveys başlangıç, gelecek session kalan 4 feature sayfasını sıralı kapatır). Hero mockup `max-w-none` mobile için kullanma (overflow vertical hero card görsel hierarchy bozulur). Sektör cross-link section'a 12+ sektör koyma (6 sweet spot — 3-col grid lg'de 2 row, scroll fatigue yok). **Yap**: yeni feature sayfasında bu 4 item baseline; AEO H2 pull quote için spesifik feature value cümle hazırla (örn. audit: "operasyonel disiplin yorumun kalitesini şekillendirir", survey: "NPS + CSAT, müşterinin kamuda söylemediği iyileştirme sinyallerini taşır"). Sektör list owner panel feature spec'ine uyumlu olmalı (audit 6 sektör template kütüphanesi ile parity, survey 6 sektör en sık kullanılan senaryo). **HIGH 3 gap §38.A backlog ek**: (1) `/features/google-reviews` — Google Business Profile entegrasyonu (Stage 125-129 + §43 Reputation OS suite) marketing parity; auto-draft + rating impact tracking + health snapshot vurgusu. (2) `/features/qr-studio` — QR oluşturma + edit + history + analytics (mevcut `/solutions/qr-generator` design-only). (3) `/features/menu` — DnD builder + 7 tema + analytics (`Restaurant.menuEnabled` master flag + base64-in-DB §3 mimari). Her biri Stage 134 paterniyle ~600 satır + navbar entry + JSON-LD 4-tier. **Chat prompt history (Stage 135)**: 2026-05-25 kullanıcı verbatim (yukarıda) + AskUserQuestion 2 karar (scope: sadece audit + surveys; polish: 4 item tümü). Owner sidebar audit Explore agent tarafından, 3 HIGH gap + 2 MEDIUM gap (Restaurants multi-location + Integrations detail) raporlandı; HIGH 3'ü §38.A'ya not edildi, MEDIUM 2'si scope dışı (mevcut sayfalarda implicit, ayrı talep gelene kadar bekler). Hukuki/disipline override yok.
@@ -5358,247 +5360,202 @@ Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaur
 
 ---
 
-## §44 — Lemon Squeezy Billing Foundation (kanonik, 2026-05)
+## §44 — Dodo Payments Billing Foundation (kanonik, 2026-05, Stage 140 §38.220)
+
+> **Tarihsel not**: Stage 137 §38.217 + Stage 138 §38.218 + Stage 139
+> §38.219'da Lemon Squeezy entegrasyonu kuruldu (foundation + Wave 2 +
+> admin polish). **Stage 140 §38.220'de Lemon Squeezy tamamen kaldırıldı**;
+> bu § Dodo Payments için yeniden yazıldı. Lemon Squeezy şu nedenle
+> değiştirildi: Buaze kullanıcı tercihi (operatör henüz prod env vars'ı
+> set etmemişti — schema migrasyonu safe, sıfır data kaybı).
 
 Buaze write-side billing entegrasyonu. CLAUDE.md §15.2 canonical billing
 parity ile birlikte çalışır — read-side (marketing `/pricing`, admin
-`/admin/plans`, owner `BillingReadOnlyCard`) intact, bu §write-side
-(checkout + webhook + subscription lifecycle).
+`/admin/plans`, owner `BillingReadOnlyCard`) intact, bu § write-side
+(checkout + webhook + subscription lifecycle) Dodo Payments SDK paterni.
 
-### §44.1 Mimari (5 katman)
+### §44.0 — Bu PR'da yapılan değişikliklerin overview'i
 
-1. **Schema extensions** — `BillingSubscription` (4 LS field) +
-   `BillingInvoice` (2 field) + `SubscriptionPlan` (5 field: payment
-   provider + 4 variant ID slot) + yeni `LemonSqueezyEvent` tablosu
-   (webhook audit + idempotency).
-2. **Lib** — `src/lib/lemon-squeezy/{config,types,webhook,client,
-   event-handlers,index}.ts`. No SDK dep (`openai.ts` §15 fetch wrapper
-   paterni paralel). Module-cached config + boot-time mode/key
-   prefix mismatch detection.
-3. **Webhook endpoint** — `POST /api/webhooks/lemon-squeezy`. Sırasıyla:
-   read raw body → HMAC-SHA256 signature verify → SHA256 payload hash
-   insert (P2002 dedupe) → defansif JSON parse → dispatch → mark
-   processed. Signature OK sonrası **her zaman 200** dön (LS retry
-   storm önleme).
-4. **Hybrid manual + automated** (CLAUDE.md §44.5) — `BillingSubscription.source`
-   field (`'manual' | 'lemon_squeezy'`) audit trail; admin
-   `MemberBillingModal` LS-created rows üzerinde override yapabilir,
-   `source` orijinal yaratıcıyı korur.
-5. **Currency strategy** (CLAUDE.md §44.2) — Dual USD + TRY (user kararı,
-   AskUserQuestion). Her tier için 4 variant slot
-   (`lsVariantIdUsdMonthly/Yearly` + `lsVariantIdTryMonthly/Yearly`).
-   Variant lookup `currency` + `billingCycle` derive eder.
+**Removal (Stage 140 §38.220)**: 12 dosya silindi (`src/lib/lemon-squeezy/`
+6 dosya + `src/app/api/billing/{checkout,portal,cancel,reactivate}/route.ts`
+4 dosya + `src/app/api/webhooks/lemon-squeezy/route.ts` + LS test file).
+Schema rollback migration `20260525000001_remove_lemon_squeezy` 4 BillingSub
+LS field + 4 SubPlan LS field + LemonSqueezyEvent table drop edildi (sıfır
+production row — Stage 137 prod'a deploy edilmemişti).
+
+**Add**: `@dodopayments/nextjs` npm dep eklendi. 3 yeni route handler:
+`src/app/checkout/route.ts` (GET static + POST session), `src/app/api/webhook/dodo-payments/route.ts`
+(POST + 8 spesifik event handler), `src/app/customer-portal/route.ts` (GET).
+`SubscriptionPlan.dodoProductId` + `BillingSubscription.providerCustomerId`
+field'ları eklendi.
+
+### §44.1 Mimari
+
+1. **Resmi SDK** — `@dodopayments/nextjs` paketinin 3 named export'u
+   kullanılır: `Checkout`, `Webhooks`, `CustomerPortal`. SDK signature
+   verify + checkout URL üretimi + portal redirect kendisi handle eder
+   (manuel HMAC + REST fetch kodu yok). Sebep: Lemon Squeezy paterninden
+   farklı olarak Dodo SDK Next.js App Router'a doğrudan integration
+   (route handler factory exports).
+2. **3 route handler** — `src/app/checkout/route.ts` (GET static + POST
+   session), `src/app/api/webhook/dodo-payments/route.ts` (POST + 8
+   spesifik event handler), `src/app/customer-portal/route.ts` (GET).
+3. **Schema** — `SubscriptionPlan.paymentProvider` ('manual' |
+   'dodo_payments' | 'iyzico') + `SubscriptionPlan.dodoProductId` (1
+   product ID per tier — Lemon Squeezy 4-variant matrix'ten farklı,
+   Dodo product = SaaS tier, customer cycle/currency'i checkout
+   sayfasında seçer). `BillingSubscription.providerCustomerId` (Dodo
+   customer_id, /customer-portal redirect için). `BillingSubscription.source`
+   ('manual' | 'dodo_payments' | 'iyzico') + `cancelAtPeriodEnd` generic
+   field korunur.
+4. **Hybrid manual + automated** — `BillingSubscription.source` field
+   audit trail; admin `MemberBillingModal` Dodo-created row'ları
+   override edebilir (enterprise/legacy/discount), `source` orijinal
+   yaratıcıyı korur.
+5. **User resolution strategy** — `payload.data.metadata.user_id`
+   (checkout endpoint POST custom_data ile pass eder) → `payload.data.customer.email`
+   lookup fallback → null (event skip, admin manuel replay).
 
 ### §44.2 Env vars (4 optional)
 
 | Env | Eksikse |
 |---|---|
-| `LEMON_SQUEEZY_API_KEY` | `lsFetch()` `not_configured` döner, webhook 503 |
-| `LEMON_SQUEEZY_STORE_ID` | Admin `/admin/plans` variant ID girişi disabled |
-| `LEMON_SQUEEZY_WEBHOOK_SECRET` | Webhook her POST'ta 503 — LS retry storm |
-| `LEMON_SQUEEZY_MODE` | Default `'test'` — production'da explicit set zorunlu |
-
-**Mode/key prefix sanity**: `test_xxx` API key + `production` mode
-mismatch → `getLemonSqueezyConfig()` `enabled: false` + Sentry error
-(silent live charges riski önleme). Legacy prefix yok formatta sessiz
-geçer (eski LS hesapları).
+| `DODO_PAYMENTS_API_KEY` | /checkout + /customer-portal route handler runtime error; mevcut manuel admin akışı intact |
+| `DODO_PAYMENTS_WEBHOOK_SECRET` | /api/webhook/dodo-payments her POST'ta 401 — Dodo retry storm |
+| `DODO_PAYMENTS_RETURN_URL` | Successful checkout sonrası owner'ı geri yönlendirme URL'i (lokal: localhost:3000/success; prod: buaze.com/dashboard/account) |
+| `DODO_PAYMENTS_ENVIRONMENT` | `'test_mode'` (default) veya `'live_mode'`. Production deploy'da explicit `'live_mode'` zorunlu + live_ API key |
 
 ### §44.3 Schema fields
 
 ```prisma
 model BillingSubscription {
-  // ... existing fields ...
-  source                  String   @default("manual")    // 'manual' | 'lemon_squeezy'
-  lemonSqueezyCustomerId  String?  @map("...")           // Portal URL signing için
-  lemonSqueezyVariantId   String?  @map("...")           // Tier reverse lookup
-  cancelAtPeriodEnd       Boolean  @default(false)       // "iptal et" flag, expire ayrı
-  // providerRef (existing @unique) reused for LS subscription ID
-  // status (existing) reused with LS mapping (mapLsStatusToBuazeStatus)
-}
-
-model BillingInvoice {
-  // ... existing ...
-  receiptUrl  String?  @map("receipt_url")
-  source      String   @default("manual")
+  source              String   @default("manual")    // 'manual' | 'dodo_payments' | 'iyzico'
+  providerCustomerId  String?  @map("provider_customer_id")  // Dodo customer_id
+  cancelAtPeriodEnd   Boolean  @default(false)       // generic scheduled-cancel flag
+  // providerRef (existing @unique) reused — holds Dodo subscription_id
 }
 
 model SubscriptionPlan {
-  // ... existing ...
-  paymentProvider       String  @default("manual")   // 'manual' | 'lemon_squeezy' | 'iyzico'
-  lsVariantIdUsdMonthly String?
-  lsVariantIdUsdYearly  String?
-  lsVariantIdTryMonthly String?
-  lsVariantIdTryYearly  String?
-}
-
-model LemonSqueezyEvent {
-  id            String    @id
-  payloadHash   String    @unique           // SHA256 hex — idempotency key
-  eventName     String                      // meta.event_name
-  resourceType  String?                     // data.type
-  resourceId    String?                     // data.id
-  payload       Json                        // full payload, forensics
-  processedAt   DateTime?                   // null = pending, set = done
-  error         String?   @db.Text          // last error if handler failed
-  receivedCount Int       @default(1)       // LS retry counter
-  createdAt     DateTime  @default(now())
+  paymentProvider String  @default("manual")    // 'manual' | 'dodo_payments' | 'iyzico'
+  dodoProductId   String?                       // 1 product ID per tier
 }
 ```
 
-### §44.4 Webhook idempotency pattern (kanonik)
+Lemon Squeezy 4-variant matrix (USD/TRY × monthly/yearly) **YOK** — Dodo
+paterni: 1 product ID, customer cycle/currency'i checkout sayfasında seçer.
 
-Lemon Squeezy retry stratejisi: aynı endpoint çağrısı tekrar gönderiliyor
-(aynı body, aynı imza). Idempotency için **payload SHA256 hash**'i tablo
-UNIQUE constraint — duplicate delivery P2002 ile yakalanır:
+### §44.4 Webhook event taxonomy
 
-```ts
-const payloadHash = computePayloadHash(rawBody);
-try {
-  await prisma.lemonSqueezyEvent.create({ data: { payloadHash, ... } });
-} catch (err) {
-  if (err.code === 'P2002') {
-    await prisma.lemonSqueezyEvent.update({
-      where: { payloadHash },
-      data: { receivedCount: { increment: 1 } },
-    });
-    return NextResponse.json({ ok: true, deduped: true }, { status: 200 });
-  }
-  throw err;
-}
-```
-
-Bu pattern **yeni webhook endpoint'leri için kanonik** — Iyzico, Stripe,
-PayPal, başka provider eklenirken aynı payloadHash strategy reuse edilir.
-
-### §44.5 Hybrid mode (manuel + Lemon Squeezy)
-
-Owner self-service Lemon Squeezy üzerinden subscribe/upgrade/cancel yapar.
-Admin `MemberBillingModal` manuel override için kalır:
-
-- **Enterprise deal'lar** — custom fiyat, off-platform anlaşma
-- **Legacy / grandfathered users** — early adopter custom pricing
-- **Refund / credit** — admin manuel credit verir, audit log'lanır
-- **Iyzico TR pazar** — gelecek scope (CLAUDE.md §44.7 backlog)
-
-`BillingSubscription.source` field audit kaynak — LS-created row üzerine
-admin override yapabilir, `source` orijinal yaratıcıyı kayıt tutar
-(`'lemon_squeezy'`). Future migration (Iyzico Wave 3.5) source
-field'ından hangi row'ların değişeceğini bilir.
-
-### §44.6 Event handler taxonomy (11 event)
+Dodo SDK `Webhooks({ webhookKey, onPayload, on<EventName> })` paterni —
+catch-all + spesifik handler'lar. SDK signature verify'i HMAC ile kendisi
+yapar, manuel idempotency tablosu gerekmez.
 
 | Event | Side effect |
 |---|---|
-| `subscription_created` / `_updated` / `_resumed` / `_unpaused` | `handleSubscriptionUpsert` — BillingSubscription upsert (status + cancelAtPeriodEnd + renewsAt + tier link) |
-| `subscription_cancelled` | `cancelAtPeriodEnd: true`, status `active` (dönem sonuna kadar erişim) |
-| `subscription_expired` | status `canceled`, cancelAtPeriodEnd `false` |
-| `subscription_paused` | status `past_due` (UI banner için) |
-| `subscription_payment_success` / `_recovered` | `BillingInvoice` upsert (paid) + parent sub status `active` |
-| `subscription_payment_failed` | `BillingInvoice` (failed) + parent sub `past_due` + Sentry warning |
-| `subscription_payment_refunded` | `BillingInvoice.status: 'refunded'` |
-| `order_created` | `BillingInvoice` upsert (one-time payment, foundation skeleton) |
-| `order_refunded` | `BillingInvoice.status: 'refunded'` |
-| `license_key_*` | Skeleton (Buaze SaaS, license-based değil) — `unsupported_yet` return |
+| `payment.succeeded` | BillingInvoice upsert (paid) + parent sub `status='active'` |
+| `payment.failed` | BillingInvoice (failed) + parent sub `past_due` + Sentry warn |
+| `payment.refunded` | BillingInvoice.status: 'refunded' |
+| `subscription.active` / `.renewed` | `handleSubscriptionUpsert` (status + cancelAtPeriodEnd:false + renewsAt + tier link + providerCustomerId) |
+| `subscription.on_hold` | status: 'past_due' (UI banner) |
+| `subscription.cancelled` | cancelAtPeriodEnd: true, status: 'active' (grace until renewsAt) |
+| `subscription.expired` | status: 'canceled' (terminal) |
 
-### §44.7 KVKK + PII discipline (§40.4.PII paterni)
+### §44.5 Hybrid mode (manuel + Dodo Payments)
 
-Lemon Squeezy webhook payload'larında `user_email` + `user_name` gelir.
-Bu PII Buaze tarafında:
+Owner self-service Dodo üzerinden subscribe/upgrade/cancel yapar. Admin
+`MemberBillingModal` manuel override için kalır:
+- **Enterprise deal'lar** — custom fiyat, off-platform anlaşma
+- **Legacy / grandfathered users** — early adopter pricing
+- **Refund / credit** — admin manuel credit (audit log'lanır)
+- **Iyzico TR pazar** — gelecek scope (`paymentProvider='iyzico'`)
 
-- **DB'de**: `LemonSqueezyEvent.payload Json` — forensics + admin replay
-  için saklanır. Owner UI'a render edilirken redacted (sadece sub status
-  + amount görünür).
-- **Sentry**: `extra` field'lar `userId` + `lsCustomerId` + sayısal ID'ler
-  taşır, **email/name asla**. `sendDefaultPii: false` (CLAUDE.md §26.2)
-  SDK tarafı redact zaten devrede.
-- **Console**: `console.error` Sentry `extra` ile otomatik kapılır
-  (CLAUDE.md §40.4.PII) — `userId` + `eventName` + `payloadHash` log'la,
-  raw payload **asla**.
+`BillingSubscription.source` audit kaynak; Dodo-created row üzerine admin
+override yapılabilir, `source='dodo_payments'` korunur.
 
-### §44.8 Tests (CLAUDE.md §32 paterni)
+### §44.6 Cancel + reactivate flow (Dodo portal-driven)
 
-`tests/lemon-squeezy-webhook.test.ts` — pure logic, no DB:
-- HMAC-SHA256 signature verify (valid / invalid secret / missing header /
-  length mismatch / non-hex)
-- Payload SHA256 hash determinism + collision resistance
-- Defansif JSON parse (valid / malformed / missing fields / null / array)
-- Known event type guard
-- Config sanity (4 disabled reasons + mode/key mismatch detection +
-  legacy prefix silent pass)
+Owner cancel/reactivate **inline UI'da YOK**. `BillingReadOnlyCard` tek
+CTA — "Aboneliği yönet" → `/customer-portal?customer_id=<dodo_customer_id>`
+→ Dodo signed portal URL → owner Dodo'nun full-featured UI'sında cancel/
+reactivate/payment method update/billing address update yapar.
 
-Handler integration testleri **next PR** scope (DB gerek). Foundation
-primitives coverage yeterli.
+Sebep: Dodo customer portal full subscription management içerir; Buaze
+tarafında özel cancel modal + reactivate buton + confirm dialog (Stage
+138 Wave 2 paterni) **kaldırıldı** — UX iki yerden ikiye katlanır,
+inconsistent.
 
-### §44.9 Backlog + Wave 2 closure (kanonik)
+Webhook events DB'yi senkronize tutar:
+- Portal'da cancel → `subscription.cancelled` → `cancelAtPeriodEnd=true`
+- Portal'da reactivate → `subscription.active`/`renewed` → `cancelAtPeriodEnd=false`
+- Portal'da kart güncelleme → DB row dokunulmaz (kart info Dodo'da)
 
-**Foundation (Stage 137 §38.217)** + **Wave 2 (Stage 138 §38.218)** ile
-kapatılanlar ✅, sonraki PR'larda kalanlar 🚧:
+### §44.7 KVKK + PII discipline (§40.4 paterni)
 
-1. ✅ **Checkout endpoint** — `POST /api/billing/checkout` Wave 2'de
-   shipped. Zod `.strict()` body (planId + billingCycle + currency +
-   opsiyonel redirectPath), 4-slot variant lookup, rate limit 10/dk/owner,
-   `paymentProvider !== 'lemon_squeezy'` ise 409. Response: signed
-   checkout URL + variantId + planId echo.
-2. ✅ **Customer portal** — `GET /api/billing/portal` Wave 2'de shipped.
-   `getSubscription(providerRef)` ile signed `urls.customer_portal` fetch
-   (LS subscription endpoint daha temiz; customer endpoint gerekmedi —
-   §44 spec audit keşfi). Source `lemon_squeezy` zorunlu, 404 yoksa.
-3. ✅ **Cancel + reactivate** — `POST /api/billing/cancel` (DELETE LS) +
-   `POST /api/billing/reactivate` (PATCH `cancelled:false`). Wave 2'de
-   shipped. DB row update intentionally webhook'a bırakıldı (single
-   source of truth, drift önleme — §44.6 paterni).
-4. ✅ **Owner UI** — `BillingReadOnlyCard` Wave 2'de extension.
-   3-state CTA: no LS sub → `/pricing` link, active → Manage portal +
-   Cancel buttons, cancel-scheduled → Reactivate. Confirm modal
-   (Pulse §11) + success/error AlertBanner notice.
-5. ✅ **Admin variant mapping** — `/admin/plans` PlansManager Wave 2'de
-   `paymentProvider` dropdown (manual / lemon_squeezy / iyzico) + 4
-   variant ID slot input (conditional, sadece lemon_squeezy seçildiğinde
-   görünür). Backend POST + PATCH validation (alnum/dash regex, 1-40
-   char). `toAdminRow` projection genişledi.
-6. 🚧 **Admin LemonSqueezyEvent UI** — `/admin/billing/events` failed
-   handler retry + payload forensics. Wave 3 scope.
-7. 🚧 **Iyzico Wave 3.5** — TR pazar için ayrı provider. `paymentProvider`
-   enum'a `'iyzico'` zaten eklendi; helper + webhook ayrı PR.
-8. 🚧 **Ops alert webhook** — `notifyOpsOfBillingFailure` helper
-   (`notifyOpsOfMailFailure` §21.33 paterni). Wave 3 scope.
-9. 🚧 **Marketing `/pricing` checkout wiring** — public pricing card
-   "Subscribe" butonları `/api/billing/checkout`'a POST atsın. Şu an
-   `/pricing` link sadece görüntü; checkout flow hâlâ owner'ın
-   `BillingReadOnlyCard`'tan başlatması (veya manuel form submit)
-   gerekiyor. UX iyileştirmesi sonraki PR.
+Dodo webhook payload'larında `customer.email` + `customer.name` gelir.
+Buaze tarafında:
+- **Webhook handler `onPayload` catch-all**: console.log sadece event type
+  + payment_id + subscription_id — email/name **YOK**
+- **Sentry tag/extra**: userId + paymentId + subscriptionId — email/name **ASLA**
+- `sendDefaultPii: false` (CLAUDE.md §26.2) SDK tarafı redact zaten devrede
+
+### §44.8 Tests
+
+Stage 140 PR'ında yeni test eklenmedi — SDK signature verify'i kendi
+yapıyor, eski Lemon Squeezy test file'ı silindi. Production smoke test:
+operatör Dodo dashboard'tan test mode webhook tetiklediğinde
+`BillingSubscription` upsert + `/dashboard/account` UI'da "Aboneliği yönet"
+CTA görünür.
+
+Gelecek test scope (opsiyonel): webhook handler unit tests (fake payload
+→ resolveUserId + resolveTierFromProduct + DB upsert assertion).
+
+### §44.9 Backlog (gelecek scope)
+
+🚧 **Marketing `/pricing` checkout wiring** — public pricing card
+"Subscribe" butonları `/checkout?productId=<dodoProductId>` link veya
+POST atsın. Şu an `/pricing` link sadece marketing kart, owner self-
+service akışı `BillingReadOnlyCard` üzerinden başlar.
+
+🚧 **Admin event audit UI** — `/admin/billing/events` — Dodo webhook
+event'lerini tablo halinde göster + failed handler retry. Şu an Dodo
+dashboard'tan görülebilir.
+
+🚧 **Iyzico Wave 3.5** — TR pazar için ayrı provider. `paymentProvider`
+enum'da `'iyzico'` slot mevcut; helper + webhook + product ID field ayrı
+PR.
+
+🚧 **Ops alert** — `notifyOpsOfBillingFailure` helper (CLAUDE.md §21.33
+paterni) — `payment.failed` event'lerinde admin'e mail.
 
 ### §44.10 Yapma / Yap
 
 **Yapma**:
-- Webhook signature verify atlamak — fake event POST'la herkes Pro tier
-  mount edebilir (security CRITICAL)
-- Payload hash dışı dedupe kullanmak (eventName + resourceId + timestamp
-  vb.) — Lemon Squeezy event_id field'ı yok, payload hash deterministik
-  en güvenli
-- `req.json()` çağırıp sonra signature verify — body bir kez okunabilir,
-  signature raw bytes üzerinde
-- `subscription_cancelled` event'inde DB row silmek — owner dönem sonuna
+- SDK webhook signature verify'i atlayıp özel HMAC implementasyonu yazma
+  — SDK kendi yapıyor, manuel kod regression riski
+- `subscription.cancelled` event'inde DB row silmek — owner dönem sonuna
   kadar erişim hakkı taşır, sadece `cancelAtPeriodEnd: true` flag
-- Failed handler'da 500 dönmek — LS retry storm; signature OK ise her
-  zaman 200, `error` column ile admin manuel retry
-- API key'i client bundle'a koymak (NEXT_PUBLIC_) — full account erişimi,
-  server-only zorunlu
-- Test mode key (test_xxx) + production mode kombinasyonu — silent live
-  charge riski; `getLemonSqueezyConfig` boot'ta yakalar
-- Mevcut admin manuel akışı (`MemberBillingModal`) deprecate etmek —
-  enterprise/legacy/refund use case'leri için kalır (hybrid §44.5)
+- Inline cancel modal / reactivate buton ekleme — Dodo portal full UI
+  içerir, double-source drift kaynağı
+- Dodo amount field'ını MAJOR unit varsaymak — Dodo minor unit gönderir
+  (cents/kuruş), `minorToMajor(n)` helper ile çevir, BillingInvoice.amount
+  Decimal(10,2) MAJOR unit
+- API key'i client bundle'a koymak (NEXT_PUBLIC_) — full account erişimi
+- Test mode key + `'live_mode'` environment kombinasyonu — silent live
+  charge riski; operatör explicit set etmeli
+- Manuel admin akışı (`MemberBillingModal`) deprecate etmek — enterprise/
+  legacy/refund use case'leri için kalır (hybrid §44.5)
 
 **Yap**:
-- Yeni webhook provider eklerken (Iyzico, Stripe, PayPal) `payloadHash`
-  idempotency paterni reuse — kanonik §44.4
-- Yeni handler eklerken: idempotent upsert + `resolveUserId` (custom_data
-  preferred, email fallback) + `resolveTierFromVariant` (4 slot) +
-  Prisma `connection_limit=1` paralel okuma yapma (CLAUDE.md §40.1)
-- LS amount field'ları minor unit (cents/kuruş) — `minorToMajor(n)` helper
-  ile MAJOR'a çevir, BillingInvoice.amount Decimal(10,2) MAJOR unit
-- Subscription cancel ≠ delete; expire ayrı event (LS internal job)
-- Variant ID yeni eklenirken admin `/admin/plans` editöründe TR/USD ×
-  monthly/yearly 4 slot doldur, eksik slot = o kombinasyon checkout disabled
+- Yeni Dodo event handler eklerken: idempotent upsert + `resolveUserId`
+  (metadata preferred) + `resolveTierFromProduct` + Prisma sequential
+  await (CLAUDE.md §40.1 connection_limit=1)
+- Yeni payment provider eklerken (Iyzico) `BillingSubscription.source`
+  + `paymentProvider` enum literal ekle, `providerCustomerId` field
+  reuse (generic), `providerRef` reuse (subscription/transaction ID)
+- Dodo product ID admin `/admin/plans` editöründen set edilir; eksik =
+  o tier'da checkout button gizli
+- Webhook handler'da error catch + Sentry capture (tags: `integration:
+  'dodo-payments'`, `handler: 'subscription.X'`) — handler dispatch'i
+  bloklamasın; SDK 200 dönmeye devam etsin (retry storm önleme)
 
 ---

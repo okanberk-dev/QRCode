@@ -9,8 +9,8 @@ export const dynamic = 'force-dynamic';
 
 const ALLOWED_PERIODS = new Set(['month', 'year', 'one-time']);
 const ALLOWED_DISCOUNT_TYPES = new Set(['percent', 'fixed']);
-const ALLOWED_PAYMENT_PROVIDERS = new Set(['manual', 'lemon_squeezy', 'iyzico']);
-const VARIANT_ID_RE = /^[a-zA-Z0-9_-]{1,40}$/;
+const ALLOWED_PAYMENT_PROVIDERS = new Set(['manual', 'dodo_payments', 'iyzico']);
+const PRODUCT_ID_RE = /^[a-zA-Z0-9_-]{1,80}$/;
 
 function asString(v: unknown, max = 1000): string {
   return typeof v === 'string' ? v.trim().slice(0, max) : '';
@@ -102,24 +102,17 @@ export async function POST(req: NextRequest) {
   data.discountLabelTr = asString(body.discountLabelTr, 40) || null;
   data.discountLabelEn = asString(body.discountLabelEn, 40) || null;
 
-  // Lemon Squeezy variant mapping (CLAUDE.md §44.9 Wave 2)
+  // Payment provider routing (CLAUDE.md §44, Stage 140 §38.220)
   const provider = asString(body.paymentProvider, 20) || 'manual';
   if (!ALLOWED_PAYMENT_PROVIDERS.has(provider)) errors.push('Geçersiz ödeme sağlayıcı.');
   else data.paymentProvider = provider;
-  for (const field of [
-    'lsVariantIdUsdMonthly',
-    'lsVariantIdUsdYearly',
-    'lsVariantIdTryMonthly',
-    'lsVariantIdTryYearly',
-  ] as const) {
-    const v = asString(body[field], 40);
-    if (!v) {
-      data[field] = null;
-    } else if (!VARIANT_ID_RE.test(v)) {
-      errors.push(`${field}: geçersiz variant ID (alnum/dash, 1-40 karakter).`);
-    } else {
-      data[field] = v;
-    }
+  const dodoProductId = asString(body.dodoProductId, 80);
+  if (!dodoProductId) {
+    data.dodoProductId = null;
+  } else if (!PRODUCT_ID_RE.test(dodoProductId)) {
+    errors.push('dodoProductId: geçersiz product ID (alnum/dash, 1-80 karakter).');
+  } else {
+    data.dodoProductId = dodoProductId;
   }
 
   if (errors.length) return NextResponse.json({ error: errors.join(' ') }, { status: 400 });

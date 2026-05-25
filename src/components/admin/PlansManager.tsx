@@ -41,12 +41,9 @@ interface FormState {
   discountLabelTr: string;
   discountLabelEn: string;
   /** Payment provider (CLAUDE.md §44). 'manual' tier'lar checkout butonu
-   *  göstermez; 'lemon_squeezy' tier'lar 4 variant slot kullanır. */
-  paymentProvider: 'manual' | 'lemon_squeezy' | 'iyzico';
-  lsVariantIdUsdMonthly: string;
-  lsVariantIdUsdYearly: string;
-  lsVariantIdTryMonthly: string;
-  lsVariantIdTryYearly: string;
+   *  göstermez; 'dodo_payments' tier'lar `dodoProductId` slot'u kullanır. */
+  paymentProvider: 'manual' | 'dodo_payments' | 'iyzico';
+  dodoProductId: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -73,10 +70,7 @@ const EMPTY_FORM: FormState = {
   discountLabelTr: '',
   discountLabelEn: '',
   paymentProvider: 'manual',
-  lsVariantIdUsdMonthly: '',
-  lsVariantIdUsdYearly: '',
-  lsVariantIdTryMonthly: '',
-  lsVariantIdTryYearly: '',
+  dodoProductId: '',
 };
 
 function rowToForm(p: AdminPlanRow): FormState {
@@ -103,13 +97,10 @@ function rowToForm(p: AdminPlanRow): FormState {
     discountValue: p.discountValue != null ? String(p.discountValue) : '',
     discountLabelTr: p.discountLabelTr || '',
     discountLabelEn: p.discountLabelEn || '',
-    paymentProvider: (p.paymentProvider === 'lemon_squeezy' || p.paymentProvider === 'iyzico'
+    paymentProvider: (p.paymentProvider === 'dodo_payments' || p.paymentProvider === 'iyzico'
       ? p.paymentProvider
       : 'manual') as FormState['paymentProvider'],
-    lsVariantIdUsdMonthly: p.lsVariantIdUsdMonthly ?? '',
-    lsVariantIdUsdYearly: p.lsVariantIdUsdYearly ?? '',
-    lsVariantIdTryMonthly: p.lsVariantIdTryMonthly ?? '',
-    lsVariantIdTryYearly: p.lsVariantIdTryYearly ?? '',
+    dodoProductId: p.dodoProductId ?? '',
   };
 }
 
@@ -139,13 +130,9 @@ function formToBody(f: FormState) {
     discountLabelTr: f.discountActive ? f.discountLabelTr.trim() || null : null,
     discountLabelEn: f.discountActive ? f.discountLabelEn.trim() || null : null,
     paymentProvider: f.paymentProvider,
-    // 4 variant slot — boş = null (provider değişikliği eski mapping'i sıfırlamaz,
-    // admin elle silmek isterse boş bırakır). LS değilken send boş string, backend
-    // null'a çevirir (idempotent partial PATCH).
-    lsVariantIdUsdMonthly: f.lsVariantIdUsdMonthly.trim(),
-    lsVariantIdUsdYearly: f.lsVariantIdUsdYearly.trim(),
-    lsVariantIdTryMonthly: f.lsVariantIdTryMonthly.trim(),
-    lsVariantIdTryYearly: f.lsVariantIdTryYearly.trim(),
+    // Dodo Payments product ID — admin /admin/plans editöründen her tier
+    // için 1 product ID set edilir. Boş = null (admin override clear).
+    dodoProductId: f.dodoProductId.trim(),
   };
 }
 
@@ -945,17 +932,16 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
               </div>
             )}
 
-            {/* ── Ödeme sağlayıcı + Lemon Squeezy variant mapping (CLAUDE.md §44) ── */}
+            {/* ── Ödeme sağlayıcı + Dodo Payments product mapping (CLAUDE.md §44, Stage 140) ── */}
             <div className="bz-card-soft p-4">
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[13px] font-semibold text-[#0A0A0A]">Ödeme sağlayıcı</p>
-                  <p className="mt-0.5 text-[11px] text-[#737373]">
-                    <strong>manual</strong> = admin elle yönetir (enterprise/legacy).{' '}
-                    <strong>lemon_squeezy</strong> = self-service checkout. Variant
-                    ID&apos;leri Lemon Squeezy dashboard&apos;ından kopyalayın.
-                  </p>
-                </div>
+              <div className="mb-3">
+                <p className="text-[13px] font-semibold text-[#0A0A0A]">Ödeme sağlayıcı</p>
+                <p className="mt-0.5 text-[11px] text-[#737373]">
+                  <strong>manual</strong> = admin elle yönetir (enterprise/legacy,
+                  checkout butonu gizli). <strong>dodo_payments</strong> = self-service
+                  checkout. Product ID&apos;yi Dodo Payments dashboard&apos;ından
+                  (Products → seçilen product URL&apos;sinden) kopyalayın.
+                </p>
               </div>
               <Field label="Sağlayıcı">
                 <select
@@ -969,70 +955,36 @@ export default function PlansManager({ initialPlans }: { initialPlans: AdminPlan
                   className="bz-input"
                 >
                   <option value="manual">manual (admin yönetir)</option>
-                  <option value="lemon_squeezy">lemon_squeezy (self-service)</option>
+                  <option value="dodo_payments">dodo_payments (self-service)</option>
                   <option value="iyzico">iyzico (yakında — Wave 3.5)</option>
                 </select>
               </Field>
-              {form.paymentProvider === 'lemon_squeezy' && (
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {form.paymentProvider === 'dodo_payments' && (
+                <div className="mt-3">
                   <Field
-                    label="USD aylık variant ID"
-                    hint="Lemon Squeezy → Products → Variant URL'deki sayı"
+                    label="Dodo Product ID"
+                    hint="Dodo Payments dashboard → Products → URL'deki ID (örn. pdt_abc123)"
                   >
                     <input
                       type="text"
-                      value={form.lsVariantIdUsdMonthly}
+                      value={form.dodoProductId}
                       onChange={(e) =>
-                        setForm((f) => ({ ...f, lsVariantIdUsdMonthly: e.target.value }))
+                        setForm((f) => ({ ...f, dodoProductId: e.target.value }))
                       }
-                      placeholder="789012"
+                      placeholder="pdt_abc123"
                       className="bz-input bz-mono"
                     />
                   </Field>
-                  <Field label="USD yıllık variant ID">
-                    <input
-                      type="text"
-                      value={form.lsVariantIdUsdYearly}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, lsVariantIdUsdYearly: e.target.value }))
-                      }
-                      placeholder="789013"
-                      className="bz-input bz-mono"
-                    />
-                  </Field>
-                  <Field label="TRY aylık variant ID">
-                    <input
-                      type="text"
-                      value={form.lsVariantIdTryMonthly}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, lsVariantIdTryMonthly: e.target.value }))
-                      }
-                      placeholder="789014"
-                      className="bz-input bz-mono"
-                    />
-                  </Field>
-                  <Field label="TRY yıllık variant ID">
-                    <input
-                      type="text"
-                      value={form.lsVariantIdTryYearly}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, lsVariantIdTryYearly: e.target.value }))
-                      }
-                      placeholder="789015"
-                      className="bz-input bz-mono"
-                    />
-                  </Field>
+                  <AlertBanner kind="info" className="mt-3">
+                    <p className="text-[12px] leading-[1.5]">
+                      Dodo product&apos;ında billing cycle (aylık/yıllık) ve
+                      currency (USD/TRY) konfigürasyonu Dodo dashboard&apos;ında
+                      tanımlanır. Owner checkout&apos;ta tek product ID ile
+                      varyantlar arasında seçim yapar. Bu slot boş ise
+                      checkout butonu owner panelinde gizli.
+                    </p>
+                  </AlertBanner>
                 </div>
-              )}
-              {form.paymentProvider === 'lemon_squeezy' && (
-                <AlertBanner kind="info" className="mt-3">
-                  <p className="text-[12px] leading-[1.5]">
-                    Boş bırakılan slot için o (currency × cycle) kombinasyonu
-                    owner panelinde checkout butonu görünmez. Hibrit USD+TRY
-                    fiyatlama için en az 2 slot (USD aylık + TRY aylık)
-                    önerilir.
-                  </p>
-                </AlertBanner>
               )}
             </div>
           </div>
