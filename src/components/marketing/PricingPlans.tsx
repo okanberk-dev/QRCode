@@ -31,9 +31,10 @@ export default function PricingPlans({
   const base = `/${locale}`;
   const [billing, setBilling] = useState<Billing>('monthly');
 
+  // §38.225 Stage 145 — USD-only fiyatlandırma. Buaze tüm pazarlarda USD.
+  // Locale (tr/en) sadece label/CTA dilini değiştirir, fiyat format'ı sabit.
   const formatPrice = (value: number) => {
-    if (value === 0) return isTr ? '₺0' : '$0';
-    if (isTr) return `₺${value.toLocaleString('tr-TR')}`;
+    if (value === 0) return isTr ? 'Ücretsiz' : 'Free';
     return `$${value.toLocaleString('en-US')}`;
   };
 
@@ -176,11 +177,12 @@ export default function PricingPlans({
                     {/* CLAUDE.md §15.2 rounding disiplini: yıllık toplam tutar her
                         zaman `priceYearlyTotal` (kanonik DB değeri veya formula
                         sonucu), `priceYearly × 12` DEĞİL — rounding error'ı
-                        marketing × 12 ≠ admin'in yazdığı tutar bug'ına yol açar. */}
+                        marketing × 12 ≠ admin'in yazdığı tutar bug'ına yol açar.
+                        §38.225: USD-only. */}
                     <span>
                       {billing === 'yearly'
                         ? isTr
-                          ? `₺${p.priceYearlyTotal.toLocaleString('tr-TR')}/yıl`
+                          ? `$${p.priceYearlyTotal.toLocaleString('en-US')}/yıl`
                           : `$${p.priceYearlyTotal.toLocaleString('en-US')}/year`
                         : isTr
                           ? `${formatPrice(p.priceMonthly - p.discount.discountedMonthly)} tasarruf`

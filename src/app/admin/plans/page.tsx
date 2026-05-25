@@ -48,10 +48,12 @@ export default async function AdminPlansPage() {
 
   // Plan-key buckets — schema stores `plan` as a free string ("trial",
   // "monthly", "yearly", or future tier keys). Bucket loosely by prefix.
+  // §38.225 Stage 145 — Pro → Scale rename (Dodo product 'Scale' eşleşmesi).
   const planBuckets: Array<{ key: string; label: string; color: string; count: number }> = [
-    { key: 'pro', label: 'Pro', color: '#0A0A0A', count: 0 },
+    { key: 'scale', label: 'Scale', color: '#0A0A0A', count: 0 },
     { key: 'growth', label: 'Growth', color: '#525252', count: 0 },
     { key: 'starter', label: 'Starter', color: '#A3A3A3', count: 0 },
+    { key: 'pro', label: 'Pro (legacy)', color: '#737373', count: 0 },
     { key: 'monthly', label: 'Monthly', color: '#525252', count: 0 },
     { key: 'yearly', label: 'Yearly', color: '#0A0A0A', count: 0 },
     { key: 'trial', label: 'Trial', color: '#C6F24E', count: 0 },
@@ -76,19 +78,18 @@ export default async function AdminPlansPage() {
   const managedPlans = await getAllPlansForAdmin().catch(() => []);
 
   // §38.224 — Per-plan user count + DB-driven MRR.
-  // Eski: hardcoded `paidOwners * 749` (drift kaynağı, sayfada yazılan
-  // fiyatlarla eşleşmiyordu).
-  // Yeni: her tier'ın aylık TRY fiyatı × o tier'daki active user count
-  // toplamı. Trial user'lar MRR'ye dahil değil. Discount varsa indirimli
-  // aylık tutar kullanılır (CLAUDE.md §15.2 canonical billing parity).
+  // §38.225 Stage 145 — USD-only MRR (priceUsd primary, priceTry kaldırıldı).
+  // Her tier'ın aylık USD fiyatı × o tier'daki active user count toplamı.
+  // Trial user'lar MRR'ye dahil değil. Discount varsa indirimli aylık tutar
+  // kullanılır (CLAUDE.md §15.2 canonical billing parity).
   //
   // planUsage map: { [planId]: count } — PlansManager'a prop geçilir,
   // her tier card'ında "X işletme bu paketi kullanıyor" badge gösterilir.
   const planUsage: Record<string, number> = {};
-  let mrrTry = 0;
+  let mrrUsd = 0;
   for (const tier of managedPlans) {
     // Plan key fuzzy match: tier.nameTr (lowercase) → o key'i içeren
-    // user.plan satırlarını say. Pro/Growth/Starter standart adlar.
+    // user.plan satırlarını say. Scale/Growth/Starter standart adlar.
     const tierKey = tier.nameTr.toLowerCase();
     const usersForTier = owners.filter((o) => {
       const plan = (o.plan || 'trial').toLowerCase();
@@ -97,16 +98,18 @@ export default async function AdminPlansPage() {
     });
     planUsage[tier.id] = usersForTier.length;
     // Active discount varsa indirimli aylık fiyat kullan; yoksa list price.
-    let monthlyShown = tier.priceTry;
+    // priceUsd null ise 0 — TRY fallback yapılmaz (§38.225).
+    const baseUsd = tier.priceUsd ?? 0;
+    let monthlyShown = baseUsd;
     if (tier.discountActive && tier.discountValue != null && tier.discountValue > 0) {
       if (tier.discountType === 'percent') {
         const pct = Math.min(100, Math.max(0, tier.discountValue));
-        monthlyShown = Math.max(0, Math.round(tier.priceTry * (1 - pct / 100)));
+        monthlyShown = Math.max(0, Math.round(baseUsd * (1 - pct / 100)));
       } else {
-        monthlyShown = Math.max(0, tier.priceTry - tier.discountValue);
+        monthlyShown = Math.max(0, baseUsd - tier.discountValue);
       }
     }
-    mrrTry += usersForTier.length * monthlyShown;
+    mrrUsd += usersForTier.length * monthlyShown;
   }
 
   return (
@@ -142,11 +145,11 @@ export default async function AdminPlansPage() {
         />
         <StatCard
           label="Aylık MRR (tahmini)"
-          value={`₺${mrrTry.toLocaleString('tr-TR')}`}
-          delta={mrrTry > 0 ? 'DB tier fiyatları' : 'Henüz ödeyen yok'}
-          deltaKind={mrrTry > 0 ? 'up' : 'neutral'}
+          value={`$${mrrUsd.toLocaleString('en-US')}`}
+          delta={mrrUsd > 0 ? 'USD · DB tier fiyatları' : 'Henüz ödeyen yok'}
+          deltaKind={mrrUsd > 0 ? 'up' : 'neutral'}
           icon={<CreditCard size={14} strokeWidth={2} />}
-          accent={mrrTry > 0 ? '#C6F24E' : undefined}
+          accent={mrrUsd > 0 ? '#C6F24E' : undefined}
         />
       </div>
 

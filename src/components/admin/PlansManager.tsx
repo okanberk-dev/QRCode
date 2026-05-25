@@ -51,8 +51,10 @@ const EMPTY_FORM: FormState = {
   nameEn: '',
   descriptionTr: '',
   descriptionEn: '',
+  // §38.225 Stage 145 — USD-only. priceTry hep '0' (schema field korunur,
+  // UI'da girilmez). priceUsd primary required field.
   priceTry: '0',
-  priceUsd: '',
+  priceUsd: '0',
   priceYearlyTry: '',
   priceYearlyUsd: '',
   period: 'month',
@@ -256,12 +258,11 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
     if (!form.nameTr.trim() || !form.nameEn.trim()) return 'TR ve EN paket adı zorunlu.';
     if (!form.descriptionTr.trim() || !form.descriptionEn.trim())
       return 'TR ve EN açıklama zorunlu.';
-    const tryPrice = parseInt(form.priceTry, 10);
-    if (isNaN(tryPrice) || tryPrice < 0) return 'TRY fiyatı geçersiz.';
-    if (form.priceUsd.trim() !== '') {
-      const usd = parseInt(form.priceUsd, 10);
-      if (isNaN(usd) || usd < 0) return 'USD fiyatı geçersiz.';
-    }
+    // §38.225 Stage 145 — USD-only. priceTry validation kaldırıldı (form
+    // hidden; formToBody içinde '0' fallback). priceUsd primary required.
+    if (form.priceUsd.trim() === '') return 'USD fiyatı zorunlu.';
+    const usd = parseInt(form.priceUsd, 10);
+    if (isNaN(usd) || usd < 0) return 'USD fiyatı geçersiz.';
     if (form.discountActive) {
       const v = parseInt(form.discountValue, 10);
       if (isNaN(v) || v <= 0) return 'İndirim değeri sıfırdan büyük olmalı.';
@@ -539,18 +540,19 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   </div>
                 </div>
 
-                {/* Price hero — Aylık TRY (large) + USD (secondary) + Yıllık (sub).
-                    Hepsi InlinePriceCell ile click-to-edit. */}
+                {/* Price hero — Aylık USD (large) + Yıllık USD (sub).
+                    §38.225 Stage 145: USD-only. TRY field'ları schema'da kalır
+                    (backwards-compat) ama admin UI'da gösterilmez. */}
                 <div
                   className={`mb-5 border-b pb-5 ${isDark ? 'border-white/10' : 'border-[#EDEDED]'}`}
                 >
                   <div className="flex items-baseline gap-2">
                     <InlinePriceCell
                       planId={p.id}
-                      field="priceTry"
-                      value={p.priceTry}
-                      currency="TRY"
-                      label="Aylık TRY fiyat"
+                      field="priceUsd"
+                      value={p.priceUsd}
+                      currency="USD"
+                      label="Aylık USD fiyat"
                       busy={busyRowId === p.id}
                       onSave={savePriceInline}
                       required
@@ -563,7 +565,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                       /ay
                     </span>
                   </div>
-                  {/* USD secondary + Yıllık row */}
+                  {/* Yıllık USD row */}
                   <div
                     className={`mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] ${
                       isDark ? 'text-white/60' : 'text-[#525252]'
@@ -575,47 +577,7 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                           isDark ? 'text-white/40' : 'text-[#A3A3A3]'
                         }`}
                       >
-                        USD
-                      </span>
-                      <InlinePriceCell
-                        planId={p.id}
-                        field="priceUsd"
-                        value={p.priceUsd}
-                        currency="USD"
-                        label="Aylık USD fiyat"
-                        busy={busyRowId === p.id}
-                        onSave={savePriceInline}
-                        dark={isDark}
-                      />
-                    </div>
-                    <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`text-[10px] uppercase tracking-wider ${
-                          isDark ? 'text-white/40' : 'text-[#A3A3A3]'
-                        }`}
-                      >
-                        Yıllık ₺
-                      </span>
-                      <InlinePriceCell
-                        planId={p.id}
-                        field="priceYearlyTry"
-                        value={p.priceYearlyTry}
-                        currency="TRY"
-                        label="Yıllık TRY fiyat (toplam)"
-                        busy={busyRowId === p.id}
-                        onSave={savePriceInline}
-                        dark={isDark}
-                      />
-                    </div>
-                    <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`text-[10px] uppercase tracking-wider ${
-                          isDark ? 'text-white/40' : 'text-[#A3A3A3]'
-                        }`}
-                      >
-                        Yıllık $
+                        Yıllık toplam
                       </span>
                       <InlinePriceCell
                         planId={p.id}
@@ -628,6 +590,19 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                         dark={isDark}
                       />
                     </div>
+                    {p.priceYearlyUsd == null && p.priceUsd != null && p.priceUsd > 0 && (
+                      <>
+                        <span className={isDark ? 'text-white/20' : 'text-[#D4D4D4]'}>·</span>
+                        <span
+                          className={`text-[10px] uppercase tracking-wider ${
+                            isDark ? 'text-white/40' : 'text-[#A3A3A3]'
+                          }`}
+                          title="Formula fallback: monthly × 12 × 0.8 (≈%20 indirim)"
+                        >
+                          Otomatik ${Math.round(p.priceUsd * 12 * 0.8)}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -867,27 +842,11 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
             </Field>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <Field label="Aylık fiyat (TRY)" required>
-              <input
-                type="number"
-                min={0}
-                value={form.priceTry}
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setForm((f) => ({
-                    ...f,
-                    priceTry: next,
-                    // CLAUDE.md §15.2 — yıllık override admin elle dokunmadıysa
-                    // aylık değişince temizlenir → public sayfa formula
-                    // (monthly × 12 × 0.8) yeniden geçerli olur.
-                    priceYearlyTry: yearlyTryTouchedRef.current ? f.priceYearlyTry : '',
-                  }));
-                }}
-                className="bz-input"
-              />
-            </Field>
-            <Field label="Aylık fiyat (USD, opsiyonel)">
+          {/* §38.225 Stage 145 — USD-only fiyatlandırma. TRY field'ları
+              schema'da kalır ama admin UI'da gizli; her create/edit'te
+              priceTry: 0 olarak otomatik set edilir (formToBody içinde). */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Aylık fiyat (USD)" required>
               <input
                 type="number"
                 min={0}
@@ -897,11 +856,14 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
                   setForm((f) => ({
                     ...f,
                     priceUsd: next,
+                    // CLAUDE.md §15.2 — yıllık override admin elle dokunmadıysa
+                    // aylık değişince temizlenir → public sayfa formula
+                    // (monthly × 12 × 0.8) yeniden geçerli olur.
                     priceYearlyUsd: yearlyUsdTouchedRef.current ? f.priceYearlyUsd : '',
                   }));
                 }}
                 className="bz-input"
-                placeholder="EN sayfası için"
+                placeholder="örn. 40"
               />
             </Field>
             <Field label="Periyot">
@@ -919,99 +881,56 @@ export default function PlansManager({ initialPlans, initialUsage }: PlansManage
             </Field>
           </div>
 
-          {/* Yıllık fiyat — public pricing sayfasında "Yıllık" toggle'da
-              gösterilir. Boş bırakılırsa frontend formula (aylık × 12 × 0.8)
-              uygular; admin elle override ettiğinde DB değeri kullanılır.
-              CLAUDE.md §15.2 yıllık fiyat override pattern.
+          {/* Yıllık fiyat (USD, opsiyonel) — public pricing sayfasında "Yıllık"
+              toggle'da gösterilir. Boş bırakılırsa frontend formula
+              (aylık × 12 × 0.8) uygular; admin elle override ettiğinde DB
+              değeri kullanılır. CLAUDE.md §15.2 yıllık fiyat override pattern.
 
               Stale override koruması: admin aylık fiyatı değiştirip yıllık'a
               dokunmazsa form yıllık'ı boşaltır (auto-clear) → kayıtta null
               → public sayfada formula geçerli olur. Admin yıllık'a elle
               değer girerse override "touched" sayılır ve aylık değişse de
               korunur. */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field
-              label="Yıllık fiyat (TRY, opsiyonel)"
-              hint="Boş bırakılırsa aylık × 12 × 0.8 (≈%20 indirim) hesaplanır."
-            >
-              <div className="flex items-stretch gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  value={form.priceYearlyTry}
-                  onChange={(e) => {
-                    yearlyTryTouchedRef.current = true;
-                    setForm((f) => ({ ...f, priceYearlyTry: e.target.value }));
-                  }}
-                  className="bz-input flex-1"
-                  placeholder={(() => {
-                    const m = parseInt(form.priceTry, 10);
-                    if (!Number.isFinite(m) || m <= 0) return 'örn. 4990';
-                    return `Otomatik: ${Math.round(m * 12 * 0.8).toLocaleString('tr-TR')}`;
-                  })()}
-                />
-                {form.priceYearlyTry.trim() !== '' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      yearlyTryTouchedRef.current = false;
-                      setForm((f) => ({ ...f, priceYearlyTry: '' }));
-                    }}
-                    className="bz-btn-ghost shrink-0 px-3"
-                    title="Otomatik formüle dön (aylık × 12 × 0.8)"
-                  >
-                    <RotateCcw size={13} />
-                  </button>
-                )}
-              </div>
-              {/* Public sayfada gösterilecek "aylık eşdeğeri" canlı önizleme */}
-              <YearlyDisplayHint
-                monthly={form.priceTry}
-                yearlyOverride={form.priceYearlyTry}
-                currency="TRY"
+          <Field
+            label="Yıllık fiyat (USD, opsiyonel)"
+            hint="Boş bırakılırsa aylık × 12 × 0.8 (≈%20 indirim) hesaplanır."
+          >
+            <div className="flex items-stretch gap-2">
+              <input
+                type="number"
+                min={0}
+                value={form.priceYearlyUsd}
+                onChange={(e) => {
+                  yearlyUsdTouchedRef.current = true;
+                  setForm((f) => ({ ...f, priceYearlyUsd: e.target.value }));
+                }}
+                className="bz-input flex-1"
+                placeholder={(() => {
+                  const u = parseInt(form.priceUsd, 10);
+                  if (!Number.isFinite(u) || u <= 0) return 'örn. 384';
+                  return `Otomatik: ${Math.round(u * 12 * 0.8)}`;
+                })()}
               />
-            </Field>
-            <Field
-              label="Yıllık fiyat (USD, opsiyonel)"
-              hint="USD aylık dolu ise yıllık otomatik hesaplanabilir, ya da elle gir."
-            >
-              <div className="flex items-stretch gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  value={form.priceYearlyUsd}
-                  onChange={(e) => {
-                    yearlyUsdTouchedRef.current = true;
-                    setForm((f) => ({ ...f, priceYearlyUsd: e.target.value }));
+              {form.priceYearlyUsd.trim() !== '' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    yearlyUsdTouchedRef.current = false;
+                    setForm((f) => ({ ...f, priceYearlyUsd: '' }));
                   }}
-                  className="bz-input flex-1"
-                  placeholder={(() => {
-                    const u = parseInt(form.priceUsd, 10);
-                    if (!Number.isFinite(u) || u <= 0) return 'EN sayfası için';
-                    return `Otomatik: ${Math.round(u * 12 * 0.8)}`;
-                  })()}
-                />
-                {form.priceYearlyUsd.trim() !== '' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      yearlyUsdTouchedRef.current = false;
-                      setForm((f) => ({ ...f, priceYearlyUsd: '' }));
-                    }}
-                    className="bz-btn-ghost shrink-0 px-3"
-                    title="Otomatik formüle dön (aylık × 12 × 0.8)"
-                  >
-                    <RotateCcw size={13} />
-                  </button>
-                )}
-              </div>
-              <YearlyDisplayHint
-                monthly={form.priceUsd}
-                yearlyOverride={form.priceYearlyUsd}
-                currency="USD"
-              />
-            </Field>
-          </div>
+                  className="bz-btn-ghost shrink-0 px-3"
+                  title="Otomatik formüle dön (aylık × 12 × 0.8)"
+                >
+                  <RotateCcw size={13} />
+                </button>
+              )}
+            </div>
+            <YearlyDisplayHint
+              monthly={form.priceUsd}
+              yearlyOverride={form.priceYearlyUsd}
+              currency="USD"
+            />
+          </Field>
 
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Özellikler (TR) — her satıra bir madde">

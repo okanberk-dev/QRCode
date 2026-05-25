@@ -158,7 +158,10 @@ export function toAdminRow(row: {
 
 export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan {
   const isTr = locale === 'tr';
-  const baseMonthly = isTr ? row.priceTry : (row.priceUsd ?? Math.round(row.priceTry / 30));
+  // §38.225 Stage 145 — USD-only fiyatlandırma. Locale (tr/en) sadece tier
+  // name + description + features dilini belirler; fiyat her iki locale'de de
+  // USD. `priceTry` schema'da backwards-compat için kalır ama UI'da gösterilmez.
+  const baseMonthly = row.priceUsd ?? 0;
   const discountedMonthly = applyDiscount(
     baseMonthly,
     row.discountActive,
@@ -166,15 +169,15 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
     row.discountValue,
   );
   // Yıllık fiyat öncelik (CLAUDE.md §15.2):
-  //   1. Admin override (priceYearlyTry/Usd dolu, > 0) → DB değeri kanonik YILLIK TOPLAM
+  //   1. Admin override (priceYearlyUsd dolu, > 0) → DB değeri kanonik YILLIK TOPLAM
   //   2. Formula fallback → `discountedMonthly × 12 × 0.8` (≈%20 yıllık indirim)
   //
   // Rounding disiplini: `priceYearlyTotal` her zaman authoritative; aylık-eşdeğer
   // `priceYearly = round(total / 12)` SADECE kart başlığı gösterimi için
-  // (`₺X/ay`). "TRY/yıl" satırı veya billing summary tutarı her zaman
+  // (`$X/mo`). "$Y/year" satırı veya billing summary tutarı her zaman
   // `priceYearlyTotal`'dan beslenir — yoksa `Math.round(total / 12) × 12 ≠ total`
   // rounding error'ı marketing × 12 ≠ admin'in yazdığı değer bug'ına yol açar.
-  const adminYearly = isTr ? row.priceYearlyTry : row.priceYearlyUsd;
+  const adminYearly = row.priceYearlyUsd;
   const priceYearlyTotal =
     adminYearly != null && adminYearly > 0
       ? adminYearly
@@ -218,13 +221,14 @@ export function toPublicPlan(row: AdminPlanRow, locale: 'tr' | 'en'): PublicPlan
  *   legacy/trial owner → null sonuç (UI fallback PLAN_LABELS davranışına döner)
  * @param billingCycle - 'monthly' | 'yearly' | null; null ise plan.period
  *   tahmin edilir (legacy davranış)
- * @param currency - 'TRY' | 'USD' (varsayılan TRY); USD null gelirse TRY'ye düşer
+ * @param currency - 'TRY' | 'USD' (varsayılan USD); §38.225 Stage 145 sonrası
+ *   tüm yeni billing USD; TRY parametre legacy admin override için kalır
  * @returns canonical amount + meta (label, formula vs override flag)
  */
 export function resolveBillingAmount(
   plan: AdminPlanRow | null,
   billingCycle: 'monthly' | 'yearly' | null | undefined,
-  currency: 'TRY' | 'USD' = 'TRY',
+  currency: 'TRY' | 'USD' = 'USD',
 ): {
   amount: number | null;
   amountYearlyTotal: number | null;

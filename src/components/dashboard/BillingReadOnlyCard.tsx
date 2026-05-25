@@ -69,7 +69,9 @@ const STATUS_KIND: Record<Invoice['status'], 'lime' | 'ghost' | 'danger' | 'info
 };
 
 function formatCurrency(amount: number, currency: string | null, locale: 'tr' | 'en') {
-  const cur = currency || 'TRY';
+  // §38.225 Stage 145 — USD-only fiyatlandırma. Mevcut TRY subscription'lar
+  // (legacy) tutarlarını korumaya devam eder; yeni hesaplar USD ile gelir.
+  const cur = currency || 'USD';
   try {
     return new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
       style: 'currency',

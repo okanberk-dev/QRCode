@@ -54,7 +54,9 @@ const EMPTY: BillingForm = {
   paymentBrand: '',
   paymentLast4: '',
   amount: '',
-  currency: 'TRY',
+  // §38.225 Stage 145 — USD-only fiyatlandırma default. Legacy TRY override
+  // dropdown'da hâlâ mevcut (mevcut subscription'ları düzenlerken).
+  currency: 'USD',
   billingCycle: '',
   companyName: '',
   taxNumber: '',
@@ -157,7 +159,7 @@ export default function MemberBillingModal({
           paymentBrand: sub?.paymentBrand ?? '',
           paymentLast4: sub?.paymentLast4 ?? '',
           amount: sub?.amount != null ? String(sub.amount) : '',
-          currency: sub?.currency ?? 'TRY',
+          currency: sub?.currency ?? 'USD',
           billingCycle: sub?.billingCycle ?? '',
           companyName: sub?.companyName ?? '',
           taxNumber: sub?.taxNumber ?? '',
