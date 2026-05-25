@@ -1,43 +1,38 @@
 /**
- * Dodo Payments checkout route handler (CLAUDE.md §44, Stage 140 §38.220).
+ * Dodo Payments checkout route — TEMPORARY STUB (Stage 141 §38.221).
  *
- * GET  /checkout?productId=<dodo_product_id>            — static checkout URL
- * POST /checkout  body: { productId, quantity?, custom_data? } — session checkout
+ * Stage 140 §38.220'de `@dodopayments/nextjs` SDK ile kurulmuştu ama
+ * Vercel deployment ERROR çıkardı (build success + Sentry source-map
+ * upload success + ready timestamp set, ama final state ERROR — log'un
+ * son 8 saniyesi capture limit'ine takıldığı için kök neden henüz net
+ * değil). Production'ı acil restore için Dodo SDK dep + import geçici
+ * kaldırıldı; bu route 501 döner.
  *
- * SDK reference: https://docs.dodopayments.com/developer-resources/nextjs-adaptor
- *
- * Notes:
- *   • Lokal dev'de SDK çağrısı `DODO_PAYMENTS_*` env'ler eksikse runtime'da
- *     fail eder. Operatör Vercel project env'lerine 4 env'i set ettikten
- *     sonra production'da çalışır.
- *   • Buaze custom_data convention: `{ user_id: string, plan_id?: string }`.
- *     Webhook handler bu field'larla `BillingSubscription.userId`'yi resolve
- *     eder (CLAUDE.md §44 user resolution paterni).
- *   • Production'da bu route'a giden trafiğe owner JWT cookie gerekiyor mu?
- *     Şu an SDK doğrudan checkout URL üretir — owner-scope filtreleme
- *     marketing /pricing kartından gelen `productId` ile yapılır (admin
- *     /admin/plans'tan seçtiği `dodoProductId` slot'una bağlı).
+ * Sonraki PR scope:
+ *   • Vercel inspector URL veya `vercel logs` ile son 8sn build log'unu çek
+ *   • Dodo SDK runtime gereksinimini (edge mi node mu, peer deps, dynamic
+ *     imports) izole et
+ *   • Stub'tan canlıya geç
  */
 
-import { Checkout } from '@dodopayments/nextjs';
+import { NextResponse } from 'next/server';
 
-// GET — Static checkout link. Marketing /pricing cards link to this route
-// with `?productId=<dodo_product_id>` query; SDK redirects to Dodo's hosted
-// checkout page (one URL per product, suitable for embedded "Buy" buttons).
-export const GET = Checkout({
-  bearerToken: process.env.DODO_PAYMENTS_API_KEY,
-  returnUrl: process.env.DODO_PAYMENTS_RETURN_URL,
-  environment: process.env.DODO_PAYMENTS_ENVIRONMENT,
-  type: 'static',
-});
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
-// POST — Session checkout. Owner-initiated programmatic checkout from the
-// dashboard ("Upgrade" button). Body carries `productId` + optional
-// `quantity` and `custom_data` (user_id, plan_id) — the SDK forwards them
-// to Dodo and produces a one-shot signed checkout URL.
-export const POST = Checkout({
-  bearerToken: process.env.DODO_PAYMENTS_API_KEY,
-  returnUrl: process.env.DODO_PAYMENTS_RETURN_URL,
-  environment: process.env.DODO_PAYMENTS_ENVIRONMENT,
-  type: 'session',
-});
+const NOT_CONFIGURED = NextResponse.json(
+  {
+    error: 'dodo_payments_disabled',
+    message:
+      'Checkout entegrasyonu geçici olarak devre dışı (Stage 141). Lütfen daha sonra tekrar deneyin.',
+  },
+  { status: 501 },
+);
+
+export function GET() {
+  return NOT_CONFIGURED;
+}
+
+export function POST() {
+  return NOT_CONFIGURED;
+}
