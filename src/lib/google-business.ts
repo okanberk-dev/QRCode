@@ -32,6 +32,7 @@ const TOKEN_REFRESH_TIMEOUT_MS = 10_000;
 export type GoogleBusinessFailureCode =
   | 'GOOGLE_REAUTH_REQUIRED'
   | 'GOOGLE_RATE_LIMITED'
+  | 'GOOGLE_API_NOT_PROVISIONED'
   | 'GOOGLE_SERVER_ERROR'
   | 'GOOGLE_NETWORK_ERROR'
   | 'GOOGLE_API_ERROR'
@@ -50,6 +51,10 @@ const GOOGLE_FAILURE_MESSAGES: Record<GoogleBusinessFailureCode, Record<Locale, 
   GOOGLE_RATE_LIMITED: {
     tr: 'Google API kotası doldu. Birkaç dakika sonra tekrar deneyin.',
     en: 'Google API quota exhausted. Try again in a few minutes.',
+  },
+  GOOGLE_API_NOT_PROVISIONED: {
+    tr: 'Google İşletme Profili API erişimi henüz aktif değil. Hesabınız doğru bağlı; ek bir işlem yapmanıza gerek yok.',
+    en: 'Google Business Profile API access is not active yet. Your account is connected correctly; no action is needed on your side.',
   },
   GOOGLE_SERVER_ERROR: {
     tr: 'Google sunucusu geçici hata döndü. Tekrar deneyin.',
@@ -559,16 +564,37 @@ async function rawFetchWithTimeout(
   }
 }
 
+/**
+ * Google "API enabled ama quota=0" (henüz provision edilmemiş) durumunu
+ * tespit eder. Bu durumda accounts.list/locations.list 429
+ * RESOURCE_EXHAUSTED + `quota_limit_value:"0"` döner. KALICI bir durumdur:
+ * owner farklı Google hesabıyla bağlansa da aynı sonucu alır çünkü quota
+ * proje-geneli (`consumer: projects/<n>`). Sadece Google Cloud Console'da
+ * quota artışı (operatör aksiyonu, CLAUDE.md §5.1.1) çözer. Geçici rate
+ * limit'ten (quota_limit_value > 0) ayırt edilir.
+ */
+function isQuotaNotProvisioned(text: string): boolean {
+  return /"quota_limit_value"\s*:\s*"0"/.test(text);
+}
+
 function isRetriableStatus(status: number, networkError: boolean): boolean {
   if (networkError) return true;
-  if (status === 429) return true;
+  // §38.231 — 429 RETRY EDİLMEZ. Google Business quota dakika-bazlı
+  // (1/min/proje); 1-2s backoff aynı dakika içinde yine 429 döndürür +
+  // proje-geneli quota'yı her denemede yeniden tüketir (1 çağrı → 3 burn).
+  // Negative cache (§38.209) "tekrar dene"yi zaten 90s sonraya erteliyor;
+  // quota=0 (provision edilmemiş) durumunda retry tümüyle anlamsız.
   if (status >= 500 && status < 600) return true;
   return false;
 }
 
 function classifyOutcome(outcome: RawFetchOutcome): GoogleBusinessFailureCode {
   if (outcome.networkError) return 'GOOGLE_NETWORK_ERROR';
-  if (outcome.status === 429) return 'GOOGLE_RATE_LIMITED';
+  if (outcome.status === 429) {
+    return isQuotaNotProvisioned(outcome.text)
+      ? 'GOOGLE_API_NOT_PROVISIONED'
+      : 'GOOGLE_RATE_LIMITED';
+  }
   if (outcome.status >= 500) return 'GOOGLE_SERVER_ERROR';
   return 'GOOGLE_API_ERROR';
 }

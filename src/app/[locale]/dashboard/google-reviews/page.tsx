@@ -571,6 +571,12 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   // (Önbellek) ve "Son senkron" zamanı için kullanılır (CLAUDE.md §5.1).
   const [inlineLocationsSource, setInlineLocationsSource] = useState<'cache' | 'google' | 'empty' | null>(null);
   const [inlineLocationsSyncedAt, setInlineLocationsSyncedAt] = useState<string | null>(null);
+  // §38.231 — Google projesinde Business Profile API quota=0 (henüz
+  // provision edilmemiş) ise backend `warning: 'GOOGLE_API_NOT_PROVISIONED'`
+  // döner. Bu KALICI durum: owner farklı hesap denese de çözülmez (quota
+  // proje-geneli). UI "farklı hesapla bağlan" yanıltıcı CTA'sını gizler,
+  // owner'a doğru bağlı olduğunu + ek işlem gerekmediğini söyler.
+  const [apiNotProvisioned, setApiNotProvisioned] = useState(false);
   // §38.211 — Auto-retry tamamen kaldırıldı (shared API quota
   // anti-pattern). Eski state'ler (autoRetryFiredRef, autoRetryAttemptRef,
   // MAX_AUTO_RETRY_ATTEMPTS, hasAutoRetried) silindi — quota fail
@@ -864,6 +870,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     setLocationNotice(null);
     setLocationRetryAfter(null);
     setNeedsReconnect(false);
+    setApiNotProvisioned(false);
     // §38.211 — Auto-retry KALDIRILDI (shared API quota anti-pattern,
     // §40.4). resetAutoRetry opt is no-op (signature korunuyor backwards-
     // compat için, ileride state geri eklenirse caller'lar değişmesin).
@@ -875,7 +882,17 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
       }`;
       const res = await fetch(url);
       const data = await res.json();
-      if (res.ok && (data?.warning === 'GOOGLE_RATE_LIMITED' || data?.warning === 'CLIENT_THROTTLED')) {
+      if (
+        res.ok &&
+        (data?.warning === 'GOOGLE_RATE_LIMITED' ||
+          data?.warning === 'GOOGLE_API_NOT_PROVISIONED' ||
+          data?.warning === 'CLIENT_THROTTLED')
+      ) {
+        // §38.231 — quota=0 (provision edilmemiş) KALICI durum. "Farklı
+        // hesap" yanıltıcı + "60s sonra dene" countdown yanlış sinyal
+        // (kalıcı, bekleyince düzelmez). Geçici quota/throttle'dan ayır.
+        const notProvisioned = data.warning === 'GOOGLE_API_NOT_PROVISIONED';
+        setApiNotProvisioned(notProvisioned);
         setInlineLocations(data.locations ?? []);
         setInlineAccounts(Array.isArray(data.accounts) ? data.accounts : []);
         setAccountsLoaded(true);
@@ -893,7 +910,8 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         // başlatır — bu sadece buton disable + display amaçlı, hiçbir
         // retry tetiği YOK. Sandwich card (§38.208) owner'a "Farklı
         // hesapla bağlan" alternatifini hemen sunuyor.
-        setLocationRetryAfter(60);
+        // §38.231 — not-provisioned ise countdown YOK (kalıcı durum).
+        if (!notProvisioned) setLocationRetryAfter(60);
         return;
       }
       if (!res.ok) {
@@ -1450,8 +1468,14 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                   beraberinde görünür. Owner countdown'u beklemek zorunda
                   değil. (CLAUDE.md §5.1.1 quota proje-geneli, 1 req/dk,
                   tüm Buaze kullanıcıları paylaşır — bekleme bazen yetmez,
-                  alternative hesap önerisi her durumda anlamlı.) */}
-              {inlineAccounts.length === 0 && (
+                  alternative hesap önerisi her durumda anlamlı.)
+
+                  §38.231 — quota=0 (provision edilmemiş) KALICI durumda
+                  bu "farklı hesapla bağlan" kartı GİZLENİR: quota
+                  proje-geneli olduğu için hesap değiştirmek çözmez,
+                  owner'ı boşuna uğraştırır. Backend'in net sarı banner
+                  mesajı (apiNotProvisioned) yeterli. */}
+              {inlineAccounts.length === 0 && !apiNotProvisioned && (
                 <div className="rounded-xl bg-white border border-[#FDE68A] px-4 py-3">
                   <div className="flex items-start gap-3">
                     <Sparkles size={14} className="shrink-0 text-[#92400E] mt-0.5" />
