@@ -177,7 +177,7 @@ export async function GET(
     });
   } catch (error) {
     if (error instanceof GoogleBusinessApiError) {
-      if (error.code === 'GOOGLE_RATE_LIMITED') {
+      if (error.code === 'GOOGLE_RATE_LIMITED' || error.code === 'GOOGLE_API_NOT_PROVISIONED') {
         // (3) Google API quota tükendi → graceful degrade.
         //
         // §38.211 — Auto-retry KALDIRILDI (anti-pattern for shared quota).
@@ -207,6 +207,10 @@ export async function GET(
         // Empty stamp write korunur (§38.209 negative cache 90s pencere
         // intact) — sayfa refresh / restaurant switch'te Google'a
         // gitmemek için.
+        // §38.231 — quota=0 (provision edilmemiş) durumu geçici rate
+        // limit'ten ayrı işlenir: owner'a "farklı hesap dene" YANILTICI
+        // (quota proje-geneli, hesap değiştirmek çözmez).
+        const notProvisioned = error.code === 'GOOGLE_API_NOT_PROVISIONED';
         const hasCache = cached.locations.length > 0 || cached.accounts.length > 0;
         if (!hasCache) {
           // İlk quota fail — empty stamp yaz ki sonraki request'ler
@@ -235,11 +239,18 @@ export async function GET(
             stale: true,
             source: hasCache ? 'cache' : 'empty',
             cacheAgeSeconds: hasCache ? ageSec : 0,
-            warning: 'GOOGLE_RATE_LIMITED',
+            warning: error.code,
             // §38.211 — retryAfterSeconds intentionally omitted; frontend
             // would start a countdown + auto-retry which burns the
             // project-wide quota for everyone.
-            message: isTr
+            // §38.231 — notProvisioned (quota=0) KALICI durum: "farklı
+            // hesap dene" yanıltıcı (quota proje-geneli). Owner'a doğru
+            // bağlı olduğunu + ek işlem gerekmediğini söyle.
+            message: notProvisioned
+              ? (isTr
+                ? 'Google İşletme Profili API erişimi henüz aktif değil. Hesabınız doğru bağlı; bu Buaze tarafında tamamlanması gereken bir yapılandırma adımı, sizin ek bir işlem yapmanıza gerek yok.'
+                : 'Google Business Profile API access is not active yet. Your account is connected correctly; this is a configuration step on the Buaze side and no action is needed from you.')
+              : isTr
               ? (hasCache
                 ? `Google API kotası şu an dolu (tüm Buaze kullanıcıları aynı kotayı paylaşır). Son güncel veriler gösteriliyor; birkaç dakika sonra "Yenile" ile tekrar deneyin.`
                 : `Google API kotası şu an dolu (tüm Buaze kullanıcıları aynı kotayı paylaşır). Birkaç dakika bekleyin veya farklı bir Google hesabıyla bağlanmayı deneyin.`)
