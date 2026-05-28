@@ -98,5 +98,8 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ docs: filtered });
+  return NextResponse.json(
+    { docs: filtered },
+    { headers: { 'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300' } },
+  );
 }

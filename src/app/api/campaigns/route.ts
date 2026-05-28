@@ -59,6 +59,8 @@ export async function GET(req: NextRequest) {
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
     })),
+  }, {
+    headers: { 'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120' },
   });
 }
 
