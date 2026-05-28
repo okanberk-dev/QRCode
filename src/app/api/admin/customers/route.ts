@@ -309,6 +309,8 @@ export async function GET(req: NextRequest) {
         avgRating: summaryRow?.avg_rating ?? null,
         segmentCounts,
       },
+    }, {
+      headers: { 'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120' },
     });
   } catch (error) {
     console.error('[ADMIN_CUSTOMERS_GET]', error);

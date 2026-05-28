@@ -22,7 +22,10 @@ export async function GET(req: NextRequest) {
   if (!gate.ok) return gate.res;
 
   const settings = await getSiteSettings();
-  return NextResponse.json({ settings, defaults: SITE_SETTINGS_DEFAULTS });
+  return NextResponse.json(
+    { settings, defaults: SITE_SETTINGS_DEFAULTS },
+    { headers: { 'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120' } },
+  );
 }
 
 function keywordsToCsv(input: unknown): string | null {

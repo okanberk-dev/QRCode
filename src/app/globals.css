@@ -811,8 +811,6 @@ input::-webkit-inner-spin-button {
   border: 1px solid #EDEDED;
   border-radius: 16px;
 }
-.bz-divider { border-top: 1px solid #EDEDED; }
-
 /* ── §38.65 Apple-style elevation tier + motion easing ──────────────
    Pulse design system'e Apple HIG (macOS Sonoma / iOS 17) "soft elevation"
    katmanı. 3-tier shadow scale: idle/hover/floating. Heavy
@@ -1161,13 +1159,8 @@ select.bz-input option:checked {
   color: #0A0A0A;
 }
 
-/* Search wrapper — magnifier icon absolute pozisyonlu sol içeride.
-   tokens.css line 170-179 birebir port. Kullanım:
-   <div class="bz-input-search"><Search size={14}/><input class="bz-input" placeholder="Ara…"/></div>
-   Icon padding-left: 34px sayesinde input metnine bindirmez. */
-.bz-input-search { position: relative; display: inline-flex; align-items: center; width: 100%; }
-.bz-input-search input { padding-left: 34px; }
-.bz-input-search > svg { position: absolute; left: 11px; color: #A3A3A3; pointer-events: none; }
+/* §38.232 — `.bz-input-search` wrapper silindi (0 callsite — arama
+ * inputları `.bz-input` + inline lucide ikon paterniyle render edilir). */
 
 /* ── Tables ── */
 .bz-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -1349,99 +1342,10 @@ select.bz-input option:checked {
 
 /* ─── Pulse 2026 sidebar utilities (Phase 1 foundation, CLAUDE.md §23.7 Phase 12) ─── */
 
-/* Brand mark — logo + wordmark inline cluster (sidebar header). */
-.bz-brand-mark {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-heading);
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  color: #0A0A0A;
-}
-.bz-brand-mark .dot { color: #C6F24E; }
-
-/* Section eyebrow inside collapsible sidebar groups. */
-.bz-side-section {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #A3A3A3;
-  padding: 14px 8px 6px;
-  display: flex;
-  align-items: center;
-}
-/* CSS Performance §38.60 — `.bz-side-section--mini` collapsed-mode variant
- * silindi (0 callsite — UserDashboardShell `!isCollapsed && (...)` inline
- * conditional kullanıyor; CSS variant gerekmiyor). */
-
-/* Sidebar nav item — supports default + collapsed (mini) + active states. */
-.bz-side-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #525252;
-  cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease;
-  user-select: none;
-}
-.bz-side-item .label { flex: 1; min-width: 0; }
-.bz-side-item .count {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  color: #A3A3A3;
-  background: #F5F5F5;
-  border-radius: 999px;
-  padding: 2px 7px;
-}
-.bz-side-item .badge-new {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  color: #0A0A0A;
-  background: #C6F24E;
-  border-radius: 4px;
-  padding: 2px 5px;
-  font-weight: 600;
-}
-.bz-side-item:hover {
-  background: #FAFAFA;
-  color: #0A0A0A;
-}
-.bz-side-item:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(198, 242, 78, 0.6);
-}
-.bz-side-item.active {
-  background: #0A0A0A;
-  color: #FFFFFF;
-}
-.bz-side-item.active .count {
-  background: rgba(255, 255, 255, 0.12);
-  color: #C6F24E;
-}
-.bz-side-item.active::before {
-  content: '';
-  position: absolute;
-  left: -14px;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  background: #C6F24E;
-  border-radius: 0 2px 2px 0;
-}
-
-/* CSS Performance §38.60 — `.bz-side-item--mini` + `.bz-side-tip` (collapsed
- * mode tooltip) silindi (0 callsite — UserDashboardShell.tsx `!isCollapsed &&
- * (...)` inline conditional + ikon-only render kullanıyor; CSS variant
- * gerekmiyor). `.bz-side-cta--mini` aktif (line 445), korundu. */
+/* §38.232 — `.bz-brand-mark` + `.bz-side-section` + `.bz-side-item` (ve §38.60
+ * `--mini` varyantları, §38.101 `-active`) tümü silindi (0 callsite — sidebar
+ * brand / nav / active state inline Tailwind paterniyle uygulanır:
+ * UserDashboardShell + AdminSidebar). `.bz-side-cta` hâlâ aktif, korundu. */
 
 /* Sidebar primary CTA (Yeni Yorum İste / Request review). */
 .bz-side-cta {
@@ -1742,25 +1646,8 @@ select.bz-input option:checked {
 }
 .bz-progress.lime > i { background: #C6F24E; }
 
-/* Mobile topbar hamburger toggle. */
-.bz-topbar-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  border: 1px solid #EDEDED;
-  background: #FFFFFF;
-  color: #0A0A0A;
-  cursor: pointer;
-  transition: background-color 120ms ease;
-}
-.bz-topbar-toggle:hover { background: #F5F5F5; }
-.bz-topbar-toggle:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(198, 242, 78, 0.6);
-}
+/* §38.232 — `.bz-topbar-toggle` silindi (0 callsite — mobil topbar hamburger
+ * `bz-btn-icon` primitive paterniyle render edilir). */
 
 /* CSS Performance §38.60 — `.bz-mob-drawer-overlay`, `.bz-mob-drawer`,
  * @keyframes bz-drawer-slide-in (toplam ~28 satır + 1 keyframe) silindi.
@@ -1823,73 +1710,9 @@ select.bz-input option:checked {
  * Yeniden ihtiyaç olursa: önce 3+ callsite varlığını doğrula (CLAUDE.md §7
  * abstraction kaçınma); aksi halde inline Tailwind tercih et. */
 
-/* ─── ROI calculator slider polish ─────────────────────────────────────────
-   Native input[type=range] thumb default ~14px — mobilde dokunma için yetersiz.
-   Pulse §11 lime accent kullanılır, mobilde 28px (40px touch alan), desktop'ta
-   18px. Track 6px lime gradient + soft graphite border (modern look). */
-.roi-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(to right, #C6F24E 0%, #C6F24E var(--roi-fill, 50%), #EDEDED var(--roi-fill, 50%), #EDEDED 100%);
-  outline: none;
-  transition: background-position 0.12s ease;
-  cursor: pointer;
-}
-.roi-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #0A0A0A;
-  border: 4px solid #C6F24E;
-  box-shadow: 0 4px 12px rgba(10, 10, 10, 0.18);
-  cursor: pointer;
-  transition: transform 0.12s ease;
-}
-.roi-slider::-webkit-slider-thumb:active {
-  transform: scale(0.92);
-}
-.roi-slider::-moz-range-thumb {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #0A0A0A;
-  border: 4px solid #C6F24E;
-  box-shadow: 0 4px 12px rgba(10, 10, 10, 0.18);
-  cursor: pointer;
-}
-.roi-slider:focus-visible::-webkit-slider-thumb {
-  outline: 3px solid #C6F24E;
-  outline-offset: 2px;
-}
-.roi-slider:focus-visible::-moz-range-thumb {
-  outline: 3px solid #C6F24E;
-  outline-offset: 2px;
-}
-@media (min-width: 640px) {
-  /* Desktop'ta daha kompakt thumb — fare hassasiyeti yeterli. */
-  .roi-slider::-webkit-slider-thumb {
-    width: 20px;
-    height: 20px;
-    border-width: 3px;
-  }
-  .roi-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-width: 3px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .roi-slider,
-  .roi-slider::-webkit-slider-thumb,
-  .roi-slider::-moz-range-thumb {
-    transition: none;
-  }
-}
+/* §38.232 — `.roi-slider` polish (~66 satır) `src/app/[locale]/roi/roi.css`'e
+ * taşındı (CLAUDE.md §40.11 segment-scoped CSS). Tek route family (/roi —
+ * RoiCalculator.tsx); global bundle'dan çıkarıldı, route-level layout inject eder. */
 
 /* Legal document typography — public sayfa shell'i (LegalDocumentPage.tsx)
    tarafından <article className="prose-legal"> ile sarılır. Token'lar §11

@@ -71,6 +71,8 @@ export async function GET(req: NextRequest) {
         .filter((s) => s.source !== null)
         .map((s) => ({ value: s.source as string, count: s._count._all })),
     },
+  }, {
+    headers: { 'Cache-Control': 'private, s-maxage=30, stale-while-revalidate=120' },
   });
 }
 
