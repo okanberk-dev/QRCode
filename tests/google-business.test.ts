@@ -250,7 +250,7 @@ describe('googleBusinessFetch — transport behaviour', () => {
     assert.equal(fetchMock.mock.callCount(), 1, 'should not retry on 403');
   });
 
-  it('returns GOOGLE_RATE_LIMITED after exhausting retries on 429', async () => {
+  it('returns GOOGLE_RATE_LIMITED immediately on 429 (no retry, §38.231)', async () => {
     const fetchMock = mock.fn(async () => plainResponse('rate limited', 429));
     globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
 
@@ -263,8 +263,10 @@ describe('googleBusinessFetch — transport behaviour', () => {
     if (result.ok) return;
     assert.equal(result.status, 429);
     assert.equal(result.code, 'GOOGLE_RATE_LIMITED');
-    // Initial attempt + 2 retries (MAX_RETRIES = 2)
-    assert.equal(fetchMock.mock.callCount(), 3, 'should retry 429 twice');
+    // §38.231 — 429 is NOT retried. Google Business quota is per-minute and
+    // project-wide; retrying re-burns shared quota (1 call → 3) and a 1-2s
+    // backoff still hits the same minute. Single attempt only.
+    assert.equal(fetchMock.mock.callCount(), 1, 'should not retry 429');
   });
 
   it('returns GOOGLE_SERVER_ERROR after exhausting retries on 500', async () => {

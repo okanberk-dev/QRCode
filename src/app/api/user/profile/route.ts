@@ -4,24 +4,22 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from '@/lib/bcrypt-config';
-import { verifyJwt } from '@/lib/auth';
+import { getUserFromRequest } from '@/lib/auth';
 import { sendPasswordChangedEmail } from '@/lib/email';
 import { getClientIp } from '@/lib/rate-limit';
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get('user_token')?.value;
-    if (!token) {
+    // §38.189 / §37.2.A — session-aware auth: getUserFromRequest runs the
+    // UserSession revoke check, so a logged-out / password-reset session is
+    // rejected here (bare verifyJwt would accept it until JWT expiry).
+    const auth = await getUserFromRequest(req);
+    if (!auth) {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
     }
 
-    const payload = await verifyJwt(token);
-    if (!payload || !payload.userId) {
-      return NextResponse.json({ error: 'Geçersiz oturum' }, { status: 401 });
-    }
-
     const user = await prisma.user.findUnique({
-      where: { id: payload.userId as string },
+      where: { id: auth.userId },
       select: {
         id: true,
         email: true,
@@ -80,21 +78,16 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const token = req.cookies.get('user_token')?.value;
-    if (!token) {
+    const auth = await getUserFromRequest(req);
+    if (!auth) {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
-    }
-
-    const payload = await verifyJwt(token);
-    if (!payload || !payload.userId) {
-      return NextResponse.json({ error: 'Geçersiz oturum' }, { status: 401 });
     }
 
     const body = await req.json();
     const { name, email, phoneNumber, position, timezone, currentPassword, newPassword } = body;
 
     const user = await prisma.user.findUnique({
-      where: { id: payload.userId as string },
+      where: { id: auth.userId },
     });
 
     if (!user) {

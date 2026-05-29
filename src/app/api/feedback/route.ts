@@ -103,6 +103,7 @@ export async function POST(req: NextRequest) {
     const validPlatforms = [
       'google', 'yemeksepeti', 'getir', 'trendyol_go',
       'tripadvisor', 'airbnb', 'booking', 'yandex',
+      'yelp', 'foursquare',
     ];
     const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : null;
 

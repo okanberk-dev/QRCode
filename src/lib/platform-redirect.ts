@@ -18,6 +18,8 @@ const VALID_PROVIDERS = new Set([
   'airbnb',
   'booking',
   'yandex',
+  'yelp',
+  'foursquare',
 ]);
 
 const VALID_SOURCES = new Set(['qr', 'direct', 'link', 'table', 'delivery']);
