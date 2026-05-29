@@ -31,19 +31,26 @@ import { Checkout } from '@dodopayments/nextjs';
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 
+// Dodo SDK `environment` literal union ('test_mode' | 'live_mode'). Env var
+// is `string | undefined`; coerce defensively — any non-'live_mode' value
+// (including undefined) falls back to the safe 'test_mode' (CLAUDE.md §44.2:
+// default test_mode; §44.10: avoid silent live charges from a misconfig).
+const dodoEnvironment: 'test_mode' | 'live_mode' =
+  process.env.DODO_PAYMENTS_ENVIRONMENT === 'live_mode' ? 'live_mode' : 'test_mode';
+
 // SDK handler instances (module-level — Vercel serverless cold start'ta tek
 // kere init olur). Internal call edilir; response JSON parse + 302 redirect.
 const sdkStaticCheckout = Checkout({
   bearerToken: process.env.DODO_PAYMENTS_API_KEY,
   returnUrl: process.env.DODO_PAYMENTS_RETURN_URL,
-  environment: process.env.DODO_PAYMENTS_ENVIRONMENT,
+  environment: dodoEnvironment,
   type: 'static',
 });
 
 const sdkSessionCheckout = Checkout({
   bearerToken: process.env.DODO_PAYMENTS_API_KEY,
   returnUrl: process.env.DODO_PAYMENTS_RETURN_URL,
-  environment: process.env.DODO_PAYMENTS_ENVIRONMENT,
+  environment: dodoEnvironment,
   type: 'session',
 });
 

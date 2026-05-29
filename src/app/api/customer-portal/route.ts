@@ -22,7 +22,13 @@
 
 import { CustomerPortal } from '@dodopayments/nextjs';
 
+// Dodo SDK `environment` literal union ('test_mode' | 'live_mode'). Env var
+// is `string | undefined`; coerce defensively — non-'live_mode' (incl.
+// undefined) → safe 'test_mode' fallback (CLAUDE.md §44.2 / §44.10).
+const dodoEnvironment: 'test_mode' | 'live_mode' =
+  process.env.DODO_PAYMENTS_ENVIRONMENT === 'live_mode' ? 'live_mode' : 'test_mode';
+
 export const GET = CustomerPortal({
   bearerToken: process.env.DODO_PAYMENTS_API_KEY,
-  environment: process.env.DODO_PAYMENTS_ENVIRONMENT,
+  environment: dodoEnvironment,
 });

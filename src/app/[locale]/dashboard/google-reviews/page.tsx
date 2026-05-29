@@ -1187,8 +1187,12 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
         ? pctDelta(repliedThisMonth, prevPeriodReplied)
         : null;
 
-    // Avg response time delta — prev 30d ile current 30d kıyas
-    // (Daha düşük süre = iyi → "-" pozitif gösterilir, sign 1 sayılır)
+    // Avg response time delta — prev 30d ile current 30d kıyas.
+    // pctDelta(curr, prev) burada sign=-1 döner çünkü süre İYİLEŞİNCE
+    // (curr < prev) fark negatiftir. Render tarafı bu sign=-1'i lime/pozitif
+    // rozete çevirir ("daha düşük süre = iyi") — aşağıdaki avgResponseDelta
+    // render bloğundaki telafi edici ters çevirmeye bakın. Argüman sırasını
+    // değiştirmeyin: render'daki inversion'la birlikte sonuç zaten doğru.
     const avgResponseDelta =
       avgResponseHours !== null && prevAvgResponseHours !== null && prevAvgResponseHours > 0
         ? pctDelta(avgResponseHours, prevAvgResponseHours)

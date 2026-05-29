@@ -303,9 +303,16 @@ export async function sendImpersonationStartEmail(params: {
 }): Promise<boolean> {
   const recipient = stripCtl(params.recipient, 256);
   if (!recipient) return false;
+  // stripCtl removes CRLF/tab (header-injection defense). Keep these RAW for
+  // the plain-text body; build HTML-escaped variants for the HTML body so an
+  // admin-supplied reason/username can't inject markup into the recipient's
+  // mail client (§21.1 / §37.6 escape discipline).
   const adminUsername = stripCtl(params.adminUsername, 80) ?? 'Yönetici';
   const reason = stripCtl(params.reason, 500) ?? '(belirtilmemiş)';
   const recipientName = stripCtl(params.recipientName, 100);
+  const adminUsernameHtml = escapeHtml(adminUsername);
+  const reasonHtml = escapeHtml(reason);
+  const recipientNameHtml = recipientName ? escapeHtml(recipientName) : null;
   const endsAtLabel = params.endsAt.toLocaleString(
     params.locale === 'en' ? 'en-US' : 'tr-TR',
     { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' },
@@ -316,21 +323,24 @@ export async function sendImpersonationStartEmail(params: {
       ? `[Buaze] An admin opened a support session on your account`
       : `[Buaze] Hesabınıza destek erişimi açıldı`;
 
-  const greeting = recipientName
-    ? params.locale === 'en'
-      ? `Hi ${recipientName},`
-      : `Merhaba ${recipientName},`
-    : params.locale === 'en'
-      ? 'Hi there,'
-      : 'Merhaba,';
+  const buildGreeting = (name: string | null) =>
+    name
+      ? params.locale === 'en'
+        ? `Hi ${name},`
+        : `Merhaba ${name},`
+      : params.locale === 'en'
+        ? 'Hi there,'
+        : 'Merhaba,';
+  const greeting = buildGreeting(recipientName); // plain-text body
+  const greetingHtml = buildGreeting(recipientNameHtml); // HTML body (escaped)
 
   const html =
     params.locale === 'en'
       ? `
-<p>${greeting}</p>
-<p>A Buaze admin (${adminUsername}) just opened a 30-minute support
+<p>${greetingHtml}</p>
+<p>A Buaze admin (${adminUsernameHtml}) just opened a 30-minute support
 session on your account.</p>
-<p><strong>Reason:</strong> ${reason}</p>
+<p><strong>Reason:</strong> ${reasonHtml}</p>
 <p><strong>Session ends at:</strong> ${endsAtLabel} (auto-revoke).</p>
 <p>This is part of KVKK / GDPR transparency — we always notify you when an
 admin acts on your behalf. Your data is read-only during this session
@@ -340,10 +350,10 @@ support@buaze.com.</p>
 <p>— Buaze Team</p>
 `
       : `
-<p>${greeting}</p>
-<p>Bir Buaze yöneticisi (${adminUsername}) hesabınızda 30 dakikalık bir destek
+<p>${greetingHtml}</p>
+<p>Bir Buaze yöneticisi (${adminUsernameHtml}) hesabınızda 30 dakikalık bir destek
 oturumu açtı.</p>
-<p><strong>Sebep:</strong> ${reason}</p>
+<p><strong>Sebep:</strong> ${reasonHtml}</p>
 <p><strong>Oturum bitiş:</strong> ${endsAtLabel} (otomatik kapanır).</p>
 <p>Bu bildirim KVKK / GDPR şeffaflık disiplinin bir parçasıdır — bir
 yönetici hesabınız üzerinden işlem yaptığında her zaman size haber

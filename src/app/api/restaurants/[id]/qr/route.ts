@@ -137,6 +137,7 @@ export async function GET(
     const validPlatforms = [
       'google', 'yemeksepeti', 'getir', 'trendyol_go',
       'tripadvisor', 'airbnb', 'booking', 'yandex',
+      'yelp', 'foursquare',
     ];
     const sanitizedPlatform = platform && validPlatforms.includes(platform) ? platform : '';
 

@@ -1,6 +1,14 @@
 import { prisma } from '@/lib/prisma';
 
 const VALID_SOURCES = new Set(['qr', 'direct', 'link', 'table', 'delivery']);
+// Canonical review platforms (CLAUDE.md §5). Unknown values are nulled (not
+// rejected) — the scan still counts as a conversion event; only the platform
+// attribution is dropped so analytics rows stay clean. Mirrors the `source`
+// whitelist + the feedback/qr/redirect VALID_* sets.
+const VALID_PLATFORMS = new Set([
+  'google', 'yemeksepeti', 'getir', 'trendyol_go',
+  'tripadvisor', 'airbnb', 'booking', 'yandex', 'yelp', 'foursquare',
+]);
 
 interface RecordScanInput {
   slug: string;
@@ -28,7 +36,8 @@ export async function recordQrScan(input: RecordScanInput): Promise<{ ok: boolea
   if (!restaurant || !restaurant.isActive) return { ok: true };
 
   const tableNumber = input.tableNumber ? String(input.tableNumber).trim().slice(0, 32) || null : null;
-  const platform = input.platform ? String(input.platform).trim().slice(0, 32) || null : null;
+  const platformRaw = input.platform ? String(input.platform).trim().toLowerCase().slice(0, 32) || null : null;
+  const platform = platformRaw && VALID_PLATFORMS.has(platformRaw) ? platformRaw : null;
   const sourceRaw = input.source ? String(input.source).trim().toLowerCase() : null;
   const source = sourceRaw && VALID_SOURCES.has(sourceRaw) ? sourceRaw : null;
   const sessionId = input.sessionId ? String(input.sessionId).trim().slice(0, 64) || null : null;

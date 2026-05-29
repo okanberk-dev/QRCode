@@ -44,7 +44,7 @@
 import { Webhooks } from '@dodopayments/nextjs';
 import { Prisma } from '@prisma/client';
 import * as Sentry from '@sentry/nextjs';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // ─────────────────────────────────────────────────────────────────────
@@ -175,11 +175,14 @@ async function handlePaymentSucceeded(payload: DodoPayloadShape): Promise<void> 
     },
   });
 
-  // Clear past_due if parent subscription exists.
+  // Clear past_due if parent subscription exists. Scope by userId too
+  // (defense-in-depth, §37.2.B) — providerRef is @unique so this targets the
+  // one row, but the userId guard ensures a mis-resolved event can never flip
+  // another user's subscription status (no-ops instead).
   const subscriptionId = payload.data?.subscription_id;
   if (subscriptionId) {
     await prisma.billingSubscription.updateMany({
-      where: { providerRef: subscriptionId },
+      where: { providerRef: subscriptionId, userId },
       data: { status: 'active' },
     });
   }
@@ -189,28 +192,37 @@ async function handlePaymentFailed(payload: DodoPayloadShape): Promise<void> {
   const paymentId = payload.data?.payment_id ?? payload.data?.subscription_id;
   if (!paymentId) return;
   const userId = await resolveUserId(payload);
+  const subscriptionId = payload.data?.subscription_id;
 
-  if (userId) {
-    await prisma.billingInvoice.upsert({
-      where: { providerRef: paymentId },
-      create: {
-        userId,
-        providerRef: paymentId,
-        amount: minorToMajor(payload.data?.total_amount),
-        currency: payload.data?.currency ?? 'USD',
-        status: 'failed',
-        source: 'dodo_payments',
-        description: 'Subscription payment failed',
-        issuedAt: safeDate(payload.data?.created_at) ?? new Date(),
-      },
-      update: { status: 'failed' },
+  // No resolved user → do NOT write an unscoped invoice or flip a subscription
+  // past_due (would dangle on an unknown user). Surface for manual replay.
+  if (!userId) {
+    Sentry.captureMessage('Dodo payment.failed — user not resolved', {
+      level: 'warning',
+      tags: { integration: 'dodo-payments', event_name: 'payment.failed' },
+      extra: { paymentId, subscriptionId },
     });
+    return;
   }
 
-  const subscriptionId = payload.data?.subscription_id;
+  await prisma.billingInvoice.upsert({
+    where: { providerRef: paymentId },
+    create: {
+      userId,
+      providerRef: paymentId,
+      amount: minorToMajor(payload.data?.total_amount),
+      currency: payload.data?.currency ?? 'USD',
+      status: 'failed',
+      source: 'dodo_payments',
+      description: 'Subscription payment failed',
+      issuedAt: safeDate(payload.data?.created_at) ?? new Date(),
+    },
+    update: { status: 'failed' },
+  });
+
   if (subscriptionId) {
     await prisma.billingSubscription.updateMany({
-      where: { providerRef: subscriptionId },
+      where: { providerRef: subscriptionId, userId },
       data: { status: 'past_due' },
     });
   }
@@ -260,7 +272,12 @@ async function handleSubscriptionUpsert(payload: DodoPayloadShape): Promise<void
       cancelAtPeriodEnd: false,
       renewsAt: safeDate(payload.data?.next_billing_date),
       currency: payload.data?.currency ?? 'USD',
-      plan: 'dodo_payments',
+      // Legacy lifecycle/quota bucket (CLAUDE.md §15.2): drives PLAN_QUOTA
+      // lookup until billingCycle lands (phase 2). 'dodo_payments' is NOT a
+      // valid bucket — PLAN_QUOTA[plan] would miss and fall to trial (500),
+      // under-serving a paying subscriber. 'monthly' grants paid-tier quota
+      // (2000). Canonical tier identity stays on subscriptionPlanId.
+      plan: 'monthly',
       subscriptionPlanId: planId,
     },
     update: {
@@ -268,6 +285,7 @@ async function handleSubscriptionUpsert(payload: DodoPayloadShape): Promise<void
       providerCustomerId: customerId,
       source: 'dodo_payments',
       status,
+      plan: 'monthly',
       cancelAtPeriodEnd: false,
       renewsAt: safeDate(payload.data?.next_billing_date),
       ...(planId ? { subscriptionPlanId: planId } : {}),
@@ -317,11 +335,14 @@ async function handleSubscriptionOnHold(payload: DodoPayloadShape): Promise<void
 // Sentry warning + tags `integration: 'dodo-payments', kind: 'signature_verify_fail'`.
 
 const sdkWebhookHandler = Webhooks({
-  webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_SECRET,
+  // SDK requires a string; env is `string | undefined`. Empty fallback →
+  // SDK returns 401 "Secret can't be empty." which the diagnostic wrapper
+  // below catches (CLAUDE.md §44.3.2). Never hard-throw at module load.
+  webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_SECRET ?? '',
   // Catch-all — fires for every event. Use for audit / Sentry breadcrumb.
   // PII discipline (§40.4): redact customer email/name from console.
   onPayload: async (payload) => {
-    const safe = payload as DodoPayloadShape;
+    const safe = payload as unknown as DodoPayloadShape;
     console.log('[dodo-payments webhook]', {
       type: safe.type,
       paymentId: safe.data?.payment_id ?? null,
@@ -331,56 +352,60 @@ const sdkWebhookHandler = Webhooks({
   },
   onPaymentSucceeded: async (payload) => {
     try {
-      await handlePaymentSucceeded(payload as DodoPayloadShape);
+      await handlePaymentSucceeded(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'payment.succeeded' } });
     }
   },
   onPaymentFailed: async (payload) => {
     try {
-      await handlePaymentFailed(payload as DodoPayloadShape);
+      await handlePaymentFailed(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'payment.failed' } });
     }
   },
-  onPaymentRefunded: async (payload) => {
+  // NOTE: Dodo SDK fires `onRefundSucceeded` (event `refund.succeeded`), NOT
+  // `onPaymentRefunded` — the latter is not a real SDK callback, so the refund
+  // handler never ran (refunds left BillingInvoice.status stale). The refund
+  // payload carries `data.payment_id`, which handlePaymentRefunded resolves.
+  onRefundSucceeded: async (payload) => {
     try {
-      await handlePaymentRefunded(payload as DodoPayloadShape);
+      await handlePaymentRefunded(payload as unknown as DodoPayloadShape);
     } catch (err) {
-      Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'payment.refunded' } });
+      Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'refund.succeeded' } });
     }
   },
   onSubscriptionActive: async (payload) => {
     try {
-      await handleSubscriptionUpsert(payload as DodoPayloadShape);
+      await handleSubscriptionUpsert(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.active' } });
     }
   },
   onSubscriptionRenewed: async (payload) => {
     try {
-      await handleSubscriptionUpsert(payload as DodoPayloadShape);
+      await handleSubscriptionUpsert(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.renewed' } });
     }
   },
   onSubscriptionCancelled: async (payload) => {
     try {
-      await handleSubscriptionCancelled(payload as DodoPayloadShape);
+      await handleSubscriptionCancelled(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.cancelled' } });
     }
   },
   onSubscriptionExpired: async (payload) => {
     try {
-      await handleSubscriptionExpired(payload as DodoPayloadShape);
+      await handleSubscriptionExpired(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.expired' } });
     }
   },
   onSubscriptionOnHold: async (payload) => {
     try {
-      await handleSubscriptionOnHold(payload as DodoPayloadShape);
+      await handleSubscriptionOnHold(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.on_hold' } });
     }
