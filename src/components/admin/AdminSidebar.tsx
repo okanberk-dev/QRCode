@@ -14,7 +14,9 @@ import {
   CreditCard,
   Crown,
   FileEdit,
+  Globe,
   Inbox,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -345,6 +347,22 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
         { href: '/admin/newsletters/campaigns', icon: Megaphone, label: locale === 'en' ? 'Campaigns' : 'Bülten Kampanyaları', permission: { resource: 'mail_templates', action: 'read' } },
         { href: '/admin/mail-templates', icon: FileEdit, label: locale === 'en' ? 'Mail Templates' : 'Mail İçerikleri', permission: { resource: 'mail_templates', action: 'read' } },
         { href: '/admin/dev/lifecycle-emails', icon: Mail, label: locale === 'en' ? 'Lifecycle' : 'Yaşam Döngüsü', roles: ['superadmin'] },
+      ],
+    },
+    // "Bağımsız şeyler" kurgusu — çalışan ama sidebar'da olmayan superadmin
+    // oversight/dev sayfaları tek grupta toplandı (eskiden sadece command
+    // palette / direkt URL ile erişiliyordu). Bu üç sayfanın AdminResource
+    // RBAC mapping'i yok → grup superadmin-only (legal-documents paterni).
+    {
+      type: 'group',
+      id: 'system',
+      icon: KeyRound,
+      label: locale === 'en' ? 'System' : 'Sistem',
+      roles: ['superadmin'],
+      children: [
+        { href: '/admin/api', icon: KeyRound, label: locale === 'en' ? 'API & Webhooks' : 'API & Webhook', roles: ['superadmin'] },
+        { href: '/admin/audit-logs', icon: ScrollText, label: locale === 'en' ? 'Audit Log' : 'Denetim Kaydı', roles: ['superadmin'] },
+        { href: '/admin/google', icon: Globe, label: locale === 'en' ? 'Google Integrations' : 'Google Entegrasyonları', roles: ['superadmin'] },
       ],
     },
   ];

@@ -6,6 +6,7 @@ import {
   Bell,
   CreditCard,
   Download,
+  KeyRound,
   Loader2,
   ShieldCheck,
   ShieldQuestion,
@@ -25,6 +26,7 @@ import { BusinessUsersRolesSettings } from "@/components/dashboard/settings/sect
 import { BusinessLegalSettings } from "@/components/dashboard/settings/sections/BusinessLegalSettings";
 import { BusinessActivityLogSettings } from "@/components/dashboard/settings/sections/BusinessActivityLogSettings";
 import { BusinessPulseAiSettings } from "@/components/dashboard/settings/sections/BusinessPulseAiSettings";
+import { BusinessApiKeysSettings } from "@/components/dashboard/settings/sections/BusinessApiKeysSettings";
 import { AccountPlanWidget } from "@/components/dashboard/account/AccountPlanWidget";
 import { AccountInvoicesWidget } from "@/components/dashboard/account/AccountInvoicesWidget";
 import { AccountDangerZone } from "@/components/dashboard/account/AccountDangerZone";
@@ -63,9 +65,11 @@ import AdminBackLink from "@/components/dashboard/AdminBackLink";
 //   "Bildirim" → "Bildirimler" (tasarım line 8)
 //   "Faturalandırma" → "Plan & Faturalama" (tasarım line 10)
 //   "Kullanıcılar" → "Ekip & Roller" (tasarım line 6)
-// 3 tasarım tab'ı (İşletme bilgileri / Dil & Bölge / API & Webhook) DEFER
-// edildi — backend bağlı (CLAUDE.md §38.51 + §38.B HIGH backlog). Tasarım
-// 8 tab gösterse de, prod backend'i olmayan placeholder tab eklemiyoruz.
+// 2 tasarım tab'ı (İşletme bilgileri / Dil & Bölge) DEFER edildi — backend
+// bağlı (CLAUDE.md §38.51 + §38.B HIGH backlog). API & Webhook tab'ının
+// "API Erişimi" yarısı artık WIRED: backend `/api/api-keys` owner-scoped +
+// çalışıyor (BusinessApiKeysSettings). Webhook tarafı hâlâ defer (CRUD
+// backend yok). Prod backend'i olmayan placeholder tab eklemiyoruz.
 const TABS: SettingsTab[] = [
   { id: "profile", label: "Profil", group: "settings" },
   { id: "security", label: "Güvenlik", group: "settings" },
@@ -74,6 +78,7 @@ const TABS: SettingsTab[] = [
   { id: "ai", label: "Pulse AI", group: "settings" },
   { id: "billing", label: "Plan & Faturalama", group: "settings" },
   { id: "team", label: "Ekip & Roller", group: "settings" },
+  { id: "api", label: "API Erişimi", group: "settings" },
   { id: "legal", label: "KVKK & Yasal", group: "settings" },
 ];
 
@@ -467,10 +472,33 @@ export default function AccountSettingsClient({
         />
       </SettingsSection>
 
+      {/* API Erişimi — backend /api/api-keys owner-scoped + çalışıyor (ownerRef).
+          §38.51'de owner panelden kaldırılmıştı; açık kullanıcı talebiyle geri
+          eklendi. Workspace-scoped (per-restaurant değil) — account-level doğru
+          yer. Webhook CRUD backend'i yok, o yarı hâlâ defer. */}
+      <SettingsSection
+        id="api"
+        active={active === "api"}
+        eyebrow={isTr ? "08 — API ERİŞİMİ" : "08 — API ACCESS"}
+        title={isTr ? "API anahtarları" : "API keys"}
+        description={
+          isTr
+            ? "Kendi entegrasyonların için kişisel API anahtarı oluştur, yenile veya iptal et."
+            : "Create, rotate, or revoke personal API keys for your own integrations."
+        }
+        actions={
+          <span className="text-[#737373]" aria-hidden="true">
+            <KeyRound size={18} />
+          </span>
+        }
+      >
+        <BusinessApiKeysSettings locale={locale} />
+      </SettingsSection>
+
       <SettingsSection
         id="legal"
         active={active === "legal"}
-        eyebrow={isTr ? "08 — KVKK & YASAL" : "08 — LEGAL"}
+        eyebrow={isTr ? "09 — KVKK & YASAL" : "09 — LEGAL"}
         title={isTr ? "KVKK & yasal" : "KVKK & legal"}
         description={
           isTr
