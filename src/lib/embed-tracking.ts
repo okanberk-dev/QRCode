@@ -46,7 +46,12 @@ export async function recordEmbedView(input: RecordViewInput): Promise<{ ok: boo
     });
     return { ok: true };
   } catch (err) {
-    console.error('[embed-view] insert failed', err);
+    // §37.7 — structured, PII-free (err.meta may carry the ipAddress query param).
+    console.error('[embed-view] insert failed', {
+      restaurantId: restaurant.id,
+      name: err instanceof Error ? err.name : 'unknown',
+      message: err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200),
+    });
     return { ok: false };
   }
 }

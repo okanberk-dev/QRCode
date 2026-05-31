@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyJwt } from '@/lib/auth';
+import { getUserFromRequest } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,16 +20,14 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get('user_token')?.value;
-    if (!token) {
+    // §38.189 / §37.2.A / §40.4.A — session-aware auth: getUserFromRequest runs
+    // the UserSession revoke check, so a logged-out / password-reset session is
+    // rejected here (bare verifyJwt would accept it until JWT 7-day expiry).
+    const auth = await getUserFromRequest(req);
+    if (!auth) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
     }
-
-    const payload = await verifyJwt(token);
-    const userId = payload?.userId as string | undefined;
-    if (!userId) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-    }
+    const userId = auth.userId;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

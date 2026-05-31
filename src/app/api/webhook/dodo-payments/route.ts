@@ -105,7 +105,11 @@ async function resolveTierFromProduct(productId: string | undefined): Promise<st
 // Dodo amounts are in MINOR units (cents/kuruş). BillingInvoice.amount is
 // Decimal(10,2) in MAJOR — divide by 100.
 function minorToMajor(minor: number | undefined): Prisma.Decimal {
-  if (typeof minor !== 'number' || !Number.isFinite(minor)) return new Prisma.Decimal(0);
+  // §44.10 — never trust webhook amounts. Reject non-finite AND negative so a
+  // corrupted/forged payload can't write a negative invoice (billing integrity).
+  if (typeof minor !== 'number' || !Number.isFinite(minor) || minor < 0) {
+    return new Prisma.Decimal(0);
+  }
   return new Prisma.Decimal(minor).div(100);
 }
 

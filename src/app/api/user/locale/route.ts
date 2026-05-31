@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyJwt } from '@/lib/auth';
+import { getUserFromRequest } from '@/lib/auth';
 
 export async function PUT(req: NextRequest) {
   try {
-    const token = req.cookies.get('user_token')?.value;
-    if (!token) {
+    // §38.189 / §37.2.A / §40.4.A — session-aware auth (UserSession revoke check);
+    // bare verifyJwt would accept a logged-out / password-reset session until expiry.
+    const auth = await getUserFromRequest(req);
+    if (!auth) {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
-    }
-
-    const payload = await verifyJwt(token);
-    if (!payload || !payload.userId) {
-      return NextResponse.json({ error: 'Geçersiz oturum' }, { status: 401 });
     }
 
     const { locale } = await req.json();
@@ -21,7 +18,7 @@ export async function PUT(req: NextRequest) {
 
     // Update user locale in db
     await prisma.user.update({
-      where: { id: payload.userId as string },
+      where: { id: auth.userId },
       data: { locale },
     });
 
