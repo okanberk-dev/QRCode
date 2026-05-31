@@ -164,7 +164,11 @@ export async function POST(req: NextRequest) {
       rememberMe: !!rememberMe,
     });
   } catch (error) {
-    console.error('[AUTH_LOGIN]', error);
+    // §37.7 — structured, PII-free (raw Prisma error may carry email/query meta).
+    console.error('[AUTH_LOGIN]', {
+      name: error instanceof Error ? error.name : 'unknown',
+      message: error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200),
+    });
     return NextResponse.json(
       { error: 'Bir hata oluştu. Lütfen tekrar deneyin.' },
       { status: 500 }

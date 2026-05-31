@@ -58,7 +58,12 @@ export async function recordQrScan(input: RecordScanInput): Promise<{ ok: boolea
     });
     return { ok: true };
   } catch (err) {
-    console.error('[qr-scan] insert failed', err);
+    // §37.7 — structured, PII-free (err.meta may carry the ipAddress query param).
+    console.error('[qr-scan] insert failed', {
+      restaurantId: restaurant.id,
+      name: err instanceof Error ? err.name : 'unknown',
+      message: err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200),
+    });
     return { ok: false };
   }
 }
