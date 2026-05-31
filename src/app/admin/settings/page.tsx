@@ -137,8 +137,8 @@ function AdminSettingsBody() {
               title={isTr ? 'Otomasyon kuralları' : 'Automation rules'}
               body={
                 isTr
-                  ? 'Puan eşiği, anahtar kelime veya platforma göre otomatik yanıt / atama / webhook kuralları. API hazır (/api/automations), UI listesi bir sonraki aşamada eklenir.'
-                  : 'Rating, keyword, or platform-based auto-reply/assign/webhook rules. API is live (/api/automations); list UI ships next.'
+                  ? 'Puan eşiği, anahtar kelime veya platforma göre otomatik yanıt / atama / webhook kuralları. Bu özellik planlanıyor; backend ve arayüz birlikte geldiğinde burada yönetilecek.'
+                  : 'Rating, keyword, or platform-based auto-reply/assign/webhook rules. This feature is planned — it will be managed here once the backend and UI ship together.'
               }
             />
           )}
@@ -184,9 +184,10 @@ function AdminSettingsBody() {
               title={isTr ? 'API & Webhook' : 'API & Webhooks'}
               body={
                 isTr
-                  ? 'Kişisel API anahtarları oluştur, webhook hedefleri tanımla. /api/api-keys uç noktası hazır, UI sonraki aşamada.'
-                  : 'Personal API tokens and webhook targets. /api/api-keys endpoint is live; UI ships next.'
+                  ? 'Kişisel API anahtarları oluştur, yenile ve iptal et. Anahtar yönetimi hazır — “API & Webhook” sayfasından yönet. Webhook hedefleri (event → dış URL) yakında.'
+                  : 'Create, rotate, and revoke personal API tokens. Key management is live — manage it on the “API & Webhooks” page. Webhook targets (event → external URL) are coming soon.'
               }
+              cta={{ label: isTr ? 'API & Webhook sayfasını aç' : 'Open API & Webhooks', href: '/admin/api' }}
             />
           )}
         </section>

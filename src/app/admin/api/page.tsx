@@ -42,37 +42,6 @@ interface ActivityRow {
   status: 'ok' | 'fail' | 'pending';
 }
 
-const DEMO_WEBHOOKS: WebhookRow[] = [
-  {
-    id: 'demo-wh-1',
-    url: 'https://hooks.slack.com/services/…/buaze',
-    events: ['feedback.created', 'feedback.low_rating'],
-    status: 'active',
-    lastDelivery: new Date(Date.now() - 3600000 * 2).toISOString(),
-  },
-];
-
-const DEMO_ACTIVITY: ActivityRow[] = [
-  {
-    id: 'act-1',
-    label: 'feedback.low_rating → Slack (#itibar)',
-    at: new Date(Date.now() - 3600000 * 2).toISOString(),
-    status: 'ok',
-  },
-  {
-    id: 'act-2',
-    label: 'API key "Buaze CLI · local" used',
-    at: new Date(Date.now() - 3600000 * 4).toISOString(),
-    status: 'ok',
-  },
-  {
-    id: 'act-3',
-    label: 'feedback.created → https://retool…/buaze',
-    at: new Date(Date.now() - 86400000).toISOString(),
-    status: 'fail',
-  },
-];
-
 export default function AdminApiPage() {
   return (
     <SuperadminBlock>
@@ -111,12 +80,15 @@ function AdminApiBody() {
         setKeys([]);
         flash(isTr ? 'API anahtarları alınamadı' : 'Could not load API keys');
       }
-      setWebhooks(DEMO_WEBHOOKS);
-      setActivity(DEMO_ACTIVITY);
+      // Webhooks + recent-activity için henüz backend yok (CRUD + delivery
+      // log). Sahte demo veri kaldırıldı — operatör boş state görür, gerçek
+      // sistem durumu hakkında yanılmaz. Backend gelince state doldurulacak.
+      setWebhooks([]);
+      setActivity([]);
       setLoading(false);
     })();
-    // Mount-only demo data load. `isTr` only affects render output; locale
-    // change via parent layout already triggers a full remount.
+    // Mount-only load. `isTr` only affects render output; locale change via
+    // parent layout already triggers a full remount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -316,6 +288,19 @@ function AdminApiBody() {
                 </div>
               </div>
               <div className="divide-y divide-[#EDEDED]">
+                {webhooks.length === 0 && (
+                  <div className="flex flex-col items-center gap-1.5 p-8 text-center">
+                    <Webhook size={18} className="text-[#A3A3A3]" />
+                    <p className="text-[13px] font-medium text-[#0A0A0A]">
+                      {isTr ? 'Henüz webhook endpoint’i yok' : 'No webhook endpoints yet'}
+                    </p>
+                    <p className="max-w-sm text-[12px] text-[#737373]">
+                      {isTr
+                        ? 'Webhook teslimatı (event → dış URL) yakında. Şu an aktif endpoint yok.'
+                        : 'Webhook delivery (event → external URL) is coming soon. No active endpoints yet.'}
+                    </p>
+                  </div>
+                )}
                 {webhooks.map((w) => (
                   <div key={w.id} className="grid gap-3 p-5 md:grid-cols-[1fr_auto]">
                     <div className="min-w-0">
@@ -376,6 +361,19 @@ function AdminApiBody() {
               <p className="pulse-eyebrow text-[#737373]">{isTr ? 'SON OLAYLAR' : 'RECENT ACTIVITY'}</p>
             </div>
             <ul className="divide-y divide-[#EDEDED]">
+              {activity.length === 0 && (
+                <li className="flex flex-col items-center gap-1.5 p-8 text-center">
+                  <ActivitySquare size={18} className="text-[#A3A3A3]" />
+                  <p className="text-[13px] font-medium text-[#0A0A0A]">
+                    {isTr ? 'Henüz olay kaydı yok' : 'No activity yet'}
+                  </p>
+                  <p className="max-w-xs text-[12px] text-[#737373]">
+                    {isTr
+                      ? 'Gerçek teslimat günlüğü webhook backend’i ile gelecek.'
+                      : 'A real delivery log arrives with the webhook backend.'}
+                  </p>
+                </li>
+              )}
               {activity.map((a) => (
                 <li key={a.id} className="flex items-start gap-3 p-4">
                   <span
