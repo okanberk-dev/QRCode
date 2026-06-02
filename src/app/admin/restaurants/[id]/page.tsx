@@ -610,7 +610,6 @@ export default function RestaurantDetailPage() {
             <div className="flex items-start gap-3 rounded-2xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] p-4">
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-[#EDEDED]">
                 {menuLogoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={menuLogoUrl} alt="logo" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-[#A3A3A3]">

@@ -56,7 +56,6 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
   const searchTerm = filters.values.search;
   const setSearchTerm = (v: string) => filters.set('search', v);
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants ?? []);
-  const [loading, setLoading] = useState(initialUsers === undefined);
   const skipFirstFetchRef = useRef(initialUsers !== undefined);
   
   const [showModal, setShowModal] = useState(false);
@@ -85,7 +84,6 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
   const [isManualSlug, setIsManualSlug] = useState(false);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
       setFetchError(null);
       const usersRes = await fetch('/api/admin/users');
@@ -118,7 +116,6 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
       console.error(e);
       setFetchError('Bağlantı hatası — yöneticiler şu an gelmiyor.');
     }
-    setLoading(false);
   };
 
   useEffect(() => {

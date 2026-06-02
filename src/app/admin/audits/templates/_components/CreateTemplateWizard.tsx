@@ -425,7 +425,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
             <div className="rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-3.5 text-[12.5px] leading-[1.55] text-[#92400E]">
               <p>
                 <strong>Bu şablon taslak olarak oluşturulur.</strong> Yayınlamadan önce detay
-                ekranından en az 1 soru ekle. Sonra "Yayınla" butonuyla owner kataloğuna açılır.
+                ekranından en az 1 soru ekle. Sonra &quot;Yayınla&quot; butonuyla owner kataloğuna açılır.
               </p>
             </div>
           </div>

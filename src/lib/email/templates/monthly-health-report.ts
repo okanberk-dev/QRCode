@@ -11,7 +11,7 @@
 
 import { PULSE, FONTS } from '../tokens';
 import { pulseLayout } from '../layout';
-import { renderEyebrow, renderH2, renderP, spacer } from '../components';
+import { renderEyebrow, renderH2, spacer } from '../components';
 import { escapeHtml } from '../escape';
 import { scoreLabel } from '@/lib/reputation/health-score';
 

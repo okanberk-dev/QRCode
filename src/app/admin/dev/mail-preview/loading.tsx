@@ -1,5 +1,4 @@
 import {
-  SkBox,
   SkCardGrid,
   SkPageHeader,
   SkPageShell,

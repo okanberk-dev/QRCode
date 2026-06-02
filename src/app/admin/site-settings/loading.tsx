@@ -1,5 +1,4 @@
 import {
-  SkBox,
   SkForm,
   SkPageHeader,
   SkPageShell,
