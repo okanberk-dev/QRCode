@@ -68,7 +68,7 @@ function ForgotPasswordContent() {
         className="pointer-events-none absolute right-[-10%] top-[-15%] h-[380px] w-[380px] rounded-full bg-[#C6F24E]/20 blur-[120px]"
       />
 
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-5 sm:px-7 py-5 sm:py-7">
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[1152px] flex-col px-4 sm:px-7 py-6 sm:py-7">
         {/* Top bar */}
         <header className="flex items-center justify-between">
           <Link href="/admin" className="inline-flex items-center gap-2.5">

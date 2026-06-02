@@ -81,7 +81,7 @@ function ResetPasswordContent() {
         className="absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_top,#EAF9B8_0%,rgba(234,249,184,0)_62%)]"
       />
 
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-6xl flex-col px-4 sm:px-5 py-5 sm:py-6">
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[1152px] flex-col px-4 sm:px-7 py-6 sm:py-7">
         <header className="flex items-center justify-between">
           <Link href="/admin" className="inline-flex items-center gap-2 sm:gap-2.5">
             <BuazeLogo size={32} />
