@@ -179,4 +179,4 @@ API key system are available for developer-facing workflows.
 - Postal address: Workinton Maslak, Floor 4, Maslak / İstanbul, TR
 - Security disclosures: see /.well-known/security.txt
 - Language: Turkish (primary), English (secondary)
-- Last updated: 2026-05-12
+- Last updated: 2026-06-03

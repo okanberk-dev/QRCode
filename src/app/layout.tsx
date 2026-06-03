@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
-import { cookies } from 'next/headers';
 import './globals.css';
 import { getSiteSettings } from '@/lib/site-settings';
 import { QueryProvider } from '@/components/providers/QueryProvider';
@@ -8,9 +7,17 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import CookieConsentBanner from '@/components/legal/CookieConsentBanner';
 import ConditionalAnalytics from '@/components/legal/ConditionalAnalytics';
-import { locales, defaultLocale, type Locale } from '@/lib/translations';
 
-export const dynamic = 'force-dynamic';
+// SEO §35 — root layout no longer forces `dynamic = 'force-dynamic'`.
+// The previous force-dynamic + `cookies()` read defeated ISR for the whole
+// `[locale]/*` marketing tree (every Googlebot hit re-rendered server-side
+// instead of being served fast from the Vercel CDN edge). The `cookies()`
+// read only fed the cookie-banner locale, which CookieConsentBanner already
+// auto-detects client-side (Stage 31d §38.110), so the read was redundant.
+// Dashboard self-declares force-dynamic; admin layout reads cookies() (so it
+// stays dynamic automatically); public `/r` + `/menu` are dynamic segments
+// rendered on-demand. Marketing pages keep their per-page `revalidate=3600`,
+// which now actually takes effect → better crawl budget + Core Web Vitals.
 const YM_ID = 108768887;
 
 // Stage 27 §38.103 Fix M5 — Space Grotesk weight 600 unused removal.
@@ -135,22 +142,11 @@ export const viewport: Viewport = {
   ],
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Stage 31b §38.108 — Cookie consent banner için locale detection.
-  // Root layout `[locale]` URL segment'i taşımıyor (marketing + admin +
-  // public surface'larda farklı). NEXT_LOCALE cookie'si veya browser
-  // accept-language fallback. CookieConsentBanner bilingual; default 'tr'
-  // safe.
-  const cookieStore = await cookies();
-  const localeCookie = cookieStore.get('NEXT_LOCALE')?.value;
-  const detectedLocale: Locale = locales.includes(localeCookie as Locale)
-    ? (localeCookie as Locale)
-    : defaultLocale;
-
   return (
     <html lang="tr" className={`${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}>
       <head>
@@ -189,8 +185,9 @@ export default async function RootLayout({
         />
         <QueryProvider>{children}</QueryProvider>
         {/* Cookie consent banner — bottom-sheet, ilk ziyarette görünür,
-            iframe (`/embed/*`) context'te otomatik gizli. */}
-        <CookieConsentBanner locale={detectedLocale} />
+            iframe (`/embed/*`) context'te otomatik gizli. Locale client-side
+            auto-detect edilir (Stage 31d §38.110); default 'tr'. */}
+        <CookieConsentBanner />
         {/* Vercel telemetry — Speed Insights (Web Vitals: FCP/LCP/CLS/INP)
             ve Analytics (page views) birlikte mount'lı. RES (Real Experience
             Score) hesaplaması her iki sample stream'i de tüketir; tek başına
