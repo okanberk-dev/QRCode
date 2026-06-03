@@ -10,7 +10,7 @@ import { prisma } from '@/lib/prisma';
  */
 export const BLOG_TRANSLATION_PAIRS: ReadonlyArray<{ tr: string; en: string }> = [
   {
-    tr: 'digital-reputation-strategies',
+    tr: 'dijital-itibar-yonetimi-stratejileri',
     en: 'professional-digital-reputation-strategies',
   },
   {

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
-// `next/dynamic` aliased — page already exports `dynamic = 'force-dynamic'`
-// (Next.js route segment config); plain import would shadow it.
+// `next/dynamic` aliased to `nextDynamic` so the import name doesn't collide
+// with a Next.js route segment config export named `dynamic`. The page ships
+// via ISR (`revalidate=3600` inherited from [locale]/layout.tsx, SEO §35.11);
+// it no longer force-dynamic renders.
 import nextDynamic from 'next/dynamic';
 import { jsonLdString } from '@/lib/seo/json-ld';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
