@@ -3804,6 +3804,15 @@ Site-wide audit (2026-05) aşağıdaki bulguları işaret etti — fix gerekli a
 
 **Yapma:** Audit raporu gördüğünde toplu olarak hepsini fixleme — yukarıdaki listede `marketing pozisyon kararı` etiketli olanlar **kullanıcı talebi** gerektirir. Sadece deterministik teknik defect'leri (canonical drift, BCP 47 format, robots.txt host protocol vs.) açık talep olmadan da fix edilir.
 
+### 35.11 SEO içerik pass (2026-06-03, PR #744)
+
+"Site Google'da görünmüyor" raporu sonrası 2 aşamalı SEO PR. **Faz 1 (infra)**: root layout `force-dynamic` + `cookies()` kaldırıldı → `[locale]/*` marketing ISR (`revalidate=3600`) gerçekten devreye girdi (CDN edge, §38.A canary kapandı); NAP geo coords Ataşehir→Maslak parity (§19.1.2). **Faz 2 (content)**, kullanıcı kararıyla:
+- **H1 keyword override (§39.3 audit trail)**: kullanıcı marka-slogan H1'lerini SEO için keyword-odaklı yapmayı seçti (Pulse §11 voice override). Hero `HeroCinematic` H1 "Her yorum bir nabız" → "Google yorumlarını QR ile yönet"; `HeroParallax` → "Online itibarını QR ile yönet"; FAQ H1 "Cevaplar" → "Yorum yönetimi SSS"; Blog H1 "İtibar kütüphanesi" → "Yorum yönetimi blogu". Hero animasyon koreografisi etkilenmedi (sadece COPY title metni). `HeroStarClimb` (animated counter yapısı, prod'da render edilmiyor — default cinematic) dokunulmadı.
+- **TR blog slug migration**: 4 TR yazı İngilizce slug taşıyordu → Türkçe slug'a çevrildi (DB UPDATE, prod) + `next.config.ts`'e `/tr/`-scoped 301 redirect (link equity korunur; EN postlar `/en/` slug'ını korur).
+- **3 pillar TR blog yazısı** (DB-live + `scripts/seed-blog-pillar-posts.ts` idempotent runner, §33): `qr-kod-ile-musteri-geri-bildirimi-toplama-rehberi` / `online-itibar-yonetimi-nedir` / `cok-platformlu-yorum-yonetimi` — 3 ayrı keyword kümesi (QR feedback / itibar yönetimi / çok-platform), cannibalization yok, internal linking + §19.1.1 + §35.8 + §35.9 uyumlu (review-gating wording yok, fake metric yok, customer agency framing). Blog meta TR 170→<160 char + "haftalık" yanlış vaadi kaldırıldı.
+
+**Operatör follow-up (kod dışı, asıl kaldıraç)**: site küçük/yeni domain (6 restoran) + sığ blog otoritesi düşük; Google görünürlüğü rekabetçi nişte aylar alır. Sürekli/derin TR içerik üretimi + backlink + GSC'den sitemap re-submit + URL Inspection "Request Indexing" gerekir. Teknik SEO + on-page artık sağlam.
+
 ---
 
 ## 36. useUrlFilter Hook (Phase 11.13)
