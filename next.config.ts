@@ -86,6 +86,32 @@ const nextConfig: NextConfig = {
         destination: '/en/blog/why-google-reviews-matter-for-local-businesses',
         permanent: true,
       },
+
+      // SEO §35 (2026-06-03) — TR blog posts had English slugs, weakening
+      // Turkish keyword signal in the URL. Slugs were renamed in the DB to
+      // Turkish; these /tr-scoped 301s preserve any indexed equity from the
+      // old English URLs. EN posts keep the English slug (unaffected — these
+      // sources are /tr/ only).
+      {
+        source: '/tr/blog/the-power-of-google-reviews-for-hotels',
+        destination: '/tr/blog/oteller-icin-google-yorumlarinin-gucu',
+        permanent: true,
+      },
+      {
+        source: '/tr/blog/handling-negative-customer-reviews',
+        destination: '/tr/blog/olumsuz-musteri-yorumlarini-yonetme',
+        permanent: true,
+      },
+      {
+        source: '/tr/blog/how-to-increase-restaurant-reviews',
+        destination: '/tr/blog/restoran-yorumlari-nasil-artirilir',
+        permanent: true,
+      },
+      {
+        source: '/tr/blog/digital-reputation-strategies',
+        destination: '/tr/blog/dijital-itibar-yonetimi-stratejileri',
+        permanent: true,
+      },
     ];
   },
 

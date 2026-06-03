@@ -39,7 +39,8 @@ interface Cursor {
 const COPY = {
   tr: {
     eyebrow: 'BUAZE PULSE — DİJİTAL İTİBAR',
-    title: 'Yorumları yönet,\npuanı yükselt',
+    // SEO §35 — keyword-odaklı H1 (kullanıcı kararı 2026-06-03).
+    title: 'Online itibarını\nQR ile yönet',
     subtitle:
       'QR akışları, tek panelde gelen kutusu, Pulse AI yanıt taslakları — tüm itibarınızı bir araya getirir.',
     primaryCta: '14 gün ücretsiz dene',
@@ -59,7 +60,7 @@ const COPY = {
   },
   en: {
     eyebrow: 'BUAZE PULSE — DIGITAL REPUTATION',
-    title: 'Manage reviews,\nclimb the rating',
+    title: 'Manage your online\nreputation with QR',
     subtitle:
       'QR flows, unified inbox, Pulse AI reply drafts — your entire reputation in one place.',
     primaryCta: 'Start 14-day free trial',

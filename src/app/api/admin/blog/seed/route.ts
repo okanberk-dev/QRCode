@@ -17,7 +17,7 @@ async function requireSuperadmin(req: NextRequest) {
 
 const BLOG_POSTS_TR = [
   {
-    slug: 'digital-reputation-strategies',
+    slug: 'dijital-itibar-yonetimi-stratejileri',
     locale: 'tr',
     title: "Dijital İtibar Yönetimi: Yerel İşletmeler İçin Sürdürülebilir Stratejiler",
     description: "Müşterilerin onda dokuzu kapıdan içeri girmeden önce Google ve yorum sayfalarını kontrol ediyor. Dijital itibarı bir günde değil, günlük operasyonun parçası olarak inşa eden işletmelerin pratik yol haritası.",
@@ -59,7 +59,7 @@ const BLOG_POSTS_TR = [
       `,
   },
   {
-    slug: 'how-to-increase-restaurant-reviews',
+    slug: 'restoran-yorumlari-nasil-artirilir',
     locale: 'tr',
     title: 'Restoranınızın Google Yorumlarını Artırmanın Sakin Yolu',
     description: 'Yemek platformlarının komisyonu sürdürülebilir değil. Google’da güveni inşa eden restoranlar, kendi organik kitlesini büyütüyor. Komut listesi değil, alışkanlık önerisi.',
@@ -92,7 +92,7 @@ const BLOG_POSTS_TR = [
       `,
   },
   {
-    slug: 'handling-negative-customer-reviews',
+    slug: 'olumsuz-musteri-yorumlarini-yonetme',
     locale: 'tr',
     title: 'Olumsuz Müşteri Yorumlarına Profesyonel Yanıt: Krizi Fırsata Çeviren Çerçeve',
     description: 'Tek bir yıldızlı yorum tüm itibarınızı sarsabilir. Yanıtın tonu, hızı ve operasyonel arka planı krizi büyümeden kapatır. Restoran, otel ve klinik yöneticileri için sade bir yanıt çerçevesi.',
@@ -132,7 +132,7 @@ const BLOG_POSTS_TR = [
       `,
   },
   {
-    slug: 'the-power-of-google-reviews-for-hotels',
+    slug: 'oteller-icin-google-yorumlarinin-gucu',
     locale: 'tr',
     title: 'Oteller İçin Dijital İtibar: Yüksek Google Puanı Doğrudan Rezervasyonu Nasıl Açıyor?',
     description: 'Otel müşterisi tatilini bir tıkla seçmiyor; ortalama yedi farklı sayfa karşılaştırıyor. Yüksek Google puanı OTA komisyonlarını azaltıyor, doğrudan rezervasyon akışını kalıcı kılıyor. Otel yöneticileri için sade bir rehber.',

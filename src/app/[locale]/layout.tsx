@@ -62,10 +62,14 @@ export async function generateMetadata({
     category: 'Business',
     // GEO Tags
     other: {
+      // NAP consistency (SEO §19.1.2 + §35) — geo coords must match the
+      // LocalBusiness/Organization address (Workinton Maslak). Previously
+      // these pointed to Ataşehir while the postal address said Maslak,
+      // a Name-Address-Position mismatch that weakens local E-E-A-T.
       'geo.region': 'TR-34',
-      'geo.placename': 'Ataşehir, İstanbul',
-      'geo.position': '40.9923;29.1244',
-      'ICBM': '40.9923, 29.1244',
+      'geo.placename': 'Maslak, İstanbul',
+      'geo.position': '41.1106;29.0203',
+      'ICBM': '41.1106, 29.0203',
     },
     robots: {
       index: true,

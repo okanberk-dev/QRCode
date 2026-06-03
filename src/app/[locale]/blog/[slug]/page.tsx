@@ -90,9 +90,9 @@ export async function generateMetadata(
     },
     other: {
       'geo.region': 'TR-34',
-      'geo.placename': 'Ataşehir, İstanbul',
-      'geo.position': '40.9923;29.1244',
-      ICBM: '40.9923, 29.1244',
+      'geo.placename': 'Maslak, İstanbul',
+      'geo.position': '41.1106;29.0203',
+      ICBM: '41.1106, 29.0203',
       'article:section': locale === 'tr' ? 'İtibar Yönetimi' : 'Reputation Management',
       'article:tag': keywords.join(', '),
     },
@@ -293,8 +293,8 @@ export default async function BlogPostPage({
       name: 'Türkiye',
       geo: {
         '@type': 'GeoCoordinates',
-        latitude: 40.9923,
-        longitude: 29.1244,
+        latitude: 41.1106,
+        longitude: 29.0203,
       },
     },
   };

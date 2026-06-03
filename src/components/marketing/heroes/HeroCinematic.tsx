@@ -34,7 +34,9 @@ interface Props {
 
 const COPY = {
   tr: {
-    title: 'Her yorum bir nabız\nHer yanıt bir rakip',
+    // SEO §35 — keyword-odaklı H1 (kullanıcı kararı 2026-06-03, marka
+    // slogan H1'i override edildi). Birincil hedef: "Google yorum" + "QR".
+    title: 'Google yorumlarını\nQR ile yönet',
     subtitle:
       'QR ile geri bildirim topla, tek panelden yönet, Pulse AI taslakları ile saniyeler içinde yanıt ver.',
     primaryCta: '14 gün ücretsiz dene',
@@ -54,7 +56,7 @@ const COPY = {
     aiTone: 'Sıcak · Onaylı',
   },
   en: {
-    title: 'Every review is a pulse\nEvery reply is a moat',
+    title: 'Manage Google\nreviews with QR',
     subtitle:
       'Collect feedback via QR, manage it from one dashboard, reply in seconds with Pulse AI drafts.',
     primaryCta: 'Start 14-day free trial',

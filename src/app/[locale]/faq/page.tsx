@@ -157,7 +157,7 @@ export default async function FaqPage({
             <h1
               className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[64px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
             >
-              {isTr ? 'Cevaplar.' : 'Answers.'}
+              {isTr ? 'Yorum yönetimi SSS' : 'Review management FAQ'}
             </h1>
             <p className="mt-4 max-w-[320px] text-[15px] leading-[1.55] text-[#525252]">
               {isTr ? 'Başka sorun var mı? ' : 'More questions? '}

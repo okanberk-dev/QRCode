@@ -23,8 +23,8 @@ export async function generateMetadata({
     ? 'Blog & Rehberler — Yorum yönetimi & müşteri büyüme | Buaze'
     : 'Blog & Guides — Review management & customer growth | Buaze';
   const description = isTr
-    ? 'Yorum yönetimi, müşteri psikolojisi, KVKK + Google policy uyumu, QR strateji ve büyüme taktikleri — restoranlar, oteller, klinikler için haftalık uzman rehberleri.'
-    : 'Review management, customer psychology, KVKK and Google policy compliance, QR strategy and growth tactics — weekly expert guides for restaurants, hotels, clinics.';
+    ? 'Yorum yönetimi, müşteri psikolojisi, KVKK + Google policy uyumu, QR strateji ve büyüme taktikleri — restoran, otel ve klinikler için uzman rehberleri.'
+    : 'Review management, customer psychology, KVKK + Google policy compliance, QR strategy and growth tactics — expert guides for restaurants, hotels & clinics.';
   return {
     title: { absolute: title },
     description,
@@ -137,7 +137,7 @@ export default async function BlogIndexPage({
           <h1
             className="mt-3 text-[38px] sm:text-[56px] md:text-[48px] lg:text-[72px] font-medium leading-[0.95] tracking-[-0.035em] text-[#0A0A0A]"
           >
-            {isTr ? 'İtibar kütüphanesi.' : 'The reputation library.'}
+            {isTr ? 'Yorum yönetimi blogu' : 'Review management blog'}
           </h1>
           <p className="mt-4 max-w-[560px] text-[16px] text-[#525252] leading-[1.55]">
             {isTr
