@@ -1,7 +1,14 @@
 "use client";
 
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+
+interface ModalCloseConfirmCopy {
+  title: string;
+  body: string;
+  confirm: string;
+  cancel: string;
+}
 
 interface ModalProps {
   title?: ReactNode;
@@ -11,7 +18,24 @@ interface ModalProps {
   footer?: ReactNode;
   hideCloseButton?: boolean;
   ariaLabel?: string;
+  /**
+   * Optional unsaved-changes guard. When it returns `true` at close time
+   * (backdrop click or ESC), the modal shows an in-place "are you sure?"
+   * confirmation instead of closing immediately — protecting form input from
+   * an accidental outside-click. The X button still closes directly (explicit
+   * intent). Omit for the default close-immediately behavior.
+   */
+  closeGuard?: () => boolean;
+  /** i18n copy for the discard confirmation (defaults to Turkish). */
+  closeConfirm?: ModalCloseConfirmCopy;
 }
+
+const DEFAULT_CLOSE_CONFIRM: ModalCloseConfirmCopy = {
+  title: "Çıkmak istediğine emin misin?",
+  body: "Girdiğin bilgiler kaydedilmeden kapanacak.",
+  confirm: "Kapat",
+  cancel: "Vazgeç",
+};
 
 const FOCUSABLE_SELECTOR = [
   "a[href]",
@@ -31,9 +55,13 @@ export function Modal({
   footer,
   hideCloseButton,
   ariaLabel,
+  closeGuard,
+  closeConfirm,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const [confirmingClose, setConfirmingClose] = useState(false);
+  const confirmCopy = closeConfirm ?? DEFAULT_CLOSE_CONFIRM;
 
   // Stash onClose in a ref so the mount/unmount effect below can stay
   // dependency-free. Without this, callers passing an inline arrow
@@ -45,6 +73,18 @@ export function Modal({
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  // Stable close-request fn accessed via ref so the mount-only effect can call
+  // it without re-subscribing. If a guard is supplied and signals dirty input,
+  // show the in-place confirm; otherwise close immediately.
+  const requestCloseRef = useRef<() => void>(() => {});
+  requestCloseRef.current = () => {
+    if (closeGuard?.()) {
+      setConfirmingClose(true);
+    } else {
+      onCloseRef.current();
+    }
+  };
 
   useEffect(() => {
     // 1. Remember the element that triggered the modal so we can restore focus on close
@@ -66,7 +106,7 @@ export function Modal({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onCloseRef.current();
+        requestCloseRef.current();
         return;
       }
       // 3. Focus trap: keep Tab/Shift+Tab cycling inside the dialog
@@ -127,7 +167,7 @@ export function Modal({
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel || (typeof title === "string" ? title : undefined)}
-      onClick={onClose}
+      onClick={() => requestCloseRef.current()}
       // z-50 — CLAUDE.md §40.3 hierarchy: modals + drawers + palette live
       // at z-50; cookie banner (z-[100]) ve impersonation banner (z-[60])
       // bilinçli olarak üstte. Eski `z-[100]` cookie banner ile çakışıyordu:
@@ -146,7 +186,7 @@ export function Modal({
         ref={dialogRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="bz-fade-in bg-white w-full sm:w-auto focus:outline-none flex flex-col rounded-t-[20px] sm:rounded-[20px]"
+        className="bz-fade-in relative bg-white w-full sm:w-auto focus:outline-none flex flex-col rounded-t-[20px] sm:rounded-[20px]"
         style={{
           width: computedWidth,
           maxWidth: "92vw",
@@ -189,6 +229,45 @@ export function Modal({
             style={{ borderTop: "1px solid #EDEDED" }}
           >
             {footer}
+          </div>
+        )}
+
+        {/* Unsaved-changes confirmation — in-place overlay over the dialog
+            body (only shown when closeGuard signals dirty input). */}
+        {confirmingClose && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center rounded-t-[20px] sm:rounded-[20px] bg-white/95 p-6 backdrop-blur-sm"
+            role="alertdialog"
+            aria-label={confirmCopy.title}
+          >
+            <div className="w-full max-w-[340px] text-center">
+              <h3 className="bz-h-tight mb-2" style={{ fontSize: 16 }}>
+                {confirmCopy.title}
+              </h3>
+              <p className="mb-5 text-[13px] leading-[1.55] text-[#525252]">
+                {confirmCopy.body}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="bz-btn-ghost flex-1"
+                  onClick={() => setConfirmingClose(false)}
+                  autoFocus
+                >
+                  {confirmCopy.cancel}
+                </button>
+                <button
+                  type="button"
+                  className="bz-btn-primary flex-1"
+                  onClick={() => {
+                    setConfirmingClose(false);
+                    onClose();
+                  }}
+                >
+                  {confirmCopy.confirm}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

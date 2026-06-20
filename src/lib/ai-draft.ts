@@ -9,6 +9,7 @@
 import { prisma } from '@/lib/prisma';
 import { chatCompletion, hasOpenAIKey } from '@/lib/openai';
 import { buildReplyTemplate } from '@/lib/scaffolding';
+import { AI_QUOTAS, checkLayeredAiQuota, type AiQuotaLayer } from '@/lib/ai-quota';
 
 export type AiDraftTone = 'warm' | 'formal' | 'apologetic';
 export type AiDraftLocale = 'tr' | 'en';
@@ -142,23 +143,47 @@ export async function generateAiDraftBackground(
       name: true,
       comment: true,
       platform: true,
-      restaurant: { select: { name: true, category: true, pulseAiEnabled: true, enableAiDraft: true } },
+      restaurant: { select: { name: true, category: true, userId: true, pulseAiEnabled: true, enableAiDraft: true } },
     },
   });
   if (!feedback?.restaurant?.pulseAiEnabled || !feedback.restaurant.enableAiDraft) return;
 
-  const draft = await generateReplyDraft(
-    {
-      restaurantName: feedback.restaurant.name,
-      restaurantCategory: feedback.restaurant.category,
-      customerName: feedback.name,
-      rating: feedback.rating,
-      platform: feedback.platform,
-      comment: feedback.comment,
-    },
-    tone,
-    locale,
-  );
+  // AI cost ceiling (audit §38.B H3). Background drafting (cron + POST opt-in)
+  // shares the AUTODRAFT pool; over quota → deterministic template fallback so
+  // the owner still gets a draft row without burning OpenAI spend.
+  const quotaLayers: AiQuotaLayer[] = [];
+  if (feedback.restaurant.userId) {
+    quotaLayers.push({
+      scope: 'autodraft:ws',
+      identifier: feedback.restaurant.userId,
+      dailyLimit: AI_QUOTAS.AUTODRAFT_WORKSPACE_DAY,
+    });
+  }
+  quotaLayers.push({
+    scope: 'autodraft:global',
+    identifier: 'global',
+    dailyLimit: AI_QUOTAS.AUTODRAFT_GLOBAL_DAY,
+  });
+  const quota = await checkLayeredAiQuota(quotaLayers);
+
+  const draft: GeneratedDraft = quota.allowed
+    ? await generateReplyDraft(
+        {
+          restaurantName: feedback.restaurant.name,
+          restaurantCategory: feedback.restaurant.category,
+          customerName: feedback.name,
+          rating: feedback.rating,
+          platform: feedback.platform,
+          comment: feedback.comment,
+        },
+        tone,
+        locale,
+      )
+    : {
+        body: buildReplyTemplate({ name: feedback.name, rating: feedback.rating, locale }),
+        source: 'template_fallback',
+        latencyMs: 0,
+      };
 
   const stillEnabled = await prisma.feedback.findFirst({
     where: {

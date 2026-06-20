@@ -61,24 +61,27 @@ export async function POST(req: NextRequest) {
   const passwordOk = await bcrypt.compare(password, user.passwordHash);
   if (!passwordOk) return ApiErrors.badRequest('Şifre hatalı', 'INVALID_PASSWORD');
 
-  // İkinci faktör (TOTP veya backup) — opsiyonel ama varsa doğrulanır.
-  // (Şifre + session zaten yeterli güvenlik; ekstra teyit kullanıcı isteğiyle.)
-  if (code) {
-    let secondOk = false;
-    if (user.totpSecret && /^\d{6}$/.test(code)) {
-      secondOk = verifyToken(user.totpSecret, code);
-    }
-    if (!secondOk && user.twoFactorBackupCodes.length > 0) {
-      const cleaned = code.replace('-', '').toUpperCase();
-      for (const hash of user.twoFactorBackupCodes) {
-        if (await bcrypt.compare(cleaned, hash)) {
-          secondOk = true;
-          break;
-        }
+  // İkinci faktör (TOTP veya backup) ZORUNLU (audit §38.B M3). 2FA'nın amacı,
+  // şifre ele geçirilse / oturum çalınsa bile hesabı korumaktır; sadece şifreyle
+  // 2FA kapatılması bu garantiyi yok eder. `twoFactorEnabled` burada kesin
+  // (yukarıda kapalıysa early-return). Geçerli TOTP veya backup kodu şart.
+  if (!code) {
+    return ApiErrors.badRequest('Doğrulama kodu gerekli', 'CODE_REQUIRED');
+  }
+  let secondOk = false;
+  if (user.totpSecret && /^\d{6}$/.test(code)) {
+    secondOk = verifyToken(user.totpSecret, code);
+  }
+  if (!secondOk && user.twoFactorBackupCodes.length > 0) {
+    const cleaned = code.replace('-', '').toUpperCase();
+    for (const hash of user.twoFactorBackupCodes) {
+      if (await bcrypt.compare(cleaned, hash)) {
+        secondOk = true;
+        break;
       }
     }
-    if (!secondOk) return ApiErrors.badRequest('Geçersiz kod', 'INVALID_CODE');
   }
+  if (!secondOk) return ApiErrors.badRequest('Geçersiz kod', 'INVALID_CODE');
 
   await prisma.user.update({
     where: { id: userId },

@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { PULSE, FONTS } from '@/lib/email/tokens';
+import { escapeHtml } from '@/lib/email/escape';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +37,12 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const token = url.searchParams.get('token')?.trim() || '';
   const locale: 'tr' | 'en' = url.searchParams.get('lang') === 'en' ? 'en' : 'tr';
+
+  // IP rate limit (audit §38.B M2) — defense-in-depth against token-replay
+  // hammering. Generous cap; real human clicks are unaffected.
+  const ip = getClientIp(req.headers);
+  const limit = await rateLimit(`newsletter-unsubscribe:get:${ip}`, 20, 60_000);
+  if (!limit.allowed) return htmlResponse(renderInvalid(locale));
 
   const result = await applyUnsubscribe(token);
   if (!result.ok) return htmlResponse(renderInvalid(locale));
@@ -106,7 +114,7 @@ function renderSuccess(locale: 'tr' | 'en', email: string): string {
     `<div class="eyebrow"><span class="dot"></span>${isTr ? 'Buaze · Bülten' : 'Buaze · Newsletter'}</div>
      <h1>${isTr ? 'Aboneliğin sonlandı.' : 'You\'re unsubscribed.'}</h1>
      <p>${isTr ? 'Bundan sonra Pulse aylık bültenini almayacaksın. Fikrini değiştirirsen sitedeki abone formundan tekrar katılabilirsin.' : 'You\'ll no longer receive the Pulse monthly digest. If you change your mind, sign up again from any newsletter form on the site.'}</p>
-     <span class="email">${email}</span>
+     <span class="email">${escapeHtml(email)}</span>
      <div><a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}" class="btn">${isTr ? 'Anasayfaya dön →' : 'Back home →'}</a></div>`,
   );
 }

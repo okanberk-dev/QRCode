@@ -114,7 +114,7 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
 
   if (restaurants.length === 0) {
     return (
-      <div className="space-y-5">
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
         <PageHeader
           eyebrow={isTr ? 'PLATFORM BAĞLANTILARI' : 'PLATFORM LINKS'}
           title={isTr ? 'Platform Bağlantıları' : 'Platform Links'}
@@ -204,7 +204,7 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
   }`;
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <PageHeader
         eyebrow={isTr ? 'PLATFORM BAĞLANTILARI' : 'PLATFORM LINKS'}
         title={isTr ? 'Platform Bağlantıları' : 'Platform Links'}

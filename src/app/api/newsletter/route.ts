@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { sendFormConfirmationEmail } from '@/lib/email';
+import { isValidEmail } from '@/lib/validations';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +17,11 @@ export async function POST(req: NextRequest) {
   }
 
   const email = (body.email ?? '').trim().toLowerCase();
-  if (!email || !email.includes('@') || email.length > 200) {
+  // Stricter format validation than the old `includes('@')` (audit §38.B M2):
+  // rejects whitespace / multiple `@` / missing TLD. The definitive XSS fix is
+  // escapeHtml at the unsubscribe-page sink (that page reflects this value);
+  // this is defense-in-depth on the stored data.
+  if (!email || !isValidEmail(email) || email.length > 200) {
     return NextResponse.json({ error: 'invalid_email' }, { status: 400 });
   }
 

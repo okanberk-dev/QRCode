@@ -12,7 +12,8 @@
 //   4. OpenAI yoksa template fallback
 //
 // Cost guard: cron çağrı başına max N restaurant × max N review/restaurant.
-// Quota guard: AI_QUOTAS.SUGGEST_REPLY_GLOBAL_DAY reuse.
+// Quota guard: AI_QUOTAS.AUTODRAFT_{WORKSPACE,GLOBAL}_DAY — per-generation
+// layered check inside the review loop (audit §38.B H3). Over quota → break.
 
 import crypto from 'node:crypto';
 import { prisma } from '@/lib/prisma';
@@ -26,6 +27,7 @@ import {
   type GoogleBusinessLocation,
 } from '@/lib/google-business';
 import { generateReplyDraft, type AiDraftTone, type AiDraftLocale } from '@/lib/ai-draft';
+import { AI_QUOTAS, checkLayeredAiQuota } from '@/lib/ai-quota';
 import * as Sentry from '@sentry/nextjs';
 
 interface GoogleAutoDraftSummary {
@@ -95,6 +97,7 @@ async function processRestaurantGoogleDrafts(restaurantId: string): Promise<{
   }
 
   if (!restaurant.userId) return stats;
+  const ownerId = restaurant.userId;
   const integration = await prisma.googleIntegration.findFirst({
     where: { userId: restaurant.userId },
     orderBy: { updatedAt: 'desc' },
@@ -165,6 +168,16 @@ async function processRestaurantGoogleDrafts(restaurantId: string): Promise<{
       stats.skipped += 1;
       continue;
     }
+
+    // AI cost ceiling (audit §38.B H3) — checked per generation. Over quota →
+    // stop generating this cycle; remaining reviews get drafted next run once
+    // the daily window resets. Separate AUTODRAFT pool (won't starve owners'
+    // interactive suggest-reply).
+    const quota = await checkLayeredAiQuota([
+      { scope: 'autodraft:ws', identifier: ownerId, dailyLimit: AI_QUOTAS.AUTODRAFT_WORKSPACE_DAY },
+      { scope: 'autodraft:global', identifier: 'global', dailyLimit: AI_QUOTAS.AUTODRAFT_GLOBAL_DAY },
+    ]);
+    if (!quota.allowed) break;
 
     try {
       const draft = await generateReplyDraft(

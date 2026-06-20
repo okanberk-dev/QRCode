@@ -78,6 +78,9 @@ export default function MemberCreateModal({ onClose, onCreated }: MemberCreateMo
     <Modal
       size={480}
       onClose={onClose}
+      // Guard accidental close while filling the invite form; once the invite
+      // is created (result shown) closing is safe (CLAUDE.md §23.3).
+      closeGuard={() => invite === null && (email.trim() !== '' || name.trim() !== '')}
       title={
         <div>
           <p className="pulse-eyebrow text-[#737373]">YENİ KAYIT</p>

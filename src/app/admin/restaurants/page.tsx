@@ -568,6 +568,15 @@ export default function RestaurantsPage() {
         <Modal
           size={640}
           onClose={() => { setShowCreateModal(false); setError(''); }}
+          // Guard accidental outside-click / ESC when the form has input
+          // (CLAUDE.md §23.3 Modal closeGuard).
+          closeGuard={() =>
+            formData.name.trim() !== '' ||
+            formData.slug.trim() !== '' ||
+            formData.address.trim() !== '' ||
+            formData.notificationEmail.trim() !== '' ||
+            formData.userId.trim() !== ''
+          }
           title={
             <div>
               <p className="pulse-eyebrow text-[#737373]">Yeni Kayıt</p>
