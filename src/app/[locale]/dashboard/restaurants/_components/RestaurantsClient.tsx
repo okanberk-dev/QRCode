@@ -732,10 +732,28 @@ function CreateBusinessWizard({
     onSubmit(event);
   };
 
+  // Guard accidental outside-click / ESC close when the owner has started
+  // filling the wizard — show an "are you sure?" confirm instead of dropping
+  // their input (CLAUDE.md §23.3 Modal closeGuard).
+  const wizardDirty =
+    createStep > 0 ||
+    formData.name.trim() !== '' ||
+    formData.slug.trim() !== '' ||
+    (formData.address?.trim() ?? '') !== '';
+
   return (
     <Modal
       size={920}
       onClose={onClose}
+      closeGuard={() => wizardDirty}
+      closeConfirm={{
+        title: isTr ? 'Çıkmak istediğine emin misin?' : 'Discard this business?',
+        body: isTr
+          ? 'Girdiğin işletme bilgileri kaydedilmeden kapanacak.'
+          : 'The details you entered will be lost.',
+        confirm: isTr ? 'Kapat' : 'Discard',
+        cancel: isTr ? 'Vazgeç' : 'Keep editing',
+      }}
       title={
         <div>
           <p className="text-[17px] font-semibold text-[#0A0A0A]">{copyAdd}</p>

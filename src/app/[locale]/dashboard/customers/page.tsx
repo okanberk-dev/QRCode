@@ -155,7 +155,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const scopedIds = await getScopedRestaurantIds(actor);
   if (scopedIds === null || scopedIds.length === 0) {
     return (
-      <div className="space-y-5">
+      <div className="mx-auto max-w-[1600px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
         <PageHeader
           eyebrow={isTr ? 'CRM' : 'CRM'}
           title={isTr ? 'Müşteriler' : 'Customers'}
@@ -466,7 +466,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-[1600px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
       <PageHeader
         /* §38.66 — Customers 8-col tablo + filter toolbar + KPI grid yoğun
            layout; hero h1 ezici. titleScale="compact" mütevazı kalır. */
