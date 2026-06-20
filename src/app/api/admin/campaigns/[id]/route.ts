@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
-import { aggregateLogStats } from '@/lib/customer-campaign-stats';
+import { aggregateLogStatsFromGroups } from '@/lib/customer-campaign-stats';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -101,12 +101,13 @@ export async function GET(
   const approver = campaign.approvedById ? adminMap.get(campaign.approvedById) : null;
   const rejecter = campaign.rejectedById ? adminMap.get(campaign.rejectedById) : null;
 
-  // Log stats aggregate (small footprint).
-  const logs = await prisma.customerEmailLog.findMany({
+  // Log stats via groupBy (audit §38.B) — bounded, no full-table load.
+  const logGroups = await prisma.customerEmailLog.groupBy({
+    by: ['status'],
     where: { campaignId: id },
-    select: { status: true },
+    _count: { _all: true },
   });
-  const stats = aggregateLogStats(logs, campaign.recipientCount);
+  const stats = aggregateLogStatsFromGroups(logGroups, campaign.recipientCount);
 
   return NextResponse.json(
     {

@@ -7,6 +7,7 @@ import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { getUserFromRequest } from '@/lib/auth';
 import { sendPasswordChangedEmail } from '@/lib/email';
 import { getClientIp } from '@/lib/rate-limit';
+import { isStrongPassword } from '@/lib/validations';
 
 export async function GET(req: NextRequest) {
   try {
@@ -172,8 +173,14 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Mevcut şifreniz hatalı' }, { status: 400 });
       }
 
-      if (newPassword.length < 8) {
-        return NextResponse.json({ error: 'Yeni şifre en az 8 karakter olmalıdır' }, { status: 400 });
+      // Match the strength bar used by register / reset (audit §38.B M12) —
+      // ≥8 chars with at least one letter and one digit. The old length-only
+      // check let an authenticated user set a trivially weak password.
+      if (!isStrongPassword(newPassword)) {
+        return NextResponse.json(
+          { error: 'Yeni şifre en az 8 karakter olmalı ve harf ile rakam içermelidir' },
+          { status: 400 },
+        );
       }
 
       updateData.passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);

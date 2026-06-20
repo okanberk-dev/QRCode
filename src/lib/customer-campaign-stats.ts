@@ -49,10 +49,35 @@ export function aggregateLogStats(
     else buckets.pending += 1;
   }
 
-  const total = recipientCount ?? logs.length;
+  return finalizeLogStats(buckets, recipientCount ?? logs.length);
+}
+
+/**
+ * Same output as {@link aggregateLogStats} but from a Prisma `groupBy` result
+ * (audit §38.B) — avoids loading every CustomerEmailLog row into memory just
+ * to count statuses. Pass `prisma.customerEmailLog.groupBy({ by: ['status'],
+ * _count: { _all: true }, where: { campaignId } })`.
+ */
+export function aggregateLogStatsFromGroups(
+  groups: ReadonlyArray<{ status: string; _count: { _all: number } }>,
+  recipientCount?: number,
+): CampaignStats {
+  const buckets: LogStatusBucket = { pending: 0, sent: 0, failed: 0, unsubscribed: 0 };
+  let total = 0;
+  for (const g of groups) {
+    const n = g._count._all;
+    total += n;
+    if (g.status === 'sent') buckets.sent += n;
+    else if (g.status === 'failed') buckets.failed += n;
+    else if (g.status === 'unsubscribed') buckets.unsubscribed += n;
+    else buckets.pending += n;
+  }
+  return finalizeLogStats(buckets, recipientCount ?? total);
+}
+
+function finalizeLogStats(buckets: LogStatusBucket, total: number): CampaignStats {
   const eligible = total - buckets.unsubscribed;
   const deliveryRate = eligible > 0 ? Math.round((buckets.sent / eligible) * 1000) / 10 : 0;
-
   return { ...buckets, total, deliveryRate };
 }
 

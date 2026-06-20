@@ -133,7 +133,7 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       createdAt: { gte: sevenDaysAgo },
     };
 
-    const [total, avgAgg, distribution, highRatings, aspectAggs, commentRows, segmentRows] = await Promise.all([
+    const [total, avgAgg, distribution, highRatings, googleRedirects, aspectAggs, commentRows, segmentRows] = await Promise.all([
       prisma.feedback.count({ where }),
       prisma.feedback.aggregate({ _avg: { rating: true }, where }),
       prisma.feedback.groupBy({
@@ -143,6 +143,10 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
         orderBy: { rating: 'desc' },
       }),
       prisma.feedback.count({ where: { ...where, rating: { gte: 4 } } }),
+      // Actual Google-routed count (audit §38.B M11) — feedback whose redirect
+      // platform was Google, NOT every high rating. Avoids overstating the
+      // weekly "sent to Google" / conversion metric (§19.1.1 / §35.8).
+      prisma.feedback.count({ where: { ...where, platform: 'google' } }),
       prisma.feedback.aggregate({
         _avg: { foodRating: true, serviceRating: true, atmosphereRating: true },
         where,
@@ -190,7 +194,9 @@ export async function runWeeklyDigest(options?: { dryRun?: boolean }): Promise<W
       dist[row.rating] = row._count;
     });
     const lowRatings = (dist[1] || 0) + (dist[2] || 0) + (dist[3] || 0);
-    const sentToGoogle = rest.googlePlaceId ? highRatings : 0;
+    // Measured Google redirects (M11) — was `googlePlaceId ? highRatings : 0`,
+    // which assumed every ≥4★ review routed to Google.
+    const sentToGoogle = googleRedirects;
     const conversionRate = highRatings > 0
       ? parseFloat(((sentToGoogle / highRatings) * 100).toFixed(0))
       : null;

@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
 import { writeAdminAuditLog } from '@/lib/audit-log';
-import { aggregateLogStats } from '@/lib/customer-campaign-stats';
+import { aggregateLogStatsFromGroups } from '@/lib/customer-campaign-stats';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -50,15 +50,15 @@ export async function GET(
   const access = await canAccessRestaurant(actor, campaign.restaurantId);
   if (!access) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
-  // Aggregate log status counts (small footprint — pulled all logs for this
-  // campaign; CustomerEmailLog row count ~= recipientCount, owner-side bounded
-  // ≤ 1000 typical).
-  const logs = await prisma.customerEmailLog.findMany({
+  // Aggregate log status counts via groupBy (audit §38.B) — bounded result
+  // (one row per distinct status), never loads all CustomerEmailLog rows.
+  const logGroups = await prisma.customerEmailLog.groupBy({
+    by: ['status'],
     where: { campaignId: id },
-    select: { status: true },
+    _count: { _all: true },
   });
 
-  const stats = aggregateLogStats(logs, campaign.recipientCount);
+  const stats = aggregateLogStatsFromGroups(logGroups, campaign.recipientCount);
 
   return NextResponse.json(
     {

@@ -33,6 +33,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
+  // Rate limit BEFORE the scope DB read (audit §38.B) so an abusive
+  // authenticated actor can't drive unbounded getScopedRestaurantIds queries
+  // (and the empty-scope branch below is also covered).
+  const limit = await rateLimit(`realtime-token:${actor.source}:${actor.id}`, 10, 60_000);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'rate_limited', retryAfterSeconds: limit.retryAfterSeconds },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+      },
+    );
+  }
+
   // Stage 16 — Realtime is for owner dashboard. Superadmin uses
   // /admin/* routes; manager/team_member/restaurant_owner have a
   // bounded restaurant list. Don't mint a service-role-equivalent
@@ -52,17 +66,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { token: null, expiresAt: 0, restaurantIds: [] },
       { status: 200, headers: { 'Cache-Control': 'private, no-store' } },
-    );
-  }
-
-  const limit = await rateLimit(`realtime-token:${actor.source}:${actor.id}`, 10, 60_000);
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: 'rate_limited', retryAfterSeconds: limit.retryAfterSeconds },
-      {
-        status: 429,
-        headers: { 'Retry-After': String(limit.retryAfterSeconds) },
-      },
     );
   }
 
