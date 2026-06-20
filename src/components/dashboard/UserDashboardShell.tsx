@@ -1085,9 +1085,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       <a href="#panel-main-content" className="bz-skip-link">
         {locale === 'tr' ? 'İçeriğe atla' : 'Skip to content'}
       </a>
-      <div className="flex-1 lg:flex lg:min-h-0 lg:overflow-hidden">
-      {/* Desktop sidebar */}
-      <aside className={`relative hidden h-full shrink-0 border-r border-[#EDEDED] lg:flex transition-all duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-[248px]'}`}>
+      {/* §38.237 — Sidebar + main artık CSS GRID (eski `lg:flex`). Grid track'leri
+          içerikten ÖNCE boyutlanır: `[auto minmax(0,1fr)]` → kolon 1 sidebar'ın
+          kendi genişliği (w-[68px]/w-[248px] + transition), kolon 2 içerik
+          `minmax(0,1fr)` ile SERT şekilde sınırlanır. Bu, geniş içeriğin (tablo,
+          DnD builder, vb.) min-content genişliğiyle taşıp sidebar'ın üstüne
+          "kayma/overlap" yapmasını imkânsız kılar (flex `flex-1 min-w-0`'ın
+          edge-case'inde olabiliyordu). Mobilde `lg:grid` devre dışı → eski
+          `flex-1` block akışı + drawer intact. */}
+      <div className="flex-1 lg:grid lg:grid-cols-[auto_minmax(0,1fr)] lg:min-h-0 lg:overflow-hidden">
+      {/* Desktop sidebar — grid kolon 1 (auto track). Genişlik + transition
+          aside üzerinde kalır; toggle butonu (-right-3) clip olmasın diye
+          aside'da overflow-hidden YOK. */}
+      <aside className={`relative hidden h-full min-w-0 border-r border-[#EDEDED] lg:flex transition-[width] duration-300 ease-in-out ${isCollapsed ? 'w-[68px]' : 'w-[248px]'}`}>
         {renderSidebar(navRef)}
         {/* Floating toggle button */}
         <button
