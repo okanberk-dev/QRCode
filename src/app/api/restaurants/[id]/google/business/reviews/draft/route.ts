@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, resolveOwnerUserId } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { validateBody } from '@/lib/api/validate';
+import { AI_QUOTAS, checkLayeredAiQuota } from '@/lib/ai-quota';
 import { coerceTone, generateReplyDraft } from '@/lib/ai-draft';
+import { buildReplyTemplate } from '@/lib/scaffolding';
 import { rateLimit } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma';
 
@@ -68,6 +70,30 @@ export async function POST(
 
   const locale = parsed.data.locale ?? 'tr';
   const tone = coerceTone(parsed.data.tone, coerceTone(restaurant.aiDraftTone, 'warm'));
+
+  // 3-layer AI quota guard (audit §38.B H3). Per-minute rate limit above is
+  // burst protection; this is the daily spend ceiling that every other AI
+  // callsite enforces (CLAUDE.md §15.1) but this endpoint was missing. On
+  // overflow → deterministic template fallback (UI keeps working, no 429).
+  const ownerKey = (await resolveOwnerUserId(actor)) ?? actor.id;
+  const quota = await checkLayeredAiQuota([
+    { scope: 'suggest-reply:user', identifier: actor.id, dailyLimit: AI_QUOTAS.SUGGEST_REPLY_USER_DAY },
+    { scope: 'suggest-reply:ws', identifier: ownerKey, dailyLimit: AI_QUOTAS.SUGGEST_REPLY_WORKSPACE_DAY },
+    { scope: 'suggest-reply:global', identifier: 'global', dailyLimit: AI_QUOTAS.SUGGEST_REPLY_GLOBAL_DAY },
+  ]);
+  if (!quota.allowed) {
+    return NextResponse.json({
+      suggestion: buildReplyTemplate({
+        name: parsed.data.customerName ?? null,
+        rating: parsed.data.rating,
+        locale,
+      }),
+      source: 'template',
+      tone,
+      quotaExceeded: quota.scope,
+    });
+  }
+
   const draft = await generateReplyDraft(
     {
       restaurantName: restaurant.name,

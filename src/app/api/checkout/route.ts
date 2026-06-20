@@ -1,35 +1,40 @@
 /**
  * Dodo Payments checkout route handler (CLAUDE.md §44, Stage 142 §38.222,
- * Stage 149 §38.229 redirect wrapper).
+ * Stage 149 §38.229 redirect wrapper, audit §38.B C1 auth-gate).
  *
  * GET  /api/checkout?productId=<dodo_product_id>            — static checkout URL
- * POST /api/checkout  body: { productId, quantity?, custom_data? } — session checkout
+ * POST /api/checkout  body: { product_cart|product_id, ... } — session checkout
  *
  * SDK reference: https://docs.dodopayments.com/developer-resources/nextjs-adaptor
  *
  * **Stage 149 §38.229 redirect wrapper** — Dodo SDK GET/POST handler'lar JSON
  * `{ checkout_url: '...' }` döndürüyor, browser tarafında otomatik redirect
- * YAPMIYOR. Owner/marketing tıkladığında JSON görüyor → UX broken (user verbatim
- * raporu: "fiyatlandırma da al diyince böyle diyor" + JSON paylaştı). Custom
- * wrapper SDK'yı internal çağırır, JSON'dan `checkout_url`'i çıkarır,
- * `NextResponse.redirect(url, 302)` ile Dodo hosted page'e yönlendirir.
+ * YAPMIYOR. Custom wrapper SDK'yı internal çağırır, JSON'dan `checkout_url`'i
+ * çıkarır, `NextResponse.redirect(url, 302)` ile Dodo hosted page'e yönlendirir.
  *
- * Notes:
- *   • Lokal dev'de SDK çağrısı `DODO_PAYMENTS_*` env'ler eksikse runtime'da
- *     fail eder. Operatör Vercel project env'lerine 4 env'i set ettikten
- *     sonra production'da çalışır.
- *   • Buaze custom_data convention: `{ user_id: string, plan_id?: string }`.
- *     Webhook handler bu field'larla `BillingSubscription.userId`'yi resolve
- *     eder (CLAUDE.md §44 user resolution paterni).
- *   • Production'da bu route'a giden trafiğe owner JWT cookie gerekiyor mu?
- *     Şu an SDK doğrudan checkout URL üretir — owner-scope filtreleme
- *     marketing /pricing kartından gelen `productId` ile yapılır (admin
- *     /admin/plans'tan seçtiği `dodoProductId` slot'una bağlı).
+ * **Audit C1 — entitlement spoofing fix.** Dodo webhook (`/api/webhook/
+ * dodo-payments`) ödemeyi `metadata.user_id`'ye göre bir Buaze hesabına bağlar
+ * (resolveUserId Strategy 1). Eskiden bu route auth'suzdu ve `metadata.user_id`
+ * client'tan geliyordu → saldırgan kendi kartıyla ödeyip aboneliği istediği
+ * hesaba bağlayabiliyordu. Artık:
+ *   • `user_id` HER ZAMAN server tarafında authenticated actor'dan türetilir
+ *     (resolveOwnerUserId → workspace owner). Client'ın gönderdiği değer
+ *     (GET `metadata_user_id` query / POST `metadata.user_id`) silinir.
+ *   • POST (programmatic session checkout) auth ZORUNLU — owner-initiated
+ *     dashboard "Yükselt" akışı. Anonim POST 401.
+ *   • GET (static checkout link) marketing /pricing'den logged-out ziyaretçi de
+ *     kullanır → auth opsiyonel; actor varsa `metadata_user_id` enjekte edilir,
+ *     yoksa webhook customer email lookup'a (Strategy 2) düşer.
  */
 
 import { Checkout } from '@dodopayments/nextjs';
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
+import { getPanelActorFromRequest } from '@/lib/auth';
+import { resolveOwnerUserId } from '@/lib/panel-access';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // Dodo SDK `environment` literal union ('test_mode' | 'live_mode'). Env var
 // is `string | undefined`; coerce defensively — any non-'live_mode' value
@@ -64,9 +69,6 @@ async function redirectFromSdkResponse(
   sdkResponse: Response,
   kind: 'static' | 'session',
 ): Promise<Response> {
-  // SDK error response (401 invalid key, 4xx invalid body, 5xx Dodo outage) —
-  // body'i intact bırak, kullanıcı/developer reason'ı görsün. UI tarafında
-  // <a> tag click → error sayfası açılır (raw JSON), Sentry trail var.
   if (!sdkResponse.ok) {
     Sentry.captureMessage('Dodo checkout SDK non-2xx', {
       level: 'warning',
@@ -94,24 +96,67 @@ async function redirectFromSdkResponse(
     );
   }
 
-  // 302 — kasıtlı (303 See Other POST→GET semantic önemli olabilir ama Dodo
-  // hosted page GET kabul ediyor, browser-spec uyumlu 302 yeterli).
   return NextResponse.redirect(url, 302);
 }
 
-// GET — Static checkout link. Marketing /pricing cards link to this route
-// with `?productId=<dodo_product_id>` query; SDK Dodo hosted page'i çıkarır,
-// wrapper 302 redirect ile gönderir.
+/**
+ * Resolve the authenticated workspace-owner id from the request, or null when
+ * unauthenticated. Used to server-inject `user_id` into checkout metadata so
+ * the webhook can never be told which account to credit by an anonymous caller.
+ */
+async function resolveCheckoutUserId(req: NextRequest): Promise<string | null> {
+  const actor = await getPanelActorFromRequest(req);
+  if (!actor) return null;
+  return (await resolveOwnerUserId(actor)) ?? actor.id;
+}
+
+// GET — Static checkout link. Marketing /pricing cards + owner panel modal link
+// here with `?productId=<dodo_product_id>`. Any client-supplied
+// `metadata_user_id` is stripped; the server injects the authenticated owner's
+// id (if logged in). Logged-out visitors → no user_id → webhook email lookup.
 export async function GET(req: NextRequest): Promise<Response> {
-  const sdkResponse = await sdkStaticCheckout(req);
+  const userId = await resolveCheckoutUserId(req);
+
+  const url = new URL(req.url);
+  // Strip any caller-supplied identity claim — never trust the client here.
+  url.searchParams.delete('metadata_user_id');
+  if (userId) {
+    url.searchParams.set('metadata_user_id', userId);
+  }
+
+  const sdkResponse = await sdkStaticCheckout(new NextRequest(url));
   return redirectFromSdkResponse(sdkResponse, 'static');
 }
 
 // POST — Session checkout. Owner-initiated programmatic checkout from the
-// dashboard ("Upgrade" button). Body carries `productId` + optional
-// `quantity` and `custom_data` (user_id, plan_id) — SDK Dodo signed checkout
-// URL üretir, wrapper 302 redirect ile gönderir.
+// dashboard ("Upgrade" button). AUTH REQUIRED. `metadata.user_id` is forced to
+// the authenticated owner — any client-supplied value is overwritten.
 export async function POST(req: NextRequest): Promise<Response> {
-  const sdkResponse = await sdkSessionCheckout(req);
+  const userId = await resolveCheckoutUserId(req);
+  if (!userId) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+  }
+
+  const clientMeta =
+    body && typeof body.metadata === 'object' && body.metadata !== null
+      ? (body.metadata as Record<string, unknown>)
+      : {};
+  // Force the identity claim to the authenticated owner (overwrite client).
+  body.metadata = { ...clientMeta, user_id: userId };
+
+  const forwarded = new NextRequest(req.url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const sdkResponse = await sdkSessionCheckout(forwarded);
   return redirectFromSdkResponse(sdkResponse, 'session');
 }

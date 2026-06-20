@@ -40,6 +40,14 @@ export const AI_QUOTAS = {
   SUGGEST_REPLY_WORKSPACE_DAY: 300, // multi-team workspace için
   SUGGEST_REPLY_GLOBAL_DAY: 2000,
 
+  // Background auto-draft (feedback-autodraft + google-reviews-autodraft cron
+  // + feedback POST opt-in). Separate pool from interactive suggest-reply so
+  // a runaway cron can't starve owners' on-demand drafts, and vice versa.
+  // Checked per OpenAI call (audit §38.B H3 — was previously uncapped). On
+  // overflow → template fallback / skip, never an HTTP error.
+  AUTODRAFT_WORKSPACE_DAY: 200,
+  AUTODRAFT_GLOBAL_DAY: 4000,
+
   // Analytics themes — server component refresh, 1h cache hit oranı yüksek
   // 50/workspace/day → cache miss × refresh × restoran sayısı
   ANALYTICS_THEMES_WORKSPACE_DAY: 50,

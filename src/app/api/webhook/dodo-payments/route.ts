@@ -47,6 +47,9 @@ import * as Sentry from '@sentry/nextjs';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // ─────────────────────────────────────────────────────────────────────
 // Resolver helpers
 // ─────────────────────────────────────────────────────────────────────
@@ -95,8 +98,12 @@ async function resolveUserId(payload: DodoPayloadShape): Promise<string | null> 
 
 async function resolveTierFromProduct(productId: string | undefined): Promise<string | null> {
   if (!productId) return null;
+  // Match by product id only. `isActive` governs the public /pricing listing,
+  // NOT a paying customer's tier identity — filtering on it would make a
+  // renewal of a since-deactivated plan resolve to null and drop the tier
+  // link, leaving the subscriber amount-less (audit §38.B M7).
   const plan = await prisma.subscriptionPlan.findFirst({
-    where: { dodoProductId: productId, isActive: true },
+    where: { dodoProductId: productId },
     select: { id: true },
   });
   return plan?.id ?? null;
@@ -128,8 +135,11 @@ function mapStatus(dodoStatus: string | undefined): string {
   switch (dodoStatus) {
     case 'active':
     case 'trialing':
-    case 'paused':
       return 'active';
+    // `paused` is a provider-side hold (typically dunning / non-payment).
+    // Bucket with past_due so a paused subscriber is NOT served paid-tier
+    // access (audit §38.B M6 — previously mapped to 'active').
+    case 'paused':
     case 'on_hold':
     case 'past_due':
       return 'past_due';
@@ -241,8 +251,10 @@ async function handlePaymentFailed(payload: DodoPayloadShape): Promise<void> {
 async function handlePaymentRefunded(payload: DodoPayloadShape): Promise<void> {
   const paymentId = payload.data?.payment_id;
   if (!paymentId) return;
+  // Scope to Dodo-sourced invoices so a webhook can never flip a manually
+  // managed (enterprise/admin) invoice (audit §38.B H2/H3).
   await prisma.billingInvoice.updateMany({
-    where: { providerRef: paymentId },
+    where: { providerRef: paymentId, source: 'dodo_payments' },
     data: { status: 'refunded' },
   });
 }
@@ -300,8 +312,11 @@ async function handleSubscriptionUpsert(payload: DodoPayloadShape): Promise<void
 async function handleSubscriptionCancelled(payload: DodoPayloadShape): Promise<void> {
   const subscriptionId = payload.data?.subscription_id;
   if (!subscriptionId) return;
+  // `source: 'dodo_payments'` scope — a webhook event must never mutate a
+  // manually managed (enterprise/admin override) subscription that happens to
+  // share a providerRef (audit §38.B H2/H3).
   await prisma.billingSubscription.updateMany({
-    where: { providerRef: subscriptionId },
+    where: { providerRef: subscriptionId, source: 'dodo_payments' },
     data: {
       cancelAtPeriodEnd: true,
       status: 'active', // grace period — owner keeps access until renewsAt
@@ -314,7 +329,7 @@ async function handleSubscriptionExpired(payload: DodoPayloadShape): Promise<voi
   const subscriptionId = payload.data?.subscription_id;
   if (!subscriptionId) return;
   await prisma.billingSubscription.updateMany({
-    where: { providerRef: subscriptionId },
+    where: { providerRef: subscriptionId, source: 'dodo_payments' },
     data: { status: 'canceled', cancelAtPeriodEnd: false },
   });
 }
@@ -323,7 +338,7 @@ async function handleSubscriptionOnHold(payload: DodoPayloadShape): Promise<void
   const subscriptionId = payload.data?.subscription_id;
   if (!subscriptionId) return;
   await prisma.billingSubscription.updateMany({
-    where: { providerRef: subscriptionId },
+    where: { providerRef: subscriptionId, source: 'dodo_payments' },
     data: { status: 'past_due' },
   });
 }
@@ -338,11 +353,25 @@ async function handleSubscriptionOnHold(payload: DodoPayloadShape): Promise<void
 // presence + body message (Standard Webhooks library error mesajları).
 // Sentry warning + tags `integration: 'dodo-payments', kind: 'signature_verify_fail'`.
 
-const sdkWebhookHandler = Webhooks({
-  // SDK requires a string; env is `string | undefined`. Empty fallback →
-  // SDK returns 401 "Secret can't be empty." which the diagnostic wrapper
-  // below catches (CLAUDE.md §44.3.2). Never hard-throw at module load.
-  webhookKey: process.env.DODO_PAYMENTS_WEBHOOK_SECRET ?? '',
+let cachedWebhookHandler: ReturnType<typeof Webhooks> | null = null;
+
+/**
+ * Lazy-init the Dodo SDK webhook handler (audit §38.B H4).
+ *
+ * `Webhooks({...})` constructs the Standard Webhooks verifier eagerly and
+ * THROWS "Secret can't be empty." when `webhookKey` is falsy. At module level
+ * that means a missing `DODO_PAYMENTS_WEBHOOK_SECRET` throws during import →
+ * every POST returns a 500 and the 401 diagnostic wrapper is dead code (the
+ * old comment claiming the SDK "returns 401" was wrong — the constructor
+ * throws, it never reaches verify). Constructing lazily lets POST return a
+ * clean 503 "not configured" instead of crashing the route module.
+ */
+function getWebhookHandler(): ReturnType<typeof Webhooks> | null {
+  if (cachedWebhookHandler) return cachedWebhookHandler;
+  const secret = process.env.DODO_PAYMENTS_WEBHOOK_SECRET;
+  if (!secret) return null;
+  cachedWebhookHandler = Webhooks({
+    webhookKey: secret,
   // Catch-all — fires for every event. Use for audit / Sentry breadcrumb.
   // PII discipline (§40.4): redact customer email/name from console.
   onPayload: async (payload) => {
@@ -414,7 +443,9 @@ const sdkWebhookHandler = Webhooks({
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.on_hold' } });
     }
   },
-});
+  });
+  return cachedWebhookHandler;
+}
 
 // 401 diagnostic wrapper — Standard Webhooks library secret/signature
 // mismatch'lerini Sentry'ye warning olarak yansıtır. Production-safe:
@@ -422,11 +453,54 @@ const sdkWebhookHandler = Webhooks({
 // header presence + 401 body message ("Missing required headers" / "No matching
 // signature found" / "Message timestamp too old" / "Secret can't be empty.").
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
-  // Clone body once — both SDK ve diagnostic wrapper okuyabilsin
-  // (NextRequest body bir kez okunabilir). SDK kendi clone'unu kullanır
-  // ama biz wrapper'da headers ile body content-length'i log'larız.
+  const handler = getWebhookHandler();
+  if (!handler) {
+    // Secret not configured — fail loudly but cleanly (audit §38.B H4).
+    Sentry.captureMessage('Dodo webhook secret not configured', {
+      level: 'error',
+      tags: { integration: 'dodo-payments', kind: 'webhook_not_configured' },
+    });
+    return NextResponse.json({ error: 'webhook_not_configured' }, { status: 503 });
+  }
+
+  // Idempotency (audit §38.B H2). Svix `webhook-id` is stable across retries
+  // and re-deliveries. We only RECORD an id after a verified+dispatched 200,
+  // so an attacker (no valid signature) can never poison the dedup table; a
+  // pre-existing id therefore always means a prior legitimate delivery →
+  // short-circuit before re-applying state (prevents out-of-order revival /
+  // double invoicing). Header read does not consume the body (SDK reads it).
+  const eventId = req.headers.get('webhook-id');
+  if (eventId) {
+    const seen = await prisma.dodoWebhookEvent
+      .findUnique({ where: { eventId }, select: { id: true } })
+      .catch(() => null);
+    if (seen) {
+      return NextResponse.json({ ok: true, duplicate: true }, { status: 200 });
+    }
+  }
+
   const startTime = Date.now();
-  const response = await sdkWebhookHandler(req);
+  const response = await handler(req);
+
+  // Record only verified + dispatched events. SDK callbacks swallow handler
+  // errors (try/catch → Sentry) so a 200 means "accepted"; recording it stops
+  // a retry from re-running handlers. P2002 (concurrent duplicate) is benign.
+  if (response.status === 200 && eventId) {
+    try {
+      await prisma.dodoWebhookEvent.create({
+        data: { eventId, eventType: req.headers.get('webhook-type') ?? null },
+      });
+    } catch (err) {
+      if (
+        !(err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002')
+      ) {
+        Sentry.captureException(err, {
+          tags: { integration: 'dodo-payments', kind: 'idempotency_write' },
+        });
+      }
+    }
+  }
+
   if (response.status === 401 || response.status === 500) {
     // Hata path'i — diagnostic log + Sentry warning
     const clone = response.clone();

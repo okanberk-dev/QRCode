@@ -1577,6 +1577,20 @@ model BillingInvoice {
   @@map("billing_invoices")
 }
 
+// Dodo Payments webhook idempotency log (audit §38.B H2). Keyed on the Svix
+// `webhook-id` header (unique). The webhook route records an event only AFTER
+// signature verification + dispatch succeed (HTTP 200); a duplicate / retried
+// delivery with the same id is short-circuited before re-applying state
+// (prevents out-of-order revival + double invoicing). No PII — id + type only.
+model DodoWebhookEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique @map("event_id")
+  eventType String?  @map("event_type")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("dodo_webhook_events")
+}
+
 // Public marketing pricing plans, fully managed from /admin/plans.
 // Single row per plan with bilingual content (TR/EN columns) — admin
 // edits stay in lockstep across locales without needing dual rows.

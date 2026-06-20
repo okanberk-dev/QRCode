@@ -234,6 +234,18 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // IP rate limit (audit §38.B M2). processUnsubscribe re-writes consent on
+  // every call (not no-op idempotent), so a bot replaying a valid token can
+  // spam updateMany. Generous cap keeps real human double-clicks unaffected.
+  const ip = getClientIp(req.headers);
+  const limit = await rateLimit(`customer-unsubscribe:get:${ip}`, 20, 60_000);
+  if (!limit.allowed) {
+    return new NextResponse(locale === 'en' ? EN_PAGE : TR_PAGE, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
+    });
+  }
+
   const result = await processUnsubscribe(token);
   if (!result.ok) {
     return new NextResponse(ERROR_PAGE_TR, {
