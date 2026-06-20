@@ -165,6 +165,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     where: { restaurantId, sessionId: sessionId as string, createdAt: { gte: recentCutoff } },
     select: { eventType: true, categoryId: true, productId: true, createdAt: true },
     orderBy: { createdAt: 'desc' },
+    // Bounded (audit §38.B) — dedupe only needs the first occurrence per key;
+    // a session can't legitimately emit more than a few hundred events in the
+    // window, so this caps memory/scan against a session-id spamming client.
+    take: 200,
   });
 
   const recentByKey = new Map<string, Date>();

@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { getSecret } from '@/lib/auth';
 import { verifyRecaptchaToken } from '@/lib/recaptcha';
+import { isStrongPassword } from '@/lib/validations';
 
 function hashCode(code: string): string {
   return crypto.createHash('sha256').update(code).digest('hex');
@@ -21,14 +22,13 @@ export async function POST(req: NextRequest) {
     const code = typeof body.code === 'string' ? body.code.trim() : '';
     const newPassword = typeof body.newPassword === 'string' ? body.newPassword : '';
 
-    if (!token || !/^\d{6}$/.test(code) || newPassword.length < 8) {
+    // Strength bar matches register / profile change (audit §38.B M12) —
+    // ≥8 chars with at least one letter and one digit.
+    if (!token || !/^\d{6}$/.test(code) || !isStrongPassword(newPassword)) {
       return NextResponse.json(
-        { error: 'Kod 6 haneli olmalı ve şifre en az 8 karakter uzunluğunda olmalıdır.' },
+        { error: 'Kod 6 haneli olmalı; şifre en az 8 karakter olmalı ve harf ile rakam içermelidir.' },
         { status: 400 },
       );
-    }
-    if (newPassword.length > 256) {
-      return NextResponse.json({ error: 'Şifre çok uzun.' }, { status: 400 });
     }
 
     const captcha = await verifyRecaptchaToken(req, body.recaptchaToken, 'auth_reset_password');

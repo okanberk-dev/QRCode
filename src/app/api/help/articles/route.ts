@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
   const locale = localeParam === 'en' ? 'en' : 'tr';
   const category = searchParams.get('category')?.trim() || undefined;
   const slug = searchParams.get('slug')?.trim() || undefined;
-  const search = searchParams.get('search')?.trim() || undefined;
+  // Cap length (audit §38.B) — bounds the ILIKE term passed to Postgres.
+  const search = searchParams.get('search')?.trim().slice(0, 100) || undefined;
 
   if (slug) {
     let article = null;

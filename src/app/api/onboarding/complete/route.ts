@@ -46,6 +46,12 @@ export async function POST(req: NextRequest) {
     /* optional */
   }
   if (raw && typeof raw === 'object') {
+    // Size cap (audit §38.B) — `.passthrough()` forwards arbitrary wizard
+    // state into the JSON column; bound it so an authenticated user can't
+    // stuff a multi-MB blob into onboarding_progress.data.
+    if (JSON.stringify(raw).length > 50_000) {
+      return NextResponse.json({ error: 'payload_too_large' }, { status: 413 });
+    }
     const parsed = validateBody<z.infer<typeof OnboardingCompleteBody>>(OnboardingCompleteBody, raw);
     if (!parsed.ok) return parsed.response;
     body = parsed.data as Record<string, unknown>;

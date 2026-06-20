@@ -496,8 +496,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check duplicate slug
-    const existing = await prisma.restaurant.findUnique({ where: { slug } });
+    // Check duplicate slug — explicit select (CLAUDE.md §14.1) so a column
+    // drift can't P2022 the create path, and base64 image columns aren't
+    // pulled just to test existence.
+    const existing = await prisma.restaurant.findUnique({ where: { slug }, select: { id: true } });
     if (existing) {
       return ApiErrors.conflict('Bu slug zaten kullanılıyor');
     }

@@ -80,7 +80,12 @@ export async function POST(req: NextRequest) {
       return ApiErrors.tooManyRequests('Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.', 'RATE_LIMIT_EXCEEDED', 600);
     }
 
-    const body = await req.json();
+    // Malformed JSON → 400, not 500 (audit §38.B). Dedicated catch so a bad
+    // body doesn't fall through to the outer try's internalError handler.
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return ApiErrors.badRequest('Geçersiz istek gövdesi', 'INVALID_BODY');
+    }
     const { rating, name, email, phone, comment, source, branch, tableNumber, restaurantSlug, aspects, aspectTags, platform, website } = body;
 
     // §38.130 Stage 49 — sanitize once, reuse below.

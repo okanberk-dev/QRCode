@@ -10,8 +10,9 @@
 // questions (correctAnswer KASTEN EKSIK). POST submit → score response.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ArrowLeft, ArrowRight, Check, ClipboardCheck, Loader2, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight, Camera, Check, ClipboardCheck, Loader2, X } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
+import { compressImage } from '@/lib/client-image';
 import type {
   AuditQuestionType,
   AuditScoringMode,
@@ -847,10 +848,139 @@ function QuestionInput({ question, value, onChange, onToggleMulti, accent, isTr 
     );
   }
 
-  // file — placeholder, soon
+  if (question.type === 'file') {
+    return <PhotoQuestionInput value={value} onChange={onChange} accent={accent} isTr={isTr} />;
+  }
+
+  return null;
+}
+
+// Max size for a stored audit photo (base64 data URL). Aggressively
+// compressed client-side first (quality not critical here per product), so a
+// normal photo lands well under this; the cap is a defensive ceiling against
+// oversized inputs bloating the AuditAnswer JSON / request body.
+const AUDIT_PHOTO_MAX_BYTES = 600 * 1024; // ~600KB data URL
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function PhotoQuestionInput({
+  value,
+  onChange,
+  accent,
+  isTr,
+}: {
+  value: AnswerValue;
+  onChange: (v: AnswerValue) => void;
+  accent: string;
+  isTr: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const dataUrl = typeof value === 'string' && value.startsWith('data:image/') ? value : null;
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    setError(null);
+    if (!file.type.startsWith('image/')) {
+      setError(isTr ? 'Lütfen bir fotoğraf seçin.' : 'Please pick an image.');
+      return;
+    }
+    setBusy(true);
+    try {
+      // Small + low quality on purpose (product: size matters, quality doesn't).
+      const compressed = await compressImage(file, { maxDim: 1024, quality: 0.5 });
+      const url = await fileToDataUrl(compressed);
+      if (!url || url.length > AUDIT_PHOTO_MAX_BYTES) {
+        setError(
+          isTr
+            ? 'Fotoğraf çok büyük. Daha küçük bir görsel deneyin.'
+            : 'Photo is too large. Try a smaller image.',
+        );
+        return;
+      }
+      onChange(url);
+    } catch {
+      setError(isTr ? 'Fotoğraf işlenemedi.' : 'Could not process the photo.');
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
   return (
-    <p className="text-[12px] text-[#737373] italic">
-      {isTr ? 'Dosya yükleme yakında eklenecek.' : 'File upload coming soon.'}
-    </p>
+    <div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        onChange={(e) => handleFile(e.target.files?.[0])}
+      />
+      {dataUrl ? (
+        <div className="flex flex-col gap-3">
+          <img
+            src={dataUrl}
+            alt={isTr ? 'Yüklenen fotoğraf' : 'Uploaded photo'}
+            className="max-h-[260px] w-auto rounded-xl border border-[#EDEDED] object-contain"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={busy}
+              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px]"
+            >
+              <Camera size={14} strokeWidth={2} />
+              {isTr ? 'Değiştir' : 'Replace'}
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange(null)}
+              disabled={busy}
+              className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12.5px]"
+            >
+              <X size={14} strokeWidth={2} />
+              {isTr ? 'Kaldır' : 'Remove'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EDEDED] bg-[#FAFAFA] px-4 py-8 text-center transition-colors hover:border-[#A3A3A3]"
+          style={{ borderColor: busy ? accent : undefined }}
+        >
+          {busy ? (
+            <Loader2 size={22} strokeWidth={2} className="animate-spin text-[#737373]" />
+          ) : (
+            <Camera size={22} strokeWidth={1.8} className="text-[#737373]" />
+          )}
+          <span className="text-[13px] font-medium text-[#0A0A0A]">
+            {busy
+              ? isTr ? 'İşleniyor...' : 'Processing...'
+              : isTr ? 'Fotoğraf ekle' : 'Add photo'}
+          </span>
+          <span className="text-[11px] text-[#A3A3A3]">
+            {isTr ? 'İstersen fotoğraf ekleyebilirsin' : 'Optional — attach a photo if you like'}
+          </span>
+        </button>
+      )}
+      {error && (
+        <p className="mt-2 flex items-center gap-1.5 text-[12px] text-[#991B1B]">
+          <AlertTriangle size={13} strokeWidth={2.2} className="shrink-0" />
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
