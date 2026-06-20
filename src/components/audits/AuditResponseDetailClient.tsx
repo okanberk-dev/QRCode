@@ -309,7 +309,23 @@ export default function AuditResponseDetailClient({
                         <div className="pulse-eyebrow text-[#525252]">
                           {locale === 'tr' ? 'Cevap' : 'Answer'}
                         </div>
-                        <div className="text-[#0A0A0A]">{formatValue(givenValue, q.type)}</div>
+                        {q.type === 'file' &&
+                        typeof givenValue === 'string' &&
+                        givenValue.startsWith('data:image/') ? (
+                          <a href={givenValue} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={givenValue}
+                              alt={locale === 'tr' ? 'Yüklenen fotoğraf' : 'Uploaded photo'}
+                              className="mt-1 max-h-[200px] w-auto rounded-lg border border-[#EDEDED] object-contain"
+                            />
+                          </a>
+                        ) : q.type === 'file' ? (
+                          <div className="text-[#A3A3A3] italic">
+                            {locale === 'tr' ? 'Fotoğraf yok' : 'No photo'}
+                          </div>
+                        ) : (
+                          <div className="text-[#0A0A0A]">{formatValue(givenValue, q.type)}</div>
+                        )}
                       </div>
                       {q.correctAnswer != null && (
                         <div>

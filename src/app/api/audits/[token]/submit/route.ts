@@ -163,6 +163,27 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
     return ApiErrors.badRequest('Geçersiz soru id', 'INVALID_QUESTION_ID');
   }
 
+  // Photo answers (type 'file') — value must be a small inline image data URL
+  // (client compresses; base64-in-DB per §3). Cap server-side so the JSON
+  // column / request body can't be bloated. Non-file answers can't carry a
+  // data URL (prevents stuffing a huge blob into a text/scale answer).
+  const typeByQid = new Map(questions.map((q) => [q.id, q.type]));
+  const PHOTO_MAX_BYTES = 800 * 1024; // generous ceiling above client cap
+  for (const a of data.answers) {
+    const qType = typeByQid.get(a.questionId);
+    if (qType === 'file') {
+      if (a.value === null || a.value === undefined || a.value === '') continue; // optional
+      if (typeof a.value !== 'string' || !a.value.startsWith('data:image/')) {
+        return ApiErrors.badRequest('Geçersiz fotoğraf', 'INVALID_PHOTO');
+      }
+      if (a.value.length > PHOTO_MAX_BYTES) {
+        return ApiErrors.badRequest('Fotoğraf çok büyük', 'PHOTO_TOO_LARGE');
+      }
+    } else if (typeof a.value === 'string' && a.value.startsWith('data:')) {
+      return ApiErrors.badRequest('Geçersiz cevap', 'INVALID_ANSWER');
+    }
+  }
+
   // Skor hesapla
   const scoring = computeAuditScore(
     questions,

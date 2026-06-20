@@ -32,7 +32,7 @@ const QUESTION_TYPE_LABEL_TR: Record<AuditQuestionType, string> = {
   scale: 'Ölçek (1-5)',
   text: 'Serbest metin',
   yes_no: 'Evet / Hayır',
-  file: 'Dosya (yakında)',
+  file: 'Fotoğraf',
 };
 const QUESTION_TYPE_LABEL_EN: Record<AuditQuestionType, string> = {
   single: 'Single choice',
@@ -40,7 +40,7 @@ const QUESTION_TYPE_LABEL_EN: Record<AuditQuestionType, string> = {
   scale: 'Scale (1-5)',
   text: 'Free text',
   yes_no: 'Yes / No',
-  file: 'File (soon)',
+  file: 'Photo',
 };
 
 function makeId(): string {
@@ -104,6 +104,9 @@ export default function AuditQuestionEditor({ locale, open, draft, onClose, onSa
       } else if (next === 'file') {
         fresh.options = null;
         fresh.correctAnswer = null;
+        // Photo questions are documentation, not scored — default to optional
+        // ("owner isterse eklensin"); owner can still mark it required.
+        fresh.isRequired = false;
       }
       return fresh;
     });
@@ -192,7 +195,7 @@ export default function AuditQuestionEditor({ locale, open, draft, onClose, onSa
             onChange={(e) => updateType(e.target.value as AuditQuestionType)}
           >
             {AUDIT_QUESTION_TYPES.map((tp) => (
-              <option key={tp} value={tp} disabled={tp === 'file'}>
+              <option key={tp} value={tp}>
                 {typeLabel[tp]}
               </option>
             ))}
