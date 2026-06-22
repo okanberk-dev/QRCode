@@ -5263,6 +5263,61 @@ body { min-height: 100dvh; overflow-x: hidden; ... }
 - `scrollbar-gutter` overrides ekleme — html selector tek source.
 - `overflow-x: auto` body'ye ekleme (table'lar scoped wrapper kullanır).
 
+### §42.5.1 Panel scroll container — yatay scroll yasak (kanonik, 2026-06)
+
+`html { scrollbar-gutter: stable }` (§42.5) yalnız **document** scroll'ünü
+korur. Ama `lg`'de panel document scroll **etmez** — owner shell + admin
+layout outer `lg:h-screen lg:overflow-hidden`, asıl vertical scroll
+**panel-içi scroll container**'dadır (owner shell: main column; admin
+layout: `<main>`). Bu container'lar üzerinde scrollbar-gutter yok +
+`overflow-y-auto` tek başına CSS'e `overflow-x: auto` **compute** ettirir
+(bir kutu bir eksende `visible` + diğerinde scrollable olamaz; `visible` →
+`auto`). Sonuç: panel **yatay scroll edilebilir** hâle gelir.
+
+**Bug zinciri (kullanıcı raporu "panel kayması"):** uzun içerik → container
+dikey scrollbar → clientWidth ~15px daralır → sticky topbar (owner) veya
+geniş tablo/chart (admin) container'ı yatay taşırır → trackpad'de tek bir
+kazara iki-parmak yatay swipe (Mac'te çok kolay) container'ı sağa
+kaydırır → **topbar + sayfa içeriği birlikte sola kayar, sidebar'ın
+altına girer** (h1.left 276 → negatif). Headless repro ile kanıtlandı:
+eski `overflow-x: auto` + wheel deltaX=300 → `h1.left=-24` (sidebar
+altında); `overflow-x: hidden` ile → `scrollLeft=0`, `h1.left=276` (sabit).
+
+**Kanonik fix — panel scroll container'ları:**
+```
+lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable]
+```
+- `lg:overflow-x-hidden` — `overflow-y-auto`'nun `overflow-x: auto`
+  compute etmesini engeller; kullanıcı yatay scroll **edemez** (wheel/
+  trackpad/scrollbar). Taşan içerik sağda **clip** edilir, panel kaymaz.
+- `lg:[scrollbar-gutter:stable]` — dikey scrollbar lane'ini önden rezerve
+  eder; scrollbar görününce clientWidth **jump etmez** → topbar overflow
+  tetiği ortadan kalkar (§42.5 mantığı, ama gerçek scroll container'a
+  uygulanmış).
+
+Uygulanan yerler: `UserDashboardShell.tsx` main column +
+`admin/layout.tsx` `<main>` (eski `lg:overflow-auto` = iki-eksen scroll).
+
+**Güvenli — geniş tablolar:** Wide tablolar (`min-w-[1080px]` vb.) kendi
+`overflow-x-auto` wrapper'larında scroll eder (§23.6); bunlar ayrı scroll
+container, shell'in `overflow-x-hidden`'ından **etkilenmez** (içlerinde
+scroll, main'e taşmaz). Yeni geniş tablo eklerken `overflow-x-auto`
+wrapper **zorunlu** — aksi halde shell clip'i kolonları gizler (scroll
+imkânı kalmaz).
+
+**Yapma:**
+- Panel scroll container'ında `lg:overflow-auto` veya tek `lg:overflow-y-auto`
+  bırakma — yatay scroll/kayma riski. Her zaman `lg:overflow-x-hidden`
+  birlikte.
+- Geniş içeriği (tablo/chart, min-w-[Npx]) `overflow-x-auto` wrapper'sız
+  bırakma — shell clip'i sağı keser.
+
+**Yap:**
+- Yeni panel scroll container (yeni shell/nested layout) eklerken kanonik
+  3-class kombinasyonunu kullan.
+- Chart'ları `overflow-x-auto no-scrollbar` wrapper'da render et (mevcut
+  `MainTrendChart` / `PulseTrendChart` paterni).
+
 ### §42.6 Mobile breakpoint behavior
 
 | Element | < `lg` (1024px) | `lg:` desktop |

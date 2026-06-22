@@ -1099,7 +1099,20 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
         </button>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto">
+      {/* §42 — panel scroll column. `lg:overflow-y-auto` alone leaves CSS to
+          compute `overflow-x: auto` (a box can't be visible on one axis +
+          scrollable on the other), which made the column horizontally
+          scrollable whenever the sticky topbar tipped past the column width
+          (e.g. when a vertical scrollbar shaves ~15px off clientWidth). A
+          trackpad swipe or programmatic focus scroll then slid the topbar +
+          page content left under the sidebar — the "panel kayması" report.
+          `lg:overflow-x-hidden` makes horizontal scroll impossible; any
+          residual topbar overflow is clipped on the right instead of shifting
+          everything left. `lg:[scrollbar-gutter:stable]` reserves the vertical
+          scrollbar lane up-front so the content width never jumps when the
+          scrollbar appears (CLAUDE.md §42.5 applied to the real scroll
+          container, not just <html>). */}
+      <div className="flex min-w-0 flex-1 flex-col lg:h-full lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable]">
         {/* Mobile top bar — §38.65 backdrop-blur-xl Apple "frosted glass" tier upgrade
             (kullanıcı kararı: sticky header only). Önceki `backdrop-blur` (8px) →
             `backdrop-blur-xl` (24px) Liquid Glass referansı; sadece header katmanında. */}
