@@ -140,7 +140,13 @@ export default async function AdminLayout({
         <main
           id="panel-main-content"
           tabIndex={-1}
-          className={`flex-1 lg:overflow-auto flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 bg-[#FAFAFA]'}`}
+          /* §42 — `lg:overflow-auto` made this scroll container scrollable on
+             BOTH axes, so any wide child (table, chart) let the whole panel
+             slide left under the sidebar on a trackpad swipe ("panel kayması").
+             Scroll vertically only, clip horizontal overflow, and reserve the
+             scrollbar gutter so content width never jumps (owner shell parity,
+             CLAUDE.md §42.5). */
+          className={`flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable] flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 bg-[#FAFAFA]'}`}
         >
           {showSidebar && (
             <AdminTopbar
