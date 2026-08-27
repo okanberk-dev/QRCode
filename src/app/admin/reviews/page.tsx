@@ -217,6 +217,15 @@ function AdminReviewsContent() {
     return out;
   }, [rows, tab, search]);
 
+  // `tab` and `search` filter purely client-side (they are absent from
+  // buildListQuery), so changing them does NOT re-run the fetch effect that
+  // clears the selection. Rows scrolled out of view stayed in `selectedIds`
+  // and the next bulk action hit them too. Same reset the server-side filters
+  // already get (CLAUDE.md §23.3.1 + Phase 11.21).
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [tab, search]);
+
   const active = filtered.find((r) => r.id === activeId) || filtered[0] || null;
 
   // AI yalnız düşük puan + yanıtlanmamış yorumlar için (CLAUDE.md §15).
