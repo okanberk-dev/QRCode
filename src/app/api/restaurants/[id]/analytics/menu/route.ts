@@ -21,7 +21,19 @@ function resolveWindow(rangeParam: string | null): { start: Date | null; end: Da
   if (rangeParam === 'all') return { start: null, end, days: null };
   const preset = (rangeParam && rangeParam in RANGE_PRESETS ? rangeParam : '30d') as Exclude<RangePreset, 'all'>;
   const days = RANGE_PRESETS[preset];
-  const start = new Date(end.getTime() - days * 24 * 60 * 60 * 1000);
+  // Align the window to whole UTC days.
+  //
+  // It used to be a rolling `now - days*24h`, which starts mid-day. The trend
+  // query then fetched that partial oldest day, but the bucket loop only emits
+  // the `days` calendar days ending today — so those events were pulled and
+  // silently discarded, and the chart never summed to the KPI cards computed
+  // over the very same window. Anchoring the start to midnight makes the SQL
+  // range and the emitted buckets cover exactly the same N full days, so the
+  // chart reconciles with the totals (and stops sliding as the day advances).
+  const startOfToday = new Date(
+    Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()),
+  );
+  const start = new Date(startOfToday.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
   return { start, end, days };
 }
 
