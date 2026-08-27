@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
 import { Star, Check, Loader2, Copy, MessageCircle, Share2, Utensils, ExternalLink } from 'lucide-react';
 import { getTranslations, Locale, locales } from '@/lib/translations';
-import { SYSTEM_FEEDBACK } from '@/lib/constants';
+import { SYSTEM_FEEDBACK, normalizeRedirectMinRating } from '@/lib/constants';
 import { buildGoogleReviewUrl } from '@/lib/google-review';
 import { resolveBestRedirectPlatform } from '@/lib/platform-redirect-resolver';
 import { getRecaptchaToken } from '@/lib/recaptcha-client';
@@ -17,6 +17,11 @@ import {
 import RecaptchaNotice from '@/components/RecaptchaNotice';
 import { PlatformChip } from '@/components/ui';
 
+// Yüksek puan akışında reCAPTCHA token'ı için üst sınır. Redirect timeout'u
+// 1500 ms; token bu süre içinde gelmezse feedback POST'u token'sız (backend
+// soft-pass) başlatılır ki kayıt kaybolmasın.
+const HIGH_RATING_RECAPTCHA_TIMEOUT_MS = 700;
+
 interface RestaurantData {
   id: string;
   slug: string;
@@ -27,6 +32,8 @@ interface RestaurantData {
   googlePlaceId: string | null;
   /** Owner'ın panelden elle kaydettiği Google yorum linki. */
   googleReviewUrl?: string | null;
+  /** Bu puan ve üstü herkese açık platforma yönlendirilir (4 | 5, default 5). */
+  redirectMinRating?: number | null;
   getirYemekUrl: string | null;
   yemekSepetiUrl: string | null;
   trendyolYemekUrl: string | null;
@@ -366,7 +373,10 @@ function ReviewContent() {
   // — overlay görsel için nötr placeholder.
   const fallbackPlatformId = resolution.provider ?? 'google';
 
-  const isLow = rating > 0 && rating <= 3;
+  // Owner eşiği: bu puan ve üstü herkese açık platforma, altı işletmenin
+  // kendi formuna. Varsayılan 5 — yalnız 5 yıldız aktarılır.
+  const redirectMinRating = normalizeRedirectMinRating(restaurant.redirectMinRating);
+  const isLow = rating > 0 && rating < redirectMinRating;
   const visibleRating = hover || rating;
   const labels = RATING_LABELS[locale] ?? RATING_LABELS.tr;
   const hints = RATING_HINTS[locale] ?? RATING_HINTS.tr;
@@ -388,8 +398,23 @@ function ReviewContent() {
     // POSTs with `keepalive: true` so the request survives the
     // immediate `window.location.href` redirect that follows. Redirect
     // UX is untouched (no `await`); backend log noise drops.
-    getRecaptchaToken('feedback_submit')
-      .catch(() => null)
+    //
+    // Ek düzeltme: token çözülmesi `fetch`'i BEKLETİYORDU. `keepalive: true`
+    // yalnızca ZATEN BAŞLAMIŞ bir isteği unload'dan kurtarır — henüz
+    // başlamamış olanı değil. Yavaş bir mobil bağlantıda reCAPTCHA 1500 ms'lik
+    // redirect timeout'undan geç dönerse `.then()` hiç çalışmıyor ve yüksek
+    // puan kaydı sessizce kayboluyordu (owner'ın yorum sayısı / ortalama puanı
+    // eksik kalır, üstelik yalnızca yavaş bağlantılı müşterilerde). Token artık
+    // kısa bir timeout ile yarıştırılır: hazırsa gönderilir, değilse `null`
+    // gider (backend zaten token yokken soft-pass ediyor) ve POST her hâlükârda
+    // redirect'ten çok önce başlatılmış olur.
+    const recaptchaRace = Promise.race([
+      getRecaptchaToken('feedback_submit').catch(() => null),
+      new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), HIGH_RATING_RECAPTCHA_TIMEOUT_MS),
+      ),
+    ]);
+    recaptchaRace
       .then((recaptchaToken) =>
         fetch('/api/feedback', {
           method: 'POST',
@@ -450,9 +475,9 @@ function ReviewContent() {
     // 1-3 yıldız → 300ms delay → setStep(2) form ekranı (yeni). Rating
     //   fill animasyonu + tone-coded pill `bz-fade-in` görünür kalır,
     //   sonra smooth geçer. Manuel "Devam et" butonu silindi.
-    if (star >= 4 && !redirecting) {
+    if (star >= redirectMinRating && !redirecting) {
       setTimeout(() => triggerHighRedirect(star), 200);
-    } else if (star <= 3) {
+    } else if (star > 0) {
       setTimeout(() => setStep(2), 300);
     }
   };
@@ -1429,7 +1454,7 @@ function ReviewContent() {
                       "yönetim 24 saat içinde dönüş yapacak". Yüksek puan
                       durumda redirect overlay sırasında external platforma
                       gidiyor, thanks ekranı görmüyor (no-platform-URL hariç). */}
-                  {rating <= 3 && (
+                  {rating > 0 && rating < redirectMinRating && (
                     <div
                       className="mt-3 flex items-center gap-2.5 border-t border-[#F5F5F5] pt-3 text-[11.5px] text-[#525252]"
                     >
@@ -1551,7 +1576,7 @@ function ReviewContent() {
                   wa.me URL with a pre-filled message in a new tab; no
                   auto-redirect. KVKK-clean — customer must tap. */}
               {(() => {
-                const lowRating = rating > 0 && rating <= 3;
+                const lowRating = rating > 0 && rating < redirectMinRating;
                 if (!lowRating) return null;
                 if (!restaurant.whatsappReviewEnabled) return null;
                 const normalized = normalizeWhatsAppUrl(restaurant.whatsappUrl ?? '');

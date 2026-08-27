@@ -152,6 +152,7 @@ export async function PUT(
       menuLogoUrl,
       userId,
       defaultRedirectPlatform,
+      redirectMinRating,
       // Per-platform enable flags (Pulse 2026-04 owner panel toggles)
       googleEnabled,
       yemekSepetiEnabled,
@@ -207,6 +208,19 @@ export async function PUT(
     if (defaultRedirectPlatform !== undefined && defaultRedirectPlatform !== null && defaultRedirectPlatform !== '') {
       if (typeof defaultRedirectPlatform !== 'string' || !ALLOWED_DEFAULT_PLATFORMS.has(defaultRedirectPlatform)) {
         return ApiErrors.badRequest('Geçersiz varsayılan platform', 'INVALID_DEFAULT_PLATFORM');
+      }
+    }
+
+    // Public review flow threshold. Only 4 or 5 are meaningful: 5 (default)
+    // hands the public platform link to 5-star customers only, 4 keeps the
+    // legacy 4+ behaviour. Anything else is rejected rather than silently
+    // coerced so an owner never thinks they saved a value that was dropped.
+    if (redirectMinRating !== undefined && redirectMinRating !== null) {
+      if (redirectMinRating !== 4 && redirectMinRating !== 5) {
+        return ApiErrors.badRequest(
+          'Yönlendirme eşiği yalnızca 4 veya 5 olabilir',
+          'INVALID_REDIRECT_MIN_RATING',
+        );
       }
     }
 
@@ -600,6 +614,9 @@ export async function PUT(
         ...(yelpEnabled !== undefined && { yelpEnabled: Boolean(yelpEnabled) }),
         ...(foursquareEnabled !== undefined && { foursquareEnabled: Boolean(foursquareEnabled) }),
         ...(menuLogoUrl !== undefined && { menuLogoUrl: menuLogoUrl || null }),
+        ...(redirectMinRating !== undefined && redirectMinRating !== null && {
+          redirectMinRating,
+        }),
         ...(defaultRedirectPlatform !== undefined && {
           defaultRedirectPlatform: defaultRedirectPlatform || null,
         }),

@@ -99,6 +99,9 @@ export async function GET(req: NextRequest) {
           // filtresi buna bakar). Public surface bunu görmediği için elle
           // kaydedilen Google linki yönlendirmede sessizce yok sayılıyordu.
           googleReviewUrl: true,
+          // Owner'ın seçtiği "herkese açık platforma yönlendirme" eşiği
+          // (4 | 5, default 5). Public akış bunu okumazsa eşik hep 5 sanılır.
+          redirectMinRating: true,
           getirYemekUrl: true,
           yemekSepetiUrl: true,
           trendyolYemekUrl: true,

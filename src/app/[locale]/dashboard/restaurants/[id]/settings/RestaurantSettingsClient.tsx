@@ -87,6 +87,7 @@ export interface RestaurantPayload {
   foursquareEnabled: boolean;
   externalPlatformsEnabled: boolean;
   defaultRedirectPlatform: string | null;
+  redirectMinRating: number | null;
   otherPlatformUrl: string | null;
   otherPlatformLabel: string | null;
   otherPlatformEnabled: boolean;
@@ -271,6 +272,7 @@ export default function RestaurantSettingsClient({
           foursquareEnabled: data.foursquareEnabled ?? true,
           externalPlatformsEnabled: data.externalPlatformsEnabled ?? true,
           defaultRedirectPlatform: data.defaultRedirectPlatform ?? null,
+          redirectMinRating: data.redirectMinRating ?? null,
           otherPlatformUrl: data.otherPlatformUrl ?? null,
           otherPlatformLabel: data.otherPlatformLabel ?? null,
           otherPlatformEnabled: data.otherPlatformEnabled ?? true,

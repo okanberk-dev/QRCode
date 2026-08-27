@@ -245,6 +245,10 @@ model Restaurant {
   // query string. NULL → Google fallback (legacy default). Values mirror
   // Feedback.platform: google | yemeksepeti | getir | trendyol_go.
   defaultRedirectPlatform String?   @map("default_redirect_platform")
+  // Minimum yıldız — bu değer ve üstünü veren müşteriye herkese açık platform
+  // bağlantısı sunulur; altındakiler önce işletmeye özel forma düşer. Owner
+  // panelden 4 veya 5 seçebilir. Varsayılan 5 (yalnız 5 yıldız aktarılır).
+  redirectMinRating       Int       @default(5) @map("redirect_min_rating")
   notificationEmail       String?   @map("notification_email")
   primaryColor            String    @default("#1a73e8")
   isActive                Boolean   @default(true) @map("is_active")

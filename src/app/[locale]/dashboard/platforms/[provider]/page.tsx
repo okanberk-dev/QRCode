@@ -28,6 +28,7 @@ type RestaurantProviderRow = {
   googlePlaceId: string | null;
   externalPlatformsEnabled: boolean;
   defaultRedirectPlatform: string | null;
+  redirectMinRating: number | null;
   reservationUrl: string | null;
   website: string | null;
   otherPlatformUrl: string | null;
@@ -73,6 +74,7 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
       googlePlaceId: true,
       externalPlatformsEnabled: true,
       defaultRedirectPlatform: true,
+      redirectMinRating: true,
       googleReviewUrl: true,
       yemekSepetiUrl: true,
       getirYemekUrl: true,

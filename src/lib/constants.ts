@@ -45,3 +45,28 @@ export const PLAN_LABELS: Record<string, { tr: string; en: string }> = {
   yearly: { tr: 'Yıllık', en: 'Yearly' },
   enterprise: { tr: 'Kurumsal', en: 'Enterprise' },
 };
+
+/**
+ * Public review flow — minimum star rating that is offered the public
+ * platform link. Ratings below it land in the business's own feedback form
+ * first (the customer always keeps the right to post publicly wherever they
+ * want — CLAUDE.md §19.1.1).
+ *
+ * Owner-configurable per restaurant via `Restaurant.redirectMinRating`.
+ * Default 5 → only 5-star customers are handed the platform link.
+ */
+export const REDIRECT_MIN_RATING_OPTIONS = [4, 5] as const;
+
+export type RedirectMinRating = (typeof REDIRECT_MIN_RATING_OPTIONS)[number];
+
+export const DEFAULT_REDIRECT_MIN_RATING: RedirectMinRating = 5;
+
+/**
+ * Coerce any stored / submitted value to a supported threshold. Anything that
+ * is not exactly 4 falls back to the default (5) — including null, undefined,
+ * strings and out-of-range numbers — so a drifted DB row or a hand-crafted
+ * request can never widen the public-platform funnel.
+ */
+export function normalizeRedirectMinRating(value: unknown): RedirectMinRating {
+  return value === 4 ? 4 : DEFAULT_REDIRECT_MIN_RATING;
+}

@@ -11,6 +11,7 @@ import {
   Phone,
   Plug,
   RefreshCw,
+  Star,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui";
 import { AlertTriangle } from "lucide-react";
 import DefaultRedirectPicker from "@/components/dashboard/DefaultRedirectPicker";
+import RedirectThresholdPicker from "@/components/dashboard/RedirectThresholdPicker";
 import { getSectorPlatforms } from "@/lib/sector-platforms";
 import {
   checkProviderUrl,
@@ -70,6 +72,7 @@ interface RestaurantData {
   foursquareEnabled: boolean;
   externalPlatformsEnabled?: boolean;
   defaultRedirectPlatform: string | null;
+  redirectMinRating?: number | null;
   instagramUrl: string | null;
   facebookUrl: string | null;
   whatsappUrl: string | null;
@@ -556,9 +559,21 @@ export function BusinessIntegrationSettings({
       )}
 
       <SettingsCard
+        icon={<Star size={18} />}
+        title="Yönlendirme eşiği"
+        description="Hangi puandan itibaren müşteriye herkese açık platform bağlantısı sunulsun?"
+      >
+        <RedirectThresholdPicker
+          restaurantId={restaurant.id}
+          initialValue={restaurant.redirectMinRating ?? null}
+          locale={locale}
+        />
+      </SettingsCard>
+
+      <SettingsCard
         icon={<Plug size={18} />}
         title="Varsayılan platform"
-        description="Yüksek puanlı yorumlar QR'da platform belirtilmemişse buraya yönlenir."
+        description="Eşiği geçen yorumlar QR'da platform belirtilmemişse buraya yönlenir."
       >
         <DefaultRedirectPicker
           restaurantId={restaurant.id}
