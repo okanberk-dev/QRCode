@@ -1470,6 +1470,20 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 
 `vercel.json` `crons` array'inde **9 entry**. Tek source-of-truth: `vercel.json`. CLAUDE.md tablosu sadece referans amaçlı — `vercel.json` değişirse bu tabloyu da güncelle.
 
+**İki scheduler var (2026-08, Hobby plan)**: `vercel.json` her cron'u **günde bir**
+tetikler — Vercel Hobby günde birden sık schedule kabul etmiyor, sub-daily bir
+ifade deployment'ı oluşturma anında tümden reddediyor. Cron'ları tek endpoint'te
+**birleştirmek bunu çözmez**: sınır her işin *frekansında*, sayısında değil.
+Saatlik kadans gereken 4 iş bu yüzden ayrıca `.github/workflows/cron-hourly.yml`
+tarafından saat başı çağrılır (endpoint'ler zaten `Bearer ${CRON_SECRET}` korumalı
+düz GET route'ları). `vercel.json`'daki günlük satırlar bilerek duruyor: her iş
+idempotent, fazladan bir günlük çalışma zararsız ve GitHub scheduled workflow'u
+60 gün repo hareketsizliğinde devre dışı bıraktığında iş yine de dönüyor.
+Kurulum: repo Settings → Secrets and variables → Actions'ta `CRON_SECRET` secret'ı
+(Vercel'dekiyle aynı değer) + opsiyonel `CRON_BASE_URL` variable'ı (default
+`https://www.buaze.com`; apex 307 döndüğü için kanonik host şart).
+GitHub scheduled workflow'ları yük altında gecikebilir — "yaklaşık saat başı".
+
 | Path | Schedule | Amaç |
 |---|---|---|
 | `/api/cron/weekly-digest` | `0 9 * * 1` | Her pazartesi 09:00 UTC — restoran sahibine haftalık özet (Pulse AI çıkarımı dahil — §21.38) |
