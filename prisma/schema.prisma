@@ -1208,8 +1208,15 @@ model NewsletterSubscriber {
   createdAt        DateTime  @default(now()) @map("created_at")
   unsubscribedAt   DateTime? @map("unsubscribed_at")
   unsubscribeToken String?   @unique @map("unsubscribe_token")
+  // Son teslim edilen bülten anahtarı — kampanya varsa `NewsletterCampaign.id`,
+  // yoksa `issue:<n>` (legacy "son 3 blog yazısı" fallback'i). Gönderim döngüsü
+  // bu anahtara sahip aboneleri atlar, böylece süre/kap limitine takılıp yarım
+  // kalan bir çalıştırma yeniden tetiklendiğinde listenin başına ikinci kez mail
+  // atmaz ve kuyruktaki aboneler sırayı alır (audit: no send cursor).
+  lastNewsletterKey String?  @map("last_newsletter_key")
 
   @@index([createdAt])
+  @@index([unsubscribedAt, lastNewsletterKey])
   @@map("newsletter_subscribers")
 }
 

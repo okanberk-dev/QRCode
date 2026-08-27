@@ -107,6 +107,25 @@ export async function executeUserHardDelete(
       where: { userId },
     });
 
+    // Menu items must be cleared BEFORE their categories.
+    // `menu_items.category_id` is the one ON DELETE RESTRICT foreign key in the
+    // schema (CLAUDE.md §37.9). Postgres evaluates RESTRICT immediately, so it
+    // fires even when the referencing rows would be cascaded away by the very
+    // same statement — a plain `user.delete()` therefore threw for every owner
+    // that had ever created a single menu item, and the 30-day deletion cron
+    // then failed for that user on every run (KVKK erasure never fulfilled).
+    // /api/restaurants/[id] DELETE already orders these explicitly; the account
+    // wipe now does the same.
+    const ownedRestaurants = await tx.restaurant.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const restaurantIds = ownedRestaurants.map((r) => r.id);
+    if (restaurantIds.length > 0) {
+      await tx.menuItem.deleteMany({ where: { restaurantId: { in: restaurantIds } } });
+      await tx.menuCategory.deleteMany({ where: { restaurantId: { in: restaurantIds } } });
+    }
+
     // Cascade-delete the User. Restaurant + UserSession + ImpersonationSession
     // wipe automatically via onDelete: Cascade (CLAUDE.md §37.9). Restaurant
     // cascade itself wipes Feedback / Menu / QR / Analytics / Brand / etc.

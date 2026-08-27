@@ -41,11 +41,33 @@
  * event'iyle olur (provider internal job tetikler).
  */
 
+import { AsyncLocalStorage } from 'async_hooks';
 import { Webhooks } from '@dodopayments/nextjs';
 import { Prisma } from '@prisma/client';
 import * as Sentry from '@sentry/nextjs';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+
+/**
+ * Per-request handler outcome.
+ *
+ * The SDK's `on<Event>` callbacks swallow their own errors (each one wraps the
+ * work in try/catch → Sentry), so the SDK always returns 200 — even when the
+ * state change never landed. Combined with the idempotency table below that
+ * made a transient DB failure FINAL: the key was recorded, Dodo never retried,
+ * and a paid subscription could stay unactivated forever.
+ *
+ * AsyncLocalStorage gives each in-flight request its own flag (a module-level
+ * boolean would race across concurrent deliveries). A failed handler now skips
+ * the idempotency write and answers non-2xx so Dodo redelivers; every handler
+ * is an upsert, so replay is safe.
+ */
+const handlerOutcomeStore = new AsyncLocalStorage<{ failed: boolean }>();
+
+function markHandlerFailed(): void {
+  const ctx = handlerOutcomeStore.getStore();
+  if (ctx) ctx.failed = true;
+}
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -388,6 +410,7 @@ function getWebhookHandler(): ReturnType<typeof Webhooks> | null {
       await handlePaymentSucceeded(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'payment.succeeded' } });
+      markHandlerFailed();
     }
   },
   onPaymentFailed: async (payload) => {
@@ -395,6 +418,7 @@ function getWebhookHandler(): ReturnType<typeof Webhooks> | null {
       await handlePaymentFailed(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'payment.failed' } });
+      markHandlerFailed();
     }
   },
   // NOTE: Dodo SDK fires `onRefundSucceeded` (event `refund.succeeded`), NOT
@@ -406,6 +430,7 @@ function getWebhookHandler(): ReturnType<typeof Webhooks> | null {
       await handlePaymentRefunded(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'refund.succeeded' } });
+      markHandlerFailed();
     }
   },
   onSubscriptionActive: async (payload) => {
@@ -413,6 +438,7 @@ function getWebhookHandler(): ReturnType<typeof Webhooks> | null {
       await handleSubscriptionUpsert(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.active' } });
+      markHandlerFailed();
     }
   },
   onSubscriptionRenewed: async (payload) => {
@@ -420,6 +446,7 @@ function getWebhookHandler(): ReturnType<typeof Webhooks> | null {
       await handleSubscriptionUpsert(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.renewed' } });
+      markHandlerFailed();
     }
   },
   onSubscriptionCancelled: async (payload) => {
@@ -427,6 +454,7 @@ function getWebhookHandler(): ReturnType<typeof Webhooks> | null {
       await handleSubscriptionCancelled(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.cancelled' } });
+      markHandlerFailed();
     }
   },
   onSubscriptionExpired: async (payload) => {
@@ -434,6 +462,7 @@ function getWebhookHandler(): ReturnType<typeof Webhooks> | null {
       await handleSubscriptionExpired(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.expired' } });
+      markHandlerFailed();
     }
   },
   onSubscriptionOnHold: async (payload) => {
@@ -441,6 +470,7 @@ function getWebhookHandler(): ReturnType<typeof Webhooks> | null {
       await handleSubscriptionOnHold(payload as unknown as DodoPayloadShape);
     } catch (err) {
       Sentry.captureException(err, { tags: { integration: 'dodo-payments', handler: 'subscription.on_hold' } });
+      markHandlerFailed();
     }
   },
   });
@@ -480,11 +510,23 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   }
 
   const startTime = Date.now();
-  const response = await handler(req);
+  const outcome = { failed: false };
+  const response = await handlerOutcomeStore.run(outcome, () => handler(req));
 
-  // Record only verified + dispatched events. SDK callbacks swallow handler
-  // errors (try/catch → Sentry) so a 200 means "accepted"; recording it stops
-  // a retry from re-running handlers. P2002 (concurrent duplicate) is benign.
+  // A swallowed handler error must NOT be recorded as delivered — answer 5xx
+  // so Dodo redelivers the event.
+  if (response.status === 200 && outcome.failed) {
+    Sentry.captureMessage('Dodo webhook handler failed — requesting redelivery', {
+      level: 'error',
+      tags: { integration: 'dodo-payments', kind: 'handler_failed' },
+      extra: { eventType: req.headers.get('webhook-type'), hasEventId: Boolean(eventId) },
+    });
+    return NextResponse.json({ error: 'handler_failed' }, { status: 500 });
+  }
+
+  // Record only verified + SUCCESSFULLY dispatched events (a swallowed handler
+  // error already returned 500 above and never reaches here). P2002 (concurrent
+  // duplicate) is benign.
   if (response.status === 200 && eventId) {
     try {
       await prisma.dodoWebhookEvent.create({

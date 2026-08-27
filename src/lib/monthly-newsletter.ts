@@ -31,11 +31,49 @@ export interface RunMonthlyNewsletterOptions {
   campaignId?: string;
 }
 
+/**
+ * Record that this subscriber is done for the current issue. Best-effort: a
+ * failed marker only risks one duplicate on a later resume, which is strictly
+ * better than aborting a send loop that has already delivered mail.
+ */
+async function markDelivered(subscriberId: string, runKey: string): Promise<void> {
+  try {
+    await prisma.newsletterSubscriber.update({
+      where: { id: subscriberId },
+      data: { lastNewsletterKey: runKey },
+    });
+  } catch (err) {
+    console.error('[MONTHLY_NEWSLETTER] cursor write failed', {
+      subscriberId,
+      error: (err as Error).message,
+    });
+  }
+}
+
 export async function runMonthlyNewsletter(options: RunMonthlyNewsletterOptions = {}): Promise<MonthlyNewsletterResult> {
   const startedAt = Date.now();
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const issueNumber = monthsSinceEpoch();
+
+  const campaign = await pickCampaign(options.campaignId);
+
+  // Resume key for this issue. A run that stops early (subscriber cap or the
+  // 250s time budget) used to restart from the head of the list on the next
+  // trigger — the first N subscribers got a duplicate copy and the tail was
+  // never reached. Subscribers already marked with this key are skipped, so a
+  // re-trigger continues where the previous run stopped.
+  //
+  // Campaign id (not the issue number) is the key so two campaigns sent in the
+  // same month each reach the full list.
+  const runKey = campaign ? `campaign:${campaign.id}` : `issue:${issueNumber}`;
+
   // +1 row to detect overflow past the hard cap without a separate count.
   const fetched = await prisma.newsletterSubscriber.findMany({
-    where: { unsubscribedAt: null },
+    where: {
+      unsubscribedAt: null,
+      OR: [{ lastNewsletterKey: null }, { lastNewsletterKey: { not: runKey } }],
+    },
     orderBy: { createdAt: 'asc' },
     take: NEWSLETTER_SUBSCRIBER_CAP + 1,
   });
@@ -44,11 +82,6 @@ export async function runMonthlyNewsletter(options: RunMonthlyNewsletterOptions 
   // Starts true only when there are more subscribers than this run can load;
   // also flipped on the time-budget break below.
   let incomplete = overflow;
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
-  const issueNumber = monthsSinceEpoch();
-
-  const campaign = await pickCampaign(options.campaignId);
   const { postsTr, postsEn, campaignTitle, campaignIntro } = await loadPostPools(campaign);
 
   if (campaign) {
@@ -75,7 +108,10 @@ export async function runMonthlyNewsletter(options: RunMonthlyNewsletterOptions 
       const locale: 'tr' | 'en' = sub.locale === 'en' ? 'en' : 'tr';
 
       if (campaign && campaign.locale !== 'both' && campaign.locale !== locale) {
+        // Locale mismatch is terminal for THIS issue — mark it so the
+        // subscriber does not occupy a slot in every subsequent resume run.
         skipped++;
+        await markDelivered(sub.id, runKey);
         continue;
       }
 
@@ -113,6 +149,7 @@ export async function runMonthlyNewsletter(options: RunMonthlyNewsletterOptions 
       });
       if (ok) {
         sent++;
+        await markDelivered(sub.id, runKey);
       } else {
         failed++;
         // §37.7 PII discipline — log subscriber id, never the email address
