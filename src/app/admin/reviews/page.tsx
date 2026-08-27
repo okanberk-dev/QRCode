@@ -92,6 +92,10 @@ function AdminReviewsContent() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Without these the admin saw "Henüz yorum yok" whenever the list fetch
+  // failed, while the previous filter's rows silently stayed in state.
+  const [listError, setListError] = useState(false);
+  const [listReloadKey, setListReloadKey] = useState(0);
 
   // ============================================================
   // Build query params for /api/feedback (admin)
@@ -117,6 +121,7 @@ function AdminReviewsContent() {
       setLoading(true);
       setPage(1);
       setHasMore(false);
+      setListError(false);
       try {
         const [listRes, countsRes] = await Promise.all([
           fetch(`/api/feedback?${buildListQuery(1).toString()}`),
@@ -131,15 +136,26 @@ function AdminReviewsContent() {
           setSelectedIds(new Set()); // filter değişince selection sıfırla
           const totalPages = Number(data?.meta?.totalPages ?? 1);
           setHasMore(totalPages > 1);
+        } else {
+          setRows([]);
+          setActiveId(null);
+          setDegraded(null);
+          setSelectedIds(new Set());
+          setListError(true);
         }
         if (countsRes.ok) setCounts(await countsRes.json());
       } catch (err) {
         console.error(err);
+        setRows([]);
+        setActiveId(null);
+        setDegraded(null);
+        setSelectedIds(new Set());
+        setListError(true);
       }
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platform, hasReply, flagged, assigned]);
+  }, [platform, hasReply, flagged, assigned, listReloadKey]);
 
   const loadMoreRows = async () => {
     if (loadingMore || !hasMore) return;
@@ -562,6 +578,8 @@ function AdminReviewsContent() {
             hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={loadMoreRows}
+            listError={listError}
+            onRetryList={() => setListReloadKey((k) => k + 1)}
           />
         </aside>
 

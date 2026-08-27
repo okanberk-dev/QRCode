@@ -626,16 +626,43 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setReplyDraft(aiSuggestion);
   };
 
+  // The endpoint is a TOGGLE (FeedbackFlag upsert / delete). This used to be
+  // pure fire-and-forget: no local state change, no confirmation, errors
+  // swallowed — so the icon never moved, the owner could not tell flagged from
+  // unflagged, and un-flagging was effectively impossible. Same optimistic +
+  // revert + notice shape as `togglePending` below.
   const flagFeedback = async () => {
     if (!active) return;
+    const targetId = active.id;
+    const newValue = active.isFlagged !== true;
+    setFeedbacks((prev) =>
+      prev.map((r) => (r.id === targetId ? { ...r, isFlagged: newValue } : r)),
+    );
+    setBulkNotice({
+      msg: isTr
+        ? newValue
+          ? 'Dikkat işareti eklendi'
+          : 'Dikkat işareti kaldırıldı'
+        : newValue
+          ? 'Flagged'
+          : 'Flag removed',
+      tone: 'success',
+    });
     try {
-      await fetch(`/api/feedback/${active.id}/flag`, {
+      const res = await fetch(`/api/feedback/${targetId}/flag`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: 'manual' }),
       });
+      if (!res.ok) throw new Error('flag failed');
     } catch {
-      /* non-blocking */
+      setFeedbacks((prev) =>
+        prev.map((r) => (r.id === targetId ? { ...r, isFlagged: !newValue } : r)),
+      );
+      setBulkNotice({
+        msg: isTr ? 'Dikkat işareti güncellenemedi' : 'Could not update the flag',
+        tone: 'error',
+      });
     }
   };
 
