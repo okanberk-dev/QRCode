@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { getNotificationPrefsForRestaurant } from '@/lib/notification-preferences';
 import { sendFeedbackNotification } from '@/lib/email';
 import {
   parseGoogleLocationsCache,
@@ -104,11 +105,19 @@ export async function runGoogleReviewsAlert() {
           return rating > 0 && rating <= 3 && createTime > cutoffTime;
         });
 
-        // Send notifications for these new low reviews
-        for (const review of newLowReviews) {
-          const toEmail = restaurant.notificationEmail || restaurant.user?.email;
-          if (toEmail) {
-            await sendFeedbackNotification({
+        // Honour the owner's alert preference — /api/feedback already gates the
+        // in-house low-rating mail on `lowRatingEmail`, but this cron did not,
+        // so an owner who had switched the alert off kept receiving it for
+        // Google reviews. Preference off → no mail, but the watermark still
+        // advances (they deliberately don't want these, so never retry).
+        const notifPrefs = await getNotificationPrefsForRestaurant(restaurantId);
+        const toEmail = restaurant.notificationEmail || restaurant.user?.email;
+
+        // Send notifications for these new low reviews.
+        let allDelivered = true;
+        if (notifPrefs.lowRatingEmail && toEmail) {
+          for (const review of newLowReviews) {
+            const ok = await sendFeedbackNotification({
               rating: STAR_VALUE[review.starRating!] ?? 3,
               restaurantName: restaurant.name,
               name: review.reviewer?.displayName,
@@ -116,12 +125,25 @@ export async function runGoogleReviewsAlert() {
               platform: 'google',
               toEmail,
             });
-            emailSentCount++;
+            if (ok) {
+              emailSentCount++;
+            } else {
+              // Do not burn the watermark on a review the owner never heard
+              // about — the next run must retry it.
+              allDelivered = false;
+            }
           }
+        } else if (notifPrefs.lowRatingEmail && !toEmail) {
+          // No deliverable address at all: keep the watermark so the alert is
+          // retried once the owner fills in a notification e-mail.
+          allDelivered = newLowReviews.length === 0;
         }
 
         // Update lastReviewNotifiedAt — track max time across ALL reviews
-        // fetched so we don't re-process them next run
+        // fetched so we don't re-process them next run. Skipped entirely when
+        // a send failed: previously the watermark advanced regardless of the
+        // send result, so a single Resend hiccup meant that low-rating review
+        // was marked "notified" and the owner never learned about it.
         let localMaxTime = cutoffTime;
         for (const review of res.reviews) {
           if ((review.createTime || '') > localMaxTime) {
@@ -129,7 +151,7 @@ export async function runGoogleReviewsAlert() {
           }
         }
 
-        if (localMaxTime > (selection.lastReviewNotifiedAt || '')) {
+        if (allDelivered && localMaxTime > (selection.lastReviewNotifiedAt || '')) {
           selection.lastReviewNotifiedAt = localMaxTime;
           cacheUpdated = true;
         }

@@ -29,7 +29,9 @@ export async function POST(req: NextRequest) {
   if (!actor) return ApiErrors.unauthorized();
 
   // Same permission boundary as POST /api/restaurants (create a business).
-  if (actor.role === 'manager') {
+  // Allowlist — team_member / staff must not burn the project-wide Google
+  // Places quota (§5.1.1) through a create flow they cannot complete anyway.
+  if (actor.role !== 'restaurant_owner' && actor.role !== 'superadmin') {
     return ApiErrors.forbidden('Bu işlem için yetkiniz yok');
   }
 

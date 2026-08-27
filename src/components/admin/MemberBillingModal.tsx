@@ -190,12 +190,20 @@ export default function MemberBillingModal({
         : null,
     [form.subscriptionPlanId, catalog],
   );
+  // Catalog amounts are resolved in USD (`resolveBillingAmount` defaults to USD
+  // — CLAUDE.md §15.2 / §38.225 single-currency migration). Offering that
+  // number while another currency is selected auto-filled a USD figure and
+  // rendered it with the wrong symbol: picking Growth + TRY showed "₺40" for a
+  // $40 tier, and accepting the autofill stored 40 TRY. No FX source exists, so
+  // a non-USD subscription simply has no canonical amount — the admin types it.
+  const canonicalCurrency = 'USD';
   const expectedAmount = useMemo<number | null>(() => {
     if (!selectedTier) return null;
+    if (form.currency !== canonicalCurrency) return null;
     if (form.billingCycle === 'yearly') return selectedTier.yearlyAmountTotal;
     if (form.billingCycle === 'monthly') return selectedTier.monthlyAmount;
     return null;
-  }, [selectedTier, form.billingCycle]);
+  }, [selectedTier, form.billingCycle, form.currency]);
 
   const applyTier = (id: string) => {
     setForm((f) => {
@@ -395,7 +403,9 @@ export default function MemberBillingModal({
                   ? `Otomatik (${form.billingCycle === 'yearly' ? 'yıllık toplam' : 'aylık'}): ${formatCurrency(expectedAmount, form.currency)}`
                   : expectedAmount != null && amountTouchedRef.current
                     ? `Beklenen (tier'dan): ${formatCurrency(expectedAmount, form.currency)} — admin override'da`
-                    : undefined
+                    : selectedTier && form.currency !== canonicalCurrency
+                      ? `Paket fiyatları ${canonicalCurrency} tanımlı — ${form.currency} için tutarı elle gir.`
+                      : undefined
               }
             >
               <div className="flex items-stretch gap-2">

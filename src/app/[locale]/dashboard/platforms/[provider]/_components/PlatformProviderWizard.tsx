@@ -26,6 +26,7 @@ import {
   type PlatformId,
 } from '@/components/ui';
 import DefaultRedirectPicker from '@/components/dashboard/DefaultRedirectPicker';
+import RedirectThresholdPicker from '@/components/dashboard/RedirectThresholdPicker';
 import { SettingsCard } from '@/components/dashboard/settings/SettingsCard';
 import { UnsavedChangesBar } from '@/components/dashboard/settings/UnsavedChangesBar';
 import { GoogleBusinessIntegrationPanel } from '@/components/dashboard/settings/sections/GoogleBusinessIntegrationPanel';
@@ -68,6 +69,7 @@ export interface ProviderRestaurantInfo {
   foursquareEnabled: boolean;
   externalPlatformsEnabled: boolean;
   defaultRedirectPlatform: string | null;
+  redirectMinRating: number | null;
   instagramUrl: string | null;
   facebookUrl: string | null;
   whatsappUrl: string | null;
@@ -690,6 +692,24 @@ export default function PlatformProviderWizard({
           </SettingsCard>
         );
       })()}
+
+      {platform.category === 'review' && (
+        <SettingsCard
+          title={isTr ? 'Yönlendirme eşiği' : 'Redirect threshold'}
+          description={
+            isTr
+              ? 'Hangi puandan itibaren müşteriye herkese açık platform bağlantısı sunulsun?'
+              : 'From which rating up is the customer offered the public platform link?'
+          }
+        >
+          <RedirectThresholdPicker
+            key={`${selectedRestaurant.id}:${selectedRestaurant.redirectMinRating}`}
+            restaurantId={selectedRestaurant.id}
+            initialValue={selectedRestaurant.redirectMinRating}
+            locale={locale}
+          />
+        </SettingsCard>
+      )}
 
       {platform.category === 'review' && (
         <SettingsCard

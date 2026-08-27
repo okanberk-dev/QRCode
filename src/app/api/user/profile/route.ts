@@ -5,9 +5,14 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from '@/lib/bcrypt-config';
 import { getUserFromRequest } from '@/lib/auth';
-import { sendPasswordChangedEmail } from '@/lib/email';
+import { sendPasswordChangedEmail, sendVerifyEmail } from '@/lib/email';
 import { getClientIp } from '@/lib/rate-limit';
-import { isStrongPassword } from '@/lib/validations';
+import { isStrongPassword, isValidEmail } from '@/lib/validations';
+import { randomBytes } from 'crypto';
+
+// Mirrors /api/auth/resend-verify — a self-service email change must go
+// through the same ownership proof as signup.
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 export async function GET(req: NextRequest) {
   try {
@@ -99,14 +104,37 @@ export async function PUT(req: NextRequest) {
 
     if (name) updateData.name = name.trim();
 
-    if (email && email.toLowerCase().trim() !== user.email) {
-      const existingUser = await prisma.user.findUnique({
-        where: { email: email.toLowerCase().trim() },
-      });
-      if (existingUser) {
-        return NextResponse.json({ error: 'Bu e-posta adresi zaten kullanımda' }, { status: 400 });
+    // E-posta değişimi. Eskiden format kontrolü YOKTU ve `emailVerified`
+    // sıfırlanmıyordu: owner adresini asla sahip olmadığı bir adrese çevirip
+    // "doğrulanmış" kalabiliyor, ya da geçersiz bir string girip tüm
+    // transactional mail'ini (fatura, şifre sıfırlama, düşük puan uyarısı)
+    // sessizce kaybediyordu. Artık format + uzunluk doğrulanır ve yeni adres
+    // yeniden doğrulama gerektirir (signup ile aynı sahiplik ispatı).
+    let pendingVerifyEmail: string | null = null;
+    let pendingVerifyToken: string | null = null;
+    if (email !== undefined && email !== null) {
+      if (typeof email !== 'string') {
+        return NextResponse.json({ error: 'Geçerli bir e-posta adresi girin' }, { status: 400 });
       }
-      updateData.email = email.toLowerCase().trim();
+      const normalized = email.toLowerCase().trim();
+      if (normalized !== user.email) {
+        if (!isValidEmail(normalized) || normalized.length > 256) {
+          return NextResponse.json({ error: 'Geçerli bir e-posta adresi girin' }, { status: 400 });
+        }
+        const existingUser = await prisma.user.findUnique({
+          where: { email: normalized },
+          select: { id: true },
+        });
+        if (existingUser) {
+          return NextResponse.json({ error: 'Bu e-posta adresi zaten kullanımda' }, { status: 400 });
+        }
+        pendingVerifyToken = randomBytes(32).toString('hex');
+        pendingVerifyEmail = normalized;
+        updateData.email = normalized;
+        updateData.emailVerified = false;
+        updateData.emailVerifyToken = pendingVerifyToken;
+        updateData.emailVerifyTokenExpiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
+      }
     }
 
     // §38.37 — Lokal Zod validation 3 yeni alan için (CLAUDE.md §28.3.3
@@ -242,6 +270,22 @@ export async function PUT(req: NextRequest) {
         locale: userLocale,
       }).catch(() => {
         // sender already logs + ops-alerts on failure
+      });
+    }
+
+    // Yeni adrese doğrulama maili — fire-and-forget. Kullanıcı linke basana
+    // kadar `emailVerified=false` kalır (team_member login gate'i bunu zaten
+    // uyguluyor; owner için de "doğrulanmış" rozeti yalan söylemez).
+    if (pendingVerifyEmail && pendingVerifyToken) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+      const mailLocale: 'tr' | 'en' = updatedUser.locale === 'en' ? 'en' : 'tr';
+      sendVerifyEmail({
+        to: pendingVerifyEmail,
+        firstName: updatedUser.name,
+        verifyUrl: `${appUrl}/${mailLocale}/auth/verify-email?token=${pendingVerifyToken}`,
+        locale: mailLocale,
+      }).catch((err) => {
+        console.error('[PROFILE_PUT] verify mail send failed:', (err as Error).message);
       });
     }
 

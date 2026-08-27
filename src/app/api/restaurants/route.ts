@@ -94,6 +94,14 @@ export async function GET(req: NextRequest) {
           address: true,
           phone: true,
           googlePlaceId: true,
+          // Owner "Platform Bağlantıları" PUT'u SADECE `googleReviewUrl` yazar
+          // (`googlePlaceId` = Places ile doğrulanmış id, admin `unverified_platform`
+          // filtresi buna bakar). Public surface bunu görmediği için elle
+          // kaydedilen Google linki yönlendirmede sessizce yok sayılıyordu.
+          googleReviewUrl: true,
+          // Owner'ın seçtiği "herkese açık platforma yönlendirme" eşiği
+          // (4 | 5, default 5). Public akış bunu okumazsa eşik hep 5 sanılır.
+          redirectMinRating: true,
           getirYemekUrl: true,
           yemekSepetiUrl: true,
           trendyolYemekUrl: true,
@@ -233,8 +241,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams: adminParams } = new URL(req.url);
-    const page = Math.max(1, parseInt(adminParams.get('page') || '1'));
-    const limit = Math.min(100, Math.max(1, parseInt(adminParams.get('limit') || '20')));
+    const page = Math.max(1, parseInt(adminParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(adminParams.get('limit') || '20', 10) || 20));
     const status = adminParams.get('status') || 'active';
     // Optional plan filter (Pulse 2026-04 design AdminBusinesses tab — pro |
     // growth | starter | trial | all). Joins through `user.plan` because
@@ -396,7 +404,12 @@ export async function POST(req: NextRequest) {
     return ApiErrors.unauthorized();
   }
 
-  if (actor.role === 'manager') {
+  // Allowlist, blocklist değil. Eskiden yalnızca `manager` reddediliyordu;
+  // `team_member` (viewer dahil) ve admin `staff` bu daldan geçip `ownerUserId`
+  // hiçbir branch'te set edilmediği için SAHIPSIZ (orphan) ama public/canlı bir
+  // işletme yaratabiliyordu (/r/<slug> yayında, owner listesinde görünmez).
+  // Owner panel CTA'sı zaten team_member'a gizli — backend artık UI ile eşit.
+  if (actor.role !== 'restaurant_owner' && actor.role !== 'superadmin') {
     return ApiErrors.forbidden('Bu işlem için yetkiniz yok');
   }
 

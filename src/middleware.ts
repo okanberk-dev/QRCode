@@ -25,8 +25,16 @@ function getSecretBytes(): Uint8Array {
 // restaurant_owner görürse (örn. eski/migrate edilmiş cookie) admin paneline
 // girmesin — `/api/admin/*` endpoint'leri zaten 403 dönüyordu, UX confusion
 // yaratıyordu. Şimdi middleware seviyesinde redirect'lenir.
+//
+// `staff` (CLAUDE.md §37.2 granular RBAC) MUST be here too: /api/admin/login
+// issues a JWT carrying `role: 'staff'`, AdminSidebar renders staff-scoped
+// nav items, and every /api/admin/* handler gates on `hasPermission`. Only
+// this middleware did not know the role — so a staff admin was redirected to
+// the login page AND had their cookie deleted on every /admin/* request, an
+// unbreakable login loop that made the whole tier unusable. Per-resource
+// authorization stays with hasPermission; this gate is only panel entry.
 function isAllowedAdminPanelRole(role: unknown): boolean {
-  return role === 'superadmin' || role === 'manager';
+  return role === 'superadmin' || role === 'manager' || role === 'staff';
 }
 
 // Admin sub-routes that DO NOT require auth.

@@ -138,6 +138,21 @@ export async function PATCH(
     if (!cat) return ApiErrors.badRequest('Geçersiz kategori', 'INVALID_CATEGORY');
   }
 
+  // Aynı koruma owner endpoint'inde (RESPONSES_LOCK_QUESTIONS) zaten vardı,
+  // burada YOKTU. `AuditAnswer.question` onDelete: Cascade olduğu için aşağıdaki
+  // full-replace (deleteMany + createMany) yanıt almış bir şablonda TÜM geçmiş
+  // cevapları siliyordu — ve bu endpoint GLOBAL şablonları yönetiyor, yani tek
+  // bir yazım hatası düzeltmesi bütün kiracıların denetim geçmişini yok ediyordu.
+  if (Array.isArray(data.questions)) {
+    const responseCount = await prisma.auditResponse.count({ where: { templateId: id } });
+    if (responseCount > 0) {
+      return ApiErrors.badRequest(
+        'Yanıt almış şablonun soruları değiştirilemez — geçmiş cevaplar silinirdi. Yeni versiyon için şablonu çoğaltın.',
+        'RESPONSES_LOCK_QUESTIONS',
+      );
+    }
+  }
+
   const result = await prisma.$transaction(async (tx) => {
     const updated = await tx.auditTemplate.update({
       where: { id },

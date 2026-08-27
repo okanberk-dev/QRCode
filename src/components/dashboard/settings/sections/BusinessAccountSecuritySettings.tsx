@@ -206,10 +206,24 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
       if (!res.ok) {
         setPwError(data.error || (isTr ? "Şifre değiştirilemedi." : "Could not change password."));
       } else {
-        setPwSuccess(isTr ? "Şifren güncellendi." : "Your password was updated.");
+        // The API revokes EVERY UserSession on a password change (§37.2.A) —
+        // including the one this tab is using. Leaving the owner on the page
+        // meant every later request 401'd with no explanation, so the app
+        // looked broken right after a successful password change. Say what is
+        // about to happen, then send them to login (same pattern as the
+        // account-deletion flow).
+        setPwSuccess(
+          isTr
+            ? "Şifren güncellendi. Güvenlik için tüm oturumlar kapatıldı — girişe yönlendiriliyorsun."
+            : "Your password was updated. All sessions were signed out for security — redirecting you to sign in.",
+        );
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
+        window.setTimeout(() => {
+          window.location.href = `/${locale}/auth/login`;
+        }, 2500);
+        return;
       }
     } catch {
       setPwError(isTr ? "Bağlantı hatası." : "Connection error.");

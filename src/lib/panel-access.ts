@@ -28,13 +28,35 @@ async function getTeamMemberScope(actor: PanelActor): Promise<string[]> {
     select: { isActive: true, deactivatedAt: true },
   });
   if (!owner || !owner.isActive || owner.deactivatedAt) return [];
-  if (!member.locations) return [];
-  // locations Json? — üst katmanda string[] olarak yazıyoruz ama defansif
-  // filtre koruyalım (corrupt JSON / manuel SQL girişine karşı).
+
+  // `locations` NULL ya da boş dizi = "Tüm konumlar" — davet akışının
+  // VARSAYILANI budur (`/api/team` POST konum seçilmediğinde NULL yazar, davet
+  // maili "Tüm konumlar / All locations" der, `/api/team/accept-invite`
+  // `allLocations = pinnedLocations.length === 0` ile owner'ın tam listesini
+  // gösterir). Bu helper ise aynı durumu "hiç erişim yok" diye okuyordu: en
+  // yaygın davet biçimiyle katılan ekip üyesi giriş yapıp bomboş bir panel
+  // görüyordu. Üç ayrı yer bu semantiği tanımlıyor; outlier olan buydu.
+  if (member.locations === null || member.locations === undefined) {
+    return listOwnerRestaurantIds(member.ownerId);
+  }
+  // Json? — üst katmanda string[] yazıyoruz; corrupt JSON / manuel SQL girişine
+  // karşı defansif kal ve fail-closed davran (dizi değilse hiçbir scope yok).
   if (!Array.isArray(member.locations)) return [];
-  return (member.locations as unknown[]).filter(
+  const pinned = (member.locations as unknown[]).filter(
     (x): x is string => typeof x === 'string',
   );
+  if (pinned.length === 0) {
+    return listOwnerRestaurantIds(member.ownerId);
+  }
+  return pinned;
+}
+
+async function listOwnerRestaurantIds(ownerId: string): Promise<string[]> {
+  const rows = await prisma.restaurant.findMany({
+    where: { userId: ownerId },
+    select: { id: true },
+  });
+  return rows.map((r) => r.id);
 }
 
 /**

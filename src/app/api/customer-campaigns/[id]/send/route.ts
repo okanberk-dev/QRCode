@@ -19,7 +19,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canWriteRestaurant } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { validateBody } from '@/lib/api/validate';
 import { writeAdminAuditLog } from '@/lib/audit-log';
@@ -76,7 +76,7 @@ export async function POST(
   });
   if (!campaign) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  const access = await canAccessRestaurant(actor, campaign.restaurantId);
+  const access = await canWriteRestaurant(actor, campaign.restaurantId);
   if (!access) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   // Admin master flag gate (CLAUDE.md §5.2 + §38.98).

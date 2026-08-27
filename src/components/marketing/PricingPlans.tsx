@@ -219,8 +219,22 @@ export default function PricingPlans({
                   sayfasına 302 redirect yapar). Aksi halde mevcut fallback
                   (`buttonHref`, genelde register/contact). Dodo product ID
                   yoksa checkout butonu görünmez (plan listede kalır ama "Yakında"
-                  hissi vermez — buttonHref hep dolu, register/contact fallback). */}
-              {p.paymentProvider === 'dodo_payments' && p.dodoProductId ? (
+                  hissi vermez — buttonHref hep dolu, register/contact fallback).
+
+                  CYCLE GUARD: `dodoProductId` tek bir kolon ve MONTHLY ürünü
+                  işaret ediyor — şemada, admin editöründe veya webhook'ta
+                  yıllık varyant YOK. Bu koşul `billing`'i okumadığı sürece
+                  "Yıllık · %20 indirim" sekmesindeki CTA byte-byte aynı URL'i
+                  üretiyordu: ziyaretçi indirimli yıllık fiyatı görüp tıklıyor
+                  ve AYLIK ürüne düşüyordu (yıllık aldığını sanarak aylık
+                  ücretlendiriliyordu). Yıllık modda mevcut `buttonHref`
+                  fallback'ine (register/contact) düşüyoruz; kimse yıllık bir
+                  tekliften aylık ürüne yönlendirilmiyor. Kalıcı çözüm ayrı bir
+                  `dodoProductIdYearly` kolonu + Dodo tarafında yıllık ürün
+                  gerektirir (PR'da açık soru olarak not edildi). */}
+              {p.paymentProvider === 'dodo_payments' &&
+              p.dodoProductId &&
+              billing === 'monthly' ? (
                 <a
                   href={`/api/checkout?productId=${encodeURIComponent(p.dodoProductId)}`}
                   className={`block min-h-[48px] w-full rounded-full py-3.5 text-center text-[14px] font-medium transition-colors ${

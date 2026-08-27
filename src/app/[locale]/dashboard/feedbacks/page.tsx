@@ -79,6 +79,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Liste fetch'i başarısız olduğunda owner'a "Yorum yok" yerine gerçek hata +
+  // "Tekrar dene" göster (CLAUDE.md §40.4 — sessiz boş liste yasak). `listReloadKey`
+  // artınca ana effect yeniden koşar (§38.203 Fix #6 paterni).
+  const [listError, setListError] = useState(false);
+  const [listReloadKey, setListReloadKey] = useState(0);
+  const [loadMoreError, setLoadMoreError] = useState(false);
 
   // Reply composer
   const [replyDraft, setReplyDraft] = useState('');
@@ -138,6 +144,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       setLoading(true);
       setPage(1);
       setHasMore(false);
+      setListError(false);
+      setLoadMoreError(false);
       try {
         const res = await fetch(`/api/feedback?${buildListQuery(1).toString()}`);
         if (res.ok) {
@@ -148,22 +156,36 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           setDegraded(data?.meta?.degraded ?? null);
           const totalPages = Number(data?.meta?.totalPages ?? 1);
           setHasMore(totalPages > 1);
+        } else {
+          // Önceki filtrenin satırlarını taşıma — owner yeni filtre için eski
+          // sonuçları gerçek sanardı (state drift).
+          setFeedbacks([]);
+          setActiveId(null);
+          setDegraded(null);
+          setListError(true);
         }
       } catch (e) {
         console.error(e);
+        setFeedbacks([]);
+        setActiveId(null);
+        setDegraded(null);
+        setListError(true);
       }
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, rating, platform, hasReply, flagged, restaurantIdParam]);
+  }, [days, rating, platform, hasReply, flagged, restaurantIdParam, listReloadKey]);
 
   const loadMoreFeedbacks = async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
+    setLoadMoreError(false);
     const nextPage = page + 1;
     try {
       const res = await fetch(`/api/feedback?${buildListQuery(nextPage).toString()}`);
-      if (res.ok) {
+      if (!res.ok) {
+        setLoadMoreError(true);
+      } else {
         const data = await res.json();
         const rows: FeedbackRow[] = data.data ?? [];
         setFeedbacks((prev) => {
@@ -178,6 +200,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       }
     } catch (e) {
       console.error(e);
+      setLoadMoreError(true);
     }
     setLoadingMore(false);
   };
@@ -603,16 +626,43 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setReplyDraft(aiSuggestion);
   };
 
+  // The endpoint is a TOGGLE (FeedbackFlag upsert / delete). This used to be
+  // pure fire-and-forget: no local state change, no confirmation, errors
+  // swallowed — so the icon never moved, the owner could not tell flagged from
+  // unflagged, and un-flagging was effectively impossible. Same optimistic +
+  // revert + notice shape as `togglePending` below.
   const flagFeedback = async () => {
     if (!active) return;
+    const targetId = active.id;
+    const newValue = active.isFlagged !== true;
+    setFeedbacks((prev) =>
+      prev.map((r) => (r.id === targetId ? { ...r, isFlagged: newValue } : r)),
+    );
+    setBulkNotice({
+      msg: isTr
+        ? newValue
+          ? 'Dikkat işareti eklendi'
+          : 'Dikkat işareti kaldırıldı'
+        : newValue
+          ? 'Flagged'
+          : 'Flag removed',
+      tone: 'success',
+    });
     try {
-      await fetch(`/api/feedback/${active.id}/flag`, {
+      const res = await fetch(`/api/feedback/${targetId}/flag`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: 'manual' }),
       });
+      if (!res.ok) throw new Error('flag failed');
     } catch {
-      /* non-blocking */
+      setFeedbacks((prev) =>
+        prev.map((r) => (r.id === targetId ? { ...r, isFlagged: !newValue } : r)),
+      );
+      setBulkNotice({
+        msg: isTr ? 'Dikkat işareti güncellenemedi' : 'Could not update the flag',
+        tone: 'error',
+      });
     }
   };
 
@@ -921,6 +971,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={loadMoreFeedbacks}
+            listError={listError}
+            loadMoreError={loadMoreError}
+            onRetryList={() => setListReloadKey((k) => k + 1)}
           />
         </aside>
 

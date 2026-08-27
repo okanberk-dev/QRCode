@@ -160,10 +160,15 @@ export default function RestaurantsPage() {
 
   const fetchOwners = async () => {
     try {
-      const res = await fetch('/api/admin/members');
+      // Envelope-aware — same `{ data, meta }` shape the restaurants fetch a
+      // few lines above already handles. Without it the owner selector in the
+      // create modal was always empty.
+      const res = await fetch('/api/admin/members?perPage=100');
       if (res.ok) {
         const data = await res.json();
-        setOwners(Array.isArray(data) ? data : []);
+        setOwners(
+          Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [],
+        );
       }
     } catch {
       // Restaurant owners are only available to superadmin. Other roles can

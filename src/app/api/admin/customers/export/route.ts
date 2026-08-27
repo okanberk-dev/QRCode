@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { hasPermission } from '@/lib/rbac';
 import {
   deriveCustomerFields,
   computeLastTopic,
@@ -73,6 +74,12 @@ export async function GET(req: NextRequest) {
   if (!actor) return NextResponse.json({ error: 'Yetkisiz' }, { status: 401 });
   if (actor.role === 'restaurant_owner') {
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 403 });
+  }
+  // Same RBAC gate as the LIST endpoint (/api/admin/customers). Without it the
+  // CSV export handed out exactly the customer PII the list refuses to show to
+  // an admin that lacks the `customers:read` grant.
+  if (actor.source === 'admin' && !(await hasPermission(actor.id, 'customers', 'read'))) {
+    return NextResponse.json({ error: 'Yetki yok' }, { status: 403 });
   }
 
   const { searchParams } = new URL(req.url);

@@ -82,10 +82,16 @@ export default function AdminOverviewWidgets({ locale = 'tr', members: membersPr
     let alive = true;
     const fetchAll = async () => {
       try {
-        const res = await fetch('/api/admin/members');
+        const res = await fetch('/api/admin/members?perPage=100');
         if (!res.ok || !alive) return;
         const data = await res.json();
-        const list: MemberApiRow[] = Array.isArray(data) ? data : [];
+        // `{ data, meta }` envelope — a bare-array parse left the widget blank
+        // whenever the parent did not pass server data.
+        const list: MemberApiRow[] = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.data)
+            ? (data.data as MemberApiRow[])
+            : [];
 
         if (alive) {
           setMembers(

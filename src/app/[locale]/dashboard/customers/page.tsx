@@ -585,7 +585,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         {/* Hidden inputs — URL state preservation across search submit */}
         <input type="hidden" name="range" value={rangeKey} />
         {segmentFilter && <input type="hidden" name="segment" value={segmentFilter} />}
-        {restaurantIdParam && (
+        {/* Only when the <select> below is absent. With both present the GET
+            submit serialises `restaurantId` TWICE and `searchParams.get()`
+            returns the FIRST (stale, hidden) value — so switching the business
+            filter appeared to do nothing and "Tüm işletmeler" never cleared. */}
+        {restaurantIdParam && restaurants.length <= 1 && (
           <input type="hidden" name="restaurantId" value={restaurantIdParam} />
         )}
 

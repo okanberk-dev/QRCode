@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { signJwt, verifyJwt } from '@/lib/auth';
+import { signJwt, verifyUserTokenForLayout } from '@/lib/auth';
 import { hashToken } from '@/lib/session-hash';
 import { rateLimit, getClientIp, maybeSweep } from '@/lib/rate-limit';
 import { handleTokenRefresh, type RefreshDeps } from '@/lib/oauth';
@@ -31,7 +31,15 @@ export async function POST(req: NextRequest) {
     const oldToken = req.cookies.get('user_token')?.value ?? '';
 
     const deps: RefreshDeps = {
-      verifyToken: verifyJwt,
+      // MUST be the session-aware verifier, not bare `verifyJwt`.
+      // Refresh mints a brand-new token AND a brand-new UserSession row, so a
+      // signature-only check let a revoked cookie resurrect itself: "log out
+      // all devices" and the password-reset revoke sweep (§37.2.A) were both
+      // undone by a single POST from the stolen cookie, for as long as the old
+      // JWT had not expired. `verifyUserTokenForLayout` applies the same
+      // revoke check + legacy tier matrix as `getUserFromRequest`, and takes a
+      // raw token so the injectable dep shape (tests/oauth.test.ts) is kept.
+      verifyToken: verifyUserTokenForLayout,
       findUserById: (id) =>
         prisma.user.findUnique({
           where: { id },

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
+import { SYSTEM_FEEDBACK } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -126,6 +127,12 @@ export default async function EmbedPage({ params, searchParams }: RouteParams) {
             restaurantId: restaurant.id,
             rating: { gte: 4 },
             comment: { not: null },
+            // Yüksek puan yönlendirmesi `comment: 'High Rating Redirect'`
+            // sentinel'i ile kaydedilir (src/lib/constants.ts). stats / export /
+            // mail bunu zaten filtreliyordu; embed widget FİLTRELEMİYORDU →
+            // işletmenin kendi sitesinde bu iç sistem metni müşteri yorumu
+            // gibi tırnak içinde render ediliyordu.
+            NOT: { comment: SYSTEM_FEEDBACK.HIGH_RATING_REDIRECT },
           },
           orderBy: { createdAt: 'desc' },
           take: recentTake,

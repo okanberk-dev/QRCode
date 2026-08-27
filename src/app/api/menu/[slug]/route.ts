@@ -20,6 +20,14 @@ export async function GET(
       select: {
         name: true,
         isActive: true,
+        // SSR /menu/[slug] bu iki flag'i zaten kontrol ediyordu; bu public API
+        // etmiyordu. Sonuç: admin menü modülünü kapatınca (menuEnabled=false,
+        // ücretli özellik gate'i §5.2) veya owner menüyü yayından kaldırınca
+        // (menuPublished=false, taslak) menü SSR'de gizleniyor ama bu endpoint
+        // — ve onu tüketen /r/[slug]/menu sayfası — tam menüyü servis etmeye
+        // devam ediyordu.
+        menuEnabled: true,
+        menuPublished: true,
         menuLogoUrl: true,
         primaryColor: true,
         menuTheme: true,
@@ -46,6 +54,12 @@ export async function GET(
 
     if (!restaurant.isActive) {
       return NextResponse.json({ error: 'Bu restoran şu an hizmet vermemektedir' }, { status: 403 });
+    }
+
+    if (!restaurant.menuEnabled || !restaurant.menuPublished) {
+      // 404 (403 değil) — SSR /menu/[slug] ile aynı davranış: menünün var olup
+      // olmadığı bilgisi sızdırılmaz.
+      return NextResponse.json({ error: 'Menü bulunamadı' }, { status: 404 });
     }
 
     // Return menu data

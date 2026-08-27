@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAdminFromRequest } from '@/lib/auth';
+import { getAdminFromRequest, getPanelActorFromRequest } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
+import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { deriveCustomerFields } from '@/lib/customers';
 
 // GET /api/admin/customers/by-key/[key] — admin-tier cross-restaurant customer
@@ -52,6 +53,18 @@ export async function GET(
   const contactKey = decoded.slice(pipeIdx + 1).trim();
   if (!restaurantId || !contactKey) {
     return NextResponse.json({ error: 'Bulunamadı' }, { status: 404 });
+  }
+
+  // Scope check — mirrors the LIST endpoint (/api/admin/customers), which pushes
+  // `scopedIds` into its SQL filter. Here `restaurantId` arrives straight from
+  // the URL key, so without this a scoped `manager` admin holding customers:read
+  // could read ANY restaurant's customer PII (name / email / phone / comments)
+  // by crafting the key. `null` = superadmin (cross-restaurant), `[]` = no scope
+  // (list forces 0 rows for the same actor — here we 403).
+  const actor = await getPanelActorFromRequest(req);
+  const scopedIds = actor ? await getScopedRestaurantIds(actor) : [];
+  if (scopedIds !== null && !scopedIds.includes(restaurantId)) {
+    return NextResponse.json({ error: 'Yetkisiz' }, { status: 403 });
   }
 
   // hasKvkkConsent zorunlu (LIST endpoint ile aynı disiplin, §13.5).

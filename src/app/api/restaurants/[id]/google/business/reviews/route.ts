@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
+import { rateLimit } from '@/lib/rate-limit';
 import { getLocaleFromRequest } from '@/lib/api/locale';
 import {
   getGoogleIntegrationForRestaurant,
@@ -54,6 +55,26 @@ export async function GET(
         ? 'Bu işletme için Google Business konumu seçilmemiş.'
         : 'No Google Business location selected for this business.',
       'GOOGLE_LOCATION_NOT_SELECTED',
+    );
+  }
+
+  // Per-restaurant throttle. CLAUDE.md §5.1.1: the Google quota is PROJECT-wide
+  // and shared by every tenant, so "yeni googleBusinessFetch-tabanlı endpoint
+  // eklerken aynı 4-katman desenini uygula". The locations endpoint does; this
+  // one called the API on every single request — each page load, restaurant
+  // switch and component remount went straight to Google. 20/min is far above
+  // what a human browsing reviews needs, while capping remount storms.
+  const rl = await rateLimit(`google-reviews:${id}`, 20, 60_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      {
+        error: 'GOOGLE_CLIENT_THROTTLED',
+        message: isTr
+          ? 'Çok sık yenilendi. Birkaç saniye sonra tekrar deneyin.'
+          : 'Refreshed too often. Please try again in a few seconds.',
+        retryAfterSeconds: rl.retryAfterSeconds,
+      },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
     );
   }
 

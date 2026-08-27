@@ -143,11 +143,19 @@ export async function POST(req: NextRequest) {
           enableAiDraft: true,
           aiDraftTone: true,
           externalPlatformsEnabled: true,
+          // Fallback recipient. `notificationEmail` is optional, and when it is
+          // empty `sendFeedbackNotification` falls back to the NOTIFICATION_EMAIL
+          // env — i.e. Buaze's own inbox. Low-rating alerts for every restaurant
+          // that never filled the field were therefore delivered to us instead of
+          // the owner, who never learned an unhappy customer had just left. The
+          // first-feedback celebration below already resolved the owner e-mail
+          // this way; the alert path did not.
+          user: { select: { email: true } },
         },
       });
       if (restaurant) {
         restaurantId = restaurant.id;
-        notificationEmail = restaurant.notificationEmail;
+        notificationEmail = restaurant.notificationEmail || restaurant.user?.email || null;
         restaurantName = restaurant.name;
         aiDraftEnabled = restaurant.pulseAiEnabled && restaurant.enableAiDraft;
         aiDraftTone = restaurant.aiDraftTone;
@@ -415,7 +423,13 @@ export async function GET(req: NextRequest) {
     // superadmin — keep any explicit restaurantId filter or show all
   } else if (actor.role === 'manager') {
     baseWhere.restaurantId = actor.restaurantId;
-  } else if (actor.role === 'restaurant_owner') {
+  // `team_member` (davet edilen ekip üyesi) owner ile aynı dalda scope'lanır:
+  // getScopedRestaurantIds -> getTeamMemberScope zaten SADECE TeamMember.locations
+  // listesini döner (owner pasifse boş). Scope genişlemesi yok; eksik olan sadece
+  // bu dalın team_member'ı kapsamamasıydı -> davetli kullanici gelen kutusunda 403
+  // aliyordu (/api/feedback/counts zaten generic helper'i kullaniyordu -> sayaclar
+  // dolu, liste bos = kirik cekirdek akis).
+  } else if (actor.role === 'restaurant_owner' || actor.role === 'team_member') {
     const userRestIds = await getScopedRestaurantIds(actor) || [];
 
     if (baseWhere.restaurantId) {

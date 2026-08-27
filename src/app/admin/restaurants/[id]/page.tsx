@@ -167,10 +167,16 @@ export default function RestaurantDetailPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/admin/members');
+        // /api/admin/members answers with a `{ data, meta }` envelope and
+        // never a bare array, so this parse always produced [] — the owner
+        // selector was permanently empty and a superadmin could not attach a
+        // business to a customer, even though PUT fully supports `userId`.
+        const res = await fetch('/api/admin/members?perPage=100');
         if (res.ok) {
           const data = await res.json();
-          setOwners(Array.isArray(data) ? data : []);
+          setOwners(
+            Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [],
+          );
         }
       } catch {
         // Only superadmin can list owners; scoped users simply don't see the selector.

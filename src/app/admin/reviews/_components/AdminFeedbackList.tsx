@@ -1,7 +1,7 @@
 'use client';
 
 import { Inbox, Loader2, RotateCcw, Search, SlidersHorizontal } from 'lucide-react';
-import { AlertBanner, APCheckbox, EmptyState, Tabs } from '@/components/ui';
+import { AlertBanner, APCheckbox, EmptyState, ErrorState, Tabs } from '@/components/ui';
 import type { AdminTab, CountsResp, DegradedMeta, FeedbackRow } from './types';
 import { AdminFeedbackListItem } from './AdminFeedbackListItem';
 
@@ -33,6 +33,9 @@ interface AdminFeedbackListProps {
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
+  /** First-page fetch failed — show a real error + retry, not "no reviews". */
+  listError: boolean;
+  onRetryList: () => void;
 }
 
 export function AdminFeedbackList({
@@ -56,6 +59,8 @@ export function AdminFeedbackList({
   onSelect,
   degraded,
   hasMore,
+  listError,
+  onRetryList,
   loadingMore,
   onLoadMore,
 }: AdminFeedbackListProps) {
@@ -170,16 +175,38 @@ export function AdminFeedbackList({
       </div>
 
       <div className="lg:flex-1 lg:overflow-y-auto">
-        {loading ? null : filtered.length === 0 ? (
+        {loading ? null : listError ? (
           <div className="p-6">
-            <EmptyState
-              icon={<Inbox size={22} strokeWidth={1.5} />}
-              title={isTr ? 'Henüz yorum yok' : 'No reviews yet'}
-              body={isTr ? 'Filtreleri değiştirip tekrar dene.' : 'Try adjusting filters.'}
+            <ErrorState
+              title={isTr ? 'Yorumlar yüklenemedi' : 'Could not load reviews'}
+              body={
+                isTr
+                  ? 'Liste sunucudan alınamadı. Bu, yorum olmadığı anlamına gelmez.'
+                  : 'The list could not be fetched. It does not mean there are no reviews.'
+              }
+              onRetry={onRetryList}
+              retryLabel={isTr ? 'Tekrar dene' : 'Try again'}
             />
           </div>
         ) : (
           <>
+            {filtered.length === 0 && (
+              <div className="p-6">
+                <EmptyState
+                  icon={<Inbox size={22} strokeWidth={1.5} />}
+                  title={isTr ? 'Henüz yorum yok' : 'No reviews yet'}
+                  body={
+                    hasMore
+                      ? isTr
+                        ? 'Bu sayfada eşleşme yok. Aşağıdan daha fazla yükleyip tekrar dene.'
+                        : 'No match on this page. Load more below and try again.'
+                      : isTr
+                        ? 'Filtreleri değiştirip tekrar dene.'
+                        : 'Try adjusting filters.'
+                  }
+                />
+              </div>
+            )}
             {filtered.map((r) => (
               <AdminFeedbackListItem
                 key={r.id}
