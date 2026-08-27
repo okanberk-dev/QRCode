@@ -332,6 +332,20 @@ async function handleSubscriptionUpsert(payload: DodoPayloadShape): Promise<void
       ...(planId ? { subscriptionPlanId: planId } : {}),
     },
   });
+
+  // Mirror the lifecycle bucket onto User.
+  //
+  // `gateUser` (login + refresh) and /api/auth/login both lock an account out
+  // with 402 "Ücretsiz deneme süreniz sona ermiştir" when
+  // `User.plan === 'trial' && trialEndsAt < now`. The webhook only ever wrote
+  // BillingSubscription, and the ONLY writers of `User.plan` are two
+  // superadmin-only admin routes — so a customer who paid through Dodo kept
+  // `plan: 'trial'` and was locked out of the product the moment their trial
+  // window elapsed. Sequential await (never Promise.all — Supabase pooler runs
+  // at connection_limit=1, §40.1).
+  if (status === 'active') {
+    await prisma.user.update({ where: { id: userId }, data: { plan: 'monthly' } });
+  }
 }
 
 async function handleSubscriptionCancelled(payload: DodoPayloadShape): Promise<void> {
@@ -353,8 +367,17 @@ async function handleSubscriptionCancelled(payload: DodoPayloadShape): Promise<v
 async function handleSubscriptionExpired(payload: DodoPayloadShape): Promise<void> {
   const subscriptionId = payload.data?.subscription_id;
   if (!subscriptionId) return;
-  await prisma.billingSubscription.updateMany({
+  // Needs the userId so the mirrored bucket on User can be released too —
+  // otherwise a lapsed subscriber stays pinned to 'monthly' forever.
+  const existing = await prisma.billingSubscription.findFirst({
     where: { providerRef: subscriptionId, source: 'dodo_payments' },
+    // `userId` is the primary key on BillingSubscription.
+    select: { userId: true },
+  });
+  if (!existing) return;
+
+  await prisma.billingSubscription.update({
+    where: { userId: existing.userId },
     data: {
       status: 'canceled',
       cancelAtPeriodEnd: false,
@@ -366,6 +389,11 @@ async function handleSubscriptionExpired(payload: DodoPayloadShape): Promise<voi
       plan: 'free',
     },
   });
+
+  // 'free' rather than 'trial': the trial gate only fires for plan==='trial',
+  // so a lapsed subscriber loses paid limits without being bounced to the
+  // trial-expired wall on their next login.
+  await prisma.user.update({ where: { id: existing.userId }, data: { plan: 'free' } });
 }
 
 async function handleSubscriptionOnHold(payload: DodoPayloadShape): Promise<void> {
