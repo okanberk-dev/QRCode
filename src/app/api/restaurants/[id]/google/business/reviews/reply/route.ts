@@ -12,6 +12,7 @@ import {
   selectedGoogleLocation,
   updateGoogleReviewReply,
   GoogleBusinessApiError,
+  GOOGLE_REVIEW_NAME_RE,
 } from '@/lib/google-business';
 import { googleBusinessErrorResponse } from '@/lib/google-business-response';
 import { rateLimit } from '@/lib/rate-limit';
@@ -21,8 +22,16 @@ import { alreadySent, recordSent } from '@/lib/email/lifecycle';
 
 export const dynamic = 'force-dynamic';
 
+// Google review resource name: accounts/{acct}/locations/{loc}/reviews/{id}.
+// The charset is pinned to URL-safe base64 (what Google actually emits) so a
+// `..` dot-segment can never enter. This matters because `reviewName` is
+// concatenated into the request URL: `fetch()` resolves dot-segments per the
+// WHATWG URL spec, so `.../reviews/../../../../accounts/X/locations/Y/reviews/Z`
+// passes a `startsWith(expectedPrefix)` ownership check and still PUTs the
+// reply onto a completely different Google account/location. Encoding does not
+// help here (encodeURIComponent('..') === '..'); only an allow-list does.
 const Body = z.object({
-  reviewName: z.string().min(10).max(500),
+  reviewName: z.string().min(10).max(500).regex(GOOGLE_REVIEW_NAME_RE),
   comment: z.string().trim().min(2).max(4096),
 }).strict();
 
@@ -91,10 +100,23 @@ export async function POST(
     );
   }
 
+  // Never forward the client string: rebuild the resource name from the
+  // trusted selection plus the validated id, so the URL that is actually
+  // requested is provably the one the ownership check just approved.
+  const reviewId = parsed.data.reviewName.slice(expectedPrefix.length);
+  if (!/^[A-Za-z0-9_-]+$/.test(reviewId)) {
+    return ApiErrors.forbidden(
+      isTr
+        ? 'Bu yorum seçili Google konumuna ait değil.'
+        : 'This review does not belong to the selected Google location.',
+    );
+  }
+  const canonicalReviewName = `${expectedPrefix}${reviewId}`;
+
   try {
     const reply = await updateGoogleReviewReply(
       integration,
-      parsed.data.reviewName,
+      canonicalReviewName,
       parsed.data.comment,
     );
 
@@ -134,7 +156,7 @@ export async function POST(
           await recordSent({
             restaurantId: id,
             type: 'first_reply_celebration',
-            metadata: { reviewName: parsed.data.reviewName },
+            metadata: { reviewName: canonicalReviewName },
           });
         }
       } catch (err) {
