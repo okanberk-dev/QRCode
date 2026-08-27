@@ -1,6 +1,6 @@
 // CLAUDE.md §X — Reputation OS Suite (Google reviews auto-draft cron).
 //
-// Saat başı çalışır. Bağlı tüm restoranların yanıtlanmamış Google review'larına
+// Günde bir çalışır (0 6 * * *; §21.12 Hobby plan — eskiden saat başıydı). Bağlı tüm restoranların yanıtlanmamış Google review'larına
 // arka planda AI taslak hazırlar; owner panel açtığında taslak hazır gelir.
 //
 // Idempotent: aynı (restaurantId, reviewName) için 24 saatten taze draft varsa
