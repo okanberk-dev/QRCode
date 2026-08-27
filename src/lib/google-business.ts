@@ -9,6 +9,17 @@ const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const ACCOUNT_MANAGEMENT_URL = 'https://mybusinessaccountmanagement.googleapis.com/v1';
 const BUSINESS_INFORMATION_URL = 'https://mybusinessbusinessinformation.googleapis.com/v1';
 const BUSINESS_PROFILE_V4_URL = 'https://mybusiness.googleapis.com/v4';
+
+/**
+ * Canonical Google review resource name:
+ * `accounts/{accountId}/locations/{locationId}/reviews/{reviewId}`.
+ *
+ * Pinned to the URL-safe base64 charset Google actually emits. Shared by the
+ * reply endpoint (request validation) and `updateGoogleReviewReply` (assert)
+ * so the two can never drift — this is an authorization boundary, not cosmetics.
+ */
+export const GOOGLE_REVIEW_NAME_RE =
+  /^accounts\/[A-Za-z0-9_-]+\/locations\/[A-Za-z0-9_-]+\/reviews\/[A-Za-z0-9_-]+$/;
 // Stage 10 — Google Business Profile Q&A API (CLAUDE.md §38.80, §38.55
 // PROFİL SAĞLIĞI backlog kapanışı). Separate endpoint family from the
 // account-management / business-information / business-profile-v4 surfaces
@@ -274,23 +285,51 @@ export async function getGoogleIntegrationForActor(actor: PanelActor) {
   });
 }
 
+/**
+ * Resolve the Google integration a restaurant's panel surfaces should use.
+ *
+ * Precedence is deterministic and owner-first. It used to be
+ * `findFirst({ userId: { in: [actorRef, ownerId] } , orderBy: updatedAt desc })`,
+ * which let whoever refreshed last win: `/api/integrations/google/connect`
+ * accepts ANY panel actor and keys the row on the actor's own id, so a team
+ * member (or a Buaze admin) who connected their personal Google account
+ * silently shadowed the owner's. Consequences were all silent — the owner's
+ * selected location vanished, and picking a location from the wrong account
+ * wrote that third party's `googleReviewUrl` onto the restaurant, so every
+ * high-rating customer scanning the QR was redirected to a stranger's listing
+ * (§19.4.3). The crons (`reputation/snapshot.ts`, `reputation/google-draft.ts`,
+ * `cron/google-reviews-alert`) always resolved by `restaurant.userId` alone, so
+ * the panel and the background jobs could disagree about which account was live.
+ *
+ * The owner's row now always wins; the actor's own row is used only to
+ * bootstrap a workspace whose owner has never connected.
+ */
 export async function getGoogleIntegrationForRestaurant(
   actor: PanelActor,
   restaurantId: string,
 ) {
-  const refs = [googleOwnerRef(actor)];
+  const actorRef = googleOwnerRef(actor);
   const restaurant = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
     select: { userId: true },
   });
+
+  const refs = [actorRef];
   if (restaurant?.userId && !refs.includes(restaurant.userId)) {
     refs.push(restaurant.userId);
   }
 
-  return prisma.googleIntegration.findFirst({
+  // One query, resolved in JS — keeps the round-trip count where it was
+  // (CLAUDE.md §40.1) while making the winner independent of `updatedAt`.
+  const rows = await prisma.googleIntegration.findMany({
     where: { userId: { in: refs } },
-    orderBy: { updatedAt: 'desc' },
   });
+  if (rows.length === 0) return null;
+
+  const ownerRow = restaurant?.userId
+    ? rows.find((row) => row.userId === restaurant.userId)
+    : undefined;
+  return ownerRow ?? rows.find((row) => row.userId === actorRef) ?? null;
 }
 
 export async function googleReviewManagementEnabled(restaurantId: string): Promise<boolean> {
@@ -931,8 +970,15 @@ export async function updateGoogleReviewReply(
   reviewName: string,
   comment: string,
 ): Promise<{ comment: string; updateTime?: string; reviewReplyState?: string }> {
-  const safeReviewName = reviewName.replace(/^\/+/, '');
-  const url = `${BUSINESS_PROFILE_V4_URL}/${safeReviewName}/reply`;
+  // Hard assert, not a sanitiser. `reviewName` is concatenated into the URL and
+  // `fetch()` resolves `..` dot-segments (WHATWG URL), so a name that merely
+  // *starts with* the caller's own location prefix can still target another
+  // account. Stripping leading slashes never addressed that. Callers must pass
+  // a canonical resource name they rebuilt from a trusted selection.
+  if (!GOOGLE_REVIEW_NAME_RE.test(reviewName)) {
+    throw new Error('invalid Google review resource name');
+  }
+  const url = `${BUSINESS_PROFILE_V4_URL}/${reviewName}/reply`;
   const res = await googleBusinessFetch<{
     comment: string;
     updateTime?: string;
