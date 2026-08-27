@@ -434,7 +434,7 @@ export async function getFreshGoogleAccessToken(
     grant_type: 'refresh_token',
   });
 
-  // 1 retry on transient (network / 5xx). 4xx is terminal (refresh dead).
+  // 1 retry on transient (network / 5xx / 429). Only a dead grant is terminal.
   for (let attempt = 0; attempt <= 1; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TOKEN_REFRESH_TIMEOUT_MS);
@@ -467,22 +467,51 @@ export async function getFreshGoogleAccessToken(
         return { ok: true, accessToken: data.access_token };
       }
 
-      // 4xx → refresh token dead, mark integration unusable
+      // 4xx — but ONLY a dead grant is terminal.
+      //
+      // The old code nulled `refreshToken` for EVERY 4xx. Google's token
+      // endpoint also answers 4xx for transient conditions — most importantly
+      // 429 during a quota spike, which this project hits regularly because
+      // the Google quota is project-wide (§5.1.1). One such blip permanently
+      // destroyed the owner's integration and forced a full re-OAuth. Only
+      // `invalid_grant` / `invalid_client` / `unauthorized_client` actually
+      // mean the refresh token will never work again.
       if (res.status >= 400 && res.status < 500) {
-        await prisma.googleIntegration
-          .update({
-            where: { id: integration.id },
-            data: { refreshToken: null },
-          })
-          .catch(() => {
-            // best-effort cleanup; failure here shouldn't mask reauth signal
-          });
-        integration.refreshToken = null;
-        return {
-          ok: false,
-          code: 'GOOGLE_REAUTH_REQUIRED',
-          message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
-        };
+        const errBody = (await res.json().catch(() => null)) as { error?: unknown } | null;
+        const oauthError = typeof errBody?.error === 'string' ? errBody.error : '';
+        const grantIsDead =
+          oauthError === 'invalid_grant' ||
+          oauthError === 'invalid_client' ||
+          oauthError === 'unauthorized_client';
+
+        if (grantIsDead) {
+          await prisma.googleIntegration
+            .update({
+              where: { id: integration.id },
+              data: { refreshToken: null },
+            })
+            .catch(() => {
+              // best-effort cleanup; failure here shouldn't mask reauth signal
+            });
+          integration.refreshToken = null;
+          return {
+            ok: false,
+            code: 'GOOGLE_REAUTH_REQUIRED',
+            message: googleFailureMessage('GOOGLE_REAUTH_REQUIRED'),
+          };
+        }
+
+        // 429 → transient, retry once like a 5xx. Other non-grant 4xx →
+        // report a rate-limit/transient failure WITHOUT touching the stored
+        // refresh token, so the connection survives.
+        if (res.status !== 429 || attempt === 1) {
+          return {
+            ok: false,
+            code: 'GOOGLE_RATE_LIMITED',
+            message: googleFailureMessage('GOOGLE_RATE_LIMITED'),
+          };
+        }
+        // 429 on the first attempt → fall through to the retry below.
       }
       // 5xx → fall through to retry
     } catch {

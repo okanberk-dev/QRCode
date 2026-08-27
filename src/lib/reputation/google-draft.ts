@@ -64,7 +64,19 @@ function hashComment(comment: string | undefined | null): string | null {
  * Tek bir restaurant için Google review draft akışı. İçeride hata olursa
  * yutar (cron-friendly), sadece summary döner.
  */
-async function processRestaurantGoogleDrafts(restaurantId: string): Promise<{
+async function processRestaurantGoogleDrafts(
+  restaurantId: string,
+  /**
+   * Shared per-run budget for fresh `accounts.list` syncs. That endpoint is
+   * capped at 1 request/minute PER GOOGLE PROJECT (CLAUDE.md §5.1.1) — the
+   * quota is shared by every Buaze tenant AND by the owner-facing Google
+   * Reviews page. Without a budget this hourly cron fired one sync per
+   * cache-less restaurant back to back, draining the project quota and
+   * leaving owners staring at the rate-limit banner on their live page
+   * (the symptom chased in §38.209 / §38.231).
+   */
+  locationSyncBudget?: { remaining: number },
+): Promise<{
   scanned: number;
   created: number;
   skipped: number;
@@ -110,12 +122,18 @@ async function processRestaurantGoogleDrafts(restaurantId: string): Promise<{
     restaurantId,
   );
   if (!selection) {
-    // Try fresh sync once — quota may block (429), accept and skip.
-    try {
-      const fresh = await fetchGoogleBusinessLocations(integration);
-      selection = selectedGoogleLocation(fresh, restaurantId);
-    } catch {
-      // accepted skip
+    // Fresh sync only while the run still has budget. Out of budget → skip
+    // this restaurant for this cycle; the next hourly run (or the owner
+    // opening the page, which syncs through its own cache) picks it up.
+    if (!locationSyncBudget || locationSyncBudget.remaining > 0) {
+      if (locationSyncBudget) locationSyncBudget.remaining -= 1;
+      // Quota may still block (429) — accept and skip.
+      try {
+        const fresh = await fetchGoogleBusinessLocations(integration);
+        selection = selectedGoogleLocation(fresh, restaurantId);
+      } catch {
+        // accepted skip
+      }
     }
   }
   if (!selection) return stats;
@@ -239,6 +257,10 @@ async function processRestaurantGoogleDrafts(restaurantId: string): Promise<{
 export async function runGoogleReviewsAutoDraft(): Promise<GoogleAutoDraftSummary> {
   const start = Date.now();
   const BATCH_SIZE = 100;
+  // `accounts.list` is 1 req/min/project and shared with the owner-facing
+  // page. One fresh sync per run keeps this background job from starving the
+  // interactive surface; cache-less restaurants roll over to the next hour.
+  const LOCATION_SYNC_BUDGET_PER_RUN = 1;
 
   const restaurants = await prisma.restaurant.findMany({
     where: {
@@ -262,9 +284,11 @@ export async function runGoogleReviewsAutoDraft(): Promise<GoogleAutoDraftSummar
     durationMs: 0,
   };
 
+  const locationSyncBudget = { remaining: LOCATION_SYNC_BUDGET_PER_RUN };
+
   for (const r of restaurants) {
     try {
-      const s = await processRestaurantGoogleDrafts(r.id);
+      const s = await processRestaurantGoogleDrafts(r.id, locationSyncBudget);
       agg.reviewsScanned += s.scanned;
       agg.draftsCreated += s.created;
       agg.draftsSkipped += s.skipped;
