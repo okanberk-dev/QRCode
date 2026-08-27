@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant, getScopedRestaurantIds } from '@/lib/panel-access';
+import { canWriteRestaurant, getScopedRestaurantIds } from '@/lib/panel-access';
 import { validateBody } from '@/lib/api/validate';
 import { writeAdminAuditLog } from '@/lib/audit-log';
 import { runCampaignTemplateSeed } from '@/lib/customer-campaign-templates/seed-runner';
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.ok) return parsed.response;
   const data = parsed.data;
 
-  const access = await canAccessRestaurant(actor, data.restaurantId);
+  const access = await canWriteRestaurant(actor, data.restaurantId);
   if (!access) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   const restaurant = await prisma.restaurant.findUnique({

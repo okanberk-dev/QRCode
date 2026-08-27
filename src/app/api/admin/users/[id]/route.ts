@@ -115,6 +115,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
 
+  // Privilege-escalation guard. `users:write` is a grantable permission, so a
+  // non-superadmin `staff` admin could reach this handler. Without these checks
+  // it could PUT `role: 'superadmin'` on its own id and take over the panel,
+  // or rotate a superadmin's password and lock them out. DELETE already had the
+  // self-guard; PUT did not.
+  if (id === admin.id) {
+    return NextResponse.json(
+      { error: 'Kendi hesabınızı buradan düzenleyemezsiniz. Profil sayfasını kullanın.' },
+      { status: 403 },
+    );
+  }
+
   try {
     const body = await req.json();
     const { password, role, restaurantId, email } = body;
@@ -140,6 +152,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       where: { id },
       select: { role: true, restaurantId: true, email: true },
     });
+    if (!before) {
+      return NextResponse.json({ error: 'Yönetici bulunamadı' }, { status: 404 });
+    }
+
+    // Only a superadmin may grant the superadmin role or touch an existing one.
+    if (admin.role !== 'superadmin' && (role === 'superadmin' || before.role === 'superadmin')) {
+      return NextResponse.json(
+        { error: 'Süperadmin rolünü yalnızca bir süperadmin yönetebilir' },
+        { status: 403 },
+      );
+    }
 
     const data: Prisma.AdminUserUncheckedUpdateInput = {
       role,

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { resolveOwnerUserId } from '@/lib/panel-access';
+import { getTeamMemberRole, resolveOwnerUserId } from '@/lib/panel-access';
 import { validateBody } from '@/lib/api/validate';
 import { rateLimit } from '@/lib/rate-limit';
 
@@ -71,6 +71,18 @@ export async function PUT(req: NextRequest) {
       { error: 'rate_limit' },
       { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
     );
+  }
+
+  // `resolveOwnerUserId` bir team_member için WORKSPACE OWNER'ın id'sini döner —
+  // yani buradaki write owner'ın kendi bildirim kanalını değiştirir. Read-only
+  // 'viewer' rolündeki davetli, owner'ın düşük puan uyarılarını susturabiliyordu.
+  // Kod tabanının mevcut write matrisi (canWriteRestaurant / canWriteFeedback)
+  // ile aynı kural: viewer yazamaz.
+  if (actor.role === 'team_member') {
+    const teamRole = await getTeamMemberRole(actor);
+    if (teamRole === 'viewer') {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
   }
 
   const userId = await resolveOwnerUserId(actor);

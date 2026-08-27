@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant, getScopedRestaurantIds } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteRestaurant, getScopedRestaurantIds } from '@/lib/panel-access';
 import { validateBody } from '@/lib/api/validate';
 import { writeAdminAuditLog } from '@/lib/audit-log';
 
@@ -112,7 +112,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'global_template_immutable_via_owner_api' }, { status: 403 });
   }
 
-  const access = await canAccessRestaurant(actor, template.restaurantId);
+  const access = await canWriteRestaurant(actor, template.restaurantId);
   if (!access) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   const body = await req.json().catch(() => null);
@@ -181,7 +181,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'global_template_immutable_via_owner_api' }, { status: 403 });
   }
 
-  const access = await canAccessRestaurant(actor, template.restaurantId);
+  const access = await canWriteRestaurant(actor, template.restaurantId);
   if (!access) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   await prisma.customerCampaignTemplate.delete({ where: { id } });

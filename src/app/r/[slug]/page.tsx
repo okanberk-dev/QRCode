@@ -25,6 +25,8 @@ interface RestaurantData {
   address: string | null;
   phone: string | null;
   googlePlaceId: string | null;
+  /** Owner'ın panelden elle kaydettiği Google yorum linki. */
+  googleReviewUrl?: string | null;
   getirYemekUrl: string | null;
   yemekSepetiUrl: string | null;
   trendyolYemekUrl: string | null;
@@ -301,7 +303,16 @@ function ReviewContent() {
 
   // Accepts: raw Place ID (ChIJ…), g.page/r/… link, search.google.com
   // writereview link, or a /maps/place/ URL — see buildGoogleReviewUrl.
-  const googleUrl = buildGoogleReviewUrl(restaurant.googlePlaceId);
+  //
+  // `googleReviewUrl` önce gelir: owner Ayarlar > Platform Bağlantıları'ndan
+  // linki elle güncellediğinde SADECE bu alan yazılır (`googlePlaceId` Places
+  // doğrulamasına ait ve kasıtlı olarak dokunulmaz). Eskiden burada yalnızca
+  // `googlePlaceId` okunuyordu → elle kaydedilen link public akışta hiç
+  // kullanılmıyor, müşteri Google yerine başka platforma (veya hiçbir yere)
+  // yönlendiriliyordu. Place ID fallback olarak korunur.
+  const googleUrl =
+    buildGoogleReviewUrl(restaurant.googleReviewUrl ?? null) ??
+    buildGoogleReviewUrl(restaurant.googlePlaceId);
 
   // Wave 4 broken-skip — slug GET'ten gelen son 24 saatlik test sonuçlarını
   // resolver'ın beklediği Map<provider, { ok, checkedAt: Date }> formatına

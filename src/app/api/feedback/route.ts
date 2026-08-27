@@ -415,7 +415,13 @@ export async function GET(req: NextRequest) {
     // superadmin — keep any explicit restaurantId filter or show all
   } else if (actor.role === 'manager') {
     baseWhere.restaurantId = actor.restaurantId;
-  } else if (actor.role === 'restaurant_owner') {
+  // `team_member` (davet edilen ekip üyesi) owner ile aynı dalda scope'lanır:
+  // getScopedRestaurantIds -> getTeamMemberScope zaten SADECE TeamMember.locations
+  // listesini döner (owner pasifse boş). Scope genişlemesi yok; eksik olan sadece
+  // bu dalın team_member'ı kapsamamasıydı -> davetli kullanici gelen kutusunda 403
+  // aliyordu (/api/feedback/counts zaten generic helper'i kullaniyordu -> sayaclar
+  // dolu, liste bos = kirik cekirdek akis).
+  } else if (actor.role === 'restaurant_owner' || actor.role === 'team_member') {
     const userRestIds = await getScopedRestaurantIds(actor) || [];
 
     if (baseWhere.restaurantId) {

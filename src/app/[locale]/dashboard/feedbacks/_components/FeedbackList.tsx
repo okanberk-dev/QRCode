@@ -1,7 +1,7 @@
 'use client';
 
 import { Inbox, Loader2, RotateCcw, Search, SlidersHorizontal, Sparkles } from 'lucide-react';
-import { AlertBanner, EmptyState, Tabs } from '@/components/ui';
+import { AlertBanner, EmptyState, ErrorState, Tabs } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import type { ActiveTab, DegradedMeta, FeedbackRow } from './types';
 import { FeedbackListItem } from './FeedbackListItem';
@@ -40,6 +40,11 @@ interface FeedbackListProps {
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
+  /** İlk sayfa fetch'i başarısız — "Yorum yok" yerine hata + retry göster. */
+  listError: boolean;
+  /** "Daha fazla" fetch'i başarısız — buton altında inline uyarı. */
+  loadMoreError: boolean;
+  onRetryList: () => void;
 }
 
 export function FeedbackList({
@@ -63,6 +68,9 @@ export function FeedbackList({
   hasMore,
   loadingMore,
   onLoadMore,
+  listError,
+  loadMoreError,
+  onRetryList,
 }: FeedbackListProps) {
   const isTr = locale === 'tr';
 
@@ -224,16 +232,38 @@ export function FeedbackList({
       )}
 
       <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-        {loading ? null : filteredList.length === 0 ? (
+        {loading ? null : listError ? (
           <div className="p-4">
-            <EmptyState
-              icon={<Inbox size={22} strokeWidth={1.5} />}
-              title={isTr ? 'Yorum yok' : 'No reviews'}
-              body={isTr ? 'Filtreleri değiştirip tekrar dene.' : 'Try adjusting filters.'}
+            <ErrorState
+              title={isTr ? 'Yorumlar yüklenemedi' : 'Could not load reviews'}
+              body={
+                isTr
+                  ? 'Liste sunucudan alınamadı. Bu, yorumunuz olmadığı anlamına gelmez.'
+                  : 'The list could not be fetched. This does not mean you have no reviews.'
+              }
+              onRetry={onRetryList}
+              retryLabel={isTr ? 'Tekrar dene' : 'Try again'}
             />
           </div>
         ) : (
           <>
+            {filteredList.length === 0 ? (
+              <div className="p-4">
+                <EmptyState
+                  icon={<Inbox size={22} strokeWidth={1.5} />}
+                  title={isTr ? 'Yorum yok' : 'No reviews'}
+                  body={
+                    hasMore
+                      ? isTr
+                        ? 'Bu sayfada eşleşme yok. Aşağıdan daha fazla yorum yükleyip tekrar dene.'
+                        : 'No match on this page. Load more reviews below and try again.'
+                      : isTr
+                        ? 'Filtreleri değiştirip tekrar dene.'
+                        : 'Try adjusting filters.'
+                  }
+                />
+              </div>
+            ) : (
             <ul
               role="listbox"
               aria-label={isTr ? 'Yorumlar' : 'Reviews'}
@@ -251,12 +281,13 @@ export function FeedbackList({
                 />
               ))}
             </ul>
+            )}
             {/* "Daha fazla göster" — backend zaten paginate ediyor; ilk 20
                 yorum first paint için yüklenir, kullanıcı talep ettikçe +20.
                 Filter aktifken (search/tab) buton yine görünür çünkü server
                 filter'lı sayfayı döndürür. */}
             {hasMore && (
-              <div className="flex items-center justify-center px-3 py-4 border-t border-[#F5F5F5]">
+              <div className="flex flex-col items-center gap-2 px-3 py-4 border-t border-[#F5F5F5]">
                 <button
                   type="button"
                   onClick={onLoadMore}
@@ -272,6 +303,13 @@ export function FeedbackList({
                     <span>{isTr ? 'Daha fazla göster' : 'Show more'}</span>
                   )}
                 </button>
+                {loadMoreError && (
+                  <p role="alert" className="text-[11.5px] text-[#991B1B]">
+                    {isTr
+                      ? 'Sonraki sayfa yüklenemedi. Tekrar dene.'
+                      : 'Could not load the next page. Try again.'}
+                  </p>
+                )}
               </div>
             )}
           </>

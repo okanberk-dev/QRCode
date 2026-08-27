@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { writeAdminAuditLog } from '@/lib/audit-log';
 import { aggregateLogStatsFromGroups } from '@/lib/customer-campaign-stats';
 
@@ -108,7 +108,7 @@ export async function DELETE(
   });
   if (!campaign) return NextResponse.json({ error: 'not_found' }, { status: 404 });
 
-  const access = await canAccessRestaurant(actor, campaign.restaurantId);
+  const access = await canWriteRestaurant(actor, campaign.restaurantId);
   if (!access) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
   // Only draft + rejected campaigns are deletable. pending_approval/
