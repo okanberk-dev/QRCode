@@ -143,11 +143,19 @@ export async function POST(req: NextRequest) {
           enableAiDraft: true,
           aiDraftTone: true,
           externalPlatformsEnabled: true,
+          // Fallback recipient. `notificationEmail` is optional, and when it is
+          // empty `sendFeedbackNotification` falls back to the NOTIFICATION_EMAIL
+          // env — i.e. Buaze's own inbox. Low-rating alerts for every restaurant
+          // that never filled the field were therefore delivered to us instead of
+          // the owner, who never learned an unhappy customer had just left. The
+          // first-feedback celebration below already resolved the owner e-mail
+          // this way; the alert path did not.
+          user: { select: { email: true } },
         },
       });
       if (restaurant) {
         restaurantId = restaurant.id;
-        notificationEmail = restaurant.notificationEmail;
+        notificationEmail = restaurant.notificationEmail || restaurant.user?.email || null;
         restaurantName = restaurant.name;
         aiDraftEnabled = restaurant.pulseAiEnabled && restaurant.enableAiDraft;
         aiDraftTone = restaurant.aiDraftTone;

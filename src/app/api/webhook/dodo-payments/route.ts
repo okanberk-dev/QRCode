@@ -326,6 +326,9 @@ async function handleSubscriptionUpsert(payload: DodoPayloadShape): Promise<void
       plan: 'monthly',
       cancelAtPeriodEnd: false,
       renewsAt: safeDate(payload.data?.next_billing_date),
+      // Was create-only, so a renewal in a different currency left the stored
+      // value stale and the owner's billing card showed the wrong symbol.
+      currency: payload.data?.currency ?? 'USD',
       ...(planId ? { subscriptionPlanId: planId } : {}),
     },
   });
@@ -352,7 +355,16 @@ async function handleSubscriptionExpired(payload: DodoPayloadShape): Promise<voi
   if (!subscriptionId) return;
   await prisma.billingSubscription.updateMany({
     where: { providerRef: subscriptionId, source: 'dodo_payments' },
-    data: { status: 'canceled', cancelAtPeriodEnd: false },
+    data: {
+      status: 'canceled',
+      cancelAtPeriodEnd: false,
+      // Release the paid quota bucket. `/api/billing/summary` resolves the
+      // quota from `subscription.plan` WITHOUT looking at `status`, so leaving
+      // it on 'monthly' kept an expired subscriber on the paid limits
+      // indefinitely. 'free' has no PLAN_QUOTA entry and falls back to the
+      // trial allowance, which is the correct post-expiry entitlement.
+      plan: 'free',
+    },
   });
 }
 
