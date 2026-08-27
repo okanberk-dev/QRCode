@@ -545,7 +545,25 @@ export async function getUserFromRequest(req: NextRequest) {
 }
 
 export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelActor | null> {
-  const adminPayload = await getAdminFromRequest(req);
+  // Impersonation takes precedence over the retained admin cookie.
+  //
+  // `/api/admin/impersonate` deliberately KEEPS the admin's own `admin_token`
+  // so the banner and `/end` keep working, and sets a `user_token` carrying an
+  // `impersonating` claim. But this resolver checked `admin_token` first, so
+  // every request made while impersonating resolved to the ADMIN actor: the
+  // panel showed superadmin-wide data instead of reproducing the owner's view
+  // (the entire point of the feature), and actions were recorded without the
+  // impersonation session id, losing the audit trail it exists to provide.
+  // The impersonation branch further down validates the DB session and fails
+  // closed, and resolves to the scoped OWNER — strictly less privilege than
+  // the admin actor it replaces here.
+  const impersonationPeek = await getTokenPayload(req, 'user_token');
+  const isImpersonating =
+    !!impersonationPeek &&
+    typeof impersonationPeek.impersonating === 'object' &&
+    impersonationPeek.impersonating !== null;
+
+  const adminPayload = isImpersonating ? null : await getAdminFromRequest(req);
   if (adminPayload) {
     const role = getStringClaim(adminPayload, 'role');
     // Reject tokens without an explicit role — never default to superadmin
@@ -563,7 +581,7 @@ export async function getPanelActorFromRequest(req: NextRequest): Promise<PanelA
     };
   }
 
-  const legacyAdminPayload = await getTokenPayload(req, 'admin_token');
+  const legacyAdminPayload = isImpersonating ? null : await getTokenPayload(req, 'admin_token');
   if (legacyAdminPayload?.role === 'restaurant_owner' && typeof legacyAdminPayload.id === 'string') {
     return {
       id: legacyAdminPayload.id,

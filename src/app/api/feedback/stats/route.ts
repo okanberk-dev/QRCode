@@ -387,13 +387,29 @@ export async function GET(req: NextRequest) {
       baseScope.platform = dateFilter.platform as typeof baseScope.platform;
     }
 
-    const [thisWeekCount, prevWeekCount, prevWeekAvg, repliedCount, replyTimeRows] =
+    const [
+      thisWeekCount,
+      prevWeekCount,
+      thisWeekAvg,
+      prevWeekAvg,
+      repliedCount,
+      replyTimeRows,
+    ] =
       await prisma.$transaction([
         prisma.feedback.count({
           where: { ...baseScope, createdAt: { gte: oneWeekAgo } },
         }),
         prisma.feedback.count({
           where: { ...baseScope, createdAt: { gte: twoWeeksAgo, lt: oneWeekAgo } },
+        }),
+        // Current side of the week-over-week comparison. This used to be the
+        // RANGE-FILTERED `avgRating`, so on a 90d / "Tümü" selection the UI
+        // compared a 90-day (or all-time) average against last week's and
+        // presented the difference as a weekly trend — the arrow and the number
+        // were simply wrong for every range except 7d.
+        prisma.feedback.aggregate({
+          _avg: { rating: true },
+          where: { ...baseScope, createdAt: { gte: oneWeekAgo } },
         }),
         prisma.feedback.aggregate({
           _avg: { rating: true },
@@ -449,11 +465,19 @@ export async function GET(req: NextRequest) {
           ? 100
           : 0;
 
-    // Avg rating delta — bu hafta vs prev week (stat'ın range filter'ından bağımsız sabit).
+    // Avg rating delta — bu hafta vs prev week. BOTH sides use the fixed 7d/14d
+    // windows so the delta stays a true week-over-week figure no matter which
+    // range the owner has selected.
     const prevWeekAvgRating = prevWeekAvg._avg.rating
       ? parseFloat(prevWeekAvg._avg.rating.toFixed(2))
       : 0;
-    const avgRatingDelta = prevWeekAvgRating > 0 ? avgRating - prevWeekAvgRating : null;
+    const thisWeekAvgRating = thisWeekAvg._avg.rating
+      ? parseFloat(thisWeekAvg._avg.rating.toFixed(2))
+      : 0;
+    const avgRatingDelta =
+      prevWeekAvgRating > 0 && thisWeekAvgRating > 0
+        ? parseFloat((thisWeekAvgRating - prevWeekAvgRating).toFixed(2))
+        : null;
 
     return NextResponse.json(
       {

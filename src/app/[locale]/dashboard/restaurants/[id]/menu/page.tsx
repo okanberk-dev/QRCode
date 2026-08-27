@@ -517,8 +517,8 @@ export default function RestaurantMenuBuilderPage() {
   };
 
   // ── Category ops ──
-  const saveCategory = async (payload: Partial<CategoryShape>) => {
-    if (!categoryModal) return;
+  const saveCategory = async (payload: Partial<CategoryShape>): Promise<string | null> => {
+    if (!categoryModal) return null;
     setBusy(true);
     setError(null);
     try {
@@ -540,10 +540,13 @@ export default function RestaurantMenuBuilderPage() {
       if (!res.ok) throw new Error(data.error || 'İşlem başarısız');
       setCategoryModal(null);
       await fetchAll();
+      setBusy(false);
+      return null;
     } catch (e) {
       setError((e as Error).message);
+      setBusy(false);
+      return (e as Error).message;
     }
-    setBusy(false);
   };
 
   const deleteCategory = (categoryId: string) => {
@@ -608,8 +611,10 @@ export default function RestaurantMenuBuilderPage() {
   };
 
   // ── Item ops ──
-  const saveItem = async (payload: Partial<MenuItemView> & { categoryId?: string }) => {
-    if (!itemModal) return;
+  const saveItem = async (
+    payload: Partial<MenuItemView> & { categoryId?: string },
+  ): Promise<string | null> => {
+    if (!itemModal) return null;
     setBusy(true);
     setError(null);
     try {
@@ -637,10 +642,17 @@ export default function RestaurantMenuBuilderPage() {
       if (!res.ok) throw new Error(data.error || 'İşlem başarısız');
       setItemModal(null);
       await fetchAll();
+      setBusy(false);
+      return null;
     } catch (e) {
+      // Also set the page-level banner for the (rare) case where the modal is
+      // already gone — but the modal itself renders the message now. It used to
+      // ONLY set this state while staying open, so the banner painted behind
+      // the overlay and the owner saw the Save button go idle with no feedback.
       setError((e as Error).message);
+      setBusy(false);
+      return (e as Error).message;
     }
-    setBusy(false);
   };
 
   const deleteItem = (itemId: string) => {
@@ -1225,21 +1237,38 @@ function CategoryModal({
   copy: Record<string, string>;
   busy: boolean;
   onClose: () => void;
-  onSave: (payload: Partial<CategoryShape>) => void;
+  /** Resolves to an error message when the save failed, or null on success. */
+  onSave: (payload: Partial<CategoryShape>) => Promise<string | null>;
 }) {
   const [name, setName] = useState(data.name ?? '');
   const [description, setDescription] = useState(data.description ?? '');
   const [isVisible, setIsVisible] = useState(data.isVisible ?? true);
+  // Save failures used to land only on the page-level banner, which paints
+  // BEHIND this modal's overlay — the owner saw the Save button go idle with
+  // no visible reason and clicked it again.
+  const [formError, setFormError] = useState<string | null>(null);
 
   return (
     <Modal size={620} title={mode === 'create' ? copy.addCategory : copy.editCategory} onClose={onClose}>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          onSave({ id: data.id, name: name.trim(), description: description.trim() || null, isVisible });
+          setFormError(null);
+          const err = await onSave({
+            id: data.id,
+            name: name.trim(),
+            description: description.trim() || null,
+            isVisible,
+          });
+          if (err) setFormError(err);
         }}
         className="space-y-5"
       >
+        {formError && (
+          <AlertBanner kind="danger" icon={<AlertTriangle size={14} strokeWidth={2} className="mt-0.5" />}>
+            {formError}
+          </AlertBanner>
+        )}
         <Field label={copy.categoryName}>
           <input
             required
@@ -1277,7 +1306,8 @@ function ItemModal({
   locale: Locale;
   restaurantId: string;
   onClose: () => void;
-  onSave: (payload: Partial<MenuItemView> & { categoryId?: string }) => void;
+  /** Resolves to an error message when the save failed, or null on success. */
+  onSave: (payload: Partial<MenuItemView> & { categoryId?: string }) => Promise<string | null>;
 }) {
   const [categoryId, setCategoryId] = useState(data.categoryId ?? categories[0]?.id ?? '');
   const [name, setName] = useState(data.name ?? '');
@@ -1330,7 +1360,7 @@ function ItemModal({
   return (
     <Modal size={680} title={mode === 'create' ? copy.addItem : copy.editItem} onClose={onClose}>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
           const cents = parsePriceInput(priceInput);
           if (cents === null) {
@@ -1338,7 +1368,7 @@ function ItemModal({
             return;
           }
           setFormError(null);
-          onSave({
+          const err = await onSave({
             id: data.id,
             categoryId,
             name: name.trim(),
@@ -1350,6 +1380,7 @@ function ItemModal({
             isAvailable,
             isOutOfStock,
           });
+          if (err) setFormError(err);
         }}
         className="space-y-5"
       >
