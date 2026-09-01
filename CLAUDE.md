@@ -178,6 +178,11 @@ Eski akış tek "konum seç" işleminde **5-6 quota birim** yakıyordu (location
 3. **Per-restaurant rate limit (6 force/dk)**: Upstash sliding-window. Rapid click veya parallel sub-component mount'tan kotaya basmayı önler. Limit aşılırsa cache varsa stale data + `warning: 'CLIENT_THROTTLED'` dön, yoksa 429 + retry-after.
 4. **Soft 429 fallback**: Google 429 dönerse (cache var ya da yok) endpoint **hep 200 + `warning: 'GOOGLE_RATE_LIMITED'` + boş/stale arrays + `retryAfterSeconds`** döner. UI sarı banner + countdown + tek-seferlik auto-retry gösterir (kırmızı hard error yerine).
 
+> **Operatör runbook'u:** Kota `quota_limit_value: "0"` dönüyorsa (API
+> etkin ama Google sıfır kota vermiş) bu bir kod sorunu değildir —
+> `docs/GOOGLE_API_QUOTA_RUNBOOK.md` adım adım erişim başvurusu sürecini
+> anlatır. Onay gelene kadar hiçbir owner konum göremez.
+
 **Bonus**: `/api/restaurants/[id]/google/business/locations/select` POST artık `listGoogleReviews()` çağrısını **sadece `initialGoogleRating === null && currentGoogleRating === null`** olduğunda yapar. Rating zaten varsa quota yakmadan geçer; google-reviews sayfası mount olunca `/business/reviews` doğal olarak fresh rating'i getirir. Eski davranış her seçim için 1 quota burn ediyordu.
 
 **UI tarafı**:
