@@ -111,6 +111,9 @@ export function GoogleBusinessIntegrationPanel({
   // bu durumda error değil sarı uyarı + retry-after countdown göster.
   const [locationsNotice, setLocationsNotice] = useState<string | null>(null);
   const [locationsRetryAfter, setLocationsRetryAfter] = useState<number | null>(null);
+  // §38.238 — Google Cloud kotası 0 (API provision edilmemiş). Geçici
+  // rate-limit'ten ayrı tutulur: kalıcı, owner tarafında yapılacak bir şey yok.
+  const [apiNotProvisioned, setApiNotProvisioned] = useState(false);
   // Backend cache mı yoksa fresh Google API mı? Owner'a sync rozet ile
   // göster (CLAUDE.md §5.1 quota strategy — kullanıcı kaybolan kontrol
   // hissini "Son sync: 2 dk önce" rozetiyle geri kazansın).
@@ -255,6 +258,7 @@ export function GoogleBusinessIntegrationPanel({
     setLocationsError(null);
     setLocationsNotice(null);
     setLocationsRetryAfter(null);
+    setApiNotProvisioned(false);
     try {
       const url = `/api/restaurants/${restaurant.id}/google/business/locations${
         force ? '?force=true' : ''
@@ -262,8 +266,27 @@ export function GoogleBusinessIntegrationPanel({
       const res = await fetch(url);
       const data = await res.json();
       // 429 / throttle fallback path: backend status 200 + stale cache +
-      // warning döner. UI sarı banner + countdown + auto-retry gösterir.
-      if (res.ok && (data?.warning === 'GOOGLE_RATE_LIMITED' || data?.warning === 'CLIENT_THROTTLED')) {
+      // warning döner. UI sarı banner gösterir (auto-retry YOK, §38.238).
+      //
+      // §38.238 — `GOOGLE_API_NOT_PROVISIONED` buraya eklendi. Stage 151
+      // (§38.231) bu warning'i backend'e ve google-reviews sayfasına
+      // eklemişti ama Platform Bağlantıları paneli yalnız RATE_LIMITED /
+      // CLIENT_THROTTLED kontrol ediyordu. Sonuç: Google Cloud projesinde
+      // "My Business Account Management API" kotası 0 olduğunda (API henüz
+      // provision edilmemiş) backend 200 + boş accounts + bu warning
+      // dönüyor, panel ise generic başarı dalına düşüp AÇIKLAMASIZ BOŞ bir
+      // konum listesi çiziyordu. Owner "Google'a bağlandım ama işletmem
+      // çıkmıyor" diyordu — tam olarak kullanıcının bildirdiği durum.
+      if (
+        res.ok &&
+        (data?.warning === 'GOOGLE_RATE_LIMITED' ||
+          data?.warning === 'GOOGLE_API_NOT_PROVISIONED' ||
+          data?.warning === 'CLIENT_THROTTLED')
+      ) {
+        // quota=0 KALICI bir durum: beklemek düzeltmez, farklı hesap da
+        // düzeltmez (kota proje-geneli). Geri sayım göstermek yanlış sinyal.
+        const notProvisioned = data.warning === 'GOOGLE_API_NOT_PROVISIONED';
+        setApiNotProvisioned(notProvisioned);
         setLocations(data.locations ?? []);
         setLocationsSource(data.source ?? null);
         setLocationsNotice(
@@ -272,7 +295,11 @@ export function GoogleBusinessIntegrationPanel({
               ? 'Google API kotası doldu. Son güncel veriler gösteriliyor; birkaç dakika sonra yenileyin.'
               : 'Google API quota exhausted. Showing last synced data; try again in a few minutes.'),
         );
-        const retryAfter = typeof data.retryAfterSeconds === 'number' ? data.retryAfterSeconds : null;
+        const retryAfter = notProvisioned
+          ? null
+          : typeof data.retryAfterSeconds === 'number'
+            ? data.retryAfterSeconds
+            : null;
         setLocationsRetryAfter(retryAfter);
         setStatus((prev) => ({
           googleReviewManagementEnabled: prev?.googleReviewManagementEnabled ?? true,
@@ -562,9 +589,37 @@ export function GoogleBusinessIntegrationPanel({
 
               {locationsError && <AlertBanner kind="danger">{locationsError}</AlertBanner>}
               {locationsNotice && !locationsError && (
-                <AlertBanner kind="warn" onDismiss={() => setLocationsNotice(null)}>
+                // §38.238 — quota=0 kalıcı bir yapılandırma durumu, owner'ın
+                // düzeltebileceği bir uyarı değil: sarı "warn" yerine nötr
+                // "info" ton. Geçici kota/throttle warn olarak kalır.
+                <AlertBanner
+                  kind={apiNotProvisioned ? 'info' : 'warn'}
+                  onDismiss={() => setLocationsNotice(null)}
+                >
                   {locationsNotice}
                 </AlertBanner>
+              )}
+
+              {/* §38.238 — boş konum listesi için açık bir empty state.
+                  Önceden hem sync satırı hem grid `locations.length > 0`
+                  koşuluna bağlıydı ve 0 konumda hiçbir şey render
+                  edilmiyordu: owner Google'a bağlanıyor, ekranda hiçbir
+                  şey görmüyor ve neden olduğunu anlayamıyordu. */}
+              {!locationsLoading && locations.length === 0 && !locationsError && (
+                <div className="rounded-xl border border-dashed border-[#EDEDED] bg-[#FAFAFA] px-4 py-5 text-center">
+                  <p className="bz-h-tight text-[14px] text-[#0A0A0A]">
+                    {isTr ? 'Konum bulunamadı' : 'No locations found'}
+                  </p>
+                  <p className="mx-auto mt-1.5 max-w-[460px] text-[12px] leading-[1.6] text-[#737373]">
+                    {apiNotProvisioned
+                      ? isTr
+                        ? 'Hesabınız doğru bağlandı. Google İşletme Profili API erişimi Buaze tarafında aktifleşince konumlarınız burada listelenecek — sizin ek bir işlem yapmanıza gerek yok.'
+                        : 'Your account is connected correctly. Your locations will appear here once Google Business Profile API access is activated on the Buaze side — no action is needed from you.'
+                      : isTr
+                        ? 'Bu Google hesabında yönettiğiniz bir İşletme Profili görünmüyor. İşletmeniz farklı bir Google hesabında olabilir — o hesapla bağlanmayı deneyin.'
+                        : "We can't see a Business Profile you manage on this Google account. Your business may live on a different Google account — try connecting with that one."}
+                  </p>
+                </div>
               )}
 
               {locations.length > 0 && status?.syncedAt && (
