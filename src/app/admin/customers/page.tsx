@@ -225,13 +225,22 @@ export default function AdminCustomersPage() {
     [restaurantId, searchDebounced, segmentFilter, hasEmail, hasPhone, hasComment, range],
   );
   const resetFilters = () => {
-    setRange('30d');
-    setRestaurantId('');
+    // §38.238 — `useUrlFilter.set` rebuilds the query string from the
+    // `params` snapshot of the current render, so seven chained calls all
+    // started from the same baseline and only the last one survived: the
+    // button cleared `hasComment` and left every other filter applied.
+    // `setMany` applies them in a single write.
     setSearch('');
-    setSegmentFilter('');
-    setHasEmail(false);
-    setHasPhone(false);
-    setHasComment(false);
+    filters.setMany({
+      range: '30d',
+      restaurantId: '',
+      search: '',
+      segment: '',
+      hasEmail: false,
+      hasPhone: false,
+      hasComment: false,
+      page: 1,
+    });
   };
 
   const rows = data?.data ?? [];

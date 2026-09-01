@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { isValidHexColor } from '@/lib/validations';
 
 export const dynamic = 'force-dynamic';
@@ -49,6 +49,23 @@ async function requireAccess(req: NextRequest, restaurantId: string) {
     return { error: 'forbidden_restaurant' as const, status: 403 };
   }
   return { actor };
+}
+
+/**
+ * §38.238 — write gate for the PUT path.
+ *
+ * `canAccessRestaurant` is a READ scope check: it passes every team member,
+ * `viewer` included. Brand settings drive the logo and colours shown on the
+ * public review page, so gating the write on the read check let a read-only
+ * teammate repaint the business's customer-facing surface.
+ */
+async function requireWriteAccess(req: NextRequest, restaurantId: string) {
+  const access = await requireAccess(req, restaurantId);
+  if ('error' in access) return access;
+  if (!(await canWriteRestaurant(access.actor, restaurantId))) {
+    return { error: 'forbidden_readonly' as const, status: 403 };
+  }
+  return access;
 }
 
 export async function GET(req: NextRequest) {
@@ -104,7 +121,7 @@ export async function PUT(req: NextRequest) {
   const restaurantId = typeof body.restaurantId === 'string' ? body.restaurantId.trim() : '';
   if (!restaurantId) return NextResponse.json({ error: 'missing_restaurant_id' }, { status: 400 });
 
-  const access = await requireAccess(req, restaurantId);
+  const access = await requireWriteAccess(req, restaurantId);
   if ('error' in access) return NextResponse.json({ error: access.error }, { status: access.status });
 
   const restaurant = await prisma.restaurant.findUnique({
