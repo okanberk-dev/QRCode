@@ -82,10 +82,15 @@ export default async function IntegrationsPage({
         { id: 'zapier', name: 'Zapier', tag: '5,000+ apps' },
       ];
 
+  // `live: false` — bu gruptaki bağlantılar henüz ürün içinde yok. Slack bildirim
+  // yüzeyi üründen kaldırıldı (CLAUDE.md §34.5), webhook CRUD hâlâ backlog'da
+  // (§38.A). Hepsini "BAĞLI/LIVE" rozetiyle göstermek olmayan bir yeteneği
+  // varmış gibi sunuyordu.
   const groups: Array<{
     title: string;
     subtitle: string;
     items: PlatformItem[];
+    live?: boolean;
   }> = [
     {
       title: isTr ? 'Yorum platformları' : 'Review platforms',
@@ -105,6 +110,7 @@ export default async function IntegrationsPage({
         ? 'Ekibinize bildirim akıtın.'
         : 'Stream alerts to your team.',
       items: teamTools,
+      live: false,
     },
   ];
 
@@ -193,8 +199,16 @@ export default async function IntegrationsPage({
                         <div className="text-[14px] font-semibold truncate">{it.name}</div>
                         <div className="pulse-eyebrow text-[#737373] mt-0.5 truncate">{it.tag}</div>
                       </div>
-                      <span className="px-2.5 py-1 bg-[#C6F24E] rounded-full pulse-eyebrow text-[#0A0A0A]">
-                        {isTr ? 'BAĞLI' : 'LIVE'}
+                      <span
+                        className={`px-2.5 py-1 rounded-full pulse-eyebrow ${
+                          g.live === false
+                            ? 'bg-[#EDEDED] text-[#737373]'
+                            : 'bg-[#C6F24E] text-[#0A0A0A]'
+                        }`}
+                      >
+                        {g.live === false
+                          ? isTr ? 'YAKINDA' : 'SOON'
+                          : isTr ? 'BAĞLI' : 'LIVE'}
                       </span>
                     </div>
                   ))}
@@ -209,13 +223,13 @@ export default async function IntegrationsPage({
         <div className="max-w-[900px] mx-auto text-center">
           <h2 className="text-[28px] sm:text-[48px] font-medium leading-[1.02] tracking-[-0.035em]">
             {isTr
-              ? 'API ve webhook\'lar hazır.'
-              : 'APIs and webhooks are ready.'}
+              ? 'Özel entegrasyona ihtiyacınız mı var?'
+              : 'Need a custom integration?'}
           </h2>
           <p className="mt-4 text-[15px] sm:text-[16px] text-white/70 max-w-[560px] mx-auto">
             {isTr
-              ? 'Buaze\'in REST API\'si ile kendi akışlarınızı kurun. 5000+ uygulamaya Zapier üzerinden bağlanın.'
-              : 'Build your own workflows on the Buaze REST API. Connect to 5,000+ apps via Zapier.'}
+              ? 'Herkese açık REST API ve webhook\'lar yol haritamızda. İhtiyacınızı yazın, öncelik sırasını buna göre belirliyoruz.'
+              : 'A public REST API and webhooks are on our roadmap. Tell us what you need and we will prioritise accordingly.'}
           </p>
           <div className="mt-7 flex flex-col sm:flex-row justify-center gap-3">
             <Link

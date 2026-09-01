@@ -15,7 +15,7 @@ import {
   WHATSAPP_BRAND_GREEN,
 } from '@/lib/whatsapp';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
-import { PlatformChip } from '@/components/ui';
+import { PlatformChip, PLATFORMS } from '@/components/ui';
 
 // Yüksek puan akışında reCAPTCHA token'ı için üst sınır. Redirect timeout'u
 // 1500 ms; token bu süre içinde gelmezse feedback POST'u token'sız (backend
@@ -1271,6 +1271,34 @@ function ReviewContent() {
                 </button>
 
                 <RecaptchaNotice locale={locale} className="mt-2 text-center text-[10px]" />
+
+                {/* Herkese açık platform bağlantısı — düşük puan akışında DA sunulur.
+                    Buaze'nin uyum duruşu (/google-compliance) "akışta her müşteriye
+                    herkese açık platform bağlantıları sunulur" diyor; bu blok o beyanı
+                    ürün tarafında doğru kılar ve Google review-gating riskini kapatır
+                    (CLAUDE.md §19.1.1). Bilinçli olarak ikincil ağırlıkta: birincil
+                    aksiyon işletmeye özel geri bildirim; herkese açık yorum müşterinin
+                    kendi tercihidir, teşvik veya yönlendirme yok. */}
+                {targetPlatformUrl && (
+                  <div className="mt-3 border-t border-[#F5F5F5] pt-3 text-center">
+                    <p className="text-[11.5px] leading-[1.5] text-[#737373]">
+                      {locale === 'tr'
+                        ? 'Görüşünü herkese açık olarak da paylaşmak istersen:'
+                        : 'If you would also like to share your feedback publicly:'}
+                    </p>
+                    <a
+                      href={targetPlatformUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 inline-flex min-h-[44px] items-center justify-center gap-1.5 text-[12.5px] font-medium text-[#0A0A0A] underline decoration-[#C6F24E] decoration-2 underline-offset-4"
+                    >
+                      {locale === 'tr'
+                        ? `${PLATFORMS[fallbackPlatformId]?.label ?? 'Google'} üzerinde yorum yaz`
+                        : `Write a review on ${PLATFORMS[fallbackPlatformId]?.label ?? 'Google'}`}
+                      <span aria-hidden>→</span>
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           )}

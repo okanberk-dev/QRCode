@@ -84,7 +84,7 @@ export default async function GoogleCompliancePage({
         },
         {
           q: 'Müşteri verilerim KVKK ve GDPR ile uyumlu mu saklanıyor?',
-          a: 'Evet. Tüm müşteri verileri Avrupa Birliği veri merkezinde (Frankfurt) saklanır. KVKK aydınlatma metni her form altında görünür ve onay açık (opt-in) şekilde alınır. Pazarlama izni ayrıca onaylanır — hizmet onayıyla aynı checkbox\'a bundle edilmez. IP adresleri 90 gün sonra otomatik anonimleştirilir, müşteri talep ederse kişisel verileri silinir veya export edilir.',
+          a: 'Evet. Müşteri verileri AB ve ABD\'de bulunan altyapı sağlayıcılarında işlenir; sağlayıcıların tam listesi ve bulundukları ülkeler Veri İşleyici Sözleşmesi\'nde yer alır, yurt dışı aktarım KVKK m. 9 açık rızasına dayanır. KVKK aydınlatma metni her form altında görünür ve onay açık (opt-in) şekilde alınır. Pazarlama izni ayrıca onaylanır — hizmet onayıyla aynı checkbox\'a bundle edilmez. IP adresleri 90 gün sonra otomatik anonimleştirilir, müşteri talep ederse kişisel verileri silinir veya export edilir.',
         },
         {
           q: 'Buaze Google\'ın resmi iş ortağı mı?',
@@ -110,7 +110,7 @@ export default async function GoogleCompliancePage({
         },
         {
           q: 'Is my customer data stored in compliance with KVKK and GDPR?',
-          a: 'Yes. All customer data is stored in an EU data center (Frankfurt). The KVKK notice is visible under every form and consent is collected explicitly (opt-in). Marketing consent is collected separately — never bundled into the same checkbox as service consent. IP addresses are automatically anonymized after 90 days; on customer request, personal data is deleted or exported.',
+          a: 'Yes. Customer data is processed by infrastructure providers located in the EU and the USA; the full provider list and their locations are set out in the Data Processing Agreement, and cross-border transfers rely on explicit consent under KVKK art. 9. The KVKK notice is visible under every form and consent is collected explicitly (opt-in). Marketing consent is collected separately — never bundled into the same checkbox as service consent. IP addresses are automatically anonymized after 90 days; on customer request, personal data is deleted or exported.',
         },
         {
           q: 'Is Buaze an official Google partner?',

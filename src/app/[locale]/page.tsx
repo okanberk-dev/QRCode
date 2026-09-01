@@ -148,7 +148,7 @@ export default async function LandingPage({
     ? [
         {
           q: 'Buaze nasıl çalışıyor?',
-          a: "Masanıza yerleştirdiğiniz QR'ı misafir okuttuğunda 30 saniyelik bir akışla puan verir. 4-5 yıldız Google'a yönlendirilir; düşük puanlar size özel panel'e düşer ve Pulse AI saniyeler içinde profesyonel yanıt taslağı yazar.",
+          a: "Masanıza yerleştirdiğiniz QR'ı misafir okuttuğunda 30 saniyelik bir akışla puan verir. Yüksek puan verenler doğrudan seçtiğiniz platforma gider; düşük puan verenler önce ekibinizle özel paylaşım yapabilir, herkese açık yorum bağlantısı yine aynı ekranda açık kalır. Düşük puanlı geri bildirim panelinize düşer ve Pulse AI saniyeler içinde profesyonel yanıt taslağı yazar.",
           meta: ['~30 sn akış', 'Tek QR · masa-bazlı', 'Otomatik yönlendirme'],
         },
         {
@@ -175,7 +175,7 @@ export default async function LandingPage({
     : [
         {
           q: 'How does Buaze work?',
-          a: 'Guests scan the QR at the table, give a rating in 30 seconds. 4-5 stars route to Google; lower ratings land privately in your panel and Pulse AI drafts a professional reply in seconds.',
+          a: 'Guests scan the QR at the table and give a rating in 30 seconds. Higher ratings go straight to your chosen platform; lower ratings can be shared privately with your team first, while the public review link stays available on the same screen. Low-rated feedback lands in your panel and Pulse AI drafts a professional reply in seconds.',
           meta: ['~30s flow', 'One QR · per-table', 'Auto routing'],
         },
         {
@@ -387,12 +387,12 @@ export default async function LandingPage({
 
   const policyBlocks = isTr
     ? [
-        { n: '01', t: 'Google önce', d: 'Her misafire önce Google yorum bağlantısı sunulur — yıldıza göre dallandırma yok.' },
+        { n: '01', t: 'Herkese açık bağlantı', d: 'Her misafire herkese açık yorum bağlantısı sunulur; düşük puan verenler ek olarak ekibe özel paylaşım seçeneği görür.' },
         { n: '02', t: 'Şeffaf akış', d: 'Negatif yorumlar süzülmez veya engellenmez; isteyen Google\'a yazar, isteyen ek olarak işletmeye özel geri bildirim de bırakır.' },
         { n: '03', t: 'Şeffaf raporlama', d: 'Yorumlar gizlenmez veya filtrelenmez; her sinyal panelde olduğu gibi görünür.' },
       ]
     : [
-        { n: '01', t: 'Google first', d: 'Every guest sees the public Google review link first — no rating-based gating.' },
+        { n: '01', t: 'Public link always', d: 'Every guest is offered the public review link; those giving a low rating additionally see an option to share privately with the team.' },
         { n: '02', t: 'Transparent flow', d: 'Negative reviews are never filtered or blocked; private feedback to your team is an optional extra step in the same flow.' },
         { n: '03', t: 'Transparent reporting', d: 'No review is hidden or filtered; every signal lands in the panel as-is.' },
       ];

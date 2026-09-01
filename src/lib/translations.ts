@@ -102,7 +102,7 @@ export const translations = {
     faq_q4: 'Setup sürecinde destek sağlıyor musunuz?',
     faq_a4: 'Kesinlikle. Ekibimiz QR kodlarınızın tasarımından Google Haritalar entegrasyonuna kadar her adımda size ücretsiz kurulum desteği sunar.',
     faq_q5: 'İptal edebilir miyim?',
-    faq_a5: 'İstediğiniz anda, tek tıkla iptal edebilirsiniz. Kullanmadığınız dönem için otomatik iade alırsınız.',
+    faq_a5: 'İstediğiniz anda, tek tıkla iptal edebilirsiniz. İptal sonrası dönem sonuna kadar erişiminiz sürer; yenileme tarihinde abonelik otomatik kapanır. İade koşulları İade ve İptal Politikası\'nda yer alır.',
     faq_q6: 'Türkçe destek var mı?',
     faq_a6: 'Evet — Türkçe canlı destek, 7/24 yardım merkezi ve Türkçe eğitim içerikleri. Ortalama yanıt süremiz 2 dakika.',
 
@@ -810,7 +810,7 @@ export const translations = {
     faq_q4: 'Do you provide help with the setup process?',
     faq_a4: 'Absolutely. Our team provides free setup support at every step, from QR code design to Google Maps integration.',
     faq_q5: 'Can I cancel anytime?',
-    faq_a5: 'Cancel with a single click, whenever you want. You get an automatic refund for any unused period.',
+    faq_a5: 'Cancel with a single click, whenever you want. You keep access until the end of the current period; the subscription then closes automatically at renewal. Refund terms are set out in the Refund and Cancellation Policy.',
     faq_q6: 'Is Turkish support available?',
     faq_a6: 'Yes — Turkish live chat, 24/7 help center and Turkish training content. Our average reply time is 2 minutes.',
 
