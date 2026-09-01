@@ -3,7 +3,7 @@
 import { Star } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { FeedbackRow } from './types';
-import { initials, timeAgo } from './utils';
+import { formatDateTime, formatStamp, initials, timeAgo } from './utils';
 
 interface AdminFeedbackListItemProps {
   feedback: FeedbackRow;
@@ -62,13 +62,21 @@ export function AdminFeedbackListItem({
             <p className="truncate text-[13px] font-semibold text-[#0A0A0A]">
               {r.customerName || (isTr ? 'Anonim' : 'Anonymous')}
             </p>
-            <span className="shrink-0 text-[10px] text-[#737373]">
+            <span
+              className="shrink-0 text-[10px] text-[#737373]"
+              title={formatDateTime(r.createdAt, isTr)}
+            >
               {timeAgo(r.createdAt, isTr)}
             </span>
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] text-[#737373]">
             <Star size={11} className="fill-[#C6F24E] text-[#C6F24E]" />
             <span>{r.rating}.0</span>
+            {/* §38.237 — mutlak saat. Göreli damga üst satırda; operatörün
+                "tam olarak ne zaman geldi" sorusu burada yanıtlanır. */}
+            <span className="tabular-nums" title={formatDateTime(r.createdAt, isTr)}>
+              · {formatStamp(r.createdAt, isTr)}
+            </span>
             {r.restaurant?.name && <span className="truncate">· {r.restaurant.name}</span>}
             {r.isReplied && <Badge kind="ok">{isTr ? 'YANITLANDI' : 'REPLIED'}</Badge>}
             {r.isFlagged && <Badge kind="danger">{isTr ? 'DİKKAT' : 'FLAGGED'}</Badge>}

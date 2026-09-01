@@ -5,13 +5,15 @@ import {
   Check,
   Flag,
   Loader2,
+  Mail,
+  MessageSquareText,
   Sparkles,
   Star,
   UserPlus,
 } from 'lucide-react';
 import { AlertBanner, Avatar, Badge } from '@/components/ui';
-import type { AiSource, AiTone, FeedbackRow, ReplyTone } from './types';
-import { initials, timeAgo } from './utils';
+import type { AiSource, AiTone, FeedbackRow, ReplyTone, SentReply } from './types';
+import { formatDateTime, formatStamp, initials, timeAgo } from './utils';
 import { AdminFeedbackReplyComposer } from './AdminFeedbackReplyComposer';
 
 interface AdminFeedbackDetailProps {
@@ -43,6 +45,11 @@ interface AdminFeedbackDetailProps {
   sending: boolean;
   onSend: () => void;
   notice: { msg: string; tone: ReplyTone } | null;
+
+  // §38.237 — Gönderilen yanıt thread'i (admin artık işletmenin müşteriye
+  // yazdığı cevapları da görür; eskiden yalnız "Yanıtlandı" rozeti vardı).
+  sentReplies: SentReply[];
+  sentLoading: boolean;
 }
 
 export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
@@ -115,6 +122,13 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
               {timeAgo(active.createdAt, isTr)}
               {active.platform ? ` · ${active.platform.toUpperCase()}` : ''}
             </p>
+            {/* §38.237 — mutlak damga. Göreli süre üstte kalır; operatör
+                yorumun tam tarih + saatini burada görür. */}
+            <p className="mt-0.5 text-[11px] text-[#A3A3A3] tabular-nums">
+              <time dateTime={active.createdAt}>
+                {formatDateTime(active.createdAt, isTr)}
+              </time>
+            </p>
             <h2 className="mt-0.5 text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight">
               {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
             </h2>
@@ -182,6 +196,68 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
               ? 'Bu yorumda açıklama yok.'
               : 'No comment provided.'}
         </div>
+
+        {/* §38.237 — Gönderilen yanıtlar. Owner panelindeki thread ile aynı
+            veri kaynağı (`GET /api/feedback/[id]/reply`). Admin artık
+            işletmenin müşteriye ne yazdığını, hangi kanaldan gittiğini ve
+            teslim durumunu görebiliyor. */}
+        {props.sentLoading ? (
+          <div className="flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-3 text-[12px] text-[#737373]">
+            <Loader2 size={13} className="animate-spin" />
+            {isTr ? 'Gönderilen yanıtlar yükleniyor…' : 'Loading sent replies…'}
+          </div>
+        ) : props.sentReplies.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            <p className="pulse-eyebrow inline-flex items-center gap-1.5 text-[#737373]">
+              <MessageSquareText size={11} strokeWidth={2.2} />
+              {isTr
+                ? `Gönderilen yanıtlar (${props.sentReplies.length})`
+                : `Sent replies (${props.sentReplies.length})`}
+            </p>
+            <ol className="flex flex-col gap-2.5">
+              {props.sentReplies.map((rep) => {
+                const channelLabel =
+                  rep.channel === 'email'
+                    ? isTr
+                      ? 'E-posta'
+                      : 'Email'
+                    : isTr
+                      ? 'Dahili kayıt'
+                      : 'Internal';
+                const failed = rep.status === 'failed';
+                return (
+                  <li
+                    key={rep.id}
+                    className={`rounded-xl border p-3.5 ${
+                      failed ? 'border-[#FCA5A5] bg-[#FFFBFB]' : 'border-[#EDEDED] bg-white'
+                    }`}
+                  >
+                    <div className="mb-1.5 flex items-center justify-between gap-2">
+                      <span className="pulse-eyebrow inline-flex items-center gap-1.5 text-[#737373]">
+                        {rep.channel === 'email' && <Mail size={10} strokeWidth={2.2} />}
+                        {channelLabel}
+                        {failed && (
+                          <span className="text-[#991B1B]">
+                            · {isTr ? 'iletilemedi' : 'failed'}
+                          </span>
+                        )}
+                      </span>
+                      <span
+                        className="pulse-eyebrow tabular-nums text-[#A3A3A3]"
+                        title={formatDateTime(rep.createdAt, isTr)}
+                      >
+                        {timeAgo(rep.createdAt, isTr)} · {formatStamp(rep.createdAt, isTr)}
+                      </span>
+                    </div>
+                    <p className="whitespace-pre-line text-[13px] leading-[1.55] text-[#0A0A0A]">
+                      {rep.body}
+                    </p>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        ) : null}
 
         {/* High-rating reply gate */}
         {active.rating >= 4 ? (

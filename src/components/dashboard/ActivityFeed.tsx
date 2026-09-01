@@ -311,6 +311,22 @@ export function ActivityFeed({
                   addSuffix: false,
                   locale: isTr ? trLocale : enLocale,
                 });
+                // §38.237 — mutlak saat. Göreli süre tek başına "yorum tam
+                // olarak ne zaman geldi" sorusunu yanıtlamıyordu.
+                const clockTime = new Date(event.timestamp).toLocaleTimeString(
+                  isTr ? 'tr-TR' : 'en-US',
+                  { hour: '2-digit', minute: '2-digit' },
+                );
+                const fullTime = new Date(event.timestamp).toLocaleString(
+                  isTr ? 'tr-TR' : 'en-US',
+                  {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  },
+                );
                 const isNew = newEventIds.has(event.id);
                 const inlineRating =
                   event.type === 'feedback' ? extractRatingFromTarget(event.target) : null;
@@ -323,10 +339,12 @@ export function ActivityFeed({
                 const inner = (
                   <>
                     <span
-                      className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[52px] sm:w-[58px] pt-0.5"
+                      className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[52px] sm:w-[58px] pt-0.5 flex flex-col leading-[1.3]"
                       aria-hidden="true"
+                      title={fullTime}
                     >
-                      {relativeTime}
+                      <span>{relativeTime}</span>
+                      <span className="text-[#A3A3A3]">{clockTime}</span>
                     </span>
                     <span
                       aria-hidden="true"

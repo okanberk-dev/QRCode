@@ -31,6 +31,35 @@ interface Props {
   userId: string;
 }
 
+// §38.237 — Mutlak saat. Göreli süre ("2 sa önce") tek başına
+// "yorum tam olarak ne zaman geldi" sorusunu yanıtlamıyordu.
+function clockStamp(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const clock = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  if (sameDay) return clock;
+  return `${d.toLocaleDateString('tr-TR', {
+    day: 'numeric',
+    month: 'short',
+    ...(d.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
+  })} ${clock}`;
+}
+
+function fullStamp(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.toLocaleDateString('tr-TR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })} ${d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60_000);
@@ -135,7 +164,10 @@ export default function MemberRecentFeedbacksPanel({ userId }: Props) {
                 </p>
               )}
               <p className="mt-1.5 text-[11px] text-[#737373]">
-                {f.customerName || 'Anonim'} · {timeAgo(f.createdAt)}
+                {f.customerName || 'Anonim'} ·{' '}
+                <span title={fullStamp(f.createdAt)} className="tabular-nums">
+                  {timeAgo(f.createdAt)} · {clockStamp(f.createdAt)}
+                </span>
               </p>
             </div>
           </div>

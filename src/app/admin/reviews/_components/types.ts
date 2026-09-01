@@ -18,6 +18,18 @@ export interface FeedbackRow {
   restaurant?: { name: string; slug?: string } | null;
 }
 
+// §38.237 — Gönderilen yanıt thread'i. Owner paneli bunu zaten
+// `GET /api/feedback/[id]/reply` üzerinden gösteriyordu; admin panelinde
+// yalnız "Yanıtlandı" rozeti vardı, yanıt metni görünmüyordu. Aynı
+// endpoint (requireFeedbackAccess IDOR'lu) admin tarafında da tüketilir.
+export interface SentReply {
+  id: string;
+  body: string;
+  channel: string | null;
+  status: string | null;
+  createdAt: string;
+}
+
 // `/api/feedback/counts` response — admin'in kullandığı endpoint
 // (owner client-side derive ediyor; admin bu endpoint'i tüketmeye devam).
 export interface CountsResp {

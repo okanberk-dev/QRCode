@@ -99,6 +99,19 @@ function formatRelative(iso: string, locale: Locale): string {
   return `${Math.floor(mo / 12)} ${isTr ? 'yıl' : 'y'}`;
 }
 
+// §38.237 — Yorum satırlarında mutlak saat. `formatDate` (tarih-only)
+// "ilk görülme" gibi gün-granülerlikli istatistiklerde kalır.
+function formatDateTimeStamp(iso: string, locale: Locale): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const loc = locale === 'tr' ? 'tr-TR' : 'en-US';
+  return `${d.toLocaleDateString(loc, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })} ${d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })}`;
+}
+
 function formatDate(iso: string, locale: Locale): string {
   return new Date(iso).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', {
     day: '2-digit',
@@ -497,7 +510,7 @@ export function CustomerDetailDrawer({ locale }: CustomerDetailDrawerProps) {
                             </span>
                           </div>
                           <span className="bz-mono text-[10.5px] tabular-nums text-[#A3A3A3]">
-                            {formatDate(fb.createdAt, locale)}
+                            {formatDateTimeStamp(fb.createdAt, locale)}
                           </span>
                         </div>
                         {fb.comment ? (
