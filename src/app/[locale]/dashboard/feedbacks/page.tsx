@@ -89,8 +89,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // Reply composer
   const [replyDraft, setReplyDraft] = useState('');
   const [sendEmail, setSendEmail] = useState(true);
+  // Per-message responsibility acknowledgement — resets after every send
+  // and every feedback switch so it is a fresh confirmation each time,
+  // not a persisted "trust me" toggle.
+  const [confirmResponsibility, setConfirmResponsibility] = useState(false);
   const [sendingReply, setSendingReply] = useState(false);
   const [replyNotice, setReplyNotice] = useState<{ msg: string; tone: ReplyTone } | null>(null);
+
+  // Belt-and-suspenders: whichever path changes the selected feedback
+  // (list click, notification deep-link, initial load) the responsibility
+  // checkbox must not carry over to a different reply.
+  useEffect(() => {
+    setConfirmResponsibility(false);
+  }, [activeId]);
 
   // Pulse AI
   const [aiSuggestion, setAiSuggestion] = useState('');
@@ -540,7 +551,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   };
 
   const sendReply = async (overrideBody?: string) => {
-    if (!active || sendingReply) return;
+    if (!active || sendingReply || !confirmResponsibility) return;
     const body = (overrideBody ?? replyDraft).trim();
     if (!body) return;
     setSendingReply(true);
@@ -561,6 +572,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           sendEmail: wantsEmail,
           locale,
           source: replySource,
+          confirmResponsibility,
         }),
       });
       if (res.ok) {
@@ -581,6 +593,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         setReplyDraft('');
         setAiSource(null);
         setAiFromBackground(false);
+        setConfirmResponsibility(false);
         const emailStatus = data?.email?.status as 'sent' | 'skipped' | 'failed' | undefined;
         if (emailStatus === 'sent') {
           flashReply(
@@ -604,10 +617,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         }
       } else {
         const data = await res.json().catch(() => ({}));
-        flashReply(
-          isTr ? `Hata: ${data.error ?? res.status}` : `Error: ${data.error ?? res.status}`,
-          'error',
-        );
+        const message =
+          data?.error === 'content_blocked'
+            ? isTr
+              ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
+              : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.'
+            : data?.error === 'consent_required'
+              ? isTr
+                ? 'Göndermeden önce sorumluluk onayını işaretleyin.'
+                : 'Confirm the responsibility checkbox before sending.'
+              : isTr
+                ? `Hata: ${data.error ?? res.status}`
+                : `Error: ${data.error ?? res.status}`;
+        flashReply(message, 'error');
       }
     } catch {
       flashReply(isTr ? 'Ağ hatası' : 'Network error', 'error');
@@ -616,7 +638,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   };
 
   const onUseAiAndSend = async () => {
-    if (!aiSuggestion || sendingReply) return;
+    if (!aiSuggestion || sendingReply || !confirmResponsibility) return;
     setReplyDraft(aiSuggestion);
     await sendReply(aiSuggestion);
   };
@@ -1024,6 +1046,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               setReplyDraft={setReplyDraft}
               sendEmail={sendEmail}
               setSendEmail={setSendEmail}
+              confirmResponsibility={confirmResponsibility}
+              setConfirmResponsibility={setConfirmResponsibility}
               sendingReply={sendingReply}
               onSendReply={() => sendReply()}
               replyNotice={replyNotice}

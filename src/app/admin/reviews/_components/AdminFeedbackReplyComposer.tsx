@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Loader2, Mail, Send, Sparkles } from 'lucide-react';
 import type { AiSource, AiTone, FeedbackRow, ReplyTone } from './types';
 
@@ -20,6 +21,8 @@ interface AdminFeedbackReplyComposerProps {
   setDraft: (v: string) => void;
   sendEmail: boolean;
   setSendEmail: (v: boolean) => void;
+  confirmResponsibility: boolean;
+  setConfirmResponsibility: (v: boolean) => void;
   sending: boolean;
   onSend: () => void;
   notice: { msg: string; tone: ReplyTone } | null;
@@ -37,9 +40,12 @@ export function AdminFeedbackReplyComposer({
   setDraft,
   sendEmail,
   setSendEmail,
+  confirmResponsibility,
+  setConfirmResponsibility,
   sending,
   onSend,
   notice,
+  locale,
 }: AdminFeedbackReplyComposerProps) {
   return (
     <>
@@ -164,6 +170,48 @@ export function AdminFeedbackReplyComposer({
           )}
         </div>
 
+        {/* §45 — Per-message sorumluluk onayı, her gönderimde yeniden
+            işaretlenmeli (parent submit sonrası sıfırlıyor). */}
+        <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11.5px] leading-relaxed text-[#525252]">
+          <input
+            type="checkbox"
+            checked={confirmResponsibility}
+            onChange={(e) => setConfirmResponsibility(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]"
+          />
+          <span>
+            {isTr ? (
+              <>
+                Bu yanıtın içeriğinden bizzat sorumlu olduğumu, tehdit, hakaret, iftira
+                veya yasa dışı bir ifade içermediğini onaylıyorum ({' '}
+                <Link
+                  href={`/${locale}/kabul-edilebilir-kullanim`}
+                  target="_blank"
+                  rel="noopener"
+                  className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+                >
+                  Kabul Edilebilir Kullanım Politikası
+                </Link>
+                ).
+              </>
+            ) : (
+              <>
+                I confirm I am solely responsible for this reply and that it does not
+                contain a threat, insult, defamation, or unlawful statement ({' '}
+                <Link
+                  href={`/${locale}/kabul-edilebilir-kullanim`}
+                  target="_blank"
+                  rel="noopener"
+                  className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+                >
+                  Acceptable Use Policy
+                </Link>
+                ).
+              </>
+            )}
+          </span>
+        </label>
+
         <div className="mt-3 flex items-center justify-between gap-3">
           <span className="text-[11px] text-[#737373] tabular-nums">
             {draft.length} / 2000
@@ -171,7 +219,14 @@ export function AdminFeedbackReplyComposer({
           <button
             type="button"
             onClick={onSend}
-            disabled={sending || !draft.trim()}
+            disabled={sending || !draft.trim() || !confirmResponsibility}
+            title={
+              !confirmResponsibility
+                ? (isTr
+                    ? 'Göndermeden önce sorumluluk onayını işaretleyin'
+                    : 'Confirm the responsibility checkbox before sending')
+                : undefined
+            }
             className="bz-btn-primary bz-btn-sm disabled:opacity-40"
           >
             {sending ? (

@@ -42,6 +42,8 @@ interface AdminFeedbackDetailProps {
   setDraft: (v: string) => void;
   sendEmail: boolean;
   setSendEmail: (v: boolean) => void;
+  confirmResponsibility: boolean;
+  setConfirmResponsibility: (v: boolean) => void;
   sending: boolean;
   onSend: () => void;
   notice: { msg: string; tone: ReplyTone } | null;
@@ -300,6 +302,8 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
             setDraft={props.setDraft}
             sendEmail={props.sendEmail}
             setSendEmail={props.setSendEmail}
+            confirmResponsibility={props.confirmResponsibility}
+            setConfirmResponsibility={props.setConfirmResponsibility}
             sending={props.sending}
             onSend={props.onSend}
             notice={props.notice}

@@ -16,6 +16,7 @@ import {
 } from '@/lib/google-business';
 import { googleBusinessErrorResponse } from '@/lib/google-business-response';
 import { rateLimit } from '@/lib/rate-limit';
+import { moderateReplyContent } from '@/lib/content-safety';
 import { prisma } from '@/lib/prisma';
 import { sendFirstReplyCelebrationEmail } from '@/lib/email';
 import { alreadySent, recordSent } from '@/lib/email/lifecycle';
@@ -33,6 +34,10 @@ export const dynamic = 'force-dynamic';
 const Body = z.object({
   reviewName: z.string().min(10).max(500).regex(GOOGLE_REVIEW_NAME_RE),
   comment: z.string().trim().min(2).max(4096),
+  // Per-message responsibility acknowledgement (required on every send —
+  // the UI resets this after each reply). `z.literal(true)` rejects a
+  // missing or `false` value with the standard 400 validation response.
+  confirmResponsibility: z.literal(true),
 }).strict();
 
 export async function POST(
@@ -112,6 +117,20 @@ export async function POST(
     );
   }
   const canonicalReviewName = `${expectedPrefix}${reviewId}`;
+
+  // Legal-risk content gate — threats, harassment, hate speech. Public
+  // Google replies carry more exposure than internal-only ones (visible to
+  // anyone, indexed by Google), so this runs before the reply ever reaches
+  // Google's API. See src/lib/content-safety.ts.
+  const safety = await moderateReplyContent(parsed.data.comment);
+  if (safety.blocked) {
+    return ApiErrors.badRequest(
+      isTr
+        ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
+        : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.',
+      'CONTENT_BLOCKED',
+    );
+  }
 
   try {
     const reply = await updateGoogleReviewReply(

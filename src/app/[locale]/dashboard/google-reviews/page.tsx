@@ -271,6 +271,8 @@ function ReviewCard({
   onFlagToggle,
   restaurantName,
   urgent,
+  confirmed,
+  onConfirmedChange,
 }: {
   review: GoogleReview;
   locale: 'tr' | 'en';
@@ -285,6 +287,8 @@ function ReviewCard({
   onFlagToggle: () => void;
   restaurantName: string;
   urgent?: boolean;
+  confirmed: boolean;
+  onConfirmedChange: (v: boolean) => void;
 }) {
   const isTr = locale === 'tr';
   const rating = starValue(review.starRating);
@@ -474,6 +478,51 @@ function ReviewCard({
                 }
                 aria-label={isTr ? 'Google yanıtı' : 'Google reply'}
               />
+              {/* §45 — Per-message sorumluluk onayı. Google yanıtı herkese
+                  açık ve Google tarafından indekslenir; dahili yanıttan
+                  daha yüksek risk taşır. Her gönderimde yeniden
+                  işaretlenmeli (sendReply başarılı olunca sıfırlanır). */}
+              <label className="mt-2.5 flex cursor-pointer items-start gap-2 text-[11px] leading-relaxed text-[#525252]">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={(e) => onConfirmedChange(e.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[#0A0A0A]"
+                />
+                <span>
+                  {isTr ? (
+                    <>
+                      Bu yanıtın içeriğinden bizzat sorumlu olduğumu, tehdit, hakaret,
+                      iftira veya yasa dışı bir ifade içermediğini onaylıyorum ({' '}
+                      <Link
+                        href={`/${locale}/kabul-edilebilir-kullanim`}
+                        target="_blank"
+                        rel="noopener"
+                        className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+                      >
+                        Kabul Edilebilir Kullanım Politikası
+                      </Link>
+                      ).
+                    </>
+                  ) : (
+                    <>
+                      I confirm I am solely responsible for this reply and that it does
+                      not contain a threat, insult, defamation, or unlawful statement
+                      ({' '}
+                      <Link
+                        href={`/${locale}/kabul-edilebilir-kullanim`}
+                        target="_blank"
+                        rel="noopener"
+                        className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+                      >
+                        Acceptable Use Policy
+                      </Link>
+                      ).
+                    </>
+                  )}
+                </span>
+              </label>
+
               <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
                 <button
                   type="button"
@@ -496,7 +545,14 @@ function ReviewCard({
                 <button
                   type="button"
                   onClick={onSend}
-                  disabled={replying || !value.trim()}
+                  disabled={replying || !value.trim() || !confirmed}
+                  title={
+                    !confirmed
+                      ? (isTr
+                          ? 'Göndermeden önce sorumluluk onayını işaretleyin'
+                          : 'Confirm the responsibility checkbox before sending')
+                      : undefined
+                  }
                   className="bz-btn-primary bz-btn-sm text-[11.5px] disabled:opacity-60"
                 >
                   {replying ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
@@ -548,6 +604,11 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [replying, setReplying] = useState<Record<string, boolean>>({});
   const [drafting, setDrafting] = useState<Record<string, boolean>>({});
+  // Per-message responsibility acknowledgement, keyed by Google review
+  // resource name — resets after every successful reply so the checkbox
+  // is a fresh confirmation for each public Google reply, not a persisted
+  // "trust me" toggle.
+  const [confirmedReplies, setConfirmedReplies] = useState<Record<string, boolean>>({});
   // §38.55 — 3-tab filter (tasarım birebir page-google.jsx line 125-129).
   // Sort dropdown silindi (default newest first). Flag state korunur — action
   // button "Bildir" toggleFlag ile çalışır (More dropdown UI silindi, ama
@@ -1067,20 +1128,37 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
     }
   };
 
-  const sendReply = async (review: GoogleReview) => {
+  const sendReply = async (review: GoogleReview, confirmed: boolean) => {
     if (!activeRestaurantId) return;
     const comment = replyText[review.name]?.trim();
     if (!comment) return;
+    if (!confirmed) {
+      setReviewsError(
+        isTr
+          ? 'Göndermeden önce sorumluluk onayını işaretleyin.'
+          : 'Confirm the responsibility checkbox before sending.',
+      );
+      return;
+    }
     setReplying((prev) => ({ ...prev, [review.name]: true }));
     setReviewsError(null);
     try {
       const res = await fetch(`/api/restaurants/${activeRestaurantId}/google/business/reviews/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reviewName: review.name, comment }),
+        body: JSON.stringify({ reviewName: review.name, comment, confirmResponsibility: true }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Yanıt gönderilemedi.");
+      if (!res.ok) {
+        const message =
+          data?.code === 'CONTENT_BLOCKED'
+            ? data?.error ??
+              (isTr
+                ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
+                : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.')
+            : data?.error || (isTr ? 'Yanıt gönderilemedi.' : 'Failed to send reply.');
+        throw new Error(message);
+      }
       setReviewsPayload((prev) => {
         if (!prev) return prev;
         return {
@@ -1090,8 +1168,9 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
           ),
         };
       });
+      setConfirmedReplies((prev) => ({ ...prev, [review.name]: false }));
     } catch (err) {
-      setReviewsError(err instanceof Error ? err.message : "Yanıt gönderilemedi.");
+      setReviewsError(err instanceof Error ? err.message : (isTr ? 'Yanıt gönderilemedi.' : 'Failed to send reply.'));
     } finally {
       setReplying((prev) => ({ ...prev, [review.name]: false }));
     }
@@ -2108,7 +2187,7 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                                 setReplyText((prev) => ({ ...prev, [review.name]: value }))
                               }
                               onDraft={() => draftReply(review)}
-                              onSend={() => sendReply(review)}
+                              onSend={() => sendReply(review, Boolean(confirmedReplies[review.name]))}
                               drafting={Boolean(drafting[review.name])}
                               replying={Boolean(replying[review.name])}
                               aiEnabled={Boolean(status?.googleAiEnabled)}
@@ -2120,6 +2199,10 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                               urgent={
                                 starValue(review.starRating) <= 2 &&
                                 !review.reviewReply?.comment
+                              }
+                              confirmed={Boolean(confirmedReplies[review.name])}
+                              onConfirmedChange={(v) =>
+                                setConfirmedReplies((prev) => ({ ...prev, [review.name]: v }))
                               }
                             />
                           ))

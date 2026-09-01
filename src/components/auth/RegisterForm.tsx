@@ -69,7 +69,15 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   const [consentPrivacy, setConsentPrivacy] = useState(false);
   const [consentKvkk, setConsentKvkk] = useState(false);
   const [consentMarketing, setConsentMarketing] = useState(false);
-  const allRequiredConsentsGiven = consentTerms && consentPrivacy && consentKvkk;
+  // §45 — Yanıt/içerik sorumluluğu onayı. Ayrı zorunlu checkbox: kullanıcı
+  // Buaze üzerinden göndereceği tüm yanıt/mesaj içeriğinden bizzat sorumlu
+  // olduğunu ve tehdit/hakaret/iftira/yasa dışı ifade içermeyeceğini kabul
+  // eder. Backing document: Kabul Edilebilir Kullanım Politikası (mevcut,
+  // seeded legal doc — yeni içerik yazılmadı, mevcut kapsamlı belge reuse
+  // edildi).
+  const [consentContentResponsibility, setConsentContentResponsibility] = useState(false);
+  const allRequiredConsentsGiven =
+    consentTerms && consentPrivacy && consentKvkk && consentContentResponsibility;
 
   // Email query'si ile gelmişse field'ı locked tut + bilgilendirici notice göster.
   useEffect(() => {
@@ -177,8 +185,8 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
     if (!allRequiredConsentsGiven) {
       setError(
         locale === 'tr'
-          ? 'Devam etmek için Kullanım Şartları, Gizlilik Politikası ve KVKK Aydınlatma Metni onaylarını işaretle.'
-          : 'You must accept Terms of Service, Privacy Policy and KVKK Privacy Notice to continue.',
+          ? 'Devam etmek için Kullanım Şartları, Gizlilik Politikası, KVKK Aydınlatma Metni ve İçerik Sorumluluğu onaylarını işaretle.'
+          : 'You must accept Terms of Service, Privacy Policy, KVKK Privacy Notice and Content Responsibility to continue.',
       );
       return;
     }
@@ -197,6 +205,10 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           // Default false (KVKK Açık Rıza + GDPR Art.7); kullanıcı checkbox
           // ile bilinçli olarak işaretlerse server `recordConsent` log atar.
           marketingConsent: consentMarketing,
+          // §45 — server her durumda `kabul-edilebilir-kullanim` onayını
+          // log'lar (defense-in-depth); bu flag'in kendisi sadece client-side
+          // gate için kullanılıyor, sunucu ekstra bir input beklemiyor.
+
           // Faz 4 § auto-activate — register handler'ı email match + token
           // valid ise TeamMember status'ünü 'active' yapar.
           ...(inviteToken ? { inviteToken } : {}),
@@ -411,7 +423,41 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           </span>
         </label>
 
-        <label htmlFor="reg-consent-marketing" className="flex items-start gap-2.5 cursor-pointer text-[12.5px] leading-relaxed text-[#525252] pt-1.5 border-t border-[#F5F5F5]">
+        <label htmlFor="reg-consent-content" className="flex items-start gap-2.5 cursor-pointer text-[12.5px] leading-relaxed text-[#525252]">
+          <input
+            id="reg-consent-content"
+            type="checkbox"
+            required
+            checked={consentContentResponsibility}
+            onChange={(e) => setConsentContentResponsibility(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#A3A3A3] text-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E] focus:ring-offset-1"
+          />
+          <span>
+            {locale === 'tr' ? (
+              <>
+                Buaze üzerinden gönderdiğim tüm yanıt ve mesajların içeriğinden bizzat
+                sorumlu olduğumu; bu içeriklerin tehdit, hakaret, iftira veya yasa dışı
+                bir ifade içermeyeceğini kabul ederim (
+                <Link href={`/${locale}/kabul-edilebilir-kullanim`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                  Kabul Edilebilir Kullanım Politikası
+                </Link>
+                ).
+              </>
+            ) : (
+              <>
+                I confirm I am solely responsible for the content of every reply and
+                message I send through Buaze, and that it will not contain a threat,
+                insult, defamation, or unlawful statement (
+                <Link href={`/${locale}/kabul-edilebilir-kullanim`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                  Acceptable Use Policy
+                </Link>
+                ).
+              </>
+            )}
+          </span>
+        </label>
+
+                <label htmlFor="reg-consent-marketing" className="flex items-start gap-2.5 cursor-pointer text-[12.5px] leading-relaxed text-[#525252] pt-1.5 border-t border-[#F5F5F5]">
           <input
             id="reg-consent-marketing"
             type="checkbox"

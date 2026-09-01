@@ -4,6 +4,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant, canWriteFeedback } from '@/lib/panel-access';
 import { sendCustomerReplyEmail } from '@/lib/email';
 import { isValidEmail } from '@/lib/validations';
+import { moderateReplyContent } from '@/lib/content-safety';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  let body: { body?: string; channel?: string; sendEmail?: boolean; locale?: 'tr' | 'en'; source?: string } = {};
+  let body: {
+    body?: string;
+    channel?: string;
+    sendEmail?: boolean;
+    locale?: 'tr' | 'en';
+    source?: string;
+    confirmResponsibility?: boolean;
+  } = {};
   try {
     body = await req.json();
   } catch {
@@ -63,6 +71,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const text = typeof body.body === 'string' ? body.body.trim() : '';
   if (!text) return NextResponse.json({ error: 'empty_body' }, { status: 400 });
   if (text.length > 2000) return NextResponse.json({ error: 'body_too_long' }, { status: 413 });
+
+  // Per-message responsibility acknowledgement — the sender confirms the
+  // content is theirs and they carry sole liability for it. Required on
+  // every send, not just once at signup: the UI resets the checkbox after
+  // each reply and this is the server-side enforcement of that gate.
+  if (body.confirmResponsibility !== true) {
+    return NextResponse.json({ error: 'consent_required' }, { status: 400 });
+  }
+
+  // Legal-risk content gate — threats, harassment, hate speech. Runs before
+  // any DB write or email dispatch; a blocked reply never reaches the
+  // customer and never gets persisted. See src/lib/content-safety.ts.
+  const safety = await moderateReplyContent(text);
+  if (safety.blocked) {
+    return NextResponse.json(
+      { error: 'content_blocked', reason: safety.reason, categories: safety.categories },
+      { status: 422 },
+    );
+  }
 
   const locale: 'tr' | 'en' = body.locale === 'en' ? 'en' : 'tr';
   const requestedEmail = body.channel === 'email' || body.sendEmail === true;

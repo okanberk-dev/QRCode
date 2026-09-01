@@ -54,6 +54,8 @@ interface FeedbackDetailProps {
   setReplyDraft: (v: string) => void;
   sendEmail: boolean;
   setSendEmail: (v: boolean) => void;
+  confirmResponsibility: boolean;
+  setConfirmResponsibility: (v: boolean) => void;
   sendingReply: boolean;
   onSendReply: () => void;
   replyNotice: { msg: string; tone: ReplyTone } | null;
@@ -409,6 +411,8 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               setReplyDraft={props.setReplyDraft}
               sendEmail={props.sendEmail}
               setSendEmail={props.setSendEmail}
+              confirmResponsibility={props.confirmResponsibility}
+              setConfirmResponsibility={props.setConfirmResponsibility}
               sendingReply={props.sendingReply}
               onSendReply={props.onSendReply}
               replyNotice={props.replyNotice}

@@ -87,12 +87,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Stage 31b §38.108 — Kayıt onayı log'u (KVKK §10 + 6502 sayılı TKHK m.4
-    // uyumlu). UI'da artık 4 explicit checkbox (3 zorunlu + 1 opsiyonel ticari
-    // ileti). RegisterForm submit gate `allRequiredConsentsGiven` 3 zorunlu
-    // checkbox işaretlenmeden POST atmaz, ek olarak server tarafında 3 zorunlu
-    // belge her durumda log'lanır (defense-in-depth — formdan bypass'lanmış
-    // POST gelirse de KVKK aydınlatma yükümlülüğü kapsanır).
+    // Stage 31b §38.108 (§45'de genişletildi) — Kayıt onayı log'u (KVKK §10 +
+    // 6502 sayılı TKHK m.4 uyumlu). UI'da 5 explicit checkbox (4 zorunlu + 1
+    // opsiyonel ticari ileti) — 4. zorunlu checkbox içerik/yanıt sorumluluğu
+    // onayıdır (Kabul Edilebilir Kullanım Politikası). RegisterForm submit
+    // gate `allRequiredConsentsGiven` 4 zorunlu checkbox işaretlenmeden POST
+    // atmaz, ek olarak server tarafında 4 zorunlu belge her durumda
+    // log'lanır (defense-in-depth — formdan bypass'lanmış POST gelirse de
+    // KVKK aydınlatma + sorumluluk yükümlülüğü kapsanır).
     //
     // Opsiyonel ticari-ileti (ETK m.6 — KVKK Açık Rıza + GDPR Art.7) sadece
     // kullanıcı checkbox'ı işaretlerse log'lanır; default false.
@@ -100,10 +102,17 @@ export async function POST(req: NextRequest) {
       const ua = req.headers.get('user-agent');
       const localeRaw = typeof locale === 'string' ? locale.toLowerCase() : 'tr';
       const consentLocale: LegalLocale = isSupportedLegalLocale(localeRaw) ? localeRaw : 'tr';
-      const consentItems: Array<{ key: 'kullanim-sartlari' | 'gizlilik-politikasi' | 'kvkk-aydinlatma' | 'ticari-ileti'; granted: boolean }> = [
+      const consentItems: Array<{
+        key: 'kullanim-sartlari' | 'gizlilik-politikasi' | 'kvkk-aydinlatma' | 'kabul-edilebilir-kullanim' | 'ticari-ileti';
+        granted: boolean;
+      }> = [
         { key: 'kullanim-sartlari', granted: true },
         { key: 'gizlilik-politikasi', granted: true },
         { key: 'kvkk-aydinlatma', granted: true },
+        // §45 — İçerik/yanıt sorumluluğu onayı. RegisterForm submit gate 4
+        // zorunlu checkbox'ı da kapsıyor; server tarafı defense-in-depth
+        // olarak burada da her durumda log'lar.
+        { key: 'kabul-edilebilir-kullanim', granted: true },
       ];
       if (marketingConsent === true) {
         consentItems.push({ key: 'ticari-ileti', granted: true });
