@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from '@/lib/bcrypt-config';
+import { isValidEmail, isStrongPassword } from '@/lib/validations';
+import { PLAN_LABELS } from '@/lib/constants';
+import { executeUserHardDelete } from '@/lib/user-hard-delete';
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await getAdminFromRequest(req);
@@ -16,6 +19,29 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const body = await req.json();
     const { name, email, plan, isActive, password, trialEndsAt, restaurantIds } = body;
+
+    // §38.238 — this endpoint writes plan / password / e-mail / isActive
+    // straight into Prisma. It previously validated none of them, so a
+    // malformed e-mail, a one-character password or an arbitrary plan string
+    // (which downstream quota lookups key on) all persisted silently.
+    if (email !== undefined && !isValidEmail(email)) {
+      return NextResponse.json({ error: 'Geçersiz e-posta adresi.' }, { status: 400 });
+    }
+    if (plan !== undefined && !Object.prototype.hasOwnProperty.call(PLAN_LABELS, plan)) {
+      return NextResponse.json({ error: 'Geçersiz paket.' }, { status: 400 });
+    }
+    if (password !== undefined && !isStrongPassword(password)) {
+      return NextResponse.json(
+        { error: 'Şifre en az 8 karakter olmalı ve harf + rakam içermeli.' },
+        { status: 400 },
+      );
+    }
+    if (name !== undefined && (typeof name !== 'string' || name.length > 200)) {
+      return NextResponse.json({ error: 'Geçersiz ad.' }, { status: 400 });
+    }
+    if (isActive !== undefined && typeof isActive !== 'boolean') {
+      return NextResponse.json({ error: 'Geçersiz durum.' }, { status: 400 });
+    }
 
     // Check if updating email conflicts with another user
     if (email) {
@@ -92,6 +118,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
       }
 
+      // §38.238 — CLAUDE.md §37.2.A requires revoking live sessions whenever
+      // a password is forced or an account is deactivated. This route did
+      // neither, so an admin resetting a compromised customer's password (or
+      // deactivating the account outright) left the attacker's existing
+      // `user_token` cookie working until it expired on its own.
+      if (password || isActive === false) {
+        await tx.userSession.updateMany({
+          where: { userId: id, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+      }
+
       return updatedUser;
     });
 
@@ -112,10 +150,35 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
 
   try {
-    await prisma.user.delete({ where: { id } });
-    return NextResponse.json({ success: true });
+    // §38.238 — this used to be a bare `prisma.user.delete()`. Because
+    // `restaurants.user_id` is ON DELETE SET NULL (not cascade), that deleted
+    // the User row and nothing else: the customer's restaurants stayed live on
+    // the public /r/[slug] surface with every Feedback row (name / e-mail /
+    // phone / comment / IP) intact, and the OAuth refresh token, API keys and
+    // team-member records were never touched. It also wrote no audit row and
+    // did not anonymize invoices. Delegate to the shared helper, which does
+    // all of it inside one transaction.
+    const target = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true },
+    });
+    if (!target) {
+      return NextResponse.json({ error: 'Müşteri bulunamadı' }, { status: 404 });
+    }
+
+    const stats = await executeUserHardDelete(target.id, target.email, {
+      id: typeof admin.id === 'string' ? admin.id : null,
+      source: 'admin',
+      action: 'admin.customers.hard_delete',
+    });
+
+    return NextResponse.json({ success: true, stats });
   } catch (error) {
-    console.error('[ADMIN_CUSTOMER_DELETE]', error);
+    console.error('[ADMIN_CUSTOMER_DELETE]', {
+      customerId: id,
+      errorName: error instanceof Error ? error.name : 'unknown',
+      errorMessage: error instanceof Error ? error.message.slice(0, 200) : '',
+    });
     return NextResponse.json({ error: 'Müşteri silinemedi' }, { status: 500 });
   }
 }

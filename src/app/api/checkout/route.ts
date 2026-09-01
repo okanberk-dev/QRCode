@@ -31,7 +31,7 @@ import { Checkout } from '@dodopayments/nextjs';
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { resolveOwnerUserId } from '@/lib/panel-access';
+import { canManageBilling, resolveOwnerUserId } from '@/lib/panel-access';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -107,6 +107,13 @@ async function redirectFromSdkResponse(
 async function resolveCheckoutUserId(req: NextRequest): Promise<string | null> {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return null;
+  // §38.238 — `resolveOwnerUserId` maps ANY active team member (viewer
+  // included) onto the workspace owner. Injecting that id would let a
+  // non-owner start a subscription billed to, and credited to, the owner's
+  // account. Only ownership-level actors may bind a purchase to a workspace;
+  // everyone else is treated like a logged-out visitor (no user_id → the
+  // webhook falls back to matching on the checkout e-mail).
+  if (!canManageBilling(actor)) return null;
   return (await resolveOwnerUserId(actor)) ?? actor.id;
 }
 
@@ -132,6 +139,9 @@ export async function GET(req: NextRequest): Promise<Response> {
 // dashboard ("Upgrade" button). AUTH REQUIRED. `metadata.user_id` is forced to
 // the authenticated owner — any client-supplied value is overwritten.
 export async function POST(req: NextRequest): Promise<Response> {
+  // §38.238 — resolveCheckoutUserId now returns null for a workspace member
+  // without billing authority, so this 401 also covers "logged in, but a
+  // viewer/staff team member". The dashboard upgrade button is owner-only.
   const userId = await resolveCheckoutUserId(req);
   if (!userId) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });

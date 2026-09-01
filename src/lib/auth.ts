@@ -409,7 +409,16 @@ async function isAdminTokenStale(payload: jose.JWTPayload): Promise<boolean> {
       where: { id: adminId },
       select: { passwordChangedAt: true },
     });
-    if (!admin || !admin.passwordChangedAt) return false;
+    // §38.238 — a MISSING row means the AdminUser was deleted. AdminUser has
+    // no `isActive` column and no per-token session table, so this staleness
+    // check is the only revocation pivot admins have. Folding `!admin` into
+    // the same `return false` as "no passwordChangedAt yet" meant deleting a
+    // compromised or departing admin did not log them out: their 7-day JWT
+    // kept passing `getAdminFromRequest`, and every route that gates on the
+    // JWT claim alone (site-settings, plans, announcements, feature-access)
+    // still granted full write. A deleted admin is revoked, not fresh.
+    if (!admin) return true;
+    if (!admin.passwordChangedAt) return false;
     // jose `iat` is in seconds, Date.getTime() in ms.
     return iat * 1000 < admin.passwordChangedAt.getTime();
   } catch (err) {

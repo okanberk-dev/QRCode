@@ -17,9 +17,11 @@
  *      - Delete BillingSubscription row (userId is PK, can't null)
  *      - Anonymize AdminAuditLog actorId/payload PII for rows that
  *        reference the deleted user; targetId is already nullable in schema.
- *      - prisma.user.delete cascades Restaurant → 12 child tables
- *        (Feedback / Menu / QR / Analytics / Sessions / Brand / Platform /
- *        Activation / Embed / etc. per §37.9).
+ *      - executeUserHardDelete() removes Restaurant rows explicitly (the
+ *        users→restaurants FK is ON DELETE SET NULL, NOT cascade — §38.238)
+ *        which then cascades Feedback / Menu / QR / Analytics / Brand /
+ *        Platform / Activation / Embed, plus the FK-less GoogleIntegration /
+ *        ApiKey / TeamMember / NotificationPreference rows.
  *      - Write final 'admin.members.hard_delete' audit row (current admin
  *        actor, redacted payload — only hashed email + deletedAt).
  *
@@ -28,8 +30,8 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
-import { createHash } from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { executeUserHardDelete, hashEmailShort } from '@/lib/user-hard-delete';
 import { getAdminFromRequest } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
 import { rateLimit } from '@/lib/rate-limit';
@@ -38,13 +40,6 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const HARD_DELETE_GRACE_DAYS = Number(process.env.HARD_DELETE_GRACE_DAYS) || 7;
-
-/** SHA-256 short prefix used to retain a non-reversible audit hint of who was
- *  deleted (e.g. for "did we delete this person?" investigations) without
- *  storing the raw e-mail. 12 hex chars = 48 bits, plenty for forensic match. */
-function hashEmailShort(email: string): string {
-  return createHash('sha256').update(email.toLowerCase().trim()).digest('hex').slice(0, 12);
-}
 
 export async function DELETE(
   req: NextRequest,
@@ -104,78 +99,20 @@ export async function DELETE(
   const emailHash = hashEmailShort(user.email);
 
   try {
-    const stats = await prisma.$transaction(async (tx) => {
-      // Audit logs — anonymize PII before the cascade wipes the User row.
-      // actorId is nullable (Stage A migration); payload may contain email
-      // snapshots from past admin.members.* writes which we redact here.
-      const audited = await tx.adminAuditLog.findMany({
-        where: { OR: [{ actorId: id }, { targetId: id }] },
-        select: { id: true, payload: true },
-      });
-      for (const row of audited) {
-        let redactedPayload = row.payload;
-        if (row.payload && typeof row.payload === 'object' && !Array.isArray(row.payload)) {
-          const copy = { ...(row.payload as Record<string, unknown>) };
-          // Strip common PII surface keys; payload structure varies by
-          // action (members.update vs. members.deactivate vs. reset).
-          for (const key of ['email', 'name', 'phone', 'newEmail', 'oldEmail']) {
-            if (key in copy) copy[key] = null;
-          }
-          redactedPayload = copy as typeof row.payload;
-        }
-        await tx.adminAuditLog.update({
-          where: { id: row.id },
-          data: {
-            actorId: null,
-            targetId: null,
-            payload: redactedPayload ?? undefined,
-          },
-        });
-      }
-
-      // Financial — anonymize invoices (10-year retention per KVKK m.7) and
-      // delete the subscription row (userId is PK, can't null).
-      const invoiceCount = await tx.billingInvoice.updateMany({
-        where: { userId: id },
-        data: { userId: null },
-      });
-      const subscriptionDel = await tx.billingSubscription.deleteMany({
-        where: { userId: id },
-      });
-
-      // Cascade-delete the User. Restaurant + UserSession + ImpersonationSession
-      // wipe automatically via onDelete: Cascade (CLAUDE.md §37.9). Restaurant
-      // cascade itself wipes Feedback / Menu / QR / Analytics / Brand / etc.
-      await tx.user.delete({ where: { id } });
-
-      // Final audit row — actorId = the admin who performed the wipe; targetId
-      // is null because the User row no longer exists. Payload keeps a hash of
-      // the e-mail so future forensics can answer "was X deleted?" without
-      // retaining the PII itself.
-      await tx.adminAuditLog.create({
-        data: {
-          actorId: adminId,
-          actorSource: 'admin',
-          action: 'admin.members.hard_delete',
-          targetId: null,
-          payload: {
-            emailHash,
-            deactivatedAt: user.deactivatedAt,
-            deletedAt: new Date(),
-            graceDays: HARD_DELETE_GRACE_DAYS,
-            elapsedDays: ageDays,
-            invoicesAnonymized: invoiceCount.count,
-            subscriptionsDeleted: subscriptionDel.count,
-            auditRowsRedacted: audited.length,
-          },
-        },
-      });
-
-      return {
-        invoicesAnonymized: invoiceCount.count,
-        subscriptionsDeleted: subscriptionDel.count,
-        auditRowsRedacted: audited.length,
-      };
+    // §38.238 — delegate to the shared helper. This route previously carried
+    // its own copy of the transaction, which meant the SET-NULL cascade bug
+    // (and the FK-less orphan rows) had to be fixed in two places. It also
+    // never removed menu items, so on this path `user.delete()` deleted
+    // essentially nothing beyond the User row itself.
+    const stats = await executeUserHardDelete(id, user.email, {
+      id: adminId,
+      source: 'admin',
+      action: 'admin.members.hard_delete',
+      extra: {
+        deactivatedAt: user.deactivatedAt,
+        graceDays: HARD_DELETE_GRACE_DAYS,
+        elapsedDays: ageDays,
+      },
     });
 
     return NextResponse.json({ ok: true, stats });

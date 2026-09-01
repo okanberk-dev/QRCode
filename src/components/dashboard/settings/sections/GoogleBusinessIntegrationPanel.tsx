@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CheckCircle2,
   ExternalLink,
@@ -118,7 +118,6 @@ export function GoogleBusinessIntegrationPanel({
   // Auto-retry guard: backend "X saniye sonra" diyince countdown 0'a
   // gelince tek seferlik otomatik refresh tetiklensin. Sonsuz loop'tan
   // korunmak için tek-seferlik flag tutulur.
-  const autoRetryFiredRef = useRef(false);
 
   useEffect(() => {
     setQuery(defaultQuery(restaurant));
@@ -138,21 +137,27 @@ export function GoogleBusinessIntegrationPanel({
         if (prev === null) return null;
         if (prev <= 1) {
           clearInterval(interval);
-          // Auto-retry once: countdown sıfıra inerken, sarı banner görünen
-          // bir kullanıcı için butona basmadan tek otomatik tazeleme.
-          // autoRetryFiredRef sonsuz loop'tan korur.
-          if (!autoRetryFiredRef.current && status?.connected) {
-            autoRetryFiredRef.current = true;
-            void loadLocations(true);
-          }
+          // §38.238 — NO auto-retry here. This countdown is a UI cooldown for
+          // the "Konumları yenile" button only.
+          //
+          // The previous version fired `loadLocations(true)` when the counter
+          // hit zero, guarded by a one-shot ref — but `loadLocations` itself
+          // reset that ref on entry, so the retry re-armed the guard it was
+          // supposed to consume: quota fail → 60s countdown → forced refresh →
+          // quota still full → countdown → forever. A settings tab left open
+          // became a self-driving force-refresh poller against Google's
+          // PROJECT-WIDE quota (1 accounts.list/min shared by every Buaze
+          // user), so one idle tab could starve everyone else.
+          //
+          // Same anti-pattern, same resolution as CLAUDE.md §38.211 on the
+          // google-reviews page: on a shared quota, retries are cooperative
+          // only in theory — manual intervention only.
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-    // loadLocations stable closure; status.connected sadece read.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locationsRetryAfter]);
 
   const selectedLocation = status?.selectedLocation ?? null;
@@ -250,7 +255,6 @@ export function GoogleBusinessIntegrationPanel({
     setLocationsError(null);
     setLocationsNotice(null);
     setLocationsRetryAfter(null);
-    autoRetryFiredRef.current = false;
     try {
       const url = `/api/restaurants/${restaurant.id}/google/business/locations${
         force ? '?force=true' : ''

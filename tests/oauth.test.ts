@@ -325,6 +325,48 @@ describe('Token refresh', () => {
     assert.equal(verified.email, user.email);
   });
 
+  // §38.238 — an impersonation token must never be refreshed. `handleTokenRefresh`
+  // re-signs from scratch with only { userId, email, role, plan }, so refreshing
+  // one silently dropped the `impersonating` claim and turned a 30-minute audited
+  // shadow session into a plain 7-day login as that customer.
+  it('refuses to refresh an impersonation token with 403', async () => {
+    const user = buildUser({ id: 'user_existing' });
+    const { deps, signed } = buildRefreshDeps({ user });
+    const shadowToken = await signJwt({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      plan: user.plan,
+      impersonating: { adminId: 'admin_1', sessionId: 'imp_1' },
+    });
+
+    const result = await handleTokenRefresh({ token: shadowToken }, deps);
+
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.status, 403);
+    assert.equal(signed.length, 0, 'no new token may be minted for a shadow session');
+  });
+
+  it('still refreshes a normal token that has no impersonating claim', async () => {
+    const user = buildUser({ id: 'user_existing' });
+    const { deps, signed } = buildRefreshDeps({ user });
+    const token = await signJwt({
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      plan: user.plan,
+    });
+
+    const result = await handleTokenRefresh({ token }, deps);
+
+    assert.equal(result.ok, true);
+    assert.equal(signed.length, 1);
+    const verified = await verifyJwt((result as { token: string }).token);
+    assert.ok(verified);
+    assert.equal(verified.impersonating, undefined);
+  });
+
   it('rejects a malformed token with 401', async () => {
     const { deps } = buildRefreshDeps({ user: buildUser() });
     const result = await handleTokenRefresh({ token: 'not.a.jwt' }, deps);
