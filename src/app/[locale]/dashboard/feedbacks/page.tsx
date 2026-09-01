@@ -649,10 +649,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       tone: 'success',
     });
     try {
+      // §38.238 — POST on this endpoint is an UPSERT, not a toggle. Sending
+      // it unconditionally meant "remove flag" optimistically cleared the UI
+      // and then re-wrote the same FeedbackFlag row server-side: the flag
+      // reappeared on the next load and the owner could never un-flag a
+      // review. The DELETE branch existed and was simply never called here.
+      // Mirrors the admin inbox, which already picked the method correctly.
       const res = await fetch(`/api/feedback/${targetId}/flag`, {
-        method: 'POST',
+        method: newValue ? 'POST' : 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: 'manual' }),
+        body: newValue ? JSON.stringify({ reason: 'manual' }) : undefined,
       });
       if (!res.ok) throw new Error('flag failed');
     } catch {
