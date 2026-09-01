@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Loader2, Mail, Pencil, RotateCw, Send, Sparkles } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import type { AiSource, AiTone, FeedbackRow, ReplyTone } from './types';
@@ -25,6 +26,8 @@ interface FeedbackReplyComposerProps {
   setReplyDraft: (v: string) => void;
   sendEmail: boolean;
   setSendEmail: (v: boolean) => void;
+  confirmResponsibility: boolean;
+  setConfirmResponsibility: (v: boolean) => void;
   sendingReply: boolean;
   onSendReply: () => void;
 
@@ -49,6 +52,8 @@ export function FeedbackReplyComposer({
   setReplyDraft,
   sendEmail,
   setSendEmail,
+  confirmResponsibility,
+  setConfirmResponsibility,
   sendingReply,
   onSendReply,
   replyNotice,
@@ -129,9 +134,17 @@ export function FeedbackReplyComposer({
           <button
             type="button"
             onClick={onUseAiAndSend}
-            disabled={aiLoading || !aiSuggestion || sendingReply}
+            disabled={aiLoading || !aiSuggestion || sendingReply || !confirmResponsibility}
             className="bz-btn-lime w-full disabled:opacity-50 sm:w-auto"
-            title={isTr ? 'AI taslağını doğrudan gönder' : 'Send the AI draft directly'}
+            title={
+              !confirmResponsibility
+                ? (isTr
+                    ? 'Göndermeden önce sorumluluk onayını işaretleyin'
+                    : 'Confirm the responsibility checkbox before sending')
+                : isTr
+                  ? 'AI taslağını doğrudan gönder'
+                  : 'Send the AI draft directly'
+            }
           >
             {sendingReply ? (
               <Loader2 size={12} strokeWidth={2} className="animate-spin" />
@@ -326,6 +339,51 @@ export function FeedbackReplyComposer({
           )}
         </div>
 
+        {/* §45 — Per-message sorumluluk onayı. Sendleme her seferinde
+            işaretlenmeli (submit sonrası state parent'ta sıfırlanıyor);
+            metnin tehdit/hakaret/yasa dışı ifade içermemesinden ve
+            içerikten bizzat sorumlu olduğundan gönderen kişi kendisi
+            sorumludur — Buaze içeriği incelemez/onaylamaz. */}
+        <label className="mt-2.5 flex cursor-pointer items-start gap-2 text-[11.5px] leading-relaxed text-[#525252]">
+          <input
+            type="checkbox"
+            checked={confirmResponsibility}
+            onChange={(e) => setConfirmResponsibility(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]"
+          />
+          <span>
+            {isTr ? (
+              <>
+                Bu yanıtın içeriğinden bizzat sorumlu olduğumu, tehdit, hakaret, iftira
+                veya yasa dışı bir ifade içermediğini onaylıyorum ({' '}
+                <Link
+                  href={`/${locale}/kabul-edilebilir-kullanim`}
+                  target="_blank"
+                  rel="noopener"
+                  className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+                >
+                  Kabul Edilebilir Kullanım Politikası
+                </Link>
+                ).
+              </>
+            ) : (
+              <>
+                I confirm I am solely responsible for this reply and that it does not
+                contain a threat, insult, defamation, or unlawful statement ({' '}
+                <Link
+                  href={`/${locale}/kabul-edilebilir-kullanim`}
+                  target="_blank"
+                  rel="noopener"
+                  className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+                >
+                  Acceptable Use Policy
+                </Link>
+                ).
+              </>
+            )}
+          </span>
+        </label>
+
         <div className="mt-3 flex items-center justify-between gap-3">
           {/* Mobile: empty spacer (button right-aligned). Desktop: shortcut hint. */}
           <span
@@ -343,18 +401,22 @@ export function FeedbackReplyComposer({
           <button
             type="button"
             onClick={onSendReply}
-            disabled={!replyDraft.trim() || sendingReply}
-            aria-disabled={!replyDraft.trim() || sendingReply}
+            disabled={!replyDraft.trim() || sendingReply || !confirmResponsibility}
+            aria-disabled={!replyDraft.trim() || sendingReply || !confirmResponsibility}
             title={
               !replyDraft.trim()
                 ? isTr
                   ? 'Önce bir yanıt yazın'
                   : 'Write a reply first'
-                : sendingReply
+                : !confirmResponsibility
                   ? isTr
-                    ? 'Gönderiliyor…'
-                    : 'Sending…'
-                  : undefined
+                    ? 'Göndermeden önce sorumluluk onayını işaretleyin'
+                    : 'Confirm the responsibility checkbox before sending'
+                  : sendingReply
+                    ? isTr
+                      ? 'Gönderiliyor…'
+                      : 'Sending…'
+                    : undefined
             }
             className="bz-btn-primary bz-btn-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >

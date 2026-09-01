@@ -5732,3 +5732,51 @@ paterni) — `payment.failed` event'lerinde admin'e mail.
   bloklamasın; SDK 200 dönmeye devam etsin (retry storm önleme)
 
 ---
+
+## §45 — Reply Content Safety Gate + Responsibility Consent (kanonik, 2026-09)
+
+Owner/admin replies go out under the Buaze brand (email sender, Google
+Business Profile reply, in-app record) — a threat or hate-speech reply is a
+legal exposure for Buaze, not just the sender. Two independent controls,
+both hard gates with no override:
+
+1. **Content safety** — `src/lib/content-safety.ts` `moderateReplyContent()`.
+   Primary detector: OpenAI Moderation endpoint (`omni-moderation-latest`,
+   free, purpose-built for harassment/threatening/hate/violence — multi-
+   language). Fallback (no `OPENAI_API_KEY`, or the call fails/times out):
+   a narrow keyword net for unambiguous death/legal threats only. Wired
+   into `/api/feedback/[id]/reply` POST (422 `content_blocked`) and
+   `/api/restaurants/[id]/google/business/reviews/reply` POST (Zod
+   `confirmResponsibility: z.literal(true)` + moderation before the Google
+   API call). AI_QUOTAS (§15.1) do **not** apply — this is a safety
+   control, not a generative feature; gating it behind a user quota would
+   open a bypass window once quota is exhausted.
+2. **Per-message responsibility checkbox** — required on every send (not
+   persisted): owner/admin composers (`FeedbackReplyComposer.tsx`,
+   `AdminFeedbackReplyComposer.tsx`) and the Google review `ReviewCard`
+   composer all render a checkbox linking to the existing **Kabul
+   Edilebilir Kullanım Politikası** (`/kabul-edilebilir-kullanim` — no new
+   legal doc was authored, the existing AUP already lists threats/hate/
+   defamation as prohibited and carries an indemnity clause). State resets
+   to unchecked after every successful send and on every feedback switch.
+   Server-side: `/api/feedback/[id]/reply` rejects `confirmResponsibility
+   !== true` with 400 `consent_required`; the Google route enforces it via
+   Zod `z.literal(true)`.
+3. **Registration** — `RegisterForm.tsx` gained a 5th checkbox (4 now
+   mandatory): "I am solely responsible for the content of every reply/
+   message I send" linking to the same AUP page. `register/route.ts` logs
+   `kabul-edilebilir-kullanim` consent unconditionally (defense-in-depth,
+   same pattern as the other 3 mandatory docs). `ensureOnboardingConsents`
+   (`src/lib/legal/consent.ts`) — the backfill that already covers Google
+   OAuth sign-up (which has no consent-checkbox UI) — got the same key
+   added to `requiredKeys`, so Google sign-ups are covered without
+   touching the OAuth flow itself.
+
+**Yapma**: AI_QUOTAS gate on the moderation call (bypass risk). New
+threat-keyword patterns broader than unambiguous phrases (false-positive
+blocks a legit reply outright, no override exists). A new legal document
+for this — the AUP already covers it.
+
+**Yap**: New reply-send surface → wire `moderateReplyContent()` +
+`confirmResponsibility` before any DB write / outbound call, reset the
+checkbox after success only (not on transient failure).

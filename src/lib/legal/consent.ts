@@ -88,13 +88,13 @@ export async function recordConsentBatch(
 }
 
 /**
- * Stage 31b §38.108 — Onboarding consent backfill.
+ * Stage 31b §38.108 (§45'de genişletildi) — Onboarding consent backfill.
  *
- * Onboarding `complete` endpoint'inde çağrılır. Register flow'u 3 zorunlu
+ * Onboarding `complete` endpoint'inde çağrılır. Register flow'u 4 zorunlu
  * belgeye onay log atıyor (UI checkbox + recordConsentBatch). Ama:
  *   - Google sign-in akışı (`/api/auth/google`) mevcut LegalConsent log
  *     atmıyor (Google butonu UI'da yasal checkbox göstermez); bu user'lar
- *     `/onboarding`'a düşer ve /complete sonrası 3 zorunlu belgeye onay
+ *     `/onboarding`'a düşer ve /complete sonrası 4 zorunlu belgeye onay
  *     vermiş sayılır.
  *   - "Davet sonrası" register akışı da onaylı sayılır.
  *
@@ -113,6 +113,11 @@ export async function ensureOnboardingConsents(input: {
     'kullanim-sartlari',
     'gizlilik-politikasi',
     'kvkk-aydinlatma',
+    // §45 — İçerik/yanıt sorumluluğu onayı (reply/message content
+    // responsibility). Google sign-in flow için de backfill kapsamına
+    // alındı ki reply-gönderim akışı KVKK aydınlatma yükümlülüğüyle aynı
+    // garantiye sahip olsun.
+    'kabul-edilebilir-kullanim',
   ];
   try {
     const existing = await prisma.legalConsent.findMany({

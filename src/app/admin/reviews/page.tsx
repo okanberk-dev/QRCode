@@ -81,10 +81,19 @@ function AdminReviewsContent() {
   const [aiTone, setAiTone] = useState<AiTone>('warm');
   const [notice, setNotice] = useState<{ msg: string; tone: ReplyTone } | null>(null);
   const [sendEmail, setSendEmail] = useState(true);
+  // Per-message responsibility acknowledgement — resets after every send
+  // and every feedback switch (see reset effect below).
+  const [confirmResponsibility, setConfirmResponsibility] = useState(false);
   // §38.237 — Gönderilen yanıt thread'i. Owner paneli bu endpoint'i zaten
   // tüketiyordu; admin yalnız "Yanıtlandı" rozeti görüyordu.
   const [sentReplies, setSentReplies] = useState<SentReply[]>([]);
   const [sentLoading, setSentLoading] = useState(false);
+
+  // Belt-and-suspenders: whichever path changes the selected feedback the
+  // responsibility checkbox must not carry over to a different reply.
+  useEffect(() => {
+    setConfirmResponsibility(false);
+  }, [activeId]);
 
   // Notification deep-link pulse one-shot
   const focusAppliedRef = useRef(false);
@@ -329,7 +338,7 @@ function AdminReviewsContent() {
   };
 
   const onSend = async () => {
-    if (!active || !draft.trim()) return;
+    if (!active || !draft.trim() || !confirmResponsibility) return;
     setSending(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
     const replySource =
@@ -348,6 +357,7 @@ function AdminReviewsContent() {
           sendEmail: wantsEmail,
           locale,
           source: replySource,
+          confirmResponsibility,
         }),
       });
       if (res.ok) {
@@ -368,6 +378,7 @@ function AdminReviewsContent() {
         ]);
         setDraft('');
         setAiSource(null);
+        setConfirmResponsibility(false);
         const emailStatus = data?.email?.status as 'sent' | 'skipped' | 'failed' | undefined;
         if (emailStatus === 'sent') {
           flash(
@@ -392,10 +403,19 @@ function AdminReviewsContent() {
         flash(isTr ? 'Yetkisiz erişim' : 'Forbidden', 'error');
       } else {
         const data = await res.json().catch(() => ({}));
-        flash(
-          isTr ? `Hata: ${data.error ?? res.status}` : `Error: ${data.error ?? res.status}`,
-          'error',
-        );
+        const message =
+          data?.error === 'content_blocked'
+            ? isTr
+              ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
+              : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.'
+            : data?.error === 'consent_required'
+              ? isTr
+                ? 'Göndermeden önce sorumluluk onayını işaretleyin.'
+                : 'Confirm the responsibility checkbox before sending.'
+              : isTr
+                ? `Hata: ${data.error ?? res.status}`
+                : `Error: ${data.error ?? res.status}`;
+        flash(message, 'error');
       }
     } catch {
       flash(isTr ? 'Ağ hatası' : 'Network error', 'error');
@@ -705,6 +725,8 @@ function AdminReviewsContent() {
               setDraft={setDraft}
               sendEmail={sendEmail}
               setSendEmail={setSendEmail}
+              confirmResponsibility={confirmResponsibility}
+              setConfirmResponsibility={setConfirmResponsibility}
               sending={sending}
               onSend={onSend}
               notice={notice}
