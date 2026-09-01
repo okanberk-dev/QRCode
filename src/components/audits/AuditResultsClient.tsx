@@ -330,7 +330,13 @@ export default function AuditResultsClient({ locale, template }: Props) {
           }
         />
       ) : (
+        // §38.238 — `overflow-hidden` clipped the 6-column responses table with
+        // nothing to scroll: below ~768px the right-hand columns (score, outcome
+        // and the "İncele" review link) were simply unreachable on a phone, and
+        // there is no mobile card fallback on this surface. The card keeps its
+        // rounded clip; the table now scrolls horizontally inside it (§23.6).
         <div className="bz-card overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="bz-table">
             <thead>
               <tr>
@@ -411,6 +417,7 @@ export default function AuditResultsClient({ locale, template }: Props) {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

@@ -795,7 +795,12 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
       </section>
 
       {/* Action bar — sticky bottom on mobile, inline on desktop */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[#EDEDED] bg-white p-3 sm:static sm:mt-5 sm:rounded-2xl sm:border sm:bg-[#FAFAFA]">
+      {/* §38.238 — below sm this bar is fixed at the viewport bottom, where the
+          shell's floating mobile nav (z-40, 72px tall at bottom 12px+safe-area)
+          painted over it and hid "Kaydet". Raised above the nav via the shared
+          `--dash-bottom-nav-h` token; from sm up the bar is static so the offset
+          is inert. */}
+      <div className="fixed inset-x-0 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-40 border-t border-[#EDEDED] bg-white p-3 sm:static sm:mt-5 sm:rounded-2xl sm:border sm:bg-[#FAFAFA]">
         <div className="mx-auto flex max-w-[920px] flex-row items-center justify-end gap-2 px-1 sm:px-0">
           <button
             type="button"

@@ -1258,7 +1258,25 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           // Stage 60 §38.141 — Floating pill mobile bottom nav 72px height
           // + 12px bottom-margin + safe-area inset. Toplam ~120px content
           // overlap önleme. lg+ desktop'ta nav görünmez (pb-0).
-          className="flex min-w-0 min-h-0 flex-1 flex-col overflow-x-hidden bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0"
+          // §38.238 — `overflow-x-hidden` REMOVED from <main>.
+          //
+          // Per the CSS Overflow spec an element with `overflow-x: hidden`
+          // is a scroll container (it simply cannot be scrolled by the user),
+          // and its `overflow-y` resolves to `auto` rather than `visible`.
+          // That made <main> the nearest scrollport for everything inside it,
+          // so every `position: sticky` descendant in the owner panel anchored
+          // to a container that never scrolls — i.e. silently stopped sticking.
+          // Affected the menu builder live preview (`sticky top-4`), the
+          // feedbacks list filter bar and mobile detail header, the menu
+          // builder toolbar, the campaign drawer header and the create-business
+          // footer CTA.
+          //
+          // The guard is redundant anyway: `body { overflow-x: hidden }`
+          // (globals.css §42.5) covers below-lg, and from lg up the parent
+          // scroll column already carries `lg:overflow-x-hidden`
+          // (§42.5.1, line ~1115). Dropping it here restores sticky without
+          // reopening horizontal scroll.
+          className="flex min-w-0 min-h-0 flex-1 flex-col bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0"
         >
           {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 7 && (
             <TrialBanner locale={locale} daysLeft={trialDaysLeft} />
@@ -1336,13 +1354,19 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       <nav
         aria-label={copy.dashboard}
         aria-hidden={drawerOpen ? 'true' : undefined}
-        className={`fixed left-3 right-3 z-40 mx-auto max-w-[520px] lg:hidden transition-[opacity,transform] duration-200 ease-out ${
+        // §38.238 — bottom-anchored padding instead of `bottom: calc(N + env())`
+        // (CLAUDE.md §38.169). iOS Safari re-evaluates env(safe-area-inset-bottom)
+        // while the toolbar collapses/expands; animating `bottom` made the pill
+        // reflow and jitter mid-scroll. Anchoring the wrapper at bottom-0 and
+        // moving the offset into padding keeps the visual gap identical while the
+        // element itself never moves. Mirrors marketing/MobileBottomNav.
+        className={`fixed bottom-0 left-3 right-3 z-40 mx-auto max-w-[520px] lg:hidden transition-[opacity,transform] duration-200 ease-out ${
           drawerOpen
             ? 'pointer-events-none translate-y-full opacity-0'
             : 'translate-y-0 opacity-100'
         }`}
         style={{
-          bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
           willChange: 'transform, opacity',
           backfaceVisibility: 'hidden',
         }}
@@ -1474,7 +1498,10 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                modal-tier (Apple-soft heavy tier, §38.65 NotificationBell + §38.68
                drawer paterni). Apple HIG bottom sheet bz-mob-drawer-in slide-in
                variant (mobile drawer ile aynı 220ms cubic-bezier easing). */
-            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl border-t border-[#EDEDED] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] bz-elev-3"
+            // §38.238 — max-height + scroll guard: with enough nav entries (or a short
+              // landscape viewport) the sheet grew past the screen and its last rows became
+              // unreachable. overscroll-contain stops the scroll chaining to the page.
+              className="absolute bottom-0 left-0 right-0 max-h-[85dvh] overflow-y-auto overscroll-contain bg-white rounded-t-3xl border-t border-[#EDEDED] px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] bz-elev-3"
             style={{
               animation: 'bz-mob-sheet-in 200ms cubic-bezier(0.4, 0, 0.2, 1)',
             }}

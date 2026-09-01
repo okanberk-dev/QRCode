@@ -71,12 +71,17 @@ export function UnsavedChangesBar({
       role="region"
       aria-live="polite"
       aria-label="Kaydedilmemiş değişiklikler"
-      className={`fixed inset-x-0 bottom-0 z-30 transition-all duration-200 ${
+      // §38.238 — the bar was `bottom-0 z-30` while the shell's floating
+      // mobile nav is `z-40` at `bottom: 12px + safe-area` and 72px tall, so
+      // below lg the nav painted straight over it: "Kaydet" / "Geri al" were
+      // invisible AND unclickable on every settings form. Lifted above the nav
+      // with the canonical `--dash-bottom-nav-h` token (globals.css — 76px +
+      // safe-area below lg, 0 at lg), which the panel's other fixed overlays
+      // already use. The token carries the safe-area inset itself, so the
+      // inline paddingBottom only applies from lg up.
+      className={`fixed inset-x-0 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-40 transition-all duration-200 lg:bottom-0 lg:pb-[env(safe-area-inset-bottom,0px)] ${
         dirty || success || error ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0 pointer-events-none"
       }`}
-      style={{
-        paddingBottom: "env(safe-area-inset-bottom)",
-      }}
     >
       <div
         className="mx-auto max-w-[1440px] m-3 sm:m-4"

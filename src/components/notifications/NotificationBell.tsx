@@ -458,7 +458,11 @@ export default function NotificationBell({
             /* §38.65 — Apple soft elevation: heavy `shadow-[0_20px_60px_-20px_rgba(0,0,0,0.25)]`
                yerine `bz-elev-3` token (0_12px_32px_rgba(10,10,10,0.10)) — daha
                yumuşak depth, panel chrome ile uyumlu. */
-            className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(92vw,360px)] origin-top-right rounded-2xl border border-[#EDEDED] bg-white bz-elev-3 animate-slide-in"
+            // §38.238 — anchored to the bell, the 360px panel ran past the left edge on
+            // phones; body{overflow-x:hidden} then clipped it instead of scrolling, so the
+            // leading icon column of every row was cut off. Below sm it becomes a
+            // viewport-anchored sheet instead of an anchored popover.
+            className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(92vw,360px)] origin-top-right rounded-2xl border border-[#EDEDED] bg-white bz-elev-3 animate-slide-in max-sm:fixed max-sm:inset-x-3 max-sm:top-16 max-sm:w-auto"
           >
             {/* Header */}
             <div className="flex items-center justify-between gap-3 border-b border-[#EDEDED] px-4 py-3">

@@ -931,7 +931,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       {/* 3-col grid full-width. Desktop'ta sabit 100vh hesabı yerine shell'in
           flex alanını kullanır; liste, rail ve detay kendi içinde scroll eder. */}
       <div
-        className="flex min-h-0 flex-1 flex-col bg-white lg:flex-row lg:overflow-hidden xl:grid xl:grid-cols-[300px_400px_minmax(520px,1fr)]"
+        // §38.238 — the xl grid asked for 300+400+520 = 1220px of non-shrinkable
+          // track, but at 1280px only ~1017px is left after the 248px sidebar and
+          // the scrollbar gutter. Fixed px tracks and a minmax() LOWER bound do not
+          // shrink, so the detail pane's right edge was clipped — and since every
+          // ancestor is overflow-hidden (§42.5.1) it could never be scrolled back
+          // into view. The desktop-only "Beklemeye al" / "İşaretle" buttons live on
+          // that edge and were unreachable. Still overflowed at 1440px.
+          // minmax(0,1fr) lets the detail track shrink; the designed 300/400 rails
+          // return at 2xl where they actually fit.
+          className="flex min-h-0 flex-1 flex-col bg-white lg:flex-row lg:overflow-hidden xl:grid xl:grid-cols-[260px_360px_minmax(0,1fr)] 2xl:grid-cols-[300px_400px_minmax(0,1fr)]"
       >
         {/* ============ XL FILTER RAIL — visible only on xl: (≥1280px) ============ */}
         <FeedbackFiltersRail

@@ -1726,7 +1726,8 @@ function SortableCategoryRow({
           </p>
         </div>
       </button>
-      <div className="flex shrink-0 items-center gap-0.5 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+      <div // §38.238 — same hover-only trap as the item rows above.
+                  className="flex shrink-0 items-center gap-0.5 transition-opacity md:[@media(hover:hover)]:opacity-0 md:[@media(hover:hover)]:group-hover:opacity-100">
         <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" title="Up" aria-label="Up">
           <ArrowUp size={14} strokeWidth={2} />
         </button>
@@ -1870,7 +1871,13 @@ function SortableItemRow({
           </div>
         </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 border-t border-[#F5F5F5] pt-2 transition-opacity sm:border-t-0 sm:pt-0 md:opacity-0 md:group-hover:opacity-100">
+      <div // §38.238 — `md:opacity-0 md:group-hover:opacity-100` hides this 6-button
+                    // cluster (Up/Down/Hide/Out-of-stock/Edit/DELETE) on every device
+                    // ≥768px. Touch devices have no :hover, so on iPad the buttons stayed
+                    // invisible forever while remaining fully hit-testable — a tap near the
+                    // right edge of a row silently deleted an item. Gate the hover-reveal on
+                    // an actual hover-capable pointer.
+                    className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 border-t border-[#F5F5F5] pt-2 transition-opacity sm:border-t-0 sm:pt-0 md:[@media(hover:hover)]:opacity-0 md:[@media(hover:hover)]:group-hover:opacity-100">
         <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Up">
           <ArrowUp size={16} strokeWidth={2} />
         </button>
