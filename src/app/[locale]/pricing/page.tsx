@@ -34,7 +34,7 @@ export async function generateMetadata({
       title,
       description,
       url: `https://buaze.com/${locale}/pricing`,
-      images: [{ url: '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze' }],
+      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     alternates: {
       canonical: `https://buaze.com/${locale}/pricing`,
@@ -128,22 +128,6 @@ export default async function PricingPage({
     ],
   };
 
-  const testimonials = [
-    {
-      text: isTr
-        ? 'Fiyat-performans açısından piyasanın en iyi çözümü. İlk ayda kendini amorti etti.'
-        : 'Best value for money on the market. It paid for itself in the first month.',
-      author: isTr ? 'Mert A.' : 'James K.',
-      role: isTr ? 'İşletme sahibi · İstanbul' : 'Owner · London',
-    },
-    {
-      text: isTr
-        ? '14 günlük deneme bizi ikna etmeye yetti. Hemen yıllık plana geçtik.'
-        : 'The 14-day trial convinced us immediately. We switched to the annual plan right away.',
-      author: isTr ? 'Selin B.' : 'Emma W.',
-      role: isTr ? 'Pazarlama · Ankara' : 'Marketing · New York',
-    },
-  ];
 
   const trustTicks = isTr
     ? ['14 gün ücretsiz', 'İstediğinde iptal', 'Kredi kartı gerekmez']
@@ -306,30 +290,12 @@ export default async function PricingPage({
         </div>
       </section>
 
-      {/* ─── Testimonials ─── */}
-      <section className="bg-[#FAFAFA] border-y border-[#EDEDED] px-5 sm:px-10 py-[60px] sm:py-24">
-        <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-          {testimonials.map((ts, i) => (
-            <div key={i} className="bg-white p-8 rounded-3xl border border-[#EDEDED]">
-              <div className="flex gap-0.5 mb-5 text-[#C6F24E]">
-                {[0, 1, 2, 3, 4].map((s) => (
-                  <span key={s} className="text-[18px]">★</span>
-                ))}
-              </div>
-              <p className="text-[17px] text-[#0A0A0A] leading-[1.55] mb-6">&quot;{ts.text}&quot;</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#0A0A0A] text-[#C6F24E] rounded-full flex items-center justify-center text-[14px] font-semibold">
-                  {ts.author.charAt(0)}
-                </div>
-                <div>
-                  <div className="text-[14px] font-medium text-[#0A0A0A]">{ts.author}</div>
-                  <div className="text-[12px] text-[#737373]">{ts.role}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Testimonials section removed — the two quotes were attributed to invented
+          people ("Mert A. · İstanbul", "Selin B. · Ankara" / "James K. · London",
+          "Emma W. · New York") and paired with an ROI claim ("paid for itself in the
+          first month"). Named, unverifiable testimonials are FTC + Reklam Kurulu
+          deceptive-advertising risk (CLAUDE.md §35.8 / §35.10). Restore only with
+          real, consented customers. */}
 
       {/* ─── FAQ ─── */}
       <PricingFaq faqs={faqs} title={t.faq_title} subtitle={t.faq_subtitle} />

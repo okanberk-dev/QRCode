@@ -12,8 +12,8 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
   const title = locale === 'tr'
-    ? 'Diş Kliniği İtibar Yönetimi — Buaze'
-    : 'Dental Clinic Reputation Management — Buaze';
+    ? 'Diş Kliniği İtibar Yönetimi'
+    : 'Dental Clinic Reputation Management';
   const description = locale === 'tr'
     ? 'Hastalar tedavi sonrası deneyimlerini paylaşsın. Diş kliniğinizin Google yorumlarını artırın ve yeni hasta kazanın.'
     : 'Let patients share their post-treatment experience. Increase your dental clinic\'s Google reviews and gain new patients.';
@@ -25,9 +25,23 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : ['dental clinic reputation', 'dentist google reviews', 'patient satisfaction dental'],
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions/dentists`,
-      languages: { tr: 'https://buaze.com/tr/solutions/dentists', en: 'https://buaze.com/en/solutions/dentists' },
+      languages: { tr: 'https://buaze.com/tr/solutions/dentists', en: 'https://buaze.com/en/solutions/dentists', 'x-default': 'https://buaze.com/tr/solutions/dentists' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/dentists` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/dentists`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

@@ -50,6 +50,7 @@ export async function generateMetadata({
       languages: {
         tr: 'https://buaze.com/tr/press',
         en: 'https://buaze.com/en/press',
+        'x-default': 'https://buaze.com/tr/press',
       },
     },
     openGraph: {

@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Güzellik & Spa İtibar Yönetimi — Buaze'
-      : 'Beauty & Spa Reputation Management — Buaze';
+      ? 'Güzellik & Spa İtibar Yönetimi'
+      : 'Beauty & Spa Reputation Management';
   const description =
     locale === 'tr'
       ? "Hizmet biter bitmez müşteriniz QR'ı tarar. Instagram, Google ve Foursquare'de puanınız organik büyür."
@@ -33,9 +33,24 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       languages: {
         tr: 'https://buaze.com/tr/solutions/beauty-salon',
         en: 'https://buaze.com/en/solutions/beauty-salon',
+        'x-default': 'https://buaze.com/tr/solutions/beauty-salon',
       },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/beauty-salon` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/beauty-salon`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

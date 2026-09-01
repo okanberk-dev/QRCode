@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Hukuk Ofisi İtibar Yönetimi — Buaze'
-      : 'Law Firm Reputation Management — Buaze';
+      ? 'Hukuk Ofisi İtibar Yönetimi'
+      : 'Law Firm Reputation Management';
   const description =
     locale === 'tr'
       ? 'Danışmanlık sonrası müvekkilden geri bildirim toplayın. Google arama sıralamanızı yükseltin. Etik kurallara uyumlu, saygın bir dijital profil.'
@@ -33,9 +33,24 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       languages: {
         tr: 'https://buaze.com/tr/solutions/law-firms',
         en: 'https://buaze.com/en/solutions/law-firms',
+        'x-default': 'https://buaze.com/tr/solutions/law-firms',
       },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/law-firms` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/law-firms`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

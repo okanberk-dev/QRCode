@@ -35,9 +35,23 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `/${locale}/integrations`,
-      languages: { tr: '/tr/integrations', en: '/en/integrations' },
+      languages: { tr: '/tr/integrations', en: '/en/integrations', 'x-default': '/tr/integrations' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/integrations` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/integrations`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

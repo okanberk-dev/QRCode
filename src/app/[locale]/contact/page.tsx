@@ -20,8 +20,8 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
   const title = isTr
-    ? 'Buaze ile iletişime geçin — Demo, destek ve satış kanalları'
-    : 'Contact Buaze — Demo, support and sales channels';
+    ? 'İletişim — Demo, destek ve satış kanalları'
+    : 'Contact — Demo, support and sales channels';
   const description = isTr
     ? 'Demo talepleri, destek soruları ve satış için Buaze ekibine ulaşın. Türkçe + İngilizce destek, çalışma saatleri 09:00-18:00 (TRT), yanıt süresi 24 saatten az.'
     : 'Reach the Buaze team for demo requests, support questions and sales. Turkish + English support, 09:00-18:00 (TRT), response time under 24 hours.';
@@ -30,13 +30,17 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `https://buaze.com/${locale}/contact`,
-      languages: { tr: 'https://buaze.com/tr/contact', en: 'https://buaze.com/en/contact' },
+      languages: {
+        tr: 'https://buaze.com/tr/contact',
+        en: 'https://buaze.com/en/contact',
+        'x-default': 'https://buaze.com/tr/contact',
+      },
     },
     openGraph: {
       title,
       description,
       url: `https://buaze.com/${locale}/contact`,
-      images: [{ url: '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze' }],
+      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
   };
 }

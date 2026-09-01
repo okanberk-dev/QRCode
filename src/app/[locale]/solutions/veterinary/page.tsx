@@ -12,8 +12,8 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
   const title = locale === 'tr'
-    ? 'Veteriner Kliniği İtibar Yönetimi — Buaze'
-    : 'Veterinary Clinic Reputation Management — Buaze';
+    ? 'Veteriner Kliniği İtibar Yönetimi'
+    : 'Veterinary Clinic Reputation Management';
   const description = locale === 'tr'
     ? 'Evcil hayvan sahiplerinin güvenini kazanın. Veteriner kliniğinizin Google yorumlarını artırın ve yeni hasta edinin.'
     : "Win the trust of pet owners. Increase your veterinary clinic's Google reviews and gain new patients.";
@@ -25,9 +25,23 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : ['veterinary reputation management', 'vet clinic google reviews', 'pet clinic feedback'],
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions/veterinary`,
-      languages: { tr: 'https://buaze.com/tr/solutions/veterinary', en: 'https://buaze.com/en/solutions/veterinary' },
+      languages: { tr: 'https://buaze.com/tr/solutions/veterinary', en: 'https://buaze.com/en/solutions/veterinary', 'x-default': 'https://buaze.com/tr/solutions/veterinary' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/veterinary` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/veterinary`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

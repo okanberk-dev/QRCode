@@ -12,8 +12,8 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
   const title = locale === 'tr'
-    ? 'Spor Salonu & Fitness Merkezi İtibar Yönetimi — Buaze'
-    : 'Gym & Fitness Center Reputation Management — Buaze';
+    ? 'Spor Salonu & Fitness Merkezi İtibar Yönetimi'
+    : 'Gym & Fitness Center Reputation Management';
   const description = locale === 'tr'
     ? 'Üye memnuniyetini ölçün, üye kaybını azaltın. Spor salonunuzun Google yorumlarını artırın ve yeni üye kazanın.'
     : 'Measure member satisfaction, reduce member churn. Increase your gym\'s Google reviews and gain new members.';
@@ -25,9 +25,23 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : ['gym reputation management', 'fitness center google reviews', 'member satisfaction', 'gym feedback system'],
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions/gym`,
-      languages: { tr: 'https://buaze.com/tr/solutions/gym', en: 'https://buaze.com/en/solutions/gym' },
+      languages: { tr: 'https://buaze.com/tr/solutions/gym', en: 'https://buaze.com/en/solutions/gym', 'x-default': 'https://buaze.com/tr/solutions/gym' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/gym` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/gym`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

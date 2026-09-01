@@ -18,11 +18,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getTranslations(locale);
   return {
-    title: t.compare_title + ' | Buaze',
+    title: t.compare_title,
     description: t.compare_subtitle,
     alternates: {
       canonical: `https://buaze.com/${locale}/compare`,
-      languages: { tr: 'https://buaze.com/tr/compare', en: 'https://buaze.com/en/compare' },
+      languages: { tr: 'https://buaze.com/tr/compare', en: 'https://buaze.com/en/compare', 'x-default': 'https://buaze.com/tr/compare' },
     },
   };
 }

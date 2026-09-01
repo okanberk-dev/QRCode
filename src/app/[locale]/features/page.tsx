@@ -50,7 +50,7 @@ export async function generateMetadata({
       title,
       description,
       url: `https://buaze.com/${locale}/features`,
-      images: [{ url: '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze' }],
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
   };
 }

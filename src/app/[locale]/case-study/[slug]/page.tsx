@@ -79,6 +79,7 @@ export async function generateMetadata({
       languages: {
         tr: `https://buaze.com/tr/case-study/${slug}`,
         en: `https://buaze.com/en/case-study/${slug}`,
+        'x-default': `https://buaze.com/tr/case-study/${slug}`,
       },
     },
   };

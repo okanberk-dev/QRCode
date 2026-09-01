@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Klinik & Sağlık İtibar Yönetimi — Buaze'
-      : 'Clinic & Healthcare Reputation Management — Buaze';
+      ? 'Klinik & Sağlık İtibar Yönetimi'
+      : 'Clinic & Healthcare Reputation Management';
   const description =
     locale === 'tr'
       ? 'KVKK uyumlu hasta geri bildirimi. Tedavi sonrası QR ile deneyim toplayın, Google profilinizi güçlendirin.'
@@ -33,9 +33,24 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       languages: {
         tr: 'https://buaze.com/tr/solutions/healthcare',
         en: 'https://buaze.com/en/solutions/healthcare',
+        'x-default': 'https://buaze.com/tr/solutions/healthcare',
       },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/healthcare` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/healthcare`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

@@ -15,7 +15,9 @@ export async function generateMetadata({
   const { locale } = await params;
   const isTr = locale === 'tr';
 
-  const title = isTr ? 'Sıkça Sorulan Sorular | Buaze — SSS' : 'Frequently Asked Questions | Buaze — FAQ';
+  const title = isTr
+    ? 'Sıkça Sorulan Sorular — QR Yorum Yönetimi | Buaze'
+    : 'Frequently Asked Questions — QR Review Management | Buaze';
   const description = isTr
     ? 'Buaze hakkında merak ettiğiniz tüm soruların cevapları. QR itibar yönetimi, akıllı yönlendirme, fiyatlandırma ve kurulum hakkında detaylı bilgi alın.'
     : 'Find answers to all your questions about Buaze — QR reputation management, smart routing, pricing, and setup explained in detail.';
@@ -30,7 +32,7 @@ export async function generateMetadata({
       title,
       description,
       url: `https://buaze.com/${locale}/faq`,
-      images: [{ url: '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze' }],
+      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
   };
 }
@@ -70,7 +72,7 @@ export default async function FaqPage({
         },
         {
           q: 'Hangi cihazlarda çalışır?',
-          a: 'Müşteri tarafında sadece kamera var — her QR okuyan telefonda çalışır. Sizin panel web tabanlı, iOS ve Android uygulamamız da var.',
+          a: 'Müşteri tarafında sadece kamera var — her QR okuyan telefonda çalışır. Panel web tabanlıdır ve mobil tarayıcıda tam uyumlu çalışır; ayrı bir iOS/Android uygulaması gerekmez.',
         },
         {
           q: 'Kredi kartı vermem gerekiyor mu?',
@@ -90,7 +92,7 @@ export default async function FaqPage({
         },
         {
           q: 'Veri güvenliği?',
-          a: "Tüm veriler Türkiye'de (AWS eu-central-1) saklanır. KVKK + GDPR uyumlu. Uygun sektörler için ISO 27001 süreci devam ediyor.",
+          a: "Veriler, AB ve ABD'de bulunan altyapı sağlayıcılarında işlenir. Yurt dışı aktarım KVKK m. 9 kapsamında açık rızaya dayanır; sağlayıcıların tam listesi ve bulundukları ülkeler Veri İşleyici Sözleşmesi'nde yer alır. KVKK + GDPR uyumlu çalışırız.",
         },
       ]
     : [
@@ -104,7 +106,7 @@ export default async function FaqPage({
         },
         {
           q: 'Which devices does it work on?',
-          a: 'The customer only needs a camera — any phone that scans a QR works. Your panel is web-based and we also have iOS and Android apps.',
+          a: 'The customer only needs a camera — any phone that scans a QR works. The panel is web-based and fully responsive on mobile browsers; no separate iOS/Android app is required.',
         },
         {
           q: 'Do I need a credit card?',
@@ -124,7 +126,7 @@ export default async function FaqPage({
         },
         {
           q: 'What about data security?',
-          a: 'All data is stored in Turkey (AWS eu-central-1). KVKK + GDPR compliant. ISO 27001 is in progress for relevant sectors.',
+          a: 'Data is processed by infrastructure providers located in the EU and the USA. Cross-border transfers rely on explicit consent under KVKK art. 9; the full list of providers and their locations is in the Data Processing Agreement. We operate KVKK + GDPR compliant.',
         },
       ];
 

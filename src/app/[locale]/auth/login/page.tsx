@@ -54,9 +54,9 @@ export default async function LoginPage({
   const isTr = locale === 'tr';
 
   const bottomStats = [
-    { k: '2.400+', l: isTr ? 'işletme' : 'businesses' },
-    { k: '4.9/5', l: isTr ? 'müşteri puanı' : 'customer score' },
-    { k: '28', l: isTr ? 'ülke' : 'countries' },
+    { k: '10', l: isTr ? 'yorum platformu' : 'review platforms' },
+    { k: 'TR + EN', l: isTr ? 'ürün dili' : 'product languages' },
+    { k: '<5dk', l: isTr ? 'kurulum' : 'setup' },
   ];
 
   return (

@@ -43,7 +43,7 @@ export const translations = {
     hero_title_2: 'Yükseltin ve Yönetin',
     hero_subtitle: 'İşletmenizin dijital görünürlüğünü artırın ve müşteri güvenini pekiştirin. Müşteri deneyimini iyileştirin ve geri bildirim operasyonlarınızı tek bir merkezden profesyonelce yönetin.',
     hero_cta: '14 Gün Ücretsiz Deneyin',
-    hero_rating: '4.9/5 Kullanıcı Memnuniyeti',
+    hero_rating: 'KVKK uyumlu geri bildirim akışı',
     hero_platforms_title: 'Global platformlardaki tüm itibarınızı tek bir akıllı merkezde yönetiyoruz:',
 
     // Features
@@ -751,7 +751,7 @@ export const translations = {
     hero_title_2: 'Reputation Professionally',
     hero_subtitle: 'Increase your business\'s digital visibility and reinforce customer trust. Improve customer experience and manage feedback operations from a single center professionally.',
     hero_cta: 'Start Your 14-Day Free Trial',
-    hero_rating: '4.9/5 User Satisfaction Rating',
+    hero_rating: 'KVKK-compliant feedback flow',
     hero_platforms_title: 'We manage all your reputation from global platforms in one intelligent command center:',
 
     // Features

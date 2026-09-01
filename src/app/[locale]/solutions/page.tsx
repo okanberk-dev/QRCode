@@ -47,9 +47,23 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions`,
-      languages: { tr: 'https://buaze.com/tr/solutions', en: 'https://buaze.com/en/solutions' },
+      languages: { tr: 'https://buaze.com/tr/solutions', en: 'https://buaze.com/en/solutions', 'x-default': 'https://buaze.com/tr/solutions' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: isTr ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions`,
+      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 
@@ -95,8 +109,8 @@ export default async function SolutionsOverviewPage({
       eyebrow: isTr ? 'TOPLA' : 'COLLECT',
       title: isTr ? 'Tek panelde topla' : 'Collect in one panel',
       desc: isTr
-        ? 'Google, Yemeksepeti, Getir, Trendyol ve dahili kanal yorumları aynı akışta birleşir. Düşük puanlar dahili forma, yüksek puanlar platforma gider.'
-        : 'Google, Yemeksepeti, Getir, Trendyol and internal channel reviews merge into one feed. Low ratings route internally; high ratings go public.',
+        ? 'Google, Yemeksepeti, Getir, Trendyol ve dahili kanal yorumları aynı akışta birleşir. Her müşteriye herkese açık yorum bağlantısı sunulur; dileyen ayrıca ekibe özel geri bildirim gönderebilir.'
+        : 'Google, Yemeksepeti, Getir, Trendyol and internal channel reviews merge into one feed. Every customer is offered the public review link; anyone who prefers can also send private feedback to the team.',
       cta: isTr ? 'Nasıl çalışır' : 'See how it works',
       href: `${base}/how-it-works`,
     },
@@ -123,9 +137,9 @@ export default async function SolutionsOverviewPage({
   ];
 
   const numbers = [
-    { num: '500+', label: isTr ? 'AKTİF İŞLETME' : 'ACTIVE BUSINESSES' },
-    { num: '2.8M', label: isTr ? 'YAKALANAN YORUM' : 'REVIEWS CAPTURED' },
-    { num: '%92', label: isTr ? 'İTİBAR ARTIŞI' : 'REPUTATION GROWTH' },
+    { num: '10', label: isTr ? 'YORUM PLATFORMU' : 'REVIEW PLATFORMS' },
+    { num: '15', label: isTr ? 'SEKTÖR ÇÖZÜMÜ' : 'SECTOR SOLUTIONS' },
+    { num: 'TR + EN', label: isTr ? 'ÜRÜN DİLİ' : 'PRODUCT LANGUAGES' },
     { num: '<5dk', label: isTr ? 'KURULUM' : 'SETUP' },
   ];
 

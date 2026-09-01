@@ -38,6 +38,7 @@ export async function generateMetadata({
       languages: {
         tr: '/tr/solutions/qr-generator',
         en: '/en/solutions/qr-generator',
+        'x-default': '/tr/solutions/qr-generator',
       },
     },
     openGraph: {

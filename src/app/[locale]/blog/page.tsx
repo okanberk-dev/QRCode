@@ -33,13 +33,14 @@ export async function generateMetadata({
       languages: {
         tr: 'https://buaze.com/tr/blog',
         en: 'https://buaze.com/en/blog',
+        'x-default': 'https://buaze.com/tr/blog',
       },
     },
     openGraph: {
       title,
       description,
       url: `https://buaze.com/${locale}/blog`,
-      images: [{ url: '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze' }],
+      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
   };
 }

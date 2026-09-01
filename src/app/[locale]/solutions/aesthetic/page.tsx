@@ -12,8 +12,8 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
   const title = locale === 'tr'
-    ? 'Estetik Klinik İtibar Yönetimi — Buaze'
-    : 'Aesthetic Clinic Reputation Management — Buaze';
+    ? 'Estetik Klinik İtibar Yönetimi'
+    : 'Aesthetic Clinic Reputation Management';
   const description = locale === 'tr'
     ? 'Hasta gizliliğini koruyarak estetik kliniğinizin itibarını güçlendirin. Hassas alanda güven inşa edin.'
     : 'Strengthen your aesthetic clinic\'s reputation while protecting patient privacy. Build trust in a sensitive field.';
@@ -25,9 +25,23 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : ['aesthetic clinic reputation', 'plastic surgery google reviews', 'patient privacy aesthetic'],
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions/aesthetic`,
-      languages: { tr: 'https://buaze.com/tr/solutions/aesthetic', en: 'https://buaze.com/en/solutions/aesthetic' },
+      languages: { tr: 'https://buaze.com/tr/solutions/aesthetic', en: 'https://buaze.com/en/solutions/aesthetic', 'x-default': 'https://buaze.com/tr/solutions/aesthetic' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/aesthetic` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/aesthetic`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

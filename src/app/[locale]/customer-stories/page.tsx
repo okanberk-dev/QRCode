@@ -28,17 +28,31 @@ export async function generateMetadata({
       : 'Customer Stories — Buaze';
   const description =
     locale === 'tr'
-      ? '2.400\'den fazla işletme Buaze ile nabzını dinliyor. Restoran, otel, klinik, kafe ve daha fazlasından gerçek sonuçlar.'
-      : 'Over 2,400 businesses listen to their pulse with Buaze. Real outcomes from restaurants, hotels, clinics, cafés and more.';
+      ? 'İşletmeler Buaze ile nabzını dinliyor. Restoran, otel, klinik, kafe ve daha fazlasından örnek kullanım senaryoları.'
+      : 'Businesses listen to their pulse with Buaze. Example scenarios from restaurants, hotels, clinics, cafés and more.';
   return {
     metadataBase: new URL('https://buaze.com'),
     title,
     description,
     alternates: {
       canonical: `/${locale}/customer-stories`,
-      languages: { tr: '/tr/customer-stories', en: '/en/customer-stories' },
+      languages: { tr: '/tr/customer-stories', en: '/en/customer-stories', 'x-default': '/tr/customer-stories' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/customer-stories` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/customer-stories`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 
@@ -88,8 +102,8 @@ export default async function CustomerStoriesPage({
           </h1>
           <p className="mt-4 text-[15px] sm:text-[16px] text-[#525252] max-w-[560px] leading-[1.6]">
             {isTr
-              ? '2.400\'den fazla işletme Buaze ile nabzını dinliyor. İşte bir kısmı.'
-              : 'More than 2,400 businesses are listening to their pulse with Buaze. Here are a few.'}
+              ? 'İşletmeler Buaze ile nabzını dinliyor. İşte örnek senaryolar.'
+              : 'Businesses are listening to their pulse with Buaze. Here are some examples.'}
           </p>
         </div>
       </section>

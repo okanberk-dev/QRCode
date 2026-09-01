@@ -43,6 +43,7 @@ export async function generateMetadata({
       languages: {
         tr: `/tr/customer-stories/${slug}`,
         en: `/en/customer-stories/${slug}`,
+        'x-default': `/tr/customer-stories/${slug}`,
       },
     },
     openGraph: {

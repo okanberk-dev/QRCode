@@ -31,9 +31,23 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `/${locale}/careers`,
-      languages: { tr: '/tr/careers', en: '/en/careers' },
+      languages: { tr: '/tr/careers', en: '/en/careers', 'x-default': '/tr/careers' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/careers` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/careers`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 
@@ -54,13 +68,13 @@ export default async function CareersPage({
         { n: '01', t: 'Nabız gibi hızlı', d: 'Haftalık sprintler, günlük push\'lar. Kullanıcılar feedback\'i 24 saatte görür.' },
         { n: '02', t: 'Veri ile konuş', d: 'Her karar bir metriğe bağlı. Fikir değil, ölçüm.' },
         { n: '03', t: 'Birlikte inşa et', d: 'Ürün + destek + tasarım + satış — hepsi aynı Slack kanalında.' },
-        { n: '04', t: 'Yerelden globale', d: 'İstanbul\'da başladık, Amsterdam\'da ofisimiz var. Dünya ritmi.' },
+        { n: '04', t: 'Yerelden globale', d: 'İstanbul\'da başladık, ürünü TR ve EN olarak kurguladık. Uzaktan çalışıyoruz.' },
       ]
     : [
         { n: '01', t: 'Pulse-fast', d: 'Weekly sprints, daily pushes. Users see feedback within 24 hours.' },
         { n: '02', t: 'Speak with data', d: 'Every decision maps to a metric. No opinions, measurements.' },
         { n: '03', t: 'Build together', d: 'Product + support + design + sales — all on the same Slack channel.' },
-        { n: '04', t: 'Local to global', d: 'Started in Istanbul, office in Amsterdam. World pulse.' },
+        { n: '04', t: 'Local to global', d: 'Started in Istanbul, built the product in TR and EN. We work remotely.' },
       ];
 
   const roles = isTr
@@ -146,10 +160,10 @@ export default async function CareersPage({
             <div className="pulse-eyebrow text-[#737373]">{isTr ? 'Sayılarla biz' : 'By the numbers'}</div>
             <div className="mt-5 grid grid-cols-2 gap-6">
               {[
-                { k: '14 → 22', l: isTr ? 'Ekip (3 ay)' : 'Team (3 mo)' },
-                { k: '2.400+', l: isTr ? 'Müşteri' : 'Customers' },
-                { k: '4.9/5', l: isTr ? 'Çalışan puanı' : 'Glassdoor score' },
-                { k: '28', l: isTr ? 'Ülke' : 'Countries' },
+                { k: '2023', l: isTr ? 'Kuruluş' : 'Founded' },
+                { k: '10', l: isTr ? 'Yorum platformu' : 'Review platforms' },
+                { k: 'TR + EN', l: isTr ? 'Ürün dili' : 'Product languages' },
+                { k: '<5dk', l: isTr ? 'Kurulum' : 'Setup' },
               ].map((x) => (
                 <div key={x.l}>
                   <div

@@ -8,7 +8,7 @@ import { jsonLdString } from '@/lib/seo/json-ld';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
-import { IllusMountain, IllusShield } from '@/components/marketing/PulseIllustrations';
+import { IllusShield } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
 import { ArrowUpRight, BarChart3, ClipboardCheck, ClipboardList, Inbox, QrCode, Send, Sparkles, Star } from 'lucide-react';
 // Stage 41 §38.122 — HANDOFF §8 step 8 (Heroes A): 3 variant + ENV flag.
@@ -77,11 +77,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getTranslations(locale);
   const title = locale === 'tr'
-    ? 'Buaze | QR Geri Bildirim ve Dijital İtibar Yönetim Platformu'
-    : 'Buaze | QR Feedback & Digital Reputation Management Platform';
+    ? 'Buaze | QR ile Google Yorum ve Online İtibar Yönetimi'
+    : 'Buaze | QR Feedback & Online Reputation Management Software';
   const description = locale === 'tr'
-    ? 'Buaze ile QR akışlarıyla şeffaf müşteri geri bildirimi toplayın, yorumları tek panelden yönetin ve Pulse AI taslaklarıyla daha hızlı yanıt verin. Restoran, otel, klinik ve yerel hizmet işletmeleri için.'
-    : 'Collect transparent customer feedback through QR flows, manage reviews from one dashboard, and respond faster with Pulse AI drafts. Built for restaurants, hotels, clinics and local service businesses.';
+    ? 'QR ile müşteri geri bildirimi toplayın, Google yorumlarını tek panelden yönetin, Pulse AI taslaklarıyla saniyeler içinde yanıtlayın. 14 gün ücretsiz deneyin.'
+    : 'Collect customer feedback with QR, manage Google reviews from one dashboard and reply in seconds with Pulse AI drafts. Start a free 14-day trial.';
   const ogImage = locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
 
   return {
@@ -395,18 +395,6 @@ export default async function LandingPage({
         { n: '01', t: 'Google first', d: 'Every guest sees the public Google review link first — no rating-based gating.' },
         { n: '02', t: 'Transparent flow', d: 'Negative reviews are never filtered or blocked; private feedback to your team is an optional extra step in the same flow.' },
         { n: '03', t: 'Transparent reporting', d: 'No review is hidden or filtered; every signal lands in the panel as-is.' },
-      ];
-
-  const caseStats = isTr
-    ? [
-        { v: '4.2 → 4.8', l: 'Google ort.' },
-        { v: '+184%', l: 'Yorum/ay' },
-        { v: '12 dk', l: 'Yanıt' },
-      ]
-    : [
-        { v: '4.2 → 4.8', l: 'Google avg.' },
-        { v: '+184%', l: 'Reviews/mo' },
-        { v: '12 min', l: 'Reply' },
       ];
 
   return (
@@ -1514,64 +1502,13 @@ export default async function LandingPage({
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          7. CASE STUDY + MOUNTAIN
-      ═══════════════════════════════════════════════════════════ */}
-      <section className="px-5 sm:px-10 py-[60px] sm:py-28">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-10 lg:gap-16 items-center">
-          <div className="flex justify-center lg:justify-start order-2 lg:order-1">
-            <IllusMountain size={280} className="w-full max-w-[280px] h-auto" />
-          </div>
-
-          <div className="order-1 lg:order-2">
-            <span className="pulse-eyebrow text-[#737373]">
-              {isTr ? 'Vaka · Kadıköy Bistro' : 'Case · Kadıköy Bistro'}
-            </span>
-            <h2 className="mt-4 text-[26px] sm:text-[40px] lg:text-[48px] font-medium leading-[1.05] sm:leading-[1.02] tracking-[-0.035em] text-[#0A0A0A]">
-              {isTr ? (
-                <>
-                  90 günde{' '}
-                  <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">+184%</span>{' '}
-                  organik yorum.
-                </>
-              ) : (
-                <>
-                  <span className="inline-block bg-[#C6F24E] rounded-lg px-3 -skew-y-1">+184%</span>{' '}
-                  organic reviews in 90 days.
-                </>
-              )}
-            </h2>
-            <p className="mt-6 text-[17px] text-[#525252] leading-[1.6] max-w-[520px]">
-              {isTr
-                ? '"Masalara QR koyduk. İlk ay içinde Google ortalamamız 4.2\'den 4.8\'e çıktı. Artık müşteri yorumunu bekleyecek vakit harcamıyoruz — sistem kendi kendine çalışıyor."'
-                : '"We put QRs on the tables. Within the first month our Google average went from 4.2 to 4.8. We don\'t spend time waiting for reviews anymore — the system runs itself."'}
-            </p>
-
-            <div className="mt-7 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#0A0A0A] text-[#C6F24E] flex items-center justify-center text-[14px] font-semibold">
-                EK
-              </div>
-              <div>
-                <div className="text-[14px] font-medium text-[#0A0A0A]">Emre Kaya</div>
-                <div className="text-[12px] text-[#737373]">
-                  {isTr ? 'Kadıköy Bistro · Kurucu' : 'Kadıköy Bistro · Founder'}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-6">
-              {caseStats.map((s) => (
-                <div key={s.l} className="border-t-2 border-[#0A0A0A] pt-3">
-                  <div className="text-[18px] sm:text-[26px] font-medium leading-none text-[#0A0A0A] tracking-[-0.02em]">
-                    {s.v}
-                  </div>
-                  <div className="pulse-eyebrow text-[#737373] mt-2">{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Case-study section removed — it attributed a quoted testimonial to
+          "Emre Kaya · Kadıköy Bistro · Kurucu" and a +184% / 4.2→4.8 metric set,
+          but Kadıköy Bistro is listed as a placeholder brand name in this file's
+          own header note. A named, unverifiable customer testimonial plus
+          unsourced performance numbers is FTC + Reklam Kurulu deceptive-advertising
+          risk (CLAUDE.md §35.8 / §35.10). Restore once a real consented customer
+          and audited figures are available. */}
 
       {/* International testimonial section removed — the prior block
           attributed a quote to "Julia Martens · Hotel Nora · Amsterdam"

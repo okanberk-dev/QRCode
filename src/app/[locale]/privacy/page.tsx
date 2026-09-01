@@ -11,7 +11,27 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const doc = await loadActiveLegalDocumentRendered('gizlilik-politikasi', locale);
-  return { title: `${doc.title} — Buaze`, description: doc.description };
+  return {
+    title: doc.title,
+    description: doc.description,
+    alternates: {
+      canonical: `/${locale}/privacy`,
+      languages: {
+        tr: '/tr/privacy',
+        en: '/en/privacy',
+        'x-default': '/tr/privacy',
+      },
+    },
+    openGraph: {
+      type: 'article',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      url: `https://buaze.com/${locale}/privacy`,
+      title: doc.title,
+      description: doc.description,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: doc.title }],
+    },
+  };
 }
 
 // Stage 83 §38.163 — ISR (1 day) for legal/regulatory content. Save endpoints

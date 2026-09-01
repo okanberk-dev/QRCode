@@ -12,8 +12,25 @@ export async function generateMetadata({
   const { locale } = await params;
   const doc = await loadActiveLegalDocumentRendered('kvkk-aydinlatma', locale);
   return {
-    title: `${doc.title} - Buaze`,
+    title: doc.title,
     description: doc.description,
+    alternates: {
+      canonical: `/${locale}/kvkk`,
+      languages: {
+        tr: '/tr/kvkk',
+        en: '/en/kvkk',
+        'x-default': '/tr/kvkk',
+      },
+    },
+    openGraph: {
+      type: 'article',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      url: `https://buaze.com/${locale}/kvkk`,
+      title: doc.title,
+      description: doc.description,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: doc.title }],
+    },
   };
 }
 
