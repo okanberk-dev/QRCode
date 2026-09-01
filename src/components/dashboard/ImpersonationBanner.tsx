@@ -94,7 +94,12 @@ export default function ImpersonationBanner() {
     <div
       role="alert"
       aria-live="assertive"
-      className="sticky top-0 z-[60] w-full bg-[#991B1B] text-white border-b-2 border-[#7F1D1D]"
+      // §38.238 — below lg the shell's own topbar is `sticky top-0 z-40`
+      // (UserDashboardShell), so two elements competed for the same slot and the
+      // banner sat on top of the burger + logo. On mobile it now scrolls away
+      // with the page and leaves the topbar its slot; from lg up it is outside
+      // the scroll container, so behaviour there is unchanged.
+      className="relative lg:sticky lg:top-0 z-[60] w-full bg-[#991B1B] text-white border-b-2 border-[#7F1D1D]"
     >
       <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2 sm:px-7">
         <div className="flex items-center gap-3 flex-1 min-w-0">

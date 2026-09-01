@@ -6,14 +6,38 @@
 // grace deletions. Same cascade chain, same KVKK m.7 anonymisation; the
 // only delta is the actor context recorded in the final audit row.
 //
-// Cascade chain (§37.9):
-//   User → Restaurant (Cascade) → Feedback / Menu / QR / Analytics /
-//                                 BrandSettings / PlatformLinkCheck /
-//                                 RestaurantActivationState /
-//                                 PlatformRedirectEvent / QrScan /
-//                                 EmbedView (all Cascade)
-//   User → UserSession (Cascade)
-//   User → ImpersonationSession (Cascade)
+// Cascade chain — CORRECTED (§38.238).
+//
+// The previous comment (and CLAUDE.md §37.9) claimed `User → Restaurant`
+// cascades. It does NOT. The migration declares:
+//   ALTER TABLE "restaurants" ... FOREIGN KEY ("user_id")
+//     REFERENCES "users"("id") ON DELETE SET NULL
+// and the schema models it as `userId String?` / `user User?` with no
+// `onDelete:`. A bare `user.delete()` therefore left every Restaurant row
+// alive with `user_id = NULL`, and with it every Feedback row (customer
+// name / e-mail / phone / comment / ipAddress), QR, analytics and brand
+// row — i.e. the exact PII the erasure exists to remove. The orphaned
+// restaurants also stayed reachable on the public /r/[slug] and
+// /menu/[slug] surfaces (those look up by slug, never by userId), so a
+// deleted account kept collecting new feedback. Meanwhile the menus WERE
+// destroyed by the explicit deleteMany below, so the wipe was both
+// incomplete and lossy — and it reported success.
+//
+// Restaurants are now deleted explicitly; their children really are
+// CASCADE, so that wipes the tree:
+//   Restaurant (explicit delete) → Feedback / MenuCategory / MenuItem /
+//     QrGeneration / QrScan / MenuAnalyticsEvent / BrandSettings /
+//     PlatformLinkCheck / PlatformRedirectEvent / RestaurantActivationState /
+//     EmbedView (all ON DELETE CASCADE)
+//   User → UserSession (Cascade — the only real user-level cascade)
+//
+// Tables that hold user-owned data with NO foreign key to `users` at all
+// (`grep 'REFERENCES "users"'` returns only user_sessions + restaurants)
+// are deleted explicitly too, or they would outlive the account:
+//   GoogleIntegration      → OAuth refresh token for a deleted account
+//   ApiKey                 → credentials that would still authenticate
+//   TeamMember (ownerId)   → invited teammates' e-mail addresses (PII)
+//   NotificationPreference → per-user settings row
 //
 // Anonymised (not deleted — KVKK m.7 + audit retention):
 //   BillingInvoice.userId    → null
@@ -43,6 +67,11 @@ export interface HardDeleteResult {
   invoicesAnonymized: number;
   subscriptionsDeleted: number;
   auditRowsRedacted: number;
+  /** §38.238 — restaurants (and their whole CASCADE subtree) actually removed. */
+  restaurantsDeleted: number;
+  /** §38.238 — FK-less user-owned rows removed (google integration, api keys,
+   *  team members, notification preferences). */
+  orphanRowsDeleted: number;
 }
 
 /** SHA-256 short prefix used to retain a non-reversible audit hint of who was
@@ -126,9 +155,29 @@ export async function executeUserHardDelete(
       await tx.menuCategory.deleteMany({ where: { restaurantId: { in: restaurantIds } } });
     }
 
-    // Cascade-delete the User. Restaurant + UserSession + ImpersonationSession
-    // wipe automatically via onDelete: Cascade (CLAUDE.md §37.9). Restaurant
-    // cascade itself wipes Feedback / Menu / QR / Analytics / Brand / etc.
+    // §38.238 — delete the restaurants EXPLICITLY. `restaurants.user_id` is
+    // ON DELETE SET NULL, so `user.delete()` would orphan them (and every
+    // Feedback / QR / analytics row hanging off them) instead of cascading.
+    // Their own child FKs are real CASCADE, so this one statement wipes the
+    // subtree that the erasure is actually about.
+    const restaurantDel =
+      restaurantIds.length > 0
+        ? await tx.restaurant.deleteMany({ where: { id: { in: restaurantIds } } })
+        : { count: 0 };
+
+    // §38.238 — FK-less user-owned rows. Nothing in the database links these
+    // to `users`, so they survive `user.delete()` unless removed by hand.
+    // GoogleIntegration and ApiKey are the security-relevant ones: a live
+    // OAuth refresh token and working API credentials for an account that no
+    // longer exists.
+    const googleDel = await tx.googleIntegration.deleteMany({ where: { userId } });
+    const apiKeyDel = await tx.apiKey.deleteMany({ where: { userId } });
+    const teamDel = await tx.teamMember.deleteMany({ where: { ownerId: userId } });
+    const notifDel = await tx.notificationPreference.deleteMany({ where: { userId } });
+    const orphanRowsDeleted =
+      googleDel.count + apiKeyDel.count + teamDel.count + notifDel.count;
+
+    // Finally the User row itself (UserSession cascades from here).
     await tx.user.delete({ where: { id: userId } });
 
     // Final audit row — actorId = the admin / cron who performed the wipe;
@@ -147,6 +196,8 @@ export async function executeUserHardDelete(
           invoicesAnonymized: invoiceCount.count,
           subscriptionsDeleted: subscriptionDel.count,
           auditRowsRedacted: audited.length,
+          restaurantsDeleted: restaurantDel.count,
+          orphanRowsDeleted,
           ...(actor.extra ?? {}),
         },
       },
@@ -156,6 +207,8 @@ export async function executeUserHardDelete(
       invoicesAnonymized: invoiceCount.count,
       subscriptionsDeleted: subscriptionDel.count,
       auditRowsRedacted: audited.length,
+      restaurantsDeleted: restaurantDel.count,
+      orphanRowsDeleted,
     };
   });
 }

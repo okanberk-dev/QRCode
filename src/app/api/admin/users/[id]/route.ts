@@ -169,6 +169,23 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       restaurantId: role === 'manager' ? restaurantId : null,
     };
 
+    // §38.238 — a privilege change must invalidate the existing admin_token.
+    // Authorization is read from the JWT claim, never re-read from the DB
+    // (`requireSuperadmin` checks `admin.role`; scoping checks
+    // `admin.restaurantId`). Stamping the staleness pivot only inside the
+    // `if (password)` branch meant a superadmin demoted to staff kept
+    // `role: 'superadmin'` in their live cookie for up to 7 days, and a
+    // manager reassigned from restaurant A to B kept writing to A.
+    // `passwordChangedAt` is the generic "tokens issued before this are
+    // dead" pivot that `isAdminTokenStale` compares `iat` against, so it is
+    // the right field for any privilege mutation — not just passwords.
+    const privilegeChanged =
+      role !== before.role ||
+      (role === 'manager' ? restaurantId : null) !== before.restaurantId;
+    if (privilegeChanged) {
+      data.passwordChangedAt = new Date();
+    }
+
     if (password) {
       // Match the strength bar applied at create-time. The previous PUT
       // route accepted any non-empty string so an admin password reset

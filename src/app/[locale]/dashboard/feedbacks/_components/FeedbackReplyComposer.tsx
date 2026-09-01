@@ -165,7 +165,10 @@ export function FeedbackReplyComposer({
             disabled={aiLoading || aiRegenerating}
             aria-label={isTr ? 'Pulse AI yanıt tonu' : 'Pulse AI reply tone'}
             title={isTr ? 'Tonu değiştirince taslak otomatik yenilenir' : 'Changing tone auto-regenerates the draft'}
-            className="w-full sm:w-auto rounded-full border border-white/20 bg-transparent px-3 py-2 sm:py-1.5 text-[12px] font-medium text-white hover:bg-white/10 bz-motion-spring disabled:opacity-50 outline-none focus-visible:border-[#C6F24E] focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+            /* §38.238 — 12px yazı iOS Safari'de odaklanınca sayfayı zoomluyor
+               ve ~32px yükseklik 44px dokunma hedefinin altında kalıyordu.
+               Mobilde 16px + min-h-44; sm'den itibaren kompakt tasarım aynen. */
+            className="w-full sm:w-auto rounded-full border border-white/20 bg-transparent px-3 min-h-[44px] sm:min-h-0 py-2 sm:py-1.5 text-[16px] sm:text-[12px] font-medium text-white hover:bg-white/10 bz-motion-spring disabled:opacity-50 outline-none focus-visible:border-[#C6F24E] focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
             style={{ colorScheme: 'dark' }}
           >
             <option value="warm" className="text-[#0A0A0A]">
@@ -296,15 +299,19 @@ export function FeedbackReplyComposer({
 
         <div className="mt-3 rounded-lg bg-[#FAFAFA] p-2.5">
           {active.customerEmail ? (
-            <label className="flex cursor-pointer items-center gap-2 text-[12px] text-[#0A0A0A]">
+            /* §38.238 — uzun bir müşteri e-postası kırılamayan tek kelime
+               olduğu için satırı taşırıyor, checkbox'ı da eziyordu (shrink-0
+               yok). items-start + shrink-0 + min-w-0 break-words ile e-posta
+               alt satıra sarar, kontrol boyutunu korur. */
+            <label className="flex cursor-pointer items-start gap-2 text-[12px] text-[#0A0A0A]">
               <input
                 type="checkbox"
                 checked={sendEmail}
                 onChange={(e) => setSendEmail(e.target.checked)}
-                className="h-4 w-4 accent-[#0A0A0A]"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]"
               />
-              <Mail size={12} className="text-current opacity-60" />
-              <span>
+              <Mail size={12} className="mt-0.5 shrink-0 text-current opacity-60" />
+              <span className="min-w-0 break-words">
                 {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
                 <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>
               </span>

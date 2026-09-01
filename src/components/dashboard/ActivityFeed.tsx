@@ -224,6 +224,17 @@ export function ActivityFeed({
   const { events, status, newEventIds, pendingToastCount, acknowledgeToast } =
     useRealtimeActivity({ initialEvents, isTr });
 
+  // §38.237 — Mutlak saat yalnız hydration sonrası render edilir.
+  // `initialEvents` server-render'da state'e giriyor (useRealtimeActivity
+  // `useState(initialEvents)`), yani satırlar sunucuda da basılıyor.
+  // `toLocaleTimeString` sunucuda UTC, istemcide yerel saat üretir —
+  // UTC dışındaki her kullanıcıda hydration mismatch olurdu. Göreli süre
+  // (duration) timezone-bağımsız olduğu için sunucuda kalabilir.
+  const [clockReady, setClockReady] = useState(false);
+  useEffect(() => {
+    setClockReady(true);
+  }, []);
+
   // Toast'ı suppress edebileceğimiz local state — kullanıcı X'e bastıktan
   // sonra aynı session'da yeni event gelirse tekrar açılır (yeni count
   // hook tarafından artırılır).
@@ -311,6 +322,22 @@ export function ActivityFeed({
                   addSuffix: false,
                   locale: isTr ? trLocale : enLocale,
                 });
+                // §38.237 — mutlak saat. Göreli süre tek başına "yorum tam
+                // olarak ne zaman geldi" sorusunu yanıtlamıyordu.
+                const clockTime = new Date(event.timestamp).toLocaleTimeString(
+                  isTr ? 'tr-TR' : 'en-US',
+                  { hour: '2-digit', minute: '2-digit' },
+                );
+                const fullTime = new Date(event.timestamp).toLocaleString(
+                  isTr ? 'tr-TR' : 'en-US',
+                  {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  },
+                );
                 const isNew = newEventIds.has(event.id);
                 const inlineRating =
                   event.type === 'feedback' ? extractRatingFromTarget(event.target) : null;
@@ -323,10 +350,14 @@ export function ActivityFeed({
                 const inner = (
                   <>
                     <span
-                      className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[52px] sm:w-[58px] pt-0.5"
+                      className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[52px] sm:w-[58px] pt-0.5 flex flex-col leading-[1.3]"
                       aria-hidden="true"
+                      title={clockReady ? fullTime : undefined}
                     >
-                      {relativeTime}
+                      <span>{relativeTime}</span>
+                      <span className="text-[#A3A3A3]">
+                        {clockReady ? clockTime : '\u00A0'}
+                      </span>
                     </span>
                     <span
                       aria-hidden="true"

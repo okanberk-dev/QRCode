@@ -25,7 +25,7 @@
 import { CustomerPortal } from '@dodopayments/nextjs';
 import { NextRequest, NextResponse } from 'next/server';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { resolveOwnerUserId } from '@/lib/panel-access';
+import { canManageBilling, resolveOwnerUserId } from '@/lib/panel-access';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -45,6 +45,17 @@ const sdkPortal = CustomerPortal({
 export async function GET(req: NextRequest): Promise<Response> {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  // §38.238 — `resolveOwnerUserId` alone is NOT an authorization check: it
+  // resolves the workspace owner for any active team member, viewer included.
+  // The portal it hands back can cancel the subscription and change the card,
+  // so it needs ownership-level authority, not workspace membership.
+  if (!canManageBilling(actor)) {
+    return NextResponse.json(
+      { error: 'forbidden', hint: 'billing is owner-only' },
+      { status: 403 },
+    );
+  }
 
   const ownerUserId = await resolveOwnerUserId(actor);
   if (!ownerUserId) {

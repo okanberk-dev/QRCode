@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canWriteRestaurant } from '@/lib/panel-access';
 
 /**
  * Delete a QR history signature. The QrGeneration table is an audit log
@@ -26,7 +26,11 @@ export async function DELETE(
   const { id, qrId } = await params;
 
   try {
-    const hasAccess = await canAccessRestaurant(actor, id);
+    // §38.238 — this is a DELETE, so it needs the write gate.
+    // `canAccessRestaurant` is a read scope check that passes `viewer`
+    // team members, who could therefore erase QR history rows.
+    // `canWriteRestaurant` applies the established `role !== 'viewer'` rule.
+    const hasAccess = await canWriteRestaurant(actor, id);
     if (!hasAccess) {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }

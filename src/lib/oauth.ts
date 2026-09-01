@@ -126,6 +126,31 @@ export async function handleTokenRefresh(
     return { ok: false, status: 401, error: 'Geçersiz veya süresi dolmuş oturum.' };
   }
 
+  // §38.238 — never refresh an impersonation token.
+  //
+  // A token minted by /api/admin/impersonate carries
+  // `impersonating: { adminId, sessionId }`. This function re-signs a NEW
+  // token from scratch with only { userId, email, role, plan }, and the
+  // route sets it with maxAge 7 days. Refreshing therefore LAUNDERED a
+  // 30-minute, audited, banner-visible shadow session into a plain 7-day
+  // login as that customer: `getPanelActorFromRequest` no longer saw
+  // `realAdminId`, so the ImpersonationBanner disappeared, the
+  // expire-impersonation-sessions cron could close the DB row without
+  // touching the cookie, and every subsequent action was attributed to the
+  // customer instead of the admin.
+  //
+  // Carrying the claim forward would need the session re-validated and the
+  // new expiry clamped to `session.endsAt`; refusing is simpler and strictly
+  // safer. Impersonation is deliberately short-lived and has its own exit
+  // (/api/admin/impersonate/end), so there is nothing legitimate to refresh.
+  if (payload && payload.impersonating != null) {
+    return {
+      ok: false,
+      status: 403,
+      error: 'Gölge oturum yenilenemez. Yönetici oturumuna dönün.',
+    };
+  }
+
   const user = await deps.findUserById(userId);
   if (!user) {
     return { ok: false, status: 401, error: 'Kullanıcı bulunamadı.' };

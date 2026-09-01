@@ -152,8 +152,15 @@ function ChannelCard({
           </span>
         </div>
       ) : (
-        <div className="flex items-baseline justify-between gap-2">
-          <div className="flex items-baseline gap-1.5">
+        // §38.238 — this row needs ~160px (24px mono rating + 5 stars + the
+        // "N yorum" count) but the card interior never is: 142px on mobile
+        // (w-[170px] − p-3.5) and ~71-110px on desktop, where four cards share
+        // the 1.55fr column. The card is `overflow-hidden`, so the count did not
+        // scroll — it silently vanished. Allow both rows to wrap so the count
+        // drops to a second line on narrow cards while wide cards keep the
+        // single-line design.
+        <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
             <span
               className="bz-mono tabular-nums"
               style={{ fontSize: 24, fontWeight: 600, lineHeight: 1, color: '#0A0A0A' }}

@@ -4,7 +4,7 @@ import { Bookmark } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import type { Locale } from '@/lib/translations';
 import type { FeedbackRow } from './types';
-import { initials, timeAgo } from './utils';
+import { formatDateTime, formatStamp, initials, timeAgo } from './utils';
 
 interface FeedbackListItemProps {
   feedback: FeedbackRow;
@@ -94,7 +94,10 @@ export function FeedbackListItem({
               {customerLabel}
             </span>
           </div>
-          <span className="pulse-eyebrow text-[#737373] shrink-0">
+          <span
+            className="pulse-eyebrow text-[#737373] shrink-0"
+            title={formatDateTime(r.createdAt, locale)}
+          >
             {timeAgo(r.createdAt, locale)}
           </span>
         </div>
@@ -112,6 +115,14 @@ export function FeedbackListItem({
           <span className="text-[10px] text-[#737373]">
             {(r.platform || 'buaze').toUpperCase()}
             {r.restaurant?.name ? ` · ${r.restaurant.name}` : ''}
+          </span>
+          {/* §38.237 — mutlak saat. Göreli damga üst satırda kalır; burada
+              işletme sahibi yorumun tam saatini görür. */}
+          <span
+            className="text-[10px] text-[#A3A3A3] tabular-nums"
+            title={formatDateTime(r.createdAt, locale)}
+          >
+            {formatStamp(r.createdAt, locale)}
           </span>
           <span className="ml-auto flex items-center gap-1">
             {/* Stage 13 — Beklemede badge (Bookmark icon, amber palette).

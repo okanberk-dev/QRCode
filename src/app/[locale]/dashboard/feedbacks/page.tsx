@@ -649,10 +649,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       tone: 'success',
     });
     try {
+      // §38.238 — POST on this endpoint is an UPSERT, not a toggle. Sending
+      // it unconditionally meant "remove flag" optimistically cleared the UI
+      // and then re-wrote the same FeedbackFlag row server-side: the flag
+      // reappeared on the next load and the owner could never un-flag a
+      // review. The DELETE branch existed and was simply never called here.
+      // Mirrors the admin inbox, which already picked the method correctly.
       const res = await fetch(`/api/feedback/${targetId}/flag`, {
-        method: 'POST',
+        method: newValue ? 'POST' : 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: 'manual' }),
+        body: newValue ? JSON.stringify({ reason: 'manual' }) : undefined,
       });
       if (!res.ok) throw new Error('flag failed');
     } catch {
@@ -925,7 +931,16 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       {/* 3-col grid full-width. Desktop'ta sabit 100vh hesabı yerine shell'in
           flex alanını kullanır; liste, rail ve detay kendi içinde scroll eder. */}
       <div
-        className="flex min-h-0 flex-1 flex-col bg-white lg:flex-row lg:overflow-hidden xl:grid xl:grid-cols-[300px_400px_minmax(520px,1fr)]"
+        // §38.238 — the xl grid asked for 300+400+520 = 1220px of non-shrinkable
+          // track, but at 1280px only ~1017px is left after the 248px sidebar and
+          // the scrollbar gutter. Fixed px tracks and a minmax() LOWER bound do not
+          // shrink, so the detail pane's right edge was clipped — and since every
+          // ancestor is overflow-hidden (§42.5.1) it could never be scrolled back
+          // into view. The desktop-only "Beklemeye al" / "İşaretle" buttons live on
+          // that edge and were unreachable. Still overflowed at 1440px.
+          // minmax(0,1fr) lets the detail track shrink; the designed 300/400 rails
+          // return at 2xl where they actually fit.
+          className="flex min-h-0 flex-1 flex-col bg-white lg:flex-row lg:overflow-hidden xl:grid xl:grid-cols-[260px_360px_minmax(0,1fr)] 2xl:grid-cols-[300px_400px_minmax(0,1fr)]"
       >
         {/* ============ XL FILTER RAIL — visible only on xl: (≥1280px) ============ */}
         <FeedbackFiltersRail
@@ -1056,7 +1071,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         <div
           role="status"
           aria-live="polite"
-          className={`fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 z-50 max-w-[560px] -translate-x-1/2 rounded-2xl border px-4 py-3 shadow-lg inset-x-4 lg:bottom-4 sm:inset-x-auto ${
+          /* §38.238 — `left-1/2 -translate-x-1/2` ile `inset-x-4` aynı anda
+             uygulanıyordu: inset-x sol kenarı 16px'e sabitliyor, translate onu
+             ayrıca %50 kaydırıyordu; toast telefonda ~%46 genişlikte ve sağa
+             kaymış çıkıyordu. Ortalama artık sm'den itibaren. */
+          className={`fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] inset-x-4 z-50 max-w-[560px] rounded-2xl border px-4 py-3 shadow-lg lg:bottom-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 ${
             bulkNotice.tone === 'success'
               ? 'border-[#A8D62E] bg-[#0A0A0A] text-white'
               : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'

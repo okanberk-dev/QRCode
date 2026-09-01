@@ -1,0 +1,93 @@
+# Hourly cron driver — recovers the sub-daily cadence Vercel Hobby forbids.
+#
+# Vercel Hobby caps every cron job at once per day (a sub-daily schedule makes
+# it reject the whole deployment at creation time — see CLAUDE.md §21.12).
+# Merging the jobs into one endpoint does NOT get around that: the cap is on
+# each job's *frequency*, not on how many jobs there are, so one combined cron
+# would still fire once a day.
+#
+# What does work at zero cost: drive the existing endpoints from outside
+# Vercel. They are already plain GET routes behind
+# `Authorization: Bearer ${CRON_SECRET}` (§37.2 H), so any scheduler can call
+# them. This workflow is that scheduler.
+#
+# The vercel.json entries are deliberately kept as daily fallbacks: every job
+# here is idempotent, so an extra daily run is harmless, and it keeps the jobs
+# alive if GitHub disables this workflow (it does that after 60 days without
+# repo activity).
+#
+# Setup (one-time, repository Settings → Secrets and variables → Actions):
+#   secret   CRON_SECRET  — the same value as the Vercel env var
+#   variable CRON_BASE_URL — optional; defaults to https://www.buaze.com
+#                            (must be the canonical host: the apex answers 307
+#                            and this workflow does not follow redirects)
+name: Cron (hourly)
+
+on:
+  schedule:
+    # Best effort: GitHub delays scheduled runs under load, so treat this as
+    # "about once an hour", not a guarantee.
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: cron-hourly
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Trigger hourly cron endpoints
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Trigger endpoints
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          BASE_URL: ${{ vars.CRON_BASE_URL || 'https://www.buaze.com' }}
+        run: |
+          set -uo pipefail
+
+          if [ -z "${CRON_SECRET}" ]; then
+            echo "::error::CRON_SECRET repository secret is not set — add it in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+          # Ordered so the two Google jobs do not overlap: the drafts run first,
+          # then the alert reads the freshly synced state.
+          paths="
+          /api/cron/expire-impersonation-sessions
+          /api/cron/feedback-autodraft
+          /api/cron/google-reviews-autodraft
+          /api/cron/google-reviews-alert
+          "
+
+          failed=0
+          for path in $paths; do
+            echo "::group::${path}"
+            # --max-time covers the route's own maxDuration ceiling; a job that
+            # runs long is not a failure of this driver.
+            status=$(curl -sS -o /tmp/body.json -w '%{http_code}' \
+              --max-time 330 \
+              -H "Authorization: Bearer ${CRON_SECRET}" \
+              "${BASE_URL}${path}") || status="000"
+
+            echo "HTTP ${status}"
+            head -c 800 /tmp/body.json || true
+            echo
+
+            case "${status}" in
+              2*) : ;;
+              000)
+                echo "::error::${path} — request failed or timed out"
+                failed=1
+                ;;
+              *)
+                echo "::error::${path} — HTTP ${status}"
+                failed=1
+                ;;
+            esac
+            echo "::endgroup::"
+          done
+
+          exit "${failed}"

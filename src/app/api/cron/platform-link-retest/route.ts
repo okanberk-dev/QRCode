@@ -49,12 +49,41 @@ interface CronSummary {
 export async function runPlatformLinkRetest(): Promise<CronSummary> {
   const start = Date.now();
 
-  // BATCH_SIZE'a kadar aktif restoran çek. Şu anki ölçekte (10-50 restoran)
-  // tek run yeter; ileride ölçeklenirse `cursor` ile paginate edilebilir.
-  const restaurants = await prisma.restaurant.findMany({
+  // §38.238 — round-robin by staleness, not `createdAt asc`.
+  //
+  // The previous query took the first BATCH_SIZE rows ordered by creation
+  // date with no cursor and no rotation, so it re-tested the same 25 oldest
+  // restaurants every single day and every restaurant created after them was
+  // never checked at all. That also silently disabled Wave 4 broken-skip
+  // (CLAUDE.md §19.4.5) for those businesses: the resolver only skips a
+  // provider that has a recent failing PlatformLinkCheck, and they never got
+  // one, so their customers kept being redirected to dead links.
+  //
+  // Ordering by "least recently checked" makes the batch rotate on its own:
+  // never-checked restaurants come first, then the stalest. Two cheap queries
+  // instead of a LATERAL join — at this scale (tens to low thousands of rows)
+  // the id + timestamp projection is negligible, and it needs no schema change.
+  const activeIds = await prisma.restaurant.findMany({
     where: { isActive: true },
-    take: BATCH_SIZE,
-    orderBy: { createdAt: 'asc' },
+    select: { id: true },
+  });
+  const lastChecks = await prisma.platformLinkCheck.groupBy({
+    by: ['restaurantId'],
+    _max: { checkedAt: true },
+  });
+  const lastCheckedAt = new Map<string, number>();
+  for (const row of lastChecks) {
+    const t = row._max.checkedAt?.getTime();
+    if (t !== undefined) lastCheckedAt.set(row.restaurantId, t);
+  }
+  const batchIds = activeIds
+    .map((r) => r.id)
+    // Never checked → -Infinity → sorts first.
+    .sort((a, b) => (lastCheckedAt.get(a) ?? -Infinity) - (lastCheckedAt.get(b) ?? -Infinity))
+    .slice(0, BATCH_SIZE);
+
+  const restaurants = await prisma.restaurant.findMany({
+    where: { id: { in: batchIds } },
     select: {
       id: true,
       googleReviewUrl: true,

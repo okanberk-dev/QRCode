@@ -126,11 +126,8 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
   });
   const debouncedSearch = filters.values.search;
   const [searchInput, setSearchInput] = useState(debouncedSearch);
-  const setDebouncedSearch = (v: string) => filters.set('search', v);
   const planFilter = filters.values.plan;
-  const setPlanFilter = (v: string) => filters.set('plan', v);
   const statusFilter = filters.values.status;
-  const setStatusFilter = (v: 'active' | 'passive' | 'all') => filters.set('status', v);
   const attention = filters.values.attention;
   const clearAttention = () => filters.set('attention', '');
   const page = filters.values.page;
@@ -183,8 +180,13 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
   // Debounce search input by 300ms — matches admin/customers pattern.
   useEffect(() => {
     const t = setTimeout(() => {
-      setDebouncedSearch(searchInput.trim());
-      setPage(1);
+      // §38.238 — one setMany, not two set() calls. `useUrlFilter.set`
+      // rebuilds the query string from the `params` snapshot of the CURRENT
+      // render, so two calls in the same tick both start from the same
+      // baseline and the second silently discards the first. Here the
+      // `setPage(1)` write dropped the search term, so typing in the admin
+      // members search box never actually filtered anything.
+      filters.setMany({ search: searchInput.trim(), page: 1 });
     }, 300);
     return () => clearTimeout(t);
     // setDebouncedSearch + setPage are useUrlFilter wrapper proxies — new
@@ -238,11 +240,11 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
 
   const filtersActive = debouncedSearch || planFilter || statusFilter !== 'active' || attention;
   const clearFilters = () => {
+    // §38.238 — chained set() calls clobber each other (see the debounce
+    // effect above); previously only the last one survived, so "clear
+    // filters" left every filter but `page` in place.
     setSearchInput('');
-    setPlanFilter('');
-    setStatusFilter('active');
-    clearAttention();
-    setPage(1);
+    filters.setMany({ search: '', plan: '', status: 'active', attention: '', page: 1 });
   };
 
   const openEdit = (member: Member) => {
@@ -533,8 +535,8 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
           <select
             value={planFilter}
             onChange={(e) => {
-              setPlanFilter(e.target.value);
-              setPage(1);
+              // §38.238 — setMany: two set() calls in one tick clobber.
+              filters.setMany({ plan: e.target.value, page: 1 });
             }}
             className="bz-input"
             aria-label="Plan filtresi"
@@ -548,8 +550,11 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
           <select
             value={statusFilter}
             onChange={(e) => {
-              setStatusFilter(e.target.value as 'active' | 'passive' | 'all');
-              setPage(1);
+              // §38.238 — setMany: two set() calls in one tick clobber.
+              filters.setMany({
+                status: e.target.value as 'active' | 'passive' | 'all',
+                page: 1,
+              });
             }}
             className="bz-input"
             aria-label="Durum filtresi"

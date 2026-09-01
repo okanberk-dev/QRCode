@@ -241,6 +241,37 @@ export async function canDeleteRestaurant(
 }
 
 /**
+ * Faturalandırma yönetim yetkisi (§38.238).
+ *
+ * `resolveOwnerUserId` bir workspace'in owner id'sini AKTİF HER team
+ * member için döndürür — `TeamMember.role` hiç bakılmaz. Billing route'ları
+ * yalnız onu kullanınca, `viewer` etiketiyle davet edilmiş bir üye bile
+ * `GET /api/customer-portal` çağırıp owner'ın imzalı Dodo müşteri portalına
+ * yönlendiriliyordu: tüm fatura geçmişi, fatura adresi, kayıtlı kart bilgisi
+ * görünür; ödeme yöntemi değiştirilebilir; abonelik iptal edilebilir.
+ *
+ * Billing, `canWriteRestaurant`'ın kapsadığı operasyonel yazma değil,
+ * `canDeleteRestaurant` sınıfı bir sahiplik aksiyonudur (para + geri
+ * alınamaz iptal). Bu yüzden aynı posture uygulanır:
+ *  - `superadmin` (admin source) — Buaze iç ekibi
+ *  - `manager` (admin source) — admin panelinden operasyonel iş
+ *  - `restaurant_owner` (user source) — workspace sahibi
+ *
+ * `team_member` HİÇBİR rolde (owner/manager/staff/viewer etiketi dahil)
+ * faturalandırmayı yönetemez. Owner'ın ödeme yetkisi davet ettiği üyelere
+ * devredilmez.
+ *
+ * Not: read-only billing özeti (`/api/billing/summary`) bu gate'e tabi
+ * değildir — plan adını görmek workspace üyeleri için zararsız.
+ */
+export function canManageBilling(actor: PanelActor): boolean {
+  if (actor.role === 'superadmin') return true;
+  if (actor.role === 'manager' && actor.source === 'admin') return true;
+  if (actor.role === 'restaurant_owner' && actor.source === 'user') return true;
+  return false;
+}
+
+/**
  * Feedback üzerinde yazma izni kontrolü (reply, flag, assign, bulk).
  *
  * Sıra:

@@ -259,7 +259,11 @@ export function CampaignDetailDrawer({ campaignId, isTr, onClose, onChanged }: P
         type="button"
         aria-label={isTr ? 'Kapat' : 'Close'}
         onClick={onClose}
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+        /* §38.238 — scrim z-40 idi, shell'in mobil alt nav'ı da z-40:
+            nav modalin karartmasını deliyordu. Panel zaten z-50 ve DOM'da
+            sonra geldiği için scrim'in üstünde kalır (CustomerDetailDrawer
+            ile aynı). */
+        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px]"
       />
 
       {/* Drawer */}

@@ -1075,7 +1075,7 @@ export default function RestaurantMenuBuilderPage() {
                     </p>
                   </div>
                 </div>
-                <div className="mt-6 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-6 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
                   {STARTER_PRESETS.map((p) => {
                     const localized = p[isTr ? 'tr' : 'en'];
                     const busy = presetBusy === p.id;
@@ -1274,7 +1274,7 @@ function CategoryModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full bz-card px-4 py-3 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.description}>
@@ -1282,7 +1282,7 @@ function CategoryModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full resize-none bz-card px-4 py-3 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
@@ -1398,7 +1398,7 @@ function ItemModal({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full bz-card px-4 py-3 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.description}>
@@ -1406,7 +1406,7 @@ function ItemModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full resize-none bz-card px-4 py-3 text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+            className="w-full resize-none bz-card px-4 py-3 text-[16px] sm:text-[14px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
           />
         </Field>
         <Field label={copy.price}>
@@ -1417,7 +1417,7 @@ function ItemModal({
               value={priceInput}
               onChange={(e) => setPriceInput(e.target.value)}
               placeholder="0,00"
-              className="w-full bz-card px-4 py-3 pr-12 text-[15px] tabular-nums text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+              className="w-full bz-card px-4 py-3 pr-12 text-[16px] sm:text-[15px] tabular-nums text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
               style={{ fontFamily: 'var(--font-mono)' }}
             />
             <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[13px] font-medium text-[#A3A3A3]">₺</span>
@@ -1726,7 +1726,8 @@ function SortableCategoryRow({
           </p>
         </div>
       </button>
-      <div className="flex shrink-0 items-center gap-0.5 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+      <div // §38.238 — same hover-only trap as the item rows above.
+                  className="flex shrink-0 items-center gap-0.5 transition-opacity md:[@media(hover:hover)]:opacity-0 md:[@media(hover:hover)]:group-hover:opacity-100">
         <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" title="Up" aria-label="Up">
           <ArrowUp size={14} strokeWidth={2} />
         </button>
@@ -1870,7 +1871,13 @@ function SortableItemRow({
           </div>
         </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 border-t border-[#F5F5F5] pt-2 transition-opacity sm:border-t-0 sm:pt-0 md:opacity-0 md:group-hover:opacity-100">
+      <div // §38.238 — `md:opacity-0 md:group-hover:opacity-100` hides this 6-button
+                    // cluster (Up/Down/Hide/Out-of-stock/Edit/DELETE) on every device
+                    // ≥768px. Touch devices have no :hover, so on iPad the buttons stayed
+                    // invisible forever while remaining fully hit-testable — a tap near the
+                    // right edge of a row silently deleted an item. Gate the hover-reveal on
+                    // an actual hover-capable pointer.
+                    className="flex shrink-0 flex-wrap items-center justify-end gap-0.5 border-t border-[#F5F5F5] pt-2 transition-opacity sm:border-t-0 sm:pt-0 md:[@media(hover:hover)]:opacity-0 md:[@media(hover:hover)]:group-hover:opacity-100">
         <button onClick={onMoveUp} disabled={isFirst} className="bz-btn-icon disabled:opacity-30 disabled:hover:bg-transparent" aria-label="Up">
           <ArrowUp size={16} strokeWidth={2} />
         </button>
@@ -1984,7 +1991,9 @@ function ThemePanel({
               {themes.find((t) => t.id === restaurant.menuTheme)?.label ?? ''}
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div /* §38.238 — lg'de bu panel 345px; 3 sütun tema adlarını okunamaz
+                    kılıyordu. xl'e ertelendi. */
+                  className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
             {themes.map((t) => {
               const active = restaurant.menuTheme === t.id;
               const vibe = THEME_VIBES[t.id];

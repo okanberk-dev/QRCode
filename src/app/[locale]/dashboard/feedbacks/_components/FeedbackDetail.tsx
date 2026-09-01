@@ -10,7 +10,7 @@ import type {
   ReplyTone,
   SentReply,
 } from './types';
-import { initials, timeAgo } from './utils';
+import { formatDateTime, formatStamp, initials, timeAgo } from './utils';
 import { FeedbackReplyComposer } from './FeedbackReplyComposer';
 import FeedbackTimeline from '@/components/dashboard/feedbacks/FeedbackTimeline';
 import { buildFeedbackTimeline } from '@/lib/feedback-timeline';
@@ -157,6 +157,13 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               {active.restaurant?.name ? ` · ${active.restaurant.name.toUpperCase()}` : ''}
               {` · ${timeAgo(active.createdAt, locale).toUpperCase()} ${isTr ? 'ÖNCE' : 'AGO'}`}
             </p>
+            {/* §38.237 — mutlak damga. Göreli süre üstte kalır; işletme
+                sahibi yorumun tam tarih + saatini burada görür. */}
+            <p className="mt-0.5 text-[11px] text-[#A3A3A3] tabular-nums">
+              <time dateTime={active.createdAt}>
+                {formatDateTime(active.createdAt, locale)}
+              </time>
+            </p>
             <div className="mt-2 flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((i) => (
                 <span
@@ -216,7 +223,9 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
         </div>
 
         {/* Comment */}
-        <div className="mt-6 rounded-xl bg-[#FAFAFA] p-5 text-[15px] leading-[1.65] text-[#0A0A0A]">
+        <div /* §38.238 — break-words: müşteri serbest metnindeki uzun URL
+              taşıp kırpılıyordu. */
+            className="mt-6 rounded-xl bg-[#FAFAFA] p-5 text-[15px] leading-[1.65] text-[#0A0A0A] break-words">
           {active.comment ? `"${active.comment}"` : isTr ? 'Yorum bırakılmadı.' : 'No comment.'}
         </div>
 
@@ -289,11 +298,14 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                           </span>
                         )}
                       </span>
-                      <span className="pulse-eyebrow text-[#A3A3A3] tabular-nums">
-                        {timeAgo(rep.createdAt, locale)}
+                      <span
+                        className="pulse-eyebrow text-[#A3A3A3] tabular-nums"
+                        title={formatDateTime(rep.createdAt, locale)}
+                      >
+                        {timeAgo(rep.createdAt, locale)} · {formatStamp(rep.createdAt, locale)}
                       </span>
                     </div>
-                    <p className="text-[13px] leading-[1.55] text-[#0A0A0A] whitespace-pre-line">
+                    <p className="text-[13px] leading-[1.55] text-[#0A0A0A] whitespace-pre-line break-words">
                       {rep.body}
                     </p>
                     {rep.status === 'failed' && (

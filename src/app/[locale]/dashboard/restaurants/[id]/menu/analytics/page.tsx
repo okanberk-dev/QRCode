@@ -229,7 +229,9 @@ export default function MenuAnalyticsPage() {
 
         {/* Filters */}
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 text-[11px] font-semibold uppercase tracking-widest">
+          <div /* §38.238 — flex-wrap: dört uzun etiket ("Tüm zamanlar") 320-414px
+              ekranda 2-3 satıra sarıp kontrolü okunmaz kılıyordu. */
+            className="inline-flex flex-wrap rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 text-[11px] font-semibold uppercase tracking-widest">
             {([
               { key: '7d', label: copy.range7 },
               { key: '30d', label: copy.range30 },
@@ -239,7 +241,7 @@ export default function MenuAnalyticsPage() {
               <button
                 key={opt.key}
                 onClick={() => setRange(opt.key)}
-                className={`rounded-lg px-3 py-2 transition-all ${
+                className={`whitespace-nowrap rounded-lg px-3 py-2 transition-all ${
                   range === opt.key ? 'bg-[#0A0A0A] text-white shadow-sm' : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
                 }`}
               >

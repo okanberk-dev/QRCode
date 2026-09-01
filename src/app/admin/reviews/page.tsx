@@ -22,6 +22,7 @@ import type {
   HasReplyFilter,
   PlatformFilter,
   ReplyTone,
+  SentReply,
 } from './_components/types';
 import { AdminFeedbackList } from './_components/AdminFeedbackList';
 import { AdminFeedbackDetail } from './_components/AdminFeedbackDetail';
@@ -80,6 +81,10 @@ function AdminReviewsContent() {
   const [aiTone, setAiTone] = useState<AiTone>('warm');
   const [notice, setNotice] = useState<{ msg: string; tone: ReplyTone } | null>(null);
   const [sendEmail, setSendEmail] = useState(true);
+  // §38.237 — Gönderilen yanıt thread'i. Owner paneli bu endpoint'i zaten
+  // tüketiyordu; admin yalnız "Yanıtlandı" rozeti görüyordu.
+  const [sentReplies, setSentReplies] = useState<SentReply[]>([]);
+  const [sentLoading, setSentLoading] = useState(false);
 
   // Notification deep-link pulse one-shot
   const focusAppliedRef = useRef(false);
@@ -237,6 +242,39 @@ function AdminReviewsContent() {
     setSendEmail(Boolean(active?.customerEmail));
   }, [active?.id, active?.customerEmail]);
 
+  // §38.237 — Aktif yorum değişince gönderilen yanıtları çek. `cancelled`
+  // guard'ı hızlı satır değişiminde stale response'un yeni seçime
+  // yazılmasını engeller (owner panelindeki aynı pattern).
+  useEffect(() => {
+    const id = active?.id;
+    if (!id) {
+      setSentReplies([]);
+      setSentLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setSentLoading(true);
+    (async () => {
+      try {
+        const res = await fetch(`/api/feedback/${id}/reply`);
+        if (cancelled) return;
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setSentReplies(Array.isArray(data?.replies) ? data.replies : []);
+        } else {
+          setSentReplies([]);
+        }
+      } catch {
+        if (!cancelled) setSentReplies([]);
+      } finally {
+        if (!cancelled) setSentLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [active?.id]);
+
   const flash = (msg: string, tone: ReplyTone = 'info') => {
     setNotice({ msg, tone });
     setTimeout(() => setNotice(null), 2600);
@@ -317,6 +355,17 @@ function AdminReviewsContent() {
         const wasReplied = active.isReplied;
         updateRow(active.id, { isReplied: true });
         if (!wasReplied) bumpCounts({ new: -1, replied: 1 });
+        // §38.237 — thread'e optimistic ekle; refetch beklemeden görünür.
+        setSentReplies((list) => [
+          ...list,
+          {
+            id: data?.replyId ?? `tmp-${list.length}-${active.id}`,
+            body: draft,
+            channel: wantsEmail ? 'email' : 'internal',
+            status: data?.email?.status === 'failed' ? 'failed' : 'sent',
+            createdAt: new Date().toISOString(),
+          },
+        ]);
         setDraft('');
         setAiSource(null);
         const emailStatus = data?.email?.status as 'sent' | 'skipped' | 'failed' | undefined;
@@ -412,20 +461,50 @@ function AdminReviewsContent() {
     if (selectedIds.size === 0 || bulkBusy) return;
     setBulkBusy(true);
     try {
-      const res = await fetch('/api/feedback/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: Array.from(selectedIds), action }),
-      });
-      if (res.ok) {
+      // §38.238 — /api/feedback/bulk validates `ids` with Zod `.max(50)`.
+      // This sent the whole selection in one request, so as soon as
+      // "load more" grew the list past 50 rows, select-all + any bulk
+      // action failed wholesale with a 400 and processed nothing. Send in
+      // server-sized chunks and aggregate the counters instead.
+      const BULK_ID_CAP = 50;
+      const idList = Array.from(selectedIds);
+      let processed = 0;
+      let skipped = 0;
+      let failure: string | null = null;
+
+      for (let i = 0; i < idList.length; i += BULK_ID_CAP) {
+        const chunk = idList.slice(i, i + BULK_ID_CAP);
+        const res = await fetch('/api/feedback/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: chunk, action }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          // 429 = the 10/min/actor bulk rate limit. Anything already
+          // processed stays processed, so report the partial result rather
+          // than implying nothing happened.
+          failure =
+            res.status === 429
+              ? isTr
+                ? 'Hız sınırına takıldı, kalan yorumlar işlenmedi'
+                : 'Rate limited — remaining reviews were not processed'
+              : err.error?.message || (isTr ? 'Toplu işlem başarısız' : 'Bulk action failed');
+          break;
+        }
         const data = await res.json();
+        processed += data.processed ?? 0;
+        skipped += data.skipped ?? 0;
+      }
+
+      {
         flash(
-          isTr
-            ? `${data.processed} yorum işlendi` +
-                (data.skipped > 0 ? ` (${data.skipped} atlandı)` : '')
-            : `${data.processed} reviews processed` +
-                (data.skipped > 0 ? ` (${data.skipped} skipped)` : ''),
-          'success',
+          failure
+            ? `${failure}${processed > 0 ? ` · ${processed}${isTr ? ' işlendi' : ' processed'}` : ''}`
+            : isTr
+              ? `${processed} yorum işlendi` + (skipped > 0 ? ` (${skipped} atlandı)` : '')
+              : `${processed} reviews processed` + (skipped > 0 ? ` (${skipped} skipped)` : ''),
+          failure ? 'error' : 'success',
         );
         setSelectedIds(new Set());
         // Re-fetch to reflect new flag/assignment state. Mevcut filter'ları
@@ -433,16 +512,24 @@ function AdminReviewsContent() {
         // (CLAUDE.md §11.21 — assignedToMe filter aktifken bulk sonrası liste
         // yanlış genişlememeli; ayrıca load-more ile genişletilmiş liste
         // bulk sonrası ilk sayfaya çökmemeli).
+        // §38.238 — /api/feedback clamps `limit` to 100 server-side. Asking
+        // for PAGE_SIZE * page (25, 50, 75, 125, …) silently returned only
+        // 100 rows past page 4, so rows the admin had already loaded
+        // disappeared after a bulk action and `page` no longer matched the
+        // list length. Clamp here so the request and the state agree.
+        const LIST_LIMIT_CAP = 100;
+        const refreshLimit = Math.min(PAGE_SIZE * page, LIST_LIMIT_CAP);
         const refresh = await fetch(
-          `/api/feedback?${buildListQuery(1, { limit: String(PAGE_SIZE * page) }).toString()}`,
+          `/api/feedback?${buildListQuery(1, { limit: String(refreshLimit) }).toString()}`,
         );
         if (refresh.ok) {
           const d = await refresh.json();
-          setRows(d.data ?? []);
+          const rows: FeedbackRow[] = d.data ?? [];
+          setRows(rows);
+          // Keep `page` consistent with what is actually loaded, otherwise
+          // the next "load more" skips a window.
+          setPage(Math.max(1, Math.ceil(rows.length / PAGE_SIZE)));
         }
-      } else {
-        const err = await res.json().catch(() => ({}));
-        flash(err.error?.message || (isTr ? 'Toplu işlem başarısız' : 'Bulk action failed'), 'error');
       }
     } catch {
       flash(isTr ? 'Toplu işlem başarısız' : 'Bulk action failed', 'error');
@@ -621,6 +708,8 @@ function AdminReviewsContent() {
               sending={sending}
               onSend={onSend}
               notice={notice}
+              sentReplies={sentReplies}
+              sentLoading={sentLoading}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center px-4">
