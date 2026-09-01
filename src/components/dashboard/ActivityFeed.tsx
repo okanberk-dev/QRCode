@@ -224,6 +224,17 @@ export function ActivityFeed({
   const { events, status, newEventIds, pendingToastCount, acknowledgeToast } =
     useRealtimeActivity({ initialEvents, isTr });
 
+  // §38.237 — Mutlak saat yalnız hydration sonrası render edilir.
+  // `initialEvents` server-render'da state'e giriyor (useRealtimeActivity
+  // `useState(initialEvents)`), yani satırlar sunucuda da basılıyor.
+  // `toLocaleTimeString` sunucuda UTC, istemcide yerel saat üretir —
+  // UTC dışındaki her kullanıcıda hydration mismatch olurdu. Göreli süre
+  // (duration) timezone-bağımsız olduğu için sunucuda kalabilir.
+  const [clockReady, setClockReady] = useState(false);
+  useEffect(() => {
+    setClockReady(true);
+  }, []);
+
   // Toast'ı suppress edebileceğimiz local state — kullanıcı X'e bastıktan
   // sonra aynı session'da yeni event gelirse tekrar açılır (yeni count
   // hook tarafından artırılır).
@@ -341,10 +352,12 @@ export function ActivityFeed({
                     <span
                       className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[52px] sm:w-[58px] pt-0.5 flex flex-col leading-[1.3]"
                       aria-hidden="true"
-                      title={fullTime}
+                      title={clockReady ? fullTime : undefined}
                     >
                       <span>{relativeTime}</span>
-                      <span className="text-[#A3A3A3]">{clockTime}</span>
+                      <span className="text-[#A3A3A3]">
+                        {clockReady ? clockTime : '\u00A0'}
+                      </span>
                     </span>
                     <span
                       aria-hidden="true"
