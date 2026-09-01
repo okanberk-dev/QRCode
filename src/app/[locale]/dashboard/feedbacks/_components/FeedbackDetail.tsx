@@ -223,7 +223,9 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
         </div>
 
         {/* Comment */}
-        <div className="mt-6 rounded-xl bg-[#FAFAFA] p-5 text-[15px] leading-[1.65] text-[#0A0A0A]">
+        <div /* §38.238 — break-words: müşteri serbest metnindeki uzun URL
+              taşıp kırpılıyordu. */
+            className="mt-6 rounded-xl bg-[#FAFAFA] p-5 text-[15px] leading-[1.65] text-[#0A0A0A] break-words">
           {active.comment ? `"${active.comment}"` : isTr ? 'Yorum bırakılmadı.' : 'No comment.'}
         </div>
 
@@ -303,7 +305,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
                         {timeAgo(rep.createdAt, locale)} · {formatStamp(rep.createdAt, locale)}
                       </span>
                     </div>
-                    <p className="text-[13px] leading-[1.55] text-[#0A0A0A] whitespace-pre-line">
+                    <p className="text-[13px] leading-[1.55] text-[#0A0A0A] whitespace-pre-line break-words">
                       {rep.body}
                     </p>
                     {rep.status === 'failed' && (

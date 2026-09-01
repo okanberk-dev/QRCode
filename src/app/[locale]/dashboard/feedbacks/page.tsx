@@ -1071,7 +1071,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         <div
           role="status"
           aria-live="polite"
-          className={`fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 z-50 max-w-[560px] -translate-x-1/2 rounded-2xl border px-4 py-3 shadow-lg inset-x-4 lg:bottom-4 sm:inset-x-auto ${
+          /* §38.238 — `left-1/2 -translate-x-1/2` ile `inset-x-4` aynı anda
+             uygulanıyordu: inset-x sol kenarı 16px'e sabitliyor, translate onu
+             ayrıca %50 kaydırıyordu; toast telefonda ~%46 genişlikte ve sağa
+             kaymış çıkıyordu. Ortalama artık sm'den itibaren. */
+          className={`fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] inset-x-4 z-50 max-w-[560px] rounded-2xl border px-4 py-3 shadow-lg lg:bottom-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 ${
             bulkNotice.tone === 'success'
               ? 'border-[#A8D62E] bg-[#0A0A0A] text-white'
               : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'

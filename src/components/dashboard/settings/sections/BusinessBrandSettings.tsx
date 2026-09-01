@@ -236,9 +236,12 @@ export function BusinessBrandSettings({
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* §38.238 — lg'de (1024-1279) sağ sütun ~76px'e sıkışıp "Kapak yükle"
+              butonlarını kırpıyordu: sabit 320px shrink-0 önizleme + dar settings
+              gövdesi. lg'de dikey yığ, xl'de tasarımdaki yan yana düzen geri. */}
+            <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row gap-4">
           <div
-            className="relative shrink-0 w-full sm:w-[320px] overflow-hidden"
+            className="relative shrink-0 w-full sm:w-[320px] lg:w-full xl:w-[320px] overflow-hidden"
             style={{
               aspectRatio: "16 / 9",
               borderRadius: 12,

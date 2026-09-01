@@ -384,7 +384,9 @@ function ReviewCard({
           </div>
 
           {/* Body */}
-          <p className="mt-2 whitespace-pre-wrap text-[13px] leading-[1.6] text-[#262626]">
+          <p /* §38.238 — break-words: müşteri yorumundaki uzun URL kartın
+                       overflow-hidden sınırında kırpılıyordu. */
+                    className="mt-2 whitespace-pre-wrap break-words text-[13px] leading-[1.6] text-[#262626]">
             {review.comment || (isTr ? 'Yazılı yorum yok.' : 'No written comment.')}
           </p>
 
@@ -404,7 +406,7 @@ function ReviewCard({
                   </>
                 )}
               </div>
-              <p className="mt-1 whitespace-pre-wrap text-[12.5px] leading-[1.55] text-[#262626]">
+              <p className="mt-1 whitespace-pre-wrap break-words text-[12.5px] leading-[1.55] text-[#262626]">
                 {review.reviewReply?.comment}
               </p>
             </div>

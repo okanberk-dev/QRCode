@@ -87,7 +87,7 @@ export function GoogleReviewsHub({ locale, adminMode = false }: GoogleReviewsHub
     : isTr ? "Henüz işletmen yok" : "No businesses yet";
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-5 px-5 py-6 sm:px-7 lg:py-8">
+    <div className="mx-auto max-w-[1440px] space-y-5 px-4 py-6 sm:px-7 lg:py-8">
       <PageHeader
         eyebrow={isTr ? "GOOGLE İŞLETME" : "GOOGLE BUSINESS"}
         title={isTr ? "Google yorumları" : "Google reviews"}
