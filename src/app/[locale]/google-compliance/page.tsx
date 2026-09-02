@@ -23,8 +23,8 @@ export async function generateMetadata({
   // policy framing changes — search snippets and on-page heading should
   // tell the same story.
   const title = isTr
-    ? 'Google Uyumluluk & Güven — Yorum politikası | Buaze'
-    : 'Google Compliance & Trust — Review Policy | Buaze';
+    ? 'Google Yorum Politikası Uyumu — Sahte yorum yok, teşvik yok'
+    : 'Google Review Policy Compliance — No fake reviews, no incentives';
   const description = isTr
     ? 'Buaze, Google yorum politikalarına tam uyum sağlar: sahte yorum yok, teşvik yok, müşteri agency korunur. Şeffaf ve dürüst geri bildirim ekosistemini koruruz.'
     : 'Buaze strictly adheres to Google review policies: no fake reviews, no incentives, customer agency preserved. We protect a transparent, honest feedback ecosystem.';
@@ -36,13 +36,14 @@ export async function generateMetadata({
       languages: {
         tr: 'https://buaze.com/tr/google-compliance',
         en: 'https://buaze.com/en/google-compliance',
+        'x-default': 'https://buaze.com/tr/google-compliance',
       },
     },
     openGraph: {
       title,
       description,
       url: `https://buaze.com/${locale}/google-compliance`,
-      images: [{ url: '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze' }],
+      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
   };
 }
@@ -83,7 +84,7 @@ export default async function GoogleCompliancePage({
         },
         {
           q: 'Müşteri verilerim KVKK ve GDPR ile uyumlu mu saklanıyor?',
-          a: 'Evet. Tüm müşteri verileri Avrupa Birliği veri merkezinde (Frankfurt) saklanır. KVKK aydınlatma metni her form altında görünür ve onay açık (opt-in) şekilde alınır. Pazarlama izni ayrıca onaylanır — hizmet onayıyla aynı checkbox\'a bundle edilmez. IP adresleri 90 gün sonra otomatik anonimleştirilir, müşteri talep ederse kişisel verileri silinir veya export edilir.',
+          a: 'Evet. Müşteri verileri AB ve ABD\'de bulunan altyapı sağlayıcılarında işlenir; sağlayıcıların tam listesi ve bulundukları ülkeler Veri İşleyici Sözleşmesi\'nde yer alır, yurt dışı aktarım KVKK m. 9 açık rızasına dayanır. KVKK aydınlatma metni her form altında görünür ve onay açık (opt-in) şekilde alınır. Pazarlama izni ayrıca onaylanır — hizmet onayıyla aynı checkbox\'a bundle edilmez. IP adresleri 90 gün sonra otomatik anonimleştirilir, müşteri talep ederse kişisel verileri silinir veya export edilir.',
         },
         {
           q: 'Buaze Google\'ın resmi iş ortağı mı?',
@@ -109,7 +110,7 @@ export default async function GoogleCompliancePage({
         },
         {
           q: 'Is my customer data stored in compliance with KVKK and GDPR?',
-          a: 'Yes. All customer data is stored in an EU data center (Frankfurt). The KVKK notice is visible under every form and consent is collected explicitly (opt-in). Marketing consent is collected separately — never bundled into the same checkbox as service consent. IP addresses are automatically anonymized after 90 days; on customer request, personal data is deleted or exported.',
+          a: 'Yes. Customer data is processed by infrastructure providers located in the EU and the USA; the full provider list and their locations are set out in the Data Processing Agreement, and cross-border transfers rely on explicit consent under KVKK art. 9. The KVKK notice is visible under every form and consent is collected explicitly (opt-in). Marketing consent is collected separately — never bundled into the same checkbox as service consent. IP addresses are automatically anonymized after 90 days; on customer request, personal data is deleted or exported.',
         },
         {
           q: 'Is Buaze an official Google partner?',

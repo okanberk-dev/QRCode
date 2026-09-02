@@ -12,8 +12,8 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
   const title = locale === 'tr'
-    ? 'Butik Otel İtibar Yönetimi — Buaze'
-    : 'Boutique Hotel Reputation Management — Buaze';
+    ? 'Butik Otel İtibar Yönetimi'
+    : 'Boutique Hotel Reputation Management';
   const description = locale === 'tr'
     ? 'Kişisel konaklama deneyimini dijital itibara dönüştürün. TripAdvisor ve Google\'da öne çıkın, misafir dönüşünü artırın.'
     : 'Turn personalized hospitality experience into digital reputation. Stand out on TripAdvisor and Google, increase guest return.';
@@ -25,9 +25,23 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : ['boutique hotel reputation', 'boutique hotel google reviews', 'guest satisfaction small hotel'],
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions/boutique-hotels`,
-      languages: { tr: 'https://buaze.com/tr/solutions/boutique-hotels', en: 'https://buaze.com/en/solutions/boutique-hotels' },
+      languages: { tr: 'https://buaze.com/tr/solutions/boutique-hotels', en: 'https://buaze.com/en/solutions/boutique-hotels', 'x-default': 'https://buaze.com/tr/solutions/boutique-hotels' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/boutique-hotels` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/boutique-hotels`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

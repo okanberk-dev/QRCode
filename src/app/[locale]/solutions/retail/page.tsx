@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Perakende & Mağaza İtibar Yönetimi — Buaze'
-      : 'Retail & Store Reputation Management — Buaze';
+      ? 'Perakende & Mağaza İtibar Yönetimi'
+      : 'Retail & Store Reputation Management';
   const description =
     locale === 'tr'
       ? 'Müşteri kasadan çıkarken fişinin altındaki QR\'ı tarar. Google ve Yandex\'e yönlendirilir. Çok mağaza, tek panel.'
@@ -33,9 +33,24 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       languages: {
         tr: 'https://buaze.com/tr/solutions/retail',
         en: 'https://buaze.com/en/solutions/retail',
+        'x-default': 'https://buaze.com/tr/solutions/retail',
       },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/retail` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/retail`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

@@ -103,7 +103,7 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: `/${locale}/case-study`,
-      languages: { tr: '/tr/case-study', en: '/en/case-study' },
+      languages: { tr: '/tr/case-study', en: '/en/case-study', 'x-default': '/tr/case-study' },
     },
     openGraph: {
       title,

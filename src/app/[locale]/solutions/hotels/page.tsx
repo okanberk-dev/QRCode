@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Otel & Konaklama İtibar Yönetimi — Buaze'
-      : 'Hotel & Hospitality Reputation Management — Buaze';
+      ? 'Otel & Konaklama İtibar Yönetimi'
+      : 'Hotel & Hospitality Reputation Management';
   const description =
     locale === 'tr'
       ? "Booking.com, Tripadvisor, Airbnb ve Google — dört platformu tek panelden yönet. Oda QR'ları ile check-out'ta yorum topla, negatifi önce sen gör."
@@ -34,9 +34,24 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       languages: {
         tr: 'https://buaze.com/tr/solutions/hotels',
         en: 'https://buaze.com/en/solutions/hotels',
+        'x-default': 'https://buaze.com/tr/solutions/hotels',
       },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/hotels` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/hotels`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

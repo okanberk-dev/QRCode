@@ -48,6 +48,7 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
       languages: {
         tr: `https://buaze.com/tr/help/${slug}`,
         en: `https://buaze.com/en/help/${slug}`,
+        'x-default': `https://buaze.com/tr/help/${slug}`,
       },
     },
     openGraph: { type: 'article', url: `https://buaze.com/${locale}/help/${slug}`, title, description },

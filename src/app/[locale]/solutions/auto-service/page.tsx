@@ -12,8 +12,8 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
   const title = locale === 'tr'
-    ? 'Oto Servis & Tamir İtibar Yönetimi — Buaze'
-    : 'Auto Service & Repair Reputation Management — Buaze';
+    ? 'Oto Servis & Tamir İtibar Yönetimi'
+    : 'Auto Service & Repair Reputation Management';
   const description = locale === 'tr'
     ? 'Araç teslimi sonrası otomatik geri bildirim akışı. Oto servisinizin Google yorumlarını artırın ve müşteri dönüşünü sağlayın.'
     : 'Automatic feedback flow after vehicle delivery. Increase your auto service\'s Google reviews and ensure customer return.';
@@ -25,9 +25,23 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : ['auto service reputation management', 'mechanic google reviews', 'car repair feedback'],
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions/auto-service`,
-      languages: { tr: 'https://buaze.com/tr/solutions/auto-service', en: 'https://buaze.com/en/solutions/auto-service' },
+      languages: { tr: 'https://buaze.com/tr/solutions/auto-service', en: 'https://buaze.com/en/solutions/auto-service', 'x-default': 'https://buaze.com/tr/solutions/auto-service' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/auto-service` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/auto-service`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

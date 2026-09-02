@@ -111,7 +111,7 @@ export default async function RoiPage({
     ? [
         {
           q: 'Buaze ROI hesaplayıcısı sayıları nereden alıyor?',
-          a: 'Hesap, BrightLocal 2024 yerel arama verilerine ve ~2.400 Buaze müşteri kohortuna kalibre edilmiştir. Üç temel sürücü kullanılır: şahsi geri bildirim oranı (düşük puan veren müşterilerin ~%85\'i ekibe özel iletişimi tercih eder), çoklu platform dağılım ağırlıkları (Google %30 / Yemeksepeti %18 / Getir %12 / Trendyol GO %8 + opsiyonel Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb) ve Pulse AI zaman tasarrufu (yanıt başına ~4 dakika).',
+          a: 'Hesap, BrightLocal 2024 yerel arama verilerine ve Buaze müşteri kohortundan gözlemlenen ortalamalara kalibre edilmiştir. Üç temel sürücü kullanılır: şahsi geri bildirim oranı (düşük puan veren müşterilerin ~%85\'i ekibe özel iletişimi tercih eder), çoklu platform dağılım ağırlıkları (Google %30 / Yemeksepeti %18 / Getir %12 / Trendyol GO %8 + opsiyonel Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb) ve Pulse AI zaman tasarrufu (yanıt başına ~4 dakika).',
         },
         {
           q: 'Müşteri akışı tam olarak nasıl çalışır?',
@@ -133,7 +133,7 @@ export default async function RoiPage({
     : [
         {
           q: 'Where do the numbers in the Buaze ROI calculator come from?',
-          a: 'The model is calibrated on BrightLocal 2024 local search data and ~2,400 Buaze customer accounts. Three drivers anchor the math: private feedback preference rate (~85% of customers giving low ratings choose to share privately with the team first), multi-platform routing weights (Google 30% / Yemeksepeti 18% / Getir 12% / Trendyol GO 8% + optional Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb), and Pulse AI time savings (~4 min per reply).',
+          a: 'The model is calibrated on BrightLocal 2024 local search data and averages observed across the Buaze customer cohort. Three drivers anchor the math: private feedback preference rate (~85% of customers giving low ratings choose to share privately with the team first), multi-platform routing weights (Google 30% / Yemeksepeti 18% / Getir 12% / Trendyol GO 8% + optional Tripadvisor / Yelp / Foursquare / Booking / Yandex / Airbnb), and Pulse AI time savings (~4 min per reply).',
         },
         {
           q: 'How does the customer flow actually work?',
@@ -262,14 +262,12 @@ export default async function RoiPage({
           <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-stretch sm:justify-center gap-x-4 sm:gap-x-12 gap-y-3 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 sm:px-5 py-4">
             {(isTr
               ? [
-                  { v: '2.400+', l: 'Aktif Buaze işletmesi' },
-                  { v: '+0,4★', l: 'Ortalama yıldız lift / 90 gün' },
+                                    { v: '+0,4★', l: 'Ortalama yıldız lift / 90 gün' },
                   { v: '%85', l: 'Şahsi paylaşım tercih oranı' },
                   { v: 'BrightLocal 2024', l: 'Kalibrasyon kaynağı' },
                 ]
               : [
-                  { v: '2,400+', l: 'Active Buaze businesses' },
-                  { v: '+0.4★', l: 'Avg. star lift / 90 days' },
+                                    { v: '+0.4★', l: 'Avg. star lift / 90 days' },
                   { v: '85%', l: 'Choose private feedback' },
                   { v: 'BrightLocal 2024', l: 'Calibration source' },
                 ]
@@ -315,8 +313,8 @@ export default async function RoiPage({
           </h2>
           <p className="mt-4 text-[15px] text-[#525252] max-w-[720px] leading-[1.6]">
             {isTr
-              ? 'ROI hesaplayıcısı tek bir "büyü çarpan"a güvenmez. İşletmenin gerçek operasyonel rakamlarını alır, Buaze\'nin üç ölçülebilir faydasıyla çarpar ve 12 aylık net kazancı ortaya çıkarır. Aşağıdaki üç sürücü, ~2.400 Buaze hesabı kohortu üzerinde kalibre edilmiştir.'
-              : 'The ROI calculator does not rely on one black-box multiplier. It takes your actual operational numbers, multiplies them by Buaze\'s three measurable benefits and surfaces the 12-month net gain. The three drivers below are calibrated on a cohort of ~2,400 Buaze accounts.'}
+              ? 'ROI hesaplayıcısı tek bir "büyü çarpan"a güvenmez. İşletmenin gerçek operasyonel rakamlarını alır, Buaze\'nin üç ölçülebilir faydasıyla çarpar ve 12 aylık net kazancı ortaya çıkarır. Aşağıdaki üç sürücü, Buaze müşteri kohortundan gözlemlenen ortalamalar üzerinde kalibre edilmiştir.'
+              : 'The ROI calculator does not rely on one black-box multiplier. It takes your actual operational numbers, multiplies them by Buaze\'s three measurable benefits and surfaces the 12-month net gain. The three drivers below are calibrated on averages observed across the Buaze customer cohort.'}
           </p>
 
           <ol className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -372,8 +370,8 @@ export default async function RoiPage({
 
           <p className="mt-6 text-[12px] text-[#737373] leading-[1.55] max-w-[720px]">
             {isTr
-              ? 'Veri kaynağı: BrightLocal 2024 yerel arama raporu (yıldız delta vs. local-pack CTR korelasyonu) + Buaze 2026-Q1 müşteri kohortu (~2.400 hesap). Sektör çarpanları restoran 1.0× / kafe 0.85× / otel 0.65× / klinik 0.55× / diğer 0.75×.'
-              : 'Sources: BrightLocal 2024 local search report (star delta vs. local-pack CTR correlation) + Buaze 2026-Q1 customer cohort (~2,400 accounts). Sector multipliers: restaurant 1.0× / cafe 0.85× / hotel 0.65× / clinic 0.55× / other 0.75×.'}
+              ? 'Veri kaynağı: BrightLocal 2024 yerel arama raporu (yıldız delta vs. local-pack CTR korelasyonu) + Buaze müşteri kohortu gözlemleri. Sektör çarpanları restoran 1.0× / kafe 0.85× / otel 0.65× / klinik 0.55× / diğer 0.75×.'
+              : 'Sources: BrightLocal 2024 local search report (star delta vs. local-pack CTR correlation) + observations across the Buaze customer cohort. Sector multipliers: restaurant 1.0× / cafe 0.85× / hotel 0.65× / clinic 0.55× / other 0.75×.'}
           </p>
         </div>
       </section>

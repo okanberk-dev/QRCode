@@ -16,10 +16,29 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: (locale === 'tr' ? 'Buaze vs Bireysel QR | Akıllı İtibar Yönetimi' : 'Buaze vs Individual QR | Smart Reputation Management') + ' | Buaze',
+    title: (locale === 'tr' ? 'Buaze vs Bireysel QR | Akıllı İtibar Yönetimi' : 'Buaze vs Individual QR | Smart Reputation Management'),
     description: locale === 'tr'
       ? 'Ücretsiz statik QR kodları işletmeniz için ne kadar güvenli? Dinamik Buaze QR\'lerinin platform yönlendirme, müşteri-led tercih ve panelin farkını öğrenin.'
       : 'How secure are free static QR codes for your business? Learn how dynamic Buaze QR codes add platform routing, customer-led choice and a unified dashboard.',
+    alternates: {
+      canonical: `/${locale}/vs/individual-qr`,
+      languages: {
+        tr: '/tr/vs/individual-qr',
+        en: '/en/vs/individual-qr',
+        'x-default': '/tr/vs/individual-qr',
+      },
+    },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      url: `https://buaze.com/${locale}/vs/individual-qr`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

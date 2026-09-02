@@ -49,6 +49,9 @@ export const ROUTE_OVERRIDES: Record<string, RouteMeta> = {
   // detay sayfaları; 0.8 features/pulse-ai paterniyle parity. Tüm 3
   // FAQPage + Service + HowTo + BreadcrumbList JSON-LD taşır.
   'features/audit-center': { priority: 0.8, changefreq: 'monthly' },
+  // 'qr menü' 5.400/ay + 'dijital menü' 480/ay hedefli; ürün tarafı uzun
+  // süredir canlıydı ama pazarlama sayfası yoktu.
+  'features/menu': { priority: 0.85, changefreq: 'monthly' },
   'features/surveys': { priority: 0.8, changefreq: 'monthly' },
   'features/campaigns': { priority: 0.8, changefreq: 'monthly' },
   // /features/review-management + /features/analytics-reports heuristic

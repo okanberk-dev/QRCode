@@ -27,6 +27,7 @@ import {
   Utensils,
   Wand2,
   X,
+  UtensilsCrossed,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
@@ -182,6 +183,12 @@ export default function MarketingNavbarClient({
       label: isTr ? 'QR Stüdyosu' : 'QR Studio',
       sub: isTr ? 'Markana özel QR tasarla' : 'Branded QR design',
       icon: <QrCode size={16} />,
+    },
+    {
+      href: `${base}/features/menu`,
+      label: isTr ? 'QR Menü' : 'QR Menu',
+      sub: isTr ? 'Dijital menü + analitik' : 'Digital menu + analytics',
+      icon: <UtensilsCrossed size={16} />,
     },
     {
       href: `${base}/features/pulse-ai`,

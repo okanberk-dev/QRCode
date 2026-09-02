@@ -81,7 +81,7 @@ export async function generateMetadata({
       type: 'website',
       images: [
         {
-          url: '/images/open-graph-en.png',
+          url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png',
           width: 1200,
           height: 630,
           alt: 'Buaze — Kampanyalar',
@@ -93,7 +93,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: ['/images/open-graph-en.png'],
+      images: [isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
     },
   };
 }

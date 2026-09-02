@@ -38,13 +38,14 @@ export async function generateMetadata({
       languages: {
         tr: 'https://buaze.com/tr/features/pulse-ai',
         en: 'https://buaze.com/en/features/pulse-ai',
+        'x-default': 'https://buaze.com/tr/features/pulse-ai',
       },
     },
     openGraph: {
       title,
       description,
       url: `https://buaze.com/${locale}/features/pulse-ai`,
-      images: [{ url: '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze Pulse AI' }],
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze Pulse AI' }],
     },
   };
 }

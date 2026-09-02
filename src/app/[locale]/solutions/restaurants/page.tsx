@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Restoran & Kafe İtibar Yönetimi — Buaze'
-      : 'Restaurant & Café Reputation Management — Buaze';
+      ? 'Restoran & Kafe İtibar Yönetimi'
+      : 'Restaurant & Café Reputation Management';
   const description =
     locale === 'tr'
       ? 'Masaya QR koy: Buaze müşteri kohortunda ilk 90 günde organik Google yorumlarınız ortalama %184 büyüyor. Her misafire Google bağlantısı sunulur; isteyen ek olarak ekibinize özel geri bildirim de gönderebilir.'
@@ -33,9 +33,24 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       languages: {
         tr: 'https://buaze.com/tr/solutions/restaurants',
         en: 'https://buaze.com/en/solutions/restaurants',
+        'x-default': 'https://buaze.com/tr/solutions/restaurants',
       },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/restaurants` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/restaurants`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 
@@ -245,8 +260,8 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
             </h1>
             <p className="mt-5 max-w-[520px] text-[15px] leading-[1.55] text-[#525252] sm:text-[18px]">
               {isTr
-                ? "Masaya QR koy: Buaze müşteri kohortunda ilk 90 günde organik Google yorumlarınız ortalama %184 büyüyor. Her misafire Google bağlantısını sunuyoruz; ek olarak isteyen, ekibine özel geri bildirim de gönderebiliyor. 1.200+ restoran ve kafe Buaze'i tercih ediyor."
-                : 'Put a QR on the table — Buaze customer cohort sees an average +184% organic Google review growth in the first 90 days. Every guest gets the Google review link; anyone who wants to share private feedback with your team can do so in the same flow. Trusted by 1,200+ restaurants and cafés.'}
+                ? "Masaya QR koy: Buaze müşteri kohortunda ilk 90 günde organik Google yorumlarınız ortalama %184 büyüyor. Her misafire Google bağlantısını sunuyoruz; ek olarak isteyen, ekibine özel geri bildirim de gönderebiliyor."
+                : 'Put a QR on the table — Buaze customer cohort sees an average +184% organic Google review growth in the first 90 days. Every guest gets the Google review link; anyone who wants to share private feedback with your team can do so in the same flow.'}
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link

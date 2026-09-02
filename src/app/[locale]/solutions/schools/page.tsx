@@ -12,8 +12,8 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
   const title = locale === 'tr'
-    ? 'Okul & Eğitim Kurumu İtibar Yönetimi — Buaze'
-    : 'School & Educational Institution Reputation Management — Buaze';
+    ? 'Okul & Eğitim Kurumu İtibar Yönetimi'
+    : 'School & Educational Institution Reputation Management';
   const description = locale === 'tr'
     ? 'Veli ve öğrenci memnuniyetini ölçün. Okulunuzun dijital itibarını güçlendirin ve yeni öğrenci kaydını artırın.'
     : 'Measure parent and student satisfaction. Strengthen your school\'s digital reputation and increase new student enrollment.';
@@ -25,9 +25,23 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : ['school reputation management', 'educational institution google reviews', 'parent satisfaction', 'student feedback'],
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions/schools`,
-      languages: { tr: 'https://buaze.com/tr/solutions/schools', en: 'https://buaze.com/en/solutions/schools' },
+      languages: { tr: 'https://buaze.com/tr/solutions/schools', en: 'https://buaze.com/en/solutions/schools', 'x-default': 'https://buaze.com/tr/solutions/schools' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/schools` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/schools`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

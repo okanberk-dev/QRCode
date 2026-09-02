@@ -12,8 +12,8 @@ import type { Metadata } from 'next';
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
   const title = locale === 'tr'
-    ? 'Gayrimenkul & Emlak Ofisi İtibar Yönetimi — Buaze'
-    : 'Real Estate Agency Reputation Management — Buaze';
+    ? 'Gayrimenkul & Emlak Ofisi İtibar Yönetimi'
+    : 'Real Estate Agency Reputation Management';
   const description = locale === 'tr'
     ? 'Danışman bazlı QR kodlar ve müşteri geri bildirimleriyle gayrimenkul ofisinizin güvenilirliğini artırın.'
     : 'Increase your real estate agency\'s credibility with consultant-based QR codes and client feedback.';
@@ -25,9 +25,23 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       : ['real estate reputation management', 'realtor google reviews', 'agent client satisfaction'],
     alternates: {
       canonical: `https://buaze.com/${locale}/solutions/real-estate`,
-      languages: { tr: 'https://buaze.com/tr/solutions/real-estate', en: 'https://buaze.com/en/solutions/real-estate' },
+      languages: { tr: 'https://buaze.com/tr/solutions/real-estate', en: 'https://buaze.com/en/solutions/real-estate', 'x-default': 'https://buaze.com/tr/solutions/real-estate' },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/real-estate` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/real-estate`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

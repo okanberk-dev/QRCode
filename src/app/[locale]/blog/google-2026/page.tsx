@@ -35,6 +35,7 @@ export async function generateMetadata({
       languages: {
         tr: 'https://buaze.com/tr/blog/google-2026',
         en: 'https://buaze.com/en/blog/google-2026',
+        'x-default': 'https://buaze.com/tr/blog/google-2026',
       },
     },
     openGraph: {

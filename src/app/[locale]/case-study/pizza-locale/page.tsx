@@ -26,6 +26,7 @@ export async function generateMetadata({
       languages: {
         tr: 'https://buaze.com/tr/case-study/pizza-locale',
         en: 'https://buaze.com/en/case-study/pizza-locale',
+        'x-default': 'https://buaze.com/tr/case-study/pizza-locale',
       },
     },
   };

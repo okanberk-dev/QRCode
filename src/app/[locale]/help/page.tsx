@@ -35,9 +35,24 @@ export async function generateMetadata({
       languages: {
         tr: 'https://buaze.com/tr/help',
         en: 'https://buaze.com/en/help',
+        'x-default': 'https://buaze.com/tr/help',
       },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/help` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: isTr ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/help`,
+      images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

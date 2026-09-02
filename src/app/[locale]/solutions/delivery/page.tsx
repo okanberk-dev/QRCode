@@ -27,8 +27,8 @@ export async function generateMetadata({
   const { locale } = await params;
   const title =
     locale === 'tr'
-      ? 'Paket Servis QR · Yemeksepeti + Getir + Trendyol GO — Buaze'
-      : 'Delivery QR · Yemeksepeti + Getir + Trendyol GO — Buaze';
+      ? 'Paket Servis QR · Yemeksepeti + Getir + Trendyol GO'
+      : 'Delivery QR · Yemeksepeti + Getir + Trendyol GO';
   const description =
     locale === 'tr'
       ? 'Paket içine koyduğunuz tek QR ile müşteriyi tam olarak yorum bırakacağı platforma yönlendirin. Google, Yemeksepeti, Getir Yemek ve Trendyol GO uyumlu.'
@@ -42,9 +42,24 @@ export async function generateMetadata({
       languages: {
         tr: '/tr/solutions/delivery',
         en: '/en/solutions/delivery',
+        'x-default': '/tr/solutions/delivery',
       },
     },
-    openGraph: { title, description, url: `https://buaze.com/${locale}/solutions/delivery` },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      title,
+      description,
+      url: `https://buaze.com/${locale}/solutions/delivery`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

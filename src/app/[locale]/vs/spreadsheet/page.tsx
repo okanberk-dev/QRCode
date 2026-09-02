@@ -16,10 +16,29 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: (locale === 'tr' ? 'Buaze vs Excel — İtibar yönetimi karşılaştırması' : 'Buaze vs Spreadsheet | Digital Reputation Comparison') + ' | Buaze',
+    title: (locale === 'tr' ? 'Buaze vs Excel — İtibar yönetimi karşılaştırması' : 'Buaze vs Spreadsheet | Digital Reputation Comparison'),
     description: locale === 'tr'
       ? 'İtibarınızı Excel tablolarında mı takip ediyorsunuz? Manuel takibin gecikme ve kör nokta risklerini, Buaze otomasyonunun ekip ritmindeki farkını keşfedin.'
       : 'Tracking your reputation in spreadsheets? See how Buaze automation eliminates delays and blind spots, and how it changes your team\'s response cadence.',
+    alternates: {
+      canonical: `/${locale}/vs/spreadsheet`,
+      languages: {
+        tr: '/tr/vs/spreadsheet',
+        en: '/en/vs/spreadsheet',
+        'x-default': '/tr/vs/spreadsheet',
+      },
+    },
+    openGraph: {
+      type: 'website',
+      siteName: 'Buaze',
+      locale: locale === 'tr' ? 'tr_TR' : 'en_US',
+      url: `https://buaze.com/${locale}/vs/spreadsheet`,
+      images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images: [locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png'],
+    },
   };
 }
 

@@ -43,7 +43,7 @@ export const translations = {
     hero_title_2: 'Yükseltin ve Yönetin',
     hero_subtitle: 'İşletmenizin dijital görünürlüğünü artırın ve müşteri güvenini pekiştirin. Müşteri deneyimini iyileştirin ve geri bildirim operasyonlarınızı tek bir merkezden profesyonelce yönetin.',
     hero_cta: '14 Gün Ücretsiz Deneyin',
-    hero_rating: '4.9/5 Kullanıcı Memnuniyeti',
+    hero_rating: 'KVKK uyumlu geri bildirim akışı',
     hero_platforms_title: 'Global platformlardaki tüm itibarınızı tek bir akıllı merkezde yönetiyoruz:',
 
     // Features
@@ -102,7 +102,7 @@ export const translations = {
     faq_q4: 'Setup sürecinde destek sağlıyor musunuz?',
     faq_a4: 'Kesinlikle. Ekibimiz QR kodlarınızın tasarımından Google Haritalar entegrasyonuna kadar her adımda size ücretsiz kurulum desteği sunar.',
     faq_q5: 'İptal edebilir miyim?',
-    faq_a5: 'İstediğiniz anda, tek tıkla iptal edebilirsiniz. Kullanmadığınız dönem için otomatik iade alırsınız.',
+    faq_a5: 'İstediğiniz anda, tek tıkla iptal edebilirsiniz. İptal sonrası dönem sonuna kadar erişiminiz sürer; yenileme tarihinde abonelik otomatik kapanır. İade koşulları İade ve İptal Politikası\'nda yer alır.',
     faq_q6: 'Türkçe destek var mı?',
     faq_a6: 'Evet — Türkçe canlı destek, 7/24 yardım merkezi ve Türkçe eğitim içerikleri. Ortalama yanıt süremiz 2 dakika.',
 
@@ -751,7 +751,7 @@ export const translations = {
     hero_title_2: 'Reputation Professionally',
     hero_subtitle: 'Increase your business\'s digital visibility and reinforce customer trust. Improve customer experience and manage feedback operations from a single center professionally.',
     hero_cta: 'Start Your 14-Day Free Trial',
-    hero_rating: '4.9/5 User Satisfaction Rating',
+    hero_rating: 'KVKK-compliant feedback flow',
     hero_platforms_title: 'We manage all your reputation from global platforms in one intelligent command center:',
 
     // Features
@@ -810,7 +810,7 @@ export const translations = {
     faq_q4: 'Do you provide help with the setup process?',
     faq_a4: 'Absolutely. Our team provides free setup support at every step, from QR code design to Google Maps integration.',
     faq_q5: 'Can I cancel anytime?',
-    faq_a5: 'Cancel with a single click, whenever you want. You get an automatic refund for any unused period.',
+    faq_a5: 'Cancel with a single click, whenever you want. You keep access until the end of the current period; the subscription then closes automatically at renewal. Refund terms are set out in the Refund and Cancellation Policy.',
     faq_q6: 'Is Turkish support available?',
     faq_a6: 'Yes — Turkish live chat, 24/7 help center and Turkish training content. Our average reply time is 2 minutes.',
 
