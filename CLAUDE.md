@@ -5780,3 +5780,48 @@ for this — the AUP already covers it.
 **Yap**: New reply-send surface → wire `moderateReplyContent()` +
 `confirmResponsibility` before any DB write / outbound call, reset the
 checkbox after success only (not on transient failure).
+
+---
+
+## §46 — Zaman Damgası Saat Dilimi (kanonik, 2026-09)
+
+Yorum/aktivite zaman damgaları **işletmenin yerel saatinde** gösterilir ve
+saat dilimi tek noktadan gelir: `src/lib/timezone.ts`.
+
+**Sorun**: `new Date(iso).toLocaleTimeString('tr-TR')` çalıştığı ortamın
+TZ'sini kullanır. Vercel serverless process TZ = UTC, tarayıcı ise cihaz
+TZ'si. Aynı yorum üç farklı saat gösteriyordu — düşük puan uyarı mailinde
+11:32 (UTC, sunucuda render), owner panelinde 14:32, yurt dışındaki
+owner'da bambaşka. Ek olarak `low-rating-alert` damgası `new Date()` ile
+**mail render anını** basıyordu, yorumun bırakıldığı anı değil (cron/retry
+akışlarında saatlerce sapma).
+
+**Kanonik helper** (`src/lib/timezone.ts`):
+`DEFAULT_DISPLAY_TIME_ZONE` (`Europe/Istanbul`) · `resolveDisplayTimeZone(pref?)`
+(pref → `NEXT_PUBLIC_DISPLAY_TIMEZONE` → default; geçersiz IANA sessizce
+default'a düşer) · `formatClock` · `formatStampInTimeZone` ·
+`formatFullDateTimeInTimeZone` · `formatCompactStampInTimeZone` ·
+`isSameDayInTimeZone`. Hepsi geçersiz girdide `''`/`false` döner, throw
+etmez. `tests/timezone.test.ts` host TZ'sinden bağımsızlığı sabitler.
+
+**Yapma**:
+- Yorum/aktivite damgası için `toLocaleTimeString` / `toLocaleString` /
+  date-fns `isSameDay`'i doğrudan çağırma — çalıştığı ortamın TZ'sine kayar.
+- Mail template'inde zaman damgasını `new Date()` ile üretme — olayın
+  gerçek zamanını (`Feedback.createdAt`, `review.createTime`) parametre
+  olarak geçir.
+- Damgayı `useState`+`useEffect` hydration gate'i arkasına saklama
+  (§38.237 paterni) — TZ sabitlendiği için sunucu ve tarayıcı aynı
+  string'i üretir, gate gereksiz.
+- `User.timezone` (§38.37) alanını gösterimde tek başına kullanma: owner'ın
+  kişisel TZ'si ile işletmenin saati ayrışırsa mail ile panel yine farklı
+  saat gösterir. Alan profil formunda saklanmaya devam eder; restoran
+  bazlı TZ gerekirse helper'ın `pref` parametresine tek noktadan bağlanır.
+
+**Yap**:
+- Yeni zaman damgası yüzeyinde helper'lardan birini kullan.
+- Yeni mail template'i olay zamanı gösteriyorsa `submittedAt` + `timeZone`
+  parametrelerini kabul et (`low-rating-alert` / `new-review` paterni) ve
+  caller gerçek `createdAt`'i geçsin.
+- Gün gruplaması ("Bugün / Dün") `isSameDayInTimeZone` ile — gece yarısına
+  yakın olaylar aksi halde yanlış gruba düşer.

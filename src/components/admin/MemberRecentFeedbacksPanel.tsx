@@ -10,6 +10,7 @@ import {
   Store,
 } from 'lucide-react';
 import { Badge, EmptyState } from '@/components/ui';
+import { formatFullDateTimeInTimeZone, formatStampInTimeZone } from '@/lib/timezone';
 
 // CLAUDE.md §38.93 (Stage A1) — last 10 feedbacks across all owner restaurants
 // for admin oversight. Feeds are aggregated cross-restaurant; per-restaurant
@@ -33,31 +34,14 @@ interface Props {
 
 // §38.237 — Mutlak saat. Göreli süre ("2 sa önce") tek başına
 // "yorum tam olarak ne zaman geldi" sorusunu yanıtlamıyordu.
+// İşletmenin yerel saatinde damga (CLAUDE.md §46) — süperadmin paneli,
+// owner paneli ve uyarı maili aynı saati göstermeli.
 function clockStamp(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const now = new Date();
-  const sameDay =
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate();
-  const clock = d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-  if (sameDay) return clock;
-  return `${d.toLocaleDateString('tr-TR', {
-    day: 'numeric',
-    month: 'short',
-    ...(d.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
-  })} ${clock}`;
+  return formatStampInTimeZone(iso, 'tr');
 }
 
 function fullStamp(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${d.toLocaleDateString('tr-TR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })} ${d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+  return formatFullDateTimeInTimeZone(iso, 'tr');
 }
 
 function timeAgo(iso: string): string {

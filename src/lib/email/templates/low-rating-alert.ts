@@ -4,6 +4,7 @@ import { escapeHtml } from '../escape';
 import { renderEyebrow, renderP, renderAvatarCircle, renderStatusPill, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
+import { formatCompactStampInTimeZone, resolveDisplayTimeZone } from '@/lib/timezone';
 
 export interface LowRatingAlertParams {
   rating: number;
@@ -22,6 +23,12 @@ export interface LowRatingAlertParams {
   tags?: string[];
   customerSubtitle?: string | null;
   platformLabel?: string | null;
+  /** Yorumun bırakıldığı an (`Feedback.createdAt`). Verilmezse render anı
+   *  kullanılır — eski davranış, ama cron/retry akışlarında yanıltıcı. */
+  submittedAt?: Date | string | null;
+  /** Gösterim saat dilimi (IANA). Default `Europe/Istanbul`. Sunucu process
+   *  TZ'si UTC olduğu için bu parametre olmadan damga 3 saat geri düşerdi. */
+  timeZone?: string | null;
 }
 
 export async function renderLowRatingAlert(
@@ -93,9 +100,14 @@ export async function renderLowRatingAlert(
   const copy = deepSubstitute(merged, vars, 'html');
   const copyText = deepSubstitute(merged, vars, 'text');
 
-  const timestamp = new Date().toLocaleString(isTr ? 'tr-TR' : 'en-US', {
-    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-  });
+  // Yorumun bırakıldığı an, işletmenin yerel saatinde. `new Date()` +
+  // TZ'siz `toLocaleString` ikilisi sunucuda (UTC) render edildiği için
+  // owner'a saati 3 saat geri gösteriyordu; ayrıca render anını damgalıyordu.
+  const timestamp = formatCompactStampInTimeZone(
+    params.submittedAt ?? new Date(),
+    locale,
+    resolveDisplayTimeZone(params.timeZone),
+  );
   const subTitle = params.branch
     ? `${escapeHtml(params.restaurantName)} · ${escapeHtml(params.branch)}${params.tableNumber ? ' · Masa ' + escapeHtml(params.tableNumber) : ''}`
     : escapeHtml(params.restaurantName);

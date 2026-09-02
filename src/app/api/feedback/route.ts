@@ -293,13 +293,21 @@ export async function POST(req: NextRequest) {
     // Send email for 1, 2, 3 stars — but only when the owner has the
     // "low-rating alert" toggle enabled. When disabled the feedback is
     // still stored; the owner just doesn't get pinged.
+    //
+    // `rating` burada ham body değeri; `Number(...)` ile karşılaştır —
+    // string "3" gevşek karşılaştırmada çalışsa da niyet açık olmalı.
+    const numericRating = Number(rating);
     let emailSent: boolean | null = null;
-    if (rating <= 3) {
+    if (numericRating <= 3) {
       if (notifPrefs.lowRatingEmail) {
         emailSent = false;
         try {
-          await sendFeedbackNotification({
-            rating,
+          // `sendResendEmail` başarısız gönderimde `false` döner, throw
+          // etmez. Eskiden dönüş değeri yok sayılıp `emailSent = true`
+          // yazılıyordu: owner'a hiç mail gitmediği halde public yanıt
+          // "gönderildi" diyordu ve hata yalnız ops alert'inde kalıyordu.
+          emailSent = await sendFeedbackNotification({
+            rating: numericRating,
             name,
             email,
             phone,
@@ -311,12 +319,25 @@ export async function POST(req: NextRequest) {
             aspects,
             feedbackId: feedback.id,
             locale: body.locale === 'en' ? 'en' : 'tr',
+            // Damga yorumun bırakıldığı an olmalı — mail render anı değil.
+            submittedAt: feedback.createdAt,
           });
-          emailSent = true;
+          if (!emailSent) {
+            console.error('[FEEDBACK_POST] low-rating alert not delivered', {
+              feedbackId: feedback.id,
+              restaurantId,
+              hasRecipient: Boolean(notificationEmail),
+            });
+          }
         } catch (err) {
           // Log but don't fail the entire request - the feedback IS in the DB!
           console.error('Email notification failed but saving succeeded:', err);
         }
+      } else {
+        console.warn('[FEEDBACK_POST] low-rating alert suppressed by owner preference', {
+          feedbackId: feedback.id,
+          restaurantId,
+        });
       }
 
       // Pulse AI auto-draft — fire-and-forget when owner has opted in and

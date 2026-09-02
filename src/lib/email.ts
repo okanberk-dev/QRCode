@@ -88,6 +88,11 @@ export interface NotificationParams {
   feedbackId?: string;
   locale?: 'tr' | 'en';
   platform?: string | null;
+  /** Yorumun bırakıldığı an (`Feedback.createdAt`). Mail damgası bunu
+   *  kullanır; verilmezse render anı damgalanır (cron/retry'da yanıltıcı). */
+  submittedAt?: Date | string | null;
+  /** Gösterim saat dilimi (IANA). Default `Europe/Istanbul`. */
+  timeZone?: string | null;
 }
 
 export async function sendFeedbackNotification(data: NotificationParams): Promise<boolean> {
@@ -114,6 +119,8 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
       branch: data.branch,
       platform: data.platform,
       reviewUrl,
+      submittedAt: data.submittedAt ?? null,
+      timeZone: data.timeZone ?? null,
     }, locale);
   } else {
     rendered = await renderLowRatingAlert({
@@ -124,6 +131,8 @@ export async function sendFeedbackNotification(data: NotificationParams): Promis
       branch: data.branch,
       tableNumber: data.tableNumber,
       reviewUrl,
+      submittedAt: data.submittedAt ?? null,
+      timeZone: data.timeZone ?? null,
     }, locale);
   }
 

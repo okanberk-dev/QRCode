@@ -124,6 +124,9 @@ export async function runGoogleReviewsAlert() {
               comment: review.comment,
               platform: 'google',
               toEmail,
+              // Cron saatte bir çalışıyor: damga mail render anını değil
+              // yorumun Google'a düştüğü anı göstermeli.
+              submittedAt: review.createTime ?? null,
             });
             if (ok) {
               emailSentCount++;
