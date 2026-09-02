@@ -166,6 +166,17 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
       // Cross-origin iframe → window.top throws → kesinlikle iframe'iz, skip
       return;
     }
+    // Stage XX — public QR review surface (`/r/[slug]`, `/r/[slug]/menu`)
+    // skips the banner entirely. Scanning a table QR opens a 30-second,
+    // no-account rating flow (CLAUDE.md §23.7 Phase 10.1); interrupting it
+    // with a consent card is a bad first impression and the flow has no
+    // locale segment to key off (bare `/r/<slug>`), unlike `/[locale]/...`.
+    // Safe: `ConditionalAnalytics` already treats a missing consent record
+    // as `analytics: false` (no GA/Yandex load) — skipping the banner here
+    // does not grant or imply any consent, it stays at the same
+    // essential-only default the page would have before a decision anyway.
+    if (/^\/r\//.test(window.location.pathname)) return;
+
     // Stage 31d §38.110 — client-side locale detection.
     setLocale(detectLocaleFromBrowser());
     const existing = readCookieConsent();
