@@ -1,4 +1,5 @@
 import type { PlatformId } from '@/components/ui';
+import { formatFullDateTimeInTimeZone, formatStampInTimeZone } from '@/lib/timezone';
 
 export const PLATFORM_OPTIONS: PlatformId[] = [
   'google',
@@ -36,34 +37,15 @@ export function timeAgo(iso: string, isTr: boolean) {
 // `formatStamp` liste satırında kompakt saat, `formatDateTime` tooltip +
 // detay panelinde tam damga verir. Locale-aware (tr-TR 24h / en-US 12h).
 
+// İşletmenin yerel saatinde damga (CLAUDE.md §46) — operatör paneli ile
+// owner paneli ve uyarı maili aynı saati göstermeli.
+
 /** Kompakt damga: bugün → "14:32", bu yıl → "1 Eyl 14:32", eski → "1 Eyl 2025 14:32". */
 export function formatStamp(iso: string, isTr: boolean) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const loc = isTr ? 'tr-TR' : 'en-US';
-  const now = new Date();
-  const sameDay =
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate();
-  const clock = d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' });
-  if (sameDay) return clock;
-  const datePart = d.toLocaleDateString(loc, {
-    day: 'numeric',
-    month: 'short',
-    ...(d.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
-  });
-  return `${datePart} ${clock}`;
+  return formatStampInTimeZone(iso, isTr ? 'tr' : 'en');
 }
 
 /** Tam damga (tooltip + detay başlığı): "1 Eylül 2026 14:32". */
 export function formatDateTime(iso: string, isTr: boolean) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const loc = isTr ? 'tr-TR' : 'en-US';
-  return `${d.toLocaleDateString(loc, {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })} ${d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })}`;
+  return formatFullDateTimeInTimeZone(iso, isTr ? 'tr' : 'en');
 }

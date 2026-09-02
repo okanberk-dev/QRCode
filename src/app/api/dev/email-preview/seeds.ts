@@ -78,6 +78,8 @@ export const SEEDS = {
     aiTone: 'Ton: profesyonel · empati yüksek',
     aiLatencyMs: 1400,
     tags: ['servis-yavaş', 'kahve-soğuk', 'beklemeyi-uzun'],
+    // Önizlemede damganın gerçekten yorum saatini gösterdiği görülsün.
+    submittedAt: new Date(Date.now() - 8 * 60 * 1000),
   }),
   'new-review': (): NewReviewParams => ({
     rating: 5,
@@ -90,6 +92,7 @@ export const SEEDS = {
     platform: 'Google',
     reviewUrl: `${APP_URL}/tr/dashboard/feedbacks`,
     shareUrl: 'https://search.google.com/local/writereview?placeid=DEMO',
+    submittedAt: new Date(Date.now() - 3 * 60 * 1000),
   }),
   'weekly-report': (): WeeklyReportParams => {
     const now = new Date();

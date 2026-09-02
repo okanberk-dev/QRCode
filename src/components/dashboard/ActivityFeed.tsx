@@ -27,11 +27,16 @@ import {
   Star,
   X,
 } from 'lucide-react';
-import { formatDistanceToNowStrict, isSameDay, subDays } from 'date-fns';
+import { formatDistanceToNowStrict, subDays } from 'date-fns';
 import { tr as trLocale, enUS as enLocale } from 'date-fns/locale';
 import type { ActivityEvent, ActivitySentiment, ActivityType } from '@/lib/activity-feed';
 import { Eyebrow } from '@/components/ui';
 import { useRealtimeActivity, type RealtimeStatus } from '@/hooks/useRealtimeActivity';
+import {
+  formatClock,
+  formatFullDateTimeInTimeZone,
+  isSameDayInTimeZone,
+} from '@/lib/timezone';
 
 const SENTIMENT_DOT: Record<ActivitySentiment, string> = {
   pos: '#16A34A',
@@ -70,8 +75,12 @@ function groupEventsByDay(
 
   for (const ev of events) {
     let key = labelOlder;
-    if (isSameDay(ev.timestamp, now)) key = labelToday;
-    else if (isSameDay(ev.timestamp, yesterday)) key = labelYesterday;
+    // Gün sınırı işletmenin yerel saatine göre (CLAUDE.md §46). date-fns
+    // `isSameDay` çalıştığı ortamın TZ'sini kullanır: sunucuda (UTC) gece
+    // yarısına yakın bir yorum "Dün" grubuna düşerken tarayıcıda "Bugün"
+    // görünüyordu.
+    if (isSameDayInTimeZone(ev.timestamp, now)) key = labelToday;
+    else if (isSameDayInTimeZone(ev.timestamp, yesterday)) key = labelYesterday;
     if (!buckets.has(key)) buckets.set(key, []);
     buckets.get(key)!.push(ev);
   }
@@ -224,16 +233,10 @@ export function ActivityFeed({
   const { events, status, newEventIds, pendingToastCount, acknowledgeToast } =
     useRealtimeActivity({ initialEvents, isTr });
 
-  // §38.237 — Mutlak saat yalnız hydration sonrası render edilir.
-  // `initialEvents` server-render'da state'e giriyor (useRealtimeActivity
-  // `useState(initialEvents)`), yani satırlar sunucuda da basılıyor.
-  // `toLocaleTimeString` sunucuda UTC, istemcide yerel saat üretir —
-  // UTC dışındaki her kullanıcıda hydration mismatch olurdu. Göreli süre
-  // (duration) timezone-bağımsız olduğu için sunucuda kalabilir.
-  const [clockReady, setClockReady] = useState(false);
-  useEffect(() => {
-    setClockReady(true);
-  }, []);
+  // §46 — mutlak saat artık sabit bir saat diliminde (işletmenin yerel
+  // saati) üretiliyor, yani sunucu ve tarayıcı aynı string'i basıyor.
+  // Eski `clockReady` hydration gate'i (§38.237) bu yüzden kaldırıldı:
+  // saat ilk paint'te görünür, boş bir satır olarak beklemez.
 
   // Toast'ı suppress edebileceğimiz local state — kullanıcı X'e bastıktan
   // sonra aynı session'da yeni event gelirse tekrar açılır (yeni count
@@ -324,19 +327,12 @@ export function ActivityFeed({
                 });
                 // §38.237 — mutlak saat. Göreli süre tek başına "yorum tam
                 // olarak ne zaman geldi" sorusunu yanıtlamıyordu.
-                const clockTime = new Date(event.timestamp).toLocaleTimeString(
-                  isTr ? 'tr-TR' : 'en-US',
-                  { hour: '2-digit', minute: '2-digit' },
-                );
-                const fullTime = new Date(event.timestamp).toLocaleString(
-                  isTr ? 'tr-TR' : 'en-US',
-                  {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  },
+                // §46 — işletmenin yerel saati. Sabit TZ olduğu için sunucu
+                // ve tarayıcı aynı string'i üretir (hydration-safe).
+                const clockTime = formatClock(event.timestamp, isTr ? 'tr' : 'en');
+                const fullTime = formatFullDateTimeInTimeZone(
+                  event.timestamp,
+                  isTr ? 'tr' : 'en',
                 );
                 const isNew = newEventIds.has(event.id);
                 const inlineRating =
@@ -352,12 +348,10 @@ export function ActivityFeed({
                     <span
                       className="bz-mono text-[10.5px] text-[#737373] tabular-nums shrink-0 w-[52px] sm:w-[58px] pt-0.5 flex flex-col leading-[1.3]"
                       aria-hidden="true"
-                      title={clockReady ? fullTime : undefined}
+                      title={fullTime}
                     >
                       <span>{relativeTime}</span>
-                      <span className="text-[#A3A3A3]">
-                        {clockReady ? clockTime : '\u00A0'}
-                      </span>
+                      <span className="text-[#A3A3A3]">{clockTime}</span>
                     </span>
                     <span
                       aria-hidden="true"

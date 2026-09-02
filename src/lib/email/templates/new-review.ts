@@ -4,6 +4,7 @@ import { escapeHtml } from '../escape';
 import { renderButton, renderAvatarCircle, renderStatusPill, spacer } from '../components';
 import { loadMailCopy } from '../copy-loader';
 import { deepSubstitute } from '../placeholders';
+import { formatClock, resolveDisplayTimeZone } from '@/lib/timezone';
 
 export interface NewReviewParams {
   rating: number;
@@ -17,6 +18,12 @@ export interface NewReviewParams {
   /** Optional Google share link — falls back to a generic Google review URL
    *  if the restaurant has googlePlaceId, otherwise hides the secondary CTA. */
   shareUrl?: string;
+  /** Yorumun bırakıldığı an (`Feedback.createdAt`). Status pill'e saat
+   *  damgası ekler — "Az önce geldi · 14:32". Verilmezse damga gizlenir. */
+  submittedAt?: Date | string | null;
+  /** Gösterim saat dilimi (IANA). Default `Europe/Istanbul` — sunucu TZ'si
+   *  UTC olduğu için parametresiz format saati geri kaydırırdı. */
+  timeZone?: string | null;
 }
 
 export async function renderNewReview(
@@ -71,6 +78,13 @@ export async function renderNewReview(
   const copy = deepSubstitute(merged, vars, 'html');
   const copyText = deepSubstitute(merged, vars, 'text');
 
+  // Status pill'e yorumun bırakıldığı saat eklenir ("Az önce geldi · 14:32").
+  // İşletmenin yerel saatinde — sunucu process TZ'si (UTC) değil.
+  const submittedClock = params.submittedAt
+    ? formatClock(params.submittedAt, locale, resolveDisplayTimeZone(params.timeZone))
+    : '';
+  const pillText = submittedClock ? `${copy.eyebrow} · ${submittedClock}` : copy.eyebrow;
+
   // Star row — warning gold like jsx:31
   const starsHtml = `<span style="color:${PULSE.warning};font-size:18px;letter-spacing:0.05em;">${'★'.repeat(params.rating)}<span style="color:${PULSE.n300};">${'★'.repeat(5 - params.rating)}</span></span>`;
 
@@ -82,7 +96,7 @@ export async function renderNewReview(
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
       <tr>
         <td class="bz-pad" style="padding:40px 40px 8px;">
-          ${renderStatusPill({ text: copy.eyebrow, dotColor: PULSE.success, textColor: PULSE.success })}
+          ${renderStatusPill({ text: pillText, dotColor: PULSE.success, textColor: PULSE.success })}
           ${spacer(14)}
           <h1 class="bz-h1" style="font-family:${FONTS.heading};font-size:36px;font-weight:500;letter-spacing:-0.025em;line-height:1.1;color:${PULSE.graphite};margin:0;">
             ${copy.title}<br/>

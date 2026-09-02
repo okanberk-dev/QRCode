@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
 import type { CustomerSegment, CustomerSentiment } from '@/lib/customers';
+import { formatClock, resolveDisplayTimeZone } from '@/lib/timezone';
 import { computeLastChannel, computeLastTopic } from '@/lib/customers';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 import { SentimentBadge } from '@/components/customers/SentimentBadge';
@@ -101,15 +102,18 @@ function formatRelative(iso: string, locale: Locale): string {
 
 // §38.237 — Yorum satırlarında mutlak saat. `formatDate` (tarih-only)
 // "ilk görülme" gibi gün-granülerlikli istatistiklerde kalır.
+// §46 — saat işletmenin yerel saatinde (cihaz TZ'si değil).
 function formatDateTimeStamp(iso: string, locale: Locale): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
+  const tz = resolveDisplayTimeZone();
   const loc = locale === 'tr' ? 'tr-TR' : 'en-US';
-  return `${d.toLocaleDateString(loc, {
+  return `${new Intl.DateTimeFormat(loc, {
+    timeZone: tz,
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  })} ${d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })}`;
+  }).format(d)} ${formatClock(d, locale === 'tr' ? 'tr' : 'en', tz)}`;
 }
 
 function formatDate(iso: string, locale: Locale): string {

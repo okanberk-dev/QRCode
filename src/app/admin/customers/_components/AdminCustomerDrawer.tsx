@@ -23,6 +23,7 @@ import { computeLastChannel, computeLastTopic } from '@/lib/customers';
 import { SegmentChip } from '@/components/customers/SegmentChip';
 import { SentimentBadge } from '@/components/customers/SentimentBadge';
 import { AlertBanner } from '@/components/ui';
+import { formatClock, resolveDisplayTimeZone } from '@/lib/timezone';
 
 // CLAUDE.md §38.93 (Stage A1) — admin-tier counterpart of owner CustomerDetailDrawer
 // (CLAUDE.md §38.14 + §38.16). Cross-restaurant scope:
@@ -93,14 +94,17 @@ function formatRelative(iso: string): string {
 
 // §38.237 — Yorum satırlarında mutlak saat. `formatDate` (tarih-only)
 // "ilk görülme" gibi gün-granülerlikli istatistiklerde kalır.
+// §46 — saat işletmenin yerel saatinde (cihaz TZ'si değil).
 function formatDateTimeStamp(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  return `${d.toLocaleDateString('tr-TR', {
+  const tz = resolveDisplayTimeZone();
+  return `${new Intl.DateTimeFormat('tr-TR', {
+    timeZone: tz,
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  })} ${d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+  }).format(d)} ${formatClock(d, 'tr', tz)}`;
 }
 
 function formatDate(iso: string): string {

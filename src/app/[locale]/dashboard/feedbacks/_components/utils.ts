@@ -1,5 +1,6 @@
 import type { Locale } from '@/lib/translations';
 import type { PlatformId } from '@/components/ui';
+import { formatFullDateTimeInTimeZone, formatStampInTimeZone } from '@/lib/timezone';
 
 export const PLATFORM_OPTIONS: PlatformId[] = [
   'google',
@@ -40,34 +41,16 @@ export function timeAgo(dateStr: string, locale: Locale) {
 // yanıtlayamıyordu. `formatStamp` liste satırında kompakt saat,
 // `formatDateTime` tooltip + detay panelinde tam damga verir.
 
+// Damgalar işletmenin yerel saatinde üretilir (CLAUDE.md §46). Cihaz TZ'sine
+// bırakılınca aynı yorum sunucuda (UTC) 11:32, Türkiye'deki owner'da 14:32,
+// yurt dışındaki owner'da bambaşka bir saat görünüyordu.
+
 /** Kompakt damga: bugün → "14:32", bu yıl → "1 Eyl 14:32", eski → "1 Eyl 2025 14:32". */
 export function formatStamp(dateStr: string, locale: Locale) {
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return '';
-  const loc = locale === 'tr' ? 'tr-TR' : 'en-US';
-  const now = new Date();
-  const sameDay =
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate();
-  const clock = d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' });
-  if (sameDay) return clock;
-  const datePart = d.toLocaleDateString(loc, {
-    day: 'numeric',
-    month: 'short',
-    ...(d.getFullYear() === now.getFullYear() ? {} : { year: 'numeric' }),
-  });
-  return `${datePart} ${clock}`;
+  return formatStampInTimeZone(dateStr, locale === 'en' ? 'en' : 'tr');
 }
 
 /** Tam damga (tooltip + detay başlığı): "1 Eylül 2026 14:32". */
 export function formatDateTime(dateStr: string, locale: Locale) {
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return '';
-  const loc = locale === 'tr' ? 'tr-TR' : 'en-US';
-  return `${d.toLocaleDateString(loc, {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })} ${d.toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })}`;
+  return formatFullDateTimeInTimeZone(dateStr, locale === 'en' ? 'en' : 'tr');
 }
