@@ -1475,6 +1475,20 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 
 `vercel.json` `crons` array'inde **9 entry**. Tek source-of-truth: `vercel.json`. CLAUDE.md tablosu sadece referans amaçlı — `vercel.json` değişirse bu tabloyu da güncelle.
 
+**İki scheduler var (2026-08, Hobby plan)**: `vercel.json` her cron'u **günde bir**
+tetikler — Vercel Hobby günde birden sık schedule kabul etmiyor, sub-daily bir
+ifade deployment'ı oluşturma anında tümden reddediyor. Cron'ları tek endpoint'te
+**birleştirmek bunu çözmez**: sınır her işin *frekansında*, sayısında değil.
+Saatlik kadans gereken 4 iş bu yüzden ayrıca `.github/workflows/cron-hourly.yml`
+tarafından saat başı çağrılır (endpoint'ler zaten `Bearer ${CRON_SECRET}` korumalı
+düz GET route'ları). `vercel.json`'daki günlük satırlar bilerek duruyor: her iş
+idempotent, fazladan bir günlük çalışma zararsız ve GitHub scheduled workflow'u
+60 gün repo hareketsizliğinde devre dışı bıraktığında iş yine de dönüyor.
+Kurulum: repo Settings → Secrets and variables → Actions'ta `CRON_SECRET` secret'ı
+(Vercel'dekiyle aynı değer) + opsiyonel `CRON_BASE_URL` variable'ı (default
+`https://www.buaze.com`; apex 307 döndüğü için kanonik host şart).
+GitHub scheduled workflow'ları yük altında gecikebilir — "yaklaşık saat başı".
+
 | Path | Schedule | Amaç |
 |---|---|---|
 | `/api/cron/weekly-digest` | `0 9 * * 1` | Her pazartesi 09:00 UTC — restoran sahibine haftalık özet (Pulse AI çıkarımı dahil — §21.38) |
@@ -1484,8 +1498,8 @@ Backend `ALLOWED_SOURCES` set'i geçersiz değerleri sessizce `'manual'`'a düş
 | `/api/cron/trial-reminders` | `0 9 * * *` | Her gün 09:00 UTC — trial bitimine 1 ve 3 gün kalanlara hatırlatma |
 | `/api/cron/lifecycle-emails` | `0 8 * * *` | Her gün 08:00 UTC — owner lifecycle email akışı (§21.34) |
 | `/api/cron/platform-link-retest` | `0 4 * * *` | Her gün 04:00 UTC — aktif platform link'lerinin sağlık kontrolü (§19.4.4) |
-| `/api/cron/google-reviews-alert` | `0 * * * *` | Her saat — Google rating impact tracking + threshold uyarı (§37.3) |
-| `/api/cron/expire-impersonation-sessions` | `*/5 * * * *` | Her 5 dk — superadmin impersonation oturumlarını otomatik expire et (§37 deferred follow-up) |
+| `/api/cron/google-reviews-alert` | `0 7 * * *` | Her gün 07:00 UTC — Google rating impact tracking + threshold uyarı (§37.3) |
+| `/api/cron/expire-impersonation-sessions` | `0 1 * * *` | Her gün 01:00 UTC — superadmin impersonation oturumlarının `endedAt` defterini kapatır. **Erişim kontrolü bu cron değildir**: süresi dolmuş token her istekte `getUserFromRequest` içindeki `endsAt > now` kontrolüyle reddedilir (§37 deferred follow-up) |
 
 ### 21.13 Cron logic'i admin panelden tetikleme (anti-pattern: self-fetch)
 
@@ -5416,12 +5430,14 @@ Tüm field'lar nullable + default'lu (CLAUDE.md §21.18).
 
 | Path | Schedule | Görev |
 |---|---|---|
-| `/api/cron/feedback-autodraft` | `15 * * * *` | Son 48h içinde draft'sız Buaze feedback'leri tara (safety net) |
-| `/api/cron/google-reviews-autodraft` | `30 * * * *` | Bağlı tüm Google integrations × unreplied reviews → draft |
+| `/api/cron/feedback-autodraft` | `0 5 * * *` | Son 48h içinde draft'sız Buaze feedback'leri tara (safety net — asıl yol feedback POST'undaki inline tetik) |
+| `/api/cron/google-reviews-autodraft` | `0 6 * * *` | Bağlı tüm Google integrations × unreplied reviews → draft |
 | `/api/cron/monthly-health-snapshot` | `0 2 1 * *` | Aylık snapshot — 02:00 UTC |
 | `/api/cron/monthly-health-report` | `0 10 1 * *` | Aylık rapor maili — 10:00 UTC (snapshot'tan 8 saat sonra) |
 
 Auth: `Bearer ${CRON_SECRET}`. Self-fetch antipattern yok — `run*` shared helper export'lu.
+
+**Cadence notu (§21.12, Hobby plan)**: dört cron 2026-08'de saat-başı/5-dakikadan günlüğe indirildi — Vercel Hobby planı günde birden sık cron kabul etmiyor ve deployment'ı tümden reddediyor. Auto-draft'lar bu yüzden en geç ertesi gün hazır olur; feedback tarafında inline tetik hâlâ anında çalışır, cron yalnız safety net.
 Google reviews auto-draft hard-cap 30 review/restaurant + sequential per-restaurant. 429 → skip cycle.
 
 ### §43.5 Baseline hook (OAuth callback)

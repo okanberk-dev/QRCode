@@ -5,10 +5,18 @@ import { writeAdminAuditLog } from '@/lib/audit-log';
 
 // Stage A4 §38.96 — impersonation auto-timeout cron.
 //
-// Schedule: */5 * * * * (5 dakika). 30dk window'lı session'lar manual /end
+// Schedule: 0 1 * * * (günlük). 30dk window'lı session'lar manual /end
 // olmadan kapatılır. CLAUDE.md §21.13 self-fetch antipattern'ından kaçınmak
 // için `runExpireImpersonationSessions()` shared helper export'lu (admin
 // manuel trigger ileride).
+//
+// NOT (§21.12 Hobby plan): schedule */5 → günlük düşürüldü. Bu bir güvenlik
+// gevşemesi DEĞİL: süresi dolmuş bir impersonation token'ı zaten her istekte
+// reddediliyor — `getUserFromRequest` (src/lib/auth.ts) `endsAt > now`
+// kontrolünü yapıyor ve DB hatasında fail-closed dönüyor. Bu cron yalnızca
+// defter tutuyor: `endedAt` + `endedReason: 'timeout'` kolonlarını dolduruyor
+// ve audit log satırını yazıyor. Günlük çalışınca değişen tek şey o audit
+// satırının yazılma anı; erişim penceresi `endsAt` ile sabit kalır.
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
