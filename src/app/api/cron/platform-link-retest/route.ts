@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
   runPlatformLinkTest,
-  PROVIDER_MAP,
-  type ProviderMapping,
+  providerColumnsSelect,
+  collectActiveProviderLinks,
+  type ProviderRow,
 } from '@/lib/platform-link-test';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -84,34 +86,12 @@ export async function runPlatformLinkRetest(): Promise<CronSummary> {
 
   const restaurants = await prisma.restaurant.findMany({
     where: { id: { in: batchIds } },
-    select: {
-      id: true,
-      googleReviewUrl: true,
-      googleEnabled: true,
-      yemekSepetiUrl: true,
-      yemekSepetiEnabled: true,
-      getirYemekUrl: true,
-      getirEnabled: true,
-      trendyolYemekUrl: true,
-      trendyolEnabled: true,
-      tripAdvisorUrl: true,
-      tripAdvisorEnabled: true,
-      airbnbUrl: true,
-      airbnbEnabled: true,
-      bookingUrl: true,
-      bookingEnabled: true,
-      yandexUrl: true,
-      yandexEnabled: true,
-      yelpUrl: true,
-      yelpEnabled: true,
-      foursquareUrl: true,
-      foursquareEnabled: true,
-      instagramUrl: true,
-      facebookUrl: true,
-      whatsappUrl: true,
-      website: true,
-      reservationUrl: true,
-    },
+    // Select + "aktif link" kuralı retest endpoint ile paylaşılan helper'lardan
+    // gelir (platform-link-test.ts) — iki yol asla farklı platform seti
+    // test edemez. `externalPlatformsEnabled` da dahil: admin master flag
+    // kapalı işletmeler için Yemeksepeti/Getir/… satırı yazmak hem quota
+    // yakıyor hem de owner'ın göremediği "bekleyen sorun" sayacını şişiriyordu.
+    select: { id: true, ...providerColumnsSelect(), externalPlatformsEnabled: true },
   });
 
   let linksChecked = 0;
@@ -119,17 +99,7 @@ export async function runPlatformLinkRetest(): Promise<CronSummary> {
   let failures = 0;
 
   for (const r of restaurants) {
-    const row = r as unknown as Record<string, string | null | boolean>;
-    const active: Array<{ mapping: ProviderMapping; url: string }> = [];
-    for (const m of PROVIDER_MAP) {
-      const url = (row[m.urlField] as string | null) ?? '';
-      if (!url || !url.trim()) continue;
-      if (m.enabledField) {
-        const enabled = row[m.enabledField] as boolean;
-        if (!enabled) continue;
-      }
-      active.push({ mapping: m, url });
-    }
+    const active = collectActiveProviderLinks(r as ProviderRow, isExternalReviewProvider);
     if (active.length === 0) continue;
 
     const settled = await Promise.allSettled(

@@ -2,18 +2,19 @@
 //
 // Tek source: hem manuel test endpoint (POST /api/restaurants/[id]/integrations/[provider]/test)
 // hem retest endpoint (POST /api/restaurants/[id]/integrations/retest) hem de
-// gelecekteki cron (Dalga 2) bu helper'ı çağırır.
+// cron (§19.4.4) bu helper'ı çağırır.
 //
 // Akış:
 //   1. Domain check (`checkProviderUrl`) — fail ise reachability test'i atla,
 //      hard error olarak kaydet (yanlış host'a HEAD atmadan koru).
-//   2. HEAD request (5sn timeout, redirect follow). Bazı upstream HEAD reddeder.
-//   3. GET fallback — body'yi okumadan sadece status'a bakar.
+//   2. HEAD request (kendi timeout'u, redirect follow). Bazı upstream HEAD reddeder.
+//   3. GET fallback — ayrı timeout, body'yi okumadan sadece status'a bakar.
 //   4. Sonuç DB'ye persist (`PlatformLinkCheck.create`). DB hatası UI'ı kırmaz —
 //      caller fire-and-forget log + result döner.
 //   5. Caller'a normalize edilmiş sonuç döner: `{ ok, statusCode, latencyMs, error?, url, checkedAt }`.
 
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import {
   checkProviderUrl,
   describeDomainError,
@@ -21,6 +22,7 @@ import {
 } from '@/lib/integration-domains';
 
 export type PlatformLinkTestSource = 'manual' | 'cron' | 'retest_all';
+export type PlatformLinkTestLocale = 'tr' | 'en';
 
 export interface PlatformLinkTestParams {
   restaurantId: string;
@@ -28,10 +30,17 @@ export interface PlatformLinkTestParams {
   /** Test edilen URL — caller (test endpoint, retest, cron) restoran kaydından çeker. */
   url: string;
   source?: PlatformLinkTestSource;
-  /** Override edilebilir timeout (ms). Default 5000. */
+  /** Override edilebilir timeout (ms) — HEAD ve GET denemelerinin HER BİRİ için. Default 5000. */
   timeoutMs?: number;
   /** false → DB'ye yazma, sadece result döndür. Default true. Cron testleri için. */
   persist?: boolean;
+  /**
+   * Hata mesajlarının dili. Sonuç `PlatformLinkCheck.error` olarak persist
+   * edilip owner paneline olduğu gibi basıldığı için EN owner'lar TR metin
+   * görmesin diye caller (test / retest endpoint) request locale'ini geçirir.
+   * Cron owner locale'ini bilmez → default 'tr'.
+   */
+  locale?: PlatformLinkTestLocale;
 }
 
 export interface PlatformLinkTestResult {
@@ -47,6 +56,40 @@ const USER_AGENT =
   'Mozilla/5.0 (compatible; BuazeIntegrationsTest/1.0; +https://buaze.com)';
 
 const ERROR_MAX_LEN = 500;
+
+const MESSAGES = {
+  emptyUrl: {
+    tr: 'URL boş — önce kaydet, sonra test et.',
+    en: 'URL is empty — save it first, then test.',
+  },
+  invalidUrl: { tr: 'Geçersiz URL formatı.', en: 'Invalid URL format.' },
+  notFound: {
+    tr: 'Sayfa bulunamadı (404). Bağlantı kaldırılmış ya da yanlış olabilir.',
+    en: 'Page not found (404). The link may have been removed or is incorrect.',
+  },
+  gone: {
+    tr: 'Sayfa kalıcı olarak kaldırılmış (410).',
+    en: 'Page permanently removed (410).',
+  },
+  blocked: {
+    tr: 'Bağlantı sunucu tarafından reddedildi.',
+    en: 'The server refused the request.',
+  },
+  serverError: {
+    tr: 'Platform sunucusu hata döndürdü. Birazdan tekrar deneyin.',
+    en: 'The platform server returned an error. Try again shortly.',
+  },
+  unverified: { tr: 'Bağlantı doğrulanamadı.', en: 'The link could not be verified.' },
+  timeout: (seconds: number) => ({
+    tr: `${seconds} saniyede yanıt alınamadı.`,
+    en: `No response within ${seconds} seconds.`,
+  }),
+  unreachable: { tr: 'Erişilemedi.', en: 'Unreachable.' },
+} as const;
+
+function pick(entry: { tr: string; en: string }, locale: PlatformLinkTestLocale): string {
+  return entry[locale];
+}
 
 function trimError(message: string | undefined | null): string | undefined {
   if (!message) return undefined;
@@ -81,6 +124,72 @@ async function persistCheck(
   }
 }
 
+// Büyük platformlar (Yemeksepeti, Getir, Trendyol, Tripadvisor, Yelp,
+// Foursquare, Booking, Airbnb, Yandex, Google ve sosyal ağlar) datacenter
+// IP'lerinden gelen istekleri WAF / bot koruması ile 403 / 405 / 429
+// döndürerek keser. Domain zaten whitelist'ten geçtiği için bu statülerin
+// tamamı "sunucuya ulaşıldı, sayfa var" anlamına gelir — link kırık DEĞİL.
+// Aksi halde §19.4.5 broken-skip resolver'ı sapasağlam bir Yelp linkini
+// müşteri yönlendirme zincirinden düşürüyordu. Sadece owner'ın kendi
+// domain'i (website / reservation) için 403 gerçek bir engel sayılır.
+const WAF_TOLERANT_PROVIDERS = new Set<IntegrationProvider>([
+  'google',
+  'yemeksepeti',
+  'getir',
+  'trendyol_go',
+  'tripadvisor',
+  'airbnb',
+  'booking',
+  'yandex',
+  'yelp',
+  'foursquare',
+  'instagram',
+  'facebook',
+  'whatsapp',
+]);
+
+function isWafBlockStatus(status: number): boolean {
+  return status === 403 || status === 405 || status === 429 || status === 999;
+}
+
+async function attempt(
+  target: string,
+  method: 'HEAD' | 'GET',
+  timeoutMs: number,
+): Promise<{ status: number } | { aborted: true } | { failed: Error }> {
+  // Her deneme KENDİ AbortController'ını alır. Eski implementasyon tek bir
+  // timer'ı HEAD + GET arasında paylaşıyordu; HEAD 4.8 sn'de düşerse GET
+  // zaten süresi dolmuş bir signal ile başlıyor, hatta timer HEAD sırasında
+  // tetiklendiyse GET aborted signal'le anında fırlatıyordu — fallback tam
+  // da ihtiyaç duyulan yavaş-upstream durumunda hiç çalışmıyordu.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(target, {
+      method,
+      signal: controller.signal,
+      redirect: 'follow',
+      headers: {
+        'User-Agent': USER_AGENT,
+        Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
+        'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.7',
+      },
+    });
+    // GET fallback body'yi okumaz — status yeterli, bağlantıyı serbest bırak.
+    try {
+      await res.body?.cancel();
+    } catch {
+      // ignore
+    }
+    return { status: res.status };
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') return { aborted: true };
+    return { failed: err instanceof Error ? err : new Error(String(err)) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Run a single platform link test. Returns normalized result + optionally
  * persists to PlatformLinkCheck. Domain validation runs first; on fail the
@@ -96,7 +205,7 @@ export async function runPlatformLinkTest(
   params: PlatformLinkTestParams,
 ): Promise<PlatformLinkTestResult> {
   const checkedAt = new Date();
-  const { url, provider, timeoutMs = 5000, persist = true } = params;
+  const { url, provider, timeoutMs = 5000, persist = true, locale = 'tr' } = params;
 
   // 1. Empty URL guard (caller genelde önce filtrelese de defansif).
   if (!url || !url.trim()) {
@@ -104,7 +213,7 @@ export async function runPlatformLinkTest(
       ok: false,
       statusCode: 0,
       latencyMs: 0,
-      error: 'URL boş — önce kaydet, sonra test et.',
+      error: pick(MESSAGES.emptyUrl, locale),
       url: url ?? '',
       checkedAt,
     };
@@ -115,15 +224,17 @@ export async function runPlatformLinkTest(
   // 2. Domain validation — yanlış host'a HEAD atmadan koru (CLAUDE.md §19.4).
   const domainCheck = checkProviderUrl(provider, url);
   if (!domainCheck.ok) {
-    // google dışındaki platformlar için domain doğru ama 'warning' ise (örn: getir.com anasayfası) teste izin ver
-    const isAllowedWarning = domainCheck.severity === 'warning' && provider !== 'google';
-    
+    // Domain doğru ama path heuristic'i warning verdiyse (örn. getir.com
+    // ana sayfası) reachability testine yine izin ver — owner "bilerek
+    // koydum" demiş olabilir (§19.4 warning ≠ hard block).
+    const isAllowedWarning = domainCheck.severity === 'warning';
+
     if (!isAllowedWarning) {
       const result: PlatformLinkTestResult = {
         ok: false,
         statusCode: 0,
         latencyMs: 0,
-        error: describeDomainError(provider, domainCheck),
+        error: describeDomainError(provider, domainCheck, locale),
         url,
         checkedAt,
       };
@@ -142,7 +253,7 @@ export async function runPlatformLinkTest(
       ok: false,
       statusCode: 0,
       latencyMs: 0,
-      error: 'Geçersiz URL formatı.',
+      error: pick(MESSAGES.invalidUrl, locale),
       url,
       checkedAt,
     };
@@ -150,70 +261,63 @@ export async function runPlatformLinkTest(
     return result;
   }
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
   const start = Date.now();
+  const href = target.toString();
+
+  let outcome = await attempt(href, 'HEAD', timeoutMs);
+  // GET fallback: HEAD ağ hatasıyla düştü, zaman aşımına uğradı, ya da
+  // upstream HEAD'i desteklemiyor (405 / 501) veya bot filtresi HEAD'i
+  // reddediyor (403 / 429). GET gerçek sayfa isteğine daha çok benzer.
+  const needsGetFallback =
+    'failed' in outcome ||
+    'aborted' in outcome ||
+    outcome.status === 405 ||
+    outcome.status === 501 ||
+    outcome.status === 403 ||
+    outcome.status === 429;
+  if (needsGetFallback) {
+    const getOutcome = await attempt(href, 'GET', timeoutMs);
+    // GET de başarısızsa HEAD'in daha bilgilendirici olan sonucunu koru
+    // (örn. HEAD 403 + GET timeout → 403 raporla).
+    if ('status' in getOutcome || !('status' in outcome)) outcome = getOutcome;
+  }
+  const latencyMs = Date.now() - start;
 
   let result: PlatformLinkTestResult;
-  try {
-    let res: Response;
-    try {
-      res = await fetch(target.toString(), {
-        method: 'HEAD',
-        signal: controller.signal,
-        redirect: 'follow',
-        headers: { 'User-Agent': USER_AGENT },
-      });
-    } catch {
-      // Bazı upstream HEAD reddediyor — GET fallback (body okunmaz, status yeter).
-      res = await fetch(target.toString(), {
-        method: 'GET',
-        signal: controller.signal,
-        redirect: 'follow',
-        headers: { 'User-Agent': USER_AGENT },
-      });
-    }
-    const latencyMs = Date.now() - start;
-    
-    // Yemeksepeti, Getir, Trendyol gibi platformlar Vercel/bot IP'lerini WAF ile engeller (403, 405).
-    // Domain Regex ile zaten validate edildiği için, 403/405 dönmesi aslında sunucuya ulaşıldığını gösterir.
-    let isOk = res.ok;
-    const isWafBlock = res.status === 403 || res.status === 405 || res.status === 429;
-    if (!isOk && isWafBlock && ['yemeksepeti', 'getir', 'trendyol_go', 'tripadvisor'].includes(provider)) {
-      isOk = true;
-    }
+  if ('status' in outcome) {
+    const status = outcome.status;
+    const wafTolerant = WAF_TOLERANT_PROVIDERS.has(provider);
+    const isOk =
+      (status >= 200 && status < 400) || (wafTolerant && isWafBlockStatus(status));
 
     let errorMessage: string | undefined;
     if (!isOk) {
-      if (res.status === 404) errorMessage = 'Sayfa bulunamadı.';
-      else if (isWafBlock) errorMessage = 'Bağlantı sunucu tarafından reddedildi.';
-      else errorMessage = 'Bağlantı doğrulanamadı.';
+      if (status === 404) errorMessage = pick(MESSAGES.notFound, locale);
+      else if (status === 410) errorMessage = pick(MESSAGES.gone, locale);
+      else if (isWafBlockStatus(status)) errorMessage = pick(MESSAGES.blocked, locale);
+      else if (status >= 500) errorMessage = pick(MESSAGES.serverError, locale);
+      else errorMessage = pick(MESSAGES.unverified, locale);
     }
 
-    result = {
-      ok: isOk,
-      statusCode: res.status,
-      latencyMs,
-      error: errorMessage,
-      url,
-      checkedAt,
-    };
-  } catch (err) {
-    const latencyMs = Date.now() - start;
-    const aborted =
-      err instanceof Error && (err.name === 'AbortError' || /timeout/i.test(err.message));
+    result = { ok: isOk, statusCode: status, latencyMs, error: errorMessage, url, checkedAt };
+  } else if ('aborted' in outcome) {
     result = {
       ok: false,
       statusCode: 0,
       latencyMs,
-      error: aborted
-        ? `${timeoutMs / 1000} saniyede yanıt alınamadı.`
-        : (err as Error).message || 'Erişilemedi.',
+      error: pick(MESSAGES.timeout(timeoutMs / 1000), locale),
       url,
       checkedAt,
     };
-  } finally {
-    clearTimeout(timer);
+  } else {
+    result = {
+      ok: false,
+      statusCode: 0,
+      latencyMs,
+      error: outcome.failed.message || pick(MESSAGES.unreachable, locale),
+      url,
+      checkedAt,
+    };
   }
 
   if (persist) await persistCheck(params, result);
@@ -286,4 +390,109 @@ export function getProviderMapping(
   provider: string,
 ): ProviderMapping | undefined {
   return PROVIDER_MAP.find((m) => m.provider === provider);
+}
+
+/**
+ * Prisma `select` object covering every URL + enabled column PROVIDER_MAP
+ * references. Retest / cron / test endpoints MUST build their select from
+ * this instead of a hand-written literal: the previous hand-written lists
+ * silently dropped `yelpUrl` / `foursquareUrl` so those two providers were
+ * never retested (the row read `undefined` → treated as "no URL").
+ */
+export function providerColumnsSelect(): Record<RestaurantUrlField | RestaurantEnabledField, true> {
+  const select: Partial<Record<RestaurantUrlField | RestaurantEnabledField, true>> = {};
+  for (const m of PROVIDER_MAP) {
+    select[m.urlField] = true;
+    if (m.enabledField) select[m.enabledField] = true;
+  }
+  return select as Record<RestaurantUrlField | RestaurantEnabledField, true>;
+}
+
+export type ProviderRow = Partial<Record<RestaurantUrlField, string | null>> &
+  Partial<Record<RestaurantEnabledField, boolean>> & { externalPlatformsEnabled?: boolean };
+
+/**
+ * Which provider links are "active" for a restaurant row — URL set, enabled
+ * toggle on (review platforms), and not gated by the admin
+ * `externalPlatformsEnabled` master flag. Shared by retest + cron so the two
+ * paths can never disagree about what gets tested.
+ */
+export function collectActiveProviderLinks(
+  row: ProviderRow,
+  isExternal: (provider: string) => boolean,
+): Array<{ mapping: ProviderMapping; url: string }> {
+  const externalEnabled = row.externalPlatformsEnabled ?? true;
+  const active: Array<{ mapping: ProviderMapping; url: string }> = [];
+  for (const m of PROVIDER_MAP) {
+    if (!externalEnabled && isExternal(m.provider)) continue;
+    const url = row[m.urlField] ?? '';
+    if (!url || !url.trim()) continue;
+    if (m.enabledField && !row[m.enabledField]) continue;
+    active.push({ mapping: m, url: url.trim() });
+  }
+  return active;
+}
+
+export interface LatestCheckRow {
+  provider: string;
+  ok: boolean;
+  statusCode: number | null;
+  latencyMs: number | null;
+  error: string | null;
+  checkedAt: Date;
+  source: string;
+}
+
+/**
+ * Latest `PlatformLinkCheck` row per provider for one restaurant, in a single
+ * `DISTINCT ON` query. Returns a PrismaPromise so callers can batch it inside
+ * `prisma.$transaction([...])` (CLAUDE.md §40.1).
+ *
+ * Why raw SQL: Prisma's `distinct` (without the nativeDistinct preview) is
+ * applied in memory AFTER fetching every matching row, and the previous
+ * "take: 200 + JS reduce" approach silently dropped providers whose last
+ * check fell outside the 200-row window (daily cron ≈ 10 rows/day → ~20 days).
+ */
+export function latestChecksByProvider(restaurantId: string) {
+  return prisma.$queryRaw<LatestCheckRow[]>(Prisma.sql`
+    SELECT DISTINCT ON (provider)
+      provider,
+      ok,
+      status_code AS "statusCode",
+      latency_ms  AS "latencyMs",
+      error,
+      checked_at  AS "checkedAt",
+      source
+    FROM platform_link_checks
+    WHERE restaurant_id = ${restaurantId}
+    ORDER BY provider, checked_at DESC
+  `);
+}
+
+/**
+ * Latest check per (restaurant, provider) across a set of restaurants,
+ * limited to rows newer than `since`. Powers the "pending issues" KPI on the
+ * platforms page: a link counts as failing only if its MOST RECENT check
+ * failed — a plain `count(ok=false, last 24h)` inflated the number every time
+ * the cron + a manual retest both hit the same broken link.
+ */
+export function latestChecksForRestaurants(restaurantIds: string[], since: Date) {
+  if (restaurantIds.length === 0) {
+    return prisma.$queryRaw<Array<LatestCheckRow & { restaurantId: string }>>(Prisma.sql`SELECT NULL::text AS provider WHERE false`);
+  }
+  return prisma.$queryRaw<Array<LatestCheckRow & { restaurantId: string }>>(Prisma.sql`
+    SELECT DISTINCT ON (restaurant_id, provider)
+      restaurant_id AS "restaurantId",
+      provider,
+      ok,
+      status_code AS "statusCode",
+      latency_ms  AS "latencyMs",
+      error,
+      checked_at  AS "checkedAt",
+      source
+    FROM platform_link_checks
+    WHERE restaurant_id IN (${Prisma.join(restaurantIds)})
+      AND checked_at >= ${since}
+    ORDER BY restaurant_id, provider, checked_at DESC
+  `);
 }

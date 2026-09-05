@@ -163,7 +163,18 @@ export default function PlatformsClient({
       storedRestaurantId: stored,
     });
     setSelectedRestaurantId(next);
-  }, [restaurantRows, urlRestaurantId]);
+    // The server rendered KPI cards + `connected/total` counts for the
+    // restaurant IT resolved (query param only — it can't see localStorage).
+    // If the remembered business differs, push it into the URL so the server
+    // re-renders and the numbers describe the business the cards show.
+    if (next && next !== initialSelectedRestaurantId && !urlRestaurantId) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('restaurant');
+      params.set('restaurantId', next);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantRows, urlRestaurantId, initialSelectedRestaurantId]);
 
   const selectRestaurant = (restaurantId: string) => {
     setSelectedRestaurantId(restaurantId);
@@ -320,17 +331,26 @@ export default function PlatformsClient({
           {filteredPlatforms.map((platform) => {
             const isConnected = platform.connected > 0;
             const isPartial = platform.urlSet > platform.connected;
+            // Admin master flag (CLAUDE.md §5.2) — external review platforms
+            // are locked for this business. Mirror the wizard's "Kilitli"
+            // state on the card instead of teasing a "Yönet" flow that lands
+            // on a disabled form.
+            const isLocked =
+              platform.externalReview === true &&
+              selectedRestaurant?.externalPlatformsEnabled === false;
             const status = platform.comingSoon
               ? 'coming_soon'
-              : isConnected
-                ? 'connected'
-                : isPartial
-                  ? 'inactive'
-                  : 'available';
+              : isLocked
+                ? 'locked'
+                : isConnected
+                  ? 'connected'
+                  : isPartial
+                    ? 'inactive'
+                    : 'available';
             const statusBadgeKind: 'ok' | 'warn' | 'ghost' | 'info' =
               status === 'connected'
                 ? 'ok'
-                : status === 'inactive'
+                : status === 'inactive' || status === 'locked'
                   ? 'warn'
                   : status === 'coming_soon'
                     ? 'info'
@@ -340,21 +360,30 @@ export default function PlatformsClient({
                 ? 'Bağlı'
                 : status === 'inactive'
                   ? 'Pasif'
-                  : status === 'coming_soon'
-                    ? 'Yakında'
-                    : 'Hazır'
+                  : status === 'locked'
+                    ? 'Kilitli'
+                    : status === 'coming_soon'
+                      ? 'Yakında'
+                      : 'Hazır'
               : status === 'connected'
                 ? 'Connected'
                 : status === 'inactive'
                   ? 'Inactive'
-                  : status === 'coming_soon'
-                    ? 'Coming soon'
-                    : 'Available';
+                  : status === 'locked'
+                    ? 'Locked'
+                    : status === 'coming_soon'
+                      ? 'Coming soon'
+                      : 'Available';
 
             const logoSrc = getPlatformLogoSrc(platform);
 
             return (
-              <div key={platform.slug} className="bz-card flex flex-col gap-3.5 p-4">
+              <div
+                key={platform.slug}
+                className={`bz-card flex flex-col gap-3.5 p-4 transition-shadow hover:shadow-[0_18px_40px_-28px_rgba(10,10,10,0.35)] ${
+                  isLocked ? 'opacity-75' : ''
+                }`}
+              >
                 <div className="flex items-start gap-3">
                   {logoSrc ? (
                     // Mevcut /public/platforms/{id}.svg envanteri (CLAUDE.md
@@ -409,7 +438,7 @@ export default function PlatformsClient({
                   <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[10px] border border-[#EDEDED]">
                     <div className="bg-white p-2.5">
                       <div className="pulse-eyebrow mb-0.5 text-[9.5px] text-[#737373]">
-                        {isTr ? 'BAGLI' : 'CONNECTED'}
+                        {isTr ? 'BAĞLI' : 'CONNECTED'}
                       </div>
                       <div className="bz-mono text-[12px] font-semibold tabular-nums text-[#0A0A0A]">
                         {platform.connected}/{platform.total}
@@ -440,7 +469,7 @@ export default function PlatformsClient({
                   ) : (
                     <Link
                       href={`/${locale}/dashboard/platforms/${platform.slug}?restaurantId=${encodeURIComponent(selectedRestaurantId)}`}
-                      className="bz-btn-ghost inline-flex flex-1 items-center justify-center gap-1.5 text-[12px]"
+                      className="bz-btn-ghost inline-flex min-h-[40px] flex-1 items-center justify-center gap-1.5 text-[12px]"
                       aria-label={
                         isTr
                           ? `${platform.name} bağlantısını yönet`
@@ -448,7 +477,7 @@ export default function PlatformsClient({
                       }
                     >
                       <Settings size={11} strokeWidth={2} />
-                      {isTr ? 'Yönet' : 'Manage'}
+                      {isLocked ? (isTr ? 'Detay' : 'Details') : isTr ? 'Yönet' : 'Manage'}
                     </Link>
                   )}
                 </div>

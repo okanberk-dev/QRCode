@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
-import { RecaptchaEnterpriseServiceClient } from '@google-cloud/recaptcha-enterprise';
+import { SignJWT, importPKCS8 } from 'jose';
 import { getClientIp, blockKey, isBlocked } from '@/lib/rate-limit';
 
 const SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY;
@@ -15,6 +15,16 @@ const API_KEY = process.env.RECAPTCHA_ENTERPRISE_API_KEY?.trim();
 // the reason. Flip RECAPTCHA_ENFORCE=true once dashboards confirm scores
 // are healthy. Mirrors Stripe Radar / Cloudflare Turnstile rollout pattern.
 const ENFORCE = (process.env.RECAPTCHA_ENFORCE ?? 'false').toLowerCase() === 'true';
+
+// Auth-path latency budget. reCAPTCHA sits on the critical path of every
+// login / Google sign-in / register request; a slow Google edge must not
+// hold the user hostage. On timeout we fall through to `softFail` (monitor
+// mode passes, enforce mode rejects) instead of hanging the request.
+const ASSESSMENT_TIMEOUT_MS = Number(process.env.RECAPTCHA_ASSESSMENT_TIMEOUT_MS || '4000');
+
+const RECAPTCHA_REST_BASE = 'https://recaptchaenterprise.googleapis.com/v1';
+const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
+const CLOUD_PLATFORM_SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 
 type RecaptchaSuccess = {
   ok: true;
@@ -89,42 +99,168 @@ function hasCriticalBotSignal(score: number, reasons: string[]): boolean {
 const msg = (key: keyof typeof MESSAGES, locale: RecaptchaLocale) =>
   MESSAGES[key][locale];
 
-let clientSingleton: RecaptchaEnterpriseServiceClient | null = null;
+// ---------------------------------------------------------------------------
+// Transport — plain REST over `fetch`.
+//
+// The previous implementation instantiated `@google-cloud/recaptcha-enterprise`
+// (google-gax + grpc-js + protobufjs, several MB of JS). On a Vercel cold
+// start that meant ~1–2 s of module evaluation plus a gRPC channel handshake
+// and an OAuth2 exchange before the FIRST assessment could even be sent — and
+// it sat directly on the login / Google sign-in critical path. The REST API
+// is a single HTTPS round-trip with the exact same request/response shape.
+//
+// Credential precedence (unchanged from the gRPC client):
+//   1. `RECAPTCHA_ENTERPRISE_SERVICE_ACCOUNT_JSON` → self-signed JWT assertion
+//      (jose RS256) → short-lived Google access token, cached in memory until
+//      ~1 min before expiry so warm instances pay 0 extra round-trips.
+//   2. `RECAPTCHA_ENTERPRISE_API_KEY`             → `?key=` query parameter.
+// ---------------------------------------------------------------------------
 
-type RecaptchaClientOptions = ConstructorParameters<typeof RecaptchaEnterpriseServiceClient>[0];
+type ServiceAccount = { client_email: string; private_key: string };
 
-function parseServiceAccountJson(): RecaptchaClientOptions | undefined {
-  if (!SERVICE_ACCOUNT_JSON) return undefined;
+let serviceAccountCache: ServiceAccount | null | undefined;
+
+function getServiceAccount(): ServiceAccount | null {
+  if (serviceAccountCache !== undefined) return serviceAccountCache;
+  if (!SERVICE_ACCOUNT_JSON) {
+    serviceAccountCache = null;
+    return null;
+  }
   try {
-    const parsed = JSON.parse(SERVICE_ACCOUNT_JSON) as {
-      client_email?: string;
-      private_key?: string;
+    const parsed = JSON.parse(SERVICE_ACCOUNT_JSON) as Partial<ServiceAccount>;
+    if (!parsed.client_email || !parsed.private_key) {
+      serviceAccountCache = null;
+      return null;
+    }
+    serviceAccountCache = {
+      client_email: parsed.client_email,
+      // Vercel env UI stores the key with literal "\n" sequences; normalise so
+      // PEM parsing works regardless of how the operator pasted it.
+      private_key: parsed.private_key.replace(/\\n/g, '\n'),
     };
-
-    if (!parsed.client_email || !parsed.private_key) return undefined;
-    return {
-      credentials: {
-        client_email: parsed.client_email,
-        private_key: parsed.private_key,
-      },
-    } as RecaptchaClientOptions;
+    return serviceAccountCache;
   } catch (error) {
     console.error('[recaptcha] invalid service account json', error);
-    return undefined;
+    serviceAccountCache = null;
+    return null;
   }
 }
 
-function getRecaptchaClientOptions(): RecaptchaClientOptions | undefined {
-  const serviceAccountOptions = parseServiceAccountJson();
-  if (serviceAccountOptions) return serviceAccountOptions;
-  if (API_KEY) return { apiKey: API_KEY } as RecaptchaClientOptions;
-  return undefined;
+let accessTokenCache: { token: string; expiresAt: number } | null = null;
+let accessTokenInflight: Promise<string> | null = null;
+
+async function mintServiceAccountAccessToken(sa: ServiceAccount, signal: AbortSignal): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const key = await importPKCS8(sa.private_key, 'RS256');
+  const assertion = await new SignJWT({ scope: CLOUD_PLATFORM_SCOPE })
+    .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
+    .setIssuer(sa.client_email)
+    .setSubject(sa.client_email)
+    .setAudience(GOOGLE_TOKEN_URL)
+    .setIssuedAt(now)
+    .setExpirationTime(now + 3600)
+    .sign(key);
+
+  const res = await fetch(GOOGLE_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion,
+    }),
+    signal,
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`token exchange failed (${res.status}) ${text.slice(0, 200)}`);
+  }
+  const data = (await res.json()) as { access_token?: string; expires_in?: number };
+  if (!data.access_token) throw new Error('token exchange returned no access_token');
+  const ttlMs = Math.max(60, (data.expires_in ?? 3600) - 60) * 1000;
+  accessTokenCache = { token: data.access_token, expiresAt: Date.now() + ttlMs };
+  return data.access_token;
 }
 
-function getRecaptchaClient() {
-  if (clientSingleton) return clientSingleton;
-  clientSingleton = new RecaptchaEnterpriseServiceClient(getRecaptchaClientOptions());
-  return clientSingleton;
+async function getServiceAccountAccessToken(sa: ServiceAccount, signal: AbortSignal): Promise<string> {
+  if (accessTokenCache && accessTokenCache.expiresAt > Date.now()) return accessTokenCache.token;
+  if (!accessTokenInflight) {
+    accessTokenInflight = mintServiceAccountAccessToken(sa, signal).finally(() => {
+      accessTokenInflight = null;
+    });
+  }
+  return accessTokenInflight;
+}
+
+type RestAuth =
+  | { kind: 'bearer'; token: string }
+  | { kind: 'apiKey'; key: string }
+  | null;
+
+async function resolveRestAuth(signal: AbortSignal): Promise<RestAuth> {
+  const sa = getServiceAccount();
+  if (sa) {
+    return { kind: 'bearer', token: await getServiceAccountAccessToken(sa, signal) };
+  }
+  if (API_KEY) return { kind: 'apiKey', key: API_KEY };
+  return null;
+}
+
+async function recaptchaRest<T>(
+  path: string,
+  body: unknown,
+  signal: AbortSignal,
+): Promise<T> {
+  const auth = await resolveRestAuth(signal);
+  if (!auth) throw new Error('no reCAPTCHA Enterprise credentials configured');
+
+  const url = new URL(`${RECAPTCHA_REST_BASE}/${path}`);
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (auth.kind === 'apiKey') url.searchParams.set('key', auth.key);
+  else headers.Authorization = `Bearer ${auth.token}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+    signal,
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    // Google wraps errors as { error: { code, message, status } } — surface
+    // the status token (PERMISSION_DENIED etc.) so ops can act on it.
+    let summary = text.slice(0, 200);
+    try {
+      const parsed = JSON.parse(text) as { error?: { status?: string; message?: string } };
+      if (parsed.error?.status || parsed.error?.message) {
+        summary = `${parsed.error.status ?? ''} ${parsed.error.message ?? ''}`.trim().slice(0, 200);
+      }
+    } catch {
+      // keep raw slice
+    }
+    throw new Error(`recaptcha REST ${res.status}: ${summary}`);
+  }
+  return (await res.json()) as T;
+}
+
+function withTimeout(ms: number): { signal: AbortSignal; clear: () => void } {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return { signal: controller.signal, clear: () => clearTimeout(timer) };
+}
+
+interface AssessmentResponse {
+  name?: string;
+  tokenProperties?: {
+    valid?: boolean;
+    invalidReason?: string;
+    action?: string;
+  };
+  riskAnalysis?: {
+    score?: number;
+    reasons?: string[];
+  };
 }
 
 export function isRecaptchaServerConfigured(): boolean {
@@ -201,21 +337,22 @@ export async function verifyRecaptchaToken(
     });
   }
 
+  const timeout = withTimeout(ASSESSMENT_TIMEOUT_MS);
+  const startedAt = Date.now();
   try {
-    const client = getRecaptchaClient();
-    const parent = client.projectPath(PROJECT_ID!);
-    const [response] = await client.createAssessment({
-      parent,
-      assessment: {
+    const response = await recaptchaRest<AssessmentResponse>(
+      `projects/${encodeURIComponent(PROJECT_ID!)}/assessments`,
+      {
         event: {
           token,
           siteKey: SITE_KEY,
           expectedAction,
           userAgent: req.headers.get('user-agent') || undefined,
-          userIpAddress: getClientIp(req.headers),
+          userIpAddress: ip,
         },
       },
-    });
+      timeout.signal,
+    );
 
     if (!response.tokenProperties?.valid) {
       return softFail('token invalid', { invalidReason: response.tokenProperties?.invalidReason, action: expectedAction }, {
@@ -266,11 +403,22 @@ export async function verifyRecaptchaToken(
       assessmentName: response.name || undefined,
     };
   } catch (error) {
-    return softFail('assessment api error', { error: String(error), action: expectedAction }, {
-      ok: false,
-      error: msg('failure', locale),
-      status: 502,
-    });
+    const aborted = error instanceof Error && error.name === 'AbortError';
+    return softFail(
+      aborted ? 'assessment timeout' : 'assessment api error',
+      {
+        error: aborted ? `timed out after ${ASSESSMENT_TIMEOUT_MS}ms` : String(error),
+        elapsedMs: Date.now() - startedAt,
+        action: expectedAction,
+      },
+      {
+        ok: false,
+        error: msg('failure', locale),
+        status: 502,
+      },
+    );
+  } finally {
+    timeout.clear();
   }
 }
 
@@ -284,13 +432,14 @@ export async function annotateRecaptchaAssessment(
 ) {
   if (!assessmentName || !isRecaptchaServerConfigured()) return;
 
+  const timeout = withTimeout(ASSESSMENT_TIMEOUT_MS);
   try {
-    const client = getRecaptchaClient();
-    await client.annotateAssessment({
-      name: assessmentName,
-      annotation,
-    });
+    // `assessmentName` is the fully-qualified resource name returned by
+    // createAssessment: `projects/{project}/assessments/{id}`.
+    await recaptchaRest(`${assessmentName}:annotate`, { annotation }, timeout.signal);
   } catch (error) {
     console.error('[recaptcha] annotate error', error);
+  } finally {
+    timeout.clear();
   }
 }

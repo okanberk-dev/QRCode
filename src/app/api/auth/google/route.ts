@@ -9,7 +9,6 @@ import { verifyRecaptchaToken } from '@/lib/recaptcha';
 import { handleOAuthSignIn, type OAuthDeps } from '@/lib/oauth';
 import { createUserSessionForToken } from '@/lib/user-session';
 import { describeDevice } from '@/lib/device-fingerprint';
-import { sendNewDeviceLoginEmail } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,14 +25,22 @@ export async function POST(req: NextRequest) {
     const { idToken, recaptchaToken, locale } = await req.json();
     const captchaLocale = locale === 'en' ? 'en' : 'tr';
 
-    // Latency optimization (CLAUDE.md §34.19): rate-limit lookup +
-    // reCAPTCHA assessment are independent network round-trips; the
-    // Firebase ID-token verify happens inside `handleOAuthSignIn` below
-    // and depends on the rest passing first. Running rate-limit and
-    // reCAPTCHA in parallel saves ~50-150ms on the typical sign-in.
+    // Latency optimization (CLAUDE.md §34.4): rate-limit lookup, reCAPTCHA
+    // assessment and the Firebase ID-token signature check are three
+    // independent network round-trips (Upstash, Google reCAPTCHA, Google
+    // JWKS). Run them concurrently; only the DB work below depends on the
+    // verified claims. The verify is side-effect free, so starting it before
+    // the rate-limit decision leaks nothing — an over-limit caller still gets
+    // a 429 and never reaches the DB.
+    const verifiedClaims =
+      typeof idToken === 'string' && idToken
+        ? verifyFirebaseIdToken(idToken)
+        : Promise.resolve(null);
     const [ipLimit, captcha] = await Promise.all([
       rateLimit(`google-auth:ip:${ip}`, 10, 10 * 60 * 1000),
       verifyRecaptchaToken(req, recaptchaToken, 'auth_google', captchaLocale),
+      // Swallow here; `handleOAuthSignIn` re-awaits and maps null → 401.
+      verifiedClaims.catch(() => null),
     ]);
 
     if (!ipLimit.allowed) {
@@ -48,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     const deps: OAuthDeps = {
-      verifyToken: verifyFirebaseIdToken,
+      verifyToken: () => verifiedClaims.catch(() => null),
       findUser: (email) => prisma.user.findUnique({ where: { email } }),
       createUser: async (data) => {
         // Google tarafından gelen kullanıcı → parolasız hesap. Rastgele güçlü
@@ -128,18 +135,25 @@ export async function POST(req: NextRequest) {
       const userLocale: 'tr' | 'en' = (
         (user as unknown as { locale?: string }).locale === 'en' ? 'en' : 'tr'
       );
-      sendNewDeviceLoginEmail({
-        to: user.email,
-        firstName: user.name,
-        accountEmail: user.email,
-        device: desc.device,
-        location: desc.location,
-        loggedInAt: new Date(),
-        resetUrl: `${appUrl}/${userLocale}/auth/forgot-password`,
-        locale: userLocale,
-      }).catch(() => {
-        // sender wires ops-alert internally
-      });
+      // Lazy import: `@/lib/email` pulls in the whole template catalogue;
+      // keeping it off the module graph shrinks the cold-start of this
+      // route for the 99% of sign-ins that are not from a new device.
+      import('@/lib/email')
+        .then(({ sendNewDeviceLoginEmail }) =>
+          sendNewDeviceLoginEmail({
+            to: user.email,
+            firstName: user.name,
+            accountEmail: user.email,
+            device: desc.device,
+            location: desc.location,
+            loggedInAt: new Date(),
+            resetUrl: `${appUrl}/${userLocale}/auth/forgot-password`,
+            locale: userLocale,
+          }),
+        )
+        .catch(() => {
+          // sender wires ops-alert internally
+        });
     }
 
     const response = NextResponse.json({

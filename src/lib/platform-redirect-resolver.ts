@@ -42,7 +42,7 @@ export type RedirectProvider =
 
 // PlatformId (UI vocabulary) ↔ RedirectProvider (storage vocabulary).
 // Tek farklılık: trendyol vs trendyol_go (CLAUDE.md §5 platform sistem).
-const PLATFORM_ID_TO_PROVIDER: Partial<Record<PlatformId, RedirectProvider>> = {
+export const PLATFORM_ID_TO_PROVIDER: Partial<Record<PlatformId, RedirectProvider>> = {
   google: 'google',
   yemeksepeti: 'yemeksepeti',
   getir: 'getir',

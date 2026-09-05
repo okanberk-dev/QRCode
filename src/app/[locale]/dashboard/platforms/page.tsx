@@ -26,6 +26,8 @@ import PlatformsClient, {
   type PlatformSummaryRow,
   type RestaurantInfo,
 } from './_components/PlatformsClient';
+import { latestChecksForRestaurants } from '@/lib/platform-link-test';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
 
 export const dynamic = 'force-dynamic';
 
@@ -158,14 +160,15 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
   monthStart.setHours(0, 0, 0, 0);
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const [pendingIssuesCount, totalReviewsThisMonth] = await prisma.$transaction([
-    prisma.platformLinkCheck.count({
-      where: {
-        restaurantId: { in: restaurantIds },
-        checkedAt: { gte: last24h },
-        ok: false,
-      },
-    }),
+  // "Bekleyen sorun" = son 24 saatte EN SON testi başarısız olan bağlantı
+  // sayısı (restoran × provider). Admin `externalPlatformsEnabled` kapalı
+  // işletmelerde external provider satırları sayılmaz — owner o platformları
+  // panelde göremediği için düzeltemeyeceği bir sayaç görmemeli.
+  const externalDisabledIds = new Set(
+    selectedRestaurants.filter((r) => !r.externalPlatformsEnabled).map((r) => r.id),
+  );
+  const [latestChecks, totalReviewsThisMonth] = await prisma.$transaction([
+    latestChecksForRestaurants(restaurantIds, last24h),
     prisma.feedback.count({
       where: {
         restaurantId: { in: restaurantIds },
@@ -173,6 +176,11 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
       },
     }),
   ]);
+  const pendingIssuesCount = latestChecks.filter((check) => {
+    if (check.ok) return false;
+    if (externalDisabledIds.has(check.restaurantId) && isExternalReviewProvider(check.provider)) return false;
+    return true;
+  }).length;
 
   const platformSummaries = MANAGED_PLATFORM_DEFS.map((platform) => {
     let connected = 0;
@@ -214,9 +222,11 @@ export default async function OwnerPlatformsPage({ params, searchParams }: PageP
             : 'Manage review, social, and messaging links for the selected business in one flow.'
         }
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <a
-              href={`/api/dashboard/platforms/log/export`}
+              href={`/api/dashboard/platforms/log/export?locale=${locale}${
+                selectedRestaurantId ? `&restaurantId=${encodeURIComponent(selectedRestaurantId)}` : ''
+              }`}
               download
               className="bz-btn inline-flex items-center gap-1.5 text-[12.5px]"
               title={isTr ? 'Son test sonuçlarını CSV olarak indir' : 'Download recent test results as CSV'}

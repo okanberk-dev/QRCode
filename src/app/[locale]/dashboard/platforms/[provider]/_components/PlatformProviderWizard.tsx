@@ -216,13 +216,19 @@ export default function PlatformProviderWizard({
     setRestaurantRows(restaurants);
   }, [restaurants]);
 
+  // Resync the form ONLY when the selected business (or the platform page)
+  // actually changes. Keying on the row object made this effect re-run after
+  // every successful save — `updateSelectedRestaurant` replaces the row —
+  // which wiped the "Bağlantı kaydedildi" confirmation the moment it appeared.
   useEffect(() => {
-    if (!selectedRestaurant) return;
-    setUrl(selectedRestaurant[platform.urlField] ?? '');
-    setEnabled(platform.enabledField ? Boolean(selectedRestaurant[platform.enabledField]) : true);
+    const row = restaurantRows.find((restaurant) => restaurant.id === selectedRestaurantRowId);
+    if (!row) return;
+    setUrl(row[platform.urlField] ?? '');
+    setEnabled(platform.enabledField ? Boolean(row[platform.enabledField]) : true);
     setError(null);
     setSuccess(null);
-  }, [platform.enabledField, platform.urlField, selectedRestaurant, selectedRestaurant?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [platform.enabledField, platform.urlField, selectedRestaurantRowId]);
 
   useEffect(() => {
     if (!selectedRestaurantRowId) return;
@@ -282,8 +288,17 @@ export default function PlatformProviderWizard({
   const enabledPlatformIds = useMemo<PlatformId[]>(() => {
     if (!selectedRestaurant) return [];
     const allowed = getSectorPlatforms(selectedRestaurant.category);
+    const storedDefault = selectedRestaurant.defaultRedirectPlatform;
     return MANAGED_REVIEW_PLATFORMS.filter((item) => {
-      if (!item.uiPlatformId || !allowed.has(item.uiPlatformId)) return false;
+      if (!item.uiPlatformId) return false;
+      // Sector whitelist decides what we OFFER, but a platform that is
+      // already the stored default must stay visible even when it is
+      // outside the sector list — otherwise the picker flagged a perfectly
+      // valid Tripadvisor default on a clinic as an "orphan" and offered to
+      // clear it (the public resolver honours the default regardless of
+      // sector).
+      const isStoredDefault = storedDefault !== null && item.provider === storedDefault;
+      if (!allowed.has(item.uiPlatformId) && !isStoredDefault) return false;
       if (item.externalReview && selectedRestaurant.externalPlatformsEnabled === false) return false;
       const itemUrl = selectedRestaurant[item.urlField];
       const itemEnabled = item.enabledField ? Boolean(selectedRestaurant[item.enabledField]) : true;
@@ -292,6 +307,17 @@ export default function PlatformProviderWizard({
   }, [selectedRestaurant]);
 
   const selectRestaurant = (restaurantId: string) => {
+    if (restaurantId === selectedRestaurantId) return;
+    // Switching businesses resets the form — don't silently drop an unsaved
+    // URL/toggle edit.
+    if (dirty) {
+      const proceed = window.confirm(
+        isTr
+          ? 'Kaydedilmemiş değişiklikler var. İşletme değiştirirsen bu değişiklikler kaybolur. Devam edilsin mi?'
+          : 'You have unsaved changes. Switching business will discard them. Continue?',
+      );
+      if (!proceed) return;
+    }
     setSelectedRestaurantId(restaurantId);
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
@@ -386,10 +412,21 @@ export default function PlatformProviderWizard({
     setError(null);
     try {
       const response = await fetch(
-        `/api/restaurants/${selectedRestaurant.id}/integrations/${platform.provider}/test`,
+        `/api/restaurants/${selectedRestaurant.id}/integrations/${platform.provider}/test?locale=${locale}`,
         { method: 'POST' },
       );
       const data = await response.json().catch(() => ({}));
+      if (response.status === 429) {
+        // Throttled — this is NOT a broken link. Surface it as a notice
+        // instead of writing a fake failed check into the badge.
+        const retryAfter = Number(response.headers.get('Retry-After') || '0');
+        setError(
+          isTr
+            ? `Çok fazla test isteği. ${retryAfter > 0 ? `${retryAfter} sn sonra` : 'Birazdan'} tekrar dene.`
+            : `Too many test requests. Try again ${retryAfter > 0 ? `in ${retryAfter}s` : 'shortly'}.`,
+        );
+        return;
+      }
       if (!response.ok) {
         throw new Error(data?.error || (isTr ? 'Test başarısız.' : 'Test failed.'));
       }
@@ -553,6 +590,14 @@ export default function PlatformProviderWizard({
 
           {latestCheck && <LatestCheckLine check={latestCheck} locale={locale} />}
 
+          {dirty && currentUrl && !hardError && !gated && (
+            <p className="text-[12px] text-[#737373]">
+              {isTr
+                ? 'Test etmek için önce değişiklikleri kaydet.'
+                : 'Save your changes before running a test.'}
+            </p>
+          )}
+
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
             {url && (
               <a
@@ -569,6 +614,17 @@ export default function PlatformProviderWizard({
               type="button"
               onClick={runTest}
               disabled={!currentUrl || dirty || testing || Boolean(hardError) || gated}
+              title={
+                dirty
+                  ? isTr
+                    ? 'Önce kaydet'
+                    : 'Save first'
+                  : !currentUrl
+                    ? isTr
+                      ? 'Önce bir URL kaydet'
+                      : 'Save a URL first'
+                    : undefined
+              }
               className="bz-btn-ghost inline-flex items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {testing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
@@ -582,6 +638,7 @@ export default function PlatformProviderWizard({
                   setSuccess(null);
                 }}
                 disabled={gated}
+                title={isTr ? 'URL temizlenir; Kaydet ile kalıcı olur.' : 'Clears the URL; Save to persist.'}
                 className="bz-btn-danger inline-flex items-center justify-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Trash2 size={14} />
@@ -721,11 +778,12 @@ export default function PlatformProviderWizard({
           }
         >
           <DefaultRedirectPicker
-            key={`${selectedRestaurant.id}:${selectedRestaurant.defaultRedirectPlatform}:${enabledPlatformIds.join(',')}`}
+            key={selectedRestaurant.id}
             restaurantId={selectedRestaurant.id}
             enabledPlatforms={enabledPlatformIds}
             initialValue={selectedRestaurant.defaultRedirectPlatform}
             locale={locale}
+            onSaved={(next) => updateSelectedRestaurant({ defaultRedirectPlatform: next })}
           />
         </SettingsCard>
       )}

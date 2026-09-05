@@ -3,8 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { requireRestaurantAccess } from '@/lib/menu-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { getSectorPlatforms, detectSector } from '@/lib/sector-platforms';
-import { PROVIDER_MAP } from '@/lib/platform-link-test';
+import { PROVIDER_MAP, providerColumnsSelect, latestChecksByProvider } from '@/lib/platform-link-test';
+import { PLATFORM_ID_TO_PROVIDER } from '@/lib/platform-redirect-resolver';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
+import { rateLimit } from '@/lib/rate-limit';
+import type { PlatformId } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -26,18 +29,10 @@ export const runtime = 'nodejs';
 //
 // IDOR: requireRestaurantAccess. No public cache — owner-scoped, KVKK.
 
-// PlatformId import için sektör listesi PlatformId iken PROVIDER_MAP
-// IntegrationProvider. trendyol vs trendyol_go normalize lazım.
-const PLATFORM_ID_TO_PROVIDER: Record<string, string> = {
-  google: 'google',
-  yemeksepeti: 'yemeksepeti',
-  getir: 'getir',
-  trendyol: 'trendyol_go',
-  tripadvisor: 'tripadvisor',
-  airbnb: 'airbnb',
-  booking: 'booking',
-  yandex: 'yandex',
-};
+// PlatformId (sektör listesi) ↔ IntegrationProvider (PROVIDER_MAP) eşlemesi
+// resolver'daki kanonik `PLATFORM_ID_TO_PROVIDER` map'inden gelir. Buradaki
+// eski lokal kopya yelp/foursquare'i unutmuştu → food/hospitality sektörü
+// için o ikisi hiçbir zaman "önerilen" listesine düşmüyordu.
 
 interface PlatformHealth {
   provider: string;
@@ -77,62 +72,33 @@ export async function GET(
   const gate = await requireRestaurantAccess(req, id);
   if (!gate.ok) return gate.res;
 
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { id },
-    select: {
-      category: true,
-      googleReviewUrl: true,
-      googleEnabled: true,
-      yemekSepetiUrl: true,
-      yemekSepetiEnabled: true,
-      getirYemekUrl: true,
-      getirEnabled: true,
-      trendyolYemekUrl: true,
-      trendyolEnabled: true,
-      tripAdvisorUrl: true,
-      tripAdvisorEnabled: true,
-      airbnbUrl: true,
-      airbnbEnabled: true,
-      bookingUrl: true,
-      bookingEnabled: true,
-      yandexUrl: true,
-      yandexEnabled: true,
-      yelpUrl: true,
-      yelpEnabled: true,
-      foursquareUrl: true,
-      foursquareEnabled: true,
-      instagramUrl: true,
-      facebookUrl: true,
-      whatsappUrl: true,
-      website: true,
-      reservationUrl: true,
-      // §38.78 — externalPlatformsEnabled gate parity (CLAUDE.md §5.2).
-      // /retest endpoint zaten bu flag ile external provider'ları skip
-      // ediyordu; /health + /checks parite getirilir (drift önleme).
-      externalPlatformsEnabled: true,
-    },
-  });
+  const rl = await rateLimit(`integration:health:${id}`, 60, 60 * 1000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'rate_limited' },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
+    );
+  }
+
+  // Restoran + provider başına en yeni check tek `$transaction` (CLAUDE.md
+  // §40.1 pooler connection_limit=1). DISTINCT ON helper → "son 200 satır +
+  // JS reduce" pencere sorunu yok (bkz. /checks).
+  const [restaurant, checks] = await prisma.$transaction([
+    prisma.restaurant.findUnique({
+      where: { id },
+      select: {
+        category: true,
+        ...providerColumnsSelect(),
+        // §38.78 — externalPlatformsEnabled gate parity (CLAUDE.md §5.2).
+        externalPlatformsEnabled: true,
+      },
+    }),
+    latestChecksByProvider(id),
+  ]);
   if (!restaurant) return ApiErrors.notFound('İşletme bulunamadı');
 
-  // Last 200 row + JS reduce → provider başına latest (CLAUDE.md §19.4.1
-  // pattern, /checks endpoint ile aynı).
-  const checks = await prisma.platformLinkCheck.findMany({
-    where: { restaurantId: id },
-    orderBy: { checkedAt: 'desc' },
-    take: 200,
-    select: {
-      provider: true,
-      ok: true,
-      statusCode: true,
-      latencyMs: true,
-      error: true,
-      checkedAt: true,
-      source: true,
-    },
-  });
   const latestByProvider: Record<string, PlatformHealth['latestCheck']> = {};
   for (const c of checks) {
-    if (latestByProvider[c.provider]) continue;
     latestByProvider[c.provider] = {
       ok: c.ok,
       statusCode: c.statusCode,
@@ -183,8 +149,9 @@ export async function GET(
   const sectorPlatformIds = getSectorPlatforms(restaurant.category);
   const missingRecommended: string[] = [];
   for (const platformId of sectorPlatformIds) {
-    const provider = PLATFORM_ID_TO_PROVIDER[platformId];
+    const provider = PLATFORM_ID_TO_PROVIDER[platformId as PlatformId];
     if (!provider) continue;
+    if (!externalEnabled && isExternalReviewProvider(provider)) continue;
     const mapping = PROVIDER_MAP.find((m) => m.provider === provider);
     if (!mapping) continue;
     const url = (r[mapping.urlField] as string | null) ?? '';
@@ -203,6 +170,6 @@ export async function GET(
     // Owner-scoped per-provider health snapshot — driven by daily cron
     // (CLAUDE.md §19.4.4). 60s/300sw matches the dashboard polling
     // cadence (CLAUDE.md §19.3 owner-cache pattern).
-    headers: { 'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300' },
+    headers: { 'Cache-Control': 'private, max-age=30, stale-while-revalidate=120' },
   });
 }

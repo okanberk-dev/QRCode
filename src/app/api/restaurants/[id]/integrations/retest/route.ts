@@ -3,10 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { requireRestaurantAccess } from '@/lib/menu-access';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { ApiErrors } from '@/lib/api-errors';
+import { getLocaleFromRequest } from '@/lib/api/locale';
 import {
   runPlatformLinkTest,
-  PROVIDER_MAP,
-  type ProviderMapping,
+  providerColumnsSelect,
+  collectActiveProviderLinks,
+  type ProviderRow,
 } from '@/lib/platform-link-test';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
 
@@ -17,16 +19,20 @@ export const maxDuration = 30;
 // Tüm aktif platform link'lerini paralel retest et (CLAUDE.md §19.4 + §23.7
 // Phase 11.23). Owner panel "Tümünü yeniden test et" butonu çağırır.
 //
-// "Aktif" tanımı:
-//   - Yorum platformları (google/yemeksepeti/getir/trendyol_go/tripadvisor/airbnb/booking/yandex):
-//     enabled=true VE URL non-empty
-//   - Sosyal/website (instagram/facebook/whatsapp/website/reservation): URL non-empty
+// "Aktif" tanımı `collectActiveProviderLinks` (platform-link-test.ts) —
+// cron ile paylaşılan tek kaynak:
+//   - Yorum platformları: enabled=true VE URL non-empty VE (external ise)
+//     admin `externalPlatformsEnabled` master flag açık
+//   - Sosyal/website: URL non-empty
+//
+// Prisma select de `providerColumnsSelect()`'ten türer; eski elle yazılmış
+// liste yelp/foursquare kolonlarını unutmuştu → o iki platform hiç test
+// edilmiyordu (row `undefined` → "URL yok" sanılıyordu).
 //
 // Promise.allSettled kullanılır — tek bir platform test fail olsa diğerleri
 // devam eder (per-row isolation, CLAUDE.md §28.4 bulk pattern).
 //
-// Rate limit: 5/dk/restoran. 8 platform × 5sn timeout = max 40sn worst-case;
-// frequent retest'i engellemek için tek dakikada 5 toplam retest yeter.
+// Rate limit: 5/dk/restoran.
 
 interface RetestResultEntry {
   provider: string;
@@ -43,6 +49,7 @@ export async function POST(
 ) {
   maybeSweep();
   const { id } = await params;
+  const locale = getLocaleFromRequest(req);
 
   const gate = await requireRestaurantAccess(req, id);
   if (!gate.ok) return gate.res;
@@ -50,53 +57,23 @@ export async function POST(
   const rl = await rateLimit(`integration:retest:${id}`, 5, 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(
-      { error: 'Çok fazla yeniden test isteği. Lütfen birazdan tekrar deneyin.' },
+      {
+        error:
+          locale === 'en'
+            ? 'Too many retest requests. Please try again shortly.'
+            : 'Çok fazla yeniden test isteği. Lütfen birazdan tekrar deneyin.',
+      },
       { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
     );
   }
 
   const restaurant = await prisma.restaurant.findUnique({
     where: { id },
-    select: {
-      googleReviewUrl: true,
-      googleEnabled: true,
-      yemekSepetiUrl: true,
-      yemekSepetiEnabled: true,
-      getirYemekUrl: true,
-      getirEnabled: true,
-      trendyolYemekUrl: true,
-      trendyolEnabled: true,
-      tripAdvisorUrl: true,
-      tripAdvisorEnabled: true,
-      airbnbUrl: true,
-      airbnbEnabled: true,
-      bookingUrl: true,
-      bookingEnabled: true,
-      yandexUrl: true,
-      yandexEnabled: true,
-      externalPlatformsEnabled: true,
-      instagramUrl: true,
-      facebookUrl: true,
-      whatsappUrl: true,
-      website: true,
-      reservationUrl: true,
-    },
+    select: { ...providerColumnsSelect(), externalPlatformsEnabled: true },
   });
   if (!restaurant) return ApiErrors.notFound('İşletme bulunamadı');
 
-  // Filter: hangi mapping'leri test edeceğiz?
-  const r = restaurant as unknown as Record<string, string | null | boolean>;
-  const active: Array<{ mapping: ProviderMapping; url: string }> = [];
-  for (const m of PROVIDER_MAP) {
-    if (!restaurant.externalPlatformsEnabled && isExternalReviewProvider(m.provider)) continue;
-    const url = (r[m.urlField] as string | null) ?? '';
-    if (!url || !url.trim()) continue;
-    if (m.enabledField) {
-      const enabled = r[m.enabledField] as boolean;
-      if (!enabled) continue;
-    }
-    active.push({ mapping: m, url });
-  }
+  const active = collectActiveProviderLinks(restaurant as ProviderRow, isExternalReviewProvider);
 
   if (active.length === 0) {
     const empty: RetestResultEntry[] = [];
@@ -111,6 +88,7 @@ export async function POST(
         provider: mapping.provider,
         url,
         source: 'retest_all',
+        locale,
       }),
     ),
   );
@@ -134,10 +112,18 @@ export async function POST(
       ok: false,
       statusCode: 0,
       latencyMs: 0,
-      error: s.reason instanceof Error ? s.reason.message : 'Test başarısız.',
+      error:
+        s.reason instanceof Error
+          ? s.reason.message
+          : locale === 'en'
+            ? 'Test failed.'
+            : 'Test başarısız.',
       checkedAt: new Date().toISOString(),
     };
   });
 
-  return NextResponse.json({ checked: results.length, results });
+  return NextResponse.json(
+    { checked: results.length, results },
+    { headers: { 'Cache-Control': 'no-store' } },
+  );
 }

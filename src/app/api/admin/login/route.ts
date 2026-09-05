@@ -53,14 +53,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const captcha = await verifyRecaptchaToken(req, recaptchaToken, 'admin_login');
+    // reCAPTCHA assessment + per-IP / per-username throttles are independent
+    // network round-trips (Google + Upstash). Run them concurrently — same
+    // pattern as /api/auth/login (CLAUDE.md §34.4). Order of the checks below
+    // is unchanged: captcha verdict first, then throttle.
+    const [captcha, ipLimit, userLimit] = await Promise.all([
+      verifyRecaptchaToken(req, recaptchaToken, 'admin_login'),
+      rateLimit(ipKey, 8, 10 * 60 * 1000),
+      rateLimit(userKey, 5, 10 * 60 * 1000),
+    ]);
     if (!captcha.ok) {
       return NextResponse.json({ error: captcha.error }, { status: captcha.status });
     }
 
     // Defence-in-depth: per-IP and per-username throttles before DB/bcrypt work.
-    const ipLimit = await rateLimit(ipKey, 8, 10 * 60 * 1000);
-    const userLimit = await rateLimit(userKey, 5, 10 * 60 * 1000);
     if (!ipLimit.allowed || !userLimit.allowed) {
       const retry = Math.max(ipLimit.retryAfterSeconds, userLimit.retryAfterSeconds);
       blockKey(lockKey, LOCKOUT_WINDOW_MS);

@@ -5,7 +5,12 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
-import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import {
+  getRecaptchaToken,
+  preloadRecaptcha,
+  prefetchRecaptchaToken,
+  takeRecaptchaToken,
+} from '@/lib/recaptcha-client';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
 import { AlertBanner } from '@/components/ui';
 
@@ -52,7 +57,10 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
   const [twoFactorCode, setTwoFactorCode] = useState('');
 
   const finalizeGoogleSignIn = async (idToken: string) => {
-    const recaptchaToken = await getRecaptchaToken('auth_google');
+    // Token was prefetched the moment the Google popup opened (see
+    // handleGoogleSignIn) — by now it is usually already resolved, so this
+    // no longer adds a script-load + execute round-trip after the popup.
+    const recaptchaToken = await takeRecaptchaToken('auth_google');
     const res = await fetch('/api/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -73,10 +81,14 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
 
   useEffect(() => {
     let cancelled = false;
+    // Warm both third-party SDKs while the user is still reading the form so
+    // the first click / submit doesn't pay their download + handshake cost.
+    preloadRecaptcha();
     (async () => {
       try {
-        const { consumeGoogleRedirectIdToken, isGoogleRedirectPending } =
+        const { consumeGoogleRedirectIdToken, isGoogleRedirectPending, preloadGoogleSignIn } =
           await import('@/lib/firebase-client');
+        preloadGoogleSignIn();
         const wasGoogleRedirectPending = isGoogleRedirectPending();
         if (wasGoogleRedirectPending) setLoading(true);
         const idToken = await consumeGoogleRedirectIdToken();
@@ -103,6 +115,9 @@ export default function LoginForm({ locale, t }: LoginFormProps) {
     setLoading(true);
     try {
       const { startGoogleSignIn } = await import('@/lib/firebase-client');
+      // Run the reCAPTCHA execute concurrently with the Google popup instead
+      // of after it — the two are independent network round-trips.
+      prefetchRecaptchaToken('auth_google');
       const result = await startGoogleSignIn();
       if (result.status === 'unconfigured') {
         setNotice(
