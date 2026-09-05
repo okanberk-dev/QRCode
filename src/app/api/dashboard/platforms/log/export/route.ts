@@ -50,7 +50,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'rate_limit' }, { status: 429 });
   }
 
-  const scopedIds = await getScopedRestaurantIds(actor);
+  // Optional `?restaurantId=` narrows the export to one business — the
+  // platforms page is scoped to a single business, so the CSV should be too.
+  // Anything outside the actor's scope is ignored (falls back to workspace).
+  const requestedRestaurantId = req.nextUrl.searchParams.get('restaurantId')?.trim() || null;
+  const locale = req.nextUrl.searchParams.get('locale') === 'en' ? 'en' : 'tr';
+  const allScopedIds = await getScopedRestaurantIds(actor);
+  const scopedIds =
+    requestedRestaurantId && allScopedIds?.includes(requestedRestaurantId)
+      ? [requestedRestaurantId]
+      : allScopedIds;
   if (!scopedIds || scopedIds.length === 0) {
     const empty = '﻿Tarih,Restoran,Platform,Status,HTTP,Latency,Error,URL\n';
     return new NextResponse(empty, {
@@ -84,16 +93,10 @@ export async function GET(req: NextRequest) {
     take: HARD_LIMIT,
   });
 
-  const headers = [
-    'Tarih',
-    'Restoran',
-    'Platform',
-    'Status',
-    'HTTP',
-    'Latency (ms)',
-    'Error',
-    'URL',
-  ];
+  const headers =
+    locale === 'en'
+      ? ['Date', 'Business', 'Platform', 'Status', 'HTTP', 'Latency (ms)', 'Error', 'URL']
+      : ['Tarih', 'İşletme', 'Platform', 'Durum', 'HTTP', 'Gecikme (ms)', 'Hata', 'URL'];
   const lines: string[] = [headers.join(',')];
 
   for (const c of checks) {

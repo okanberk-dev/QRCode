@@ -6,10 +6,12 @@ import { ApiErrors } from '@/lib/api-errors';
 import {
   runPlatformLinkTest,
   getProviderMapping,
+  providerColumnsSelect,
   type RestaurantUrlField,
 } from '@/lib/platform-link-test';
 import type { IntegrationProvider } from '@/lib/integration-domains';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
+import { getLocaleFromRequest } from '@/lib/api/locale';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -28,29 +30,19 @@ export const runtime = 'nodejs';
 async function loadRestaurantUrl(
   id: string,
   field: RestaurantUrlField,
-): Promise<{ url: string | null } | null> {
+): Promise<{ url: string | null; externalPlatformsEnabled: boolean } | null> {
+  // Select derives from PROVIDER_MAP (no hand-written column list → no
+  // yelp/foursquare-style drift) and folds the entitlement flag into the
+  // same round-trip that used to be a separate `findUnique`.
   const restaurant = await prisma.restaurant.findUnique({
     where: { id },
-    select: {
-      googleReviewUrl: true,
-      yemekSepetiUrl: true,
-      getirYemekUrl: true,
-      trendyolYemekUrl: true,
-      tripAdvisorUrl: true,
-      airbnbUrl: true,
-      bookingUrl: true,
-      yandexUrl: true,
-      yelpUrl: true,
-      foursquareUrl: true,
-      instagramUrl: true,
-      facebookUrl: true,
-      whatsappUrl: true,
-      website: true,
-      reservationUrl: true,
-    },
+    select: { ...providerColumnsSelect(), externalPlatformsEnabled: true },
   });
   if (!restaurant) return null;
-  return { url: (restaurant as Record<string, string | null>)[field] ?? null };
+  return {
+    url: (restaurant as unknown as Record<string, string | null>)[field] ?? null,
+    externalPlatformsEnabled: restaurant.externalPlatformsEnabled,
+  };
 }
 
 export async function POST(
@@ -59,6 +51,7 @@ export async function POST(
 ) {
   maybeSweep();
   const { id, provider } = await params;
+  const locale = getLocaleFromRequest(req);
 
   const mapping = getProviderMapping(provider);
   if (!mapping) {
@@ -68,25 +61,16 @@ export async function POST(
   const gate = await requireRestaurantAccess(req, id);
   if (!gate.ok) return gate.res;
 
-  if (isExternalReviewProvider(provider)) {
-    const entitlement = await prisma.restaurant.findUnique({
-      where: { id },
-      select: { externalPlatformsEnabled: true },
-    });
-    if (!entitlement) return ApiErrors.notFound('İşletme bulunamadı');
-    if (!entitlement.externalPlatformsEnabled) {
-      return ApiErrors.forbidden(
-        'Google dışındaki platformlar bu işletme için kapalı.',
-        'EXTERNAL_PLATFORMS_DISABLED',
-      );
-    }
-  }
-
   // 30 test/dk/restoran. Owner panelinde butona spam tıklamayı engellemek için.
   const rl = await rateLimit(`integration:test:${id}`, 30, 60 * 1000);
   if (!rl.allowed) {
     return NextResponse.json(
-      { error: 'Çok fazla test isteği. Lütfen birazdan tekrar deneyin.' },
+      {
+        error:
+          locale === 'en'
+            ? 'Too many test requests. Please try again shortly.'
+            : 'Çok fazla test isteği. Lütfen birazdan tekrar deneyin.',
+      },
       { status: 429, headers: { 'Retry-After': String(rl.retryAfterSeconds) } },
     );
   }
@@ -94,11 +78,21 @@ export async function POST(
   const loaded = await loadRestaurantUrl(id, mapping.urlField);
   if (!loaded) return ApiErrors.notFound('İşletme bulunamadı');
 
+  if (isExternalReviewProvider(provider) && !loaded.externalPlatformsEnabled) {
+    return ApiErrors.forbidden(
+      locale === 'en'
+        ? 'Non-Google platforms are disabled for this business.'
+        : 'Google dışındaki platformlar bu işletme için kapalı.',
+      'EXTERNAL_PLATFORMS_DISABLED',
+    );
+  }
+
   const result = await runPlatformLinkTest({
     restaurantId: id,
     provider: provider as IntegrationProvider,
     url: loaded.url ?? '',
     source: 'manual',
+    locale,
   });
 
   return NextResponse.json(
@@ -110,6 +104,6 @@ export async function POST(
       url: result.url,
       checkedAt: result.checkedAt.toISOString(),
     },
-    { status: 200 },
+    { status: 200, headers: { 'Cache-Control': 'no-store' } },
   );
 }

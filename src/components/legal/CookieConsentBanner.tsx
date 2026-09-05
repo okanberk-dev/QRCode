@@ -176,6 +176,11 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
     // does not grant or imply any consent, it stays at the same
     // essential-only default the page would have before a decision anyway.
     if (/^\/r\//.test(window.location.pathname)) return;
+    // `/admin` (login + console) is an internal staff surface: on a phone the
+    // consent card covered the entire login form. Same safety argument as
+    // above — no consent record means `ConditionalAnalytics` stays off, so
+    // skipping the card grants nothing.
+    if (/^\/admin(\/|$)/.test(window.location.pathname)) return;
 
     // Stage 31d §38.110 — client-side locale detection.
     setLocale(detectLocaleFromBrowser());

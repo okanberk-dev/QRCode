@@ -118,6 +118,32 @@ function getAuthInstance(appMod: FirebaseAppModule, authMod: FirebaseAuthModule)
   return { auth: authMod.getAuth(app), cfg };
 }
 
+/**
+ * Warm the Firebase Auth SDK + auth instance during idle time so the click on
+ * "Google ile devam et" opens the popup immediately instead of first
+ * downloading ~150 KB of `firebase/auth` and initialising the popup resolver.
+ * Firebase modules are cached after the first import, so repeated calls are
+ * free. Errors are swallowed — the click path still loads on demand.
+ */
+export function preloadGoogleSignIn(): void {
+  if (!isFirebaseConfigured() || typeof window === 'undefined') return;
+  const run = () => {
+    loadFirebase()
+      .then((mods) => {
+        if (mods) getAuthInstance(mods.appMod, mods.authMod);
+      })
+      .catch(() => {
+        /* click path retries */
+      });
+  };
+  if ('requestIdleCallback' in window) {
+    (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number })
+      .requestIdleCallback(run, { timeout: 1500 });
+  } else {
+    setTimeout(run, 0);
+  }
+}
+
 type GoogleSignInResult =
   | { status: 'unconfigured' }
   | { status: 'idToken'; idToken: string }

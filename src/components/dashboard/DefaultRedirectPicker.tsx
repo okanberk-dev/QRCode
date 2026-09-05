@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { AlertTriangle, Check, Loader2 } from 'lucide-react';
 import { PlatformChip, PLATFORMS, type PlatformId } from '@/components/ui';
 
@@ -42,12 +42,16 @@ const STORAGE_LABEL: Record<string, string> = {
   custom: 'Custom',
 };
 
+const SAVED_NOTICE_MS = 2500;
+
 interface DefaultRedirectPickerProps {
   restaurantId: string;
   enabledPlatforms: PlatformId[];
   /** Initial selection. NULL → no default chosen yet (Google fallback). */
   initialValue: string | null;
   locale: 'tr' | 'en';
+  /** Fires after a successful PUT so the parent can keep its row in sync. */
+  onSaved?: (next: string | null) => void;
 }
 
 export default function DefaultRedirectPicker({
@@ -55,18 +59,43 @@ export default function DefaultRedirectPicker({
   enabledPlatforms,
   initialValue,
   locale,
+  onSaved,
 }: DefaultRedirectPickerProps) {
   const isTr = locale === 'tr';
   const [selected, setSelected] = useState<string | null>(initialValue);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<PlatformId | null>(null);
+  const savedTimer = useRef<number | null>(null);
+
+  // Controlled resync — parent rows change after a save elsewhere on the page
+  // (e.g. the URL of the default platform was just cleared). The previous
+  // version only read `initialValue` once and relied on a composite `key`
+  // remount from the caller.
+  useEffect(() => {
+    setSelected(initialValue);
+  }, [initialValue]);
+
+  useEffect(
+    () => () => {
+      if (savedTimer.current) window.clearTimeout(savedTimer.current);
+    },
+    [],
+  );
+
+  const flashSaved = () => {
+    setSaved(true);
+    if (savedTimer.current) window.clearTimeout(savedTimer.current);
+    savedTimer.current = window.setTimeout(() => setSaved(false), SAVED_NOTICE_MS);
+  };
 
   const persistDefault = (next: string | null, uiKey: PlatformId | null) => {
     const previous = selected;
     setSelected(next); // optimistic
     setPendingId(uiKey);
     setError(null);
+    setSaved(false);
 
     startTransition(async () => {
       try {
@@ -82,7 +111,10 @@ export default function DefaultRedirectPicker({
               (isTr ? 'Varsayılan kaydedilemedi.' : 'Could not save default.'),
           );
           setSelected(previous); // revert
+          return;
         }
+        onSaved?.(next);
+        flashSaved();
       } catch {
         setError(isTr ? 'Bağlantı hatası.' : 'Connection error.');
         setSelected(previous);
@@ -98,10 +130,11 @@ export default function DefaultRedirectPicker({
     persistDefault(storageValue, uiKey);
   };
 
-  // Detect orphan default: the stored value refers to a platform whose URL
-  // has been cleared since (so it's not in `enabledPlatforms` anymore). In
-  // that case, the public review surface silently falls back to Google —
-  // which the owner has no way to discover unless we surface it here.
+  // Detect orphan default: the stored value refers to a platform that is no
+  // longer usable (URL cleared, toggle switched off, or entitlement locked)
+  // so it isn't in `enabledPlatforms` anymore. In that case the public
+  // review surface silently falls back to Google — which the owner has no
+  // way to discover unless we surface it here.
   const enabledStorageValues = enabledPlatforms.map((id) => STORAGE_VALUE[id]);
   const isOrphan =
     selected !== null && selected !== '' && !enabledStorageValues.includes(selected);
@@ -109,12 +142,12 @@ export default function DefaultRedirectPicker({
 
   return (
     <>
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         {enabledPlatforms.length === 0 ? (
-          <span style={{ fontSize: 12, color: '#737373' }}>
+          <span className="text-[12px] text-[#737373]">
             {isTr
-              ? 'Henüz platform bağlantısı yok. Aşağıdan en az birini etkinleştir.'
-              : 'No platforms connected yet. Enable at least one below.'}
+              ? 'Henüz aktif platform bağlantısı yok. Önce bir yorum platformunun URL\'ini kaydedip etkinleştir.'
+              : 'No active platform links yet. Save and enable a review platform URL first.'}
           </span>
         ) : (
           enabledPlatforms.map((uiKey) => {
@@ -128,12 +161,11 @@ export default function DefaultRedirectPicker({
                 onClick={() => handleSelect(uiKey)}
                 disabled={isPending}
                 aria-pressed={isDefault}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full transition-colors text-[13px] font-medium disabled:cursor-not-allowed"
+                className="inline-flex min-h-[40px] items-center gap-2 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 disabled:cursor-wait"
                 style={{
                   border: `1px solid ${isDefault ? '#0A0A0A' : '#EDEDED'}`,
                   background: isDefault ? '#0A0A0A' : '#fff',
                   color: isDefault ? '#fff' : '#0A0A0A',
-                  opacity: isPending && !loading ? 0.5 : 1,
                 }}
               >
                 <PlatformChip id={uiKey} size={18} />
@@ -147,10 +179,20 @@ export default function DefaultRedirectPicker({
             );
           })
         )}
+        <span
+          role="status"
+          aria-live="polite"
+          className={`inline-flex items-center gap-1 text-[12px] font-medium text-[#166534] transition-opacity ${
+            saved ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <Check size={12} strokeWidth={2.5} />
+          {isTr ? 'Kaydedildi' : 'Saved'}
+        </span>
       </div>
-      {/* Orphan default warning — stored platform's URL was cleared since the
-          default was set. Surfaced as actionable amber notice so the owner
-          can either re-add the URL or pick a new default. */}
+      {/* Orphan default warning — stored platform is no longer usable
+          (URL removed / toggle off / locked). Surfaced as actionable amber
+          notice so the owner can either re-enable it or pick a new default. */}
       {isOrphan && (
         <div
           role="alert"
@@ -165,19 +207,19 @@ export default function DefaultRedirectPicker({
           <div className="flex-1">
             <div className="text-[12px] font-semibold leading-tight">
               {isTr
-                ? `Varsayılan "${orphanLabel}" — URL'i boş`
-                : `Default "${orphanLabel}" — URL is empty`}
+                ? `Varsayılan "${orphanLabel}" şu an kullanılamıyor`
+                : `Default "${orphanLabel}" is currently unusable`}
             </div>
-            <div className="text-[11px] leading-snug mt-0.5" style={{ color: '#78350F' }}>
+            <div className="mt-0.5 text-[11px] leading-snug" style={{ color: '#78350F' }}>
               {isTr
-                ? 'Bu platformun bağlantısı kaldırılmış. Yüksek puanlı yorumlar şu an Google\'a düşüyor. URL\'i geri ekleyin ya da varsayılanı temizleyin.'
-                : "This platform's URL was removed. High-rated reviews now fall back to Google. Re-add the URL or clear the default."}
+                ? 'Bu platformun bağlantısı kaldırılmış ya da pasif. Yüksek puanlı yorumlar şu an Google\'a düşüyor. URL\'i geri ekleyip etkinleştir ya da başka bir varsayılan seç.'
+                : "This platform's link was removed or switched off. High-rated reviews now fall back to Google. Re-add and enable the URL, or pick another default."}
             </div>
             <button
               type="button"
               onClick={() => persistDefault(null, null)}
               disabled={isPending}
-              className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold underline disabled:opacity-50"
+              className="mt-1.5 inline-flex min-h-[32px] items-center gap-1.5 text-[11px] font-semibold underline disabled:opacity-50"
               style={{ color: '#92400E' }}
             >
               {isTr ? 'Varsayılanı temizle' : 'Clear default'}

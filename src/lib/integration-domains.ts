@@ -154,6 +154,22 @@ const PATH_RULES: Partial<Record<IntegrationProvider, PathRules>> = {
     localeHomepagePaths: ['/searchresults'],
     reviewSignatures: ['/hotel/'],
   },
+  // Getir Yemek restaurant listing: /yemek/restoran/<slug> (TR) or
+  // /yemek/restaurant/<slug>. Bare getir.com or the /yemek landing is the
+  // marketplace front page.
+  getir: {
+    homepageWhenBare: true,
+    localeHomepagePaths: ['/yemek', '/tr', '/en'],
+    reviewSignatures: ['restoran', 'restaurant', '/yemek/r/'],
+  },
+  // Yandex Maps organisation card: /maps/org/<slug>/<id> or a /maps/-/<hash>
+  // short link. /maps alone is the map home; the business profile page also
+  // lives under /profile/<id>.
+  yandex: {
+    homepageWhenBare: true,
+    localeHomepagePaths: ['/maps', '/harita'],
+    reviewSignatures: ['/maps/org/', '/maps/-/', '/profile/', '/org/', 'oid='],
+  },
   airbnb: {
     homepageWhenBare: true,
     reviewSignatures: ['/rooms/', '/h/'],
@@ -292,7 +308,9 @@ export function describeDomainError(
       : 'URL must start with https://.';
   }
   if (result.reason === 'wrong_domain') {
-    const expected = (result.expected ?? []).slice(0, 3).join(', ');
+    const all = result.expected ?? [];
+    const shown = all.slice(0, 3).join(', ');
+    const expected = all.length > 3 ? `${shown}, …` : shown;
     return locale === 'tr'
       ? `Bu URL ${label} adresi gibi görünmüyor. Beklenen: ${expected}.`
       : `This URL doesn't look like a ${label} link. Expected: ${expected}.`;

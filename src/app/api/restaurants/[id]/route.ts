@@ -26,6 +26,16 @@ const URL_PROVIDER_MAP: Record<string, IntegrationProvider> = {
   foursquareUrl: 'foursquare',
 };
 
+// Platform / social URL columns: trim + 500-char cap + non-string → null,
+// identical to the social-field treatment below. A non-string body value
+// (e.g. `googleReviewUrl: 123`) used to skip the URL_PROVIDER_MAP validator
+// (`typeof !== 'string'` → continue) and then blow up inside Prisma as a 500.
+function normalizeUrlInput(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, 500) : null;
+}
+
 // Hard cap on inline-base64 menu logos — mirrors validations.ts imageUrl
 // limit (300 KB ≈ 220 KB binary). Without it an owner could blow up the
 // row size by pasting a multi-megabyte data URL straight into PUT body.
@@ -581,7 +591,7 @@ export async function PUT(
         }),
         ...(phone !== undefined && { phone: phone || null }),
         ...(googlePlaceId !== undefined && { googlePlaceId: googlePlaceId || null }),
-        ...(googleReviewUrl !== undefined && { googleReviewUrl: googleReviewUrl || null }),
+        ...(googleReviewUrl !== undefined && { googleReviewUrl: normalizeUrlInput(googleReviewUrl) }),
         ...(googleReviewManagementEnabled !== undefined && {
           googleReviewManagementEnabled: Boolean(googleReviewManagementEnabled),
         }),
@@ -593,30 +603,30 @@ export async function PUT(
         ...(notificationEmail !== undefined && { notificationEmail: notificationEmail || null }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(isActive !== undefined && { isActive }),
-        ...(getirYemekUrl !== undefined && { getirYemekUrl: getirYemekUrl || null }),
-        ...(yemekSepetiUrl !== undefined && { yemekSepetiUrl: yemekSepetiUrl || null }),
-        ...(trendyolYemekUrl !== undefined && { trendyolYemekUrl: trendyolYemekUrl || null }),
+        ...(getirYemekUrl !== undefined && { getirYemekUrl: normalizeUrlInput(getirYemekUrl) }),
+        ...(yemekSepetiUrl !== undefined && { yemekSepetiUrl: normalizeUrlInput(yemekSepetiUrl) }),
+        ...(trendyolYemekUrl !== undefined && { trendyolYemekUrl: normalizeUrlInput(trendyolYemekUrl) }),
         ...(googleEnabled !== undefined && { googleEnabled: Boolean(googleEnabled) }),
         ...(yemekSepetiEnabled !== undefined && { yemekSepetiEnabled: Boolean(yemekSepetiEnabled) }),
         ...(getirEnabled !== undefined && { getirEnabled: Boolean(getirEnabled) }),
         ...(trendyolEnabled !== undefined && { trendyolEnabled: Boolean(trendyolEnabled) }),
-        ...(tripAdvisorUrl !== undefined && { tripAdvisorUrl: tripAdvisorUrl || null }),
-        ...(airbnbUrl !== undefined && { airbnbUrl: airbnbUrl || null }),
+        ...(tripAdvisorUrl !== undefined && { tripAdvisorUrl: normalizeUrlInput(tripAdvisorUrl) }),
+        ...(airbnbUrl !== undefined && { airbnbUrl: normalizeUrlInput(airbnbUrl) }),
         ...(tripAdvisorEnabled !== undefined && { tripAdvisorEnabled: Boolean(tripAdvisorEnabled) }),
         ...(airbnbEnabled !== undefined && { airbnbEnabled: Boolean(airbnbEnabled) }),
-        ...(bookingUrl !== undefined && { bookingUrl: bookingUrl || null }),
-        ...(yandexUrl !== undefined && { yandexUrl: yandexUrl || null }),
+        ...(bookingUrl !== undefined && { bookingUrl: normalizeUrlInput(bookingUrl) }),
+        ...(yandexUrl !== undefined && { yandexUrl: normalizeUrlInput(yandexUrl) }),
         ...(bookingEnabled !== undefined && { bookingEnabled: Boolean(bookingEnabled) }),
         ...(yandexEnabled !== undefined && { yandexEnabled: Boolean(yandexEnabled) }),
         // §38.52 — Yelp + Foursquare yorum platformları PUT body
-        ...(yelpUrl !== undefined && { yelpUrl: yelpUrl || null }),
-        ...(foursquareUrl !== undefined && { foursquareUrl: foursquareUrl || null }),
+        ...(yelpUrl !== undefined && { yelpUrl: normalizeUrlInput(yelpUrl) }),
+        ...(foursquareUrl !== undefined && { foursquareUrl: normalizeUrlInput(foursquareUrl) }),
         ...(yelpEnabled !== undefined && { yelpEnabled: Boolean(yelpEnabled) }),
         ...(foursquareEnabled !== undefined && { foursquareEnabled: Boolean(foursquareEnabled) }),
         ...(menuLogoUrl !== undefined && { menuLogoUrl: menuLogoUrl || null }),
-        ...(redirectMinRating !== undefined && redirectMinRating !== null && {
-          redirectMinRating,
-        }),
+        // `null` clears the override (validated above); the old spread dropped
+        // it silently and returned 200 with the previous value intact.
+        ...(redirectMinRating !== undefined && { redirectMinRating }),
         ...(defaultRedirectPlatform !== undefined && {
           defaultRedirectPlatform: defaultRedirectPlatform || null,
         }),

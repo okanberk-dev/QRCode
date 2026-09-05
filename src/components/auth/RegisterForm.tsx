@@ -5,7 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import type { Locale } from '@/lib/translations';
-import { getRecaptchaToken } from '@/lib/recaptcha-client';
+import {
+  getRecaptchaToken,
+  preloadRecaptcha,
+  prefetchRecaptchaToken,
+  takeRecaptchaToken,
+} from '@/lib/recaptcha-client';
 import RecaptchaNotice from '@/components/RecaptchaNotice';
 import { AlertBanner } from '@/components/ui';
 
@@ -95,7 +100,8 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
   }, [inviteEmail, inviteToken]);
 
   const finalizeGoogleSignUp = async (idToken: string) => {
-    const recaptchaToken = await getRecaptchaToken('auth_google');
+    // Prefetched when the popup opened (handleGoogleSignUp) — usually ready.
+    const recaptchaToken = await takeRecaptchaToken('auth_google');
     const res = await fetch('/api/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -116,10 +122,12 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
 
   useEffect(() => {
     let cancelled = false;
+    preloadRecaptcha();
     (async () => {
       try {
-        const { consumeGoogleRedirectIdToken, isGoogleRedirectPending } =
+        const { consumeGoogleRedirectIdToken, isGoogleRedirectPending, preloadGoogleSignIn } =
           await import('@/lib/firebase-client');
+        preloadGoogleSignIn();
         const wasGoogleRedirectPending = isGoogleRedirectPending();
         if (wasGoogleRedirectPending) setLoading(true);
         const idToken = await consumeGoogleRedirectIdToken();
@@ -146,6 +154,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
     setLoading(true);
     try {
       const { startGoogleSignIn } = await import('@/lib/firebase-client');
+      prefetchRecaptchaToken('auth_google');
       const result = await startGoogleSignIn();
       if (result.status === 'unconfigured') {
         setNotice(
