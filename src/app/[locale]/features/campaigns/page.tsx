@@ -37,9 +37,9 @@ export async function generateMetadata({
   const description = isTr
     ? 'Sektörüne özel hazır şablon kütüphanesi, onay kontrollü gönderim akışı, gerçek zamanlı teslimat takibi. Buaze\'in ETK + İYS uyumlu müşteri mail kampanya modülü.'
     : 'Sector-specific template library, approval-led send flow, real-time delivery tracking. Buaze\'s ETK-compliant customer email campaign module.';
-  const canonicalUrl = `https://buaze.com/${locale}/features/campaigns`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/campaigns`;
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     keywords: isTr
@@ -66,9 +66,9 @@ export async function generateMetadata({
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        tr: 'https://buaze.com/tr/features/campaigns',
-        en: 'https://buaze.com/en/features/campaigns',
-        'x-default': 'https://buaze.com/en/features/campaigns',
+        tr: 'https://www.buaze.com/tr/features/campaigns',
+        en: 'https://www.buaze.com/en/features/campaigns',
+        'x-default': 'https://www.buaze.com/en/features/campaigns',
       },
     },
     openGraph: {
@@ -109,7 +109,7 @@ export default async function CampaignsPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
   const base = `/${locale}`;
-  const canonicalUrl = `https://buaze.com/${locale}/features/campaigns`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/campaigns`;
 
   // Campaign approval flow mockup
   const campaignMock = isTr
@@ -257,7 +257,7 @@ export default async function CampaignsPage({
     '@type': 'Service',
     name: isTr ? 'Buaze Kampanyalar' : 'Buaze Campaigns',
     serviceType: isTr ? 'Müşteri mail kampanya yönetimi' : 'Customer email campaign management',
-    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
     areaServed: 'TR',
     availableLanguage: ['tr-TR', 'en-US'],
     url: canonicalUrl,
@@ -285,8 +285,8 @@ export default async function CampaignsPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://buaze.com/${locale}/features` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://www.buaze.com/${locale}/features` },
       { '@type': 'ListItem', position: 3, name: isTr ? 'Kampanyalar' : 'Campaigns', item: canonicalUrl },
     ],
   };

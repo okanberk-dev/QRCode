@@ -263,7 +263,7 @@ export async function POST(req: NextRequest) {
         });
         if (already) return;
         const ownerLocale: 'tr' | 'en' = restWithOwner.user?.locale === 'en' ? 'en' : 'tr';
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
         const ok = await sendFirstFeedbackCelebrationEmail({
           to: recipient,
           ownerName: restWithOwner.user?.name ?? null,

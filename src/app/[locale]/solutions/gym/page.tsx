@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       ? ['spor salonu itibar', 'fitness merkezi google yorumları', 'üye memnuniyeti', 'gym feedback sistemi']
       : ['gym reputation management', 'fitness center google reviews', 'member satisfaction', 'gym feedback system'],
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/gym`,
-      languages: { tr: 'https://buaze.com/tr/solutions/gym', en: 'https://buaze.com/en/solutions/gym', 'x-default': 'https://buaze.com/tr/solutions/gym' },
+      canonical: `https://www.buaze.com/${locale}/solutions/gym`,
+      languages: { tr: 'https://www.buaze.com/tr/solutions/gym', en: 'https://www.buaze.com/en/solutions/gym', 'x-default': 'https://www.buaze.com/tr/solutions/gym' },
     },
     openGraph: {
       type: 'website',
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/gym`,
+      url: `https://www.buaze.com/${locale}/solutions/gym`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {

@@ -75,11 +75,11 @@ export async function generateMetadata({
     title: `${title} | Buaze`,
     description: isTr ? study.heroTr : study.heroEn,
     alternates: {
-      canonical: `https://buaze.com/${locale}/case-study/${slug}`,
+      canonical: `https://www.buaze.com/${locale}/case-study/${slug}`,
       languages: {
-        tr: `https://buaze.com/tr/case-study/${slug}`,
-        en: `https://buaze.com/en/case-study/${slug}`,
-        'x-default': `https://buaze.com/tr/case-study/${slug}`,
+        tr: `https://www.buaze.com/tr/case-study/${slug}`,
+        en: `https://www.buaze.com/en/case-study/${slug}`,
+        'x-default': `https://www.buaze.com/tr/case-study/${slug}`,
       },
     },
   };
@@ -126,7 +126,7 @@ export default async function CaseStudyPage({
   const subtitleText = isTr ? study.subtitleTr : study.subtitleEn;
   const quoteText = isTr ? study.quoteTr : study.quoteEn;
 
-  const canonicalUrl = `https://buaze.com/${locale}/case-study/${slug}`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/case-study/${slug}`;
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -137,7 +137,7 @@ export default async function CaseStudyPage({
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',
-      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+      logo: { '@type': 'ImageObject', url: 'https://www.buaze.com/favicon.svg' },
     },
     mainEntityOfPage: canonicalUrl,
     inLanguage: isTr ? 'tr-TR' : 'en-US',
@@ -147,8 +147,8 @@ export default async function CaseStudyPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Vaka Çalışmaları' : 'Case Studies', item: `https://buaze.com/${locale}/case-study` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Vaka Çalışmaları' : 'Case Studies', item: `https://www.buaze.com/${locale}/case-study` },
       { '@type': 'ListItem', position: 3, name: study.brand, item: canonicalUrl },
     ],
   };

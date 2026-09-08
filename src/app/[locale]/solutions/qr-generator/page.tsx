@@ -44,7 +44,7 @@ export async function generateMetadata({
     },
     openGraph: {
       type: 'website',
-      url: `https://buaze.com/${locale}/solutions/qr-generator`,
+      url: `https://www.buaze.com/${locale}/solutions/qr-generator`,
       locale: isTr ? 'tr_TR' : 'en_US',
       siteName: 'Buaze',
       title,
@@ -133,7 +133,7 @@ export default async function QRGeneratorPage({
       {
         '@type': 'WebApplication',
         name: isTr ? 'Buaze QR Kod Oluşturucu' : 'Buaze QR Code Generator',
-        url: `https://buaze.com/${locale}/solutions/qr-generator`,
+        url: `https://www.buaze.com/${locale}/solutions/qr-generator`,
         applicationCategory: 'UtilitiesApplication',
         operatingSystem: 'Web',
         description: isTr
@@ -169,19 +169,19 @@ export default async function QRGeneratorPage({
             '@type': 'ListItem',
             position: 1,
             name: isTr ? 'Ana Sayfa' : 'Home',
-            item: `https://buaze.com/${locale}`,
+            item: `https://www.buaze.com/${locale}`,
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: isTr ? 'Çözümler' : 'Solutions',
-            item: `https://buaze.com/${locale}/solutions`,
+            item: `https://www.buaze.com/${locale}/solutions`,
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: isTr ? 'QR Kod Oluşturucu' : 'QR Code Generator',
-            item: `https://buaze.com/${locale}/solutions/qr-generator`,
+            item: `https://www.buaze.com/${locale}/solutions/qr-generator`,
           },
         ],
       },

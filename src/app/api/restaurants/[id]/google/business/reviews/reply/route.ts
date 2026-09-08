@@ -163,7 +163,7 @@ export async function POST(
         const recipient = rest.notificationEmail || rest.user?.email;
         if (!recipient) return;
         const userLocale: 'tr' | 'en' = rest.user?.locale === 'en' ? 'en' : 'tr';
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
         const ok = await sendFirstReplyCelebrationEmail({
           to: recipient,
           ownerName: rest.user?.name ?? null,

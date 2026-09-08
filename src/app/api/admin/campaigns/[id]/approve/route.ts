@@ -152,7 +152,7 @@ export async function POST(
         })
         .catch(() => null);
       if (owner?.email) {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://buaze.com';
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://www.buaze.com';
         const ownerLocale: 'tr' | 'en' = owner.locale === 'en' ? 'en' : 'tr';
         const dashboardUrl = `${appUrl}/${ownerLocale}/dashboard/campaigns?id=${campaign.id}`;
         void sendOwnerCampaignApprovedMail({

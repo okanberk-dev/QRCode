@@ -410,7 +410,7 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
                 <h4 className="pulse-eyebrow mb-4 text-[#C6F24E]">{col.title}</h4>
                 <ul className="space-y-2.5">
                   {col.items.map((item) => (
-                    <li key={item.href + item.label}>
+                    <li key={item.href}>
                       <Link
                         href={item.href}
                         className="group inline-flex items-center gap-1.5 text-[13px] text-[#A3A3A3] transition-colors hover:text-white"
@@ -450,7 +450,7 @@ export default async function MarketingFooter({ locale }: MarketingFooterProps) 
                 </summary>
                 <ul className="grid gap-1 px-4 pb-4">
                   {col.items.map((item) => (
-                    <li key={item.href + item.label}>
+                    <li key={item.href}>
                       <Link
                         href={item.href}
                         className="flex min-h-[44px] items-center justify-between gap-3 rounded-2xl px-3 text-[14px] text-[#D4D4D4] transition-colors hover:bg-white/10 hover:text-white"

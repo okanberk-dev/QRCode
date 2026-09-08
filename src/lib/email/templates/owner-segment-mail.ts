@@ -28,7 +28,7 @@ export interface OwnerSegmentMailParams {
    * CLAUDE.md §38.132 — Boşsa locale-aware
    * `${NEXT_PUBLIC_APP_URL}/${locale}/dashboard` inşa edilir.
    * Caller artık manuel `/dashboard` suffix vermez (eski caller davranışı:
-   * `process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com/dashboard'` →
+   * `process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com/dashboard'` →
    * locale prefix yoktu, dashboard route 404'tu).
    */
   appUrl?: string;
@@ -58,7 +58,7 @@ export function renderOwnerSegmentMail(
   // appUrl override edilmemişse env-aware base + recipient locale +
   // `/dashboard` suffix (Next.js `/[locale]/dashboard` route'una uygun).
   const baseAppUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') || 'https://buaze.com';
+    process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') || 'https://www.buaze.com';
   const appUrl = params.appUrl || `${baseAppUrl}/${isTr ? 'tr' : 'en'}/dashboard`;
   const safeAppUrl = escapeHtml(appUrl);
 

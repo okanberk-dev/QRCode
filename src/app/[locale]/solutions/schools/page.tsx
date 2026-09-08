@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       ? ['okul itibar yönetimi', 'eğitim kurumu google yorumları', 'veli memnuniyeti', 'öğrenci feedback sistemi']
       : ['school reputation management', 'educational institution google reviews', 'parent satisfaction', 'student feedback'],
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/schools`,
-      languages: { tr: 'https://buaze.com/tr/solutions/schools', en: 'https://buaze.com/en/solutions/schools', 'x-default': 'https://buaze.com/tr/solutions/schools' },
+      canonical: `https://www.buaze.com/${locale}/solutions/schools`,
+      languages: { tr: 'https://www.buaze.com/tr/solutions/schools', en: 'https://www.buaze.com/en/solutions/schools', 'x-default': 'https://www.buaze.com/tr/solutions/schools' },
     },
     openGraph: {
       type: 'website',
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/schools`,
+      url: `https://www.buaze.com/${locale}/solutions/schools`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {

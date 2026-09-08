@@ -109,7 +109,7 @@ export async function GET(
       : false;
     const appUrl = (!hasLocalhostEnv && normalizedEnvUrl)
       ? normalizedEnvUrl
-      : 'https://buaze.com';
+      : 'https://www.buaze.com';
 
     // Attribution: analytics pipeline reads `source=qr` from the landing URL.
     const qrUrl = `${appUrl}/menu/${restaurant.slug}?source=qr`;

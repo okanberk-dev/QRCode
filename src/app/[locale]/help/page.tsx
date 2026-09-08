@@ -31,11 +31,11 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/help`,
+      canonical: `https://www.buaze.com/${locale}/help`,
       languages: {
-        tr: 'https://buaze.com/tr/help',
-        en: 'https://buaze.com/en/help',
-        'x-default': 'https://buaze.com/tr/help',
+        tr: 'https://www.buaze.com/tr/help',
+        en: 'https://www.buaze.com/en/help',
+        'x-default': 'https://www.buaze.com/tr/help',
       },
     },
     openGraph: {
@@ -44,7 +44,7 @@ export async function generateMetadata({
       locale: isTr ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/help`,
+      url: `https://www.buaze.com/${locale}/help`,
       images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -103,14 +103,14 @@ export default async function HelpCenterPage({
     }));
   }
 
-  const helpUrl = `https://buaze.com/${locale}/help`;
+  const helpUrl = `https://www.buaze.com/${locale}/help`;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+          { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
           { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım Merkezi' : 'Help Center', item: helpUrl },
         ],
       },
@@ -119,17 +119,17 @@ export default async function HelpCenterPage({
         name: isTr ? 'Buaze Yardım Merkezi' : 'Buaze Help Center',
         url: helpUrl,
         inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
-        isPartOf: { '@type': 'WebSite', name: 'Buaze', url: 'https://buaze.com' },
+        isPartOf: { '@type': 'WebSite', name: 'Buaze', url: 'https://www.buaze.com' },
         about: HELP_CATEGORIES.map((cat) => ({
           '@type': 'Thing',
           name: cat[locale].title,
           description: cat[locale].desc,
-          url: `https://buaze.com/${locale}/help/category/${cat.slug}`,
+          url: `https://www.buaze.com/${locale}/help/category/${cat.slug}`,
         })),
         hasPart: popular.map((p) => ({
           '@type': 'Article',
           headline: p.title,
-          url: `https://buaze.com/${locale}/help/${p.slug}`,
+          url: `https://www.buaze.com/${locale}/help/${p.slug}`,
           inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
         })),
       },
@@ -139,7 +139,7 @@ export default async function HelpCenterPage({
         itemListElement: HELP_CATEGORIES.map((cat, i) => ({
           '@type': 'ListItem',
           position: i + 1,
-          url: `https://buaze.com/${locale}/help/category/${cat.slug}`,
+          url: `https://www.buaze.com/${locale}/help/category/${cat.slug}`,
           name: cat[locale].title,
         })),
       },

@@ -151,7 +151,7 @@ export async function renderLowRatingAlert(
     </tr>` : '';
 
   // Quick actions — 3-col grid
-  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const localePath = isTr ? 'tr' : 'en';
   const quickHrefs = [params.reviewUrl, params.reviewUrl, `${baseAppUrl}/${localePath}/dashboard/feedbacks`];
   const quickCards = copy.quickActions.map((a, i) => `

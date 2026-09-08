@@ -81,7 +81,7 @@ export function renderFooter(params: FooterParams = {}): string {
   // Henüz şirket kurulmadığı için hukuki disclosure üretmek yanıltıcı; sadece
   // "Buaze" brand name yeterli. Şirket kurulduğunda buraya geri eklenir.
   const tagline = isTr ? 'Her yorum bir nabız.' : 'Every review is a pulse.';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   // §38.197 — /help/page route YOK (CLAUDE.md §22 /help index vs
   // /help/[slug] detail ayrımı). Footer link 35 mail template'inden
   // çağrılıyor → daha önce her birinde dead 404 link rendered.

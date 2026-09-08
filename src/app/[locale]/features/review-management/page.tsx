@@ -38,9 +38,9 @@ export async function generateMetadata({
   const description = isTr
     ? 'Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Foursquare ve daha fazlasından gelen yorumları tek panelde topla. Atama, etiket, SLA takibi ve onay kontrollü yanıt akışı; KVKK + Google policy uyumlu.'
     : 'Bring reviews from Google, Yemeksepeti, Getir, Trendyol GO, Tripadvisor, Foursquare and more into one inbox. Assignment, tags, SLA tracking and approval-led replies — KVKK and Google policy compliant.';
-  const canonicalUrl = `https://buaze.com/${locale}/features/review-management`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/review-management`;
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     keywords: isTr
@@ -66,9 +66,9 @@ export async function generateMetadata({
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        tr: 'https://buaze.com/tr/features/review-management',
-        en: 'https://buaze.com/en/features/review-management',
-        'x-default': 'https://buaze.com/en/features/review-management',
+        tr: 'https://www.buaze.com/tr/features/review-management',
+        en: 'https://www.buaze.com/en/features/review-management',
+        'x-default': 'https://www.buaze.com/en/features/review-management',
       },
     },
     openGraph: {
@@ -109,7 +109,7 @@ export default async function ReviewManagementPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
   const base = `/${locale}`;
-  const canonicalUrl = `https://buaze.com/${locale}/features/review-management`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/review-management`;
 
   // Inbox mockup rows — feels alive without animation. Brand colors are real.
   const inboxRows: Array<{
@@ -307,7 +307,7 @@ export default async function ReviewManagementPage({
     '@type': 'Service',
     name: isTr ? 'Buaze Yorum Yönetimi' : 'Buaze Review Management',
     serviceType: isTr ? 'Çoklu platform yorum yönetimi' : 'Multi-platform review management',
-    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
     areaServed: 'TR',
     availableLanguage: ['tr-TR', 'en-US'],
     url: canonicalUrl,
@@ -335,8 +335,8 @@ export default async function ReviewManagementPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://buaze.com/${locale}/features` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://www.buaze.com/${locale}/features` },
       { '@type': 'ListItem', position: 3, name: isTr ? 'Yorum Yönetimi' : 'Review Management', item: canonicalUrl },
     ],
   };

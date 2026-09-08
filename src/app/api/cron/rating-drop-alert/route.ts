@@ -33,7 +33,7 @@ export async function runRatingDropAlert(): Promise<Summary> {
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - SEVEN_DAYS_MS);
   const twentyEightDaysAgo = new Date(now.getTime() - 4 * SEVEN_DAYS_MS);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
 
   // Restaurants with ≥ MIN_REVIEWS_LAST_WEEK reviews in the last 7 days
   // (statistical floor). Then compute baseline + delta per row.

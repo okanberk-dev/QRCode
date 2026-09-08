@@ -256,7 +256,7 @@ export async function PUT(req: NextRequest) {
 
       // Fire-and-forget. Failure is non-blocking; sender wires ops alert
       // internally (CLAUDE.md §21.33).
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
       const userLocale: 'tr' | 'en' = updatedUser.locale === 'en' ? 'en' : 'tr';
       const userAgent = req.headers.get('user-agent') ?? null;
       const ip = getClientIp(req.headers);
@@ -277,7 +277,7 @@ export async function PUT(req: NextRequest) {
     // kadar `emailVerified=false` kalır (team_member login gate'i bunu zaten
     // uyguluyor; owner için de "doğrulanmış" rozeti yalan söylemez).
     if (pendingVerifyEmail && pendingVerifyToken) {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
       const mailLocale: 'tr' | 'en' = updatedUser.locale === 'en' ? 'en' : 'tr';
       sendVerifyEmail({
         to: pendingVerifyEmail,

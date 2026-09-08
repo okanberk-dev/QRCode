@@ -272,7 +272,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
       passingScore: assignment.template.passingScore,
       locale: assignment.template.locale === 'en' ? 'en' : 'tr',
       // Owner panel detay URL — fork edilmiş template → restaurantId üzerinden
-      panelUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://buaze.com'}/${assignment.template.locale === 'en' ? 'en' : 'tr'}/dashboard/audits/${assignment.template.id}`,
+      panelUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.buaze.com'}/${assignment.template.locale === 'en' ? 'en' : 'tr'}/dashboard/audits/${assignment.template.id}`,
     }).catch((err: unknown) => {
       // Best-effort — submit yine başarılı dönsün.
       console.error('[audit] notify mail failed', (err as Error).message);

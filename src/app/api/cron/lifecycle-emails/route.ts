@@ -49,7 +49,7 @@ interface LifecycleSummary {
  */
 export async function runLifecycleEmails(): Promise<LifecycleSummary> {
   const start = Date.now();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
 
   const users = await prisma.user.findMany({
     where: { isActive: true },

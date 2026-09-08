@@ -89,7 +89,7 @@ const TR_PAGE = `
   <div class="eyebrow">İletişim tercihi</div>
   <h1>Aboneliğin sonlandı.</h1>
   <p>Artık bu listeden mail almayacaksın. Ne zaman istersen restoran sahibi seni tekrar listeye ekleyebilir.</p>
-  <a href="https://buaze.com">Buaze'a dön</a>
+  <a href="https://www.buaze.com">Buaze'a dön</a>
 </main>
 </body>
 </html>`.trim();
@@ -158,7 +158,7 @@ const EN_PAGE = `
   <div class="eyebrow">Email preferences</div>
   <h1>You're unsubscribed.</h1>
   <p>You will no longer receive emails from this list. The restaurant can add you back to the list whenever you wish.</p>
-  <a href="https://buaze.com">Back to Buaze</a>
+  <a href="https://www.buaze.com">Back to Buaze</a>
 </main>
 </body>
 </html>`.trim();

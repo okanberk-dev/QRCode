@@ -30,7 +30,7 @@ export async function generateMetadata({
       ? 'İşletmenizde zaten kullandığınız araçlarla Buaze tek tıkla konuşur. Google, Yemeksepeti, Getir, Slack, Teams, WhatsApp, Zapier ve daha fazlası.'
       : 'Buaze talks to the tools your team already uses: Google, Uber Eats, DoorDash, Deliveroo, Slack, Microsoft Teams, WhatsApp, Zapier and more — connect in clicks.';
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     alternates: {
@@ -43,7 +43,7 @@ export async function generateMetadata({
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/integrations`,
+      url: `https://www.buaze.com/${locale}/integrations`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -115,7 +115,7 @@ export default async function IntegrationsPage({
   ];
 
   const allIntegrations = groups.flatMap((g) => g.items);
-  const canonicalUrl = `https://buaze.com/${locale}/integrations`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/integrations`;
   const itemListSchema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -134,7 +134,7 @@ export default async function IntegrationsPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
       { '@type': 'ListItem', position: 2, name: isTr ? 'Entegrasyonlar' : 'Integrations', item: canonicalUrl },
     ],
   };

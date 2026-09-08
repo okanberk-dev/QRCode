@@ -35,7 +35,7 @@ export async function generateMetadata({
   const description = storyText(story.description, locale);
 
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     alternates: {
@@ -50,7 +50,7 @@ export async function generateMetadata({
       type: 'article',
       title,
       description,
-      url: `https://buaze.com/${locale}/customer-stories/${slug}`,
+      url: `https://www.buaze.com/${locale}/customer-stories/${slug}`,
       images: [{ url: story.image, width: 1400, height: 900, alt: story.brand }],
     },
     twitter: {

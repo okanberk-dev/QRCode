@@ -76,7 +76,7 @@ export async function renderWelcome(
   const copy = deepSubstitute(merged, vars, 'html');
   const copyText = deepSubstitute(merged, vars, 'text');
 
-  const demoUrl = params.demoUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/${isTr ? 'tr' : 'en'}/how-it-works`;
+  const demoUrl = params.demoUrl || `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com'}/${isTr ? 'tr' : 'en'}/how-it-works`;
 
   // Steps — done/current/pending visual states matching welcome.jsx:38-71
   const stepRows = copy.steps.map((s, i) => {
@@ -106,7 +106,7 @@ export async function renderWelcome(
   // Resource grid — 2x2 — matches welcome.jsx:87-113
   // CLAUDE.md §38.132 — /help index page mevcut; /help/page route YOK
   // (CLAUDE.md §22 — `/help/[slug]` detail vs `/help` index ayrımı).
-  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const helpHref = `${baseAppUrl}/${isTr ? 'tr' : 'en'}/help`;
   const resourceCard = (r: { t: string; s: string; icon: string }) => `
     <a href="${helpHref}" style="display:block;padding:18px;background:${PULSE.n50};border:1px solid ${PULSE.n200};border-radius:12px;text-decoration:none;">

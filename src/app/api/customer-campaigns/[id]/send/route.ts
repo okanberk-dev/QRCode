@@ -165,7 +165,7 @@ export async function POST(
   }
 
   const restaurantName = campaign.restaurant?.name ?? 'Buaze';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || 'https://www.buaze.com';
   const adminUrl = `${appUrl}/admin/campaigns/${campaign.id}`;
 
   // Ops mail (CLAUDE.md §21.33 paterni) — fire-and-forget, owner submit

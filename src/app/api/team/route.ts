@@ -211,7 +211,7 @@ export async function POST(req: NextRequest) {
     restaurantNames = rows.map((r) => r.name);
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const localeStr: 'tr' | 'en' = owner?.locale === 'en' ? 'en' : 'tr';
   const acceptUrl = `${appUrl}/${localeStr}/accept-invite?token=${inviteToken}`;
 

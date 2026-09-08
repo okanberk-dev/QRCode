@@ -18,7 +18,7 @@ const TEMPLATES: Record<TemplateKey, { card: string; fg: string; border: string;
   minimal: { card: '#FAFAFA', fg: '#0A0A0A', border: '#EDEDED', eyebrow: 'rgba(10,10,10,0.55)' },
 };
 
-const DEFAULT_URL = 'https://buaze.com';
+const DEFAULT_URL = 'https://www.buaze.com';
 
 const getQrHostname = (value: string) => {
   try {

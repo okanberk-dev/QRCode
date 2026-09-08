@@ -112,6 +112,35 @@ const nextConfig: NextConfig = {
         destination: '/tr/blog/dijital-itibar-yonetimi-stratejileri',
         permanent: true,
       },
+
+      // SEO (2026-09) — Search Console "Not found (404)" cleanup.
+      // `bilgi-guvenligi` was deliberately removed (CLAUDE.md §5.3, Sentry
+      // encoding crash); external links and Google's memory still point at
+      // it, so 301 to the KVKK page rather than leaving a bare 404.
+      {
+        source: '/:locale(tr|en)/bilgi-guvenligi',
+        destination: '/:locale/kvkk',
+        permanent: true,
+      },
+      // A `/legal/` path prefix never existed on this site (CLAUDE.md
+      // §38.131 — public legal routes use short slugs). The cookie banner
+      // and the register form shipped `/legal/...` hrefs, so these URLs are
+      // in Google's index; 301 them onto the real routes.
+      {
+        source: '/:locale(tr|en)/legal/cerez-politikasi',
+        destination: '/:locale/cookie',
+        permanent: true,
+      },
+      {
+        source: '/:locale(tr|en)/legal/kvkk-aydinlatma',
+        destination: '/:locale/kvkk',
+        permanent: true,
+      },
+      {
+        source: '/:locale(tr|en)/legal/ticari-ileti',
+        destination: '/:locale/ticari-ileti',
+        permanent: true,
+      },
     ];
   },
 

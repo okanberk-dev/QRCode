@@ -167,7 +167,7 @@ export default async function EmbedPage({ params, searchParams }: RouteParams) {
       >
         Powered by{' '}
         <a
-          href="https://buaze.com/?ref=embed"
+          href="https://www.buaze.com/?ref=embed"
           target="_blank"
           rel="noopener noreferrer"
           style={{ color: palette.muted, textDecoration: 'none', fontWeight: 600 }}

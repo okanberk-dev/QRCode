@@ -29,11 +29,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/restaurants`,
+      canonical: `https://www.buaze.com/${locale}/solutions/restaurants`,
       languages: {
-        tr: 'https://buaze.com/tr/solutions/restaurants',
-        en: 'https://buaze.com/en/solutions/restaurants',
-        'x-default': 'https://buaze.com/tr/solutions/restaurants',
+        tr: 'https://www.buaze.com/tr/solutions/restaurants',
+        en: 'https://www.buaze.com/en/solutions/restaurants',
+        'x-default': 'https://www.buaze.com/tr/solutions/restaurants',
       },
     },
     openGraph: {
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/restaurants`,
+      url: `https://www.buaze.com/${locale}/solutions/restaurants`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -208,7 +208,7 @@ export default async function RestaurantsSolutionPage({ params }: { params: Prom
     description: isTr
       ? 'Masa, fatura, kapı veya paket noktasına QR koyup yorumları Buaze panelinden yönetmek için adımlar.'
       : 'Steps to place QR codes at table, receipt, door or package touchpoints and run reviews from the Buaze panel.',
-    url: `https://buaze.com/${locale}/solutions/restaurants`,
+    url: `https://www.buaze.com/${locale}/solutions/restaurants`,
     steps: isTr
       ? [
           { name: 'İşletmeni tanımla', text: 'Buaze panelinde restoran/kafe adını, kategorisini, adresini ve bildirim e-postasını gir; Google Place ID veya yorum bağlantısını ekle.' },

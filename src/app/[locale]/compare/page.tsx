@@ -21,8 +21,8 @@ export async function generateMetadata({
     title: t.compare_title,
     description: t.compare_subtitle,
     alternates: {
-      canonical: `https://buaze.com/${locale}/compare`,
-      languages: { tr: 'https://buaze.com/tr/compare', en: 'https://buaze.com/en/compare', 'x-default': 'https://buaze.com/tr/compare' },
+      canonical: `https://www.buaze.com/${locale}/compare`,
+      languages: { tr: 'https://www.buaze.com/tr/compare', en: 'https://www.buaze.com/en/compare', 'x-default': 'https://www.buaze.com/tr/compare' },
     },
   };
 }

@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       ? ['oto servis itibar yönetimi', 'araba tamircisi google yorumları', 'oto tamir feedback', 'servis müşteri memnuniyeti']
       : ['auto service reputation management', 'mechanic google reviews', 'car repair feedback'],
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/auto-service`,
-      languages: { tr: 'https://buaze.com/tr/solutions/auto-service', en: 'https://buaze.com/en/solutions/auto-service', 'x-default': 'https://buaze.com/tr/solutions/auto-service' },
+      canonical: `https://www.buaze.com/${locale}/solutions/auto-service`,
+      languages: { tr: 'https://www.buaze.com/tr/solutions/auto-service', en: 'https://www.buaze.com/en/solutions/auto-service', 'x-default': 'https://www.buaze.com/tr/solutions/auto-service' },
     },
     openGraph: {
       type: 'website',
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/auto-service`,
+      url: `https://www.buaze.com/${locale}/solutions/auto-service`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {

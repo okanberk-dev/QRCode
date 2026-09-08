@@ -132,7 +132,7 @@ export async function POST(
 
     const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()?.replace(/\/+$/, '');
     const hasLocalhost = envAppUrl ? /localhost|127\.0\.0\.1/i.test(envAppUrl) : false;
-    const appUrl = (!hasLocalhost && envAppUrl) ? envAppUrl : 'https://buaze.com';
+    const appUrl = (!hasLocalhost && envAppUrl) ? envAppUrl : 'https://www.buaze.com';
 
     const items: { table: string; qrUrl: string; svg: string }[] = [];
     for (let t = from; t <= to; t += 1) {

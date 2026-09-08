@@ -48,9 +48,9 @@ export async function generateMetadata({
   const description = isTr
     ? 'Hijiyen denetimi, işe alım quiz\'i, KVKK uyumluluk, ekip eğitim değerlendirmesi — şablon seç, ata, skorla. 6 sektör için hazır şablon + özel soru tipleri (skala, çoktan seçmeli, evet/hayır).'
     : 'Hygiene audits, hiring quizzes, KVKK compliance, team training assessments — pick a template, assign, score. Ready-made templates for 6 sectors + custom question types (scale, multiple choice, yes/no).';
-  const canonicalUrl = `https://buaze.com/${locale}/features/audit-center`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/audit-center`;
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     keywords: isTr
@@ -76,9 +76,9 @@ export async function generateMetadata({
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        tr: 'https://buaze.com/tr/features/audit-center',
-        en: 'https://buaze.com/en/features/audit-center',
-        'x-default': 'https://buaze.com/en/features/audit-center',
+        tr: 'https://www.buaze.com/tr/features/audit-center',
+        en: 'https://www.buaze.com/en/features/audit-center',
+        'x-default': 'https://www.buaze.com/en/features/audit-center',
       },
     },
     openGraph: {
@@ -119,7 +119,7 @@ export default async function AuditCenterPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
   const base = `/${locale}`;
-  const canonicalUrl = `https://buaze.com/${locale}/features/audit-center`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/audit-center`;
 
   // Score card mockup — feels like a real audit response without animation
   const scoreMock = isTr
@@ -272,7 +272,7 @@ export default async function AuditCenterPage({
     '@type': 'Service',
     name: isTr ? 'Buaze Denetim Merkezi' : 'Buaze Audit Center',
     serviceType: isTr ? 'Operasyonel denetim ve skorlama' : 'Operational audit and scoring',
-    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
     areaServed: 'TR',
     availableLanguage: ['tr-TR', 'en-US'],
     url: canonicalUrl,
@@ -300,8 +300,8 @@ export default async function AuditCenterPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://buaze.com/${locale}/features` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://www.buaze.com/${locale}/features` },
       { '@type': 'ListItem', position: 3, name: isTr ? 'Denetim Merkezi' : 'Audit Center', item: canonicalUrl },
     ],
   };

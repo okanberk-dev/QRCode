@@ -3820,6 +3820,91 @@ Site-wide audit (2026-05) aşağıdaki bulguları işaret etti — fix gerekli a
 
 ---
 
+### 35.12 Canonical host = www (kanonik, 2026-09)
+
+**Tek source-of-truth**: `src/lib/site.ts` → `SITE_URL` (env `NEXT_PUBLIC_SITE_URL`,
+default `https://www.buaze.com`) + `SITE_HOST` (robots `Host:` için).
+
+**Kural**: Buaze public yüzeyi **www** host'unda servis edilir; apex
+(`buaze.com`) hosting katmanında www'ye 301 atar. Yayımladığımız her
+`canonical`, `hreflang` alternate, sitemap satırı, JSON-LD `url` ve
+`openGraph.url` **www** olmak zorunda.
+
+**Neden**: Apex'i canonical ilan ederken apex'in www'ye 301 atması bir
+**canonical döngüsü**dür — Googlebot www'yi çeker (200), HTML apex'i
+canonical gösterir, apex tekrar www'ye döner. Google çelişkiyi çözemez ve
+sayfayı indeksten düşürür. 2026-09 GSC tablosu bunun sonucuydu: 53 sayfa
+indekste, **119** "doğru canonical'a sahip alternatif sayfa" + **24**
+"kullanıcı canonical'ı olmadan kopya" = 143 sayfa indekslenmemiş.
+
+**Yapma**:
+- Yeni metadata / JSON-LD / sitemap satırında `https://buaze.com` (apex)
+  hardcode etme — `SITE_URL` import et. Apex string'i repoda kalmamalı
+  (`grep -rn "https://buaze\.com" src/ public/ scripts/` → 0 olmalı).
+- Bir sayfada `metadataBase` varken canonical'ı yine mutlak URL yazma;
+  `canonical: \`/${locale}\`` relative yeter (metadataBase www'yi ekler).
+- `hreflang` `x-default`'u locale başına farklı yazma — **tüm sayfalarda
+  `/tr`** (TR primary, CLAUDE.md §22.9). Locale layout eskiden `/en`
+  gösteriyordu, diğer sayfalar `/tr` — drift kapatıldı.
+- Sayfa `title`'ına marka ön eki koyma. `titleTemplate` zaten `%s | Buaze`
+  ekliyor; "Buaze | X" yazmak SERP'te "Buaze | X | Buaze" üretir.
+
+**Yap**:
+- Yeni public route eklerken `alternates.canonical` + `languages` (tr/en/
+  x-default) ver. Redirect alias route'ları (`solutions/otel` → `hotels`)
+  ve `robots: { index: false }` sayfaları (help/search) canonical
+  gerektirmez — sadece bu ikisi muaf.
+- robots-disallowed endpoint'e `<a href>` verirken `rel="nofollow"` ekle
+  (`/api/checkout` paterni) — aksi halde Googlebot linki keşfedip
+  "Robots.txt ile engellendi" raporu üretir.
+- `WebSite.potentialAction` SearchAction target'ı **gerçekten `?q=` işleyen**
+  bir sayfayı göstermeli. Eskiden `/blog?q=` gösteriyordu ama blog yalnız
+  `?cat=` okuyor → Googlebot literal `?q={search_term_string}` URL'ini
+  taradı. Şimdi `/help/search?q=` (noindex) + robots `Disallow: /*?q=`.
+
+**Deploy sonrası doğrulama** (operatör, GSC):
+1. URL Denetimi → `https://www.buaze.com/tr/pricing` → CANLI URL'Yİ TEST ET
+   → "beyan edilen standart URL" **www** olmalı. Değilse deploy yayılmamıştır.
+2. `robots.txt` → `Sitemap:` + `Host:` www mi?
+3. Site Haritaları → `/sitemap.xml` sil + yeniden gönder.
+4. "Doğru standart etikete sahip alternatif sayfa" / "kopya" / "404"
+   satırlarında **DÜZELTMEYİ DOĞRULA**.
+5. GSC'ye **Alan adı (Domain) mülkü** ekle (`buaze.com`, DNS TXT) — www +
+   apex tek raporda görünsün, bu karışıklık bir daha gizlenmesin.
+
+Beklenen: ilk hareket 7–14 gün, 143 sayfanın büyük kısmı 3–6 hafta.
+
+#### 35.12.1 RSC `key` sızıntısı — URL + label birleşen 404'ler
+
+GSC 9 adet `/en/pricingPricing`, `/tr/contactİletişim`, `/en/solutions/hotelsHotel`
+tarzı 404 raporladı. Kaynak: `MarketingFooter.tsx` React `key`'i
+`key={item.href + item.label}` ile kuruyordu. Footer bir Server Component
+olduğu için Next.js bu `key`'i **RSC Flight payload**'una serialize eder ve
+payload `self.__next_f.push([...])` olarak HTML'e gömülür; Googlebot inline
+script içindeki `/…` ile başlayan string'i URL sanıp kuyruğa alır.
+
+**Yapma**: React `key`'inde URL-şekilli bir alanı başka bir alanla
+birleştirme (`key={item.href + item.label}`). Server Component'te `key`
+kullanıcıya HTML olarak gider.
+**Yap**: `key={item.href}` — zaten benzersiz. Aynı şey `key={\`${slug}-${name}\`}`
+gibi slug birleşimleri için de geçerli.
+
+#### 35.12.2 `/[locale]/legal/` segment'i YOK
+
+`src/app/[locale]/` altında **`legal/` dizini yok**; public hukuki sayfalar
+kısa slug kullanır: `/kvkk` (`kvkk-aydinlatma` doc), `/cookie`
+(`cerez-politikasi` doc), `/ticari-ileti`, `/gizlilik`, `/privacy`, `/terms`.
+
+Buna rağmen 6 canlı link `/legal/...` gösteriyordu ve 404 dönüyordu:
+- `CookieConsentBanner.tsx` → `/legal/cerez-politikasi` (root layout'ta mount
+  edildiği için **sitedeki her sayfada** kırık link)
+- `RegisterForm.tsx` ×4 → `/legal/kvkk-aydinlatma`, `/legal/ticari-ileti`
+
+Hepsi kısa slug'a çevrildi + `next.config.ts`'e 3 adet 301 eklendi (indekste
+kalmış URL'ler için). Yeni hukuki link yazarken `src/lib/email/templates/
+customer-campaign.ts` içindeki route mapping yorumuna bak — kanonik liste orada.
+
+
 ## 36. useUrlFilter Hook (Phase 11.13)
 
 `src/hooks/useUrlFilter.ts` — generic URL-synced filter state hook. Linear/Stripe SaaS pattern: filter/tab/sort/page state'i `?key=value` query param'a yansır → refresh sonrası state korunur, deeplink-friendly, browser back doğal çalışır.

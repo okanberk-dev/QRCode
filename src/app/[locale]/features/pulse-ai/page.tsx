@@ -30,21 +30,21 @@ export async function generateMetadata({
       ? 'Buaze Pulse AI, her yoruma puan ve tonuna göre özel Türkçe yanıt taslağı üretir. Onay kontrollü, hızlı yanıt akışı.'
       : 'Buaze Pulse AI drafts rating-aware replies for every review. Approval-led, fast response flow.';
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/features/pulse-ai`,
+      canonical: `https://www.buaze.com/${locale}/features/pulse-ai`,
       languages: {
-        tr: 'https://buaze.com/tr/features/pulse-ai',
-        en: 'https://buaze.com/en/features/pulse-ai',
-        'x-default': 'https://buaze.com/tr/features/pulse-ai',
+        tr: 'https://www.buaze.com/tr/features/pulse-ai',
+        en: 'https://www.buaze.com/en/features/pulse-ai',
+        'x-default': 'https://www.buaze.com/tr/features/pulse-ai',
       },
     },
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/features/pulse-ai`,
+      url: `https://www.buaze.com/${locale}/features/pulse-ai`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: 'Buaze Pulse AI' }],
     },
   };
@@ -117,7 +117,7 @@ export default async function PulseAiPage({
     ? 'Merhaba Mert, 40 dakikalık bekleyiş için özür dileriz — ana yemekler için standart hedefimiz 18 dakika. Aynı akşam servis sorumlumuzla değerlendirdik ve mutfak-salon koordinasyonunda bir iyileştirme planı çıkardık. Bir sonraki ziyaretinde şef özel olarak ilgilenmek ister — rezervasyonda adımı hatırlatman yeterli.'
     : "Hi Mark, we're sorry about the 40-minute wait — our standard target for mains is 18 minutes. We reviewed the service that evening and drew up a kitchen-to-floor coordination fix the same night. On your next visit our head chef would like to look after you personally — just mention my name at booking.";
 
-  const canonicalUrl = `https://buaze.com/${locale}/features/pulse-ai`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/pulse-ai`;
   const softwareSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
@@ -141,16 +141,16 @@ export default async function PulseAiPage({
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',
-      url: 'https://buaze.com',
-      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+      url: 'https://www.buaze.com',
+      logo: { '@type': 'ImageObject', url: 'https://www.buaze.com/favicon.svg' },
     },
   };
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://buaze.com/${locale}/features` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://www.buaze.com/${locale}/features` },
       { '@type': 'ListItem', position: 3, name: 'Buaze Pulse AI', item: canonicalUrl },
     ],
   };

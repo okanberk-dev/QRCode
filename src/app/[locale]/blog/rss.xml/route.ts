@@ -5,7 +5,7 @@ import type { Locale } from '@/lib/translations';
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
-const SITE_URL = 'https://buaze.com';
+const SITE_URL = 'https://www.buaze.com';
 const FEED_LIMIT = 50;
 
 const FEED_META: Record<Locale, { title: string; description: string }> = {

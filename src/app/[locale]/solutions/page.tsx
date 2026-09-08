@@ -46,8 +46,8 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions`,
-      languages: { tr: 'https://buaze.com/tr/solutions', en: 'https://buaze.com/en/solutions', 'x-default': 'https://buaze.com/tr/solutions' },
+      canonical: `https://www.buaze.com/${locale}/solutions`,
+      languages: { tr: 'https://www.buaze.com/tr/solutions', en: 'https://www.buaze.com/en/solutions', 'x-default': 'https://www.buaze.com/tr/solutions' },
     },
     openGraph: {
       type: 'website',
@@ -55,7 +55,7 @@ export async function generateMetadata({
       locale: isTr ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions`,
+      url: `https://www.buaze.com/${locale}/solutions`,
       images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -147,7 +147,7 @@ export default async function SolutionsOverviewPage({
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     name: isTr ? 'Buaze Çözümleri' : 'Buaze Solutions',
-    url: `https://buaze.com/${locale}/solutions`,
+    url: `https://www.buaze.com/${locale}/solutions`,
     description: isTr
       ? 'Buaze platformunun dijital itibar yönetimi çözümleri ve desteklediği sektörler.'
       : 'Digital reputation management solutions and supported industries by Buaze.',

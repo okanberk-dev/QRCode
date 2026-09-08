@@ -70,7 +70,7 @@ export async function generateMetadata({
       locale: isTr ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/features/menu`,
+      url: `https://www.buaze.com/${locale}/features/menu`,
       images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -96,7 +96,7 @@ export default async function FeatureMenuPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
   const base = `/${locale}`;
-  const url = `https://buaze.com/${locale}/features/menu`;
+  const url = `https://www.buaze.com/${locale}/features/menu`;
 
   const steps = isTr
     ? [
@@ -187,7 +187,7 @@ export default async function FeatureMenuPage({
         name: isTr ? 'Buaze QR Menü' : 'Buaze QR Menu',
         serviceType: isTr ? 'QR menü ve dijital menü yönetimi' : 'QR menu and digital menu management',
         url,
-        provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+        provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
         areaServed: isTr ? 'Türkiye' : 'Worldwide',
         description: isTr
           ? 'Sürükle-bırak menü düzenleyici, 7 tema, ürün görselleri, menüye özel QR kodu ve menü analitiği.'
@@ -196,8 +196,8 @@ export default async function FeatureMenuPage({
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-          { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://buaze.com/${locale}/features` },
+          { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+          { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://www.buaze.com/${locale}/features` },
           { '@type': 'ListItem', position: 3, name: isTr ? 'QR Menü' : 'QR Menu', item: url },
         ],
       },

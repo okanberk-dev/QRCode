@@ -38,7 +38,7 @@ export function isPreviewTemplate(value: unknown): value is PreviewTemplate {
   return typeof value === 'string' && (PREVIEW_TEMPLATES as readonly string[]).includes(value);
 }
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
 
 export const SEEDS = {
   'forgot-password': (): ForgotPasswordParams => ({

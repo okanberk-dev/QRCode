@@ -30,15 +30,15 @@ export function buildSolutionSchema({
   faqs,
 }: SolutionSchemaArgs): object[] {
   const isTr = locale === 'tr';
-  const canonicalUrl = `https://buaze.com/${locale}/solutions/${slug}`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/solutions/${slug}`;
 
   const schemas: object[] = [
     {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-        { '@type': 'ListItem', position: 2, name: isTr ? 'Çözümler' : 'Solutions', item: `https://buaze.com/${locale}/solutions` },
+        { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+        { '@type': 'ListItem', position: 2, name: isTr ? 'Çözümler' : 'Solutions', item: `https://www.buaze.com/${locale}/solutions` },
         { '@type': 'ListItem', position: 3, name: industryLabel, item: canonicalUrl },
       ],
     },
@@ -47,7 +47,7 @@ export function buildSolutionSchema({
       '@type': 'Service',
       name: serviceName,
       description,
-      provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+      provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
       areaServed: { '@type': 'Country', name: 'Turkey' },
       serviceType: isTr ? 'İtibar yönetimi yazılımı' : 'Reputation management software',
       audience: { '@type': 'BusinessAudience', audienceType: industryLabel },

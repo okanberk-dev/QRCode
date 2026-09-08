@@ -60,7 +60,7 @@ export async function sendMail(args: { to: string | string[]; subject: string; h
 }
 
 function appUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  return process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
 }
 
 // ─── Public utility ─────────────────────────────────────────────────────

@@ -38,7 +38,7 @@ function resolveAppUrl(host: string | null): string {
     const proto = host.includes('localhost') ? 'http' : 'https';
     return `${proto}://${host}`;
   }
-  return 'https://buaze.com';
+  return 'https://www.buaze.com';
 }
 
 export default async function AuditDetailPage({ params }: PageProps) {

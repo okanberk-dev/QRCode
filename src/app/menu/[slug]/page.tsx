@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const title = `${restaurant.name} · Menü`;
   const description = [restaurant.category, restaurant.address].filter(Boolean).join(' — ') ||
     `${restaurant.name} işletmesinin dijital menüsü.`;
-  const canonical = `https://buaze.com/menu/${slug}`;
+  const canonical = `https://www.buaze.com/menu/${slug}`;
   return {
     title,
     description,
@@ -126,7 +126,7 @@ export default async function PublicMenuPage({
     })),
   }));
 
-  const canonical = `https://buaze.com/menu/${data.slug}`;
+  const canonical = `https://www.buaze.com/menu/${data.slug}`;
   const restaurantNode = {
     '@type': 'Restaurant',
     '@id': `${canonical}#restaurant`,

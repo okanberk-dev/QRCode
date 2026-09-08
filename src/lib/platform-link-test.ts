@@ -53,7 +53,7 @@ export interface PlatformLinkTestResult {
 }
 
 const USER_AGENT =
-  'Mozilla/5.0 (compatible; BuazeIntegrationsTest/1.0; +https://buaze.com)';
+  'Mozilla/5.0 (compatible; BuazeIntegrationsTest/1.0; +https://www.buaze.com)';
 
 const ERROR_MAX_LEN = 500;
 

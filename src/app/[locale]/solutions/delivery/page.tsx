@@ -34,7 +34,7 @@ export async function generateMetadata({
       ? 'Paket içine koyduğunuz tek QR ile müşteriyi tam olarak yorum bırakacağı platforma yönlendirin. Google, Yemeksepeti, Getir Yemek ve Trendyol GO uyumlu.'
       : 'One QR inside every package routes the customer to the platform where they will actually leave a review. Works with Google, Yemeksepeti, Getir Yemek and Trendyol GO.';
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     alternates: {
@@ -51,7 +51,7 @@ export async function generateMetadata({
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/delivery`,
+      url: `https://www.buaze.com/${locale}/solutions/delivery`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -219,7 +219,7 @@ export default async function DeliveryPage({
     description: isTr
       ? 'Paket içi QR ile Yemeksepeti, Getir, Trendyol GO ve Google yorumlarını tek panelde yönetmek için adımlar.'
       : 'Steps to manage Yemeksepeti, Getir, Trendyol GO and Google reviews from one panel using an in-package QR.',
-    url: `https://buaze.com/${locale}/solutions/delivery`,
+    url: `https://www.buaze.com/${locale}/solutions/delivery`,
     steps: isTr
       ? [
           { name: 'Mutfak/işletmeyi tanımla', text: 'Mutfak adı, kategori, Yemeksepeti/Getir/Trendyol GO restoran bağlantıları ve Google Place ID’yi panelde gir.' },

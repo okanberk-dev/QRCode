@@ -312,7 +312,7 @@ export async function renderRoiAdminNotification(
   const callHref = rawPhone ? `tel:${rawPhone}` : '#';
   // §38.197 — env-aware admin panel fallback. Hardcoded canonical
   // staging/preview deploy'larda yanlış host'a yönlendirir.
-  const adminAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const adminAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const panelHref = params.panelUrl || `${adminAppUrl}/admin/customers`;
   const replyHref = `mailto:${encodeURI(params.email)}?subject=${encodeURIComponent(
     isTr ? `Buaze ROI hesabınız hakkında — ${params.restaurantName}` : `About your Buaze ROI estimate — ${params.restaurantName}`,

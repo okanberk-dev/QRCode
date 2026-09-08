@@ -27,7 +27,7 @@ interface Summary {
 export async function runQrNoScansReminder(): Promise<Summary> {
   const start = Date.now();
   const sevenDaysAgo = new Date(Date.now() - SEVEN_DAYS_MS);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
 
   // Pull restaurants whose first QR was generated ≥ 7 days ago. We then
   // filter zero-scan + cooldown per-row to keep the SQL simple.

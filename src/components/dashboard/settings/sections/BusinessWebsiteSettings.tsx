@@ -18,7 +18,7 @@ interface BusinessWebsiteSettingsProps {
 const APP_URL =
   typeof process !== 'undefined' && process.env.NEXT_PUBLIC_APP_URL
     ? process.env.NEXT_PUBLIC_APP_URL
-    : 'https://buaze.com';
+    : 'https://www.buaze.com';
 
 /**
  * Web sitesi widget — embed kod kopyala + tema/boyut + browser-frame önizleme.

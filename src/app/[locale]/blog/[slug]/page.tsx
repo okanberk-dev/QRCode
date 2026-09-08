@@ -67,15 +67,15 @@ export async function generateMetadata(
     title: `${post.title} — Buaze Blog`,
     description: post.description,
     keywords,
-    authors: [{ name: post.author, url: 'https://buaze.com' }],
+    authors: [{ name: post.author, url: 'https://www.buaze.com' }],
     publisher: 'Buaze',
     category: locale === 'tr' ? 'İtibar yönetimi' : 'Reputation management',
     alternates: {
-      canonical: `https://buaze.com/${locale}/blog/${slug}`,
+      canonical: `https://www.buaze.com/${locale}/blog/${slug}`,
       languages: {
-        tr: `https://buaze.com/tr/blog/${trSlug}`,
-        en: `https://buaze.com/en/blog/${enSlug}`,
-        'x-default': `https://buaze.com/en/blog/${enSlug}`,
+        tr: `https://www.buaze.com/tr/blog/${trSlug}`,
+        en: `https://www.buaze.com/en/blog/${enSlug}`,
+        'x-default': `https://www.buaze.com/en/blog/${enSlug}`,
       },
     },
     robots: {
@@ -99,7 +99,7 @@ export async function generateMetadata(
     openGraph: {
       type: 'article',
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      url: `https://buaze.com/${locale}/blog/${slug}`,
+      url: `https://www.buaze.com/${locale}/blog/${slug}`,
       siteName: 'Buaze',
       title: post.title,
       description: post.description,
@@ -244,21 +244,21 @@ export default async function BlogPostPage({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
-    '@id': `https://buaze.com/${locale}/blog/${slug}#article`,
+    '@id': `https://www.buaze.com/${locale}/blog/${slug}#article`,
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': `https://buaze.com/${locale}/blog/${slug}`,
+      '@id': `https://www.buaze.com/${locale}/blog/${slug}`,
     },
     headline: post.title,
     description: post.description,
-    image: [post.coverImage?.trim() || `https://buaze.com/images/open-graph-${locale}.png`],
-    author: [{ '@type': 'Organization', name: post.author, url: 'https://buaze.com' }],
+    image: [post.coverImage?.trim() || `https://www.buaze.com/images/open-graph-${locale}.png`],
+    author: [{ '@type': 'Organization', name: post.author, url: 'https://www.buaze.com' }],
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',
       logo: {
         '@type': 'ImageObject',
-        url: 'https://buaze.com/favicon.svg',
+        url: 'https://www.buaze.com/favicon.svg',
       },
       address: {
         '@type': 'PostalAddress',
@@ -373,7 +373,7 @@ export default async function BlogPostPage({
       {/* ─── Content grid · 3-col (TOC + article + meta) ─── */}
       <section className="px-5 sm:px-10 py-[60px] sm:py-20">
         {(() => {
-          const postUrl = `https://buaze.com/${locale}/blog/${slug}`;
+          const postUrl = `https://www.buaze.com/${locale}/blog/${slug}`;
           // Admin override → manual tag list, fallback → keyword auto-derive.
           const tags = (post.tags && post.tags.length > 0)
             ? post.tags.slice(0, 6)

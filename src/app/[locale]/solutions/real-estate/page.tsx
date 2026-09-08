@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       ? ['gayrimenkul itibar yönetimi', 'emlak ofisi google yorumları', 'danışman müşteri memnuniyeti', 'emlakçı feedback']
       : ['real estate reputation management', 'realtor google reviews', 'agent client satisfaction'],
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/real-estate`,
-      languages: { tr: 'https://buaze.com/tr/solutions/real-estate', en: 'https://buaze.com/en/solutions/real-estate', 'x-default': 'https://buaze.com/tr/solutions/real-estate' },
+      canonical: `https://www.buaze.com/${locale}/solutions/real-estate`,
+      languages: { tr: 'https://www.buaze.com/tr/solutions/real-estate', en: 'https://www.buaze.com/en/solutions/real-estate', 'x-default': 'https://www.buaze.com/tr/solutions/real-estate' },
     },
     openGraph: {
       type: 'website',
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/real-estate`,
+      url: `https://www.buaze.com/${locale}/solutions/real-estate`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {

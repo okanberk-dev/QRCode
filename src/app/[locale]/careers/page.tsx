@@ -26,7 +26,7 @@ export async function generateMetadata({
       ? 'Buaze\'de çalış: İstanbul merkezli, uzaktan-uyumlu, ürün odaklı bir SaaS ekibi. Tasarım, mühendislik, ürün ve müşteri başarısı için açık pozisyonları incele.'
       : 'Work at Buaze: an Istanbul-based, remote-friendly, product-driven SaaS team. Explore open roles across design, engineering, product and customer success.';
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     alternates: {
@@ -39,7 +39,7 @@ export async function generateMetadata({
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/careers`,
+      url: `https://www.buaze.com/${locale}/careers`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -93,7 +93,7 @@ export default async function CareersPage({
         { title: 'Data Analyst', team: 'Product', location: 'Remote (EU)', type: 'Full-time' },
       ];
 
-  const canonicalUrl = `https://buaze.com/${locale}/careers`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/careers`;
   const itemListSchema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -112,7 +112,7 @@ export default async function CareersPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
       { '@type': 'ListItem', position: 2, name: isTr ? 'Kariyer' : 'Careers', item: canonicalUrl },
     ],
   };

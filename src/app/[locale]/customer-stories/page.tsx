@@ -31,7 +31,7 @@ export async function generateMetadata({
       ? 'İşletmeler Buaze ile nabzını dinliyor. Restoran, otel, klinik, kafe ve daha fazlasından örnek kullanım senaryoları.'
       : 'Businesses listen to their pulse with Buaze. Example scenarios from restaurants, hotels, clinics, cafés and more.';
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     alternates: {
@@ -44,7 +44,7 @@ export async function generateMetadata({
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/customer-stories`,
+      url: `https://www.buaze.com/${locale}/customer-stories`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -69,7 +69,7 @@ export default async function CustomerStoriesPage({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
 
-  const canonicalUrl = `https://buaze.com/${locale}/customer-stories`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/customer-stories`;
   // Stage 94 §38.174 — ItemList JSON-LD removed; CLAUDE.md §35.10 deemed
   // these 6 stories fictitious. BreadcrumbList kept for navigation context
   // (not promotional). Page body still enumerates CUSTOMER_STORIES so
@@ -79,7 +79,7 @@ export default async function CustomerStoriesPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
       { '@type': 'ListItem', position: 2, name: isTr ? 'Başarı Hikayeleri' : 'Customer Stories', item: canonicalUrl },
     ],
   };

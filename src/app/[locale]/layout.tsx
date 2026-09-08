@@ -1,4 +1,5 @@
 import '../globals.css';
+import { SITE_URL } from '@/lib/site';
 import { jsonLdString } from '@/lib/seo/json-ld';
 import { ContactFloat } from '@/components/marketing/ContactFloat';
 import type { Metadata } from 'next';
@@ -46,14 +47,14 @@ export async function generateMetadata({
   const ogImage = locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
 
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL(SITE_URL),
     title: {
       default: title,
       template: s.titleTemplate,
     },
     description,
     keywords,
-    authors: [{ name: 'Buaze', url: 'https://buaze.com' }],
+    authors: [{ name: 'Buaze', url: 'https://www.buaze.com' }],
     creator: 'Buaze',
     publisher: 'Buaze',
     applicationName: 'Buaze',
@@ -85,7 +86,7 @@ export async function generateMetadata({
     openGraph: {
       type: 'website',
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      url: `https://buaze.com/${locale}`,
+      url: `https://www.buaze.com/${locale}`,
       siteName: 'Buaze',
       title,
       description,
@@ -100,11 +101,11 @@ export async function generateMetadata({
       images: [ogImage],
     },
     alternates: {
-      canonical: `https://buaze.com/${locale}`,
+      canonical: `https://www.buaze.com/${locale}`,
       languages: {
-        'tr': 'https://buaze.com/tr',
-        'en': 'https://buaze.com/en',
-        'x-default': 'https://buaze.com/en',
+        'tr': 'https://www.buaze.com/tr',
+        'en': 'https://www.buaze.com/en',
+        'x-default': `${SITE_URL}/tr`,
       },
     },
     icons: {
@@ -135,7 +136,7 @@ export default async function LocaleLayout({
   const locale = rawLocale as Locale;
 
   const s = await getSiteSettings();
-  const siteUrl = 'https://buaze.com';
+  const siteUrl = SITE_URL;
 
   // Stage 83 §38.163 — auth-aware ContactFloat visibility moved to the
   // client-side `useMarketingAuth` probe inside the component. We always
@@ -211,7 +212,7 @@ export default async function LocaleLayout({
       inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
       potentialAction: {
         '@type': 'SearchAction',
-        target: `${siteUrl}/${locale}/blog?q={search_term_string}`,
+        target: `${siteUrl}/${locale}/help/search?q={search_term_string}`,
         'query-input': 'required name=search_term_string',
       },
     },

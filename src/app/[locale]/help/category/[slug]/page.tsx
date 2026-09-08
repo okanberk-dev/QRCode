@@ -30,14 +30,14 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
     title,
     description: meta.desc,
     alternates: {
-      canonical: `https://buaze.com/${locale}/help/category/${slug}`,
+      canonical: `https://www.buaze.com/${locale}/help/category/${slug}`,
       languages: {
-        tr: `https://buaze.com/tr/help/category/${slug}`,
-        en: `https://buaze.com/en/help/category/${slug}`,
-        'x-default': `https://buaze.com/tr/help/category/${slug}`,
+        tr: `https://www.buaze.com/tr/help/category/${slug}`,
+        en: `https://www.buaze.com/en/help/category/${slug}`,
+        'x-default': `https://www.buaze.com/tr/help/category/${slug}`,
       },
     },
-    openGraph: { title, description: meta.desc, url: `https://buaze.com/${locale}/help/category/${slug}` },
+    openGraph: { title, description: meta.desc, url: `https://www.buaze.com/${locale}/help/category/${slug}` },
   };
 }
 
@@ -78,9 +78,9 @@ export default async function HelpCategoryPage({ params }: PageParams) {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım' : 'Help', item: `https://buaze.com/${locale}/help` },
-      { '@type': 'ListItem', position: 3, name: meta.title, item: `https://buaze.com/${locale}/help/category/${slug}` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım' : 'Help', item: `https://www.buaze.com/${locale}/help` },
+      { '@type': 'ListItem', position: 3, name: meta.title, item: `https://www.buaze.com/${locale}/help/category/${slug}` },
     ],
   };
 
@@ -94,7 +94,7 @@ export default async function HelpCategoryPage({ params }: PageParams) {
           itemListElement: articles.map((a, i) => ({
             '@type': 'ListItem',
             position: i + 1,
-            url: `https://buaze.com/${locale}/help/${a.slug}`,
+            url: `https://www.buaze.com/${locale}/help/${a.slug}`,
             name: a.title,
           })),
         }

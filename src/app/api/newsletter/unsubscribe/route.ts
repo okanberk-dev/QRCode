@@ -115,7 +115,7 @@ function renderSuccess(locale: 'tr' | 'en', email: string): string {
      <h1>${isTr ? 'Aboneliğin sonlandı.' : 'You\'re unsubscribed.'}</h1>
      <p>${isTr ? 'Bundan sonra Pulse aylık bültenini almayacaksın. Fikrini değiştirirsen sitedeki abone formundan tekrar katılabilirsin.' : 'You\'ll no longer receive the Pulse monthly digest. If you change your mind, sign up again from any newsletter form on the site.'}</p>
      <span class="email">${escapeHtml(email)}</span>
-     <div><a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}" class="btn">${isTr ? 'Anasayfaya dön →' : 'Back home →'}</a></div>`,
+     <div><a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com'}" class="btn">${isTr ? 'Anasayfaya dön →' : 'Back home →'}</a></div>`,
   );
 }
 
@@ -126,6 +126,6 @@ function renderInvalid(locale: 'tr' | 'en'): string {
     `<div class="eyebrow"><span class="dot"></span>${isTr ? 'Buaze · Bülten' : 'Buaze · Newsletter'}</div>
      <h1>${isTr ? 'Bağlantı geçersiz.' : 'Invalid link.'}</h1>
      <p>${isTr ? 'Bu bağlantı bulunamadı veya süresi dolmuş olabilir. Eğer Buaze\'den mail almak istemiyorsan herhangi bir mailimizdeki "buradan çık" bağlantısını kullanabilirsin.' : 'This link couldn\'t be found or has expired. If you no longer want emails from Buaze, use the unsubscribe link in any of our messages.'}</p>
-     <div><a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}" class="btn">${isTr ? 'Anasayfaya dön →' : 'Back home →'}</a></div>`,
+     <div><a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com'}" class="btn">${isTr ? 'Anasayfaya dön →' : 'Back home →'}</a></div>`,
   );
 }
