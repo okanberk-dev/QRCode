@@ -47,9 +47,9 @@ export async function generateMetadata({
   const description = isTr
     ? 'Müşteri memnuniyetini Google\'dan bağımsız ölç. QR\'dan açılan kısa anket, NPS / CSAT / yıldız ve metin soruları, opsiyonel kupon teşviki. Tek panel üzerinden tasarla, paylaş, analiz et.'
     : 'Measure customer satisfaction independently of Google. Short surveys opened from QR, NPS / CSAT / star and text questions, optional coupon reward. Design, share, analyze from one panel.';
-  const canonicalUrl = `https://buaze.com/${locale}/features/surveys`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/surveys`;
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     keywords: isTr
@@ -76,9 +76,9 @@ export async function generateMetadata({
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        tr: 'https://buaze.com/tr/features/surveys',
-        en: 'https://buaze.com/en/features/surveys',
-        'x-default': 'https://buaze.com/en/features/surveys',
+        tr: 'https://www.buaze.com/tr/features/surveys',
+        en: 'https://www.buaze.com/en/features/surveys',
+        'x-default': 'https://www.buaze.com/en/features/surveys',
       },
     },
     openGraph: {
@@ -119,7 +119,7 @@ export default async function SurveysPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
   const base = `/${locale}`;
-  const canonicalUrl = `https://buaze.com/${locale}/features/surveys`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/surveys`;
 
   // Mobile survey mockup — feels like a real customer screen
   const surveyMock = isTr
@@ -264,7 +264,7 @@ export default async function SurveysPage({
     '@type': 'Service',
     name: isTr ? 'Buaze Anketler' : 'Buaze Surveys',
     serviceType: isTr ? 'QR ile müşteri anketi' : 'QR-based customer surveys',
-    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
     areaServed: 'TR',
     availableLanguage: ['tr-TR', 'en-US'],
     url: canonicalUrl,
@@ -292,8 +292,8 @@ export default async function SurveysPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://buaze.com/${locale}/features` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://www.buaze.com/${locale}/features` },
       { '@type': 'ListItem', position: 3, name: isTr ? 'Anketler' : 'Surveys', item: canonicalUrl },
     ],
   };

@@ -32,7 +32,7 @@ export async function generateMetadata({
       type: 'website',
       siteName: 'Buaze',
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
-      url: `https://buaze.com/${locale}/vs/individual-qr`,
+      url: `https://www.buaze.com/${locale}/vs/individual-qr`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630 }],
     },
     twitter: {
@@ -89,7 +89,7 @@ export default async function VsIndividualQrPage({
   ];
 
   const isTr = locale === 'tr';
-  const canonicalUrl = `https://buaze.com/${locale}/vs/individual-qr`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/vs/individual-qr`;
   const webPageSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
@@ -100,14 +100,14 @@ export default async function VsIndividualQrPage({
     url: canonicalUrl,
     inLanguage: isTr ? 'tr-TR' : 'en-US',
     about: ['QR code services', 'Customer feedback platform', 'Reputation management'],
-    isPartOf: { '@type': 'WebSite', name: 'Buaze', url: 'https://buaze.com' },
+    isPartOf: { '@type': 'WebSite', name: 'Buaze', url: 'https://www.buaze.com' },
   };
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Karşılaştırma' : 'Compare', item: `https://buaze.com/${locale}/compare` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Karşılaştırma' : 'Compare', item: `https://www.buaze.com/${locale}/compare` },
       { '@type': 'ListItem', position: 3, name: isTr ? 'Bireysel QR' : 'Individual QR', item: canonicalUrl },
     ],
   };

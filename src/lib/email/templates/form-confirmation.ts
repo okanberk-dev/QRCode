@@ -212,7 +212,7 @@ export async function renderFormConfirmation(
   const copy = deepSubstitute(mergedCopy, vars, 'html');
   const copyText = deepSubstitute(mergedCopy, vars, 'text');
 
-  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const localePath = isTr ? 'tr' : 'en';
   const sideHrefA = `${baseAppUrl}/${localePath}/${params.formType === 'career' ? 'careers' : params.formType === 'newsletter' ? 'how-it-works' : 'contact'}`;
   const sideHrefB = `${baseAppUrl}/${localePath}/how-it-works`;

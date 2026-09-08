@@ -110,7 +110,7 @@ export function renderContactAdmin(
         panelSub: 'Open panel',
       };
 
-  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   // mailto/tel URL'lerinde escapeHtml KULLANILMAZ — '&' → '&amp;' link'i bozar.
   // Raw email + encodeURI yeterli; @ encode etmez ama <> gibi tehlikeli
   // karakterleri encode eder (defense-in-depth).

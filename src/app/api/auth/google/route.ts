@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
     if (session.isNewDevice && !isNewUser) {
       const userAgent = req.headers.get('user-agent');
       const desc = describeDevice(userAgent, ip);
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
       const userLocale: 'tr' | 'en' = (
         (user as unknown as { locale?: string }).locale === 'en' ? 'en' : 'tr'
       );

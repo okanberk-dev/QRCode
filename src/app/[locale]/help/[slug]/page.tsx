@@ -44,14 +44,14 @@ export async function generateMetadata({ params }: PageParams): Promise<Metadata
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/help/${slug}`,
+      canonical: `https://www.buaze.com/${locale}/help/${slug}`,
       languages: {
-        tr: `https://buaze.com/tr/help/${slug}`,
-        en: `https://buaze.com/en/help/${slug}`,
-        'x-default': `https://buaze.com/tr/help/${slug}`,
+        tr: `https://www.buaze.com/tr/help/${slug}`,
+        en: `https://www.buaze.com/en/help/${slug}`,
+        'x-default': `https://www.buaze.com/tr/help/${slug}`,
       },
     },
-    openGraph: { type: 'article', url: `https://buaze.com/${locale}/help/${slug}`, title, description },
+    openGraph: { type: 'article', url: `https://www.buaze.com/${locale}/help/${slug}`, title, description },
   };
 }
 
@@ -146,25 +146,25 @@ export default async function HelpArticlePage({ params }: PageParams) {
     datePublished: article.updatedAt.toISOString(),
     dateModified: article.updatedAt.toISOString(),
     inLanguage: locale === 'tr' ? 'tr-TR' : 'en-US',
-    image: 'https://buaze.com/favicon.svg',
-    author: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+    image: 'https://www.buaze.com/favicon.svg',
+    author: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',
-      url: 'https://buaze.com',
-      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+      url: 'https://www.buaze.com',
+      logo: { '@type': 'ImageObject', url: 'https://www.buaze.com/favicon.svg' },
     },
-    mainEntityOfPage: `https://buaze.com/${locale}/help/${slug}`,
+    mainEntityOfPage: `https://www.buaze.com/${locale}/help/${slug}`,
   };
 
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım' : 'Help', item: `https://buaze.com/${locale}/help` },
-      { '@type': 'ListItem', position: 3, name: categoryLabel, item: `https://buaze.com/${locale}/help/category/${article.category}` },
-      { '@type': 'ListItem', position: 4, name: article.title, item: `https://buaze.com/${locale}/help/${slug}` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Yardım' : 'Help', item: `https://www.buaze.com/${locale}/help` },
+      { '@type': 'ListItem', position: 3, name: categoryLabel, item: `https://www.buaze.com/${locale}/help/category/${article.category}` },
+      { '@type': 'ListItem', position: 4, name: article.title, item: `https://www.buaze.com/${locale}/help/${slug}` },
     ],
   };
 
@@ -194,7 +194,7 @@ export default async function HelpArticlePage({ params }: PageParams) {
         locale,
         name: article.title,
         description: article.excerpt ?? struct.lead.replace(/<[^>]+>/g, '').slice(0, 160),
-        url: `https://buaze.com/${locale}/help/${slug}`,
+        url: `https://www.buaze.com/${locale}/help/${slug}`,
         steps: howToSteps,
       })
     : null;

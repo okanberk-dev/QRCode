@@ -30,11 +30,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/hotels`,
+      canonical: `https://www.buaze.com/${locale}/solutions/hotels`,
       languages: {
-        tr: 'https://buaze.com/tr/solutions/hotels',
-        en: 'https://buaze.com/en/solutions/hotels',
-        'x-default': 'https://buaze.com/tr/solutions/hotels',
+        tr: 'https://www.buaze.com/tr/solutions/hotels',
+        en: 'https://www.buaze.com/en/solutions/hotels',
+        'x-default': 'https://www.buaze.com/tr/solutions/hotels',
       },
     },
     openGraph: {
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/hotels`,
+      url: `https://www.buaze.com/${locale}/solutions/hotels`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -147,7 +147,7 @@ export default async function HotelsSolutionPage({ params }: { params: Promise<{
     description: isTr
       ? 'Oda ve check-out QR’larıyla Booking, Tripadvisor, Airbnb ve Google yorumlarını tek panelden yönetmek için adımlar.'
       : 'Steps to manage Booking, Tripadvisor, Airbnb and Google reviews from one panel via room and check-out QRs.',
-    url: `https://buaze.com/${locale}/solutions/hotels`,
+    url: `https://www.buaze.com/${locale}/solutions/hotels`,
     steps: isTr
       ? [
           { name: 'Tesisi tanımla', text: 'Buaze panelinde otel adı, kategori, adres ve resepsiyon e-postasını gir; Booking, Tripadvisor, Airbnb ve Google yorum bağlantılarını ekle.' },

@@ -37,7 +37,7 @@ interface MonthlyHealthReportSummary {
 
 export async function runMonthlyHealthReport(): Promise<MonthlyHealthReportSummary> {
   const start = Date.now();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const reportMonth = new Date();
   reportMonth.setUTCDate(1);
   reportMonth.setUTCHours(0, 0, 0, 0);

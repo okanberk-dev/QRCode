@@ -88,7 +88,7 @@ export default function SolutionPageLayout({
   const base = `/${locale}`;
   const isTr = locale === 'tr';
   const currentSlug = slugProp ?? INDUSTRY_SLUG_MAP[industryKey] ?? '';
-  const canonicalUrl = `https://buaze.com/${locale}/solutions/${currentSlug}`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/solutions/${currentSlug}`;
   const relatedSolutions = getRelatedSolutions(currentSlug, 4);
 
   const displaySteps = steps || [
@@ -148,8 +148,8 @@ export default function SolutionPageLayout({
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-        { '@type': 'ListItem', position: 2, name: isTr ? 'Çözümler' : 'Solutions', item: `https://buaze.com/${locale}/solutions` },
+        { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+        { '@type': 'ListItem', position: 2, name: isTr ? 'Çözümler' : 'Solutions', item: `https://www.buaze.com/${locale}/solutions` },
         { '@type': 'ListItem', position: 3, name: industryBadge, item: canonicalUrl },
       ],
     },
@@ -158,7 +158,7 @@ export default function SolutionPageLayout({
       '@type': 'Service',
       name: `${h1Prefix} ${h1Suffix}`,
       description,
-      provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+      provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
       areaServed: { '@type': 'Country', name: 'Turkey' },
       url: canonicalUrl,
     },

@@ -1,7 +1,7 @@
 /**
  * Buaze Embed Widget — script-tag wrapper.
  * Usage:
- *   <script src="https://buaze.com/buaze-embed.js" data-buaze="<slug>" defer></script>
+ *   <script src="https://www.buaze.com/buaze-embed.js" data-buaze="<slug>" defer></script>
  *
  * Optional attributes:
  *   data-theme="light|dark"
@@ -12,7 +12,7 @@
  * script origin-enforced listener kurar (fake message spoof önleme).
  */
 (function () {
-  var SCRIPT_ORIGIN = 'https://buaze.com';
+  var SCRIPT_ORIGIN = 'https://www.buaze.com';
   // Initial iframe height per variant — must roughly match the server-
   // rendered height so the page does not visibly reflow after load.
   var VARIANT_HEIGHT = { wall: 440, spotlight: 320, badge: 110 };

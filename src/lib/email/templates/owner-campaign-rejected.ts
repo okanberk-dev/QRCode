@@ -28,10 +28,10 @@ export async function renderOwnerCampaignRejected(
   locale: 'tr' | 'en' = 'tr',
 ): Promise<{ subject: string; html: string; text: string }> {
   const isTr = locale !== 'en';
-  // §38.197 — env-aware privacy URL. Hardcoded `https://buaze.com/...`
+  // §38.197 — env-aware privacy URL. Hardcoded `https://www.buaze.com/...`
   // staging/preview deploy'larda canonical değil; NEXT_PUBLIC_APP_URL
   // env'inden derive ederek doğru host'a çık.
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const privacyHref = `${appUrl}/${isTr ? 'tr/gizlilik' : 'en/privacy'}`;
   const subject = isTr
     ? `Kampanyanız onaylanmadı — ${params.subject}`

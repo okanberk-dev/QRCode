@@ -53,7 +53,7 @@ async function markDelivered(subscriberId: string, runKey: string): Promise<void
 export async function runMonthlyNewsletter(options: RunMonthlyNewsletterOptions = {}): Promise<MonthlyNewsletterResult> {
   const startedAt = Date.now();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const issueNumber = monthsSinceEpoch();
 
   const campaign = await pickCampaign(options.campaignId);

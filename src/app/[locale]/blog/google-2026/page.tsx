@@ -31,16 +31,16 @@ export async function generateMetadata({
     title: `${title} — Buaze Blog`,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/blog/google-2026`,
+      canonical: `https://www.buaze.com/${locale}/blog/google-2026`,
       languages: {
-        tr: 'https://buaze.com/tr/blog/google-2026',
-        en: 'https://buaze.com/en/blog/google-2026',
-        'x-default': 'https://buaze.com/tr/blog/google-2026',
+        tr: 'https://www.buaze.com/tr/blog/google-2026',
+        en: 'https://www.buaze.com/en/blog/google-2026',
+        'x-default': 'https://www.buaze.com/tr/blog/google-2026',
       },
     },
     openGraph: {
       type: 'article',
-      url: `https://buaze.com/${locale}/blog/google-2026`,
+      url: `https://www.buaze.com/${locale}/blog/google-2026`,
       title,
       description,
     },
@@ -231,7 +231,7 @@ export default async function GoogleTwentyTwentySixPost({
     ? ['Google', 'Politika', 'Yorum yönetimi', 'QR', 'SEO', 'Strateji']
     : ['Google', 'Policy', 'Review management', 'QR', 'SEO', 'Strategy'];
 
-  const postUrl = `https://buaze.com/${locale}/blog/google-2026`;
+  const postUrl = `https://www.buaze.com/${locale}/blog/google-2026`;
   const shareText = encodeURIComponent(title);
   const shareUrl = encodeURIComponent(postUrl);
 

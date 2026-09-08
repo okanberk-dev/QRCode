@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       ? ['diş kliniği itibar', 'diş hekimi google yorumları', 'hasta memnuniyeti diş', 'diş polikliniği feedback']
       : ['dental clinic reputation', 'dentist google reviews', 'patient satisfaction dental'],
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/dentists`,
-      languages: { tr: 'https://buaze.com/tr/solutions/dentists', en: 'https://buaze.com/en/solutions/dentists', 'x-default': 'https://buaze.com/tr/solutions/dentists' },
+      canonical: `https://www.buaze.com/${locale}/solutions/dentists`,
+      languages: { tr: 'https://www.buaze.com/tr/solutions/dentists', en: 'https://www.buaze.com/en/solutions/dentists', 'x-default': 'https://www.buaze.com/tr/solutions/dentists' },
     },
     openGraph: {
       type: 'website',
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/dentists`,
+      url: `https://www.buaze.com/${locale}/solutions/dentists`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {

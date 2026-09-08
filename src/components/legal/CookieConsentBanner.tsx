@@ -234,7 +234,10 @@ export default function CookieConsentBanner({ locale: serverLocale = 'tr' }: Coo
     setVisible(false);
   };
 
-  const cookiePolicyHref = `/${locale}/legal/cerez-politikasi`;
+  // Public legal routes use short slugs — there is no `/[locale]/legal/`
+  // segment (CLAUDE.md §38.131). This banner renders in the root layout,
+  // so the old `/legal/...` href 404'd on every page of the site.
+  const cookiePolicyHref = `/${locale}/cookie`;
 
   return (
     <>

@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       ? ['estetik klinik itibar', 'plastik cerrahi google yorumları', 'estetik hasta gizliliği', 'klinik feedback sistemi']
       : ['aesthetic clinic reputation', 'plastic surgery google reviews', 'patient privacy aesthetic'],
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/aesthetic`,
-      languages: { tr: 'https://buaze.com/tr/solutions/aesthetic', en: 'https://buaze.com/en/solutions/aesthetic', 'x-default': 'https://buaze.com/tr/solutions/aesthetic' },
+      canonical: `https://www.buaze.com/${locale}/solutions/aesthetic`,
+      languages: { tr: 'https://www.buaze.com/tr/solutions/aesthetic', en: 'https://www.buaze.com/en/solutions/aesthetic', 'x-default': 'https://www.buaze.com/tr/solutions/aesthetic' },
     },
     openGraph: {
       type: 'website',
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/aesthetic`,
+      url: `https://www.buaze.com/${locale}/solutions/aesthetic`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {

@@ -164,7 +164,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       const roleLabel = ownerLocale === 'en'
         ? (ROLE_LABELS_EN[removedSnapshot.role] ?? 'Member')
         : (ROLE_LABELS_TR[removedSnapshot.role] ?? 'Üye');
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
       const teamUrl = `${appUrl}/${ownerLocale}/dashboard/account?section=team`;
 
       await sendTeamMemberRemovedEmail({

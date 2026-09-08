@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import { SITE_URL } from '@/lib/site';
 import { getSiteSettings } from '@/lib/site-settings';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -65,14 +66,14 @@ const jetBrainsMono = JetBrains_Mono({
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL(SITE_URL),
     title: {
       default: s.titleDefaultTr,
       template: s.titleTemplate,
     },
     description: s.descriptionTr,
     alternates: {
-      canonical: 'https://buaze.com',
+      canonical: 'https://www.buaze.com',
     },
     icons: {
       icon: [
@@ -93,7 +94,7 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: 'Buaze',
       locale: 'tr_TR',
       alternateLocale: ['en_US'],
-      url: 'https://buaze.com',
+      url: 'https://www.buaze.com',
       images: [
         {
           url: '/images/open-graph-en.png',

@@ -237,6 +237,7 @@ export default function PricingPlans({
               billing === 'monthly' ? (
                 <a
                   href={`/api/checkout?productId=${encodeURIComponent(p.dodoProductId)}`}
+                  rel="nofollow"
                   className={`block min-h-[48px] w-full rounded-full py-3.5 text-center text-[14px] font-medium transition-colors ${
                     isDark
                       ? 'bg-[#C6F24E] text-[#0A0A0A] hover:bg-[#A8D62E]'

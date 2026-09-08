@@ -44,6 +44,7 @@ const required = [
 ];
 
 const optional = [
+  ['NEXT_PUBLIC_SITE_URL', "canonical/hreflang/sitemap origin; defaults to https://www.buaze.com"],
   ['RESEND_API_KEY', 'mail send disabled, sendResendEmail returns false'],
   ['OPENAI_API_KEY', 'AI suggest-reply falls back to deterministic template'],
   ['SUPABASE_URL', 'careers attachment uploads return 503'],
@@ -87,7 +88,7 @@ const optional = [
   // ise 401 retry storm.
   ['DODO_PAYMENTS_API_KEY', 'Dodo Payments checkout + customer portal endpoints disabled. /checkout route returns runtime error. Existing manual admin billing flow intact.'],
   ['DODO_PAYMENTS_WEBHOOK_SECRET', 'Webhook signature verification disabled — /api/webhook/dodo-payments returns 401 on every POST. Dodo retry storm if this happens in production.'],
-  ['DODO_PAYMENTS_RETURN_URL', "Checkout success redirect target. Falls back to '/' relative URL if unset; production should set to https://buaze.com/dashboard/account."],
+  ['DODO_PAYMENTS_RETURN_URL', "Checkout success redirect target. Falls back to '/' relative URL if unset; production should set to https://www.buaze.com/dashboard/account."],
   ['DODO_PAYMENTS_ENVIRONMENT', "'test_mode' (default) or 'live_mode'. Production deploy MUST set to 'live_mode' explicitly + use a live_ API key."],
 ];
 

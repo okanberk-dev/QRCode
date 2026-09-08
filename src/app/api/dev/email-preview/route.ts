@@ -104,7 +104,7 @@ export async function renderTemplate(
         if (dbPosts.length > 0) {
           const orderById = new Map(postIds.map((id, i) => [id, i]));
           dbPosts.sort((a, b) => (orderById.get(a.id) ?? 999) - (orderById.get(b.id) ?? 999));
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
           posts = dbPosts.map((p) => ({
             title: p.title,
             excerpt: p.description,

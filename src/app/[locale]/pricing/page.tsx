@@ -33,12 +33,12 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/pricing`,
+      url: `https://www.buaze.com/${locale}/pricing`,
       images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     alternates: {
-      canonical: `https://buaze.com/${locale}/pricing`,
-      languages: { tr: 'https://buaze.com/tr/pricing', en: 'https://buaze.com/en/pricing', 'x-default': 'https://buaze.com/en/pricing' },
+      canonical: `https://www.buaze.com/${locale}/pricing`,
+      languages: { tr: 'https://www.buaze.com/tr/pricing', en: 'https://www.buaze.com/en/pricing', 'x-default': 'https://www.buaze.com/en/pricing' },
     },
   };
 }
@@ -83,7 +83,7 @@ export default async function PricingPage({
         unitCode: 'MON',
       },
       availability: 'https://schema.org/InStock',
-      url: `https://buaze.com/${locale}/pricing`,
+      url: `https://www.buaze.com/${locale}/pricing`,
     };
   });
 
@@ -104,7 +104,7 @@ export default async function PricingPage({
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web, iOS, Android',
         description: t.pricing_subtitle,
-        url: `https://buaze.com/${locale}/pricing`,
+        url: `https://www.buaze.com/${locale}/pricing`,
         // No aggregateRating — must be backed by verifiable on-page reviews.
         offers: planOffers,
       },
@@ -115,13 +115,13 @@ export default async function PricingPage({
             '@type': 'ListItem',
             position: 1,
             name: isTr ? 'Anasayfa' : 'Home',
-            item: `https://buaze.com/${locale}`,
+            item: `https://www.buaze.com/${locale}`,
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: isTr ? 'Fiyatlandırma' : 'Pricing',
-            item: `https://buaze.com/${locale}/pricing`,
+            item: `https://www.buaze.com/${locale}/pricing`,
           },
         ],
       },

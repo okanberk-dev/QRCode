@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
   // already written, the session is already revoked. Worst-case the
   // owner sees "Account scheduled for deletion" in the UI but doesn't
   // get the mail; ops alert + admin trigger covers that path.
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const userLocale: 'tr' | 'en' = user.locale === 'en' ? 'en' : 'tr';
   const cancelUrl = `${appUrl}/api/account/delete/cancel?token=${encodeURIComponent(cancelToken)}`;
 

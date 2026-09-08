@@ -29,17 +29,17 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/contact`,
+      canonical: `https://www.buaze.com/${locale}/contact`,
       languages: {
-        tr: 'https://buaze.com/tr/contact',
-        en: 'https://buaze.com/en/contact',
-        'x-default': 'https://buaze.com/tr/contact',
+        tr: 'https://www.buaze.com/tr/contact',
+        en: 'https://www.buaze.com/en/contact',
+        'x-default': 'https://www.buaze.com/tr/contact',
       },
     },
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/contact`,
+      url: `https://www.buaze.com/${locale}/contact`,
       images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
   };
@@ -62,7 +62,7 @@ export default async function ContactPage({
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Buaze',
-    url: 'https://buaze.com',
+    url: 'https://www.buaze.com',
     email: 'support@buaze.com',
     address: {
       '@type': 'PostalAddress',

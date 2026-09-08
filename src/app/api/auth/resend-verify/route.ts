@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
     const mailLocale: 'tr' | 'en' = user.locale === 'en' ? 'en' : localeStr;
     const verifyUrl = `${appUrl}/${mailLocale}/auth/verify-email?token=${token}`;
 

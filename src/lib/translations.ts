@@ -19,7 +19,7 @@ export const translations = {
   tr: {
     // Meta
     siteName: 'Buaze',
-    siteUrl: 'https://buaze.com',
+    siteUrl: 'https://www.buaze.com',
     siteDescription: 'QR Geri Bildirim ve Dijital İtibar Yönetim Platformu. QR akışlarıyla şeffaf müşteri geri bildirimi toplayın, yorumları tek panelden yönetin, Pulse AI taslaklarıyla daha hızlı yanıt verin.',
 
     // Navbar
@@ -727,7 +727,7 @@ export const translations = {
   en: {
     // Meta
     siteName: 'Buaze',
-    siteUrl: 'https://buaze.com',
+    siteUrl: 'https://www.buaze.com',
     siteDescription: 'QR Feedback & Digital Reputation Management Platform. Collect transparent customer feedback through QR flows, manage reviews from one dashboard, and respond faster with Pulse AI drafts.',
 
     // Navbar

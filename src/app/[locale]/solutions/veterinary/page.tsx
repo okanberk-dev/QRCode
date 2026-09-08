@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       ? ['veteriner itibar yönetimi', 'veteriner klinik google yorumları', 'evcil hayvan kliniği feedback']
       : ['veterinary reputation management', 'vet clinic google reviews', 'pet clinic feedback'],
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/veterinary`,
-      languages: { tr: 'https://buaze.com/tr/solutions/veterinary', en: 'https://buaze.com/en/solutions/veterinary', 'x-default': 'https://buaze.com/tr/solutions/veterinary' },
+      canonical: `https://www.buaze.com/${locale}/solutions/veterinary`,
+      languages: { tr: 'https://www.buaze.com/tr/solutions/veterinary', en: 'https://www.buaze.com/en/solutions/veterinary', 'x-default': 'https://www.buaze.com/tr/solutions/veterinary' },
     },
     openGraph: {
       type: 'website',
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/veterinary`,
+      url: `https://www.buaze.com/${locale}/solutions/veterinary`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {

@@ -25,13 +25,13 @@ export async function generateMetadata({
     title: { absolute: title },
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/faq`,
-      languages: { tr: 'https://buaze.com/tr/faq', en: 'https://buaze.com/en/faq', 'x-default': 'https://buaze.com/en/faq' },
+      canonical: `https://www.buaze.com/${locale}/faq`,
+      languages: { tr: 'https://www.buaze.com/tr/faq', en: 'https://www.buaze.com/en/faq', 'x-default': 'https://www.buaze.com/en/faq' },
     },
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/faq`,
+      url: `https://www.buaze.com/${locale}/faq`,
       images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
   };

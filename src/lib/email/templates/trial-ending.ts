@@ -50,7 +50,7 @@ export async function renderTrialEnding(
     ? { starter: '₺499', pro: '₺1.299', starterPeriod: '/ ay · 1 şube', proPeriod: '/ ay · 5 şube' }
     : { starter: '$19', pro: '$49', starterPeriod: '/ mo · 1 location', proPeriod: '/ mo · 5 locations' });
 
-  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const baseAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const comparisonUrl = params.comparisonUrl ?? `${baseAppUrl}/${isTr ? 'tr' : 'en'}/pricing`;
 
   const inlineDefault = isTr ? {

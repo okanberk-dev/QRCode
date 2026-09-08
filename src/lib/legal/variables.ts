@@ -109,7 +109,7 @@ export const LEGAL_VARIABLE_CATALOG: LegalVariableDef[] = [
   {
     key: 'PRICING_PAGE_URL',
     label: { tr: 'Fiyatlandırma URL', en: 'Pricing page URL' },
-    defaultValue: 'https://buaze.com/tr/pricing',
+    defaultValue: 'https://www.buaze.com/tr/pricing',
     description: {
       tr: 'Mesafeli Sözleşme — KDV dahil bedellerin gösterildiği sayfa.',
       en: 'Distance Contract — page where VAT-inclusive prices are shown.',

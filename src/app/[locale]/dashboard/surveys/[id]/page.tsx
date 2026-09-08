@@ -63,7 +63,7 @@ export default async function SurveyDetailPage({ params }: PageProps) {
     ? /localhost|127\.0\.0\.1/i.test(normalizedEnvUrl)
     : false;
   const appUrl =
-    !hasLocalhostEnv && normalizedEnvUrl ? normalizedEnvUrl : 'https://buaze.com';
+    !hasLocalhostEnv && normalizedEnvUrl ? normalizedEnvUrl : 'https://www.buaze.com';
   const publicUrl = `${appUrl}/s/${survey.slug}`;
 
   // Serialize Date instances → ISO strings for client component.

@@ -147,7 +147,7 @@ const STEPS: StepDef[] = [
   },
 ];
 
-const SAMPLE_PREVIEW_URL = "https://buaze.com/r/sample?source=qr";
+const SAMPLE_PREVIEW_URL = "https://www.buaze.com/r/sample?source=qr";
 
 export function CreateQRWizard({
   restaurants,
@@ -320,7 +320,7 @@ export function CreateQRWizard({
     // Slug + table + platform changes the encoded string → preview updates.
     const parts: string[] = [];
     if (activeRestaurant?.slug) {
-      parts.push(`https://buaze.com/r/${activeRestaurant.slug}?source=qr`);
+      parts.push(`https://www.buaze.com/r/${activeRestaurant.slug}?source=qr`);
     } else {
       parts.push(SAMPLE_PREVIEW_URL);
     }
@@ -478,7 +478,7 @@ export function CreateQRWizard({
       const restaurant = restaurants.find((r) => r.id === restaurantId);
       const envAppUrl = (process.env.NEXT_PUBLIC_APP_URL || "").trim().replace(/\/+$/, "");
       const safeBase =
-        envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl) ? envAppUrl : "https://buaze.com";
+        envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl) ? envAppUrl : "https://www.buaze.com";
       let qrUrl = `${safeBase}/r/${restaurant?.slug ?? ""}?source=qr`;
       if (tableNumber.trim()) qrUrl += `&table=${encodeURIComponent(tableNumber.trim())}`;
       if (linkType === "platform") qrUrl += `&platform=${platform}`;

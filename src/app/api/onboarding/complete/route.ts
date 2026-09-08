@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
 
   if (actor.email) {
     const bizName = bizNameRaw || null;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
     const dashboardUrl = `${appUrl}/tr/dashboard`;
     const subject = 'Buaze kurulumu tamamlandı — panele hoş geldiniz';
     const innerContent = `

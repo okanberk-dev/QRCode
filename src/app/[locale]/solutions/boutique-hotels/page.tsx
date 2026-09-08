@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       ? ['butik otel itibar', 'butik otel google yorumları', 'misafir memnuniyeti otel', 'küçük otel feedback']
       : ['boutique hotel reputation', 'boutique hotel google reviews', 'guest satisfaction small hotel'],
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/boutique-hotels`,
-      languages: { tr: 'https://buaze.com/tr/solutions/boutique-hotels', en: 'https://buaze.com/en/solutions/boutique-hotels', 'x-default': 'https://buaze.com/tr/solutions/boutique-hotels' },
+      canonical: `https://www.buaze.com/${locale}/solutions/boutique-hotels`,
+      languages: { tr: 'https://www.buaze.com/tr/solutions/boutique-hotels', en: 'https://www.buaze.com/en/solutions/boutique-hotels', 'x-default': 'https://www.buaze.com/tr/solutions/boutique-hotels' },
     },
     openGraph: {
       type: 'website',
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/boutique-hotels`,
+      url: `https://www.buaze.com/${locale}/solutions/boutique-hotels`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {

@@ -118,7 +118,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 function buildUnsubscribeUrl(token: string): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   return `${appUrl.replace(/\/$/, '')}/api/customers/unsubscribe?token=${encodeURIComponent(token)}`;
 }
 

@@ -32,17 +32,17 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/google-compliance`,
+      canonical: `https://www.buaze.com/${locale}/google-compliance`,
       languages: {
-        tr: 'https://buaze.com/tr/google-compliance',
-        en: 'https://buaze.com/en/google-compliance',
-        'x-default': 'https://buaze.com/tr/google-compliance',
+        tr: 'https://www.buaze.com/tr/google-compliance',
+        en: 'https://www.buaze.com/en/google-compliance',
+        'x-default': 'https://www.buaze.com/tr/google-compliance',
       },
     },
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/google-compliance`,
+      url: `https://www.buaze.com/${locale}/google-compliance`,
       images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
   };

@@ -29,11 +29,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/law-firms`,
+      canonical: `https://www.buaze.com/${locale}/solutions/law-firms`,
       languages: {
-        tr: 'https://buaze.com/tr/solutions/law-firms',
-        en: 'https://buaze.com/en/solutions/law-firms',
-        'x-default': 'https://buaze.com/tr/solutions/law-firms',
+        tr: 'https://www.buaze.com/tr/solutions/law-firms',
+        en: 'https://www.buaze.com/en/solutions/law-firms',
+        'x-default': 'https://www.buaze.com/tr/solutions/law-firms',
       },
     },
     openGraph: {
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/law-firms`,
+      url: `https://www.buaze.com/${locale}/solutions/law-firms`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -139,7 +139,7 @@ export default async function LawFirmsSolutionPage({ params }: { params: Promise
     description: isTr
       ? 'Danışmanlık sonrası müvekkilden geri bildirim toplamak ve etik kurallara uyumlu profil oluşturmak için adımlar.'
       : 'Steps to collect feedback after consultations and maintain an ethics-compliant public profile.',
-    url: `https://buaze.com/${locale}/solutions/law-firms`,
+    url: `https://www.buaze.com/${locale}/solutions/law-firms`,
     steps: isTr
       ? [
           { name: 'Ofisi tanımla', text: 'Hukuk ofisi adı, alanı, adresi ve bildirim e-postasını panelde gir; Google ve baro tarafından kabul edilen platformların yorum bağlantılarını ekle.' },

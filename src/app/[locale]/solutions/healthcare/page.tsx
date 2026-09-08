@@ -29,11 +29,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/healthcare`,
+      canonical: `https://www.buaze.com/${locale}/solutions/healthcare`,
       languages: {
-        tr: 'https://buaze.com/tr/solutions/healthcare',
-        en: 'https://buaze.com/en/solutions/healthcare',
-        'x-default': 'https://buaze.com/tr/solutions/healthcare',
+        tr: 'https://www.buaze.com/tr/solutions/healthcare',
+        en: 'https://www.buaze.com/en/solutions/healthcare',
+        'x-default': 'https://www.buaze.com/tr/solutions/healthcare',
       },
     },
     openGraph: {
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/healthcare`,
+      url: `https://www.buaze.com/${locale}/solutions/healthcare`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -140,7 +140,7 @@ export default async function ClinicSolutionPage({ params }: { params: Promise<{
     description: isTr
       ? 'KVKK uyumlu hasta geri bildirimi için QR akışını kurmak ve yorumları yanıtlamak için adımlar.'
       : 'Steps to set up a KVKK-compliant patient feedback QR flow and reply to reviews.',
-    url: `https://buaze.com/${locale}/solutions/healthcare`,
+    url: `https://www.buaze.com/${locale}/solutions/healthcare`,
     steps: isTr
       ? [
           { name: 'Kliniği KVKK uyumlu tanımla', text: 'İşletme adı, kategori ve KVKK aydınlatma metnini panelde onayla; bildirim e-postası ve Google yorum bağlantısını ekle.' },

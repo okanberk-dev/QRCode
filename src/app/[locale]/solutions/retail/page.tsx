@@ -29,11 +29,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/retail`,
+      canonical: `https://www.buaze.com/${locale}/solutions/retail`,
       languages: {
-        tr: 'https://buaze.com/tr/solutions/retail',
-        en: 'https://buaze.com/en/solutions/retail',
-        'x-default': 'https://buaze.com/tr/solutions/retail',
+        tr: 'https://www.buaze.com/tr/solutions/retail',
+        en: 'https://www.buaze.com/en/solutions/retail',
+        'x-default': 'https://www.buaze.com/tr/solutions/retail',
       },
     },
     openGraph: {
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/retail`,
+      url: `https://www.buaze.com/${locale}/solutions/retail`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -157,7 +157,7 @@ export default async function RetailSolutionPage({ params }: { params: Promise<{
     description: isTr
       ? 'Fiş altında veya kasa yanında QR ile müşteri yorumu toplayıp çok mağazalı operasyonu tek panelden yönetme adımları.'
       : 'Steps to collect customer reviews via QR on the receipt or near the till and run multi-store operations from one panel.',
-    url: `https://buaze.com/${locale}/solutions/retail`,
+    url: `https://www.buaze.com/${locale}/solutions/retail`,
     steps: isTr
       ? [
           { name: 'Mağazaları tanımla', text: 'Her mağazayı ayrı işletme veya tek işletme + mağaza etiketi olarak panelde tanımla; Google ve Yandex bağlantılarını ekle.' },

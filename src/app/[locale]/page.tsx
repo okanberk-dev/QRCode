@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SITE_URL } from '@/lib/site';
 // `next/dynamic` aliased to `nextDynamic` so the import name doesn't collide
 // with a Next.js route segment config export named `dynamic`. The page ships
 // via ISR (`revalidate=3600` inherited from [locale]/layout.tsx, SEO §35.11);
@@ -77,15 +78,15 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = getTranslations(locale);
   const title = locale === 'tr'
-    ? 'Buaze | QR ile Google Yorum ve Online İtibar Yönetimi'
-    : 'Buaze | QR Feedback & Online Reputation Management Software';
+    ? 'QR ile Google Yorum ve Online İtibar Yönetimi'
+    : 'QR Feedback & Online Reputation Management';
   const description = locale === 'tr'
     ? 'QR ile müşteri geri bildirimi toplayın, Google yorumlarını tek panelden yönetin, Pulse AI taslaklarıyla saniyeler içinde yanıtlayın. 14 gün ücretsiz deneyin.'
     : 'Collect customer feedback with QR, manage Google reviews from one dashboard and reply in seconds with Pulse AI drafts. Start a free 14-day trial.';
   const ogImage = locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png';
 
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL(SITE_URL),
     title,
     description,
     alternates: {
@@ -98,7 +99,7 @@ export async function generateMetadata({
     },
     openGraph: {
       type: 'website',
-      url: `https://buaze.com/${locale}`,
+      url: `https://www.buaze.com/${locale}`,
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       siteName: 'Buaze',
       title,
@@ -213,14 +214,14 @@ export default async function LandingPage({
       {
         '@type': 'Service',
         name: isTr ? 'Dijital İtibar Yönetimi Hizmeti' : 'Digital Reputation Management Service',
-        provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+        provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
         description: isTr
           ? 'İşletmeler için geri bildirim operasyonlarını profesyonelleştirme ve dijital itibar yönetimi platformu.'
           : 'Platform for professionalizing feedback operations and digital reputation management for businesses.',
         serviceType: isTr ? 'Dijital itibar yönetimi yazılımı' : 'Digital reputation management software',
         areaServed: { '@type': 'Country', name: 'Turkey' },
         inLanguage: isTr ? 'tr-TR' : 'en-US',
-        url: `https://buaze.com/${locale}`,
+        url: `https://www.buaze.com/${locale}`,
       },
       {
         '@type': 'FAQPage',

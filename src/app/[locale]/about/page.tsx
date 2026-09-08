@@ -30,12 +30,12 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/about`,
+      url: `https://www.buaze.com/${locale}/about`,
       images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     alternates: {
-      canonical: `https://buaze.com/${locale}/about`,
-      languages: { tr: 'https://buaze.com/tr/about', en: 'https://buaze.com/en/about', 'x-default': 'https://buaze.com/en/about' },
+      canonical: `https://www.buaze.com/${locale}/about`,
+      languages: { tr: 'https://www.buaze.com/tr/about', en: 'https://www.buaze.com/en/about', 'x-default': 'https://www.buaze.com/en/about' },
     },
   };
 }
@@ -59,23 +59,23 @@ export default async function AboutPage({
     '@graph': [
       {
         '@type': 'AboutPage',
-        '@id': `https://buaze.com/${locale}/about#aboutpage`,
+        '@id': `https://www.buaze.com/${locale}/about#aboutpage`,
         name: isTr ? 'Hakkımızda | Buaze' : 'About Us | Buaze',
-        url: `https://buaze.com/${locale}/about`,
+        url: `https://www.buaze.com/${locale}/about`,
         description: isTr
           ? 'Buaze (şirket), işletmelerin dijital itibarını yöneten Türkiye merkezli SaaS platformudur.'
           : 'Buaze (the company) is an Istanbul-based SaaS platform that helps businesses manage their digital reputation.',
-        mainEntity: { '@id': 'https://buaze.com/#organization' },
+        mainEntity: { '@id': 'https://www.buaze.com/#organization' },
         inLanguage: isTr ? 'tr-TR' : 'en-US',
       },
       {
         '@type': 'Organization',
-        '@id': 'https://buaze.com/#organization',
+        '@id': 'https://www.buaze.com/#organization',
         name: 'Buaze',
         legalName: 'Buaze Bilişim A.Ş.',
         alternateName: ['Buaze (the company)', 'Buaze SaaS'],
-        url: 'https://buaze.com',
-        logo: 'https://buaze.com/favicon.svg',
+        url: 'https://www.buaze.com',
+        logo: 'https://www.buaze.com/favicon.svg',
         foundingDate: '2023',
         foundingLocation: {
           '@type': 'Place',
@@ -135,13 +135,13 @@ export default async function AboutPage({
             '@type': 'ListItem',
             position: 1,
             name: isTr ? 'Anasayfa' : 'Home',
-            item: `https://buaze.com/${locale}`,
+            item: `https://www.buaze.com/${locale}`,
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: isTr ? 'Hakkımızda' : 'About',
-            item: `https://buaze.com/${locale}/about`,
+            item: `https://www.buaze.com/${locale}/about`,
           },
         ],
       },

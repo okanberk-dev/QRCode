@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com').replace(/\/+$/, '');
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com').replace(/\/+$/, '');
     // Reset URL her zaman username taşır — kullanıcı email ile arasa bile
     // kod doğrulama akışında AdminUser.username zorunludur.
     const resetUrl = `${appUrl}/admin/reset-password?username=${encodeURIComponent(admin.username)}`;

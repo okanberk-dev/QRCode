@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
     const dayBuckets: Record<string, number> = Object.fromEntries(
       TRIAL_REMINDER_DAYS.map((d) => [String(d), 0]),
     );

@@ -46,17 +46,17 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/press`,
+      canonical: `https://www.buaze.com/${locale}/press`,
       languages: {
-        tr: 'https://buaze.com/tr/press',
-        en: 'https://buaze.com/en/press',
-        'x-default': 'https://buaze.com/tr/press',
+        tr: 'https://www.buaze.com/tr/press',
+        en: 'https://www.buaze.com/en/press',
+        'x-default': 'https://www.buaze.com/tr/press',
       },
     },
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/press`,
+      url: `https://www.buaze.com/${locale}/press`,
     },
   };
 }
@@ -125,14 +125,14 @@ export default async function PressPage({
     '@graph': [
       {
         '@type': 'AboutPage',
-        '@id': `https://buaze.com/${locale}/press#aboutpage`,
+        '@id': `https://www.buaze.com/${locale}/press#aboutpage`,
         name: isTr ? 'Buaze · Basın Kiti' : 'Buaze · Press Kit',
-        url: `https://buaze.com/${locale}/press`,
+        url: `https://www.buaze.com/${locale}/press`,
         inLanguage: isTr ? 'tr-TR' : 'en-US',
         description: isTr
           ? 'Gazeteciler ve entity editörleri için Buaze (şirket) hakkında doğrulanabilir gerçekler, marka varlıkları ve iletişim bilgileri.'
           : 'Verifiable facts, brand assets and media contact for Buaze (the company).',
-        mainEntity: { '@id': 'https://buaze.com/#organization' },
+        mainEntity: { '@id': 'https://www.buaze.com/#organization' },
       },
       {
         '@type': 'BreadcrumbList',
@@ -141,13 +141,13 @@ export default async function PressPage({
             '@type': 'ListItem',
             position: 1,
             name: isTr ? 'Anasayfa' : 'Home',
-            item: `https://buaze.com/${locale}`,
+            item: `https://www.buaze.com/${locale}`,
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: isTr ? 'Basın Kiti' : 'Press Kit',
-            item: `https://buaze.com/${locale}/press`,
+            item: `https://www.buaze.com/${locale}/press`,
           },
         ],
       },

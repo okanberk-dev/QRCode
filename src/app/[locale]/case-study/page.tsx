@@ -98,7 +98,7 @@ export async function generateMetadata({
     : 'Explore how restaurants, hotels, clinics and multi-location businesses grow QR feedback, Google review management and reputation operations.';
 
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     alternates: {
@@ -108,7 +108,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/case-study`,
+      url: `https://www.buaze.com/${locale}/case-study`,
     },
   };
 }
@@ -135,7 +135,7 @@ export default async function CaseStudiesPage({
     description: isTr
       ? 'QR geri bildirim ve Google yorum yönetimi vaka çalışmaları.'
       : 'QR feedback and Google review management case studies.',
-    url: `https://buaze.com/${locale}/case-study`,
+    url: `https://www.buaze.com/${locale}/case-study`,
     inLanguage: isTr ? 'tr-TR' : 'en-US',
   };
 

@@ -22,11 +22,11 @@ export async function generateMetadata({
     title: t.pl_case_hero_title + ' | Buaze',
     description: t.pl_case_hero_desc,
     alternates: {
-      canonical: `https://buaze.com/${locale}/case-study/pizza-locale`,
+      canonical: `https://www.buaze.com/${locale}/case-study/pizza-locale`,
       languages: {
-        tr: 'https://buaze.com/tr/case-study/pizza-locale',
-        en: 'https://buaze.com/en/case-study/pizza-locale',
-        'x-default': 'https://buaze.com/tr/case-study/pizza-locale',
+        tr: 'https://www.buaze.com/tr/case-study/pizza-locale',
+        en: 'https://www.buaze.com/en/case-study/pizza-locale',
+        'x-default': 'https://www.buaze.com/tr/case-study/pizza-locale',
       },
     },
   };
@@ -145,7 +145,7 @@ export default async function PizzaLocaleCaseStudy({
         { step: '03', title: 'Chain management', desc: 'Brand quality peaked with data from 12 locations.' },
       ];
 
-  const canonicalUrl = `https://buaze.com/${locale}/case-study/pizza-locale`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/case-study/pizza-locale`;
   const articleSchema = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -155,7 +155,7 @@ export default async function PizzaLocaleCaseStudy({
     publisher: {
       '@type': 'Organization',
       name: 'Buaze',
-      logo: { '@type': 'ImageObject', url: 'https://buaze.com/favicon.svg' },
+      logo: { '@type': 'ImageObject', url: 'https://www.buaze.com/favicon.svg' },
     },
     mainEntityOfPage: canonicalUrl,
     inLanguage: isTr ? 'tr-TR' : 'en-US',
@@ -165,8 +165,8 @@ export default async function PizzaLocaleCaseStudy({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Vaka Çalışmaları' : 'Case Studies', item: `https://buaze.com/${locale}/case-study` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Vaka Çalışmaları' : 'Case Studies', item: `https://www.buaze.com/${locale}/case-study` },
       { '@type': 'ListItem', position: 3, name: 'Pizza Locale', item: canonicalUrl },
     ],
   };

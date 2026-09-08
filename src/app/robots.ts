@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { SITE_URL, SITE_HOST } from '@/lib/site';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -21,6 +22,13 @@ export default function robots(): MetadataRoute.Robots {
           '/*/dashboard/',
           '/*/onboarding',
           '/*/accept-invite',
+          // Faceted / search query strings. `?cat=` blog filters already
+          // self-canonicalise to /blog, and `?q=` only resolves on the
+          // noindex help-search page — neither is worth crawl budget, and
+          // Googlebot was fetching the literal `?q={search_term_string}`
+          // template off the WebSite SearchAction.
+          '/*?q=',
+          '/*?cat=',
         ],
       },
       // Allow AI bots to read marketing pages for search generative experiences.
@@ -57,7 +65,7 @@ export default function robots(): MetadataRoute.Robots {
         crawlDelay: 2,
       }
     ],
-    sitemap: 'https://buaze.com/sitemap.xml',
-    host: 'buaze.com',
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_HOST,
   };
 }

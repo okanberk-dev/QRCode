@@ -5,4 +5,4 @@
 Contact: mailto:info@buaze.com
 Expires: 2027-05-01T00:00:00.000Z
 Preferred-Languages: tr, en
-Canonical: https://buaze.com/.well-known/security.txt
+Canonical: https://www.buaze.com/.well-known/security.txt

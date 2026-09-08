@@ -252,7 +252,7 @@ export async function POST(req: NextRequest) {
 
     // Customer mail (Pulse roi-customer-report) — email varsa.
     if (email) {
-      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com').replace(/\/+$/, '');
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com').replace(/\/+$/, '');
       // firstName form'da toplanmıyor → null pas et; template kendi
       // içinde "İşletme adı + ekibi"/"team" fallback'ini üretir.
       // (Eski restaurantName.split(/[\s,.]/)[0] türetimi awkward selamlama
@@ -303,7 +303,7 @@ export async function POST(req: NextRequest) {
     // istemiş olabilir; UX değişmez).
     const salesInbox = process.env.NOTIFICATION_EMAIL;
     if (email && salesInbox && !isDuplicate) {
-      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com').replace(/\/+$/, '');
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com').replace(/\/+$/, '');
       const adminRendered = await renderRoiAdminNotification(
         {
           email,

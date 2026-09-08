@@ -3,10 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { HELP_CATEGORIES } from '@/lib/help-categories';
 import { STATIC_HELP_ARTICLES } from '@/lib/help-articles';
 import { discoverPublicRoutes } from '@/lib/seo/route-discovery';
+import { SITE_URL } from '@/lib/site';
 
 export const revalidate = 3600;
 
-const BASE_URL = 'https://buaze.com';
+const BASE_URL = SITE_URL;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sitemapEntries: MetadataRoute.Sitemap = [];

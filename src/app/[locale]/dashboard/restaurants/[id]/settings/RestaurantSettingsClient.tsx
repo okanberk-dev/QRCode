@@ -347,7 +347,7 @@ export default function RestaurantSettingsClient({
   // localhost link to copy).
   const envAppUrl = (process.env.NEXT_PUBLIC_APP_URL || "").trim().replace(/\/+$/, "");
   const safePublicBase =
-    envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl) ? envAppUrl : "https://buaze.com";
+    envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl) ? envAppUrl : "https://www.buaze.com";
   const publicReviewUrl = `${safePublicBase}/r/${restaurant.slug}`;
 
   const handleCopyPublicLink = async () => {

@@ -50,7 +50,7 @@ export interface CustomerCampaignParams {
 // Vercel preview deploy'larda mail testleri prod URL'sine değil mevcut
 // deploy URL'sine link verir. Trailing slash strip + fallback intact.
 const BUAZE_LEGAL_BASE_URL =
-  process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') || 'https://buaze.com';
+  process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/$/, '') || 'https://www.buaze.com';
 const BUAZE_FALLBACK_SENDER = 'hello@buaze.com';
 
 function formatSentAt(date: Date | null | undefined, locale: 'tr' | 'en'): string {

@@ -35,21 +35,21 @@ export async function generateMetadata({
       ? 'Tüm platformları tek gelen kutuda yönetin: Buaze Pulse AI taslak yanıt, QR stüdyosu, çoklu platform yönlendirme, canlı analitik ve haftalık rapor.'
       : 'Manage every platform in one inbox: Buaze Pulse AI reply drafts, QR studio, multi-platform routing, live analytics and weekly reports.';
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/features`,
+      canonical: `https://www.buaze.com/${locale}/features`,
       languages: {
-        tr: 'https://buaze.com/tr/features',
-        en: 'https://buaze.com/en/features',
-        'x-default': 'https://buaze.com/en/features',
+        tr: 'https://www.buaze.com/tr/features',
+        en: 'https://www.buaze.com/en/features',
+        'x-default': 'https://www.buaze.com/en/features',
       },
     },
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/features`,
+      url: `https://www.buaze.com/${locale}/features`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
   };
@@ -130,7 +130,7 @@ export default async function FeaturesPage({
         },
       ];
 
-  const canonicalUrl = `https://buaze.com/${locale}/features`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features`;
   const itemListSchema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
@@ -149,7 +149,7 @@ export default async function FeaturesPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
       { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: canonicalUrl },
     ],
   };
@@ -164,7 +164,7 @@ export default async function FeaturesPage({
     steps: features.map((feature) => ({
       name: feature.t,
       text: feature.d,
-      url: `https://buaze.com${feature.href}`,
+      url: `https://www.buaze.com${feature.href}`,
     })),
   });
 

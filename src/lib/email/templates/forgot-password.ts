@@ -100,7 +100,7 @@ export async function renderForgotPassword(
   const copy = deepSubstitute(merged, vars, 'html');
   const copyText = deepSubstitute(merged, vars, 'text');
 
-  const supportHref = `${process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com'}/${isTr ? 'tr' : 'en'}/contact`;
+  const supportHref = `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com'}/${isTr ? 'tr' : 'en'}/contact`;
 
   // 2x2 meta grid — matches forgot-password.jsx:65-82
   const metaCells: Array<[string, string]> = [

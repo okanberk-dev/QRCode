@@ -37,9 +37,9 @@ export async function generateMetadata({
   const description = isTr
     ? 'Ortalama puan, yanıt oranı, dönüşüm, platform kırılımı, konum karşılaştırması ve haftalık raporlar tek panelde. Pulse AI tema çıkarımı entitlement açıkken çalışır; normal KPI akışı her planda canlıdır.'
     : 'Average rating, reply rate, conversion, platform breakdown, location comparison and weekly reports — all in one panel. Pulse AI theme extraction runs when the entitlement is on; core KPIs stay live on every plan.';
-  const canonicalUrl = `https://buaze.com/${locale}/features/analytics-reports`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/analytics-reports`;
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     keywords: isTr
@@ -66,9 +66,9 @@ export async function generateMetadata({
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        tr: 'https://buaze.com/tr/features/analytics-reports',
-        en: 'https://buaze.com/en/features/analytics-reports',
-        'x-default': 'https://buaze.com/en/features/analytics-reports',
+        tr: 'https://www.buaze.com/tr/features/analytics-reports',
+        en: 'https://www.buaze.com/en/features/analytics-reports',
+        'x-default': 'https://www.buaze.com/en/features/analytics-reports',
       },
     },
     openGraph: {
@@ -109,7 +109,7 @@ export default async function AnalyticsReportsPage({
   const t = getTranslations(locale);
   const isTr = locale === 'tr';
   const base = `/${locale}`;
-  const canonicalUrl = `https://buaze.com/${locale}/features/analytics-reports`;
+  const canonicalUrl = `https://www.buaze.com/${locale}/features/analytics-reports`;
 
   // KPI tile values — neutral and believable; never fabricated guarantees.
   const tiles = isTr
@@ -255,7 +255,7 @@ export default async function AnalyticsReportsPage({
     '@type': 'Service',
     name: isTr ? 'Buaze Analitik & Raporlar' : 'Buaze Analytics & Reports',
     serviceType: isTr ? 'Müşteri yorum analitiği' : 'Customer review analytics',
-    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://buaze.com' },
+    provider: { '@type': 'Organization', name: 'Buaze', url: 'https://www.buaze.com' },
     areaServed: 'TR',
     availableLanguage: ['tr-TR', 'en-US'],
     url: canonicalUrl,
@@ -283,8 +283,8 @@ export default async function AnalyticsReportsPage({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://buaze.com/${locale}/features` },
+      { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+      { '@type': 'ListItem', position: 2, name: isTr ? 'Özellikler' : 'Features', item: `https://www.buaze.com/${locale}/features` },
       { '@type': 'ListItem', position: 3, name: isTr ? 'Analitik & Raporlar' : 'Analytics & Reports', item: canonicalUrl },
     ],
   };

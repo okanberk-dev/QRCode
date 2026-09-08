@@ -232,7 +232,7 @@ export async function issueLoginSession(args: {
     const userAgent = req.headers.get('user-agent');
     const ip = getClientIp(req.headers);
     const desc = describeDevice(userAgent, ip);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
     // Best-effort locale resolution — User row was fetched above (user) so
     // we can read the locale field directly when available.
     const userLocale: 'tr' | 'en' = (

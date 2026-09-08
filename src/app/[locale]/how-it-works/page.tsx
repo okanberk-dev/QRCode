@@ -29,13 +29,13 @@ export async function generateMetadata({
       ? ['QR kod itibar yönetimi nasıl çalışır', 'müşteri geri bildirim sistemi kurulum', 'google yorum toplama sistemi', 'dijital itibar adımları']
       : ['QR reputation management how it works', 'customer feedback system setup', 'Google review collection system', 'digital reputation steps'],
     alternates: {
-      canonical: `https://buaze.com/${locale}/how-it-works`,
-      languages: { tr: 'https://buaze.com/tr/how-it-works', en: 'https://buaze.com/en/how-it-works', 'x-default': 'https://buaze.com/en/how-it-works' },
+      canonical: `https://www.buaze.com/${locale}/how-it-works`,
+      languages: { tr: 'https://www.buaze.com/tr/how-it-works', en: 'https://www.buaze.com/en/how-it-works', 'x-default': 'https://www.buaze.com/en/how-it-works' },
     },
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/how-it-works`,
+      url: `https://www.buaze.com/${locale}/how-it-works`,
     },
   };
 }
@@ -120,8 +120,8 @@ export default async function HowItWorksPage({
       {
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://buaze.com/${locale}` },
-          { '@type': 'ListItem', position: 2, name: isTr ? 'Nasıl Çalışır?' : 'How It Works', item: `https://buaze.com/${locale}/how-it-works` },
+          { '@type': 'ListItem', position: 1, name: isTr ? 'Ana Sayfa' : 'Home', item: `https://www.buaze.com/${locale}` },
+          { '@type': 'ListItem', position: 2, name: isTr ? 'Nasıl Çalışır?' : 'How It Works', item: `https://www.buaze.com/${locale}/how-it-works` },
         ],
       },
     ],

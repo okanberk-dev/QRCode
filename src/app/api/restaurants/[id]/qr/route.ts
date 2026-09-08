@@ -220,7 +220,7 @@ export async function GET(
       : false;
     const appUrl = (!hasLocalhostEnv && normalizedEnvUrl)
       ? normalizedEnvUrl
-      : 'https://buaze.com';
+      : 'https://www.buaze.com';
 
     let qrUrl = `${appUrl}/r/${restaurant.slug}?source=qr`;
     if (table) {

@@ -29,11 +29,11 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
     title,
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/solutions/beauty-salon`,
+      canonical: `https://www.buaze.com/${locale}/solutions/beauty-salon`,
       languages: {
-        tr: 'https://buaze.com/tr/solutions/beauty-salon',
-        en: 'https://buaze.com/en/solutions/beauty-salon',
-        'x-default': 'https://buaze.com/tr/solutions/beauty-salon',
+        tr: 'https://www.buaze.com/tr/solutions/beauty-salon',
+        en: 'https://www.buaze.com/en/solutions/beauty-salon',
+        'x-default': 'https://www.buaze.com/tr/solutions/beauty-salon',
       },
     },
     openGraph: {
@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
       locale: locale === 'tr' ? 'tr_TR' : 'en_US',
       title,
       description,
-      url: `https://buaze.com/${locale}/solutions/beauty-salon`,
+      url: `https://www.buaze.com/${locale}/solutions/beauty-salon`,
       images: [{ url: locale === 'tr' ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
     twitter: {
@@ -139,7 +139,7 @@ export default async function BeautySalonSolutionPage({ params }: { params: Prom
     description: isTr
       ? 'Hizmet bitiminde QR ile yorum toplayıp Instagram, Google ve Foursquare\'de organik puan büyütmek için adımlar.'
       : 'Steps to collect reviews via QR at service end and grow ratings organically on Instagram, Google and Foursquare.',
-    url: `https://buaze.com/${locale}/solutions/beauty-salon`,
+    url: `https://www.buaze.com/${locale}/solutions/beauty-salon`,
     steps: isTr
       ? [
           { name: 'Salonu tanımla', text: 'Salon adı, kategori, Instagram/Google bağlantıları ve bildirim e-postasını panelde gir; uzman/seans bazlı raporlama için etiket alanlarını planla.' },

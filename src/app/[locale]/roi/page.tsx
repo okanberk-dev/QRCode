@@ -27,9 +27,9 @@ export async function generateMetadata({
   const description = isTr
     ? 'QR yorum akışının 12 aylık getirisini slider\'larla hesaplayın: Pulse AI yanıt taslağı, müşteri tercihli platform seçimi, haftalık rapor. KVKK + Google uyumlu.'
     : 'Calculate the 12-month net gain of QR review routing with sliders: Pulse AI reply drafts, customer-led platform choice and weekly reports. KVKK + Google compliant.';
-  const url = `https://buaze.com/${locale}/roi`;
+  const url = `https://www.buaze.com/${locale}/roi`;
   return {
-    metadataBase: new URL('https://buaze.com'),
+    metadataBase: new URL('https://www.buaze.com'),
     title,
     description,
     keywords: isTr
@@ -53,11 +53,11 @@ export async function generateMetadata({
           'multi-platform reviews',
         ],
     alternates: {
-      canonical: `https://buaze.com/${locale}/roi`,
+      canonical: `https://www.buaze.com/${locale}/roi`,
       languages: {
-        tr: 'https://buaze.com/tr/roi',
-        en: 'https://buaze.com/en/roi',
-        'x-default': 'https://buaze.com/en/roi',
+        tr: 'https://www.buaze.com/tr/roi',
+        en: 'https://www.buaze.com/en/roi',
+        'x-default': 'https://www.buaze.com/en/roi',
       },
     },
     openGraph: {
@@ -69,7 +69,7 @@ export async function generateMetadata({
       locale: isTr ? 'tr_TR' : 'en_US',
       images: [
         {
-          url: 'https://buaze.com/favicon.svg',
+          url: 'https://www.buaze.com/favicon.svg',
           width: 512,
           height: 512,
           alt: 'Buaze ROI Hesaplayıcı',
@@ -80,7 +80,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: ['https://buaze.com/favicon.svg'],
+      images: ['https://www.buaze.com/favicon.svg'],
     },
     robots: {
       index: true,
@@ -102,7 +102,7 @@ export default async function RoiPage({
   const t = getTranslations(locale);
   const base = `/${locale}`;
   const isTr = locale === 'tr';
-  const url = `https://buaze.com/${locale}/roi`;
+  const url = `https://www.buaze.com/${locale}/roi`;
 
   // SSS — hem görünür accordion'a hem FAQPage JSON-LD'ye beslenir.
   // AI ajanları (ChatGPT, Perplexity, Gemini) JSON-LD FAQPage şemasını
@@ -178,8 +178,8 @@ export default async function RoiPage({
         publisher: {
           '@type': 'Organization',
           name: 'Buaze',
-          url: 'https://buaze.com',
-          logo: 'https://buaze.com/favicon.svg',
+          url: 'https://www.buaze.com',
+          logo: 'https://www.buaze.com/favicon.svg',
         },
       },
       {
@@ -189,7 +189,7 @@ export default async function RoiPage({
             '@type': 'ListItem',
             position: 1,
             name: isTr ? 'Ana Sayfa' : 'Home',
-            item: `https://buaze.com/${locale}`,
+            item: `https://www.buaze.com/${locale}`,
           },
           {
             '@type': 'ListItem',

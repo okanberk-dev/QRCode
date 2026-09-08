@@ -77,7 +77,7 @@ export async function GET(
     ? /localhost|127\.0\.0\.1/i.test(normalizedEnvUrl)
     : false;
   const appUrl =
-    !hasLocalhostEnv && normalizedEnvUrl ? normalizedEnvUrl : 'https://buaze.com';
+    !hasLocalhostEnv && normalizedEnvUrl ? normalizedEnvUrl : 'https://www.buaze.com';
   const qrUrl = `${appUrl}/s/${survey.slug}?source=qr`;
 
   // Style modes:

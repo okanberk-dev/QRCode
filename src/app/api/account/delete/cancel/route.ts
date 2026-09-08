@@ -55,7 +55,7 @@ function renderLandingPage(opts: { locale: 'tr' | 'en'; success: boolean; messag
 }
 
 export async function GET(req: NextRequest) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
   const ip = getClientIp(req.headers);
 
   // Lookup token rate-limit so a brute-force scan of cancel tokens dies
@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
   const userId = payload.userId;
   if (!userId) return ApiErrors.unauthorized();
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buaze.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.buaze.com';
 
   const user = await prisma.user.findUnique({
     where: { id: userId },

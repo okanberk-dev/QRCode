@@ -29,17 +29,17 @@ export async function generateMetadata({
     title: { absolute: title },
     description,
     alternates: {
-      canonical: `https://buaze.com/${locale}/blog`,
+      canonical: `https://www.buaze.com/${locale}/blog`,
       languages: {
-        tr: 'https://buaze.com/tr/blog',
-        en: 'https://buaze.com/en/blog',
-        'x-default': 'https://buaze.com/tr/blog',
+        tr: 'https://www.buaze.com/tr/blog',
+        en: 'https://www.buaze.com/en/blog',
+        'x-default': 'https://www.buaze.com/tr/blog',
       },
     },
     openGraph: {
       title,
       description,
-      url: `https://buaze.com/${locale}/blog`,
+      url: `https://www.buaze.com/${locale}/blog`,
       images: [{ url: isTr ? '/images/open-graph-tr.png' : '/images/open-graph-en.png', width: 1200, height: 630, alt: title }],
     },
   };

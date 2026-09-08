@@ -415,7 +415,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
           <span>
             {locale === 'tr' ? (
               <>
-                <Link href={`/${locale}/legal/kvkk-aydinlatma`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                <Link href={`/${locale}/kvkk`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
                   KVKK Aydınlatma Metni
                 </Link>
                 &apos;ni okudum ve kişisel verilerimin işlenmesine ilişkin bilgilendirildim.
@@ -423,7 +423,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             ) : (
               <>
                 I have read the{' '}
-                <Link href={`/${locale}/legal/kvkk-aydinlatma`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                <Link href={`/${locale}/kvkk`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
                   KVKK Privacy Notice
                 </Link>{' '}
                 and understand how my personal data is processed.
@@ -478,7 +478,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             {locale === 'tr' ? (
               <>
                 Buaze&apos;den ürün güncellemeleri, kampanya ve özel teklif içeren ticari iletiler (e-posta, SMS) almak istiyorum. Bu onayı{' '}
-                <Link href={`/${locale}/legal/ticari-ileti`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                <Link href={`/${locale}/ticari-ileti`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
                   iletişim tercihleri
                 </Link>{' '}
                 sayfasından dilediğimde geri alabilirim. <span className="text-[#A3A3A3]">(İsteğe bağlı)</span>
@@ -486,7 +486,7 @@ export default function RegisterForm({ locale, t }: RegisterFormProps) {
             ) : (
               <>
                 I would like to receive product updates, campaigns and special offers from Buaze (email, SMS). I can withdraw this consent anytime via the{' '}
-                <Link href={`/${locale}/legal/ticari-ileti`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
+                <Link href={`/${locale}/ticari-ileti`} target="_blank" rel="noopener" className="text-[#0A0A0A] font-semibold underline-offset-2 hover:underline">
                   communication preferences
                 </Link>{' '}
                 page. <span className="text-[#A3A3A3]">(Optional)</span>
