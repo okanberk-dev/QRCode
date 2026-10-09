@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withCronGuard } from '@/lib/cron-guard';
 import { runWeeklyDigest } from '@/lib/weekly-digest-runner';
 import { sendWeeklyDigestSummary } from '@/lib/email';
 
@@ -30,7 +31,7 @@ export const maxDuration = 300;
  */
 const DEFAULT_RECIPIENT = 'hello@buaze.com';
 
-export async function GET(req: NextRequest) {
+async function handleCron(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
@@ -95,3 +96,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'summary_failed' }, { status: 500 });
   }
 }
+
+export const GET = withCronGuard('/api/cron/weekly-digest-summary', handleCron);

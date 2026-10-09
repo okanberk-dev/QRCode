@@ -45,15 +45,14 @@ export const ROUTE_OVERRIDES: Record<string, RouteMeta> = {
   'how-it-works': { priority: 0.8, changefreq: 'monthly' },
   features: { priority: 0.85, changefreq: 'monthly' },
   'features/pulse-ai': { priority: 0.8, changefreq: 'monthly' },
-  // Stage 135 §38.215 — Reputation OS suite (audit/surveys/campaigns)
-  // detay sayfaları; 0.8 features/pulse-ai paterniyle parity. Tüm 3
+  // Stage 135 §38.215 — Reputation OS suite (audit/surveys) detay
+  // sayfaları; 0.8 features/pulse-ai paterniyle parity. Hepsi
   // FAQPage + Service + HowTo + BreadcrumbList JSON-LD taşır.
   'features/audit-center': { priority: 0.8, changefreq: 'monthly' },
   // 'qr menü' 5.400/ay + 'dijital menü' 480/ay hedefli; ürün tarafı uzun
   // süredir canlıydı ama pazarlama sayfası yoktu.
   'features/menu': { priority: 0.85, changefreq: 'monthly' },
   'features/surveys': { priority: 0.8, changefreq: 'monthly' },
-  'features/campaigns': { priority: 0.8, changefreq: 'monthly' },
   // /features/review-management + /features/analytics-reports heuristic
   // default 0.7 ile çalışıyor — Stage 134 priority audit gerekiyorsa
   // ayrı PR (kapsam dışı).

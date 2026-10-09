@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withCronGuard } from '@/lib/cron-guard';
 import { prisma } from '@/lib/prisma';
 import { sendTrialEndingEmail } from '@/lib/email';
 import { notifyOpsOfMailFailure } from '@/lib/email/ops-alert';
@@ -26,7 +27,7 @@ export const maxDuration = 300;
  */
 const TRIAL_REMINDER_DAYS = [1, 3] as const;
 
-export async function GET(req: NextRequest) {
+async function handleCron(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
@@ -231,3 +232,5 @@ async function collectUsage(restaurantId: string | undefined): Promise<{
     growthPct,
   };
 }
+
+export const GET = withCronGuard('/api/cron/trial-reminders', handleCron);

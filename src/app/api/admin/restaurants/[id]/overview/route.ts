@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/admin/restaurants/[id]/overview — superadmin read-only summary of
  * everything the OWNER runs on this restaurant.
  *
- * Owner-side modules (surveys, audit center, customer campaigns, team, Google
+ * Owner-side modules (surveys, audit center, team, Google
  * Business connection, platform link health, self-scheduled deletion) had no
  * admin visibility at all: an admin opening /admin/restaurants/[id] saw only
  * name/contact fields and could not tell whether a public survey collecting
@@ -45,7 +45,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       surveyCount,
       auditTemplateCount,
       auditResponseAgg,
-      campaignGroups,
       failingLinkChecks,
       qrCount,
     ] = await prisma.$transaction([
@@ -69,12 +68,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         where: { restaurantId: id, completedAt: { not: null } },
         _count: { _all: true },
         _avg: { scorePercentage: true },
-      }),
-      prisma.customerEmailCampaign.groupBy({
-        by: ['status'],
-        where: { restaurantId: id },
-        _count: { _all: true },
-        orderBy: { status: 'asc' },
       }),
       prisma.platformLinkCheck.findMany({
         where: { restaurantId: id, checkedAt: { gte: since24h }, ok: false },
@@ -133,11 +126,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       };
     }
 
-    const campaigns: Record<string, number> = {};
-    for (const g of campaignGroups) {
-      campaigns[g.status] = typeof g._count === 'object' && g._count ? g._count._all ?? 0 : 0;
-    }
-
     return NextResponse.json(
       {
         restaurant: {
@@ -166,7 +154,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               ? Math.round(auditResponseAgg._avg.scorePercentage) / 100
               : null,
         },
-        campaigns,
         team,
         google,
         platformLinks: { failingProviders: failingLinkChecks.map((c) => c.provider) },

@@ -11,7 +11,7 @@ import MarketingFooter from '@/components/marketing/MarketingFooter';
 import Link from 'next/link';
 import { IllusShield } from '@/components/marketing/PulseIllustrations';
 import PlatformLogo, { GLOBAL_REVIEW, GLOBAL_DELIVERY } from '@/components/marketing/PlatformLogo';
-import { ArrowUpRight, BarChart3, ClipboardCheck, ClipboardList, Inbox, QrCode, Send, Sparkles, Star } from 'lucide-react';
+import { ArrowUpRight, BarChart3, ClipboardCheck, ClipboardList, Inbox, QrCode, Sparkles, Star } from 'lucide-react';
 // Stage 41 §38.122 — HANDOFF §8 step 8 (Heroes A): 3 variant + ENV flag.
 // `HeroVariantPicker` is a Client Component that reads
 // `process.env.NEXT_PUBLIC_HERO_VARIANT` (build-time inlined) and dynamically
@@ -599,11 +599,11 @@ export default async function LandingPage({
 
       {/* ═══════════════════════════════════════════════════════════
           3.5 REPUTATION OS SUITE — operational depth (Stage 134 §38.214)
-          Owner panel /dashboard/{audits,surveys,campaigns} marketing
+          Owner panel /dashboard/{audits,surveys} + Pulse AI marketing
           parity. 3-card grid · Pulse §11 lime accent · 3-step "geri
           bildirim toplama" sonrası "operasyona dökme" narrative'i.
-          Anchor href'leri yeni /features/{audit-center,surveys,
-          campaigns} detay sayfalarına gider.
+          Anchor href'leri /features/{audit-center,surveys,pulse-ai}
+          detay sayfalarına gider.
       ═══════════════════════════════════════════════════════════ */}
       <section className="border-y border-[#EDEDED] bg-[#FAFAFA] px-5 sm:px-10 py-[60px] sm:py-24">
         <div className="max-w-[1200px] mx-auto">
@@ -632,8 +632,8 @@ export default async function LandingPage({
             </h2>
             <p className="mt-5 text-[15px] sm:text-[17px] text-[#525252] leading-[1.6] max-w-[640px]">
               {isTr
-                ? 'Yorum yönetimi tek başına yeterli değil. Buaze; operasyonel disiplin (denetim), derin müşteri sesi (anketler) ve yeniden etkileşim (kampanyalar) ile feedback döngüsünü kapatır — hepsi tek panelde.'
-                : 'Review management alone is not enough. Buaze closes the feedback loop with operational discipline (audits), deep customer voice (surveys) and re-engagement (campaigns) — all in one panel.'}
+                ? 'Yorum yönetimi tek başına yeterli değil. Buaze; operasyonel disiplin (denetim), derin müşteri sesi (anketler) ve hızlı yanıt (Pulse AI) ile feedback döngüsünü kapatır — hepsi tek panelde.'
+                : 'Review management alone is not enough. Buaze closes the feedback loop with operational discipline (audits), deep customer voice (surveys) and fast replies (Pulse AI) — all in one panel.'}
             </p>
           </div>
 
@@ -658,13 +658,13 @@ export default async function LandingPage({
                 href: `${base}/features/surveys`,
               },
               {
-                eyebrow: isTr ? 'KAMPANYALAR' : 'CAMPAIGNS',
-                title: isTr ? 'Müşterini geri kazan' : 'Win your customers back',
+                eyebrow: isTr ? 'PULSE AI' : 'PULSE AI',
+                title: isTr ? 'Her yoruma hızlı yanıt' : 'A fast reply to every review',
                 body: isTr
-                  ? 'Sektörel hazır şablon kütüphanesi, onay kontrollü gönderim, gerçek zamanlı teslimat takibi. ETK + İYS uyumlu CRM akışı.'
-                  : 'Sector-specific template library, approval-led send, real-time delivery tracking. ETK + IYS compliant CRM flow.',
-                icon: Send,
-                href: `${base}/features/campaigns`,
+                  ? 'Yorumun tonuna uygun yanıt taslağı saniyeler içinde hazır. Siz okuyup onaylarsınız; hiçbir yanıt sizden habersiz gönderilmez.'
+                  : 'A reply draft that matches the review\'s tone, ready in seconds. You read and approve it; nothing is sent without you.',
+                icon: Sparkles,
+                href: `${base}/features/pulse-ai`,
               },
             ].map((suite) => (
               <Link

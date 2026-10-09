@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withCronGuard } from '@/lib/cron-guard';
 import { runMonthlyNewsletter } from '@/lib/monthly-newsletter';
 
 // CRITICAL — Vercel Pro defaults function timeout to 60s when these are
@@ -16,7 +17,7 @@ export const maxDuration = 300;
  * Schedule: 0 9 1 * * (Vercel Cron, see vercel.json) — first of every month.
  * Auth: Bearer CRON_SECRET (Vercel Cron sets this header automatically).
  */
-export async function GET(req: NextRequest) {
+async function handleCron(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
@@ -34,3 +35,5 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+export const GET = withCronGuard('/api/cron/monthly-newsletter', handleCron);

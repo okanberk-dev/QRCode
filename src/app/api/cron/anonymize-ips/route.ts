@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withCronGuard } from '@/lib/cron-guard';
 import { prisma } from '@/lib/prisma';
 
 // Runtime + maxDuration explicit declared so Vercel Pro does not fall back
@@ -34,7 +35,7 @@ export const maxDuration = 300;
  *
  * Security: CRON_SECRET header required — refuses every request otherwise.
  */
-export async function GET(req: NextRequest) {
+async function handleCron(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
@@ -90,3 +91,5 @@ export async function GET(req: NextRequest) {
     retentionDays,
   });
 }
+
+export const GET = withCronGuard('/api/cron/anonymize-ips', handleCron);

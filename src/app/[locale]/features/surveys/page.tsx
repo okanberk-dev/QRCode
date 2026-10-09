@@ -703,8 +703,8 @@ export default async function SurveysPage({
               <Link href={`${base}/features/audit-center`} className="rounded-full border border-[#EDEDED] px-3 py-1 hover:border-[#0A0A0A]">
                 {isTr ? 'Denetim Merkezi' : 'Audit Center'}
               </Link>
-              <Link href={`${base}/features/campaigns`} className="rounded-full border border-[#EDEDED] px-3 py-1 hover:border-[#0A0A0A]">
-                {isTr ? 'Kampanyalar' : 'Campaigns'}
+              <Link href={`${base}/features/pulse-ai`} className="rounded-full border border-[#EDEDED] px-3 py-1 hover:border-[#0A0A0A]">
+                Pulse AI
               </Link>
               <Link href={`${base}/features/analytics-reports`} className="rounded-full border border-[#EDEDED] px-3 py-1 hover:border-[#0A0A0A]">
                 {isTr ? 'Analitik & Raporlar' : 'Analytics & Reports'}

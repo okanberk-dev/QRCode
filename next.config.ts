@@ -131,6 +131,28 @@ const nextConfig: NextConfig = {
         destination: '/:locale/cookie',
         permanent: true,
       },
+      // Customer campaign mail feature removed (CLAUDE.md §38.241) — its
+      // marketing page was indexed; send it to the features overview.
+      {
+        source: '/:locale(tr|en)/features/campaigns',
+        destination: '/:locale/features',
+        permanent: true,
+      },
+      {
+        source: '/:locale(tr|en)/dashboard/campaigns/:path*',
+        destination: '/:locale/dashboard/customers',
+        permanent: true,
+      },
+      {
+        source: '/admin/campaign-approvals/:path*',
+        destination: '/admin/dashboard',
+        permanent: true,
+      },
+      {
+        source: '/admin/customer-campaign-templates/:path*',
+        destination: '/admin/dashboard',
+        permanent: true,
+      },
       {
         source: '/:locale(tr|en)/legal/kvkk-aydinlatma',
         destination: '/:locale/kvkk',
@@ -339,8 +361,8 @@ export default withSentryConfig(withAnalyzer(nextConfig), {
     // Hide Sentry's own logger noise from the production browser console.
     // (Replaces the deprecated top-level `disableLogger: true`.)
     treeshake: { removeDebugLogging: true },
-    // Auto-create Sentry cron monitors for vercel.json crons.
-    // (Replaces the deprecated top-level `automaticVercelMonitors: true`.)
-    automaticVercelMonitors: true,
+    // `automaticVercelMonitors` was removed: it only wraps Pages Router
+    // `pages/api` routes, so it never instrumented our App Router crons.
+    // Cron failure handling lives in `withCronGuard` (src/lib/cron-guard.ts).
   },
 });

@@ -18,7 +18,6 @@ import {
   Plug,
   QrCode,
   Scale,
-  Send,
   ShoppingBag,
   Sparkles,
   Star,
@@ -214,8 +213,8 @@ export default function MarketingNavbarClient({
       sub: isTr ? 'Google · Yemeksepeti · Getir' : 'Google · Yelp · Tripadvisor',
       icon: <Plug size={16} />,
     },
-    // Stage 134 §38.214 — operasyonel feature trio. Owner panel
-    // /dashboard/{audits,surveys,campaigns} marketing parity (CLAUDE.md §43
+    // Stage 134 §38.214 — operasyonel feature'lar. Owner panel
+    // /dashboard/{audits,surveys} marketing parity (CLAUDE.md §43
     // Reputation OS suite paralelinde).
     {
       href: `${base}/features/audit-center`,
@@ -228,12 +227,6 @@ export default function MarketingNavbarClient({
       label: isTr ? 'Anketler' : 'Surveys',
       sub: isTr ? 'NPS · CSAT · özel sorular' : 'NPS · CSAT · custom',
       icon: <ClipboardList size={16} />,
-    },
-    {
-      href: `${base}/features/campaigns`,
-      label: isTr ? 'Kampanyalar' : 'Campaigns',
-      sub: isTr ? 'Şablonlu mail · onay akışı' : 'Templated email · approval flow',
-      icon: <Send size={16} />,
     },
   ];
 

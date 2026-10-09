@@ -31,10 +31,6 @@ export const RESOURCES = [
   // action gerekli (start session); 'read' yok — superadmin OR grant'lı
   // manager bu yetkiyle owner panel'ine geçebilir.
   'impersonation',
-  // Stage 29 §38.105 — campaign moderation queue. 'read' campaign queue
-  // listesi + detail; 'write' approve/reject aksiyonu. Owner submit eder
-  // → admin queue → admin onaylayınca Resend pipeline tetiklenir.
-  'campaigns',
 ] as const;
 
 export const ACTIONS = ['read', 'write', 'delete'] as const;

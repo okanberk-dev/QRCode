@@ -1,10 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Mail,
   Tag,
   Archive,
   ArchiveRestore,
@@ -19,7 +17,7 @@ import type { Locale } from '@/lib/translations';
 //   - selectedKeys state taşır (filter değişiminde clear, CLAUDE.md §11.21)
 //   - Tablodaki .bz-customer-checkbox elementlerini hydrate eder
 //   - Floating bottom toolbar (selection > 0)
-//   - 3 modal (Campaign compose / Segment picker / Archive confirm)
+//   - 2 modal (Segment picker / Archive confirm)
 //   - POST /api/customers/bulk + auto-refresh router
 
 interface CustomersBulkBarProps {
@@ -37,7 +35,7 @@ const SEGMENT_OPTIONS: Array<{ key: CustomerSegment; tr: string; en: string }> =
   { key: 'churned', tr: 'Kayıp', en: 'Churned' },
 ];
 
-type BulkBusy = 'archive' | 'unarchive' | 'segment' | 'campaign' | null;
+type BulkBusy = 'archive' | 'unarchive' | 'segment' | null;
 
 export default function CustomersBulkBar({ locale, showArchived = false }: CustomersBulkBarProps) {
   const router = useRouter();
@@ -48,7 +46,6 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
 
   // Modal states
-  const [campaignOpen, setCampaignOpen] = useState(false);
   const [segmentOpen, setSegmentOpen] = useState(false);
   const [confirmDialog, askConfirm] = useConfirmDialog();
 
@@ -131,7 +128,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
       });
   };
 
-  if (count === 0 && !confirmDialog && !campaignOpen && !segmentOpen && !notice) {
+  if (count === 0 && !confirmDialog && !segmentOpen && !notice) {
     return null;
   }
 
@@ -236,20 +233,12 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
             ...(!showArchived
               ? [
                   {
-                    key: 'campaign',
-                    label: isTr ? 'Kampanya' : 'Campaign',
-                    icon: <Mail size={13} strokeWidth={2.2} />,
-                    onClick: () => setCampaignOpen(true),
-                    disabled: busy !== null,
-                    variant: 'primary' as const,
-                  },
-                  {
                     key: 'segment',
                     label: isTr ? 'Segmentle' : 'Set segment',
                     icon: <Tag size={13} strokeWidth={2.2} />,
                     onClick: () => setSegmentOpen(true),
                     disabled: busy !== null,
-                    variant: 'neutral' as const,
+                    variant: 'primary' as const,
                   },
                 ]
               : []),
@@ -307,14 +296,6 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
         />
       )}
 
-      {/* Campaign compose modal */}
-      {campaignOpen && (
-        <CampaignRouteModal
-          isTr={isTr}
-          campaignsHref={`/${locale}/dashboard/campaigns`}
-          onClose={() => setCampaignOpen(false)}
-        />
-      )}
     </>
   );
 }
@@ -379,47 +360,6 @@ function SegmentPickerModal({
             {busy && <Loader2 size={13} className="animate-spin" />}
             {isTr ? 'Uygula' : 'Apply'}
           </button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-// ──────────────────────────────────────────────────────────────────────────
-// Campaign compose modal
-// ──────────────────────────────────────────────────────────────────────────
-
-// Customer e-mail campaigns go out under the Buaze sender, so every one of
-// them passes Buaze admin approval (/admin/campaign-approvals, §38.105) and
-// the `campaignsEnabled` entitlement. This bar used to send straight to the
-// selected customers through /api/customers/bulk, skipping approval, the
-// entitlement and the viewer role check. It now routes the owner to the
-// moderated Campaigns flow instead.
-function CampaignRouteModal({
-  isTr,
-  campaignsHref,
-  onClose,
-}: {
-  isTr: boolean;
-  campaignsHref: string;
-  onClose: () => void;
-}) {
-  return (
-    <Modal onClose={onClose} size={480} title={isTr ? 'Kampanya oluştur' : 'Create a campaign'}>
-      <div className="space-y-4">
-        <p className="text-[13px] leading-relaxed text-[#525252]">
-          {isTr
-            ? 'Müşteri kampanyaları gönderilmeden önce Buaze ekibinin onayından geçer ve yalnızca pazarlama izni veren müşterilerinize ulaşır. Kampanyanızı Kampanyalar sayfasından oluşturup onaya gönderebilirsiniz.'
-            : 'Customer campaigns are reviewed by the Buaze team before sending and only reach customers who opted into marketing. Create your campaign on the Campaigns page and submit it for approval.'}
-        </p>
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="bz-btn-ghost">
-            {isTr ? 'Vazgeç' : 'Cancel'}
-          </button>
-          <Link href={campaignsHref} className="bz-btn-primary inline-flex items-center gap-1.5">
-            <Mail size={13} strokeWidth={2.2} />
-            {isTr ? 'Kampanyalara git' : 'Go to Campaigns'}
-          </Link>
         </div>
       </div>
     </Modal>

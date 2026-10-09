@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withCronGuard } from '@/lib/cron-guard';
 import { prisma } from '@/lib/prisma';
 import {
   runPlatformLinkTest,
@@ -128,7 +129,7 @@ export async function runPlatformLinkRetest(): Promise<CronSummary> {
   };
 }
 
-export async function GET(req: NextRequest) {
+async function handleCron(req: NextRequest) {
   // CRON_SECRET guard — open public trigger önleme (CLAUDE.md §21.13).
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
@@ -145,3 +146,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export const GET = withCronGuard('/api/cron/platform-link-retest', handleCron);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withCronGuard } from '@/lib/cron-guard';
 import { runWeeklyDigest } from '@/lib/weekly-digest-runner';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,7 @@ export const maxDuration = 300;
  *
  * Security: `Authorization: Bearer ${CRON_SECRET}` zorunlu.
  */
-export async function GET(req: NextRequest) {
+async function handleCron(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
@@ -48,3 +49,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Digest failed' }, { status: 500 });
   }
 }
+
+export const GET = withCronGuard('/api/cron/weekly-digest', handleCron);

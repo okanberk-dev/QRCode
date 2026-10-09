@@ -521,68 +521,6 @@ const ROI_ADMIN_NOTIFICATION_EN: FlatCopy = {
 };
 
 // ───────────────────────────────────────────────────────────────────────
-// Wave 5 — campaign chrome (customer-campaign + owner moderation).
-// ───────────────────────────────────────────────────────────────────────
-
-const CUSTOMER_CAMPAIGN_TR: FlatCopy = {
-  eyebrow: 'Restoranından mesaj',
-  unsubscribeLabel: 'Listeden ayrıl',
-  sentLine: 'Buaze',
-  sentSuffix: 'üzerinden iletildi.',
-};
-
-const CUSTOMER_CAMPAIGN_EN: FlatCopy = {
-  eyebrow: 'Message from your restaurant',
-  unsubscribeLabel: 'Unsubscribe',
-  sentLine: 'Sent via Buaze',
-  sentSuffix: '',
-};
-
-const OWNER_CAMPAIGN_APPROVED_TR: FlatCopy = {
-  eyebrow: 'KAMPANYA ONAYLANDI',
-  title: 'Kampanyanız yola çıktı',
-  intro: 'Merhaba ${ownerName}, ${restaurantName} adına gönderdiğiniz kampanya admin ekibimiz tarafından onaylandı ve müşterilerinize iletildi. İşte özet:',
-  statsLabel: 'Gönderim özeti',
-  sentRow: 'Başarılı gönderim',
-  failedRow: 'Başarısız',
-  ctaLabel: 'Panelden detayları gör',
-  footerHint: 'Bu mail otomatik gönderildi. Sonraki kampanyalarınız için panel üzerinden yeni gönderim başlatabilirsiniz.',
-};
-
-const OWNER_CAMPAIGN_APPROVED_EN: FlatCopy = {
-  eyebrow: 'CAMPAIGN APPROVED',
-  title: 'Your campaign is on its way',
-  intro: 'Hi ${ownerName}, the campaign you submitted for ${restaurantName} was approved by our admin team and delivered to your customers. Summary below:',
-  statsLabel: 'Delivery summary',
-  sentRow: 'Delivered',
-  failedRow: 'Failed',
-  ctaLabel: 'View details in dashboard',
-  footerHint: 'This message is automated. Start new campaigns anytime from your panel.',
-};
-
-const OWNER_CAMPAIGN_REJECTED_TR: FlatCopy = {
-  eyebrow: 'KAMPANYA REDDEDİLDİ',
-  title: 'Kampanyanız onaylanmadı',
-  intro: 'Merhaba ${ownerName}, ${restaurantName} adına gönderdiğiniz kampanyayı admin ekibimiz inceledi ve onaylayamadı. Aşağıdaki gerekçeyi inceleyip revize edebilirsiniz.',
-  noteLabel: 'Reviewer notu',
-  nextStepsTitle: 'Sonraki adımlar',
-  nextStepsBody: 'Kampanyayı revize edip tekrar gönderebilirsiniz. Şüpheli durumda destek ekibimiz size yardımcı olur.',
-  ctaLabel: 'Kampanyayı düzenle',
-  footerHint: 'Tek seferde maksimum bir kampanya onayda olabilir. Revize sonrası tekrar yola çıkar.',
-};
-
-const OWNER_CAMPAIGN_REJECTED_EN: FlatCopy = {
-  eyebrow: 'CAMPAIGN REJECTED',
-  title: 'Your campaign was not approved',
-  intro: 'Hi ${ownerName}, the admin team reviewed the campaign you submitted for ${restaurantName} and could not approve it. Please review the reason below and revise.',
-  noteLabel: 'Reviewer note',
-  nextStepsTitle: 'Next steps',
-  nextStepsBody: 'You can revise the campaign and resubmit. Our support team is happy to help when in doubt.',
-  ctaLabel: 'Edit campaign',
-  footerHint: 'Only one campaign may be in review at a time. After your revision it will resume processing.',
-};
-
-// ───────────────────────────────────────────────────────────────────────
 // Wave B (CLAUDE.md §38.B) — 4 new templates: password change confirmation,
 // team join / team remove owner notifications, and the first-feedback
 // activation moment celebration. Each template's render fn carries the
@@ -977,9 +915,6 @@ export const MAIL_INLINE_DEFAULTS: Record<
   'first-feedback-tips': LIFECYCLE_INLINE_DEFAULTS['first-feedback-tips'],
   'upgrade-suggestion': LIFECYCLE_INLINE_DEFAULTS['upgrade-suggestion'],
   'inactive-reactivation': LIFECYCLE_INLINE_DEFAULTS['inactive-reactivation'],
-  'customer-campaign': { tr: CUSTOMER_CAMPAIGN_TR, en: CUSTOMER_CAMPAIGN_EN },
-  'owner-campaign-approved': { tr: OWNER_CAMPAIGN_APPROVED_TR, en: OWNER_CAMPAIGN_APPROVED_EN },
-  'owner-campaign-rejected': { tr: OWNER_CAMPAIGN_REJECTED_TR, en: OWNER_CAMPAIGN_REJECTED_EN },
   // CLAUDE.md §42 Phase 3 — audit-completed bildirim.
   'audit-completed': {
     tr: {

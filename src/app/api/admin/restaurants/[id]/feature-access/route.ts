@@ -15,7 +15,7 @@ import {
 
 // §38.78 — Zod `.strict()` schema (CLAUDE.md §28.3 high-risk admin destructive
 // disipline). Mass assignment kapatıcı: schema dışı field'lar 400 ile reddedilir.
-// 7 boolean toggle (§38.98 campaignsEnabled eklendi), her field opsiyonel
+// Boolean toggle'lar, her field opsiyonel
 // (en az 1 zorunluluğu `Object.keys(data).length === 0` check'inde, line ~50).
 const PatchSchema = z.object({
   googleReviewManagementEnabled: z.boolean().optional(),
@@ -24,7 +24,6 @@ const PatchSchema = z.object({
   menuPublished: z.boolean().optional(),
   aiAnalyticsEnabled: z.boolean().optional(),
   externalPlatformsEnabled: z.boolean().optional(),
-  campaignsEnabled: z.boolean().optional(),
   surveysEnabled: z.boolean().optional(),
 }).strict();
 

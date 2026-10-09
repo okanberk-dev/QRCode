@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, BarChart3, Send, ClipboardList, ClipboardCheck, ShieldAlert, PauseCircle } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, BarChart3, ClipboardList, ClipboardCheck, ShieldAlert, PauseCircle } from 'lucide-react';
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
@@ -49,7 +49,6 @@ type FeatureToggleKey =
   | 'menuPublished'
   | 'aiAnalyticsEnabled'
   | 'externalPlatformsEnabled'
-  | 'campaignsEnabled'
   | 'surveysEnabled';
 
 // /api/admin/restaurants/[id]/overview — owner-side modules summary.
@@ -66,7 +65,6 @@ interface OwnerModulesOverview {
     }>;
   };
   audits: { templates: number; completedResponses: number; avgScorePercent: number | null };
-  campaigns: Record<string, number>;
   team: { active: number; invited: number };
   google: { connected: boolean; locationTitle: string | null; syncedAt: string | null };
   platformLinks: { failingProviders: string[] };
@@ -114,7 +112,6 @@ export default function RestaurantDetailPage() {
   const [pulseAiEnabled, setPulseAiEnabled] = useState(true);
   const [aiAnalyticsEnabled, setAiAnalyticsEnabled] = useState(true);
   const [externalPlatformsEnabled, setExternalPlatformsEnabled] = useState(true);
-  const [campaignsEnabled, setCampaignsEnabled] = useState(false);
   const [surveysEnabled, setSurveysEnabled] = useState(true);
   const [suspendedByAdmin, setSuspendedByAdmin] = useState(false);
   const [overview, setOverview] = useState<OwnerModulesOverview | null>(null);
@@ -178,7 +175,6 @@ export default function RestaurantDetailPage() {
           setPulseAiEnabled(data.pulseAiEnabled ?? true);
           setAiAnalyticsEnabled(data.aiAnalyticsEnabled ?? true);
           setExternalPlatformsEnabled(data.externalPlatformsEnabled ?? true);
-          setCampaignsEnabled(data.campaignsEnabled ?? false);
           setSurveysEnabled(data.surveysEnabled ?? true);
           setSuspendedByAdmin(Boolean(data.suspendedByAdmin));
         } else {
@@ -193,7 +189,7 @@ export default function RestaurantDetailPage() {
     fetchRestaurant();
   }, [id, router]);
 
-  // Owner-side modules (surveys, audits, campaigns, team, Google, link
+  // Owner-side modules (surveys, audits, team, Google, link
   // health, self-deletion) — read-only admin visibility.
   useEffect(() => {
     let cancelled = false;
@@ -280,7 +276,6 @@ export default function RestaurantDetailPage() {
     if (next.externalPlatformsEnabled !== undefined) {
       setExternalPlatformsEnabled(Boolean(next.externalPlatformsEnabled));
     }
-    if (next.campaignsEnabled !== undefined) setCampaignsEnabled(Boolean(next.campaignsEnabled));
     if (next.surveysEnabled !== undefined) setSurveysEnabled(Boolean(next.surveysEnabled));
   };
 
@@ -298,7 +293,6 @@ export default function RestaurantDetailPage() {
       menuPublished,
       aiAnalyticsEnabled,
       externalPlatformsEnabled,
-      campaignsEnabled,
       surveysEnabled,
     };
     const optimistic = { ...prev, ...patch };
@@ -789,15 +783,6 @@ export default function RestaurantDetailPage() {
             onChange={(next) => saveFeatureSetting({ externalPlatformsEnabled: next })}
           />
           <FeatureToggleCard
-            icon={<Send size={17} strokeWidth={2.2} />}
-            eyebrow="Pazarlama"
-            title="Kampanyalar"
-            description="Owner panelden müşterilere e-posta kampanyası gönderme. Sadece pazarlama onayı veren müşteriler hedef alınır."
-            checked={campaignsEnabled}
-            loading={featureSaving === 'campaignsEnabled'}
-            onChange={(next) => saveFeatureSetting({ campaignsEnabled: next })}
-          />
-          <FeatureToggleCard
             icon={<ClipboardList size={17} strokeWidth={2.2} />}
             eyebrow="Anketler"
             title="Anket modülü"
@@ -1236,10 +1221,6 @@ function OwnerModulesCard({
   const deletionDays = deletionAt
     ? Math.max(0, Math.ceil((deletionAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
     : null;
-  const pendingCampaigns = overview?.campaigns.pending_approval ?? 0;
-  const campaignTotal = overview
-    ? Object.values(overview.campaigns).reduce((sum, n) => sum + n, 0)
-    : 0;
 
   return (
     <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
@@ -1251,7 +1232,7 @@ function OwnerModulesCard({
           <p className="pulse-eyebrow text-[#737373]">Owner Modülleri</p>
           <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">İşletme sahibinin panelde kullandıkları</h3>
           <p className="mt-1 text-[12px] leading-relaxed text-[#737373]">
-            Anket, denetim, kampanya, ekip ve Google bağlantısı — owner gibi görmeden özet.
+            Anket, denetim, ekip ve Google bağlantısı — owner gibi görmeden özet.
           </p>
         </div>
       </div>
@@ -1301,14 +1282,6 @@ function OwnerModulesCard({
                   ? `${overview.audits.completedResponses} yanıt · ort. %${overview.audits.avgScorePercent ?? '—'}`
                   : 'Henüz yanıt yok'
               }
-            />
-            <ModuleTile
-              icon={<Send size={15} />}
-              label="Kampanyalar"
-              value={String(campaignTotal)}
-              hint={pendingCampaigns > 0 ? `${pendingCampaigns} onay bekliyor` : 'Bekleyen onay yok'}
-              tone={pendingCampaigns > 0 ? 'attention' : 'neutral'}
-              href={pendingCampaigns > 0 ? '/admin/campaign-approvals' : undefined}
             />
             <ModuleTile
               icon={<Users size={15} />}

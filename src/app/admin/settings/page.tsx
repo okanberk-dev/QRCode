@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import {
-  Bell,
   Briefcase,
   Building2,
   CreditCard,
@@ -17,7 +16,7 @@ import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider
 import SuperadminBlock from '@/components/admin/SuperadminBlock';
 import { AlertBanner, PageHeader } from '@/components/ui';
 
-type TabId = 'account' | 'brand' | 'integrations' | 'automation' | 'team' | 'billing' | 'notifications' | 'api';
+type TabId = 'account' | 'brand' | 'integrations' | 'automation' | 'team' | 'billing' | 'api';
 
 export default function AdminSettingsPage() {
   return (
@@ -59,7 +58,6 @@ function AdminSettingsBody() {
     { id: 'automation', label: isTr ? 'Otomasyon' : 'Automation', icon: Workflow },
     { id: 'team', label: isTr ? 'Ekip' : 'Team', icon: Users },
     { id: 'billing', label: isTr ? 'Faturalandırma' : 'Billing', icon: CreditCard },
-    { id: 'notifications', label: isTr ? 'Bildirimler' : 'Notifications', icon: Bell },
     { id: 'api', label: 'API', icon: Key },
   ];
 
@@ -164,18 +162,6 @@ function AdminSettingsBody() {
                   : 'Plan, payment method and invoice history live on the "Billing" page.'
               }
               cta={{ label: isTr ? 'Faturalandırmayı aç' : 'Open billing', href: '/admin/billing' }}
-            />
-          )}
-          {tab === 'notifications' && (
-            <Placeholder
-              icon={Bell}
-              title={isTr ? 'Bildirim tercihleri' : 'Notification preferences'}
-              body={
-                isTr
-                  ? 'E-posta, SMS, Slack ve webhook tercihleri “Bildirimler” sayfasından yönetilir.'
-                  : 'Email, SMS, Slack and webhook preferences live on the "Notifications" page.'
-              }
-              cta={{ label: isTr ? 'Bildirimleri aç' : 'Open notifications', href: '/admin/notifications' }}
             />
           )}
           {tab === 'api' && (

@@ -1093,7 +1093,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
       <CustomerDetailDrawer locale={locale} />
 
       {/* §38.48 Wave 2 — Bulk action bar client island. Tablodaki checkbox'ları
-          hydrate eder + selection state + 3 modal trigger (Kampanya/Segmentle/
+          hydrate eder + selection state + 2 modal trigger (Segmentle/
           Arşivle). showArchived prop'u "Geri al" eylemi için. */}
       <CustomersBulkBar locale={locale} showArchived={showArchived} />
     </div>

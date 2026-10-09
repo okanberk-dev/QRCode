@@ -242,47 +242,6 @@ const FIELDS_BY_TEMPLATE: Record<string, FieldDef[]> = {
     { key: 'cta', label: 'Birincil CTA buton metni' },
     { key: 'footnote', label: 'Footer dipnot', multiline: true },
   ],
-  // §38.48 Wave 2 — Customer mass email campaign chrome (subject + body owner-authored,
-  // editor sadece üst-seviye chrome alanlarını override eder).
-  'customer-campaign': [
-    { key: 'eyebrow', label: 'Eyebrow', hint: '"Restoranından mesaj"' },
-    { key: 'unsubscribeLabel', label: '"Listeden ayrıl" link metni' },
-    { key: 'sentLine', label: 'Footer "Buaze ile gönderildi" prefix' },
-    { key: 'sentSuffix', label: 'Footer suffix', hint: 'TR: "üzerinden iletildi." / EN: ""' },
-  ],
-  // Stage 29 §38.105 — campaign moderation owner notifications.
-  'owner-campaign-approved': [
-    { key: 'eyebrow', label: 'Eyebrow' },
-    { key: 'title', label: 'Başlık' },
-    {
-      key: 'intro',
-      label: 'Giriş paragrafı',
-      multiline: true,
-      hint: '${ownerName} ve ${restaurantName} placeholder\'ları kullanılabilir',
-      placeholders: ['ownerName', 'restaurantName'],
-    },
-    { key: 'statsLabel', label: 'Stats başlık' },
-    { key: 'sentRow', label: '"Gönderilen" satırı' },
-    { key: 'failedRow', label: '"Başarısız" satırı' },
-    { key: 'ctaLabel', label: 'CTA buton metni' },
-    { key: 'footerHint', label: 'Footer ipucu', multiline: true },
-  ],
-  'owner-campaign-rejected': [
-    { key: 'eyebrow', label: 'Eyebrow' },
-    { key: 'title', label: 'Başlık' },
-    {
-      key: 'intro',
-      label: 'Giriş paragrafı',
-      multiline: true,
-      hint: '${ownerName} ve ${restaurantName} placeholder\'ları kullanılabilir',
-      placeholders: ['ownerName', 'restaurantName'],
-    },
-    { key: 'noteLabel', label: '"Gerekçe" başlığı' },
-    { key: 'nextStepsTitle', label: 'Sonraki adımlar başlığı' },
-    { key: 'nextStepsBody', label: 'Sonraki adımlar açıklama', multiline: true },
-    { key: 'ctaLabel', label: 'CTA buton metni' },
-    { key: 'footerHint', label: 'Footer ipucu', multiline: true },
-  ],
   // Wave B1 (CLAUDE.md §38.B) — password-changed security alert. KVKK
   // lock'lu 4 alan (statusText/notYouTitle/notYouBody/notYouLink) admin
   // editor'da disabled görünür (locked-fields.ts).
@@ -525,9 +484,6 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'first-feedback-tips': 'İlk yorum rehberi',
   'upgrade-suggestion': 'Plan yükseltme önerisi',
   'inactive-reactivation': 'Tekrar canlandırma',
-  'customer-campaign': 'Müşteri kampanyası',
-  'owner-campaign-approved': 'Kampanya onaylandı (owner)',
-  'owner-campaign-rejected': 'Kampanya reddedildi (owner)',
   // Wave B (CLAUDE.md §38.B)
   'password-changed': 'Şifre değişti (güvenlik)',
   'team-member-joined': 'Yeni ekip üyesi',

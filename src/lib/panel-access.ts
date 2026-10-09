@@ -85,7 +85,7 @@ export async function getTeamMemberRole(actor: PanelActor): Promise<string | nul
  * verified `user_token` payload. Owner dashboard pages used to filter
  * restaurants with `userId: payload.userId`, which is only correct for the
  * workspace owner — invited team members (role=team_member) saw empty
- * Surveys / Campaigns / Audit Center / Menu / Platforms pages even though
+ * Surveys / Audit Center / Menu / Platforms pages even though
  * the APIs behind them already accepted their scope. This resolves the same
  * scope the API layer uses.
  */

@@ -9,6 +9,7 @@
 // upsert eder. enableAiDraft + pulseAiEnabled toggle'ları runtime check'lenir.
 
 import { NextRequest, NextResponse } from 'next/server';
+import { withCronGuard } from '@/lib/cron-guard';
 import { prisma } from '@/lib/prisma';
 import { generateAiDraftBackground, type AiDraftTone } from '@/lib/ai-draft';
 import * as Sentry from '@sentry/nextjs';
@@ -78,7 +79,7 @@ export async function runFeedbackAutoDraft(): Promise<FeedbackAutoDraftSummary> 
   };
 }
 
-export async function GET(req: NextRequest) {
+async function handleCron(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
@@ -93,3 +94,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export const GET = withCronGuard('/api/cron/feedback-autodraft', handleCron);

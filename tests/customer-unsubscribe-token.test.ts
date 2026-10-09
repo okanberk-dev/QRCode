@@ -1,10 +1,7 @@
 /**
- * §38.48 Wave 2 — Customer campaign unsubscribe token tests.
- *
- * sendCustomerCampaign full pipeline DB-bağımlı (CustomerEmailLog/Campaign
- * upsert + Resend HTTP); unit testte mocking yerine sadece saf token helper'a
- * odaklanıyoruz. Helper HMAC-SHA256 + constant-time compare → tampering
- * resistance kritik.
+ * Unsubscribe token verifier tests. The campaign mail sender is gone, but the
+ * links in already-delivered mails must keep verifying (KVKK / ETK). HMAC-SHA256
+ * + constant-time compare → tampering resistance is the critical property.
  */
 
 import { describe, it } from 'node:test';
@@ -12,7 +9,7 @@ import assert from 'node:assert/strict';
 
 import {
   verifyUnsubscribeToken,
-} from '../src/lib/email-customer-campaign';
+} from '../src/lib/customer-unsubscribe-token';
 
 // Internal helper not exported; we re-implement the same logic here for round-trip.
 import crypto from 'node:crypto';

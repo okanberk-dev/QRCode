@@ -59,7 +59,6 @@ interface DashboardWorkspace {
     category: string;
     primaryColor: string;
     isActive: boolean;
-    campaignsEnabled: boolean;
     menuEnabled: boolean;
     externalPlatformsEnabled: boolean;
     feedbackCount: number;
@@ -117,8 +116,6 @@ function useTopBar(locale: Locale, pathname: string | null, section?: string | n
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
   if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform Bağlantıları' : 'Platform Links' };
   if (rest.startsWith('/customers')) return { breadcrumb: isTr ? 'CRM / MÜŞTERİLER' : 'CRM / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
-  // §38.72 — Campaigns sidebar item (CRM grup §38.56) için breadcrumb entry.
-  if (rest.startsWith('/campaigns')) return { breadcrumb: isTr ? 'CRM / KAMPANYALAR' : 'CRM / CAMPAIGNS', title: isTr ? 'Kampanyalar' : 'Campaigns' };
   if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORMLAR' : 'PANEL / PLATFORMS', title: isTr ? 'Platform bağlantıları' : 'Review platforms' };
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
@@ -411,7 +408,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       `${base}/google-reviews`,
       `${base}/analytics`,
       `${base}/customers`,
-      `${base}/campaigns`,
       `${base}/qr`,
       `${base}/menu`,
       `${base}/restaurants`,
@@ -532,21 +528,14 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       id: 'crm',
       icon: UsersRound,
       label: 'CRM',
-      // §38.56 — tasarım a/shell.jsx CRM grup: Müşteriler / Analitik / Kampanyalar.
-      // §38.99 — Kampanyalar artık canlı (placeholder rewrite), "Yeni" badge
-      // kaldırıldı. Admin master flag (Restaurant.campaignsEnabled §38.98) ile
-      // per-restaurant kapatılabilir; UI disabled mode AlertBanner gösterir.
+      // §38.56 — CRM grup: Müşteriler / Analitik / Anketler / Denetim.
+      // Müşteri kampanya maili özelliği kaldırıldı (CLAUDE.md §38.241).
       children: [
         { href: `/${locale}/dashboard/customers`, icon: UsersRound, label: copy.customers },
         { href: `/${locale}/dashboard/analytics`, icon: BarChart3, label: copy.analytics },
-        {
-          href: `/${locale}/dashboard/campaigns`,
-          icon: MessageSquareText,
-          label: locale === 'tr' ? 'Kampanyalar' : 'Campaigns',
-        },
         // Stage 98 — Surveys nav entry (CLAUDE.md §42). CRM group altında,
-        // Customers + Analytics + Campaigns ile aynı bilgi mimarisi (hepsi
-        // hedeflenmiş geri bildirim + insight kaynağı).
+        // Customers + Analytics ile aynı bilgi mimarisi (hepsi hedeflenmiş
+        // geri bildirim + insight kaynağı).
         {
           href: `/${locale}/dashboard/surveys`,
           icon: ClipboardList,
@@ -1573,7 +1562,6 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           { href: `/${locale}/dashboard/google-reviews`, label: copy.googleReviews, keywords: ['google', 'yorum', 'review', 'feedback'] },
           { href: `/${locale}/dashboard/qr`, label: copy.qr, keywords: ['qr', 'kod', 'code'] },
           { href: `/${locale}/dashboard/analytics`, label: copy.analytics, keywords: ['analitik', 'rapor', 'analytics', 'report'] },
-          { href: `/${locale}/dashboard/campaigns`, label: locale === 'tr' ? 'Kampanyalar' : 'Campaigns', keywords: ['kampanya', 'campaign', 'mail', 'segment'] },
           { href: `/${locale}/dashboard/restaurants`, label: copy.restaurants, keywords: ['işletme', 'konum', 'lokasyon', 'restoran', 'location'] },
           { href: `/${locale}/dashboard/menu`, label: copy.menu, keywords: ['menü', 'menu', 'ürün', 'item'] },
           { href: `/${locale}/dashboard/platforms`, label: copy.integrations, keywords: ['entegrasyon', 'integration', 'google', 'yemeksepeti', 'getir', 'trendyol', 'platform', 'url'] },
