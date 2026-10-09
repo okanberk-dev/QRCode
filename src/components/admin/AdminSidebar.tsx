@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import nextDynamic from 'next/dynamic';
 import {
   BarChart3,
-  Bell,
   BookOpen,
   ChevronDown,
   ChevronLeft,
@@ -21,7 +20,6 @@ import {
   LogOut,
   Mail,
   Megaphone,
-  MessageSquareText,
   QrCode,
   Search as SearchIcon,
   ScrollText,
@@ -252,28 +250,6 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
         { href: '/admin/analytics', icon: BarChart3, label: locale === 'en' ? 'Analytics' : 'Analitik', permission: { resource: 'analytics', action: 'read' } },
         { href: '/admin/qr', icon: QrCode, label: t('qr_codes') },
         ...(role === 'manager' ? [] : [{ href: '/admin/restaurants', icon: Store, label: t('restaurants'), roles: ['superadmin'] }]),
-        // Stage 29 §38.105 — Campaign moderation queue. Backend RBAC
-        // `campaigns:read` zorunlu; superadmin bypass + grant'lı staff/manager
-        // ise erişim. Sidebar `permission` annotation'ı staff için aktif;
-        // superadmin direkt görür, manager için RBAC permission grant
-        // durumunda admin tarafından ayrıca açılır (mevcut /admin/users/[id]/permissions paterni).
-        {
-          href: '/admin/campaign-approvals',
-          icon: Sparkles,
-          label: locale === 'en' ? 'Campaign approvals' : 'Kampanya Onayları',
-          roles: ['superadmin'],
-          permission: { resource: 'campaigns', action: 'read' },
-        },
-        // Stage 119 §38.199 — Sektör bazlı kampanya şablon kataloğu. Owner
-        // panel /dashboard/campaigns'in "Şablon seç" picker'ı bu kataloğu
-        // tüketir. Buaze global rows (restaurantId=null); owner-saved rows
-        // (restaurantId set) admin tarafından düzenlenmez.
-        {
-          href: '/admin/customer-campaign-templates',
-          icon: MessageSquareText,
-          label: locale === 'en' ? 'Campaign templates' : 'Kampanya Şablonları',
-          roles: ['superadmin'],
-        },
         // CLAUDE.md §42 — Denetim Merkezi (superadmin). 3 alt-yüzey:
         //   1. Şablonlar (catalog + edit + question builder)
         //   2. Kategoriler (sektör taksonomisi)
@@ -296,16 +272,6 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
         { href: '/admin/team', icon: Users, label: locale === 'en' ? 'Team' : 'Ekip' },
         { href: '/admin/billing', icon: CreditCard, label: locale === 'en' ? 'Billing' : 'Faturalandırma' },
         { href: '/admin/settings', icon: Settings, label: locale === 'en' ? 'Settings' : 'Ayarlar' },
-      ],
-    },
-    {
-      type: 'group',
-      id: 'manager-settings',
-      icon: Bell,
-      label: locale === 'en' ? 'Settings' : 'Ayarlar',
-      roles: ['superadmin', 'manager'],
-      children: [
-        { href: '/admin/notifications', icon: Bell, label: locale === 'en' ? 'Notifications' : 'Bildirimler' },
       ],
     },
     {
@@ -658,6 +624,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
               locale={locale === 'en' ? 'en' : 'tr'}
               announcements={announcements}
               panelBase="/admin"
+              notificationsSettingsHref={null}
             />
           </ViewportMount>
           {/* Mobile-only logout icon. Desktop keeps the labelled `bz-btn-danger`

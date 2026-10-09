@@ -6,7 +6,6 @@ export const RESTAURANT_FEATURE_SELECT = {
   menuPublished: true,
   aiAnalyticsEnabled: true,
   externalPlatformsEnabled: true,
-  campaignsEnabled: true,
   surveysEnabled: true,
   updatedAt: true,
 } as const;
@@ -18,8 +17,6 @@ export const RESTAURANT_FEATURE_KEYS = [
   'menuPublished',
   'aiAnalyticsEnabled',
   'externalPlatformsEnabled',
-  // CLAUDE.md §38.98 — Owner panel campaigns feature. Default true (opt-out).
-  'campaignsEnabled',
   // Admin master switch for the owner Surveys module (2026-10 owner↔admin
   // link). Default true — existing owners keep access.
   'surveysEnabled',

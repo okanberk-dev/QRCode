@@ -60,16 +60,6 @@ export const SUPPORTED_MAIL_KEYS = [
   'first-feedback-tips',
   'upgrade-suggestion',
   'inactive-reactivation',
-  // §38.48 Wave 2 — Owner → customer mass email campaign (CLAUDE.md §38.48).
-  'customer-campaign',
-  // Stage 29 §38.105 — campaign moderation owner notification mails.
-  // Admin approve → owner-campaign-approved (delivery summary + dashboard CTA).
-  // Admin reject → owner-campaign-rejected (reviewer note + revize rehberi).
-  // Ops mail (notifyOpsOfCampaignSubmitted) ve admin in-app feed
-  // (writeAdminNotification) ayrı kanallar; bu 2 template owner mailbox'una
-  // gider.
-  'owner-campaign-approved',
-  'owner-campaign-rejected',
   // CLAUDE.md §42 Phase 3 — Denetim Merkezi yanıt tamamlandı bildirimi.
   // Owner'a (Restaurant.notificationEmail) gönderilir. Skor + geçti/kaldı +
   // panel detay link.

@@ -179,6 +179,8 @@ model Restaurant {
   // eder — CLAUDE.md §5.2 paterni). Mevcut row'lar Stage 30 migration ile
   // false'a çekildi; admin /admin/restaurants/[id] feature-access
   // endpoint'inden tek-tek aktif edilir.
+  // DEPRECATED (CLAUDE.md §38.241): campaign mail feature removed; column
+  // kept to avoid a destructive migration. Not read or written by the app.
   campaignsEnabled              Boolean @default(false) @map("campaigns_enabled")
   // Admin master switch for the owner Surveys module (create/publish +
   // public /s/[slug] submissions). Default true so existing owners keep the
@@ -1727,6 +1729,9 @@ model CustomerSegmentOverride {
   @@map("customer_segment_overrides")
 }
 
+// DEPRECATED (CLAUDE.md §38.241, 2026-10): the customer campaign mail feature
+// was removed from the app. Table kept only to preserve historical data and
+// the unsubscribe link in already-delivered mails. No code writes to it.
 model CustomerEmailCampaign {
   id             String             @id @default(cuid())
   restaurantId   String             @map("restaurant_id")
@@ -1825,6 +1830,9 @@ model CustomerEmailLog {
 // - (sector, locale, isPublished) — owner picker query hot path.
 // - (restaurantId, sector, locale) — owner's "my templates" list.
 // - (forkedFromId) — admin can see "how many forks exist" for a global.
+// DEPRECATED (CLAUDE.md §38.241, 2026-10): the customer campaign mail feature
+// was removed from the app. Table kept only to preserve historical data and
+// the unsubscribe link in already-delivered mails. No code writes to it.
 model CustomerCampaignTemplate {
   id            String  @id @default(cuid())
   // Stable handle for seeded global templates (e.g. 'food.reactivation.tr').
@@ -1872,6 +1880,9 @@ model CustomerCampaignTemplate {
 //
 // Index'ler: (adminId, readAt, createdAt) feed query (per-admin + unread filter
 // + chronological); (type, createdAt) admin filter + analytics.
+// DEPRECATED (CLAUDE.md §38.241, 2026-10): the customer campaign mail feature
+// was removed from the app. Table kept only to preserve historical data and
+// the unsubscribe link in already-delivered mails. No code writes to it.
 model AdminNotification {
   id        String    @id @default(cuid())
   adminId   String?   @map("admin_id") // null = broadcast (tüm admin'ler)

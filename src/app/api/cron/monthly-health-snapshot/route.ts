@@ -10,6 +10,7 @@
 // promise sequencing — Google API quota'sını paralelle patlatma.
 
 import { NextRequest, NextResponse } from 'next/server';
+import { withCronGuard } from '@/lib/cron-guard';
 import { prisma } from '@/lib/prisma';
 import { captureSnapshot } from '@/lib/reputation/snapshot';
 
@@ -77,7 +78,7 @@ export async function runMonthlyHealthSnapshot(): Promise<SnapshotSummary> {
   };
 }
 
-export async function GET(req: NextRequest) {
+async function handleCron(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
@@ -93,3 +94,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export const GET = withCronGuard('/api/cron/monthly-health-snapshot', handleCron);

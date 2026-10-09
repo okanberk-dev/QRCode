@@ -4,6 +4,7 @@
 // cooldown 14 days per restaurant.
 
 import { NextRequest, NextResponse } from 'next/server';
+import { withCronGuard } from '@/lib/cron-guard';
 import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import { sendQrNoScansReminderEmail } from '@/lib/email';
@@ -122,7 +123,7 @@ export async function runQrNoScansReminder(): Promise<Summary> {
   return { candidates: candidates.length, sent, skipped, failures, durationMs: Date.now() - start };
 }
 
-export async function GET(req: NextRequest) {
+async function handleCron(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
@@ -137,3 +138,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'cron_failed' }, { status: 500 });
   }
 }
+
+export const GET = withCronGuard('/api/cron/qr-no-scans-reminder', handleCron);

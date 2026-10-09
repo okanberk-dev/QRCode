@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withCronGuard } from '@/lib/cron-guard';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getNotificationPrefsForRestaurant } from '@/lib/notification-preferences';
@@ -191,7 +192,7 @@ export async function runGoogleReviewsAlert() {
   return { ok: true, processedCount, emailSentCount };
 }
 
-export async function GET(req: NextRequest) {
+async function handleCron(req: NextRequest) {
   // CRON_SECRET fail-closed guard (CLAUDE.md §37.2 H)
   const authHeader = req.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
@@ -207,3 +208,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export const GET = withCronGuard('/api/cron/google-reviews-alert', handleCron);

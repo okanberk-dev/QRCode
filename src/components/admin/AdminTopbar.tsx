@@ -12,10 +12,6 @@ const NotificationBell = nextDynamic(() => import('@/components/notifications/No
   ssr: false,
   loading: () => <span aria-hidden className="inline-flex h-9 w-9 shrink-0" />,
 });
-const AdminCampaignBell = nextDynamic(() => import('@/components/admin/AdminCampaignBell'), {
-  ssr: false,
-  loading: () => <span aria-hidden className="inline-flex h-9 w-9 shrink-0" />,
-});
 // §38.219 Stage 139 — Cmd+K command palette. ssr:false because the
 // palette uses window listeners + lazy fetches /api/admin/* on open.
 // Modal is mounted at the topbar level so a single instance handles both
@@ -88,17 +84,8 @@ export default function AdminTopbar({ announcements = [], displayName }: AdminTo
           locale={locale === 'en' ? 'en' : 'tr'}
           announcements={announcements}
           panelBase="/admin"
+          notificationsSettingsHref={null}
         />
-      </ViewportMount>
-      {/* Stage 29 §38.105 — Campaign moderation in-app bell. AdminNotification
-          feed (broadcast + per-admin). RBAC `campaigns:read` permission ile
-          gate'li (backend), UI'da sadece görünüyor — manager için 401/403
-          fallback'inde silent kalır. */}
-      <ViewportMount
-        query="(min-width: 1024px)"
-        fallback={<span aria-hidden className="inline-flex h-9 w-9 shrink-0" />}
-      >
-        <AdminCampaignBell locale={locale === 'en' ? 'en' : 'tr'} />
       </ViewportMount>
       {/* CLAUDE.md §38.164 (Stage 84): inline `style={{ fontFamily: 'var(--font-heading)' }}` redundancy
           kaldırıldı. Avatar `<Link>` (heading değil) — `bz-h-tight` utility ile heading semantic.

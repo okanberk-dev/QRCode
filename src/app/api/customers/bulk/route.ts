@@ -9,11 +9,11 @@ import { rateLimit } from '@/lib/rate-limit';
 // §38.48 Wave 2 — Owner-scoped Customers bulk action endpoint.
 // Plan: ~/.claude/plans/nerin-ile-devam-et-sprightly-kahn.md Phase E.
 //
-// 4 action:
+// 3 action:
 //   - archive       → CustomerArchive upsert (soft-delete, ?showArchived=1 ile geri)
 //   - unarchive     → CustomerArchive delete
 //   - set_segment   → CustomerSegmentOverride upsert (manualSegment 5 enum)
-//   - send_campaign → CustomerEmailCampaign create + sendCustomerCampaign batch
+// (Müşteri kampanya maili özelliği kaldırıldı — CLAUDE.md §38.241.)
 //
 // Auth: getPanelActorFromRequest + getScopedRestaurantIds (owner-only,
 //       superadmin null scope 403; admin'in kendi /api/admin/customers/...
@@ -23,9 +23,7 @@ import { rateLimit } from '@/lib/rate-limit';
 // Rate limit: 10 req/dk/actor (Upstash, CLAUDE.md §14.2).
 // Zod: BodySchema strict + ids max 50 (CLAUDE.md §28.4 paterni).
 //
-// Response: { processed, skipped, action, campaignId? }
-//
-// maxDuration: 60 (send_campaign batch worst-case 50 × 600ms = 30sn safe).
+// Response: { processed, skipped, action }
 
 export const maxDuration = 60;
 
@@ -34,15 +32,11 @@ const SEGMENT_VALUES = ['vip', 'loyal', 'new', 'risk', 'churned'] as const;
 const BodySchema = z
   .object({
     keys: z.array(z.string().min(3).max(256)).min(1).max(50),
-    action: z.enum(['archive', 'unarchive', 'set_segment', 'send_campaign']),
+    action: z.enum(['archive', 'unarchive', 'set_segment']),
     payload: z
       .object({
         // set_segment için
         segment: z.enum(SEGMENT_VALUES).optional(),
-        // send_campaign için
-        subject: z.string().min(1).max(150).optional(),
-        body: z.string().min(1).max(10_000).optional(),
-        locale: z.enum(['tr', 'en']).optional(),
       })
       .strict()
       .optional(),
@@ -207,24 +201,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { processed, skipped, action: 'set_segment' },
         { status: 200 },
-      );
-    }
-
-    if (data.action === 'send_campaign') {
-      // Customer e-mail campaigns go out under the Buaze sender and must
-      // pass the admin moderation pipeline (draft → pending_approval →
-      // admin approve → send, §38.105) plus the `campaignsEnabled`
-      // entitlement. This branch used to send immediately to the selected
-      // customers, bypassing all of that. The owner UI now routes to the
-      // Campaigns page; the action is kept in the schema only so stale
-      // clients get a clear answer instead of a validation error.
-      return NextResponse.json(
-        {
-          error:
-            'Kampanyalar artık Kampanyalar sayfasından oluşturulup Buaze onayına gönderilir.',
-          code: 'use_campaigns_flow',
-        },
-        { status: 410 },
       );
     }
 

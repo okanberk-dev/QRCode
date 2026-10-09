@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyUnsubscribeToken } from '@/lib/email-customer-campaign';
+import { verifyUnsubscribeToken } from '@/lib/customer-unsubscribe-token';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 // §38.48 Wave 2 — Customer campaign unsubscribe endpoint.

@@ -36,12 +36,10 @@ interface NotificationBellProps {
    *  `/${locale}/dashboard/feedbacks`, not `/dashboard/reviews`, so
    *  callers should pass an explicit href. */
   reviewsHref?: string;
-  /** Where the gear icon + "settings" footer link goes. Admin uses
-   *  `/admin/notifications`; owner now has its own page at
-   *  `/${locale}/dashboard/notifications` (added 2026-04 — fixes the
-   *  cross-panel jump that previously dropped owners into the admin
-   *  shell). */
-  notificationsSettingsHref?: string;
+  /** Where the gear icon + "settings" footer link goes. Owner has its own
+   *  page at `/${locale}/dashboard/notifications`. Pass `null` to hide both
+   *  links — the admin panel has no notification-preferences page. */
+  notificationsSettingsHref?: string | null;
   /** Active owner business scope. When present, low-rating feedback notifications are scoped to it. */
   restaurantId?: string | null;
   /** Optional accent (defaults to lime — Pulse). */
@@ -118,7 +116,8 @@ export default function NotificationBell({
   const isTr = locale === 'tr';
   const base = panelBase ?? '/admin';
   const reviewsLink = reviewsHref ?? `${base}/reviews`;
-  const settingsLink = notificationsSettingsHref ?? `${base}/notifications`;
+  const settingsLink =
+    notificationsSettingsHref === null ? null : notificationsSettingsHref ?? `${base}/notifications`;
   // Use the panel base as the storage scope so admin + owner tabs in
   // the same browser don't clobber each other's read-state.
   const scope = base;
@@ -494,14 +493,16 @@ export default function NotificationBell({
                     {isTr ? 'Tümünü okundu' : 'Mark all read'}
                   </button>
                 )}
-                <Link
-                  href={settingsLink}
-                  onClick={() => setOpen(false)}
-                  aria-label={isTr ? 'Bildirim ayarları' : 'Notification settings'}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
-                >
-                  <Settings size={13} strokeWidth={2} />
-                </Link>
+                {settingsLink ? (
+                  <Link
+                    href={settingsLink}
+                    onClick={() => setOpen(false)}
+                    aria-label={isTr ? 'Bildirim ayarları' : 'Notification settings'}
+                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#737373] transition-colors hover:bg-[#F5F5F5] hover:text-[#0A0A0A]"
+                  >
+                    <Settings size={13} strokeWidth={2} />
+                  </Link>
+                ) : null}
               </div>
             </div>
 
@@ -626,13 +627,15 @@ export default function NotificationBell({
                 {isTr ? 'Tüm yorumlar' : 'All reviews'}
                 <ExternalLink size={11} strokeWidth={2} />
               </Link>
-              <Link
-                href={settingsLink}
-                onClick={() => setOpen(false)}
-                className="inline-flex items-center gap-1 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
-              >
-                {isTr ? 'AYARLAR' : 'SETTINGS'}
-              </Link>
+              {settingsLink ? (
+                <Link
+                  href={settingsLink}
+                  onClick={() => setOpen(false)}
+                  className="inline-flex items-center gap-1 pulse-eyebrow text-[#737373] hover:text-[#0A0A0A] transition-colors"
+                >
+                  {isTr ? 'AYARLAR' : 'SETTINGS'}
+                </Link>
+              ) : null}
             </div>
           </div>
         </>

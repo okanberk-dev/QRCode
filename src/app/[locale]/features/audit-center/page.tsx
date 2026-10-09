@@ -737,8 +737,8 @@ export default async function AuditCenterPage({
               <Link href={`${base}/features/surveys`} className="rounded-full border border-[#EDEDED] px-3 py-1 hover:border-[#0A0A0A]">
                 {isTr ? 'Anketler' : 'Surveys'}
               </Link>
-              <Link href={`${base}/features/campaigns`} className="rounded-full border border-[#EDEDED] px-3 py-1 hover:border-[#0A0A0A]">
-                {isTr ? 'Kampanyalar' : 'Campaigns'}
+              <Link href={`${base}/features/pulse-ai`} className="rounded-full border border-[#EDEDED] px-3 py-1 hover:border-[#0A0A0A]">
+                Pulse AI
               </Link>
               <Link href={`${base}/features/review-management`} className="rounded-full border border-[#EDEDED] px-3 py-1 hover:border-[#0A0A0A]">
                 {isTr ? 'Yorum Yönetimi' : 'Review Management'}
