@@ -75,6 +75,43 @@ export async function writeAdminAuditLog(entry: AuditWriteParams): Promise<void>
   }
 }
 
+/**
+ * Owner-panel write audit (2026-10 owner↔admin link).
+ *
+ * Owner-side changes (restaurant settings, team, surveys, account deletion…)
+ * used to leave no trail at all, so `/admin/audit-logs` and the owner's own
+ * `/api/account/audit-log` were blind to them — including changes an admin
+ * made while impersonating ("Owner gibi gör"). This wrapper records the panel
+ * actor and, when the request is an impersonation session, the real admin id
+ * + session id so the trail shows who actually clicked.
+ *
+ * `targetId` should be the owning user id where possible so the row also
+ * surfaces in `/admin/members/[id]/audit` and in the owner's audit view.
+ * Never put PII (email/phone) in `payload` — field names, ids and booleans.
+ */
+export async function writePanelAuditLog(
+  actor: {
+    id: string;
+    source: 'admin' | 'user';
+    realAdminId?: string | null;
+    impersonationSessionId?: string | null;
+  },
+  action: string,
+  targetId: string | null,
+  payload?: Record<string, unknown>,
+): Promise<void> {
+  const impersonation = actor.realAdminId
+    ? { realAdminId: actor.realAdminId, sessionId: actor.impersonationSessionId ?? null }
+    : undefined;
+  await writeAdminAuditLog({
+    actorId: actor.id,
+    actorSource: actor.source,
+    action,
+    targetId,
+    payload: impersonation ? { ...(payload ?? {}), impersonation } : payload,
+  });
+}
+
 // PII redaction utilities — used by viewer endpoints to mask email/phone in
 // payload JSON before returning to UI. Two-way: helper functions reusable.
 

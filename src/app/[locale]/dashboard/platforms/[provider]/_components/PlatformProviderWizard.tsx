@@ -540,7 +540,7 @@ export default function PlatformProviderWizard({
             >
               <input
                 id={`platform-url-${platform.slug}`}
-                className="bz-input bz-mono w-full text-[13px]"
+                className="bz-input bz-mono w-full text-[16px] sm:text-[13px]"
                 type="url"
                 inputMode="url"
                 autoComplete="off"

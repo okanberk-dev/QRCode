@@ -2,13 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { getScopedRestaurantIds, getTeamMemberRole } from '@/lib/panel-access';
 import { validateBody } from '@/lib/api/validate';
 import { rateLimit } from '@/lib/rate-limit';
-import {
-  sendCustomerCampaign,
-  type CustomerCampaignRecipient,
-} from '@/lib/email-customer-campaign';
 
 // §38.48 Wave 2 — Owner-scoped Customers bulk action endpoint.
 // Plan: ~/.claude/plans/nerin-ile-devam-et-sprightly-kahn.md Phase E.
@@ -83,6 +79,12 @@ export async function POST(req: NextRequest) {
   const scopedIds = await getScopedRestaurantIds(actor);
   if (scopedIds === null) {
     return NextResponse.json({ error: 'Yetkisiz' }, { status: 403 });
+  }
+
+  // Every action here is a write — read-only team members (viewer) must not
+  // archive / re-segment customers.
+  if ((await getTeamMemberRole(actor)) === 'viewer') {
+    return NextResponse.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
   }
 
   // Rate limit (CLAUDE.md §14.2 + §28.4 paterni).
@@ -209,111 +211,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (data.action === 'send_campaign') {
-      const subject = data.payload?.subject?.trim();
-      const messageBody = data.payload?.body?.trim();
-      const locale = data.payload?.locale ?? 'tr';
-      if (!subject || !messageBody) {
-        return NextResponse.json(
-          { error: 'send_campaign için payload.subject ve body zorunlu' },
-          { status: 400 },
-        );
-      }
-
-      // Single restaurant scope kuralı: campaign belirli bir restaurantId'ye
-      // bağlı (FK). Eğer keys çoklu restaurantId içeriyorsa ilkini al + filtrele.
-      // Owner panel UI checkbox'lar tek restaurant'ta seçildiğinden tipik tek
-      // restaurantId; multi-restaurant filtre nadiren karışık seçim yaratır.
-      const primaryRestaurantId = parsedKeys[0].restaurantId;
-      const sameRestaurantKeys = parsedKeys.filter(
-        (k) => k.restaurantId === primaryRestaurantId,
-      );
-
-      const restaurant = await prisma.restaurant.findUnique({
-        where: { id: primaryRestaurantId },
-        select: { name: true },
-      });
-      if (!restaurant) {
-        return NextResponse.json({ error: 'Restoran bulunamadı' }, { status: 404 });
-      }
-
-      // Recipients: feedback rows içinde son email + KVKK marketing consent.
-      // Per-key son feedback'in `email` + `hasMarketingConsent` alanları (LIST
-      // endpoint paterni reuse — ARRAY_AGG değil basit query, çünkü 50 kişi
-      // sınırı + sadece email dolu olanlar).
-      const recipients: CustomerCampaignRecipient[] = [];
-      for (const k of sameRestaurantKeys) {
-        // Find the latest feedback for this contact_key with valid email.
-        const fb = await prisma.feedback.findFirst({
-          where: {
-            restaurantId: k.restaurantId,
-            email: { not: null },
-            // Match contact key — email lower-case OR phone exact.
-            OR: [
-              { email: { equals: k.contactKey, mode: 'insensitive' } },
-              { phone: k.contactKey },
-            ],
-            hasKvkkConsent: true,
-          },
-          orderBy: { createdAt: 'desc' },
-          select: {
-            email: true,
-            hasMarketingConsent: true,
-          },
-        });
-        if (!fb || !fb.email) continue;
-        recipients.push({
-          key: `${k.restaurantId}|${k.contactKey}`,
-          restaurantId: k.restaurantId,
-          contactKey: k.contactKey,
-          email: fb.email,
-          hasMarketingConsent: Boolean(fb.hasMarketingConsent),
-        });
-      }
-
-      if (recipients.length === 0) {
-        return NextResponse.json(
-          {
-            processed: 0,
-            skipped: data.keys.length,
-            action: 'send_campaign',
-            error: 'Geçerli e-posta adresi bulunamadı',
-          },
-          { status: 200 },
-        );
-      }
-
-      // Create campaign row first (audit trail).
-      const campaign = await prisma.customerEmailCampaign.create({
-        data: {
-          restaurantId: primaryRestaurantId,
-          subject,
-          body: messageBody,
-          recipientCount: recipients.length,
-          status: 'sending',
-          createdById: actor.id,
-        },
-      });
-
-      // Send batch (helper handles KVKK gate + Resend throttle + log).
-      const result = await sendCustomerCampaign({
-        campaignId: campaign.id,
-        restaurantId: primaryRestaurantId,
-        restaurantName: restaurant.name,
-        subject,
-        body: messageBody,
-        recipients,
-        locale,
-      });
-
+      // Customer e-mail campaigns go out under the Buaze sender and must
+      // pass the admin moderation pipeline (draft → pending_approval →
+      // admin approve → send, §38.105) plus the `campaignsEnabled`
+      // entitlement. This branch used to send immediately to the selected
+      // customers, bypassing all of that. The owner UI now routes to the
+      // Campaigns page; the action is kept in the schema only so stale
+      // clients get a clear answer instead of a validation error.
       return NextResponse.json(
         {
-          processed: result.sentCount,
-          failed: result.failedCount,
-          skipped: result.skippedCount + (data.keys.length - sameRestaurantKeys.length),
-          action: 'send_campaign',
-          campaignId: campaign.id,
+          error:
+            'Kampanyalar artık Kampanyalar sayfasından oluşturulup Buaze onayına gönderilir.',
+          code: 'use_campaigns_flow',
         },
-        { status: 200 },
+        { status: 410 },
       );
     }
 

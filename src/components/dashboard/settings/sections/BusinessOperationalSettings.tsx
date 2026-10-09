@@ -5,6 +5,7 @@ import { AlertTriangle, Clock, Info } from "lucide-react";
 import { AlertBanner, Field, APSwitch } from "@/components/ui";
 import { SettingsCard } from "../SettingsCard";
 import { UnsavedChangesBar } from "../UnsavedChangesBar";
+import { restaurantSaveErrorMessage } from "../restaurant-status";
 
 interface RestaurantData {
   id: string;
@@ -15,6 +16,7 @@ interface RestaurantData {
 
 interface BusinessOperationalSettingsProps {
   restaurant: RestaurantData;
+  locale?: "tr" | "en";
   onSaved?: (partial: Partial<RestaurantData>) => void;
 }
 
@@ -54,8 +56,10 @@ function isDirty(a: FormState, b: FormState) {
  */
 export function BusinessOperationalSettings({
   restaurant,
+  locale = "tr",
   onSaved,
 }: BusinessOperationalSettingsProps) {
+  const t = locale === "en" ? COPY.en : COPY.tr;
   const [form, setForm] = useState<FormState>(() => toForm(restaurant));
   const [initial, setInitial] = useState<FormState>(() => toForm(restaurant));
   const [saving, setSaving] = useState(false);
@@ -63,6 +67,9 @@ export function BusinessOperationalSettings({
   const [success, setSuccess] = useState<string | null>(null);
   const [hoursError, setHoursError] = useState<string | null>(null);
 
+  // Resync only when another business is loaded — keying on the object made
+  // our own onSaved (parent merge → new object) clear the success banner and
+  // any other section's save wipe unsaved edits here.
   useEffect(() => {
     const next = toForm(restaurant);
     setForm(next);
@@ -70,7 +77,8 @@ export function BusinessOperationalSettings({
     setHoursError(null);
     setError(null);
     setSuccess(null);
-  }, [restaurant]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurant.id]);
 
   const dirty = useMemo(() => isDirty(form, initial), [form, initial]);
 
@@ -82,7 +90,7 @@ export function BusinessOperationalSettings({
 
   const validate = (): boolean => {
     if (form.workingHours.trim() && !/^\d{2}:\d{2}-\d{2}:\d{2}$/.test(form.workingHours.trim())) {
-      setHoursError("Format: 08:00-22:00");
+      setHoursError(t.hoursFormat);
       return false;
     }
     return true;
@@ -91,7 +99,7 @@ export function BusinessOperationalSettings({
   const handleSave = async () => {
     if (saving) return;
     if (!validate()) {
-      setError("Lütfen alanları kontrol edin.");
+      setError(t.checkFields);
       return;
     }
     setSaving(true);
@@ -110,13 +118,13 @@ export function BusinessOperationalSettings({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Kaydedilemedi.");
+        throw new Error(restaurantSaveErrorMessage(data, locale, t.saveFailed));
       }
       setInitial(form);
-      setSuccess("Operasyonel ayarlar güncellendi.");
+      setSuccess(t.saved);
       onSaved?.(payload);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Kaydedilemedi.");
+      setError(err instanceof Error ? err.message : t.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -144,12 +152,12 @@ export function BusinessOperationalSettings({
 
       <SettingsCard
         icon={<Clock size={18} />}
-        title="Çalışma saatleri"
-        description="Müşteriye basit bir saat aralığı göster. Detaylı haftalık takvim yakında."
+        title={t.hoursTitle}
+        description={t.hoursDesc}
       >
         <Field
-          label="Saat aralığı"
-          hint="Örn: 08:00-22:00. Boş bırakırsan müşteri sayfasında saat görünmez."
+          label={t.hoursLabel}
+          hint={t.hoursHint}
           error={hoursError ?? undefined}
         >
           <input
@@ -165,32 +173,30 @@ export function BusinessOperationalSettings({
           style={{ background: "#FAFAFA", border: "1px solid #EDEDED" }}
         >
           <Info size={14} className="shrink-0 mt-0.5 text-[#737373]" aria-hidden="true" />
-          <span className="text-[12px] text-[#525252]">
-            Detaylı haftalık takvim (gün-bazlı açılış/kapanış) yakında V2&apos;de gelecek.
-          </span>
+          <span className="text-[12px] text-[#525252]">{t.hoursSoon}</span>
         </div>
       </SettingsCard>
 
       <SettingsCard
         icon={<AlertTriangle size={18} />}
-        title="Geçici olarak kapalı"
-        description="Renovasyon, tatil veya beklenmedik durumlarda işletmeyi geçici kapat."
+        title={t.closedTitle}
+        description={t.closedDesc}
       >
         <div className="flex items-center gap-3">
           <APSwitch
             checked={form.temporarilyClosed}
             onChange={(next) => set("temporarilyClosed", next)}
-            ariaLabel="Geçici kapalı"
+            ariaLabel={t.closedAria}
           />
           <span className="text-[13px] text-[#0A0A0A]">
-            {form.temporarilyClosed ? "Geçici olarak kapalı" : "Açık"}
+            {form.temporarilyClosed ? t.closedOn : t.closedOff}
           </span>
         </div>
         {form.temporarilyClosed && (
           <div className="mt-4">
             <Field
-              label="Kapatma sebebi"
-              hint={`${form.closedReason.length}/${REASON_MAX} karakter — public sayfada görünür.`}
+              label={t.reasonLabel}
+              hint={t.reasonHint(form.closedReason.length, REASON_MAX)}
             >
               <textarea
                 className="bz-input"
@@ -198,7 +204,7 @@ export function BusinessOperationalSettings({
                 value={form.closedReason}
                 maxLength={REASON_MAX}
                 onChange={(e) => set("closedReason", e.target.value.slice(0, REASON_MAX))}
-                placeholder="Yıllık tatildeyiz, 15 Ekim'de tekrar açıyoruz."
+                placeholder={t.reasonPlaceholder}
                 style={{ resize: "vertical", minHeight: 76 }}
               />
             </Field>
@@ -213,9 +219,51 @@ export function BusinessOperationalSettings({
         onReset={handleReset}
         error={error}
         success={dirty ? null : success}
+        locale={locale}
       />
     </div>
   );
 }
+
+const COPY = {
+  tr: {
+    hoursFormat: "Format: 08:00-22:00",
+    checkFields: "Lütfen alanları kontrol edin.",
+    saveFailed: "Kaydedilemedi.",
+    saved: "Operasyonel ayarlar güncellendi.",
+    hoursTitle: "Çalışma saatleri",
+    hoursDesc: "Müşteriye basit bir saat aralığı göster. Detaylı haftalık takvim yakında.",
+    hoursLabel: "Saat aralığı",
+    hoursHint: "Örn: 08:00-22:00. Boş bırakırsan müşteri sayfasında saat görünmez.",
+    hoursSoon: "Detaylı haftalık takvim (gün-bazlı açılış/kapanış) yakında gelecek.",
+    closedTitle: "Geçici olarak kapalı",
+    closedDesc: "Renovasyon, tatil veya beklenmedik durumlarda işletmeyi geçici kapat.",
+    closedAria: "Geçici kapalı",
+    closedOn: "Geçici olarak kapalı",
+    closedOff: "Açık",
+    reasonLabel: "Kapatma sebebi",
+    reasonHint: (n: number, max: number) => `${n}/${max} karakter — public sayfada görünür.`,
+    reasonPlaceholder: "Yıllık tatildeyiz, 15 Ekim'de tekrar açıyoruz.",
+  },
+  en: {
+    hoursFormat: "Format: 08:00-22:00",
+    checkFields: "Please check the highlighted fields.",
+    saveFailed: "Could not save.",
+    saved: "Operational settings updated.",
+    hoursTitle: "Opening hours",
+    hoursDesc: "Show customers a simple time range. A detailed weekly schedule is coming soon.",
+    hoursLabel: "Time range",
+    hoursHint: "E.g. 08:00-22:00. Leave empty to hide hours on the customer page.",
+    hoursSoon: "A detailed weekly schedule (per-day opening/closing) is coming soon.",
+    closedTitle: "Temporarily closed",
+    closedDesc: "Close the business temporarily for renovation, holidays or emergencies.",
+    closedAria: "Temporarily closed",
+    closedOn: "Temporarily closed",
+    closedOff: "Open",
+    reasonLabel: "Closure reason",
+    reasonHint: (n: number, max: number) => `${n}/${max} characters — shown on the public page.`,
+    reasonPlaceholder: "We're on our annual break and reopen on 15 October.",
+  },
+};
 
 export default BusinessOperationalSettings;

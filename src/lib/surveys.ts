@@ -141,6 +141,8 @@ export const SURVEY_PUBLIC_SELECT = {
       slug: true,
       primaryColor: true,
       isActive: true,
+      // Admin master switch (feature-access). Public reads 404 when off.
+      surveysEnabled: true,
     },
   },
   questions: {

@@ -40,7 +40,9 @@ export async function GET(
 
   const url = new URL(req.url);
   const rangeParam = url.searchParams.get('range') ?? '7d';
-  const range = rangeParam in RANGE_DAYS ? rangeParam : '7d';
+  // Object.hasOwn — `in` also matches prototype keys (`?range=toString`),
+  // which yielded a function → NaN date → 500.
+  const range = Object.hasOwn(RANGE_DAYS, rangeParam) ? rangeParam : '7d';
   const days = RANGE_DAYS[range];
 
   const now = new Date();

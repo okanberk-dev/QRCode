@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { BCRYPT_COST } from '@/lib/bcrypt-config';
-import { getUserFromRequest } from '@/lib/auth';
+import { getPanelActorFromRequest, getUserFromRequest } from '@/lib/auth';
+import { writePanelAuditLog } from '@/lib/audit-log';
 import { sendPasswordChangedEmail, sendVerifyEmail } from '@/lib/email';
 import { getClientIp } from '@/lib/rate-limit';
 import { isStrongPassword, isValidEmail } from '@/lib/validations';
@@ -89,8 +90,17 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Geçersiz istek' }, { status: 400 });
+    }
     const { name, email, phoneNumber, position, timezone, currentPassword, newPassword } = body;
+    if (name !== undefined && name !== null && (typeof name !== 'string' || name.length > 120)) {
+      return NextResponse.json({ error: 'Ad en fazla 120 karakter olabilir' }, { status: 400 });
+    }
+    if (newPassword !== undefined && newPassword !== null && typeof newPassword !== 'string') {
+      return NextResponse.json({ error: 'Geçersiz şifre' }, { status: 400 });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: auth.userId },
@@ -102,7 +112,7 @@ export async function PUT(req: NextRequest) {
 
     const updateData: Prisma.UserUpdateInput = {};
 
-    if (name) updateData.name = name.trim();
+    if (typeof name === 'string' && name.trim()) updateData.name = name.trim();
 
     // E-posta değişimi. Eskiden format kontrolü YOKTU ve `emailVerified`
     // sıfırlanmıyordu: owner adresini asla sahip olmadığı bir adrese çevirip
@@ -117,6 +127,23 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: 'Geçerli bir e-posta adresi girin' }, { status: 400 });
       }
       const normalized = email.toLowerCase().trim();
+      if (normalized !== user.email && user.role === 'team_member') {
+        // A team member's workspace access is resolved by e-mail
+        // (TeamMember.email ↔ User.email). Letting them retarget their
+        // address meant: (a) their old membership row stayed active for an
+        // address anyone could now register, and (b) they could point their
+        // account at another workspace's orphaned active membership and
+        // inherit its restaurants after a token refresh. The owner re-invites
+        // the new address instead.
+        return NextResponse.json(
+          {
+            error:
+              'Ekip üyeleri e-posta adresini değiştiremez. Yeni adres için işletme sahibinden davet isteyin.',
+            code: 'TEAM_MEMBER_EMAIL_LOCKED',
+          },
+          { status: 403 },
+        );
+      }
       if (normalized !== user.email) {
         if (!isValidEmail(normalized) || normalized.length > 256) {
           return NextResponse.json({ error: 'Geçerli bir e-posta adresi girin' }, { status: 400 });
@@ -289,9 +316,25 @@ export async function PUT(req: NextRequest) {
       });
     }
 
+    // Security-relevant account changes are audit-logged (owner's own
+    // /api/account/audit-log + /admin/audit-logs). No values, only what
+    // changed; impersonated edits carry the real admin id.
+    if (passwordWasChanged || pendingVerifyEmail) {
+      const actor = await getPanelActorFromRequest(req);
+      await writePanelAuditLog(
+        actor ?? { id: user.id, source: 'user' },
+        'owner.account.security_update',
+        user.id,
+        { passwordChanged: passwordWasChanged, emailChanged: Boolean(pendingVerifyEmail) },
+      );
+    }
+
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error) {
-    console.error('[PROFILE_PUT]', error);
+    console.error('[PROFILE_PUT]', {
+      errorName: error instanceof Error ? error.name : 'unknown',
+      errorMessage: error instanceof Error ? error.message.slice(0, 200) : 'non-error',
+    });
     return NextResponse.json({ error: 'Güncelleme sırasında bir hata oluştu' }, { status: 500 });
   }
 }

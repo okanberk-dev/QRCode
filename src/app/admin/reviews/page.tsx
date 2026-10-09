@@ -46,8 +46,11 @@ function AdminReviewsContent() {
     hasReply: 'all' as HasReplyFilter,
     flagged: false as boolean,
     assigned: false as boolean,
+    // `/admin/restaurants/[id]` → "Yorum geçmişini gör" links here with
+    // ?restaurantId=…; the page ignored it and showed every restaurant.
+    restaurantId: '',
   });
-  const { tab, platform, hasReply, flagged, assigned } = filters.values;
+  const { tab, platform, hasReply, flagged, assigned, restaurantId: restaurantFilter } = filters.values;
 
   // Notification deep-link target — `?focus=<feedbackId>` from NotificationBell.
   const focusId = searchParams.get('focus');
@@ -123,6 +126,7 @@ function AdminReviewsContent() {
     if (hasReply === 'pending') query.set('hasReply', 'false');
     if (flagged) query.set('isFlagged', 'true');
     if (assigned) query.set('isAssigned', 'me');
+    if (restaurantFilter) query.set('restaurantId', restaurantFilter);
     if (extra) for (const k in extra) query.set(k, extra[k]);
     return query;
   };
@@ -139,7 +143,11 @@ function AdminReviewsContent() {
       try {
         const [listRes, countsRes] = await Promise.all([
           fetch(`/api/feedback?${buildListQuery(1).toString()}`),
-          fetch('/api/feedback/counts'),
+          fetch(
+            restaurantFilter
+              ? `/api/feedback/counts?restaurantId=${encodeURIComponent(restaurantFilter)}`
+              : '/api/feedback/counts',
+          ),
         ]);
         if (listRes.ok) {
           const data = await listRes.json();
@@ -169,7 +177,7 @@ function AdminReviewsContent() {
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platform, hasReply, flagged, assigned, listReloadKey]);
+  }, [platform, hasReply, flagged, assigned, restaurantFilter, listReloadKey]);
 
   const loadMoreRows = async () => {
     if (loadingMore || !hasMore) return;
@@ -636,6 +644,21 @@ function AdminReviewsContent() {
               : 'Inspect, reply, flag, or assign reviews from all restaurants in one inbox.'
           }
         />
+        {restaurantFilter && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => filters.set('restaurantId', '')}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-[#EAF9B8] px-3 py-1.5 text-[11px] font-medium text-[#0A0A0A]"
+            >
+              {isTr
+                ? `${rows[0]?.restaurant?.name ?? 'Seçili işletme'} yorumları`
+                : `${rows[0]?.restaurant?.name ?? 'Selected business'} reviews`}
+              <span className="text-[#525252]" aria-hidden>×</span>
+              <span className="sr-only">{isTr ? 'Filtreyi kaldır' : 'Clear filter'}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* KPI özet — mobile detail view'inde gizli */}

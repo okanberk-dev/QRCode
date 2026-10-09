@@ -72,6 +72,10 @@ export async function POST(
       restaurantId: true,
       rating: true,
       comment: true,
+      // Admin master switches (CLAUDE.md §5.2). This endpoint generated (and
+      // paid for) AI summaries on every inbox click even after an admin had
+      // switched Pulse AI / AI analytics off for the business.
+      restaurant: { select: { pulseAiEnabled: true, aiAnalyticsEnabled: true } },
     },
   });
   if (!feedback) {
@@ -81,8 +85,17 @@ export async function POST(
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
+  if (!feedback.restaurant?.pulseAiEnabled || !feedback.restaurant?.aiAnalyticsEnabled) {
+    return NextResponse.json({ ...FALLBACK, disabled: true });
+  }
+
+  // Locale is part of the cache key — a TR summary must not be served to an
+  // EN request (and vice versa) for the next 24h.
+  const locale = new URL(req.url).searchParams.get('locale') === 'en' ? 'en' : 'tr';
+  const cacheKey = `${id}:${locale}`;
+
   // Cache check
-  const cached = getCached(id);
+  const cached = getCached(cacheKey);
   if (cached) {
     return NextResponse.json(cached);
   }
@@ -90,7 +103,7 @@ export async function POST(
   // Empty content — fallback (yorum yoksa AI çağrısı maliyetsiz)
   if (!feedback.comment || feedback.comment.trim().length < 10) {
     const result = { ...FALLBACK };
-    setCached(id, result);
+    setCached(cacheKey, result);
     return NextResponse.json(result);
   }
 
@@ -107,7 +120,7 @@ export async function POST(
   // OpenAI key check
   if (!hasOpenAIKey()) {
     const result = { ...FALLBACK };
-    setCached(id, result);
+    setCached(cacheKey, result);
     return NextResponse.json(result);
   }
 
@@ -121,13 +134,10 @@ export async function POST(
   ]);
   if (!quota.allowed) {
     const result = { ...FALLBACK };
-    setCached(id, result);
+    setCached(cacheKey, result);
     return NextResponse.json(result);
   }
 
-  // Locale detect — TR default
-  const url = new URL(req.url);
-  const locale = url.searchParams.get('locale') === 'en' ? 'en' : 'tr';
   const isTr = locale === 'tr';
 
   const systemPrompt = isTr
@@ -152,7 +162,7 @@ export async function POST(
 
     if (!content) {
       const result = { ...FALLBACK };
-      setCached(id, result);
+      setCached(cacheKey, result);
       return NextResponse.json(result);
     }
 
@@ -166,7 +176,7 @@ export async function POST(
 
     if (!parsed) {
       const result = { ...FALLBACK };
-      setCached(id, result);
+      setCached(cacheKey, result);
       return NextResponse.json(result);
     }
 
@@ -187,12 +197,12 @@ export async function POST(
       returnIntent,
       source: 'openai',
     };
-    setCached(id, result);
+    setCached(cacheKey, result);
     return NextResponse.json(result);
   } catch (error) {
     console.error('[feedback-summary]', { feedbackId: id, error: error instanceof Error ? error.message : String(error) });
     const result = { ...FALLBACK };
-    setCached(id, result);
+    setCached(cacheKey, result);
     return NextResponse.json(result);
   }
 }

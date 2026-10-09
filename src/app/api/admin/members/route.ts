@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
           trialEndsAt: true,
           isActive: true,
           deactivatedAt: true,
+          scheduledDeletionAt: true,
           lastInvitedAt: true,
           createdAt: true,
           _count: { select: { restaurants: true } },

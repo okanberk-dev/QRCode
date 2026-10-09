@@ -5,6 +5,7 @@ import { hasPermission } from '@/lib/rbac';
 import { rateLimit } from '@/lib/rate-limit';
 import { getBiSnapshot, type BiSnapshot } from '@/lib/admin-bi';
 import { ApiErrors } from '@/lib/api-errors';
+import { csvCell } from '@/lib/csv-safe';
 
 // Stage A5 §38.97 — BI CSV export (cross-workspace).
 //
@@ -20,8 +21,8 @@ export const dynamic = 'force-dynamic';
 const RangeSchema = z.enum(['30d', '90d', '1y']);
 
 function csvEscape(v: string | number | null | undefined): string {
-  const s = v === null || v === undefined ? '' : String(v);
-  return `"${s.replace(/"/g, '""')}"`;
+  // Formula-injection safe (src/lib/csv-safe.ts) — same quoting as before.
+  return csvCell(v);
 }
 
 function buildCsv(snapshot: BiSnapshot): string {

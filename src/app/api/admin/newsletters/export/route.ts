@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
 import { getNewsletterSourceLabel } from '@/lib/newsletter-sources';
+import { neutralizeCsvFormula } from '@/lib/csv-safe';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +69,9 @@ export async function GET(req: NextRequest) {
   });
 }
 
-function escapeCsv(v: string): string {
+function escapeCsv(raw: string): string {
+  // Formula-injection guard (src/lib/csv-safe.ts) before quoting.
+  const v = neutralizeCsvFormula(raw);
   if (v.includes(',') || v.includes('"') || v.includes('\n')) {
     return `"${v.replace(/"/g, '""')}"`;
   }

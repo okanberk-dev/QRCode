@@ -41,7 +41,8 @@ export default async function PublicSurveyPage({ params }: PageProps) {
     !survey ||
     !survey.isActive ||
     !survey.isPublished ||
-    !survey.restaurant.isActive
+    !survey.restaurant.isActive ||
+    !survey.restaurant.surveysEnabled
   ) {
     notFound();
   }

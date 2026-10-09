@@ -2,7 +2,7 @@
 
 // CLAUDE.md §42 Phase 4 — Owner audit results client.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -18,6 +18,7 @@ import {
   BarChart,
   EmptyState,
   PageHeader,
+  PulseSelect,
   TableSkeleton,
 } from '@/components/ui';
 import { getTranslations, type Locale } from '@/lib/translations';
@@ -82,6 +83,8 @@ type PassedFilter = 'all' | 'true' | 'false';
 
 export default function AuditResultsClient({ locale, template }: Props) {
   const t = getTranslations(locale);
+  // Filtre etiketlerini kontrollerine bağlar (label htmlFor yoktu).
+  const filterIdBase = useId();
   const [range, setRange] = useState<RangeFilter>('30d');
   const [status, setStatus] = useState<StatusFilter>('completed');
   const [passedFilter, setPassedFilter] = useState<PassedFilter>('all');
@@ -255,50 +258,56 @@ export default function AuditResultsClient({ locale, template }: Props) {
       {/* Filters */}
       <div className="bz-card p-3 flex flex-wrap gap-2 items-end">
         <div>
-          <label className="pulse-eyebrow text-[#525252] block mb-1">
+          <label htmlFor={`${filterIdBase}-range`} className="pulse-eyebrow text-[#525252] block mb-1">
             {locale === 'tr' ? 'Aralık' : 'Range'}
           </label>
-          <select
-            className="bz-input min-w-[120px]"
+          <PulseSelect
+            id={`${filterIdBase}-range`}
+            className="min-w-[120px]"
             value={range}
-            onChange={(e) => setRange(e.target.value as RangeFilter)}
-          >
-            <option value="7d">7g</option>
-            <option value="30d">30g</option>
-            <option value="90d">90g</option>
-            <option value="all">{locale === 'tr' ? 'Tümü' : 'All'}</option>
-          </select>
+            onChange={(v) => setRange(v as RangeFilter)}
+            options={[
+              { value: '7d', label: locale === 'tr' ? '7g' : '7d' },
+              { value: '30d', label: locale === 'tr' ? '30g' : '30d' },
+              { value: '90d', label: locale === 'tr' ? '90g' : '90d' },
+              { value: 'all', label: locale === 'tr' ? 'Tümü' : 'All' },
+            ]}
+          />
         </div>
         <div>
-          <label className="pulse-eyebrow text-[#525252] block mb-1">
+          <label htmlFor={`${filterIdBase}-status`} className="pulse-eyebrow text-[#525252] block mb-1">
             {locale === 'tr' ? 'Durum' : 'Status'}
           </label>
-          <select
-            className="bz-input min-w-[140px]"
+          <PulseSelect
+            id={`${filterIdBase}-status`}
+            className="min-w-[140px]"
             value={status}
-            onChange={(e) => setStatus(e.target.value as StatusFilter)}
-          >
-            <option value="all">{locale === 'tr' ? 'Tümü' : 'All'}</option>
-            <option value="completed">{t.audits_completed}</option>
-            <option value="in_progress">{t.audits_in_progress}</option>
-          </select>
+            onChange={(v) => setStatus(v as StatusFilter)}
+            options={[
+              { value: 'all', label: locale === 'tr' ? 'Tümü' : 'All' },
+              { value: 'completed', label: t.audits_completed },
+              { value: 'in_progress', label: t.audits_in_progress },
+            ]}
+          />
         </div>
         <div>
-          <label className="pulse-eyebrow text-[#525252] block mb-1">
+          <label htmlFor={`${filterIdBase}-outcome`} className="pulse-eyebrow text-[#525252] block mb-1">
             {locale === 'tr' ? 'Sonuç' : 'Outcome'}
           </label>
-          <select
-            className="bz-input min-w-[120px]"
+          <PulseSelect
+            id={`${filterIdBase}-outcome`}
+            className="min-w-[120px]"
             value={passedFilter}
-            onChange={(e) => setPassedFilter(e.target.value as PassedFilter)}
-          >
-            <option value="all">{locale === 'tr' ? 'Tümü' : 'All'}</option>
-            <option value="true">{t.audits_passed}</option>
-            <option value="false">{t.audits_failed}</option>
-          </select>
+            onChange={(v) => setPassedFilter(v as PassedFilter)}
+            options={[
+              { value: 'all', label: locale === 'tr' ? 'Tümü' : 'All' },
+              { value: 'true', label: t.audits_passed },
+              { value: 'false', label: t.audits_failed },
+            ]}
+          />
         </div>
         <div className="flex-1 min-w-[200px]">
-          <label className="pulse-eyebrow text-[#525252] block mb-1">
+          <label htmlFor={`${filterIdBase}-search`} className="pulse-eyebrow text-[#525252] block mb-1">
             {locale === 'tr' ? 'Ara (ad / e-posta)' : 'Search (name / email)'}
           </label>
           <div className="relative">
@@ -307,6 +316,7 @@ export default function AuditResultsClient({ locale, template }: Props) {
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#737373]"
             />
             <input
+              id={`${filterIdBase}-search`}
               className="bz-input pl-8"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}

@@ -732,12 +732,9 @@ async function renderAnalyticsPage({
       {/* §38.34 — Mobile hero (sm:hidden) — graphite + lime 4.71 + sparkline */}
       <MobileAnalyticsHero
         avgRating={avgRatingNow}
-        delta={
-          npsResult.npsScore !== 0
-            ? `↑ ${(avgRatingNow - 4.0).toFixed(2)}`
-            : null
-        }
-        deltaKind="up"
+        // Önceki dönem ortalaması hesaplanmıyor; sabit 4.0'a göre "↑" delta
+        // gerçek bir değişim değildi (hep yeşil). Gerçek delta gelene dek gizli.
+        delta={null}
         sparkline={sparkReviews}
         isTr={isTr}
       />
@@ -761,8 +758,9 @@ async function renderAnalyticsPage({
           {
             label: isTr ? 'ORTALAMA PUAN' : 'AVG RATING',
             value: avgRatingNow > 0 ? avgRatingNow.toFixed(2) : '—',
-            delta: avgRatingNow > 0 ? `+${(avgRatingNow - 4.0).toFixed(2)}` : null,
-            deltaKind: 'up',
+            // Sabit 4.0 baz alınan "+" delta önceki döneme göre değişim değildi
+            // (3.5 ortalamada "+-0.50" basıyordu); prev avg hesaplanana dek yok.
+            delta: null,
             subtitle: isTr
               ? `hedef ${resolvedTargetRating.toFixed(1)}`
               : `target ${resolvedTargetRating.toFixed(1)}`,

@@ -25,7 +25,7 @@ import {
   Tag,
   Wand2,
 } from "lucide-react";
-import { Field, Modal, PlatformChip, RadioCard, type PlatformId } from "@/components/ui";
+import { Field, Modal, PlatformChip, PulseSelect, RadioCard, type PlatformId } from "@/components/ui";
 import { getSectorPlatforms } from "@/lib/sector-platforms";
 import {
   QR_PRESETS,
@@ -670,17 +670,12 @@ export function CreateQRWizard({
                 label={isTr ? "İşletme" : "Location"}
                 hint={isTr ? "QR hangi işletmeye bağlanacak?" : "Which location is this for?"}
               >
-                <select
-                  className="bz-input"
+                <PulseSelect
+                  className="w-full"
                   value={restaurantId}
-                  onChange={(e) => setRestaurantId(e.target.value)}
-                >
-                  {restaurants.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setRestaurantId(v)}
+                  options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
+                />
               </Field>
             )}
 

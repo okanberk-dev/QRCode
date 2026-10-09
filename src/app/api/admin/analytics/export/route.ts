@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { csvCell } from '@/lib/csv-safe';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,8 +17,8 @@ function parseRange(range: string): Date | null {
 }
 
 function csvEscape(v: string | number | null | undefined): string {
-  const s = v === null || v === undefined ? '' : String(v);
-  return `"${s.replace(/"/g, '""')}"`;
+  // Formula-injection safe (src/lib/csv-safe.ts) — same quoting as before.
+  return csvCell(v);
 }
 
 export async function GET(req: NextRequest) {

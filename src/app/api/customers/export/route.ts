@@ -9,6 +9,7 @@ import {
   computeLastChannel,
   type CustomerSegment,
 } from '@/lib/customers';
+import { csvCell } from '@/lib/csv-safe';
 
 // Owner-scoped Customers CSV export (Phase 8b, CLAUDE.md §23.7 Phase 12).
 // Phase 8c (CLAUDE.md §38.16): adds Avg Rating + Days Since + Segment + LTV +
@@ -66,8 +67,8 @@ function toBool(raw: string | null) {
 }
 
 function esc(v: string | number | null | undefined): string {
-  const s = v === null || v === undefined ? '' : String(v);
-  return `"${s.replace(/"/g, '""')}"`;
+  // Formula-injection safe (src/lib/csv-safe.ts) — same quoting as before.
+  return csvCell(v);
 }
 
 export async function GET(req: NextRequest) {

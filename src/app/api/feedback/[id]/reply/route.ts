@@ -5,6 +5,7 @@ import { canAccessRestaurant, canWriteFeedback } from '@/lib/panel-access';
 import { sendCustomerReplyEmail } from '@/lib/email';
 import { isValidEmail } from '@/lib/validations';
 import { moderateReplyContent } from '@/lib/content-safety';
+import { rateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +55,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
+  // Every reply can e-mail the customer and calls the moderation API — cap
+  // the volume so a customer's inbox can't be flooded from one review.
+  const [actorLimit, feedbackLimit] = await Promise.all([
+    rateLimit(`feedback:reply:actor:${access.actor.id}`, 30, 60_000),
+    rateLimit(`feedback:reply:fb:${id}`, 5, 10 * 60_000),
+  ]);
+  if (!actorLimit.allowed || !feedbackLimit.allowed) {
+    return NextResponse.json(
+      { error: 'rate_limited', message: 'Çok fazla yanıt gönderildi. Lütfen biraz sonra tekrar deneyin.' },
+      { status: 429 },
+    );
+  }
+
   let body: {
     body?: string;
     channel?: string;
@@ -63,7 +77,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     confirmResponsibility?: boolean;
   } = {};
   try {
-    body = await req.json();
+    const parsed = await req.json();
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+    }
+    body = parsed;
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }

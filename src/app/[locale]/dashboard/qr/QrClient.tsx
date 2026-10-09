@@ -5,7 +5,6 @@ import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigat
 import { Download, Grid3x3, List as ListIcon, Loader2, Plus, QrCode, Trash2 } from 'lucide-react';
 import {
   AlertBanner,
-  Badge,
   ConfirmDialog,
   EmptyState,
   PageHeader,
@@ -632,92 +631,146 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
         </div>
       )}
 
-      {/* List view */}
+      {/* List view — §23.6: masaüstünde tablo, mobil/tablette kart listesi
+          (önceki tablo gizli scrollbar ile yatay taşıyordu). "Durum" sütunu
+          kaldırıldı: QR için gerçek durum verisi yok, hep "Aktif" basıyordu. */}
       {!loading && cardItems.length > 0 && view === 'list' && (
-        <div className="bz-card overflow-hidden">
-          <div className="no-scrollbar overflow-x-auto">
-            <table className="bz-table w-full">
-              <thead>
-                <tr>
-                  <th>{isTr ? 'QR adı' : 'Name'}</th>
-                  {restaurants.length > 1 && <th>{isTr ? 'Şube' : 'Branch'}</th>}
-                  <th>{isTr ? 'Platform' : 'Platform'}</th>
-                  <th>{isTr ? 'Hedef' : 'Target'}</th>
-                  <th>{isTr ? 'Tarih' : 'Date'}</th>
-                  <th>{isTr ? 'Durum' : 'Status'}</th>
-                  <th aria-label="actions" />
-                </tr>
-              </thead>
-              <tbody>
-                {cardItems.map((c) => {
-                  const rawItem = filteredItems.find((it) => it.id === c.id)!;
-                  const created = new Date(c.createdAt);
-                  return (
-                    <tr key={c.id}>
-                      <td style={{ fontWeight: 600 }}>{c.name}</td>
-                      {restaurants.length > 1 && (
-                        <td style={{ color: '#525252' }}>{c.branch || '—'}</td>
+        <>
+          <ul className="bz-card divide-y divide-[#EDEDED] lg:hidden">
+            {cardItems.map((c) => {
+              const rawItem = filteredItems.find((it) => it.id === c.id)!;
+              const created = new Date(c.createdAt);
+              return (
+                <li key={c.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-semibold text-[#0A0A0A]">{c.name}</p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11.5px] text-[#737373]">
+                      {c.platform && PLATFORM_TO_CHIP[c.platform] ? (
+                        <span className="inline-flex items-center gap-1">
+                          <PlatformChip id={PLATFORM_TO_CHIP[c.platform]} size={12} />
+                          {PLATFORM_LABELS[c.platform]}
+                        </span>
+                      ) : (
+                        <span>{isTr ? 'Genel' : 'General'}</span>
                       )}
-                      <td>
-                        {c.platform && PLATFORM_TO_CHIP[c.platform] ? (
-                          <span className="inline-flex items-center gap-1.5">
-                            <PlatformChip
-                              id={PLATFORM_TO_CHIP[c.platform]}
-                              size={14}
-                            />
-                            <span className="text-[12px]">
-                              {PLATFORM_LABELS[c.platform]}
-                            </span>
-                          </span>
-                        ) : (
-                          <span style={{ color: '#737373' }}>
-                            {isTr ? 'Genel' : 'General'}
-                          </span>
-                        )}
-                      </td>
-                      <td className="bz-mono" style={{ fontWeight: 600 }}>
-                        {c.tableNumber || '—'}
-                      </td>
-                      <td style={{ color: '#737373' }}>
+                      {restaurants.length > 1 && c.branch && <span>· {c.branch}</span>}
+                      {c.tableNumber && <span className="bz-mono">· {c.tableNumber}</span>}
+                      <span>
+                        ·{' '}
                         {created.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',
                         })}
-                      </td>
-                      <td>
-                        <Badge kind="ok">{isTr ? 'Aktif' : 'Active'}</Badge>
-                      </td>
-                      <td>
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            type="button"
-                            onClick={() => downloadOne(rawItem, 'png')}
-                            aria-label={isTr ? 'PNG indir' : 'Download PNG'}
-                            title={isTr ? 'PNG indir' : 'Download PNG'}
-                            className="bz-btn-icon"
-                          >
-                            <Download size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => requestDelete(rawItem)}
-                            aria-label={isTr ? 'QR\'ı sil' : 'Delete QR'}
-                            title={isTr ? 'Sil' : 'Delete'}
-                            className="bz-btn-icon"
-                            style={{ color: '#DC2626' }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => downloadOne(rawItem, 'png')}
+                      aria-label={isTr ? 'PNG indir' : 'Download PNG'}
+                      title={isTr ? 'PNG indir' : 'Download PNG'}
+                      className="bz-btn-icon"
+                    >
+                      <Download size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => requestDelete(rawItem)}
+                      aria-label={isTr ? 'QR\'ı sil' : 'Delete QR'}
+                      title={isTr ? 'Sil' : 'Delete'}
+                      className="bz-btn-icon"
+                      style={{ color: '#DC2626' }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="bz-card hidden overflow-hidden lg:block">
+            <div className="overflow-x-auto">
+              <table className="bz-table w-full">
+                <thead>
+                  <tr>
+                    <th>{isTr ? 'QR adı' : 'Name'}</th>
+                    {restaurants.length > 1 && <th>{isTr ? 'Şube' : 'Branch'}</th>}
+                    <th>{isTr ? 'Platform' : 'Platform'}</th>
+                    <th>{isTr ? 'Hedef' : 'Target'}</th>
+                    <th>{isTr ? 'Tarih' : 'Date'}</th>
+                    <th aria-label="actions" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {cardItems.map((c) => {
+                    const rawItem = filteredItems.find((it) => it.id === c.id)!;
+                    const created = new Date(c.createdAt);
+                    return (
+                      <tr key={c.id}>
+                        <td style={{ fontWeight: 600 }}>{c.name}</td>
+                        {restaurants.length > 1 && (
+                          <td style={{ color: '#525252' }}>{c.branch || '—'}</td>
+                        )}
+                        <td>
+                          {c.platform && PLATFORM_TO_CHIP[c.platform] ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <PlatformChip
+                                id={PLATFORM_TO_CHIP[c.platform]}
+                                size={14}
+                              />
+                              <span className="text-[12px]">
+                                {PLATFORM_LABELS[c.platform]}
+                              </span>
+                            </span>
+                          ) : (
+                            <span style={{ color: '#737373' }}>
+                              {isTr ? 'Genel' : 'General'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="bz-mono" style={{ fontWeight: 600 }}>
+                          {c.tableNumber || '—'}
+                        </td>
+                        <td style={{ color: '#737373' }}>
+                          {created.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td>
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => downloadOne(rawItem, 'png')}
+                              aria-label={isTr ? 'PNG indir' : 'Download PNG'}
+                              title={isTr ? 'PNG indir' : 'Download PNG'}
+                              className="bz-btn-icon"
+                            >
+                              <Download size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => requestDelete(rawItem)}
+                              aria-label={isTr ? 'QR\'ı sil' : 'Delete QR'}
+                              title={isTr ? 'Sil' : 'Delete'}
+                              className="bz-btn-icon"
+                              style={{ color: '#DC2626' }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {showCreate && (

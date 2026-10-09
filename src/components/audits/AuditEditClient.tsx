@@ -51,7 +51,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { AlertBanner, Badge, Field, PageHeader, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, Badge, Field, PageHeader, PulseSelect, useConfirmDialog } from '@/components/ui';
 import { type Locale } from '@/lib/translations';
 import {
   AUDIT_SECTORS,
@@ -598,21 +598,22 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
             />
           </Field>
           <Field label={isTr ? 'Dil' : 'Locale'}>
-            <select
+            <PulseSelect
               value={tplLocale}
-              onChange={(e) => setTplLocale(e.target.value as 'tr' | 'en')}
+              onChange={(v) => setTplLocale(v as 'tr' | 'en')}
               disabled={contentLocked}
-              className="bz-input"
-            >
-              <option value="tr">Türkçe</option>
-              <option value="en">English</option>
-            </select>
+              className="w-full"
+              options={[
+                { value: 'tr', label: 'Türkçe' },
+                { value: 'en', label: 'English' },
+              ]}
+            />
           </Field>
           <Field label={isTr ? 'Sektör' : 'Sector'}>
-            <select
+            <PulseSelect
               value={sector}
-              onChange={(e) => {
-                const next = e.target.value as AuditSector;
+              onChange={(v) => {
+                const next = v as AuditSector;
                 setSector(next);
                 // Sektör değiştiyse kategori artık eşleşmiyor olabilir → null'a düşür.
                 if (categoryId) {
@@ -623,31 +624,24 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
                 }
               }}
               disabled={contentLocked}
-              className="bz-input"
-            >
-              {AUDIT_SECTORS.map((s) => (
-                <option key={s} value={s}>
-                  {sectorLabel[s]}
-                </option>
-              ))}
-            </select>
+              className="w-full"
+              options={AUDIT_SECTORS.map((s) => ({ value: s, label: sectorLabel[s] }))}
+            />
           </Field>
           <Field label={isTr ? 'Kategori (opsiyonel)' : 'Category (optional)'}>
-            <select
+            <PulseSelect
               value={categoryId ?? ''}
-              onChange={(e) => setCategoryId(e.target.value || null)}
+              onChange={(v) => setCategoryId(v || null)}
               disabled={contentLocked || categoriesForSector.length === 0}
-              className="bz-input"
-            >
-              <option value="">
-                {isTr ? '— Kategori seç —' : '— Pick a category —'}
-              </option>
-              {categoriesForSector.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {isTr ? c.labelTr : c.labelEn}
-                </option>
-              ))}
-            </select>
+              className="w-full"
+              options={[
+                { value: '', label: isTr ? '— Kategori seç —' : '— Pick a category —' },
+                ...categoriesForSector.map((c) => ({
+                  value: c.id,
+                  label: isTr ? c.labelTr : c.labelEn,
+                })),
+              ]}
+            />
           </Field>
           <Field
             label={isTr ? 'Açıklama' : 'Description'}
@@ -675,10 +669,10 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
         </h2>
         <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
           <Field label={isTr ? 'Skorlama modu' : 'Scoring mode'}>
-            <select
+            <PulseSelect
               value={scoringMode}
-              onChange={(e) => {
-                const next = e.target.value as AuditScoringMode;
+              onChange={(v) => {
+                const next = v as AuditScoringMode;
                 setScoringMode(next);
                 if (next !== 'pass_fail') {
                   // pass_fail dışında passingScore opsiyonel
@@ -686,14 +680,12 @@ export default function AuditEditClient({ locale, restaurantId, template, catego
                 }
               }}
               disabled={contentLocked}
-              className="bz-input"
-            >
-              {(['percentage', 'weighted', 'pass_fail'] as AuditScoringMode[]).map((s) => (
-                <option key={s} value={s}>
-                  {scoringLabel[s]}
-                </option>
-              ))}
-            </select>
+              className="w-full"
+              options={(['percentage', 'weighted', 'pass_fail'] as AuditScoringMode[]).map((s) => ({
+                value: s,
+                label: scoringLabel[s],
+              }))}
+            />
           </Field>
           <Field
             label={

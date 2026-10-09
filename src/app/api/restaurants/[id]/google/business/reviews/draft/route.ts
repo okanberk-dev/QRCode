@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant, resolveOwnerUserId } from '@/lib/panel-access';
+import { canWriteRestaurant, resolveOwnerUserId } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { validateBody } from '@/lib/api/validate';
 import { AI_QUOTAS, checkLayeredAiQuota } from '@/lib/ai-quota';
@@ -28,7 +28,10 @@ export async function POST(
   if (!actor) return ApiErrors.unauthorized();
 
   const { id } = await params;
-  if (!(await canAccessRestaurant(actor, id))) return ApiErrors.forbidden();
+  // Write-level gate (not just access): drafting spends the workspace's AI
+  // quota and only writers can send the reply anyway — a viewer team member
+  // must not burn AI quota.
+  if (!(await canWriteRestaurant(actor, id))) return ApiErrors.forbidden();
 
   const body = await req.json().catch(() => null);
   const parsed = validateBody(Body, body);

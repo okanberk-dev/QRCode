@@ -4,7 +4,7 @@
 
 import { useId, useState } from 'react';
 import { Loader2, Save } from 'lucide-react';
-import { AlertBanner, Field, Modal, RadioCard } from '@/components/ui';
+import { AlertBanner, Field, Modal, PulseSelect, RadioCard } from '@/components/ui';
 import { getTranslations, type Locale } from '@/lib/translations';
 import {
   AUDIT_RECURRENCES,
@@ -156,19 +156,19 @@ export default function AuditAssignmentModal({
                   : 'No active team members.'}
               </p>
             ) : (
-              <select
+              <PulseSelect
                 id={`${idBase}-tm`}
-                className="bz-input"
+                className="w-full"
                 value={teamMemberId}
-                onChange={(e) => setTeamMemberId(e.target.value)}
-              >
-                <option value="">—</option>
-                {teamMembers.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name || m.email} · {m.role}
-                  </option>
-                ))}
-              </select>
+                onChange={setTeamMemberId}
+                options={[
+                  { value: '', label: '—' },
+                  ...teamMembers.map((m) => ({
+                    value: m.id,
+                    label: `${m.name || m.email} · ${m.role}`,
+                  })),
+                ]}
+              />
             )}
           </Field>
         )}
@@ -240,17 +240,15 @@ export default function AuditAssignmentModal({
             />
           </Field>
           <Field label={t.audits_assign_recurrence}>
-            <select
-              className="bz-input"
+            <PulseSelect
+              className="w-full"
               value={recurrence}
-              onChange={(e) => setRecurrence(e.target.value as AuditRecurrence)}
-            >
-              {AUDIT_RECURRENCES.map((r) => (
-                <option key={r} value={r}>
-                  {t[`audits_recurrence_${r}` as 'audits_recurrence_once']}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setRecurrence(v as AuditRecurrence)}
+              options={AUDIT_RECURRENCES.map((r) => ({
+                value: r,
+                label: t[`audits_recurrence_${r}` as 'audits_recurrence_once'],
+              }))}
+            />
           </Field>
         </div>
 

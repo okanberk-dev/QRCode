@@ -7,15 +7,20 @@ import { copyToClipboard } from '@/lib/clipboard';
 interface CopyUrlButtonProps {
   url: string;
   className?: string;
+  locale?: 'tr' | 'en';
 }
 
-export default function CopyUrlButton({ url, className = "" }: CopyUrlButtonProps) {
+export default function CopyUrlButton({ url, className = "", locale = 'tr' }: CopyUrlButtonProps) {
   const [copied, setCopied] = useState(false);
+  const label =
+    locale === 'en'
+      ? copied ? 'Link copied' : 'Copy link'
+      : copied ? 'Bağlantı kopyalandı' : 'Bağlantıyı kopyala';
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const success = await copyToClipboard(url);
     if (success) {
       setCopied(true);
@@ -25,10 +30,11 @@ export default function CopyUrlButton({ url, className = "" }: CopyUrlButtonProp
 
   return (
     <button
+      type="button"
       onClick={handleCopy}
       className={`bz-btn-icon ${className}`}
-      title="Bağlantıyı Kopyala"
-      aria-label="Bağlantıyı Kopyala"
+      title={label}
+      aria-label={label}
     >
       {copied ? <Check size={14} strokeWidth={2} className="text-[#A8D62E]" /> : <Copy size={14} strokeWidth={2} />}
     </button>

@@ -2,7 +2,7 @@
 
 // CLAUDE.md §42 Phase 2 — Owner audit list client component.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ClipboardCheck,
@@ -21,6 +21,7 @@ import {
   CardSkeleton,
   EmptyState,
   PageHeader,
+  PulseSelect,
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { AUDIT_SECTORS, type AuditSector, type AuditScoringMode } from '@/lib/audits/types';
@@ -113,6 +114,7 @@ function FilterPill({
 
 export default function AuditListClient({ locale, restaurants, initialActiveRestaurantId }: Props) {
   const t = getTranslations(locale);
+  const restaurantSelectId = useId();
   const [activeRestaurantId, setActiveRestaurantId] = useState<string>(
     initialActiveRestaurantId ?? restaurants[0]?.id ?? '',
   );
@@ -242,20 +244,16 @@ export default function AuditListClient({ locale, restaurants, initialActiveRest
 
       {restaurants.length > 1 && (
         <div className="bz-card p-3">
-          <label className="pulse-eyebrow text-[#525252] block mb-1">
+          <label htmlFor={restaurantSelectId} className="pulse-eyebrow text-[#525252] block mb-1">
             {locale === 'tr' ? 'Aktif işletme' : 'Active business'}
           </label>
-          <select
-            className="bz-input"
+          <PulseSelect
+            id={restaurantSelectId}
+            className="w-full"
             value={activeRestaurantId}
-            onChange={(e) => setActiveRestaurantId(e.target.value)}
-          >
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
+            onChange={setActiveRestaurantId}
+            options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
+          />
         </div>
       )}
 

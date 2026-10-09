@@ -24,6 +24,7 @@ import {
   PageHeader,
   StatCard,
 } from '@/components/ui';
+import DetailLoading from './loading';
 
 /**
  * Owner restaurant detail page — Pulse redesign (PR after merge of /account hub).
@@ -127,8 +128,9 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
     </Link>
   );
 
-  // §40.10 clean slate — skeleton return kaldırıldı; data gelene kadar null.
-  if (loading) return null;
+  // Client-fetch path (impersonation / team member): render the segment
+  // skeleton instead of a blank page while the request is in flight.
+  if (loading) return <DetailLoading />;
 
   if (error || !data) {
     return (
@@ -152,8 +154,14 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
     : data.isActive
       ? 'active'
       : 'disabled';
-  const publicUrl =
-    typeof window !== 'undefined' ? `${window.location.origin}/r/${data.slug}` : `/r/${data.slug}`;
+  // Same origin on server and client (a `window` check printed `/r/slug` in
+  // the SSR HTML and an absolute URL after hydration → mismatch). Mirrors the
+  // settings page: env app URL, falling back to the production host when the
+  // env is missing or points at localhost.
+  const envAppUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/+$/, '');
+  const publicBase =
+    envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl) ? envAppUrl : 'https://www.buaze.com';
+  const publicUrl = `${publicBase}/r/${data.slug}`;
   const dateFmt = new Intl.DateTimeFormat(isTr ? 'tr-TR' : 'en-US', {
     year: 'numeric',
     month: 'short',
@@ -221,7 +229,8 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
 
       <PageHeader
         eyebrow={isTr ? 'İŞLETME ÖZETİ' : 'BUSINESS OVERVIEW'}
-        title={data.name}
+        // Long names wrap instead of clipping at 375px.
+        title={<span className="break-words [overflow-wrap:anywhere]">{data.name}</span>}
         description={
           <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[#525252]">
             <span className="bz-mono text-[12px] text-[#0A0A0A]">/{data.slug}</span>
@@ -298,7 +307,7 @@ export default function RestaurantDetailClient({ initialData }: RestaurantDetail
           <span className="text-[11px] text-[#737373] whitespace-nowrap">
             {isTr ? 'Son güncelleme' : 'Updated'} {dateFmt.format(new Date(data.updatedAt))}
           </span>
-          <CopyUrlButton url={publicUrl} />
+          <CopyUrlButton url={publicUrl} locale={locale} />
           <a
             href={publicUrl}
             target="_blank"

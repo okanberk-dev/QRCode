@@ -80,6 +80,32 @@ export async function getTeamMemberRole(actor: PanelActor): Promise<string | nul
   return member?.role ?? null;
 }
 
+/**
+ * Server-component variant of the API scope for pages that only hold a
+ * verified `user_token` payload. Owner dashboard pages used to filter
+ * restaurants with `userId: payload.userId`, which is only correct for the
+ * workspace owner — invited team members (role=team_member) saw empty
+ * Surveys / Campaigns / Audit Center / Menu / Platforms pages even though
+ * the APIs behind them already accepted their scope. This resolves the same
+ * scope the API layer uses.
+ */
+export async function getScopedRestaurantIdsForUserPayload(payload: {
+  userId: string;
+  role?: unknown;
+  email?: unknown;
+}): Promise<string[]> {
+  const actor: PanelActor = {
+    id: payload.userId,
+    role: typeof payload.role === 'string' && payload.role ? payload.role : 'restaurant_owner',
+    restaurantId: null,
+    username: null,
+    email: typeof payload.email === 'string' ? payload.email : null,
+    plan: null,
+    source: 'user',
+  };
+  return (await getScopedRestaurantIds(actor)) ?? [];
+}
+
 export async function getScopedRestaurantIds(actor: PanelActor) {
   if (actor.role === 'manager') {
     return actor.restaurantId ? [actor.restaurantId] : [];

@@ -11,8 +11,13 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 401 });
     }
 
-    const { locale } = await req.json();
-    if (!locale || !['en', 'tr'].includes(locale)) {
+    // Malformed / non-object body used to throw into the outer catch → 500.
+    const raw: unknown = await req.json().catch(() => null);
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+    }
+    const { locale } = raw as { locale?: unknown };
+    if (typeof locale !== 'string' || !['en', 'tr'].includes(locale)) {
       return NextResponse.json({ error: 'Geçersiz dil seçimi' }, { status: 400 });
     }
 

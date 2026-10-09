@@ -510,10 +510,19 @@ export default function NotificationBell({
               {/* Announcements */}
               {announcements.length > 0 && (
                 <div>
-                  <div className="px-4 pt-3 pb-1.5">
+                  <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-1.5">
                     <span className="pulse-eyebrow text-[#A8D62E]">
                       {isTr ? 'DUYURULAR' : 'ANNOUNCEMENTS'}
                     </span>
+                    {/* The owner announcements archive page had no entry
+                        point at all (not in nav, palette or bell). */}
+                    <Link
+                      href={`${base}/announcements`}
+                      onClick={() => setOpen(false)}
+                      className="text-[11px] font-medium text-[#737373] hover:text-[#0A0A0A] hover:underline"
+                    >
+                      {isTr ? 'Tümünü gör' : 'View all'}
+                    </Link>
                   </div>
                   <ul className="px-2 pb-1">
                     {announcements.map((a) => (

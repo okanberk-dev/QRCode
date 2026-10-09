@@ -172,7 +172,18 @@ export async function executeUserHardDelete(
     // longer exists.
     const googleDel = await tx.googleIntegration.deleteMany({ where: { userId } });
     const apiKeyDel = await tx.apiKey.deleteMany({ where: { userId } });
-    const teamDel = await tx.teamMember.deleteMany({ where: { ownerId: userId } });
+    // Both directions: the team this user OWNED, and this user's own
+    // memberships in other owners' workspaces. Team scope is resolved by
+    // e-mail, so an active membership left behind for a deleted account
+    // could be inherited by whoever registers that address next.
+    const teamDel = await tx.teamMember.deleteMany({
+      where: {
+        OR: [
+          { ownerId: userId },
+          { email: email.toLowerCase().trim() },
+        ],
+      },
+    });
     const notifDel = await tx.notificationPreference.deleteMany({ where: { userId } });
     const orphanRowsDeleted =
       googleDel.count + apiKeyDel.count + teamDel.count + notifDel.count;

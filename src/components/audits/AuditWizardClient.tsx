@@ -45,6 +45,7 @@ import {
   Badge,
   Field,
   PageHeader,
+  PulseSelect,
   RadioCard,
 } from '@/components/ui';
 import { getTranslations, type Locale } from '@/lib/translations';
@@ -547,17 +548,12 @@ export default function AuditWizardClient({
           <>
             {restaurants.length > 1 && (
               <Field label={locale === 'tr' ? 'İşletme' : 'Business'} required>
-                <select
-                  className="bz-input"
+                <PulseSelect
+                  className="w-full"
                   value={state.restaurantId}
-                  onChange={(e) => setState({ ...state, restaurantId: e.target.value })}
-                >
-                  {restaurants.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setState({ ...state, restaurantId: v })}
+                  options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
+                />
               </Field>
             )}
             <Field label={locale === 'tr' ? 'Başlık' : 'Title'} required>
@@ -581,33 +577,29 @@ export default function AuditWizardClient({
             </Field>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={locale === 'tr' ? 'Sektör' : 'Sector'}>
-                <select
-                  className="bz-input"
+                <PulseSelect
+                  className="w-full"
                   value={state.sector}
-                  onChange={(e) => setState({ ...state, sector: e.target.value as AuditSector })}
-                >
-                  {AUDIT_SECTORS.map((s) => (
-                    <option key={s} value={s}>
-                      {t[`audits_sector_${s}` as 'audits_sector_food']}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setState({ ...state, sector: v as AuditSector })}
+                  options={AUDIT_SECTORS.map((s) => ({
+                    value: s,
+                    label: t[`audits_sector_${s}` as 'audits_sector_food'],
+                  }))}
+                />
               </Field>
               <Field label={locale === 'tr' ? 'Kategori (opsiyonel)' : 'Category (optional)'}>
-                <select
-                  className="bz-input"
+                <PulseSelect
+                  className="w-full"
                   value={state.categoryId ?? ''}
-                  onChange={(e) =>
-                    setState({ ...state, categoryId: e.target.value || null })
-                  }
-                >
-                  <option value="">—</option>
-                  {categoriesForSector.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {locale === 'tr' ? c.labelTr : c.labelEn}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setState({ ...state, categoryId: v || null })}
+                  options={[
+                    { value: '', label: '—' },
+                    ...categoriesForSector.map((c) => ({
+                      value: c.id,
+                      label: locale === 'tr' ? c.labelTr : c.labelEn,
+                    })),
+                  ]}
+                />
               </Field>
             </div>
           </>
@@ -774,20 +766,18 @@ export default function AuditWizardClient({
                           : 'No active team members. Invite via Settings → Team first.'}
                       </p>
                     ) : (
-                      <select
-                        className="bz-input"
+                      <PulseSelect
+                        className="w-full"
                         value={state.assigneeTeamMemberId ?? ''}
-                        onChange={(e) =>
-                          setState({ ...state, assigneeTeamMemberId: e.target.value || null })
-                        }
-                      >
-                        <option value="">—</option>
-                        {teamMembers.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.name || m.email} · {m.role}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => setState({ ...state, assigneeTeamMemberId: v || null })}
+                        options={[
+                          { value: '', label: '—' },
+                          ...teamMembers.map((m) => ({
+                            value: m.id,
+                            label: `${m.name || m.email} · ${m.role}`,
+                          })),
+                        ]}
+                      />
                     )}
                   </Field>
                 )}
@@ -869,17 +859,15 @@ export default function AuditWizardClient({
                     />
                   </Field>
                   <Field label={t.audits_assign_recurrence}>
-                    <select
-                      className="bz-input"
+                    <PulseSelect
+                      className="w-full"
                       value={state.recurrence}
-                      onChange={(e) => setState({ ...state, recurrence: e.target.value as AuditRecurrence })}
-                    >
-                      {AUDIT_RECURRENCES.map((r) => (
-                        <option key={r} value={r}>
-                          {t[`audits_recurrence_${r}` as 'audits_recurrence_once']}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(v) => setState({ ...state, recurrence: v as AuditRecurrence })}
+                      options={AUDIT_RECURRENCES.map((r) => ({
+                        value: r,
+                        label: t[`audits_recurrence_${r}` as 'audits_recurrence_once'],
+                      }))}
+                    />
                   </Field>
                 </div>
 

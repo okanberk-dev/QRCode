@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { isValidTableIdentifier, isValidHexColor } from '@/lib/validations';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { isExternalReviewProvider } from '@/lib/restaurant-features';
@@ -185,6 +185,14 @@ export async function GET(
       );
     }
 
+    // Access check BEFORE loading the row: checking existence / isActive
+    // first answered 404 vs 409 vs 403 to any authenticated actor — an
+    // existence + active-state oracle for arbitrary restaurant ids.
+    const hasAccess = await canAccessRestaurant(actor, id);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    }
+
     const restaurant = await prisma.restaurant.findUnique({
       where: { id },
       // `name` needed for premium PNG headline (composePremiumQrPng).
@@ -206,11 +214,6 @@ export async function GET(
         { error: 'Google dışındaki platformlar bu işletme için kapalı.' },
         { status: 403 },
       );
-    }
-
-    const hasAccess = await canAccessRestaurant(actor, restaurant.id);
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
     const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -240,7 +243,10 @@ export async function GET(
     // single field would be ambiguous — we don't want a stale "remembered"
     // light/dark to leak into an otherwise default flow.
     const persistColors = !!(darkRaw && lightRaw);
-    await rememberFeedbackQr({
+    // Persisting a QrGeneration row is a write — viewers still get the image
+    // (QRCard previews / downloads) but don't mutate history.
+    const canWrite = await canWriteRestaurant(actor, restaurant.id);
+    if (canWrite) await rememberFeedbackQr({
       restaurantId: restaurant.id,
       qrUrl,
       tableNumber: table || null,

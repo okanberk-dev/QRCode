@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { getScopedRestaurantIds } from '@/lib/panel-access';
+import { getScopedRestaurantIds, getTeamMemberRole } from '@/lib/panel-access';
 import { ApiErrors } from '@/lib/api-errors';
 import { validateBody } from '@/lib/api/validate';
 import { normalizeRestaurantParam } from '@/lib/active-business';
@@ -22,6 +22,17 @@ export async function POST(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor) {
     return ApiErrors.unauthorized();
+  }
+
+  // Marking the whole inbox read is a WRITE — same viewer gate as the
+  // single-item PATCH (`canWriteFeedback`): a team_member with the
+  // 'viewer' role (or no active membership) is read-only. Role is
+  // workspace-wide, so one lookup covers every scoped restaurant.
+  if (actor.role === 'team_member') {
+    const memberRole = await getTeamMemberRole(actor);
+    if (!memberRole || memberRole === 'viewer') {
+      return NextResponse.json({ error: 'forbidden_role' }, { status: 403 });
+    }
   }
 
   const body = await req.json().catch(() => ({}));

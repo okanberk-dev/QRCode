@@ -19,7 +19,9 @@ export async function GET(req: NextRequest) {
         where.restaurantId = restaurantIdParam;
       }
     } else if (actor.role === 'manager') {
-      where.restaurantId = actor.restaurantId;
+      // A manager with no restaurant would leave the filter undefined and
+      // read every tenant; pin to an id that cannot match instead.
+      where.restaurantId = actor.restaurantId ?? '__no_restaurant__';
     // `team_member` (davet edilen ekip üyesi) owner ile aynı dalda scope'lanır:
     // getScopedRestaurantIds -> getTeamMemberScope zaten SADECE TeamMember.locations
     // listesini döner (owner pasifse boş). Scope genişlemesi yok; eksik olan sadece

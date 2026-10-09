@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireMenuModuleAccess } from '@/lib/menu-access';
+import { canWriteRestaurant } from '@/lib/panel-access';
 import { isValidHexColor } from '@/lib/validations';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import QRCode from 'qrcode';
@@ -118,7 +119,11 @@ export async function GET(
     const defaultDark = restaurant.menuAccentColor ?? restaurant.primaryColor ?? '#000000';
     const dark = darkRaw && isValidHexColor(darkRaw) ? darkRaw : defaultDark;
 
-    await rememberMenuQr(restaurant.id, qrUrl);
+    // History row is a write — viewers (read-only gate above) still get the
+    // image but don't mutate QrGeneration.
+    if (await canWriteRestaurant(access.actor!, restaurant.id)) {
+      await rememberMenuQr(restaurant.id, qrUrl);
+    }
 
     const qrOptions = {
       width,

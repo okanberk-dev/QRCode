@@ -244,7 +244,13 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
           </Field>
           <Field
             label={isTr ? "Saat dilimi" : "Time zone"}
-            hint={isTr ? "Tarih/saat görünümü için" : "For date/time display"}
+            // Panel/mail timestamps use the business's local time (§46), not
+            // this field — the old "for date/time display" hint was untrue.
+            hint={
+              isTr
+                ? "Hesabında saklanır; panel ve e-posta saatleri şimdilik işletmenin yerel saatiyle gösterilir."
+                : "Saved to your account; panel and email times currently use the business's local time."
+            }
           >
             <PulseSelect
               value={timezone}

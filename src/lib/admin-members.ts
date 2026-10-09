@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import type { NextRequest } from 'next/server';
 import type { Prisma } from '@prisma/client';
 import { getSecret } from '@/lib/auth';
+import { neutralizeCsvFormula } from '@/lib/csv-safe';
 
 // ─────────────────────────────────────────────────────────────────
 // Search / filter / pagination — list query helpers
@@ -147,7 +148,8 @@ export function buildInviteBase(req: NextRequest): string {
 /** Escape a field for CSV (RFC 4180 double-quote rules). */
 export function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
-  const s = String(value);
+  // Formula-injection guard (src/lib/csv-safe.ts); real numbers untouched.
+  const s = typeof value === 'number' ? String(value) : neutralizeCsvFormula(String(value));
   if (/[",\n\r]/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`;
   }

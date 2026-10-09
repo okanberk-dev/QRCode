@@ -26,17 +26,77 @@ interface BrandSnapshot {
 
 const COMPLETION_FIELDS: Array<{
   key: keyof BrandSnapshot;
-  label: string;
+  label: { tr: string; en: string };
 }> = [
-  { key: "logoUrl", label: "Logo" },
-  { key: "faviconUrl", label: "Favicon" },
-  { key: "coverImageUrl", label: "Kapak görseli" },
-  { key: "primaryColor", label: "Birincil renk" },
-  { key: "secondaryColor", label: "İkincil renk" },
-  { key: "accentColor", label: "Vurgu rengi" },
-  { key: "accentFont", label: "Yazı tipi" },
-  { key: "slogan", label: "Slogan" },
+  { key: "logoUrl", label: { tr: "Logo", en: "Logo" } },
+  { key: "faviconUrl", label: { tr: "Favicon", en: "Favicon" } },
+  { key: "coverImageUrl", label: { tr: "Kapak görseli", en: "Cover image" } },
+  { key: "primaryColor", label: { tr: "Birincil renk", en: "Primary colour" } },
+  { key: "secondaryColor", label: { tr: "İkincil renk", en: "Secondary colour" } },
+  { key: "accentColor", label: { tr: "Vurgu rengi", en: "Accent colour" } },
+  { key: "accentFont", label: { tr: "Yazı tipi", en: "Font" } },
+  { key: "slogan", label: { tr: "Slogan", en: "Tagline" } },
 ];
+
+const COPY = {
+  tr: {
+    loadFailed: "Marka ayarları yüklenemedi.",
+    imageOnly: "Sadece görsel dosyası yükleyebilirsiniz.",
+    tooLarge: "Görsel 5 MB'dan büyük olamaz.",
+    uploadFailed: "Görsel yüklenemedi. Lütfen tekrar deneyin.",
+    saveFailed: "Kapak görseli kaydedilemedi.",
+    removeFailed: "Kapak görseli kaldırılamadı.",
+    coverUpdated: "Kapak görseli güncellendi.",
+    coverRemoved: "Kapak görseli kaldırıldı.",
+    completionTitle: "Marka profil tamamlanma",
+    loading: "Yükleniyor…",
+    complete: "Mükemmel! Tüm marka alanları dolu.",
+    progress: (filled: number, total: number) =>
+      `${filled} / ${total} alan dolu. Profili tamamla, müşterilerin daha güvenli hissetsin.`,
+    missing: "Eksik:",
+    coverTitle: "Kapak görseli",
+    coverDesc: "16:9 oranında hero görsel. Public sayfanın üstünde gösterilir.",
+    coverAlt: "Kapak görseli önizleme",
+    notUploaded: "Henüz yüklenmedi",
+    changeCover: "Kapağı değiştir",
+    uploadCover: "Kapak yükle",
+    removeCover: "Kapağı kaldır",
+    fileHint: "JPG / PNG / WebP · 1600×900 önerilir · max 5 MB",
+    refresh: "Tamamlanma yüzdesini yenile",
+  },
+  en: {
+    loadFailed: "Could not load brand settings.",
+    imageOnly: "Only image files can be uploaded.",
+    tooLarge: "The image can't be larger than 5 MB.",
+    uploadFailed: "The image couldn't be uploaded. Please try again.",
+    saveFailed: "Couldn't save the cover image.",
+    removeFailed: "Couldn't remove the cover image.",
+    coverUpdated: "Cover image updated.",
+    coverRemoved: "Cover image removed.",
+    completionTitle: "Brand profile completion",
+    loading: "Loading…",
+    complete: "Great! Every brand field is filled in.",
+    progress: (filled: number, total: number) =>
+      `${filled} / ${total} fields filled. Complete your profile so customers feel more confident.`,
+    missing: "Missing:",
+    coverTitle: "Cover image",
+    coverDesc: "16:9 hero image shown at the top of your public page.",
+    coverAlt: "Cover image preview",
+    notUploaded: "Not uploaded yet",
+    changeCover: "Change cover",
+    uploadCover: "Upload cover",
+    removeCover: "Remove cover",
+    fileHint: "JPG / PNG / WebP · 1600×900 recommended · max 5 MB",
+    refresh: "Refresh completion",
+  },
+};
+
+/** API error bodies carry internal codes (`upload_failed`, `save_failed`…);
+ *  show those as the localized fallback, pass human messages through. */
+function humanError(raw: unknown, fallback: string): string {
+  if (typeof raw !== "string" || !raw.trim()) return fallback;
+  return /^[a-z0-9_]+$/.test(raw.trim()) ? fallback : raw;
+}
 
 /**
  * Section 2 — Marka kimliği wrapper.
@@ -56,6 +116,7 @@ export function BusinessBrandSettings({
   restaurantName,
   isTr = true,
 }: BusinessBrandSettingsProps) {
+  const t = isTr ? COPY.tr : COPY.en;
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [snapshot, setSnapshot] = useState<BrandSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,7 +148,7 @@ export function BusinessBrandSettings({
         });
       } catch {
         if (!cancelled) {
-          setCoverError("Marka ayarları yüklenemedi.");
+          setCoverError(t.loadFailed);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -97,15 +158,17 @@ export function BusinessBrandSettings({
     return () => {
       cancelled = true;
     };
+    // `t` only feeds the error copy — no refetch on a language change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId, refreshTick]);
 
   const handleCoverUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setCoverError("Sadece görsel dosyası yükleyebilirsiniz.");
+      setCoverError(t.imageOnly);
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setCoverError("Görsel 5 MB'dan büyük olamaz.");
+      setCoverError(t.tooLarge);
       return;
     }
     setCoverError(null);
@@ -120,8 +183,8 @@ export function BusinessBrandSettings({
         method: "POST",
         body: fd,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "upload_failed");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(humanError(data.error, t.uploadFailed));
       // Persist immediately — kapak görseli için tek-tıkla flow.
       setSavingCover(true);
       const saveRes = await fetch("/api/settings/brand", {
@@ -129,14 +192,14 @@ export function BusinessBrandSettings({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ restaurantId, coverImageUrl: data.url }),
       });
-      const saved = await saveRes.json();
-      if (!saveRes.ok) throw new Error(saved.error || "save_failed");
+      const saved = await saveRes.json().catch(() => ({}));
+      if (!saveRes.ok) throw new Error(humanError(saved.error, t.saveFailed));
       setSnapshot((prev) =>
         prev ? { ...prev, coverImageUrl: saved.coverImageUrl ?? data.url } : prev,
       );
-      setCoverSuccess("Kapak görseli güncellendi.");
+      setCoverSuccess(t.coverUpdated);
     } catch (err) {
-      setCoverError((err as Error).message || "Yükleme başarısız.");
+      setCoverError(humanError((err as Error).message, t.uploadFailed));
     } finally {
       setUploadingCover(false);
       setSavingCover(false);
@@ -153,12 +216,12 @@ export function BusinessBrandSettings({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ restaurantId, coverImageUrl: null }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "save_failed");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(humanError(data.error, t.removeFailed));
       setSnapshot((prev) => (prev ? { ...prev, coverImageUrl: null } : prev));
-      setCoverSuccess("Kapak görseli kaldırıldı.");
+      setCoverSuccess(t.coverRemoved);
     } catch (err) {
-      setCoverError((err as Error).message || "Kaldırma başarısız.");
+      setCoverError(humanError((err as Error).message, t.removeFailed));
     } finally {
       setSavingCover(false);
     }
@@ -175,7 +238,7 @@ export function BusinessBrandSettings({
     ? Math.round((filledCount / COMPLETION_FIELDS.length) * 100)
     : 0;
   const missing = snapshot
-    ? COMPLETION_FIELDS.filter((f) => !snapshot[f.key]).map((f) => f.label)
+    ? COMPLETION_FIELDS.filter((f) => !snapshot[f.key]).map((f) => (isTr ? f.label.tr : f.label.en))
     : [];
 
   return (
@@ -183,13 +246,13 @@ export function BusinessBrandSettings({
       {/* 1. Profil tamamlanma */}
       <SettingsCard
         icon={<Sparkles size={18} />}
-        title="Marka profil tamamlanma"
+        title={t.completionTitle}
         description={
           loading
-            ? "Yükleniyor…"
+            ? t.loading
             : completionPct === 100
-              ? "Mükemmel! Tüm marka alanları dolu."
-              : `${filledCount} / ${COMPLETION_FIELDS.length} alan dolu. Profili tamamla, müşterilerin daha güvenli hissetsin.`
+              ? t.complete
+              : t.progress(filledCount, COMPLETION_FIELDS.length)
         }
         actions={
           <div className="bz-mono text-[12px] text-[#0A0A0A]">
@@ -200,14 +263,14 @@ export function BusinessBrandSettings({
         {loading ? (
           <div className="flex items-center gap-2 text-[13px] text-[#737373]">
             <Loader2 size={14} className="animate-spin" />
-            Yükleniyor…
+            {t.loading}
           </div>
         ) : (
           <>
             <ProgressBar value={completionPct} />
             {missing.length > 0 && (
               <p className="mt-3 text-[12.5px] text-[#525252]">
-                <span className="text-[#0A0A0A] font-medium">Eksik:</span>{" "}
+                <span className="text-[#0A0A0A] font-medium">{t.missing}</span>{" "}
                 {missing.join(" · ")}
               </p>
             )}
@@ -218,8 +281,8 @@ export function BusinessBrandSettings({
       {/* 2. Kapak görseli (bağımsız PUT) */}
       <SettingsCard
         icon={<ImageIcon size={18} />}
-        title="Kapak görseli"
-        description="16:9 oranında hero görsel. Public sayfanın üstünde gösterilir."
+        title={t.coverTitle}
+        description={t.coverDesc}
       >
         {coverError && (
           <div className="mb-3">
@@ -257,13 +320,13 @@ export function BusinessBrandSettings({
                
               <img
                 src={snapshot.coverImageUrl}
-                alt="Kapak görseli önizleme"
+                alt={t.coverAlt}
                 className="h-full w-full object-cover"
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-[#A3A3A3]">
                 <ImageIcon size={22} strokeWidth={2} />
-                <span className="text-[11px]">Henüz yüklenmedi</span>
+                <span className="text-[11px]">{t.notUploaded}</span>
               </div>
             )}
           </div>
@@ -288,7 +351,7 @@ export function BusinessBrandSettings({
               className="bz-btn-ghost inline-flex items-center gap-1.5 self-start"
             >
               <Upload size={14} strokeWidth={2} aria-hidden="true" />
-              {snapshot?.coverImageUrl ? "Kapağı değiştir" : "Kapak yükle"}
+              {snapshot?.coverImageUrl ? t.changeCover : t.uploadCover}
             </button>
             {snapshot?.coverImageUrl && (
               <button
@@ -298,11 +361,11 @@ export function BusinessBrandSettings({
                 className="bz-btn-danger bz-btn-sm self-start disabled:opacity-50"
               >
                 <X size={12} strokeWidth={2} aria-hidden="true" />
-                Kapağı kaldır
+                {t.removeCover}
               </button>
             )}
             <p className="text-[11px] text-[#A3A3A3] leading-[1.55] mt-1">
-              JPG / PNG / WebP · 1600×900 önerilir · max 5 MB
+              {t.fileHint}
             </p>
           </div>
         </div>
@@ -324,7 +387,7 @@ export function BusinessBrandSettings({
           onClick={() => setRefreshTick((t) => t + 1)}
           className="text-[12px] text-[#737373] hover:text-[#0A0A0A] transition-colors"
         >
-          Tamamlanma yüzdesini yenile
+          {t.refresh}
         </button>
       </div>
     </div>

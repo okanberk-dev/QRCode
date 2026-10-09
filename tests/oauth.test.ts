@@ -412,6 +412,28 @@ describe('Token refresh', () => {
     assert.equal(result.status, 403);
   });
 
+  // Team scope is resolved by e-mail, so a session must not keep renewing
+  // with an address the team member has not verified (login already gated
+  // this; refresh did not).
+  it('rejects a team_member with an unverified e-mail with 403', async () => {
+    const user = { ...buildUser({ role: 'team_member' }), emailVerified: false };
+    const { deps, signed } = buildRefreshDeps({ user });
+    const token = await signJwt({ userId: user.id, email: user.email, role: user.role, plan: user.plan });
+    const result = await handleTokenRefresh({ token }, deps);
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.equal(result.status, 403);
+    assert.equal(signed.length, 0);
+  });
+
+  it('still refreshes a restaurant_owner whose e-mail is unverified', async () => {
+    const user = { ...buildUser(), emailVerified: false };
+    const { deps } = buildRefreshDeps({ user });
+    const token = await signJwt({ userId: user.id, email: user.email, role: user.role, plan: user.plan });
+    const result = await handleTokenRefresh({ token }, deps);
+    assert.equal(result.ok, true);
+  });
+
   it('rejects an expired trial with 402 and trialExpired=true', async () => {
     const expiredTrial = new Date(FIXED_NOW);
     expiredTrial.setDate(expiredTrial.getDate() - 1);

@@ -22,7 +22,7 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
-import { Field, Modal } from "@/components/ui";
+import { APSwitch, Field, Modal } from "@/components/ui";
 import {
   WHATSAPP_BRAND_GREEN,
   WHATSAPP_MESSAGE_MAX_CHARS,
@@ -612,22 +612,13 @@ export function WhatsAppReviewWizard({
             <div
               className="flex items-start gap-3 rounded-2xl border border-[#EDEDED] bg-white p-4"
             >
-              <button
-                type="button"
-                role="switch"
-                aria-checked={enabled}
-                onClick={() => setEnabled((v) => !v)}
-                className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
-                style={{
-                  background: enabled ? "#0A0A0A" : "#E5E5E5",
-                }}
-              >
-                <span
-                  aria-hidden="true"
-                  className="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform"
-                  style={{ transform: enabled ? "translateX(22px)" : "translateX(2px)" }}
-                />
-              </button>
+              {/* Canonical panel switch (§23.3) — the hand-rolled one was graphite
+                  when on and had no accessible name. */}
+              <APSwitch
+                checked={enabled}
+                onChange={setEnabled}
+                ariaLabel={isTr ? "WhatsApp geri bildirim butonunu aç" : "Enable the WhatsApp feedback button"}
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-semibold text-[#0A0A0A]">
                   {isTr ? "Bu özelliği aç" : "Enable this feature"}

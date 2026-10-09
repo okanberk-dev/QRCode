@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import AuditDetailClient from '@/components/audits/AuditDetailClient';
 import type {
   AuditQuestionType,
@@ -58,10 +59,18 @@ export default async function AuditDetailPage({ params }: PageProps) {
   }
 
   // Şablon — owner'a ait restoranın bir şablonu olmalı.
+  // Team members included — same scope the API layer resolves
+  // (getScopedRestaurantIds). `userId: payload.userId` hid every
+  // restaurant from invited team members.
+  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+    userId: payload.userId,
+    role: payload.role,
+    email: payload.email,
+  });
   const template = await prisma.auditTemplate.findFirst({
     where: {
       id,
-      restaurant: { userId: payload.userId },
+      restaurantId: { in: scopedIds },
     },
     select: {
       id: true,

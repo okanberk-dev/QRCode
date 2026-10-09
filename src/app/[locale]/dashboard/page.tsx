@@ -12,8 +12,8 @@ import type { Locale } from '@/lib/translations';
 import Link from 'next/link';
 import {
   ArrowRight,
+  BarChart3,
   Building2,
-  Download,
   Inbox,
   Plus,
   QrCode,
@@ -34,6 +34,7 @@ import { buildPlatformDailyTrend, type PlatformDailyPoint } from '@/lib/analytic
 import { Eyebrow, PageHeader, Sparkline, StatCard } from '@/components/ui';
 import PendingTasks from '@/components/dashboard/PendingTasks';
 import { buildPendingTasks } from '@/lib/dashboard-tasks';
+import { isSameDayInTimeZone, resolveDisplayTimeZone } from '@/lib/timezone';
 
 // TrendsChart taşır 'use client' direktifini — server-side pre-render
 // minimal HTML, browser'da Recharts hydrate. `dynamic({ ssr: false })`
@@ -139,6 +140,8 @@ async function renderDashboardPage({
           isActive: true,
           initialGoogleRating: true,
           currentGoogleRating: true,
+          // §5.2 — admin master flag; AI tema çıkarımı bu flag kapalıyken çalışmamalı.
+          aiAnalyticsEnabled: true,
           _count: { select: { feedbacks: true } },
         },
       },
@@ -393,7 +396,8 @@ async function renderDashboardPage({
       },
       orderBy: { createdAt: 'desc' },
       take: 80,
-      select: { rating: true, comment: true },
+      // restaurantId — AI tema girdisini aiAnalyticsEnabled restoranlarla sınırlamak için.
+      select: { rating: true, comment: true, restaurantId: true },
     }),
     // Phase 8c+ §38.30 — NABIZ chart 30G/90G/YTD chip toggle için ham veri.
     // En geriye uzanan window (YTD veya 90 gün, hangisi daha eski). JS-side
@@ -543,17 +547,19 @@ async function renderDashboardPage({
   const dayLabelsTr = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
   const dayLabelsEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const dayLabels = isTr ? dayLabelsTr : dayLabelsEn;
+  // §46 — gün sınırları işletme saat diliminde; sunucu UTC'de `setHours(0)`
+  // gece yarısına yakın yorumları bir önceki/sonraki güne kaydırıyordu.
+  const displayTz = resolveDisplayTimeZone();
+  const weekdayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: displayTz });
+  const weekdayIdx: Record<string, number> = {
+    Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6,
+  };
   const trendsChartData: { date: string; count: number; avgRating: number }[] = [];
   for (let i = 0; i < 7; i++) {
-    const dayStart = new Date();
-    dayStart.setHours(0, 0, 0, 0);
-    dayStart.setDate(dayStart.getDate() - (6 - i));
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-    const jsDay = dayStart.getDay();
-    const labelIdx = jsDay === 0 ? 6 : jsDay - 1;
-    const dayFbs = trendFeedbacks.filter(
-      (f) => f.createdAt >= dayStart && f.createdAt < dayEnd,
+    const dayRef = new Date(now - (6 - i) * 86400000);
+    const labelIdx = weekdayIdx[weekdayFmt.format(dayRef)] ?? 0;
+    const dayFbs = trendFeedbacks.filter((f) =>
+      isSameDayInTimeZone(f.createdAt, dayRef, displayTz),
     );
     const count = dayFbs.length;
     const ratingSum = dayFbs.reduce((sum, f) => sum + (f.rating || 0), 0);
@@ -677,15 +683,31 @@ async function renderDashboardPage({
   // OpenAI latency'si page render'ını blok etmez. 1 saat sonra cache
   // expire olduğunda yine background populate. Owner ilk dashboard
   // ziyareti veya cold start sonrası AI section'ı 2. yenilemede görür.
+  // §5.2 — admin `aiAnalyticsEnabled=false` restoranların yorumları AI'a
+  // gönderilmez (analytics/page.tsx paterni). Kapsamda hiç açık restoran
+  // yoksa çağrı tamamen atlanır ve AI kartları gizli kalır.
+  const aiEnabledRestaurantIds = new Set(
+    user.restaurants
+      .filter((r) => r.aiAnalyticsEnabled && restIds.includes(r.id))
+      .map((r) => r.id),
+  );
+  const aiAnalyticsAvailable = aiEnabledRestaurantIds.size > 0;
   const themeComments: Array<{ rating: number; comment: string }> = themesFeedbacks
-    .filter((f): f is { rating: number; comment: string } =>
+    .filter(
+      (f) => typeof f.restaurantId === 'string' && aiEnabledRestaurantIds.has(f.restaurantId),
+    )
+    .filter((f): f is typeof f & { comment: string } =>
       typeof f.comment === 'string' && f.comment.length > 0,
     )
     .map((f) => ({ rating: f.rating, comment: f.comment }));
-  const themeCacheKey = `dashboard-themes:${user.id}:30d`;
-  const cachedDashboardThemes = getCachedThemes(themeCacheKey);
+  // Cache key AI-açık restoran kapsamını içerir — aksi halde kapsam/flag
+  // değişince eski (başka restoranlardan üretilmiş) temalar gösterilirdi.
+  const themeCacheKey = `dashboard-themes:${user.id}:${[...aiEnabledRestaurantIds].sort().join(',')}:30d`;
+  const cachedDashboardThemes = aiAnalyticsAvailable ? getCachedThemes(themeCacheKey) : null;
   let dashboardThemes;
-  if (cachedDashboardThemes) {
+  if (!aiAnalyticsAvailable) {
+    dashboardThemes = { themes: [], synthesis: '', source: 'fallback' as const };
+  } else if (cachedDashboardThemes) {
     dashboardThemes = cachedDashboardThemes;
   } else {
     // Background populate (fire-and-forget). Promise reject olursa Sentry
@@ -787,6 +809,10 @@ async function renderDashboardPage({
             value: `${ratingDeltaNum > 0 ? '+' : ''}${ratingDeltaNum.toFixed(1)}`,
             kind: ratingDeltaNum > 0 ? 'up' : 'down',
           };
+
+  // ratingDelta değerleri '—' / '0' / '+0.3'; eski `!== '0%'` kontrolü hiç
+  // eşleşmiyor ve veri yokken "↑ —" basıyordu.
+  const showRatingDelta = ratingDeltaNum !== null && ratingDeltaNum !== 0;
 
   // ---- Quick actions (mobile + desktop unified) ----
   const quickActions = [
@@ -896,7 +922,15 @@ async function renderDashboardPage({
   // greeting (saat-aware) + actionable hook (pending count) + subtitle (restoran
   // · tarih · son güncelleme) + 3 action button (Rapor / Tarih / Yorum İste).
   const nowDate = new Date();
-  const hour = nowDate.getHours();
+  // §46 — sunucu UTC'de çalışır; selamlama saati işletme saat diliminden.
+  const hour =
+    Number(
+      new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        hourCycle: 'h23',
+        timeZone: displayTz,
+      }).format(nowDate),
+    ) % 24;
   const greeting = isTr
     ? hour >= 5 && hour < 12
       ? 'Günaydın'
@@ -964,7 +998,41 @@ async function renderDashboardPage({
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+    timeZone: displayTz,
   });
+
+  // KPI delta'ları scope penceresinde hesaplanıyor (ScopeDropdown, default 7g);
+  // etiketler bu pencereyi doğru söylemeli — sabit "son 7/30 gün" yanıltıyordu.
+  const scopeLabel = isTr
+    ? scope === 'tw7d'
+      ? 'son 7 gün'
+      : scope === 'tw30d'
+        ? 'son 30 gün'
+        : scope === 'tw90d'
+          ? 'son 90 gün'
+          : 'bu yıl'
+    : scope === 'tw7d'
+      ? 'last 7 days'
+      : scope === 'tw30d'
+        ? 'last 30 days'
+        : scope === 'tw90d'
+          ? 'last 90 days'
+          : 'this year';
+  const prevScopeLabel = isTr
+    ? scope === 'tw7d'
+      ? 'önceki 7 gün'
+      : scope === 'tw30d'
+        ? 'önceki 30 gün'
+        : scope === 'tw90d'
+          ? 'önceki 90 gün'
+          : 'geçen yılın aynı dönemi'
+    : scope === 'tw7d'
+      ? 'prev 7 days'
+      : scope === 'tw30d'
+        ? 'prev 30 days'
+        : scope === 'tw90d'
+          ? 'prev 90 days'
+          : 'same period last year';
 
   return (
     <div
@@ -973,7 +1041,6 @@ async function renderDashboardPage({
          zaten `py-12` generous; Dashboard daha breathing room kazanır.
          Yoğun layout sayfaları (Yorumlar/Müşteriler/Analitik) korunur. */
       className="mx-auto max-w-[1440px] space-y-6 px-4 sm:px-7 py-6 lg:py-8"
-      style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <PageHeader
         eyebrow={isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW'}
@@ -990,8 +1057,8 @@ async function renderDashboardPage({
               href={scopedHref(`/${locale}/dashboard/analytics`)}
               className="bz-btn-ghost inline-flex items-center gap-1.5 text-[12px]"
             >
-              <Download size={13} strokeWidth={2} />
-              {isTr ? 'Rapor indir' : 'Download report'}
+              <BarChart3 size={13} strokeWidth={2} />
+              {isTr ? 'Analitiğe git' : 'Open analytics'}
             </Link>
             {/* §38.31 — Header dynamic ScopeDropdown (önceki §38.30 sade
                 Link'ti). 4 option: Bu hafta / Bu ay / Son 90 gün / Bu yıl.
@@ -1026,6 +1093,7 @@ async function renderDashboardPage({
             {nowDate.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
               day: 'numeric',
               month: 'long',
+              timeZone: displayTz,
             })}
           </div>
           <div className="mt-2 mb-3">
@@ -1053,14 +1121,17 @@ async function renderDashboardPage({
               </span>
             </div>
             <div className="bz-mono text-[11px] text-white/60 mt-1.5">
-              {ratingDelta.value !== '0%' && (
+              {/* Puan genel ortalama; delta scope penceresi vs önceki pencere,
+                  sayı tüm zamanlar — etiketler bunu söylemeli. */}
+              {showRatingDelta && (
                 <span className="text-[#C6F24E] font-semibold">
-                  {ratingDelta.kind === 'down' ? '↓' : '↑'} {ratingDelta.value.replace(/^[+-]/, '')}
+                  {ratingDelta.kind === 'down' ? '↓' : '↑'} {ratingDelta.value.replace(/^[+-]/, '')}{' '}
+                  {scopeLabel}
                 </span>
               )}
-              {ratingDelta.value !== '0%' && ' · '}
-              {totalReviews}{' '}
-              {isTr ? 'yorum bu ay' : 'reviews this month'}
+              {showRatingDelta && ' · '}
+              {totalReviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}{' '}
+              {isTr ? 'toplam yorum' : 'total reviews'}
             </div>
           </div>
           {/* Mini 7-gün sparkline (trendsChartData.count series) — graphite
@@ -1122,9 +1193,11 @@ async function renderDashboardPage({
         <StatCard
           label={isTr ? 'Genel puan' : 'Avg rating'}
           value={avgRating > 0 ? `${avgRating.toFixed(1)}` : '—'}
-          delta={ratingDelta.value}
+          // Veri yokken ('—') delta satırı gösterilmez; değer tüm zamanlar
+          // ortalaması, delta scope penceresi ortalaması vs önceki pencere.
+          delta={ratingDeltaNum !== null ? ratingDelta.value : undefined}
           deltaKind={ratingDelta.kind}
-          deltaSuffix={isTr ? '/ 5.0' : '/ 5.0'}
+          deltaSuffix={`${scopeLabel} vs. ${prevScopeLabel}`}
           icon={<Star size={14} strokeWidth={2} fill="#C6F24E" stroke="#C6F24E" />}
           accent="#C6F24E"
         />
@@ -1133,7 +1206,7 @@ async function renderDashboardPage({
           value={totalReviews.toLocaleString(isTr ? 'tr-TR' : 'en-US')}
           delta={totalReviewsDelta.value}
           deltaKind={totalReviewsDelta.kind}
-          deltaSuffix={isTr ? 'son 7 gün' : 'last 7 days'}
+          deltaSuffix={`${scopeLabel} vs. ${prevScopeLabel}`}
           icon={<Inbox size={14} strokeWidth={2} />}
         />
         <StatCard
@@ -1145,9 +1218,7 @@ async function renderDashboardPage({
           }
           deltaSuffix={
             lowRated30dCount > 0
-              ? isTr
-                ? `${lowRated30dRepliedCount}/${lowRated30dCount} · son 30 gün`
-                : `${lowRated30dRepliedCount}/${lowRated30dCount} · last 30 days`
+              ? `${lowRated30dRepliedCount}/${lowRated30dCount} · ${scopeLabel}`
               : isTr
                 ? 'düşük puan yorum yok'
                 : 'no low rating reviews'
@@ -1157,7 +1228,7 @@ async function renderDashboardPage({
         <StatCard
           label={isTr ? 'Yeni müşteri' : 'New customers'}
           value={Number(newCustomers30dRows[0]?.count ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          deltaSuffix={isTr ? 'son 30 gün · CRM\'de aktif' : 'last 30 days · in CRM'}
+          deltaSuffix={isTr ? `${scopeLabel} · CRM'de aktif` : `${scopeLabel} · in CRM`}
           icon={<Building2 size={14} strokeWidth={2} />}
         />
       </div>
@@ -1191,15 +1262,20 @@ async function renderDashboardPage({
       <section className="bz-card p-5 sm:p-6 hidden sm:block">
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-3">
           <div>
-            <Eyebrow>{isTr ? 'NABIZ · SON 30 GÜN' : 'PULSE · LAST 30 DAYS'}</Eyebrow>
-            <div className="flex items-baseline gap-2.5 mt-1.5">
+            {/* Grafik penceresi (30G/90G/YTD) kendi toggle'ında; başlıktaki
+                puan tüm zamanlar ortalaması, delta ise scope penceresi. */}
+            <Eyebrow>{isTr ? 'NABIZ' : 'PULSE'}</Eyebrow>
+            <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 mt-1.5">
               <span
                 className="bz-h-tight"
                 style={{ fontSize: 24, lineHeight: 1 }}
               >
                 {avgRating > 0 ? avgRating.toFixed(2) : '—'}
               </span>
-              {ratingDelta.value !== '0%' && (
+              <span className="text-[12px] text-[#737373]">
+                {isTr ? 'genel ortalama' : 'overall average'}
+              </span>
+              {showRatingDelta && (
                 <span
                   className={`text-[11px] font-semibold ${
                     ratingDelta.kind === 'down' ? 'text-[#DC2626]' : 'text-[#16A34A]'
@@ -1208,9 +1284,11 @@ async function renderDashboardPage({
                   {ratingDelta.kind === 'down' ? '↓' : '↑'} {ratingDelta.value.replace(/^[+-]/, '')}
                 </span>
               )}
-              <span className="text-[12px] text-[#737373]">
-                {isTr ? 'vs. önceki 30 gün' : 'vs. prev 30 days'}
-              </span>
+              {showRatingDelta && (
+                <span className="text-[12px] text-[#737373]">
+                  {scopeLabel} vs. {prevScopeLabel}
+                </span>
+              )}
             </div>
           </div>
           <Link

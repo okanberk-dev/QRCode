@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import { SURVEY_OWNER_SELECT } from '@/lib/surveys';
 import SurveyDetailClient from '../_components/SurveyDetailClient';
 
@@ -55,7 +56,13 @@ export default async function SurveyDetailPage({ params }: PageProps) {
     where: { id: survey.restaurantId },
     select: { id: true, name: true, userId: true },
   });
-  if (!restaurant || restaurant.userId !== payload.userId) notFound();
+  // Team members included (same scope as the survey APIs).
+  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+    userId: payload.userId,
+    role: payload.role,
+    email: payload.email,
+  });
+  if (!restaurant || !scopedIds.includes(restaurant.id)) notFound();
 
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
   const normalizedEnvUrl = envAppUrl?.replace(/\/+$/, '');

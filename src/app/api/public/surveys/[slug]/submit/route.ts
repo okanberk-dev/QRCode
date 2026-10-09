@@ -91,13 +91,19 @@ export async function POST(
       // Stage B — collectMarketingConsent gate dropped. Marketing consent is
       // now always submitter-controlled via the public form checkbox tied
       // to Buaze-managed /acik-riza (same as /r/[slug] flow).
-      restaurant: { select: { isActive: true } },
+      restaurant: { select: { isActive: true, surveysEnabled: true } },
       questions: {
         select: { id: true, type: true, required: true, options: true },
       },
     },
   });
-  if (!survey || !survey.isActive || !survey.isPublished || !survey.restaurant.isActive) {
+  if (
+    !survey ||
+    !survey.isActive ||
+    !survey.isPublished ||
+    !survey.restaurant.isActive ||
+    !survey.restaurant.surveysEnabled
+  ) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 

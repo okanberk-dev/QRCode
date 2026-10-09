@@ -317,20 +317,35 @@ export interface ReorderEntry {
   sortOrder: number;
 }
 
+// Bounds for menu reorder payloads. Each entry becomes one UPDATE inside a
+// single $transaction (connection_limit=1) — an unbounded array would let one
+// request pin the pool; the builder UI sends contiguous 0..n-1 indices.
+export const REORDER_MAX_ENTRIES = 500;
+export const REORDER_MAX_SORT_ORDER = 100_000;
+
 export function validateReorder(body: unknown): { ok: true; categories: ReorderEntry[]; items: ReorderEntry[] } | { ok: false; error: string } {
   if (!body || typeof body !== 'object') return { ok: false, error: 'Geçersiz istek gövdesi' };
   const b = body as Record<string, unknown>;
   const parse = (arr: unknown, label: string): ReorderEntry[] | string => {
     if (arr === undefined) return [];
     if (!Array.isArray(arr)) return `${label} liste olmalı`;
+    if (arr.length > REORDER_MAX_ENTRIES) return `En fazla ${REORDER_MAX_ENTRIES} ${label} sıralanabilir`;
     const out: ReorderEntry[] = [];
     for (const entry of arr) {
       if (!entry || typeof entry !== 'object') return `Geçersiz ${label} girişi`;
       const e = entry as Record<string, unknown>;
       const id = typeof e.id === 'string' ? e.id.trim() : '';
-      const so = typeof e.sortOrder === 'number' ? e.sortOrder : Number(e.sortOrder);
-      if (!id || !Number.isFinite(so)) return `Geçersiz ${label} girişi`;
-      out.push({ id, sortOrder: Math.trunc(so) });
+      const so = e.sortOrder;
+      if (
+        !id ||
+        typeof so !== 'number' ||
+        !Number.isInteger(so) ||
+        so < 0 ||
+        so > REORDER_MAX_SORT_ORDER
+      ) {
+        return `Geçersiz ${label} girişi`;
+      }
+      out.push({ id, sortOrder: so });
     }
     return out;
   };

@@ -45,6 +45,8 @@ interface Member {
   trialEndsAt: string | null;
   isActive: boolean;
   deactivatedAt?: string | null;
+  // Owner self-scheduled deletion (30-day grace) — cron hard-deletes after.
+  scheduledDeletionAt?: string | null;
   lastInvitedAt?: string | null;
   createdAt: string;
   _count: { restaurants: number };
@@ -693,6 +695,9 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                               <Badge kind={m.isActive ? 'ok' : 'danger'}>
                                 {m.isActive ? 'Aktif' : 'Silinmiş'}
                               </Badge>
+                              {m.scheduledDeletionAt && (
+                                <Badge kind="danger">Silinme planlandı</Badge>
+                              )}
                               {m.plan === 'trial' && m.trialEndsAt && (
                                 <Badge
                                   kind={trialExpired ? 'danger' : trialSoon ? 'warn' : 'ghost'}
@@ -738,9 +743,12 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                         </div>
                       </td>
                       <td className="hidden md:table-cell px-3 py-4 sm:px-5">
-                        <Badge kind={m.isActive ? 'ok' : 'danger'}>
-                          {m.isActive ? 'Aktif' : 'Silinmiş'}
-                        </Badge>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge kind={m.isActive ? 'ok' : 'danger'}>
+                            {m.isActive ? 'Aktif' : 'Silinmiş'}
+                          </Badge>
+                          {m.scheduledDeletionAt && <Badge kind="danger">Silinme planlandı</Badge>}
+                        </div>
                       </td>
                       <td className="px-2 py-4 sm:px-5 text-right">
                         <div className="inline-flex items-center gap-1.5">

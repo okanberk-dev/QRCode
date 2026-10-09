@@ -14,6 +14,7 @@ import { getUserFromRequest } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { sendAccountDeletionCanceledEmail } from '@/lib/email';
 import { ApiErrors } from '@/lib/api-errors';
+import { writeAdminAuditLog } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -124,9 +125,14 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  console.error('[ACCOUNT_DELETE_CANCELED]', {
-    userId: user.id,
-    ip,
+  // §37.7 — no IP in logs.
+  console.error('[ACCOUNT_DELETE_CANCELED]', { userId: user.id });
+  await writeAdminAuditLog({
+    actorId: user.id,
+    actorSource: 'user',
+    action: 'owner.account.deletion_canceled',
+    targetId: user.id,
+    payload: { via: 'email_link' },
   });
 
   // Confirmation mail — fire-and-forget.
@@ -189,9 +195,13 @@ export async function POST(req: NextRequest) {
     data: { scheduledDeletionAt: null, deletionCancelToken: null },
   });
 
-  console.error('[ACCOUNT_DELETE_CANCELED_INAPP]', {
-    userId,
-    ip: getClientIp(req.headers),
+  console.error('[ACCOUNT_DELETE_CANCELED_INAPP]', { userId });
+  await writeAdminAuditLog({
+    actorId: userId,
+    actorSource: 'user',
+    action: 'owner.account.deletion_canceled',
+    targetId: userId,
+    payload: { via: 'in_app' },
   });
 
   const userLocale: 'tr' | 'en' = user.locale === 'en' ? 'en' : 'tr';

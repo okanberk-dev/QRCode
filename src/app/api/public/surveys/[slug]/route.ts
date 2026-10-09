@@ -25,7 +25,9 @@ export async function GET(
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
-  if (!survey.restaurant.isActive) {
+  // Admin can switch the Surveys module off per restaurant; a live public
+  // link must stop collecting answers (and contact data) at that moment.
+  if (!survey.restaurant.isActive || !survey.restaurant.surveysEnabled) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 

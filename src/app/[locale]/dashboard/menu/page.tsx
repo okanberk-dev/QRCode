@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Plus, UtensilsCrossed } from 'lucide-react';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import type { Locale } from '@/lib/translations';
 import { Badge, EmptyState, Eyebrow, PageHeader } from '@/components/ui';
 
@@ -75,8 +76,16 @@ export default async function DashboardMenuPage({
   const payload = await verifyJwt(token);
   if (!payload || typeof payload.userId !== 'string') redirect(`/${locale}/auth/login`);
 
+  // Team members included — same scope the API layer resolves
+  // (getScopedRestaurantIds). `userId: payload.userId` hid every
+  // restaurant from invited team members.
+  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+    userId: payload.userId,
+    role: payload.role,
+    email: payload.email,
+  });
   const restaurants = await prisma.restaurant.findMany({
-    where: { userId: payload.userId },
+    where: { id: { in: scopedIds } },
     select: {
       id: true,
       name: true,

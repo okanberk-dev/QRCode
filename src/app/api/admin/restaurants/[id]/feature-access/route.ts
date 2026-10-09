@@ -4,6 +4,9 @@ import * as Sentry from '@sentry/nextjs';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
 import { validateBody } from '@/lib/api/validate';
+import { rateLimit } from '@/lib/rate-limit';
+import { writeAdminAuditLog } from '@/lib/audit-log';
+import { revalidatePublicMenu } from '@/lib/restaurant-revalidate';
 import {
   RESTAURANT_FEATURE_KEYS,
   RESTAURANT_FEATURE_SELECT,
@@ -22,6 +25,7 @@ const PatchSchema = z.object({
   aiAnalyticsEnabled: z.boolean().optional(),
   externalPlatformsEnabled: z.boolean().optional(),
   campaignsEnabled: z.boolean().optional(),
+  surveysEnabled: z.boolean().optional(),
 }).strict();
 
 type PatchInput = z.infer<typeof PatchSchema>;
@@ -36,6 +40,13 @@ export async function PATCH(
   }
 
   const { id } = await params;
+  const adminId = typeof admin.id === 'string' ? admin.id : 'env-admin';
+
+  // §37.2.C — privileged write: rate limit per admin.
+  const limit = await rateLimit(`admin:feature-access:${adminId}`, 60, 60_000);
+  if (!limit.allowed) {
+    return NextResponse.json({ error: 'Çok fazla istek' }, { status: 429 });
+  }
 
   const body = await req.json().catch(() => null);
   const parsed = validateBody<PatchInput>(PatchSchema, body);
@@ -61,11 +72,43 @@ export async function PATCH(
   }
 
   try {
+    // Snapshot for the audit trail + the owner id so the entry shows up in
+    // the owner's own audit log (/api/account/audit-log matches targetId) and
+    // in /admin/members/[id]/audit. Before this, flipping a paid feature off
+    // left no trace anywhere and the owner had no way to learn why.
+    const before = await prisma.restaurant.findUnique({
+      where: { id },
+      select: { ...RESTAURANT_FEATURE_SELECT, userId: true, slug: true },
+    });
+    if (!before) {
+      return NextResponse.json({ error: 'İşletme bulunamadı' }, { status: 404 });
+    }
+
     const restaurant = await prisma.restaurant.update({
       where: { id },
       data,
       select: RESTAURANT_FEATURE_SELECT,
     });
+
+    const changed: Record<string, { from: boolean; to: boolean }> = {};
+    for (const key of RESTAURANT_FEATURE_KEYS) {
+      if (before[key] !== restaurant[key]) {
+        changed[key] = { from: before[key], to: restaurant[key] };
+      }
+    }
+    if (Object.keys(changed).length > 0) {
+      await writeAdminAuditLog({
+        actorId: adminId,
+        actorSource: 'admin',
+        action: 'admin.restaurants.feature_access',
+        targetId: before.userId ?? id,
+        payload: { restaurantId: id, changed },
+      });
+    }
+
+    if ('menuEnabled' in data || 'menuPublished' in data) {
+      revalidatePublicMenu(before.slug);
+    }
 
     if (data.pulseAiEnabled === false) {
       try {

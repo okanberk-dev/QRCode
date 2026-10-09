@@ -257,16 +257,28 @@ export function SkTabStrip({ count = 5 }: { count?: number }) {
  * is render-time and bypasses the scanner entirely. `w-full` ensures
  * the element stretches to parent width before max-width caps it.
  */
+// Literal class map — Tailwind v4 scanner dinamik `space-y-${n}` göremez.
+const SHELL_SPACE_CLASS = {
+  3: 'space-y-3',
+  3.5: 'space-y-3.5',
+  4: 'space-y-4',
+  5: 'space-y-5',
+  6: 'space-y-6',
+} as const;
+
 export function SkPageShell({
   max = 1440,
+  space = 5,
   children,
 }: {
   max?: 640 | 920 | 1100 | 1200 | 1280 | 1400 | 1440 | 1600;
+  /** Sayfa wrapper'ının `space-y-*` değeri (CLS parity, §40.10). Default 5. */
+  space?: keyof typeof SHELL_SPACE_CLASS;
   children: ReactNode;
 }) {
   return (
     <div
-      className="mx-auto w-full px-4 sm:px-7 py-6 lg:py-8 space-y-5"
+      className={`mx-auto w-full px-4 sm:px-7 py-6 lg:py-8 ${SHELL_SPACE_CLASS[space]}`}
       style={{ maxWidth: `${max}px` }}
     >
       {children}

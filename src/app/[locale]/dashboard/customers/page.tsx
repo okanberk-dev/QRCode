@@ -770,8 +770,10 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             <table className="bz-table w-full min-w-[1080px]">
               <thead>
                 <tr>
-                  {/* §38.48 Wave 2 — bulk select-all checkbox; client island hydrates */}
-                  <th className="w-10 text-left">
+                  {/* §38.48 Wave 2 — bulk select-all checkbox; client island hydrates.
+                      Sticky left-0: isim kolonu left-10'da sabitken checkbox kolonu
+                      kayıp onun altından geçiyordu. */}
+                  <th className="w-10 text-left sticky left-0 z-10 bg-[#FAFAFA]">
                     <input
                       type="checkbox"
                       data-select-all
@@ -810,8 +812,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                       ? Math.round(Math.max(0, Math.min(5, r.avg_rating)) * 20)
                       : 0;
                   return (
-                    <tr key={detailKey} className={`bz-tr-hover ${r.archived ? 'opacity-60' : ''}`}>
-                      <td className="w-10">
+                    // `group` + `!bg`: .bz-table hover kuralı katmansız olduğundan
+                    // utility'leri ezip sticky hücreleri yarı saydam yapıyordu
+                    // (yatay scroll'da alttaki içerik görünüyordu).
+                    <tr key={detailKey} className={`group bz-tr-hover ${r.archived ? 'opacity-60' : ''}`}>
+                      <td className="w-10 sticky left-0 z-10 !bg-white group-hover:!bg-[#FAFAFA]">
                         <input
                           type="checkbox"
                           data-customer-key={detailKey}
@@ -819,7 +824,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
                           className="h-4 w-4 cursor-pointer accent-[#0A0A0A]"
                         />
                       </td>
-                      <td className="sticky left-10 z-10 bg-white">
+                      <td className="sticky left-10 z-10 !bg-white group-hover:!bg-[#FAFAFA]">
                         <div className="flex items-center gap-3">
                           <div
                             className="bz-avatar h-8 w-8 text-[12px]"

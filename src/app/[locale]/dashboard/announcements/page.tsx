@@ -6,6 +6,7 @@ import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { Locale } from '@/lib/translations';
 import { Badge, EmptyState, PageHeader } from '@/components/ui';
+import { formatFullDateTimeInTimeZone } from '@/lib/timezone';
 
 export async function generateMetadata({
   params,
@@ -124,13 +125,8 @@ export default async function OwnerAnnouncementsPage({
                   </h2>
                   <p style={{ fontSize: 13, color: '#525252', lineHeight: 1.55 }}>{a.message}</p>
                   <div className="mt-2" style={{ fontSize: 11, color: '#A3A3A3' }}>
-                    {new Date(a.createdAt).toLocaleString(isTr ? 'tr-TR' : 'en-US', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+                    {/* §46 — sunucu UTC'de render ediyor; işletme saat dilimine sabitle. */}
+                    {formatFullDateTimeInTimeZone(a.createdAt, isTr ? 'tr' : 'en')}
                   </div>
                 </div>
               </div>

@@ -9,17 +9,24 @@ import {
   Trash2,
 } from "lucide-react";
 import { AlertBanner, Field, Modal } from "@/components/ui";
+import {
+  SuspendedByAdminNotice,
+  isSuspendedByAdminError,
+  restaurantSaveErrorMessage,
+} from "../restaurant-status";
 
 interface RestaurantData {
   id: string;
   name: string;
   isActive: boolean;
+  /** Admin pause — the owner can no longer change the active status. */
+  suspendedByAdmin?: boolean;
 }
 
 interface DangerZoneProps {
   restaurant: RestaurantData;
   locale?: "tr" | "en";
-  onDeactivated?: (next: { isActive: boolean }) => void;
+  onDeactivated?: (next: { isActive: boolean; suspendedByAdmin?: boolean }) => void;
 }
 
 /**
@@ -36,6 +43,8 @@ interface DangerZoneProps {
  */
 export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZoneProps) {
   const router = useRouter();
+  const t = locale === "en" ? COPY.en : COPY.tr;
+  const suspended = restaurant.suspendedByAdmin === true;
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -53,12 +62,15 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Devre dışı bırakılamadı.");
+        if (isSuspendedByAdminError(data)) {
+          onDeactivated?.({ isActive: false, suspendedByAdmin: true });
+        }
+        throw new Error(restaurantSaveErrorMessage(data, locale, t.deactivateFailed));
       }
       onDeactivated?.({ isActive: false });
-      setSuccess("İşletme devre dışı bırakıldı. Müşteri sayfası kapalı görünüyor.");
+      setSuccess(t.deactivated);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Hata");
+      setError(err instanceof Error ? err.message : t.genericError);
     } finally {
       setDeactivateBusy(false);
     }
@@ -71,7 +83,7 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
   const handleDelete = async () => {
     if (deleteBusy) return;
     if (deleteConfirmName.trim() !== restaurant.name) {
-      setError("İşletme adı eşleşmiyor.");
+      setError(t.nameMismatch);
       return;
     }
     setDeleteBusy(true);
@@ -82,12 +94,12 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Silinemedi.");
+        throw new Error(data?.error || t.deleteFailed);
       }
       // Liste sayfasına yönlendir.
       router.push(`/${locale}/dashboard/restaurants`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Hata");
+      setError(err instanceof Error ? err.message : t.genericError);
       setDeleteBusy(false);
     }
   };
@@ -100,6 +112,7 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
 
   return (
     <div className="space-y-5">
+      {suspended && <SuspendedByAdminNotice locale={locale} />}
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>
           {error}
@@ -127,23 +140,20 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
             <PowerOff size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">
-              İşletmeyi devre dışı bırak
-            </h3>
-            <p className="text-[12.5px] text-[#525252] mt-1">
-              Müşteri sayfası &quot;aktif değil&quot; uyarısı gösterir, yorum kabul edilmez.
-              İstediğin zaman tekrar aktifleştirebilirsin.
-            </p>
+            <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">{t.deactivateTitle}</h3>
+            <p className="text-[12.5px] text-[#525252] mt-1">{t.deactivateBody}</p>
             <button
               type="button"
               onClick={handleDeactivate}
-              disabled={deactivateBusy || !restaurant.isActive}
+              disabled={deactivateBusy || !restaurant.isActive || suspended}
               className="bz-btn-danger mt-3 disabled:opacity-50"
             >
               {deactivateBusy && <Loader2 size={14} className="animate-spin" />}
-              {restaurant.isActive
-                ? "İşletmeyi devre dışı bırak"
-                : "Zaten devre dışı"}
+              {suspended
+                ? t.pausedByAdmin
+                : restaurant.isActive
+                  ? t.deactivateTitle
+                  : t.alreadyDisabled}
             </button>
           </div>
         </div>
@@ -165,13 +175,8 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
             <Trash2 size={18} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">
-              İşletmeyi kalıcı olarak sil
-            </h3>
-            <p className="text-[12.5px] text-[#525252] mt-1">
-              Tüm yorumlar, menü, QR kodlar ve ayarlar kalıcı olarak silinir.
-              Bu işlem geri alınamaz.
-            </p>
+            <h3 className="bz-h-tight text-[16px] text-[#0A0A0A]">{t.deleteTitle}</h3>
+            <p className="text-[12.5px] text-[#525252] mt-1">{t.deleteBody}</p>
             <button
               type="button"
               onClick={() => setDeleteOpen(true)}
@@ -186,7 +191,7 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
               }}
             >
               <Trash2 size={14} />
-              İşletmeyi sil
+              {t.deleteCta}
             </button>
           </div>
         </div>
@@ -195,7 +200,7 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
       {/* Delete confirm modal */}
       {deleteOpen && (
         <Modal
-          title="İşletmeyi kalıcı olarak sil"
+          title={t.deleteTitle}
           onClose={() => {
             setDeleteOpen(false);
             setDeleteConfirmName("");
@@ -203,15 +208,12 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
           size={520}
         >
           <div className="space-y-4">
-            <AlertBanner kind="danger">
-              Bu işlem geri alınamaz. Tüm yorumlar, menü kategorileri, ürünler,
-              QR geçmişi ve ayarlar silinir.
-            </AlertBanner>
+            <AlertBanner kind="danger">{t.deleteWarning}</AlertBanner>
             <p className="text-[13px] text-[#525252]">
-              Onaylamak için işletme adını yazın:
-              <span className="bz-mono ml-1">{restaurant.name}</span>
+              {t.deleteConfirmPrompt}
+              <span className="bz-mono ml-1 break-all">{restaurant.name}</span>
             </p>
-            <Field label="İşletme adı">
+            <Field label={t.nameLabel}>
               <input
                 className="bz-input bz-mono"
                 type="text"
@@ -230,7 +232,7 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
                 }}
                 className="bz-btn-ghost"
               >
-                İptal
+                {t.cancel}
               </button>
               <button
                 type="button"
@@ -240,7 +242,7 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
               >
                 {deleteBusy && <Loader2 size={14} className="animate-spin" />}
                 <AlertOctagon size={14} />
-                Kalıcı olarak sil
+                {t.deleteConfirm}
               </button>
             </div>
           </div>
@@ -249,5 +251,50 @@ export function DangerZone({ restaurant, locale = "tr", onDeactivated }: DangerZ
     </div>
   );
 }
+
+const COPY = {
+  tr: {
+    deactivateFailed: "Devre dışı bırakılamadı.",
+    deactivated: "İşletme devre dışı bırakıldı. Müşteri sayfası kapalı görünüyor.",
+    genericError: "Bir hata oluştu.",
+    nameMismatch: "İşletme adı eşleşmiyor.",
+    deleteFailed: "Silinemedi.",
+    deactivateTitle: "İşletmeyi devre dışı bırak",
+    deactivateBody:
+      "Müşteri sayfası \"aktif değil\" uyarısı gösterir, yorum kabul edilmez. İstediğin zaman Güvenlik sekmesinden tekrar aktifleştirebilirsin.",
+    alreadyDisabled: "Zaten devre dışı",
+    pausedByAdmin: "Buaze tarafından duraklatıldı",
+    deleteTitle: "İşletmeyi kalıcı olarak sil",
+    deleteBody: "Tüm yorumlar, menü, QR kodlar ve ayarlar kalıcı olarak silinir. Bu işlem geri alınamaz.",
+    deleteCta: "İşletmeyi sil",
+    deleteWarning:
+      "Bu işlem geri alınamaz. Tüm yorumlar, menü kategorileri, ürünler, QR geçmişi ve ayarlar silinir.",
+    deleteConfirmPrompt: "Onaylamak için işletme adını yazın:",
+    nameLabel: "İşletme adı",
+    cancel: "İptal",
+    deleteConfirm: "Kalıcı olarak sil",
+  },
+  en: {
+    deactivateFailed: "Could not disable the business.",
+    deactivated: "Business disabled. The customer page now shows as closed.",
+    genericError: "Something went wrong.",
+    nameMismatch: "The business name doesn't match.",
+    deleteFailed: "Could not delete.",
+    deactivateTitle: "Disable business",
+    deactivateBody:
+      "The customer page shows a \"not active\" notice and stops accepting reviews. You can reactivate it any time from the Security tab.",
+    alreadyDisabled: "Already disabled",
+    pausedByAdmin: "Paused by Buaze",
+    deleteTitle: "Delete business permanently",
+    deleteBody: "All reviews, menu, QR codes and settings are permanently deleted. This cannot be undone.",
+    deleteCta: "Delete business",
+    deleteWarning:
+      "This cannot be undone. All reviews, menu categories, items, QR history and settings will be deleted.",
+    deleteConfirmPrompt: "Type the business name to confirm:",
+    nameLabel: "Business name",
+    cancel: "Cancel",
+    deleteConfirm: "Delete permanently",
+  },
+};
 
 export default DangerZone;

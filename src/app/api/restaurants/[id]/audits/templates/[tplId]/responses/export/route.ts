@@ -9,6 +9,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { ApiErrors } from '@/lib/api-errors';
+import { neutralizeCsvFormula } from '@/lib/csv-safe';
 
 type Params = { id: string; tplId: string };
 
@@ -19,6 +20,8 @@ function csvField(value: unknown): string {
   else if (typeof value === 'number' || typeof value === 'boolean') s = String(value);
   else if (value instanceof Date) s = value.toISOString();
   else s = JSON.stringify(value);
+  // Formula-injection guard (src/lib/csv-safe.ts); real numbers untouched.
+  if (typeof value !== 'number') s = neutralizeCsvFormula(s);
   // Excel CSV escape: " → "", surround with "" if contains , " \r \n
   if (/[",\r\n]/.test(s)) {
     s = `"${s.replace(/"/g, '""')}"`;

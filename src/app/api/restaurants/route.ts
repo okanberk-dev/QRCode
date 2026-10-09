@@ -277,9 +277,18 @@ export async function GET(req: NextRequest) {
         // `where` directly. Pre-resolve the matching ids, then narrow the
         // main query — keeps pagination + ordering intact.
         const TRIAL_QUOTA = 2000;
+        // Scope the pre-scan to the actor's restaurants: previously any owner
+        // could hit `?attention=quota_full` and trigger an unbounded GLOBAL
+        // findMany (+ per-row feedback _count). Superadmin (scopedIds=null)
+        // keeps the global view, capped with `take`.
         const trialRestaurants = await prisma.restaurant.findMany({
-          where: { user: { plan: 'trial' } },
+          where: {
+            user: { plan: 'trial' },
+            ...(scopedIds !== null ? { id: { in: scopedIds } } : {}),
+          },
           select: { id: true, _count: { select: { feedbacks: true } } },
+          orderBy: { createdAt: 'desc' },
+          take: 2000,
         });
         const quotaIds = trialRestaurants
           .filter((r) => r._count.feedbacks >= TRIAL_QUOTA * 0.9)

@@ -4,6 +4,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { PLATFORMS, type PlatformId } from '@/components/ui';
+import { neutralizeCsvFormula } from '@/lib/csv-safe';
 
 // §38.50 — Owner-scoped Analytics CSV export. Tasarımdaki "Rapor al" CTA bu
 // endpoint'i çağırır. URL params analytics page ile aynı (range/platform/
@@ -35,7 +36,8 @@ function parseCustomRange(
 
 function csvEscape(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '';
-  const str = String(value);
+  // Formula-injection guard (src/lib/csv-safe.ts); real numbers untouched.
+  const str = typeof value === 'number' ? String(value) : neutralizeCsvFormula(value);
   if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
     return `"${str.replace(/"/g, '""')}"`;
   }

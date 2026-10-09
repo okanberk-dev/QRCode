@@ -364,8 +364,12 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
                       setFormField('slug', event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
                       setIsManualSlug(true);
                     }}
-                    className="min-w-0 w-full bg-transparent py-3.5 text-sm font-medium text-[#0A0A0A] outline-none"
+                    // 16px below sm stops iOS Safari zooming into the field.
+                    className="min-w-0 w-full bg-transparent py-3.5 text-[16px] sm:text-[14px] font-medium text-[#0A0A0A] outline-none"
                     placeholder="maya-klinik"
+                    autoCapitalize="off"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                 </div>
                 {formData.slug && !slugValid ? (
@@ -706,8 +710,9 @@ export default function CreateBusinessClient({ locale, initialNotificationEmail 
           </div>
         )}
 
-        {/* Footer nav */}
-        <div className="sticky bottom-0 -mx-4 flex flex-col gap-2 border-t border-[#EDEDED] bg-white/95 px-4 py-4 backdrop-blur sm:-mx-7 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+        {/* Footer nav — below lg it sits above the shell's floating bottom
+            nav (`--dash-bottom-nav-h`, safe-area included) instead of under it. */}
+        <div className="sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] lg:bottom-0 -mx-4 flex flex-col gap-2 border-t border-[#EDEDED] bg-white/95 px-4 py-4 backdrop-blur sm:-mx-7 sm:flex-row sm:items-center sm:justify-between sm:px-7">
           <Link href={`/${locale}/dashboard/restaurants`} className="bz-btn-ghost order-2 justify-center sm:order-1">
             {isTr ? 'İptal' : 'Cancel'}
           </Link>

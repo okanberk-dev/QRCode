@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
 
 interface UnsavedChangesBarProps {
@@ -12,24 +12,48 @@ interface UnsavedChangesBarProps {
   onReset: () => void;
   /** Optional inline error string rendered next to actions. */
   error?: string | null;
-  /** Optional inline success label (e.g. "Kaydedildi"). */
+  /** Optional inline success label (e.g. "Kaydedildi"). Auto-hides after ~3s. */
   success?: string | null;
-  /** Custom dirty label (defaults to "Kaydedilmemiş değişiklikler var"). */
+  /** UI language for the default labels below (TR default). */
+  locale?: "tr" | "en";
+  /** Label overrides — default to the `locale` copy. */
   dirtyLabel?: string;
   saveLabel?: string;
   resetLabel?: string;
 }
 
+const SUCCESS_VISIBLE_MS = 3000;
+
+const COPY = {
+  tr: {
+    dirty: "Kaydedilmemiş değişiklikler var.",
+    save: "Kaydet",
+    reset: "Geri al",
+    region: "Kaydedilmemiş değişiklikler",
+  },
+  en: {
+    dirty: "You have unsaved changes.",
+    save: "Save",
+    reset: "Reset",
+    region: "Unsaved changes",
+  },
+} as const;
+
 /**
- * Sticky save bar shown when a form is dirty.
+ * Save bar shown while a form is dirty (or right after a save / error).
  *
- * - `dirty=false` → fades out (`opacity-0 pointer-events-none`).
+ * Rendered `sticky` at the bottom of the form's own column instead of
+ * `fixed inset-x-0`: the fixed bar spanned the whole viewport at lg —
+ * over the sidebar, centred on the window rather than the content — and
+ * covered the last card. Sticky keeps it aligned to the content column
+ * whatever the (collapsible) sidebar width is, and because it is in flow
+ * it reserves its own space, so nothing is hidden behind it. Below lg it
+ * floats above the shell's floating bottom nav (`--dash-bottom-nav-h`,
+ * which already carries the safe-area inset; 0 from lg up).
+ *
  * - Cmd/Ctrl+S → preventDefault + onSave.
  * - `beforeunload` → standard browser prompt while dirty.
- * - `aria-live="polite"` so SR users hear the dirty/saving state changes.
- *
- * Pulse 2026-04 styling — `bz-card-soft` background, safe-area inset on mobile.
- * z-30 sits below the mobile bottom nav (`z-40`).
+ * - The live region stays mounted so SR users hear state changes.
  */
 export function UnsavedChangesBar({
   dirty,
@@ -38,10 +62,28 @@ export function UnsavedChangesBar({
   onReset,
   error,
   success,
-  dirtyLabel = "Kaydedilmemiş değişiklikler var.",
-  saveLabel = "Kaydet",
-  resetLabel = "Geri al",
+  locale = "tr",
+  dirtyLabel,
+  saveLabel,
+  resetLabel,
 }: UnsavedChangesBarProps) {
+  const copy = COPY[locale];
+
+  // Success confirmations auto-hide; a new message (or a fresh save cycle
+  // that cleared it to null first) shows again.
+  const [prevSuccess, setPrevSuccess] = useState(success);
+  const [successExpired, setSuccessExpired] = useState(false);
+  if (success !== prevSuccess) {
+    setPrevSuccess(success);
+    setSuccessExpired(false);
+  }
+  useEffect(() => {
+    if (!success || successExpired) return;
+    const t = window.setTimeout(() => setSuccessExpired(true), SUCCESS_VISIBLE_MS);
+    return () => window.clearTimeout(t);
+  }, [success, successExpired]);
+  const showSuccess = Boolean(success) && !successExpired;
+
   // Cmd/Ctrl+S → trigger save while dirty.
   useEffect(() => {
     if (!dirty || saving) return;
@@ -66,74 +108,71 @@ export function UnsavedChangesBar({
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
 
+  const visible = dirty || Boolean(error) || showSuccess;
+
   return (
     <div
       role="region"
       aria-live="polite"
-      aria-label="Kaydedilmemiş değişiklikler"
-      // §38.238 — the bar was `bottom-0 z-30` while the shell's floating
-      // mobile nav is `z-40` at `bottom: 12px + safe-area` and 72px tall, so
-      // below lg the nav painted straight over it: "Kaydet" / "Geri al" were
-      // invisible AND unclickable on every settings form. Lifted above the nav
-      // with the canonical `--dash-bottom-nav-h` token (globals.css — 76px +
-      // safe-area below lg, 0 at lg), which the panel's other fixed overlays
-      // already use. The token carries the safe-area inset itself, so the
-      // inline paddingBottom only applies from lg up.
-      className={`fixed inset-x-0 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-40 transition-all duration-200 lg:bottom-0 lg:pb-[env(safe-area-inset-bottom,0px)] ${
-        dirty || success || error ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0 pointer-events-none"
-      }`}
+      aria-label={copy.region}
+      className={
+        visible
+          ? "sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 pt-1 lg:bottom-4 bz-fade-in"
+          : undefined
+      }
     >
-      <div
-        className="mx-auto max-w-[1440px] m-3 sm:m-4"
-        style={{
-          background: "#FAFAFA",
-          border: "1px solid #EDEDED",
-          borderRadius: 16,
-          boxShadow: "0 12px 32px -8px rgba(10,10,10,0.18)",
-        }}
-      >
-        <div className="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 flex-wrap">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <span
-              aria-hidden="true"
-              className="shrink-0"
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                background: dirty ? "#C6F24E" : success ? "#16A34A" : "#A3A3A3",
-              }}
-            />
-            <span className="bz-mono text-[12px] truncate text-[#0A0A0A]">
-              {error ? error : success ? success : dirtyLabel}
-            </span>
-          </div>
+      {visible && (
+        <div
+          style={{
+            background: "#FAFAFA",
+            border: "1px solid #EDEDED",
+            borderRadius: 16,
+            boxShadow: "0 12px 32px -8px rgba(10,10,10,0.18)",
+          }}
+        >
+          <div className="flex items-center gap-3 px-4 sm:px-5 py-3 sm:py-3.5 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span
+                aria-hidden="true"
+                className="shrink-0"
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 999,
+                  background: error ? "#DC2626" : dirty ? "#C6F24E" : "#16A34A",
+                }}
+              />
+              <span className="bz-mono text-[12px] truncate text-[#0A0A0A]">
+                {error ? error : dirty ? (dirtyLabel ?? copy.dirty) : success}
+              </span>
+            </div>
 
-          <div className="flex items-center gap-2 ml-auto">
-            <button
-              type="button"
-              onClick={onReset}
-              disabled={!dirty || saving}
-              className="bz-btn-ghost inline-flex items-center gap-1.5"
-              style={{ height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13 }}
-            >
-              <RotateCcw size={14} aria-hidden="true" />
-              {resetLabel}
-            </button>
-            <button
-              type="button"
-              onClick={() => void onSave()}
-              disabled={!dirty || saving}
-              className="bz-btn-primary inline-flex items-center gap-1.5"
-              style={{ height: 36, padding: "0 16px", borderRadius: 999, fontSize: 13 }}
-              aria-keyshortcuts="Meta+S Control+S"
-            >
-              {saving && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
-              {saveLabel}
-            </button>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                type="button"
+                onClick={onReset}
+                disabled={!dirty || saving}
+                className="bz-btn-ghost inline-flex items-center gap-1.5"
+                style={{ height: 36, padding: "0 14px", borderRadius: 999, fontSize: 13 }}
+              >
+                <RotateCcw size={14} aria-hidden="true" />
+                {resetLabel ?? copy.reset}
+              </button>
+              <button
+                type="button"
+                onClick={() => void onSave()}
+                disabled={!dirty || saving}
+                className="bz-btn-primary inline-flex items-center gap-1.5"
+                style={{ height: 36, padding: "0 16px", borderRadius: 999, fontSize: 13 }}
+                aria-keyshortcuts="Meta+S Control+S"
+              >
+                {saving && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+                {saveLabel ?? copy.save}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

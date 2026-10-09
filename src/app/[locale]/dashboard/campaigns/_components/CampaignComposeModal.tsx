@@ -395,7 +395,7 @@ export function CampaignComposeModal({
                     ? 'Müşterilerine ne söylemek istersin? Selam ile başla, samimi ol.'
                     : 'What do you want to say? Start with a greeting, keep it warm.'
                 }
-                className="bz-input w-full text-[14px] sm:text-[13px] leading-[1.55] resize-y"
+                className="bz-input w-full text-[16px] sm:text-[13px] leading-[1.55] resize-y"
                 disabled={submitting !== null}
               />
               <div className={`text-right text-[10.5px] bz-mono tabular-nums mt-1 ${bodyCharColor}`}>
@@ -431,7 +431,8 @@ export function CampaignComposeModal({
                   type="checkbox"
                   checked={saveAsTemplate}
                   onChange={(e) => setSaveAsTemplate(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-[#EDEDED] text-[#0A0A0A] focus:ring-[#C6F24E]"
+                  // Native checkbox `text-*` ile boyanmaz; accent ile graphite.
+                  className="mt-0.5 h-4 w-4 rounded border-[#EDEDED] accent-[#0A0A0A] focus:ring-[#C6F24E]"
                   disabled={submitting !== null}
                 />
                 <div className="flex-1">

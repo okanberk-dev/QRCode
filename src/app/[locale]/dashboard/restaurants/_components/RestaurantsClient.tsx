@@ -5,6 +5,11 @@ import Link from 'next/link';
 import { ExternalLink, Loader2, Plus, Search, Store } from 'lucide-react';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
 import { AlertBanner, Badge, EmptyState, ErrorState, PageHeader, Tabs, type TabItem } from '@/components/ui';
+import {
+  isSuspendedByAdminError,
+  restaurantSaveErrorMessage,
+  suspendedByAdminMessage,
+} from '@/components/dashboard/settings/restaurant-status';
 import type { Locale } from '@/lib/translations';
 
 interface Restaurant {
@@ -15,6 +20,8 @@ interface Restaurant {
   notificationEmail: string | null;
   primaryColor: string;
   isActive: boolean;
+  /** Superadmin pause (`Restaurant.suspendedByAdmin`) — owner cannot re-activate. */
+  suspendedByAdmin?: boolean;
   createdAt: string;
   _count: { feedbacks: number };
 }
@@ -85,6 +92,7 @@ export default function RestaurantsClient({
         deactivate: 'Devre dışı bırak',
         activeStatus: 'Aktif',
         inactiveStatus: 'Devre dışı',
+        pausedByAdmin: 'Buaze tarafından duraklatıldı',
       }
     : {
         eyebrow: isTeamMember ? 'LOCATIONS YOU MANAGE' : 'BUSINESSES',
@@ -111,6 +119,7 @@ export default function RestaurantsClient({
         deactivate: 'Disable',
         activeStatus: 'Active',
         inactiveStatus: 'Disabled',
+        pausedByAdmin: 'Paused by Buaze',
       };
 
   const fetchRestaurants = async () => {
@@ -160,9 +169,19 @@ export default function RestaurantsClient({
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
+        if (isSuspendedByAdminError(data)) {
+          // Lock this card's toggle without waiting for a refetch.
+          setRestaurants((prev) =>
+            prev.map((r) => (r.id === id ? { ...r, suspendedByAdmin: true } : r)),
+          );
+        }
         setNotice({
           kind: 'danger',
-          text: data.error || (locale === 'tr' ? 'Durum güncellenemedi.' : 'Status could not be updated.'),
+          text: restaurantSaveErrorMessage(
+            data,
+            locale,
+            locale === 'tr' ? 'Durum güncellenemedi.' : 'Status could not be updated.',
+          ),
         });
         return;
       }
@@ -216,6 +235,11 @@ export default function RestaurantsClient({
       r.category.toLowerCase().includes(searchTerm.toLowerCase()),
   );
   const newBusinessHref = `/${locale}/dashboard/restaurants/new`;
+  // Absolute public link for the copy button — env app URL (stable on server
+  // and client), production host when unset / localhost.
+  const envAppUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/+$/, '');
+  const publicBase =
+    envAppUrl && !/localhost|127\.0\.0\.1/i.test(envAppUrl) ? envAppUrl : 'https://www.buaze.com';
   const statusTabs: TabItem[] = [
     { id: 'active', label: copy.active },
     { id: 'all', label: copy.all },
@@ -297,23 +321,15 @@ export default function RestaurantsClient({
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((restaurant) => {
-            const trend: 'active' | 'new' | 'inactive' = !restaurant.isActive
-              ? 'inactive'
-              : restaurant._count.feedbacks >= 10
-                ? 'active'
-                : 'new';
-            const trendStyle = {
-              active: { bg: 'bg-[#EAF9B8]', fg: 'text-[#0A0A0A]', label: locale === 'tr' ? '↑ AKTİF' : '↑ ACTIVE' },
-              new: { bg: 'bg-[#F5F5F5]', fg: 'text-[#525252]', label: locale === 'tr' ? '→ YENİ' : '→ NEW' },
-              inactive: { bg: 'bg-[#FEF2F2]', fg: 'text-[#991B1B]', label: locale === 'tr' ? '· DEVRE DIŞI' : '· DISABLED' },
-            }[trend];
+            const suspended = restaurant.suspendedByAdmin === true;
+            const publicUrl = `${publicBase}/r/${restaurant.slug}`;
             return (
               <div
                 key={restaurant.id}
                 className={`overflow-hidden bz-card bz-motion-spring ${!restaurant.isActive ? 'border-[#FECACA] bg-[#FFFBFB]' : 'hover:border-[#C6F24E] hover:bz-elev-2 bz-lift'}`}
               >
                 <div className="p-5 sm:p-6">
-                  {/* Header — name + address + trend badge (AdminLocations design) */}
+                  {/* Header — name + category + status badge (AdminLocations design) */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3
@@ -323,12 +339,15 @@ export default function RestaurantsClient({
                       </h3>
                       <p className="mt-1 text-[12px] text-[#737373] truncate">{restaurant.category}</p>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1.5">
-                      <span className={`${trendStyle.bg} ${trendStyle.fg} shrink-0 pulse-eyebrow rounded px-2 py-1`}>
-                        {trendStyle.label}
-                      </span>
+                    {/* Status shown once here; the map overlay is the only other
+                        mention (status used to appear four times per card). */}
+                    <div className="shrink-0">
                       <Badge kind={restaurant.isActive ? 'ok' : 'danger'}>
-                        {restaurant.isActive ? copy.activeStatus : copy.inactiveStatus}
+                        {suspended
+                          ? copy.pausedByAdmin
+                          : restaurant.isActive
+                            ? copy.activeStatus
+                            : copy.inactiveStatus}
                       </Badge>
                     </div>
                   </div>
@@ -348,36 +367,23 @@ export default function RestaurantsClient({
                     </span>
                   </div>
 
-                  {/* 4-col stat grid (AdminLocations §727-739) */}
-                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {[
-                      { l: locale === 'tr' ? 'PUAN' : 'RATING', v: '—', star: true },
-                      { l: locale === 'tr' ? 'YORUM' : 'REVIEWS', v: String(restaurant._count.feedbacks) },
-                      {
-                        l: locale === 'tr' ? 'DURUM' : 'STATUS',
-                        v: restaurant.isActive ? copy.activeStatus : copy.inactiveStatus,
-                      },
-                      { l: 'URL', v: `/${restaurant.slug}`, mono: true },
-                    ].map((x) => (
-                      <div key={x.l} className="min-w-0">
-                        <div className="pulse-eyebrow text-[#737373]">{x.l}</div>
-                        <div
-                          className={`mt-1.5 text-[16px] sm:text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] truncate ${x.mono ? 'font-mono text-[13px] sm:text-[13px]' : 'font-heading'}`}
-                        >
-                          {x.v}
-                          {x.star && <span className="text-[#C6F24E] ml-1 text-[12px]"> ★</span>}
-                        </div>
+                  {/* Review count + public link. The old 4-tile grid had a "PUAN"
+                      tile hardcoded to "—" with a lime star (the SSR list carries
+                      no rating), a "DURUM" tile repeating the badge and a URL
+                      tile repeating this row — collapsed into one line. */}
+                  <div className="mt-4 flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="pulse-eyebrow text-[#737373]">{locale === 'tr' ? 'YORUM' : 'REVIEWS'}</div>
+                      <div className="mt-1.5 text-[16px] sm:text-[18px] font-semibold text-[#0A0A0A] tracking-[-0.015em] font-heading">
+                        {restaurant._count.feedbacks}
                       </div>
-                    ))}
-                  </div>
-
-                  {/* URL row + copy */}
-                  <div className="mt-4 flex items-center gap-1.5">
-                    <CopyUrlButton
-                      url={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${restaurant.slug}`}
-                      className="h-5 w-5 shrink-0"
-                    />
-                    <p className="pulse-eyebrow text-[#737373] truncate">/r/{restaurant.slug}</p>
+                    </div>
+                    {/* Copy keeps bz-btn-icon's native 32px tap target (was
+                        squeezed to 20px). */}
+                    <div className="flex min-w-0 items-center gap-1">
+                      <p className="pulse-eyebrow text-[#737373] truncate">/r/{restaurant.slug}</p>
+                      <CopyUrlButton url={publicUrl} locale={locale} className="shrink-0" />
+                    </div>
                   </div>
 
                   {/*
@@ -417,7 +423,8 @@ export default function RestaurantsClient({
                     {canMutate && (
                       <button
                         type="button"
-                        disabled={actionLoadingId === restaurant.id}
+                        disabled={actionLoadingId === restaurant.id || suspended}
+                        title={suspended ? suspendedByAdminMessage(locale) : undefined}
                         onClick={() => toggleActive(restaurant.id, restaurant.isActive)}
                         className={`inline-flex items-center justify-center bz-touch-target sm:min-h-0 sm:min-w-0 rounded-full px-4 py-2.5 text-center text-[12px] font-medium bz-motion-spring disabled:opacity-60 ${
                           restaurant.isActive
@@ -427,7 +434,9 @@ export default function RestaurantsClient({
                       >
                         {actionLoadingId === restaurant.id
                           ? locale === 'tr' ? 'İşleniyor...' : 'Working...'
-                          : restaurant.isActive ? copy.deactivate : copy.activate}
+                          : suspended
+                            ? copy.pausedByAdmin
+                            : restaurant.isActive ? copy.deactivate : copy.activate}
                       </button>
                     )}
                     <Link

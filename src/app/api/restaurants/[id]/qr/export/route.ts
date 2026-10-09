@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
+import { csvCell } from '@/lib/csv-safe';
 
 const PLATFORM_LABELS: Record<string, string> = {
   google: 'Google',
@@ -45,7 +46,8 @@ export async function GET(
     });
 
     const header = ['ID', 'Tarih', 'Restoran', 'Masa No', 'Platform', 'Servis Tipi', 'Hedef URL'];
-    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    // Formula-injection safe (src/lib/csv-safe.ts) — same quoting as before.
+    const esc = (v: string) => csvCell(v);
     
     const rows = history.map((record) => [
       record.id,

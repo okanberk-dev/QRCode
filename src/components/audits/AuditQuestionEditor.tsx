@@ -6,7 +6,7 @@
 
 import { useEffect, useId, useMemo, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
-import { AlertBanner, APSwitch, Field, Modal } from '@/components/ui';
+import { AlertBanner, APSwitch, Field, Modal, PulseSelect } from '@/components/ui';
 import {
   AUDIT_QUESTION_TYPES,
   type AuditQuestionType,
@@ -188,18 +188,13 @@ export default function AuditQuestionEditor({ locale, open, draft, onClose, onSa
         {error && <AlertBanner kind="danger">{error}</AlertBanner>}
 
         <Field label={t.audits_question_type_label} htmlFor={`${idBase}-type`}>
-          <select
+          <PulseSelect
             id={`${idBase}-type`}
-            className="bz-input"
+            className="w-full"
             value={q.type}
-            onChange={(e) => updateType(e.target.value as AuditQuestionType)}
-          >
-            {AUDIT_QUESTION_TYPES.map((tp) => (
-              <option key={tp} value={tp}>
-                {typeLabel[tp]}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => updateType(v as AuditQuestionType)}
+            options={AUDIT_QUESTION_TYPES.map((tp) => ({ value: tp, label: typeLabel[tp] }))}
+          />
         </Field>
 
         <Field label={t.audits_question_prompt} required htmlFor={`${idBase}-prompt`}>
@@ -264,6 +259,7 @@ export default function AuditQuestionEditor({ locale, open, draft, onClose, onSa
                         type="checkbox"
                         checked={checked}
                         onChange={() => toggleMultiCorrect(opt)}
+                        className="h-4 w-4 accent-[#0A0A0A]"
                       />
                       {opt}
                     </label>
@@ -271,20 +267,15 @@ export default function AuditQuestionEditor({ locale, open, draft, onClose, onSa
                 })}
               </div>
             ) : (
-              <select
-                className="bz-input"
+              <PulseSelect
+                className="w-full"
                 value={typeof q.correctAnswer === 'string' ? q.correctAnswer : ''}
-                onChange={(e) =>
-                  setQ({ ...q, correctAnswer: e.target.value ? e.target.value : null })
-                }
-              >
-                <option value="">—</option>
-                {effectiveOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setQ({ ...q, correctAnswer: v ? v : null })}
+                options={[
+                  { value: '', label: '—' },
+                  ...effectiveOptions.map((opt) => ({ value: opt, label: opt })),
+                ]}
+              />
             )}
           </Field>
         )}

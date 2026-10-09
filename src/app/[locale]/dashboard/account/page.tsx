@@ -14,6 +14,7 @@ interface RestaurantOption {
 interface UserProfile {
   email: string;
   name: string | null;
+  scheduledDeletionAt: string | null;
 }
 
 export default async function AccountSettingsPage({
@@ -52,12 +53,20 @@ export default async function AccountSettingsPage({
           }),
           prisma.user.findUnique({
             where: { id: userId },
-            select: { email: true, name: true },
+            // scheduledDeletionAt drives the Security → danger zone state;
+            // without it a hydrated page showed a pending deletion as "none".
+            select: { email: true, name: true, scheduledDeletionAt: true },
           }),
           prisma.teamMember.count({ where: { ownerId: userId } }),
         ]);
         initialRestaurants = restaurants;
-        initialProfile = profile ? { email: profile.email, name: profile.name } : null;
+        initialProfile = profile
+          ? {
+              email: profile.email,
+              name: profile.name,
+              scheduledDeletionAt: profile.scheduledDeletionAt?.toISOString() ?? null,
+            }
+          : null;
         initialTeamCount = teamCount;
       }
     } catch (error) {

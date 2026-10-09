@@ -47,29 +47,34 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(true);
   const [pendingKey, setPendingKey] = useState<keyof Prefs | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
+  // Real prefs never arrived (4xx/5xx/network). Toggles stay disabled: the
+  // PUT sends all three fields, so toggling on top of DEFAULT_PREFS would
+  // overwrite the owner's saved choices with defaults.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch('/api/notifications');
-        if (!cancelled && res.ok) {
-          const json = (await res.json()) as ApiPrefs;
-          setPrefs({
-            lowRatingEmail: json.lowRatingEmail ?? DEFAULT_PREFS.lowRatingEmail,
-            weeklyReport: json.weeklyReport ?? DEFAULT_PREFS.weeklyReport,
-            // API uses `disableTrialReminders` (DB schema); UI inverts to
-            // `receiveTrialReminders` so every toggle is positive-semantic.
-            receiveTrialReminders: !(json.disableTrialReminders ?? false),
-          });
+        if (cancelled) return;
+        if (!res.ok) {
+          setLoadFailed(true);
+          return;
         }
+        const json = (await res.json()) as ApiPrefs;
+        if (cancelled) return;
+        setPrefs({
+          lowRatingEmail: json.lowRatingEmail ?? DEFAULT_PREFS.lowRatingEmail,
+          weeklyReport: json.weeklyReport ?? DEFAULT_PREFS.weeklyReport,
+          // API uses `disableTrialReminders` (DB schema); UI inverts to
+          // `receiveTrialReminders` so every toggle is positive-semantic.
+          receiveTrialReminders: !(json.disableTrialReminders ?? false),
+        });
+        setLoadFailed(false);
       } catch {
-        if (!cancelled) {
-          setNotice({
-            kind: 'danger',
-            text: isTr ? 'Bildirim tercihleri yüklenemedi.' : 'Could not load notification preferences.',
-          });
-        }
+        if (!cancelled) setLoadFailed(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -77,7 +82,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
     return () => {
       cancelled = true;
     };
-  }, [isTr]);
+  }, [reloadTick]);
 
   const flash = (kind: 'success' | 'danger', text: string) => {
     setNotice({ kind, text });
@@ -85,7 +90,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
   };
 
   const toggle = async (key: keyof Prefs) => {
-    if (pendingKey) return; // tek istek aynı anda
+    if (pendingKey || loadFailed) return; // tek istek aynı anda; veri yoksa yazma
     const previous = prefs;
     const next = { ...prefs, [key]: !prefs[key] };
     setPrefs(next); // optimistic
@@ -115,7 +120,14 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
         // Revert — optimistic UI ile server arasında drift'i kapat.
         setPrefs(previous);
         const body = (await res.json().catch(() => ({}))) as { error?: string };
-        flash('danger', isTr ? `Güncellenemedi: ${body.error ?? res.status}` : `Update failed: ${body.error ?? res.status}`);
+        flash(
+          'danger',
+          body.error && !/^[a-z0-9_]+$/.test(body.error)
+            ? body.error
+            : isTr
+              ? 'Tercih güncellenemedi. Lütfen tekrar deneyin.'
+              : 'Could not update the preference. Please try again.',
+        );
       }
     } catch {
       setPrefs(previous);
@@ -180,6 +192,26 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
 
   return (
     <div className="space-y-4">
+      {loadFailed && (
+        <AlertBanner kind="danger">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {isTr
+              ? 'Bildirim tercihleri yüklenemedi; kayıtlı ayarların üzerine yazılmaması için değişiklik kapalı.'
+              : "Couldn't load your notification preferences; changes are disabled so your saved settings aren't overwritten."}
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                setReloadTick((n) => n + 1);
+              }}
+              className="font-semibold underline underline-offset-2"
+            >
+              {isTr ? 'Tekrar dene' : 'Retry'}
+            </button>
+          </span>
+        </AlertBanner>
+      )}
+
       {notice && (
         <AlertBanner
           kind={notice.kind === 'success' ? 'success' : 'danger'}
@@ -192,12 +224,13 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
       <section className="space-y-3">
         {rows.map((row) => {
           const Icon = row.icon;
-          const on = Boolean(prefs[row.key]);
+          // Unknown state after a failed load — render neutral, not "on".
+          const on = !loadFailed && Boolean(prefs[row.key]);
           const isPending = pendingKey === row.key;
           return (
             <div
               key={row.key}
-              className="rounded-[24px] border border-[#EDEDED] bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#D4D4D4] sm:p-5"
+              className="bz-card p-4 transition-colors hover:border-[#D4D4D4] sm:p-5"
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-start gap-3">
@@ -222,7 +255,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
                           aria-hidden="true"
                           className={`inline-block h-1.5 w-1.5 rounded-full ${on ? 'bg-[#A8D62E]' : 'bg-[#A3A3A3]'}`}
                         />
-                        {on ? (isTr ? 'Aktif' : 'Active') : (isTr ? 'Pasif' : 'Off')}
+                        {loadFailed ? '—' : on ? (isTr ? 'Aktif' : 'Active') : (isTr ? 'Pasif' : 'Off')}
                       </span>
                     </div>
                     <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
@@ -234,7 +267,7 @@ export default function OwnerNotificationsForm({ locale }: { locale: Locale }) {
                   checked={on}
                   onChange={() => toggle(row.key)}
                   loading={isPending}
-                  disabled={Boolean(pendingKey && !isPending)}
+                  disabled={loadFailed || Boolean(pendingKey && !isPending)}
                   ariaLabel={row.label[isTr ? 'tr' : 'en']}
                   className="self-start sm:self-center"
                 />

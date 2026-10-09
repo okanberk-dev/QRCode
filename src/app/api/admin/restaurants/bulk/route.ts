@@ -11,6 +11,7 @@ import {
   type RestaurantFeatureKey,
 } from '@/lib/restaurant-features';
 import { writeAdminAuditLog } from '@/lib/audit-log';
+import { revalidatePublicMenu } from '@/lib/restaurant-revalidate';
 
 /**
  * POST /api/admin/restaurants/bulk — superadmin only toplu işletme aksiyonu.
@@ -86,10 +87,18 @@ export async function POST(req: NextRequest) {
   // helper'ına geçildi).
   if (data.action === 'activate' || data.action === 'deactivate') {
     const { ids, action } = data;
+    // `suspendedByAdmin` makes the pause stick: owner Settings → Durum can
+    // no longer flip isActive back on while it is set (PUT returns
+    // SUSPENDED_BY_ADMIN). Activating clears it again.
     const result = await prisma.restaurant.updateMany({
       where: { id: { in: ids } },
-      data: { isActive: action === 'activate' },
+      data: { isActive: action === 'activate', suspendedByAdmin: action === 'deactivate' },
     });
+    const slugs = await prisma.restaurant.findMany({
+      where: { id: { in: ids } },
+      select: { slug: true },
+    });
+    for (const r of slugs) revalidatePublicMenu(r.slug);
     await writeAdminAuditLog({
       actorId: actor.id,
       actorSource: 'admin',
@@ -123,7 +132,7 @@ export async function POST(req: NextRequest) {
   // RESTAURANT_FEATURE_SELECT zaten id: true taşıyor; sadece name'i ek olarak istiyoruz.
   const beforeRows = await prisma.restaurant.findMany({
     where: { id: { in: ids } },
-    select: { ...RESTAURANT_FEATURE_SELECT, name: true },
+    select: { ...RESTAURANT_FEATURE_SELECT, name: true, slug: true },
   });
 
   const result = await prisma.restaurant.updateMany({
@@ -145,6 +154,10 @@ export async function POST(req: NextRequest) {
     if (failedCleanup > 0) {
       console.warn(`[admin restaurants/bulk feature_override] ${failedCleanup} ai-draft cleanup rejected (best-effort)`);
     }
+  }
+
+  if (feature === 'menuEnabled' || feature === 'menuPublished') {
+    for (const r of beforeRows) revalidatePublicMenu(r.slug);
   }
 
   await writeAdminAuditLog({
