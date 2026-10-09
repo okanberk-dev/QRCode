@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import type { Locale } from '@/lib/translations';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import { resolveActiveRestaurantId } from '@/lib/active-business';
 import { detectSector } from '@/lib/sector-platforms';
 import { CampaignsClient } from './_components/CampaignsClient';
@@ -33,8 +34,16 @@ export default async function OwnerCampaignsPage({ params, searchParams }: PageP
     redirect(`/${locale}/auth/login?next=/${locale}/dashboard/campaigns`);
   }
 
+  // Team members included — same scope the API layer resolves
+  // (getScopedRestaurantIds). `userId: payload.userId` hid every
+  // restaurant from invited team members.
+  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+    userId: payload.userId,
+    role: payload.role,
+    email: payload.email,
+  });
   const restaurants = await prisma.restaurant.findMany({
-    where: { userId: payload.userId, isActive: true },
+    where: { id: { in: scopedIds }, isActive: true },
     select: {
       id: true,
       name: true,

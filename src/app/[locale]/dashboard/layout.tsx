@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import {
   isAdminRole,
   verifyAdminTokenForLayout,
+  verifyJwt,
   verifyUserTokenForLayout,
   type PanelActor,
 } from '@/lib/auth';
@@ -18,10 +19,12 @@ export const dynamic = 'force-dynamic';
 
 // Stage 25 §38.101 Phase A #3 — process-local cache.
 // Owner shell + admin shell her ikisi de aktif duyuruları fetch ediyordu;
-// duyuru create/edit/delete frequency çok düşük (admin panel'den ayda
-// birkaç kez). 5dk TTL drift kabul edilebilir; admin save sonrası
-// `clearAnnouncementsCache()` ile anında temizlenebilir.
-const ANNOUNCEMENTS_CACHE_TTL_MS = 5 * 60 * 1000;
+// duyuru create/edit/delete frequency çok düşük. The cache is per serverless
+// instance, so an admin save in /admin cannot clear it here (the old comment
+// promised a `clearAnnouncementsCache()` that never existed). Keep the TTL
+// short instead: an archived/critical announcement disappears from owner
+// panels within a minute, while a cold query (take 5) stays cheap.
+const ANNOUNCEMENTS_CACHE_TTL_MS = 60 * 1000;
 const announcementsCache = new Map<Locale, { data: DashboardAnnouncement[]; expiresAt: number }>();
 
 async function fetchActiveAnnouncements(locale: Locale): Promise<DashboardAnnouncement[]> {
@@ -83,12 +86,27 @@ export default async function DashboardLayout({
   // CLAUDE.md §38 audit-api-401 — use the staleness-aware verifier so a
   // password-rotated admin token doesn't render this branch only for every
   // API call to 401.
+  //
+  // "Owner gibi gör" (impersonation) keeps admin_token alive next to a
+  // user_token carrying an `impersonating` claim. Checking admin_token first
+  // sent impersonating admins to this thin admin bar: no owner shell, no
+  // sidebar and — worst — no ImpersonationBanner, so there was no countdown
+  // and no "Çıkış". The API layer already prefers the impersonated actor
+  // (getPanelActorFromRequest §38.238); the layout now matches it. The
+  // session itself is re-validated on every API call, and the banner's
+  // actor-context fetch fails closed if it has ended.
   const adminToken = cookieStore.get('admin_token')?.value;
-  if (adminToken) {
+  const userTokenPeek = cookieStore.get('user_token')?.value;
+  const peekPayload = userTokenPeek ? await verifyJwt(userTokenPeek) : null;
+  const isImpersonating =
+    !!peekPayload &&
+    typeof peekPayload.impersonating === 'object' &&
+    peekPayload.impersonating !== null;
+  if (adminToken && !isImpersonating) {
     const adminPayload = await verifyAdminTokenForLayout(adminToken);
     if (adminPayload && isAdminRole(adminPayload.role)) {
       return (
-        <div className="min-h-screen bg-[#FFFFFF]">
+        <div className="min-h-dvh bg-[#FFFFFF]">
           <div className="border-b border-[#EDEDED] bg-[#0A0A0A] text-white">
             <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-3 px-4 py-2.5 sm:px-7">
               <p className="text-[11px] pulse-eyebrow">

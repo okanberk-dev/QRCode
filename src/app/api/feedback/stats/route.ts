@@ -55,7 +55,9 @@ export async function GET(req: NextRequest) {
         dateFilter.restaurantId = restaurantIdParam;
       }
     } else if (actor.role === 'manager') {
-      dateFilter.restaurantId = actor.restaurantId;
+      // A manager with no restaurant would leave the filter undefined and
+      // read every tenant; pin to an id that cannot match instead.
+      dateFilter.restaurantId = actor.restaurantId ?? '__no_restaurant__';
     // `team_member` (davet edilen ekip üyesi) owner ile aynı dalda scope'lanır:
     // getScopedRestaurantIds -> getTeamMemberScope zaten SADECE TeamMember.locations
     // listesini döner (owner pasifse boş). Scope genişlemesi yok; eksik olan sadece
@@ -189,10 +191,66 @@ export async function GET(req: NextRequest) {
       byRestaurant,
     };
 
-    const aggregations = await prisma.feedback.aggregate({
-      _avg: { rating: true },
-      where: dateFilter
-    });
+    // Remaining independent reads in ONE `$transaction` (CLAUDE.md §40.1) —
+    // were six sequential round-trips. Same queries, same results.
+    const [
+      aggregations,
+      aspectAggs,
+      distributionRaw,
+      dayDistributionRaw,
+      allComments,
+      platformGroupRaw,
+    ] = await prisma.$transaction([
+      prisma.feedback.aggregate({
+        _avg: { rating: true },
+        where: dateFilter,
+      }),
+      // Aspect breakdown: Food / Service / Atmosphere averages + sample size.
+      // Feedback rows where the respective aspect is null are automatically
+      // excluded from the average and counted separately.
+      prisma.feedback.aggregate({
+        _avg: {
+          foodRating: true,
+          serviceRating: true,
+          atmosphereRating: true,
+        },
+        _count: {
+          foodRating: true,
+          serviceRating: true,
+          atmosphereRating: true,
+        },
+        where: dateFilter,
+      }),
+      // Distribution
+      prisma.feedback.groupBy({
+        by: ['rating'],
+        where: dateFilter,
+        _count: true,
+        orderBy: { rating: 'desc' },
+      }),
+      // Day of week distribution (Pzt, Sal, ...) - Limit to last 2000 for performance
+      prisma.feedback.findMany({
+        where: dateFilter,
+        select: { createdAt: true },
+        take: 2000,
+        orderBy: { createdAt: 'desc' },
+      }),
+      // Word Cloud - Sample last 1000 comments for performance
+      prisma.feedback.findMany({
+        where: { ...dateFilter, comment: { not: '' } },
+        select: { comment: true },
+        take: 1000,
+        orderBy: { createdAt: 'desc' },
+      }),
+      // Platform distribution (with avg rating per platform)
+      prisma.feedback.groupBy({
+        by: ['platform'],
+        where: dateFilter,
+        _count: true,
+        _avg: { rating: true },
+      }),
+    ]);
+
     // Returned as a real number so UI callers can safely invoke
     // .toFixed() on the value. Previously this was a string ("4.5") which
     // blew up admin/analytics as `D.toFixed is not a function` once the
@@ -200,23 +258,6 @@ export async function GET(req: NextRequest) {
     const avgRating = aggregations._avg.rating
       ? parseFloat(aggregations._avg.rating.toFixed(1))
       : 0;
-
-    // Aspect breakdown: Food / Service / Atmosphere averages + sample size.
-    // Feedback rows where the respective aspect is null are automatically
-    // excluded from the average and counted separately.
-    const aspectAggs = await prisma.feedback.aggregate({
-      _avg: {
-        foodRating: true,
-        serviceRating: true,
-        atmosphereRating: true,
-      },
-      _count: {
-        foodRating: true,
-        serviceRating: true,
-        atmosphereRating: true,
-      },
-      where: dateFilter,
-    });
 
     const round1 = (n: number | null | undefined) =>
       n === null || n === undefined ? null : parseFloat(n.toFixed(1));
@@ -237,22 +278,16 @@ export async function GET(req: NextRequest) {
     };
 
     // Distribution
-    const distributionRaw = await prisma.feedback.groupBy({
-      by: ['rating'],
-      where: dateFilter,
-      _count: true,
-      orderBy: { rating: 'desc' }
-    });
     const distribution: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
     distributionRaw.forEach((item) => {
       distribution[item.rating] = item._count;
     });
 
     // Weekly trend (last 7 days) — scan counts + avg rating per day.
-    // The previous implementation awaited each day sequentially (7 round-trips
-    // with 2 queries each = 14 total, serially blocked). Now we build the 7
-    // ranges up-front and fire all 14 queries in a single Promise.all so the
-    // total wall-time is one round-trip regardless of day count.
+    // One aggregate per day (`_count._all` + `_avg.rating`, same values the
+    // former count()+aggregate() pair returned) batched in a single
+    // `$transaction` — CLAUDE.md §40.1: the old nested Promise.all fired 14
+    // parallel queries against the connection_limit=1 Supabase pooler.
     const dayBuckets = Array.from({ length: 7 }, (_, idx) => {
       const offset = 6 - idx;
       const d = new Date();
@@ -262,36 +297,30 @@ export async function GET(req: NextRequest) {
       return { d, start, end };
     });
 
-    const trendResults = await Promise.all(
+    const trendResults = await prisma.$transaction(
       dayBuckets.map(({ start, end }) => {
         const trendFilter: Prisma.FeedbackWhereInput = {
           ...dateFilter,
           createdAt: { gte: start, lt: end },
         };
-        return Promise.all([
-          prisma.feedback.count({ where: trendFilter }),
-          prisma.feedback.aggregate({ _avg: { rating: true }, where: trendFilter }),
-        ]);
+        return prisma.feedback.aggregate({
+          _count: { _all: true },
+          _avg: { rating: true },
+          where: trendFilter,
+        });
       })
     );
 
     const trends = dayBuckets.map(({ d }, idx) => {
-      const [count, aggregations] = trendResults[idx];
+      const dayAgg = trendResults[idx];
       return {
         date: d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
-        count,
-        avgRating: parseFloat(aggregations._avg.rating?.toFixed(1) || '0'),
+        count: dayAgg._count._all,
+        avgRating: parseFloat(dayAgg._avg.rating?.toFixed(1) || '0'),
       };
     });
 
-    // Day of week distribution (Pzt, Sal, ...) - Limit to last 2000 for performance
-    const dayDistributionRaw = await prisma.feedback.findMany({
-      where: dateFilter,
-      select: { createdAt: true },
-      take: 2000,
-      orderBy: { createdAt: 'desc' }
-    });
-
+    // Day of week distribution (Pzt, Sal, ...)
     // Day.getDay(): 0=Sun, 1=Mon, ..., 6=Sat
     const daysMap: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
     dayDistributionRaw.forEach((f) => {
@@ -307,14 +336,7 @@ export async function GET(req: NextRequest) {
       count: daysMap[d],
     }));
 
-    // Word Cloud - Sample last 1000 comments for performance
-    const allComments = await prisma.feedback.findMany({
-      where: { ...dateFilter, comment: { not: '' } },
-      select: { comment: true },
-      take: 1000,
-      orderBy: { createdAt: 'desc' }
-    });
-
+    // Word Cloud
     const stopWords = new Set([
       'bir', 've', 'iyi', 'çok', 'için', 'bu', 'da', 'de', 'ile', 'ama', 'fakat',
       'daha', 'güzel', 'teşekkürler', 'teşekkür', 'harika', 'gerçekten', 'kadar',
@@ -341,13 +363,6 @@ export async function GET(req: NextRequest) {
       .slice(0, 30);
 
     // Platform distribution (with avg rating per platform)
-    const platformGroupRaw = await prisma.feedback.groupBy({
-      by: ['platform'],
-      where: dateFilter,
-      _count: true,
-      _avg: { rating: true },
-    });
-
     const platformLabels: Record<string, string> = {
       google: 'Google',
       yemeksepeti: 'Yemeksepeti',

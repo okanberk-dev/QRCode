@@ -2,7 +2,7 @@
 
 // CLAUDE.md §42 Phase 2 — Global audit template catalog (owner side).
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -18,6 +18,7 @@ import {
   CardSkeleton,
   EmptyState,
   PageHeader,
+  PulseSelect,
 } from '@/components/ui';
 import { AUDIT_SECTORS, type AuditSector, type AuditScoringMode } from '@/lib/audits/types';
 import {
@@ -89,6 +90,7 @@ export default function AuditCatalogClient({
 }: Props) {
   const t = getTranslations(locale);
   const router = useRouter();
+  const restaurantSelectId = useId();
   const [activeRestaurantId, setActiveRestaurantId] = useState<string>(
     initialActiveRestaurantId ?? restaurants[0]?.id ?? '',
   );
@@ -171,20 +173,16 @@ export default function AuditCatalogClient({
       <div className="bz-card p-3 space-y-3">
         {restaurants.length > 1 && (
           <div>
-            <label className="pulse-eyebrow text-[#525252] block mb-1">
+            <label htmlFor={restaurantSelectId} className="pulse-eyebrow text-[#525252] block mb-1">
               {locale === 'tr' ? 'Hangi işletmeye kopyalansın?' : 'Fork into which business?'}
             </label>
-            <select
-              className="bz-input"
+            <PulseSelect
+              id={restaurantSelectId}
+              className="w-full"
               value={activeRestaurantId}
-              onChange={(e) => setActiveRestaurantId(e.target.value)}
-            >
-              {restaurants.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+              onChange={setActiveRestaurantId}
+              options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
+            />
           </div>
         )}
         <div>

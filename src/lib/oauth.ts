@@ -22,6 +22,8 @@ export interface OAuthUserRecord {
   plan: string;
   isActive: boolean;
   trialEndsAt: Date | null;
+  /** Optional — only the refresh path selects it (team_member gate). */
+  emailVerified?: boolean;
 }
 
 export interface NewUserData {
@@ -158,6 +160,18 @@ export async function handleTokenRefresh(
 
   const gate = gateUser(user, deps.now());
   if (gate) return gate;
+
+  // Parity with /api/auth/login: a team member whose address is not
+  // verified cannot obtain a session. Refresh skipped this check, so a
+  // session minted before an e-mail change kept renewing with the new,
+  // unverified address — and team scope is resolved by that address.
+  if (user.role === 'team_member' && user.emailVerified === false) {
+    return {
+      ok: false,
+      status: 403,
+      error: 'E-posta adresinizi doğrulamanız gerekiyor.',
+    };
+  }
 
   const token = await deps.signToken({
     userId: user.id,

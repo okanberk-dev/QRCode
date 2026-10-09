@@ -2,11 +2,40 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { sendTeamMemberRemovedEmail } from '@/lib/email';
+import { writePanelAuditLog } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 
 const VALID_ROLES = new Set(['owner', 'manager', 'staff', 'viewer']);
-const VALID_STATUSES = new Set(['invited', 'active', 'revoked']);
+// Owners may only REVOKE through PATCH. Setting 'active' here skipped the
+// invite-acceptance flow and its cross-tenant guard (§40.4.I) — producing
+// duplicate active memberships for one e-mail (scope then resolved
+// arbitrarily) and active rows with no real account behind them. Setting
+// 'invited' left the old token in place. Re-inviting goes through
+// POST /api/team or /resend-invite, which mint a fresh token.
+const VALID_STATUSES = new Set(['revoked']);
+
+// A removed / revoked team member must not keep using an existing session
+// until their JWT expires (§37.2.A).
+async function revokeMemberSessions(email: string, memberId: string) {
+  try {
+    const userRow = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, role: true },
+    });
+    if (userRow?.role === 'team_member') {
+      await prisma.userSession.updateMany({
+        where: { userId: userRow.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+  } catch (err) {
+    console.error('[TEAM] session revoke failed', {
+      memberId,
+      errName: err instanceof Error ? err.name : 'unknown',
+    });
+  }
+}
 
 const ROLE_LABELS_TR: Record<string, string> = {
   owner: 'Sahip',
@@ -58,7 +87,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     updates.role = body.role;
   }
   if (body.status) {
-    if (!VALID_STATUSES.has(body.status)) return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+    if (!VALID_STATUSES.has(body.status)) {
+      return NextResponse.json(
+        { error: 'Durum yalnızca iptal edilebilir; yeniden eklemek için davet gönderin.', code: 'invalid_status' },
+        { status: 400 },
+      );
+    }
     updates.status = body.status;
   }
   if (typeof body.name === 'string') {
@@ -97,7 +131,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const updated = await prisma.teamMember.update({
     where: { id },
-    data: updates,
+    data: {
+      ...updates,
+      // Revoking also kills any pending invite link.
+      ...(updates.status === 'revoked' ? { inviteToken: null, inviteTokenExpiresAt: null } : {}),
+    },
+  });
+
+  if (updates.status === 'revoked' && access.member.status !== 'revoked') {
+    await revokeMemberSessions(access.member.email, id);
+  }
+
+  await writePanelAuditLog(access.actor, 'owner.team.update', access.actor.id, {
+    memberId: id,
+    ...(updates.role ? { role: updates.role } : {}),
+    ...(updates.status ? { status: updates.status } : {}),
+    ...(updates.locations ? { locationCount: updates.locations.length } : {}),
   });
 
   return NextResponse.json({
@@ -132,23 +181,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   // session (if any) needs to be revoked. team_member is an active
   // identity; leaving the cookie alive lets a removed teammate keep using
   // the panel until their JWT expires. Mirrors password-changed.
-  try {
-    const userRow = await prisma.user.findUnique({
-      where: { email: removedSnapshot.email },
-      select: { id: true, role: true },
-    });
-    if (userRow?.role === 'team_member') {
-      await prisma.userSession.updateMany({
-        where: { userId: userRow.id, revokedAt: null },
-        data: { revokedAt: new Date() },
-      });
-    }
-  } catch (err) {
-    console.error('[TEAM_DELETE] session revoke failed', {
-      memberId: id,
-      errName: err instanceof Error ? err.name : 'unknown',
-    });
-  }
+  await revokeMemberSessions(removedSnapshot.email, id);
+
+  await writePanelAuditLog(access.actor, 'owner.team.remove', access.actor.id, {
+    memberId: id,
+    role: removedSnapshot.role,
+  });
 
   // Wave B3 — fire-and-forget owner notification (mail goes to OWNER, not
   // the removed member). All lookups + send happen inside the helper.

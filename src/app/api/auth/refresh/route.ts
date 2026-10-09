@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
             plan: true,
             isActive: true,
             trialEndsAt: true,
+            emailVerified: true,
           },
         }),
       signToken: signJwt,

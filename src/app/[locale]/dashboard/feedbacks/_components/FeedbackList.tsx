@@ -149,7 +149,9 @@ export function FeedbackList({
           xl:'de (≥1280px) parent grid'in <FeedbackFiltersRail> standalone rail'a
           taşıdığı için bu header xl: aralığında gizli — duplicate state kullanmasın.
           lg:1024-1279 ve mobil aralıkta header burada görünür (mevcut UX). */}
-      <div className="border-b border-[#EDEDED] bg-white p-3 space-y-2.5 sticky top-0 z-10 xl:hidden">
+      {/* Mobilde belge scroll eder → shell'in sticky topbar'ının (~61px, z-40)
+          altına yapış; lg'de grid kendi overflow kabı olduğundan top-0 doğru. */}
+      <div className="border-b border-[#EDEDED] bg-white p-3 space-y-2.5 sticky top-[61px] z-10 lg:top-0 xl:hidden">
         <div className="flex items-center gap-2 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2 focus-within:border-[#0A0A0A] transition-colors">
           <Search size={14} className="text-[#737373] shrink-0" strokeWidth={2} />
           <input
@@ -210,7 +212,7 @@ export function FeedbackList({
           xl:hidden — rail tarafında zaten chip görünür. bottom nav (CLAUDE.md
           §25 MobileBottomNav) altında ~80px yer var; banner üzerinde sticky. */}
       {counts.aiReady > 0 && activeTab !== 'ai_ready' && (
-        <div className="lg:hidden sticky bottom-[80px] z-30 mx-3 mb-3 rounded-2xl bg-[#0A0A0A] text-white px-4 py-3 bz-elev-2 flex items-center gap-3">
+        <div className="lg:hidden sticky bottom-[calc(var(--dash-bottom-nav-h,96px)+12px)] z-30 mx-3 mb-3 rounded-2xl bg-[#0A0A0A] text-white px-4 py-3 bz-elev-2 flex items-center gap-3">
           <span
             aria-hidden="true"
             className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#C6F24E]/15 border border-[#C6F24E]/30"

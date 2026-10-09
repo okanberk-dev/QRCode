@@ -180,6 +180,16 @@ model Restaurant {
   // false'a çekildi; admin /admin/restaurants/[id] feature-access
   // endpoint'inden tek-tek aktif edilir.
   campaignsEnabled              Boolean @default(false) @map("campaigns_enabled")
+  // Admin master switch for the owner Surveys module (create/publish +
+  // public /s/[slug] submissions). Default true so existing owners keep the
+  // module they already use; admin opts a restaurant out from
+  // /admin/restaurants/[id] → Paket Özellikleri (CLAUDE.md §5.2 pattern).
+  surveysEnabled                Boolean @default(true) @map("surveys_enabled")
+  // Set when a superadmin pauses the restaurant (detail form or bulk
+  // "Duraklat"). While true the owner can no longer flip `isActive` back on
+  // from Settings → Durum — before this flag an admin pause lasted only until
+  // the owner's next click. Cleared when the admin reactivates.
+  suspendedByAdmin              Boolean @default(false) @map("suspended_by_admin")
 
   // Google Rating Impact Tracking
   initialGoogleRating Float? @map("initial_google_rating")

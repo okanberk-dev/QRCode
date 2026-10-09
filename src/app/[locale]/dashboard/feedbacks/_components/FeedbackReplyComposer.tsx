@@ -17,6 +17,8 @@ interface FeedbackReplyComposerProps {
   aiFromBackground: boolean;
   aiTone: AiTone;
   setAiTone: (v: AiTone) => void;
+  /** Yönetici Pulse AI'yı bu işletme için kapattı — AI aksiyonları gizlenir. */
+  aiDisabledByAdmin?: boolean;
   onRegenerateAi: () => void;
   onUseAiAndSend: () => void;
   onCopyAiToDraft: () => void;
@@ -45,6 +47,7 @@ export function FeedbackReplyComposer({
   aiFromBackground,
   aiTone,
   setAiTone,
+  aiDisabledByAdmin = false,
   onRegenerateAi,
   onUseAiAndSend,
   onCopyAiToDraft,
@@ -96,7 +99,14 @@ export function FeedbackReplyComposer({
           )}
         </div>
 
-        {aiLoading ? (
+        {aiDisabledByAdmin ? (
+          // 403 eskiden yutuluyordu ve "Yeniden öner" boşuna sunuluyordu.
+          <p className="mt-3 text-[12.5px] leading-[1.6] text-white/60">
+            {isTr
+              ? 'Pulse AI bu işletme için yönetici tarafından kapatıldı.'
+              : 'Pulse AI has been turned off for this business by an administrator.'}
+          </p>
+        ) : aiLoading ? (
           <div className="mt-3 space-y-2" aria-hidden="true">
             <div className="h-3 w-full rounded bg-white/10 animate-pulse" />
             <div className="h-3 w-[88%] rounded bg-white/10 animate-pulse" />
@@ -116,7 +126,7 @@ export function FeedbackReplyComposer({
           </p>
         )}
 
-        {!aiLoading && (aiSource === 'template' || aiSource === 'template-fallback') && aiSuggestion && (
+        {!aiDisabledByAdmin && !aiLoading && (aiSource === 'template' || aiSource === 'template-fallback') && aiSuggestion && (
           <p className="mt-3 inline-flex items-start gap-2 text-[11px] leading-[1.5] text-white/60">
             <span aria-hidden="true" className="mt-0.5">⚠</span>
             <span>
@@ -130,6 +140,7 @@ export function FeedbackReplyComposer({
         {/* Action row — mobile stack, sm+ row.
             Stage 79 §38.159 — xl+ dar panel (~360px) için gap-1.5 kompakt
             (4 button: Use & send + Regenerate + Tone select + Edit). */}
+        {!aiDisabledByAdmin && (
         <div className="mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 xl:gap-1.5">
           <button
             type="button"
@@ -205,6 +216,7 @@ export function FeedbackReplyComposer({
             {isTr ? 'Düzenle' : 'Edit'}
           </button>
         </div>
+        )}
       </div>
 
       {/*

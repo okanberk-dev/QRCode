@@ -25,8 +25,9 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { getUserFromRequest } from '@/lib/auth';
 import { ApiErrors } from '@/lib/api-errors';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { rateLimit } from '@/lib/rate-limit';
 import { sendAccountDeletionScheduledEmail } from '@/lib/email';
+import { writeAdminAuditLog } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -39,6 +40,13 @@ export async function POST(req: NextRequest) {
   if (!payload) return ApiErrors.unauthorized();
   const userId = payload.userId;
   if (!userId) return ApiErrors.unauthorized();
+
+  // An admin "Owner gibi gör" shadow session must never be able to put the
+  // customer's account on the deletion track — that is the owner's own,
+  // irreversible-after-30-days decision.
+  if (payload.impersonating != null) {
+    return ApiErrors.forbidden('Gölge oturumda hesap silme başlatılamaz.', 'IMPERSONATION_FORBIDDEN');
+  }
 
   // CLAUDE.md §37.2.C — privileged write rate limit. Account deletion is
   // a high-cost (Resend send + DB cascade chain) action; 3/min/actor is
@@ -93,11 +101,20 @@ export async function POST(req: NextRequest) {
     }),
   ]);
 
-  // CLAUDE.md §37.7 PII redaction — log userId, not email.
+  // CLAUDE.md §37.7 PII redaction — log userId only (no email / IP).
   console.error('[ACCOUNT_DELETE_SCHEDULED]', {
     userId,
     scheduledFor: scheduledFor.toISOString(),
-    ip: getClientIp(req.headers),
+  });
+
+  // Visible in /admin/audit-logs + the admin member page: admins used to
+  // see the account as healthy until the cron wiped it 30 days later.
+  await writeAdminAuditLog({
+    actorId: userId,
+    actorSource: 'user',
+    action: 'owner.account.deletion_scheduled',
+    targetId: userId,
+    payload: { scheduledFor: scheduledFor.toISOString(), graceDays: GRACE_DAYS },
   });
 
   // Fire-and-forget mail (sender wires ops alert internally §21.33). We

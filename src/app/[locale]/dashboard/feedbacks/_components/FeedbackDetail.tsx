@@ -46,6 +46,8 @@ interface FeedbackDetailProps {
   aiFromBackground: boolean;
   aiTone: AiTone;
   setAiTone: (v: AiTone) => void;
+  /** Admin master flag `pulseAiEnabled=false` (API 403 `pulse_ai_disabled_by_admin`). */
+  aiDisabledByAdmin?: boolean;
   onRegenerateAi: () => void;
   onUseAiAndSend: () => void;
   onCopyAiToDraft: () => void;
@@ -76,9 +78,10 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
       role="region"
       aria-labelledby={`feedback-detail-title-${active.id}`}
     >
-      {/* Mobile sticky top — back button */}
+      {/* Mobile sticky top — back button. Shell mobil topbar'ı (~61px, z-40)
+          da sticky; top-0 bu barı onun altına kaydırıyordu. */}
       {showBackButton && (
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 backdrop-blur px-4 py-3 lg:hidden">
+        <div className="sticky top-[61px] z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 backdrop-blur px-4 py-3 lg:hidden">
           <button
             type="button"
             onClick={onBack}
@@ -404,6 +407,7 @@ export function FeedbackDetail(props: FeedbackDetailProps) {
               aiFromBackground={props.aiFromBackground}
               aiTone={props.aiTone}
               setAiTone={props.setAiTone}
+              aiDisabledByAdmin={props.aiDisabledByAdmin}
               onRegenerateAi={props.onRegenerateAi}
               onUseAiAndSend={props.onUseAiAndSend}
               onCopyAiToDraft={props.onCopyAiToDraft}

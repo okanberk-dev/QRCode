@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { SYSTEM_FEEDBACK } from '@/lib/constants';
+import { csvCell } from '@/lib/csv-safe';
 
 const PLATFORM_LABELS: Record<string, string> = {
   google: 'Google',
@@ -45,7 +46,9 @@ export async function GET(req: NextRequest) {
         where.restaurantId = restaurantId;
       }
     } else if (actor.role === 'manager') {
-      where.restaurantId = actor.restaurantId;
+      // A manager with no restaurant would leave the filter undefined and
+      // read every tenant; pin to an id that cannot match instead.
+      where.restaurantId = actor.restaurantId ?? '__no_restaurant__';
     // `team_member` (davet edilen ekip üyesi) owner ile aynı dalda scope'lanır:
     // getScopedRestaurantIds -> getTeamMemberScope zaten SADECE TeamMember.locations
     // listesini döner (owner pasifse boş). Scope genişlemesi yok; eksik olan sadece
@@ -130,7 +133,8 @@ export async function GET(req: NextRequest) {
 
     // Generate CSV with Platform, Kaynak and KVKK columns
     const header = ['ID', 'Tarih', 'Puan', 'KVKK Onayı', 'Platform', 'Kaynak', 'Yorum', 'Restoran', 'Şube', 'Masa No'];
-    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    // Formula-injection safe (src/lib/csv-safe.ts) — same quoting as before.
+    const esc = (v: string) => csvCell(v);
     const rows = feedbacks.map((f) => [
       f.id,
       f.createdAt.toISOString(),

@@ -267,10 +267,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-3.5">
         {/* Plan hero — graphite bg */}
         <div className="rounded-2xl bg-[#0A0A0A] p-5 sm:p-6 text-white">
-          <p
-            className="text-[11px] font-medium tracking-[0.18em] uppercase text-[#A3A3A3]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
+          <p className="bz-mono text-[11px] font-medium tracking-[0.18em] uppercase text-[#A3A3A3]">
             {isTr ? 'MEVCUT PLAN' : 'CURRENT PLAN'}
           </p>
           <h3 className="bz-h-tight-2 mt-1.5 text-[36px] sm:text-[40px] text-white">
@@ -446,7 +443,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
       </div>
 
       {/* ─── Invoice list ─── */}
-      <div className="mt-6 rounded-2xl border border-[#EDEDED] bg-white">
+      <div className="mt-6 bz-card">
         <div className="flex items-center gap-2 border-b border-[#EDEDED] px-5 py-4">
           <Receipt size={14} className="text-[#0A0A0A]" strokeWidth={2} />
           <h3 className="text-[15px] font-semibold text-[#0A0A0A]">
@@ -462,12 +459,14 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
           </div>
         ) : (
           <>
-            {/* Desktop table */}
-            <table className="hidden md:table w-full text-left text-[13px]">
+            {/* Desktop table — scroll wrapper so a long description / invoice
+                number can't push the row past the card at md–lg widths. */}
+            <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-[13px]">
               <thead>
                 <tr
-                  className="border-b border-[#EDEDED] bg-[#FAFAFA] text-[#737373]"
-                  style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.16em' }}
+                  className="bz-mono border-b border-[#EDEDED] bg-[#FAFAFA] text-[#737373]"
+                  style={{ fontSize: 11, letterSpacing: '0.16em' }}
                 >
                   <th className="px-5 py-3 font-medium uppercase">
                     {isTr ? 'TARİH' : 'DATE'}
@@ -491,10 +490,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                     className="border-b border-[#EDEDED] last:border-0 hover:bg-[#FAFAFA]/50"
                   >
                     <td className="px-5 py-3.5 text-[#525252]">{dateFormat(inv.date)}</td>
-                    <td
-                      className="px-5 py-3.5 text-[#525252]"
-                      style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
-                    >
+                    <td className="bz-mono px-5 py-3.5 text-[12px] text-[#525252]">
                       {inv.invoiceNumber || inv.id.slice(0, 10).toUpperCase()}
                     </td>
                     <td className="px-5 py-3.5">
@@ -529,6 +525,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                 ))}
               </tbody>
             </table>
+            </div>
 
             {/* Mobile cards */}
             <div className="md:hidden divide-y divide-[#EDEDED]">
@@ -546,7 +543,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                     <div className="mt-1 text-[11px] text-[#737373] flex items-center gap-2">
                       <span>{dateFormat(inv.date)}</span>
                       <span>·</span>
-                      <span style={{ fontFamily: 'var(--font-mono)' }}>
+                      <span className="bz-mono">
                         {inv.invoiceNumber || inv.id.slice(0, 8).toUpperCase()}
                       </span>
                     </div>
@@ -653,10 +650,9 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                   </p>
                   <div className="mt-3 flex items-baseline gap-2">
                     <span
-                      className={`text-[28px] font-medium leading-none tracking-[-0.03em] ${
+                      className={`bz-h-tight text-[28px] font-medium leading-none tracking-[-0.03em] ${
                         isDark ? 'text-[#C6F24E]' : 'text-[#0A0A0A]'
                       }`}
-                      style={{ fontFamily: 'var(--font-heading)' }}
                     >
                       {monthlyShown === 0
                         ? isTr ? 'Ücretsiz' : 'Free'

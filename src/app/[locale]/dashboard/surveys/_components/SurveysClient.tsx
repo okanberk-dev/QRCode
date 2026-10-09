@@ -13,6 +13,8 @@ import { AlertBanner, Badge, EmptyState, PageHeader, PulseSelect, StatCard } fro
 interface Restaurant {
   id: string;
   name: string;
+  /** Admin master switch (feature-access). Undefined = enabled. */
+  surveysEnabled?: boolean;
 }
 
 interface SurveyRow {
@@ -109,6 +111,26 @@ export default function SurveysClient({
           </Link>
         }
       />
+
+      {(() => {
+        // Admin can switch the Surveys module off per business; tell the
+        // owner why creating/publishing fails and why public links stopped.
+        const disabled = restaurants.filter((r) => r.surveysEnabled === false);
+        const scope = activeRestaurantId
+          ? disabled.filter((r) => r.id === activeRestaurantId)
+          : disabled;
+        if (scope.length === 0) return null;
+        const names = scope.map((r) => r.name).join(', ');
+        return (
+          <div className="mt-4">
+            <AlertBanner kind="warn">
+              {locale === 'tr'
+                ? `Anket modülü ${names} için Buaze yönetimi tarafından kapatıldı. Mevcut anketleriniz korunur; yeni anket yayınlanamaz ve yayındaki linkler yanıt toplamaz.`
+                : `The Surveys module is turned off by Buaze for ${names}. Existing surveys are kept, but new surveys can't be published and live links stop collecting answers.`}
+            </AlertBanner>
+          </div>
+        );
+      })()}
 
       {restaurants.length > 1 && (
         <div className="mt-4 flex flex-wrap items-center gap-2">

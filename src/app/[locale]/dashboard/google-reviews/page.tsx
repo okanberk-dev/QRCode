@@ -468,7 +468,7 @@ function ReviewCard({
           {composerOpen && (
             <div className="mt-3 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] p-3">
               <textarea
-                className="bz-input min-h-[88px] resize-y text-[13px]"
+                className="bz-input min-h-[88px] resize-y text-[16px] sm:text-[13px]"
                 value={value}
                 onChange={(event) => onChange(event.target.value.slice(0, 4096))}
                 placeholder={
@@ -1974,7 +1974,9 @@ function GoogleReviewsContent({ locale }: { locale: Locale }) {
                           }
                         : null
                     }
-                    sub={isTr ? 'sektör ort. %64' : 'sector avg 64%'}
+                    // §35.8 — kaynağı olmayan "sektör ort. %64" kıyası kaldırıldı;
+                    // oran tüm listelenen yorumlar üzerinden hesaplanıyor.
+                    sub={isTr ? 'tüm yorumlarda' : 'across all reviews'}
                   />
                   {/* ORT. YANIT SÜRESİ */}
                   <KpiTile

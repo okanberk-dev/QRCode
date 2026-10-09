@@ -20,6 +20,7 @@ import {
   describeDomainError,
   type IntegrationProvider,
 } from '@/lib/integration-domains';
+import { assertPublicHttpUrl, type SsrfBlockReason } from '@/lib/ssrf-guard';
 
 export type PlatformLinkTestSource = 'manual' | 'cron' | 'retest_all';
 export type PlatformLinkTestLocale = 'tr' | 'en';
@@ -85,7 +86,24 @@ const MESSAGES = {
     en: `No response within ${seconds} seconds.`,
   }),
   unreachable: { tr: 'Erişilemedi.', en: 'Unreachable.' },
+  // SSRF guard (src/lib/ssrf-guard.ts) — özel / iç ağ adresleri test edilmez.
+  privateAddress: {
+    tr: 'Bu adres herkese açık bir web adresi değil (yerel / iç ağ adresleri test edilemez).',
+    en: 'This is not a public web address (local / internal network addresses cannot be tested).',
+  },
 } as const;
+
+// Kaç redirect hop'u elle takip edilir. Her hop SSRF guard'dan yeniden geçer;
+// limit aşılırsa son 3xx status raporlanır (sunucu yanıt verdi → link canlı).
+const MAX_REDIRECTS = 3;
+
+function ssrfMessage(reason: SsrfBlockReason, locale: PlatformLinkTestLocale): string {
+  if (reason === 'dns_unresolved') return pick(MESSAGES.unreachable, locale);
+  if (reason === 'invalid_url' || reason === 'wrong_protocol') {
+    return pick(MESSAGES.invalidUrl, locale);
+  }
+  return pick(MESSAGES.privateAddress, locale);
+}
 
 function pick(entry: { tr: string; en: string }, locale: PlatformLinkTestLocale): string {
   return entry[locale];
@@ -156,7 +174,12 @@ async function attempt(
   target: string,
   method: 'HEAD' | 'GET',
   timeoutMs: number,
-): Promise<{ status: number } | { aborted: true } | { failed: Error }> {
+): Promise<
+  | { status: number }
+  | { aborted: true }
+  | { failed: Error }
+  | { blocked: SsrfBlockReason }
+> {
   // Her deneme KENDİ AbortController'ını alır. Eski implementasyon tek bir
   // timer'ı HEAD + GET arasında paylaşıyordu; HEAD 4.8 sn'de düşerse GET
   // zaten süresi dolmuş bir signal ile başlıyor, hatta timer HEAD sırasında
@@ -165,23 +188,44 @@ async function attempt(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(target, {
-      method,
-      signal: controller.signal,
-      redirect: 'follow',
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
-        'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.7',
-      },
-    });
-    // GET fallback body'yi okumaz — status yeterli, bağlantıyı serbest bırak.
-    try {
-      await res.body?.cancel();
-    } catch {
-      // ignore
+    // `redirect: 'manual'` + elle takip: `follow` modunda public bir URL
+    // 302 ile 127.0.0.1 / 169.254.169.254'e yönlendirip guard'ı atlatabilirdi.
+    // İlk URL caller'da guard'dan geçti; her Location hop'u burada yeniden
+    // doğrulanır.
+    let current = target;
+    for (let hop = 0; ; hop++) {
+      const res = await fetch(current, {
+        method,
+        signal: controller.signal,
+        redirect: 'manual',
+        headers: {
+          'User-Agent': USER_AGENT,
+          Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
+          'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.7',
+        },
+      });
+      // GET fallback body'yi okumaz — status yeterli, bağlantıyı serbest bırak.
+      try {
+        await res.body?.cancel();
+      } catch {
+        // ignore
+      }
+
+      const location = res.headers.get('location');
+      const isRedirect = res.status >= 300 && res.status < 400 && Boolean(location);
+      if (!isRedirect || hop >= MAX_REDIRECTS) return { status: res.status };
+
+      let next: string;
+      try {
+        next = new URL(location as string, current).toString();
+      } catch {
+        return { status: res.status };
+      }
+      const guard = await assertPublicHttpUrl(next);
+      if (!guard.ok) return { blocked: guard.reason };
+      // HEAD/GET redirect'te method değişmez (303 dahil) — aynı method ile devam.
+      current = next;
     }
-    return { status: res.status };
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') return { aborted: true };
     return { failed: err instanceof Error ? err : new Error(String(err)) };
@@ -261,20 +305,40 @@ export async function runPlatformLinkTest(
     return result;
   }
 
-  const start = Date.now();
   const href = target.toString();
+
+  // SSRF guard — free-form website / reservation linkleri iç ağa (127.0.0.1,
+  // 169.254.169.254, 10/8 …) işaret edemesin. Engellenen URL'ye hiç istek
+  // atılmaz; sonuç başarısız test ile aynı şekilde döner.
+  const guard = await assertPublicHttpUrl(href);
+  if (!guard.ok) {
+    const result: PlatformLinkTestResult = {
+      ok: false,
+      statusCode: 0,
+      latencyMs: 0,
+      error: ssrfMessage(guard.reason, locale),
+      url,
+      checkedAt,
+    };
+    if (persist) await persistCheck(params, result);
+    return result;
+  }
+
+  const start = Date.now();
 
   let outcome = await attempt(href, 'HEAD', timeoutMs);
   // GET fallback: HEAD ağ hatasıyla düştü, zaman aşımına uğradı, ya da
   // upstream HEAD'i desteklemiyor (405 / 501) veya bot filtresi HEAD'i
   // reddediyor (403 / 429). GET gerçek sayfa isteğine daha çok benzer.
+  // Redirect hop'u guard'a takıldıysa GET de aynı yere gider — fallback yok.
   const needsGetFallback =
-    'failed' in outcome ||
+    !('blocked' in outcome) &&
+    ('failed' in outcome ||
     'aborted' in outcome ||
     outcome.status === 405 ||
     outcome.status === 501 ||
     outcome.status === 403 ||
-    outcome.status === 429;
+    outcome.status === 429);
   if (needsGetFallback) {
     const getOutcome = await attempt(href, 'GET', timeoutMs);
     // GET de başarısızsa HEAD'in daha bilgilendirici olan sonucunu koru
@@ -300,6 +364,15 @@ export async function runPlatformLinkTest(
     }
 
     result = { ok: isOk, statusCode: status, latencyMs, error: errorMessage, url, checkedAt };
+  } else if ('blocked' in outcome) {
+    result = {
+      ok: false,
+      statusCode: 0,
+      latencyMs,
+      error: ssrfMessage(outcome.blocked, locale),
+      url,
+      checkedAt,
+    };
   } else if ('aborted' in outcome) {
     result = {
       ok: false,

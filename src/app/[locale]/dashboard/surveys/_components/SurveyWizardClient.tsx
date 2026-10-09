@@ -42,7 +42,7 @@ import {
   Gauge,
 } from 'lucide-react';
 import { getTranslations, type Locale } from '@/lib/translations';
-import { AlertBanner, Badge, Field, PageHeader, PulseSelect } from '@/components/ui';
+import { AlertBanner, APSwitch, Badge, Field, PageHeader, PulseSelect } from '@/components/ui';
 import {
   OPTIONS_MAX,
   OPTIONS_MIN,
@@ -809,15 +809,14 @@ function SortableQuestionRow({
             />
           )}
 
-          <label className="flex items-center gap-2 text-xs text-[#525252]">
-            <input
-              type="checkbox"
-              checked={question.required}
-              onChange={(e) => onUpdate({ required: e.target.checked })}
-              className="h-4 w-4 rounded border-[#EDEDED]"
-            />
-            {t.survey_question_required_label}
-          </label>
+          {/* Boolean ayar → kanonik APSwitch (§23.3); native checkbox tarayıcı
+              mavisiyle Pulse paletinden kopuyordu. */}
+          <APSwitch
+            size="sm"
+            checked={question.required}
+            onChange={(next) => onUpdate({ required: next })}
+            label={t.survey_question_required_label}
+          />
         </div>
         {canRemove && (
           <button
@@ -1000,15 +999,12 @@ function Step4Appearance({
             no longer exists. `collectContact` (e-mail/phone field) is a UX
             choice and stays. */}
         <div className="space-y-2 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
-          <label className="flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={collectContact}
-              onChange={(e) => setCollectContact(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-[#EDEDED]"
-            />
-            <span>{t.survey_form_collect_contact}</span>
-          </label>
+          <APSwitch
+            size="sm"
+            checked={collectContact}
+            onChange={setCollectContact}
+            label={t.survey_form_collect_contact}
+          />
           <p className="text-[11px] text-[#737373]">
             {locale === 'tr'
               ? 'KVKK Aydınlatma Metni ve İletişim İzni, Buaze tarafından yönetilir; her ankette otomatik olarak gösterilir.'

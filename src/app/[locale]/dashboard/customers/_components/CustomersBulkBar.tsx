@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Mail,
@@ -218,33 +219,6 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
     }
   }
 
-  async function onCampaignSubmit(subject: string, messageBody: string) {
-    if (!subject.trim() || !messageBody.trim()) return;
-    setBusy('campaign');
-    const { ok, body } = await postBulk('send_campaign', {
-      subject: subject.trim(),
-      body: messageBody.trim(),
-      locale,
-    });
-    setBusy(null);
-    setCampaignOpen(false);
-    if (ok) {
-      setNotice({
-        tone: 'success',
-        text: isTr
-          ? `${body.processed ?? 0} müşteriye kampanya gönderildi${body.skipped ? `, ${body.skipped} atlandı (KVKK izni yok)` : ''}.`
-          : `Campaign sent to ${body.processed ?? 0}${body.skipped ? `, ${body.skipped} skipped (no KVKK consent)` : ''}.`,
-      });
-      setSelected(new Set());
-      router.refresh();
-    } else {
-      setNotice({
-        tone: 'error',
-        text: body?.error || (isTr ? 'Kampanya gönderilemedi' : 'Campaign failed'),
-      });
-    }
-  }
-
   return (
     <>
       {/* Floating bottom toolbar */}
@@ -309,7 +283,7 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
         <div
           role="status"
           aria-live="polite"
-          className={`fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 -translate-x-1/2 z-50 rounded-full px-4 py-2 text-[12px] font-medium shadow-md lg:bottom-20 ${
+          className={`fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] left-1/2 -translate-x-1/2 z-50 w-max max-w-[calc(100vw-32px)] rounded-2xl px-4 py-2 text-center text-[12px] font-medium shadow-md lg:bottom-20 ${
             notice.tone === 'success'
               ? 'bg-[#0A0A0A] text-white'
               : 'bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]'
@@ -335,11 +309,9 @@ export default function CustomersBulkBar({ locale, showArchived = false }: Custo
 
       {/* Campaign compose modal */}
       {campaignOpen && (
-        <CampaignComposeModal
+        <CampaignRouteModal
           isTr={isTr}
-          count={count}
-          busy={busy === 'campaign'}
-          onSubmit={onCampaignSubmit}
+          campaignsHref={`/${locale}/dashboard/campaigns`}
           onClose={() => setCampaignOpen(false)}
         />
       )}
@@ -417,77 +389,37 @@ function SegmentPickerModal({
 // Campaign compose modal
 // ──────────────────────────────────────────────────────────────────────────
 
-function CampaignComposeModal({
+// Customer e-mail campaigns go out under the Buaze sender, so every one of
+// them passes Buaze admin approval (/admin/campaign-approvals, §38.105) and
+// the `campaignsEnabled` entitlement. This bar used to send straight to the
+// selected customers through /api/customers/bulk, skipping approval, the
+// entitlement and the viewer role check. It now routes the owner to the
+// moderated Campaigns flow instead.
+function CampaignRouteModal({
   isTr,
-  count,
-  busy,
-  onSubmit,
+  campaignsHref,
   onClose,
 }: {
   isTr: boolean;
-  count: number;
-  busy: boolean;
-  onSubmit: (subject: string, body: string) => void;
+  campaignsHref: string;
   onClose: () => void;
 }) {
-  const [subject, setSubject] = useState('');
-  const [body, setBody] = useState('');
-  const canSend = subject.trim().length > 0 && body.trim().length > 0 && !busy;
-
   return (
-    <Modal onClose={onClose} size={600} title={isTr ? 'Kampanya gönder' : 'Send campaign'}>
-      <div className="space-y-3.5">
-        <div className="rounded-lg border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 text-[12px] text-[#92400E]">
-          <strong>KVKK:</strong>{' '}
+    <Modal onClose={onClose} size={480} title={isTr ? 'Kampanya oluştur' : 'Create a campaign'}>
+      <div className="space-y-4">
+        <p className="text-[13px] leading-relaxed text-[#525252]">
           {isTr
-            ? 'Sadece pazarlama izni veren müşterilere gönderilir. İzin yoksa otomatik atlanır.'
-            : 'Only customers who opted into marketing get this. Others are auto-skipped.'}
-        </div>
-        <label className="block">
-          <span className="pulse-eyebrow text-[#737373]">{isTr ? 'KONU' : 'SUBJECT'}</span>
-          <input
-            type="text"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            maxLength={150}
-            disabled={busy}
-            placeholder={isTr ? 'Sana özel bir teklif…' : 'A special offer for you…'}
-            className="bz-input w-full mt-1"
-          />
-        </label>
-        <label className="block">
-          <span className="pulse-eyebrow text-[#737373]">{isTr ? 'MESAJ' : 'MESSAGE'}</span>
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            maxLength={10000}
-            disabled={busy}
-            rows={8}
-            placeholder={
-              isTr
-                ? 'Selam,\n\nSeni tekrar görmek isteriz. …'
-                : 'Hi,\n\nWe\'d love to see you again. …'
-            }
-            className="bz-input w-full mt-1 resize-y"
-          />
-          <span className="text-[11px] text-[#737373] mt-0.5 block">
-            {body.length}/10.000 · {isTr ? `${count} alıcı` : `${count} recipient${count === 1 ? '' : 's'}`}
-          </span>
-        </label>
-        <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} disabled={busy} className="bz-btn-ghost">
+            ? 'Müşteri kampanyaları gönderilmeden önce Buaze ekibinin onayından geçer ve yalnızca pazarlama izni veren müşterilerinize ulaşır. Kampanyanızı Kampanyalar sayfasından oluşturup onaya gönderebilirsiniz.'
+            : 'Customer campaigns are reviewed by the Buaze team before sending and only reach customers who opted into marketing. Create your campaign on the Campaigns page and submit it for approval.'}
+        </p>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="bz-btn-ghost">
             {isTr ? 'Vazgeç' : 'Cancel'}
           </button>
-          <button
-            type="button"
-            onClick={() => onSubmit(subject, body)}
-            disabled={!canSend}
-            className="bz-btn-primary inline-flex items-center gap-1.5"
-          >
-            {busy && <Loader2 size={13} className="animate-spin" />}
-            <Mail size={13} strokeWidth={2} />
-            {isTr ? 'Gönder' : 'Send'}
-          </button>
+          <Link href={campaignsHref} className="bz-btn-primary inline-flex items-center gap-1.5">
+            <Mail size={13} strokeWidth={2.2} />
+            {isTr ? 'Kampanyalara git' : 'Go to Campaigns'}
+          </Link>
         </div>
       </div>
     </Modal>

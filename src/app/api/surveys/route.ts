@@ -124,6 +124,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Yetkisiz işletme' }, { status: 403 });
   }
 
+  // Admin master switch (feature-access → surveysEnabled). §5.2 pattern:
+  // the owner keeps their surveys but cannot create/publish while it is off.
+  const surveyGate = await prisma.restaurant.findUnique({
+    where: { id: data.restaurantId },
+    select: { surveysEnabled: true },
+  });
+  if (!surveyGate?.surveysEnabled) {
+    return NextResponse.json(
+      {
+        error: 'surveys_disabled',
+        message: 'Anketler bu işletme için Buaze yönetimi tarafından kapatıldı.',
+      },
+      { status: 403 },
+    );
+  }
+
   // Per-type question validation (multiple_choice options).
   for (const q of data.questions) {
     if (q.type === 'multiple_choice') {

@@ -73,8 +73,10 @@ export default async function DashboardRestaurantDetailPage({
             qrGenerations: restaurant._count.qrGenerations,
           };
         } else {
-          // Not found / not owned — client will refetch, surface its own error.
-          initialData = null;
+          // Not owned by this user — team members / managers reach their
+          // assigned locations through the API's IDOR check, so leave it
+          // undefined and let the client fetch (null showed "not found").
+          initialData = undefined;
         }
       }
     } catch (error) {

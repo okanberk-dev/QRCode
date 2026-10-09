@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getAdminFromRequest } from '@/lib/auth';
+import { writeAdminAuditLog } from '@/lib/audit-log';
+import { revalidatePublicMenu } from '@/lib/restaurant-revalidate';
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const admin = await getAdminFromRequest(req);
@@ -34,9 +36,38 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const restaurant = await prisma.restaurant.update({
       where: { id },
       data,
-      select: { id: true, menuEnabled: true, menuPublished: true, menuUpdatedAt: true },
+      select: {
+        id: true,
+        menuEnabled: true,
+        menuPublished: true,
+        menuUpdatedAt: true,
+        slug: true,
+        userId: true,
+      },
     });
-    return NextResponse.json({ restaurant });
+    // Public /menu/[slug] is ISR-cached for 1h; without this an admin
+    // unpublish/disable stayed live until the cache expired.
+    revalidatePublicMenu(restaurant.slug);
+    // §37.2.C — targetId = owner so it appears in the owner's audit log.
+    await writeAdminAuditLog({
+      actorId: typeof admin.id === 'string' ? admin.id : 'env-admin',
+      actorSource: 'admin',
+      action: 'admin.restaurants.menu_settings',
+      targetId: restaurant.userId ?? id,
+      payload: {
+        restaurantId: id,
+        menuEnabled: restaurant.menuEnabled,
+        menuPublished: restaurant.menuPublished,
+      },
+    });
+    return NextResponse.json({
+      restaurant: {
+        id: restaurant.id,
+        menuEnabled: restaurant.menuEnabled,
+        menuPublished: restaurant.menuPublished,
+        menuUpdatedAt: restaurant.menuUpdatedAt,
+      },
+    });
   } catch (error) {
     if ((error as { code?: string })?.code === 'P2025') {
       return NextResponse.json({ error: 'İşletme bulunamadı' }, { status: 404 });

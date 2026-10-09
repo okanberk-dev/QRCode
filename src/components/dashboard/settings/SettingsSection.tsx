@@ -1,30 +1,42 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { Eyebrow } from "@/components/ui";
+import { useCompactSettingsNav } from "./useCompactSettingsNav";
 
 interface SettingsSectionProps {
   /** Anchor id used for `?section=` deep-links and scroll-mt. */
   id: string;
-  /** Whether this section is currently active (only rendered on ≥md). */
+  /** Whether this section is the active tab (≥md) / initially open (<md). */
   active: boolean;
   eyebrow?: string;
   title: string;
   description?: ReactNode;
-  /** When true on mobile, renders `<details>`; on ≥md `active` controls visibility. */
   children: ReactNode;
   /** Optional right-aligned actions in section header (e.g. status badge). */
   actions?: ReactNode;
+  /**
+   * Keep the content mounted after it was first shown (default true).
+   * Form sections need this: unmounting on tab switch silently threw away
+   * unsaved edits. Read-only list sections (team, billing, activity…) can
+   * pass `false` so they refetch fresh data every time they are reopened.
+   */
+  keepMounted?: boolean;
 }
 
 /**
  * Per-section wrapper inside `<SettingsLayout>`.
  *
- * Behavior:
- * - ≥ md: only renders children when `active` is true (the parent layout
- *   coordinates active state via `<Tabs>`).
- * - sm: always renders as `<details>` (semantic accordion). The element opens
- *   automatically when this section is the active one.
+ * - ≥ md: tab panel. Inactive sections are hidden with CSS (`md:hidden`)
+ *   instead of being unmounted, so a half-filled form survives a tab switch.
+ * - < md: accordion card (button + `aria-expanded`). Seeded open when this is
+ *   the active section.
+ *
+ * The DOM shape is identical in both modes and the switch is pure CSS, so the
+ * desktop server render → mobile client hand-off does not remount children.
+ * Content is still mounted lazily — the first time the section is shown — so
+ * opening the hub does not fire every section's fetch at once.
  */
 export function SettingsSection({
   id,
@@ -34,79 +46,85 @@ export function SettingsSection({
   description,
   children,
   actions,
+  keepMounted = true,
 }: SettingsSectionProps) {
-  const [isCompactNav, setIsCompactNav] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(max-width: 767px)");
-    const sync = () => setIsCompactNav(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
+  const compact = useCompactSettingsNav();
 
-  if (isCompactNav) {
-    return (
-      <details
-        id={`section-${id}`}
-        open={active}
-        className="bz-card scroll-mt-20 bz-motion-spring"
-        style={{ padding: 0 }}
-      >
-        {/*
-          Stage 80 §38.160 — Mobile accordion summary: 56px+ touch target
-          guarantee + Apple-soft tap feedback (`active:bg-[#FAFAFA]`).
-          Mevcut px-5 py-4 ≈ 60px height intact, `min-h-[56px]` minimum
-          garantilenir (WCAG 2.5.5 + dense exception tolerated). Tap
-          feedback kullanıcıya "uygulama gibi" hissi verir (CLAUDE.md
-          §38.46 + §38.65 paterni reuse).
-        */}
-        <summary
-          className="flex items-center justify-between px-5 py-4 cursor-pointer list-none min-h-[56px] active:bg-[#FAFAFA] bz-motion-spring"
-          style={{ borderRadius: 16 }}
-        >
-          <div className="min-w-0">
-            {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-            <h2 className="bz-h-tight text-[18px] mt-1 truncate">{title}</h2>
-          </div>
-          {actions && <div className="shrink-0 ml-3">{actions}</div>}
-        </summary>
-        <div className="px-5 pb-5 pt-1">
-          {description && (
-            <p className="text-[13px] leading-[1.55] text-[#525252] mb-4">{description}</p>
-          )}
-          {children}
-        </div>
-      </details>
-    );
+  // Accordion state (<md). A tab change (deep-link / desktop nav) opens the
+  // newly active section so resizing to mobile shows what was on screen.
+  const [open, setOpen] = useState(active);
+  const [prevActive, setPrevActive] = useState(active);
+  if (active !== prevActive) {
+    setPrevActive(active);
+    if (active) setOpen(true);
   }
 
-  if (!active) return null;
+  const showing = compact ? open : active;
+  const [everShown, setEverShown] = useState(showing);
+  if (showing && !everShown) setEverShown(true);
+  const mounted = keepMounted ? everShown : showing;
+
+  const titleId = `section-${id}-title`;
+  const panelId = `section-${id}-panel`;
 
   return (
     <section
       id={`section-${id}`}
-      className="scroll-mt-20"
-      aria-labelledby={`section-${id}-title`}
+      aria-labelledby={titleId}
+      className={`scroll-mt-20 max-md:rounded-2xl max-md:border max-md:border-[#EDEDED] max-md:bg-white ${
+        active ? "" : "md:hidden"
+      }`}
     >
-      <header className="flex items-start justify-between gap-4 mb-5 sm:mb-6">
+      {/* < md — accordion trigger. Heading wraps the button (WAI-ARIA
+          accordion pattern); actions sit outside so they may be interactive. */}
+      <div className="flex items-center gap-2 md:hidden">
+        <h2 className="min-w-0 flex-1">
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={panelId}
+            onClick={() => setOpen((v) => !v)}
+            className="flex w-full min-h-[56px] items-center justify-between gap-3 rounded-2xl px-5 py-4 text-left active:bg-[#FAFAFA] bz-motion-spring"
+          >
+            <span className="min-w-0">
+              {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+              <span className="mt-1 block truncate bz-h-tight text-[18px]">{title}</span>
+            </span>
+            <ChevronDown
+              size={16}
+              aria-hidden="true"
+              className={`shrink-0 text-[#737373] transition-transform ${open ? "rotate-180" : ""}`}
+            />
+          </button>
+        </h2>
+        {actions && <div className="shrink-0 pr-5">{actions}</div>}
+      </div>
+
+      {/* ≥ md — tab panel header. */}
+      <header className="mb-5 hidden items-start justify-between gap-4 sm:mb-6 md:flex">
         <div className="min-w-0">
           {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
-          <h2
-            id={`section-${id}-title`}
-            className="bz-h-tight-2 text-[24px] sm:text-[28px] mt-1"
-          >
+          <h2 id={titleId} className="bz-h-tight-2 mt-1 text-[24px] sm:text-[28px]">
             {title}
           </h2>
           {description && (
-            <p className="text-[13px] sm:text-[14px] leading-[1.6] text-[#525252] mt-2 max-w-[640px]">
+            <p className="mt-2 max-w-[640px] text-[13px] leading-[1.6] text-[#525252] sm:text-[14px]">
               {description}
             </p>
           )}
         </div>
         {actions && <div className="shrink-0">{actions}</div>}
       </header>
-      <div className="space-y-5 sm:space-y-6">{children}</div>
+
+      <div
+        id={panelId}
+        className={`max-md:px-5 max-md:pb-5 max-md:pt-1 ${open ? "" : "max-md:hidden"}`}
+      >
+        {description && (
+          <p className="mb-4 text-[13px] leading-[1.55] text-[#525252] md:hidden">{description}</p>
+        )}
+        <div className="space-y-5 sm:space-y-6">{mounted ? children : null}</div>
+      </div>
     </section>
   );
 }

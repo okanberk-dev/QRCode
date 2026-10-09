@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, ReactNode, useEffect, useMemo, useState } from "react";
+import { Fragment, ReactNode, useMemo } from "react";
 import { Eyebrow, Tabs, type TabItem } from "@/components/ui";
 
 export interface SettingsTab {
@@ -43,24 +43,24 @@ interface SettingsLayoutProps {
    */
   groups?: SettingsGroup[];
   /**
-   * Optional right rail rendered xl: (≥1280px) breakpoint'inde 320px sabit
-   * kolon olarak. lg ve altında gizli (yer yok). Tasarım .design-pulse-2026
-   * page-account.jsx 220|1fr|320 paterni. account/page.tsx kullanır;
-   * restaurants/[id]/settings rail geçmediği sürece mevcut 2-col korunur.
+   * Optional right rail (plan / invoice widgets). Rendered as a 320px third
+   * column only from `2xl` (≥1536px viewport): at xl the 248px shell sidebar
+   * + 220px nav + 320px rail crushed the form column to ~340px. Below 2xl the
+   * rail stacks under the content instead of disappearing.
    */
   rightRail?: ReactNode;
 }
 
 /**
- * Settings hub layout — vertical Tabs (lg) / horizontal Tabs (md) / accordion (sm).
+ * Settings hub layout — vertical Tabs (lg) / horizontal Tabs (md) / accordion (<md).
  *
- * - Desktop ≥ lg: 240px sticky vertical nav + max-w-[920px] form content.
- * - Tablet md: horizontal Tabs at top, content below.
- * - Mobile sm: each `<SettingsSection>` is a `<details>` element (semantic accordion).
+ * - ≥ lg: 220px sticky vertical nav + max-w-[920px] content (+ 320px rail at 2xl).
+ * - md: horizontal sticky tab strip above the content.
+ * - < md: nav hidden; every `<SettingsSection>` renders as an accordion card.
  *
- * Mobile fallback: parent passes the section panes as children; only the active
- * one renders on lg/md, while sm shows all sections in `<details>` form (the
- * sections themselves opt-in via their own `mobileAccordion` prop).
+ * The breakpoint switch is pure CSS and the element tree is the same at every
+ * width, so the server render (no viewport) hydrates into the mobile layout
+ * without remounting the sections or re-running their fetches.
  */
 export function SettingsLayout({
   tabs,
@@ -92,151 +92,120 @@ export function SettingsLayout({
     groups.forEach((g) => buckets.set(g.id, []));
     const ungrouped: TabItem[] = [];
     tabs.forEach((t) => {
+      const item: TabItem = {
+        id: t.id,
+        label: t.label,
+        count: t.count,
+        badge: t.badge,
+        disabled: t.disabled,
+      };
       const bucket = t.group && buckets.get(t.group);
-      if (bucket) {
-        bucket.push({
-          id: t.id,
-          label: t.label,
-          count: t.count,
-          badge: t.badge,
-          disabled: t.disabled,
-        });
-      } else {
-        ungrouped.push({
-          id: t.id,
-          label: t.label,
-          count: t.count,
-          badge: t.badge,
-          disabled: t.disabled,
-        });
-      }
+      if (bucket) bucket.push(item);
+      else ungrouped.push(item);
     });
     return { buckets, ungrouped };
   }, [tabs, groups]);
 
-  // Track viewport so mobile shows all sections (accordion); ≥ md shows only active.
-  const [isCompactNav, setIsCompactNav] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(max-width: 767px)");
-    const sync = () => setIsCompactNav(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-
   return (
-    <div className={`mx-auto max-w-[1440px] px-5 sm:px-7 py-6 lg:py-8`}>
+    <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
       {header && <div className="mb-6 sm:mb-8">{header}</div>}
 
-      {/* Mobile (sm): all sections render as accordion via children */}
-      {isCompactNav ? (
-        <div className="space-y-3" role="region" aria-label={ariaLabel}>
-          {children}
-          {rightRail && (
-            <div className="space-y-3 pt-2 border-t border-[#EDEDED] mt-3">
-              {rightRail}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div
-          className={`grid grid-cols-1 gap-6 lg:gap-10 ${
-            rightRail
-              ? 'lg:grid-cols-[220px_1fr] xl:grid-cols-[220px_minmax(0,1fr)_320px]'
-              : 'lg:grid-cols-[220px_1fr]'
+      <div
+        className={`grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-10 ${
+          rightRail ? "xl:gap-6 2xl:grid-cols-[220px_minmax(0,1fr)_320px]" : ""
+        }`}
+      >
+        {/* Tab nav — hidden below md (sections become an accordion there),
+            horizontal strip on md, vertical card on lg (§38.63 design parity:
+            `bz-card` + 12px padding, grouped under eyebrows). With a rail
+            stacked under the content (lg–xl) the nav spans both rows so it
+            stays sticky while the rail scrolls by. */}
+        <aside
+          className={`hidden self-start md:block lg:sticky ${stickyTopClass} ${
+            rightRail ? "lg:row-span-2 2xl:row-span-1" : ""
           }`}
         >
-          {/* Tab nav: horizontal on md, vertical on lg.
-              §38.63 — Tasarım `.design-owner-2026/page-account.jsx` parity:
-              vertical nav (lg+) `<div className="bz-card" style={{ padding: 12,
-              alignSelf: 'flex-start', position: 'sticky', top: 20 }}>` ile
-              kart içinde grup'lanmış. Önceki düz aside (sticky-only) drift'ti.
-              `bz-card` wrapper + `p-3` (~12px) padding tasarımdaki ölçüye
-              birebir uydu. Horizontal nav (md/sm) kartsız kalır (zaten
-              underline strip görünümü). */}
-          <aside className={`lg:sticky ${stickyTopClass} self-start`}>
-            <div className="hidden lg:block bz-card p-3">
-              {groupedTabs && groups ? (
-                <div className="space-y-4">
-                  {groups.map((g, idx) => {
-                    const items = groupedTabs.buckets.get(g.id) ?? [];
-                    if (items.length === 0) return null;
-                    return (
-                      <Fragment key={g.id}>
-                        {idx > 0 && <div className="-mx-3 border-t border-[#EDEDED]" aria-hidden />}
-                        <div className="space-y-1.5">
-                          <div className="px-2.5 pt-1">
-                            <Eyebrow>{g.label}</Eyebrow>
-                          </div>
-                          <Tabs
-                            items={items}
-                            active={active}
-                            onChange={onChange}
-                            variant="vertical"
-                            ariaLabel={`${ariaLabel ?? ""} — ${g.label}`.trim()}
-                          />
+          <div className="hidden lg:block bz-card p-3">
+            {groupedTabs && groups ? (
+              <div className="space-y-4">
+                {groups.map((g, idx) => {
+                  const items = groupedTabs.buckets.get(g.id) ?? [];
+                  if (items.length === 0) return null;
+                  return (
+                    <Fragment key={g.id}>
+                      {idx > 0 && <div className="-mx-3 border-t border-[#EDEDED]" aria-hidden />}
+                      <div className="space-y-1.5">
+                        <div className="px-2.5 pt-1">
+                          <Eyebrow>{g.label}</Eyebrow>
                         </div>
-                      </Fragment>
-                    );
-                  })}
-                  {groupedTabs.ungrouped.length > 0 && (
-                    <Fragment>
-                      <div className="-mx-3 border-t border-[#EDEDED]" aria-hidden />
-                      <Tabs
-                        items={groupedTabs.ungrouped}
-                        active={active}
-                        onChange={onChange}
-                        variant="vertical"
-                        ariaLabel={ariaLabel}
-                      />
+                        <Tabs
+                          items={items}
+                          active={active}
+                          onChange={onChange}
+                          variant="vertical"
+                          ariaLabel={`${ariaLabel ?? ""} — ${g.label}`.trim()}
+                        />
+                      </div>
                     </Fragment>
-                  )}
-                </div>
-              ) : (
-                <Tabs
-                  items={tabItems}
-                  active={active}
-                  onChange={onChange}
-                  variant="vertical"
-                  ariaLabel={ariaLabel}
-                />
-              )}
-            </div>
-            {/*
-              Stage 80 §38.160 — Tablet (md/lg-) horizontal tab strip artık
-              sticky-on-scroll. Kullanıcı içerik aşağı scroll edince tab strip
-              topbar (64px) altında pin'lenir; tab geçişi her zaman erişilebilir
-              (mobile uygulama-gibi UX). Mobile (sm, ≤767px) bu blok zaten
-              gizli — accordion mode (line 133-141 children direct render).
-              `md:sticky md:top-16` UserDashboardShell topbar h-16 paterniyle
-              uyumlu; `bg-white/95 backdrop-blur` Apple-soft hissi.
-            */}
-            <div className="lg:hidden -mx-5 px-5 sm:-mx-7 sm:px-7 overflow-x-auto no-scrollbar md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur md:border-b md:border-[#EDEDED] md:py-2">
+                  );
+                })}
+                {groupedTabs.ungrouped.length > 0 && (
+                  <Fragment>
+                    <div className="-mx-3 border-t border-[#EDEDED]" aria-hidden />
+                    <Tabs
+                      items={groupedTabs.ungrouped}
+                      active={active}
+                      onChange={onChange}
+                      variant="vertical"
+                      ariaLabel={ariaLabel}
+                    />
+                  </Fragment>
+                )}
+              </div>
+            ) : (
               <Tabs
                 items={tabItems}
                 active={active}
                 onChange={onChange}
-                variant="horizontal"
+                variant="vertical"
                 ariaLabel={ariaLabel}
               />
-            </div>
-          </aside>
+            )}
+          </div>
+          {/* Stage 80 §38.160 — md horizontal tab strip pinned under the 64px
+              topbar while scrolling. Negative margins mirror the canonical
+              page gutter (`px-4 sm:px-7`, §42.4) so the strip runs edge to edge. */}
+          <div className="lg:hidden -mx-4 px-4 sm:-mx-7 sm:px-7 overflow-x-auto no-scrollbar md:sticky md:top-16 md:z-20 md:bg-white/95 md:backdrop-blur md:border-b md:border-[#EDEDED] md:py-2">
+            <Tabs
+              items={tabItems}
+              active={active}
+              onChange={onChange}
+              variant="horizontal"
+              ariaLabel={ariaLabel}
+            />
+          </div>
+        </aside>
 
-          <main className="min-w-0 max-w-[920px]">
-            {children}
-          </main>
-
-          {/* Right rail (xl:+) — opsiyonel; tasarım .design-pulse-2026
-              page-account.jsx 320px paterni. Sticky scroll, lg ve altında
-              gizli (yer yok), mobil accordion altında inline render edilir. */}
-          {rightRail && (
-            <aside className={`hidden xl:block xl:sticky ${stickyTopClass} self-start space-y-3`}>
-              {rightRail}
-            </aside>
-          )}
+        {/* Content column. A plain <div>: the dashboard shell already owns the
+            page <main> landmark and nested <main> elements are invalid. */}
+        <div
+          className="min-w-0 max-w-[920px] space-y-3 md:space-y-0"
+          role="region"
+          aria-label={ariaLabel}
+        >
+          {children}
         </div>
-      )}
+
+        {/* Right rail — third column from 2xl; below that it stacks under the
+            content (two widgets side by side where there is room). */}
+        {rightRail && (
+          <aside
+            className={`space-y-3 md:grid md:grid-cols-2 md:items-start md:gap-3 md:space-y-0 lg:col-start-2 lg:max-w-[920px] lg:grid-cols-1 xl:grid-cols-2 2xl:col-start-3 2xl:row-start-1 2xl:block 2xl:max-w-none 2xl:space-y-3 2xl:sticky ${stickyTopClass} 2xl:self-start`}
+          >
+            {rightRail}
+          </aside>
+        )}
+      </div>
     </div>
   );
 }

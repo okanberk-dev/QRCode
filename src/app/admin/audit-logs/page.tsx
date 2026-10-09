@@ -77,6 +77,10 @@ export default function AdminAuditLogsPage() {
     actorSource: 'all' as SourceFilter,
     action: '',
     actorId: '',
+    // Deep links (restaurant detail "İşlem kaydı", campaign approvals) pass
+    // ?targetId=…; the API supported it but the page dropped it, so those
+    // links showed the unfiltered global log.
+    targetId: '',
     page: 1,
   });
   const range = filters.values.range;
@@ -88,6 +92,8 @@ export default function AdminAuditLogsPage() {
   const setActionDebounced = (v: string) => filters.set('action', v);
   const actorIdFilter = filters.values.actorId;
   const setActorId = (v: string) => filters.set('actorId', v);
+  const targetIdFilter = filters.values.targetId;
+  const setTargetId = (v: string) => filters.set('targetId', v);
   const page = filters.values.page;
   const setPage = (v: number) => filters.set('page', v);
 
@@ -108,7 +114,7 @@ export default function AdminAuditLogsPage() {
   useEffect(() => {
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, actorSource, actionFilter, actorIdFilter]);
+  }, [range, actorSource, actionFilter, actorIdFilter, targetIdFilter]);
 
   const buildQuery = useCallback(
     (overrides: Partial<{ page: number }> = {}) => {
@@ -117,11 +123,12 @@ export default function AdminAuditLogsPage() {
       if (actorSource !== 'all') q.set('actorSource', actorSource);
       if (actionFilter) q.set('action', actionFilter);
       if (actorIdFilter) q.set('actorId', actorIdFilter);
+      if (targetIdFilter) q.set('targetId', targetIdFilter);
       q.set('page', String(overrides.page ?? page));
       q.set('limit', '50');
       return q;
     },
-    [range, actorSource, actionFilter, actorIdFilter, page],
+    [range, actorSource, actionFilter, actorIdFilter, targetIdFilter, page],
   );
 
   const fetchData = useCallback(async () => {
@@ -308,6 +315,15 @@ export default function AdminAuditLogsPage() {
             >
               <UserIcon size={12} strokeWidth={2} />
               Aktör: {actorIdFilter.slice(0, 12)}…
+              <span className="text-[#A3A3A3]">×</span>
+            </button>
+          )}
+          {targetIdFilter && (
+            <button
+              onClick={() => setTargetId('')}
+              className="inline-flex items-center gap-1 rounded-full border border-[#EDEDED] bg-white px-3 py-1.5 text-[11px] font-medium text-[#525252]"
+            >
+              Hedef: {targetIdFilter.slice(0, 12)}…
               <span className="text-[#A3A3A3]">×</span>
             </button>
           )}

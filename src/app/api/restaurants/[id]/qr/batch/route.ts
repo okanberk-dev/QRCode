@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
-import { canAccessRestaurant } from '@/lib/panel-access';
+import { canAccessRestaurant, canWriteRestaurant } from '@/lib/panel-access';
 import { isValidHexColor } from '@/lib/validations';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import QRCode from 'qrcode';
@@ -112,6 +112,12 @@ export async function POST(
   }
 
   try {
+    // Access check BEFORE loading the row (no existence / isActive oracle
+    // for restaurants the actor can't see).
+    const hasAccess = await canAccessRestaurant(actor, id);
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
+    }
     const restaurant = await prisma.restaurant.findUnique({
       where: { id },
       select: { id: true, slug: true, name: true, isActive: true },
@@ -124,10 +130,6 @@ export async function POST(
         { error: 'Bu işletme pasif durumda. QR oluşturmadan önce aktifleştirin.' },
         { status: 409 }
       );
-    }
-    const hasAccess = await canAccessRestaurant(actor, restaurant.id);
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Yetkisiz erişim' }, { status: 403 });
     }
 
     const envAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim()?.replace(/\/+$/, '');
@@ -149,8 +151,9 @@ export async function POST(
       items.push({ table, qrUrl, svg });
     }
 
-    // Record one canonical batch entry for this exact range.
-    await rememberBatchQr({
+    // Record one canonical batch entry for this exact range — a write, so
+    // only for writers (viewers still receive the generated SVGs).
+    if (await canWriteRestaurant(actor, restaurant.id)) await rememberBatchQr({
       restaurantId: restaurant.id,
       qrUrl: `${appUrl}/r/${restaurant.slug}?source=qr&batch=${from}-${to}`,
       tableNumber: `${from}-${to}`,

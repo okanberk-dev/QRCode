@@ -6,7 +6,6 @@ import {
   Bell,
   CreditCard,
   Download,
-  Loader2,
   ShieldCheck,
   ShieldQuestion,
   Sparkles,
@@ -16,6 +15,7 @@ import {
 import { AlertBanner, PageHeader } from "@/components/ui";
 import { SettingsLayout, type SettingsTab } from "@/components/dashboard/settings/SettingsLayout";
 import { SettingsSection } from "@/components/dashboard/settings/SettingsSection";
+import { useCompactSettingsNav } from "@/components/dashboard/settings/useCompactSettingsNav";
 import { AccountOverviewCard } from "@/components/dashboard/account/AccountOverviewCard";
 import { BusinessProfileSettings } from "@/components/dashboard/settings/sections/BusinessProfileSettings";
 import { BusinessAccountSecuritySettings } from "@/components/dashboard/settings/sections/BusinessAccountSecuritySettings";
@@ -34,6 +34,7 @@ import { GoogleConnectFlashBanner } from "@/components/dashboard/google/GoogleCo
 // Wave B4 backend canlı; DangerZone import edilebilir, bu dosya right-rail
 // 2 widget'la (Plan + Invoices) intact kalır.
 import AdminBackLink from "@/components/dashboard/AdminBackLink";
+import AccountLoading from "./loading";
 
 /**
  * Workspace-level Settings hub (`/dashboard/account`) — unified Hub.
@@ -68,22 +69,18 @@ import AdminBackLink from "@/components/dashboard/AdminBackLink";
 // kararı: restoran sahibi API erişimi görmemeli; geliştirici konusu, owner için
 // kafa karıştırıcı). Backend `/api/api-keys` korunuyor ve yalnızca admin
 // `/admin/api`'de yönetilir. Prod backend'i olmayan placeholder tab eklemiyoruz.
-const TABS: SettingsTab[] = [
-  { id: "profile", label: "Profil", group: "settings" },
-  { id: "security", label: "Güvenlik", group: "settings" },
-  { id: "activity", label: "Hesap aktivitesi", group: "settings" },
-  { id: "notifications", label: "Bildirimler", group: "settings" },
-  { id: "ai", label: "Pulse AI", group: "settings" },
-  { id: "billing", label: "Plan & Faturalama", group: "settings" },
-  { id: "team", label: "Ekip & Roller", group: "settings" },
-  { id: "legal", label: "KVKK & Yasal", group: "settings" },
+const TAB_LABELS: Array<{ id: string; tr: string; en: string }> = [
+  { id: "profile", tr: "Profil", en: "Profile" },
+  { id: "security", tr: "Güvenlik", en: "Security" },
+  { id: "activity", tr: "Hesap aktivitesi", en: "Account activity" },
+  { id: "notifications", tr: "Bildirimler", en: "Notifications" },
+  { id: "ai", tr: "Pulse AI", en: "Pulse AI" },
+  { id: "billing", tr: "Plan & Faturalama", en: "Plan & billing" },
+  { id: "team", tr: "Ekip & Roller", en: "Team & roles" },
+  { id: "legal", tr: "KVKK & Yasal", en: "KVKK & legal" },
 ];
 
-const GROUPS = [
-  { id: "settings", label: "AYARLAR" },
-];
-
-const VALID_SECTION_IDS = new Set(TABS.map((t) => t.id));
+const VALID_SECTION_IDS = new Set(TAB_LABELS.map((t) => t.id));
 
 interface RestaurantOption {
   id: string;
@@ -113,6 +110,20 @@ export default function AccountSettingsClient({
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = params.locale === "en" ? "en" : "tr";
+  const compact = useCompactSettingsNav();
+  const tabs = useMemo<SettingsTab[]>(
+    () =>
+      TAB_LABELS.map((t) => ({
+        id: t.id,
+        label: locale === "tr" ? t.tr : t.en,
+        group: "settings",
+      })),
+    [locale],
+  );
+  const groups = useMemo(
+    () => [{ id: "settings", label: locale === "tr" ? "AYARLAR" : "SETTINGS" }],
+    [locale],
+  );
 
   const initialSection = useMemo(() => {
     const fromUrl = searchParams.get("section");
@@ -178,7 +189,11 @@ export default function AccountSettingsClient({
           setTeamCount(arr.length);
         }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Yüklenemedi");
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : locale === "tr" ? "Yüklenemedi" : "Could not load",
+          );
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -187,6 +202,8 @@ export default function AccountSettingsClient({
     return () => {
       cancelled = true;
     };
+    // locale only feeds the error copy.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSectionChange = (next: string) => {
@@ -248,18 +265,11 @@ export default function AccountSettingsClient({
     />
   );
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
-        <div className="flex items-center justify-center gap-2 text-[#737373] text-[13px]">
-          <Loader2 size={14} className="animate-spin" />
-          {isTr ? "Yükleniyor…" : "Loading…"}
-        </div>
-      </div>
-    );
-  }
+  // Client-fetch path only (no SSR data): reuse the segment skeleton so the
+  // hand-off matches loading.tsx instead of flashing a spinner.
+  if (loading) return <AccountLoading />;
 
-  // §38.37 — Right rail (xl:+) — tasarım .design-owner-2026/page-account.jsx
+  // §38.37 — Right rail (3. kolon 2xl:+, altında içeriğin altına iner) — tasarım .design-owner-2026/page-account.jsx
   // 320px sağ kolon paterni: Plan dark hero (usage bars) + Recent invoices.
   // Stage 79 §38.159 — AccountDangerZone (Hesabı dondur/sil placeholder)
   // kaldırıldı. Backend yoktu, owner UX confusing idi. 2 widget kalır.
@@ -276,8 +286,8 @@ export default function AccountSettingsClient({
 
   return (
     <SettingsLayout
-      tabs={TABS}
-      groups={GROUPS}
+      tabs={tabs}
+      groups={groups}
       active={active}
       onChange={handleSectionChange}
       header={header}
@@ -304,7 +314,11 @@ export default function AccountSettingsClient({
             - Ekip Üyeleri (BusinessUsersRolesSettings, online dot)
             - Güvenlik (BusinessAccountSecuritySettings, Şifre + Sessions)
           Drilldown için Team + Security tab'lar hâlâ var; Profile tab AKTİFKEN
-          4 card senkronize scroll. Owner tek bakışta hesabını görür. */}
+          4 card senkronize scroll. Owner tek bakışta hesabını görür.
+          Ekip + Güvenlik kopyaları yalnız desktop'ta ve Profil aktifken:
+          mobil accordion'da ayrı Ekip/Güvenlik kartları zaten var (aynı
+          liste iki kez görünüyordu); aktif değilken unmount edilir ki Ekip
+          sekmesinde yapılan değişiklikten sonra eski listeyi göstermesin. */}
       <SettingsSection
         id="profile"
         active={active === "profile"}
@@ -324,14 +338,19 @@ export default function AccountSettingsClient({
         <div className="space-y-4">
           <AccountOverviewCard locale={locale} profile={profile} />
           <BusinessProfileSettings locale={locale} />
-          {profile && (
-            <BusinessUsersRolesSettings
-              restaurants={restaurants}
-              ownerEmail={profile.email}
-              ownerName={profile.name}
-            />
+          {!compact && active === "profile" && (
+            <>
+              {profile && (
+                <BusinessUsersRolesSettings
+                  restaurants={restaurants}
+                  ownerEmail={profile.email}
+                  ownerName={profile.name}
+                  locale={locale}
+                />
+              )}
+              <BusinessAccountSecuritySettings locale={locale} />
+            </>
           )}
-          <BusinessAccountSecuritySettings locale={locale} />
         </div>
       </SettingsSection>
 
@@ -342,8 +361,8 @@ export default function AccountSettingsClient({
         title={isTr ? "Güvenlik" : "Security"}
         description={
           isTr
-            ? "Şifre, iki adımlı doğrulama ve aktif oturumların."
-            : "Password, two-factor verification, and active sessions."
+            ? "Şifren ve aktif oturumların."
+            : "Your password and active sessions."
         }
         actions={
           <span className="text-[#737373]" aria-hidden="true">
@@ -372,6 +391,7 @@ export default function AccountSettingsClient({
       <SettingsSection
         id="activity"
         active={active === "activity"}
+        keepMounted={false}
         eyebrow={isTr ? "03 — HESAP AKTİVİTESİ" : "03 — ACCOUNT ACTIVITY"}
         title={isTr ? "Hesap aktivitesi" : "Account activity"}
         description={
@@ -430,12 +450,13 @@ export default function AccountSettingsClient({
       <SettingsSection
         id="billing"
         active={active === "billing"}
+        keepMounted={false}
         eyebrow={isTr ? "06 — FATURALANDIRMA" : "06 — BILLING"}
         title={isTr ? "Plan ve fatura geçmişi" : "Plan & invoices"}
         description={
           isTr
-            ? "Plan değişikliği için Buaze ekibiyle iletişime geç. Fatura geçmişi aşağıda."
-            : "Contact Buaze to change plans. Invoice history is below."
+            ? "Planını yükselt, aboneliğini yönet ve fatura geçmişini gör."
+            : "Upgrade your plan, manage your subscription and see your invoices."
         }
         actions={
           <span className="text-[#737373]" aria-hidden="true">
@@ -449,6 +470,7 @@ export default function AccountSettingsClient({
       <SettingsSection
         id="team"
         active={active === "team"}
+        keepMounted={false}
         eyebrow={isTr ? "07 — KULLANICILAR" : "07 — USERS"}
         title={isTr ? "Ekip ve roller" : "Team & roles"}
         description={
@@ -466,12 +488,14 @@ export default function AccountSettingsClient({
           restaurants={restaurants}
           ownerEmail={profile?.email ?? ""}
           ownerName={profile?.name ?? null}
+          locale={locale}
         />
       </SettingsSection>
 
       <SettingsSection
         id="legal"
         active={active === "legal"}
+        keepMounted={false}
         eyebrow={isTr ? "08 — KVKK & YASAL" : "08 — LEGAL"}
         title={isTr ? "KVKK & yasal" : "KVKK & legal"}
         description={

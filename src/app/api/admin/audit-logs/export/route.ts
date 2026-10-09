@@ -5,6 +5,7 @@ import { getAdminFromRequest } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
 import { rateLimit } from '@/lib/rate-limit';
 import { sanitizeAuditPayload, actionLabel } from '@/lib/audit-log';
+import { neutralizeCsvFormula } from '@/lib/csv-safe';
 
 // Stage A3 §38.95 — admin audit log CSV export.
 //
@@ -23,7 +24,8 @@ const RANGE_DAYS: Record<'7d' | '30d' | '90d', number> = {
 
 function csvEscape(value: unknown): string {
   if (value == null) return '';
-  const str = typeof value === 'string' ? value : JSON.stringify(value);
+  // Formula-injection guard (src/lib/csv-safe.ts) before quoting.
+  const str = neutralizeCsvFormula(typeof value === 'string' ? value : JSON.stringify(value));
   // Always wrap in quotes; escape internal quotes by doubling.
   return `"${str.replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
 }

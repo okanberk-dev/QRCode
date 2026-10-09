@@ -28,6 +28,13 @@ import { FeedbackDetail } from './_components/FeedbackDetail';
 import { FeedbackFiltersRail } from './_components/FeedbackFiltersRail';
 import { FeedbackFiltersModal } from './_components/FeedbackFiltersModal';
 
+/** suggest-reply → 403 `pulse_ai_disabled_by_admin` (admin master flag, §5.2). */
+async function isPulseAiDisabledResponse(res: Response): Promise<boolean> {
+  if (res.status !== 403) return false;
+  const data = await res.json().catch(() => null);
+  return data?.error === 'pulse_ai_disabled_by_admin';
+}
+
 function FeedbacksContent({ locale }: { locale: Locale }) {
   // `t` ileride gerekirse — şu an sadece dil bazlı fallback için kalıyor.
   void getTranslations(locale);
@@ -108,6 +115,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [aiRegenerating, setAiRegenerating] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSource, setAiSource] = useState<AiSource>(null);
+  // Admin `pulseAiEnabled=false` → suggest-reply 403 / draft `pulseAiDisabled`.
+  // Yutulmak yerine composer'da not gösterilir, AI butonları gizlenir.
+  const [aiDisabledByAdmin, setAiDisabledByAdmin] = useState(false);
   const [aiTone, setAiTone] = useState<AiTone>('warm');
   const [aiFromBackground, setAiFromBackground] = useState(false);
 
@@ -425,12 +435,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       setAiSource(null);
       setAiLoading(false);
       setAiFromBackground(false);
+      setAiDisabledByAdmin(false);
       return;
     }
     setSendEmail(Boolean(activeCustomerEmail));
     setAiSuggestion('');
     setAiSource(null);
     setAiFromBackground(false);
+    setAiDisabledByAdmin(false);
     if (activeRating >= 4 || activeIsReplied) {
       setAiLoading(false);
       return;
@@ -446,6 +458,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         const draftRes = await fetch(`/api/feedback/${activeFeedbackId}/draft`);
         if (draftRes.ok) {
           const data = await draftRes.json();
+          if (!cancelled && data?.pulseAiDisabled) {
+            setAiDisabledByAdmin(true);
+            setAiLoading(false);
+            return;
+          }
           if (!cancelled && data?.autoDraftDisabled) {
             setAiLoading(false);
             return;
@@ -484,6 +501,10 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           }
         } else {
           if (cancelled) return;
+          if (await isPulseAiDisabledResponse(res)) {
+            if (!cancelled) setAiDisabledByAdmin(true);
+            return;
+          }
           setAiSuggestion(
             buildReplyTemplate({ name: activeCustomerName, rating: activeRating, locale }),
           );
@@ -542,6 +563,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         if (data?.tone === 'warm' || data?.tone === 'formal' || data?.tone === 'apologetic') {
           setAiTone(data.tone);
         }
+      } else if (await isPulseAiDisabledResponse(res)) {
+        setAiDisabledByAdmin(true);
       }
     } catch {
       /* ignore */
@@ -1039,6 +1062,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               aiFromBackground={aiFromBackground}
               aiTone={aiTone}
               setAiTone={setAiTone}
+              aiDisabledByAdmin={aiDisabledByAdmin}
               onRegenerateAi={() => onRegenerateAi()}
               onUseAiAndSend={onUseAiAndSend}
               onCopyAiToDraft={onCopyAiToDraft}

@@ -6,6 +6,9 @@ import { ApiErrors } from '@/lib/api-errors';
 import { isValidEmail, isValidHexColor } from '@/lib/validations';
 import { checkProviderUrl, type IntegrationProvider } from '@/lib/integration-domains';
 import { isExternalPlatformField, isExternalReviewProvider } from '@/lib/restaurant-features';
+import { normalizeGoogleReviewInput } from '@/lib/restaurant-google-input';
+import { writePanelAuditLog } from '@/lib/audit-log';
+import { revalidatePublicMenu } from '@/lib/restaurant-revalidate';
 
 // Field → provider mapping shared with /api/restaurants POST. Keeps the
 // hard-error gate (invalid_url / wrong_protocol / wrong_domain) consistent
@@ -136,7 +139,12 @@ export async function PUT(
   }
 
   try {
-    const body = await req.json();
+    // Malformed / non-object JSON used to throw inside destructuring and
+    // surface as a 500; it is a client error.
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return ApiErrors.badRequest('Geçersiz istek gövdesi', 'INVALID_JSON');
+    }
     const {
       name,
       slug,
@@ -205,6 +213,58 @@ export async function PUT(
       // edilir; server'da defansif aralık kontrolü (mass assignment guard).
       targetRating,
     } = body;
+
+    // Basic shape checks for free-text identity fields. They used to reach
+    // Prisma untyped (a number → 500) and without length caps (POST caps
+    // kvkkText at 5000; PUT accepted anything).
+    const TEXT_LIMITS: Array<[string, unknown, number, boolean]> = [
+      // [label, value, maxLen, required-non-empty-when-present]
+      ['name', name, 120, true],
+      ['category', category, 80, true],
+      ['address', address, 500, false],
+      ['phone', phone, 40, false],
+      ['kvkkText', kvkkText, 5000, false],
+      ['city', city, 80, false],
+      ['description', description, 2000, false],
+      ['googlePlaceId', googlePlaceId, 2000, false],
+    ];
+    for (const [label, value, max, required] of TEXT_LIMITS) {
+      if (value === undefined || value === null) continue;
+      if (typeof value !== 'string') {
+        return ApiErrors.badRequest(`${label} metin olmalı`, 'INVALID_FIELD_TYPE');
+      }
+      if (value.length > max) {
+        return ApiErrors.badRequest(`${label} en fazla ${max} karakter olabilir`, 'FIELD_TOO_LONG');
+      }
+      if (required && !value.trim()) {
+        return ApiErrors.badRequest(`${label} boş olamaz`, 'FIELD_REQUIRED');
+      }
+    }
+    // `slug: ""` used to slip past the regex check (`if (slug)`) and be
+    // written as an empty string; null would 500 on the non-null column.
+    if (slug !== undefined && (typeof slug !== 'string' || !slug.trim() || slug.length > 80)) {
+      return ApiErrors.badRequest('Geçersiz slug', 'INVALID_SLUG');
+    }
+    if (isActive !== undefined && typeof isActive !== 'boolean') {
+      return ApiErrors.badRequest('isActive bir boolean olmalı', 'INVALID_IS_ACTIVE');
+    }
+
+    // Google input. The admin restaurant form (and Places-linked owners)
+    // store a raw Place ID like "ChIJ…" in `googlePlaceId` and mirror it into
+    // `googleReviewUrl`; that raw ID failed the URL validator below with
+    // INVALID_PLATFORM_URL, so the admin could not save ANYTHING (name, owner
+    // reassignment, notification email) on those restaurants. POST already
+    // normalises via normalizeGoogleReviewInput — PUT now does the same when
+    // the review URL is absent or just echoes the place id.
+    let resolvedGoogleReviewUrl: unknown = googleReviewUrl;
+    if (
+      typeof googlePlaceId === 'string' &&
+      googlePlaceId.trim() &&
+      (googleReviewUrl === undefined ||
+        (typeof googleReviewUrl === 'string' && googleReviewUrl.trim() === googlePlaceId.trim()))
+    ) {
+      resolvedGoogleReviewUrl = normalizeGoogleReviewInput(googlePlaceId).googleReviewUrl;
+    }
 
     // Phase 12.6 — defaultRedirectPlatform whitelist. NULL or '' = clear
     // (back to legacy Google fallback). Anything else must be one of the
@@ -370,12 +430,6 @@ export async function PUT(
       }
     }
 
-    if (googleReviewManagementEnabled !== undefined && actor.source !== 'admin') {
-      return ApiErrors.forbidden(
-        'Google yorum yönetimini sadece admin paneli değiştirebilir.',
-        'GOOGLE_REVIEW_MANAGEMENT_ADMIN_ONLY',
-      );
-    }
     const featureEntitlementFields = {
       pulseAiEnabled,
       aiAnalyticsEnabled,
@@ -395,7 +449,10 @@ export async function PUT(
     // Warning severities (homepage / not_review_link) still pass; only
     // invalid_url / wrong_protocol / wrong_domain are rejected.
     for (const [field, provider] of Object.entries(URL_PROVIDER_MAP)) {
-      const value = (body as Record<string, unknown>)[field];
+      const value =
+        field === 'googleReviewUrl'
+          ? resolvedGoogleReviewUrl
+          : (body as Record<string, unknown>)[field];
       if (typeof value !== 'string' || !value.trim()) continue;
       const result = checkProviderUrl(provider, value);
       if (!result.ok && result.severity === 'error') {
@@ -452,12 +509,53 @@ export async function PUT(
       where: { id },
       select: {
         id: true,
+        slug: true,
+        userId: true,
+        isActive: true,
+        suspendedByAdmin: true,
+        googleReviewManagementEnabled: true,
         defaultRedirectPlatform: true,
         externalPlatformsEnabled: true,
       },
     });
     if (!currentRest) {
       return ApiErrors.notFound('İşletme bulunamadı');
+    }
+
+    // Paid entitlement — only a superadmin may CHANGE it (parity with the
+    // canonical feature-access endpoint). Comparing with the stored value
+    // keeps forms that always echo the field (admin detail form saved by a
+    // restaurant-scoped manager) working, while a restaurant-scoped manager
+    // or owner can no longer flip it through this generic PUT.
+    if (
+      googleReviewManagementEnabled !== undefined &&
+      actor.role !== 'superadmin' &&
+      Boolean(googleReviewManagementEnabled) !== currentRest.googleReviewManagementEnabled
+    ) {
+      return ApiErrors.forbidden(
+        'Google yorum yönetimini sadece süperadmin değiştirebilir.',
+        'GOOGLE_REVIEW_MANAGEMENT_ADMIN_ONLY',
+      );
+    }
+
+    // Admin pause must stick. Before `suspendedByAdmin`, a superadmin
+    // "Duraklat" (detail form or bulk) lasted only until the owner flipped
+    // Settings → Durum back on. Only a superadmin can lift it.
+    const isSuperadmin = actor.role === 'superadmin';
+    if (isActive === true && currentRest.suspendedByAdmin && !isSuperadmin) {
+      return ApiErrors.forbidden(
+        'Bu işletme Buaze yönetimi tarafından duraklatıldı. Yeniden etkinleştirmek için destek ekibiyle iletişime geçin.',
+        'SUSPENDED_BY_ADMIN',
+      );
+    }
+    let suspendedByAdminUpdate: boolean | undefined;
+    if (isSuperadmin && isActive === true) {
+      suspendedByAdminUpdate = false;
+    } else if (isSuperadmin && isActive === false && currentRest.isActive) {
+      // Only an actual active→paused transition by the superadmin marks the
+      // suspension; the admin form always sends isActive, so re-saving an
+      // owner-paused restaurant must not turn it into an admin suspension.
+      suspendedByAdminUpdate = true;
     }
 
     if (actor.source !== 'admin' && currentRest.externalPlatformsEnabled === false) {
@@ -482,7 +580,7 @@ export async function PUT(
     // /r/[slug] doesn't silently fall back to Google with the owner none
     // the wiser. Owner explicit value always wins over derived cleanup.
     const platformUrlInBody: Record<string, unknown> = {
-      google: googleReviewUrl,
+      google: resolvedGoogleReviewUrl,
       yemeksepeti: yemekSepetiUrl,
       getir: getirYemekUrl,
       trendyol_go: trendyolYemekUrl,
@@ -590,8 +688,12 @@ export async function PUT(
           targetRating: typeof targetRating === 'number' ? targetRating : null,
         }),
         ...(phone !== undefined && { phone: phone || null }),
-        ...(googlePlaceId !== undefined && { googlePlaceId: googlePlaceId || null }),
-        ...(googleReviewUrl !== undefined && { googleReviewUrl: normalizeUrlInput(googleReviewUrl) }),
+        ...(googlePlaceId !== undefined && {
+          googlePlaceId: typeof googlePlaceId === 'string' && googlePlaceId.trim() ? googlePlaceId.trim() : null,
+        }),
+        ...(resolvedGoogleReviewUrl !== undefined && {
+          googleReviewUrl: normalizeUrlInput(resolvedGoogleReviewUrl),
+        }),
         ...(googleReviewManagementEnabled !== undefined && {
           googleReviewManagementEnabled: Boolean(googleReviewManagementEnabled),
         }),
@@ -603,6 +705,7 @@ export async function PUT(
         ...(notificationEmail !== undefined && { notificationEmail: notificationEmail || null }),
         ...(primaryColor !== undefined && { primaryColor }),
         ...(isActive !== undefined && { isActive }),
+        ...(suspendedByAdminUpdate !== undefined && { suspendedByAdmin: suspendedByAdminUpdate }),
         ...(getirYemekUrl !== undefined && { getirYemekUrl: normalizeUrlInput(getirYemekUrl) }),
         ...(yemekSepetiUrl !== undefined && { yemekSepetiUrl: normalizeUrlInput(yemekSepetiUrl) }),
         ...(trendyolYemekUrl !== undefined && { trendyolYemekUrl: normalizeUrlInput(trendyolYemekUrl) }),
@@ -634,6 +737,31 @@ export async function PUT(
         ...(ownerUserId !== undefined && { userId: ownerUserId }),
       },
     });
+
+    // Public menu is ISR-cached for 1h: refresh it when visibility or the
+    // URL changed (pause/resume, slug rename — old slug must 404 promptly).
+    if (isActive !== undefined && isActive !== currentRest.isActive) {
+      revalidatePublicMenu(restaurant.slug);
+    }
+    if (slug !== undefined && slug !== currentRest.slug) {
+      revalidatePublicMenu(currentRest.slug);
+      revalidatePublicMenu(restaurant.slug);
+    }
+
+    // Audit trail (owner + admin + impersonated edits). Field NAMES only —
+    // values can carry PII (phone, notification email, addresses).
+    const changedFields = Object.keys(body as Record<string, unknown>).slice(0, 80);
+    await writePanelAuditLog(
+      actor,
+      actor.source === 'admin' ? 'admin.restaurants.update' : 'owner.restaurant.update',
+      currentRest.userId ?? id,
+      {
+        restaurantId: id,
+        fields: changedFields,
+        ...(isActive !== undefined && isActive !== currentRest.isActive ? { isActive } : {}),
+        ...(suspendedByAdminUpdate !== undefined ? { suspendedByAdmin: suspendedByAdminUpdate } : {}),
+      },
+    );
 
     // CLAUDE.md §40.6 — mutation endpoint defansif `no-store` (A5 audit
     // fix). Auth boundary zaten korur ama explicit yazmak CDN/proxy
@@ -688,7 +816,8 @@ export async function DELETE(
     // Cascade counts captured pre-transaction for the audit payload — gives
     // operator triage context ("delete wiped 1.2K feedbacks") without
     // re-querying after the row vanishes.
-    const [feedbackCount, qrCount, menuItemCount] = await Promise.all([
+    // §40.1 — single pooled connection: batch reads in a transaction.
+    const [feedbackCount, qrCount, menuItemCount] = await prisma.$transaction([
       prisma.feedback.count({ where: { restaurantId: id } }),
       prisma.qrGeneration.count({ where: { restaurantId: id } }),
       prisma.menuItem.count({ where: { restaurantId: id } }),

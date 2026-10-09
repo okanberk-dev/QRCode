@@ -45,14 +45,13 @@ interface BusinessUsersRolesSettingsProps {
   /** Owner'ın gösterimi için (read-only ilk satır). */
   ownerEmail: string;
   ownerName: string | null;
+  locale?: "tr" | "en";
 }
 
 const VALID_ROLES = ["manager", "staff", "viewer"] as const;
-const ROLE_LABELS: Record<TeamRow["role"], string> = {
-  owner: "Sahip",
-  manager: "Yönetici",
-  staff: "Personel",
-  viewer: "Görüntüleyici",
+const ROLE_LABELS: Record<"tr" | "en", Record<TeamRow["role"], string>> = {
+  tr: { owner: "Sahip", manager: "Yönetici", staff: "Personel", viewer: "Görüntüleyici" },
+  en: { owner: "Owner", manager: "Manager", staff: "Staff", viewer: "Viewer" },
 };
 const ROLE_BADGE_KIND: Record<TeamRow["role"], BadgeKind> = {
   owner: "lime",
@@ -60,10 +59,9 @@ const ROLE_BADGE_KIND: Record<TeamRow["role"], BadgeKind> = {
   staff: "ghost",
   viewer: "off",
 };
-const STATUS_LABELS: Record<TeamRow["status"], string> = {
-  invited: "Davetli",
-  active: "Aktif",
-  revoked: "İptal edildi",
+const STATUS_LABELS: Record<"tr" | "en", Record<TeamRow["status"], string>> = {
+  tr: { invited: "Davetli", active: "Aktif", revoked: "İptal edildi" },
+  en: { invited: "Invited", active: "Active", revoked: "Revoked" },
 };
 const STATUS_BADGE_KIND: Record<TeamRow["status"], BadgeKind> = {
   invited: "warn",
@@ -71,17 +69,18 @@ const STATUS_BADGE_KIND: Record<TeamRow["status"], BadgeKind> = {
   revoked: "off",
 };
 
-function formatRelative(iso: string | null): string {
+function formatRelative(iso: string | null, locale: "tr" | "en"): string {
   if (!iso) return "—";
+  const isTr = locale !== "en";
   const diff = Date.now() - new Date(iso).getTime();
   const sec = Math.floor(diff / 1000);
-  if (sec < 60) return "az önce";
+  if (sec < 60) return isTr ? "az önce" : "just now";
   const min = Math.floor(sec / 60);
-  if (min < 60) return `${min} dk önce`;
+  if (min < 60) return isTr ? `${min} dk önce` : `${min}m ago`;
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} sa önce`;
+  if (hr < 24) return isTr ? `${hr} sa önce` : `${hr}h ago`;
   const day = Math.floor(hr / 24);
-  return `${day} gün önce`;
+  return isTr ? `${day} gün önce` : `${day}d ago`;
 }
 
 /**
@@ -109,7 +108,11 @@ export function BusinessUsersRolesSettings({
   restaurants,
   ownerEmail,
   ownerName,
+  locale = "tr",
 }: BusinessUsersRolesSettingsProps) {
+  const t = locale === "en" ? COPY.en : COPY.tr;
+  const roleLabels = ROLE_LABELS[locale];
+  const statusLabels = STATUS_LABELS[locale];
   const [members, setMembers] = useState<TeamRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,7 +174,8 @@ export function BusinessUsersRolesSettings({
       );
       setMembers(rows);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Yüklenemedi");
+      // "load_failed" is an internal marker — never show it raw.
+      setError(err instanceof Error && err.message !== "load_failed" ? err.message : t.loadFailed);
     } finally {
       setLoading(false);
     }
@@ -179,12 +183,14 @@ export function BusinessUsersRolesSettings({
 
   useEffect(() => {
     void load();
+    // Mount-only fetch; `load` closes over `t` just for error copy.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleInvite = async () => {
     if (inviting) return;
     if (!inviteEmail.trim()) {
-      setError("E-posta gerekli.");
+      setError(t.emailRequired);
       return;
     }
     setInviting(true);
@@ -201,15 +207,15 @@ export function BusinessUsersRolesSettings({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Davet gönderilemedi.");
-      setSuccess(`Davet ${inviteEmail.trim()} adresine gönderildi.`);
+      if (!res.ok) throw new Error(data.error || t.inviteFailed);
+      setSuccess(t.inviteSent(inviteEmail.trim()));
       setInviteOpen(false);
       setInviteEmail("");
       setInviteRole("manager");
       setInviteLocations([]);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Hata");
+      setError(err instanceof Error ? err.message : t.genericError);
     } finally {
       setInviting(false);
     }
@@ -238,13 +244,13 @@ export function BusinessUsersRolesSettings({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Güncellenemedi");
+        throw new Error(data.error || t.updateFailed);
       }
-      setSuccess(`${editOpen.email} güncellendi.`);
+      setSuccess(t.updated(editOpen.email));
       setEditOpen(null);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Hata");
+      setError(err instanceof Error ? err.message : t.genericError);
     } finally {
       setEditSaving(false);
     }
@@ -252,9 +258,9 @@ export function BusinessUsersRolesSettings({
 
   const handleResend = (m: TeamRow) => {
     askConfirm({
-      title: "Daveti yenile?",
-      body: `${m.email} adresine yeni bir davet bağlantısı gönderilir. 1 saat içinde yeniden yapılamaz.`,
-      confirmLabel: "Yenile",
+      title: t.resendTitle,
+      body: t.resendBody(m.email),
+      confirmLabel: t.resendConfirm,
       onConfirm: async () => {
         setResendingId(m.id);
         try {
@@ -263,14 +269,14 @@ export function BusinessUsersRolesSettings({
           if (!res.ok) {
             if (res.status === 429 && data.retryAfterSeconds) {
               const min = Math.ceil(data.retryAfterSeconds / 60);
-              throw new Error(`Çok erken — ${min} dk sonra tekrar dene.`);
+              throw new Error(t.tooSoon(min));
             }
-            throw new Error(data.error || "Yenilenemedi");
+            throw new Error(data.error || t.resendFailed);
           }
-          setSuccess(`${m.email} adresine yeni davet gönderildi.`);
+          setSuccess(t.resent(m.email));
           await load();
         } catch (err) {
-          setError(err instanceof Error ? err.message : "Hata");
+          setError(err instanceof Error ? err.message : t.genericError);
         } finally {
           setResendingId(null);
         }
@@ -280,19 +286,19 @@ export function BusinessUsersRolesSettings({
 
   const handleRemove = (m: TeamRow) => {
     askConfirm({
-      title: "Üyeyi kaldır?",
-      body: `${m.email} bu workspace'e artık erişemeyecek.`,
-      confirmLabel: "Kaldır",
+      title: t.removeTitle,
+      body: t.removeBody(m.email),
+      confirmLabel: t.removeConfirm,
       variant: "danger",
       onConfirm: async () => {
         setBusyId(m.id);
         try {
           const res = await fetch(`/api/team/${m.id}`, { method: "DELETE" });
-          if (!res.ok) throw new Error("Kaldırılamadı");
+          if (!res.ok) throw new Error(t.removeFailed);
           setMembers((prev) => prev.filter((x) => x.id !== m.id));
-          setSuccess(`${m.email} kaldırıldı.`);
+          setSuccess(t.removed(m.email));
         } catch (err) {
-          setError(err instanceof Error ? err.message : "Hata");
+          setError(err instanceof Error ? err.message : t.genericError);
         } finally {
           setBusyId(null);
         }
@@ -316,8 +322,8 @@ export function BusinessUsersRolesSettings({
 
       <SettingsCard
         icon={<Users size={18} />}
-        title="Ekip üyeleri"
-        description="Workspace'ne kullanıcı davet et, rol ve konum erişimini yönet."
+        title={t.cardTitle}
+        description={t.cardDesc}
         actions={
           canManageTeam ? (
             <button
@@ -327,7 +333,7 @@ export function BusinessUsersRolesSettings({
               style={{ height: 28, padding: "0 12px", borderRadius: 999 }}
             >
               <Plus size={12} />
-              Üye davet et
+              {t.invite}
             </button>
           ) : null
         }
@@ -341,7 +347,7 @@ export function BusinessUsersRolesSettings({
           <div className="relative">
             <Avatar size={36} name={ownerName || ownerEmail} />
             <span
-              aria-label="online"
+              aria-label={t.online}
               className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#16A34A] border-2 border-white"
             />
           </div>
@@ -350,31 +356,27 @@ export function BusinessUsersRolesSettings({
               <span className="bz-h-tight text-[13px] truncate">
                 {ownerName || ownerEmail}
               </span>
-              <Badge kind="lime" dot={false}>Sahip</Badge>
+              <Badge kind="lime" dot={false}>{roleLabels.owner}</Badge>
             </div>
             <div className="text-[11.5px] text-[#525252] truncate">{ownerEmail}</div>
           </div>
-          <Badge kind="ok">Aktif</Badge>
+          <Badge kind="ok">{statusLabels.active}</Badge>
         </div>
 
         {loading ? (
           <div className="flex items-center gap-2 text-[13px] text-[#737373] py-4">
             <Loader2 size={14} className="animate-spin" />
-            Yükleniyor…
+            {t.loading}
           </div>
         ) : members.length === 0 ? (
-          <p className="text-[13px] text-[#737373] py-2">
-            Henüz ek üye yok. &quot;Üye davet et&quot; ile başla.
-          </p>
+          <p className="text-[13px] text-[#737373] py-2">{t.empty}</p>
         ) : (
           <div className="space-y-2">
             {members.map((m) => {
               const locCount = m.locations?.length ?? 0;
               const totalLoc = restaurants.length;
               const locLabel =
-                locCount === 0
-                  ? "Tüm konumlar"
-                  : `${locCount} / ${totalLoc} konum`;
+                locCount === 0 ? t.allLocations : t.someLocations(locCount, totalLoc);
               const online = isOnlineByLastSeen(m.lastSeenAt);
               return (
                 <div
@@ -391,7 +393,7 @@ export function BusinessUsersRolesSettings({
                     <Avatar size={36} name={m.name || m.email} />
                     {online && (
                       <span
-                        aria-label="online"
+                        aria-label={t.online}
                         className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#16A34A] border-2 border-white"
                       />
                     )}
@@ -402,10 +404,10 @@ export function BusinessUsersRolesSettings({
                         {m.name || m.email}
                       </span>
                       <Badge kind={ROLE_BADGE_KIND[m.role]} dot={false}>
-                        {ROLE_LABELS[m.role]}
+                        {roleLabels[m.role]}
                       </Badge>
                       <Badge kind={STATUS_BADGE_KIND[m.status]}>
-                        {STATUS_LABELS[m.status]}
+                        {statusLabels[m.status]}
                       </Badge>
                     </div>
                     <div className="text-[11.5px] text-[#737373] mt-0.5 flex items-center gap-2 flex-wrap">
@@ -415,7 +417,7 @@ export function BusinessUsersRolesSettings({
                       {m.lastSeenAt && (
                         <>
                           <span>·</span>
-                          <span>Son: {formatRelative(m.lastSeenAt)}</span>
+                          <span>{t.lastSeen(formatRelative(m.lastSeenAt, locale))}</span>
                         </>
                       )}
                     </div>
@@ -428,7 +430,7 @@ export function BusinessUsersRolesSettings({
                         className="bz-btn-ghost text-[12px]"
                         style={{ height: 28, padding: "0 10px", borderRadius: 999 }}
                       >
-                        Düzenle
+                        {t.edit}
                       </button>
                       {m.status !== "active" && (
                         <button
@@ -436,8 +438,8 @@ export function BusinessUsersRolesSettings({
                           onClick={() => handleResend(m)}
                           disabled={resendingId === m.id}
                           className="bz-btn-icon"
-                          aria-label="Daveti yenile"
-                          title="Daveti yenile"
+                          aria-label={t.resendAria}
+                          title={t.resendAria}
                         >
                           {resendingId === m.id ? (
                             <Loader2 size={12} className="animate-spin" />
@@ -451,8 +453,8 @@ export function BusinessUsersRolesSettings({
                         onClick={() => handleRemove(m)}
                         disabled={busyId === m.id}
                         className="bz-btn-icon"
-                        aria-label="Kaldır"
-                        title="Kaldır"
+                        aria-label={t.removeConfirm}
+                        title={t.removeConfirm}
                       >
                         {busyId === m.id ? (
                           <Loader2 size={12} className="animate-spin" />
@@ -472,18 +474,18 @@ export function BusinessUsersRolesSettings({
       {/* Invite modal */}
       {inviteOpen && (
         <Modal
-          title="Yeni üye davet et"
+          title={t.inviteTitle}
           onClose={() => setInviteOpen(false)}
           size={520}
         >
           <div className="space-y-4">
-            <Field label="E-posta" required>
+            <Field label={t.email} required>
               <input
                 className="bz-input"
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="uye@isletmem.com"
+                placeholder={t.emailPlaceholder}
                 autoComplete="email"
                 inputMode="email"
                 enterKeyHint="send"
@@ -492,26 +494,22 @@ export function BusinessUsersRolesSettings({
                 spellCheck={false}
               />
             </Field>
-            <Field label="Rol">
+            <Field label={t.role}>
               <PulseSelect
                 value={inviteRole}
                 onChange={(value) => setInviteRole(value as typeof VALID_ROLES[number])}
                 options={VALID_ROLES.map((r) => ({
                   value: r,
-                  label: ROLE_LABELS[r as TeamRow["role"]],
+                  label: roleLabels[r as TeamRow["role"]],
                 }))}
-                ariaLabel="Davet edilecek üye rolü"
+                ariaLabel={t.inviteRoleAria}
               />
             </Field>
             <div>
-              <label className="block text-[12px] text-[#525252] mb-2">
-                Konum erişimi
-              </label>
-              <p className="text-[11.5px] text-[#737373] mb-2">
-                Boş bırakırsan tüm konumlara erişir. Belirli konumlar seç:
-              </p>
+              <label className="block text-[12px] text-[#525252] mb-2">{t.locationAccess}</label>
+              <p className="text-[11.5px] text-[#737373] mb-2">{t.locationHint}</p>
               {restaurants.length === 0 ? (
-                <p className="text-[12px] text-[#737373]">Henüz işletme yok.</p>
+                <p className="text-[12px] text-[#737373]">{t.noBusiness}</p>
               ) : (
                 <div className="space-y-1 max-h-[180px] overflow-y-auto">
                   {restaurants.map((r) => (
@@ -539,7 +537,7 @@ export function BusinessUsersRolesSettings({
                 onClick={() => setInviteOpen(false)}
                 className="bz-btn-ghost"
               >
-                İptal
+                {t.cancel}
               </button>
               <button
                 type="button"
@@ -548,7 +546,7 @@ export function BusinessUsersRolesSettings({
                 className="bz-btn-primary inline-flex items-center gap-1.5"
               >
                 {inviting ? <Loader2 size={14} className="animate-spin" /> : <Mail size={14} />}
-                Daveti gönder
+                {t.sendInvite}
               </button>
             </div>
           </div>
@@ -557,7 +555,7 @@ export function BusinessUsersRolesSettings({
 
       {/* Edit modal */}
       {editOpen && (
-        <Modal title="Üyeyi düzenle" onClose={() => setEditOpen(null)} size={520}>
+        <Modal title={t.editTitle} onClose={() => setEditOpen(null)} size={520}>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <Avatar size={36} name={editOpen.name || editOpen.email} />
@@ -570,23 +568,21 @@ export function BusinessUsersRolesSettings({
                 </div>
               </div>
             </div>
-            <Field label="Rol">
+            <Field label={t.role}>
               <PulseSelect
                 value={editRole}
                 onChange={(value) => setEditRole(value as typeof VALID_ROLES[number])}
                 options={VALID_ROLES.map((r) => ({
                   value: r,
-                  label: ROLE_LABELS[r as TeamRow["role"]],
+                  label: roleLabels[r as TeamRow["role"]],
                 }))}
-                ariaLabel="Üye rolü"
+                ariaLabel={t.memberRoleAria}
               />
             </Field>
             <div>
-              <label className="block text-[12px] text-[#525252] mb-2">
-                Konum erişimi
-              </label>
+              <label className="block text-[12px] text-[#525252] mb-2">{t.locationAccess}</label>
               {restaurants.length === 0 ? (
-                <p className="text-[12px] text-[#737373]">Henüz işletme yok.</p>
+                <p className="text-[12px] text-[#737373]">{t.noBusiness}</p>
               ) : (
                 <div className="space-y-1 max-h-[180px] overflow-y-auto">
                   {restaurants.map((r) => (
@@ -614,7 +610,7 @@ export function BusinessUsersRolesSettings({
                 onClick={() => setEditOpen(null)}
                 className="bz-btn-ghost"
               >
-                İptal
+                {t.cancel}
               </button>
               <button
                 type="button"
@@ -623,7 +619,7 @@ export function BusinessUsersRolesSettings({
                 className="bz-btn-primary inline-flex items-center gap-1.5"
               >
                 {editSaving && <Loader2 size={14} className="animate-spin" />}
-                Kaydet
+                {t.save}
               </button>
             </div>
           </div>
@@ -632,5 +628,98 @@ export function BusinessUsersRolesSettings({
     </div>
   );
 }
+
+const COPY = {
+  tr: {
+    loadFailed: "Ekip listesi yüklenemedi.",
+    emailRequired: "E-posta gerekli.",
+    inviteFailed: "Davet gönderilemedi.",
+    inviteSent: (email: string) => `Davet ${email} adresine gönderildi.`,
+    genericError: "Bir hata oluştu.",
+    updateFailed: "Güncellenemedi.",
+    updated: (email: string) => `${email} güncellendi.`,
+    resendTitle: "Daveti yenile?",
+    resendBody: (email: string) =>
+      `${email} adresine yeni bir davet bağlantısı gönderilir. 1 saat içinde yeniden yapılamaz.`,
+    resendConfirm: "Yenile",
+    resendAria: "Daveti yenile",
+    tooSoon: (min: number) => `Çok erken — ${min} dk sonra tekrar dene.`,
+    resendFailed: "Davet yenilenemedi.",
+    resent: (email: string) => `${email} adresine yeni davet gönderildi.`,
+    removeTitle: "Üyeyi kaldır?",
+    removeBody: (email: string) => `${email} bu çalışma alanına artık erişemeyecek.`,
+    removeConfirm: "Kaldır",
+    removeFailed: "Üye kaldırılamadı.",
+    removed: (email: string) => `${email} kaldırıldı.`,
+    cardTitle: "Ekip üyeleri",
+    cardDesc: "Çalışma alanına kullanıcı davet et, rol ve konum erişimini yönet.",
+    invite: "Üye davet et",
+    online: "çevrimiçi",
+    loading: "Yükleniyor…",
+    empty: "Henüz ek üye yok. \"Üye davet et\" ile başla.",
+    allLocations: "Tüm konumlar",
+    someLocations: (n: number, total: number) => `${n} / ${total} konum`,
+    lastSeen: (rel: string) => `Son: ${rel}`,
+    edit: "Düzenle",
+    inviteTitle: "Yeni üye davet et",
+    email: "E-posta",
+    emailPlaceholder: "uye@isletmem.com",
+    role: "Rol",
+    inviteRoleAria: "Davet edilecek üye rolü",
+    memberRoleAria: "Üye rolü",
+    locationAccess: "Konum erişimi",
+    locationHint: "Boş bırakırsan tüm konumlara erişir. Belirli konumlar seç:",
+    noBusiness: "Henüz işletme yok.",
+    cancel: "İptal",
+    sendInvite: "Daveti gönder",
+    editTitle: "Üyeyi düzenle",
+    save: "Kaydet",
+  },
+  en: {
+    loadFailed: "Could not load the team list.",
+    emailRequired: "Email is required.",
+    inviteFailed: "Could not send the invite.",
+    inviteSent: (email: string) => `Invite sent to ${email}.`,
+    genericError: "Something went wrong.",
+    updateFailed: "Could not update.",
+    updated: (email: string) => `${email} updated.`,
+    resendTitle: "Resend invite?",
+    resendBody: (email: string) =>
+      `A new invite link is sent to ${email}. You can't resend again within 1 hour.`,
+    resendConfirm: "Resend",
+    resendAria: "Resend invite",
+    tooSoon: (min: number) => `Too soon — try again in ${min} min.`,
+    resendFailed: "Could not resend the invite.",
+    resent: (email: string) => `New invite sent to ${email}.`,
+    removeTitle: "Remove member?",
+    removeBody: (email: string) => `${email} will no longer have access to this workspace.`,
+    removeConfirm: "Remove",
+    removeFailed: "Could not remove the member.",
+    removed: (email: string) => `${email} removed.`,
+    cardTitle: "Team members",
+    cardDesc: "Invite people to your workspace and manage their role and location access.",
+    invite: "Invite member",
+    online: "online",
+    loading: "Loading…",
+    empty: "No other members yet. Start with \"Invite member\".",
+    allLocations: "All locations",
+    someLocations: (n: number, total: number) => `${n} / ${total} locations`,
+    lastSeen: (rel: string) => `Last seen: ${rel}`,
+    edit: "Edit",
+    inviteTitle: "Invite a new member",
+    email: "Email",
+    emailPlaceholder: "member@mybusiness.com",
+    role: "Role",
+    inviteRoleAria: "Role for the invited member",
+    memberRoleAria: "Member role",
+    locationAccess: "Location access",
+    locationHint: "Leave empty to grant access to all locations, or pick specific ones:",
+    noBusiness: "No businesses yet.",
+    cancel: "Cancel",
+    sendInvite: "Send invite",
+    editTitle: "Edit member",
+    save: "Save",
+  },
+};
 
 export default BusinessUsersRolesSettings;

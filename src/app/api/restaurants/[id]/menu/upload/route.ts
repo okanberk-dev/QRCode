@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
-import { requireMenuModuleAccess } from '@/lib/menu-access';
+import { requireMenuModuleAccess, requireRestaurantAccess } from '@/lib/menu-access';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 
 // Client-side limit is 5 MB (raw upload); server-side we enforce the same
@@ -30,7 +30,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   maybeSweep();
   const { id } = await params;
 
-  const gate = await requireMenuModuleAccess(req, id);
+  // Plain write-access gate first (POST → write; viewers 403). The menu
+  // module gate is applied per-kind below: brand uploads (favicon / cover /
+  // logo from Marka Kimliği) must keep working when the admin disabled the
+  // menu module. Nothing is persisted here — saving a menu logo still goes
+  // through the menu-gated theme endpoint.
+  const gate = await requireRestaurantAccess(req, id);
   if (!gate.ok) return gate.res;
 
   // 60 uploads/min/user. Normal workflow is well below this; abuse needs a
@@ -60,6 +65,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         : kindRaw === 'cover'
           ? 'cover'
           : 'item';
+
+  // `item` (menu product image) is the only menu-exclusive kind; `logo` is
+  // shared by the menu builder and brand identity and can't be told apart.
+  if (kind === 'item') {
+    const menuGate = await requireMenuModuleAccess(req, id);
+    if (!menuGate.ok) return menuGate.res;
+  }
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'Dosya bulunamadı' }, { status: 400 });

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { ArrowLeft, Plug } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { resolveActiveRestaurantId } from '@/lib/active-business';
 import { EmptyState, PageHeader } from '@/components/ui';
@@ -63,8 +64,16 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
     redirect(`/${locale}/auth/login?next=${encodeURIComponent(next)}`);
   }
 
+  // Team members included — same scope the API layer resolves
+  // (getScopedRestaurantIds). `userId: payload.userId` hid every
+  // restaurant from invited team members.
+  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+    userId: payload.userId,
+    role: payload.role,
+    email: payload.email,
+  });
   const restaurants = (await prisma.restaurant.findMany({
-    where: { userId: payload.userId },
+    where: { id: { in: scopedIds } },
     select: {
       id: true,
       name: true,

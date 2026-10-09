@@ -31,6 +31,7 @@ export async function GET(
       trialEndsAt: true,
       isActive: true,
       deactivatedAt: true,
+      scheduledDeletionAt: true,
       lastInvitedAt: true,
       lastTrialReminderAt: true,
       locale: true,

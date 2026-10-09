@@ -38,12 +38,19 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  let body: { step?: number; data?: unknown } = {};
-  try {
-    body = await req.json();
-  } catch {
+  const raw: unknown = await req.json().catch(() => null);
+  // Non-object bodies (`null`, arrays, primitives) used to crash on
+  // `body.step` → 500; treat them as malformed.
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
+  // Size cap (parity with /api/onboarding/complete) — `data` is free-form
+  // wizard state stored verbatim in onboarding_progress.data; bound it so an
+  // authenticated user can't stuff a multi-MB blob into the JSON column.
+  if (JSON.stringify(raw).length > 50_000) {
+    return NextResponse.json({ error: 'payload_too_large' }, { status: 413 });
+  }
+  const body = raw as { step?: number; data?: unknown };
 
   const step =
     typeof body.step === 'number' && body.step >= 1 && body.step <= 10

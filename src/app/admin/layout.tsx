@@ -3,6 +3,7 @@ import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminMobileNav from '@/components/admin/AdminMobileNav';
 import AdminTopbar from '@/components/admin/AdminTopbar';
 import AnnouncementBanner, { type DashboardAnnouncement } from '@/components/dashboard/AnnouncementBanner';
+import ImpersonationBanner from '@/components/dashboard/ImpersonationBanner';
 import {
   isAdminRole,
   verifyAdminTokenForLayout,
@@ -18,7 +19,8 @@ function getStringClaim(payload: Awaited<ReturnType<typeof verifyJwt>>, key: str
   return typeof value === 'string' && value.trim() ? value : null;
 }
 
-const ADMIN_ANNOUNCEMENTS_CACHE_TTL_MS = 5 * 60 * 1000;
+// Per-instance cache; short TTL so admin edits propagate within a minute.
+const ADMIN_ANNOUNCEMENTS_CACHE_TTL_MS = 60 * 1000;
 const adminAnnouncementsCache = new Map<
   'tr' | 'en',
   { data: DashboardAnnouncement[]; expiresAt: number }
@@ -119,6 +121,21 @@ export default async function AdminLayout({
   // We hide it if not authenticated.
   const showSidebar = isAuthenticated;
 
+  // "Owner gibi gör" keeps admin_token next to an impersonating user_token.
+  // While it is alive, every shared API (`/api/feedback`, `/api/restaurants`…)
+  // resolves to the impersonated OWNER (getPanelActorFromRequest §38.238), so
+  // an admin who navigated back to /admin saw owner-scoped lists or 403s with
+  // nothing on screen explaining why and no way to end the session here.
+  // Mount the same banner the owner shell uses — it validates the session via
+  // /api/account/actor-context and renders nothing once it has ended.
+  let impersonationActive = false;
+  if (showSidebar) {
+    const userToken = cookieStore.get('user_token')?.value;
+    const userPeek = userToken ? await verifyJwt(userToken) : null;
+    impersonationActive =
+      !!userPeek && typeof userPeek.impersonating === 'object' && userPeek.impersonating !== null;
+  }
+
   let announcements: DashboardAnnouncement[] = [];
   let adminProfile: AdminPanelProfile | null = null;
   if (showSidebar && actor) {
@@ -148,6 +165,7 @@ export default async function AdminLayout({
              CLAUDE.md §42.5). */
           className={`flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable] flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 bg-[#FAFAFA]'}`}
         >
+          {impersonationActive && <ImpersonationBanner />}
           {showSidebar && (
             <AdminTopbar
               announcements={announcements}

@@ -19,7 +19,7 @@ type RangePreset = keyof typeof RANGE_PRESETS | 'all';
 function resolveWindow(rangeParam: string | null): { start: Date | null; end: Date; days: number | null } {
   const end = new Date();
   if (rangeParam === 'all') return { start: null, end, days: null };
-  const preset = (rangeParam && rangeParam in RANGE_PRESETS ? rangeParam : '30d') as Exclude<RangePreset, 'all'>;
+  const preset = (rangeParam && Object.hasOwn(RANGE_PRESETS, rangeParam) ? rangeParam : '30d') as Exclude<RangePreset, 'all'>;
   const days = RANGE_PRESETS[preset];
   // Align the window to whole UTC days.
   //

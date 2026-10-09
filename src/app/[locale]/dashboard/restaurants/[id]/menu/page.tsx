@@ -764,7 +764,9 @@ export default function RestaurantMenuBuilderPage() {
   if (previewMode) {
     return (
       <div className="min-h-full">
-        <div className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#1A1A1A] bg-[#0A0A0A] px-5 py-3.5 text-white">
+        {/* Shell topbar'ları da sticky top-0 (mobil ~61px z-40, masaüstü ~71px
+            z-30); bar onların altına yerleşmeli, üstüne/altına kaymamalı. */}
+        <div className="sticky top-[61px] z-20 flex items-center justify-between gap-3 border-b border-[#1A1A1A] bg-[#0A0A0A] px-5 py-3.5 text-white lg:top-[71px]">
           <div className="flex min-w-0 items-center gap-3">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#C6F24E]">
               <Eye size={14} strokeWidth={2.25} className="text-[#0A0A0A]" />
@@ -788,7 +790,9 @@ export default function RestaurantMenuBuilderPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-6 px-4 sm:px-7 py-6 pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:py-8 lg:pb-8">
+    // Mobil bottom-nav boşluğu zaten shell <main>'de; burada tekrarlamak ~190px
+    // boşluk bırakıyordu.
+    <div className="mx-auto max-w-[1600px] space-y-6 px-4 sm:px-7 py-6 lg:py-8">
       {/* Header */}
       <div className="relative overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
         {restaurant.menuPublished && (
@@ -1286,7 +1290,7 @@ function CategoryModal({
           />
         </Field>
         <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
-          <input type="checkbox" checked={isVisible} onChange={(e) => setIsVisible(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
+          <input type="checkbox" checked={isVisible} onChange={(e) => setIsVisible(e.target.checked)} className="h-4 w-4 accent-[#0A0A0A]" />
           <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.visible}</span>
         </label>
         <ModalActions busy={busy} copy={copy} onClose={onClose} />
@@ -1473,7 +1477,7 @@ function ItemModal({
                 value={imageUrl.startsWith('data:') ? '' : imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder={copy.orUrl + ' · https://...'}
-                className="w-full rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[12px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
+                className="w-full rounded-full border border-[#EDEDED] bg-white px-3.5 py-2 text-[16px] sm:text-[12px] text-[#0A0A0A] outline-none transition-all placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:ring-2 focus:ring-[#C6F24E]/40"
               />
             </div>
           </div>
@@ -1578,7 +1582,7 @@ function ItemModal({
 
         <div className="grid grid-cols-2 gap-3">
           <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
-            <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="h-4 w-4 accent-[#C6F24E]" />
+            <input type="checkbox" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="h-4 w-4 accent-[#0A0A0A]" />
             <span className="text-[14px] font-medium text-[#0A0A0A]">{copy.available}</span>
           </label>
           <label className="flex cursor-pointer items-center gap-3 bz-card px-4 py-3 transition-colors hover:bg-[#FAFAFA]">

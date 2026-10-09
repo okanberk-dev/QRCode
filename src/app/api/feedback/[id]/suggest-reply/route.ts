@@ -44,10 +44,21 @@ export async function POST(
 
   const { id } = await params;
   let body: { locale?: 'tr' | 'en'; tone?: AiDraftTone; autoDraft?: boolean } = {};
-  try {
-    body = await req.json();
-  } catch {
-    /* ignore */
+  // Body is optional (empty → defaults), but a present-and-malformed body —
+  // invalid JSON, `null`, arrays, primitives — is a 400. Previously `null`
+  // parsed fine and crashed on `body.locale` → 500.
+  const rawText = await req.text().catch(() => '');
+  if (rawText.trim()) {
+    let parsedBody: unknown = null;
+    try {
+      parsedBody = JSON.parse(rawText);
+    } catch {
+      parsedBody = null;
+    }
+    if (!parsedBody || typeof parsedBody !== 'object' || Array.isArray(parsedBody)) {
+      return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+    }
+    body = parsedBody as typeof body;
   }
   const locale: 'tr' | 'en' = body.locale === 'en' ? 'en' : 'tr';
 

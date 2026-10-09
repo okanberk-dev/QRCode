@@ -20,6 +20,9 @@ interface RestaurantSettings {
   loaded: boolean;
   saving: boolean;
   error?: string | null;
+  /** Initial GET failed — controls stay disabled so a toggle can't PATCH
+   *  over settings we never saw. */
+  loadError?: boolean;
 }
 
 interface BusinessPulseAiSettingsProps {
@@ -51,6 +54,51 @@ const TONE_OPTIONS: Array<{ value: Tone; labelTr: string; labelEn: string; descT
   },
 ];
 
+const FALLBACK_SETTINGS: RestaurantSettings = {
+  pulseAiEnabled: true,
+  enableAiDraft: false,
+  googleAiEnabled: true,
+  aiDraftTone: "warm",
+  loaded: true,
+  saving: false,
+};
+
+/** ai-settings API returns snake codes; map them to owner-readable copy. */
+function describeAiSettingsError(code: unknown, isTr: boolean): string {
+  switch (code) {
+    case "pulse_ai_disabled_by_admin":
+      return isTr
+        ? "Pulse AI bu işletme için Buaze tarafından kapatıldı."
+        : "Pulse AI is disabled for this location by Buaze.";
+    case "not_found":
+      return isTr ? "İşletme bulunamadı." : "Business not found.";
+    case "invalid_tone":
+      return isTr ? "Geçersiz ton seçimi." : "Invalid tone.";
+    default:
+      return isTr
+        ? "Değişiklik kaydedilemedi. Lütfen tekrar deneyin."
+        : "Couldn't save the change. Please try again.";
+  }
+}
+
+async function fetchSettings(id: string): Promise<RestaurantSettings> {
+  try {
+    const res = await fetch(`/api/restaurants/${id}/ai-settings`);
+    if (!res.ok) return { ...FALLBACK_SETTINGS, loadError: true };
+    const data = await res.json();
+    return {
+      pulseAiEnabled: Boolean(data.pulseAiEnabled ?? true),
+      enableAiDraft: Boolean(data.enableAiDraft),
+      googleAiEnabled: Boolean(data.googleAiEnabled ?? true),
+      aiDraftTone: (data.aiDraftTone as Tone) ?? "warm",
+      loaded: true,
+      saving: false,
+    };
+  } catch {
+    return { ...FALLBACK_SETTINGS, loadError: true };
+  }
+}
+
 /**
  * Pulse AI per-restaurant settings (CLAUDE.md §15).
  *
@@ -61,43 +109,33 @@ const TONE_OPTIONS: Array<{ value: Tone; labelTr: string; labelEn: string; descT
 export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: BusinessPulseAiSettingsProps) {
   const isTr = locale !== "en";
   const [settings, setSettings] = useState<Record<string, RestaurantSettings>>({});
-  const [globalError, setGlobalError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const next: Record<string, RestaurantSettings> = {};
-      await Promise.all(
-        restaurants.map(async (r) => {
-          try {
-            const res = await fetch(`/api/restaurants/${r.id}/ai-settings`);
-            if (!res.ok) {
-              next[r.id] = { pulseAiEnabled: false, enableAiDraft: false, googleAiEnabled: false, aiDraftTone: "warm", loaded: true, saving: false };
-              return;
-            }
-            const data = await res.json();
-            next[r.id] = {
-              pulseAiEnabled: Boolean(data.pulseAiEnabled ?? true),
-              enableAiDraft: Boolean(data.enableAiDraft),
-              googleAiEnabled: Boolean(data.googleAiEnabled ?? true),
-              aiDraftTone: (data.aiDraftTone as Tone) ?? "warm",
-              loaded: true,
-              saving: false,
-            };
-          } catch {
-            next[r.id] = { pulseAiEnabled: false, enableAiDraft: false, googleAiEnabled: false, aiDraftTone: "warm", loaded: true, saving: false };
-          }
-        }),
+      const entries = await Promise.all(
+        restaurants.map(async (r) => [r.id, await fetchSettings(r.id)] as const),
       );
-      if (!cancelled) setSettings(next);
+      if (!cancelled) setSettings(Object.fromEntries(entries));
     })();
     return () => {
       cancelled = true;
     };
   }, [restaurants]);
 
+  const retryLoad = async (id: string) => {
+    setSettings((s) => ({ ...s, [id]: { ...(s[id] ?? FALLBACK_SETTINGS), loaded: false } }));
+    const next = await fetchSettings(id);
+    setSettings((s) => ({ ...s, [id]: next }));
+  };
+
   const update = async (id: string, patch: Partial<Pick<RestaurantSettings, "enableAiDraft" | "googleAiEnabled" | "aiDraftTone">>) => {
-    setSettings((s) => ({ ...s, [id]: { ...(s[id] ?? { pulseAiEnabled: true, enableAiDraft: false, googleAiEnabled: true, aiDraftTone: "warm", loaded: true, saving: false }), ...patch, saving: true, error: null } }));
+    const previous = settings[id] ?? FALLBACK_SETTINGS;
+    // Optimistic; reverted to `previous` if the PATCH fails so the switch
+    // never shows a state the server didn't accept.
+    setSettings((s) => ({ ...s, [id]: { ...previous, ...patch, saving: true, error: null } }));
+    const revert = (message: string) =>
+      setSettings((s) => ({ ...s, [id]: { ...previous, saving: false, error: message } }));
     try {
       const res = await fetch(`/api/restaurants/${id}/ai-settings`, {
         method: "PATCH",
@@ -106,7 +144,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setSettings((s) => ({ ...s, [id]: { ...s[id], saving: false, error: err?.error ?? "save_failed" } }));
+        revert(describeAiSettingsError(err?.error, isTr));
         return;
       }
       const data = await res.json();
@@ -122,8 +160,12 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
           error: null,
         },
       }));
-    } catch (err) {
-      setSettings((s) => ({ ...s, [id]: { ...s[id], saving: false, error: err instanceof Error ? err.message : "save_failed" } }));
+    } catch {
+      revert(
+        isTr
+          ? "Bağlantı hatası — değişiklik geri alındı."
+          : "Network error — the change was reverted.",
+      );
     }
   };
 
@@ -139,12 +181,6 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
 
   return (
     <div className="space-y-5">
-      {globalError && (
-        <AlertBanner kind="danger" onDismiss={() => setGlobalError(null)}>
-          {globalError}
-        </AlertBanner>
-      )}
-
       <AlertBanner kind="info" icon={<Sparkles size={14} />}>
         {isTr
           ? "Düşük puanlı (1-3 yıldız) yorum geldiğinde Pulse AI sizin için yanıt taslağı hazırlar. Onaylamadan göndermez. Yorum metni OpenAI'a iletilir — KVKK için müşteri rızanız mevcut olmalı."
@@ -154,7 +190,9 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
       {restaurants.map((r) => {
       const s = settings[r.id];
       const loaded = Boolean(s?.loaded);
+      const loadError = s?.loadError === true;
       const pulseEnabled = s?.pulseAiEnabled !== false;
+      const controlsDisabled = Boolean(s?.saving) || !pulseEnabled || loadError;
         return (
           <div key={r.id} className="bz-card p-5">
             <div className="flex items-start justify-between gap-3">
@@ -190,7 +228,25 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
               </>
             ) : (
               <>
-                {!pulseEnabled && (
+                {loadError && (
+                  <div className="mt-4">
+                    <AlertBanner kind="danger">
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        {isTr
+                          ? "Bu işletmenin Pulse AI ayarları yüklenemedi; değişiklik yapılamaz."
+                          : "Couldn't load this location's Pulse AI settings; changes are disabled."}
+                        <button
+                          type="button"
+                          onClick={() => void retryLoad(r.id)}
+                          className="font-semibold underline underline-offset-2"
+                        >
+                          {isTr ? "Tekrar dene" : "Retry"}
+                        </button>
+                      </span>
+                    </AlertBanner>
+                  </div>
+                )}
+                {!loadError && !pulseEnabled && (
                   <div className="mt-4">
                     <AlertBanner kind="warn">
                       {isTr
@@ -203,7 +259,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                   <APSwitch
                     checked={Boolean(s?.enableAiDraft)}
                     onChange={(next) => update(r.id, { enableAiDraft: next })}
-                    disabled={s?.saving || !pulseEnabled}
+                    disabled={controlsDisabled}
                     ariaLabel={
                       isTr ? "Buaze yorumlarına otomatik AI taslak" : "Auto AI draft for Buaze feedback"
                     }
@@ -213,7 +269,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                       <span className="font-semibold">
                         {isTr ? "Buaze yorumlarına otomatik AI taslak" : "Auto AI draft for Buaze feedback"}
                       </span>
-                      {Boolean(s?.enableAiDraft) && pulseEnabled && (
+                      {Boolean(s?.enableAiDraft) && pulseEnabled && !loadError && (
                         <span className="text-[10px] tracking-[0.16em] uppercase bg-[#EAF9B8] text-[#0A0A0A] rounded px-1.5 py-0.5 font-mono">
                           {isTr ? "AKTİF" : "ACTIVE"}
                         </span>
@@ -231,7 +287,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                   <APSwitch
                     checked={Boolean(s?.googleAiEnabled)}
                     onChange={(next) => update(r.id, { googleAiEnabled: next })}
-                    disabled={s?.saving || !pulseEnabled}
+                    disabled={controlsDisabled}
                     ariaLabel={
                       isTr ? "Google yorumlarına otomatik AI taslak" : "Auto AI draft for Google reviews"
                     }
@@ -241,7 +297,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                       <span className="font-semibold">
                         {isTr ? "Google yorumlarına otomatik AI taslak" : "Auto AI draft for Google reviews"}
                       </span>
-                      {Boolean(s?.googleAiEnabled) && pulseEnabled && (
+                      {Boolean(s?.googleAiEnabled) && pulseEnabled && !loadError && (
                         <span className="text-[10px] tracking-[0.16em] uppercase bg-[#EAF9B8] text-[#0A0A0A] rounded px-1.5 py-0.5 font-mono">
                           {isTr ? "AKTİF" : "ACTIVE"}
                         </span>
@@ -264,7 +320,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                       <RadioCard
                         key={opt.value}
                         active={s?.aiDraftTone === opt.value}
-                        disabled={s?.saving || !pulseEnabled}
+                        disabled={controlsDisabled}
                         onClick={() => update(r.id, { aiDraftTone: opt.value })}
                         title={isTr ? opt.labelTr : opt.labelEn}
                         body={isTr ? opt.descTr : opt.descEn}
@@ -275,10 +331,7 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
 
                 {s?.error && (
                   <div className="mt-3">
-                    <AlertBanner kind="danger">
-                      {isTr ? "Kaydedilemedi: " : "Save failed: "}
-                      {s.error}
-                    </AlertBanner>
+                    <AlertBanner kind="danger">{s.error}</AlertBanner>
                   </div>
                 )}
                 {s?.saving && (

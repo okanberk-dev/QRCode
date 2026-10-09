@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { requireMenuModuleAccess, touchMenuUpdated } from '@/lib/menu-access';
 import { isValidHexColor, isValidMenuTheme } from '@/lib/validations';
 
+// Mirrors the raster whitelist in validations.ts (menu item imageUrl).
+const DATA_URL_RASTER_RE = /^data:image\/(jpeg|jpg|png|webp|gif|avif);base64,/i;
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -41,12 +44,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   if ('menuLogoUrl' in b) {
-    // Logo accepts http(s) URL, data:image/ URL, or null to clear.
+    // Logo accepts http(s) URL, raster data:image/ URL, or null to clear.
     if (b.menuLogoUrl === null || b.menuLogoUrl === '') {
       data.menuLogoUrl = null;
     } else if (typeof b.menuLogoUrl === 'string') {
       const trimmed = b.menuLogoUrl.trim();
-      const isDataUrl = trimmed.startsWith('data:image/');
+      const isDataUrl = trimmed.startsWith('data:');
+      // Raster-only whitelist (same as validations.ts imageUrl): a bare
+      // `data:image/` prefix let `data:image/svg+xml` through — SVG can carry
+      // `<script>` and the logo renders on the public menu (stored XSS).
+      if (isDataUrl && !DATA_URL_RASTER_RE.test(trimmed)) {
+        return NextResponse.json(
+          { error: 'Logo formatı desteklenmiyor (yalnız JPEG/PNG/WebP/GIF/AVIF)' },
+          { status: 400 },
+        );
+      }
       const maxLen = isDataUrl ? 300_000 : 1000;
       if (trimmed.length > maxLen) {
         return NextResponse.json({ error: 'Logo çok büyük' }, { status: 400 });

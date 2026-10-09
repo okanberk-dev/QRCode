@@ -443,6 +443,9 @@ export async function GET(req: NextRequest) {
   if (actor.role === 'superadmin') {
     // superadmin — keep any explicit restaurantId filter or show all
   } else if (actor.role === 'manager') {
+    // A manager without a restaurant would otherwise leave restaurantId
+    // undefined → no filter → every tenant's reviews.
+    if (!actor.restaurantId) return ApiErrors.forbidden();
     baseWhere.restaurantId = actor.restaurantId;
   // `team_member` (davet edilen ekip üyesi) owner ile aynı dalda scope'lanır:
   // getScopedRestaurantIds -> getTeamMemberScope zaten SADECE TeamMember.locations
@@ -644,12 +647,28 @@ export async function GET(req: NextRequest) {
       };
       const draft = f.id ? aiDraftMap.get(f.id) : undefined;
       const aiAutoDraftEnabled = f.restaurant?.pulseAiEnabled === true && f.restaurant?.enableAiDraft === true;
+      // The list query uses `include`, so every Feedback column reached the
+      // panel — including the reviewer's IP address and user agent, shown to
+      // owners and read-only team viewers alike. Neither is used by the UI;
+      // drop them here (KVKK data minimisation, §13.9 / §37.7).
+      const { ipAddress: _ip, userAgent: _ua, ...safe } = f as typeof f & {
+        ipAddress?: unknown;
+        userAgent?: unknown;
+      };
+      void _ip;
+      void _ua;
       return {
-        ...f,
+        ...safe,
         customerName: f.name,
         customerEmail: f.email,
         restaurant: f.restaurant
-          ? { name: f.restaurant.name ?? '', slug: f.restaurant.slug ?? undefined }
+          ? {
+              name: f.restaurant.name ?? '',
+              slug: f.restaurant.slug ?? undefined,
+              // Lets the inbox hide AI controls when an admin turned Pulse
+              // AI off for this business (§5.2).
+              pulseAiEnabled: f.restaurant.pulseAiEnabled !== false,
+            }
           : null,
         isReplied: joinsAvailable ? (f._count?.replies ?? 0) > 0 : false,
         isFlagged: joinsAvailable ? Boolean(f.flag) : false,

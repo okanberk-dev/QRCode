@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type FormEvent, type ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, BarChart3, Send } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, Eye, EyeOff, Building2, MapPin, Globe, AlertTriangle, CheckCircle2, QrCode, MessageSquare, Link2, Users, Sparkles, BarChart3, Send, ClipboardList, ClipboardCheck, ShieldAlert, PauseCircle } from 'lucide-react';
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
@@ -49,7 +49,30 @@ type FeatureToggleKey =
   | 'menuPublished'
   | 'aiAnalyticsEnabled'
   | 'externalPlatformsEnabled'
-  | 'campaignsEnabled';
+  | 'campaignsEnabled'
+  | 'surveysEnabled';
+
+// /api/admin/restaurants/[id]/overview — owner-side modules summary.
+interface OwnerModulesOverview {
+  surveys: {
+    total: number;
+    items: Array<{
+      id: string;
+      title: string;
+      slug: string;
+      isActive: boolean;
+      isPublished: boolean;
+      responseCount: number;
+    }>;
+  };
+  audits: { templates: number; completedResponses: number; avgScorePercent: number | null };
+  campaigns: Record<string, number>;
+  team: { active: number; invited: number };
+  google: { connected: boolean; locationTitle: string | null; syncedAt: string | null };
+  platformLinks: { failingProviders: string[] };
+  qrCount: number;
+  owner: { scheduledDeletionAt: string | null; isActive: boolean | null };
+}
 
 export default function RestaurantDetailPage() {
   const params = useParams();
@@ -91,7 +114,11 @@ export default function RestaurantDetailPage() {
   const [pulseAiEnabled, setPulseAiEnabled] = useState(true);
   const [aiAnalyticsEnabled, setAiAnalyticsEnabled] = useState(true);
   const [externalPlatformsEnabled, setExternalPlatformsEnabled] = useState(true);
-  const [campaignsEnabled, setCampaignsEnabled] = useState(true);
+  const [campaignsEnabled, setCampaignsEnabled] = useState(false);
+  const [surveysEnabled, setSurveysEnabled] = useState(true);
+  const [suspendedByAdmin, setSuspendedByAdmin] = useState(false);
+  const [overview, setOverview] = useState<OwnerModulesOverview | null>(null);
+  const [overviewError, setOverviewError] = useState(false);
   const [featureSaving, setFeatureSaving] = useState<FeatureToggleKey | null>(null);
   const [owners, setOwners] = useState<Owner[]>([]);
   const [meta, setMeta] = useState<RestaurantMeta | null>(null);
@@ -151,7 +178,9 @@ export default function RestaurantDetailPage() {
           setPulseAiEnabled(data.pulseAiEnabled ?? true);
           setAiAnalyticsEnabled(data.aiAnalyticsEnabled ?? true);
           setExternalPlatformsEnabled(data.externalPlatformsEnabled ?? true);
-          setCampaignsEnabled(data.campaignsEnabled ?? true);
+          setCampaignsEnabled(data.campaignsEnabled ?? false);
+          setSurveysEnabled(data.surveysEnabled ?? true);
+          setSuspendedByAdmin(Boolean(data.suspendedByAdmin));
         } else {
           setError('Bir hata oluştu');
         }
@@ -163,6 +192,25 @@ export default function RestaurantDetailPage() {
     };
     fetchRestaurant();
   }, [id, router]);
+
+  // Owner-side modules (surveys, audits, campaigns, team, Google, link
+  // health, self-deletion) — read-only admin visibility.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/admin/restaurants/${id}/overview`);
+        if (!res.ok) throw new Error(String(res.status));
+        const data = (await res.json()) as OwnerModulesOverview;
+        if (!cancelled) setOverview(data);
+      } catch {
+        if (!cancelled) setOverviewError(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   useEffect(() => {
     (async () => {
@@ -212,6 +260,7 @@ export default function RestaurantDetailPage() {
         return;
       }
 
+      if (typeof data.suspendedByAdmin === 'boolean') setSuspendedByAdmin(data.suspendedByAdmin);
       setSuccess('İşletme başarıyla güncellendi.');
       setTimeout(() => setSuccess(''), 3000);
     } catch {
@@ -232,6 +281,7 @@ export default function RestaurantDetailPage() {
       setExternalPlatformsEnabled(Boolean(next.externalPlatformsEnabled));
     }
     if (next.campaignsEnabled !== undefined) setCampaignsEnabled(Boolean(next.campaignsEnabled));
+    if (next.surveysEnabled !== undefined) setSurveysEnabled(Boolean(next.surveysEnabled));
   };
 
   const saveFeatureSetting = async (patch: Partial<Record<FeatureToggleKey, boolean>>) => {
@@ -249,6 +299,7 @@ export default function RestaurantDetailPage() {
       aiAnalyticsEnabled,
       externalPlatformsEnabled,
       campaignsEnabled,
+      surveysEnabled,
     };
     const optimistic = { ...prev, ...patch };
     if (patch.menuEnabled === false) optimistic.menuPublished = false;
@@ -388,6 +439,12 @@ export default function RestaurantDetailPage() {
                     <span className={`h-1.5 w-1.5 rounded-full ${formData.isActive ? 'bg-[#16A34A]' : 'bg-[#A3A3A3]'}`} aria-hidden />
                     <span className="font-medium">{formData.isActive ? 'Aktif' : 'Pasif'}</span>
                   </span>
+                  {suspendedByAdmin && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-[11px] font-medium text-[#991B1B]">
+                      <PauseCircle size={11} strokeWidth={2.25} />
+                      Admin tarafından duraklatıldı
+                    </span>
+                  )}
                   <span className="h-1 w-1 rounded-full bg-[#EDEDED]" aria-hidden />
                   <span className={`inline-flex items-center gap-1.5 ${menuStateTone.text}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${menuStateTone.dot}`} aria-hidden />
@@ -645,6 +702,13 @@ export default function RestaurantDetailPage() {
         </div>
       </section>
 
+      <OwnerModulesCard
+        ownerId={meta?.user?.id ?? null}
+        overview={overview}
+        failed={overviewError}
+        surveysEnabled={surveysEnabled}
+      />
+
       {/* Feature entitlements — package-ready master switches */}
       <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-[#EDEDED] px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
@@ -732,6 +796,15 @@ export default function RestaurantDetailPage() {
             checked={campaignsEnabled}
             loading={featureSaving === 'campaignsEnabled'}
             onChange={(next) => saveFeatureSetting({ campaignsEnabled: next })}
+          />
+          <FeatureToggleCard
+            icon={<ClipboardList size={17} strokeWidth={2.2} />}
+            eyebrow="Anketler"
+            title="Anket modülü"
+            description="Kapalıyken owner yeni anket oluşturamaz/yayınlayamaz ve yayındaki anket linkleri yanıt toplamayı durdurur."
+            checked={surveysEnabled}
+            loading={featureSaving === 'surveysEnabled'}
+            onChange={(next) => saveFeatureSetting({ surveysEnabled: next })}
           />
           <FeatureToggleCard
             icon={menuPublished ? <Eye size={17} strokeWidth={2.2} /> : <EyeOff size={17} strokeWidth={2.2} />}
@@ -845,23 +918,20 @@ export default function RestaurantDetailPage() {
               </div>
             </div>
 
-            <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 transition-colors hover:bg-[#FAFAFA]">
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3">
               <div className="min-w-0">
                 <p className="text-[14px] font-medium text-[#0A0A0A]">İşletme Aktif</p>
                 <p className="mt-0.5 text-[12px] text-[#737373]">
-                  Pasifleştirildiğinde yeni QR taramaları cevap vermez.
+                  Pasifleştirildiğinde yeni QR taramaları cevap vermez. Buradan duraklatılan
+                  işletmeyi owner kendi panelinden yeniden açamaz.
                 </p>
               </div>
-              <div className="relative shrink-0">
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                  className="peer sr-only"
-                />
-                <div className="h-6 w-11 rounded-full bg-[#EDEDED] transition-colors after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:bg-[#0A0A0A] peer-checked:after:translate-x-full peer-focus-visible:ring-2 peer-focus-visible:ring-[#C6F24E]/60" />
-              </div>
-            </label>
+              <APSwitch
+                checked={formData.isActive}
+                onChange={(next) => setFormData(prev => ({ ...prev, isActive: next }))}
+                ariaLabel="İşletme aktif"
+              />
+            </div>
           </div>
         </section>
 
@@ -1146,4 +1216,220 @@ function FeatureToggleCard({
       </div>
     </div>
   );
+}
+
+// Owner-side modules at a glance (2026-10 owner↔admin link). Read-only:
+// admin control stays on the master switches below; this card answers
+// "what is the owner actually running here?" without impersonating.
+function OwnerModulesCard({
+  ownerId,
+  overview,
+  failed,
+  surveysEnabled,
+}: {
+  ownerId: string | null;
+  overview: OwnerModulesOverview | null;
+  failed: boolean;
+  surveysEnabled: boolean;
+}) {
+  const deletionAt = overview?.owner.scheduledDeletionAt ? new Date(overview.owner.scheduledDeletionAt) : null;
+  const deletionDays = deletionAt
+    ? Math.max(0, Math.ceil((deletionAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+    : null;
+  const pendingCampaigns = overview?.campaigns.pending_approval ?? 0;
+  const campaignTotal = overview
+    ? Object.values(overview.campaigns).reduce((sum, n) => sum + n, 0)
+    : 0;
+
+  return (
+    <section className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">
+      <div className="flex items-start gap-3 border-b border-[#EDEDED] px-6 py-5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0A0A0A] text-[#C6F24E]">
+          <ClipboardCheck size={18} strokeWidth={2} />
+        </div>
+        <div className="min-w-0">
+          <p className="pulse-eyebrow text-[#737373]">Owner Modülleri</p>
+          <h3 className="mt-0.5 text-[16px] font-medium text-[#0A0A0A]">İşletme sahibinin panelde kullandıkları</h3>
+          <p className="mt-1 text-[12px] leading-relaxed text-[#737373]">
+            Anket, denetim, kampanya, ekip ve Google bağlantısı — owner gibi görmeden özet.
+          </p>
+        </div>
+      </div>
+
+      {failed && (
+        <div className="px-6 py-5">
+          <AlertBanner kind="warn">Owner modülleri özeti yüklenemedi.</AlertBanner>
+        </div>
+      )}
+
+      {!failed && !overview && (
+        <div className="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-[92px] rounded-2xl bg-[#F5F5F5]" />
+          ))}
+        </div>
+      )}
+
+      {overview && (
+        <div className="space-y-4 p-6">
+          {deletionAt && (
+            <AlertBanner kind="danger" icon={<ShieldAlert size={14} strokeWidth={2} className="mt-0.5" />}>
+              İşletme sahibi hesabını silme talebinde bulundu — {deletionDays} gün içinde
+              ({deletionAt.toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' })}) kalıcı olarak silinecek.
+              Owner kendi panelinden iptal edebilir.
+            </AlertBanner>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ModuleTile
+              icon={<ClipboardList size={15} />}
+              label="Anketler"
+              value={String(overview.surveys.total)}
+              hint={
+                surveysEnabled
+                  ? `${overview.surveys.items.filter((s) => s.isActive && s.isPublished).length} yayında`
+                  : 'Modül kapalı'
+              }
+              tone={surveysEnabled ? 'neutral' : 'muted'}
+            />
+            <ModuleTile
+              icon={<ClipboardCheck size={15} />}
+              label="Denetim"
+              value={String(overview.audits.templates)}
+              hint={
+                overview.audits.completedResponses > 0
+                  ? `${overview.audits.completedResponses} yanıt · ort. %${overview.audits.avgScorePercent ?? '—'}`
+                  : 'Henüz yanıt yok'
+              }
+            />
+            <ModuleTile
+              icon={<Send size={15} />}
+              label="Kampanyalar"
+              value={String(campaignTotal)}
+              hint={pendingCampaigns > 0 ? `${pendingCampaigns} onay bekliyor` : 'Bekleyen onay yok'}
+              tone={pendingCampaigns > 0 ? 'attention' : 'neutral'}
+              href={pendingCampaigns > 0 ? '/admin/campaign-approvals' : undefined}
+            />
+            <ModuleTile
+              icon={<Users size={15} />}
+              label="Ekip"
+              value={String(overview.team.active)}
+              hint={overview.team.invited > 0 ? `${overview.team.invited} davet bekliyor` : 'Aktif üye'}
+            />
+            <ModuleTile
+              icon={<MessageSquare size={15} />}
+              label="Google Business"
+              value={overview.google.connected ? 'Bağlı' : 'Bağlı değil'}
+              hint={
+                overview.google.connected
+                  ? overview.google.locationTitle ?? 'Konum seçilmedi'
+                  : 'Owner hesabını bağlamamış'
+              }
+              tone={overview.google.connected ? 'neutral' : 'muted'}
+            />
+            <ModuleTile
+              icon={<Link2 size={15} />}
+              label="Platform linkleri"
+              value={
+                overview.platformLinks.failingProviders.length > 0
+                  ? `${overview.platformLinks.failingProviders.length} sorunlu`
+                  : 'Sağlıklı'
+              }
+              hint={
+                overview.platformLinks.failingProviders.length > 0
+                  ? overview.platformLinks.failingProviders.join(', ')
+                  : 'Son 24 saatte hata yok'
+              }
+              tone={overview.platformLinks.failingProviders.length > 0 ? 'attention' : 'neutral'}
+            />
+          </div>
+
+          {overview.surveys.items.length > 0 && (
+            <div className="rounded-2xl border border-[#EDEDED]">
+              <p className="pulse-eyebrow border-b border-[#EDEDED] px-4 py-2.5 text-[#737373]">Son anketler</p>
+              <ul className="divide-y divide-[#EDEDED]">
+                {overview.surveys.items.slice(0, 5).map((s) => (
+                  <li key={s.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-medium text-[#0A0A0A]">{s.title}</p>
+                      <p className="text-[11px] text-[#737373]">
+                        {s.responseCount} yanıt · {s.isActive && s.isPublished ? 'Yayında' : s.isPublished ? 'Pasif' : 'Taslak'}
+                      </p>
+                    </div>
+                    {s.isActive && s.isPublished && (
+                      <Link
+                        href={`/s/${s.slug}`}
+                        target="_blank"
+                        className="inline-flex shrink-0 items-center gap-1 text-[12px] font-medium text-[#0A0A0A] hover:underline underline-offset-2"
+                      >
+                        Aç <ExternalLink size={11} strokeWidth={2} />
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/admin/audits/stats`} className="bz-btn-ghost text-[12px]">
+              <ClipboardCheck size={12} strokeWidth={2} />
+              Denetim istatistikleri
+            </Link>
+            {ownerId && (
+              // Owner-side + admin changes on this business are logged with
+              // the owner's user id as targetId (writePanelAuditLog).
+              <Link href={`/admin/audit-logs?targetId=${ownerId}`} className="bz-btn-ghost text-[12px]">
+                <ShieldAlert size={12} strokeWidth={2} />
+                İşlem kaydı
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ModuleTile({
+  icon,
+  label,
+  value,
+  hint,
+  tone = 'neutral',
+  href,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  hint: string;
+  tone?: 'neutral' | 'muted' | 'attention';
+  href?: string;
+}) {
+  const toneClass =
+    tone === 'attention'
+      ? 'border-[#FDE68A] bg-[#FFFBEB]'
+      : tone === 'muted'
+        ? 'border-[#EDEDED] bg-[#FAFAFA]'
+        : 'border-[#EDEDED] bg-white';
+  const body = (
+    <>
+      <div className="flex items-center gap-2 text-[#737373]">
+        {icon}
+        <p className="pulse-eyebrow">{label}</p>
+      </div>
+      <p className="mt-2 truncate text-[20px] font-medium text-[#0A0A0A]">{value}</p>
+      <p className="mt-0.5 truncate text-[12px] text-[#737373]" title={hint}>
+        {hint}
+      </p>
+    </>
+  );
+  if (href) {
+    return (
+      <Link href={href} className={`block min-w-0 rounded-2xl border p-3 transition-colors hover:border-[#0A0A0A] ${toneClass}`}>
+        {body}
+      </Link>
+    );
+  }
+  return <div className={`min-w-0 rounded-2xl border p-3 ${toneClass}`}>{body}</div>;
 }

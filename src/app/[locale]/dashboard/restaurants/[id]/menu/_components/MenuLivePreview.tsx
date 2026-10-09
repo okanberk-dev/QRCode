@@ -41,7 +41,9 @@ export function MenuLivePreview({ restaurant, categories, locale }: MenuLivePrev
 
   return (
     <aside
-      className="sticky top-4 hidden lg:block"
+      // Masaüstü shell topbar'ı (~71px) da sticky; top-4 önizlemenin üst
+      // kısmını onun altına sokuyordu → topbar + 16px boşluk.
+      className="sticky top-[87px] hidden lg:block"
       aria-label={isTr ? 'Menü canlı önizlemesi' : 'Live menu preview'}
     >
       <div className="overflow-hidden rounded-3xl border border-[#EDEDED] bg-white shadow-sm">

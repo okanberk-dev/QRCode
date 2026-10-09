@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
 import { verifyJwt, isAdminRole } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import { resolveActiveRestaurantId } from '@/lib/active-business';
 import SurveysClient from './_components/SurveysClient';
 
@@ -47,9 +48,17 @@ export default async function OwnerSurveysPage({ params, searchParams }: PagePro
     redirect(`/${locale}/auth/login?next=/${locale}/dashboard/surveys`);
   }
 
+  // Team members included — same scope the API layer resolves
+  // (getScopedRestaurantIds). `userId: payload.userId` hid every
+  // restaurant from invited team members.
+  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+    userId: payload.userId,
+    role: payload.role,
+    email: payload.email,
+  });
   const restaurants = await prisma.restaurant.findMany({
-    where: { userId: payload.userId, isActive: true },
-    select: { id: true, name: true },
+    where: { id: { in: scopedIds }, isActive: true },
+    select: { id: true, name: true, surveysEnabled: true },
     orderBy: { createdAt: 'asc' },
   });
   const initialActiveRestaurantId = resolveActiveRestaurantId({
@@ -61,7 +70,11 @@ export default async function OwnerSurveysPage({ params, searchParams }: PagePro
   return (
     <SurveysClient
       locale={locale}
-      restaurants={restaurants.map((r) => ({ id: r.id, name: r.name }))}
+      restaurants={restaurants.map((r) => ({
+        id: r.id,
+        name: r.name,
+        surveysEnabled: r.surveysEnabled,
+      }))}
       initialActiveRestaurantId={initialActiveRestaurantId}
     />
   );

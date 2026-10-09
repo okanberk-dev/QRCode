@@ -11,6 +11,8 @@ import {
   roleLabel,
 } from '@/lib/team-invite';
 import { sendTeamInviteEmail } from '@/lib/email';
+import { rateLimit } from '@/lib/rate-limit';
+import { writePanelAuditLog } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 
@@ -122,11 +124,46 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Every invite sends a Buaze-branded mail to an arbitrary address with
+  // owner-controlled text — cap the volume per owner (spam / phishing).
+  const limit = await rateLimit(`team:invite:${actor.id}`, 20, 60 * 60 * 1000);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Çok fazla davet gönderildi. Lütfen daha sonra tekrar deneyin.', code: 'rate_limited' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } },
+    );
+  }
+
   const rawBody = await req.json().catch(() => null);
   const parsed = validateBody<z.infer<typeof InviteSchema>>(InviteSchema, rawBody);
   if (!parsed.ok) return parsed.response;
 
   const { email, role: roleInput, name: nameInput, locations: locationsInput } = parsed.data;
+
+  // Re-invite goes through this same upsert. Without these guards it
+  // (a) bypassed the 1h cooldown that /resend-invite enforces, and
+  // (b) silently demoted an ACTIVE member back to "invited", cutting their
+  // access until they accepted again.
+  const existingMember = await prisma.teamMember.findUnique({
+    where: { ownerId_email: { ownerId: actor.id, email } },
+    select: { status: true, lastInvitedAt: true },
+  });
+  if (existingMember?.status === 'active') {
+    return NextResponse.json(
+      { error: 'Bu kişi zaten ekibinizde aktif.', code: 'already_active' },
+      { status: 409 },
+    );
+  }
+  if (
+    existingMember?.status === 'invited' &&
+    existingMember.lastInvitedAt &&
+    Date.now() - existingMember.lastInvitedAt.getTime() < 60 * 60 * 1000
+  ) {
+    return NextResponse.json(
+      { error: 'Bu adrese son 1 saat içinde davet gönderildi.', code: 'cooldown' },
+      { status: 429 },
+    );
+  }
   const role = roleInput ?? 'manager';
   const name = nameInput && nameInput.length > 0 ? nameInput : null;
 
@@ -185,6 +222,13 @@ export async function POST(req: NextRequest) {
       inviteTokenExpiresAt,
       lastInvitedAt: now,
     },
+  });
+
+  await writePanelAuditLog(actor, 'owner.team.invite', actor.id, {
+    memberId: member.id,
+    role,
+    locationCount: locations?.length ?? null,
+    reinvite: Boolean(existingMember),
   });
 
   // Mail gönderim — owner workspace info'su için User'ı oku.

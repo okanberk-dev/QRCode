@@ -73,13 +73,34 @@ export interface CustomerCampaignSendResult {
   totalCount: number;
 }
 
+// Dev-only fallback — kept byte-identical to the previous inline fallback so
+// tokens minted in local dev keep verifying. Never used in production.
+const DEV_UNSUBSCRIBE_SECRET = 'dev-secret-do-not-use-in-prod';
+
+/**
+ * Single source for the unsubscribe HMAC secret (sign + verify MUST use the
+ * same bytes). Mirrors `getSecret()` in auth.ts: a missing JWT_SECRET in
+ * production throws instead of silently signing with a public string — that
+ * fallback let anyone forge unsubscribe tokens for any campaign/contact.
+ */
+function requireUnsubscribeSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      '[Buaze] JWT_SECRET is not configured in production. Refusing to sign/verify unsubscribe tokens.',
+    );
+  }
+  return DEV_UNSUBSCRIBE_SECRET;
+}
+
 /**
  * Generate a deterministic unsubscribe token for a (campaignId, contactKey)
  * pair. Token format: HMAC-SHA256 → base64url. Server-side `verifyToken` helper
  * decodes campaignId + contactKey from token.
  */
 function buildUnsubscribeToken(campaignId: string, contactKey: string): string {
-  const secret = process.env.JWT_SECRET || 'dev-secret-do-not-use-in-prod';
+  const secret = requireUnsubscribeSecret();
   const payload = `${campaignId}:${contactKey}`;
   const sig = crypto
     .createHmac('sha256', secret)
@@ -95,7 +116,8 @@ export function verifyUnsubscribeToken(token: string): { campaignId: string; con
     if (lastColon === -1) return null;
     const payload = decoded.slice(0, lastColon);
     const sig = decoded.slice(lastColon + 1);
-    const secret = process.env.JWT_SECRET || 'dev-secret-do-not-use-in-prod';
+    // Throws in prod without JWT_SECRET → caught below → null (fail closed).
+    const secret = requireUnsubscribeSecret();
     const expected = crypto
       .createHmac('sha256', secret)
       .update(payload)

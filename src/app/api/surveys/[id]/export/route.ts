@@ -6,10 +6,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPanelActorFromRequest } from '@/lib/auth';
 import { canAccessRestaurant } from '@/lib/panel-access';
+import { neutralizeCsvFormula } from '@/lib/csv-safe';
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
-  const str = String(value).replace(/[\r\n]+/g, ' ').replace(/"/g, '""');
+  // Formula-injection guard (src/lib/csv-safe.ts); real numbers untouched.
+  const raw = typeof value === 'number' ? String(value) : neutralizeCsvFormula(String(value));
+  const str = raw.replace(/[\r\n]+/g, ' ').replace(/"/g, '""');
   return /[,";]/.test(str) ? `"${str}"` : str;
 }
 

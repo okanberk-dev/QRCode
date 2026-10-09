@@ -5,6 +5,7 @@ import { getUserFromRequest } from '@/lib/auth';
 import { verifyToken } from '@/lib/totp';
 import { rateLimit, maybeSweep } from '@/lib/rate-limit';
 import { ApiErrors } from '@/lib/api-errors';
+import { writeAdminAuditLog } from '@/lib/audit-log';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -90,6 +91,15 @@ export async function POST(req: NextRequest) {
       totpSecret: null,
       twoFactorBackupCodes: [],
     },
+  });
+
+  // Security downgrade — always audit-logged.
+  await writeAdminAuditLog({
+    actorId: userId,
+    actorSource: 'user',
+    action: 'owner.account.2fa_disabled',
+    targetId: userId,
+    payload: {},
   });
 
   return NextResponse.json({ ok: true });

@@ -9,13 +9,19 @@ export const dynamic = 'force-dynamic';
 const VALID_FONTS = new Set(['Space Grotesk', 'Inter', 'Manrope', 'system']);
 const SLOGAN_MAX = 140;
 
+// Raster formats only. `data:image/svg+xml` can carry <script> and is
+// mirrored into Restaurant.menuLogoUrl, which the public menu renders —
+// same allow-list as the restaurant PUT (A3 audit fix).
+const DATA_URL_RASTER_RE = /^data:image\/(jpeg|jpg|png|webp|gif|avif);base64,/i;
+
 function normalizeImageUrl(value: unknown, maxDataUrlBytes = 300_000) {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value !== 'string') return 'invalid';
   const raw = value.trim();
   if (!raw) return null;
-  const isDataUrl = raw.startsWith('data:image/');
-  if (isDataUrl && raw.length <= maxDataUrlBytes) return raw;
+  if (raw.startsWith('data:')) {
+    return DATA_URL_RASTER_RE.test(raw) && raw.length <= maxDataUrlBytes ? raw : 'invalid';
+  }
   try {
     const url = new URL(raw);
     if ((url.protocol === 'http:' || url.protocol === 'https:') && raw.length <= 1000) return raw;
@@ -75,7 +81,8 @@ export async function GET(req: NextRequest) {
   const access = await requireAccess(req, restaurantId);
   if ('error' in access) return NextResponse.json({ error: access.error }, { status: access.status });
 
-  const [settings, restaurant] = await Promise.all([
+  // §40.1 — single pooled connection.
+  const [settings, restaurant] = await prisma.$transaction([
     prisma.brandSettings.findUnique({ where: { restaurantId } }),
     prisma.restaurant.findUnique({
       where: { id: restaurantId },
@@ -113,7 +120,11 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   let body: Record<string, unknown> = {};
   try {
-    body = await req.json();
+    const parsed = await req.json();
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+    }
+    body = parsed as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
@@ -130,75 +141,77 @@ export async function PUT(req: NextRequest) {
   });
   if (!restaurant) return NextResponse.json({ error: 'restaurant_not_found' }, { status: 404 });
 
-  const logoUrl = normalizeImageUrl(body.logoUrl);
+  // Partial update: a field that is ABSENT from the body is left as is;
+  // `null` / '' clears it. The PUT used to treat every field as required —
+  // the cover upload/remove calls (which send only `coverImageUrl`) always
+  // failed with `invalid_accent_font`, and any caller that did include
+  // accentFont silently wiped the logo, favicon, colours and slogan and
+  // nulled Restaurant.menuLogoUrl / menuAccentColor.
+  const has = (key: string) => Object.prototype.hasOwnProperty.call(body, key);
+
+  const logoUrl = has('logoUrl') ? normalizeImageUrl(body.logoUrl) : undefined;
   if (logoUrl === 'invalid') return NextResponse.json({ error: 'invalid_logo_url' }, { status: 400 });
 
-  const faviconUrl = normalizeImageUrl(body.faviconUrl);
+  const faviconUrl = has('faviconUrl') ? normalizeImageUrl(body.faviconUrl) : undefined;
   if (faviconUrl === 'invalid') return NextResponse.json({ error: 'invalid_favicon_url' }, { status: 400 });
 
   // Section 2 — Kapak görseli (Faz 1 MVP). 16:9 görsel; base64 data URL daha
-  // geniş olabilir (yaklaşık 500KB). Boş string clear, undefined dokunma.
-  const coverImageUrl =
-    body.coverImageUrl === undefined ? undefined : normalizeImageUrl(body.coverImageUrl, 500_000);
+  // geniş olabilir (yaklaşık 500KB).
+  const coverImageUrl = has('coverImageUrl') ? normalizeImageUrl(body.coverImageUrl, 500_000) : undefined;
   if (coverImageUrl === 'invalid') {
     return NextResponse.json({ error: 'invalid_cover_image_url' }, { status: 400 });
   }
 
-  const primaryColor = normalizeColor(body.primaryColor);
+  const primaryColor = has('primaryColor') ? normalizeColor(body.primaryColor) : undefined;
   if (primaryColor === 'invalid') return NextResponse.json({ error: 'invalid_primary_color' }, { status: 400 });
 
-  const secondaryColor = normalizeColor(body.secondaryColor);
+  const secondaryColor = has('secondaryColor') ? normalizeColor(body.secondaryColor) : undefined;
   if (secondaryColor === 'invalid') return NextResponse.json({ error: 'invalid_secondary_color' }, { status: 400 });
 
-  const accentColor = normalizeColor(body.accentColor);
+  const accentColor = has('accentColor') ? normalizeColor(body.accentColor) : undefined;
   if (accentColor === 'invalid') return NextResponse.json({ error: 'invalid_accent_color' }, { status: 400 });
 
-  const accentFont = body.accentFont === null || body.accentFont === ''
-    ? null
-    : typeof body.accentFont === 'string' && VALID_FONTS.has(body.accentFont)
-      ? body.accentFont
-      : undefined;
-  if (accentFont === undefined) return NextResponse.json({ error: 'invalid_accent_font' }, { status: 400 });
+  let accentFont: string | null | undefined;
+  if (has('accentFont')) {
+    if (body.accentFont === null || body.accentFont === '') accentFont = null;
+    else if (typeof body.accentFont === 'string' && VALID_FONTS.has(body.accentFont)) accentFont = body.accentFont;
+    else return NextResponse.json({ error: 'invalid_accent_font' }, { status: 400 });
+  }
 
-  const slogan = normalizeSlogan(body.slogan);
+  const slogan = has('slogan') ? normalizeSlogan(body.slogan) : undefined;
   if (slogan === 'invalid') return NextResponse.json({ error: 'invalid_slogan' }, { status: 400 });
+
+  const fields = {
+    ...(logoUrl !== undefined ? { logoUrl } : {}),
+    ...(faviconUrl !== undefined ? { faviconUrl } : {}),
+    ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
+    ...(primaryColor !== undefined ? { primaryColor } : {}),
+    ...(secondaryColor !== undefined ? { secondaryColor } : {}),
+    ...(accentColor !== undefined ? { accentColor } : {}),
+    ...(accentFont !== undefined ? { accentFont } : {}),
+    ...(slogan !== undefined ? { slogan } : {}),
+  };
+  if (Object.keys(fields).length === 0) {
+    return NextResponse.json({ error: 'no_fields' }, { status: 400 });
+  }
 
   const settings = await prisma.brandSettings.upsert({
     where: { restaurantId },
-    create: {
-      restaurantId,
-      logoUrl,
-      faviconUrl,
-      // coverImageUrl undefined → omit on create (Prisma default null).
-      ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
-      primaryColor,
-      secondaryColor,
-      accentColor,
-      accentFont,
-      slogan,
-    },
-    update: {
-      logoUrl,
-      faviconUrl,
-      ...(coverImageUrl !== undefined ? { coverImageUrl } : {}),
-      primaryColor,
-      secondaryColor,
-      accentColor,
-      accentFont,
-      slogan,
-    },
+    create: { restaurantId, ...fields },
+    update: fields,
   });
 
   // Mirror logo + accent + primary onto Restaurant for public-surface read perf
-  // (CLAUDE.md §19.3 edge cache; menu/PublicMenuView/QR landing reuse).
-  await prisma.restaurant.update({
-    where: { id: restaurantId },
-    data: {
-      menuLogoUrl: logoUrl,
-      menuAccentColor: accentColor,
-      ...(primaryColor ? { primaryColor } : {}),
-    },
-  });
+  // (CLAUDE.md §19.3 edge cache; menu/PublicMenuView/QR landing reuse) —
+  // only the fields this request actually changed.
+  const mirror = {
+    ...(logoUrl !== undefined ? { menuLogoUrl: logoUrl } : {}),
+    ...(accentColor !== undefined ? { menuAccentColor: accentColor } : {}),
+    ...(primaryColor ? { primaryColor } : {}),
+  };
+  if (Object.keys(mirror).length > 0) {
+    await prisma.restaurant.update({ where: { id: restaurantId }, data: mirror });
+  }
 
   return NextResponse.json({
     ok: true,

@@ -12,6 +12,7 @@ import { sectorIdToLabel } from '@/lib/sectors';
 import { ensureOnboardingConsents } from '@/lib/legal/consent';
 import { isSupportedLegalLocale, type LegalLocale } from '@/lib/legal/keys';
 import { getClientIp } from '@/lib/rate-limit';
+import { ApiErrors } from '@/lib/api-errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +35,12 @@ export async function POST(req: NextRequest) {
   const actor = await getPanelActorFromRequest(req);
   if (!actor || actor.source !== 'user') {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  // Same allowlist as POST /api/restaurants: this endpoint auto-creates a
+  // PUBLIC restaurant owned by the caller, so a team_member (incl. viewer)
+  // must not be able to mint an orphan live business via onboarding.
+  if (actor.role !== 'restaurant_owner') {
+    return ApiErrors.forbidden('Bu işlem için yetkiniz yok');
   }
 
   // Body opsiyonel — finish-later akışında boş POST kabul edilir.

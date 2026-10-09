@@ -66,7 +66,9 @@ export function PageHeader({
              compact yoğun 3-col layout (Yorumlar/Müşteriler/Analitik için
              22-32px) ezici hissedilmesini önler. `bz-h-tight-2` Space Grotesk
              weight 500 + tight tracking sabit. */
-          className="bz-h-tight-2 mt-1"
+          // min-w-0 + break-words: tek kelimelik uzun işletme adları 375px'te
+          // taşıp kırpılıyordu.
+          className="bz-h-tight-2 mt-1 min-w-0 break-words"
           style={titleStyle}
         >
           {title}

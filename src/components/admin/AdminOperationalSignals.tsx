@@ -103,7 +103,7 @@ export function AdminOperationalSignals({ bulkRows, destructiveRows }: Props) {
         <div className="flex items-center justify-between gap-2">
           <Eyebrow>SON TOPLU İŞLEMLER</Eyebrow>
           <Link
-            href="/admin/audit-logs?source=admin&action=bulk"
+            href="/admin/audit-logs?actorSource=admin&action=bulk"
             className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0A0A0A] hover:underline"
           >
             Tümü

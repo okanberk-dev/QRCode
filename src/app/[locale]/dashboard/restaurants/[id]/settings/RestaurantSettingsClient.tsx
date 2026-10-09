@@ -25,6 +25,7 @@ import { BusinessWebsiteSettings } from "@/components/dashboard/settings/section
 import { BusinessOperationalSettings } from "@/components/dashboard/settings/sections/BusinessOperationalSettings";
 import { BusinessSecuritySettings } from "@/components/dashboard/settings/sections/BusinessSecuritySettings";
 import { DangerZone } from "@/components/dashboard/settings/sections/DangerZone";
+import SettingsLoading from "./loading";
 
 /**
  * Amber dot rendered next to a tab label when that section has unfilled
@@ -63,6 +64,8 @@ export interface RestaurantPayload {
   googlePlaceId: string | null;
   notificationEmail: string | null;
   isActive: boolean;
+  /** Superadmin pause — owner status controls are locked while true. */
+  suspendedByAdmin: boolean;
   // Faz 2 — entegrasyon alanları
   googleReviewUrl: string | null;
   googleEnabled: boolean;
@@ -231,7 +234,9 @@ export default function RestaurantSettingsClient({
         const res = await fetch(`/api/restaurants/${id}`);
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || "İşletme yüklenemedi.");
+          throw new Error(
+            data.error || (locale === "tr" ? "İşletme yüklenemedi." : "Could not load the business."),
+          );
         }
         const data = await res.json();
         if (cancelled) return;
@@ -248,6 +253,7 @@ export default function RestaurantSettingsClient({
           googlePlaceId: data.googlePlaceId ?? null,
           notificationEmail: data.notificationEmail ?? null,
           isActive: data.isActive ?? true,
+          suspendedByAdmin: data.suspendedByAdmin === true,
           googleReviewUrl: data.googleReviewUrl ?? null,
           googleEnabled: data.googleEnabled ?? true,
           yemekSepetiUrl: data.yemekSepetiUrl ?? null,
@@ -296,6 +302,8 @@ export default function RestaurantSettingsClient({
     return () => {
       cancelled = true;
     };
+    // locale only feeds the error copy; refetching on a language switch isn't needed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleSectionChange = (next: string) => {
@@ -306,10 +314,6 @@ export default function RestaurantSettingsClient({
     window.history.replaceState({}, "", url.toString());
   };
 
-  const handleCategoryChange = (category: string) => {
-    setRestaurant((prev) => (prev ? { ...prev, category } : prev));
-  };
-
   // Section component'leri kendi alt-tipiyle (RestaurantData) callback yapar.
   // Parent burada Partial olarak kabul edip mevcut state'in üzerine merge eder.
   // Bu sayede General + Brand + Integrations farklı subset'leri bağımsız save'leyebilir.
@@ -317,16 +321,15 @@ export default function RestaurantSettingsClient({
     setRestaurant((prev) => (prev ? { ...prev, ...partial } : prev));
   };
 
-  // §40.10 clean-slate — initialRestaurant boş + henüz fetch dönmedi durumu
-  // sadece admin impersonation veya team_member fallback senaryolarında
-  // görünür. Direct owner load yolunda bu blok atlanır.
-  if (loading) return null;
+  // Client-fetch path (admin impersonation / team_member fallback): show the
+  // same skeleton as the segment's loading.tsx instead of a blank page.
+  if (loading) return <SettingsLoading />;
 
   if (error || !restaurant) {
     return (
       <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
         <AlertBanner kind="danger">
-          {error || "İşletme bulunamadı."}
+          {error || (locale === "tr" ? "İşletme bulunamadı." : "Business not found.")}
         </AlertBanner>
         <div className="mt-4">
           <Link
@@ -334,12 +337,14 @@ export default function RestaurantSettingsClient({
             className="bz-btn-ghost inline-flex items-center gap-1.5"
           >
             <ArrowLeft size={14} />
-            İşletmelere dön
+            {locale === "tr" ? "İşletmelere dön" : "Back to businesses"}
           </Link>
         </div>
       </div>
     );
   }
+
+  const isTr = locale === "tr";
 
   // Public review surface URL — used by the quick action chips. Falls back
   // to relative `/r/{slug}` when env app URL is missing or local-host
@@ -375,7 +380,8 @@ export default function RestaurantSettingsClient({
       </Link>
       <PageHeader
         eyebrow={locale === "tr" ? "İŞLETME AYARLARI" : "BUSINESS SETTINGS"}
-        title={restaurant.name}
+        // Long names must wrap instead of overflowing at 375px.
+        title={<span className="break-words [overflow-wrap:anywhere]">{restaurant.name}</span>}
         description={`/r/${restaurant.slug}`}
         actions={
           <BusinessStatusBadge status={restaurant.isActive ? "active" : "disabled"} />
@@ -435,28 +441,32 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="general"
         active={active === "general"}
-        eyebrow="01 — KİMLİK"
-        title="Genel Bilgiler"
-        description="İşletmenin temel kimliği, iletişim bilgileri ve durumu."
+        eyebrow={isTr ? "01 — KİMLİK" : "01 — IDENTITY"}
+        title={isTr ? "Genel Bilgiler" : "General details"}
+        description={
+          isTr
+            ? "İşletmenin temel kimliği ve iletişim bilgileri."
+            : "Your business identity and contact details."
+        }
         actions={
           <span className="text-[#737373] text-[20px]" aria-hidden="true">
             <Building2 size={18} />
           </span>
         }
       >
-        <BusinessGeneralSettings
-          restaurant={restaurant}
-          onCategoryChange={handleCategoryChange}
-          onSaved={handleSaved}
-        />
+        <BusinessGeneralSettings restaurant={restaurant} locale={locale} onSaved={handleSaved} />
       </SettingsSection>
 
       <SettingsSection
         id="brand"
         active={active === "brand"}
-        eyebrow="02 — MARKA"
-        title="Marka Kimliği"
-        description="Logo, kapak, renk paleti, font ve slogan — public sayfanın görsel dili."
+        eyebrow={isTr ? "02 — MARKA" : "02 — BRAND"}
+        title={isTr ? "Marka Kimliği" : "Brand identity"}
+        description={
+          isTr
+            ? "Logo, kapak, renk paleti, font ve slogan — public sayfanın görsel dili."
+            : "Logo, cover, colour palette, font and tagline — the look of your public page."
+        }
         actions={
           <span className="text-[#737373] text-[20px]" aria-hidden="true">
             <Palette size={18} />
@@ -466,16 +476,20 @@ export default function RestaurantSettingsClient({
         <BusinessBrandSettings
           restaurantId={restaurant.id}
           restaurantName={restaurant.name}
-          isTr={locale === "tr"}
+          isTr={isTr}
         />
       </SettingsSection>
 
       <SettingsSection
         id="website"
         active={active === "website"}
-        eyebrow="03 — WEB SİTESİ"
-        title="Web sitesi entegrasyonu"
-        description="İşletmenizin web sitesine yorum widget'ı yerleştirin."
+        eyebrow={isTr ? "03 — WEB SİTESİ" : "03 — WEBSITE"}
+        title={isTr ? "Web sitesi entegrasyonu" : "Website integration"}
+        description={
+          isTr
+            ? "İşletmenizin web sitesine yorum widget'ı yerleştirin."
+            : "Embed a review widget on your website."
+        }
         actions={
           <span className="text-[#737373]" aria-hidden="true">
             <Globe size={18} />
@@ -494,56 +508,52 @@ export default function RestaurantSettingsClient({
       <SettingsSection
         id="operations"
         active={active === "operations"}
-        eyebrow="04 — OPERASYONEL"
-        title="Operasyonel ayarlar"
-        description="Çalışma saatleri ve geçici kapalı durumu."
+        eyebrow={isTr ? "04 — OPERASYONEL" : "04 — OPERATIONS"}
+        title={isTr ? "Operasyonel ayarlar" : "Operational settings"}
+        description={
+          isTr ? "Çalışma saatleri ve geçici kapalı durumu." : "Opening hours and temporary closure."
+        }
         actions={
           <span className="text-[#737373]" aria-hidden="true">
             <Clock size={18} />
           </span>
         }
       >
-        <BusinessOperationalSettings
-          restaurant={restaurant}
-          onSaved={handleSaved}
-        />
+        <BusinessOperationalSettings restaurant={restaurant} locale={locale} onSaved={handleSaved} />
       </SettingsSection>
 
       <SettingsSection
         id="security"
         active={active === "security"}
-        eyebrow="05 — GÜVENLİK"
-        title="Güvenlik & erişim"
-        description="İşletme aktiflik durumu."
+        eyebrow={isTr ? "05 — GÜVENLİK" : "05 — SECURITY"}
+        title={isTr ? "Güvenlik & erişim" : "Security & access"}
+        description={isTr ? "İşletme aktiflik durumu." : "Whether the business is active."}
         actions={
           <span className="text-[#737373]" aria-hidden="true">
             <Lock size={18} />
           </span>
         }
       >
-        <BusinessSecuritySettings
-          restaurant={restaurant}
-          onSaved={handleSaved}
-        />
+        <BusinessSecuritySettings restaurant={restaurant} locale={locale} onSaved={handleSaved} />
       </SettingsSection>
 
       <SettingsSection
         id="danger"
         active={active === "danger"}
-        eyebrow="06 — TEHLİKELİ BÖLGE"
-        title="Tehlikeli bölge"
-        description="Geri alınamaz veya yıkıcı işlemler. Dikkatli kullan."
+        eyebrow={isTr ? "06 — TEHLİKELİ BÖLGE" : "06 — DANGER ZONE"}
+        title={isTr ? "Tehlikeli bölge" : "Danger zone"}
+        description={
+          isTr
+            ? "Geri alınamaz veya yıkıcı işlemler. Dikkatli kullan."
+            : "Destructive or irreversible actions. Use with care."
+        }
         actions={
           <span className="text-[#991B1B]" aria-hidden="true">
             <AlertOctagon size={18} />
           </span>
         }
       >
-        <DangerZone
-          restaurant={restaurant}
-          locale={locale === "tr" ? "tr" : "en"}
-          onDeactivated={(next) => handleSaved(next)}
-        />
+        <DangerZone restaurant={restaurant} locale={locale} onDeactivated={(next) => handleSaved(next)} />
       </SettingsSection>
     </SettingsLayout>
   );

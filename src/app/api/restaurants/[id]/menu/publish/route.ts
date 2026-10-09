@@ -8,11 +8,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const gate = await requireRestaurantAccess(req, id);
   if (!gate.ok) return gate.res;
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Geçersiz JSON' }, { status: 400 });
+  const body: unknown = await req.json().catch(() => null);
+  // JSON `null` / primitives parsed fine but then crashed on
+  // `(null).menuPublished` → 500.
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
   const b = body as { menuPublished?: unknown };

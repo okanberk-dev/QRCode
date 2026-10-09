@@ -43,6 +43,7 @@ interface MemberDetail {
     trialEndsAt: string | null;
     isActive: boolean;
     deactivatedAt: string | null;
+    scheduledDeletionAt?: string | null;
     lastInvitedAt: string | null;
     locale: string;
     createdAt: string;
@@ -274,6 +275,14 @@ export default function MemberDetailPage({
                 {' · '}
                 <span className="text-[#DC2626] font-medium">
                   Silinmiş (silinme tarihi: {dateLabel(user.deactivatedAt)})
+                </span>
+              </>
+            )}
+            {user.isActive && user.scheduledDeletionAt && (
+              <>
+                {' · '}
+                <span className="text-[#DC2626] font-medium">
+                  Owner hesabını silme talebinde bulundu — kalıcı silinme: {dateLabel(user.scheduledDeletionAt)}
                 </span>
               </>
             )}

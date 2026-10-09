@@ -4,17 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Building2, Globe, Info, Loader2, Phone, Pin } from "lucide-react";
 import {
   AlertBanner,
-  BusinessStatusBadge,
   Field,
   PlatformChip,
   PulseSelect,
-  APSwitch,
   type PlatformId,
 } from "@/components/ui";
 import { SECTORS, getSectorByLabel } from "@/lib/sectors";
 import { getSectorPlatforms } from "@/lib/sector-platforms";
 import { SettingsCard } from "../SettingsCard";
 import { UnsavedChangesBar } from "../UnsavedChangesBar";
+import { restaurantSaveErrorMessage } from "../restaurant-status";
 
 interface RestaurantData {
   id: string;
@@ -28,7 +27,6 @@ interface RestaurantData {
   phone: string | null;
   googlePlaceId: string | null;
   notificationEmail: string | null;
-  isActive: boolean;
   /** Phase 8c+ §38.26 — Owner-tanımlı hedef puan, Analytics 14-haftalık trend
    *  chart için. null = henüz ayarlanmadı (chart 4.0 fallback). */
   targetRating: number | null;
@@ -36,8 +34,7 @@ interface RestaurantData {
 
 interface BusinessGeneralSettingsProps {
   restaurant: RestaurantData;
-  /** Notify parent when category changes (Section 3 platform list re-renders). */
-  onCategoryChange?: (category: string) => void;
+  locale?: "tr" | "en";
   /** Optional: parent receives the freshly persisted snapshot after save. */
   onSaved?: (next: RestaurantData) => void;
 }
@@ -56,7 +53,6 @@ interface FormState {
   phone: string;
   googlePlaceId: string;
   notificationEmail: string;
-  isActive: boolean;
   /** Empty string = "henüz ayarlanmadı" (DB null). Number-string parse save'de. */
   targetRating: string;
 }
@@ -73,7 +69,6 @@ function toForm(r: RestaurantData): FormState {
     phone: r.phone ?? "",
     googlePlaceId: r.googlePlaceId ?? "",
     notificationEmail: r.notificationEmail ?? "",
-    isActive: r.isActive ?? true,
     targetRating:
       typeof r.targetRating === "number" ? r.targetRating.toFixed(1) : "",
   };
@@ -87,14 +82,20 @@ function isDirty(a: FormState, b: FormState) {
  * Section 1 — İşletmenin temel bilgileri (Genel Bilgiler).
  *
  * Field'lar tek bir `<form>` içinde, sticky `<UnsavedChangesBar>` `dirty`
- * olduğunda görünür. Kategori değişimi parent'a iletilir → Section 3'ün
- * platform listesi sektör whitelist'ine göre anında re-render olur.
+ * olduğunda görünür. Sektör değişimi yalnız local form state'ini günceller;
+ * parent kaydetten sonra `onSaved` ile haberdar olur.
+ *
+ * Aktiflik durumu (isActive) bilinçli olarak burada YOK — tek kontrol
+ * Güvenlik sekmesinde. Bu form da `isActive` gönderiyordu; başka sekmede
+ * yapılan devre dışı bırakma, burada eski değerle kaydedilince geri açılıyordu.
  */
 export function BusinessGeneralSettings({
   restaurant,
-  onCategoryChange,
+  locale = "tr",
   onSaved,
 }: BusinessGeneralSettingsProps) {
+  const isTr = locale !== "en";
+  const t = isTr ? COPY.tr : COPY.en;
   const [form, setForm] = useState<FormState>(() => toForm(restaurant));
   const [initial, setInitial] = useState<FormState>(() => toForm(restaurant));
   const [saving, setSaving] = useState(false);
@@ -102,7 +103,9 @@ export function BusinessGeneralSettings({
   const [success, setSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormState, string>>>({});
 
-  // Sync when parent passes a fresh restaurant prop (e.g. switcher change).
+  // Resync ONLY when a different business is loaded. Keying on the object
+  // re-ran after every parent merge (our own onSaved, another section's
+  // save), which wiped unsaved edits and the "Kaydedildi" confirmation.
   useEffect(() => {
     const next = toForm(restaurant);
     setForm(next);
@@ -110,7 +113,8 @@ export function BusinessGeneralSettings({
     setFieldErrors({});
     setError(null);
     setSuccess(null);
-  }, [restaurant]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurant.id]);
 
   const dirty = useMemo(() => isDirty(form, initial), [form, initial]);
 
@@ -118,9 +122,6 @@ export function BusinessGeneralSettings({
     setForm((prev) => ({ ...prev, [key]: value }));
     setFieldErrors((prev) => ({ ...prev, [key]: undefined }));
     if (success) setSuccess(null);
-    if (key === "category" && typeof value === "string" && onCategoryChange) {
-      onCategoryChange(value);
-    }
   };
 
   const visiblePlatforms = useMemo<PlatformId[]>(() => {
@@ -130,31 +131,31 @@ export function BusinessGeneralSettings({
 
   const validate = (): boolean => {
     const next: Partial<Record<keyof FormState, string>> = {};
-    if (!form.name.trim()) next.name = "İşletme adı zorunlu.";
-    else if (form.name.length > NAME_MAX) next.name = `En fazla ${NAME_MAX} karakter.`;
+    if (!form.name.trim()) next.name = t.nameRequired;
+    else if (form.name.length > NAME_MAX) next.name = t.maxChars(NAME_MAX);
     if (form.slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(form.slug)) {
-      next.slug = "Sadece küçük harf, rakam ve tire kullanılabilir.";
+      next.slug = t.slugInvalid;
     }
     if (form.description.length > DESCRIPTION_MAX) {
-      next.description = `En fazla ${DESCRIPTION_MAX} karakter.`;
+      next.description = t.maxChars(DESCRIPTION_MAX);
     }
     if (form.website.trim()) {
       try {
         const u = new URL(form.website.trim());
-        if (!/^https?:$/.test(u.protocol)) next.website = "http(s):// ile başlamalı.";
+        if (!/^https?:$/.test(u.protocol)) next.website = t.websiteProtocol;
       } catch {
-        next.website = "Geçerli bir URL girin.";
+        next.website = t.urlInvalid;
       }
     }
     if (form.notificationEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.notificationEmail.trim())) {
-      next.notificationEmail = "Geçerli bir e-posta girin.";
+      next.notificationEmail = t.emailInvalid;
     }
     // Phase 8c+ §38.26 — targetRating range validation (1.0–5.0).
     const targetRaw = form.targetRating.trim();
     if (targetRaw) {
       const parsed = Number(targetRaw.replace(',', '.'));
       if (!Number.isFinite(parsed) || parsed < 1 || parsed > 5) {
-        next.targetRating = "Hedef puan 1.0 – 5.0 arasında olmalı.";
+        next.targetRating = t.targetRange;
       }
     }
     setFieldErrors(next);
@@ -164,7 +165,7 @@ export function BusinessGeneralSettings({
   const handleSave = async () => {
     if (saving) return;
     if (!validate()) {
-      setError("Lütfen alanları kontrol edin.");
+      setError(t.checkFields);
       return;
     }
     setSaving(true);
@@ -189,7 +190,6 @@ export function BusinessGeneralSettings({
         phone: form.phone.trim() || null,
         googlePlaceId: form.googlePlaceId.trim() || null,
         notificationEmail: form.notificationEmail.trim() || null,
-        isActive: form.isActive,
         targetRating: targetRatingValue,
       };
       const res = await fetch(`/api/restaurants/${restaurant.id}`, {
@@ -199,18 +199,18 @@ export function BusinessGeneralSettings({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Kaydedilemedi.");
+        throw new Error(restaurantSaveErrorMessage(data, locale, t.saveFailed));
       }
       const updated = await res.json();
       setInitial(form);
-      setSuccess("Kaydedildi. Genel bilgiler güncellendi.");
+      setSuccess(t.saved);
       onSaved?.({
         ...restaurant,
         ...payload,
         ...updated,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Kaydedilemedi.";
+      const msg = err instanceof Error ? err.message : t.saveFailed;
       setError(msg);
     } finally {
       setSaving(false);
@@ -235,11 +235,11 @@ export function BusinessGeneralSettings({
 
       <SettingsCard
         icon={<Building2 size={18} />}
-        title="Kimlik"
-        description="Müşteri sayfanda ve panelde görünen temel bilgiler."
+        title={t.identityTitle}
+        description={t.identityDesc}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="İşletme adı" required error={fieldErrors.name}>
+          <Field label={t.name} required error={fieldErrors.name}>
             <input
               className="bz-input"
               type="text"
@@ -251,8 +251,8 @@ export function BusinessGeneralSettings({
             />
           </Field>
           <Field
-            label="URL slug"
-            hint={`/r/${form.slug || "..."} — değiştirirsen QR linkleri tazelenir.`}
+            label={t.slug}
+            hint={t.slugHint(form.slug || "...")}
             error={fieldErrors.slug}
           >
             <input
@@ -260,22 +260,25 @@ export function BusinessGeneralSettings({
               type="text"
               value={form.slug}
               onChange={(e) => set("slug", e.target.value.toLowerCase())}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
             />
           </Field>
-          <Field label="Sektör">
+          <Field label={t.sector}>
             <PulseSelect
               value={sectorOption?.id ?? "diger"}
               onChange={(value) => {
                 const opt = SECTORS.find((s) => s.id === value);
                 if (opt) set("category", opt.label);
               }}
-              options={SECTORS.map((s) => ({ value: s.id, label: s.display.tr }))}
-              ariaLabel="Sektör"
+              options={SECTORS.map((s) => ({ value: s.id, label: isTr ? s.display.tr : s.display.en }))}
+              ariaLabel={t.sector}
             />
           </Field>
           <Field
-            label="Kısa açıklama"
-            hint={`${descCount}/${DESCRIPTION_MAX} karakter — public sayfada görünür.`}
+            label={t.description}
+            hint={t.descHint(descCount, DESCRIPTION_MAX)}
             error={fieldErrors.description}
           >
             <textarea
@@ -297,9 +300,7 @@ export function BusinessGeneralSettings({
           >
             <Info size={14} className="shrink-0 mt-0.5 text-[#737373]" aria-hidden="true" />
             <div className="min-w-0">
-              <span className="text-[12px] text-[#525252]">
-                Bu sektörde görünecek platformlar:
-              </span>
+              <span className="text-[12px] text-[#525252]">{t.sectorPlatforms}</span>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {visiblePlatforms.map((pid) => (
                   <PlatformChip key={pid} id={pid} size={16} withLabel />
@@ -312,11 +313,11 @@ export function BusinessGeneralSettings({
 
       <SettingsCard
         icon={<Phone size={18} />}
-        title="İletişim ve adres"
-        description="Müşterilerin sana ulaşması için kullanılacak bilgiler."
+        title={t.contactTitle}
+        description={t.contactDesc}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Telefon" error={fieldErrors.phone}>
+          <Field label={t.phone} error={fieldErrors.phone}>
             <input
               className="bz-input"
               type="tel"
@@ -328,7 +329,7 @@ export function BusinessGeneralSettings({
               placeholder="+90 ..."
             />
           </Field>
-          <Field label="Bildirim e-postası" error={fieldErrors.notificationEmail}>
+          <Field label={t.notificationEmail} error={fieldErrors.notificationEmail}>
             <input
               className="bz-input"
               type="email"
@@ -340,10 +341,10 @@ export function BusinessGeneralSettings({
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck={false}
-              placeholder="bildirim@isletmem.com"
+              placeholder={t.emailPlaceholder}
             />
           </Field>
-          <Field label="Adres">
+          <Field label={t.address}>
             <input
               className="bz-input"
               type="text"
@@ -352,7 +353,7 @@ export function BusinessGeneralSettings({
               autoComplete="street-address"
             />
           </Field>
-          <Field label="Şehir">
+          <Field label={t.city}>
             <input
               className="bz-input"
               type="text"
@@ -366,34 +367,27 @@ export function BusinessGeneralSettings({
 
       <SettingsCard
         icon={<Globe size={18} />}
-        title="Web ve haritalar"
-        description="İşletmenin web kimliği ve Google Haritalar konumu."
+        title={t.webTitle}
+        description={t.webDesc}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field
-            label="Web sitesi"
-            hint="https:// ile başlamalı."
-            error={fieldErrors.website}
-          >
+          <Field label={t.website} hint={t.websiteHint} error={fieldErrors.website}>
             <input
               className="bz-input"
               type="url"
               value={form.website}
               onChange={(e) => set("website", e.target.value)}
-              placeholder="https://isletmem.com"
+              placeholder={t.websitePlaceholder}
               autoComplete="url"
             />
           </Field>
-          <Field
-            label="Google Maps / Place ID"
-            hint="Google profil URL'i veya yer (place) kimliği."
-          >
+          <Field label={t.placeId} hint={t.placeIdHint}>
             <input
               className="bz-input bz-mono"
               type="text"
               value={form.googlePlaceId}
               onChange={(e) => set("googlePlaceId", e.target.value)}
-              placeholder="ChIJ... veya https://maps.app.goo.gl/..."
+              placeholder={t.placeIdPlaceholder}
             />
           </Field>
         </div>
@@ -403,15 +397,11 @@ export function BusinessGeneralSettings({
           trend chart'ında dashed line + delta to target hint için. */}
       <SettingsCard
         icon={<Pin size={18} />}
-        title="Performans hedefi"
-        description="Analytics 14-haftalık trend grafiğinde hedef puan çizgisi olarak görünür. Ayarlamazsan 4.0 endüstri ortalaması kullanılır."
+        title={t.targetTitle}
+        description={t.targetDesc}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field
-            label="Hedef ortalama puan"
-            error={fieldErrors.targetRating}
-            hint="1.0 – 5.0 arası (örn. 4.5). Boş bırakırsan 4.0 fallback."
-          >
+          <Field label={t.targetLabel} error={fieldErrors.targetRating} hint={t.targetHint}>
             <input
               className="bz-input"
               type="text"
@@ -425,31 +415,6 @@ export function BusinessGeneralSettings({
         </div>
       </SettingsCard>
 
-      <SettingsCard
-        icon={<Pin size={18} />}
-        title="Durum"
-        description="Pasif yaparsan müşteri /r/<slug> sayfası 'aktif değil' uyarısı gösterir."
-        actions={
-          <BusinessStatusBadge status={form.isActive ? "active" : "disabled"} />
-        }
-      >
-        <div className="flex items-center gap-3">
-          <APSwitch
-            checked={form.isActive}
-            onChange={(next) => set("isActive", next)}
-            ariaLabel="İşletme aktif"
-          />
-          <span className="text-[13px] text-[#0A0A0A]">
-            {form.isActive ? "İşletme aktif" : "İşletme devre dışı"}
-          </span>
-        </div>
-        {!form.isActive && (
-          <p className="text-[12.5px] text-[#92400E] mt-3">
-            Devre dışı: yorum kabul edilmez, müşteri sayfası kapalı görünür.
-          </p>
-        )}
-      </SettingsCard>
-
       <UnsavedChangesBar
         dirty={dirty}
         saving={saving}
@@ -457,16 +422,104 @@ export function BusinessGeneralSettings({
         onReset={handleReset}
         error={error}
         success={dirty ? null : success}
+        locale={locale}
       />
 
       {saving && (
         <div className="sr-only" aria-live="polite">
           <Loader2 aria-hidden="true" />
-          Kaydediliyor
+          {t.saving}
         </div>
       )}
     </div>
   );
 }
+
+const COPY = {
+  tr: {
+    nameRequired: "İşletme adı zorunlu.",
+    maxChars: (n: number) => `En fazla ${n} karakter.`,
+    slugInvalid: "Sadece küçük harf, rakam ve tire kullanılabilir.",
+    websiteProtocol: "http(s):// ile başlamalı.",
+    urlInvalid: "Geçerli bir URL girin.",
+    emailInvalid: "Geçerli bir e-posta girin.",
+    targetRange: "Hedef puan 1.0 – 5.0 arasında olmalı.",
+    checkFields: "Lütfen alanları kontrol edin.",
+    saveFailed: "Kaydedilemedi.",
+    saved: "Kaydedildi. Genel bilgiler güncellendi.",
+    saving: "Kaydediliyor",
+    identityTitle: "Kimlik",
+    identityDesc: "Müşteri sayfanda ve panelde görünen temel bilgiler.",
+    name: "İşletme adı",
+    slug: "URL slug",
+    slugHint: (slug: string) => `/r/${slug} — değiştirirsen QR linkleri tazelenir.`,
+    sector: "Sektör",
+    description: "Kısa açıklama",
+    descHint: (n: number, max: number) => `${n}/${max} karakter — public sayfada görünür.`,
+    sectorPlatforms: "Bu sektörde görünecek platformlar:",
+    contactTitle: "İletişim ve adres",
+    contactDesc: "Müşterilerin sana ulaşması için kullanılacak bilgiler.",
+    phone: "Telefon",
+    notificationEmail: "Bildirim e-postası",
+    emailPlaceholder: "bildirim@isletmem.com",
+    address: "Adres",
+    city: "Şehir",
+    webTitle: "Web ve haritalar",
+    webDesc: "İşletmenin web kimliği ve Google Haritalar konumu.",
+    website: "Web sitesi",
+    websiteHint: "https:// ile başlamalı.",
+    websitePlaceholder: "https://isletmem.com",
+    placeId: "Google Maps / Place ID",
+    placeIdHint: "Google profil URL'i veya yer (place) kimliği.",
+    placeIdPlaceholder: "ChIJ... veya https://maps.app.goo.gl/...",
+    targetTitle: "Performans hedefi",
+    targetDesc:
+      "Analytics 14-haftalık trend grafiğinde hedef puan çizgisi olarak görünür. Ayarlamazsan 4.0 endüstri ortalaması kullanılır.",
+    targetLabel: "Hedef ortalama puan",
+    targetHint: "1.0 – 5.0 arası (örn. 4.5). Boş bırakırsan 4.0 fallback.",
+  },
+  en: {
+    nameRequired: "Business name is required.",
+    maxChars: (n: number) => `At most ${n} characters.`,
+    slugInvalid: "Use lowercase letters, numbers and hyphens only.",
+    websiteProtocol: "Must start with http(s)://.",
+    urlInvalid: "Enter a valid URL.",
+    emailInvalid: "Enter a valid email.",
+    targetRange: "Target rating must be between 1.0 and 5.0.",
+    checkFields: "Please check the highlighted fields.",
+    saveFailed: "Could not save.",
+    saved: "Saved. General details updated.",
+    saving: "Saving",
+    identityTitle: "Identity",
+    identityDesc: "Core details shown on your customer page and in the panel.",
+    name: "Business name",
+    slug: "URL slug",
+    slugHint: (slug: string) => `/r/${slug} — changing it refreshes your QR links.`,
+    sector: "Sector",
+    description: "Short description",
+    descHint: (n: number, max: number) => `${n}/${max} characters — shown on the public page.`,
+    sectorPlatforms: "Platforms shown for this sector:",
+    contactTitle: "Contact & address",
+    contactDesc: "How customers reach you.",
+    phone: "Phone",
+    notificationEmail: "Notification email",
+    emailPlaceholder: "alerts@mybusiness.com",
+    address: "Address",
+    city: "City",
+    webTitle: "Web & maps",
+    webDesc: "Your business website and Google Maps location.",
+    website: "Website",
+    websiteHint: "Must start with https://.",
+    websitePlaceholder: "https://mybusiness.com",
+    placeId: "Google Maps / Place ID",
+    placeIdHint: "Google profile URL or place ID.",
+    placeIdPlaceholder: "ChIJ... or https://maps.app.goo.gl/...",
+    targetTitle: "Performance target",
+    targetDesc:
+      "Shown as the target line on the 14-week Analytics trend chart. If unset, the 4.0 industry average is used.",
+    targetLabel: "Target average rating",
+    targetHint: "Between 1.0 and 5.0 (e.g. 4.5). Leave empty for the 4.0 fallback.",
+  },
+};
 
 export default BusinessGeneralSettings;

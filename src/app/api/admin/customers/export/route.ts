@@ -10,6 +10,7 @@ import {
   computeLastChannel,
   type CustomerSegment,
 } from '@/lib/customers';
+import { csvCell } from '@/lib/csv-safe';
 
 // CSV export of the feedback-derived admin customer list. Mirrors the filter
 // surface of GET /api/admin/customers but returns the full filtered set (no
@@ -65,8 +66,8 @@ function toBool(raw: string | null) {
 }
 
 function esc(v: string | number | null | undefined): string {
-  const s = v === null || v === undefined ? '' : String(v);
-  return `"${s.replace(/"/g, '""')}"`;
+  // Formula-injection safe (src/lib/csv-safe.ts) — same quoting as before.
+  return csvCell(v);
 }
 
 export async function GET(req: NextRequest) {

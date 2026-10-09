@@ -408,7 +408,7 @@ function TopProductsTable({ rows, copy }: { rows: ProductRow[]; copy: Copy; isTr
       {rows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
       ) : (
-        <div className="no-scrollbar overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">
@@ -483,7 +483,7 @@ function LowInterestTable({ rows, copy }: { rows: LowInterestRow[]; copy: Copy }
       {rows.length === 0 ? (
         <p className="py-10 text-center text-xs font-bold text-[#6B7280]">{copy.topProductsEmpty}</p>
       ) : (
-        <div className="no-scrollbar overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-[10px] font-semibold uppercase tracking-widest text-[#6B7280]">

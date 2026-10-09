@@ -45,6 +45,14 @@ interface PulseSelectProps {
   className?: string;
   disabled?: boolean;
   placeholder?: string;
+  /** <Field> cloneElement ile id + aria-* enjekte eder; trigger'a uygulanmazsa
+   *  <label htmlFor> boşa düşer ve hint/error ekran okuyucuya bağlanmaz. */
+  id?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: boolean;
+  "aria-required"?: boolean;
+  /** Görünür bir etiketin id'si (ariaLabel yerine). */
+  "aria-labelledby"?: string;
 }
 
 export function PulseSelect({
@@ -55,8 +63,14 @@ export function PulseSelect({
   className = "",
   disabled = false,
   placeholder,
+  id,
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
+  "aria-required": ariaRequired,
+  "aria-labelledby": ariaLabelledBy,
 }: PulseSelectProps) {
-  const triggerId = useId();
+  const generatedId = useId();
+  const triggerId = id || generatedId;
   const listboxId = `${triggerId}-listbox`;
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -241,6 +255,10 @@ export function PulseSelect({
         aria-expanded={open}
         aria-controls={listboxId}
         aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
+        aria-describedby={ariaDescribedBy}
+        aria-invalid={ariaInvalid}
+        aria-required={ariaRequired}
         disabled={disabled}
         onClick={toggleMenu}
         onKeyDown={onTriggerKeyDown}

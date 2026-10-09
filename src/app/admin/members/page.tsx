@@ -76,6 +76,7 @@ export default async function AdminMembersPage({
     ...m,
     trialEndsAt: m.trialEndsAt ? m.trialEndsAt.toISOString() : null,
     deactivatedAt: m.deactivatedAt ? m.deactivatedAt.toISOString() : null,
+    scheduledDeletionAt: m.scheduledDeletionAt ? m.scheduledDeletionAt.toISOString() : null,
     lastInvitedAt: m.lastInvitedAt ? m.lastInvitedAt.toISOString() : null,
     createdAt: m.createdAt.toISOString(),
   }));
@@ -102,6 +103,7 @@ async function loadMembers(
         trialEndsAt: true,
         isActive: true,
         deactivatedAt: true,
+        scheduledDeletionAt: true,
         lastInvitedAt: true,
         createdAt: true,
         _count: { select: { restaurants: true } },

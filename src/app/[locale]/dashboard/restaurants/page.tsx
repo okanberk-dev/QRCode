@@ -65,7 +65,10 @@ export default async function DashboardRestaurantsPage({ params }: PageProps) {
   const restaurants =
     scopedIds && scopedIds.length > 0
       ? await prisma.restaurant.findMany({
-          where: { id: { in: scopedIds }, isActive: true },
+          // No isActive filter: a paused business used to vanish from this
+          // list, leaving the owner no visible way to reactivate it (the
+          // card already renders paused / "paused by Buaze" states).
+          where: { id: { in: scopedIds } },
           select: {
             id: true,
             slug: true,
@@ -74,6 +77,7 @@ export default async function DashboardRestaurantsPage({ params }: PageProps) {
             notificationEmail: true,
             primaryColor: true,
             isActive: true,
+            suspendedByAdmin: true,
             createdAt: true,
             _count: { select: { feedbacks: true } },
           },

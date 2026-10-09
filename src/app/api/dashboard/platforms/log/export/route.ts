@@ -4,6 +4,7 @@ import { getPanelActorFromRequest } from '@/lib/auth';
 import { getScopedRestaurantIds } from '@/lib/panel-access';
 import { rateLimit } from '@/lib/rate-limit';
 import { PROVIDER_LABELS } from '@/lib/integration-domains';
+import { neutralizeCsvFormula } from '@/lib/csv-safe';
 
 // §38.52 — Workspace-level Platform Bağlantı Log'u CSV export. Tasarım kaynağı:
 // .design-owner-2026/page-platforms.jsx PageHeader actions "Bağlantı log'u"
@@ -21,7 +22,8 @@ const HISTORY_DAYS = 90;
 
 function csvEscape(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '';
-  const str = String(value);
+  // Formula-injection guard (src/lib/csv-safe.ts); real numbers untouched.
+  const str = typeof value === 'number' ? String(value) : neutralizeCsvFormula(value);
   if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
     return `"${str.replace(/"/g, '""')}"`;
   }
