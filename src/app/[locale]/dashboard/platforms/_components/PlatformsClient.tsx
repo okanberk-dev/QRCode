@@ -139,6 +139,20 @@ export default function PlatformsClient({
     }
   }, [queryRestaurantId, rows]);
 
+  // "Değiştir" links from the provider page and settings land on
+  // #yonlendirme. On client navigation Next applies the hash scroll while
+  // loading.tsx is still on screen (the section does not exist yet), and
+  // when the URL names no business the skeleton is up until `resolved`. So
+  // scroll once the real content is rendered. scrollIntoView also scrolls
+  // the lg panel scroll container (§42.5.1); the section has scroll-mt-24.
+  useEffect(() => {
+    if (!resolved || window.location.hash !== '#yonlendirme') return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById('yonlendirme')?.scrollIntoView({ block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [resolved]);
+
   const restaurant = rows.find((row) => row.id === selectedId) ?? rows[0];
   const restaurantChecks = useMemo(() => checks[restaurant.id] ?? {}, [checks, restaurant.id]);
 

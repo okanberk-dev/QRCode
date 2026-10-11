@@ -15,6 +15,9 @@ import {
   type PlatformEnabledField,
   type PlatformUrlField,
 } from '@/lib/platform-management';
+import { latestChecksForRestaurants } from '@/lib/platform-link-test';
+import { isExternalReviewProvider } from '@/lib/restaurant-features';
+import type { LatestCheckLite } from '@/lib/platform-link-status';
 import PlatformProviderWizard, {
   type ProviderRestaurantInfo,
 } from './_components/PlatformProviderWizard';
@@ -28,6 +31,11 @@ const PAGE_WRAPPER =
   'mx-auto w-full max-w-[1280px] space-y-5 px-4 sm:px-7 py-6 lg:py-8 ' +
   '[&_:is(a,button,input,summary)]:scroll-mt-24 ' +
   '[&_:is(a,button,input,summary)]:scroll-mb-[calc(var(--dash-bottom-nav-h,0px)+16px)]';
+
+// Same window as the overview (platforms/page.tsx) so both pages read the
+// same status for the same link. The daily cron keeps active links fresh;
+// the window only bounds the DISTINCT ON scan.
+const CHECK_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
 
 interface PageProps {
   params: Promise<{ locale: string; provider: string }>;
@@ -94,47 +102,73 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
     role: payload.role,
     email: payload.email,
   });
-  const restaurants = (await prisma.restaurant.findMany({
-    where: { id: { in: scopedIds } },
-    select: {
-      id: true,
-      name: true,
-      category: true,
-      address: true,
-      city: true,
-      googlePlaceId: true,
-      externalPlatformsEnabled: true,
-      defaultRedirectPlatform: true,
-      redirectMinRating: true,
-      googleReviewUrl: true,
-      yemekSepetiUrl: true,
-      getirYemekUrl: true,
-      trendyolYemekUrl: true,
-      tripAdvisorUrl: true,
-      airbnbUrl: true,
-      bookingUrl: true,
-      yandexUrl: true,
-      yelpUrl: true,
-      foursquareUrl: true,
-      instagramUrl: true,
-      facebookUrl: true,
-      whatsappUrl: true,
-      googleEnabled: true,
-      yemekSepetiEnabled: true,
-      getirEnabled: true,
-      trendyolEnabled: true,
-      tripAdvisorEnabled: true,
-      airbnbEnabled: true,
-      bookingEnabled: true,
-      yandexEnabled: true,
-      yelpEnabled: true,
-      foursquareEnabled: true,
-      // Stage 97 — WhatsApp review opt-in (CLAUDE.md §19.1).
-      whatsappReviewEnabled: true,
-      whatsappReviewMessage: true,
-    },
-    orderBy: { createdAt: 'asc' },
-  })) as RestaurantProviderRow[];
+  const since = new Date(Date.now() - CHECK_WINDOW_MS);
+  // One connection, one snapshot (CLAUDE.md §40.1 — pooler connection_limit=1).
+  // Checks are loaded on the server for EVERY scoped business — the status
+  // pill, the business summary and "Varsayılan platform yap" must never
+  // render from an empty check set (a failing link read as "Bağlı" until a
+  // client fetch returned), and switching business stays instant.
+  const [restaurantRows, checkRows] = await prisma.$transaction([
+    prisma.restaurant.findMany({
+      where: { id: { in: scopedIds } },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        address: true,
+        city: true,
+        googlePlaceId: true,
+        externalPlatformsEnabled: true,
+        defaultRedirectPlatform: true,
+        redirectMinRating: true,
+        googleReviewUrl: true,
+        yemekSepetiUrl: true,
+        getirYemekUrl: true,
+        trendyolYemekUrl: true,
+        tripAdvisorUrl: true,
+        airbnbUrl: true,
+        bookingUrl: true,
+        yandexUrl: true,
+        yelpUrl: true,
+        foursquareUrl: true,
+        instagramUrl: true,
+        facebookUrl: true,
+        whatsappUrl: true,
+        googleEnabled: true,
+        yemekSepetiEnabled: true,
+        getirEnabled: true,
+        trendyolEnabled: true,
+        tripAdvisorEnabled: true,
+        airbnbEnabled: true,
+        bookingEnabled: true,
+        yandexEnabled: true,
+        yelpEnabled: true,
+        foursquareEnabled: true,
+        // Stage 97 — WhatsApp review opt-in (CLAUDE.md §19.1).
+        whatsappReviewEnabled: true,
+        whatsappReviewMessage: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    }),
+    latestChecksForRestaurants(scopedIds, since),
+  ]);
+  const restaurants = restaurantRows as RestaurantProviderRow[];
+
+  const externalDisabledIds = new Set(
+    restaurants.filter((restaurant) => !restaurant.externalPlatformsEnabled).map((restaurant) => restaurant.id),
+  );
+  const checksByRestaurant: Record<string, Record<string, LatestCheckLite>> = {};
+  for (const check of checkRows) {
+    // Admin-gated external providers read as "Kapalı" regardless of their
+    // last check — mirror the overview and GET /integrations/checks.
+    if (externalDisabledIds.has(check.restaurantId) && isExternalReviewProvider(check.provider)) continue;
+    (checksByRestaurant[check.restaurantId] ??= {})[check.provider] = {
+      ok: check.ok,
+      checkedAt: new Date(check.checkedAt).toISOString(),
+      error: check.error,
+      statusCode: check.statusCode,
+    };
+  }
 
   // Query-only on the server; the client resolves the remembered business
   // after mount (skeleton until then when the URL names none).
@@ -195,6 +229,7 @@ export default async function PlatformProviderPage({ params, searchParams }: Pag
         platform={platform}
         restaurants={restaurants.map<ProviderRestaurantInfo>((restaurant) => ({ ...restaurant }))}
         selectedRestaurantId={selectedRestaurantId}
+        checksByRestaurant={checksByRestaurant}
         serverNow={Date.now()}
       />
     </div>

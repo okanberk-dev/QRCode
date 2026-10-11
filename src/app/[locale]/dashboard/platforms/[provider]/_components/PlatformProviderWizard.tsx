@@ -13,7 +13,7 @@
 // guarded by an inline Save, `beforeunload`, the back links and the business
 // switch.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -84,9 +84,16 @@ interface PlatformProviderWizardProps {
   platform: ManageablePlatformDef;
   restaurants: ProviderRestaurantInfo[];
   selectedRestaurantId: string;
+  /** Latest link check per provider for every scoped business, loaded on the
+   *  server so the first render already shows the real status. */
+  checksByRestaurant: Record<string, Record<string, LatestCheckLite>>;
   /** Server render time — keeps relative check times hydration-stable. */
   serverNow: number;
 }
+
+type ProviderChecks = Record<string, LatestCheckLite>;
+
+const NO_CHECKS: ProviderChecks = {};
 
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2! focus-visible:ring-[#0A0A0A] focus-visible:ring-offset-2';
@@ -147,6 +154,7 @@ export default function PlatformProviderWizard({
   platform,
   restaurants,
   selectedRestaurantId: initialSelectedRestaurantId,
+  checksByRestaurant,
   serverNow,
 }: PlatformProviderWizardProps) {
   const isTr = locale === 'tr';
@@ -168,7 +176,10 @@ export default function PlatformProviderWizard({
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [checks, setChecks] = useState<Record<string, LatestCheckLite>>({});
+  // Per-business check map (server snapshot + checks run in this session).
+  // Never starts empty for a business that has checks — an empty set read a
+  // failing link as "Bağlı" and offered "Varsayılan platform yap" on it.
+  const [checksByBusiness, setChecksByBusiness] = useState(checksByRestaurant);
   // True once the owner ran "Kontrol et" in this session — only then is the
   // result rendered inside the live region (the persisted check loaded on
   // mount is shown statically so it is not announced on page load).
@@ -187,6 +198,21 @@ export default function PlatformProviderWizard({
   useEffect(() => {
     setRestaurantRows(restaurants);
   }, [restaurants]);
+
+  useEffect(() => {
+    setChecksByBusiness(checksByRestaurant);
+  }, [checksByRestaurant]);
+
+  const checks = useMemo<ProviderChecks>(
+    () => (selectedRestaurantRowId ? checksByBusiness[selectedRestaurantRowId] ?? NO_CHECKS : NO_CHECKS),
+    [checksByBusiness, selectedRestaurantRowId],
+  );
+
+  // Writes go to the business the action was started for, even if the owner
+  // switched business while the request was in flight.
+  const patchChecks = useCallback((restaurantId: string, update: (current: ProviderChecks) => ProviderChecks) => {
+    setChecksByBusiness((all) => ({ ...all, [restaurantId]: update(all[restaurantId] ?? NO_CHECKS) }));
+  }, []);
 
   useEffect(() => setNowMs(Date.now()), []);
 
@@ -222,24 +248,6 @@ export default function PlatformProviderWizard({
     setFreshCheck(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platform.enabledField, platform.urlField, selectedRestaurantRowId]);
-
-  useEffect(() => {
-    if (!selectedRestaurantRowId) return;
-    let cancelled = false;
-    setChecks({});
-    fetch(`/api/restaurants/${selectedRestaurantRowId}/integrations/checks`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        if (cancelled) return;
-        setChecks((data?.checks as Record<string, LatestCheckLite> | undefined) ?? {});
-      })
-      .catch(() => {
-        if (!cancelled) setChecks({});
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedRestaurantRowId]);
 
   const dirty = url !== currentUrl || enabled !== currentEnabled;
   const gated = selectedRestaurant?.externalPlatformsEnabled === false && platform.externalReview === true;
@@ -349,7 +357,7 @@ export default function PlatformProviderWizard({
       }
       // A new URL invalidates the previous check result.
       if ((savedUrl || '').trim() !== currentUrl.trim()) {
-        setChecks((current) => {
+        patchChecks(selectedRestaurant.id, (current) => {
           const next = { ...current };
           delete next[platform.provider];
           return next;
@@ -377,12 +385,13 @@ export default function PlatformProviderWizard({
 
   const runTest = async () => {
     if (!selectedRestaurant || testing || dirty || gated || !currentUrl) return;
+    const testedRestaurantId = selectedRestaurant.id;
     setTesting(true);
     setError(null);
     setSuccess(null);
     try {
       const response = await fetch(
-        `/api/restaurants/${selectedRestaurant.id}/integrations/${platform.provider}/test?locale=${locale}`,
+        `/api/restaurants/${testedRestaurantId}/integrations/${platform.provider}/test?locale=${locale}`,
         { method: 'POST' },
       );
       const data = await response.json().catch(() => ({}));
@@ -399,7 +408,7 @@ export default function PlatformProviderWizard({
       if (!response.ok) {
         throw new Error(data?.error || (isTr ? 'Kontrol yapılamadı.' : 'Could not run the check.'));
       }
-      setChecks((current) => ({
+      patchChecks(testedRestaurantId, (current) => ({
         ...current,
         [platform.provider]: {
           ok: Boolean(data.ok),
@@ -564,7 +573,7 @@ export default function PlatformProviderWizard({
             // an unsaved edit.
             setUrl(next.googleReviewUrl ?? '');
             setEnabled(next.googleEnabled);
-            setChecks((current) => {
+            patchChecks(selectedRestaurant.id, (current) => {
               const copy = { ...current };
               delete copy.google;
               return copy;
@@ -755,7 +764,9 @@ export default function PlatformProviderWizard({
               <CheckResultLine check={lastCheck} locale={locale} nowMs={nowMs} />
             )}
           </div>
-          {!freshCheck && lastCheck && !dirty && !gated && (
+          {/* A leftover check for a link that has since been cleared reads as
+              "failed" next to an "Eksik" pill — only show it for a saved URL. */}
+          {!freshCheck && lastCheck && currentUrl && !dirty && !gated && (
             <CheckResultLine check={lastCheck} locale={locale} nowMs={nowMs} />
           )}
         </div>
