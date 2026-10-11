@@ -1,16 +1,14 @@
 'use client';
 
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Inbox, Loader2 } from 'lucide-react';
-import {
-  EmptyState,
-  PageHeader,
-  StatCard,
-} from '@/components/ui';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { AlertCircle, CheckCircle2, Inbox, X } from 'lucide-react';
+import { EmptyState } from '@/components/ui';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
+import { InboxToolbar } from '@/components/dashboard/feedbacks/InboxToolbar';
+import type { InboxTab } from '@/components/dashboard/feedbacks/InboxStatusTabs';
 
 import type {
   AdminTab,
@@ -25,52 +23,166 @@ import type {
   SentReply,
 } from './_components/types';
 import { AdminFeedbackList } from './_components/AdminFeedbackList';
-import { AdminFeedbackDetail } from './_components/AdminFeedbackDetail';
+import { AdminFeedbackDetail, AdminFeedbackDetailSkeleton } from './_components/AdminFeedbackDetail';
 import { AdminFeedbackFiltersModal } from './_components/AdminFeedbackFiltersModal';
 import { BulkActionToolbar } from './_components/BulkActionToolbar';
+import {
+  ADMIN_REVIEWS_ROOT_CLASS,
+  ADMIN_REVIEWS_SPLIT_CLASS,
+  AdminReviewsHeader,
+  AdminReviewsSkeleton,
+} from './_components/AdminReviewsChrome';
+
+// URL filter defaults (CLAUDE.md §36). Values equal to their default are
+// removed from the URL, so existing deep links keep working unchanged.
+const FILTER_DEFAULTS = {
+  tab: 'all' as AdminTab,
+  platform: 'all' as PlatformFilter,
+  // rating / days: parity with the owner inbox, existing API params.
+  rating: 'all',
+  days: 'all',
+  hasReply: 'all' as HasReplyFilter,
+  // boolean literal-type cast (CLAUDE.md §36.3).
+  flagged: false as boolean,
+  assigned: false as boolean,
+  // `/admin/restaurants/[id]` → "Yorum geçmişini gör" links here with
+  // ?restaurantId=… (shown as a removable chip in the toolbar).
+  restaurantId: '',
+};
+type FilterKey = keyof typeof FILTER_DEFAULTS;
+
+// Pagination — "Daha fazla göster" (25 per page).
+const PAGE_SIZE = 25;
+
+const LG_QUERY = '(min-width: 1024px)';
+/** Desktop split view (list + detail side by side). */
+const isLgUp = () => typeof window !== 'undefined' && window.matchMedia(LG_QUERY).matches;
+
+/** Reply API error → user copy. The raw `data.error` key is never shown (§0.7). */
+function replyErrorMessage(code: unknown, isTr: boolean): string {
+  switch (code) {
+    case 'content_blocked':
+      return isTr
+        ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
+        : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.';
+    case 'consent_required':
+      return isTr
+        ? 'Göndermeden önce sorumluluk onayını işaretleyin.'
+        : 'Confirm the responsibility checkbox before sending.';
+    case 'body_too_long':
+      return isTr
+        ? 'Yanıt en fazla 2000 karakter olabilir.'
+        : 'Replies can be at most 2,000 characters.';
+    case 'empty_body':
+      return isTr ? 'Boş yanıt gönderilemez.' : "A reply can't be empty.";
+    case 'rate_limited':
+      return isTr
+        ? 'Çok fazla yanıt gönderildi. Lütfen biraz sonra tekrar deneyin.'
+        : 'Too many replies sent. Please try again in a moment.';
+    default:
+      return isTr
+        ? 'Yanıt gönderilemedi. Lütfen tekrar deneyin.'
+        : 'The reply could not be sent. Please try again.';
+  }
+}
+
+/** Client-side tab + search filter over the loaded rows. */
+function applyClientFilters(
+  rows: FeedbackRow[],
+  tab: AdminTab,
+  search: string,
+  keptInNewTab: ReadonlySet<string>,
+  isTr: boolean,
+): FeedbackRow[] {
+  let out = rows;
+  if (tab === 'new') out = out.filter((r) => !r.isReplied || keptInNewTab.has(r.id));
+  else if (tab === 'attention') out = out.filter((r) => r.rating <= 2);
+  else if (tab === 'replied') out = out.filter((r) => r.isReplied);
+  const q = search.trim().toLocaleLowerCase(isTr ? 'tr-TR' : 'en-US');
+  if (q) {
+    out = out.filter(
+      (r) =>
+        (r.customerName ?? '').toLocaleLowerCase(isTr ? 'tr-TR' : 'en-US').includes(q) ||
+        (r.comment ?? '').toLocaleLowerCase(isTr ? 'tr-TR' : 'en-US').includes(q),
+    );
+  }
+  return out;
+}
 
 function AdminReviewsContent() {
   const { locale } = useAdminTranslation();
   const isTr = locale === 'tr';
 
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   // ============================================================
-  // URL filter state — useUrlFilter (CLAUDE.md §36)
+  // URL filter state — read through useUrlFilter (CLAUDE.md §36). Writes go
+  // through `history.replaceState`, not the hook's `router.replace`: the page
+  // is fully client-side, so the RSC round trip `router.replace` costs on
+  // every tab click / select change only delayed the URL — and with it the
+  // tab and the list — by a server hop (owner inbox parity). Next 15 keeps
+  // `useSearchParams` in sync with replaceState.
   // ============================================================
-  const filters = useUrlFilter({
-    tab: 'all' as AdminTab,
-    platform: 'all' as PlatformFilter,
-    hasReply: 'all' as HasReplyFilter,
-    flagged: false as boolean,
-    assigned: false as boolean,
-    // `/admin/restaurants/[id]` → "Yorum geçmişini gör" links here with
-    // ?restaurantId=…; the page ignored it and showed every restaurant.
-    restaurantId: '',
-  });
-  const { tab, platform, hasReply, flagged, assigned, restaurantId: restaurantFilter } = filters.values;
+  const filters = useUrlFilter(FILTER_DEFAULTS);
+  const {
+    tab,
+    platform,
+    rating,
+    days,
+    hasReply,
+    flagged,
+    assigned,
+    restaurantId: restaurantFilter,
+  } = filters.values;
+
+  const writeFilters = useCallback(
+    (updates: Partial<Record<FilterKey, string | boolean>>) => {
+      const next = new URLSearchParams(window.location.search);
+      for (const key of Object.keys(updates) as FilterKey[]) {
+        const value = updates[key];
+        if (value === undefined || value === FILTER_DEFAULTS[key]) next.delete(key);
+        else next.set(key, String(value));
+      }
+      const qs = next.toString();
+      window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
+    },
+    [pathname],
+  );
 
   // Notification deep-link target — `?focus=<feedbackId>` from NotificationBell.
   const focusId = searchParams.get('focus');
 
-  // Mobile push-route: `?view=detail` query'sini list/detail visibility
-  // toggle olarak kullanır. Desktop (≥lg) bunu ignore eder.
+  // Mobile push-route: `?view=detail` toggles list/detail below lg. Desktop
+  // always renders the split view.
   const view = searchParams.get('view');
   const idParam = searchParams.get('id');
   const isMobileDetailView = view === 'detail';
+  const isMobileDetailViewRef = useRef(isMobileDetailView);
+  isMobileDetailViewRef.current = isMobileDetailView;
+
+  // Live viewport flag (initial false → SSR-safe; the list is loading on the
+  // first paint anyway).
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(LG_QUERY);
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   // ============================================================
   // Local state
   // ============================================================
   const [rows, setRows] = useState<FeedbackRow[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
   const [counts, setCounts] = useState<CountsResp | null>(null);
   const [degraded, setDegraded] = useState<DegradedMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(focusId ?? idParam);
   const [search, setSearch] = useState('');
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersModal, setFiltersModal] = useState<null | 'all' | 'more'>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
@@ -82,40 +194,61 @@ function AdminReviewsContent() {
   const [suggesting, setSuggesting] = useState(false);
   const [aiSource, setAiSource] = useState<AiSource>(null);
   const [aiTone, setAiTone] = useState<AiTone>('warm');
+  // Reply status line (inside the composer / the replied gate).
   const [notice, setNotice] = useState<{ msg: string; tone: ReplyTone } | null>(null);
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Action toast (flag / assign / bulk) — visible even when the composer is
+  // not rendered (high-rated or replied reviews).
+  const [toast, setToast] = useState<{ msg: string; tone: 'success' | 'error' } | null>(null);
   const [sendEmail, setSendEmail] = useState(true);
-  // Per-message responsibility acknowledgement — resets after every send
-  // and every feedback switch (see reset effect below).
+  // §45 — per-message responsibility acknowledgement. Resets after every
+  // successful send and every review switch (effect below).
   const [confirmResponsibility, setConfirmResponsibility] = useState(false);
-  // §38.237 — Gönderilen yanıt thread'i. Owner paneli bu endpoint'i zaten
-  // tüketiyordu; admin yalnız "Yanıtlandı" rozeti görüyordu.
+  // §38.237 — sent reply thread.
   const [sentReplies, setSentReplies] = useState<SentReply[]>([]);
   const [sentLoading, setSentLoading] = useState(false);
-
-  // Belt-and-suspenders: whichever path changes the selected feedback the
-  // responsibility checkbox must not carry over to a different reply.
-  useEffect(() => {
-    setConfirmResponsibility(false);
-  }, [activeId]);
+  // Replies sent from this page, per review. A thread fetch that was already
+  // in flight when the admin hit Send can land after the POST response; it
+  // must neither drop the new reply nor list it twice.
+  const sentLocallyRef = useRef<Map<string, SentReply[]>>(new Map());
 
   // Notification deep-link pulse one-shot
-  const focusAppliedRef = useRef(false);
+  const focusAppliedRef = useRef<string | null>(null);
   const [pulsedId, setPulsedId] = useState<string | null>(null);
 
-  // Pagination — "Daha fazla göster" pattern. Initial 25 row first paint için
-  // yeterli; admin paneli ağır KPI grid + bulk toolbar hesabıyla yarışmasın,
-  // kullanıcı talep ettikçe +25.
-  const PAGE_SIZE = 25;
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  // Without these the admin saw "Henüz yorum yok" whenever the list fetch
-  // failed, while the previous filter's rows silently stayed in state.
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  // A failed list fetch shows an error + retry, never a silent "no reviews".
   const [listError, setListError] = useState(false);
   const [listReloadKey, setListReloadKey] = useState(0);
 
+  // Reviews answered while the "Yanıt bekliyor" tab is open stay listed (now
+  // shown as replied) until the tab changes or the list reloads — otherwise
+  // the row vanished from under the cursor right after sending.
+  const [keptInNewTab, setKeptInNewTab] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => {
+    setKeptInNewTab(new Set());
+  }, [tab]);
+
+  // Mobile list ↔ detail navigation bookkeeping (history API, §0.11).
+  const cameFromListRef = useRef(false);
+  const listScrollYRef = useRef(0);
+  const lastOpenedIdRef = useRef<string | null>(null);
+  const focusDetailOnOpenRef = useRef(false);
+
+  // Remembered business names for the restaurantId chip (rows can be empty
+  // under a filter or while loading).
+  const [restaurantNames, setRestaurantNames] = useState<Record<string, string>>({});
+
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  const searchRef = useRef(search);
+  searchRef.current = search;
+
   // ============================================================
-  // Build query params for /api/feedback (admin)
+  // Build query params for /api/feedback (existing params only).
   // ============================================================
   const buildListQuery = (targetPage: number, extra?: Record<string, string>) => {
     const query = new URLSearchParams({
@@ -123,6 +256,8 @@ function AdminReviewsContent() {
       limit: String(PAGE_SIZE),
     });
     if (platform !== 'all') query.set('platform', String(platform));
+    if (rating !== 'all') query.set('rating', String(rating));
+    if (days !== 'all') query.set('days', String(days));
     if (hasReply === 'pending') query.set('hasReply', 'false');
     if (flagged) query.set('isFlagged', 'true');
     if (assigned) query.set('isAssigned', 'me');
@@ -131,15 +266,37 @@ function AdminReviewsContent() {
     return query;
   };
 
+  const rememberNames = (list: FeedbackRow[]) => {
+    const found: Record<string, string> = {};
+    for (const r of list) {
+      if (r.restaurantId && r.restaurant?.name) found[r.restaurantId] = r.restaurant.name;
+    }
+    if (Object.keys(found).length > 0) setRestaurantNames((prev) => ({ ...prev, ...found }));
+  };
+
   // ============================================================
-  // Fetch list + counts (parallel)
+  // Fetch list + counts (parallel).
+  //
+  // §0.1 race guard: every list request takes a ticket from `listReqRef`; a
+  // response only writes state if its ticket is still the latest — for the
+  // list AND the counts, so a slow response from a previous filter can never
+  // overwrite the current one (or have a bulk action act on stale rows).
   // ============================================================
+  const listReqRef = useRef(0);
+
   useEffect(() => {
+    const req = ++listReqRef.current;
+    setLoading(true);
+    setPage(1);
+    setHasMore(false);
+    setTotal(null);
+    setListError(false);
+    setLoadMoreError(false);
+    setLoadingMore(false);
+    setKeptInNewTab(new Set());
+    // Selection belongs to the previous result set.
+    setSelectedIds(new Set());
     (async () => {
-      setLoading(true);
-      setPage(1);
-      setHasMore(false);
-      setListError(false);
       try {
         const [listRes, countsRes] = await Promise.all([
           fetch(`/api/feedback?${buildListQuery(1).toString()}`),
@@ -149,137 +306,163 @@ function AdminReviewsContent() {
               : '/api/feedback/counts',
           ),
         ]);
+        if (req !== listReqRef.current) return;
         if (listRes.ok) {
           const data = await listRes.json();
+          if (req !== listReqRef.current) return;
           const list: FeedbackRow[] = data.data ?? [];
           setRows(list);
-          setActiveId((c) => c ?? list[0]?.id ?? null);
+          rememberNames(list);
+          setActiveId((curr) => {
+            if (curr && list.some((r) => r.id === curr)) return curr;
+            // Desktop: fall back to the first row of the visible (tab +
+            // search) list. Below lg nothing is auto-selected; an explicitly
+            // opened mobile detail keeps its id.
+            if (isLgUp()) {
+              const visible = applyClientFilters(list, tabRef.current, searchRef.current, new Set(), isTr);
+              return visible[0]?.id ?? null;
+            }
+            return isMobileDetailViewRef.current ? curr : null;
+          });
           setDegraded(data?.meta?.degraded ?? null);
-          setSelectedIds(new Set()); // filter değişince selection sıfırla
+          const totalNum = Number(data?.meta?.total);
+          setTotal(Number.isFinite(totalNum) ? totalNum : list.length);
           const totalPages = Number(data?.meta?.totalPages ?? 1);
           setHasMore(totalPages > 1);
         } else {
           setRows([]);
           setActiveId(null);
           setDegraded(null);
-          setSelectedIds(new Set());
           setListError(true);
         }
-        if (countsRes.ok) setCounts(await countsRes.json());
+        if (countsRes.ok) {
+          const c = await countsRes.json().catch(() => null);
+          if (req !== listReqRef.current) return;
+          if (c) setCounts(c);
+        }
       } catch (err) {
+        if (req !== listReqRef.current) return;
         console.error(err);
         setRows([]);
         setActiveId(null);
         setDegraded(null);
-        setSelectedIds(new Set());
         setListError(true);
       }
-      setLoading(false);
+      if (req === listReqRef.current) setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [platform, hasReply, flagged, assigned, restaurantFilter, listReloadKey]);
+  }, [platform, rating, days, hasReply, flagged, assigned, restaurantFilter, listReloadKey]);
 
   const loadMoreRows = async () => {
     if (loadingMore || !hasMore) return;
+    const req = ++listReqRef.current;
     setLoadingMore(true);
+    setLoadMoreError(false);
     const nextPage = page + 1;
     try {
       const res = await fetch(`/api/feedback?${buildListQuery(nextPage).toString()}`);
-      if (res.ok) {
+      if (req !== listReqRef.current) return;
+      if (!res.ok) {
+        setLoadMoreError(true);
+      } else {
         const data = await res.json();
+        if (req !== listReqRef.current) return;
         const list: FeedbackRow[] = data.data ?? [];
         setRows((prev) => {
-          // Sayfalar arası overlap (yeni yorum eklenmesi vb.) → duplicate id
-          // skip: React key collision + UI jiter önler.
+          // Pages can overlap when new reviews arrive → skip duplicate ids.
           const seen = new Set(prev.map((r) => r.id));
           return [...prev, ...list.filter((r) => !seen.has(r.id))];
         });
+        rememberNames(list);
         setPage(nextPage);
+        const totalNum = Number(data?.meta?.total);
+        if (Number.isFinite(totalNum)) setTotal(totalNum);
         const totalPages = Number(data?.meta?.totalPages ?? 1);
         setHasMore(nextPage < totalPages);
       }
     } catch (err) {
+      if (req !== listReqRef.current) return;
       console.error(err);
+      setLoadMoreError(true);
     }
-    setLoadingMore(false);
+    if (req === listReqRef.current) setLoadingMore(false);
   };
-
-  // ============================================================
-  // Notification deep-link
-  // ============================================================
-  useEffect(() => {
-    if (!focusId || loading || focusAppliedRef.current) return;
-    if (!rows.some((r) => r.id === focusId)) return;
-    focusAppliedRef.current = true;
-    setActiveId(focusId);
-    requestAnimationFrame(() => {
-      const el = document.querySelector<HTMLElement>(`[data-feedback-id="${focusId}"]`);
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setPulsedId(focusId);
-      setTimeout(() => setPulsedId(null), 1800);
-    });
-  }, [focusId, loading, rows]);
 
   // ============================================================
   // Filtered list (client-side: tab + search)
   // ============================================================
-  const filtered = useMemo(() => {
-    let out = rows;
-    if (tab === 'new') out = out.filter((r) => !r.isReplied);
-    else if (tab === 'attention') out = out.filter((r) => r.rating <= 2);
-    else if (tab === 'replied') out = out.filter((r) => r.isReplied);
-    if (search) {
-      const q = search.toLowerCase();
-      out = out.filter(
-        (r) =>
-          (r.customerName ?? '').toLowerCase().includes(q) ||
-          (r.comment ?? '').toLowerCase().includes(q),
-      );
-    }
-    return out;
-  }, [rows, tab, search]);
+  const filtered = useMemo(
+    () => applyClientFilters(rows, tab, search, keptInNewTab, isTr),
+    [rows, tab, search, keptInNewTab, isTr],
+  );
 
   // `tab` and `search` filter purely client-side (they are absent from
-  // buildListQuery), so changing them does NOT re-run the fetch effect that
-  // clears the selection. Rows scrolled out of view stayed in `selectedIds`
-  // and the next bulk action hit them too. Same reset the server-side filters
-  // already get (CLAUDE.md §23.3.1 + Phase 11.21).
+  // buildListQuery), so they don't re-run the fetch effect that clears the
+  // selection. Rows hidden by them stayed selected and the next bulk action
+  // hit them too (CLAUDE.md §23.3.1 + Phase 11.21).
   useEffect(() => {
     setSelectedIds(new Set());
   }, [tab, search]);
 
-  const active = filtered.find((r) => r.id === activeId) || filtered[0] || null;
+  // Desktop: when the tab or search hides the selected review, move the
+  // selection to the first visible row (or clear it so the detail pane does
+  // not keep showing a review next to the list's "Yorum yok").
+  useEffect(() => {
+    if (!isLgUp() || loading) return;
+    setActiveId((curr) => {
+      if (curr && filtered.some((r) => r.id === curr)) return curr;
+      return filtered[0]?.id ?? null;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, search]);
 
-  // AI yalnız düşük puan + yanıtlanmamış yorumlar için (CLAUDE.md §15).
-  // Eski davranış suggest-reply'ı kullanıcı tıklayınca üretiyordu — bu zaten
-  // tek-defa pattern. Aktif yorum değişince composer state'i resetliyoruz.
+  const active = useMemo(() => {
+    const found = activeId ? rows.find((r) => r.id === activeId) : undefined;
+    if (found) return found;
+    // Desktop never shows an empty detail pane when rows are visible; mobile
+    // only shows a detail the admin actually opened.
+    return isDesktop ? filtered[0] ?? null : null;
+  }, [rows, activeId, filtered, isDesktop]);
+
+  const activeFeedbackId = active?.id ?? null;
+  const activeCustomerEmail = active?.customerEmail ?? null;
+
+  // Composer state follows the selected review: switching reviews drops the
+  // draft, the AI source, the notice and — §45 — the responsibility consent.
   useEffect(() => {
     setDraft('');
     setAiSource(null);
-    setSendEmail(Boolean(active?.customerEmail));
-  }, [active?.id, active?.customerEmail]);
+    setNotice(null);
+    setConfirmResponsibility(false);
+    setSendEmail(Boolean(activeCustomerEmail));
+  }, [activeFeedbackId, activeCustomerEmail]);
 
-  // §38.237 — Aktif yorum değişince gönderilen yanıtları çek. `cancelled`
-  // guard'ı hızlı satır değişiminde stale response'un yeni seçime
-  // yazılmasını engeller (owner panelindeki aynı pattern).
+  // §38.237 — sent replies of the selected review. `cancelled` guards against
+  // a stale response landing on a newer selection.
   useEffect(() => {
-    const id = active?.id;
-    if (!id) {
+    if (!activeFeedbackId) {
       setSentReplies([]);
       setSentLoading(false);
       return;
     }
     let cancelled = false;
     setSentLoading(true);
+    setSentReplies([]);
     (async () => {
       try {
-        const res = await fetch(`/api/feedback/${id}/reply`);
+        const res = await fetch(`/api/feedback/${activeFeedbackId}/reply`);
         if (cancelled) return;
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
-          setSentReplies(Array.isArray(data?.replies) ? data.replies : []);
+          if (cancelled) return;
+          const server: SentReply[] = Array.isArray(data?.replies) ? data.replies : [];
+          const known = new Set(server.map((r) => r.id));
+          const local = (sentLocallyRef.current.get(activeFeedbackId) ?? []).filter(
+            (r) => !known.has(r.id),
+          );
+          setSentReplies([...server, ...local]);
         } else {
-          setSentReplies([]);
+          setSentReplies(sentLocallyRef.current.get(activeFeedbackId) ?? []);
         }
       } catch {
         if (!cancelled) setSentReplies([]);
@@ -290,12 +473,46 @@ function AdminReviewsContent() {
     return () => {
       cancelled = true;
     };
-  }, [active?.id]);
+  }, [activeFeedbackId]);
 
+  // ============================================================
+  // Notification deep-link: select + scroll + lime pulse
+  // ============================================================
+  useEffect(() => {
+    if (!focusId || loading || focusAppliedRef.current === focusId) return;
+    if (!rows.some((r) => r.id === focusId)) return;
+    focusAppliedRef.current = focusId;
+    setActiveId(focusId);
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLElement>(`[data-feedback-id="${focusId}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setPulsedId(focusId);
+      setTimeout(() => setPulsedId(null), 1800);
+    });
+  }, [focusId, loading, rows]);
+
+  // ============================================================
+  // Notices
+  // ============================================================
+  // Reply status line dwell: 5s (success/info), 8s (error) — §38.15.
   const flash = (msg: string, tone: ReplyTone = 'info') => {
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
     setNotice({ msg, tone });
-    setTimeout(() => setNotice(null), 2600);
+    noticeTimerRef.current = setTimeout(() => setNotice(null), tone === 'error' ? 8000 : 5000);
   };
+  useEffect(
+    () => () => {
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    },
+    [],
+  );
+
+  // Toast auto-dismiss: 5s success, 8s error.
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), toast.tone === 'error' ? 8000 : 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const updateRow = (id: string, patch: Partial<FeedbackRow>) => {
     setRows((list) => list.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -319,9 +536,10 @@ function AdminReviewsContent() {
   // ============================================================
   const onSuggest = async (toneOverride?: AiTone) => {
     if (!active) return;
+    const targetId = active.id;
     setSuggesting(true);
     try {
-      const res = await fetch(`/api/feedback/${active.id}/suggest-reply`, {
+      const res = await fetch(`/api/feedback/${targetId}/suggest-reply`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ locale, tone: toneOverride }),
@@ -329,11 +547,11 @@ function AdminReviewsContent() {
       if (res.ok) {
         const data = await res.json();
         if (typeof data?.suggestion === 'string' && data.suggestion.length > 0) {
-          setDraft(data.suggestion);
+          setDraft(data.suggestion.slice(0, 2000));
           setAiSource((data.source as AiSource) ?? 'template');
         }
       } else if (res.status === 429) {
-        flash(isTr ? 'Çok sık istek — biraz bekle' : 'Too many requests — slow down', 'error');
+        flash(isTr ? 'Çok sık istek — biraz bekleyin.' : 'Too many requests — slow down.', 'error');
       } else {
         setDraft(buildReplyTemplate({ name: active.customerName, rating: active.rating, locale }));
         setAiSource('template-fallback');
@@ -346,7 +564,7 @@ function AdminReviewsContent() {
   };
 
   const onSend = async () => {
-    if (!active || !draft.trim() || !confirmResponsibility) return;
+    if (!active || sending || !draft.trim() || !confirmResponsibility) return;
     setSending(true);
     const wantsEmail = sendEmail && Boolean(active.customerEmail);
     const replySource =
@@ -371,19 +589,25 @@ function AdminReviewsContent() {
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         const wasReplied = active.isReplied;
-        updateRow(active.id, { isReplied: true });
+        if (tabRef.current === 'new') {
+          setKeptInNewTab((prev) => new Set(prev).add(active.id));
+        }
+        updateRow(active.id, { isReplied: true, hasPendingAiDraft: false });
         if (!wasReplied) bumpCounts({ new: -1, replied: 1 });
-        // §38.237 — thread'e optimistic ekle; refetch beklemeden görünür.
-        setSentReplies((list) => [
-          ...list,
-          {
-            id: data?.replyId ?? `tmp-${list.length}-${active.id}`,
-            body: draft,
-            channel: wantsEmail ? 'email' : 'internal',
-            status: data?.email?.status === 'failed' ? 'failed' : 'sent',
-            createdAt: new Date().toISOString(),
-          },
+        // §38.237 — thread entry from the POST response (`reply.id`), so it
+        // dedupes against a thread fetch that already contains it.
+        const entry: SentReply = {
+          id: data?.reply?.id ?? `tmp-${Date.now()}-${active.id}`,
+          body: data?.reply?.body ?? draft,
+          channel: data?.reply?.channel ?? (wantsEmail ? 'email' : 'internal'),
+          status: data?.reply?.status ?? (data?.email?.status === 'failed' ? 'failed' : 'sent'),
+          createdAt: data?.reply?.createdAt ?? new Date().toISOString(),
+        };
+        sentLocallyRef.current.set(active.id, [
+          ...(sentLocallyRef.current.get(active.id) ?? []),
+          entry,
         ]);
+        setSentReplies((list) => [...list.filter((r) => r.id !== entry.id), entry]);
         setDraft('');
         setAiSource(null);
         setConfirmResponsibility(false);
@@ -397,87 +621,90 @@ function AdminReviewsContent() {
           );
         } else if (emailStatus === 'failed') {
           flash(
-            isTr
-              ? 'Yanıt kaydedildi ama e-posta gönderilemedi'
-              : 'Saved but email delivery failed',
+            isTr ? 'Yanıt kaydedildi ama e-posta gönderilemedi' : 'Saved but email delivery failed',
             'error',
           );
         } else {
           flash(isTr ? 'Yanıt kaydedildi (dahili)' : 'Reply saved (internal)', 'success');
         }
       } else if (res.status === 401) {
-        flash(isTr ? 'Oturum süresi doldu' : 'Session expired', 'error');
-      } else if (res.status === 403) {
-        flash(isTr ? 'Yetkisiz erişim' : 'Forbidden', 'error');
+        flash(
+          isTr ? 'Oturum süresi doldu. Lütfen yeniden giriş yapın.' : 'Session expired. Please sign in again.',
+          'error',
+        );
       } else {
         const data = await res.json().catch(() => ({}));
-        const message =
-          data?.error === 'content_blocked'
+        flash(
+          res.status === 403 && data?.error !== 'consent_required'
             ? isTr
-              ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
-              : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.'
-            : data?.error === 'consent_required'
-              ? isTr
-                ? 'Göndermeden önce sorumluluk onayını işaretleyin.'
-                : 'Confirm the responsibility checkbox before sending.'
-              : isTr
-                ? `Hata: ${data.error ?? res.status}`
-                : `Error: ${data.error ?? res.status}`;
-        flash(message, 'error');
+              ? 'Bu yoruma yanıt verme yetkiniz yok.'
+              : 'You are not allowed to reply to this review.'
+            : replyErrorMessage(data?.error, isTr),
+          'error',
+        );
       }
     } catch {
-      flash(isTr ? 'Ağ hatası' : 'Network error', 'error');
+      flash(
+        isTr
+          ? 'Bağlantı hatası. Yanıt gönderilemedi, lütfen tekrar deneyin.'
+          : 'Network error. The reply was not sent, please try again.',
+        'error',
+      );
     }
     setSending(false);
   };
 
+  // Flag toggle — POST adds, DELETE removes (§38.238).
   const onFlag = async () => {
     if (!active || flagging) return;
+    const targetId = active.id;
+    const wasFlagged = active.isFlagged === true;
     setFlagging(true);
     try {
-      const res = await fetch(`/api/feedback/${active.id}/flag`, {
-        method: active.isFlagged ? 'DELETE' : 'POST',
+      const res = await fetch(`/api/feedback/${targetId}/flag`, {
+        method: wasFlagged ? 'DELETE' : 'POST',
         headers: { 'content-type': 'application/json' },
-        body: active.isFlagged ? undefined : JSON.stringify({}),
+        body: wasFlagged ? undefined : JSON.stringify({}),
       });
       if (res.ok) {
-        updateRow(active.id, { isFlagged: !active.isFlagged });
-        flash(
-          active.isFlagged
+        updateRow(targetId, { isFlagged: !wasFlagged });
+        setToast({
+          msg: wasFlagged
             ? isTr
               ? 'İşaret kaldırıldı'
               : 'Flag removed'
             : isTr
-              ? 'İşaretlendi'
-              : 'Flagged',
-          'success',
-        );
+              ? 'Yorum işaretlendi'
+              : 'Review flagged',
+          tone: 'success',
+        });
       } else {
-        flash(isTr ? 'İşaretleme başarısız' : 'Flag failed', 'error');
+        setToast({ msg: isTr ? 'İşaret güncellenemedi' : 'Could not update the flag', tone: 'error' });
       }
     } catch {
-      flash(isTr ? 'Ağ hatası' : 'Network error', 'error');
+      setToast({ msg: isTr ? 'Bağlantı hatası' : 'Network error', tone: 'error' });
     }
     setFlagging(false);
   };
 
   const onAssign = async () => {
     if (!active || assigning) return;
+    const targetId = active.id;
     setAssigning(true);
     try {
-      const res = await fetch(`/api/feedback/${active.id}/assign`, {
+      const res = await fetch(`/api/feedback/${targetId}/assign`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ assigneeId: 'self' }),
       });
       if (res.ok) {
-        updateRow(active.id, { isAssigned: true });
-        flash(isTr ? 'Size atandı' : 'Assigned to you', 'success');
+        updateRow(targetId, { isAssigned: true });
+        setToast({ msg: isTr ? 'Size atandı' : 'Assigned to you', tone: 'success' });
       } else {
-        flash(isTr ? 'Atama başarısız' : 'Assign failed', 'error');
+        setToast({ msg: isTr ? 'Atama başarısız' : 'Assign failed', tone: 'error' });
       }
     } catch {
-      flash(isTr ? 'Ağ hatası' : 'Network error', 'error');
+      setToast({ msg: isTr ? 'Bağlantı hatası' : 'Network error', tone: 'error' });
     }
     setAssigning(false);
   };
@@ -489,11 +716,8 @@ function AdminReviewsContent() {
     if (selectedIds.size === 0 || bulkBusy) return;
     setBulkBusy(true);
     try {
-      // §38.238 — /api/feedback/bulk validates `ids` with Zod `.max(50)`.
-      // This sent the whole selection in one request, so as soon as
-      // "load more" grew the list past 50 rows, select-all + any bulk
-      // action failed wholesale with a 400 and processed nothing. Send in
-      // server-sized chunks and aggregate the counters instead.
+      // §38.238 — /api/feedback/bulk validates `ids` with Zod `.max(50)`;
+      // send server-sized chunks and aggregate the counters.
       const BULK_ID_CAP = 50;
       const idList = Array.from(selectedIds);
       let processed = 0;
@@ -508,16 +732,16 @@ function AdminReviewsContent() {
           body: JSON.stringify({ ids: chunk, action }),
         });
         if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
           // 429 = the 10/min/actor bulk rate limit. Anything already
-          // processed stays processed, so report the partial result rather
-          // than implying nothing happened.
+          // processed stays processed, so report the partial result.
           failure =
             res.status === 429
               ? isTr
                 ? 'Hız sınırına takıldı, kalan yorumlar işlenmedi'
                 : 'Rate limited — remaining reviews were not processed'
-              : err.error?.message || (isTr ? 'Toplu işlem başarısız' : 'Bulk action failed');
+              : isTr
+                ? 'Toplu işlem başarısız'
+                : 'Bulk action failed';
           break;
         }
         const data = await res.json();
@@ -525,51 +749,47 @@ function AdminReviewsContent() {
         skipped += data.skipped ?? 0;
       }
 
-      {
-        flash(
-          failure
-            ? `${failure}${processed > 0 ? ` · ${processed}${isTr ? ' işlendi' : ' processed'}` : ''}`
-            : isTr
-              ? `${processed} yorum işlendi` + (skipped > 0 ? ` (${skipped} atlandı)` : '')
-              : `${processed} reviews processed` + (skipped > 0 ? ` (${skipped} skipped)` : ''),
-          failure ? 'error' : 'success',
-        );
-        setSelectedIds(new Set());
-        // Re-fetch to reflect new flag/assignment state. Mevcut filter'ları
-        // + load-more sonrası ulaşılan **toplam yüklü sayfayı** koruyarak
-        // (CLAUDE.md §11.21 — assignedToMe filter aktifken bulk sonrası liste
-        // yanlış genişlememeli; ayrıca load-more ile genişletilmiş liste
-        // bulk sonrası ilk sayfaya çökmemeli).
-        // §38.238 — /api/feedback clamps `limit` to 100 server-side. Asking
-        // for PAGE_SIZE * page (25, 50, 75, 125, …) silently returned only
-        // 100 rows past page 4, so rows the admin had already loaded
-        // disappeared after a bulk action and `page` no longer matched the
-        // list length. Clamp here so the request and the state agree.
-        const LIST_LIMIT_CAP = 100;
-        const refreshLimit = Math.min(PAGE_SIZE * page, LIST_LIMIT_CAP);
-        const refresh = await fetch(
-          `/api/feedback?${buildListQuery(1, { limit: String(refreshLimit) }).toString()}`,
-        );
-        if (refresh.ok) {
-          const d = await refresh.json();
-          const rows: FeedbackRow[] = d.data ?? [];
-          setRows(rows);
-          // Keep `page` consistent with what is actually loaded, otherwise
-          // the next "load more" skips a window.
-          setPage(Math.max(1, Math.ceil(rows.length / PAGE_SIZE)));
+      setToast({
+        msg: failure
+          ? `${failure}${processed > 0 ? ` · ${processed}${isTr ? ' işlendi' : ' processed'}` : ''}`
+          : isTr
+            ? `${processed} yorum işlendi` + (skipped > 0 ? ` (${skipped} atlandı)` : '')
+            : `${processed} reviews processed` + (skipped > 0 ? ` (${skipped} skipped)` : ''),
+        tone: failure ? 'error' : 'success',
+      });
+      setSelectedIds(new Set());
+      // Re-fetch to reflect the new flag / assignment / read state, keeping
+      // the filters and the number of rows already loaded. /api/feedback
+      // clamps `limit` to 100 (§38.238), so clamp here too and keep `page`
+      // consistent with what is actually loaded.
+      const req = ++listReqRef.current;
+      const LIST_LIMIT_CAP = 100;
+      const refreshLimit = Math.min(PAGE_SIZE * page, LIST_LIMIT_CAP);
+      const refresh = await fetch(
+        `/api/feedback?${buildListQuery(1, { limit: String(refreshLimit) }).toString()}`,
+      );
+      if (req === listReqRef.current && refresh.ok) {
+        const d = await refresh.json();
+        if (req === listReqRef.current) {
+          const next: FeedbackRow[] = d.data ?? [];
+          setRows(next);
+          setPage(Math.max(1, Math.ceil(next.length / PAGE_SIZE)));
+          setLoading(false);
         }
       }
     } catch {
-      flash(isTr ? 'Toplu işlem başarısız' : 'Bulk action failed', 'error');
+      setToast({ msg: isTr ? 'Toplu işlem başarısız' : 'Bulk action failed', tone: 'error' });
     }
     setBulkBusy(false);
   };
 
   // ============================================================
-  // Mobile push-route handlers
+  // List ↔ detail navigation (§0.11) — history API instead of router.push,
+  // so a row tap / back press costs no RSC server round-trip. Next 15 keeps
+  // useSearchParams in sync with pushState/replaceState.
   // ============================================================
   const buildUrl = (overrides: { id?: string | null; view?: 'detail' | null }) => {
-    const next = new URLSearchParams(searchParams.toString());
+    const next = new URLSearchParams(window.location.search);
     if (overrides.id !== undefined) {
       if (overrides.id === null) next.delete('id');
       else next.set('id', overrides.id);
@@ -584,18 +804,65 @@ function AdminReviewsContent() {
 
   const onSelectFeedback = (id: string) => {
     setActiveId(id);
-    router.push(buildUrl({ id, view: 'detail' }));
+    if (isLgUp()) {
+      // Desktop: keep the URL shareable without stacking a history entry
+      // per review.
+      window.history.replaceState(null, '', buildUrl({ id, view: null }));
+    } else {
+      cameFromListRef.current = true;
+      listScrollYRef.current = window.scrollY;
+      lastOpenedIdRef.current = id;
+      focusDetailOnOpenRef.current = true;
+      window.history.pushState(null, '', buildUrl({ id, view: 'detail' }));
+    }
   };
 
   const onBackToList = () => {
-    router.push(buildUrl({ view: null }));
+    if (cameFromListRef.current) {
+      cameFromListRef.current = false;
+      window.history.back();
+    } else {
+      window.history.replaceState(null, '', buildUrl({ view: null }));
+    }
   };
 
-  // Custom reset — sadece filter alanları, ?id ?view ?focus korunur.
+  // Mobile detail opened → start at the top and move focus to the title.
+  useEffect(() => {
+    if (!isMobileDetailView || !active || !focusDetailOnOpenRef.current) return;
+    focusDetailOnOpenRef.current = false;
+    const id = active.id;
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      document.getElementById(`feedback-detail-title-${id}`)?.focus({ preventScroll: true });
+    });
+  }, [isMobileDetailView, active]);
+
+  // Back to the list (in-app button or browser back) → restore the list
+  // scroll position and focus the row that was opened.
+  const prevDetailViewRef = useRef(isMobileDetailView);
+  useEffect(() => {
+    const was = prevDetailViewRef.current;
+    prevDetailViewRef.current = isMobileDetailView;
+    if (!was || isMobileDetailView || isLgUp()) return;
+    const y = listScrollYRef.current;
+    const openedId = lastOpenedIdRef.current;
+    requestAnimationFrame(() => {
+      window.scrollTo(0, y);
+      if (openedId) {
+        document.getElementById(`feedback-option-${openedId}`)?.focus({ preventScroll: true });
+      }
+    });
+  }, [isMobileDetailView]);
+
+  // Reset every filter + the tab + search; id / view / focus / restaurantId
+  // stay (the restaurant chip has its own ×).
   const onResetFilters = () => {
-    filters.setMany({
+    setSearch('');
+    writeFilters({
       tab: 'all',
       platform: 'all',
+      rating: 'all',
+      days: 'all',
       hasReply: 'all',
       flagged: false,
       assigned: false,
@@ -621,112 +888,141 @@ function AdminReviewsContent() {
     });
   };
 
-  const activeFilterCount =
+  const moreFiltersCount = (hasReply !== 'all' ? 1 : 0) + (flagged ? 1 : 0) + (assigned ? 1 : 0);
+  const allFiltersCount =
     (platform !== 'all' ? 1 : 0) +
-    (hasReply !== 'all' ? 1 : 0) +
-    (flagged ? 1 : 0) +
-    (assigned ? 1 : 0);
-  const hasActiveFilter = activeFilterCount > 0 || tab !== 'all';
+    (rating !== 'all' ? 1 : 0) +
+    (days !== 'all' ? 1 : 0) +
+    moreFiltersCount;
+  const hasActiveFilter = allFiltersCount > 0 || tab !== 'all' || search.trim() !== '';
+
+  // Status tabs. `/api/feedback/counts` covers the whole (business-scoped)
+  // inbox, so its numbers are only shown while no server-side filter narrows
+  // the list. With a filter, "Tümü" shows the filtered total from the list
+  // response and the other tabs only exact client-side counts (all rows
+  // loaded) — never a mismatched or placeholder number.
+  const serverFiltered = allFiltersCount > 0;
+  const countsReady = !loading && !listError;
+  const allLoaded = countsReady && !hasMore;
+  const localCounts = useMemo(
+    () => ({
+      new: rows.filter((r) => !r.isReplied).length,
+      attention: rows.filter((r) => r.rating <= 2).length,
+      replied: rows.filter((r) => r.isReplied).length,
+    }),
+    [rows],
+  );
+  const tabCount = (key: 'all' | 'new' | 'attention' | 'replied'): number | null => {
+    if (!countsReady) return null;
+    if (!serverFiltered && counts) return counts[key];
+    if (key === 'all') return total;
+    return allLoaded ? localCounts[key] : null;
+  };
+  const statusTabs: InboxTab[] = [
+    { id: 'all', label: isTr ? 'Tümü' : 'All', count: tabCount('all') },
+    { id: 'new', label: isTr ? 'Yanıt bekliyor' : 'Awaiting reply', count: tabCount('new') },
+    {
+      id: 'attention',
+      label: isTr ? 'Düşük puan' : 'Low rating',
+      count: tabCount('attention'),
+      title: isTr ? '1–2 yıldız' : '1–2 stars',
+      tone: 'danger',
+    },
+    { id: 'replied', label: isTr ? 'Yanıtlandı' : 'Replied', count: tabCount('replied') },
+  ];
+
+  const restaurantName = restaurantFilter
+    ? restaurantNames[restaurantFilter] ??
+      rows.find((r) => r.restaurantId === restaurantFilter)?.restaurant?.name ??
+      null
+    : null;
+  const restaurantChip = restaurantFilter ? (
+    <button
+      type="button"
+      onClick={() => writeFilters({ restaurantId: '' })}
+      className="inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-[#EAF9B8] px-3 text-[12px] font-medium text-[#0A0A0A] transition-colors hover:bg-[#DDF39A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1"
+      title={isTr ? 'İşletme filtresini kaldır' : 'Remove the business filter'}
+    >
+      <span className="truncate">
+        {isTr
+          ? `${restaurantName ?? 'Seçili işletme'} yorumları`
+          : `${restaurantName ?? 'Selected business'} reviews`}
+      </span>
+      <X size={13} strokeWidth={2.2} aria-hidden="true" className="shrink-0 text-[#525252]" />
+      <span className="sr-only">{isTr ? '— filtreyi kaldır' : '— remove filter'}</span>
+    </button>
+  ) : null;
+
+  // List highlight only where the detail is visible next to it.
+  const listActiveId = isDesktop ? active?.id ?? null : null;
 
   // ============================================================
   // Render
   // ============================================================
   return (
-    <div className="mx-auto max-w-[1600px] px-4 sm:px-7 py-6 lg:py-8 space-y-4">
-      {/* PageHeader — mobile detail view'inde gizli */}
-      <div className={isMobileDetailView ? 'hidden lg:block' : ''}>
-        <PageHeader
-          eyebrow={isTr ? 'YORUMLAR' : 'REVIEWS'}
-          title={isTr ? 'Yorum gelen kutusu' : 'Review inbox'}
-          description={
-            isTr
-              ? 'Tüm restoranlardan gelen yorumları tek panelden incele, yanıtla, işaretle veya sahibi atan.'
-              : 'Inspect, reply, flag, or assign reviews from all restaurants in one inbox.'
-          }
-        />
-        {restaurantFilter && (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => filters.set('restaurantId', '')}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#0A0A0A] bg-[#EAF9B8] px-3 py-1.5 text-[11px] font-medium text-[#0A0A0A]"
-            >
-              {isTr
-                ? `${rows[0]?.restaurant?.name ?? 'Seçili işletme'} yorumları`
-                : `${rows[0]?.restaurant?.name ?? 'Selected business'} reviews`}
-              <span className="text-[#525252]" aria-hidden>×</span>
-              <span className="sr-only">{isTr ? 'Filtreyi kaldır' : 'Clear filter'}</span>
-            </button>
-          </div>
-        )}
-      </div>
+    // Full-bleed inbox (owner parity, §38.62): header and toolbar carry their
+    // own padding, the split panes run edge to edge and scroll internally on
+    // lg. `w-full min-w-0` keeps the root at the viewport width on mobile —
+    // the old `mx-auto` wrapper shrank to its min-content width (490px at
+    // 390), clipping the right edge of every row.
+    <div className={ADMIN_REVIEWS_ROOT_CLASS}>
+      <AdminReviewsHeader isTr={isTr} className={isMobileDetailView ? 'hidden lg:block' : ''} />
 
-      {/* KPI özet — mobile detail view'inde gizli */}
-      {counts && !isMobileDetailView && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-          <StatCard
-            label={isTr ? 'Tüm yorumlar' : 'All reviews'}
-            value={(counts.all ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          />
-          <StatCard
-            label={isTr ? 'Yanıt bekleyen' : 'Pending reply'}
-            value={(counts.new ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-            accent="#C6F24E"
-          />
-          <StatCard
-            label={isTr ? 'Düşük puan (≤2★)' : 'Low rating (≤2★)'}
-            value={(counts.attention ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          />
-          <StatCard
-            label={isTr ? 'Yanıtlanmış' : 'Replied'}
-            value={(counts.replied ?? 0).toLocaleString(isTr ? 'tr-TR' : 'en-US')}
-          />
-        </div>
-      )}
+      <InboxToolbar
+        isTr={isTr}
+        className={isMobileDetailView ? 'hidden lg:block' : ''}
+        tabs={statusTabs}
+        activeTab={tab}
+        onTabChange={(id) => writeFilters({ tab: id as AdminTab })}
+        listId="feedback-list"
+        search={search}
+        onSearchChange={setSearch}
+        platform={String(platform)}
+        onPlatformChange={(v) => writeFilters({ platform: v as PlatformFilter })}
+        rating={String(rating)}
+        onRatingChange={(v) => writeFilters({ rating: v })}
+        days={String(days)}
+        onDaysChange={(v) => writeFilters({ days: v })}
+        moreFiltersCount={moreFiltersCount}
+        allFiltersCount={allFiltersCount}
+        onOpenMoreFilters={() => setFiltersModal('more')}
+        onOpenAllFilters={() => setFiltersModal('all')}
+        showClear={hasActiveFilter}
+        onClear={onResetFilters}
+        rightSlot={restaurantChip}
+      />
 
-      {/* Layout container */}
-      <div
-        className="flex flex-col overflow-hidden rounded-2xl border border-[#EDEDED] bg-white lg:flex-row lg:h-[calc(100vh-260px)] lg:min-h-[540px]"
-      >
-        {/* LEFT — list */}
+      {/* Split view: list | detail. */}
+      <div className={ADMIN_REVIEWS_SPLIT_CLASS}>
         <aside
-          className={`w-full flex-shrink-0 border-b border-[#EDEDED] lg:border-b-0 lg:border-r lg:w-[380px] xl:w-[420px] ${
-            isMobileDetailView ? 'hidden lg:block' : 'block'
+          className={`min-h-0 lg:overflow-y-auto lg:border-r lg:border-[#EDEDED] ${
+            isMobileDetailView ? 'hidden lg:block' : ''
           }`}
         >
           <AdminFeedbackList
             isTr={isTr}
             loading={loading}
             filtered={filtered}
-            activeId={active?.id ?? null}
+            activeId={listActiveId}
             pulsedId={pulsedId}
             selectedIds={selectedIds}
             onToggleSelect={onToggleSelect}
             onToggleSelectAll={onToggleSelectAll}
-            search={search}
-            setSearch={setSearch}
-            tab={tab}
-            setTab={(v) => filters.set('tab', v)}
-            counts={counts}
             hasActiveFilter={hasActiveFilter}
-            activeFilterCount={activeFilterCount}
-            onOpenFilters={() => setFiltersOpen(true)}
             onResetFilters={onResetFilters}
             onSelect={onSelectFeedback}
             degraded={degraded}
             hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={loadMoreRows}
+            loadMoreError={loadMoreError}
             listError={listError}
             onRetryList={() => setListReloadKey((k) => k + 1)}
           />
         </aside>
 
-        {/* DETAIL */}
         <div
-          className={`flex-1 min-w-0 ${
-            isMobileDetailView ? 'flex' : 'hidden lg:flex'
-          } flex-col`}
+          className={`min-w-0 flex-col lg:flex lg:min-h-0 ${isMobileDetailView ? 'flex' : 'hidden'}`}
         >
           {active ? (
             <AdminFeedbackDetail
@@ -756,8 +1052,27 @@ function AdminReviewsContent() {
               sentReplies={sentReplies}
               sentLoading={sentLoading}
             />
-          ) : (
-            <div className="flex flex-1 items-center justify-center px-4">
+          ) : loading ? (
+            <AdminFeedbackDetailSkeleton />
+          ) : isMobileDetailView ? (
+            <div className="px-4 py-6">
+              <EmptyState
+                icon={<Inbox size={22} strokeWidth={1.5} />}
+                title={isTr ? 'Yorum bulunamadı' : 'Review not found'}
+                body={
+                  isTr
+                    ? 'Bu yorum mevcut filtrelerde yok ya da daha eski sayfalarda.'
+                    : 'This review is not in the current filters or is on an older page.'
+                }
+                action={
+                  <button type="button" onClick={onBackToList} className="bz-btn bz-btn-sm">
+                    {isTr ? 'Yorumlara dön' : 'Back to reviews'}
+                  </button>
+                }
+              />
+            </div>
+          ) : filtered.length > 0 ? (
+            <div className="flex flex-1 items-center justify-center px-4 py-10">
               <EmptyState
                 icon={<Inbox size={22} strokeWidth={1.5} />}
                 title={isTr ? 'Bir yorum seç' : 'Select a review'}
@@ -768,25 +1083,35 @@ function AdminReviewsContent() {
                 }
               />
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {/* Filters modal */}
       <AdminFeedbackFiltersModal
-        open={filtersOpen}
-        onClose={() => setFiltersOpen(false)}
+        open={filtersModal !== null}
+        compact={filtersModal === 'more'}
+        onClose={() => setFiltersModal(null)}
         isTr={isTr}
+        daysFilter={String(days)}
+        setDaysFilter={(v) => writeFilters({ days: v })}
+        ratingFilter={String(rating)}
+        setRatingFilter={(v) => writeFilters({ rating: v })}
         platformFilter={platform}
-        setPlatformFilter={(v) => filters.set('platform', v)}
+        setPlatformFilter={(v) => writeFilters({ platform: v })}
         hasReplyFilter={hasReply}
-        setHasReplyFilter={(v) => filters.set('hasReply', v)}
+        setHasReplyFilter={(v) => writeFilters({ hasReply: v })}
         flaggedOnly={flagged}
-        setFlaggedOnly={(v) => filters.set('flagged', v)}
+        setFlaggedOnly={(v) => writeFilters({ flagged: v })}
         assignedToMe={assigned}
-        setAssignedToMe={(v) => filters.set('assigned', v)}
-        hasActiveFilter={activeFilterCount > 0}
-        onResetFilters={onResetFilters}
+        setAssignedToMe={(v) => writeFilters({ assigned: v })}
+        hasActiveFilter={filtersModal === 'more' ? moreFiltersCount > 0 : allFiltersCount > 0}
+        onResetFilters={() => {
+          if (filtersModal === 'more') {
+            writeFilters({ hasReply: 'all', flagged: false, assigned: false });
+          } else {
+            onResetFilters();
+          }
+        }}
       />
 
       {/* Bulk action floating toolbar */}
@@ -800,19 +1125,58 @@ function AdminReviewsContent() {
         onMarkRead={() => runBulk('bulk_mark_read')}
         onClear={() => setSelectedIds(new Set())}
       />
+
+      {/* Action toast (flag / assign / bulk) — above the mobile bottom nav
+          (--dash-bottom-nav-h; 0 on lg) and above the bulk bar while a
+          selection is active. */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed inset-x-4 z-50 max-w-[560px] rounded-2xl border px-4 py-3 shadow-lg sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 ${
+            // PanelSelectionBar is ~162px tall below sm (2×2 action grid) and
+            // ~106px from sm (one row); keep a 12px gap above it.
+            selectedIds.size > 0
+              ? 'bottom-[calc(var(--dash-bottom-nav-h)+186px)] sm:bottom-[calc(var(--dash-bottom-nav-h)+130px)] lg:bottom-[134px]'
+              : 'bottom-[calc(var(--dash-bottom-nav-h)+12px)] lg:bottom-4'
+          } ${
+            toast.tone === 'success'
+              ? 'border-[#A8D62E] bg-[#0A0A0A] text-white'
+              : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            {toast.tone === 'success' ? (
+              <CheckCircle2 size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-[#C6F24E]" />
+            ) : (
+              <AlertCircle size={14} strokeWidth={2} aria-hidden="true" className="mt-0.5 shrink-0 text-[#DC2626]" />
+            )}
+            <p className="flex-1 text-[13px] leading-snug">{toast.msg}</p>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className={`-m-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                toast.tone === 'success' ? 'hover:bg-white/10' : 'hover:bg-[#FEE2E2]'
+              }`}
+              aria-label={isTr ? 'Bildirimi kapat' : 'Dismiss notice'}
+            >
+              <X size={14} strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
+function AdminReviewsFallback() {
+  const { locale } = useAdminTranslation();
+  return <AdminReviewsSkeleton isTr={locale === 'tr'} />;
+}
+
 export default function AdminReviewsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
-        </div>
-      }
-    >
+    <Suspense fallback={<AdminReviewsFallback />}>
       <AdminReviewsContent />
     </Suspense>
   );

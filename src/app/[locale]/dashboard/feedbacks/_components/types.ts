@@ -11,7 +11,12 @@ export interface FeedbackRow {
   customerName: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
-  aspects?: { service?: number; food?: number; price?: number; atmosphere?: number } | null;
+  // Optional 1–5 aspect ratings the public form can collect (Feedback
+  // foodRating / serviceRating / atmosphereRating). The list endpoint returns
+  // every Feedback column, so these arrive as-is; null when not asked.
+  foodRating?: number | null;
+  serviceRating?: number | null;
+  atmosphereRating?: number | null;
   isReplied?: boolean;
   isFlagged?: boolean;
   // §38.56 — Yorumlar Inbox tab kategorileri (Okunmamış / Beklemede).

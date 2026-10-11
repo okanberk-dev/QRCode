@@ -15,6 +15,13 @@ export interface FeedbackRow {
   isFlagged?: boolean;
   isAssigned?: boolean;
   assigneeId?: string | null;
+  // Owner-side state the list endpoint already returns (§38.56 / §38.58).
+  // The admin rows show them read-only: unread dot, "Beklemede" and
+  // "AI taslağı hazır" chips. Old rows may omit them.
+  isRead?: boolean;
+  isPending?: boolean;
+  hasPendingAiDraft?: boolean;
+  restaurantId?: string | null;
   restaurant?: { name: string; slug?: string } | null;
 }
 
@@ -51,5 +58,7 @@ export type AiTone = 'warm' | 'formal' | 'apologetic';
 export type AiSource = 'openai' | 'template' | 'template-fallback' | null;
 export type ReplyTone = 'success' | 'info' | 'error';
 
-export type PlatformFilter = 'all' | PlatformId;
+// Storage ids (`trendyol_go`, …) plus `buaze_qr` (platform IS NULL) — the
+// API already handles both (§0.6 / §0.9 of the inbox redesign).
+export type PlatformFilter = 'all' | 'buaze_qr' | PlatformId;
 export type HasReplyFilter = 'all' | 'pending';

@@ -1,16 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { Download, Filter, Inbox, Loader2, Sparkles, X } from 'lucide-react';
-import { EmptyState, PageHeader } from '@/components/ui';
-// §38.56 — KpiStrip kaldırıldı (kullanıcı kararı, tasarım a/page-reviews.jsx
-// birebir — toolbar'da CSV/Filtre/Toplu yanıtla yeterli). Component dosyası
-// silinmedi (potansiyel future use), sadece import + render kaldırıldı.
-import { getTranslations } from '@/lib/translations';
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense, use, type ReactNode } from 'react';
+import { useSearchParams, usePathname } from 'next/navigation';
+import { Download, Inbox, Loader2, Sparkles, X } from 'lucide-react';
+import { EmptyState } from '@/components/ui';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 import type { Locale } from '@/lib/translations';
 import { buildReplyTemplate } from '@/lib/scaffolding';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
+import { InboxToolbar } from '@/components/dashboard/feedbacks/InboxToolbar';
+import type { InboxTab } from '@/components/dashboard/feedbacks/InboxStatusTabs';
 
 import type {
   ActiveTab,
@@ -24,8 +23,7 @@ import type {
   SentReply,
 } from './_components/types';
 import { FeedbackList } from './_components/FeedbackList';
-import { FeedbackDetail } from './_components/FeedbackDetail';
-import { FeedbackFiltersRail } from './_components/FeedbackFiltersRail';
+import { FeedbackDetail, FeedbackDetailSkeleton } from './_components/FeedbackDetail';
 import { FeedbackFiltersModal } from './_components/FeedbackFiltersModal';
 
 /** suggest-reply → 403 `pulse_ai_disabled_by_admin` (admin master flag, §5.2). */
@@ -35,60 +33,128 @@ async function isPulseAiDisabledResponse(res: Response): Promise<boolean> {
   return data?.error === 'pulse_ai_disabled_by_admin';
 }
 
+// URL filter defaults (CLAUDE.md §36). Values equal to their default are
+// removed from the URL, so legacy deep links keep working unchanged.
+const FILTER_DEFAULTS = {
+  tab: 'all' as ActiveTab,
+  days: 'all',
+  rating: 'all',
+  platform: 'all' as PlatformFilter,
+  hasReply: 'all' as HasReplyFilter,
+  // boolean literal-type cast (CLAUDE.md §36.3).
+  flagged: false as boolean,
+};
+type FilterKey = keyof typeof FILTER_DEFAULTS;
+
+const LG_QUERY = '(min-width: 1024px)';
+/** Desktop split view (list + detail side by side). */
+const isLgUp = () => typeof window !== 'undefined' && window.matchMedia(LG_QUERY).matches;
+
+/** Reply API error → user copy. The raw `data.error` key is never shown (§0.7). */
+function replyErrorMessage(code: unknown, isTr: boolean): string {
+  switch (code) {
+    case 'content_blocked':
+      return isTr
+        ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
+        : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.';
+    case 'consent_required':
+      return isTr
+        ? 'Göndermeden önce sorumluluk onayını işaretleyin.'
+        : 'Confirm the responsibility checkbox before sending.';
+    case 'body_too_long':
+      return isTr
+        ? 'Yanıt en fazla 2000 karakter olabilir.'
+        : 'Replies can be at most 2,000 characters.';
+    case 'empty_body':
+      return isTr ? 'Boş yanıt gönderilemez.' : "A reply can't be empty.";
+    case 'rate_limited':
+      return isTr
+        ? 'Çok fazla yanıt gönderildi. Lütfen biraz sonra tekrar deneyin.'
+        : 'Too many replies sent. Please try again in a moment.';
+    default:
+      return isTr
+        ? 'Yanıt gönderilemedi. Lütfen tekrar deneyin.'
+        : 'The reply could not be sent. Please try again.';
+  }
+}
+
 function FeedbacksContent({ locale }: { locale: Locale }) {
-  // `t` ileride gerekirse — şu an sadece dil bazlı fallback için kalıyor.
-  void getTranslations(locale);
   const isTr = locale === 'tr';
 
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   // ============================================================
-  // URL filter state — useUrlFilter hook (CLAUDE.md §36).
-  // 6 filter alanı tek hook'ta. `id`, `view`, `focus` ayrı yönetilir
-  // (filter olmadıkları için reset onları silmemeli).
+  // URL filter state — read through useUrlFilter (CLAUDE.md §36). `id`,
+  // `view`, `focus` and `restaurantId` are managed separately so a filter
+  // reset never clears them.
   // ============================================================
-  const filters = useUrlFilter({
-    tab: 'all' as ActiveTab,
-    days: 'all',
-    rating: 'all',
-    platform: 'all' as PlatformFilter,
-    hasReply: 'all' as HasReplyFilter,
-    // boolean literal-type cast (CLAUDE.md §36.3) — set('flagged', boolean) için.
-    flagged: false as boolean,
-  });
+  const filters = useUrlFilter(FILTER_DEFAULTS);
+
+  // Writes go through `history.replaceState`, not the hook's
+  // `router.replace`: the page is fully client-side, so the RSC round trip
+  // `router.replace` costs on every tab click / select change only delayed
+  // the URL — and with it the selected tab and the list — by a server hop
+  // (seconds on a busy server). Next 15 keeps `useSearchParams` (and so
+  // `filters.values`) in sync with replaceState. Same URL shape and the
+  // same "default value → param removed" rule as the hook.
+  const writeFilters = useCallback(
+    (updates: Partial<Record<FilterKey, string | boolean>>) => {
+      const next = new URLSearchParams(window.location.search);
+      for (const key of Object.keys(updates) as FilterKey[]) {
+        const value = updates[key];
+        if (value === undefined || value === FILTER_DEFAULTS[key]) next.delete(key);
+        else next.set(key, String(value));
+      }
+      const qs = next.toString();
+      window.history.replaceState(null, '', qs ? `${pathname}?${qs}` : pathname);
+    },
+    [pathname],
+  );
 
   // Notification deep-link target — `?focus=<feedbackId>` from NotificationBell.
   const focusId = searchParams.get('focus');
   const restaurantIdParam = searchParams.get('restaurantId') ?? searchParams.get('restaurant');
+  const scopedRestaurantId =
+    restaurantIdParam && restaurantIdParam !== 'all' ? restaurantIdParam : null;
 
-  // Mobile push-route: `?view=detail` query'sini list/detail visibility
-  // toggle olarak kullanır. Desktop (≥lg) bunu ignore eder ve daima
-  // split-pane render olur.
+  // Mobile push-route: `?view=detail` toggles list/detail below lg. Desktop
+  // always renders the split view.
   const view = searchParams.get('view');
   const idParam = searchParams.get('id');
   const isMobileDetailView = view === 'detail';
+  const isMobileDetailViewRef = useRef(isMobileDetailView);
+  isMobileDetailViewRef.current = isMobileDetailView;
+
+  // Live viewport flag (initial false → SSR-safe; the list is loading on the
+  // first paint anyway).
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(LG_QUERY);
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   // ============================================================
   // Local state
   // ============================================================
   const [feedbacks, setFeedbacks] = useState<FeedbackRow[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
   const [degraded, setDegraded] = useState<DegradedMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(focusId ?? idParam);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersModal, setFiltersModal] = useState<null | 'all' | 'more'>(null);
 
-  // Pagination — "Daha fazla göster" pattern. Initial 20 row first paint için
-  // ağır chart/AI fetch'leriyle yarışmasın; kullanıcı talep ettikçe +20.
+  // Pagination — "Daha fazla göster" (20 per page).
   const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  // Liste fetch'i başarısız olduğunda owner'a "Yorum yok" yerine gerçek hata +
-  // "Tekrar dene" göster (CLAUDE.md §40.4 — sessiz boş liste yasak). `listReloadKey`
-  // artınca ana effect yeniden koşar (§38.203 Fix #6 paterni).
+  // §40.4 — a failed list fetch shows an error + retry, never a silent
+  // "no reviews". `listReloadKey` re-runs the list effect.
   const [listError, setListError] = useState(false);
   const [listReloadKey, setListReloadKey] = useState(0);
   const [loadMoreError, setLoadMoreError] = useState(false);
@@ -96,16 +162,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // Reply composer
   const [replyDraft, setReplyDraft] = useState('');
   const [sendEmail, setSendEmail] = useState(true);
-  // Per-message responsibility acknowledgement — resets after every send
-  // and every feedback switch so it is a fresh confirmation each time,
-  // not a persisted "trust me" toggle.
+  // §45 — per-message responsibility acknowledgement. Resets after every
+  // successful send and every feedback switch (fresh confirmation each time).
   const [confirmResponsibility, setConfirmResponsibility] = useState(false);
   const [sendingReply, setSendingReply] = useState(false);
   const [replyNotice, setReplyNotice] = useState<{ msg: string; tone: ReplyTone } | null>(null);
+  const replyNoticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Belt-and-suspenders: whichever path changes the selected feedback
-  // (list click, notification deep-link, initial load) the responsibility
-  // checkbox must not carry over to a different reply.
   useEffect(() => {
     setConfirmResponsibility(false);
   }, [activeId]);
@@ -116,7 +179,6 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSource, setAiSource] = useState<AiSource>(null);
   // Admin `pulseAiEnabled=false` → suggest-reply 403 / draft `pulseAiDisabled`.
-  // Yutulmak yerine composer'da not gösterilir, AI butonları gizlenir.
   const [aiDisabledByAdmin, setAiDisabledByAdmin] = useState(false);
   const [aiTone, setAiTone] = useState<AiTone>('warm');
   const [aiFromBackground, setAiFromBackground] = useState(false);
@@ -125,25 +187,50 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const [sentReplies, setSentReplies] = useState<SentReply[]>([]);
   const [sentLoading, setSentLoading] = useState(false);
 
-  // Notification deep-link pulse one-shot
-  const focusAppliedRef = useRef(false);
+  // Notification deep-link pulse (one-shot per focus id)
+  const focusAppliedRef = useRef<string | null>(null);
   const [pulsedId, setPulsedId] = useState<string | null>(null);
 
-  // §38.58 — Toplu yanıtla (bulk_ai_reply) state. Tasarım a/page-reviews.jsx:45
-  // topbar "Toplu yanıtla" CTA — aktif filtered list'in ilk 50 yorumu için
-  // /api/feedback/bulk endpoint'ine bulk_ai_reply action POST eder. Auto-send
-  // YOK; her draft FeedbackAiDraft'a yazılır, owner FeedbackList'te tek-tek
-  // onaylayıp gönderir (KVKK + UX güvenliği). Per-id checkbox UX gelecek
-  // scope (CLAUDE.md §38.58 backlog) — MVP filter-aware bulk yeterli.
+  // Mobile list ↔ detail navigation bookkeeping (history API, §0.11).
+  const cameFromListRef = useRef(false);
+  const listScrollYRef = useRef(0);
+  const lastOpenedIdRef = useRef<string | null>(null);
+  const focusDetailOnOpenRef = useRef(false);
+
+  // Auto mark-read: one automatic attempt per id, so a failing PATCH (which
+  // reverts isRead) cannot loop the effect.
+  const autoReadTriedRef = useRef<Set<string>>(new Set());
+
+  // Reviews read while the "Okunmamış" tab is open stay listed (now shown as
+  // read) until the owner leaves the tab or the list reloads — the Gmail
+  // pattern. Without it, opening an unread review made it vanish from under
+  // the cursor, and the desktop auto-selection on entering the tab silently
+  // consumed the first unread review (detail showed it, the list did not).
+  const [keptInUnreadTab, setKeptInUnreadTab] = useState<ReadonlySet<string>>(() => new Set());
+
+  // §38.58 — "AI taslakları" (bulk_ai_reply): prepares drafts, sends nothing.
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkNotice, setBulkNotice] = useState<{ msg: string; tone: 'success' | 'error' } | null>(null);
 
-  // Stringify filter values for stable effect deps
   const { tab, days, rating, platform, hasReply, flagged } = filters.values;
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  // Switching tabs starts a fresh unread view (see keptInUnreadTab).
+  useEffect(() => {
+    setKeptInUnreadTab(new Set());
+  }, [tab]);
 
   // ============================================================
-  // Fetch feedbacks list — backend kontratı (CLAUDE.md §Backend) korundu.
+  // Fetch feedbacks list — backend contract unchanged.
+  //
+  // §0.1 race guard: every list request takes a ticket from `listReqRef`;
+  // a response only writes state if its ticket is still the latest. Without
+  // it, the unscoped first request (before the shell adds ?restaurantId)
+  // could land last and show — and bulk-draft — another business's reviews.
   // ============================================================
+  const listReqRef = useRef(0);
+  const prevScopeRef = useRef<string | null | undefined>(undefined);
+
   const buildListQuery = (targetPage: number) => {
     const query = new URLSearchParams({
       page: String(targetPage),
@@ -154,76 +241,100 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     if (platform !== 'all') query.append('platform', String(platform));
     if (hasReply === 'pending') query.append('hasReply', 'false');
     if (flagged) query.append('isFlagged', 'true');
-    if (restaurantIdParam && restaurantIdParam !== 'all') {
-      query.append('restaurantId', restaurantIdParam);
-    }
+    if (scopedRestaurantId) query.append('restaurantId', scopedRestaurantId);
     return query;
   };
 
   useEffect(() => {
+    const req = ++listReqRef.current;
+    // A business switch must never keep the previous business's rows on
+    // screen while the new list loads.
+    if (prevScopeRef.current !== undefined && prevScopeRef.current !== scopedRestaurantId) {
+      setFeedbacks([]);
+    }
+    prevScopeRef.current = scopedRestaurantId;
+    setLoading(true);
+    setPage(1);
+    setHasMore(false);
+    setTotal(null);
+    setListError(false);
+    setLoadMoreError(false);
+    setLoadingMore(false);
+    setKeptInUnreadTab(new Set());
     (async () => {
-      setLoading(true);
-      setPage(1);
-      setHasMore(false);
-      setListError(false);
-      setLoadMoreError(false);
       try {
         const res = await fetch(`/api/feedback?${buildListQuery(1).toString()}`);
+        if (req !== listReqRef.current) return;
         if (res.ok) {
           const data = await res.json();
+          if (req !== listReqRef.current) return;
           const rows: FeedbackRow[] = data.data ?? [];
           setFeedbacks(rows);
-          if (rows.length > 0) setActiveId((curr) => curr ?? rows[0].id);
+          setActiveId((curr) => {
+            if (curr && rows.some((r) => r.id === curr)) return curr;
+            // Desktop: fall back to the newest row of the new result set.
+            // §0.4 — below lg nothing is auto-selected (it would silently
+            // mark the newest review read without ever showing it); an
+            // explicitly opened mobile detail keeps its id.
+            if (isLgUp()) return rows[0]?.id ?? null;
+            return isMobileDetailViewRef.current ? curr : null;
+          });
           setDegraded(data?.meta?.degraded ?? null);
+          const totalNum = Number(data?.meta?.total);
+          setTotal(Number.isFinite(totalNum) ? totalNum : rows.length);
           const totalPages = Number(data?.meta?.totalPages ?? 1);
           setHasMore(totalPages > 1);
         } else {
-          // Önceki filtrenin satırlarını taşıma — owner yeni filtre için eski
-          // sonuçları gerçek sanardı (state drift).
           setFeedbacks([]);
           setActiveId(null);
           setDegraded(null);
           setListError(true);
         }
       } catch (e) {
+        if (req !== listReqRef.current) return;
         console.error(e);
         setFeedbacks([]);
         setActiveId(null);
         setDegraded(null);
         setListError(true);
       }
-      setLoading(false);
+      if (req === listReqRef.current) setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days, rating, platform, hasReply, flagged, restaurantIdParam, listReloadKey]);
+  }, [days, rating, platform, hasReply, flagged, scopedRestaurantId, listReloadKey]);
 
   const loadMoreFeedbacks = async () => {
     if (loadingMore || !hasMore) return;
+    const req = ++listReqRef.current;
     setLoadingMore(true);
     setLoadMoreError(false);
     const nextPage = page + 1;
     try {
       const res = await fetch(`/api/feedback?${buildListQuery(nextPage).toString()}`);
+      if (req !== listReqRef.current) return;
       if (!res.ok) {
         setLoadMoreError(true);
       } else {
         const data = await res.json();
+        if (req !== listReqRef.current) return;
         const rows: FeedbackRow[] = data.data ?? [];
         setFeedbacks((prev) => {
-          // Sayfalar arası overlap (yeni yorum eklenmesi vb.) durumunda
-          // duplicate id'leri at — UI'daki React key collision'a düşürmemek için.
+          // Drop ids already present (new reviews shift page boundaries).
           const seen = new Set(prev.map((r) => r.id));
           return [...prev, ...rows.filter((r) => !seen.has(r.id))];
         });
         setPage(nextPage);
+        const totalNum = Number(data?.meta?.total);
+        if (Number.isFinite(totalNum)) setTotal(totalNum);
         const totalPages = Number(data?.meta?.totalPages ?? 1);
         setHasMore(nextPage < totalPages);
       }
     } catch (e) {
+      if (req !== listReqRef.current) return;
       console.error(e);
       setLoadMoreError(true);
     }
-    setLoadingMore(false);
+    if (req === listReqRef.current) setLoadingMore(false);
   };
 
   // ============================================================
@@ -231,12 +342,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // ============================================================
   const filteredList = useMemo(() => {
     let rows = feedbacks;
-    // §38.56 — Yeni 5-tab tasarım birebir (Tümü/Okunmamış/Düşük/Yanıtlandı/Beklemede)
-    if (tab === 'unread') rows = rows.filter((r) => r.isRead !== true);
+    // §38.56 — 5 tabs: Tümü / Okunmamış / Düşük puan / Yanıtlandı / Beklemede.
+    if (tab === 'unread') rows = rows.filter((r) => r.isRead !== true || keptInUnreadTab.has(r.id));
     else if (tab === 'low') rows = rows.filter((r) => r.rating <= 3);
     else if (tab === 'replied') rows = rows.filter((r) => r.isReplied === true);
     else if (tab === 'pending') rows = rows.filter((r) => r.isPending === true);
-    // Eski tab literal'ları (deeplink-friendly backwards-compat, CLAUDE.md §38.56)
+    // Legacy tab literals (deep-link backwards-compat, §38.56).
     else if (tab === 'high') rows = rows.filter((r) => r.rating >= 4);
     else if (tab === 'redirected') rows = rows.filter((r) => !!r.platform);
     else if (tab === 'unreplied') rows = rows.filter((r) => r.isReplied !== true);
@@ -249,70 +360,80 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       rows = rows.filter((r) => r.hasPendingAiDraft === true);
     }
     if (searchTerm) {
-      const q = searchTerm.toLowerCase();
+      const q = searchTerm.toLocaleLowerCase(isTr ? 'tr-TR' : 'en-US');
       rows = rows.filter(
         (r) =>
-          (r.customerName ?? '').toLowerCase().includes(q) ||
-          (r.comment ?? '').toLowerCase().includes(q),
+          (r.customerName ?? '').toLocaleLowerCase(isTr ? 'tr-TR' : 'en-US').includes(q) ||
+          (r.comment ?? '').toLocaleLowerCase(isTr ? 'tr-TR' : 'en-US').includes(q),
       );
     }
     return rows;
-  }, [feedbacks, tab, searchTerm]);
+  }, [feedbacks, tab, searchTerm, isTr, keptInUnreadTab]);
 
-  const active = useMemo(
-    () => feedbacks.find((r) => r.id === activeId) ?? filteredList[0] ?? null,
-    [feedbacks, activeId, filteredList],
-  );
+  // Desktop: when the owner changes the tab or the search so the selected
+  // review is no longer in the list, move the selection to the first visible
+  // row (otherwise the detail shows a review the list does not). Keyed on the
+  // tab/search only — marking a review read inside the "Okunmamış" tab must
+  // not make the selection jump.
+  useEffect(() => {
+    if (!isLgUp() || loading) return;
+    setActiveId((curr) => {
+      if (curr && filteredList.some((r) => r.id === curr)) return curr;
+      // Nothing matches → clear, so the detail pane doesn't keep showing a
+      // review next to the list's "Yorum yok".
+      return filteredList[0]?.id ?? null;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, searchTerm]);
 
-  const counts = useMemo(() => {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const startMs = startOfDay.getTime();
-    return {
-      all: feedbacks.length,
-      low: feedbacks.filter((r) => r.rating <= 3).length,
-      high: feedbacks.filter((r) => r.rating >= 4).length,
-      redirected: feedbacks.filter((r) => !!r.platform).length,
-      unreplied: feedbacks.filter((r) => r.isReplied !== true).length,
-      today: feedbacks.filter(
-        (r) => new Date(r.createdAt).getTime() >= startMs,
-      ).length,
-      aiReady: feedbacks.filter((r) => r.hasPendingAiDraft === true).length,
-      // §38.56 — Yeni 5-tab counts (tasarım a/page-reviews.jsx birebir).
-      // Eski feedback'ler (migration öncesi) isRead/isPending undefined →
-      // Okunmamış/Beklemede sayımına dahil olmaz; default false.
+  const active = useMemo(() => {
+    const found = activeId ? feedbacks.find((r) => r.id === activeId) : undefined;
+    if (found) return found;
+    // Desktop never shows an empty detail pane when rows exist; mobile only
+    // shows a detail the owner actually opened.
+    return isDesktop ? filteredList[0] ?? null : null;
+  }, [feedbacks, activeId, filteredList, isDesktop]);
+
+  const counts = useMemo(
+    () => ({
       unread: feedbacks.filter((r) => r.isRead !== true).length,
+      low: feedbacks.filter((r) => r.rating <= 3).length,
       replied: feedbacks.filter((r) => r.isReplied === true).length,
       pending: feedbacks.filter((r) => r.isPending === true).length,
-    };
-  }, [feedbacks]);
+      aiReady: feedbacks.filter((r) => r.hasPendingAiDraft === true).length,
+    }),
+    [feedbacks],
+  );
 
-  // §38.33 — BU HAFTA stat card için son 7 gün aggregate (client-side, mevcut
-  // feedbacks state üstünden). Tasarım kaynağı: page-reviews.jsx line 83-92.
+  // Week summary (header). Computed from the loaded rows, so it is only
+  // claimed when those rows cover the window (newest-first ordering): either
+  // everything is loaded, or the oldest loaded row predates the window.
+  const serverFiltered =
+    rating !== 'all' || platform !== 'all' || hasReply !== 'all' || flagged || days !== 'all';
   const weekStats = useMemo(() => {
-    const sevenDaysAgo = Date.now() - 7 * 86400000;
-    const fourteenDaysAgo = Date.now() - 14 * 86400000;
-    const last7 = feedbacks.filter(
-      (r) => new Date(r.createdAt).getTime() >= sevenDaysAgo,
-    );
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 86400000;
+    const fourteenDaysAgo = now - 14 * 86400000;
+    const oldestLoaded = feedbacks.length
+      ? Math.min(...feedbacks.map((r) => new Date(r.createdAt).getTime()))
+      : now;
+    const coversWeek = !hasMore || oldestLoaded < sevenDaysAgo;
+    const coversPrevWeek = !hasMore || oldestLoaded < fourteenDaysAgo;
+    const last7 = feedbacks.filter((r) => new Date(r.createdAt).getTime() >= sevenDaysAgo);
     const prev7 = feedbacks.filter((r) => {
       const t = new Date(r.createdAt).getTime();
       return t >= fourteenDaysAgo && t < sevenDaysAgo;
     });
-    const avgOf = (rows: typeof last7) =>
+    const avgOf = (rows: FeedbackRow[]) =>
       rows.length === 0 ? 0 : rows.reduce((sum, r) => sum + r.rating, 0) / rows.length;
     const last7Avg = avgOf(last7);
     const prev7Avg = avgOf(prev7);
     const delta =
-      last7Avg > 0 && prev7Avg > 0
+      coversPrevWeek && last7Avg > 0 && prev7Avg > 0
         ? Math.round((last7Avg - prev7Avg) * 100) / 100
         : null;
-    return {
-      avgRating: last7Avg,
-      delta,
-      totalCount: last7.length,
-    };
-  }, [feedbacks]);
+    return { count: last7.length, avg: last7Avg, delta, exact: coversWeek };
+  }, [feedbacks, hasMore]);
 
   const activeFeedbackId = active?.id ?? null;
   const activeCustomerEmail = active?.customerEmail ?? null;
@@ -321,14 +442,11 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   const activeIsReplied = active?.isReplied === true;
   const activeAutoDraftEnabled = active?.aiAutoDraftEnabled === true;
 
-  // UX: feedback değişince composer state'lerini temizle. User A'ya draft
-  // yazıp B'ye geçince stale draft kalmasın (Gmail-like behavior). Reply
-  // notice + AI suggestion da feedback'e bağlı, yeni bağlamda anlamsız.
+  // Composer state follows the selected review (Gmail-like): switching
+  // reviews drops the draft and the notice.
   useEffect(() => {
     setReplyDraft('');
     setReplyNotice(null);
-    // sendEmail varsayılanı yeni feedback için yeniden değerlendirilir —
-    // customerEmail varsa true (etkin), yoksa false (otomatik dahili).
     setSendEmail(true);
   }, [activeFeedbackId]);
 
@@ -338,6 +456,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       if (!row || row.isRead === true) return;
 
       const previousRead = row.isRead;
+      if (tabRef.current === 'unread') {
+        setKeptInUnreadTab((prev) => new Set(prev).add(id));
+      }
       setFeedbacks((prev) =>
         prev.map((feedback) => (feedback.id === id ? { ...feedback, isRead: true } : feedback)),
       );
@@ -364,13 +485,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   );
 
   // ============================================================
-  // Notification deep-link: scroll + lime pulse
+  // Notification deep-link: select + scroll + lime pulse + mark read
   // ============================================================
   useEffect(() => {
-    if (!focusId || loading || focusAppliedRef.current) return;
+    if (!focusId || loading || focusAppliedRef.current === focusId) return;
     if (!feedbacks.some((r) => r.id === focusId)) return;
-    focusAppliedRef.current = true;
+    focusAppliedRef.current = focusId;
     setActiveId(focusId);
+    autoReadTriedRef.current.add(focusId);
     void markFeedbackRead(focusId);
     requestAnimationFrame(() => {
       const el = document.querySelector<HTMLElement>(`[data-feedback-id="${focusId}"]`);
@@ -380,24 +502,30 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     });
   }, [focusId, loading, feedbacks, markFeedbackRead]);
 
+  // Auto mark-read only for a review that is actually on screen: desktop
+  // split view, or the mobile detail view (§0.4).
   useEffect(() => {
     if (loading || !activeId || !feedbacks.some((r) => r.id === activeId)) return;
+    if (!isDesktop && !isMobileDetailView) return;
+    if (autoReadTriedRef.current.has(activeId)) return;
+    autoReadTriedRef.current.add(activeId);
     void markFeedbackRead(activeId);
-  }, [activeId, feedbacks, loading, markFeedbackRead]);
+  }, [activeId, feedbacks, loading, markFeedbackRead, isDesktop, isMobileDetailView]);
 
   // ============================================================
   // Sent reply thread fetch on selection
   // ============================================================
   useEffect(() => {
-    if (!active) {
+    if (!activeFeedbackId) {
       setSentReplies([]);
       return;
     }
     let cancelled = false;
     setSentLoading(true);
+    setSentReplies([]);
     (async () => {
       try {
-        const res = await fetch(`/api/feedback/${active.id}/reply`);
+        const res = await fetch(`/api/feedback/${activeFeedbackId}/reply`);
         if (!cancelled && res.ok) {
           const data = await res.json();
           const list: SentReply[] = Array.isArray(data?.replies) ? data.replies : [];
@@ -414,20 +542,12 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active?.id]);
+  }, [activeFeedbackId]);
 
   // ============================================================
-  // AI draft fetch (background draft → fallback on-demand)
-  //
-  // AI yalnızca düşük puanlı (rating < 4) ve **henüz yanıtlanmamış**
-  // yorumlar için üretilir. Yüksek puanlı yorumlar zaten platforma
-  // yönlendirilmiş, yanıtlanmış yorumlar için yeni öneri gereksiz —
-  // ikisi de UI'da bloğu gizler ve gereksiz network çağrısı yapmaz.
-  // Restoran bazlı `enableAiDraft=false` ise seçim anında draft endpoint'i
-  // ve suggest-reply otomatik çağrılmaz; manuel "Yeniden öner" ayrı kalır.
-  // (Eski davranış her seçimde 1-2 fetch tetikliyordu → "AI iki defa
-  // üretti" hissi doğuyordu.)
+  // AI draft fetch (background draft → fallback on-demand). Only for low
+  // (rating < 4), not-yet-replied reviews with auto-draft enabled; manual
+  // "Taslak oluştur / Yeniden öner" stays an explicit owner action.
   // ============================================================
   useEffect(() => {
     if (!activeFeedbackId || activeRating === null) {
@@ -536,14 +656,21 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   // ============================================================
   // Action handlers
   // ============================================================
-  // UX: notice 2.8s → 5s. WCAG önerisi "important messages stay ≥5.5s",
-  // 5s makul orta nokta. Error tone ekstra dwell (8s) — kullanıcı hatayı
-  // okumadan kaybolmasın.
+  // Notice dwell: 5s (success/info), 8s (error) — §38.15.
   const flashReply = (msg: string, tone: ReplyTone = 'info') => {
+    if (replyNoticeTimerRef.current) clearTimeout(replyNoticeTimerRef.current);
     setReplyNotice({ msg, tone });
-    const dwell = tone === 'error' ? 8000 : 5000;
-    setTimeout(() => setReplyNotice(null), dwell);
+    replyNoticeTimerRef.current = setTimeout(
+      () => setReplyNotice(null),
+      tone === 'error' ? 8000 : 5000,
+    );
   };
+  useEffect(
+    () => () => {
+      if (replyNoticeTimerRef.current) clearTimeout(replyNoticeTimerRef.current);
+    },
+    [],
+  );
 
   const onRegenerateAi = async (toneOverride?: AiTone) => {
     if (!active) return;
@@ -606,11 +733,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           ),
         );
         const newReply: SentReply = {
-          id: data?.replyId ?? `tmp-${Date.now()}`,
-          body,
-          channel: wantsEmail ? 'email' : 'internal',
-          status: data?.email?.status === 'failed' ? 'failed' : 'sent',
-          createdAt: new Date().toISOString(),
+          // The API returns { reply: { id, ... } }; using its id keeps the
+          // optimistic row and the refetched thread from showing twice.
+          id: data?.reply?.id ?? `tmp-${Date.now()}`,
+          body: data?.reply?.body ?? body,
+          channel: data?.reply?.channel ?? (wantsEmail ? 'email' : 'internal'),
+          status: data?.reply?.status ?? (data?.email?.status === 'failed' ? 'failed' : 'sent'),
+          createdAt: data?.reply?.createdAt ?? new Date().toISOString(),
         };
         setSentReplies((list) => [...list, newReply]);
         setReplyDraft('');
@@ -633,29 +762,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             'error',
           );
         } else {
-          flashReply(
-            isTr ? 'Yanıt kaydedildi (dahili)' : 'Reply saved (internal)',
-            'success',
-          );
+          flashReply(isTr ? 'Yanıt kaydedildi (dahili)' : 'Reply saved (internal)', 'success');
         }
       } else {
         const data = await res.json().catch(() => ({}));
-        const message =
-          data?.error === 'content_blocked'
-            ? isTr
-              ? 'Bu yanıt gönderilemedi: tehdit, hakaret veya benzeri riskli bir ifade içeriyor olabilir.'
-              : 'This reply could not be sent: it may contain a threat, harassment, or similarly risky content.'
-            : data?.error === 'consent_required'
-              ? isTr
-                ? 'Göndermeden önce sorumluluk onayını işaretleyin.'
-                : 'Confirm the responsibility checkbox before sending.'
-              : isTr
-                ? `Hata: ${data.error ?? res.status}`
-                : `Error: ${data.error ?? res.status}`;
-        flashReply(message, 'error');
+        flashReply(replyErrorMessage(data?.error, isTr), 'error');
       }
     } catch {
-      flashReply(isTr ? 'Ağ hatası' : 'Network error', 'error');
+      flashReply(
+        isTr
+          ? 'Bağlantı hatası. Yanıt gönderilemedi, lütfen tekrar deneyin.'
+          : 'Network error. The reply was not sent, please try again.',
+        'error',
+      );
     }
     setSendingReply(false);
   };
@@ -671,11 +790,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setReplyDraft(aiSuggestion);
   };
 
-  // The endpoint is a TOGGLE (FeedbackFlag upsert / delete). This used to be
-  // pure fire-and-forget: no local state change, no confirmation, errors
-  // swallowed — so the icon never moved, the owner could not tell flagged from
-  // unflagged, and un-flagging was effectively impossible. Same optimistic +
-  // revert + notice shape as `togglePending` below.
+  // Flag toggle — POST adds, DELETE removes (§38.238). Optimistic + revert.
   const flagFeedback = async () => {
     if (!active) return;
     const targetId = active.id;
@@ -686,20 +801,14 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     setBulkNotice({
       msg: isTr
         ? newValue
-          ? 'Dikkat işareti eklendi'
-          : 'Dikkat işareti kaldırıldı'
+          ? 'Yorum işaretlendi'
+          : 'İşaret kaldırıldı'
         : newValue
-          ? 'Flagged'
+          ? 'Review flagged'
           : 'Flag removed',
       tone: 'success',
     });
     try {
-      // §38.238 — POST on this endpoint is an UPSERT, not a toggle. Sending
-      // it unconditionally meant "remove flag" optimistically cleared the UI
-      // and then re-wrote the same FeedbackFlag row server-side: the flag
-      // reappeared on the next load and the owner could never un-flag a
-      // review. The DELETE branch existed and was simply never called here.
-      // Mirrors the admin inbox, which already picked the method correctly.
       const res = await fetch(`/api/feedback/${targetId}/flag`, {
         method: newValue ? 'POST' : 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -711,16 +820,13 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
         prev.map((r) => (r.id === targetId ? { ...r, isFlagged: !newValue } : r)),
       );
       setBulkNotice({
-        msg: isTr ? 'Dikkat işareti güncellenemedi' : 'Could not update the flag',
+        msg: isTr ? 'İşaret güncellenemedi' : 'Could not update the flag',
         tone: 'error',
       });
     }
   };
 
-  // Stage 13 (CLAUDE.md §38.83) — Beklemede toggle. Optimistic state +
-  // bulkNotice surface reuse (mevcut useEffect 5s success / 8s error
-  // auto-dismiss, CLAUDE.md §38.15 dwell timing). PATCH başarısız ise
-  // state revert + error notice. flagFeedback paterni mirror.
+  // Stage 13 (§38.83) — Beklemede toggle. Optimistic + revert.
   const togglePending = async () => {
     if (!active) return;
     const newValue = active.isPending !== true;
@@ -746,7 +852,6 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       });
       if (!res.ok) throw new Error('PATCH failed');
     } catch {
-      // Revert optimistic update on failure
       setFeedbacks((prev) =>
         prev.map((r) => (r.id === targetId ? { ...r, isPending: !newValue } : r)),
       );
@@ -758,7 +863,9 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
   };
 
   // ============================================================
-  // Mobile push-route handlers
+  // List ↔ detail navigation (§0.11) — history API instead of router.push,
+  // so a row tap / back press costs no RSC server round-trip. Next 15 keeps
+  // useSearchParams in sync with pushState/replaceState.
   // ============================================================
   const buildUrl = (overrides: { id?: string | null; view?: 'detail' | null }) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -776,18 +883,64 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
 
   const onSelectFeedback = (id: string) => {
     setActiveId(id);
-    // Push (not replace) so browser back returns to list view on mobile.
-    router.push(buildUrl({ id, view: 'detail' }));
+    autoReadTriedRef.current.add(id);
+    if (isLgUp()) {
+      // Desktop: keep the URL shareable without stacking a history entry per
+      // review (arrow-key navigation selects too).
+      window.history.replaceState(null, '', buildUrl({ id, view: null }));
+    } else {
+      cameFromListRef.current = true;
+      listScrollYRef.current = window.scrollY;
+      lastOpenedIdRef.current = id;
+      focusDetailOnOpenRef.current = true;
+      window.history.pushState(null, '', buildUrl({ id, view: 'detail' }));
+    }
     void markFeedbackRead(id);
   };
 
   const onBackToList = () => {
-    router.push(buildUrl({ view: null }));
+    if (cameFromListRef.current) {
+      cameFromListRef.current = false;
+      window.history.back();
+    } else {
+      window.history.replaceState(null, '', buildUrl({ view: null }));
+    }
   };
 
-  // Reset filters but keep id/view/focus query params intact.
+  // Mobile detail opened → start at the top and move focus to the title.
+  useEffect(() => {
+    if (!isMobileDetailView || !active || !focusDetailOnOpenRef.current) return;
+    focusDetailOnOpenRef.current = false;
+    const id = active.id;
+    requestAnimationFrame(() => {
+      window.scrollTo(0, 0);
+      document
+        .getElementById(`feedback-detail-title-${id}`)
+        ?.focus({ preventScroll: true });
+    });
+  }, [isMobileDetailView, active]);
+
+  // Back to the list (in-app button or browser back) → restore the list
+  // scroll position and focus the row that was opened.
+  const prevDetailViewRef = useRef(isMobileDetailView);
+  useEffect(() => {
+    const was = prevDetailViewRef.current;
+    prevDetailViewRef.current = isMobileDetailView;
+    if (!was || isMobileDetailView || isLgUp()) return;
+    const y = listScrollYRef.current;
+    const openedId = lastOpenedIdRef.current;
+    requestAnimationFrame(() => {
+      window.scrollTo(0, y);
+      if (openedId) {
+        document.getElementById(`feedback-option-${openedId}`)?.focus({ preventScroll: true });
+      }
+    });
+  }, [isMobileDetailView]);
+
+  // Reset every filter + the tab + search; id/view/focus/restaurantId stay.
   const onResetFilters = () => {
-    filters.setMany({
+    setSearchTerm('');
+    writeFilters({
       tab: 'all',
       days: 'all',
       rating: 'all',
@@ -797,11 +950,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     });
   };
 
-  // §38.58 — Bulk AI reply (Toplu yanıtla). Aktif filtered list'in ilk 50
-  // **yanıtsız** yorumu için /api/feedback/bulk endpoint'ine POST eder.
-  // Yanıtsız filtre: zaten yanıtlanmış olanlar için draft hazırlamak gereksiz.
-  // Auto-send YOK; her draft FeedbackAiDraft'a yazılır + FeedbackList'te
-  // PULSE AI badge görünür → owner her birini tek-tek onaylar.
+  // §38.58 — "AI taslakları": first 50 unreplied reviews of the filtered
+  // list get a Pulse AI draft. Nothing is sent automatically.
   const onBulkAiReply = async () => {
     if (bulkBusy) return;
     const targetIds = filteredList
@@ -829,7 +979,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       });
       if (!res.ok) {
         setBulkNotice({
-          msg: isTr ? 'Toplu taslak hazırlanamadı.' : 'Could not prepare bulk drafts.',
+          msg: isTr ? 'AI taslakları hazırlanamadı.' : 'Could not prepare AI drafts.',
           tone: 'error',
         });
         return;
@@ -837,21 +987,15 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
       const data = await res.json().catch(() => ({}));
       const processed = typeof data?.processed === 'number' ? data.processed : 0;
       const skipped = typeof data?.skipped === 'number' ? data.skipped : 0;
-      // FeedbackList'te PULSE AI badge'leri yansısın diye list state'i refresh
-      // et. Mevcut feedbacks array'inde hasPendingAiDraft = true olarak
-      // optimistic update; backend cache yansıması için kullanıcı sayfayı
-      // refresh ederse yine aynı (FeedbackAiDraft tablosu kalıcı).
       setFeedbacks((list) =>
         list.map((r) =>
-          targetIds.includes(r.id) && !r.isReplied
-            ? { ...r, hasPendingAiDraft: true }
-            : r,
+          targetIds.includes(r.id) && !r.isReplied ? { ...r, hasPendingAiDraft: true } : r,
         ),
       );
       setBulkNotice({
         msg: isTr
-          ? `${processed} taslak hazırlandı${skipped > 0 ? ` · ${skipped} atlandı` : ''}. Aşağıdaki listede her birini tek-tek onaylayabilirsin.`
-          : `${processed} drafts prepared${skipped > 0 ? ` · ${skipped} skipped` : ''}. Approve each one in the list below.`,
+          ? `${processed} taslak hazırlandı${skipped > 0 ? ` · ${skipped} atlandı` : ''}. Hiçbiri gönderilmedi; listede her birini açıp onaylayabilirsin.`
+          : `${processed} drafts prepared${skipped > 0 ? ` · ${skipped} skipped` : ''}. Nothing was sent; open each one in the list to approve it.`,
         tone: 'success',
       });
     } catch {
@@ -864,8 +1008,7 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     }
   };
 
-  // §38.58 — Bulk notice 5s auto-dismiss (success), 8s (error). CLAUDE.md
-  // §38.15 dwell timing kanonik: WCAG dwell ≥5.5s, error daha uzun.
+  // Bulk notice auto-dismiss: 5s success, 8s error (§38.15).
   useEffect(() => {
     if (!bulkNotice) return;
     const ttl = bulkNotice.tone === 'error' ? 8000 : 5000;
@@ -878,154 +1021,215 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
     [filteredList],
   );
 
-  const activeFilterCount =
+  const moreFiltersCount = (hasReply !== 'all' ? 1 : 0) + (flagged ? 1 : 0);
+  const allFiltersCount =
     (days !== 'all' ? 1 : 0) +
     (rating !== 'all' ? 1 : 0) +
     (platform !== 'all' ? 1 : 0) +
-    (hasReply !== 'all' ? 1 : 0) +
-    (flagged ? 1 : 0);
+    moreFiltersCount;
+  const hasActiveFilter = allFiltersCount > 0 || tab !== 'all' || searchTerm.trim() !== '';
 
-  const hasActiveFilter = activeFilterCount > 0 || tab !== 'all';
+  // §0.5 — CSV export follows the selected business + toolbar filters.
+  // `buaze_qr` is not understood by the export endpoint (it would match
+  // nothing), so that one filter falls back to all platforms.
+  const exportHref = useMemo(() => {
+    const q = new URLSearchParams({ days: days === 'all' ? '90' : String(days) });
+    if (scopedRestaurantId) q.set('restaurantId', scopedRestaurantId);
+    if (platform !== 'all' && platform !== 'buaze_qr') q.set('platform', String(platform));
+    if (rating !== 'all') q.set('rating', String(rating));
+    return `/api/feedback/export?${q.toString()}`;
+  }, [days, scopedRestaurantId, platform, rating]);
+
+  // Status tabs. Counts are shown only when exact: "Tümü" from the server
+  // total, the others only once every row is loaded — never a 0 placeholder.
+  const countsExact = !loading && !listError && !hasMore;
+  const statusTabs: InboxTab[] = [
+    { id: 'all', label: isTr ? 'Tümü' : 'All', count: loading || listError ? null : total },
+    { id: 'unread', label: isTr ? 'Okunmamış' : 'Unread', count: countsExact ? counts.unread : null },
+    {
+      id: 'low',
+      label: isTr ? 'Düşük puan' : 'Low rating',
+      count: countsExact ? counts.low : null,
+      title: isTr ? '1–3 yıldız' : '1–3 stars',
+      tone: 'danger',
+    },
+    { id: 'replied', label: isTr ? 'Yanıtlandı' : 'Replied', count: countsExact ? counts.replied : null },
+    { id: 'pending', label: isTr ? 'Beklemede' : 'Pending', count: countsExact ? counts.pending : null },
+  ];
+
+  const fmtAvg = (n: number) =>
+    n.toLocaleString(isTr ? 'tr-TR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // Header summary line.
+  let summary: ReactNode = null;
+  if (loading) {
+    summary = <SkBox className="h-4 w-56" />;
+  } else if (listError) {
+    summary = null;
+  } else if (serverFiltered) {
+    summary = isTr ? (
+      <>
+        Filtreye uyan <strong className="font-semibold text-[#0A0A0A]">{total ?? feedbacks.length} yorum</strong>
+      </>
+    ) : (
+      <>
+        <strong className="font-semibold text-[#0A0A0A]">{total ?? feedbacks.length} reviews</strong> match the filters
+      </>
+    );
+  } else if (weekStats.count === 0) {
+    summary = isTr ? 'Bu hafta henüz yorum yok' : 'No reviews yet this week';
+  } else if (!weekStats.exact) {
+    summary = isTr ? (
+      <>
+        Bu hafta <strong className="font-semibold text-[#0A0A0A]">{weekStats.count}+ yorum</strong>
+      </>
+    ) : (
+      <>
+        This week <strong className="font-semibold text-[#0A0A0A]">{weekStats.count}+ reviews</strong>
+      </>
+    );
+  } else {
+    const showDelta = weekStats.delta !== null && Math.abs(weekStats.delta) >= 0.05;
+    const deltaChip = showDelta ? (
+      <span
+        className={`rounded-full px-1.5 text-[11px] font-semibold ${
+          (weekStats.delta ?? 0) > 0 ? 'bg-[#F0FDF4] text-[#166534]' : 'bg-[#FEF2F2] text-[#991B1B]'
+        }`}
+        title={isTr ? 'Önceki 7 güne göre' : 'Compared with the previous 7 days'}
+      >
+        {(weekStats.delta ?? 0) > 0 ? '↑' : '↓'} {fmtAvg(Math.abs(weekStats.delta ?? 0))}
+      </span>
+    ) : null;
+    summary = isTr ? (
+      <>
+        Bu hafta <strong className="font-semibold text-[#0A0A0A]">{weekStats.count} yorum</strong>
+        <span aria-hidden="true">·</span>
+        ortalama <strong className="font-semibold text-[#0A0A0A]">{fmtAvg(weekStats.avg)} ★</strong>
+        {deltaChip}
+      </>
+    ) : (
+      <>
+        This week <strong className="font-semibold text-[#0A0A0A]">{weekStats.count} reviews</strong>
+        <span aria-hidden="true">·</span>
+        <strong className="font-semibold text-[#0A0A0A]">{fmtAvg(weekStats.avg)} ★</strong> average
+        {deltaChip}
+      </>
+    );
+  }
+
+  // List highlight only where the detail is visible next to it (§0.4).
+  const listActiveId = isDesktop ? active?.id ?? null : null;
 
   // ============================================================
   // Render
   // ============================================================
   return (
-    // §38.62 — Pixel-perfect parity: tasarım `.design-owner-2026/page-reviews.jsx`
-    // `contentStyle={{ padding: 0, background: '#FFFFFF' }}` override ediyor.
-    // Outer `mx-auto max-w-[1600px] px-4 sm:px-7 py-6 lg:py-8` kaldırıldı; 3-col
-    // grid full-width content area'da render ediliyor → filter rail sol sidebar'a
-    // yapışık (border-right). Header için ayrı padded wrapper (px-4 sm:px-7
-    // py-6 lg:py-8) tasarımdaki PanelTopbar görünümünü taklit eder.
-    <div className="min-h-full bg-white lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
-      {/* PageHeader — mobile detail view'inde gizle (sticky back zaten orada).
-          Padded wrapper sadece header için, alt grid full-width. */}
-      <div className={`px-4 sm:px-7 py-6 lg:py-8 border-b border-[#EDEDED] ${isMobileDetailView ? 'hidden lg:block' : ''}`}>
-        <PageHeader
-          /* §38.66 — Yorumlar 3-col layout (filter rail + list + detail)
-             yoğun bilgi mimarisi; hero scale h1 (40px) ezici hissedilebilir.
-             titleScale="compact" 22-32px clamp ile mütevazı kalır. */
-          titleScale="compact"
-          eyebrow={isTr ? 'GERİ BİLDİRİMLER' : 'FEEDBACKS'}
-          title={isTr ? 'Yorumlar' : 'Reviews'}
-          description={
-            isTr
-              ? 'Tüm kanallardan gelen müşteri geri bildirimleri. Yanıt sürelerinin altında kalmaya çalış.'
-              : 'Customer feedback from all channels. Try to stay under reply targets.'
-          }
-          actions={
-            <div className="flex items-center gap-2">
-              {/* §38.53 — Dışa aktar (CSV export, mevcut /api/feedback/export endpoint) */}
-              <a
-                href="/api/feedback/export?days=90"
-                download
-                className="bz-btn inline-flex items-center gap-1.5 text-[12.5px]"
-                title={isTr ? 'Son 90 gün yorumları CSV indir' : 'Download last 90 days as CSV'}
-              >
-                <Download size={13} strokeWidth={2} />
-                {isTr ? 'Dışa aktar' : 'Export'}
-              </a>
-              {/* §38.53 — Filtre (mobil drawer toggle, xl: rail görünür) */}
-              <button
-                type="button"
-                onClick={() => setFiltersOpen(true)}
-                className="bz-btn inline-flex items-center gap-1.5 text-[12.5px] xl:hidden"
-              >
-                <Filter size={13} strokeWidth={2} />
-                {isTr ? 'Filtre' : 'Filter'}
-              </button>
-              {/* §38.58 — Toplu yanıtla (bulk_ai_reply). Tasarım a/page-reviews.jsx:45
-                  birebir; aktif filtered list'in ilk 50 yanıtsız yorumu için AI
-                  draft hazırlar (auto-send YOK, owner her birini onaylar). */}
-              <button
-                type="button"
-                onClick={onBulkAiReply}
-                disabled={bulkBusy || bulkEligibleCount === 0}
-                className="bz-btn-primary inline-flex items-center gap-1.5 text-[12.5px] disabled:cursor-not-allowed disabled:opacity-50"
-                title={
-                  bulkEligibleCount === 0
-                    ? isTr
-                      ? 'Yanıt bekleyen yorum yok'
-                      : 'No reviews awaiting reply'
-                    : isTr
-                      ? `${bulkEligibleCount} yorum için AI taslağı hazırla`
-                      : `Prepare AI drafts for ${bulkEligibleCount} reviews`
-                }
-              >
-                {bulkBusy ? (
-                  <Loader2 size={13} strokeWidth={2} className="animate-spin" />
-                ) : (
-                  <Sparkles size={13} strokeWidth={2} />
-                )}
-                {isTr ? 'Toplu yanıtla' : 'Bulk reply'}
-                {bulkEligibleCount > 0 && (
-                  <span className="ml-1 inline-flex items-center justify-center rounded bg-[#0A0A0A] px-1.5 text-[10px] font-mono text-[#C6F24E]">
-                    {bulkEligibleCount}
-                  </span>
-                )}
-              </button>
+    // §38.62 — full-bleed inbox (no outer max-width wrapper): header and
+    // toolbar carry their own padding, the split panes run edge to edge and
+    // scroll internally on lg.
+    <div className="flex min-h-full w-full min-w-0 flex-col bg-white lg:min-h-0 lg:flex-1">
+      {/* Header — hidden on the mobile detail view (the back bar is there). */}
+      <div
+        className={`px-4 pb-3 pt-5 sm:px-7 lg:pb-4 lg:pt-6 ${isMobileDetailView ? 'hidden lg:block' : ''}`}
+      >
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            {/* Desktop uses the shell topbar h1 — one h1 per breakpoint. */}
+            <h1 className="bz-h-tight text-[24px] text-[#0A0A0A] lg:hidden">
+              {isTr ? 'Yorumlar' : 'Reviews'}
+            </h1>
+            <div className="mt-0.5 flex min-h-[20px] flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#525252]">
+              {summary}
             </div>
-          }
-        />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={exportHref}
+              download
+              className="bz-btn bz-btn-sm"
+              title={
+                isTr
+                  ? 'Seçili işletme ve filtrelerle CSV indir'
+                  : 'Download CSV for the selected business and filters'
+              }
+            >
+              <Download size={13} strokeWidth={2} aria-hidden="true" />
+              {isTr ? 'Dışa aktar' : 'Export'}
+            </a>
+            <button
+              type="button"
+              onClick={onBulkAiReply}
+              disabled={bulkBusy || loading || bulkEligibleCount === 0}
+              className="bz-btn-primary bz-btn-sm"
+              title={
+                bulkEligibleCount === 0
+                  ? isTr
+                    ? 'Yanıt bekleyen yorum yok'
+                    : 'No reviews awaiting reply'
+                  : isTr
+                    ? 'Yanıt bekleyen en fazla 50 yorum için Pulse AI taslağı hazırlar; hiçbir şey otomatik gönderilmez.'
+                    : 'Prepares Pulse AI drafts for up to 50 reviews awaiting reply; nothing is sent automatically.'
+              }
+            >
+              {bulkBusy ? (
+                <Loader2 size={13} strokeWidth={2} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <Sparkles size={13} strokeWidth={2} aria-hidden="true" />
+              )}
+              {isTr ? 'AI taslakları' : 'AI drafts'}
+              {!loading && bulkEligibleCount > 0 && (
+                <span className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-[#C6F24E] px-1.5 text-[11px] font-semibold leading-[18px] text-[#0A0A0A] tabular-nums">
+                  {bulkEligibleCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* §38.56 — KPI 4-card strip SİLİNDİ (kullanıcı kararı, tasarım
-          a/page-reviews.jsx birebir). Mevcut WeekStatsCard rail'da
-          (FeedbackFiltersRail içinde) Bu hafta özet hâlâ görünür. */}
+      <InboxToolbar
+        isTr={isTr}
+        className={isMobileDetailView ? 'hidden lg:block' : ''}
+        tabs={statusTabs}
+        activeTab={tab}
+        onTabChange={(id) => writeFilters({ tab: id as ActiveTab })}
+        listId="feedback-list"
+        search={searchTerm}
+        onSearchChange={setSearchTerm}
+        platform={String(platform)}
+        onPlatformChange={(v) => writeFilters({ platform: v as PlatformFilter })}
+        rating={String(rating)}
+        onRatingChange={(v) => writeFilters({ rating: v })}
+        days={String(days)}
+        onDaysChange={(v) => writeFilters({ days: v })}
+        moreFiltersCount={moreFiltersCount}
+        allFiltersCount={allFiltersCount}
+        onOpenMoreFilters={() => setFiltersModal('more')}
+        onOpenAllFilters={() => setFiltersModal('all')}
+        showClear={hasActiveFilter}
+        onClear={onResetFilters}
+      />
 
-      {/* 3-col grid full-width. Desktop'ta sabit 100vh hesabı yerine shell'in
-          flex alanını kullanır; liste, rail ve detay kendi içinde scroll eder. */}
-      <div
-        // §38.238 — the xl grid asked for 300+400+520 = 1220px of non-shrinkable
-          // track, but at 1280px only ~1017px is left after the 248px sidebar and
-          // the scrollbar gutter. Fixed px tracks and a minmax() LOWER bound do not
-          // shrink, so the detail pane's right edge was clipped — and since every
-          // ancestor is overflow-hidden (§42.5.1) it could never be scrolled back
-          // into view. The desktop-only "Beklemeye al" / "İşaretle" buttons live on
-          // that edge and were unreachable. Still overflowed at 1440px.
-          // minmax(0,1fr) lets the detail track shrink; the designed 300/400 rails
-          // return at 2xl where they actually fit.
-          className="flex min-h-0 flex-1 flex-col bg-white lg:flex-row lg:overflow-hidden xl:grid xl:grid-cols-[260px_360px_minmax(0,1fr)] 2xl:grid-cols-[300px_400px_minmax(0,1fr)]"
-      >
-        {/* ============ XL FILTER RAIL — visible only on xl: (≥1280px) ============ */}
-        <FeedbackFiltersRail
-          locale={locale}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          activeTab={tab}
-          setActiveTab={(v) => filters.set('tab', v)}
-          counts={counts}
-          hasActiveFilter={hasActiveFilter}
-          activeFilterCount={activeFilterCount}
-          onOpenFilters={() => setFiltersOpen(true)}
-          onResetFilters={onResetFilters}
-          platformFilter={platform}
-          setPlatformFilter={(v) => filters.set('platform', v)}
-          weekStats={weekStats}
-        />
-
-        {/* ============ LEFT — list (orta kolon xl:'de) ============ */}
+      {/* Split view: list | detail. 2 columns from lg; the list widens with
+          the viewport (360 → 420 → 480) and the detail takes the rest. */}
+      <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[480px_minmax(0,1fr)]">
         <aside
-          className={`min-h-0 w-full flex-shrink-0 border-b border-[#EDEDED] lg:border-b-0 lg:border-r lg:w-[380px] xl:w-auto xl:flex-none ${
-            isMobileDetailView ? 'hidden lg:block' : 'block'
+          className={`min-h-0 lg:overflow-y-auto lg:border-r lg:border-[#EDEDED] ${
+            isMobileDetailView ? 'hidden lg:block' : ''
           }`}
         >
           <FeedbackList
             locale={locale}
             loading={loading}
-            feedbacks={feedbacks}
             filteredList={filteredList}
-            activeId={active?.id ?? null}
+            activeId={listActiveId}
             pulsedId={pulsedId}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
             activeTab={tab}
-            setActiveTab={(v) => filters.set('tab', v)}
-            counts={counts}
+            setActiveTab={(v) => writeFilters({ tab: v })}
+            aiReadyCount={counts.aiReady}
             hasActiveFilter={hasActiveFilter}
-            activeFilterCount={activeFilterCount}
-            onOpenFilters={() => setFiltersOpen(true)}
             onResetFilters={onResetFilters}
+            showBusiness={!scopedRestaurantId}
             onSelect={onSelectFeedback}
             degraded={degraded}
             hasMore={hasMore}
@@ -1037,13 +1241,8 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
           />
         </aside>
 
-        {/* ============ DETAIL ============
-            `min-h-0` detail panelinin shell flex alanında taşmadan kendi
-            scroll konteynerini kullanmasını sağlar. */}
         <div
-          className={`flex-1 min-w-0 ${
-            isMobileDetailView ? 'flex' : 'hidden lg:flex'
-          } flex-col lg:min-h-0`}
+          className={`min-w-0 flex-col lg:flex lg:min-h-0 ${isMobileDetailView ? 'flex' : 'hidden'}`}
         >
           {active ? (
             <FeedbackDetail
@@ -1076,8 +1275,27 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
               onSendReply={() => sendReply()}
               replyNotice={replyNotice}
             />
-          ) : (
-            <div className="flex flex-1 items-center justify-center px-4">
+          ) : loading ? (
+            <FeedbackDetailSkeleton />
+          ) : isMobileDetailView ? (
+            <div className="px-4 py-6">
+              <EmptyState
+                icon={<Inbox size={22} strokeWidth={1.5} />}
+                title={isTr ? 'Yorum bulunamadı' : 'Review not found'}
+                body={
+                  isTr
+                    ? 'Bu yorum mevcut filtrelerde yok ya da daha eski sayfalarda.'
+                    : 'This review is not in the current filters or is on an older page.'
+                }
+                action={
+                  <button type="button" onClick={onBackToList} className="bz-btn bz-btn-sm">
+                    {isTr ? 'Yorumlara dön' : 'Back to reviews'}
+                  </button>
+                }
+              />
+            </div>
+          ) : filteredList.length > 0 ? (
+            <div className="flex flex-1 items-center justify-center px-4 py-10">
               <EmptyState
                 icon={<Inbox size={22} strokeWidth={1.5} />}
                 title={isTr ? 'Bir yorum seç' : 'Select a review'}
@@ -1088,42 +1306,42 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
                 }
               />
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {/* Filters modal */}
       <FeedbackFiltersModal
-        open={filtersOpen}
-        onClose={() => setFiltersOpen(false)}
+        open={filtersModal !== null}
+        compact={filtersModal === 'more'}
+        onClose={() => setFiltersModal(null)}
         locale={locale}
         daysFilter={String(days)}
-        setDaysFilter={(v) => filters.set('days', v)}
+        setDaysFilter={(v) => writeFilters({ days: v })}
         filterRating={String(rating)}
-        setFilterRating={(v) => filters.set('rating', v)}
+        setFilterRating={(v) => writeFilters({ rating: v })}
         platformFilter={platform}
-        setPlatformFilter={(v) => filters.set('platform', v)}
+        setPlatformFilter={(v) => writeFilters({ platform: v })}
         hasReplyFilter={hasReply}
-        setHasReplyFilter={(v) => filters.set('hasReply', v)}
+        setHasReplyFilter={(v) => writeFilters({ hasReply: v })}
         flaggedOnly={flagged}
-        setFlaggedOnly={(v) => filters.set('flagged', v)}
-        hasActiveFilter={activeFilterCount > 0}
-        onResetFilters={onResetFilters}
+        setFlaggedOnly={(v) => writeFilters({ flagged: v })}
+        hasActiveFilter={filtersModal === 'more' ? moreFiltersCount > 0 : allFiltersCount > 0}
+        onResetFilters={() => {
+          if (filtersModal === 'more') {
+            writeFilters({ hasReply: 'all', flagged: false });
+          } else {
+            onResetFilters();
+          }
+        }}
       />
 
-      {/* §38.58 — Bulk notice (CLAUDE.md §23.3.1 floating toolbar paterni).
-          Success/error tone-based palette; 5s/8s auto-dismiss (§38.15 dwell).
-          §38.171 Stage 91 — `bottom-4` (16px hardcode) yerine `--dash-bottom-nav-h`
-          CSS var ile owner mobile bottom nav clearance (lg:+ otomatik 0). */}
+      {/* §38.58 / §38.171 — bulk + flag/pending notice, above the mobile
+          bottom nav (--dash-bottom-nav-h; 0 on lg). */}
       {bulkNotice && (
         <div
           role="status"
           aria-live="polite"
-          /* §38.238 — `left-1/2 -translate-x-1/2` ile `inset-x-4` aynı anda
-             uygulanıyordu: inset-x sol kenarı 16px'e sabitliyor, translate onu
-             ayrıca %50 kaydırıyordu; toast telefonda ~%46 genişlikte ve sağa
-             kaymış çıkıyordu. Ortalama artık sm'den itibaren. */
-          className={`fixed bottom-[calc(var(--dash-bottom-nav-h)+12px)] inset-x-4 z-50 max-w-[560px] rounded-2xl border px-4 py-3 shadow-lg lg:bottom-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 ${
+          className={`fixed inset-x-4 bottom-[calc(var(--dash-bottom-nav-h)+12px)] z-50 max-w-[560px] rounded-2xl border px-4 py-3 shadow-lg sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 lg:bottom-4 ${
             bulkNotice.tone === 'success'
               ? 'border-[#A8D62E] bg-[#0A0A0A] text-white'
               : 'border-[#FECACA] bg-[#FEF2F2] text-[#991B1B]'
@@ -1133,18 +1351,19 @@ function FeedbacksContent({ locale }: { locale: Locale }) {
             <Sparkles
               size={14}
               strokeWidth={2}
+              aria-hidden="true"
               className={`mt-0.5 shrink-0 ${
                 bulkNotice.tone === 'success' ? 'text-[#C6F24E]' : 'text-[#DC2626]'
               }`}
             />
-            <p className="flex-1 text-[12.5px] leading-snug">{bulkNotice.msg}</p>
+            <p className="flex-1 text-[13px] leading-snug">{bulkNotice.msg}</p>
             <button
               type="button"
               onClick={() => setBulkNotice(null)}
-              className="shrink-0 rounded-full p-1 hover:bg-white/10"
+              className="-m-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-white/10"
               aria-label={isTr ? 'Bildirimi kapat' : 'Dismiss notice'}
             >
-              <X size={12} strokeWidth={2} />
+              <X size={14} strokeWidth={2} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -1158,12 +1377,10 @@ export default function FeedbacksPage({
 }: {
   params: Promise<{ locale: Locale }>;
 }) {
-  // §38.49 — Client component → async edilemez (Next.js no-async-client-component
-  // kuralı). React 18.3+ `use()` hook ile Promise client-side unwrap.
+  // §38.49 — client component cannot be async; React `use()` unwraps params.
   const resolvedParams = use(params);
-  // §40.10 clean slate — Suspense fallback boş; çift skeleton flash riskini
-  // tamamen ortadan kaldırır. FeedbacksContent kendi loading state'iyle
-  // (boş layout) render eder; fetch tamamlanınca data dolar.
+  // Suspense fallback null: the segment loading.tsx covers navigation and the
+  // page renders its own skeleton rows while the list loads (§40.10).
   return (
     <Suspense fallback={null}>
       <FeedbacksContent locale={resolvedParams.locale} />

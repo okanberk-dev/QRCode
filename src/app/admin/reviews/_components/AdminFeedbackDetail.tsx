@@ -1,27 +1,22 @@
 'use client';
 
-import {
-  ArrowLeft,
-  Check,
-  Flag,
-  Loader2,
-  Mail,
-  MessageSquareText,
-  Sparkles,
-  Star,
-  UserPlus,
-} from 'lucide-react';
-import { AlertBanner, Avatar, Badge } from '@/components/ui';
+import { ArrowLeft, Check, Flag, Loader2, Mail, MessageSquare, QrCode, Sparkles, Star, UserPlus } from 'lucide-react';
+import { AlertBanner, PlatformChip } from '@/components/ui';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
+import { RatingBadge } from '@/components/dashboard/feedbacks/RatingBadge';
+import { FeedbackStatusChips } from '@/components/dashboard/feedbacks/FeedbackStatusChips';
+import FeedbackTimeline from '@/components/dashboard/feedbacks/FeedbackTimeline';
+import { buildFeedbackTimeline } from '@/lib/feedback-timeline';
 import type { AiSource, AiTone, FeedbackRow, ReplyTone, SentReply } from './types';
-import { formatDateTime, formatStamp, initials, timeAgo } from './utils';
-import { AdminFeedbackReplyComposer } from './AdminFeedbackReplyComposer';
+import { formatDateTime, formatStamp, platformIconId, platformLabel, timeAgoLabel } from './utils';
+import { AdminPulseAiCard, AdminReplyComposerCard } from './AdminFeedbackReplyComposer';
 
 interface AdminFeedbackDetailProps {
   feedback: FeedbackRow;
   isTr: boolean;
   locale: string;
 
-  /** Mobile push-route geri butonu (yalnız mobil görünümde göster). */
+  /** Mobile push-route back bar (only on the mobile detail view). */
   showBackButton: boolean;
   onBack: () => void;
 
@@ -48,10 +43,28 @@ interface AdminFeedbackDetailProps {
   onSend: () => void;
   notice: { msg: string; tone: ReplyTone } | null;
 
-  // §38.237 — Gönderilen yanıt thread'i (admin artık işletmenin müşteriye
-  // yazdığı cevapları da görür; eskiden yalnız "Yanıtlandı" rozeti vardı).
+  // §38.237 — sent replies thread (what the business wrote to the customer,
+  // the channel and the delivery state).
   sentReplies: SentReply[];
   sentLoading: boolean;
+}
+
+/** Detail-pane placeholder while the list loads (rating box, title, comment). */
+export function AdminFeedbackDetailSkeleton() {
+  return (
+    <div className="px-5 py-5 sm:px-8 sm:py-6" aria-hidden="true">
+      <div className="flex items-start gap-4">
+        <SkBox className="h-12 w-12 shrink-0 rounded-2xl" />
+        <div className="min-w-0 flex-1 space-y-2 pt-1">
+          <SkBox className="h-6 w-48 max-w-full" />
+          <SkBox className="h-4 w-64 max-w-full" />
+          <SkBox className="h-3 w-36" />
+        </div>
+      </div>
+      <SkBox className="mt-5 h-24 w-full rounded-2xl" />
+      <SkBox className="mt-5 h-32 w-full rounded-2xl" />
+    </div>
+  );
 }
 
 export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
@@ -64,240 +77,333 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
     onFlag,
     assigning,
     onAssign,
+    sentReplies,
+    sentLoading,
   } = props;
 
+  const titleId = `feedback-detail-title-${active.id}`;
+  const pLabel = platformLabel(active.platform, isTr);
+  const iconId = platformIconId(active.platform);
+  const isFlagged = active.isFlagged === true;
+  const isAssigned = active.isAssigned === true;
+  const isHigh = active.rating >= 4;
+  // Admin reply condition (unchanged): low/mid rating and not replied yet.
+  const canReply = !isHigh && !active.isReplied;
+
+  const flagLabel = isTr
+    ? isFlagged
+      ? 'İşareti kaldır'
+      : 'İşaretle'
+    : isFlagged
+      ? 'Unflag'
+      : 'Flag';
+  const assignLabel = isTr ? (isAssigned ? 'Atandı' : 'Ata') : isAssigned ? 'Assigned' : 'Assign';
+
+  const flagButton = (compact: boolean) => (
+    <button
+      type="button"
+      onClick={onFlag}
+      disabled={flagging}
+      className={`${isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
+      aria-pressed={isFlagged}
+      aria-label={compact ? flagLabel : undefined}
+      title={compact ? flagLabel : undefined}
+    >
+      {flagging ? (
+        <Loader2 size={compact ? 14 : 12} className="animate-spin" aria-hidden="true" />
+      ) : (
+        <Flag
+          size={compact ? 14 : 12}
+          strokeWidth={2}
+          fill={isFlagged ? 'currentColor' : 'none'}
+          aria-hidden="true"
+        />
+      )}
+      <span className={compact ? 'hidden sm:inline' : undefined}>{flagLabel}</span>
+    </button>
+  );
+
+  const assignButton = (compact: boolean) => (
+    <button
+      type="button"
+      onClick={onAssign}
+      disabled={assigning}
+      className={`${isAssigned ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
+      aria-pressed={isAssigned}
+      aria-label={compact ? assignLabel : undefined}
+      title={compact ? assignLabel : undefined}
+    >
+      {assigning ? (
+        <Loader2 size={compact ? 14 : 12} className="animate-spin" aria-hidden="true" />
+      ) : isAssigned ? (
+        <Check size={compact ? 14 : 12} strokeWidth={2.2} aria-hidden="true" />
+      ) : (
+        <UserPlus size={compact ? 14 : 12} strokeWidth={2} aria-hidden="true" />
+      )}
+      <span className={compact ? 'hidden sm:inline' : undefined}>{assignLabel}</span>
+    </button>
+  );
+
   return (
-    <section className="flex flex-col bg-white lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-      {/* Mobile sticky top — back button + quick actions */}
+    <section
+      className="flex flex-col bg-white lg:min-h-0 lg:flex-1"
+      role="region"
+      aria-labelledby={titleId}
+    >
+      {/* Mobile sticky back bar — under the 61px admin mobile topbar. */}
       {showBackButton && (
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 backdrop-blur px-4 py-3 lg:hidden">
+        <div className="sticky top-[61px] z-10 flex items-center justify-between gap-2 border-b border-[#EDEDED] bg-white/95 px-4 py-2.5 backdrop-blur lg:hidden">
           <button
             type="button"
             onClick={onBack}
             className="bz-btn bz-btn-sm"
             aria-label={isTr ? 'Yorumlar listesine dön' : 'Back to reviews'}
           >
-            <ArrowLeft size={16} strokeWidth={2} />
+            <ArrowLeft size={16} strokeWidth={2} aria-hidden="true" />
             {isTr ? 'Yorumlar' : 'Reviews'}
           </button>
           <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={onFlag}
-              disabled={flagging}
-              className={`${active.isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
-            >
-              {flagging ? <Loader2 size={12} className="animate-spin" /> : <Flag size={12} />}
-              {active.isFlagged ? (isTr ? 'Kaldır' : 'Unflag') : isTr ? 'İşaretle' : 'Flag'}
-            </button>
-            <button
-              type="button"
-              onClick={onAssign}
-              disabled={assigning}
-              className={`${active.isAssigned ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
-            >
-              {assigning ? (
-                <Loader2 size={12} className="animate-spin" />
-              ) : active.isAssigned ? (
-                <Check size={12} />
-              ) : (
-                <UserPlus size={12} />
-              )}
-              {active.isAssigned ? (isTr ? 'Atandı' : 'Assigned') : isTr ? 'Ata' : 'Assign'}
-            </button>
+            {flagButton(true)}
+            {assignButton(true)}
           </div>
         </div>
       )}
 
-      <div className="flex flex-col gap-4 p-5 sm:p-6">
-        {/* Header card */}
-        <div className="flex flex-wrap items-start gap-3">
-          <Avatar
-            name={initials(active.customerName)}
-            size={56}
-            color={active.rating >= 4 ? '#0A0A0A' : active.rating <= 2 ? '#DC2626' : '#737373'}
-            fg={active.rating >= 4 ? '#C6F24E' : '#FFFFFF'}
-          />
-          <div className="min-w-0 flex-1">
-            <p className="pulse-eyebrow text-[#737373]">
-              {active.restaurant?.name || (isTr ? 'İşletme' : 'Location')} ·{' '}
-              {timeAgo(active.createdAt, isTr)}
-              {active.platform ? ` · ${active.platform.toUpperCase()}` : ''}
-            </p>
-            {/* §38.237 — mutlak damga. Göreli süre üstte kalır; operatör
-                yorumun tam tarih + saatini burada görür. */}
-            <p className="mt-0.5 text-[11px] text-[#A3A3A3] tabular-nums">
-              <time dateTime={active.createdAt}>
-                {formatDateTime(active.createdAt, isTr)}
-              </time>
-            </p>
-            <h2 className="mt-0.5 text-[20px] sm:text-[22px] font-semibold text-[#0A0A0A] tracking-[-0.015em] bz-h-tight">
-              {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
-            </h2>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <Star
-                    key={n}
-                    size={14}
-                    className={
-                      n <= active.rating ? 'fill-[#C6F24E] text-[#C6F24E]' : 'text-[#EDEDED]'
-                    }
-                  />
-                ))}
-                <span className="ml-1 text-[12px] text-[#737373]">{active.rating}.0</span>
+      <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+        <div className="px-5 py-5 sm:px-8 sm:py-6 lg:pb-8">
+          {/* Header. The badge + text block keeps at least 260px; when the
+              pane is narrower than that plus the desktop actions, the actions
+              wrap onto their own line instead of squeezing the name. */}
+          <div className="flex flex-wrap items-start gap-x-4 gap-y-3">
+            <div className="flex min-w-0 flex-[1_1_260px] items-start gap-4">
+              <RatingBadge rating={active.rating} isTr={isTr} size="lg" />
+              <div className="min-w-0 flex-1">
+                <h2
+                  id={titleId}
+                  tabIndex={-1}
+                  className="bz-h-tight break-words text-[20px] text-[#0A0A0A] outline-none sm:text-[22px]"
+                >
+                  {active.customerName || (isTr ? 'Anonim müşteri' : 'Anonymous customer')}
+                </h2>
+                <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-[#525252]">
+                  <span className="inline-flex items-center gap-1.5">
+                    {iconId ? (
+                      <span aria-hidden="true" className="inline-flex">
+                        <PlatformChip id={iconId} size={16} />
+                      </span>
+                    ) : (
+                      <QrCode size={14} strokeWidth={2} aria-hidden="true" />
+                    )}
+                    {pLabel}
+                  </span>
+                  {active.restaurant?.name && (
+                    <>
+                      <span aria-hidden="true" className="text-[#D4D4D4]">
+                        ·
+                      </span>
+                      <span className="min-w-0 break-words">{active.restaurant.name}</span>
+                    </>
+                  )}
+                  <span aria-hidden="true" className="text-[#D4D4D4]">
+                    ·
+                  </span>
+                  <time dateTime={active.createdAt} title={formatDateTime(active.createdAt, isTr)}>
+                    {timeAgoLabel(active.createdAt, isTr)}
+                  </time>
+                </p>
+                {/* §38.237 / §46 — exact stamp in the business timezone. */}
+                <p className="mt-0.5 text-[12px] tabular-nums text-[#737373]">
+                  <time dateTime={active.createdAt}>{formatDateTime(active.createdAt, isTr)}</time>
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <span className="inline-flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star
+                        key={i}
+                        size={16}
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                        className={i <= active.rating ? 'fill-[#0A0A0A] text-[#0A0A0A]' : 'text-[#D4D4D4]'}
+                      />
+                    ))}
+                    <span className="ml-1.5 text-[13px] font-semibold text-[#0A0A0A]">
+                      {active.rating} / 5
+                    </span>
+                  </span>
+                  <FeedbackStatusChips feedback={active} isTr={isTr} showAssigned />
+                </div>
               </div>
-              {active.isReplied && <Badge kind="ok">{isTr ? 'YANITLANDI' : 'REPLIED'}</Badge>}
-              {active.isFlagged && <Badge kind="danger">{isTr ? 'DİKKAT' : 'FLAGGED'}</Badge>}
-              {active.isAssigned && <Badge kind="ghost">{isTr ? 'ATANDI' : 'ASSIGNED'}</Badge>}
+            </div>
+            {/* Desktop actions (mobile copies live in the sticky back bar). */}
+            <div className="hidden shrink-0 flex-wrap justify-end gap-1.5 lg:flex">
+              {flagButton(false)}
+              {assignButton(false)}
             </div>
           </div>
 
-          {/* Desktop action buttons (mobile sticky-top'ta zaten var) */}
-          {!showBackButton && (
-            <div className="hidden lg:flex flex-wrap gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={onFlag}
-                disabled={flagging}
-                className={`${active.isFlagged ? 'bz-btn-danger' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
-              >
-                {flagging ? <Loader2 size={12} className="animate-spin" /> : <Flag size={12} />}
-                {active.isFlagged
-                  ? isTr
-                    ? 'İşaret kaldır'
-                    : 'Unflag'
-                  : isTr
-                    ? 'İşaretle'
-                    : 'Flag'}
-              </button>
-              <button
-                type="button"
-                onClick={onAssign}
-                disabled={assigning}
-                className={`${active.isAssigned ? 'bz-btn-primary' : 'bz-btn'} bz-btn-sm disabled:opacity-50`}
-              >
-                {assigning ? (
-                  <Loader2 size={12} className="animate-spin" />
-                ) : active.isAssigned ? (
-                  <Check size={12} />
-                ) : (
-                  <UserPlus size={12} />
-                )}
-                {active.isAssigned ? (isTr ? 'Atandı' : 'Assigned') : isTr ? 'Ata' : 'Assign'}
-              </button>
+          {/* Comment */}
+          {active.comment ? (
+            <blockquote className="mt-5 whitespace-pre-line break-words rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-5 py-4 text-[15px] leading-[1.7] text-[#0A0A0A]">
+              {active.comment}
+            </blockquote>
+          ) : (
+            <p className="mt-5 text-[14px] italic text-[#737373]">
+              {isTr
+                ? 'Müşteri yorum yazmadı, yalnızca puan verdi.'
+                : 'The customer left a rating without a comment.'}
+            </p>
+          )}
+
+          {/* §38.237 — sent replies (`GET /api/feedback/[id]/reply`). */}
+          {sentReplies.length > 0 && (
+            <div className="mt-6">
+              <div className="mb-2 flex items-center gap-2">
+                <MessageSquare size={13} className="text-[#525252]" strokeWidth={2} aria-hidden="true" />
+                <span className="text-[12px] font-semibold text-[#525252]">
+                  {isTr
+                    ? `Gönderilen yanıtlar (${sentReplies.length})`
+                    : `Sent replies (${sentReplies.length})`}
+                </span>
+              </div>
+              <ol className="flex flex-col gap-2.5">
+                {sentReplies.map((rep) => {
+                  const channelLabel =
+                    rep.channel === 'email'
+                      ? isTr
+                        ? 'E-posta'
+                        : 'Email'
+                      : isTr
+                        ? 'Dahili kayıt'
+                        : 'Internal note';
+                  const failed = rep.status === 'failed';
+                  return (
+                    <li
+                      key={rep.id}
+                      className={`rounded-xl border p-3.5 ${
+                        failed ? 'border-[#FCA5A5] bg-[#FFFBFB]' : 'border-[#EDEDED] bg-white'
+                      }`}
+                    >
+                      <div className="mb-1.5 flex items-center justify-between gap-2 text-[12px]">
+                        <span className="inline-flex items-center gap-1.5 font-medium text-[#525252]">
+                          {rep.channel === 'email' && <Mail size={11} strokeWidth={2.2} aria-hidden="true" />}
+                          {channelLabel}
+                          {failed && (
+                            <span className="text-[#991B1B]">· {isTr ? 'iletilemedi' : 'failed'}</span>
+                          )}
+                        </span>
+                        <time
+                          dateTime={rep.createdAt}
+                          className="tabular-nums text-[#A3A3A3]"
+                          title={formatDateTime(rep.createdAt, isTr)}
+                        >
+                          {formatStamp(rep.createdAt, isTr)}
+                        </time>
+                      </div>
+                      <p className="whitespace-pre-line break-words text-[13px] leading-[1.55] text-[#0A0A0A]">
+                        {rep.body}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
           )}
-        </div>
 
-        {/* Comment card */}
-        <div className="rounded-xl bg-[#FAFAFA] p-4 sm:p-5 text-[14px] sm:text-[15px] leading-[1.65] text-[#0A0A0A]">
-          {active.comment
-            ? `"${active.comment}"`
-            : isTr
-              ? 'Bu yorumda açıklama yok.'
-              : 'No comment provided.'}
-        </div>
+          {sentLoading && sentReplies.length === 0 && (
+            <div className="mt-6 flex items-center gap-2 text-[12px] text-[#737373]">
+              <Loader2 size={12} className="animate-spin" aria-hidden="true" />
+              {isTr ? 'Gönderilen yanıtlar yükleniyor…' : 'Loading sent replies…'}
+            </div>
+          )}
 
-        {/* §38.237 — Gönderilen yanıtlar. Owner panelindeki thread ile aynı
-            veri kaynağı (`GET /api/feedback/[id]/reply`). Admin artık
-            işletmenin müşteriye ne yazdığını, hangi kanaldan gittiğini ve
-            teslim durumunu görebiliyor. */}
-        {props.sentLoading ? (
-          <div className="flex items-center gap-2 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] px-3.5 py-3 text-[12px] text-[#737373]">
-            <Loader2 size={13} className="animate-spin" />
-            {isTr ? 'Gönderilen yanıtlar yükleniyor…' : 'Loading sent replies…'}
-          </div>
-        ) : props.sentReplies.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            <p className="pulse-eyebrow inline-flex items-center gap-1.5 text-[#737373]">
-              <MessageSquareText size={11} strokeWidth={2.2} />
-              {isTr
-                ? `Gönderilen yanıtlar (${props.sentReplies.length})`
-                : `Sent replies (${props.sentReplies.length})`}
-            </p>
-            <ol className="flex flex-col gap-2.5">
-              {props.sentReplies.map((rep) => {
-                const channelLabel =
-                  rep.channel === 'email'
+          {/* Pulse AI (low rating, not replied) or a gate. */}
+          {canReply ? (
+            <AdminPulseAiCard
+              isTr={isTr}
+              suggesting={props.suggesting}
+              aiSource={props.aiSource}
+              aiTone={props.aiTone}
+              setAiTone={props.setAiTone}
+              onSuggest={props.onSuggest}
+            />
+          ) : isHigh ? (
+            <div className="mt-6">
+              <AlertBanner
+                kind="lime"
+                icon={<Sparkles size={14} className="mt-1 text-[#0A0A0A]" strokeWidth={2} />}
+              >
+                <span className="block text-[#525252]">
+                  <strong className="font-semibold text-[#0A0A0A]">
+                    {isTr ? 'Yanıt gerekmiyor.' : 'No reply needed.'}
+                  </strong>{' '}
+                  {active.platform
                     ? isTr
-                      ? 'E-posta'
-                      : 'Email'
+                      ? `Bu ${pLabel} yorumu yüksek puanlı; müşteri paylaşımını platformda yaptı. Takip etmek isterseniz yorumu işaretleyebilir veya atayabilirsiniz.`
+                      : `This ${pLabel} review is high-rated and the customer already posted it on the platform. You can still flag or assign it to follow up.`
                     : isTr
-                      ? 'Dahili kayıt'
-                      : 'Internal';
-                const failed = rep.status === 'failed';
-                return (
-                  <li
-                    key={rep.id}
-                    className={`rounded-xl border p-3.5 ${
-                      failed ? 'border-[#FCA5A5] bg-[#FFFBFB]' : 'border-[#EDEDED] bg-white'
-                    }`}
-                  >
-                    <div className="mb-1.5 flex items-center justify-between gap-2">
-                      <span className="pulse-eyebrow inline-flex items-center gap-1.5 text-[#737373]">
-                        {rep.channel === 'email' && <Mail size={10} strokeWidth={2.2} />}
-                        {channelLabel}
-                        {failed && (
-                          <span className="text-[#991B1B]">
-                            · {isTr ? 'iletilemedi' : 'failed'}
-                          </span>
-                        )}
-                      </span>
-                      <span
-                        className="pulse-eyebrow tabular-nums text-[#A3A3A3]"
-                        title={formatDateTime(rep.createdAt, isTr)}
-                      >
-                        {timeAgo(rep.createdAt, isTr)} · {formatStamp(rep.createdAt, isTr)}
-                      </span>
-                    </div>
-                    <p className="whitespace-pre-line text-[13px] leading-[1.55] text-[#0A0A0A]">
-                      {rep.body}
-                    </p>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        ) : null}
+                      ? 'Yüksek puanlı bir Buaze QR yorumu. Takip etmek isterseniz işaretleyebilir veya atayabilirsiniz.'
+                      : 'This is a high-rated Buaze QR review. You can still flag or assign it to follow up.'}
+                </span>
+              </AlertBanner>
+            </div>
+          ) : (
+            // Right after a successful send the composer unmounts (the review
+            // is now replied), so its status line would vanish with it — the
+            // gate carries the confirmation instead.
+            <div className="mt-6">
+              <AlertBanner
+                kind={props.notice?.tone === 'success' ? 'success' : 'info'}
+                icon={<Check size={14} className="mt-1 text-[#0A0A0A]" strokeWidth={2.2} />}
+              >
+                <span className="block text-[#525252]">
+                  <strong className="font-semibold text-[#0A0A0A]">
+                    {props.notice?.tone === 'success'
+                      ? props.notice.msg + '.'
+                      : isTr
+                        ? 'Yanıtlandı.'
+                        : 'Replied.'}
+                  </strong>{' '}
+                  {isTr
+                    ? 'Gönderilen yanıtı yukarıda görebilirsiniz.'
+                    : 'You can see the sent reply above.'}
+                </span>
+              </AlertBanner>
+            </div>
+          )}
 
-        {/* High-rating reply gate */}
-        {active.rating >= 4 ? (
-          <AlertBanner
-            kind="lime"
-            icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}
-          >
-            <span className="block font-semibold text-[#0A0A0A]">
-              {isTr ? 'Yanıt yazmaya gerek yok' : 'No reply needed'}
-            </span>
-            <span className="block mt-0.5 text-[#525252]">
-              {isTr
-                ? `Yüksek puanlı yorum ${(active.platform || 'platform').toUpperCase()} üzerinden alındı; müşteri zaten platformda paylaşımını yaptı. İsterseniz yukarıdaki Flag/Ata aksiyonlarıyla bu yorumu ekibinizle takip edebilirsiniz.`
-                : `High-rating review came in via ${(active.platform || 'platform').toUpperCase()}; the customer already posted on the platform. You can still flag or assign it to your team.`}
-            </span>
-          </AlertBanner>
-        ) : active.isReplied ? (
-          /* Yanıtlanmış yorum — AI yeniden üretmesin, sade "Yanıtlandı"
-             başlığı yeterli. Üstteki Flag/Assign action button'ları zaten
-             ayrı block'ta görünür kalıyor; ek açıklayıcı cümleye gerek yok. */
-          <AlertBanner
-            kind="info"
-            icon={<Sparkles size={14} className="text-[#0A0A0A] mt-1" strokeWidth={2} />}
-          >
-            <span className="block font-semibold text-[#0A0A0A]">
-              {isTr ? 'Yanıtlandı' : 'Replied'}
-            </span>
-          </AlertBanner>
-        ) : (
-          <AdminFeedbackReplyComposer
+          {/* §38.33 — timeline (received + replies), owner parity. */}
+          <div className="mt-6">
+            <FeedbackTimeline
+              events={buildFeedbackTimeline({
+                feedback: {
+                  id: active.id,
+                  createdAt: new Date(active.createdAt),
+                  platform: active.platform,
+                },
+                replies: sentReplies.map((r) => ({
+                  id: r.id,
+                  createdAt: new Date(r.createdAt),
+                  source: null,
+                  channel: r.channel,
+                })),
+                isTr,
+              })}
+              isTr={isTr}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Reply composer — docked on lg, OUTSIDE the scroll area so it can never
+          cover the body. Inline at the end of the body on mobile. Same sizing
+          as the owner dock: capped at 48% of the pane with a floor so label →
+          Send fits on short screens; only the textarea shrinks. */}
+      {canReply && (
+        <div className="border-t border-[#EDEDED] bg-white px-5 py-4 sm:px-8 lg:flex lg:max-h-[max(48%,232px)] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:py-3 lg:focus-within:max-h-[max(48%,264px)]">
+          <AdminReplyComposerCard
             feedback={active}
             isTr={isTr}
             locale={props.locale}
-            suggesting={props.suggesting}
-            aiSource={props.aiSource}
-            aiTone={props.aiTone}
-            setAiTone={props.setAiTone}
-            onSuggest={props.onSuggest}
             draft={props.draft}
             setDraft={props.setDraft}
             sendEmail={props.sendEmail}
@@ -308,8 +414,8 @@ export function AdminFeedbackDetail(props: AdminFeedbackDetailProps) {
             onSend={props.onSend}
             notice={props.notice}
           />
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

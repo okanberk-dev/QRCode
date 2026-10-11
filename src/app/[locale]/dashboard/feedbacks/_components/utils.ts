@@ -1,39 +1,54 @@
 import type { Locale } from '@/lib/translations';
-import type { PlatformId } from '@/components/ui';
-import { formatFullDateTimeInTimeZone, formatStampInTimeZone } from '@/lib/timezone';
+import {
+  formatFullDateTimeInTimeZone,
+  formatStampInTimeZone,
+  resolveDisplayTimeZone,
+} from '@/lib/timezone';
 
-export const PLATFORM_OPTIONS: PlatformId[] = [
-  'google',
-  'yemeksepeti',
-  'getir',
-  'trendyol_go',
-  'tripadvisor',
-];
+// Platform display helpers are shared with the admin inbox — one source.
+export {
+  INBOX_PLATFORM_FILTER_IDS,
+  platformIconId,
+  platformLabel,
+} from '@/components/dashboard/feedbacks/inbox-format';
 
-export function initials(name: string | null) {
-  if (!name) return 'B';
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase())
-    .slice(0, 2)
-    .join('');
-}
-
+/**
+ * Compact relative age: "12 sn" / "7 dk" / "7 sa" / "2 gün" (EN "7h", "2d").
+ * Older than a week → a short date in the business timezone (§46) — never
+ * the device timezone.
+ */
 export function timeAgo(dateStr: string, locale: Locale) {
   const isTr = locale === 'tr';
   const now = Date.now();
   const then = new Date(dateStr).getTime();
+  if (!Number.isFinite(then)) return '';
   const diff = Math.max(0, Math.floor((now - then) / 1000));
   if (diff < 60) return isTr ? `${diff} sn` : `${diff}s`;
   if (diff < 3600) return isTr ? `${Math.floor(diff / 60)} dk` : `${Math.floor(diff / 60)}m`;
   if (diff < 86400) return isTr ? `${Math.floor(diff / 3600)} sa` : `${Math.floor(diff / 3600)}h`;
   const days = Math.floor(diff / 86400);
   if (days < 7) return isTr ? `${days} gün` : `${days}d`;
-  return new Date(dateStr).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
-    day: '2-digit',
+  return new Intl.DateTimeFormat(isTr ? 'tr-TR' : 'en-US', {
+    timeZone: resolveDisplayTimeZone(),
+    day: 'numeric',
     month: 'short',
-  });
+  }).format(new Date(dateStr));
+}
+
+/**
+ * Sentence-case relative label for list rows and the detail meta line:
+ * "az önce", "7 dk önce", "2 gün önce" / "just now", "7m ago", "2d ago".
+ * Dates older than a week stay as-is ("3 Eki").
+ */
+export function timeAgoLabel(dateStr: string, locale: Locale) {
+  const isTr = locale === 'tr';
+  const then = new Date(dateStr).getTime();
+  if (!Number.isFinite(then)) return '';
+  const diff = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (diff < 60) return isTr ? 'az önce' : 'just now';
+  const base = timeAgo(dateStr, locale);
+  if (diff >= 7 * 86400) return base;
+  return isTr ? `${base} önce` : `${base} ago`;
 }
 
 // §38.237 — Mutlak zaman damgası. `timeAgo` göreli ("3 sa") gösterir ama

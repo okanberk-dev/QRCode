@@ -1,0 +1,122 @@
+'use client';
+
+import { useRef, type KeyboardEvent } from 'react';
+
+/**
+ * Pill tablist for the review inboxes (owner + admin). Each tab can carry a
+ * count pill; pass `count: null`/`undefined` to omit it (the owner inbox only
+ * shows counts it knows to be exact, and none while loading — never a 0
+ * placeholder).
+ *
+ * Keyboard: ArrowLeft/Right/Home/End move AND select (same contract as the
+ * `<Tabs>` primitive), roving `tabIndex`. If `active` matches no tab (e.g. a
+ * legacy deep-link tab), the first tab stays in the tab order.
+ */
+
+export interface InboxTab {
+  id: string;
+  label: string;
+  /** Exact count, or null/undefined to hide the pill. */
+  count?: number | null;
+  /** Tooltip, e.g. "1–3 yıldız" on the low-rating tab. */
+  title?: string;
+  /** `danger` tints the count pill red when it is > 0 and the tab is not selected. */
+  tone?: 'default' | 'danger';
+}
+
+interface InboxStatusTabsProps {
+  tabs: InboxTab[];
+  active: string;
+  onChange: (id: string) => void;
+  ariaLabel: string;
+  /** id of the element the tabs filter (`aria-controls`). */
+  controlsId?: string;
+  className?: string;
+}
+
+export function InboxStatusTabs({
+  tabs,
+  active,
+  onChange,
+  ariaLabel,
+  controlsId,
+  className = '',
+}: InboxStatusTabsProps) {
+  const refs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const activeIndex = tabs.findIndex((t) => t.id === active);
+  const focusableIndex = activeIndex === -1 ? 0 : activeIndex;
+
+  const move = (index: number) => {
+    const next = tabs[index];
+    if (!next) return;
+    onChange(next.id);
+    refs.current[next.id]?.focus();
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      move((index + 1) % tabs.length);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      move((index - 1 + tabs.length) % tabs.length);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      move(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      move(tabs.length - 1);
+    }
+  };
+
+  return (
+    <div
+      role="tablist"
+      aria-label={ariaLabel}
+      aria-orientation="horizontal"
+      className={`-mx-4 flex gap-1.5 overflow-x-auto px-4 no-scrollbar [mask-image:linear-gradient(to_right,#000_88%,transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none] ${className}`}
+    >
+      {tabs.map((tab, index) => {
+        const selected = tab.id === active;
+        const showCount = typeof tab.count === 'number';
+        const countTone = selected
+          ? 'bg-white/15 text-white'
+          : tab.tone === 'danger' && (tab.count ?? 0) > 0
+            ? 'bg-[#FEE2E2] text-[#991B1B]'
+            : 'bg-[#F5F5F5] text-[#525252]';
+        return (
+          <button
+            key={tab.id}
+            ref={(el) => {
+              refs.current[tab.id] = el;
+            }}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            aria-controls={controlsId}
+            tabIndex={index === focusableIndex ? 0 : -1}
+            title={tab.title}
+            onClick={() => onChange(tab.id)}
+            onKeyDown={(e) => onKeyDown(e, index)}
+            className={`inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-1 ${
+              selected
+                ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#D4D4D4] hover:text-[#0A0A0A]'
+            }`}
+          >
+            <span>{tab.label}</span>
+            {showCount && (
+              <span
+                className={`min-w-[20px] rounded-full px-1.5 text-center text-[11px] leading-[18px] tabular-nums ${countTone}`}
+              >
+                {tab.count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export default InboxStatusTabs;

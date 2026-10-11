@@ -475,7 +475,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     const isTr = locale === 'tr';
     return {
       dashboard: isTr ? 'Panel' : 'Dashboard',
-      feedbacks: isClinicMode ? (isTr ? 'Hasta geri bildirimleri' : 'Patient feedback') : (isTr ? 'Yorumlar' : 'Feedbacks'),
+      feedbacks: isClinicMode ? (isTr ? 'Hasta geri bildirimleri' : 'Patient feedback') : (isTr ? 'Yorumlar' : 'Reviews'),
       googleReviews: isTr ? 'Google Yorumları' : 'Google Reviews',
       analytics: isTr ? 'Analitik' : 'Analytics',
       restaurants: isClinicMode ? (isTr ? 'Klinikler' : 'Clinics') : (isTr ? 'İşletmeler' : 'Locations'),

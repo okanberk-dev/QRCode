@@ -1,22 +1,148 @@
 'use client';
 
+import { useLayoutEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Loader2, Mail, Send, Sparkles } from 'lucide-react';
+import { Loader2, Mail, RotateCw, Send, Sparkles } from 'lucide-react';
 import type { AiSource, AiTone, FeedbackRow, ReplyTone } from './types';
 
-interface AdminFeedbackReplyComposerProps {
-  feedback: FeedbackRow;
-  isTr: boolean;
-  locale: string;
+/** API limit for a reply body (`/api/feedback/[id]/reply` → body_too_long). */
+export const ADMIN_REPLY_MAX_LENGTH = 2000;
 
-  // AI block
+export const ADMIN_REPLY_TEXTAREA_ID = 'admin-reply-textarea';
+
+/* ============================================================================
+ * Pulse AI card — lives in the scrollable detail body, right above the docked
+ * reply composer. Admin keeps its single `onSuggest(tone)` flow: the draft is
+ * written straight into the reply box (no separate suggestion state).
+ * ========================================================================== */
+
+interface AdminPulseAiCardProps {
+  isTr: boolean;
   suggesting: boolean;
   aiSource: AiSource;
   aiTone: AiTone;
   setAiTone: (v: AiTone) => void;
   onSuggest: (tone?: AiTone) => void;
+}
 
-  // Composer
+export function AdminPulseAiCard({
+  isTr,
+  suggesting,
+  aiSource,
+  aiTone,
+  setAiTone,
+  onSuggest,
+}: AdminPulseAiCardProps) {
+  const isTemplate = aiSource === 'template' || aiSource === 'template-fallback';
+  const hasDraft = aiSource !== null;
+
+  return (
+    <div className="mt-5 rounded-2xl bg-[#0A0A0A] p-4 text-white sm:p-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <span
+          aria-hidden="true"
+          className="flex h-6 w-6 items-center justify-center rounded-md bg-[#C6F24E] text-[#0A0A0A]"
+        >
+          <Sparkles size={13} strokeWidth={2.2} />
+        </span>
+        <span className="text-[13px] font-semibold text-[#C6F24E]">
+          {isTr ? 'Pulse AI önerisi' : 'Pulse AI suggestion'}
+        </span>
+        {suggesting ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white/70">
+            <Loader2 size={11} className="animate-spin" aria-hidden="true" />
+            {isTr ? 'Hazırlanıyor' : 'Working'}
+          </span>
+        ) : aiSource === 'openai' ? (
+          <span className="rounded-full bg-[#C6F24E] px-2 py-0.5 text-[11px] font-medium text-[#0A0A0A]">
+            AI
+          </span>
+        ) : isTemplate ? (
+          <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white/70">
+            {isTr ? 'Şablon' : 'Template'}
+          </span>
+        ) : null}
+      </div>
+
+      <p className="mt-3 text-[14px] leading-[1.65] text-white/85">
+        {hasDraft
+          ? isTr
+            ? 'Taslak aşağıdaki yanıt alanına eklendi. Göndermeden önce gözden geçirip düzenleyebilirsin.'
+            : 'The draft is in the reply box below. Review and edit it before sending.'
+          : isTr
+            ? 'Puan, yorum ve müşteri bağlamına göre Buaze tonunda kişiselleştirilmiş yanıt üretir. AI yanıt vermezse güvenli şablona düşer.'
+            : 'Generates a personalized reply in your Buaze voice based on rating, comment and context. Falls back to a safe template when unavailable.'}
+      </p>
+
+      {!suggesting && isTemplate && (
+        <p className="mt-3 inline-flex items-start gap-2 text-[12px] leading-[1.5] text-white/60">
+          <span aria-hidden="true" className="mt-0.5">
+            ⚠
+          </span>
+          <span>
+            {isTr
+              ? 'AI servisi şu an pasif; bu bir hazır şablon taslaktır. "Yeniden öner" ile tekrar deneyebilirsiniz.'
+              : 'AI service is currently unavailable; this is a generic template. Click "Regenerate" to retry.'}
+          </span>
+        </p>
+      )}
+
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+        <button
+          type="button"
+          onClick={() => onSuggest(aiTone)}
+          disabled={suggesting}
+          className="bz-btn-lime w-full sm:w-auto"
+        >
+          {suggesting ? (
+            <Loader2 size={13} strokeWidth={2.2} className="animate-spin" aria-hidden="true" />
+          ) : hasDraft ? (
+            <RotateCw size={13} strokeWidth={2.2} aria-hidden="true" />
+          ) : (
+            <Sparkles size={13} strokeWidth={2.2} aria-hidden="true" />
+          )}
+          {hasDraft
+            ? isTr
+              ? 'Yeniden öner'
+              : 'Regenerate'
+            : isTr
+              ? 'Taslak oluştur'
+              : 'Generate draft'}
+        </button>
+        <select
+          value={aiTone}
+          onChange={(e) => setAiTone(e.target.value as AiTone)}
+          disabled={suggesting}
+          aria-label={isTr ? 'Pulse AI yanıt tonu' : 'Pulse AI reply tone'}
+          /* Documented dark native-select exception (§38.202), owner parity.
+             16px + 44px on mobile (iOS zoom, touch target), compact from sm. */
+          className="min-h-[44px] w-full rounded-full border border-white/20 bg-transparent px-3 py-2 text-[16px] font-medium text-white outline-none bz-motion-spring hover:bg-white/10 focus-visible:border-[#C6F24E] focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A] disabled:opacity-50 sm:min-h-0 sm:w-auto sm:py-1.5 sm:text-[12px]"
+          style={{ colorScheme: 'dark' }}
+        >
+          <option value="warm" className="text-[#0A0A0A]">
+            {isTr ? 'Ton: Samimi' : 'Tone: Warm'}
+          </option>
+          <option value="formal" className="text-[#0A0A0A]">
+            {isTr ? 'Ton: Resmi' : 'Tone: Formal'}
+          </option>
+          <option value="apologetic" className="text-[#0A0A0A]">
+            {isTr ? 'Ton: Özür' : 'Tone: Apologetic'}
+          </option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+ * Reply composer card — docked at the bottom of the detail pane on lg (outside
+ * the scroll area, so it can never cover content), inline on mobile.
+ * ========================================================================== */
+
+interface AdminReplyComposerCardProps {
+  feedback: FeedbackRow;
+  isTr: boolean;
+  locale: string;
   draft: string;
   setDraft: (v: string) => void;
   sendEmail: boolean;
@@ -28,14 +154,10 @@ interface AdminFeedbackReplyComposerProps {
   notice: { msg: string; tone: ReplyTone } | null;
 }
 
-export function AdminFeedbackReplyComposer({
+export function AdminReplyComposerCard({
   feedback: active,
   isTr,
-  suggesting,
-  aiSource,
-  aiTone,
-  setAiTone,
-  onSuggest,
+  locale,
   draft,
   setDraft,
   sendEmail,
@@ -45,198 +167,183 @@ export function AdminFeedbackReplyComposer({
   sending,
   onSend,
   notice,
-  locale,
-}: AdminFeedbackReplyComposerProps) {
+}: AdminReplyComposerCardProps) {
+  const willEmail = sendEmail && Boolean(active.customerEmail);
+  const canSend = Boolean(draft.trim()) && !sending && confirmResponsibility;
+
+  // Auto-grow on every draft change (typing, an AI draft landing, the draft
+  // clearing on a review switch). lg: capped at 200px so the docked composer
+  // never eats the reading area; mobile: up to half the viewport.
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    if (!draft) return; // empty → back to the rows/min-height size
+    const cap =
+      window.innerWidth >= 1024 ? 200 : Math.min(480, Math.round(window.innerHeight * 0.5));
+    el.style.height = `${Math.min(el.scrollHeight + 2, cap)}px`;
+  }, [draft]);
+
   return (
-    <>
-      {/* Pulse AI block — graphite imza (owner ile parite §11) */}
-      <div className="rounded-xl bg-[#0A0A0A] p-4 sm:p-5 text-white">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="flex h-5 w-5 items-center justify-center rounded bg-[#C6F24E] text-[10px] font-bold text-[#0A0A0A] bz-h-tight">
-            AI
-          </span>
-          <span className="pulse-eyebrow text-[#C6F24E]">
-            {isTr ? 'BUAZE PULSE AI ÖNERİSİ' : 'BUAZE PULSE AI SUGGESTION'}
-          </span>
-          {!suggesting && aiSource === 'openai' && (
-            <span className="pulse-eyebrow rounded-full bg-[#C6F24E] px-2 py-0.5 text-[#0A0A0A]">
-              AI
-            </span>
-          )}
-          {!suggesting && (aiSource === 'template' || aiSource === 'template-fallback') && (
-            <span className="pulse-eyebrow rounded-full bg-white/10 px-2 py-0.5 text-white/70">
-              {isTr ? 'ŞABLON' : 'TEMPLATE'}
-            </span>
-          )}
-          {suggesting && (
-            <span className="pulse-eyebrow inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-white/70">
-              <Loader2 size={10} className="animate-spin" />
-              {isTr ? 'HAZIRLANIYOR' : 'WORKING'}
-            </span>
-          )}
-        </div>
-
-        <p className="mt-3 text-[12px] leading-[1.55] text-white/70">
-          {isTr
-            ? 'Puan, yorum ve müşteri bağlamına göre Buaze tonunda kişiselleştirilmiş yanıt üretir. AI yanıt vermezse güvenli şablona düşer.'
-            : 'Generates a personalized reply in your Buaze voice based on rating, comment and context. Falls back to a safe template when unavailable.'}
-        </p>
-
-        <div className="mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onSuggest(aiTone)}
-            disabled={suggesting}
-            className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-full bg-[#C6F24E] px-4 py-2 sm:py-1.5 text-[12px] font-semibold text-[#0A0A0A] hover:bg-[#A8D62E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {suggesting ? (
-              <Loader2 size={12} strokeWidth={2} className="animate-spin" />
-            ) : (
-              <Sparkles size={12} strokeWidth={2} />
-            )}
-            {isTr ? 'Taslak oluştur' : 'Generate draft'}
-          </button>
-          <select
-            value={aiTone}
-            onChange={(e) => setAiTone(e.target.value as AiTone)}
-            disabled={suggesting}
-            aria-label={isTr ? 'Pulse AI tonu' : 'Pulse AI tone'}
-            className="bz-input w-full rounded-full border-white/20 bg-transparent py-2 text-[12px] font-medium text-white hover:bg-white/10 disabled:opacity-50 sm:w-auto sm:py-1.5"
-            style={{ colorScheme: 'dark' }}
-          >
-            <option value="warm" className="text-[#0A0A0A]">
-              {isTr ? 'Ton: Samimi' : 'Tone: Warm'}
-            </option>
-            <option value="formal" className="text-[#0A0A0A]">
-              {isTr ? 'Ton: Resmi' : 'Tone: Formal'}
-            </option>
-            <option value="apologetic" className="text-[#0A0A0A]">
-              {isTr ? 'Ton: Özür' : 'Tone: Apologetic'}
-            </option>
-          </select>
-        </div>
+    // lg: column flex item of the docked footer — only the textarea shrinks
+    // (min 44px, it then scrolls internally), so Send stays visible however
+    // long the draft gets.
+    <div className="lg:flex lg:min-h-0 lg:flex-col">
+      <div className="flex items-center justify-between gap-2 lg:shrink-0">
+        <label htmlFor={ADMIN_REPLY_TEXTAREA_ID} className="text-[13px] font-semibold text-[#0A0A0A]">
+          {isTr ? 'Yanıtınız' : 'Your reply'}
+        </label>
+        <span className="text-[11px] tabular-nums text-[#A3A3A3]" aria-live="polite">
+          {draft.length} / {ADMIN_REPLY_MAX_LENGTH}
+        </span>
       </div>
+      <textarea
+        ref={textareaRef}
+        id={ADMIN_REPLY_TEXTAREA_ID}
+        rows={2}
+        maxLength={ADMIN_REPLY_MAX_LENGTH}
+        aria-describedby="admin-reply-textarea-hint"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          // Cmd/Ctrl+Enter → send (owner parity). onSend re-checks the
+          // empty / consent / sending guards.
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            if (canSend) onSend();
+          }
+        }}
+        placeholder={isTr ? 'Yanıtınızı yazın…' : 'Write your reply…'}
+        inputMode="text"
+        enterKeyHint="send"
+        autoCorrect="on"
+        spellCheck={true}
+        className="mt-2 max-h-[480px] min-h-[84px] w-full resize-none overflow-y-auto rounded-xl border border-[#EDEDED] bg-white px-3.5 py-2.5 text-[16px] leading-[1.55] text-[#0A0A0A] placeholder:text-[#A3A3A3] focus:border-[#0A0A0A] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] sm:text-[14px] lg:max-h-[200px] lg:min-h-[44px] lg:shrink"
+      />
+      <p id="admin-reply-textarea-hint" className="sr-only">
+        {isTr
+          ? 'Cmd veya Ctrl + Enter ile gönderebilirsiniz. En fazla 2000 karakter.'
+          : 'Press Cmd or Ctrl + Enter to send. Up to 2,000 characters.'}
+      </p>
 
-      {/* Reply textarea */}
-      <div className="mt-4 rounded-xl border border-[#EDEDED] p-4">
-        <div className="flex items-center justify-between gap-2">
-          <p className="pulse-eyebrow text-[#737373]">
-            {isTr ? 'YANIT YAZIN' : 'WRITE A REPLY'}
-          </p>
-          {notice && (
-            <span
-              className={`pulse-eyebrow rounded-full px-2.5 py-1 ${
-                notice.tone === 'success'
-                  ? 'bg-[#EAF9B8] text-[#0A0A0A]'
-                  : notice.tone === 'error'
-                    ? 'bg-[#FEF2F2] text-[#991B1B]'
-                    : 'bg-[#F5F5F5] text-[#525252]'
-              }`}
-            >
-              {notice.msg}
+      <div className="mt-2 rounded-lg bg-[#FAFAFA] px-3 py-2 text-[12px] lg:shrink-0 lg:py-1.5">
+        {active.customerEmail ? (
+          <label className="flex cursor-pointer items-start gap-2 text-[#0A0A0A]">
+            <input
+              type="checkbox"
+              checked={sendEmail}
+              onChange={(e) => setSendEmail(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]"
+            />
+            <Mail size={12} className="mt-0.5 shrink-0 text-current opacity-60" aria-hidden="true" />
+            <span className="min-w-0 break-words">
+              {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
+              <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>
             </span>
-          )}
-        </div>
-        <textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          rows={5}
-          placeholder={isTr ? 'Yanıtınızı yazın…' : 'Write your reply…'}
-          className="mt-2.5 w-full resize-none bg-transparent text-[14px] sm:text-[13px] text-[#0A0A0A] placeholder:text-[#A3A3A3] outline-none"
-        />
-
-        <div className="mt-3 rounded-lg bg-[#FAFAFA] p-2.5">
-          {active.customerEmail ? (
-            <label className="flex cursor-pointer items-center gap-2 text-[12px] text-[#0A0A0A]">
-              <input
-                type="checkbox"
-                checked={sendEmail}
-                onChange={(e) => setSendEmail(e.target.checked)}
-                className="h-4 w-4 accent-[#0A0A0A]"
-              />
-              <Mail size={12} className="text-current opacity-60" />
-              <span>
-                {isTr ? 'Müşteriye e-posta gönder' : 'Email the customer'}
-                <span className="ml-1 text-[#737373]">· {active.customerEmail}</span>
-              </span>
-            </label>
-          ) : (
-            <p className="flex items-center gap-2 text-[11px] text-[#737373]">
-              <Mail size={12} />
+          </label>
+        ) : (
+          <p className="flex items-start gap-2 text-[#737373]">
+            <Mail size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <span>
               {isTr
                 ? `Müşteri e-posta bırakmamış${active.rating >= 4 ? ' (yüksek puanlılar yönlendirildiği için bu beklenir)' : ''} — yanıt sadece dahili olarak kaydedilir.`
                 : `No customer email${active.rating >= 4 ? ' (expected for high-rating redirects)' : ''} — reply saved internally only.`}
-            </p>
+            </span>
+          </p>
+        )}
+      </div>
+
+      {/* §45 — Per-message responsibility acknowledgement. Must be ticked for
+          every send (the page resets it after a successful send and on every
+          review switch). Wording and link verbatim. */}
+      <label className="mt-2 flex cursor-pointer items-start gap-2 text-[12px] leading-[1.5] text-[#525252] lg:shrink-0">
+        <input
+          type="checkbox"
+          checked={confirmResponsibility}
+          onChange={(e) => setConfirmResponsibility(e.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]"
+        />
+        <span>
+          {isTr ? (
+            <>
+              Bu yanıtın içeriğinden bizzat sorumlu olduğumu, tehdit, hakaret, iftira
+              veya yasa dışı bir ifade içermediğini onaylıyorum ({' '}
+              <Link
+                href={`/${locale}/kabul-edilebilir-kullanim`}
+                target="_blank"
+                rel="noopener"
+                className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+              >
+                Kabul Edilebilir Kullanım Politikası
+              </Link>
+              ).
+            </>
+          ) : (
+            <>
+              I confirm I am solely responsible for this reply and that it does not
+              contain a threat, insult, defamation, or unlawful statement ({' '}
+              <Link
+                href={`/${locale}/kabul-edilebilir-kullanim`}
+                target="_blank"
+                rel="noopener"
+                className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
+              >
+                Acceptable Use Policy
+              </Link>
+              ).
+            </>
           )}
-        </div>
+        </span>
+      </label>
 
-        {/* §45 — Per-message sorumluluk onayı, her gönderimde yeniden
-            işaretlenmeli (parent submit sonrası sıfırlıyor). */}
-        <label className="mt-3 flex cursor-pointer items-start gap-2 text-[11.5px] leading-relaxed text-[#525252]">
-          <input
-            type="checkbox"
-            checked={confirmResponsibility}
-            onChange={(e) => setConfirmResponsibility(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[#0A0A0A]"
-          />
-          <span>
-            {isTr ? (
-              <>
-                Bu yanıtın içeriğinden bizzat sorumlu olduğumu, tehdit, hakaret, iftira
-                veya yasa dışı bir ifade içermediğini onaylıyorum ({' '}
-                <Link
-                  href={`/${locale}/kabul-edilebilir-kullanim`}
-                  target="_blank"
-                  rel="noopener"
-                  className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
-                >
-                  Kabul Edilebilir Kullanım Politikası
-                </Link>
-                ).
-              </>
-            ) : (
-              <>
-                I confirm I am solely responsible for this reply and that it does not
-                contain a threat, insult, defamation, or unlawful statement ({' '}
-                <Link
-                  href={`/${locale}/kabul-edilebilir-kullanim`}
-                  target="_blank"
-                  rel="noopener"
-                  className="font-semibold text-[#0A0A0A] underline-offset-2 hover:underline"
-                >
-                  Acceptable Use Policy
-                </Link>
-                ).
-              </>
-            )}
-          </span>
-        </label>
-
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <span className="text-[11px] text-[#737373] tabular-nums">
-            {draft.length} / 2000
+      <div className="mt-2.5 flex items-center justify-between gap-3 lg:shrink-0">
+        <p
+          role="status"
+          aria-live="polite"
+          className={`min-w-0 text-[12px] leading-[1.45] ${
+            notice?.tone === 'success'
+              ? 'text-[#166534]'
+              : notice?.tone === 'error'
+                ? 'text-[#991B1B]'
+                : 'text-[#525252]'
+          }`}
+        >
+          {notice?.msg}
+        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="hidden text-[11px] text-[#A3A3A3] sm:inline" aria-hidden="true">
+            ⌘ Enter
           </span>
           <button
             type="button"
             onClick={onSend}
-            disabled={sending || !draft.trim() || !confirmResponsibility}
+            disabled={!canSend}
             title={
-              !confirmResponsibility
-                ? (isTr
+              !draft.trim()
+                ? isTr
+                  ? 'Önce bir yanıt yazın'
+                  : 'Write a reply first'
+                : !confirmResponsibility
+                  ? isTr
                     ? 'Göndermeden önce sorumluluk onayını işaretleyin'
-                    : 'Confirm the responsibility checkbox before sending')
-                : undefined
+                    : 'Confirm the responsibility checkbox before sending'
+                  : sending
+                    ? isTr
+                      ? 'Gönderiliyor…'
+                      : 'Sending…'
+                    : undefined
             }
-            className="bz-btn-primary bz-btn-sm disabled:opacity-40"
+            className="bz-btn-primary bz-btn-sm"
           >
             {sending ? (
-              <Loader2 size={12} strokeWidth={2} className="animate-spin" />
-            ) : sendEmail && active.customerEmail ? (
-              <Mail size={12} strokeWidth={2} />
+              <Loader2 size={12} strokeWidth={2} className="animate-spin" aria-hidden="true" />
+            ) : willEmail ? (
+              <Mail size={12} strokeWidth={2} aria-hidden="true" />
             ) : (
-              <Send size={12} strokeWidth={2} />
+              <Send size={12} strokeWidth={2} aria-hidden="true" />
             )}
-            {sendEmail && active.customerEmail
+            {willEmail
               ? isTr
                 ? 'E-posta ile gönder'
                 : 'Send as email'
@@ -246,8 +353,6 @@ export function AdminFeedbackReplyComposer({
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }
-
-export default AdminFeedbackReplyComposer;
