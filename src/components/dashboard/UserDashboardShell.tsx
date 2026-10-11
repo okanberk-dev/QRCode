@@ -1273,7 +1273,13 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           // scroll column already carries `lg:overflow-x-hidden`
           // (§42.5.1, line ~1115). Dropping it here restores sticky without
           // reopening horizontal scroll.
-          className="flex min-w-0 min-h-0 flex-1 flex-col bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0"
+          //
+          // `[&>*]:w-full` — page wrappers are `mx-auto max-w-[N]`. As items of
+          // this flex column, auto side margins switch off stretch, so without
+          // an explicit width each page shrank to its content: narrow strips on
+          // desktop, sideways overflow on mobile (customers 565px at 390). Full
+          // width + max-w + mx-auto centres them as intended (§42.3).
+          className="flex min-w-0 min-h-0 flex-1 flex-col bg-[#FAFAFA] pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 [&>*]:w-full"
         >
           {user.plan === 'trial' && trialDaysLeft !== null && trialDaysLeft <= 7 && (
             <TrialBanner locale={locale} daysLeft={trialDaysLeft} />

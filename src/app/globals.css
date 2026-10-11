@@ -781,6 +781,12 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
+/* `bz-*` lives in Tailwind's `components` layer so utilities written next to
+ * it (`bz-btn-icon xl:hidden`, `bz-input pl-9`, `bz-card p-0`) win, as authors
+ * expect. Unlayered, these rules beat every Tailwind v4 utility regardless of
+ * specificity — `xl:hidden` never hid the duplicate topbar search button and
+ * `pl-9` left search icons sitting on top of the placeholder. */
+@layer components {
 /* ─────────────────────────────────────────────────────────────
  * Pulse 2026-04 Panel Redesign — `bz-*` design system
  * (admin + business panel only — marketing/blog/help still uses `pulse-*`)
@@ -1645,6 +1651,16 @@ select.bz-input option:checked {
   transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .bz-progress.lime > i { background: #C6F24E; }
+} /* @layer components */
+
+/* iOS Safari zooms into any focused field under 16px. Inside the layer a
+ * `text-[13px]` utility next to `bz-input` would now win on phones, so the
+ * mobile floor stays unlayered for real form fields only. */
+@media (max-width: 639.98px) {
+  input.bz-input,
+  textarea.bz-input,
+  select.bz-input { font-size: 16px; }
+}
 
 /* §38.232 — `.bz-topbar-toggle` silindi (0 callsite — mobil topbar hamburger
  * `bz-btn-icon` primitive paterniyle render edilir). */

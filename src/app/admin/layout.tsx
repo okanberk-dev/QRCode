@@ -162,8 +162,12 @@ export default async function AdminLayout({
              slide left under the sidebar on a trackpad swipe ("panel kayması").
              Scroll vertically only, clip horizontal overflow, and reserve the
              scrollbar gutter so content width never jumps (owner shell parity,
-             CLAUDE.md §42.5). */
-          className={`flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable] flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 bg-[#FAFAFA]'}`}
+             CLAUDE.md §42.5).
+             `[&>*]:w-full` (sidebar layout only): page wrappers are
+             `mx-auto max-w-[N]` flex items; auto margins disable stretch, so
+             without a width they shrank to their content (CSV button cut off
+             at 1440, sideways overflow at 390). */
+          className={`flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:[scrollbar-gutter:stable] flex flex-col ${!showSidebar ? 'items-center justify-center min-h-[100dvh]' : 'pb-[calc(96px+env(safe-area-inset-bottom,0px))] lg:pb-0 bg-[#FAFAFA] [&>*]:w-full'}`}
         >
           {impersonationActive && <ImpersonationBanner />}
           {showSidebar && (
