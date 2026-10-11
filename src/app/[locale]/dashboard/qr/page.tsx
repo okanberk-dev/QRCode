@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import QrClient from './QrClient';
 
 export const dynamic = 'force-dynamic';
@@ -38,8 +39,17 @@ export default async function DashboardQrPage() {
       const payload = await verifyJwt(userToken);
       const userId = typeof payload?.userId === 'string' ? payload.userId : null;
       if (userId) {
+        // Team members included — same scope the API layer resolves
+        // (CLAUDE.md §38.240). `where: { userId }` returned [] for an invited
+        // team member, and QrClient treats an SSR [] as "already loaded", so
+        // the member saw "no business" and a disabled "Yeni QR oluştur".
+        const scopedIds = await getScopedRestaurantIdsForUserPayload({
+          userId,
+          role: payload?.role,
+          email: payload?.email,
+        });
         initialRestaurants = await prisma.restaurant.findMany({
-          where: { userId },
+          where: { id: { in: scopedIds } },
           select: {
             id: true,
             slug: true,

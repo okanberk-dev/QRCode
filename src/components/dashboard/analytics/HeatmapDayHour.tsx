@@ -1,12 +1,14 @@
 // Phase 8c+ §38.24 — Analytics tasarım drift'i kapatma (.design-owner-2026/
 // page-analytics.jsx YORUM YOĞUNLUĞU paterni). 7×24 (Gün × Saat) heatmap
-// custom SVG — recharts dependency'si yok. Mevcut "Günlük Dağılım" + "Saat
+// custom HTML grid — recharts dependency'si yok. Mevcut "Günlük Dağılım" + "Saat
 // Bazlı Dağılım" 2 ayrı bar chart pattern'i KEEP edilir; bu yeni section
 // owner'a 2D yoğunluk haritası sunar (peak gün × saat tek bakışta).
 //
 // Pure presentational — server + client component'lerin ikisinden de import
 // edilebilir ('use client' yok). Mobile responsive: parent overflow-x-auto
-// gerekirse min-w-[600px] cell layout korunur.
+// gerekirse min-w-[480px] cell layout korunur.
+
+import { Fragment } from 'react';
 
 interface HeatmapCell {
   day: number; // 0=Mon..6=Sun
@@ -24,6 +26,8 @@ const DAY_LABELS_TR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'] as cons
 const DAY_LABELS_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 // X axis: 5 nokta (00, 06, 12, 18, 23) — tasarım kaynağı paterni.
 const HOUR_TICKS = [0, 6, 12, 18, 23] as const;
+// Day-label column + 24 equal hour columns (shared by cells and the x axis).
+const GRID_TEMPLATE = '32px repeat(24, minmax(0, 1fr))';
 
 export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
   const dayLabels = isTr ? DAY_LABELS_TR : DAY_LABELS_EN;
@@ -58,14 +62,6 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
     }
   }
 
-  // SVG layout (tasarım paterni: 480×180 viewBox)
-  const VB_W = 480;
-  const VB_H = 180;
-  const CELL_W = 18;
-  const CELL_H = 20;
-  const X_OFFSET = 28;
-  const Y_OFFSET = 10;
-
   const totalReviews = cells.reduce((sum, c) => sum + c.count, 0);
   const hasData = totalReviews > 0;
 
@@ -93,76 +89,61 @@ export function HeatmapDayHour({ cells, isTr = true }: HeatmapDayHourProps) {
 
       {hasData ? (
         <>
+          {/* HTML grid instead of a scaled SVG: the old 480×180 viewBox was
+              stretched to the card width (~2.2× on desktop), so the 9–10px
+              axis labels rendered at ~20px. Cells still fill the width; the
+              labels stay at their real size. Below ~480px the grid scrolls. */}
           <div className="overflow-x-auto">
-            <svg
-              viewBox={`0 0 ${VB_W} ${VB_H}`}
-              className="block w-full"
-              style={{ minWidth: 480 }}
+            <div
+              className="min-w-[480px]"
               role="img"
               aria-label={
                 isTr
-                  ? `Gün × saat yorum yoğunluğu heatmap'i, pik ${dayLabels[peakDay]} ${peakHour}:00 · ${peakCount} yorum/saat`
-                  : `Day × hour review density heatmap, peak ${dayLabels[peakDay]} ${peakHour}:00 · ${peakCount} reviews/hour`
+                  ? `Gün × saat yorum yoğunluğu, pik ${dayLabels[peakDay]} ${String(peakHour).padStart(2, '0')}:00 · ${peakCount} yorum/saat`
+                  : `Day × hour review density, peak ${dayLabels[peakDay]} ${String(peakHour).padStart(2, '0')}:00 · ${peakCount} reviews/hour`
               }
             >
-              {/* X axis labels (5 hour ticks) */}
-              {HOUR_TICKS.map((h) => (
-                <text
-                  key={`hx-${h}`}
-                  x={X_OFFSET + h * CELL_W + CELL_W / 2 - 2}
-                  y={VB_H - 8}
-                  fontSize="9"
-                  fontFamily="var(--font-mono)"
-                  fill="#A3A3A3"
-                  textAnchor="middle"
-                >
-                  {String(h).padStart(2, '0')}:00
-                </text>
-              ))}
-
-              {/* Y axis labels (day names) */}
-              {dayLabels.map((day, di) => (
-                <text
-                  key={`dy-${day}`}
-                  x={X_OFFSET - 6}
-                  y={Y_OFFSET + di * CELL_H + CELL_H / 2 + 3}
-                  fontSize="10"
-                  fontFamily="var(--font-mono)"
-                  fill="#737373"
-                  textAnchor="end"
-                >
-                  {day}
-                </text>
-              ))}
-
-              {/* Heatmap cells */}
-              {Array.from({ length: 7 }, (_, di) =>
-                Array.from({ length: 24 }, (_, hi) => {
-                  const v = matrix[di][hi];
-                  const ratio = max > 0 ? v / max : 0;
-                  // Alpha 0 cell → açık gri; aksi halde lime opacity (tasarım paterni).
-                  const fill =
-                    v === 0
-                      ? '#F2F2F2'
-                      : `rgba(168, 214, 46, ${0.15 + ratio * 0.85})`;
-                  return (
-                    <rect
-                      key={`c-${di}-${hi}`}
-                      x={X_OFFSET + hi * CELL_W}
-                      y={Y_OFFSET + di * CELL_H}
-                      width={CELL_W - 2}
-                      height={CELL_H - 4}
-                      rx={3}
-                      fill={fill}
+              <div className="grid gap-[3px]" style={{ gridTemplateColumns: GRID_TEMPLATE }}>
+                {dayLabels.map((day, di) => (
+                  <Fragment key={`row-${day}`}>
+                    <span
+                      className="bz-mono self-center pr-1.5 text-right text-[10px] leading-none text-[#737373]"
+                      aria-hidden="true"
                     >
-                      <title>
-                        {`${dayLabels[di]} ${String(hi).padStart(2, '0')}:00 — ${v} ${isTr ? 'yorum' : 'reviews'}`}
-                      </title>
-                    </rect>
-                  );
-                }),
-              )}
-            </svg>
+                      {day}
+                    </span>
+                    {Array.from({ length: 24 }, (_, hi) => {
+                      const v = matrix[di][hi];
+                      const ratio = max > 0 ? v / max : 0;
+                      // Boş hücre açık gri; aksi halde lime opacity (tasarım paterni).
+                      const fill =
+                        v === 0 ? '#F2F2F2' : `rgba(168, 214, 46, ${0.15 + ratio * 0.85})`;
+                      return (
+                        <div
+                          key={`c-${di}-${hi}`}
+                          className="aspect-square max-h-9 w-full rounded-[3px] sm:rounded-[5px]"
+                          style={{ background: fill }}
+                          title={`${dayLabels[di]} ${String(hi).padStart(2, '0')}:00 — ${v} ${isTr ? 'yorum' : 'reviews'}`}
+                          aria-hidden="true"
+                        />
+                      );
+                    })}
+                  </Fragment>
+                ))}
+              </div>
+              {/* X axis — 5 ticks (00, 06, 12, 18, 23) aligned to their hour column. */}
+              <div className="mt-2 grid" style={{ gridTemplateColumns: GRID_TEMPLATE }} aria-hidden="true">
+                {HOUR_TICKS.map((h) => (
+                  <span
+                    key={`hx-${h}`}
+                    className="bz-mono whitespace-nowrap text-[10px] leading-none text-[#A3A3A3]"
+                    style={{ gridColumn: h + 2, gridRow: 1, justifySelf: h === 23 ? 'end' : 'center' }}
+                  >
+                    {String(h).padStart(2, '0')}:00
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
 
           <p className="bz-mono mt-2 text-[11px] text-[#737373]">

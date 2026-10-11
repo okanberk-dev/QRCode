@@ -228,7 +228,6 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
 
   let summaryRow: SummaryRow | undefined;
   let aggregates: AggregateRow[] = [];
-  let restaurants: { id: string; name: string }[] = [];
   // §38.48 Wave 2 — Archive overlay + segment override map'leri.
   let archivedKeys = new Set<string>();
   let segmentOverrides = new Map<string, CustomerSegment>();
@@ -242,7 +241,7 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     // §38.48 — overlay query'leri Promise.all'a paralel eklendi (CLAUDE.md
     // §14.1 connection_limit=1 disiplini için tek transaction yerine paralel
     // küçük query'ler kabul edilebilir — overlay tabloları boş çoğu owner için).
-    const [summary, fetched, restaurantList, archives, overrides] = await Promise.all([
+    const [summary, fetched, archives, overrides] = await Promise.all([
       prisma.$queryRaw<SummaryRow[]>(Prisma.sql`
         SELECT
           COUNT(DISTINCT CONCAT(f.restaurant_id, '|', COALESCE(NULLIF(LOWER(TRIM(f.email)), ''), NULLIF(TRIM(f.phone), '')))) AS customers,
@@ -275,11 +274,6 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         ORDER BY MAX(f.created_at) DESC
         LIMIT ${MAX_AGGREGATE_ROWS}
       `),
-      prisma.restaurant.findMany({
-        where: { id: { in: scopedIds } },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' },
-      }),
       // §38.48 — Archive overlay (showArchived ise filter hâlâ sorgulanır
       // ama UI bypass eder; "geri al" butonu için archived state gerekir).
       prisma.customerArchive.findMany({
@@ -294,7 +288,6 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
     ]);
     summaryRow = summary[0];
     aggregates = fetched;
-    restaurants = restaurantList;
     archivedKeys = new Set(archives.map((a) => `${a.restaurantId}|${a.contactKey}`));
     segmentOverrides = new Map(
       overrides
@@ -416,7 +409,10 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
   const rows = filtered.slice(offset, offset + PAGE_SIZE);
   const truncated = aggregates.length >= MAX_AGGREGATE_ROWS;
 
-  const hasFilter = Boolean(search || restaurantIdParam || segmentFilter || rangeKey !== '30d' || showArchived);
+  // The active business (`restaurantId`) is the shell's scope, not a filter:
+  // the topbar switcher always writes it into the URL on this page, so it
+  // must not light up "Temizle" or the "no match for these filters" copy.
+  const hasFilter = Boolean(search || segmentFilter || rangeKey !== '30d' || showArchived);
 
   // URL builder for filter forms / pagination / drawer detail links.
   function buildHref(
@@ -585,16 +581,18 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
         {/* Hidden inputs — URL state preservation across search submit */}
         <input type="hidden" name="range" value={rangeKey} />
         {segmentFilter && <input type="hidden" name="segment" value={segmentFilter} />}
-        {/* Only when the <select> below is absent. With both present the GET
-            submit serialises `restaurantId` TWICE and `searchParams.get()`
-            returns the FIRST (stale, hidden) value — so switching the business
-            filter appeared to do nothing and "Tüm işletmeler" never cleared. */}
-        {restaurantIdParam && restaurants.length <= 1 && (
+        {/* The business scope comes from the shell's topbar switcher, which
+            keeps `?restaurantId` in the URL. It is carried as a hidden input so
+            "Uygula" never submits a stale or empty business. (A separate
+            business <select> used to live here; being uncontrolled it kept
+            showing "Tüm işletmeler" after the switcher changed scope, and its
+            "all" option was immediately overwritten by the shell anyway.) */}
+        {restaurantIdParam && (
           <input type="hidden" name="restaurantId" value={restaurantIdParam} />
         )}
 
         {/* Search input — sol icon, max 320px lg, full mobile */}
-        <div className="relative w-full lg:w-auto lg:max-w-[320px] lg:flex-1">
+        <div className="relative w-full lg:w-auto lg:min-w-[240px] lg:max-w-[320px] lg:flex-1">
           <Search
             size={14}
             className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A3A3A3]"
@@ -688,28 +686,11 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
           })}
         </div>
 
-        {/* Restaurant select (multi-restaurant only) */}
-        {restaurants.length > 1 && (
-          <select
-            name="restaurantId"
-            defaultValue={restaurantIdParam ?? ''}
-            className="bz-input w-full lg:w-[180px]"
-            aria-label={isTr ? 'İşletme filtresi' : 'Business filter'}
-          >
-            <option value="">{isTr ? 'Tüm işletmeler' : 'All businesses'}</option>
-            {restaurants.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        )}
-
         {/* §38.48 — Arşiv toggle (Wave 2). Default off; on iken muted styling
             tablo satırlarında + "Geri al" buton. */}
         <Link
           href={buildHref({ showArchived: showArchived ? '' : '1', page: '1' })}
-          className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium bz-motion-spring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
+          className={`self-start lg:self-auto shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium bz-motion-spring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C6F24E] focus-visible:ring-offset-2 ${
             showArchived
               ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
               : 'border-[#EDEDED] bg-white text-[#525252] hover:border-[#A3A3A3]'
@@ -734,7 +715,14 @@ export default async function OwnerCustomersPage({ params, searchParams }: PageP
             {isTr ? 'Uygula' : 'Apply'}
           </button>
           {hasFilter && (
-            <Link href={`/${locale}/dashboard/customers`} className="bz-btn-ghost">
+            <Link
+              href={
+                restaurantIdParam
+                  ? `/${locale}/dashboard/customers?restaurantId=${encodeURIComponent(restaurantIdParam)}`
+                  : `/${locale}/dashboard/customers`
+              }
+              className="bz-btn-ghost"
+            >
               {isTr ? 'Temizle' : 'Reset'}
             </Link>
           )}

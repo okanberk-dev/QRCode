@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Download, Grid3x3, List as ListIcon, Loader2, Plus, QrCode, Trash2 } from 'lucide-react';
+import { Download, Grid3x3, List as ListIcon, Plus, QrCode, Trash2 } from 'lucide-react';
 import {
   AlertBanner,
   ConfirmDialog,
@@ -12,6 +12,7 @@ import {
   PulseSelect,
   type PlatformId,
 } from '@/components/ui';
+import { SkCardGrid } from '@/components/ui/skeletons/PageSkeleton';
 import { CreateQRWizard, type QRGenerationResult } from '@/components/panel/qr/CreateQRWizard';
 import { QRCard, type QRCardItem } from '@/components/panel/qr/QRCard';
 import { dedupeQrRows } from '@/lib/qr-signature';
@@ -96,16 +97,6 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
   // restoran için ayrı endpoint; defer/lazy concern).
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants ?? []);
   const [items, setItems] = useState<QrHistoryItem[]>([]);
-  const [svgs, setSvgs] = useState<Record<string, string>>({});
-  // Mirror of `svgs` for the lazy-preview effect below. The effect used to
-  // read `svgs` AND list it in its own dependency array while calling
-  // `setSvgs` per item: every resolved preview re-ran the effect, its cleanup
-  // set `cancelled = true` so the other in-flight workers threw away their
-  // results, and the re-run re-requested the very items already being fetched.
-  // A ref keeps the "already have / already fetching" check out of the
-  // dependency list, so one pass fetches each item exactly once.
-  const svgsRef = useRef<Record<string, string>>({});
-  const svgFetchInFlightRef = useRef<Set<string>>(new Set());
   const [restaurantsLoaded, setRestaurantsLoaded] = useState(initialRestaurants !== undefined);
   const [loading, setLoading] = useState(true);
   const skipFirstRestaurantsFetchRef = useRef(initialRestaurants !== undefined);
@@ -124,15 +115,14 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const selectBranchFilter = (restaurantId: string) => {
     setBranchFilter(restaurantId);
+    // "Tüm şubeler" is a local list filter only. The shell's business switcher
+    // owns `?restaurantId` and re-adds it whenever it is missing, so clearing
+    // it here used to snap the filter straight back to a single business.
+    if (restaurantId === 'all') return;
     const params = new URLSearchParams(searchParams.toString());
     params.delete('restaurant');
-    if (restaurantId === 'all') {
-      params.delete('restaurantId');
-      if (typeof window !== 'undefined') window.localStorage.removeItem(ACTIVE_BUSINESS_STORAGE_KEY);
-    } else {
-      params.set('restaurantId', restaurantId);
-      if (typeof window !== 'undefined') window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
-    }
+    params.set('restaurantId', restaurantId);
+    if (typeof window !== 'undefined') window.localStorage.setItem(ACTIVE_BUSINESS_STORAGE_KEY, restaurantId);
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
@@ -151,14 +141,13 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [autoOpenWizard, restaurantsLoaded, restaurants.length, pathname, router, searchParams]);
 
-  // 1) Load restaurants — §40.10 skip on first run if SSR hydrated
+  // 1) Load restaurants once — §40.10 skip if SSR hydrated. This used to
+  // depend on `preselected`, so the shell writing `?restaurantId` right after
+  // mount re-fetched the list, which in turn re-fetched every QR history
+  // (spinner shown twice, histories loaded three times).
   useEffect(() => {
     if (skipFirstRestaurantsFetchRef.current) {
       skipFirstRestaurantsFetchRef.current = false;
-      // Honor preselected query param against SSR-provided list.
-      if (preselected && restaurants.some((r) => r.id === preselected)) {
-        setBranchFilter(preselected);
-      }
       return;
     }
     let cancelled = false;
@@ -168,9 +157,6 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
         if (cancelled) return;
         const list = Array.isArray(data) ? data : data?.data || [];
         setRestaurants(list);
-        if (preselected && list.some((r: Restaurant) => r.id === preselected)) {
-          setBranchFilter(preselected);
-        }
       })
       .catch(() => {
         if (!cancelled) setRestaurants([]);
@@ -181,8 +167,15 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preselected]);
+  }, []);
+
+  // 1b) Follow the active business from the URL (the shell's switcher keeps
+  // `?restaurantId` in sync) without re-fetching anything.
+  useEffect(() => {
+    if (preselected && restaurants.some((r) => r.id === preselected)) {
+      setBranchFilter(preselected);
+    }
+  }, [preselected, restaurants]);
 
   // 2) After restaurants load, fetch each restaurant's QR history in parallel
   useEffect(() => {
@@ -216,55 +209,36 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
     };
   }, [restaurantsLoaded, restaurants]);
 
-  // 3) Lazy-fetch SVG for each item not yet cached
+  // (A lazy per-item SVG prefetch used to live here. QRCard renders its own
+  // <img> preview and ignores the `svg` prop, so the prefetch was dead
+  // weight — and every one of those GET /qr calls re-ran rememberFeedbackQr,
+  // bumping each QR's "Oluşturuldu" date on every page view.)
+
+  // Platform filter options come from the QRs that actually exist, so hotel
+  // QRs pinned to Tripadvisor / Booking / Airbnb / Yandex are filterable too
+  // (the list used to be hardcoded to the four food-delivery platforms).
+  const platformOptions = useMemo(() => {
+    const present = new Set<string>();
+    let hasGeneral = false;
+    for (const it of items) {
+      if (it.platform) present.add(it.platform);
+      else hasGeneral = true;
+    }
+    const known = Object.keys(PLATFORM_LABELS).filter((key) => present.has(key));
+    const unknown = [...present].filter((key) => !(key in PLATFORM_LABELS)).sort();
+    return [
+      { value: 'all', label: isTr ? 'Tüm platformlar' : 'All platforms' },
+      ...(hasGeneral ? [{ value: 'general', label: isTr ? 'Genel (sabitsiz)' : 'General (no pin)' }] : []),
+      ...[...known, ...unknown].map((key) => ({ value: key, label: PLATFORM_LABELS[key] ?? key })),
+    ];
+  }, [items, isTr]);
+
+  // A deleted QR can remove the selected platform from the list — fall back
+  // to "all" instead of leaving a filter value that is no longer offered.
   useEffect(() => {
-    if (items.length === 0) return;
-    const toFetch = items.filter(
-      (item) => !svgsRef.current[item.id] && !svgFetchInFlightRef.current.has(item.id),
-    );
-    if (toFetch.length === 0) return;
-    for (const item of toFetch) svgFetchInFlightRef.current.add(item.id);
-
-    let cancelled = false;
-    const fetchOne = async (item: QrHistoryItem) => {
-      const params = new URLSearchParams({ format: 'svg' });
-      if (item.tableNumber) params.set('table', item.tableNumber);
-      if (item.platform) params.set('platform', item.platform);
-      // Stage 96 — carry the persisted colour pair so the lazy preview
-      // matches what owner saved (not the platform default).
-      if (item.darkColor && item.lightColor) {
-        params.set('dark', item.darkColor);
-        params.set('light', item.lightColor);
-      }
-      const res = await fetch(
-        `/api/restaurants/${item.restaurantId}/qr?${params.toString()}`,
-      );
-      if (!res.ok) return null;
-      return await res.text();
-    };
-
-    // Fan-out with a soft cap (max 8 in flight at a time)
-    const queue = [...toFetch];
-    const workers = Array.from({ length: Math.min(8, queue.length) }, async () => {
-      while (!cancelled && queue.length > 0) {
-        const item = queue.shift();
-        if (!item) break;
-        const svg = await fetchOne(item).catch(() => null);
-        svgFetchInFlightRef.current.delete(item.id);
-        if (cancelled || !svg) continue;
-        svgsRef.current = { ...svgsRef.current, [item.id]: svg };
-        setSvgs((prev) => ({ ...prev, [item.id]: svg }));
-      }
-      // Anything still queued when cancelled must not stay marked in-flight,
-      // otherwise a later pass would skip it forever.
-      for (const pending of queue) svgFetchInFlightRef.current.delete(pending.id);
-    });
-    Promise.all(workers).catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [items]);
+    if (platformFilter === 'all') return;
+    if (!platformOptions.some((o) => o.value === platformFilter)) setPlatformFilter('all');
+  }, [platformOptions, platformFilter]);
 
   const restaurantById = useMemo(() => {
     const m = new Map<string, Restaurant>();
@@ -327,8 +301,6 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
       restaurantId: result.restaurantId,
     };
     setItems((prev) => dedupeQrRows([newItem, ...prev]));
-    svgsRef.current = { ...svgsRef.current, [newItem.id]: result.svg };
-    setSvgs((prev) => ({ ...prev, [newItem.id]: result.svg }));
     // Görünür feedback — modal kapandı + kullanıcı listede yeni satırı görür.
     // 3 saniye sonra otomatik kaybolur.
     setCreateNotice(isTr ? 'QR kodu oluşturuldu.' : 'QR code created.');
@@ -381,20 +353,6 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
             ? `QR silinemedi${body?.error ? ` — ${body.error}` : ''}.`
             : `Failed to delete QR${body?.error ? ` — ${body.error}` : ''}.`,
         );
-      } else {
-        // Drop the cached SVG too so a future re-creation of the same
-        // (table, platform) pair doesn't render a stale preview.
-        if (target.id in svgsRef.current) {
-          const nextRef = { ...svgsRef.current };
-          delete nextRef[target.id];
-          svgsRef.current = nextRef;
-        }
-        setSvgs((prev) => {
-          if (!(target.id in prev)) return prev;
-          const next = { ...prev };
-          delete next[target.id];
-          return next;
-        });
       }
     } catch {
       setItems((prev) => dedupeQrRows([...prev, target]));
@@ -501,14 +459,7 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
             onChange={setPlatformFilter}
             ariaLabel={isTr ? 'Platform filtresi' : 'Platform filter'}
             className="min-w-[200px]"
-            options={[
-              { value: 'all', label: isTr ? 'Tüm platformlar' : 'All platforms' },
-              { value: 'general', label: isTr ? 'Genel (sabitsiz)' : 'General (no pin)' },
-              { value: 'google', label: 'Google' },
-              { value: 'yemeksepeti', label: 'Yemeksepeti' },
-              { value: 'getir', label: 'Getir' },
-              { value: 'trendyol_go', label: 'Trendyol GO' },
-            ]}
+            options={platformOptions}
           />
         </div>
       )}
@@ -545,10 +496,11 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
         </div>
       )}
 
-      {/* Loading */}
+      {/* Loading — same card-grid skeleton as loading.tsx, so the route
+          skeleton and the in-page history load look like one state (§40.10). */}
       {loading && (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0A0A0A]" />
+        <div aria-busy="true" aria-label={isTr ? 'QR kodları yükleniyor' : 'Loading QR codes'}>
+          <SkCardGrid count={6} cols={3} />
         </div>
       )}
 
@@ -622,7 +574,6 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
               <QRCard
                 key={c.id}
                 item={c}
-                svg={svgs[c.id]}
                 locale={locale}
                 onDelete={raw ? () => requestDelete(raw) : undefined}
               />

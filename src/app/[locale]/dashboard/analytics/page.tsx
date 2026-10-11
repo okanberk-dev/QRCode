@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyJwt } from '@/lib/auth';
+import { getScopedRestaurantIdsForUserPayload } from '@/lib/panel-access';
 import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/translations';
@@ -30,6 +31,30 @@ interface InteractionTrendPoint {
   reviews: number;
   /** Yönlendirme — rating ≥ 4 + platform set. Funnel: reviews ⊇ redirects. */
   redirects: number;
+  /** O günün ortalama puanı; yorum yoksa null (ORTALAMA PUAN sparkline). */
+  avgRating: number | null;
+}
+
+// Gün × Saat bucket'ları işletmenin yerel saatinde hesaplanır (CLAUDE.md §46).
+// `Date#getHours()` / `getDay()` sunucunun TZ'sini kullanır — Vercel'de UTC —
+// bu yüzden İstanbul'daki bir öğle yoğunluğu 09:00'da görünüyordu.
+const WEEKDAY_INDEX: Record<string, number> = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+function makeZonedDayHour(timeZone: string) {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    weekday: 'short',
+    hour: '2-digit',
+    hourCycle: 'h23',
+  });
+  return (date: Date): { day: number; hour: number } => {
+    let day = -1;
+    let hour = -1;
+    for (const part of fmt.formatToParts(date)) {
+      if (part.type === 'weekday') day = WEEKDAY_INDEX[part.value] ?? -1;
+      else if (part.type === 'hour') hour = Number(part.value) % 24;
+    }
+    return { day, hour };
+  };
 }
 // §38.158 — PulseTrendChart import kaldırıldı (14 haftalık trend section silindi).
 // Component dosyası `src/components/dashboard/analytics/PulseTrendChart.tsx`
@@ -56,6 +81,7 @@ import { calculateNPS } from '@/lib/analytics-nps';
 // Helper dosyası lib/analytics-weekly-trend.ts orphan kaldı — gelecek
 // dashboard veya rapor surface'inde reuse ihtiyacı çıkarsa restore edilir.
 import { buildPlatformDailyTrend } from '@/lib/analytics-platform-trend';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 
 // Note: InteractionTrendChart taşır 'use client' direktifini — Next.js 15
 // otomatik client boundary çizer, server-side pre-render minimal HTML
@@ -187,16 +213,27 @@ async function renderAnalyticsPage({
   const payload = await verifyJwt(token);
   if (!payload || typeof payload.userId !== 'string') redirect(`/${locale}/auth/login`);
 
-  const user = await prisma.user.findUnique({
+  const userRow = await prisma.user.findUnique({
     where: { id: payload.userId },
-    select: {
-      id: true,
-      restaurants: {
-        select: { id: true, name: true, aiAnalyticsEnabled: true, targetRating: true },
-      },
-    },
+    select: { id: true },
   });
-  if (!user) redirect(`/${locale}/auth/login`);
+  if (!userRow) redirect(`/${locale}/auth/login`);
+  // Team members included — same scope the API layer resolves (CLAUDE.md
+  // §38.240). `user.restaurants` (owned only) left invited team members with
+  // an empty analytics page.
+  const scopedIds = await getScopedRestaurantIdsForUserPayload({
+    userId: payload.userId,
+    role: payload.role,
+    email: payload.email,
+  });
+  const user = {
+    id: userRow.id,
+    restaurants: await prisma.restaurant.findMany({
+      where: { id: { in: scopedIds } },
+      select: { id: true, name: true, aiAnalyticsEnabled: true, targetRating: true },
+      orderBy: { createdAt: 'asc' },
+    }),
+  };
 
   // §38.50 — Custom range önceliği: `?range=custom&customStart=...&customEnd=...`
   // ile owner özel pencere seçer; `range` literal map'inde yoksa custom parse'a
@@ -473,7 +510,10 @@ async function renderAnalyticsPage({
     const redirects = dayFbs.filter(
       (f) => (f.rating ?? 0) >= 4 && f.platform != null && f.platform !== '',
     ).length;
-    return { date: dateFmt.format(dayStart), scans, reviews, redirects };
+    const rated = dayFbs.filter((f) => (f.rating ?? 0) > 0);
+    const avgRating =
+      rated.length > 0 ? rated.reduce((sum, f) => sum + f.rating, 0) / rated.length : null;
+    return { date: dateFmt.format(dayStart), scans, reviews, redirects, avgRating };
   });
 
   // Platform paylaşımı — sadece "Tümü" filter'ında anlamlı (tek platform
@@ -492,11 +532,11 @@ async function renderAnalyticsPage({
 
   // Günlük dağılım (7-day day-of-week) — fixed 7d window
   const dayLabels = isTr ? DAY_LABELS_TR : DAY_LABELS_EN;
+  const zonedDayHour = makeZonedDayHour(resolveDisplayTimeZone());
   const dayBuckets: number[] = Array(7).fill(0);
   for (const f of feedbacks7d) {
-    const jsDay = f.createdAt.getDay();
-    const idx = jsDay === 0 ? 6 : jsDay - 1;
-    dayBuckets[idx] = (dayBuckets[idx] || 0) + 1;
+    const { day: idx } = zonedDayHour(f.createdAt);
+    if (idx >= 0 && idx < 7) dayBuckets[idx] = (dayBuckets[idx] || 0) + 1;
   }
   const dayData = dayBuckets.map((v, i) => ({ label: dayLabels[i], value: v }));
 
@@ -505,7 +545,7 @@ async function renderAnalyticsPage({
   // 24-bucket; sparse label'lar (her 3 saatte bir) chart'ı temiz tutar.
   const hourBuckets: number[] = Array(24).fill(0);
   for (const f of feedbacksWindow) {
-    const hour = f.createdAt.getHours();
+    const { hour } = zonedDayHour(f.createdAt);
     if (hour >= 0 && hour < 24) hourBuckets[hour] = (hourBuckets[hour] || 0) + 1;
   }
   const hourData = hourBuckets.map((v, h) => ({
@@ -520,9 +560,7 @@ async function renderAnalyticsPage({
   const heatmapCells: Array<{ day: number; hour: number; count: number }> = [];
   const heatmapMatrix: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
   for (const f of feedbacksWindow) {
-    const jsDay = f.createdAt.getDay();
-    const day = jsDay === 0 ? 6 : jsDay - 1;
-    const hour = f.createdAt.getHours();
+    const { day, hour } = zonedDayHour(f.createdAt);
     if (day >= 0 && day < 7 && hour >= 0 && hour < 24) {
       heatmapMatrix[day][hour] += 1;
     }
@@ -696,6 +734,18 @@ async function renderAnalyticsPage({
   // çıkartarak ham series verir. Min 2 nokta gerekir (StatCard guard).
   const _sparkScans = interactionData.map((d) => d.scans);
   const sparkReviews = interactionData.map((d) => d.reviews);
+  // ORTALAMA PUAN — günlük ortalama. Yorumsuz günler son bilinen değeri
+  // taşır (sahte 0 çukuru olmasın); ilk yorumdan önceki günler atlanır.
+  // En az 2 günde yorum yoksa trend yok → sparkline gizli.
+  const ratedDays = interactionData.filter((d) => d.avgRating !== null).length;
+  const sparkAvgRating: number[] = [];
+  if (ratedDays >= 2) {
+    let lastAvg: number | null = null;
+    for (const d of interactionData) {
+      if (d.avgRating !== null) lastAvg = d.avgRating;
+      if (lastAvg !== null) sparkAvgRating.push(Math.round(lastAvg * 100) / 100);
+    }
+  }
   const _sparkRedirects = interactionData.map((d) => d.redirects);
   // Conversion = reviews / scans (her gün için, NaN guard 0 fallback).
   const _sparkConversion = interactionData.map((d) =>
@@ -735,7 +785,7 @@ async function renderAnalyticsPage({
         // Önceki dönem ortalaması hesaplanmıyor; sabit 4.0'a göre "↑" delta
         // gerçek bir değişim değildi (hep yeşil). Gerçek delta gelene dek gizli.
         delta={null}
-        sparkline={sparkReviews}
+        sparkline={sparkAvgRating}
         isTr={isTr}
       />
 
@@ -764,9 +814,12 @@ async function renderAnalyticsPage({
             subtitle: isTr
               ? `hedef ${resolvedTargetRating.toFixed(1)}`
               : `target ${resolvedTargetRating.toFixed(1)}`,
-            sparkline: sparkReviews,
+            sparkline: sparkAvgRating,
             sparklineColor: '#A8D62E',
           },
+          // YANIT SÜRESİ / NPS / TEKRAR GELME have no daily series of their own;
+          // they used to borrow the review-volume sparkline, which drew a
+          // rising trend even when the metric was "—". No sparkline instead.
           {
             label: isTr ? 'YANIT SÜRESİ' : 'REPLY TIME',
             value: avgResponseValueLabel,
@@ -780,8 +833,6 @@ async function renderAnalyticsPage({
                 : isTr
                   ? 'henüz yanıt yok'
                   : 'no replies yet',
-            sparkline: sparkReviews,
-            sparklineColor: '#A8D62E',
           },
           {
             label: isTr ? 'NPS' : 'NPS',
@@ -795,8 +846,6 @@ async function renderAnalyticsPage({
                 : isTr
                   ? 'yeterli veri yok'
                   : 'not enough data',
-            sparkline: sparkReviews,
-            sparklineColor: '#A8D62E',
           },
           {
             label: isTr ? 'TEKRAR GELME' : 'RETURN RATE',
@@ -816,8 +865,6 @@ async function renderAnalyticsPage({
                 : isTr
                   ? 'KVKK onaylı veri yok'
                   : 'no consented data',
-            sparkline: sparkReviews,
-            sparklineColor: '#0A0A0A',
           },
         ]}
         isTr={isTr}
