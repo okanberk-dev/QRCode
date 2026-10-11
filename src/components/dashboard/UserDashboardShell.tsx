@@ -108,15 +108,15 @@ function useTopBar(locale: Locale, pathname: string | null, section?: string | n
   if (!pathname) return null;
   const rest = pathname.replace(`/${locale}/dashboard`, '') || '/';
   if (rest === '/') return { breadcrumb: isTr ? 'PANEL / GENEL BAKIŞ' : 'PANEL / OVERVIEW', title: isTr ? 'Genel bakış' : 'Overview' };
-  if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorum gelen kutusu' : 'Review inbox' };
+  if (rest.startsWith('/feedbacks')) return { breadcrumb: isTr ? 'PANEL / YORUMLAR' : 'PANEL / REVIEWS', title: isTr ? 'Yorumlar' : 'Reviews' };
   if (rest.startsWith('/google-reviews')) return { breadcrumb: isTr ? 'PANEL / GOOGLE YORUMLARI' : 'PANEL / GOOGLE REVIEWS', title: isTr ? 'Google\'a Yapılan Yorumlar' : 'Google Reviews' };
   if (rest.startsWith('/qr')) return { breadcrumb: isTr ? 'QR OLUŞTUR / YENİ KAMPANYA' : 'QR / NEW CAMPAIGN', title: isTr ? 'QR kodu oluştur' : 'Create QR code' };
   if (rest.startsWith('/analytics')) return { breadcrumb: isTr ? 'ANALİTİK / GENEL' : 'ANALYTICS / OVERVIEW', title: isTr ? 'Analitik' : 'Analytics' };
   if (rest.startsWith('/restaurants')) return { breadcrumb: isTr ? 'PANEL / İŞLETMELER' : 'PANEL / BUSINESSES', title: isTr ? 'İşletmeler' : 'Businesses' };
   if (rest.startsWith('/menu')) return { breadcrumb: isTr ? 'PANEL / MENÜ' : 'PANEL / MENU', title: isTr ? 'Menü' : 'Menu' };
-  if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform Bağlantıları' : 'Platform Links' };
+  if (rest.startsWith('/integrations')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform bağlantıları' : 'Platform links' };
   if (rest.startsWith('/customers')) return { breadcrumb: isTr ? 'CRM / MÜŞTERİLER' : 'CRM / CUSTOMERS', title: isTr ? 'Müşteriler' : 'Customers' };
-  if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORMLAR' : 'PANEL / PLATFORMS', title: isTr ? 'Platform bağlantıları' : 'Review platforms' };
+  if (rest.startsWith('/platforms')) return { breadcrumb: isTr ? 'PANEL / PLATFORM BAĞLANTILARI' : 'PANEL / PLATFORM LINKS', title: isTr ? 'Platform bağlantıları' : 'Platform links' };
   if (rest.startsWith('/announcements')) return { breadcrumb: isTr ? 'PANEL / DUYURULAR' : 'PANEL / ANNOUNCEMENTS', title: isTr ? 'Duyurular' : 'Announcements' };
   if (rest.startsWith('/guide')) return { breadcrumb: isTr ? 'PANEL / KILAVUZ' : 'PANEL / GUIDE', title: isTr ? 'Kılavuz' : 'Guide' };
   if (rest.startsWith('/account')) {
@@ -201,11 +201,21 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
     [workspaceRestaurants, activeRestaurantId],
   );
   const isClinicMode = activeRestaurant ? detectSector(activeRestaurant.category) === 'clinic' : false;
+  // The dashboard root (`/{locale}/dashboard`) is a prefix of every panel
+  // route, so prefix matching would light "Panel" up on every page next to
+  // the real item. The root matches exactly; everything else matches itself
+  // and its sub-routes.
+  const dashboardRootHref = `/${locale}/dashboard`;
+  const isPathActive = (href: string): boolean => {
+    if (!pathname) return false;
+    if (href === dashboardRootHref) return pathname === href;
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
   const matchHref = (href: string): boolean => {
     if (!pathname) return false;
     const [hrefPath, hrefQuery] = href.split('?');
     if (!hrefQuery) {
-      return pathname === hrefPath || pathname.startsWith(`${hrefPath}/`);
+      return isPathActive(hrefPath);
     }
     if (pathname !== hrefPath) return false;
     const expected = new URLSearchParams(hrefQuery);
@@ -471,7 +481,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       restaurants: isClinicMode ? (isTr ? 'Klinikler' : 'Clinics') : (isTr ? 'İşletmeler' : 'Locations'),
       qr: 'QR',
       menu: isClinicMode ? (isTr ? 'Hizmetler' : 'Services') : (isTr ? 'Menü' : 'Menu'),
-      integrations: isTr ? 'Platform Bağlantıları' : 'Platform Links',
+      integrations: isTr ? 'Platform bağlantıları' : 'Platform links',
       guide: isTr ? 'Kılavuz' : 'Guide',
       account: isTr ? 'Hesabım' : 'Account',
       logout: isTr ? 'Çıkış' : 'Logout',
@@ -479,7 +489,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       trialLeft: isTr ? 'gün kaldı' : 'days left',
       more: isTr ? 'Daha fazla' : 'More',
       customers: isClinicMode ? (isTr ? 'Hastalar' : 'Patients') : (isTr ? 'Müşteriler' : 'Customers'),
-      platforms: isTr ? 'Platform bağlantıları' : 'Review platforms',
+      platforms: isTr ? 'Platform bağlantıları' : 'Platform links',
       announcements: isTr ? 'Duyurular' : 'Announcements',
       notifications: isTr ? 'Bildirimler' : 'Notifications',
       // Stage 98 — Surveys (CLAUDE.md §42). Anketler nav entry,
@@ -623,9 +633,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
       : []),
     { href: `/${locale}/dashboard/account`, icon: UserCircle, label: copy.account },
   ];
-  const moreActive = moreSheetItems.some(
-    (i) => pathname === i.href || pathname?.startsWith(`${i.href}/`),
-  );
+  const moreActive = moreSheetItems.some((i) => isPathActive(i.href));
 
   const displayName = user.name?.trim() || user.email.split('@')[0];
   const initial = displayName.charAt(0).toUpperCase();
@@ -779,7 +787,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
 
           if (item.type === 'item') {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+            const isActive = isPathActive(item.href);
             return (
               <Link
                 key={item.href}
@@ -829,7 +837,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             const cIsAccountBase = c.href.endsWith('/dashboard/account');
             if (cHasQuery) return matchHref(c.href);
             if (cIsAccountBase) return matchAccountBase(c.href);
-            return pathname === c.href || pathname?.startsWith(`${c.href}/`);
+            return isPathActive(c.href);
           });
           const isExpanded = childActive || expandedGroups[item.id] === true;
           return (
@@ -892,7 +900,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
                         ? matchHref(child.href)
                         : isAccountBase
                           ? matchAccountBase(child.href)
-                          : pathname === child.href || pathname?.startsWith(`${child.href}/`);
+                          : isPathActive(child.href);
                       return (
                         <Link
                           key={child.href}
@@ -1371,7 +1379,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
           <ul className="flex h-[72px] items-stretch px-2">
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+              const isActive = isPathActive(item.href);
               const isFeedbacks = item.href === `/${locale}/dashboard/feedbacks`;
               return (
                 <li key={item.href} className="min-w-0 flex-1">
@@ -1510,7 +1518,7 @@ export default function UserDashboardShell({ locale, user, workspace, announceme
             <ul className="space-y-0.5">
               {moreSheetItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
+                const isActive = isPathActive(item.href);
                 return (
                   <li key={item.href}>
                     <Link
