@@ -6,7 +6,6 @@ import nextDynamic from 'next/dynamic';
 import {
   BarChart3,
   BookOpen,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
@@ -366,6 +365,22 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
     return group.children.some(isChildAllowed);
   }
 
+  // Exactly one active entry per page: the longest visible href that matches
+  // the path. A plain prefix test lit up both "Bülten Aboneleri"
+  // (/admin/newsletters) and "Bülten Kampanyaları" (/admin/newsletters/campaigns).
+  const matchesPath = (href: string) => pathname === href || !!pathname?.startsWith(href + '/');
+  const visibleHrefs: string[] = [];
+  for (const entry of menuItems) {
+    if (entry.type === 'group') {
+      if (!isGroupVisible(entry)) continue;
+      for (const child of entry.children) if (isChildAllowed(child)) visibleHrefs.push(child.href);
+    } else {
+      visibleHrefs.push(entry.href);
+    }
+  }
+  const activeHref =
+    visibleHrefs.filter(matchesPath).sort((a, b) => b.length - a.length)[0] ?? null;
+
   const roleLabel =
     role === 'superadmin'
       ? locale === 'en'
@@ -413,7 +428,8 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
         </Link>
       </div>
 
-      {/* Workspace switcher */}
+      {/* Workspace label — static for admins (there is no workspace to
+          switch to), so no dropdown chevron. */}
       <div className="px-3 pb-3">
         <div className={`flex items-center gap-2.5 rounded-lg bg-[#FAFAFA] border border-[#EDEDED] ${isCollapsed ? 'px-2 py-2 justify-center' : 'px-3 py-2.5'}`}>
           {/* CLAUDE.md §38.164 (Stage 84): inline fontFamily → bz-h-tight utility (Pulse §11 disipline) */}
@@ -428,7 +444,6 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
                 <p className="truncate text-[13px] font-semibold text-[#0A0A0A] leading-tight">{workspaceName}</p>
                 <p className="pulse-eyebrow text-[#737373] mt-0.5">{workspaceMeta}</p>
               </div>
-              <ChevronDown size={14} className="text-[#A3A3A3] shrink-0" strokeWidth={2} />
             </>
           )}
         </div>
@@ -455,7 +470,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
 
             if (item.type === 'item') {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
+              const isActive = item.href === activeHref;
               return (
                 <Link
                   key={item.href}
@@ -478,9 +493,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
             // — operator never has to click to find where they are.
             const Icon = item.icon;
             const allowedChildren = item.children.filter(isChildAllowed);
-            const childActive = allowedChildren.some(
-              (c) => pathname === c.href || pathname?.startsWith(c.href + '/'),
-            );
+            const childActive = allowedChildren.some((c) => c.href === activeHref);
             const isExpanded = childActive || expandedGroups[item.id] === true;
             return (
               <div key={item.id}>
@@ -514,7 +527,7 @@ export default function AdminSidebar({ announcements = [], initialProfile = null
                   <div className="mt-1 ml-5 space-y-0.5 border-l border-[#EDEDED] pl-3 pb-1">
                     {allowedChildren.map((child) => {
                       const ChildIcon = child.icon;
-                      const isActive = pathname === child.href || pathname?.startsWith(child.href + '/');
+                      const isActive = child.href === activeHref;
                       return (
                         <Link
                           key={child.href}

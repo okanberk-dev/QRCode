@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ScrollText } from 'lucide-react';
 import { AlertBanner, Badge, PageHeader, Tabs, type TabItem } from '@/components/ui';
+import { formatStampInTimeZone } from '@/lib/timezone';
+import { LegalDocGroupsSkeleton } from './LegalDocGroupsSkeleton';
 
 interface DocCell {
   id: string | null;
@@ -31,14 +33,22 @@ export default function LegalDocumentsIndexPage() {
   const [error, setError] = useState<string | null>(null);
   const [docs, setDocs] = useState<DocCell[]>([]);
   const [search, setSearch] = useState('');
+  // Debounced copy drives the fetch — one request per pause, not per key.
+  const [searchQuery, setSearchQuery] = useState('');
   const [status, setStatus] = useState<string>('all');
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
+    const t = setTimeout(() => setSearchQuery(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => {
     let alive = true;
     setLoading(true);
+    setError(null);
     const params = new URLSearchParams();
-    if (search) params.set('search', search);
+    if (searchQuery) params.set('search', searchQuery);
     if (status && status !== 'all') params.set('status', status);
     (async () => {
       try {
@@ -56,7 +66,7 @@ export default function LegalDocumentsIndexPage() {
     return () => {
       alive = false;
     };
-  }, [search, status, refreshKey]);
+  }, [searchQuery, status, refreshKey]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, DocCell[]>();
@@ -113,6 +123,7 @@ export default function LegalDocumentsIndexPage() {
         <input
           type="search"
           placeholder="Başlık veya tür ara..."
+          aria-label="Hukuki metin ara"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="bz-input w-full sm:max-w-[320px]"
@@ -130,13 +141,20 @@ export default function LegalDocumentsIndexPage() {
         </div>
       </AlertBanner>
 
-      {loading ? null : grouped.length === 0 ? (
+      {loading && docs.length === 0 ? (
+        // Same group-card skeleton as loading.tsx (§40.10) — the list area
+        // used to stay blank until the first response.
+        <LegalDocGroupsSkeleton />
+      ) : grouped.length === 0 ? (
         <div className="rounded-2xl border border-[#EDEDED] bg-white p-10 text-center">
           <ScrollText size={28} className="mx-auto mb-3 text-[#A3A3A3]" />
           <p className="text-[14px] text-[#525252]">Filtrelere uyan metin bulunamadı.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div
+          aria-busy={loading}
+          className={`space-y-4 transition-opacity ${loading ? 'opacity-60' : ''}`}
+        >
           {grouped.map((group) => (
             <div key={group.key} className="bz-card overflow-hidden">
               <div className="border-b border-[#EDEDED] px-5 py-4">
@@ -169,11 +187,11 @@ export default function LegalDocumentsIndexPage() {
                           {item.source === 'db' ? (
                             <>v{item.version}</>
                           ) : (
-                            <span className="text-[#A8D62E]">Henüz oluşturulmadı (kod default&apos;u kullanılıyor)</span>
+                            <span className="font-medium text-[#92400E]">Henüz oluşturulmadı · varsayılan metin kullanılıyor</span>
                           )}
                           {item.updatedAt && (
                             <span className="hidden sm:inline">
-                              · Güncellendi {new Date(item.updatedAt).toLocaleDateString('tr-TR')}
+                              · Güncellendi {formatStampInTimeZone(item.updatedAt, 'tr')}
                             </span>
                           )}
                         </div>

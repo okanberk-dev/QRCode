@@ -276,9 +276,8 @@ export default function UserDetailPage({
           <div className="mt-5 pt-4 border-t border-[#EDEDED]">
             <p className="text-[12px] text-[#737373]">
               <span className="font-medium text-[#0A0A0A]">Aktif oturumlar</span> —
-              AdminUser session tablosu henüz açılmadı (CLAUDE.md §38.79). Şifre değişimi
-              tüm cookies için staleness pivot&apos;u olarak çalışır; üstteki
-              &quot;Son şifre değişimi&quot; alanı önceki oturumların geçersiz kılındığı tarihtir.
+              Şifre değiştiğinde bu yöneticinin önceki tüm oturumları kapanır. Üstteki
+              &quot;Son şifre değişimi&quot; tarihi, önceki oturumların geçersiz kılındığı andır.
             </p>
           </div>
         </section>

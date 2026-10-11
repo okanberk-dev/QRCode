@@ -6,9 +6,11 @@ import { Loader2, Save, ArrowLeft, Trash2, ExternalLink, Mail, UtensilsCrossed, 
 import Link from 'next/link';
 import PlatformUrlHelp from '@/components/admin/PlatformUrlHelp';
 import CopyUrlButton from '@/components/dashboard/CopyUrlButton';
-import { AlertBanner, APSwitch, useConfirmDialog } from '@/components/ui';
+import { AlertBanner, APSwitch, PLATFORMS, useConfirmDialog } from '@/components/ui';
+import RestaurantDetailLoading from './loading';
 import { getSectorPlatforms } from '@/lib/sector-platforms';
 import { MENU_THEMES, type MenuTheme as MenuThemeKey } from '@/lib/validations';
+import { formatStampInTimeZone } from '@/lib/timezone';
 
 // Theme label map — matches owner builder copy (CLAUDE.md §12). TR-only here
 // because admin panel is Turkish-first (no /en/admin equivalent).
@@ -67,7 +69,7 @@ interface OwnerModulesOverview {
   audits: { templates: number; completedResponses: number; avgScorePercent: number | null };
   team: { active: number; invited: number };
   google: { connected: boolean; locationTitle: string | null; syncedAt: string | null };
-  platformLinks: { failingProviders: string[] };
+  platformLinks: { failingProviders: string[]; lastCheckedAt?: string | null };
   qrCount: number;
   owner: { scheduledDeletionAt: string | null; isActive: boolean | null };
 }
@@ -374,13 +376,8 @@ export default function RestaurantDetailPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="h-7 w-7 animate-spin text-[#0A0A0A]" />
-      </div>
-    );
-  }
+  // Same skeleton as loading.tsx (§40.10) — no spinner hand-off flash.
+  if (loading) return <RestaurantDetailLoading />;
 
   const menuStateLabel = !menuEnabled ? 'Menü kapalı' : menuPublished ? 'Menü yayında' : 'Menü taslak';
   const menuStateTone = !menuEnabled
@@ -1300,21 +1297,40 @@ function OwnerModulesCard({
               }
               tone={overview.google.connected ? 'neutral' : 'muted'}
             />
-            <ModuleTile
-              icon={<Link2 size={15} />}
-              label="Platform linkleri"
-              value={
-                overview.platformLinks.failingProviders.length > 0
-                  ? `${overview.platformLinks.failingProviders.length} sorunlu`
-                  : 'Sağlıklı'
-              }
-              hint={
-                overview.platformLinks.failingProviders.length > 0
-                  ? overview.platformLinks.failingProviders.join(', ')
-                  : 'Son 24 saatte hata yok'
-              }
-              tone={overview.platformLinks.failingProviders.length > 0 ? 'attention' : 'neutral'}
-            />
+            {(() => {
+              const failing = overview.platformLinks.failingProviders;
+              const lastCheckedAt = overview.platformLinks.lastCheckedAt ?? null;
+              const failingLabels = failing.map(
+                (p) => (PLATFORMS as Record<string, { label: string }>)[p]?.label ?? p,
+              );
+              const testedRecently =
+                !!lastCheckedAt && Date.now() - new Date(lastCheckedAt).getTime() < 24 * 60 * 60 * 1000;
+              return (
+                <ModuleTile
+                  icon={<Link2 size={15} />}
+                  label="Platform linkleri"
+                  value={
+                    failing.length > 0
+                      ? `${failing.length} sorunlu`
+                      : !lastCheckedAt
+                        ? 'Henüz test edilmedi'
+                        : testedRecently
+                          ? 'Sağlıklı'
+                          : 'Test güncel değil'
+                  }
+                  hint={
+                    failing.length > 0
+                      ? failingLabels.join(', ')
+                      : !lastCheckedAt
+                        ? 'Bağlantı testi hiç çalışmadı'
+                        : testedRecently
+                          ? 'Son 24 saatte hata yok'
+                          : `Son test: ${formatStampInTimeZone(lastCheckedAt, 'tr')}`
+                  }
+                  tone={failing.length > 0 ? 'attention' : lastCheckedAt ? 'neutral' : 'muted'}
+                />
+              );
+            })()}
           </div>
 
           {overview.surveys.items.length > 0 && (

@@ -14,6 +14,13 @@ import {
   StatCard,
 } from '@/components/ui';
 import { getAllPlansForAdmin } from '@/lib/subscription-plans';
+import {
+  REVENUE_SUBSCRIPTION_SELECT,
+  buildPlanDistribution,
+  classifyOwnerPlan,
+  formatUsd,
+  summarizeRevenue,
+} from '@/lib/admin-bi';
 import PlansManager from '@/components/admin/PlansManager';
 
 export const metadata: Metadata = {
@@ -42,92 +49,79 @@ export default async function AdminPlansPage() {
   //
   // `getAllPlansForAdmin()` internal'da kendi prisma çağrılarını yapar;
   // helper'ı transaction içine alamadığımız için 2 ana read'i (owners +
-  // recentPaid) transaction'la, managedPlans paralel `Promise.all`'a
+  // subscriptions) transaction'la, managedPlans paralel `Promise.all`'a
   // alındı — managedPlans helper kendi pool client'ını alır, ortak
   // transaction'a girmez ama paralel çalışır.
-  const [ownersAndPaid, managedPlans] = await Promise.all([
+  const [ownersAndSubs, managedPlans] = await Promise.all([
     prisma.$transaction([
       prisma.user.findMany({
         where: { role: 'restaurant_owner' },
-        select: { id: true, plan: true, trialEndsAt: true, isActive: true, createdAt: true },
-      }),
-      prisma.user.findMany({
-        where: { role: 'restaurant_owner', plan: { not: 'trial' } },
-        select: { id: true, name: true, email: true, plan: true, createdAt: true },
+        select: { id: true, name: true, email: true, plan: true, trialEndsAt: true, isActive: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
-        take: 5,
       }),
+      // §15.2 canonical billing — tier usage + MRR come from BillingSubscription
+      // (subscriptionPlanId + billingCycle + admin override). `User.plan` is a
+      // lifecycle bucket (monthly/yearly/free…), never a tier name.
+      prisma.billingSubscription.findMany({ select: REVENUE_SUBSCRIPTION_SELECT }),
     ]),
     getAllPlansForAdmin().catch(() => []),
   ]);
-  const [owners, recentPaid] = ownersAndPaid;
+  const [owners, subscriptions] = ownersAndSubs;
+  const now = new Date();
 
   const totalOwners = owners.length;
   const activeOwners = owners.filter((o) => o.isActive).length;
-  const trialOwners = owners.filter((o) => o.plan === 'trial').length;
-  const paidOwners = totalOwners - trialOwners;
+
+  const { buckets: planBuckets, counts: planCounts } = buildPlanDistribution({
+    owners,
+    subscriptions,
+    tiers: managedPlans,
+    now,
+    includeEmptyTiers: false,
+  });
+  const paidOwners = planCounts.paid;
   const paidShare = totalOwners ? Math.round((paidOwners / totalOwners) * 100) : 0;
+  const trialOwners = planCounts.trial;
+  const trialDaysLeft = owners
+    .filter((o) => o.plan === 'trial' && o.trialEndsAt && o.trialEndsAt > now)
+    .map((o) => Math.ceil(((o.trialEndsAt as Date).getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
+  const avgTrialDaysLeft = trialDaysLeft.length
+    ? Math.round(trialDaysLeft.reduce((a, b) => a + b, 0) / trialDaysLeft.length)
+    : null;
 
-  // Plan-key buckets — schema stores `plan` as a free string ("trial",
-  // "monthly", "yearly", or future tier keys). Bucket loosely by prefix.
-  // §38.225 Stage 145 — Pro → Scale rename (Dodo product 'Scale' eşleşmesi).
-  const planBuckets: Array<{ key: string; label: string; color: string; count: number }> = [
-    { key: 'scale', label: 'Scale', color: '#0A0A0A', count: 0 },
-    { key: 'growth', label: 'Growth', color: '#525252', count: 0 },
-    { key: 'starter', label: 'Starter', color: '#A3A3A3', count: 0 },
-    { key: 'pro', label: 'Pro (legacy)', color: '#737373', count: 0 },
-    { key: 'monthly', label: 'Monthly', color: '#525252', count: 0 },
-    { key: 'yearly', label: 'Yearly', color: '#0A0A0A', count: 0 },
-    { key: 'trial', label: 'Trial', color: '#C6F24E', count: 0 },
-  ];
-  for (const o of owners) {
-    const plan = (o.plan || 'trial').toLowerCase();
-    const bucket = planBuckets.find((b) => plan.includes(b.key));
-    if (bucket) bucket.count += 1;
-    else planBuckets[planBuckets.length - 1].count += 1; // fallback to trial
-  }
-
-  // §38.224 — Per-plan user count + DB-driven MRR.
-  // §38.225 Stage 145 — USD-only MRR (priceUsd primary, priceTry kaldırıldı).
-  // Her tier'ın aylık USD fiyatı × o tier'daki active user count toplamı.
-  // Trial user'lar MRR'ye dahil değil. Discount varsa indirimli aylık tutar
-  // kullanılır (CLAUDE.md §15.2 canonical billing parity).
-  //
-  // planUsage map: { [planId]: count } — PlansManager'a prop geçilir,
-  // her tier card'ında "X işletme bu paketi kullanıyor" badge gösterilir.
+  // Per-tier usage badge (PlansManager) + USD MRR — same helper the
+  // dashboard + analytics BI section use.
+  const tiersById = new Map(managedPlans.map((t) => [t.id, t]));
+  const revenue = summarizeRevenue(subscriptions, tiersById);
   const planUsage: Record<string, number> = {};
-  let mrrUsd = 0;
-  for (const tier of managedPlans) {
-    // Plan key fuzzy match: tier.nameTr (lowercase) → o key'i içeren
-    // user.plan satırlarını say. Scale/Growth/Starter standart adlar.
-    const tierKey = tier.nameTr.toLowerCase();
-    const usersForTier = owners.filter((o) => {
-      const plan = (o.plan || 'trial').toLowerCase();
-      // Skip trial (MRR'ye dahil değil); plan string'i tier name içeriyor mu
-      return plan !== 'trial' && plan.includes(tierKey);
-    });
-    planUsage[tier.id] = usersForTier.length;
-    // Active discount varsa indirimli aylık fiyat kullan; yoksa list price.
-    // priceUsd null ise 0 — TRY fallback yapılmaz (§38.225).
-    const baseUsd = tier.priceUsd ?? 0;
-    let monthlyShown = baseUsd;
-    if (tier.discountActive && tier.discountValue != null && tier.discountValue > 0) {
-      if (tier.discountType === 'percent') {
-        const pct = Math.min(100, Math.max(0, tier.discountValue));
-        monthlyShown = Math.max(0, Math.round(baseUsd * (1 - pct / 100)));
-      } else {
-        monthlyShown = Math.max(0, baseUsd - tier.discountValue);
-      }
-    }
-    mrrUsd += usersForTier.length * monthlyShown;
-  }
+  for (const tier of managedPlans) planUsage[tier.id] = revenue.usageByPlanId[tier.id] ?? 0;
+  const mrrUsd = revenue.mrrUsd;
+
+  // "Son katılan ödeyen müşteriler" — same paid rule as the KPI.
+  const subsByUser = new Map(subscriptions.map((s) => [s.userId, s]));
+  const tierNameByUser = new Map(
+    subscriptions
+      .filter((s) => s.subscriptionPlanId && tiersById.has(s.subscriptionPlanId))
+      .map((s) => {
+        const tier = tiersById.get(s.subscriptionPlanId as string);
+        return [s.userId, tier ? tier.nameTr || tier.nameEn : null] as const;
+      }),
+  );
+  const recentPaid = owners
+    .filter((o) => classifyOwnerPlan(o, subsByUser.get(o.id), now) === 'paid')
+    .slice(0, 5);
+  const PLAN_BADGE_LABEL: Record<string, string> = {
+    monthly: 'Aylık',
+    yearly: 'Yıllık',
+    enterprise: 'Kurumsal',
+  };
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="ABONELİKLER"
         title="Plan yönetimi"
-        description="Müşterilerinin plan dağılımını izle, paket fiyatlandırmasını incele. Dodo Payments ile self-service checkout aktif — admin manuel override (enterprise/legacy/refund) intact."
+        description="Müşterilerinin plan dağılımını izle, paket fiyatlarını yönet. İşletme sahipleri Dodo Payments ile kendi aboneliklerini başlatabilir; özel anlaşmalar için planı elle düzenleyebilirsin."
       />
 
       <div className="grid gap-3.5 grid-cols-2 lg:grid-cols-4 mb-4">
@@ -142,22 +136,32 @@ export default async function AdminPlansPage() {
           label="Ödeyen müşteri"
           value={paidOwners}
           delta={`%${paidShare}`}
-          deltaKind="up"
+          deltaKind="neutral"
+          deltaSuffix="tüm müşterilerin"
           icon={<TrendingUp size={14} strokeWidth={2} />}
-          accent="#C6F24E"
+          accent={paidOwners > 0 ? '#C6F24E' : undefined}
         />
         <StatCard
           label="Aktif denemeler"
           value={trialOwners}
-          delta="14 gün ort."
+          delta={avgTrialDaysLeft != null ? `ort. ${avgTrialDaysLeft} gün kaldı` : undefined}
           deltaKind="neutral"
           icon={<Crown size={14} strokeWidth={2} />}
         />
         <StatCard
           label="Aylık MRR (tahmini)"
-          value={`$${mrrUsd.toLocaleString('en-US')}`}
-          delta={mrrUsd > 0 ? 'USD · DB tier fiyatları' : 'Henüz ödeyen yok'}
-          deltaKind={mrrUsd > 0 ? 'up' : 'neutral'}
+          value={formatUsd(mrrUsd)}
+          delta={
+            revenue.activeSubscriptions > 0
+              ? `${revenue.activeSubscriptions} aktif abonelik`
+              : 'Henüz ödeyen yok'
+          }
+          deltaKind="neutral"
+          deltaSuffix={
+            revenue.unpricedSubscriptions > 0
+              ? `${revenue.unpricedSubscriptions} tanesi fiyatsız`
+              : undefined
+          }
           icon={<CreditCard size={14} strokeWidth={2} />}
           accent={mrrUsd > 0 ? '#C6F24E' : undefined}
         />
@@ -168,11 +172,10 @@ export default async function AdminPlansPage() {
         <div className="bz-card p-5 sm:p-6">
           <Eyebrow>Plan dağılımı</Eyebrow>
           <div className="bz-h-tight mt-1 mb-3.5" style={{ fontSize: 18 }}>
-            {totalOwners} işletme
+            {totalOwners} işletme sahibi
           </div>
           <div className="flex flex-col gap-2.5">
             {planBuckets
-              .filter((b) => b.count > 0)
               .map((b) => {
                 const pct = totalOwners ? (b.count / totalOwners) * 100 : 0;
                 return (
@@ -231,7 +234,9 @@ export default async function AdminPlansPage() {
                     })}
                   </div>
                 </div>
-                <Badge kind="lime">{u.plan}</Badge>
+                <Badge kind="lime">
+                  {tierNameByUser.get(u.id) || PLAN_BADGE_LABEL[(u.plan || '').toLowerCase()] || 'Ücretli'}
+                </Badge>
               </div>
             ))
           )}
@@ -243,9 +248,7 @@ export default async function AdminPlansPage() {
           (marketing /pricing parity) + per-plan user count badge. */}
       <PlansManager initialPlans={managedPlans} initialUsage={planUsage} />
 
-      {/* Roadmap note — Stage 142 §38.222 Dodo Payments canlıya alındı.
-          Stage 149 §38.229 — Iyzico provider iptal edildi (Dodo Payments
-          tek self-service sağlayıcı). */}
+      {/* Ödeme entegrasyonu notu — sade, operatöre yönelik dil (§38.233). */}
       <div
         className="mt-4 p-4 rounded-xl flex gap-3 flex-col sm:flex-row"
         style={{ background: '#EAF9B8', border: '1px solid #C6F24E' }}
@@ -257,15 +260,14 @@ export default async function AdminPlansPage() {
           style={{ flexShrink: 0, marginTop: 2 }}
         />
         <div style={{ fontSize: 12.5, color: '#0A0A0A', lineHeight: 1.55 }}>
-          <strong>Ödeme entegrasyonu:</strong> Dodo Payments canlıda (Stage 142
-          §38.222). Bir tier için `paymentProvider=&apos;dodo_payments&apos;` +
-          `dodoProductId=&apos;pdt_xxx&apos;` set edildiğinde owner billing
-          panelinde &quot;Aboneliği yönet&quot; CTA aktif olur. Manuel plan
+          <strong>Ödeme entegrasyonu:</strong> Bir pakette ödeme sağlayıcısı olarak
+          Dodo Payments seçilip ürün kimliği girildiğinde, işletme sahibi
+          panelinde &quot;Aboneliği yönet&quot; butonu açılır. Manuel plan
           değişiklikleri{' '}
           <Link href="/admin/members" className="underline text-[#0A0A0A] font-medium">
             İşletme Sahipleri
           </Link>{' '}
-          listesindeki MemberBillingModal ile yapılır.
+          listesinden yapılır.
         </div>
       </div>
     </div>

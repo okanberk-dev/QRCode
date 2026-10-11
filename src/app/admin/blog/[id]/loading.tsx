@@ -1,36 +1,10 @@
-import {
-  SkBox,
-  SkPageHeader,
-  SkPageShell,
-} from '@/components/ui/skeletons/PageSkeleton';
+import { BlogEditorSkeleton } from '@/components/admin/BlogPostEditor';
 
 /**
- * Admin blog post edit — back link + PageHeader + editor + meta side
- * rail. (CLAUDE.md §40.10)
+ * Admin blog editor — same header bar + 2-column (content / 360px settings
+ * rail) grid as BlogPostEditor, which also renders this skeleton while an
+ * existing post loads (CLAUDE.md §40.10).
  */
 export default function Loading() {
-  return (
-    <SkPageShell max={1440}>
-      <SkBox className="h-3 w-32" />
-      <SkPageHeader withActions titleWidth="w-72" />
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
-        <div className="bz-card p-5 space-y-3">
-          <SkBox className="h-10 w-full" />
-          <SkBox className="h-10 w-full" />
-          <SkBox className="h-96 w-full" />
-        </div>
-        <div className="space-y-4">
-          <div className="bz-card p-5 space-y-3">
-            <SkBox className="h-4 w-32" />
-            <SkBox className="h-10 w-full" />
-            <SkBox className="h-10 w-full" />
-          </div>
-          <div className="bz-card p-5 space-y-3">
-            <SkBox className="h-4 w-32" />
-            <SkBox className="h-32 w-full" />
-          </div>
-        </div>
-      </div>
-    </SkPageShell>
-  );
+  return <BlogEditorSkeleton />;
 }

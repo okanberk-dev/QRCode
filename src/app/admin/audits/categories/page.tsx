@@ -146,7 +146,7 @@ export default function AuditCategoriesPage() {
         <div className="space-y-2 text-[13px] text-[#525252]">
           <p>
             Denetim Merkezi için <strong className="text-[#0A0A0A]">18 kategori</strong>,{' '}
-            <strong className="text-[#0A0A0A]">25 şablon</strong> ve{' '}
+            <strong className="text-[#0A0A0A]">24 şablon</strong> ve{' '}
             <strong className="text-[#0A0A0A]">~120 soru</strong> yüklenir veya güncellenir.
           </p>
           <p>
@@ -262,7 +262,7 @@ export default function AuditCategoriesPage() {
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
         eyebrowColor="#C6F24E"
         title="Denetim kategorileri"
-        description="Şablonları sektör ve konuya göre gruplayan taksonomi. Owner şablon oluştururken bu kategori listesinden seçer."
+        description="Şablonları sektör ve konuya göre gruplayan taksonomi. İşletme sahipleri şablon oluştururken bu kategori listesinden seçer."
         actions={
           <div className="flex flex-wrap gap-2">
             <button
@@ -270,7 +270,7 @@ export default function AuditCategoriesPage() {
               className="bz-btn-ghost"
               onClick={runSeed}
               disabled={seeding || loading}
-              title="Varsayılan 18 kategori + 25 şablon + ~120 soru yüklenir veya güncellenir"
+              title="Varsayılan 18 kategori + 24 şablon + ~120 soru yüklenir veya güncellenir"
             >
               {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
               Varsayılan içeriği yükle
@@ -297,7 +297,7 @@ export default function AuditCategoriesPage() {
         <EmptyState
           icon={<Tag size={20} />}
           title="Henüz kategori yok"
-          body="Buaze 6 sektör için hazır 18 kategori + 25 şablon ile başlatabilirsin. Sıfırdan ekleyeceksen 'Yeni kategori' butonunu kullan."
+          body="Buaze 6 sektör için hazır 18 kategori + 24 şablon ile başlatabilirsin. Sıfırdan ekleyeceksen 'Yeni kategori' butonunu kullan."
           action={
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <button
@@ -323,9 +323,12 @@ export default function AuditCategoriesPage() {
                 <span className="pulse-eyebrow text-[#0A0A0A]">{SECTOR_LABEL[sector]}</span>
                 <Badge kind={SECTOR_BADGE[sector]}>{items.length}</Badge>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {/* grid-cols-1 (minmax(0,1fr)): without it the single mobile
+                  track sized itself to the longest "label · /slug" line and
+                  pushed cards past the 390px viewport, clipping the actions. */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {items.map((cat) => (
-                  <article key={cat.id} className="bz-card p-4 flex flex-col gap-3">
+                  <article key={cat.id} className="bz-card min-w-0 p-4 flex flex-col gap-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="bz-h-tight text-[15px] truncate">{cat.labelTr}</div>
@@ -419,7 +422,7 @@ export default function AuditCategoriesPage() {
               />
             </Field>
           </div>
-          <Field label="Lucide ikon adı" hint="Boş = ClipboardCheck default">
+          <Field label="İkon adı (opsiyonel)" hint="Örn. UserPlus. Boş bırakılabilir.">
             <input
               className="bz-input"
               value={form.iconKey}

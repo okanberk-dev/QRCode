@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Loader2, Mail, Plus, RefreshCw, Search } from 'lucide-react';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 
 interface CampaignRow {
   id: string;
@@ -95,7 +96,7 @@ export default function AdminCampaignsPage() {
               Bülten Kampanyaları
             </h1>
             <p className="mt-1.5 text-[13px] sm:text-[14px] text-[#525252] max-w-[560px]">
-              Aylık cron varsayılan olarak son 3 blog yazısını gönderir. Burada özel başlık + intro + post seçimi ile sayıları override edebilirsin.
+              Aylık bülten varsayılan olarak son 3 blog yazısını gönderir. Burada özel başlık, giriş metni ve yazı seçimiyle kendi kampanyanı hazırlayabilirsin.
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -120,10 +121,18 @@ export default function AdminCampaignsPage() {
 
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex w-full overflow-x-auto rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-1 pulse-eyebrow sm:w-auto">
+          {/* Wraps on mobile instead of an overflow strip that pushed the page
+              sideways / hid the last status at 390px. */}
+          <div
+            role="group"
+            aria-label="Durum filtresi"
+            className="flex w-full min-w-0 flex-wrap gap-1 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-1 pulse-eyebrow sm:inline-flex sm:w-auto sm:flex-nowrap"
+          >
             {(['all', 'draft', 'scheduled', 'sent', 'failed'] as const).map((s) => (
               <button
                 key={s}
+                type="button"
+                aria-pressed={status === s}
                 onClick={() => setStatus(s)}
                 className={`shrink-0 rounded-lg px-3 py-1.5 transition-all ${
                   status === s ? 'bg-[#0A0A0A] text-white shadow-sm' : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
@@ -152,8 +161,16 @@ export default function AdminCampaignsPage() {
 
       <div className="overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-sm">
         {loading && !data ? (
-          <div className="flex items-center justify-center p-16">
-            <Loader2 size={22} className="animate-spin text-[#0A0A0A]" />
+          // Row skeleton (§40.10) instead of a second spinner after loading.tsx.
+          <div className="divide-y divide-[#EDEDED]" aria-busy="true">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <SkBox className="h-4 w-56 max-w-[55%]" />
+                <SkBox className="h-4 w-10" />
+                <SkBox className="hidden h-5 w-20 rounded-full md:block" />
+                <SkBox className="ml-auto h-4 w-16" />
+              </div>
+            ))}
           </div>
         ) : rows.length === 0 ? (
           <div className="p-12 text-center">

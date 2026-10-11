@@ -7,18 +7,21 @@ import {
 } from '@/components/ui/skeletons/PageSkeleton';
 
 /**
- * Admin audit stats — PageHeader + KPI + 3-table breakdown (sector /
- * top templates / per-restaurant). (CLAUDE.md §40.10)
+ * Admin audit stats — PageHeader (back + refresh) + 4 KPI cards + three
+ * titled sections (sector table / top templates / most active businesses).
+ * Mirrors page.tsx (CLAUDE.md §40.10).
  */
 export default function Loading() {
   return (
-    <SkPageShell max={1600}>
-      <SkBox className="h-3 w-32" />
-      <SkPageHeader titleWidth="w-44" />
+    <SkPageShell max={1600} space={4}>
+      <SkPageHeader withActions titleWidth="w-48" />
       <SkStatGrid count={4} />
-      <SkTable rows={6} cols={4} />
-      <SkTable rows={5} cols={4} />
-      <SkTable rows={8} cols={5} />
+      {[6, 3, 3].map((rows, i) => (
+        <div key={i} className="space-y-2">
+          <SkBox className="h-5 w-48" />
+          <SkTable rows={rows} cols={4} />
+        </div>
+      ))}
     </SkPageShell>
   );
 }

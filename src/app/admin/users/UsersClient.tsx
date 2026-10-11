@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ExternalLink, Key, Mail, Plus, Trash2, Loader2, Store, User, ShieldCheck, UserCog, Search } from 'lucide-react';
+import { AlertTriangle, Check, ExternalLink, Key, Mail, Pencil, Plus, Trash2, Loader2, Store, User, ShieldCheck, UserCog, Search } from 'lucide-react';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
 import { AlertBanner, Badge, Modal, PageHeader, useConfirmDialog } from '@/components/ui';
-import { useUrlFilter } from '@/hooks/useUrlFilter';
+import { useDebouncedUrlInput, useUrlFilter } from '@/hooks/useUrlFilter';
 
 interface User {
   id: string;
@@ -44,17 +44,52 @@ function roleBadgeIcon(role: string) {
 interface UsersClientProps {
   initialUsers?: User[];
   initialRestaurants?: Restaurant[];
+  /** Total admin count (server prefetch). Drives "Daha fazla yükle". */
+  initialTotal?: number;
 }
 
-export default function UsersClient({ initialUsers, initialRestaurants }: UsersClientProps) {
-  const { t } = useAdminTranslation();
+// /api/admin/users and /api/restaurants cap a page at 100 rows.
+const PAGE_SIZE = 100;
+
+function listFrom<T>(body: unknown): T[] {
+  if (Array.isArray(body)) return body as T[];
+  const data = (body as { data?: unknown } | null)?.data;
+  return Array.isArray(data) ? (data as T[]) : [];
+}
+
+/**
+ * Every business (active + paused) for the manager scope picker. The API
+ * defaults to 20 active rows, which hid businesses beyond the first page
+ * once the list refetched after a save.
+ */
+async function fetchRestaurantOptions(): Promise<Restaurant[] | null> {
+  const all: Restaurant[] = [];
+  for (let page = 1; page <= 10; page++) {
+    const res = await fetch(`/api/restaurants?status=all&limit=${PAGE_SIZE}&page=${page}`);
+    if (!res.ok) return page === 1 ? null : all;
+    const body = await res.json();
+    all.push(...listFrom<Restaurant>(body).map((r) => ({ id: r.id, name: r.name })));
+    const totalPages = (body as { meta?: { totalPages?: number } } | null)?.meta?.totalPages ?? 1;
+    if (page >= totalPages) break;
+  }
+  return all.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+}
+
+export default function UsersClient({ initialUsers, initialRestaurants, initialTotal }: UsersClientProps) {
+  const { locale } = useAdminTranslation();
+  const isTr = locale !== 'en';
   // §40.10 server-hydration — initialUsers undefined ise client'ta fetch yapılır,
   // doluysa çift skeleton flash önlenir.
   const [users, setUsers] = useState<User[]>(initialUsers ?? []);
+  const [total, setTotal] = useState<number>(initialTotal ?? initialUsers?.length ?? 0);
+  const [loadedPage, setLoadedPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
   // PR4 — URL synced search (useUrlFilter §28).
   const filters = useUrlFilter({ search: '' });
-  const searchTerm = filters.values.search;
-  const setSearchTerm = (v: string) => filters.set('search', v);
+  // The field keeps its own value and writes the URL debounced — binding it
+  // straight to the URL lost keystrokes during each router round trip.
+  const search = useDebouncedUrlInput(filters.values.search, (v) => filters.set('search', v));
+  const searchTerm = search.input;
   const [restaurants, setRestaurants] = useState<Restaurant[]>(initialRestaurants ?? []);
   const skipFirstFetchRef = useRef(initialUsers !== undefined);
   
@@ -86,37 +121,60 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
   const fetchData = async () => {
     try {
       setFetchError(null);
-      const usersRes = await fetch('/api/admin/users');
+      const usersRes = await fetch(`/api/admin/users?limit=${PAGE_SIZE}&page=1`);
       if (usersRes.ok) {
         // /api/admin/users returns { data, meta } — never assign the raw
         // response or .filter() downstream will crash.
         const usersData = await usersRes.json();
-        const list = Array.isArray(usersData)
-          ? usersData
-          : Array.isArray(usersData?.data)
-          ? usersData.data
-          : [];
+        const list = listFrom<User>(usersData);
         setUsers(list);
+        setTotal(typeof usersData?.meta?.total === 'number' ? usersData.meta.total : list.length);
+        setLoadedPage(1);
       } else {
         setFetchError('Yöneticiler getirilemedi. Lütfen sayfayı yenileyin.');
       }
 
-      const restRes = await fetch('/api/restaurants');
-      if (restRes.ok) {
-        const restData = await restRes.json();
-        setRestaurants(
-          Array.isArray(restData)
-            ? restData
-            : Array.isArray(restData?.data)
-            ? restData.data
-            : [],
-        );
-      }
+      const options = await fetchRestaurantOptions();
+      if (options) setRestaurants(options);
     } catch (e) {
       console.error(e);
       setFetchError('Bağlantı hatası — yöneticiler şu an gelmiyor.');
     }
   };
+
+  const loadMoreUsers = async () => {
+    setLoadingMore(true);
+    try {
+      const nextPage = loadedPage + 1;
+      const res = await fetch(`/api/admin/users?limit=${PAGE_SIZE}&page=${nextPage}`);
+      if (!res.ok) {
+        setFetchError('Yöneticiler getirilemedi. Lütfen sayfayı yenileyin.');
+        return;
+      }
+      const body = await res.json();
+      const list = listFrom<User>(body);
+      setUsers((prev) => {
+        const seen = new Set(prev.map((u) => u.id));
+        return [...prev, ...list.filter((u) => !seen.has(u.id))];
+      });
+      if (typeof body?.meta?.total === 'number') setTotal(body.meta.total);
+      setLoadedPage(nextPage);
+    } catch (e) {
+      console.error(e);
+      setFetchError('Bağlantı hatası — yöneticiler şu an gelmiyor.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const term = searchTerm.trim().toLocaleLowerCase('tr');
+  const visibleUsers = term
+    ? users.filter((u) =>
+        [u.username, u.email ?? '', u.restaurant?.name ?? ''].some((v) =>
+          v.toLocaleLowerCase('tr').includes(term),
+        ),
+      )
+    : users;
 
   useEffect(() => {
     if (skipFirstFetchRef.current) {
@@ -273,9 +331,15 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#A3A3A3]" size={14} strokeWidth={2} />
         <input
           type="text"
-          placeholder={t('search_placeholder')}
+          inputMode="search"
+          autoCorrect="off"
+          spellCheck={false}
+          placeholder={
+            isTr ? 'Kullanıcı adı, e-posta veya işletme ara...' : 'Search by username, email or business...'
+          }
+          aria-label={isTr ? 'Yönetici ara' : 'Search admins'}
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => search.setInput(e.target.value)}
           className="bz-input"
           style={{ paddingLeft: 36 }}
         />
@@ -293,9 +357,7 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
               </tr>
             </thead>
             <tbody className="divide-y divide-[#EDEDED] text-sm">
-              {users.filter(u =>
-                u.username.toLowerCase().includes(searchTerm.toLowerCase())
-              ).map(user => (
+              {visibleUsers.map(user => (
                 <tr key={user.id} className="hover:bg-[#EAF9B8]/30 transition-all border-b border-[#EDEDED] group">
                   <td className="px-3 py-4 sm:px-6">
                     <div className="flex items-center gap-3">
@@ -366,6 +428,7 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
                         href={`/admin/users/${user.id}`}
                         className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#FAFAFA] active:translate-y-1 active:shadow-none transition-all"
                         title="Detay"
+                        aria-label={`${user.username} detayını aç`}
                       >
                         <ExternalLink size={16} strokeWidth={2} />
                       </Link>
@@ -373,13 +436,15 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
                         onClick={() => handleEdit(user)}
                         className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-[#0A0A0A] bg-white border border-[#EDEDED] rounded-xl hover:bg-[#C6F24E] active:translate-y-1 active:shadow-none transition-all"
                         title="Düzenle"
+                        aria-label={`${user.username} düzenle`}
                       >
-                        <Plus className="rotate-45" size={18} strokeWidth={2} />
+                        <Pencil size={16} strokeWidth={2} />
                       </button>
                       <button
                         onClick={() => handleDelete(user.id)}
                         className="w-11 h-11 sm:w-10 sm:h-10 flex items-center justify-center text-white bg-[#991B1B] border border-[#EDEDED] rounded-xl hover:bg-[#7F1D1D] active:translate-y-1 active:shadow-none transition-all"
                         title="Sil"
+                        aria-label={`${user.username} sil`}
                       >
                         <Trash2 size={18} strokeWidth={2} />
                       </button>
@@ -391,6 +456,30 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
           </table>
         </div>
       </div>
+
+      {term && visibleUsers.length === 0 && users.length > 0 && (
+        <p className="px-1 text-[13px] text-[#737373]">
+          &quot;{searchTerm.trim()}&quot; ile eşleşen yönetici bulunamadı.
+          {users.length < total ? ' Arama yalnızca yüklenen yöneticilerde yapılır.' : ''}
+        </p>
+      )}
+
+      {users.length < total && (
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-[12px] text-[#737373]">
+            {users.length} / {total} yönetici yüklendi
+          </p>
+          <button
+            type="button"
+            onClick={loadMoreUsers}
+            disabled={loadingMore}
+            className="bz-btn-ghost disabled:opacity-50"
+          >
+            {loadingMore ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} strokeWidth={2} />}
+            Daha fazla yükle
+          </button>
+        </div>
+      )}
 
       {showModal && (
         <Modal
@@ -566,7 +655,13 @@ export default function UsersClient({ initialUsers, initialRestaurants }: UsersC
                   disabled={isSubmitting}
                   className="bz-btn-primary disabled:opacity-50"
                 >
-                  {isSubmitting ? <Loader2 className="animate-spin" size={14} strokeWidth={2} /> : <Plus size={14} className={editingId ? 'rotate-45' : ''} strokeWidth={2} />}
+                  {isSubmitting ? (
+                    <Loader2 className="animate-spin" size={14} strokeWidth={2} />
+                  ) : editingId ? (
+                    <Check size={14} strokeWidth={2} />
+                  ) : (
+                    <Plus size={14} strokeWidth={2} />
+                  )}
                   {editingId ? 'Güncellemeyi kaydet' : 'Hesabı oluştur'}
                 </button>
               </div>

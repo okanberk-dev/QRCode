@@ -5,6 +5,7 @@ import type { ThemeMention } from '@/components/dashboard/analytics/TopMentionsP
 import { buildPlatformDailyTrend } from '@/lib/analytics-platform-trend';
 import { calculateNPS } from '@/lib/analytics-nps';
 import { prisma } from '@/lib/prisma';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 
 const RANGE_DAYS: Record<string, number> = {
   '7d': 7,
@@ -59,10 +60,14 @@ export interface PanelAnalyticsData {
   windowDays: number;
 }
 
-function pctDelta(curr: number, prev: number): { value: string; kind: 'up' | 'down' | 'neutral' } {
+function pctDelta(
+  curr: number,
+  prev: number,
+  isTr = true,
+): { value: string; kind: 'up' | 'down' | 'neutral' } {
   if (prev === 0) {
     if (curr === 0) return { value: '0%', kind: 'neutral' };
-    return { value: 'Yeni', kind: 'up' };
+    return { value: isTr ? 'Yeni' : 'New', kind: 'up' };
   }
   const pct = Math.round(((curr - prev) / prev) * 1000) / 10;
   return {
@@ -79,6 +84,80 @@ function responseLabel(hours: number | null, isTr: boolean) {
   return minutes > 0
     ? `${whole}${isTr ? 'sa' : 'h'} ${minutes}${isTr ? 'dk' : 'm'}`
     : `${whole}${isTr ? 'sa' : 'h'}`;
+}
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  Mon: 0,
+  Tue: 1,
+  Wed: 2,
+  Thu: 3,
+  Fri: 4,
+  Sat: 5,
+  Sun: 6,
+};
+
+/**
+ * Day-of-week (Mon=0..Sun=6) + hour (0-23) in the display timezone
+ * (CLAUDE.md §46). `Date#getDay/getHours` use the server TZ (UTC on Vercel),
+ * which put a 08:46 Istanbul review into the 05:00 cell.
+ */
+function makeDayHourResolver(timeZone: string) {
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    weekday: 'short',
+    hour: '2-digit',
+    hourCycle: 'h23',
+  });
+  return (date: Date): { day: number; hour: number } => {
+    let day = 0;
+    let hour = 0;
+    for (const part of fmt.formatToParts(date)) {
+      if (part.type === 'weekday') day = WEEKDAY_INDEX[part.value] ?? 0;
+      else if (part.type === 'hour') hour = Number(part.value) % 24;
+    }
+    return { day, hour };
+  };
+}
+
+/** Calendar day key (YYYY-MM-DD) in the display timezone. */
+function makeDayKeyResolver(timeZone: string) {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return (date: Date) => fmt.format(date);
+}
+
+function trendSentence(
+  reviewsCount: number,
+  prevCount: number,
+  windowDays: number,
+  isTr: boolean,
+): string {
+  if (reviewsCount === 0) return '';
+  const lead = isTr
+    ? `${windowDays} günlük pencerede ${reviewsCount} yorum toplandı`
+    : `${reviewsCount} reviews collected in the ${windowDays}-day window`;
+  if (prevCount === 0) {
+    return isTr
+      ? `${lead}; önceki dönemde yorum yoktu.`
+      : `${lead}; there were no reviews in the previous period.`;
+  }
+  const pct = Math.round(((reviewsCount - prevCount) / prevCount) * 1000) / 10;
+  const abs = Math.abs(pct).toLocaleString(isTr ? 'tr-TR' : 'en-US');
+  if (pct === 0) {
+    return isTr ? `${lead}; önceki dönemle aynı seviyede.` : `${lead}; flat versus the previous period.`;
+  }
+  if (pct > 0) {
+    return isTr
+      ? `${lead}; önceki döneme göre %${abs} arttı.`
+      : `${lead}; up ${abs}% versus the previous period.`;
+  }
+  return isTr
+    ? `${lead}; önceki döneme göre %${abs} azaldı.`
+    : `${lead}; down ${abs}% versus the previous period.`;
 }
 
 function tokenize(comment: string) {
@@ -153,7 +232,7 @@ export async function buildPanelAnalyticsData({
   ]);
 
   const reviewsCount = feedbacksWindow.length;
-  const reviewsDelta = pctDelta(reviewsCount, feedbacksPrevWindow);
+  const reviewsDelta = pctDelta(reviewsCount, feedbacksPrevWindow, isTr);
   const avgRatingNow =
     reviewsCount > 0
       ? feedbacksWindow.reduce((sum, feedback) => sum + (feedback.rating ?? 0), 0) / reviewsCount
@@ -187,15 +266,17 @@ export async function buildPanelAnalyticsData({
   const returnRate =
     totalUniqueCustomers > 0 ? Math.round((returningCustomers / totalUniqueCustomers) * 100) : null;
 
+  // Day buckets in the display timezone (§46) — not the server's midnight.
+  const displayTimeZone = resolveDisplayTimeZone();
+  const dayKeyOf = makeDayKeyResolver(displayTimeZone);
+  const reviewsPerDay = new Map<string, number>();
+  for (const feedback of feedbacksWindow) {
+    const key = dayKeyOf(feedback.createdAt);
+    reviewsPerDay.set(key, (reviewsPerDay.get(key) ?? 0) + 1);
+  }
   const sparkReviews = Array.from({ length: windowDays }, (_, index) => {
-    const dayStart = new Date();
-    dayStart.setHours(0, 0, 0, 0);
-    dayStart.setDate(dayStart.getDate() - (windowDays - 1 - index));
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-    return feedbacksWindow.filter(
-      (feedback) => feedback.createdAt >= dayStart && feedback.createdAt < dayEnd,
-    ).length;
+    const day = new Date(now - (windowDays - 1 - index) * 24 * 60 * 60 * 1000);
+    return reviewsPerDay.get(dayKeyOf(day)) ?? 0;
   });
 
   const targetRatings = restaurants
@@ -333,10 +414,9 @@ export async function buildPanelAnalyticsData({
     .slice(0, 5);
 
   const heatmapMatrix: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0));
+  const dayHourOf = makeDayHourResolver(displayTimeZone);
   for (const feedback of feedbacksWindow) {
-    const jsDay = feedback.createdAt.getDay();
-    const day = jsDay === 0 ? 6 : jsDay - 1;
-    const hour = feedback.createdAt.getHours();
+    const { day, hour } = dayHourOf(feedback.createdAt);
     heatmapMatrix[day][hour] += 1;
   }
   const heatmapCells: Array<{ day: number; hour: number; count: number }> = [];
@@ -349,12 +429,7 @@ export async function buildPanelAnalyticsData({
   const lowRatedCount = feedbacksWindow.filter((feedback) => (feedback.rating ?? 0) <= 2).length;
   const topTheme = themes[0]?.theme ?? null;
   const insight = {
-    trend:
-      reviewsCount > 0
-        ? isTr
-          ? `${windowDays} günlük pencerede ${reviewsCount} yorum toplandı; önceki döneme göre ${reviewsDelta.value}.`
-          : `${reviewsCount} reviews collected in the ${windowDays}-day window; ${reviewsDelta.value} versus the previous period.`
-        : '',
+    trend: trendSentence(reviewsCount, feedbacksPrevWindow, windowDays, isTr),
     win:
       topTheme && sentimentPos >= 50
         ? isTr

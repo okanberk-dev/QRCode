@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 /**
@@ -150,4 +150,73 @@ export function useUrlFilter<T extends FilterDefaults>(defaults: T): UrlFilterAp
   useEffect(() => {}, [values]);
 
   return { values, set, setMany, reset, hasActive, toQueryString };
+}
+
+export interface DebouncedUrlInput {
+  /** Value bound to the <input>. Updates on every keystroke. */
+  input: string;
+  /** onChange handler — the URL is written after `delayMs` of inactivity. */
+  setInput: (value: string) => void;
+  /**
+   * Set the input without a debounced write — for "clear" actions that write
+   * the URL themselves in the same tick (e.g. `filters.setMany({ search: '' })`).
+   */
+  replaceInput: (value: string) => void;
+}
+
+/**
+ * Text input bound to one URL-synced filter (search boxes).
+ *
+ * Binding an <input> straight to `filters.values.x` makes every keystroke wait
+ * for a router round trip; React resets the field to the old URL value in the
+ * meantime and typed characters are lost. This hook keeps a local value for
+ * the field, writes the trimmed value to the URL after `delayMs`, and only
+ * copies the URL back into the field when it changed from outside (back /
+ * forward, deep link, a "clear filters" button) — never the echo of its own
+ * write, so a trailing space the user is still typing is not stripped.
+ *
+ *   const search = useDebouncedUrlInput(filters.values.search, (v) =>
+ *     filters.setMany({ search: v, page: 1 }),
+ *   );
+ *   <input value={search.input} onChange={(e) => search.setInput(e.target.value)} />
+ */
+export function useDebouncedUrlInput(
+  urlValue: string,
+  push: (value: string) => void,
+  delayMs = 300,
+): DebouncedUrlInput {
+  const [input, setInput] = useState(urlValue);
+  const lastPushedRef = useRef(urlValue);
+  // Latest `push` — it closes over the current search params, so the timer
+  // must call the newest one (an older closure would drop other filters that
+  // changed while the user was typing).
+  const pushRef = useRef(push);
+  useEffect(() => {
+    pushRef.current = push;
+  });
+
+  // URL → input, only for changes this hook did not write.
+  useEffect(() => {
+    if (urlValue === lastPushedRef.current) return;
+    lastPushedRef.current = urlValue;
+    setInput(urlValue);
+  }, [urlValue]);
+
+  // input → URL, debounced.
+  useEffect(() => {
+    const next = input.trim();
+    if (next === lastPushedRef.current) return;
+    const t = setTimeout(() => {
+      lastPushedRef.current = next;
+      pushRef.current(next);
+    }, delayMs);
+    return () => clearTimeout(t);
+  }, [input, delayMs]);
+
+  const replaceInput = useCallback((value: string) => {
+    lastPushedRef.current = value.trim();
+    setInput(value);
+  }, []);
+
+  return { input, setInput, replaceInput };
 }

@@ -25,9 +25,12 @@ export default async function AdminUsersPage() {
   // single loading.tsx skeleton resolves into populated lists, no flash.
   let initialUsers: Awaited<ReturnType<typeof loadUsers>> = [];
   let initialRestaurants: Awaited<ReturnType<typeof loadRestaurants>> = [];
+  let initialTotal = 0;
   try {
-    [initialUsers, initialRestaurants] = await Promise.all([
+    // §40.1 — single pooled connection: batch the reads in one transaction.
+    [initialUsers, initialTotal, initialRestaurants] = await prisma.$transaction([
       loadUsers(),
+      prisma.adminUser.count(),
       loadRestaurants(),
     ]);
   } catch (error) {
@@ -36,11 +39,16 @@ export default async function AdminUsersPage() {
   }
 
   return (
-    <UsersClient initialUsers={initialUsers} initialRestaurants={initialRestaurants} />
+    <UsersClient
+      initialUsers={initialUsers}
+      initialRestaurants={initialRestaurants}
+      initialTotal={initialTotal}
+    />
   );
 }
 
-async function loadUsers() {
+// Plain (non-async) functions so they return PrismaPromises for $transaction.
+function loadUsers() {
   return prisma.adminUser.findMany({
     select: {
       id: true,
@@ -51,11 +59,13 @@ async function loadUsers() {
       restaurant: { select: { name: true } },
     },
     orderBy: { username: 'asc' },
-    take: 20,
+    // Matches the client page size (/api/admin/users?limit=100); the list
+    // offers "Daha fazla yükle" when the total is larger.
+    take: 100,
   });
 }
 
-async function loadRestaurants() {
+function loadRestaurants() {
   return prisma.restaurant.findMany({
     select: { id: true, name: true },
     orderBy: { name: 'asc' },

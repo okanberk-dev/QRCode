@@ -21,7 +21,7 @@
 //   POST  /api/admin/audits/templates/[id]/publish    → toggle
 //   DELETE/api/admin/audits/templates/[id]            → hard delete
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -47,6 +47,7 @@ import {
   useConfirmDialog,
 } from '@/components/ui';
 import AuditQuestionEditor from '@/components/audits/AuditQuestionEditor';
+import TemplateDetailSkeleton from './loading';
 import { type AuditQuestionDraft } from '@/lib/audits/wizard-state';
 import {
   parseAuditErrorResponse,
@@ -90,7 +91,7 @@ const QUESTION_TYPE_LABEL: Record<string, string> = {
   scale: 'Ölçek',
   text: 'Metin',
   yes_no: 'Evet/Hayır',
-  file: 'Dosya',
+  file: 'Fotoğraf',
 };
 
 interface CategoryRef {
@@ -98,6 +99,7 @@ interface CategoryRef {
   slug: string;
   labelTr: string;
   labelEn: string;
+  sector?: AuditSector;
 }
 
 interface TemplateData {
@@ -124,6 +126,19 @@ function randomId(): string {
   return `q_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+// Save/delete live in the sticky bottom bar, so a message rendered at the top
+// of the page (or next to a field above the fold) can be off-screen. Scroll it
+// to the middle of the viewport when it is not comfortably visible; the
+// margins leave room for the sticky topbar and the sticky action bar.
+function revealIfHidden(el: HTMLElement | null) {
+  if (!el || typeof window === 'undefined') return;
+  const rect = el.getBoundingClientRect();
+  const viewport = window.innerHeight || document.documentElement.clientHeight;
+  if (rect.top >= 80 && rect.bottom <= viewport - 160) return;
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+}
+
 export default function AdminTemplateDetailClient({ templateId }: Props) {
   const router = useRouter();
   const [confirmDialog, askConfirm] = useConfirmDialog();
@@ -134,6 +149,12 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [passingScoreError, setPassingScoreError] = useState<string | null>(null);
+  const passingScoreInputRef = useRef<HTMLInputElement>(null);
+  const errorBannerRef = useRef<HTMLDivElement>(null);
+  // Set by actions triggered from the sticky bar; the effect below scrolls the
+  // banner into view once it has rendered.
+  const revealErrorRef = useRef(false);
 
   // Local edit state — fetch sonrası `data`'dan seed edilir, save sonrası
   // backend response ile reset.
@@ -150,7 +171,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<AuditQuestionDraft | null>(null);
 
-  const isRestaurantScoped = data?.restaurantId !== null;
+  const isRestaurantScoped = data != null && data.restaurantId !== null;
 
   const seedFromTemplate = useCallback((tpl: TemplateData) => {
     setTitle(tpl.title);
@@ -159,6 +180,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
     setCategoryId(tpl.categoryId || '');
     setScoringMode(tpl.scoringMode);
     setPassingScore(tpl.passingScore != null ? String(tpl.passingScore) : '');
+    setPassingScoreError(null);
     setLocale(tpl.locale);
     setQuestions(tpl.questions.map((q, i) => ({ ...q, sortOrder: i })));
   }, []);
@@ -204,9 +226,18 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
     loadCategories();
   }, [load, loadCategories]);
 
+  useEffect(() => {
+    if (!error || !revealErrorRef.current) return;
+    revealErrorRef.current = false;
+    revealIfHidden(errorBannerRef.current);
+  }, [error]);
+
+  // Only the selected sector's categories (plus the currently linked one so
+  // an existing cross-sector link is still visible). The old filter ended in
+  // `|| true`, listing every sector's categories for every template.
   const filteredCategories = useMemo(
-    () => categories.filter((c) => c.slug.startsWith(`${sector}-`) || true),
-    [categories, sector],
+    () => categories.filter((c) => c.sector === sector || c.id === categoryId),
+    [categories, sector, categoryId],
   );
 
   const moveQuestion = (index: number, dir: -1 | 1) => {
@@ -266,11 +297,29 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
 
   const handleSave = async () => {
     if (!title.trim()) {
+      revealErrorRef.current = true;
       setError('Başlık zorunlu');
       return;
     }
+    // Validate before saving and show the message under the field itself —
+    // the shared banner sits at the top of the page, out of view from the
+    // sticky save bar. (An out-of-range value used to be dropped silently.)
+    let parsedPassingScore: number | null = null;
+    if (passingScore.trim() !== '') {
+      const pass = Number(passingScore);
+      if (!Number.isFinite(pass) || pass < 0 || pass > 100) {
+        setPassingScoreError('Geçme puanı 0-100 aralığında olmalı veya boş bırakılmalı.');
+        const input = passingScoreInputRef.current;
+        input?.focus({ preventScroll: true });
+        revealIfHidden(input);
+        return;
+      }
+      parsedPassingScore = pass;
+    }
+    setPassingScoreError(null);
     setSaving(true);
     setError(null);
+    revealErrorRef.current = true;
     try {
       const body: Record<string, unknown> = {
         title: title.trim(),
@@ -290,12 +339,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
           sortOrder: i,
         })),
       };
-      const pass = Number(passingScore);
-      if (Number.isFinite(pass) && pass >= 0 && pass <= 100) {
-        body.passingScore = pass;
-      } else if (passingScore.trim() === '') {
-        body.passingScore = null;
-      }
+      body.passingScore = parsedPassingScore;
 
       const res = await fetch(`/api/admin/audits/templates/${templateId}`, {
         method: 'PATCH',
@@ -307,6 +351,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
         setError(summarizeAuditError(parsed));
         return;
       }
+      revealErrorRef.current = false;
       setNotice('Şablon güncellendi.');
       await load();
       setTimeout(() => setNotice(null), 3500);
@@ -345,6 +390,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
   const doDeleteTemplate = async () => {
     if (!data) return;
     setSaving(true);
+    revealErrorRef.current = true;
     try {
       const res = await fetch(`/api/admin/audits/templates/${data.id}`, { method: 'DELETE' });
       if (!res.ok) {
@@ -364,7 +410,7 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
     if (!data) return;
     askConfirm({
       title: `"${data.title}" silinecek`,
-      body: 'Şablon, soruları, atamaları ve yanıtlar cascade silinir. Bu işlem geri alınamaz.',
+      body: 'Şablonla birlikte soruları, atamaları ve tüm yanıtları da kalıcı olarak silinir. Bu işlem geri alınamaz.',
       confirmLabel: 'Kalıcı olarak sil',
       cancelLabel: 'Vazgeç',
       variant: 'danger',
@@ -372,8 +418,9 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
     });
   };
 
-  // §40.10 clean slate — skeleton render kaldırıldı; data gelene kadar null.
-  if (loading && !data) return null;
+  // §40.10 — keep showing the route skeleton (same shape as loading.tsx)
+  // until the template arrives instead of a blank page.
+  if (loading && !data) return <TemplateDetailSkeleton />;
 
   if (!data) {
     return (
@@ -401,8 +448,8 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
         title={data.title || 'Adsız şablon'}
         description={
           isRestaurantScoped
-            ? 'Restoran-özel şablon — admin sadece görüntüleme yapabilir, düzenleme owner panelden açılır.'
-            : 'Sorular + meta admin tarafından düzenlenebilir. Yayın için en az 1 soru zorunlu.'
+            ? 'İşletmeye özel şablon — burada yalnızca görüntülenir; düzenleme işletme panelinden yapılır.'
+            : 'Şablon bilgilerini ve sorularını buradan düzenleyebilirsin. Yayınlamak için en az 1 soru gerekir.'
         }
         actions={
           <div className="flex flex-wrap gap-2">
@@ -414,7 +461,11 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
               className="bz-btn-ghost"
               onClick={handlePublishToggle}
               disabled={saving || isRestaurantScoped}
-              title={isRestaurantScoped ? 'Restoran-özel şablon admin endpoint üzerinden yönetilmez' : ''}
+              title={
+                isRestaurantScoped
+                  ? 'İşletmeye özel şablonların yayın durumu işletme panelinden yönetilir'
+                  : undefined
+              }
             >
               {saving ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -433,9 +484,11 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
       />
 
       {error && (
-        <AlertBanner kind="danger" onDismiss={() => setError(null)}>
-          {error}
-        </AlertBanner>
+        <div ref={errorBannerRef}>
+          <AlertBanner kind="danger" onDismiss={() => setError(null)}>
+            {error}
+          </AlertBanner>
+        </div>
       )}
       {notice && (
         <AlertBanner kind="success" onDismiss={() => setNotice(null)}>
@@ -493,7 +546,16 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
             <select
               className="bz-input"
               value={sector}
-              onChange={(e) => setSector(e.target.value as AuditSector)}
+              onChange={(e) => {
+                const nextSector = e.target.value as AuditSector;
+                setSector(nextSector);
+                // A category from the previous sector no longer fits; clear it
+                // so the template is not saved under the wrong sector's category.
+                setCategoryId((prev) => {
+                  const current = categories.find((c) => c.id === prev);
+                  return current?.sector && current.sector !== nextSector ? '' : prev;
+                });
+              }}
               disabled={saving || isRestaurantScoped}
             >
               {AUDIT_SECTORS.map((s) => (
@@ -534,14 +596,22 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
           </Field>
         </div>
 
-        <Field label="Geçme puanı (0-100, boş = sadece skor)" hint="Pass/Fail modunda zorunlu">
+        <Field
+          label="Geçme puanı (0-100, boş = sadece skor)"
+          hint="“Geçti / Kaldı” modunda zorunlu"
+          error={passingScoreError}
+        >
           <input
+            ref={passingScoreInputRef}
             className="bz-input"
             type="number"
             min={0}
             max={100}
             value={passingScore}
-            onChange={(e) => setPassingScore(e.target.value)}
+            onChange={(e) => {
+              setPassingScore(e.target.value);
+              if (passingScoreError) setPassingScoreError(null);
+            }}
             disabled={saving || isRestaurantScoped}
           />
         </Field>
@@ -649,9 +719,10 @@ export default function AdminTemplateDetailClient({ templateId }: Props) {
         )}
       </div>
 
-      {/* Action bar */}
+      {/* Action bar — below lg it parks above the floating mobile nav;
+          at bottom-0 the nav covered "Kaydet" on phones. */}
       {!isRestaurantScoped && (
-        <div className="flex flex-wrap justify-between gap-2 sticky bottom-0 bg-white border-t border-[#EDEDED] pt-3 pb-2 -mx-4 px-4 sm:-mx-7 sm:px-7">
+        <div className="flex flex-wrap justify-between gap-2 sticky bottom-[calc(96px+env(safe-area-inset-bottom,0px))] z-10 bg-white border-t border-[#EDEDED] pt-3 pb-2 -mx-4 px-4 sm:-mx-7 sm:px-7 lg:bottom-0">
           <button
             type="button"
             className="bz-btn-ghost text-[#991B1B]"

@@ -30,6 +30,7 @@ interface CategoryRef {
   slug: string;
   labelTr: string;
   labelEn: string;
+  sector?: AuditSector;
 }
 
 interface CreateForm {
@@ -97,8 +98,11 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Categories carry their own `sector`; seeded slugs ("hiring-quiz",
+  // "operations-daily"…) have no sector prefix, so matching on the slug
+  // left this dropdown permanently empty.
   const filteredCategories = useMemo(
-    () => categories.filter((c) => c.slug.startsWith(`${form.sector}-`) || c.slug === form.sector),
+    () => categories.filter((c) => c.sector === form.sector),
     [categories, form.sector],
   );
 
@@ -122,7 +126,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
 
   function continueTo(next: Step) {
     if (next === 1 && !canContinueIdentity) {
-      setError('Başlık zorunlu. En az 2 karakter yaz.');
+      setError('Başlık zorunlu.');
       return;
     }
     if (next === 2 && !canContinueScoring) {
@@ -169,7 +173,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
   if (!open) return null;
 
   return (
-    <Modal size={680} onClose={handleClose} title="Yeni global şablon">
+    <Modal size={680} onClose={handleClose} title="Yeni hazır şablon">
       <div className="space-y-5">
         {/* Step indicator — CreateBusinessWizard paterni */}
         <div className="grid grid-cols-3 gap-2 rounded-2xl bg-[#F5F5F5] p-1.5">
@@ -188,7 +192,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                     setStep(idx as Step);
                   }
                 }}
-                className={`flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-2 text-[12px] font-semibold transition-all ${
+                className={`flex min-h-[44px] min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 text-[11px] font-semibold transition-all sm:gap-2 sm:px-2 sm:text-[12px] ${
                   active
                     ? 'bg-white text-[#0A0A0A] shadow-sm'
                     : complete
@@ -197,7 +201,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                 }`}
               >
                 <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${
                     active || complete ? 'bg-[#C6F24E] text-[#0A0A0A]' : 'bg-white text-[#737373]'
                   }`}
                 >
@@ -226,14 +230,14 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
                 <div>
                   <p className="text-[15px] font-semibold text-[#0A0A0A]">Şablon kimliği</p>
                   <p className="mt-1 text-[12.5px] leading-[1.55] text-[#525252]">
-                    Sektör, dil ve kategori şablonun owner kataloğunda nasıl gruplandırılacağını
+                    Sektör, dil ve kategori şablonun işletme kataloğunda nasıl gruplandırılacağını
                     belirler. Hepsi sonradan düzenlenebilir.
                   </p>
                 </div>
               </div>
             </div>
 
-            <Field label="Başlık" required hint="Owner şablon listesinde bu metni görür">
+            <Field label="Başlık" required hint="İşletme sahibi şablon listesinde bu metni görür">
               <input
                 className="bz-input"
                 value={form.title}
@@ -371,7 +375,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
 
             <Field
               label="Açıklama (opsiyonel)"
-              hint="Owner şablon seçim ekranında özet metin olarak görür."
+              hint="İşletme sahibi şablon seçim ekranında özet metin olarak görür."
             >
               <textarea
                 className="bz-input min-h-[80px]"
@@ -425,7 +429,7 @@ export default function CreateTemplateWizard({ open, categories, onClose, onCrea
             <div className="rounded-2xl border border-[#FDE68A] bg-[#FFFBEB] p-3.5 text-[12.5px] leading-[1.55] text-[#92400E]">
               <p>
                 <strong>Bu şablon taslak olarak oluşturulur.</strong> Yayınlamadan önce detay
-                ekranından en az 1 soru ekle. Sonra &quot;Yayınla&quot; butonuyla owner kataloğuna açılır.
+                ekranından en az 1 soru ekle. Sonra &quot;Yayınla&quot; butonuyla işletme sahiplerinin kataloğuna açılır.
               </p>
             </div>
           </div>

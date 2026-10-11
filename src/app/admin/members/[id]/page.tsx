@@ -85,7 +85,7 @@ const TABS: TabItem[] = [
   { id: 'invoices', label: 'Faturalar' },
   { id: 'restaurants', label: 'İşletmeler' },
   { id: 'team', label: 'Ekip' },
-  { id: 'audit', label: 'Audit log' },
+  { id: 'audit', label: 'İşlem kaydı' },
 ];
 
 const COOLDOWN_MS = 60 * 60 * 1000;
@@ -318,7 +318,7 @@ export default function MemberDetailPage({
                 <Mail size={14} strokeWidth={2} />
               )}
               <span className="hidden sm:inline">Şifre sıfırlama maili gönder</span>
-              <span className="sm:hidden">Davet</span>
+              <span className="sm:hidden">Şifre maili</span>
             </button>
             {user.isActive ? (
               <button
@@ -326,7 +326,7 @@ export default function MemberDetailPage({
                 onClick={() => setConfirmAction('deactivate')}
                 disabled={actionRunning === 'deactivate'}
                 className="bz-btn-danger"
-                title="Hesabı sil — DB'de korunur, geri alınabilir"
+                title="Hesabı sil — veriler sistemde saklanır, geri alınabilir"
               >
                 <Ban size={14} strokeWidth={2} />
                 Sil
@@ -398,7 +398,7 @@ export default function MemberDetailPage({
           <section className="bz-card p-5 sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-3 flex-wrap">
               <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Aktivasyon kontrol listesi</h3>
-              <p className="text-[11px] text-[#737373]">Restoran başına 5 adımlık kurulum (CLAUDE.md §19.5)</p>
+              <p className="text-[11px] text-[#737373]">Her işletme için 5 adımlık kurulum durumu</p>
             </div>
             <MemberActivationPanel userId={id} />
           </section>
@@ -430,9 +430,12 @@ export default function MemberDetailPage({
                       <Badge kind={subStatusMeta.kind}>{subStatusMeta.label}</Badge>
                       {subscription.amount != null && (
                         <span className="text-[12px] text-[#525252]">
+                          {/* Yearly cycles store the annual total
+                              (MemberBillingModal / §15.2), so label it
+                              per year and show the monthly equivalent. */}
                           {fmtMoney(subscription.amount, subscription.currency)}
                           {subscription.billingCycle === 'yearly'
-                            ? ' / ay · yıllık'
+                            ? ` / yıl (≈ ${fmtMoney(subscription.amount / 12, subscription.currency)} / ay)`
                             : subscription.billingCycle === 'monthly'
                               ? ' / ay'
                               : ''}
@@ -460,13 +463,13 @@ export default function MemberDetailPage({
                 className="bz-btn-ghost"
               >
                 <CreditCard size={14} strokeWidth={2} />
-                Plan & Adresi düzenle (modal)
+                Plan ve adresi düzenle
               </button>
             </div>
           </section>
 
           <section className="bz-card p-5 sm:p-6">
-            <h3 className="text-[15px] font-semibold text-[#0A0A0A] mb-4">Son admin aksiyonları</h3>
+            <h3 className="text-[15px] font-semibold text-[#0A0A0A] mb-4">Son işlemler</h3>
             <MemberAuditTimeline userId={id} max={5} />
             {counts.invoices === 0 ? null : (
               <button
@@ -474,7 +477,7 @@ export default function MemberDetailPage({
                 onClick={() => setActiveTab('audit')}
                 className="mt-4 text-[12px] text-[#737373] hover:text-[#0A0A0A] underline"
               >
-                Tüm log&apos;u gör
+                Tüm işlem kaydını gör
               </button>
             )}
           </section>
@@ -486,7 +489,7 @@ export default function MemberDetailPage({
         <div className="bz-card p-5 sm:p-6">
           <p className="text-[13px] text-[#525252] mb-3">
             Plan, ödeme yöntemi ve fatura adresi alanlarını düzenlemek için aşağıdaki butonu kullan.
-            Tüm değişiklikler audit log&apos;a kaydedilir.
+            Tüm değişiklikler işlem kaydına yazılır.
           </p>
           <button
             type="button"
@@ -494,7 +497,7 @@ export default function MemberDetailPage({
             className="bz-btn-primary"
           >
             <CreditCard size={14} strokeWidth={2} />
-            Faturalandırma modalını aç
+            Plan ve faturalandırmayı düzenle
           </button>
         </div>
       )}
@@ -519,7 +522,7 @@ export default function MemberDetailPage({
       <ConfirmDialog
         open={confirmAction === 'deactivate'}
         title="Hesabı sil"
-        body="Bu hesap silinecek (arşive alınacak). Kullanıcı listede gözükmeyecek, panele giriş yapamayacak. Veriler (restoranlar, faturalar, audit log) DB'de korunur — istersen 'Silinmiş (arşiv)' filtresinden bulup 'Geri getir' diyebilirsin."
+        body="Bu hesap silinecek (arşive alınacak). Kullanıcı listede gözükmeyecek, panele giriş yapamayacak. Veriler (işletmeler, faturalar, işlem kaydı) sistemde saklanır — istersen 'Silinmiş (arşiv)' filtresinden bulup 'Geri getir' diyebilirsin."
         confirmLabel="Sil"
         variant="danger"
         onConfirm={performDeactivate}

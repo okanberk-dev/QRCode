@@ -15,6 +15,14 @@ import {
 } from 'lucide-react';
 import { getNewsletterSourceLabel } from '@/lib/newsletter-sources';
 import { PageHeader, PulseSelect, StatCard, useConfirmDialog } from '@/components/ui';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
+
+const RANGE_LABEL: Record<'7d' | '30d' | '90d' | 'all', { long: string; short: string }> = {
+  '7d': { long: 'Son 7 gün', short: '7 gün' },
+  '30d': { long: 'Son 30 gün', short: '30 gün' },
+  '90d': { long: 'Son 90 gün', short: '90 gün' },
+  all: { long: 'Tümü', short: 'Tümü' },
+};
 
 type Range = '7d' | '30d' | '90d' | 'all';
 type Status = 'all' | 'active' | 'cancelled';
@@ -201,7 +209,7 @@ export default function AdminNewslettersPage() {
       <PageHeader
         eyebrow="BÜLTEN ABONELERİ"
         title="Bülten aboneleri"
-        description="Pulse aylık bültenine kayıtlı kullanıcılar. KVKK uyumlu — tek tıkla iptal token'ı her abonede tutulur."
+        description="Pulse aylık bültenine kayıtlı kullanıcılar. KVKK uyumlu — her abone aboneliğini tek tıkla iptal edebilir."
         actions={
           <>
             <button
@@ -232,6 +240,16 @@ export default function AdminNewslettersPage() {
         }
       />
 
+      {!data && loading && (
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4" aria-hidden="true">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bz-card space-y-3 p-4">
+              <SkBox className="h-3 w-16" />
+              <SkBox className="h-7 w-20" />
+            </div>
+          ))}
+        </div>
+      )}
       {data && (
         <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
           <StatCard label="Toplam abone" value={data.summary.total.toLocaleString('tr-TR')} icon={<Users size={14} />} />
@@ -244,16 +262,25 @@ export default function AdminNewslettersPage() {
       {/* Filters */}
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex w-full overflow-x-auto rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-1 pulse-eyebrow sm:w-auto">
+          {/* 4-column grid with short labels on mobile — the eyebrow-tracked
+              labels pushed 'Tümü' off-screen in an overflow strip at 390px. */}
+          <div
+            role="group"
+            aria-label="Tarih aralığı"
+            className="grid w-full grid-cols-4 gap-1 rounded-xl border border-[#EDEDED] bg-[#FAFAFA] p-1 pulse-eyebrow sm:inline-flex sm:w-auto"
+          >
             {(['7d', '30d', '90d', 'all'] as const).map((opt) => (
               <button
                 key={opt}
+                type="button"
+                aria-pressed={range === opt}
                 onClick={() => setRange(opt)}
-                className={`shrink-0 rounded-lg px-3 py-1.5 transition-all ${
+                className={`min-w-0 rounded-lg px-1.5 py-1.5 transition-all sm:shrink-0 sm:px-3 ${
                   range === opt ? 'bg-[#0A0A0A] text-white shadow-sm' : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
                 }`}
               >
-                {opt === '7d' ? 'Son 7 gün' : opt === '30d' ? 'Son 30 gün' : opt === '90d' ? 'Son 90 gün' : 'Tümü'}
+                <span className="sm:hidden">{RANGE_LABEL[opt].short}</span>
+                <span className="hidden sm:inline">{RANGE_LABEL[opt].long}</span>
               </button>
             ))}
           </div>
@@ -328,8 +355,16 @@ export default function AdminNewslettersPage() {
 
       <div className="overflow-hidden rounded-2xl border border-[#EDEDED] bg-white shadow-sm">
         {loading && !data ? (
-          <div className="flex items-center justify-center p-16">
-            <Loader2 size={22} className="animate-spin text-[#0A0A0A]" />
+          // Row skeleton (§40.10) instead of a second spinner after loading.tsx.
+          <div className="divide-y divide-[#EDEDED]" aria-busy="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <SkBox className="h-4 w-48 max-w-[50%]" />
+                <SkBox className="h-4 w-10" />
+                <SkBox className="hidden h-4 w-24 md:block" />
+                <SkBox className="ml-auto h-4 w-20" />
+              </div>
+            ))}
           </div>
         ) : rows.length === 0 ? (
           <div className="p-12 text-center">

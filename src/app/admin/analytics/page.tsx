@@ -111,51 +111,53 @@ export default async function AdminAnalyticsPage({
               ? 'Review and channel metrics for your assigned business.'
               : 'Review and channel metrics across all businesses.'
         }
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] bg-white p-1">
-              {RANGE_OPTIONS.map((range) => (
-                <Link
-                  key={range}
-                  href={withParam(currentParams, 'range', range)}
-                  className={`rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                    rangeKey === range
-                      ? 'bg-[#0A0A0A] text-white'
-                      : 'text-[#525252] hover:bg-[#F5F5F5]'
-                  }`}
-                >
-                  {range.toUpperCase()}
-                </Link>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <Link
-                href={withParam(currentParams, 'platform', null)}
-                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                  !platformFilter
-                    ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
-                    : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-                }`}
-              >
-                {isTr ? 'Tümü' : 'All'}
-              </Link>
-              {PLATFORM_OPTIONS.map((platform) => (
-                <Link
-                  key={platform}
-                  href={withParam(currentParams, 'platform', platform)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    platformFilter === platform
-                      ? 'border-[#0A0A0A] bg-white text-[#0A0A0A]'
-                      : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
-                  }`}
-                >
-                  {PLATFORMS[platform].label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        }
       />
+
+      {/* Range + platform filters live in their own toolbar row (owner
+          analytics parity). As PageHeader `actions` the non-shrinking chip
+          row squeezed the title to "An/ali/tik" at tablet widths. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex items-center gap-1 rounded-lg border border-[#EDEDED] bg-white p-1">
+          {RANGE_OPTIONS.map((range) => (
+            <Link
+              key={range}
+              href={withParam(currentParams, 'range', range)}
+              className={`rounded-md px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                rangeKey === range
+                  ? 'bg-[#0A0A0A] text-white'
+                  : 'text-[#525252] hover:bg-[#F5F5F5]'
+              }`}
+            >
+              {range.toUpperCase()}
+            </Link>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Link
+            href={withParam(currentParams, 'platform', null)}
+            className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+              !platformFilter
+                ? 'border-[#0A0A0A] bg-[#0A0A0A] text-white'
+                : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+            }`}
+          >
+            {isTr ? 'Tümü' : 'All'}
+          </Link>
+          {PLATFORM_OPTIONS.map((platform) => (
+            <Link
+              key={platform}
+              href={withParam(currentParams, 'platform', platform)}
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                platformFilter === platform
+                  ? 'border-[#0A0A0A] bg-white text-[#0A0A0A]'
+                  : 'border-[#EDEDED] text-[#525252] hover:bg-[#FAFAFA]'
+              }`}
+            >
+              {PLATFORMS[platform].label}
+            </Link>
+          ))}
+        </div>
+      </div>
 
       <AnalyticsKpiGrid kpis={data.kpis} isTr={isTr} />
       <MainTrendChart points={data.platformTrendPoints} isTr={isTr} />

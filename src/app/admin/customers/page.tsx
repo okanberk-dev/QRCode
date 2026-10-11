@@ -295,7 +295,7 @@ export default function AdminCustomersPage() {
             icon={<Users size={14} />}
           />
           <StatCard
-            label="Toplam feedback"
+            label="Toplam geri bildirim"
             value={data.summary.feedbacks.toLocaleString('tr-TR')}
             icon={<Mail size={14} />}
           />
@@ -311,7 +311,10 @@ export default function AdminCustomersPage() {
       {/* Filters */}
       <div className="rounded-2xl border border-[#EDEDED] bg-white p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 pulse-eyebrow">
+          {/* Range segmented control — full-width on mobile (each label gets its
+              natural width) so labels never wrap; plain 12px label (no mono
+              eyebrow tracking). */}
+          <div className="flex w-full rounded-xl border border-[#EDEDED] bg-[#FFFFFF] p-1 sm:inline-flex sm:w-auto">
             {([
               { key: '7d', label: 'Son 7 gün' },
               { key: '30d', label: 'Son 30 gün' },
@@ -321,7 +324,8 @@ export default function AdminCustomersPage() {
               <button
                 key={opt.key}
                 onClick={() => setRange(opt.key)}
-                className={`rounded-lg px-3 py-1.5 transition-all ${
+                aria-pressed={range === opt.key}
+                className={`flex-auto whitespace-nowrap rounded-lg px-2 py-1.5 text-[12px] font-medium transition-all sm:flex-none sm:px-3 ${
                   range === opt.key ? 'bg-[#0A0A0A] text-white shadow-sm' : 'text-[#1A1A1A] hover:text-[#0A0A0A]'
                 }`}
               >
@@ -338,17 +342,19 @@ export default function AdminCustomersPage() {
               ...restaurants.map((r) => ({ value: r.id, label: r.name })),
             ]}
             ariaLabel="Restoran filtresi"
-            className="min-w-[180px]"
+            className="w-full sm:w-auto sm:min-w-[180px]"
           />
 
-          <div className="relative w-full flex-1 sm:w-auto sm:min-w-[200px]">
+          {/* basis-full on mobile: `flex-1` (basis 0) used to squeeze the search
+              next to the select at ~120px. */}
+          <div className="relative basis-full sm:basis-auto sm:min-w-[200px] sm:flex-1">
             <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" strokeWidth={2} />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="İsim, e-posta, telefon veya yorumda ara…"
               aria-label="Müşteri ara"
-              className="w-full rounded-xl border border-[#EDEDED] bg-white py-2 pl-9 pr-3 text-xs font-medium text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+              className="w-full rounded-xl border border-[#EDEDED] bg-white py-2 pl-9 pr-3 text-[16px] font-medium text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E] sm:text-xs"
             />
           </div>
 
@@ -447,7 +453,7 @@ export default function AdminCustomersPage() {
                     <th className="px-5 py-3">İşletme</th>
                     <th className="px-5 py-3">Segment</th>
                     <th className="px-5 py-3 text-right">Son Puan</th>
-                    <th className="px-5 py-3 text-right">Feedback</th>
+                    <th className="px-5 py-3 text-right">Geri bildirim</th>
                     <th className="px-5 py-3 text-right">LTV</th>
                     {/* §38.48 — Owner /customers paterni reuse: Son konu + Kanal */}
                     <th className="px-5 py-3">Son Konu</th>
@@ -639,7 +645,7 @@ export default function AdminCustomersPage() {
                       {r.branch && <p><MapPin size={10} className="mr-1 inline" strokeWidth={2} />{r.branch}</p>}
                     </div>
                     <div className="mt-2 flex items-center justify-between pulse-eyebrow text-[#6B7280]">
-                      <span>{r.feedbackCount} feedback · LTV {r.ltv.toLocaleString('tr-TR')}</span>
+                      <span>{r.feedbackCount} geri bildirim · LTV {r.ltv.toLocaleString('tr-TR')}</span>
                       <span>{new Date(r.lastAt).toLocaleDateString('tr-TR')}</span>
                     </div>
                   </div>

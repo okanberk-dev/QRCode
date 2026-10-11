@@ -6,7 +6,7 @@
 // sector + category dropdown). Full question builder Faz 2'de. Owner-fork
 // flow Faz 2'de owner panelinden açılır.
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   ClipboardCheck,
@@ -40,6 +40,7 @@ interface CategoryRef {
   slug: string;
   labelTr: string;
   labelEn: string;
+  sector?: AuditSector;
 }
 
 interface Template {
@@ -108,7 +109,12 @@ export default function AuditTemplatesPage() {
   const [seedResult, setSeedResult] = useState<SeedResult | null>(null);
   const [confirmEl, askConfirm] = useConfirmDialog();
 
+  // Only the latest request may update state: a slower, older request that
+  // failed used to leave an error banner on top of freshly loaded data.
+  const loadSeq = useRef(0);
+
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
     setLoading(true);
     setError(null);
     try {
@@ -118,19 +124,21 @@ export default function AuditTemplatesPage() {
       if (scope === 'global') qs.set('restaurantId', 'null');
 
       const res = await fetch(`/api/admin/audits/templates?${qs.toString()}`);
+      if (seq !== loadSeq.current) return;
       if (!res.ok) {
         const parsed = await parseAuditErrorResponse(res, 'tr');
-        setError(summarizeAuditError(parsed));
+        if (seq === loadSeq.current) setError(summarizeAuditError(parsed));
         return;
       }
       const json = await res.json();
+      if (seq !== loadSeq.current) return;
       let rows: Template[] = json.data;
       if (scope === 'restaurant') rows = rows.filter((r) => r.restaurantId !== null);
       setData(rows);
     } catch {
-      setError('Bağlantı hatası');
+      if (seq === loadSeq.current) setError('Bağlantı hatası');
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   }, [scope, sectorFilter, publishedFilter]);
 
@@ -145,6 +153,7 @@ export default function AuditTemplatesPage() {
           slug: c.slug,
           labelTr: c.labelTr,
           labelEn: c.labelEn,
+          sector: c.sector,
         })),
       );
     } catch {
@@ -183,6 +192,8 @@ export default function AuditTemplatesPage() {
       setNotice(tpl.isPublished ? 'Yayından kaldırıldı.' : 'Yayınlandı.');
       await load();
       setTimeout(() => setNotice(null), 3500);
+    } catch {
+      setError('Bağlantı hatası');
     } finally {
       setBusyId(null);
     }
@@ -195,7 +206,7 @@ export default function AuditTemplatesPage() {
         <div className="space-y-2 text-[13px] text-[#525252]">
           <p>
             Denetim Merkezi için <strong className="text-[#0A0A0A]">18 kategori</strong>,{' '}
-            <strong className="text-[#0A0A0A]">25 şablon</strong> ve{' '}
+            <strong className="text-[#0A0A0A]">24 şablon</strong> ve{' '}
             <strong className="text-[#0A0A0A]">~120 soru</strong> yüklenir veya güncellenir.
           </p>
           <p>
@@ -236,7 +247,7 @@ export default function AuditTemplatesPage() {
         eyebrow="SUPERADMIN · DENETİM MERKEZİ"
         eyebrowColor="#C6F24E"
         title="Şablon kataloğu"
-        description="Sektör başına yayınlanan hazır denetim şablonlarını yönet. Owner'lar bu kataloğu kendi denetimleri için fork eder."
+        description="Sektör başına yayınlanan hazır denetim şablonlarını yönet. İşletme sahipleri bu kataloğu kopyalayıp kendi denetimlerine uyarlar."
         actions={
           <div className="flex flex-wrap gap-2">
             <Link href="/admin/audits/categories" className="bz-btn-ghost">
@@ -247,7 +258,7 @@ export default function AuditTemplatesPage() {
               className="bz-btn-ghost"
               onClick={runSeed}
               disabled={seeding || loading}
-              title="Varsayılan 18 kategori + 25 şablon + ~120 soru yüklenir veya güncellenir"
+              title="Varsayılan 18 kategori + 24 şablon + ~120 soru yüklenir veya güncellenir"
             >
               {seeding ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
               Varsayılan içeriği yükle
@@ -279,7 +290,9 @@ export default function AuditTemplatesPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <Tabs items={SCOPE_TABS} active={scope} onChange={(v) => filters.set('scope', v)} />
-        <div className="flex flex-wrap gap-2">
+        {/* shrink-0: .bz-tabs is width:100%, which squeezed this group and
+            stacked the two filters vertically next to the tabs. */}
+        <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-nowrap">
           <select
             className="bz-input min-w-[160px]"
             value={sectorFilter}
@@ -309,15 +322,15 @@ export default function AuditTemplatesPage() {
       {loading && !data ? null : !data || data.length === 0 ? (
         <EmptyState
           icon={<ClipboardCheck size={20} />}
-          title={counts.total === 0 ? 'Henüz şablon yok' : 'Sonuç yok'}
+          title={filters.hasActive ? 'Sonuç yok' : 'Henüz şablon yok'}
           body={
-            counts.total === 0
-              ? 'Buaze 6 sektör için hazır 18 kategori + 25 şablon ile başlatabilirsin. Sıfırdan ekleyeceksen "Yeni şablon" butonunu kullan.'
-              : 'Filtreyi değiştir veya yeni bir şablon oluştur.'
+            filters.hasActive
+              ? 'Bu filtrelerle eşleşen şablon yok. Filtreyi değiştir veya yeni bir şablon oluştur.'
+              : 'Buaze 6 sektör için hazır 18 kategori + 24 şablon ile başlatabilirsin. Sıfırdan ekleyeceksen "Yeni şablon" butonunu kullan.'
           }
           action={
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              {counts.total === 0 && (
+              {!filters.hasActive && (
                 <button
                   type="button"
                   className="bz-btn-primary"
@@ -330,7 +343,7 @@ export default function AuditTemplatesPage() {
               )}
               <button
                 type="button"
-                className={counts.total === 0 ? 'bz-btn-ghost' : 'bz-btn-primary'}
+                className={filters.hasActive ? 'bz-btn-primary' : 'bz-btn-ghost'}
                 onClick={() => setCreateOpen(true)}
               >
                 <Plus size={14} strokeWidth={2} /> Yeni şablon
@@ -403,8 +416,8 @@ export default function AuditTemplatesPage() {
                           onClick={() => togglePublish(tpl)}
                           title={
                             tpl.restaurantId
-                              ? 'Restoran-özel şablon admin endpoint üzerinden yönetilmez'
-                              : ''
+                              ? 'İşletmeye özel şablonların yayın durumu işletme panelinden yönetilir'
+                              : undefined
                           }
                         >
                           {busyId === tpl.id ? (

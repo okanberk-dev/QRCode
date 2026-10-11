@@ -1,9 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Loader2, User, Key, Check, Mail, ShieldCheck, AlertCircle, Globe } from 'lucide-react';
 import { AlertBanner, PageHeader } from '@/components/ui';
 import { useAdminTranslation } from '@/components/admin/AdminTranslationProvider';
+import ProfileSkeleton from './loading';
+
+const ROLE_LABEL: Record<string, string> = {
+  superadmin: 'Süper yönetici',
+  manager: 'Yönetici',
+  restaurant_owner: 'İşletme sahibi',
+  staff: 'Personel',
+};
 
 interface ProfileData {
   id: string;
@@ -20,6 +28,11 @@ export default function AdminProfilePage() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  // Where the current error/success message belongs. Form results render
+  // inside their own card, next to the button that was clicked — the page
+  // banner sits above the fold and was off-screen on phones.
+  const [messageScope, setMessageScope] = useState<'page' | 'email' | 'password'>('page');
+  const formMessageRef = useRef<HTMLDivElement>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
 
   // E-mail
@@ -34,12 +47,30 @@ export default function AdminProfilePage() {
 
   const isEnvAdmin = profile?.id === 'env-admin';
 
+  // Bring an in-card form message fully into view: it renders under the
+  // button, where the floating bottom nav (phones) can cover it. Only scroll
+  // when it is not comfortably visible.
+  useEffect(() => {
+    if (messageScope === 'page' || (!error && !success)) return;
+    const el = formMessageRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const viewport = window.innerHeight || document.documentElement.clientHeight;
+    if (rect.top >= 80 && rect.bottom <= viewport - 120) return;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+  }, [error, success, messageScope]);
+
   useEffect(() => {
     let cancelled = false;
     fetch('/api/admin/me')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (cancelled || !data) return;
+        if (cancelled) return;
+        if (!data) {
+          setError('Profil bilgileri yüklenemedi. Sayfayı yenileyip tekrar dene.');
+          return;
+        }
         setProfile({
           id: data.id,
           username: data.username,
@@ -48,7 +79,9 @@ export default function AdminProfilePage() {
         });
         setEmail(data.recoveryEmail || '');
       })
-      .catch((e) => console.error(e))
+      .catch(() => {
+        if (!cancelled) setError('Bağlantı hatası. Profil bilgileri yüklenemedi.');
+      })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
@@ -61,6 +94,7 @@ export default function AdminProfilePage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setMessageScope('email');
     setSavingEmail(true);
     try {
       const res = await fetch('/api/admin/profile', {
@@ -89,13 +123,19 @@ export default function AdminProfilePage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setMessageScope('password');
 
     if (pwForm.newPassword !== pwForm.confirmPassword) {
       setError('Şifreler eşleşmiyor.');
       return;
     }
-    if (pwForm.newPassword.length < 8) {
-      setError('Yeni şifre en az 8 karakter olmalı.');
+    // Mirrors the server rule (isStrongPassword: 8+ chars, a letter and a digit).
+    if (
+      pwForm.newPassword.length < 8 ||
+      !/[A-Za-z]/.test(pwForm.newPassword) ||
+      !/\d/.test(pwForm.newPassword)
+    ) {
+      setError('Yeni şifre en az 8 karakter olmalı ve en az bir harf ile bir rakam içermeli.');
       return;
     }
 
@@ -124,13 +164,9 @@ export default function AdminProfilePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center p-8">
-        <Loader2 className="animate-spin text-[#0A0A0A] w-10 h-10" />
-      </div>
-    );
-  }
+  // Same shape as loading.tsx, so the route skeleton hands over without a
+  // second (spinner) loading state (CLAUDE.md §40.10).
+  if (loading) return <ProfileSkeleton />;
 
   return (
     <div className="mx-auto max-w-[1280px] px-4 sm:px-7 py-6 lg:py-8 space-y-5">
@@ -145,12 +181,12 @@ export default function AdminProfilePage() {
         </AlertBanner>
       )}
 
-      {error && (
+      {messageScope === 'page' && error && (
         <AlertBanner kind="danger" onDismiss={() => setError('')}>
           {error}
         </AlertBanner>
       )}
-      {success && <AlertBanner kind="success">{success}</AlertBanner>}
+      {messageScope === 'page' && success && <AlertBanner kind="success">{success}</AlertBanner>}
 
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-5 lg:gap-7">
         {/* Sidebar info */}
@@ -163,9 +199,9 @@ export default function AdminProfilePage() {
             <div className="bz-h-tight mt-1 truncate" style={{ fontSize: 16 }}>
               {profile?.username}
             </div>
-            <div className="mt-1 text-[12px] text-[#737373] uppercase tracking-wide">
-              {profile?.role || 'superadmin'}
-              {isEnvAdmin && ' · ENV'}
+            <div className="mt-1 text-[12px] text-[#737373]">
+              {ROLE_LABEL[profile?.role ?? ''] ?? profile?.role ?? '—'}
+              {isEnvAdmin && ' · Varsayılan hesap'}
             </div>
           </div>
           <div className="mt-5 rounded-xl bg-[#FAFAFA] border border-[#EDEDED] p-3.5">
@@ -173,8 +209,8 @@ export default function AdminProfilePage() {
               Güvenlik ipucu
             </p>
             <p className="text-[11px] leading-[1.55] text-[#525252]">
-              Şifreni düzenli aralıklarla değiştir. En az 8 karakter, bir büyük harf ve bir
-              rakam içersin.
+              Şifreni düzenli aralıklarla değiştir. En az 8 karakter olsun; en az bir harf ve
+              bir rakam içersin.
             </p>
           </div>
         </aside>
@@ -198,10 +234,14 @@ export default function AdminProfilePage() {
 
             <form onSubmit={handleEmailSubmit} className="space-y-3">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                <label
+                  htmlFor="admin-recovery-email"
+                  className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]"
+                >
                   E-posta
                 </label>
                 <input
+                  id="admin-recovery-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -237,12 +277,24 @@ export default function AdminProfilePage() {
                 </button>
               </div>
 
+              {messageScope === 'email' && (error || success) && (
+                <div ref={formMessageRef}>
+                  {error ? (
+                    <AlertBanner kind="danger" onDismiss={() => setError('')}>
+                      {error}
+                    </AlertBanner>
+                  ) : (
+                    <AlertBanner kind="success">{success}</AlertBanner>
+                  )}
+                </div>
+              )}
+
               {isEnvAdmin && (
                 <div className="flex items-start gap-2 rounded-lg bg-[#FFFBEB] border border-[#FDE68A] px-3 py-2 text-[12px] text-[#92400E]">
                   <AlertCircle size={13} className="shrink-0 mt-0.5" strokeWidth={2} />
                   <span>
-                    Çevre (env) admin&apos;i için e-posta veritabanına yazılamaz. DB üzerinden bir
-                    AdminUser oluşturup ona e-posta ekle.
+                    Varsayılan sistem hesabının bilgileri buradan değiştirilemez. Kurtarma e-postası
+                    eklemek için kendine ayrı bir yönetici hesabı oluştur.
                   </span>
                 </div>
               )}
@@ -260,9 +312,9 @@ export default function AdminProfilePage() {
               </h3>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
                 Kullanıcı adı
-              </label>
+              </p>
               <div
                 className="rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-[14px] font-medium text-[#0A0A0A]"
               >
@@ -333,10 +385,14 @@ export default function AdminProfilePage() {
 
             <form onSubmit={handlePasswordSubmit} className="space-y-3">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                <label
+                  htmlFor="admin-current-password"
+                  className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]"
+                >
                   Mevcut şifre
                 </label>
                 <input
+                  id="admin-current-password"
                   type="password"
                   required
                   disabled={isEnvAdmin}
@@ -351,10 +407,14 @@ export default function AdminProfilePage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                  <label
+                    htmlFor="admin-new-password"
+                    className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]"
+                  >
                     Yeni şifre
                   </label>
                   <input
+                    id="admin-new-password"
                     type="password"
                     required
                     disabled={isEnvAdmin}
@@ -363,16 +423,20 @@ export default function AdminProfilePage() {
                     onChange={(e) =>
                       setPwForm((p) => ({ ...p, newPassword: e.target.value }))
                     }
-                    placeholder="Min 8 karakter"
+                    placeholder="En az 8 karakter"
                     className="bz-input"
                     autoComplete="new-password"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]">
+                  <label
+                    htmlFor="admin-confirm-password"
+                    className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#737373]"
+                  >
                     Şifreyi tekrarla
                   </label>
                   <input
+                    id="admin-confirm-password"
                     type="password"
                     required
                     disabled={isEnvAdmin}
@@ -400,6 +464,18 @@ export default function AdminProfilePage() {
                 )}
                 Şifreyi güncelle
               </button>
+
+              {messageScope === 'password' && (error || success) && (
+                <div ref={formMessageRef}>
+                  {error ? (
+                    <AlertBanner kind="danger" onDismiss={() => setError('')}>
+                      {error}
+                    </AlertBanner>
+                  ) : (
+                    <AlertBanner kind="success">{success}</AlertBanner>
+                  )}
+                </div>
+              )}
             </form>
           </section>
         </div>

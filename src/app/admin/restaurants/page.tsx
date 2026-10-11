@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Plus, Store, Loader2, ToggleLeft, ToggleRight, Search, X, Info, MapPin, UtensilsCrossed, Link2, MoreHorizontal, Star, ExternalLink, Download, Settings2, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useUrlFilter } from '@/hooks/useUrlFilter';
+import { useDebouncedUrlInput, useUrlFilter } from '@/hooks/useUrlFilter';
 import { AlertBanner, APCheckbox, Avatar, Badge, type BadgeKind, EmptyState, Modal, PageHeader, PanelSelectionBar, type TabItem, Tabs, useConfirmDialog } from '@/components/ui';
+import RestaurantsLoading from './loading';
 
 interface Restaurant {
   id: string;
@@ -24,15 +25,33 @@ interface Restaurant {
   _count: { feedbacks: number; menuItems: number; qrGenerations?: number; adminUsers?: number };
 }
 
+// User.plan is the lifecycle bucket (trial | monthly | yearly | enterprise |
+// free — CLAUDE.md §15.2), not the marketing tier. Labels match
+// /admin/members and MemberBillingModal.
 const PLAN_BADGE: Record<string, { label: string; kind: BadgeKind }> = {
-  trial: { label: 'Trial', kind: 'warn' },
+  trial: { label: 'Deneme', kind: 'warn' },
   monthly: { label: 'Aylık', kind: 'info' },
   yearly: { label: 'Yıllık', kind: 'ok' },
-  pro: { label: 'Pro', kind: 'lime' },
-  growth: { label: 'Growth', kind: 'info' },
-  starter: { label: 'Starter', kind: 'ghost' },
+  enterprise: { label: 'Kurumsal', kind: 'lime' },
   free: { label: 'Ücretsiz', kind: 'ghost' },
 };
+
+type PlanFilter = 'all' | 'trial' | 'monthly' | 'yearly' | 'enterprise' | 'free';
+const PLAN_FILTERS: PlanFilter[] = ['all', 'trial', 'monthly', 'yearly', 'enterprise', 'free'];
+type StatusFilter = 'active' | 'passive' | 'all';
+
+// /api/restaurants caps a page at 100 rows; the list loads more on demand.
+const PAGE_SIZE = 100;
+
+function apiErrorMessage(body: unknown, fallback: string): string {
+  const err = (body as { error?: unknown } | null)?.error;
+  if (typeof err === 'string' && err) return err;
+  if (err && typeof err === 'object') {
+    const message = (err as { message?: unknown }).message;
+    if (typeof message === 'string' && message) return message;
+  }
+  return fallback;
+}
 
 function planBadge(plan: string | undefined | null) {
   if (!plan) return PLAN_BADGE.trial;
@@ -59,11 +78,11 @@ type FeatureKey =
   | 'externalPlatformsEnabled';
 
 const FEATURE_OPTIONS: Array<{ key: FeatureKey; label: string; hint: string }> = [
-  { key: 'googleReviewManagementEnabled', label: 'Google yorum yönetimi', hint: 'Sahteci yorum + AI cevap taslağı' },
+  { key: 'googleReviewManagementEnabled', label: 'Google yorum yönetimi', hint: 'Google yorumlarını listeleme + AI cevap taslağı' },
   { key: 'pulseAiEnabled', label: 'Pulse AI', hint: 'Otomatik yanıt taslakları + tema çıkarımı' },
   { key: 'menuEnabled', label: 'Menü düzenleme', hint: 'Owner menü ekleyip yayınlayabilir' },
-  { key: 'menuPublished', label: 'Menü yayında', hint: 'Public /menu/[slug] sayfası açık' },
-  { key: 'aiAnalyticsEnabled', label: 'AI analitik', hint: 'Tema + weekly insight + sentiment progress' },
+  { key: 'menuPublished', label: 'Menü yayında', hint: 'Müşterilere açık menü sayfası yayında' },
+  { key: 'aiAnalyticsEnabled', label: 'AI analitik', hint: 'Yorum temaları + haftalık AI özeti' },
   { key: 'externalPlatformsEnabled', label: 'Dış platformlar', hint: 'Yemeksepeti / Getir / Trendyol / Tripadvisor / Yelp / Foursquare ...' },
 ];
 
@@ -74,8 +93,8 @@ export default function RestaurantsPage() {
   // status default 'active' (önceki davranış); search ve plan boş.
   const filters = useUrlFilter({
     search: '',
-    status: 'active' as 'active' | 'passive' | 'all',
-    plan: 'all' as 'all' | 'pro' | 'growth' | 'starter' | 'trial',
+    status: 'active' as StatusFilter,
+    plan: 'all' as PlanFilter,
     // Menu publish status filter — client-side (data zaten payload'da).
     // `published` = menuEnabled && menuPublished, `draft` = enabled && !published,
     // `disabled` = !enabled. Operator menu yayın akışını taramak için kullanır.
@@ -85,12 +104,17 @@ export default function RestaurantsPage() {
     // info banner with "Filtreyi temizle" (clear) action.
     attention: '' as '' | 'quota_full' | 'unverified_platform',
   });
-  const searchTerm = filters.values.search;
-  const setSearchTerm = (v: string) => filters.set('search', v);
+  // The field keeps its own value and writes the URL debounced — binding it
+  // straight to the URL lost keystrokes during each router round trip. The
+  // list filters on the local value, so results update while typing.
+  const search = useDebouncedUrlInput(filters.values.search, (v) => filters.set('search', v));
+  const searchTerm = search.input;
   const statusFilter = filters.values.status;
-  const setStatusFilter = (v: 'active' | 'passive' | 'all') => filters.set('status', v);
-  const planFilter = filters.values.plan;
-  const setPlanFilter = (v: 'all' | 'pro' | 'growth' | 'starter' | 'trial') => filters.set('plan', v);
+  const setStatusFilter = (v: StatusFilter) => filters.set('status', v);
+  // Old bookmarks may still carry ?plan=pro|growth|starter — treat any value
+  // outside the lifecycle buckets as "all" instead of an always-empty list.
+  const planFilter: PlanFilter = PLAN_FILTERS.includes(filters.values.plan) ? filters.values.plan : 'all';
+  const setPlanFilter = (v: PlanFilter) => filters.set('plan', v);
   const menuStatusFilter = filters.values.menuStatus;
   const setMenuStatusFilter = (v: 'all' | 'published' | 'draft' | 'disabled') => filters.set('menuStatus', v);
   const attention = filters.values.attention;
@@ -108,7 +132,23 @@ export default function RestaurantsPage() {
   const [featureKey, setFeatureKey] = useState<FeatureKey>('pulseAiEnabled');
   const [featureValue, setFeatureValue] = useState<boolean>(true);
   const [confirmDialog, askConfirm] = useConfirmDialog();
+  // `loading` is the first load only (full skeleton). Later refetches keep the
+  // page chrome on screen and only dim the list (`refreshing`).
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [total, setTotal] = useState(0);
+  // Filters the current `total` belongs to. The header reads these instead of
+  // the live tab state, so a new label never shows next to the old count
+  // while a refetch is in flight.
+  const [appliedFilters, setAppliedFilters] = useState({
+    status: statusFilter,
+    plan: planFilter,
+    attention,
+  });
+  const [loadedPage, setLoadedPage] = useState(1);
+  const hasLoadedRef = useRef(false);
+  const requestIdRef = useRef(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
@@ -127,35 +167,55 @@ export default function RestaurantsPage() {
   const [isManualSlug, setIsManualSlug] = useState(false);
   const [showGoogleInfo, setShowGoogleInfo] = useState(false);
 
-  const fetchRestaurants = async (filter?: string, planArg?: string) => {
-    setLoading(true);
+  const fetchRestaurants = async (opts: { append?: boolean } = {}) => {
+    const append = opts.append === true;
+    const nextPage = append ? loadedPage + 1 : 1;
+    const requestId = ++requestIdRef.current;
+    if (append) setLoadingMore(true);
+    else if (hasLoadedRef.current) setRefreshing(true);
+    else setLoading(true);
     setFetchError(null);
     try {
-      const currentFilter = filter || statusFilter;
-      const currentPlan = planArg ?? planFilter;
       const qp = new URLSearchParams();
-      qp.set('status', currentFilter);
-      qp.set('plan', currentPlan);
+      qp.set('status', statusFilter);
+      qp.set('plan', planFilter);
       if (attention) qp.set('attention', attention);
+      qp.set('limit', String(PAGE_SIZE));
+      qp.set('page', String(nextPage));
       const res = await fetch(`/api/restaurants?${qp.toString()}`);
+      // A newer request (filter change) superseded this one — drop it.
+      if (requestId !== requestIdRef.current) return;
       if (res.ok) {
         const result = await res.json();
+        if (requestId !== requestIdRef.current) return;
         // Handle both older array response and newer { data, meta } shape.
         // Never assign a non-array value — a later .filter() would crash.
-        const list = Array.isArray(result)
+        const list: Restaurant[] = Array.isArray(result)
           ? result
           : Array.isArray(result?.data)
           ? result.data
           : [];
-        setRestaurants(list);
+        const metaTotal = typeof result?.meta?.total === 'number' ? result.meta.total : null;
+        setRestaurants((prev) => {
+          if (!append) return list;
+          const seen = new Set(prev.map((r) => r.id));
+          return [...prev, ...list.filter((r) => !seen.has(r.id))];
+        });
+        setTotal((prevTotal) => metaTotal ?? (append ? prevTotal + list.length : list.length));
+        setLoadedPage(nextPage);
+        if (!append) setAppliedFilters({ status: statusFilter, plan: planFilter, attention });
+        hasLoadedRef.current = true;
       } else {
         setFetchError('İşletmeler getirilemedi. Lütfen sayfayı yenileyin.');
       }
     } catch (e) {
+      if (requestId !== requestIdRef.current) return;
       console.error(e);
       setFetchError('Bağlantı hatası — işletmeler şu an gelmiyor.');
     }
     setLoading(false);
+    setRefreshing(false);
+    setLoadingMore(false);
   };
 
   const fetchOwners = async () => {
@@ -231,7 +291,7 @@ export default function RestaurantsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'İşletme oluşturulamadı');
+        setError(apiErrorMessage(data, 'İşletme oluşturulamadı'));
         setCreating(false);
         return;
       }
@@ -247,15 +307,28 @@ export default function RestaurantsPage() {
   };
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
+    setFetchError(null);
     try {
-      await fetch(`/api/restaurants/${id}`, {
+      const res = await fetch(`/api/restaurants/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !currentStatus }),
       });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setFetchError(
+          apiErrorMessage(
+            body,
+            currentStatus ? 'İşletme duraklatılamadı.' : 'İşletme aktifleştirilemedi.',
+          ),
+        );
+        return;
+      }
+      setBulkNotice(currentStatus ? 'İşletme duraklatıldı' : 'İşletme aktifleştirildi');
       fetchRestaurants();
     } catch (e) {
       console.error(e);
+      setFetchError('Bağlantı hatası — işlem tamamlanamadı.');
     }
   };
 
@@ -286,8 +359,8 @@ export default function RestaurantsPage() {
         setSelectedIds(new Set());
         await fetchRestaurants();
       } else {
-        const err = await res.json().catch(() => ({}));
-        setFetchError(err.error?.message || 'Toplu işlem başarısız.');
+        const err = await res.json().catch(() => null);
+        setFetchError(apiErrorMessage(err, 'Toplu işlem başarısız.'));
       }
     } catch (e) {
       console.error(e);
@@ -327,8 +400,8 @@ export default function RestaurantsPage() {
             setSelectedIds(new Set());
             await fetchRestaurants();
           } else {
-            const err = await res.json().catch(() => ({}));
-            setFetchError(err.error || 'Toplu özellik geçişi başarısız.');
+            const err = await res.json().catch(() => null);
+            setFetchError(apiErrorMessage(err, 'Toplu özellik geçişi başarısız.'));
           }
         } catch (e) {
           console.error(e);
@@ -342,15 +415,16 @@ export default function RestaurantsPage() {
 
   const filteredRestaurants = useMemo(
     () => {
-      const term = searchTerm.toLowerCase();
+      const lc = (v: string) => v.toLocaleLowerCase('tr');
+      const term = lc(searchTerm.trim());
       return restaurants.filter((r) => {
         // Search match (name / slug / category / owner email-or-name)
         const matchesSearch =
-          r.name.toLowerCase().includes(term) ||
-          r.slug.toLowerCase().includes(term) ||
-          r.category.toLowerCase().includes(term) ||
-          (r.user?.email || '').toLowerCase().includes(term) ||
-          (r.user?.name || '').toLowerCase().includes(term);
+          lc(r.name).includes(term) ||
+          lc(r.slug).includes(term) ||
+          lc(r.category).includes(term) ||
+          lc(r.user?.email || '').includes(term) ||
+          lc(r.user?.name || '').includes(term);
         if (!matchesSearch) return false;
         // Menu status — client-side filter (data zaten payload'da, ek API trip yok)
         if (menuStatusFilter === 'published' && !(r.menuEnabled && r.menuPublished)) return false;
@@ -375,17 +449,43 @@ export default function RestaurantsPage() {
     return { published, draft, disabled };
   }, [restaurants]);
 
-  // §40.10 clean slate — skeleton return kaldırıldı; data gelene kadar null.
-  if (loading) return null;
+  // First load only: render the same skeleton as loading.tsx (§40.10) so the
+  // segment skeleton hands over without a blank frame. Later refetches keep
+  // the header, tabs and search on screen (see `refreshing`).
+  if (loading) return <RestaurantsLoading />;
 
-  // Primary tabs — plan-bazlı (1:1 design AdminBusinesses, line 102-107)
+  // Primary tabs — owner plan (lifecycle bucket on User.plan, §15.2).
   const planTabs: TabItem[] = [
-    { id: 'all', label: `Tümü (${restaurants.length})` },
-    { id: 'pro', label: 'Pro' },
-    { id: 'growth', label: 'Growth' },
-    { id: 'starter', label: 'Starter' },
-    { id: 'trial', label: 'Trial' },
+    { id: 'all', label: 'Tüm planlar' },
+    { id: 'trial', label: 'Deneme' },
+    { id: 'monthly', label: 'Aylık' },
+    { id: 'yearly', label: 'Yıllık' },
+    { id: 'enterprise', label: 'Kurumsal' },
+    { id: 'free', label: 'Ücretsiz' },
   ];
+
+  // Server-side filters narrow `restaurants` itself; client-side ones
+  // (search, menu status) narrow `filteredRestaurants`. Empty states must
+  // tell "nothing registered" apart from "nothing matches".
+  const serverFiltered = statusFilter !== 'all' || planFilter !== 'all' || !!attention;
+  const showAllBusinesses = () => {
+    search.replaceInput('');
+    filters.setMany({ status: 'all', plan: 'all', attention: '', menuStatus: 'all', search: '' });
+  };
+  const clearClientFilters = () => {
+    search.replaceInput('');
+    filters.setMany({ search: '', menuStatus: 'all' });
+  };
+  const headerTitle = appliedFilters.attention
+    ? `${total} işletme dikkat istiyor`
+    : appliedFilters.plan !== 'all'
+    ? `${total} işletme listeleniyor`
+    : appliedFilters.status === 'active'
+    ? `${total} aktif işletme`
+    : appliedFilters.status === 'passive'
+    ? `${total} duraklatılmış işletme`
+    : `${total} kayıtlı işletme`;
+  const hasMore = restaurants.length < total;
 
   // Secondary control — operational status (preserved for "Pasif işletmeleri
   // gör" use case; design'da tek tab ama mevcut operatör akışı için kritik)
@@ -413,7 +513,7 @@ export default function RestaurantsPage() {
       r.name,
       r.category,
       r.city || '',
-      r.user?.plan || '',
+      r.user?.plan ? planBadge(r.user.plan).label : '',
       String(r._count.feedbacks),
       r.avgRating != null ? r.avgRating.toFixed(1) : '',
       r.isActive ? 'Aktif' : 'Pasif',
@@ -450,7 +550,7 @@ export default function RestaurantsPage() {
       )}
       <PageHeader
         eyebrow="İŞLETMELER"
-        title={`${restaurants.length} kayıtlı işletme`}
+        title={headerTitle}
         actions={
           <>
             <button onClick={handleExport} className="bz-btn-ghost">
@@ -478,8 +578,8 @@ export default function RestaurantsPage() {
         <Tabs
           items={planTabs}
           active={planFilter}
-          onChange={(id) => setPlanFilter(id as 'all' | 'pro' | 'growth' | 'starter' | 'trial')}
-          ariaLabel="Plan filter"
+          onChange={(id) => setPlanFilter(id as PlanFilter)}
+          ariaLabel="Plan filtresi"
         />
       </div>
 
@@ -497,8 +597,8 @@ export default function RestaurantsPage() {
         <Tabs
           items={statusTabs}
           active={statusFilter}
-          onChange={(id) => setStatusFilter(id as 'active' | 'passive' | 'all')}
-          ariaLabel="Status filter"
+          onChange={(id) => setStatusFilter(id as StatusFilter)}
+          ariaLabel="Durum filtresi"
           className="md:w-auto"
         />
 
@@ -509,13 +609,16 @@ export default function RestaurantsPage() {
             placeholder="İşletme, URL, kategori veya sahip ara..."
             aria-label="İşletme ara"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => search.setInput(e.target.value)}
             className="bz-input"
             style={{ paddingLeft: 36, paddingRight: searchTerm ? 36 : 12 }}
           />
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm('')}
+              onClick={() => {
+                search.replaceInput('');
+                filters.set('search', '');
+              }}
               className="absolute right-2 top-1/2 -translate-y-1/2 bz-btn-icon"
               aria-label="Aramayı temizle"
               style={{ width: 28, height: 28 }}
@@ -526,24 +629,53 @@ export default function RestaurantsPage() {
         </div>
       </div>
 
-      {/* Restaurant Cards Grid */}
+      {/* Restaurant Cards Grid — dimmed (not unmounted) while a filter change
+          or an action refetches the list. */}
+      <div
+        aria-busy={refreshing}
+        className={`space-y-4 transition-opacity ${refreshing ? 'pointer-events-none opacity-50' : ''}`}
+      >
       {restaurants.length === 0 ? (
-        <EmptyState
-          icon={<Store size={22} />}
-          title="Henüz işletme yok"
-          body="İlk işletmenizi ekleyin — QR kodu, menüsü ve geri bildirim akışı dakikalar içinde hazır olur."
-          action={
-            <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
-              <Plus size={14} strokeWidth={2} />
-              İşletme ekle
-            </button>
-          }
-        />
+        serverFiltered ? (
+          <EmptyState
+            icon={<Search size={22} />}
+            title="Bu filtreye uyan işletme yok"
+            body="Seçili durum veya plan filtresiyle eşleşen işletme bulunamadı. Filtreleri temizleyip tüm işletmeleri görebilirsin."
+            action={
+              <button onClick={showAllBusinesses} className="bz-btn-ghost">
+                <X size={14} strokeWidth={2} />
+                Tüm işletmeleri göster
+              </button>
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={<Store size={22} />}
+            title="Henüz işletme yok"
+            body="İlk işletmenizi ekleyin — QR kodu, menüsü ve geri bildirim akışı dakikalar içinde hazır olur."
+            action={
+              <button onClick={() => setShowCreateModal(true)} className="bz-btn-primary">
+                <Plus size={14} strokeWidth={2} />
+                İşletme ekle
+              </button>
+            }
+          />
+        )
       ) : filteredRestaurants.length === 0 ? (
         <EmptyState
           icon={<Search size={22} />}
           title="Sonuç bulunamadı"
-          body={`"${searchTerm}" için işletme bulunamadı. Farklı bir arama terimi deneyin.`}
+          body={
+            searchTerm.trim()
+              ? `"${searchTerm.trim()}" ile eşleşen işletme bulunamadı.${hasMore ? ' Arama yalnızca yüklenen işletmelerde yapılır.' : ''}`
+              : 'Seçili menü durumunda işletme yok.'
+          }
+          action={
+            <button onClick={clearClientFilters} className="bz-btn-ghost">
+              <X size={14} strokeWidth={2} />
+              Filtreleri temizle
+            </button>
+          }
         />
       ) : (
         <RestaurantTable
@@ -567,6 +699,25 @@ export default function RestaurantsPage() {
           }}
         />
       )}
+
+      {hasMore && restaurants.length > 0 && (
+        <div className="flex flex-col items-center gap-2 pt-1">
+          <p className="text-[12px] text-[#737373]">
+            {restaurants.length} / {total} işletme yüklendi
+            {searchTerm.trim() ? ' · arama ve toplu işlemler yalnızca yüklenenlerde çalışır' : ''}
+          </p>
+          <button
+            type="button"
+            onClick={() => fetchRestaurants({ append: true })}
+            disabled={loadingMore}
+            className="bz-btn-ghost disabled:opacity-50"
+          >
+            {loadingMore ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} strokeWidth={2} />}
+            Daha fazla yükle
+          </button>
+        </div>
+      )}
+      </div>
 
       {/* Create Modal */}
       {showCreateModal && (
@@ -702,7 +853,7 @@ export default function RestaurantsPage() {
                       <option value="">Sahipsiz oluştur</option>
                       {owners.map((owner) => (
                         <option key={owner.id} value={owner.id}>
-                          {(owner.name || owner.email)} · {owner.plan}
+                          {(owner.name || owner.email)} · {planBadge(owner.plan).label}
                         </option>
                       ))}
                     </select>
@@ -839,14 +990,14 @@ export default function RestaurantsPage() {
                 {selectedIds.size} işletmede özellik aç/kapat
               </h2>
               <p className="mt-1 text-[12px] text-[#525252]">
-                Tek bir master flag, seçili tüm işletmelere uygulanır. Owner panelleri anında etkilenir.
+                Seçtiğin özellik ayarı, seçili tüm işletmelere uygulanır. İşletme panelleri anında etkilenir.
               </p>
             </div>
           }
         >
           <div className="space-y-5">
             <AlertBanner kind="warn" icon={<Info size={14} strokeWidth={2} />}>
-              Bu işlem geri alınamaz şekilde audit log&apos;a yazılır. Pulse AI kapatılırsa bekleyen taslaklar silinir; menü kapatılırsa ayrıca yayın da kapanır.
+              Bu işlem işlem geçmişine kaydedilir. Pulse AI kapatılırsa bekleyen taslaklar silinir; menü kapatılırsa ayrıca yayın da kapanır.
             </AlertBanner>
 
             <div className="space-y-2">
@@ -868,7 +1019,6 @@ export default function RestaurantsPage() {
                       <div className="text-[13px] font-medium text-[#0A0A0A]">{f.label}</div>
                       <div className="mt-0.5 text-[11px] text-[#737373]">{f.hint}</div>
                     </div>
-                    <span className="bz-mono mt-0.5 text-[10px] text-[#A3A3A3]">{f.key}</span>
                   </button>
                 ))}
               </div>

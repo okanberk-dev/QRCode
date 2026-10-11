@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Loader2, ArrowRight, BellRing } from 'lucide-react';
 import { AlertBanner, Badge, PageHeader } from '@/components/ui';
+import { SkCardGrid } from '@/components/ui/skeletons/PageSkeleton';
+import { MAIL_TEMPLATE_LABELS } from '@/components/admin/mailTemplateLabels';
+import { formatStampInTimeZone } from '@/lib/timezone';
 
 interface GridCell {
   key: string;
@@ -18,27 +21,6 @@ interface Response {
   data: GridCell[];
 }
 
-// Audit Fix C: liste UI label'ları MailTemplateEditor TEMPLATE_LABELS ile
-// senkron kalmalı. SUPPORTED_MAIL_KEYS'e yeni entry eklendiğinde buraya da
-// eklenir, aksi halde grid'de raw key (`qr-not-downloaded`) görünür.
-const TEMPLATE_LABELS: Record<string, string> = {
-  welcome: 'Hoş geldin',
-  newsletter: 'Aylık bülten',
-  'trial-ending': 'Deneme bitiyor',
-  'forgot-password': 'Şifre sıfırlama',
-  'low-rating-alert': 'Düşük puan uyarısı',
-  'new-review': 'Yeni 5★ yorum',
-  'weekly-report': 'Haftalık rapor',
-  'customer-reply': 'Müşteri yanıtı',
-  'form-confirmation': 'Form onayı',
-  'verify-email': 'E-posta onayı',
-  'roi-customer-report': 'ROI raporu (müşteri)',
-  'roi-admin-notification': 'ROI lead (admin)',
-  'qr-not-downloaded': 'QR indirilmedi',
-  'first-feedback-tips': 'İlk yorum rehberi',
-  'upgrade-suggestion': 'Plan yükseltme önerisi',
-  'inactive-reactivation': 'Tekrar canlandırma',
-};
 
 const LOCALE_LABELS: Record<string, string> = {
   tr: 'Türkçe',
@@ -83,7 +65,7 @@ export default function MailTemplatesIndexPage() {
         }
         throw new Error(body.error || 'Tetikleme başarısız');
       }
-      setOpsResult('Ops alert tetiklendi. OPS_EMAIL / NOTIFICATION_EMAIL kutusunu kontrol et (60sn içinde gelmeli). Gelmezse server log\'da "[ops-alert]" satırlarına bak.');
+      setOpsResult('Test uyarısı gönderildi. Operasyon e-posta kutusunu kontrol et — 1 dakika içinde gelmeli.');
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -91,22 +73,26 @@ export default function MailTemplatesIndexPage() {
     }
   };
 
+  // One card per template × locale; count distinct templates from the data
+  // instead of a hardcoded number that drifted (it said 16 with 28 live).
+  const templateCount = new Set((data?.data ?? []).map((c) => c.key)).size;
+
   return (
     <div className="mx-auto max-w-[1280px] space-y-4 px-4 sm:px-7 py-6 lg:py-8">
       <PageHeader
         eyebrow="MAIL İÇERİKLERİ"
         title="Mail içerikleri"
-        description="16 mail template'inin (Pulse + lifecycle + ROI + verify) içerik alanlarını burada düzenleyebilirsin. Boş bıraktığın alanlar otomatik kod-içi varsayılana düşer. Değişiklikler 1 dakika içinde tüm gönderimlere yansır."
+        description={`${templateCount > 0 ? `${templateCount} mail şablonunun` : 'Mail şablonlarının'} içerik alanlarını burada düzenleyebilirsin. Boş bıraktığın alanlar varsayılan metne döner. Değişiklikler 1 dakika içinde tüm gönderimlere yansır.`}
         actions={
           <button
             type="button"
             onClick={onTestOpsAlert}
             disabled={opsTesting}
             className="bz-btn-ghost"
-            title="Ops alert pipeline'ı test et — RESEND_API_KEY'e dokunmaz, sadece notifyOpsOfMailFailure'ı tetikler"
+            title="Mail gönderimi başarısız olduğunda operasyon ekibine giden uyarıyı test et"
           >
             {opsTesting ? <Loader2 size={14} className="animate-spin" /> : <BellRing size={14} />}
-            Ops alert testi
+            Uyarı mailini test et
           </button>
         }
       />
@@ -115,11 +101,10 @@ export default function MailTemplatesIndexPage() {
       {opsResult && <AlertBanner kind="lime">{opsResult}</AlertBanner>}
 
       {loading ? (
-        <div className="flex items-center justify-center p-16">
-          <Loader2 size={22} className="animate-spin text-[#0A0A0A]" />
-        </div>
+        // Same card grid skeleton as loading.tsx (§40.10) — no spinner.
+        <SkCardGrid count={9} cols={3} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(data?.data ?? []).map((cell) => (
             <Link
               key={`${cell.key}-${cell.locale}`}
@@ -128,7 +113,7 @@ export default function MailTemplatesIndexPage() {
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-[#0A0A0A] truncate">
-                  {TEMPLATE_LABELS[cell.key] ?? cell.key}
+                  {MAIL_TEMPLATE_LABELS[cell.key] ?? cell.key}
                 </p>
                 <Badge kind="ghost">{cell.locale.toUpperCase()}</Badge>
               </div>
@@ -139,14 +124,7 @@ export default function MailTemplatesIndexPage() {
                 {cell.seeded ? (
                   <span className="text-[11px] text-[#525252] truncate">
                     Son güncelleme:{' '}
-                    {cell.updatedAt
-                      ? new Date(cell.updatedAt).toLocaleDateString('tr-TR', {
-                          day: 'numeric',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })
-                      : '—'}
+                    {cell.updatedAt ? formatStampInTimeZone(cell.updatedAt, 'tr') : '—'}
                   </span>
                 ) : (
                   <Badge kind="ghost">Kod varsayılanı</Badge>

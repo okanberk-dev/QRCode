@@ -24,6 +24,7 @@ import {
   type AdminAction,
   type AdminResource,
 } from '@/lib/rbac';
+import { formatFullDateTimeInTimeZone } from '@/lib/timezone';
 
 // Stage A2 §38.94 — admin permission matrix UI.
 // 11 resources × 3 actions = 33 cell grid + preset bundles + audit-aware
@@ -174,7 +175,7 @@ export default function UserPermissionsPage({
   const askRevoke = (resource: string, action: string, permissionId: string) => {
     askConfirm({
       title: 'Yetki geri alınsın mı?',
-      body: `${RESOURCE_LABELS[resource as AdminResource] || resource} → ${ACTION_LABELS[action as AdminAction] || action} grant'ı bu yöneticiden kaldırılacak. Anında geçerli olur.`,
+      body: `${RESOURCE_LABELS[resource as AdminResource] || resource} → ${ACTION_LABELS[action as AdminAction] || action} izni bu yöneticiden kaldırılacak. Anında geçerli olur.`,
       confirmLabel: 'Geri al',
       cancelLabel: 'Vazgeç',
       variant: 'danger',
@@ -258,8 +259,8 @@ export default function UserPermissionsPage({
         title={`${data.target.username} yetkileri`}
         description={
           isSuperadmin
-            ? 'Bu kullanıcı superadmin — RBAC bypass devrede, tüm kaynaklar otomatik açık.'
-            : 'Manager rolü için cross-resource erişim grant\'ları. Anında etkin olur (60sn cache TTL).'
+            ? 'Bu kullanıcı superadmin — tüm bölümlere otomatik olarak tam erişimi var.'
+            : 'Bu yöneticinin hangi bölümleri görüp düzenleyebileceğini belirle. Değişiklikler en geç 1 dakika içinde geçerli olur.'
         }
       />
 
@@ -281,7 +282,7 @@ export default function UserPermissionsPage({
             <div>
               <strong>Superadmin için yetki ataması gereksiz.</strong>
               <p className="text-[12px] mt-1 opacity-80">
-                Superadmin role&apos;ü RBAC helper&apos;ında bypass edilir — her kaynak ve aksiyona her zaman erişir.
+                Superadmin her bölüme ve işleme her zaman erişebilir.
                 Bu sayfayı yönetici veya görevli rolündeki kullanıcılar için kullan.
               </p>
             </div>
@@ -296,7 +297,7 @@ export default function UserPermissionsPage({
             <div>
               <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Hazır şablonlar</h3>
               <p className="mt-0.5 text-[12px] text-[#737373]">
-                Tek tıkla yaygın grant kombinasyonları. Tekrar uygulanabilir (re-grant zarar vermez).
+                Sık kullanılan izin kombinasyonlarını tek tıkla ver. Tekrar uygulamak zarar vermez.
               </p>
             </div>
           </div>
@@ -324,9 +325,9 @@ export default function UserPermissionsPage({
                     {preset.grants.map((g) => (
                       <span
                         key={`${g.resource}:${g.action}`}
-                        className="inline-flex items-center rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-2 py-0.5 text-[10px] font-mono text-[#525252]"
+                        className="inline-flex items-center rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-2 py-0.5 text-[10px] text-[#525252]"
                       >
-                        {g.resource}:{g.action}
+                        {RESOURCE_LABELS[g.resource] || g.resource} · {ACTION_LABELS[g.action] || g.action}
                       </span>
                     ))}
                   </div>
@@ -350,8 +351,8 @@ export default function UserPermissionsPage({
             <div>
               <h3 className="text-[15px] font-semibold text-[#0A0A0A]">Yetki matrisi</h3>
               <p className="mt-0.5 text-[12px] text-[#737373]">
-                {RESOURCES.length} kaynak × {ACTIONS.length} aksiyon = {RESOURCES.length * ACTIONS.length} hücre.
-                Her hücre tek-tıkla grant/revoke.
+                {RESOURCES.length} bölüm × {ACTIONS.length} işlem. Bir hücreye tıklayarak izni ver
+                veya geri al.
               </p>
             </div>
             <Badge kind="ghost">
@@ -363,7 +364,7 @@ export default function UserPermissionsPage({
             <table className="w-full text-left text-[13px]" style={{ minWidth: 540 }}>
               <thead>
                 <tr className="bg-[#FAFAFA] border-b border-[#EDEDED]">
-                  <th className="px-4 py-3 pulse-eyebrow text-[#737373]">Kaynak</th>
+                  <th className="px-4 py-3 pulse-eyebrow text-[#737373]">Bölüm</th>
                   {ACTIONS.map((a) => (
                     <th
                       key={a}
@@ -382,7 +383,6 @@ export default function UserPermissionsPage({
                       <span className="text-[13px] font-medium text-[#0A0A0A]">
                         {RESOURCE_LABELS[r]}
                       </span>
-                      <p className="mt-0.5 text-[10px] text-[#A3A3A3] font-mono">{r}</p>
                     </td>
                     {ACTIONS.map((a) => {
                       const key = permissionKey(r, a);
@@ -439,15 +439,16 @@ export default function UserPermissionsPage({
               return (
                 <li key={p.id} className="flex items-center justify-between gap-3 py-3">
                   <div>
-                    <span className="font-mono text-[12px] text-[#0A0A0A]">
-                      {p.resource}:{p.action}
+                    <span className="text-[13px] font-medium text-[#0A0A0A]">
+                      {RESOURCE_LABELS[p.resource as AdminResource] || p.resource} ·{' '}
+                      {ACTION_LABELS[p.action as AdminAction] || p.action}
                     </span>
                     <p className="text-[11px] text-[#737373] mt-0.5">
-                      Verildi: {new Date(p.grantedAt).toLocaleString('tr-TR')}
+                      Verildi: {formatFullDateTimeInTimeZone(p.grantedAt, 'tr')}
                       {p.expiresAt && (
                         <>
                           {' · '}
-                          Sona erer: {new Date(p.expiresAt).toLocaleDateString('tr-TR')}
+                          Sona erer: {formatFullDateTimeInTimeZone(p.expiresAt, 'tr')}
                         </>
                       )}
                     </p>

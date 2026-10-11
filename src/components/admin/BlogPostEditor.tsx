@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { parseBlogDate } from '@/lib/blog-date';
@@ -32,6 +32,7 @@ import {
   X,
 } from 'lucide-react';
 import { plainTextToBlogContent, sanitizeBlogContent } from '@/lib/blog-content';
+import { SkBox } from '@/components/ui/skeletons/PageSkeleton';
 
 interface BlogPost {
   id: string;
@@ -136,7 +137,7 @@ function getStarterTemplate(locale: string) {
     return `<h2>Why this matters</h2>
 <p>Open with the concrete business problem this article solves. Keep the first paragraph practical, specific, and easy to scan.</p>
 
-<blockquote>Use quotes for sharp takeaways, customer observations, or a short expert note. The public page will render this in the Pulse quote style automatically.</blockquote>
+<blockquote>Use quotes for sharp takeaways, customer observations, or a short expert note. The published page renders this in the highlighted quote style automatically.</blockquote>
 
 <h2>What changes in the daily workflow?</h2>
 <p>Explain the operational impact for restaurants, teams, and guests. Use examples instead of abstract claims.</p>
@@ -148,7 +149,7 @@ function getStarterTemplate(locale: string) {
   return `<h2>Bu neden önemli?</h2>
 <p>Yazının çözdüğü işletme problemini net ve pratik bir girişle anlatın. İlk paragraf doğrudan faydayı göstermeli.</p>
 
-<blockquote>Keskin çıkarımlar, müşteri gözlemleri veya kısa uzman notları için alıntı kullanın. Public sayfa bunu otomatik Pulse alıntı stilinde gösterir.</blockquote>
+<blockquote>Keskin çıkarımlar, müşteri gözlemleri veya kısa uzman notları için alıntı kullanın. Yayındaki sayfa bunu otomatik olarak vurgulu alıntı stilinde gösterir.</blockquote>
 
 <h2>Günlük operasyonu nasıl değiştirir?</h2>
 <p>Restoran ekibi, misafir ve yönetici açısından etkisini örneklerle açıklayın. Soyut vaat yerine uygulanabilir öneriler kullanın.</p>
@@ -157,8 +158,69 @@ function getStarterTemplate(locale: string) {
 <p>Önerilen kurulumu, güvenli yorum akışını ve ölçülebilir sonucu anlatın.</p>`;
 }
 
+/**
+ * Editor skeleton — same header bar + 2-column grid as the editor below.
+ * Used by blog/new + blog/[id] loading.tsx and by the editor while an
+ * existing post loads, so there is no spinner hand-off (CLAUDE.md §40.10).
+ */
+export function BlogEditorSkeleton() {
+  return (
+    <div className="w-full flex-1 bg-[#FFFFFF]" aria-busy="true">
+      <div className="border-b border-[#EDEDED] bg-white">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-4 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <SkBox className="mt-1 h-9 w-9 rounded-lg" />
+            <div className="space-y-2">
+              <SkBox className="h-3 w-24" />
+              <SkBox className="h-6 w-64 max-w-full" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <SkBox className="h-10 w-28 rounded-full" />
+            <SkBox className="h-10 w-28 rounded-full" />
+          </div>
+        </div>
+      </div>
+      <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-6 sm:px-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:py-8">
+        <div className="space-y-6">
+          <div className="space-y-4 rounded-[28px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-7">
+            <SkBox className="h-3 w-16" />
+            <SkBox className="h-12 w-full" />
+            <SkBox className="h-24 w-full rounded-2xl" />
+          </div>
+          <div className="overflow-hidden rounded-[28px] border border-[#EDEDED] bg-white shadow-sm">
+            <div className="border-b border-[#EDEDED] bg-[#FAFAFA] p-3">
+              <SkBox className="h-8 w-56" />
+            </div>
+            <div className="space-y-3 p-6">
+              <SkBox className="h-4 w-full" />
+              <SkBox className="h-4 w-11/12" />
+              <SkBox className="h-4 w-3/4" />
+              <SkBox className="h-80 w-full" />
+            </div>
+          </div>
+        </div>
+        <div className="space-y-5">
+          <div className="space-y-4 rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] p-5">
+            <SkBox className="h-3 w-28" />
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <SkBox className="h-3 w-20" />
+                <SkBox className="h-11 w-full rounded-2xl" />
+              </div>
+            ))}
+          </div>
+          <SkBox className="h-40 w-full rounded-[28px]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit'; postId?: string }) {
   const router = useRouter();
+  // Stable ids so every visible label is programmatically tied to its input.
+  const fid = useId();
   const editorRef = useRef<HTMLDivElement | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM, date: defaultDate('tr') });
   const [loading, setLoading] = useState(mode === 'edit');
@@ -435,19 +497,19 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
 
   const wordCount = stripHtml(form.content).split(' ').filter(Boolean).length;
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen flex-1 items-center justify-center bg-[#FFFFFF]">
-        <Loader2 size={32} className="animate-spin text-[#A8D62E]" />
-      </div>
-    );
-  }
+  if (loading) return <BlogEditorSkeleton />;
 
   return (
-    <div className="min-h-screen flex-1 bg-[#FFFFFF]">
+    // `flex-1` without `min-h-screen`: the old min-height let this column
+    // flex item shrink to the viewport inside the panel scroll container,
+    // so the white background ended mid-page under a 2000px form.
+    <div className="w-full flex-1 bg-[#FFFFFF]">
       <form onSubmit={handleSubmit}>
-        <div className="sticky top-0 z-30 border-b border-[#EDEDED] bg-white/90 backdrop-blur-xl">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-10">
+        {/* Sticky on desktop only, offset below the 57px admin topbar so it no
+            longer covers search / bell / avatar. On mobile the bar is ~190px
+            tall and would slide under the mobile header, so it scrolls. */}
+        <div className="z-20 border-b border-[#EDEDED] bg-white/90 backdrop-blur-xl lg:sticky lg:top-[57px]">
+          <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-4 py-4 sm:px-7 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-4">
               <Link
                 href="/admin/blog"
@@ -497,7 +559,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
           </div>
         </div>
 
-        <main className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-10">
+        <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-6 sm:px-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:py-8">
           <section className="space-y-6">
             {error && (
               <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
@@ -506,10 +568,11 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
             )}
 
             <div className="rounded-[28px] border border-[#EDEDED] bg-white p-5 shadow-sm sm:p-7">
-              <label className="pulse-eyebrow text-[#737373]">BAŞLIK</label>
+              <label htmlFor={`${fid}-title`} className="pulse-eyebrow text-[#737373]">BAŞLIK</label>
               {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints (CLAUDE.md §25.5/§25.6 paterni) +
                   iOS auto-zoom önleme (text-[16px] mobile baseline). */}
               <input
+                id={`${fid}-title`}
                 type="text"
                 required
                 maxLength={180}
@@ -545,6 +608,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
               </div>
               {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints. */}
               <textarea
+                aria-label="Kısa açıklama"
                 required
                 rows={3}
                 maxLength={280}
@@ -598,7 +662,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       onClick={() => setEditorMode('preview')}
                       className={editorMode === 'preview' ? 'bz-btn-primary bz-btn-sm' : 'bz-btn bz-btn-sm'}
                     >
-                      Public görünüm
+                      Yayındaki görünüm
                     </button>
                   </div>
                   <button
@@ -681,7 +745,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
             </div>
           </section>
 
-          <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+          <aside className="space-y-5 lg:self-start">
             <div className="rounded-[28px] border border-[#EDEDED] bg-[#FAFAFA] p-5">
               <p className="pulse-eyebrow text-[#737373]">YAYIN AYARLARI</p>
               <p className="mt-2 text-[11px] leading-[1.55] text-[#737373]">
@@ -690,8 +754,12 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
               </p>
               <div className="mt-5 space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-[#737373]">Dil</label>
-                  <div className="mt-2 grid grid-cols-2 gap-2 rounded-2xl border border-[#EDEDED] bg-white p-1.5">
+                  <p id={`${fid}-locale`} className="text-xs font-semibold text-[#737373]">Dil</p>
+                  <div
+                    role="group"
+                    aria-labelledby={`${fid}-locale`}
+                    className="mt-2 grid grid-cols-2 gap-2 rounded-2xl border border-[#EDEDED] bg-white p-1.5"
+                  >
                     {(['tr', 'en'] as const).map(locale => (
                       <button
                         key={locale}
@@ -717,6 +785,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                             };
                           })
                         }
+                        aria-pressed={form.locale === locale}
                         className={`rounded-xl py-2.5 text-xs font-semibold transition-colors ${form.locale === locale ? 'bg-[#0A0A0A] text-white' : 'text-[#737373] hover:bg-[#FAFAFA]'}`}
                       >
                         {locale.toUpperCase()}
@@ -726,10 +795,11 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#737373]">Slug</label>
+                  <label htmlFor={`${fid}-slug`} className="text-xs font-semibold text-[#737373]">Slug</label>
                   <div className="mt-2 flex gap-2">
                     {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints + iOS auto-zoom önleme. */}
                     <input
+                      id={`${fid}-slug`}
                       type="text"
                       required
                       value={form.slug}
@@ -750,6 +820,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       disabled={slugSuggesting || !form.title.trim()}
                       className="bz-btn bz-btn-sm disabled:opacity-60"
                       title="Yapay zekâ ile SEO uyumlu slug öner"
+                      aria-label="Yapay zekâ ile slug öner"
                     >
                       {slugSuggesting ? (
                         <Loader2 size={16} className="animate-spin" />
@@ -764,9 +835,10 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#737373]">Yazar</label>
+                  <label htmlFor={`${fid}-author`} className="text-xs font-semibold text-[#737373]">Yazar</label>
                   {/* CLAUDE.md §38.164 (Stage 84): mobile keyboard hints + iOS auto-zoom önleme. */}
                   <input
+                    id={`${fid}-author`}
                     type="text"
                     value={form.author}
                     onChange={event => setForm(f => ({ ...f, author: event.target.value }))}
@@ -781,8 +853,9 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#737373]">Yayın tarihi</label>
+                  <label htmlFor={`${fid}-date`} className="text-xs font-semibold text-[#737373]">Yayın tarihi</label>
                   <input
+                    id={`${fid}-date`}
                     type="date"
                     value={dateInputValue(form.date)}
                     onChange={(event) => {
@@ -799,7 +872,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
 
                 <div>
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-[#737373]">Okuma süresi</label>
+                    <label htmlFor={`${fid}-readtime`} className="text-xs font-semibold text-[#737373]">Okuma süresi</label>
                     <button
                       type="button"
                       onClick={requestReadTimeSuggestion}
@@ -821,6 +894,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                     </button>
                   </div>
                   <input
+                    id={`${fid}-readtime`}
                     type="text"
                     value={form.readTime}
                     onChange={event => setForm(f => ({ ...f, readTime: event.target.value }))}
@@ -829,7 +903,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-[#737373]">Kapak görseli</label>
+                  <label htmlFor={`${fid}-cover`} className="text-xs font-semibold text-[#737373]">Kapak görseli</label>
                   {/* Preview — visible whenever coverImage is set */}
                   {form.coverImage && (
                     <div className="mt-2 relative overflow-hidden rounded-2xl border border-[#EDEDED] bg-[#FAFAFA]">
@@ -851,12 +925,14 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   )}
 
                   {/* Upload + URL hybrid */}
-                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                  {/* Stacked: the 360px side rail is too narrow for button + URL
+                      input side by side (the input poked past the card edge). */}
+                  <div className="mt-2 flex flex-col gap-2">
                     <button
                       type="button"
                       onClick={() => coverFileInputRef.current?.click()}
                       disabled={coverUploading}
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-xs font-semibold text-[#0A0A0A] hover:border-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-xs font-semibold text-[#0A0A0A] hover:border-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {coverUploading ? (
                         <>
@@ -881,11 +957,12 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                       }}
                     />
                     <input
+                      id={`${fid}-cover`}
                       type="text"
                       value={form.coverImage}
                       onChange={(event) => setForm((f) => ({ ...f, coverImage: event.target.value }))}
                       placeholder="veya URL yapıştır: https://..."
-                      className="flex-1 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
+                      className="w-full min-w-0 rounded-2xl border border-[#EDEDED] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#C6F24E]"
                     />
                   </div>
                   <p className="mt-2 text-[11px] text-[#737373] leading-[1.55]">
@@ -899,10 +976,13 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                 <div className="flex items-center justify-between rounded-2xl border border-[#EDEDED] bg-white p-4">
                   <div>
                     <p className="text-sm font-semibold text-[#0A0A0A]">{form.isActive ? 'Yayında' : 'Taslak'}</p>
-                    <p className="text-xs font-medium text-[#737373]">Public görünürlüğü</p>
+                    <p className="text-xs font-medium text-[#737373]">Herkese açık görünürlük</p>
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={form.isActive}
+                    aria-label="Yazıyı yayınla"
                     onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
                     className={`relative h-7 w-14 rounded-full transition-colors ${form.isActive ? 'bg-[#C6F24E]' : 'bg-[#D4D4D4]'}`}
                   >
@@ -962,33 +1042,35 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
 
             {/* Public görünüm — opsiyonel override'lar; boş bırakılırsa public sayfa default'a düşer */}
             <div className="rounded-[28px] border border-[#EDEDED] bg-white p-5">
-              <p className="pulse-eyebrow text-[#737373]">PUBLIC GÖRÜNÜM</p>
+              <p className="pulse-eyebrow text-[#737373]">YAYINDAKİ GÖRÜNÜM</p>
               <p className="mt-2 text-[11px] leading-[1.55] text-[#737373]">
-                Boş bırakılan alanlar public sayfada Buaze default&rsquo;larına düşer.
+                Boş bırakılan alanlar yayındaki sayfada Buaze&rsquo;nin varsayılan metinleriyle gösterilir.
               </p>
 
               {/* Yazar bio */}
               <div className="mt-5">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                <label htmlFor={`${fid}-bio`} className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
                   <User size={13} />
                   Yazar açıklaması
                 </label>
                 <textarea
+                  id={`${fid}-bio`}
                   rows={3}
                   maxLength={280}
                   value={form.authorBio}
                   onChange={event => setForm(f => ({ ...f, authorBio: event.target.value }))}
                   placeholder={form.locale === 'en'
                     ? 'Two short sentences shown next to the author chip on the public page.'
-                    : 'Public sayfa sağ kenarda yazarın yanında görünen 2 cümlelik açıklama.'}
+                    : 'Yayındaki sayfada, sağ kenarda yazarın yanında görünen 2 cümlelik açıklama.'}
                   className="mt-2 w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-sm leading-[1.55] text-[#0A0A0A] outline-none focus:border-[#C6F24E] focus:bg-white"
                 />
               </div>
 
               {/* Yazar rolü */}
               <div className="mt-4">
-                <label className="text-xs font-semibold text-[#737373]">Yazar rolü</label>
+                <label htmlFor={`${fid}-role`} className="text-xs font-semibold text-[#737373]">Yazar rolü</label>
                 <input
+                  id={`${fid}-role`}
                   type="text"
                   maxLength={60}
                   value={form.authorRole}
@@ -1000,7 +1082,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
 
               {/* Tags */}
               <div className="mt-4">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                <label htmlFor={`${fid}-tags`} className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
                   <Tag size={13} />
                   Etiketler
                 </label>
@@ -1026,6 +1108,7 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   </div>
                 )}
                 <input
+                  id={`${fid}-tags`}
                   type="text"
                   value={tagDraft}
                   onChange={event => setTagDraft(event.target.value)}
@@ -1040,21 +1123,23 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
 
               {/* Pull quote */}
               <div className="mt-4">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                <label htmlFor={`${fid}-quote`} className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
                   <Quote size={13} />
                   Vurgulu alıntı
                 </label>
                 <textarea
+                  id={`${fid}-quote`}
                   rows={3}
                   maxLength={280}
                   value={form.pullQuote}
                   onChange={event => setForm(f => ({ ...f, pullQuote: event.target.value }))}
                   placeholder={form.locale === 'en'
-                    ? 'A single sharp sentence highlighted between graphite lines mid-article.'
-                    : 'Makalenin ortasında graphite çizgiler arasında vurgulanan tek cümle.'}
+                    ? 'A single sharp sentence highlighted between dark lines mid-article.'
+                    : 'Makalenin ortasında koyu çizgiler arasında vurgulanan tek cümle.'}
                   className="mt-2 w-full resize-none rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] px-4 py-3 text-sm leading-[1.55] text-[#0A0A0A] outline-none focus:border-[#C6F24E] focus:bg-white"
                 />
                 <input
+                  aria-label="Alıntının sahibi"
                   type="text"
                   maxLength={80}
                   value={form.pullQuoteAuthor}
@@ -1068,21 +1153,23 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
 
               {/* CTA override */}
               <div className="mt-4 rounded-2xl border border-[#EDEDED] bg-[#FAFAFA] p-4">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
+                <label htmlFor={`${fid}-cta`} className="flex items-center gap-1.5 text-xs font-semibold text-[#737373]">
                   <ExternalLink size={13} />
-                  Dark CTA (opsiyonel)
+                  Yazı sonu çağrı kutusu (opsiyonel)
                 </label>
                 <input
+                  id={`${fid}-cta`}
                   type="text"
                   maxLength={120}
                   value={form.ctaTitle}
                   onChange={event => setForm(f => ({ ...f, ctaTitle: event.target.value }))}
                   placeholder={form.locale === 'en'
-                    ? 'Headline (default: Ready to grow…)'
-                    : 'Başlık (default: Google politikalarına…)'}
+                    ? 'Headline (if empty: Ready to grow…)'
+                    : 'Başlık (boş bırakılırsa: Google politikalarına…)'}
                   className="mt-3 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-[#C6F24E]"
                 />
                 <input
+                  aria-label="Çağrı kutusu alt metni"
                   type="text"
                   maxLength={160}
                   value={form.ctaSubtitle}
@@ -1091,17 +1178,18 @@ export default function BlogPostEditor({ mode, postId }: { mode: 'new' | 'edit';
                   className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-[#C6F24E]"
                 />
                 <input
+                  aria-label="Çağrı kutusu buton etiketi"
                   type="text"
                   maxLength={40}
                   value={form.ctaButtonLabel}
                   onChange={event => setForm(f => ({ ...f, ctaButtonLabel: event.target.value }))}
-                  placeholder={form.locale === 'en' ? 'Button label (default: Start free)' : 'Buton etiketi (default: Ücretsiz başla)'}
+                  placeholder={form.locale === 'en' ? 'Button label (if empty: Start free)' : 'Buton etiketi (boş bırakılırsa: Ücretsiz başla)'}
                   className="mt-2 w-full rounded-2xl border border-[#EDEDED] bg-white px-4 py-2.5 text-sm font-medium outline-none focus:border-[#C6F24E]"
                 />
               </div>
             </div>
           </aside>
-        </main>
+        </div>
       </form>
     </div>
   );

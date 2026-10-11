@@ -19,6 +19,13 @@ import AdminOverviewWidgets, {
 import AdminOperationalSignals, {
   type OperationalSignalRow,
 } from '@/components/admin/AdminOperationalSignals';
+import {
+  REVENUE_SUBSCRIPTION_SELECT,
+  buildPlanDistribution,
+  formatUsd,
+  summarizeRevenue,
+} from '@/lib/admin-bi';
+import { toAdminRow } from '@/lib/subscription-plans';
 
 export const metadata: Metadata = {
   title: 'Panel — Buaze Admin',
@@ -27,18 +34,7 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-// Plan tier sentinel prices used by the MRR estimation. Same source-of-truth
-// the /admin/plans page uses for its own MRR widget — Dodo Payments webhook
-// invoices (Stage 142 §38.222) feed BillingInvoice rows; long-term MRR can
-// shift to DB sum once invoice volume is sufficient.
-const PLAN_PRICES: Record<string, number> = {
-  pro: 1499,
-  growth: 899,
-  starter: 499,
-  monthly: 499,
-  yearly: 416, // 4990 / 12 (yearly equivalent monthly)
-  enterprise: 0,
-};
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Plan trial quota (review count) — used by the "Kota %90+ doldu" attention
 // metric. Aligned with CLAUDE.md GROWTH plan note (default trial = 2000).
@@ -65,9 +61,9 @@ export default async function AdminDashboardPage() {
 
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
   const twelveWeeksAgo = new Date(now.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
 
   // Aggregate queries — kept narrow so the dashboard stays a strategic
@@ -75,11 +71,11 @@ export default async function AdminDashboardPage() {
   const [
     totalBusinesses,
     newBusinesses24h,
-    last7Reviews,
-    prev7Reviews,
+    prev30Reviews,
     monthlyReviews,
     owners,
-    ownersThirtyDaysAgo,
+    subscriptions,
+    tierRows,
     restaurantsForGrowth,
     recentRestaurants,
     menusEnabledCount,
@@ -87,19 +83,17 @@ export default async function AdminDashboardPage() {
   ] = await prisma.$transaction([
     prisma.restaurant.count(),
     prisma.restaurant.count({ where: { createdAt: { gte: oneDayAgo } } }),
-    prisma.feedback.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
-    prisma.feedback.count({ where: { createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo } } }),
+    prisma.feedback.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
     prisma.feedback.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
     prisma.user.findMany({
       where: { role: 'restaurant_owner' },
-      select: { plan: true, trialEndsAt: true, isActive: true },
+      select: { id: true, plan: true, trialEndsAt: true, isActive: true, createdAt: true },
     }),
-    // 30-day-old MRR snapshot proxy (bkz. CLAUDE.md §14 — plan-switch history
-    // tracking yok, today's plan ≈ past plan kabul edilir).
-    prisma.user.findMany({
-      where: { role: 'restaurant_owner', createdAt: { lt: thirtyDaysAgo } },
-      select: { plan: true },
-    }),
+    // §15.2 canonical billing — MRR + plan distribution come from
+    // BillingSubscription + SubscriptionPlan tiers (USD-only, §38.225), the
+    // same source /admin/plans and the analytics BI section use.
+    prisma.billingSubscription.findMany({ select: REVENUE_SUBSCRIPTION_SELECT }),
+    prisma.subscriptionPlan.findMany({ orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }] }),
     prisma.restaurant.findMany({
       where: { createdAt: { gte: twelveWeeksAgo } },
       select: { createdAt: true },
@@ -125,52 +119,65 @@ export default async function AdminDashboardPage() {
     prisma.restaurant.count({ where: { menuEnabled: true, menuPublished: true } }),
   ]);
 
-  // 7-day review delta (design uniform "son 7 gün" suffix uses W-1 → W % change).
-  const reviewsDeltaPct = prev7Reviews > 0
-    ? Math.round(((last7Reviews - prev7Reviews) / prev7Reviews) * 1000) / 10
-    : last7Reviews > 0 ? 100 : 0;
+  // 30-day review volume vs the previous 30 days (same window as the value).
+  const reviewsDeltaPct = prev30Reviews > 0
+    ? Math.round(((monthlyReviews - prev30Reviews) / prev30Reviews) * 1000) / 10
+    : 0;
   const reviewsDeltaKind: 'up' | 'down' | 'neutral' =
-    reviewsDeltaPct > 0 ? 'up' : reviewsDeltaPct < 0 ? 'down' : 'neutral';
+    prev30Reviews === 0
+      ? monthlyReviews > 0 ? 'up' : 'neutral'
+      : reviewsDeltaPct > 0 ? 'up' : reviewsDeltaPct < 0 ? 'down' : 'neutral';
 
-  const activeTrials = owners.filter(
-    (o) => o.plan === 'trial' && o.trialEndsAt && o.trialEndsAt > now,
-  ).length;
+  const tiers = tierRows.map(toAdminRow);
+  const tiersById = new Map(tiers.map((t) => [t.id, t]));
 
-  // Estimated MRR (sentinel prices). Dodo Payments webhook invoice volume
-  // büyüdüğünde gerçek BillingInvoice toplamına geçilebilir (Stage 142 §38.222).
-  const computeMrr = (rows: { plan: string | null }[]) =>
-    rows.reduce((acc, o) => {
-      const plan = (o.plan || 'trial').toLowerCase();
-      if (plan === 'trial' || plan === 'free') return acc;
-      const matched = Object.keys(PLAN_PRICES).find((k) => plan.includes(k));
-      return acc + (matched ? PLAN_PRICES[matched] : 0);
-    }, 0);
-  const mrr = computeMrr(owners);
-  const mrrThirtyDaysAgo = computeMrr(ownersThirtyDaysAgo);
+  // Plan distribution + lifecycle counts — paid / trial / trial expired / free.
+  const totalOwners = owners.length;
+  const { buckets: planBuckets, counts: planCounts } = buildPlanDistribution({
+    owners,
+    subscriptions,
+    tiers,
+    now,
+  });
+  const activeTrials = planCounts.trial;
+  const trialDaysLeft = owners
+    .filter((o) => o.plan === 'trial' && o.trialEndsAt && o.trialEndsAt > now)
+    .map((o) => Math.ceil(((o.trialEndsAt as Date).getTime() - now.getTime()) / DAY_MS));
+  const avgTrialDaysLeft = trialDaysLeft.length
+    ? Math.round(trialDaysLeft.reduce((a, b) => a + b, 0) / trialDaysLeft.length)
+    : null;
+
+  // MRR (USD) — canonical tier price / admin override per active subscription.
+  // 30-day comparison is a proxy: subscriptions of owners that already existed
+  // 30 days ago (no subscription start history — same assumption as before).
+  const mrr = summarizeRevenue(subscriptions, tiersById).mrrUsd;
+  const ownerCreatedAt = new Map(owners.map((o) => [o.id, o.createdAt]));
+  const mrrThirtyDaysAgo = summarizeRevenue(
+    subscriptions.filter((s) => {
+      const created = ownerCreatedAt.get(s.userId);
+      return created ? created < thirtyDaysAgo : false;
+    }),
+    tiersById,
+  ).mrrUsd;
   const mrrDeltaPct = mrrThirtyDaysAgo > 0
     ? Math.round(((mrr - mrrThirtyDaysAgo) / mrrThirtyDaysAgo) * 1000) / 10
-    : mrr > 0 ? 100 : 0;
+    : 0;
   const mrrDeltaKind: 'up' | 'down' | 'neutral' =
-    mrrDeltaPct > 0 ? 'up' : mrrDeltaPct < 0 ? 'down' : 'neutral';
-
-  // Plan distribution — 4 buckets per design AdminDashboard.
-  const totalOwners = owners.length;
-  const planBuckets: Array<{ key: string; label: string; color: string; count: number }> = [
-    { key: 'pro', label: 'Pro', color: '#0A0A0A', count: 0 },
-    { key: 'growth', label: 'Growth', color: '#525252', count: 0 },
-    { key: 'starter', label: 'Starter', color: '#A3A3A3', count: 0 },
-    { key: 'trial', label: 'Trial', color: '#C6F24E', count: 0 },
-  ];
-  for (const o of owners) {
-    const plan = (o.plan || 'trial').toLowerCase();
-    const bucket =
-      planBuckets.find((b) => plan.includes(b.key)) ??
-      // fall through to trial for monthly/yearly/free/unknown values
-      (plan === 'monthly' || plan === 'yearly'
-        ? planBuckets.find((b) => b.key === 'starter')
-        : planBuckets[planBuckets.length - 1]);
-    if (bucket) bucket.count += 1;
-  }
+    mrrThirtyDaysAgo === 0
+      ? mrr > 0 ? 'up' : 'neutral'
+      : mrrDeltaPct > 0 ? 'up' : mrrDeltaPct < 0 ? 'down' : 'neutral';
+  const mrrDelta =
+    mrr === 0 && mrrThirtyDaysAgo === 0
+      ? 'Henüz ödeyen yok'
+      : mrrThirtyDaysAgo === 0
+        ? `+${formatUsd(mrr)}`
+        : `${mrrDeltaPct >= 0 ? '+' : ''}${mrrDeltaPct}%`;
+  const mrrDeltaSuffix =
+    mrr === 0 && mrrThirtyDaysAgo === 0
+      ? undefined
+      : mrrThirtyDaysAgo === 0
+        ? 'son 30 günde'
+        : 'son 30 güne göre';
 
   const businessGrowthData = bucketByWeek(
     restaurantsForGrowth.map((r) => r.createdAt),
@@ -350,10 +357,10 @@ export default async function AdminDashboardPage() {
       <section className="md:hidden rounded-[20px] bg-[#0A0A0A] p-[18px] text-white">
         <span className="pulse-eyebrow text-[#C6F24E]" style={{ fontSize: 9 }}>SİSTEM NABZI</span>
         <div className="bz-h-tight-2 mt-2" style={{ fontSize: 32 }}>
-          ₺{mrr.toLocaleString('tr-TR')}
+          {formatUsd(mrr)}
         </div>
         <div className="text-[12px] text-white/60">
-          Aylık tekrarlayan gelir
+          Aylık tekrarlayan gelir (tahmini)
           {mrrThirtyDaysAgo > 0 && (
             <>
               {' · '}
@@ -376,39 +383,44 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      {/* Desktop-only 4-stat KPI grid — 'son 7 gün' uniform suffix per design */}
+      {/* Desktop-only 4-stat KPI grid — each delta suffix names its own window */}
       <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <StatCard
           label="Toplam işletme"
           value={totalBusinesses}
-          delta={`+${newBusinesses24h} (24s)`}
+          delta={`+${newBusinesses24h}`}
           deltaKind={newBusinesses24h > 0 ? 'up' : 'neutral'}
-          deltaSuffix="son 7 gün"
+          deltaSuffix="son 24 saatte"
           icon={<Store size={14} strokeWidth={2} />}
         />
         <StatCard
-          label="Aylık MRR"
-          value={`₺${mrr.toLocaleString('tr-TR')}`}
-          delta={mrrThirtyDaysAgo > 0 ? `${mrrDeltaPct >= 0 ? '+' : ''}${mrrDeltaPct}%` : 'Yeni'}
+          label="Aylık MRR (tahmini)"
+          value={formatUsd(mrr)}
+          delta={mrrDelta}
           deltaKind={mrrDeltaKind}
-          deltaSuffix="son 7 gün"
+          deltaSuffix={mrrDeltaSuffix}
           icon={<CreditCard size={14} strokeWidth={2} />}
-          accent="#C6F24E"
+          accent={mrr > 0 ? '#C6F24E' : undefined}
         />
         <StatCard
           label="Aktif denemeler"
           value={activeTrials}
-          delta="14 gün ort."
+          delta={avgTrialDaysLeft != null ? `ort. ${avgTrialDaysLeft} gün kaldı` : undefined}
           deltaKind="neutral"
-          deltaSuffix="son 7 gün"
           icon={<Crown size={14} strokeWidth={2} />}
         />
         <StatCard
           label="Aylık yorum"
           value={monthlyReviews.toLocaleString('tr-TR')}
-          delta={`${reviewsDeltaPct >= 0 ? '+' : ''}${reviewsDeltaPct}%`}
+          delta={
+            prev30Reviews === 0
+              ? monthlyReviews > 0
+                ? `+${monthlyReviews.toLocaleString('tr-TR')}`
+                : undefined
+              : `${reviewsDeltaPct >= 0 ? '+' : ''}${reviewsDeltaPct.toLocaleString('tr-TR')}%`
+          }
           deltaKind={reviewsDeltaKind}
-          deltaSuffix="son 7 gün"
+          deltaSuffix={prev30Reviews === 0 ? 'önceki 30 günde yorum yoktu' : 'önceki 30 güne göre'}
           icon={<MessageSquare size={14} strokeWidth={2} />}
         />
       </div>
@@ -477,7 +489,7 @@ export default async function AdminDashboardPage() {
         <div className="bz-card p-5 sm:p-6">
           <Eyebrow>PLAN DAĞILIMI</Eyebrow>
           <div className="bz-h-tight mt-1 mb-3.5" style={{ fontSize: 18 }}>
-            {totalOwners} işletme
+            {totalOwners} işletme sahibi
           </div>
           <div className="flex flex-col gap-2.5">
             {planBuckets.map((b) => {

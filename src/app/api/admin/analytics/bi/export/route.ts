@@ -3,81 +3,22 @@ import { z } from 'zod';
 import { getAdminFromRequest } from '@/lib/auth';
 import { hasPermission } from '@/lib/rbac';
 import { rateLimit } from '@/lib/rate-limit';
-import { getBiSnapshot, type BiSnapshot } from '@/lib/admin-bi';
+import { buildBiCsv, getBiSnapshot } from '@/lib/admin-bi';
 import { ApiErrors } from '@/lib/api-errors';
-import { csvCell } from '@/lib/csv-safe';
 
 // Stage A5 §38.97 — BI CSV export (cross-workspace).
 //
 // GET /api/admin/analytics/bi/export?range=30d|90d|1y
 //
 // Single CSV with 4 sections (MRR / Churn / NPS / Cohort) separated by
-// header rows. Excel TR-safe UTF-8 BOM (CLAUDE.md §38.50).
+// header rows — built by `buildBiCsv` (src/lib/admin-bi.ts). Excel TR-safe
+// UTF-8 BOM (CLAUDE.md §38.50).
 //
 // Rate limit 5/dk/admin (CLAUDE.md §38.78 export rate-limit paterni).
 
 export const dynamic = 'force-dynamic';
 
 const RangeSchema = z.enum(['30d', '90d', '1y']);
-
-function csvEscape(v: string | number | null | undefined): string {
-  // Formula-injection safe (src/lib/csv-safe.ts) — same quoting as before.
-  return csvCell(v);
-}
-
-function buildCsv(snapshot: BiSnapshot): string {
-  const lines: string[] = [];
-
-  // Section 1: MRR trend
-  lines.push('# MRR TRENDI');
-  lines.push(['Ay', 'Toplam (TRY)', 'Pro', 'Growth', 'Starter', 'Monthly', 'Yearly'].map(csvEscape).join(','));
-  for (const p of snapshot.mrr) {
-    lines.push([
-      p.month,
-      p.total,
-      p.byPlan.pro || 0,
-      p.byPlan.growth || 0,
-      p.byPlan.starter || 0,
-      p.byPlan.monthly || 0,
-      p.byPlan.yearly || 0,
-    ].map(csvEscape).join(','));
-  }
-  lines.push('');
-
-  // Section 2: Churn
-  lines.push('# CHURN ORANI');
-  lines.push(['Ay', 'Pasifleşen', 'Aktif (denominator)', 'Oran %'].map(csvEscape).join(','));
-  for (const p of snapshot.churn) {
-    lines.push([p.month, p.churned, p.active, p.ratePct].map(csvEscape).join(','));
-  }
-  lines.push('');
-
-  // Section 3: NPS
-  lines.push('# NPS DAGILIMI');
-  lines.push(['Promoter (5)', 'Passive (3-4)', 'Detractor (1-2)', 'Toplam', 'Skor'].map(csvEscape).join(','));
-  lines.push([
-    snapshot.nps.promoters,
-    snapshot.nps.passives,
-    snapshot.nps.detractors,
-    snapshot.nps.total,
-    snapshot.nps.score,
-  ].map(csvEscape).join(','));
-  lines.push('');
-
-  // Section 4: Cohort retention
-  lines.push('# KOHORT RETENTION (signup ayı bazlı)');
-  lines.push(['Kohort Ayı', 'Kayıt', 'Aktif (paid)', 'Trial', 'Retention %'].map(csvEscape).join(','));
-  for (const p of snapshot.cohort) {
-    lines.push([p.cohortMonth, p.signups, p.retainedActive, p.retainedTrial, p.retentionPct].map(csvEscape).join(','));
-  }
-  lines.push('');
-
-  // Footer
-  lines.push(`# Olusturma: ${snapshot.generatedAt}`);
-  lines.push(`# Aralik: ${snapshot.range} (${snapshot.months} ay)`);
-
-  return '﻿' + lines.join('\n');
-}
 
 export async function GET(req: NextRequest) {
   const admin = await getAdminFromRequest(req);
@@ -99,7 +40,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const snapshot = await getBiSnapshot(parsed.data);
-    const csv = buildCsv(snapshot);
+    const csv = buildBiCsv(snapshot);
     const filename = `buaze-bi-${parsed.data}-${snapshot.generatedAt.slice(0, 10)}.csv`;
     return new NextResponse(csv, {
       headers: {

@@ -24,6 +24,7 @@ import {
   PulseMenuItem,
   useConfirmDialog,
 } from '@/components/ui';
+import { SkTable } from '@/components/ui/skeletons/PageSkeleton';
 
 interface BlogPost {
   id: string;
@@ -41,13 +42,21 @@ interface BlogPost {
 
 interface AdminBlogClientProps {
   initialPosts?: BlogPost[];
+  /** Total post count (server prefetch). Drives "Daha fazla yükle". */
+  initialTotal?: number;
 }
 
-export default function AdminBlogClient({ initialPosts }: AdminBlogClientProps) {
+// /api/admin/blog caps a page at 100 rows.
+const PAGE_SIZE = 100;
+
+export default function AdminBlogClient({ initialPosts, initialTotal }: AdminBlogClientProps) {
   // §40.10 server-hydration — initialPosts undefined ise client'ta fetch yapılır,
   // doluysa çift skeleton flash önlenir (loading.tsx → mount → data hazır).
   const [posts, setPosts] = useState<BlogPost[]>(initialPosts ?? []);
   const [loading, setLoading] = useState(initialPosts === undefined);
+  const [total, setTotal] = useState<number>(initialTotal ?? initialPosts?.length ?? 0);
+  const [loadedPage, setLoadedPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -58,15 +67,38 @@ export default function AdminBlogClient({ initialPosts }: AdminBlogClientProps) 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/blog');
+      const res = await fetch(`/api/admin/blog?limit=${PAGE_SIZE}&page=1`);
       const data = await res.json();
-      setPosts(Array.isArray(data?.posts) ? data.posts : []);
+      const list: BlogPost[] = Array.isArray(data?.posts) ? data.posts : [];
+      setPosts(list);
+      setTotal(typeof data?.meta?.total === 'number' ? data.meta.total : list.length);
+      setLoadedPage(1);
     } catch {
       setError('Blog yazıları yüklenemedi.');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const loadMorePosts = async () => {
+    setLoadingMore(true);
+    try {
+      const nextPage = loadedPage + 1;
+      const res = await fetch(`/api/admin/blog?limit=${PAGE_SIZE}&page=${nextPage}`);
+      const data = await res.json();
+      const list: BlogPost[] = Array.isArray(data?.posts) ? data.posts : [];
+      setPosts((prev) => {
+        const seen = new Set(prev.map((p) => p.id));
+        return [...prev, ...list.filter((p) => !seen.has(p.id))];
+      });
+      if (typeof data?.meta?.total === 'number') setTotal(data.meta.total);
+      setLoadedPage(nextPage);
+    } catch {
+      setError('Blog yazıları yüklenemedi.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     if (initialPosts === undefined) {
@@ -111,6 +143,7 @@ export default function AdminBlogClient({ initialPosts }: AdminBlogClientProps) 
           const res = await fetch(`/api/admin/blog/${id}`, { method: 'DELETE' });
           if (res.ok) {
             setPosts(prev => prev.filter(post => post.id !== id));
+            setTotal(t => Math.max(0, t - 1));
             setSuccess('Yazı silindi.');
             setTimeout(() => setSuccess(''), 3000);
           } else {
@@ -176,6 +209,8 @@ export default function AdminBlogClient({ initialPosts }: AdminBlogClientProps) 
           {(['all', 'tr', 'en'] as const).map(locale => (
             <button
               key={locale}
+              type="button"
+              aria-pressed={filterLocale === locale}
               onClick={() => setFilterLocale(locale)}
               className={`rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-colors ${
                 filterLocale === locale
@@ -197,16 +232,41 @@ export default function AdminBlogClient({ initialPosts }: AdminBlogClientProps) 
       {success && <AlertBanner kind="success">{success}</AlertBanner>}
 
       {/* Table — 1:1 design AdminBlog */}
-      {loading ? null : filtered.length === 0 ? (
+      {loading && posts.length === 0 ? (
+        <SkTable rows={6} cols={6} />
+      ) : posts.length === 0 ? (
         <EmptyState
           icon={<BookOpen size={22} />}
-          title="Yazı bulunamadı"
-          body="Filtreleri temizleyin veya yeni bir blog yazısı oluşturun."
+          title="Henüz blog yazısı yok"
+          body="İlk yazını oluştur ya da hazır örnek yazıları içeri aktar."
           action={
-            <Link href="/admin/blog/new" className="bz-btn-primary">
-              Yeni yazı oluştur
-              <ArrowRight size={14} strokeWidth={2} />
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Link href="/admin/blog/new" className="bz-btn-primary">
+                Yeni yazı oluştur
+                <ArrowRight size={14} strokeWidth={2} />
+              </Link>
+              <button onClick={handleSeed} disabled={seeding} className="bz-btn-ghost">
+                {seeding ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                Örnekleri aktar
+              </button>
+            </div>
+          }
+        />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={<Search size={22} />}
+          title="Yazı bulunamadı"
+          body="Arama veya dil filtresiyle eşleşen yazı yok."
+          action={
+            <button
+              onClick={() => {
+                setSearch('');
+                setFilterLocale('all');
+              }}
+              className="bz-btn-ghost"
+            >
+              Filtreleri temizle
+            </button>
           }
         />
       ) : (
@@ -339,6 +399,23 @@ export default function AdminBlogClient({ initialPosts }: AdminBlogClientProps) 
               </article>
             ))}
           </div>
+        </div>
+      )}
+      {!loading && posts.length < total && (
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-[12px] text-[#737373]">
+            {posts.length} / {total} yazı yüklendi
+            {search.trim() || filterLocale !== 'all' ? ' · filtreler yalnızca yüklenen yazılarda çalışır' : ''}
+          </p>
+          <button
+            type="button"
+            onClick={loadMorePosts}
+            disabled={loadingMore}
+            className="bz-btn-ghost disabled:opacity-50"
+          >
+            {loadingMore ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} strokeWidth={2} />}
+            Daha fazla yükle
+          </button>
         </div>
       )}
       {confirmDialog}

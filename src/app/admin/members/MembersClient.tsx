@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useUrlFilter } from '@/hooks/useUrlFilter';
+import { useDebouncedUrlInput, useUrlFilter } from '@/hooks/useUrlFilter';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -69,6 +69,7 @@ const PLAN_BADGE: Record<string, { label: string; kind: BadgeKind }> = {
   trial: { label: 'Deneme', kind: 'lime' },
   monthly: { label: 'Aylık', kind: 'info' },
   yearly: { label: 'Yıllık', kind: 'ok' },
+  enterprise: { label: 'Kurumsal', kind: 'info' },
   free: { label: 'Ücretsiz', kind: 'ghost' },
 };
 
@@ -127,7 +128,14 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
     page: 1,
   });
   const debouncedSearch = filters.values.search;
-  const [searchInput, setSearchInput] = useState(debouncedSearch);
+  // §38.238 — one setMany, not two set() calls (two writes in one tick
+  // clobber each other). The hook keeps the field's own value, writes the
+  // URL debounced and only copies URL changes it did not make back into the
+  // field, so a trailing space mid-typing is not stripped.
+  const search = useDebouncedUrlInput(debouncedSearch, (v) =>
+    filters.setMany({ search: v, page: 1 }),
+  );
+  const searchInput = search.input;
   const planFilter = filters.values.plan;
   const statusFilter = filters.values.status;
   const attention = filters.values.attention;
@@ -171,30 +179,6 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
   const [hardDeleteError, setHardDeleteError] = useState<string | null>(null);
   const [hardDeleting, setHardDeleting] = useState(false);
   const HARD_DELETE_GRACE_DAYS = 7;
-
-  // URL'den gelen filter (browser back / deeplink) input'a yansımalı; aksi
-  // halde mount'taki debouncedSearch snapshot'ı korunur ve liste filtreli
-  // ama input boş görünür.
-  useEffect(() => {
-    setSearchInput(debouncedSearch);
-  }, [debouncedSearch]);
-
-  // Debounce search input by 300ms — matches admin/customers pattern.
-  useEffect(() => {
-    const t = setTimeout(() => {
-      // §38.238 — one setMany, not two set() calls. `useUrlFilter.set`
-      // rebuilds the query string from the `params` snapshot of the CURRENT
-      // render, so two calls in the same tick both start from the same
-      // baseline and the second silently discards the first. Here the
-      // `setPage(1)` write dropped the search term, so typing in the admin
-      // members search box never actually filtered anything.
-      filters.setMany({ search: searchInput.trim(), page: 1 });
-    }, 300);
-    return () => clearTimeout(t);
-    // setDebouncedSearch + setPage are useUrlFilter wrapper proxies — new
-    // reference each render (CLAUDE.md §36). Adding to deps would loop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchInput]);
 
   const queryString = useMemo(() => {
     const qp = new URLSearchParams();
@@ -245,7 +229,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
     // §38.238 — chained set() calls clobber each other (see the debounce
     // effect above); previously only the last one survived, so "clear
     // filters" left every filter but `page` in place.
-    setSearchInput('');
+    search.replaceInput('');
     filters.setMany({ search: '', plan: '', status: 'active', attention: '', page: 1 });
   };
 
@@ -527,20 +511,20 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
             autoCorrect="off"
             spellCheck={false}
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={(e) => search.setInput(e.target.value)}
             placeholder="İşletme sahibi ara (email veya isim)…"
             aria-label="İşletme sahibi ara"
             className="bz-input w-full pl-11"
           />
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <select
             value={planFilter}
             onChange={(e) => {
               // §38.238 — setMany: two set() calls in one tick clobber.
               filters.setMany({ plan: e.target.value, page: 1 });
             }}
-            className="bz-input"
+            className="bz-input w-full sm:w-44"
             aria-label="Plan filtresi"
           >
             {PLAN_FILTER_OPTIONS.map((p) => (
@@ -558,7 +542,7 @@ export default function MembersClient({ initialMembers, initialMeta }: MembersCl
                 page: 1,
               });
             }}
-            className="bz-input"
+            className="bz-input w-full sm:w-52"
             aria-label="Durum filtresi"
           >
             {STATUS_FILTER_OPTIONS.map((s) => (

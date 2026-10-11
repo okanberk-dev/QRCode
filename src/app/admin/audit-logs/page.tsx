@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -22,6 +22,7 @@ import {
 } from '@/components/ui';
 import { useUrlFilter } from '@/hooks/useUrlFilter';
 import { actionLabel } from '@/lib/audit-log';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 
 // Stage A3 §38.95 — admin audit log viewer page.
 // Filter toolbar (useUrlFilter §36) + paginated table + CSV export +
@@ -59,16 +60,59 @@ type RangeFilter = '7d' | '30d' | '90d';
 const SOURCE_BADGE: Record<string, { label: string; kind: BadgeKind }> = {
   admin: { label: 'Yönetici', kind: 'info' },
   user: { label: 'İşletme sahibi', kind: 'ok' },
+  cron: { label: 'Otomatik görev', kind: 'ghost' },
 };
 
+// Actions written by newer routes that have no entry in the shared
+// ACTION_LABELS map yet — without these the viewer printed the raw key
+// (e.g. "owner.restaurant.update") as the row title.
+const EXTRA_ACTION_LABELS: Record<string, string> = {
+  'admin.audits.categories.create': 'Denetim kategorisi oluşturuldu',
+  'admin.audits.categories.update': 'Denetim kategorisi güncellendi',
+  'admin.audits.categories.delete': 'Denetim kategorisi silindi',
+  'admin.audits.templates.create': 'Denetim şablonu oluşturuldu',
+  'admin.audits.templates.update': 'Denetim şablonu güncellendi',
+  'admin.audits.templates.delete': 'Denetim şablonu silindi',
+  'admin.audits.templates.publish': 'Denetim şablonu yayınlandı',
+  'admin.audits.templates.unpublish': 'Denetim şablonu yayından kaldırıldı',
+  'admin.customers.hard_delete': 'Müşteri kaydı kalıcı olarak silindi',
+  'admin.impersonate.start': 'İşletme sahibi gözünden görüntüleme başladı',
+  'admin.impersonate.end': 'İşletme sahibi gözünden görüntüleme bitti',
+  'admin.members.update': 'İşletme sahibi güncellendi',
+  'admin.members.hard_delete': 'İşletme sahibi kalıcı olarak silindi',
+  'admin.newsletters.trigger': 'Bülten gönderimi elle başlatıldı',
+  'admin.restaurants.menu_settings': 'İşletme menü erişimi değiştirildi',
+  'admin.restaurants.menu_theme_update': 'İşletme menü teması güncellendi',
+  'cron.account.scheduled_delete': 'Planlanan hesap silme uygulandı',
+  'owner.account.deletion_scheduled': 'Hesap silme planlandı',
+  'owner.account.deletion_canceled': 'Hesap silme talebi iptal edildi',
+  'owner.account.security_update': 'Hesap güvenlik ayarları güncellendi',
+  'owner.google.disconnect': 'Google bağlantısı kaldırıldı',
+  'owner.restaurant.update': 'İşletme bilgileri güncellendi',
+  'owner.team.invite': 'Ekip üyesi davet edildi',
+  'owner.team.update': 'Ekip üyesi güncellendi',
+  'owner.team.remove': 'Ekip üyesi çıkarıldı',
+  'restaurant.delete': 'İşletme silindi',
+};
+
+function describeAction(action: string): string {
+  const label = actionLabel(action, 'tr');
+  return label !== action ? label : EXTRA_ACTION_LABELS[action] ?? action;
+}
+
+// §46 — render in the business display timezone, not the device timezone.
+const DATE_FORMAT = new Intl.DateTimeFormat('tr-TR', {
+  timeZone: resolveDisplayTimeZone(),
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
 function dateLabel(iso: string): string {
-  return new Date(iso).toLocaleString('tr-TR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '—' : DATE_FORMAT.format(d);
 }
 
 export default function AdminAuditLogsPage() {
@@ -138,7 +182,7 @@ export default function AdminAuditLogsPage() {
       const res = await fetch(`/api/admin/audit-logs?${buildQuery().toString()}`);
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        if (res.status === 403) setError('Yetkiniz yok (audit_logs:read).');
+        if (res.status === 403) setError('Denetim kayıtlarını görme yetkin yok.');
         else setError(j.error || 'Yükleme başarısız.');
         return;
       }
@@ -168,7 +212,7 @@ export default function AdminAuditLogsPage() {
           const retry = j.retryAfter ?? 60;
           setError(`Çok sık indiriyorsun. ${retry} sn sonra tekrar dene.`);
         } else if (res.status === 403) {
-          setError('Yetkiniz yok (audit_logs:read).');
+          setError('Denetim kayıtlarını görme yetkin yok.');
         } else {
           setError(j.error || 'CSV indirilemedi.');
         }
@@ -216,7 +260,7 @@ export default function AdminAuditLogsPage() {
         eyebrow="SUPERADMIN · DENETİM KAYITLARI"
         eyebrowColor="#C6F24E"
         title="Denetim kayıtları"
-        description="Tüm panel aksiyonlarının zaman damgalı, IP'siz, PII-redacted log'u. Filtre ile ara, tıkla detayı gör, CSV indir."
+        description="Paneldeki tüm işlemlerin zaman damgalı kaydı. IP adresi tutulmaz, e-posta ve telefon gizlenir. Filtrele, ayrıntıyı aç, CSV olarak indir."
         actions={
           <>
             <button onClick={fetchData} disabled={loading} className="bz-btn-ghost">
@@ -248,10 +292,9 @@ export default function AdminAuditLogsPage() {
         <div className="flex items-start gap-2">
           <Clock size={14} strokeWidth={2} className="shrink-0 mt-0.5" />
           <div>
-            <strong>Veri saklama (KVKK §13.9):</strong>{' '}
-            Audit log kayıtları 2 yıl boyunca saklanır (legitimate interest — hesap güvenliği +
-            KVKK soruşturma trail). PII alanları (e-posta / telefon) viewer&apos;da otomatik mask
-            edilir. Raw veriye erişim yalnız DB direct sorgusuyla mümkündür.
+            <strong>Veri saklama (KVKK):</strong>{' '}
+            Denetim kayıtları hesap güvenliği ve olası KVKK incelemeleri için 2 yıl saklanır.
+            E-posta ve telefon gibi kişisel veriler bu ekranda otomatik olarak gizlenir.
           </div>
         </div>
       </AlertBanner>
@@ -304,7 +347,7 @@ export default function AdminAuditLogsPage() {
               onChange={(e) => setActionInput(e.target.value)}
               placeholder="Aksiyon ara (örn. user.delete, permission.grant)"
               aria-label="Aksiyon ara"
-              className="w-full rounded-xl border border-[#EDEDED] bg-white py-2 pl-9 pr-3 text-xs font-medium text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#C6F24E]"
+              className="bz-input w-full pl-9"
             />
           </div>
 
@@ -367,7 +410,7 @@ export default function AdminAuditLogsPage() {
                       </div>
                     )}
                     <div className="mt-2 text-[12px] font-medium text-[#0A0A0A]">
-                      {actionLabel(entry.action, 'tr')}
+                      {describeAction(entry.action)}
                     </div>
                     <div className="mt-1 flex items-center gap-2 flex-wrap text-[11px] text-[#737373]">
                       <span className="font-mono text-[#A3A3A3]">{entry.action}</span>
@@ -386,9 +429,10 @@ export default function AdminAuditLogsPage() {
                       <button
                         type="button"
                         onClick={() => setExpandedRow(isExpanded ? null : entry.id)}
+                        aria-expanded={isExpanded}
                         className="mt-2 text-[11px] text-[#525252] hover:text-[#0A0A0A] underline"
                       >
-                        {isExpanded ? 'Payload gizle' : 'Payload göster'}
+                        {isExpanded ? 'Ayrıntıyı gizle' : 'Ayrıntıyı göster'}
                       </button>
                     )}
                     {isExpanded && entry.payload != null && (
@@ -421,7 +465,7 @@ export default function AdminAuditLogsPage() {
                       Hedef
                     </th>
                     <th className="px-4 py-3 text-right" style={{ width: 100 }}>
-                      Payload
+                      Ayrıntı
                     </th>
                   </tr>
                 </thead>
@@ -431,8 +475,8 @@ export default function AdminAuditLogsPage() {
                     const sourceMeta =
                       SOURCE_BADGE[entry.actorSource] || { label: entry.actorSource, kind: 'ghost' as BadgeKind };
                     return (
-                      <>
-                        <tr key={entry.id} className="hover:bg-[#FAFAFA]/60">
+                      <Fragment key={entry.id}>
+                        <tr className="hover:bg-[#FAFAFA]/60">
                           <td className="px-4 py-3 text-[12px] text-[#525252] tabular-nums">
                             {dateLabel(entry.createdAt)}
                           </td>
@@ -454,7 +498,7 @@ export default function AdminAuditLogsPage() {
                           <td className="px-4 py-3">
                             <div className="flex flex-col gap-0.5">
                               <span className="text-[13px] font-medium text-[#0A0A0A]">
-                                {actionLabel(entry.action, 'tr')}
+                                {describeAction(entry.action)}
                               </span>
                               <span className="text-[10px] text-[#A3A3A3] font-mono">
                                 {entry.action}
@@ -477,6 +521,7 @@ export default function AdminAuditLogsPage() {
                                 onClick={() =>
                                   setExpandedRow(isExpanded ? null : entry.id)
                                 }
+                                aria-expanded={isExpanded}
                                 className="text-[11px] text-[#525252] hover:text-[#0A0A0A] underline"
                               >
                                 {isExpanded ? 'Gizle' : 'Göster'}
@@ -487,7 +532,7 @@ export default function AdminAuditLogsPage() {
                           </td>
                         </tr>
                         {isExpanded && entry.payload != null && (
-                          <tr key={`${entry.id}-payload`} className="bg-[#FAFAFA]/40">
+                          <tr className="bg-[#FAFAFA]/40">
                             <td colSpan={6} className="px-4 py-3">
                               <pre
                                 className="overflow-x-auto rounded-lg bg-white p-3 text-[11px] text-[#262626] border border-[#EDEDED]"
@@ -498,7 +543,7 @@ export default function AdminAuditLogsPage() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>
@@ -506,11 +551,11 @@ export default function AdminAuditLogsPage() {
             </div>
 
             {pagination && (
-              <div className="flex items-center justify-between gap-3 border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-3">
+              <div className="flex flex-col items-start gap-3 border-t border-[#EDEDED] bg-[#FAFAFA] px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="pulse-eyebrow text-[#6B7280]">
                   Sayfa {data?.page ?? 1} / {totalPages} · Toplam {data?.total ?? 0}
                 </p>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center gap-1">
                   <button
                     onClick={() => setPage(Math.max(1, page - 1))}
                     disabled={page <= 1 || loading}
