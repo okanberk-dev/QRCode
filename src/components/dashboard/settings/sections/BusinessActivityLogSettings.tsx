@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Activity, ChevronDown, ChevronRight, Clock, Loader2, ShieldCheck } from 'lucide-react';
 import { AlertBanner, EmptyState } from '@/components/ui';
-import { actionLabel } from '@/lib/audit-log';
+import { ACTION_LABELS } from '@/lib/audit-log';
+import { resolveDisplayTimeZone } from '@/lib/timezone';
 import type { Locale } from '@/lib/translations';
 
 // Stage A3 §38.95 — owner KVKK transparency surface.
@@ -22,30 +23,104 @@ interface AuditEntry {
 
 interface Props {
   locale: Locale;
+  /** Owner's businesses — resolves `restaurantId` in a row's details to a name. */
+  restaurants?: Array<{ id: string; name: string }>;
+}
+
+const PAGE_SIZE = 20;
+
+// Package switches an admin can flip (`admin.restaurants.feature_access`).
+const FEATURE_LABELS: Record<string, { tr: string; en: string }> = {
+  googleReviewManagementEnabled: { tr: 'Google yorum yönetimi', en: 'Google review management' },
+  pulseAiEnabled: { tr: 'Pulse AI', en: 'Pulse AI' },
+  aiAnalyticsEnabled: { tr: 'AI analitik', en: 'AI analytics' },
+  externalPlatformsEnabled: { tr: 'Google dışı platformlar', en: 'Non-Google platforms' },
+  menuEnabled: { tr: 'Menü', en: 'Menu' },
+  menuPublished: { tr: 'Menü yayını', en: 'Menu publishing' },
+  surveysEnabled: { tr: 'Anketler', en: 'Surveys' },
+};
+
+/** Readable title; unknown action codes get a neutral label, never the raw code. */
+function entryTitle(action: string, isTr: boolean): string {
+  const known = ACTION_LABELS[action];
+  if (known) return isTr ? known.tr : known.en;
+  return isTr ? 'Hesap işlemi' : 'Account change';
+}
+
+/** The API builds actor labels in Turkish ("Sen", "admin (Yönetici)"). */
+function actorText(entry: AuditEntry, isTr: boolean): string {
+  if (entry.actorSource === 'user') return isTr ? 'Sen' : 'You';
+  const match = /^(.*) \(Yönetici\)$/.exec(entry.actorLabel);
+  const base = isTr ? 'Buaze yöneticisi' : 'Buaze admin';
+  return match ? `${base} · ${match[1]}` : base;
+}
+
+/** Plain-language summary of a row's payload (no raw JSON / field codes). */
+function detailLines(
+  payload: unknown,
+  isTr: boolean,
+  restaurantName: (id: string) => string | null,
+): string[] {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return [];
+  const p = payload as Record<string, unknown>;
+  const lines: string[] = [];
+  if (typeof p.restaurantId === 'string') {
+    const name = restaurantName(p.restaurantId);
+    if (name) lines.push(`${isTr ? 'İşletme' : 'Business'}: ${name}`);
+  }
+  if (p.changed && typeof p.changed === 'object' && !Array.isArray(p.changed)) {
+    for (const [key, value] of Object.entries(p.changed as Record<string, unknown>)) {
+      const label = FEATURE_LABELS[key];
+      const to = value && typeof value === 'object' ? (value as { to?: unknown }).to : undefined;
+      if (label && typeof to === 'boolean') {
+        lines.push(
+          `${isTr ? label.tr : label.en}: ${to ? (isTr ? 'açıldı' : 'turned on') : isTr ? 'kapatıldı' : 'turned off'}`,
+        );
+      }
+    }
+    if (lines.length === 0 || (lines.length === 1 && typeof p.restaurantId === 'string')) {
+      const n = Object.keys(p.changed as Record<string, unknown>).length;
+      if (n > 0) lines.push(isTr ? `${n} ayar değişti` : `${n} setting(s) changed`);
+    }
+  }
+  if (Array.isArray(p.fields) && p.fields.length > 0) {
+    lines.push(isTr ? `${p.fields.length} alan güncellendi` : `${p.fields.length} field(s) updated`);
+  }
+  if (p.impersonation && typeof p.impersonation === 'object') {
+    lines.push(
+      isTr
+        ? 'Bir Buaze yöneticisi senin hesabın üzerinden yaptı.'
+        : 'A Buaze admin made this while viewing your account.',
+    );
+  }
+  return lines;
 }
 
 function relativeTime(iso: string, isTr: boolean): string {
   const ms = Date.now() - new Date(iso).getTime();
   const min = Math.floor(ms / 60000);
   if (min < 1) return isTr ? 'şimdi' : 'just now';
-  if (min < 60) return `${min} ${isTr ? 'dk önce' : 'min ago'}`;
+  if (min < 60) return isTr ? `${min} dk önce` : `${min} min ago`;
   const h = Math.floor(min / 60);
-  if (h < 24) return `${h} ${isTr ? 'sa önce' : 'h ago'}`;
+  if (h < 24) return isTr ? `${h} sa önce` : `${h}h ago`;
   const d = Math.floor(h / 24);
-  if (d < 30) return `${d} ${isTr ? 'gün önce' : 'd ago'}`;
+  if (d < 30) return isTr ? `${d} gün önce` : `${d}d ago`;
   return new Date(iso).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+    timeZone: resolveDisplayTimeZone(),
   });
 }
 
-export function BusinessActivityLogSettings({ locale }: Props) {
+export function BusinessActivityLogSettings({ locale, restaurants = [] }: Props) {
   const isTr = locale === 'tr';
   const [data, setData] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const restaurantName = (id: string) => restaurants.find((r) => r.id === id)?.name ?? null;
 
   useEffect(() => {
     let cancelled = false;
@@ -72,16 +147,11 @@ export function BusinessActivityLogSettings({ locale }: Props) {
 
   return (
     <div className="space-y-4">
-      <AlertBanner kind="info">
-        <div className="flex items-start gap-2">
-          <ShieldCheck size={14} strokeWidth={2} className="shrink-0 mt-0.5" />
-          <div>
-            <strong>{isTr ? 'KVKK şeffaflık trail\'i' : 'KVKK transparency trail'}:</strong>{' '}
-            {isTr
-              ? 'Hesabınla ilgili tüm aksiyonlar — sen yaptığın veya admin tarafından yapılan — son 2 yıl boyunca burada görünür. E-posta ve telefon alanları otomatik mask edilir.'
-              : 'All actions on your account — yours or admin-initiated — are listed here for the last 2 years. Email and phone fields are automatically masked.'}
-          </div>
-        </div>
+      <AlertBanner kind="info" icon={<ShieldCheck size={14} strokeWidth={2} />}>
+        <strong>{isTr ? 'KVKK şeffaflığı' : 'KVKK transparency'}:</strong>{' '}
+        {isTr
+          ? 'Hesabınla ilgili işlemler — kendi yaptıkların ve Buaze yöneticilerinin yaptıkları — son 2 yıl boyunca burada listelenir. E-posta ve telefon bilgileri gizlenerek gösterilir.'
+          : 'Changes to your account — yours and those made by Buaze administrators — are listed here for the last 2 years. Email and phone details are shown masked.'}
       </AlertBanner>
 
       {error && (
@@ -101,15 +171,18 @@ export function BusinessActivityLogSettings({ locale }: Props) {
           title={isTr ? 'Henüz hesap aktivitesi yok' : 'No account activity yet'}
           body={
             isTr
-              ? 'Hesabını oluşturduğundan bu yana audit log boş. Şifre değişimi, profil güncelleme ve admin aksiyonları burada listelenir.'
-              : 'No audit entries since account creation. Password changes, profile updates and admin actions appear here.'
+              ? 'Hesabını oluşturduğundan bu yana kayıtlı bir işlem yok. Şifre değişikliği, profil güncellemesi ve yönetici işlemleri burada listelenir.'
+              : 'Nothing recorded since your account was created. Password changes, profile updates and admin actions appear here.'
           }
         />
       ) : (
+        <>
         <ol className="space-y-2">
-          {data.map((entry) => {
+          {data.slice(0, visible).map((entry) => {
             const isExpanded = expandedId === entry.id;
-            const hasPayload = entry.payload != null;
+            const details = detailLines(entry.payload, isTr, restaurantName);
+            const hasDetails = details.length > 0;
+            const detailsId = `activity-details-${entry.id}`;
             return (
               <li
                 key={entry.id}
@@ -117,28 +190,25 @@ export function BusinessActivityLogSettings({ locale }: Props) {
               >
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[13px] font-semibold text-[#0A0A0A]">
-                        {actionLabel(entry.action, isTr ? 'tr' : 'en')}
-                      </span>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[#FAFAFA] border border-[#EDEDED] px-2 py-0.5 text-[10px] font-mono text-[#737373]">
-                        {entry.action}
-                      </span>
-                    </div>
+                    <span className="text-[13px] font-semibold text-[#0A0A0A]">
+                      {entryTitle(entry.action, isTr)}
+                    </span>
                     <p className="mt-1 text-[11px] text-[#737373]">
                       <span className="inline-flex items-center gap-1">
                         <Clock size={11} strokeWidth={2} />
                         {relativeTime(entry.createdAt, isTr)}
                       </span>
                       <span className="mx-1.5 text-[#A3A3A3]">·</span>
-                      {entry.actorLabel}
+                      {actorText(entry, isTr)}
                     </p>
                   </div>
-                  {hasPayload && (
+                  {hasDetails && (
                     <button
                       type="button"
                       onClick={() => setExpandedId(isExpanded ? null : entry.id)}
-                      className="text-[11px] text-[#737373] hover:text-[#0A0A0A] flex items-center gap-1"
+                      aria-expanded={isExpanded}
+                      aria-controls={detailsId}
+                      className="-my-2 -mr-2 inline-flex min-h-[40px] items-center gap-1 rounded-lg px-2 text-[11px] text-[#737373] hover:text-[#0A0A0A]"
                     >
                       {isExpanded ? (
                         <ChevronDown size={12} strokeWidth={2} />
@@ -149,18 +219,34 @@ export function BusinessActivityLogSettings({ locale }: Props) {
                     </button>
                   )}
                 </div>
-                {isExpanded && hasPayload && (
-                  <pre
-                    className="mt-3 overflow-x-auto rounded-lg bg-[#FAFAFA] p-2.5 text-[11px] text-[#525252] border border-[#EDEDED]"
-                    style={{ fontFamily: 'var(--font-mono)' }}
+                {isExpanded && hasDetails && (
+                  <ul
+                    id={detailsId}
+                    className="mt-3 space-y-1 rounded-lg border border-[#EDEDED] bg-[#FAFAFA] px-3 py-2.5 text-[12px] leading-[1.5] text-[#525252]"
                   >
-                    {JSON.stringify(entry.payload, null, 2)}
-                  </pre>
+                    {details.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
                 )}
               </li>
             );
           })}
         </ol>
+        {data.length > visible && (
+          <div className="flex justify-center pt-1">
+            <button
+              type="button"
+              onClick={() => setVisible((v) => v + PAGE_SIZE)}
+              className="bz-btn-ghost min-h-[40px] text-[12.5px]"
+            >
+              {isTr
+                ? `Daha fazla göster (${data.length - visible} kayıt daha)`
+                : `Show more (${data.length - visible} more)`}
+            </button>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

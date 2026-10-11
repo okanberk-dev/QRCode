@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Check, CreditCard, Download, FileText, Loader2, Lock, Receipt } from 'lucide-react';
 import { AlertBanner, Badge, Eyebrow, Modal } from '@/components/ui';
 import type { PublicPlan } from '@/lib/subscription-plans';
+import { PLAN_LABELS } from '@/lib/constants';
 
 interface BillingReadOnlyCardProps {
   isTr: boolean;
@@ -100,6 +101,11 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // The summary's planLabel follows the user's saved language, not the page
+  // URL — resolve the legacy plan bucket label for the language on screen.
+  const planName = summary
+    ? (summary.tier?.name ?? PLAN_LABELS[summary.plan]?.[isTr ? 'tr' : 'en'] ?? summary.planLabel)
+    : isTr ? 'Deneme' : 'Trial';
   // §44 Dodo Payments self-service — portal redirect is the only inline
   // action; cancel + reactivate are handled inside Dodo's customer portal
   // (subscription management UI is full-featured there). This keeps Buaze
@@ -241,8 +247,8 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
       <p className="mt-1 mb-5 text-[13px] text-[#737373] leading-[1.55] flex items-center gap-1.5">
         <Lock size={12} className="text-[#737373]" strokeWidth={2} />
         {isTr
-          ? 'Faturalandırma bilgileri şu anda yalnızca admin panelinden yönetilmektedir.'
-          : 'Billing information is currently managed only from the admin panel.'}
+          ? 'Plan değişikliği ve fatura bilgileri için bizimle iletişime geçebilirsin.'
+          : 'Contact us to change your plan or update billing details.'}
       </p>
 
       {error && (
@@ -271,7 +277,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
             {isTr ? 'MEVCUT PLAN' : 'CURRENT PLAN'}
           </p>
           <h3 className="bz-h-tight-2 mt-1.5 text-[36px] sm:text-[40px] text-white">
-            {summary?.planLabel || (isTr ? 'Trial' : 'Trial')}
+            {planName}
           </h3>
           <p className="mt-1.5 text-[13px] text-[#A3A3A3]">
             {summary?.status === 'past_due'
@@ -374,8 +380,8 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
                 </button>
                 <span className="text-[11px] text-[#A3A3A3]">
                   {isTr
-                    ? 'Paket seç ve Dodo Payments ile güvenli ödemeye geç.'
-                    : 'Pick a plan and continue to secure checkout via Dodo Payments.'}
+                    ? 'Paketini seç, güvenli ödeme sayfasına geç.'
+                    : 'Pick a plan and continue to secure checkout.'}
                 </span>
               </>
             )}
@@ -406,7 +412,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
               </p>
             )}
             <div className="mt-3">
-              <Badge kind="ghost">{isTr ? 'Yalnızca admin' : 'Admin only'}</Badge>
+              <Badge kind="ghost">{isTr ? 'Destek üzerinden' : 'Via support'}</Badge>
             </div>
           </div>
 
@@ -454,7 +460,7 @@ export default function BillingReadOnlyCard({ isTr }: BillingReadOnlyCardProps) 
           <div className="flex items-center justify-center gap-2 p-8 text-[13px] text-[#737373]">
             <FileText size={14} className="text-[#A3A3A3]" strokeWidth={2} />
             {isTr
-              ? 'Henüz fatura yok. İlk faturanız oluşturulduğunda burada görünür.'
+              ? 'Henüz fatura yok. İlk faturan oluşturulduğunda burada görünür.'
               : 'No invoices yet. Your first invoice will appear here.'}
           </div>
         ) : (

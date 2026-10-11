@@ -2,7 +2,6 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Megaphone } from 'lucide-react';
-import { verifyJwt } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import type { Locale } from '@/lib/translations';
 import { Badge, EmptyState, PageHeader } from '@/components/ui';
@@ -30,11 +29,15 @@ export default async function OwnerAnnouncementsPage({
   const { locale } = await params;
   const isTr = locale === 'tr';
 
+  // The dashboard layout already gates this segment (owner session, or an
+  // admin viewing owner pages with admin_token only). Announcements are not
+  // user-specific, so this defensive check only bounces visitors without
+  // any panel cookie — it used to send admin-only sessions to the owner
+  // login page.
   const cookieStore = await cookies();
-  const token = cookieStore.get('user_token')?.value;
-  if (!token) redirect(`/${locale}/auth/login`);
-  const payload = await verifyJwt(token);
-  if (!payload) redirect(`/${locale}/auth/login`);
+  const userToken = cookieStore.get('user_token')?.value;
+  const adminToken = cookieStore.get('admin_token')?.value;
+  if (!userToken && !adminToken) redirect(`/${locale}/auth/login`);
 
   // Tenant-scope: show platform announcements targeting this user's locale
   // or "all". Read-only — owners can't author. Author UI lives in /admin.
@@ -77,7 +80,7 @@ export default async function OwnerAnnouncementsPage({
     if (isTr) {
       if (s === 'critical' || s === 'danger') return 'Kritik';
       if (s === 'warning' || s === 'warn') return 'Önemli';
-      if (s === 'success') return 'Bilgi';
+      if (s === 'success') return 'Güncelleme';
       return 'Bilgi';
     }
     if (s === 'critical' || s === 'danger') return 'Critical';

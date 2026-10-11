@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, Calendar, Crown, Loader2, MessageSquareText, Reply, Store } from "lucide-react";
 import type { Locale } from "@/lib/translations";
 import { Avatar, Badge, Eyebrow } from "@/components/ui";
+import { resolveDisplayTimeZone } from "@/lib/timezone";
 
 interface OverviewData {
   email: string;
@@ -163,12 +164,13 @@ export function AccountOverviewCard({ locale, profile }: AccountOverviewCardProp
   const memberSince = new Date(data.createdAt).toLocaleDateString(isTr ? "tr-TR" : "en-US", {
     year: "numeric",
     month: "long",
+    timeZone: resolveDisplayTimeZone(),
   });
   const numberFmt = new Intl.NumberFormat(isTr ? "tr-TR" : "en-US");
 
   const stats: Array<{ label: string; value: string; icon: React.ReactNode; sublabel?: string }> = [
     {
-      label: isTr ? "Aktif işletme" : "Active business",
+      label: isTr ? "Aktif işletme" : "Active businesses",
       value: numberFmt.format(data.restaurantsActive),
       icon: <Store size={14} strokeWidth={2} />,
     },

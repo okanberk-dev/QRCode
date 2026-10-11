@@ -419,8 +419,8 @@ export default function QrClient({ initialRestaurants }: QrClientProps) {
         title={isTr ? 'QR kodları' : 'QR codes'}
         description={
           isTr
-            ? '4–5 yıldız veren müşteri seçtiğin platforma yönlendirilir; düşük puan dahili formda kalır.'
-            : 'Customers giving 4–5 stars route to the platform you choose; lower ratings stay in the private form.'
+            ? 'QR kodunu okutan müşteri puan verir; yüksek puanda seçtiğin yorum platformu önerilir. Her müşteri yorumunu istediği yerde yazabilir.'
+            : 'Customers who scan the QR give a rating; with a high rating your chosen review platform is suggested. Every customer can still post their review wherever they like.'
         }
         actions={headerActions}
       />

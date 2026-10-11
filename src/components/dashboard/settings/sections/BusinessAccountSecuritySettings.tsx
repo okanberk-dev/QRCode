@@ -29,8 +29,8 @@ interface SessionsResponse {
  * page-account.jsx "3 cihaz · macOS, iOS, Chrome" özet pattern. Pragmatik
  * heuristic — UA-Parser-JS gibi bir lib eklenmedi (CLAUDE.md §7).
  */
-function parseUserAgentLabel(ua: string | null): { device: string; browser: string } {
-  if (!ua) return { device: 'Bilinmiyor', browser: '—' };
+function parseUserAgentLabel(ua: string | null, isTr = true): { device: string; browser: string } {
+  if (!ua) return { device: isTr ? 'Bilinmiyor' : 'Unknown', browser: '—' };
   // OS
   let device = 'Web';
   if (/iPhone|iPad/i.test(ua)) device = 'iOS';
@@ -103,14 +103,14 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
       if (!res.ok) return;
       const data = (await res.json()) as SessionsResponse;
       const devices = Array.from(
-        new Set(data.sessions.map((s) => parseUserAgentLabel(s.userAgent).device)),
+        new Set(data.sessions.map((s) => parseUserAgentLabel(s.userAgent, isTr).device)),
       ).slice(0, 3);
       setSessionsSummary({ count: data.sessions.length, devices });
       setSessions(data.sessions);
     } catch {
       // Silent fail — summary opsiyonel görsel
     }
-  }, []);
+  }, [isTr]);
 
   useEffect(() => {
     loadSessionsSummary();
@@ -147,7 +147,7 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
       const next = sessions.filter((s) => s.id !== id);
       setSessions(next);
       const devices = Array.from(
-        new Set(next.map((s) => parseUserAgentLabel(s.userAgent).device)),
+        new Set(next.map((s) => parseUserAgentLabel(s.userAgent, isTr).device)),
       ).slice(0, 3);
       setSessionsSummary({ count: next.length, devices });
     } catch {
@@ -172,7 +172,7 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
         const data = (await refresh.json()) as SessionsResponse;
         setSessions(data.sessions);
         const devices = Array.from(
-          new Set(data.sessions.map((s) => parseUserAgentLabel(s.userAgent).device)),
+          new Set(data.sessions.map((s) => parseUserAgentLabel(s.userAgent, isTr).device)),
         ).slice(0, 3);
         setSessionsSummary({ count: data.sessions.length, devices });
       }
@@ -356,7 +356,7 @@ export function BusinessAccountSecuritySettings({ locale = "tr" }: BusinessAccou
           ) : (
             <ol className="flex flex-col divide-y divide-[#EDEDED]">
               {sessions.map((s) => {
-                const ua = parseUserAgentLabel(s.userAgent);
+                const ua = parseUserAgentLabel(s.userAgent, isTr);
                 const Icon = ua.device === 'iOS' || ua.device === 'Android' ? Smartphone : ua.device === 'Web' ? Globe : Monitor;
                 return (
                   <li key={s.id} className="flex items-center gap-3 py-3">

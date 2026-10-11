@@ -5,6 +5,7 @@ import { Book, ExternalLink, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui";
 import type { Locale } from "@/lib/translations";
 import { LEGAL_DOCUMENT_KEYS, LEGAL_DOCUMENT_LABELS } from "@/lib/legal/keys";
+import { resolveDisplayTimeZone } from "@/lib/timezone";
 import { SettingsCard } from "../SettingsCard";
 
 interface BusinessLegalSettingsProps {
@@ -85,8 +86,8 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
         title={isTr ? "Yasal metinler" : "Legal documents"}
         description={
           isTr
-            ? "Aşağıdaki sözleşme ve onay metinleri Buaze tarafından merkezi yönetilir; tüm işletmelerinde aynı sürüm aktiftir. Açmak için kart üzerine tıkla."
-            : "These documents are centrally managed by Buaze and run on every location with the same version. Click a card to view."
+            ? "Aşağıdaki sözleşme ve onay metinleri Buaze tarafından merkezi yönetilir; tüm işletmelerinde aynı sürüm geçerlidir. Okumak için karta tıkla (yeni sekmede açılır)."
+            : "These documents are managed centrally by Buaze; the same version applies to all your businesses. Click a card to read it (opens in a new tab)."
         }
       >
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -119,7 +120,7 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
                   )}
                   {d.effectiveAt && (
                     <span className="hidden sm:inline">
-                      · {new Date(d.effectiveAt).toLocaleDateString(isTr ? "tr-TR" : "en-US")}
+                      · {new Date(d.effectiveAt).toLocaleDateString(isTr ? "tr-TR" : "en-US", { timeZone: resolveDisplayTimeZone() })}
                     </span>
                   )}
                 </div>
@@ -138,8 +139,8 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
         title={isTr ? "Müşteri akışı" : "Customer flow"}
         description={
           isTr
-            ? "Yorum formunu açan müşteriden KVKK aydınlatma + açık rıza onayı toplanır. Pazarlama izni opt-in (KVKK + ETK gereği). Her onay versiyon numarasıyla loglanır."
-            : "When a customer opens the review form, KVKK + explicit consent are collected. Marketing consent is opt-in. Each consent is logged with the version number."
+            ? "Yorum formunu dolduran müşteriden KVKK aydınlatma metni ve açık rıza onayı alınır. Pazarlama izni isteğe bağlıdır. Her onay, metnin sürüm numarasıyla birlikte kaydedilir."
+            : "Customers who fill in the review form accept the KVKK privacy notice and explicit consent. Marketing consent is optional. Each consent is recorded together with the document version."
         }
       >
         <ul className="space-y-2 text-[13px] leading-[1.6] text-[#525252]">
@@ -147,24 +148,24 @@ export function BusinessLegalSettings({ locale = "tr" }: BusinessLegalSettingsPr
             <span className="text-[#A3A3A3]">·</span>
             <span>
               {isTr
-                ? "KVKK aydınlatma + açık rıza submit-gate olarak işler."
-                : "KVKK + explicit consent are required to submit."}
+                ? "Müşteri, aydınlatma metnini ve açık rızayı onaylamadan formu gönderemez."
+                : "The form can't be sent until the customer accepts the privacy notice and explicit consent."}
             </span>
           </li>
           <li className="flex gap-2">
             <span className="text-[#A3A3A3]">·</span>
             <span>
               {isTr
-                ? "Pazarlama izni opt-in: müşteri kendisi işaretler, ETK m.6 + İYS uyumlu."
-                : "Marketing is opt-in: customer ticks it, ETK Art. 6 + IYS compliant."}
+                ? "Pazarlama izni kutusu boş gelir; yalnızca müşteri kendisi işaretlerse izin verilmiş olur (Elektronik Ticaret Kanunu ve İYS'ye uygun)."
+                : "The marketing consent box starts unticked; consent is given only if the customer ticks it (in line with Turkish e-commerce law and IYS)."}
             </span>
           </li>
           <li className="flex gap-2">
             <span className="text-[#A3A3A3]">·</span>
             <span>
               {isTr
-                ? "IP retention 90 gün — KVKK veri minimizasyonu ilkesi."
-                : "IP retention is 90 days — KVKK data minimisation."}
+                ? "Müşterilerin IP adresleri 90 gün sonra silinir (KVKK veri en aza indirme ilkesi)."
+                : "Customer IP addresses are deleted after 90 days (KVKK data minimisation)."}
             </span>
           </li>
         </ul>

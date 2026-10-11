@@ -49,8 +49,8 @@ const TONE_OPTIONS: Array<{ value: Tone; labelTr: string; labelEn: string; descT
     value: "apologetic",
     labelTr: "Özür ağırlıklı",
     labelEn: "Apologetic",
-    descTr: "İçten özür + sorumluluk kabulü + telafi. Düşük puan akışları için.",
-    descEn: "Sincere apology + responsibility + remediation. For low-rating flows.",
+    descTr: "İçten özür + sorumluluk kabulü + telafi. Düşük puanlı yorumlar için uygun.",
+    descEn: "Sincere apology + responsibility + remediation. Best for low-rating reviews.",
   },
 ];
 
@@ -69,7 +69,7 @@ function describeAiSettingsError(code: unknown, isTr: boolean): string {
     case "pulse_ai_disabled_by_admin":
       return isTr
         ? "Pulse AI bu işletme için Buaze tarafından kapatıldı."
-        : "Pulse AI is disabled for this location by Buaze.";
+        : "Pulse AI is turned off for this location by Buaze.";
     case "not_found":
       return isTr ? "İşletme bulunamadı." : "Business not found.";
     case "invalid_tone":
@@ -173,8 +173,8 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
     return (
       <AlertBanner kind="info">
         {isTr
-          ? "Henüz restoran yok. Önce bir restoran ekle, ardından Pulse AI ayarları burada görünür."
-          : "No restaurants yet. Add a restaurant first; Pulse AI settings will appear here."}
+          ? "Henüz işletme yok. Önce bir işletme ekle, ardından Pulse AI ayarları burada görünür."
+          : "No businesses yet. Add a business first; Pulse AI settings will appear here."}
       </AlertBanner>
     );
   }
@@ -183,8 +183,8 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
     <div className="space-y-5">
       <AlertBanner kind="info" icon={<Sparkles size={14} />}>
         {isTr
-          ? "Düşük puanlı (1-3 yıldız) yorum geldiğinde Pulse AI sizin için yanıt taslağı hazırlar. Onaylamadan göndermez. Yorum metni OpenAI'a iletilir — KVKK için müşteri rızanız mevcut olmalı."
-          : "When a low-rating (1-3 stars) review arrives, Pulse AI prepares a reply draft for you. It never sends without your approval. The review text is sent to OpenAI — your KVKK / GDPR consent must already cover this."}
+          ? "Yeni bir yorum geldiğinde Pulse AI senin için yanıt taslağı hazırlar; sen onaylamadan hiçbir şey gönderilmez. Taslak için yorum metni yapay zekâ hizmet sağlayıcımız OpenAI'a iletilir — müşteri aydınlatma metninin bunu kapsadığından emin ol."
+          : "When a new review arrives, Pulse AI prepares a reply draft for you; nothing is sent without your approval. To write the draft, the review text is sent to our AI provider OpenAI — make sure your customer privacy notice covers this."}
       </AlertBanner>
 
       {restaurants.map((r) => {
@@ -250,8 +250,8 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                   <div className="mt-4">
                     <AlertBanner kind="warn">
                       {isTr
-                        ? "Pulse AI bu işletme için admin tarafından kapalı. Taslaklar ve Google AI yardımcıları paket açılana kadar kullanılamaz."
-                        : "Pulse AI is disabled for this location by admin. Drafts and Google AI helpers are unavailable until the feature is enabled."}
+                        ? "Pulse AI bu işletme için Buaze tarafından kapalı. Taslaklar ve Google AI yardımcıları bu özellik paketine eklenene kadar kullanılamaz."
+                        : "Pulse AI is turned off for this location by Buaze. Drafts and Google AI helpers are unavailable until the feature is added to your package."}
                     </AlertBanner>
                   </div>
                 )}
@@ -277,8 +277,8 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                     </div>
                     <span className="block text-[12px] text-[#737373] mt-1 leading-relaxed">
                       {isTr
-                        ? "Yeni yorumlar geldiğinde Buaze otomatik taslak hazırlar; inbox'ı açtığınızda taslak hazır gelir. Arka plan görevi her saat eksik kalan taslakları tarar. Otomatik gönderim YOK — onayınız her zaman gerekir."
-                        : "When new reviews arrive, Buaze prepares the draft automatically; opens-ready in your inbox. A background job scans for missing drafts every hour. NO auto-send — your approval is always required."}
+                        ? "Yeni bir yorum geldiğinde taslak otomatik hazırlanır; Yorumlar sayfasını açtığında seni bekler. Eksik kalan taslaklar her saat tamamlanır. Otomatik gönderim yoktur — her yanıt senin onayınla gider."
+                        : "When a new review arrives, a draft is prepared automatically and waits for you on the Reviews page. Missing drafts are filled in every hour. Nothing is sent automatically — every reply needs your approval."}
                     </span>
                   </div>
                 </div>
@@ -305,8 +305,8 @@ export function BusinessPulseAiSettings({ restaurants, locale = "tr" }: Business
                     </div>
                     <span className="block text-[12px] text-[#737373] mt-1 leading-relaxed">
                       {isTr
-                        ? "Saat başı çalışan görev, Google'da yanıtlanmamış tüm yorumlara taslak hazırlar; sayfayı açtığınızda taslak içeride bekler. Sadece manuel onayınız sonrası Google'a gider."
-                        : "An hourly job prepares drafts for every unanswered Google review; opens-ready when you visit the page. Drafts are only sent to Google after your manual approval."}
+                        ? "Google'da yanıtlanmamış yorumlar için her saat taslak hazırlanır; Google Yorumları sayfasını açtığında seni bekler. Yanıt yalnızca sen onaylayınca Google'a gönderilir."
+                        : "Drafts are prepared every hour for unanswered Google reviews and wait for you on the Google Reviews page. A reply is posted to Google only after you approve it."}
                     </span>
                   </div>
                 </div>

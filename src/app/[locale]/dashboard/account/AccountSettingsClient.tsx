@@ -6,6 +6,7 @@ import {
   Bell,
   CreditCard,
   Download,
+  Loader2,
   ShieldCheck,
   ShieldQuestion,
   Sparkles,
@@ -144,6 +145,8 @@ export default function AccountSettingsClient({
   const [loading, setLoading] = useState(initialRestaurants === undefined);
   const skipFirstFetchRef = useRef(initialRestaurants !== undefined);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (skipFirstFetchRef.current) {
@@ -216,6 +219,60 @@ export default function AccountSettingsClient({
 
   const isTr = locale === "tr";
 
+  // Plan widget "Yönet" → billing tab, scrolled into view (the rail sits
+  // below the content until 2xl, so the tab switch alone was off-screen).
+  const openBillingSection = () => {
+    handleSectionChange("billing");
+    window.requestAnimationFrame(() => {
+      document.getElementById("section-billing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  // KVKK data export. A plain <form method="POST"> navigated the whole tab to
+  // the API response: fine for the file download, but the second click
+  // within an hour (rate limited) left the owner on a raw JSON error page.
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    setError(null);
+    setExportNotice(null);
+    try {
+      const res = await fetch("/api/account/export-data", { method: "POST" });
+      if (!res.ok) {
+        setError(
+          res.status === 429
+            ? isTr
+              ? "Veri dışa aktarımı saatte bir kez yapılabilir. Lütfen daha sonra tekrar dene."
+              : "You can export your data once an hour. Please try again later."
+            : isTr
+              ? "Veriler indirilemedi. Lütfen tekrar dene."
+              : "Could not export your data. Please try again.",
+        );
+        return;
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const fileName = /filename="([^"]+)"/.exec(disposition)?.[1] ?? "buaze-veri.json";
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(href), 1000);
+      setExportNotice(
+        isTr
+          ? "Verilerin indirildi. Bilgilendirme e-postası da gönderildi."
+          : "Your data was downloaded. We also sent you a confirmation email.",
+      );
+    } catch {
+      setError(isTr ? "Bağlantı hatası. Lütfen tekrar dene." : "Connection error. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // §38.51 — Header actions tasarım birebir parity. "Değişiklikleri kaydet"
   // header'da SKIP edildi (drift kabul, CLAUDE.md §38.51): mevcut akış
   // her-section-kendi-form paterni — generic header save tetikleyici hangi
@@ -237,29 +294,30 @@ export default function AccountSettingsClient({
               verir). Manager scope'lu admin → /admin/restaurants/[id], superadmin
               → /admin/dashboard. */}
           <AdminBackLink />
-          <form action="/api/account/export-data" method="POST" className="inline-flex">
-            {/*
-              Stage 80 §38.160 — Mobile (<sm) icon-only "Veri indir"; sm:+
-              text label görünür. 44px touch target garantisi mobile için
-              (`bz-touch-target`). Pulse §11 + WCAG 2.5.5 + §38.74 dense
-              chip exception (44×44 minimum action button mobile'da).
-            */}
-            <button
-              type="submit"
-              className="bz-btn bz-touch-target sm:min-h-0 sm:min-w-0"
-              title={
-                isTr
-                  ? 'KVKK / GDPR veri dışa aktarımı (saatte 1)'
-                  : 'KVKK / GDPR data export (1/hr)'
-              }
-              aria-label={isTr ? 'Veri indir' : 'Export data'}
-            >
-              <Download size={13} />
-              <span className="hidden sm:inline">
-                {isTr ? 'Veri indir' : 'Export data'}
-              </span>
-            </button>
-          </form>
+          {/*
+            Stage 80 §38.160 — Mobile (<sm) icon-only "Veri indir"; sm:+
+            text label görünür. 44px touch target garantisi mobile için
+            (`bz-touch-target`). Pulse §11 + WCAG 2.5.5 + §38.74 dense
+            chip exception (44×44 minimum action button mobile'da).
+          */}
+          <button
+            type="button"
+            onClick={() => void handleExport()}
+            disabled={exporting}
+            aria-busy={exporting}
+            className="bz-btn bz-touch-target sm:min-h-0 sm:min-w-0 disabled:opacity-60"
+            title={
+              isTr
+                ? 'Hesap verilerini indir (saatte bir kez)'
+                : 'Download your account data (once an hour)'
+            }
+            aria-label={isTr ? 'Veri indir' : 'Export data'}
+          >
+            {exporting ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+            <span className="hidden sm:inline">
+              {isTr ? 'Veri indir' : 'Export data'}
+            </span>
+          </button>
         </div>
       }
     />
@@ -279,6 +337,7 @@ export default function AccountSettingsClient({
         locale={locale}
         teamCount={teamCount}
         restaurantCount={restaurants.length}
+        onManage={openBillingSection}
       />
       <AccountInvoicesWidget locale={locale} />
     </>
@@ -303,6 +362,11 @@ export default function AccountSettingsClient({
       {error && (
         <AlertBanner kind="danger" onDismiss={() => setError(null)}>
           {error}
+        </AlertBanner>
+      )}
+      {exportNotice && (
+        <AlertBanner kind="success" onDismiss={() => setExportNotice(null)}>
+          {exportNotice}
         </AlertBanner>
       )}
 
@@ -396,8 +460,8 @@ export default function AccountSettingsClient({
         title={isTr ? "Hesap aktivitesi" : "Account activity"}
         description={
           isTr
-            ? "Hesabınla ilgili tüm aksiyonlar — kendi yaptığın veya admin tarafından yapılan. KVKK §13.9 transparency."
-            : "All actions on your account — yours or admin-initiated. KVKK §13.9 transparency."
+            ? "Hesabında yapılan işlemler — kendi yaptıkların ve Buaze yöneticilerinin yaptıkları."
+            : "Changes made to your account — by you and by Buaze administrators."
         }
         actions={
           <span className="text-[#737373]" aria-hidden="true">
@@ -405,19 +469,19 @@ export default function AccountSettingsClient({
           </span>
         }
       >
-        <BusinessActivityLogSettings locale={locale} />
+        <BusinessActivityLogSettings locale={locale} restaurants={restaurants} />
       </SettingsSection>
 
       {/* ÇALIŞMA ALANI */}
       <SettingsSection
         id="notifications"
         active={active === "notifications"}
-        eyebrow={isTr ? "04 — BİLDİRİM" : "04 — NOTIFICATIONS"}
+        eyebrow={isTr ? "04 — BİLDİRİMLER" : "04 — NOTIFICATIONS"}
         title={isTr ? "Bildirim ayarları" : "Notification settings"}
         description={
           isTr
-            ? "Düşük puan e-postası ve haftalık rapor tercihleri."
-            : "Low-rating email and weekly report preferences."
+            ? "Düşük puan uyarısı, haftalık rapor ve deneme süresi hatırlatmaları için e-posta tercihlerin."
+            : "Email preferences for low-rating alerts, the weekly report and trial reminders."
         }
         actions={
           <span className="text-[#737373]" aria-hidden="true">
@@ -435,8 +499,8 @@ export default function AccountSettingsClient({
         title={isTr ? "Pulse AI yanıt taslakları" : "Pulse AI reply drafts"}
         description={
           isTr
-            ? "Düşük puanlı yorumlara otomatik taslak hazırlama ve varsayılan ton seçimi (her işletme için)."
-            : "Auto-prepared drafts for low-rating reviews and default tone (per location)."
+            ? "Yorumlara otomatik yanıt taslağı hazırlama ve varsayılan ton seçimi (her işletme için)."
+            : "Auto-prepared reply drafts and the default tone (per business)."
         }
         actions={
           <span className="text-[#737373]" aria-hidden="true">
@@ -451,7 +515,7 @@ export default function AccountSettingsClient({
         id="billing"
         active={active === "billing"}
         keepMounted={false}
-        eyebrow={isTr ? "06 — FATURALANDIRMA" : "06 — BILLING"}
+        eyebrow={isTr ? "06 — PLAN & FATURALAMA" : "06 — PLAN & BILLING"}
         title={isTr ? "Plan ve fatura geçmişi" : "Plan & invoices"}
         description={
           isTr
@@ -471,12 +535,12 @@ export default function AccountSettingsClient({
         id="team"
         active={active === "team"}
         keepMounted={false}
-        eyebrow={isTr ? "07 — KULLANICILAR" : "07 — USERS"}
+        eyebrow={isTr ? "07 — EKİP & ROLLER" : "07 — TEAM & ROLES"}
         title={isTr ? "Ekip ve roller" : "Team & roles"}
         description={
           isTr
-            ? "Workspace üyeleri, rolleri ve konum erişimleri."
-            : "Workspace members, roles, and location access."
+            ? "Ekip üyelerin, rolleri ve erişebildikleri işletmeler."
+            : "Your team members, their roles and the businesses they can access."
         }
         actions={
           <span className="text-[#737373]" aria-hidden="true">
@@ -496,7 +560,7 @@ export default function AccountSettingsClient({
         id="legal"
         active={active === "legal"}
         keepMounted={false}
-        eyebrow={isTr ? "08 — KVKK & YASAL" : "08 — LEGAL"}
+        eyebrow={isTr ? "08 — KVKK & YASAL" : "08 — KVKK & LEGAL"}
         title={isTr ? "KVKK & yasal" : "KVKK & legal"}
         description={
           isTr

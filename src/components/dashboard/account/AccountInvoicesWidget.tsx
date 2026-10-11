@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, Loader2, Receipt } from "lucide-react";
 import { Eyebrow, Badge } from "@/components/ui";
 import type { Locale } from "@/lib/translations";
+import { resolveDisplayTimeZone } from "@/lib/timezone";
 
 // §38.37 — Hesabım sağ rail Recent invoices widget. Tasarım .design-owner-2026/
 // page-account.jsx:207-225 birebir: 4 satır recent invoices, date + amount +
@@ -90,6 +91,7 @@ export function AccountInvoicesWidget({ locale = "tr" }: AccountInvoicesWidgetPr
             day: "2-digit",
             month: "short",
             year: "numeric",
+            timeZone: resolveDisplayTimeZone(),
           });
           const currency = inv.currency === "TRY" ? "₺" : inv.currency === "USD" ? "$" : inv.currency;
           return (

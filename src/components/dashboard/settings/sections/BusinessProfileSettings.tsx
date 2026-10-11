@@ -13,17 +13,17 @@ interface BusinessProfileSettingsProps {
 // (custom input fallback). Tasarım .design-owner-2026/page-account.jsx:Profile
 // timezone select. Backend Zod regex `^[A-Za-z]+/[A-Za-z_-]+(?:/[A-Za-z_-]+)?$`
 // kabul eder, herhangi bir IANA tz string set edilebilir.
-const TIMEZONE_OPTIONS: { value: string; label: string }[] = [
-  { value: "Europe/Istanbul", label: "İstanbul (UTC+3)" },
-  { value: "Europe/London", label: "Londra (UTC+0/+1)" },
-  { value: "Europe/Berlin", label: "Berlin (UTC+1/+2)" },
-  { value: "Europe/Paris", label: "Paris (UTC+1/+2)" },
-  { value: "Europe/Amsterdam", label: "Amsterdam (UTC+1/+2)" },
-  { value: "America/New_York", label: "New York (UTC-5/-4)" },
-  { value: "America/Los_Angeles", label: "Los Angeles (UTC-8/-7)" },
-  { value: "Asia/Dubai", label: "Dubai (UTC+4)" },
-  { value: "Asia/Singapore", label: "Singapur (UTC+8)" },
-  { value: "Asia/Tokyo", label: "Tokyo (UTC+9)" },
+const TIMEZONE_OPTIONS: { value: string; tr: string; en: string }[] = [
+  { value: "Europe/Istanbul", tr: "İstanbul (UTC+3)", en: "Istanbul (UTC+3)" },
+  { value: "Europe/London", tr: "Londra (UTC+0/+1)", en: "London (UTC+0/+1)" },
+  { value: "Europe/Berlin", tr: "Berlin (UTC+1/+2)", en: "Berlin (UTC+1/+2)" },
+  { value: "Europe/Paris", tr: "Paris (UTC+1/+2)", en: "Paris (UTC+1/+2)" },
+  { value: "Europe/Amsterdam", tr: "Amsterdam (UTC+1/+2)", en: "Amsterdam (UTC+1/+2)" },
+  { value: "America/New_York", tr: "New York (UTC-5/-4)", en: "New York (UTC-5/-4)" },
+  { value: "America/Los_Angeles", tr: "Los Angeles (UTC-8/-7)", en: "Los Angeles (UTC-8/-7)" },
+  { value: "Asia/Dubai", tr: "Dubai (UTC+4)", en: "Dubai (UTC+4)" },
+  { value: "Asia/Singapore", tr: "Singapur (UTC+8)", en: "Singapore (UTC+8)" },
+  { value: "Asia/Tokyo", tr: "Tokyo (UTC+9)", en: "Tokyo (UTC+9)" },
 ];
 
 /**
@@ -181,10 +181,20 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
               enterKeyHint="next"
             />
           </Field>
+          {/* The required asterisk is part of the label here: Field appends
+              its own after the label node, and with the full-width flex row
+              (name ↔ "Verified") it wrapped onto a second line, pushing this
+              input below the "Ad Soyad" one. The input's own `required`
+              still exposes the requirement to assistive tech. */}
           <Field
             label={
               <span className="flex items-center justify-between gap-2">
-                <span>{isTr ? "E-posta" : "Email"}</span>
+                <span>
+                  {isTr ? "E-posta" : "Email"}
+                  <span style={{ color: "#DC2626", marginLeft: 4 }} aria-hidden="true">
+                    *
+                  </span>
+                </span>
                 {emailVerified && (
                   <span
                     className="inline-flex items-center gap-1 text-[10px] font-medium text-[#16A34A]"
@@ -196,7 +206,6 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
                 )}
               </span>
             }
-            required
           >
             <input
               type="email"
@@ -257,7 +266,7 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
               onChange={setTimezone}
               options={[
                 { value: "", label: isTr ? "Seçilmedi" : "Not set" },
-                ...TIMEZONE_OPTIONS,
+                ...TIMEZONE_OPTIONS.map((o) => ({ value: o.value, label: isTr ? o.tr : o.en })),
               ]}
               ariaLabel={isTr ? "Saat dilimi" : "Time zone"}
               placeholder={isTr ? "Seçilmedi" : "Not set"}
@@ -286,7 +295,7 @@ export function BusinessProfileSettings({ locale = "tr" }: BusinessProfileSettin
           <p className="mt-1 text-[12px] leading-[1.55] text-[#737373]">
             {isTr
               ? "Bu sadece senin paneli görme dilini değiştirir. Müşteri yorum sayfası ayrı."
-              : "This only affects your panel UI language. The public review surface is separate."}
+              : "This only changes the language of your panel. The customer review page is not affected."}
           </p>
         </div>
         <Field label={isTr ? "Dil" : "Language"}>
